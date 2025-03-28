@@ -10,7 +10,6 @@
 
 #include "pycore_bitutils.h"      // _Py_bswap32()
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
-#include <stdbool.h>              // bool
 
 #include <ffi.h>
 #include "ctypes.h"
@@ -56,71 +55,56 @@ Py_ssize_t LOW_BIT(Py_ssize_t offset);
 @classmethod
 _ctypes.CField.__new__ as PyCField_new
 
+    *
     name: object(subclass_of='&PyUnicode_Type')
     type as proto: object
-    size: Py_ssize_t
-    offset: Py_ssize_t
+    byte_size: Py_ssize_t
+    byte_offset: Py_ssize_t
     index: Py_ssize_t
+    _internal_use: bool
     bit_size as bit_size_obj: object = None
+    bit_offset as bit_offset_obj: object = None
 
 [clinic start generated code]*/
 
 static PyObject *
 PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
-                  Py_ssize_t size, Py_ssize_t offset, Py_ssize_t index,
-                  PyObject *bit_size_obj)
-/*[clinic end generated code: output=43649ef9157c5f58 input=3d813f56373c4caa]*/
+                  Py_ssize_t byte_size, Py_ssize_t byte_offset,
+                  Py_ssize_t index, int _internal_use,
+                  PyObject *bit_size_obj, PyObject *bit_offset_obj)
+/*[clinic end generated code: output=3f2885ee4108b6e2 input=b343436e33c0d782]*/
 {
     CFieldObject* self = NULL;
-    if (size < 0) {
-        PyErr_Format(PyExc_ValueError,
-                     "size of field %R must not be negative, got %zd",
-                     name, size);
+
+    if (!_internal_use) {
+        // Do not instantiate outside ctypes, yet.
+        // The constructor is internal API and may change without warning.
+        PyErr_Format(PyExc_TypeError, "cannot create %T object", type);
         goto error;
     }
-    // assert: no overflow;
-    if ((unsigned long long int) size
-            >= (1ULL << (8*sizeof(Py_ssize_t)-1)) / 8) {
+    if (byte_size < 0) {
         PyErr_Format(PyExc_ValueError,
-                     "size of field %R is too big: %zd", name, size);
+                     "byte size of field %R must not be negative, got %zd",
+                     name, byte_size);
         goto error;
     }
 
-    PyTypeObject *tp = type;
-    ctypes_state *st = get_module_state_by_class(tp);
-    self = (CFieldObject *)tp->tp_alloc(tp, 0);
-    if (!self) {
-        return NULL;
-    }
-    if (PyUnicode_CheckExact(name)) {
-        self->name = Py_NewRef(name);
-    } else {
-        self->name = PyObject_Str(name);
-        if (!self->name) {
-            goto error;
-        }
-    }
-
+    ctypes_state *st = get_module_state_by_class(type);
     StgInfo *info;
     if (PyStgInfo_FromType(st, proto, &info) < 0) {
         goto error;
     }
     if (info == NULL) {
         PyErr_Format(PyExc_TypeError,
-                     "type of field %R must be a C type", self->name);
+                     "type of field %R must be a C type", name);
         goto error;
     }
+    assert(byte_size == info->size);
 
+    Py_ssize_t bitfield_size = 0;
+    Py_ssize_t bit_offset = 0;
     if (bit_size_obj != Py_None) {
-#ifdef Py_DEBUG
-        Py_ssize_t bit_size = NUM_BITS(size);
-        assert(bit_size > 0);
-        assert(bit_size <= info->size * 8);
-        // Currently, the bit size is specified redundantly
-        // in NUM_BITS(size) and bit_size_obj.
-        // Verify that they match.
-        assert(PyLong_AsSsize_t(bit_size_obj) == bit_size);
-#endif
+        // It's a bit field!
         switch(info->ffi_type_pointer.type) {
             case FFI_TYPE_UINT8:
             case FFI_TYPE_UINT16:
@@ -144,11 +128,67 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                              ((PyTypeObject*)proto)->tp_name);
                 goto error;
         }
+
+        if (byte_size > 100) {
+            // Bitfields must "live" in a field defined by a ffi type,
+            // so they're limited to about 8 bytes.
+            // This check is here to avoid overflow in later checks.
+            PyErr_Format(PyExc_ValueError,
+                         "bit field %R size too large, got %zd",
+                         name, byte_size);
+            goto error;
+        }
+        bitfield_size = PyLong_AsSsize_t(bit_size_obj);
+        if ((bitfield_size <= 0) || (bitfield_size > 255)) {
+            if (!PyErr_Occurred()) {
+                PyErr_Format(PyExc_ValueError,
+                             "bit size of field %R out of range, got %zd",
+                             name, bitfield_size);
+            }
+            goto error;
+        }
+        bit_offset = PyLong_AsSsize_t(bit_offset_obj);
+        if ((bit_offset < 0) || (bit_offset > 255)) {
+            if (!PyErr_Occurred()) {
+                PyErr_Format(PyExc_ValueError,
+                             "bit offset of field %R out of range, got %zd",
+                             name, bit_offset);
+            }
+            goto error;
+        }
+        if ((bitfield_size + bit_offset) > byte_size * 8) {
+            PyErr_Format(
+                PyExc_ValueError,
+                "bit field %R overflows its type (%zd + %zd >= %zd)",
+                name, bit_offset, byte_size*8);
+            goto error;
+        }
+    }
+    else {
+        if (bit_offset_obj != Py_None) {
+            PyErr_Format(
+                PyExc_ValueError,
+                "field %R: bit_offset must be specified if bit_size is",
+                name);
+            goto error;
+        }
     }
 
+    self = _CFieldObject_CAST(type->tp_alloc(type, 0));
+    if (!self) {
+        return NULL;
+    }
+    self->name = PyUnicode_FromObject(name);
+    if (!self->name) {
+        goto error;
+    }
+    assert(PyUnicode_CheckExact(self->name));
+
     self->proto = Py_NewRef(proto);
-    self->size = size;
-    self->offset = offset;
+    self->byte_size = byte_size;
+    self->byte_offset = byte_offset;
+    self->bitfield_size = (uint8_t)bitfield_size;
+    self->bit_offset = (uint8_t)bit_offset;
 
     self->index = index;
 
@@ -192,6 +232,15 @@ error:
     return NULL;
 }
 
+static inline Py_ssize_t
+_pack_legacy_size(CFieldObject *field)
+{
+    if (field->bitfield_size) {
+        Py_ssize_t bit_offset = field->bit_offset;
+        return (field->bitfield_size << 16) | bit_offset;
+    }
+    return field->byte_size;
+}
 
 static int
 PyCField_set(PyObject *op, PyObject *inst, PyObject *value)
@@ -206,18 +255,18 @@ PyCField_set(PyObject *op, PyObject *inst, PyObject *value)
         return -1;
     }
     dst = _CDataObject_CAST(inst);
-    ptr = dst->b_ptr + self->offset;
+    ptr = dst->b_ptr + self->byte_offset;
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "can't delete attribute");
         return -1;
     }
     return PyCData_set(st, inst, self->proto, self->setfunc, value,
-                       self->index, self->size, ptr);
+                       self->index, _pack_legacy_size(self), ptr);
 }
 
 static PyObject *
-PyCField_get(PyObject *op, PyObject *inst, PyTypeObject *type)
+PyCField_get(PyObject *op, PyObject *inst, PyObject *type)
 {
     CDataObject *src;
     CFieldObject *self = _CFieldObject_CAST(op);
@@ -232,25 +281,110 @@ PyCField_get(PyObject *op, PyObject *inst, PyTypeObject *type)
     }
     src = _CDataObject_CAST(inst);
     return PyCData_get(st, self->proto, self->getfunc, inst,
-                       self->index, self->size, src->b_ptr + self->offset);
+                       self->index, _pack_legacy_size(self),
+                       src->b_ptr + self->byte_offset);
 }
 
 static PyObject *
-PyCField_get_offset(PyObject *self, void *data)
+PyCField_get_legacy_size(PyObject *self, void *Py_UNUSED(closure))
 {
-    return PyLong_FromSsize_t(_CFieldObject_CAST(self)->offset);
+    CFieldObject *field = _CFieldObject_CAST(self);
+    return PyLong_FromSsize_t(_pack_legacy_size(field));
 }
 
 static PyObject *
-PyCField_get_size(PyObject *self, void *data)
+PyCField_get_bit_size(PyObject *self, void *Py_UNUSED(closure))
 {
-    return PyLong_FromSsize_t(_CFieldObject_CAST(self)->size);
+    CFieldObject *field = _CFieldObject_CAST(self);
+    if (field->bitfield_size) {
+        return PyLong_FromSsize_t(field->bitfield_size);
+    }
+    if (field->byte_size < PY_SSIZE_T_MAX / 8) {
+        return PyLong_FromSsize_t(field->byte_size * 8);
+    }
+
+    // If the bit size overflows Py_ssize_t, we don't try fitting it in
+    // a bigger C type. Use Python ints.
+    PyObject *byte_size_obj = NULL;
+    PyObject *eight = NULL;
+    PyObject *result = NULL;
+
+    byte_size_obj = PyLong_FromSsize_t(field->byte_size);
+    if (!byte_size_obj) {
+        goto finally;
+    }
+    eight = PyLong_FromLong(8);
+    if (!eight) {
+        goto finally;
+    }
+    result = PyNumber_Multiply(byte_size_obj, eight);
+finally:
+    Py_XDECREF(byte_size_obj);
+    Py_XDECREF(eight);
+    return result;
+}
+
+static PyObject *
+PyCField_is_bitfield(PyObject *self, void *Py_UNUSED(closure))
+{
+    return PyBool_FromLong(_CFieldObject_CAST(self)->bitfield_size);
+}
+
+static PyObject *
+PyCField_is_anonymous(PyObject *self, void *Py_UNUSED(closure))
+{
+    return PyBool_FromLong(_CFieldObject_CAST(self)->anonymous);
 }
 
 static PyGetSetDef PyCField_getset[] = {
-    { "offset", PyCField_get_offset, NULL, PyDoc_STR("offset in bytes of this field") },
-    { "size", PyCField_get_size, NULL, PyDoc_STR("size in bytes of this field") },
-    { NULL, NULL, NULL, NULL },
+    { "size", PyCField_get_legacy_size, NULL,
+        PyDoc_STR("size in bytes of this field. For bitfields, this is a "
+                  "legacy packed value; use byte_size instead") },
+
+    { "bit_size", PyCField_get_bit_size, NULL,
+        PyDoc_STR("size of this field in bits") },
+    { "is_bitfield", PyCField_is_bitfield, NULL,
+        PyDoc_STR("true if this is a bitfield") },
+    { "is_anonymous", PyCField_is_anonymous, NULL,
+        PyDoc_STR("true if this field is anonymous") },
+    { NULL },
+};
+
+static PyMemberDef PyCField_members[] = {
+    { "name",
+        .type = Py_T_OBJECT_EX,
+        .offset = offsetof(CFieldObject, name),
+        .flags = Py_READONLY,
+        .doc = PyDoc_STR("name of this field") },
+    { "type",
+        .type = Py_T_OBJECT_EX,
+        .offset = offsetof(CFieldObject, proto),
+        .flags = Py_READONLY,
+        .doc = PyDoc_STR("type of this field") },
+    { "offset",
+        .type = Py_T_PYSSIZET,
+        .offset = offsetof(CFieldObject, byte_offset),
+        .flags = Py_READONLY,
+        .doc = PyDoc_STR(
+            "offset in bytes of this field (same as byte_offset)") },
+    { "byte_offset",
+        .type = Py_T_PYSSIZET,
+        .offset = offsetof(CFieldObject, byte_offset),
+        .flags = Py_READONLY,
+        .doc = PyDoc_STR("offset in bytes of this field. "
+                         "For bitfields: excludes bit_offset.") },
+    { "byte_size",
+        .type = Py_T_PYSSIZET,
+        .offset = offsetof(CFieldObject, byte_size),
+        .flags = Py_READONLY,
+        .doc = PyDoc_STR("size of this field in bytes") },
+    { "bit_offset",
+        .type = Py_T_UBYTE,
+        .offset = offsetof(CFieldObject, bit_offset),
+        .flags = Py_READONLY,
+        .doc = PyDoc_STR("additional offset in bits (relative to byte_offset);"
+                         " zero for non-bitfields") },
+    { NULL },
 };
 
 static int
@@ -282,24 +416,27 @@ PyCField_dealloc(PyObject *self)
 }
 
 static PyObject *
-PyCField_repr(PyObject *op)
+PyCField_repr(PyObject *self)
 {
+    CFieldObject *field = _CFieldObject_CAST(self);
     PyObject *result;
-    CFieldObject *self = _CFieldObject_CAST(op);
-    Py_ssize_t bits = NUM_BITS(self->size);
-    Py_ssize_t size = LOW_BIT(self->size);
-    const char *name;
+    const char *tp_name = ((PyTypeObject *)field->proto)->tp_name;
 
-    name = ((PyTypeObject *)self->proto)->tp_name;
-
-    if (bits)
+    if (field->bitfield_size) {
         result = PyUnicode_FromFormat(
-            "<Field type=%s, ofs=%zd:%zd, bits=%zd>",
-            name, self->offset, size, bits);
-    else
+            "<%T %R type=%s, ofs=%zd, bit_size=%zd, bit_offset=%zd>",
+            self,
+            field->name, tp_name, field->byte_offset,
+            (Py_ssize_t)field->bitfield_size,
+            (Py_ssize_t)field->bit_offset);
+    }
+    else {
         result = PyUnicode_FromFormat(
-            "<Field type=%s, ofs=%zd, size=%zd>",
-            name, self->offset, size);
+            "<%T %R type=%s, ofs=%zd, size=%zd>",
+            self,
+            field->name, tp_name, field->byte_offset,
+            field->byte_size);
+    }
     return result;
 }
 
@@ -311,13 +448,14 @@ static PyType_Slot cfield_slots[] = {
     {Py_tp_traverse, PyCField_traverse},
     {Py_tp_clear, PyCField_clear},
     {Py_tp_getset, PyCField_getset},
+    {Py_tp_members, PyCField_members},
     {Py_tp_descr_get, PyCField_get},
     {Py_tp_descr_set, PyCField_set},
     {0, NULL},
 };
 
 PyType_Spec cfield_spec = {
-    .name = "_ctypes.CField",
+    .name = "ctypes.CField",
     .basicsize = sizeof(CFieldObject),
     .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
               Py_TPFLAGS_IMMUTABLETYPE),

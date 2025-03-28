@@ -39,6 +39,9 @@ class ReadTestBase:
         p = self.root / 'fileA'
         with magic_open(p, 'rb') as f:
             self.assertEqual(f.read(), b'this is file A\n')
+        self.assertRaises(ValueError, magic_open, p, 'rb', encoding='utf8')
+        self.assertRaises(ValueError, magic_open, p, 'rb', errors='strict')
+        self.assertRaises(ValueError, magic_open, p, 'rb', newline='')
 
     def test_read_bytes(self):
         p = self.root / 'fileA'
@@ -127,6 +130,8 @@ class ReadTestBase:
         check("**/file*",
               ["fileA", "dirA/linkC/fileB", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD",
                "linkB/fileB"])
+        with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
+            list(p.glob(''))
 
     def test_walk_top_down(self):
         it = self.root.walk()

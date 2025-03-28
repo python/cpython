@@ -1,0 +1,2 @@
+clang-cl on Windows needs option ``/EHa`` to support SEH (structured
+exception handling) correctly. Fix by Chris Eibl.

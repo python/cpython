@@ -1837,6 +1837,9 @@ builtin_anext_impl(PyObject *module, PyObject *aiterator,
     }
 
     awaitable = (*t->tp_as_async->am_anext)(aiterator);
+    if (awaitable == NULL) {
+        return NULL;
+    }
     if (default_value == NULL) {
         return awaitable;
     }
@@ -2534,22 +2537,19 @@ static PyObject *
 builtin_round_impl(PyObject *module, PyObject *number, PyObject *ndigits)
 /*[clinic end generated code: output=ff0d9dd176c02ede input=275678471d7aca15]*/
 {
-    PyObject *round, *result;
-
-    round = _PyObject_LookupSpecial(number, &_Py_ID(__round__));
-    if (round == NULL) {
-        if (!PyErr_Occurred())
-            PyErr_Format(PyExc_TypeError,
-                         "type %.100s doesn't define __round__ method",
-                         Py_TYPE(number)->tp_name);
-        return NULL;
+    PyObject *result;
+    if (ndigits == Py_None) {
+        result = _PyObject_MaybeCallSpecialNoArgs(number, &_Py_ID(__round__));
     }
-
-    if (ndigits == Py_None)
-        result = _PyObject_CallNoArgs(round);
-    else
-        result = PyObject_CallOneArg(round, ndigits);
-    Py_DECREF(round);
+    else {
+        result = _PyObject_MaybeCallSpecialOneArg(number, &_Py_ID(__round__),
+                                                  ndigits);
+    }
+    if (result == NULL && !PyErr_Occurred()) {
+        PyErr_Format(PyExc_TypeError,
+                     "type %.100s doesn't define __round__ method",
+                     Py_TYPE(number)->tp_name);
+    }
     return result;
 }
 
@@ -3121,9 +3121,7 @@ zip_next(PyObject *self)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
     } else {
         result = PyTuple_New(tuplesize);
         if (result == NULL)

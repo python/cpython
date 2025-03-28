@@ -573,6 +573,8 @@ class MathTests(unittest.TestCase):
         #self.assertEqual(math.ceil(NINF), NINF)
         #self.assertTrue(math.isnan(math.floor(NAN)))
 
+        class TestFloorIsNone(float):
+            __floor__ = None
         class TestFloor:
             def __floor__(self):
                 return 42
@@ -588,6 +590,7 @@ class MathTests(unittest.TestCase):
         self.assertEqual(math.floor(FloatLike(41.9)), 41)
         self.assertRaises(TypeError, math.floor, TestNoFloor())
         self.assertRaises(ValueError, math.floor, TestBadFloor())
+        self.assertRaises(TypeError, math.floor, TestFloorIsNone(3.5))
 
         t = TestNoFloor()
         t.__floor__ = lambda *args: args

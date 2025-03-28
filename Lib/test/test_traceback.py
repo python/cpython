@@ -4616,6 +4616,12 @@ class MiscTest(unittest.TestCase):
                 res3 = traceback._levenshtein_distance(a, b, threshold)
                 self.assertGreater(res3, threshold, msg=(a, b, threshold))
 
+    @cpython_only
+    def test_suggestions_extension(self):
+        # Check that the C extension is available
+        import _suggestions  # noqa: F401
+
+
 class TestColorizedTraceback(unittest.TestCase):
     def test_colorized_traceback(self):
         def foo(*args):

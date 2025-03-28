@@ -811,6 +811,14 @@ pathlib
   :meth:`pathlib.Path.rglob` and :meth:`pathlib.PurePath.match` for matching
   the path's case sensitivity, allowing for more precise control over the matching process.
 
+platform
+--------
+
+* Add support for detecting Windows 11 and Windows Server releases past 2012.
+  Previously, lookups on Windows Server platforms newer than Windows Server 2012
+  and on Windows 11 would return ``Windows-10``.
+  (Contributed by Steve Dower in :gh:`89545`.)
+
 pdb
 ---
 

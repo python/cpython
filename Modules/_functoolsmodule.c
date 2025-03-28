@@ -1008,9 +1008,7 @@ _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
             }
             // bpo-42536: The GC may have untracked this args tuple. Since we're
             // recycling it, make sure it's tracked again:
-            if (!_PyObject_GC_IS_TRACKED(args)) {
-                _PyObject_GC_TRACK(args);
-            }
+            _PyTuple_Recycle(args);
         }
     }
 

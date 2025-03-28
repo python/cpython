@@ -78,19 +78,6 @@ module math
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=76bc7002685dd942]*/
 
 
-typedef struct {
-    PyObject *str___ceil__;
-    PyObject *str___floor__;
-    PyObject *str___trunc__;
-} math_module_state;
-
-static inline math_module_state*
-get_math_module_state(PyObject *module)
-{
-    void *state = _PyModule_GetState(module);
-    assert(state != NULL);
-    return (math_module_state *)state;
-}
 
 /*
 Double and triple length extended precision algorithms from:
@@ -1140,18 +1127,17 @@ math_ceil(PyObject *module, PyObject *number)
         x = PyFloat_AS_DOUBLE(number);
     }
     else {
-        math_module_state *state = get_math_module_state(module);
-        PyObject *method = _PyObject_LookupSpecial(number, state->str___ceil__);
-        if (method != NULL) {
-            PyObject *result = _PyObject_CallNoArgs(method);
-            Py_DECREF(method);
+        PyObject *result = _PyObject_MaybeCallSpecialNoArgs(number, &_Py_ID(__ceil__));
+        if (result != NULL) {
             return result;
         }
-        if (PyErr_Occurred())
+        else if (PyErr_Occurred()) {
             return NULL;
+        }
         x = PyFloat_AsDouble(number);
-        if (x == -1.0 && PyErr_Occurred())
+        if (x == -1.0 && PyErr_Occurred()) {
             return NULL;
+        }
     }
     return PyLong_FromDouble(ceil(x));
 }
@@ -1209,18 +1195,17 @@ math_floor(PyObject *module, PyObject *number)
         x = PyFloat_AS_DOUBLE(number);
     }
     else {
-        math_module_state *state = get_math_module_state(module);
-        PyObject *method = _PyObject_LookupSpecial(number, state->str___floor__);
-        if (method != NULL) {
-            PyObject *result = _PyObject_CallNoArgs(method);
-            Py_DECREF(method);
+        PyObject *result = _PyObject_MaybeCallSpecialNoArgs(number, &_Py_ID(__floor__));
+        if (result != NULL) {
             return result;
         }
-        if (PyErr_Occurred())
+        else if (PyErr_Occurred()) {
             return NULL;
+        }
         x = PyFloat_AsDouble(number);
-        if (x == -1.0 && PyErr_Occurred())
+        if (x == -1.0 && PyErr_Occurred()) {
             return NULL;
+        }
     }
     return PyLong_FromDouble(floor(x));
 }
@@ -2074,24 +2059,20 @@ static PyObject *
 math_trunc(PyObject *module, PyObject *x)
 /*[clinic end generated code: output=34b9697b707e1031 input=2168b34e0a09134d]*/
 {
-    PyObject *trunc, *result;
-
     if (PyFloat_CheckExact(x)) {
         return PyFloat_Type.tp_as_number->nb_int(x);
     }
 
-    math_module_state *state = get_math_module_state(module);
-    trunc = _PyObject_LookupSpecial(x, state->str___trunc__);
-    if (trunc == NULL) {
-        if (!PyErr_Occurred())
-            PyErr_Format(PyExc_TypeError,
-                         "type %.100s doesn't define __trunc__ method",
-                         Py_TYPE(x)->tp_name);
-        return NULL;
+    PyObject *result = _PyObject_MaybeCallSpecialNoArgs(x, &_Py_ID(__trunc__));
+    if (result != NULL) {
+        return result;
     }
-    result = _PyObject_CallNoArgs(trunc);
-    Py_DECREF(trunc);
-    return result;
+    else if (!PyErr_Occurred()) {
+        PyErr_Format(PyExc_TypeError,
+            "type %.100s doesn't define __trunc__ method",
+            Py_TYPE(x)->tp_name);
+    }
+    return NULL;
 }
 
 
@@ -4084,19 +4065,6 @@ static int
 math_exec(PyObject *module)
 {
 
-    math_module_state *state = get_math_module_state(module);
-    state->str___ceil__ = PyUnicode_InternFromString("__ceil__");
-    if (state->str___ceil__ == NULL) {
-        return -1;
-    }
-    state->str___floor__ = PyUnicode_InternFromString("__floor__");
-    if (state->str___floor__ == NULL) {
-        return -1;
-    }
-    state->str___trunc__ = PyUnicode_InternFromString("__trunc__");
-    if (state->str___trunc__ == NULL) {
-        return -1;
-    }
     if (PyModule_Add(module, "pi", PyFloat_FromDouble(Py_MATH_PI)) < 0) {
         return -1;
     }
@@ -4114,22 +4082,6 @@ math_exec(PyObject *module)
         return -1;
     }
     return 0;
-}
-
-static int
-math_clear(PyObject *module)
-{
-    math_module_state *state = get_math_module_state(module);
-    Py_CLEAR(state->str___ceil__);
-    Py_CLEAR(state->str___floor__);
-    Py_CLEAR(state->str___trunc__);
-    return 0;
-}
-
-static void
-math_free(void *module)
-{
-    math_clear((PyObject *)module);
 }
 
 static PyMethodDef math_methods[] = {
@@ -4208,11 +4160,9 @@ static struct PyModuleDef mathmodule = {
     PyModuleDef_HEAD_INIT,
     .m_name = "math",
     .m_doc = module_doc,
-    .m_size = sizeof(math_module_state),
+    .m_size = 0,
     .m_methods = math_methods,
     .m_slots = math_slots,
-    .m_clear = math_clear,
-    .m_free = math_free,
 };
 
 PyMODINIT_FUNC

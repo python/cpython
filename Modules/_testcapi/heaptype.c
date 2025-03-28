@@ -605,15 +605,17 @@ heapctype_init(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static int
-heapgcctype_traverse(HeapCTypeObject *self, visitproc visit, void *arg)
+heapgcctype_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    HeapCTypeObject *self = (HeapCTypeObject*)op;
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static void
-heapgcctype_dealloc(HeapCTypeObject *self)
+heapgcctype_dealloc(PyObject *op)
 {
+    HeapCTypeObject *self = (HeapCTypeObject*)op;
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     PyObject_GC_Del(self);
@@ -642,8 +644,9 @@ PyDoc_STRVAR(heapctype__doc__,
 "The 'value' attribute is set to 10 in __init__.");
 
 static void
-heapctype_dealloc(HeapCTypeObject *self)
+heapctype_dealloc(PyObject *op)
 {
+    HeapCTypeObject *self = (HeapCTypeObject*)op;
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_Free(self);
     Py_DECREF(tp);
@@ -716,8 +719,9 @@ typedef struct {
 } HeapCTypeWithBufferObject;
 
 static int
-heapctypewithbuffer_getbuffer(HeapCTypeWithBufferObject *self, Py_buffer *view, int flags)
+heapctypewithbuffer_getbuffer(PyObject *op, Py_buffer *view, int flags)
 {
+    HeapCTypeWithBufferObject *self = (HeapCTypeWithBufferObject*)op;
     self->buffer[0] = '1';
     self->buffer[1] = '2';
     self->buffer[2] = '3';
@@ -727,8 +731,9 @@ heapctypewithbuffer_getbuffer(HeapCTypeWithBufferObject *self, Py_buffer *view, 
 }
 
 static void
-heapctypewithbuffer_releasebuffer(HeapCTypeWithBufferObject *self, Py_buffer *view)
+heapctypewithbuffer_releasebuffer(PyObject *op, Py_buffer *view)
 {
+    HeapCTypeWithBufferObject *self = (HeapCTypeWithBufferObject*)op;
     assert(view->obj == (void*) self);
 }
 
@@ -873,9 +878,9 @@ typedef struct {
 } HeapCTypeWithDictObject;
 
 static void
-heapctypewithdict_dealloc(HeapCTypeWithDictObject* self)
+heapctypewithdict_dealloc(PyObject *op)
 {
-
+    HeapCTypeWithDictObject *self = (HeapCTypeWithDictObject*)op;
     PyTypeObject *tp = Py_TYPE(self);
     Py_XDECREF(self->dict);
     PyObject_Free(self);
@@ -917,22 +922,23 @@ static PyType_Spec HeapCTypeWithDict2_spec = {
 };
 
 static int
-heapmanaged_traverse(HeapCTypeObject *self, visitproc visit, void *arg)
+heapmanaged_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return PyObject_VisitManagedDict((PyObject *)self, visit, arg);
 }
 
 static int
-heapmanaged_clear(HeapCTypeObject *self)
+heapmanaged_clear(PyObject *self)
 {
-    PyObject_ClearManagedDict((PyObject *)self);
+    PyObject_ClearManagedDict(self);
     return 0;
 }
 
 static void
-heapmanaged_dealloc(HeapCTypeObject *self)
+heapmanaged_dealloc(PyObject *op)
 {
+    HeapCTypeObject *self = (HeapCTypeObject*)op;
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_ClearManagedDict((PyObject *)self);
     PyObject_GC_UnTrack(self);
@@ -1016,9 +1022,9 @@ static struct PyMemberDef heapctypewithweakref_members[] = {
 };
 
 static void
-heapctypewithweakref_dealloc(HeapCTypeWithWeakrefObject* self)
+heapctypewithweakref_dealloc(PyObject *op)
 {
-
+    HeapCTypeWithWeakrefObject *self = (HeapCTypeWithWeakrefObject*)op;
     PyTypeObject *tp = Py_TYPE(self);
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *) self);
@@ -1071,16 +1077,18 @@ heapctypesetattr_init(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 static void
-heapctypesetattr_dealloc(HeapCTypeSetattrObject *self)
+heapctypesetattr_dealloc(PyObject *op)
 {
+    HeapCTypeSetattrObject *self = (HeapCTypeSetattrObject*)op;
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_Free(self);
     Py_DECREF(tp);
 }
 
 static int
-heapctypesetattr_setattro(HeapCTypeSetattrObject *self, PyObject *attr, PyObject *value)
+heapctypesetattr_setattro(PyObject *op, PyObject *attr, PyObject *value)
 {
+    HeapCTypeSetattrObject *self = (HeapCTypeSetattrObject*)op;
     PyObject *svalue = PyUnicode_FromString("value");
     if (svalue == NULL)
         return -1;
@@ -1237,8 +1245,9 @@ HeapCCollection_new(PyTypeObject *subtype, PyObject *args, PyObject *kwds)
 }
 
 static Py_ssize_t
-HeapCCollection_length(PyVarObject *self)
+HeapCCollection_length(PyObject *op)
 {
+    PyVarObject *self = (PyVarObject*)op;
     return Py_SIZE(self);
 }
 

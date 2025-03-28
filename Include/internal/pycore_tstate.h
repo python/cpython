@@ -47,8 +47,9 @@ typedef struct _PyThreadStateImpl {
     struct _qsbr_thread_state *qsbr;  // only used by free-threaded build
     struct llist_node mem_free_queue; // delayed free queue
 
-
 #ifdef Py_GIL_DISABLED
+    // Stack references for the current thread that exist on the C stack
+    struct _PyCStackRef *c_stack_refs;
     struct _gc_thread_state gc;
     struct _mimalloc_thread_state mimalloc;
     struct _Py_freelists freelists;

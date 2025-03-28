@@ -1247,6 +1247,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionadded:: 3.13
 
+   .. impl-detail::
+
+      It is not guaranteed to exist in all implementations of Python.
 
 .. function:: is_finalizing()
 

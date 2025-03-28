@@ -7158,6 +7158,8 @@ class GetTypeHintTests(BaseTestCase):
 
         self.assertEqual(get_type_hints(C, format=annotationlib.Format.STRING),
                          {'x': 'undefined'})
+        # Make sure using an int as format also works:
+        self.assertEqual(get_type_hints(C, format=4), {'x': 'undefined'})
 
     def test_get_type_hints_format_function(self):
         def func(x: undefined) -> undefined: ...

@@ -937,18 +937,22 @@ def main():
 
     import argparse
     parser = argparse.ArgumentParser(
-        description="Generates a uuid using the selected uuid function.")
-    parser.add_argument("-u", "--uuid", choices=uuid_funcs.keys(), default="uuid4",
-                        help="The function to use to generate the uuid. "
-                        "By default uuid4 function is used.")
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+        description="Generate a UUID using the selected UUID function.")
+    parser.add_argument("-u", "--uuid",
+                        choices=uuid_funcs.keys(),
+                        default="uuid4",
+                        help="function to generate the UUID")
     parser.add_argument("-n", "--namespace",
-                        help="The namespace is a UUID, or '@ns' where 'ns' is a "
-                        "well-known predefined UUID addressed by namespace name. "
-                        "Such as @dns, @url, @oid, and @x500. "
-                        "Only required for uuid3/uuid5 functions.")
+                        choices=["any UUID", *namespaces.keys()],
+                        help="uuid3/uuid5 only: "
+                        "a UUID, or a well-known predefined UUID addressed "
+                        "by namespace name")
     parser.add_argument("-N", "--name",
-                        help="The name used as part of generating the uuid. "
-                        "Only required for uuid3/uuid5 functions.")
+                        help="uuid3/uuid5 only: "
+                        "name used as part of generating the UUID")
+    parser.add_argument("-C", "--count", metavar="NUM", type=int, default=1,
+                        help="generate NUM fresh UUIDs")
 
     args = parser.parse_args()
     uuid_func = uuid_funcs[args.uuid]
@@ -963,9 +967,11 @@ def main():
                 "Run 'python -m uuid -h' for more information."
             )
         namespace = namespaces[namespace] if namespace in namespaces else UUID(namespace)
-        print(uuid_func(namespace, name))
+        for _ in range(args.count):
+            print(uuid_func(namespace, name))
     else:
-        print(uuid_func())
+        for _ in range(args.count):
+            print(uuid_func())
 
 
 # The following standard UUIDs are for use with uuid3() or uuid5().

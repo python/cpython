@@ -277,9 +277,11 @@ _elementtree_Element_find(PyObject *self, PyTypeObject *cls, PyObject *const *ar
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(path), &_Py_ID(namespaces), },
     };
     #undef NUM_KEYWORDS
@@ -341,9 +343,11 @@ _elementtree_Element_findtext(PyObject *self, PyTypeObject *cls, PyObject *const
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(path), &_Py_ID(default), &_Py_ID(namespaces), },
     };
     #undef NUM_KEYWORDS
@@ -411,9 +415,11 @@ _elementtree_Element_findall(PyObject *self, PyTypeObject *cls, PyObject *const 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(path), &_Py_ID(namespaces), },
     };
     #undef NUM_KEYWORDS
@@ -474,9 +480,11 @@ _elementtree_Element_iterfind(PyObject *self, PyTypeObject *cls, PyObject *const
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(path), &_Py_ID(namespaces), },
     };
     #undef NUM_KEYWORDS
@@ -537,9 +545,11 @@ _elementtree_Element_get(PyObject *self, PyObject *const *args, Py_ssize_t nargs
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(default), },
     };
     #undef NUM_KEYWORDS
@@ -600,9 +610,11 @@ _elementtree_Element_iter(PyObject *self, PyTypeObject *cls, PyObject *const *ar
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(tag), },
     };
     #undef NUM_KEYWORDS
@@ -864,9 +876,11 @@ _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwar
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(element_factory), &_Py_ID(comment_factory), &_Py_ID(pi_factory), &_Py_ID(insert_comments), &_Py_ID(insert_pis), },
     };
     #undef NUM_KEYWORDS
@@ -1139,9 +1153,11 @@ _elementtree_XMLParser___init__(PyObject *self, PyObject *args, PyObject *kwargs
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(target), &_Py_ID(encoding), },
     };
     #undef NUM_KEYWORDS
@@ -1315,4 +1331,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0eed58350c3c1832 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c863ce16d8566291 input=a9049054013a1b77]*/
