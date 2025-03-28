@@ -34,7 +34,7 @@
     <ClCompile Include="..\Python\ast.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\Python\ast_opt.c">
+    <ClCompile Include="..\Python\ast_process.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\ast_unparse.c">
