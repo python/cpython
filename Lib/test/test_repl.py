@@ -296,7 +296,7 @@ class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 
 class TestAsyncioREPL(unittest.TestCase):
     def test_multiple_statements_fail_early(self):
-        user_input = "1 / 0; print('afterwards')"
+        user_input = "1 / 0; print('after' + 'wards')"
         p = spawn_repl("-m", "asyncio")
         p.stdin.write(user_input)
         output = kill_python(p)
