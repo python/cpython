@@ -2148,18 +2148,7 @@ static PyObject *CreateSwappedType(ctypes_state *st, PyTypeObject *type,
     if (!swapped_args)
         return NULL;
 
-    if (st->swapped_suffix == NULL) {
-#ifdef WORDS_BIGENDIAN
-        st->swapped_suffix = PyUnicode_InternFromString("_le");
-#else
-        st->swapped_suffix = PyUnicode_InternFromString("_be");
-#endif
-    }
-    if (st->swapped_suffix == NULL) {
-        Py_DECREF(swapped_args);
-        return NULL;
-    }
-
+    assert(st->swapped_suffix != NULL);
     newname = PyUnicode_Concat(name, st->swapped_suffix);
     if (newname == NULL) {
         Py_DECREF(swapped_args);
@@ -5113,12 +5102,7 @@ PyCArrayType_from_ctype(ctypes_state *st, PyObject *itemtype, Py_ssize_t length)
     char name[256];
     PyObject *len;
 
-    if (st->array_cache == NULL) {
-        st->array_cache = PyDict_New();
-        if (st->array_cache == NULL) {
-            return NULL;
-        }
-    }
+    assert(st->array_cache != NULL);
     len = PyLong_FromSsize_t(length);
     if (len == NULL)
         return NULL;
@@ -6096,6 +6080,20 @@ _ctypes_mod_exec(PyObject *mod)
 
     st->PyExc_ArgError = PyErr_NewException("ctypes.ArgumentError", NULL, NULL);
     if (!st->PyExc_ArgError) {
+        return -1;
+    }
+
+    st->array_cache = PyDict_New();
+    if (st->array_cache == NULL) {
+        return -1;
+    }
+
+#ifdef WORDS_BIGENDIAN
+        st->swapped_suffix = PyUnicode_InternFromString("_le");
+#else
+        st->swapped_suffix = PyUnicode_InternFromString("_be");
+#endif
+    if (st->swapped_suffix == NULL) {
         return -1;
     }
 

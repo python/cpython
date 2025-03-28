@@ -1017,6 +1017,9 @@ uuid
   Nil and Max UUID formats as defined by :rfc:`9562`.
   (Contributed by Nick Pope in :gh:`128427`.)
 
+* Allow to generate multiple UUIDs at once via :option:`python -m uuid --count <uuid --count>`.
+  (Contributed by Simon Legner in :gh:`131236`.)
+
 
 zipinfo
 -------
