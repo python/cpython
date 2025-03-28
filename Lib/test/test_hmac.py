@@ -324,7 +324,7 @@ class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
     def assert_hmac_common_cases(
         self, key, msg, hexdigest, digestmod, hashname, digest_size, block_size
     ):
-        """Extra common tests executed by all subclasses."""
+        """Common tests executed by all subclasses."""
         h1 = self.hmac_new_by_name(key, hashname=hashname)
         h2 = h1.copy()
         h2.update(b"test update should not affect original")
