@@ -2838,9 +2838,6 @@ __test__ = {'disassembler_test': _dis_test,
             'disassembler_memo_test': _memo_test,
            }
 
-def _test():
-    import doctest
-    return doctest.testmod()
 
 if __name__ == "__main__":
     import argparse
@@ -2848,7 +2845,7 @@ if __name__ == "__main__":
         description='disassemble one or more pickle files')
     parser.add_argument(
         'pickle_file',
-        nargs='*', help='the pickle file')
+        nargs='+', help='the pickle file')
     parser.add_argument(
         '-o', '--output',
         help='the file where the output should be written')
@@ -2865,36 +2862,24 @@ if __name__ == "__main__":
         '-p', '--preamble', default="==> {name} <==",
         help='if more than one pickle file is specified, print this before'
         ' each disassembly')
-    parser.add_argument(
-        '-t', '--test', action='store_true',
-        help='run self-test suite')
-    parser.add_argument(
-        '-v', action='store_true',
-        help='run verbosely; only affects self-test run')
     args = parser.parse_args()
-    if args.test:
-        _test()
+    annotate = 30 if args.annotate else 0
+    memo = {} if args.memo else None
+    if args.output is None:
+        output = sys.stdout
     else:
-        if not args.pickle_file:
-            parser.print_help()
-        else:
-            annotate = 30 if args.annotate else 0
-            memo = {} if args.memo else None
-            if args.output is None:
-                output = sys.stdout
+        output = open(args.output, 'w')
+    try:
+        for arg in args.pickle_file:
+            if len(args.pickle_file) > 1:
+                name = '<stdin>' if arg == '-' else arg
+                preamble = args.preamble.format(name=name)
+                output.write(preamble + '\n')
+            if arg == '-':
+                dis(sys.stdin.buffer, output, memo, args.indentlevel, annotate)
             else:
-                output = open(args.output, 'w')
-            try:
-                for arg in args.pickle_file:
-                    if len(args.pickle_file) > 1:
-                        name = '<stdin>' if arg == '-' else arg
-                        preamble = args.preamble.format(name=name)
-                        output.write(preamble + '\n')
-                    if arg == '-':
-                        dis(sys.stdin.buffer, output, memo, args.indentlevel, annotate)
-                    else:
-                        with open(arg, 'rb') as f:
-                            dis(f, output, memo, args.indentlevel, annotate)
-            finally:
-                if output is not sys.stdout:
-                    output.close()
+                with open(arg, 'rb') as f:
+                    dis(f, output, memo, args.indentlevel, annotate)
+    finally:
+        if output is not sys.stdout:
+            output.close()

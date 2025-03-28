@@ -58,11 +58,14 @@ class TestNullDlsym(unittest.TestCase):
         import subprocess
         import tempfile
 
-        retcode = subprocess.call(["gcc", "--version"],
-                                  stdout=subprocess.DEVNULL,
-                                  stderr=subprocess.DEVNULL)
-        if retcode != 0:
+        try:
+            retcode = subprocess.call(["gcc", "--version"],
+                                      stdout=subprocess.DEVNULL,
+                                      stderr=subprocess.DEVNULL)
+        except OSError:
             self.skipTest("gcc is missing")
+        if retcode != 0:
+            self.skipTest("gcc --version failed")
 
         pipe_r, pipe_w = os.pipe()
         self.addCleanup(os.close, pipe_r)

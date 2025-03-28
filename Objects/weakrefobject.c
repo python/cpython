@@ -987,10 +987,13 @@ handle_callback(PyWeakReference *ref, PyObject *callback)
 {
     PyObject *cbresult = PyObject_CallOneArg(callback, (PyObject *)ref);
 
-    if (cbresult == NULL)
-        PyErr_WriteUnraisable(callback);
-    else
+    if (cbresult == NULL) {
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "calling weakref callback %R", callback);
+    }
+    else {
         Py_DECREF(cbresult);
+    }
 }
 
 /* This function is called by the tp_dealloc handler to clear weak references.
