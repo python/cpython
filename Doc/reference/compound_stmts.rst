@@ -232,7 +232,7 @@ Additional information on exceptions can be found in section :ref:`exceptions`,
 and information on using the :keyword:`raise` statement to generate exceptions
 may be found in section :ref:`raise`.
 
-.. versionchanged:: 3.13
+.. versionchanged:: next
    Support for optionally dropping grouping parentheses when using multiple exception types. See :pep:`758`.
 
 .. _except:
