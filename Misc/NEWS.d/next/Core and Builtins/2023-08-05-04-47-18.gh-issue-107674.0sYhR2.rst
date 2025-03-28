@@ -1,0 +1,1 @@
+Fixed performance regression in ``sys.settrace``.
