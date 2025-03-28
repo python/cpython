@@ -235,120 +235,6 @@ class TestTranforms(BytecodeTestCase):
         self.assertTrue(g(4))
         self.check_lnotab(g)
 
-    def test_elim_extra_return(self):
-        # RETURN LOAD_CONST None RETURN  -->  RETURN
-        def f(x):
-            return x
-        self.assertNotInBytecode(f, 'LOAD_CONST', None)
-        returns = [instr for instr in dis.get_instructions(f)
-                          if instr.opname == 'RETURN_VALUE']
-        self.assertEqual(len(returns), 1)
-        self.check_lnotab(f)
-
-    def test_elim_jump_to_return(self):
-        # JUMP_FORWARD to RETURN -->  RETURN
-        def f(cond, true_value, false_value):
-            # Intentionally use two-line expression to test issue37213.
-            return (true_value if cond
-                    else false_value)
-        self.check_jump_targets(f)
-        self.assertNotInBytecode(f, 'JUMP_FORWARD')
-        self.assertNotInBytecode(f, 'JUMP_BACKWARD')
-        returns = [instr for instr in dis.get_instructions(f)
-                          if instr.opname == 'RETURN_VALUE']
-        self.assertEqual(len(returns), 2)
-        self.check_lnotab(f)
-
-    def test_elim_jump_to_uncond_jump(self):
-        # POP_JUMP_IF_FALSE to JUMP_FORWARD --> POP_JUMP_IF_FALSE to non-jump
-        def f():
-            if a:
-                # Intentionally use two-line expression to test issue37213.
-                if (c
-                    or d):
-                    foo()
-            else:
-                baz()
-        self.check_jump_targets(f)
-        self.check_lnotab(f)
-
-    def test_elim_jump_to_uncond_jump2(self):
-        # POP_JUMP_IF_FALSE to JUMP_BACKWARD --> POP_JUMP_IF_FALSE to non-jump
-        def f():
-            while a:
-                # Intentionally use two-line expression to test issue37213.
-                if (c
-                    or d):
-                    a = foo()
-        self.check_jump_targets(f)
-        self.check_lnotab(f)
-
-    def test_elim_jump_to_uncond_jump3(self):
-        # Intentionally use two-line expressions to test issue37213.
-        # POP_JUMP_IF_FALSE to POP_JUMP_IF_FALSE --> POP_JUMP_IF_FALSE to non-jump
-        def f(a, b, c):
-            return ((a and b)
-                    and c)
-        self.check_jump_targets(f)
-        self.check_lnotab(f)
-        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_FALSE'), 2)
-        # POP_JUMP_IF_TRUE to POP_JUMP_IF_TRUE --> POP_JUMP_IF_TRUE to non-jump
-        def f(a, b, c):
-            return ((a or b)
-                    or c)
-        self.check_jump_targets(f)
-        self.check_lnotab(f)
-        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_TRUE'), 2)
-        # JUMP_IF_FALSE_OR_POP to JUMP_IF_TRUE_OR_POP --> POP_JUMP_IF_FALSE to non-jump
-        def f(a, b, c):
-            return ((a and b)
-                    or c)
-        self.check_jump_targets(f)
-        self.check_lnotab(f)
-        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_FALSE'), 1)
-        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_TRUE'), 1)
-        # POP_JUMP_IF_TRUE to POP_JUMP_IF_FALSE --> POP_JUMP_IF_TRUE to non-jump
-        def f(a, b, c):
-            return ((a or b)
-                    and c)
-        self.check_jump_targets(f)
-        self.check_lnotab(f)
-        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_FALSE'), 1)
-        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_TRUE'), 1)
-
-    def test_elim_jump_to_uncond_jump4(self):
-        def f():
-            for i in range(5):
-                if i > 3:
-                    print(i)
-        self.check_jump_targets(f)
-
-    def test_elim_jump_after_return1(self):
-        # Eliminate dead code: jumps immediately after returns can't be reached
-        def f(cond1, cond2):
-            if cond1: return 1
-            if cond2: return 2
-            while 1:
-                return 3
-            while 1:
-                if cond1: return 4
-                return 5
-            return 6
-        self.assertNotInBytecode(f, 'JUMP_FORWARD')
-        self.assertNotInBytecode(f, 'JUMP_BACKWARD')
-        returns = [instr for instr in dis.get_instructions(f)
-                          if instr.opname == 'RETURN_VALUE']
-        self.assertLessEqual(len(returns), 6)
-        self.check_lnotab(f)
-
-    def test_make_function_doesnt_bail(self):
-        def f():
-            def g()->1+1:
-                pass
-            return g
-        self.assertNotInBytecode(f, 'BINARY_OP')
-        self.check_lnotab(f)
-
     def test_constant_folding_small_int(self):
         tests = [
             ('(0, )[0]', 0),
@@ -485,6 +371,7 @@ class TestTranforms(BytecodeTestCase):
             ('("a" * 10)[10]', 'NB_SUBSCR', False, None, None),
             ('(1, (1, 2))[2:6][0][2-1]', 'NB_SUBSCR', False, None, None),
         ]
+
         for (
             expr,
             nb_op,
@@ -616,6 +503,120 @@ class TestTranforms(BytecodeTestCase):
         for source in sources:
             code = compile(textwrap.dedent(source), '', 'single')
             self.assertNotInBytecode(code, 'NOP')
+
+    def test_elim_extra_return(self):
+        # RETURN LOAD_CONST None RETURN  -->  RETURN
+        def f(x):
+            return x
+        self.assertNotInBytecode(f, 'LOAD_CONST', None)
+        returns = [instr for instr in dis.get_instructions(f)
+                          if instr.opname == 'RETURN_VALUE']
+        self.assertEqual(len(returns), 1)
+        self.check_lnotab(f)
+
+    def test_elim_jump_to_return(self):
+        # JUMP_FORWARD to RETURN -->  RETURN
+        def f(cond, true_value, false_value):
+            # Intentionally use two-line expression to test issue37213.
+            return (true_value if cond
+                    else false_value)
+        self.check_jump_targets(f)
+        self.assertNotInBytecode(f, 'JUMP_FORWARD')
+        self.assertNotInBytecode(f, 'JUMP_BACKWARD')
+        returns = [instr for instr in dis.get_instructions(f)
+                          if instr.opname == 'RETURN_VALUE']
+        self.assertEqual(len(returns), 2)
+        self.check_lnotab(f)
+
+    def test_elim_jump_to_uncond_jump(self):
+        # POP_JUMP_IF_FALSE to JUMP_FORWARD --> POP_JUMP_IF_FALSE to non-jump
+        def f():
+            if a:
+                # Intentionally use two-line expression to test issue37213.
+                if (c
+                    or d):
+                    foo()
+            else:
+                baz()
+        self.check_jump_targets(f)
+        self.check_lnotab(f)
+
+    def test_elim_jump_to_uncond_jump2(self):
+        # POP_JUMP_IF_FALSE to JUMP_BACKWARD --> POP_JUMP_IF_FALSE to non-jump
+        def f():
+            while a:
+                # Intentionally use two-line expression to test issue37213.
+                if (c
+                    or d):
+                    a = foo()
+        self.check_jump_targets(f)
+        self.check_lnotab(f)
+
+    def test_elim_jump_to_uncond_jump3(self):
+        # Intentionally use two-line expressions to test issue37213.
+        # POP_JUMP_IF_FALSE to POP_JUMP_IF_FALSE --> POP_JUMP_IF_FALSE to non-jump
+        def f(a, b, c):
+            return ((a and b)
+                    and c)
+        self.check_jump_targets(f)
+        self.check_lnotab(f)
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_FALSE'), 2)
+        # POP_JUMP_IF_TRUE to POP_JUMP_IF_TRUE --> POP_JUMP_IF_TRUE to non-jump
+        def f(a, b, c):
+            return ((a or b)
+                    or c)
+        self.check_jump_targets(f)
+        self.check_lnotab(f)
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_TRUE'), 2)
+        # JUMP_IF_FALSE_OR_POP to JUMP_IF_TRUE_OR_POP --> POP_JUMP_IF_FALSE to non-jump
+        def f(a, b, c):
+            return ((a and b)
+                    or c)
+        self.check_jump_targets(f)
+        self.check_lnotab(f)
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_FALSE'), 1)
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_TRUE'), 1)
+        # POP_JUMP_IF_TRUE to POP_JUMP_IF_FALSE --> POP_JUMP_IF_TRUE to non-jump
+        def f(a, b, c):
+            return ((a or b)
+                    and c)
+        self.check_jump_targets(f)
+        self.check_lnotab(f)
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_FALSE'), 1)
+        self.assertEqual(count_instr_recursively(f, 'POP_JUMP_IF_TRUE'), 1)
+
+    def test_elim_jump_to_uncond_jump4(self):
+        def f():
+            for i in range(5):
+                if i > 3:
+                    print(i)
+        self.check_jump_targets(f)
+
+    def test_elim_jump_after_return1(self):
+        # Eliminate dead code: jumps immediately after returns can't be reached
+        def f(cond1, cond2):
+            if cond1: return 1
+            if cond2: return 2
+            while 1:
+                return 3
+            while 1:
+                if cond1: return 4
+                return 5
+            return 6
+        self.assertNotInBytecode(f, 'JUMP_FORWARD')
+        self.assertNotInBytecode(f, 'JUMP_BACKWARD')
+        returns = [instr for instr in dis.get_instructions(f)
+                          if instr.opname == 'RETURN_VALUE']
+        self.assertLessEqual(len(returns), 6)
+        self.check_lnotab(f)
+
+    def test_make_function_doesnt_bail(self):
+        def f():
+            def g()->1+1:
+                pass
+            return g
+        self.assertNotInBytecode(f, 'BINARY_OP')
+        self.check_lnotab(f)
 
     def test_in_literal_list(self):
         def containtest():
