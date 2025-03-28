@@ -2782,6 +2782,14 @@ def try_protocol_combo(server_protocol, client_protocol, expect_success,
                                  % (expect_success, stats['version']))
 
 
+def supports_kx_alias(ctx, aliases):
+    for cipher in ctx.get_ciphers():
+        for alias in aliases:
+            if f"Kx={alias}" in cipher['description']:
+                return True
+    return False
+
+
 class ThreadedTests(unittest.TestCase):
 
     @support.requires_resource('walltime')
@@ -4042,17 +4050,12 @@ class ThreadedTests(unittest.TestCase):
                                    sni_name=hostname)
 
     def test_dh_params(self):
-        # Check we can get a connection with ephemeral finite-field Diffie-
-        # Hellman (if supported).
+        # Check we can get a connection with ephemeral finite-field
+        # Diffie-Hellman (if supported).
         client_context, server_context, hostname = testing_context()
         dhe_aliases = {"ADH", "EDH", "DHE"}
-        def supports_dhe(ctx) -> bool:
-            for cipher in ctx.get_ciphers():
-                for alias in dhe_aliases:
-                    if f"Kx={alias}" in cipher['description']:
-                        return True
-            return False
-        if not (supports_dhe(client_context) and supports_dhe(server_context)):
+        if not (supports_kx_alias(client_context, dhe_aliases) and
+                supports_kx_alias(server_context, dhe_aliases)):
             self.skipTest("libssl doesn't support ephemeral DH")
         # test scenario needs TLS <= 1.2
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
