@@ -1,6 +1,7 @@
 """Tests for tasks.py."""
 
 import collections
+import contextlib
 import contextvars
 import gc
 import io
