@@ -1198,43 +1198,42 @@ _PyEval_DisableGIL(PyThreadState *tstate)
 static inline void run_remote_debugger_script(const char *path)
 {
     if (0 != PySys_Audit("remote_debugger_script", "s", path)) {
-        PyErr_FormatUnraisable("Error when auditing remote debugger script %s", path);
+        PyErr_FormatUnraisable(
+            "Audit hook failed for remote debugger script %s", path);
         return;
     }
 
-    // Open the debugger script with the open code hook. Unfortunately this forces us to handle
-    // the resulting Python object, which is a file object and therefore we need to call
-    // Python methods on it instead of the simpler C equivalents.
+    // Open the debugger script with the open code hook, and reopen the
+    // resulting file object to get a C FILE* object.
     PyObject* fileobj = PyFile_OpenCode(path);
     if (!fileobj) {
-        PyErr_FormatUnraisable("Error when opening debugger script %s", path);
+        PyErr_FormatUnraisable("Can't open debugger script %s", path);
         return;
     }
 
     int fd = PyObject_AsFileDescriptor(fileobj);
     if (fd == -1) {
-        PyErr_FormatUnraisable("Error when getting file descriptor for debugger script %s", path);
-        return;
-    }
-#ifdef MS_WINDOWS
-    FILE* f = _fdopen(fd, "r");
-#else
-    FILE* f = fdopen(fd, "r");
-#endif
-
-    if (!f) {
-        PyErr_SetFromErrno(PyExc_OSError);
+        PyErr_FormatUnraisable("Can't find fd for debugger script %s", path);
     } else {
-        PyRun_AnyFile(f, path);
-    }
+#ifdef MS_WINDOWS
+        FILE* f = _fdopen(fd, "r");
+#else
+        FILE* f = fdopen(fd, "r");
+#endif
+        if (!f) {
+            PyErr_SetFromErrno(PyExc_OSError);
+        } else {
+            PyRun_AnyFile(f, path);
+        }
 
-    if (PyErr_Occurred()) {
-        PyErr_FormatUnraisable("Error executing debugger script %s", path);
+        if (PyErr_Occurred()) {
+            PyErr_FormatUnraisable("Error executing debugger script %s", path);
+        }
     }
 
     PyObject* res = PyObject_CallMethod(fileobj, "close", "");
     if (!res) {
-        PyErr_FormatUnraisable("Error when closing debugger script %s", path);
+        PyErr_FormatUnraisable("Error closing debugger script %s", path);
     } else {
         Py_DECREF(res);
     }
