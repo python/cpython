@@ -1326,6 +1326,12 @@ ensure_shared_on_read(PyDictObject *mp)
         Py_END_CRITICAL_SECTION();
     }
 }
+
+void
+_PyDict_EnsureSharedOnRead(PyDictObject *mp)
+{
+    ensure_shared_on_read(mp);
+}
 #endif
 
 static inline void
