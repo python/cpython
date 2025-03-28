@@ -1132,7 +1132,7 @@ deque([('brown', 2),
     'jumped over a '
     'lazy dog'}""")
 
-    def test_block_style(self):
+    def test_block_style_dataclass(self):
         @dataclass
         class DummyDataclass:
             foo: str
@@ -1151,7 +1151,19 @@ deque([('brown', 2),
             corge=7,
             garply=(1, 2, 3, 4),
         )
+        self.assertEqual(pprint.pformat(dummy_dataclass, width=40, indent=4, block_style=True),
+"""\
+DummyDataclass(
+    foo='foo',
+    bar=1.2,
+    baz=False,
+    qux={'baz': 123, 'foo': 'bar'},
+    quux=['foo', 'bar', 'baz'],
+    corge=7,
+    garply=(1, 2, 3, 4)
+)""")
 
+    def test_block_style_dict(self):
         dummy_dict = {
             "foo": "bar",
             "baz": 123,
@@ -1159,7 +1171,17 @@ deque([('brown', 2),
             "quux": ["foo", "bar", "baz"],
             "corge": 7,
         }
+        self.assertEqual(pprint.pformat(dummy_dict, width=40, indent=4, block_style=True, sort_dicts=False),
+"""\
+{
+    'foo': 'bar',
+    'baz': 123,
+    'qux': {'foo': 'bar', 'baz': 123},
+    'quux': ['foo', 'bar', 'baz'],
+    'corge': 7
+}""")
 
+    def test_block_style_ordered_dict(self):
         dummy_ordered_dict = OrderedDict(
             [
                 ("foo", 1),
@@ -1167,13 +1189,31 @@ deque([('brown', 2),
                 ("baz", 123),
             ]
         )
+        self.assertEqual(pprint.pformat(dummy_ordered_dict, width=20, indent=4, block_style=True),
+"""\
+OrderedDict([
+    ('foo', 1),
+    ('bar', 12),
+    ('baz', 123)
+])""")
 
+    def test_block_style_list(self):
         dummy_list = [
             "foo",
             "bar",
             "baz",
+            "qux",
         ]
+        self.assertEqual(pprint.pformat(dummy_list, width=20, indent=4, block_style=True),
+"""\
+[
+    'foo',
+    'bar',
+    'baz',
+    'qux'
+]""")
 
+    def test_block_style_tuple(self):
         dummy_tuple = (
             "foo",
             "bar",
@@ -1181,13 +1221,40 @@ deque([('brown', 2),
             4,
             5,
             6,
-            dummy_list,
         )
+        self.assertEqual(pprint.pformat(dummy_tuple, width=20, indent=4, block_style=True),
+"""\
+(
+    'foo',
+    'bar',
+    'baz',
+    4,
+    5,
+    6
+)""")
 
+    def test_block_style_set(self):
+        dummy_set = {
+            "foo",
+            "bar",
+            "baz",
+            "qux",
+            (1, 2, 3),
+        }
+        self.assertEqual(pprint.pformat(dummy_set, width=20, indent=4, block_style=True),
+"""\
+{
+    'bar',
+    'baz',
+    'foo',
+    'qux',
+    (1, 2, 3)
+}""")
+
+    def test_block_style_frozenset(self):
         dummy_set = {
             (1, 2, 3),
         }
-
         dummy_frozenset = frozenset(
             {
                 "foo",
@@ -1197,12 +1264,56 @@ deque([('brown', 2),
                 frozenset(dummy_set),
             }
         )
+        self.assertEqual(pprint.pformat(dummy_frozenset, width=40, indent=4, block_style=True),
+"""\
+frozenset({
+    frozenset({(1, 2, 3)}),
+    'bar',
+    'baz',
+    'foo',
+    (1, 2, 3)
+})""")
 
+    def test_block_style_bytes(self):
+        dummy_bytes = b"Hello world! foo bar baz 123 456 789"
+        self.assertEqual(pprint.pformat(dummy_bytes, width=20, indent=4, block_style=True),
+"""\
+(
+    b'Hello world!'
+    b' foo bar baz'
+    b' 123 456 789'
+)""")
+
+    def test_block_style_bytearray(self):
         dummy_bytes = b"Hello world! foo bar baz 123 456 789"
         dummy_byte_array = bytearray(dummy_bytes)
+        self.assertEqual(pprint.pformat(dummy_byte_array, width=40, indent=4, block_style=True),
+"""\
+bytearray(
+    b'Hello world! foo bar baz 123 456'
+    b' 789'
+)""")
 
+    def test_block_style_mappingproxy(self):
+        dummy_dict = {
+            "foo": "bar",
+            "baz": 123,
+            "qux": {"foo": "bar", "baz": 123},
+            "quux": ["foo", "bar", "baz"],
+            "corge": 7,
+        }
         dummy_mappingproxy = MappingProxyType(dummy_dict)
+        self.assertEqual(pprint.pformat(dummy_mappingproxy, width=40, indent=4, block_style=True),
+"""\
+mappingproxy({
+    'baz': 123,
+    'corge': 7,
+    'foo': 'bar',
+    'quux': ['foo', 'bar', 'baz'],
+    'qux': {'baz': 123, 'foo': 'bar'}
+})""")
 
+    def test_block_style_namespace(self):
         dummy_namespace = SimpleNamespace(
             foo="bar",
             bar=42,
@@ -1213,36 +1324,128 @@ deque([('brown', 2),
             ),
         )
 
+        self.assertEqual(pprint.pformat(dummy_namespace, width=40, indent=4, block_style=True),
+"""\
+namespace(
+    foo='bar',
+    bar=42,
+    baz=namespace(
+        x=321,
+        y='string',
+        d={'bar': 'baz', 'foo': True}
+    )
+)""")
+
+    def test_block_style_defaultdict(self):
         dummy_defaultdict = defaultdict(list)
         dummy_defaultdict["foo"].append("bar")
         dummy_defaultdict["foo"].append("baz")
         dummy_defaultdict["foo"].append("qux")
         dummy_defaultdict["bar"] = {"foo": "bar", "baz": None}
+        self.assertEqual(pprint.pformat(dummy_defaultdict, width=40, indent=4, block_style=True),
+"""\
+defaultdict(<class 'list'>, {
+    'bar': {'baz': None, 'foo': 'bar'},
+    'foo': ['bar', 'baz', 'qux']
+})""")
 
-        dummy_counter = Counter()
-        dummy_counter.update("foo")
-        dummy_counter.update(
-            {
-                "bar": 5,
-                "baz": 3,
-                "qux": 10,
-            }
-        )
+    def test_block_style_counter(self):
+        dummy_counter = Counter("abcdeabcdabcaba")
+        expected = """\
+Counter({
+    'a': 5,
+    'b': 4,
+    'c': 3,
+    'd': 2,
+    'e': 1
+})"""
+        self.assertEqual(pprint.pformat(dummy_counter, width=40, indent=4, block_style=True), expected)
 
+        expected2 = """\
+Counter({
+  'a': 5,
+  'b': 4,
+  'c': 3,
+  'd': 2,
+  'e': 1
+})"""
+        self.assertEqual(pprint.pformat(dummy_counter, width=20, indent=2, block_style=True), expected2)
+
+    def test_block_style_chainmap(self):
+        dummy_dict = {
+            "foo": "bar",
+            "baz": 123,
+            "qux": {"foo": "bar", "baz": 123},
+            "quux": ["foo", "bar", "baz"],
+            "corge": 7,
+        }
         dummy_chainmap = ChainMap(
             {"foo": "bar"},
             {"baz": "qux"},
             {"corge": dummy_dict},
         )
         dummy_chainmap.maps.append({"garply": "waldo"})
+        self.assertEqual(pprint.pformat(dummy_chainmap, width=40, indent=4, block_style=True),
+"""\
+ChainMap(
+    {'foo': 'bar'},
+    {'baz': 'qux'},
+    {
+        'corge': {
+            'baz': 123,
+            'corge': 7,
+            'foo': 'bar',
+            'quux': ['foo', 'bar', 'baz'],
+            'qux': {
+                'baz': 123,
+                'foo': 'bar'
+            }
+        }
+    },
+    {'garply': 'waldo'}
+)""")
 
+    def test_block_style_deque(self):
+        dummy_dict = {
+            "foo": "bar",
+            "baz": 123,
+            "qux": {"foo": "bar", "baz": 123},
+            "quux": ["foo", "bar", "baz"],
+            "corge": 7,
+        }
+        dummy_list = [
+            "foo",
+            "bar",
+            "baz",
+        ]
+        dummy_set = {
+            (1, 2, 3),
+        }
         dummy_deque = deque(maxlen=10)
         dummy_deque.append("foo")
         dummy_deque.append(123)
         dummy_deque.append(dummy_dict)
         dummy_deque.extend(dummy_list)
         dummy_deque.appendleft(dummy_set)
+        self.assertEqual(pprint.pformat(dummy_deque, width=40, indent=4, block_style=True),
+"""\
+deque([
+    {(1, 2, 3)},
+    'foo',
+    123,
+    {
+        'baz': 123,
+        'corge': 7,
+        'foo': 'bar',
+        'quux': ['foo', 'bar', 'baz'],
+        'qux': {'baz': 123, 'foo': 'bar'}
+    },
+    'foo',
+    'bar',
+    'baz'
+], maxlen=10)""")
 
+    def test_block_style_userdict(self):
         class DummyUserDict(UserDict):
             """A custom UserDict with some extra attributes"""
 
@@ -1260,6 +1463,17 @@ deque([('brown', 2),
         )
         dummy_userdict.access_count = 5
 
+        self.assertEqual(pprint.pformat(dummy_userdict, width=40, indent=4, block_style=True),
+"""\
+{
+    'baz': 123,
+    'corge': 7,
+    'foo': 'bar',
+    'quux': ['foo', 'bar', 'baz'],
+    'qux': {'baz': 123, 'foo': 'bar'}
+}""")
+
+    def test_block_style_userlist(self):
         class DummyUserList(UserList):
             """A custom UserList with some extra attributes"""
 
@@ -1268,146 +1482,14 @@ deque([('brown', 2),
                 self.description = "foo"
         dummy_userlist = DummyUserList(["first", 2, {"key": "value"}, [4, 5, 6]])
 
-        dummy_samples = {
-            "dummy_dataclass": dummy_dataclass,
-            "dummy_dict": dummy_dict,
-            "dummy_ordered_dict": dummy_ordered_dict,
-            "dummy_list": dummy_list,
-            "dummy_tuple": dummy_tuple,
-            "dummy_set": dummy_set,
-            "dummy_frozenset": dummy_frozenset,
-            "dummy_bytes": dummy_bytes,
-            "dummy_byte_array": dummy_byte_array,
-            "dummy_mappingproxy": dummy_mappingproxy,
-            "dummy_namespace": dummy_namespace,
-            "dummy_defaultdict": dummy_defaultdict,
-            "dummy_counter": dummy_counter,
-            "dummy_chainmap": dummy_chainmap,
-            "dummy_deque": dummy_deque,
-            "dummy_userdict": dummy_userdict,
-            "dummy_userlist": dummy_userlist,
-        }
-        self.assertEqual(pprint.pformat(dummy_samples, width=40, indent=4, block_style=True, sort_dicts=False),
+        self.assertEqual(pprint.pformat(dummy_userlist, width=40, indent=4, block_style=True),
 """\
-{
-    'dummy_dataclass': DummyDataclass(
-        foo='foo',
-        bar=1.2,
-        baz=False,
-        qux={'foo': 'bar', 'baz': 123},
-        quux=['foo', 'bar', 'baz'],
-        corge=7,
-        garply=(1, 2, 3, 4)
-    ),
-    'dummy_dict': {
-        'foo': 'bar',
-        'baz': 123,
-        'qux': {'foo': 'bar', 'baz': 123},
-        'quux': ['foo', 'bar', 'baz'],
-        'corge': 7
-    },
-    'dummy_ordered_dict': OrderedDict([
-        ('foo', 1),
-        ('bar', 12),
-        ('baz', 123)
-    ]),
-    'dummy_list': ['foo', 'bar', 'baz'],
-    'dummy_tuple': (
-        'foo',
-        'bar',
-        'baz',
-        4,
-        5,
-        6,
-        ['foo', 'bar', 'baz']
-    ),
-    'dummy_set': {(1, 2, 3)},
-    'dummy_frozenset': frozenset({
-        frozenset({(1, 2, 3)}),
-        'bar',
-        'baz',
-        'foo',
-        (1, 2, 3)
-    }),
-    'dummy_bytes': b'Hello world! foo bar baz 123 456'
-    b' 789',
-    'dummy_byte_array': bytearray(
-        b'Hello world! foo bar baz 123'
-        b' 456 789'
-    ),
-    'dummy_mappingproxy': mappingproxy({
-        'foo': 'bar',
-        'baz': 123,
-        'qux': {'foo': 'bar', 'baz': 123},
-        'quux': ['foo', 'bar', 'baz'],
-        'corge': 7
-    }),
-    'dummy_namespace': namespace(
-        foo='bar',
-        bar=42,
-        baz=namespace(
-            x=321,
-            y='string',
-            d={'foo': True, 'bar': 'baz'}
-        )
-    ),
-    'dummy_defaultdict': defaultdict(<class 'list'>, {
-        'foo': ['bar', 'baz', 'qux'],
-        'bar': {'foo': 'bar', 'baz': None}
-    }),
-    'dummy_counter': Counter({
-        'qux': 10,
-        'bar': 5,
-        'baz': 3,
-        'o': 2,
-        'f': 1
-    }),
-    'dummy_chainmap': ChainMap(
-        {'foo': 'bar'},
-        {'baz': 'qux'},
-        {
-            'corge': {
-                'foo': 'bar',
-                'baz': 123,
-                'qux': {
-                    'foo': 'bar',
-                    'baz': 123
-                },
-                'quux': ['foo', 'bar', 'baz'],
-                'corge': 7
-            }
-        },
-        {'garply': 'waldo'}
-    ),
-    'dummy_deque': deque([
-        {(1, 2, 3)},
-        'foo',
-        123,
-        {
-            'foo': 'bar',
-            'baz': 123,
-            'qux': {'foo': 'bar', 'baz': 123},
-            'quux': ['foo', 'bar', 'baz'],
-            'corge': 7
-        },
-        'foo',
-        'bar',
-        'baz'
-    ], maxlen=10),
-    'dummy_userdict': {
-        'foo': 'bar',
-        'baz': 123,
-        'qux': {'foo': 'bar', 'baz': 123},
-        'quux': ['foo', 'bar', 'baz'],
-        'corge': 7
-    },
-    'dummy_userlist': [
-        'first',
-        2,
-        {'key': 'value'},
-        [4, 5, 6]
-    ]
-}""")
+[
+    'first',
+    2,
+    {'key': 'value'},
+    [4, 5, 6]
+]""")
 
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):

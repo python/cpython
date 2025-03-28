@@ -732,8 +732,9 @@ pprint
 ------
 
 * Add a *block_style* keyword argument for :func:`pprint.pprint`,
-  :func:`pprint.pformat`, :func:`pprint.pp` by passing on all *kwargs* and
-  :class:`pprint.PrettyPrinter`.
+  :func:`pprint.pformat`, :func:`pprint.pp`. If true, the output will be
+  formatted in a block style similar to pretty-printed :func:`json.dumps` when
+  *indent* is supplied. Incompatible with *compact* mode.
   (Contributed by Stefan Todoran in :gh:`129274`.)
 
 
