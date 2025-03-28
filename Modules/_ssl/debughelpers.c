@@ -176,8 +176,8 @@ _PySSLContext_set_keylog_filename(PyObject *op, PyObject *arg,
     FILE *fp;
 
 #if defined(MS_WINDOWS) && defined(_DEBUG)
-    PyErr_SetString(PyExc_RuntimeError,
-                    "unable to set_keylog_filename on Windows debug build");
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "set_keylog_filename: unavailable on Windows debug build");
     return -1;
 #endif
 
