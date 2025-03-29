@@ -878,19 +878,17 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         return -1;
     }
 
-    if (debugger_script_path != NULL) {
-        uintptr_t debugger_script_path_addr = (
-            thread_state_addr +
-            debug_offsets.debugger_support.remote_debugger_support +
-            debug_offsets.debugger_support.debugger_script_path);
-        if (0 != write_memory(
-                handle,
-                debugger_script_path_addr,
-                strlen(debugger_script_path) + 1,
-                debugger_script_path))
-        {
-            return -1;
-        }
+    uintptr_t debugger_script_path_addr = (
+        thread_state_addr +
+        debug_offsets.debugger_support.remote_debugger_support +
+        debug_offsets.debugger_support.debugger_script_path);
+    if (0 != write_memory(
+            handle,
+            debugger_script_path_addr,
+            strlen(debugger_script_path) + 1,
+            debugger_script_path))
+    {
+        return -1;
     }
 
     int pending_call = 1;
