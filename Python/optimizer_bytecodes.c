@@ -418,7 +418,6 @@ dummy_func(void) {
         if (sym_matches_type(value, &PyUnicode_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(value, &PyUnicode_Type);
     }
 
     op(_TO_BOOL_STR, (value -- res)) {
