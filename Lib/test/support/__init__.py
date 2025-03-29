@@ -6,6 +6,7 @@ if __name__ != 'test.support':
 import contextlib
 import dataclasses
 import functools
+import logging
 import _opcode
 import os
 import re
@@ -386,7 +387,7 @@ def skip_if_buildbot(reason=None):
     try:
         isbuildbot = getpass.getuser().lower() == 'buildbot'
     except (KeyError, OSError) as err:
-        warnings.warn(f'getpass.getuser() failed {err}.', RuntimeWarning)
+        logging.getLogger(__name__).warning('getpass.getuser() failed %s.', err, exc_info=err)
         isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
 
@@ -1079,8 +1080,7 @@ class _MemoryWatchdog:
         try:
             f = open(self.procfile, 'r')
         except OSError as e:
-            warnings.warn('/proc not available for stats: {}'.format(e),
-                          RuntimeWarning)
+            logging.getLogger(__name__).warning('/proc not available for stats: %s', e, exc_info=e)
             sys.stderr.flush()
             return
 
