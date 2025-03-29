@@ -1355,7 +1355,7 @@ class SysModuleTest(unittest.TestCase):
         sys._stats_dump()
 
     @test.support.cpython_only
-    @unittest.skipUnless(hasattr(sys, 'abiflags'), 'need sys.abiflags')
+    @unittest.skipUnless(support.HAS_SYS_ABIFLAGS, 'need sys.abiflags')
     def test_disable_gil_abi(self):
         self.assertEqual('t' in sys.abiflags, support.Py_GIL_DISABLED)
 
