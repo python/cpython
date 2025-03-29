@@ -909,15 +909,6 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         return -1;
     }
 
-    if (0 == read_memory(
-            handle,
-            thread_state_addr + debug_offsets.debugger_support.eval_breaker,
-            sizeof(uintptr_t),
-            &eval_breaker))
-    {
-        printf("Eval breaker: %p\n", (void*)eval_breaker);
-    }
-
     return 0;
 }
 
