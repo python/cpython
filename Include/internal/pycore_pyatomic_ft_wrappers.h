@@ -110,6 +110,48 @@ extern "C" {
 #define FT_ATOMIC_LOAD_ULLONG_RELAXED(value) \
     _Py_atomic_load_ullong_relaxed(&value)
 
+static inline void *
+FT_ATOMIC_MEMCPY_PTR_RELAXED(void *dest, void *src, ssize_t n)
+{
+    assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
+    assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
+    assert(n % sizeof(void *) == 0);
+
+    if (dest != src) {
+        for (void **d = (void **)dest, **s = (void **)src, **e = d + n / sizeof(void *); d != e; d++, s++) {
+            void *v = _Py_atomic_load_ptr_relaxed(s);
+            _Py_atomic_store_ptr_relaxed(d, v);
+        }
+    }
+
+    return dest;
+}
+
+static inline void *
+FT_ATOMIC_MEMMOVE_PTR_RELAXED(void *dest, void *src, ssize_t n)
+{
+    assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
+    assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
+    assert(n % sizeof(void *) == 0);
+
+    if (dest < src || dest >= (void *)((char *)src + n)) {  // prefer incrementing copy
+        for (void **d = (void **)dest, **s = (void **)src, **e = d + n / sizeof(void *); d != e; d++, s++) {
+            void *v = _Py_atomic_load_ptr_relaxed(s);
+            _Py_atomic_store_ptr_relaxed(d, v);
+        }
+    }
+    else if (dest > src) {
+        n = n / sizeof(void *) - 1;
+        for (void **d = (void **)dest + n, **s = (void **)src + n, **e = (void **)dest - 1; d != e; d--, s--) {
+            void *v = _Py_atomic_load_ptr_relaxed(s);
+            _Py_atomic_store_ptr_relaxed(d, v);
+        }
+    }
+
+    return dest;
+}
+
+
 #else
 #define FT_ATOMIC_LOAD_PTR(value) value
 #define FT_ATOMIC_STORE_PTR(value, new_value) value = new_value
@@ -156,6 +198,9 @@ extern "C" {
 #define FT_ATOMIC_STORE_LLONG_RELAXED(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_ULLONG_RELAXED(value) value
 #define FT_ATOMIC_STORE_ULLONG_RELAXED(value, new_value) value = new_value
+
+#define FT_ATOMIC_MEMCPY_PTR_RELAXED(dest, src, n) memcpy(dest, src, n)
+#define FT_ATOMIC_MEMMOVE_PTR_RELAXED(dest, src, n) memmove(dest, src, n)
 
 #endif
 

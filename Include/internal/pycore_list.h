@@ -48,15 +48,17 @@ _PyList_AppendTakeRef(PyListObject *self, PyObject *newitem)
     return _PyList_AppendTakeRefListResize(self, newitem);
 }
 
-// Repeat the bytes of a buffer in place
+// Repeat the bytes of a buffer of pointers in place
 static inline void
-_Py_memory_repeat(char* dest, Py_ssize_t len_dest, Py_ssize_t len_src)
+_Py_memory_ptrs_repeat(char* dest, Py_ssize_t len_dest, Py_ssize_t len_src)
 {
     assert(len_src > 0);
+    assert(len_src % sizeof(void *) == 0);
+    assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
     Py_ssize_t copied = len_src;
     while (copied < len_dest) {
         Py_ssize_t bytes_to_copy = Py_MIN(copied, len_dest - copied);
-        memcpy(dest + copied, dest, (size_t)bytes_to_copy);
+        FT_ATOMIC_MEMCPY_PTR_RELAXED(dest + copied, dest, (size_t)bytes_to_copy);
         copied += bytes_to_copy;
     }
 }
