@@ -92,7 +92,7 @@ if the destination alredady exists.
 
 [clinic start generated code]*/
 
-static int
+static PyObject *
 _posixshmem_shm_rename_impl(PyObject *module, PyObject *path_from,
                             PyObject *path_to, int flags)
 /*[clinic end generated code: output=a9101f606826ad30 input=0373bfc9c491e123]*/

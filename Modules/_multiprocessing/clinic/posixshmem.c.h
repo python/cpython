@@ -60,28 +60,37 @@ PyDoc_STRVAR(_posixshmem_shm_rename__doc__,
 #define _POSIXSHMEM_SHM_RENAME_METHODDEF    \
     {"shm_rename", (PyCFunction)(void(*)(void))_posixshmem_shm_rename, METH_FASTCALL, _posixshmem_shm_rename__doc__},
 
-static int
+static PyObject *
 _posixshmem_shm_rename_impl(PyObject *module, PyObject *path_from,
                             PyObject *path_to, int flags);
 
 static PyObject *
-_posixshmem_shm_rename(PyObject *module, PyObject *args, PyObject *kwargs)
+_posixshmem_shm_rename(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"path_from", "path_to", "flags", NULL};
     PyObject *path_from;
     PyObject *path_to;
     int flags;
-    int _return_value;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Ui|i:shm_rename", _keywords,
-        &path_from, &path_to, &flags))
-        goto exit;
-    _return_value = _posixshmem_shm_rename_impl(module, path_from, path_to, flags);
-    if ((_return_value == -1) && PyErr_Occurred()) {
+    if (nargs != 3) {
+        PyErr_Format(PyExc_TypeError, "shm_rename expected 3 arguments, got %zd", nargs);
         goto exit;
     }
-    return_value = PyLong_FromLong((long)_return_value);
+    if (!PyUnicode_Check(args[0])) {
+        PyErr_Format(PyExc_TypeError, "shm_rename() argument 1 must be str, not %T", args[0]);
+        goto exit;
+    }
+    path_from = args[0];
+    if (!PyUnicode_Check(args[1])) {
+        PyErr_Format(PyExc_TypeError, "shm_rename() argument 2 must be str, not %T", args[1]);
+        goto exit;
+    }
+    path_to = args[1];
+    flags = PyLong_AsInt(args[2]);
+    if (flags == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _posixshmem_shm_rename_impl(module, path_from, path_to, flags);
 
 exit:
     return return_value;
@@ -105,14 +114,10 @@ PyDoc_STRVAR(_posixshmem_shm_unlink__doc__,
     {"shm_unlink", (PyCFunction)_posixshmem_shm_unlink, METH_O, _posixshmem_shm_unlink__doc__},
 
 static PyObject *
-<<<<<<< HEAD
-_posixshmem_shm_unlink(PyObject *module, PyObject *args, PyObject *kwargs)
-=======
 _posixshmem_shm_unlink_impl(PyObject *module, PyObject *path);
 
 static PyObject *
 _posixshmem_shm_unlink(PyObject *module, PyObject *arg)
->>>>>>> origin/main
 {
     PyObject *return_value = NULL;
     PyObject *path;
@@ -141,4 +146,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=ca3677d5d1e7755f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c708ebf083cac0dc input=a9049054013a1b77]*/
