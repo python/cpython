@@ -1,0 +1,3 @@
+Fix reading duplicated entries in :mod:`zipfile` by name.
+Reading duplicated entries (except the last one) by ``ZipInfo``
+now emits a warning instead of raising an exception.
