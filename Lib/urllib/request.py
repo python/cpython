@@ -1450,6 +1450,19 @@ def parse_http_list(s):
     return [part.strip() for part in res]
 
 class FileHandler(BaseHandler):
+    # names for the localhost
+    names = None
+    def get_names(self):
+        if FileHandler.names is None:
+            try:
+                FileHandler.names = tuple(
+                    socket.gethostbyname_ex('localhost')[2] +
+                    socket.gethostbyname_ex(socket.gethostname())[2])
+            except socket.gaierror:
+                FileHandler.names = (socket.gethostbyname('localhost'),)
+        return FileHandler.names
+
+    # not entirely sure what the rules are here
     def open_local_file(self, req):
         import email.utils
         import mimetypes
@@ -1470,25 +1483,14 @@ class FileHandler(BaseHandler):
 
     file_open = open_local_file
 
-_local_addresses = None
-
 def _is_local_authority(authority):
-    global _local_addresses
-
     if not authority or authority == 'localhost':
         return True
     try:
         address = socket.gethostbyname(authority)
     except (socket.gaierror, AttributeError):
         return False
-    if _local_addresses is None:
-        try:
-            _local_addresses = frozenset(
-                socket.gethostbyname_ex('localhost')[2] +
-                socket.gethostbyname_ex(socket.gethostname())[2])
-        except socket.gaierror:
-            _local_addresses = frozenset(socket.gethostbyname('localhost'),)
-    return address in _local_addresses
+    return address in FileHandler().get_names()
 
 class FTPHandler(BaseHandler):
     def ftp_open(self, req):
