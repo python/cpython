@@ -1,0 +1,4 @@
+Optimize ``LOAD_FAST`` and its superinstruction form to reduce reference
+counting overhead. These instructions are replaced with faster variants that
+load borrowed references onto the operand stack when we can prove that the
+reference in the frame outlives the reference loaded onto the stack.

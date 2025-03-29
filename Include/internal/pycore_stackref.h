@@ -172,6 +172,12 @@ PyStackRef_MakeHeapSafe(_PyStackRef ref)
     return ref;
 }
 
+static inline _PyStackRef
+PyStackRef_Borrow(_PyStackRef ref)
+{
+    return PyStackRef_DUP(ref)
+}
+
 #define PyStackRef_CLEAR(REF) \
     do { \
         _PyStackRef *_tmp_op_ptr = &(REF); \
@@ -253,6 +259,25 @@ _PyStackRef_FromPyObjectSteal(PyObject *obj)
 }
 #   define PyStackRef_FromPyObjectSteal(obj) _PyStackRef_FromPyObjectSteal(_PyObject_CAST(obj))
 
+static inline bool
+PyStackRef_IsHeapSafe(_PyStackRef stackref)
+{
+    if (PyStackRef_IsDeferred(stackref)) {
+        PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
+        return obj == NULL || _Py_IsImmortal(obj) || _PyObject_HasDeferredRefcount(obj);
+    }
+    return true;
+}
+
+static inline _PyStackRef
+PyStackRef_MakeHeapSafe(_PyStackRef stackref)
+{
+    if (PyStackRef_IsHeapSafe(stackref)) {
+        return stackref;
+    }
+    PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
+    return (_PyStackRef){ .bits = (uintptr_t)(Py_NewRef(obj)) | Py_TAG_PTR };
+}
 
 static inline _PyStackRef
 PyStackRef_FromPyObjectStealMortal(PyObject *obj)
@@ -311,25 +336,16 @@ PyStackRef_DUP(_PyStackRef stackref)
 {
     assert(!PyStackRef_IsNull(stackref));
     if (PyStackRef_IsDeferred(stackref)) {
-        assert(_Py_IsImmortal(PyStackRef_AsPyObjectBorrow(stackref)) ||
-               _PyObject_HasDeferredRefcount(PyStackRef_AsPyObjectBorrow(stackref))
-        );
         return stackref;
     }
     Py_INCREF(PyStackRef_AsPyObjectBorrow(stackref));
     return stackref;
 }
 
-static inline bool
-PyStackRef_IsHeapSafe(_PyStackRef ref)
-{
-    return true;
-}
-
 static inline _PyStackRef
-PyStackRef_MakeHeapSafe(_PyStackRef ref)
+PyStackRef_Borrow(_PyStackRef stackref)
 {
-    return ref;
+    return (_PyStackRef){ .bits = stackref.bits | Py_TAG_DEFERRED };
 }
 
 // Convert a possibly deferred reference to a strong reference.
@@ -399,7 +415,6 @@ static inline void PyStackRef_CheckValid(_PyStackRef ref) {
             assert(!_Py_IsStaticImmortal(obj));
             break;
         case Py_TAG_REFCNT:
-            assert(obj == NULL || _Py_IsImmortal(obj));
             break;
         default:
             assert(0);
@@ -413,20 +428,27 @@ static inline void PyStackRef_CheckValid(_PyStackRef ref) {
 #endif
 
 #ifdef _WIN32
-#define PyStackRef_RefcountOnObject(REF) (((REF).bits & Py_TAG_BITS) == 0)
+#define PyStackRef_RefcountOnObject(REF) (((REF).bits & Py_TAG_REFCNT) == 0)
 #define PyStackRef_AsPyObjectBorrow BITS_TO_PTR_MASKED
+#define PyStackRef_Borrow(REF) (_PyStackRef){ .bits = ((REF).bits) | Py_TAG_REFCNT};
 #else
 /* Does this ref not have an embedded refcount and thus not refer to a declared immmortal object? */
 static inline int
 PyStackRef_RefcountOnObject(_PyStackRef ref)
 {
-    return (ref.bits & Py_TAG_BITS) == 0;
+    return (ref.bits & Py_TAG_REFCNT) == 0;
 }
 
 static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef ref)
 {
     return BITS_TO_PTR_MASKED(ref);
+}
+
+static inline _PyStackRef
+PyStackRef_Borrow(_PyStackRef ref)
+{
+    return (_PyStackRef){ .bits = ref.bits | Py_TAG_REFCNT };
 }
 #endif
 
