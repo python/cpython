@@ -6749,16 +6749,24 @@ PyUnstable_Long_CompactValue(const PyLongObject* op) {
 
 
 PyObject* PyLong_FromInt32(int32_t value)
-{ return PyLong_FromNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_INT(uint32_t, int32_t, value);
+}
 
 PyObject* PyLong_FromUInt32(uint32_t value)
-{ return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_UINT(uint32_t, value);
+}
 
 PyObject* PyLong_FromInt64(int64_t value)
-{ return PyLong_FromNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_INT(uint64_t, int64_t, value);
+}
 
 PyObject* PyLong_FromUInt64(uint64_t value)
-{ return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_UINT(uint64_t, value);
+}
 
 #define LONG_TO_INT(obj, value, type_name) \
     do { \
