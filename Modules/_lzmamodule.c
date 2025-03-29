@@ -1410,7 +1410,7 @@ PyDoc_STRVAR(_lzma__encode_filter_properties__doc__,
 "The result does not include the filter ID itself, only the options.");
 
 #define _LZMA__ENCODE_FILTER_PROPERTIES_METHODDEF    \
-    {"_encode_filter_properties", (PyCFunction)_lzma__encode_filter_properties, METH_O, _lzma__encode_filter_properties__doc__},
+    {"_encode_filter_properties", _lzma__encode_filter_properties, METH_O, _lzma__encode_filter_properties__doc__},
 
 static PyObject *
 _lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter);

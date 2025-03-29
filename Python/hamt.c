@@ -2516,7 +2516,7 @@ hamt_baseiter_new(PyTypeObject *type, binaryfunc yield, PyHamtObject *o)
     .tp_traverse = hamt_baseiter_tp_traverse,                   \
     .tp_clear = hamt_baseiter_tp_clear,                         \
     .tp_iter = PyObject_SelfIter,                               \
-    .tp_iternext = (iternextfunc)hamt_baseiter_tp_iternext,
+    .tp_iternext = hamt_baseiter_tp_iternext,
 
 
 /////////////////////////////////// _PyHamtItems_Type

@@ -824,8 +824,8 @@ ga_unpacked_tuple_args(PyObject *self, void *unused)
 }
 
 static PyGetSetDef ga_properties[] = {
-    {"__parameters__", ga_parameters, (setter)NULL, PyDoc_STR("Type variables in the GenericAlias."), NULL},
-    {"__typing_unpacked_tuple_args__", ga_unpacked_tuple_args, (setter)NULL, NULL},
+    {"__parameters__", ga_parameters, NULL, PyDoc_STR("Type variables in the GenericAlias."), NULL},
+    {"__typing_unpacked_tuple_args__", ga_unpacked_tuple_args, NULL, NULL},
     {0}
 };
 
@@ -1000,7 +1000,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_new = ga_new,
     .tp_free = PyObject_GC_Del,
     .tp_getset = ga_properties,
-    .tp_iter = (getiterfunc)ga_iter,
+    .tp_iter = ga_iter,
     .tp_vectorcall_offset = offsetof(gaobject, vectorcall),
 };
 

@@ -495,7 +495,7 @@ _cjk_free(void *mod)
 }
 
 static struct PyMethodDef _cjk_methods[] = {
-    {"getcodec", (PyCFunction)getcodec, METH_O, ""},
+    {"getcodec", getcodec, METH_O, ""},
     {NULL, NULL},
 };
 

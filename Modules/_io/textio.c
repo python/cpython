@@ -3386,8 +3386,6 @@ static PyMemberDef textiowrapper_members[] = {
 static PyGetSetDef textiowrapper_getset[] = {
     _IO_TEXTIOWRAPPER_NAME_GETSETDEF
     _IO_TEXTIOWRAPPER_CLOSED_GETSETDEF
-/*    {"mode", (getter)TextIOWrapper_mode_get, NULL, NULL},
-*/
     _IO_TEXTIOWRAPPER_NEWLINES_GETSETDEF
     _IO_TEXTIOWRAPPER_ERRORS_GETSETDEF
     _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF

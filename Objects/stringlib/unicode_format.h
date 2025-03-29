@@ -1100,7 +1100,7 @@ static PyTypeObject PyFormatterIter_Type = {
    describing the parsed elements.  It's a wrapper around
    stringlib/string_format.h's MarkupIterator */
 static PyObject *
-formatter_parser(PyObject *ignored, PyObject *self)
+formatter_parser(PyObject *Py_UNUSED(module), PyObject *self)
 {
     formatteriterobject *it;
 
@@ -1236,7 +1236,7 @@ static PyTypeObject PyFieldNameIter_Type = {
    field_name_split.  The iterator it returns is a
    FieldNameIterator */
 static PyObject *
-formatter_field_name_split(PyObject *ignored, PyObject *self)
+formatter_field_name_split(PyObject *Py_UNUSED(module), PyObject *self)
 {
     SubString first;
     Py_ssize_t first_idx;
