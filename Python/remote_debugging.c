@@ -795,8 +795,10 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         return -1;
     }
 
-    if (is_remote_debugging_enabled == 0) {
-        PyErr_SetString(PyExc_RuntimeError, "Remote debugging is not enabled in the remote process");
+    if (is_remote_debugging_enabled != 1) {
+        PyErr_SetString(
+            PyExc_RuntimeError,
+            "Remote debugging is not enabled in the remote process");
         return -1;
     }
 
