@@ -9,8 +9,7 @@ extern "C" {
 #endif
 
 #include "pycore_bytesobject.h"   // _PyBytesWriter
-#include "pycore_global_objects.h"// _PY_NSMALLNEGINTS
-#include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_runtime.h"       // _Py_SINGLETON()
 
 /*
  * Default int base conversion size limitation: Denial of Service prevention.
@@ -64,6 +63,8 @@ PyAPI_FUNC(void) _PyLong_ExactDealloc(PyObject *self);
 #if _PY_NSMALLPOSINTS < 257
 #  error "_PY_NSMALLPOSINTS must be greater than or equal to 257"
 #endif
+
+#define _PY_IS_SMALL_INT(val) ((val) >= 0 && (val) < 256 && (val) < _PY_NSMALLPOSINTS)
 
 // Return a reference to the immortal zero singleton.
 // The function cannot return NULL.

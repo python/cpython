@@ -1,2 +1,0 @@
-On FreeBSD, :data:`sys.platform` doesn't contain the major version anymore.
-It is always ``'freebsd'``, instead of ``'freebsd13'`` or ``'freebsd14'``.

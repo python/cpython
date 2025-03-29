@@ -204,7 +204,7 @@ def _safe_string(value, what, func=str):
 # --
 
 def print_exc(limit=None, file=None, chain=True):
-    """Shorthand for 'print_exception(sys.exception(), limit, file, chain)'."""
+    """Shorthand for 'print_exception(sys.exception(), limit=limit, file=file, chain=chain)'."""
     print_exception(sys.exception(), limit=limit, file=file, chain=chain)
 
 def format_exc(limit=None, chain=True):
@@ -212,15 +212,15 @@ def format_exc(limit=None, chain=True):
     return "".join(format_exception(sys.exception(), limit=limit, chain=chain))
 
 def print_last(limit=None, file=None, chain=True):
-    """This is a shorthand for 'print_exception(sys.last_exc, limit, file, chain)'."""
+    """This is a shorthand for 'print_exception(sys.last_exc, limit=limit, file=file, chain=chain)'."""
     if not hasattr(sys, "last_exc") and not hasattr(sys, "last_type"):
         raise ValueError("no last exception")
 
     if hasattr(sys, "last_exc"):
-        print_exception(sys.last_exc, limit, file, chain)
+        print_exception(sys.last_exc, limit=limit, file=file, chain=chain)
     else:
         print_exception(sys.last_type, sys.last_value, sys.last_traceback,
-                        limit, file, chain)
+                        limit=limit, file=file, chain=chain)
 
 
 #
@@ -288,11 +288,11 @@ class FrameSummary:
     """
 
     __slots__ = ('filename', 'lineno', 'end_lineno', 'colno', 'end_colno',
-                 'name', '_lines', '_lines_dedented', 'locals')
+                 'name', '_lines', '_lines_dedented', 'locals', '_code')
 
     def __init__(self, filename, lineno, name, *, lookup_line=True,
             locals=None, line=None,
-            end_lineno=None, colno=None, end_colno=None):
+            end_lineno=None, colno=None, end_colno=None, **kwargs):
         """Construct a FrameSummary.
 
         :param lookup_line: If True, `linecache` is consulted for the source
@@ -308,6 +308,7 @@ class FrameSummary:
         self.colno = colno
         self.end_colno = end_colno
         self.name = name
+        self._code = kwargs.get("_code")
         self._lines = line
         self._lines_dedented = None
         if lookup_line:
@@ -347,7 +348,10 @@ class FrameSummary:
             lines = []
             for lineno in range(self.lineno, self.end_lineno + 1):
                 # treat errors (empty string) and empty lines (newline) as the same
-                lines.append(linecache.getline(self.filename, lineno).rstrip())
+                line = linecache.getline(self.filename, lineno).rstrip()
+                if not line and self._code is not None and self.filename.startswith("<"):
+                    line = linecache._getline_from_code(self._code, lineno).rstrip()
+                lines.append(line)
             self._lines = "\n".join(lines) + "\n"
 
     @property
@@ -380,10 +384,14 @@ def walk_stack(f):
     current stack is used. Usually used with StackSummary.extract.
     """
     if f is None:
-        f = sys._getframe().f_back.f_back.f_back.f_back
-    while f is not None:
-        yield f, f.f_lineno
-        f = f.f_back
+        f = sys._getframe().f_back
+
+    def walk_stack_generator(frame):
+        while frame is not None:
+            yield frame, frame.f_lineno
+            frame = frame.f_back
+
+    return walk_stack_generator(f)
 
 
 def walk_tb(tb):
@@ -480,9 +488,13 @@ class StackSummary(list):
                 f_locals = f.f_locals
             else:
                 f_locals = None
-            result.append(FrameSummary(
-                filename, lineno, name, lookup_line=False, locals=f_locals,
-                end_lineno=end_lineno, colno=colno, end_colno=end_colno))
+            result.append(
+                FrameSummary(filename, lineno, name,
+                    lookup_line=False, locals=f_locals,
+                    end_lineno=end_lineno, colno=colno, end_colno=end_colno,
+                    _code=f.f_code,
+                )
+            )
         for filename in fnames:
             linecache.checkcache(filename)
 
