@@ -2782,6 +2782,14 @@ def try_protocol_combo(server_protocol, client_protocol, expect_success,
                                  % (expect_success, stats['version']))
 
 
+def supports_kx_alias(ctx, aliases):
+    for cipher in ctx.get_ciphers():
+        for alias in aliases:
+            if f"Kx={alias}" in cipher['description']:
+                return True
+    return False
+
+
 class ThreadedTests(unittest.TestCase):
 
     @support.requires_resource('walltime')
@@ -4042,8 +4050,13 @@ class ThreadedTests(unittest.TestCase):
                                    sni_name=hostname)
 
     def test_dh_params(self):
-        # Check we can get a connection with ephemeral Diffie-Hellman
+        # Check we can get a connection with ephemeral finite-field
+        # Diffie-Hellman (if supported).
         client_context, server_context, hostname = testing_context()
+        dhe_aliases = {"ADH", "EDH", "DHE"}
+        if not (supports_kx_alias(client_context, dhe_aliases)
+                and supports_kx_alias(server_context, dhe_aliases)):
+            self.skipTest("libssl doesn't support ephemeral DH")
         # test scenario needs TLS <= 1.2
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
         try:
@@ -4059,7 +4072,7 @@ class ThreadedTests(unittest.TestCase):
                                    sni_name=hostname)
         cipher = stats["cipher"][0]
         parts = cipher.split("-")
-        if "ADH" not in parts and "EDH" not in parts and "DHE" not in parts:
+        if not dhe_aliases.intersection(parts):
             self.fail("Non-DH key exchange: " + cipher[0])
 
     def test_ecdh_curve(self):

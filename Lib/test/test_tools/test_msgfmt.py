@@ -1,6 +1,7 @@
 """Tests for the Tools/i18n/msgfmt.py tool."""
 
 import json
+import struct
 import sys
 import unittest
 from gettext import GNUTranslations
@@ -39,6 +40,28 @@ class CompilationTest(unittest.TestCase):
                         actual = GNUTranslations(f)
 
                     self.assertDictEqual(actual._catalog, expected._catalog)
+
+    def test_binary_header(self):
+        with open(data_dir / "general.mo", "rb") as f:
+            mo_data = f.read()
+
+        (
+            magic,
+            version,
+            num_strings,
+            orig_table_offset,
+            trans_table_offset,
+            hash_table_size,
+            hash_table_offset,
+        ) = struct.unpack("=Iiiiiii", mo_data[:28])
+
+        self.assertEqual(magic, 0x950412de)
+        self.assertEqual(version, 0)
+        self.assertEqual(num_strings, 9)
+        self.assertEqual(orig_table_offset, 28)
+        self.assertEqual(trans_table_offset, 100)
+        self.assertEqual(hash_table_size, 0)
+        self.assertEqual(hash_table_offset, 0)
 
     def test_translations(self):
         with open(data_dir / 'general.mo', 'rb') as f:
