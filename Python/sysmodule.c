@@ -2426,8 +2426,6 @@ sys_is_stack_trampoline_active_impl(PyObject *module)
 sys.is_remote_debug_enabled
 
 Return True if remote debugging is enabled, False otherwise.
-
-If no stack profiler is activated, this function has no effect.
 [clinic start generated code]*/
 
 static PyObject *
@@ -2479,7 +2477,7 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
     if (attr == INVALID_FILE_ATTRIBUTES) {
         DWORD err = GetLastError();
         PyMem_Free(debugger_script_path_w);
-        
+
         if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
             PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
         }
@@ -2498,14 +2496,14 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
         PyMem_Free(debugger_script_path_w);
         return NULL;
     }
-    
+
     PyMem_Free(debugger_script_path_w);
 #else
     const char *debugger_script_path = PyUnicode_AsUTF8(script);
     if (debugger_script_path == NULL) {
         return NULL;
     }
-    
+
     if (access(debugger_script_path, F_OK | R_OK) != 0) {
         switch (errno) {
             case ENOENT:
