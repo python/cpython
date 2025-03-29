@@ -1,0 +1,1 @@
+Fix :meth:`!pickle._Unpickler.load_build` to detect an invalid ``inst`` argument if ``state`` is falsey but not None.
