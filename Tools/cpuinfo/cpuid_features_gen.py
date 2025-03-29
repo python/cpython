@@ -1,0 +1,138 @@
+"""
+Generate an enumeration describing masks to apply on CPUID output registers.
+
+Member names are Py_CPUID_MASK_<REGISTER>_L<LEAF>[S<SUBLEAF>]_<FEATURE>,
+where <> (resp. []) denotes a required (resp. optional) group and:
+
+- REGISTER is EAX, EBX, ECX or EDX,
+- LEAF is the initial value of the EAX register (1 or 7),
+- SUBLEAF is the initial value of the ECX register (omitted if 0), and
+- FEATURE is a SIMD feature (with one or more specialized instructions).
+
+For maintainability, the flags are ordered by registers, leafs, subleafs,
+and bits. See https://en.wikipedia.org/wiki/CPUID for the values.
+
+Note 1: The LEAF is also called the 'page' or the 'level'.
+Note 2: The SUBLEAF is also referred to as the 'count'.
+
+The LEAF value should only 1 or 7 as other values may have different
+meanings depending on the underlying architecture.
+"""
+
+from __future__ import annotations
+
+__all__ = ["generate_cpuid_features_enum"]
+
+from functools import partial
+from io import StringIO
+from typing import TYPE_CHECKING
+from . import _util as util
+
+if TYPE_CHECKING:
+    from typing import Final, IO
+
+    type Leaf = int
+    type SubLeaf = int
+    type Registry = str
+    type FeatureFamily = tuple[Leaf, SubLeaf, Registry]
+
+    type Feature = str
+    type Bit = int
+
+CPUID_FEATURES: Final[dict[CPUIDFeatureFamily, dict[Feature, Bit]]] = {
+    (1, 0, "ECX"): {
+        "SSE3": 0,
+        "PCLMULQDQ": 1,
+        "SSSE3": 9,
+        "FMA": 12,
+        "SSE4_1": 19,
+        "SSE4_2": 20,
+        "POPCNT": 23,
+        "XSAVE": 26,
+        "OSXSAVE": 27,
+        "AVX": 28,
+    },
+    (1, 0, "EDX"): {
+        "CMOV": 15,
+        "SSE": 25,
+        "SSE2": 26,
+    },
+    (7, 0, "EBX"): {
+        "AVX2": 5,
+        "AVX512_F": 16,
+        "AVX512_DQ": 17,
+        "AVX512_IFMA": 21,
+        "AVX512_PF": 26,
+        "AVX512_ER": 27,
+        "AVX512_CD": 28,
+        "AVX512_BW": 30,
+        "AVX512_VL": 31,
+    },
+    (7, 0, "ECX"): {
+        "AVX512_VBMI": 1,
+        "AVX512_VBMI2": 6,
+        "AVX512_VNNI": 11,
+        "AVX512_BITALG": 12,
+        "AVX512_VPOPCNTDQ": 14,
+    },
+    (7, 0, "EDX"): {
+        "AVX512_4VNNIW": 2,
+        "AVX512_4FMAPS": 3,
+        "AVX512_VP2INTERSECT": 8,
+    },
+    (7, 1, "EAX"): {
+        "AVX_VNNI": 4,
+        "AVX_IFMA": 23,
+    },
+    (7, 1, "EDX"): {
+        "AVX_VNNI_INT8": 4,
+        "AVX_NE_CONVERT": 5,
+        "AVX_VNNI_INT16": 10,
+    },
+}
+
+
+def get_member_name(
+    leaf: Leaf, subleaf: SubLeaf, registry: Registry, name: Feature
+) -> str:
+    node = f"L{leaf}S{subleaf}" if subleaf else f"L{leaf}"
+    return f"Py_CPUID_MASK_{registry}_{node}_{name}"
+
+
+NAMESIZE: Final[int] = util.next_block(
+    max(
+        len(get_member_name(*family, name))
+        for family, values in CPUID_FEATURES.items()
+        for name in values
+    )
+)
+
+
+def generate_cpuid_features_enum(enum_name: str) -> str:
+    # The enumeration is rendered as follows:
+    #
+    #   <INDENT><MEMBER_NAME> <TAB>= 0x<MASK>, <TAB>// bit = BIT
+    #   ^       ^             ^    ^   ^       ^    ^
+    #
+    # where ^ indicates a column that is a multiple of 4, <MASK> has
+    # exactly 8 characters and <BIT> has at most 2 characters.
+
+    output = StringIO()
+    write = partial(print, file=output)
+    indent = " " * 4
+
+    write(f"typedef enum {enum_name} {{")
+    for family, values in CPUID_FEATURES.items():
+        leaf, subleaf, registry = family
+        title = f"CPUID (LEAF={leaf}, SUBLEAF={subleaf}) [{registry}]"
+        write(indent, "/* ", title, " */", sep="")
+        for feature_name, bit in values.items():
+            if not feature_name:
+                raise ValueError(f"invalid entry for {family}")
+            if not 0 <= bit < 32:
+                raise ValueError(f"invalid bit value for {feature_name!r}")
+            key = get_member_name(leaf, subleaf, registry, feature_name)
+            member_def = util.make_enum_member(key, bit, NAMESIZE)
+            write(indent, member_def, sep="")
+    write(f"}} {enum_name};")
+    return output.getvalue().rstrip("\n")
