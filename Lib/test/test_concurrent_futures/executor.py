@@ -1,3 +1,4 @@
+import gc
 import itertools
 import threading
 import time
@@ -55,8 +56,27 @@ class ExecutorTest:
         i = self.executor.map(divmod, [1, 1, 1, 1], [2, 3, 0, 5])
         self.assertEqual(i.__next__(), (0, 1))
         self.assertEqual(i.__next__(), (0, 1))
-        with self.assertRaises(ZeroDivisionError):
-            i.__next__()
+
+        error = None
+        try:
+            next(i)
+        except ZeroDivisionError as zero_div_error:
+            error = zero_div_error
+        self.assertIsNotNone(
+            error,
+            msg="next one should raise a ZeroDivisionError",
+        )
+
+        # a failed future should not be captured in its
+        # future._exception.__traceback__ to avoid a reference cycle
+        self.assertFalse(
+            [
+                referrer
+                for referrer in gc.get_referrers(error)
+                if isinstance(referrer, futures.Future)
+            ],
+            msg="none of the referrers should be a Future",
+        )
 
     @support.requires_resource('walltime')
     def test_map_timeout(self):
@@ -140,7 +160,7 @@ class ExecutorTest:
         self.assertEqual(
             next(ints),
             buffersize,
-            msg="should have fetched only `buffersize` elements from `ints`.",
+            msg="should have fetched only `buffersize` elements from `ints`",
         )
 
     def test_shutdown_race_issue12456(self):
