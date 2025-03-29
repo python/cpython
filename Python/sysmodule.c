@@ -2440,35 +2440,8 @@ sys_is_remote_debug_enabled_impl(PyObject *module)
 #endif
 }
 
-/*[clinic input]
-sys.remote_exec
-
-    pid: int
-    script: object
-
-Executes a file containing Python code in a given remote Python process.
-
-This function returns immediately, and the code will be executed by the
-target process's main thread at the next available opportunity, similarly
-to how signals are handled. There is no interface to determine when the
-code has been executed. The caller is responsible for making sure that
-the file still exists whenever the remote process tries to read it and that
-it hasn't been overwritten.
-
-The remote process must be running a CPython interpreter of the same major
-and minor version as the local process. If either the local or remote
-interpreter is pre-release (alpha, beta, or release candidate) then the
-local and remote interpreters must be the same exact version.
-
-Args:
-     pid (int): The process ID of the target Python process.
-     script (str|bytes): The path to a file containing
-         the Python code to be executed.
-[clinic start generated code]*/
-
 static PyObject *
-sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
-/*[clinic end generated code: output=7d94c56afe4a52c0 input=5749b0253d5b588c]*/
+sys_remote_exec_unicode_path(PyObject *module, int pid, PyObject *script)
 {
     const char *debugger_script_path = PyUnicode_AsUTF8(script);
     if (debugger_script_path == NULL) {
@@ -2519,6 +2492,49 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
     }
 
     Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys.remote_exec
+
+    pid: int
+    script: object
+
+Executes a file containing Python code in a given remote Python process.
+
+This function returns immediately, and the code will be executed by the
+target process's main thread at the next available opportunity, similarly
+to how signals are handled. There is no interface to determine when the
+code has been executed. The caller is responsible for making sure that
+the file still exists whenever the remote process tries to read it and that
+it hasn't been overwritten.
+
+The remote process must be running a CPython interpreter of the same major
+and minor version as the local process. If either the local or remote
+interpreter is pre-release (alpha, beta, or release candidate) then the
+local and remote interpreters must be the same exact version.
+
+Args:
+     pid (int): The process ID of the target Python process.
+     script (str|bytes): The path to a file containing
+         the Python code to be executed.
+[clinic start generated code]*/
+
+static PyObject *
+sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
+/*[clinic end generated code: output=7d94c56afe4a52c0 input=5749b0253d5b588c]*/
+{
+    PyObject *ret = NULL;
+    PyObject *os = PyImport_ImportModule("os");
+    if (os) {
+        PyObject *path = PyObject_CallMethod(os, "fsdecode", "O", script);
+        if (path) {
+            ret = sys_remote_exec_unicode_path(module, pid, path);
+            Py_DECREF(path);
+        }
+        Py_DECREF(os);
+    }
+    return ret;
 }
 
 
