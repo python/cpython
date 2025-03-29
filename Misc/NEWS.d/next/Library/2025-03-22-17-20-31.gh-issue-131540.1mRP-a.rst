@@ -1,0 +1,2 @@
+threading.Thread now validates that 'args' is iterable. Raises TypeError if it is not.
+
