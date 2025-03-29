@@ -665,6 +665,9 @@ class AbstractEventLoop:
     def set_debug(self, enabled):
         raise NotImplementedError
 
+    def crash(self, exception):
+        raise NotImplementedError
+
 
 class _AbstractEventLoopPolicy:
     """Abstract policy for accessing the event loop."""
