@@ -1520,6 +1520,18 @@
             break;
         }
 
+        case _INSERT_NULL: {
+            JitOptSymbol *arg1;
+            JitOptSymbol *arg2;
+            arg1 = sym_new_not_null(ctx);
+            arg2 = sym_new_not_null(ctx);
+            stack_pointer[-1] = arg1;
+            stack_pointer[0] = arg2;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _LOAD_SPECIAL: {
             JitOptSymbol *attr;
             JitOptSymbol *self_or_null;

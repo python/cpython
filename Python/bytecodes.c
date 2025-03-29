@@ -3347,24 +3347,32 @@ dummy_func(
             _FOR_ITER_GEN_FRAME +
             _PUSH_FRAME;
 
-        inst(LOAD_SPECIAL, (owner -- attr, self_or_null)) {
-            assert(oparg <= SPECIAL_MAX);
-            PyObject *owner_o = PyStackRef_AsPyObjectSteal(owner);
+        op(_INSERT_NULL, (arg -- arg1, arg2)) {
+            arg1 = PyStackRef_NULL;
+            arg2 = arg;
+            DEAD(arg);
+        }
+
+        op(_LOAD_SPECIAL, (null, self -- method_and_self[2])) {
+            method_and_self[0] = null;
+            method_and_self[1] = self;
             PyObject *name = _Py_SpecialMethods[oparg].name;
-            PyObject *self_or_null_o;
-            PyObject *attr_o = _PyObject_LookupSpecialMethod(owner_o, name, &self_or_null_o);
-            if (attr_o == NULL) {
+            int err = _PyObject_LookupSpecialMethod(name, method_and_self);
+            if (err < 0) {
                 if (!_PyErr_Occurred(tstate)) {
                     _PyErr_Format(tstate, PyExc_TypeError,
                                   _Py_SpecialMethods[oparg].error,
-                                  Py_TYPE(owner_o)->tp_name);
+                                  PyStackRef_TYPE(method_and_self[1])->tp_name);
+                    ERROR_NO_POP();
                 }
-                ERROR_IF(true, error);
+                ERROR_NO_POP();
             }
-            attr = PyStackRef_FromPyObjectSteal(attr_o);
-            self_or_null = self_or_null_o == NULL ?
-                PyStackRef_NULL : PyStackRef_FromPyObjectSteal(self_or_null_o);
+            INPUTS_DEAD();
         }
+
+        macro(LOAD_SPECIAL) =
+            _INSERT_NULL +
+            _LOAD_SPECIAL;
 
         inst(WITH_EXCEPT_START, (exit_func, exit_self, lasti, unused, val -- exit_func, exit_self, lasti, unused, val, res)) {
             /* At the top of the stack are 4 values:
