@@ -3,10 +3,18 @@
 
 from idlelib import mainmenu
 import re
+import sys
 import unittest
+from unittest import mock
 
 
 class MainMenuTest(unittest.TestCase):
+    def setUp(self):
+        self._patcher = mock.patch("idlelib.macosx._tk_type", new="cocoa" if sys.platform == "darwin" else "other")
+        self._patcher.start()
+
+    def tearDown(self):
+        self._patcher.stop()
 
     def test_menudefs(self):
         actual = [item[0] for item in mainmenu.menudefs]
@@ -15,7 +23,7 @@ class MainMenuTest(unittest.TestCase):
         self.assertEqual(actual, expect)
 
     def test_default_keydefs(self):
-        self.assertGreaterEqual(len(mainmenu.default_keydefs), 50)
+        self.assertGreaterEqual(len(mainmenu.get_default_keydefs()), 50)
 
     def test_tcl_indexes(self):
         # Test tcl patterns used to find menuitem to alter.
