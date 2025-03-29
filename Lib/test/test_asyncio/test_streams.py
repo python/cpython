@@ -1,15 +1,12 @@
 """Tests for streams.py."""
 
 import gc
-import os
 import queue
 import pickle
 import socket
-import sys
 import threading
 import unittest
 from unittest import mock
-import warnings
 try:
     import ssl
 except ImportError:
@@ -17,7 +14,7 @@ except ImportError:
 
 import asyncio
 from test.test_asyncio import utils as test_utils
-from test.support import requires_subprocess, socket_helper
+from test.support import socket_helper
 
 
 def tearDownModule():

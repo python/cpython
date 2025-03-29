@@ -75,6 +75,19 @@ PyDoc_STRVAR(SHA1Type_update__doc__,
 #define SHA1TYPE_UPDATE_METHODDEF    \
     {"update", (PyCFunction)SHA1Type_update, METH_O, SHA1Type_update__doc__},
 
+static PyObject *
+SHA1Type_update_impl(SHA1object *self, PyObject *obj);
+
+static PyObject *
+SHA1Type_update(PyObject *self, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+
+    return_value = SHA1Type_update_impl((SHA1object *)self, obj);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_sha1_sha1__doc__,
 "sha1($module, /, string=b\'\', *, usedforsecurity=True)\n"
 "--\n"
@@ -97,9 +110,11 @@ _sha1_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
     };
     #undef NUM_KEYWORDS
@@ -149,4 +164,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ad6f3788a6e7ff6f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=06161e87e2d645d4 input=a9049054013a1b77]*/

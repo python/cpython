@@ -486,7 +486,7 @@ use the traditional parser-based REPL.
 .IP PYTHONBREAKPOINT
 If this environment variable is set to 0, it disables the default debugger. It
 can be set to the callable of your debugger of choice.
-.IP PYTHONCOERCELOCALE
+.IP PYTHONCOERCECLOCALE
 If set to the value 0, causes the main Python command line application to skip
 coercing the legacy ASCII-based C and POSIX locales to a more capable UTF-8
 based alternative.

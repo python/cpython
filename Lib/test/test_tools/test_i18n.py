@@ -8,13 +8,17 @@ from textwrap import dedent
 from pathlib import Path
 
 from test.support.script_helper import assert_python_ok
-from test.test_tools import skip_if_missing, toolsdir
+from test.test_tools import imports_under_tool, skip_if_missing, toolsdir
 from test.support.os_helper import temp_cwd, temp_dir
 
 
 skip_if_missing()
 
 DATA_DIR = Path(__file__).resolve().parent / 'i18n_data'
+
+
+with imports_under_tool("i18n"):
+    from pygettext import parse_spec
 
 
 def normalize_POT_file(pot):
@@ -87,7 +91,8 @@ class Test_pygettext(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(normalize_POT_file(expected), normalize_POT_file(actual))
 
-    def extract_from_str(self, module_content, *, args=(), strict=True, with_stderr=False):
+    def extract_from_str(self, module_content, *, args=(), strict=True,
+                         with_stderr=False, raw=False):
         """Return all msgids extracted from module_content."""
         filename = 'test.py'
         with temp_cwd(None):
@@ -98,10 +103,11 @@ class Test_pygettext(unittest.TestCase):
                 self.assertEqual(res.err, b'')
             with open('messages.pot', encoding='utf-8') as fp:
                 data = fp.read()
-        msgids = self.get_msgids(data)
+        if not raw:
+            data = self.get_msgids(data)
         if not with_stderr:
-            return msgids
-        return msgids, res.err
+            return data
+        return data, res.err
 
     def extract_docstrings_from_str(self, module_content):
         """Return all docstrings extracted from module_content."""
@@ -375,15 +381,8 @@ class Test_pygettext(unittest.TestCase):
 
     def test_pygettext_output(self):
         """Test that the pygettext output exactly matches snapshots."""
-        for input_file in DATA_DIR.glob('*.py'):
-            output_file = input_file.with_suffix('.pot')
-            with self.subTest(input_file=f'i18n_data/{input_file}'):
-                contents = input_file.read_text(encoding='utf-8')
-                with temp_cwd(None):
-                    Path(input_file.name).write_text(contents)
-                    assert_python_ok('-Xutf8', self.script, '--docstrings', input_file.name)
-                    output = Path('messages.pot').read_text(encoding='utf-8')
-
+        for input_file, output_file, output in extract_from_snapshots():
+            with self.subTest(input_file=input_file):
                 expected = output_file.read_text(encoding='utf-8')
                 self.assert_POT_equal(expected, output)
 
@@ -413,6 +412,12 @@ class Test_pygettext(unittest.TestCase):
             self.assertIn(f'msgid "{text2}"', data)
             self.assertNotIn(text3, data)
 
+    def test_help_text(self):
+        """Test that the help text is displayed."""
+        res = assert_python_ok(self.script, '--help')
+        self.assertEqual(res.out, b'')
+        self.assertIn(b'pygettext -- Python equivalent of xgettext(1)', res.err)
+
     def test_error_messages(self):
         """Test that pygettext outputs error messages to stderr."""
         stderr = self.get_stderr(dedent('''\
@@ -431,16 +436,112 @@ class Test_pygettext(unittest.TestCase):
             "*** test.py:3: Variable positional arguments are not allowed in gettext calls\n"
         )
 
+    def test_extract_all_comments(self):
+        """
+        Test that the --add-comments option without an
+        explicit tag extracts all translator comments.
+        """
+        for arg in ('--add-comments', '-c'):
+            with self.subTest(arg=arg):
+                data = self.extract_from_str(dedent('''\
+                # Translator comment
+                _("foo")
+                '''), args=(arg,), raw=True)
+                self.assertIn('#. Translator comment', data)
 
-def update_POT_snapshots():
-    for input_file in DATA_DIR.glob('*.py'):
+    def test_comments_with_multiple_tags(self):
+        """
+        Test that multiple --add-comments tags can be specified.
+        """
+        for arg in ('--add-comments={}', '-c{}'):
+            with self.subTest(arg=arg):
+                args = (arg.format('foo:'), arg.format('bar:'))
+                data = self.extract_from_str(dedent('''\
+                # foo: comment
+                _("foo")
+
+                # bar: comment
+                _("bar")
+
+                # baz: comment
+                _("baz")
+                '''), args=args, raw=True)
+                self.assertIn('#. foo: comment', data)
+                self.assertIn('#. bar: comment', data)
+                self.assertNotIn('#. baz: comment', data)
+
+    def test_comments_not_extracted_without_tags(self):
+        """
+        Test that translator comments are not extracted without
+        specifying --add-comments.
+        """
+        data = self.extract_from_str(dedent('''\
+        # Translator comment
+        _("foo")
+        '''), raw=True)
+        self.assertNotIn('#.', data)
+
+    def test_parse_keyword_spec(self):
+        valid = (
+            ('foo', ('foo', {0: 'msgid'})),
+            ('foo:1', ('foo', {0: 'msgid'})),
+            ('foo:1,2', ('foo', {0: 'msgid', 1: 'msgid_plural'})),
+            ('foo:1, 2', ('foo', {0: 'msgid', 1: 'msgid_plural'})),
+            ('foo:1,2c', ('foo', {0: 'msgid', 1: 'msgctxt'})),
+            ('foo:2c,1', ('foo', {0: 'msgid', 1: 'msgctxt'})),
+            ('foo:2c ,1', ('foo', {0: 'msgid', 1: 'msgctxt'})),
+            ('foo:1,2,3c', ('foo', {0: 'msgid', 1: 'msgid_plural', 2: 'msgctxt'})),
+            ('foo:1, 2, 3c', ('foo', {0: 'msgid', 1: 'msgid_plural', 2: 'msgctxt'})),
+            ('foo:3c,1,2', ('foo', {0: 'msgid', 1: 'msgid_plural', 2: 'msgctxt'})),
+        )
+        for spec, expected in valid:
+            with self.subTest(spec=spec):
+                self.assertEqual(parse_spec(spec), expected)
+
+        invalid = (
+            ('foo:', "Invalid keyword spec 'foo:': missing argument positions"),
+            ('foo:bar', "Invalid keyword spec 'foo:bar': position is not an integer"),
+            ('foo:0', "Invalid keyword spec 'foo:0': argument positions must be strictly positive"),
+            ('foo:-2', "Invalid keyword spec 'foo:-2': argument positions must be strictly positive"),
+            ('foo:1,1', "Invalid keyword spec 'foo:1,1': duplicate positions"),
+            ('foo:1,2,1', "Invalid keyword spec 'foo:1,2,1': duplicate positions"),
+            ('foo:1c,2,1c', "Invalid keyword spec 'foo:1c,2,1c': duplicate positions"),
+            ('foo:1c,2,3c', "Invalid keyword spec 'foo:1c,2,3c': msgctxt can only appear once"),
+            ('foo:1,2,3', "Invalid keyword spec 'foo:1,2,3': too many positions"),
+            ('foo:1c', "Invalid keyword spec 'foo:1c': msgctxt cannot appear without msgid"),
+        )
+        for spec, message in invalid:
+            with self.subTest(spec=spec):
+                with self.assertRaises(ValueError) as cm:
+                    parse_spec(spec)
+                self.assertEqual(str(cm.exception), message)
+
+
+def extract_from_snapshots():
+    snapshots = {
+        'messages.py': (),
+        'fileloc.py': ('--docstrings',),
+        'docstrings.py': ('--docstrings',),
+        'comments.py': ('--add-comments=i18n:',),
+        'custom_keywords.py': ('--keyword=foo', '--keyword=nfoo:1,2',
+                               '--keyword=pfoo:1c,2',
+                               '--keyword=npfoo:1c,2,3', '--keyword=_:1,2'),
+    }
+
+    for filename, args in snapshots.items():
+        input_file = DATA_DIR / filename
         output_file = input_file.with_suffix('.pot')
         contents = input_file.read_bytes()
         with temp_cwd(None):
             Path(input_file.name).write_bytes(contents)
-            assert_python_ok('-Xutf8', Test_pygettext.script, '--docstrings', input_file.name)
-            output = Path('messages.pot').read_text(encoding='utf-8')
+            assert_python_ok('-Xutf8', Test_pygettext.script, *args,
+                             input_file.name)
+            yield (input_file, output_file,
+                   Path('messages.pot').read_text(encoding='utf-8'))
 
+
+def update_POT_snapshots():
+    for _, output_file, output in extract_from_snapshots():
         output = normalize_POT_file(output)
         output_file.write_text(output, encoding='utf-8')
 
