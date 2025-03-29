@@ -3,7 +3,7 @@ import inspect
 import textwrap
 import types
 import unittest
-from test.support import run_code, check_syntax_error
+from test.support import run_code, check_syntax_error, cpython_only
 
 
 class TypeAnnotationTests(unittest.TestCase):
@@ -108,6 +108,16 @@ class TypeAnnotationTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del D.__annotations__
         self.assertEqual(D.__annotations__, {})
+
+    @cpython_only
+    def test_no_cell(self):
+        # gh-130924: Test that uses of annotations in local scopes do not
+        # create cell variables.
+        def f(x):
+            a: x
+            return x
+
+        self.assertEqual(f.__code__.co_cellvars, ())
 
 
 def build_module(code: str, name: str = "top") -> types.ModuleType:
@@ -352,6 +362,7 @@ class DeferredEvaluationTests(unittest.TestCase):
                 check_syntax_error(self, prelude + "(x): (yield)", "yield expression cannot be used within an annotation")
                 check_syntax_error(self, prelude + "(x): (yield from x)", "yield expression cannot be used within an annotation")
                 check_syntax_error(self, prelude + "(x): (y := 3)", "named expression cannot be used within an annotation")
+                check_syntax_error(self, prelude + "(x): (__debug__ := 3)", "named expression cannot be used within an annotation")
                 check_syntax_error(self, prelude + "(x): (await 42)", "await expression cannot be used within an annotation")
 
     def test_ignore_non_simple_annotations(self):
