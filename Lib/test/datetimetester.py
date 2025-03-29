@@ -3390,6 +3390,7 @@ class TestDateTime(TestDate):
                         dt_rt = self.theclass.fromisoformat(dtstr)
                         self.assertEqual(dt, dt_rt)
 
+    @warnings_helper.ignore_warnings(category=DeprecationWarning)
     def test_fromisoformat_datetime_examples(self):
         UTC = timezone.utc
         BST = timezone(timedelta(hours=1), 'BST')
