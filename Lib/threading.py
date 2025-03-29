@@ -1546,7 +1546,11 @@ def _shutdown():
     # Call registered threading atexit functions before threads are joined.
     # Order is reversed, similar to atexit.
     for atexit_call in reversed(_threading_atexits):
-        atexit_call()
+        try:
+            atexit_call()
+        except:
+            th = current_thread()
+            th._invoke_excepthook(th)
 
     if _is_main_interpreter():
         _main_thread._handle._set_done()
