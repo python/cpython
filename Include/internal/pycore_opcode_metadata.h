@@ -1465,7 +1465,7 @@ _PyOpcode_macro_expansion[256] = {
     [TO_BOOL_INT] = { .nuops = 1, .uops = { { _TO_BOOL_INT, OPARG_SIMPLE, 3 } } },
     [TO_BOOL_LIST] = { .nuops = 1, .uops = { { _TO_BOOL_LIST, OPARG_SIMPLE, 3 } } },
     [TO_BOOL_NONE] = { .nuops = 1, .uops = { { _TO_BOOL_NONE, OPARG_SIMPLE, 3 } } },
-    [TO_BOOL_STR] = { .nuops = 1, .uops = { { _TO_BOOL_STR, OPARG_SIMPLE, 3 } } },
+    [TO_BOOL_STR] = { .nuops = 2, .uops = { { _GUARD_TOS_UNICODE, OPARG_SIMPLE, 0 }, { _TO_BOOL_STR, OPARG_SIMPLE, 3 } } },
     [UNARY_INVERT] = { .nuops = 1, .uops = { { _UNARY_INVERT, OPARG_SIMPLE, 0 } } },
     [UNARY_NEGATIVE] = { .nuops = 1, .uops = { { _UNARY_NEGATIVE, OPARG_SIMPLE, 0 } } },
     [UNARY_NOT] = { .nuops = 1, .uops = { { _UNARY_NOT, OPARG_SIMPLE, 0 } } },

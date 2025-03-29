@@ -208,6 +208,15 @@
             break;
         }
 
+        case _GUARD_TOS_UNICODE: {
+            JitOptSymbol *value;
+            value = stack_pointer[-1];
+            if (sym_matches_type(value, &PyUnicode_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            break;
+        }
+
         case _TO_BOOL_STR: {
             JitOptSymbol *value;
             JitOptSymbol *res;

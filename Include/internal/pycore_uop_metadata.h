@@ -64,7 +64,8 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_TO_BOOL_INT] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_TO_BOOL_LIST] = HAS_EXIT_FLAG,
     [_TO_BOOL_NONE] = HAS_EXIT_FLAG,
-    [_TO_BOOL_STR] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
+    [_GUARD_TOS_UNICODE] = HAS_EXIT_FLAG,
+    [_TO_BOOL_STR] = HAS_ESCAPES_FLAG,
     [_REPLACE_WITH_TRUE] = HAS_ESCAPES_FLAG,
     [_UNARY_INVERT] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_BOTH_INT] = HAS_EXIT_FLAG,
@@ -413,6 +414,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_NOT_EXHAUSTED_TUPLE] = "_GUARD_NOT_EXHAUSTED_TUPLE",
     [_GUARD_TOS_FLOAT] = "_GUARD_TOS_FLOAT",
     [_GUARD_TOS_INT] = "_GUARD_TOS_INT",
+    [_GUARD_TOS_UNICODE] = "_GUARD_TOS_UNICODE",
     [_GUARD_TYPE_VERSION] = "_GUARD_TYPE_VERSION",
     [_GUARD_TYPE_VERSION_AND_LOCK] = "_GUARD_TYPE_VERSION_AND_LOCK",
     [_IMPORT_FROM] = "_IMPORT_FROM",
@@ -649,6 +651,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _TO_BOOL_NONE:
             return 1;
+        case _GUARD_TOS_UNICODE:
+            return 0;
         case _TO_BOOL_STR:
             return 1;
         case _REPLACE_WITH_TRUE:

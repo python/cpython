@@ -1581,6 +1581,24 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_COMPARE_OP_INT", uops)
         self.assertIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
+    def test_remove_guard_for_known_type_str(self):
+        def f(n):
+            for i in range(n):
+                false = i == TIER2_THRESHOLD
+                empty = "X"[:false]
+                empty += ""  # Make JIT realize this is a string.
+                if empty:
+                    return 1
+            return 0
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_STR", uops)
+        self.assertNotIn("_GUARD_TOS_UNICODE", uops)
+
+
 def global_identity(x):
     return x
 
