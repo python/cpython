@@ -1,0 +1,1 @@
+Correct MIME type for Advanced SubStation files.
