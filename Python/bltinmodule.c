@@ -2019,7 +2019,7 @@ builtin_min(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 }
 
 PyDoc_STRVAR(min_doc,
-"min(iterable, *[, default=obj, key=func]) -> value\n\
+"min(iterable, /, *[, default=obj, key=func]) -> value\n\
 min(arg1, arg2, *args, *[, key=func]) -> value\n\
 \n\
 With a single iterable argument, return its smallest item. The\n\
@@ -2036,7 +2036,7 @@ builtin_max(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *k
 }
 
 PyDoc_STRVAR(max_doc,
-"max(iterable, *[, default=obj, key=func]) -> value\n\
+"max(iterable, /, *[, default=obj, key=func]) -> value\n\
 max(arg1, arg2, *args, *[, key=func]) -> value\n\
 \n\
 With a single iterable argument, return its biggest item. The\n\
