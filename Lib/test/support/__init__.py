@@ -880,7 +880,8 @@ def check_bolt_optimized():
 with warnings.catch_warnings():
     # ignore DeprecationWarning on sys.abiflags change on Windows
     warnings.simplefilter('ignore', DeprecationWarning)
-    HAS_SYS_ABIFLAGS = hasattr(sys, 'abiflags')  # equal to `not sys.platform.startswith('win')`
+    # Equal to `not sys.platform.startswith('win')` prior to 3.16
+    HAS_SYS_ABIFLAGS = hasattr(sys, 'abiflags')
 
 
 Py_GIL_DISABLED = bool(sysconfig.get_config_var('Py_GIL_DISABLED'))
