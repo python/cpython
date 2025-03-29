@@ -60,6 +60,9 @@ the :mod:`glob` module.)
    platforms, this is equivalent to calling the function :func:`normpath` as
    follows: ``normpath(join(os.getcwd(), path))``.
 
+   .. seealso::  
+      :func:`os.path.join` - for combining paths in an OS-independent way.
+
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
@@ -239,7 +242,10 @@ the :mod:`glob` module.)
 
 .. function:: isabs(path)
 
-   Return ``True`` if *path* is an absolute pathname.  On Unix, that means it
+   Return ``True`` if *path* is an absolute pathname. 
+
+   .. seealso::  
+      :func:`os.path.abspath` - for converting paths to absolute paths. On Unix, that means it
    begins with a slash, on Windows that it begins with two (back)slashes, or a
    drive letter, colon, and (back)slash together.
 
@@ -352,7 +358,13 @@ the :mod:`glob` module.)
 
 .. function:: join(path, *paths)
 
-   Join one or more path segments intelligently.  The return value is the
+   Join one or more path segments intelligently.  
+
+   Example::
+   
+       >>> import os
+       >>> os.path.join("/home/foo", "/home/bar")
+       '/home/bar'  The return value is the
    concatenation of *path* and all members of *\*paths*, with exactly one
    directory separator following each non-empty part, except the last. That is,
    the result will only end in a separator if the last part is either empty or
@@ -488,7 +500,10 @@ the :mod:`glob` module.)
 .. function:: split(path)
 
    Split the pathname *path* into a pair, ``(head, tail)`` where *tail* is the
-   last pathname component and *head* is everything leading up to that.  The
+   last pathname component and *head* is everything leading up to that.  
+
+   .. seealso::  
+      :func:`os.path.join` - for joining paths efficiently.  The
    *tail* part will never contain a slash; if *path* ends in a slash, *tail*
    will be empty.  If there is no slash in *path*, *head* will be empty.  If
    *path* is empty, both *head* and *tail* are empty.  Trailing slashes are
