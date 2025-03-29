@@ -469,8 +469,6 @@ static PyObject *
 formatlong(PyObject *v, int flags, int prec, int type)
 {
     PyObject *result, *iobj;
-    if (type == 'i')
-        type = 'd';
     if (PyLong_Check(v))
         return _PyUnicode_FormatLong(v, flags & F_ALT, prec, type);
     if (PyNumber_Check(v)) {
@@ -2649,15 +2647,16 @@ bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep)
 }
 
 static PyObject *
-bytes_getnewargs(PyBytesObject *v, PyObject *Py_UNUSED(ignored))
+bytes_getnewargs(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
+    PyBytesObject *v = _PyBytes_CAST(op);
     return Py_BuildValue("(y#)", v->ob_sval, Py_SIZE(v));
 }
 
 
 static PyMethodDef
 bytes_methods[] = {
-    {"__getnewargs__",          (PyCFunction)bytes_getnewargs,  METH_NOARGS},
+    {"__getnewargs__", bytes_getnewargs,  METH_NOARGS},
     BYTES___BYTES___METHODDEF
     {"capitalize", stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},

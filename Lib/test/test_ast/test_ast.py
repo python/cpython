@@ -3238,6 +3238,18 @@ class ASTOptimiziationTests(unittest.TestCase):
                 values = get_match_case_values(case.pattern)
                 self.assertListEqual(constants, values)
 
+    def test_match_case_not_folded_in_unoptimized_ast(self):
+        src = textwrap.dedent("""
+            match a:
+                case 1+2j:
+                    pass
+            """)
+
+        unfolded = "MatchValue(value=BinOp(left=Constant(value=1), op=Add(), right=Constant(value=2j))"
+        folded = "MatchValue(value=Constant(value=(1+2j)))"
+        for optval in (0, 1, 2):
+            self.assertIn(folded if optval else unfolded, ast.dump(ast.parse(src, optimize=optval)))
+
 
 if __name__ == '__main__':
     if len(sys.argv) > 1 and sys.argv[1] == '--snapshot-update':
