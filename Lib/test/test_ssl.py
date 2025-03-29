@@ -4054,8 +4054,8 @@ class ThreadedTests(unittest.TestCase):
         # Diffie-Hellman (if supported).
         client_context, server_context, hostname = testing_context()
         dhe_aliases = {"ADH", "EDH", "DHE"}
-        if not (supports_kx_alias(client_context, dhe_aliases) and
-                supports_kx_alias(server_context, dhe_aliases)):
+        if not (supports_kx_alias(client_context, dhe_aliases)
+                and supports_kx_alias(server_context, dhe_aliases)):
             self.skipTest("libssl doesn't support ephemeral DH")
         # test scenario needs TLS <= 1.2
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
