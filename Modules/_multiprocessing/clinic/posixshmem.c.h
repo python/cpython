@@ -60,7 +60,7 @@ PyDoc_STRVAR(_posixshmem_shm_rename__doc__,
 #define _POSIXSHMEM_SHM_RENAME_METHODDEF    \
     {"shm_rename", (PyCFunction)(void(*)(void))_posixshmem_shm_rename, METH_FASTCALL, _posixshmem_shm_rename__doc__},
 
-static PyObject *
+static int
 _posixshmem_shm_rename_impl(PyObject *module, PyObject *path_from,
                             PyObject *path_to, int flags);
 
@@ -71,6 +71,7 @@ _posixshmem_shm_rename(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     PyObject *path_from;
     PyObject *path_to;
     int flags;
+    int _return_value;
 
     if (nargs != 3) {
         PyErr_Format(PyExc_TypeError, "shm_rename expected 3 arguments, got %zd", nargs);
@@ -90,7 +91,11 @@ _posixshmem_shm_rename(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     if (flags == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = _posixshmem_shm_rename_impl(module, path_from, path_to, flags);
+    _return_value = _posixshmem_shm_rename_impl(module, path_from, path_to, flags);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyLong_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -146,4 +151,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=c708ebf083cac0dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3b3a888f3ea27db0 input=a9049054013a1b77]*/

@@ -265,15 +265,12 @@ class SharedMemory:
         With the SHM_RENAME_NOREPLACE flag, an error will be returned
         if the new name exists.
         """
-        if !platform.hasattr("shm_rename"):
+        if not hasattr(_posixshmem, "shm_rename"):
             raise OSError("Unsupported operation on this platform")
 
-        if newname:
-            newname = "/" + newname if self._prepend_leading_slash else newname
-            self._fd = _posixshmem.shm_rename(self._name, newname, flags)
-            self._name = newname
-            return True
-        return False
+        newname = "/" + newname if self._prepend_leading_slash else newname
+        self._fd = _posixshmem.shm_rename(self._name, newname, flags)
+        self._name = newname
 
 
 _encoding = "utf8"

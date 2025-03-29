@@ -75,7 +75,7 @@ _posixshmem_shm_open_impl(PyObject *module, PyObject *path, int flags,
 
 #ifdef HAVE_SHM_RENAME
 /*[clinic input]
-_posixshmem.shm_rename
+_posixshmem.shm_rename -> int
     path_from: unicode
     path_to: unicode
     flags: int
@@ -92,16 +92,22 @@ if the destination alredady exists.
 
 [clinic start generated code]*/
 
-static PyObject *
+static int
 _posixshmem_shm_rename_impl(PyObject *module, PyObject *path_from,
                             PyObject *path_to, int flags)
-/*[clinic end generated code: output=a9101f606826ad30 input=0373bfc9c491e123]*/
+/*[clinic end generated code: output=d9a710c512166e18 input=5fb42d1ce077caec]*/
 {
     int rv;
     int async_err = 0;
-    const char *from = PyUnicode_AsUTF8AndSize(path_from, NULL);
-    const char *to = PyUnicode_AsUTF8AndSize(path_to, NULL);
+    Py_ssize_t from_size;
+    Py_ssize_t to_size;
+    const char *from = PyUnicode_AsUTF8AndSize(path_from, &from_size);
+    const char *to = PyUnicode_AsUTF8AndSize(path_to, &to_size);
     if (from == NULL || to == NULL) {
+        return -1;
+    }
+    if (strlen(from) != (size_t)from_size || strlen(to) != (size_t)to_size) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         return -1;
     }
     do {
