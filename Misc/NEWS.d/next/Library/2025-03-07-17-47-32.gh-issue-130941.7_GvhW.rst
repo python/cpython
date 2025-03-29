@@ -1,0 +1,2 @@
+Fix :class:`configparser.ConfigParser` parsing empty interpolation with
+``allow_no_value`` set to ``True``.
