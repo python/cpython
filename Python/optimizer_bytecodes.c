@@ -100,22 +100,18 @@ dummy_func(void) {
         res = sym_new_null(ctx);
     }
 
-    op(_GUARD_BOTH_INT, (left, right -- left, right)) {
-        if (sym_matches_type(left, &PyLong_Type)) {
-            if (sym_matches_type(right, &PyLong_Type)) {
-                REPLACE_OP(this_instr, _NOP, 0, 0);
-            }
-            else {
-                REPLACE_OP(this_instr, _GUARD_TOS_INT, 0, 0);
-            }
+    op(_GUARD_TOS_INT, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyLong_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        else {
-            if (sym_matches_type(right, &PyLong_Type)) {
-                REPLACE_OP(this_instr, _GUARD_NOS_INT, 0, 0);
-            }
+        sym_set_type(tos, &PyLong_Type);
+    }
+
+    op(_GUARD_NOS_INT, (nos, unused -- nos, unused)) {
+        if (sym_matches_type(nos, &PyLong_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(left, &PyLong_Type);
-        sym_set_type(right, &PyLong_Type);
+        sym_set_type(nos, &PyLong_Type);
     }
 
     op(_GUARD_TYPE_VERSION, (type_version/2, owner -- owner)) {
@@ -141,32 +137,32 @@ dummy_func(void) {
         }
     }
 
-    op(_GUARD_BOTH_FLOAT, (left, right -- left, right)) {
-        if (sym_matches_type(left, &PyFloat_Type)) {
-            if (sym_matches_type(right, &PyFloat_Type)) {
-                REPLACE_OP(this_instr, _NOP, 0, 0);
-            }
-            else {
-                REPLACE_OP(this_instr, _GUARD_TOS_FLOAT, 0, 0);
-            }
+    op(_GUARD_TOS_FLOAT, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyFloat_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        else {
-            if (sym_matches_type(right, &PyFloat_Type)) {
-                REPLACE_OP(this_instr, _GUARD_NOS_FLOAT, 0, 0);
-            }
-        }
-
-        sym_set_type(left, &PyFloat_Type);
-        sym_set_type(right, &PyFloat_Type);
+        sym_set_type(tos, &PyFloat_Type);
     }
 
-    op(_GUARD_BOTH_UNICODE, (left, right -- left, right)) {
-        if (sym_matches_type(left, &PyUnicode_Type) &&
-            sym_matches_type(right, &PyUnicode_Type)) {
-            REPLACE_OP(this_instr, _NOP, 0 ,0);
+    op(_GUARD_NOS_FLOAT, (nos, unused -- nos, unused)) {
+        if (sym_matches_type(nos, &PyFloat_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
         }
-        sym_set_type(left, &PyUnicode_Type);
-        sym_set_type(right, &PyUnicode_Type);
+        sym_set_type(nos, &PyFloat_Type);
+    }
+
+    op(_GUARD_TOS_UNICODE, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyUnicode_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(tos, &PyUnicode_Type);
+    }
+
+    op(_GUARD_NOS_UNICODE, (nos, unused -- nos, unused)) {
+        if (sym_matches_type(nos, &PyUnicode_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(nos, &PyUnicode_Type);
     }
 
     op(_BINARY_OP, (left, right -- res)) {
