@@ -161,13 +161,8 @@ def make(filename, outfile):
                 if not msgid:
                     # Filter out POT-Creation-Date
                     # See issue #131852
-                    import re
-                    msgstr = re.sub(
-                        r"^POT-Creation-Date:.*(?:\n|$)",
-                        "",
-                        msgstr.decode(encoding),
-                        flags=re.MULTILINE,
-                    ).encode(encoding)
+                    msgstr = ''.join(line for line in msgstr.decode(encoding).splitlines(True)
+                                     if 'POT-Creation-Date' not in line).encode(encoding)
 
                     # See whether there is an encoding declaration
                     p = HeaderParser()
