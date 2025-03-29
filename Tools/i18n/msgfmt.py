@@ -90,7 +90,7 @@ def generate():
     #  Because unsuccessful searches are unlikely this is a good value.
     #  Formulas: [Knuth, The Art of Computer Programming, Volume 3,
     #                 766 Sorting and Searching, 1973, Addison Wesley]
-    hash_tab_size = next_prime((len(sorted(MESSAGES.keys())) * 4) // 3)
+    hash_tab_size = next_prime((len(MESSAGES) * 4) // 3)
     if hash_tab_size <= 2:
         hash_tab_size = 3
     hash_table = array.array("I", [0] * hash_tab_size)
