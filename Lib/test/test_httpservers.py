@@ -870,6 +870,16 @@ class CGIHTTPServerTestCase(BaseTestCase):
             (res.read(), res.getheader('Content-type'), res.status),
             (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK))
 
+    def test_is_cgi(self):
+        res = self.request('/x:/cgi-bin/file1.py')
+        if sys.platform == 'win32':
+            # On Windows, drive letters will be ignored.
+            self.assertEqual(
+                (res.read(), res.getheader('Content-type'), res.status),
+                (b'Hello World' + self.linesep, 'text/html', HTTPStatus.OK))
+        else:
+            self.assertEqual(res.status, HTTPStatus.NOT_FOUND)
+
     def test_issue19435(self):
         res = self.request('///////////nocgi.py/../cgi-bin/nothere.sh')
         self.assertEqual(res.status, HTTPStatus.NOT_FOUND)
