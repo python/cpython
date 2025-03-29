@@ -104,7 +104,7 @@ class ResourceTracker(object):
         # This shouldn't happen (it might when called by a finalizer)
         # so we check for it anyway.
         if self._lock._recursion_count() > 1:
-            return self._reentrant_call_error()
+            raise self._reentrant_call_error()
         if self._fd is None:
             # not running
             return
