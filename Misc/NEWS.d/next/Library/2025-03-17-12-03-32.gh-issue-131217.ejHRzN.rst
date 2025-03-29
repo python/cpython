@@ -1,0 +1,2 @@
+Fix new repl to display output from multiple statements, separated by ';'.
+Patch by Sergey B Kirpichev.
