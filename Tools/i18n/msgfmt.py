@@ -158,14 +158,22 @@ def make(filename, outfile):
             msgctxt = b''
         elif l.startswith('msgid') and not l.startswith('msgid_plural'):
             if section == STR:
-                add(msgctxt, msgid, msgstr, fuzzy)
-                msgctxt = None
                 if not msgid:
+                    # Filter out POT-Creation-Date
+                    # See issue #131852
+                    msgstr = "\n".join(
+                        line
+                        for line in msgstr.decode(encoding).splitlines()
+                        if not line.startswith("POT-Creation-Date:")
+                    ).encode(encoding)
+
                     # See whether there is an encoding declaration
                     p = HeaderParser()
                     charset = p.parsestr(msgstr.decode(encoding)).get_content_charset()
                     if charset:
                         encoding = charset
+                add(msgctxt, msgid, msgstr, fuzzy)
+                msgctxt = None
             section = ID
             l = l[5:]
             msgid = msgstr = b''
