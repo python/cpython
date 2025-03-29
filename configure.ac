@@ -164,7 +164,7 @@ AC_ARG_WITH([build-python],
     dnl Build Python interpreter is used for regeneration and freezing.
     ac_cv_prog_PYTHON_FOR_REGEN=$with_build_python
     PYTHON_FOR_FREEZE="$with_build_python"
-    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH) _PYTHON_SYSCONFIGDATA_PATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`) '$with_build_python
+    PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(srcdir)/Lib _PYTHON_SYSCONFIGDATA_NAME=$(SYSCONFIGDATA_NAME) _PYTHON_SYSCONFIGDATA_PATH=$(abs_builddir)/$(PYBUILDDIR) '$with_build_python
     AC_MSG_RESULT([$with_build_python])
   ], [
     AS_VAR_IF([cross_compiling], [yes],
@@ -175,6 +175,11 @@ AC_ARG_WITH([build-python],
   ]
 )
 AC_SUBST([PYTHON_FOR_BUILD])
+
+SYSCONFIGDATA_NAME='_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH)'
+SYSCONFIGVARS_JSON_NAME='_sysconfigvars_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).json'
+AC_SUBST([SYSCONFIGDATA_NAME])
+AC_SUBST([SYSCONFIGVARS_JSON_NAME])
 
 AC_MSG_CHECKING([for Python interpreter freezing])
 AC_MSG_RESULT([$PYTHON_FOR_FREEZE])

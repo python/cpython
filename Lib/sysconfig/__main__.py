@@ -1,13 +1,12 @@
 import json
 import os
 import sys
-import types
 from sysconfig import (
     _ALWAYS_STR,
+    _PROJECT_BASE,
     _PYTHON_BUILD,
     _get_sysconfigdata_name,
     get_config_h_filename,
-    get_config_var,
     get_config_vars,
     get_default_scheme,
     get_makefile_filename,
@@ -161,10 +160,8 @@ def _print_config_dict(d, stream):
 
 
 def _get_pybuilddir():
-    pybuilddir = f'build/lib.{get_platform()}-{get_python_version()}'
-    if get_config_var('Py_DEBUG') == '1':
-        pybuilddir += '-pydebug'
-    return pybuilddir
+    with open(os.path.join(_PROJECT_BASE, 'pybuilddir.txt')) as f:
+        return f.read()
 
 
 def _get_json_data_name():
@@ -203,23 +200,6 @@ def _generate_posix_vars():
 
     name = _get_sysconfigdata_name()
 
-    # There's a chicken-and-egg situation on OS X with regards to the
-    # _sysconfigdata module after the changes introduced by #15298:
-    # get_config_vars() is called by get_platform() as part of the
-    # `make pybuilddir.txt` target -- which is a precursor to the
-    # _sysconfigdata.py module being constructed.  Unfortunately,
-    # get_config_vars() eventually calls _init_posix(), which attempts
-    # to import _sysconfigdata, which we won't have built yet.  In order
-    # for _init_posix() to work, if we're on Darwin, just mock up the
-    # _sysconfigdata module manually and populate it with the build vars.
-    # This is more than sufficient for ensuring the subsequent call to
-    # get_platform() succeeds.
-    # GH-127178: Since we started generating a .json file, we also need this to
-    #            be able to run sysconfig.get_config_vars().
-    module = types.ModuleType(name)
-    module.build_time_vars = vars
-    sys.modules[name] = module
-
     pybuilddir = _get_pybuilddir()
     os.makedirs(pybuilddir, exist_ok=True)
     destfile = os.path.join(pybuilddir, name + '.py')
@@ -242,10 +222,6 @@ def _generate_posix_vars():
         json.dump(install_vars, f, indent=2)
 
     print(f'Written {jsonfile}')
-
-    # Create file used for sys.path fixup -- see Modules/getpath.c
-    with open('pybuilddir.txt', 'w', encoding='utf8') as f:
-        f.write(pybuilddir)
 
 
 def _print_dict(title, data):

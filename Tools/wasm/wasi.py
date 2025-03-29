@@ -212,12 +212,8 @@ def configure_wasi_python(context, working_dir):
     python_build_dir = BUILD_DIR / "build"
     lib_dirs = list(python_build_dir.glob("lib.*"))
     assert len(lib_dirs) == 1, f"Expected a single lib.* directory in {python_build_dir}"
-    lib_dir = os.fsdecode(lib_dirs[0])
-    pydebug = lib_dir.endswith("-pydebug")
-    python_version = lib_dir.removesuffix("-pydebug").rpartition("-")[-1]
-    sysconfig_data = f"{wasi_build_dir}/build/lib.wasi-wasm32-{python_version}"
-    if pydebug:
-        sysconfig_data += "-pydebug"
+    _, python_version, abiflags = os.fsdecode(lib_dirs[0]).rsplit('-', maxsplit=2)
+    sysconfig_data = f"{wasi_build_dir}/build/lib.wasi-wasm32-wasi-{python_version}-{abiflags}"
 
     # Use PYTHONPATH to include sysconfig data which must be anchored to the
     # WASI guest's `/` directory.
@@ -244,8 +240,13 @@ def configure_wasi_python(context, working_dir):
                     f"--host={context.host_triple}",
                     f"--build={build_platform()}",
                     f"--with-build-python={build_python}"]
-    if pydebug:
-        configure.append("--with-pydebug")
+    for flag in abiflags:
+        if flag == 'd':
+            configure.append("--with-pydebug")
+        elif flag == 't':
+            configure.append("--disable-gil")
+        else:
+            raise ValueError(f"Unknown ABI flag: {flag}")
     if context.args:
         configure.extend(context.args)
     call(configure,
