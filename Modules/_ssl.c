@@ -451,8 +451,9 @@ PyDoc_STRVAR(SSLEOFError_doc,
 "SSL/TLS connection terminated abruptly.");
 
 static PyObject *
-SSLError_str(PyOSErrorObject *self)
+SSLError_str(PyObject *op)
 {
+    PyOSErrorObject *self = (PyOSErrorObject*)op;
     if (self->strerror != NULL && PyUnicode_Check(self->strerror)) {
         return Py_NewRef(self->strerror);
     }
@@ -4425,6 +4426,12 @@ _ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath)
 {
     FILE *f;
     DH *dh;
+
+#if defined(MS_WINDOWS) && defined(_DEBUG)
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "load_dh_params: unavailable on Windows debug build");
+    return NULL;
+#endif
 
     f = Py_fopen(filepath, "rb");
     if (f == NULL)

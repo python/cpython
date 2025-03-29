@@ -224,9 +224,7 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-            sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
-        {
+        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
             assert(PyLong_CheckExact(sym_get_const(ctx, left)));
             assert(PyLong_CheckExact(sym_get_const(ctx, right)));
             PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(ctx, left),
@@ -245,9 +243,7 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-            sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
-        {
+        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
             assert(PyLong_CheckExact(sym_get_const(ctx, left)));
             assert(PyLong_CheckExact(sym_get_const(ctx, right)));
             PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(ctx, left),
@@ -266,9 +262,7 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-            sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
-        {
+        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
             assert(PyLong_CheckExact(sym_get_const(ctx, left)));
             assert(PyLong_CheckExact(sym_get_const(ctx, right)));
             PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(ctx, left),
@@ -287,9 +281,7 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-            sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
-        {
+        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
             assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
             assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
             PyObject *temp = PyFloat_FromDouble(
@@ -309,9 +301,7 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-            sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
-        {
+        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
             assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
             assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
             PyObject *temp = PyFloat_FromDouble(
@@ -331,9 +321,7 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-            sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
-        {
+        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
             assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
             assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
             PyObject *temp = PyFloat_FromDouble(
@@ -353,8 +341,9 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-            sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
+        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+            assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
+            assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
             PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
             if (temp == NULL) {
                 goto error;
@@ -369,8 +358,9 @@ dummy_func(void) {
 
     op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- )) {
         JitOptSymbol *res;
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-            sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
+        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+            assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
+            assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
             PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
             if (temp == NULL) {
                 goto error;
@@ -446,7 +436,24 @@ dummy_func(void) {
     }
 
     op(_COMPARE_OP_INT, (left, right -- res)) {
-        res = sym_new_type(ctx, &PyBool_Type);
+        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+            assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+            assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+            PyObject *tmp = PyObject_RichCompare(sym_get_const(ctx, left),
+                                                 sym_get_const(ctx, right),
+                                                 oparg >> 5);
+            if (tmp == NULL) {
+                goto error;
+            }
+            assert(PyBool_Check(tmp));
+            assert(_Py_IsImmortal(tmp));
+            REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
+            res = sym_new_const(ctx, tmp);
+            Py_DECREF(tmp);
+        }
+        else {
+            res = sym_new_type(ctx, &PyBool_Type);
+        }
     }
 
     op(_COMPARE_OP_FLOAT, (left, right -- res)) {
@@ -546,10 +553,14 @@ dummy_func(void) {
         }
     }
 
-    op (_PUSH_NULL_CONDITIONAL, ( -- null if (oparg & 1))) {
-        int opcode = (oparg & 1) ? _PUSH_NULL : _NOP;
-        REPLACE_OP(this_instr, opcode, 0, 0);
-        null = sym_new_null(ctx);
+    op (_PUSH_NULL_CONDITIONAL, ( -- null[oparg & 1])) {
+        if (oparg & 1) {
+            REPLACE_OP(this_instr, _PUSH_NULL, 0, 0);
+            null[0] = sym_new_null(ctx);
+        }
+        else {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
     }
 
     op(_LOAD_ATTR, (owner -- attr, self_or_null[oparg&1])) {
@@ -695,6 +706,8 @@ dummy_func(void) {
     }
 
     op(_RETURN_VALUE, (retval -- res)) {
+        JitOptSymbol *temp = retval;
+        DEAD(retval);
         SAVE_STACK();
         ctx->frame->stack_pointer = stack_pointer;
         frame_pop(ctx);
@@ -714,7 +727,7 @@ dummy_func(void) {
             ctx->done = true;
         }
         RELOAD_STACK();
-        res = retval;
+        res = temp;
     }
 
     op(_RETURN_GENERATOR, ( -- res)) {
@@ -765,7 +778,7 @@ dummy_func(void) {
         Py_UNREACHABLE();
     }
 
-    op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- unused if (0))) {
+    op(_PUSH_FRAME, (new_frame: _Py_UOpsAbstractFrame * -- )) {
         SYNC_SP();
         ctx->frame->stack_pointer = stack_pointer;
         ctx->frame = new_frame;
