@@ -161,10 +161,12 @@ def make(filename, outfile):
                 if not msgid:
                     # Filter out POT-Creation-Date
                     # See issue #131852
-                    msgstr = "\n".join(
-                        line
-                        for line in msgstr.decode(encoding).splitlines()
-                        if not line.startswith("POT-Creation-Date:")
+                    import re
+                    msgstr = re.sub(
+                        r"^POT-Creation-Date:.*(?:\n|$)",
+                        "",
+                        msgstr.decode(encoding),
+                        flags=re.MULTILINE,
                     ).encode(encoding)
 
                     # See whether there is an encoding declaration
