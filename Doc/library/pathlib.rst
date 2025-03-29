@@ -877,6 +877,7 @@ conforming to :rfc:`8089`.
       resolve to a local address, then on Windows a UNC path is returned (as
       before), and on other platforms a :exc:`ValueError` is raised.
 
+
 .. method:: Path.as_uri()
 
    Represent the path as a 'file' URI.  :exc:`ValueError` is raised if
