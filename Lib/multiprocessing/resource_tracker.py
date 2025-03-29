@@ -167,8 +167,12 @@ class ResourceTracker(object):
             fds_to_pass.append(r)
             # process will out live us, so no need to wait on pid
             exe = spawn.get_executable()
-            args = [exe] + util._args_from_interpreter_flags()
-            args += ['-c', cmd % r]
+            args = [
+                exe,
+                *util._args_from_interpreter_flags(),
+                '-c',
+                f'from multiprocessing.resource_tracker import main;main({r})',
+            ]
             # bpo-33613: Register a signal mask that will block the signals.
             # This signal mask will be inherited by the child that is going
             # to be spawned and will protect the child from a race condition
