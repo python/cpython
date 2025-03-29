@@ -506,6 +506,11 @@ def _init_config_vars():
     base_prefix = _BASE_PREFIX
     base_exec_prefix = _BASE_EXEC_PREFIX
 
+    with warnings.catch_warnings():
+        # ignore DeprecationWarning on sys.abiflags change on Windows
+        warnings.simplefilter('ignore', DeprecationWarning)
+        abiflags = getattr(sys, 'abiflags', '')
+
     if os.name == 'posix':
         _init_posix(_CONFIG_VARS)
         # If we are cross-compiling, load the prefixes from the Makefile instead.
@@ -515,10 +520,6 @@ def _init_config_vars():
             base_prefix = _CONFIG_VARS['host_prefix']
             base_exec_prefix = _CONFIG_VARS['host_exec_prefix']
             abiflags = _CONFIG_VARS['ABIFLAGS']
-        else:
-            abiflags = sys.abiflags
-    else:
-        abiflags = ''  # sys.abiflags is absent on Windows
 
     # Normalized versions of prefix and exec_prefix are handy to have;
     # in fact, these are the standard versions used most places in the

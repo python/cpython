@@ -719,9 +719,6 @@ class SysModuleTest(unittest.TestCase):
         self.assertIn(sys.float_repr_style, ('short', 'legacy'))
         if not sys.platform.startswith('win'):
             self.assertIsInstance(sys.abiflags, str)
-
-            # test hasattr(sys, 'abiflags') == (os.name != 'nt)
-            self.assertEqual(os.name, 'posix')
         else:
             absent = object()
             with self.assertWarnsRegex(
@@ -745,9 +742,6 @@ class SysModuleTest(unittest.TestCase):
                     r'sys\.abiflags will be set\b.*\bon all platforms',
                 ):
                     _ = sys.abiflags
-
-            # test hasattr(sys, 'abiflags') == (os.name != 'nt)
-            self.assertEqual(os.name, 'nt')
 
     def test_thread_info(self):
         info = sys.thread_info
