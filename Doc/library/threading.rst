@@ -50,7 +50,8 @@ level :mod:`_thread` module.
 Introduction
 ------------
 
-The :mod:`threading` module provides a way to run multiple threads (smaller
+The :mod:`threading` module provides a way to run multiple `threads
+<https://en.wikipedia.org/wiki/Thread_(computing)>`_ (smaller
 units of a process) concurrently within a single process. It allows for the
 creation and management of threads, making it possible to execute tasks in
 parallel, sharing memory space. Threads are particularly useful when tasks are
