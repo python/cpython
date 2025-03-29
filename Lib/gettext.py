@@ -46,6 +46,7 @@ internationalized, to the local language and cultural habits.
 import operator
 import os
 import sys
+import locale
 
 
 __all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
@@ -491,11 +492,16 @@ def find(domain, localedir=None, languages=None, all=False):
         localedir = _default_localedir
     if languages is None:
         languages = []
-        for envar in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
-            val = os.environ.get(envar)
-            if val:
-                languages = val.split(':')
-                break
+        if os.environ.get('LANGUAGE'):
+            languages = os.environ.get('LANGUAGE').split(',')
+        elif locale.getlocale() != (None, None):
+            languages.append(".".join(filter(None, locale.getlocale())))
+        else:
+            for envar in ('LC_ALL', 'LC_MESSAGES', 'LANG'):
+                val = os.environ.get(envar)
+                if val:
+                    languages = val.split(':')
+                    break
         if 'C' not in languages:
             languages.append('C')
     # now normalize and expand the languages
