@@ -614,11 +614,26 @@ Functions
    except for recognizing UTC and GMT which are always known (and are considered to
    be non-daylight savings timezones).
 
+   The ``%F`` directive is exclusive to :func:`!time.strptime` and allows for
+   optional microseconds as a decimal.::
+
+      >>> import time
+      >>> time.strptime("09:10:13", "%H:%M:%S%F")
+      time.struct_time(tm_year=1900, tm_mon=1, tm_mday=1, tm_hour=9, tm_min=10,
+                       tm_sec=13, tm_wday=0, tm_yday=1, tm_isdst=-1)
+      >>> time.strptime("09:10:13.22", "%H:%M:%S%F")
+      time.struct_time(tm_year=1900, tm_mon=1, tm_mday=1, tm_hour=9, tm_min=10,
+                       tm_sec=13, tm_wday=0, tm_yday=1, tm_isdst=-1)
+
+
    Only the directives specified in the documentation are supported.  Because
    ``strftime()`` is implemented per platform it can sometimes offer more
    directives than those listed.  But ``strptime()`` is independent of any platform
    and thus does not necessarily support all directives available that are not
    documented as supported.
+
+   .. versionchanged::
+      Added the ``%F`` directive.
 
 
 .. class:: struct_time
