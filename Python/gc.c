@@ -2407,20 +2407,20 @@ void
 PyUnstable_GC_VisitObjects(gcvisitobjects_t callback, void *arg)
 {
     GCState *gcstate = get_gc_state();
-    int origenstate = gcstate->enabled;
+    int original_state = gcstate->enabled;
     gcstate->enabled = 0;
-    if (visit_generation(callback, arg, &gcstate->young)) {
+    if (visit_generation(callback, arg, &gcstate->young) < 0) {
         goto done;
     }
-    if (visit_generation(callback, arg, &gcstate->old[0])) {
+    if (visit_generation(callback, arg, &gcstate->old[0]) < 0) {
         goto done;
     }
-    if (visit_generation(callback, arg, &gcstate->old[1])) {
+    if (visit_generation(callback, arg, &gcstate->old[1]) < 0) {
         goto done;
     }
     visit_generation(callback, arg, &gcstate->permanent_generation);
 done:
-    gcstate->enabled = origenstate;
+    gcstate->enabled = original_state;
 }
 
 #endif  // Py_GIL_DISABLED
