@@ -2455,6 +2455,11 @@ code has been executed. The caller is responsible for making sure that
 the file still exists whenever the remote process tries to read it and that
 it hasn't been overwritten.
 
+The remote process must be running a CPython interpreter of the same major
+and minor version as the local process. If either the local or remote
+interpreter is pre-release (alpha, beta, or release candidate) then the
+local and remote interpreters must be the same exact version.
+
 Args:
      pid (int): The process ID of the target Python process.
      script (str|bytes): The path to a file containing
