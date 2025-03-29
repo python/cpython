@@ -281,6 +281,19 @@ class LineCacheTests(unittest.TestCase):
         self.assertEqual(linecache.getlines(filename, module_globals),
                          ['source for x.y.z\n'])
 
+    def test_frozen(self):
+        filename = '<frozen fakemodule>'
+        module_globals = {'__file__': FILENAME}
+        empty = linecache.getlines(filename)
+        self.assertEqual(empty, [])
+        lines = linecache.getlines(filename, module_globals)
+        self.assertGreater(len(lines), 0)
+        lines_cached = linecache.getlines(filename)
+        self.assertEqual(lines, lines_cached)
+        linecache.clearcache()
+        empty = linecache.getlines(filename)
+        self.assertEqual(empty, [])
+
     def test_invalid_names(self):
         for name, desc in [
             ('\x00', 'NUL bytes filename'),
