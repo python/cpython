@@ -877,6 +877,13 @@ def check_bolt_optimized():
     return '--enable-bolt' in config_args
 
 
+with warnings.catch_warnings():
+    # ignore DeprecationWarning on sys.abiflags change on Windows
+    warnings.simplefilter('ignore', DeprecationWarning)
+    # Equal to `not sys.platform.startswith('win')` prior to 3.16
+    HAS_SYS_ABIFLAGS = hasattr(sys, 'abiflags')
+
+
 Py_GIL_DISABLED = bool(sysconfig.get_config_var('Py_GIL_DISABLED'))
 
 def requires_gil_enabled(msg="needs the GIL enabled"):

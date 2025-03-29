@@ -333,7 +333,7 @@ def get_makefile_filename():
     if _PYTHON_BUILD:
         return os.path.join(_PROJECT_BASE, "Makefile")
 
-    if hasattr(sys, 'abiflags'):
+    if os.name == 'nt':
         config_dir_name = f'config-{_PY_VERSION_SHORT}{sys.abiflags}'
     else:
         config_dir_name = 'config'
@@ -496,6 +496,8 @@ def get_path(name, scheme=get_default_scheme(), vars=None, expand=True):
 
 
 def _init_config_vars():
+    import warnings
+
     global _CONFIG_VARS
     _CONFIG_VARS = {}
 
@@ -504,10 +506,10 @@ def _init_config_vars():
     base_prefix = _BASE_PREFIX
     base_exec_prefix = _BASE_EXEC_PREFIX
 
-    try:
-        abiflags = sys.abiflags
-    except AttributeError:
-        abiflags = ''
+    with warnings.catch_warnings():
+        # ignore DeprecationWarning on sys.abiflags change on Windows
+        warnings.simplefilter('ignore', DeprecationWarning)
+        abiflags = getattr(sys, 'abiflags', '')
 
     if os.name == 'posix':
         _init_posix(_CONFIG_VARS)

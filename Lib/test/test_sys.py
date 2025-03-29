@@ -719,6 +719,29 @@ class SysModuleTest(unittest.TestCase):
         self.assertIn(sys.float_repr_style, ('short', 'legacy'))
         if not sys.platform.startswith('win'):
             self.assertIsInstance(sys.abiflags, str)
+        else:
+            absent = object()
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                r'sys\.abiflags will be set\b.*\bon all platforms',
+            ):
+                self.assertIs(getattr(sys, 'abiflags', absent), absent)
+            with self.assertWarnsRegex(
+                DeprecationWarning,
+                r'sys\.abiflags will be set\b.*\bon all platforms',
+            ):
+                self.assertFalse(hasattr(sys, 'abiflags'))
+
+            # Emit a deprecated warning and also raise an AttributeError
+            with self.assertRaisesRegex(
+                AttributeError,
+                r"module 'sys' has no attribute 'abiflags'",
+            ):
+                with self.assertWarnsRegex(
+                    DeprecationWarning,
+                    r'sys\.abiflags will be set\b.*\bon all platforms',
+                ):
+                    _ = sys.abiflags
 
     def test_thread_info(self):
         info = sys.thread_info
@@ -1332,7 +1355,7 @@ class SysModuleTest(unittest.TestCase):
         sys._stats_dump()
 
     @test.support.cpython_only
-    @unittest.skipUnless(hasattr(sys, 'abiflags'), 'need sys.abiflags')
+    @unittest.skipUnless(support.HAS_SYS_ABIFLAGS, 'need sys.abiflags')
     def test_disable_gil_abi(self):
         self.assertEqual('t' in sys.abiflags, support.Py_GIL_DISABLED)
 
