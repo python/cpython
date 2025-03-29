@@ -2283,34 +2283,36 @@ dummy_func(
             assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
             PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
             DEOPT_IF(dict == NULL);
+            PyDictKeysObject *dk = FT_ATOMIC_LOAD_PTR(dict->ma_keys);
             assert(PyDict_CheckExact((PyObject *)dict));
+#ifdef Py_GIL_DISABLED
+            DEOPT_IF(!_Py_IsOwnedByCurrentThread((PyObject *)dict) && !_PyObject_GC_IS_SHARED(dict));
+#endif
             PyObject *attr_o;
-            if (!LOCK_OBJECT(dict)) {
+            if (hint >= (size_t)FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_nentries)) {
                 DEOPT_IF(true);
             }
 
-            if (hint >= (size_t)dict->ma_keys->dk_nentries) {
-                UNLOCK_OBJECT(dict);
-                DEOPT_IF(true);
-            }
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
-                UNLOCK_OBJECT(dict);
+            if (dk->dk_kind != DICT_KEYS_UNICODE) {
                 DEOPT_IF(true);
             }
-            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
-            if (ep->me_key != name) {
-                UNLOCK_OBJECT(dict);
+            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dk) + hint;
+            if (FT_ATOMIC_LOAD_PTR_RELAXED(ep->me_key) != name) {
                 DEOPT_IF(true);
             }
-            attr_o = ep->me_value;
+            attr_o = FT_ATOMIC_LOAD_PTR(ep->me_value);
             if (attr_o == NULL) {
-                UNLOCK_OBJECT(dict);
                 DEOPT_IF(true);
             }
             STAT_INC(LOAD_ATTR, hit);
+#ifdef Py_GIL_DISABLED
+            if (!_Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr)) {
+                DEOPT_IF(true);
+            }
+#else
             attr = PyStackRef_FromPyObjectNew(attr_o);
-            UNLOCK_OBJECT(dict);
+#endif
             PyStackRef_CLOSE(owner);
         }
 
