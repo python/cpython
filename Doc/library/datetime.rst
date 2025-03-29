@@ -734,6 +734,15 @@ Instance methods:
    ``date.fromordinal(d.toordinal()) == d``.
 
 
+.. method:: date.timestamp()
+
+   Return POSIX timestamp corresponding to the :class:`.date`
+   instance. The return value is a :class:`float` similar to that
+   returned by :func:`time.time`.
+
+   .. versionadded:: next
+
+
 .. method:: date.weekday()
 
    Return the day of the week as an integer, where Monday is 0 and Sunday is 6.

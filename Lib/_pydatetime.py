@@ -1162,6 +1162,10 @@ class date:
         """
         return _ymd2ord(self._year, self._month, self._day)
 
+    def timestamp(self):
+        """Return POSIX timestamp as float (midnight UTC)."""
+        return float((self.toordinal() - _DATE_EPOCH) * 86400)
+
     def replace(self, year=None, month=None, day=None):
         """Return a new date with new values for the specified fields."""
         if year is None:
@@ -2532,6 +2536,7 @@ UTC = timezone.utc = timezone._create(timedelta(0))
 timezone.min = timezone._create(-timedelta(hours=23, minutes=59))
 timezone.max = timezone._create(timedelta(hours=23, minutes=59))
 _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+_DATE_EPOCH = date(1970, 1, 1).toordinal()  # used by date.timestamp()
 
 # Some time zone algebra.  For a datetime x, let
 #     x.n = x stripped of its timezone -- its naive time.
