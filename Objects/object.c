@@ -6,26 +6,28 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_context.h"       // _PyContextTokenMissing_Type
-#include "pycore_critical_section.h"     // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
-#include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
+#include "pycore_dict.h"          // _PyObject_MaterializeManagedDict()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
-#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_genobject.h"     // _PyAsyncGenAThrow_Type
+#include "pycore_hamt.h"          // _PyHamtItems_Type
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
-#include "pycore_hashtable.h"     // _Py_hashtable_new()
+#include "pycore_list.h"          // _PyList_DebugMallocStats()
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
-#include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
-#include "pycore_object_state.h"  // struct _reftracer_runtime_state
-#include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_optimizer.h"     // _PyUOpExecutor_Type, ...
+#include "pycore_object.h"        // export _Py_SwappedOp
+#include "pycore_optimizer.h"     // _PyUOpExecutor_Type
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
+#include "pycore_tuple.h"         // _PyTuple_DebugMallocStats()
 #include "pycore_typeobject.h"    // _PyBufferWrapper_Type
-#include "pycore_typevarobject.h" // _PyTypeAlias_Type, _Py_initialize_generic
+#include "pycore_typevarobject.h" // _PyTypeAlias_Type
 #include "pycore_unionobject.h"   // _PyUnion_Type
 
 
@@ -1678,14 +1680,20 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
                      Py_TYPE(name)->tp_name);
         return NULL;
     }
-    Py_INCREF(name);
 
     if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0)
-            goto done;
+            return NULL;
     }
 
-    descr = _PyType_LookupRef(tp, name);
+    Py_INCREF(name);
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+
+    _PyType_LookupStackRefAndVersion(tp, name, &cref.ref);
+    descr = PyStackRef_AsPyObjectBorrow(cref.ref);
 
     f = NULL;
     if (descr != NULL) {
@@ -1756,8 +1764,8 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
 
     if (descr != NULL) {
-        res = descr;
-        descr = NULL;
+        res = PyStackRef_AsPyObjectSteal(cref.ref);
+        cref.ref = PyStackRef_NULL;
         goto done;
     }
 
@@ -1769,7 +1777,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         _PyObject_SetAttributeErrorContext(obj, name);
     }
   done:
-    Py_XDECREF(descr);
+    _PyThreadState_PopCStackRef(tstate, &cref);
     Py_DECREF(name);
     return res;
 }
@@ -1803,7 +1811,13 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
 
     Py_INCREF(name);
     Py_INCREF(tp);
-    descr = _PyType_LookupRef(tp, name);
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+
+    _PyType_LookupStackRefAndVersion(tp, name, &cref.ref);
+    descr = PyStackRef_AsPyObjectBorrow(cref.ref);
 
     if (descr != NULL) {
         f = Py_TYPE(descr)->tp_descr_set;
@@ -1870,7 +1884,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         _PyObject_SetAttributeErrorContext(obj, name);
     }
   done:
-    Py_XDECREF(descr);
+    _PyThreadState_PopCStackRef(tstate, &cref);
     Py_DECREF(tp);
     Py_DECREF(name);
     return res;
@@ -2540,6 +2554,9 @@ _Py_SetImmortalUntracked(PyObject *op)
     op->ob_ref_local = _Py_IMMORTAL_REFCNT_LOCAL;
     op->ob_ref_shared = 0;
     _Py_atomic_or_uint8(&op->ob_gc_bits, _PyGC_BITS_DEFERRED);
+#elif SIZEOF_VOID_P > 4
+    op->ob_flags = _Py_IMMORTAL_FLAGS;
+    op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #else
     op->ob_refcnt = _Py_IMMORTAL_INITIAL_REFCNT;
 #endif
@@ -2984,7 +3001,7 @@ _Py_Dealloc(PyObject *op)
     destructor dealloc = type->tp_dealloc;
 #ifdef Py_DEBUG
     PyThreadState *tstate = _PyThreadState_GET();
-#ifndef Py_GIL_DISABLED
+#if !defined(Py_GIL_DISABLED) && !defined(Py_STACKREF_DEBUG)
     /* This assertion doesn't hold for the free-threading build, as
      * PyStackRef_CLOSE_SPECIALIZED is not implemented */
     assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
