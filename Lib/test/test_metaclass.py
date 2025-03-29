@@ -297,4 +297,5 @@ def load_tests(loader, tests, pattern):
 
 
 if __name__ == "__main__":
+    __name__ = "test.test_metaclass"
     unittest.main()
