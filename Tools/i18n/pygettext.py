@@ -743,7 +743,7 @@ def main():
     if options.excludefilename:
         try:
             with open(options.excludefilename) as fp:
-                options.toexclude = fp.readlines()
+                options.toexclude = fp.read().splitlines()
         except IOError:
             print(f"Can't read --exclude-file: {options.excludefilename}",
                   file=sys.stderr)

@@ -7,7 +7,7 @@ import unittest
 from textwrap import dedent
 from pathlib import Path
 
-from test.support.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_failure, assert_python_ok
 from test.test_tools import imports_under_tool, skip_if_missing, toolsdir
 from test.support.os_helper import temp_cwd, temp_dir
 
@@ -516,8 +516,19 @@ class Test_pygettext(unittest.TestCase):
                     parse_spec(spec)
                 self.assertEqual(str(cm.exception), message)
 
+    def test_missing_exclude_file(self):
+        """
+        Test that an error is raised if the exclude file (passed via
+        --exclude-file) does not exist.
+        """
+        _, _, stderr = assert_python_failure(self.script,
+                                             '--exclude-file=foo.txt')
+        self.assertIn("Can't read --exclude-file: foo.txt",
+                      stderr.decode('utf-8'))
+
 
 def extract_from_snapshots():
+    exclude_file = DATA_DIR / 'excluded.txt'
     snapshots = {
         'messages.py': (),
         'fileloc.py': ('--docstrings',),
@@ -526,6 +537,8 @@ def extract_from_snapshots():
         'custom_keywords.py': ('--keyword=foo', '--keyword=nfoo:1,2',
                                '--keyword=pfoo:1c,2',
                                '--keyword=npfoo:1c,2,3', '--keyword=_:1,2'),
+        # Test excluded msgids with an exclude file
+        'excluded.py': (f'--exclude-file={exclude_file}',),
     }
 
     for filename, args in snapshots.items():
