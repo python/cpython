@@ -6474,6 +6474,12 @@ long_long_meth(PyObject *self, PyObject *Py_UNUSED(ignored))
     return long_long(self);
 }
 
+static PyObject *
+long_long_getter(PyObject *self, void *Py_UNUSED(ignored))
+{
+    return long_long(self);
+}
+
 /*[clinic input]
 int.is_integer
 
@@ -6534,7 +6540,7 @@ static PyMethodDef long_methods[] = {
 
 static PyGetSetDef long_getset[] = {
     {"real",
-     (getter)long_long_meth, (setter)NULL,
+     long_long_getter, (setter)NULL,
      "the real part of a complex number",
      NULL},
     {"imag",
@@ -6542,7 +6548,7 @@ static PyGetSetDef long_getset[] = {
      "the imaginary part of a complex number",
      NULL},
     {"numerator",
-     (getter)long_long_meth, (setter)NULL,
+     long_long_getter, (setter)NULL,
      "the numerator of a rational number in lowest terms",
      NULL},
     {"denominator",

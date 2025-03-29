@@ -6,8 +6,8 @@
 #include "pycore_critical_section.h"
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // DICT_KEYS_UNICODE
-#include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
+#include "pycore_interpframe.h"   // FRAME_SPECIALS_SIZE
 #include "pycore_list.h"          // _PyListIterObject
 #include "pycore_long.h"          // _PyLong_IsNonNegativeCompact()
 #include "pycore_moduleobject.h"
@@ -1009,6 +1009,9 @@ specialize_dict_access_hint(
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(dict);
+#ifdef Py_GIL_DISABLED
+    _PyDict_EnsureSharedOnRead(dict);
+#endif
 
     // We found an instance with a __dict__.
     if (_PyDict_HasSplitTable(dict)) {
