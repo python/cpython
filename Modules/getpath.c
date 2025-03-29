@@ -690,7 +690,6 @@ env_to_dict(PyObject *dict, const char *key, int and_clear)
     // Quick convert to wchar_t, since we know key is ASCII
     wchar_t *wp = wkey;
     for (const char *p = &key[4]; *p; ++p) {
-        assert(*p < 128);
         *wp++ = *p;
     }
     *wp = L'\0';
