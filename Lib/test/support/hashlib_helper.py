@@ -10,7 +10,7 @@ except ImportError:
 
 try:
     import _hmac
-except:
+except ImportError:
     _hmac = None
 
 
