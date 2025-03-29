@@ -75,7 +75,6 @@ import builtins
 import _sitebuiltins
 import io
 import stat
-import warnings
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -319,15 +318,6 @@ def _getuserbase():
 # Same to sysconfig.get_path('purelib', os.name+'_user')
 def _get_path(userbase):
     version = sys.version_info
-    with warnings.catch_warnings():
-        # ignore DeprecationWarning on sys.abiflags change on Windows
-        warnings.simplefilter('ignore', DeprecationWarning)
-        abiflags = getattr(sys, 'abiflags', '')
-    if 't' in abiflags:
-        abi_thread = 't'
-    else:
-        abi_thread = ''
-
     implementation = _get_implementation()
     implementation_lower = implementation.lower()
     if os.name == 'nt':
@@ -337,6 +327,7 @@ def _get_path(userbase):
     if sys.platform == 'darwin' and sys._framework:
         return f'{userbase}/lib/{implementation_lower}/site-packages'
 
+    abi_thread = 't' if 't' in sys.abiflags else ''
     return f'{userbase}/lib/python{version[0]}.{version[1]}{abi_thread}/site-packages'
 
 
@@ -405,15 +396,8 @@ def getsitepackages(prefixes=None):
 
         implementation = _get_implementation().lower()
         ver = sys.version_info
-        with warnings.catch_warnings():
-            # ignore DeprecationWarning on sys.abiflags change on Windows
-            warnings.simplefilter('ignore', DeprecationWarning)
-            abiflags = getattr(sys, 'abiflags', '')
-        if 't' in abiflags:
-            abi_thread = 't'
-        else:
-            abi_thread = ''
-        if os.sep == '/':
+        if os.name != 'nt':
+            abi_thread = 't' if 't' in sys.abiflags else ''
             libdirs = [sys.platlibdir]
             if sys.platlibdir != "lib":
                 libdirs.append("lib")
