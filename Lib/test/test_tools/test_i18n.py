@@ -672,7 +672,7 @@ class TestPOParser(unittest.TestCase):
         pos = (
             ('''
 msgid "foo"
-msgstr[0] "bar"       
+msgstr[0] "bar"
 ''', 'Missing msgid_plural section'),
             ('''
 msgid "foo"
