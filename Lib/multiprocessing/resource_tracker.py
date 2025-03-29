@@ -213,10 +213,6 @@ class ResourceTracker(object):
                 try:
                     self._write(to_send)
                 except OSError:
-                    dead = True
-                else:
-                    dead = False
-                if dead:
                     self._teardown_dead_process()
                     self._launch()
 
