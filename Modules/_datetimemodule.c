@@ -5901,6 +5901,7 @@ datetime_fromisoformat(PyObject *cls, PyObject *dtstr)
     const Py_ssize_t separator_location = _find_isoformat_datetime_separator(
             dt_ptr, len);
 
+
     const char *p = dt_ptr;
 
     int year = 0, month = 0, day = 0;
