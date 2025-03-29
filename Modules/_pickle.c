@@ -1879,6 +1879,10 @@ _checkmodule(PyObject *module_name, PyObject *module,
             _PyUnicode_EqualToASCIIString(module_name, "__main__")) {
         return -1;
     }
+    if (PyUnicode_Check(module_name) &&
+            _PyUnicode_EqualToASCIIString(module_name, "__mp_main__")) {
+        return -1;
+    }
 
     PyObject *candidate = getattribute(module, dotted_path, 0);
     if (candidate == NULL) {
