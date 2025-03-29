@@ -1533,6 +1533,10 @@ class Pathname_Tests(unittest.TestCase):
         fn = urllib.request.url2pathname
         self.assertEqual(fn('/foo/bar'), '/foo/bar')
         self.assertRaises(urllib.error.URLError, fn, '//foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//localhost:/foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//:80/foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//:/foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//c:80/foo/bar')
         self.assertEqual(fn('///foo/bar'), '/foo/bar')
         self.assertEqual(fn('////foo/bar'), '//foo/bar')
         self.assertEqual(fn('//localhost/foo/bar'), '/foo/bar')
