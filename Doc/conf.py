@@ -234,6 +234,7 @@ nitpick_ignore += [
     ('c:data', 'PyExc_AssertionError'),
     ('c:data', 'PyExc_AttributeError'),
     ('c:data', 'PyExc_BaseException'),
+    ('c:data', 'PyExc_BaseExceptionGroup'),
     ('c:data', 'PyExc_BlockingIOError'),
     ('c:data', 'PyExc_BrokenPipeError'),
     ('c:data', 'PyExc_BufferError'),
@@ -287,6 +288,7 @@ nitpick_ignore += [
     # C API: Standard Python warning classes
     ('c:data', 'PyExc_BytesWarning'),
     ('c:data', 'PyExc_DeprecationWarning'),
+    ('c:data', 'PyExc_EncodingWarning'),
     ('c:data', 'PyExc_FutureWarning'),
     ('c:data', 'PyExc_ImportWarning'),
     ('c:data', 'PyExc_PendingDeprecationWarning'),
