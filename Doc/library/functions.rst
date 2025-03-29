@@ -1220,8 +1220,8 @@ are always available.  They are listed here in alphabetical order.
       Added the *strict* parameter.
 
 
-.. function:: max(iterable, *, key=None)
-              max(iterable, *, default, key=None)
+.. function:: max(iterable, /, *, key=None)
+              max(iterable, /, *, default, key=None)
               max(arg1, arg2, *args, key=None)
 
    Return the largest item in an iterable or the largest of two or more
