@@ -3,6 +3,10 @@ name: Reusable Windows MSI
 on:
   workflow_call:
     inputs:
+      os:
+        description: OS to run on
+        required: true
+        type: string
       arch:
         description: CPU architecture
         required: true
@@ -16,8 +20,9 @@ env:
 
 jobs:
   build:
+    if: inputs.arch != 'ARM64' || github.repository_owner == 'python'
     name: installer for ${{ inputs.arch }}
-    runs-on: windows-latest
+    runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     env:
       ARCH: ${{ inputs.arch }}
