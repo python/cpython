@@ -4136,6 +4136,12 @@ _ssl__SSLContext_load_dh_params(PySSLContext *self, PyObject *filepath)
     FILE *f;
     DH *dh;
 
+#if defined(MS_WINDOWS) && defined(_DEBUG)
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "load_dh_params: unavailable on Windows debug build");
+    return NULL;
+#endif
+
     f = _Py_fopen_obj(filepath, "rb");
     if (f == NULL)
         return NULL;
