@@ -197,7 +197,7 @@ class ResourceTracker(object):
             if self._lock._recursion_count() > 1:
                 # The code below is certainly not reentrant-safe, so bail out
                 if msg is None:
-                    return self._reentrant_call_error()
+                    raise self._reentrant_call_error()
                 return self._reentrant_messages.append(msg)
 
             if self._fd is not None:
