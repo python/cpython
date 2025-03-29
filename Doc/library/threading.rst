@@ -58,7 +58,7 @@ I/O-bound, such as file operations or making network requests,
 where much of the time is spent waiting for external resources.
 
 A typical use case for :mod:`threading` includes managing a pool of worker
-threads that can process multiple tasks concurrently.  This basic example of
+threads that can process multiple tasks concurrently.  Here's a basic example of
 creating and starting threads using :class:`~threading.Thread`::
 
    import threading
