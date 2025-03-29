@@ -1,5 +1,5 @@
-:mod:`queue` --- A synchronized queue class
-===========================================
+:mod:`!queue` --- A synchronized queue class
+============================================
 
 .. module:: queue
    :synopsis: A synchronized queue class.
@@ -187,10 +187,11 @@ fully processed by daemon consumer threads.
    processed (meaning that a :meth:`task_done` call was received for every item
    that had been :meth:`put` into the queue).
 
+   ``shutdown(immediate=True)`` calls :meth:`task_done` for each remaining item
+   in the queue.
+
    Raises a :exc:`ValueError` if called more times than there were items placed in
    the queue.
-
-   Raises :exc:`ShutDown` if the queue has been shut down immediately.
 
 
 .. method:: Queue.join()
@@ -201,8 +202,6 @@ fully processed by daemon consumer threads.
    The count goes down whenever a consumer thread calls :meth:`task_done` to
    indicate that the item was retrieved and all work on it is complete.  When the
    count of unfinished tasks drops to zero, :meth:`join` unblocks.
-
-   Raises :exc:`ShutDown` if the queue has been shut down immediately.
 
 
 Example of how to wait for enqueued tasks to be completed::
@@ -246,8 +245,10 @@ them down.
    queue is empty. Set *immediate* to true to make :meth:`~Queue.get` raise
    immediately instead.
 
-   All blocked callers of :meth:`~Queue.put` will be unblocked. If *immediate*
-   is true, also unblock callers of :meth:`~Queue.get` and :meth:`~Queue.join`.
+   All blocked callers of :meth:`~Queue.put` and :meth:`~Queue.get` will be
+   unblocked. If *immediate* is true, a task will be marked as done for each
+   remaining item in the queue, which may unblock callers of
+   :meth:`~Queue.join`.
 
    .. versionadded:: 3.13
 

@@ -35,9 +35,9 @@ extern PyObject* PyInit__codecs(void);
 extern PyObject* PyInit__weakref(void);
 /* XXX: These two should really be extracted to standalone extensions. */
 extern PyObject* PyInit_xxsubtype(void);
-extern PyObject* PyInit__xxsubinterpreters(void);
-extern PyObject* PyInit__xxinterpchannels(void);
-extern PyObject* PyInit__xxinterpqueues(void);
+extern PyObject* PyInit__interpreters(void);
+extern PyObject* PyInit__interpchannels(void);
+extern PyObject* PyInit__interpqueues(void);
 extern PyObject* PyInit__random(void);
 extern PyObject* PyInit_itertools(void);
 extern PyObject* PyInit__collections(void);
@@ -77,6 +77,7 @@ extern PyObject* PyInit__stat(void);
 extern PyObject* PyInit__opcode(void);
 extern PyObject* PyInit__contextvars(void);
 extern PyObject* PyInit__tokenize(void);
+extern PyObject* PyInit__suggestions(void);
 
 /* tools/freeze/makeconfig.py marker for additional "extern" */
 /* -- ADDMODULE MARKER 1 -- */
@@ -137,11 +138,12 @@ struct _inittab _PyImport_Inittab[] = {
     {"_datetime", PyInit__datetime},
     {"_functools", PyInit__functools},
     {"_json", PyInit__json},
+    {"_suggestions", PyInit__suggestions},
 
     {"xxsubtype", PyInit_xxsubtype},
-    {"_xxsubinterpreters", PyInit__xxsubinterpreters},
-    {"_xxinterpchannels", PyInit__xxinterpchannels},
-    {"_xxinterpqueues", PyInit__xxinterpqueues},
+    {"_interpreters", PyInit__interpreters},
+    {"_interpchannels", PyInit__interpchannels},
+    {"_interpqueues", PyInit__interpqueues},
 #ifdef _Py_HAVE_ZLIB
     {"zlib", PyInit_zlib},
 #endif
