@@ -65,7 +65,7 @@ def generate():
         hash_val = hashpjw(string)
         hash_cursor = hash_val % hash_tab_size
         inc = 1 + (hash_val % (hash_tab_size - 2))
-        while hash_table[hash_cursor] != 0:
+        while hash_table[hash_cursor]:
             hash_cursor += inc
             hash_cursor %= hash_tab_size
         hash_table[hash_cursor] = i + 1
@@ -106,10 +106,9 @@ def generate():
         offsets.append((len(ids), len(id), len(strs), len(MESSAGES[id])))
         ids += id + b'\0'
         strs += MESSAGES[id] + b'\0'
-    output = ''
-    ## FIX ME The header is 7 32-bit unsigned integers.  We use hash tables, so
-    # the keys start right after the index tables.
-    # translated string.
+
+    # The header is 7 32-bit unsigned integers, and we have an index table and
+    # hash table.
     keystart = 7*4+16*len(keys)+hash_tab_size*4
     # and the values start after the keys
     valuestart = keystart + len(ids)
@@ -301,7 +300,7 @@ def hashpjw(str_param):
         hval <<= 4
         hval += s
         g = hval & 0xF << 28
-        if g != 0:
+        if g:
             hval ^= g >> 24
             hval ^= g
     return hval
