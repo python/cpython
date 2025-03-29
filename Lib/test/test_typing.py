@@ -6,6 +6,7 @@ from collections import defaultdict
 from functools import lru_cache, wraps, reduce
 import gc
 import inspect
+import io
 import itertools
 import operator
 import os
@@ -4294,6 +4295,40 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIsSubclass(C, ReleasableBuffer)
         self.assertNotIsInstance(C(), ReleasableBuffer)
 
+    def test_io_reader_protocol_allowed(self):
+        @runtime_checkable
+        class CustomReader(io.Reader[bytes], Protocol):
+            def close(self): ...
+
+        class A: pass
+        class B:
+            def read(self, sz=-1):
+                return b""
+            def close(self):
+                pass
+
+        self.assertIsSubclass(B, CustomReader)
+        self.assertIsInstance(B(), CustomReader)
+        self.assertNotIsSubclass(A, CustomReader)
+        self.assertNotIsInstance(A(), CustomReader)
+
+    def test_io_writer_protocol_allowed(self):
+        @runtime_checkable
+        class CustomWriter(io.Writer[bytes], Protocol):
+            def close(self): ...
+
+        class A: pass
+        class B:
+            def write(self, b):
+                pass
+            def close(self):
+                pass
+
+        self.assertIsSubclass(B, CustomWriter)
+        self.assertIsInstance(B(), CustomWriter)
+        self.assertNotIsSubclass(A, CustomWriter)
+        self.assertNotIsInstance(A(), CustomWriter)
+
     def test_builtin_protocol_allowlist(self):
         with self.assertRaises(TypeError):
             class CustomProtocol(TestCase, Protocol):
@@ -7123,6 +7158,8 @@ class GetTypeHintTests(BaseTestCase):
 
         self.assertEqual(get_type_hints(C, format=annotationlib.Format.STRING),
                          {'x': 'undefined'})
+        # Make sure using an int as format also works:
+        self.assertEqual(get_type_hints(C, format=4), {'x': 'undefined'})
 
     def test_get_type_hints_format_function(self):
         def func(x: undefined) -> undefined: ...
@@ -8348,6 +8385,23 @@ class NamedTupleTests(BaseTestCase):
         with self.assertRaises(CustomException):
             class Foo(NamedTuple):
                 attr = very_annoying
+
+    def test_super_explicitly_disallowed(self):
+        expected_message = (
+            "uses of super() and __class__ are unsupported "
+            "in methods of NamedTuple subclasses"
+        )
+
+        with self.assertRaises(TypeError, msg=expected_message):
+            class ThisWontWork(NamedTuple):
+                def __repr__(self):
+                    return super().__repr__()
+
+        with self.assertRaises(TypeError, msg=expected_message):
+            class ThisWontWorkEither(NamedTuple):
+                @property
+                def name(self):
+                    return __class__.__name__
 
 
 class TypedDictTests(BaseTestCase):

@@ -1876,6 +1876,7 @@ _PROTO_ALLOWLIST = {
         'Reversible', 'Buffer',
     ],
     'contextlib': ['AbstractContextManager', 'AbstractAsyncContextManager'],
+    'io': ['Reader', 'Writer'],
     'os': ['PathLike'],
 }
 
@@ -2314,7 +2315,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
         hints = {}
         for base in reversed(obj.__mro__):
             ann = annotationlib.get_annotations(base, format=format)
-            if format is annotationlib.Format.STRING:
+            if format == annotationlib.Format.STRING:
                 hints.update(ann)
                 continue
             if globalns is None:
@@ -2338,7 +2339,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 value = _eval_type(value, base_globals, base_locals, base.__type_params__,
                                    format=format, owner=obj)
                 hints[name] = value
-        if include_extras or format is annotationlib.Format.STRING:
+        if include_extras or format == annotationlib.Format.STRING:
             return hints
         else:
             return {k: _strip_annotations(t) for k, t in hints.items()}
@@ -2352,7 +2353,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
         and not hasattr(obj, '__annotate__')
     ):
         raise TypeError(f"{obj!r} is not a module, class, or callable.")
-    if format is annotationlib.Format.STRING:
+    if format == annotationlib.Format.STRING:
         return hints
 
     if globalns is None:
@@ -2889,6 +2890,9 @@ _special = frozenset({'__module__', '__name__', '__annotations__', '__annotate__
 class NamedTupleMeta(type):
     def __new__(cls, typename, bases, ns):
         assert _NamedTuple in bases
+        if "__classcell__" in ns:
+            raise TypeError(
+                "uses of super() and __class__ are unsupported in methods of NamedTuple subclasses")
         for base in bases:
             if base is not _NamedTuple and base is not Generic:
                 raise TypeError(

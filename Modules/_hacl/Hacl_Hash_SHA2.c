@@ -25,6 +25,9 @@
 
 #include "internal/Hacl_Hash_SHA2.h"
 
+#include "Hacl_Streaming_Types.h"
+
+#include "internal/Hacl_Streaming_Types.h"
 
 
 void Hacl_Hash_SHA2_sha256_init(uint32_t *hash)
@@ -447,14 +450,67 @@ calling `free_256`.
 Hacl_Streaming_MD_state_32 *Hacl_Hash_SHA2_malloc_256(void)
 {
   uint8_t *buf = (uint8_t *)KRML_HOST_CALLOC(64U, sizeof (uint8_t));
-  uint32_t *block_state = (uint32_t *)KRML_HOST_CALLOC(8U, sizeof (uint32_t));
-  Hacl_Streaming_MD_state_32
-  s = { .block_state = block_state, .buf = buf, .total_len = (uint64_t)0U };
-  Hacl_Streaming_MD_state_32
-  *p = (Hacl_Streaming_MD_state_32 *)KRML_HOST_MALLOC(sizeof (Hacl_Streaming_MD_state_32));
-  p[0U] = s;
-  Hacl_Hash_SHA2_sha256_init(block_state);
-  return p;
+  if (buf == NULL)
+  {
+    return NULL;
+  }
+  uint8_t *buf1 = buf;
+  uint32_t *b = (uint32_t *)KRML_HOST_CALLOC(8U, sizeof (uint32_t));
+  Hacl_Streaming_Types_optional_32 block_state;
+  if (b == NULL)
+  {
+    block_state = ((Hacl_Streaming_Types_optional_32){ .tag = Hacl_Streaming_Types_None });
+  }
+  else
+  {
+    block_state = ((Hacl_Streaming_Types_optional_32){ .tag = Hacl_Streaming_Types_Some, .v = b });
+  }
+  if (block_state.tag == Hacl_Streaming_Types_None)
+  {
+    KRML_HOST_FREE(buf1);
+    return NULL;
+  }
+  if (block_state.tag == Hacl_Streaming_Types_Some)
+  {
+    uint32_t *block_state1 = block_state.v;
+    Hacl_Streaming_Types_optional k_ = Hacl_Streaming_Types_Some;
+    switch (k_)
+    {
+      case Hacl_Streaming_Types_None:
+        {
+          return NULL;
+        }
+      case Hacl_Streaming_Types_Some:
+        {
+          Hacl_Streaming_MD_state_32
+          s = { .block_state = block_state1, .buf = buf1, .total_len = (uint64_t)0U };
+          Hacl_Streaming_MD_state_32
+          *p = (Hacl_Streaming_MD_state_32 *)KRML_HOST_MALLOC(sizeof (Hacl_Streaming_MD_state_32));
+          if (p != NULL)
+          {
+            p[0U] = s;
+          }
+          if (p == NULL)
+          {
+            KRML_HOST_FREE(block_state1);
+            KRML_HOST_FREE(buf1);
+            return NULL;
+          }
+          Hacl_Hash_SHA2_sha256_init(block_state1);
+          return p;
+        }
+      default:
+        {
+          KRML_HOST_EPRINTF("KaRaMeL incomplete match at %s:%d\n", __FILE__, __LINE__);
+          KRML_HOST_EXIT(253U);
+        }
+    }
+  }
+  KRML_HOST_EPRINTF("KaRaMeL abort at %s:%d\n%s\n",
+    __FILE__,
+    __LINE__,
+    "unreachable (pattern matches are exhaustive in F*)");
+  KRML_HOST_EXIT(255U);
 }
 
 /**
@@ -470,15 +526,67 @@ Hacl_Streaming_MD_state_32 *Hacl_Hash_SHA2_copy_256(Hacl_Streaming_MD_state_32 *
   uint8_t *buf0 = scrut.buf;
   uint64_t total_len0 = scrut.total_len;
   uint8_t *buf = (uint8_t *)KRML_HOST_CALLOC(64U, sizeof (uint8_t));
+  if (buf == NULL)
+  {
+    return NULL;
+  }
   memcpy(buf, buf0, 64U * sizeof (uint8_t));
-  uint32_t *block_state = (uint32_t *)KRML_HOST_CALLOC(8U, sizeof (uint32_t));
-  memcpy(block_state, block_state0, 8U * sizeof (uint32_t));
-  Hacl_Streaming_MD_state_32
-  s = { .block_state = block_state, .buf = buf, .total_len = total_len0 };
-  Hacl_Streaming_MD_state_32
-  *p = (Hacl_Streaming_MD_state_32 *)KRML_HOST_MALLOC(sizeof (Hacl_Streaming_MD_state_32));
-  p[0U] = s;
-  return p;
+  uint32_t *b = (uint32_t *)KRML_HOST_CALLOC(8U, sizeof (uint32_t));
+  Hacl_Streaming_Types_optional_32 block_state;
+  if (b == NULL)
+  {
+    block_state = ((Hacl_Streaming_Types_optional_32){ .tag = Hacl_Streaming_Types_None });
+  }
+  else
+  {
+    block_state = ((Hacl_Streaming_Types_optional_32){ .tag = Hacl_Streaming_Types_Some, .v = b });
+  }
+  if (block_state.tag == Hacl_Streaming_Types_None)
+  {
+    KRML_HOST_FREE(buf);
+    return NULL;
+  }
+  if (block_state.tag == Hacl_Streaming_Types_Some)
+  {
+    uint32_t *block_state1 = block_state.v;
+    memcpy(block_state1, block_state0, 8U * sizeof (uint32_t));
+    Hacl_Streaming_Types_optional k_ = Hacl_Streaming_Types_Some;
+    switch (k_)
+    {
+      case Hacl_Streaming_Types_None:
+        {
+          return NULL;
+        }
+      case Hacl_Streaming_Types_Some:
+        {
+          Hacl_Streaming_MD_state_32
+          s = { .block_state = block_state1, .buf = buf, .total_len = total_len0 };
+          Hacl_Streaming_MD_state_32
+          *p = (Hacl_Streaming_MD_state_32 *)KRML_HOST_MALLOC(sizeof (Hacl_Streaming_MD_state_32));
+          if (p != NULL)
+          {
+            p[0U] = s;
+          }
+          if (p == NULL)
+          {
+            KRML_HOST_FREE(block_state1);
+            KRML_HOST_FREE(buf);
+            return NULL;
+          }
+          return p;
+        }
+      default:
+        {
+          KRML_HOST_EPRINTF("KaRaMeL incomplete match at %s:%d\n", __FILE__, __LINE__);
+          KRML_HOST_EXIT(253U);
+        }
+    }
+  }
+  KRML_HOST_EPRINTF("KaRaMeL abort at %s:%d\n%s\n",
+    __FILE__,
+    __LINE__,
+    "unreachable (pattern matches are exhaustive in F*)");
+  KRML_HOST_EXIT(255U);
 }
 
 /**
@@ -760,14 +868,67 @@ void Hacl_Hash_SHA2_hash_256(uint8_t *output, uint8_t *input, uint32_t input_len
 Hacl_Streaming_MD_state_32 *Hacl_Hash_SHA2_malloc_224(void)
 {
   uint8_t *buf = (uint8_t *)KRML_HOST_CALLOC(64U, sizeof (uint8_t));
-  uint32_t *block_state = (uint32_t *)KRML_HOST_CALLOC(8U, sizeof (uint32_t));
-  Hacl_Streaming_MD_state_32
-  s = { .block_state = block_state, .buf = buf, .total_len = (uint64_t)0U };
-  Hacl_Streaming_MD_state_32
-  *p = (Hacl_Streaming_MD_state_32 *)KRML_HOST_MALLOC(sizeof (Hacl_Streaming_MD_state_32));
-  p[0U] = s;
-  Hacl_Hash_SHA2_sha224_init(block_state);
-  return p;
+  if (buf == NULL)
+  {
+    return NULL;
+  }
+  uint8_t *buf1 = buf;
+  uint32_t *b = (uint32_t *)KRML_HOST_CALLOC(8U, sizeof (uint32_t));
+  Hacl_Streaming_Types_optional_32 block_state;
+  if (b == NULL)
+  {
+    block_state = ((Hacl_Streaming_Types_optional_32){ .tag = Hacl_Streaming_Types_None });
+  }
+  else
+  {
+    block_state = ((Hacl_Streaming_Types_optional_32){ .tag = Hacl_Streaming_Types_Some, .v = b });
+  }
+  if (block_state.tag == Hacl_Streaming_Types_None)
+  {
+    KRML_HOST_FREE(buf1);
+    return NULL;
+  }
+  if (block_state.tag == Hacl_Streaming_Types_Some)
+  {
+    uint32_t *block_state1 = block_state.v;
+    Hacl_Streaming_Types_optional k_ = Hacl_Streaming_Types_Some;
+    switch (k_)
+    {
+      case Hacl_Streaming_Types_None:
+        {
+          return NULL;
+        }
+      case Hacl_Streaming_Types_Some:
+        {
+          Hacl_Streaming_MD_state_32
+          s = { .block_state = block_state1, .buf = buf1, .total_len = (uint64_t)0U };
+          Hacl_Streaming_MD_state_32
+          *p = (Hacl_Streaming_MD_state_32 *)KRML_HOST_MALLOC(sizeof (Hacl_Streaming_MD_state_32));
+          if (p != NULL)
+          {
+            p[0U] = s;
+          }
+          if (p == NULL)
+          {
+            KRML_HOST_FREE(block_state1);
+            KRML_HOST_FREE(buf1);
+            return NULL;
+          }
+          Hacl_Hash_SHA2_sha224_init(block_state1);
+          return p;
+        }
+      default:
+        {
+          KRML_HOST_EPRINTF("KaRaMeL incomplete match at %s:%d\n", __FILE__, __LINE__);
+          KRML_HOST_EXIT(253U);
+        }
+    }
+  }
+  KRML_HOST_EPRINTF("KaRaMeL abort at %s:%d\n%s\n",
+    __FILE__,
+    __LINE__,
+    "unreachable (pattern matches are exhaustive in F*)");
+  KRML_HOST_EXIT(255U);
 }
 
 void Hacl_Hash_SHA2_reset_224(Hacl_Streaming_MD_state_32 *state)
@@ -858,14 +1019,67 @@ void Hacl_Hash_SHA2_hash_224(uint8_t *output, uint8_t *input, uint32_t input_len
 Hacl_Streaming_MD_state_64 *Hacl_Hash_SHA2_malloc_512(void)
 {
   uint8_t *buf = (uint8_t *)KRML_HOST_CALLOC(128U, sizeof (uint8_t));
-  uint64_t *block_state = (uint64_t *)KRML_HOST_CALLOC(8U, sizeof (uint64_t));
-  Hacl_Streaming_MD_state_64
-  s = { .block_state = block_state, .buf = buf, .total_len = (uint64_t)0U };
-  Hacl_Streaming_MD_state_64
-  *p = (Hacl_Streaming_MD_state_64 *)KRML_HOST_MALLOC(sizeof (Hacl_Streaming_MD_state_64));
-  p[0U] = s;
-  Hacl_Hash_SHA2_sha512_init(block_state);
-  return p;
+  if (buf == NULL)
+  {
+    return NULL;
+  }
+  uint8_t *buf1 = buf;
+  uint64_t *b = (uint64_t *)KRML_HOST_CALLOC(8U, sizeof (uint64_t));
+  Hacl_Streaming_Types_optional_64 block_state;
+  if (b == NULL)
+  {
+    block_state = ((Hacl_Streaming_Types_optional_64){ .tag = Hacl_Streaming_Types_None });
+  }
+  else
+  {
+    block_state = ((Hacl_Streaming_Types_optional_64){ .tag = Hacl_Streaming_Types_Some, .v = b });
+  }
+  if (block_state.tag == Hacl_Streaming_Types_None)
+  {
+    KRML_HOST_FREE(buf1);
+    return NULL;
+  }
+  if (block_state.tag == Hacl_Streaming_Types_Some)
+  {
+    uint64_t *block_state1 = block_state.v;
+    Hacl_Streaming_Types_optional k_ = Hacl_Streaming_Types_Some;
+    switch (k_)
+    {
+      case Hacl_Streaming_Types_None:
+        {
+          return NULL;
+        }
+      case Hacl_Streaming_Types_Some:
+        {
+          Hacl_Streaming_MD_state_64
+          s = { .block_state = block_state1, .buf = buf1, .total_len = (uint64_t)0U };
+          Hacl_Streaming_MD_state_64
+          *p = (Hacl_Streaming_MD_state_64 *)KRML_HOST_MALLOC(sizeof (Hacl_Streaming_MD_state_64));
+          if (p != NULL)
+          {
+            p[0U] = s;
+          }
+          if (p == NULL)
+          {
+            KRML_HOST_FREE(block_state1);
+            KRML_HOST_FREE(buf1);
+            return NULL;
+          }
+          Hacl_Hash_SHA2_sha512_init(block_state1);
+          return p;
+        }
+      default:
+        {
+          KRML_HOST_EPRINTF("KaRaMeL incomplete match at %s:%d\n", __FILE__, __LINE__);
+          KRML_HOST_EXIT(253U);
+        }
+    }
+  }
+  KRML_HOST_EPRINTF("KaRaMeL abort at %s:%d\n%s\n",
+    __FILE__,
+    __LINE__,
+    "unreachable (pattern matches are exhaustive in F*)");
+  KRML_HOST_EXIT(255U);
 }
 
 /**
@@ -881,15 +1095,67 @@ Hacl_Streaming_MD_state_64 *Hacl_Hash_SHA2_copy_512(Hacl_Streaming_MD_state_64 *
   uint8_t *buf0 = scrut.buf;
   uint64_t total_len0 = scrut.total_len;
   uint8_t *buf = (uint8_t *)KRML_HOST_CALLOC(128U, sizeof (uint8_t));
+  if (buf == NULL)
+  {
+    return NULL;
+  }
   memcpy(buf, buf0, 128U * sizeof (uint8_t));
-  uint64_t *block_state = (uint64_t *)KRML_HOST_CALLOC(8U, sizeof (uint64_t));
-  memcpy(block_state, block_state0, 8U * sizeof (uint64_t));
-  Hacl_Streaming_MD_state_64
-  s = { .block_state = block_state, .buf = buf, .total_len = total_len0 };
-  Hacl_Streaming_MD_state_64
-  *p = (Hacl_Streaming_MD_state_64 *)KRML_HOST_MALLOC(sizeof (Hacl_Streaming_MD_state_64));
-  p[0U] = s;
-  return p;
+  uint64_t *b = (uint64_t *)KRML_HOST_CALLOC(8U, sizeof (uint64_t));
+  Hacl_Streaming_Types_optional_64 block_state;
+  if (b == NULL)
+  {
+    block_state = ((Hacl_Streaming_Types_optional_64){ .tag = Hacl_Streaming_Types_None });
+  }
+  else
+  {
+    block_state = ((Hacl_Streaming_Types_optional_64){ .tag = Hacl_Streaming_Types_Some, .v = b });
+  }
+  if (block_state.tag == Hacl_Streaming_Types_None)
+  {
+    KRML_HOST_FREE(buf);
+    return NULL;
+  }
+  if (block_state.tag == Hacl_Streaming_Types_Some)
+  {
+    uint64_t *block_state1 = block_state.v;
+    memcpy(block_state1, block_state0, 8U * sizeof (uint64_t));
+    Hacl_Streaming_Types_optional k_ = Hacl_Streaming_Types_Some;
+    switch (k_)
+    {
+      case Hacl_Streaming_Types_None:
+        {
+          return NULL;
+        }
+      case Hacl_Streaming_Types_Some:
+        {
+          Hacl_Streaming_MD_state_64
+          s = { .block_state = block_state1, .buf = buf, .total_len = total_len0 };
+          Hacl_Streaming_MD_state_64
+          *p = (Hacl_Streaming_MD_state_64 *)KRML_HOST_MALLOC(sizeof (Hacl_Streaming_MD_state_64));
+          if (p != NULL)
+          {
+            p[0U] = s;
+          }
+          if (p == NULL)
+          {
+            KRML_HOST_FREE(block_state1);
+            KRML_HOST_FREE(buf);
+            return NULL;
+          }
+          return p;
+        }
+      default:
+        {
+          KRML_HOST_EPRINTF("KaRaMeL incomplete match at %s:%d\n", __FILE__, __LINE__);
+          KRML_HOST_EXIT(253U);
+        }
+    }
+  }
+  KRML_HOST_EPRINTF("KaRaMeL abort at %s:%d\n%s\n",
+    __FILE__,
+    __LINE__,
+    "unreachable (pattern matches are exhaustive in F*)");
+  KRML_HOST_EXIT(255U);
 }
 
 void Hacl_Hash_SHA2_reset_512(Hacl_Streaming_MD_state_64 *state)
@@ -1172,14 +1438,67 @@ void Hacl_Hash_SHA2_hash_512(uint8_t *output, uint8_t *input, uint32_t input_len
 Hacl_Streaming_MD_state_64 *Hacl_Hash_SHA2_malloc_384(void)
 {
   uint8_t *buf = (uint8_t *)KRML_HOST_CALLOC(128U, sizeof (uint8_t));
-  uint64_t *block_state = (uint64_t *)KRML_HOST_CALLOC(8U, sizeof (uint64_t));
-  Hacl_Streaming_MD_state_64
-  s = { .block_state = block_state, .buf = buf, .total_len = (uint64_t)0U };
-  Hacl_Streaming_MD_state_64
-  *p = (Hacl_Streaming_MD_state_64 *)KRML_HOST_MALLOC(sizeof (Hacl_Streaming_MD_state_64));
-  p[0U] = s;
-  Hacl_Hash_SHA2_sha384_init(block_state);
-  return p;
+  if (buf == NULL)
+  {
+    return NULL;
+  }
+  uint8_t *buf1 = buf;
+  uint64_t *b = (uint64_t *)KRML_HOST_CALLOC(8U, sizeof (uint64_t));
+  Hacl_Streaming_Types_optional_64 block_state;
+  if (b == NULL)
+  {
+    block_state = ((Hacl_Streaming_Types_optional_64){ .tag = Hacl_Streaming_Types_None });
+  }
+  else
+  {
+    block_state = ((Hacl_Streaming_Types_optional_64){ .tag = Hacl_Streaming_Types_Some, .v = b });
+  }
+  if (block_state.tag == Hacl_Streaming_Types_None)
+  {
+    KRML_HOST_FREE(buf1);
+    return NULL;
+  }
+  if (block_state.tag == Hacl_Streaming_Types_Some)
+  {
+    uint64_t *block_state1 = block_state.v;
+    Hacl_Streaming_Types_optional k_ = Hacl_Streaming_Types_Some;
+    switch (k_)
+    {
+      case Hacl_Streaming_Types_None:
+        {
+          return NULL;
+        }
+      case Hacl_Streaming_Types_Some:
+        {
+          Hacl_Streaming_MD_state_64
+          s = { .block_state = block_state1, .buf = buf1, .total_len = (uint64_t)0U };
+          Hacl_Streaming_MD_state_64
+          *p = (Hacl_Streaming_MD_state_64 *)KRML_HOST_MALLOC(sizeof (Hacl_Streaming_MD_state_64));
+          if (p != NULL)
+          {
+            p[0U] = s;
+          }
+          if (p == NULL)
+          {
+            KRML_HOST_FREE(block_state1);
+            KRML_HOST_FREE(buf1);
+            return NULL;
+          }
+          Hacl_Hash_SHA2_sha384_init(block_state1);
+          return p;
+        }
+      default:
+        {
+          KRML_HOST_EPRINTF("KaRaMeL incomplete match at %s:%d\n", __FILE__, __LINE__);
+          KRML_HOST_EXIT(253U);
+        }
+    }
+  }
+  KRML_HOST_EPRINTF("KaRaMeL abort at %s:%d\n%s\n",
+    __FILE__,
+    __LINE__,
+    "unreachable (pattern matches are exhaustive in F*)");
+  KRML_HOST_EXIT(255U);
 }
 
 void Hacl_Hash_SHA2_reset_384(Hacl_Streaming_MD_state_64 *state)
