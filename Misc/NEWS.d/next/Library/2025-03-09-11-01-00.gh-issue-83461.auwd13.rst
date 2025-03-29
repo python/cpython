@@ -1,0 +1,3 @@
+Digits passed to :meth:`datetime.date.strptime`, :meth:`datetime.datetime.strptime`,
+:meth:`datetime.time.strptime` and :meth:`time.strptime` must now be ASCII in
+non-locale-specific numeric format codes.
