@@ -348,6 +348,7 @@ exactly as written here:
    as         def        from       nonlocal   while
    assert     del        global     not        with
    async      elif       if         or         yield
+   __type_checking__
 
 
 .. _soft-keywords:
