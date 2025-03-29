@@ -682,7 +682,7 @@ json
 math
 ----
 
-* Added more detailed messages for domain errors in the module.
+* Added more detailed error messages for domain errors in the module.
   (Contributed by by Charlie Zhao and Sergey B Kirpichev in :gh:`101410`.)
 
 
