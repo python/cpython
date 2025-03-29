@@ -801,7 +801,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     }
 
     uintptr_t thread_state_addr;
-    pid_t this_tid = 0;
+    unsigned long this_tid = 0;
 
     if (tid != 0) {
         if (0 != read_memory(
@@ -822,7 +822,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
                 return -1;
             }
 
-            if (this_tid == tid) {
+            if (this_tid == (unsigned long)tid) {
                 break;
             }
 
