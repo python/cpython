@@ -485,6 +485,7 @@ class PluralFormsInternalTestCase(unittest.TestCase):
         s = ''.join([ str(f(x)) for x in range(200) ])
         eq(s, "01233333333444444444444444444444444444444444444444444444444444444444444444444444444444444444444444445553333333344444444444444444444444444444444444444444444444444444444444444444444444444444444444444444")
 
+    @support.skip_wasi_stack_overflow()
     def test_security(self):
         raises = self.assertRaises
         # Test for a dangerous expression
