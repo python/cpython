@@ -92,7 +92,11 @@ static unsigned int sre_toupper(unsigned int ch) {
 /* -------------------------------------------------------------------- */
 
 #if defined(_MSC_VER)
-#pragma optimize("agtw", on) /* doesn't seem to make much difference... */
+# if defined(__clang__)
+#  pragma optimize("", on)
+# else
+#  pragma optimize("gt", on) /* doesn't seem to make much difference... */
+# endif
 #pragma warning(disable: 4710) /* who cares if functions are not inlined ;-) */
 /* fastest possible local call under MSVC */
 #define LOCAL(type) static __inline type __fastcall
