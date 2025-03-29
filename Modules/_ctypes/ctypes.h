@@ -81,8 +81,6 @@ typedef struct {
 #ifdef MS_WIN32
     PyTypeObject *PyComError_Type;
 #endif
-    /* This dict maps ctypes types to POINTER types */
-    PyObject *_ctypes_ptrtype_cache;
     /* a callable object used for unpickling:
        strong reference to _ctypes._unpickle() function */
     PyObject *_unpickle;
@@ -388,6 +386,7 @@ typedef struct {
     PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
     PyObject *restype;          /* CDataObject or NULL */
     PyObject *checker;
+    PyObject *pointer_type;
     PyObject *module;
     int flags;                  /* calling convention and such */
 
@@ -401,6 +400,7 @@ typedef struct {
 
 extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
 extern void ctype_clear_stginfo(StgInfo *info);
+extern void ctype_free_stginfo_members(StgInfo *info);
 
 typedef int(* PPROC)(void);
 
@@ -589,6 +589,7 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
     if (!module) {
         return NULL;
     }
+    info->pointer_type = NULL;
     info->module = Py_NewRef(module);
 
     info->initialized = 1;
