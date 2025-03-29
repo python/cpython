@@ -576,8 +576,8 @@ given type object has a specified feature.
 /* Objects behave like an unbound method */
 #define Py_TPFLAGS_METHOD_DESCRIPTOR (1UL << 17)
 
-/* Unused. Legacy flag */
-#define Py_TPFLAGS_VALID_VERSION_TAG  (1UL << 19)
+/* Type structure is potentially exposed (revealed) to other threads */
+#define Py_TPFLAGS_EXPOSED  (1UL << 19)
 
 /* Type is abstract and cannot be instantiated */
 #define Py_TPFLAGS_IS_ABSTRACT (1UL << 20)
@@ -776,11 +776,7 @@ PyType_HasFeature(PyTypeObject *type, unsigned long feature)
     // PyTypeObject is opaque in the limited C API
     flags = PyType_GetFlags(type);
 #else
-#   ifdef Py_GIL_DISABLED
-        flags = _Py_atomic_load_ulong_relaxed(&type->tp_flags);
-#   else
-        flags = type->tp_flags;
-#   endif
+    flags = type->tp_flags;
 #endif
     return ((flags & feature) != 0);
 }
