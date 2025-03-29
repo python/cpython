@@ -23,10 +23,8 @@ from tempfile import TemporaryDirectory
 SCRIPT_NAME = Path(__file__).name
 ANDROID_DIR = Path(__file__).resolve().parent
 CHECKOUT = ANDROID_DIR.parent
-BUILD_DIR = ANDROID_DIR / "build"
-DIST_DIR = ANDROID_DIR / "dist"
-PREFIX_DIR = ANDROID_DIR / "prefix"
 TESTBED_DIR = ANDROID_DIR / "testbed"
+CROSS_BUILD_DIR = CHECKOUT / "cross-build"
 
 HOSTS = ["aarch64-linux-android", "x86_64-linux-android"]
 APP_ID = "org.python.testbed"
@@ -62,8 +60,8 @@ def delete_glob(pattern):
             path.unlink()
 
 
-def subdir(parent, host, *, create=False):
-    path = parent / host
+def subdir(*parts, create=False):
+    path = CROSS_BUILD_DIR.joinpath(*parts)
     if not path.exists():
         if not create:
             sys.exit(
@@ -85,7 +83,7 @@ def run(command, *, host=None, env=None, log=True, **kwargs):
         env_output = subprocess.run(
             f"set -eu; "
             f"HOST={host}; "
-            f"PREFIX={subdir(PREFIX_DIR, host)}; "
+            f"PREFIX={subdir(host)}/prefix; "
             f". {env_script}; "
             f"export",
             check=True, shell=True, text=True, stdout=subprocess.PIPE
@@ -113,13 +111,13 @@ def run(command, *, host=None, env=None, log=True, **kwargs):
 
 def build_python_path():
     """The path to the build Python binary."""
-    build_subdir = subdir(BUILD_DIR, "build")
-    binary = build_subdir / "python"
+    build_dir = subdir("build", "build")
+    binary = build_dir / "python"
     if not binary.is_file():
         binary = binary.with_suffix(".exe")
         if not binary.is_file():
             raise FileNotFoundError("Unable to find `python(.exe)` in "
-                                    f"{build_subdir}")
+                                    f"{build_dir}")
 
     return binary
 
@@ -127,7 +125,7 @@ def build_python_path():
 def configure_build_python(context):
     if context.clean:
         clean("build")
-    os.chdir(subdir(BUILD_DIR, "build", create=True))
+    os.chdir(subdir("build", "build", create=True))
 
     command = [relpath(CHECKOUT / "configure")]
     if context.args:
@@ -136,7 +134,7 @@ def configure_build_python(context):
 
 
 def make_build_python(context):
-    os.chdir(subdir(BUILD_DIR, "build"))
+    os.chdir(subdir("build", "build"))
     run(["make", "-j", str(os.cpu_count())])
 
 
@@ -160,13 +158,13 @@ def configure_host_python(context):
     if context.clean:
         clean(context.host)
 
-    prefix_subdir = subdir(PREFIX_DIR, context.host, create=True)
-    if not (prefix_subdir / "include").exists():
-        os.chdir(prefix_subdir)
+    prefix_dir = subdir(context.host, "prefix", create=True)
+    if not (prefix_dir / "include").exists():
+        os.chdir(prefix_dir)
         unpack_deps(context.host)
 
-    build_subdir = subdir(BUILD_DIR, context.host, create=True)
-    os.chdir(build_subdir)
+    build_dir = subdir(context.host, "build", create=True)
+    os.chdir(build_dir)
 
     command = [
         # Basic cross-compiling configuration
@@ -182,7 +180,7 @@ def configure_host_python(context):
 
         # Dependent libraries. The others are found using pkg-config: see
         # android-env.sh.
-        f"--with-openssl={prefix_subdir}",
+        f"--with-openssl={prefix_dir}",
     ]
 
     if context.args:
@@ -194,13 +192,13 @@ def make_host_python(context):
     # The CFLAGS and LDFLAGS set in android-env include the prefix dir, so
     # delete any previous Python installation to prevent it being used during
     # the build.
-    prefix_subdir = subdir(PREFIX_DIR, context.host)
+    prefix_dir = subdir(context.host, "prefix")
     for pattern in ("include/python*", "lib/libpython*", "lib/python*"):
-        delete_glob(f"{prefix_subdir}/{pattern}")
+        delete_glob(f"{prefix_dir}/{pattern}")
 
-    os.chdir(subdir(BUILD_DIR, context.host))
+    os.chdir(subdir(context.host, "build"))
     run(["make", "-j", str(os.cpu_count())], host=context.host)
-    run(["make", "install", f"prefix={prefix_subdir}"], host=context.host)
+    run(["make", "install", f"prefix={prefix_dir}"], host=context.host)
 
 
 def build_all(context):
@@ -211,13 +209,15 @@ def build_all(context):
 
 
 def clean(host):
-    for parent in (BUILD_DIR, PREFIX_DIR):
-        delete_glob(f"{parent}/{host}")
+    # Don't delete "dist", as that could be difficult to regenerate, and won't
+    # affect future builds anyway.
+    for name in ["build", "prefix"]:
+        delete_glob(CROSS_BUILD_DIR / host / name)
 
 
 def clean_all(context):
-    for parent in (BUILD_DIR, PREFIX_DIR):
-        delete_glob(parent)
+    for host in HOSTS + ["build"]:
+        clean(host)
 
 
 def setup_sdk():
@@ -541,8 +541,8 @@ async def run_testbed(context):
         raise e.exceptions[0]
 
 
-def package_version(prefix_subdir):
-    patchlevel_glob = f"{prefix_subdir}/include/python*/patchlevel.h"
+def package_version(prefix_dir):
+    patchlevel_glob = f"{prefix_dir}/include/python*/patchlevel.h"
     patchlevel_paths = glob(patchlevel_glob)
     if len(patchlevel_paths) != 1:
         sys.exit(f"{patchlevel_glob} matched {len(patchlevel_paths)} paths.")
@@ -564,8 +564,8 @@ def package_version(prefix_subdir):
 
 
 def package(context):
-    prefix_subdir = subdir(PREFIX_DIR, context.host)
-    version = package_version(prefix_subdir)
+    prefix_dir = subdir(context.host, "prefix")
+    version = package_version(prefix_dir)
 
     with TemporaryDirectory(prefix=SCRIPT_NAME) as temp_dir:
         temp_dir = Path(temp_dir)
@@ -590,8 +590,8 @@ def package(context):
             ("lib/pkgconfig", ["*crypto*", "*ssl*", "*python*", "*sqlite*"]),
         ]:
             for pattern in patterns:
-                for src in glob(f"{prefix_subdir}/{rel_dir}/{pattern}"):
-                    dst = temp_dir / relpath(src, ANDROID_DIR)
+                for src in glob(f"{prefix_dir}/{rel_dir}/{pattern}"):
+                    dst = temp_dir / relpath(src, prefix_dir.parent)
                     dst.parent.mkdir(parents=True, exist_ok=True)
                     if Path(src).is_dir():
                         shutil.copytree(
@@ -601,9 +601,9 @@ def package(context):
                     else:
                         shutil.copy2(src, dst, follow_symlinks=False)
 
-        DIST_DIR.mkdir(exist_ok=True)
+        dist_dir = subdir(context.host, "dist", create=True)
         package_path = shutil.make_archive(
-            f"{DIST_DIR}/python-{version}-{context.host}", "gztar", temp_dir
+            f"{dist_dir}/python-{version}-{context.host}", "gztar", temp_dir
         )
         print(f"Wrote {package_path}")
 

@@ -64,8 +64,8 @@ To do all steps in a single command, run:
 ./android.py build HOST
 ```
 
-In the end you should have an Android build of Python and its supporting
-libraries in `prefix/HOST`.
+In the end you should have a build Python in `cross-build/build`, and a host
+Python in `cross-build/HOST`.
 
 You can use `--` as a separator for any of the `configure`-related commands –
 including `build` itself – to pass arguments to the underlying `configure`
@@ -88,8 +88,8 @@ package it for release with this command:
 
 `HOST` is defined in the section above.
 
-This will generate a tarball in the `dist` directory, whose structure is similar
-to the `Android` directory of the CPython source tree.
+This will generate a tarball in `cross-build/HOST/dist`, whose structure is
+similar to the `Android` directory of the CPython source tree.
 
 
 ## Testing
@@ -98,8 +98,6 @@ The Python test suite can be run on Linux, macOS, or Windows:
 
 * On Linux, the emulator needs access to the KVM virtualization interface, and
   a DISPLAY environment variable pointing at an X server.
-* On Windows, you won't be able to do the build on the same machine, so you'll
-  have to copy the `prefix/HOST` directory from somewhere else.
 
 The test suite can usually be run on a device with 2 GB of RAM, but this is
 borderline, so you may need to increase it to 4 GB. As of Android
@@ -109,9 +107,16 @@ and find `hw.ramSize` in both config.ini and hardware-qemu.ini. Either set these
 manually to the same value, or use the Android Studio Device Manager, which will
 update both files.
 
-Before running the test suite, follow the instructions in the section above
-to build the architecture you want to test. Then run the test script in one of
-the following modes:
+You can run the test suite either:
+
+* Within the CPython repository, after doing a build as described above. On
+  Windows, you won't be able to do the build on the same machine, so you'll have
+  to copy the `cross-build/HOST/prefix` directory from somewhere else.
+
+* Or by taking a release package built using the `package` command, extracting
+  it wherever you want, and using its own copy of `android.py`.
+
+The test script supports the following modes:
 
 * In `--connected` mode, it runs on a device or emulator you have already
   connected to the build machine. List the available devices with
