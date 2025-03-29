@@ -161,8 +161,8 @@ def make(filename, outfile):
                 if not msgid:
                     # Filter out POT-Creation-Date
                     # See issue #131852
-                    msgstr = ''.join(line for line in msgstr.decode(encoding).splitlines(True)
-                                     if 'POT-Creation-Date' not in line).encode(encoding)
+                    msgstr = b''.join(line for line in msgstr.splitlines(True)
+                                      if not line.startswith(b'POT-Creation-Date'))
 
                     # See whether there is an encoding declaration
                     p = HeaderParser()
