@@ -42,8 +42,11 @@ class CompilationTest(unittest.TestCase):
                     self.assertDictEqual(actual._catalog, expected._catalog)
 
     def test_binary_header(self):
-        with open(data_dir / "general.mo", "rb") as f:
-            mo_data = f.read()
+        with temp_cwd():
+            tmp_mo_file = 'messages.mo'
+            compile_messages(data_dir / "general.po", tmp_mo_file)
+            with open(tmp_mo_file, 'rb') as f:
+                mo_data = f.read()
 
         (
             magic,
@@ -53,7 +56,7 @@ class CompilationTest(unittest.TestCase):
             trans_table_offset,
             hash_table_size,
             hash_table_offset,
-        ) = struct.unpack("=Iiiiiii", mo_data[:28])
+        ) = struct.unpack("=7I", mo_data[:28])
 
         self.assertEqual(magic, 0x950412de)
         self.assertEqual(version, 0)
