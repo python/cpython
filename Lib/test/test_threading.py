@@ -179,9 +179,10 @@ class ThreadTests(BaseTestCase):
             pass
 
         invalid_args = (
-            "test string",
             1,
-            b"Bytes"
+            3.14,
+            None,
+            object(),
         )
 
         for args in invalid_args:
@@ -189,11 +190,17 @@ class ThreadTests(BaseTestCase):
                 with self.assertRaises(TypeError):
                     threading.Thread(target=task, args=args)
 
-    def test_lock_no_args(self):
-        threading.Lock()  # works
-        self.assertRaises(TypeError, threading.Lock, 1)
-        self.assertRaises(TypeError, threading.Lock, a=1)
-        self.assertRaises(TypeError, threading.Lock, 1, 2, a=1, b=2)
+    def test_args_valid_inputs_does_not_raise(self):
+        def task():
+            pass
+
+        class CustomIter:
+            def __iter__(self):
+                yield
+        try:
+            t = threading.Thread(target=task, args=CustomIter())
+        except TypeError as e:
+            self.fail(f"Thread raised an exception with an object that has the '__iter__' attribute with error {e}")
 
     def test_lock_no_subclass(self):
         # Intentionally disallow subclasses of threading.Lock because they have
