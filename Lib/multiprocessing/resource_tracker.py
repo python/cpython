@@ -253,7 +253,7 @@ class ResourceTracker(object):
         assert nbytes == len(msg), f"{nbytes=} != {len(msg)=}"
 
     def _send(self, cmd, name, rtype):
-        msg = f"{cmd}:{name}:{rtype}\n".encode("ascii")        
+        msg = f"{cmd}:{name}:{rtype}\n".encode("ascii")
         if len(msg) > 512:
             # posix guarantees that writes to a pipe of less than PIPE_BUF
             # bytes are atomic, and that PIPE_BUF >= 512
