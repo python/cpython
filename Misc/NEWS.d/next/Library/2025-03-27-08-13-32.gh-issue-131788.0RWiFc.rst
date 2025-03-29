@@ -1,0 +1,1 @@
+Make ``ResourceTracker.send`` re-entrant safe
