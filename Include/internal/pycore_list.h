@@ -12,6 +12,8 @@ extern "C" {
 #include "pycore_stackref.h"
 #endif
 
+#include "pycore_pyatomic_ft_wrappers.h"
+
 PyAPI_FUNC(PyObject*) _PyList_Extend(PyListObject *, PyObject *);
 extern void _PyList_DebugMallocStats(FILE *out);
 // _PyList_GetItemRef should be used only when the object is known as a list
