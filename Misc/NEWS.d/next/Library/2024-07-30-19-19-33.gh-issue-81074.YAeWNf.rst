@@ -1,0 +1,1 @@
+Allow non-ASCII addr_spec in email.headerregistry.Address constructor
