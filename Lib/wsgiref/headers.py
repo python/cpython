@@ -10,6 +10,8 @@ written by Barry Warsaw.
 import re
 tspecials = re.compile(r'[ \(\)<>@,;:\\"/\[\]\?=]')
 
+from http.client import _is_legal_header_name, _is_illegal_header_value
+
 def _formatparam(param, value=None, quote=1):
     """Convenience function to format and return a key=value pair.
 
@@ -32,7 +34,9 @@ class Headers:
         headers = headers if headers is not None else []
         if type(headers) is not list:
             raise TypeError("Headers must be a list of name/value tuples")
-        self._headers = headers
+        self._headers = []
+        for header, value in headers:
+            self.add_header(header, value)
         if __debug__:
             for k, v in headers:
                 self._convert_string_type(k)
@@ -52,8 +56,7 @@ class Headers:
     def __setitem__(self, name, val):
         """Set the value of a header."""
         del self[name]
-        self._headers.append(
-            (self._convert_string_type(name), self._convert_string_type(val)))
+        self.add_header(name, val)
 
     def __delitem__(self,name):
         """Delete all occurrences of a header, if present.
@@ -148,8 +151,7 @@ class Headers:
         and value 'value'."""
         result = self.get(name)
         if result is None:
-            self._headers.append((self._convert_string_type(name),
-                self._convert_string_type(value)))
+            self.add_header(name, value)
             return value
         else:
             return result
@@ -181,4 +183,10 @@ class Headers:
             else:
                 v = self._convert_string_type(v)
                 parts.append(_formatparam(k.replace('_', '-'), v))
-        self._headers.append((self._convert_string_type(_name), "; ".join(parts)))
+        header = self._convert_string_type(_name)
+        value = "; ".join(parts)
+        if not _is_legal_header_name(header.encode('ascii')):
+            raise ValueError('Invalid header name %r' % (header,))
+        if _is_illegal_header_value(value.encode('ascii')):
+            raise ValueError('Invalid header value %r' % (value,))
+        self._headers.append((header, value))
