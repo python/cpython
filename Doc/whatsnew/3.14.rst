@@ -679,6 +679,13 @@ json
   (Contributed by Trey Hunner in :gh:`122873`.)
 
 
+math
+----
+
+* Added more detailed messages for domain errors in the module.
+  (Contributed by by Charlie Zhao and Sergey B Kirpichev in :gh:`101410`.)
+
+
 mimetypes
 ---------
 
