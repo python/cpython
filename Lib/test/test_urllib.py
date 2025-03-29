@@ -1430,14 +1430,10 @@ class Pathname_Tests(unittest.TestCase):
         fn = urllib.request.pathname2url
         sep = os.path.sep
         self.assertEqual(fn(''), '')
-        self.assertEqual(fn(f'{sep}'), '///')
-        self.assertEqual(fn(f'{sep}{sep}'), '////')
+        self.assertEqual(fn(sep), '///')
         self.assertEqual(fn('a'), 'a')
         self.assertEqual(fn(f'a{sep}b.c'), 'a/b.c')
         self.assertEqual(fn(f'{sep}a{sep}b.c'), '///a/b.c')
-        self.assertEqual(fn(f'{sep}{sep}a{sep}b.c'), '////a/b.c')
-        self.assertEqual(fn(f'{sep}{sep}{sep}a{sep}b.c'), '/////a/b.c')
-        self.assertEqual(fn(f'{sep}{sep}{sep}{sep}a{sep}b.c'), '//////a/b.c')
         self.assertEqual(fn(f'{sep}a{sep}b%#c'), '///a/b%25%23c')
 
     @unittest.skipUnless(sys.platform == 'win32',
@@ -1477,6 +1473,14 @@ class Pathname_Tests(unittest.TestCase):
                 '///C:/foo/bar/spam.foo']
         for url in urls:
             self.assertEqual(fn(urllib.request.url2pathname(url)), url)
+
+    @unittest.skipIf(sys.platform == 'win32',
+                     'test specific to POSIX pathnames')
+    def test_pathname2url_posix(self):
+        fn = urllib.request.pathname2url
+        self.assertEqual(fn('//a/b.c'), '////a/b.c')
+        self.assertEqual(fn('///a/b.c'), '/////a/b.c')
+        self.assertEqual(fn('////a/b.c'), '//////a/b.c')
 
     @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
     def test_pathname2url_nonascii(self):
