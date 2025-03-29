@@ -205,9 +205,9 @@ class Emitter:
         next(tkn_iter)  # Semi colon
         storage.clear_inputs("at ERROR_IF")
 
-        c_offset = storage.stack.peek_offset()
+        c_offset = storage.stack.sp_offset()
         try:
-            offset = -int(c_offset)
+            offset = int(c_offset)
         except ValueError:
             offset = -1
         self.out.emit(self.goto_error(offset, label, storage))
