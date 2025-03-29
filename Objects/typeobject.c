@@ -10022,9 +10022,7 @@ slot_nb_bool(PyObject *self)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "__bool__ should return "
-                     "bool, returned %s",
-                     Py_TYPE(value)->tp_name);
+                     "%T.__bool__ returned non-bool (type %T)", self, value);
         result = -1;
     }
     Py_DECREF(value);
