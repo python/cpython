@@ -835,6 +835,13 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
                 return -1;
             }
         }
+
+        if (thread_state_addr == 0) {
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                "Can't find the specified thread in the remote process");
+            return -1;
+        }
     } else {
         if (0 != read_memory(
                 handle,
@@ -844,11 +851,13 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         {
             return -1;
         }
-    }
 
-    if (thread_state_addr == 0) {
-        PyErr_SetString(PyExc_RuntimeError, "No thread state found");
-        return -1;
+        if (thread_state_addr == 0) {
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                "Can't find the main thread in the remote process");
+            return -1;
+        }
     }
 
     uintptr_t eval_breaker;
