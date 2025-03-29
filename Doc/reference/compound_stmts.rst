@@ -232,6 +232,8 @@ Additional information on exceptions can be found in section :ref:`exceptions`,
 and information on using the :keyword:`raise` statement to generate exceptions
 may be found in section :ref:`raise`.
 
+.. versionchanged:: next
+   Support for optionally dropping grouping parentheses when using multiple exception types. See :pep:`758`.
 
 .. _except:
 
@@ -247,7 +249,8 @@ An expression-less :keyword:`!except` clause, if present, must be last;
 it matches any exception.
 
 For an :keyword:`!except` clause with an expression, the
-expression must evaluate to an exception type or a tuple of exception types.
+expression must evaluate to an exception type or a tuple of exception types. Parentheses
+can be dropped if multiple exception types are provided and the ``as`` clause is not used.
 The raised exception matches an :keyword:`!except` clause whose expression evaluates
 to the class or a :term:`non-virtual base class <abstract base class>` of the exception object,
 or to a tuple that contains such a class.
