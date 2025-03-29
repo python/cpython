@@ -498,7 +498,8 @@ def _parse_isoformat_time(tstr, is_expanded=False):
             warnings.warn(
                 "Support for partially expanded formats are deprecated in "
                 "accordance with ISO 8601:2 and will be removed in 3.15",
-                DeprecationWarning
+                DeprecationWarning,
+                stacklevel=2,
             )
 
         tz_comps = _parse_hh_mm_ss_ff(tzstr)
