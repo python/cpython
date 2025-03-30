@@ -443,8 +443,7 @@ def dedent(text):
         if c != l2[margin] or c not in ' \t':
             break
 
-    return '\n'.join([l[margin:] if l and not l.isspace() else ''
-                      for l in lines])
+    return '\n'.join([l[margin:] if not l.isspace() else '' for l in lines])
 
 
 def indent(text, prefix, predicate=None):
