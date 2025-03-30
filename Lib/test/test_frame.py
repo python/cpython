@@ -346,6 +346,12 @@ class TestFrameLocals(unittest.TestCase):
         self.assertEqual(x, 2)
         self.assertEqual(y, 3)
 
+    def test_closure_with_inline_comprehension(self):
+        lambda: k
+        k = 1
+        lst = [locals() for k in [0]]
+        self.assertEqual(lst[0]['k'], 0)
+
     def test_as_dict(self):
         x = 1
         y = 2
