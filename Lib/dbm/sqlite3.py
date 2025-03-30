@@ -48,7 +48,7 @@ class _ThreadLocalSqliteConnection:
             # caught in a reference loop. We would like to be called
             # as soon as the OS-level thread ends instead.
             if self._conn is not None:
-                dct = self._conn.dicts.pop(idt)
+                self._conn.pop(idt)
         wrthread = ref(thread, thread_deleted)
         try:
             conn = sqlite3.connect(self._uri, autocommit=True, uri=True)
@@ -60,7 +60,7 @@ class _ThreadLocalSqliteConnection:
     def close(self):
         for t, conn in self._conn.items():
             conn.close()
-            del self._conn[t]
+        self._conn = {}
 
 
 class _Database(MutableMapping):
