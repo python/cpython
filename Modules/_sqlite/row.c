@@ -166,7 +166,9 @@ pysqlite_row_subscript(PyObject *op, PyObject *idx)
             }
             if (eq) {
                 /* found item */
-                return PyTuple_GET_ITEM(self->data, i);
+                PyObject *item = PyTuple_GET_ITEM(self->data, i);
+                assert(item != NULL);
+                return Py_NewRef(item);
             }
         }
 
