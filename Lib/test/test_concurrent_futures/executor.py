@@ -79,7 +79,7 @@ class ExecutorTest:
                     var: val
                     for var, val in tb.tb_frame.f_locals.items()
                     if isinstance(val, Exception)
-                    or (isinstance(val, futures.Future) and val.exception())
+                    or (isinstance(val, futures.Future) and val._exception)
                 },
                 msg=f"traceback frames should not contain any variables referring to an Exception or a failed Future",
             )
