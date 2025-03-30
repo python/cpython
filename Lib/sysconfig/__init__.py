@@ -334,6 +334,8 @@ def get_makefile_filename():
     if _PYTHON_BUILD:
         return os.path.join(_PROJECT_BASE, "Makefile")
 
+    # XXX: Remove this in Python 3.16
+    # This flag will always be True since Python 3.16
     with warnings.catch_warnings():
         # ignore DeprecationWarning on sys.abiflags change on Windows
         warnings.simplefilter('ignore', DeprecationWarning)
@@ -512,6 +514,8 @@ def _init_config_vars():
     base_prefix = _BASE_PREFIX
     base_exec_prefix = _BASE_EXEC_PREFIX
 
+    # XXX: Remove this context manager in Python 3.16
+    # sys.abiflags will always be available on all platforms since Python 3.16
     with warnings.catch_warnings():
         # ignore DeprecationWarning on sys.abiflags change on Windows
         warnings.simplefilter('ignore', DeprecationWarning)
