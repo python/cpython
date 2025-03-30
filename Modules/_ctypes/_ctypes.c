@@ -6093,11 +6093,16 @@ _ctypes_mod_exec(PyObject *mod)
     }
 
 #ifdef WORDS_BIGENDIAN
-        st->swapped_suffix = PyUnicode_InternFromString("_le");
+    st->swapped_suffix = PyUnicode_InternFromString("_le");
 #else
-        st->swapped_suffix = PyUnicode_InternFromString("_be");
+    st->swapped_suffix = PyUnicode_InternFromString("_be");
 #endif
     if (st->swapped_suffix == NULL) {
+        return -1;
+    }
+
+    st->error_object_name = PyUnicode_InternFromString("ctypes.error_object");
+    if (st->error_object_name == NULL) {
         return -1;
     }
 
