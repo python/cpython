@@ -42,6 +42,8 @@ class _ThreadLocalSqliteConnection:
     def conn(self):
         thread = current_thread()
         idt = id(thread)
+        if idt in self._conn:
+            return self._conn[idt]
         def thread_deleted(_, idt=idt):
             # When the thread is deleted, remove the local dict.
             # Note that this is suboptimal if the thread object gets
