@@ -205,8 +205,7 @@ WorkerContext._send_script_result({self.resultsid})"""
             assert res is None, res
             assert pickled
             assert exc_wrapper is not None
-            exc = pickle.loads(excdata)
-            raise exc from exc_wrapper
+            raise pickle.loads(excdata) from exc_wrapper
         return pickle.loads(res) if pickled else res
 
 
