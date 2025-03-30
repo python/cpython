@@ -794,12 +794,8 @@ class _SelectorTransport(transports._FlowControlMixin,
         self._closing = False  # Set when close() called.
         self._paused = False  # Set when pause_reading() called
 
-        if self._server is not None:
-            if self._server.is_serving():
-                self._server._attach(self)
-            else:
-                self.abort()
-                return
+        if self._server is not None and self._server.is_serving():
+            self._server._attach(self)
 
         loop._transports[self._sock_fd] = self
 
