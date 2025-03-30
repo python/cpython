@@ -4406,7 +4406,7 @@ _build_result(PyObject *result, PyObject *callargs,
 }
 
 static PyObject *
-PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
+PyCFuncPtr_call_lock_held(PyObject *op, PyObject *inargs, PyObject *kwds)
 {
     PyObject *restype;
     PyObject *converters;
@@ -4542,6 +4542,16 @@ PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
 
     return _build_result(result, callargs,
                          outmask, inoutmask, numretvals);
+}
+
+static PyObject *
+PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = PyCFuncPtr_call_lock_held(op, inargs, kwds);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static int
@@ -6093,11 +6103,16 @@ _ctypes_mod_exec(PyObject *mod)
     }
 
 #ifdef WORDS_BIGENDIAN
-        st->swapped_suffix = PyUnicode_InternFromString("_le");
+    st->swapped_suffix = PyUnicode_InternFromString("_le");
 #else
-        st->swapped_suffix = PyUnicode_InternFromString("_be");
+    st->swapped_suffix = PyUnicode_InternFromString("_be");
 #endif
     if (st->swapped_suffix == NULL) {
+        return -1;
+    }
+
+    st->error_object_name = PyUnicode_InternFromString("ctypes.error_object");
+    if (st->error_object_name == NULL) {
         return -1;
     }
 
