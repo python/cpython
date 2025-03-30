@@ -190,6 +190,15 @@ Py_DEPRECATED(3.12) extern void _PyErr_ChainExceptions(PyObject *, PyObject *, P
 PyAPI_DATA(PyTypeObject) _PyExc_IncompleteInputError;
 #define PyExc_IncompleteInputError ((PyObject *)(&_PyExc_IncompleteInputError))
 
+extern int _PyUnicodeError_GetParams(
+    PyObject *self,
+    PyObject **obj,
+    Py_ssize_t *objlen,
+    Py_ssize_t *start,
+    Py_ssize_t *end,
+    Py_ssize_t *slen,
+    int as_bytes);
+
 #ifdef __cplusplus
 }
 #endif
