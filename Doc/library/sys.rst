@@ -24,7 +24,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. availability:: Unix.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       A deprecation warning will be emitted if the :data:`sys.abiflags` member
       is accessed on Windows before Python 3.16.
       For example:

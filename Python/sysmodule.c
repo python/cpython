@@ -1,4 +1,3 @@
-
 /* System module */
 
 /*
@@ -75,15 +74,20 @@ module sys
 #include "clinic/sysmodule.c.h"
 
 
-#define WarnIncomingSysAbiflagsChange()                                            \
-    PyErr_WarnEx(PyExc_DeprecationWarning,                                         \
-        "sys.abiflags will be set to a meaningful value on all platforms "         \
-        "in Python 3.16 instead of absent.\n\n"                                    \
-        "Please consider using `warnings.simplefilter()` with the "                \
-        "`warnings.catch_warnings()` context manager.\n"                           \
-        "Or update the code with `if sys.platform.startswith('win')` condition.",  \
-        /*stack_level=*/1)
-
+// XXX: remove this and related code after set sys.abiflags on Windows in 3.16.
+static int
+_warn_incoming_sys_abiflags_change()
+{
+    return PyErr_WarnEx(
+        PyExc_DeprecationWarning,
+        "sys.abiflags will be set to a meaningful value on all platforms "
+        "in Python 3.16 instead of absent.\n\n"
+        "Please consider using `warnings.simplefilter()` with the "
+        "`warnings.catch_warnings()` context manager.\n"
+        "Or update the code with `if sys.platform.startswith('win')` "
+        "condition.",
+        /*stack_level=*/1);
+}
 
 PyObject *
 _PySys_GetRequiredAttr(PyObject *name)
@@ -104,7 +108,8 @@ _PySys_GetRequiredAttr(PyObject *name)
     if (PyDict_GetItemRef(sysdict, name, &value) == 0) {
 #ifndef ABIFLAGS
         if (_PyUnicode_EqualToASCIIString(name, "abiflags")) {
-            if (WarnIncomingSysAbiflagsChange() < 0) {
+            if (_warn_incoming_sys_abiflags_change() < 0) {
+                Py_XDECREF(value);
                 return NULL;
             }
         }
@@ -127,7 +132,8 @@ _PySys_GetRequiredAttrString(const char *name)
     if (PyDict_GetItemStringRef(sysdict, name, &value) == 0) {
 #ifndef ABIFLAGS
         if (strcmp(name, "abiflags") == 0) {
-            if (WarnIncomingSysAbiflagsChange() < 0) {
+            if (_warn_incoming_sys_abiflags_change() < 0) {
+                Py_XDECREF(value);
                 return NULL;
             }
         }
@@ -156,7 +162,7 @@ _PySys_GetOptionalAttr(PyObject *name, PyObject **value)
     int ret = PyDict_GetItemRef(sysdict, name, value);
 #ifndef ABIFLAGS
     if (ret == 0 && _PyUnicode_EqualToASCIIString(name, "abiflags")) {
-        if (WarnIncomingSysAbiflagsChange() < 0) {
+        if (_warn_incoming_sys_abiflags_change() < 0) {
             return -1;
         }
     }
@@ -176,7 +182,7 @@ _PySys_GetOptionalAttrString(const char *name, PyObject **value)
     int ret = PyDict_GetItemStringRef(sysdict, name, value);
 #ifndef ABIFLAGS
     if (ret == 0 && strcmp(name, "abiflags") == 0) {
-        if (WarnIncomingSysAbiflagsChange() < 0) {
+        if (_warn_incoming_sys_abiflags_change() < 0) {
             return -1;
         }
     }
@@ -204,7 +210,7 @@ PySys_GetObject(const char *name)
     Py_XDECREF(value);  // return a borrowed reference
 #ifndef ABIFLAGS
     if (ret == 0 && strcmp(name, "abiflags") == 0) {
-        if (WarnIncomingSysAbiflagsChange() < 0) {
+        if (_warn_incoming_sys_abiflags_change() < 0) {
             return NULL;
         }
     }
@@ -978,16 +984,18 @@ sys___getattr__(PyObject *module, PyObject *name)
 {
     PyObject *value = NULL;
     if (_PySys_GetOptionalAttr(name, &value) < 0) {
+        Py_XDECREF(value);
         return NULL;
     }
     if (value == NULL) {
+        PyErr_Clear();
         PyErr_Format(PyExc_AttributeError,
                      "module 'sys' has no attribute '%U'", name);
     }
     return value;
 }
 
-PyDoc_STRVAR(__getattr___doc,
+PyDoc_STRVAR(sysmodule__getattr___doc,
 "__getattr__($module, name, /)\n"
 "--\n"
 "\n"
@@ -2726,7 +2734,7 @@ static PyMethodDef sys_methods[] = {
     SYS_EXCEPTHOOK_METHODDEF
     SYS_EXIT_METHODDEF
     {"__getattr__", _PyCFunction_CAST(sys___getattr__),
-     METH_O, __getattr___doc},
+     METH_O, sysmodule__getattr___doc},
     SYS_GETDEFAULTENCODING_METHODDEF
     SYS_GETDLOPENFLAGS_METHODDEF
     SYS_GETALLOCATEDBLOCKS_METHODDEF
