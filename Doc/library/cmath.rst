@@ -57,9 +57,9 @@ the function is then applied to the result of the conversion.
 :func:`acos(z) <acos>`                                Return the arc cosine of *z*
 :func:`asin(z) <asin>`                                Return the arc sine of *z*
 :func:`atan(z) <atan>`                                Return the arc tangent of *z*
-:func:`cos(z) <cos>`                                  Return the cosine of *z*.
-:func:`sin(z) <sin>`                                  Return the sine of *z*.
-:func:`tan(z) <tan>`                                  Return the tangent of *z*.
+:func:`cos(z) <cos>`                                  Return the cosine of *z*
+:func:`sin(z) <sin>`                                  Return the sine of *z*
+:func:`tan(z) <tan>`                                  Return the tangent of *z*
 
 **Hyperbolic functions**
 --------------------------------------------------------------------------------------------------
@@ -67,8 +67,8 @@ the function is then applied to the result of the conversion.
 :func:`asinh(z) <asinh>`                              Return the inverse hyperbolic sine of *z*
 :func:`atanh(z) <atanh>`                              Return the inverse hyperbolic tangent of *z*
 :func:`cosh(z) <cosh>`                                Return the hyperbolic cosine of *z*
-:func:`sinh(z) <sinh>`                                Return the hyperbolic sine of *z*.
-:func:`tanh(z) <tanh>`                                Return the hyperbolic tangent of *z*.
+:func:`sinh(z) <sinh>`                                Return the hyperbolic sine of *z*
+:func:`tanh(z) <tanh>`                                Return the hyperbolic tangent of *z*
 
 **Classification functions**
 --------------------------------------------------------------------------------------------------
