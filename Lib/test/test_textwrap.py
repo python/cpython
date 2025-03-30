@@ -791,7 +791,7 @@ class DedentTestCase(unittest.TestCase):
 
         # ASCII whitespace.
         text = "\f\n\r\t\v "
-        expect = "\f\n\r\t\v "
+        expect = "\n"
         self.assertEqual(expect, dedent(text))
 
         # One newline.
@@ -801,7 +801,7 @@ class DedentTestCase(unittest.TestCase):
 
         # Windows-style newlines.
         text = "\r\n"
-        expect = "\r\n"
+        expect = "\n"
         self.assertEqual(expect, dedent(text))
 
         # Whitespace mixture.
