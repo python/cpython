@@ -62,7 +62,7 @@ def generate():
     global MESSAGES
 
     def hash_insert_entry(string, i):
-        hash_val = hashpjw(string)
+        hash_val = _hashpjw(string)
         hash_cursor = hash_val % hash_tab_size
         inc = 1 + (hash_val % (hash_tab_size - 2))
         while hash_table[hash_cursor]:
@@ -90,7 +90,7 @@ def generate():
     #  Because unsuccessful searches are unlikely this is a good value.
     #  Formulas: [Knuth, The Art of Computer Programming, Volume 3,
     #                 766 Sorting and Searching, 1973, Addison Wesley]
-    hash_tab_size = next_prime((len(MESSAGES) * 4) // 3)
+    hash_tab_size = _next_prime((len(MESSAGES) * 4) // 3)
     if hash_tab_size <= 2:
         hash_tab_size = 3
     hash_table = array.array("I", [0] * hash_tab_size)
@@ -294,7 +294,7 @@ def main():
 
 # Peter J. Weinberger hash function
 # See: https://www.drdobbs.com/database/hashing-rehashed/184409859
-def hashpjw(strs):
+def _hashpjw(strs):
     hval = 0
     for s in strs:
         if not s:
@@ -308,7 +308,7 @@ def hashpjw(strs):
     return hval
 
 
-def next_prime(start):
+def _next_prime(start):
     def is_prime(num):
         divn = 3
         sq = divn * divn

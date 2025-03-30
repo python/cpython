@@ -9,7 +9,7 @@ from pathlib import Path
 
 from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure, assert_python_ok
-from test.test_tools import skip_if_missing, toolsdir
+from test.test_tools import imports_under_tool, skip_if_missing, toolsdir
 
 
 skip_if_missing('i18n')
@@ -17,6 +17,9 @@ skip_if_missing('i18n')
 data_dir = (Path(__file__).parent / 'msgfmt_data').resolve()
 script_dir = Path(toolsdir) / 'i18n'
 msgfmt = script_dir / 'msgfmt.py'
+
+with imports_under_tool("i18n"):
+    from msgfmt import _hashpjw
 
 
 def compile_messages(po_file, mo_file):
@@ -42,7 +45,25 @@ class CompilationTest(unittest.TestCase):
                     self.assertDictEqual(actual._catalog, expected._catalog)
 
     def test_hash_table(self):
-        pass
+        # Check _hashpjw generates correct hash values
+        self.assertEqual(_hashpjw(b"stan"), 502398)
+        self.assertEqual(_hashpjw(b"foo"), 27999)
+
+        # Check hash table is generated correctly for general.po
+        with temp_cwd():
+            tmp_mo_file = "messages.mo"
+            compile_messages(data_dir / "general.po", tmp_mo_file)
+            with open(tmp_mo_file, "rb") as f:
+                mo_data = f.read()
+
+            header = struct.unpack("=7I", mo_data[:28])
+            hash_table_size, hash_table_offset = header[5:7]
+
+            hash_tab = struct.unpack(f"={hash_table_size}I",
+                                       mo_data[hash_table_offset : hash_table_offset + (hash_table_size * 4)])
+
+            self.assertEqual(hash_tab, (1, 3, 0, 8, 9, 7, 2, 0, 4, 5, 0, 6, 0))
+
 
     def test_binary_header(self):
         with temp_cwd():
