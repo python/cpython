@@ -379,8 +379,9 @@ class ListTest(list_tests.CommonTest):
         code = textwrap.dedent("""
         from test import support
         import sys
-        # Prime the freelist
-        l = [None]
+        # Prime the freelist, size needs to larger than the small list freelists
+        l = [None, None, None, None, None, None, None, None, None, None, None,
+             None, None, None, None, None, None, None, None, None,]
         del l
         support.inject_memory_error()
         l = [None]
