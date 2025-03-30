@@ -110,11 +110,15 @@ struct HandlerInfo {
 
 static struct HandlerInfo handler_info[64];
 
-#define CALL_XML_HANDLER_SETTER(HANDLER_INFO, XML_PARSER, XML_HANDLER)      \
-    do {                                                                    \
-        xmlhandlersetter setter = (xmlhandlersetter)(HANDLER_INFO).setter;  \
-        setter((XML_PARSER), (XML_HANDLER));                                \
-    } while (0)
+// gh-111178: Use _Py_NO_SANITIZE_UNDEFINED, rather than using the exact
+// handler API for each handler.
+static inline void _Py_NO_SANITIZE_UNDEFINED
+CALL_XML_HANDLER_SETTER(const struct HandlerInfo *handler_info,
+                        XML_Parser xml_parser, xmlhandler xml_handler)
+{
+    xmlhandlersetter setter = (xmlhandlersetter)handler_info->setter;
+    setter(xml_parser, xml_handler);
+}
 
 /* Set an integer attribute on the error object; return true on success,
  * false on an exception.
@@ -180,6 +184,12 @@ conv_string_to_unicode(const XML_Char *str)
         Py_RETURN_NONE;
     }
     return PyUnicode_DecodeUTF8(str, strlen(str), "strict");
+}
+
+static PyObject *
+conv_string_to_unicode_void(void *arg)
+{
+    return conv_string_to_unicode((const XML_Char *)arg);
 }
 
 static PyObject *
@@ -498,7 +508,7 @@ VOID_HANDLER(ProcessingInstruction,
              (void *userData,
               const XML_Char *target,
               const XML_Char *data),
-             ("(NO&)", string_intern(self, target), conv_string_to_unicode ,data))
+             ("(NO&)", string_intern(self, target), conv_string_to_unicode_void, data))
 
 VOID_HANDLER(UnparsedEntityDecl,
              (void *userData,
@@ -535,12 +545,13 @@ VOID_HANDLER(XmlDecl,
               const XML_Char *encoding,
               int standalone),
              ("(O&O&i)",
-              conv_string_to_unicode ,version, conv_string_to_unicode ,encoding,
+              conv_string_to_unicode_void, version,
+              conv_string_to_unicode_void, encoding,
               standalone))
 
 static PyObject *
 conv_content_model(XML_Content * const model,
-                   PyObject *(*conv_string)(const XML_Char *))
+                   PyObject *(*conv_string)(void *))
 {
     PyObject *result = NULL;
     PyObject *children = PyTuple_New(model->numchildren);
@@ -559,7 +570,7 @@ conv_content_model(XML_Content * const model,
         }
         result = Py_BuildValue("(iiO&N)",
                                model->type, model->quant,
-                               conv_string,model->name, children);
+                               conv_string, model->name, children);
     }
     return result;
 }
@@ -581,7 +592,7 @@ my_ElementDeclHandler(void *userData,
 
         if (flush_character_buffer(self) < 0)
             goto finally;
-        modelobj = conv_content_model(model, (conv_string_to_unicode));
+        modelobj = conv_content_model(model, conv_string_to_unicode_void);
         if (modelobj == NULL) {
             flag_error(self);
             goto finally;
@@ -622,7 +633,8 @@ VOID_HANDLER(AttlistDecl,
               int isrequired),
              ("(NNO&O&i)",
               string_intern(self, elname), string_intern(self, attname),
-              conv_string_to_unicode ,att_type, conv_string_to_unicode ,dflt,
+              conv_string_to_unicode_void, att_type,
+              conv_string_to_unicode_void, dflt,
               isrequired))
 
 #if XML_COMBINED_VERSION >= 19504
@@ -658,7 +670,7 @@ VOID_HANDLER(EndNamespaceDecl,
 
 VOID_HANDLER(Comment,
                (void *userData, const XML_Char *data),
-                ("(O&)", conv_string_to_unicode ,data))
+                ("(O&)", conv_string_to_unicode_void, data))
 
 VOID_HANDLER(StartCdataSection,
                (void *userData),
@@ -689,7 +701,8 @@ RC_HANDLER(int, ExternalEntityRef,
                     const XML_Char *publicId),
                 int rc=0;,
                 ("(O&NNN)",
-                 conv_string_to_unicode ,context, string_intern(self, base),
+                 conv_string_to_unicode_void, context,
+                 string_intern(self, base),
                  string_intern(self, systemId), string_intern(self, publicId)),
                 rc = PyLong_AsLong(rv);, rc,
                 XML_GetUserData(parser))
@@ -1050,7 +1063,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
         if (handler != NULL) {
             new_parser->handlers[i] = Py_NewRef(handler);
             struct HandlerInfo info = handler_info[i];
-            CALL_XML_HANDLER_SETTER(info, new_parser->itself, info.handler);
+            CALL_XML_HANDLER_SETTER(&info, new_parser->itself, info.handler);
         }
     }
 
@@ -1361,7 +1374,7 @@ xmlparse_handler_setter(PyObject *op, PyObject *v, void *closure)
         c_handler = handler_info[handlernum].handler;
     }
     Py_XSETREF(self->handlers[handlernum], v);
-    CALL_XML_HANDLER_SETTER(handler_info[handlernum], self->itself, c_handler);
+    CALL_XML_HANDLER_SETTER(&handler_info[handlernum], self->itself, c_handler);
     return 0;
 }
 
@@ -2204,7 +2217,7 @@ clear_handlers(xmlparseobject *self, int initial)
         }
         else {
             Py_CLEAR(self->handlers[i]);
-            CALL_XML_HANDLER_SETTER(handler_info[i], self->itself, NULL);
+            CALL_XML_HANDLER_SETTER(&handler_info[i], self->itself, NULL);
         }
     }
 }
