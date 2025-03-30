@@ -4174,6 +4174,31 @@ class ConfigDictTest(BaseTest):
         handler = logging.getHandlerByName('custom')
         self.assertEqual(handler.custom_kwargs, custom_kwargs)
 
+    # See gh-91555 and gh-90321
+    @support.requires_subprocess()
+    def test_deadlock_in_queue(self):
+        queue = multiprocessing.Queue()
+        handler = logging.handlers.QueueHandler(queue)
+        logger = multiprocessing.get_logger()
+        level = logger.level
+        try:
+            logger.setLevel(logging.DEBUG)
+            logger.addHandler(handler)
+            logger.debug("deadlock")
+        finally:
+            logger.setLevel(level)
+            logger.removeHandler(handler)
+
+    def test_recursion_in_custom_handler(self):
+        class BadHandler(logging.Handler):
+            def __init__(self):
+                super().__init__()
+            def emit(self, record):
+                logger.debug("recurse")
+        logger = logging.getLogger("test_recursion_in_custom_handler")
+        logger.addHandler(BadHandler())
+        logger.setLevel(logging.DEBUG)
+        logger.debug("boom")
 
 class ManagerTest(BaseTest):
     def test_manager_loggerclass(self):

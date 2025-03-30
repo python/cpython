@@ -1459,9 +1459,6 @@ class Manager(object):
 #   Logger classes and functions
 #---------------------------------------------------------------------------
 
-_tls = threading.local()
-_tls.in_progress = False
-
 class Logger(Filterer):
     """
     Instances of the Logger class represent a single logging channel. A
@@ -1477,6 +1474,8 @@ class Logger(Filterer):
     level, and "input.csv", "input.xls" and "input.gnu" for the sub-levels.
     There is no arbitrary limit to the depth of nesting.
     """
+    _tls = threading.local()
+
     def __init__(self, name, level=NOTSET):
         """
         Initialize the logger with a name and an optional level.
@@ -1676,7 +1675,7 @@ class Logger(Filterer):
         if self._is_disabled():
             return
 
-        _tls.in_progress = True
+        self._tls.in_progress = True
         try:
             maybe_record = self.filter(record)
             if not maybe_record:
@@ -1685,7 +1684,7 @@ class Logger(Filterer):
                 record = maybe_record
             self.callHandlers(record)
         finally:
-            _tls.in_progress = False
+            self._tls.in_progress = False
 
     def addHandler(self, hdlr):
         """
@@ -1824,7 +1823,9 @@ class Logger(Filterer):
                        _hierlevel(item) == 1 + _hierlevel(item.parent))
 
     def _is_disabled(self):
-        return self.disabled or getattr(_tls, 'in_progress', False)
+        # We need to use getattr as it will only be set the first time a log
+        # message is recorded on any given thread
+        return self.disabled or getattr(self._tls, 'in_progress', False)
 
     def __repr__(self):
         level = getLevelName(self.getEffectiveLevel())
