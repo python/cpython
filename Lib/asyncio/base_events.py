@@ -276,7 +276,7 @@ class _SendfileFallbackProtocol(protocols.Protocol):
 class _ServerState(enum.Enum):
     """This tracks the state of Server.
 
-    -[in]->INITIALIZED -[ss]-> SERVING -[cl]-> CLOSED -[wk]*-> SHUTDOWN
+    -[in]->NOT_STARTED -[ss]-> SERVING -[cl]-> CLOSED -[wk]*-> SHUTDOWN
 
     - in: Server.__init__()
     - ss: Server._start_serving()
@@ -284,7 +284,7 @@ class _ServerState(enum.Enum):
     - wk: Server._wakeup()  *only called if number of clients == 0
     """
 
-    INITIALIZED = "initialized"
+    NOT_STARTED = "not_started"
     SERVING = "serving"
     CLOSED = "closed"
     SHUTDOWN = "shutdown"
@@ -305,7 +305,7 @@ class Server(events.AbstractServer):
         self._ssl_context = ssl_context
         self._ssl_handshake_timeout = ssl_handshake_timeout
         self._ssl_shutdown_timeout = ssl_shutdown_timeout
-        self._state = _ServerState.INITIALIZED
+        self._state = _ServerState.NOT_STARTED
         self._serving_forever_fut = None
 
     def __repr__(self):
@@ -319,9 +319,9 @@ class Server(events.AbstractServer):
     def _detach(self, transport):
         self._clients.discard(transport)
         if self._state == _ServerState.CLOSED and len(self._clients) == 0:
-            self._wakeup()
+            self._shutdown()
 
-    def _wakeup(self):
+    def _shutdown(self):
         if self._state == _ServerState.CLOSED:
             self._state = _ServerState.SHUTDOWN
         elif self._state == _ServerState.SHUTDOWN:
@@ -339,7 +339,7 @@ class Server(events.AbstractServer):
                 waiter.set_result(None)
 
     def _start_serving(self):
-        if self._state == _ServerState.INITIALIZED:
+        if self._state == _ServerState.NOT_STARTED:
             self._state = _ServerState.SERVING
         elif self._state == _ServerState.SERVING:
             return
@@ -385,7 +385,7 @@ class Server(events.AbstractServer):
             self._serving_forever_fut = None
 
         if len(self._clients) == 0:
-            self._wakeup()
+            self._shutdown()
 
     def close_clients(self):
         for transport in self._clients.copy():
