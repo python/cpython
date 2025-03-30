@@ -330,7 +330,7 @@ class Server(events.AbstractServer):
             # Server._detach() by the last connected client.
             return
         else:
-            raise RuntimeError(f"server {self!r} can only wakeup waiters after closing")
+            raise RuntimeError(f"server {self!r} must be closed before shutdown")
 
         waiters = self._waiters
         self._waiters = None
