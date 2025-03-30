@@ -169,14 +169,13 @@ static Py_complex acos_special_values[7][7];
 cmath.acos -> Py_complex_protected
 
     z: Py_complex_protected
-    /
 
 Return the arc cosine of z.
 [clinic start generated code]*/
 
 static Py_complex
 cmath_acos_impl(PyObject *module, Py_complex z)
-/*[clinic end generated code: output=40bd42853fd460ae input=bd6cbd78ae851927]*/
+/*[clinic end generated code: output=40bd42853fd460ae input=825ee8128f5c21e2]*/
 {
     Py_complex s1, s2, r;
 
@@ -865,7 +864,6 @@ cmath.log
 
     z as x: Py_complex
     base as y_obj: object = NULL
-    /
 
 log(z[, base]) -> the logarithm of z to the given base.
 
@@ -874,7 +872,7 @@ If the base is not specified, returns the natural logarithm (base e) of z.
 
 static PyObject *
 cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
-/*[clinic end generated code: output=4effdb7d258e0d94 input=e1f81d4fcfd26497]*/
+/*[clinic end generated code: output=4effdb7d258e0d94 input=62e46be565758323]*/
 {
     Py_complex y;
 
@@ -913,14 +911,13 @@ math_error(void)
 cmath.phase
 
     z: Py_complex
-    /
 
 Return argument, also known as the phase angle, of a complex.
 [clinic start generated code]*/
 
 static PyObject *
 cmath_phase_impl(PyObject *module, Py_complex z)
-/*[clinic end generated code: output=50725086a7bfd253 input=5cf75228ba94b69d]*/
+/*[clinic end generated code: output=50725086a7bfd253 input=3ffcb1a685836dea]*/
 {
     double phi;
 
@@ -933,10 +930,7 @@ cmath_phase_impl(PyObject *module, Py_complex z)
 }
 
 /*[clinic input]
-cmath.polar
-
-    z: Py_complex
-    /
+cmath.polar = cmath.phase
 
 Convert a complex from rectangular coordinates to polar coordinates.
 
@@ -945,7 +939,7 @@ r is the distance from 0 and phi the phase angle.
 
 static PyObject *
 cmath_polar_impl(PyObject *module, Py_complex z)
-/*[clinic end generated code: output=d0a8147c41dbb654 input=26c353574fd1a861]*/
+/*[clinic end generated code: output=d0a8147c41dbb654 input=4dabce97b098e272]*/
 {
     double r, phi;
 
@@ -976,14 +970,13 @@ cmath.rect
 
     r: double
     phi: double
-    /
 
 Convert from polar coordinates to rectangular coordinates.
 [clinic start generated code]*/
 
 static PyObject *
 cmath_rect_impl(PyObject *module, double r, double phi)
-/*[clinic end generated code: output=385a0690925df2d5 input=24c5646d147efd69]*/
+/*[clinic end generated code: output=385a0690925df2d5 input=8c5ac8c4d3f2f69a]*/
 {
     Py_complex z;
     errno = 0;

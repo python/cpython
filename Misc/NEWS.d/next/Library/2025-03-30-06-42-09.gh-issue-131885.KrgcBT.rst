@@ -1,0 +1,2 @@
+Simplify function signatures in the :mod:`cmath` module, e.g. ``sin(z)``
+instead of ``sin(z, /)``.  Patch by Sergey B Kirpichev.
