@@ -4406,7 +4406,7 @@ _build_result(PyObject *result, PyObject *callargs,
 }
 
 static PyObject *
-PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
+PyCFuncPtr_call_lock_held(PyObject *op, PyObject *inargs, PyObject *kwds)
 {
     PyObject *restype;
     PyObject *converters;
@@ -4542,6 +4542,16 @@ PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
 
     return _build_result(result, callargs,
                          outmask, inoutmask, numretvals);
+}
+
+static PyObject *
+PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = PyCFuncPtr_call_lock_held(op, inargs, kwds);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static int
