@@ -17,7 +17,6 @@ import collections
 import itertools
 import os
 import queue
-import sys
 import threading
 import time
 import traceback
@@ -789,7 +788,9 @@ class ApplyResult(object):
         try:
             return callback(args)
         except Exception as e:
-            sys.excepthook(*sys.exc_info())
+            args = threading.ExceptHookArgs([type(e), e, e.__traceback__, None])
+            threading.excepthook(args)
+            del args
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
