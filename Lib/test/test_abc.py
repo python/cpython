@@ -411,7 +411,35 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
             self.assertIsInstance(42, A)
             self.assertIsInstance(42, (A,))
 
-        def test_issubclass_bad_arguments(self):
+        def test_subclasses(self):
+            class A:
+                pass
+
+            class B:
+                pass
+
+            class C:
+                pass
+
+            class Sup(metaclass=abc_ABCMeta):
+                __subclasses__ = lambda: [A, B]
+
+            self.assertIsSubclass(A, Sup)
+            self.assertIsSubclass(A, (Sup,))
+            self.assertIsInstance(A(), Sup)
+            self.assertIsInstance(A(), (Sup,))
+
+            self.assertIsSubclass(B, Sup)
+            self.assertIsSubclass(B, (Sup,))
+            self.assertIsInstance(B(), Sup)
+            self.assertIsInstance(B(), (Sup,))
+
+            self.assertNotIsSubclass(C, Sup)
+            self.assertNotIsSubclass(C, (Sup,))
+            self.assertNotIsInstance(C(), Sup)
+            self.assertNotIsInstance(C(), (Sup,))
+
+        def test_subclasses_bad_arguments(self):
             class A(metaclass=abc_ABCMeta):
                 pass
 
