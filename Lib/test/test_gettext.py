@@ -37,8 +37,8 @@ cyBmaWNoZXJvcyAoY29udGV4dCkAYmFjb24Ad2luayB3aW5rIChpbiAibXkgY29udGV4dCIpAHdp
 bmsgd2luayAoaW4gIm15IG90aGVyIGNvbnRleHQiKQB3aW5rIHdpbmsA
 '''
 
-# Invalid magic number ('ABCD' b64-encoded)
-GNU_MO_DATA_BAD_MAGIC_NUMBER = rb'\QUJDRA=='
+# .mo file with an invalid magic number
+GNU_MO_DATA_BAD_MAGIC_NUMBER = base64.b64encode(b'ABCD')
 
 # This data contains an invalid major version number (5)
 # An unexpected major version number should be treated as an error when
