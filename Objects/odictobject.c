@@ -471,6 +471,7 @@ later:
 #include "pycore_dict.h"             // _Py_dict_lookup()
 #include "pycore_object.h"           // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"         // _PyErr_ChainExceptions1()
+#include "pycore_tuple.h"            // _PyTuple_Recycle()
 #include <stddef.h>                  // offsetof()
 
 #include "clinic/odictobject.c.h"
@@ -1762,9 +1763,7 @@ odictiter_iternext(PyObject *op)
         Py_DECREF(PyTuple_GET_ITEM(result, 1));  /* borrowed */
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
     }
     else {
         result = PyTuple_New(2);

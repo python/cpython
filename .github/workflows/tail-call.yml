@@ -87,8 +87,8 @@ jobs:
           set PlatformToolset=clangcl
           set LLVMToolsVersion=${{ matrix.llvm }}.1.5
           set LLVMInstallDir=C:\Program Files\LLVM
-          ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }}
-          ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+          call ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }}
+          call ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       # No tests (yet):
       - name: Emulated Windows (release)
