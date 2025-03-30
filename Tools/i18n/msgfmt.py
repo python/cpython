@@ -34,7 +34,7 @@ import array
 from email.parser import HeaderParser
 import codecs
 
-__version__ = "1.3"
+__version__ = "1.2"
 
 
 MESSAGES = {}
@@ -121,7 +121,7 @@ def generate():
         voffsets += [l2, o2+valuestart]
     offsets = koffsets + voffsets
     output = struct.pack("Iiiiiii",
-                         0x950412de,             # Magic
+                         0x950412de,                   # Magic
                          0,                            # Version
                          len(keys),                    # # of entries
                          7*4,                          # start of key index
@@ -292,14 +292,16 @@ def main():
 
 # Utilities for writing hash table
 
-def hashpjw(str_param):
+# Peter J. Weinberger hash function
+# See: https://www.drdobbs.com/database/hashing-rehashed/184409859
+def hashpjw(strs):
     hval = 0
-    for s in str_param:
+    for s in strs:
         if not s:
             break
         hval <<= 4
         hval += s
-        g = hval & 0xF << 28
+        g = hval & (0xF << 28)
         if g:
             hval ^= g >> 24
             hval ^= g
