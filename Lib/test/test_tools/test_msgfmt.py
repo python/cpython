@@ -66,8 +66,8 @@ class CompilationTest(unittest.TestCase):
         self.assertEqual(num_strings, 9)
         self.assertEqual(orig_table_offset, 28)
         self.assertEqual(trans_table_offset, 100)
-        self.assertEqual(hash_table_size, 0)
-        self.assertEqual(hash_table_offset, 0)
+        self.assertEqual(hash_table_size, 13)
+        self.assertEqual(hash_table_offset, 172)
 
     def test_translations(self):
         with open(data_dir / 'general.mo', 'rb') as f:
