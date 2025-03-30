@@ -588,8 +588,9 @@ ctype_get_pointer_type(PyObject *self, void *Py_UNUSED(ignored))
         return NULL;
     }
 
-    if (info->pointer_type) {
-        return Py_NewRef(info->pointer_type);
+    PyObject* pointer_type = FT_ATOMIC_LOAD_PTR_ACQUIRE(info->pointer_type);
+    if (pointer_type) {
+        return Py_NewRef(pointer_type);
     }
     Py_RETURN_NONE;
 }
@@ -1227,26 +1228,39 @@ PyCPointerType_SetProto(ctypes_state *st, PyObject *self, StgInfo *stginfo, PyOb
         PyErr_Format(PyExc_TypeError, "%R must have storage info", proto);
         return -1;
     }
-    if (info->pointer_type && info->pointer_type != self) {
+
+    PyObject* pointer_type = FT_ATOMIC_LOAD_PTR_ACQUIRE(info->pointer_type);
+    PyObject* stginfo_proto = FT_ATOMIC_LOAD_PTR_ACQUIRE(stginfo->proto);
+
+    if (pointer_type && pointer_type != self) {
         PyErr_Format(PyExc_TypeError,
             "pointer type already set: old=%R, new=%R",
-            info->pointer_type, self);
+            pointer_type, self);
         return -1;
     }
-    if (stginfo->proto && stginfo->proto != proto) {
+    if (stginfo_proto && stginfo_proto != proto) {
         PyErr_Format(PyExc_TypeError,
             "cls type already set: old=%R, new=%R",
-            stginfo->proto, proto);
+            stginfo_proto, proto);
         return -1;
     }
 
-    if (!stginfo->proto) {
-        stginfo->proto = Py_NewRef(proto);
+    if (!stginfo_proto || !pointer_type) {
+        STGINFO2_LOCK(stginfo, info);
+
+        stginfo_proto = FT_ATOMIC_LOAD_PTR_ACQUIRE(stginfo->proto);
+        if (!stginfo_proto) {
+            FT_ATOMIC_STORE_PTR_RELEASE(stginfo->proto, Py_NewRef(proto));
+        }
+
+        pointer_type = FT_ATOMIC_LOAD_PTR_ACQUIRE(info->pointer_type);
+        if (!pointer_type) {
+            FT_ATOMIC_STORE_PTR_RELEASE(info->pointer_type, Py_NewRef(self));
+        }
+
+        STGINFO2_UNLOCK();
     }
 
-    if (!info->pointer_type) {
-        info->pointer_type = Py_NewRef(self);
-    }
     return 0;
 }
 
