@@ -102,6 +102,11 @@ WIN32 is still required for the locale module.
 /* #define Py_GIL_DISABLED 1 */
 #endif
 
+// _DEBUG implies Py_DEBUG
+#ifdef _DEBUG
+#define Py_DEBUG
+#endif
+
 /* Compiler specific defines */
 
 /* ------------------------------------------------------------------------*/
@@ -287,11 +292,6 @@ typedef int pid_t;
 
 #ifndef NO_STDIO_H
 #       include <stdio.h>
-#endif
-
-// _DEBUG implies Py_DEBUG
-#ifdef _DEBUG
-#       define Py_DEBUG
 #endif
 
 /* 64 bit ints are usually spelt __int64 unless compiler has overridden */
