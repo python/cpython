@@ -53,11 +53,11 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
         if not isinstance(part, Uop):
             continue
         for var in part.stack.inputs:
-            if var.name not in seen:
+            if var.used and var.name not in seen:
                 seen.add(var.name)
                 declare_variable(var, out)
         for var in part.stack.outputs:
-            if var.name not in seen:
+            if var.used and var.name not in seen:
                 seen.add(var.name)
                 declare_variable(var, out)
 
