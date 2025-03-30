@@ -439,11 +439,9 @@ def dedent(text):
     non_blank_lines = [l for l in lines if l and not l.isspace()]
     l1 = min(non_blank_lines)
     l2 = max(non_blank_lines)
-    margin = 0
-    for i, c in enumerate(l1):
-        if c != l2[i] or c not in ' \t':
+    for margin, c in enumerate(l1):
+        if c != l2[margin] or c not in ' \t':
             break
-        margin += 1
 
     return '\n'.join([l[margin:] if l and not l.isspace() else ''
                       for l in lines])
