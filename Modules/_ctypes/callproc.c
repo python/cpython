@@ -164,12 +164,7 @@ _ctypes_get_errobj(ctypes_state *st, int **pspace)
                         "cannot get thread state");
         return NULL;
     }
-    if (st->error_object_name == NULL) {
-        st->error_object_name = PyUnicode_InternFromString("ctypes.error_object");
-        if (st->error_object_name == NULL) {
-            return NULL;
-        }
-    }
+    assert(st->error_object_name != NULL);
     if (PyDict_GetItemRef(dict, st->error_object_name, &errobj) < 0) {
         return NULL;
     }
