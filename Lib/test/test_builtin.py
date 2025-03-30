@@ -225,6 +225,8 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(all(x > 42 for x in S), True)
         S = [50, 40, 60]
         self.assertEqual(all(x > 42 for x in S), False)
+        S = [50, 40, 60, TestFailingBool()]
+        self.assertEqual(all(x > 42 for x in S), False)
 
     def test_any(self):
         self.assertEqual(any([None, None, None]), False)
@@ -238,8 +240,58 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(any([1, TestFailingBool()]), True) # Short-circuit
         S = [40, 60, 30]
         self.assertEqual(any(x > 42 for x in S), True)
+        S = [40, 60, 30, TestFailingBool()]
+        self.assertEqual(any(x > 42 for x in S), True)
         S = [10, 20, 30]
         self.assertEqual(any(x > 42 for x in S), False)
+
+    def test_all_any_tuple_optimization(self):
+        def f_all():
+            return all(x-2 for x in [1,2,3])
+
+        def f_any():
+            return any(x-1 for x in [1,2,3])
+
+        def f_tuple():
+            return tuple(2*x for x in [1,2,3])
+
+        funcs = [f_all, f_any, f_tuple]
+
+        for f in funcs:
+            # check that generator code object is not duplicated
+            code_objs = [c for c in f.__code__.co_consts if isinstance(c, type(f.__code__))]
+            self.assertEqual(len(code_objs), 1)
+
+
+        # check the overriding the builtins works
+
+        global all, any, tuple
+        saved = all, any, tuple
+        try:
+            all = lambda x : "all"
+            any = lambda x : "any"
+            tuple = lambda x : "tuple"
+
+            overridden_outputs = [f() for f in funcs]
+        finally:
+            all, any, tuple = saved
+
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
+
+        # Now repeat, overriding the builtins module as well
+        saved = all, any, tuple
+        try:
+            builtins.all = all = lambda x : "all"
+            builtins.any = any = lambda x : "any"
+            builtins.tuple = tuple = lambda x : "tuple"
+
+            overridden_outputs = [f() for f in funcs]
+        finally:
+            all, any, tuple = saved
+            builtins.all, builtins.any, builtins.tuple = saved
+
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
+
 
     def test_ascii(self):
         self.assertEqual(ascii(''), '\'\'')
