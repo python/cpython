@@ -94,14 +94,7 @@ class ExecutorTest:
 
         # a failed future should not be captured in its
         # future._exception.__traceback__ to avoid a reference cycle
-        self.assertFalse(
-            [
-                referrer
-                for referrer in gc.get_referrers(error)
-                if isinstance(referrer, futures.Future)
-            ],
-            msg="none of the referrers should be a Future",
-        )
+        self.assertListEqual(gc.get_referrers(error), [])
         self.assertEqual(next(i), (1, 0))
         self.assertRaises(StopIteration, next, i)
         self.assertRaises(StopIteration, next, i)
