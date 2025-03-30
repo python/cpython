@@ -368,24 +368,28 @@ class Server(events.AbstractServer):
     def close(self):
         if self._state in {_ServerState.CLOSED, _ServerState.SHUTDOWN}:
             return
-        else:
+
+        prev_state = self._state
+        try:
             self._state = _ServerState.CLOSED
 
-        sockets = self._sockets
-        if sockets is None:
-            return
-        self._sockets = None
+            sockets = self._sockets
+            if sockets is None:
+                return
+            self._sockets = None
 
-        for sock in sockets:
-            self._loop._stop_serving(sock)
+            for sock in sockets:
+                self._loop._stop_serving(sock)
 
-        if (self._serving_forever_fut is not None and
-                not self._serving_forever_fut.done()):
-            self._serving_forever_fut.cancel()
-            self._serving_forever_fut = None
+            if (self._serving_forever_fut is not None and
+                    not self._serving_forever_fut.done()):
+                self._serving_forever_fut.cancel()
+                self._serving_forever_fut = None
 
-        if len(self._clients) == 0:
-            self._shutdown()
+            if len(self._clients) == 0:
+                self._shutdown()
+        except:
+            self._state = prev_state
 
     def close_clients(self):
         for transport in self._clients.copy():
