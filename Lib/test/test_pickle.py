@@ -746,12 +746,15 @@ class CommandLineTest(unittest.TestCase):
             self.assertListEqual(res.splitlines(), expect.splitlines())
 
     def test_unknown_flag(self):
-        data = 'some_text'
-        self.set_pickle_data(data)
+        output = io.StringIO()
         with self.assertRaises(SystemExit):
             # suppress argparse error message
-            with contextlib.redirect_stderr(io.StringIO()):
+            with contextlib.redirect_stderr(output):
                 _ = self.invoke_pickle('--unknown')
+        msg = output.getvalue()
+        self.assertTrue(msg.startswith('usage: '),
+                        "Output does not start with 'usage: '. "
+                        f"Output was: {msg}")
 
 
 def load_tests(loader, tests, pattern):
