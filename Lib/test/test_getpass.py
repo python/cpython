@@ -176,7 +176,7 @@ class UnixGetpassTest(unittest.TestCase):
             mock_input.assert_called_once_with('Password: ', textio(), textio(), '*')
             self.assertEqual(result, mock_result)
 
-    def test_input_with_echochar(self):
+    def test_input_with_control_characters(self):
         passwd = 'my1pa$$word!'
         mock_input = StringIO(f'{passwd}\n')
         mock_output = StringIO()
@@ -186,6 +186,18 @@ class UnixGetpassTest(unittest.TestCase):
                                                   mock_input, '*')
         self.assertEqual(result, passwd)
         self.assertEqual('Password: ************', mock_output.getvalue())
+
+    def test_control_chars_with_echochar(self):
+        passwd = 'pass\twd\b'
+        expect_result = 'pass\tw'
+        mock_input = StringIO(f'{passwd}\n')
+        mock_output = StringIO()
+        with mock.patch('sys.stdin', mock_input), \
+                mock.patch('sys.stdout', mock_output):
+            result = getpass._input_with_echochar('Password: ', mock_output,
+                                                  mock_input, '*')
+        self.assertEqual(result, expect_result)
+        self.assertEqual('Password: *******\x08 \x08', mock_output.getvalue())
 
 
 if __name__ == "__main__":
