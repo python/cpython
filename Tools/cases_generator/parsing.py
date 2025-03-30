@@ -171,7 +171,9 @@ class WhileStmt(Stmt):
 class MacroIfStmt(Stmt):
     condition: lx.Token
     body: list[Stmt]
+    else_: lx.Token | None
     else_body: list[Stmt] | None
+    endif: lx.Token
 
     def print(self, out:CWriter) -> None:
         out.emit(self.condition)
@@ -657,7 +659,15 @@ class Parser(PLexer):
             return self.for_stmt(tkn)
         elif tkn := self.expect(lx.WHILE):
             return self.while_stmt(tkn)
-        elif tkn := self.expect(lx.CMACRO):
+        elif tkn := self.expect(lx.CMACRO_IF):
+            return self.macro_if(tkn)
+        elif tkn := self.expect(lx.CMACRO_ELSE):
+            msg = "Unexpected #else"
+            raise self.make_syntax_error(msg)
+        elif tkn := self.expect(lx.CMACRO_ENDIF):
+            msg = "Unexpected #endif"
+            raise self.make_syntax_error(msg)
+        elif tkn := self.expect(lx.CMACRO_OTHER):
             return SimpleStmt([tkn])
         elif tkn := self.expect(lx.SWITCH):
             msg = "switch statements are not supported due to their complex flow control. Sorry."
@@ -678,6 +688,24 @@ class Parser(PLexer):
                 else_body = self.block()
         return IfStmt(if_, condition, body, else_, else_body)
 
+
+    def macro_if(self, cond: lx.Token) -> IfStmt:
+        else_ = None
+        body: list[Stmt] = []
+        else_body: list[Stmt] | None = None
+        part = body
+        while True:
+            if tkn := self.expect(lx.CMACRO_ENDIF):
+                return MacroIfStmt(cond, body, else_, else_body, tkn)
+            elif tkn := self.expect(lx.CMACRO_ELSE):
+                if part is else_body:
+                    raise self.make_syntax_error("Multiple #else")
+                else_ = tkn
+                else_body = []
+                part = else_body
+            else:
+                part.append(self.stmt())
+
     def for_stmt(self, for_: lx.Token) -> ForStmt:
         lparen = self.require(lx.LPAREN)
         header = [lparen] + self.consume_to(lx.RPAREN)
@@ -693,6 +721,7 @@ class Parser(PLexer):
 
 if __name__ == "__main__":
     import sys
+    import pprint
 
     if sys.argv[1:]:
         filename = sys.argv[1]
@@ -710,5 +739,5 @@ if __name__ == "__main__":
         filename = "<default>"
         src = "if (x) { x.foo; // comment\n}"
     parser = Parser(src, filename)
-    x = parser.definition()
-    print(x)
+    while node := parser.definition():
+        pprint.pprint(node)

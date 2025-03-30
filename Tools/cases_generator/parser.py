@@ -17,6 +17,7 @@ from parsing import (  # noqa: F401
     ForStmt,
     WhileStmt,
     BlockStmt,
+    MacroIfStmt,
 )
 
 import pprint

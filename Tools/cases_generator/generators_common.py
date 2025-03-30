@@ -12,7 +12,7 @@ from cwriter import CWriter
 from typing import Callable, TextIO, Iterator, Iterable
 from lexer import Token
 from stack import Storage, StackError
-from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, ForStmt, WhileStmt
+from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, ForStmt, WhileStmt, MacroIfStmt
 
 # Set this to true for voluminous output showing state of stack and locals
 PRINT_STACKS = False
@@ -476,6 +476,8 @@ class Emitter:
             return self._emit_for(stmt, uop, storage, inst)
         elif isinstance(stmt, WhileStmt):
             return self._emit_while(stmt, uop, storage, inst)
+        elif isinstance(stmt, MacroIfStmt):
+            return self._emit_macro_if(stmt, uop, storage, inst)
         else:
             raise NotImplementedError("Unexpected statement")
 
@@ -532,6 +534,37 @@ class Emitter:
             return reachable, None, storage
         except StackError as ex:
             raise analysis_error(ex.args[0], tkn) #from None
+
+
+    def _emit_macro_if(
+        self,
+        stmt: IfStmt,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ) -> tuple[bool, Token, Storage]:
+        self.out.emit(stmt.condition)
+        branch = stmt.else_ is not None
+        reachable = True
+        for s in stmt.body:
+            r, tkn, storage = self._emit_stmt(s, uop, storage, inst)
+            if tkn is not None:
+                self.out.emit(tkn)
+            if not r:
+                reachable = False
+        if branch:
+            else_storage = storage.copy()
+            self.out.emit(stmt.else_)
+            for s in stmt.else_body:
+                r, tkn, else_storage = self._emit_stmt(s, uop, else_storage, inst)
+                if tkn is not None:
+                    self.out.emit(tkn)
+                if not r:
+                    reachable = False
+            storage.merge(else_storage, self.out)
+        self.out.emit(stmt.endif)
+        return reachable, None, storage
+
 
     def _emit_if(
         self,
@@ -640,7 +673,7 @@ class Emitter:
             if emit_braces:
                 self.out.emit(tkn)
         except StackError as ex:
-            raise analysis_error(ex.args[0], last) from None
+            raise analysis_error(ex.args[0], tkn) from None
         return storage
 
     def emit(self, txt: str | Token) -> None:
