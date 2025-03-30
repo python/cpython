@@ -102,7 +102,7 @@
         _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
             _PyReftracerTrack(op, PyRefTracer_DESTROY); \
-            /* TODO(picnixz): remove '(destructor)' cast to detect runtime UBs */ \
+            /* TODO(picnixz): remove cast to detect incorrect macro usages */ \
             destructor d = (destructor)(dealloc); \
             d(op); \
         } \
