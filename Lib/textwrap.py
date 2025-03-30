@@ -429,16 +429,13 @@ def dedent(text):
     if not text:
         return text
 
-    # If the input is entirely whitespace, return normalized lines.
-    if text.isspace():
-        return '\n' * text.count('\n')
-
     lines = text.split('\n')
 
     # Get length of leading whitespace, inspired by ``os.path.commonprefix()``.
     non_blank_lines = [l for l in lines if l and not l.isspace()]
-    l1 = min(non_blank_lines)
-    l2 = max(non_blank_lines)
+    l1 = min(non_blank_lines, default='')
+    l2 = max(non_blank_lines, default='')
+    margin = 0
     for margin, c in enumerate(l1):
         if c != l2[margin] or c not in ' \t':
             break
