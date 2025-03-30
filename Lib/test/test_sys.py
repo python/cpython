@@ -1708,7 +1708,7 @@ class SizeofTest(unittest.TestCase):
         # PyCapsule
         check(_datetime.datetime_CAPI, size('6P'))
         # rangeiterator
-        check(iter(range(1)), size('3l'))
+        check(iter(range(1)), size('4l'))
         check(iter(range(2**65)), size('3P'))
         # reverse
         check(reversed(''), size('nP'))

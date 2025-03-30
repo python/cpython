@@ -369,16 +369,16 @@ PyTypeObject _PyUOpExecutor_Type = {
 /* TO DO -- Generate these tables */
 static const uint16_t
 _PyUOp_Replacements[MAX_UOP_ID + 1] = {
-    [_ITER_JUMP_RANGE] = _GUARD_NOT_EXHAUSTED_RANGE,
     [_ITER_JUMP_LIST] = _GUARD_NOT_EXHAUSTED_LIST,
     [_ITER_JUMP_TUPLE] = _GUARD_NOT_EXHAUSTED_TUPLE,
     [_FOR_ITER] = _FOR_ITER_TIER_TWO,
     [_ITER_NEXT_LIST] = _ITER_NEXT_LIST_TIER_TWO,
+    [_ITER_NEXT_RANGE] = _ITER_NEXT_RANGE_TIER_TWO,
 };
 
 static const uint8_t
 is_for_iter_test[MAX_UOP_ID + 1] = {
-    [_GUARD_NOT_EXHAUSTED_RANGE] = 1,
+    [_ITER_NEXT_RANGE_TIER_TWO] = 1,
     [_GUARD_NOT_EXHAUSTED_LIST] = 1,
     [_GUARD_NOT_EXHAUSTED_TUPLE] = 1,
     [_FOR_ITER_TIER_TWO] = 1,

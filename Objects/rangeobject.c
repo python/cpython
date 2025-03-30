@@ -1,12 +1,14 @@
 /* Range object implementation */
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
-#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
-#include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_modsupport.h"    // _PyArg_NoKwnames()
+#include "pycore_abstract.h"           // _PyIndex_Check()
+#include "pycore_ceval.h"              // _PyEval_GetBuiltin()
+#include "pycore_critical_section.h"   // _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED()
+#include "pycore_long.h"               // _PyLong_GetZero()
+#include "pycore_modsupport.h"         // _PyArg_NoKwnames()
+#include "pycore_pyatomic_ft_wrappers.h"
 #include "pycore_range.h"
-#include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_tuple.h"              // _PyTuple_ITEMS()
 
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
@@ -828,11 +830,14 @@ static PyObject *
 rangeiter_next(PyObject *op)
 {
     _PyRangeIterObject *r = (_PyRangeIterObject*)op;
-    if (r->len > 0) {
-        long result = r->start;
-        r->start = result + r->step;
-        r->len--;
-        return PyLong_FromLong(result);
+    long start = FT_ATOMIC_LOAD_LONG_RELAXED(r->start);
+    long len = _PyRangeIter_GetLength(r, start);
+    if (len > 0) {
+#ifndef Py_GIL_DISABLED
+        r->len = len - 1;
+#endif
+        FT_ATOMIC_STORE_LONG_RELAXED(r->start, start + r->step);
+        return PyLong_FromLong(start);
     }
     return NULL;
 }
@@ -841,7 +846,8 @@ static PyObject *
 rangeiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     _PyRangeIterObject *r = (_PyRangeIterObject*)op;
-    return PyLong_FromLong(r->len);
+    long start = FT_ATOMIC_LOAD_LONG_RELAXED(r->start);
+    return PyLong_FromLong(_PyRangeIter_GetLength(r, start));
 }
 
 PyDoc_STRVAR(length_hint_doc,
@@ -855,17 +861,17 @@ rangeiter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     PyObject *range;
 
     /* create a range object for pickling */
-    start = PyLong_FromLong(r->start);
+    start = PyLong_FromLong(FT_ATOMIC_LOAD_LONG_RELAXED(r->start));
     if (start == NULL)
         goto err;
-    stop = PyLong_FromLong(r->start + r->len * r->step);
+    stop = PyLong_FromLong(r->stop);
     if (stop == NULL)
         goto err;
     step = PyLong_FromLong(r->step);
     if (step == NULL)
         goto err;
     range = (PyObject*)make_range_object(&PyRange_Type,
-                               start, stop, step);
+                                         start, stop, step);
     if (range == NULL)
         goto err;
     /* return the result */
@@ -886,12 +892,14 @@ rangeiter_setstate(PyObject *op, PyObject *state)
     if (index == -1 && PyErr_Occurred())
         return NULL;
     /* silently clip the index value */
+    long start = FT_ATOMIC_LOAD_LONG_RELAXED(r->start);
+    long len = _PyRangeIter_GetLength(r, start);
     if (index < 0)
         index = 0;
-    else if (index > r->len)
-        index = r->len; /* exhausted iterator */
-    r->start += index * r->step;
-    r->len -= index;
+    else if (index > len)
+        index = len; /* exhausted iterator */
+    r->len = len - index;
+    FT_ATOMIC_STORE_LONG_RELAXED(r->start, start + index * r->step);
     Py_RETURN_NONE;
 }
 
@@ -978,6 +986,7 @@ fast_range_iter(long start, long stop, long step, long len)
     it->start = start;
     it->step = step;
     it->len = len;
+    it->stop = stop;
     return (PyObject *)it;
 }
 
@@ -992,13 +1001,17 @@ static PyObject *
 longrangeiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     longrangeiterobject *r = (longrangeiterobject*)op;
-    Py_INCREF(r->len);
-    return r->len;
+    PyObject *len;
+    Py_BEGIN_CRITICAL_SECTION(r);
+    len = Py_NewRef(r->len);
+    Py_END_CRITICAL_SECTION();
+    return len;
 }
 
 static PyObject *
-longrangeiter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
+longrangeiter_reduce_lock_held(PyObject *op)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     longrangeiterobject *r = (longrangeiterobject*)op;
     PyObject *product, *stop=NULL;
     PyObject *range;
@@ -1011,8 +1024,8 @@ longrangeiter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     Py_DECREF(product);
     if (stop ==  NULL)
         return NULL;
-    range =  (PyObject*)make_range_object(&PyRange_Type,
-                               Py_NewRef(r->start), stop, Py_NewRef(r->step));
+    range = (PyObject*)make_range_object(&PyRange_Type,
+                                         Py_NewRef(r->start), stop, Py_NewRef(r->step));
     if (range == NULL) {
         Py_DECREF(r->start);
         Py_DECREF(stop);
@@ -1026,8 +1039,19 @@ longrangeiter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 }
 
 static PyObject *
-longrangeiter_setstate(PyObject *op, PyObject *state)
+longrangeiter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyObject *ret;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    ret = longrangeiter_reduce_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return ret;
+}
+
+static PyObject *
+longrangeiter_setstate_lock_held(PyObject *op, PyObject *state)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     longrangeiterobject *r = (longrangeiterobject*)op;
     PyObject *zero = _PyLong_GetZero();  // borrowed reference
     int cmp;
@@ -1065,6 +1089,16 @@ longrangeiter_setstate(PyObject *op, PyObject *state)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+longrangeiter_setstate(PyObject *op, PyObject *state)
+{
+    PyObject *ret;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    ret = longrangeiter_setstate_lock_held(op, state);
+    Py_END_CRITICAL_SECTION();
+    return ret;
+}
+
 static PyMethodDef longrangeiter_methods[] = {
     {"__length_hint__", longrangeiter_len, METH_NOARGS, length_hint_doc},
     {"__reduce__", longrangeiter_reduce, METH_NOARGS, reduce_doc},
@@ -1083,8 +1117,9 @@ longrangeiter_dealloc(PyObject *op)
 }
 
 static PyObject *
-longrangeiter_next(PyObject *op)
+longrangeiter_next_lock_held(PyObject *op)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     longrangeiterobject *r = (longrangeiterobject*)op;
     if (PyObject_RichCompareBool(r->len, _PyLong_GetZero(), Py_GT) != 1)
         return NULL;
@@ -1102,6 +1137,16 @@ longrangeiter_next(PyObject *op)
     r->start = new_start;
     Py_SETREF(r->len, new_len);
     return result;
+}
+
+static PyObject *
+longrangeiter_next(PyObject *op)
+{
+    PyObject *ret;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    ret = longrangeiter_next_lock_held(op);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 PyTypeObject PyLongRangeIter_Type = {
@@ -1295,4 +1340,15 @@ long_range:
 create_failure:
     Py_DECREF(it);
     return NULL;
+}
+
+long
+_PyRangeIter_GetLength(_PyRangeIterObject *r, long start)
+{
+#ifdef Py_GIL_DISABLED
+    // we know this won't be greater than a long
+    return (long)get_len_of_range(start, r->stop, r->step);
+#else
+    return r->len;
+#endif
 }

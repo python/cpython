@@ -1523,15 +1523,11 @@
             break;
         }
 
-        /* _ITER_JUMP_RANGE is not a viable micro-op for tier 2 */
+        /* _ITER_NEXT_RANGE is not a viable micro-op for tier 2 */
 
-        case _GUARD_NOT_EXHAUSTED_RANGE: {
-            break;
-        }
-
-        case _ITER_NEXT_RANGE: {
+        case _ITER_NEXT_RANGE_TIER_TWO: {
             JitOptSymbol *next;
-            next = sym_new_type(ctx, &PyLong_Type);
+            next = sym_new_not_null(ctx);
             stack_pointer[0] = next;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

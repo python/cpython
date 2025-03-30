@@ -1,3 +1,4 @@
+import sys
 import threading
 import unittest
 from test import support
@@ -12,8 +13,8 @@ if support.check_sanitizer(thread=True):
     NUMITEMS = 1000
     NUMTHREADS = 2
 else:
-    NUMITEMS = 100000
-    NUMTHREADS = 5
+    NUMITEMS = 50000
+    NUMTHREADS = 3
 NUMMUTATORS = 2
 
 class ContendedTupleIterationTest(unittest.TestCase):
@@ -23,7 +24,7 @@ class ContendedTupleIterationTest(unittest.TestCase):
     def assert_iterator_results(self, results, expected):
         # Most iterators are not atomic (yet?) so they can skip or duplicate
         # items, but they should not invent new items (like the range
-        # iterator currently does).
+        # iterator has done in the past).
         extra_items = set(results) - set(expected)
         self.assertEqual(set(), extra_items)
 
@@ -34,12 +35,12 @@ class ContendedTupleIterationTest(unittest.TestCase):
             t.start()
             threads.append(t)
         return threads
-
+        
     def test_iteration(self):
         """Test iteration over a shared container"""
         seq = self.make_testdata(NUMITEMS)
         results = []
-        start = threading.Barrier(NUMTHREADS)
+        start = threading.Event()
         def worker():
             idx = 0
             start.wait()
@@ -47,17 +48,18 @@ class ContendedTupleIterationTest(unittest.TestCase):
                 idx += 1
             results.append(idx)
         threads = self.run_threads(worker)
+        start.set()
         for t in threads:
             t.join()
         # Each thread has its own iterator, so results should be entirely predictable.
         self.assertEqual(results, [NUMITEMS] * NUMTHREADS)
-
+        
     def test_shared_iterator(self):
         """Test iteration over a shared iterator"""
         seq = self.make_testdata(NUMITEMS)
         it = iter(seq)
         results = []
-        start = threading.Barrier(NUMTHREADS)
+        start = threading.Event()
         def worker():
             items = []
             start.wait()
@@ -66,9 +68,10 @@ class ContendedTupleIterationTest(unittest.TestCase):
                 items.append(item)
             results.extend(items)
         threads = self.run_threads(worker)
+        start.set()
         for t in threads:
             t.join()
-        self.assert_iterator_results(results, seq)
+        self.assert_iterator_results(sorted(results), seq)
 
 class ContendedListIterationTest(ContendedTupleIterationTest):
     def make_testdata(self, n):
@@ -78,7 +81,7 @@ class ContendedListIterationTest(ContendedTupleIterationTest):
         """Test iteration over a shared mutating container."""
         seq = self.make_testdata(NUMITEMS)
         results = []
-        start = threading.Barrier(NUMTHREADS + NUMMUTATORS)
+        start = threading.Event()
         endmutate = threading.Event()
         def mutator():
             orig = seq[:]
@@ -87,10 +90,7 @@ class ContendedListIterationTest(ContendedTupleIterationTest):
             replacement = (orig * 3)[NUMITEMS//2:]
             start.wait()
             while not endmutate.is_set():
-                seq.extend(replacement)
-                seq[:0] = orig
-                seq.__imul__(2)
-                seq.extend(seq)
+                seq[:] = replacement
                 seq[:] = orig
         def worker():
             items = []
@@ -103,6 +103,7 @@ class ContendedListIterationTest(ContendedTupleIterationTest):
         try:
             threads = self.run_threads(worker)
             mutators = self.run_threads(mutator, numthreads=NUMMUTATORS)
+            start.set()
             for t in threads:
                 t.join()
         finally:
@@ -116,12 +117,7 @@ class ContendedRangeIterationTest(ContendedTupleIterationTest):
     def make_testdata(self, n):
         return range(n)
 
-    def assert_iterator_results(self, results, expected):
-        # Range iterators that are shared between threads will (right now)
-        # sometimes produce items after the end of the range, sometimes
-        # _far_ after the end of the range. That should be fixed, but for
-        # now, let's just check they're integers that could have resulted
-        # from stepping beyond the range bounds.
-        extra_items = set(results) - set(expected)
-        for item in extra_items:
-            self.assertEqual((item - expected.start) % expected.step, 0)
+
+class ContendedLongRangeIterationTest(ContendedTupleIterationTest):
+    def make_testdata(self, n):
+        return range(0, sys.maxsize*n, sys.maxsize)

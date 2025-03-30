@@ -13,7 +13,10 @@ typedef struct {
     long start;
     long step;
     long len;
+    long stop;
 } _PyRangeIterObject;
+
+extern long _PyRangeIter_GetLength(_PyRangeIterObject *r, long start);
 
 #ifdef __cplusplus
 }
