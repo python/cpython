@@ -25,52 +25,14 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. availability:: Unix.
 
    .. versionchanged:: next
-      A deprecation warning will be emitted if the :data:`sys.abiflags` member
-      is accessed on Windows before Python 3.16.
-      For example:
+      A :exc:`DeprecationWarning` will be emitted if the :data:`sys.abiflags`
+      member is accessed on Windows before Python 3.16. The :data:`sys.abiflags`
+      member will be set to a meaningful value on Windows in Python 3.16. This
+      means the :data:`sys.abiflags` member will always be available on all
+      platforms starting from Python 3.16.
 
-      .. code-block:: python
-
-         >>> import sys
-         >>> getattr(sys, 'abiflags', None)  # on Windows
-         <python-input-1>:1: DeprecationWarning: sys.abiflags will be set to a meaningful value on all platforms ...
-         >>> hasattr(sys, 'abiflags')  # on Windows
-         <python-input-2>:1: DeprecationWarning: sys.abiflags will be set to a meaningful value on all platforms ...
-         False
-
-      To suppress this warning, use the :mod:`warnings` module:
-
-      .. code-block:: python
-
-         import warnings
-
-         with warnings.catch_warnings():
-             # ignore DeprecationWarning on sys.abiflags change on Windows
-             warnings.simplefilter('ignore', DeprecationWarning)
-             abiflags = getattr(sys, 'abiflags', '')
-
-      Due to historical reasons, :data:`sys.abiflags` is not covered by
-      :pep:`3149` on Windows. Now we have multiple builds, such as the
-      :term:`free-threaded <free threading>` build, that provide different ABIs.
-      :data:`sys.abiflags` is now required under many circumstances to determine
-      the ABI of the Python interpreter.
-
-      The :data:`sys.abiflags` member will be set to a meaningful value on
-      Windows in Python 3.16. This means the :data:`sys.abiflags` member will
-      always be available on all platforms starting from Python 3.16.
-
-      The following table shows how to migrate from the old code to the new code
-      without changing the behavior:
-
-      +---------------------------------------+---------------------------------------------------------------------+
-      | Code prior to Python 3.14             | Code prior to Python 3.16 with the same behavior                    |
-      +=======================================+=====================================================================+
-      | ``sys.abiflags``                      | ``sys.abiflags``                                                    |
-      +---------------------------------------+---------------------------------------------------------------------+
-      | ``getattr(sys, 'abiflags', default)`` | ``sys.abiflags if not sys.platform.startswith('win') else default`` |
-      +---------------------------------------+---------------------------------------------------------------------+
-      | ``hasattr(sys, 'abiflags')``          | ``not sys.platform.startswith('win')``                              |
-      +---------------------------------------+---------------------------------------------------------------------+
+      See :ref:`whatsnew314-sys-abiflags-change` in the *What's New* for more
+      details.
 
 
 .. function:: addaudithook(hook)
