@@ -77,8 +77,8 @@ module sys
 #ifndef ABIFLAGS
 
 // XXX: remove this and related code after set sys.abiflags on Windows in 3.16.
-static int
-_warn_incoming_sys_abiflags_change()
+static inline int
+_warn_incoming_sys_abiflags_change(void)
 {
     return PyErr_WarnEx(
         PyExc_DeprecationWarning,
@@ -167,8 +167,7 @@ _PySys_GetOptionalAttr(PyObject *name, PyObject **value)
 #ifndef ABIFLAGS
     if (ret == 0 && _PyUnicode_EqualToASCIIString(name, "abiflags")) {
         if (_warn_incoming_sys_abiflags_change() < 0) {
-            Py_XDECREF(*value);
-            *value = NULL;
+            Py_CLEAR(*value);
             return -1;
         }
     }
@@ -189,8 +188,7 @@ _PySys_GetOptionalAttrString(const char *name, PyObject **value)
 #ifndef ABIFLAGS
     if (ret == 0 && strcmp(name, "abiflags") == 0) {
         if (_warn_incoming_sys_abiflags_change() < 0) {
-            Py_XDECREF(*value);
-            *value = NULL;
+            Py_CLEAR(*value);
             return -1;
         }
     }

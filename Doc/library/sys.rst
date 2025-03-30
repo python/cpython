@@ -31,8 +31,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       means the :data:`sys.abiflags` member will always be available on all
       platforms starting from Python 3.16.
 
-      See :ref:`whatsnew314-sys-abiflags-change` in the *What's New* for more
-      details.
+      See the notes for :ref:`incoming change to sys.abiflags <whatsnew314-sys-abiflags-change>`
+      in the *What's New* for more details.
 
 
 .. function:: addaudithook(hook)

@@ -932,6 +932,7 @@ sys
 * Schedule a change for availability of :data:`sys.abiflags` on Windows. A
   :exc:`DeprecationWarning` will be emitted if the :data:`sys.abiflags` member
   is accessed on Windows before Python 3.16.
+  (Contributed by Xuehai Pan in :gh:`131717`.)
 
 .. _whatsnew314-sys-abiflags-change:
 
