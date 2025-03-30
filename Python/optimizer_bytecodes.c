@@ -414,10 +414,16 @@ dummy_func(void) {
         }
     }
 
+    op(_GUARD_TOS_UNICODE, (value -- value)) {
+        if (sym_matches_type(value, &PyUnicode_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(value, &PyUnicode_Type);
+    }
+
     op(_TO_BOOL_STR, (value -- res)) {
         if (!optimize_to_bool(this_instr, ctx, value, &res)) {
             res = sym_new_truthiness(ctx, value, true);
-            sym_set_type(value, &PyUnicode_Type);
         }
     }
 
