@@ -157,6 +157,7 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND{idx}();\n")
                 idx += 1
         storage = emitter.emit_tokens(uop, storage, None)
+        storage.flush(emitter.out)
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body[0]) from None
     return storage.stack
@@ -196,7 +197,6 @@ def generate_tier2(
         stack = write_uop(uop, emitter, stack)
         out.start_line()
         if not uop.properties.always_exits:
-            stack.flush(out)
             out.emit("break;\n")
         out.start_line()
         out.emit("}")

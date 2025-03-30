@@ -129,6 +129,7 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_tuple.h"         // _PyTuple_Recycle()
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 
 #include "stringlib/eq.h"                // unicode_eq()
@@ -1325,6 +1326,12 @@ ensure_shared_on_read(PyDictObject *mp)
         Py_END_CRITICAL_SECTION();
     }
 }
+
+void
+_PyDict_EnsureSharedOnRead(PyDictObject *mp)
+{
+    ensure_shared_on_read(mp);
+}
 #endif
 
 static inline void
@@ -1412,18 +1419,20 @@ compare_unicode_unicode_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
 {
     PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
     PyObject *startkey = _Py_atomic_load_ptr_relaxed(&ep->me_key);
-    assert(startkey == NULL || PyUnicode_CheckExact(startkey));
     if (startkey == key) {
+        assert(PyUnicode_CheckExact(startkey));
         return 1;
     }
     if (startkey != NULL) {
         if (_Py_IsImmortal(startkey)) {
+            assert(PyUnicode_CheckExact(startkey));
             return unicode_get_hash(startkey) == hash && unicode_eq(startkey, key);
         }
         else {
             if (!_Py_TryIncrefCompare(&ep->me_key, startkey)) {
                 return DKIX_KEY_CHANGED;
             }
+            assert(PyUnicode_CheckExact(startkey));
             if (unicode_get_hash(startkey) == hash && unicode_eq(startkey, key)) {
                 Py_DECREF(startkey);
                 return 1;
@@ -5622,9 +5631,7 @@ dictiter_iternextitem(PyObject *self)
             Py_DECREF(oldvalue);
             // bpo-42536: The GC may have untracked this result tuple. Since we're
             // recycling it, make sure it's tracked again:
-            if (!_PyObject_GC_IS_TRACKED(result)) {
-                _PyObject_GC_TRACK(result);
-            }
+            _PyTuple_Recycle(result);
         }
         else {
             result = PyTuple_New(2);
@@ -5747,9 +5754,7 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
             Py_DECREF(oldvalue);
             // bpo-42536: The GC may have untracked this result tuple. Since
             // we're recycling it, make sure it's tracked again:
-            if (!_PyObject_GC_IS_TRACKED(result)) {
-                _PyObject_GC_TRACK(result);
-            }
+            _PyTuple_Recycle(result);
         }
         else {
             result = PyTuple_New(2);
