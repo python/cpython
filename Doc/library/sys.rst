@@ -35,6 +35,11 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       <whatsnew314-sys-abiflags-change>` on the *What's New in 3.14*
       page for more details.
 
+   .. TODO: When we're in Python 3.16:
+      - Add a **CAUTION** section about the differences of :data:`sys.abiflags`
+        between prior-3.14, 3.14-3.15, and 3.16+ on Windows.
+      - Move porting recommendations from whatsnew/3.14.rst.
+
 
 .. function:: addaudithook(hook)
 

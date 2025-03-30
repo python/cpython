@@ -960,7 +960,7 @@ To suppress this warning, use the :mod:`warnings` module:
    import warnings
 
    with warnings.catch_warnings():
-       # ignore DeprecationWarning on sys.abiflags change on Windows
+       # ignore DeprecationWarning on incoming sys.abiflags change on Windows before 3.16
        warnings.simplefilter('ignore', DeprecationWarning)
        abiflags = getattr(sys, 'abiflags', '')
 
