@@ -67,9 +67,22 @@ class ExecutorTest:
             msg="next one should raise a ZeroDivisionError",
         )
 
-        # a failed future should not be captured in its
-        # future._exception.__traceback__ to avoid a reference cycle
-        self.assertListEqual(gc.get_referrers(error), [])
+        self.assertFalse(
+            gc.get_referrers(error),
+            msg="the raised error should not have any referrer",
+        )
+
+        tb = error.__traceback__
+        while (tb := tb.tb_next):
+            self.assertFalse(
+                {
+                    var: val
+                    for var, val in tb.tb_frame.f_locals.items()
+                    if isinstance(val, Exception)
+                    or (isinstance(val, futures.Future) and val.exception())
+                },
+                msg=f"traceback frames should not contain any variables referring to an Exception or a failed Future",
+            )
 
     @support.requires_resource('walltime')
     def test_map_timeout(self):
