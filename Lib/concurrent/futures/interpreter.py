@@ -88,7 +88,10 @@ class WorkerContext(_thread.WorkerContext):
             if exc is None:
                 # The exception must have been not shareable.
                 raise  # re-raise
-            raise exc from wrapper
+            try:
+                raise exc from wrapper
+            finally:
+                exc = None
 
 
 class BrokenInterpreterPool(_thread.BrokenThreadPool):
