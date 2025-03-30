@@ -176,7 +176,7 @@ class UnixGetpassTest(unittest.TestCase):
             mock_input.assert_called_once_with('Password: ', textio(), textio(), '*')
             self.assertEqual(result, mock_result)
 
-    def test_input_with_control_characters(self):
+    def test_input_with_echochar(self):
         passwd = 'my1pa$$word!'
         mock_input = StringIO(f'{passwd}\n')
         mock_output = StringIO()
