@@ -26,13 +26,14 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionchanged:: next
       A :exc:`DeprecationWarning` will be emitted if the :data:`sys.abiflags`
-      member is accessed on Windows before Python 3.16. The :data:`sys.abiflags`
+      member is accessed on Windows before Python 3.16. The :data:`!sys.abiflags`
       member will be set to a meaningful value on Windows in Python 3.16. This
-      means the :data:`sys.abiflags` member will always be available on all
+      means the :data:`!sys.abiflags` member will always be available on all
       platforms starting from Python 3.16.
 
-      See the notes for :ref:`incoming change to sys.abiflags <whatsnew314-sys-abiflags-change>`
-      in the *What's New* for more details.
+      See the notes for :ref:`incoming change to sys.abiflags
+      <whatsnew314-sys-abiflags-change>` on the *What's New in 3.14*
+      page for more details.
 
 
 .. function:: addaudithook(hook)

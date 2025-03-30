@@ -113,7 +113,7 @@ _PySys_GetRequiredAttr(PyObject *name)
 #ifndef ABIFLAGS
         if (_PyUnicode_EqualToASCIIString(name, "abiflags")) {
             if (_warn_incoming_sys_abiflags_change() < 0) {
-                Py_XDECREF(value);
+                Py_CLEAR(value);
                 return NULL;
             }
         }
@@ -137,7 +137,7 @@ _PySys_GetRequiredAttrString(const char *name)
 #ifndef ABIFLAGS
         if (strcmp(name, "abiflags") == 0) {
             if (_warn_incoming_sys_abiflags_change() < 0) {
-                Py_XDECREF(value);
+                Py_CLEAR(value);
                 return NULL;
             }
         }
@@ -217,6 +217,7 @@ PySys_GetObject(const char *name)
 #ifndef ABIFLAGS
     if (ret == 0 && strcmp(name, "abiflags") == 0) {
         if (_warn_incoming_sys_abiflags_change() < 0) {
+            Py_CLEAR(value);
             return NULL;
         }
     }

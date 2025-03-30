@@ -930,9 +930,10 @@ sys
   It is always ``'freebsd'``, instead of ``'freebsd13'`` or ``'freebsd14'``.
 
 * Schedule a change for availability of :data:`sys.abiflags` on Windows. A
-  :exc:`DeprecationWarning` will be emitted if the :data:`sys.abiflags` member
+  :exc:`DeprecationWarning` will be emitted if the :data:`!sys.abiflags` member
   is accessed on Windows before Python 3.16.
   (Contributed by Xuehai Pan in :gh:`131717`.)
+
 
 .. _whatsnew314-sys-abiflags-change:
 
@@ -966,11 +967,11 @@ To suppress this warning, use the :mod:`warnings` module:
 Due to historical reasons, :data:`sys.abiflags` is not covered by
 :pep:`3149` on Windows. Now we have multiple builds, such as the
 :term:`free-threaded <free threading>` build, that provide different ABIs.
-:data:`sys.abiflags` is now required under many circumstances to determine
+:data:`!sys.abiflags` is now required under many circumstances to determine
 the ABI of the Python interpreter.
 
-The :data:`sys.abiflags` member will be set to a meaningful value on
-Windows in Python 3.16. This means the :data:`sys.abiflags` member will
+The :data:`!sys.abiflags` member will be set to a meaningful value on
+Windows in Python 3.16. This means the :data:`!sys.abiflags` member will
 always be available on all platforms starting from Python 3.16.
 
 The following table shows how to migrate from the old code to the new code
@@ -985,6 +986,7 @@ without changing the behavior:
 +---------------------------------------+---------------------------------------------------------------------+
 | ``hasattr(sys, 'abiflags')``          | ``not sys.platform.startswith('win')``                              |
 +---------------------------------------+---------------------------------------------------------------------+
+
 
 sys.monitoring
 --------------
