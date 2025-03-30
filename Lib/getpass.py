@@ -147,7 +147,8 @@ def fallback_getpass(prompt='Password: ', stream=None):
 def _check_echochar(echochar):
     # ASCII excluding control characters
     if echochar and not (echochar.isprintable() and echochar.isascii()):
-        raise ValueError(f"'echochar' must be ASCII, got: {echochar!r}")
+        raise ValueError("'echochar' must be a printable ASCII string, "
+                         f"got: {echochar!r}")
 
 
 def _raw_input(prompt="", stream=None, input=None):
@@ -184,21 +185,30 @@ def _input_with_echochar(prompt, stream, input, echochar):
     stream.write(prompt)
     stream.flush()
     passwd = ""
+    eof_pressed = False
     while True:
         char = input.read(1)
         if char == '\n' or char == '\r':
             break
-        if char == '\x03':
+        elif char == '\x03':
             raise KeyboardInterrupt
-        if char == '\x7f' or char == '\b':
+        elif char == '\x7f' or char == '\b':
             if passwd:
                 stream.write("\b \b")
                 stream.flush()
             passwd = passwd[:-1]
+        elif char == '\x04':
+            if eof_pressed:
+                break
+            else:
+                eof_pressed = True
+        elif char == '\x00':
+            continue
         else:
             passwd += char
             stream.write(echochar)
             stream.flush()
+            eof_pressed = False
     return passwd
 
 

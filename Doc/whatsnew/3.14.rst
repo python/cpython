@@ -608,14 +608,6 @@ getopt
   (Contributed by Serhiy Storchaka in :gh:`126390`.)
 
 
-graphlib
---------
-
-* Allow :meth:`graphlib.TopologicalSorter.prepare` to be called more than once
-  as long as sorting has not started.
-  (Contributed by Daniel Pope in :gh:`130914`)
-
-
 getpass
 -------
 
@@ -623,6 +615,14 @@ getpass
   optional argument ``echochar``. Placeholder characters are rendered whenever
   a character is entered, and removed when a character is deleted.
   (Contributed by Semyon Moroz in :gh:`77065`.)
+
+
+graphlib
+--------
+
+* Allow :meth:`graphlib.TopologicalSorter.prepare` to be called more than once
+  as long as sorting has not started.
+  (Contributed by Daniel Pope in :gh:`130914`)
 
 
 http
