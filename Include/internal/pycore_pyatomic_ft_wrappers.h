@@ -20,8 +20,6 @@ extern "C" {
 #endif
 
 #ifdef Py_GIL_DISABLED
-#define FT_ATOMIC_LOAD_INT(value) _Py_atomic_load_int(&value)
-#define FT_ATOMIC_STORE_INT(value, new_value) _Py_atomic_store_int(&value, new_value)
 #define FT_ATOMIC_LOAD_PTR(value) _Py_atomic_load_ptr(&value)
 #define FT_ATOMIC_STORE_PTR(value, new_value) _Py_atomic_store_ptr(&value, new_value)
 #define FT_ATOMIC_LOAD_SSIZE(value) _Py_atomic_load_ssize(&value)
@@ -113,8 +111,6 @@ extern "C" {
     _Py_atomic_load_ullong_relaxed(&value)
 
 #else
-#define FT_ATOMIC_LOAD_INT(value) value
-#define FT_ATOMIC_STORE_INT(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_PTR(value) value
 #define FT_ATOMIC_STORE_PTR(value, new_value) value = new_value
 #define FT_ATOMIC_LOAD_SSIZE(value) value

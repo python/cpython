@@ -375,12 +375,9 @@ typedef struct CFieldObject {
 *****************************************************************/
 
 typedef struct {
-#ifdef Py_GIL_DISABLED
-    PyMutex mutex;              /* critical section mutex */
-#endif
     int initialized;
     Py_ssize_t size;            /* number of bytes */
-    Py_ssize_t align;           /* alignment requirements */
+    Py_ssize_t align;           /* alignment reqwuirements */
     Py_ssize_t length;          /* number of fields */
     ffi_type ffi_type_pointer;
     PyObject *proto;            /* Only for Pointer/ArrayObject */
@@ -395,15 +392,19 @@ typedef struct {
     PyObject *checker;
     PyObject *module;
     int flags;                  /* calling convention and such */
-    int dict_final;
+#ifdef Py_GIL_DISABLED
+    PyMutex mutex;              /* critical section mutex */
+#endif
+    uint8_t dict_final;
 
     /* pep3118 fields, pointers need PyMem_Free */
     char *format;
     int ndim;
     Py_ssize_t *shape;
-/*      Py_ssize_t *strides;    */ /* unused in ctypes */
-/*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
+    /*      Py_ssize_t *strides;    */ /* unused in ctypes */
+    /*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
 } StgInfo;
+
 
 /*
     To ensure thread safety in the free threading build, the `STGINFO_LOCK` and
@@ -422,17 +423,17 @@ typedef struct {
 #define STGINFO_LOCK(stginfo)   Py_BEGIN_CRITICAL_SECTION_MUT(&(stginfo)->mutex)
 #define STGINFO_UNLOCK()        Py_END_CRITICAL_SECTION()
 
-static inline int
+static inline uint8_t
 stginfo_get_dict_final(StgInfo *info)
 {
-    return FT_ATOMIC_LOAD_INT(info->dict_final);
+    return FT_ATOMIC_LOAD_UINT8(info->dict_final);
 }
 
 static inline void
 stginfo_set_dict_final_lock_held(StgInfo *info)
 {
     _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&info->mutex);
-    FT_ATOMIC_STORE_INT(info->dict_final, 1);
+    FT_ATOMIC_STORE_UINT8(info->dict_final, 1);
 }
 
 
