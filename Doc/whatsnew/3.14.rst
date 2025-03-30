@@ -812,6 +812,11 @@ os
 pathlib
 -------
 
+* Add :meth:`pathlib.PurePath.segments` attribute that stores the original
+  arguments given to the path object initializer.
+
+  (Contributed by Barney Gale in :gh:`131916`.)
+
 * Add methods to :class:`pathlib.Path` to recursively copy or move files and
   directories:
 

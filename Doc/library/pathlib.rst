@@ -298,6 +298,30 @@ property:
 
    (note how the drive and local root are regrouped in a single part)
 
+To access the arguments given to the path initializer, use the following
+property:
+
+.. attribute:: PurePath.segments
+
+   A tuple of giving access to the path's initializer arguments::
+
+      >>> p = PurePath('/usr', 'bin/python3')
+      >>> p.segments
+      ('/usr', 'bin/python3')
+
+      >>> p = PurePath('/usr', PurePath('bin', 'python3'))
+      >>> p.segments
+      ('/usr', 'bin', 'python3')
+
+   (note how nested path objects have their segments merged)
+
+   .. note::
+
+      Paths with different segments compare equal if their normalized string
+      representation is the same.
+
+   .. versionadded:: next
+
 
 Methods and properties
 ^^^^^^^^^^^^^^^^^^^^^^

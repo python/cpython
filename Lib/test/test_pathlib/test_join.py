@@ -31,6 +31,14 @@ class JoinTestBase:
         P('a/b/c')
         P('/a/b/c')
 
+    def test_segments(self):
+        P = self.cls
+        self.assertEqual(P().segments, ())
+        self.assertEqual(P('a', 'b', 'c').segments, ('a', 'b', 'c'))
+        self.assertEqual(P('/a', 'b', 'c').segments, ('/a', 'b', 'c'))
+        self.assertEqual(P('a/b/c').segments, ('a/b/c',))
+        self.assertEqual(P('/a/b/c').segments, ('/a/b/c',))
+
     def test_with_segments(self):
         class P(self.cls):
             def __init__(self, *pathsegments, session_id):

@@ -256,6 +256,15 @@ class PurePathTest(unittest.TestCase):
         check('a/./.',    '', '', ['a'])
         check('/a/b',     '', sep, ['a', 'b'])
 
+    def test_segments_nested(self):
+        P = self.cls
+        P(FakePath("a/b/c"))
+        self.assertEqual(P(P('a')).segments, ('a',))
+        self.assertEqual(P(P('a'), 'b').segments, ('a', 'b'))
+        self.assertEqual(P(P('a'), P('b')).segments, ('a', 'b'))
+        self.assertEqual(P(P('a'), P('b'), P('c')).segments, ('a', 'b', 'c'))
+        self.assertEqual(P(P('./a:b')).segments, ('./a:b',))
+
     def test_empty_path(self):
         # The empty path points to '.'
         p = self.cls('')
@@ -1176,17 +1185,6 @@ class PathTest(PurePathTest):
                                                  dir=os.getcwd()))
         self.addCleanup(os_helper.rmtree, d)
         return d
-
-    def test_matches_writablepath_docstrings(self):
-        path_names = {name for name in dir(pathlib.types._WritablePath) if name[0] != '_'}
-        for attr_name in path_names:
-            if attr_name == 'parser':
-                # On Windows, Path.parser is ntpath, but WritablePath.parser is
-                # posixpath, and so their docstrings differ.
-                continue
-            our_attr = getattr(self.cls, attr_name)
-            path_attr = getattr(pathlib.types._WritablePath, attr_name)
-            self.assertEqual(our_attr.__doc__, path_attr.__doc__)
 
     def test_concrete_class(self):
         if self.cls is pathlib.Path:

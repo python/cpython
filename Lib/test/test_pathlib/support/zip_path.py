@@ -230,11 +230,11 @@ class ReadableZipPath(_ReadablePath):
     Simple implementation of a ReadablePath class for .zip files.
     """
 
-    __slots__ = ('_segments', 'zip_file')
+    __slots__ = ('segments', 'zip_file')
     parser = posixpath
 
     def __init__(self, *pathsegments, zip_file):
-        self._segments = pathsegments
+        self.segments = pathsegments
         self.zip_file = zip_file
         if not isinstance(zip_file.filelist, ZipFileList):
             zip_file.filelist = ZipFileList(zip_file)
@@ -246,11 +246,6 @@ class ReadableZipPath(_ReadablePath):
         if not isinstance(other, ReadableZipPath):
             return NotImplemented
         return str(self) == str(other) and self.zip_file is other.zip_file
-
-    def __str__(self):
-        if not self._segments:
-            return ''
-        return self.parser.join(*self._segments)
 
     def __repr__(self):
         return f'{type(self).__name__}({str(self)!r}, zip_file={self.zip_file!r})'
@@ -293,11 +288,11 @@ class WritableZipPath(_WritablePath):
     Simple implementation of a WritablePath class for .zip files.
     """
 
-    __slots__ = ('_segments', 'zip_file')
+    __slots__ = ('segments', 'zip_file')
     parser = posixpath
 
     def __init__(self, *pathsegments, zip_file):
-        self._segments = pathsegments
+        self.segments = pathsegments
         self.zip_file = zip_file
 
     def __hash__(self):
@@ -307,11 +302,6 @@ class WritableZipPath(_WritablePath):
         if not isinstance(other, WritableZipPath):
             return NotImplemented
         return str(self) == str(other) and self.zip_file is other.zip_file
-
-    def __str__(self):
-        if not self._segments:
-            return ''
-        return self.parser.join(*self._segments)
 
     def __repr__(self):
         return f'{type(self).__name__}({str(self)!r}, zip_file={self.zip_file!r})'
