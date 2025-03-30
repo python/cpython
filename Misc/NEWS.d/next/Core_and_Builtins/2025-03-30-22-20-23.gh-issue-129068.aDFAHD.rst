@@ -1,0 +1,1 @@
+Make range iterator safe in :term:`free-threaded <free threading>` build.
