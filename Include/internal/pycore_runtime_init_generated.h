@@ -1149,6 +1149,7 @@ extern "C" {
     INIT_ID(persistent_id), \
     INIT_ID(persistent_load), \
     INIT_ID(person), \
+    INIT_ID(phi), \
     INIT_ID(pi_factory), \
     INIT_ID(pid), \
     INIT_ID(policy), \

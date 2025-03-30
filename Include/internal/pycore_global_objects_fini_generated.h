@@ -1151,6 +1151,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(persistent_id));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(persistent_load));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(person));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(phi));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pi_factory));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(pid));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(policy));

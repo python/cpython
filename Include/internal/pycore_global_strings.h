@@ -642,6 +642,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(persistent_id)
         STRUCT_FOR_ID(persistent_load)
         STRUCT_FOR_ID(person)
+        STRUCT_FOR_ID(phi)
         STRUCT_FOR_ID(pi_factory)
         STRUCT_FOR_ID(pid)
         STRUCT_FOR_ID(policy)
