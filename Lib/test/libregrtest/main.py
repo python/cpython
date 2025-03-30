@@ -15,7 +15,7 @@ from .cmdline import _parse_args, Namespace
 from .findtests import findtests, split_test_packages, list_cases
 from .logger import Logger
 from .pgo import setup_pgo_tests
-from .result import State, TestResult
+from .result import TestResult
 from .results import TestResults, EXITCODE_INTERRUPTED
 from .runtests import RunTests, HuntRefleak
 from .setup import setup_process, setup_test_dir
@@ -640,9 +640,9 @@ class Regrtest:
         if not sys.stdout.write_through:
             python_opts.append('-u')
 
-        # Add warnings filter 'default'
+        # Add warnings filter 'error'
         if 'default' not in sys.warnoptions:
-            python_opts.extend(('-W', 'default'))
+            python_opts.extend(('-W', 'error'))
 
         # Error on bytes/str comparison
         if sys.flags.bytes_warning < 2:
