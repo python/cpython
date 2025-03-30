@@ -366,7 +366,7 @@ class Server(events.AbstractServer):
         return tuple(trsock.TransportSocket(s) for s in self._sockets)
 
     def close(self):
-        if self._state == _ServerState.CLOSED or self._state == _ServerState.SHUTDOWN:
+        if self._state in {_ServerState.CLOSED, _ServerState.SHUTDOWN}:
             return
         else:
             self._state = _ServerState.CLOSED
