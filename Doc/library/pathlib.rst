@@ -315,11 +315,6 @@ property:
 
    (note how nested path objects have their segments merged)
 
-   .. note::
-
-      Paths with different segments compare equal if their normalized string
-      representation is the same.
-
    .. versionadded:: next
 
 
