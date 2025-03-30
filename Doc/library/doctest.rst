@@ -1447,7 +1447,7 @@ TestResults objects
 ^^^^^^^^^^^^^^^^^^^
 
 
-.. class:: TestResults(failed, attempted, *, skipped=0)
+.. class:: TestResults(failed, attempted)
 
    .. attribute:: failed
 
