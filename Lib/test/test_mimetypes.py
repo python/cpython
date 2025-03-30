@@ -3,7 +3,6 @@ import io
 import mimetypes
 import os
 import sys
-import tempfile
 import unittest.mock
 from platform import win32_edition
 from test import support
