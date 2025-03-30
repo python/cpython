@@ -2,7 +2,7 @@
 # chosen because they use threads and run in a reasonable amount of time.
 
 TSAN_TESTS = [
-    'test_asyncio.test_free_threading',
+    'test_asyncio',
     # TODO: enable more of test_capi once bugs are fixed (GH-116908, GH-116909).
     'test_capi.test_mem',
     'test_capi.test_pyatomic',
