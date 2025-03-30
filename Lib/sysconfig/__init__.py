@@ -406,7 +406,7 @@ def _init_non_posix(vars):
     #       on Windows. sys.abiflags is absent on Windows and vars['abiflags']
     #       is already widely used to calculate paths, so it should remain an
     #       empty string.
-    vars.update(_sysconfig.config_vars())  # defined in Modules/_sysconfig.c
+    vars.update(_sysconfig.config_vars())
 
     vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
     if hasattr(sys, 'dllhandle'):
