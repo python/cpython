@@ -74,6 +74,8 @@ module sys
 #include "clinic/sysmodule.c.h"
 
 
+#ifndef ABIFLAGS
+
 // XXX: remove this and related code after set sys.abiflags on Windows in 3.16.
 static int
 _warn_incoming_sys_abiflags_change()
@@ -88,6 +90,8 @@ _warn_incoming_sys_abiflags_change()
         "condition.",
         /*stack_level=*/1);
 }
+
+#endif
 
 PyObject *
 _PySys_GetRequiredAttr(PyObject *name)
@@ -163,6 +167,8 @@ _PySys_GetOptionalAttr(PyObject *name, PyObject **value)
 #ifndef ABIFLAGS
     if (ret == 0 && _PyUnicode_EqualToASCIIString(name, "abiflags")) {
         if (_warn_incoming_sys_abiflags_change() < 0) {
+            Py_XDECREF(*value);
+            *value = NULL;
             return -1;
         }
     }
@@ -183,6 +189,8 @@ _PySys_GetOptionalAttrString(const char *name, PyObject **value)
 #ifndef ABIFLAGS
     if (ret == 0 && strcmp(name, "abiflags") == 0) {
         if (_warn_incoming_sys_abiflags_change() < 0) {
+            Py_XDECREF(*value);
+            *value = NULL;
             return -1;
         }
     }
