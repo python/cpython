@@ -69,7 +69,7 @@ class ExecutorTest:
 
         self.assertFalse(
             gc.get_referrers(error),
-            msg="the raised error should not have any referrer",
+            msg="the raised error should not have any referrers",
         )
 
         tb = error.__traceback__
