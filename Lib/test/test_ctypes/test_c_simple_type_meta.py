@@ -1,9 +1,9 @@
 import unittest
 from test.support import MS_WINDOWS
 import ctypes
-from ctypes import POINTER, c_void_p
+from ctypes import POINTER, Structure, c_void_p
 
-from ._support import PyCSimpleType
+from ._support import PyCSimpleType, PyCPointerType, PyCStructType
 
 
 class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
@@ -222,3 +222,124 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
         if not MS_WINDOWS:
             expected_type_chars.remove('X')
         self.assertIn("'" + ''.join(expected_type_chars) + "'", message)
+
+    def test_creating_pointer_in_dunder_init_3(self):
+
+        class StructureMeta(PyCStructType):
+            def __new__(cls, name, bases, dct, /, create_pointer_type=True):
+                if len(bases) > 1:
+                    bases = (bases[0],)
+
+                return super().__new__(cls, name, bases, dct)
+
+            def __init__(self, name, bases, dct, /, create_pointer_type=True):
+
+                super().__init__(name, bases, dct)
+                if create_pointer_type:
+                    p_bases = (POINTER(bases[0]),)
+                    p = PointerMeta(f"p{name}", p_bases, {'_type_': self})
+                    assert isinstance(p, PyCPointerType)
+                    assert self.__pointer_type__ is not None
+                    assert self.__pointer_type__ == p
+
+
+        class PointerMeta(PyCPointerType):
+            def __new__(cls, name, bases, dct):
+                target = dct.get('_type_', None)
+                if target is None:
+
+                    # Create corresponding interface type and then set it as target
+                    target = StructureMeta(
+                        f"_{name}_",
+                        (bases[0]._type_,),
+                        {},
+                        create_pointer_type=False
+                    )
+                    dct['_type_'] = target
+
+                pointer_type = super().__new__(cls, name, bases, dct)
+                assert target.__pointer_type__ is None
+
+                return pointer_type
+
+            def __init__(self, name, bases, dct, /, create_pointer_type=True):
+                target = dct.get('_type_', None)
+                super().__init__(name, bases, dct)
+                assert target.__pointer_type__ is self
+
+
+        class Interface(Structure, metaclass=StructureMeta, create_pointer_type=False):
+            pass
+
+        class pInterface(POINTER(c_void_p), metaclass=PointerMeta):
+            _type_ = Interface
+
+        class IUnknown(Interface):
+            pass
+
+        class pIUnknown(pInterface):
+            pass
+
+        self.assertTrue(issubclass(POINTER(IUnknown), pInterface))
+        self.assertTrue(issubclass(pIUnknown, pInterface))
+
+        self.assertIs(POINTER(Interface), pInterface)
+        self.assertIsNot(POINTER(IUnknown), pIUnknown)
+
+    def test_creating_pointer_in_dunder_init_4(self):
+
+        class StructureMeta(PyCStructType):
+            def __new__(cls, name, bases, dct, /, create_pointer_type=True):
+                if len(bases) > 1:
+                    bases = (bases[0],)
+
+                return super().__new__(cls, name, bases, dct)
+
+            def __init__(self, name, bases, dct, /, create_pointer_type=True):
+
+                super().__init__(name, bases, dct)
+                if create_pointer_type:
+                    p_bases = (POINTER(bases[0]),)
+                    p = PointerMeta(f"p{name}", p_bases, {'_type_': self})
+                    assert isinstance(p, PyCPointerType)
+                    assert self.__pointer_type__ is not None
+                    assert self.__pointer_type__ == p
+
+
+        class PointerMeta(PyCPointerType):
+            def __new__(cls, name, bases, dct):
+                target = dct.get('_type_', None)
+                assert target is not None
+                pointer_type = target.__pointer_type__
+
+                if pointer_type is None:
+                    pointer_type = super().__new__(cls, name, bases, dct)
+
+                return pointer_type
+
+            def __init__(self, name, bases, dct, /, create_pointer_type=True):
+                target = dct.get('_type_', None)
+                if target.__pointer_type__ is None:
+                    # target.__pointer_type__ was created by super().__new__
+                    super().__init__(name, bases, dct)
+
+                assert target.__pointer_type__ is self
+
+
+        class Interface(Structure, metaclass=StructureMeta, create_pointer_type=False):
+            pass
+
+        class pInterface(POINTER(c_void_p), metaclass=PointerMeta):
+            _type_ = Interface
+
+        class IUnknown(Interface):
+            pass
+
+        class pIUnknown(pInterface):
+            _type_ = IUnknown
+
+        self.assertTrue(issubclass(POINTER(IUnknown), pInterface))
+        self.assertTrue(issubclass(pIUnknown, pInterface))
+
+        self.assertIs(POINTER(Interface), pInterface)
+        self.assertIs(POINTER(IUnknown), pIUnknown)
