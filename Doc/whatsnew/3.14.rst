@@ -106,6 +106,7 @@ For example the following expressions are now valid:
    except AlbumNotFound, SongsTooGoodToBeReleased:
        print("Sorry, no new album this year.")
 
+    # The same applies to except* (for exception groups):
    try:
        release_new_sleep_token_album()
    except* AlbumNotFound, SongsTooGoodToBeReleased:
