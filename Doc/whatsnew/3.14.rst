@@ -133,7 +133,7 @@ Here's a simple example that inspects object types in a running Python process:
 
     # Count objects by type
     type_counts = collections.Counter(type(obj).__name__
-                                     for obj in gc.get_objects())
+                                      for obj in gc.get_objects())
 
     # Print the most common types
     print("Most common object types in process:")
