@@ -4034,7 +4034,7 @@ PyBytesWriter_WriteBytes(PyBytesWriter *writer,
         size_t len = strlen(bytes);
         if (len > (size_t)PY_SSIZE_T_MAX) {
             PyErr_NoMemory();
-            return NULL;
+            return -1;
         }
         size = (Py_ssize_t)len;
     }
