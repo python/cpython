@@ -2430,7 +2430,7 @@ Return True if remote debugging is enabled, False otherwise.
 
 static PyObject *
 sys_is_remote_debug_enabled_impl(PyObject *module)
-/*[clinic end generated code: output=7ca3d38bdd5935eb input=c8b9354cb7a08ed6]*/
+/*[clinic end generated code: output=7ca3d38bdd5935eb input=7335c4a2fe8cf4f3]*/
 {
 #ifndef Py_REMOTE_DEBUG
     Py_RETURN_FALSE;
@@ -2522,7 +2522,7 @@ Args:
 
 static PyObject *
 sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
-/*[clinic end generated code: output=7d94c56afe4a52c0 input=5749b0253d5b588c]*/
+/*[clinic end generated code: output=7d94c56afe4a52c0 input=39908ca2c5fe1eb0]*/
 {
     PyObject *ret = NULL;
     PyObject *os = PyImport_ImportModule("os");

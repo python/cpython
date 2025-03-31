@@ -1,0 +1,1 @@
+Allow to generate multiple UUIDs at once via :option:`python -m uuid --count <uuid --count>`.
