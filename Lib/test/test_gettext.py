@@ -748,6 +748,13 @@ class FindTestCase(unittest.TestCase):
                                   localedir=os.path.join(self.tempdir, "locale"))
             self.assertEqual(result, mo_file)
             self.env.unset(var)
+        # test fallbacks
+        for var in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+            self.env.set(var, 'es_ES:ga_IE:fr_FR')
+            result = gettext.find("mofile",
+                                  localedir=os.path.join(self.tempdir, "locale"))
+            self.assertEqual(result, mo_file)
+            self.env.unset(var)
 
     @unittest.mock.patch("locale.getlocale", return_value=('ga_IE', 'UTF-8'))
     def test_process_vars_override(self, patch_getlocale):

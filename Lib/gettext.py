@@ -492,10 +492,10 @@ def find(domain, localedir=None, languages=None, all=False):
         localedir = _default_localedir
     if languages is None:
         languages = []
-        if os.environ.get('LANGUAGE'):
-            languages = os.environ.get('LANGUAGE').split(',')
-        elif locale.getlocale() != (None, None):
-            languages.append(".".join(filter(None, locale.getlocale())))
+        if val := os.environ.get('LANGUAGE'):
+            languages = val.split(':')
+        elif (loc := locale.getlocale()) != (None, None):
+            languages.append(".".join(filter(None, loc)))
         else:
             for envar in ('LC_ALL', 'LC_MESSAGES', 'LANG'):
                 val = os.environ.get(envar)
