@@ -6,9 +6,9 @@
 #include "clinic/watchers.c.h"
 
 #define Py_BUILD_CORE
-#include "pycore_function.h"  // FUNC_MAX_WATCHERS
-#include "pycore_code.h"  // CODE_MAX_WATCHERS
-#include "pycore_context.h" // CONTEXT_MAX_WATCHERS
+#include "pycore_function.h"      // FUNC_MAX_WATCHERS
+#include "pycore_interp_structs.h" // CODE_MAX_WATCHERS
+#include "pycore_context.h"       // CONTEXT_MAX_WATCHERS
 
 /*[clinic input]
 module _testcapi
@@ -428,7 +428,8 @@ allocate_too_many_code_watchers(PyObject *self, PyObject *args)
     PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < num_watchers; i++) {
         if (PyCode_ClearWatcher(watcher_ids[i]) < 0) {
-            PyErr_WriteUnraisable(Py_None);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "clearing code watcher");
             break;
         }
     }
@@ -609,7 +610,8 @@ allocate_too_many_func_watchers(PyObject *self, PyObject *args)
     PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < num_watchers; i++) {
         if (PyFunction_ClearWatcher(watcher_ids[i]) < 0) {
-            PyErr_WriteUnraisable(Py_None);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "clearing function watcher");
             break;
         }
     }
@@ -755,7 +757,8 @@ allocate_too_many_context_watchers(PyObject *self, PyObject *args)
     PyObject *exc = PyErr_GetRaisedException();
     for (int i = 0; i < num_watchers; i++) {
         if (PyContext_ClearWatcher(watcher_ids[i]) < 0) {
-            PyErr_WriteUnraisable(Py_None);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "clearing context watcher");
             break;
         }
     }
