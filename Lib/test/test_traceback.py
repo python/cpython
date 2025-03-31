@@ -4629,6 +4629,8 @@ class MiscTest(unittest.TestCase):
         # gh-131936: _Py_CalculateSuggestions wanted exactly a list
         class MyList(list):
             def __getitem__(self, *_):
+                # _Py_CalculateSuggestions uses the list macros, so this
+                # shouldn't be a problem.
                 raise RuntimeError("evil")
 
         self.assertEqual(_suggestions._generate_suggestions(MyList(["spanish", "inquisition"]), "spani"),
