@@ -4338,23 +4338,13 @@
             iter = stack_pointer[-1];
             _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(r) == &PyRangeIter_Type);
-            #ifdef Py_GIL_DISABLED
-            long value = FT_ATOMIC_LOAD_LONG_RELAXED(r->start);
-            long len = _PyRangeIter_GetLength(r, value);
+            long value;
+            long len = _PyRangeIter_GetLengthAndStart(r, &value);
             if (len <= 0) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            FT_ATOMIC_STORE_LONG_RELAXED(r->start, value + r->step);
-            #else  // the code above will work for GIL build but below is faster
-            if (r->len <= 0) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            long value = r->start;
-            r->start = value + r->step;
-            r->len--;
-            #endif
+            _PyRangeIter_SetLength(r, len - 1);
             PyObject *res = PyLong_FromLong(value);
             if (res == NULL) {
                 JUMP_TO_ERROR();

@@ -830,13 +830,10 @@ static PyObject *
 rangeiter_next(PyObject *op)
 {
     _PyRangeIterObject *r = (_PyRangeIterObject*)op;
-    long start = FT_ATOMIC_LOAD_LONG_RELAXED(r->start);
-    long len = _PyRangeIter_GetLength(r, start);
+    long start;
+    long len = _PyRangeIter_GetLengthAndStart(r, &start);
     if (len > 0) {
-#ifndef Py_GIL_DISABLED
-        r->len = len - 1;
-#endif
-        FT_ATOMIC_STORE_LONG_RELAXED(r->start, start + r->step);
+        _PyRangeIter_SetLength(r, len - 1);
         return PyLong_FromLong(start);
     }
     return NULL;
@@ -846,8 +843,9 @@ static PyObject *
 rangeiter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     _PyRangeIterObject *r = (_PyRangeIterObject*)op;
-    long start = FT_ATOMIC_LOAD_LONG_RELAXED(r->start);
-    return PyLong_FromLong(_PyRangeIter_GetLength(r, start));
+    long start;
+    long len = _PyRangeIter_GetLengthAndStart(r, &start);
+    return PyLong_FromLong(len);
 }
 
 PyDoc_STRVAR(length_hint_doc,
@@ -861,7 +859,9 @@ rangeiter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     PyObject *range;
 
     /* create a range object for pickling */
-    start = PyLong_FromLong(FT_ATOMIC_LOAD_LONG_RELAXED(r->start));
+    long lstart;
+    (void)_PyRangeIter_GetLengthAndStart(r, &lstart);
+    start = PyLong_FromLong(lstart);
     if (start == NULL)
         goto err;
     stop = PyLong_FromLong(r->stop);
@@ -892,14 +892,13 @@ rangeiter_setstate(PyObject *op, PyObject *state)
     if (index == -1 && PyErr_Occurred())
         return NULL;
     /* silently clip the index value */
-    long start = FT_ATOMIC_LOAD_LONG_RELAXED(r->start);
-    long len = _PyRangeIter_GetLength(r, start);
+    long start;
+    long len = _PyRangeIter_GetLengthAndStart(r, &start);
     if (index < 0)
         index = 0;
     else if (index > len)
         index = len; /* exhausted iterator */
-    r->len = len - index;
-    FT_ATOMIC_STORE_LONG_RELAXED(r->start, start + index * r->step);
+    _PyRangeIter_SetLength(r, len - index);
     Py_RETURN_NONE;
 }
 
@@ -983,9 +982,9 @@ fast_range_iter(long start, long stop, long step, long len)
     _PyRangeIterObject *it = PyObject_New(_PyRangeIterObject, &PyRangeIter_Type);
     if (it == NULL)
         return NULL;
-    it->start = start;
-    it->step = step;
     it->len = len;
+    it->end = start + step * len;
+    it->step = step;
     it->stop = stop;
     return (PyObject *)it;
 }

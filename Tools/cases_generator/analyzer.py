@@ -674,7 +674,8 @@ NON_ESCAPING_FUNCTIONS = (
     "JUMP_TO_LABEL",
     "restart_backoff_counter",
     "_Py_ReachedRecursionLimit",
-    "_PyRangeIter_GetLength",
+    "_PyRangeIter_GetLengthAndStart",
+    "_PyRangeIter_SetLength",
 )
 
 def find_stmt_start(node: parser.CodeDef, idx: int) -> lexer.Token:

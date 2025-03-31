@@ -10,13 +10,25 @@ extern "C" {
 
 typedef struct {
     PyObject_HEAD
-    long start;
-    long step;
     long len;
+    long end;
+    long step;
     long stop;
 } _PyRangeIterObject;
 
-extern long _PyRangeIter_GetLength(_PyRangeIterObject *r, long start);
+static inline long
+_PyRangeIter_GetLengthAndStart(_PyRangeIterObject *r, long *value)
+{
+    long len = FT_ATOMIC_LOAD_LONG_RELAXED(r->len);
+    *value = r->end - r->step * len;
+    return len;
+}
+
+static inline void
+_PyRangeIter_SetLength(_PyRangeIterObject *r, long len)
+{
+    FT_ATOMIC_STORE_LONG_RELAXED(r->len, len);
+}
 
 #ifdef __cplusplus
 }
