@@ -354,8 +354,8 @@ class Parser(PLexer):
             if self.expect(lx.LPAREN):
                 if tkn := self.expect(lx.IDENTIFIER):
                     if self.expect(lx.RPAREN):
-                        if block := self.block():
-                            return LabelDef(tkn.text, spilled, block)
+                        block = self.block()
+                        return LabelDef(tkn.text, spilled, block)
         return None
 
     @contextual

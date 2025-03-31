@@ -491,6 +491,7 @@ class Emitter:
     ) -> tuple[bool, Token | None, Storage]:
         local_stores = set(uop.local_stores)
         reachable = True
+        tkn = stmt.contents[-1]
         try:
             if stmt in uop.properties.escaping_calls:
                 escape = uop.properties.escaping_calls[stmt]
@@ -579,6 +580,7 @@ class Emitter:
             self.out.emit(tkn)
         if_storage = storage.copy()
         try:
+            rbrace: Token | None = stmt.if_
             reachable, rbrace, if_storage = self._emit_stmt(stmt.body, uop, if_storage, inst)
             if stmt.else_ is not None:
                 assert rbrace is not None
