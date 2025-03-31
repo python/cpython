@@ -34,11 +34,11 @@ DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
 
 def declare_variable(
-    var: StackItem, uop: Uop, required: set[str], out: CWriter
+    var: StackItem, uop: Uop, seen: set[str], out: CWriter
 ) -> None:
-    if not var.used or var.name not in required:
+    if not var.used or var.name in seen:
         return
-    required.remove(var.name)
+    seen.add(var.name)
     type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
     out.emit(f"{type}{space}{var.name};\n")
@@ -46,16 +46,16 @@ def declare_variable(
 
 def declare_variables(uop: Uop, out: CWriter) -> None:
     stack = Stack()
+    null = CWriter.null()
     for var in reversed(uop.stack.inputs):
-        stack.pop(var)
+        stack.pop(var, null)
     for var in uop.stack.outputs:
         stack.push(Local.undefined(var))
-    required = set(stack.defined)
-    required.discard("unused")
+    seen = {"unused"}
     for var in reversed(uop.stack.inputs):
-        declare_variable(var, uop, required, out)
+        declare_variable(var, uop, seen, out)
     for var in uop.stack.outputs:
-        declare_variable(var, uop, required, out)
+        declare_variable(var, uop, seen, out)
 
 
 class Tier2Emitter(Emitter):
@@ -143,9 +143,7 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
         elif uop.properties.const_oparg >= 0:
             emitter.emit(f"oparg = {uop.properties.const_oparg};\n")
             emitter.emit(f"assert(oparg == CURRENT_OPARG());\n")
-        code_list, storage = Storage.for_uop(stack, uop)
-        for code in code_list:
-            emitter.emit(code)
+        storage = Storage.for_uop(stack, uop, emitter.out)
         idx = 0
         for cache in uop.caches:
             if cache.name != "unused":
