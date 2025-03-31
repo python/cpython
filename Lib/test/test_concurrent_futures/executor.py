@@ -69,7 +69,7 @@ class ExecutorTest:
 
         self.assertFalse(
             gc.get_referrers(error),
-            msg="the raised error should not have any referrers",
+            msg="the exception should not have any referrers",
         )
 
         tb = error.__traceback__
@@ -81,7 +81,7 @@ class ExecutorTest:
                     if isinstance(val, Exception)
                     and var in val.__traceback__.tb_frame.f_locals
                 },
-                msg=f"the raised exception's traceback should not contain an exception that captures itself in its own traceback",
+                msg=f"the exception's traceback should not contain an exception that captures itself in its own traceback",
             )
 
     @support.requires_resource('walltime')
