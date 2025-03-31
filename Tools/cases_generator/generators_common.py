@@ -15,7 +15,7 @@ from stack import Storage, StackError
 from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, ForStmt, WhileStmt, MacroIfStmt
 
 # Set this to true for voluminous output showing state of stack and locals
-PRINT_STACKS = False
+PRINT_STACKS = 1 # False
 
 class TokenIterator:
 

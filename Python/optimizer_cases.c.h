@@ -32,6 +32,12 @@
                 if (sym_is_null(value)) {
                     ctx->done = true;
                 }
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: 'value'D*/
+                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -43,6 +49,12 @@
             JitOptSymbol *value;
             {
                 value = GETLOCAL(oparg);
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: 'value'D*/
+                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -56,6 +68,12 @@
                 value = GETLOCAL(oparg);
                 JitOptSymbol *temp = sym_new_null(ctx);
                 GETLOCAL(oparg) = temp;
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: 'value'D*/
+                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -72,6 +90,12 @@
                 int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
                 REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
                 value = sym_new_const(ctx, val);
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: 'value'D*/
+                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -85,6 +109,12 @@
                 PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
                 REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
                 value = sym_new_const(ctx, val);
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: 'value'D*/
+                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -97,6 +127,12 @@
             {
                 PyObject *val = PyLong_FromLong(this_instr->oparg);
                 value = sym_new_const(ctx, val);
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: 'value'D*/
+                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -109,6 +145,12 @@
             value = stack_pointer[-1];
             {
                 GETLOCAL(oparg) = value;
+                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'value'M
+               outputs: */
+                /* Variables: . base: -1. sp: 0. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -125,6 +167,12 @@
             JitOptSymbol *res;
             {
                 res = sym_new_null(ctx);
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: 0. sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -161,6 +209,12 @@
             {
                 sym_set_type(value, &PyBool_Type);
                 res = sym_new_truthiness(ctx, value, false);
+                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'value'M
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -171,9 +225,16 @@
             JitOptSymbol *res;
             value = stack_pointer[-1];
             {
-                if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+                int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+                if (!already_bool) {
                     res = sym_new_truthiness(ctx, value, true);
                 }
+                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'value'M
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -184,10 +245,17 @@
             JitOptSymbol *res;
             value = stack_pointer[-1];
             {
-                if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+                int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+                if (!already_bool) {
                     sym_set_type(value, &PyBool_Type);
                     res = sym_new_truthiness(ctx, value, true);
                 }
+                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'value'M
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -198,10 +266,17 @@
             JitOptSymbol *res;
             value = stack_pointer[-1];
             {
-                if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+                int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+                if (!already_bool) {
                     sym_set_type(value, &PyLong_Type);
                     res = sym_new_truthiness(ctx, value, true);
                 }
+                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'value'M
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -212,10 +287,17 @@
             JitOptSymbol *res;
             value = stack_pointer[-1];
             {
-                if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+                int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+                if (!already_bool) {
                     sym_set_type(value, &PyList_Type);
                     res = sym_new_type(ctx, &PyBool_Type);
                 }
+                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'value'M
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -226,10 +308,17 @@
             JitOptSymbol *res;
             value = stack_pointer[-1];
             {
-                if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+                int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+                if (!already_bool) {
                     sym_set_const(value, Py_None);
                     res = sym_new_const(ctx, Py_False);
                 }
+                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'value'M
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -254,11 +343,21 @@
                 res = sym_new_truthiness(ctx, value, true);
 =======
             {
-                if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+                int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+                if (!already_bool) {
                     res = sym_new_truthiness(ctx, value, true);
                     sym_set_type(value, &PyUnicode_Type);
                 }
+<<<<<<< HEAD
 >>>>>>> e599204f472 (Parse down to statement level in the cases generator)
+=======
+                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'value'M
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+>>>>>>> ed96ae5aeac (Handle variable definition through out parameters)
             }
             stack_pointer[-1] = res;
             break;
@@ -268,6 +367,12 @@
             JitOptSymbol *res;
             {
                 res = sym_new_const(ctx, Py_True);
+                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'value'M
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -301,6 +406,12 @@
                 }
                 sym_set_type(left, &PyLong_Type);
                 sym_set_type(right, &PyLong_Type);
+                /* Variables: 'left'MD, 'right'MD. base: -2. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: 'left'MD, 'right'MD. base: -2. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -351,6 +462,12 @@
                     assert(WITHIN_STACK_BOUNDS());
 >>>>>>> e599204f472 (Parse down to statement level in the cases generator)
                 }
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -394,6 +511,12 @@
                     assert(WITHIN_STACK_BOUNDS());
 >>>>>>> e599204f472 (Parse down to statement level in the cases generator)
                 }
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -437,6 +560,12 @@
                     assert(WITHIN_STACK_BOUNDS());
 >>>>>>> e599204f472 (Parse down to statement level in the cases generator)
                 }
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -463,6 +592,12 @@
                 }
                 sym_set_type(left, &PyFloat_Type);
                 sym_set_type(right, &PyFloat_Type);
+                /* Variables: 'left'MD, 'right'MD. base: -2. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: 'left'MD, 'right'MD. base: -2. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -515,6 +650,12 @@
                     assert(WITHIN_STACK_BOUNDS());
 >>>>>>> e599204f472 (Parse down to statement level in the cases generator)
                 }
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -560,6 +701,12 @@
                     assert(WITHIN_STACK_BOUNDS());
 >>>>>>> e599204f472 (Parse down to statement level in the cases generator)
                 }
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -605,6 +752,12 @@
                     assert(WITHIN_STACK_BOUNDS());
 >>>>>>> e599204f472 (Parse down to statement level in the cases generator)
                 }
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -622,6 +775,12 @@
                 }
                 sym_set_type(left, &PyUnicode_Type);
                 sym_set_type(right, &PyUnicode_Type);
+                /* Variables: 'left'MD, 'right'MD. base: -2. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: 'left'MD, 'right'MD. base: -2. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -659,6 +818,12 @@
                     assert(WITHIN_STACK_BOUNDS());
 >>>>>>> e599204f472 (Parse down to statement level in the cases generator)
                 }
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -694,6 +859,12 @@
                     res = sym_new_type(ctx, &PyUnicode_Type);
                 }
                 GETLOCAL(this_instr->operand0) = res;
+                /* Variables: 'left'M, 'right'M. base: -2. sp: 0. logical_sp: 0 
+               inputs: 'left'M, 'right'M
+               outputs: */
+                /* Variables: . base: -2. sp: 0. logical_sp: -2 
+               inputs: 
+               outputs: */
             }
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
@@ -778,6 +949,12 @@
             {
                 new_frame = NULL;
                 ctx->done = true;
+                /* Variables: 'container'M, 'sub'M, 'getitem'M. base: -3. sp: 0. logical_sp: 0 
+               inputs: 'container'M, 'sub'M, 'getitem'M
+               outputs: 'new_frame'D*/
+                /* Variables: 'new_frame'D. base: -3. sp: 0. logical_sp: -2 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-3] = (JitOptSymbol *)new_frame;
             stack_pointer += -2;
@@ -859,6 +1036,12 @@
                     ctx->done = true;
                 }
                 res = temp;
+                /* Variables: . base: -1. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -1. sp: -1. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[0] = res;
             stack_pointer += 1;
@@ -894,6 +1077,12 @@
         case _SEND_GEN_FRAME: {
             {
                 ctx->done = true;
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -902,6 +1091,12 @@
             JitOptSymbol *res;
             {
                 res = sym_new_unknown(ctx);
+                /* Variables: 'unused'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'unused'M
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -948,6 +1143,12 @@
                 for (int i = 0; i < oparg; i++) {
                     values[i] = sym_new_unknown(ctx);
                 }
+                /* Variables: 'seq'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'seq'M
+               outputs: 'values'A*/
+                /* Variables: 'values'A. base: -1. sp: 0. logical_sp: -1 + oparg 
+               inputs: 
+               outputs: */
             }
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -962,6 +1163,12 @@
             {
                 val0 = sym_tuple_getitem(ctx, seq, 0);
                 val1 = sym_tuple_getitem(ctx, seq, 1);
+                /* Variables: 'seq'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'seq'M
+               outputs: 'val1'D, 'val0'D*/
+                /* Variables: 'val1'D, 'val0'D. base: -1. sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = val1;
             stack_pointer[0] = val0;
@@ -979,6 +1186,12 @@
                 for (int i = 0; i < oparg; i++) {
                     values[i] = sym_tuple_getitem(ctx, seq, i);
                 }
+                /* Variables: 'seq'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'seq'M
+               outputs: 'values'A*/
+                /* Variables: 'values'A. base: -1. sp: 0. logical_sp: -1 + oparg 
+               inputs: 
+               outputs: */
             }
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1004,6 +1217,12 @@
                 for (int i = 0; i < totalargs; i++) {
                     values[i] = sym_new_unknown(ctx);
                 }
+                /* Variables: 'seq'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'seq'M
+               outputs: 'values'A, 'unused', 'unused'A*/
+                /* Variables: 'values'A, 'unused', 'unused'A. base: -1. sp: 0. logical_sp: (oparg & 0xFF) + (oparg >> 8) 
+               inputs: 
+               outputs: */
             }
             stack_pointer += (oparg & 0xFF) + (oparg >> 8);
             assert(WITHIN_STACK_BOUNDS());
@@ -1072,6 +1291,12 @@
                 else {
                     REPLACE_OP(this_instr, _NOP, 0, 0);
                 }
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: 'null'A*/
+                /* Variables: 'null'A. base: 0. sp: 0. logical_sp: (oparg & 1) 
+               inputs: 
+               outputs: */
             }
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
@@ -1153,6 +1378,12 @@
             values = &stack_pointer[-oparg];
             {
                 tup = sym_new_tuple(ctx, oparg, values);
+                /* Variables: 'values'MA. base: -oparg. sp: 0. logical_sp: 0 
+               inputs: 'values'MA
+               outputs: 'tup'D*/
+                /* Variables: 'tup'D. base: -oparg. sp: 0. logical_sp: 1 - oparg 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-oparg] = tup;
             stack_pointer += 1 - oparg;
@@ -1254,6 +1485,12 @@
                 if (oparg &1) {
                     self_or_null[0] = sym_new_unknown(ctx);
                 }
+                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'owner'M
+               outputs: 'attr'D, 'self_or_null'A*/
+                /* Variables: 'attr'D, 'self_or_null'A. base: -1. sp: 0. logical_sp: (oparg&1) 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
@@ -1278,6 +1515,12 @@
                         }
                     }
                 }
+                /* Variables: 'owner'MD. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: 'owner'MD. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -1296,6 +1539,12 @@
             {
                 attr = sym_new_not_null(ctx);
                 (void)offset;
+                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'owner'M
+               outputs: 'attr'D*/
+                /* Variables: 'attr'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = attr;
             break;
@@ -1328,6 +1577,12 @@
                 if (attr == NULL) {
                     attr = sym_new_not_null(ctx);
                 }
+                /* Variables: 'attr'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: 'attr'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = attr;
             break;
@@ -1339,6 +1594,12 @@
             {
                 attr = sym_new_not_null(ctx);
                 (void)hint;
+                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'owner'M
+               outputs: 'attr'D*/
+                /* Variables: 'attr'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = attr;
             break;
@@ -1350,6 +1611,12 @@
             {
                 attr = sym_new_not_null(ctx);
                 (void)index;
+                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'owner'M
+               outputs: 'attr'D*/
+                /* Variables: 'attr'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = attr;
             break;
@@ -1365,6 +1632,12 @@
             {
                 attr = sym_new_not_null(ctx);
                 (void)descr;
+                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'owner'M
+               outputs: 'attr'D*/
+                /* Variables: 'attr'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = attr;
             break;
@@ -1377,6 +1650,12 @@
                 (void)fget;
                 new_frame = NULL;
                 ctx->done = true;
+                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'owner'M
+               outputs: 'new_frame'D*/
+                /* Variables: 'new_frame'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = (JitOptSymbol *)new_frame;
             break;
@@ -1415,6 +1694,12 @@
                 else {
                     res = _Py_uop_sym_new_not_null(ctx);
                 }
+                /* Variables: 'left'M, 'right'M. base: -2. sp: 0. logical_sp: 0 
+               inputs: 'left'M, 'right'M
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -2. sp: 0. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1426,6 +1711,12 @@
             JitOptSymbol *res;
             {
                 res = sym_new_type(ctx, &PyBool_Type);
+                /* Variables: 'left'M, 'right'M. base: -2. sp: 0. logical_sp: 0 
+               inputs: 'left'M, 'right'M
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -2. sp: 0. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1475,6 +1766,12 @@
                     assert(WITHIN_STACK_BOUNDS());
 >>>>>>> e599204f472 (Parse down to statement level in the cases generator)
                 }
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
+                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -1484,6 +1781,12 @@
             JitOptSymbol *res;
             {
                 res = sym_new_type(ctx, &PyBool_Type);
+                /* Variables: 'left'M, 'right'M. base: -2. sp: 0. logical_sp: 0 
+               inputs: 'left'M, 'right'M
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -2. sp: 0. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1495,6 +1798,12 @@
             JitOptSymbol *res;
             {
                 res = sym_new_type(ctx, &PyBool_Type);
+                /* Variables: 'left'M, 'right'M. base: -2. sp: 0. logical_sp: 0 
+               inputs: 'left'M, 'right'M
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -2. sp: 0. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1506,6 +1815,12 @@
             JitOptSymbol *res;
             {
                 res = sym_new_type(ctx, &PyBool_Type);
+                /* Variables: 'left'M, 'right'M. base: -2. sp: 0. logical_sp: 0 
+               inputs: 'left'M, 'right'M
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -2. sp: 0. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1703,6 +2018,12 @@
             JitOptSymbol *next;
             {
                 next = sym_new_type(ctx, &PyLong_Type);
+                /* Variables: 'iter'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: 'next'D*/
+                /* Variables: 'iter'M, 'next'D. base: -1. sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -1713,6 +2034,12 @@
         case _FOR_ITER_GEN_FRAME: {
             {
                 ctx->done = true;
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -1723,6 +2050,12 @@
             {
                 attr = sym_new_not_null(ctx);
                 self_or_null = sym_new_unknown(ctx);
+                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'owner'M
+               outputs: 'attr'D, 'self_or_null'D*/
+                /* Variables: 'attr'D, 'self_or_null'D. base: -1. sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = attr;
             stack_pointer[0] = self_or_null;
@@ -1770,6 +2103,12 @@
                 (void)descr;
                 attr = sym_new_not_null(ctx);
                 self = owner;
+                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'owner'M
+               outputs: 'attr'D, 'self'D*/
+                /* Variables: 'attr'D, 'self'D. base: -1. sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
@@ -1788,6 +2127,12 @@
                 (void)descr;
                 attr = sym_new_not_null(ctx);
                 self = owner;
+                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'owner'M
+               outputs: 'attr'D, 'self'D*/
+                /* Variables: 'attr'D, 'self'D. base: -1. sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
@@ -1824,6 +2169,12 @@
                 (void)descr;
                 attr = sym_new_not_null(ctx);
                 self = owner;
+                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'owner'M
+               outputs: 'attr'D, 'self'D*/
+                /* Variables: 'attr'D, 'self'D. base: -1. sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
@@ -1842,6 +2193,12 @@
                 (void)args;
                 func = sym_new_not_null(ctx);
                 maybe_self = sym_new_not_null(ctx);
+                /* Variables: 'callable'M, 'self_or_null'M, 'args'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
+               inputs: 'callable'M, 'self_or_null'M, 'args'MA
+               outputs: 'func'D, 'maybe_self'D, 'args'A*/
+                /* Variables: 'func'D, 'maybe_self'D, 'args'A. base: -2 - oparg. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-2 - oparg] = func;
             stack_pointer[-1 - oparg] = maybe_self;
@@ -1863,6 +2220,12 @@
                     break;
                 }
                 new_frame = frame_new(ctx, co, 0, NULL, 0);
+                /* Variables: 'callable'M, 'self_or_null'M, 'args'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
+               inputs: 'callable'M, 'self_or_null'M, 'args'MA
+               outputs: 'new_frame'D*/
+                /* Variables: 'new_frame'D. base: -2 - oparg. sp: 0. logical_sp: -1 - oparg 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-2 - oparg] = (JitOptSymbol *)new_frame;
             stack_pointer += -1 - oparg;
@@ -1881,6 +2244,12 @@
                     this_instr->operand1 = (uintptr_t)sym_get_const(ctx, callable);
                 }
                 sym_set_type(callable, &PyFunction_Type);
+                /* Variables: 'callable'MD, 'self_or_null'M, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: 'callable'MD, 'self_or_null'M, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -1918,6 +2287,12 @@
             {
                 sym_set_null(null);
                 sym_set_type(callable, &PyMethod_Type);
+                /* Variables: 'callable'MD, 'null'MD, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: 'callable'MD, 'null'MD, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -1930,6 +2305,12 @@
             {
                 callable[0] = sym_new_not_null(ctx);
                 self_or_null[0] = sym_new_not_null(ctx);
+                /* Variables: 'callable'MDA, 'self_or_null'MDA, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: 'callable'MDA, 'self_or_null'MDA, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -1939,6 +2320,12 @@
                 if (_PyInterpreterState_GET()->eval_frame == NULL) {
                     REPLACE_OP(this_instr, _NOP, 0 ,0);
                 }
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -1959,6 +2346,12 @@
                         }
                     }
                 }
+                /* Variables: 'callable'MD, 'self_or_null'MD, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: 'callable'MD, 'self_or_null'MD, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -1967,6 +2360,12 @@
             {
                 assert(corresponding_check_stack == NULL);
                 corresponding_check_stack = this_instr;
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -1997,6 +2396,12 @@
                 } else {
                     new_frame = frame_new(ctx, co, 0, NULL, 0);
                 }
+                /* Variables: 'callable'M, 'self_or_null'M, 'args'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
+               inputs: 'callable'M, 'self_or_null'M, 'args'MA
+               outputs: 'new_frame'D*/
+                /* Variables: 'new_frame'D. base: -2 - oparg. sp: 0. logical_sp: -1 - oparg 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-2 - oparg] = (JitOptSymbol *)new_frame;
             stack_pointer += -1 - oparg;
@@ -2010,6 +2415,9 @@
             {
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
+                /* Variables: . base: -1. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
                 ctx->frame->stack_pointer = stack_pointer;
                 ctx->frame = new_frame;
                 ctx->curr_frame_depth++;
@@ -2034,6 +2442,12 @@
                     corresponding_check_stack->opcode = _NOP;
                 }
                 corresponding_check_stack = NULL;
+                /* Variables: . base: -1. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
+                /* Variables: . base: -1. sp: -1. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -2077,6 +2491,12 @@
                 (void)args;
                 self = sym_new_not_null(ctx);
                 init = sym_new_not_null(ctx);
+                /* Variables: 'callable'M, 'null'M, 'args'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
+               inputs: 'callable'M, 'null'M, 'args'MA
+               outputs: 'self'D, 'init'D, 'args'A*/
+                /* Variables: 'self'D, 'init'D, 'args'A. base: -2 - oparg. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-2 - oparg] = self;
             stack_pointer[-1 - oparg] = init;
@@ -2088,6 +2508,12 @@
             {
                 init_frame = NULL;
                 ctx->done = true;
+                /* Variables: 'self'M, 'init'M, 'args'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
+               inputs: 'self'M, 'init'M, 'args'MA
+               outputs: 'init_frame'D*/
+                /* Variables: 'init_frame'D. base: -2 - oparg. sp: 0. logical_sp: -1 - oparg 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-2 - oparg] = (JitOptSymbol *)init_frame;
             stack_pointer += -1 - oparg;
@@ -2213,6 +2639,12 @@
             {
                 new_frame = NULL;
                 ctx->done = true;
+                /* Variables: 'callable'M, 'self_or_null'M, 'args'MA, 'kwnames'M. base: -3 - oparg. sp: 0. logical_sp: 0 
+               inputs: 'callable'M, 'self_or_null'M, 'args'MA, 'kwnames'M
+               outputs: 'new_frame'D*/
+                /* Variables: 'new_frame'D. base: -3 - oparg. sp: 0. logical_sp: -2 - oparg 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-3 - oparg] = (JitOptSymbol *)new_frame;
             stack_pointer += -2 - oparg;
@@ -2276,6 +2708,9 @@
         case _RETURN_GENERATOR: {
             JitOptSymbol *res;
             {
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: 'res'*/
                 ctx->frame->stack_pointer = stack_pointer;
                 frame_pop(ctx);
                 stack_pointer = ctx->frame->stack_pointer;
@@ -2293,6 +2728,12 @@
                 if (co == NULL) {
                     ctx->done = true;
                 }
+                /* Variables: 'res'D. base: 0. sp: 1. logical_sp: 1 
+               inputs: 
+               outputs: */
+                /* Variables: 'res'D. base: 0. sp: 1. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = res;
             break;
@@ -2337,6 +2778,12 @@
             {
                 assert(oparg > 0);
                 top = bottom;
+                /* Variables: 'bottom'MD, 'unused'MA. base: -1 - (oparg-1). sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: 'top'D*/
+                /* Variables: 'bottom'MD, 'unused'MA, 'top'D. base: -1 - (oparg-1). sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[0] = top;
             stack_pointer += 1;
@@ -2384,6 +2831,12 @@
                 else {
                     res = sym_new_type(ctx, &PyFloat_Type);
                 }
+                /* Variables: 'left'M, 'right'M. base: -2. sp: 0. logical_sp: 0 
+               inputs: 'left'M, 'right'M
+               outputs: 'res'D*/
+                /* Variables: 'res'D. base: -2. sp: 0. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -2401,6 +2854,12 @@
                 bottom[0] = top[0];
                 top[0] = temp;
                 assert(oparg >= 2);
+                /* Variables: 'bottom'MDA, 'unused'MA, 'top'MDA. base: -2 - (oparg-2). sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: 'bottom'MDA, 'unused'MA, 'top'MDA. base: -2 - (oparg-2). sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -2433,6 +2892,12 @@
                     eliminate_pop_guard(this_instr, value != Py_True);
                 }
                 sym_set_const(flag, Py_True);
+                /* Variables: 'flag'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'flag'M
+               outputs: */
+                /* Variables: . base: -1. sp: 0. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2449,6 +2914,12 @@
                     eliminate_pop_guard(this_instr, value != Py_False);
                 }
                 sym_set_const(flag, Py_False);
+                /* Variables: 'flag'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'flag'M
+               outputs: */
+                /* Variables: . base: -1. sp: 0. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2469,6 +2940,12 @@
                     eliminate_pop_guard(this_instr, true);
                 }
                 sym_set_const(flag, Py_None);
+                /* Variables: 'flag'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'flag'M
+               outputs: */
+                /* Variables: . base: -1. sp: 0. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2488,6 +2965,12 @@
                     assert(!sym_matches_type(flag, &_PyNone_Type));
                     eliminate_pop_guard(this_instr, false);
                 }
+                /* Variables: 'flag'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'flag'M
+               outputs: */
+                /* Variables: . base: -1. sp: 0. logical_sp: -1 
+               inputs: 
+               outputs: */
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2497,6 +2980,12 @@
         case _JUMP_TO_TOP: {
             {
                 ctx->done = true;
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -2510,6 +2999,12 @@
             {
                 (void)framesize;
                 Py_UNREACHABLE();
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -2523,6 +3018,12 @@
             {
                 (void)exit_p;
                 ctx->done = true;
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             break;
         }
@@ -2536,6 +3037,12 @@
             PyObject *ptr = (PyObject *)this_instr->operand0;
             {
                 value = sym_new_const(ctx, ptr);
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: 'value'D*/
+                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -2548,6 +3055,12 @@
             PyObject *ptr = (PyObject *)this_instr->operand0;
             {
                 value = sym_new_const(ctx, ptr);
+                /* Variables: 'pop'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'pop'M
+               outputs: 'value'D*/
+                /* Variables: 'value'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = value;
             break;
@@ -2558,6 +3071,12 @@
             PyObject *ptr = (PyObject *)this_instr->operand0;
             {
                 value = sym_new_const(ctx, ptr);
+                /* Variables: . base: 0. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: 'value'D*/
+                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
+               inputs: 
+               outputs: */
             }
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -2570,6 +3089,12 @@
             PyObject *ptr = (PyObject *)this_instr->operand0;
             {
                 value = sym_new_const(ctx, ptr);
+                /* Variables: 'pop'M. base: -1. sp: 0. logical_sp: 0 
+               inputs: 'pop'M
+               outputs: 'value'D*/
+                /* Variables: 'value'D. base: -1. sp: 0. logical_sp: 0 
+               inputs: 
+               outputs: */
             }
             stack_pointer[-1] = value;
             break;
