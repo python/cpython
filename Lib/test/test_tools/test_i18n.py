@@ -518,109 +518,6 @@ class Test_pygettext(unittest.TestCase):
                 self.assertEqual(str(cm.exception), message)
 
 
-class TestCharacterEscapes(unittest.TestCase):
-    # Pygettext always escapes the following characters:
-    special_chars = {
-        '\\': r'\\',
-        '\t': r'\t',
-        '\r': r'\r',
-        '\n': r'\n',
-        '\"': r'\"',
-    }
-
-    def tearDownClass():
-        # Reset the global 'escapes' dict to the default
-        make_escapes(pass_nonascii=True)
-
-    def test_special_chars(self):
-        # special_chars are always escaped regardless of the
-        # --escape option
-        for pass_nonascii in (True, False):
-            make_escapes(pass_nonascii=pass_nonascii)
-            with self.subTest(pass_nonascii=pass_nonascii):
-                for char in self.special_chars:
-                    self.assertEqual(pygettext.escape(char, encoding='utf-8'),
-                                     self.special_chars[char])
-
-    def _char_to_octal_escape(self, char):
-        """Convert a character to its octal escape representation."""
-        return r"\%03o" % ord(char)
-
-    def _octal_escape_to_string(self, escaped):
-        """Convert an octal escape representation to string."""
-        octal_escapes = re.findall(r'\\([0-7]{3})', escaped)
-        bytestr = bytes([int(n, 8) for n in octal_escapes])
-        return bytestr.decode('utf-8')
-
-    def test_not_escaped(self):
-        """
-        Test escaping when the --escape is not used.
-
-        When --escape is not used, only some characters withing the ASCII
-        range are escaoped. Characters >= 128 are not escaped.
-        """
-        # This is the same as invoking pygettext without
-        # the --escape option (the default behavior).
-        make_escapes(pass_nonascii=True)
-        # The encoding option is not used when --escape is not passed
-        encoding = 'foo'
-
-        # First 32 characters use octal escapes (except for special chars)
-        for i in range(32):
-            char = chr(i)
-            if char in self.special_chars:
-                continue
-            self.assertEqual(pygettext.escape(char, encoding=encoding),
-                             self._char_to_octal_escape(char))
-
-        # Characters 32-126 are not escaped (except for special chars)
-        for i in range(32, 127):
-            char = chr(i)
-            if char in self.special_chars:
-                continue
-            self.assertEqual(pygettext.escape(char, encoding=encoding), char)
-
-        # chr(127) uses octal escape
-        self.assertEqual(pygettext.escape(chr(127), encoding=encoding),
-                         '\\177')
-
-        # All characters >= 128 are not escaped
-        for i in range(128, 256):
-            char = chr(i)
-            self.assertEqual(pygettext.escape(char, encoding=encoding), char)
-
-    def test_escaped(self):
-        """
-        Test escaping when --escape is used.
-
-        When --escape is used, all characters are escaped, including
-        """
-        make_escapes(pass_nonascii=False)
-        encoding = 'utf-8'
-
-        # First 32 characters use octal escapes (except for special chars)
-        for i in range(32):
-            char = chr(i)
-            if char in self.special_chars:
-                continue
-            self.assertEqual(pygettext.escape(char, encoding=encoding),
-                             self._char_to_octal_escape(char))
-
-        # Characters 32-126 are not escaped (except for special chars)
-        for i in range(32, 127):
-            char = chr(i)
-            if char in self.special_chars:
-                continue
-            self.assertEqual(pygettext.escape(char, encoding=encoding), char)
-
-        # Characters >= 127 are escaped
-        for i in range(127, 256):
-            char = chr(i)
-            escaped = pygettext.escape(char, encoding=encoding)
-            decoded_char = self._octal_escape_to_string(escaped)
-            self.assertEqual(char, decoded_char)
-
-
 def extract_from_snapshots():
     snapshots = {
         'messages.py': (),
@@ -630,13 +527,21 @@ def extract_from_snapshots():
         'custom_keywords.py': ('--keyword=foo', '--keyword=nfoo:1,2',
                                '--keyword=pfoo:1c,2',
                                '--keyword=npfoo:1c,2,3', '--keyword=_:1,2'),
-        # Test escaping non-ASCII characters
-        'escapes.py': ('--escape',),
+        # == Test character escaping
+        # Escape ascii and unicode:
+        'escapes.py': ('--escape', '--add-comments='),
+        # Escape only ascii and let unicode pass through:
+        ('escapes.py', 'ascii-escapes.pot'): ('--add-comments=',),
     }
 
     for filename, args in snapshots.items():
-        input_file = DATA_DIR / filename
-        output_file = input_file.with_suffix('.pot')
+        if isinstance(filename, tuple):
+            filename, output_file = filename
+            output_file = DATA_DIR / output_file
+            input_file = DATA_DIR / filename
+        else:
+            input_file = DATA_DIR / filename
+            output_file = input_file.with_suffix('.pot')
         contents = input_file.read_bytes()
         with temp_cwd(None):
             Path(input_file.name).write_bytes(contents)
