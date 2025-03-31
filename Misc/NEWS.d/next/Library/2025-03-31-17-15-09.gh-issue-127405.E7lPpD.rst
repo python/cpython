@@ -1,0 +1,1 @@
+Remove dead code in :func:`sysconfig._get_pybuilddir`. Patch by Xuehai Pan.
