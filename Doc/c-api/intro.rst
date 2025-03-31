@@ -832,6 +832,13 @@ It is also implied by the presence of the
 not-Python-specific :c:macro:`!_DEBUG` macro.  When :c:macro:`!Py_DEBUG` is enabled
 in the Unix build, compiler optimization is disabled.
 
+.. note::
+   On Windows, the :c:macro:`!Py_DEBUG` macro is not defined by default.
+
+   The :option:`--with-pydebug` option is not available on Windows. Instead, the
+   not-Python-specific :c:macro:`!_DEBUG` macro can be defined by the compiler
+   options and that will enable the :c:macro:`!Py_DEBUG` macro.
+
 In addition to the reference count debugging described below, extra checks are
 performed, see :ref:`Python Debug Build <debug-build>`.
 
