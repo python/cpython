@@ -79,8 +79,9 @@ class ExecutorTest:
                     var: val
                     for var, val in tb.tb_frame.f_locals.items()
                     if isinstance(val, Exception)
+                    and var in val.__traceback__.tb_frame.f_locals
                 },
-                msg=f"traceback frames should not contain any exception",
+                msg=f"the raised exception's traceback should not contain an exception that captures itself in its own traceback",
             )
 
     @support.requires_resource('walltime')
