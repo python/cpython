@@ -625,6 +625,9 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             self.assertEqual(abiflags, '')
 
         if support.Py_DEBUG:
+            # The 'd' flag should always be the last one.
+            # On Windows, the debug flag is used differently with a underscore prefix.
+            # For example, `python{X}.{Y}td` on Unix and ```python{X}.{Y}t_d.exe` on Windows.
             self.assertEndsWith(ABIFLAGS, 'd')
         else:
             self.assertNotIn('d', ABIFLAGS)
