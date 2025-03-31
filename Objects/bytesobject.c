@@ -4032,7 +4032,12 @@ PyBytesWriter_WriteBytes(PyBytesWriter *writer,
                          const void *bytes, Py_ssize_t size)
 {
     if (size < 0) {
-        size = strlen(bytes);
+        size_t len = strlen(bytes);
+        if (len > (size_t)PY_SSIZE_T_MAX) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        size = (Py_ssize_t)len;
     }
 
     Py_ssize_t pos = writer->size;
