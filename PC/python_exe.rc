@@ -12,7 +12,7 @@
 // current versions of Windows.
 1 RT_MANIFEST "python.manifest"
 
-1 ICON DISCARDABLE "icons\python.ico"
+1 ICON DISCARDABLE "icons\python.ico" 
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -24,7 +24,7 @@ VS_VERSION_INFO VERSIONINFO
  FILEVERSION PYVERSION64
  PRODUCTVERSION PYVERSION64
  FILEFLAGSMASK 0x3fL
-#ifdef Py_DEBUG
+#ifdef _DEBUG
  FILEFLAGS VS_FF_DEBUG
 #else
  FILEFLAGS 0x0L
