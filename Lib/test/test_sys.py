@@ -1981,17 +1981,17 @@ class TestRemoteExec(unittest.TestCase):
         target = os_helper.TESTFN + '_target.py'
         self.addCleanup(os_helper.unlink, target)
 
-        parent_sock, child_sock = socket.socketpair()
+        port = find_unused_port()
 
         with open(target, 'w') as f:
             f.write(f'''
 import sys
 import time
 import socket
-import os
 
-# Get the socket from the passed file descriptor
-sock = socket.socket(fileno={child_sock.fileno()})
+# Connect to the test process
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(('localhost', {port}))
 
 # Signal that the process is ready
 sock.sendall(b"ready")
@@ -2017,28 +2017,34 @@ sock.close()
             cmd.extend(python_args)
         cmd.append(target)
 
+        # Create a socket server to communicate with the target process
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket.bind(('localhost', port))
+        server_socket.settimeout(SHORT_TIMEOUT)
+        server_socket.listen(1)
+
         with subprocess.Popen(cmd,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE,
                               env=env,
-                              pass_fds=[child_sock.fileno()],
                               ) as proc:
+            client_socket = None
             try:
-                # Close the child socket in the parent process as it's now owned by the child
-                child_sock.close()
+                # Accept connection from target process
+                client_socket, _ = server_socket.accept()
+                server_socket.close()
 
-            # Wait for process to be ready
-                response = parent_sock.recv(1024)
+                response = client_socket.recv(1024)
                 self.assertEqual(response, b"ready")
 
                 # Try remote exec on the target process
                 sys.remote_exec(proc.pid, script)
 
                 # Signal script to continue
-                parent_sock.sendall(b"continue")
+                client_socket.sendall(b"continue")
 
                 # Wait for execution confirmation
-                response = parent_sock.recv(1024)
+                response = client_socket.recv(1024)
                 self.assertEqual(response, b"executed")
 
                 # Return output for test verification
@@ -2047,8 +2053,8 @@ sock.close()
             except PermissionError:
                 self.skipTest("Insufficient permissions to execute code in remote process")
             finally:
-                # Wait for execution confirmation
-                parent_sock.close()
+                if client_socket is not None:
+                    client_socket.close()
                 proc.kill()
                 proc.terminate()
                 proc.wait(timeout=SHORT_TIMEOUT)
