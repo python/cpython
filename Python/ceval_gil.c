@@ -1215,32 +1215,31 @@ static inline void run_remote_debugger_script(const char *path)
     if (fd == -1) {
         PyErr_FormatUnraisable("Can't find fd for debugger script %s", path);
     } else {
+        int dup_fd = -1;
+        FILE *f = NULL;
+
 #ifdef MS_WINDOWS
-        PyObject* path_obj = PyUnicode_FromString(path);
-        if (!path_obj) {
-            PyErr_FormatUnraisable("Error when converting remote debugger script path %s to Unicode", path);
-            return;
+        dup_fd = _dup(fd);
+        if (dup_fd != -1) {
+            f = _fdopen(dup_fd, "r");
         }
-        wchar_t* wpath = PyUnicode_AsWideCharString(path_obj, NULL);
-        Py_DECREF(path_obj);
-        if (!wpath) {
-            PyErr_FormatUnraisable("Error when converting remote debugger script path %s to wide char", path);
-            return;
+        if (!f) {
+            _close(dup_fd);
         }
-        FILE* f = _wfopen(wpath, L"r");
 #else
-        FILE* f = fdopen(fd, "r");
+        dup_fd = dup(fd);
+        if (dup_fd != -1) {
+            f = fdopen(fd, "r");
+        }
+        if (!f) {
+            close(dup_fd);
+        }
 #endif
         if (!f) {
             PyErr_SetFromErrno(PyExc_OSError);
         } else {
-            PyRun_AnyFile(f, path);
+            PyRun_AnyFileEx(f, path, 1);
         }
-
-#ifdef MS_WINDOWS
-        PyMem_Free(wpath);
-        fclose(f);
-#endif
 
         if (PyErr_Occurred()) {
             PyErr_FormatUnraisable("Error executing debugger script %s", path);
