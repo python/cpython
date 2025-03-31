@@ -4621,10 +4621,20 @@ class MiscTest(unittest.TestCase):
         # Check that the C extension is available
         import _suggestions
 
-        self.assertEqual(_suggestions._generate_suggestions(["hello", "world"], "hell"),
-                         "hello")
-        self.assertEqual(_suggestions._generate_suggestions(["hovercraft"], "eels"),
-                         None)
+        self.assertEqual(
+            _suggestions._generate_suggestions(
+                ["hello", "world"],
+                "hell"
+            ),
+            "hello"
+        )
+        self.assertEqual(
+            _suggestions._generate_suggestions(
+                ["hovercraft"],
+                "eels"
+            ),
+            None
+        )
 
         # gh-131936: _Py_CalculateSuggestions wanted exactly a list
         class MyList(list):
@@ -4633,8 +4643,13 @@ class MiscTest(unittest.TestCase):
                 # shouldn't be a problem.
                 raise RuntimeError("evil")
 
-        self.assertEqual(_suggestions._generate_suggestions(MyList(["spanish", "inquisition"]), "spani"),
-                         "spanish")
+        self.assertEqual(
+            _suggestions._generate_suggestions(
+                MyList(["spanish", "inquisition"]),
+                "spani"
+            ),
+            "spanish"
+        )
 
 
 class TestColorizedTraceback(unittest.TestCase):
