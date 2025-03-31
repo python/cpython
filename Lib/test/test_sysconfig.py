@@ -618,17 +618,21 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertIsInstance(abiflags, str)
         self.assertIsInstance(ABIFLAGS, str)
         self.assertIn(abiflags, ABIFLAGS)
-        if ABIFLAGS:
-            self.assertLessEqual(ABIFLAGS.count('_'), 1)  # example value on Windows: 't_d'
-            self.assertTrue(ABIFLAGS.replace('_', '').isalpha(), ABIFLAGS)
 
         if os.name == 'nt':
             self.assertEqual(abiflags, '')
+            # Example values: '', 't', 't_d', '_d'
+            self.assertLessEqual(ABIFLAGS.count('_'), 1)
+        else:
+            # Example values: '', 't', 'td', 'd'
+            self.assertNotIn('_', ABIFLAGS)
+        if ABIFLAGS:
+            self.assertTrue(ABIFLAGS.replace('_', '').isalpha(), ABIFLAGS)
 
         if support.Py_DEBUG:
             # The 'd' flag should always be the last one.
             # On Windows, the debug flag is used differently with a underscore prefix.
-            # For example, `python{X}.{Y}td` on Unix and ```python{X}.{Y}t_d.exe` on Windows.
+            # For example, `python{X}.{Y}td` on Unix and `python{X}.{Y}t_d.exe` on Windows.
             self.assertEndsWith(ABIFLAGS, 'd')
         else:
             self.assertNotIn('d', ABIFLAGS)
