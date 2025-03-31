@@ -117,6 +117,3 @@ dnpgettext(*args, 'context', 'foo', 'foos')
 # f-strings
 f"Hello, {_('world')}!"
 f"Hello, {ngettext('world', 'worlds', 3)}!"
-
-# non-ascii
-_("α β γ δ")

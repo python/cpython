@@ -97,7 +97,3 @@ msgid_plural "worlds"
 msgstr[0] ""
 msgstr[1] ""
 
-#: messages.py:122
-msgid "α β γ δ"
-msgstr ""
-

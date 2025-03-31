@@ -18,8 +18,7 @@ DATA_DIR = Path(__file__).resolve().parent / 'i18n_data'
 
 
 with imports_under_tool("i18n"):
-    import pygettext
-    from pygettext import make_escapes, parse_spec
+    from pygettext import parse_spec
 
 
 def normalize_POT_file(pot):
