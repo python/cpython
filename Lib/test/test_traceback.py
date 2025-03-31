@@ -4619,7 +4619,20 @@ class MiscTest(unittest.TestCase):
     @cpython_only
     def test_suggestions_extension(self):
         # Check that the C extension is available
-        import _suggestions  # noqa: F401
+        import _suggestions
+
+        self.assertEqual(_suggestions._generate_suggestions(["hello", "world"], "hell"),
+                         "hello")
+        self.assertEqual(_suggestions._generate_suggestions(["hovercraft"], "eels"),
+                         None)
+
+        # gh-131936: _Py_CalculateSuggestions wanted exactly a list
+        class MyList(list):
+            def __getitem__(self, *_):
+                raise RuntimeError("evil")
+
+        self.assertEqual(_suggestions._generate_suggestions(MyList(["spanish", "inquisition"]), "spani"),
+                         "spanish")
 
 
 class TestColorizedTraceback(unittest.TestCase):
