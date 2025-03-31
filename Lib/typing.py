@@ -363,18 +363,6 @@ def _deduplicate_unhashable(unhashable_params):
             new_unhashable.append(t)
     return new_unhashable
 
-def _compare_args_orderless(first_args, second_args):
-    first_unhashable = _deduplicate_unhashable(first_args)
-    second_unhashable = _deduplicate_unhashable(second_args)
-    t = list(second_unhashable)
-    try:
-        for elem in first_unhashable:
-            t.remove(elem)
-    except ValueError:
-        return False
-    return not t
-
-
 def _flatten_literal_params(parameters):
     """Internal helper for Literal creation: flatten Literals among parameters."""
     params = []
