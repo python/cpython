@@ -603,8 +603,8 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
         return NULL;
     }
 
-    if (!PyTuple_Check(mro)) {
-        PyErr_SetString(PyExc_TypeError, "__mro__ is not tuple");
+    if (!PyTuple_CheckExact(mro)) {
+        PyErr_SetString(PyExc_TypeError, "__mro__ must be an exact tuple");
         goto error;
     }
 
@@ -612,12 +612,10 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
         PyObject *base_class = PyTuple_GET_ITEM(mro, pos);  // borrowed
         PyObject *base_class_data;
 
-        if (PyObject_GetOptionalAttr(base_class, &_Py_ID(_abc_impl),
-                                 &base_class_data) < 0) {
-            goto error;
-        }
-
-        if (PyErr_Occurred()) {
+        if (PyObject_GetOptionalAttr(base_class,
+                                     &_Py_ID(_abc_impl),
+                                     &base_class_data) < 0)
+        {
             goto error;
         }
 
@@ -627,8 +625,11 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
         }
 
         _abc_data *base_class_state = _abc_data_CAST(base_class_data);
-        if (_add_to_weak_set(base_class_state, &base_class_state->_abc_registry, subclass) < 0) {
-            Py_DECREF(base_class_data);
+        int res = _add_to_weak_set(base_class_state,
+                                   &base_class_state->_abc_registry,
+                                   subclass);
+        Py_DECREF(base_class_data);
+        if (res < 0) {
             goto error;
         }
     }
@@ -763,7 +764,6 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 
     PyObject *ok, *subclasses = NULL, *result = NULL;
     _abcmodule_state *state = NULL;
-    Py_ssize_t pos;
     int incache;
     _abc_data *impl = _get_impl(module, self);
     if (impl == NULL) {
@@ -848,45 +848,6 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     if (subclasscheck_check_registry(impl, subclass, &result)) {
         // Exception occurred or result is set.
         goto end;
-    }
-
-    /* 6. Check if it's a subclass of a subclass (recursive).
-        >>> class Ancestor: __subclasses__ = lambda: [Other]
-        >>> class Other: pass
-        >>> isinstance(Other, Ancestor) is True
-
-      Do not iterate over cls.__subclasses__() because it returns the entire class tree,
-      not just direct children, which leads to O(n^2) lookup.
-    */
-    PyObject *dict = _PyType_GetDict(cls); // borrowed
-    PyObject *subclasses_own_method = PyDict_GetItemString(dict, "__subclasses__"); // borrowed
-    if (subclasses_own_method) {
-      subclasses = PyObject_CallNoArgs(subclasses_own_method);
-      if (subclasses == NULL) {
-          goto end;
-      }
-      if (!PyList_Check(subclasses)) {
-          PyErr_SetString(PyExc_TypeError, "__subclasses__() must return a list");
-          goto end;
-      }
-      for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
-          PyObject *scls = PyList_GetItemRef(subclasses, pos);
-          if (scls == NULL) {
-              goto end;
-          }
-          int r = PyObject_IsSubclass(subclass, scls);
-          Py_DECREF(scls);
-          if (r > 0) {
-              if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
-                  goto end;
-              }
-              result = Py_True;
-              goto end;
-          }
-          if (r < 0) {
-              goto end;
-          }
-      }
     }
 
     /* No dice; update negative cache. */

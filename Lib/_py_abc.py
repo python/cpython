@@ -51,6 +51,7 @@ class ABCMeta(type):
         cls._abc_cache = WeakSet()
         cls._abc_negative_cache = WeakSet()
         cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
+        cls._prevent_recursion = 0
         return cls
 
     def register(cls, subclass):
@@ -154,19 +155,6 @@ class ABCMeta(type):
             if issubclass(subclass, rcls):
                 cls._abc_cache.add(subclass)
                 return True
-
-        # Check if it's a subclass of a subclass (recursive).
-        # >>> class Ancestor: __subclasses__ = lambda: [Other]
-        # >>> class Other: pass
-        # >>> isinstance(Other, Ancestor) is True
-        # Do not iterate over cls.__subclasses__() because it returns the entire class tree,
-        # not just direct children, which leads to O(n^2) lookup.
-        original_subclasses = getattr(cls, "__dict__", {}).get("__subclasses__", _UNSET)
-        if original_subclasses is not _UNSET:
-            for scls in original_subclasses():
-                if issubclass(subclass, scls):
-                    cls._abc_cache.add(subclass)
-                    return True
         # No dice; update negative cache
         cls._abc_negative_cache.add(subclass)
         return False
