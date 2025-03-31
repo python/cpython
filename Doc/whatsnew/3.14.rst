@@ -959,6 +959,42 @@ turtle
   (Contributed by Marie Roald and Yngve Mardal Moe in :gh:`126350`.)
 
 
+types
+-----
+
+* :class:`types.UnionType` is now an alias for :class:`typing.Union`
+  See :ref:`below <whatsnew314-typing-union>` for more details.
+  (Contributed by Jelle Zijlstra in :gh:`105499`.)
+
+typing
+------
+
+.. _whatsnew314-typing-union:
+
+* :class:`types.UnionType` and :class:`typing.Union` are now aliases for each other,
+  meaning that both old-style unions (created with ``Union[int, str]``) and new-style
+  unions (``int | str``) now create instances of the same runtime type. This unifies
+  the behavior between the two syntaxes, but leads to some differences in behavior that
+  may affect users who introspect types at runtime:
+
+  - Both syntaxes for creating a union now produce the same string representation in
+    ``repr()``. For example, ``repr(Union[int, str])``
+    is now ``"int | str"`` instead of ``"typing.Union[int, str]"``.
+  - Unions created using the old syntax are no longer cached. Previously, running
+    ``Union[int, str]`` multiple times would return the same object
+    (``Union[int, str] is Union[int, str]`` would be ``True``), but now it will
+    return two different objects. Users should use ``==`` to compare unions for equality, not
+    ``is``. New-style unions already worked this way in earlier versions.
+  - Previously, old-style unions were implemented using the private class
+    ``typing._UnionGenericAlias``. This class is no longer needed for the implementation,
+    but it has been retained for backward compatibility, with removal scheduled for Python
+    3.17. Users should use documented introspection helpers like :func:`typing.get_origin`
+    and :func:`typing.get_args` instead of relying on private implementation details.
+  - It is now possible to use :class:`typing.Union` in :func:`isinstance` checks.
+  - The ``__args__`` attribute of :class:`typing.Union` objects is no longer writable.
+
+  (Contributed by Jelle Zijlstra in :gh:`105499`.)
+
 unicodedata
 -----------
 
