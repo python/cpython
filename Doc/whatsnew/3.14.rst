@@ -117,36 +117,36 @@ Here's a simple example that inspects object types in a running Python process:
 
   .. code-block:: python
 
-    import sys
-    import tempfile
-    import os
+     import sys
+     import tempfile
+     import os
 
-    # Create a temporary script
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-        script_path = f.name
-        f.write("""
-    import gc
-    import collections
+     # Create a temporary script
+     with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+         script_path = f.name
+         f.write("""
+     import gc
+     import collections
 
-    # Collect all objects managed by the garbage collector
-    gc.collect()
+     # Collect all objects managed by the garbage collector
+     gc.collect()
 
-    # Count objects by type
-    type_counts = collections.Counter(type(obj).__name__
-                                      for obj in gc.get_objects())
+     # Count objects by type
+     type_counts = collections.Counter(type(obj).__name__
+                                       for obj in gc.get_objects())
 
-    # Print the most common types
-    print("Most common object types in process:")
-    for type_name, count in type_counts.most_common(10):
-        print(f"  {type_name}: {count}")
-    """)
+     # Print the most common types
+     print("Most common object types in process:")
+     for type_name, count in type_counts.most_common(10):
+         print(f"  {type_name}: {count}")
+     """)
 
-    try:
-        # Execute in process with PID 1234
-        print("Behold! An offering:")
-        sys.remote_exec(1234, script_path)
-    finally:
-        os.unlink(script_path)
+     try:
+         # Execute in process with PID 1234
+         print("Behold! An offering:")
+         sys.remote_exec(1234, script_path)
+     finally:
+         os.unlink(script_path)
 
 The debugging interface has been carefully designed with security in mind and includes several
 mechanisms to control access:

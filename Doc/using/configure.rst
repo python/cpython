@@ -667,7 +667,7 @@ also be used to improve performance.
    execution of a Python file in a separate process as described in :pep:`768` is
    not compiled.
 
-   ..versionadded:: 3.14
+   ..versionadded:: next
 
 
 .. _debug-build:
