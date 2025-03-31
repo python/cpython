@@ -10,10 +10,10 @@ import sys
 import tempfile
 import warnings
 import weakref
+from textwrap import dedent
 
 import doctest
 import unittest
-from textwrap import dedent
 from test import support
 from test.support import import_helper, os_helper
 
@@ -746,15 +746,12 @@ class CommandLineTest(unittest.TestCase):
             self.assertListEqual(res.splitlines(), expect.splitlines())
 
     def test_unknown_flag(self):
-        output = io.StringIO()
+        stderr = io.StringIO()
         with self.assertRaises(SystemExit):
-            # suppress argparse error message
-            with contextlib.redirect_stderr(output):
+            # check that the parser help is shown
+            with contextlib.redirect_stderr(stderr):
                 _ = self.invoke_pickle('--unknown')
-        msg = output.getvalue()
-        self.assertTrue(msg.startswith('usage: '),
-                        "Output does not start with 'usage: '. "
-                        f"Output was: {msg}")
+        self.assertStartsWith(stderr.getvalue(), 'usage: ')
 
 
 def load_tests(loader, tests, pattern):
