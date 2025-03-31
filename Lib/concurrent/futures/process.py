@@ -210,9 +210,13 @@ def _sendback_result(result_queue, work_id, result=None, exception=None,
         result_queue.put(_ResultItem(work_id, result=result,
                                      exception=exception, exit_pid=exit_pid))
     except BaseException as e:
-        exc = _ExceptionWithTraceback(e, e.__traceback__)
-        result_queue.put(_ResultItem(work_id, exception=exc,
-                                     exit_pid=exit_pid))
+        result_queue.put(
+            _ResultItem(
+                work_id,
+                exception=_ExceptionWithTraceback(e, e.__traceback__),
+                exit_pid=exit_pid
+            )
+        )
 
 
 def _process_worker(call_queue, result_queue, initializer, initargs, max_tasks=None):
