@@ -619,7 +619,8 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertIsInstance(ABIFLAGS, str)
         self.assertIn(abiflags, ABIFLAGS)
         if ABIFLAGS:
-            self.assertTrue(ABIFLAGS.isalpha(), ABIFLAGS)
+            self.assertLessEqual(ABIFLAGS.count('_'), 1)  # example value on Windows: 't_d'
+            self.assertTrue(ABIFLAGS.replace('_', '').isalpha(), ABIFLAGS)
 
         if os.name == 'nt':
             self.assertEqual(abiflags, '')
