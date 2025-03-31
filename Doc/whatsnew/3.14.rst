@@ -163,6 +163,7 @@ See :pep:`768` for more details.
 
 (Contributed by Pablo Galindo Salgado, Matt Wozniski, and Ivona Stojanovic in :gh:`131591`.)
 
+
 .. _whatsnew314-pep649:
 
 PEP 649: deferred evaluation of annotations
