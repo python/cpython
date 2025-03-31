@@ -5,6 +5,8 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
+#include "pycore_tuple.h"         // _PyTuple_Recycle()
 
 #include "clinic/enumobject.c.h"
 
@@ -219,9 +221,7 @@ enum_next_long(enumobject *en, PyObject* next_item)
         Py_DECREF(old_item);
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
         return result;
     }
     result = PyTuple_New(2);
@@ -271,9 +271,7 @@ enum_next(PyObject *op)
         Py_DECREF(old_item);
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
         return result;
     }
     result = PyTuple_New(2);

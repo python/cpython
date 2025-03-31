@@ -11,6 +11,7 @@
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #include <float.h>                // DBL_MANT_DIG
 #include <stddef.h>               // offsetof
@@ -6473,6 +6474,12 @@ long_long_meth(PyObject *self, PyObject *Py_UNUSED(ignored))
     return long_long(self);
 }
 
+static PyObject *
+long_long_getter(PyObject *self, void *Py_UNUSED(ignored))
+{
+    return long_long(self);
+}
+
 /*[clinic input]
 int.is_integer
 
@@ -6533,7 +6540,7 @@ static PyMethodDef long_methods[] = {
 
 static PyGetSetDef long_getset[] = {
     {"real",
-     (getter)long_long_meth, (setter)NULL,
+     long_long_getter, (setter)NULL,
      "the real part of a complex number",
      NULL},
     {"imag",
@@ -6541,7 +6548,7 @@ static PyGetSetDef long_getset[] = {
      "the imaginary part of a complex number",
      NULL},
     {"numerator",
-     (getter)long_long_meth, (setter)NULL,
+     long_long_getter, (setter)NULL,
      "the numerator of a rational number in lowest terms",
      NULL},
     {"denominator",
@@ -6742,16 +6749,24 @@ PyUnstable_Long_CompactValue(const PyLongObject* op) {
 
 
 PyObject* PyLong_FromInt32(int32_t value)
-{ return PyLong_FromNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_INT(uint32_t, int32_t, value);
+}
 
 PyObject* PyLong_FromUInt32(uint32_t value)
-{ return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_UINT(uint32_t, value);
+}
 
 PyObject* PyLong_FromInt64(int64_t value)
-{ return PyLong_FromNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_INT(uint64_t, int64_t, value);
+}
 
 PyObject* PyLong_FromUInt64(uint64_t value)
-{ return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_UINT(uint64_t, value);
+}
 
 #define LONG_TO_INT(obj, value, type_name) \
     do { \

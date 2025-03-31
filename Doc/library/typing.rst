@@ -2298,7 +2298,7 @@ without the dedicated syntax, as documented below.
       >>> Unpacked.__value__
       tuple[bool, typing.Unpack[Alias]]
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 Other special directives
@@ -2384,7 +2384,7 @@ types.
    .. versionchanged:: 3.11
       Added support for generic namedtuples.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Using :func:`super` (and the ``__class__`` :term:`closure variable`) in methods of ``NamedTuple`` subclasses
       is unsupported and causes a :class:`TypeError`.
 
