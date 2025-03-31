@@ -244,7 +244,6 @@ class Stack:
                     f"Size mismatch when popping '{popped.name}' from stack to assign to '{var.name}'. "
                     f"Expected {var_size(var)} got {var_size(popped.item)}"
                 )
-                return popped
             if not var.used:
                 return popped
             if popped.name != var.name:
