@@ -457,6 +457,7 @@ _safe_PyBytes_FromStringAndSize(char *start, size_t num_bytes) {
         }
         if (safe_memcpy(PyBytesWriter_GetData(writer), start, num_bytes) < 0) {
             PyBytesWriter_Discard(writer);
+            return NULL;
         }
         return PyBytesWriter_Finish(writer);
     }
