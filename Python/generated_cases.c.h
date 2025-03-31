@@ -8457,7 +8457,8 @@
                 }
                 STAT_INC(LOAD_ATTR, hit);
                 #ifdef Py_GIL_DISABLED
-                if (!_Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr)) {
+                int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr);
+                if (!increfed) {
                     if (true) {
                         UPDATE_MISS_STATS(LOAD_ATTR);
                         assert(_PyOpcode_Deopt[opcode] == (LOAD_ATTR));
@@ -8524,42 +8525,8 @@
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_COMMON_CONSTANT);
             _PyStackRef value;
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-            // Keep in sync with _common_constants in opcode.py
             assert(oparg < NUM_COMMON_CONSTANTS);
             value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
-=======
-=======
-            /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: 'value'*/
->>>>>>> ed96ae5aeac (Handle variable definition through out parameters)
-=======
->>>>>>> 1e72e135618 (Fixup declarations and test output)
-            PyObject *val;
-            if (oparg == CONSTANT_ASSERTIONERROR) {
-                val = PyExc_AssertionError;
-            }
-            else {
-                assert(oparg == CONSTANT_NOTIMPLEMENTEDERROR);
-                val = PyExc_NotImplementedError;
-            }
-            value = PyStackRef_FromPyObjectImmortal(val);
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> e599204f472 (Parse down to statement level in the cases generator)
-=======
-            /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: 'value'D*/
-            /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
->>>>>>> ed96ae5aeac (Handle variable definition through out parameters)
-=======
->>>>>>> 1e72e135618 (Fixup declarations and test output)
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -11426,7 +11393,6 @@
             }
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
-<<<<<<< HEAD
             // _TO_BOOL_STR
             {
                 STAT_INC(TO_BOOL, hit);
@@ -11446,30 +11412,6 @@
                     stack_pointer += 1;
                     assert(WITHIN_STACK_BOUNDS());
                 }
-=======
-            value = stack_pointer[-1];
-            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            if (!PyUnicode_CheckExact(value_o)) {
-                UPDATE_MISS_STATS(TO_BOOL);
-                assert(_PyOpcode_Deopt[opcode] == (TO_BOOL));
-                JUMP_TO_PREDICTED(TO_BOOL);
-            }
-            STAT_INC(TO_BOOL, hit);
-            if (value_o == &_Py_STR(empty)) {
-                assert(_Py_IsImmortal(value_o));
-                res = PyStackRef_False;
-            }
-            else {
-                assert(Py_SIZE(value_o));
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(value);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                res = PyStackRef_True;
-                stack_pointer += 1;
-                assert(WITHIN_STACK_BOUNDS());
->>>>>>> ed96ae5aeac (Handle variable definition through out parameters)
             }
             stack_pointer[-1] = res;
             DISPATCH();

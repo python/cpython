@@ -226,33 +226,9 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-<<<<<<< HEAD
-<<<<<<< HEAD
-            if (!optimize_to_bool(this_instr, ctx, value, &res)) {
-                res = sym_new_truthiness(ctx, value, true);
-=======
-            {
-                int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
-                if (!already_bool) {
-                    res = sym_new_truthiness(ctx, value, true);
-                    sym_set_type(value, &PyUnicode_Type);
-                }
-<<<<<<< HEAD
->>>>>>> e599204f472 (Parse down to statement level in the cases generator)
-=======
-                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'value'M
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
->>>>>>> ed96ae5aeac (Handle variable definition through out parameters)
-=======
             int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
             if (!already_bool) {
                 res = sym_new_truthiness(ctx, value, true);
-                sym_set_type(value, &PyUnicode_Type);
->>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -309,8 +285,6 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-<<<<<<< HEAD
-<<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyLong_CheckExact(sym_get_const(ctx, left)));
                 assert(PyLong_CheckExact(sym_get_const(ctx, right)));
@@ -318,33 +292,7 @@
                     (PyLongObject *)sym_get_const(ctx, right));
                 if (temp == NULL) {
                     goto error;
-=======
-=======
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
->>>>>>> 1e72e135618 (Fixup declarations and test output)
-            {
-                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(ctx, left),
-                    (PyLongObject *)sym_get_const(ctx, right));
-                if (temp == NULL) {
-                    goto error;
                 }
-<<<<<<< HEAD
-                else {
-                    res = sym_new_type(ctx, &PyLong_Type);
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
->>>>>>> e599204f472 (Parse down to statement level in the cases generator)
-                }
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-=======
                 res = sym_new_const(ctx, temp);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
@@ -355,7 +303,6 @@
                 res = sym_new_type(ctx, &PyLong_Type);
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
->>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -367,8 +314,6 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-<<<<<<< HEAD
-<<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyLong_CheckExact(sym_get_const(ctx, left)));
                 assert(PyLong_CheckExact(sym_get_const(ctx, right)));
@@ -376,33 +321,7 @@
                     (PyLongObject *)sym_get_const(ctx, right));
                 if (temp == NULL) {
                     goto error;
-=======
-=======
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
->>>>>>> 1e72e135618 (Fixup declarations and test output)
-            {
-                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(ctx, left),
-                    (PyLongObject *)sym_get_const(ctx, right));
-                if (temp == NULL) {
-                    goto error;
                 }
-<<<<<<< HEAD
-                else {
-                    res = sym_new_type(ctx, &PyLong_Type);
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
->>>>>>> e599204f472 (Parse down to statement level in the cases generator)
-                }
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-=======
                 res = sym_new_const(ctx, temp);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
@@ -413,7 +332,6 @@
                 res = sym_new_type(ctx, &PyLong_Type);
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
->>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -425,8 +343,6 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-<<<<<<< HEAD
-<<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyLong_CheckExact(sym_get_const(ctx, left)));
                 assert(PyLong_CheckExact(sym_get_const(ctx, right)));
@@ -434,33 +350,7 @@
                     (PyLongObject *)sym_get_const(ctx, right));
                 if (temp == NULL) {
                     goto error;
-=======
-=======
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
->>>>>>> 1e72e135618 (Fixup declarations and test output)
-            {
-                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(ctx, left),
-                    (PyLongObject *)sym_get_const(ctx, right));
-                if (temp == NULL) {
-                    goto error;
                 }
-<<<<<<< HEAD
-                else {
-                    res = sym_new_type(ctx, &PyLong_Type);
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
->>>>>>> e599204f472 (Parse down to statement level in the cases generator)
-                }
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-=======
                 res = sym_new_const(ctx, temp);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
@@ -471,7 +361,6 @@
                 res = sym_new_type(ctx, &PyLong_Type);
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
->>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -514,8 +403,6 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-<<<<<<< HEAD
-<<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
                 assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
@@ -524,34 +411,7 @@
                     PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
                 if (temp == NULL) {
                     goto error;
-=======
-=======
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
->>>>>>> 1e72e135618 (Fixup declarations and test output)
-            {
-                assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-                assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = PyFloat_FromDouble(
-                    PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) *
-                    PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
-                if (temp == NULL) {
-                    goto error;
                 }
-<<<<<<< HEAD
-                else {
-                    res = sym_new_type(ctx, &PyFloat_Type);
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
->>>>>>> e599204f472 (Parse down to statement level in the cases generator)
-                }
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-=======
                 res = sym_new_const(ctx, temp);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
@@ -562,7 +422,6 @@
                 res = sym_new_type(ctx, &PyFloat_Type);
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
->>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -574,8 +433,6 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-<<<<<<< HEAD
-<<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
                 assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
@@ -584,34 +441,7 @@
                     PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
                 if (temp == NULL) {
                     goto error;
-=======
-=======
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
->>>>>>> 1e72e135618 (Fixup declarations and test output)
-            {
-                assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-                assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = PyFloat_FromDouble(
-                    PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) +
-                    PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
-                if (temp == NULL) {
-                    goto error;
                 }
-<<<<<<< HEAD
-                else {
-                    res = sym_new_type(ctx, &PyFloat_Type);
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
->>>>>>> e599204f472 (Parse down to statement level in the cases generator)
-                }
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-=======
                 res = sym_new_const(ctx, temp);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
@@ -622,7 +452,6 @@
                 res = sym_new_type(ctx, &PyFloat_Type);
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
->>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -634,8 +463,6 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-<<<<<<< HEAD
-<<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
                 assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
@@ -644,34 +471,7 @@
                     PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
                 if (temp == NULL) {
                     goto error;
-=======
-=======
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
->>>>>>> 1e72e135618 (Fixup declarations and test output)
-            {
-                assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-                assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = PyFloat_FromDouble(
-                    PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) -
-                    PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
-                if (temp == NULL) {
-                    goto error;
                 }
-<<<<<<< HEAD
-                else {
-                    res = sym_new_type(ctx, &PyFloat_Type);
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
->>>>>>> e599204f472 (Parse down to statement level in the cases generator)
-                }
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-=======
                 res = sym_new_const(ctx, temp);
                 stack_pointer[-2] = res;
                 stack_pointer += -1;
@@ -682,7 +482,6 @@
                 res = sym_new_type(ctx, &PyFloat_Type);
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
->>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -708,43 +507,9 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-<<<<<<< HEAD
-<<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
                 assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
-                PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
-                if (temp == NULL) {
-                    goto error;
-=======
-            {
-                if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                    sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
-                    PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
-                    if (temp == NULL) {
-                        goto error;
-                    }
-                    res = sym_new_const(ctx, temp);
-                    stack_pointer[-2] = res;
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
-                    Py_DECREF(temp);
-                }
-                else {
-                    res = sym_new_type(ctx, &PyUnicode_Type);
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
->>>>>>> e599204f472 (Parse down to statement level in the cases generator)
-                }
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-=======
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
                 PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
                 if (temp == NULL) {
                     goto error;
@@ -759,7 +524,6 @@
                 res = sym_new_type(ctx, &PyUnicode_Type);
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
->>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -770,8 +534,6 @@
             JitOptSymbol *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-<<<<<<< HEAD
-<<<<<<< HEAD
             JitOptSymbol *res;
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
@@ -779,26 +541,6 @@
                 PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
                 if (temp == NULL) {
                     goto error;
-=======
-            {
-                JitOptSymbol *res;
-                if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                    sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
-                    PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
-                    if (temp == NULL) {
-                        goto error;
-                    }
-                    res = sym_new_const(ctx, temp);
-                    Py_DECREF(temp);
->>>>>>> e599204f472 (Parse down to statement level in the cases generator)
-=======
-            JitOptSymbol *res;
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
-                PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
-                if (temp == NULL) {
-                    goto error;
->>>>>>> 1e72e135618 (Fixup declarations and test output)
                 }
                 res = sym_new_const(ctx, temp);
                 Py_DECREF(temp);
@@ -1511,8 +1253,6 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-<<<<<<< HEAD
-<<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyLong_CheckExact(sym_get_const(ctx, left)));
                 assert(PyLong_CheckExact(sym_get_const(ctx, right)));
@@ -1521,33 +1261,7 @@
                     oparg >> 5);
                 if (tmp == NULL) {
                     goto error;
-=======
-=======
-            if (sym_is_const(ctx, left) && sym_is_const(ctx, right))
->>>>>>> 1e72e135618 (Fixup declarations and test output)
-            {
-                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                PyObject *tmp = PyObject_RichCompare(sym_get_const(ctx, left),
-                    sym_get_const(ctx, right),
-                    oparg >> 5);
-                if (tmp == NULL) {
-                    goto error;
                 }
-<<<<<<< HEAD
-                else {
-                    res = sym_new_type(ctx, &PyBool_Type);
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
->>>>>>> e599204f472 (Parse down to statement level in the cases generator)
-                }
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-                /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-=======
                 assert(PyBool_Check(tmp));
                 assert(_Py_IsImmortal(tmp));
                 REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
@@ -1561,7 +1275,6 @@
                 res = sym_new_type(ctx, &PyBool_Type);
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
->>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;

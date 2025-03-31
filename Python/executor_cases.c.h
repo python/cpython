@@ -734,11 +734,12 @@
         case _GUARD_TOS_UNICODE: {
             _PyStackRef value;
             value = stack_pointer[-1];
-<<<<<<< HEAD
-            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            if (!PyUnicode_CheckExact(value_o)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
+            {
+                PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+                if (!PyUnicode_CheckExact(value_o)) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
             }
             break;
         }
@@ -747,30 +748,9 @@
             _PyStackRef value;
             _PyStackRef res;
             value = stack_pointer[-1];
-            STAT_INC(TO_BOOL, hit);
-            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            if (value_o == &_Py_STR(empty)) {
-                assert(_Py_IsImmortal(value_o));
-                res = PyStackRef_False;
-            }
-            else {
-                assert(Py_SIZE(value_o));
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(value);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                res = PyStackRef_True;
-                stack_pointer += 1;
-                assert(WITHIN_STACK_BOUNDS());
-=======
             {
-                PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-                if (!PyUnicode_CheckExact(value_o)) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
                 STAT_INC(TO_BOOL, hit);
+                PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
                 if (value_o == &_Py_STR(empty)) {
                     assert(_Py_IsImmortal(value_o));
                     res = PyStackRef_False;
@@ -786,19 +766,6 @@
                     stack_pointer += 1;
                     assert(WITHIN_STACK_BOUNDS());
                 }
-<<<<<<< HEAD
-<<<<<<< HEAD
->>>>>>> e599204f472 (Parse down to statement level in the cases generator)
-=======
-                /* Variables: . base: -1. sp: 0. logical_sp: -1 
-               inputs: 
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
->>>>>>> ed96ae5aeac (Handle variable definition through out parameters)
-=======
->>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -2077,23 +2044,10 @@
         case _LOAD_COMMON_CONSTANT: {
             _PyStackRef value;
             oparg = CURRENT_OPARG();
-<<<<<<< HEAD
-            // Keep in sync with _common_constants in opcode.py
-            assert(oparg < NUM_COMMON_CONSTANTS);
-            value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
-=======
             {
-                PyObject *val;
-                if (oparg == CONSTANT_ASSERTIONERROR) {
-                    val = PyExc_AssertionError;
-                }
-                else {
-                    assert(oparg == CONSTANT_NOTIMPLEMENTEDERROR);
-                    val = PyExc_NotImplementedError;
-                }
-                value = PyStackRef_FromPyObjectImmortal(val);
+                assert(oparg < NUM_COMMON_CONSTANTS);
+                value = PyStackRef_FromPyObjectNew(tstate->interp->common_consts[oparg]);
             }
->>>>>>> e599204f472 (Parse down to statement level in the cases generator)
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -3464,66 +3418,6 @@
             oparg = CURRENT_OPARG();
             owner = stack_pointer[-1];
             uint16_t hint = (uint16_t)CURRENT_OPERAND0();
-<<<<<<< HEAD
-            PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
-            assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
-            PyDictObject *dict = _PyObject_GetManagedDict(owner_o);
-            if (dict == NULL) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            PyDictKeysObject *dk = FT_ATOMIC_LOAD_PTR(dict->ma_keys);
-            assert(PyDict_CheckExact((PyObject *)dict));
-            #ifdef Py_GIL_DISABLED
-            if (!_Py_IsOwnedByCurrentThread((PyObject *)dict) && !_PyObject_GC_IS_SHARED(dict)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            #endif
-            PyObject *attr_o;
-            if (hint >= (size_t)FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_nentries)) {
-                if (true) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
-            }
-            PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-            if (dk->dk_kind != DICT_KEYS_UNICODE) {
-                if (true) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
-            }
-            PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dk) + hint;
-            if (FT_ATOMIC_LOAD_PTR_RELAXED(ep->me_key) != name) {
-                if (true) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
-            }
-            attr_o = FT_ATOMIC_LOAD_PTR(ep->me_value);
-            if (attr_o == NULL) {
-                if (true) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
-            }
-            STAT_INC(LOAD_ATTR, hit);
-            #ifdef Py_GIL_DISABLED
-            if (!_Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr)) {
-                if (true) {
-                    UOP_STAT_INC(uopcode, miss);
-                    JUMP_TO_JUMP_TARGET();
-                }
-            }
-            #else
-            attr = PyStackRef_FromPyObjectNew(attr_o);
-            #endif
-            stack_pointer[-1] = attr;
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(owner);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-=======
             {
                 PyObject *owner_o = PyStackRef_AsPyObjectBorrow(owner);
                 assert(Py_TYPE(owner_o)->tp_flags & Py_TPFLAGS_MANAGED_DICT);
@@ -3532,54 +3426,59 @@
                     UOP_STAT_INC(uopcode, miss);
                     JUMP_TO_JUMP_TARGET();
                 }
+                PyDictKeysObject *dk = FT_ATOMIC_LOAD_PTR(dict->ma_keys);
                 assert(PyDict_CheckExact((PyObject *)dict));
-                PyObject *attr_o;
-                if (!LOCK_OBJECT(dict)) {
-                    if (true) {
-                        UOP_STAT_INC(uopcode, miss);
-                        JUMP_TO_JUMP_TARGET();
-                    }
+                #ifdef Py_GIL_DISABLED
+                if (!_Py_IsOwnedByCurrentThread((PyObject *)dict) && !_PyObject_GC_IS_SHARED(dict)) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
                 }
-                if (hint >= (size_t)dict->ma_keys->dk_nentries) {
-                    UNLOCK_OBJECT(dict);
+                #endif
+                PyObject *attr_o;
+                if (hint >= (size_t)FT_ATOMIC_LOAD_SSIZE_RELAXED(dk->dk_nentries)) {
                     if (true) {
                         UOP_STAT_INC(uopcode, miss);
                         JUMP_TO_JUMP_TARGET();
                     }
                 }
                 PyObject *name = GETITEM(FRAME_CO_NAMES, oparg>>1);
-                if (dict->ma_keys->dk_kind != DICT_KEYS_UNICODE) {
-                    UNLOCK_OBJECT(dict);
+                if (dk->dk_kind != DICT_KEYS_UNICODE) {
                     if (true) {
                         UOP_STAT_INC(uopcode, miss);
                         JUMP_TO_JUMP_TARGET();
                     }
                 }
-                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dict->ma_keys) + hint;
-                if (ep->me_key != name) {
-                    UNLOCK_OBJECT(dict);
+                PyDictUnicodeEntry *ep = DK_UNICODE_ENTRIES(dk) + hint;
+                if (FT_ATOMIC_LOAD_PTR_RELAXED(ep->me_key) != name) {
                     if (true) {
                         UOP_STAT_INC(uopcode, miss);
                         JUMP_TO_JUMP_TARGET();
                     }
                 }
-                attr_o = ep->me_value;
+                attr_o = FT_ATOMIC_LOAD_PTR(ep->me_value);
                 if (attr_o == NULL) {
-                    UNLOCK_OBJECT(dict);
                     if (true) {
                         UOP_STAT_INC(uopcode, miss);
                         JUMP_TO_JUMP_TARGET();
                     }
                 }
                 STAT_INC(LOAD_ATTR, hit);
+                #ifdef Py_GIL_DISABLED
+                int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr);
+                if (!increfed) {
+                    if (true) {
+                        UOP_STAT_INC(uopcode, miss);
+                        JUMP_TO_JUMP_TARGET();
+                    }
+                }
+                #else
                 attr = PyStackRef_FromPyObjectNew(attr_o);
-                UNLOCK_OBJECT(dict);
+                #endif
                 stack_pointer[-1] = attr;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyStackRef_CLOSE(owner);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
->>>>>>> e599204f472 (Parse down to statement level in the cases generator)
             break;
         }
 

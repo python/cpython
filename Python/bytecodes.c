@@ -2315,7 +2315,8 @@ dummy_func(
             }
             STAT_INC(LOAD_ATTR, hit);
 #ifdef Py_GIL_DISABLED
-            if (!_Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr)) {
+            int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr);
+            if (!increfed) {
                 DEOPT_IF(true);
             }
 #else
