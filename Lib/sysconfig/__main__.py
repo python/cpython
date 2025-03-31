@@ -161,10 +161,7 @@ def _print_config_dict(d, stream):
 
 
 def _get_pybuilddir():
-    pybuilddir = f'build/lib.{get_platform()}-{get_python_version()}'
-    if get_config_var('Py_DEBUG'):
-        pybuilddir += '-pydebug'
-    return pybuilddir
+    return f'build/lib.{get_platform()}-{get_python_version()}'
 
 
 def _get_json_data_name():
