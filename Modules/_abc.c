@@ -760,7 +760,6 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         PyErr_SetString(PyExc_TypeError, "issubclass() arg 1 must be a class");
         return NULL;
     }
-    PyTypeObject *cls = (PyTypeObject *)self;
 
     PyObject *ok, *subclasses = NULL, *result = NULL;
     _abcmodule_state *state = NULL;
