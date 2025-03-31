@@ -2006,6 +2006,11 @@ print("Target process running...")
 # unblocks)
 sock.recv(1024)
 
+# Do a bunch of work to give the remote script time to run
+x = 0
+for i in range(100):
+    x += i
+
 # Write confirmation back
 sock.sendall(b"executed")
 sock.close()

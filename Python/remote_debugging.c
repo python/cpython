@@ -68,7 +68,7 @@
 #    define HAVE_PROCESS_VM_READV 0
 #endif
 
-#if (defined(__APPLE__) || defined(MS_WINDOWS) || ((defined(__linux__) || defined(__FreeBSD__)) && HAVE_PROCESS_VM_READV))
+#if (defined(__APPLE__) || defined(MS_WINDOWS) || (defined(__linux__) && HAVE_PROCESS_VM_READV))
 #    define Py_SUPPORTS_REMOTE_DEBUG 1
 #endif
 
