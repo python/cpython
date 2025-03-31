@@ -1683,7 +1683,7 @@ raise a custom exception only when using 'as'
    ... finally:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized when using 'as'
 
 
    >>> try:
