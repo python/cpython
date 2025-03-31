@@ -109,6 +109,7 @@ bytes(cdata)
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
+#include "pycore_pyatomic_ft_wrappers.h"
 #ifdef MS_WIN32
 #  include "pycore_modsupport.h"  // _PyArg_NoKeywords()
 #endif
@@ -710,13 +711,15 @@ StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruc
         if (baseinfo == NULL) {
             return 0;
         }
-
+        int ret = 0;
+        STGINFO_LOCK(baseinfo);
         /* copy base info */
-        if (PyCStgInfo_clone(info, baseinfo) < 0) {
-            return -1;
+        ret = PyCStgInfo_clone(info, baseinfo);
+        if (ret >= 0) {
+            stginfo_set_dict_final_lock_held(baseinfo); /* set the 'final' flag in the baseclass info */
         }
-        info->flags &= ~DICTFLAG_FINAL; /* clear the 'final' flag in the subclass info */
-        baseinfo->flags |= DICTFLAG_FINAL; /* set the 'final' flag in the baseclass info */
+        STGINFO_UNLOCK();
+        return ret;
     }
     return 0;
 }
@@ -3122,6 +3125,7 @@ PyCData_MallocBuffer(CDataObject *obj, StgInfo *info)
      * access.
      */
    assert (Py_REFCNT(obj) == 1);
+   assert(stginfo_get_dict_final(info) == 1);
 
     if ((size_t)info->size <= sizeof(obj->b_value)) {
         /* No need to call malloc, can use the default buffer */
@@ -3167,7 +3171,7 @@ PyCData_FromBaseObj(ctypes_state *st,
         return NULL;
     }
 
-    info->flags |= DICTFLAG_FINAL;
+    stginfo_set_dict_final(info);
     cmem = (CDataObject *)((PyTypeObject *)type)->tp_alloc((PyTypeObject *)type, 0);
     if (cmem == NULL) {
         return NULL;
@@ -3216,7 +3220,7 @@ PyCData_AtAddress(ctypes_state *st, PyObject *type, void *buf)
         return NULL;
     }
 
-    info->flags |= DICTFLAG_FINAL;
+    stginfo_set_dict_final(info);
 
     pd = (CDataObject *)((PyTypeObject *)type)->tp_alloc((PyTypeObject *)type, 0);
     if (!pd) {
@@ -3451,7 +3455,7 @@ generic_pycdata_new(ctypes_state *st,
         return NULL;
     }
 
-    info->flags |= DICTFLAG_FINAL;
+    stginfo_set_dict_final(info);
 
     obj = (CDataObject *)type->tp_alloc(type, 0);
     if (!obj)
@@ -4402,7 +4406,7 @@ _build_result(PyObject *result, PyObject *callargs,
 }
 
 static PyObject *
-PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
+PyCFuncPtr_call_lock_held(PyObject *op, PyObject *inargs, PyObject *kwds)
 {
     PyObject *restype;
     PyObject *converters;
@@ -4538,6 +4542,16 @@ PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
 
     return _build_result(result, callargs,
                          outmask, inoutmask, numretvals);
+}
+
+static PyObject *
+PyCFuncPtr_call(PyObject *op, PyObject *inargs, PyObject *kwds)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = PyCFuncPtr_call_lock_held(op, inargs, kwds);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static int
@@ -6089,11 +6103,16 @@ _ctypes_mod_exec(PyObject *mod)
     }
 
 #ifdef WORDS_BIGENDIAN
-        st->swapped_suffix = PyUnicode_InternFromString("_le");
+    st->swapped_suffix = PyUnicode_InternFromString("_le");
 #else
-        st->swapped_suffix = PyUnicode_InternFromString("_be");
+    st->swapped_suffix = PyUnicode_InternFromString("_be");
 #endif
     if (st->swapped_suffix == NULL) {
+        return -1;
+    }
+
+    st->error_object_name = PyUnicode_InternFromString("ctypes.error_object");
+    if (st->error_object_name == NULL) {
         return -1;
     }
 
