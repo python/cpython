@@ -347,6 +347,12 @@ void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 
 PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
 
+#ifndef Py_SUPPORTS_REMOTE_DEBUG
+    #if (defined(__APPLE__) || defined(MS_WINDOWS) || (defined(__linux__) && HAVE_PROCESS_VM_READV))
+    #    define Py_SUPPORTS_REMOTE_DEBUG 1
+    #endif
+#endif
+
 #ifdef __cplusplus
 }
 #endif

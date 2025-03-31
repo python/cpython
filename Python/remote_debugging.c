@@ -68,11 +68,6 @@
 #    define HAVE_PROCESS_VM_READV 0
 #endif
 
-#if (defined(__APPLE__) || defined(MS_WINDOWS) || (defined(__linux__) && HAVE_PROCESS_VM_READV))
-#    define Py_SUPPORTS_REMOTE_DEBUG 1
-#endif
-
-
 // Define a platform-independent process handle structure
 typedef struct {
     pid_t pid;

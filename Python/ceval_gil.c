@@ -1192,7 +1192,7 @@ _PyEval_DisableGIL(PyThreadState *tstate)
 }
 #endif
 
-#ifdef Py_REMOTE_DEBUG
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
 // Note that this function is inline to avoid creating a PLT entry
 // that would be an easy target for a ROP gadget.
 static inline void run_remote_debugger_script(const char *path)
@@ -1383,7 +1383,7 @@ _Py_HandlePending(PyThreadState *tstate)
         }
     }
 
-#ifdef Py_REMOTE_DEBUG
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
     const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
     if (config->remote_debug == 1
          && tstate->remote_debugger_support.debugger_pending_call == 1)
