@@ -129,7 +129,7 @@ _Py_CalculateSuggestions(PyObject *dir,
                       PyObject *name)
 {
     assert(!PyErr_Occurred());
-    assert(PyList_CheckExact(dir));
+    assert(PyList_Check(dir));
 
     Py_ssize_t dir_size = PyList_GET_SIZE(dir);
     if (dir_size >= MAX_CANDIDATE_ITEMS) {
