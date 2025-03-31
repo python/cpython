@@ -1838,7 +1838,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. function:: remote_exec(pid, script)
 
-   Executes a file containing Python code  given by *script* in the remote
+   Executes *script*, a file containing Python code in the remote
    process with the given *pid*.
 
    This function returns immediately, and the code will be executed by the
