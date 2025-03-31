@@ -2032,7 +2032,7 @@ sock.close()
             try:
                 # Accept connection from target process
                 client_socket, _ = server_socket.accept()
-                
+
                 # Wait for process to be ready
                 response = client_socket.recv(1024)
                 self.assertEqual(response, b"ready")
