@@ -1,3 +1,5 @@
+pip install pyTelegramBotAPI
+
 """A generic class to build line-oriented command interpreters.
 
 Interpreters constructed with this class obey the following conventions:
