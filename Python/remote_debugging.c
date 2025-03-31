@@ -770,7 +770,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         return -1;
     }
 
-    uintptr_t interpreter_state_list_head = debug_offsets.runtime_state.interpreters_head;
+    uintptr_t interpreter_state_list_head = (uintptr_t)debug_offsets.runtime_state.interpreters_head;
 
     uintptr_t interpreter_state_addr;
     if (0 != read_memory(
@@ -882,7 +882,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         return -1;
     }
 
-    uintptr_t debugger_script_path_addr = (
+    uintptr_t debugger_script_path_addr = (uintptr_t)(
         thread_state_addr +
         debug_offsets.debugger_support.remote_debugger_support +
         debug_offsets.debugger_support.debugger_script_path);
@@ -896,7 +896,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     }
 
     int pending_call = 1;
-    uintptr_t debugger_pending_call_addr = (
+    uintptr_t debugger_pending_call_addr = (uintptr_t)(
         thread_state_addr +
         debug_offsets.debugger_support.remote_debugger_support +
         debug_offsets.debugger_support.debugger_pending_call);
@@ -912,7 +912,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
 
     if (0 != write_memory(
             handle,
-            thread_state_addr + debug_offsets.debugger_support.eval_breaker,
+            thread_state_addr + (uintptr_t)debug_offsets.debugger_support.eval_breaker,
             sizeof(uintptr_t),
             &eval_breaker))
 
