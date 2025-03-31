@@ -35,13 +35,13 @@ extern "C" {
   unboxed integers harder in the future.
 
   Steal means that ownership is transferred to something else. The total
-  number of references to the object stays the same.
+  number of references to the object stays the same.  The old reference is no
+  longer valid.
 
   New creates a new reference from the old reference. The old reference
   is still valid.
 
-  With these 3 API, a strict stack discipline must be maintained. All
-  _PyStackRef must be operated on by the new reference operations:
+  All _PyStackRef must be operated on by the new reference operations:
 
     1. DUP
     2. CLOSE
@@ -592,7 +592,7 @@ PyStackRef_XCLOSE(_PyStackRef ref)
 
 // Note: this is a macro because MSVC (Windows) has trouble inlining it.
 
-#define PyStackRef_Is(a, b) (((a).bits & (~Py_TAG_REFCNT)) == ((b).bits & (~Py_TAG_REFCNT)))
+#define PyStackRef_Is(a, b) (((a).bits & (~Py_TAG_BITS)) == ((b).bits & (~Py_TAG_BITS)))
 
 #endif // !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
 
@@ -640,13 +640,35 @@ PyStackRef_FunctionCheck(_PyStackRef stackref)
     return PyFunction_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 
+static inline void
+_PyThreadState_PushCStackRef(PyThreadState *tstate, _PyCStackRef *ref)
+{
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    ref->next = tstate_impl->c_stack_refs;
+    tstate_impl->c_stack_refs = ref;
+#endif
+    ref->ref = PyStackRef_NULL;
+}
+
+static inline void
+_PyThreadState_PopCStackRef(PyThreadState *tstate, _PyCStackRef *ref)
+{
+#ifdef Py_GIL_DISABLED
+    _PyThreadStateImpl *tstate_impl = (_PyThreadStateImpl *)tstate;
+    assert(tstate_impl->c_stack_refs == ref);
+    tstate_impl->c_stack_refs = ref->next;
+#endif
+    PyStackRef_XCLOSE(ref->ref);
+}
+
 #ifdef Py_GIL_DISABLED
 
 static inline int
 _Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
 {
     if (_PyObject_HasDeferredRefcount(op)) {
-        *out = (_PyStackRef){ .bits = (intptr_t)op | Py_TAG_DEFERRED };
+        *out = (_PyStackRef){ .bits = (uintptr_t)op | Py_TAG_DEFERRED };
         return 1;
     }
     if (_Py_TryIncrefCompare(src, op)) {
@@ -654,6 +676,17 @@ _Py_TryIncrefCompareStackRef(PyObject **src, PyObject *op, _PyStackRef *out)
         return 1;
     }
     return 0;
+}
+
+static inline int
+_Py_TryXGetStackRef(PyObject **src, _PyStackRef *out)
+{
+    PyObject *op = _Py_atomic_load_ptr_relaxed(src);
+    if (op == NULL) {
+        *out = PyStackRef_NULL;
+        return 1;
+    }
+    return _Py_TryIncrefCompareStackRef(src, op, out);
 }
 
 #endif
