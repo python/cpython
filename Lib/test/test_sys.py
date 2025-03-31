@@ -7,11 +7,11 @@ import locale
 import operator
 import os
 import random
+import socket
 import struct
 import subprocess
 import sys
 import sysconfig
-import socket
 import test.support
 from io import StringIO
 from unittest import mock
@@ -1962,7 +1962,7 @@ def _supports_remote_attaching():
 
 @unittest.skipIf(not sys.is_remote_debug_enabled(), "Remote debugging is not enabled")
 @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux" and sys.platform != "win32",
-                    "Test only runs on Linux and MacOS")
+                    "Test only runs on Linux, Windows and MacOS")
 @unittest.skipIf(sys.platform == "linux" and not _supports_remote_attaching(),
                     "Test only runs on Linux with process_vm_readv support")
 class TestRemoteExec(unittest.TestCase):
@@ -1993,10 +1993,10 @@ import socket
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect(('localhost', {port}))
 
+{prologue}
+
 # Signal that the process is ready
 sock.sendall(b"ready")
-
-{prologue}
 
 print("Target process running...")
 

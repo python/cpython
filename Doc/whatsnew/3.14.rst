@@ -117,9 +117,9 @@ Here's a simple example that inspects object types in a running Python process:
 
   .. code-block:: python
 
+     import os
      import sys
      import tempfile
-     import os
 
      # Create a temporary script
      with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
@@ -153,7 +153,7 @@ mechanisms to control access:
 
 * A :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` environment variable.
 * A :option:`-X disable-remote-debug` command-line option.
-* A ``--without-remote-debug`` configure flag to completely disable the feature at build time.
+* A :option:`--without-remote-debug` configure flag to completely disable the feature at build time.
 
 A key implementation detail is that the interface piggybacks on the interpreter's existing evaluation
 loop and safe points, ensuring zero overhead during normal execution while providing a reliable way
