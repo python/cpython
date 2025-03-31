@@ -96,7 +96,7 @@ PEP 758 – Allow except and except* expressions without parentheses
 ------------------------------------------------------------------
 
 The :keyword:`except` and :keyword:`except* <except_star>` expressions now allow
-parentheses to be omitted when there is only one exception type.
+parentheses to be omitted when there are multiple exception types and the ``as`` clause is not used.
 For example the following expressions are now valid:
 
 .. code-block:: python
