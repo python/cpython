@@ -257,12 +257,9 @@ def _process_worker(call_queue, result_queue, initializer, initargs, max_tasks=N
         try:
             r = call_item.fn(*call_item.args, **call_item.kwargs)
         except BaseException as e:
-            _sendback_result(
-                result_queue,
-                call_item.work_id,
-                exception=_ExceptionWithTraceback(e, e.__traceback__),
-                exit_pid=exit_pid,
-            )
+            exc = _ExceptionWithTraceback(e, e.__traceback__)
+            _sendback_result(result_queue, call_item.work_id, exception=exc,
+                             exit_pid=exit_pid)
         else:
             _sendback_result(result_queue, call_item.work_id, result=r,
                              exit_pid=exit_pid)
