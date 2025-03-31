@@ -589,7 +589,6 @@ class TestCharacterEscapes(unittest.TestCase):
             char = chr(i)
             self.assertEqual(pygettext.escape(char, encoding=encoding), char)
 
-
     def test_escaped(self):
         """
         Test escaping when --escape is used.
