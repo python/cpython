@@ -1531,7 +1531,7 @@ class TestUopsOptimization(unittest.TestCase):
         # But all of the appends we care about are still there:
         self.assertEqual(uops.count("_CALL_LIST_APPEND"), len("ABCDEFG"))
 
-def test_narrow_type_to_constant_str_empty(self):
+    def test_narrow_type_to_constant_str_empty(self):
         def f(n):
             trace = []
             for i in range(n):
@@ -1563,6 +1563,41 @@ def test_narrow_type_to_constant_str_empty(self):
         self.assertEqual(uops.count("_GUARD_IS_TRUE_POP"), 0)
         # But all of the appends we care about are still there:
         self.assertEqual(uops.count("_CALL_LIST_APPEND"), len("ABCDEFG"))
+
+    def test_compare_pop_two_load_const_inline_borrow(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                a = 10
+                b = 10
+                if a == b:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_COMPARE_OP_INT", uops)
+        self.assertIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_remove_guard_for_known_type_str(self):
+        def f(n):
+            for i in range(n):
+                false = i == TIER2_THRESHOLD
+                empty = "X"[:false]
+                empty += ""  # Make JIT realize this is a string.
+                if empty:
+                    return 1
+            return 0
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_STR", uops)
+        self.assertNotIn("_GUARD_TOS_UNICODE", uops)
+
 
 def global_identity(x):
     return x

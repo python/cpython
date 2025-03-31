@@ -73,7 +73,7 @@ Executor Objects
       .. versionchanged:: 3.5
          Added the *chunksize* parameter.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.14
          Added the *buffersize* parameter.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
@@ -431,7 +431,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       After calling this method the caller should no longer submit tasks to the
       executor.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    .. method:: kill_workers()
 
@@ -443,7 +443,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       After calling this method the caller should no longer submit tasks to the
       executor.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
 .. _processpoolexecutor-example:
 
