@@ -354,14 +354,11 @@ def _deduplicate(params, *, unhashable_fallback=False):
         if not unhashable_fallback:
             raise
         # Happens for cases like `Annotated[dict, {'x': IntValidator()}]`
-        return _deduplicate_unhashable(params)
-
-def _deduplicate_unhashable(unhashable_params):
-    new_unhashable = []
-    for t in unhashable_params:
-        if t not in new_unhashable:
-            new_unhashable.append(t)
-    return new_unhashable
+        new_unhashable = []
+        for t in params:
+            if t not in new_unhashable:
+                new_unhashable.append(t)
+        return new_unhashable
 
 def _flatten_literal_params(parameters):
     """Internal helper for Literal creation: flatten Literals among parameters."""
