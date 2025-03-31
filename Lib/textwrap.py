@@ -432,15 +432,28 @@ def dedent(text):
     lines = text.split('\n')
 
     # Get length of leading whitespace, inspired by ``os.path.commonprefix()``.
-    non_blank_lines = [l for l in lines if l and not l.isspace()]
-    l1 = min(non_blank_lines, default='')
-    l2 = max(non_blank_lines, default='')
-    margin = 0
+    l1 = None
+    l2 = None
+    for i, line in enumerate(lines):
+        # Compute min + max concurrently + normalize others
+        if line and not line.isspace():
+            if l1 is None or line < l1:
+                l1 = line
+            if l2 is None or line > l2:
+                l2 = line
+        else:
+            lines[i] = ''
+    
+    if l1 is None:
+        l1 = ''
+    
     for margin, c in enumerate(l1):
         if c != l2[margin] or c not in ' \t':
             break
+    else:
+        return '\n'.join(lines)
 
-    return '\n'.join([l[margin:] if not l.isspace() else '' for l in lines])
+    return '\n'.join([line[margin:] for line in lines])
 
 
 def indent(text, prefix, predicate=None):
