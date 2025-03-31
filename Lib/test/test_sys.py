@@ -285,6 +285,27 @@ class SysModuleTest(unittest.TestCase):
             r'import sys; sys.exit("h\xe9")',
             b"h\xe9", PYTHONIOENCODING='latin-1')
 
+    @support.requires_subprocess()
+    def test_exit_codes_under_repl(self):
+        # GH-129900: SystemExit, or things that raised it, didn't
+        # get their return code propagated by the REPL
+        import tempfile
+
+        exit_ways = [
+            "exit",
+            "__import__('sys').exit",
+            "raise SystemExit"
+        ]
+
+        for exitfunc in exit_ways:
+            for return_code in (0, 123):
+                with self.subTest(exitfunc=exitfunc, return_code=return_code):
+                    with tempfile.TemporaryFile("w+") as stdin:
+                        stdin.write(f"{exitfunc}({return_code})\n")
+                        stdin.seek(0)
+                        proc = subprocess.run([sys.executable], stdin=stdin)
+                        self.assertEqual(proc.returncode, return_code)
+
     def test_getdefaultencoding(self):
         self.assertRaises(TypeError, sys.getdefaultencoding, 42)
         # can't check more than the type, as the user might have changed it
@@ -1634,7 +1655,7 @@ class SizeofTest(unittest.TestCase):
         # float
         check(float(0), size('d'))
         # sys.floatinfo
-        check(sys.float_info, vsize('') + self.P * len(sys.float_info))
+        check(sys.float_info, self.P + vsize('') + self.P * len(sys.float_info))
         # frame
         def func():
             return sys._getframe()
@@ -1742,8 +1763,8 @@ class SizeofTest(unittest.TestCase):
         # super
         check(super(int), size('3P'))
         # tuple
-        check((), vsize(''))
-        check((1,2,3), vsize('') + 3*self.P)
+        check((), vsize('') + self.P)
+        check((1,2,3), vsize('') + self.P + 3*self.P)
         # type
         # static type: PyTypeObject
         fmt = 'P2nPI13Pl4Pn9Pn12PIPc'
@@ -1865,7 +1886,7 @@ class SizeofTest(unittest.TestCase):
         # XXX
         # sys.flags
         # FIXME: The +1 will not be necessary once gh-122575 is fixed
-        check(sys.flags, vsize('') + self.P * (1 + len(sys.flags)))
+        check(sys.flags, vsize('') + self.P + self.P * (1 + len(sys.flags)))
 
     def test_asyncgen_hooks(self):
         old = sys.get_asyncgen_hooks()
