@@ -408,6 +408,9 @@ def _init_non_posix(vars):
     #       empty string.
     vars.update(_sysconfig.config_vars())
 
+    # Add an underscore to the `d` flag. E.g, `td` -> `t_d`, `d` -> `_d`.
+    vars['Py_DEBUG'] = vars['Py_DEBUG'].replace('d', '_d')
+
     vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
     if hasattr(sys, 'dllhandle'):
         dllhandle = _winapi.GetModuleFileName(sys.dllhandle)
