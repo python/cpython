@@ -603,6 +603,13 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
+   * ``-X disable_remote_debug`` disables the remote debugging support as described
+     in :pep:`768`. This option is only available on some platforms and will do nothing
+     if is not supported on the current system. See also
+     :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` and :pep:`768`.
+
+     .. versionadded:: 3.14
+
    * :samp:`-X cpu_count={n}` overrides :func:`os.cpu_count`,
      :func:`os.process_cpu_count`, and :func:`multiprocessing.cpu_count`.
      *n* must be greater than or equal to 1.
@@ -1160,7 +1167,14 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_DISABLE_REMOTE_DEBUG
 
+   If this variable is set to a non-empty string, it disables the remote
+   debugging feature described in :pep:`768`.
+
+   See also the :option:`-X disable_remote_debug` command-line option.
+
+   .. versionadded:: 3.14
 
 .. envvar:: PYTHON_CPU_COUNT
 
