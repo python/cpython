@@ -2527,7 +2527,7 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
     PyObject *ret = NULL;
     PyObject *os = PyImport_ImportModule("os");
     if (os) {
-        PyObject *path = PyObject_CallMethod(os, "fsdecode", "O", script);
+        PyObject *path = PyObject_CallMethodOneArg(os, &_Py_ID(fsdecode), script);
         if (path) {
             ret = sys_remote_exec_unicode_path(module, pid, path);
             Py_DECREF(path);

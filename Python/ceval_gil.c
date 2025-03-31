@@ -1214,7 +1214,8 @@ static inline void run_remote_debugger_script(const char *path)
     int fd = PyObject_AsFileDescriptor(fileobj);
     if (fd == -1) {
         PyErr_FormatUnraisable("Can't find fd for debugger script %s", path);
-    } else {
+    } 
+    else {
         int dup_fd = -1;
         FILE *f = NULL;
 
@@ -1237,7 +1238,8 @@ static inline void run_remote_debugger_script(const char *path)
 #endif
         if (!f) {
             PyErr_SetFromErrno(PyExc_OSError);
-        } else {
+        } 
+        else {
             PyRun_AnyFileEx(f, path, 1);
         }
 
@@ -1246,7 +1248,7 @@ static inline void run_remote_debugger_script(const char *path)
         }
     }
 
-    PyObject* res = PyObject_CallMethod(fileobj, "close", "");
+    PyObject* res = PyObject_CallMethodNoArgs(fileobj, &_Py_ID(close));
     if (!res) {
         PyErr_FormatUnraisable("Error closing debugger script %s", path);
     } else {
