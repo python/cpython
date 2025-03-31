@@ -928,11 +928,10 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
 int
 _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
 {
-#if (!defined(__linux__) && !defined(__APPLE__) && !defined(MS_WINDOWS)) || (defined(__linux__) && !HAVE_PROCESS_VM_READV)
+#ifndef Py_SUPPORTS_REMOTE_DEBUG
     PyErr_SetString(PyExc_RuntimeError, "Remote debugging is not supported on this platform");
     return -1;
-#endif
-
+#else
     proc_handle_t handle;
     if (init_proc_handle(&handle, pid) < 0) {
         return -1;
@@ -941,4 +940,5 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
     int rc = send_exec_to_proc_handle(&handle, tid, debugger_script_path);
     cleanup_proc_handle(&handle);
     return rc;
+#endif
 }
