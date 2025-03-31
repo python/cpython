@@ -18,6 +18,7 @@ from unittest import mock
 from test import support
 from test.support import os_helper
 from test.support.script_helper import assert_python_ok, assert_python_failure
+from test.support.socket_helper import find_unused_port
 from test.support import threading_helper
 from test.support import import_helper
 from test.support import force_not_colorized
@@ -1980,20 +1981,17 @@ class TestRemoteExec(unittest.TestCase):
         target = os_helper.TESTFN + '_target.py'
         self.addCleanup(os_helper.unlink, target)
 
-        # Find an available port for the socket
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(('localhost', 0))
-            port = s.getsockname()[1]
+        parent_sock, child_sock = socket.socketpair()
 
         with open(target, 'w') as f:
             f.write(f'''
 import sys
 import time
 import socket
+import os
 
-# Connect to the test process
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(('localhost', {port}))
+# Get the socket from the passed file descriptor
+sock = socket.socket(fileno={child_sock.fileno()})
 
 # Signal that the process is ready
 sock.sendall(b"ready")
@@ -2019,32 +2017,28 @@ sock.close()
             cmd.extend(python_args)
         cmd.append(target)
 
-        # Create a socket server to communicate with the target process
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server_socket.bind(('localhost', port))
-        server_socket.settimeout(10.0)  # Set a timeout to prevent hanging
-        server_socket.listen(1)
-
         with subprocess.Popen(cmd,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE,
-                              env=env) as proc:
+                              env=env,
+                              pass_fds=[child_sock.fileno()],
+                              ) as proc:
             try:
-                # Accept connection from target process
-                client_socket, _ = server_socket.accept()
+                # Close the child socket in the parent process as it's now owned by the child
+                child_sock.close()
 
-                # Wait for process to be ready
-                response = client_socket.recv(1024)
+            # Wait for process to be ready
+                response = parent_sock.recv(1024)
                 self.assertEqual(response, b"ready")
 
                 # Try remote exec on the target process
                 sys.remote_exec(proc.pid, script)
 
                 # Signal script to continue
-                client_socket.sendall(b"continue")
+                parent_sock.sendall(b"continue")
 
                 # Wait for execution confirmation
-                response = client_socket.recv(1024)
+                response = parent_sock.recv(1024)
                 self.assertEqual(response, b"executed")
 
                 # Return output for test verification
@@ -2053,9 +2047,8 @@ sock.close()
             except PermissionError:
                 self.skipTest("Insufficient permissions to execute code in remote process")
             finally:
-                if 'client_socket' in locals():
-                    client_socket.close()
-                server_socket.close()
+                # Wait for execution confirmation
+                parent_sock.close()
                 proc.kill()
                 proc.terminate()
                 proc.wait(timeout=SHORT_TIMEOUT)
