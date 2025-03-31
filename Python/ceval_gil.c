@@ -1229,7 +1229,7 @@ static inline void run_remote_debugger_script(const char *path)
 #else
         dup_fd = dup(fd);
         if (dup_fd != -1) {
-            f = fdopen(fd, "r");
+            f = fdopen(dup_fd, "r");
         }
         if (!f) {
             close(dup_fd);
