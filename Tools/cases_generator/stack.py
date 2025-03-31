@@ -64,7 +64,7 @@ class PointerOffset:
             if txt[0] == "+":
                 txt = txt[1:]
             if txt[0] == "-":
-                n = (txt[1],)
+                n = (txt[1:],)
             else:
                 p = (txt,)
         return PointerOffset(i, p, n)
