@@ -5833,7 +5833,6 @@ static unsigned int
 type_assign_version_lock_held(PyTypeObject *type)
 {
     ASSERT_TYPE_LOCK_HELD();
-    assert(!types_world_is_stopped());
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (assign_version_tag(interp, type)) {
         return type->tp_version_tag;
