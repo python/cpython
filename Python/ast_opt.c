@@ -21,7 +21,7 @@ typedef struct {
     int ff_features;
     int syntax_check_only;
 
-    _Py_c_array_t cf_finally;       /* context for PEP 678 check */
+    _Py_c_array_t cf_finally;       /* context for PEP 765 check */
     int cf_finally_used;
 } _PyASTOptimizeState;
 
