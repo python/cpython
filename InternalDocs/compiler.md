@@ -505,8 +505,8 @@ Important files
   * [Python/ast.c](../Python/ast.c):
     Used for validating the AST.
 
-  * [Python/ast_opt.c](../Python/ast_opt.c):
-    Optimizes the AST.
+  * [Python/ast_process.c](../Python/ast_process.c):
+    Processes the AST before compiling.
 
   * [Python/ast_unparse.c](../Python/ast_unparse.c):
     Converts the AST expression node back into a string (for string annotations).
