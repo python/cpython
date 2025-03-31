@@ -93,7 +93,7 @@ New features
 .. _whatsnew314-pep678:
 
 PEP 768: Safe external debugger interface for CPython
-----------------------------------------------------
+-----------------------------------------------------
 
 :pep:`768` introduces a zero-overhead debugging interface that allows debuggers and profilers
 to safely attach to running Python processes. This is a significant enhancement to Python's
