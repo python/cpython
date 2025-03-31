@@ -179,37 +179,37 @@ WorkerContext._send_script_result({self.resultsid})"""
             raise NotImplementedError(kind)
 
         try:
-            try:
-                self._exec(script)
-            except ExecutionFailed as exc:
-                exc_wrapper = exc
-            else:
-                exc_wrapper = None
-
-            # Return the result, or raise the exception.
-            while True:
-                try:
-                    obj = _interpqueues.get(self.resultsid)
-                except _interpqueues.QueueNotFoundError:
-                    raise  # re-raise
-                except _interpqueues.QueueError:
-                    continue
-                except ModuleNotFoundError:
-                    # interpreters.queues doesn't exist, which means
-                    # QueueEmpty doesn't.  Act as though it does.
-                    continue
-                else:
-                    break
-            (res, excdata), pickled, unboundop = obj
-            assert unboundop is None, unboundop
-            if excdata is not None:
-                assert res is None, res
-                assert pickled
-                assert exc_wrapper is not None
-                raise pickle.loads(excdata) from exc_wrapper
-            return pickle.loads(res) if pickled else res
-        finally:
+            self._exec(script)
+        except ExecutionFailed as exc:
+            exc_wrapper = exc
+        else:
             exc_wrapper = None
+
+        # Return the result, or raise the exception.
+        while True:
+            try:
+                obj = _interpqueues.get(self.resultsid)
+            except _interpqueues.QueueNotFoundError:
+                raise  # re-raise
+            except _interpqueues.QueueError:
+                continue
+            except ModuleNotFoundError:
+                # interpreters.queues doesn't exist, which means
+                # QueueEmpty doesn't.  Act as though it does.
+                continue
+            else:
+                break
+        (res, excdata), pickled, unboundop = obj
+        assert unboundop is None, unboundop
+        if excdata is not None:
+            assert res is None, res
+            assert pickled
+            assert exc_wrapper is not None
+            try:
+                raise pickle.loads(excdata) from exc_wrapper
+            finally:
+                exc_wrapper = None
+        return pickle.loads(res) if pickled else res
 
 
 class BrokenInterpreterPool(_thread.BrokenThreadPool):
