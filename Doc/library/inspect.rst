@@ -627,6 +627,9 @@ Retrieving source code
    .. versionchanged:: 3.5
       Documentation strings are now inherited if not overridden.
 
+   .. versionchanged:: next
+      Now correctly returns an inherited docstring on :class:`~functools.cached_property` objects if not overridden.
+
 
 .. function:: getcomments(object)
 
