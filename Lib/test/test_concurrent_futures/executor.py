@@ -69,13 +69,17 @@ class ExecutorTest:
             msg="next should raise a ZeroDivisionError",
         )
 
-        # some referrers may remain for free-threading build on Windows/Linux
-        is_free_threading = '--disable-gil' in get_config_var("CONFIG_ARGS")
-        if not is_free_threading or sys.platform not in ("linux", "win32"):
-            self.assertFalse(
-                gc.get_referrers(error),
-                msg="the exception should not have any referrers",
-            )
+        # a GC collection may be necessary for free-threading build on Windows/Linux
+        if (
+            '--disable-gil' in get_config_var("CONFIG_ARGS")
+            and sys.platform in ("linux", "win32")
+        ):
+            gc.collect()
+
+        self.assertFalse(
+            gc.get_referrers(error),
+            msg="the exception should not have any referrers",
+        )
 
         tb = error.__traceback__
         while (tb := tb.tb_next):
