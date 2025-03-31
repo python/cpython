@@ -966,6 +966,7 @@ types
   See :ref:`below <whatsnew314-typing-union>` for more details.
   (Contributed by Jelle Zijlstra in :gh:`105499`.)
 
+
 typing
 ------
 
