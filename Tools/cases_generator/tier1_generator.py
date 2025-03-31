@@ -201,9 +201,8 @@ def generate_tier1_labels(
         storage = Storage(Stack(), [], [], False)
         if label.spilled:
             storage.spilled = 1
-            emitter.emit("/* STACK SPILLED */\n")
         emitter.emit_tokens(label, storage, None)
-        emitter.emit("\n")
+        emitter.emit("\n\n")
 
 
 def generate_tier1_cases(

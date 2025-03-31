@@ -27,17 +27,9 @@
 
         case _LOAD_FAST_CHECK: {
             JitOptSymbol *value;
-            {
-                value = GETLOCAL(oparg);
-                if (sym_is_null(value)) {
-                    ctx->done = true;
-                }
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: 'value'D*/
-                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
+            value = GETLOCAL(oparg);
+            if (sym_is_null(value)) {
+                ctx->done = true;
             }
             stack_pointer[0] = value;
             stack_pointer += 1;
@@ -47,15 +39,7 @@
 
         case _LOAD_FAST: {
             JitOptSymbol *value;
-            {
-                value = GETLOCAL(oparg);
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: 'value'D*/
-                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
-            }
+            value = GETLOCAL(oparg);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -64,17 +48,9 @@
 
         case _LOAD_FAST_AND_CLEAR: {
             JitOptSymbol *value;
-            {
-                value = GETLOCAL(oparg);
-                JitOptSymbol *temp = sym_new_null(ctx);
-                GETLOCAL(oparg) = temp;
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: 'value'D*/
-                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
-            }
+            value = GETLOCAL(oparg);
+            JitOptSymbol *temp = sym_new_null(ctx);
+            GETLOCAL(oparg) = temp;
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -85,18 +61,10 @@
 
         case _LOAD_CONST_MORTAL: {
             JitOptSymbol *value;
-            {
-                PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
-                int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
-                REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
-                value = sym_new_const(ctx, val);
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: 'value'D*/
-                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
-            }
+            PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
+            int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;
+            REPLACE_OP(this_instr, opcode, 0, (uintptr_t)val);
+            value = sym_new_const(ctx, val);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -105,17 +73,9 @@
 
         case _LOAD_CONST_IMMORTAL: {
             JitOptSymbol *value;
-            {
-                PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
-                REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
-                value = sym_new_const(ctx, val);
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: 'value'D*/
-                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
-            }
+            PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
+            REPLACE_OP(this_instr, _LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)val);
+            value = sym_new_const(ctx, val);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -124,16 +84,8 @@
 
         case _LOAD_SMALL_INT: {
             JitOptSymbol *value;
-            {
-                PyObject *val = PyLong_FromLong(this_instr->oparg);
-                value = sym_new_const(ctx, val);
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: 'value'D*/
-                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
-            }
+            PyObject *val = PyLong_FromLong(this_instr->oparg);
+            value = sym_new_const(ctx, val);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -143,15 +95,7 @@
         case _STORE_FAST: {
             JitOptSymbol *value;
             value = stack_pointer[-1];
-            {
-                GETLOCAL(oparg) = value;
-                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'value'M
-               outputs: */
-                /* Variables: . base: -1. sp: 0. logical_sp: -1 
-               inputs: 
-               outputs: */
-            }
+            GETLOCAL(oparg) = value;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -165,15 +109,7 @@
 
         case _PUSH_NULL: {
             JitOptSymbol *res;
-            {
-                res = sym_new_null(ctx);
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: 0. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
-            }
+            res = sym_new_null(ctx);
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -206,16 +142,8 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-            {
-                sym_set_type(value, &PyBool_Type);
-                res = sym_new_truthiness(ctx, value, false);
-                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'value'M
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            sym_set_type(value, &PyBool_Type);
+            res = sym_new_truthiness(ctx, value, false);
             stack_pointer[-1] = res;
             break;
         }
@@ -224,17 +152,9 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-            {
-                int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
-                if (!already_bool) {
-                    res = sym_new_truthiness(ctx, value, true);
-                }
-                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'value'M
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!already_bool) {
+                res = sym_new_truthiness(ctx, value, true);
             }
             stack_pointer[-1] = res;
             break;
@@ -244,18 +164,10 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-            {
-                int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
-                if (!already_bool) {
-                    sym_set_type(value, &PyBool_Type);
-                    res = sym_new_truthiness(ctx, value, true);
-                }
-                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'value'M
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!already_bool) {
+                sym_set_type(value, &PyBool_Type);
+                res = sym_new_truthiness(ctx, value, true);
             }
             stack_pointer[-1] = res;
             break;
@@ -265,18 +177,10 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-            {
-                int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
-                if (!already_bool) {
-                    sym_set_type(value, &PyLong_Type);
-                    res = sym_new_truthiness(ctx, value, true);
-                }
-                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'value'M
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!already_bool) {
+                sym_set_type(value, &PyLong_Type);
+                res = sym_new_truthiness(ctx, value, true);
             }
             stack_pointer[-1] = res;
             break;
@@ -286,18 +190,10 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-            {
-                int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
-                if (!already_bool) {
-                    sym_set_type(value, &PyList_Type);
-                    res = sym_new_type(ctx, &PyBool_Type);
-                }
-                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'value'M
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!already_bool) {
+                sym_set_type(value, &PyList_Type);
+                res = sym_new_type(ctx, &PyBool_Type);
             }
             stack_pointer[-1] = res;
             break;
@@ -307,18 +203,10 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-            {
-                int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
-                if (!already_bool) {
-                    sym_set_const(value, Py_None);
-                    res = sym_new_const(ctx, Py_False);
-                }
-                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'value'M
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!already_bool) {
+                sym_set_const(value, Py_None);
+                res = sym_new_const(ctx, Py_False);
             }
             stack_pointer[-1] = res;
             break;
@@ -339,6 +227,7 @@
             JitOptSymbol *res;
             value = stack_pointer[-1];
 <<<<<<< HEAD
+<<<<<<< HEAD
             if (!optimize_to_bool(this_instr, ctx, value, &res)) {
                 res = sym_new_truthiness(ctx, value, true);
 =======
@@ -358,6 +247,12 @@
                inputs: 
                outputs: */
 >>>>>>> ed96ae5aeac (Handle variable definition through out parameters)
+=======
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!already_bool) {
+                res = sym_new_truthiness(ctx, value, true);
+                sym_set_type(value, &PyUnicode_Type);
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -365,15 +260,7 @@
 
         case _REPLACE_WITH_TRUE: {
             JitOptSymbol *res;
-            {
-                res = sym_new_const(ctx, Py_True);
-                /* Variables: 'value'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'value'M
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            res = sym_new_const(ctx, Py_True);
             stack_pointer[-1] = res;
             break;
         }
@@ -390,29 +277,21 @@
             JitOptSymbol *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            {
-                if (sym_matches_type(left, &PyLong_Type)) {
-                    if (sym_matches_type(right, &PyLong_Type)) {
-                        REPLACE_OP(this_instr, _NOP, 0, 0);
-                    }
-                    else {
-                        REPLACE_OP(this_instr, _GUARD_TOS_INT, 0, 0);
-                    }
+            if (sym_matches_type(left, &PyLong_Type)) {
+                if (sym_matches_type(right, &PyLong_Type)) {
+                    REPLACE_OP(this_instr, _NOP, 0, 0);
                 }
                 else {
-                    if (sym_matches_type(right, &PyLong_Type)) {
-                        REPLACE_OP(this_instr, _GUARD_NOS_INT, 0, 0);
-                    }
+                    REPLACE_OP(this_instr, _GUARD_TOS_INT, 0, 0);
                 }
-                sym_set_type(left, &PyLong_Type);
-                sym_set_type(right, &PyLong_Type);
-                /* Variables: 'left'MD, 'right'MD. base: -2. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: 'left'MD, 'right'MD. base: -2. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
             }
+            else {
+                if (sym_matches_type(right, &PyLong_Type)) {
+                    REPLACE_OP(this_instr, _GUARD_NOS_INT, 0, 0);
+                }
+            }
+            sym_set_type(left, &PyLong_Type);
+            sym_set_type(right, &PyLong_Type);
             break;
         }
 
@@ -431,6 +310,7 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
 <<<<<<< HEAD
+<<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyLong_CheckExact(sym_get_const(ctx, left)));
                 assert(PyLong_CheckExact(sym_get_const(ctx, right)));
@@ -439,23 +319,19 @@
                 if (temp == NULL) {
                     goto error;
 =======
+=======
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
+                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             {
-                if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                    sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
-                {
-                    assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-                    assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                    PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(ctx, left),
-                        (PyLongObject *)sym_get_const(ctx, right));
-                    if (temp == NULL) {
-                        goto error;
-                    }
-                    res = sym_new_const(ctx, temp);
-                    stack_pointer[-2] = res;
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
-                    Py_DECREF(temp);
+                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+                PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(ctx, left),
+                    (PyLongObject *)sym_get_const(ctx, right));
+                if (temp == NULL) {
+                    goto error;
                 }
+<<<<<<< HEAD
                 else {
                     res = sym_new_type(ctx, &PyLong_Type);
                     stack_pointer += -1;
@@ -468,6 +344,18 @@
                 /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
                inputs: 
                outputs: */
+=======
+                res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                Py_DECREF(temp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyLong_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -480,6 +368,7 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
 <<<<<<< HEAD
+<<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyLong_CheckExact(sym_get_const(ctx, left)));
                 assert(PyLong_CheckExact(sym_get_const(ctx, right)));
@@ -488,23 +377,19 @@
                 if (temp == NULL) {
                     goto error;
 =======
+=======
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
+                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             {
-                if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                    sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
-                {
-                    assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-                    assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                    PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(ctx, left),
-                        (PyLongObject *)sym_get_const(ctx, right));
-                    if (temp == NULL) {
-                        goto error;
-                    }
-                    res = sym_new_const(ctx, temp);
-                    stack_pointer[-2] = res;
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
-                    Py_DECREF(temp);
+                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+                PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(ctx, left),
+                    (PyLongObject *)sym_get_const(ctx, right));
+                if (temp == NULL) {
+                    goto error;
                 }
+<<<<<<< HEAD
                 else {
                     res = sym_new_type(ctx, &PyLong_Type);
                     stack_pointer += -1;
@@ -517,6 +402,18 @@
                 /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
                inputs: 
                outputs: */
+=======
+                res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                Py_DECREF(temp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyLong_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -529,6 +426,7 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
 <<<<<<< HEAD
+<<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyLong_CheckExact(sym_get_const(ctx, left)));
                 assert(PyLong_CheckExact(sym_get_const(ctx, right)));
@@ -537,23 +435,19 @@
                 if (temp == NULL) {
                     goto error;
 =======
+=======
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
+                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             {
-                if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                    sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
-                {
-                    assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-                    assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                    PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(ctx, left),
-                        (PyLongObject *)sym_get_const(ctx, right));
-                    if (temp == NULL) {
-                        goto error;
-                    }
-                    res = sym_new_const(ctx, temp);
-                    stack_pointer[-2] = res;
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
-                    Py_DECREF(temp);
+                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+                PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(ctx, left),
+                    (PyLongObject *)sym_get_const(ctx, right));
+                if (temp == NULL) {
+                    goto error;
                 }
+<<<<<<< HEAD
                 else {
                     res = sym_new_type(ctx, &PyLong_Type);
                     stack_pointer += -1;
@@ -566,6 +460,18 @@
                 /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
                inputs: 
                outputs: */
+=======
+                res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                Py_DECREF(temp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyLong_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -576,29 +482,21 @@
             JitOptSymbol *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            {
-                if (sym_matches_type(left, &PyFloat_Type)) {
-                    if (sym_matches_type(right, &PyFloat_Type)) {
-                        REPLACE_OP(this_instr, _NOP, 0, 0);
-                    }
-                    else {
-                        REPLACE_OP(this_instr, _GUARD_TOS_FLOAT, 0, 0);
-                    }
+            if (sym_matches_type(left, &PyFloat_Type)) {
+                if (sym_matches_type(right, &PyFloat_Type)) {
+                    REPLACE_OP(this_instr, _NOP, 0, 0);
                 }
                 else {
-                    if (sym_matches_type(right, &PyFloat_Type)) {
-                        REPLACE_OP(this_instr, _GUARD_NOS_FLOAT, 0, 0);
-                    }
+                    REPLACE_OP(this_instr, _GUARD_TOS_FLOAT, 0, 0);
                 }
-                sym_set_type(left, &PyFloat_Type);
-                sym_set_type(right, &PyFloat_Type);
-                /* Variables: 'left'MD, 'right'MD. base: -2. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: 'left'MD, 'right'MD. base: -2. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
             }
+            else {
+                if (sym_matches_type(right, &PyFloat_Type)) {
+                    REPLACE_OP(this_instr, _GUARD_NOS_FLOAT, 0, 0);
+                }
+            }
+            sym_set_type(left, &PyFloat_Type);
+            sym_set_type(right, &PyFloat_Type);
             break;
         }
 
@@ -617,6 +515,7 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
 <<<<<<< HEAD
+<<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
                 assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
@@ -626,24 +525,20 @@
                 if (temp == NULL) {
                     goto error;
 =======
+=======
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
+                sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             {
-                if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                    sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
-                {
-                    assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-                    assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
-                    PyObject *temp = PyFloat_FromDouble(
-                        PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) *
-                        PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
-                    if (temp == NULL) {
-                        goto error;
-                    }
-                    res = sym_new_const(ctx, temp);
-                    stack_pointer[-2] = res;
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
-                    Py_DECREF(temp);
+                assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
+                assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
+                PyObject *temp = PyFloat_FromDouble(
+                    PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) *
+                    PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
+                if (temp == NULL) {
+                    goto error;
                 }
+<<<<<<< HEAD
                 else {
                     res = sym_new_type(ctx, &PyFloat_Type);
                     stack_pointer += -1;
@@ -656,6 +551,18 @@
                 /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
                inputs: 
                outputs: */
+=======
+                res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                Py_DECREF(temp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyFloat_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -668,6 +575,7 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
 <<<<<<< HEAD
+<<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
                 assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
@@ -677,24 +585,20 @@
                 if (temp == NULL) {
                     goto error;
 =======
+=======
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
+                sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             {
-                if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                    sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
-                {
-                    assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-                    assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
-                    PyObject *temp = PyFloat_FromDouble(
-                        PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) +
-                        PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
-                    if (temp == NULL) {
-                        goto error;
-                    }
-                    res = sym_new_const(ctx, temp);
-                    stack_pointer[-2] = res;
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
-                    Py_DECREF(temp);
+                assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
+                assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
+                PyObject *temp = PyFloat_FromDouble(
+                    PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) +
+                    PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
+                if (temp == NULL) {
+                    goto error;
                 }
+<<<<<<< HEAD
                 else {
                     res = sym_new_type(ctx, &PyFloat_Type);
                     stack_pointer += -1;
@@ -707,6 +611,18 @@
                 /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
                inputs: 
                outputs: */
+=======
+                res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                Py_DECREF(temp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyFloat_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -719,6 +635,7 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
 <<<<<<< HEAD
+<<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
                 assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
@@ -728,24 +645,20 @@
                 if (temp == NULL) {
                     goto error;
 =======
+=======
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
+                sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             {
-                if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
-                    sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
-                {
-                    assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-                    assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
-                    PyObject *temp = PyFloat_FromDouble(
-                        PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) -
-                        PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
-                    if (temp == NULL) {
-                        goto error;
-                    }
-                    res = sym_new_const(ctx, temp);
-                    stack_pointer[-2] = res;
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
-                    Py_DECREF(temp);
+                assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
+                assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
+                PyObject *temp = PyFloat_FromDouble(
+                    PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) -
+                    PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
+                if (temp == NULL) {
+                    goto error;
                 }
+<<<<<<< HEAD
                 else {
                     res = sym_new_type(ctx, &PyFloat_Type);
                     stack_pointer += -1;
@@ -758,6 +671,18 @@
                 /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
                inputs: 
                outputs: */
+=======
+                res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                Py_DECREF(temp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyFloat_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -768,20 +693,12 @@
             JitOptSymbol *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            {
-                if (sym_matches_type(left, &PyUnicode_Type) &&
-                    sym_matches_type(right, &PyUnicode_Type)) {
-                    REPLACE_OP(this_instr, _NOP, 0 ,0);
-                }
-                sym_set_type(left, &PyUnicode_Type);
-                sym_set_type(right, &PyUnicode_Type);
-                /* Variables: 'left'MD, 'right'MD. base: -2. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: 'left'MD, 'right'MD. base: -2. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
+            if (sym_matches_type(left, &PyUnicode_Type) &&
+                sym_matches_type(right, &PyUnicode_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0 ,0);
             }
+            sym_set_type(left, &PyUnicode_Type);
+            sym_set_type(right, &PyUnicode_Type);
             break;
         }
 
@@ -791,6 +708,7 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
+<<<<<<< HEAD
 <<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
@@ -824,6 +742,24 @@
                 /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
                inputs: 
                outputs: */
+=======
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
+                sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
+                PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
+                if (temp == NULL) {
+                    goto error;
+                }
+                res = sym_new_const(ctx, temp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                Py_DECREF(temp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyUnicode_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -834,6 +770,7 @@
             JitOptSymbol *left;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
+<<<<<<< HEAD
 <<<<<<< HEAD
             JitOptSymbol *res;
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
@@ -854,18 +791,22 @@
                     res = sym_new_const(ctx, temp);
                     Py_DECREF(temp);
 >>>>>>> e599204f472 (Parse down to statement level in the cases generator)
+=======
+            JitOptSymbol *res;
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right) &&
+                sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
+                PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
+                if (temp == NULL) {
+                    goto error;
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
                 }
-                else {
-                    res = sym_new_type(ctx, &PyUnicode_Type);
-                }
-                GETLOCAL(this_instr->operand0) = res;
-                /* Variables: 'left'M, 'right'M. base: -2. sp: 0. logical_sp: 0 
-               inputs: 'left'M, 'right'M
-               outputs: */
-                /* Variables: . base: -2. sp: 0. logical_sp: -2 
-               inputs: 
-               outputs: */
+                res = sym_new_const(ctx, temp);
+                Py_DECREF(temp);
             }
+            else {
+                res = sym_new_type(ctx, &PyUnicode_Type);
+            }
+            GETLOCAL(this_instr->operand0) = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -946,16 +887,8 @@
 
         case _BINARY_OP_SUBSCR_INIT_CALL: {
             _Py_UOpsAbstractFrame *new_frame;
-            {
-                new_frame = NULL;
-                ctx->done = true;
-                /* Variables: 'container'M, 'sub'M, 'getitem'M. base: -3. sp: 0. logical_sp: 0 
-               inputs: 'container'M, 'sub'M, 'getitem'M
-               outputs: 'new_frame'D*/
-                /* Variables: 'new_frame'D. base: -3. sp: 0. logical_sp: -2 
-               inputs: 
-               outputs: */
-            }
+            new_frame = NULL;
+            ctx->done = true;
             stack_pointer[-3] = (JitOptSymbol *)new_frame;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
@@ -1018,31 +951,23 @@
             JitOptSymbol *retval;
             JitOptSymbol *res;
             retval = stack_pointer[-1];
-            {
-                JitOptSymbol *temp = retval;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                ctx->frame->stack_pointer = stack_pointer;
-                frame_pop(ctx);
-                stack_pointer = ctx->frame->stack_pointer;
-                assert(corresponding_check_stack == NULL);
-                assert(co != NULL);
-                int framesize = co->co_framesize;
-                assert(framesize > 0);
-                assert(framesize <= curr_space);
-                curr_space -= framesize;
-                co = get_code(this_instr);
-                if (co == NULL) {
-                    ctx->done = true;
-                }
-                res = temp;
-                /* Variables: . base: -1. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -1. sp: -1. logical_sp: 0 
-               inputs: 
-               outputs: */
+            JitOptSymbol *temp = retval;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            ctx->frame->stack_pointer = stack_pointer;
+            frame_pop(ctx);
+            stack_pointer = ctx->frame->stack_pointer;
+            assert(corresponding_check_stack == NULL);
+            assert(co != NULL);
+            int framesize = co->co_framesize;
+            assert(framesize > 0);
+            assert(framesize <= curr_space);
+            curr_space -= framesize;
+            co = get_code(this_instr);
+            if (co == NULL) {
+                ctx->done = true;
             }
+            res = temp;
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1075,29 +1000,13 @@
         /* _SEND is not a viable micro-op for tier 2 */
 
         case _SEND_GEN_FRAME: {
-            {
-                ctx->done = true;
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            ctx->done = true;
             break;
         }
 
         case _YIELD_VALUE: {
             JitOptSymbol *res;
-            {
-                res = sym_new_unknown(ctx);
-                /* Variables: 'unused'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'unused'M
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            res = sym_new_unknown(ctx);
             stack_pointer[-1] = res;
             break;
         }
@@ -1139,16 +1048,8 @@
         case _UNPACK_SEQUENCE: {
             JitOptSymbol **values;
             values = &stack_pointer[-1];
-            {
-                for (int i = 0; i < oparg; i++) {
-                    values[i] = sym_new_unknown(ctx);
-                }
-                /* Variables: 'seq'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'seq'M
-               outputs: 'values'A*/
-                /* Variables: 'values'A. base: -1. sp: 0. logical_sp: -1 + oparg 
-               inputs: 
-               outputs: */
+            for (int i = 0; i < oparg; i++) {
+                values[i] = sym_new_unknown(ctx);
             }
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1160,16 +1061,8 @@
             JitOptSymbol *val1;
             JitOptSymbol *val0;
             seq = stack_pointer[-1];
-            {
-                val0 = sym_tuple_getitem(ctx, seq, 0);
-                val1 = sym_tuple_getitem(ctx, seq, 1);
-                /* Variables: 'seq'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'seq'M
-               outputs: 'val1'D, 'val0'D*/
-                /* Variables: 'val1'D, 'val0'D. base: -1. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
-            }
+            val0 = sym_tuple_getitem(ctx, seq, 0);
+            val1 = sym_tuple_getitem(ctx, seq, 1);
             stack_pointer[-1] = val1;
             stack_pointer[0] = val0;
             stack_pointer += 1;
@@ -1182,16 +1075,8 @@
             JitOptSymbol **values;
             seq = stack_pointer[-1];
             values = &stack_pointer[-1];
-            {
-                for (int i = 0; i < oparg; i++) {
-                    values[i] = sym_tuple_getitem(ctx, seq, i);
-                }
-                /* Variables: 'seq'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'seq'M
-               outputs: 'values'A*/
-                /* Variables: 'values'A. base: -1. sp: 0. logical_sp: -1 + oparg 
-               inputs: 
-               outputs: */
+            for (int i = 0; i < oparg; i++) {
+                values[i] = sym_tuple_getitem(ctx, seq, i);
             }
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1212,17 +1097,9 @@
         case _UNPACK_EX: {
             JitOptSymbol **values;
             values = &stack_pointer[-1];
-            {
-                int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
-                for (int i = 0; i < totalargs; i++) {
-                    values[i] = sym_new_unknown(ctx);
-                }
-                /* Variables: 'seq'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'seq'M
-               outputs: 'values'A, 'unused', 'unused'A*/
-                /* Variables: 'values'A, 'unused', 'unused'A. base: -1. sp: 0. logical_sp: (oparg & 0xFF) + (oparg >> 8) 
-               inputs: 
-               outputs: */
+            int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
+            for (int i = 0; i < totalargs; i++) {
+                values[i] = sym_new_unknown(ctx);
             }
             stack_pointer += (oparg & 0xFF) + (oparg >> 8);
             assert(WITHIN_STACK_BOUNDS());
@@ -1283,20 +1160,12 @@
         case _PUSH_NULL_CONDITIONAL: {
             JitOptSymbol **null;
             null = &stack_pointer[0];
-            {
-                if (oparg & 1) {
-                    REPLACE_OP(this_instr, _PUSH_NULL, 0, 0);
-                    null[0] = sym_new_null(ctx);
-                }
-                else {
-                    REPLACE_OP(this_instr, _NOP, 0, 0);
-                }
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: 'null'A*/
-                /* Variables: 'null'A. base: 0. sp: 0. logical_sp: (oparg & 1) 
-               inputs: 
-               outputs: */
+            if (oparg & 1) {
+                REPLACE_OP(this_instr, _PUSH_NULL, 0, 0);
+                null[0] = sym_new_null(ctx);
+            }
+            else {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
             }
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
@@ -1376,15 +1245,7 @@
             JitOptSymbol **values;
             JitOptSymbol *tup;
             values = &stack_pointer[-oparg];
-            {
-                tup = sym_new_tuple(ctx, oparg, values);
-                /* Variables: 'values'MA. base: -oparg. sp: 0. logical_sp: 0 
-               inputs: 'values'MA
-               outputs: 'tup'D*/
-                /* Variables: 'tup'D. base: -oparg. sp: 0. logical_sp: 1 - oparg 
-               inputs: 
-               outputs: */
-            }
+            tup = sym_new_tuple(ctx, oparg, values);
             stack_pointer[-oparg] = tup;
             stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1479,18 +1340,10 @@
             JitOptSymbol **self_or_null;
             owner = stack_pointer[-1];
             self_or_null = &stack_pointer[0];
-            {
-                (void)owner;
-                attr = sym_new_not_null(ctx);
-                if (oparg &1) {
-                    self_or_null[0] = sym_new_unknown(ctx);
-                }
-                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'owner'M
-               outputs: 'attr'D, 'self_or_null'A*/
-                /* Variables: 'attr'D, 'self_or_null'A. base: -1. sp: 0. logical_sp: (oparg&1) 
-               inputs: 
-               outputs: */
+            (void)owner;
+            attr = sym_new_not_null(ctx);
+            if (oparg &1) {
+                self_or_null[0] = sym_new_unknown(ctx);
             }
             stack_pointer[-1] = attr;
             stack_pointer += (oparg&1);
@@ -1502,25 +1355,17 @@
             JitOptSymbol *owner;
             owner = stack_pointer[-1];
             uint32_t type_version = (uint32_t)this_instr->operand0;
-            {
-                assert(type_version);
-                if (sym_matches_type_version(owner, type_version)) {
-                    REPLACE_OP(this_instr, _NOP, 0, 0);
-                } else {
-                    PyTypeObject *type = _PyType_LookupByVersion(type_version);
-                    if (type) {
-                        if (sym_set_type_version(owner, type_version)) {
-                            PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
-                            _Py_BloomFilter_Add(dependencies, type);
-                        }
+            assert(type_version);
+            if (sym_matches_type_version(owner, type_version)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            } else {
+                PyTypeObject *type = _PyType_LookupByVersion(type_version);
+                if (type) {
+                    if (sym_set_type_version(owner, type_version)) {
+                        PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
+                        _Py_BloomFilter_Add(dependencies, type);
                     }
                 }
-                /* Variables: 'owner'MD. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: 'owner'MD. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
             }
             break;
         }
@@ -1536,16 +1381,8 @@
         case _LOAD_ATTR_INSTANCE_VALUE: {
             JitOptSymbol *attr;
             uint16_t offset = (uint16_t)this_instr->operand0;
-            {
-                attr = sym_new_not_null(ctx);
-                (void)offset;
-                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'owner'M
-               outputs: 'attr'D*/
-                /* Variables: 'attr'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            attr = sym_new_not_null(ctx);
+            (void)offset;
             stack_pointer[-1] = attr;
             break;
         }
@@ -1556,33 +1393,25 @@
             owner = stack_pointer[-1];
             uint32_t dict_version = (uint32_t)this_instr->operand0;
             uint16_t index = (uint16_t)this_instr->operand0;
-            {
-                (void)dict_version;
-                (void)index;
-                attr = NULL;
-                if (sym_is_const(ctx, owner)) {
-                    PyModuleObject *mod = (PyModuleObject *)sym_get_const(ctx, owner);
-                    if (PyModule_CheckExact(mod)) {
-                        PyObject *dict = mod->md_dict;
-                        stack_pointer[-1] = attr;
-                        uint64_t watched_mutations = get_mutations(dict);
-                        if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
-                            PyDict_Watch(GLOBALS_WATCHER_ID, dict);
-                            _Py_BloomFilter_Add(dependencies, dict);
-                            PyObject *res = convert_global_to_const(this_instr, dict, true);
-                            attr = sym_new_const(ctx, res);
-                        }
+            (void)dict_version;
+            (void)index;
+            attr = NULL;
+            if (sym_is_const(ctx, owner)) {
+                PyModuleObject *mod = (PyModuleObject *)sym_get_const(ctx, owner);
+                if (PyModule_CheckExact(mod)) {
+                    PyObject *dict = mod->md_dict;
+                    stack_pointer[-1] = attr;
+                    uint64_t watched_mutations = get_mutations(dict);
+                    if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
+                        PyDict_Watch(GLOBALS_WATCHER_ID, dict);
+                        _Py_BloomFilter_Add(dependencies, dict);
+                        PyObject *res = convert_global_to_const(this_instr, dict, true);
+                        attr = sym_new_const(ctx, res);
                     }
                 }
-                if (attr == NULL) {
-                    attr = sym_new_not_null(ctx);
-                }
-                /* Variables: 'attr'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: 'attr'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
+            }
+            if (attr == NULL) {
+                attr = sym_new_not_null(ctx);
             }
             stack_pointer[-1] = attr;
             break;
@@ -1591,16 +1420,8 @@
         case _LOAD_ATTR_WITH_HINT: {
             JitOptSymbol *attr;
             uint16_t hint = (uint16_t)this_instr->operand0;
-            {
-                attr = sym_new_not_null(ctx);
-                (void)hint;
-                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'owner'M
-               outputs: 'attr'D*/
-                /* Variables: 'attr'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            attr = sym_new_not_null(ctx);
+            (void)hint;
             stack_pointer[-1] = attr;
             break;
         }
@@ -1608,16 +1429,8 @@
         case _LOAD_ATTR_SLOT: {
             JitOptSymbol *attr;
             uint16_t index = (uint16_t)this_instr->operand0;
-            {
-                attr = sym_new_not_null(ctx);
-                (void)index;
-                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'owner'M
-               outputs: 'attr'D*/
-                /* Variables: 'attr'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            attr = sym_new_not_null(ctx);
+            (void)index;
             stack_pointer[-1] = attr;
             break;
         }
@@ -1629,16 +1442,8 @@
         case _LOAD_ATTR_CLASS: {
             JitOptSymbol *attr;
             PyObject *descr = (PyObject *)this_instr->operand0;
-            {
-                attr = sym_new_not_null(ctx);
-                (void)descr;
-                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'owner'M
-               outputs: 'attr'D*/
-                /* Variables: 'attr'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            attr = sym_new_not_null(ctx);
+            (void)descr;
             stack_pointer[-1] = attr;
             break;
         }
@@ -1646,17 +1451,9 @@
         case _LOAD_ATTR_PROPERTY_FRAME: {
             _Py_UOpsAbstractFrame *new_frame;
             PyObject *fget = (PyObject *)this_instr->operand0;
-            {
-                (void)fget;
-                new_frame = NULL;
-                ctx->done = true;
-                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'owner'M
-               outputs: 'new_frame'D*/
-                /* Variables: 'new_frame'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            (void)fget;
+            new_frame = NULL;
+            ctx->done = true;
             stack_pointer[-1] = (JitOptSymbol *)new_frame;
             break;
         }
@@ -1687,19 +1484,11 @@
 
         case _COMPARE_OP: {
             JitOptSymbol *res;
-            {
-                if (oparg & 16) {
-                    res = sym_new_type(ctx, &PyBool_Type);
-                }
-                else {
-                    res = _Py_uop_sym_new_not_null(ctx);
-                }
-                /* Variables: 'left'M, 'right'M. base: -2. sp: 0. logical_sp: 0 
-               inputs: 'left'M, 'right'M
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -2. sp: 0. logical_sp: -1 
-               inputs: 
-               outputs: */
+            if (oparg & 16) {
+                res = sym_new_type(ctx, &PyBool_Type);
+            }
+            else {
+                res = _Py_uop_sym_new_not_null(ctx);
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1709,15 +1498,7 @@
 
         case _COMPARE_OP_FLOAT: {
             JitOptSymbol *res;
-            {
-                res = sym_new_type(ctx, &PyBool_Type);
-                /* Variables: 'left'M, 'right'M. base: -2. sp: 0. logical_sp: 0 
-               inputs: 'left'M, 'right'M
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -2. sp: 0. logical_sp: -1 
-               inputs: 
-               outputs: */
-            }
+            res = sym_new_type(ctx, &PyBool_Type);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1731,6 +1512,7 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
 <<<<<<< HEAD
+<<<<<<< HEAD
             if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
                 assert(PyLong_CheckExact(sym_get_const(ctx, left)));
                 assert(PyLong_CheckExact(sym_get_const(ctx, right)));
@@ -1740,26 +1522,19 @@
                 if (tmp == NULL) {
                     goto error;
 =======
+=======
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right))
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             {
-                if (sym_is_const(ctx, left) && sym_is_const(ctx, right))
-                {
-                    assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-                    assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-                    PyObject *tmp = PyObject_RichCompare(sym_get_const(ctx, left),
-                        sym_get_const(ctx, right),
-                        oparg >> 5);
-                    if (tmp == NULL) {
-                        goto error;
-                    }
-                    assert(PyBool_Check(tmp));
-                    assert(_Py_IsImmortal(tmp));
-                    REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
-                    res = sym_new_const(ctx, tmp);
-                    stack_pointer[-2] = res;
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
-                    Py_DECREF(tmp);
+                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+                PyObject *tmp = PyObject_RichCompare(sym_get_const(ctx, left),
+                    sym_get_const(ctx, right),
+                    oparg >> 5);
+                if (tmp == NULL) {
+                    goto error;
                 }
+<<<<<<< HEAD
                 else {
                     res = sym_new_type(ctx, &PyBool_Type);
                     stack_pointer += -1;
@@ -1772,6 +1547,21 @@
                 /* Variables: 'res'D. base: -2. sp: -1. logical_sp: -1 
                inputs: 
                outputs: */
+=======
+                assert(PyBool_Check(tmp));
+                assert(_Py_IsImmortal(tmp));
+                REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
+                res = sym_new_const(ctx, tmp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                Py_DECREF(tmp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyBool_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+>>>>>>> 1e72e135618 (Fixup declarations and test output)
             }
             stack_pointer[-1] = res;
             break;
@@ -1779,15 +1569,7 @@
 
         case _COMPARE_OP_STR: {
             JitOptSymbol *res;
-            {
-                res = sym_new_type(ctx, &PyBool_Type);
-                /* Variables: 'left'M, 'right'M. base: -2. sp: 0. logical_sp: 0 
-               inputs: 'left'M, 'right'M
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -2. sp: 0. logical_sp: -1 
-               inputs: 
-               outputs: */
-            }
+            res = sym_new_type(ctx, &PyBool_Type);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1796,15 +1578,7 @@
 
         case _IS_OP: {
             JitOptSymbol *res;
-            {
-                res = sym_new_type(ctx, &PyBool_Type);
-                /* Variables: 'left'M, 'right'M. base: -2. sp: 0. logical_sp: 0 
-               inputs: 'left'M, 'right'M
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -2. sp: 0. logical_sp: -1 
-               inputs: 
-               outputs: */
-            }
+            res = sym_new_type(ctx, &PyBool_Type);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1813,15 +1587,7 @@
 
         case _CONTAINS_OP: {
             JitOptSymbol *res;
-            {
-                res = sym_new_type(ctx, &PyBool_Type);
-                /* Variables: 'left'M, 'right'M. base: -2. sp: 0. logical_sp: 0 
-               inputs: 'left'M, 'right'M
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -2. sp: 0. logical_sp: -1 
-               inputs: 
-               outputs: */
-            }
+            res = sym_new_type(ctx, &PyBool_Type);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2016,15 +1782,7 @@
 
         case _ITER_NEXT_RANGE: {
             JitOptSymbol *next;
-            {
-                next = sym_new_type(ctx, &PyLong_Type);
-                /* Variables: 'iter'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: 'next'D*/
-                /* Variables: 'iter'M, 'next'D. base: -1. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
-            }
+            next = sym_new_type(ctx, &PyLong_Type);
             stack_pointer[0] = next;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2032,31 +1790,15 @@
         }
 
         case _FOR_ITER_GEN_FRAME: {
-            {
-                ctx->done = true;
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            ctx->done = true;
             break;
         }
 
         case _LOAD_SPECIAL: {
             JitOptSymbol *attr;
             JitOptSymbol *self_or_null;
-            {
-                attr = sym_new_not_null(ctx);
-                self_or_null = sym_new_unknown(ctx);
-                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'owner'M
-               outputs: 'attr'D, 'self_or_null'D*/
-                /* Variables: 'attr'D, 'self_or_null'D. base: -1. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
-            }
+            attr = sym_new_not_null(ctx);
+            self_or_null = sym_new_unknown(ctx);
             stack_pointer[-1] = attr;
             stack_pointer[0] = self_or_null;
             stack_pointer += 1;
@@ -2099,17 +1841,9 @@
             JitOptSymbol *self;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand0;
-            {
-                (void)descr;
-                attr = sym_new_not_null(ctx);
-                self = owner;
-                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'owner'M
-               outputs: 'attr'D, 'self'D*/
-                /* Variables: 'attr'D, 'self'D. base: -1. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
-            }
+            (void)descr;
+            attr = sym_new_not_null(ctx);
+            self = owner;
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
             stack_pointer += 1;
@@ -2123,17 +1857,9 @@
             JitOptSymbol *self;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand0;
-            {
-                (void)descr;
-                attr = sym_new_not_null(ctx);
-                self = owner;
-                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'owner'M
-               outputs: 'attr'D, 'self'D*/
-                /* Variables: 'attr'D, 'self'D. base: -1. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
-            }
+            (void)descr;
+            attr = sym_new_not_null(ctx);
+            self = owner;
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
             stack_pointer += 1;
@@ -2165,17 +1891,9 @@
             JitOptSymbol *self;
             owner = stack_pointer[-1];
             PyObject *descr = (PyObject *)this_instr->operand0;
-            {
-                (void)descr;
-                attr = sym_new_not_null(ctx);
-                self = owner;
-                /* Variables: 'owner'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'owner'M
-               outputs: 'attr'D, 'self'D*/
-                /* Variables: 'attr'D, 'self'D. base: -1. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
-            }
+            (void)descr;
+            attr = sym_new_not_null(ctx);
+            self = owner;
             stack_pointer[-1] = attr;
             stack_pointer[0] = self;
             stack_pointer += 1;
@@ -2189,17 +1907,9 @@
             JitOptSymbol *maybe_self;
             args = &stack_pointer[-oparg];
             args = &stack_pointer[-oparg];
-            {
-                (void)args;
-                func = sym_new_not_null(ctx);
-                maybe_self = sym_new_not_null(ctx);
-                /* Variables: 'callable'M, 'self_or_null'M, 'args'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
-               inputs: 'callable'M, 'self_or_null'M, 'args'MA
-               outputs: 'func'D, 'maybe_self'D, 'args'A*/
-                /* Variables: 'func'D, 'maybe_self'D, 'args'A. base: -2 - oparg. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            (void)args;
+            func = sym_new_not_null(ctx);
+            maybe_self = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = func;
             stack_pointer[-1 - oparg] = maybe_self;
             break;
@@ -2211,22 +1921,14 @@
 
         case _PY_FRAME_GENERAL: {
             _Py_UOpsAbstractFrame *new_frame;
-            {
-                PyCodeObject *co = NULL;
-                assert((this_instr + 2)->opcode == _PUSH_FRAME);
-                co = get_code_with_logging((this_instr + 2));
-                if (co == NULL) {
-                    ctx->done = true;
-                    break;
-                }
-                new_frame = frame_new(ctx, co, 0, NULL, 0);
-                /* Variables: 'callable'M, 'self_or_null'M, 'args'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
-               inputs: 'callable'M, 'self_or_null'M, 'args'MA
-               outputs: 'new_frame'D*/
-                /* Variables: 'new_frame'D. base: -2 - oparg. sp: 0. logical_sp: -1 - oparg 
-               inputs: 
-               outputs: */
+            PyCodeObject *co = NULL;
+            assert((this_instr + 2)->opcode == _PUSH_FRAME);
+            co = get_code_with_logging((this_instr + 2));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
             }
+            new_frame = frame_new(ctx, co, 0, NULL, 0);
             stack_pointer[-2 - oparg] = (JitOptSymbol *)new_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -2237,20 +1939,12 @@
             JitOptSymbol *callable;
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)this_instr->operand0;
-            {
-                if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyFunction_Type)) {
-                    assert(PyFunction_Check(sym_get_const(ctx, callable)));
-                    REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
-                    this_instr->operand1 = (uintptr_t)sym_get_const(ctx, callable);
-                }
-                sym_set_type(callable, &PyFunction_Type);
-                /* Variables: 'callable'MD, 'self_or_null'M, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: 'callable'MD, 'self_or_null'M, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
+            if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyFunction_Type)) {
+                assert(PyFunction_Check(sym_get_const(ctx, callable)));
+                REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
+                this_instr->operand1 = (uintptr_t)sym_get_const(ctx, callable);
             }
+            sym_set_type(callable, &PyFunction_Type);
             break;
         }
 
@@ -2284,16 +1978,8 @@
             JitOptSymbol *callable;
             null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            {
-                sym_set_null(null);
-                sym_set_type(callable, &PyMethod_Type);
-                /* Variables: 'callable'MD, 'null'MD, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: 'callable'MD, 'null'MD, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            sym_set_null(null);
+            sym_set_type(callable, &PyMethod_Type);
             break;
         }
 
@@ -2302,30 +1988,14 @@
             JitOptSymbol **callable;
             self_or_null = &stack_pointer[-1 - oparg];
             callable = &stack_pointer[-2 - oparg];
-            {
-                callable[0] = sym_new_not_null(ctx);
-                self_or_null[0] = sym_new_not_null(ctx);
-                /* Variables: 'callable'MDA, 'self_or_null'MDA, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: 'callable'MDA, 'self_or_null'MDA, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            callable[0] = sym_new_not_null(ctx);
+            self_or_null[0] = sym_new_not_null(ctx);
             break;
         }
 
         case _CHECK_PEP_523: {
-            {
-                if (_PyInterpreterState_GET()->eval_frame == NULL) {
-                    REPLACE_OP(this_instr, _NOP, 0 ,0);
-                }
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
+            if (_PyInterpreterState_GET()->eval_frame == NULL) {
+                REPLACE_OP(this_instr, _NOP, 0 ,0);
             }
             break;
         }
@@ -2335,38 +2005,22 @@
             JitOptSymbol *callable;
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
-            {
-                assert(sym_matches_type(callable, &PyFunction_Type));
-                if (sym_is_const(ctx, callable)) {
-                    if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-                        PyFunctionObject *func = (PyFunctionObject *)sym_get_const(ctx, callable);
-                        PyCodeObject *co = (PyCodeObject *)func->func_code;
-                        if (co->co_argcount == oparg + !sym_is_null(self_or_null)) {
-                            REPLACE_OP(this_instr, _NOP, 0 ,0);
-                        }
+            assert(sym_matches_type(callable, &PyFunction_Type));
+            if (sym_is_const(ctx, callable)) {
+                if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
+                    PyFunctionObject *func = (PyFunctionObject *)sym_get_const(ctx, callable);
+                    PyCodeObject *co = (PyCodeObject *)func->func_code;
+                    if (co->co_argcount == oparg + !sym_is_null(self_or_null)) {
+                        REPLACE_OP(this_instr, _NOP, 0 ,0);
                     }
                 }
-                /* Variables: 'callable'MD, 'self_or_null'MD, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: 'callable'MD, 'self_or_null'MD, 'unused'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
             }
             break;
         }
 
         case _CHECK_STACK_SPACE: {
-            {
-                assert(corresponding_check_stack == NULL);
-                corresponding_check_stack = this_instr;
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            assert(corresponding_check_stack == NULL);
+            corresponding_check_stack = this_instr;
             break;
         }
 
@@ -2376,32 +2030,24 @@
             _Py_UOpsAbstractFrame *new_frame;
             args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
-            {
-                int argcount = oparg;
-                PyCodeObject *co = NULL;
-                assert((this_instr + 2)->opcode == _PUSH_FRAME);
-                co = get_code_with_logging((this_instr + 2));
-                if (co == NULL) {
-                    ctx->done = true;
-                    break;
-                }
-                assert(self_or_null != NULL);
-                assert(args != NULL);
-                if (sym_is_not_null(self_or_null)) {
-                    args--;
-                    argcount++;
-                }
-                if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-                    new_frame = frame_new(ctx, co, 0, args, argcount);
-                } else {
-                    new_frame = frame_new(ctx, co, 0, NULL, 0);
-                }
-                /* Variables: 'callable'M, 'self_or_null'M, 'args'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
-               inputs: 'callable'M, 'self_or_null'M, 'args'MA
-               outputs: 'new_frame'D*/
-                /* Variables: 'new_frame'D. base: -2 - oparg. sp: 0. logical_sp: -1 - oparg 
-               inputs: 
-               outputs: */
+            int argcount = oparg;
+            PyCodeObject *co = NULL;
+            assert((this_instr + 2)->opcode == _PUSH_FRAME);
+            co = get_code_with_logging((this_instr + 2));
+            if (co == NULL) {
+                ctx->done = true;
+                break;
+            }
+            assert(self_or_null != NULL);
+            assert(args != NULL);
+            if (sym_is_not_null(self_or_null)) {
+                args--;
+                argcount++;
+            }
+            if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
+                new_frame = frame_new(ctx, co, 0, args, argcount);
+            } else {
+                new_frame = frame_new(ctx, co, 0, NULL, 0);
             }
             stack_pointer[-2 - oparg] = (JitOptSymbol *)new_frame;
             stack_pointer += -1 - oparg;
@@ -2412,43 +2058,32 @@
         case _PUSH_FRAME: {
             _Py_UOpsAbstractFrame *new_frame;
             new_frame = (_Py_UOpsAbstractFrame *)stack_pointer[-1];
-            {
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                /* Variables: . base: -1. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-                ctx->frame->stack_pointer = stack_pointer;
-                ctx->frame = new_frame;
-                ctx->curr_frame_depth++;
-                stack_pointer = new_frame->stack_pointer;
-                co = get_code(this_instr);
-                if (co == NULL) {
-                    ctx->done = true;
-                    break;
-                }
-                int framesize = co->co_framesize;
-                assert(framesize > 0);
-                curr_space += framesize;
-                if (curr_space < 0 || curr_space > INT32_MAX) {
-                    ctx->done = true;
-                    break;
-                }
-                max_space = curr_space > max_space ? curr_space : max_space;
-                if (first_valid_check_stack == NULL) {
-                    first_valid_check_stack = corresponding_check_stack;
-                }
-                else if (corresponding_check_stack) {
-                    corresponding_check_stack->opcode = _NOP;
-                }
-                corresponding_check_stack = NULL;
-                /* Variables: . base: -1. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
-                /* Variables: . base: -1. sp: -1. logical_sp: -1 
-               inputs: 
-               outputs: */
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            ctx->frame->stack_pointer = stack_pointer;
+            ctx->frame = new_frame;
+            ctx->curr_frame_depth++;
+            stack_pointer = new_frame->stack_pointer;
+            co = get_code(this_instr);
+            if (co == NULL) {
+                ctx->done = true;
+                break;
             }
+            int framesize = co->co_framesize;
+            assert(framesize > 0);
+            curr_space += framesize;
+            if (curr_space < 0 || curr_space > INT32_MAX) {
+                ctx->done = true;
+                break;
+            }
+            max_space = curr_space > max_space ? curr_space : max_space;
+            if (first_valid_check_stack == NULL) {
+                first_valid_check_stack = corresponding_check_stack;
+            }
+            else if (corresponding_check_stack) {
+                corresponding_check_stack->opcode = _NOP;
+            }
+            corresponding_check_stack = NULL;
             break;
         }
 
@@ -2486,18 +2121,10 @@
             args = &stack_pointer[-oparg];
             args = &stack_pointer[-oparg];
             uint32_t type_version = (uint32_t)this_instr->operand0;
-            {
-                (void)type_version;
-                (void)args;
-                self = sym_new_not_null(ctx);
-                init = sym_new_not_null(ctx);
-                /* Variables: 'callable'M, 'null'M, 'args'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
-               inputs: 'callable'M, 'null'M, 'args'MA
-               outputs: 'self'D, 'init'D, 'args'A*/
-                /* Variables: 'self'D, 'init'D, 'args'A. base: -2 - oparg. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            (void)type_version;
+            (void)args;
+            self = sym_new_not_null(ctx);
+            init = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = self;
             stack_pointer[-1 - oparg] = init;
             break;
@@ -2505,16 +2132,8 @@
 
         case _CREATE_INIT_FRAME: {
             _Py_UOpsAbstractFrame *init_frame;
-            {
-                init_frame = NULL;
-                ctx->done = true;
-                /* Variables: 'self'M, 'init'M, 'args'MA. base: -2 - oparg. sp: 0. logical_sp: 0 
-               inputs: 'self'M, 'init'M, 'args'MA
-               outputs: 'init_frame'D*/
-                /* Variables: 'init_frame'D. base: -2 - oparg. sp: 0. logical_sp: -1 - oparg 
-               inputs: 
-               outputs: */
-            }
+            init_frame = NULL;
+            ctx->done = true;
             stack_pointer[-2 - oparg] = (JitOptSymbol *)init_frame;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -2636,16 +2255,8 @@
 
         case _PY_FRAME_KW: {
             _Py_UOpsAbstractFrame *new_frame;
-            {
-                new_frame = NULL;
-                ctx->done = true;
-                /* Variables: 'callable'M, 'self_or_null'M, 'args'MA, 'kwnames'M. base: -3 - oparg. sp: 0. logical_sp: 0 
-               inputs: 'callable'M, 'self_or_null'M, 'args'MA, 'kwnames'M
-               outputs: 'new_frame'D*/
-                /* Variables: 'new_frame'D. base: -3 - oparg. sp: 0. logical_sp: -2 - oparg 
-               inputs: 
-               outputs: */
-            }
+            new_frame = NULL;
+            ctx->done = true;
             stack_pointer[-3 - oparg] = (JitOptSymbol *)new_frame;
             stack_pointer += -2 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -2707,33 +2318,22 @@
 
         case _RETURN_GENERATOR: {
             JitOptSymbol *res;
-            {
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: 'res'*/
-                ctx->frame->stack_pointer = stack_pointer;
-                frame_pop(ctx);
-                stack_pointer = ctx->frame->stack_pointer;
-                res = sym_new_unknown(ctx);
-                assert(corresponding_check_stack == NULL);
-                assert(co != NULL);
-                int framesize = co->co_framesize;
-                assert(framesize > 0);
-                assert(framesize <= curr_space);
-                curr_space -= framesize;
-                stack_pointer[0] = res;
-                stack_pointer += 1;
-                assert(WITHIN_STACK_BOUNDS());
-                co = get_code(this_instr);
-                if (co == NULL) {
-                    ctx->done = true;
-                }
-                /* Variables: 'res'D. base: 0. sp: 1. logical_sp: 1 
-               inputs: 
-               outputs: */
-                /* Variables: 'res'D. base: 0. sp: 1. logical_sp: 1 
-               inputs: 
-               outputs: */
+            ctx->frame->stack_pointer = stack_pointer;
+            frame_pop(ctx);
+            stack_pointer = ctx->frame->stack_pointer;
+            res = sym_new_unknown(ctx);
+            assert(corresponding_check_stack == NULL);
+            assert(co != NULL);
+            int framesize = co->co_framesize;
+            assert(framesize > 0);
+            assert(framesize <= curr_space);
+            curr_space -= framesize;
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            co = get_code(this_instr);
+            if (co == NULL) {
+                ctx->done = true;
             }
             stack_pointer[-1] = res;
             break;
@@ -2775,16 +2375,8 @@
             JitOptSymbol *bottom;
             JitOptSymbol *top;
             bottom = stack_pointer[-1 - (oparg-1)];
-            {
-                assert(oparg > 0);
-                top = bottom;
-                /* Variables: 'bottom'MD, 'unused'MA. base: -1 - (oparg-1). sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: 'top'D*/
-                /* Variables: 'bottom'MD, 'unused'MA, 'top'D. base: -1 - (oparg-1). sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
-            }
+            assert(oparg > 0);
+            top = bottom;
             stack_pointer[0] = top;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2797,46 +2389,38 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            {
-                bool lhs_int = sym_matches_type(left, &PyLong_Type);
-                bool rhs_int = sym_matches_type(right, &PyLong_Type);
-                bool lhs_float = sym_matches_type(left, &PyFloat_Type);
-                bool rhs_float = sym_matches_type(right, &PyFloat_Type);
-                if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
+            bool lhs_int = sym_matches_type(left, &PyLong_Type);
+            bool rhs_int = sym_matches_type(right, &PyLong_Type);
+            bool lhs_float = sym_matches_type(left, &PyFloat_Type);
+            bool rhs_float = sym_matches_type(right, &PyFloat_Type);
+            if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
+                res = sym_new_unknown(ctx);
+            }
+            else if (oparg == NB_POWER || oparg == NB_INPLACE_POWER) {
+                if (rhs_float) {
                     res = sym_new_unknown(ctx);
                 }
-                else if (oparg == NB_POWER || oparg == NB_INPLACE_POWER) {
-                    if (rhs_float) {
-                        res = sym_new_unknown(ctx);
-                    }
-                    else if (lhs_float) {
-                        res = sym_new_type(ctx, &PyFloat_Type);
-                    }
-                    else if (!sym_is_const(ctx, right)) {
-                        res = sym_new_unknown(ctx);
-                    }
-                    else if (_PyLong_IsNegative((PyLongObject *)sym_get_const(ctx, right))) {
-                        res = sym_new_type(ctx, &PyFloat_Type);
-                    }
-                    else {
-                        res = sym_new_type(ctx, &PyLong_Type);
-                    }
-                }
-                else if (oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE) {
+                else if (lhs_float) {
                     res = sym_new_type(ctx, &PyFloat_Type);
                 }
-                else if (lhs_int && rhs_int) {
-                    res = sym_new_type(ctx, &PyLong_Type);
+                else if (!sym_is_const(ctx, right)) {
+                    res = sym_new_unknown(ctx);
+                }
+                else if (_PyLong_IsNegative((PyLongObject *)sym_get_const(ctx, right))) {
+                    res = sym_new_type(ctx, &PyFloat_Type);
                 }
                 else {
-                    res = sym_new_type(ctx, &PyFloat_Type);
+                    res = sym_new_type(ctx, &PyLong_Type);
                 }
-                /* Variables: 'left'M, 'right'M. base: -2. sp: 0. logical_sp: 0 
-               inputs: 'left'M, 'right'M
-               outputs: 'res'D*/
-                /* Variables: 'res'D. base: -2. sp: 0. logical_sp: -1 
-               inputs: 
-               outputs: */
+            }
+            else if (oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE) {
+                res = sym_new_type(ctx, &PyFloat_Type);
+            }
+            else if (lhs_int && rhs_int) {
+                res = sym_new_type(ctx, &PyLong_Type);
+            }
+            else {
+                res = sym_new_type(ctx, &PyFloat_Type);
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -2849,18 +2433,10 @@
             JitOptSymbol **bottom;
             top = &stack_pointer[-1];
             bottom = &stack_pointer[-2 - (oparg-2)];
-            {
-                JitOptSymbol *temp = bottom[0];
-                bottom[0] = top[0];
-                top[0] = temp;
-                assert(oparg >= 2);
-                /* Variables: 'bottom'MDA, 'unused'MA, 'top'MDA. base: -2 - (oparg-2). sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: 'bottom'MDA, 'unused'MA, 'top'MDA. base: -2 - (oparg-2). sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            JitOptSymbol *temp = bottom[0];
+            bottom[0] = top[0];
+            top[0] = temp;
+            assert(oparg >= 2);
             break;
         }
 
@@ -2885,20 +2461,12 @@
         case _GUARD_IS_TRUE_POP: {
             JitOptSymbol *flag;
             flag = stack_pointer[-1];
-            {
-                if (sym_is_const(ctx, flag)) {
-                    PyObject *value = sym_get_const(ctx, flag);
-                    assert(value != NULL);
-                    eliminate_pop_guard(this_instr, value != Py_True);
-                }
-                sym_set_const(flag, Py_True);
-                /* Variables: 'flag'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'flag'M
-               outputs: */
-                /* Variables: . base: -1. sp: 0. logical_sp: -1 
-               inputs: 
-               outputs: */
+            if (sym_is_const(ctx, flag)) {
+                PyObject *value = sym_get_const(ctx, flag);
+                assert(value != NULL);
+                eliminate_pop_guard(this_instr, value != Py_True);
             }
+            sym_set_const(flag, Py_True);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -2907,20 +2475,12 @@
         case _GUARD_IS_FALSE_POP: {
             JitOptSymbol *flag;
             flag = stack_pointer[-1];
-            {
-                if (sym_is_const(ctx, flag)) {
-                    PyObject *value = sym_get_const(ctx, flag);
-                    assert(value != NULL);
-                    eliminate_pop_guard(this_instr, value != Py_False);
-                }
-                sym_set_const(flag, Py_False);
-                /* Variables: 'flag'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'flag'M
-               outputs: */
-                /* Variables: . base: -1. sp: 0. logical_sp: -1 
-               inputs: 
-               outputs: */
+            if (sym_is_const(ctx, flag)) {
+                PyObject *value = sym_get_const(ctx, flag);
+                assert(value != NULL);
+                eliminate_pop_guard(this_instr, value != Py_False);
             }
+            sym_set_const(flag, Py_False);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -2929,24 +2489,16 @@
         case _GUARD_IS_NONE_POP: {
             JitOptSymbol *flag;
             flag = stack_pointer[-1];
-            {
-                if (sym_is_const(ctx, flag)) {
-                    PyObject *value = sym_get_const(ctx, flag);
-                    assert(value != NULL);
-                    eliminate_pop_guard(this_instr, !Py_IsNone(value));
-                }
-                else if (sym_has_type(flag)) {
-                    assert(!sym_matches_type(flag, &_PyNone_Type));
-                    eliminate_pop_guard(this_instr, true);
-                }
-                sym_set_const(flag, Py_None);
-                /* Variables: 'flag'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'flag'M
-               outputs: */
-                /* Variables: . base: -1. sp: 0. logical_sp: -1 
-               inputs: 
-               outputs: */
+            if (sym_is_const(ctx, flag)) {
+                PyObject *value = sym_get_const(ctx, flag);
+                assert(value != NULL);
+                eliminate_pop_guard(this_instr, !Py_IsNone(value));
             }
+            else if (sym_has_type(flag)) {
+                assert(!sym_matches_type(flag, &_PyNone_Type));
+                eliminate_pop_guard(this_instr, true);
+            }
+            sym_set_const(flag, Py_None);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -2955,22 +2507,14 @@
         case _GUARD_IS_NOT_NONE_POP: {
             JitOptSymbol *flag;
             flag = stack_pointer[-1];
-            {
-                if (sym_is_const(ctx, flag)) {
-                    PyObject *value = sym_get_const(ctx, flag);
-                    assert(value != NULL);
-                    eliminate_pop_guard(this_instr, Py_IsNone(value));
-                }
-                else if (sym_has_type(flag)) {
-                    assert(!sym_matches_type(flag, &_PyNone_Type));
-                    eliminate_pop_guard(this_instr, false);
-                }
-                /* Variables: 'flag'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'flag'M
-               outputs: */
-                /* Variables: . base: -1. sp: 0. logical_sp: -1 
-               inputs: 
-               outputs: */
+            if (sym_is_const(ctx, flag)) {
+                PyObject *value = sym_get_const(ctx, flag);
+                assert(value != NULL);
+                eliminate_pop_guard(this_instr, Py_IsNone(value));
+            }
+            else if (sym_has_type(flag)) {
+                assert(!sym_matches_type(flag, &_PyNone_Type));
+                eliminate_pop_guard(this_instr, false);
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2978,15 +2522,7 @@
         }
 
         case _JUMP_TO_TOP: {
-            {
-                ctx->done = true;
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            ctx->done = true;
             break;
         }
 
@@ -2996,16 +2532,8 @@
 
         case _CHECK_STACK_SPACE_OPERAND: {
             uint32_t framesize = (uint32_t)this_instr->operand0;
-            {
-                (void)framesize;
-                Py_UNREACHABLE();
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            (void)framesize;
+            Py_UNREACHABLE();
             break;
         }
 
@@ -3015,16 +2543,8 @@
 
         case _EXIT_TRACE: {
             PyObject *exit_p = (PyObject *)this_instr->operand0;
-            {
-                (void)exit_p;
-                ctx->done = true;
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            (void)exit_p;
+            ctx->done = true;
             break;
         }
 
@@ -3035,15 +2555,7 @@
         case _LOAD_CONST_INLINE: {
             JitOptSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand0;
-            {
-                value = sym_new_const(ctx, ptr);
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: 'value'D*/
-                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
-            }
+            value = sym_new_const(ctx, ptr);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -3053,15 +2565,7 @@
         case _POP_TOP_LOAD_CONST_INLINE: {
             JitOptSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand0;
-            {
-                value = sym_new_const(ctx, ptr);
-                /* Variables: 'pop'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'pop'M
-               outputs: 'value'D*/
-                /* Variables: 'value'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            value = sym_new_const(ctx, ptr);
             stack_pointer[-1] = value;
             break;
         }
@@ -3069,15 +2573,7 @@
         case _LOAD_CONST_INLINE_BORROW: {
             JitOptSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand0;
-            {
-                value = sym_new_const(ctx, ptr);
-                /* Variables: . base: 0. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: 'value'D*/
-                /* Variables: 'value'D. base: 0. sp: 0. logical_sp: 1 
-               inputs: 
-               outputs: */
-            }
+            value = sym_new_const(ctx, ptr);
             stack_pointer[0] = value;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -3087,15 +2583,7 @@
         case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
             JitOptSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand0;
-            {
-                value = sym_new_const(ctx, ptr);
-                /* Variables: 'pop'M. base: -1. sp: 0. logical_sp: 0 
-               inputs: 'pop'M
-               outputs: 'value'D*/
-                /* Variables: 'value'D. base: -1. sp: 0. logical_sp: 0 
-               inputs: 
-               outputs: */
-            }
+            value = sym_new_const(ctx, ptr);
             stack_pointer[-1] = value;
             break;
         }
