@@ -68,6 +68,11 @@
 #    define HAVE_PROCESS_VM_READV 0
 #endif
 
+#if (defined(__APPLE__) || defined(MS_WINDOWS) || (defined(__linux__) && HAVE_PROCESS_VM_READV))
+#    define Py_SUPPORTS_REMOTE_DEBUG 1
+#endif
+
+
 // Define a platform-independent process handle structure
 typedef struct {
     pid_t pid;
@@ -104,10 +109,7 @@ cleanup_proc_handle(proc_handle_t *handle) {
     handle->pid = 0;
 }
 
-/*[clinic input]
-module _pdb
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7fb1cf2618bcf972]*/
+#ifdef Py_SUPPORTS_REMOTE_DEBUG
 
 #if defined(__APPLE__) && TARGET_OS_OSX
 static uintptr_t
@@ -298,7 +300,7 @@ search_map_for_section(proc_handle_t *handle, const char* secname, const char* s
 
 #endif // (__APPLE__ && TARGET_OS_OSX)
 
-#ifdef __linux__
+#if defined(__linux__) && HAVE_PROCESS_VM_READV
 static uintptr_t
 find_map_start_address(proc_handle_t *handle, char* result_filename, const char* map)
 {
@@ -920,6 +922,8 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
 
     return 0;
 }
+
+#endif // defined(Py_SUPPORTS_REMOTE_DEBUG)
 
 int
 _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
