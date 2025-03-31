@@ -19,13 +19,13 @@
 #include <winrt\Windows.Storage.h>
 
 #ifdef PYTHONW
-#ifdef _DEBUG
+#ifdef Py_DEBUG
 const wchar_t *PROGNAME = L"pythonw_d.exe";
 #else
 const wchar_t *PROGNAME = L"pythonw.exe";
 #endif
 #else
-#ifdef _DEBUG
+#ifdef Py_DEBUG
 const wchar_t *PROGNAME = L"python_d.exe";
 #else
 const wchar_t *PROGNAME = L"python.exe";

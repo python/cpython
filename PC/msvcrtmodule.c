@@ -415,7 +415,7 @@ msvcrt_ungetwch_impl(PyObject *module, int unicode_char)
 
 #endif /* MS_WINDOWS_DESKTOP */
 
-#ifdef _DEBUG
+#ifdef Py_DEBUG
 /*[clinic input]
 msvcrt.CrtSetReportFile -> HANDLE
 
@@ -490,7 +490,7 @@ msvcrt_set_error_mode_impl(PyObject *module, int mode)
 
     return res;
 }
-#endif /* _DEBUG */
+#endif /* Py_DEBUG */
 
 #if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM)
 
@@ -604,7 +604,7 @@ exec_module(PyObject* m)
     INSERTINT(m, "SEM_NOGPFAULTERRORBOX", SEM_NOGPFAULTERRORBOX);
     INSERTINT(m, "SEM_NOOPENFILEERRORBOX", SEM_NOOPENFILEERRORBOX);
 #endif
-#ifdef _DEBUG
+#ifdef Py_DEBUG
     INSERTINT(m, "CRT_WARN", _CRT_WARN);
     INSERTINT(m, "CRT_ERROR", _CRT_ERROR);
     INSERTINT(m, "CRT_ASSERT", _CRT_ASSERT);

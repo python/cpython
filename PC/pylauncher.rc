@@ -16,13 +16,13 @@
 #elif defined(PYW_ICON)
 1 ICON DISCARDABLE "icons\pythonw.ico"
 #else
-1 ICON DISCARDABLE "icons\launcher.ico" 
-2 ICON DISCARDABLE "icons\py.ico" 
-3 ICON DISCARDABLE "icons\pyc.ico" 
-4 ICON DISCARDABLE "icons\pyd.ico" 
+1 ICON DISCARDABLE "icons\launcher.ico"
+2 ICON DISCARDABLE "icons\py.ico"
+3 ICON DISCARDABLE "icons\pyc.ico"
+4 ICON DISCARDABLE "icons\pyd.ico"
 5 ICON DISCARDABLE "icons\python.ico"
 6 ICON DISCARDABLE "icons\pythonw.ico"
-7 ICON DISCARDABLE "icons\setup.ico" 
+7 ICON DISCARDABLE "icons\setup.ico"
 #endif
 
 1 USAGE "launcher-usage.txt"
@@ -37,7 +37,7 @@ VS_VERSION_INFO VERSIONINFO
  FILEVERSION PYVERSION64
  PRODUCTVERSION PYVERSION64
  FILEFLAGSMASK 0x3fL
-#ifdef _DEBUG
+#ifdef Py_DEBUG
  FILEFLAGS VS_FF_DEBUG
 #else
  FILEFLAGS 0x0L

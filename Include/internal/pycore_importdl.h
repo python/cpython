@@ -107,7 +107,7 @@ extern int _PyImport_RunModInitFunc(
 #include <windows.h>
 typedef FARPROC dl_funcptr;
 
-#ifdef _DEBUG
+#ifdef Py_DEBUG
 #  define PYD_DEBUG_SUFFIX "_d"
 #else
 #  define PYD_DEBUG_SUFFIX ""

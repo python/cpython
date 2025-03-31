@@ -10,7 +10,7 @@
 #define MS_WINDOWS
 #include "modsupport.h"
 #include "patchlevel.h"
-#ifdef _DEBUG
+#ifdef Py_DEBUG
 #   define PYTHON_DEBUG_EXT "_d"
 #else
 #   define PYTHON_DEBUG_EXT
