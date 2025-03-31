@@ -4636,7 +4636,7 @@ class MiscTest(unittest.TestCase):
             None
         )
 
-        # gh-131936: _generate_suggestions didn't check for exactly a list
+        # gh-131936: _generate_suggestions() doesn't accept list subclasses
         class MyList(list):
             pass
 
