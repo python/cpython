@@ -731,4 +731,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=692c6f52bb9193ce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5cbbc70157dcfaed input=a9049054013a1b77]*/
