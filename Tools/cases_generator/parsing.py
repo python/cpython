@@ -103,8 +103,10 @@ class IfStmt(Stmt):
         for tkn in self.condition:
             out.emit(tkn)
         self.body.print(out)
-        if self.else_body is not None:
+        if self.else_ is not None:
             out.emit(self.else_)
+        self.body.print(out)
+        if self.else_body is not None:
             self.else_body.print(out)
 
     def accept(self, visitor: Visitor) -> None:
@@ -689,7 +691,7 @@ class Parser(PLexer):
         return IfStmt(if_, condition, body, else_, else_body)
 
 
-    def macro_if(self, cond: lx.Token) -> IfStmt:
+    def macro_if(self, cond: lx.Token) -> MacroIfStmt:
         else_ = None
         body: list[Stmt] = []
         else_body: list[Stmt] | None = None

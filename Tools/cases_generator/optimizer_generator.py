@@ -153,7 +153,7 @@ def write_uop(
             out.start_line()
             stack.flush(out)
     except StackError as ex:
-        raise analysis_error(ex.args[0], prototype.body[0]) # from None
+        raise analysis_error(ex.args[0], prototype.body.open) # from None
 
 
 SKIPS = ("_EXTENDED_ARG",)
