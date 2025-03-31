@@ -49,7 +49,6 @@ class ABCMeta(type):
         cls._abc_cache = WeakSet()
         cls._abc_negative_cache = WeakSet()
         cls._abc_negative_cache_version = ABCMeta._abc_invalidation_counter
-        cls._prevent_recursion = 0
         return cls
 
     def register(cls, subclass):
