@@ -1,7 +1,5 @@
 from _weakrefset import WeakSet
 
-_UNSET = object()
-
 
 def get_cache_token():
     """Returns the current ABC cache token.
