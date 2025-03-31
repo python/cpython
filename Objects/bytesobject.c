@@ -3996,11 +3996,10 @@ _PyBytesWriter_ResizeAndUpdatePointer(PyBytesWriter *writer, Py_ssize_t size,
 int
 PyBytesWriter_Grow(PyBytesWriter *writer, Py_ssize_t size)
 {
-    if (size < 0) {
-        PyErr_SetString(PyExc_ValueError, "size must be >= 0");
+    if (size < 0 && writer->size + size < 0) {
+        PyErr_SetString(PyExc_ValueError, "invalid size");
         return -1;
     }
-
     if (size > PY_SSIZE_T_MAX - writer->size) {
         PyErr_NoMemory();
         return -1;
