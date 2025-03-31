@@ -161,7 +161,7 @@ class Emitter:
         self.emit(") {\n")
         next(tkn_iter)  # Semi colon
         assert inst is not None
-        assert inst.family is not None
+        assert inst.family is not None, inst
         family_name = inst.family.name
         self.emit(f"UPDATE_MISS_STATS({family_name});\n")
         self.emit(f"assert(_PyOpcode_Deopt[opcode] == ({family_name}));\n")

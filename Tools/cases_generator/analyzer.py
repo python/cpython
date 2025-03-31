@@ -683,6 +683,7 @@ def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, Escapi
     calls = {e.call for e in escapes.values()}
 
     def visit(stmt: Stmt) -> None:
+        nonlocal error
         if isinstance(stmt, IfStmt) or isinstance(stmt, WhileStmt):
             for tkn in stmt.condition:
                 if tkn in calls:
@@ -694,13 +695,17 @@ def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, Escapi
                 if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF"):
                     in_if = 1
                     next(tkn_iter)
-                elif tkn.kind == "LPAREN" and in_if:
-                    in_if += 1
+                elif tkn.kind == "LPAREN":
+                    if in_if:
+                        in_if += 1
                 elif tkn.kind == "RPAREN":
                     if in_if:
                         in_if -= 1
-                if tkn in calls and in_if:
+                elif tkn in calls and in_if:
                     error = tkn
+
+
+    instr.block.accept(visit)
     if error is not None:
         raise analysis_error(f"Escaping call '{error.text} in condition", error)
 
