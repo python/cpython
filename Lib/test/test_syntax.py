@@ -1674,7 +1674,7 @@ raise a custom exception only when using 'as'
    ... except A, B, C as blech:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized when using 'as'
 
    >>> try:
    ...   pass
@@ -1691,7 +1691,7 @@ raise a custom exception only when using 'as'
    ... except* A, B, C as blech:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized when using 'as'
 
    >>> try:
    ...   pass
@@ -1700,7 +1700,7 @@ raise a custom exception only when using 'as'
    ... finally:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized when using 'as'
 
 Custom exception for 'except*' without an exception type
 
