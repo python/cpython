@@ -156,7 +156,7 @@ types_mutex_unlock(void)
 }
 
 #define ASSERT_TYPE_LOCK_HELD() \
-    {if (!types_world_is_stopped()) assert(types_mutex_is_owned());}
+    assert(types_world_is_stopped() || types_mutex_is_owned())
 
 #else
 
@@ -432,7 +432,8 @@ type_set_flags(PyTypeObject *tp, unsigned long flags)
     if (tp->tp_flags & Py_TPFLAGS_READY) {
         // It's possible the type object has been exposed to other threads
         // if it's been marked ready.  In that case, the type lock should be
-        // held when flags are modified.
+        // held when flags are modified (or the stop-the-world mechanism should
+        // be active).
         ASSERT_TYPE_LOCK_HELD();
     }
     ASSERT_NEW_OR_STOPPED(tp);
@@ -1923,18 +1924,9 @@ type_set_bases(PyObject *tp, PyObject *new_bases, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
     int res;
-    bool need_stop = !types_world_is_stopped();
-    if (need_stop) {
-        // This function can be re-entered.  We want to avoid trying to stop
-        // the world a second time if that happens.  Example call chain:
-        // mro_invoke() -> call_unbound_noarg() -> type_setattro() ->
-        // type_set_bases()
-        types_stop_world();
-    }
+    types_stop_world();
     res = type_set_bases_unlocked(type, new_bases);
-    if (need_stop) {
-        types_start_world();
-    }
+    types_start_world();
     return res;
 }
 
@@ -3487,16 +3479,48 @@ mro_invoke(PyTypeObject *type)
     const int custom = !Py_IS_TYPE(type, &PyType_Type);
 
     if (custom) {
+        // Custom mro() method on metaclass.  This is potentially
+        // re-entrant.  We are called either from type_ready(), in which case
+        // the TYPE_LOCK mutex is held, or from type_set_bases() (assignment to
+        // __bases__), in which case we need to stop-the-world in order to avoid
+        // data races.
+        bool stopped = types_world_is_stopped();
+        if (stopped) {
+            // Called for type_set_bases(), re-assigment of __bases__
+            types_start_world();
+        }
+        else {
+            // Called from type_ready()
+            ASSERT_TYPE_LOCK_HELD();
+            types_mutex_unlock();
+        }
         mro_result = call_method_noarg((PyObject *)type, &_Py_ID(mro));
+        if (mro_result != NULL) {
+            new_mro = PySequence_Tuple(mro_result);
+            Py_DECREF(mro_result);
+        }
+        else {
+            new_mro = NULL;
+        }
+        if (stopped) {
+            types_stop_world();
+        }
+        else {
+            types_mutex_lock();
+        }
     }
     else {
+        // In this case, the mro() method on the type object is being used and
+        // we know that these calls are not re-entrant.
         mro_result = mro_implementation(type);
+        if (mro_result != NULL) {
+            new_mro = PySequence_Tuple(mro_result);
+            Py_DECREF(mro_result);
+        }
+        else {
+            new_mro = NULL;
+        }
     }
-    if (mro_result == NULL)
-        return NULL;
-
-    new_mro = PySequence_Tuple(mro_result);
-    Py_DECREF(mro_result);
     if (new_mro == NULL) {
         return NULL;
     }
@@ -3549,9 +3573,7 @@ mro_internal_unlocked(PyTypeObject *type, int initial, PyObject **p_old_mro)
        Don't let old_mro be GC'ed and its address be reused for
        another object, like (suddenly!) a new tp_mro.  */
     old_mro = Py_XNewRef(lookup_tp_mro(type));
-    types_mutex_unlock();
     new_mro = mro_invoke(type);  /* might cause reentrance */
-    types_mutex_lock();
     reent = (lookup_tp_mro(type) != old_mro);
     Py_XDECREF(old_mro);
     if (new_mro == NULL) {
@@ -5523,7 +5545,6 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
     }
 
     PyObject *res = NULL;
-    types_mutex_lock();
 
     PyObject *mro = lookup_tp_mro(type);
     // The type must be ready
@@ -5550,7 +5571,6 @@ PyType_GetModuleByDef(PyTypeObject *type, PyModuleDef *def)
             break;
         }
     }
-    types_mutex_unlock();
 
     if (res == NULL) {
         PyErr_Format(
@@ -5806,12 +5826,14 @@ _PyTypes_AfterFork(void)
 #endif
 }
 
-// Try to assign a new type version tag, return it if
-// successful.  Return 0 if no version was assigned.
+// Try to assign a new type version tag, return it if successful.  Return 0
+// if no version was assigned.  Note that this function can be called while
+// holding the TYPE_LOCK mutex or when the stop-the-world mechanism is active.
 static unsigned int
 type_assign_version_lock_held(PyTypeObject *type)
 {
     ASSERT_TYPE_LOCK_HELD();
+    assert(!types_world_is_stopped());
     PyInterpreterState *interp = _PyInterpreterState_GET();
     if (assign_version_tag(interp, type)) {
         return type->tp_version_tag;
@@ -5916,6 +5938,8 @@ type_lookup_ex(PyTypeObject *type, PyObject *name, _PyStackRef *out,
     return assigned_version;
 }
 
+// Note that this function can be called while holding the TYPE_LOCK mutex or
+// when the stop-the-world mechanism is active.
 static unsigned int
 type_lookup_lock_held(PyTypeObject *type, PyObject *name, _PyStackRef *out)
 {
@@ -6019,7 +6043,6 @@ _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor
 void
 _PyType_SetFlags(PyTypeObject *self, unsigned long mask, unsigned long flags)
 {
-    types_mutex_lock();
     unsigned long new_flags = (self->tp_flags & ~mask) | flags;
     if (new_flags != self->tp_flags) {
         types_stop_world();
@@ -6027,7 +6050,6 @@ _PyType_SetFlags(PyTypeObject *self, unsigned long mask, unsigned long flags)
         self->tp_flags = (self->tp_flags & ~mask) | flags;
         types_start_world();
     }
-    types_mutex_unlock();
 }
 
 int
@@ -6190,18 +6212,6 @@ _Py_type_getattro(PyObject *tp, PyObject *name)
     return _Py_type_getattro_impl(type, name, NULL);
 }
 
-#ifdef Py_GIL_DISABLED
-static int
-update_slot_world_stopped(PyTypeObject *type, PyObject *name)
-{
-    int ret;
-    types_stop_world();
-    ret = update_slot(type, name);
-    types_start_world();
-    return ret;
-}
-#endif
-
 // Called by type_setattro().  Updates both the type dict and
 // any type slots that correspond to the modified entry.
 static int
@@ -6241,7 +6251,11 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
 #ifdef Py_GIL_DISABLED
     if (is_dunder_name(name) && has_slotdef(name)) {
         // update is potentially changing one or more slots
-        return update_slot_world_stopped(type, name);
+        int ret;
+        types_stop_world();
+        ret = update_slot(type, name);
+        types_start_world();
+        return ret;
     }
 #else
     if (is_dunder_name(name)) {
@@ -6319,7 +6333,7 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
         }
     }
 
-    // FIXME: can this deadlock? if so, how to avoid
+    // FIXME: I'm not totaly sure this is safe from a deadlock. If so, how to avoid?
     types_mutex_lock();
     Py_BEGIN_CRITICAL_SECTION(dict);
     res = type_update_dict(type, (PyDictObject *)dict, name, value, &old_value);
@@ -7254,14 +7268,10 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         return -1;
     }
 
-#ifdef Py_GIL_DISABLED
     types_stop_world();
-#endif
     PyTypeObject *oldto = Py_TYPE(self);
     int res = object_set_class_world_stopped(self, newto);
-#ifdef Py_GIL_DISABLED
     types_start_world();
-#endif
     if (res == 0) {
         if (oldto->tp_flags & Py_TPFLAGS_HEAPTYPE) {
             Py_DECREF(oldto);
@@ -10736,9 +10746,7 @@ releasebuffer_maybe_call_super(PyObject *self, Py_buffer *buffer)
 {
     releasebufferproc base_releasebuffer;
 
-    types_mutex_lock();
     base_releasebuffer = releasebuffer_maybe_call_super_unlocked(self, buffer);
-    types_mutex_unlock();
 
     if (base_releasebuffer != NULL) {
         base_releasebuffer(self, buffer);
@@ -11806,14 +11814,8 @@ _super_lookup_descr(PyTypeObject *su_type, PyTypeObject *su_obj_type, PyObject *
     PyObject *mro, *res;
     Py_ssize_t i, n;
 
-    types_mutex_lock();
     mro = lookup_tp_mro(su_obj_type);
-    /* keep a strong reference to mro because su_obj_type->tp_mro can be
-       replaced during PyDict_GetItemRef(dict, name, &res) and because
-       another thread can modify it after we end the critical section
-       below  */
     Py_XINCREF(mro);
-    types_mutex_unlock();
 
     if (mro == NULL)
         return NULL;
