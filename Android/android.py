@@ -111,7 +111,7 @@ def run(command, *, host=None, env=None, log=True, **kwargs):
 
 def build_python_path():
     """The path to the build Python binary."""
-    build_dir = subdir("build", "build")
+    build_dir = subdir("build")
     binary = build_dir / "python"
     if not binary.is_file():
         binary = binary.with_suffix(".exe")
@@ -125,7 +125,7 @@ def build_python_path():
 def configure_build_python(context):
     if context.clean:
         clean("build")
-    os.chdir(subdir("build", "build", create=True))
+    os.chdir(subdir("build", create=True))
 
     command = [relpath(CHECKOUT / "configure")]
     if context.args:
@@ -134,7 +134,7 @@ def configure_build_python(context):
 
 
 def make_build_python(context):
-    os.chdir(subdir("build", "build"))
+    os.chdir(subdir("build"))
     run(["make", "-j", str(os.cpu_count())])
 
 
@@ -158,14 +158,14 @@ def configure_host_python(context):
     if context.clean:
         clean(context.host)
 
-    prefix_dir = subdir(context.host, "prefix", create=True)
-    if not (prefix_dir / "include").exists():
+    host_dir = subdir(context.host, create=True)
+    prefix_dir = host_dir / "prefix"
+    if not prefix_dir.exists():
+        prefix_dir.mkdir()
         os.chdir(prefix_dir)
         unpack_deps(context.host)
 
-    build_dir = subdir(context.host, "build", create=True)
-    os.chdir(build_dir)
-
+    os.chdir(host_dir)
     command = [
         # Basic cross-compiling configuration
         relpath(CHECKOUT / "configure"),
@@ -192,11 +192,12 @@ def make_host_python(context):
     # The CFLAGS and LDFLAGS set in android-env include the prefix dir, so
     # delete any previous Python installation to prevent it being used during
     # the build.
-    prefix_dir = subdir(context.host, "prefix")
+    host_dir = subdir(context.host)
+    prefix_dir = host_dir / "prefix"
     for pattern in ("include/python*", "lib/libpython*", "lib/python*"):
         delete_glob(f"{prefix_dir}/{pattern}")
 
-    os.chdir(subdir(context.host, "build"))
+    os.chdir(host_dir)
     run(["make", "-j", str(os.cpu_count())], host=context.host)
     run(["make", "install", f"prefix={prefix_dir}"], host=context.host)
 
@@ -209,10 +210,7 @@ def build_all(context):
 
 
 def clean(host):
-    # Don't delete "dist", as that could be difficult to regenerate, and won't
-    # affect future builds anyway.
-    for name in ["build", "prefix"]:
-        delete_glob(CROSS_BUILD_DIR / host / name)
+    delete_glob(CROSS_BUILD_DIR / host)
 
 
 def clean_all(context):
