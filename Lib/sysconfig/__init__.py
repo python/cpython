@@ -338,7 +338,7 @@ def get_makefile_filename():
     # This flag will always be True since Python 3.16
     with warnings.catch_warnings():
         # ignore DeprecationWarning on sys.abiflags change on Windows
-        warnings.simplefilter('ignore', DeprecationWarning)
+        warnings.filterwarnings('ignore', r'sys\.abiflags', category=DeprecationWarning)
         has_abiflags = hasattr(sys, 'abiflags')
 
     if has_abiflags:

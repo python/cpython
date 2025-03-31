@@ -881,7 +881,7 @@ def check_bolt_optimized():
 # This flag will always be True since Python 3.16
 with warnings.catch_warnings():
     # ignore DeprecationWarning on sys.abiflags change on Windows
-    warnings.simplefilter('ignore', DeprecationWarning)
+    warnings.filterwarnings('ignore', r'sys\.abiflags', category=DeprecationWarning)
     # Equal to `not sys.platform.startswith('win')` prior to 3.16
     HAS_SYS_ABIFLAGS = hasattr(sys, 'abiflags')
 

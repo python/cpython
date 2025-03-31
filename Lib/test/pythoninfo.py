@@ -51,7 +51,7 @@ def copy_attributes(info_add, obj, name_fmt, attributes, *, formatter=None):
             # XXX: Remove this special case handling in Python 3.16
             with warnings.catch_warnings():
                 # ignore DeprecationWarning on sys.abiflags change on Windows
-                warnings.simplefilter("ignore", DeprecationWarning)
+                warnings.filterwarnings('ignore', r'sys\.abiflags', category=DeprecationWarning)
                 value = getattr(obj, attr, None)
         else:
             value = getattr(obj, attr, None)
