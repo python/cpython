@@ -60,11 +60,11 @@ class ExecutorTest:
         error = None
         try:
             next(i)
-        except ZeroDivisionError as zero_div_error:
-            error = zero_div_error
-        self.assertIsNotNone(
-            error,
-            msg="next one should raise a ZeroDivisionError",
+        except Exception as e:
+            error = e
+        self.assertTrue(
+            isinstance(error, ZeroDivisionError),
+            msg="next should raise a ZeroDivisionError",
         )
 
         self.assertFalse(
