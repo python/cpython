@@ -43,8 +43,13 @@ jobs:
         -p "${ARCH}"
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
       shell: bash
+    - uses: actions/upload-artifact@v4
+      with:
+        name: windows-${{ inputs.arch }}-bin
+        path: ./PCbuild/${{ inputs.arch }}
     - name: Display build info
       run: .\\python.bat -m test.pythoninfo
+      shell: cmd
     - name: Tests
       run: >-
         .\\PCbuild\\rt.bat
