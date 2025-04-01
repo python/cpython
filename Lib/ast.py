@@ -652,6 +652,9 @@ def main():
 if __name__ == '__main__':
     main()
 
+def __dir__():
+    dir_ = {n for n in globals() if not n.startswith('_') and n != 'sys'}
+    return sorted(dir_ | {'unparse'})
 
 def __getattr__(name):
     if name == 'unparse':
