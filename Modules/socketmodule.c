@@ -2107,6 +2107,21 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             straddr = PyBytes_AS_STRING(args);
             if (setbdaddr(straddr, &_BT_HCI_MEMB(addr, bdaddr)) < 0)
                 return 0;
+#elif defined(__FreeBSD__)
+            _BT_HCI_MEMB(addr, family) = AF_BLUETOOTH;
+            if (!PyBytes_Check(args)) {
+                PyErr_Format(PyExc_OSError, "%s: "
+                             "wrong node format", caller);
+                return 0;
+            }
+            const char *straddr = PyBytes_AS_STRING(args);
+            size_t len = PyBytes_GET_SIZE(args);
+            if (len >= sizeof(_BT_HCI_MEMB(addr, node))) {
+                PyErr_Format(PyExc_OSError, "%s: "
+                             "node too long", caller);
+                return 0;
+            }
+            strcpy(_BT_HCI_MEMB(addr, node), straddr);
 #else  /* __NetBSD__ || __DragonFly__ */
             _BT_HCI_MEMB(addr, family) = AF_BLUETOOTH;
             unsigned short dev = _BT_HCI_MEMB(addr, dev);
