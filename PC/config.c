@@ -14,20 +14,22 @@ extern PyObject* PyInit_faulthandler(void);
 extern PyObject* PyInit__tracemalloc(void);
 extern PyObject* PyInit_gc(void);
 extern PyObject* PyInit_math(void);
-extern PyObject* PyInit__md5(void);
 extern PyObject* PyInit_nt(void);
 extern PyObject* PyInit__operator(void);
 extern PyObject* PyInit__signal(void);
-extern PyObject* PyInit__sha1(void);
-extern PyObject* PyInit__sha2(void);
-extern PyObject* PyInit__sha3(void);
 extern PyObject* PyInit__statistics(void);
 extern PyObject* PyInit__sysconfig(void);
 extern PyObject* PyInit__typing(void);
-extern PyObject* PyInit__blake2(void);
-extern PyObject* PyInit__hmac(void);
 extern PyObject* PyInit_time(void);
 extern PyObject* PyInit__thread(void);
+/* cryptographic primitives */
+extern PyObject* PyInit__blake2(void);
+extern PyObject* PyInit__md5(void);
+extern PyObject* PyInit__sha1(void);
+extern PyObject* PyInit__sha2(void);
+extern PyObject* PyInit__sha3(void);
+extern PyObject* PyInit__hmac(void);
+/* ------------------------ */
 #ifdef WIN32
 extern PyObject* PyInit_msvcrt(void);
 extern PyObject* PyInit__locale(void);
@@ -99,6 +101,13 @@ struct _inittab _PyImport_Inittab[] = {
     {"nt", PyInit_nt}, /* Use the NT os functions, not posix */
     {"_operator", PyInit__operator},
     {"_signal", PyInit__signal},
+    {"_sysconfig", PyInit__sysconfig},
+    {"time", PyInit_time},
+    {"_thread", PyInit__thread},
+    {"_tokenize", PyInit__tokenize},
+    {"_typing", PyInit__typing},
+    {"_statistics", PyInit__statistics},
+
     /* cryptographic hash functions */
     {"_blake2", PyInit__blake2},
     {"_md5", PyInit__md5},
@@ -108,12 +117,6 @@ struct _inittab _PyImport_Inittab[] = {
     /* other cryptographic primitives */
     {"_hmac", PyInit__hmac},
 
-    {"_sysconfig", PyInit__sysconfig},
-    {"time", PyInit_time},
-    {"_thread", PyInit__thread},
-    {"_tokenize", PyInit__tokenize},
-    {"_typing", PyInit__typing},
-    {"_statistics", PyInit__statistics},
 #ifdef WIN32
     {"msvcrt", PyInit_msvcrt},
     {"_locale", PyInit__locale},
