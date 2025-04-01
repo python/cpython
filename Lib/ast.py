@@ -662,10 +662,4 @@ def __getattr__(name):
         from _ast_unparse import unparse
         return unparse
 
-    if name in {'_INFSTR', '_SINGLE_QUOTES', '_MULTI_QUOTES', '_ALL_QUOTES',
-                '_Precedence', '_Unparser'}:
-        # all of these names are private, but re-exported for compatibility
-        import _ast_unparse
-        return getattr(_ast_unparse, name)
-
     raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
