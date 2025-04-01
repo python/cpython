@@ -3389,7 +3389,7 @@ Text = str
 
 
 # Constant that's True when type checking, but False here.
-TYPE_CHECKING = False
+TYPE_CHECKING = __type_checking__
 
 
 class IO(Generic[AnyStr]):
