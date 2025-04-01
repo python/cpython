@@ -5555,9 +5555,10 @@ Pointer_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 }
 
 static int
-copy_pointer_to_list_lock_held(PyObject *myself, PyObject *np, Py_ssize_t start, Py_ssize_t step)
+copy_pointer_to_list_lock_held(PyObject *myself, PyObject *np, Py_ssize_t len,
+                               Py_ssize_t start, Py_ssize_t step)
 {
-    Py_ssize_t i, len;
+    Py_ssize_t i;
     size_t cur;
     for (cur = start, i = 0; i < len; cur += step, i++) {
         PyObject *v = Pointer_item_lock_held(myself, cur);
@@ -5711,7 +5712,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
 
         int res;
         LOCK_PTR(self);
-        res = copy_pointer_to_list_lock_held(myself, np, start, step);
+        res = copy_pointer_to_list_lock_held(myself, np, len, start, step);
         UNLOCK_PTR(self);
         if (res < 0) {
             Py_DECREF(np);
