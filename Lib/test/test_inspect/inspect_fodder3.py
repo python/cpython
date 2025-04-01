@@ -20,7 +20,7 @@ class ChildPropertyFoo(ParentInheritDoc):
 
 class ChildMethodFoo(ParentInheritDoc):
     def foo(self):
-        "docstring for the method foo"
+        """docstring for the method foo"""
 
 # Docstring in child but not parent
 class ParentNoDoc:
