@@ -1,6 +1,6 @@
 from pathlib import Path
-from test.support.import_helper import unload, CleanImport
-from test.support.warnings_helper import check_warnings, ignore_warnings
+from test.support.import_helper import unload
+from test.support.warnings_helper import check_warnings
 import unittest
 import sys
 import importlib
@@ -11,6 +11,10 @@ import os.path
 import tempfile
 import shutil
 import zipfile
+
+from test.support.import_helper import DirsOnSysPath
+from test.support.os_helper import FakePath
+from test.test_importlib.util import uncache
 
 # Note: pkgutil.walk_packages is currently tested in test_runpy. This is
 # a hack to get a major issue resolved for 3.3b2. Longer term, it should
@@ -118,7 +122,7 @@ class PkgutilTests(unittest.TestCase):
 
             # make sure iter_modules accepts Path objects
             names = []
-            for moduleinfo in pkgutil.iter_modules([Path(zip_file)]):
+            for moduleinfo in pkgutil.iter_modules([FakePath(zip_file)]):
                 self.assertIsInstance(moduleinfo, pkgutil.ModuleInfo)
                 names.append(moduleinfo.name)
             self.assertEqual(names, [pkg])
@@ -318,6 +322,38 @@ class PkgutilTests(unittest.TestCase):
                 with self.assertRaises(exc):
                     pkgutil.resolve_name(s)
 
+    def test_name_resolution_import_rebinding(self):
+        # The same data is also used for testing import in test_import and
+        # mock.patch in test_unittest.
+        path = os.path.join(os.path.dirname(__file__), 'test_import', 'data')
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package3.submodule.attr'), 'submodule')
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package3.submodule:attr'), 'submodule')
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package3:submodule.attr'), 'rebound')
+            self.assertEqual(pkgutil.resolve_name('package3.submodule.attr'), 'submodule')
+            self.assertEqual(pkgutil.resolve_name('package3:submodule.attr'), 'rebound')
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package3:submodule.attr'), 'rebound')
+            self.assertEqual(pkgutil.resolve_name('package3.submodule:attr'), 'submodule')
+            self.assertEqual(pkgutil.resolve_name('package3:submodule.attr'), 'rebound')
+
+    def test_name_resolution_import_rebinding2(self):
+        path = os.path.join(os.path.dirname(__file__), 'test_import', 'data')
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package4.submodule.attr'), 'submodule')
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package4.submodule:attr'), 'submodule')
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package4:submodule.attr'), 'origin')
+            self.assertEqual(pkgutil.resolve_name('package4.submodule.attr'), 'submodule')
+            self.assertEqual(pkgutil.resolve_name('package4:submodule.attr'), 'submodule')
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            self.assertEqual(pkgutil.resolve_name('package4:submodule.attr'), 'origin')
+            self.assertEqual(pkgutil.resolve_name('package4.submodule:attr'), 'submodule')
+            self.assertEqual(pkgutil.resolve_name('package4:submodule.attr'), 'submodule')
+
 
 class PkgutilPEP302Tests(unittest.TestCase):
 
@@ -486,7 +522,43 @@ class ExtendPathTests(unittest.TestCase):
         del sys.modules['foo.bar']
         del sys.modules['foo.baz']
 
-    # XXX: test .pkg files
+
+    def test_extend_path_argument_types(self):
+        pkgname = 'foo'
+        dirname_0 = self.create_init(pkgname)
+
+        # If the input path is not a list it is returned unchanged
+        self.assertEqual('notalist', pkgutil.extend_path('notalist', 'foo'))
+        self.assertEqual(('not', 'a', 'list'), pkgutil.extend_path(('not', 'a', 'list'), 'foo'))
+        self.assertEqual(123, pkgutil.extend_path(123, 'foo'))
+        self.assertEqual(None, pkgutil.extend_path(None, 'foo'))
+
+        # Cleanup
+        shutil.rmtree(dirname_0)
+        del sys.path[0]
+
+
+    def test_extend_path_pkg_files(self):
+        pkgname = 'foo'
+        dirname_0 = self.create_init(pkgname)
+
+        with open(os.path.join(dirname_0, 'bar.pkg'), 'w') as pkg_file:
+            pkg_file.write('\n'.join([
+                'baz',
+                '/foo/bar/baz',
+                '',
+                '#comment'
+            ]))
+
+        extended_paths = pkgutil.extend_path(sys.path, 'bar')
+
+        self.assertEqual(extended_paths[:-2], sys.path)
+        self.assertEqual(extended_paths[-2], 'baz')
+        self.assertEqual(extended_paths[-1], '/foo/bar/baz')
+
+        # Cleanup
+        shutil.rmtree(dirname_0)
+        del sys.path[0]
 
 
 class NestedNamespacePackageTest(unittest.TestCase):
@@ -534,67 +606,6 @@ class ImportlibMigrationTests(unittest.TestCase):
     # With full PEP 302 support in the standard import machinery, the
     # PEP 302 emulation in this module is in the process of being
     # deprecated in favour of importlib proper
-
-    @unittest.skipIf(__name__ == '__main__', 'not compatible with __main__')
-    @ignore_warnings(category=DeprecationWarning)
-    def test_get_loader_handles_missing_loader_attribute(self):
-        global __loader__
-        this_loader = __loader__
-        del __loader__
-        try:
-            self.assertIsNotNone(pkgutil.get_loader(__name__))
-        finally:
-            __loader__ = this_loader
-
-    @ignore_warnings(category=DeprecationWarning)
-    def test_get_loader_handles_missing_spec_attribute(self):
-        name = 'spam'
-        mod = type(sys)(name)
-        del mod.__spec__
-        with CleanImport(name):
-            sys.modules[name] = mod
-            loader = pkgutil.get_loader(name)
-        self.assertIsNone(loader)
-
-    @ignore_warnings(category=DeprecationWarning)
-    def test_get_loader_handles_spec_attribute_none(self):
-        name = 'spam'
-        mod = type(sys)(name)
-        mod.__spec__ = None
-        with CleanImport(name):
-            sys.modules[name] = mod
-            loader = pkgutil.get_loader(name)
-        self.assertIsNone(loader)
-
-    @ignore_warnings(category=DeprecationWarning)
-    def test_get_loader_None_in_sys_modules(self):
-        name = 'totally bogus'
-        sys.modules[name] = None
-        try:
-            loader = pkgutil.get_loader(name)
-        finally:
-            del sys.modules[name]
-        self.assertIsNone(loader)
-
-    def test_get_loader_is_deprecated(self):
-        with check_warnings(
-            (r".*\bpkgutil.get_loader\b.*", DeprecationWarning),
-        ):
-            res = pkgutil.get_loader("sys")
-        self.assertIsNotNone(res)
-
-    def test_find_loader_is_deprecated(self):
-        with check_warnings(
-            (r".*\bpkgutil.find_loader\b.*", DeprecationWarning),
-        ):
-            res = pkgutil.find_loader("sys")
-        self.assertIsNotNone(res)
-
-    @ignore_warnings(category=DeprecationWarning)
-    def test_find_loader_missing_module(self):
-        name = 'totally bogus'
-        loader = pkgutil.find_loader(name)
-        self.assertIsNone(loader)
 
     def test_get_importer_avoids_emulation(self):
         # We use an illegal path so *none* of the path hooks should fire

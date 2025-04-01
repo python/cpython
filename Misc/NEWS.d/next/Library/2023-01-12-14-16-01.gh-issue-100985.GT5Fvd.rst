@@ -1,2 +1,0 @@
-Update HTTPSConnection to consistently wrap IPv6 Addresses when using a
-proxy.

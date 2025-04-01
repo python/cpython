@@ -11,9 +11,8 @@ The following modules have a command-line interface.
 * :mod:`code`
 * :ref:`compileall <compileall-cli>`
 * :mod:`cProfile`: see :ref:`profile <profile-cli>`
-* :ref:`difflib <difflib-interface>`
 * :ref:`dis <dis-cli>`
-* :mod:`doctest`
+* :ref:`doctest <doctest-cli>`
 * :mod:`!encodings.rot_13`
 * :mod:`ensurepip`
 * :mod:`filecmp`
@@ -23,10 +22,10 @@ The following modules have a command-line interface.
 * :ref:`http.server <http-server-cli>`
 * :mod:`!idlelib`
 * :ref:`inspect <inspect-module-cli>`
-* :ref:`json.tool <json-commandline>`
-* :mod:`mimetypes`
+* :ref:`json <json-commandline>`
+* :ref:`mimetypes <mimetypes-cli>`
 * :mod:`pdb`
-* :mod:`pickle`
+* :ref:`pickle <pickle-cli>`
 * :ref:`pickletools <pickletools-cli>`
 * :mod:`platform`
 * :mod:`poplib`
@@ -36,9 +35,11 @@ The following modules have a command-line interface.
 * :mod:`pyclbr`
 * :mod:`pydoc`
 * :mod:`quopri`
+* :ref:`random <random-cli>`
 * :mod:`runpy`
 * :ref:`site <site-commandline>`
 * :ref:`sqlite3 <sqlite3-cli>`
+* :ref:`symtable <symtable-cli>`
 * :ref:`sysconfig <sysconfig-cli>`
 * :mod:`tabnanny`
 * :ref:`tarfile <tarfile-commandline>`

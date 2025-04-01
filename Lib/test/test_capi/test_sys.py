@@ -5,9 +5,9 @@ from test import support
 from test.support import import_helper
 
 try:
-    import _testcapi
+    import _testlimitedcapi
 except ImportError:
-    _testcapi = None
+    _testlimitedcapi = None
 
 NULL = None
 
@@ -20,10 +20,10 @@ class CAPITest(unittest.TestCase):
     maxDiff = None
 
     @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_sys_getobject(self):
         # Test PySys_GetObject()
-        getobject = _testcapi.sys_getobject
+        getobject = _testlimitedcapi.sys_getobject
 
         self.assertIs(getobject(b'stdout'), sys.stdout)
         with support.swap_attr(sys, '\U0001f40d', 42):
@@ -38,10 +38,10 @@ class CAPITest(unittest.TestCase):
         # CRASHES getobject(NULL)
 
     @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_sys_setobject(self):
         # Test PySys_SetObject()
-        setobject = _testcapi.sys_setobject
+        setobject = _testlimitedcapi.sys_setobject
 
         value = ['value']
         value2 = ['value2']
@@ -51,7 +51,7 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(setobject(b'newattr', value2), 0)
             self.assertIs(sys.newattr, value2)
             self.assertEqual(setobject(b'newattr', NULL), 0)
-            self.assertFalse(hasattr(sys, 'newattr'))
+            self.assertNotHasAttr(sys, 'newattr')
             self.assertEqual(setobject(b'newattr', NULL), 0)
         finally:
             with contextlib.suppress(AttributeError):
@@ -60,7 +60,7 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(setobject('\U0001f40d'.encode(), value), 0)
             self.assertIs(getattr(sys, '\U0001f40d'), value)
             self.assertEqual(setobject('\U0001f40d'.encode(), NULL), 0)
-            self.assertFalse(hasattr(sys, '\U0001f40d'))
+            self.assertNotHasAttr(sys, '\U0001f40d')
         finally:
             with contextlib.suppress(AttributeError):
                 delattr(sys, '\U0001f40d')
@@ -70,10 +70,10 @@ class CAPITest(unittest.TestCase):
         # CRASHES setobject(NULL, value)
 
     @support.cpython_only
-    @unittest.skipIf(_testcapi is None, 'need _testcapi module')
+    @unittest.skipIf(_testlimitedcapi is None, 'need _testlimitedcapi module')
     def test_sys_getxoptions(self):
         # Test PySys_GetXOptions()
-        getxoptions = _testcapi.sys_getxoptions
+        getxoptions = _testlimitedcapi.sys_getxoptions
 
         self.assertIs(getxoptions(), sys._xoptions)
 

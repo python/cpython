@@ -8,7 +8,6 @@ import itertools
 import pprint
 import random
 import re
-import test.support
 import types
 import unittest
 

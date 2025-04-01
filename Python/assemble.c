@@ -1,11 +1,12 @@
-#include <stdbool.h>
-
 #include "Python.h"
 #include "pycore_code.h"            // write_location_entry_start()
 #include "pycore_compile.h"
+#include "pycore_instruction_sequence.h"
 #include "pycore_opcode_utils.h"    // IS_BACKWARDS_JUMP_OPCODE
 #include "pycore_opcode_metadata.h" // is_pseudo_target, _PyOpcode_Caches
+#include "pycore_symtable.h"        // _Py_SourceLocation
 
+#include <stdbool.h>
 
 #define DEFAULT_CODE_SIZE 128
 #define DEFAULT_LNOTAB_SIZE 16
@@ -21,9 +22,9 @@
         return ERROR;       \
     }
 
-typedef _PyCompilerSrcLocation location;
-typedef _PyCompile_Instruction instruction;
-typedef _PyCompile_InstructionSequence instr_sequence;
+typedef _Py_SourceLocation location;
+typedef _PyInstruction instruction;
+typedef _PyInstructionSequence instr_sequence;
 
 static inline bool
 same_location(location a, location b)
@@ -125,13 +126,13 @@ assemble_emit_exception_table_item(struct assembler *a, int value, int msb)
     write_except_byte(a, (value&0x3f) | msb);
 }
 
-/* See Objects/exception_handling_notes.txt for details of layout */
+/* See InternalDocs/exception_handling.md for details of layout */
 #define MAX_SIZE_OF_ENTRY 20
 
 static int
 assemble_emit_exception_table_entry(struct assembler *a, int start, int end,
                                     int handler_offset,
-                                    _PyCompile_ExceptHandlerInfo *handler)
+                                    _PyExceptHandlerInfo *handler)
 {
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_except_table);
     if (a->a_except_table_off + MAX_SIZE_OF_ENTRY >= len) {
@@ -157,7 +158,7 @@ static int
 assemble_exception_table(struct assembler *a, instr_sequence *instrs)
 {
     int ioffset = 0;
-    _PyCompile_ExceptHandlerInfo handler;
+    _PyExceptHandlerInfo handler;
     handler.h_label = -1;
     handler.h_startdepth = -1;
     handler.h_preserve_lasti = -1;
@@ -290,6 +291,7 @@ write_location_info_entry(struct assembler* a, location loc, int isize)
         RETURN_IF_ERROR(_PyBytes_Resize(&a->a_linetable, len*2));
     }
     if (loc.lineno < 0) {
+        assert(loc.lineno == NO_LOCATION.lineno);
         write_location_info_none(a, isize);
         return SUCCESS;
     }
@@ -340,6 +342,18 @@ assemble_location_info(struct assembler *a, instr_sequence *instrs,
 {
     a->a_lineno = firstlineno;
     location loc = NO_LOCATION;
+    for (int i = instrs->s_used-1; i >= 0; i--) {
+        instruction *instr = &instrs->s_instrs[i];
+        if (same_location(instr->i_loc, NEXT_LOCATION)) {
+            if (IS_TERMINATOR_OPCODE(instr->i_opcode)) {
+                instr->i_loc = NO_LOCATION;
+            }
+            else {
+                assert(i < instrs->s_used-1);
+                instr->i_loc = instr[1].i_loc;
+            }
+        }
+    }
     int size = 0;
     for (int i = 0; i < instrs->s_used; i++) {
         instruction *instr = &instrs->s_instrs[i];
@@ -367,17 +381,17 @@ write_instr(_Py_CODEUNIT *codestr, instruction *instr, int ilen)
             codestr->op.code = EXTENDED_ARG;
             codestr->op.arg = (oparg >> 24) & 0xFF;
             codestr++;
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 3:
             codestr->op.code = EXTENDED_ARG;
             codestr->op.arg = (oparg >> 16) & 0xFF;
             codestr++;
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 2:
             codestr->op.code = EXTENDED_ARG;
             codestr->op.arg = (oparg >> 8) & 0xFF;
             codestr++;
-            /* fall through */
+            _Py_FALLTHROUGH;
         case 1:
             codestr->op.code = opcode;
             codestr->op.arg = oparg & 0xFF;
@@ -631,6 +645,10 @@ error:
     return co;
 }
 
+
+// The offset (in code units) of the END_SEND from the SEND in the `yield from` sequence.
+#define END_SEND_OFFSET 5
+
 static int
 resolve_jump_offsets(instr_sequence *instrs)
 {
@@ -669,7 +687,12 @@ resolve_jump_offsets(instr_sequence *instrs)
             if (OPCODE_HAS_JUMP(instr->i_opcode)) {
                 instruction *target = &instrs->s_instrs[instr->i_target];
                 instr->i_oparg = target->i_offset;
-                if (instr->i_oparg < offset) {
+                if (instr->i_opcode == END_ASYNC_FOR) {
+                    // sys.monitoring needs to be able to find the matching END_SEND
+                    // but the target is the SEND, so we adjust it here.
+                    instr->i_oparg = offset - instr->i_oparg - END_SEND_OFFSET;
+                }
+                else if (instr->i_oparg < offset) {
                     assert(IS_BACKWARDS_JUMP_OPCODE(instr->i_opcode));
                     instr->i_oparg = offset - instr->i_oparg;
                 }
@@ -735,7 +758,9 @@ _PyAssemble_MakeCodeObject(_PyCompile_CodeUnitMetadata *umd, PyObject *const_cac
                            PyObject *consts, int maxdepth, instr_sequence *instrs,
                            int nlocalsplus, int code_flags, PyObject *filename)
 {
-
+    if (_PyInstructionSequence_ApplyLabelMap(instrs) < 0) {
+        return NULL;
+    }
     if (resolve_unconditional_jumps(instrs) < 0) {
         return NULL;
     }

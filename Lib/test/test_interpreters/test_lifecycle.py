@@ -10,7 +10,7 @@ from test import support
 from test.support import import_helper
 from test.support import os_helper
 # Raise SkipTest if subinterpreters not supported.
-import_helper.import_module('_xxsubinterpreters')
+import_helper.import_module('_interpreters')
 from .utils import TestBase
 
 
@@ -124,7 +124,7 @@ class StartupTests(TestBase):
             orig = sys.path[0]
 
             interp = interpreters.create()
-            interp.exec_sync(f"""if True:
+            interp.exec(f"""if True:
                 import json
                 import sys
                 print(json.dumps({{
@@ -164,6 +164,7 @@ class StartupTests(TestBase):
 
 class FinalizationTests(TestBase):
 
+    @support.requires_subprocess()
     def test_gh_109793(self):
         # Make sure finalization finishes and the correct error code
         # is reported, even when subinterpreters get cleaned up at the end.

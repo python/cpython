@@ -1,6 +1,5 @@
 # Windows specific tests
 
-import _ctypes_test
 import ctypes
 import errno
 import sys
@@ -9,6 +8,7 @@ from ctypes import (CDLL, Structure, POINTER, pointer, sizeof, byref,
                     _pointer_type_cache,
                     c_void_p, c_char, c_int, c_long)
 from test import support
+from test.support import import_helper
 from ._support import Py_TPFLAGS_DISALLOW_INSTANTIATION, Py_TPFLAGS_IMMUTABLETYPE
 
 
@@ -36,6 +36,7 @@ class FunctionCallTestCase(unittest.TestCase):
 @unittest.skipUnless(sys.platform == "win32", 'Windows-specific test')
 class ReturnStructSizesTestCase(unittest.TestCase):
     def test_sizes(self):
+        _ctypes_test = import_helper.import_module("_ctypes_test")
         dll = CDLL(_ctypes_test.__file__)
         for i in range(1, 11):
             fields = [ (f"f{f}", c_char) for f in range(1, i + 1)]
@@ -64,15 +65,16 @@ class TestWintypes(unittest.TestCase):
                              sizeof(c_void_p))
 
     def test_COMError(self):
-        from _ctypes import COMError
+        from ctypes import COMError
         if support.HAVE_DOCSTRINGS:
             self.assertEqual(COMError.__doc__,
                              "Raised when a COM method call failed.")
 
-        ex = COMError(-1, "text", ("details",))
+        ex = COMError(-1, "text", ("descr", "source", "helpfile", 0, "progid"))
         self.assertEqual(ex.hresult, -1)
         self.assertEqual(ex.text, "text")
-        self.assertEqual(ex.details, ("details",))
+        self.assertEqual(ex.details,
+                         ("descr", "source", "helpfile", 0, "progid"))
 
         self.assertEqual(COMError.mro(),
                          [COMError, Exception, BaseException, object])
@@ -116,6 +118,7 @@ class Structures(unittest.TestCase):
                         ("right", c_long),
                         ("bottom", c_long)]
 
+        _ctypes_test = import_helper.import_module("_ctypes_test")
         dll = CDLL(_ctypes_test.__file__)
 
         pt = POINT(15, 25)

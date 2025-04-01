@@ -1492,8 +1492,8 @@ class FPTest(NumberTest):
             if a.itemsize==1:
                 self.assertEqual(a, b)
             else:
-                # On alphas treating the byte swapped bit patters as
-                # floats/doubles results in floating point exceptions
+                # On alphas treating the byte swapped bit patterns as
+                # floats/doubles results in floating-point exceptions
                 # => compare the 8bit string values instead
                 self.assertNotEqual(a.tobytes(), b.tobytes())
             b.byteswap()
@@ -1664,6 +1664,14 @@ class LargeArrayTest(unittest.TestCase):
         self.assertEqual(len(ls), len(example))
         self.assertEqual(ls[:8], list(example[:8]))
         self.assertEqual(ls[-8:], list(example[-8:]))
+
+    def test_gh_128961(self):
+        a = array.array('i')
+        it = iter(a)
+        list(it)
+        it.__setstate__(0)
+        self.assertRaises(StopIteration, next, it)
+
 
 if __name__ == "__main__":
     unittest.main()

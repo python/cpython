@@ -25,7 +25,6 @@
     :license: Python License.
 """
 import sys
-import re
 from _ast import *
 from contextlib import contextmanager, nullcontext
 from enum import IntEnum, auto, _simple_enum
@@ -114,7 +113,11 @@ def literal_eval(node_or_string):
     return _convert(node_or_string)
 
 
-def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
+def dump(
+    node, annotate_fields=True, include_attributes=False,
+    *,
+    indent=None, show_empty=False,
+):
     """
     Return a formatted dump of the tree in node.  This is mainly useful for
     debugging purposes.  If annotate_fields is true (by default),
@@ -125,6 +128,8 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
     include_attributes can be set to true.  If indent is a non-negative
     integer or string, then the tree will be pretty-printed with that indent
     level. None (the default) selects the single line representation.
+    If show_empty is False, then empty lists and fields that are None
+    will be omitted from the output for better readability.
     """
     def _format(node, level=0):
         if indent is not None:
@@ -137,6 +142,7 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
         if isinstance(node, AST):
             cls = type(node)
             args = []
+            args_buffer = []
             allsimple = True
             keywords = annotate_fields
             for name in node._fields:
@@ -148,6 +154,18 @@ def dump(node, annotate_fields=True, include_attributes=False, *, indent=None):
                 if value is None and getattr(cls, name, ...) is None:
                     keywords = True
                     continue
+                if (
+                    not show_empty
+                    and (value is None or value == [])
+                    # Special cases:
+                    # `Constant(value=None)` and `MatchSingleton(value=None)`
+                    and not isinstance(node, (Constant, MatchSingleton))
+                ):
+                    args_buffer.append(repr(value))
+                    continue
+                elif not keywords:
+                    args.extend(args_buffer)
+                    args_buffer = []
                 value, simple = _format(value, level)
                 allsimple = allsimple and simple
                 if keywords:
@@ -306,12 +324,18 @@ def get_docstring(node, clean=True):
     return text
 
 
-_line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
+_line_pattern = None
 def _splitlines_no_ff(source, maxlines=None):
     """Split a string into lines ignoring form feed and other chars.
 
     This mimics how the Python parser splits source code.
     """
+    global _line_pattern
+    if _line_pattern is None:
+        # lazily computed to speedup import time of `ast`
+        import re
+        _line_pattern = re.compile(r"(.*?(?:\r\n|\n|\r|$))")
+
     lines = []
     for lineno, match in enumerate(_line_pattern.finditer(source), 1):
         if maxlines is not None and lineno > maxlines:
@@ -382,6 +406,88 @@ def walk(node):
         yield node
 
 
+def compare(
+    a,
+    b,
+    /,
+    *,
+    compare_attributes=False,
+):
+    """Recursively compares two ASTs.
+
+    compare_attributes affects whether AST attributes are considered
+    in the comparison. If compare_attributes is False (default), then
+    attributes are ignored. Otherwise they must all be equal. This
+    option is useful to check whether the ASTs are structurally equal but
+    might differ in whitespace or similar details.
+    """
+
+    sentinel = object()  # handle the possibility of a missing attribute/field
+
+    def _compare(a, b):
+        # Compare two fields on an AST object, which may themselves be
+        # AST objects, lists of AST objects, or primitive ASDL types
+        # like identifiers and constants.
+        if isinstance(a, AST):
+            return compare(
+                a,
+                b,
+                compare_attributes=compare_attributes,
+            )
+        elif isinstance(a, list):
+            # If a field is repeated, then both objects will represent
+            # the value as a list.
+            if len(a) != len(b):
+                return False
+            for a_item, b_item in zip(a, b):
+                if not _compare(a_item, b_item):
+                    return False
+            else:
+                return True
+        else:
+            return type(a) is type(b) and a == b
+
+    def _compare_fields(a, b):
+        if a._fields != b._fields:
+            return False
+        for field in a._fields:
+            a_field = getattr(a, field, sentinel)
+            b_field = getattr(b, field, sentinel)
+            if a_field is sentinel and b_field is sentinel:
+                # both nodes are missing a field at runtime
+                continue
+            if a_field is sentinel or b_field is sentinel:
+                # one of the node is missing a field
+                return False
+            if not _compare(a_field, b_field):
+                return False
+        else:
+            return True
+
+    def _compare_attributes(a, b):
+        if a._attributes != b._attributes:
+            return False
+        # Attributes are always ints.
+        for attr in a._attributes:
+            a_attr = getattr(a, attr, sentinel)
+            b_attr = getattr(b, attr, sentinel)
+            if a_attr is sentinel and b_attr is sentinel:
+                # both nodes are missing an attribute at runtime
+                continue
+            if a_attr != b_attr:
+                return False
+        else:
+            return True
+
+    if type(a) is not type(b):
+        return False
+    if not _compare_fields(a, b):
+        return False
+    if compare_attributes and not _compare_attributes(a, b):
+        return False
+    return True
+
+
 class NodeVisitor(object):
     """
     A node visitor base class that walks the abstract syntax tree and calls a
@@ -417,27 +523,6 @@ class NodeVisitor(object):
                         self.visit(item)
             elif isinstance(value, AST):
                 self.visit(value)
-
-    def visit_Constant(self, node):
-        value = node.value
-        type_name = _const_node_type_names.get(type(value))
-        if type_name is None:
-            for cls, name in _const_node_type_names.items():
-                if isinstance(value, cls):
-                    type_name = name
-                    break
-        if type_name is not None:
-            method = 'visit_' + type_name
-            try:
-                visitor = getattr(self, method)
-            except AttributeError:
-                pass
-            else:
-                import warnings
-                warnings.warn(f"{method} is deprecated; add visit_Constant",
-                              DeprecationWarning, 2)
-                return visitor(node)
-        return self.generic_visit(node)
 
 
 class NodeTransformer(NodeVisitor):
@@ -497,151 +582,6 @@ class NodeTransformer(NodeVisitor):
                 else:
                     setattr(node, field, new_node)
         return node
-
-
-_DEPRECATED_VALUE_ALIAS_MESSAGE = (
-    "{name} is deprecated and will be removed in Python {remove}; use value instead"
-)
-_DEPRECATED_CLASS_MESSAGE = (
-    "{name} is deprecated and will be removed in Python {remove}; "
-    "use ast.Constant instead"
-)
-
-
-# If the ast module is loaded more than once, only add deprecated methods once
-if not hasattr(Constant, 'n'):
-    # The following code is for backward compatibility.
-    # It will be removed in future.
-
-    def _n_getter(self):
-        """Deprecated. Use value instead."""
-        import warnings
-        warnings._deprecated(
-            "Attribute n", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
-        )
-        return self.value
-
-    def _n_setter(self, value):
-        import warnings
-        warnings._deprecated(
-            "Attribute n", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
-        )
-        self.value = value
-
-    def _s_getter(self):
-        """Deprecated. Use value instead."""
-        import warnings
-        warnings._deprecated(
-            "Attribute s", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
-        )
-        return self.value
-
-    def _s_setter(self, value):
-        import warnings
-        warnings._deprecated(
-            "Attribute s", message=_DEPRECATED_VALUE_ALIAS_MESSAGE, remove=(3, 14)
-        )
-        self.value = value
-
-    Constant.n = property(_n_getter, _n_setter)
-    Constant.s = property(_s_getter, _s_setter)
-
-class _ABC(type):
-
-    def __init__(cls, *args):
-        cls.__doc__ = """Deprecated AST node class. Use ast.Constant instead"""
-
-    def __instancecheck__(cls, inst):
-        if cls in _const_types:
-            import warnings
-            warnings._deprecated(
-                f"ast.{cls.__qualname__}",
-                message=_DEPRECATED_CLASS_MESSAGE,
-                remove=(3, 14)
-            )
-        if not isinstance(inst, Constant):
-            return False
-        if cls in _const_types:
-            try:
-                value = inst.value
-            except AttributeError:
-                return False
-            else:
-                return (
-                    isinstance(value, _const_types[cls]) and
-                    not isinstance(value, _const_types_not.get(cls, ()))
-                )
-        return type.__instancecheck__(cls, inst)
-
-def _new(cls, *args, **kwargs):
-    for key in kwargs:
-        if key not in cls._fields:
-            # arbitrary keyword arguments are accepted
-            continue
-        pos = cls._fields.index(key)
-        if pos < len(args):
-            raise TypeError(f"{cls.__name__} got multiple values for argument {key!r}")
-    if cls in _const_types:
-        import warnings
-        warnings._deprecated(
-            f"ast.{cls.__qualname__}", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
-        )
-        return Constant(*args, **kwargs)
-    return Constant.__new__(cls, *args, **kwargs)
-
-class Num(Constant, metaclass=_ABC):
-    _fields = ('n',)
-    __new__ = _new
-
-class Str(Constant, metaclass=_ABC):
-    _fields = ('s',)
-    __new__ = _new
-
-class Bytes(Constant, metaclass=_ABC):
-    _fields = ('s',)
-    __new__ = _new
-
-class NameConstant(Constant, metaclass=_ABC):
-    __new__ = _new
-
-class Ellipsis(Constant, metaclass=_ABC):
-    _fields = ()
-
-    def __new__(cls, *args, **kwargs):
-        if cls is _ast_Ellipsis:
-            import warnings
-            warnings._deprecated(
-                "ast.Ellipsis", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
-            )
-            return Constant(..., *args, **kwargs)
-        return Constant.__new__(cls, *args, **kwargs)
-
-# Keep another reference to Ellipsis in the global namespace
-# so it can be referenced in Ellipsis.__new__
-# (The original "Ellipsis" name is removed from the global namespace later on)
-_ast_Ellipsis = Ellipsis
-
-_const_types = {
-    Num: (int, float, complex),
-    Str: (str,),
-    Bytes: (bytes,),
-    NameConstant: (type(None), bool),
-    Ellipsis: (type(...),),
-}
-_const_types_not = {
-    Num: (bool,),
-}
-
-_const_node_type_names = {
-    bool: 'NameConstant',  # should be before int
-    type(None): 'NameConstant',
-    int: 'Num',
-    float: 'Num',
-    complex: 'Num',
-    str: 'Str',
-    bytes: 'Bytes',
-    type(...): 'Ellipsis',
-}
 
 class slice(AST):
     """Deprecated AST node class."""
@@ -734,6 +674,7 @@ class _Unparser(NodeVisitor):
         self._type_ignores = {}
         self._indent = 0
         self._in_try_star = False
+        self._in_interactive = False
 
     def interleave(self, inter, f, seq):
         """Call f on each item in seq, calling inter() in between."""
@@ -762,11 +703,20 @@ class _Unparser(NodeVisitor):
         if self._source:
             self.write("\n")
 
-    def fill(self, text=""):
+    def maybe_semicolon(self):
+        """Adds a "; " delimiter if it isn't the start of generated source"""
+        if self._source:
+            self.write("; ")
+
+    def fill(self, text="", *, allow_semicolon=True):
         """Indent a piece of text and append it, according to the current
-        indentation level"""
-        self.maybe_newline()
-        self.write("    " * self._indent + text)
+        indentation level, or only delineate with semicolon if applicable"""
+        if self._in_interactive and not self._indent and allow_semicolon:
+            self.maybe_semicolon()
+            self.write(text)
+        else:
+            self.maybe_newline()
+            self.write("    " * self._indent + text)
 
     def write(self, *text):
         """Add new source parts"""
@@ -872,8 +822,17 @@ class _Unparser(NodeVisitor):
             ignore.lineno: f"ignore{ignore.tag}"
             for ignore in node.type_ignores
         }
-        self._write_docstring_and_traverse_body(node)
-        self._type_ignores.clear()
+        try:
+            self._write_docstring_and_traverse_body(node)
+        finally:
+            self._type_ignores.clear()
+
+    def visit_Interactive(self, node):
+        self._in_interactive = True
+        try:
+            self._write_docstring_and_traverse_body(node)
+        finally:
+            self._in_interactive = False
 
     def visit_FunctionType(self, node):
         with self.delimit("(", ")"):
@@ -1005,17 +964,17 @@ class _Unparser(NodeVisitor):
             self.traverse(node.cause)
 
     def do_visit_try(self, node):
-        self.fill("try")
+        self.fill("try", allow_semicolon=False)
         with self.block():
             self.traverse(node.body)
         for ex in node.handlers:
             self.traverse(ex)
         if node.orelse:
-            self.fill("else")
+            self.fill("else", allow_semicolon=False)
             with self.block():
                 self.traverse(node.orelse)
         if node.finalbody:
-            self.fill("finally")
+            self.fill("finally", allow_semicolon=False)
             with self.block():
                 self.traverse(node.finalbody)
 
@@ -1036,7 +995,7 @@ class _Unparser(NodeVisitor):
             self._in_try_star = prev_in_try_star
 
     def visit_ExceptHandler(self, node):
-        self.fill("except*" if self._in_try_star else "except")
+        self.fill("except*" if self._in_try_star else "except", allow_semicolon=False)
         if node.type:
             self.write(" ")
             self.traverse(node.type)
@@ -1049,9 +1008,9 @@ class _Unparser(NodeVisitor):
     def visit_ClassDef(self, node):
         self.maybe_newline()
         for deco in node.decorator_list:
-            self.fill("@")
+            self.fill("@", allow_semicolon=False)
             self.traverse(deco)
-        self.fill("class " + node.name)
+        self.fill("class " + node.name, allow_semicolon=False)
         if hasattr(node, "type_params"):
             self._type_params_helper(node.type_params)
         with self.delimit_if("(", ")", condition = node.bases or node.keywords):
@@ -1081,10 +1040,10 @@ class _Unparser(NodeVisitor):
     def _function_helper(self, node, fill_suffix):
         self.maybe_newline()
         for deco in node.decorator_list:
-            self.fill("@")
+            self.fill("@", allow_semicolon=False)
             self.traverse(deco)
         def_str = fill_suffix + " " + node.name
-        self.fill(def_str)
+        self.fill(def_str, allow_semicolon=False)
         if hasattr(node, "type_params"):
             self._type_params_helper(node.type_params)
         with self.delimit("(", ")"):
@@ -1105,12 +1064,21 @@ class _Unparser(NodeVisitor):
         if node.bound:
             self.write(": ")
             self.traverse(node.bound)
+        if node.default_value:
+            self.write(" = ")
+            self.traverse(node.default_value)
 
     def visit_TypeVarTuple(self, node):
         self.write("*" + node.name)
+        if node.default_value:
+            self.write(" = ")
+            self.traverse(node.default_value)
 
     def visit_ParamSpec(self, node):
         self.write("**" + node.name)
+        if node.default_value:
+            self.write(" = ")
+            self.traverse(node.default_value)
 
     def visit_TypeAlias(self, node):
         self.fill("type ")
@@ -1126,7 +1094,7 @@ class _Unparser(NodeVisitor):
         self._for_helper("async for ", node)
 
     def _for_helper(self, fill, node):
-        self.fill(fill)
+        self.fill(fill, allow_semicolon=False)
         self.set_precedence(_Precedence.TUPLE, node.target)
         self.traverse(node.target)
         self.write(" in ")
@@ -1134,46 +1102,46 @@ class _Unparser(NodeVisitor):
         with self.block(extra=self.get_type_comment(node)):
             self.traverse(node.body)
         if node.orelse:
-            self.fill("else")
+            self.fill("else", allow_semicolon=False)
             with self.block():
                 self.traverse(node.orelse)
 
     def visit_If(self, node):
-        self.fill("if ")
+        self.fill("if ", allow_semicolon=False)
         self.traverse(node.test)
         with self.block():
             self.traverse(node.body)
         # collapse nested ifs into equivalent elifs.
         while node.orelse and len(node.orelse) == 1 and isinstance(node.orelse[0], If):
             node = node.orelse[0]
-            self.fill("elif ")
+            self.fill("elif ", allow_semicolon=False)
             self.traverse(node.test)
             with self.block():
                 self.traverse(node.body)
         # final else
         if node.orelse:
-            self.fill("else")
+            self.fill("else", allow_semicolon=False)
             with self.block():
                 self.traverse(node.orelse)
 
     def visit_While(self, node):
-        self.fill("while ")
+        self.fill("while ", allow_semicolon=False)
         self.traverse(node.test)
         with self.block():
             self.traverse(node.body)
         if node.orelse:
-            self.fill("else")
+            self.fill("else", allow_semicolon=False)
             with self.block():
                 self.traverse(node.orelse)
 
     def visit_With(self, node):
-        self.fill("with ")
+        self.fill("with ", allow_semicolon=False)
         self.interleave(lambda: self.write(", "), self.traverse, node.items)
         with self.block(extra=self.get_type_comment(node)):
             self.traverse(node.body)
 
     def visit_AsyncWith(self, node):
-        self.fill("async with ")
+        self.fill("async with ", allow_semicolon=False)
         self.interleave(lambda: self.write(", "), self.traverse, node.items)
         with self.block(extra=self.get_type_comment(node)):
             self.traverse(node.body)
@@ -1247,9 +1215,14 @@ class _Unparser(NodeVisitor):
                     fallback_to_repr = True
                     break
                 quote_types = new_quote_types
-            elif "\n" in value:
-                quote_types = [q for q in quote_types if q in _MULTI_QUOTES]
-                assert quote_types
+            else:
+                if "\n" in value:
+                    quote_types = [q for q in quote_types if q in _MULTI_QUOTES]
+                    assert quote_types
+
+                new_quote_types = [q for q in quote_types if q not in value]
+                if new_quote_types:
+                    quote_types = new_quote_types
             new_fstring_parts.append(value)
 
         if fallback_to_repr:
@@ -1310,7 +1283,7 @@ class _Unparser(NodeVisitor):
         self.write(node.id)
 
     def _write_docstring(self, node):
-        self.fill()
+        self.fill(allow_semicolon=False)
         if node.kind == "u":
             self.write("u")
         self._write_str_avoiding_backslashes(node.value, quote_types=_MULTI_QUOTES)
@@ -1604,7 +1577,7 @@ class _Unparser(NodeVisitor):
             self.traverse(node.step)
 
     def visit_Match(self, node):
-        self.fill("match ")
+        self.fill("match ", allow_semicolon=False)
         self.traverse(node.subject)
         with self.block():
             for case in node.cases:
@@ -1698,7 +1671,7 @@ class _Unparser(NodeVisitor):
             self.traverse(node.optional_vars)
 
     def visit_match_case(self, node):
-        self.fill("case ")
+        self.fill("case ", allow_semicolon=False)
         self.traverse(node.pattern)
         if node.guard:
             self.write(" if ")
@@ -1785,31 +1758,16 @@ class _Unparser(NodeVisitor):
             self.set_precedence(_Precedence.BOR.next(), *node.patterns)
             self.interleave(lambda: self.write(" | "), self.traverse, node.patterns)
 
+
 def unparse(ast_obj):
     unparser = _Unparser()
     return unparser.visit(ast_obj)
 
 
-_deprecated_globals = {
-    name: globals().pop(name)
-    for name in ('Num', 'Str', 'Bytes', 'NameConstant', 'Ellipsis')
-}
-
-def __getattr__(name):
-    if name in _deprecated_globals:
-        globals()[name] = value = _deprecated_globals[name]
-        import warnings
-        warnings._deprecated(
-            f"ast.{name}", message=_DEPRECATED_CLASS_MESSAGE, remove=(3, 14)
-        )
-        return value
-    raise AttributeError(f"module 'ast' has no attribute '{name}'")
-
-
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(prog='python -m ast')
+    parser = argparse.ArgumentParser()
     parser.add_argument('infile', nargs='?', default='-',
                         help='the file to parse; defaults to stdin')
     parser.add_argument('-m', '--mode', default='exec',

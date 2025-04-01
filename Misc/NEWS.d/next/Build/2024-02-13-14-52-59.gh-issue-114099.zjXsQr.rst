@@ -1,2 +1,0 @@
-Makefile targets were added to support compiling an iOS-compatible framework
-build.
