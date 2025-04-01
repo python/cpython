@@ -913,6 +913,11 @@ def singledispatch(func):
     def _is_valid_dispatch_type(cls):
         if isinstance(cls, type):
             return True
+
+        if isinstance(cls, GenericAlias):
+            from typing import get_args
+            return all(isinstance(arg, (type, UnionType)) for arg in get_args(cls))
+
         return (isinstance(cls, UnionType) and
                 all(isinstance(arg, type) for arg in cls.__args__))
 
