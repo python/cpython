@@ -2121,12 +2121,12 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             const char *straddr = PyBytes_AS_STRING(args);
             size_t len = PyBytes_GET_SIZE(args);
             if (strlen(straddr) != len) {
-                PyErr_Format(PyExc_OSError, "%s: "
+                PyErr_Format(PyExc_ValueError, "%s: "
                              "node contains embedded null character", caller);
                 return 0;
             }
             if (len > sizeof(_BT_HCI_MEMB(addr, node))) {
-                PyErr_Format(PyExc_OSError, "%s: "
+                PyErr_Format(PyExc_ValueError, "%s: "
                              "node too long", caller);
                 return 0;
             }
