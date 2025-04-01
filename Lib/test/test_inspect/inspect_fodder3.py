@@ -31,4 +31,4 @@ class ParentNoDoc:
 class ChildDefineDoc(ParentNoDoc):
     @cached_property
     def foo(self):
-        "docstring for foo defined in child"
+        """docstring for foo defined in child"""
