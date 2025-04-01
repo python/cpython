@@ -6263,6 +6263,7 @@ class TestSyncManagerTypes(unittest.TestCase):
     @classmethod
     def _test_lock(cls, obj):
         obj.acquire()
+        obj.locked()
 
     def test_lock(self, lname="Lock"):
         o = getattr(self.manager, lname)()
@@ -6274,8 +6275,9 @@ class TestSyncManagerTypes(unittest.TestCase):
     def _test_rlock(cls, obj):
         obj.acquire()
         obj.release()
+        obj.locked()
 
-    def test_rlock(self, lname="Lock"):
+    def test_rlock(self, lname="RLock"):
         o = getattr(self.manager, lname)()
         self.run_worker(self._test_rlock, o)
 
