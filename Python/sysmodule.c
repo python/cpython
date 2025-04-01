@@ -2525,14 +2525,10 @@ sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
 /*[clinic end generated code: output=7d94c56afe4a52c0 input=39908ca2c5fe1eb0]*/
 {
     PyObject *ret = NULL;
-    PyObject *os = PyImport_ImportModule("os");
-    if (os) {
-        PyObject *path = PyObject_CallMethodOneArg(os, &_Py_ID(fsdecode), script);
-        if (path) {
-            ret = sys_remote_exec_unicode_path(module, pid, path);
-            Py_DECREF(path);
-        }
-        Py_DECREF(os);
+    PyObject *path;
+    if (PyUnicode_FSDecoder(script, &path)) {
+        ret = sys_remote_exec_unicode_path(module, pid, path);
+        Py_DECREF(path);
     }
     return ret;
 }

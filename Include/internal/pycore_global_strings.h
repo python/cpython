@@ -458,7 +458,6 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(fromlist)
         STRUCT_FOR_ID(fromtimestamp)
         STRUCT_FOR_ID(fromutc)
-        STRUCT_FOR_ID(fsdecode)
         STRUCT_FOR_ID(fset)
         STRUCT_FOR_ID(func)
         STRUCT_FOR_ID(future)

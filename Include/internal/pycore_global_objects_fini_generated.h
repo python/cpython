@@ -967,7 +967,6 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fromlist));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fromtimestamp));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fromutc));
-    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fsdecode));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(fset));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(func));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(future));

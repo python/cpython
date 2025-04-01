@@ -965,7 +965,6 @@ extern "C" {
     INIT_ID(fromlist), \
     INIT_ID(fromtimestamp), \
     INIT_ID(fromutc), \
-    INIT_ID(fsdecode), \
     INIT_ID(fset), \
     INIT_ID(func), \
     INIT_ID(future), \
