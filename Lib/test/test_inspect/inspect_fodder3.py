@@ -15,7 +15,7 @@ class ChildInheritDoc(ParentInheritDoc):
 class ChildPropertyFoo(ParentInheritDoc):
     @property
     def foo(self):
-        "docstring for the property foo"
+        """docstring for the property foo"""
         pass
 
 class ChildMethodFoo(ParentInheritDoc):
