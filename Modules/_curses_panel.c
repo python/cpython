@@ -62,7 +62,7 @@ _curses_panel_traverse(PyObject *mod, visitproc visit, void *arg)
 static void
 _curses_panel_free(void *mod)
 {
-    _curses_panel_clear((PyObject *) mod);
+    (void)_curses_panel_clear((PyObject *)mod);
 }
 
 /* Utility Functions */
@@ -100,6 +100,8 @@ typedef struct {
     PANEL *pan;
     PyCursesWindowObject *wo;   /* for reference counts */
 } PyCursesPanelObject;
+
+#define _PyCursesPanelObject_CAST(op)   ((PyCursesPanelObject *)(op))
 
 /* Some helper functions. The problem is that there's always a window
    associated with a panel. To ensure that Python's GC doesn't pull
@@ -277,9 +279,10 @@ PyCursesPanel_New(_curses_panel_state *state, PANEL *pan,
 }
 
 static void
-PyCursesPanel_Dealloc(PyCursesPanelObject *po)
+PyCursesPanel_Dealloc(PyObject *self)
 {
     PyObject *tp, *obj;
+    PyCursesPanelObject *po = _PyCursesPanelObject_CAST(self);
 
     tp = (PyObject *) Py_TYPE(po);
     obj = (PyObject *) panel_userptr(po->pan);

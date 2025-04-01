@@ -6,7 +6,10 @@ import os
 import sys
 import tempfile
 import textwrap
+import threading
 import unittest
+from test import support
+from test.support import threading_helper
 from test.support import verbose
 from test.support.import_helper import import_module
 from test.support.os_helper import unlink, temp_dir, TESTFN
@@ -113,6 +116,14 @@ class TestHistoryManipulation (unittest.TestCase):
 
         # write_history_file can create the target
         readline.write_history_file(hfilename)
+
+        # Negative values should be disallowed
+        with self.assertRaises(ValueError):
+            readline.append_history_file(-42, hfilename)
+
+        # See gh-122431, using the minimum signed integer value caused a segfault
+        with self.assertRaises(ValueError):
+            readline.append_history_file(-2147483648, hfilename)
 
     def test_nonascii_history(self):
         readline.clear_history()
@@ -393,6 +404,27 @@ readline.write_history_file(history_file)
         # possible deduplication with arbitrary previous content).
         # So, we've only tested that the read did not fail.
         # See TestHistoryManipulation for the full test.
+
+
+@unittest.skipUnless(support.Py_GIL_DISABLED, 'these tests can only possibly fail with GIL disabled')
+class FreeThreadingTest(unittest.TestCase):
+    @threading_helper.reap_threads
+    @threading_helper.requires_working_threading()
+    def test_free_threading(self):
+        def completer_delims(b):
+            b.wait()
+            for _ in range(100):
+                readline.get_completer_delims()
+                readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
+                readline.set_completer_delims(' \t\n`@#%^&*()=+[{]}\\|;:\'",<>?')
+                readline.get_completer_delims()
+
+        count   = 40
+        barrier = threading.Barrier(count)
+        threads = [threading.Thread(target=completer_delims, args=(barrier,)) for _ in range(count)]
+
+        with threading_helper.start_threads(threads):
+            pass
 
 
 if __name__ == "__main__":
