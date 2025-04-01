@@ -25,6 +25,7 @@ trans_36 = bytes((x ^ 0x36) for x in range(256))
 # hashing module used.  Use digest_size from the instance of HMAC instead.
 digest_size = None
 
+
 def _get_digest_constructor(digest_like):
     if callable(digest_like):
         return digest_like
@@ -36,6 +37,7 @@ def _get_digest_constructor(digest_like):
         def digest_wrapper(d=b''):
             return digest_like.new(d)
     return digest_wrapper
+
 
 class HMAC:
     """RFC 2104 HMAC class.  Also complies with RFC 4231.
@@ -194,6 +196,7 @@ class HMAC:
         h = self._current()
         return h.hexdigest()
 
+
 def new(key, msg=None, digestmod=''):
     """Create a new hashing object and return it.
 
@@ -213,6 +216,7 @@ def new(key, msg=None, digestmod=''):
     """
     return HMAC(key, msg, digestmod)
 
+
 def digest(key, msg, digest):
     """Fast inline implementation of HMAC.
 
@@ -222,19 +226,20 @@ def digest(key, msg, digest):
             A hashlib constructor returning a new hash object. *OR*
             A module supporting PEP 247.
     """
-    if _hashopenssl is not None and isinstance(digest, (str, _functype)):
+    if _hashopenssl and isinstance(digest, (str, _functype)):
         try:
             return _hashopenssl.hmac_digest(key, msg, digest)
         except _hashopenssl.UnsupportedDigestmodError:
             pass
 
-    if _hmac is not None and isinstance(digest, str):
+    if _hmac and isinstance(digest, str):
         try:
             return _hmac.compute_digest(key, msg, digest)
         except (OverflowError, _hmac.UnknownHashError):
             pass
 
     return _compute_digest_fallback(key, msg, digest)
+
 
 def _compute_digest_fallback(key, msg, digest):
     digest_cons = _get_digest_constructor(digest)
