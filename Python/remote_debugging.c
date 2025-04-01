@@ -1,6 +1,10 @@
 #define _GNU_SOURCE
 #include "pyconfig.h"
 
+#include "Python.h"
+#include "internal/pycore_runtime.h"
+#include "internal/pycore_ceval.h"
+
 #ifdef __linux__
 #    include <elf.h>
 #    include <sys/uio.h>
@@ -56,13 +60,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #endif
-
-#ifndef Py_BUILD_CORE_BUILTIN
-#    define Py_BUILD_CORE_MODULE 1
-#endif
-#include "Python.h"
-#include <internal/pycore_runtime.h>
-#include <internal/pycore_ceval.h>
 
 #ifndef HAVE_PROCESS_VM_READV
 #    define HAVE_PROCESS_VM_READV 0
