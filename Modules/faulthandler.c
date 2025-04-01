@@ -1107,7 +1107,7 @@ faulthandler_fatal_error_c_thread(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-static PyObject * _Py_NO_SANITIZE_UNDEFINED
+static PyObject* _Py_NO_SANITIZE_UNDEFINED
 faulthandler_sigfpe(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     faulthandler_suppress_crash_report();
