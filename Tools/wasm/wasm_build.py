@@ -335,8 +335,8 @@ WASI = Platform(
             "--env PYTHONPATH="
             + ":".join(
                 (
-                    "/{relbuilddir}/build/lib.wasi-wasm32-{version}",
                     "/{relbuilddir}/build/lib.wasi-wasm32-{version}-pydebug",
+                    "/{relbuilddir}/build/lib.wasi-wasm32-{version}",
                     "/Lib",
                 )
             )
