@@ -757,7 +757,7 @@ class Pool(object):
         self._check_error(exc_val)
 
     def _error(self, error):
-        util.debug('callback error', exc_info=error)
+        util.debug('callback error: %s', error)
         self._errors.append(error)
 
 #
