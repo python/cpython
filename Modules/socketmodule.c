@@ -2132,7 +2132,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             }
             strncpy(_BT_HCI_MEMB(addr, node), straddr,
                     sizeof(_BT_HCI_MEMB(addr, node)));
-#else  /* __NetBSD__ || __DragonFly__ */
+#else
             _BT_HCI_MEMB(addr, family) = AF_BLUETOOTH;
             unsigned short dev = _BT_HCI_MEMB(addr, dev);
             if (!PyArg_ParseTuple(args, "H", &dev)) {
@@ -2141,7 +2141,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                 return 0;
             }
             _BT_HCI_MEMB(addr, dev) = dev;
-#endif /* !(__NetBSD__ || __DragonFly__) */
+#endif
             *len_ret = sizeof *addr;
             return 1;
         }
