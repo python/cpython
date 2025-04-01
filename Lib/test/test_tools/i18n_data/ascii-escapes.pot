@@ -39,13 +39,13 @@ msgstr ""
 msgid "\177"
 msgstr ""
 
-#. characters 128-255
+#. some characters in the 128-255 range
 #: escapes.py:20
-msgid " ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ"
+msgid "   ÿ"
 msgstr ""
 
-#. some characters >= 256
-#: escapes.py:26
-msgid "ě š č ř α β γ δ ㄱ ㄲ ㄴ ㄷ"
+#. some characters >= 256 encoded as 2, 3 and 4 bytes, respectively
+#: escapes.py:23
+msgid "α ㄱ 𓂀"
 msgstr ""
 
