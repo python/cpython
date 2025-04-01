@@ -65,7 +65,7 @@ def compute_changes() -> None:
         outputs = process_changed_files(files)
     else:
         # Otherwise, just run the tests
-        outputs = Outputs(run_tests=True)
+        outputs = Outputs(run_tests=True, run_windows_tests=True)
     outputs = process_target_branch(outputs, target_branch)
 
     if outputs.run_tests:
