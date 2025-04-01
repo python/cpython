@@ -843,6 +843,10 @@ def _compose_mro(cls, types):
                     mro.append(subcls)
     return _c3_mro(cls, abcs=mro)
 
+def _pep585_registry_matches(cls, registry):
+    from typing import get_origin
+    return (i for i in registry.keys() if get_origin(i) == cls)
+
 def _find_impl_match(cls_obj, registry):
     """Returns the best matching implementation from *registry* for type *cls_obj*.
 
@@ -861,9 +865,9 @@ def _find_impl_match(cls_obj, registry):
 
     if (not isinstance(cls_obj, type) and
         len(cls_obj) > 0 and # dont try to match the types of empty containers
-        any(i for i in registry.keys() if get_origin(i) == cls)):
+        any(_pep585_registry_matches(cls, registry))):
         # check containers that match cls first
-        for t in [i for i in registry.keys() if get_origin(i) == cls]:
+        for t in _pep585_registry_matches(cls, registry):
             if not all((isinstance(i, get_args(t)) for i in cls_obj)):
                 continue
 
@@ -898,9 +902,10 @@ def _find_impl_match(cls_obj, registry):
     return match
 
 def _find_impl(cls_obj, registry):
-    return (
+    return registry.get(
         _find_impl_match(cls_obj, registry)
     )
+
 
 def singledispatch(func):
     """Single-dispatch generic function decorator.
@@ -920,6 +925,18 @@ def singledispatch(func):
     dispatch_cache = weakref.WeakKeyDictionary()
     cache_token = None
 
+    def _fetch_dispatch_with_cache(cls):
+        try:
+            impl = dispatch_cache[cls]
+        except KeyError:
+            try:
+                impl = registry[cls]
+            except KeyError:
+                impl = _find_impl(cls, registry)
+            dispatch_cache[cls] = impl
+        return impl
+
+
     def dispatch(cls_obj):
         """generic_func.dispatch(cls) -> <function implementation>
 
@@ -935,18 +952,13 @@ def singledispatch(func):
                 dispatch_cache.clear()
                 cache_token = current_token
 
-
         # if PEP-585 types are not registered for the given *cls*,
         # then we can use the cache. Otherwise, the cache cannot be used
         # because we need to confirm every item matches first
-        from typing import get_origin
-        if not any(i for i in registry.keys() if get_origin(i) == cls):
-            try:
-                impl = registry[cls]
-            except KeyError:
-                impl = _find_impl(cls, registry)
-            dispatch_cache[cls] = impl
-        return impl
+        if not any(_pep585_registry_matches(cls, registry)):
+            return _fetch_dispatch_with_cache(cls)
+
+        return _find_impl(cls_obj, registry)
 
     def _is_valid_dispatch_type(cls):
         if isinstance(cls, type):
