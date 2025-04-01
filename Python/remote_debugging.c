@@ -592,10 +592,7 @@ read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* ds
     }
     return 0;
 #else
-    PyErr_SetString(
-        PyExc_RuntimeError,
-        "Memory reading is not supported on this platform");
-    return -1;
+    Py_UNREACHABLE();
 #endif
 }
 
@@ -657,8 +654,7 @@ write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const 
     }
     return 0;
 #else
-    PyErr_Format(PyExc_RuntimeError, "Writing memory is not supported on this platform");
-    return -1;
+    Py_UNREACHABLE();
 #endif
 }
 
