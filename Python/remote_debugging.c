@@ -808,7 +808,7 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
             if (0 != read_memory(
                     handle,
                     thread_state_addr + debug_offsets.thread_state.native_thread_id,
-                    sizeof(pid_t),
+                    sizeof(this_tid),
                     &this_tid))
             {
                 return -1;
