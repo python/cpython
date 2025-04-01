@@ -135,7 +135,7 @@ WHITESPACE_STR = ' \t\n\r'
 
 
 def JSONObject(s_and_end, strict, scan_once, object_hook, object_pairs_hook,
-               memo=None, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
+               memo=None, cache_keys=True, _w=WHITESPACE.match, _ws=WHITESPACE_STR):
     s, end = s_and_end
     pairs = []
     pairs_append = pairs.append
@@ -166,7 +166,8 @@ def JSONObject(s_and_end, strict, scan_once, object_hook, object_pairs_hook,
     end += 1
     while True:
         key, end = scanstring(s, end, strict)
-        key = memo_get(key, key)
+        if cache_keys:
+            key = memo_get(key, key)
         # To skip some function call overhead we optimize the fast paths where
         # the JSON key separator is ": " or just ":".
         if s[end:end + 1] != ':':
@@ -291,7 +292,7 @@ class JSONDecoder(object):
 
     def __init__(self, *, object_hook=None, parse_float=None,
             parse_int=None, parse_constant=None, strict=True,
-            object_pairs_hook=None):
+            object_pairs_hook=None, cache_keys=True):
         """``object_hook``, if specified, will be called with the result
         of every JSON object decoded and its return value will be used in
         place of the given ``dict``.  This can be used to provide custom
@@ -323,6 +324,9 @@ class JSONDecoder(object):
         characters will be allowed inside strings.  Control characters in
         this context are those with character codes in the 0-31 range,
         including ``'\\t'`` (tab), ``'\\n'``, ``'\\r'`` and ``'\\0'``.
+
+        if ``cache_keys`` is true, then repeated keys will be re-used across
+        dictionaries, leading to lower memory usage, but worse performance.
         """
         self.object_hook = object_hook
         self.parse_float = parse_float or float
@@ -330,6 +334,7 @@ class JSONDecoder(object):
         self.parse_constant = parse_constant or _CONSTANTS.__getitem__
         self.strict = strict
         self.object_pairs_hook = object_pairs_hook
+        self.cache_keys = cache_keys
         self.parse_object = JSONObject
         self.parse_array = JSONArray
         self.parse_string = scanstring

@@ -1,6 +1,7 @@
 import decimal
 from io import StringIO
 from collections import OrderedDict
+from functools import partial
 from test.test_json import PyTest, CTest
 from test import support
 
@@ -87,6 +88,19 @@ class TestDecode:
         self.check_keys_reuse(s, self.loads)
         decoder = self.json.decoder.JSONDecoder()
         self.check_keys_reuse(s, decoder.decode)
+        self.assertFalse(decoder.memo)
+
+    def check_no_keys_reuse(self, source, loads):
+        rval = loads(source)
+        (a, b), (c, d) = sorted(rval[0]), sorted(rval[1])
+        self.assertIsNot(a, c)
+        self.assertIsNot(b, d)
+
+    def test_no_keys_reuse(self):
+        s = '[{"a_key": 1, "b_\xe9": 2}, {"a_key": 3, "b_\xe9": 4}]'
+        self.check_no_keys_reuse(s, partial(self.loads, cache_keys=False))
+        decoder = self.json.decoder.JSONDecoder(cache_keys=False)
+        self.check_no_keys_reuse(s, decoder.decode)
         self.assertFalse(decoder.memo)
 
     def test_extra_data(self):

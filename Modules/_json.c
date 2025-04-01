@@ -21,6 +21,7 @@
 typedef struct _PyScannerObject {
     PyObject_HEAD
     signed char strict;
+    signed char cache_keys;
     PyObject *object_hook;
     PyObject *object_pairs_hook;
     PyObject *parse_float;
@@ -32,6 +33,7 @@ typedef struct _PyScannerObject {
 
 static PyMemberDef scanner_members[] = {
     {"strict", Py_T_BOOL, offsetof(PyScannerObject, strict), Py_READONLY, "strict"},
+    {"cache_keys", Py_T_BOOL, offsetof(PyScannerObject, cache_keys), Py_READONLY, "cache_keys"},
     {"object_hook", _Py_T_OBJECT, offsetof(PyScannerObject, object_hook), Py_READONLY, "object_hook"},
     {"object_pairs_hook", _Py_T_OBJECT, offsetof(PyScannerObject, object_pairs_hook), Py_READONLY},
     {"parse_float", _Py_T_OBJECT, offsetof(PyScannerObject, parse_float), Py_READONLY, "parse_float"},
@@ -710,10 +712,12 @@ _parse_object_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ss
             key = scanstring_unicode(pystr, idx + 1, s->strict, &next_idx);
             if (key == NULL)
                 goto bail;
-            if (PyDict_SetDefaultRef(memo, key, key, &memokey) < 0) {
-                goto bail;
+            if (memo != Py_None) {
+                if (PyDict_SetDefaultRef(memo, key, key, &memokey) < 0) {
+                    goto bail;
+                }
+                Py_SETREF(key, memokey);
             }
-            Py_SETREF(key, memokey);
             idx = next_idx;
 
             /* skip whitespace between key and : delimiter, read :, skip whitespace */
@@ -1124,8 +1128,10 @@ scan_once_unicode(PyScannerObject *s, PyObject *memo, PyObject *pystr, Py_ssize_
 }
 
 static PyObject *
-scanner_call(PyObject *self, PyObject *args, PyObject *kwds)
+scanner_call(PyObject *op, PyObject *args, PyObject *kwds)
 {
+    PyScannerObject *self = PyScannerObject_CAST(op);
+
     /* Python callable interface to scan_once_{str,unicode} */
     PyObject *pystr;
     PyObject *rval;
@@ -1142,12 +1148,17 @@ scanner_call(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyObject *memo = PyDict_New();
-    if (memo == NULL) {
-        return NULL;
+    PyObject *memo;
+    if (self->cache_keys) {
+        memo = PyDict_New();
+        if (memo == NULL) {
+            return NULL;
+        }
     }
-    rval = scan_once_unicode(PyScannerObject_CAST(self),
-                             memo, pystr, idx, &next_idx);
+    else {
+        memo = Py_None;
+    }
+    rval = scan_once_unicode(self, memo, pystr, idx, &next_idx);
     Py_DECREF(memo);
     if (rval == NULL)
         return NULL;
@@ -1160,6 +1171,7 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     PyScannerObject *s;
     PyObject *ctx;
     PyObject *strict;
+    PyObject *cache_keys;
     static char *kwlist[] = {"context", NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "O:make_scanner", kwlist, &ctx))
@@ -1177,6 +1189,13 @@ scanner_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     s->strict = PyObject_IsTrue(strict);
     Py_DECREF(strict);
     if (s->strict < 0)
+        goto bail;
+    cache_keys = PyObject_GetAttrString(ctx, "cache_keys");
+    if (cache_keys == NULL)
+        goto bail;
+    s->cache_keys = PyObject_IsTrue(cache_keys);
+    Py_DECREF(cache_keys);
+    if (s->cache_keys < 0)
         goto bail;
     s->object_hook = PyObject_GetAttrString(ctx, "object_hook");
     if (s->object_hook == NULL)
