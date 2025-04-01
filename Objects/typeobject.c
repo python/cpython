@@ -92,6 +92,19 @@ types_world_is_stopped(void)
     return interp->stoptheworld.world_stopped;
 }
 
+// Checks that either the type has not yet been revealed (exposed) to
+// other threads or the world is stopped and we can safely update it
+// without races.  The _Py_TYPE_REVEALED_FLAG flag is set by type_new() and
+// PyType_FromMetaclass() to indicate that a newly initialized type might
+// be revealed.
+#if SIZEOF_VOID_P > 4
+#define ASSERT_NEW_OR_STOPPED(tp)                                              \
+    assert((((PyObject *)(tp))->ob_flags & _Py_TYPE_REVEALED_FLAG) == 0 ||      \
+           types_world_is_stopped())
+#else
+#define ASSERT_NEW_OR_STOPPED(tp)
+#endif
+
 static void
 types_stop_world(void)
 {
@@ -159,6 +172,7 @@ types_mutex_unlock(void)
 #define types_stop_world()
 #define types_start_world()
 #define ASSERT_TYPE_LOCK_HELD()
+#define ASSERT_NEW_OR_STOPPED(tp)
 
 #endif
 
@@ -428,6 +442,7 @@ type_set_flags(PyTypeObject *tp, unsigned long flags)
         // be active).
         ASSERT_TYPE_LOCK_HELD();
     }
+    ASSERT_NEW_OR_STOPPED(tp);
     tp->tp_flags = flags;
 }
 
@@ -435,6 +450,7 @@ static void
 type_set_flags_with_mask(PyTypeObject *tp, unsigned long mask, unsigned long flags)
 {
     ASSERT_TYPE_LOCK_HELD();
+    ASSERT_NEW_OR_STOPPED(tp);
     unsigned long new_flags = (tp->tp_flags & ~mask) | flags;
     type_set_flags(tp, new_flags);
 }
@@ -570,6 +586,7 @@ static inline void
 set_tp_bases(PyTypeObject *self, PyObject *bases, int initial)
 {
     assert(PyTuple_CheckExact(bases));
+    ASSERT_NEW_OR_STOPPED(self);
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         // XXX tp_bases can probably be statically allocated for each
         // static builtin type.
@@ -627,6 +644,7 @@ _PyType_GetMRO(PyTypeObject *self)
 static inline void
 set_tp_mro(PyTypeObject *self, PyObject *mro, int initial)
 {
+    ASSERT_NEW_OR_STOPPED(self);
     if (mro != NULL) {
         assert(PyTuple_CheckExact(mro));
         if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
@@ -1705,6 +1723,7 @@ static int
 mro_hierarchy(PyTypeObject *type, PyObject *temp)
 {
     ASSERT_TYPE_LOCK_HELD();
+    ASSERT_NEW_OR_STOPPED(type);
 
     PyObject *old_mro;
     int res = mro_internal(type, &old_mro);
@@ -3551,6 +3570,7 @@ static int
 mro_internal_unlocked(PyTypeObject *type, int initial, PyObject **p_old_mro)
 {
     ASSERT_TYPE_LOCK_HELD();
+    ASSERT_NEW_OR_STOPPED(type);
 
     PyObject *new_mro, *old_mro;
     int reent;
@@ -3600,6 +3620,7 @@ static int
 mro_internal(PyTypeObject *type, PyObject **p_old_mro)
 {
     int res;
+    ASSERT_NEW_OR_STOPPED(type);
     res = mro_internal_unlocked(type, 0, p_old_mro);
     return res;
 }
@@ -4679,6 +4700,10 @@ type_new_impl(type_new_ctx *ctx)
     }
 
     assert(_PyType_CheckConsistency(type));
+#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
+    // After this point, other threads can potentally use this type.
+    ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
+#endif
 
     return (PyObject *)type;
 
@@ -5392,6 +5417,10 @@ PyType_FromMetaclass(
     }
 
     assert(_PyType_CheckConsistency(type));
+#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG) && SIZEOF_VOID_P > 4
+    // After this point, other threads can potentally use this type.
+    ((PyObject*)type)->ob_flags |= _Py_TYPE_REVEALED_FLAG;
+#endif
 
  finally:
     if (PyErr_Occurred()) {
@@ -8649,6 +8678,7 @@ static int
 type_ready_mro(PyTypeObject *type, int initial)
 {
     ASSERT_TYPE_LOCK_HELD();
+    ASSERT_NEW_OR_STOPPED(type);
 
     if (type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         if (!initial) {
@@ -8724,6 +8754,7 @@ static int
 type_ready_inherit(PyTypeObject *type)
 {
     ASSERT_TYPE_LOCK_HELD();
+    ASSERT_NEW_OR_STOPPED(type);
 
     /* Inherit special flags from dominant base */
     PyTypeObject *base = type->tp_base;
@@ -8921,6 +8952,7 @@ static int
 type_ready(PyTypeObject *type, int initial)
 {
     ASSERT_TYPE_LOCK_HELD();
+    ASSERT_NEW_OR_STOPPED(type);
 
     _PyObject_ASSERT((PyObject *)type, !is_readying(type));
     start_readying(type);
@@ -11253,6 +11285,7 @@ static pytype_slotdef *
 update_one_slot(PyTypeObject *type, pytype_slotdef *p)
 {
     ASSERT_TYPE_LOCK_HELD();
+    ASSERT_NEW_OR_STOPPED(type);
 
     PyObject *descr;
     PyWrapperDescrObject *d;
@@ -11369,6 +11402,7 @@ static int
 update_slots_callback(PyTypeObject *type, void *data)
 {
     ASSERT_TYPE_LOCK_HELD();
+    ASSERT_NEW_OR_STOPPED(type);
 
     pytype_slotdef **pp = (pytype_slotdef **)data;
     for (; *pp; pp++) {
@@ -11387,6 +11421,7 @@ update_slot(PyTypeObject *type, PyObject *name)
     int offset;
 
     ASSERT_TYPE_LOCK_HELD();
+    ASSERT_NEW_OR_STOPPED(type);
     assert(types_world_is_stopped());
     assert(PyUnicode_CheckExact(name));
     assert(PyUnicode_CHECK_INTERNED(name));
@@ -11441,6 +11476,7 @@ update_all_slots(PyTypeObject* type)
     pytype_slotdef *p;
 
     ASSERT_TYPE_LOCK_HELD();
+    ASSERT_NEW_OR_STOPPED(type);
 
     /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
     type_modified_unlocked(type);
