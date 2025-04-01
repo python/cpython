@@ -648,7 +648,7 @@ write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const 
             PyErr_SetString(PyExc_PermissionError, "Invalid argument to mach_vm_write");
             break;
         default:
-            PyErr_SetString(PyExc_RuntimeError, "Unknown error writing memory");
+            PyErr_Format(PyExc_RuntimeError, "Unknown error writing memory: %d", (int)kr);
         }
         return -1;
     }
