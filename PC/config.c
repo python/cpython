@@ -22,6 +22,7 @@ extern PyObject* PyInit__sysconfig(void);
 extern PyObject* PyInit__typing(void);
 extern PyObject* PyInit_time(void);
 extern PyObject* PyInit__thread(void);
+
 /* cryptographic hash functions */
 extern PyObject* PyInit__blake2(void);
 extern PyObject* PyInit__md5(void);
@@ -30,7 +31,7 @@ extern PyObject* PyInit__sha2(void);
 extern PyObject* PyInit__sha3(void);
 /* other cryptographic primitives */
 extern PyObject* PyInit__hmac(void);
-/* ------------------------ */
+
 #ifdef WIN32
 extern PyObject* PyInit_msvcrt(void);
 extern PyObject* PyInit__locale(void);
