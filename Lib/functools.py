@@ -902,9 +902,13 @@ def singledispatch(func):
             if cache_token != current_token:
                 dispatch_cache.clear()
                 cache_token = current_token
-        try:
-            impl = dispatch_cache[cls]
-        except KeyError:
+
+
+        # if PEP-585 types are not registered for the given *cls*,
+        # then we can use the cache. Otherwise, the cache cannot be used
+        # because we need to confirm every item matches first
+        from typing import get_origin
+        if not any(i for i in registry.keys() if get_origin(i) == cls):
             try:
                 impl = registry[cls]
             except KeyError:
