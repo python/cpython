@@ -103,28 +103,29 @@ which relays any information about the UUID's safety, using this enumeration:
      - Meaning
 
    * - .. attribute:: UUID.time_low
-     - The first 32 bits of the UUID.
+     - The first 32 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.time_mid
-     - The next 16 bits of the UUID.
+     - The next 16 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.time_hi_version
-     - The next 16 bits of the UUID.
+     - The next 16 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.clock_seq_hi_variant
-     - The next 8 bits of the UUID.
+     - The next 8 bits of the UUID. Only relevant to versions 1 and 6.
 
    * - .. attribute:: UUID.clock_seq_low
-     - The next 8 bits of the UUID.
+     - The next 8 bits of the UUID. Only relevant to versions 1 and 6.
 
    * - .. attribute:: UUID.node
-     - The last 48 bits of the UUID.
+     - The last 48 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.time
-     - The 60-bit timestamp.
+     - The 60-bit timestamp for version 1 and 6,
+       or the 48-bit timestamp for version 7.
 
    * - .. attribute:: UUID.clock_seq
-     - The 14-bit sequence number.
+     - The 14-bit sequence number. Only relevant to versions 1 and 6.
 
 
 .. attribute:: UUID.hex
@@ -377,6 +378,13 @@ The following options are accepted:
    The name used as part of generating the uuid. Only required for
    :func:`uuid3` / :func:`uuid5` functions.
 
+.. option:: -C <num>
+            --count <num>
+
+   Generate *num* fresh UUIDs.
+
+   .. versionadded:: next
+
 
 .. _uuid-example:
 
@@ -432,16 +440,18 @@ Here are some examples of typical usage of the :mod:`uuid` module::
 Command-Line Example
 --------------------
 
-Here are some examples of typical usage of the :mod:`uuid` command line interface:
+Here are some examples of typical usage of the :mod:`uuid` command-line interface:
 
 .. code-block:: shell
 
-   # generate a random uuid - by default uuid4() is used
+   # generate a random UUID - by default uuid4() is used
    $ python -m uuid
 
-   # generate a uuid using uuid1()
+   # generate a UUID using uuid1()
    $ python -m uuid -u uuid1
 
-   # generate a uuid using uuid5
+   # generate a UUID using uuid5
    $ python -m uuid -u uuid5 -n @url -N example.com
 
+   # generate 42 random UUIDs
+   $ python -m uuid -C 42

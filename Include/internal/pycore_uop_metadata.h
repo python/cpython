@@ -33,8 +33,18 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_LOAD_FAST_6] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
     [_LOAD_FAST_7] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
     [_LOAD_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_BORROW_0] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_BORROW_1] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_BORROW_2] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_BORROW_3] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_BORROW_4] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_BORROW_5] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_BORROW_6] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_BORROW_7] = HAS_LOCAL_FLAG | HAS_PURE_FLAG,
+    [_LOAD_FAST_BORROW] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_PURE_FLAG,
     [_LOAD_FAST_AND_CLEAR] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_FAST_LOAD_FAST] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
+    [_LOAD_FAST_BORROW_LOAD_FAST_BORROW] = HAS_ARG_FLAG | HAS_LOCAL_FLAG,
     [_LOAD_CONST_MORTAL] = HAS_ARG_FLAG | HAS_CONST_FLAG,
     [_LOAD_CONST_IMMORTAL] = HAS_ARG_FLAG | HAS_CONST_FLAG,
     [_LOAD_SMALL_INT_0] = 0,
@@ -64,7 +74,8 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_TO_BOOL_INT] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_TO_BOOL_LIST] = HAS_EXIT_FLAG,
     [_TO_BOOL_NONE] = HAS_EXIT_FLAG,
-    [_TO_BOOL_STR] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
+    [_GUARD_TOS_UNICODE] = HAS_EXIT_FLAG,
+    [_TO_BOOL_STR] = HAS_ESCAPES_FLAG,
     [_REPLACE_WITH_TRUE] = HAS_ESCAPES_FLAG,
     [_UNARY_INVERT] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_BOTH_INT] = HAS_EXIT_FLAG,
@@ -131,7 +142,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_MAKE_CELL] = HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_DELETE_DEREF] = HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_LOAD_FROM_DICT_OR_DEREF] = HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
-    [_LOAD_DEREF] = HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_LOAD_DEREF] = HAS_ARG_FLAG | HAS_LOCAL_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_DEREF] = HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ESCAPES_FLAG,
     [_COPY_FREE_VARS] = HAS_ARG_FLAG,
     [_BUILD_STRING] = HAS_ARG_FLAG | HAS_ERROR_FLAG,
@@ -286,6 +297,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
 
 const uint8_t _PyUop_Replication[MAX_UOP_ID+1] = {
     [_LOAD_FAST] = 8,
+    [_LOAD_FAST_BORROW] = 8,
     [_LOAD_SMALL_INT] = 4,
     [_STORE_FAST] = 8,
     [_INIT_CALL_PY_EXACT_ARGS] = 5,
@@ -413,6 +425,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_NOT_EXHAUSTED_TUPLE] = "_GUARD_NOT_EXHAUSTED_TUPLE",
     [_GUARD_TOS_FLOAT] = "_GUARD_TOS_FLOAT",
     [_GUARD_TOS_INT] = "_GUARD_TOS_INT",
+    [_GUARD_TOS_UNICODE] = "_GUARD_TOS_UNICODE",
     [_GUARD_TYPE_VERSION] = "_GUARD_TYPE_VERSION",
     [_GUARD_TYPE_VERSION_AND_LOCK] = "_GUARD_TYPE_VERSION_AND_LOCK",
     [_IMPORT_FROM] = "_IMPORT_FROM",
@@ -464,6 +477,16 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_LOAD_FAST_6] = "_LOAD_FAST_6",
     [_LOAD_FAST_7] = "_LOAD_FAST_7",
     [_LOAD_FAST_AND_CLEAR] = "_LOAD_FAST_AND_CLEAR",
+    [_LOAD_FAST_BORROW] = "_LOAD_FAST_BORROW",
+    [_LOAD_FAST_BORROW_0] = "_LOAD_FAST_BORROW_0",
+    [_LOAD_FAST_BORROW_1] = "_LOAD_FAST_BORROW_1",
+    [_LOAD_FAST_BORROW_2] = "_LOAD_FAST_BORROW_2",
+    [_LOAD_FAST_BORROW_3] = "_LOAD_FAST_BORROW_3",
+    [_LOAD_FAST_BORROW_4] = "_LOAD_FAST_BORROW_4",
+    [_LOAD_FAST_BORROW_5] = "_LOAD_FAST_BORROW_5",
+    [_LOAD_FAST_BORROW_6] = "_LOAD_FAST_BORROW_6",
+    [_LOAD_FAST_BORROW_7] = "_LOAD_FAST_BORROW_7",
+    [_LOAD_FAST_BORROW_LOAD_FAST_BORROW] = "_LOAD_FAST_BORROW_LOAD_FAST_BORROW",
     [_LOAD_FAST_CHECK] = "_LOAD_FAST_CHECK",
     [_LOAD_FAST_LOAD_FAST] = "_LOAD_FAST_LOAD_FAST",
     [_LOAD_FROM_DICT_OR_DEREF] = "_LOAD_FROM_DICT_OR_DEREF",
@@ -587,9 +610,29 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _LOAD_FAST:
             return 0;
+        case _LOAD_FAST_BORROW_0:
+            return 0;
+        case _LOAD_FAST_BORROW_1:
+            return 0;
+        case _LOAD_FAST_BORROW_2:
+            return 0;
+        case _LOAD_FAST_BORROW_3:
+            return 0;
+        case _LOAD_FAST_BORROW_4:
+            return 0;
+        case _LOAD_FAST_BORROW_5:
+            return 0;
+        case _LOAD_FAST_BORROW_6:
+            return 0;
+        case _LOAD_FAST_BORROW_7:
+            return 0;
+        case _LOAD_FAST_BORROW:
+            return 0;
         case _LOAD_FAST_AND_CLEAR:
             return 0;
         case _LOAD_FAST_LOAD_FAST:
+            return 0;
+        case _LOAD_FAST_BORROW_LOAD_FAST_BORROW:
             return 0;
         case _LOAD_CONST_MORTAL:
             return 0;
@@ -649,6 +692,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _TO_BOOL_NONE:
             return 1;
+        case _GUARD_TOS_UNICODE:
+            return 0;
         case _TO_BOOL_STR:
             return 1;
         case _REPLACE_WITH_TRUE:
@@ -930,7 +975,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _LOAD_ATTR_METHOD_LAZY_DICT:
             return 1;
         case _MAYBE_EXPAND_METHOD:
-            return 2 + oparg;
+            return 0;
         case _PY_FRAME_GENERAL:
             return 2 + oparg;
         case _CHECK_FUNCTION_VERSION:
@@ -976,7 +1021,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CALL_TUPLE_1:
             return 3;
         case _CHECK_AND_ALLOCATE_OBJECT:
-            return 2 + oparg;
+            return 0;
         case _CREATE_INIT_FRAME:
             return 2 + oparg;
         case _EXIT_INIT_CHECK:
@@ -1004,7 +1049,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CALL_METHOD_DESCRIPTOR_FAST:
             return 2 + oparg;
         case _MAYBE_EXPAND_METHOD_KW:
-            return 3 + oparg;
+            return 1;
         case _PY_FRAME_KW:
             return 3 + oparg;
         case _CHECK_FUNCTION_VERSION_KW:

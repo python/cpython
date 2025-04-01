@@ -38,6 +38,14 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
+      <!--
+      ExceptionHandling=Async sets MSVC's /EHa (-fasync-exceptions in clang)
+      For clang, /EHa just has a slightly different meaning compared to MSVC,
+      so this option is needed to handle SEH correctly
+      (even though MSVC does not need it).
+      Please see GH-131691 for details.
+      -->
+      <ExceptionHandling>Async</ExceptionHandling>
       <AdditionalOptions>-Wno-deprecated-non-prototype -Wno-unused-label -Wno-pointer-sign -Wno-incompatible-pointer-types-discards-qualifiers -Wno-unused-function %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)' == 'Win32'">-m32 %(AdditionalOptions)</AdditionalOptions>
       <AdditionalOptions Condition="'$(Platform)' == 'x64'">-m64 %(AdditionalOptions)</AdditionalOptions>

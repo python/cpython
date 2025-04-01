@@ -134,7 +134,7 @@ class TestUops(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_JUMP_TO_TOP", uops)
-        self.assertIn("_LOAD_FAST_0", uops)
+        self.assertIn("_LOAD_FAST_BORROW_0", uops)
 
     def test_extended_arg(self):
         "Check EXTENDED_ARG handling in superblock creation"
@@ -180,7 +180,7 @@ class TestUops(unittest.TestCase):
 
         ex = get_first_executor(many_vars)
         self.assertIsNotNone(ex)
-        self.assertTrue(any((opcode, oparg, operand) == ("_LOAD_FAST", 259, 0)
+        self.assertTrue(any((opcode, oparg, operand) == ("_LOAD_FAST_BORROW", 259, 0)
                             for opcode, oparg, _, operand in list(ex)))
 
     def test_unspecialized_unpack(self):
@@ -1580,6 +1580,24 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP_INT", uops)
         self.assertIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+
+    def test_remove_guard_for_known_type_str(self):
+        def f(n):
+            for i in range(n):
+                false = i == TIER2_THRESHOLD
+                empty = "X"[:false]
+                empty += ""  # Make JIT realize this is a string.
+                if empty:
+                    return 1
+            return 0
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 0)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_TO_BOOL_STR", uops)
+        self.assertNotIn("_GUARD_TOS_UNICODE", uops)
+
 
 def global_identity(x):
     return x
