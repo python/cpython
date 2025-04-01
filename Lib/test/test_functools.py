@@ -2254,6 +2254,133 @@ class TestSingleDispatch(unittest.TestCase):
 
         self.assertRaises(RuntimeError, g.dispatch(list[int]))
 
+    def test_pep585_method_basic(self):
+        class A:
+            @functools.singledispatchmethod
+            def g(obj):
+                return "base"
+            def g_list_int(li):
+                return "list of ints"
+
+        a = A()
+        a.g.register(list[int], A.g_list_int)
+        self.assertEqual(a.g([1]), "list of ints")
+        self.assertIs(a.g.dispatch(list[int]), A.g_list_int)
+
+    def test_pep585_method_annotation(self):
+        class A:
+            @functools.singledispatchmethod
+            def g(obj):
+                return "base"
+            # previously this failed with: 'not a class'
+            @g.register
+            def g_list_int(li: list[int]):
+                return "list of ints"
+        a = A()
+        self.assertEqual(a.g([1,2,3]), "list of ints")
+        self.assertIs(g.dispatch(tuple[int]), A.g_list_int)
+
+    def test_pep585_method_all_must_match(self):
+        class A:
+            @functools.singledispatch
+            def g(obj):
+                return "base"
+            def g_list_int(li):
+                return "list of ints"
+            def g_list_not_ints(l):
+                # should only trigger if list doesnt match `list[int]`
+                # ie. at least one element is not an int
+                return "!all(int)"
+
+        a = A()
+        a.g.register(list[int], A.g_list_int)
+        a.g.register(list, A.g_list_not_ints)
+
+        self.assertEqual(a.g([1,2,3]), "list of ints")
+        self.assertEqual(a.g([1,2,3, "hello"]), "!all(int)")
+        self.assertEqual(a.g([3.14]), "!all(int)")
+
+        self.assertIs(a.g.dispatch(list[int]), A.g_list_int)
+        self.assertIs(a.g.dispatch(list[str]), A.g_list_not_ints)
+        self.assertIs(a.g.dispatch(list[float]), A.g_list_not_ints)
+        self.assertIs(a.g.dispatch(list[int|str]), A.g_list_not_ints)
+
+    def test_pep585_method_specificity(self):
+        class A:
+            @functools.singledispatch
+            def g(obj):
+                return "base"
+            @g.register
+            def g_list(l: list):
+                return "basic list"
+            @g.register
+            def g_list_int(li: list[int]):
+                return "int"
+            @g.register
+            def g_list_str(ls: list[str]):
+                return "str"
+            @g.register
+            def g_list_mixed_int_str(lmis:list[int|str]):
+                return "int|str"
+            @g.register
+            def g_list_mixed_int_float(lmif: list[int|float]):
+                return "int|float"
+            @g.register
+            def g_list_mixed_int_float_str(lmifs: list[int|float|str]):
+                return "int|float|str"
+
+        a = A()
+
+        # this matches list, list[int], list[int|str], list[int|float|str], list[int|...|...|...|...]
+        # but list[int] is the most specific, so that is correct
+        self.assertEqual(a.g([1,2,3]), "int")
+
+        # this cannot match list[int] because of the string
+        # it does match list[int|float|str] but this is incorrect because,
+        # the most specific is list[int|str]
+        self.assertEqual(a.g([1,2,3, "hello"]), "int|str")
+
+        # list[float] is not mapped so,
+        # list[int|float] is the most specific
+        self.assertEqual(a.g([3.14]), "int|float")
+
+        self.assertIs(a.g.dispatch(list[int]), A.g_list_int)
+        self.assertIs(a.g.dispatch(list[float]), A.g_list_mixed_int_float)
+        self.assertIs(a.g.dispatch(list[int|str]), A.g_list_mixed_int_str)
+
+    def test_pep585_method_ambiguous(self):
+        class A:
+            @functools.singledispatch
+            def g(obj):
+                return "base"
+            @g.register
+            def g_list_int_float(l: list[int|float]):
+                return "int|float"
+            @g.register
+            def g_list_int_str(l: list[int|str]):
+                return "int|str"
+            @g.register
+            def g_list_int(l: list[int]):
+                return "int only"
+
+        a = A()
+
+        self.assertEqual(a.g([3.1]), "int|float") # floats only
+        self.assertEqual(a.g(["hello"]), "int|str") # strings only
+        self.assertEqual(a.g([3.14, 1]), "int|float") # ints and floats
+        self.assertEqual(a.g(["hello", 1]), "int|str") # ints and strings
+
+        self.assertIs(a.g.dispatch(list[int]), A.g_list_int)
+        self.assertIs(a.g.dispatch(list[str]), A.g_list_int_str)
+        self.assertIs(a.g.dispatch(list[float]), A.g_list_int_float)
+        self.assertIs(a.g.dispatch(list[int|str]), A.g_list_int_str)
+        self.assertIs(a.g.dispatch(list[int|float]), A.g_list_int_float)
+
+        # these should fail because it's unclear which target is "correct"
+        self.assertRaises(RuntimeError, a.g([1]))
+
+        self.assertRaises(RuntimeError, a.g.dispatch(list[int]))
+
     def test_simple_overloads(self):
         @functools.singledispatch
         def g(obj):
