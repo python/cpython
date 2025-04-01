@@ -1,7 +1,7 @@
 import unittest
 from test.support import MS_WINDOWS
 import ctypes
-from ctypes import POINTER, Structure, c_void_p
+from ctypes import POINTER, Structure, c_void_p, set_non_ctypes_pointer_type
 
 from ._support import PyCSimpleType, PyCPointerType, PyCStructType
 
@@ -36,7 +36,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
                 else:
                     ptr_bases = (self, POINTER(bases[0]))
                 p = p_meta(f"POINTER({self.__name__})", ptr_bases, {})
-                self.__pointer_type__ = p
+                set_non_ctypes_pointer_type(self, p)
                 return self
 
         class p_meta(PyCSimpleType, ct_meta):
@@ -85,7 +85,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
                 if isinstance(self, p_meta):
                     return self
                 p = p_meta(f"POINTER({self.__name__})", (self, c_void_p), {})
-                self.__pointer_type__ = p
+                set_non_ctypes_pointer_type(self, p)
                 return self
 
         class p_meta(PyCSimpleType, ct_meta):
@@ -131,7 +131,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
                 else:
                     ptr_bases = (self, POINTER(bases[0]))
                 p = p_meta(f"POINTER({self.__name__})", ptr_bases, {})
-                self.__pointer_type__ = p
+                set_non_ctypes_pointer_type(self, p)
 
         class p_meta(PyCSimpleType, ct_meta):
             pass
@@ -180,7 +180,7 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
                 if isinstance(self, p_meta):
                     return
                 p = p_meta(f"POINTER({self.__name__})", (self, c_void_p), {})
-                self.__pointer_type__ = p
+                set_non_ctypes_pointer_type(self, p)
 
         class p_meta(PyCSimpleType, ct_meta):
             pass
