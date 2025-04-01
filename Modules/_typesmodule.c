@@ -1,7 +1,7 @@
 /* _types module */
 
 #include "Python.h"
-#include "internal/pycore_namespace.h"     // _PyNamespace_Type
+#include "pycore_namespace.h"     // _PyNamespace_Type
 
 static int
 _types_exec(PyObject *m)
