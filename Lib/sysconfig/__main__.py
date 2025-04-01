@@ -160,15 +160,6 @@ def _print_config_dict(d, stream):
     print ("}", file=stream)
 
 
-def _get_pybuilddir(py_debug=None):
-    pybuilddir = f'build/lib.{get_platform()}-{get_python_version()}'
-    if py_debug is None:
-        py_debug = get_config_var('Py_DEBUG')
-    if py_debug:
-        pybuilddir += '-pydebug'
-    return pybuilddir
-
-
 def _get_json_data_name():
     name = _get_sysconfigdata_name()
     assert name.startswith('_sysconfigdata')
@@ -222,7 +213,10 @@ def _generate_posix_vars():
     module.build_time_vars = vars
     sys.modules[name] = module
 
-    pybuilddir = _get_pybuilddir(vars['Py_DEBUG'])
+    pybuilddir = os.environ.get(
+        '_PYTHON_SYSCONFIGDATA_PATH',
+        f'build/lib.{get_platform()}-{get_python_version()}',
+    )
     os.makedirs(pybuilddir, exist_ok=True)
     destfile = os.path.join(pybuilddir, name + '.py')
 
