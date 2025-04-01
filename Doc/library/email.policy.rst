@@ -411,12 +411,17 @@ added matters.  To illustrate::
       formatted in this way may be passed to SMTP servers that support
       the ``SMTPUTF8`` extension (:rfc:`6531`).
 
-      .. versionchanged:: 3.13
-         If ``False``, the generator will raise a ``ValueError`` if any email
-         address contains non-ASCII characters. To send to a non-ASCII domain
-         with ``utf8=False``, encode the domain using the third-party
-         :pypi:`idna` module or :mod:`encodings.idna`. No RFC allows a non-ASCII
-         username ("localpart") in an email address with ``utf8=False``.
+      When ``False``, the generator will raise an
+      :exc:`~email.errors.InvalidMailboxError` if any address header includes
+      a mailbox ("addr-spec") with non-ASCII characters. To use a mailbox with
+      an internationalized domain name, first encode the domain using the
+      third-party :pypi:`idna` or :pypi:`uts46` module or with
+      :mod:`encodings.idna`. It is not possible to use a non-ASCII username
+      ("local-part") in a mailbox when ``utf8=False``.
+
+      .. versionchanged:: 3.14
+         Raises :exc:`~email.errors.InvalidMailboxError`. (Earlier versions
+         incorrectly applied :rfc:`2047` to non-ASCII addr-specs.)
 
    .. attribute:: refold_source
 

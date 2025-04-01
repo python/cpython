@@ -1,3 +1,5 @@
-Stop incorrectly using RFC 2047 "encoded words" for email addresses with
-non-ASCII characters when email.generator is called using a policy with
-``utf8=False``.
+The :mod:`email` module no longer incorrectly encodes non-ASCII characters
+in email addresses using :rfc:`2047` encoding. Under a policy with ``utf8=True``
+this means the addresses will be correctly passed through. Under a policy with
+``utf8=False``, attempting to serialize a message with non-ASCII email addresses
+will now result in an :exc:`~email.errors.InvalidMailboxError`.

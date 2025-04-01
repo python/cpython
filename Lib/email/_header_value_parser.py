@@ -2843,7 +2843,7 @@ def _refold_parse_tree(parse_tree, *, policy):
                 # Non-ASCII addr-spec came from parsed message; leave unchanged.
                 want_encoding = False
             else:
-                raise ValueError(
+                raise errors.InvalidMailboxError(
                     "Non-ASCII address requires policy with utf8=True:"
                     " '{}'".format(part)
                 )

@@ -304,11 +304,13 @@ class TestGeneratorBase:
             with self.subTest(address=address):
                 msg = EmailMessage()
                 msg['To'] = address
-                expected_error = re.escape(
-                    "Non-ASCII address requires policy with utf8=True:"
-                    " '{}'".format(msg['To'].addresses[0].addr_spec)
+                addr_spec = msg['To'].addresses[0].addr_spec
+                expected_error = (
+                    fr"(?i)(?=.*non-ascii)(?=.*utf8.*True)(?=.*{re.escape(addr_spec)})"
                 )
-                with self.assertRaisesRegex(ValueError, expected_error):
+                with self.assertRaisesRegex(
+                    email.errors.InvalidMailboxError, expected_error
+                ):
                     g.flatten(msg)
 
 
