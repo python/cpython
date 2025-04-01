@@ -332,5 +332,3 @@ UnionType = type(int | str)
 EllipsisType = type(Ellipsis)
 NoneType = type(None)
 NotImplementedType = type(NotImplemented)
-
-__all__ = [n for n in globals() if not n.startswith('_')]
