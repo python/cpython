@@ -1086,55 +1086,47 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                 else if (format->type == 'o') {
                     shift *= 3;
                 }
+                shift--;  /* expected value in range(-2**shift, 2**shift) */
 
                 PyObject *mod = _PyLong_Lshift(PyLong_FromLong(1), shift);
-                PyObject *mod2 = _PyLong_Rshift(mod, 1);
-                PyObject *value2 = value;
 
-                if (mod == NULL || mod2 == NULL) {
-                    Py_XDECREF(mod);
-                    Py_XDECREF(mod2);
+                if (mod == NULL) {
                     goto done;
                 }
                 if (PyLong_IsNegative(value)) {
-                    value2 = PyNumber_Negative(mod2);
-                    if (value2 == NULL) {
-                        Py_DECREF(mod2);
+                    Py_SETREF(mod, PyNumber_Negative(mod));
+                    if (mod == NULL) {
                         goto done;
                     }
-                    Py_SETREF(mod2, value2);
-                    if (PyObject_RichCompareBool(value, mod2, Py_LT)) {
-                        Py_DECREF(mod2);
-                        PyErr_Format(PyExc_ValueError,
-                                     "Expected integer in range(-2**%ld, 2**%ld)",
-                                     shift - 1, shift - 1);
-                        goto done;
+                    if (PyObject_RichCompareBool(value, mod, Py_LT)) {
+                        goto range;
                     }
-                    Py_DECREF(mod2);
-                    value2 = PyNumber_Add(value, mod);
+                    Py_SETREF(mod, _PyLong_Lshift(mod, 1));
+                    tmp = PyNumber_Subtract(value, mod);
                     Py_DECREF(mod);
-                    if (value2 == NULL) {
+                    if (tmp == NULL) {
                         goto done;
                     }
+                    Py_SETREF(tmp, _PyLong_Format(tmp, base));
                 }
                 else {
-                    if (PyObject_RichCompareBool(value2, mod2, Py_GE)) {
+                    if (PyObject_RichCompareBool(value, mod, Py_GE)) {
+range:
                         Py_DECREF(mod);
-                        Py_DECREF(mod2);
                         PyErr_Format(PyExc_ValueError,
                                      "Expected integer in range(-2**%ld, 2**%ld)",
-                                     shift - 1, shift - 1);
+                                     shift, shift);
                         goto done;
                     }
                     Py_DECREF(mod);
-                    Py_DECREF(mod2);
-                    Py_INCREF(value2);
+                    tmp = _PyLong_Format(value, base);
                 }
-                tmp = _PyLong_Format(value2, base);
-                Py_DECREF(value2);
             }
             else {
                 tmp = _PyLong_Format(value, base);
+            }
+            if (tmp == NULL) {
+                goto done;
             }
 
             /* Prepend enough leading zeros (after the sign) */
