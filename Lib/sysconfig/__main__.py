@@ -161,7 +161,10 @@ def _print_config_dict(d, stream):
 
 
 def _get_pybuilddir():
-    return f'build/lib.{get_platform()}-{get_python_version()}'
+    pybuilddir = f'build/lib.{get_platform()}-{get_python_version()}'
+    if hasattr(sys, "gettotalrefcount"):
+        pybuilddir += '-pydebug'
+    return pybuilddir
 
 
 def _get_json_data_name():
