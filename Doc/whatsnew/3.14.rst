@@ -90,6 +90,33 @@ If you encounter :exc:`NameError`\s or pickling errors coming out of
 New features
 ============
 
+.. _whatsnew314-pep758:
+
+PEP 758 – Allow except and except* expressions without parentheses
+------------------------------------------------------------------
+
+The :keyword:`except` and :keyword:`except* <except_star>` expressions now allow
+parentheses to be omitted when there are multiple exception types and the ``as`` clause is not used.
+For example the following expressions are now valid:
+
+.. code-block:: python
+
+   try:
+       release_new_sleep_token_album()
+   except AlbumNotFound, SongsTooGoodToBeReleased:
+       print("Sorry, no new album this year.")
+
+    # The same applies to except* (for exception groups):
+   try:
+       release_new_sleep_token_album()
+   except* AlbumNotFound, SongsTooGoodToBeReleased:
+       print("Sorry, no new album this year.")
+
+Check :pep:`758` for more details.
+
+(Contributed by Pablo Galindo and Brett Cannon in :gh:`131831`.)
+
+
 .. _whatsnew314-pep649:
 
 PEP 649: deferred evaluation of annotations
