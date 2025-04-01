@@ -1105,8 +1105,8 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                     Py_SETREF(mod2, value2);
                     if (PyObject_RichCompareBool(value, mod2, Py_LT)) {
                         Py_DECREF(mod2);
-                        PyErr_Format(PyExc_OverflowError,
-                                     "Expected integer in range [-2**%ld, 2**%ld)",
+                        PyErr_Format(PyExc_ValueError,
+                                     "Expected integer in range(-2**%ld, 2**%ld)",
                                      shift - 1, shift - 1);
                         goto done;
                     }
@@ -1121,8 +1121,8 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                     if (PyObject_RichCompareBool(value2, mod2, Py_GE)) {
                         Py_DECREF(mod);
                         Py_DECREF(mod2);
-                        PyErr_Format(PyExc_OverflowError,
-                                     "Expected integer in range [-2**%ld, 2**%ld)",
+                        PyErr_Format(PyExc_ValueError,
+                                     "Expected integer in range(-2**%ld, 2**%ld)",
                                      shift - 1, shift - 1);
                         goto done;
                     }
