@@ -332,7 +332,14 @@ WASI = Platform(
             "--wasm max-wasm-stack=16777216 "
             "--wasi preview2 "
             "--dir {srcdir}::/ "
-            "--env PYTHONPATH=/{relbuilddir}/build/lib.wasi-wasm32-{version}:/Lib"
+            "--env PYTHONPATH="
+            + ":".join(
+                (
+                    "/{relbuilddir}/build/lib.wasi-wasm32-{version}",
+                    "/{relbuilddir}/build/lib.wasi-wasm32-{version}-pydebug",
+                    "/Lib",
+                )
+            )
         ),
         "PATH": [WASI_SDK_PATH / "bin", os.environ["PATH"]],
     },
