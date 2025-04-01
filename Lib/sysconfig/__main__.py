@@ -213,10 +213,7 @@ def _generate_posix_vars():
     module.build_time_vars = vars
     sys.modules[name] = module
 
-    pybuilddir = os.environ.get(
-        '_PYTHON_SYSCONFIGDATA_PATH',
-        f'build/lib.{get_platform()}-{get_python_version()}',
-    )
+    pybuilddir = f'build/lib.{get_platform()}-{get_python_version()}'
     os.makedirs(pybuilddir, exist_ok=True)
     destfile = os.path.join(pybuilddir, name + '.py')
 
