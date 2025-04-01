@@ -887,13 +887,14 @@ def singledispatch(func):
     dispatch_cache = weakref.WeakKeyDictionary()
     cache_token = None
 
-    def dispatch(cls):
+    def dispatch(cls_obj):
         """generic_func.dispatch(cls) -> <function implementation>
 
         Runs the dispatch algorithm to return the best available implementation
         for the given *cls* registered on *generic_func*.
 
         """
+        cls = cls_obj.__class__
         nonlocal cache_token
         if cache_token is not None:
             current_token = get_cache_token()
@@ -981,7 +982,7 @@ def singledispatch(func):
         if not args:
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
-        return dispatch(args[0].__class__)(*args, **kw)
+        return dispatch(args[0])(*args, **kw)
 
     funcname = getattr(func, '__name__', 'singledispatch function')
     registry[object] = func
@@ -1069,7 +1070,7 @@ class _singledispatchmethod_get:
                                'singledispatchmethod method')
             raise TypeError(f'{funcname} requires at least '
                             '1 positional argument')
-        return self._dispatch(args[0].__class__).__get__(self._obj, self._cls)(*args, **kwargs)
+        return self._dispatch(args[0]).__get__(self._obj, self._cls)(*args, **kwargs)
 
     def __getattr__(self, name):
         # Resolve these attributes lazily to speed up creation of
