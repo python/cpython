@@ -147,6 +147,7 @@ set PYTHONPATH=$(PySourcePath)Lib
 @setlocal
 @set PYTHONHOME=$(PySourcePath)
 @"$(OutDir)$(PyExeName)$(PyDebugExt).exe" %*
+@exit /B %ERRORLEVEL%
 </_Content>
       <_ExistingContent Condition="Exists('$(PySourcePath)python.bat')">$([System.IO.File]::ReadAllText('$(PySourcePath)python.bat'))</_ExistingContent>
     </PropertyGroup>
