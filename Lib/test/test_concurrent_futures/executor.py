@@ -1,12 +1,10 @@
 import gc
 import itertools
-import sys
 import threading
 import time
 import weakref
 from concurrent import futures
 from operator import add
-from sysconfig import get_config_var
 from test import support
 from test.support import Py_GIL_DISABLED
 
@@ -69,13 +67,10 @@ class ExecutorTest:
             msg="next should raise a ZeroDivisionError",
         )
 
-        # some referrers may remain for free-threading build on Windows/Linux
-        is_free_threading = '--disable-gil' in get_config_var("CONFIG_ARGS")
-        if not is_free_threading or sys.platform not in ("linux", "win32"):
-            self.assertFalse(
-                gc.get_referrers(error),
-                msg="the exception should not have any referrers",
-            )
+        self.assertFalse(
+            gc.get_referrers(error),
+            msg="the exception should not have any referrers",
+        )
 
         tb = error.__traceback__
         while (tb := tb.tb_next):
