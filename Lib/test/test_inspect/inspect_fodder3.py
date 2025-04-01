@@ -4,7 +4,7 @@ from functools import cached_property
 class ParentInheritDoc:
     @cached_property
     def foo(self):
-        "docstring for foo defined in parent"
+        """docstring for foo defined in parent"""
 
 class ChildInheritDoc(ParentInheritDoc):
     @cached_property
