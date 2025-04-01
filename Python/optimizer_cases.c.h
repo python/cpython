@@ -140,8 +140,11 @@
         }
 
         case _UNARY_NOT: {
+            JitOptSymbol *value;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            value = stack_pointer[-1];
+            sym_set_type(value, &PyBool_Type);
+            res = sym_new_truthiness(ctx, value, false);
             stack_pointer[-1] = res;
             break;
         }
@@ -151,7 +154,7 @@
             JitOptSymbol *res;
             value = stack_pointer[-1];
             if (!optimize_to_bool(this_instr, ctx, value, &res)) {
-                res = sym_new_type(ctx, &PyBool_Type);
+                res = sym_new_truthiness(ctx, value, true);
             }
             stack_pointer[-1] = res;
             break;
@@ -163,7 +166,7 @@
             value = stack_pointer[-1];
             if (!optimize_to_bool(this_instr, ctx, value, &res)) {
                 sym_set_type(value, &PyBool_Type);
-                res = value;
+                res = sym_new_truthiness(ctx, value, true);
             }
             stack_pointer[-1] = res;
             break;
@@ -175,7 +178,7 @@
             value = stack_pointer[-1];
             if (!optimize_to_bool(this_instr, ctx, value, &res)) {
                 sym_set_type(value, &PyLong_Type);
-                res = sym_new_type(ctx, &PyBool_Type);
+                res = sym_new_truthiness(ctx, value, true);
             }
             stack_pointer[-1] = res;
             break;
@@ -205,13 +208,22 @@
             break;
         }
 
+        case _GUARD_TOS_UNICODE: {
+            JitOptSymbol *value;
+            value = stack_pointer[-1];
+            if (sym_matches_type(value, &PyUnicode_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(value, &PyUnicode_Type);
+            break;
+        }
+
         case _TO_BOOL_STR: {
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
             if (!optimize_to_bool(this_instr, ctx, value, &res)) {
-                res = sym_new_type(ctx, &PyBool_Type);
-                sym_set_type(value, &PyUnicode_Type);
+                res = sym_new_truthiness(ctx, value, true);
             }
             stack_pointer[-1] = res;
             break;
@@ -268,21 +280,17 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right) &&
-                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
-            {
-                assert(PyLong_CheckExact(sym_get_const(left)));
-                assert(PyLong_CheckExact(sym_get_const(right)));
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
-                PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(left),
-                    (PyLongObject *)sym_get_const(right));
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+                PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(ctx, left),
+                    (PyLongObject *)sym_get_const(ctx, right));
                 if (temp == NULL) {
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
-                stack_pointer[0] = res;
-                stack_pointer += 1;
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
@@ -303,21 +311,17 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right) &&
-                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
-            {
-                assert(PyLong_CheckExact(sym_get_const(left)));
-                assert(PyLong_CheckExact(sym_get_const(right)));
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
-                PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(left),
-                    (PyLongObject *)sym_get_const(right));
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+                PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(ctx, left),
+                    (PyLongObject *)sym_get_const(ctx, right));
                 if (temp == NULL) {
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
-                stack_pointer[0] = res;
-                stack_pointer += 1;
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
@@ -338,21 +342,17 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right) &&
-                sym_matches_type(left, &PyLong_Type) && sym_matches_type(right, &PyLong_Type))
-            {
-                assert(PyLong_CheckExact(sym_get_const(left)));
-                assert(PyLong_CheckExact(sym_get_const(right)));
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
-                PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(left),
-                    (PyLongObject *)sym_get_const(right));
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+                PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(ctx, left),
+                    (PyLongObject *)sym_get_const(ctx, right));
                 if (temp == NULL) {
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
-                stack_pointer[0] = res;
-                stack_pointer += 1;
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
                 // TODO gh-115506:
@@ -404,14 +404,12 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right) &&
-                sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
-            {
-                assert(PyFloat_CheckExact(sym_get_const(left)));
-                assert(PyFloat_CheckExact(sym_get_const(right)));
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+                assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
+                assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
                 PyObject *temp = PyFloat_FromDouble(
-                    PyFloat_AS_DOUBLE(sym_get_const(left)) *
-                    PyFloat_AS_DOUBLE(sym_get_const(right)));
+                    PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) *
+                    PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
                 if (temp == NULL) {
                     goto error;
                 }
@@ -438,14 +436,12 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right) &&
-                sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
-            {
-                assert(PyFloat_CheckExact(sym_get_const(left)));
-                assert(PyFloat_CheckExact(sym_get_const(right)));
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+                assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
+                assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
                 PyObject *temp = PyFloat_FromDouble(
-                    PyFloat_AS_DOUBLE(sym_get_const(left)) +
-                    PyFloat_AS_DOUBLE(sym_get_const(right)));
+                    PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) +
+                    PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
                 if (temp == NULL) {
                     goto error;
                 }
@@ -472,14 +468,12 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right) &&
-                sym_matches_type(left, &PyFloat_Type) && sym_matches_type(right, &PyFloat_Type))
-            {
-                assert(PyFloat_CheckExact(sym_get_const(left)));
-                assert(PyFloat_CheckExact(sym_get_const(right)));
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+                assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
+                assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
                 PyObject *temp = PyFloat_FromDouble(
-                    PyFloat_AS_DOUBLE(sym_get_const(left)) -
-                    PyFloat_AS_DOUBLE(sym_get_const(right)));
+                    PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) -
+                    PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
                 if (temp == NULL) {
                     goto error;
                 }
@@ -510,7 +504,7 @@
                 REPLACE_OP(this_instr, _NOP, 0 ,0);
             }
             sym_set_type(left, &PyUnicode_Type);
-            sym_set_type(left, &PyUnicode_Type);
+            sym_set_type(right, &PyUnicode_Type);
             break;
         }
 
@@ -520,9 +514,10 @@
             JitOptSymbol *res;
             right = stack_pointer[-1];
             left = stack_pointer[-2];
-            if (sym_is_const(left) && sym_is_const(right) &&
-                sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
-                PyObject *temp = PyUnicode_Concat(sym_get_const(left), sym_get_const(right));
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+                assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
+                assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
+                PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
                 if (temp == NULL) {
                     goto error;
                 }
@@ -547,24 +542,23 @@
             right = stack_pointer[-1];
             left = stack_pointer[-2];
             JitOptSymbol *res;
-            if (sym_is_const(left) && sym_is_const(right) &&
-                sym_matches_type(left, &PyUnicode_Type) && sym_matches_type(right, &PyUnicode_Type)) {
-                PyObject *temp = PyUnicode_Concat(sym_get_const(left), sym_get_const(right));
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+                assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
+                assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
+                PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
                 if (temp == NULL) {
                     goto error;
                 }
                 res = sym_new_const(ctx, temp);
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
             }
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
             }
             // _STORE_FAST:
             GETLOCAL(this_instr->operand0) = res;
+            stack_pointer += -2;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -707,6 +701,7 @@
             JitOptSymbol *retval;
             JitOptSymbol *res;
             retval = stack_pointer[-1];
+            JitOptSymbol *temp = retval;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             ctx->frame->stack_pointer = stack_pointer;
@@ -724,7 +719,7 @@
                 // might be impossible, but bailing is still safe
                 ctx->done = true;
             }
-            res = retval;
+            res = temp;
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
@@ -918,11 +913,15 @@
         }
 
         case _PUSH_NULL_CONDITIONAL: {
-            JitOptSymbol *null = NULL;
-            int opcode = (oparg & 1) ? _PUSH_NULL : _NOP;
-            REPLACE_OP(this_instr, opcode, 0, 0);
-            null = sym_new_null(ctx);
-            if (oparg & 1) stack_pointer[0] = null;
+            JitOptSymbol **null;
+            null = &stack_pointer[0];
+            if (oparg & 1) {
+                REPLACE_OP(this_instr, _PUSH_NULL, 0, 0);
+                null[0] = sym_new_null(ctx);
+            }
+            else {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
             stack_pointer += (oparg & 1);
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -932,39 +931,21 @@
             break;
         }
 
-        case _GUARD_GLOBALS_VERSION_PUSH_KEYS: {
-            JitOptSymbol *globals_keys;
-            uint16_t version = (uint16_t)this_instr->operand0;
-            globals_keys = sym_new_unknown(ctx);
-            (void)version;
-            stack_pointer[0] = globals_keys;
+        case _LOAD_GLOBAL_MODULE: {
+            JitOptSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
-        case _GUARD_BUILTINS_VERSION_PUSH_KEYS: {
-            JitOptSymbol *builtins_keys;
-            uint16_t version = (uint16_t)this_instr->operand0;
-            builtins_keys = sym_new_unknown(ctx);
-            (void)version;
-            stack_pointer[0] = builtins_keys;
+        case _LOAD_GLOBAL_BUILTINS: {
+            JitOptSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _LOAD_GLOBAL_MODULE_FROM_KEYS: {
-            JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[-1] = res;
-            break;
-        }
-
-        case _LOAD_GLOBAL_BUILTINS_FROM_KEYS: {
-            JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[-1] = res;
             break;
         }
 
@@ -1168,80 +1149,34 @@
             break;
         }
 
-        case _CHECK_ATTR_MODULE_PUSH_KEYS: {
+        case _LOAD_ATTR_MODULE: {
             JitOptSymbol *owner;
-            JitOptSymbol *mod_keys;
+            JitOptSymbol *attr;
             owner = stack_pointer[-1];
             uint32_t dict_version = (uint32_t)this_instr->operand0;
+            uint16_t index = (uint16_t)this_instr->operand0;
             (void)dict_version;
-            mod_keys = sym_new_not_null(ctx);
-            if (sym_is_const(owner)) {
-                PyObject *cnst = sym_get_const(owner);
-                if (PyModule_CheckExact(cnst)) {
-                    PyModuleObject *mod = (PyModuleObject *)cnst;
+            (void)index;
+            attr = NULL;
+            if (sym_is_const(ctx, owner)) {
+                PyModuleObject *mod = (PyModuleObject *)sym_get_const(ctx, owner);
+                if (PyModule_CheckExact(mod)) {
                     PyObject *dict = mod->md_dict;
-                    stack_pointer[0] = mod_keys;
-                    stack_pointer += 1;
-                    assert(WITHIN_STACK_BOUNDS());
+                    stack_pointer[-1] = attr;
                     uint64_t watched_mutations = get_mutations(dict);
                     if (watched_mutations < _Py_MAX_ALLOWED_GLOBALS_MODIFICATIONS) {
                         PyDict_Watch(GLOBALS_WATCHER_ID, dict);
                         _Py_BloomFilter_Add(dependencies, dict);
-                        this_instr->opcode = _NOP;
+                        PyObject *res = convert_global_to_const(this_instr, dict, true);
+                        attr = sym_new_const(ctx, res);
                     }
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
                 }
-            }
-            stack_pointer[0] = mod_keys;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _LOAD_ATTR_MODULE_FROM_KEYS: {
-            JitOptSymbol *owner;
-            JitOptSymbol *attr;
-            owner = stack_pointer[-2];
-            uint16_t index = (uint16_t)this_instr->operand0;
-            (void)index;
-            attr = NULL;
-            if (this_instr[-1].opcode == _NOP) {
-                // Preceding _CHECK_ATTR_MODULE_PUSH_KEYS was removed: mod is const and dict is watched.
-                assert(sym_is_const(owner));
-                PyModuleObject *mod = (PyModuleObject *)sym_get_const(owner);
-                assert(PyModule_CheckExact(mod));
-                PyObject *dict = mod->md_dict;
-                stack_pointer[-2] = attr;
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                PyObject *res = convert_global_to_const(this_instr, dict);
-                if (res != NULL) {
-                    this_instr[-1].opcode = _POP_TOP;
-                    attr = sym_new_const(ctx, res);
-                }
-                else {
-                    this_instr->opcode = _LOAD_ATTR_MODULE;
-                }
-                stack_pointer += 1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             if (attr == NULL) {
                 /* No conversion made. We don't know what `attr` is. */
                 attr = sym_new_not_null(ctx);
             }
-            stack_pointer[-2] = attr;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _CHECK_ATTR_WITH_HINT: {
-            JitOptSymbol *dict;
-            dict = sym_new_not_null(ctx);
-            stack_pointer[0] = dict;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = attr;
             break;
         }
 
@@ -1250,9 +1185,7 @@
             uint16_t hint = (uint16_t)this_instr->operand0;
             attr = sym_new_not_null(ctx);
             (void)hint;
-            stack_pointer[-2] = attr;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = attr;
             break;
         }
 
@@ -1318,11 +1251,7 @@
                 res = sym_new_type(ctx, &PyBool_Type);
             }
             else {
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
                 res = _Py_uop_sym_new_not_null(ctx);
-                stack_pointer += 2;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -1340,11 +1269,35 @@
         }
 
         case _COMPARE_OP_INT: {
+            JitOptSymbol *right;
+            JitOptSymbol *left;
             JitOptSymbol *res;
-            res = sym_new_type(ctx, &PyBool_Type);
-            stack_pointer[-2] = res;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
+            right = stack_pointer[-1];
+            left = stack_pointer[-2];
+            if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
+                assert(PyLong_CheckExact(sym_get_const(ctx, left)));
+                assert(PyLong_CheckExact(sym_get_const(ctx, right)));
+                PyObject *tmp = PyObject_RichCompare(sym_get_const(ctx, left),
+                    sym_get_const(ctx, right),
+                    oparg >> 5);
+                if (tmp == NULL) {
+                    goto error;
+                }
+                assert(PyBool_Check(tmp));
+                assert(_Py_IsImmortal(tmp));
+                REPLACE_OP(this_instr, _POP_TWO_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)tmp);
+                res = sym_new_const(ctx, tmp);
+                stack_pointer[-2] = res;
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+                Py_DECREF(tmp);
+            }
+            else {
+                res = sym_new_type(ctx, &PyBool_Type);
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
+            }
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -1521,7 +1474,9 @@
             break;
         }
 
-        case _ITER_NEXT_LIST: {
+        /* _ITER_NEXT_LIST is not a viable micro-op for tier 2 */
+
+        case _ITER_NEXT_LIST_TIER_TWO: {
             JitOptSymbol *next;
             next = sym_new_not_null(ctx);
             stack_pointer[0] = next;
@@ -1703,16 +1658,14 @@
             _Py_UOpsAbstractFrame *new_frame;
             PyCodeObject *co = NULL;
             assert((this_instr + 2)->opcode == _PUSH_FRAME);
-            stack_pointer += -2 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             co = get_code_with_logging((this_instr + 2));
             if (co == NULL) {
                 ctx->done = true;
                 break;
             }
             new_frame = frame_new(ctx, co, 0, NULL, 0);
-            stack_pointer[0] = (JitOptSymbol *)new_frame;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = (JitOptSymbol *)new_frame;
+            stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -1721,10 +1674,10 @@
             JitOptSymbol *callable;
             callable = stack_pointer[-2 - oparg];
             uint32_t func_version = (uint32_t)this_instr->operand0;
-            if (sym_is_const(callable) && sym_matches_type(callable, &PyFunction_Type)) {
-                assert(PyFunction_Check(sym_get_const(callable)));
+            if (sym_is_const(ctx, callable) && sym_matches_type(callable, &PyFunction_Type)) {
+                assert(PyFunction_Check(sym_get_const(ctx, callable)));
                 REPLACE_OP(this_instr, _CHECK_FUNCTION_VERSION_INLINE, 0, func_version);
-                this_instr->operand1 = (uintptr_t)sym_get_const(callable);
+                this_instr->operand1 = (uintptr_t)sym_get_const(ctx, callable);
             }
             sym_set_type(callable, &PyFunction_Type);
             break;
@@ -1790,9 +1743,9 @@
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             assert(sym_matches_type(callable, &PyFunction_Type));
-            if (sym_is_const(callable)) {
+            if (sym_is_const(ctx, callable)) {
                 if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
-                    PyFunctionObject *func = (PyFunctionObject *)sym_get_const(callable);
+                    PyFunctionObject *func = (PyFunctionObject *)sym_get_const(ctx, callable);
                     PyCodeObject *co = (PyCodeObject *)func->func_code;
                     if (co->co_argcount == oparg + !sym_is_null(self_or_null)) {
                         REPLACE_OP(this_instr, _NOP, 0 ,0);
@@ -1817,8 +1770,6 @@
             int argcount = oparg;
             PyCodeObject *co = NULL;
             assert((this_instr + 2)->opcode == _PUSH_FRAME);
-            stack_pointer += -2 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
             co = get_code_with_logging((this_instr + 2));
             if (co == NULL) {
                 ctx->done = true;
@@ -1836,8 +1787,8 @@
             } else {
                 new_frame = frame_new(ctx, co, 0, NULL, 0);
             }
-            stack_pointer[0] = (JitOptSymbol *)new_frame;
-            stack_pointer += 1;
+            stack_pointer[-2 - oparg] = (JitOptSymbol *)new_frame;
+            stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -2038,18 +1989,7 @@
         /* _MONITOR_CALL_KW is not a viable micro-op for tier 2 */
 
         case _MAYBE_EXPAND_METHOD_KW: {
-            JitOptSymbol **func;
-            JitOptSymbol **maybe_self;
-            JitOptSymbol **args;
             JitOptSymbol *kwnames_out;
-            func = &stack_pointer[-3 - oparg];
-            maybe_self = &stack_pointer[-2 - oparg];
-            args = &stack_pointer[-1 - oparg];
-            func[0] = sym_new_not_null(ctx);
-            maybe_self[0] = sym_new_not_null(ctx);
-            for (int _i = oparg; --_i >= 0;) {
-                args[_i] = sym_new_not_null(ctx);
-            }
             kwnames_out = sym_new_not_null(ctx);
             stack_pointer[-1] = kwnames_out;
             break;
@@ -2141,6 +2081,7 @@
                 // might be impossible, but bailing is still safe
                 ctx->done = true;
             }
+            stack_pointer[-1] = res;
             break;
         }
 
@@ -2226,12 +2167,12 @@
                             res = sym_new_type(ctx, &PyFloat_Type);
                         }
                         else {
-                            if (!sym_is_const(right)) {
+                            if (!sym_is_const(ctx, right)) {
                                 // Case A or B... can't know without the sign of the RHS:
                                 res = sym_new_unknown(ctx);
                             }
                             else {
-                                if (_PyLong_IsNegative((PyLongObject *)sym_get_const(right))) {
+                                if (_PyLong_IsNegative((PyLongObject *)sym_get_const(ctx, right))) {
                                     // Case B:
                                     res = sym_new_type(ctx, &PyFloat_Type);
                                 }
@@ -2296,15 +2237,12 @@
         case _GUARD_IS_TRUE_POP: {
             JitOptSymbol *flag;
             flag = stack_pointer[-1];
-            if (sym_is_const(flag)) {
-                PyObject *value = sym_get_const(flag);
+            if (sym_is_const(ctx, flag)) {
+                PyObject *value = sym_get_const(ctx, flag);
                 assert(value != NULL);
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
                 eliminate_pop_guard(this_instr, value != Py_True);
-                stack_pointer += 1;
-                assert(WITHIN_STACK_BOUNDS());
             }
+            sym_set_const(flag, Py_True);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -2313,15 +2251,12 @@
         case _GUARD_IS_FALSE_POP: {
             JitOptSymbol *flag;
             flag = stack_pointer[-1];
-            if (sym_is_const(flag)) {
-                PyObject *value = sym_get_const(flag);
+            if (sym_is_const(ctx, flag)) {
+                PyObject *value = sym_get_const(ctx, flag);
                 assert(value != NULL);
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
                 eliminate_pop_guard(this_instr, value != Py_False);
-                stack_pointer += 1;
-                assert(WITHIN_STACK_BOUNDS());
             }
+            sym_set_const(flag, Py_False);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -2330,50 +2265,39 @@
         case _GUARD_IS_NONE_POP: {
             JitOptSymbol *flag;
             flag = stack_pointer[-1];
-            if (sym_is_const(flag)) {
-                PyObject *value = sym_get_const(flag);
+            if (sym_is_const(ctx, flag)) {
+                PyObject *value = sym_get_const(ctx, flag);
                 assert(value != NULL);
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
                 eliminate_pop_guard(this_instr, !Py_IsNone(value));
             }
             else {
                 if (sym_has_type(flag)) {
                     assert(!sym_matches_type(flag, &_PyNone_Type));
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
                     eliminate_pop_guard(this_instr, true);
-                    stack_pointer += 1;
-                    assert(WITHIN_STACK_BOUNDS());
                 }
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
+            sym_set_const(flag, Py_None);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _GUARD_IS_NOT_NONE_POP: {
             JitOptSymbol *flag;
             flag = stack_pointer[-1];
-            if (sym_is_const(flag)) {
-                PyObject *value = sym_get_const(flag);
+            if (sym_is_const(ctx, flag)) {
+                PyObject *value = sym_get_const(ctx, flag);
                 assert(value != NULL);
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
                 eliminate_pop_guard(this_instr, Py_IsNone(value));
             }
             else {
                 if (sym_has_type(flag)) {
                     assert(!sym_matches_type(flag, &_PyNone_Type));
-                    stack_pointer += -1;
-                    assert(WITHIN_STACK_BOUNDS());
                     eliminate_pop_guard(this_instr, false);
-                    stack_pointer += 1;
-                    assert(WITHIN_STACK_BOUNDS());
                 }
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
@@ -2420,6 +2344,14 @@
             break;
         }
 
+        case _POP_TOP_LOAD_CONST_INLINE: {
+            JitOptSymbol *value;
+            PyObject *ptr = (PyObject *)this_instr->operand0;
+            value = sym_new_const(ctx, ptr);
+            stack_pointer[-1] = value;
+            break;
+        }
+
         case _LOAD_CONST_INLINE_BORROW: {
             JitOptSymbol *value;
             PyObject *ptr = (PyObject *)this_instr->operand0;
@@ -2432,37 +2364,22 @@
 
         case _POP_TOP_LOAD_CONST_INLINE_BORROW: {
             JitOptSymbol *value;
-            value = sym_new_not_null(ctx);
+            PyObject *ptr = (PyObject *)this_instr->operand0;
+            value = sym_new_const(ctx, ptr);
             stack_pointer[-1] = value;
             break;
         }
 
+        case _POP_TWO_LOAD_CONST_INLINE_BORROW: {
+            JitOptSymbol *value;
+            value = sym_new_not_null(ctx);
+            stack_pointer[-2] = value;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _CHECK_FUNCTION: {
-            break;
-        }
-
-        case _LOAD_GLOBAL_MODULE: {
-            JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _LOAD_GLOBAL_BUILTINS: {
-            JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
-            stack_pointer[0] = res;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _LOAD_ATTR_MODULE: {
-            JitOptSymbol *attr;
-            attr = sym_new_not_null(ctx);
-            stack_pointer[-1] = attr;
             break;
         }
 

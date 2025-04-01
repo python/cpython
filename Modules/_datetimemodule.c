@@ -13,6 +13,7 @@
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_time.h"          // _PyTime_ObjectToTime_t()
+#include "pycore_unicodeobject.h" // _PyUnicode_Copy()
 
 #include "datetime.h"
 
@@ -663,7 +664,8 @@ check_date_args(int year, int month, int day)
     int dim = days_in_month(year, month);
     if (day < 1 || day > dim) {
         PyErr_Format(PyExc_ValueError,
-                     "day must be in 1..%d, not %d", dim, day);
+                     "day %i must be in range 1..%d for month %i in year %i",
+                     day, dim, month, year);
         return -1;
     }
     return 0;
@@ -3290,8 +3292,8 @@ as local time.
 [clinic start generated code]*/
 
 static PyObject *
-datetime_date_fromtimestamp(PyTypeObject *type, PyObject *timestamp)
-/*[clinic end generated code: output=fd045fda58168869 input=eabb3fe7f40491fe]*/
+datetime_date_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp)
+/*[clinic end generated code: output=59def4e32c028fb6 input=eabb3fe7f40491fe]*/
 {
     return date_fromtimestamp((PyObject *) type, timestamp);
 }

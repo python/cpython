@@ -66,8 +66,6 @@ module _ctypes
 #include "Python.h"
 
 
-#include <stdbool.h>
-
 #ifdef MS_WIN32
 #include <windows.h>
 #include <tchar.h>
@@ -166,12 +164,7 @@ _ctypes_get_errobj(ctypes_state *st, int **pspace)
                         "cannot get thread state");
         return NULL;
     }
-    if (st->error_object_name == NULL) {
-        st->error_object_name = PyUnicode_InternFromString("ctypes.error_object");
-        if (st->error_object_name == NULL) {
-            return NULL;
-        }
-    }
+    assert(st->error_object_name != NULL);
     if (PyDict_GetItemRef(dict, st->error_object_name, &errobj) < 0) {
         return NULL;
     }
@@ -1355,8 +1348,9 @@ PyObject *_ctypes_callproc(ctypes_state *st,
 }
 
 static int
-_parse_voidp(PyObject *obj, void **address)
+_parse_voidp(PyObject *obj, void *arg)
 {
+    void **address = (void **)arg;
     *address = PyLong_AsVoidPtr(obj);
     if (*address == NULL)
         return 0;
@@ -1848,8 +1842,9 @@ addressof(PyObject *self, PyObject *obj)
 }
 
 static int
-converter(PyObject *obj, void **address)
+converter(PyObject *obj, void *arg)
 {
+    void **address = (void **)arg;
     *address = PyLong_AsVoidPtr(obj);
     return *address != NULL;
 }
