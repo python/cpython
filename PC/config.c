@@ -99,12 +99,15 @@ struct _inittab _PyImport_Inittab[] = {
     {"nt", PyInit_nt}, /* Use the NT os functions, not posix */
     {"_operator", PyInit__operator},
     {"_signal", PyInit__signal},
+    /* cryptographic hash functions */
+    {"_blake2", PyInit__blake2},
     {"_md5", PyInit__md5},
     {"_sha1", PyInit__sha1},
     {"_sha2", PyInit__sha2},
     {"_sha3", PyInit__sha3},
-    {"_blake2", PyInit__blake2},
+    /* other cryptographic primitives */
     {"_hmac", PyInit__hmac},
+
     {"_sysconfig", PyInit__sysconfig},
     {"time", PyInit_time},
     {"_thread", PyInit__thread},
