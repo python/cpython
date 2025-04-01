@@ -653,16 +653,23 @@
             break;
         }
 
-        case _TO_BOOL_STR: {
+        case _GUARD_TOS_UNICODE: {
             _PyStackRef value;
-            _PyStackRef res;
             value = stack_pointer[-1];
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             if (!PyUnicode_CheckExact(value_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            break;
+        }
+
+        case _TO_BOOL_STR: {
+            _PyStackRef value;
+            _PyStackRef res;
+            value = stack_pointer[-1];
             STAT_INC(TO_BOOL, hit);
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             if (value_o == &_Py_STR(empty)) {
                 assert(_Py_IsImmortal(value_o));
                 res = PyStackRef_False;

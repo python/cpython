@@ -100,7 +100,7 @@ def generate_stack_effect_functions(analysis: Analysis, out: CWriter) -> None:
     def add(inst: Instruction | PseudoInstruction) -> None:
         stack = get_stack_effect(inst)
         popped = (-stack.base_offset).to_c()
-        pushed = (stack.top_offset - stack.base_offset).to_c()
+        pushed = (stack.logical_sp - stack.base_offset).to_c()
         popped_data.append((inst.name, popped))
         pushed_data.append((inst.name, pushed))
 

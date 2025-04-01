@@ -512,10 +512,14 @@ dummy_func(
             res = PyStackRef_False;
         }
 
-        inst(TO_BOOL_STR, (unused/1, unused/2, value -- res)) {
+        op(_GUARD_TOS_UNICODE, (value -- value)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             EXIT_IF(!PyUnicode_CheckExact(value_o));
+        }
+
+        op(_TO_BOOL_STR, (value -- res)) {
             STAT_INC(TO_BOOL, hit);
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
             if (value_o == &_Py_STR(empty)) {
                 assert(_Py_IsImmortal(value_o));
                 DEAD(value);
@@ -527,6 +531,9 @@ dummy_func(
                 res = PyStackRef_True;
             }
         }
+
+        macro(TO_BOOL_STR) =
+            _GUARD_TOS_UNICODE + unused/1 + unused/2 + _TO_BOOL_STR;
 
         op(_REPLACE_WITH_TRUE, (value -- res)) {
             PyStackRef_CLOSE(value);
@@ -1477,7 +1484,7 @@ dummy_func(
             (void)counter;
         }
 
-        op(_UNPACK_SEQUENCE, (seq -- output[oparg], top[0])) {
+        op(_UNPACK_SEQUENCE, (seq -- unused[oparg], top[0])) {
             PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
             int res = _PyEval_UnpackIterableStackRef(tstate, seq_o, oparg, -1, top);
             Py_DECREF(seq_o);
@@ -1526,7 +1533,7 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(UNPACK_EX, (seq -- left[oparg & 0xFF], unused, right[oparg >> 8], top[0])) {
+        inst(UNPACK_EX, (seq -- unused[oparg & 0xFF], unused, unused[oparg >> 8], top[0])) {
             PyObject *seq_o = PyStackRef_AsPyObjectSteal(seq);
             int res = _PyEval_UnpackIterableStackRef(tstate, seq_o, oparg & 0xFF, oparg >> 8, top);
             Py_DECREF(seq_o);
