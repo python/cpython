@@ -224,7 +224,7 @@ def configure_wasi_python(context, working_dir):
     args = {"GUEST_DIR": "/",
             "HOST_DIR": CHECKOUT,
             "ENV_VAR_NAME": "PYTHONPATH",
-            "ENV_VAR_VALUE": f"/{sysconfig_data}",
+            "ENV_VAR_VALUE": f"/{sysconfig_data}:/Lib",
             "PYTHON_WASM": working_dir / "python.wasm"}
     # Check dynamically for wasmtime in case it was specified manually via
     # `--host-runner`.
