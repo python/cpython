@@ -260,7 +260,7 @@ Basic Usage
 
 .. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, \
                    parse_int=None, parse_constant=None, \
-                   object_pairs_hook=None, **kw)
+                   object_pairs_hook=None, cache_keys=True, **kw)
 
    Deserialize *fp* to a Python object
    using the :ref:`JSON-to-Python conversion table <json-to-py-table>`.
@@ -321,6 +321,11 @@ Basic Usage
       Default ``None``.
    :type parse_constant: :term:`callable` | None
 
+   :param bool cache_keys:
+      If set, then repeated keys will be re-used across dictionaries, leading
+      to lower memory usage, but worse performance.
+      Default ``True``.
+
    :raises JSONDecodeError:
       When the data being deserialized is not a valid JSON document.
 
@@ -345,7 +350,11 @@ Basic Usage
       conversion length limitation <int_max_str_digits>` to help avoid denial
       of service attacks.
 
-.. function:: loads(s, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
+   .. versionchanged:: next
+
+      * Added the optional *cache_keys* parameter.
+
+.. function:: loads(s, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, cache_keys=True, **kw)
 
    Identical to :func:`load`, but instead of a file-like object,
    deserialize *s* (a :class:`str`, :class:`bytes` or :class:`bytearray`

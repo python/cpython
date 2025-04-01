@@ -272,7 +272,8 @@ def detect_encoding(b):
 
 
 def load(fp, *, cls=None, object_hook=None, parse_float=None,
-        parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
+        parse_int=None, parse_constant=None, object_pairs_hook=None,
+        cache_keys=True, **kw):
     """Deserialize ``fp`` (a ``.read()``-supporting file-like object containing
     a JSON document) to a Python object.
 
@@ -293,11 +294,13 @@ def load(fp, *, cls=None, object_hook=None, parse_float=None,
     return loads(fp.read(),
         cls=cls, object_hook=object_hook,
         parse_float=parse_float, parse_int=parse_int,
-        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook, **kw)
+        parse_constant=parse_constant, object_pairs_hook=object_pairs_hook,
+        cache_keys=cache_keys, **kw)
 
 
 def loads(s, *, cls=None, object_hook=None, parse_float=None,
-        parse_int=None, parse_constant=None, object_pairs_hook=None, **kw):
+        parse_int=None, parse_constant=None, object_pairs_hook=None,
+        cache_keys=True, **kw):
     """Deserialize ``s`` (a ``str``, ``bytes`` or ``bytearray`` instance
     containing a JSON document) to a Python object.
 
@@ -326,6 +329,9 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
     following strings: -Infinity, Infinity, NaN.
     This can be used to raise an exception if invalid JSON numbers
     are encountered.
+
+    if ``cache_keys`` is true, then repeated keys will be re-used across
+    dictionaries, leading to lower memory usage, but worse performance.
 
     To use a custom ``JSONDecoder`` subclass, specify it with the ``cls``
     kwarg; otherwise ``JSONDecoder`` is used.
@@ -356,4 +362,6 @@ def loads(s, *, cls=None, object_hook=None, parse_float=None,
         kw['parse_int'] = parse_int
     if parse_constant is not None:
         kw['parse_constant'] = parse_constant
+    if not cache_keys:
+        kw['cache_keys'] = cache_keys
     return cls(**kw).decode(s)
