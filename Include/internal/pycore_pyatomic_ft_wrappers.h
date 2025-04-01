@@ -110,53 +110,8 @@ extern "C" {
 #define FT_ATOMIC_LOAD_ULLONG_RELAXED(value) \
     _Py_atomic_load_ullong_relaxed(&value)
 
-// This should probably be moved into its own file as a real function.
-static inline void *
-_Py_atomic_memcpy_ptr_relaxed(void *dest, void *src, Py_ssize_t sn)
-{
-    size_t n = (size_t)sn;
-    assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
-    assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
-    assert(n % sizeof(void *) == 0);
-
-    if (dest != src) {
-        for (void **d = (void **)dest, **s = (void **)src, **e = d + n / sizeof(void *); d != e; d++, s++) {
-            void *v = _Py_atomic_load_ptr_relaxed(s);
-            _Py_atomic_store_ptr_relaxed(d, v);
-        }
-    }
-
-    return dest;
-}
-
 #define FT_ATOMIC_MEMCPY_PTR_RELAXED(dest, src, n) \
     _Py_atomic_memcpy_ptr_relaxed(dest, src, (Py_ssize_t)(n))
-
-static inline void *
-_Py_atomic_memmove_ptr_relaxed(void *dest, void *src, Py_ssize_t sn)
-{
-    size_t n = (size_t)sn;
-    assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
-    assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
-    assert(n % sizeof(void *) == 0);
-
-    if (dest < src || dest >= (void *)((char *)src + n)) {  // prefer incrementing copy
-        for (void **d = (void **)dest, **s = (void **)src, **e = d + n / sizeof(void *); d != e; d++, s++) {
-            void *v = _Py_atomic_load_ptr_relaxed(s);
-            _Py_atomic_store_ptr_relaxed(d, v);
-        }
-    }
-    else if (dest > src) {
-        n = n / sizeof(void *) - 1;
-        for (void **d = (void **)dest + n, **s = (void **)src + n, **e = (void **)dest - 1; d != e; d--, s--) {
-            void *v = _Py_atomic_load_ptr_relaxed(s);
-            _Py_atomic_store_ptr_relaxed(d, v);
-        }
-    }
-
-    return dest;
-}
-
 #define FT_ATOMIC_MEMMOVE_PTR_RELAXED(dest, src, n) \
     _Py_atomic_memmove_ptr_relaxed(dest, src, (Py_ssize_t)(n))
 
