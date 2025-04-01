@@ -852,18 +852,6 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
         }
     }
 
-    uintptr_t eval_breaker;
-    if (0 != read_memory(
-            handle,
-            thread_state_addr + debug_offsets.debugger_support.eval_breaker,
-            sizeof(uintptr_t),
-            &eval_breaker))
-    {
-        return -1;
-    }
-
-    eval_breaker |= _PY_EVAL_PLEASE_STOP_BIT;
-
     // Ensure our path is not too long
     if (debug_offsets.debugger_support.debugger_script_path_size <= strlen(debugger_script_path)) {
         PyErr_SetString(PyExc_ValueError, "Debugger script path is too long");
@@ -897,6 +885,18 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     {
         return -1;
     }
+
+    uintptr_t eval_breaker;
+    if (0 != read_memory(
+            handle,
+            thread_state_addr + debug_offsets.debugger_support.eval_breaker,
+            sizeof(uintptr_t),
+            &eval_breaker))
+    {
+        return -1;
+    }
+
+    eval_breaker |= _PY_EVAL_PLEASE_STOP_BIT;
 
     if (0 != write_memory(
             handle,
