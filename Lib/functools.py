@@ -843,8 +843,8 @@ def _compose_mro(cls, types):
                     mro.append(subcls)
     return _c3_mro(cls, abcs=mro)
 
-def _find_impl(cls, registry):
-    """Returns the best matching implementation from *registry* for type *cls*.
+def _find_impl(cls_obj, registry):
+    """Returns the best matching implementation from *registry* for type *cls_obj*.
 
     Where there is no registered implementation for a specific type, its method
     resolution order is used to find a more generic implementation.
@@ -853,6 +853,7 @@ def _find_impl(cls, registry):
     *object* type, this function may return None.
 
     """
+    cls = cls_obj if isinstance(cls_obj, type) else cls_obj.__class__
     mro = _compose_mro(cls, registry.keys())
     match = None
     for t in mro:
