@@ -604,7 +604,11 @@ Miscellaneous options
      .. versionadded:: 3.13
 
    * ``-X disable_remote_debug`` disables the remote debugging support as described
-     in :pep:`768`. This option is only available on some platforms and will do nothing
+     in :pep:`768`.  This includes both the functionality to schedule code for
+     execution in another process and the functionality to receive code for
+     execution in the current process.
+
+     This option is only available on some platforms and will do nothing
      if is not supported on the current system. See also
      :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` and :pep:`768`.
 
@@ -1170,7 +1174,9 @@ conflict.
 .. envvar:: PYTHON_DISABLE_REMOTE_DEBUG
 
    If this variable is set to a non-empty string, it disables the remote
-   debugging feature described in :pep:`768`.
+   debugging feature described in :pep:`768`. This includes both the functionality
+   to schedule code for execution in another process and the functionality to
+   receive code for execution in the current process.
 
    See also the :option:`-X disable_remote_debug` command-line option.
 

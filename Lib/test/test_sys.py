@@ -1965,6 +1965,7 @@ def _supports_remote_attaching():
                     "Test only runs on Linux, Windows and MacOS")
 @unittest.skipIf(sys.platform == "linux" and not _supports_remote_attaching(),
                     "Test only runs on Linux with process_vm_readv support")
+@test.support.cpython_only
 class TestRemoteExec(unittest.TestCase):
     def tearDown(self):
         test.support.reap_children()
@@ -2151,6 +2152,32 @@ this is invalid python code
         """Test remote exec with invalid script path"""
         with self.assertRaises(OSError):
             sys.remote_exec(os.getpid(), "invalid_script_path")
+
+    def test_remote_exec_in_process_without_debug_fails_envvar(self):
+        """Test remote exec in a process without remote debugging enabled"""
+        script = os_helper.TESTFN + '_remote.py'
+        self.addCleanup(os_helper.unlink, script)
+        with open(script, 'w') as f:
+            f.write('print("Remote script executed successfully!")')
+        env = os.environ.copy()
+        env['PYTHON_DISABLE_REMOTE_DEBUG'] = '1'
+
+        _, out, err = assert_python_failure('-c', f'import os, sys; sys.remote_exec(os.getpid(), "{script}")', **env)
+        self.assertIn(b"Remote debugging is not enabled", err)
+        self.assertEqual(out, b"")
+
+    def test_remote_exec_in_process_without_debug_fails_xoption(self):
+        """Test remote exec in a process without remote debugging enabled"""
+        script = os_helper.TESTFN + '_remote.py'
+        self.addCleanup(os_helper.unlink, script)
+        with open(script, 'w') as f:
+            f.write('print("Remote script executed successfully!")')
+
+        _, out, err = assert_python_failure('-Xdisable-remote-debug', '-c', f'import os, sys; sys.remote_exec(os.getpid(), "{script}")')
+        self.assertIn(b"Remote debugging is not enabled", err)
+        self.assertEqual(out, b"")
+
+
 
 if __name__ == "__main__":
     unittest.main()

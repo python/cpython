@@ -97,7 +97,7 @@ PEP 768: Safe external debugger interface for CPython
 
 :pep:`768` introduces a zero-overhead debugging interface that allows debuggers and profilers
 to safely attach to running Python processes. This is a significant enhancement to Python's
-debugging capabilities, bringing them in line with other major programming languages.
+debugging capabilities allowing debuggers to forego unsafe alternatives.
 
 The new interface provides safe execution points for attaching debugger code without modifying
 the interpreter's normal execution path or adding runtime overhead. This enables tools to
@@ -124,23 +124,7 @@ Here's a simple example that inspects object types in a running Python process:
      # Create a temporary script
      with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
          script_path = f.name
-         f.write("""
-     import gc
-     import collections
-
-     # Collect all objects managed by the garbage collector
-     gc.collect()
-
-     # Count objects by type
-     type_counts = collections.Counter(type(obj).__name__
-                                       for obj in gc.get_objects())
-
-     # Print the most common types
-     print("Most common object types in process:")
-     for type_name, count in type_counts.most_common(10):
-         print(f"  {type_name}: {count}")
-     """)
-
+         f.write("import my_debugger; my_debugger.connect(HOST_PROCESS)")
      try:
          # Execute in process with PID 1234
          print("Behold! An offering:")

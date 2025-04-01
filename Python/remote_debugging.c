@@ -104,7 +104,7 @@ cleanup_proc_handle(proc_handle_t *handle) {
     handle->pid = 0;
 }
 
-#ifdef Py_SUPPORTS_REMOTE_DEBUG
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
 
 #if defined(__APPLE__) && TARGET_OS_OSX
 static uintptr_t
@@ -918,15 +918,26 @@ send_exec_to_proc_handle(proc_handle_t *handle, int tid, const char *debugger_sc
     return 0;
 }
 
-#endif // defined(Py_SUPPORTS_REMOTE_DEBUG)
+#endif // defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
 
 int
 _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
 {
-#ifndef Py_SUPPORTS_REMOTE_DEBUG
+#if !defined(Py_SUPPORTS_REMOTE_DEBUG)
     PyErr_SetString(PyExc_RuntimeError, "Remote debugging is not supported on this platform");
     return -1;
+#elif !defined(Py_REMOTE_DEBUG)
+    PyErr_SetString(PyExc_RuntimeError, "Remote debugging support has not been compiled in");
+    return -1;
 #else
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->remote_debug != 1) {
+        PyErr_SetString(PyExc_RuntimeError, "Remote debugging is not enabled");
+        return -1;
+    }
+
     proc_handle_t handle;
     if (init_proc_handle(&handle, pid) < 0) {
         return -1;
