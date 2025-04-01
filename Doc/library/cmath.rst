@@ -55,13 +55,13 @@ segment that joins the origin to *z*.
 The following functions can be used to convert from the native
 rectangular coordinates to polar coordinates and back.
 
-.. function:: phase(x)
+.. function:: phase(z)
 
-   Return the phase of *x* (also known as the *argument* of *x*), as a float.
-   ``phase(x)`` is equivalent to ``math.atan2(x.imag, x.real)``.  The result
+   Return the phase of *z* (also known as the *argument* of *z*), as a float.
+   ``phase(z)`` is equivalent to ``math.atan2(z.imag, z.real)``.  The result
    lies in the range [-\ *π*, *π*], and the branch cut for this operation lies
    along the negative real axis.  The sign of the result is the same as the
-   sign of ``x.imag``, even when ``x.imag`` is zero::
+   sign of ``z.imag``, even when ``z.imag`` is zero::
 
       >>> phase(-1+0j)
       3.141592653589793
@@ -71,147 +71,147 @@ rectangular coordinates to polar coordinates and back.
 
 .. note::
 
-   The modulus (absolute value) of a complex number *x* can be
+   The modulus (absolute value) of a complex number *z* can be
    computed using the built-in :func:`abs` function.  There is no
    separate :mod:`cmath` module function for this operation.
 
 
-.. function:: polar(x)
+.. function:: polar(z)
 
-   Return the representation of *x* in polar coordinates.  Returns a
-   pair ``(r, phi)`` where *r* is the modulus of *x* and phi is the
-   phase of *x*.  ``polar(x)`` is equivalent to ``(abs(x),
-   phase(x))``.
+   Return the representation of *z* in polar coordinates.  Returns a
+   pair ``(r, phi)`` where *r* is the modulus of *z* and *phi* is the
+   phase of *z*.  ``polar(z)`` is equivalent to ``(abs(z),
+   phase(z))``.
 
 
 .. function:: rect(r, phi)
 
-   Return the complex number *x* with polar coordinates *r* and *phi*.
+   Return the complex number *z* with polar coordinates *r* and *phi*.
    Equivalent to ``complex(r * math.cos(phi), r * math.sin(phi))``.
 
 
 Power and logarithmic functions
 -------------------------------
 
-.. function:: exp(x)
+.. function:: exp(z)
 
-   Return *e* raised to the power *x*, where *e* is the base of natural
+   Return *e* raised to the power *z*, where *e* is the base of natural
    logarithms.
 
 
-.. function:: log(x[, base])
+.. function:: log(z[, base])
 
-   Returns the logarithm of *x* to the given *base*. If the *base* is not
-   specified, returns the natural logarithm of *x*. There is one branch cut,
+   Return the logarithm of *z* to the given *base*. If the *base* is not
+   specified, returns the natural logarithm of *z*. There is one branch cut,
    from 0 along the negative real axis to -∞.
 
 
-.. function:: log10(x)
+.. function:: log10(z)
 
-   Return the base-10 logarithm of *x*. This has the same branch cut as
+   Return the base-10 logarithm of *z*. This has the same branch cut as
    :func:`log`.
 
 
-.. function:: sqrt(x)
+.. function:: sqrt(z)
 
-   Return the square root of *x*. This has the same branch cut as :func:`log`.
+   Return the square root of *z*. This has the same branch cut as :func:`log`.
 
 
 Trigonometric functions
 -----------------------
 
-.. function:: acos(x)
+.. function:: acos(z)
 
-   Return the arc cosine of *x*. There are two branch cuts: One extends right
+   Return the arc cosine of *z*. There are two branch cuts: One extends right
    from 1 along the real axis to ∞. The other extends left from -1 along the
    real axis to -∞.
 
 
-.. function:: asin(x)
+.. function:: asin(z)
 
-   Return the arc sine of *x*. This has the same branch cuts as :func:`acos`.
+   Return the arc sine of *z*. This has the same branch cuts as :func:`acos`.
 
 
-.. function:: atan(x)
+.. function:: atan(z)
 
-   Return the arc tangent of *x*. There are two branch cuts: One extends from
+   Return the arc tangent of *z*. There are two branch cuts: One extends from
    ``1j`` along the imaginary axis to ``∞j``. The other extends from ``-1j``
    along the imaginary axis to ``-∞j``.
 
 
-.. function:: cos(x)
+.. function:: cos(z)
 
-   Return the cosine of *x*.
-
-
-.. function:: sin(x)
-
-   Return the sine of *x*.
+   Return the cosine of *z*.
 
 
-.. function:: tan(x)
+.. function:: sin(z)
 
-   Return the tangent of *x*.
+   Return the sine of *z*.
+
+
+.. function:: tan(z)
+
+   Return the tangent of *z*.
 
 
 Hyperbolic functions
 --------------------
 
-.. function:: acosh(x)
+.. function:: acosh(z)
 
-   Return the inverse hyperbolic cosine of *x*. There is one branch cut,
+   Return the inverse hyperbolic cosine of *z*. There is one branch cut,
    extending left from 1 along the real axis to -∞.
 
 
-.. function:: asinh(x)
+.. function:: asinh(z)
 
-   Return the inverse hyperbolic sine of *x*. There are two branch cuts:
+   Return the inverse hyperbolic sine of *z*. There are two branch cuts:
    One extends from ``1j`` along the imaginary axis to ``∞j``.  The other
    extends from ``-1j`` along the imaginary axis to ``-∞j``.
 
 
-.. function:: atanh(x)
+.. function:: atanh(z)
 
-   Return the inverse hyperbolic tangent of *x*. There are two branch cuts: One
+   Return the inverse hyperbolic tangent of *z*. There are two branch cuts: One
    extends from ``1`` along the real axis to ``∞``. The other extends from
    ``-1`` along the real axis to ``-∞``.
 
 
-.. function:: cosh(x)
+.. function:: cosh(z)
 
-   Return the hyperbolic cosine of *x*.
-
-
-.. function:: sinh(x)
-
-   Return the hyperbolic sine of *x*.
+   Return the hyperbolic cosine of *z*.
 
 
-.. function:: tanh(x)
+.. function:: sinh(z)
 
-   Return the hyperbolic tangent of *x*.
+   Return the hyperbolic sine of *z*.
+
+
+.. function:: tanh(z)
+
+   Return the hyperbolic tangent of *z*.
 
 
 Classification functions
 ------------------------
 
-.. function:: isfinite(x)
+.. function:: isfinite(z)
 
-   Return ``True`` if both the real and imaginary parts of *x* are finite, and
+   Return ``True`` if both the real and imaginary parts of *z* are finite, and
    ``False`` otherwise.
 
    .. versionadded:: 3.2
 
 
-.. function:: isinf(x)
+.. function:: isinf(z)
 
-   Return ``True`` if either the real or the imaginary part of *x* is an
+   Return ``True`` if either the real or the imaginary part of *z* is an
    infinity, and ``False`` otherwise.
 
 
-.. function:: isnan(x)
+.. function:: isnan(z)
 
-   Return ``True`` if either the real or the imaginary part of *x* is a NaN,
+   Return ``True`` if either the real or the imaginary part of *z* is a NaN,
    and ``False`` otherwise.
 
 
