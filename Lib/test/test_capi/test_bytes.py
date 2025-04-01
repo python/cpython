@@ -93,6 +93,7 @@ class CAPITest(unittest.TestCase):
         # Test PyBytes_Size()
         size = _testlimitedcapi.bytes_size
 
+        self.assertEqual(size(b''), 0)
         self.assertEqual(size(b'abc'), 3)
         self.assertEqual(size(BytesSubclass(b'abc')), 3)
         self.assertRaises(TypeError, size, bytearray(b'abc'))

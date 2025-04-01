@@ -1,1 +1,0 @@
-Fix :func:`os.path.normpath` for drive-relative paths on Windows.

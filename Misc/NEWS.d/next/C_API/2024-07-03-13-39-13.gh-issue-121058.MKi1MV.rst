@@ -1,2 +1,0 @@
-``PyThreadState_Clear()`` now warns (and calls ``sys.excepthook``) if the
-thread state still has an active exception.

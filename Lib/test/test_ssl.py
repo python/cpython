@@ -151,7 +151,7 @@ def is_ubuntu():
 
 if is_ubuntu():
     def seclevel_workaround(*ctxs):
-        """"Lower security level to '1' and allow all ciphers for TLS 1.0/1"""
+        """Lower security level to '1' and allow all ciphers for TLS 1.0/1"""
         for ctx in ctxs:
             if (
                 hasattr(ctx, "minimum_version") and
@@ -1321,12 +1321,15 @@ class ContextTests(unittest.TestCase):
         with self.assertRaises(ssl.SSLError):
             ctx.load_verify_locations(cadata=cacert_der + b"A")
 
-    @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_load_dh_params(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
-        ctx.load_dh_params(DHFILE)
-        if os.name != 'nt':
-            ctx.load_dh_params(BYTES_DHFILE)
+        try:
+            ctx.load_dh_params(DHFILE)
+        except RuntimeError:
+            if Py_DEBUG_WIN32:
+                self.skipTest("not supported on Win32 debug build")
+            raise
+        ctx.load_dh_params(BYTES_DHFILE)
         self.assertRaises(TypeError, ctx.load_dh_params)
         self.assertRaises(TypeError, ctx.load_dh_params, None)
         with self.assertRaises(FileNotFoundError) as cm:
@@ -1649,12 +1652,17 @@ class SSLErrorTests(unittest.TestCase):
         self.assertEqual(str(e), "foo")
         self.assertEqual(e.errno, 1)
 
-    @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_lib_reason(self):
         # Test the library and reason attributes
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        with self.assertRaises(ssl.SSLError) as cm:
-            ctx.load_dh_params(CERTFILE)
+        try:
+            with self.assertRaises(ssl.SSLError) as cm:
+                ctx.load_dh_params(CERTFILE)
+        except RuntimeError:
+            if Py_DEBUG_WIN32:
+                self.skipTest("not supported on Win32 debug build")
+            raise
+
         self.assertEqual(cm.exception.library, 'PEM')
         regex = "(NO_START_LINE|UNSUPPORTED_PUBLIC_KEY_TYPE)"
         self.assertRegex(cm.exception.reason, regex)
@@ -2772,6 +2780,14 @@ def try_protocol_combo(server_protocol, client_protocol, expect_success,
               and expect_success != stats['version']):
             raise AssertionError("version mismatch: expected %r, got %r"
                                  % (expect_success, stats['version']))
+
+
+def supports_kx_alias(ctx, aliases):
+    for cipher in ctx.get_ciphers():
+        for alias in aliases:
+            if f"Kx={alias}" in cipher['description']:
+                return True
+    return False
 
 
 class ThreadedTests(unittest.TestCase):
@@ -4033,13 +4049,22 @@ class ThreadedTests(unittest.TestCase):
                                    chatty=True, connectionchatty=True,
                                    sni_name=hostname)
 
-    @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_dh_params(self):
-        # Check we can get a connection with ephemeral Diffie-Hellman
+        # Check we can get a connection with ephemeral finite-field
+        # Diffie-Hellman (if supported).
         client_context, server_context, hostname = testing_context()
+        dhe_aliases = {"ADH", "EDH", "DHE"}
+        if not (supports_kx_alias(client_context, dhe_aliases)
+                and supports_kx_alias(server_context, dhe_aliases)):
+            self.skipTest("libssl doesn't support ephemeral DH")
         # test scenario needs TLS <= 1.2
         client_context.maximum_version = ssl.TLSVersion.TLSv1_2
-        server_context.load_dh_params(DHFILE)
+        try:
+            server_context.load_dh_params(DHFILE)
+        except RuntimeError:
+            if Py_DEBUG_WIN32:
+                self.skipTest("not supported on Win32 debug build")
+            raise
         server_context.set_ciphers("kEDH")
         server_context.maximum_version = ssl.TLSVersion.TLSv1_2
         stats = server_params_test(client_context, server_context,
@@ -4047,7 +4072,7 @@ class ThreadedTests(unittest.TestCase):
                                    sni_name=hostname)
         cipher = stats["cipher"][0]
         parts = cipher.split("-")
-        if "ADH" not in parts and "EDH" not in parts and "DHE" not in parts:
+        if not dhe_aliases.intersection(parts):
             self.fail("Non-DH key exchange: " + cipher[0])
 
     def test_ecdh_curve(self):
@@ -4494,7 +4519,8 @@ class ThreadedTests(unittest.TestCase):
                 s.connect((HOST, server.port))
 
 
-@unittest.skipUnless(has_tls_version('TLSv1_3'), "Test needs TLS 1.3")
+@unittest.skipUnless(has_tls_version('TLSv1_3') and ssl.HAS_PHA,
+                     "Test needs TLS 1.3 PHA")
 class TestPostHandshakeAuth(unittest.TestCase):
     def test_pha_setter(self):
         protocols = [
@@ -4819,14 +4845,18 @@ class TestSSLDebug(unittest.TestCase):
             return len(list(f))
 
     @requires_keylog
-    @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_keylog_defaults(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         self.assertEqual(ctx.keylog_filename, None)
 
         self.assertFalse(os.path.isfile(os_helper.TESTFN))
-        ctx.keylog_filename = os_helper.TESTFN
+        try:
+            ctx.keylog_filename = os_helper.TESTFN
+        except RuntimeError:
+            if Py_DEBUG_WIN32:
+                self.skipTest("not supported on Win32 debug build")
+            raise
         self.assertEqual(ctx.keylog_filename, os_helper.TESTFN)
         self.assertTrue(os.path.isfile(os_helper.TESTFN))
         self.assertEqual(self.keylog_lines(), 1)
@@ -4843,12 +4873,17 @@ class TestSSLDebug(unittest.TestCase):
             ctx.keylog_filename = 1
 
     @requires_keylog
-    @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_keylog_filename(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         client_context, server_context, hostname = testing_context()
 
-        client_context.keylog_filename = os_helper.TESTFN
+        try:
+            client_context.keylog_filename = os_helper.TESTFN
+        except RuntimeError:
+            if Py_DEBUG_WIN32:
+                self.skipTest("not supported on Win32 debug build")
+            raise
+
         server = ThreadedEchoServer(context=server_context, chatty=False)
         with server:
             with client_context.wrap_socket(socket.socket(),
@@ -4881,7 +4916,6 @@ class TestSSLDebug(unittest.TestCase):
     @requires_keylog
     @unittest.skipIf(sys.flags.ignore_environment,
                      "test is not compatible with ignore_environment")
-    @unittest.skipIf(Py_DEBUG_WIN32, "Avoid mixing debug/release CRT on Windows")
     def test_keylog_env(self):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         with unittest.mock.patch.dict(os.environ):
@@ -4891,7 +4925,12 @@ class TestSSLDebug(unittest.TestCase):
             ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
             self.assertEqual(ctx.keylog_filename, None)
 
-            ctx = ssl.create_default_context()
+            try:
+                ctx = ssl.create_default_context()
+            except RuntimeError:
+                if Py_DEBUG_WIN32:
+                    self.skipTest("not supported on Win32 debug build")
+                raise
             self.assertEqual(ctx.keylog_filename, os_helper.TESTFN)
 
             ctx = ssl._create_stdlib_context()

@@ -62,6 +62,7 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     Py_ssize_t refcnt = Py_REFCNT(obj);
     assert(refcnt >= 1);
 
+#ifndef Py_LIMITED_API
     // gh-92138: For backward compatibility, functions of Python C API accepts
     // "const PyObject*". Check that using it does not emit C++ compiler
     // warnings.
@@ -74,6 +75,7 @@ test_api_casts(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(PyTuple_GET_SIZE(const_obj) == 2);
     PyObject *one = PyTuple_GET_ITEM(const_obj, 0);
     assert(PyLong_AsLong(one) == 1);
+#endif
 
     // gh-92898: StrongRef doesn't inherit from PyObject but has an operator to
     // cast to PyObject*.
@@ -106,6 +108,12 @@ test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     }
 
     assert(PyUnicode_Check(str));
+
+    assert(PyUnicode_GetLength(str) == 3);
+    assert(PyUnicode_ReadChar(str, 0) == 'a');
+    assert(PyUnicode_ReadChar(str, 1) == 'b');
+
+#ifndef Py_LIMITED_API
     assert(PyUnicode_GET_LENGTH(str) == 3);
 
     // gh-92800: test PyUnicode_READ()
@@ -121,6 +129,7 @@ test_unicode(PyObject *Py_UNUSED(module), PyObject *Py_UNUSED(args))
     assert(PyUnicode_READ(ukind, const_data, 2) == 'c');
 
     assert(PyUnicode_READ_CHAR(str, 1) == 'b');
+#endif
 
     Py_DECREF(str);
     Py_RETURN_NONE;
@@ -152,10 +161,23 @@ private:
 
 int VirtualPyObject::instance_count = 0;
 
+// Converting from function pointer to void* has undefined behavior, but
+// works on all known platforms, and CPython's module and type slots currently
+// need it.
+// (GCC doesn't have a narrower category for this than -Wpedantic.)
+_Py_COMP_DIAG_PUSH
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wpedantic"
+#elif defined(__clang__)
+#pragma clang diagnostic ignored "-Wpedantic"
+#endif
+
 PyType_Slot VirtualPyObject_Slots[] = {
     {Py_tp_free, (void*)VirtualPyObject::dealloc},
     {0, _Py_NULL},
 };
+
+_Py_COMP_DIAG_POP
 
 PyType_Spec VirtualPyObject_Spec = {
     /* .name */ STR(MODULE_NAME) ".VirtualPyObject",
@@ -232,11 +254,20 @@ _testcppext_exec(PyObject *module)
     return 0;
 }
 
+// Need to ignore "-Wpedantic" warnings; see VirtualPyObject_Slots above
+_Py_COMP_DIAG_PUSH
+#if defined(__GNUC__)
+#pragma GCC diagnostic ignored "-Wpedantic"
+#elif defined(__clang__)
+#pragma clang diagnostic ignored "-Wpedantic"
+#endif
+
 static PyModuleDef_Slot _testcppext_slots[] = {
     {Py_mod_exec, reinterpret_cast<void*>(_testcppext_exec)},
     {0, _Py_NULL}
 };
 
+_Py_COMP_DIAG_POP
 
 PyDoc_STRVAR(_testcppext_doc, "C++ test extension.");
 
