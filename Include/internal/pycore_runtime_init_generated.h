@@ -790,7 +790,9 @@ extern "C" {
     INIT_ID(aggregate_class), \
     INIT_ID(alias), \
     INIT_ID(align), \
+    INIT_ID(all), \
     INIT_ID(allow_code), \
+    INIT_ID(any), \
     INIT_ID(append), \
     INIT_ID(arg), \
     INIT_ID(argdefs), \

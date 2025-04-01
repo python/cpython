@@ -208,13 +208,32 @@
             break;
         }
 
+        case _GUARD_NOS_UNICODE: {
+            JitOptSymbol *nos;
+            nos = stack_pointer[-2];
+            if (sym_matches_type(nos, &PyUnicode_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(nos, &PyUnicode_Type);
+            break;
+        }
+
+        case _GUARD_TOS_UNICODE: {
+            JitOptSymbol *value;
+            value = stack_pointer[-1];
+            if (sym_matches_type(value, &PyUnicode_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(value, &PyUnicode_Type);
+            break;
+        }
+
         case _TO_BOOL_STR: {
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
             if (!optimize_to_bool(this_instr, ctx, value, &res)) {
                 res = sym_new_truthiness(ctx, value, true);
-                sym_set_type(value, &PyUnicode_Type);
             }
             stack_pointer[-1] = res;
             break;
@@ -460,26 +479,6 @@
                 assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
-            break;
-        }
-
-        case _GUARD_NOS_UNICODE: {
-            JitOptSymbol *nos;
-            nos = stack_pointer[-2];
-            if (sym_matches_type(nos, &PyUnicode_Type)) {
-                REPLACE_OP(this_instr, _NOP, 0, 0);
-            }
-            sym_set_type(nos, &PyUnicode_Type);
-            break;
-        }
-
-        case _GUARD_TOS_UNICODE: {
-            JitOptSymbol *tos;
-            tos = stack_pointer[-1];
-            if (sym_matches_type(tos, &PyUnicode_Type)) {
-                REPLACE_OP(this_instr, _NOP, 0, 0);
-            }
-            sym_set_type(tos, &PyUnicode_Type);
             break;
         }
 

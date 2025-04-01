@@ -64,7 +64,9 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_TO_BOOL_INT] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_TO_BOOL_LIST] = HAS_EXIT_FLAG,
     [_TO_BOOL_NONE] = HAS_EXIT_FLAG,
-    [_TO_BOOL_STR] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
+    [_GUARD_NOS_UNICODE] = HAS_EXIT_FLAG,
+    [_GUARD_TOS_UNICODE] = HAS_EXIT_FLAG,
+    [_TO_BOOL_STR] = HAS_ESCAPES_FLAG,
     [_REPLACE_WITH_TRUE] = HAS_ESCAPES_FLAG,
     [_UNARY_INVERT] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_NOS_INT] = HAS_EXIT_FLAG,
@@ -77,8 +79,6 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_BINARY_OP_MULTIPLY_FLOAT] = HAS_ERROR_FLAG | HAS_PURE_FLAG,
     [_BINARY_OP_ADD_FLOAT] = HAS_ERROR_FLAG | HAS_PURE_FLAG,
     [_BINARY_OP_SUBTRACT_FLOAT] = HAS_ERROR_FLAG | HAS_PURE_FLAG,
-    [_GUARD_NOS_UNICODE] = HAS_EXIT_FLAG,
-    [_GUARD_TOS_UNICODE] = HAS_EXIT_FLAG,
     [_BINARY_OP_ADD_UNICODE] = HAS_ERROR_FLAG | HAS_PURE_FLAG,
     [_BINARY_OP_INPLACE_ADD_UNICODE] = HAS_LOCAL_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_BINARY_OP_EXTEND] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
@@ -647,6 +647,10 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 1;
         case _TO_BOOL_NONE:
             return 1;
+        case _GUARD_NOS_UNICODE:
+            return 0;
+        case _GUARD_TOS_UNICODE:
+            return 0;
         case _TO_BOOL_STR:
             return 1;
         case _REPLACE_WITH_TRUE:
@@ -673,10 +677,6 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2;
         case _BINARY_OP_SUBTRACT_FLOAT:
             return 2;
-        case _GUARD_NOS_UNICODE:
-            return 0;
-        case _GUARD_TOS_UNICODE:
-            return 0;
         case _BINARY_OP_ADD_UNICODE:
             return 2;
         case _BINARY_OP_INPLACE_ADD_UNICODE:

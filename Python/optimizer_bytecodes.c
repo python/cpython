@@ -151,20 +151,6 @@ dummy_func(void) {
         sym_set_type(nos, &PyFloat_Type);
     }
 
-    op(_GUARD_TOS_UNICODE, (tos -- tos)) {
-        if (sym_matches_type(tos, &PyUnicode_Type)) {
-            REPLACE_OP(this_instr, _NOP, 0, 0);
-        }
-        sym_set_type(tos, &PyUnicode_Type);
-    }
-
-    op(_GUARD_NOS_UNICODE, (nos, unused -- nos, unused)) {
-        if (sym_matches_type(nos, &PyUnicode_Type)) {
-            REPLACE_OP(this_instr, _NOP, 0, 0);
-        }
-        sym_set_type(nos, &PyUnicode_Type);
-    }
-
     op(_BINARY_OP, (left, right -- res)) {
         bool lhs_int = sym_matches_type(left, &PyLong_Type);
         bool rhs_int = sym_matches_type(right, &PyLong_Type);
@@ -410,10 +396,23 @@ dummy_func(void) {
         }
     }
 
+    op(_GUARD_NOS_UNICODE, (nos, unused -- nos, unused)) {
+        if (sym_matches_type(nos, &PyUnicode_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(nos, &PyUnicode_Type);
+    }
+
+    op(_GUARD_TOS_UNICODE, (value -- value)) {
+        if (sym_matches_type(value, &PyUnicode_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(value, &PyUnicode_Type);
+    }
+
     op(_TO_BOOL_STR, (value -- res)) {
         if (!optimize_to_bool(this_instr, ctx, value, &res)) {
             res = sym_new_truthiness(ctx, value, true);
-            sym_set_type(value, &PyUnicode_Type);
         }
     }
 
