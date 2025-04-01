@@ -45,7 +45,7 @@ jobs:
       shell: bash
     - uses: actions/upload-artifact@v4
       with:
-        name: windows-${{ inputs.arch }}-bin
+        name: windows-${{ inputs.arch }}${{ fromJSON(inputs.free-threading) && '-t' || '' }}-bin
         path: ./PCbuild/${{ inputs.arch }}
     - name: Display build info
       run: .\\python.bat -m test.pythoninfo
