@@ -217,6 +217,16 @@
             break;
         }
 
+        case _GUARD_NOS_UNICODE: {
+            JitOptSymbol *nos;
+            nos = stack_pointer[-2];
+            if (sym_matches_type(nos, &PyUnicode_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(nos, &PyUnicode_Type);
+            break;
+        }
+
         case _GUARD_TOS_UNICODE: {
             JitOptSymbol *value;
             value = stack_pointer[-1];
@@ -252,34 +262,23 @@
             break;
         }
 
-        case _GUARD_BOTH_INT: {
-            JitOptSymbol *right;
-            JitOptSymbol *left;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_matches_type(left, &PyLong_Type)) {
-                if (sym_matches_type(right, &PyLong_Type)) {
-                    REPLACE_OP(this_instr, _NOP, 0, 0);
-                }
-                else {
-                    REPLACE_OP(this_instr, _GUARD_TOS_INT, 0, 0);
-                }
-            }
-            else {
-                if (sym_matches_type(right, &PyLong_Type)) {
-                    REPLACE_OP(this_instr, _GUARD_NOS_INT, 0, 0);
-                }
-            }
-            sym_set_type(left, &PyLong_Type);
-            sym_set_type(right, &PyLong_Type);
-            break;
-        }
-
         case _GUARD_NOS_INT: {
+            JitOptSymbol *nos;
+            nos = stack_pointer[-2];
+            if (sym_matches_type(nos, &PyLong_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(nos, &PyLong_Type);
             break;
         }
 
         case _GUARD_TOS_INT: {
+            JitOptSymbol *tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PyLong_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(tos, &PyLong_Type);
             break;
         }
 
@@ -376,34 +375,23 @@
             break;
         }
 
-        case _GUARD_BOTH_FLOAT: {
-            JitOptSymbol *right;
-            JitOptSymbol *left;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_matches_type(left, &PyFloat_Type)) {
-                if (sym_matches_type(right, &PyFloat_Type)) {
-                    REPLACE_OP(this_instr, _NOP, 0, 0);
-                }
-                else {
-                    REPLACE_OP(this_instr, _GUARD_TOS_FLOAT, 0, 0);
-                }
-            }
-            else {
-                if (sym_matches_type(right, &PyFloat_Type)) {
-                    REPLACE_OP(this_instr, _GUARD_NOS_FLOAT, 0, 0);
-                }
-            }
-            sym_set_type(left, &PyFloat_Type);
-            sym_set_type(right, &PyFloat_Type);
-            break;
-        }
-
         case _GUARD_NOS_FLOAT: {
+            JitOptSymbol *nos;
+            nos = stack_pointer[-2];
+            if (sym_matches_type(nos, &PyFloat_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(nos, &PyFloat_Type);
             break;
         }
 
         case _GUARD_TOS_FLOAT: {
+            JitOptSymbol *tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PyFloat_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(tos, &PyFloat_Type);
             break;
         }
 
@@ -500,20 +488,6 @@
                 assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
-            break;
-        }
-
-        case _GUARD_BOTH_UNICODE: {
-            JitOptSymbol *right;
-            JitOptSymbol *left;
-            right = stack_pointer[-1];
-            left = stack_pointer[-2];
-            if (sym_matches_type(left, &PyUnicode_Type) &&
-                sym_matches_type(right, &PyUnicode_Type)) {
-                REPLACE_OP(this_instr, _NOP, 0 ,0);
-            }
-            sym_set_type(left, &PyUnicode_Type);
-            sym_set_type(right, &PyUnicode_Type);
             break;
         }
 
