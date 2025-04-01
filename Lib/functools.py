@@ -843,7 +843,7 @@ def _compose_mro(cls, types):
                     mro.append(subcls)
     return _c3_mro(cls, abcs=mro)
 
-def _find_impl(cls_obj, registry):
+def _find_impl_match(cls_obj, registry):
     """Returns the best matching implementation from *registry* for type *cls_obj*.
 
     Where there is no registered implementation for a specific type, its method
@@ -856,6 +856,32 @@ def _find_impl(cls_obj, registry):
     cls = cls_obj if isinstance(cls_obj, type) else cls_obj.__class__
     mro = _compose_mro(cls, registry.keys())
     match = None
+
+    from typing import get_origin, get_args
+
+    if (not isinstance(cls_obj, type) and
+        len(cls_obj) > 0 and # dont try to match the types of empty containers
+        any(i for i in registry.keys() if get_origin(i) == cls)):
+        # check containers that match cls first
+        for t in [i for i in registry.keys() if get_origin(i) == cls]:
+            if not all((isinstance(i, get_args(t)) for i in cls_obj)):
+                continue
+
+            if match is None:
+                match = t
+
+            else:
+                match_args = get_args(get_args(match)[0])
+                t_args = get_args(get_args(t)[0])
+                if len(match_args) == len(t_args):
+                    raise RuntimeError("Ambiguous dispatch: {} or {}".format( match, t))
+
+                elif len(t_args)<len(match_args):
+                    match = t
+
+    if match:
+        return match
+
     for t in mro:
         if match is not None:
             # If *match* is an implicit ABC but there is another unrelated,
@@ -868,7 +894,13 @@ def _find_impl(cls_obj, registry):
             break
         if t in registry:
             match = t
-    return registry.get(match)
+
+    return match
+
+def _find_impl(cls_obj, registry):
+    return (
+        _find_impl_match(cls_obj, registry)
+    )
 
 def singledispatch(func):
     """Single-dispatch generic function decorator.
