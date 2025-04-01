@@ -68,13 +68,15 @@ class TestEffects(unittest.TestCase):
             StackItem("b", None, "oparg*4"),
             StackItem("c", None, "1"),
         ]
-        stack.pop(z)
-        stack.pop(y)
-        stack.pop(x)
+        null = CWriter.null()
+        stack.pop(z, null)
+        stack.pop(y, null)
+        stack.pop(x, null)
         for out in outputs:
             stack.push(Local.undefined(out))
         self.assertEqual(stack.base_offset.to_c(), "-1 - oparg - oparg*2")
-        self.assertEqual(stack.top_offset.to_c(), "1 - oparg - oparg*2 + oparg*4")
+        self.assertEqual(stack.physical_sp.to_c(), "0")
+        self.assertEqual(stack.logical_sp.to_c(), "1 - oparg - oparg*2 + oparg*4")
 
 
 class TestGeneratedCases(unittest.TestCase):
