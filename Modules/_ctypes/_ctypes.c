@@ -5686,7 +5686,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             if (step == 1) {
                 PyObject *res;
                 LOCK_PTR(self);
-                wchar_t *ptr = *(void **)self;
+                wchar_t *ptr = *(wchar_t **)self->b_ptr;
                 res = PyUnicode_FromWideChar(ptr + start,
                                              len);
                 UNLOCK_PTR(self);
@@ -5696,7 +5696,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             if (dest == NULL)
                 return PyErr_NoMemory();
             LOCK_PTR(self);
-            wchar_t *ptr = *(void **)self;
+            wchar_t *ptr = *(wchar_t **)self->b_ptr;
             for (cur = start, i = 0; i < len; cur += step, i++) {
                 dest[i] = ptr[cur];
             }
