@@ -1423,7 +1423,7 @@ object -- see :ref:`multiprocessing-managers`.
 
    .. method:: locked()
 
-      Returns a boolean whether this object is locked right now or not.
+      Return a boolean indicating whether this object is locked right now or not.
 
       .. versionadded:: next
 
@@ -1490,7 +1490,7 @@ object -- see :ref:`multiprocessing-managers`.
 
    .. method:: locked()
 
-      Returns a boolean whether this object is locked right now or not.
+      Return a boolean indicating whether this object is locked right now or not.
 
       .. versionadded:: next
 

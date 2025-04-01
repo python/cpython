@@ -1097,7 +1097,7 @@ rlock_locked(PyObject *op, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(rlock_locked_doc,
 "locked()\n\
 \n\
-Returns whether this lock is locked right now or not.");
+Return a boolean indicating whether this object is locked right now or not.");
 
 static PyObject *
 rlock_acquire_restore(PyObject *op, PyObject *args)

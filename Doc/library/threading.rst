@@ -711,7 +711,7 @@ call release as many times the lock has been acquired can lead to deadlock.
 
    .. method:: locked()
 
-      Returns a boolean whether this object is locked right now or not.
+      Return a boolean indicating whether this object is locked right now or not.
 
       .. versionadded:: next
 
@@ -810,7 +810,7 @@ item to the buffer only needs to wake up one consumer thread.
 
    .. method:: locked()
 
-      Returns a boolean whether this object is locked right now or not.
+      Return a boolean indicating whether this object is locked right now or not.
 
       .. versionadded:: next
 
