@@ -333,8 +333,10 @@ NotImplementedType = type(NotImplemented)
 
 def __getattr__(name):
     if name == 'CapsuleType':
+        global CapsuleType
         import _socket
-        return type(_socket.CAPI)
+        CapsuleType = type(_socket.CAPI)
+        return CapsuleType
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __all__ = [n for n in globals() if n[:1] != '_']
