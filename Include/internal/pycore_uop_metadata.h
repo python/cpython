@@ -287,7 +287,6 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_START_EXECUTOR] = HAS_ESCAPES_FLAG,
     [_MAKE_WARM] = 0,
     [_FATAL_ERROR] = 0,
-    [_CHECK_VALIDITY_AND_SET_IP] = HAS_DEOPT_FLAG,
     [_DEOPT] = 0,
     [_ERROR_POP_N] = HAS_ARG_FLAG,
     [_TIER2_RESUME_CHECK] = HAS_DEOPT_FLAG,
@@ -365,7 +364,6 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CHECK_STACK_SPACE] = "_CHECK_STACK_SPACE",
     [_CHECK_STACK_SPACE_OPERAND] = "_CHECK_STACK_SPACE_OPERAND",
     [_CHECK_VALIDITY] = "_CHECK_VALIDITY",
-    [_CHECK_VALIDITY_AND_SET_IP] = "_CHECK_VALIDITY_AND_SET_IP",
     [_COMPARE_OP] = "_COMPARE_OP",
     [_COMPARE_OP_FLOAT] = "_COMPARE_OP_FLOAT",
     [_COMPARE_OP_INT] = "_COMPARE_OP_INT",
@@ -1113,8 +1111,6 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _MAKE_WARM:
             return 0;
         case _FATAL_ERROR:
-            return 0;
-        case _CHECK_VALIDITY_AND_SET_IP:
             return 0;
         case _DEOPT:
             return 0;

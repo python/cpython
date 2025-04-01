@@ -2378,10 +2378,6 @@
             break;
         }
 
-        case _CHECK_VALIDITY_AND_SET_IP: {
-            break;
-        }
-
         case _DEOPT: {
             break;
         }

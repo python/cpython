@@ -5191,11 +5191,6 @@ dummy_func(
             Py_FatalError("Fatal error uop executed.");
         }
 
-        tier2 op(_CHECK_VALIDITY_AND_SET_IP, (instr_ptr/4 --)) {
-            DEOPT_IF(!current_executor->vm_data.valid);
-            frame->instr_ptr = (_Py_CODEUNIT *)instr_ptr;
-        }
-
         tier2 op(_DEOPT, (--)) {
             tstate->previous_executor = (PyObject *)current_executor;
             GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
