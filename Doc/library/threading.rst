@@ -808,6 +808,12 @@ item to the buffer only needs to wake up one consumer thread.
       Release the underlying lock. This method calls the corresponding method on
       the underlying lock; there is no return value.
 
+   .. method:: locked()
+
+      Returns a boolean whether this object is locked right now or not.
+
+      .. versionadded:: next
+
    .. method:: wait(timeout=None)
 
       Wait until notified or until a timeout occurs. If the calling thread has
