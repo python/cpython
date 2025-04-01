@@ -60,29 +60,28 @@ class object "PyObject *" "&PyBaseObject_Type"
 
 #ifdef Py_GIL_DISABLED
 
-// There's a global lock for types that ensures that the tp_version_tag is
-// correctly updated if the type is modified.  This avoids having to take
-// additional locks while doing various subclass processing which may result
-// in odd behaviors w.r.t. running with the GIL as the outer type lock could
-// be released and reacquired during a subclass update if there's contention
-// on the subclass lock.
+// There's a global lock for types that ensures that tp_version_tag and
+// _spec_cache are correctly updated if the type is modified.  This avoids
+// having to take additional locks while doing various subclass processing
+// which may result in odd behaviors w.r.t. running with the GIL as the outer
+// type lock could be released and reacquired during a subclass update if
+// there's contention on the subclass lock.
 //
 // Note that this lock does not protect when updating type slots or the
 // tp_flags member.  Instead, we either ensure those updates are done before
 // the type has been revealed to other threads or we only do those updates
 // while the stop-the-world mechanism is active.  The slots and flags are read
 // in many places without holding a lock and without atomics.
-//
+#define TYPE_LOCK &PyInterpreterState_Get()->types.mutex
+
 // Since TYPE_LOCK is used as regular mutex, we must take special care about
 // potential re-entrant code paths.  We use TYPE_LOCK_TID in debug builds to
 // ensure that we are not trying to re-acquire the mutex when it is already
 // held by the current thread.  There are a couple cases when we release the
-// mutex, when we call functions that might re-enter.
-#define TYPE_LOCK &PyInterpreterState_Get()->types.mutex
-
-// Used to check for correct use of the TYPE_LOCK mutex.  It is a regular
-// mutex and does not support re-entrancy.  If we already hold the lock and
-// try to acquire it again with the same thread, it is a bug on the code.
+// mutex, when we call functions that might re-enter.  If we already hold the
+// lock and try to acquire it again with the same thread, it is a bug in the
+// code.  We could just let it deadlock but having an assert failure gives
+// a more explicit error.
 #define TYPE_LOCK_TID &PyInterpreterState_Get()->types.mutex_tid
 
 // Return true if the world is currently stopped.
