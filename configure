@@ -30977,6 +30977,7 @@ then :
 
 
 
+
 fi
 
 
@@ -30995,7 +30996,6 @@ fi
   as_fn_append MODULE_BLOCK "MODULE__TYPES_STATE=$py_cv_module__types$as_nl"
   if test "x$py_cv_module__types" = xyes
 then :
-
 
 
 
