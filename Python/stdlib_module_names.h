@@ -92,6 +92,7 @@ static const char* _Py_stdlib_module_names[] = {
 "_tkinter",
 "_tokenize",
 "_tracemalloc",
+"_types",
 "_typing",
 "_uuid",
 "_warnings",
