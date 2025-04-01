@@ -2076,10 +2076,10 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             struct sockaddr_rc *addr = &addrbuf->bt_rc;
             _BT_RC_MEMB(addr, family) = AF_BLUETOOTH;
 #ifdef MS_WINDOWS
-            unsigned long channel = _BT_RC_MEMB(addr, channel);
+            unsigned long channel;
 #           define FORMAT_CHANNEL "k"
 #else
-            unsigned char channel = _BT_RC_MEMB(addr, channel);
+            unsigned char channel;
 #           define FORMAT_CHANNEL "B"
 #endif
             if (!PyArg_ParseTuple(args, "s" FORMAT_CHANNEL,
