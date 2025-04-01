@@ -1521,11 +1521,15 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
             struct sockaddr_hci *a = (struct sockaddr_hci *) addr;
 #if defined(__NetBSD__) || defined(__DragonFly__)
             return makebdaddr(&_BT_HCI_MEMB(a, bdaddr));
-#else /* __NetBSD__ || __DragonFly__ */
+#elif defined(__FreeBSD__)
+            char *node = _BT_HCI_MEMB(a, node);
+            size_t len = strnlen(node, sizeof(_BT_HCI_MEMB(a, node)));
+            return PyBytes_FromStringAndSize(node, (Py_ssize_t)len);
+#else
             PyObject *ret = NULL;
             ret = Py_BuildValue("i", _BT_HCI_MEMB(a, dev));
             return ret;
-#endif /* !(__NetBSD__ || __DragonFly__) */
+#endif
         }
 
 #if !defined(__FreeBSD__)
@@ -2116,12 +2120,18 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             }
             const char *straddr = PyBytes_AS_STRING(args);
             size_t len = PyBytes_GET_SIZE(args);
-            if (len >= sizeof(_BT_HCI_MEMB(addr, node))) {
+            if (strlen(straddr) != len) {
+                PyErr_Format(PyExc_OSError, "%s: "
+                             "node contains embedded null character", caller);
+                return 0;
+            }
+            if (len > sizeof(_BT_HCI_MEMB(addr, node))) {
                 PyErr_Format(PyExc_OSError, "%s: "
                              "node too long", caller);
                 return 0;
             }
-            strcpy(_BT_HCI_MEMB(addr, node), straddr);
+            strncpy(_BT_HCI_MEMB(addr, node), straddr,
+                    sizeof(_BT_HCI_MEMB(addr, node)));
 #else  /* __NetBSD__ || __DragonFly__ */
             _BT_HCI_MEMB(addr, family) = AF_BLUETOOTH;
             unsigned short dev = _BT_HCI_MEMB(addr, dev);
