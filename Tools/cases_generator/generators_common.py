@@ -466,23 +466,13 @@ class Emitter:
         storage: Storage,
         inst: Instruction | None,
     ) -> tuple[bool, Token | None, Storage]:
-        if isinstance(stmt, SimpleStmt):
-            return self._emit_simple(stmt, uop, storage, inst)
-        elif isinstance(stmt, BlockStmt):
-            return self._emit_block(stmt, uop, storage, inst)
-        elif isinstance(stmt, IfStmt):
-            return self._emit_if(stmt, uop, storage, inst)
-        elif isinstance(stmt, ForStmt):
-            return self._emit_for(stmt, uop, storage, inst)
-        elif isinstance(stmt, WhileStmt):
-            return self._emit_while(stmt, uop, storage, inst)
-        elif isinstance(stmt, MacroIfStmt):
-            return self._emit_macro_if(stmt, uop, storage, inst)
-        else:
-            raise NotImplementedError("Unexpected statement")
+        method_name = "emit_" + stmt.__class__.__name__
+        method = getattr(self, method_name, None)
+        if method is None:
+            raise NotImplementedError
+        return method(stmt, uop, storage, inst) # type: ignore
 
-
-    def _emit_simple(
+    def emit_SimpleStmt(
         self,
         stmt: SimpleStmt,
         uop: CodeSection,
@@ -536,7 +526,7 @@ class Emitter:
             raise analysis_error(ex.args[0], tkn) #from None
 
 
-    def _emit_macro_if(
+    def emit_MacroIfStmt(
         self,
         stmt: MacroIfStmt,
         uop: CodeSection,
@@ -568,7 +558,7 @@ class Emitter:
         return reachable, None, storage
 
 
-    def _emit_if(
+    def emit_IfStmt(
         self,
         stmt: IfStmt,
         uop: CodeSection,
@@ -610,7 +600,7 @@ class Emitter:
             assert rbrace is not None
             raise analysis_error(ex.args[0], rbrace) from None
 
-    def _emit_block(
+    def emit_BlockStmt(
         self,
         stmt: BlockStmt,
         uop: CodeSection,
@@ -635,7 +625,7 @@ class Emitter:
                 tkn = stmt.close
             raise analysis_error(ex.args[0], tkn) from None
 
-    def _emit_for(
+    def emit_ForStmt(
         self,
         stmt: ForStmt,
         uop: CodeSection,
@@ -648,7 +638,7 @@ class Emitter:
             self.out.emit(tkn)
         return self._emit_stmt(stmt.body, uop, storage, inst)
 
-    def _emit_while(
+    def emit_WhileStmt(
         self,
         stmt: WhileStmt,
         uop: CodeSection,
@@ -670,7 +660,7 @@ class Emitter:
         emit_braces: bool = True
     ) -> Storage:
         self.out.start_line()
-        reachable, tkn, storage = self._emit_block(code.body, code, storage, inst, emit_braces)
+        reachable, tkn, storage = self.emit_BlockStmt(code.body, code, storage, inst, emit_braces)
         assert tkn is not None
         try:
             if reachable:

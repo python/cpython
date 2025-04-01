@@ -1,7 +1,7 @@
 """Parser for bytecodes.inst."""
 
 from dataclasses import dataclass, field
-from typing import NamedTuple, Callable, TypeVar, Literal, cast, Optional, Iterator
+from typing import NamedTuple, Callable, TypeVar, Literal, cast, Iterator
 from io import StringIO
 
 import lexer as lx
@@ -81,13 +81,13 @@ class Stmt:
         return io.getvalue()
 
     def print(self, out:CWriter) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def accept(self, visitor: Visitor) -> None:
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def tokens(self) -> Iterator[lx.Token]:
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 @dataclass
@@ -96,7 +96,7 @@ class IfStmt(Stmt):
     condition: list[lx.Token]
     body: Stmt
     else_: lx.Token | None
-    else_body: Optional[Stmt]
+    else_body: Stmt | None
 
     def print(self, out:CWriter) -> None:
         out.emit(self.if_)
