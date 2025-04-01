@@ -361,7 +361,7 @@ class Parser(PLexer):
     @contextual
     def inst_def(self) -> InstDef | None:
         if hdr := self.inst_header():
-            block := self.block()
+            block = self.block()
             return InstDef(
                 hdr.annotations,
                 hdr.kind,
