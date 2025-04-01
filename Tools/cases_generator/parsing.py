@@ -690,7 +690,6 @@ class Parser(PLexer):
                 else_body = self.block()
         return IfStmt(if_, condition, body, else_, else_body)
 
-
     def macro_if(self, cond: lx.Token) -> MacroIfStmt:
         else_ = None
         body: list[Stmt] = []
