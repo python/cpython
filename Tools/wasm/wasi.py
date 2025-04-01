@@ -224,7 +224,7 @@ def configure_wasi_python(context, working_dir):
     args = {"GUEST_DIR": "/",
             "HOST_DIR": CHECKOUT,
             "ENV_VAR_NAME": "PYTHONPATH",
-            "ENV_VAR_VALUE": f"/{sysconfig_data}:/Lib",
+            "ENV_VAR_VALUE": f"/{sysconfig_data}",
             "PYTHON_WASM": working_dir / "python.wasm"}
     # Check dynamically for wasmtime in case it was specified manually via
     # `--host-runner`.
@@ -296,7 +296,7 @@ def main():
                         # Make sure the stack size will work for a pydebug
                         # build.
                         # Use 16 MiB stack.
-                        "--wasm max-wasm-stack=16777216 "
+                        "--wasm max-wasm-stack=33554432 "
                         # Enable thread support; causes use of preview1.
                         #"--wasm threads=y --wasi threads=y "
                         # Map the checkout to / to load the stdlib from /Lib.
