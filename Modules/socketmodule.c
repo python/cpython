@@ -1536,15 +1536,15 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
             return ret;
 #endif
         }
+#endif /* BTPROTO_HCI */
 
-#if !defined(__FreeBSD__)
+#ifdef BTPROTO_SCO
         case BTPROTO_SCO:
         {
             struct sockaddr_sco *a = (struct sockaddr_sco *) addr;
             return makebdaddr(&_BT_SCO_MEMB(a, bdaddr));
         }
-#endif /* !__FreeBSD__ */
-#endif /* BTPROTO_HCI */
+#endif /* BTPROTO_SCO */
 
         default:
             PyErr_SetString(PyExc_ValueError,
@@ -2149,7 +2149,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             *len_ret = sizeof *addr;
             return 1;
         }
-#if !defined(__FreeBSD__)
+#endif /* BTPROTO_HCI */
+#ifdef BTPROTO_SCO
         case BTPROTO_SCO:
         {
             const char *straddr;
@@ -2168,8 +2169,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             *len_ret = sizeof *addr;
             return 1;
         }
-#endif /* !__FreeBSD__ */
-#endif /* BTPROTO_HCI */
+#endif /* BTPROTO_SCO */
         default:
             PyErr_Format(PyExc_OSError,
                          "%s(): unknown Bluetooth protocol", caller);
@@ -2719,11 +2719,11 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
         case BTPROTO_HCI:
             *len_ret = sizeof (struct sockaddr_hci);
             return 1;
-#if !defined(__FreeBSD__)
+#endif /* BTPROTO_HCI */
+#ifdef BTPROTO_SCO
         case BTPROTO_SCO:
             *len_ret = sizeof (struct sockaddr_sco);
             return 1;
-#endif /* !__FreeBSD__ */
 #endif /* BTPROTO_HCI */
         default:
             PyErr_SetString(PyExc_OSError, "getsockaddrlen: "
