@@ -1,3 +1,0 @@
-Add a new flag, ``CO_METHOD``, to :attr:`~codeobject.co_flags` that
-indicates whether the code object belongs to a function defined in class
-scope.

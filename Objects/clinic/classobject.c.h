@@ -16,9 +16,9 @@ static PyObject *
 method___reduce___impl(PyMethodObject *self);
 
 static PyObject *
-method___reduce__(PyMethodObject *self, PyObject *Py_UNUSED(ignored))
+method___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return method___reduce___impl(self);
+    return method___reduce___impl((PyMethodObject *)self);
 }
 
 PyDoc_STRVAR(method_new__doc__,
@@ -82,4 +82,4 @@ instancemethod_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5a5e3f2d0726f189 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab546abf90aac94e input=a9049054013a1b77]*/

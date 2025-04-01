@@ -1,9 +1,9 @@
 import os
 import pickle
 import re
+import tempfile
 import unittest
 import unittest.mock
-import tempfile
 from test import support
 from test.support import import_helper
 from test.support import os_helper
@@ -52,6 +52,21 @@ pencolor = red
 fillcolor: blue
 visible = False
 """
+
+
+def patch_screen():
+    """Patch turtle._Screen for testing without a display.
+
+    We must patch the _Screen class itself instead of the _Screen
+    instance because instantiating it requires a display.
+    """
+    return unittest.mock.patch(
+        "turtle._Screen.__new__",
+        **{
+            "return_value.__class__": turtle._Screen,
+            "return_value.mode.return_value": "standard",
+        },
+    )
 
 
 class TurtleConfigTest(unittest.TestCase):
@@ -513,7 +528,7 @@ class TestTurtleScreen(unittest.TestCase):
 
             turtle.TurtleScreen.save(screen, file_path, overwrite=True)
             with open(file_path) as f:
-                assert f.read() == "postscript"
+                self.assertEqual(f.read(), "postscript")
 
     def test_save(self) -> None:
         screen = unittest.mock.Mock()
@@ -524,7 +539,101 @@ class TestTurtleScreen(unittest.TestCase):
 
             turtle.TurtleScreen.save(screen, file_path)
             with open(file_path) as f:
-                assert f.read() == "postscript"
+                self.assertEqual(f.read(), "postscript")
+
+    def test_no_animation_sets_tracer_0(self):
+        s = turtle.TurtleScreen(cv=unittest.mock.MagicMock())
+
+        with s.no_animation():
+            self.assertEqual(s.tracer(), 0)
+
+    def test_no_animation_resets_tracer_to_old_value(self):
+        s = turtle.TurtleScreen(cv=unittest.mock.MagicMock())
+
+        for tracer in [0, 1, 5]:
+            s.tracer(tracer)
+            with s.no_animation():
+                pass
+            self.assertEqual(s.tracer(), tracer)
+
+    def test_no_animation_calls_update_at_exit(self):
+        s = turtle.TurtleScreen(cv=unittest.mock.MagicMock())
+        s.update = unittest.mock.MagicMock()
+
+        with s.no_animation():
+            s.update.assert_not_called()
+        s.update.assert_called_once()
+
+
+class TestTurtle(unittest.TestCase):
+    def setUp(self):
+        with patch_screen():
+            self.turtle = turtle.Turtle()
+
+        # Reset the Screen singleton to avoid reference leaks
+        self.addCleanup(setattr, turtle.Turtle, '_screen', None)
+
+    def test_begin_end_fill(self):
+        self.assertFalse(self.turtle.filling())
+        self.turtle.begin_fill()
+        self.assertTrue(self.turtle.filling())
+        self.turtle.end_fill()
+        self.assertFalse(self.turtle.filling())
+
+    def test_fill(self):
+        # The context manager behaves like begin_fill and end_fill.
+        self.assertFalse(self.turtle.filling())
+        with self.turtle.fill():
+            self.assertTrue(self.turtle.filling())
+        self.assertFalse(self.turtle.filling())
+
+    def test_fill_resets_after_exception(self):
+        # The context manager cleans up correctly after exceptions.
+        try:
+            with self.turtle.fill():
+                self.assertTrue(self.turtle.filling())
+                raise ValueError
+        except ValueError:
+            self.assertFalse(self.turtle.filling())
+
+    def test_fill_context_when_filling(self):
+        # The context manager works even when the turtle is already filling.
+        self.turtle.begin_fill()
+        self.assertTrue(self.turtle.filling())
+        with self.turtle.fill():
+            self.assertTrue(self.turtle.filling())
+        self.assertFalse(self.turtle.filling())
+
+    def test_begin_end_poly(self):
+        self.assertFalse(self.turtle._creatingPoly)
+        self.turtle.begin_poly()
+        self.assertTrue(self.turtle._creatingPoly)
+        self.turtle.end_poly()
+        self.assertFalse(self.turtle._creatingPoly)
+
+    def test_poly(self):
+        # The context manager behaves like begin_poly and end_poly.
+        self.assertFalse(self.turtle._creatingPoly)
+        with self.turtle.poly():
+            self.assertTrue(self.turtle._creatingPoly)
+        self.assertFalse(self.turtle._creatingPoly)
+
+    def test_poly_resets_after_exception(self):
+        # The context manager cleans up correctly after exceptions.
+        try:
+            with self.turtle.poly():
+                self.assertTrue(self.turtle._creatingPoly)
+                raise ValueError
+        except ValueError:
+            self.assertFalse(self.turtle._creatingPoly)
+
+    def test_poly_context_when_creating_poly(self):
+        # The context manager works when the turtle is already creating poly.
+        self.turtle.begin_poly()
+        self.assertTrue(self.turtle._creatingPoly)
+        with self.turtle.poly():
+            self.assertTrue(self.turtle._creatingPoly)
+        self.assertFalse(self.turtle._creatingPoly)
 
 
 class TestModuleLevel(unittest.TestCase):

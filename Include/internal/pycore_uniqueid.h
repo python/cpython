@@ -16,7 +16,7 @@ extern "C" {
 // Per-thread reference counting is used along with deferred reference
 // counting to avoid scaling bottlenecks due to reference count contention.
 //
-// An id of -1 is used to indicate that an object doesn't use per-thread
+// An id of 0 is used to indicate that an object doesn't use per-thread
 // refcounting. This value is used when the object is finalized by the GC
 // and during interpreter shutdown to allow the object to be
 // deallocated promptly when the object's refcount reaches zero.
@@ -24,26 +24,8 @@ extern "C" {
 // Each entry implicitly represents a unique id based on its offset in the
 // table. Non-allocated entries form a free-list via the 'next' pointer.
 // Allocated entries store the corresponding PyObject.
-typedef union _Py_unique_id_entry {
-    // Points to the next free type id, when part of the freelist
-    union _Py_unique_id_entry *next;
 
-    // Stores the object when the id is assigned
-    PyObject *obj;
-} _Py_unique_id_entry;
-
-struct _Py_unique_id_pool {
-    PyMutex mutex;
-
-    // combined table of object with allocated unique ids and unallocated ids.
-    _Py_unique_id_entry *table;
-
-    // Next entry to allocate inside 'table' or NULL
-    _Py_unique_id_entry *freelist;
-
-    // size of 'table'
-    Py_ssize_t size;
-};
+#define _Py_INVALID_UNIQUE_ID 0
 
 // Assigns the next id from the pool of ids.
 extern Py_ssize_t _PyObject_AssignUniqueId(PyObject *obj);
@@ -65,7 +47,7 @@ extern void _PyObject_FinalizePerThreadRefcounts(_PyThreadStateImpl *tstate);
 extern void _PyObject_FinalizeUniqueIdPool(PyInterpreterState *interp);
 
 // Increfs the object, resizing the thread-local refcount array if necessary.
-PyAPI_FUNC(void) _PyObject_ThreadIncrefSlow(PyObject *obj, Py_ssize_t unique_id);
+PyAPI_FUNC(void) _PyObject_ThreadIncrefSlow(PyObject *obj, size_t idx);
 
 #endif   /* Py_GIL_DISABLED */
 

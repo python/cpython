@@ -1,7 +1,6 @@
-import unittest
-import math
 import string
 import sys
+import unittest
 from test import support
 from test.support import import_helper
 from test.support import script_helper

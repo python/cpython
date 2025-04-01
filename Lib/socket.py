@@ -937,7 +937,9 @@ def create_server(address, *, family=AF_INET, backlog=None, reuse_port=False,
                 # Fail later on bind(), for platforms which may not
                 # support this option.
                 pass
-        if reuse_port:
+        # Since Linux 6.12.9, SO_REUSEPORT is not allowed
+        # on other address families than AF_INET/AF_INET6.
+        if reuse_port and family in (AF_INET, AF_INET6):
             sock.setsockopt(SOL_SOCKET, SO_REUSEPORT, 1)
         if has_ipv6 and family == AF_INET6:
             if dualstack_ipv6:

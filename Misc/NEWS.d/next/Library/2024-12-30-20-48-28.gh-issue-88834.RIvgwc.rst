@@ -1,3 +1,0 @@
-Unify the instance check for :class:`typing.Union` and
-:class:`types.UnionType`: :class:`!Union` now uses the instance checks
-against its parameters instead of the subclass checks.

@@ -1,0 +1,1 @@
+Fix mimalloc library builds for 32-bit ARM targets.

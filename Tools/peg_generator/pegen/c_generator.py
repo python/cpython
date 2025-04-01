@@ -44,7 +44,7 @@ EXTENSION_PREFIX = """\
 #    define MAXSTACK 4000
 #  endif
 #else
-#  define MAXSTACK 6000
+#  define MAXSTACK 4000
 #endif
 
 """
@@ -380,7 +380,7 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.cleanup_statements: List[str] = []
 
     def add_level(self) -> None:
-        self.print("if (p->level++ == MAXSTACK) {")
+        self.print("if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {")
         with self.indent():
             self.print("_Pypegen_stack_overflow(p);")
         self.print("}")

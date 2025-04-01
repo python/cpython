@@ -21,6 +21,9 @@ if not support.MS_WINDOWS:
 
         # gh-120593: Check the 'const' qualifier
         '-Wcast-qual',
+
+        # Ask for strict(er) compliance with the standard
+        '-pedantic-errors',
     ]
     if not support.Py_GIL_DISABLED:
         CFLAGS.append(

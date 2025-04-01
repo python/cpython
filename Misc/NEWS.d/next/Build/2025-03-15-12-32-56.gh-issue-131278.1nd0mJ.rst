@@ -1,0 +1,2 @@
+Add optimizing flag ``WITH_COMPUTED_GOTOS`` to Windows builds for when
+using a compiler that supports it (currently clang-cl). Patch by Chris Eibl.

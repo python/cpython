@@ -1,3 +1,0 @@
-For Emscripten builds the function pointer cast call trampoline now uses the
-wasm-gc ref.test instruction if it's available instead of Wasm JS type
-reflection.

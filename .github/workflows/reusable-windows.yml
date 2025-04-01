@@ -18,12 +18,13 @@ on:
         default: false
 
 env:
+  FORCE_COLOR: 1
   IncludeUwp: >-
     true
 
 jobs:
   build:
-    name: 'build and test (${{ inputs.arch }})'
+    name: ${{ inputs.arch == 'arm64' && 'build' || 'build and test' }} (${{ inputs.arch }})
     runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     env:

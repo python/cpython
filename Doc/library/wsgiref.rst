@@ -119,7 +119,8 @@ in type annotations.
    applications to set up dummy environments.  It should NOT be used by actual WSGI
    servers or applications, since the data is fake!
 
-   Example usage::
+   Example usage (see also :func:`~wsgiref.simple_server.demo_app`
+   for another example)::
 
       from wsgiref.util import setup_testing_defaults
       from wsgiref.simple_server import make_server
@@ -311,6 +312,8 @@ request.  (E.g., using the :func:`shift_path_info` function from
    in the *environ* parameter.  It's useful for verifying that a WSGI server (such
    as :mod:`wsgiref.simple_server`) is able to run a simple WSGI application
    correctly.
+
+   The *start_response* callable should follow the :class:`.StartResponse` protocol.
 
 
 .. class:: WSGIServer(server_address, RequestHandlerClass)
@@ -679,7 +682,9 @@ input, output, and error streams.
 
       This method can access the current error using ``sys.exception()``,
       and should pass that information to *start_response* when calling it (as
-      described in the "Error Handling" section of :pep:`3333`).
+      described in the "Error Handling" section of :pep:`3333`). In particular,
+      the *start_response* callable should follow the :class:`.StartResponse`
+      protocol.
 
       The default implementation just uses the :attr:`error_status`,
       :attr:`error_headers`, and :attr:`error_body` attributes to generate an output
@@ -781,7 +786,7 @@ in :pep:`3333`.
 .. versionadded:: 3.11
 
 
-.. class:: StartResponse()
+.. class:: StartResponse
 
    A :class:`typing.Protocol` describing :pep:`start_response()
    <3333#the-start-response-callable>`
@@ -816,7 +821,8 @@ in :pep:`3333`.
 Examples
 --------
 
-This is a working "Hello World" WSGI application::
+This is a working "Hello World" WSGI application, where the *start_response*
+callable should follow the :class:`.StartResponse` protocol::
 
    """
    Every WSGI application must have an application object - a callable

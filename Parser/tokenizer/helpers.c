@@ -113,7 +113,10 @@ _PyTokenizer_warn_invalid_escape_sequence(struct tok_state *tok, int first_inval
     }
 
     PyObject *msg = PyUnicode_FromFormat(
-        "invalid escape sequence '\\%c'",
+        "\"\\%c\" is an invalid escape sequence. "
+        "Such sequences will not work in the future. "
+        "Did you mean \"\\\\%c\"? A raw string is also an option.",
+        (char) first_invalid_escape_char,
         (char) first_invalid_escape_char
     );
 
@@ -129,7 +132,12 @@ _PyTokenizer_warn_invalid_escape_sequence(struct tok_state *tok, int first_inval
             /* Replace the SyntaxWarning exception with a SyntaxError
                to get a more accurate error report */
             PyErr_Clear();
-            return _PyTokenizer_syntaxerror(tok, "invalid escape sequence '\\%c'", (char) first_invalid_escape_char);
+
+            return _PyTokenizer_syntaxerror(tok,
+                "\"\\%c\" is an invalid escape sequence. "
+                "Did you mean \"\\\\%c\"? A raw string is also an option.",
+                (char) first_invalid_escape_char,
+                (char) first_invalid_escape_char);
         }
 
         return -1;

@@ -269,21 +269,13 @@ class ProcessTestCase(BaseTestCase):
         self.assertIn('stdin', c.exception.args[0])
         self.assertIn('input', c.exception.args[0])
 
-    @support.requires_resource('walltime')
     def test_check_output_timeout(self):
         # check_output() function with timeout arg
         with self.assertRaises(subprocess.TimeoutExpired) as c:
             output = subprocess.check_output(
                     [sys.executable, "-c",
-                     "import sys, time\n"
-                     "sys.stdout.write('BDFL')\n"
-                     "sys.stdout.flush()\n"
-                     "time.sleep(3600)"],
-                    # Some heavily loaded buildbots (sparc Debian 3.x) require
-                    # this much time to start and print.
-                    timeout=3)
-            self.fail("Expected TimeoutExpired.")
-        self.assertEqual(c.exception.output, b'BDFL')
+                     "import time; time.sleep(3600)"],
+                    timeout=0.1)
 
     def test_call_kwargs(self):
         # call() function with keyword args
@@ -1694,20 +1686,11 @@ class RunFuncTestCase(BaseTestCase):
         self.assertIn('stdin', c.exception.args[0])
         self.assertIn('input', c.exception.args[0])
 
-    @support.requires_resource('walltime')
     def test_check_output_timeout(self):
         with self.assertRaises(subprocess.TimeoutExpired) as c:
-            cp = self.run_python((
-                     "import sys, time\n"
-                     "sys.stdout.write('BDFL')\n"
-                     "sys.stdout.flush()\n"
-                     "time.sleep(3600)"),
-                    # Some heavily loaded buildbots (sparc Debian 3.x) require
-                    # this much time to start and print.
-                    timeout=3, stdout=subprocess.PIPE)
-        self.assertEqual(c.exception.output, b'BDFL')
-        # output is aliased to stdout
-        self.assertEqual(c.exception.stdout, b'BDFL')
+            cp = self.run_python(
+                    "import time; time.sleep(3600)",
+                    timeout=0.1, stdout=subprocess.PIPE)
 
     def test_run_kwargs(self):
         newenv = os.environ.copy()
@@ -1821,9 +1804,9 @@ class RunFuncTestCase(BaseTestCase):
         cp = subprocess.run([sys.executable, "-Xwarn_default_encoding", "-c", code],
                             capture_output=True)
         lines = cp.stderr.splitlines()
-        self.assertEqual(len(lines), 4, lines)
+        self.assertEqual(len(lines), 2, lines)
         self.assertTrue(lines[0].startswith(b"<string>:2: EncodingWarning: "))
-        self.assertTrue(lines[2].startswith(b"<string>:3: EncodingWarning: "))
+        self.assertTrue(lines[1].startswith(b"<string>:3: EncodingWarning: "))
 
 
 def _get_test_grp_name():

@@ -1,0 +1,1 @@
+Register ``cseuckr`` as an encoding alias for ``euc_kr``.

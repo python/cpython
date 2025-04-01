@@ -1307,8 +1307,8 @@ Convert number to a complex floating-point number.
 [clinic start generated code]*/
 
 static PyObject *
-complex_from_number(PyTypeObject *type, PyObject *number)
-/*[clinic end generated code: output=658a7a5fb0de074d input=3f8bdd3a2bc3facd]*/
+complex_from_number_impl(PyTypeObject *type, PyObject *number)
+/*[clinic end generated code: output=7248bb593e1871e1 input=3f8bdd3a2bc3facd]*/
 {
     if (PyComplex_CheckExact(number) && type == &PyComplex_Type) {
         Py_INCREF(number);

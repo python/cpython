@@ -2,8 +2,10 @@ import unittest
 import sys
 from test import support
 from test.support.testcase import ComplexesAreIdenticalMixin
-from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
-                               INVALID_UNDERSCORE_LITERALS)
+from test.support.numbers import (
+    VALID_UNDERSCORE_LITERALS,
+    INVALID_UNDERSCORE_LITERALS,
+)
 
 from random import random
 from math import isnan, copysign

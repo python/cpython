@@ -105,14 +105,14 @@ snippet decode a complete instruction:
 For various reasons we'll get to later (mostly efficiency, given that `EXTENDED_ARG`
 is rare) the actual code is different.
 
-## Jumps
+## Jumps
 
 Note that when the `switch` statement is reached, `next_instr` (the "instruction offset")
 already points to the next instruction.
 Thus, jump instructions can be implemented by manipulating `next_instr`:
 
 - A jump forward (`JUMP_FORWARD`) sets `next_instr += oparg`.
-- A jump backward sets `next_instr -= oparg`.
+- A jump backward (`JUMP_BACKWARD`) sets `next_instr -= oparg`.
 
 ## Inline cache entries
 

@@ -168,6 +168,18 @@ SyntaxError: expected 'else' after 'if' expression
 Traceback (most recent call last):
 SyntaxError: expected 'else' after 'if' expression
 
+>>> x = 1 if 1 else pass
+Traceback (most recent call last):
+SyntaxError: expected expression after 'else', but statement is given
+
+>>> x = pass if 1 else 1
+Traceback (most recent call last):
+SyntaxError: expected expression before 'if', but statement is given
+
+>>> x = pass if 1 else pass
+Traceback (most recent call last):
+SyntaxError: expected expression before 'if', but statement is given
+
 >>> if True:
 ...     print("Hello"
 ...
@@ -311,6 +323,12 @@ SyntaxError: did you forget parentheses around the comprehension target?
 >>> {x,y for x,y in range(100)}
 Traceback (most recent call last):
 SyntaxError: did you forget parentheses around the comprehension target?
+
+# Incorrectly closed strings
+
+>>> "The interesting object "The important object" is very important"
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Is this intended to be part of the string?
 
 # Missing commas in literals collections should not
 # produce special error messages regarding missing
@@ -840,7 +858,7 @@ Traceback (most recent call last):
 SyntaxError: 'function call' is an illegal expression for augmented assignment
 
 
-Test continue in finally in weird combinations.
+Test control flow in finally
 
 continue in for loop under finally should be ok.
 
@@ -854,51 +872,63 @@ continue in for loop under finally should be ok.
     >>> test()
     9
 
-continue in a finally should be ok.
+break in for loop under finally should be ok.
 
     >>> def test():
-    ...    for abc in range(10):
-    ...        try:
-    ...            pass
-    ...        finally:
-    ...            continue
-    ...    print(abc)
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         for abc in range(10):
+    ...             break
+    ...     print(abc)
     >>> test()
-    9
+    0
+
+return in function under finally should be ok.
 
     >>> def test():
-    ...    for abc in range(10):
-    ...        try:
-    ...            pass
-    ...        finally:
-    ...            try:
-    ...                continue
-    ...            except:
-    ...                pass
-    ...    print(abc)
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         def f():
+    ...             return 42
+    ...     print(f())
     >>> test()
-    9
+    42
+
+combine for loop and function def
+
+return in function under finally should be ok.
 
     >>> def test():
-    ...    for abc in range(10):
-    ...        try:
-    ...            pass
-    ...        finally:
-    ...            try:
-    ...                pass
-    ...            except:
-    ...                continue
-    ...    print(abc)
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         for i in range(10):
+    ...             def f():
+    ...                 return 42
+    ...     print(f())
     >>> test()
-    9
+    42
+
+    >>> def test():
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         def f():
+    ...             for i in range(10):
+    ...                 return 42
+    ...     print(f())
+    >>> test()
+    42
 
 A continue outside loop should not be allowed.
 
     >>> def foo():
     ...     try:
-    ...         pass
-    ...     finally:
     ...         continue
+    ...     finally:
+    ...         pass
     Traceback (most recent call last):
       ...
     SyntaxError: 'continue' not properly in loop
@@ -2375,7 +2405,88 @@ import unittest
 
 from test import support
 
-class SyntaxTestCase(unittest.TestCase):
+class SyntaxWarningTest(unittest.TestCase):
+    def check_warning(self, code, errtext, filename="<testcase>", mode="exec"):
+        """Check that compiling code raises SyntaxWarning with errtext.
+
+        errtest is a regular expression that must be present in the
+        text of the warning raised.
+        """
+        with self.assertWarnsRegex(SyntaxWarning, errtext):
+            compile(code, filename, mode)
+
+    def test_return_in_finally(self):
+        source = textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    return 42
+            """)
+        self.check_warning(source, "'return' in a 'finally' block")
+
+        source = textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    try:
+                        return 42
+                    except:
+                        pass
+            """)
+        self.check_warning(source, "'return' in a 'finally' block")
+
+        source = textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    try:
+                        pass
+                    except:
+                        return 42
+            """)
+        self.check_warning(source, "'return' in a 'finally' block")
+
+    def test_break_and_continue_in_finally(self):
+        for kw in ('break', 'continue'):
+
+            source = textwrap.dedent(f"""
+                for abc in range(10):
+                    try:
+                        pass
+                    finally:
+                        {kw}
+                """)
+            self.check_warning(source, f"'{kw}' in a 'finally' block")
+
+            source = textwrap.dedent(f"""
+                for abc in range(10):
+                    try:
+                        pass
+                    finally:
+                        try:
+                            {kw}
+                        except:
+                            pass
+                """)
+            self.check_warning(source, f"'{kw}' in a 'finally' block")
+
+            source = textwrap.dedent(f"""
+                for abc in range(10):
+                    try:
+                        pass
+                    finally:
+                        try:
+                            pass
+                        except:
+                            {kw}
+                """)
+            self.check_warning(source, f"'{kw}' in a 'finally' block")
+
+
+class SyntaxErrorTestCase(unittest.TestCase):
 
     def _check_error(self, code, errtext,
                      filename="<testcase>", mode="exec", subclass=None,
@@ -2383,7 +2494,7 @@ class SyntaxTestCase(unittest.TestCase):
         """Check that compiling code raises SyntaxError with errtext.
 
         errtest is a regular expression that must be present in the
-        test of the exception raised.  If subclass is specified it
+        text of the exception raised.  If subclass is specified it
         is the expected subclass of SyntaxError (e.g. IndentationError).
         """
         try:
@@ -2857,6 +2968,44 @@ while 1:
             end_offset=15 + len("obj.attr"),
         )
 
+    def test_ifexp_else_stmt(self):
+        msg = "expected expression after 'else', but statement is given"
+
+        for stmt in [
+            "pass",
+            "return",
+            "return 2",
+            "raise Exception('a')",
+            "del a",
+            "yield 2",
+            "assert False",
+            "break",
+            "continue",
+            "import",
+            "import ast",
+            "from",
+            "from ast import *"
+        ]:
+            self._check_error(f"x = 1 if 1 else {stmt}", msg)
+
+    def test_ifexp_body_stmt_else_expression(self):
+        msg = "expected expression before 'if', but statement is given"
+
+        for stmt in [
+            "pass",
+            "break",
+            "continue"
+        ]:
+            self._check_error(f"x = {stmt} if 1 else 1", msg)
+
+    def test_ifexp_body_stmt_else_stmt(self):
+        msg = "expected expression before 'if', but statement is given"
+        for lhs_stmt, rhs_stmt in [
+            ("pass", "pass"),
+            ("break", "pass"),
+            ("continue", "import ast")
+        ]:
+            self._check_error(f"x = {lhs_stmt} if 1 else {rhs_stmt}", msg)
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())

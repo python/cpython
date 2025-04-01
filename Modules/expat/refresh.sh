@@ -12,9 +12,9 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good. These values are used for verifying the SBOM, too.
-expected_libexpat_tag="R_2_6_4"
-expected_libexpat_version="2.6.4"
-expected_libexpat_sha256="fd03b7172b3bd7427a3e7a812063f74754f24542429b634e0db6511b53fb2278"
+expected_libexpat_tag="R_2_7_0"
+expected_libexpat_version="2.7.0"
+expected_libexpat_sha256="362e89ca6b8a0d46fc5740a917eb2a8b4d6356edbe016eee09f49c0781215844"
 
 expat_dir="$(realpath "$(dirname -- "${BASH_SOURCE[0]}")")"
 cd ${expat_dir}
@@ -54,4 +54,13 @@ rm libexpat.tar.gz
 # Step 3: Add the namespacing include to expat_external.h
 sed -i 's/#define Expat_External_INCLUDED 1/&\n\n\/* Namespace external symbols to allow multiple libexpat version to\n   co-exist. \*\/\n#include "pyexpatns.h"/' expat_external.h
 
-echo "Updated; verify all is okay using git diff and git status."
+echo "
+Updated! next steps:
+- Verify all is okay:
+    git diff
+    git status
+- Regenerate the sbom file
+    make regen-sbom
+- Update warning count in Tools/build/.warningignore_macos
+    (use info from CI if not on a Mac)
+"

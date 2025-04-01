@@ -1,7 +1,7 @@
 .. _idle:
 
-IDLE
-====
+IDLE --- Python editor and shell
+================================
 
 .. moduleauthor:: Guido van Rossum <guido@python.org>
 
@@ -11,6 +11,9 @@ IDLE
    single: IDLE
    single: Python Editor
    single: Integrated Development Environment
+
+..
+   Remember to update Lib/idlelib/help.html with idlelib.help.copy_source() when modifying this file.
 
 --------------
 
@@ -657,29 +660,61 @@ functions to be used from IDLE's Python shell.
 Command line usage
 ^^^^^^^^^^^^^^^^^^
 
-.. code-block:: none
+.. program:: idle
 
-   idle.py [-c command] [-d] [-e] [-h] [-i] [-r file] [-s] [-t title] [-] [arg] ...
+IDLE can be invoked from the command line with various options. The general syntax is:
 
-   -c command  run command in the shell window
-   -d          enable debugger and open shell window
-   -e          open editor window
-   -h          print help message with legal combinations and exit
-   -i          open shell window
-   -r file     run file in shell window
-   -s          run $IDLESTARTUP or $PYTHONSTARTUP first, in shell window
-   -t title    set title of shell window
-   -           run stdin in shell (- must be last option before args)
+.. code-block:: bash
 
-If there are arguments:
+   python -m idlelib [options] [file ...]
 
-* If ``-``, ``-c``, or ``r`` is used, all arguments are placed in
-  ``sys.argv[1:...]`` and ``sys.argv[0]`` is set to ``''``, ``'-c'``,
-  or ``'-r'``.  No editor window is opened, even if that is the default
-  set in the Options dialog.
+The following options are available:
 
-* Otherwise, arguments are files opened for editing and
-  ``sys.argv`` reflects the arguments passed to IDLE itself.
+.. option:: -c <command>
+
+   Run the specified Python command in the shell window.
+   For example, pass ``-c "print('Hello, World!')"``.
+   On Windows, the outer quotes must be double quotes as shown.
+
+.. option:: -d
+
+   Enable the debugger and open the shell window.
+
+.. option:: -e
+
+   Open an editor window.
+
+.. option:: -h
+
+   Print a help message with legal combinations of options and exit.
+
+.. option:: -i
+
+   Open a shell window.
+
+.. option:: -r <file>
+
+   Run the specified file in the shell window.
+
+.. option:: -s
+
+   Run the startup file (as defined by the environment variables :envvar:`IDLESTARTUP` or :envvar:`PYTHONSTARTUP`) before opening the shell window.
+
+.. option:: -t <title>
+
+   Set the title of the shell window.
+
+.. option:: -
+
+   Read and execute standard input in the shell window. This option must be the last one before any arguments.
+
+If arguments are provided:
+
+- If ``-``, ``-c``, or ``-r`` is used, all arguments are placed in ``sys.argv[1:]``,
+  and ``sys.argv[0]`` is set to ``''``, ``'-c'``, or ``'-r'`` respectively.
+  No editor window is opened, even if that is the default set in the *Options* dialog.
+- Otherwise, arguments are treated as files to be opened for editing, and ``sys.argv`` reflects the arguments passed to IDLE itself.
+
 
 Startup failure
 ^^^^^^^^^^^^^^^
@@ -971,8 +1006,8 @@ information.  The only current default extension is zzdummy, an example
 also used for testing.
 
 
-idlelib
--------
+idlelib --- implementation of IDLE application
+----------------------------------------------
 
 .. module:: idlelib
    :synopsis: Implementation package for the IDLE shell/editor.

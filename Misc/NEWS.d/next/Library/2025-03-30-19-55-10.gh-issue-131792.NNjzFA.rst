@@ -1,0 +1,5 @@
+Improved performance of :func:`textwrap.dedent` by an average of ~2.4x,
+(with improvements of up to 4x for large inputs),
+and fixed a bug where blank lines with whitespace characters other than space
+or horizontal tab were not normalised to the newline.
+Patch by Adam Turner, Marius Juston, and Pieter Eendebak.

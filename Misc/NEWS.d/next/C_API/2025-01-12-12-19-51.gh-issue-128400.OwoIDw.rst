@@ -1,2 +1,0 @@
-:c:func:`Py_FatalError` no longer shows all threads on the :term:`free
-threaded <free threading>` build to prevent crashes.

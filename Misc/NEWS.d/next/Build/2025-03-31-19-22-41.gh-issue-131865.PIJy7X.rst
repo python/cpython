@@ -1,0 +1,2 @@
+The DTrace build now properly passes the ``CC`` and ``CFLAGS`` variables
+to the ``dtrace`` command when utilizing SystemTap on Linux.

@@ -91,7 +91,7 @@ static PyObject *
 select_poll_register_impl(pollObject *self, int fd, unsigned short eventmask);
 
 static PyObject *
-select_poll_register(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
+select_poll_register(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -112,7 +112,7 @@ select_poll_register(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     }
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = select_poll_register_impl(self, fd, eventmask);
+    return_value = select_poll_register_impl((pollObject *)self, fd, eventmask);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -142,7 +142,7 @@ static PyObject *
 select_poll_modify_impl(pollObject *self, int fd, unsigned short eventmask);
 
 static PyObject *
-select_poll_modify(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
+select_poll_modify(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -159,7 +159,7 @@ select_poll_modify(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = select_poll_modify_impl(self, fd, eventmask);
+    return_value = select_poll_modify_impl((pollObject *)self, fd, eventmask);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -183,7 +183,7 @@ static PyObject *
 select_poll_unregister_impl(pollObject *self, int fd);
 
 static PyObject *
-select_poll_unregister(pollObject *self, PyObject *arg)
+select_poll_unregister(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -193,7 +193,7 @@ select_poll_unregister(pollObject *self, PyObject *arg)
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = select_poll_unregister_impl(self, fd);
+    return_value = select_poll_unregister_impl((pollObject *)self, fd);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -224,7 +224,7 @@ static PyObject *
 select_poll_poll_impl(pollObject *self, PyObject *timeout_obj);
 
 static PyObject *
-select_poll_poll(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
+select_poll_poll(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *timeout_obj = Py_None;
@@ -238,7 +238,7 @@ select_poll_poll(pollObject *self, PyObject *const *args, Py_ssize_t nargs)
     timeout_obj = args[0];
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = select_poll_poll_impl(self, timeout_obj);
+    return_value = select_poll_poll_impl((pollObject *)self, timeout_obj);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -270,7 +270,7 @@ select_devpoll_register_impl(devpollObject *self, int fd,
                              unsigned short eventmask);
 
 static PyObject *
-select_devpoll_register(devpollObject *self, PyObject *const *args, Py_ssize_t nargs)
+select_devpoll_register(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -291,7 +291,7 @@ select_devpoll_register(devpollObject *self, PyObject *const *args, Py_ssize_t n
     }
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = select_devpoll_register_impl(self, fd, eventmask);
+    return_value = select_devpoll_register_impl((devpollObject *)self, fd, eventmask);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -323,7 +323,7 @@ select_devpoll_modify_impl(devpollObject *self, int fd,
                            unsigned short eventmask);
 
 static PyObject *
-select_devpoll_modify(devpollObject *self, PyObject *const *args, Py_ssize_t nargs)
+select_devpoll_modify(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -344,7 +344,7 @@ select_devpoll_modify(devpollObject *self, PyObject *const *args, Py_ssize_t nar
     }
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = select_devpoll_modify_impl(self, fd, eventmask);
+    return_value = select_devpoll_modify_impl((devpollObject *)self, fd, eventmask);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -368,7 +368,7 @@ static PyObject *
 select_devpoll_unregister_impl(devpollObject *self, int fd);
 
 static PyObject *
-select_devpoll_unregister(devpollObject *self, PyObject *arg)
+select_devpoll_unregister(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -378,7 +378,7 @@ select_devpoll_unregister(devpollObject *self, PyObject *arg)
         goto exit;
     }
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = select_devpoll_unregister_impl(self, fd);
+    return_value = select_devpoll_unregister_impl((devpollObject *)self, fd);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -409,7 +409,7 @@ static PyObject *
 select_devpoll_poll_impl(devpollObject *self, PyObject *timeout_obj);
 
 static PyObject *
-select_devpoll_poll(devpollObject *self, PyObject *const *args, Py_ssize_t nargs)
+select_devpoll_poll(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *timeout_obj = Py_None;
@@ -423,7 +423,7 @@ select_devpoll_poll(devpollObject *self, PyObject *const *args, Py_ssize_t nargs
     timeout_obj = args[0];
 skip_optional:
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = select_devpoll_poll_impl(self, timeout_obj);
+    return_value = select_devpoll_poll_impl((devpollObject *)self, timeout_obj);
     Py_END_CRITICAL_SECTION();
 
 exit:
@@ -449,12 +449,12 @@ static PyObject *
 select_devpoll_close_impl(devpollObject *self);
 
 static PyObject *
-select_devpoll_close(devpollObject *self, PyObject *Py_UNUSED(ignored))
+select_devpoll_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = select_devpoll_close_impl(self);
+    return_value = select_devpoll_close_impl((devpollObject *)self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -477,12 +477,12 @@ static PyObject *
 select_devpoll_fileno_impl(devpollObject *self);
 
 static PyObject *
-select_devpoll_fileno(devpollObject *self, PyObject *Py_UNUSED(ignored))
+select_devpoll_fileno(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = select_devpoll_fileno_impl(self);
+    return_value = select_devpoll_fileno_impl((devpollObject *)self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -570,9 +570,11 @@ select_epoll(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(sizehint), &_Py_ID(flags), },
     };
     #undef NUM_KEYWORDS
@@ -643,12 +645,12 @@ static PyObject *
 select_epoll_close_impl(pyEpoll_Object *self);
 
 static PyObject *
-select_epoll_close(pyEpoll_Object *self, PyObject *Py_UNUSED(ignored))
+select_epoll_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = select_epoll_close_impl(self);
+    return_value = select_epoll_close_impl((pyEpoll_Object *)self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -671,9 +673,9 @@ static PyObject *
 select_epoll_fileno_impl(pyEpoll_Object *self);
 
 static PyObject *
-select_epoll_fileno(pyEpoll_Object *self, PyObject *Py_UNUSED(ignored))
+select_epoll_fileno(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return select_epoll_fileno_impl(self);
+    return select_epoll_fileno_impl((pyEpoll_Object *)self);
 }
 
 #endif /* defined(HAVE_EPOLL) */
@@ -693,7 +695,7 @@ static PyObject *
 select_epoll_fromfd_impl(PyTypeObject *type, int fd);
 
 static PyObject *
-select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
+select_epoll_fromfd(PyObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -702,7 +704,7 @@ select_epoll_fromfd(PyTypeObject *type, PyObject *arg)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = select_epoll_fromfd_impl(type, fd);
+    return_value = select_epoll_fromfd_impl((PyTypeObject *)type, fd);
 
 exit:
     return return_value;
@@ -734,7 +736,7 @@ select_epoll_register_impl(pyEpoll_Object *self, int fd,
                            unsigned int eventmask);
 
 static PyObject *
-select_epoll_register(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+select_epoll_register(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -743,9 +745,11 @@ select_epoll_register(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t na
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fd), &_Py_ID(eventmask), },
     };
     #undef NUM_KEYWORDS
@@ -784,7 +788,7 @@ select_epoll_register(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t na
         goto exit;
     }
 skip_optional_pos:
-    return_value = select_epoll_register_impl(self, fd, eventmask);
+    return_value = select_epoll_register_impl((pyEpoll_Object *)self, fd, eventmask);
 
 exit:
     return return_value;
@@ -813,7 +817,7 @@ select_epoll_modify_impl(pyEpoll_Object *self, int fd,
                          unsigned int eventmask);
 
 static PyObject *
-select_epoll_modify(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+select_epoll_modify(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -822,9 +826,11 @@ select_epoll_modify(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t narg
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fd), &_Py_ID(eventmask), },
     };
     #undef NUM_KEYWORDS
@@ -858,7 +864,7 @@ select_epoll_modify(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t narg
     if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = select_epoll_modify_impl(self, fd, eventmask);
+    return_value = select_epoll_modify_impl((pyEpoll_Object *)self, fd, eventmask);
 
 exit:
     return return_value;
@@ -884,7 +890,7 @@ static PyObject *
 select_epoll_unregister_impl(pyEpoll_Object *self, int fd);
 
 static PyObject *
-select_epoll_unregister(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+select_epoll_unregister(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -893,9 +899,11 @@ select_epoll_unregister(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(fd), },
     };
     #undef NUM_KEYWORDS
@@ -924,7 +932,7 @@ select_epoll_unregister(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t 
     if (fd < 0) {
         goto exit;
     }
-    return_value = select_epoll_unregister_impl(self, fd);
+    return_value = select_epoll_unregister_impl((pyEpoll_Object *)self, fd);
 
 exit:
     return return_value;
@@ -957,7 +965,7 @@ select_epoll_poll_impl(pyEpoll_Object *self, PyObject *timeout_obj,
                        int maxevents);
 
 static PyObject *
-select_epoll_poll(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+select_epoll_poll(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -966,9 +974,11 @@ select_epoll_poll(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(timeout), &_Py_ID(maxevents), },
     };
     #undef NUM_KEYWORDS
@@ -1009,7 +1019,7 @@ select_epoll_poll(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs,
         goto exit;
     }
 skip_optional_pos:
-    return_value = select_epoll_poll_impl(self, timeout_obj, maxevents);
+    return_value = select_epoll_poll_impl((pyEpoll_Object *)self, timeout_obj, maxevents);
 
 exit:
     return return_value;
@@ -1031,9 +1041,9 @@ static PyObject *
 select_epoll___enter___impl(pyEpoll_Object *self);
 
 static PyObject *
-select_epoll___enter__(pyEpoll_Object *self, PyObject *Py_UNUSED(ignored))
+select_epoll___enter__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return select_epoll___enter___impl(self);
+    return select_epoll___enter___impl((pyEpoll_Object *)self);
 }
 
 #endif /* defined(HAVE_EPOLL) */
@@ -1053,7 +1063,7 @@ select_epoll___exit___impl(pyEpoll_Object *self, PyObject *exc_type,
                            PyObject *exc_value, PyObject *exc_tb);
 
 static PyObject *
-select_epoll___exit__(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t nargs)
+select_epoll___exit__(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *exc_type = Py_None;
@@ -1076,7 +1086,7 @@ select_epoll___exit__(pyEpoll_Object *self, PyObject *const *args, Py_ssize_t na
     }
     exc_tb = args[2];
 skip_optional:
-    return_value = select_epoll___exit___impl(self, exc_type, exc_value, exc_tb);
+    return_value = select_epoll___exit___impl((pyEpoll_Object *)self, exc_type, exc_value, exc_tb);
 
 exit:
     return return_value;
@@ -1146,12 +1156,12 @@ static PyObject *
 select_kqueue_close_impl(kqueue_queue_Object *self);
 
 static PyObject *
-select_kqueue_close(kqueue_queue_Object *self, PyObject *Py_UNUSED(ignored))
+select_kqueue_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    return_value = select_kqueue_close_impl(self);
+    return_value = select_kqueue_close_impl((kqueue_queue_Object *)self);
     Py_END_CRITICAL_SECTION();
 
     return return_value;
@@ -1174,9 +1184,9 @@ static PyObject *
 select_kqueue_fileno_impl(kqueue_queue_Object *self);
 
 static PyObject *
-select_kqueue_fileno(kqueue_queue_Object *self, PyObject *Py_UNUSED(ignored))
+select_kqueue_fileno(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return select_kqueue_fileno_impl(self);
+    return select_kqueue_fileno_impl((kqueue_queue_Object *)self);
 }
 
 #endif /* defined(HAVE_KQUEUE) */
@@ -1196,7 +1206,7 @@ static PyObject *
 select_kqueue_fromfd_impl(PyTypeObject *type, int fd);
 
 static PyObject *
-select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
+select_kqueue_fromfd(PyObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -1205,7 +1215,7 @@ select_kqueue_fromfd(PyTypeObject *type, PyObject *arg)
     if (fd == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = select_kqueue_fromfd_impl(type, fd);
+    return_value = select_kqueue_fromfd_impl((PyTypeObject *)type, fd);
 
 exit:
     return return_value;
@@ -1238,7 +1248,7 @@ select_kqueue_control_impl(kqueue_queue_Object *self, PyObject *changelist,
                            int maxevents, PyObject *otimeout);
 
 static PyObject *
-select_kqueue_control(kqueue_queue_Object *self, PyObject *const *args, Py_ssize_t nargs)
+select_kqueue_control(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *changelist;
@@ -1258,7 +1268,7 @@ select_kqueue_control(kqueue_queue_Object *self, PyObject *const *args, Py_ssize
     }
     otimeout = args[2];
 skip_optional:
-    return_value = select_kqueue_control_impl(self, changelist, maxevents, otimeout);
+    return_value = select_kqueue_control_impl((kqueue_queue_Object *)self, changelist, maxevents, otimeout);
 
 exit:
     return return_value;
@@ -1365,4 +1375,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=78b4e67f7d401b5e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6fc20d78802511d1 input=a9049054013a1b77]*/

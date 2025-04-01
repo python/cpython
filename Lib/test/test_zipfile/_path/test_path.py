@@ -5,7 +5,6 @@ import pathlib
 import pickle
 import stat
 import sys
-import time
 import unittest
 import zipfile
 import zipfile._path

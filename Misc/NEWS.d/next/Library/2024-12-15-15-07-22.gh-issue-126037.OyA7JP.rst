@@ -1,0 +1,5 @@
+:mod:`xml.etree.ElementTree`: Fix a crash in :meth:`Element.find <xml.etree.ElementTree.Element.find>`,
+:meth:`Element.findtext <xml.etree.ElementTree.Element.findtext>` and
+:meth:`Element.findall <xml.etree.ElementTree.Element.findall>` when the tag
+to find implements an :meth:`~object.__eq__` method mutating the element
+being queried. Patch by Bénédikt Tran.

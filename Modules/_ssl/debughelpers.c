@@ -85,7 +85,9 @@ _PySSL_msg_callback(int write_p, int version, int content_type,
 
 
 static PyObject *
-_PySSLContext_get_msg_callback(PySSLContext *self, void *c) {
+_PySSLContext_get_msg_callback(PyObject *op, void *Py_UNUSED(closure))
+{
+    PySSLContext *self = PySSLContext_CAST(op);
     if (self->msg_cb != NULL) {
         return Py_NewRef(self->msg_cb);
     } else {
@@ -94,7 +96,10 @@ _PySSLContext_get_msg_callback(PySSLContext *self, void *c) {
 }
 
 static int
-_PySSLContext_set_msg_callback(PySSLContext *self, PyObject *arg, void *c) {
+_PySSLContext_set_msg_callback(PyObject *op, PyObject *arg,
+                               void *Py_UNUSED(closure))
+{
+    PySSLContext *self = PySSLContext_CAST(op);
     Py_CLEAR(self->msg_cb);
     if (arg == Py_None) {
         SSL_CTX_set_msg_callback(self->ctx, NULL);
@@ -153,7 +158,9 @@ _PySSL_keylog_callback(const SSL *ssl, const char *line)
 }
 
 static PyObject *
-_PySSLContext_get_keylog_filename(PySSLContext *self, void *c) {
+_PySSLContext_get_keylog_filename(PyObject *op, void *Py_UNUSED(closure))
+{
+    PySSLContext *self = PySSLContext_CAST(op);
     if (self->keylog_filename != NULL) {
         return Py_NewRef(self->keylog_filename);
     } else {
@@ -162,8 +169,18 @@ _PySSLContext_get_keylog_filename(PySSLContext *self, void *c) {
 }
 
 static int
-_PySSLContext_set_keylog_filename(PySSLContext *self, PyObject *arg, void *c) {
+_PySSLContext_set_keylog_filename(PyObject *op, PyObject *arg,
+                                  void *Py_UNUSED(closure))
+{
+    PySSLContext *self = PySSLContext_CAST(op);
     FILE *fp;
+
+#if defined(MS_WINDOWS) && defined(_DEBUG)
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "set_keylog_filename: unavailable on Windows debug build");
+    return -1;
+#endif
+
     /* Reset variables and callback first */
     SSL_CTX_set_keylog_callback(self->ctx, NULL);
     Py_CLEAR(self->keylog_filename);

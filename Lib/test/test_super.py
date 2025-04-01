@@ -9,9 +9,6 @@ from unittest.mock import patch
 from test.support import import_helper, threading_helper
 
 
-ADAPTIVE_WARMUP_DELAY = 2
-
-
 class A:
     def f(self):
         return 'A'
@@ -466,7 +463,8 @@ class TestSuper(unittest.TestCase):
             super(MyType, type(mytype)).__setattr__(mytype, "bar", 1)
             self.assertEqual(mytype.bar, 1)
 
-        for _ in range(ADAPTIVE_WARMUP_DELAY):
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             test("foo1")
 
     def test_reassigned_new(self):
@@ -485,7 +483,8 @@ class TestSuper(unittest.TestCase):
             def __new__(cls):
                 return super().__new__(cls)
 
-        for _ in range(ADAPTIVE_WARMUP_DELAY):
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             C()
 
     def test_mixed_staticmethod_hierarchy(self):
@@ -505,7 +504,8 @@ class TestSuper(unittest.TestCase):
             def some(cls):
                 return super().some(cls)
 
-        for _ in range(ADAPTIVE_WARMUP_DELAY):
+        _testinternalcapi = import_helper.import_module("_testinternalcapi")
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
             C.some(C)
 
     @threading_helper.requires_working_threading()

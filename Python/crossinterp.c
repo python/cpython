@@ -5,8 +5,8 @@
 #include "pycore_ceval.h"         // _Py_simple_func
 #include "pycore_crossinterp.h"   // _PyXIData_t
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_namespace.h"     //_PyNamespace_New()
-#include "pycore_pyerrors.h"      // _PyErr_Clear()
+#include "pycore_namespace.h"     // _PyNamespace_New()
+#include "pycore_typeobject.h"    // _PyStaticType_InitBuiltin()
 
 
 /**************/
@@ -368,12 +368,9 @@ _convert_exc_to_TracebackException(PyObject *exc, PyObject **p_tbexc)
     PyObject *create = NULL;
 
     // This is inspired by _PyErr_Display().
-    PyObject *tbmod = PyImport_ImportModule("traceback");
-    if (tbmod == NULL) {
-        return -1;
-    }
-    PyObject *tbexc_type = PyObject_GetAttrString(tbmod, "TracebackException");
-    Py_DECREF(tbmod);
+    PyObject *tbexc_type = PyImport_ImportModuleAttrString(
+        "traceback",
+        "TracebackException");
     if (tbexc_type == NULL) {
         return -1;
     }
@@ -784,7 +781,8 @@ _PyXI_excinfo_Apply(_PyXI_excinfo *info, PyObject *exctype)
         PyObject *exc = PyErr_GetRaisedException();
         if (PyObject_SetAttrString(exc, "_errdisplay", tbexc) < 0) {
 #ifdef Py_DEBUG
-            PyErr_FormatUnraisable("Exception ignored when setting _errdisplay");
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "setting _errdisplay");
 #endif
             PyErr_Clear();
         }

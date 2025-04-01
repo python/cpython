@@ -370,7 +370,7 @@ ABC hierarchy::
            :exc:`NotImplementedError`.  Functionality provided when
            :meth:`exec_module` is available.
 
-        .. deprecated:: 3.4
+        .. deprecated-removed:: 3.4 3.15
            The recommended API for loading a module is :meth:`exec_module`
            (and :meth:`create_module`).  Loaders should implement it instead of
            :meth:`load_module`.  The import machinery takes care of all the
@@ -380,15 +380,18 @@ ABC hierarchy::
 
 .. class:: ResourceLoader
 
+   *Superseded by TraversableResources*
+
     An abstract base class for a :term:`loader` which implements the optional
     :pep:`302` protocol for loading arbitrary resources from the storage
     back-end.
 
     .. deprecated:: 3.7
        This ABC is deprecated in favour of supporting resource loading
-       through :class:`importlib.resources.abc.ResourceReader`.
+       through :class:`importlib.resources.abc.TraversableResources`.
 
-    .. abstractmethod:: get_data(path)
+    .. method:: get_data(path)
+       :abstractmethod:
 
         An abstract method to return the bytes for the data located at *path*.
         Loaders that have a file-like storage back-end
@@ -425,7 +428,8 @@ ABC hierarchy::
         .. versionchanged:: 3.4
            No longer abstract and a concrete implementation is provided.
 
-    .. abstractmethod:: get_source(fullname)
+    .. method:: get_source(fullname)
+       :abstractmethod:
 
         An abstract method to return the source of a module. It is returned as
         a text string using :term:`universal newlines`, translating all
@@ -472,7 +476,7 @@ ABC hierarchy::
 
        Implementation of :meth:`Loader.load_module`.
 
-       .. deprecated:: 3.4
+       .. deprecated-removed:: 3.4 3.15
           use :meth:`exec_module` instead.
 
 
@@ -482,7 +486,8 @@ ABC hierarchy::
     when implemented, helps a module to be executed as a script. The ABC
     represents an optional :pep:`302` protocol.
 
-    .. abstractmethod:: get_filename(fullname)
+    .. method:: get_filename(fullname)
+       :abstractmethod:
 
         An abstract method that is to return the value of
         :attr:`~module.__file__` for the specified module. If no path is
@@ -519,14 +524,16 @@ ABC hierarchy::
 
       Calls super's ``load_module()``.
 
-      .. deprecated:: 3.4
+      .. deprecated-removed:: 3.4 3.15
          Use :meth:`Loader.exec_module` instead.
 
-   .. abstractmethod:: get_filename(fullname)
+   .. method:: get_filename(fullname)
+      :abstractmethod:
 
       Returns :attr:`path`.
 
-   .. abstractmethod:: get_data(path)
+   .. method:: get_data(path)
+      :abstractmethod:
 
       Reads *path* as a binary file and returns the bytes from it.
 
@@ -608,7 +615,7 @@ ABC hierarchy::
 
        Concrete implementation of :meth:`Loader.load_module`.
 
-       .. deprecated:: 3.4
+       .. deprecated-removed:: 3.4 3.15
           Use :meth:`exec_module` instead.
 
     .. method:: get_source(fullname)
@@ -662,7 +669,8 @@ ABC hierarchy::
     .. deprecated-removed:: 3.12 3.14
        Use :class:`importlib.resources.abc.TraversableResources` instead.
 
-    .. abstractmethod:: open_resource(resource)
+    .. method:: open_resource(resource)
+       :abstractmethod:
 
         Returns an opened, :term:`file-like object` for binary reading
         of the *resource*.
@@ -670,19 +678,22 @@ ABC hierarchy::
         If the resource cannot be found, :exc:`FileNotFoundError` is
         raised.
 
-    .. abstractmethod:: resource_path(resource)
+    .. method:: resource_path(resource)
+       :abstractmethod:
 
         Returns the file system path to the *resource*.
 
         If the resource does not concretely exist on the file system,
         raise :exc:`FileNotFoundError`.
 
-    .. abstractmethod:: is_resource(name)
+    .. method:: is_resource(name)
+       :abstractmethod:
 
         Returns ``True`` if the named *name* is considered a resource.
         :exc:`FileNotFoundError` is raised if *name* does not exist.
 
-    .. abstractmethod:: contents()
+    .. method:: contents()
+       :abstractmethod:
 
         Returns an :term:`iterable` of strings over the contents of
         the package. Do note that it is not required that all names
@@ -718,33 +729,39 @@ ABC hierarchy::
 
        Abstract. The base name of this object without any parent references.
 
-    .. abstractmethod:: iterdir()
+    .. method:: iterdir()
+       :abstractmethod:
 
        Yield ``Traversable`` objects in ``self``.
 
-    .. abstractmethod:: is_dir()
+    .. method:: is_dir()
+       :abstractmethod:
 
        Return ``True`` if ``self`` is a directory.
 
-    .. abstractmethod:: is_file()
+    .. method:: is_file()
+       :abstractmethod:
 
        Return ``True`` if ``self`` is a file.
 
-    .. abstractmethod:: joinpath(child)
+    .. method:: joinpath(child)
+       :abstractmethod:
 
        Return Traversable child in ``self``.
 
-    .. abstractmethod:: __truediv__(child)
+    .. method:: __truediv__(child)
+       :abstractmethod:
 
        Return ``Traversable`` child in ``self``.
 
-    .. abstractmethod:: open(mode='r', *args, **kwargs)
+    .. method:: open(mode='r', *args, **kwargs)
+       :abstractmethod:
 
        *mode* may be 'r' or 'rb' to open as text or binary. Return a handle
        suitable for reading (same as :attr:`pathlib.Path.open`).
 
        When opening as text, accepts encoding parameters such as those
-       accepted by :attr:`io.TextIOWrapper`.
+       accepted by :class:`io.TextIOWrapper`.
 
     .. method:: read_bytes()
 
@@ -772,7 +789,8 @@ ABC hierarchy::
     .. deprecated-removed:: 3.12 3.14
        Use :class:`importlib.resources.abc.TraversableResources` instead.
 
-    .. abstractmethod:: files()
+    .. method:: files()
+       :abstractmethod:
 
        Returns a :class:`importlib.resources.abc.Traversable` object for the loaded
        package.
@@ -792,14 +810,14 @@ ABC hierarchy::
 This module contains the various objects that help :keyword:`import`
 find and load modules.
 
-.. attribute:: SOURCE_SUFFIXES
+.. data:: SOURCE_SUFFIXES
 
    A list of strings representing the recognized file suffixes for source
    modules.
 
    .. versionadded:: 3.3
 
-.. attribute:: DEBUG_BYTECODE_SUFFIXES
+.. data:: DEBUG_BYTECODE_SUFFIXES
 
    A list of strings representing the file suffixes for non-optimized bytecode
    modules.
@@ -807,9 +825,9 @@ find and load modules.
    .. versionadded:: 3.3
 
    .. deprecated:: 3.5
-      Use :attr:`BYTECODE_SUFFIXES` instead.
+      Use :const:`BYTECODE_SUFFIXES` instead.
 
-.. attribute:: OPTIMIZED_BYTECODE_SUFFIXES
+.. data:: OPTIMIZED_BYTECODE_SUFFIXES
 
    A list of strings representing the file suffixes for optimized bytecode
    modules.
@@ -817,9 +835,9 @@ find and load modules.
    .. versionadded:: 3.3
 
    .. deprecated:: 3.5
-      Use :attr:`BYTECODE_SUFFIXES` instead.
+      Use :const:`BYTECODE_SUFFIXES` instead.
 
-.. attribute:: BYTECODE_SUFFIXES
+.. data:: BYTECODE_SUFFIXES
 
    A list of strings representing the recognized file suffixes for bytecode
    modules (including the leading dot).
@@ -829,7 +847,7 @@ find and load modules.
    .. versionchanged:: 3.5
       The value is no longer dependent on ``__debug__``.
 
-.. attribute:: EXTENSION_SUFFIXES
+.. data:: EXTENSION_SUFFIXES
 
    A list of strings representing the recognized file suffixes for
    extension modules.
@@ -1018,7 +1036,7 @@ find and load modules.
       Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
       specifying the name of the module to load is optional.
 
-      .. deprecated:: 3.6
+      .. deprecated-removed:: 3.6 3.15
 
          Use :meth:`importlib.abc.Loader.exec_module` instead.
 
@@ -1061,7 +1079,7 @@ find and load modules.
    Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
    specifying the name of the module to load is optional.
 
-   .. deprecated:: 3.6
+   .. deprecated-removed:: 3.6 3.15
 
       Use :meth:`importlib.abc.Loader.exec_module` instead.
 
@@ -1107,7 +1125,7 @@ find and load modules.
    .. method:: is_package(fullname)
 
       Returns ``True`` if the file path points to a package's ``__init__``
-      module based on :attr:`EXTENSION_SUFFIXES`.
+      module based on :const:`EXTENSION_SUFFIXES`.
 
    .. method:: get_code(fullname)
 
@@ -1292,7 +1310,7 @@ find and load modules.
 This module contains the various objects that help in the construction of
 an :term:`importer`.
 
-.. attribute:: MAGIC_NUMBER
+.. data:: MAGIC_NUMBER
 
    The bytes which represent the bytecode version number. If you need help with
    loading/writing bytecode then consider :class:`importlib.abc.SourceLoader`.

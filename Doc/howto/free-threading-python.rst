@@ -43,7 +43,7 @@ Identifying free-threaded Python
 ================================
 
 To check if the current interpreter supports free-threading, :option:`python -VV <-V>`
-and :attr:`sys.version` contain "experimental free-threading build".
+and :data:`sys.version` contain "experimental free-threading build".
 The new :func:`sys._is_gil_enabled` function can be used to check whether
 the GIL is actually disabled in the running process.
 

@@ -31,9 +31,11 @@ sys_addaudithook(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(hook), },
     };
     #undef NUM_KEYWORDS
@@ -373,6 +375,36 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(sys__is_immortal__doc__,
+"_is_immortal($module, op, /)\n"
+"--\n"
+"\n"
+"Return True if the given object is \"immortal\" per PEP 683.\n"
+"\n"
+"This function should be used for specialized purposes only.");
+
+#define SYS__IS_IMMORTAL_METHODDEF    \
+    {"_is_immortal", (PyCFunction)sys__is_immortal, METH_O, sys__is_immortal__doc__},
+
+static int
+sys__is_immortal_impl(PyObject *module, PyObject *op);
+
+static PyObject *
+sys__is_immortal(PyObject *module, PyObject *op)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = sys__is_immortal_impl(module, op);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys_settrace__doc__,
 "settrace($module, function, /)\n"
 "--\n"
@@ -589,9 +621,11 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(depth), },
     };
     #undef NUM_KEYWORDS
@@ -891,9 +925,11 @@ sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t n
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(maxdigits), },
     };
     #undef NUM_KEYWORDS
@@ -1041,9 +1077,11 @@ sys_getunicodeinternedsize(PyObject *module, PyObject *const *args, Py_ssize_t n
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(_only_immortal), },
     };
     #undef NUM_KEYWORDS
@@ -1503,9 +1541,11 @@ sys__dump_tracelets(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(outpath), },
     };
     #undef NUM_KEYWORDS
@@ -1565,9 +1605,11 @@ sys__getframemodulename(PyObject *module, PyObject *const *args, Py_ssize_t narg
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(depth), },
     };
     #undef NUM_KEYWORDS
@@ -1724,4 +1766,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=568b0a0069dc43e8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=75e202eec4450f50 input=a9049054013a1b77]*/

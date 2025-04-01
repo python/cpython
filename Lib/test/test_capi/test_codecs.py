@@ -854,20 +854,18 @@ class CAPICodecErrors(unittest.TestCase):
         self.do_test_codec_errors_handler(handler, self.unicode_encode_errors)
 
     def do_test_codec_errors_handler(self, handler, exceptions):
-        at_least_one = False
+        self.assertNotEqual(len(exceptions), 0)
         for exc in exceptions:
-            # See https://github.com/python/cpython/issues/123378 and related
-            # discussion and issues for details.
-            if self._exception_may_crash(exc):
-                continue
-
-            at_least_one = True
             with self.subTest(handler=handler, exc=exc):
                 # test that the handler does not crash
-                self.assertIsInstance(handler(exc), tuple)
-
-        if exceptions:
-            self.assertTrue(at_least_one, "all exceptions are crashing")
+                res = handler(exc)
+                self.assertIsInstance(res, tuple)
+                self.assertEqual(len(res), 2)
+                replacement, continue_from = res
+                self.assertIsInstance(replacement, str)
+                self.assertIsInstance(continue_from, int)
+                self.assertGreaterEqual(continue_from, 0)
+                self.assertLessEqual(continue_from, len(exc.object))
 
         for bad_exc in (
             self.bad_unicode_errors
@@ -875,30 +873,6 @@ class CAPICodecErrors(unittest.TestCase):
         ):
             with self.subTest('bad type', handler=handler, exc=bad_exc):
                 self.assertRaises(TypeError, handler, bad_exc)
-
-    @classmethod
-    def _exception_may_crash(cls, exc):
-        """Indicate whether a Unicode exception might currently crash
-        the interpreter when used by a built-in codecs error handler.
-
-        Until gh-123378 is fixed, we skip the tests for these exceptions.
-
-        This should only be used by "do_test_codec_errors_handler".
-        """
-        message, start, end = exc.object, exc.start, exc.end
-        match exc:
-            case UnicodeEncodeError():
-                return end < start or (end - start) >= len(message)
-            case UnicodeDecodeError():
-                # The case "end - start >= len(message)" does not crash.
-                return end < start
-            case UnicodeTranslateError():
-                # Test "end <= start" because PyCodec_ReplaceErrors checks
-                # the Unicode kind of a 0-length string which by convention
-                # is PyUnicode_1BYTE_KIND and not PyUnicode_2BYTE_KIND as
-                # the handler currently expects.
-                return end <= start or (end - start) >= len(message)
-        return False
 
 
 if __name__ == "__main__":

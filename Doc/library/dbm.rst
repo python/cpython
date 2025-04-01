@@ -455,7 +455,7 @@ The :mod:`!dbm.dumb` module defines the following:
    .. method:: dumbdbm.sync()
 
       Synchronize the on-disk directory and data files.  This method is called
-      by the :meth:`Shelve.sync` method.
+      by the :meth:`shelve.Shelf.sync` method.
 
    .. method:: dumbdbm.close()
 

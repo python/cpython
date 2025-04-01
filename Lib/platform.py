@@ -189,22 +189,25 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
             # sys.executable is not set.
             return lib, version
 
-    libc_search = re.compile(b'(__libc_init)'
-                          b'|'
-                          b'(GLIBC_([0-9.]+))'
-                          b'|'
-                          br'(libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)', re.ASCII)
+    libc_search = re.compile(br"""
+          (__libc_init)
+        | (GLIBC_([0-9.]+))
+        | (libc(_\w+)?\.so(?:\.(\d[0-9.]*))?)
+        | (musl-([0-9.]+))
+        """,
+        re.ASCII | re.VERBOSE)
 
     V = _comparable_version
     # We use os.path.realpath()
     # here to work around problems with Cygwin not being
     # able to open symlinks for reading
     executable = os.path.realpath(executable)
+    ver = None
     with open(executable, 'rb') as f:
         binary = f.read(chunksize)
         pos = 0
         while pos < len(binary):
-            if b'libc' in binary or b'GLIBC' in binary:
+            if b'libc' in binary or b'GLIBC' in binary or b'musl' in binary:
                 m = libc_search.search(binary, pos)
             else:
                 m = None
@@ -216,7 +219,7 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
                     continue
                 if not m:
                     break
-            libcinit, glibc, glibcversion, so, threads, soversion = [
+            libcinit, glibc, glibcversion, so, threads, soversion, musl, muslversion = [
                 s.decode('latin1') if s is not None else s
                 for s in m.groups()]
             if libcinit and not lib:
@@ -224,18 +227,22 @@ def libc_ver(executable=None, lib='', version='', chunksize=16384):
             elif glibc:
                 if lib != 'glibc':
                     lib = 'glibc'
-                    version = glibcversion
-                elif V(glibcversion) > V(version):
-                    version = glibcversion
+                    ver = glibcversion
+                elif V(glibcversion) > V(ver):
+                    ver = glibcversion
             elif so:
                 if lib != 'glibc':
                     lib = 'libc'
-                    if soversion and (not version or V(soversion) > V(version)):
-                        version = soversion
-                    if threads and version[-len(threads):] != threads:
-                        version = version + threads
+                    if soversion and (not ver or V(soversion) > V(ver)):
+                        ver = soversion
+                    if threads and ver[-len(threads):] != threads:
+                        ver = ver + threads
+            elif musl:
+                lib = 'musl'
+                if not ver or V(muslversion) > V(ver):
+                    ver = muslversion
             pos = m.end()
-    return lib, version
+    return lib, version if ver is None else ver
 
 def _norm_version(version, build=''):
 

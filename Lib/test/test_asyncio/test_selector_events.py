@@ -1051,6 +1051,48 @@ class SelectorSocketTransportTests(test_utils.TestCase):
         transport.close()
         remove_writer.assert_called_with(self.sock_fd)
 
+    def test_write_buffer_after_close(self):
+        # gh-115514: If the transport is closed while:
+        #  * Transport write buffer is not empty
+        #  * Transport is paused
+        #  * Protocol has data in its buffer, like SSLProtocol in self._outgoing
+        # The data is still written out.
+
+        # Also tested with real SSL transport in
+        # test.test_asyncio.test_ssl.TestSSL.test_remote_shutdown_receives_trailing_data
+
+        data = memoryview(b'data')
+        self.sock.send.return_value = 2
+        self.sock.send.fileno.return_value = 7
+
+        def _resume_writing():
+            transport.write(b"data")
+            self.protocol.resume_writing.side_effect = None
+
+        self.protocol.resume_writing.side_effect = _resume_writing
+
+        transport = self.socket_transport()
+        transport._high_water = 1
+
+        transport.write(data)
+
+        self.assertTrue(transport._protocol_paused)
+        self.assertTrue(self.sock.send.called)
+        self.loop.assert_writer(7, transport._write_ready)
+
+        transport.close()
+
+        # not called, we still have data in write buffer
+        self.assertFalse(self.protocol.connection_lost.called)
+
+        self.loop.writers[7]._run()
+        # during this ^ run, the _resume_writing mock above was called and added more data
+
+        self.assertEqual(transport.get_write_buffer_size(), 2)
+        self.loop.writers[7]._run()
+
+        self.assertEqual(transport.get_write_buffer_size(), 0)
+        self.assertTrue(self.protocol.connection_lost.called)
 
 class SelectorSocketTransportBufferedProtocolTests(test_utils.TestCase):
 

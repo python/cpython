@@ -8,8 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-/* Forward declaration */
-struct pyruntimestate;
+#include "pycore_typedefs.h"      // _PyRuntimeState
 
 /* --- PyStatus ----------------------------------------------- */
 
@@ -177,7 +176,7 @@ extern PyStatus _PyConfig_InitPathConfig(
 extern PyStatus _PyConfig_InitImportConfig(PyConfig *config);
 extern PyStatus _PyConfig_Read(PyConfig *config, int compute_path_config);
 extern PyStatus _PyConfig_Write(const PyConfig *config,
-    struct pyruntimestate *runtime);
+    _PyRuntimeState *runtime);
 extern PyStatus _PyConfig_SetPyArgv(
     PyConfig *config,
     const _PyArgv *args);

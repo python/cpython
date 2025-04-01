@@ -977,8 +977,9 @@ typedef struct {
 } formatteriterobject;
 
 static void
-formatteriter_dealloc(formatteriterobject *it)
+formatteriter_dealloc(PyObject *op)
 {
+    formatteriterobject *it = (formatteriterobject*)op;
     Py_XDECREF(it->str);
     PyObject_Free(it);
 }
@@ -992,8 +993,9 @@ formatteriter_dealloc(formatteriterobject *it)
    conversion is either None, or the string after the '!'
 */
 static PyObject *
-formatteriter_next(formatteriterobject *it)
+formatteriter_next(PyObject *op)
 {
+    formatteriterobject *it = (formatteriterobject*)op;
     SubString literal;
     SubString field_name;
     SubString format_spec;
@@ -1066,7 +1068,7 @@ static PyTypeObject PyFormatterIter_Type = {
     sizeof(formatteriterobject),        /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)formatteriter_dealloc,  /* tp_dealloc */
+    formatteriter_dealloc,              /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -1088,7 +1090,7 @@ static PyTypeObject PyFormatterIter_Type = {
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)formatteriter_next,   /* tp_iternext */
+    formatteriter_next,                 /* tp_iternext */
     formatteriter_methods,              /* tp_methods */
     0,
 };
@@ -1098,7 +1100,7 @@ static PyTypeObject PyFormatterIter_Type = {
    describing the parsed elements.  It's a wrapper around
    stringlib/string_format.h's MarkupIterator */
 static PyObject *
-formatter_parser(PyObject *ignored, PyObject *self)
+formatter_parser(PyObject *Py_UNUSED(module), PyObject *self)
 {
     formatteriterobject *it;
 
@@ -1136,8 +1138,9 @@ typedef struct {
 } fieldnameiterobject;
 
 static void
-fieldnameiter_dealloc(fieldnameiterobject *it)
+fieldnameiter_dealloc(PyObject *op)
 {
+    fieldnameiterobject *it = (fieldnameiterobject*)op;
     Py_XDECREF(it->str);
     PyObject_Free(it);
 }
@@ -1149,8 +1152,9 @@ fieldnameiter_dealloc(fieldnameiterobject *it)
    value is an integer or string
 */
 static PyObject *
-fieldnameiter_next(fieldnameiterobject *it)
+fieldnameiter_next(PyObject *op)
 {
+    fieldnameiterobject *it = (fieldnameiterobject*)op;
     int result;
     int is_attr;
     Py_ssize_t idx;
@@ -1198,7 +1202,7 @@ static PyTypeObject PyFieldNameIter_Type = {
     sizeof(fieldnameiterobject),        /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)fieldnameiter_dealloc,  /* tp_dealloc */
+    fieldnameiter_dealloc,              /* tp_dealloc */
     0,                                  /* tp_vectorcall_offset */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -1220,7 +1224,7 @@ static PyTypeObject PyFieldNameIter_Type = {
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)fieldnameiter_next,   /* tp_iternext */
+    fieldnameiter_next,                 /* tp_iternext */
     fieldnameiter_methods,              /* tp_methods */
     0};
 
@@ -1232,7 +1236,7 @@ static PyTypeObject PyFieldNameIter_Type = {
    field_name_split.  The iterator it returns is a
    FieldNameIterator */
 static PyObject *
-formatter_field_name_split(PyObject *ignored, PyObject *self)
+formatter_field_name_split(PyObject *Py_UNUSED(module), PyObject *self)
 {
     SubString first;
     Py_ssize_t first_idx;

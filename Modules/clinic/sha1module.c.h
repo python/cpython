@@ -21,13 +21,13 @@ static PyObject *
 SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls);
 
 static PyObject *
-SHA1Type_copy(SHA1object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+SHA1Type_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
-    return SHA1Type_copy_impl(self, cls);
+    return SHA1Type_copy_impl((SHA1object *)self, cls);
 }
 
 PyDoc_STRVAR(SHA1Type_digest__doc__,
@@ -43,9 +43,9 @@ static PyObject *
 SHA1Type_digest_impl(SHA1object *self);
 
 static PyObject *
-SHA1Type_digest(SHA1object *self, PyObject *Py_UNUSED(ignored))
+SHA1Type_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA1Type_digest_impl(self);
+    return SHA1Type_digest_impl((SHA1object *)self);
 }
 
 PyDoc_STRVAR(SHA1Type_hexdigest__doc__,
@@ -61,9 +61,9 @@ static PyObject *
 SHA1Type_hexdigest_impl(SHA1object *self);
 
 static PyObject *
-SHA1Type_hexdigest(SHA1object *self, PyObject *Py_UNUSED(ignored))
+SHA1Type_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA1Type_hexdigest_impl(self);
+    return SHA1Type_hexdigest_impl((SHA1object *)self);
 }
 
 PyDoc_STRVAR(SHA1Type_update__doc__,
@@ -74,6 +74,19 @@ PyDoc_STRVAR(SHA1Type_update__doc__,
 
 #define SHA1TYPE_UPDATE_METHODDEF    \
     {"update", (PyCFunction)SHA1Type_update, METH_O, SHA1Type_update__doc__},
+
+static PyObject *
+SHA1Type_update_impl(SHA1object *self, PyObject *obj);
+
+static PyObject *
+SHA1Type_update(PyObject *self, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+
+    return_value = SHA1Type_update_impl((SHA1object *)self, obj);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_sha1_sha1__doc__,
 "sha1($module, /, string=b\'\', *, usedforsecurity=True)\n"
@@ -97,9 +110,11 @@ _sha1_sha1(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
     };
     #undef NUM_KEYWORDS
@@ -149,4 +164,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=917e2789f1f5ebf9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=06161e87e2d645d4 input=a9049054013a1b77]*/

@@ -1,3 +1,0 @@
-Allow :meth:`!xml.dom.xmlbuilder.DOMParser.parse` to correctly handle
-:class:`!xml.dom.xmlbuilder.DOMInputSource` instances that only have a
-:attr:`!systemId` attribute set.

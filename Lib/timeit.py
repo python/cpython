@@ -44,7 +44,6 @@ Functions:
     timeit(string, string) -> float
     repeat(string, string) -> list
     default_timer() -> float
-
 """
 
 import gc
@@ -302,7 +301,7 @@ def main(args=None, *, _wrap_timer=None):
                 precision += 1
             verbose += 1
         if o in ("-h", "--help"):
-            print(__doc__, end=' ')
+            print(__doc__, end="")
             return 0
     setup = "\n".join(setup) or "pass"
 

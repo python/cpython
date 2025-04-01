@@ -77,12 +77,11 @@ class Block(Node):
 class StackEffect(Node):
     name: str = field(compare=False)  # __eq__ only uses type, cond, size
     type: str = ""  # Optional `:type`
-    cond: str = ""  # Optional `if (cond)`
     size: str = ""  # Optional `[size]`
     # Note: size cannot be combined with type or cond
 
     def __repr__(self) -> str:
-        items = [self.name, self.type, self.cond, self.size]
+        items = [self.name, self.type, self.size]
         while items and items[-1] == "":
             del items[-1]
         return f"StackEffect({', '.join(repr(item) for item in items)})"
@@ -150,8 +149,14 @@ class Pseudo(Node):
     targets: list[str]  # opcodes this can be replaced by
     as_sequence: bool
 
+@dataclass
+class LabelDef(Node):
+    name: str
+    spilled: bool
+    block: Block
 
-AstNode = InstDef | Macro | Pseudo | Family
+
+AstNode = InstDef | Macro | Pseudo | Family | LabelDef
 
 
 class Parser(PLexer):
@@ -165,6 +170,21 @@ class Parser(PLexer):
             return pseudo
         if inst := self.inst_def():
             return inst
+        if label := self.label_def():
+            return label
+        return None
+
+    @contextual
+    def label_def(self) -> LabelDef | None:
+        spilled = False
+        if self.expect(lx.SPILLED):
+            spilled = True
+        if self.expect(lx.LABEL):
+            if self.expect(lx.LPAREN):
+                if tkn := self.expect(lx.IDENTIFIER):
+                    if self.expect(lx.RPAREN):
+                        if block := self.block():
+                            return LabelDef(tkn.text, spilled, block)
         return None
 
     @contextual
@@ -278,22 +298,15 @@ class Parser(PLexer):
                 type_text = self.require(lx.IDENTIFIER).text.strip()
                 if self.expect(lx.TIMES):
                     type_text += " *"
-            cond_text = ""
-            if self.expect(lx.IF):
-                self.require(lx.LPAREN)
-                if not (cond := self.expression()):
-                    raise self.make_syntax_error("Expected condition")
-                self.require(lx.RPAREN)
-                cond_text = cond.text.strip()
             size_text = ""
             if self.expect(lx.LBRACKET):
-                if type_text or cond_text:
+                if type_text:
                     raise self.make_syntax_error("Unexpected [")
                 if not (size := self.expression()):
                     raise self.make_syntax_error("Expected expression")
                 self.require(lx.RBRACKET)
                 size_text = size.text.strip()
-            return StackEffect(tkn.text, type_text, cond_text, size_text)
+            return StackEffect(tkn.text, type_text, size_text)
         return None
 
     @contextual
@@ -357,9 +370,12 @@ class Parser(PLexer):
     def uop(self) -> UOp | None:
         if tkn := self.expect(lx.IDENTIFIER):
             if self.expect(lx.DIVIDE):
+                sign = 1
+                if negate := self.expect(lx.MINUS):
+                    sign = -1
                 if num := self.expect(lx.NUMBER):
                     try:
-                        size = int(num.text)
+                        size = sign * int(num.text)
                     except ValueError:
                         raise self.make_syntax_error(
                             f"Expected integer, got {num.text!r}"

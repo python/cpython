@@ -40,11 +40,14 @@ Executor Objects
              future = executor.submit(pow, 323, 1235)
              print(future.result())
 
-   .. method:: map(fn, *iterables, timeout=None, chunksize=1)
+   .. method:: map(fn, *iterables, timeout=None, chunksize=1, buffersize=None)
 
       Similar to :func:`map(fn, *iterables) <map>` except:
 
-      * the *iterables* are collected immediately rather than lazily;
+      * The *iterables* are collected immediately rather than lazily, unless a
+        *buffersize* is specified to limit the number of submitted tasks whose
+        results have not yet been yielded. If the buffer is full, iteration over
+        the *iterables* pauses until a result is yielded from the buffer.
 
       * *fn* is executed asynchronously and several calls to
         *fn* may be made concurrently.
@@ -68,7 +71,10 @@ Executor Objects
       *chunksize* has no effect.
 
       .. versionchanged:: 3.5
-         Added the *chunksize* argument.
+         Added the *chunksize* parameter.
+
+      .. versionchanged:: 3.14
+         Added the *buffersize* parameter.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
 
@@ -414,6 +420,30 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       :ref:`multiprocessing-start-methods`) changed away from *fork*. If you
       require the *fork* start method for :class:`ProcessPoolExecutor` you must
       explicitly pass ``mp_context=multiprocessing.get_context("fork")``.
+
+   .. method:: terminate_workers()
+
+      Attempt to terminate all living worker processes immediately by calling
+      :meth:`Process.terminate <multiprocessing.Process.terminate>` on each of them.
+      Internally, it will also call :meth:`Executor.shutdown` to ensure that all
+      other resources associated with the executor are freed.
+
+      After calling this method the caller should no longer submit tasks to the
+      executor.
+
+      .. versionadded:: 3.14
+
+   .. method:: kill_workers()
+
+      Attempt to kill all living worker processes immediately by calling
+      :meth:`Process.kill <multiprocessing.Process.kill>` on each of them.
+      Internally, it will also call :meth:`Executor.shutdown` to ensure that all
+      other resources associated with the executor are freed.
+
+      After calling this method the caller should no longer submit tasks to the
+      executor.
+
+      .. versionadded:: 3.14
 
 .. _processpoolexecutor-example:
 

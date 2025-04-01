@@ -1,2 +1,0 @@
-Fix a bug where Argument Clinic's C pre-processor parser tried to parse
-pre-processor directives inside C comments. Patch by Erlend Aasland.

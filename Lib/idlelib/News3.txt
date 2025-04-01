@@ -1,8 +1,26 @@
-What's New in IDLE 3.13.0
-(since 3.12.0)
-Released on 2024-10-xx
+What's New in IDLE 3.14.0
+(since 3.13.0)
+Released on 2025-10-07
 =========================
 
+
+gh-127060: Set TERM environment variable to 'dumb' to not add ANSI escape
+sequences for text color in tracebacks. IDLE does not understand them.
+Patch by Victor Stinner.
+
+gh-122392: Increase currently inadequate vertical spacing for the IDLE
+browsers (path, module, and stack) on high-resolution monitors.
+
+
+What's New in IDLE 3.13.0
+(since 3.12.0)
+Released on 2024-10-07
+=========================
+
+gh-120104: Fix padding in config and search dialog windows in IDLE.
+
+gh-129873: Simplify displaying the IDLE doc by only copying the text
+section of idle.html to idlelib/help.html. Patch by Stan Ulbrych.
 
 gh-120083: Add explicit black IDLE Hovertip foreground color needed for
 recent macOS. Fixes Sonoma showing unreadable white on pale yellow.

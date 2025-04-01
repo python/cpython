@@ -5,6 +5,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
 #include "pycore_typevarobject.h" // _Py_typing_type_repr
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 #include "pycore_unionobject.h"   // _Py_union_type_or, _PyGenericAlias_Check
 
 
@@ -180,11 +181,22 @@ tuple_extend(PyObject **dst, Py_ssize_t dstindex,
 PyObject *
 _Py_make_parameters(PyObject *args)
 {
+    assert(PyTuple_Check(args) || PyList_Check(args));
+    const bool is_args_list = PyList_Check(args);
+    PyObject *tuple_args = NULL;
+    if (is_args_list) {
+        args = tuple_args = PySequence_Tuple(args);
+        if (args == NULL) {
+            return NULL;
+        }
+    }
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     Py_ssize_t len = nargs;
     PyObject *parameters = PyTuple_New(len);
-    if (parameters == NULL)
+    if (parameters == NULL) {
+        Py_XDECREF(tuple_args);
         return NULL;
+    }
     Py_ssize_t iparam = 0;
     for (Py_ssize_t iarg = 0; iarg < nargs; iarg++) {
         PyObject *t = PyTuple_GET_ITEM(args, iarg);
@@ -195,6 +207,7 @@ _Py_make_parameters(PyObject *args)
         int rc = PyObject_HasAttrWithError(t, &_Py_ID(__typing_subst__));
         if (rc < 0) {
             Py_DECREF(parameters);
+            Py_XDECREF(tuple_args);
             return NULL;
         }
         if (rc) {
@@ -205,7 +218,18 @@ _Py_make_parameters(PyObject *args)
             if (PyObject_GetOptionalAttr(t, &_Py_ID(__parameters__),
                                      &subparams) < 0) {
                 Py_DECREF(parameters);
+                Py_XDECREF(tuple_args);
                 return NULL;
+            }
+            if (!subparams && (PyTuple_Check(t) || PyList_Check(t))) {
+                // Recursively call _Py_make_parameters for lists/tuples and
+                // add the results to the current parameters.
+                subparams = _Py_make_parameters(t);
+                if (subparams == NULL) {
+                    Py_DECREF(parameters);
+                    Py_XDECREF(tuple_args);
+                    return NULL;
+                }
             }
             if (subparams && PyTuple_Check(subparams)) {
                 Py_ssize_t len2 = PyTuple_GET_SIZE(subparams);
@@ -215,6 +239,7 @@ _Py_make_parameters(PyObject *args)
                     if (_PyTuple_Resize(&parameters, len) < 0) {
                         Py_DECREF(subparams);
                         Py_DECREF(parameters);
+                        Py_XDECREF(tuple_args);
                         return NULL;
                     }
                 }
@@ -229,9 +254,11 @@ _Py_make_parameters(PyObject *args)
     if (iparam < len) {
         if (_PyTuple_Resize(&parameters, iparam) < 0) {
             Py_XDECREF(parameters);
+            Py_XDECREF(tuple_args);
             return NULL;
         }
     }
+    Py_XDECREF(tuple_args);
     return parameters;
 }
 
@@ -416,11 +443,22 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         t = list[T];          t[int]      -> newargs = [int]
         t = dict[str, T];     t[int]      -> newargs = [str, int]
         t = dict[T, list[S]]; t[str, int] -> newargs = [str, list[int]]
+        t = list[[T]];        t[str]      -> newargs = [[str]]
      */
+    assert (PyTuple_Check(args) || PyList_Check(args));
+    const bool is_args_list = PyList_Check(args);
+    PyObject *tuple_args = NULL;
+    if (is_args_list) {
+        args = tuple_args = PySequence_Tuple(args);
+        if (args == NULL) {
+            return NULL;
+        }
+    }
     Py_ssize_t nargs = PyTuple_GET_SIZE(args);
     PyObject *newargs = PyTuple_New(nargs);
     if (newargs == NULL) {
         Py_DECREF(item);
+        Py_XDECREF(tuple_args);
         return NULL;
     }
     for (Py_ssize_t iarg = 0, jarg = 0; iarg < nargs; iarg++) {
@@ -430,17 +468,46 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
             jarg++;
             continue;
         }
-
+        // Recursively substitute params in lists/tuples.
+        if (PyTuple_Check(arg) || PyList_Check(arg)) {
+            PyObject *subargs = _Py_subs_parameters(self, arg, parameters, item);
+            if (subargs == NULL) {
+                Py_DECREF(newargs);
+                Py_DECREF(item);
+                Py_XDECREF(tuple_args);
+                return NULL;
+            }
+            if (PyTuple_Check(arg)) {
+                PyTuple_SET_ITEM(newargs, jarg, subargs);
+            }
+            else {
+                // _Py_subs_parameters returns a tuple. If the original arg was a list,
+                // convert subargs to a list as well.
+                PyObject *subargs_list = PySequence_List(subargs);
+                Py_DECREF(subargs);
+                if (subargs_list == NULL) {
+                    Py_DECREF(newargs);
+                    Py_DECREF(item);
+                    Py_XDECREF(tuple_args);
+                    return NULL;
+                }
+                PyTuple_SET_ITEM(newargs, jarg, subargs_list);
+            }
+            jarg++;
+            continue;
+        }
         int unpack = _is_unpacked_typevartuple(arg);
         if (unpack < 0) {
             Py_DECREF(newargs);
             Py_DECREF(item);
+            Py_XDECREF(tuple_args);
             return NULL;
         }
         PyObject *subst;
         if (PyObject_GetOptionalAttr(arg, &_Py_ID(__typing_subst__), &subst) < 0) {
             Py_DECREF(newargs);
             Py_DECREF(item);
+            Py_XDECREF(tuple_args);
             return NULL;
         }
         if (subst) {
@@ -455,6 +522,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
         if (arg == NULL) {
             Py_DECREF(newargs);
             Py_DECREF(item);
+            Py_XDECREF(tuple_args);
             return NULL;
         }
         if (unpack) {
@@ -463,6 +531,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
             Py_DECREF(arg);
             if (jarg < 0) {
                 Py_DECREF(item);
+                Py_XDECREF(tuple_args);
                 return NULL;
             }
         }
@@ -473,6 +542,7 @@ _Py_subs_parameters(PyObject *self, PyObject *args, PyObject *parameters, PyObje
     }
 
     Py_DECREF(item);
+    Py_XDECREF(tuple_args);
     return newargs;
 }
 
@@ -754,8 +824,8 @@ ga_unpacked_tuple_args(PyObject *self, void *unused)
 }
 
 static PyGetSetDef ga_properties[] = {
-    {"__parameters__", ga_parameters, (setter)NULL, PyDoc_STR("Type variables in the GenericAlias."), NULL},
-    {"__typing_unpacked_tuple_args__", ga_unpacked_tuple_args, (setter)NULL, NULL},
+    {"__parameters__", ga_parameters, NULL, PyDoc_STR("Type variables in the GenericAlias."), NULL},
+    {"__typing_unpacked_tuple_args__", ga_unpacked_tuple_args, NULL, NULL},
     {0}
 };
 
@@ -816,7 +886,9 @@ static PyNumberMethods ga_as_number = {
 };
 
 static PyObject *
-ga_iternext(gaiterobject *gi) {
+ga_iternext(PyObject *op)
+{
+    gaiterobject *gi = (gaiterobject*)op;
     if (gi->obj == NULL) {
         PyErr_SetNone(PyExc_StopIteration);
         return NULL;
@@ -832,21 +904,25 @@ ga_iternext(gaiterobject *gi) {
 }
 
 static void
-ga_iter_dealloc(gaiterobject *gi) {
+ga_iter_dealloc(PyObject *op)
+{
+    gaiterobject *gi = (gaiterobject*)op;
     PyObject_GC_UnTrack(gi);
     Py_XDECREF(gi->obj);
     PyObject_GC_Del(gi);
 }
 
 static int
-ga_iter_traverse(gaiterobject *gi, visitproc visit, void *arg)
+ga_iter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    gaiterobject *gi = (gaiterobject*)op;
     Py_VISIT(gi->obj);
     return 0;
 }
 
 static int
-ga_iter_clear(PyObject *self) {
+ga_iter_clear(PyObject *self)
+{
     gaiterobject *gi = (gaiterobject *)self;
     Py_CLEAR(gi->obj);
     return 0;
@@ -880,11 +956,11 @@ PyTypeObject _Py_GenericAliasIterType = {
     .tp_name = "generic_alias_iterator",
     .tp_basicsize = sizeof(gaiterobject),
     .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc)ga_iternext,
-    .tp_traverse = (traverseproc)ga_iter_traverse,
+    .tp_iternext = ga_iternext,
+    .tp_traverse = ga_iter_traverse,
     .tp_methods = ga_iter_methods,
-    .tp_dealloc = (destructor)ga_iter_dealloc,
-    .tp_clear = (inquiry)ga_iter_clear,
+    .tp_dealloc = ga_iter_dealloc,
+    .tp_clear = ga_iter_clear,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
 };
 
@@ -924,7 +1000,7 @@ PyTypeObject Py_GenericAliasType = {
     .tp_new = ga_new,
     .tp_free = PyObject_GC_Del,
     .tp_getset = ga_properties,
-    .tp_iter = (getiterfunc)ga_iter,
+    .tp_iter = ga_iter,
     .tp_vectorcall_offset = offsetof(gaobject, vectorcall),
 };
 

@@ -66,8 +66,6 @@ module _ctypes
 #include "Python.h"
 
 
-#include <stdbool.h>
-
 #ifdef MS_WIN32
 #include <windows.h>
 #include <tchar.h>
@@ -166,12 +164,7 @@ _ctypes_get_errobj(ctypes_state *st, int **pspace)
                         "cannot get thread state");
         return NULL;
     }
-    if (st->error_object_name == NULL) {
-        st->error_object_name = PyUnicode_InternFromString("ctypes.error_object");
-        if (st->error_object_name == NULL) {
-            return NULL;
-        }
-    }
+    assert(st->error_object_name != NULL);
     if (PyDict_GetItemRef(dict, st->error_object_name, &errobj) < 0) {
         return NULL;
     }
@@ -493,27 +486,29 @@ PyCArgObject_new(ctypes_state *st)
 }
 
 static int
-PyCArg_traverse(PyCArgObject *self, visitproc visit, void *arg)
+PyCArg_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyCArgObject *self = _PyCArgObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->obj);
     return 0;
 }
 
 static int
-PyCArg_clear(PyCArgObject *self)
+PyCArg_clear(PyObject *op)
 {
+    PyCArgObject *self = _PyCArgObject_CAST(op);
     Py_CLEAR(self->obj);
     return 0;
 }
 
 static void
-PyCArg_dealloc(PyCArgObject *self)
+PyCArg_dealloc(PyObject *self)
 {
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     (void)PyCArg_clear(self);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -524,8 +519,9 @@ is_literal_char(unsigned char c)
 }
 
 static PyObject *
-PyCArg_repr(PyCArgObject *self)
+PyCArg_repr(PyObject *op)
 {
+    PyCArgObject *self = _PyCArgObject_CAST(op);
     switch(self->tag) {
     case 'b':
     case 'B':
@@ -1352,8 +1348,9 @@ PyObject *_ctypes_callproc(ctypes_state *st,
 }
 
 static int
-_parse_voidp(PyObject *obj, void **address)
+_parse_voidp(PyObject *obj, void *arg)
 {
+    void **address = (void **)arg;
     *address = PyLong_AsVoidPtr(obj);
     if (*address == NULL)
         return 0;
@@ -1845,8 +1842,9 @@ addressof(PyObject *self, PyObject *obj)
 }
 
 static int
-converter(PyObject *obj, void **address)
+converter(PyObject *obj, void *arg)
 {
+    void **address = (void **)arg;
     *address = PyLong_AsVoidPtr(obj);
     return *address != NULL;
 }

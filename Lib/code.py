@@ -219,12 +219,17 @@ class InteractiveConsole(InteractiveInterpreter):
         """
         try:
             sys.ps1
+            delete_ps1_after = False
         except AttributeError:
             sys.ps1 = ">>> "
+            delete_ps1_after = True
         try:
-            sys.ps2
+            _ps2 = sys.ps2
+            delete_ps2_after = False
         except AttributeError:
             sys.ps2 = "... "
+            delete_ps2_after = True
+
         cprt = 'Type "help", "copyright", "credits" or "license" for more information.'
         if banner is None:
             self.write("Python %s on %s\n%s\n(%s)\n" %
@@ -286,6 +291,12 @@ class InteractiveConsole(InteractiveInterpreter):
 
             if _quit is not None:
                 builtins.quit = _quit
+
+            if delete_ps1_after:
+                del sys.ps1
+
+            if delete_ps2_after:
+                del sys.ps2
 
             if exitmsg is None:
                 self.write('now exiting %s...\n' % self.__class__.__name__)

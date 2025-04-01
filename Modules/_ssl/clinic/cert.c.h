@@ -20,7 +20,7 @@ static PyObject *
 _ssl_Certificate_public_bytes_impl(PySSLCertificate *self, int format);
 
 static PyObject *
-_ssl_Certificate_public_bytes(PySSLCertificate *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_ssl_Certificate_public_bytes(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -29,9 +29,11 @@ _ssl_Certificate_public_bytes(PySSLCertificate *self, PyObject *const *args, Py_
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(format), },
     };
     #undef NUM_KEYWORDS
@@ -65,7 +67,7 @@ _ssl_Certificate_public_bytes(PySSLCertificate *self, PyObject *const *args, Py_
         goto exit;
     }
 skip_optional_pos:
-    return_value = _ssl_Certificate_public_bytes_impl(self, format);
+    return_value = _ssl_Certificate_public_bytes_impl((PySSLCertificate *)self, format);
 
 exit:
     return return_value;
@@ -83,8 +85,8 @@ static PyObject *
 _ssl_Certificate_get_info_impl(PySSLCertificate *self);
 
 static PyObject *
-_ssl_Certificate_get_info(PySSLCertificate *self, PyObject *Py_UNUSED(ignored))
+_ssl_Certificate_get_info(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl_Certificate_get_info_impl(self);
+    return _ssl_Certificate_get_info_impl((PySSLCertificate *)self);
 }
-/*[clinic end generated code: output=e5fa354db5fc56b4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bab2dba7dbc1523c input=a9049054013a1b77]*/

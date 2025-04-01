@@ -283,6 +283,10 @@ class FormatTest(unittest.TestCase):
                         "%x format: an integer is required, not str")
         test_exc_common('%x', 3.14, TypeError,
                         "%x format: an integer is required, not float")
+        test_exc_common('%i', '1', TypeError,
+                        "%i format: a real number is required, not str")
+        test_exc_common('%i', b'1', TypeError,
+                        "%i format: a real number is required, not bytes")
 
     def test_str_format(self):
         testformat("%r", "\u0378", "'\\u0378'")  # non printable
@@ -515,11 +519,15 @@ class FormatTest(unittest.TestCase):
         error_msg = re.escape("Cannot specify both ',' and '_'.")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:,_}'.format(1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:.,_f}'.format(1.1)
 
     def test_with_an_underscore_and_a_comma_in_format_specifier(self):
         error_msg = re.escape("Cannot specify both ',' and '_'.")
         with self.assertRaisesRegex(ValueError, error_msg):
             '{:_,}'.format(1)
+        with self.assertRaisesRegex(ValueError, error_msg):
+            '{:._,f}'.format(1.1)
 
     def test_better_error_message_format(self):
         # https://bugs.python.org/issue20524

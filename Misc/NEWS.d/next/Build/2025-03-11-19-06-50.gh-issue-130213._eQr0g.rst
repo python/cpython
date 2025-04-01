@@ -1,0 +1,2 @@
+Update the vendored HACL* library to fix build issues with older clang
+compilers.

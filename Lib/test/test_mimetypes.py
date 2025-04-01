@@ -3,9 +3,11 @@ import mimetypes
 import os
 import sys
 import unittest.mock
+from os import linesep
 
 from test import support
 from test.support import os_helper
+from test.support.script_helper import run_python_until_end
 from platform import win32_edition
 
 try:
@@ -224,17 +226,31 @@ class MimeTypesTestCase(unittest.TestCase):
     def test_preferred_extension(self):
         def check_extensions():
             for mime_type, ext in (
+                ("application/epub+zip", ".epub"),
                 ("application/octet-stream", ".bin"),
+                ("application/ogg", ".ogx"),
                 ("application/postscript", ".ps"),
                 ("application/vnd.apple.mpegurl", ".m3u"),
                 ("application/vnd.ms-excel", ".xls"),
                 ("application/vnd.ms-fontobject", ".eot"),
                 ("application/vnd.ms-powerpoint", ".ppt"),
+                ("application/vnd.oasis.opendocument.graphics", ".odg"),
+                ("application/vnd.oasis.opendocument.presentation", ".odp"),
+                ("application/vnd.oasis.opendocument.spreadsheet", ".ods"),
+                ("application/vnd.oasis.opendocument.text", ".odt"),
+                ("application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx"),
+                ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
+                ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"),
                 ("application/x-texinfo", ".texi"),
                 ("application/x-troff", ".roff"),
                 ("application/xml", ".xsl"),
+                ("audio/flac", ".flac"),
                 ("audio/matroska", ".mka"),
+                ("audio/mp4", ".m4a"),
                 ("audio/mpeg", ".mp3"),
+                ("audio/ogg", ".ogg"),
+                ("audio/vnd.wave", ".wav"),
+                ("audio/webm", ".weba"),
                 ("font/otf", ".otf"),
                 ("font/ttf", ".ttf"),
                 ("font/woff", ".woff"),
@@ -244,13 +260,13 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("image/fits", ".fits"),
                 ("image/g3fax", ".g3"),
                 ("image/jp2", ".jp2"),
+                ("image/jpeg", ".jpg"),
                 ("image/jpm", ".jpm"),
                 ("image/t38", ".t38"),
-                ("image/webp", ".webp"),
-                ("image/wmf", ".wmf"),
-                ("image/jpeg", ".jpg"),
                 ("image/tiff", ".tiff"),
                 ("image/tiff-fx", ".tfx"),
+                ("image/webp", ".webp"),
+                ("image/wmf", ".wmf"),
                 ("message/rfc822", ".eml"),
                 ("text/html", ".html"),
                 ("text/plain", ".txt"),
@@ -259,7 +275,9 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("video/matroska", ".mkv"),
                 ("video/matroska-3d", ".mk3d"),
                 ("video/mpeg", ".mpeg"),
+                ("video/ogg", ".ogv"),
                 ("video/quicktime", ".mov"),
+                ("video/vnd.avi", ".avi"),
             ):
                 with self.subTest(mime_type=mime_type, ext=ext):
                     self.assertEqual(mimetypes.guess_extension(mime_type), ext)
@@ -374,50 +392,53 @@ class MiscTestCase(unittest.TestCase):
 
 class MimetypesCliTestCase(unittest.TestCase):
 
-    def mimetypes_cmd(self, *args, **kwargs):
-        support.patch(self, sys, "argv", [sys.executable, *args])
-        with support.captured_stdout() as output:
-            mimetypes._main()
-            return output.getvalue().strip()
+    def mimetypes_cmd(cls, *args, **kwargs):
+        result, _ = run_python_until_end('-m', 'mimetypes', *args)
+        return result.rc, result.out.decode(), result.err.decode()
 
     def test_help_option(self):
-        support.patch(self, sys, "argv", [sys.executable, "-h"])
-        with support.captured_stdout() as output:
-            with self.assertRaises(SystemExit) as cm:
-                mimetypes._main()
-
-        self.assertIn("Usage: mimetypes.py", output.getvalue())
-        self.assertEqual(cm.exception.code, 0)
+        retcode, out, err = self.mimetypes_cmd('-h')
+        self.assertEqual(retcode, 0)
+        self.assertStartsWith(out, 'usage: ')
+        self.assertEqual(err, '')
 
     def test_invalid_option(self):
-        support.patch(self, sys, "argv", [sys.executable, "--invalid"])
-        with support.captured_stdout() as output:
-            with self.assertRaises(SystemExit) as cm:
-                mimetypes._main()
-
-        self.assertIn("Usage: mimetypes.py", output.getvalue())
-        self.assertEqual(cm.exception.code, 1)
+        retcode, out, err = self.mimetypes_cmd('--invalid')
+        self.assertEqual(retcode, 2)
+        self.assertEqual(out, '')
+        self.assertStartsWith(err, 'usage: ')
 
     def test_guess_extension(self):
-        eq = self.assertEqual
+        retcode, out, err = self.mimetypes_cmd('-l', '-e', 'image/jpg')
+        self.assertEqual(retcode, 0)
+        self.assertEqual(out, f'.jpg{linesep}')
+        self.assertEqual(err, '')
 
-        extension = self.mimetypes_cmd("-l", "-e", "image/jpg")
-        eq(extension, ".jpg")
+        retcode, out, err = self.mimetypes_cmd('-e', 'image/jpg')
+        self.assertEqual(retcode, 1)
+        self.assertEqual(out, '')
+        self.assertEqual(err, f'error: unknown type image/jpg{linesep}')
 
-        extension = self.mimetypes_cmd("-e", "image/jpg")
-        eq(extension, "I don't know anything about type image/jpg")
-
-        extension = self.mimetypes_cmd("-e", "image/jpeg")
-        eq(extension, ".jpg")
+        retcode, out, err = self.mimetypes_cmd('-e', 'image/jpeg')
+        self.assertEqual(retcode, 0)
+        self.assertEqual(out, f'.jpg{linesep}')
+        self.assertEqual(err, '')
 
     def test_guess_type(self):
-        eq = self.assertEqual
+        retcode, out, err = self.mimetypes_cmd('-l', 'foo.webp')
+        self.assertEqual(retcode, 0)
+        self.assertEqual(out, f'type: image/webp encoding: None{linesep}')
+        self.assertEqual(err, '')
 
-        type_info = self.mimetypes_cmd("-l", "foo.pic")
-        eq(type_info, "type: image/pict encoding: None")
-
-        type_info = self.mimetypes_cmd("foo.pic")
-        eq(type_info, "I don't know anything about type foo.pic")
+    @unittest.skipIf(
+        sys.platform == 'darwin',
+        'macOS lists common_types in mime.types thus making them always known'
+    )
+    def test_guess_type_conflicting_with_mimetypes(self):
+        retcode, out, err = self.mimetypes_cmd('foo.pic')
+        self.assertEqual(retcode, 1)
+        self.assertEqual(out, '')
+        self.assertEqual(err, f'error: media type unknown for foo.pic{linesep}')
 
 if __name__ == "__main__":
     unittest.main()

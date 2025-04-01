@@ -111,10 +111,6 @@ class BaseTest(unittest.TestCase):
             result = f.read()
         return result
 
-    def assertEndsWith(self, string, tail):
-        if not string.endswith(tail):
-            self.fail(f"String {string!r} does not end with {tail!r}")
-
 class BasicTest(BaseTest):
     """Test venv module functionality."""
 
@@ -232,25 +228,27 @@ class BasicTest(BaseTest):
         builder = venv.EnvBuilder()
         bin_path = 'bin'
         python_exe = os.path.split(sys.executable)[1]
+        expected_exe = os.path.basename(sys._base_executable)
+
         if sys.platform == 'win32':
             bin_path = 'Scripts'
             if os.path.normcase(os.path.splitext(python_exe)[0]).endswith('_d'):
-                python_exe = 'python_d.exe'
+                expected_exe = 'python_d'
             else:
-                python_exe = 'python.exe'
+                expected_exe = 'python'
+            python_exe = expected_exe + '.exe'
+
         with tempfile.TemporaryDirectory() as fake_env_dir:
             expect_exe = os.path.normcase(
-                os.path.join(fake_env_dir, bin_path, python_exe)
+                os.path.join(fake_env_dir, bin_path, expected_exe)
             )
             if sys.platform == 'win32':
                 expect_exe = os.path.normcase(os.path.realpath(expect_exe))
 
             def pip_cmd_checker(cmd, **kwargs):
-                cmd[0] = os.path.normcase(cmd[0])
                 self.assertEqual(
-                    cmd,
+                    cmd[1:],
                     [
-                        expect_exe,
                         '-m',
                         'pip',
                         'install',
@@ -258,6 +256,9 @@ class BasicTest(BaseTest):
                         'pip',
                     ]
                 )
+                exe_dir = os.path.normcase(os.path.dirname(cmd[0]))
+                expected_dir = os.path.normcase(os.path.dirname(expect_exe))
+                self.assertEqual(exe_dir, expected_dir)
 
             fake_context = builder.ensure_directories(fake_env_dir)
             with patch('venv.subprocess.check_output', pip_cmd_checker):
@@ -685,7 +686,8 @@ class BasicTest(BaseTest):
         self.addCleanup(rmtree, non_installed_dir)
         bindir = os.path.join(non_installed_dir, self.bindir)
         os.mkdir(bindir)
-        shutil.copy2(sys.executable, bindir)
+        python_exe = os.path.basename(sys.executable)
+        shutil.copy2(sys.executable, os.path.join(bindir, python_exe))
         libdir = os.path.join(non_installed_dir, platlibdir, self.lib[1])
         os.makedirs(libdir)
         landmark = os.path.join(libdir, "os.py")
@@ -721,7 +723,7 @@ class BasicTest(BaseTest):
             else:
                 additional_pythonpath_for_non_installed.append(
                     eachpath)
-        cmd = [os.path.join(non_installed_dir, self.bindir, self.exe),
+        cmd = [os.path.join(non_installed_dir, self.bindir, python_exe),
                "-m",
                "venv",
                "--without-pip",
@@ -752,7 +754,8 @@ class BasicTest(BaseTest):
         subprocess.check_call(cmd, env=child_env)
         # Now check the venv created from the non-installed python has
         # correct zip path in pythonpath.
-        cmd = [self.envpy(), '-S', '-c', 'import sys; print(sys.path)']
+        target_python = os.path.join(self.env_dir, self.bindir, python_exe)
+        cmd = [target_python, '-S', '-c', 'import sys; print(sys.path)']
         out, err = check_output(cmd)
         self.assertTrue(zip_landmark.encode() in out)
 

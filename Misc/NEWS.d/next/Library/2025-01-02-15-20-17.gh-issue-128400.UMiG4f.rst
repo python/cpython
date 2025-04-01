@@ -1,2 +1,0 @@
-Only show the current thread in :mod:`faulthandler` on the :term:`free
-threaded <free threading>` build to prevent races.

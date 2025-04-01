@@ -8,8 +8,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-// Export for '_pickle' shared extension
-PyAPI_FUNC(PyObject*) _PySys_GetAttr(PyThreadState *tstate, PyObject *name);
+PyAPI_FUNC(int) _PySys_GetOptionalAttr(PyObject *, PyObject **);
+PyAPI_FUNC(int) _PySys_GetOptionalAttrString(const char *, PyObject **);
+PyAPI_FUNC(PyObject *) _PySys_GetRequiredAttr(PyObject *);
+PyAPI_FUNC(PyObject *) _PySys_GetRequiredAttrString(const char *);
 
 // Export for '_pickle' shared extension
 PyAPI_FUNC(size_t) _PySys_GetSizeOf(PyObject *);

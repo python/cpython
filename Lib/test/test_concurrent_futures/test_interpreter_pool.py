@@ -3,7 +3,6 @@ import contextlib
 import io
 import os
 import pickle
-import sys
 import time
 import unittest
 from concurrent.futures.interpreter import (

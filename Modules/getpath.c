@@ -955,7 +955,7 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
     ) {
         Py_DECREF(co);
         Py_DECREF(dict);
-        PyErr_FormatUnraisable("Exception ignored in preparing getpath");
+        PyErr_FormatUnraisable("Exception ignored while preparing getpath");
         return PyStatus_Error("error evaluating initial values");
     }
 
@@ -964,13 +964,13 @@ _PyConfig_InitPathConfig(PyConfig *config, int compute_path_config)
 
     if (!r) {
         Py_DECREF(dict);
-        PyErr_FormatUnraisable("Exception ignored in running getpath");
+        PyErr_FormatUnraisable("Exception ignored while running getpath");
         return PyStatus_Error("error evaluating path");
     }
     Py_DECREF(r);
 
     if (_PyConfig_FromDict(config, configDict) < 0) {
-        PyErr_FormatUnraisable("Exception ignored in reading getpath results");
+        PyErr_FormatUnraisable("Exception ignored while reading getpath results");
         Py_DECREF(dict);
         return PyStatus_Error("error getting getpath results");
     }

@@ -1,0 +1,3 @@
+Allow to unset one or more environment variables at once via
+:meth:`EnvironmentVarGuard.unset()
+<test.support.os_helper.EnvironmentVarGuard.unset>`. Patch by Bénédikt Tran.

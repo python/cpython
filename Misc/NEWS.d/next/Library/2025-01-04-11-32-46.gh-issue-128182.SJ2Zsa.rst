@@ -1,2 +1,0 @@
-Fix crash when using :mod:`ctypes` pointers concurrently on the :term:`free
-threaded <free threading>` build.

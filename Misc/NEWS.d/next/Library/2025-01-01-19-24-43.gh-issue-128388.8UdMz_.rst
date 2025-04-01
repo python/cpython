@@ -1,1 +1,0 @@
-Fix ``PyREPL`` on Windows to support more keybindings, like the :kbd:`Control-←` and :kbd:`Control-→` word-skipping keybindings and those with meta (i.e. :kbd:`Alt`), e.g. :kbd:`Alt-d` to ``kill-word`` or :kbd:`Alt-Backspace` ``backward-kill-word``.

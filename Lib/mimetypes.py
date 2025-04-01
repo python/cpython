@@ -90,6 +90,8 @@ class MimeTypes:
         list of standard types, else to the list of non-standard
         types.
         """
+        if not type:
+            return
         self.types_map[strict][ext] = type
         exts = self.types_map_inv[strict].setdefault(type, [])
         if ext not in exts:
@@ -463,6 +465,7 @@ def _default_mime_types():
     types_map = _types_map_default = {
         '.js'     : 'text/javascript',
         '.mjs'    : 'text/javascript',
+        '.epub'   : 'application/epub+zip',
         '.json'   : 'application/json',
         '.webmanifest': 'application/manifest+json',
         '.doc'    : 'application/msword',
@@ -478,6 +481,7 @@ def _default_mime_types():
         '.obj'    : 'application/octet-stream',
         '.so'     : 'application/octet-stream',
         '.oda'    : 'application/oda',
+        '.ogx'    : 'application/ogg',
         '.pdf'    : 'application/pdf',
         '.p7c'    : 'application/pkcs7-mime',
         '.ps'     : 'application/postscript',
@@ -494,6 +498,13 @@ def _default_mime_types():
         '.ppa'    : 'application/vnd.ms-powerpoint',
         '.pps'    : 'application/vnd.ms-powerpoint',
         '.pwz'    : 'application/vnd.ms-powerpoint',
+        '.odg'    : 'application/vnd.oasis.opendocument.graphics',
+        '.odp'    : 'application/vnd.oasis.opendocument.presentation',
+        '.ods'    : 'application/vnd.oasis.opendocument.spreadsheet',
+        '.odt'    : 'application/vnd.oasis.opendocument.text',
+        '.pptx'   : 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        '.xlsx'   : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        '.docx'   : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         '.wasm'   : 'application/wasm',
         '.bcpio'  : 'application/x-bcpio',
         '.cpio'   : 'application/x-cpio',
@@ -544,17 +555,21 @@ def _default_mime_types():
         '.ass'    : 'audio/aac',
         '.au'     : 'audio/basic',
         '.snd'    : 'audio/basic',
+        '.flac'   : 'audio/flac',
         '.mka'    : 'audio/matroska',
+        '.m4a'    : 'audio/mp4',
         '.mp3'    : 'audio/mpeg',
         '.mp2'    : 'audio/mpeg',
+        '.ogg'    : 'audio/ogg',
         '.opus'   : 'audio/opus',
         '.aif'    : 'audio/x-aiff',
         '.aifc'   : 'audio/x-aiff',
         '.aiff'   : 'audio/x-aiff',
         '.ra'     : 'audio/x-pn-realaudio',
-        '.wav'    : 'audio/x-wav',
+        '.wav'    : 'audio/vnd.wave',
         '.otf'    : 'font/otf',
         '.ttf'    : 'font/ttf',
+        '.weba'   : 'audio/webm',
         '.woff'   : 'font/woff',
         '.woff2'  : 'font/woff2',
         '.avif'   : 'image/avif',
@@ -627,10 +642,11 @@ def _default_mime_types():
         '.mpa'    : 'video/mpeg',
         '.mpe'    : 'video/mpeg',
         '.mpg'    : 'video/mpeg',
+        '.ogv'    : 'video/ogg',
         '.mov'    : 'video/quicktime',
         '.qt'     : 'video/quicktime',
         '.webm'   : 'video/webm',
-        '.avi'    : 'video/x-msvideo',
+        '.avi'    : 'video/vnd.avi',
         '.movie'  : 'video/x-sgi-movie',
         }
 
@@ -654,50 +670,38 @@ _default_mime_types()
 
 
 def _main():
-    import getopt
+    """Run the mimetypes command-line interface."""
     import sys
+    from argparse import ArgumentParser
 
-    USAGE = """\
-Usage: mimetypes.py [options] type
+    parser = ArgumentParser(description='map filename extensions to MIME types')
+    parser.add_argument(
+        '-e', '--extension',
+        action='store_true',
+        help='guess extension instead of type'
+    )
+    parser.add_argument(
+        '-l', '--lenient',
+        action='store_true',
+        help='additionally search for common but non-standard types'
+    )
+    parser.add_argument('type', nargs='+', help='a type to search')
+    args = parser.parse_args()
 
-Options:
-    --help / -h       -- print this message and exit
-    --lenient / -l    -- additionally search of some common, but non-standard
-                         types.
-    --extension / -e  -- guess extension instead of type
-
-More than one type argument may be given.
-"""
-
-    def usage(code, msg=''):
-        print(USAGE)
-        if msg: print(msg)
-        sys.exit(code)
-
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hle',
-                                   ['help', 'lenient', 'extension'])
-    except getopt.error as msg:
-        usage(1, msg)
-
-    strict = 1
-    extension = 0
-    for opt, arg in opts:
-        if opt in ('-h', '--help'):
-            usage(0)
-        elif opt in ('-l', '--lenient'):
-            strict = 0
-        elif opt in ('-e', '--extension'):
-            extension = 1
-    for gtype in args:
-        if extension:
-            guess = guess_extension(gtype, strict)
-            if not guess: print("I don't know anything about type", gtype)
-            else: print(guess)
-        else:
-            guess, encoding = guess_type(gtype, strict)
-            if not guess: print("I don't know anything about type", gtype)
-            else: print('type:', guess, 'encoding:', encoding)
+    if args.extension:
+        for gtype in args.type:
+            guess = guess_extension(gtype, not args.lenient)
+            if guess:
+                print(guess)
+            else:
+                sys.exit(f"error: unknown type {gtype}")
+    else:
+        for gtype in args.type:
+            guess, encoding = guess_type(gtype, not args.lenient)
+            if guess:
+                print('type:', guess, 'encoding:', encoding)
+            else:
+                sys.exit(f"error: media type unknown for {gtype}")
 
 
 if __name__ == '__main__':

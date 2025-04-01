@@ -8,8 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "opcode_ids.h"
-
 #define MAX_REAL_OPCODE 254
 
 #define IS_WITHIN_OPCODE_RANGE(opcode) \
@@ -67,7 +65,10 @@ extern "C" {
 /* Values used as the oparg for LOAD_COMMON_CONSTANT */
 #define CONSTANT_ASSERTIONERROR 0
 #define CONSTANT_NOTIMPLEMENTEDERROR 1
-#define NUM_COMMON_CONSTANTS 2
+#define CONSTANT_BUILTIN_TUPLE 2
+#define CONSTANT_BUILTIN_ALL 3
+#define CONSTANT_BUILTIN_ANY 4
+#define NUM_COMMON_CONSTANTS 5
 
 /* Values used in the oparg for RESUME */
 #define RESUME_AT_FUNC_START 0

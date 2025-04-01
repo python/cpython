@@ -390,7 +390,7 @@ class TestCoverage(unittest.TestCase):
         libpath = os.path.normpath(os.path.dirname(os.path.dirname(__file__)))
         # sys.prefix does not work when running from a checkout
         tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,
-                             libpath], trace=0, count=1)
+                             libpath] + sys.path, trace=0, count=1)
         with captured_stdout() as stdout:
             self._coverage(tracer)
         if os.path.exists(TESTFN):

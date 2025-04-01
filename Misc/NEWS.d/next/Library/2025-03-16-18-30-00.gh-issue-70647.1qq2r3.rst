@@ -1,0 +1,2 @@
+When creating a :mod:`datetime` object with an out of range date a more informative
+error is raised.

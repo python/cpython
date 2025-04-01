@@ -30,9 +30,11 @@ typevar_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(name), &_Py_ID(bound), &_Py_ID(default), &_Py_ID(covariant), &_Py_ID(contravariant), &_Py_ID(infer_variance), },
     };
     #undef NUM_KEYWORDS
@@ -130,6 +132,19 @@ PyDoc_STRVAR(typevar_typing_subst__doc__,
 #define TYPEVAR_TYPING_SUBST_METHODDEF    \
     {"__typing_subst__", (PyCFunction)typevar_typing_subst, METH_O, typevar_typing_subst__doc__},
 
+static PyObject *
+typevar_typing_subst_impl(typevarobject *self, PyObject *arg);
+
+static PyObject *
+typevar_typing_subst(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+
+    return_value = typevar_typing_subst_impl((typevarobject *)self, arg);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(typevar_typing_prepare_subst__doc__,
 "__typing_prepare_subst__($self, alias, args, /)\n"
 "--\n"
@@ -143,7 +158,7 @@ typevar_typing_prepare_subst_impl(typevarobject *self, PyObject *alias,
                                   PyObject *args);
 
 static PyObject *
-typevar_typing_prepare_subst(typevarobject *self, PyObject *const *args, Py_ssize_t nargs)
+typevar_typing_prepare_subst(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *alias;
@@ -154,7 +169,7 @@ typevar_typing_prepare_subst(typevarobject *self, PyObject *const *args, Py_ssiz
     }
     alias = args[0];
     __clinic_args = args[1];
-    return_value = typevar_typing_prepare_subst_impl(self, alias, __clinic_args);
+    return_value = typevar_typing_prepare_subst_impl((typevarobject *)self, alias, __clinic_args);
 
 exit:
     return return_value;
@@ -172,9 +187,9 @@ static PyObject *
 typevar_reduce_impl(typevarobject *self);
 
 static PyObject *
-typevar_reduce(typevarobject *self, PyObject *Py_UNUSED(ignored))
+typevar_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return typevar_reduce_impl(self);
+    return typevar_reduce_impl((typevarobject *)self);
 }
 
 PyDoc_STRVAR(typevar_has_default__doc__,
@@ -189,9 +204,9 @@ static PyObject *
 typevar_has_default_impl(typevarobject *self);
 
 static PyObject *
-typevar_has_default(typevarobject *self, PyObject *Py_UNUSED(ignored))
+typevar_has_default(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return typevar_has_default_impl(self);
+    return typevar_has_default_impl((typevarobject *)self);
 }
 
 PyDoc_STRVAR(paramspecargs_new__doc__,
@@ -213,9 +228,11 @@ paramspecargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(origin), },
     };
     #undef NUM_KEYWORDS
@@ -268,9 +285,11 @@ paramspeckwargs_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(origin), },
     };
     #undef NUM_KEYWORDS
@@ -326,9 +345,11 @@ paramspec_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(name), &_Py_ID(bound), &_Py_ID(default), &_Py_ID(covariant), &_Py_ID(contravariant), &_Py_ID(infer_variance), },
     };
     #undef NUM_KEYWORDS
@@ -418,6 +439,19 @@ PyDoc_STRVAR(paramspec_typing_subst__doc__,
 #define PARAMSPEC_TYPING_SUBST_METHODDEF    \
     {"__typing_subst__", (PyCFunction)paramspec_typing_subst, METH_O, paramspec_typing_subst__doc__},
 
+static PyObject *
+paramspec_typing_subst_impl(paramspecobject *self, PyObject *arg);
+
+static PyObject *
+paramspec_typing_subst(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+
+    return_value = paramspec_typing_subst_impl((paramspecobject *)self, arg);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(paramspec_typing_prepare_subst__doc__,
 "__typing_prepare_subst__($self, alias, args, /)\n"
 "--\n"
@@ -431,7 +465,7 @@ paramspec_typing_prepare_subst_impl(paramspecobject *self, PyObject *alias,
                                     PyObject *args);
 
 static PyObject *
-paramspec_typing_prepare_subst(paramspecobject *self, PyObject *const *args, Py_ssize_t nargs)
+paramspec_typing_prepare_subst(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *alias;
@@ -442,7 +476,7 @@ paramspec_typing_prepare_subst(paramspecobject *self, PyObject *const *args, Py_
     }
     alias = args[0];
     __clinic_args = args[1];
-    return_value = paramspec_typing_prepare_subst_impl(self, alias, __clinic_args);
+    return_value = paramspec_typing_prepare_subst_impl((paramspecobject *)self, alias, __clinic_args);
 
 exit:
     return return_value;
@@ -460,9 +494,9 @@ static PyObject *
 paramspec_reduce_impl(paramspecobject *self);
 
 static PyObject *
-paramspec_reduce(paramspecobject *self, PyObject *Py_UNUSED(ignored))
+paramspec_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return paramspec_reduce_impl(self);
+    return paramspec_reduce_impl((paramspecobject *)self);
 }
 
 PyDoc_STRVAR(paramspec_has_default__doc__,
@@ -477,9 +511,9 @@ static PyObject *
 paramspec_has_default_impl(paramspecobject *self);
 
 static PyObject *
-paramspec_has_default(paramspecobject *self, PyObject *Py_UNUSED(ignored))
+paramspec_has_default(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return paramspec_has_default_impl(self);
+    return paramspec_has_default_impl((paramspecobject *)self);
 }
 
 PyDoc_STRVAR(typevartuple__doc__,
@@ -502,9 +536,11 @@ typevartuple(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(name), &_Py_ID(default), },
     };
     #undef NUM_KEYWORDS
@@ -557,6 +593,19 @@ PyDoc_STRVAR(typevartuple_typing_subst__doc__,
 #define TYPEVARTUPLE_TYPING_SUBST_METHODDEF    \
     {"__typing_subst__", (PyCFunction)typevartuple_typing_subst, METH_O, typevartuple_typing_subst__doc__},
 
+static PyObject *
+typevartuple_typing_subst_impl(typevartupleobject *self, PyObject *arg);
+
+static PyObject *
+typevartuple_typing_subst(PyObject *self, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+
+    return_value = typevartuple_typing_subst_impl((typevartupleobject *)self, arg);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(typevartuple_typing_prepare_subst__doc__,
 "__typing_prepare_subst__($self, alias, args, /)\n"
 "--\n"
@@ -570,7 +619,7 @@ typevartuple_typing_prepare_subst_impl(typevartupleobject *self,
                                        PyObject *alias, PyObject *args);
 
 static PyObject *
-typevartuple_typing_prepare_subst(typevartupleobject *self, PyObject *const *args, Py_ssize_t nargs)
+typevartuple_typing_prepare_subst(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *alias;
@@ -581,7 +630,7 @@ typevartuple_typing_prepare_subst(typevartupleobject *self, PyObject *const *arg
     }
     alias = args[0];
     __clinic_args = args[1];
-    return_value = typevartuple_typing_prepare_subst_impl(self, alias, __clinic_args);
+    return_value = typevartuple_typing_prepare_subst_impl((typevartupleobject *)self, alias, __clinic_args);
 
 exit:
     return return_value;
@@ -599,9 +648,9 @@ static PyObject *
 typevartuple_reduce_impl(typevartupleobject *self);
 
 static PyObject *
-typevartuple_reduce(typevartupleobject *self, PyObject *Py_UNUSED(ignored))
+typevartuple_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return typevartuple_reduce_impl(self);
+    return typevartuple_reduce_impl((typevartupleobject *)self);
 }
 
 PyDoc_STRVAR(typevartuple_has_default__doc__,
@@ -616,9 +665,9 @@ static PyObject *
 typevartuple_has_default_impl(typevartupleobject *self);
 
 static PyObject *
-typevartuple_has_default(typevartupleobject *self, PyObject *Py_UNUSED(ignored))
+typevartuple_has_default(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return typevartuple_has_default_impl(self);
+    return typevartuple_has_default_impl((typevartupleobject *)self);
 }
 
 PyDoc_STRVAR(typealias_reduce__doc__,
@@ -633,9 +682,9 @@ static PyObject *
 typealias_reduce_impl(typealiasobject *self);
 
 static PyObject *
-typealias_reduce(typealiasobject *self, PyObject *Py_UNUSED(ignored))
+typealias_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return typealias_reduce_impl(self);
+    return typealias_reduce_impl((typealiasobject *)self);
 }
 
 PyDoc_STRVAR(typealias_new__doc__,
@@ -658,9 +707,11 @@ typealias_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(name), &_Py_ID(value), &_Py_ID(type_params), },
     };
     #undef NUM_KEYWORDS
@@ -706,4 +757,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=26351c3549f5ad83 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9dad71445e079303 input=a9049054013a1b77]*/

@@ -94,12 +94,6 @@ PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
 
 /* In exceptions.c */
 
-PyAPI_FUNC(int) _PyUnicodeError_GetParams(
-    PyObject *self,
-    PyObject **obj, Py_ssize_t *objlen,
-    Py_ssize_t *start, Py_ssize_t *end,
-    int as_bytes);
-
 PyAPI_FUNC(PyObject*) PyUnstable_Exc_PrepReraiseStar(
      PyObject *orig,
      PyObject *excs);
