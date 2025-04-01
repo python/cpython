@@ -160,9 +160,11 @@ def _print_config_dict(d, stream):
     print ("}", file=stream)
 
 
-def _get_pybuilddir():
+def _get_pybuilddir(py_debug=None):
     pybuilddir = f'build/lib.{get_platform()}-{get_python_version()}'
-    if hasattr(sys, "gettotalrefcount"):
+    if py_debug is None:
+        py_debug = get_config_var('Py_DEBUG')
+    if py_debug:
         pybuilddir += '-pydebug'
     return pybuilddir
 
@@ -220,7 +222,7 @@ def _generate_posix_vars():
     module.build_time_vars = vars
     sys.modules[name] = module
 
-    pybuilddir = _get_pybuilddir()
+    pybuilddir = _get_pybuilddir(vars['Py_DEBUG'])
     os.makedirs(pybuilddir, exist_ok=True)
     destfile = os.path.join(pybuilddir, name + '.py')
 
