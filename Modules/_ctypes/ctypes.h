@@ -6,6 +6,8 @@
 
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_critical_section.h"
+#include "pycore_pyatomic_ft_wrappers.h"
 
 // Do we support C99 complex types in ffi?
 // For Apple's libffi, this must be determined at runtime (see gh-128156).
@@ -375,7 +377,7 @@ typedef struct CFieldObject {
 typedef struct {
     int initialized;
     Py_ssize_t size;            /* number of bytes */
-    Py_ssize_t align;           /* alignment requirements */
+    Py_ssize_t align;           /* alignment reqwuirements */
     Py_ssize_t length;          /* number of fields */
     ffi_type ffi_type_pointer;
     PyObject *proto;            /* Only for Pointer/ArrayObject */
@@ -390,14 +392,63 @@ typedef struct {
     PyObject *checker;
     PyObject *module;
     int flags;                  /* calling convention and such */
+#ifdef Py_GIL_DISABLED
+    PyMutex mutex;              /* critical section mutex */
+#endif
+    uint8_t dict_final;
 
     /* pep3118 fields, pointers need PyMem_Free */
     char *format;
     int ndim;
     Py_ssize_t *shape;
-/*      Py_ssize_t *strides;    */ /* unused in ctypes */
-/*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
+    /*      Py_ssize_t *strides;    */ /* unused in ctypes */
+    /*      Py_ssize_t *suboffsets; */ /* unused in ctypes */
 } StgInfo;
+
+
+/*
+    To ensure thread safety in the free threading build, the `STGINFO_LOCK` and
+    `STGINFO_UNLOCK` macros use critical sections to protect against concurrent
+    modifications to `StgInfo` and assignment of the `dict_final` field. Once
+    `dict_final` is set, `StgInfo` is treated as read-only, and no further
+    modifications are allowed. This approach allows most read operations to
+    proceed without acquiring the critical section lock.
+
+    The `dict_final` field is written only after all other modifications to
+    `StgInfo` are complete. The reads and writes of `dict_final` use the
+    sequentially consistent memory ordering to ensure that all other fields are
+    visible to other threads before the `dict_final` bit is set.
+*/
+
+#define STGINFO_LOCK(stginfo)   Py_BEGIN_CRITICAL_SECTION_MUT(&(stginfo)->mutex)
+#define STGINFO_UNLOCK()        Py_END_CRITICAL_SECTION()
+
+static inline uint8_t
+stginfo_get_dict_final(StgInfo *info)
+{
+    return FT_ATOMIC_LOAD_UINT8(info->dict_final);
+}
+
+static inline void
+stginfo_set_dict_final_lock_held(StgInfo *info)
+{
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(&info->mutex);
+    FT_ATOMIC_STORE_UINT8(info->dict_final, 1);
+}
+
+
+// Set the `dict_final` bit in StgInfo. It checks if the bit is already set
+// and in that avoids acquiring the critical section (general case).
+static inline void
+stginfo_set_dict_final(StgInfo *info)
+{
+    if (stginfo_get_dict_final(info) == 1) {
+        return;
+    }
+    STGINFO_LOCK(info);
+    stginfo_set_dict_final_lock_held(info);
+    STGINFO_UNLOCK();
+}
 
 extern int PyCStgInfo_clone(StgInfo *dst_info, StgInfo *src_info);
 extern void ctype_clear_stginfo(StgInfo *info);
@@ -426,8 +477,6 @@ PyObject *_ctypes_callproc(ctypes_state *st,
 
 #define TYPEFLAG_ISPOINTER 0x100
 #define TYPEFLAG_HASPOINTER 0x200
-
-#define DICTFLAG_FINAL 0x1000
 
 struct tagPyCArgObject {
     PyObject_HEAD
