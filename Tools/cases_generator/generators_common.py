@@ -470,7 +470,7 @@ class Emitter:
         method = getattr(self, method_name, None)
         if method is None:
             raise NotImplementedError
-        return method(stmt, uop, storage, inst) # type: ignore
+        return method(stmt, uop, storage, inst) # type: ignore[no-any-return]
 
     def emit_SimpleStmt(
         self,
@@ -569,8 +569,8 @@ class Emitter:
         for tkn in stmt.condition:
             self.out.emit(tkn)
         if_storage = storage.copy()
+        rbrace: Token | None = stmt.if_
         try:
-            rbrace: Token | None = stmt.if_
             reachable, rbrace, if_storage = self._emit_stmt(stmt.body, uop, if_storage, inst)
             if stmt.else_ is not None:
                 assert rbrace is not None
@@ -609,6 +609,7 @@ class Emitter:
         emit_braces: bool = True,
     ) -> tuple[bool, Token | None, Storage]:
         """ Returns (reachable?, closing '}', stack)."""
+        tkn: Token | None = None
         try:
             if emit_braces:
                 self.out.emit(stmt.open)

@@ -361,16 +361,15 @@ class Parser(PLexer):
     @contextual
     def inst_def(self) -> InstDef | None:
         if hdr := self.inst_header():
-            if block := self.block():
-                return InstDef(
-                    hdr.annotations,
-                    hdr.kind,
-                    hdr.name,
-                    hdr.inputs,
-                    hdr.outputs,
-                    block,
-                )
-            raise self.make_syntax_error("Expected block")
+            block := self.block()
+            return InstDef(
+                hdr.annotations,
+                hdr.kind,
+                hdr.name,
+                hdr.inputs,
+                hdr.outputs,
+                block,
+            )
         return None
 
     @contextual
