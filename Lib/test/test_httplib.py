@@ -1696,8 +1696,8 @@ class ExtendedReadTestContentLengthKnown(ExtendedReadTest):
         """
         resp = self.resp
         content = resp.fp.read()
-        # Truncate the content to the last newline.
-        content = content[:content.rindex(b"\n") - 1]
+        # Remove last newline and following bytes.
+        content = content.rsplit(b'\n', 1)[0]
         resp.fp = io.BytesIO(content)
         with self.assertRaises(client.IncompleteRead) as cm:
             while True:
@@ -1705,7 +1705,7 @@ class ExtendedReadTestContentLengthKnown(ExtendedReadTest):
                 if not data:
                     break
         exception = cm.exception
-        self.assertEqual(exception.partial, content.split(b"\n")[-1])
+        self.assertEqual(exception.partial, content.rsplit(b'\n', 1)[1])
         self.assertIsNone(exception.expected)
         self.assertTrue(resp.isclosed())
 
