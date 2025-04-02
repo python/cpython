@@ -980,6 +980,13 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
        from a hard-code pseudo-locale */
     LocaleInfo locale = LocaleInfo_STATIC_INIT;
 
+    /* no precision allowed on 'c' integer representation type */
+    if (format->precision != -1 && format->type == 'c') {
+        PyErr_SetString(PyExc_ValueError,
+                        "Precision not allowed with 'c' integer format specifier");
+        goto done;
+    }
+
     /* no negative zero coercion on integers */
     if (format->no_neg_0) {
         PyErr_SetString(PyExc_ValueError,

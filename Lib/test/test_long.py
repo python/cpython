@@ -750,6 +750,7 @@ class LongTest(unittest.TestCase):
         self.assertRaises(ValueError, format, -129, '.8b')
 
         # make sure these are errors
+        self.assertRaises(ValueError, format, 3, "1.3c")  # precision disallowed with 'c',
         self.assertRaises(ValueError, format, 3, "_c")   # underscore,
         self.assertRaises(ValueError, format, 3, ",c")   # comma, and
         self.assertRaises(ValueError, format, 3, "+c")   # sign not allowed
