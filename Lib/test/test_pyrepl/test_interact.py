@@ -1,6 +1,7 @@
 import contextlib
 import io
 import unittest
+import warnings
 from unittest.mock import patch
 from textwrap import dedent
 
@@ -291,11 +292,10 @@ class TestWarnings(unittest.TestCase):
                 return 2
         """)
 
-        f = io.StringIO()
-        with contextlib.redirect_stderr(f):
-            result = console.runsource(code)
-        self.assertFalse(result)
-        warning = "<input>:5: SyntaxWarning: 'return' in a 'finally' block"
-        output = f.getvalue()
-        # Check that the warning is shown only once
-        self.assertEqual(output.count(warning), 1)
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            console.runsource(code)
+
+        count = sum("'return' in a 'finally' block" in str(w.message)
+                    for w in caught)
+        self.assertEqual(count, 1)

@@ -231,9 +231,9 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             # was compiled to AST.
             # This prevents emitting duplicate warnings which are
             # raised in the AST optimizer.
-            all_warnings = {str(w.message) for w in all_warnings}
+            all_warnings = {str(w) for w in all_warnings}
             new_warnings = [w for w in stmt_warnings
-                            if str(w.message) not in all_warnings]
+                            if str(w) not in all_warnings]
             _replay_warnings(new_warnings)
 
             if code is None:
