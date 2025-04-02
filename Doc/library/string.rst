@@ -325,11 +325,11 @@ The general form of a *standard format specifier* is:
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
    width_and_precision: [`width_with_grouping`][`precision_with_grouping`]
-   width_with_grouping: [`width`][`grouping_option`]
-   precision_with_grouping: "." [`precision`]`grouping_option`
+   width_with_grouping: [`width`][`grouping`]
+   precision_with_grouping: "." [`precision`][`grouping`]
    width: `~python-grammar:digit`+
-   grouping_option: "_" | ","
    precision: `~python-grammar:digit`+
+   grouping: "," | "_"
    type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g"
        : | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
@@ -419,29 +419,6 @@ decimal-point character appears in the result of these conversions
 only if a digit follows it. In addition, for ``'g'`` and ``'G'``
 conversions, trailing zeros are not removed from the result.
 
-.. index:: single: , (comma); in string formatting
-
-The ``','`` option signals the use of a comma for a thousands separator for
-floating-point presentation types and for integer presentation type ``'d'``.
-For other presentation types, this option is an error.
-For a locale aware separator, use the ``'n'`` integer presentation type
-instead.
-
-.. versionchanged:: 3.1
-   Added the ``','`` option (see also :pep:`378`).
-
-.. index:: single: _ (underscore); in string formatting
-
-The ``'_'`` option signals the use of an underscore for a thousands
-separator for floating-point presentation types and for integer
-presentation type ``'d'``.  For integer presentation types ``'b'``,
-``'o'``, ``'x'``, and ``'X'``, underscores will be inserted every 4
-digits.  For other presentation types, specifying this option is an
-error.
-
-.. versionchanged:: 3.6
-   Added the ``'_'`` option (see also :pep:`515`).
-
 *width* is a decimal integer defining the minimum total field width,
 including any prefixes, separators, and other formatting characters.
 If not specified, then the field width will be determined by the content.
@@ -463,10 +440,37 @@ indicates the maximum field size - in other words, how many characters will be
 used from the field content.  The *precision* is not allowed for integer
 presentation types.
 
-The ``'_'`` or ``','`` option after *precision* means the use of an underscore
-or a comma for a thousands separator of the fractional part for floating-point
-presentation types.
+The *grouping* option after *width* and *precision* specifies a thousands
+separator for integral and fractional parts of a number respectively.
+It can be one of the following:
 
+.. index::
+   single: , (comma); in string formatting
+   single: _ (underscore); in string formatting
+
++---------+----------------------------------------------------------+
+| Option  | Meaning                                                  |
++=========+==========================================================+
+| ``','`` | Uses a comma as a thousands separator for                |
+|         | floating-point presentation types                        |
+|         | and integer presentation type ``'d'``.                   |
+|         | For other presentation types, this option is an error.   |
++---------+----------------------------------------------------------+
+| ``'_'`` | Uses an underscore as a thousands separator for          |
+|         | floating-point presentation types                        |
+|         | and integer presentation type ``'d'``.                   |
+|         | For integer presentation types                           |
+|         | ``'b'``, ``'o'``, ``'x'``, and ``'X'``,                  |
+|         | underscores will be inserted every 4 digits.             |
+|         | For other presentation types, this option is an error.   |
++---------+----------------------------------------------------------+
+
+For a locale aware separator, use the ``'n'`` presentation type instead.
+
+.. versionchanged:: 3.1
+   Added the ``','`` option (see also :pep:`378`).
+.. versionchanged:: 3.6
+   Added the ``'_'`` option (see also :pep:`515`).
 .. versionchanged:: 3.14
    Support thousands separators for the fractional part.
 
