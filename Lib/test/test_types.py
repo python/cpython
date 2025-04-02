@@ -647,7 +647,7 @@ class TypesTests(unittest.TestCase):
     def test_capsule_type(self):
         self.assertIsInstance(_datetime.datetime_CAPI, types.CapsuleType)
 
-    def test_gh131998(self):
+    def test_call_unbound_crash(self):
         # GH-131998: The specialized instruction would get tricked into dereferencing
         # a bound "self" that didn't exist if subsequently called unbound.
         code = """if True:
