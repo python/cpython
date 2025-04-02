@@ -157,12 +157,15 @@ def generate_deopt_table(analysis: Analysis, out: CWriter) -> None:
         if inst.family is not None:
             deopt = inst.family.name
         deopts.append((inst.name, deopt))
-    for name, deopt in sorted(deopts):
-        out.emit(f"[{name}] = {deopt},\n")
     defined = set(analysis.opmap.values())
     for i in range(256):
         if i not in defined:
-            out.emit(f"[{i}] = {i},\n")
+            deopts.append((f'{i}', f'{i}'))
+
+    assert len(deopts) == 256
+    assert len(set(x[0] for x in deopts)) == 256
+    for name, deopt in sorted(deopts):
+        out.emit(f"[{name}] = {deopt},\n")
     out.emit("};\n\n")
     out.emit("#endif // NEED_OPCODE_METADATA\n\n")
 
