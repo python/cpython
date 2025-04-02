@@ -360,11 +360,11 @@ search_elf_file_for_section(
     }
 
 exit:
-    if (fd >= 0 && close(fd) != 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
-    }
     if (file_memory != NULL) {
         munmap(file_memory, file_stats.st_size);
+    }
+    if (fd >= 0 && close(fd) != 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
     }
     return result;
 }
