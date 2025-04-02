@@ -31,14 +31,6 @@ class PyclbrTest(TestCase):
             print("l1=%r\nl2=%r\nignore=%r" % (l1, l2, ignore), file=sys.stderr)
             self.fail("%r missing" % missing.pop())
 
-    def assertHasattr(self, obj, attr, ignore):
-        ''' succeed iff hasattr(obj,attr) or attr in ignore. '''
-        if attr in ignore: return
-        if not hasattr(obj, attr): print("???", attr)
-        self.assertTrue(hasattr(obj, attr),
-                        'expected hasattr(%r, %r)' % (obj, attr))
-
-
     def assertHaskey(self, obj, key, ignore):
         ''' succeed iff key in obj or key in ignore. '''
         if key in ignore: return
@@ -86,7 +78,7 @@ class PyclbrTest(TestCase):
         for name, value in dict.items():
             if name in ignore:
                 continue
-            self.assertHasattr(module, name, ignore)
+            self.assertHasAttr(module, name, ignore)
             py_item = getattr(module, name)
             if isinstance(value, pyclbr.Function):
                 self.assertIsInstance(py_item, (FunctionType, BuiltinFunctionType))
@@ -234,7 +226,7 @@ class PyclbrTest(TestCase):
         cm(
             'pdb',
             # pyclbr does not handle elegantly `typing` or properties
-            ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget'),
+            ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'curframe_locals'),
         )
         cm('pydoc', ignore=('input', 'output',)) # properties
 

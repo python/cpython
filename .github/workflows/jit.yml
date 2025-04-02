@@ -25,6 +25,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+env:
+  FORCE_COLOR: 1
+
 jobs:
   interpreter:
     name: Interpreter (Debug)
@@ -83,8 +86,7 @@ jobs:
             runner: ubuntu-24.04
           - target: aarch64-unknown-linux-gnu/gcc
             architecture: aarch64
-            # Forks don't have access to our paid AArch64 runners. These jobs are skipped below:
-            runner: ${{ github.repository_owner == 'python' && 'ubuntu-24.04-aarch64' || 'ubuntu-24.04' }}
+            runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
         with:
@@ -123,8 +125,7 @@ jobs:
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       - name: Native Linux
-        # Forks don't have access to our paid AArch64 runners. Skip those:
-        if: runner.os == 'Linux' && (matrix.architecture == 'x86_64' || github.repository_owner == 'python')
+        if: runner.os == 'Linux'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
@@ -136,7 +137,9 @@ jobs:
     name: Free-Threaded (Debug)
     needs: interpreter
     runs-on: ubuntu-24.04
+    timeout-minutes: 90
     strategy:
+      fail-fast: false
       matrix:
         llvm:
           - 19
