@@ -880,7 +880,7 @@ contextvar_new(PyObject *name, PyObject *def)
 
     var->var_hash = contextvar_generate_hash(var, name);
     if (var->var_hash == -1) {
-        Py_DECREF(var);
+        PyObject_GC_Del(var);
         return NULL;
     }
 
