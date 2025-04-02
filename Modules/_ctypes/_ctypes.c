@@ -5499,10 +5499,14 @@ Pointer_set_contents(PyObject *op, PyObject *value, void *closure)
     }
 
     dst = (CDataObject *)value;
-    assert(dst != self); // XXX Can the user do this?
-    LOCK_PTR(dst);
-    locked_deref_assign(self, dst->b_ptr);
-    UNLOCK_PTR(dst);
+    if (dst != self) {
+        LOCK_PTR(dst);
+        locked_deref_assign(self, dst->b_ptr);
+        UNLOCK_PTR(dst);
+    } else {
+        // We already hold the lock
+        *((void **)self->b_ptr) = dst->b_ptr;
+    }
 
     /*
        A Pointer instance must keep the value it points to alive.  So, a
