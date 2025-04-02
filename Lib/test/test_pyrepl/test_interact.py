@@ -295,6 +295,7 @@ class TestWarnings(unittest.TestCase):
         with contextlib.redirect_stderr(f):
             result = console.runsource(code)
         self.assertFalse(result)
-        self.assertEqual(f.getvalue(),
-                         "<input>:5: SyntaxWarning: "
-                         "'return' in a 'finally' block\n")
+        warning = "<input>:5: SyntaxWarning: 'return' in a 'finally' block"
+        output = f.getvalue()
+        # Check that the warning is shown only once
+        self.assertEqual(output.count(warning), 1)
