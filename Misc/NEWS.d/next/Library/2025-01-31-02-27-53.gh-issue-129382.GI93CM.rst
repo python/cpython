@@ -1,2 +1,2 @@
-Updated :class:`venv.EnvBuilder`/:func:`venv.creatr`'s ``symlinks`` parameter's
+Updated :class:`venv.EnvBuilder`/:func:`venv.create`'s ``symlinks`` parameter's
 default to match the :ref:`CLI <venv-cli>`.
