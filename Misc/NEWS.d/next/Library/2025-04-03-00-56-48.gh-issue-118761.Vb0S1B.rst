@@ -1,0 +1,2 @@
+Improve import times by up to 33x for the :mod:`shlex` module. Patch by Adam
+Turner.

@@ -7,25 +7,22 @@
 # iterator interface by Gustavo Niemeyer, April 2003.
 # changes to tokenize more like Posix shells by Vinay Sajip, July 2016.
 
-import os
-import re
-import sys
-from collections import deque
-
-from io import StringIO
-
 __all__ = ["shlex", "split", "quote", "join"]
 
 class shlex:
     "A lexical analyzer class for simple shell-like syntaxes."
     def __init__(self, instream=None, infile=None, posix=False,
                  punctuation_chars=False):
+        from collections import deque  # deferred import for performance
+
         if isinstance(instream, str):
+            from io import StringIO  # deferred import for performance
             instream = StringIO(instream)
         if instream is not None:
             self.instream = instream
             self.infile = infile
         else:
+            import sys  # deferred import for performance
             self.instream = sys.stdin
             self.infile = None
         self.posix = posix
@@ -78,6 +75,7 @@ class shlex:
     def push_source(self, newstream, newfile=None):
         "Push an input source onto the lexer's input source stack."
         if isinstance(newstream, str):
+            from io import StringIO  # deferred import for performance
             newstream = StringIO(newstream)
         self.filestack.appendleft((self.infile, self.instream, self.lineno))
         self.infile = newfile
@@ -278,6 +276,7 @@ class shlex:
 
     def sourcehook(self, newfile):
         "Hook called on a filename to be sourced."
+        import os.path
         if newfile[0] == '"':
             newfile = newfile[1:-1]
         # This implements cpp-like semantics for relative-path inclusion.
@@ -318,7 +317,14 @@ def join(split_command):
     return ' '.join(quote(arg) for arg in split_command)
 
 
-_find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
+def _find_unsafe(s, /):
+    # this function replaces itself with the compiled pattern on execution,
+    # to allow as deferred import of re for performance
+    global _find_unsafe
+    import re
+    _find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
+    return _find_unsafe(s)
+
 
 def quote(s):
     """Return a shell-escaped version of the string *s*."""
@@ -337,6 +343,7 @@ def _print_tokens(lexer):
         print("Token: " + repr(tt))
 
 if __name__ == '__main__':
+    import sys  # deferred import for performance
     if len(sys.argv) == 1:
         _print_tokens(shlex())
     else:
