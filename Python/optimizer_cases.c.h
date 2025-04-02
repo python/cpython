@@ -28,7 +28,6 @@
         case _LOAD_FAST_CHECK: {
             JitOptSymbol *value;
             value = GETLOCAL(oparg);
-            // We guarantee this will error - just bail and don't optimize it.
             if (sym_is_null(value)) {
                 ctx->done = true;
             }
@@ -162,7 +161,8 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-            if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!already_bool) {
                 res = sym_new_truthiness(ctx, value, true);
             }
             stack_pointer[-1] = res;
@@ -173,7 +173,8 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-            if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!already_bool) {
                 sym_set_type(value, &PyBool_Type);
                 res = sym_new_truthiness(ctx, value, true);
             }
@@ -185,7 +186,8 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-            if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!already_bool) {
                 sym_set_type(value, &PyLong_Type);
                 res = sym_new_truthiness(ctx, value, true);
             }
@@ -197,7 +199,8 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-            if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!already_bool) {
                 sym_set_type(value, &PyList_Type);
                 res = sym_new_type(ctx, &PyBool_Type);
             }
@@ -209,7 +212,8 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-            if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!already_bool) {
                 sym_set_const(value, Py_None);
                 res = sym_new_const(ctx, Py_False);
             }
@@ -241,7 +245,8 @@
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
-            if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+            int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+            if (!already_bool) {
                 res = sym_new_truthiness(ctx, value, true);
             }
             stack_pointer[-1] = res;
@@ -301,8 +306,6 @@
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
-                // TODO gh-115506:
-                // replace opcode with constant propagated one and add tests!
             }
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
@@ -332,8 +335,6 @@
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
-                // TODO gh-115506:
-                // replace opcode with constant propagated one and add tests!
             }
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
@@ -363,8 +364,6 @@
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
-                // TODO gh-115506:
-                // replace opcode with constant propagated one and add tests!
             }
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
@@ -415,8 +414,6 @@
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
-                // TODO gh-115506:
-                // replace opcode with constant propagated one and update tests!
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
@@ -447,8 +444,6 @@
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
-                // TODO gh-115506:
-                // replace opcode with constant propagated one and update tests!
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
@@ -479,8 +474,6 @@
                 stack_pointer += -1;
                 assert(WITHIN_STACK_BOUNDS());
                 Py_DECREF(temp);
-                // TODO gh-115506:
-                // replace opcode with constant propagated one and update tests!
             }
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
@@ -538,7 +531,6 @@
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
             }
-            // _STORE_FAST:
             GETLOCAL(this_instr->operand0) = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
@@ -690,7 +682,6 @@
             ctx->frame->stack_pointer = stack_pointer;
             frame_pop(ctx);
             stack_pointer = ctx->frame->stack_pointer;
-            /* Stack space handling */
             assert(corresponding_check_stack == NULL);
             assert(co != NULL);
             int framesize = co->co_framesize;
@@ -699,7 +690,6 @@
             curr_space -= framesize;
             co = get_code(this_instr);
             if (co == NULL) {
-                // might be impossible, but bailing is still safe
                 ctx->done = true;
             }
             res = temp;
@@ -735,7 +725,6 @@
         /* _SEND is not a viable micro-op for tier 2 */
 
         case _SEND_GEN_FRAME: {
-            // We are about to hit the end of the trace:
             ctx->done = true;
             break;
         }
@@ -784,7 +773,6 @@
         case _UNPACK_SEQUENCE: {
             JitOptSymbol **values;
             values = &stack_pointer[-1];
-            /* This has to be done manually */
             for (int i = 0; i < oparg; i++) {
                 values[i] = sym_new_unknown(ctx);
             }
@@ -834,7 +822,6 @@
         case _UNPACK_EX: {
             JitOptSymbol **values;
             values = &stack_pointer[-1];
-            /* This has to be done manually */
             int totalargs = (oparg & 0xFF) + (oparg >> 8) + 1;
             for (int i = 0; i < totalargs; i++) {
                 values[i] = sym_new_unknown(ctx);
@@ -1097,15 +1084,8 @@
             if (sym_matches_type_version(owner, type_version)) {
                 REPLACE_OP(this_instr, _NOP, 0, 0);
             } else {
-                // add watcher so that whenever the type changes we invalidate this
                 PyTypeObject *type = _PyType_LookupByVersion(type_version);
-                // if the type is null, it was not found in the cache (there was a conflict)
-                // with the key, in which case we can't trust the version
                 if (type) {
-                    // if the type version was set properly, then add a watcher
-                    // if it wasn't this means that the type version was previously set to something else
-                    // and we set the owner to bottom, so we don't need to add a watcher because we must have
-                    // already added one earlier.
                     if (sym_set_type_version(owner, type_version)) {
                         PyType_Watch(TYPE_WATCHER_ID, (PyObject *)type);
                         _Py_BloomFilter_Add(dependencies, type);
@@ -1156,7 +1136,6 @@
                 }
             }
             if (attr == NULL) {
-                /* No conversion made. We don't know what `attr` is. */
                 attr = sym_new_not_null(ctx);
             }
             stack_pointer[-1] = attr;
@@ -1507,7 +1486,6 @@
         }
 
         case _FOR_ITER_GEN_FRAME: {
-            /* We are about to hit the end of the trace */
             ctx->done = true;
             break;
         }
@@ -1712,8 +1690,6 @@
         }
 
         case _CHECK_PEP_523: {
-            /* Setting the eval frame function invalidates
-             * all executors, so no need to check dynamically */
             if (_PyInterpreterState_GET()->eval_frame == NULL) {
                 REPLACE_OP(this_instr, _NOP, 0 ,0);
             }
@@ -1761,7 +1737,6 @@
             assert(self_or_null != NULL);
             assert(args != NULL);
             if (sym_is_not_null(self_or_null)) {
-                // Bound method fiddling, same as _INIT_CALL_PY_EXACT_ARGS in VM
                 args--;
                 argcount++;
             }
@@ -1787,16 +1762,13 @@
             stack_pointer = new_frame->stack_pointer;
             co = get_code(this_instr);
             if (co == NULL) {
-                // should be about to _EXIT_TRACE anyway
                 ctx->done = true;
                 break;
             }
-            /* Stack space handling */
             int framesize = co->co_framesize;
             assert(framesize > 0);
             curr_space += framesize;
             if (curr_space < 0 || curr_space > INT32_MAX) {
-                // won't fit in signed 32-bit int
                 ctx->done = true;
                 break;
             }
@@ -1804,11 +1776,8 @@
             if (first_valid_check_stack == NULL) {
                 first_valid_check_stack = corresponding_check_stack;
             }
-            else {
-                if (corresponding_check_stack) {
-                    // delete all but the first valid _CHECK_STACK_SPACE
-                    corresponding_check_stack->opcode = _NOP;
-                }
+            else if (corresponding_check_stack) {
+                corresponding_check_stack->opcode = _NOP;
             }
             corresponding_check_stack = NULL;
             break;
@@ -2049,7 +2018,6 @@
             frame_pop(ctx);
             stack_pointer = ctx->frame->stack_pointer;
             res = sym_new_unknown(ctx);
-            /* Stack space handling */
             assert(corresponding_check_stack == NULL);
             assert(co != NULL);
             int framesize = co->co_framesize;
@@ -2061,7 +2029,6 @@
             assert(WITHIN_STACK_BOUNDS());
             co = get_code(this_instr);
             if (co == NULL) {
-                // might be impossible, but bailing is still safe
                 ctx->done = true;
             }
             stack_pointer[-1] = res;
@@ -2123,63 +2090,33 @@
             bool lhs_float = sym_matches_type(left, &PyFloat_Type);
             bool rhs_float = sym_matches_type(right, &PyFloat_Type);
             if (!((lhs_int || lhs_float) && (rhs_int || rhs_float))) {
-                // There's something other than an int or float involved:
                 res = sym_new_unknown(ctx);
             }
-            else {
-                if (oparg == NB_POWER || oparg == NB_INPLACE_POWER) {
-                    // This one's fun... the *type* of the result depends on the
-                    // *values* being exponentiated. However, exponents with one
-                    // constant part are reasonably common, so it's probably worth
-                    // trying to infer some simple cases:
-                    // - A: 1 ** 1 -> 1 (int ** int -> int)
-                    // - B: 1 ** -1 -> 1.0 (int ** int -> float)
-                    // - C: 1.0 ** 1 -> 1.0 (float ** int -> float)
-                    // - D: 1 ** 1.0 -> 1.0 (int ** float -> float)
-                    // - E: -1 ** 0.5 ~> 1j (int ** float -> complex)
-                    // - F: 1.0 ** 1.0 -> 1.0 (float ** float -> float)
-                    // - G: -1.0 ** 0.5 ~> 1j (float ** float -> complex)
-                    if (rhs_float) {
-                        // Case D, E, F, or G... can't know without the sign of the LHS
-                        // or whether the RHS is whole, which isn't worth the effort:
-                        res = sym_new_unknown(ctx);
-                    }
-                    else {
-                        if (lhs_float) {
-                            // Case C:
-                            res = sym_new_type(ctx, &PyFloat_Type);
-                        }
-                        else {
-                            if (!sym_is_const(ctx, right)) {
-                                // Case A or B... can't know without the sign of the RHS:
-                                res = sym_new_unknown(ctx);
-                            }
-                            else {
-                                if (_PyLong_IsNegative((PyLongObject *)sym_get_const(ctx, right))) {
-                                    // Case B:
-                                    res = sym_new_type(ctx, &PyFloat_Type);
-                                }
-                                else {
-                                    // Case A:
-                                    res = sym_new_type(ctx, &PyLong_Type);
-                                }
-                            }
-                        }
-                    }
+            else if (oparg == NB_POWER || oparg == NB_INPLACE_POWER) {
+                if (rhs_float) {
+                    res = sym_new_unknown(ctx);
+                }
+                else if (lhs_float) {
+                    res = sym_new_type(ctx, &PyFloat_Type);
+                }
+                else if (!sym_is_const(ctx, right)) {
+                    res = sym_new_unknown(ctx);
+                }
+                else if (_PyLong_IsNegative((PyLongObject *)sym_get_const(ctx, right))) {
+                    res = sym_new_type(ctx, &PyFloat_Type);
                 }
                 else {
-                    if (oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE) {
-                        res = sym_new_type(ctx, &PyFloat_Type);
-                    }
-                    else {
-                        if (lhs_int && rhs_int) {
-                            res = sym_new_type(ctx, &PyLong_Type);
-                        }
-                        else {
-                            res = sym_new_type(ctx, &PyFloat_Type);
-                        }
-                    }
+                    res = sym_new_type(ctx, &PyLong_Type);
                 }
+            }
+            else if (oparg == NB_TRUE_DIVIDE || oparg == NB_INPLACE_TRUE_DIVIDE) {
+                res = sym_new_type(ctx, &PyFloat_Type);
+            }
+            else if (lhs_int && rhs_int) {
+                res = sym_new_type(ctx, &PyLong_Type);
+            }
+            else {
+                res = sym_new_type(ctx, &PyFloat_Type);
             }
             stack_pointer[-2] = res;
             stack_pointer += -1;
@@ -2253,11 +2190,9 @@
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, !Py_IsNone(value));
             }
-            else {
-                if (sym_has_type(flag)) {
-                    assert(!sym_matches_type(flag, &_PyNone_Type));
-                    eliminate_pop_guard(this_instr, true);
-                }
+            else if (sym_has_type(flag)) {
+                assert(!sym_matches_type(flag, &_PyNone_Type));
+                eliminate_pop_guard(this_instr, true);
             }
             sym_set_const(flag, Py_None);
             stack_pointer += -1;
@@ -2273,11 +2208,9 @@
                 assert(value != NULL);
                 eliminate_pop_guard(this_instr, Py_IsNone(value));
             }
-            else {
-                if (sym_has_type(flag)) {
-                    assert(!sym_matches_type(flag, &_PyNone_Type));
-                    eliminate_pop_guard(this_instr, false);
-                }
+            else if (sym_has_type(flag)) {
+                assert(!sym_matches_type(flag, &_PyNone_Type));
+                eliminate_pop_guard(this_instr, false);
             }
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -2296,8 +2229,6 @@
         case _CHECK_STACK_SPACE_OPERAND: {
             uint32_t framesize = (uint32_t)this_instr->operand0;
             (void)framesize;
-            /* We should never see _CHECK_STACK_SPACE_OPERANDs.
-             * They are only created at the end of this pass. */
             Py_UNREACHABLE();
             break;
         }
