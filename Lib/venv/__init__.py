@@ -344,6 +344,7 @@ class EnvBuilder:
             exename = os.path.basename(context.env_exe)
             exe_stem = os.path.splitext(exename)[0]
             exe_d = '_d' if os.path.normcase(exe_stem).endswith('_d') else ''
+            current_exename = os.path.basename(sys.executable)
             if sysconfig.is_python_build():
                 scripts = dirname
             else:
@@ -355,6 +356,7 @@ class EnvBuilder:
                 link_sources = {
                     'python.exe': python_exe,
                     f'python{exe_d}.exe': python_exe,
+                    current_exename: python_exe,
                     'pythonw.exe': pythonw_exe,
                     f'pythonw{exe_d}.exe': pythonw_exe,
                 }
@@ -363,6 +365,7 @@ class EnvBuilder:
                 copy_sources = {
                     'python.exe': python_exe,
                     f'python{exe_d}.exe': python_exe,
+                    current_exename: python_exe,
                     'pythonw.exe': pythonw_exe,
                     f'pythonw{exe_d}.exe': pythonw_exe,
                 }
@@ -375,6 +378,7 @@ class EnvBuilder:
                     f'python{exe_d}.exe': python_exe,
                     f'python{exe_t}.exe': python_exe,
                     f'python{exe_t}{exe_d}.exe': python_exe,
+                    current_exename: python_exe,
                     'pythonw.exe': pythonw_exe,
                     f'pythonw{exe_d}.exe': pythonw_exe,
                     f'pythonw{exe_t}.exe': pythonw_exe,
@@ -387,6 +391,7 @@ class EnvBuilder:
                     f'python{exe_d}.exe': python_exe,
                     f'python{exe_t}.exe': python_exe,
                     f'python{exe_t}{exe_d}.exe': python_exe,
+                    current_exename: python_exe,
                     'pythonw.exe': pythonw_exe,
                     f'pythonw{exe_d}.exe': pythonw_exe,
                     f'pythonw{exe_t}.exe': pythonw_exe,
