@@ -285,7 +285,7 @@ Got:          '%s'
             ("foo=bar;bar=baz", "foo=bar; bar=baz"),
             ('foo bar baz', "foo; bar; baz"),
             (r'foo="\"" bar="\\"', r'foo="\""; bar="\\"'),
-            #("föo=bär", 'föo="bär"'),
+            ("föo=bär", 'föo="bär"'),
             ('foo,,,bar', 'foo, bar'),
             ('foo=bar,bar=baz', 'foo=bar, bar=baz'),
             ("foo=\n", 'foo=""'),
@@ -307,8 +307,8 @@ Got:          '%s'
             (r'Basic realm="\"foo\\\\bar\""',
              r'Basic; realm="\"foo\\\\bar\""'),
 
-            ('n; foo="foo;_", bar=foo!_',
-             'n; foo="foo;_", bar="foo!_"'),
+            ('n; foo="foo;_", bar="foo,_"',
+             'n; foo="foo;_", bar="foo,_"'),
             ]
 
         for arg, expect in tests:
