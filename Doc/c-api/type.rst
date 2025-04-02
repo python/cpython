@@ -83,7 +83,7 @@ Type Objects
    exception.
 
    In free-threaded builds, :c:func:`PyType_AddWatcher` is not thread-safe,
-   so it must be called at start up.
+   so it must be called at start up (before spawning the first thread).
 
    .. versionadded:: 3.12
 
