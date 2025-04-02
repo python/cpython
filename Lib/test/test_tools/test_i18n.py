@@ -778,11 +778,21 @@ def extract_from_snapshots():
                                '--keyword=npfoo:1c,2,3', '--keyword=_:1,2'),
         # Test excluded msgids with an exclude file
         'excluded.py': (f'--exclude-file={exclude_file}',),
+        # == Test character escaping
+        # Escape ascii and unicode:
+        'escapes.py': ('--escape', '--add-comments='),
+        # Escape only ascii and let unicode pass through:
+        ('escapes.py', 'ascii-escapes.pot'): ('--add-comments=',),
     }
 
     for filename, args in snapshots.items():
-        input_file = DATA_DIR / filename
-        output_file = input_file.with_suffix('.pot')
+        if isinstance(filename, tuple):
+            filename, output_file = filename
+            output_file = DATA_DIR / output_file
+            input_file = DATA_DIR / filename
+        else:
+            input_file = DATA_DIR / filename
+            output_file = input_file.with_suffix('.pot')
         contents = input_file.read_bytes()
         with temp_cwd(None):
             Path(input_file.name).write_bytes(contents)

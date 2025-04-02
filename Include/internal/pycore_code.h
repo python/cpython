@@ -8,10 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_structs.h"     // _Py_CODEUNIT
-#include "pycore_stackref.h"    // _PyStackRef
-#include "pycore_lock.h"        // PyMutex
 #include "pycore_backoff.h"     // _Py_BackoffCounter
+#include "pycore_structs.h"     // _Py_CODEUNIT
 #include "pycore_tstate.h"      // _PyThreadStateImpl
 
 

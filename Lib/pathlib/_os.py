@@ -186,6 +186,12 @@ def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
             pass
         else:
             return attr(path, buffering, encoding, errors, newline)
+    elif encoding is not None:
+        raise ValueError("binary mode doesn't take an encoding argument")
+    elif errors is not None:
+        raise ValueError("binary mode doesn't take an errors argument")
+    elif newline is not None:
+        raise ValueError("binary mode doesn't take a newline argument")
 
     try:
         attr = getattr(cls, f'__open_{mode}b__')
