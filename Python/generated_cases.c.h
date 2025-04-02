@@ -2608,9 +2608,9 @@
             _PyStackRef *callable;
             _PyStackRef *self_or_null;
             _PyStackRef *args;
-            _PyStackRef kwnames;
             _PyStackRef kwnames_in;
             _PyStackRef kwnames_out;
+            _PyStackRef kwnames;
             _PyStackRef res;
             // _SPECIALIZE_CALL_KW
             {
@@ -2791,9 +2791,9 @@
             static_assert(INLINE_CACHE_ENTRIES_CALL_KW == 3, "incorrect cache size");
             _PyStackRef *callable;
             _PyStackRef *null;
-            _PyStackRef kwnames;
             _PyStackRef *self_or_null;
             _PyStackRef *args;
+            _PyStackRef kwnames;
             _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
@@ -2924,9 +2924,9 @@
             opcode = CALL_KW_NON_PY;
             static_assert(INLINE_CACHE_ENTRIES_CALL_KW == 3, "incorrect cache size");
             _PyStackRef *callable;
-            _PyStackRef kwnames;
             _PyStackRef *self_or_null;
             _PyStackRef *args;
+            _PyStackRef kwnames;
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
@@ -3057,8 +3057,8 @@
             static_assert(INLINE_CACHE_ENTRIES_CALL_KW == 3, "incorrect cache size");
             _PyStackRef *callable;
             _PyStackRef *self_or_null;
-            _PyStackRef kwnames;
             _PyStackRef *args;
+            _PyStackRef kwnames;
             _PyInterpreterFrame *new_frame;
             /* Skip 1 cache entry */
             // _CHECK_PEP_523
@@ -4682,8 +4682,8 @@
             PREDICTED_CONTAINS_OP:;
             _Py_CODEUNIT* const this_instr = next_instr - 2;
             (void)this_instr;
-            _PyStackRef left;
             _PyStackRef right;
+            _PyStackRef left;
             _PyStackRef b;
             // _SPECIALIZE_CONTAINS_OP
             {
