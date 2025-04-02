@@ -646,6 +646,19 @@ class TypesTests(unittest.TestCase):
     def test_capsule_type(self):
         self.assertIsInstance(_datetime.datetime_CAPI, types.CapsuleType)
 
+    def test_gh131998(self):
+        # GH-131998: The specialized instruction would get tricked into dereferencing
+        # a bound "self" that didn't exist if subsequently called unbound.
+        def call(part):
+            part.pop()
+
+
+        try:
+            call(["a"])
+            call(list)
+        except:
+            pass
+
 
 class UnionTests(unittest.TestCase):
 
