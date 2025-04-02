@@ -913,6 +913,56 @@ dummy_func(void) {
         }
     }
 
+    op(_GUARD_TOS_LIST, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyList_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(tos, &PyList_Type);
+    }
+
+    op(_GUARD_NOS_LIST, (nos, unused -- nos, unused)) {
+        if (sym_matches_type(nos, &PyList_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(nos, &PyList_Type);
+    }
+
+    op(_GUARD_TOS_TUPLE, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyTuple_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(tos, &PyTuple_Type);
+    }
+
+    op(_GUARD_NOS_TUPLE, (nos, unused -- nos, unused)) {
+        if (sym_matches_type(nos, &PyTuple_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(nos, &PyTuple_Type);
+    }
+
+    op(_GUARD_TOS_DICT, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyDict_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(tos, &PyDict_Type);
+    }
+
+    op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
+        if (sym_matches_type(nos, &PyDict_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(nos, &PyDict_Type);
+    }
+
+    op(_GUARD_TOS_ANY_SET, (tos -- tos)) {
+        if (sym_matches_type(tos, &PySet_Type) ||
+            sym_matches_type(tos, &PyFrozenSet_Type))
+        {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+    }
+
 
 // END BYTECODES //
 
