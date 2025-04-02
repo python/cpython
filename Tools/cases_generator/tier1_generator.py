@@ -24,7 +24,7 @@ from generators_common import (
     Emitter,
 )
 from cwriter import CWriter
-from typing import TextIO, Callable
+from typing import TextIO
 from stack import Local, Stack, StackError, get_stack_effect, Storage
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
@@ -40,10 +40,7 @@ LABEL_END_MARKER = "/* END LABELS */"
 def declare_variable(var: StackItem, out: CWriter) -> None:
     type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
-    if var.condition:
-        out.emit(f"{type}{space}{var.name} = {null};\n")
-    else:
-        out.emit(f"{type}{space}{var.name};\n")
+    out.emit(f"{type}{space}{var.name};\n")
 
 
 def declare_variables(inst: Instruction, out: CWriter) -> None:
@@ -51,18 +48,17 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
         stack = get_stack_effect(inst)
     except StackError as ex:
         raise analysis_error(ex.args[0], inst.where) from None
-    required = set(stack.defined)
-    required.discard("unused")
+    seen = {"unused"}
     for part in inst.parts:
         if not isinstance(part, Uop):
             continue
         for var in part.stack.inputs:
-            if var.name in required:
-                required.remove(var.name)
+            if var.used and var.name not in seen:
+                seen.add(var.name)
                 declare_variable(var, out)
         for var in part.stack.outputs:
-            if var.name in required:
-                required.remove(var.name)
+            if var.used and var.name not in seen:
+                seen.add(var.name)
                 declare_variable(var, out)
 
 
@@ -89,10 +85,8 @@ def write_uop(
         if braces:
             emitter.out.emit(f"// {uop.name}\n")
             emitter.emit("{\n")
-        code_list, storage = Storage.for_uop(stack, uop)
+        storage = Storage.for_uop(stack, uop, emitter.out)
         emitter._print_storage(storage)
-        for code in code_list:
-            emitter.emit(code)
 
         for cache in uop.caches:
             if cache.name != "unused":
@@ -208,7 +202,7 @@ def generate_tier1_labels(
     for name, label in analysis.labels.items():
         emitter.emit(f"LABEL({name})\n")
         emitter.emit("{\n")
-        storage = Storage(Stack(), [], [], [])
+        storage = Storage(Stack(), [], [], False)
         if label.spilled:
             storage.spilled = 1
             emitter.emit("/* STACK SPILLED */\n")

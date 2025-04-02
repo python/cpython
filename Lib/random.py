@@ -245,11 +245,10 @@ class Random(_random.Random):
     def _randbelow_with_getrandbits(self, n):
         "Return a random int in the range [0,n).  Defined for n > 0."
 
-        getrandbits = self.getrandbits
         k = n.bit_length()
-        r = getrandbits(k)  # 0 <= r < 2**k
+        r = self.getrandbits(k)  # 0 <= r < 2**k
         while r >= n:
-            r = getrandbits(k)
+            r = self.getrandbits(k)
         return r
 
     def _randbelow_without_getrandbits(self, n, maxsize=1<<BPF):
@@ -336,8 +335,11 @@ class Random(_random.Random):
     def randint(self, a, b):
         """Return random integer in range [a, b], including both end points.
         """
-
-        return self.randrange(a, b+1)
+        a = _index(a)
+        b = _index(b)
+        if b < a:
+            raise ValueError(f"empty range in randint({a}, {b})")
+        return a + self._randbelow(b - a + 1)
 
 
     ## -------------------- sequence methods  -------------------
@@ -792,12 +794,18 @@ class Random(_random.Random):
 
             sum(random() < p for i in range(n))
 
-        Returns an integer in the range:   0 <= X <= n
+        Returns an integer in the range:
+
+            0 <= X <= n
+
+        The integer is chosen with the probability:
+
+            P(X == k) = math.comb(n, k) * p ** k * (1 - p) ** (n - k)
 
         The mean (expected value) and variance of the random variable are:
 
             E[X] = n * p
-            Var[x] = n * p * (1 - p)
+            Var[X] = n * p * (1 - p)
 
         """
         # Error check inputs and handle edge cases

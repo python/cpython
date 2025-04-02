@@ -109,6 +109,7 @@ static const char PyCursesVersion[] = "2.2";
 #include "pycore_long.h"        // _PyLong_GetZero()
 #include "pycore_structseq.h"   // _PyStructSequence_NewType()
 #include "pycore_sysmodule.h"   // _PySys_GetOptionalAttrString()
+#include "pycore_fileutils.h"   // _Py_set_inheritable
 
 #ifdef __hpux
 #define STRICT_SYSV_CURSES
@@ -2309,8 +2310,8 @@ This information can be later retrieved using the getwin() function.
 [clinic start generated code]*/
 
 static PyObject *
-_curses_window_putwin(PyCursesWindowObject *self, PyObject *file)
-/*[clinic end generated code: output=3a25e2a5e7a040ac input=0608648e09c8ea0a]*/
+_curses_window_putwin_impl(PyCursesWindowObject *self, PyObject *file)
+/*[clinic end generated code: output=fdae68ac59b0281b input=0608648e09c8ea0a]*/
 {
     /* We have to simulate this by writing to a temporary FILE*,
        then reading back, then writing to the argument file. */
@@ -2708,7 +2709,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_SETSCRREG_METHODDEF
     {"standend",        PyCursesWindow_wstandend, METH_NOARGS},
     {"standout",        PyCursesWindow_wstandout, METH_NOARGS},
-    {"subpad", (PyCFunction)_curses_window_subwin, METH_VARARGS, _curses_window_subwin__doc__},
+    {"subpad",          _curses_window_subwin, METH_VARARGS, _curses_window_subwin__doc__},
     _CURSES_WINDOW_SUBWIN_METHODDEF
     {"syncdown",        PyCursesWindow_wsyncdown, METH_NOARGS},
 #ifdef HAVE_CURSES_SYNCOK
