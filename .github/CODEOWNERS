@@ -106,12 +106,16 @@ Objects/exceptions.c          @iritkatriel
 
 # Hashing & cryptographic primitives
 **/*hashlib*                  @gpshead @tiran @picnixz
-**/*pyhash*                   @gpshead @tiran
-**/sha*                       @gpshead @tiran @picnixz
-Modules/md5*                  @gpshead @tiran @picnixz
-**/*blake*                    @gpshead @tiran @picnixz
-Modules/_hacl/**              @gpshead
+**/*hashopenssl*              @gpshead @tiran @picnixz
+**/*pyhash*                   @gpshead @tiran @picnixz
+Modules/*blake*               @gpshead @tiran @picnixz
+Modules/*md5*                 @gpshead @tiran @picnixz
+Modules/*sha*                 @gpshead @tiran @picnixz
+Modules/_hacl/**              @gpshead @picnixz
 **/*hmac*                     @gpshead @picnixz
+
+# libssl
+**/*ssl*                      @gpshead @picnixz
 
 # logging
 **/*logging*                  @vsajip
@@ -308,3 +312,6 @@ Doc/reference/                @willingc @AA-Turner
 # Colorize
 Lib/_colorize.py              @hugovk
 Lib/test/test__colorize.py    @hugovk
+
+# Fuzzing
+Modules/_xxtestfuzz/          @ammaraskar
