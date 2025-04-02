@@ -1360,6 +1360,43 @@ class ExceptionTests(unittest.TestCase):
                 exc = UnicodeDecodeError('utf-8', encoded, start, end, '')
                 self.assertIsInstance(str(exc), str)
 
+    def test_unicode_error_evil_str_set_none_object(self):
+        def side_effect(exc):
+            exc.object = None
+        self.do_test_unicode_error_mutate(side_effect)
+
+    def test_unicode_error_evil_str_del_self_object(self):
+        def side_effect(exc):
+            del exc.object
+        self.do_test_unicode_error_mutate(side_effect)
+
+    def do_test_unicode_error_mutate(self, side_effect):
+        # Test that str(UnicodeError(...)) does not crash when
+        # side-effects mutate the underlying 'object' attribute.
+        # See https://github.com/python/cpython/issues/128974.
+
+        class Evil(str):
+            def __str__(self):
+                side_effect(exc)
+                return self
+
+        for reason, encoding in [
+            ("reason", Evil("utf-8")),
+            (Evil("reason"), "utf-8"),
+            (Evil("reason"), Evil("utf-8")),
+        ]:
+            with self.subTest(encoding=encoding, reason=reason):
+                with self.subTest(UnicodeEncodeError):
+                    exc = UnicodeEncodeError(encoding, "x", 0, 1, reason)
+                    self.assertRaises(TypeError, str, exc)
+                with self.subTest(UnicodeDecodeError):
+                    exc = UnicodeDecodeError(encoding, b"x", 0, 1, reason)
+                    self.assertRaises(TypeError, str, exc)
+
+        with self.subTest(UnicodeTranslateError):
+            exc = UnicodeTranslateError("x", 0, 1, Evil("reason"))
+            self.assertRaises(TypeError, str, exc)
+
     @no_tracing
     def test_badisinstance(self):
         # Bug #2542: if issubclass(e, MyException) raises an exception,

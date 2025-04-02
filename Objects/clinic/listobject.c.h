@@ -114,7 +114,7 @@ static PyObject *
 list_append_impl(PyListObject *self, PyObject *object);
 
 static PyObject *
-list_append(PyListObject *self, PyObject *object)
+list_append(PyObject *self, PyObject *object)
 {
     PyObject *return_value = NULL;
 
@@ -133,6 +133,19 @@ PyDoc_STRVAR(list_extend__doc__,
 
 #define LIST_EXTEND_METHODDEF    \
     {"extend", (PyCFunction)list_extend, METH_O, list_extend__doc__},
+
+static PyObject *
+list_extend_impl(PyListObject *self, PyObject *iterable);
+
+static PyObject *
+list_extend(PyObject *self, PyObject *iterable)
+{
+    PyObject *return_value = NULL;
+
+    return_value = list_extend_impl((PyListObject *)self, iterable);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(list_pop__doc__,
 "pop($self, index=-1, /)\n"
@@ -211,9 +224,11 @@ list_sort(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwn
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(reverse), },
     };
     #undef NUM_KEYWORDS
@@ -341,6 +356,19 @@ PyDoc_STRVAR(list_count__doc__,
 #define LIST_COUNT_METHODDEF    \
     {"count", (PyCFunction)list_count, METH_O, list_count__doc__},
 
+static PyObject *
+list_count_impl(PyListObject *self, PyObject *value);
+
+static PyObject *
+list_count(PyObject *self, PyObject *value)
+{
+    PyObject *return_value = NULL;
+
+    return_value = list_count_impl((PyListObject *)self, value);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(list_remove__doc__,
 "remove($self, value, /)\n"
 "--\n"
@@ -356,7 +384,7 @@ static PyObject *
 list_remove_impl(PyListObject *self, PyObject *value);
 
 static PyObject *
-list_remove(PyListObject *self, PyObject *value)
+list_remove(PyObject *self, PyObject *value)
 {
     PyObject *return_value = NULL;
 
@@ -440,4 +468,4 @@ list___reversed__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return list___reversed___impl((PyListObject *)self);
 }
-/*[clinic end generated code: output=35c43dc33f9ba521 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae13fc2b56dc27c2 input=a9049054013a1b77]*/

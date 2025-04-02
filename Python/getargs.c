@@ -10,6 +10,7 @@
 #include "pycore_pystate.h"       // _Py_IsMainInterpreter()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_pyerrors.h"      // _Py_CalculateSuggestions()
+#include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal
 
 /* Export Stable ABIs (abi only) */
 PyAPI_FUNC(int) _PyArg_Parse_SizeT(PyObject *, const char *, ...);
