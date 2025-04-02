@@ -146,14 +146,15 @@ _PyStackRef_CLOSE(_PyStackRef ref, const char *filename, int linenumber)
 #define PyStackRef_CLOSE(REF) _PyStackRef_CLOSE((REF), __FILE__, __LINE__)
 
 static inline void
-PyStackRef_XCLOSE(_PyStackRef ref)
+_PyStackRef_XCLOSE(_PyStackRef ref, const char *filename, int linenumber)
 {
     if (PyStackRef_IsNull(ref)) {
         return;
     }
-    PyObject *obj = _Py_stackref_close(ref);
+    PyObject *obj = _Py_stackref_close(ref, filename, linenumber);
     Py_DECREF(obj);
 }
+#define PyStackRef_XCLOSE(REF) _PyStackRef_XCLOSE((REF), __FILE__, __LINE__)
 
 static inline _PyStackRef
 _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
@@ -164,7 +165,8 @@ _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
 }
 #define PyStackRef_DUP(REF) _PyStackRef_DUP(REF, __FILE__, __LINE__)
 
-extern void PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct);
+extern void _PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct, const char *filename, int linenumber);
+#define PyStackRef_CLOSE_SPECIALIZED(REF, DESTRUCT) _PyStackRef_CLOSE_SPECIALIZED(REF, DESTRUCT, __FILE__, __LINE__)
 
 static inline _PyStackRef
 PyStackRef_MakeHeapSafe(_PyStackRef ref)
@@ -175,7 +177,7 @@ PyStackRef_MakeHeapSafe(_PyStackRef ref)
 static inline _PyStackRef
 PyStackRef_Borrow(_PyStackRef ref)
 {
-    return PyStackRef_DUP(ref)
+    return PyStackRef_DUP(ref);
 }
 
 #define PyStackRef_CLEAR(REF) \
@@ -200,6 +202,18 @@ PyStackRef_IsHeapSafe(_PyStackRef ref)
     return true;
 }
 
+static inline _PyStackRef
+_PyStackRef_FromPyObjectNewMortal(PyObject *obj, const char *filename, int linenumber)
+{
+    assert(!_Py_IsStaticImmortal(obj));
+    Py_INCREF(obj);
+    return _Py_stackref_create(obj, filename, linenumber);
+}
+#define PyStackRef_FromPyObjectNewMortal(obj) _PyStackRef_FromPyObjectNewMortal(_PyObject_CAST(obj), __FILE__, __LINE__)
+
+#define PyStackRef_RefcountOnObject(REF) 1
+
+extern int PyStackRef_Is(_PyStackRef a, _PyStackRef b);
 
 #else
 
@@ -615,6 +629,7 @@ PyStackRef_XCLOSE(_PyStackRef ref)
 // Note: this is a macro because MSVC (Windows) has trouble inlining it.
 
 #define PyStackRef_Is(a, b) (((a).bits & (~Py_TAG_BITS)) == ((b).bits & (~Py_TAG_BITS)))
+
 
 #endif // !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
 
