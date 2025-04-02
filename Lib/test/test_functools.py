@@ -3407,7 +3407,7 @@ class TestSingleDispatch(unittest.TestCase):
                 def _(self, arg: typing.Self):
                     return arg
 
-         # 'self' cannot be the only parameter
+        # 'self' cannot be the only parameter
         with self.assertRaises(TypeError):
             class Foo:
                 @functools.singledispatchmethod
