@@ -655,10 +655,10 @@ class TypesTests(unittest.TestCase):
         def call(part):
             part.pop()
 
+        call(['a'])
         try:
-            call(['a'])
             call(list)
-        except:
+        except TypeError:
             pass
         """
         assert_python_ok("-c", code)
