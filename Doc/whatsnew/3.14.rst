@@ -706,6 +706,13 @@ json
   (Contributed by Trey Hunner in :gh:`122873`.)
 
 
+linecache
+---------
+
+* :func:`linecache.getline` can retrieve source code for frozen modules.
+  (Contributed by Tian Gao in :gh:`131638`.)
+
+
 mimetypes
 ---------
 
