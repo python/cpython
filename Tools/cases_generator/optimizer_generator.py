@@ -145,7 +145,7 @@ def write_uop(
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.in_local = False
-            storage = emitter.emit_tokens(override, storage, None)
+            storage = emitter.emit_tokens(override, storage, None, False)
             out.start_line()
             storage.flush(out)
         else:
@@ -153,7 +153,7 @@ def write_uop(
             out.start_line()
             stack.flush(out)
     except StackError as ex:
-        raise analysis_error(ex.args[0], prototype.body[0]) # from None
+        raise analysis_error(ex.args[0], prototype.body.open) # from None
 
 
 SKIPS = ("_EXTENDED_ARG",)

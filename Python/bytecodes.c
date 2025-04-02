@@ -163,7 +163,7 @@ dummy_func(
         op(_CHECK_PERIODIC_IF_NOT_YIELD_FROM, (--)) {
             if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
-                QSBR_QUIESCENT_STATE(tstate); \
+                QSBR_QUIESCENT_STATE(tstate);
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
                     int err = _Py_HandlePending(tstate);
                     ERROR_IF(err != 0, error);
@@ -2245,7 +2245,8 @@ dummy_func(
             PyObject *attr_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(*value_ptr);
             DEOPT_IF(attr_o == NULL);
             #ifdef Py_GIL_DISABLED
-            if (!_Py_TryIncrefCompareStackRef(value_ptr, attr_o, &attr)) {
+            int increfed = _Py_TryIncrefCompareStackRef(value_ptr, attr_o, &attr);
+            if (!increfed) {
                 DEOPT_IF(true);
             }
             #else
@@ -2322,7 +2323,8 @@ dummy_func(
             }
             STAT_INC(LOAD_ATTR, hit);
 #ifdef Py_GIL_DISABLED
-            if (!_Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr)) {
+            int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr);
+            if (!increfed) {
                 DEOPT_IF(true);
             }
 #else
