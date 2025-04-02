@@ -4,6 +4,7 @@ from test.support import (
     run_with_locale, cpython_only, no_rerun,
     MISSING_C_DOCSTRINGS,
 )
+from test.support.script_helper import assert_python_ok
 import collections.abc
 from collections import namedtuple, UserDict
 import copy
@@ -649,15 +650,18 @@ class TypesTests(unittest.TestCase):
     def test_gh131998(self):
         # GH-131998: The specialized instruction would get tricked into dereferencing
         # a bound "self" that didn't exist if subsequently called unbound.
+        code = """if True:
+        import glob
         def call(part):
             part.pop()
 
-
         try:
-            call(["a"])
+            call(['a'])
             call(list)
         except:
             pass
+        """
+        assert_python_ok("-c", code)
 
 
 class UnionTests(unittest.TestCase):
