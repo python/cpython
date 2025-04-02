@@ -2,7 +2,6 @@
 
 import builtins
 import enum
-import functools
 import keyword
 import sys
 import types
@@ -23,12 +22,16 @@ class _LazyImporter:
     def __getattr__(self, name):
         if name == "ast":
             import ast
-            setattr(self, "ast", ast)
+            self.ast = ast
             return ast
         elif name == "_Stringifier":
             from ._stringifier import _Stringifier
-            setattr(self, "_Stringifier", _Stringifier)
+            self._Stringifier = _Stringifier
             return _Stringifier
+        elif name == "functools":
+            import functools
+            self.functools = functools
+            return functools
         else:
             raise AttributeError(
                 f"{self.__class__.__name__!r} object has no attribute {name!r}"
@@ -588,7 +591,7 @@ def get_annotations(
             if hasattr(unwrap, "__wrapped__"):
                 unwrap = unwrap.__wrapped__
                 continue
-            if isinstance(unwrap, functools.partial):
+            if isinstance(unwrap, _laz.functools.partial):
                 unwrap = unwrap.func
                 continue
             break
