@@ -620,6 +620,15 @@ class AugStore(expr_context):
 class Param(expr_context):
     """Deprecated AST node class.  Unused in Python 3."""
 
+_Unparser = None
+
+def unparse(ast_obj):
+    global _Unparser
+    if _Unparser is None:
+        from _ast_unparse import Unparser as _Unparser
+    unparser = _Unparser()
+    return unparser.visit(ast_obj)
+
 
 def main():
     import argparse
@@ -651,15 +660,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-def __dir__():
-    dir_ = {n for n in globals() if not n.startswith('_') and n != 'sys'}
-    return sorted(dir_ | {'unparse'})
-
-def __getattr__(name):
-    if name == 'unparse':
-        global unparse
-        from _ast_unparse import unparse
-        return unparse
-
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')

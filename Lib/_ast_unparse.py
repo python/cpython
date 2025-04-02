@@ -6,8 +6,6 @@ from ast import NodeVisitor
 from contextlib import contextmanager, nullcontext
 from enum import IntEnum, auto, _simple_enum
 
-__all__ = ('unparse',)
-
 # Large float and imaginary literals get turned into infinities in the AST.
 # We unparse those infinities to INFSTR.
 _INFSTR = "1e" + repr(sys.float_info.max_10_exp + 1)
@@ -48,7 +46,7 @@ _SINGLE_QUOTES = ("'", '"')
 _MULTI_QUOTES = ('"""', "'''")
 _ALL_QUOTES = (*_SINGLE_QUOTES, *_MULTI_QUOTES)
 
-class _Unparser(NodeVisitor):
+class Unparser(NodeVisitor):
     """Methods in this class recursively traverse an AST and
     output source code for the abstract syntax; original formatting
     is disregarded."""
@@ -1142,9 +1140,3 @@ class _Unparser(NodeVisitor):
         with self.require_parens(_Precedence.BOR, node):
             self.set_precedence(_Precedence.BOR.next(), *node.patterns)
             self.interleave(lambda: self.write(" | "), self.traverse, node.patterns)
-
-
-def unparse(ast_obj):
-    unparser = _Unparser()
-    return unparser.visit(ast_obj)
-unparse.__module__ = 'ast'  # backwards compatibility
