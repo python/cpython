@@ -153,8 +153,7 @@ class BasicTest(BaseTest):
         self.assertIn('home = %s' % path, data)
         self.assertIn('executable = %s' %
                       os.path.realpath(sys.executable), data)
-        copies = '' if os.name=='nt' else ' --copies'
-        cmd = (f'command = {sys.executable} -m venv{copies} --without-pip '
+        cmd = (f'command = {sys.executable} -m venv --without-pip '
                f'--without-scm-ignore-files {self.env_dir}')
         self.assertIn(cmd, data)
         fn = self.get_env_file(self.bindir, self.exe)
