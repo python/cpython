@@ -5504,8 +5504,9 @@ Pointer_set_contents(PyObject *op, PyObject *value, void *closure)
         locked_deref_assign(self, dst->b_ptr);
         UNLOCK_PTR(dst);
     } else {
-        // We already hold the lock
+        LOCK_PTR(self);
         *((void **)self->b_ptr) = dst->b_ptr;
+        UNLOCK_PTR(self);
     }
 
     /*
