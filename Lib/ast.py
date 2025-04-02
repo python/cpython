@@ -24,7 +24,6 @@
     :copyright: Copyright 2008 by Armin Ronacher.
     :license: Python License.
 """
-import sys
 from _ast import *
 
 
@@ -620,18 +619,20 @@ class AugStore(expr_context):
 class Param(expr_context):
     """Deprecated AST node class.  Unused in Python 3."""
 
-_Unparser = None
 
 def unparse(ast_obj):
     global _Unparser
-    if _Unparser is None:
+    try:
+        unparser = _Unparser()
+    except NameError:
         from _ast_unparse import Unparser as _Unparser
-    unparser = _Unparser()
+        unparser = _Unparser()
     return unparser.visit(ast_obj)
 
 
 def main():
     import argparse
+    import sys
 
     parser = argparse.ArgumentParser()
     parser.add_argument('infile', nargs='?', default='-',
