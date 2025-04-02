@@ -294,55 +294,12 @@ search_map_for_section(proc_handle_t *handle, const char* secname, const char* s
 
 #if defined(__linux__) && HAVE_PROCESS_VM_READV
 static uintptr_t
-find_map_start_address(proc_handle_t *handle, char* result_filename, const char* map)
+search_elf_file_for_section(
+        proc_handle_t *handle,
+        const char* secname,
+        uintptr_t start_address,
+        const char *elf_file)
 {
-    char maps_file_path[64];
-    sprintf(maps_file_path, "/proc/%d/maps", handle->pid);
-
-    FILE* maps_file = fopen(maps_file_path, "r");
-    if (maps_file == NULL) {
-        PyErr_SetFromErrno(PyExc_OSError);
-        return 0;
-    }
-
-    int match_found = 0;
-
-    char line[256];
-    char map_filename[PATH_MAX];
-    uintptr_t result_address = 0;
-    while (fgets(line, sizeof(line), maps_file) != NULL) {
-        unsigned long start_address = 0;
-        sscanf(line, "%lx-%*x %*s %*s %*s %*s %s", &start_address, map_filename);
-        char* filename = strrchr(map_filename, '/');
-        if (filename != NULL) {
-            filename++;  // Move past the '/'
-        } else {
-            filename = map_filename;  // No path, use the whole string
-        }
-
-        if (!match_found && strncmp(filename, map, strlen(map)) == 0) {
-            match_found = 1;
-            result_address = start_address;
-            strcpy(result_filename, map_filename);
-            break;
-        }
-    }
-
-    fclose(maps_file);
-
-    if (!match_found) {
-        map_filename[0] = '\0';
-    }
-
-    return result_address;
-}
-
-static uintptr_t
-search_map_for_section(proc_handle_t *handle, const char* secname, const char* map)
-{
-    char elf_file[256];
-    uintptr_t start_address = find_map_start_address(handle, elf_file, map);
-
     if (start_address == 0) {
         return 0;
     }
@@ -411,6 +368,83 @@ exit:
     }
     return result;
 }
+
+static uintptr_t
+search_linux_map_for_section(proc_handle_t *handle, const char* secname, const char* substr)
+{
+    char maps_file_path[64];
+    sprintf(maps_file_path, "/proc/%d/maps", handle->pid);
+
+    FILE* maps_file = fopen(maps_file_path, "r");
+    if (maps_file == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return 0;
+    }
+
+    size_t linelen = 0;
+    size_t linesz = PATH_MAX;
+    char *line = PyMem_Malloc(linesz);
+    if (!line) {
+        fclose(maps_file);
+        PyErr_NoMemory();
+        return 0;
+    }
+
+    uintptr_t retval = 0;
+    while (fgets(line + linelen, linesz - linelen, maps_file) != NULL) {
+        linelen = strlen(line);
+        if (line[linelen - 1] != '\n') {
+            // Read a partial line: realloc and keep reading where we left off.
+            // Note that even the last line will be terminated by a newline.
+            linesz *= 2;
+            char *biggerline = PyMem_Realloc(line, linesz);
+            if (!biggerline) {
+                PyMem_Free(line);
+                fclose(maps_file);
+                PyErr_NoMemory();
+                return 0;
+            }
+            line = biggerline;
+            continue;
+        }
+
+        // Read a full line: strip the newline
+        line[linelen - 1] = '\0';
+        // and prepare to read the next line into the start of the buffer.
+        linelen = 0;
+
+        unsigned long start = 0;
+        unsigned long path_pos = 0;
+        sscanf(line, "%lx-%*x %*s %*s %*s %*s %ln", &start, &path_pos);
+
+        if (!path_pos) {
+            // Line didn't match our format string.  This shouldn't be
+            // possible, but let's be defensive and skip the line.
+            continue;
+        }
+
+        const char *path = line + path_pos;
+        const char *filename = strrchr(path, '/');
+        if (filename) {
+            filename++;  // Move past the '/'
+        } else {
+            filename = path;  // No directories, or an empty string
+        }
+
+        if (strstr(filename, substr)) {
+            retval = search_elf_file_for_section(handle, secname, start, path);
+            if (retval) {
+                break;
+            }
+        }
+    }
+
+    PyMem_Free(line);
+    fclose(maps_file);
+
+    return retval;
+}
+
 
 #endif // __linux__
 
@@ -512,20 +546,27 @@ get_py_runtime(proc_handle_t* handle)
 {
     uintptr_t address = 0;
 
-#ifndef MS_WINDOWS
-    // On non-Windows platforms, try libpython first, then fall back to python
-    address = search_map_for_section(handle, "PyRuntime", "libpython");
-    if (address == 0) {
-        // TODO: Differentiate between not found and error
-        PyErr_Clear();
-        address = search_map_for_section(handle, "PyRuntime", "python");
-    }
-#else
+#ifdef MS_WINDOWS
     // On Windows, search for 'python' in executable or DLL
     address = search_windows_map_for_section(handle, "PyRuntime", L"python");
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
         PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
+    }
+#elif defined(__linux__)
+    // On Linux, search for 'python' in executable or DLL
+    address = search_linux_map_for_section(handle, "PyRuntime", "python");
+    if (address == 0) {
+        // Error out: 'python' substring covers both executable and DLL
+        PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
+    }
+#else
+    // On macOS, try libpython first, then fall back to python
+    address = search_map_for_section(handle, "PyRuntime", "libpython");
+    if (address == 0) {
+        // TODO: Differentiate between not found and error
+        PyErr_Clear();
+        address = search_map_for_section(handle, "PyRuntime", "python");
     }
 #endif
 
