@@ -651,6 +651,10 @@ class TypesTests(unittest.TestCase):
         # GH-131998: The specialized instruction would get tricked into dereferencing
         # a bound "self" that didn't exist if subsequently called unbound.
         code = """if True:
+        # The optimizer is finicky, and the easiest way (that I know of)
+        # to get it to reproduce in CI is by importing a Python module at runtime.
+        import glob
+
         def call(part):
             part.pop()
 
