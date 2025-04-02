@@ -462,12 +462,12 @@ types ``'g'`` or ``'G'``.  For string presentation types the field
 indicates the maximum field size - in other words, how many characters will be
 used from the field content.
 
-For integer presentation types, the precision gives the minimal number of
-digits to appear, expanded with an appropriate number of leading zeros.  Note
-that for non-decimal presentation types --- two's complements are used to
-represent signed integers, accepting values in range ``[-m,m)``, where
-``m=2**(k*precision-1)`` and ``k=1,3,4`` for ``'b'``, ``'o'`` and
-``'x'``/``'X'`` types, respectively.  A precision of ``0`` is treated as
+For integer presentation types (excluding ``'c'``), the precision gives the
+minimal number of digits to appear, expanded with an appropriate number of
+leading zeros.  Note that for non-decimal presentation types --- two's
+complements are used to represent signed integers, accepting values in range
+``[-m,m)``, where ``m=2**(k*precision-1)`` and ``k=1,3,4`` for ``'b'``, ``'o'``
+and ``'x'``/``'X'`` types, respectively.  A precision of ``0`` is treated as
 equivalent to a precision of ``1`` here.
 
 .. versionchanged:: next
