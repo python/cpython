@@ -334,7 +334,7 @@ class ListTest(list_tests.CommonTest):
 
     def test_deopt_from_append_list(self):
         # gh-132011: it used to crash, because
-        # of `CALL_LIST_APPEND` specializetion failure.
+        # of `CALL_LIST_APPEND` specialization failure.
         code = textwrap.dedent("""
         l = []
         def lappend(l, x, y):

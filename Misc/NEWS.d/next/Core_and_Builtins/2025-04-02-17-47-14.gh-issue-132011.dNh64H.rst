@@ -1,1 +1,1 @@
-Fix crash on incorrect ``CALL_LIST_APPEND`` deoptimization.
+Fix crash when calling :meth:`list.append` as an unbound method.
