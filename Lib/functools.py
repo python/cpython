@@ -969,7 +969,8 @@ def singledispatch(func):
             return all(isinstance(arg, (type, UnionType)) for arg in get_args(cls))
 
         return (isinstance(cls, UnionType) and
-                all(isinstance(arg, type) for arg in cls.__args__))
+                all(isinstance(arg, (type, GenericAlias)) for arg in cls.__args__))
+
 
     def register(cls, func=None):
         """generic_func.register(cls, func) -> func
@@ -987,6 +988,7 @@ def singledispatch(func):
                     f"Invalid first argument to `register()`. "
                     f"{cls!r} is not a class or union type."
                 )
+
             ann = getattr(cls, '__annotate__', None)
             if ann is None:
                 raise TypeError(

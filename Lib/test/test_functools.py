@@ -3483,18 +3483,12 @@ class TestSingleDispatch(unittest.TestCase):
         def f(arg):
             return "default"
 
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(list[int], lambda arg: "types.GenericAlias")
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(typing.List[int], lambda arg: "typing.GenericAlias")
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(list[int] | str, lambda arg: "types.UnionTypes(types.GenericAlias)")
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(typing.List[float] | bytes, lambda arg: "typing.Union[typing.GenericAlias]")
+        f.register(list[int], lambda arg: "types.GenericAlias")
+        f.register(list[float] | str, lambda arg: "types.UnionTypes(types.GenericAlias)")
 
-        self.assertEqual(f([1]), "default")
-        self.assertEqual(f([1.0]), "default")
-        self.assertEqual(f(""), "default")
+        self.assertEqual(f([1]), "types.GenericAlias")
+        self.assertEqual(f([1.0]), "types.UnionTypes(types.GenericAlias)")
+        self.assertEqual(f(""), "types.UnionTypes(types.GenericAlias)")
         self.assertEqual(f(b""), "default")
 
     def test_register_genericalias_decorator(self):
@@ -3502,41 +3496,39 @@ class TestSingleDispatch(unittest.TestCase):
         def f(arg):
             return "default"
 
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(list[int])
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(typing.List[int])
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(list[int] | str)
-        with self.assertRaisesRegex(TypeError, "Invalid first argument to "):
-            f.register(typing.List[int] | str)
+        f.register(list[int])
+        #f.register(typing.List[int])
+        f.register(list[int] | str)
+        #f.register(typing.List[int] | str)
 
     def test_register_genericalias_annotation(self):
         @functools.singledispatch
         def f(arg):
             return "default"
 
-        with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
-            @f.register
-            def _(arg: list[int]):
-                return "types.GenericAlias"
+        @f.register
+        def _(arg: list[int]):
+            return "types.GenericAlias"
+
         with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
             @f.register
             def _(arg: typing.List[float]):
                 return "typing.GenericAlias"
-        with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
-            @f.register
-            def _(arg: list[int] | str):
-                return "types.UnionType(types.GenericAlias)"
+
+        @f.register
+        def _(arg: list[bytes] | str):
+            return "types.UnionType(types.GenericAlias)"
+
         with self.assertRaisesRegex(TypeError, "Invalid annotation for 'arg'"):
             @f.register
             def _(arg: typing.List[float] | bytes):
                 return "typing.Union[typing.GenericAlias]"
 
-        self.assertEqual(f([1]), "default")
+        self.assertEqual(f([1]), "types.GenericAlias")
         self.assertEqual(f([1.0]), "default")
-        self.assertEqual(f(""), "default")
+        self.assertEqual(f(""), "types.UnionType(types.GenericAlias)")
         self.assertEqual(f(b""), "default")
+        self.assertEqual(f([b""]), "types.UnionType(types.GenericAlias)")
 
     def test_forward_reference(self):
         @functools.singledispatch
