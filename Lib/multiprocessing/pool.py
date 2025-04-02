@@ -364,8 +364,9 @@ class Pool(object):
 
     def _check_error(self, exc=None):
         if self._errors:
-            errs = list(self._errors)
-            if exc is not None and not isinstance(exc, CallbackError):
+            errs = [CallbackError("callback raised", errs) for errs in self._errors]
+            if exc is not None and not isinstance(exc, CallbackError) \
+                               and not isinstance(exc, BrokenPoolError):
                 errs.append(exc)
             raise BrokenPoolError("Callback(s) failed", errs) from None
 
@@ -773,7 +774,7 @@ class ApplyResult(object):
         self._cache = pool._cache
         self._callback = callback
         self._error_callback = error_callback
-        self._cb_error = None
+        self._cb_errors = []
         self._cache[self._job] = self
 
     def ready(self):
@@ -791,8 +792,8 @@ class ApplyResult(object):
         self.wait(timeout)
         if not self.ready():
             raise TimeoutError
-        if self._cb_error:
-            raise self._cb_error
+        if self._cb_errors:
+            raise CallbackError("callback raised", self._cb_errors)
         elif self._success:
             return self._value
         else:
@@ -804,14 +805,14 @@ class ApplyResult(object):
             try:
                 self._callback(self._value)
             except Exception as e:
-                self._cb_error = CallbackError("apply callback", [e])
-                self._pool._error(self._cb_error)
+                self._cb_errors = (e,)
+                self._pool._error(self._cb_errors)
         if self._error_callback and not self._success:
             try:
                 self._error_callback(self._value)
             except Exception as e:
-                self._cb_error = CallbackError("apply error callback", [e, self._value])
-                self._pool._error(self._cb_error)
+                self._cb_errors = (e, self._value)
+                self._pool._error(self._cb_errors)
         self._event.set()
         del self._cache[self._job]
         self._pool = None
@@ -849,8 +850,8 @@ class MapResult(ApplyResult):
                     try:
                         self._callback(self._value)
                     except Exception as e:
-                        self._cb_error = CallbackError("map callback", [e])
-                        self._pool._error(self._cb_error)
+                        self._cb_errors = (e,)
+                        self._pool._error(self._cb_errors)
                 del self._cache[self._job]
                 self._event.set()
                 self._pool = None
@@ -865,9 +866,8 @@ class MapResult(ApplyResult):
                     try:
                         self._error_callback(self._value)
                     except Exception as e:
-                        self._cb_error = CallbackError("map error callback",
-                                                       [e, self._value])
-                        self._pool._error(self._cb_error)
+                        self._cb_errors = (e, self._value)
+                        self._pool._error(self._cb_errors)
                 del self._cache[self._job]
                 self._event.set()
                 self._pool = None

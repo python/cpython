@@ -3151,6 +3151,22 @@ class _TestPool(BaseTestCase):
                 self._check_subexceptions(pool_ctx.exception, [CallbackError])
                 self._check_subexceptions(pool_ctx.exception.exceptions[0], [KeyError])
 
+                # Exiting the context manager directly with a broken pool error
+                # - BrokenPoolError containing:
+                #   - CallbackError instance containing:
+                #     - Error thrown from the callback
+                # Note that only one instance of the error is present: it was
+                # *not* added again as it was above, since it is a BrokenPoolError
+                with self.assertRaises(BrokenPoolError) as pool_ctx:
+                    with self.Pool(1) as pool:
+                        try:
+                            func(pool, noop, callback=raising).get()
+                        except CallbackError:
+                            pass
+                        func(pool, noop, callback=raising)
+                self._check_subexceptions(pool_ctx.exception, [CallbackError])
+                self._check_subexceptions(pool_ctx.exception.exceptions[0], [KeyError])
+
         # Skip this test for process-based parallelism as sharing the barrier will fail
         if self.TYPE != 'processes':
             with self.subTest(name="Multiple callback failures"):
