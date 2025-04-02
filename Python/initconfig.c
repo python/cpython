@@ -8,6 +8,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromConfig()
 #include "pycore_pymem.h"         // _PyMem_DefaultRawMalloc()
+#include "pycore_pyhash.h"        // _Py_HashSecret
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_pystats.h"       // _Py_StatsOn()
 #include "pycore_sysmodule.h"     // _PySys_SetIntMaxStrDigits()
@@ -22,6 +23,15 @@
 #  endif
 #  ifdef HAVE_FCNTL_H
 #    include <fcntl.h>            // O_BINARY
+#  endif
+#endif
+
+#ifdef __APPLE__
+/* Enable system log by default on non-macOS Apple platforms */
+#  if defined(TARGET_OS_IPHONE) && TARGET_OS_IPHONE
+#define USE_SYSTEM_LOGGER_DEFAULT 1;
+#  else
+#define USE_SYSTEM_LOGGER_DEFAULT 0;
 #  endif
 #endif
 
@@ -251,7 +261,7 @@ Options (and corresponding environment variables):\n\
 -h     : print this help message and exit (also -? or --help)\n\
 -i     : inspect interactively after running script; forces a prompt even\n\
          if stdin does not appear to be a terminal; also PYTHONINSPECT=x\n\
--I     : isolate Python from the user's environment (implies -E and -s)\n\
+-I     : isolate Python from the user's environment (implies -E, -P and -s)\n\
 -m mod : run library module as a script (terminates option list)\n\
 -O     : remove assert and __debug__-dependent statements; add .opt-1 before\n\
          .pyc extension; also PYTHONOPTIMIZE=x\n\
@@ -1017,7 +1027,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->code_debug_ranges = 1;
     config->cpu_count = -1;
 #ifdef __APPLE__
-    config->use_system_logger = 0;
+    config->use_system_logger = USE_SYSTEM_LOGGER_DEFAULT;
 #endif
 #ifdef Py_GIL_DISABLED
     config->enable_gil = _PyConfig_GIL_DEFAULT;
@@ -1049,7 +1059,7 @@ config_init_defaults(PyConfig *config)
     config->legacy_windows_stdio = 0;
 #endif
 #ifdef __APPLE__
-    config->use_system_logger = 0;
+    config->use_system_logger = USE_SYSTEM_LOGGER_DEFAULT;
 #endif
 }
 
@@ -1086,7 +1096,7 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->legacy_windows_stdio = 0;
 #endif
 #ifdef __APPLE__
-    config->use_system_logger = 0;
+    config->use_system_logger = USE_SYSTEM_LOGGER_DEFAULT;
 #endif
 }
 
@@ -3470,10 +3480,13 @@ _Py_DumpPathConfig(PyThreadState *tstate)
 
 #define DUMP_SYS(NAME) \
         do { \
-            obj = PySys_GetObject(#NAME); \
             PySys_FormatStderr("  sys.%s = ", #NAME); \
+            if (_PySys_GetOptionalAttrString(#NAME, &obj) < 0) { \
+                PyErr_Clear(); \
+            } \
             if (obj != NULL) { \
                 PySys_FormatStderr("%A", obj); \
+                Py_DECREF(obj); \
             } \
             else { \
                 PySys_WriteStderr("(not set)"); \
@@ -3491,7 +3504,8 @@ _Py_DumpPathConfig(PyThreadState *tstate)
     DUMP_SYS(exec_prefix);
 #undef DUMP_SYS
 
-    PyObject *sys_path = PySys_GetObject("path");  /* borrowed reference */
+    PyObject *sys_path;
+    (void) _PySys_GetOptionalAttrString("path", &sys_path);
     if (sys_path != NULL && PyList_Check(sys_path)) {
         PySys_WriteStderr("  sys.path = [\n");
         Py_ssize_t len = PyList_GET_SIZE(sys_path);
@@ -3501,6 +3515,7 @@ _Py_DumpPathConfig(PyThreadState *tstate)
         }
         PySys_WriteStderr("  ]\n");
     }
+    Py_XDECREF(sys_path);
 
     _PyErr_SetRaisedException(tstate, exc);
 }
@@ -4110,22 +4125,10 @@ _PyConfig_CreateXOptionsDict(const PyConfig *config)
 }
 
 
-static PyObject*
-config_get_sys(const char *name)
-{
-    PyObject *value = PySys_GetObject(name);
-    if (value == NULL) {
-        PyErr_Format(PyExc_RuntimeError, "lost sys.%s", name);
-        return NULL;
-    }
-    return Py_NewRef(value);
-}
-
-
 static int
 config_get_sys_write_bytecode(const PyConfig *config, int *value)
 {
-    PyObject *attr = config_get_sys("dont_write_bytecode");
+    PyObject *attr = _PySys_GetRequiredAttrString("dont_write_bytecode");
     if (attr == NULL) {
         return -1;
     }
@@ -4146,7 +4149,7 @@ config_get(const PyConfig *config, const PyConfigSpec *spec,
 {
     if (use_sys) {
         if (spec->sys.attr != NULL) {
-            return config_get_sys(spec->sys.attr);
+            return _PySys_GetRequiredAttrString(spec->sys.attr);
         }
 
         if (strcmp(spec->name, "write_bytecode") == 0) {

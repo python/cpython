@@ -517,7 +517,7 @@ class TestGetAnnotations(unittest.TestCase):
 
         foo.__annotations__ = {"a": "foo", "b": "str"}
         for format in Format:
-            if format is Format.VALUE_WITH_FAKE_GLOBALS:
+            if format == Format.VALUE_WITH_FAKE_GLOBALS:
                 continue
             with self.subTest(format=format):
                 self.assertEqual(
@@ -816,7 +816,7 @@ class TestGetAnnotations(unittest.TestCase):
 
         wa = WeirdAnnotations()
         for format in Format:
-            if format is Format.VALUE_WITH_FAKE_GLOBALS:
+            if format == Format.VALUE_WITH_FAKE_GLOBALS:
                 continue
             with (
                 self.subTest(format=format),

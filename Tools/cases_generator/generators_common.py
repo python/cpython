@@ -2,7 +2,6 @@ from pathlib import Path
 
 from analyzer import (
     Instruction,
-    Uop,
     Properties,
     StackItem,
     analysis_error,
@@ -126,7 +125,6 @@ class Emitter:
             "PyStackRef_AsPyObjectSteal": self.stackref_steal,
             "DISPATCH": self.dispatch,
             "INSTRUCTION_SIZE": self.instruction_size,
-            "POP_INPUT": self.pop_input,
             "stack_pointer": self.stack_pointer,
         }
         self.out = out
@@ -207,9 +205,9 @@ class Emitter:
         next(tkn_iter)  # Semi colon
         storage.clear_inputs("at ERROR_IF")
 
-        c_offset = storage.stack.peek_offset()
+        c_offset = storage.stack.sp_offset()
         try:
-            offset = -int(c_offset)
+            offset = int(c_offset)
         except ValueError:
             offset = -1
         self.out.emit(self.goto_error(offset, label, storage))
@@ -250,6 +248,7 @@ class Emitter:
         except Exception as ex:
             ex.args = (ex.args[0] + str(tkn),)
             raise
+        self._print_storage(storage)
         return True
 
     def kill_inputs(
@@ -264,7 +263,7 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         for var in storage.inputs:
-            var.defined = False
+            var.kill()
         return True
 
     def kill(
@@ -282,7 +281,7 @@ class Emitter:
         next(tkn_iter)
         for var in storage.inputs:
             if var.name == name:
-                var.defined = False
+                var.kill()
                 break
         else:
             raise analysis_error(
@@ -303,9 +302,9 @@ class Emitter:
                     raise analysis_error(
                         f"Cannot close '{name.text}' when "
                         f"'{live}' is still live", name)
-                var.defined = False
+                var.kill()
                 break
-            if var.defined:
+            if var.in_local:
                 live = var.name
         return True
 
@@ -404,6 +403,7 @@ class Emitter:
         self.out.emit(")")
 
     def emit_save(self, storage: Storage) -> None:
+        storage.flush(self.out)
         storage.save(self.out)
         self._print_storage(storage)
 
@@ -419,29 +419,6 @@ class Emitter:
         next(tkn_iter)
         next(tkn_iter)
         self.emit_save(storage)
-        return True
-
-    def pop_input(
-        self,
-        tkn: Token,
-        tkn_iter: TokenIterator,
-        uop: CodeSection,
-        storage: Storage,
-        inst: Instruction | None,
-    ) -> bool:
-        next(tkn_iter)
-        name_tkn = next(tkn_iter)
-        name = name_tkn.text
-        next(tkn_iter)
-        next(tkn_iter)
-        if not storage.inputs:
-            raise analysis_error("stack is empty", tkn)
-        tos = storage.inputs[-1]
-        if tos.name != name:
-            raise analysis_error(f"'{name} is not top of stack", name_tkn)
-        tos.defined = False
-        storage.clear_dead_inputs()
-        storage.flush(self.out)
         return True
 
     def emit_reload(self, storage: Storage) -> None:
@@ -523,6 +500,9 @@ class Emitter:
                 else:
                     if PRINT_STACKS:
                         self.emit("/* Merge */\n")
+                        self.out.emit(if_storage.as_comment())
+                        self.out.emit("\n")
+                        self.out.emit(else_storage.as_comment())
                     else_storage.merge(if_storage, self.out)
                     storage = else_storage
                     self._print_storage(storage)
@@ -538,7 +518,7 @@ class Emitter:
                     reachable = True
         except StackError as ex:
             self._print_storage(if_storage)
-            raise analysis_error(ex.args[0], rbrace) # from None
+            raise analysis_error(ex.args[0], rbrace) from None
         return reachable, rbrace, storage
 
     def _emit_block(
@@ -551,7 +531,7 @@ class Emitter:
     ) -> tuple[bool, Token, Storage]:
         """ Returns (reachable?, closing '}', stack)."""
         braces = 1
-        out_stores = set(uop.output_stores)
+        local_stores = set(uop.local_stores)
         tkn = next(tkn_iter)
         reload: Token | None = None
         try:
@@ -599,11 +579,19 @@ class Emitter:
                         if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst):
                             reachable = False
                     else:
-                        if tkn in out_stores:
-                            for out in storage.outputs:
-                                if out.name == tkn.text:
-                                    out.defined = True
-                                    out.in_memory = False
+                        if tkn in local_stores:
+                            for var in storage.inputs:
+                                if var.name == tkn.text:
+                                    if var.in_local or var.in_memory():
+                                        msg = f"Cannot assign to already defined input variable '{tkn.text}'"
+                                        raise analysis_error(msg, tkn)
+                                    var.in_local = True
+                                    var.memory_offset = None
+                                    break
+                            for var in storage.outputs:
+                                if var.name == tkn.text:
+                                    var.in_local = True
+                                    var.memory_offset = None
                                     break
                         if tkn.text.startswith("DISPATCH"):
                             self._print_storage(storage)
@@ -673,8 +661,6 @@ def cflags(p: Properties) -> str:
         flags.append("HAS_PURE_FLAG")
     if p.no_save_ip:
         flags.append("HAS_NO_SAVE_IP_FLAG")
-    if p.oparg_and_1:
-        flags.append("HAS_OPARG_AND_1_FLAG")
     if flags:
         return " | ".join(flags)
     else:
