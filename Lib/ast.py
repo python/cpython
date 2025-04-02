@@ -24,7 +24,6 @@
     :copyright: Copyright 2008 by Armin Ronacher.
     :license: Python License.
 """
-import sys
 from _ast import *
 
 
@@ -623,6 +622,7 @@ class Param(expr_context):
 
 def main():
     import argparse
+    import sys
 
     parser = argparse.ArgumentParser()
     parser.add_argument('infile', nargs='?', default='-',
@@ -655,7 +655,7 @@ if __name__ == '__main__':
 def __dir__():
     return {n for n in globals() if not n.startswith('_')} | {'unparse'}
 
-__all__ = tuple(__dir__() - {'sys'})  # don't include modules in __all__
+__all__ = tuple(__dir__())
 
 def __getattr__(name):
     if name == 'unparse':
