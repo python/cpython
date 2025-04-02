@@ -307,22 +307,21 @@ do_start_joinable_thread(void (*func)(void *), void *arg, pthread_t* out_id)
 }
 
 /* Helper to convert pthread_t to PyThread_ident_t. POSIX allows pthread_t to be
-   non-arithmetic, e.g., musl typedefs it as a pointer */
+   non-arithmetic, e.g., musl typedefs it as a pointer. */
 static PyThread_ident_t
 _pthread_t_to_ident(pthread_t value) {
-#if SIZEOF_PTHREAD_T > SIZEOF_LONG
-    return (PyThread_ident_t) *(unsigned long *) &value;
+// Cast through an integer type of the same size to avoid sign-extension.
+#if SIZEOF_PTHREAD_T == SIZEOF_VOID_P
+    return (uintptr_t) value;
+#elif SIZEOF_PTHREAD_T == SIZEOF_LONG
+    return (unsigned long) value;
+#elif SIZEOF_PTHREAD_T == SIZEOF_INT
+    return (unsigned int) value;
+#elif SIZEOF_PTHREAD_T == SIZEOF_LONG_LONG
+    return (unsigned long long) value;
 #else
-    PyThread_ident_t ident;
-#if defined(__linux__) && !defined(__GLIBC__)
-    ident = (PyThread_ident_t) (uintptr_t) value;
-    assert(pthread_equal(value, (pthread_t) (uintptr_t) ident));
-#else
-    ident = (PyThread_ident_t) value;
-    assert(pthread_equal(value, (pthread_t) ident));
+#error "Unsupported SIZEOF_PTHREAD_T value"
 #endif
-    return ident;
-#endif  // SIZEOF_PTHREAD_T > SIZEOF_LONG
 }
 
 int
