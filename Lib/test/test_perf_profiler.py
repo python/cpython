@@ -17,7 +17,7 @@ from test.support.os_helper import temp_dir
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-if support.check_sanitizer(address=True, memory=True, ub=True):
+if support.check_sanitizer(address=True, memory=True, ub=True, function=True):
     # gh-109580: Skip the test because it does crash randomly if Python is
     # built with ASAN.
     raise unittest.SkipTest("test crash randomly on ASAN/MSAN/UBSAN build")
