@@ -651,7 +651,6 @@ class TypesTests(unittest.TestCase):
         # GH-131998: The specialized instruction would get tricked into dereferencing
         # a bound "self" that didn't exist if subsequently called unbound.
         code = """if True:
-        import glob
         def call(part):
             part.pop()
 
