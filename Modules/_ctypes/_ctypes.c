@@ -5558,9 +5558,7 @@ static int
 copy_pointer_to_list_lock_held(PyObject *myself, PyObject *np, Py_ssize_t len,
                                Py_ssize_t start, Py_ssize_t step)
 {
-    Py_ssize_t i;
-    size_t cur;
-    for (cur = start, i = 0; i < len; cur += step, i++) {
+    for (size_t cur = start, Py_ssize_t i = 0; i < len; cur += step, i++) {
         PyObject *v = Pointer_item_lock_held(myself, cur);
         if (!v) {
             return -1;
