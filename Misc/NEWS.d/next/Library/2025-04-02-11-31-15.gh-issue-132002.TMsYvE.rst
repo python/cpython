@@ -1,0 +1,2 @@
+Fix crash when deallocating :class:`contextvars.ContextVar` with weird
+unahashable string names.

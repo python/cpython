@@ -1664,7 +1664,7 @@ class SizeofTest(unittest.TestCase):
             INTERPRETER_FRAME = '9PihcP'
         else:
             INTERPRETER_FRAME = '9PhcP'
-        check(x, size('3PiccPP' + INTERPRETER_FRAME + 'P'))
+        check(x, size('3PiccPPP' + INTERPRETER_FRAME + 'P'))
         # function
         def func(): pass
         check(func, size('16Pi'))
