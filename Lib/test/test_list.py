@@ -346,7 +346,7 @@ class ListTest(list_tests.CommonTest):
         except TypeError:
             pass
         else:
-            assert False
+            raise AssertionError
         """)
 
         rc, _, _ = assert_python_ok("-c", code)
