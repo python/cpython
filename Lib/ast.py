@@ -24,7 +24,6 @@
     :copyright: Copyright 2008 by Armin Ronacher.
     :license: Python License.
 """
-import sys
 from _ast import *
 
 
@@ -621,8 +620,19 @@ class Param(expr_context):
     """Deprecated AST node class.  Unused in Python 3."""
 
 
+def unparse(ast_obj):
+    global _Unparser
+    try:
+        unparser = _Unparser()
+    except NameError:
+        from _ast_unparse import Unparser as _Unparser
+        unparser = _Unparser()
+    return unparser.visit(ast_obj)
+
+
 def main():
     import argparse
+    import sys
 
     parser = argparse.ArgumentParser()
     parser.add_argument('infile', nargs='?', default='-',
@@ -651,15 +661,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-def __dir__():
-    dir_ = {n for n in globals() if not n.startswith('_') and n != 'sys'}
-    return sorted(dir_ | {'unparse'})
-
-def __getattr__(name):
-    if name == 'unparse':
-        global unparse
-        from _ast_unparse import unparse
-        return unparse
-
-    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
