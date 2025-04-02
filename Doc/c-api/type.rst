@@ -82,6 +82,9 @@ Type Objects
    error (e.g. no more watcher IDs available), return ``-1`` and set an
    exception.
 
+   In free-threaded builds, :c:func:`PyType_AddWatcher` is not thread-safe,
+   so it must be called at start up.
+
    .. versionadded:: 3.12
 
 
