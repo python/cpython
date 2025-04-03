@@ -55,7 +55,7 @@ Parse Plist example:
     print(pl["foo"])
 """
 __all__ = [
-    "InvalidFileException", "FMT_XML", "FMT_BINARY", "load", "dump", "loads", "dumps", "UID"
+    "InvalidFileException", "FMT_XML", "FMT_BINARY", "load", "dump", "loads", "dumps", "UID", "CFUID_KEY"
 ]
 
 import binascii
@@ -111,6 +111,9 @@ PLISTHEADER = b"""\
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 """
+
+# CF$UID KEY
+CFUID_KEY = "CF$UID"
 
 
 # Regex to find any control chars, except for \t \n and \r
@@ -179,6 +182,7 @@ class _PlistParser:
         self.stack = []
         self.current_key = None
         self.root = None
+        self.previous_dict_key = None
         self._dict_type = dict_type
         self._aware_datetime = aware_datetime
 
@@ -236,6 +240,7 @@ class _PlistParser:
 
     def begin_dict(self, attrs):
         d = self._dict_type()
+        self.previous_dict_key = self.current_key
         self.add_object(d)
         self.stack.append(d)
 
@@ -243,7 +248,17 @@ class _PlistParser:
         if self.current_key:
             raise ValueError("missing value for key '%s' at line %d" %
                              (self.current_key,self.parser.CurrentLineNumber))
-        self.stack.pop()
+        d = self.stack.pop()
+        # Unmarshal CF$UID to UID and replace the dict node
+        if len(d) == 1 and CFUID_KEY in d and isinstance(d[CFUID_KEY], int):
+            uid = UID(d[CFUID_KEY])
+            if self.previous_dict_key:
+                self.stack[-1][self.previous_dict_key] = uid
+            elif not self.stack:
+                self.root = uid
+            else:
+                # self.stack[-1] can only be a list
+                self.stack[-1][-1] = uid
 
     def end_key(self):
         if self.current_key or not isinstance(self.stack[-1], dict):
@@ -372,6 +387,9 @@ class _PlistWriter(_DumbXMLWriter):
 
         elif isinstance(value, (tuple, list)):
             self.write_array(value)
+
+        elif isinstance(value, UID):
+            self.write_dict({"CF$UID": int(value.data)})
 
         else:
             raise TypeError("unsupported type: %s" % type(value))
