@@ -22,6 +22,7 @@ import logging
 import logging.handlers
 import logging.config
 
+
 import codecs
 import configparser
 import copy
@@ -2094,6 +2095,18 @@ class SysLogHandlerTest(BaseTest):
         logger.error("sp\xe4m")
         self.handled.wait(support.LONG_TIMEOUT)
         self.assertEqual(self.log_output, b'<11>sp\xc3\xa4m\x00')
+
+    @patch('socket.socket')
+    def test_tcp_timeout(self, mock_socket):
+        instance_mock_sock = mock_socket.return_value
+        instance_mock_sock.connect.side_effect = socket.timeout
+
+        with self.assertRaises(socket.timeout):
+            logging.handlers.SysLogHandler(address=('localhost', 514),
+                                           socktype=socket.SOCK_STREAM,
+                                           timeout=1)
+
+        instance_mock_sock.close.assert_called()
 
 @unittest.skipUnless(hasattr(socket, "AF_UNIX"), "Unix sockets required")
 class UnixSysLogHandlerTest(SysLogHandlerTest):
