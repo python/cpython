@@ -57,6 +57,7 @@ class _TemplatePattern:
     def __get__(self, instance, cls=None):
         if cls is None:
             return self
+        # This descriptor is overwritten in ``_compile_pattern()``.
         return cls._compile_pattern()
 
 
