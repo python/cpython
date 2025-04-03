@@ -2691,6 +2691,7 @@ class BasicBluetoothTest(unittest.TestCase):
             except OSError as err:
                 if sys.platform == 'win32' and err.winerror == 10050:
                     self.skipTest(str(err))
+                raise
             addr = s.getsockname()
             self.assertEqual(addr, (mock.ANY, channel))
             self.assertRegex(addr[0], r'(?i)[0-9a-f]{2}(?::[0-9a-f]{2}){4}')
