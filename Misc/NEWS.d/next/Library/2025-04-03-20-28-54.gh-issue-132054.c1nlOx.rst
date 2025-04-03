@@ -1,0 +1,1 @@
+Mime type ``application/yaml`` is now supported by :mod:`mimetypes`.
