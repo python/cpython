@@ -185,7 +185,7 @@ are always available.  They are listed here in alphabetical order.
 .. class:: bytearray(source=b'')
            bytearray(source, encoding)
            bytearray(source, encoding, errors)
-   :noindex:
+   :no-index-entry:
 
    Return a new array of bytes.  The :class:`bytearray` class is a mutable
    sequence of integers in the range 0 <= x < 256.  It has most of the usual
@@ -217,7 +217,7 @@ are always available.  They are listed here in alphabetical order.
 .. class:: bytes(source=b'')
            bytes(source, encoding)
            bytes(source, encoding, errors)
-   :noindex:
+   :no-index-entry:
 
    Return a new "bytes" object which is an immutable sequence of integers in
    the range ``0 <= x < 256``.  :class:`bytes` is an immutable version of
@@ -471,7 +471,7 @@ are always available.  They are listed here in alphabetical order.
 .. class:: dict(**kwarg)
            dict(mapping, **kwarg)
            dict(iterable, **kwarg)
-   :noindex:
+   :no-index-entry:
 
    Create a new dictionary.  The :class:`dict` object is the dictionary class.
    See :class:`dict` and :ref:`typesmapping` for documentation about this class.
@@ -847,7 +847,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. _func-frozenset:
 .. class:: frozenset(iterable=set())
-   :noindex:
+   :no-index-entry:
 
    Return a new :class:`frozenset` object, optionally with elements taken from
    *iterable*.  ``frozenset`` is a built-in class.  See :class:`frozenset` and
@@ -1146,7 +1146,7 @@ are always available.  They are listed here in alphabetical order.
 .. _func-list:
 .. class:: list()
            list(iterable)
-   :noindex:
+   :no-index-entry:
 
    Rather than being a function, :class:`list` is actually a mutable
    sequence type, as documented in :ref:`typesseq-list` and :ref:`typesseq`.
@@ -1252,7 +1252,7 @@ are always available.  They are listed here in alphabetical order.
 
 .. _func-memoryview:
 .. class:: memoryview(object)
-   :noindex:
+   :no-index-entry:
 
    Return a "memory view" object created from the given argument.  See
    :ref:`typememoryview` for more information.
@@ -1731,7 +1731,7 @@ are always available.  They are listed here in alphabetical order.
 .. _func-range:
 .. class:: range(stop)
            range(start, stop, step=1)
-   :noindex:
+   :no-index-entry:
 
    Rather than being a function, :class:`range` is actually an immutable
    sequence type, as documented in :ref:`typesseq-range` and :ref:`typesseq`.
@@ -1799,7 +1799,7 @@ are always available.  They are listed here in alphabetical order.
 .. _func-set:
 .. class:: set()
            set(iterable)
-   :noindex:
+   :no-index-entry:
 
    Return a new :class:`set` object, optionally with elements taken from
    *iterable*.  ``set`` is a built-in class.  See :class:`set` and
@@ -1940,7 +1940,7 @@ are always available.  They are listed here in alphabetical order.
 .. _func-str:
 .. class:: str(object='')
            str(object=b'', encoding='utf-8', errors='strict')
-   :noindex:
+   :no-index-entry:
 
    Return a :class:`str` version of *object*.  See :func:`str` for details.
 
@@ -2056,7 +2056,7 @@ are always available.  They are listed here in alphabetical order.
 .. _func-tuple:
 .. class:: tuple()
            tuple(iterable)
-   :noindex:
+   :no-index-entry:
 
    Rather than being a function, :class:`tuple` is actually an immutable
    sequence type, as documented in :ref:`typesseq-tuple` and :ref:`typesseq`.
