@@ -516,22 +516,6 @@ def _unwrap_partialmethod(func):
 
 _CacheInfo = namedtuple("CacheInfo", ["hits", "misses", "maxsize", "currsize"])
 
-class _HashedSeq(list):
-    """ This class guarantees that hash() will be called no more than once
-        per element.  This is important because the lru_cache() will hash
-        the key multiple times on a cache miss.
-
-    """
-
-    __slots__ = 'hashvalue'
-
-    def __init__(self, tup, hash=hash):
-        self[:] = tup
-        self.hashvalue = hash(tup)
-
-    def __hash__(self):
-        return self.hashvalue
-
 def _make_key(args, kwds, typed,
              kwd_mark = (object(),),
              fasttypes = {int, str},
@@ -561,7 +545,7 @@ def _make_key(args, kwds, typed,
             key += tuple(type(v) for v in kwds.values())
     elif len(key) == 1 and type(key[0]) in fasttypes:
         return key[0]
-    return _HashedSeq(key)
+    return key
 
 def lru_cache(maxsize=128, typed=False):
     """Least-recently-used cache decorator.

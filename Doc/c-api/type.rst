@@ -311,10 +311,6 @@ The following functions and structs are used to create
 
    Metaclasses that override :c:member:`~PyTypeObject.tp_new` are not
    supported, except if ``tp_new`` is ``NULL``.
-   (For backwards compatibility, other ``PyType_From*`` functions allow
-   such metaclasses. They ignore ``tp_new``, which may result in incomplete
-   initialization. This is deprecated and in Python 3.14+ such metaclasses will
-   not be supported.)
 
    The *bases* argument can be used to specify base classes; it can either
    be only one class or a tuple of classes.
