@@ -7311,7 +7311,20 @@ class EvaluateForwardRefTests(BaseTestCase):
 
     def test_evaluate_forward_ref_no_type_params(self):
         ref = ForwardRef('int')
-        self.assertIs(typing.evaluate_forward_ref(ref), int)
+        with self.assertWarnsRegex(
+            DeprecationWarning,
+            (
+                "Failing to pass a value to the 'type_params' parameter "
+                "of 'typing.evaluate_forward_ref' is deprecated, "
+                "as it leads to incorrect behaviour"
+            ),
+        ):
+            typing.evaluate_forward_ref(ref)
+
+        # No warnings when `type_params` is passed:
+        with warnings.catch_warnings(record=True) as w:
+            typing.evaluate_forward_ref(ref, type_params=())
+        self.assertEqual(w, [])
 
 
 class CollectionsAbcTests(BaseTestCase):
