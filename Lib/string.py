@@ -49,10 +49,37 @@ def capwords(s, sep=None):
 
 
 ####################################################################
-import re as _re
-from collections import ChainMap as _ChainMap
-
+_sentinel_flags = object()
 _sentinel_dict = {}
+
+
+class _TemplatePattern:
+    def __get__(self, instance, cls=None):
+        if cls is None:
+            return self
+        import re
+        if ('pattern' in cls.__dict__
+            and not isinstance(cls.__dict__['pattern'], _TemplatePattern)):
+            pattern = cls.pattern
+        else:
+            delim = re.escape(cls.delimiter)
+            id = cls.idpattern
+            bid = cls.braceidpattern or cls.idpattern
+            pattern = fr"""
+            {delim}(?:
+              (?P<escaped>{delim})  |   # Escape sequence of two delimiters
+              (?P<named>{id})       |   # delimiter and a Python identifier
+              {{(?P<braced>{bid})}} |   # delimiter and a braced identifier
+              (?P<invalid>)             # Other ill-formed delimiter exprs
+            )
+            """
+        if cls.flags is _sentinel_flags:
+            cls.flags = re.IGNORECASE
+        pattern = re.compile(pattern, cls.flags | re.VERBOSE)
+        # replace this descriptor with the compiled pattern
+        setattr(cls, 'pattern', pattern)
+        return pattern
+
 
 class Template:
     """A string class for supporting $-substitutions."""
@@ -64,25 +91,14 @@ class Template:
     # See https://bugs.python.org/issue31672
     idpattern = r'(?a:[_a-z][_a-z0-9]*)'
     braceidpattern = None
-    flags = _re.IGNORECASE
+    flags = _sentinel_flags  # default: re.IGNORECASE
+
+    # use a descriptor to be able to defer the import of `re`, for performance
+    pattern = _TemplatePattern()
 
     def __init_subclass__(cls):
         super().__init_subclass__()
-        if 'pattern' in cls.__dict__:
-            pattern = cls.pattern
-        else:
-            delim = _re.escape(cls.delimiter)
-            id = cls.idpattern
-            bid = cls.braceidpattern or cls.idpattern
-            pattern = fr"""
-            {delim}(?:
-              (?P<escaped>{delim})  |   # Escape sequence of two delimiters
-              (?P<named>{id})       |   # delimiter and a Python identifier
-              {{(?P<braced>{bid})}} |   # delimiter and a braced identifier
-              (?P<invalid>)             # Other ill-formed delimiter exprs
-            )
-            """
-        cls.pattern = _re.compile(pattern, cls.flags | _re.VERBOSE)
+        cls.pattern = _TemplatePattern()
 
     def __init__(self, template):
         self.template = template
@@ -105,7 +121,8 @@ class Template:
         if mapping is _sentinel_dict:
             mapping = kws
         elif kws:
-            mapping = _ChainMap(kws, mapping)
+            from collections import ChainMap
+            mapping = ChainMap(kws, mapping)
         # Helper function for .sub()
         def convert(mo):
             # Check the most common path first.
@@ -124,7 +141,8 @@ class Template:
         if mapping is _sentinel_dict:
             mapping = kws
         elif kws:
-            mapping = _ChainMap(kws, mapping)
+            from collections import ChainMap
+            mapping = ChainMap(kws, mapping)
         # Helper function for .sub()
         def convert(mo):
             named = mo.group('named') or mo.group('braced')
@@ -169,10 +187,6 @@ class Template:
                 raise ValueError('Unrecognized named group in pattern',
                     self.pattern)
         return ids
-
-# Initialize Template.pattern.  __init_subclass__() is automatically called
-# only for subclasses, not for the Template class itself.
-Template.__init_subclass__()
 
 
 ########################################################################
