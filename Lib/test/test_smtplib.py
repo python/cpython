@@ -1295,7 +1295,25 @@ class SMTPSimTests(unittest.TestCase):
         with self.assertRaises(smtplib.SMTPDataError):
             smtp.sendmail('John@foo.org', ['Sally@foo.org'], 'test message')
         self.assertIsNone(smtp.sock)
-        self.assertEqual(self.serv._SMTPchannel.rcpt_count, 0)
+        self.assertEqual(self.serv._SMTPchannel.rset_count, 0)
+
+    def test_421_from_multi_data_cmd(self):
+        class MySimSMTPChannel(SimSMTPChannel):
+            def found_terminator(self):
+                if self.smtp_state == self.DATA:
+                    self.push('250 ok')
+                    self.push('421 closing')
+                else:
+                    super().found_terminator()
+        self.serv.channel_class = MySimSMTPChannel
+        smtp = smtplib.LMTP(HOST, self.port, local_hostname='localhost',
+                            timeout=support.LOOPBACK_TIMEOUT)
+        smtp.noop()
+        with self.assertRaises(smtplib.LMTPDataError) as r:
+            smtp.sendmail('John@foo.org', ['Sally@foo.org', 'Frank@foo.org', 'George@foo.org'], 'test message')
+        self.assertEqual(r.exception.recipients, {'Frank@foo.org': (421, b'closing')})
+        self.assertIsNone(smtp.sock)
+        self.assertEqual(self.serv._SMTPchannel.rset_count, 0)
 
     def test_smtputf8_NotSupportedError_if_no_server_support(self):
         smtp = smtplib.SMTP(
@@ -1361,6 +1379,69 @@ class SMTPSimTests(unittest.TestCase):
 
         self.assertIn(['mail from:<John> size=14'], self.serv._SMTPchannel.all_received_lines)
         self.assertIn(['rcpt to:<Sally>'], self.serv._SMTPchannel.all_received_lines)
+
+    def test_lmtp_multi_error(self):
+        class MySimSMTPChannel(SimSMTPChannel):
+            def found_terminator(self):
+                if self.smtp_state == self.DATA:
+                    self.push('452 full')
+                    self.push('250 ok')
+                else:
+                    super().found_terminator()
+            def smtp_RCPT(self, arg):
+                if self.rcpt_count == 0:
+                    self.rcpt_count += 1
+                    self.push('450 busy')
+                else:
+                    super().smtp_RCPT(arg)
+        self.serv.channel_class = MySimSMTPChannel
+
+        smtp = smtplib.LMTP(
+            HOST, self.port, local_hostname='localhost',
+            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+
+        message = EmailMessage()
+        message['From'] = 'John@foo.org'
+        message['To'] = 'Sally@foo.org, Frank@foo.org, George@foo.org'
+
+        self.assertDictEqual(smtp.send_message(message), {
+            'Sally@foo.org': (450, b'busy'), 'Frank@foo.org': (452, b'full')
+        })
+
+    def test_lmtp_all_error(self):
+        class MySimSMTPChannel(SimSMTPChannel):
+            def found_terminator(self):
+                if self.smtp_state == self.DATA:
+                    self.push('452 full')
+                    self.received_lines = []
+                    self.smtp_state = self.COMMAND
+                    self.set_terminator(b'\r\n')
+                else:
+                    super().found_terminator()
+            def smtp_RCPT(self, arg):
+                if self.rcpt_count == 0:
+                    self.rcpt_count += 1
+                    self.push('450 busy')
+                else:
+                    super().smtp_RCPT(arg)
+        self.serv.channel_class = MySimSMTPChannel
+
+        smtp = smtplib.LMTP(
+            HOST, self.port, local_hostname='localhost',
+            timeout=support.LOOPBACK_TIMEOUT)
+        self.addCleanup(smtp.close)
+
+        message = EmailMessage()
+        message['From'] = 'John@foo.org'
+        message['To'] = 'Sally@foo.org, Frank@foo.org'
+
+        with self.assertRaises(smtplib.LMTPDataError) as r:
+            smtp.send_message(message)
+        self.assertEqual(r.exception.recipients, {
+            'Sally@foo.org': (450, b'busy'), 'Frank@foo.org': (452, b'full')
+        })
+        self.assertEqual(self.serv._SMTPchannel.rset_count, 1)
 
 
 class SimSMTPUTF8Server(SimSMTPServer):
