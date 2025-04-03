@@ -292,9 +292,7 @@ def header_decode(s):
     s_len = len(s)
     i =0
     while i < s_len:
-        c = s[i]
-
-        if c == '=' and i + 2 < s_len and s[i + 1] in hexdigits and s[i + 2] in hexdigits:
+        if (c := s[i]) == '=' and i + 2 < s_len and s[i + 1] in hexdigits and s[i + 2] in hexdigits:
             result.append(unquote(s[i: i + 3]))
             i += 3
             continue
