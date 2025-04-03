@@ -278,6 +278,13 @@ def decode(encoded, eol=NL):
 body_decode = decode
 decodestring = decode
 
+
+_HEX_TO_CHAR = {}
+for i in range(256):
+    key_lower = f"{i:02x}"
+    char_val = chr(i)
+    _HEX_TO_CHAR[key_lower] = char_val
+
 # Header decoding is done a bit differently
 def header_decode(s):
     """Decode a string encoded with RFC 2045 MIME header 'Q' encoding.
@@ -288,15 +295,27 @@ def header_decode(s):
     """
     # Check for regex =[a-fA-F0-9]{2}
     result = []
-
     s_len = len(s)
-    i =0
+    i = 0
+    last_append = 0
+    s = s.replace("_", " ")
+
     while i < s_len:
-        if (c := s[i]) == '=' and i + 2 < s_len and s[i + 1] in hexdigits and s[i + 2] in hexdigits:
-            result.append(unquote(s[i: i + 3]))
-            i += 3
-            continue
-        result.append(' ' if c == '_' else c)
+        if s[i] == '=' and i + 2 < s_len:
+            hex_str = s[i + 1:i + 3].lower()
+            if hex_str in _HEX_TO_CHAR:
+                if last_append < i:
+                    result.append(s[last_append:i])
+                result.append(_HEX_TO_CHAR[hex_str])
+                i += 3
+                last_append = i
+                continue
         i += 1
+
+    if last_append == 0:
+        return s
+
+    if last_append < s_len:
+        result.append(s[last_append:])
 
     return ''.join(result)
