@@ -294,11 +294,15 @@ def header_decode(s):
     the high level email.header class for that functionality.
     """
     # Check for regex =[a-fA-F0-9]{2}
+    s = s.replace("_", " ")
+    
+    if '=' not in s:
+        return s
+    
     result = []
     s_len = len(s)
     i = 0
     last_append = 0
-    s = s.replace("_", " ")
 
     while i < s_len:
         if s[i] == '=' and i + 2 < s_len:
@@ -310,9 +314,6 @@ def header_decode(s):
                 last_append = i
                 continue
         i += 1
-
-    if last_append == 0:
-        return s
 
     if last_append < s_len:
         result.append(s[last_append:])
