@@ -308,8 +308,9 @@ are always available.  They are listed here in alphabetical order.
    The *mode* argument specifies what kind of code must be compiled; it can be
    ``'exec'`` if *source* consists of a sequence of statements, ``'eval'`` if it
    consists of a single expression, or ``'single'`` if it consists of a single
-   interactive statement (in the latter case, expression statements that
-   evaluate to something other than ``None`` will be printed).
+   interactive statement.  In the ``'single'`` case, expression statements that
+   evaluate to something other than ``None`` will be printed using
+   :func:`sys.displayhook`.
 
    The optional arguments *flags* and *dont_inherit* control which
    :ref:`compiler options <ast-compiler-flags>` should be activated
