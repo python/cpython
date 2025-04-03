@@ -6,7 +6,7 @@ import weakref
 from concurrent import futures
 from operator import add
 from test import support
-from test.support import Py_GIL_DISABLED, warnings_helper
+from test.support import Py_GIL_DISABLED, disable_gc, warnings_helper
 
 
 def mul(x, y):
@@ -77,6 +77,7 @@ class ExecutorTest:
                 list(map(pow, range(10), range(10))))
 
     @warnings_helper.ignore_fork_in_thread_deprecation_warnings()
+    @disable_gc()
     def test_map_exception(self):
         i = self.executor.map(divmod, [5, 5, 5, 5], [2, 3, 0, 5])
         self.assertEqual(next(i), (2, 1))
@@ -92,8 +93,9 @@ class ExecutorTest:
             msg="next should raise a ZeroDivisionError",
         )
 
+        # TODO: remove only for debugging
         self.assertFalse(
-            gc.get_referrers(error),
+            [gc.get_referrers(x) for x in gc.get_referrers(error)],
             msg="the exception should not have any referrers",
         )
 
