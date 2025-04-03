@@ -90,6 +90,63 @@ If you encounter :exc:`NameError`\s or pickling errors coming out of
 New features
 ============
 
+.. _whatsnew314-pep678:
+
+PEP 768: Safe external debugger interface for CPython
+-----------------------------------------------------
+
+:pep:`768` introduces a zero-overhead debugging interface that allows debuggers and profilers
+to safely attach to running Python processes. This is a significant enhancement to Python's
+debugging capabilities allowing debuggers to forego unsafe alternatives.
+
+The new interface provides safe execution points for attaching debugger code without modifying
+the interpreter's normal execution path or adding runtime overhead. This enables tools to
+inspect and interact with Python applications in real-time without stopping or restarting
+them — a crucial capability for high-availability systems and production environments.
+
+For convenience, CPython implements this interface through the :mod:`sys` module with a
+:func:`sys.remote_exec` function::
+
+    sys.remote_exec(pid, script_path)
+
+This function allows sending Python code to be executed in a target process at the next safe
+execution point. However, tool authors can also implement the protocol directly as described
+in the PEP, which details the underlying mechanisms used to safely attach to running processes.
+
+Here's a simple example that inspects object types in a running Python process:
+
+  .. code-block:: python
+
+     import os
+     import sys
+     import tempfile
+
+     # Create a temporary script
+     with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+         script_path = f.name
+         f.write(f"import my_debugger; my_debugger.connect({os.getpid()})")
+     try:
+         # Execute in process with PID 1234
+         print("Behold! An offering:")
+         sys.remote_exec(1234, script_path)
+     finally:
+         os.unlink(script_path)
+
+The debugging interface has been carefully designed with security in mind and includes several
+mechanisms to control access:
+
+* A :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` environment variable.
+* A :option:`-X disable-remote-debug` command-line option.
+* A :option:`--without-remote-debug` configure flag to completely disable the feature at build time.
+
+A key implementation detail is that the interface piggybacks on the interpreter's existing evaluation
+loop and safe points, ensuring zero overhead during normal execution while providing a reliable way
+for external processes to coordinate debugging operations.
+
+See :pep:`768` for more details.
+
+(Contributed by Pablo Galindo Salgado, Matt Wozniski, and Ivona Stojanovic in :gh:`131591`.)
+
 .. _whatsnew314-pep758:
 
 PEP 758 – Allow except and except* expressions without parentheses
