@@ -347,6 +347,18 @@ void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 
 PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
 
+#ifndef Py_SUPPORTS_REMOTE_DEBUG
+    #if defined(__APPLE__)
+    #  if !defined(TARGET_OS_OSX)
+// Older macOS SDKs do not define TARGET_OS_OSX
+    #     define TARGET_OS_OSX 1
+    #  endif
+    #endif
+    #if ((defined(__APPLE__) && TARGET_OS_OSX) || defined(MS_WINDOWS) || (defined(__linux__) && HAVE_PROCESS_VM_READV))
+    #    define Py_SUPPORTS_REMOTE_DEBUG 1
+    #endif
+#endif
+
 #ifdef __cplusplus
 }
 #endif

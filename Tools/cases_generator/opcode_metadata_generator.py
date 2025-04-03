@@ -227,9 +227,10 @@ def generate_expansion_table(analysis: Analysis, out: CWriter) -> None:
         expansions: list[tuple[str, str, int]] = []  # [(name, size, offset), ...]
         if inst.is_super():
             pieces = inst.name.split("_")
-            assert len(pieces) == 4, f"{inst.name} doesn't look like a super-instr"
-            name1 = "_".join(pieces[:2])
-            name2 = "_".join(pieces[2:])
+            assert len(pieces) % 2 == 0, f"{inst.name} doesn't look like a super-instr"
+            parts_per_piece = int(len(pieces) / 2)
+            name1 = "_".join(pieces[:parts_per_piece])
+            name2 = "_".join(pieces[parts_per_piece:])
             assert name1 in analysis.instructions, f"{name1} doesn't match any instr"
             assert name2 in analysis.instructions, f"{name2} doesn't match any instr"
             instr1 = analysis.instructions[name1]
