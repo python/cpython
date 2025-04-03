@@ -2403,7 +2403,10 @@ of the main interpreter.");
 #   include <pthread_np.h>
 #endif
 
-#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP) || defined(MS_WINDOWS)
+
+#if (((defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)) \
+      && defined(_PYTHREAD_NAME_MAXLEN)) \
+     || defined(MS_WINDOWS))
 /*[clinic input]
 _thread._get_name
 

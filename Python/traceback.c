@@ -1056,7 +1056,8 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
                         sizeof(unsigned long) * 2);
 
     // Write the thread name
-#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)
+#if ((defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)) \
+     && defined(_PYTHREAD_NAME_MAXLEN))
     char name[_PYTHREAD_NAME_MAXLEN+1];
     pthread_t thread = (pthread_t)tstate->thread_id;
 #ifdef HAVE_PTHREAD_GETNAME_NP
