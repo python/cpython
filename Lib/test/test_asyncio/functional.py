@@ -1,5 +1,4 @@
 import asyncio
-import asyncio.events
 import contextlib
 import os
 import pprint

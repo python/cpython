@@ -43,7 +43,6 @@ import socket
 import io
 import re
 import email.utils
-import email.message
 import email.generator
 import base64
 import hmac
