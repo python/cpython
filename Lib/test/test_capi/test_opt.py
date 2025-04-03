@@ -1621,7 +1621,7 @@ class TestUopsOptimization(unittest.TestCase):
                 if in_set:
                     x += 1
             return x
-        
+
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
