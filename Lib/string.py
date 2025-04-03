@@ -49,36 +49,15 @@ def capwords(s, sep=None):
 
 
 ####################################################################
-_sentinel_flags = object()
 _sentinel_dict = {}
+_sentinel_flags = object()
 
 
 class _TemplatePattern:
     def __get__(self, instance, cls=None):
         if cls is None:
             return self
-        import re
-        if ('pattern' in cls.__dict__
-            and not isinstance(cls.__dict__['pattern'], _TemplatePattern)):
-            pattern = cls.pattern
-        else:
-            delim = re.escape(cls.delimiter)
-            id = cls.idpattern
-            bid = cls.braceidpattern or cls.idpattern
-            pattern = fr"""
-            {delim}(?:
-              (?P<escaped>{delim})  |   # Escape sequence of two delimiters
-              (?P<named>{id})       |   # delimiter and a Python identifier
-              {{(?P<braced>{bid})}} |   # delimiter and a braced identifier
-              (?P<invalid>)             # Other ill-formed delimiter exprs
-            )
-            """
-        if cls.flags is _sentinel_flags:
-            cls.flags = re.IGNORECASE
-        pattern = re.compile(pattern, cls.flags | re.VERBOSE)
-        # replace this descriptor with the compiled pattern
-        setattr(cls, 'pattern', pattern)
-        return pattern
+        return cls._compile_pattern()
 
 
 class Template:
@@ -93,12 +72,36 @@ class Template:
     braceidpattern = None
     flags = _sentinel_flags  # default: re.IGNORECASE
 
-    # use a descriptor to be able to defer the import of `re`, for performance
-    pattern = _TemplatePattern()
+    pattern = _TemplatePattern()  # use a descriptor to compile the pattern
 
     def __init_subclass__(cls):
         super().__init_subclass__()
-        cls.pattern = _TemplatePattern()
+        cls._compile_pattern()
+
+    @classmethod
+    def _compile_pattern(cls):
+        import re  # deferred import, for performance
+
+        cls_pattern = cls.__dict__.get('pattern')
+        if cls_pattern and not isinstance(cls_pattern, _TemplatePattern):
+            # Prefer a pattern defined on the class.
+            pattern = cls_pattern
+        else:
+            delim = re.escape(cls.delimiter)
+            id = cls.idpattern
+            bid = cls.braceidpattern or cls.idpattern
+            pattern = fr"""
+            {delim}(?:
+              (?P<escaped>{delim})  |   # Escape sequence of two delimiters
+              (?P<named>{id})       |   # delimiter and a Python identifier
+              {{(?P<braced>{bid})}} |   # delimiter and a braced identifier
+              (?P<invalid>)             # Other ill-formed delimiter exprs
+            )
+            """
+        if cls.flags is _sentinel_flags:
+            cls.flags = re.IGNORECASE
+        pat = cls.pattern = re.compile(pattern, cls.flags | re.VERBOSE)
+        return pat
 
     def __init__(self, template):
         self.template = template
