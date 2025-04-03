@@ -127,6 +127,17 @@ class WinAPITests(unittest.TestCase):
         # Should contain "PROGRA~" but we can't predict the number
         self.assertIsNotNone(re.match(r".\:\\PROGRA~\d", actual.upper()), actual)
 
+    def test_getmodulefilename(self):
+        dll_file_path = _winapi.GetModuleFileName(sys.dllhandle)
+        dll_file_name = os.path.basename(dll_file_path)
+        self.assertEqual(
+            dll_file_name,
+            "python{vi.major}{vi.minor}{abiflags}.dll".format(
+                vi=sys.version_info,
+                abiflags=sysconfig.get_config_var('ABIFLAGS'),
+            ),
+        )
+
     def test_namedpipe(self):
         pipe_name = rf"\\.\pipe\LOCAL\{os_helper.TESTFN}"
 
@@ -158,14 +169,3 @@ class WinAPITests(unittest.TestCase):
             pipe2.write(b'testdata')
             pipe2.flush()
             self.assertEqual((b'testdata', 8), _winapi.PeekNamedPipe(pipe, 8)[:2])
-
-    def test_get_module_file_name(self):
-        dll_file_path = _winapi.GetModuleFileName(sys.dllhandle)
-        dll_file_name = os.path.basename(dll_file_path)
-        self.assertEqual(
-            dll_file_name,
-            "python{vi.major}{vi.minor}{abiflags}.dll".format(
-                vi=sys.version_info,
-                abiflags=sysconfig.get_config_var('ABIFLAGS'),
-            ),
-        )
