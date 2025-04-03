@@ -70,7 +70,11 @@ class ExecutorTest:
 
         # TODO: remove only for debugging
         self.assertFalse(
-            [gc.get_referrers(x) for x in gc.get_referrers(error)],
+            [
+                gc.get_referrers(y)
+                for x in gc.get_referrers(error)
+                for y in gc.get_referrers(x)
+            ],
             msg="the exception should not have any referrers",
         )
 
