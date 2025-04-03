@@ -440,7 +440,7 @@ indicates the maximum field size - in other words, how many characters will be
 used from the field content.  The *precision* is not allowed for integer
 presentation types.
 
-The *grouping* option after *width* and *precision* specifies a thousands
+The *grouping* option after *width* and *precision* specifies a digit
 separator for integral and fractional parts of a number respectively.
 It can be one of the following:
 
@@ -451,17 +451,17 @@ It can be one of the following:
 +---------+----------------------------------------------------------+
 | Option  | Meaning                                                  |
 +=========+==========================================================+
-| ``','`` | Uses a comma as a thousands separator for                |
-|         | floating-point presentation types                        |
-|         | and integer presentation type ``'d'``.                   |
+| ``','`` | Inserts a comma every 3 digits for                       |
+|         | integer presentation type ``'d'`` and                    |
+|         | floating-point presentation types, excluding ``'n'``.    |
 |         | For other presentation types, this option is an error.   |
 +---------+----------------------------------------------------------+
-| ``'_'`` | Uses an underscore as a thousands separator for          |
-|         | floating-point presentation types                        |
-|         | and integer presentation type ``'d'``.                   |
+| ``'_'`` | Inserts an underscore every 3 digits for                 |
+|         | integer presentation type ``'d'`` and                    |
+|         | floating-point presentation types, excluding ``'n'``.    |
 |         | For integer presentation types                           |
 |         | ``'b'``, ``'o'``, ``'x'``, and ``'X'``,                  |
-|         | underscores will be inserted every 4 digits.             |
+|         | underscores are inserted every 4 digits.                 |
 |         | For other presentation types, this option is an error.   |
 +---------+----------------------------------------------------------+
 
@@ -472,7 +472,7 @@ For a locale aware separator, use the ``'n'`` presentation type instead.
 .. versionchanged:: 3.6
    Added the ``'_'`` option (see also :pep:`515`).
 .. versionchanged:: 3.14
-   Support thousands separators for the fractional part.
+   Support *grouping* option for the fractional part.
 
 Finally, the *type* determines how the data should be presented.
 
@@ -720,7 +720,7 @@ Replacing ``%x`` and ``%o`` and converting the value to different bases::
    >>> "int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}".format(42)
    'int: 42;  hex: 0x2a;  oct: 0o52;  bin: 0b101010'
 
-Using the comma or the underscore as a thousands separator::
+Using the comma or the underscore as a digit separator::
 
    >>> '{:,}'.format(1234567890)
    '1,234,567,890'
