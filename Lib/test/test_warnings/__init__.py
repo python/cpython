@@ -1832,6 +1832,50 @@ class DeprecatedTests(PyPublicAPITests):
         self.assertFalse(inspect.iscoroutinefunction(Cls.sync))
         self.assertTrue(inspect.iscoroutinefunction(Cls.coro))
 
+    def test_inspect_class_signature(self):
+        class Cls1:  # no __init__ or __new__
+            pass
+
+        class Cls2:  # __new__ only
+            def __new__(cls, x, y):
+                return super().__new__(cls)
+
+        class Cls3:  # __init__ only
+            def __init__(self, x, y):
+                pass
+
+        class Cls4:  # __new__ and __init__
+            def __new__(cls, x, y):
+                return super().__new__(cls)
+
+            def __init__(self, x, y):
+                pass
+
+        class Cls5(Cls1):  # inherits no __init__ or __new__
+            pass
+
+        class Cls6(Cls2):  # inherits __new__ only
+            pass
+
+        class Cls7(Cls3):  # inherits __init__ only
+            pass
+
+        class Cls8(Cls4):  # inherits __new__ and __init__
+            pass
+
+        for cls in (Cls1, Cls2, Cls3, Cls4, Cls5, Cls6, Cls7, Cls8):
+            with self.subTest(f'{cls.__name__}'):
+                try:
+                    original_signature = inspect.signature(cls)
+                except ValueError:
+                    original_signature = None
+                try:
+                    new_signature = inspect.signature(deprecated("depr")(cls))
+                except ValueError:
+                    new_signature = None
+                self.assertEqual(original_signature, new_signature)
+
+
 def setUpModule():
     py_warnings.onceregistry.clear()
     c_warnings.onceregistry.clear()
