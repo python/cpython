@@ -11107,12 +11107,21 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
 {
     /* XXX Maybe this could be optimized more -- but is it worth it? */
 
+#ifdef Py_GIL_DISABLED
+    pytype_slotdef *ptrs[MAX_EQUIV];
+    pytype_slotdef **pp = ptrs;
+    /* Collect all slotdefs that match name into ptrs. */
+    for (pytype_slotdef *p = slotdefs; p->name_strobj; p++) {
+        if (p->name_strobj == name)
+            *pp++ = p;
+    }
+    *pp = NULL;
+#else
     /* pname and ptrs act as a little cache */
     PyInterpreterState *interp = _PyInterpreterState_GET();
 #define pname _Py_INTERP_CACHED_OBJECT(interp, type_slots_pname)
 #define ptrs _Py_INTERP_CACHED_OBJECT(interp, type_slots_ptrs)
     pytype_slotdef *p, **pp;
-    void **res, **ptr;
 
     if (pname != name) {
         /* Collect all slotdefs that match name into ptrs. */
@@ -11124,10 +11133,12 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
         }
         *pp = NULL;
     }
+#endif
 
     /* Look in all slots of the type matching the name. If exactly one of these
        has a filled-in slot, return a pointer to that slot.
        Otherwise, return NULL. */
+    void **res, **ptr;
     res = NULL;
     for (pp = ptrs; *pp; pp++) {
         ptr = slotptr(type, (*pp)->offset);
@@ -11137,9 +11148,11 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
             return NULL;
         res = ptr;
     }
-    return res;
+#ifndef Py_GIL_DISABLED
 #undef pname
 #undef ptrs
+#endif
+    return res;
 }
 
 #ifdef Py_GIL_DISABLED
