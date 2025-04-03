@@ -656,6 +656,11 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
                     errstr = "Some I/O error occurred";
                 }
             } else {
+                if (ERR_GET_LIB(e) == ERR_LIB_SYS) {
+                    // A system error is being reported; reason is set to errno
+                    errno = ERR_GET_REASON(e);
+                    return PyErr_SetFromErrno(PyExc_OSError);
+                }
                 p = PY_SSL_ERROR_SYSCALL;
             }
             break;
@@ -681,6 +686,11 @@ PySSL_SetError(PySSLSocket *sslsock, int ret, const char *filename, int lineno)
                 errstr = "EOF occurred in violation of protocol";
             }
 #endif
+            if (ERR_GET_LIB(e) == ERR_LIB_SYS) {
+                // A system error is being reported; reason is set to errno
+                errno = ERR_GET_REASON(e);
+                return PyErr_SetFromErrno(PyExc_OSError);
+            }
             break;
         }
         default:
