@@ -67,7 +67,6 @@ extern PyObject *_PyAsyncGenValueWrapperNew(PyThreadState *state, PyObject *);
 extern PyTypeObject _PyCoroWrapper_Type;
 extern PyTypeObject _PyAsyncGenWrappedValue_Type;
 extern PyTypeObject _PyAsyncGenAThrow_Type;
-extern PyTypeObject _PyAsyncGenWrappedValue_Type;
 
 typedef struct _PyAsyncGenWrappedValue {
     PyObject_HEAD
