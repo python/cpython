@@ -227,6 +227,7 @@ class FaultHandlerTests(unittest.TestCase):
             func='faulthandler_fatal_error_thread',
             py_fatal_error=True)
 
+    @support.skip_if_sanitizer("TSAN itercepts SIGABRT", thread=True)
     def test_sigabrt(self):
         self.check_fatal_error("""
             import faulthandler
@@ -238,6 +239,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform == 'win32',
                      "SIGFPE cannot be caught on Windows")
+    @support.skip_if_sanitizer("TSAN itercepts SIGFPE", thread=True)
     def test_sigfpe(self):
         self.check_fatal_error("""
             import faulthandler
@@ -249,6 +251,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(signal, 'SIGBUS'), 'need signal.SIGBUS')
+    @support.skip_if_sanitizer("TSAN itercepts SIGBUS", thread=True)
     @skip_segfault_on_android
     def test_sigbus(self):
         self.check_fatal_error("""
@@ -263,6 +266,7 @@ class FaultHandlerTests(unittest.TestCase):
 
     @unittest.skipIf(_testcapi is None, 'need _testcapi')
     @unittest.skipUnless(hasattr(signal, 'SIGILL'), 'need signal.SIGILL')
+    @support.skip_if_sanitizer("TSAN itercepts SIGILL", thread=True)
     @skip_segfault_on_android
     def test_sigill(self):
         self.check_fatal_error("""
@@ -795,6 +799,7 @@ class FaultHandlerTests(unittest.TestCase):
     def test_register_threads(self):
         self.check_register(all_threads=True)
 
+    @support.skip_if_sanitizer("gh-129825: hangs under TSAN", thread=True)
     def test_register_chain(self):
         self.check_register(chain=True)
 
