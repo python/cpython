@@ -1864,7 +1864,7 @@ class DeprecatedTests(PyPublicAPITests):
             pass
 
         for cls in (Cls1, Cls2, Cls3, Cls4, Cls5, Cls6, Cls7, Cls8):
-            with self.subTest(f'{cls.__name__}'):
+            with self.subTest(f'class {cls.__name__} signature'):
                 try:
                     original_signature = inspect.signature(cls)
                 except ValueError:
@@ -1875,6 +1875,16 @@ class DeprecatedTests(PyPublicAPITests):
                     new_signature = None
                 self.assertEqual(original_signature, new_signature)
 
+            with self.subTest(f'class {cls.__name__}.__new__ signature'):
+                try:
+                    original_signature = inspect.signature(cls.__new__)
+                except ValueError:
+                    original_signature = None
+                try:
+                    new_signature = inspect.signature(deprecated("depr")(cls).__new__)
+                except ValueError:
+                    new_signature = None
+                self.assertEqual(original_signature, new_signature)
 
 def setUpModule():
     py_warnings.onceregistry.clear()

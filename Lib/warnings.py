@@ -620,14 +620,22 @@ class deprecated:
             original_new = arg.__new__
             is_object_new = original_new is object.__new__
             if is_object_new:
+                import inspect
+
+                try:
+                    arg.__signature__ = inspect.signature(arg)
+                except ValueError:
+                    pass
+
                 def wraps(wrapped):
                     def identity(func):
                         return func
                     return identity
+
             else:
                 wraps = functools.wraps
 
-            @update_signature(arg)
+            @update_signature(original_new)
             @wraps(original_new)
             def __new__(cls, *args, **kwargs):
                 if cls is arg:
