@@ -501,7 +501,7 @@ def _is_perf_version_at_least(major, minor):
     version = output.split()[2]
     version = version.split("-")[0]
     version = version.split(".")
-    version = tuple(map(int, version))
+    version = tuple(map(int, version[:2]))
     return version >= (major, minor)
 
 
