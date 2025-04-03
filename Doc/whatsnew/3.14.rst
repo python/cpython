@@ -90,6 +90,33 @@ If you encounter :exc:`NameError`\s or pickling errors coming out of
 New features
 ============
 
+.. _whatsnew314-pep758:
+
+PEP 758 – Allow except and except* expressions without parentheses
+------------------------------------------------------------------
+
+The :keyword:`except` and :keyword:`except* <except_star>` expressions now allow
+parentheses to be omitted when there are multiple exception types and the ``as`` clause is not used.
+For example the following expressions are now valid:
+
+.. code-block:: python
+
+   try:
+       release_new_sleep_token_album()
+   except AlbumNotFound, SongsTooGoodToBeReleased:
+       print("Sorry, no new album this year.")
+
+    # The same applies to except* (for exception groups):
+   try:
+       release_new_sleep_token_album()
+   except* AlbumNotFound, SongsTooGoodToBeReleased:
+       print("Sorry, no new album this year.")
+
+Check :pep:`758` for more details.
+
+(Contributed by Pablo Galindo and Brett Cannon in :gh:`131831`.)
+
+
 .. _whatsnew314-pep649:
 
 PEP 649: deferred evaluation of annotations
@@ -679,6 +706,13 @@ json
   (Contributed by Trey Hunner in :gh:`122873`.)
 
 
+linecache
+---------
+
+* :func:`linecache.getline` can retrieve source code for frozen modules.
+  (Contributed by Tian Gao in :gh:`131638`.)
+
+
 mimetypes
 ---------
 
@@ -902,6 +936,15 @@ ssl
 * Indicate through :data:`ssl.HAS_PHA` whether the :mod:`ssl` module supports
   TLSv1.3 post-handshake client authentication (PHA).
   (Contributed by Will Childs-Klein in :gh:`128036`.)
+
+
+struct
+------
+
+* Support the :c:expr:`float complex` and :c:expr:`double complex` C types in
+  the :mod:`struct` module (formatting characters ``'E'`` and ``'C'``,
+  respectively) if the compiler has C11 complex arithmetic.
+  (Contributed by Sergey B Kirpichev in :gh:`121249`.)
 
 
 symtable
