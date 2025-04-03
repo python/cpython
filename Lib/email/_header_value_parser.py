@@ -1037,7 +1037,7 @@ def get_fws(value):
     fws = WhiteSpaceTerminal(value[:len(value)-len(newvalue)], 'fws')
     return fws, newvalue
 
-def get_encoded_word(value):
+def get_encoded_word(value, terminal_type='vtext'):
     """ encoded-word = "=?" charset "?" encoding "?" encoded-text "?="
 
     """
@@ -1076,7 +1076,7 @@ def get_encoded_word(value):
             ew.append(token)
             continue
         chars, *remainder = _wsp_splitter(text, 1)
-        vtext = ValueTerminal(chars, 'vtext')
+        vtext = ValueTerminal(chars, terminal_type)
         _validate_xtext(vtext)
         ew.append(vtext)
         text = ''.join(remainder)
@@ -1118,7 +1118,7 @@ def get_unstructured(value):
         valid_ew = True
         if value.startswith('=?'):
             try:
-                token, value = get_encoded_word(value)
+                token, value = get_encoded_word(value, 'utext')
             except _InvalidEwError:
                 valid_ew = False
             except errors.HeaderParseError:
@@ -1147,7 +1147,7 @@ def get_unstructured(value):
         # the parser to go in an infinite loop.
         if valid_ew and rfc2047_matcher.search(tok):
             tok, *remainder = value.partition('=?')
-        vtext = ValueTerminal(tok, 'vtext')
+        vtext = ValueTerminal(tok, 'utext')
         _validate_xtext(vtext)
         unstructured.append(vtext)
         value = ''.join(remainder)
@@ -2781,7 +2781,7 @@ def _refold_parse_tree(parse_tree, *, policy):
             continue
         tstr = str(part)
         if not want_encoding:
-            if part.token_type == 'ptext':
+            if part.token_type in ('ptext', 'vtext'):
                 # Encode if tstr contains special characters.
                 want_encoding = not SPECIALSNL.isdisjoint(tstr)
             else:
