@@ -288,17 +288,17 @@ def header_decode(s):
     """
     # Check for regex =[a-fA-F0-9]{2}
     result = []
-    
-    max_s_check_len = s - 2
-    for i, c in enumerate(s):
-        if c == '=' and i < max_s_check_len:
-            hex_part = s[i: i + 3]
-            
-            if (hex_part[1] in hexdigits) and (hex_part[2] in hexdigits):
-                result.append(unquote(hex_part))
-                i += 3
-                continue
+
+    s_len = len(s)
+    i =0
+    while i < s_len:
+        c = s[i]
+
+        if c == '=' and i + 2 < s_len and s[i + 1] in hexdigits and s[i + 2] in hexdigits:
+            result.append(unquote(s[i: i + 3]))
+            i += 3
+            continue
         result.append(' ' if c == '_' else c)
         i += 1
-    
+
     return ''.join(result)
