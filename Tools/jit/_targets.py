@@ -25,6 +25,7 @@ TOOLS = TOOLS_JIT.parent
 CPYTHON = TOOLS.parent
 PYTHON_EXECUTOR_CASES_C_H = CPYTHON / "Python" / "executor_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
+ASYNCIO_RUNNER = asyncio.Runner()
 
 _S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection)
 _R = typing.TypeVar(
@@ -199,7 +200,7 @@ class _Target(typing.Generic[_S, _R]):
             and jit_stencils.read_text().startswith(digest)
         ):
             return
-        stencil_groups = asyncio.run(self._build_stencils())
+        stencil_groups = ASYNCIO_RUNNER.run(self._build_stencils())
         jit_stencils_new = out / "jit_stencils.h.new"
         try:
             with jit_stencils_new.open("w") as file:
