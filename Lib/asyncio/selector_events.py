@@ -107,13 +107,31 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             self._selector.close()
             self._selector = None
 
-    def _close_self_pipe(self):
-        self._remove_reader(self._ssock.fileno())
-        self._ssock.close()
-        self._ssock = None
-        self._csock.close()
-        self._csock = None
+    def _close_self_pipe(self, shutdown=False):
+        if self._ssock is not None:
+            self._remove_reader(self._ssock.fileno())
+            if shutdown:
+                try:
+                    self._ssock.shutdown(socket.SHUT_RDWR)
+                except OSError as e:
+                    # Log the error with more context
+                    print(f"Error shutting down _ssock (fileno={self._ssock.fileno()}): {e}")
+            self._ssock.close()
+            self._ssock = None
+
+        if self._csock is not None:
+            if shutdown:
+                try:
+                    self._csock.shutdown(socket.SHUT_RDWR)
+                except OSError as e:
+                    # Log the error with more context
+                    print(f"Error shutting down _csock (fileno={self._csock.fileno()}): {e}")
+            self._csock.close()
+            self._csock = None
+
         self._internal_fds -= 1
+
+
 
     def _make_self_pipe(self):
         # A self-socket, really. :-)
