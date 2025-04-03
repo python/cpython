@@ -1,10 +1,13 @@
 import unittest
 from test.support import MS_WINDOWS
 import ctypes
-from ctypes import POINTER, Structure, c_void_p, set_non_ctypes_pointer_type
+from ctypes import POINTER, Structure, c_void_p
 
 from ._support import PyCSimpleType, PyCPointerType, PyCStructType
 
+
+def set_non_ctypes_pointer_type(cls, pointer_type):
+    cls.__pointer_type__ = pointer_type
 
 class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
     def tearDown(self):
@@ -285,7 +288,6 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
         self.assertTrue(issubclass(POINTER(IUnknown), pInterface))
 
         self.assertIs(POINTER(Interface), pInterface)
-        self.assertIs(POINTER(IUnknown), POINTER(IUnknown))
         self.assertIsNot(POINTER(IUnknown), pIUnknown)
 
     def test_creating_pointer_in_dunder_init_4(self):
@@ -345,7 +347,6 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
 
         self.assertIs(POINTER(Interface), pInterface)
         self.assertIs(POINTER(IUnknown), pIUnknown)
-        self.assertIs(POINTER(IUnknown), pIUnknown)
 
     def test_custom_pointer_cache_for_ctypes_type1(self):
         # Check if PyCPointerType.__init__() caches a pointer type
@@ -368,7 +369,6 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
 
         self.assertIs(P._type_, C)
         self.assertIs(P, POINTER(C))
-        self.assertIs(P, POINTER(C))
 
     def test_custom_pointer_cache_for_ctypes_type2(self):
         # Check if PyCPointerType.__init__() caches a pointer type
@@ -387,5 +387,4 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
             pass
 
         self.assertIs(P._type_, C)
-        self.assertIs(P, POINTER(C))
         self.assertIs(P, POINTER(C))

@@ -297,13 +297,6 @@ def pointer(obj):
     typ = POINTER(type(obj))
     return typ(obj)
 
-def set_non_ctypes_pointer_type(cls, pointer_type):
-    """Set pointer type for cls."""
-    assert not isinstance(pointer_type, _Pointer)
-    assert not isinstance(cls, _SimpleCData)
-
-    cls.__pointer_type__ = pointer_type
-
 _pointer_type_cache = {}
 """XXX: Subject to change."""
 
