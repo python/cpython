@@ -3,8 +3,6 @@
 import os
 import pathlib
 import re
-import sys
-import sysconfig
 import unittest
 from test.support import import_helper, os_helper
 
