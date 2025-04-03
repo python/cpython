@@ -401,15 +401,19 @@ def _init_non_posix(vars):
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
 
-    # Add EXT_SUFFIX, SOABI, ABIFLAGS, Py_DEBUG, and Py_GIL_DISABLED
+    # Add EXT_SUFFIX, SOABI, Py_DEBUG, and Py_GIL_DISABLED
+    vars.update(_sysconfig.config_vars())
+
     # NOTE: ABIFLAGS is only an emulated value. It is not present during build
     #       on Windows. sys.abiflags is absent on Windows and vars['abiflags']
     #       is already widely used to calculate paths, so it should remain an
     #       empty string.
-    vars.update(_sysconfig.config_vars())
-
-    # Add an underscore to the `d` flag. E.g, `td` -> `t_d`, `d` -> `_d`.
-    vars['ABIFLAGS'] = vars['ABIFLAGS'].replace('d', '_d')
+    vars['ABIFLAGS'] = ''.join(
+        (
+            't' if vars['Py_GIL_DISABLED'] else '',
+            '_d' if vars['Py_DEBUG'] else '',
+        ),
+    )
 
     vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
     if hasattr(sys, 'dllhandle'):

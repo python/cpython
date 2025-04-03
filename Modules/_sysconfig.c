@@ -55,23 +55,6 @@ _sysconfig_config_vars_impl(PyObject *module)
         Py_DECREF(config);
         return NULL;
     }
-
-    // On Unix, the `ABIFLAGS` key is defined via a different logic.
-    //
-    // Emulate `sys.abiflags` value on Unix for Windows. ABIFLAGS here is only
-    // an emulated value. It is not present during build on Windows.
-    if (add_string_value(config, "ABIFLAGS",
-#  ifdef Py_GIL_DISABLED
-                         "t"
-#  endif
-#  ifdef Py_DEBUG
-                         "d"
-#  endif
-                         "")
-        < 0) {
-        Py_DECREF(config);
-        return NULL;
-    }
 #endif
 
 #ifdef Py_GIL_DISABLED
