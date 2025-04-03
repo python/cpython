@@ -158,6 +158,7 @@ import sys
 import tokenize
 import token
 import types
+import weakref
 import functools
 import builtins
 from keyword import iskeyword
@@ -828,6 +829,14 @@ def getfile(object):
             if object.__module__ == '__main__':
                 raise OSError('source code not available')
         raise TypeError('{!r} is a built-in class'.format(object))
+    if code := _getcode(object):
+        return code.co_filename
+    raise TypeError('module, class, method, function, traceback, frame, or '
+                    'code object was expected, got {}'.format(
+                    type(object).__name__))
+
+def _getcode(object):
+    """Get the code object an object is associated with, if available."""
     if ismethod(object):
         object = object.__func__
     if isfunction(object):
@@ -837,10 +846,8 @@ def getfile(object):
     if isframe(object):
         object = object.f_code
     if iscode(object):
-        return object.co_filename
-    raise TypeError('module, class, method, function, traceback, frame, or '
-                    'code object was expected, got {}'.format(
-                    type(object).__name__))
+        return object
+    return None
 
 def getmodulename(path):
     """Return the module name for a given file, or None."""
@@ -893,6 +900,22 @@ def getabsfile(object, _filename=None):
 
 modulesbyfile = {}
 _filesbymodname = {}
+_moduleless = OrderedDict()
+_MAX_MODULELESS = 200
+
+def _is_cached_moduleless(code):
+    if ref := _moduleless.get(id(code)):
+        if ref() is code:
+            _moduleless.move_to_end(id(code), last=True)
+            return True
+    return False
+
+def _cache_moduleless(code):
+    if code is None:
+        return
+    _moduleless[id(code)] = weakref.ref(code)
+    if len(_moduleless) > _MAX_MODULELESS:
+        _moduleless.popitem(last=False)
 
 def getmodule(object, _filename=None):
     """Return the module an object was defined in, or None if not found."""
@@ -904,14 +927,42 @@ def getmodule(object, _filename=None):
     # Try the filename to modulename cache
     if _filename is not None and _filename in modulesbyfile:
         return sys.modules.get(modulesbyfile[_filename])
+    # Check for moduleless objects
+    code = _getcode(object)
+    if _is_cached_moduleless(code):
+        return None
     # Try the cache again with the absolute file name
     try:
         file = getabsfile(object, _filename)
     except (TypeError, FileNotFoundError):
+        _cache_moduleless(code)
         return None
     if file in modulesbyfile:
         return sys.modules.get(modulesbyfile[file])
     # Update the filename to module name cache and check yet again
+    _update_module_filename_cache()
+    if file in modulesbyfile:
+        return sys.modules.get(modulesbyfile[file])
+    # Check the main module
+    main = sys.modules['__main__']
+    if not hasattr(object, '__name__'):
+        _cache_moduleless(code)
+        return None
+    if hasattr(main, object.__name__):
+        mainobject = getattr(main, object.__name__)
+        if mainobject is object:
+            return main
+    # Check builtins
+    builtin = sys.modules['builtins']
+    if hasattr(builtin, object.__name__):
+        builtinobject = getattr(builtin, object.__name__)
+        if builtinobject is object:
+            return builtin
+    _cache_moduleless(code)
+    return None
+
+def _update_module_filename_cache():
+    """Update the filename to module name cache."""
     # Copy sys.modules in order to cope with changes while iterating
     for modname, module in sys.modules.copy().items():
         if ismodule(module) and hasattr(module, '__file__'):
@@ -924,22 +975,6 @@ def getmodule(object, _filename=None):
             # Always map to the name the module knows itself by
             modulesbyfile[f] = modulesbyfile[
                 os.path.realpath(f)] = module.__name__
-    if file in modulesbyfile:
-        return sys.modules.get(modulesbyfile[file])
-    # Check the main module
-    main = sys.modules['__main__']
-    if not hasattr(object, '__name__'):
-        return None
-    if hasattr(main, object.__name__):
-        mainobject = getattr(main, object.__name__)
-        if mainobject is object:
-            return main
-    # Check builtins
-    builtin = sys.modules['builtins']
-    if hasattr(builtin, object.__name__):
-        builtinobject = getattr(builtin, object.__name__)
-        if builtinobject is object:
-            return builtin
 
 
 class ClassFoundException(Exception):
