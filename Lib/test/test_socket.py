@@ -1,4 +1,5 @@
 import unittest
+from unittest import mock
 from test import support
 from test.support import (
     is_apple, os_helper, refleak_helper, socket_helper, threading_helper
@@ -2682,13 +2683,23 @@ class BasicBluetoothTest(unittest.TestCase):
             with self.assertRaises(OSError):
                 f.bind((socket.BDADDR_ANY.encode(), 0x1001))
 
-    @unittest.skipIf(sys.platform == "win32", "test does not work on windows")
     def testBindRfcommSocket(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as s:
             channel = 0
-            s.bind((socket.BDADDR_ANY, channel))
+            try:
+                s.bind((socket.BDADDR_ANY, channel))
+            except OSError as err:
+                if sys.platform == 'win32' and err.winerror == 10050:
+                    self.skipTest(str(err))
             addr = s.getsockname()
-            self.assertEqual(addr, (socket.BDADDR_ANY, channel))
+            self.assertEqual(addr, (mock.ANY, channel))
+            self.assertRegex(addr[0], r'(?i)[0-9a-f]{2}(?::[0-9a-f]{2}){4}')
+            if sys.platform != 'win32':
+                self.assertEqual(addr, (socket.BDADDR_ANY, channel))
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as s:
+            s.bind(addr)
+            addr2 = s.getsockname()
+            self.assertEqual(addr2, addr)
 
     def testBadRfcommAddr(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as s:
