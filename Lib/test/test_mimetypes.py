@@ -245,7 +245,6 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/x-troff", ".roff"),
                 ("application/xml", ".xsl"),
                 ("application/yaml", ".yaml"),
-                ("application/yaml", ".yml"),
                 ("audio/flac", ".flac"),
                 ("audio/matroska", ".mka"),
                 ("audio/mp4", ".m4a"),
