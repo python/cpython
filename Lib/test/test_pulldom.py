@@ -174,9 +174,8 @@ class ThoroughTestCase(unittest.TestCase):
         """Test some of the hard-to-reach parts of PullDOM."""
         self._test_thorough(pulldom.parse(None, parser=SAXExerciser()))
 
-    @unittest.expectedFailure
-    def test_sax2dom_fail(self):
-        """SAX2DOM can"t handle a PI before the root element."""
+    def test_sax2dom_pi_before_root_element(self):
+        """Verify SAX2DOM can handle a PI before the root element."""
         pd = SAX2DOMTestHelper(None, SAXExerciser(), 12)
         self._test_thorough(pd)
 
@@ -198,10 +197,11 @@ class ThoroughTestCase(unittest.TestCase):
             evt, node = next(pd)
             self.assertEqual(pulldom.COMMENT, evt)
             self.assertEqual("a comment", node.data)
-            evt, node = next(pd)
-            self.assertEqual(pulldom.PROCESSING_INSTRUCTION, evt)
-            self.assertEqual("target", node.target)
-            self.assertEqual("data", node.data)
+
+        evt, node = next(pd)
+        self.assertEqual(pulldom.PROCESSING_INSTRUCTION, evt)
+        self.assertEqual("target", node.target)
+        self.assertEqual("data", node.data)
 
         evt, node = next(pd)
         self.assertEqual(pulldom.START_ELEMENT, evt)
@@ -267,12 +267,13 @@ class SAXExerciser(object):
 
 
 class SAX2DOMExerciser(SAXExerciser):
-    """The same as SAXExerciser, but without the processing instruction and
-    comment before the root element, because S2D can"t handle it"""
+    """The same as SAXExerciser, but without the comment before the root
+    element, because S2D can't handle it."""
 
     def parse(self, _):
         h = self._handler
         h.startDocument()
+        h.processingInstruction("target", "data")
         h.startElement("html", AttributesImpl({}))
         h.comment("a comment")
         h.processingInstruction("target", "data")
