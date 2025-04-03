@@ -16,9 +16,9 @@ PyDoc_STRVAR(frame_locals__doc__,
 #endif
 #if defined(FRAME_LOCALS_GETSETDEF)
 #  undef FRAME_LOCALS_GETSETDEF
-#  define FRAME_LOCALS_GETSETDEF {"f_locals", (getter)frame_locals_get, (setter)frame_locals_set, frame_locals_DOCSTR},
+#  define FRAME_LOCALS_GETSETDEF {"f_locals", frame_locals_get, frame_locals_set, frame_locals_DOCSTR},
 #else
-#  define FRAME_LOCALS_GETSETDEF {"f_locals", (getter)frame_locals_get, NULL, frame_locals_DOCSTR},
+#  define FRAME_LOCALS_GETSETDEF {"f_locals", frame_locals_get, NULL, frame_locals_DOCSTR},
 #endif
 
 static PyObject *
@@ -48,9 +48,9 @@ PyDoc_STRVAR(frame_lineno__doc__,
 #endif
 #if defined(FRAME_LINENO_GETSETDEF)
 #  undef FRAME_LINENO_GETSETDEF
-#  define FRAME_LINENO_GETSETDEF {"f_lineno", (getter)frame_lineno_get, (setter)frame_lineno_set, frame_lineno_DOCSTR},
+#  define FRAME_LINENO_GETSETDEF {"f_lineno", frame_lineno_get, frame_lineno_set, frame_lineno_DOCSTR},
 #else
-#  define FRAME_LINENO_GETSETDEF {"f_lineno", (getter)frame_lineno_get, NULL, frame_lineno_DOCSTR},
+#  define FRAME_LINENO_GETSETDEF {"f_lineno", frame_lineno_get, NULL, frame_lineno_DOCSTR},
 #endif
 
 static PyObject *
@@ -80,9 +80,9 @@ PyDoc_STRVAR(frame_lasti__doc__,
 #endif
 #if defined(FRAME_LASTI_GETSETDEF)
 #  undef FRAME_LASTI_GETSETDEF
-#  define FRAME_LASTI_GETSETDEF {"f_lasti", (getter)frame_lasti_get, (setter)frame_lasti_set, frame_lasti_DOCSTR},
+#  define FRAME_LASTI_GETSETDEF {"f_lasti", frame_lasti_get, frame_lasti_set, frame_lasti_DOCSTR},
 #else
-#  define FRAME_LASTI_GETSETDEF {"f_lasti", (getter)frame_lasti_get, NULL, frame_lasti_DOCSTR},
+#  define FRAME_LASTI_GETSETDEF {"f_lasti", frame_lasti_get, NULL, frame_lasti_DOCSTR},
 #endif
 
 static PyObject *
@@ -112,9 +112,9 @@ PyDoc_STRVAR(frame_globals__doc__,
 #endif
 #if defined(FRAME_GLOBALS_GETSETDEF)
 #  undef FRAME_GLOBALS_GETSETDEF
-#  define FRAME_GLOBALS_GETSETDEF {"f_globals", (getter)frame_globals_get, (setter)frame_globals_set, frame_globals_DOCSTR},
+#  define FRAME_GLOBALS_GETSETDEF {"f_globals", frame_globals_get, frame_globals_set, frame_globals_DOCSTR},
 #else
-#  define FRAME_GLOBALS_GETSETDEF {"f_globals", (getter)frame_globals_get, NULL, frame_globals_DOCSTR},
+#  define FRAME_GLOBALS_GETSETDEF {"f_globals", frame_globals_get, NULL, frame_globals_DOCSTR},
 #endif
 
 static PyObject *
@@ -144,9 +144,9 @@ PyDoc_STRVAR(frame_builtins__doc__,
 #endif
 #if defined(FRAME_BUILTINS_GETSETDEF)
 #  undef FRAME_BUILTINS_GETSETDEF
-#  define FRAME_BUILTINS_GETSETDEF {"f_builtins", (getter)frame_builtins_get, (setter)frame_builtins_set, frame_builtins_DOCSTR},
+#  define FRAME_BUILTINS_GETSETDEF {"f_builtins", frame_builtins_get, frame_builtins_set, frame_builtins_DOCSTR},
 #else
-#  define FRAME_BUILTINS_GETSETDEF {"f_builtins", (getter)frame_builtins_get, NULL, frame_builtins_DOCSTR},
+#  define FRAME_BUILTINS_GETSETDEF {"f_builtins", frame_builtins_get, NULL, frame_builtins_DOCSTR},
 #endif
 
 static PyObject *
@@ -176,9 +176,9 @@ PyDoc_STRVAR(frame_code__doc__,
 #endif
 #if defined(FRAME_CODE_GETSETDEF)
 #  undef FRAME_CODE_GETSETDEF
-#  define FRAME_CODE_GETSETDEF {"f_code", (getter)frame_code_get, (setter)frame_code_set, frame_code_DOCSTR},
+#  define FRAME_CODE_GETSETDEF {"f_code", frame_code_get, frame_code_set, frame_code_DOCSTR},
 #else
-#  define FRAME_CODE_GETSETDEF {"f_code", (getter)frame_code_get, NULL, frame_code_DOCSTR},
+#  define FRAME_CODE_GETSETDEF {"f_code", frame_code_get, NULL, frame_code_DOCSTR},
 #endif
 
 static PyObject *
@@ -195,9 +195,9 @@ frame_code_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(FRAME_BACK_GETSETDEF)
 #  undef FRAME_BACK_GETSETDEF
-#  define FRAME_BACK_GETSETDEF {"f_back", (getter)frame_back_get, (setter)frame_back_set, frame_back_DOCSTR},
+#  define FRAME_BACK_GETSETDEF {"f_back", frame_back_get, frame_back_set, frame_back_DOCSTR},
 #else
-#  define FRAME_BACK_GETSETDEF {"f_back", (getter)frame_back_get, NULL, frame_back_DOCSTR},
+#  define FRAME_BACK_GETSETDEF {"f_back", frame_back_get, NULL, frame_back_DOCSTR},
 #endif
 
 static PyObject *
@@ -227,9 +227,9 @@ PyDoc_STRVAR(frame_trace_opcodes__doc__,
 #endif
 #if defined(FRAME_TRACE_OPCODES_GETSETDEF)
 #  undef FRAME_TRACE_OPCODES_GETSETDEF
-#  define FRAME_TRACE_OPCODES_GETSETDEF {"f_trace_opcodes", (getter)frame_trace_opcodes_get, (setter)frame_trace_opcodes_set, frame_trace_opcodes_DOCSTR},
+#  define FRAME_TRACE_OPCODES_GETSETDEF {"f_trace_opcodes", frame_trace_opcodes_get, frame_trace_opcodes_set, frame_trace_opcodes_DOCSTR},
 #else
-#  define FRAME_TRACE_OPCODES_GETSETDEF {"f_trace_opcodes", (getter)frame_trace_opcodes_get, NULL, frame_trace_opcodes_DOCSTR},
+#  define FRAME_TRACE_OPCODES_GETSETDEF {"f_trace_opcodes", frame_trace_opcodes_get, NULL, frame_trace_opcodes_DOCSTR},
 #endif
 
 static PyObject *
@@ -252,9 +252,9 @@ frame_trace_opcodes_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(FRAME_TRACE_OPCODES_GETSETDEF)
 #  undef FRAME_TRACE_OPCODES_GETSETDEF
-#  define FRAME_TRACE_OPCODES_GETSETDEF {"f_trace_opcodes", (getter)frame_trace_opcodes_get, (setter)frame_trace_opcodes_set, frame_trace_opcodes_DOCSTR},
+#  define FRAME_TRACE_OPCODES_GETSETDEF {"f_trace_opcodes", frame_trace_opcodes_get, frame_trace_opcodes_set, frame_trace_opcodes_DOCSTR},
 #else
-#  define FRAME_TRACE_OPCODES_GETSETDEF {"f_trace_opcodes", NULL, (setter)frame_trace_opcodes_set, NULL},
+#  define FRAME_TRACE_OPCODES_GETSETDEF {"f_trace_opcodes", NULL, frame_trace_opcodes_set, NULL},
 #endif
 
 static int
@@ -277,9 +277,9 @@ frame_trace_opcodes_set(PyObject *self, PyObject *value, void *Py_UNUSED(context
 #endif
 #if defined(FRAME_LINENO_GETSETDEF)
 #  undef FRAME_LINENO_GETSETDEF
-#  define FRAME_LINENO_GETSETDEF {"f_lineno", (getter)frame_lineno_get, (setter)frame_lineno_set, frame_lineno_DOCSTR},
+#  define FRAME_LINENO_GETSETDEF {"f_lineno", frame_lineno_get, frame_lineno_set, frame_lineno_DOCSTR},
 #else
-#  define FRAME_LINENO_GETSETDEF {"f_lineno", NULL, (setter)frame_lineno_set, NULL},
+#  define FRAME_LINENO_GETSETDEF {"f_lineno", NULL, frame_lineno_set, NULL},
 #endif
 
 static int
@@ -309,9 +309,9 @@ PyDoc_STRVAR(frame_trace__doc__,
 #endif
 #if defined(FRAME_TRACE_GETSETDEF)
 #  undef FRAME_TRACE_GETSETDEF
-#  define FRAME_TRACE_GETSETDEF {"f_trace", (getter)frame_trace_get, (setter)frame_trace_set, frame_trace_DOCSTR},
+#  define FRAME_TRACE_GETSETDEF {"f_trace", frame_trace_get, frame_trace_set, frame_trace_DOCSTR},
 #else
-#  define FRAME_TRACE_GETSETDEF {"f_trace", (getter)frame_trace_get, NULL, frame_trace_DOCSTR},
+#  define FRAME_TRACE_GETSETDEF {"f_trace", frame_trace_get, NULL, frame_trace_DOCSTR},
 #endif
 
 static PyObject *
@@ -334,9 +334,9 @@ frame_trace_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(FRAME_TRACE_GETSETDEF)
 #  undef FRAME_TRACE_GETSETDEF
-#  define FRAME_TRACE_GETSETDEF {"f_trace", (getter)frame_trace_get, (setter)frame_trace_set, frame_trace_DOCSTR},
+#  define FRAME_TRACE_GETSETDEF {"f_trace", frame_trace_get, frame_trace_set, frame_trace_DOCSTR},
 #else
-#  define FRAME_TRACE_GETSETDEF {"f_trace", NULL, (setter)frame_trace_set, NULL},
+#  define FRAME_TRACE_GETSETDEF {"f_trace", NULL, frame_trace_set, NULL},
 #endif
 
 static int
@@ -366,9 +366,9 @@ PyDoc_STRVAR(frame_generator__doc__,
 #endif
 #if defined(FRAME_GENERATOR_GETSETDEF)
 #  undef FRAME_GENERATOR_GETSETDEF
-#  define FRAME_GENERATOR_GETSETDEF {"f_generator", (getter)frame_generator_get, (setter)frame_generator_set, frame_generator_DOCSTR},
+#  define FRAME_GENERATOR_GETSETDEF {"f_generator", frame_generator_get, frame_generator_set, frame_generator_DOCSTR},
 #else
-#  define FRAME_GENERATOR_GETSETDEF {"f_generator", (getter)frame_generator_get, NULL, frame_generator_DOCSTR},
+#  define FRAME_GENERATOR_GETSETDEF {"f_generator", frame_generator_get, NULL, frame_generator_DOCSTR},
 #endif
 
 static PyObject *
@@ -433,4 +433,4 @@ frame___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-/*[clinic end generated code: output=2292649a947634ce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e00666ac581a7f1c input=a9049054013a1b77]*/

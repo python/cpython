@@ -218,9 +218,9 @@ PyDoc_STRVAR(_io__TextIOBase_encoding__doc__,
 #endif
 #if defined(_IO__TEXTIOBASE_ENCODING_GETSETDEF)
 #  undef _IO__TEXTIOBASE_ENCODING_GETSETDEF
-#  define _IO__TEXTIOBASE_ENCODING_GETSETDEF {"encoding", (getter)_io__TextIOBase_encoding_get, (setter)_io__TextIOBase_encoding_set, _io__TextIOBase_encoding_DOCSTR},
+#  define _IO__TEXTIOBASE_ENCODING_GETSETDEF {"encoding", _io__TextIOBase_encoding_get, _io__TextIOBase_encoding_set, _io__TextIOBase_encoding_DOCSTR},
 #else
-#  define _IO__TEXTIOBASE_ENCODING_GETSETDEF {"encoding", (getter)_io__TextIOBase_encoding_get, NULL, _io__TextIOBase_encoding_DOCSTR},
+#  define _IO__TEXTIOBASE_ENCODING_GETSETDEF {"encoding", _io__TextIOBase_encoding_get, NULL, _io__TextIOBase_encoding_DOCSTR},
 #endif
 
 static PyObject *
@@ -248,9 +248,9 @@ PyDoc_STRVAR(_io__TextIOBase_newlines__doc__,
 #endif
 #if defined(_IO__TEXTIOBASE_NEWLINES_GETSETDEF)
 #  undef _IO__TEXTIOBASE_NEWLINES_GETSETDEF
-#  define _IO__TEXTIOBASE_NEWLINES_GETSETDEF {"newlines", (getter)_io__TextIOBase_newlines_get, (setter)_io__TextIOBase_newlines_set, _io__TextIOBase_newlines_DOCSTR},
+#  define _IO__TEXTIOBASE_NEWLINES_GETSETDEF {"newlines", _io__TextIOBase_newlines_get, _io__TextIOBase_newlines_set, _io__TextIOBase_newlines_DOCSTR},
 #else
-#  define _IO__TEXTIOBASE_NEWLINES_GETSETDEF {"newlines", (getter)_io__TextIOBase_newlines_get, NULL, _io__TextIOBase_newlines_DOCSTR},
+#  define _IO__TEXTIOBASE_NEWLINES_GETSETDEF {"newlines", _io__TextIOBase_newlines_get, NULL, _io__TextIOBase_newlines_DOCSTR},
 #endif
 
 static PyObject *
@@ -276,9 +276,9 @@ PyDoc_STRVAR(_io__TextIOBase_errors__doc__,
 #endif
 #if defined(_IO__TEXTIOBASE_ERRORS_GETSETDEF)
 #  undef _IO__TEXTIOBASE_ERRORS_GETSETDEF
-#  define _IO__TEXTIOBASE_ERRORS_GETSETDEF {"errors", (getter)_io__TextIOBase_errors_get, (setter)_io__TextIOBase_errors_set, _io__TextIOBase_errors_DOCSTR},
+#  define _IO__TEXTIOBASE_ERRORS_GETSETDEF {"errors", _io__TextIOBase_errors_get, _io__TextIOBase_errors_set, _io__TextIOBase_errors_DOCSTR},
 #else
-#  define _IO__TEXTIOBASE_ERRORS_GETSETDEF {"errors", (getter)_io__TextIOBase_errors_get, NULL, _io__TextIOBase_errors_DOCSTR},
+#  define _IO__TEXTIOBASE_ERRORS_GETSETDEF {"errors", _io__TextIOBase_errors_get, NULL, _io__TextIOBase_errors_DOCSTR},
 #endif
 
 static PyObject *
@@ -1168,9 +1168,9 @@ _io_TextIOWrapper_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 #endif
 #if defined(_IO_TEXTIOWRAPPER_NAME_GETSETDEF)
 #  undef _IO_TEXTIOWRAPPER_NAME_GETSETDEF
-#  define _IO_TEXTIOWRAPPER_NAME_GETSETDEF {"name", (getter)_io_TextIOWrapper_name_get, (setter)_io_TextIOWrapper_name_set, _io_TextIOWrapper_name_DOCSTR},
+#  define _IO_TEXTIOWRAPPER_NAME_GETSETDEF {"name", _io_TextIOWrapper_name_get, _io_TextIOWrapper_name_set, _io_TextIOWrapper_name_DOCSTR},
 #else
-#  define _IO_TEXTIOWRAPPER_NAME_GETSETDEF {"name", (getter)_io_TextIOWrapper_name_get, NULL, _io_TextIOWrapper_name_DOCSTR},
+#  define _IO_TEXTIOWRAPPER_NAME_GETSETDEF {"name", _io_TextIOWrapper_name_get, NULL, _io_TextIOWrapper_name_DOCSTR},
 #endif
 
 static PyObject *
@@ -1193,9 +1193,9 @@ _io_TextIOWrapper_name_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(_IO_TEXTIOWRAPPER_CLOSED_GETSETDEF)
 #  undef _IO_TEXTIOWRAPPER_CLOSED_GETSETDEF
-#  define _IO_TEXTIOWRAPPER_CLOSED_GETSETDEF {"closed", (getter)_io_TextIOWrapper_closed_get, (setter)_io_TextIOWrapper_closed_set, _io_TextIOWrapper_closed_DOCSTR},
+#  define _IO_TEXTIOWRAPPER_CLOSED_GETSETDEF {"closed", _io_TextIOWrapper_closed_get, _io_TextIOWrapper_closed_set, _io_TextIOWrapper_closed_DOCSTR},
 #else
-#  define _IO_TEXTIOWRAPPER_CLOSED_GETSETDEF {"closed", (getter)_io_TextIOWrapper_closed_get, NULL, _io_TextIOWrapper_closed_DOCSTR},
+#  define _IO_TEXTIOWRAPPER_CLOSED_GETSETDEF {"closed", _io_TextIOWrapper_closed_get, NULL, _io_TextIOWrapper_closed_DOCSTR},
 #endif
 
 static PyObject *
@@ -1218,9 +1218,9 @@ _io_TextIOWrapper_closed_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(_IO_TEXTIOWRAPPER_NEWLINES_GETSETDEF)
 #  undef _IO_TEXTIOWRAPPER_NEWLINES_GETSETDEF
-#  define _IO_TEXTIOWRAPPER_NEWLINES_GETSETDEF {"newlines", (getter)_io_TextIOWrapper_newlines_get, (setter)_io_TextIOWrapper_newlines_set, _io_TextIOWrapper_newlines_DOCSTR},
+#  define _IO_TEXTIOWRAPPER_NEWLINES_GETSETDEF {"newlines", _io_TextIOWrapper_newlines_get, _io_TextIOWrapper_newlines_set, _io_TextIOWrapper_newlines_DOCSTR},
 #else
-#  define _IO_TEXTIOWRAPPER_NEWLINES_GETSETDEF {"newlines", (getter)_io_TextIOWrapper_newlines_get, NULL, _io_TextIOWrapper_newlines_DOCSTR},
+#  define _IO_TEXTIOWRAPPER_NEWLINES_GETSETDEF {"newlines", _io_TextIOWrapper_newlines_get, NULL, _io_TextIOWrapper_newlines_DOCSTR},
 #endif
 
 static PyObject *
@@ -1243,9 +1243,9 @@ _io_TextIOWrapper_newlines_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(_IO_TEXTIOWRAPPER_ERRORS_GETSETDEF)
 #  undef _IO_TEXTIOWRAPPER_ERRORS_GETSETDEF
-#  define _IO_TEXTIOWRAPPER_ERRORS_GETSETDEF {"errors", (getter)_io_TextIOWrapper_errors_get, (setter)_io_TextIOWrapper_errors_set, _io_TextIOWrapper_errors_DOCSTR},
+#  define _IO_TEXTIOWRAPPER_ERRORS_GETSETDEF {"errors", _io_TextIOWrapper_errors_get, _io_TextIOWrapper_errors_set, _io_TextIOWrapper_errors_DOCSTR},
 #else
-#  define _IO_TEXTIOWRAPPER_ERRORS_GETSETDEF {"errors", (getter)_io_TextIOWrapper_errors_get, NULL, _io_TextIOWrapper_errors_DOCSTR},
+#  define _IO_TEXTIOWRAPPER_ERRORS_GETSETDEF {"errors", _io_TextIOWrapper_errors_get, NULL, _io_TextIOWrapper_errors_DOCSTR},
 #endif
 
 static PyObject *
@@ -1268,9 +1268,9 @@ _io_TextIOWrapper_errors_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(_IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF)
 #  undef _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF
-#  define _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF {"_CHUNK_SIZE", (getter)_io_TextIOWrapper__CHUNK_SIZE_get, (setter)_io_TextIOWrapper__CHUNK_SIZE_set, _io_TextIOWrapper__CHUNK_SIZE_DOCSTR},
+#  define _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF {"_CHUNK_SIZE", _io_TextIOWrapper__CHUNK_SIZE_get, _io_TextIOWrapper__CHUNK_SIZE_set, _io_TextIOWrapper__CHUNK_SIZE_DOCSTR},
 #else
-#  define _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF {"_CHUNK_SIZE", (getter)_io_TextIOWrapper__CHUNK_SIZE_get, NULL, _io_TextIOWrapper__CHUNK_SIZE_DOCSTR},
+#  define _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF {"_CHUNK_SIZE", _io_TextIOWrapper__CHUNK_SIZE_get, NULL, _io_TextIOWrapper__CHUNK_SIZE_DOCSTR},
 #endif
 
 static PyObject *
@@ -1293,9 +1293,9 @@ _io_TextIOWrapper__CHUNK_SIZE_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(_IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF)
 #  undef _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF
-#  define _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF {"_CHUNK_SIZE", (getter)_io_TextIOWrapper__CHUNK_SIZE_get, (setter)_io_TextIOWrapper__CHUNK_SIZE_set, _io_TextIOWrapper__CHUNK_SIZE_DOCSTR},
+#  define _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF {"_CHUNK_SIZE", _io_TextIOWrapper__CHUNK_SIZE_get, _io_TextIOWrapper__CHUNK_SIZE_set, _io_TextIOWrapper__CHUNK_SIZE_DOCSTR},
 #else
-#  define _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF {"_CHUNK_SIZE", NULL, (setter)_io_TextIOWrapper__CHUNK_SIZE_set, NULL},
+#  define _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF {"_CHUNK_SIZE", NULL, _io_TextIOWrapper__CHUNK_SIZE_set, NULL},
 #endif
 
 static int
@@ -1312,4 +1312,4 @@ _io_TextIOWrapper__CHUNK_SIZE_set(PyObject *self, PyObject *value, void *Py_UNUS
 
     return return_value;
 }
-/*[clinic end generated code: output=8603f712b19c4f65 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=50bc041dbd9a4e78 input=a9049054013a1b77]*/

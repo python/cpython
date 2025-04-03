@@ -167,9 +167,9 @@ GETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
     #endif
     #if defined({getset_name}_GETSETDEF)
     #  undef {getset_name}_GETSETDEF
-    #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
+    #  define {getset_name}_GETSETDEF {{"{name}", {getset_basename}_get, {getset_basename}_set, {getset_basename}_DOCSTR}},
     #else
-    #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, {getset_basename}_DOCSTR}},
+    #  define {getset_name}_GETSETDEF {{"{name}", {getset_basename}_get, NULL, {getset_basename}_DOCSTR}},
     #endif
 """)
 SETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
@@ -178,9 +178,9 @@ SETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
     #endif
     #if defined({getset_name}_GETSETDEF)
     #  undef {getset_name}_GETSETDEF
-    #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
+    #  define {getset_name}_GETSETDEF {{"{name}", {getset_basename}_get, {getset_basename}_set, {getset_basename}_DOCSTR}},
     #else
-    #  define {getset_name}_GETSETDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
+    #  define {getset_name}_GETSETDEF {{"{name}", NULL, {getset_basename}_set, NULL}},
     #endif
 """)
 METHODDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
