@@ -1,0 +1,2 @@
+:meth:`imaplib.login` now raises exceptions with :class:`str` instead of
+:class:`bytes`. Patch by Florian Best.
