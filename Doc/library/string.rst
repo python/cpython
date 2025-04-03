@@ -511,7 +511,7 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
-   |         | number separator characters.                             |
+   |         | digit separator characters.                              |
    +---------+----------------------------------------------------------+
    | None    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
@@ -593,7 +593,8 @@ The available presentation types for :class:`float` and
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'g'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
-   |         | number separator characters.                             |
+   |         | digit separator characters                               |
+   |         | for the integral part of a number.                       |
    +---------+----------------------------------------------------------+
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
    |         | in fixed (``'f'``) format, followed by a percent sign.   |
