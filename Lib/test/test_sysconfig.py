@@ -456,20 +456,19 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         library = sysconfig.get_config_var('LIBRARY')
         ldlibrary = sysconfig.get_config_var('LDLIBRARY')
         major, minor = sys.version_info[:2]
-        if sys.platform == 'win32':
-            self.assertTrue(library.startswith(f'python{major}{minor}'))
-            self.assertTrue(library.endswith('.dll'))
+        abiflags = sysconfig.get_config_var('ABIFLAGS')
+        if sys.platform.startswith('win'):
+            self.assertEqual(library, f'python{major}{minor}{abiflags}.dll')
             self.assertEqual(library, ldlibrary)
         elif is_apple_mobile:
             framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
             self.assertEqual(ldlibrary, f"{framework}.framework/{framework}")
         else:
-            self.assertTrue(library.startswith(f'libpython{major}.{minor}'))
-            self.assertTrue(library.endswith('.a'))
+            self.assertEqual(library, f'libpython{major}.{minor}{abiflags}.a')
             if sys.platform == 'darwin' and sys._framework:
                 self.skipTest('gh-110824: skip LDLIBRARY test for framework build')
             else:
-                self.assertTrue(ldlibrary.startswith(f'libpython{major}.{minor}'))
+                self.assertStartsWith(ldlibrary, f'libpython{major}.{minor}{abiflags}')
 
     @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
     @requires_subprocess()
