@@ -286,24 +286,19 @@ def header_decode(s):
     quoted-printable (like =?iso-8859-1?q?Hello_World?=) -- please use
     the high level email.header class for that functionality.
     """
-    s = s.replace('_', ' ')
-    
-    valid_hex = '0123456789ABCDEFabcdef'
-    
-    i = 0
     # Check for regex =[a-fA-F0-9]{2}
-    
     result = []
     
-    while i < len(s):
-        if s[i] == '=' and i + 2 < len(s):
+    max_s_check_len = s - 2
+    for i, c in enumerate(s):
+        if c == '=' and i < max_s_check_len:
             hex_part = s[i: i + 3]
             
-            if (hex_part[1] in valid_hex) and (hex_part[2] in valid_hex):
+            if (hex_part[1] in hexdigits) and (hex_part[2] in hexdigits):
                 result.append(unquote(hex_part))
                 i += 3
                 continue
-        result.append(s[i])
+        result.append(' ' if c == '_' else c)
         i += 1
     
     return ''.join(result)
