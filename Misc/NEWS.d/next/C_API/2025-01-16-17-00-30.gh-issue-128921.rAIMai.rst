@@ -1,0 +1,5 @@
+Set `skipinitialspace` to True by default in csv.py
+
+The default value of `skipinitialspace` in `csv.py` has been changed to `True`, aligning with common user preferences and improving ease of use when parsing CSV files with leading spaces.
+
+Patch by Logan Wright. ([GH-128921](https://github.com/python/cpython/pull/128921))
