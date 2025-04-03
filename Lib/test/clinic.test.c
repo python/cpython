@@ -5364,9 +5364,9 @@ Test.property
 #endif
 #if defined(TEST_PROPERTY_GETSETDEF)
 #  undef TEST_PROPERTY_GETSETDEF
-#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, (setter)Test_property_set, Test_property_DOCSTR},
+#  define TEST_PROPERTY_GETSETDEF {"property", Test_property_get, Test_property_set, Test_property_DOCSTR},
 #else
-#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, NULL, Test_property_DOCSTR},
+#  define TEST_PROPERTY_GETSETDEF {"property", Test_property_get, NULL, Test_property_DOCSTR},
 #endif
 
 static PyObject *
@@ -5380,7 +5380,7 @@ Test_property_get(PyObject *self, void *Py_UNUSED(context))
 
 static PyObject *
 Test_property_get_impl(TestObj *self)
-/*[clinic end generated code: output=b38d68abd3466a6e input=2d92b3449fbc7d2b]*/
+/*[clinic end generated code: output=4d600bc77ca96957 input=2d92b3449fbc7d2b]*/
 
 /*[clinic input]
 @setter
@@ -5392,9 +5392,9 @@ Test.property
 #endif
 #if defined(TEST_PROPERTY_GETSETDEF)
 #  undef TEST_PROPERTY_GETSETDEF
-#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, (setter)Test_property_set, Test_property_DOCSTR},
+#  define TEST_PROPERTY_GETSETDEF {"property", Test_property_get, Test_property_set, Test_property_DOCSTR},
 #else
-#  define TEST_PROPERTY_GETSETDEF {"property", NULL, (setter)Test_property_set, NULL},
+#  define TEST_PROPERTY_GETSETDEF {"property", NULL, Test_property_set, NULL},
 #endif
 
 static int
@@ -5412,7 +5412,7 @@ Test_property_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 
 static int
 Test_property_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=49f925ab2a33b637 input=3bc3f46a23c83a88]*/
+/*[clinic end generated code: output=5d1024e9700a89dd input=3bc3f46a23c83a88]*/
 
 /*[clinic input]
 @setter
@@ -5424,9 +5424,9 @@ Test.setter_first_with_docstr
 #endif
 #if defined(TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF)
 #  undef TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF
-#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", (getter)Test_setter_first_with_docstr_get, (setter)Test_setter_first_with_docstr_set, Test_setter_first_with_docstr_DOCSTR},
+#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", Test_setter_first_with_docstr_get, Test_setter_first_with_docstr_set, Test_setter_first_with_docstr_DOCSTR},
 #else
-#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", NULL, (setter)Test_setter_first_with_docstr_set, NULL},
+#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", NULL, Test_setter_first_with_docstr_set, NULL},
 #endif
 
 static int
@@ -5444,7 +5444,7 @@ Test_setter_first_with_docstr_set(PyObject *self, PyObject *value, void *Py_UNUS
 
 static int
 Test_setter_first_with_docstr_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=5aaf44373c0af545 input=31a045ce11bbe961]*/
+/*[clinic end generated code: output=b3e243759a22bb02 input=31a045ce11bbe961]*/
 
 /*[clinic input]
 @getter
@@ -5465,9 +5465,9 @@ PyDoc_STRVAR(Test_setter_first_with_docstr__doc__,
 #endif
 #if defined(TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF)
 #  undef TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF
-#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", (getter)Test_setter_first_with_docstr_get, (setter)Test_setter_first_with_docstr_set, Test_setter_first_with_docstr_DOCSTR},
+#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", Test_setter_first_with_docstr_get, Test_setter_first_with_docstr_set, Test_setter_first_with_docstr_DOCSTR},
 #else
-#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", (getter)Test_setter_first_with_docstr_get, NULL, Test_setter_first_with_docstr_DOCSTR},
+#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", Test_setter_first_with_docstr_get, NULL, Test_setter_first_with_docstr_DOCSTR},
 #endif
 
 static PyObject *
@@ -5481,7 +5481,7 @@ Test_setter_first_with_docstr_get(PyObject *self, void *Py_UNUSED(context))
 
 static PyObject *
 Test_setter_first_with_docstr_get_impl(TestObj *self)
-/*[clinic end generated code: output=fe6e3aa844a24920 input=10af4e43b3cb34dc]*/
+/*[clinic end generated code: output=968a7642c38ef6e6 input=10af4e43b3cb34dc]*/
 
 /*[clinic input]
 output push
