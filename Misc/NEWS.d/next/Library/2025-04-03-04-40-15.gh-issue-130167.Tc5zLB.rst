@@ -1,2 +1,0 @@
-Improved import time of :mod:`email.quoprimime` module by 60%. Patch by
-Marius-Juston
