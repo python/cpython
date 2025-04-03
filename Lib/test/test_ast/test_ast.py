@@ -1,3 +1,4 @@
+import _ast_unparse
 import ast
 import builtins
 import copy
@@ -152,22 +153,6 @@ class AST_Tests(unittest.TestCase):
                     else:
                         self.assertIsInstance(res.body[0].value, ast.Name)
                         self.assertEqual(res.body[0].value.id, expected)
-
-    def test_optimization_levels_const_folding(self):
-        folded = ('Expr', (1, 0, 1, 6), ('Constant', (1, 0, 1, 6), (1, 2), None))
-        not_folded = ('Expr', (1, 0, 1, 6),
-                         ('Tuple', (1, 0, 1, 6),
-                             [('Constant', (1, 1, 1, 2), 1, None),
-                             ('Constant', (1, 4, 1, 5), 2, None)], ('Load',)))
-
-        cases = [(-1, not_folded), (0, not_folded), (1, folded), (2, folded)]
-        for (optval, expected) in cases:
-            with self.subTest(optval=optval):
-                tree1 = ast.parse("(1, 2)", optimize=optval)
-                tree2 = ast.parse(ast.parse("(1, 2)"), optimize=optval)
-                for tree in [tree1, tree2]:
-                    res = to_tuple(tree.body[0])
-                    self.assertEqual(res, expected)
 
     def test_invalid_position_information(self):
         invalid_linenos = [
@@ -748,7 +733,7 @@ class AST_Tests(unittest.TestCase):
                     return self.__class__(self + 1)
                 except ValueError:
                     return self
-        enum._test_simple_enum(_Precedence, ast._Precedence)
+        enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
     @skip_wasi_stack_overflow()
@@ -819,6 +804,61 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,
                                     r"Exceeds the limit \(\d+ digits\)"):
             repr(ast.Constant(value=eval(source)))
+
+    def test_pep_765_warnings(self):
+        srcs = [
+            textwrap.dedent("""
+                 def f():
+                     try:
+                         pass
+                     finally:
+                         return 42
+                 """),
+            textwrap.dedent("""
+                 for x in y:
+                     try:
+                         pass
+                     finally:
+                         break
+                 """),
+            textwrap.dedent("""
+                 for x in y:
+                     try:
+                         pass
+                     finally:
+                         continue
+                 """),
+        ]
+        for src in srcs:
+            with self.assertWarnsRegex(SyntaxWarning, 'finally'):
+                ast.parse(src)
+
+    def test_pep_765_no_warnings(self):
+        srcs = [
+            textwrap.dedent("""
+                 try:
+                     pass
+                 finally:
+                     def f():
+                         return 42
+                 """),
+            textwrap.dedent("""
+                 try:
+                     pass
+                 finally:
+                     for x in y:
+                         break
+                 """),
+            textwrap.dedent("""
+                 try:
+                     pass
+                 finally:
+                     for x in y:
+                         continue
+                 """),
+        ]
+        for src in srcs:
+            ast.parse(src)
 
 
 class CopyTests(unittest.TestCase):
@@ -3138,101 +3178,6 @@ class ASTOptimiziationTests(unittest.TestCase):
 
         self.assert_ast(code, non_optimized_target, optimized_target)
 
-
-    def test_folding_tuple(self):
-        code = "(1,)"
-
-        non_optimized_target = self.wrap_expr(ast.Tuple(elts=[ast.Constant(1)]))
-        optimized_target = self.wrap_expr(ast.Constant(value=(1,)))
-
-        self.assert_ast(code, non_optimized_target, optimized_target)
-
-    def test_folding_type_param_in_function_def(self):
-        code = "def foo[%s = (1, 2)](): pass"
-
-        unoptimized_tuple = ast.Tuple(elts=[ast.Constant(1), ast.Constant(2)])
-        unoptimized_type_params = [
-            ("T", "T", ast.TypeVar),
-            ("**P", "P", ast.ParamSpec),
-            ("*Ts", "Ts", ast.TypeVarTuple),
-        ]
-
-        for type, name, type_param in unoptimized_type_params:
-            result_code = code % type
-            optimized_target = self.wrap_statement(
-                ast.FunctionDef(
-                    name='foo',
-                    args=ast.arguments(),
-                    body=[ast.Pass()],
-                    type_params=[type_param(name=name, default_value=ast.Constant((1, 2)))]
-                )
-            )
-            non_optimized_target = self.wrap_statement(
-                ast.FunctionDef(
-                    name='foo',
-                    args=ast.arguments(),
-                    body=[ast.Pass()],
-                    type_params=[type_param(name=name, default_value=unoptimized_tuple)]
-                )
-            )
-            self.assert_ast(result_code, non_optimized_target, optimized_target)
-
-    def test_folding_type_param_in_class_def(self):
-        code = "class foo[%s = (1, 2)]: pass"
-
-        unoptimized_tuple = ast.Tuple(elts=[ast.Constant(1), ast.Constant(2)])
-        unoptimized_type_params = [
-            ("T", "T", ast.TypeVar),
-            ("**P", "P", ast.ParamSpec),
-            ("*Ts", "Ts", ast.TypeVarTuple),
-        ]
-
-        for type, name, type_param in unoptimized_type_params:
-            result_code = code % type
-            optimized_target = self.wrap_statement(
-                ast.ClassDef(
-                    name='foo',
-                    body=[ast.Pass()],
-                    type_params=[type_param(name=name, default_value=ast.Constant((1, 2)))]
-                )
-            )
-            non_optimized_target = self.wrap_statement(
-                ast.ClassDef(
-                    name='foo',
-                    body=[ast.Pass()],
-                    type_params=[type_param(name=name, default_value=unoptimized_tuple)]
-                )
-            )
-            self.assert_ast(result_code, non_optimized_target, optimized_target)
-
-    def test_folding_type_param_in_type_alias(self):
-        code = "type foo[%s = (1, 2)] = 1"
-
-        unoptimized_tuple = ast.Tuple(elts=[ast.Constant(1), ast.Constant(2)])
-        unoptimized_type_params = [
-            ("T", "T", ast.TypeVar),
-            ("**P", "P", ast.ParamSpec),
-            ("*Ts", "Ts", ast.TypeVarTuple),
-        ]
-
-        for type, name, type_param in unoptimized_type_params:
-            result_code = code % type
-            optimized_target = self.wrap_statement(
-                ast.TypeAlias(
-                    name=ast.Name(id='foo', ctx=ast.Store()),
-                    type_params=[type_param(name=name, default_value=ast.Constant((1, 2)))],
-                    value=ast.Constant(value=1),
-                )
-            )
-            non_optimized_target = self.wrap_statement(
-                ast.TypeAlias(
-                    name=ast.Name(id='foo', ctx=ast.Store()),
-                    type_params=[type_param(name=name, default_value=unoptimized_tuple)],
-                    value=ast.Constant(value=1),
-                )
-            )
-            self.assert_ast(result_code, non_optimized_target, optimized_target)
-
     def test_folding_match_case_allowed_expressions(self):
         def get_match_case_values(node):
             result = []
@@ -3293,6 +3238,18 @@ class ASTOptimiziationTests(unittest.TestCase):
                 case = match_stmt.cases[0]
                 values = get_match_case_values(case.pattern)
                 self.assertListEqual(constants, values)
+
+    def test_match_case_not_folded_in_unoptimized_ast(self):
+        src = textwrap.dedent("""
+            match a:
+                case 1+2j:
+                    pass
+            """)
+
+        unfolded = "MatchValue(value=BinOp(left=Constant(value=1), op=Add(), right=Constant(value=2j))"
+        folded = "MatchValue(value=Constant(value=(1+2j)))"
+        for optval in (0, 1, 2):
+            self.assertIn(folded if optval else unfolded, ast.dump(ast.parse(src, optimize=optval)))
 
 
 if __name__ == '__main__':

@@ -6,7 +6,9 @@
 #include "pycore_critical_section.h"  // Py_BEGIN_CRITICAL_SECTION_MUT()
 #include "pycore_dict.h"          // _PyDict_GetItem_KnownHash()
 #include "pycore_freelist.h"      // _Py_FREELIST_POP()
+#include "pycore_genobject.h"
 #include "pycore_llist.h"         // struct llist_node
+#include "pycore_list.h"          // _PyList_AppendTakeRef()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_SetMaybeWeakref
@@ -2119,8 +2121,9 @@ TaskStepMethWrapper_traverse(PyObject *op,
 }
 
 static PyObject *
-TaskStepMethWrapper_get___self__(TaskStepMethWrapper *o, void *Py_UNUSED(ignored))
+TaskStepMethWrapper_get___self__(PyObject *op, void *Py_UNUSED(closure))
 {
+    TaskStepMethWrapper *o = (TaskStepMethWrapper*)op;
     if (o->sw_task) {
         return Py_NewRef(o->sw_task);
     }
@@ -2128,7 +2131,7 @@ TaskStepMethWrapper_get___self__(TaskStepMethWrapper *o, void *Py_UNUSED(ignored
 }
 
 static PyGetSetDef TaskStepMethWrapper_getsetlist[] = {
-    {"__self__", (getter)TaskStepMethWrapper_get___self__, NULL, NULL},
+    {"__self__", TaskStepMethWrapper_get___self__, NULL, NULL},
     {NULL} /* Sentinel */
 };
 
@@ -2953,7 +2956,7 @@ static PyType_Slot Task_slots[] = {
     {Py_tp_iter, future_new_iter},
     {Py_tp_methods, TaskType_methods},
     {Py_tp_getset, TaskType_getsetlist},
-    {Py_tp_init, (initproc)_asyncio_Task___init__},
+    {Py_tp_init, _asyncio_Task___init__},
     {Py_tp_new, PyType_GenericNew},
     {Py_tp_finalize, TaskObj_finalize},
 
@@ -4393,7 +4396,7 @@ static struct PyModuleDef _asynciomodule = {
     .m_slots = module_slots,
     .m_traverse = module_traverse,
     .m_clear = module_clear,
-    .m_free = (freefunc)module_free,
+    .m_free = module_free,
 };
 
 PyMODINIT_FUNC

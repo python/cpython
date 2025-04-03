@@ -29,12 +29,7 @@ import functools
 import operator
 import sys
 import types
-from types import (
-    WrapperDescriptorType,
-    MethodWrapperType,
-    MethodDescriptorType,
-    GenericAlias,
-)
+from types import GenericAlias
 import warnings
 
 from _typing import (
@@ -354,26 +349,11 @@ def _deduplicate(params, *, unhashable_fallback=False):
         if not unhashable_fallback:
             raise
         # Happens for cases like `Annotated[dict, {'x': IntValidator()}]`
-        return _deduplicate_unhashable(params)
-
-def _deduplicate_unhashable(unhashable_params):
-    new_unhashable = []
-    for t in unhashable_params:
-        if t not in new_unhashable:
-            new_unhashable.append(t)
-    return new_unhashable
-
-def _compare_args_orderless(first_args, second_args):
-    first_unhashable = _deduplicate_unhashable(first_args)
-    second_unhashable = _deduplicate_unhashable(second_args)
-    t = list(second_unhashable)
-    try:
-        for elem in first_unhashable:
-            t.remove(elem)
-    except ValueError:
-        return False
-    return not t
-
+        new_unhashable = []
+        for t in params:
+            if t not in new_unhashable:
+                new_unhashable.append(t)
+        return new_unhashable
 
 def _flatten_literal_params(parameters):
     """Internal helper for Literal creation: flatten Literals among parameters."""
@@ -963,7 +943,7 @@ def evaluate_forward_ref(
     owner=None,
     globals=None,
     locals=None,
-    type_params=_sentinel,
+    type_params=None,
     format=annotationlib.Format.VALUE,
     _recursive_guard=frozenset(),
 ):
@@ -983,15 +963,12 @@ def evaluate_forward_ref(
     infer the namespaces to use for looking up names. *globals* and *locals*
     can also be explicitly given to provide the global and local namespaces.
     *type_params* is a tuple of type parameters that are in scope when
-    evaluating the forward reference. This parameter must be provided (though
+    evaluating the forward reference. This parameter should be provided (though
     it may be an empty tuple) if *owner* is not given and the forward reference
     does not already have an owner set. *format* specifies the format of the
     annotation and is a member of the annotationlib.Format enum.
 
     """
-    if type_params is _sentinel:
-        _deprecation_warning_for_no_type_params_passed("typing.evaluate_forward_ref")
-        type_params = ()
     if format == annotationlib.Format.STRING:
         return forward_ref.__forward_arg__
     if forward_ref.__forward_arg__ in _recursive_guard:
@@ -2315,7 +2292,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
         hints = {}
         for base in reversed(obj.__mro__):
             ann = annotationlib.get_annotations(base, format=format)
-            if format is annotationlib.Format.STRING:
+            if format == annotationlib.Format.STRING:
                 hints.update(ann)
                 continue
             if globalns is None:
@@ -2339,7 +2316,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
                 value = _eval_type(value, base_globals, base_locals, base.__type_params__,
                                    format=format, owner=obj)
                 hints[name] = value
-        if include_extras or format is annotationlib.Format.STRING:
+        if include_extras or format == annotationlib.Format.STRING:
             return hints
         else:
             return {k: _strip_annotations(t) for k, t in hints.items()}
@@ -2353,7 +2330,7 @@ def get_type_hints(obj, globalns=None, localns=None, include_extras=False,
         and not hasattr(obj, '__annotate__')
     ):
         raise TypeError(f"{obj!r} is not a module, class, or callable.")
-    if format is annotationlib.Format.STRING:
+    if format == annotationlib.Format.STRING:
         return hints
 
     if globalns is None:

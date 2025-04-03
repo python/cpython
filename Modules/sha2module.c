@@ -89,16 +89,28 @@ sha2_get_state(PyObject *module)
     return (sha2_state *)state;
 }
 
-static void SHA256copy(SHA256object *src, SHA256object *dest)
+static int
+SHA256copy(SHA256object *src, SHA256object *dest)
 {
     dest->digestsize = src->digestsize;
     dest->state = Hacl_Hash_SHA2_copy_256(src->state);
+    if (dest->state == NULL) {
+        (void)PyErr_NoMemory();
+        return -1;
+    }
+    return 0;
 }
 
-static void SHA512copy(SHA512object *src, SHA512object *dest)
+static int
+SHA512copy(SHA512object *src, SHA512object *dest)
 {
     dest->digestsize = src->digestsize;
     dest->state = Hacl_Hash_SHA2_copy_512(src->state);
+    if (dest->state == NULL) {
+        (void)PyErr_NoMemory();
+        return -1;
+    }
+    return 0;
 }
 
 static SHA256object *
@@ -166,7 +178,10 @@ static void
 SHA256_dealloc(PyObject *op)
 {
     SHA256object *ptr = _SHA256object_CAST(op);
-    Hacl_Hash_SHA2_free_256(ptr->state);
+    if (ptr->state != NULL) {
+        Hacl_Hash_SHA2_free_256(ptr->state);
+        ptr->state = NULL;
+    }
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
@@ -177,7 +192,10 @@ static void
 SHA512_dealloc(PyObject *op)
 {
     SHA512object *ptr = _SHA512object_CAST(op);
-    Hacl_Hash_SHA2_free_512(ptr->state);
+    if (ptr->state != NULL) {
+        Hacl_Hash_SHA2_free_512(ptr->state);
+        ptr->state = NULL;
+    }
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
@@ -187,34 +205,42 @@ SHA512_dealloc(PyObject *op)
 /* HACL* takes a uint32_t for the length of its parameter, but Py_ssize_t can be
  * 64 bits so we loop in <4gig chunks when needed. */
 
-static void update_256(Hacl_Hash_SHA2_state_t_256 *state, uint8_t *buf, Py_ssize_t len) {
-  /* Note: we explicitly ignore the error code on the basis that it would take >
-   * 1 billion years to overflow the maximum admissible length for SHA2-256
-   * (namely, 2^61-1 bytes). */
+static void
+update_256(Hacl_Hash_SHA2_state_t_256 *state, uint8_t *buf, Py_ssize_t len)
+{
+    /*
+     * Note: we explicitly ignore the error code on the basis that it would
+     * take more than 1 billion years to overflow the maximum admissible length
+     * for SHA-2-256 (2^61 - 1).
+     */
 #if PY_SSIZE_T_MAX > UINT32_MAX
-  while (len > UINT32_MAX) {
-    Hacl_Hash_SHA2_update_256(state, buf, UINT32_MAX);
-    len -= UINT32_MAX;
-    buf += UINT32_MAX;
-  }
+    while (len > UINT32_MAX) {
+        (void)Hacl_Hash_SHA2_update_256(state, buf, UINT32_MAX);
+        len -= UINT32_MAX;
+        buf += UINT32_MAX;
+    }
 #endif
-  /* Cast to uint32_t is safe: len <= UINT32_MAX at this point. */
-  Hacl_Hash_SHA2_update_256(state, buf, (uint32_t) len);
+    /* cast to uint32_t is now safe */
+    (void)Hacl_Hash_SHA2_update_256(state, buf, (uint32_t)len);
 }
 
-static void update_512(Hacl_Hash_SHA2_state_t_512 *state, uint8_t *buf, Py_ssize_t len) {
-  /* Note: we explicitly ignore the error code on the basis that it would take >
-   * 1 billion years to overflow the maximum admissible length for this API
-   * (namely, 2^64-1 bytes). */
+static void
+update_512(Hacl_Hash_SHA2_state_t_512 *state, uint8_t *buf, Py_ssize_t len)
+{
+    /*
+     * Note: we explicitly ignore the error code on the basis that it would
+     * take more than 1 billion years to overflow the maximum admissible length
+     * for SHA-2-512 (2^64 - 1).
+     */
 #if PY_SSIZE_T_MAX > UINT32_MAX
-  while (len > UINT32_MAX) {
-    Hacl_Hash_SHA2_update_512(state, buf, UINT32_MAX);
-    len -= UINT32_MAX;
-    buf += UINT32_MAX;
-  }
+    while (len > UINT32_MAX) {
+        (void)Hacl_Hash_SHA2_update_512(state, buf, UINT32_MAX);
+        len -= UINT32_MAX;
+        buf += UINT32_MAX;
+    }
 #endif
-  /* Cast to uint32_t is safe: len <= UINT32_MAX at this point. */
-  Hacl_Hash_SHA2_update_512(state, buf, (uint32_t) len);
+    /* cast to uint32_t is now safe */
+    (void)Hacl_Hash_SHA2_update_512(state, buf, (uint32_t)len);
 }
 
 
@@ -232,21 +258,27 @@ static PyObject *
 SHA256Type_copy_impl(SHA256object *self, PyTypeObject *cls)
 /*[clinic end generated code: output=fabd515577805cd3 input=3137146fcb88e212]*/
 {
+    int rc;
     SHA256object *newobj;
     sha2_state *state = _PyType_GetModuleState(cls);
     if (Py_IS_TYPE(self, state->sha256_type)) {
         if ((newobj = newSHA256object(state)) == NULL) {
             return NULL;
         }
-    } else {
+    }
+    else {
         if ((newobj = newSHA224object(state)) == NULL) {
             return NULL;
         }
     }
 
     ENTER_HASHLIB(self);
-    SHA256copy(self, newobj);
+    rc = SHA256copy(self, newobj);
     LEAVE_HASHLIB(self);
+    if (rc < 0) {
+        Py_DECREF(newobj);
+        return NULL;
+    }
     return (PyObject *)newobj;
 }
 
@@ -262,6 +294,7 @@ static PyObject *
 SHA512Type_copy_impl(SHA512object *self, PyTypeObject *cls)
 /*[clinic end generated code: output=66d2a8ef20de8302 input=f673a18f66527c90]*/
 {
+    int rc;
     SHA512object *newobj;
     sha2_state *state = _PyType_GetModuleState(cls);
 
@@ -277,8 +310,12 @@ SHA512Type_copy_impl(SHA512object *self, PyTypeObject *cls)
     }
 
     ENTER_HASHLIB(self);
-    SHA512copy(self, newobj);
+    rc = SHA512copy(self, newobj);
     LEAVE_HASHLIB(self);
+    if (rc < 0) {
+        Py_DECREF(newobj);
+        return NULL;
+    }
     return (PyObject *)newobj;
 }
 
@@ -587,12 +624,12 @@ _sha2_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
     new->state = Hacl_Hash_SHA2_malloc_256();
     new->digestsize = 32;
 
-    if (PyErr_Occurred()) {
+    if (new->state == NULL) {
         Py_DECREF(new);
         if (string) {
             PyBuffer_Release(&buf);
         }
-        return NULL;
+        return PyErr_NoMemory();
     }
     if (string) {
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
@@ -601,7 +638,8 @@ _sha2_sha256_impl(PyObject *module, PyObject *string, int usedforsecurity)
             Py_BEGIN_ALLOW_THREADS
             update_256(new->state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS
-        } else {
+        }
+        else {
             update_256(new->state, buf.buf, buf.len);
         }
         PyBuffer_Release(&buf);
@@ -641,12 +679,12 @@ _sha2_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
     new->state = Hacl_Hash_SHA2_malloc_224();
     new->digestsize = 28;
 
-    if (PyErr_Occurred()) {
+    if (new->state == NULL) {
         Py_DECREF(new);
         if (string) {
             PyBuffer_Release(&buf);
         }
-        return NULL;
+        return PyErr_NoMemory();
     }
     if (string) {
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
@@ -655,7 +693,8 @@ _sha2_sha224_impl(PyObject *module, PyObject *string, int usedforsecurity)
             Py_BEGIN_ALLOW_THREADS
             update_256(new->state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS
-        } else {
+        }
+        else {
             update_256(new->state, buf.buf, buf.len);
         }
         PyBuffer_Release(&buf);
@@ -683,23 +722,26 @@ _sha2_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity)
 
     sha2_state *state = sha2_get_state(module);
 
-    if (string)
+    if (string) {
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
+    }
 
     if ((new = newSHA512object(state)) == NULL) {
-        if (string)
+        if (string) {
             PyBuffer_Release(&buf);
+        }
         return NULL;
     }
 
     new->state = Hacl_Hash_SHA2_malloc_512();
     new->digestsize = 64;
 
-    if (PyErr_Occurred()) {
+    if (new->state == NULL) {
         Py_DECREF(new);
-        if (string)
+        if (string) {
             PyBuffer_Release(&buf);
-        return NULL;
+        }
+        return PyErr_NoMemory();
     }
     if (string) {
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
@@ -708,7 +750,8 @@ _sha2_sha512_impl(PyObject *module, PyObject *string, int usedforsecurity)
             Py_BEGIN_ALLOW_THREADS
             update_512(new->state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS
-        } else {
+        }
+        else {
             update_512(new->state, buf.buf, buf.len);
         }
         PyBuffer_Release(&buf);
@@ -736,23 +779,26 @@ _sha2_sha384_impl(PyObject *module, PyObject *string, int usedforsecurity)
 
     sha2_state *state = sha2_get_state(module);
 
-    if (string)
+    if (string) {
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
+    }
 
     if ((new = newSHA384object(state)) == NULL) {
-        if (string)
+        if (string) {
             PyBuffer_Release(&buf);
+        }
         return NULL;
     }
 
     new->state = Hacl_Hash_SHA2_malloc_384();
     new->digestsize = 48;
 
-    if (PyErr_Occurred()) {
+    if (new->state == NULL) {
         Py_DECREF(new);
-        if (string)
+        if (string) {
             PyBuffer_Release(&buf);
-        return NULL;
+        }
+        return PyErr_NoMemory();
     }
     if (string) {
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
@@ -761,7 +807,8 @@ _sha2_sha384_impl(PyObject *module, PyObject *string, int usedforsecurity)
             Py_BEGIN_ALLOW_THREADS
             update_512(new->state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS
-        } else {
+        }
+        else {
             update_512(new->state, buf.buf, buf.len);
         }
         PyBuffer_Release(&buf);

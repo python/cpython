@@ -1,13 +1,13 @@
-
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyEval_SignalReceived()
+#include "pycore_gc.h"            // _Py_RunGC()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_interp.h"        // _Py_RunGC()
+#include "pycore_optimizer.h"     // _Py_Executors_InvalidateCold()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pylifecycle.h"   // _PyErr_Print()
-#include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
-#include "pycore_pystate.h"       // PyThread_hang_thread()
 #include "pycore_pystats.h"       // _Py_PrintSpecializationStats()
+#include "pycore_runtime.h"       // _PyRuntime
+
 
 /*
    Notes about the implementation:
@@ -1192,6 +1192,71 @@ _PyEval_DisableGIL(PyThreadState *tstate)
 }
 #endif
 
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+// Note that this function is inline to avoid creating a PLT entry
+// that would be an easy target for a ROP gadget.
+static inline void run_remote_debugger_script(const char *path)
+{
+    if (0 != PySys_Audit("remote_debugger_script", "s", path)) {
+        PyErr_FormatUnraisable(
+            "Audit hook failed for remote debugger script %s", path);
+        return;
+    }
+
+    // Open the debugger script with the open code hook, and reopen the
+    // resulting file object to get a C FILE* object.
+    PyObject* fileobj = PyFile_OpenCode(path);
+    if (!fileobj) {
+        PyErr_FormatUnraisable("Can't open debugger script %s", path);
+        return;
+    }
+
+    int fd = PyObject_AsFileDescriptor(fileobj);
+    if (fd == -1) {
+        PyErr_FormatUnraisable("Can't find fd for debugger script %s", path);
+    }
+    else {
+        int dup_fd = -1;
+        FILE *f = NULL;
+
+#ifdef MS_WINDOWS
+        dup_fd = _dup(fd);
+        if (dup_fd != -1) {
+            f = _fdopen(dup_fd, "r");
+        }
+        if (!f) {
+            _close(dup_fd);
+        }
+#else
+        dup_fd = dup(fd);
+        if (dup_fd != -1) {
+            f = fdopen(dup_fd, "r");
+        }
+        if (!f) {
+            close(dup_fd);
+        }
+#endif
+        if (!f) {
+            PyErr_SetFromErrno(PyExc_OSError);
+        }
+        else {
+            PyRun_AnyFileEx(f, path, 1);
+        }
+
+        if (PyErr_Occurred()) {
+            PyErr_FormatUnraisable("Error executing debugger script %s", path);
+        }
+    }
+
+    PyObject* res = PyObject_CallMethodNoArgs(fileobj, &_Py_ID(close));
+    if (!res) {
+        PyErr_FormatUnraisable("Error closing debugger script %s", path);
+    } else {
+        Py_DECREF(res);
+    }
+    Py_DECREF(fileobj);
+}
+#endif
 
 /* Do periodic things, like check for signals and async I/0.
 * We need to do reasonably frequently, but not too frequently.
@@ -1319,5 +1384,35 @@ _Py_HandlePending(PyThreadState *tstate)
             return -1;
         }
     }
+
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+    const PyConfig *config = _PyInterpreterState_GetConfig(tstate->interp);
+    if (config->remote_debug == 1
+         && tstate->remote_debugger_support.debugger_pending_call == 1)
+    {
+        tstate->remote_debugger_support.debugger_pending_call = 0;
+
+        // Immediately make a copy in case of a race with another debugger
+        // process that's trying to write to the buffer. At least this way
+        // we'll be internally consistent: what we audit is what we run.
+        const size_t pathsz
+            = sizeof(tstate->remote_debugger_support.debugger_script_path);
+
+        char *path = PyMem_Malloc(pathsz);
+        if (path) {
+            // And don't assume the debugger correctly null terminated it.
+            memcpy(
+                path,
+                tstate->remote_debugger_support.debugger_script_path,
+                pathsz);
+            path[pathsz - 1] = '\0';
+            if (*path) {
+                run_remote_debugger_script(path);
+            }
+            PyMem_Free(path);
+        }
+    }
+#endif
+
     return 0;
 }

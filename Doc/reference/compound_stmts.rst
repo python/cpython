@@ -232,6 +232,8 @@ Additional information on exceptions can be found in section :ref:`exceptions`,
 and information on using the :keyword:`raise` statement to generate exceptions
 may be found in section :ref:`raise`.
 
+.. versionchanged:: next
+   Support for optionally dropping grouping parentheses when using multiple exception types. See :pep:`758`.
 
 .. _except:
 
@@ -247,7 +249,8 @@ An expression-less :keyword:`!except` clause, if present, must be last;
 it matches any exception.
 
 For an :keyword:`!except` clause with an expression, the
-expression must evaluate to an exception type or a tuple of exception types.
+expression must evaluate to an exception type or a tuple of exception types. Parentheses
+can be dropped if multiple exception types are provided and the ``as`` clause is not used.
 The raised exception matches an :keyword:`!except` clause whose expression evaluates
 to the class or a :term:`non-virtual base class <abstract base class>` of the exception object,
 or to a tuple that contains such a class.
@@ -420,16 +423,16 @@ is executed.  If there is a saved exception it is re-raised at the end of the
 :keyword:`!finally` clause.  If the :keyword:`!finally` clause raises another
 exception, the saved exception is set as the context of the new exception.
 If the :keyword:`!finally` clause executes a :keyword:`return`, :keyword:`break`
-or :keyword:`continue` statement, the saved exception is discarded::
+or :keyword:`continue` statement, the saved exception is discarded. For example,
+this function returns 42.
 
-   >>> def f():
-   ...     try:
-   ...         1/0
-   ...     finally:
-   ...         return 42
-   ...
-   >>> f()
-   42
+.. code-block::
+
+   def f():
+       try:
+           1/0
+       finally:
+           return 42
 
 The exception information is not available to the program during execution of
 the :keyword:`!finally` clause.
@@ -446,20 +449,24 @@ statement, the :keyword:`!finally` clause is also executed 'on the way out.'
 The return value of a function is determined by the last :keyword:`return`
 statement executed.  Since the :keyword:`!finally` clause always executes, a
 :keyword:`!return` statement executed in the :keyword:`!finally` clause will
-always be the last one executed::
+always be the last one executed. The following function returns 'finally'.
 
-   >>> def foo():
-   ...     try:
-   ...         return 'try'
-   ...     finally:
-   ...         return 'finally'
-   ...
-   >>> foo()
-   'finally'
+.. code-block::
+
+   def foo():
+       try:
+           return 'try'
+       finally:
+           return 'finally'
 
 .. versionchanged:: 3.8
    Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
    :keyword:`!finally` clause due to a problem with the implementation.
+
+.. versionchanged:: next
+   The compiler emits a :exc:`SyntaxWarning` when a :keyword:`return`,
+   :keyword:`break` or :keyword:`continue` appears in a :keyword:`!finally`
+   block (see :pep:`765`).
 
 
 .. _with:
@@ -1218,7 +1225,7 @@ A function definition defines a user-defined function object (see section
    parameter_list_no_posonly: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
                             : | `parameter_list_starargs`
    parameter_list_starargs: "*" [`star_parameter`] ("," `defparameter`)* ["," [`parameter_star_kwargs`]]
-                          : "*" ("," `defparameter`)+ ["," [`parameter_star_kwargs`]]
+                          : | "*" ("," `defparameter`)+ ["," [`parameter_star_kwargs`]]
                           : | `parameter_star_kwargs`
    parameter_star_kwargs: "**" `parameter` [","]
    parameter: `identifier` [":" `expression`]

@@ -736,7 +736,7 @@ range_subscript(PyObject *op, PyObject *item)
 static PyMappingMethods range_as_mapping = {
         range_length,                /* mp_length */
         range_subscript,             /* mp_subscript */
-        (objobjargproc)0,            /* mp_ass_subscript */
+        0,                           /* mp_ass_subscript */
 };
 
 static int

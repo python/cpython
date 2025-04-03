@@ -312,6 +312,8 @@ typedef struct {
 #endif
 } PySSLContext;
 
+#define PySSLContext_CAST(op)   ((PySSLContext *)(op))
+
 typedef struct {
     int ssl; /* last seen error from SSL */
     int c; /* last seen error from libc */
@@ -337,17 +339,23 @@ typedef struct {
     PyObject *exc;
 } PySSLSocket;
 
+#define PySSLSocket_CAST(op)    ((PySSLSocket *)(op))
+
 typedef struct {
     PyObject_HEAD
     BIO *bio;
     int eof_written;
 } PySSLMemoryBIO;
 
+#define PySSLMemoryBIO_CAST(op) ((PySSLMemoryBIO *)(op))
+
 typedef struct {
     PyObject_HEAD
     SSL_SESSION *session;
     PySSLContext *ctx;
 } PySSLSession;
+
+#define PySSLSession_CAST(op)   ((PySSLSession *)(op))
 
 static inline _PySSLError _PySSL_errno(int failed, const SSL *ssl, int retcode)
 {
@@ -443,8 +451,9 @@ PyDoc_STRVAR(SSLEOFError_doc,
 "SSL/TLS connection terminated abruptly.");
 
 static PyObject *
-SSLError_str(PyOSErrorObject *self)
+SSLError_str(PyObject *op)
 {
+    PyOSErrorObject *self = (PyOSErrorObject*)op;
     if (self->strerror != NULL && PyUnicode_Check(self->strerror)) {
         return Py_NewRef(self->strerror);
     }
@@ -2317,23 +2326,26 @@ _ssl__SSLSocket_owner_set_impl(PySSLSocket *self, PyObject *value)
 }
 
 static int
-PySSL_traverse(PySSLSocket *self, visitproc visit, void *arg)
+PySSL_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PySSLSocket *self = PySSLSocket_CAST(op);
     Py_VISIT(self->exc);
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static int
-PySSL_clear(PySSLSocket *self)
+PySSL_clear(PyObject *op)
 {
+    PySSLSocket *self = PySSLSocket_CAST(op);
     Py_CLEAR(self->exc);
     return 0;
 }
 
 static void
-PySSL_dealloc(PySSLSocket *self)
+PySSL_dealloc(PyObject *op)
 {
+    PySSLSocket *self = PySSLSocket_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     if (self->ssl) {
@@ -3278,8 +3290,9 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
 }
 
 static int
-context_traverse(PySSLContext *self, visitproc visit, void *arg)
+context_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PySSLContext *self = PySSLContext_CAST(op);
     Py_VISIT(self->set_sni_cb);
     Py_VISIT(self->msg_cb);
     Py_VISIT(Py_TYPE(self));
@@ -3287,8 +3300,9 @@ context_traverse(PySSLContext *self, visitproc visit, void *arg)
 }
 
 static int
-context_clear(PySSLContext *self)
+context_clear(PyObject *op)
 {
+    PySSLContext *self = PySSLContext_CAST(op);
     Py_CLEAR(self->set_sni_cb);
     Py_CLEAR(self->msg_cb);
     Py_CLEAR(self->keylog_filename);
@@ -3306,15 +3320,16 @@ context_clear(PySSLContext *self)
 }
 
 static void
-context_dealloc(PySSLContext *self)
+context_dealloc(PyObject *op)
 {
+    PySSLContext *self = PySSLContext_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    context_clear(self);
+    (void)context_clear(op);
     SSL_CTX_free(self->ctx);
     PyMem_FREE(self->alpn_protocols);
-    Py_TYPE(self)->tp_free(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -3908,7 +3923,9 @@ _ssl__SSLContext_check_hostname_set_impl(PySSLContext *self, PyObject *value)
 }
 
 static PyObject *
-get_post_handshake_auth(PySSLContext *self, void *c) {
+get_post_handshake_auth(PyObject *op, void *Py_UNUSED(closure))
+{
+    PySSLContext *self = PySSLContext_CAST(op);
 #if defined(PySSL_HAVE_POST_HS_AUTH)
     return PyBool_FromLong(self->post_handshake_auth);
 #else
@@ -3918,7 +3935,9 @@ get_post_handshake_auth(PySSLContext *self, void *c) {
 
 #if defined(PySSL_HAVE_POST_HS_AUTH)
 static int
-set_post_handshake_auth(PySSLContext *self, PyObject *arg, void *c) {
+set_post_handshake_auth(PyObject *op, PyObject *arg, void *Py_UNUSED(closure))
+{
+    PySSLContext *self = PySSLContext_CAST(op);
     if (arg == NULL) {
         PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
@@ -4407,6 +4426,12 @@ _ssl__SSLContext_load_dh_params_impl(PySSLContext *self, PyObject *filepath)
 {
     FILE *f;
     DH *dh;
+
+#if defined(MS_WINDOWS) && defined(_DEBUG)
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "load_dh_params: unavailable on Windows debug build");
+    return NULL;
+#endif
 
     f = Py_fopen(filepath, "rb");
     if (f == NULL)
@@ -5197,18 +5222,18 @@ static PyGetSetDef context_getsetlist[] = {
     _SSL__SSLCONTEXT__HOST_FLAGS_GETSETDEF
     _SSL__SSLCONTEXT_MINIMUM_VERSION_GETSETDEF
     _SSL__SSLCONTEXT_MAXIMUM_VERSION_GETSETDEF
-    {"keylog_filename", (getter) _PySSLContext_get_keylog_filename,
-                        (setter) _PySSLContext_set_keylog_filename, NULL},
-    {"_msg_callback", (getter) _PySSLContext_get_msg_callback,
-                      (setter) _PySSLContext_set_msg_callback, NULL},
+    {"keylog_filename", _PySSLContext_get_keylog_filename,
+                        _PySSLContext_set_keylog_filename, NULL},
+    {"_msg_callback", _PySSLContext_get_msg_callback,
+                      _PySSLContext_set_msg_callback, NULL},
     _SSL__SSLCONTEXT_SNI_CALLBACK_GETSETDEF
 #if defined(TLS1_3_VERSION) && !defined(OPENSSL_NO_TLS1_3)
     _SSL__SSLCONTEXT_NUM_TICKETS_GETSETDEF
 #endif
     _SSL__SSLCONTEXT_OPTIONS_GETSETDEF
-    {"post_handshake_auth", (getter) get_post_handshake_auth,
+    {"post_handshake_auth", get_post_handshake_auth,
 #if defined(PySSL_HAVE_POST_HS_AUTH)
-                            (setter) set_post_handshake_auth,
+                            set_post_handshake_auth,
 #else
                             NULL,
 #endif
@@ -5300,19 +5325,20 @@ _ssl_MemoryBIO_impl(PyTypeObject *type)
 }
 
 static int
-memory_bio_traverse(PySSLMemoryBIO *self, visitproc visit, void *arg)
+memory_bio_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static void
-memory_bio_dealloc(PySSLMemoryBIO *self)
+memory_bio_dealloc(PyObject *op)
 {
+    PySSLMemoryBIO *self = PySSLMemoryBIO_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
-    BIO_free(self->bio);
-    Py_TYPE(self)->tp_free(self);
+    (void)BIO_free(self->bio);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -5492,8 +5518,9 @@ static PyType_Spec PySSLMemoryBIO_spec = {
  */
 
 static void
-PySSLSession_dealloc(PySSLSession *self)
+PySSLSession_dealloc(PyObject *op)
 {
+    PySSLSession *self = PySSLSession_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
@@ -5514,7 +5541,7 @@ PySSLSession_richcompare(PyObject *left, PyObject *right, int op)
     }
 
     int result;
-    PyTypeObject *sesstype = ((PySSLSession*)left)->ctx->state->PySSLSession_Type;
+    PyTypeObject *sesstype = PySSLSession_CAST(left)->ctx->state->PySSLSession_Type;
 
     if (!Py_IS_TYPE(left, sesstype) || !Py_IS_TYPE(right, sesstype)) {
         Py_RETURN_NOTIMPLEMENTED;
@@ -5525,9 +5552,9 @@ PySSLSession_richcompare(PyObject *left, PyObject *right, int op)
     } else {
         const unsigned char *left_id, *right_id;
         unsigned int left_len, right_len;
-        left_id = SSL_SESSION_get_id(((PySSLSession *)left)->session,
+        left_id = SSL_SESSION_get_id(PySSLSession_CAST(left)->session,
                                      &left_len);
-        right_id = SSL_SESSION_get_id(((PySSLSession *)right)->session,
+        right_id = SSL_SESSION_get_id(PySSLSession_CAST(right)->session,
                                       &right_len);
         if (left_len == right_len) {
             result = memcmp(left_id, right_id, left_len);
@@ -5564,16 +5591,18 @@ PySSLSession_richcompare(PyObject *left, PyObject *right, int op)
 }
 
 static int
-PySSLSession_traverse(PySSLSession *self, visitproc visit, void *arg)
+PySSLSession_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PySSLSession *self = PySSLSession_CAST(op);
     Py_VISIT(self->ctx);
     Py_VISIT(Py_TYPE(self));
     return 0;
 }
 
 static int
-PySSLSession_clear(PySSLSession *self)
+PySSLSession_clear(PyObject *op)
 {
+    PySSLSession *self = PySSLSession_CAST(op);
     Py_CLEAR(self->ctx);
     return 0;
 }
@@ -6082,7 +6111,7 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
         return PyErr_SetFromWindowsErr(GetLastError());
     }
 
-    while (pCertCtx = CertEnumCertificatesInStore(hCollectionStore, pCertCtx)) {
+    while ((pCertCtx = CertEnumCertificatesInStore(hCollectionStore, pCertCtx))) {
         cert = PyBytes_FromStringAndSize((const char*)pCertCtx->pbCertEncoded,
                                             pCertCtx->cbCertEncoded);
         if (!cert) {
@@ -6181,7 +6210,7 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
         return PyErr_SetFromWindowsErr(GetLastError());
     }
 
-    while (pCrlCtx = CertEnumCRLsInStore(hCollectionStore, pCrlCtx)) {
+    while ((pCrlCtx = CertEnumCRLsInStore(hCollectionStore, pCrlCtx))) {
         crl = PyBytes_FromStringAndSize((const char*)pCrlCtx->pbCrlEncoded,
                                             pCrlCtx->cbCrlEncoded);
         if (!crl) {
