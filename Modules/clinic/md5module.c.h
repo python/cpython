@@ -110,9 +110,11 @@ _md5_md5(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kw
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
     };
     #undef NUM_KEYWORDS
@@ -162,4 +164,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6b3d1a9abaf59b63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=00b9229e080ff7d0 input=a9049054013a1b77]*/

@@ -33,9 +33,11 @@ syslog_openlog(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(ident), &_Py_ID(logoption), &_Py_ID(facility), },
     };
     #undef NUM_KEYWORDS
@@ -263,4 +265,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f3101e6b4c13a76f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=866c52f4edda0a73 input=a9049054013a1b77]*/

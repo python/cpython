@@ -29,9 +29,11 @@ _ssl_Certificate_public_bytes(PyObject *self, PyObject *const *args, Py_ssize_t 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(format), },
     };
     #undef NUM_KEYWORDS
@@ -87,4 +89,4 @@ _ssl_Certificate_get_info(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _ssl_Certificate_get_info_impl((PySSLCertificate *)self);
 }
-/*[clinic end generated code: output=4a086ea89162137f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a1188d37625a51f9 input=a9049054013a1b77]*/

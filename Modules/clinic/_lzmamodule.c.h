@@ -104,9 +104,11 @@ _lzma_LZMADecompressor_decompress(PyObject *self, PyObject *const *args, Py_ssiz
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(data), &_Py_ID(max_length), },
     };
     #undef NUM_KEYWORDS
@@ -200,9 +202,11 @@ _lzma_LZMADecompressor(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(format), &_Py_ID(memlimit), &_Py_ID(filters), },
     };
     #undef NUM_KEYWORDS
@@ -329,4 +333,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=88187d95393f0c22 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f839b34e83bd870d input=a9049054013a1b77]*/

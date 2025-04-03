@@ -469,8 +469,6 @@ static PyObject *
 formatlong(PyObject *v, int flags, int prec, int type)
 {
     PyObject *result, *iobj;
-    if (type == 'i')
-        type = 'd';
     if (PyLong_Check(v))
         return _PyUnicode_FormatLong(v, flags & F_ALT, prec, type);
     if (PyNumber_Check(v)) {

@@ -114,9 +114,11 @@ complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(real), &_Py_ID(imag), },
     };
     #undef NUM_KEYWORDS
@@ -183,4 +185,4 @@ complex_from_number(PyObject *type, PyObject *number)
 
     return return_value;
 }
-/*[clinic end generated code: output=46767f8412462a4e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8e80b6f784e3376f input=a9049054013a1b77]*/
