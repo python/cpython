@@ -39,8 +39,6 @@ __all__ = [
     'unquote',
     ]
 
-import re
-
 from string import ascii_letters, digits, hexdigits
 
 CRLF = '\r\n'
@@ -280,14 +278,6 @@ def decode(encoded, eol=NL):
 body_decode = decode
 decodestring = decode
 
-
-
-def _unquote_match(match):
-    """Turn a match in the form =AB to the ASCII character with value 0xab"""
-    s = match.group(0)
-    return unquote(s)
-
-
 # Header decoding is done a bit differently
 def header_decode(s):
     """Decode a string encoded with RFC 2045 MIME header 'Q' encoding.
@@ -297,4 +287,23 @@ def header_decode(s):
     the high level email.header class for that functionality.
     """
     s = s.replace('_', ' ')
-    return re.sub(r'=[a-fA-F0-9]{2}', _unquote_match, s, flags=re.ASCII)
+    
+    valid_hex = '0123456789ABCDEFabcdef'
+    
+    i = 0
+    # Check for regex =[a-fA-F0-9]{2}
+    
+    result = []
+    
+    while i < len(s):
+        if s[i] == '=' and i + 2 < len(s):
+            hex_part = s[i: i + 3]
+            
+            if (hex_part[1] in valid_hex) and (hex_part[2] in valid_hex):
+                result.append(unquote(hex_part))
+                i += 3
+                continue
+        result.append(s[i])
+        i += 1
+    
+    return ''.join(result)
