@@ -3,6 +3,8 @@
 import os
 import pathlib
 import re
+import sys
+import sysconfig
 import unittest
 from test.support import import_helper, os_helper
 
@@ -156,3 +158,14 @@ class WinAPITests(unittest.TestCase):
             pipe2.write(b'testdata')
             pipe2.flush()
             self.assertEqual((b'testdata', 8), _winapi.PeekNamedPipe(pipe, 8)[:2])
+
+    def test_get_module_file_name(self):
+        dll_file_path = _winapi.GetModuleFileName(sys.dllhandle)
+        dll_file_name = os.path.basename(dll_file_path)
+        self.assertEqual(
+            dll_file_name,
+            "python{vi.major}{vi.minor}{abiflags}.dll".format(
+                vi=sys.version_info,
+                abiflags=sysconfig.get_config_var('ABIFLAGS'),
+            ),
+        )
