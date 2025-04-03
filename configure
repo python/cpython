@@ -1123,6 +1123,7 @@ with_wheel_pkg_dir
 with_readline
 with_computed_gotos
 with_tail_call_interp
+with_remote_debug
 with_ensurepip
 with_openssl
 with_openssl_rpath
@@ -1932,6 +1933,7 @@ Optional Packages:
                           default on supported compilers)
   --with-tail-call-interp enable tail-calling interpreter in evaluation loop
                           and rest of CPython
+  --with-remote-debug     enable remote debugging support (default is yes)
   --with-ensurepip[=install|upgrade|no]
                           "install" or "upgrade" using bundled pip (default is
                           upgrade)
@@ -29301,6 +29303,34 @@ printf "%s\n" "no value specified" >&6; } ;;
 esac
 fi
 
+
+# Check for --with-remote-debug
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-remote-debug" >&5
+printf %s "checking for --with-remote-debug... " >&6; }
+
+# Check whether --with-remote-debug was given.
+if test ${with_remote_debug+y}
+then :
+  withval=$with_remote_debug;
+else case e in #(
+  e) with_remote_debug=yes ;;
+esac
+fi
+
+
+if test "$with_remote_debug" = yes; then
+
+printf "%s\n" "#define Py_REMOTE_DEBUG 1" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else
+
+printf "%s\n" "#define Py_REMOTE_DEBUG 0" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
 
 
 case $ac_sys_system in
