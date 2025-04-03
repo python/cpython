@@ -28,9 +28,8 @@ TAB   = False,    True,     True,    None   # Tab.
 TRY_A = False,    False,    False,   ATTRS  # '.' for attributes.
 TRY_F = False,    False,    False,   FILES  # '/' in quotes for file name.
 
-# This string includes all chars that may be in an identifier.
-# TODO Update this here and elsewhere.
-ID_CHARS = string.ascii_letters + string.digits + "_"
+# all ASCII chars that may be in an identifier
+_ASCII_ID_CHARS = frozenset(string.ascii_letters + string.digits + "_")
 
 SEPS = f"{os.sep}{os.altsep if os.altsep else ''}"
 TRIGGERS = f".{SEPS}"
@@ -134,7 +133,11 @@ class AutoComplete:
         elif hp.is_in_code() and (not mode or mode==ATTRS):
             self._remove_autocomplete_window()
             mode = ATTRS
-            while i and (curline[i-1] in ID_CHARS or ord(curline[i-1]) > 127):
+            while i:
+                c = curline[i-1]
+                if c not in _ASCII_ID_CHARS:
+                    if c <= '\x7f' or not ('a' + c).isidentifier():
+                        break
                 i -= 1
             comp_start = curline[i:j]
             if i and curline[i-1] == '.':  # Need object with attributes.
