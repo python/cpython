@@ -611,6 +611,8 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertEqual(Py_GIL_DISABLED, support.Py_GIL_DISABLED)
 
     def test_abiflags(self):
+        # XXX: If this test fails on some platforms, maintainers should add/update
+        # the definition of the ABIFLAGS variable and make this test pass.
         abiflags = sysconfig.get_config_var('abiflags')
         ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
 
@@ -621,7 +623,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         if os.name == 'nt':
             self.assertEqual(abiflags, '')
             # Example values: '', 't', 't_d', '_d'
-            self.assertLessEqual(ABIFLAGS.count('_'), 1)
+            self.assertTrue(ABIFLAGS.count('_d') == 1 or '_' not in ABIFLAGS, ABIFLAGS)
         else:
             # Example values: '', 't', 'td', 'd'
             self.assertNotIn('_', ABIFLAGS)
