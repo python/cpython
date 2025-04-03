@@ -302,8 +302,7 @@ def header_decode(s):
 
     while i < s_len:
         if s[i] == '=' and i + 2 < s_len:
-            hex_str = s[i + 1:i + 3].lower()
-            if hex_str in _HEX_TO_CHAR:
+            if (hex_str := s[i + 1:i + 3].lower()) in _HEX_TO_CHAR:
                 if last_append < i:
                     result.append(s[last_append:i])
                 result.append(_HEX_TO_CHAR[hex_str])
