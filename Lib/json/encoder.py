@@ -108,7 +108,7 @@ class JSONEncoder(object):
         """Constructor for JSONEncoder, with sensible defaults.
 
         If skipkeys is false, then it is a TypeError to attempt
-        encoding of keys that are not str, int, float or None.  If
+        encoding of keys that are not bool, str, int, float or None.  If
         skipkeys is True, such items are simply skipped.
 
         If ensure_ascii is true, the output is guaranteed to be str
