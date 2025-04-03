@@ -3478,11 +3478,9 @@ mro_invoke(PyTypeObject *type)
     const int custom = !Py_IS_TYPE(type, &PyType_Type);
 
     if (custom) {
-        // Custom mro() method on metaclass.  This is potentially
-        // re-entrant.  We are called either from type_ready(), in which case
-        // the TYPE_LOCK mutex is held, or from type_set_bases() (assignment to
-        // __bases__), in which case we need to stop-the-world in order to avoid
-        // data races.
+        // Custom mro() method on metaclass.  This is potentially re-entrant.
+        // We are called either from type_ready() or from type_set_bases()
+        // (assignment to __bases__).
         bool stopped = types_world_is_stopped();
         if (stopped) {
             // Called for type_set_bases(), re-assigment of __bases__
