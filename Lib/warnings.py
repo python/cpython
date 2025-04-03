@@ -624,7 +624,7 @@ class deprecated:
 
                 try:
                     arg.__signature__ = inspect.signature(arg)
-                except ValueError:
+                except (ValueError, AttributeError, TypeError):
                     pass
 
                 def wraps(wrapped):
