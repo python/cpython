@@ -3169,8 +3169,6 @@ dummy_func(
             assert(Py_TYPE(iter_o) == &PyListIter_Type);
             PyListObject *seq = it->it_seq;
             assert(seq);
-            // The code generator doesn't understand #ifdef Py_GIL_DISABLED
-            // so put in some control flow
 #ifdef Py_GIL_DISABLED
             assert(_PyObject_IsUniquelyReferenced(iter_o));
             assert(_Py_IsOwnedByCurrentThread((PyObject *)seq) ||
