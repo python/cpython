@@ -93,11 +93,9 @@ class ForwardRef:
         """
         if self.__cell__ is not None:
             try:
-                value = self.__cell__.cell_contents
+                return self.__cell__.cell_contents
             except ValueError:
                 pass
-            else:
-                return value
         if owner is None:
             owner = self.__owner__
 
