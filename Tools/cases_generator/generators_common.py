@@ -551,7 +551,7 @@ class Emitter:
                     self.out.emit(tkn)
                 if not r:
                     reachable = False
-            else_storage.merge(storage, self.out)
+            else_storage.merge(storage, self.out)  # type: ignore[possibly-undefined]
             storage = else_storage
         self.out.emit(stmt.endif)
         return reachable, None, storage

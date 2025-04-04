@@ -263,7 +263,7 @@ def generate_tier1_cases(
             insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
             reachable, offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)
         out.start_line()
-        if reachable:
+        if reachable: # type: ignore[possibly-undefined]
             stack.flush(out)
             out.emit("DISPATCH();\n")
         out.start_line()
