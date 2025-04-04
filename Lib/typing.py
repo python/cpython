@@ -162,18 +162,11 @@ __all__ = [
 ]
 
 class _LazyAnnotationLib:
-    def __init__(self) -> None:
-        self._annolib = None
-
     def __getattr__(self, attr):
-        if self._annolib is None:
-            import annotationlib
-
-            self._annolib = annotationlib
-
-        value = getattr(self._annolib, attr)
-        setattr(self, attr, value)
-        return value
+        global _lazy_annotationlib
+        import annotationlib
+        _lazy_annotationlib = annotationlib
+        return getattr(annotationlib, attr)
 
 _lazy_annotationlib = _LazyAnnotationLib()
 
