@@ -3365,9 +3365,10 @@ dummy_func(
             _FOR_ITER_GEN_FRAME +
             _PUSH_FRAME;
 
-        inst(LOAD_SPECIAL, (owner -- method_and_self[2])) {
+        inst(LOAD_SPECIAL, (self -- method_and_self[2])) {
+            method_and_self[1] = self;
             method_and_self[0] = PyStackRef_NULL;
-            method_and_self[1] = owner;
+            DEAD(self);
             PyObject *name = _Py_SpecialMethods[oparg].name;
             int err = _PyObject_LookupSpecialMethod(name, method_and_self);
             if (err < 0) {
@@ -3379,7 +3380,6 @@ dummy_func(
                               PyStackRef_TYPE(method_and_self[1])->tp_name);
                 ERROR_NO_POP();
             }
-            INPUTS_DEAD();
         }
 
         inst(WITH_EXCEPT_START, (exit_func, exit_self, lasti, unused, val -- exit_func, exit_self, lasti, unused, val, res)) {

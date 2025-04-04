@@ -9268,13 +9268,15 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_SPECIAL);
-            _PyStackRef owner;
+            _PyStackRef self;
             _PyStackRef *method_and_self;
-            owner = stack_pointer[-1];
+            self = stack_pointer[-1];
             method_and_self = &stack_pointer[-1];
+            method_and_self[1] = self;
             method_and_self[0] = PyStackRef_NULL;
-            method_and_self[1] = owner;
             PyObject *name = _Py_SpecialMethods[oparg].name;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = _PyObject_LookupSpecialMethod(name, method_and_self);
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -9289,7 +9291,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 JUMP_TO_LABEL(error);
             }
-            stack_pointer += 1;
+            stack_pointer += 2;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
