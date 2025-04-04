@@ -28,7 +28,6 @@ import operator
 import sys
 import types
 from types import GenericAlias
-import warnings
 
 from _typing import (
     _idfunc,
@@ -1641,14 +1640,17 @@ class _TupleType(_SpecialGenericAlias, _root=True):
 
 class _UnionGenericAliasMeta(type):
     def __instancecheck__(self, inst: object) -> bool:
+        import warnings
         warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
         return isinstance(inst, Union)
 
     def __subclasscheck__(self, inst: type) -> bool:
+        import warnings
         warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
         return issubclass(inst, Union)
 
     def __eq__(self, other):
+        import warnings
         warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
         if other is _UnionGenericAlias or other is Union:
             return True
@@ -1665,6 +1667,7 @@ class _UnionGenericAlias(metaclass=_UnionGenericAliasMeta):
 
     """
     def __new__(cls, self_cls, parameters, /, *, name=None):
+        import warnings
         warnings._deprecated("_UnionGenericAlias", remove=(3, 17))
         return Union[parameters]
 
