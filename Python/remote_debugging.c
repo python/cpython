@@ -548,7 +548,7 @@ get_py_runtime(proc_handle_t* handle)
 
 #ifdef MS_WINDOWS
     // On Windows, search for 'python' in executable or DLL
-#ifdef ___clang__
+#ifdef __clang__
     const char* secname = "_PyRuntime";
 #else
     const char* secname = "PyRuntime";
