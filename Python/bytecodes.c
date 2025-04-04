@@ -1123,7 +1123,7 @@ dummy_func(
             _PyStackRef temp = PyStackRef_MakeHeapSafe(retval);
             DEAD(retval);
             SAVE_STACK();
-            assert(EMPTY());
+            assert(STACK_LEVEL() == 0);
             _Py_LeaveRecursiveCallPy(tstate);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
@@ -4815,7 +4815,7 @@ dummy_func(
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             ERROR_IF(gen == NULL, error);
-            assert(EMPTY());
+            assert(STACK_LEVEL() == 0);
             SAVE_STACK();
             _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
             frame->instr_ptr++;
@@ -5224,22 +5224,26 @@ dummy_func(
         }
 
         label(pop_4_error) {
-            STACK_SHRINK(4);
+            stack_pointer -= 4;
+            assert(WITHIN_STACK_BOUNDS());
             goto error;
         }
 
         label(pop_3_error) {
-            STACK_SHRINK(3);
+            stack_pointer -= 3;
+            assert(WITHIN_STACK_BOUNDS());
             goto error;
         }
 
         label(pop_2_error) {
-            STACK_SHRINK(2);
+            stack_pointer -= 2;
+            assert(WITHIN_STACK_BOUNDS());
             goto error;
         }
 
         label(pop_1_error) {
-            STACK_SHRINK(1);
+            stack_pointer -= 1;
+            assert(WITHIN_STACK_BOUNDS());
             goto error;
         }
 
