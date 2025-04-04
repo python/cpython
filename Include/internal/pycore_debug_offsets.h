@@ -17,13 +17,21 @@ extern "C" {
 
 // Macros to burn global values in custom sections so out-of-process
 // profilers can locate them easily.
-#define GENERATE_DEBUG_SECTION(name, declaration)     \
-   _GENERATE_DEBUG_SECTION_WINDOWS(name)            \
-   _GENERATE_DEBUG_SECTION_APPLE(name)              \
-   declaration                                      \
-   _GENERATE_DEBUG_SECTION_LINUX(name)
 
-#if defined(MS_WINDOWS) && !defined(__clang__)
+// MSVC+Clang has a bug where it declares it twice.
+#if defined(MS_WINDOWS) && defined(__clang__)
+#   define GENERATE_DEBUG_SECTION(name, declaration)     \
+        _GENERATE_DEBUG_SECTION_WINDOWS(name)
+#else
+// Everything else
+#   define GENERATE_DEBUG_SECTION(name, declaration)     \
+        _GENERATE_DEBUG_SECTION_WINDOWS(name)            \
+        _GENERATE_DEBUG_SECTION_APPLE(name)              \
+        declaration                                      \
+        _GENERATE_DEBUG_SECTION_LINUX(name)
+#endif
+
+#if defined(MS_WINDOWS)
 #define _GENERATE_DEBUG_SECTION_WINDOWS(name)                       \
    _Pragma(Py_STRINGIFY(section(Py_STRINGIFY(name), read, write))) \
    __declspec(allocate(Py_STRINGIFY(name)))
