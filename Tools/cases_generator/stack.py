@@ -7,7 +7,7 @@ from typing import Iterator
 UNUSED = {"unused"}
 
 # Set this to true for voluminous output showing state of stack and locals
-PRINT_STACKS = 1 # False
+PRINT_STACKS = False
 
 def maybe_parenthesize(sym: str) -> str:
     """Add parentheses around a string if it contains an operator
@@ -321,7 +321,7 @@ class Stack:
                 var.memory_offset = var_offset
                 stack_offset = var_offset - self.physical_sp
                 Stack._do_emit(out, var.item, stack_offset, self.cast_type, self.extract_bits)
-                out.emit(self.as_comment() + "\n")
+                self._print(out)
             var_offset = var_offset.push(var.item)
 
     def flush(self, out: CWriter) -> None:

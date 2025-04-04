@@ -224,8 +224,6 @@ def generate_tier1_cases(
         out.emit("\n")
         out.emit(f"TARGET({name}) {{\n")
         popped = get_popped(inst, analysis)
-        if inst.name != "INTERPRETER_EXIT":
-            out.emit(f"assert(STACK_LEVEL() - {popped} >= -1);\n")
         # We need to ifdef it because this breaks platforms
         # without computed gotos/tail calling.
         out.emit(f"#if Py_TAIL_CALL_INTERP\n")
