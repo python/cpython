@@ -2403,10 +2403,7 @@ of the main interpreter.");
 #   include <pthread_np.h>
 #endif
 
-
-#if (((defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)) \
-      && defined(_PYTHREAD_NAME_MAXLEN)) \
-     || defined(MS_WINDOWS))
+#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP) || defined(MS_WINDOWS)
 /*[clinic input]
 _thread._get_name
 
@@ -2418,7 +2415,7 @@ _thread__get_name_impl(PyObject *module)
 /*[clinic end generated code: output=20026e7ee3da3dd7 input=35cec676833d04c8]*/
 {
 #ifndef MS_WINDOWS
-    char name[_PYTHREAD_NAME_MAXLEN+1];
+    char name[100];
     pthread_t thread = pthread_self();
 #ifdef HAVE_PTHREAD_GETNAME_NP
     int rc = pthread_getname_np(thread, name, Py_ARRAY_LENGTH(name));

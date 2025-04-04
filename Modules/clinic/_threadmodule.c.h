@@ -8,7 +8,7 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
-#if ((((defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)) && defined(_PYTHREAD_NAME_MAXLEN)) || defined(MS_WINDOWS)))
+#if (defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP) || defined(MS_WINDOWS))
 
 PyDoc_STRVAR(_thread__get_name__doc__,
 "_get_name($module, /)\n"
@@ -28,7 +28,7 @@ _thread__get_name(PyObject *module, PyObject *Py_UNUSED(ignored))
     return _thread__get_name_impl(module);
 }
 
-#endif /* ((((defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)) && defined(_PYTHREAD_NAME_MAXLEN)) || defined(MS_WINDOWS))) */
+#endif /* (defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP) || defined(MS_WINDOWS)) */
 
 #if (defined(HAVE_PTHREAD_SETNAME_NP) || defined(HAVE_PTHREAD_SET_NAME_NP) || defined(MS_WINDOWS))
 
@@ -103,4 +103,4 @@ exit:
 #ifndef _THREAD_SET_NAME_METHODDEF
     #define _THREAD_SET_NAME_METHODDEF
 #endif /* !defined(_THREAD_SET_NAME_METHODDEF) */
-/*[clinic end generated code: output=513be36c7ed8f449 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e978dc4615b9bc35 input=a9049054013a1b77]*/
