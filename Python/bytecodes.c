@@ -3997,9 +3997,8 @@ dummy_func(
                 tstate, (PyCodeObject *)&_Py_InitCleanup, 1, frame);
             assert(_PyFrame_GetBytecode(shim)[0].op.code == EXIT_INIT_CHECK);
             assert(_PyFrame_GetBytecode(shim)[1].op.code == RETURN_VALUE);
-            shim->localsplus[0] = PyStackRef_NULL;
             /* Push self onto stack of shim */
-            shim->localsplus[1] = PyStackRef_DUP(self[0]);
+            shim->localsplus[0] = PyStackRef_DUP(self[0]);
             _PyInterpreterFrame *temp = _PyEvalFramePushAndInit(
                 tstate, init[0], NULL, args-1, oparg+1, NULL, shim);
             DEAD(init);

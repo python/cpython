@@ -110,7 +110,7 @@
 /* PRE_DISPATCH_GOTO() does lltrace if enabled. Normally a no-op */
 #ifdef Py_DEBUG
 #define PRE_DISPATCH_GOTO() if (frame->lltrace >= 5) { \
-    lltrace_instruction(frame, _tos, stack_pointer, next_instr, opcode, oparg); }
+    lltrace_instruction(frame, stack_pointer, next_instr, opcode, oparg); }
 #else
 #define PRE_DISPATCH_GOTO() ((void)0)
 #endif
@@ -238,7 +238,7 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #endif
 
 #define WITHIN_STACK_BOUNDS() \
-   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= -1 && STACK_LEVEL() <= STACK_SIZE()))
+   (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
 
 /* Data access macros */
 #define FRAME_CO_CONSTS (_PyFrame_GetCode(frame)->co_consts)
