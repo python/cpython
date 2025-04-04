@@ -3449,7 +3449,9 @@ Introspection helpers
    .. versionadded:: 3.7.4
 
    .. versionchanged:: 3.14
-      This is now an alias for :class:`annotationlib.ForwardRef`.
+      This is now an alias for :class:`annotationlib.ForwardRef`. Several undocumented
+      behaviors of this class have been changed; for example, after a ``ForwardRef`` has
+      been evaluated, the evaluated value is no longer cached.
 
 .. function:: evaluate_forward_ref(forward_ref, *, owner=None, globals=None, locals=None, type_params=None, format=annotationlib.Format.VALUE)
 
