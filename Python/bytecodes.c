@@ -3172,7 +3172,7 @@ dummy_func(
 #ifdef Py_GIL_DISABLED
             assert(_PyObject_IsUniquelyReferenced(iter_o));
             assert(_Py_IsOwnedByCurrentThread((PyObject *)seq) ||
-                _PyObject_GC_IS_SHARED(seq));
+                   _PyObject_GC_IS_SHARED(seq));
             STAT_INC(FOR_ITER, hit);
             int result = _PyList_GetItemRefNoLock(seq, it->it_index, &next);
             // A negative result means we lost a race with another thread
