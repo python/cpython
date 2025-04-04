@@ -1864,8 +1864,8 @@ class DeprecatedTests(PyPublicAPITests):
             pass
 
         # The `@deprecated` decorator will update the class in-place.
-        # Test the children classes first.
-        for cls in (Cls8, Cls7, Cls6, Cls5, Cls4, Cls3, Cls2, Cls1):
+        # Test the child classes first.
+        for cls in reversed((Cls1, Cls2, Cls3, Cls4, Cls5, Cls6, Cls7, Cls8)):
             with self.subTest(f'class {cls.__name__} signature'):
                 try:
                     original_signature = inspect.signature(cls)
