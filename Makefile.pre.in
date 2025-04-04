@@ -32,6 +32,7 @@ srcdir=		@srcdir@
 VPATH=		@srcdir@
 abs_srcdir=	@abs_srcdir@
 abs_builddir=	@abs_builddir@
+PYBUILDDIR=		build/lib.@MACHDEP@-@MULTIARCH@-@VERSION@-@ABIFLAGS@
 
 
 CC=		@CC@
@@ -134,6 +135,10 @@ MACHDEP=	@MACHDEP@
 # Multiarch directory (may be empty)
 MULTIARCH=	@MULTIARCH@
 MULTIARCH_CPPFLAGS = @MULTIARCH_CPPFLAGS@
+
+# Sysconfig data
+SYSCONFIGDATA_NAME=			@SYSCONFIGDATA_NAME@
+SYSCONFIGVARS_JSON_NAME=	@SYSCONFIGVARS_JSON_NAME@
 
 # Install prefix for architecture-independent files
 prefix=		@prefix@
@@ -731,11 +736,12 @@ list-targets:
 
 .PHONY: build_all
 build_all:	check-clean-src check-app-store-compliance $(BUILDPYTHON) platform sharedmods \
-		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil build-details.json
+		gdbhooks Programs/_testembed scripts checksharedmods rundsymutil pybuilddir.txt \
+		$(PYBUILDDIR)/build-details.json $(PYBUILDDIR)/$(SYSCONFIGDATA_NAME).py
 
 .PHONY: build_wasm
 build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
-		python-config checksharedmods
+		$(PYBUILDDIR)/$(SYSCONFIGDATA_NAME).py python-config checksharedmods
 
 .PHONY: build_emscripten
 build_emscripten: build_wasm web_example
@@ -918,27 +924,37 @@ clinic-tests: check-clean-src $(srcdir)/Lib/test/clinic.test.c
 $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
 	$(LINKCC) $(PY_CORE_LDFLAGS) $(LINKFORSHARED) -o $@ Programs/python.o $(LINK_PYTHON_OBJS) $(LIBS) $(MODLIBS) $(SYSLIBS)
 
-platform: $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
+platform: $(PYTHON_FOR_BUILD_DEPS) $(PYBUILDDIR)/$(SYSCONFIGDATA_NAME).py
 	$(RUNSHARED) $(PYTHON_FOR_BUILD) -c 'import sys ; from sysconfig import get_platform ; print("%s-%d.%d" % (get_platform(), *sys.version_info[:2]))' >platform
 
-# Create build directory and generate the sysconfig build-time data there.
-# pybuilddir.txt contains the name of the build dir and is used for
-# sys.path fixup -- see Modules/getpath.c.
-# Since this step runs before shared modules are built, try to avoid bootstrap
-# problems by creating a dummy pybuilddir.txt just to allow interpreter
-# initialization to succeed.  It will be overwritten by generate-posix-vars
-# or removed in case of failure.
-pybuilddir.txt: $(PYTHON_FOR_BUILD_DEPS)
-	@echo "none" > ./pybuilddir.txt
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) -S -m sysconfig --generate-posix-vars ;\
-	if test $$? -ne 0 ; then \
-		echo "generate-posix-vars failed" ; \
-		rm -f ./pybuilddir.txt ; \
-		exit 1 ; \
-	fi
+# Create build directory and pybuilddir.txt.
+# pybuilddir.txt which is used by Modules/getpath.c to detect the build directory.
+pybuilddir.txt:
+	mkdir -p $(PYBUILDDIR)
+	printf $(PYBUILDDIR) >pybuilddir.txt
 
-build-details.json: pybuilddir.txt
-	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py `cat pybuilddir.txt`/build-details.json
+SYSCONFIG_SRC=	\
+		$(srcdir)/Lib/sysconfig/__init__.py \
+		$(srcdir)/Lib/sysconfig/__main__.py
+SYSCONFIGVARS_DEPS=	\
+		$(SYSCONFIG_SRC) \
+		Makefile \
+		Python/sysmodule.o \
+		Modules/posixmodule.o
+
+# Generate the sysconfig data module.
+$(PYBUILDDIR)/$(SYSCONFIGDATA_NAME).py $(PYBUILDDIR)/$(SYSCONFIGVARS_JSON_NAME): $(SYSCONFIGVARS_DEPS) $(PYTHON_FOR_BUILD_DEPS) pybuilddir.txt
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) -S -m sysconfig --generate-posix-vars
+	@# Sanity check, to make sure sysconfig._get_sysconfigdata_name() returns the same value.
+	@for file in $@; do \
+		if test ! -f $<; then \
+			echo "generate-posix-vars didn't generate '$(PYBUILDDIR)/$(SYSCONFIGDATA_NAME).py'" \
+			exit 1; \
+		fi; \
+	done
+
+$(PYBUILDDIR)/build-details.json: $(PYTHON_FOR_BUILD_DEPS) $(PYBUILDDIR)/$(SYSCONFIGDATA_NAME).py Makefile pybuilddir.txt
+	$(RUNSHARED) $(PYTHON_FOR_BUILD) $(srcdir)/Tools/build/generate-build-details.py $@
 
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
@@ -1444,18 +1460,8 @@ $(LIBHACL_BLAKE2_A): $(LIBHACL_BLAKE2_OBJS)
 	-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(LIBHACL_BLAKE2_OBJS)
 
-# create relative links from build/lib.platform/egg.so to Modules/egg.so
-# pybuilddir.txt is created too late. We cannot use it in Makefile
-# targets. ln --relative is not portable.
 .PHONY: sharedmods
-sharedmods: $(SHAREDMODS) pybuilddir.txt
-	@target=`cat pybuilddir.txt`; \
-	$(MKDIR_P) $$target; \
-	for mod in X $(SHAREDMODS); do \
-		if test $$mod != X; then \
-			$(LN) -sf ../../$$mod $$target/`basename $$mod`; \
-		fi; \
-	done
+sharedmods: $(SHAREDMODS)
 
 # dependency on BUILDPYTHON ensures that the target is run last
 .PHONY: checksharedmods
@@ -2657,9 +2663,9 @@ libinstall:	all $(srcdir)/Modules/xxmodule.c
 			esac; \
 		done; \
 	done
-	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py $(DESTDIR)$(LIBDEST); \
-	$(INSTALL_DATA) `cat pybuilddir.txt`/_sysconfig_vars_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).json $(DESTDIR)$(LIBDEST); \
-	$(INSTALL_DATA) `cat pybuilddir.txt`/build-details.json $(DESTDIR)$(LIBDEST); \
+	$(INSTALL_DATA) $(PYBUILDDIR)/_sysconfigdata_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).py $(DESTDIR)$(LIBDEST); \
+	$(INSTALL_DATA) $(PYBUILDDIR)/_sysconfig_vars_$(ABIFLAGS)_$(MACHDEP)_$(MULTIARCH).json $(DESTDIR)$(LIBDEST); \
+	$(INSTALL_DATA) $(PYBUILDDIR)/build-details.json $(DESTDIR)$(LIBDEST); \
 	$(INSTALL_DATA) $(srcdir)/LICENSE $(DESTDIR)$(LIBDEST)/LICENSE.txt
 	@ # If app store compliance has been configured, apply the patch to the
 	@ # installed library code. The patch has been previously validated against
@@ -3064,7 +3070,7 @@ clean-retain-profile: pycremoval
 	find build -name 'fficonfig.h' -exec rm -f {} ';' || true
 	find build -name '*.py' -exec rm -f {} ';' || true
 	find build -name '*.py[co]' -exec rm -f {} ';' || true
-	-rm -f pybuilddir.txt
+	-rm -rf pybuilddir.txt $(PYBUILDDIR)
 	-rm -f _bootstrap_python
 	-rm -rf web_example python.mjs python.wasm python*.symbols python*.map
 	-rm -f Programs/_testembed Programs/_freeze_module

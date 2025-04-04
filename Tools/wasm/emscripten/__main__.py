@@ -195,11 +195,10 @@ def configure_emscripten_python(context, working_dir):
     assert (
         len(lib_dirs) == 1
     ), f"Expected a single lib.* directory in {python_build_dir}"
-    lib_dir = os.fsdecode(lib_dirs[0])
-    pydebug = lib_dir.endswith("-pydebug")
-    python_version = lib_dir.removesuffix("-pydebug").rpartition("-")[-1]
+    _, python_version, abiflags = os.fsdecode(lib_dirs[0]).rsplit('-', maxsplit=2)
     sysconfig_data = (
-        f"{emscripten_build_dir}/build/lib.emscripten-wasm32-{python_version}"
+        f"{emscripten_build_dir}/build/"
+        f"lib.emscripten-wasm32-emscripten-{python_version}-{abiflags}"
     )
     if pydebug:
         sysconfig_data += "-pydebug"
@@ -227,8 +226,13 @@ def configure_emscripten_python(context, working_dir):
         "--enable-wasm-dynamic-linking",
         f"--prefix={PREFIX_DIR}",
     ]
-    if pydebug:
-        configure.append("--with-pydebug")
+    for flag in abiflags:
+        if flag == 'd':
+            configure.append("--with-pydebug")
+        elif flag == 't':
+            configure.append("--disable-gil")
+        else:
+            raise ValueError(f"Unknown ABI flag: {flag}")
     if context.args:
         configure.extend(context.args)
     call(
