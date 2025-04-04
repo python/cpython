@@ -455,6 +455,13 @@ Other language changes
   The testbed can also be used to run the test suite of projects other than
   CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
 
+* Add a built-in implementation for HMAC (:rfc:`2104`) using formally verified
+  code from the `HACL* <https://github.com/hacl-star/hacl-star/>`__ project.
+  This implementation is used as a fallback when the OpenSSL implementation
+  of HMAC is not available.
+  (Contributed by Bénédikt Tran in :gh:`99108`.)
+
+
 .. _whatsnew314-pep765:
 
 PEP 765: Disallow return/break/continue that exit a finally block
@@ -463,6 +470,7 @@ PEP 765: Disallow return/break/continue that exit a finally block
 The compiler emits a :exc:`SyntaxWarning` when a :keyword:`return`, :keyword:`break` or
 :keyword:`continue` statements appears where it exits a :keyword:`finally` block.
 This change is specified in :pep:`765`.
+
 
 New modules
 ===========
@@ -703,6 +711,14 @@ graphlib
 * Allow :meth:`graphlib.TopologicalSorter.prepare` to be called more than once
   as long as sorting has not started.
   (Contributed by Daniel Pope in :gh:`130914`)
+
+
+hmac
+----
+
+* Add a built-in implementation for HMAC (:rfc:`2104`) using formally verified
+  code from the `HACL* <https://github.com/hacl-star/hacl-star/>`__ project.
+  (Contributed by Bénédikt Tran in :gh:`99108`.)
 
 
 http
