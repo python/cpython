@@ -1,3 +1,4 @@
+import _ast_unparse
 import ast
 import builtins
 import copy
@@ -732,7 +733,7 @@ class AST_Tests(unittest.TestCase):
                     return self.__class__(self + 1)
                 except ValueError:
                     return self
-        enum._test_simple_enum(_Precedence, ast._Precedence)
+        enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
     @skip_wasi_stack_overflow()

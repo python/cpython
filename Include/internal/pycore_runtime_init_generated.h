@@ -596,12 +596,14 @@ extern "C" {
     INIT_ID(__bytes__), \
     INIT_ID(__call__), \
     INIT_ID(__cantrace__), \
+    INIT_ID(__ceil__), \
     INIT_ID(__class__), \
     INIT_ID(__class_getitem__), \
     INIT_ID(__classcell__), \
     INIT_ID(__classdict__), \
     INIT_ID(__classdictcell__), \
     INIT_ID(__complex__), \
+    INIT_ID(__conditional_annotations__), \
     INIT_ID(__contains__), \
     INIT_ID(__ctypes_from_outparam__), \
     INIT_ID(__del__), \
@@ -619,6 +621,7 @@ extern "C" {
     INIT_ID(__file__), \
     INIT_ID(__firstlineno__), \
     INIT_ID(__float__), \
+    INIT_ID(__floor__), \
     INIT_ID(__floordiv__), \
     INIT_ID(__format__), \
     INIT_ID(__fspath__), \
@@ -724,6 +727,7 @@ extern "C" {
     INIT_ID(__subclasscheck__), \
     INIT_ID(__subclasshook__), \
     INIT_ID(__truediv__), \
+    INIT_ID(__trunc__), \
     INIT_ID(__type_params__), \
     INIT_ID(__typing_is_unpacked_typevartuple__), \
     INIT_ID(__typing_prepare_subst__), \
@@ -786,7 +790,9 @@ extern "C" {
     INIT_ID(aggregate_class), \
     INIT_ID(alias), \
     INIT_ID(align), \
+    INIT_ID(all), \
     INIT_ID(allow_code), \
+    INIT_ID(any), \
     INIT_ID(append), \
     INIT_ID(arg), \
     INIT_ID(argdefs), \
@@ -1187,6 +1193,7 @@ extern "C" {
     INIT_ID(salt), \
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \
+    INIT_ID(script), \
     INIT_ID(second), \
     INIT_ID(security_attributes), \
     INIT_ID(seek), \

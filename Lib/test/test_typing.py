@@ -7158,6 +7158,8 @@ class GetTypeHintTests(BaseTestCase):
 
         self.assertEqual(get_type_hints(C, format=annotationlib.Format.STRING),
                          {'x': 'undefined'})
+        # Make sure using an int as format also works:
+        self.assertEqual(get_type_hints(C, format=4), {'x': 'undefined'})
 
     def test_get_type_hints_format_function(self):
         def func(x: undefined) -> undefined: ...
@@ -7309,20 +7311,7 @@ class EvaluateForwardRefTests(BaseTestCase):
 
     def test_evaluate_forward_ref_no_type_params(self):
         ref = ForwardRef('int')
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            (
-                "Failing to pass a value to the 'type_params' parameter "
-                "of 'typing.evaluate_forward_ref' is deprecated, "
-                "as it leads to incorrect behaviour"
-            ),
-        ):
-            typing.evaluate_forward_ref(ref)
-
-        # No warnings when `type_params` is passed:
-        with warnings.catch_warnings(record=True) as w:
-            typing.evaluate_forward_ref(ref, type_params=())
-        self.assertEqual(w, [])
+        self.assertIs(typing.evaluate_forward_ref(ref), int)
 
 
 class CollectionsAbcTests(BaseTestCase):

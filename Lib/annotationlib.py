@@ -27,7 +27,6 @@ class Format(enum.IntEnum):
     STRING = 4
 
 
-_Union = None
 _sentinel = object()
 
 # Slots shared by ForwardRef and _Stringifier. The __forward__ names must be
@@ -246,16 +245,10 @@ class ForwardRef:
         return hash((self.__forward_arg__, self.__forward_module__))
 
     def __or__(self, other):
-        global _Union
-        if _Union is None:
-            from typing import Union as _Union
-        return _Union[self, other]
+        return types.UnionType[self, other]
 
     def __ror__(self, other):
-        global _Union
-        if _Union is None:
-            from typing import Union as _Union
-        return _Union[other, self]
+        return types.UnionType[other, self]
 
     def __repr__(self):
         if self.__forward_module__ is None:
