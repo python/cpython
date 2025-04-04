@@ -116,22 +116,25 @@ As a consequence of this, split keys have a maximum size of 16.
 #define PyDict_MINSIZE 8
 
 #include "Python.h"
-#include "pycore_bitutils.h"             // _Py_bit_length
-#include "pycore_call.h"                 // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"                // _PyEval_GetBuiltin()
-#include "pycore_code.h"                 // stats
-#include "pycore_critical_section.h"     // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
-#include "pycore_dict.h"                 // export _PyDict_SizeOf()
-#include "pycore_freelist.h"             // _PyFreeListState_GET()
-#include "pycore_gc.h"                   // _PyObject_GC_IS_TRACKED()
-#include "pycore_object.h"               // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
+#include "pycore_bitutils.h"      // _Py_bit_length
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_code.h"          // stats
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
+#include "pycore_dict.h"          // export _PyDict_SizeOf()
+#include "pycore_freelist.h"      // _PyFreeListState_GET()
+#include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
+#include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_SSIZE_RELAXED
-#include "pycore_pyerrors.h"             // _PyErr_GetRaisedException()
-#include "pycore_pystate.h"              // _PyThreadState_GET()
-#include "pycore_setobject.h"            // _PySet_NextEntry()
-#include "stringlib/eq.h"                // unicode_eq()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_tuple.h"         // _PyTuple_Recycle()
+#include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 
+#include "stringlib/eq.h"                // unicode_eq()
 #include <stdbool.h>
+
 
 /*[clinic input]
 class dict "PyDictObject *" "&PyDict_Type"
@@ -1323,6 +1326,12 @@ ensure_shared_on_read(PyDictObject *mp)
         Py_END_CRITICAL_SECTION();
     }
 }
+
+void
+_PyDict_EnsureSharedOnRead(PyDictObject *mp)
+{
+    ensure_shared_on_read(mp);
+}
 #endif
 
 static inline void
@@ -1410,18 +1419,20 @@ compare_unicode_unicode_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
 {
     PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
     PyObject *startkey = _Py_atomic_load_ptr_relaxed(&ep->me_key);
-    assert(startkey == NULL || PyUnicode_CheckExact(startkey));
     if (startkey == key) {
+        assert(PyUnicode_CheckExact(startkey));
         return 1;
     }
     if (startkey != NULL) {
         if (_Py_IsImmortal(startkey)) {
+            assert(PyUnicode_CheckExact(startkey));
             return unicode_get_hash(startkey) == hash && unicode_eq(startkey, key);
         }
         else {
             if (!_Py_TryIncrefCompare(&ep->me_key, startkey)) {
                 return DKIX_KEY_CHANGED;
             }
+            assert(PyUnicode_CheckExact(startkey));
             if (unicode_get_hash(startkey) == hash && unicode_eq(startkey, key)) {
                 Py_DECREF(startkey);
                 return 1;
@@ -5620,9 +5631,7 @@ dictiter_iternextitem(PyObject *self)
             Py_DECREF(oldvalue);
             // bpo-42536: The GC may have untracked this result tuple. Since we're
             // recycling it, make sure it's tracked again:
-            if (!_PyObject_GC_IS_TRACKED(result)) {
-                _PyObject_GC_TRACK(result);
-            }
+            _PyTuple_Recycle(result);
         }
         else {
             result = PyTuple_New(2);
@@ -5745,9 +5754,7 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
             Py_DECREF(oldvalue);
             // bpo-42536: The GC may have untracked this result tuple. Since
             // we're recycling it, make sure it's tracked again:
-            if (!_PyObject_GC_IS_TRACKED(result)) {
-                _PyObject_GC_TRACK(result);
-            }
+            _PyTuple_Recycle(result);
         }
         else {
             result = PyTuple_New(2);
@@ -5920,7 +5927,7 @@ dictview_mapping(PyObject *view, void *Py_UNUSED(ignored)) {
 }
 
 static PyGetSetDef dictview_getset[] = {
-    {"mapping", dictview_mapping, (setter)NULL,
+    {"mapping", dictview_mapping, NULL,
      PyDoc_STR("dictionary that this view refers to"), NULL},
     {0}
 };
@@ -6337,7 +6344,7 @@ dictviews_xor(PyObject* self, PyObject *other)
 
 static PyNumberMethods dictviews_as_number = {
     0,                                  /*nb_add*/
-    (binaryfunc)dictviews_sub,          /*nb_subtract*/
+    dictviews_sub,                      /*nb_subtract*/
     0,                                  /*nb_multiply*/
     0,                                  /*nb_remainder*/
     0,                                  /*nb_divmod*/
@@ -6349,9 +6356,9 @@ static PyNumberMethods dictviews_as_number = {
     0,                                  /*nb_invert*/
     0,                                  /*nb_lshift*/
     0,                                  /*nb_rshift*/
-    (binaryfunc)_PyDictView_Intersect,  /*nb_and*/
-    (binaryfunc)dictviews_xor,          /*nb_xor*/
-    (binaryfunc)dictviews_or,           /*nb_or*/
+    _PyDictView_Intersect,              /*nb_and*/
+    dictviews_xor,                      /*nb_xor*/
+    dictviews_or,                       /*nb_or*/
 };
 
 static PyObject*
@@ -6609,7 +6616,7 @@ static PySequenceMethods dictvalues_as_sequence = {
     0,                                  /* sq_slice */
     0,                                  /* sq_ass_item */
     0,                                  /* sq_ass_slice */
-    (objobjproc)0,                      /* sq_contains */
+    0,                                  /* sq_contains */
 };
 
 static PyObject* dictvalues_reversed(PyObject *dv, PyObject *Py_UNUSED(ignored));

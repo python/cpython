@@ -576,7 +576,7 @@ def _check_date_fields(year, month, day):
         raise ValueError(f"month must be in 1..12, not {month}")
     dim = _days_in_month(year, month)
     if not 1 <= day <= dim:
-        raise ValueError(f"day must be in 1..{dim}, not {day}")
+        raise ValueError(f"day {day} must be in range 1..{dim} for month {month} in year {year}")
     return year, month, day
 
 def _check_time_fields(hour, minute, second, microsecond, fold):
