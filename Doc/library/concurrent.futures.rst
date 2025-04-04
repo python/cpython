@@ -194,6 +194,10 @@ And::
       Default value of *max_workers* is changed to
       ``min(32, (os.process_cpu_count() or 1) + 4)``.
 
+   .. versionchanged:: next
+      Added *ctxkwargs* to pass additional arguments to ``cls.prepare_context``
+      class method.
+
 
 .. _threadpoolexecutor-example:
 
