@@ -7,6 +7,9 @@
 # iterator interface by Gustavo Niemeyer, April 2003.
 # changes to tokenize more like Posix shells by Vinay Sajip, July 2016.
 
+import sys
+from io import StringIO
+
 __all__ = ["shlex", "split", "quote", "join"]
 
 class shlex:
@@ -16,13 +19,11 @@ class shlex:
         from collections import deque  # deferred import for performance
 
         if isinstance(instream, str):
-            from io import StringIO  # deferred import for performance
             instream = StringIO(instream)
         if instream is not None:
             self.instream = instream
             self.infile = infile
         else:
-            import sys  # deferred import for performance
             self.instream = sys.stdin
             self.infile = None
         self.posix = posix
@@ -75,7 +76,6 @@ class shlex:
     def push_source(self, newstream, newfile=None):
         "Push an input source onto the lexer's input source stack."
         if isinstance(newstream, str):
-            from io import StringIO  # deferred import for performance
             newstream = StringIO(newstream)
         self.filestack.appendleft((self.infile, self.instream, self.lineno))
         self.infile = newfile
@@ -343,7 +343,6 @@ def _print_tokens(lexer):
         print("Token: " + repr(tt))
 
 if __name__ == '__main__':
-    import sys  # deferred import for performance
     if len(sys.argv) == 1:
         _print_tokens(shlex())
     else:
