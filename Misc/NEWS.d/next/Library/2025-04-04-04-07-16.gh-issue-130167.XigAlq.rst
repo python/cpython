@@ -1,2 +1,2 @@
 Improved performance of :func:`_pydecimal._all_zeros` by an average of
-~1.7x and :func:`_pydecimal._exact_half` by ~1.27x. Patch by Marius Juston
+~1.7x and :func:`_pydecimal._exact_half` by ~1.38x. Patch by Marius Juston
