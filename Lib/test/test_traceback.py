@@ -3598,6 +3598,7 @@ class TestTracebackException(unittest.TestCase):
             self.assertIsNone(te.exc_type)
 
     def test_no_refs_to_exception_and_traceback_objects(self):
+        exc_obj = None
         try:
             1/0
         except Exception as e:
