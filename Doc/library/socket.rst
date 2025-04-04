@@ -156,8 +156,10 @@ created.  Socket addresses are represented as follows:
 
   - :const:`BTPROTO_HCI` accepts a format that depends on your OS.
 
-    - On Linux it accepts a tuple ``(device_id,)`` where ``device_id``
-      is an integer specifying the number of the Bluetooth device.
+    - On Linux it accepts a tuple ``(device_id, [channel])`` where ``device_id``
+      is an integer specifying the number of the Bluetooth device,
+      and ``channel`` is an optional integer specifying the HCI channel
+      (:const:`HCI_CHANNEL_RAW` by default).
     - On FreeBSD, NetBSD and DragonFly BSD it accepts ``bdaddr`` where ``bdaddr``
       is a :class:`bytes` object containing the Bluetooth address in a
       string format. (ex. ``b'12:23:34:45:56:67'``)
@@ -167,6 +169,9 @@ created.  Socket addresses are represented as follows:
 
     .. versionchanged:: 3.13.3
        FreeBSD support added.
+
+    .. versionchanged:: next
+       Added ``channel`` field.
 
   - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is a
     :class:`bytes` object containing the Bluetooth address in a
@@ -677,6 +682,18 @@ Constants
    For use with :const:`BTPROTO_HCI`. :const:`!HCI_FILTER` is only
    available on Linux and FreeBSD. :const:`!HCI_TIME_STAMP` and
    :const:`!HCI_DATA_DIR` are only available on Linux.
+
+.. data:: HCI_CHANNEL_RAW
+          HCI_CHANNEL_USER
+          HCI_CHANNEL_MONITOR
+          HCI_CHANNEL_CONTROL
+          HCI_CHANNEL_LOGGING
+
+   Possible values for ``channel`` field in the :const:`BTPROTO_HCI` address.
+
+   .. availability:: Linux
+
+   .. versionadded:: next
 
 .. data:: AF_QIPCRTR
 
