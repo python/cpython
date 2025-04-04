@@ -620,9 +620,10 @@ class FormatTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, error_msg):
             f"{0:fz}"  # wrong position
 
-        error_msg = re.escape("Negative zero coercion (z) not allowed")
+        error_msg = re.escape("'z' option not allowed with 'c', 'd' and 'n'")
         with self.assertRaisesRegex(ValueError, error_msg):
             f"{0:zd}"  # can't apply to int presentation type
+        error_msg = re.escape("Negative zero coercion (z) not allowed")
         with self.assertRaisesRegex(ValueError, error_msg):
             f"{'x':zs}"  # can't apply to string
 

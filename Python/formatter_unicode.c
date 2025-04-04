@@ -988,10 +988,12 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
     }
 
     /* no negative zero coercion on integers */
-    if (format->no_neg_0) {
+    if (format->no_neg_0 && format->type != 'b' && format->type != 'o'
+        && format->type != 'x' && format->type != 'X')
+    {
         PyErr_SetString(PyExc_ValueError,
-                        "Negative zero coercion (z) not allowed in integer"
-                        " format specifier");
+                        "'z' option not allowed with 'c', 'd' and 'n' "
+                        "integer format specifier");
         goto done;
     }
 
@@ -1084,8 +1086,9 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
             int64_t precision = Py_MAX(1, format->precision);
 
             /* Use two's complement for 'b', 'o' and 'x' formatting types */
-            if (format->type == 'b' || format->type == 'x'
-                || format->type == 'o' || format->type == 'X')
+            if (format->no_neg_0 && (format->type == 'b' || format->type == 'x'
+                                     || format->type == 'o'
+                                     || format->type == 'X'))
             {
                 int64_t shift = precision;
                 int incr = 1;
