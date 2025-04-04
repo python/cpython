@@ -900,6 +900,8 @@ LDSHARED
 SHLIB_SUFFIX
 DSYMUTIL_PATH
 DSYMUTIL
+JIT_STENCILS_H
+REGEN_JIT_COMMAND
 UNIVERSAL_ARCH_FLAGS
 WASM_STDLIB
 WASM_ASSETS_DIR
@@ -928,8 +930,6 @@ LLVM_AR
 PROFILE_TASK
 DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
-JIT_STENCILS_H
-REGEN_JIT_COMMAND
 ABI_THREAD
 ABIFLAGS
 LN
@@ -1092,13 +1092,13 @@ with_pydebug
 with_trace_refs
 enable_pystats
 with_assertions
-enable_experimental_jit
 enable_optimizations
 with_lto
 enable_bolt
 with_strict_overflow
 enable_safety
 enable_slower_safety
+enable_experimental_jit
 with_dsymutil
 with_address_sanitizer
 with_memory_sanitizer
@@ -1823,9 +1823,6 @@ Optional Features:
   --disable-gil           enable experimental support for running without the
                           GIL (default is no)
   --enable-pystats        enable internal statistics gathering (default is no)
-  --enable-experimental-jit[=no|yes|yes-off|interpreter]
-                          build the experimental just-in-time compiler
-                          (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-bolt           enable usage of the llvm-bolt post-link optimizer
@@ -1834,6 +1831,9 @@ Optional Features:
                           no performance overhead
   --enable-slower-safety  enable usage of the security compiler options with
                           performance overhead
+  --enable-experimental-jit[=no|yes|yes-off|interpreter]
+                          build the experimental just-in-time compiler
+                          (default is no)
   --enable-loadable-sqlite-extensions
                           support loadable extensions in the sqlite3 module,
                           see Doc/library/sqlite3.rst (default is no)
@@ -8367,51 +8367,6 @@ else
 printf "%s\n" "no" >&6; }
 fi
 
-# Check for --enable-experimental-jit:
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-experimental-jit" >&5
-printf %s "checking for --enable-experimental-jit... " >&6; }
-# Check whether --enable-experimental-jit was given.
-if test ${enable_experimental_jit+y}
-then :
-  enableval=$enable_experimental_jit;
-else case e in #(
-  e) enable_experimental_jit=no ;;
-esac
-fi
-
-case $enable_experimental_jit in
-  no)              jit_flags="";          tier2_flags="" ;;
-  yes)             jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=1" ;;
-  yes-off)         jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=3" ;;
-  interpreter)     jit_flags="";          tier2_flags="-D_Py_TIER2=4" ;;
-  interpreter-off) jit_flags="";          tier2_flags="-D_Py_TIER2=6" ;;  # Secret option
-  *) as_fn_error $? "invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-off|interpreter" "$LINENO" 5 ;;
-esac
-if ${tier2_flags:+false} :
-then :
-
-else case e in #(
-  e) as_fn_append CFLAGS_NODIST " $tier2_flags" ;;
-esac
-fi
-if ${jit_flags:+false} :
-then :
-
-else case e in #(
-  e) as_fn_append CFLAGS_NODIST " $jit_flags"
-           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"
-           JIT_STENCILS_H="jit_stencils.h"
-           if test "x$Py_DEBUG" = xtrue
-then :
-  as_fn_append REGEN_JIT_COMMAND " --debug"
-fi ;;
-esac
-fi
-
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tier2_flags $jit_flags" >&5
-printf "%s\n" "$tier2_flags $jit_flags" >&6; }
-
 # Enable optimization flags
 
 
@@ -10706,42 +10661,50 @@ fi
                UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+               ARCH_TRIPLES=`echo {ppc,i386}-apple-darwin`
                ;;
             64-bit)
                UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+               ARCH_TRIPLES=`echo {ppc64,x86_64}-apple-darwin`
                ;;
             all)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+               ARCH_TRIPLES=`echo {i386,ppc,ppc64,x86_64}-apple-darwin`
                ;;
             universal2)
                UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                LIPO_INTEL64_FLAGS="-extract x86_64"
                ARCH_RUN_32BIT="true"
+               ARCH_TRIPLES=`echo {aarch64,x86_64}-apple-darwin`
                ;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386"
+               ARCH_TRIPLES=`echo {i386,x86_64}-apple-darwin`
                ;;
             intel-32)
                UNIVERSAL_ARCH_FLAGS="-arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+               ARCH_TRIPLES=i386-apple-darwin
                ;;
             intel-64)
                UNIVERSAL_ARCH_FLAGS="-arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+               ARCH_TRIPLES=x86_64-apple-darwin
                ;;
             3-way)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+               ARCH_TRIPLES=`echo {i386,ppc,x86_64}-apple-darwin`
                ;;
             *)
                as_fn_error $? "proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way" "$LINENO" 5
@@ -10857,6 +10820,51 @@ else case e in #(
  ;;
 esac
 fi
+
+# Check for --enable-experimental-jit:
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-experimental-jit" >&5
+printf %s "checking for --enable-experimental-jit... " >&6; }
+# Check whether --enable-experimental-jit was given.
+if test ${enable_experimental_jit+y}
+then :
+  enableval=$enable_experimental_jit;
+else case e in #(
+  e) enable_experimental_jit=no ;;
+esac
+fi
+
+case $enable_experimental_jit in
+  no)              jit_flags="";          tier2_flags="" ;;
+  yes)             jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=1" ;;
+  yes-off)         jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=3" ;;
+  interpreter)     jit_flags="";          tier2_flags="-D_Py_TIER2=4" ;;
+  interpreter-off) jit_flags="";          tier2_flags="-D_Py_TIER2=6" ;;  # Secret option
+  *) as_fn_error $? "invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-off|interpreter" "$LINENO" 5 ;;
+esac
+if ${tier2_flags:+false} :
+then :
+
+else case e in #(
+  e) as_fn_append CFLAGS_NODIST " $tier2_flags" ;;
+esac
+fi
+if ${jit_flags:+false} :
+then :
+
+else case e in #(
+  e) as_fn_append CFLAGS_NODIST " $jit_flags"
+           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host}"
+           JIT_STENCILS_H="jit_stencils.h"
+           if test "x$Py_DEBUG" = xtrue
+then :
+  as_fn_append REGEN_JIT_COMMAND " --debug"
+fi ;;
+esac
+fi
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tier2_flags $jit_flags" >&5
+printf "%s\n" "$tier2_flags $jit_flags" >&6; }
 
 case "$ac_cv_cc_name" in
 mpicc)
