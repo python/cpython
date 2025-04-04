@@ -2786,12 +2786,12 @@ _PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self)
     _PyType_LookupStackRefAndVersion(Py_TYPE(self), attr, &method_and_self[0]);
     PyObject *method_o = PyStackRef_AsPyObjectBorrow(method_and_self[0]);
     if (method_o == NULL) {
-        return -1;
+        return 0;
     }
 
     if (_PyType_HasFeature(Py_TYPE(method_o), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
         /* Avoid temporary PyMethodObject */
-        return 0;
+        return 1;
     }
 
     descrgetfunc f = Py_TYPE(method_o)->tp_descr_get;
@@ -2804,7 +2804,7 @@ _PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self)
         method_and_self[0] = PyStackRef_FromPyObjectSteal(func);
     }
     PyStackRef_CLEAR(method_and_self[1]); // clear self
-    return 0;
+    return 1;
 }
 
 static int
