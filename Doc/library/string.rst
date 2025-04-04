@@ -454,7 +454,8 @@ of a number respectively. It can be one of the following:
 | ``','`` | Inserts a comma every 3 digits for                       |
 |         | integer presentation type ``'d'`` and                    |
 |         | floating-point presentation types, excluding ``'n'``.    |
-|         | For other presentation types, this option is an error.   |
+|         | For other presentation types,                            |
+|         | this option is not supported.                            |
 +---------+----------------------------------------------------------+
 | ``'_'`` | Inserts an underscore every 3 digits for                 |
 |         | integer presentation type ``'d'`` and                    |
@@ -462,7 +463,8 @@ of a number respectively. It can be one of the following:
 |         | For integer presentation types                           |
 |         | ``'b'``, ``'o'``, ``'x'``, and ``'X'``,                  |
 |         | underscores are inserted every 4 digits.                 |
-|         | For other presentation types, this option is an error.   |
+|         | For other presentation types,                            |
+|         | this option is not supported.                            |
 +---------+----------------------------------------------------------+
 
 For a locale aware separator, use the ``'n'`` presentation type instead.
