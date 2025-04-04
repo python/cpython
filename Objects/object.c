@@ -2106,7 +2106,7 @@ static PyNumberMethods none_as_number = {
     0,                          /* nb_negative */
     0,                          /* nb_positive */
     0,                          /* nb_absolute */
-    (inquiry)none_bool,         /* nb_bool */
+    none_bool,                  /* nb_bool */
     0,                          /* nb_invert */
     0,                          /* nb_lshift */
     0,                          /* nb_rshift */
@@ -2152,7 +2152,7 @@ PyTypeObject _PyNone_Type = {
     &none_as_number,    /*tp_as_number*/
     0,                  /*tp_as_sequence*/
     0,                  /*tp_as_mapping*/
-    (hashfunc)none_hash,/*tp_hash */
+    none_hash,          /*tp_hash */
     0,                  /*tp_call */
     0,                  /*tp_str */
     0,                  /*tp_getattro */
