@@ -1,0 +1,1 @@
+Fixed some race conditions in os.scandir and associated direntry.
