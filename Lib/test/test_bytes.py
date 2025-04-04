@@ -780,17 +780,24 @@ class BaseBytesTest:
 
         pi = PseudoFloat(3.1415)
 
-        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not float', operator.mod, '%x', 3.14)
-        self.assertRaisesRegex(TypeError, '%X format: an integer is required, not float', operator.mod, '%X', 2.11)
-        self.assertRaisesRegex(TypeError, '%o format: an integer is required, not float', operator.mod, '%o', 1.79)
-        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not PseudoFloat', operator.mod, '%x', pi)
-        self.assertRaisesRegex(TypeError, '%x format: an integer is required, not complex', operator.mod, '%x', 3j)
-        self.assertRaisesRegex(TypeError, '%X format: an integer is required, not complex', operator.mod, '%X', 2j)
-        self.assertRaisesRegex(TypeError, '%o format: an integer is required, not complex', operator.mod, '%o', 1j)
-        self.assertRaisesRegex(TypeError, '%u format: a real number is required, not complex', operator.mod, '%u', 3j)
-        self.assertRaisesRegex(TypeError, '%i format: a real number is required, not complex', operator.mod, '%i', 2j)
-        self.assertRaisesRegex(TypeError, '%d format: a real number is required, not complex', operator.mod, '%d', 2j)
-        self.assertRaisesRegex(TypeError, r'%c requires an int or a unicode character, not .*\.PseudoFloat', operator.mod, '%c', pi)
+        mod = operator.mod
+        exceptions_params = [
+            ('%x format: an integer is required, not float', '%x', 3.14),
+            ('%X format: an integer is required, not float', '%X', 2.11),
+            ('%o format: an integer is required, not float', '%o', 1.79),
+            ('%x format: an integer is required, not PseudoFloat', '%x', pi),
+            ('%x format: an integer is required, not complex', '%x', 3j),
+            ('%X format: an integer is required, not complex', '%X', 2j),
+            ('%o format: an integer is required, not complex', '%o', 1j),
+            ('%u format: a real number is required, not complex', '%u', 3j),
+            ('%i format: a real number is required, not complex', '%i', 2j),
+            ('%d format: a real number is required, not complex', '%d', 2j),
+            (r'%c requires an int or a unicode character, not .*\.PseudoFloat',
+                '%c', pi),
+        ]
+
+        for msg, format, value in exceptions_params:
+            self.assertRaisesRegex(TypeError, msg , mod, format, value)
 
     def test_imod(self):
         b = self.type2test(b'hello, %b!')
