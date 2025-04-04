@@ -392,15 +392,18 @@ class _ExecutorManagerThread(threading.Thread):
             else:
                 work_item = self.pending_work_items[work_id]
 
-                if work_item.future.set_running_or_notify_cancel():
-                    self.call_queue.put(_CallItem(work_id,
-                                                  work_item.fn,
-                                                  work_item.args,
-                                                  work_item.kwargs),
-                                        block=True)
-                else:
-                    del self.pending_work_items[work_id]
-                    continue
+                try:
+                    if work_item.future.set_running_or_notify_cancel():
+                        self.call_queue.put(_CallItem(work_id,
+                                                      work_item.fn,
+                                                      work_item.args,
+                                                      work_item.kwargs),
+                                            block=True)
+                    else:
+                        del self.pending_work_items[work_id]
+                        continue
+                finally:
+                    del work_item
 
     def wait_result_broken_or_wakeup(self):
         # Wait for a result to be ready in the result_queue while checking
