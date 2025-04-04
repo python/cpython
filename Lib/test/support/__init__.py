@@ -409,7 +409,8 @@ def skip_if_buildbot(reason=None):
         isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
 
-def check_sanitizer(*, address=False, memory=False, ub=False, thread=False):
+def check_sanitizer(*, address=False, memory=False, ub=False, thread=False,
+                    function=True):
     """Returns True if Python is compiled with sanitizer support"""
     if not (address or memory or ub or thread):
         raise ValueError('At least one of address, memory, ub or thread must be True')
@@ -433,11 +434,15 @@ def check_sanitizer(*, address=False, memory=False, ub=False, thread=False):
         '-fsanitize=thread' in cflags or
         '--with-thread-sanitizer' in config_args
     )
+    function_sanitizer = (
+        '-fsanitize=function' in cflags
+    )
     return (
         (memory and memory_sanitizer) or
         (address and address_sanitizer) or
         (ub and ub_sanitizer) or
-        (thread and thread_sanitizer)
+        (thread and thread_sanitizer) or
+        (function and function_sanitizer)
     )
 
 

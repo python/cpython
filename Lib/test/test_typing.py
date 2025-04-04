@@ -812,7 +812,7 @@ def template_replace(templates: list[str], replacements: dict[str, list[str]]) -
 
     Example 1: Suppose that:
       templates = ["dog_breed are awesome", "dog_breed are cool"]
-      replacements = ["dog_breed": ["Huskies", "Beagles"]]
+      replacements = {"dog_breed": ["Huskies", "Beagles"]}
     Then we would return:
       [
           ("Huskies are awesome", "Huskies are cool"),
@@ -7311,20 +7311,7 @@ class EvaluateForwardRefTests(BaseTestCase):
 
     def test_evaluate_forward_ref_no_type_params(self):
         ref = ForwardRef('int')
-        with self.assertWarnsRegex(
-            DeprecationWarning,
-            (
-                "Failing to pass a value to the 'type_params' parameter "
-                "of 'typing.evaluate_forward_ref' is deprecated, "
-                "as it leads to incorrect behaviour"
-            ),
-        ):
-            typing.evaluate_forward_ref(ref)
-
-        # No warnings when `type_params` is passed:
-        with warnings.catch_warnings(record=True) as w:
-            typing.evaluate_forward_ref(ref, type_params=())
-        self.assertEqual(w, [])
+        self.assertIs(typing.evaluate_forward_ref(ref), int)
 
 
 class CollectionsAbcTests(BaseTestCase):
