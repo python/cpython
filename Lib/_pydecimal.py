@@ -6078,7 +6078,14 @@ _parser = re.compile(r"""        # A numeric string consists of:
 
 # Checks for regex 0*$
 def _all_zeros(d_int, prec=0):
-    return '0' in d_int and d_int.endswith((len(d_int) - prec) * '0')
+    i = prec
+    len_d = len(d_int)
+    
+    while i < len_d:
+        if d_int[i] != '0':
+            return False
+        i += 1
+    return True
 
 # Checks for regex 50*$ 
 def _exact_half(d_int, prec=0):
