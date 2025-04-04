@@ -61,7 +61,6 @@ def create_https_server(
     *,
     address=('localhost', 0),
     request_handler=DummyRequestHandler,
-
 ):
     return HTTPSServer(
         address, request_handler,
@@ -415,6 +414,10 @@ class BaseHTTPSServerTestCase(BaseTestCase):
             (self.ONLYKEY, None, None),
             (self.ONLYKEY, self.ONLYCERT, None),
             (self.CERTFILE_PROTECTED, None, self.BADPASSWORD),
+            # TODO: test the next case and add same case to test_ssl (We
+            # specify a cert and a password-protected file, but no password):
+            # (self.CERTFILE_PROTECTED, None, None),
+            # see issue #132102
         ]
         for certfile, keyfile, password in invalid_certdata:
             with self.subTest(
