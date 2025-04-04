@@ -506,6 +506,7 @@ PYTHON_OBJS=	\
 		Python/suggestions.o \
 		Python/perf_trampoline.o \
 		Python/perf_jit_trampoline.o \
+		Python/remote_debugging.o \
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
@@ -2090,7 +2091,7 @@ Python/frozen.o: $(FROZEN_FILES_OUT)
 # an include guard, so we can't use a pipeline to transform its output.
 Include/pydtrace_probes.h: $(srcdir)/Include/pydtrace.d
 	$(MKDIR_P) Include
-	$(DTRACE) $(DFLAGS) -o $@ -h -s $<
+	CC="$(CC)" CFLAGS="$(CFLAGS)" $(DTRACE) $(DFLAGS) -o $@ -h -s $<
 	: sed in-place edit with POSIX-only tools
 	sed 's/PYTHON_/PyDTrace_/' $@ > $@.tmp
 	mv $@.tmp $@
@@ -2100,7 +2101,7 @@ Python/gc.o: $(srcdir)/Include/pydtrace.h
 Python/import.o: $(srcdir)/Include/pydtrace.h
 
 Python/pydtrace.o: $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
-	$(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
+	CC="$(CC)" CFLAGS="$(CFLAGS)" $(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
 
 Objects/typeobject.o: Objects/typeslots.inc
 
