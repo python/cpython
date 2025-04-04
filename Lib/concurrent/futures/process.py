@@ -346,12 +346,29 @@ class _ExecutorManagerThread(threading.Thread):
                 self.terminate_broken(cause)
                 return
             if result_item is not None:
-                self.process_result_item(result_item)
                 exit_pid = result_item.exit_pid
-
-                # Delete reference to result_item to avoid keeping references
-                # while waiting on new results.
+                work_id = result_item.work_id
+                exception = result_item.exeption
+                result = result_item.result
                 del result_item
+                # Process the received a result_item. This can be either the PID of a
+                # worker that exited gracefully or a _ResultItem
+
+                # Received a _ResultItem so mark the future as completed.
+                work_item = self.pending_work_items.pop(work_id, None)
+                # work_item can be None if another process terminated (see above)
+                if work_item is not None:
+                    f = work_item.future
+                    del work_item
+                    if exception:
+                        f.set_exception(exception)
+                    else:
+                        f.set_result(result)
+                    del f
+
+                # Delete reference to exception/result to avoid keeping references
+                # while waiting on new results.
+                del exception, result
 
                 process_exited = exit_pid is not None
                 if process_exited:
@@ -434,19 +451,6 @@ class _ExecutorManagerThread(threading.Thread):
         self.thread_wakeup.clear()
 
         return result_item, is_broken, cause
-
-    def process_result_item(self, result_item):
-        # Process the received a result_item. This can be either the PID of a
-        # worker that exited gracefully or a _ResultItem
-
-        # Received a _ResultItem so mark the future as completed.
-        work_item = self.pending_work_items.pop(result_item.work_id, None)
-        # work_item can be None if another process terminated (see above)
-        if work_item is not None:
-            if result_item.exception:
-                work_item.future.set_exception(result_item.exception)
-            else:
-                work_item.future.set_result(result_item.result)
 
     def is_shutting_down(self):
         # Check whether we should start shutting down the executor.
