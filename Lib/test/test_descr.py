@@ -4519,6 +4519,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         o.whatever = Provoker(o)
         del o
 
+    @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     @support.requires_resource('cpu')
     def test_wrapper_segfault(self):

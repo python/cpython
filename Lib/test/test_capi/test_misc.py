@@ -411,10 +411,12 @@ class CAPITest(unittest.TestCase):
         for i in range(100):
             L = MyList((L,))
 
+    @support.skip_emscripten_stack_overflow()
     @support.requires_resource('cpu')
     def test_trashcan_python_class1(self):
         self.do_test_trashcan_python_class(list)
 
+    @support.skip_emscripten_stack_overflow()
     @support.requires_resource('cpu')
     def test_trashcan_python_class2(self):
         from _testcapi import MyList

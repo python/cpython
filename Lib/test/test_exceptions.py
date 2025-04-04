@@ -1428,6 +1428,7 @@ class ExceptionTests(unittest.TestCase):
         self.assertIsInstance(exc, RecursionError, type(exc))
         self.assertIn("maximum recursion depth exceeded", str(exc))
 
+    @support.skip_emscripten_stack_overflow()
     @support.skip_wasi_stack_overflow()
     @cpython_only
     @support.requires_resource('cpu')
