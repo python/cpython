@@ -440,9 +440,9 @@ indicates the maximum field size - in other words, how many characters will be
 used from the field content.  The *precision* is not allowed for integer
 presentation types.
 
-The *grouping* option after *width* and *precision* fields specifies a digit
-separator for integral and fractional parts of a number respectively.
-It can be one of the following:
+The *grouping* option after *width* and *precision* fields specifies
+a digit group separator for integral and fractional parts
+of a number respectively. It can be one of the following:
 
 .. index::
    single: , (comma); in string formatting
@@ -513,7 +513,7 @@ The available integer presentation types are:
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'d'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
-   |         | digit separator characters.                              |
+   |         | digit group separators.                                  |
    +---------+----------------------------------------------------------+
    | None    | The same as ``'d'``.                                     |
    +---------+----------------------------------------------------------+
@@ -595,7 +595,7 @@ The available presentation types for :class:`float` and
    +---------+----------------------------------------------------------+
    | ``'n'`` | Number. This is the same as ``'g'``, except that it uses |
    |         | the current locale setting to insert the appropriate     |
-   |         | digit separator characters                               |
+   |         | digit group separators                                   |
    |         | for the integral part of a number.                       |
    +---------+----------------------------------------------------------+
    | ``'%'`` | Percentage. Multiplies the number by 100 and displays    |
@@ -723,7 +723,7 @@ Replacing ``%x`` and ``%o`` and converting the value to different bases::
    >>> "int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}".format(42)
    'int: 42;  hex: 0x2a;  oct: 0o52;  bin: 0b101010'
 
-Using the comma or the underscore as a digit separator::
+Using the comma or the underscore as a digit group separator::
 
    >>> '{:,}'.format(1234567890)
    '1,234,567,890'
