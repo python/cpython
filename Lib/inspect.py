@@ -1910,6 +1910,8 @@ def _signature_get_user_defined_method(cls, method_name):
         meth = getattr(cls, method_name, None)
     else:
         meth = getattr_static(cls, method_name, None)
+    if meth is not None:
+        meth = unwrap(meth)
     if meth is None or isinstance(meth, _NonUserDefinedCallables):
         # Once '__signature__' will be added to 'C'-level
         # callables, this check won't be necessary
