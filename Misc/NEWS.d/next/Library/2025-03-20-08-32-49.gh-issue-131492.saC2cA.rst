@@ -1,0 +1,1 @@
+Fix a resource leak when constructing a :class:`gzip.GzipFile` with a filename fails, for example when passing an invalid ``compresslevel``.

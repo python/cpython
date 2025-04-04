@@ -4,8 +4,6 @@
 extern "C" {
 #endif
 
-#include "pycore_lock.h"
-
 #ifndef Py_BUILD_CORE
 #  error "this header requires Py_BUILD_CORE define"
 #endif
