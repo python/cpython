@@ -780,7 +780,6 @@ class BaseBytesTest:
 
         pi = PseudoFloat(3.1415)
 
-        mod = operator.mod
         exceptions_params = [
             ('%x format: an integer is required, not float', '%x', 3.14),
             ('%X format: an integer is required, not float', '%X', 2.11),
@@ -796,8 +795,8 @@ class BaseBytesTest:
                 '%c', pi),
         ]
 
-        for msg, format, value in exceptions_params:
-            self.assertRaisesRegex(TypeError, msg , mod, format, value)
+        for msg, format_str, value in exceptions_params:
+            self.assertRaisesRegex(TypeError, msg, operator.mod, format_str, value)
 
     def test_imod(self):
         b = self.type2test(b'hello, %b!')
