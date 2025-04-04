@@ -8,10 +8,12 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "dynamic_annotations.h" // _Py_ANNOTATE_RWLOCK_CREATE
+#include "dynamic_annotations.h"  // _Py_ANNOTATE_RWLOCK_CREATE
 
+#include "pycore_code.h"          // _PyCode_GetTLBCFast()
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_stats.h"         // EVAL_CALL_STAT_INC()
 #include "pycore_typedefs.h"      // _PyInterpreterFrame
 
 
@@ -344,6 +346,18 @@ void _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 
 PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
+
+#ifndef Py_SUPPORTS_REMOTE_DEBUG
+    #if defined(__APPLE__)
+    #  if !defined(TARGET_OS_OSX)
+// Older macOS SDKs do not define TARGET_OS_OSX
+    #     define TARGET_OS_OSX 1
+    #  endif
+    #endif
+    #if ((defined(__APPLE__) && TARGET_OS_OSX) || defined(MS_WINDOWS) || (defined(__linux__) && HAVE_PROCESS_VM_READV))
+    #    define Py_SUPPORTS_REMOTE_DEBUG 1
+    #endif
+#endif
 
 #ifdef __cplusplus
 }

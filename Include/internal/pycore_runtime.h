@@ -8,7 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_runtime_structs.h"
+#include "pycore_runtime_structs.h" // _PyRuntimeState
+
 
 /* API */
 

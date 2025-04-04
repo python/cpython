@@ -90,6 +90,90 @@ If you encounter :exc:`NameError`\s or pickling errors coming out of
 New features
 ============
 
+.. _whatsnew314-pep678:
+
+PEP 768: Safe external debugger interface for CPython
+-----------------------------------------------------
+
+:pep:`768` introduces a zero-overhead debugging interface that allows debuggers and profilers
+to safely attach to running Python processes. This is a significant enhancement to Python's
+debugging capabilities allowing debuggers to forego unsafe alternatives.
+
+The new interface provides safe execution points for attaching debugger code without modifying
+the interpreter's normal execution path or adding runtime overhead. This enables tools to
+inspect and interact with Python applications in real-time without stopping or restarting
+them — a crucial capability for high-availability systems and production environments.
+
+For convenience, CPython implements this interface through the :mod:`sys` module with a
+:func:`sys.remote_exec` function::
+
+    sys.remote_exec(pid, script_path)
+
+This function allows sending Python code to be executed in a target process at the next safe
+execution point. However, tool authors can also implement the protocol directly as described
+in the PEP, which details the underlying mechanisms used to safely attach to running processes.
+
+Here's a simple example that inspects object types in a running Python process:
+
+  .. code-block:: python
+
+     import os
+     import sys
+     import tempfile
+
+     # Create a temporary script
+     with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+         script_path = f.name
+         f.write(f"import my_debugger; my_debugger.connect({os.getpid()})")
+     try:
+         # Execute in process with PID 1234
+         print("Behold! An offering:")
+         sys.remote_exec(1234, script_path)
+     finally:
+         os.unlink(script_path)
+
+The debugging interface has been carefully designed with security in mind and includes several
+mechanisms to control access:
+
+* A :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` environment variable.
+* A :option:`-X disable-remote-debug` command-line option.
+* A :option:`--without-remote-debug` configure flag to completely disable the feature at build time.
+
+A key implementation detail is that the interface piggybacks on the interpreter's existing evaluation
+loop and safe points, ensuring zero overhead during normal execution while providing a reliable way
+for external processes to coordinate debugging operations.
+
+See :pep:`768` for more details.
+
+(Contributed by Pablo Galindo Salgado, Matt Wozniski, and Ivona Stojanovic in :gh:`131591`.)
+
+.. _whatsnew314-pep758:
+
+PEP 758 – Allow except and except* expressions without parentheses
+------------------------------------------------------------------
+
+The :keyword:`except` and :keyword:`except* <except_star>` expressions now allow
+parentheses to be omitted when there are multiple exception types and the ``as`` clause is not used.
+For example the following expressions are now valid:
+
+.. code-block:: python
+
+   try:
+       release_new_sleep_token_album()
+   except AlbumNotFound, SongsTooGoodToBeReleased:
+       print("Sorry, no new album this year.")
+
+    # The same applies to except* (for exception groups):
+   try:
+       release_new_sleep_token_album()
+   except* AlbumNotFound, SongsTooGoodToBeReleased:
+       print("Sorry, no new album this year.")
+
+Check :pep:`758` for more details.
+
+(Contributed by Pablo Galindo and Brett Cannon in :gh:`131831`.)
+
+
 .. _whatsnew314-pep649:
 
 PEP 649: deferred evaluation of annotations
@@ -502,6 +586,11 @@ ctypes
   to help match a non-default ABI.
   (Contributed by Petr Viktorin in :gh:`97702`.)
 
+* The class of :class:`~ctypes.Structure`/:class:`~ctypes.Union`
+  field descriptors is now available as :class:`~ctypes.CField`,
+  and has new attributes to aid debugging and introspection.
+  (Contributed by Petr Viktorin in :gh:`128715`.)
+
 * On Windows, the :exc:`~ctypes.COMError` exception is now public.
   (Contributed by Jun Komoda in :gh:`126686`.)
 
@@ -672,6 +761,13 @@ json
   switch: :program:`python -m json`.
   See the :ref:`JSON command-line interface <json-commandline>` documentation.
   (Contributed by Trey Hunner in :gh:`122873`.)
+
+
+linecache
+---------
+
+* :func:`linecache.getline` can retrieve source code for frozen modules.
+  (Contributed by Tian Gao in :gh:`131638`.)
 
 
 mimetypes
@@ -899,6 +995,15 @@ ssl
   (Contributed by Will Childs-Klein in :gh:`128036`.)
 
 
+struct
+------
+
+* Support the :c:expr:`float complex` and :c:expr:`double complex` C types in
+  the :mod:`struct` module (formatting characters ``'E'`` and ``'C'``,
+  respectively) if the compiler has C11 complex arithmetic.
+  (Contributed by Sergey B Kirpichev in :gh:`121249`.)
+
+
 symtable
 --------
 
@@ -1012,6 +1117,9 @@ uuid
   Nil and Max UUID formats as defined by :rfc:`9562`.
   (Contributed by Nick Pope in :gh:`128427`.)
 
+* Allow to generate multiple UUIDs at once via :option:`python -m uuid --count <uuid --count>`.
+  (Contributed by Simon Legner in :gh:`131236`.)
+
 
 zipinfo
 -------
@@ -1025,6 +1133,7 @@ zipinfo
   distributions can set centrally and have build tools consume this in order
   to produce reproducible output.
   (Contributed by Jiahao Li in :gh:`91279`.)
+
 
 .. Add improved modules above alphabetically, not here at the end.
 
@@ -1076,6 +1185,18 @@ uuid
     respectively.
 
   (Contributed by Bénédikt Tran in :gh:`128150`.)
+
+
+zlib
+----
+
+* On Windows, ``zlib-ng`` is now used as the implementation of the
+  :mod:`zlib` module. This should produce compatible and comparable
+  results with better performance, though it is worth noting that
+  ``zlib.Z_BEST_SPEED`` (1) may result in significantly less
+  compression than the previous implementation (while also significantly
+  reducing the time taken to compress).
+  (Contributed by Steve Dower in :gh:`91349`.)
 
 
 Deprecated
@@ -1135,11 +1256,21 @@ Deprecated
   or *sequence* as keyword arguments is now deprecated.
   (Contributed by Kirill Podoprigora in :gh:`121676`.)
 
+* :mod:`!nturl2path`: This module is now deprecated. Call
+  :func:`urllib.request.url2pathname` and :func:`~urllib.request.pathname2url`
+  instead.
+  (Contributed by Barney Gale in :gh:`125866`.)
+
 * :mod:`os`:
   :term:`Soft deprecate <soft deprecated>` :func:`os.popen` and
   :func:`os.spawn* <os.spawnl>` functions. They should no longer be used to
   write new code.  The :mod:`subprocess` module is recommended instead.
   (Contributed by Victor Stinner in :gh:`120743`.)
+
+* :mod:`pathlib`:
+  :meth:`!pathlib.PurePath.as_uri` is deprecated and will be removed in Python
+  3.19. Use :meth:`pathlib.Path.as_uri` instead.
+  (Contributed by Barney Gale in :gh:`123599`.)
 
 * :mod:`pdb`:
   The undocumented ``pdb.Pdb.curframe_locals`` attribute is now a deprecated
