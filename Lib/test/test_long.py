@@ -745,6 +745,8 @@ class LongTest(unittest.TestCase):
         self.assertEqual(format(73, 'z.8b'), '01001001')
         self.assertEqual(format(73, 'z#.8b'), '0b01001001')
         self.assertEqual(format(300, 'z.8b'), '100101100')
+        self.assertEqual(format(200, '.8b'), '11001000')
+        self.assertEqual(format(200, 'z.8b'), '011001000')
         self.assertEqual(format(-200, 'z.8b'), '100111000')
         self.assertEqual(format(128, 'z.8b'), '010000000')
         self.assertEqual(format(-129, 'z.8b'), '101111111')

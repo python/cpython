@@ -1141,33 +1141,35 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                 goto done;
             }
 
-            /* Prepend enough leading zeros (after the sign) */
+            /* Prepend enough leading zeros (after sign and prefix) */
 
-            int sign = PyUnicode_READ_CHAR(tmp, leading_chars_to_skip) == '-';
+            int sign = PyUnicode_READ_CHAR(tmp, 0) == '-';
             Py_ssize_t tmp2_len = precision + leading_chars_to_skip + sign;
             Py_ssize_t tmp_len = PyUnicode_GET_LENGTH(tmp);
             Py_ssize_t gap = tmp2_len - tmp_len;
 
             if (gap > 0) {
                 PyObject *tmp2 = PyUnicode_New(tmp2_len, 127);
+                Py_ssize_t value_start = leading_chars_to_skip + sign;
 
-                if (PyUnicode_CopyCharacters(tmp2, leading_chars_to_skip + gap + sign,
-                                             tmp, leading_chars_to_skip + sign,
-                                             tmp2_len - leading_chars_to_skip - sign) == -1) {
+                if (PyUnicode_CopyCharacters(tmp2, value_start + gap,
+                                             tmp, value_start,
+                                             precision) == -1) {
                     Py_DECREF(tmp2);
                     goto done;
                 }
-                if (PyUnicode_Fill(tmp2, leading_chars_to_skip + sign, gap, '0') == -1) {
+                if (PyUnicode_Fill(tmp2, value_start, gap, '0') == -1) {
                     Py_DECREF(tmp2);
                     goto done;
                 }
-                if (sign && PyUnicode_WriteChar(tmp2, leading_chars_to_skip, '-') == -1) {
+                if (sign && PyUnicode_WriteChar(tmp2, 0, '-') == -1) {
                     Py_DECREF(tmp2);
                     goto done;
                 }
                 if (leading_chars_to_skip
-                    && PyUnicode_CopyCharacters(tmp2, 0, tmp, 0,
-                                                leading_chars_to_skip) == -1) {
+                    && PyUnicode_CopyCharacters(tmp2, sign, tmp, sign,
+                                                leading_chars_to_skip) == -1)
+                {
                     Py_DECREF(tmp2);
                     goto done;
                 }

@@ -398,9 +398,11 @@ following:
 
 .. index:: single: z; in string formatting
 
-The ``'z'`` option coerces negative zero floating-point values to positive
-zero after rounding to the format precision.  This option is only valid for
-floating-point presentation types.
+For floating-point presentation types the ``'z'`` option coerces negative zero
+floating-point values to positive zero after rounding to the format precision.
+For integer types ``'b'``, ``'o'``, ``'x'`` and ``'X'`` it can be used to
+interpret integer value as two's complement.  This option is invalid for other
+presentation types.
 
 .. versionchanged:: 3.11
    Added the ``'z'`` option (see also :pep:`682`).
@@ -464,10 +466,11 @@ used from the field content.
 
 For integer presentation types (excluding ``'c'``), the precision gives the
 minimal number of digits to appear, expanded with an appropriate number of
-leading zeros.  Note that for non-decimal presentation types --- integer value
-interpreted as ``max(k*precision, number.bit_length())``-bit two's complement,
-where ``k=1,3,4`` for ``'b'``, ``'o'`` and ``'x'``/``'X'`` types, respectively.
-A precision of ``0`` is treated as equivalent to a precision of ``1`` here.
+leading zeros.  If ``'z'`` option specified for non-decimal presentation types
+--- integer value interpreted as ``max(k*precision, number.bit_length())``-bit
+two's complement, where ``k=1,3,4`` for ``'b'``, ``'o'`` and ``'x'``/``'X'``
+types, respectively.  A precision of ``0`` is treated as equivalent to a
+precision of ``1`` here.
 
 .. versionchanged:: next
    Precision specification allowed for integer presentation types.
