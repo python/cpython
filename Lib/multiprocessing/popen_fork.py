@@ -1,6 +1,7 @@
 import atexit
 import os
 import signal
+import threading
 
 from . import util
 
@@ -17,22 +18,70 @@ class Popen(object):
         util._flush_std_streams()
         self.returncode = None
         self.finalizer = None
+        self._exit_condition = threading.Condition()
+        self._exit_blockers = 0
         self._launch(process_obj)
 
     def duplicate_for_child(self, fd):
         return fd
 
     def poll(self, flag=os.WNOHANG):
-        if self.returncode is None:
-            try:
-                pid, sts = os.waitpid(self.pid, flag)
-            except OSError:
-                # Child process not yet created. See #1731717
-                # e.errno == errno.ECHILD == 10
-                return None
+        with self._exit_condition:
+            if self.returncode is not None:
+                return self.returncode
+            elif flag & os.WNOHANG == os.WNOHANG:
+                return self._nonblocking_poll(flag)
+            else:
+                self._exit_blockers += 1
+
+        # We have released the lock, so may be racing with blocking &
+        # non-blocking calls at this point...
+        pid = None
+        try:
+            pid, sts = os.waitpid(self.pid, flag)
+        except OSError:
+            # Child process doesn't exist because it hasn't started yet (see
+            # bpo-1731717) or has already been awaited on a racing thread (see
+            # gh-130895)
+            pass
+
+        with self._exit_condition:
+            self._exit_blockers -= 1
             if pid == self.pid:
-                self.returncode = os.waitstatus_to_exitcode(sts)
+                self._set_returncode(sts)
+            elif self._exit_blockers == 0:
+                self._exit_condition.notify_all()
+
+            # Wait until we get a definitive result, or we know there are no
+            # racing calls that might be about to set it
+            while self.returncode is None and self._exit_blockers > 0:
+                self._exit_condition.wait()
+
+            return self.returncode
+
+    def _nonblocking_poll(self, flag):
+        assert self._exit_condition._is_owned()
+        assert self.returncode is None
+        assert flag & os.WNOHANG == os.WNOHANG
+        try:
+            pid, sts = os.waitpid(self.pid, flag)
+            if pid == self.pid:
+                self._set_returncode(sts)
+        except OSError:
+            # See comments in the poll(...) except clause above
+            pass
+
+        # We may be racing with a blocking wait call, in which case (if we lose
+        # the race) it is arbitrary whether this returns None or the exit code
+        # (if there is one): calling code must always be prepared to handle a
+        # situation where this method returns None but the process has ended.
         return self.returncode
+
+    def _set_returncode(self, sts):
+        assert self._exit_condition._is_owned()
+        assert self.returncode is None
+        self.returncode = os.waitstatus_to_exitcode(sts)
+        self._exit_condition.notify_all()
 
     def wait(self, timeout=None):
         if self.returncode is None:
