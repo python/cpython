@@ -990,9 +990,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
      * These are cached values from the frame and code object.  */
     _Py_CODEUNIT *next_instr;
     _PyStackRef *stack_pointer;
-#ifdef Py_DEBUG
     entry_frame.localsplus[0] = PyStackRef_NULL;
-#endif
 #ifdef Py_STACKREF_DEBUG
     entry_frame.f_funcobj = PyStackRef_None;
 #elif defined(Py_DEBUG)

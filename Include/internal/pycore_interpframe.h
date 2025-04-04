@@ -146,11 +146,10 @@ _PyFrame_Initialize(
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->visited = 0;
 #ifdef Py_DEBUG
-    frame->localsplus[code->co_nlocalsplus] = PyStackRef_NULL;
     frame->lltrace = 0;
 #endif
 
-    for (int i = null_locals_from; i < code->co_nlocalsplus; i++) {
+    for (int i = null_locals_from; i <= code->co_nlocalsplus; i++) {
         frame->localsplus[i] = PyStackRef_NULL;
     }
 }
