@@ -1091,15 +1091,15 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                                      || format->type == 'X'))
             {
                 int64_t shift = precision;
-                int incr = 1;
+                int incr = 1, k = 1;
 
                 if (format->type == 'x' || format->type == 'X') {
-                    shift *= 4;
+                    k = 4;
                 }
                 else if (format->type == 'o') {
-                    shift *= 3;
+                    k = 3;
                 }
-                shift = Py_MAX(shift, _PyLong_NumBits(value));
+                shift = Py_MAX(shift*k, _PyLong_NumBits(value));
                 shift--;
 
                 /* expected value in range(-2**n, 2**n), where n=shift
@@ -1132,7 +1132,8 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                     Py_DECREF(mod);
                     tmp = _PyLong_Format(value, base);
                 }
-                precision += (incr - 1);
+                shift += incr;
+                precision = (shift + k - 1)/k;
             }
             else {
                 tmp = _PyLong_Format(value, base);
