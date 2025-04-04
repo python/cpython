@@ -3,7 +3,6 @@
 import ast
 import builtins
 import enum
-import functools
 import keyword
 import sys
 import types
@@ -765,9 +764,10 @@ def get_annotations(
             if hasattr(unwrap, "__wrapped__"):
                 unwrap = unwrap.__wrapped__
                 continue
-            if isinstance(unwrap, functools.partial):
-                unwrap = unwrap.func
-                continue
+            if functools := sys.modules.get("functools"):
+                if isinstance(unwrap, functools.partial):
+                    unwrap = unwrap.func
+                    continue
             break
         if hasattr(unwrap, "__globals__"):
             obj_globals = unwrap.__globals__
