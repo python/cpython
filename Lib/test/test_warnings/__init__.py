@@ -1870,25 +1870,30 @@ class DeprecatedTests(PyPublicAPITests):
                 except ValueError:
                     original_signature = None
                 try:
-                    new_signature = inspect.signature(deprecated("depr")(cls))
+                    original_new_signature = inspect.signature(cls.__new__)
                 except ValueError:
-                    new_signature = None
-                self.assertEqual(original_signature, new_signature)
+                    original_new_signature = None
 
-            with self.subTest(f'class {cls.__name__}.__new__ signature'):
+                deprecated_cls = deprecated("depr")(cls)
+
                 try:
-                    original_signature = inspect.signature(cls.__new__)
+                    deprecated_signature = inspect.signature(deprecated_cls)
                 except ValueError:
-                    original_signature = None
+                    deprecated_signature = None
+                self.assertEqual(original_signature, deprecated_signature)
                 try:
-                    new_signature = inspect.signature(deprecated("depr")(cls).__new__)
+                    deprecated_new_signature = inspect.signature(deprecated_cls.__new__)
                 except ValueError:
-                    new_signature = None
-                self.assertEqual(original_signature, new_signature)
+                    deprecated_new_signature = None
+
+                self.assertEqual(original_signature, deprecated_signature)
+                self.assertEqual(original_new_signature, deprecated_new_signature)
+
 
 def setUpModule():
     py_warnings.onceregistry.clear()
     c_warnings.onceregistry.clear()
+
 
 tearDownModule = setUpModule
 
