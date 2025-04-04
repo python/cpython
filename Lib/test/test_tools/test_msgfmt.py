@@ -54,7 +54,7 @@ class CompilationTest(unittest.TestCase):
     def test_binary_header(self):
         with temp_cwd():
             tmp_mo_file = 'messages.mo'
-            compile_messages(data_dir / "general.po", tmp_mo_file)
+            compile_messages(tmp_mo_file, data_dir / "general.po")
             with open(tmp_mo_file, 'rb') as f:
                 mo_data = f.read()
 
