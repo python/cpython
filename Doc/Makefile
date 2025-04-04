@@ -73,7 +73,7 @@ build:
 		echo ""; \
 		exit 1; \
 	fi
-	$(SPHINXBUILD) $(ALLSPHINXOPTS)
+	$(SPHINXBUILD) $(ALLSPHINXOPTS) --tag create-social-cards
 	@echo
 
 .PHONY: html
