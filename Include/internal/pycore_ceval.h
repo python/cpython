@@ -196,7 +196,7 @@ extern void _PyEval_DeactivateOpCache(void);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-#if !_Py__has_builtin(__builtin_frame_address)
+#if !_Py__has_builtin(__builtin_frame_address) && !defined(_MSC_VER)
 static uintptr_t return_pointer_as_int(char* p) {
     return (uintptr_t)p;
 }
@@ -206,6 +206,8 @@ static inline uintptr_t
 _Py_get_machine_stack_pointer(void) {
 #if _Py__has_builtin(__builtin_frame_address)
     return (uintptr_t)__builtin_frame_address(0);
+#elif defined(_MSC_VER)
+    return (uintptr_t)_AddressOfReturnAddress();
 #else
     char here;
     /* Avoid compiler warning about returning stack address */
