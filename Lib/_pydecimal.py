@@ -6076,7 +6076,10 @@ _parser = re.compile(r"""        # A numeric string consists of:
     \Z
 """, re.VERBOSE | re.IGNORECASE).match
 
-_all_zeros = re.compile('0*$').match
+# Checks for regex 0*$
+def _all_zeros(d_int,prec=0):
+    return '0' in d_int and d_int.endswith((len(d_int) - prec) * '0')
+
 _exact_half = re.compile('50*$').match
 
 ##### PEP3101 support functions ##############################################
