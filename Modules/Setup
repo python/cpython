@@ -150,6 +150,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_socket socketmodule.c
 #_statistics _statisticsmodule.c
 #_struct _struct.c
+#_types _typesmodule.c
 #_typing _typingmodule.c
 #_zoneinfo _zoneinfo.c
 #array arraymodule.c
