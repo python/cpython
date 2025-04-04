@@ -597,6 +597,13 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_BINARY_OP_SUBSCR_TUPLE_SLICE          35
 #define SPEC_FAIL_BINARY_OP_SUBSCR_STRING_SLICE         36
 #define SPEC_FAIL_BINARY_OP_SUBSCR_NOT_HEAP_TYPE        37
+#define SPEC_FAIL_BINARY_OP_SUBSCR_OTHER_SLICE          38
+#define SPEC_FAIL_BINARY_OP_SUBSCR_MAPPINGPROXY         39
+#define SPEC_FAIL_BINARY_OP_SUBSCR_RE_MATCH             40
+#define SPEC_FAIL_BINARY_OP_SUBSCR_ARRAY                41
+#define SPEC_FAIL_BINARY_OP_SUBSCR_DEQUE                42
+#define SPEC_FAIL_BINARY_OP_SUBSCR_ENUMDICT             43
+#define SPEC_FAIL_BINARY_OP_SUBSCR_STACKSUMMARY         44
 
 /* Calls */
 
@@ -2358,6 +2365,34 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
                 }
             }
             Py_XDECREF(descriptor);
+
+            if (PyObject_TypeCheck(lhs, &PyDictProxy_Type)) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_MAPPINGPROXY;
+            }
+
+            if (strcmp(container_type->tp_name, "array.array") == 0) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_ARRAY;
+            }
+
+            if (strcmp(container_type->tp_name, "re.Match") == 0) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_RE_MATCH;
+            }
+
+            if (strcmp(container_type->tp_name, "collections.deque") == 0) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_DEQUE;
+            }
+
+            if (strcmp(_PyType_Name(container_type), "EnumDict") != 0) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_ENUMDICT;
+            }
+
+            if (strcmp(container_type->tp_name, "StackSummary") != 0) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_STACKSUMMARY;
+            }
+
+            if (PySlice_Check(rhs)) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_OTHER_SLICE;
+            }
             return SPEC_FAIL_BINARY_OP_SUBSCR;
     }
     Py_UNREACHABLE();
