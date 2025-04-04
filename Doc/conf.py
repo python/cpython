@@ -624,7 +624,7 @@ stable_abi_file = 'data/stable_abi.dat'
 # Options for sphinxext-opengraph
 # -------------------------------
 
-ogp_site_url = 'https://docs.python.org/3/'
+ogp_canonical_url = 'https://docs.python.org/3/'
 ogp_site_name = 'Python documentation'
 ogp_social_cards = {  # Used when matplotlib is installed
     'image': '_static/og-image.png',
