@@ -464,11 +464,10 @@ used from the field content.
 
 For integer presentation types (excluding ``'c'``), the precision gives the
 minimal number of digits to appear, expanded with an appropriate number of
-leading zeros.  Note that for non-decimal presentation types --- two's
-complements are used to represent signed integers, accepting values in range
-``[-m,m)``, where ``m=2**(k*precision-1)`` and ``k=1,3,4`` for ``'b'``, ``'o'``
-and ``'x'``/``'X'`` types, respectively.  A precision of ``0`` is treated as
-equivalent to a precision of ``1`` here.
+leading zeros.  Note that for non-decimal presentation types --- integer value
+interpreted as ``max(k*precision, number.bit_length())``-bit two's complement,
+where ``k=1,3,4`` for ``'b'``, ``'o'`` and ``'x'``/``'X'`` types, respectively.
+A precision of ``0`` is treated as equivalent to a precision of ``1`` here.
 
 .. versionchanged:: next
    Precision specification allowed for integer presentation types.

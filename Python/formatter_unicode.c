@@ -1081,11 +1081,14 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
 
         /* Do the hard part, converting to a string in a given base */
         if (format->precision != -1) {
+            int64_t precision = Py_MAX(1, format->precision);
+
             /* Use two's complement for 'b', 'o' and 'x' formatting types */
             if (format->type == 'b' || format->type == 'x'
                 || format->type == 'o' || format->type == 'X')
             {
-                int64_t shift = Py_MAX(1, format->precision);
+                int64_t shift = precision;
+                int incr = 1;
 
                 if (format->type == 'x' || format->type == 'X') {
                     shift *= 4;
@@ -1093,8 +1096,11 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                 else if (format->type == 'o') {
                     shift *= 3;
                 }
-                shift--;  /* expected value in range(-2**shift, 2**shift) */
+                shift = Py_MAX(shift, _PyLong_NumBits(value));
+                shift--;
 
+                /* expected value in range(-2**n, 2**n), where n=shift
+                   or n=shift+1 */
                 PyObject *mod = _PyLong_Lshift(PyLong_FromLong(1), shift);
 
                 if (mod == NULL) {
@@ -1106,9 +1112,9 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                         goto done;
                     }
                     if (PyObject_RichCompareBool(value, mod, Py_LT)) {
-                        goto range;
+                        incr++;
                     }
-                    Py_SETREF(mod, _PyLong_Lshift(mod, 1));
+                    Py_SETREF(mod, _PyLong_Lshift(mod, incr));
                     tmp = PyNumber_Subtract(value, mod);
                     Py_DECREF(mod);
                     if (tmp == NULL) {
@@ -1118,16 +1124,12 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                 }
                 else {
                     if (PyObject_RichCompareBool(value, mod, Py_GE)) {
-range:
-                        Py_DECREF(mod);
-                        PyErr_Format(PyExc_ValueError,
-                                     "Expected integer in range(-2**%ld, 2**%ld)",
-                                     shift, shift);
-                        goto done;
+                        incr++;
                     }
                     Py_DECREF(mod);
                     tmp = _PyLong_Format(value, base);
                 }
+                precision += (incr - 1);
             }
             else {
                 tmp = _PyLong_Format(value, base);
@@ -1139,7 +1141,7 @@ range:
             /* Prepend enough leading zeros (after the sign) */
 
             int sign = PyUnicode_READ_CHAR(tmp, leading_chars_to_skip) == '-';
-            Py_ssize_t tmp2_len = format->precision + leading_chars_to_skip + sign;
+            Py_ssize_t tmp2_len = precision + leading_chars_to_skip + sign;
             Py_ssize_t tmp_len = PyUnicode_GET_LENGTH(tmp);
             Py_ssize_t gap = tmp2_len - tmp_len;
 
