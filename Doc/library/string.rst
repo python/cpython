@@ -419,7 +419,7 @@ decimal-point character appears in the result of these conversions
 only if a digit follows it. In addition, for ``'g'`` and ``'G'``
 conversions, trailing zeros are not removed from the result.
 
-*width* is a decimal integer defining the minimum total field width,
+The *width* is a decimal integer defining the minimum total field width,
 including any prefixes, separators, and other formatting characters.
 If not specified, then the field width will be determined by the content.
 
@@ -440,7 +440,7 @@ indicates the maximum field size - in other words, how many characters will be
 used from the field content.  The *precision* is not allowed for integer
 presentation types.
 
-The *grouping* option after *width* and *precision* specifies a digit
+The *grouping* option after *width* and *precision* fields specifies a digit
 separator for integral and fractional parts of a number respectively.
 It can be one of the following:
 
@@ -474,7 +474,7 @@ For a locale aware separator, use the ``'n'`` presentation type instead.
    Added the ``'_'`` option (see also :pep:`515`).
 
 .. versionchanged:: 3.14
-   Support *grouping* option for the fractional part.
+   Support the *grouping* option for the fractional part.
 
 Finally, the *type* determines how the data should be presented.
 
