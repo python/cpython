@@ -793,12 +793,12 @@ frozenset_hash(PyObject *self)
     PySetObject *so = _PySet_CAST(self);
     Py_uhash_t hash;
 
-    if (so->hash != -1) {
-        return so->hash;
+    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(so->hash) != -1) {
+        return FT_ATOMIC_LOAD_SSIZE_RELAXED(so->hash);
     }
 
     hash = frozenset_hash_impl(self);
-    so->hash = hash;
+    FT_ATOMIC_STORE_SSIZE_RELAXED(so->hash, hash);
     return hash;
 }
 

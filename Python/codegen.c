@@ -3820,6 +3820,92 @@ update_start_location_to_match_attr(compiler *c, location loc,
     return loc;
 }
 
+static int
+maybe_optimize_function_call(compiler *c, expr_ty e, jump_target_label end)
+{
+    asdl_expr_seq *args = e->v.Call.args;
+    asdl_keyword_seq *kwds = e->v.Call.keywords;
+    expr_ty func = e->v.Call.func;
+
+    if (! (func->kind == Name_kind &&
+           asdl_seq_LEN(args) == 1 &&
+           asdl_seq_LEN(kwds) == 0 &&
+           asdl_seq_GET(args, 0)->kind == GeneratorExp_kind))
+    {
+        return 0;
+    }
+
+    location loc = LOC(func);
+
+    int optimized = 0;
+    NEW_JUMP_TARGET_LABEL(c, skip_optimization);
+
+    int const_oparg = -1;
+    PyObject *initial_res = NULL;
+    int continue_jump_opcode = -1;
+    if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "all")) {
+        const_oparg = CONSTANT_BUILTIN_ALL;
+        initial_res = Py_True;
+        continue_jump_opcode = POP_JUMP_IF_TRUE;
+    }
+    else if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "any")) {
+        const_oparg = CONSTANT_BUILTIN_ANY;
+        initial_res = Py_False;
+        continue_jump_opcode = POP_JUMP_IF_FALSE;
+    }
+    else if (_PyUnicode_EqualToASCIIString(func->v.Name.id, "tuple")) {
+        const_oparg = CONSTANT_BUILTIN_TUPLE;
+    }
+    if (const_oparg != -1) {
+        ADDOP_I(c, loc, COPY, 1); // the function
+        ADDOP_I(c, loc, LOAD_COMMON_CONSTANT, const_oparg);
+        ADDOP_COMPARE(c, loc, Is);
+        ADDOP_JUMP(c, loc, POP_JUMP_IF_FALSE, skip_optimization);
+        ADDOP(c, loc, POP_TOP);
+
+        if (const_oparg == CONSTANT_BUILTIN_TUPLE) {
+            ADDOP_I(c, loc, BUILD_LIST, 0);
+        }
+        expr_ty generator_exp = asdl_seq_GET(args, 0);
+        VISIT(c, expr, generator_exp);
+
+        NEW_JUMP_TARGET_LABEL(c, loop);
+        NEW_JUMP_TARGET_LABEL(c, cleanup);
+
+        USE_LABEL(c, loop);
+        ADDOP_JUMP(c, loc, FOR_ITER, cleanup);
+        if (const_oparg == CONSTANT_BUILTIN_TUPLE) {
+            ADDOP_I(c, loc, LIST_APPEND, 2);
+            ADDOP_JUMP(c, loc, JUMP, loop);
+        }
+        else {
+            ADDOP(c, loc, TO_BOOL);
+            ADDOP_JUMP(c, loc, continue_jump_opcode, loop);
+        }
+
+        ADDOP(c, NO_LOCATION, POP_ITER);
+        if (const_oparg != CONSTANT_BUILTIN_TUPLE) {
+            ADDOP_LOAD_CONST(c, loc, initial_res == Py_True ? Py_False : Py_True);
+        }
+        ADDOP_JUMP(c, loc, JUMP, end);
+
+        USE_LABEL(c, cleanup);
+        ADDOP(c, NO_LOCATION, END_FOR);
+        ADDOP(c, NO_LOCATION, POP_ITER);
+        if (const_oparg == CONSTANT_BUILTIN_TUPLE) {
+            ADDOP_I(c, loc, CALL_INTRINSIC_1, INTRINSIC_LIST_TO_TUPLE);
+        }
+        else {
+            ADDOP_LOAD_CONST(c, loc, initial_res);
+        }
+
+        optimized = 1;
+        ADDOP_JUMP(c, loc, JUMP, end);
+    }
+    USE_LABEL(c, skip_optimization);
+    return optimized;
+}
+
 // Return 1 if the method call was optimized, 0 if not, and -1 on error.
 static int
 maybe_optimize_method_call(compiler *c, expr_ty e)
@@ -3926,14 +4012,18 @@ codegen_call(compiler *c, expr_ty e)
     if (ret == 1) {
         return SUCCESS;
     }
+    NEW_JUMP_TARGET_LABEL(c, skip_normal_call);
     RETURN_IF_ERROR(check_caller(c, e->v.Call.func));
     VISIT(c, expr, e->v.Call.func);
+    RETURN_IF_ERROR(maybe_optimize_function_call(c, e, skip_normal_call));
     location loc = LOC(e->v.Call.func);
     ADDOP(c, loc, PUSH_NULL);
     loc = LOC(e);
-    return codegen_call_helper(c, loc, 0,
-                               e->v.Call.args,
-                               e->v.Call.keywords);
+    ret = codegen_call_helper(c, loc, 0,
+                              e->v.Call.args,
+                              e->v.Call.keywords);
+    USE_LABEL(c, skip_normal_call);
+    return ret;
 }
 
 static int
