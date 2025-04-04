@@ -1816,7 +1816,7 @@ static int
 unicode_modifiable(PyObject *unicode)
 {
     assert(_PyUnicode_CHECK(unicode));
-    if (Py_REFCNT(unicode) != 1)
+    if (!_PyObject_IsUniquelyReferenced(unicode))
         return 0;
     if (PyUnicode_HASH(unicode) != -1)
         return 0;
@@ -14738,7 +14738,7 @@ _PyUnicode_FormatLong(PyObject *val, int alt, int prec, int type)
     assert(PyUnicode_IS_ASCII(result));
 
     /* To modify the string in-place, there can only be one reference. */
-    if (Py_REFCNT(result) != 1) {
+    if (!_PyObject_IsUniquelyReferenced(result)) {
         Py_DECREF(result);
         PyErr_BadInternalCall();
         return NULL;
