@@ -2292,11 +2292,21 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 static int
 symtable_visit_type_param_bound_or_default(
     struct symtable *st, expr_ty e, identifier name,
-    void *key, const char *ste_scope_info)
+    type_param_ty tp, const char *ste_scope_info)
 {
+    if (_PyUnicode_Equal(name, &_Py_ID(__classdict__))) {
+
+        PyObject *error_msg = PyUnicode_FromFormat("reserved name '%U' cannot be "
+                                                   "used for type parameter", name);
+        PyErr_SetObject(PyExc_SyntaxError, error_msg);
+        Py_DECREF(error_msg);
+        SET_ERROR_LOCATION(st->st_filename, LOCATION(tp));
+        return 0;
+    }
+
     if (e) {
         int is_in_class = st->st_cur->ste_can_see_class_scope;
-        if (!symtable_enter_block(st, name, TypeVariableBlock, key, LOCATION(e)))
+        if (!symtable_enter_block(st, name, TypeVariableBlock, (void *)tp, LOCATION(e))) {
             return 0;
 
         st->st_cur->ste_can_see_class_scope = is_in_class;
