@@ -441,7 +441,7 @@ used from the field content.  The *precision* is not allowed for integer
 presentation types.
 
 The *grouping* option after *width* and *precision* fields specifies
-a digit group separator for integral and fractional parts
+a digit group separator for the integral and fractional parts
 of a number respectively. It can be one of the following:
 
 .. index::
