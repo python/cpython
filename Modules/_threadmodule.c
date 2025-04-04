@@ -2415,6 +2415,7 @@ _thread__get_name_impl(PyObject *module)
 /*[clinic end generated code: output=20026e7ee3da3dd7 input=35cec676833d04c8]*/
 {
 #ifndef MS_WINDOWS
+    // Linux and macOS are limited to respectively 16 and 64 bytes
     char name[100];
     pthread_t thread = pthread_self();
 #ifdef HAVE_PTHREAD_GETNAME_NP
