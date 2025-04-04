@@ -686,6 +686,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(salt)
         STRUCT_FOR_ID(sched_priority)
         STRUCT_FOR_ID(scheduler)
+        STRUCT_FOR_ID(script)
         STRUCT_FOR_ID(second)
         STRUCT_FOR_ID(security_attributes)
         STRUCT_FOR_ID(seek)
