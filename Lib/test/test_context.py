@@ -92,6 +92,15 @@ class ContextTest(unittest.TestCase):
             contextvars.Context(a=1)
         contextvars.Context(**{})
 
+    def test_context_new_unhashable_str_subclass(self):
+        # gh-132002: it used to crash on unhashable str subtypes.
+        class weird_str(str):
+            def __eq__(self, other):
+                pass
+
+        with self.assertRaisesRegex(TypeError, 'unhashable type'):
+            contextvars.ContextVar(weird_str())
+
     def test_context_typerrors_1(self):
         ctx = contextvars.Context()
 
