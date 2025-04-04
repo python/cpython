@@ -109,7 +109,7 @@ static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 _Py_COMP_DIAG_PUSH
 _Py_COMP_DIAG_IGNORE_DEPR_DECLS
 
-GENERATE_DEBUG_SECTION(PyRuntime, _PyRuntimeState _PyRuntime)
+GENERATE_DEBUG_SECTION(PyRuntime, extern _PyRuntimeState _PyRuntime)
 = _PyRuntimeState_INIT(_PyRuntime, _Py_Debug_Cookie);
 _Py_COMP_DIAG_POP
 
