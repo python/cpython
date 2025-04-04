@@ -75,7 +75,7 @@ def write_uop(
     stack: Stack,
     inst: Instruction,
     braces: bool,
-) -> tuple[int, Stack]:
+) -> tuple[bool, int, Stack]:
     # out.emit(stack.as_comment() + "\n")
     if isinstance(uop, Skip):
         entries = "entries" if uop.size > 1 else "entry"
