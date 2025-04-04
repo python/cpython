@@ -469,8 +469,10 @@ For a locale aware separator, use the ``'n'`` presentation type instead.
 
 .. versionchanged:: 3.1
    Added the ``','`` option (see also :pep:`378`).
+
 .. versionchanged:: 3.6
    Added the ``'_'`` option (see also :pep:`515`).
+
 .. versionchanged:: 3.14
    Support *grouping* option for the fractional part.
 
