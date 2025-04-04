@@ -295,7 +295,7 @@ def header_decode(s):
     if '=' not in s:
         return s
     
-    result = []
+    result = ''
     s_len = len(s)
     i = 0
     last_append = 0
@@ -304,14 +304,14 @@ def header_decode(s):
         if s[i] == '=' and i + 2 < s_len:
             if (hex_str := s[i + 1:i + 3].lower()) in _HEX_TO_CHAR:
                 if last_append < i:
-                    result.append(s[last_append:i])
-                result.append(_HEX_TO_CHAR[hex_str])
+                    result += s[last_append:i]
+                result += _HEX_TO_CHAR[hex_str]
                 i += 3
                 last_append = i
                 continue
         i += 1
 
     if last_append < s_len:
-        result.append(s[last_append:])
+        result += s[last_append:]
 
-    return ''.join(result)
+    return result
