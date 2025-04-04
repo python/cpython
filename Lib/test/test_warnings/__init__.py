@@ -1881,12 +1881,11 @@ class DeprecatedTests(PyPublicAPITests):
                 except ValueError:
                     deprecated_signature = None
                 self.assertEqual(original_signature, deprecated_signature)
+
                 try:
                     deprecated_new_signature = inspect.signature(deprecated_cls.__new__)
                 except ValueError:
                     deprecated_new_signature = None
-
-                self.assertEqual(original_signature, deprecated_signature)
                 self.assertEqual(original_new_signature, deprecated_new_signature)
 
 
