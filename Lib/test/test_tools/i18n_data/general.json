@@ -1,0 +1,103 @@
+[
+    {
+        "msgctxt": null,
+        "msgid": "",
+        "msgid_plural": null,
+        "msgstr": "Project-Id-Version: PACKAGE VERSION\nPOT-Creation-Date: 2024-10-26 18:06+0200\nPO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\nLast-Translator: FULL NAME <EMAIL@ADDRESS>\nLanguage-Team: LANGUAGE <LL@li.org>\nMIME-Version: 1.0\nContent-Type: text/plain; charset=UTF-8\nContent-Transfer-Encoding: 8bit\n"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "foo",
+        "msgid_plural": null,
+        "msgstr": "bar"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Escape sequences \" \n \t",
+        "msgid_plural": null,
+        "msgstr": ""
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Python",
+        "msgid_plural": null,
+        "msgstr": "Python"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "Python (2)",
+        "msgid_plural": null,
+        "msgstr": "Python (2)"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "αβ",
+        "msgid_plural": null,
+        "msgstr": "αβ"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "barbaz",
+        "msgid_plural": null,
+        "msgstr": "quxxyz"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "xyz",
+        "msgid_plural": null,
+        "msgstr": ""
+    },
+    {
+        "msgctxt": "context",
+        "msgid": "foo",
+        "msgid_plural": null,
+        "msgstr": "bar"
+    },
+    {
+        "msgctxt": "xyz",
+        "msgid": "foo",
+        "msgid_plural": null,
+        "msgstr": "bar"
+    },
+    {
+        "msgctxt": null,
+        "msgid": "One email sent.",
+        "msgid_plural": "%d emails sent.",
+        "msgstr": [
+            "One email sent.",
+            "%d emails sent."
+        ]
+    },
+    {
+        "msgctxt": null,
+        "msgid": "One message sent.",
+        "msgid_plural": "%d messages sent.",
+        "msgstr": [
+            "%d message sent."
+        ]
+    },
+    {
+        "msgctxt": "abc",
+        "msgid": "One email sent.",
+        "msgid_plural": "%d emails sent.",
+        "msgstr": [
+            "One email sent.",
+            "%d emails sent."
+        ]
+    },
+    {
+        "msgctxt": null,
+        "msgid": "qux",
+        "msgid_plural": "quxs",
+        "msgstr": [
+            "abc",
+            "xyz"
+        ]
+    },
+    {
+        "msgctxt": null,
+        "msgid": "baz",
+        "msgid_plural": null,
+        "msgstr": ""
+    }
+]
