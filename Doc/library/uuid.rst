@@ -103,28 +103,29 @@ which relays any information about the UUID's safety, using this enumeration:
      - Meaning
 
    * - .. attribute:: UUID.time_low
-     - The first 32 bits of the UUID.
+     - The first 32 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.time_mid
-     - The next 16 bits of the UUID.
+     - The next 16 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.time_hi_version
-     - The next 16 bits of the UUID.
+     - The next 16 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.clock_seq_hi_variant
-     - The next 8 bits of the UUID.
+     - The next 8 bits of the UUID. Only relevant to versions 1 and 6.
 
    * - .. attribute:: UUID.clock_seq_low
-     - The next 8 bits of the UUID.
+     - The next 8 bits of the UUID. Only relevant to versions 1 and 6.
 
    * - .. attribute:: UUID.node
-     - The last 48 bits of the UUID.
+     - The last 48 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.time
-     - The 60-bit timestamp.
+     - The 60-bit timestamp for version 1 and 6,
+       or the 48-bit timestamp for version 7.
 
    * - .. attribute:: UUID.clock_seq
-     - The 14-bit sequence number.
+     - The 14-bit sequence number. Only relevant to versions 1 and 6.
 
 
 .. attribute:: UUID.hex
