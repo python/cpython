@@ -5676,7 +5676,6 @@
                 long value;
                 long len = _PyRangeIter_GetLengthAndStart(r, &value);
                 if (len <= 0) {
-                    // Jump over END_FOR instruction.
                     JUMPBY(oparg + 1);
                     DISPATCH();
                 }
