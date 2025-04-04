@@ -1147,6 +1147,55 @@ Text I/O
    It inherits from :class:`codecs.IncrementalDecoder`.
 
 
+Static Typing
+-------------
+
+The following protocols can be used for annotating function and method
+arguments for simple stream reading or writing operations. They are decorated
+with :deco:`typing.runtime_checkable`.
+
+.. class:: Reader[T]
+
+   Generic protocol for reading from a file or other input stream. ``T`` will
+   usually be :class:`str` or :class:`bytes`, but can be any type that is
+   read from the stream.
+
+   .. versionadded:: 3.14
+
+   .. method:: read()
+               read(size, /)
+
+      Read data from the input stream and return it. If *size* is
+      specified, it should be an integer, and at most *size* items
+      (bytes/characters) will be read.
+
+   For example::
+
+     def read_it(reader: Reader[str]):
+         data = reader.read(11)
+         assert isinstance(data, str)
+
+.. class:: Writer[T]
+
+   Generic protocol for writing to a file or other output stream. ``T`` will
+   usually be :class:`str` or :class:`bytes`, but can be any type that can be
+   written to the stream.
+
+   .. versionadded:: 3.14
+
+   .. method:: write(data, /)
+
+      Write *data* to the output stream and return the number of items
+      (bytes/characters) written.
+
+   For example::
+
+     def write_binary(writer: Writer[bytes]):
+         writer.write(b"Hello world!\n")
+
+See :ref:`typing-io` for other I/O related protocols and classes that can be
+used for static type checking.
+
 Performance
 -----------
 

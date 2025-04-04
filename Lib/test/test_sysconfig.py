@@ -643,7 +643,8 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
 
         system_config_vars = get_config_vars()
 
-        ignore_keys = set()
+        # Keys dependent on uncontrollable external context
+        ignore_keys = {'userbase'}
         # Keys dependent on Python being run outside the build directrory
         if sysconfig.is_python_build():
             ignore_keys |= {'srcdir'}

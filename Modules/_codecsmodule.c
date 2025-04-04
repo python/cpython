@@ -32,6 +32,7 @@ Copyright (c) Corporation for National Research Initiatives.
 
 #include "Python.h"
 #include "pycore_codecs.h"        // _PyCodec_Lookup()
+#include "pycore_unicodeobject.h" // _PyUnicode_EncodeCharmap
 
 #ifdef MS_WINDOWS
 #include <windows.h>

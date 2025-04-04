@@ -984,11 +984,17 @@
 /* Defined for Solaris 2.6 bug in pthread header. */
 #undef HAVE_PTHREAD_DESTRUCTOR
 
+/* Define to 1 if you have the 'pthread_getattr_np' function. */
+#undef HAVE_PTHREAD_GETATTR_NP
+
 /* Define to 1 if you have the 'pthread_getcpuclockid' function. */
 #undef HAVE_PTHREAD_GETCPUCLOCKID
 
 /* Define to 1 if you have the 'pthread_getname_np' function. */
 #undef HAVE_PTHREAD_GETNAME_NP
+
+/* Define to 1 if you have the 'pthread_get_name_np' function. */
+#undef HAVE_PTHREAD_GET_NAME_NP
 
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
@@ -1001,6 +1007,9 @@
 
 /* Define to 1 if you have the 'pthread_setname_np' function. */
 #undef HAVE_PTHREAD_SETNAME_NP
+
+/* Define to 1 if you have the 'pthread_set_name_np' function. */
+#undef HAVE_PTHREAD_SET_NAME_NP
 
 /* Define to 1 if you have the 'pthread_sigmask' function. */
 #undef HAVE_PTHREAD_SIGMASK
