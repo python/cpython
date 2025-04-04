@@ -1654,7 +1654,8 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
     }
 
     if (rc == 0) {
-        PyErr_SetString(PyExc_ValueError, "list.remove(x): x not in list");
+        PyErr_SetString(PyExc_ValueError,
+                        "Element.remove(x): element not found");
         return NULL;
     }
 
