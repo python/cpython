@@ -6077,7 +6077,7 @@ _parser = re.compile(r"""        # A numeric string consists of:
 """, re.VERBOSE | re.IGNORECASE).match
 
 # Checks for regex 0*$
-def _all_zeros(d_int,prec=0):
+def _all_zeros(d_int, prec=0):
     return '0' in d_int and d_int.endswith((len(d_int) - prec) * '0')
 
 # Checks for regex 50*$ 
