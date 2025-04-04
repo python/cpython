@@ -6089,7 +6089,16 @@ def _all_zeros(d_int, prec=0):
 
 # Checks for regex 50*$ 
 def _exact_half(d_int, prec=0):
-    return len(d_int) >= prec + 1 and d_int[prec] == '5' and d_int.endswith( (len(d_int) - prec - 1) * '0')
+    len_d = len(d_int)
+    i = prec + 1
+    
+    if len_d >= i and d_int[prec] == '5':
+        while i < len_d:
+            if d_int[i] != '0':
+                return False
+            i += 1
+        return True
+    return False
 
 ##### PEP3101 support functions ##############################################
 # The functions in this section have little to do with the Decimal
