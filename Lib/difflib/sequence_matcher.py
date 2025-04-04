@@ -2,7 +2,7 @@ from collections import namedtuple as _namedtuple
 from heapq import nlargest as _nlargest
 from types import GenericAlias
 
-from .utils import Match, _calculate_ratio
+from .utils import Match, _calculate_ratio, _format_range_unified, _check_types, _format_range_context
 
 
 class SequenceMatcher:
@@ -637,3 +637,202 @@ class SequenceMatcher:
         return _calculate_ratio(min(la, lb), la + lb)
 
     __class_getitem__ = classmethod(GenericAlias)
+
+# See http://www.unix.org/single_unix_specification/
+def context_diff(
+    a, b, fromfile="", tofile="", fromfiledate="", tofiledate="", n=3, lineterm="\n"
+):
+    r"""
+    Compare two sequences of lines; generate the delta as a context diff.
+
+    Context diffs are a compact way of showing line changes and a few
+    lines of context.  The number of context lines is set by 'n' which
+    defaults to three.
+
+    By default, the diff control lines (those with *** or ---) are
+    created with a trailing newline.  This is helpful so that inputs
+    created from file.readlines() result in diffs that are suitable for
+    file.writelines() since both the inputs and outputs have trailing
+    newlines.
+
+    For inputs that do not have trailing newlines, set the lineterm
+    argument to "" so that the output will be uniformly newline free.
+
+    The context diff format normally has a header for filenames and
+    modification times.  Any or all of these may be specified using
+    strings for 'fromfile', 'tofile', 'fromfiledate', and 'tofiledate'.
+    The modification times are normally expressed in the ISO 8601 format.
+    If not specified, the strings default to blanks.
+
+    Example:
+
+    >>> print(''.join(context_diff('one\ntwo\nthree\nfour\n'.splitlines(True),
+    ...       'zero\none\ntree\nfour\n'.splitlines(True), 'Original', 'Current')),
+    ...       end="")
+    *** Original
+    --- Current
+    ***************
+    *** 1,4 ****
+      one
+    ! two
+    ! three
+      four
+    --- 1,4 ----
+    + zero
+      one
+    ! tree
+      four
+    """
+
+    _check_types(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
+    prefix = dict(insert="+ ", delete="- ", replace="! ", equal="  ")
+    started = False
+    for group in SequenceMatcher(None, a, b).get_grouped_opcodes(n):
+        if not started:
+            started = True
+            fromdate = "\t{}".format(fromfiledate) if fromfiledate else ""
+            todate = "\t{}".format(tofiledate) if tofiledate else ""
+            yield "*** {}{}{}".format(fromfile, fromdate, lineterm)
+            yield "--- {}{}{}".format(tofile, todate, lineterm)
+
+        first, last = group[0], group[-1]
+        yield "***************" + lineterm
+
+        file1_range = _format_range_context(first[1], last[2])
+        yield "*** {} ****{}".format(file1_range, lineterm)
+
+        if any(tag in {"replace", "delete"} for tag, _, _, _, _ in group):
+            for tag, i1, i2, _, _ in group:
+                if tag != "insert":
+                    for line in a[i1:i2]:
+                        yield prefix[tag] + line
+
+        file2_range = _format_range_context(first[3], last[4])
+        yield "--- {} ----{}".format(file2_range, lineterm)
+
+        if any(tag in {"replace", "insert"} for tag, _, _, _, _ in group):
+            for tag, _, _, j1, j2 in group:
+                if tag != "delete":
+                    for line in b[j1:j2]:
+                        yield prefix[tag] + line
+
+
+def unified_diff(
+    a, b, fromfile="", tofile="", fromfiledate="", tofiledate="", n=3, lineterm="\n"
+):
+    r"""
+    Compare two sequences of lines; generate the delta as a unified diff.
+
+    Unified diffs are a compact way of showing line changes and a few
+    lines of context.  The number of context lines is set by 'n' which
+    defaults to three.
+
+    By default, the diff control lines (those with ---, +++, or @@) are
+    created with a trailing newline.  This is helpful so that inputs
+    created from file.readlines() result in diffs that are suitable for
+    file.writelines() since both the inputs and outputs have trailing
+    newlines.
+
+    For inputs that do not have trailing newlines, set the lineterm
+    argument to "" so that the output will be uniformly newline free.
+
+    The unidiff format normally has a header for filenames and modification
+    times.  Any or all of these may be specified using strings for
+    'fromfile', 'tofile', 'fromfiledate', and 'tofiledate'.
+    The modification times are normally expressed in the ISO 8601 format.
+
+    Example:
+
+    >>> for line in unified_diff('one two three four'.split(),
+    ...             'zero one tree four'.split(), 'Original', 'Current',
+    ...             '2005-01-26 23:30:50', '2010-04-02 10:20:52',
+    ...             lineterm=''):
+    ...     print(line)                 # doctest: +NORMALIZE_WHITESPACE
+    --- Original        2005-01-26 23:30:50
+    +++ Current         2010-04-02 10:20:52
+    @@ -1,4 +1,4 @@
+    +zero
+     one
+    -two
+    -three
+    +tree
+     four
+    """
+
+    _check_types(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
+    started = False
+    for group in SequenceMatcher(None, a, b).get_grouped_opcodes(n):
+        if not started:
+            started = True
+            fromdate = "\t{}".format(fromfiledate) if fromfiledate else ""
+            todate = "\t{}".format(tofiledate) if tofiledate else ""
+            yield "--- {}{}{}".format(fromfile, fromdate, lineterm)
+            yield "+++ {}{}{}".format(tofile, todate, lineterm)
+
+        first, last = group[0], group[-1]
+        file1_range = _format_range_unified(first[1], last[2])
+        file2_range = _format_range_unified(first[3], last[4])
+        yield "@@ -{} +{} @@{}".format(file1_range, file2_range, lineterm)
+
+        for tag, i1, i2, j1, j2 in group:
+            if tag == "equal":
+                for line in a[i1:i2]:
+                    yield " " + line
+                continue
+            if tag in {"replace", "delete"}:
+                for line in a[i1:i2]:
+                    yield "-" + line
+            if tag in {"replace", "insert"}:
+                for line in b[j1:j2]:
+                    yield "+" + line
+
+
+def get_close_matches(word, possibilities, n=3, cutoff=0.6):
+    """Use SequenceMatcher to return list of the best "good enough" matches.
+
+    word is a sequence for which close matches are desired (typically a
+    string).
+
+    possibilities is a list of sequences against which to match word
+    (typically a list of strings).
+
+    Optional arg n (default 3) is the maximum number of close matches to
+    return.  n must be > 0.
+
+    Optional arg cutoff (default 0.6) is a float in [0, 1].  Possibilities
+    that don't score at least that similar to word are ignored.
+
+    The best (no more than n) matches among the possibilities are returned
+    in a list, sorted by similarity score, most similar first.
+
+    >>> get_close_matches("appel", ["ape", "apple", "peach", "puppy"])
+    ['apple', 'ape']
+    >>> import keyword as _keyword
+    >>> get_close_matches("wheel", _keyword.kwlist)
+    ['while']
+    >>> get_close_matches("Apple", _keyword.kwlist)
+    []
+    >>> get_close_matches("accept", _keyword.kwlist)
+    ['except']
+    """
+
+    if not n > 0:
+        raise ValueError("n must be > 0: %r" % (n,))
+    if not 0.0 <= cutoff <= 1.0:
+        raise ValueError("cutoff must be in [0.0, 1.0]: %r" % (cutoff,))
+    result = []
+    s = SequenceMatcher()
+    s.set_seq2(word)
+    for x in possibilities:
+        s.set_seq1(x)
+        if (
+            s.real_quick_ratio() >= cutoff
+            and s.quick_ratio() >= cutoff
+            and s.ratio() >= cutoff
+        ):
+            result.append((s.ratio(), x))
+
+    # Move the best scorers to head of list
+    result = _nlargest(n, result)
+    # Strip scores for the best n matches
+    return [x for score, x in result]
