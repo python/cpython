@@ -796,7 +796,8 @@ class BaseBytesTest:
         ]
 
         for msg, format_str, value in exceptions_params:
-            self.assertRaisesRegex(TypeError, msg, operator.mod, format_str, value)
+            with self.assertRaisesRegex(TypeError, msg):
+                operator.mod(format_str, value)
 
     def test_imod(self):
         b = self.type2test(b'hello, %b!')
