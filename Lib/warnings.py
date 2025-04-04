@@ -604,10 +604,7 @@ class deprecated:
                 else:
                     signature = inspect.signature(func)
                     if signature != original_signature:
-                        try:
-                            func.__text_signature__ = str(original_signature)
-                        except (AttributeError, TypeError):
-                            pass
+                        func.__signature__ = original_signature
 
                 return func
 
