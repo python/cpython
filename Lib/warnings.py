@@ -591,49 +591,14 @@ class deprecated:
             arg.__deprecated__ = msg
             return arg
 
-        def update_signature(original_func):
-            # Ensure that the signature of the decorated callable matches the original one
-
-            def wrapper(func):
-                import inspect
-
-                try:
-                    original_signature = inspect.signature(original_func)
-                except ValueError:
-                    pass
-                else:
-                    signature = inspect.signature(func)
-                    if signature != original_signature:
-                        func.__signature__ = original_signature
-
-                return func
-
-            return wrapper
-
         if isinstance(arg, type):
             import functools
             from types import MethodType
 
             original_new = arg.__new__
             is_object_new = original_new is object.__new__
-            if is_object_new:
-                import inspect
 
-                try:
-                    arg.__signature__ = inspect.signature(arg)
-                except (ValueError, AttributeError, TypeError):
-                    pass
-
-                def wraps(wrapped):
-                    def identity(func):
-                        return func
-                    return identity
-
-            else:
-                wraps = functools.wraps
-
-            @update_signature(original_new)
-            @wraps(original_new)
+            @functools.wraps(original_new)
             def __new__(cls, *args, **kwargs):
                 if cls is arg:
                     warn(msg, category=category, stacklevel=stacklevel + 1)
@@ -653,7 +618,6 @@ class deprecated:
             if isinstance(original_init_subclass, MethodType):
                 original_init_subclass = original_init_subclass.__func__
 
-                @update_signature(original_init_subclass)
                 @functools.wraps(original_init_subclass)
                 def __init_subclass__(*args, **kwargs):
                     warn(msg, category=category, stacklevel=stacklevel + 1)
@@ -664,8 +628,6 @@ class deprecated:
             # Or otherwise, which likely means it's a builtin such as
             # object's implementation of __init_subclass__.
             else:
-
-                @update_signature(original_init_subclass)
                 @functools.wraps(original_init_subclass)
                 def __init_subclass__(*args, **kwargs):
                     warn(msg, category=category, stacklevel=stacklevel + 1)
@@ -680,7 +642,6 @@ class deprecated:
             import functools
             import inspect
 
-            @update_signature(arg)
             @functools.wraps(arg)
             def wrapper(*args, **kwargs):
                 warn(msg, category=category, stacklevel=stacklevel + 1)

@@ -1863,7 +1863,9 @@ class DeprecatedTests(PyPublicAPITests):
         class Cls8(Cls4):  # inherits __new__ and __init__
             pass
 
-        for cls in (Cls1, Cls2, Cls3, Cls4, Cls5, Cls6, Cls7, Cls8):
+        # The `@deprecated` decorator will update the class in-place.
+        # Test the children classes first.
+        for cls in (Cls8, Cls7, Cls6, Cls5, Cls4, Cls3, Cls2, Cls1):
             with self.subTest(f'class {cls.__name__} signature'):
                 try:
                     original_signature = inspect.signature(cls)

@@ -1916,7 +1916,7 @@ def _signature_get_user_defined_method(cls, method_name):
         return None
     if method_name != '__new__':
         meth = _descriptor_get(meth, cls)
-    return meth
+    return unwrap(meth)
 
 
 def _signature_get_partial(wrapped_sig, partial, extra_args=()):
