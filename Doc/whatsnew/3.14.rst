@@ -1103,10 +1103,13 @@ typing
     return two different objects. Users should use ``==`` to compare unions for equality, not
     ``is``. New-style unions have never been cached this way.
     This change could increase memory usage for some programs that use a large number of
-    unions, but unions used in annotations are no longer evaluated by default in Python 3.14
-    (because of :pep:`649`), the new union object is itself much smaller, and removing the
-    cache also saves some space, so it is unlikely that this change will cause a significant
-    increase in memory usage.
+    unions created by subscripting ``typing.Union``. However, several factors offset this cost:
+    unions used in annotations are no longer evaluated by default in Python 3.14
+    because of :pep:`649`; an instance of :class:`types.UnionType` is
+    itself much smaller than the object returned by ``Union[]`` was on prior Python
+    versions; and removing the cache also saves some space. It is therefore
+    unlikely that this change will cause a significant increase in memory usage for most
+    users.
   - Previously, old-style unions were implemented using the private class
     ``typing._UnionGenericAlias``. This class is no longer needed for the implementation,
     but it has been retained for backward compatibility, with removal scheduled for Python
