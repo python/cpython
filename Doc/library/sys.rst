@@ -1247,6 +1247,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionadded:: 3.13
 
+   .. impl-detail::
+
+      It is not guaranteed to exist in all implementations of Python.
 
 .. function:: is_finalizing()
 
@@ -1831,6 +1834,28 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. availability:: Linux.
 
    .. versionadded:: 3.12
+
+
+.. function:: remote_exec(pid, script)
+
+   Executes *script*, a file containing Python code in the remote
+   process with the given *pid*.
+
+   This function returns immediately, and the code will be executed by the
+   target process's main thread at the next available opportunity, similarly
+   to how signals are handled. There is no interface to determine when the
+   code has been executed. The caller is responsible for making sure that
+   the file still exists whenever the remote process tries to read it and that
+   it hasn't been overwritten.
+
+   The remote process must be running a CPython interpreter of the same major
+   and minor version as the local process. If either the local or remote
+   interpreter is pre-release (alpha, beta, or release candidate) then the
+   local and remote interpreters must be the same exact version.
+
+   .. availability:: Unix, Windows.
+   .. versionadded:: next
+
 
 .. function:: _enablelegacywindowsfsencoding()
 

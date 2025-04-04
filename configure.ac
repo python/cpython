@@ -5147,7 +5147,8 @@ AC_CHECK_FUNCS([ \
   posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 process_vm_readv \
   pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
-  pthread_kill pthread_getname_np pthread_setname_np pthread_getattr_np \
+  pthread_kill pthread_get_name_np pthread_getname_np pthread_set_name_np
+  pthread_setname_np pthread_getattr_np \
   ptsname ptsname_r pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
   rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
   sched_setparam sched_setscheduler sem_clockwait sem_getvalue sem_open \
@@ -7033,6 +7034,26 @@ fi
 ],
 [AC_MSG_RESULT([no value specified])])
 
+# Check for --with-remote-debug
+AC_MSG_CHECKING([for --with-remote-debug])
+AC_ARG_WITH(
+  [remote-debug],
+  [AS_HELP_STRING(
+    [--with-remote-debug],
+    [enable remote debugging support (default is yes)])],
+  [],
+  [with_remote_debug=yes])
+
+if test "$with_remote_debug" = yes; then
+  AC_DEFINE([Py_REMOTE_DEBUG], [1],
+    [Define if you want to enable remote debugging support.])
+  AC_MSG_RESULT([yes])
+else
+  AC_DEFINE([Py_REMOTE_DEBUG], [0],
+    [Define if you want to enable remote debugging support.])
+  AC_MSG_RESULT([no])
+fi
+
 
 case $ac_sys_system in
 AIX*)
@@ -7559,10 +7580,11 @@ _RESTORE_VAR([CPPFLAGS])
 case "$ac_sys_system" in
   Linux*) _PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
   SunOS*) _PYTHREAD_NAME_MAXLEN=31;;
-  NetBSD*) _PYTHREAD_NAME_MAXLEN=31;;
+  NetBSD*) _PYTHREAD_NAME_MAXLEN=15;; # gh-131268
   Darwin) _PYTHREAD_NAME_MAXLEN=63;;
   iOS) _PYTHREAD_NAME_MAXLEN=63;;
-  FreeBSD*) _PYTHREAD_NAME_MAXLEN=98;;
+  FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
+  OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
   *) _PYTHREAD_NAME_MAXLEN=;;
 esac
 if test -n "$_PYTHREAD_NAME_MAXLEN"; then

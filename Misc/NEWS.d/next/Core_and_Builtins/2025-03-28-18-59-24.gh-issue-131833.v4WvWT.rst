@@ -1,0 +1,2 @@
+Add support for optionally dropping grouping parentheses when using multiple
+exception types as per :pep:`758`. Patch by Pablo Galindo

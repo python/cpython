@@ -24,7 +24,7 @@ env:
 
 jobs:
   build:
-    name: ${{ inputs.arch == 'arm64' && 'build' || 'build and test' }} (${{ inputs.arch }})
+    name: Build and test (${{ inputs.arch }})
     runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     env:
@@ -37,17 +37,21 @@ jobs:
       if: inputs.arch != 'Win32'
       run: echo "::add-matcher::.github/problem-matchers/msvc.json"
     - name: Build CPython
+      # Forks don't have access to Windows on Arm runners. Skip those:
+      if: inputs.arch != 'arm64' || github.repository_owner == 'python'
       run: >-
         .\\PCbuild\\build.bat
         -e -d -v
         -p "${ARCH}"
         ${{ fromJSON(inputs.free-threading) && '--disable-gil' || '' }}
       shell: bash
-    - name: Display build info  # FIXME(diegorusso): remove the `if`
-      if: inputs.arch != 'arm64'
+    - name: Display build info
+      # Forks don't have access to Windows on Arm runners. Skip those:
+      if: inputs.arch != 'arm64' || github.repository_owner == 'python'
       run: .\\python.bat -m test.pythoninfo
-    - name: Tests  # FIXME(diegorusso): remove the `if`
-      if: inputs.arch != 'arm64'
+    - name: Tests
+      # Forks don't have access to Windows on Arm runners. Skip those:
+      if: inputs.arch != 'arm64' || github.repository_owner == 'python'
       run: >-
         .\\PCbuild\\rt.bat
         -p "${ARCH}"

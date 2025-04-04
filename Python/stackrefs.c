@@ -55,6 +55,12 @@ _Py_stackref_get_object(_PyStackRef ref)
     return entry->obj;
 }
 
+int
+PyStackRef_Is(_PyStackRef a, _PyStackRef b)
+{
+    return _Py_stackref_get_object(a) == _Py_stackref_get_object(b);
+}
+
 PyObject *
 _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber)
 {
@@ -182,9 +188,9 @@ _Py_stackref_report_leaks(PyInterpreterState *interp)
 }
 
 void
-PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
+_PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct, const char *filename, int linenumber)
 {
-    PyObject *obj = _Py_stackref_close(ref);
+    PyObject *obj = _Py_stackref_close(ref, filename, linenumber);
     _Py_DECREF_SPECIALIZED(obj, destruct);
 }
 

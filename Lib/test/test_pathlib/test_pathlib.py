@@ -412,12 +412,18 @@ class PurePathTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             P() < {}
 
+    def make_uri(self, path):
+        if isinstance(path, pathlib.Path):
+            return path.as_uri()
+        with self.assertWarns(DeprecationWarning):
+            return path.as_uri()
+
     def test_as_uri_common(self):
         P = self.cls
         with self.assertRaises(ValueError):
-            P('a').as_uri()
+            self.make_uri(P('a'))
         with self.assertRaises(ValueError):
-            P().as_uri()
+            self.make_uri(P())
 
     def test_repr_roundtrips(self):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
@@ -645,9 +651,9 @@ class PurePathTest(unittest.TestCase):
     @needs_posix
     def test_as_uri_posix(self):
         P = self.cls
-        self.assertEqual(P('/').as_uri(), 'file:///')
-        self.assertEqual(P('/a/b.c').as_uri(), 'file:///a/b.c')
-        self.assertEqual(P('/a/b%#c').as_uri(), 'file:///a/b%25%23c')
+        self.assertEqual(self.make_uri(P('/')), 'file:///')
+        self.assertEqual(self.make_uri(P('/a/b.c')), 'file:///a/b.c')
+        self.assertEqual(self.make_uri(P('/a/b%#c')), 'file:///a/b%25%23c')
 
     @needs_posix
     def test_as_uri_non_ascii(self):
@@ -657,7 +663,7 @@ class PurePathTest(unittest.TestCase):
             os.fsencode('\xe9')
         except UnicodeEncodeError:
             self.skipTest("\\xe9 cannot be encoded to the filesystem encoding")
-        self.assertEqual(P('/a/b\xe9').as_uri(),
+        self.assertEqual(self.make_uri(P('/a/b\xe9')),
                          'file:///a/b' + quote_from_bytes(os.fsencode('\xe9')))
 
     @needs_posix
@@ -751,17 +757,17 @@ class PurePathTest(unittest.TestCase):
     def test_as_uri_windows(self):
         P = self.cls
         with self.assertRaises(ValueError):
-            P('/a/b').as_uri()
+            self.make_uri(P('/a/b'))
         with self.assertRaises(ValueError):
-            P('c:a/b').as_uri()
-        self.assertEqual(P('c:/').as_uri(), 'file:///c:/')
-        self.assertEqual(P('c:/a/b.c').as_uri(), 'file:///c:/a/b.c')
-        self.assertEqual(P('c:/a/b%#c').as_uri(), 'file:///c:/a/b%25%23c')
-        self.assertEqual(P('c:/a/b\xe9').as_uri(), 'file:///c:/a/b%C3%A9')
-        self.assertEqual(P('//some/share/').as_uri(), 'file://some/share/')
-        self.assertEqual(P('//some/share/a/b.c').as_uri(),
+            self.make_uri(P('c:a/b'))
+        self.assertEqual(self.make_uri(P('c:/')), 'file:///c:/')
+        self.assertEqual(self.make_uri(P('c:/a/b.c')), 'file:///c:/a/b.c')
+        self.assertEqual(self.make_uri(P('c:/a/b%#c')), 'file:///c:/a/b%25%23c')
+        self.assertEqual(self.make_uri(P('c:/a/b\xe9')), 'file:///c:/a/b%C3%A9')
+        self.assertEqual(self.make_uri(P('//some/share/')), 'file://some/share/')
+        self.assertEqual(self.make_uri(P('//some/share/a/b.c')),
                          'file://some/share/a/b.c')
-        self.assertEqual(P('//some/share/a/b%#c\xe9').as_uri(),
+        self.assertEqual(self.make_uri(P('//some/share/a/b%#c\xe9')),
                          'file://some/share/a/b%25%23c%C3%A9')
 
     @needs_windows
