@@ -1,4 +1,4 @@
-from annotationlib import Format
+from annotationlib import Format, ForwardRef
 import asyncio
 import builtins
 import collections
