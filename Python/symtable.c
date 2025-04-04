@@ -2192,6 +2192,24 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
 }
 
 static int
+symtable_visit_type_param_check_reserved_name(struct symtable *st, type_param_ty tp, identifier name)
+{
+    if (_PyUnicode_Equal(name, &_Py_ID(__classdict__))) {
+        PyObject *error_msg = PyUnicode_FromFormat("reserved name '%U' cannot be "
+                                                   "used for type parameter", name);
+        PyErr_SetObject(PyExc_SyntaxError, error_msg);
+        Py_DECREF(error_msg);
+        PyErr_RangedSyntaxLocationObject(st->st_filename,
+                                         tp->lineno,
+                                         tp->col_offset + 1,
+                                         tp->end_lineno,
+                                         tp->end_col_offset + 1);
+        return 0;
+    }
+    return 1;
+}
+
+static int
 symtable_visit_type_param(struct symtable *st, type_param_ty tp)
 {
     if (++st->recursion_depth > st->recursion_limit) {
@@ -2201,6 +2219,8 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
     }
     switch(tp->kind) {
     case TypeVar_kind:
+        if (!symtable_visit_type_param_check_reserved_name(st, tp, tp->v.TypeVar.name))
+            VISIT_QUIT(st, 0);
         if (!symtable_add_def(st, tp->v.TypeVar.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
         if (tp->v.TypeVar.bound) {
@@ -2219,10 +2239,14 @@ symtable_visit_type_param(struct symtable *st, type_param_ty tp)
         }
         break;
     case TypeVarTuple_kind:
+        if (!symtable_visit_type_param_check_reserved_name(st, tp, tp->v.TypeVarTuple.name))
+            VISIT_QUIT(st, 0);
         if (!symtable_add_def(st, tp->v.TypeVarTuple.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
         break;
     case ParamSpec_kind:
+        if (!symtable_visit_type_param_check_reserved_name(st, tp, tp->v.ParamSpec.name))
+            VISIT_QUIT(st, 0);
         if (!symtable_add_def(st, tp->v.ParamSpec.name, DEF_TYPE_PARAM | DEF_LOCAL, LOCATION(tp)))
             VISIT_QUIT(st, 0);
         break;
