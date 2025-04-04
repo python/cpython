@@ -553,7 +553,7 @@ get_py_runtime(proc_handle_t* handle)
 #else
     const char* secname = "PyRuntime";
 #endif
-    address = search_windows_map_for_section(handle, "PyRuntime", L"python");
+    address = search_windows_map_for_section(handle, secname, L"python");
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
         PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
