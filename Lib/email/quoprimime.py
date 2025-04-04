@@ -279,11 +279,7 @@ body_decode = decode
 decodestring = decode
 
 
-_HEX_TO_CHAR = {}
-for i in range(256):
-    key_lower = f"{i:02x}"
-    char_val = chr(i)
-    _HEX_TO_CHAR[key_lower] = char_val
+_HEX_TO_CHAR = {f'{i:02x}': chr(i) for i in range(256)}
 
 # Header decoding is done a bit differently
 def header_decode(s):
