@@ -5326,13 +5326,13 @@ static PyType_Spec pycsimple_spec = {
   PyCPointer_Type
 */
 static PyObject *
-Pointer_item(PyObject *myself, Py_ssize_t index)
+Pointer_item_lock_held(PyObject *myself, Py_ssize_t index)
 {
     CDataObject *self = _CDataObject_CAST(myself);
     Py_ssize_t size;
     Py_ssize_t offset;
     PyObject *proto;
-    void *deref = locked_deref(self);
+    void *deref = *(void **)self->b_ptr;
 
     if (deref == NULL) {
         PyErr_SetString(PyExc_ValueError,
@@ -5364,8 +5364,23 @@ Pointer_item(PyObject *myself, Py_ssize_t index)
                        index, size, (char *)((char *)deref + offset));
 }
 
+static PyObject *
+Pointer_item(PyObject *myself, Py_ssize_t index)
+{
+    CDataObject *self = _CDataObject_CAST(myself);
+    PyObject *res;
+    // TODO: The plan is to make LOCK_PTR() a mutex instead of a critical
+    // section someday, so when that happens, this needs to get refactored
+    // to be re-entrant safe.
+    // This goes for all the locks here.
+    LOCK_PTR(self);
+    res = Pointer_item_lock_held(myself, index);
+    UNLOCK_PTR(self);
+    return res;
+}
+
 static int
-Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
+Pointer_ass_item_lock_held(PyObject *myself, Py_ssize_t index, PyObject *value)
 {
     CDataObject *self = _CDataObject_CAST(myself);
     Py_ssize_t size;
@@ -5378,7 +5393,7 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
         return -1;
     }
 
-    void *deref = locked_deref(self);
+    void *deref = *(void **)self->b_ptr;
     if (deref == NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "NULL pointer access");
@@ -5409,10 +5424,21 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
                        index, size, ((char *)deref + offset));
 }
 
-static PyObject *
-Pointer_get_contents(PyObject *self, void *closure)
+static int
+Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
 {
-    void *deref = locked_deref(_CDataObject_CAST(self));
+    CDataObject *self = _CDataObject_CAST(myself);
+    int res;
+    LOCK_PTR(self);
+    res = Pointer_ass_item_lock_held(myself, index, value);
+    UNLOCK_PTR(self);
+    return res;
+}
+
+static PyObject *
+Pointer_get_contents_lock_held(PyObject *self, void *closure)
+{
+    void *deref = *(void **)_CDataObject_CAST(self)->b_ptr;
     if (deref == NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "NULL pointer access");
@@ -5427,6 +5453,17 @@ Pointer_get_contents(PyObject *self, void *closure)
     assert(stginfo); /* Cannot be NULL for pointer instances */
 
     return PyCData_FromBaseObj(st, stginfo->proto, self, 0, deref);
+}
+
+static PyObject *
+Pointer_get_contents(PyObject *myself, void *closure)
+{
+    CDataObject *self = _CDataObject_CAST(myself);
+    PyObject *res;
+    LOCK_PTR(self);
+    res = Pointer_get_contents_lock_held(myself, closure);
+    UNLOCK_PTR(self);
+    return res;
 }
 
 static int
@@ -5462,7 +5499,15 @@ Pointer_set_contents(PyObject *op, PyObject *value, void *closure)
     }
 
     dst = (CDataObject *)value;
-    locked_deref_assign(self, dst->b_ptr);
+    if (dst != self) {
+        LOCK_PTR(dst);
+        locked_deref_assign(self, dst->b_ptr);
+        UNLOCK_PTR(dst);
+    } else {
+        LOCK_PTR(self);
+        *((void **)self->b_ptr) = dst->b_ptr;
+        UNLOCK_PTR(self);
+    }
 
     /*
        A Pointer instance must keep the value it points to alive.  So, a
@@ -5512,6 +5557,23 @@ Pointer_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
     return generic_pycdata_new(st, type, args, kw);
+}
+
+static int
+copy_pointer_to_list_lock_held(PyObject *myself, PyObject *np, Py_ssize_t len,
+                               Py_ssize_t start, Py_ssize_t step)
+{
+    Py_ssize_t i;
+    size_t cur;
+    for (cur = start, i = 0; i < len; cur += step, i++) {
+        PyObject *v = Pointer_item_lock_held(myself, cur);
+        if (!v) {
+            return -1;
+        }
+        PyList_SET_ITEM(np, i, v);
+    }
+
+    return 0;
 }
 
 static PyObject *
@@ -5595,7 +5657,6 @@ Pointer_subscript(PyObject *myself, PyObject *item)
         }
         assert(iteminfo);
         if (iteminfo->getfunc == _ctypes_get_fielddesc("c")->getfunc) {
-            char *ptr = locked_deref(self);
             char *dest;
 
             if (len <= 0)
@@ -5603,6 +5664,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             if (step == 1) {
                 PyObject *res;
                 LOCK_PTR(self);
+                char *ptr = *(void **)self->b_ptr;
                 res = PyBytes_FromStringAndSize(ptr + start,
                                                 len);
                 UNLOCK_PTR(self);
@@ -5612,6 +5674,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             if (dest == NULL)
                 return PyErr_NoMemory();
             LOCK_PTR(self);
+            char *ptr = *(void **)self->b_ptr;
             for (cur = start, i = 0; i < len; cur += step, i++) {
                 dest[i] = ptr[cur];
             }
@@ -5621,7 +5684,6 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             return np;
         }
         if (iteminfo->getfunc == _ctypes_get_fielddesc("u")->getfunc) {
-            wchar_t *ptr = locked_deref(self);
             wchar_t *dest;
 
             if (len <= 0)
@@ -5629,6 +5691,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             if (step == 1) {
                 PyObject *res;
                 LOCK_PTR(self);
+                wchar_t *ptr = *(wchar_t **)self->b_ptr;
                 res = PyUnicode_FromWideChar(ptr + start,
                                              len);
                 UNLOCK_PTR(self);
@@ -5638,6 +5701,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             if (dest == NULL)
                 return PyErr_NoMemory();
             LOCK_PTR(self);
+            wchar_t *ptr = *(wchar_t **)self->b_ptr;
             for (cur = start, i = 0; i < len; cur += step, i++) {
                 dest[i] = ptr[cur];
             }
@@ -5651,14 +5715,15 @@ Pointer_subscript(PyObject *myself, PyObject *item)
         if (np == NULL)
             return NULL;
 
-        for (cur = start, i = 0; i < len; cur += step, i++) {
-            PyObject *v = Pointer_item(myself, cur);
-            if (!v) {
-                Py_DECREF(np);
-                return NULL;
-            }
-            PyList_SET_ITEM(np, i, v);
+        int res;
+        LOCK_PTR(self);
+        res = copy_pointer_to_list_lock_held(myself, np, len, start, step);
+        UNLOCK_PTR(self);
+        if (res < 0) {
+            Py_DECREF(np);
+            return NULL;
         }
+
         return np;
     }
     else {

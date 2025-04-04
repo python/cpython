@@ -48,18 +48,17 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
         stack = get_stack_effect(inst)
     except StackError as ex:
         raise analysis_error(ex.args[0], inst.where) from None
-    required = set(stack.defined)
-    required.discard("unused")
+    seen = {"unused"}
     for part in inst.parts:
         if not isinstance(part, Uop):
             continue
         for var in part.stack.inputs:
-            if var.name in required:
-                required.remove(var.name)
+            if var.used and var.name not in seen:
+                seen.add(var.name)
                 declare_variable(var, out)
         for var in part.stack.outputs:
-            if var.name in required:
-                required.remove(var.name)
+            if var.used and var.name not in seen:
+                seen.add(var.name)
                 declare_variable(var, out)
 
 
@@ -80,40 +79,35 @@ def write_uop(
         emitter.emit(f"// flush\n")
         stack.flush(emitter.out)
         return offset, stack
-    try:
-        locals: dict[str, Local] = {}
+    locals: dict[str, Local] = {}
+    emitter.out.start_line()
+    if braces:
+        emitter.out.emit(f"// {uop.name}\n")
+        emitter.emit("{\n")
+    storage = Storage.for_uop(stack, uop, emitter.out)
+    emitter._print_storage(storage)
+
+    for cache in uop.caches:
+        if cache.name != "unused":
+            if cache.size == 4:
+                type = "PyObject *"
+                reader = "read_obj"
+            else:
+                type = f"uint{cache.size*16}_t "
+                reader = f"read_u{cache.size*16}"
+            emitter.emit(
+                f"{type}{cache.name} = {reader}(&this_instr[{offset}].cache);\n"
+            )
+            if inst.family is None:
+                emitter.emit(f"(void){cache.name};\n")
+        offset += cache.size
+
+    storage = emitter.emit_tokens(uop, storage, inst, False)
+    if braces:
         emitter.out.start_line()
-        if braces:
-            emitter.out.emit(f"// {uop.name}\n")
-            emitter.emit("{\n")
-        code_list, storage = Storage.for_uop(stack, uop)
-        emitter._print_storage(storage)
-        for code in code_list:
-            emitter.emit(code)
-
-        for cache in uop.caches:
-            if cache.name != "unused":
-                if cache.size == 4:
-                    type = "PyObject *"
-                    reader = "read_obj"
-                else:
-                    type = f"uint{cache.size*16}_t "
-                    reader = f"read_u{cache.size*16}"
-                emitter.emit(
-                    f"{type}{cache.name} = {reader}(&this_instr[{offset}].cache);\n"
-                )
-                if inst.family is None:
-                    emitter.emit(f"(void){cache.name};\n")
-            offset += cache.size
-
-        storage = emitter.emit_tokens(uop, storage, inst)
-        if braces:
-            emitter.out.start_line()
-            emitter.emit("}\n")
-        # emitter.emit(stack.as_comment() + "\n")
-        return offset, storage.stack
-    except StackError as ex:
-        raise analysis_error(ex.args[0], uop.body[0])
+        emitter.emit("}\n")
+    # emitter.emit(stack.as_comment() + "\n")
+    return offset, storage.stack
 
 
 def uses_this(inst: Instruction) -> bool:
@@ -130,7 +124,7 @@ def uses_this(inst: Instruction) -> bool:
     for uop in inst.parts:
         if not isinstance(uop, Uop):
             continue
-        for tkn in uop.body:
+        for tkn in uop.body.tokens():
             if (tkn.kind == "IDENTIFIER"
                     and (tkn.text in {"DEOPT_IF", "EXIT_IF"})):
                 return True
@@ -204,15 +198,11 @@ def generate_tier1_labels(
     # Emit tail-callable labels as function defintions
     for name, label in analysis.labels.items():
         emitter.emit(f"LABEL({name})\n")
-        emitter.emit("{\n")
         storage = Storage(Stack(), [], [], False)
         if label.spilled:
             storage.spilled = 1
-            emitter.emit("/* STACK SPILLED */\n")
         emitter.emit_tokens(label, storage, None)
-        emitter.emit("\n")
-        emitter.emit("}\n")
-        emitter.emit("\n")
+        emitter.emit("\n\n")
 
 
 def generate_tier1_cases(
