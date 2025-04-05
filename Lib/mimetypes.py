@@ -669,7 +669,7 @@ def _default_mime_types():
 _default_mime_types()
 
 
-def _main():
+def _main(args=None):
     """Run the mimetypes command-line interface."""
     import sys
     from argparse import ArgumentParser
@@ -686,7 +686,7 @@ def _main():
         help='additionally search for common but non-standard types'
     )
     parser.add_argument('type', nargs='+', help='a type to search')
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     if args.extension:
         for gtype in args.type:
@@ -694,14 +694,16 @@ def _main():
             if guess:
                 print(guess)
             else:
-                sys.exit(f"error: unknown type {gtype}")
+                # do not use parser.error() as it prints a help message
+                parser.exit(1, f"error: unknown type {gtype}\n")
     else:
         for gtype in args.type:
             guess, encoding = guess_type(gtype, not args.lenient)
             if guess:
                 print('type:', guess, 'encoding:', encoding)
             else:
-                sys.exit(f"error: media type unknown for {gtype}")
+                # do not use parser.error() as it prints a help message
+                parser.exit(1, f"error: media type unknown for {gtype}\n")
 
 
 if __name__ == '__main__':
