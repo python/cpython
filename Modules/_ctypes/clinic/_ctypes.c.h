@@ -581,25 +581,82 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(PyCData_reduce__doc__,
+PyDoc_STRVAR(_ctypes_PyCData___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n");
 
-#define PYCDATA_REDUCE_METHODDEF    \
-    {"__reduce__", _PyCFunction_CAST(PyCData_reduce), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, PyCData_reduce__doc__},
+#define _CTYPES_PYCDATA___REDUCE___METHODDEF    \
+    {"__reduce__", _PyCFunction_CAST(_ctypes_PyCData___reduce__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _ctypes_PyCData___reduce____doc__},
 
 static PyObject *
-PyCData_reduce_impl(PyObject *myself, PyTypeObject *cls);
+_ctypes_PyCData___reduce___impl(PyObject *myself, PyTypeObject *cls);
 
 static PyObject *
-PyCData_reduce(PyObject *myself, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_ctypes_PyCData___reduce__(PyObject *myself, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__reduce__() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return PyCData_reduce_impl(myself, cls);
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = _ctypes_PyCData___reduce___impl(myself, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_ctypes_PyCData___setstate____doc__,
+"__setstate__($self, dict, data, /)\n"
+"--\n"
+"\n");
+
+#define _CTYPES_PYCDATA___SETSTATE___METHODDEF    \
+    {"__setstate__", _PyCFunction_CAST(_ctypes_PyCData___setstate__), METH_FASTCALL, _ctypes_PyCData___setstate____doc__},
+
+static PyObject *
+_ctypes_PyCData___setstate___impl(PyObject *myself, PyObject *dict,
+                                  const char *data, Py_ssize_t data_length);
+
+static PyObject *
+_ctypes_PyCData___setstate__(PyObject *myself, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *dict;
+    const char *data;
+    Py_ssize_t data_length;
+
+    if (!_PyArg_ParseStack(args, nargs, "O!s#:__setstate__",
+        &PyDict_Type, &dict, &data, &data_length)) {
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = _ctypes_PyCData___setstate___impl(myself, dict, data, data_length);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_ctypes_PyCData___ctypes_from_outparam____doc__,
+"__ctypes_from_outparam__($self, /)\n"
+"--\n"
+"\n"
+"default __ctypes_from_outparam__ method returns self.");
+
+#define _CTYPES_PYCDATA___CTYPES_FROM_OUTPARAM___METHODDEF    \
+    {"__ctypes_from_outparam__", (PyCFunction)_ctypes_PyCData___ctypes_from_outparam__, METH_NOARGS, _ctypes_PyCData___ctypes_from_outparam____doc__},
+
+static PyObject *
+_ctypes_PyCData___ctypes_from_outparam___impl(PyObject *self);
+
+static PyObject *
+_ctypes_PyCData___ctypes_from_outparam__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _ctypes_PyCData___ctypes_from_outparam___impl(self);
 }
 
 #if !defined(_ctypes_CFuncPtr_errcheck_DOCSTR)
@@ -793,4 +850,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=a18d87239b6fb8ca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a1d935e9d8ceadd input=a9049054013a1b77]*/
