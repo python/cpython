@@ -770,7 +770,7 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
 
     def __iter__(self):
         with self._lock:
-            return iter(list(self._environ))
+            return iter(dict(self._environ))
 
     def __len__(self):
         with self._lock:
@@ -801,6 +801,7 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
                 else:
                     self._environ[k] = v
             self._changed.clear()
+            os.environ = self._environ
 
 try:
     if support.MS_WINDOWS:
