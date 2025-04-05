@@ -287,7 +287,9 @@ class TestMain(unittest.TestCase):
                     fp.write(input_)
                 _, stdout, _ = assert_python_ok('-m', self.module, infile,
                                                 PYTHON_COLORS='1')
-                self.assertEqual(stdout.strip(), expected)
+                stdout = stdout.replace(b'\r\n', b'\n')  # normalize line endings
+                stdout = stdout.strip()
+                self.assertEqual(stdout, expected)
 
 
 @support.requires_subprocess()
