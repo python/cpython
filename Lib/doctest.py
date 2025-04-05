@@ -1354,6 +1354,7 @@ class DocTestRunner:
         SUCCESS, FAILURE, BOOM = range(3) # `outcome` state
 
         check = self._checker.check_output
+        skip_following_examples = False
 
         # Process each example.
         for examplenum, example in enumerate(test.examples):
@@ -1374,7 +1375,8 @@ class DocTestRunner:
                         self.optionflags &= ~optionflag
 
             # If 'SKIP' is set, then skip this example.
-            if self.optionflags & SKIP:
+            # Or if `SkipTest` was raised, skip all following examples.
+            if skip_following_examples or self.optionflags & SKIP:
                 skips += 1
                 continue
 
@@ -1400,10 +1402,16 @@ class DocTestRunner:
                 raise
             except:
                 exception = sys.exc_info()
+                exc = exception[0]
+                if f'{exc.__module__}.{exc.__qualname__}' == 'doctest.SkipTest':
+                    skip_following_examples = True
                 self.debugger.set_continue() # ==== Example Finished ====
 
             got = self._fakeout.getvalue()  # the actual output
             self._fakeout.truncate(0)
+            if skip_following_examples:
+                skips += 1
+                continue
             outcome = FAILURE   # guilty until proved innocent or insane
 
             # If the example executed without raising any exceptions,
@@ -2229,6 +2237,25 @@ def run_docstring_examples(f, globs, verbose=False, name="NoName",
     runner = DocTestRunner(verbose=verbose, optionflags=optionflags)
     for test in finder.find(f, name, globs=globs):
         runner.run(test, compileflags=compileflags)
+
+
+class SkipTest(Exception):
+    """
+    Special exception that will skip all following examples.
+
+    Can be used to conditionally skip some doctests or its parts:
+
+      >>> import doctest
+      >>> 1 + 1  # will be checked
+      2
+
+      >>> raise doctest.SkipTest("Do not check any example after this line")
+
+      >>> 1 + 1  # won't be checked!
+      3
+
+    """
+
 
 ######################################################################
 ## 7. Unittest Support
