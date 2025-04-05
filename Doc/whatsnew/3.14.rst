@@ -728,6 +728,17 @@ http
   module allow the browser to apply its default dark mode.
   (Contributed by Yorik Hansen in :gh:`123430`.)
 
+* The :mod:`http.server` module now supports serving over HTTPS using the
+  :class:`http.server.HTTPSServer` class. This functionality is exposed by
+  the command-line interface (``python -m http.server``) through the following
+  options:
+
+  * ``--tls-cert <path>``: Path to the TLS certificate file.
+  * ``--tls-key <path>``: Optional path to the private key file.
+  * ``--tls-password-file <path>``: Optional path to the password file for the private key.
+
+  (Contributed by Semyon Moroz in :gh:`85162`.)
+
 
 imaplib
 -------
