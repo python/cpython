@@ -1,0 +1,2 @@
+Ensure Tkinter file dialogs return ``""`` rather than ``()`` or ``b""``
+when canceled.
