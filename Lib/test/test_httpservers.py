@@ -8,6 +8,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer, HTTPSServer, \
      SimpleHTTPRequestHandler, CGIHTTPRequestHandler
 from http import server, HTTPStatus
 
+import copy
 import os
 import socket
 import sys
@@ -113,7 +114,7 @@ class BaseTestCase(unittest.TestCase):
 
     def setUp(self):
         self._threads = threading_helper.threading_setup()
-        os.environ = os_helper.EnvironmentVarGuard()
+        os.environ = copy.copy(os_helper.EnvironmentVarGuard())
         self.server_started = threading.Event()
         self.thread = TestServerThread(self, self.request_handler, self.tls)
         self.thread.start()
