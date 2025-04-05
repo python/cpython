@@ -466,7 +466,8 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
     const char *format = *p_format;
     int i;
     Py_ssize_t len;
-    int mustbetuple = PyTuple_Check(arg);
+    int istuple = PyTuple_Check(arg);
+    int mustbetuple = istuple;
 
     for (;;) {
         int c = *format++;
@@ -514,8 +515,8 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         }
     }
 
-    if (PyTuple_Check(arg)) {
-        Py_INCREF(arg);
+    if (istuple) {
+        /* fallthrough */
     }
     else if (!PySequence_Check(arg) ||
         PyUnicode_Check(arg) || PyBytes_Check(arg) || PyByteArray_Check(arg))
@@ -555,7 +556,9 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         PyOS_snprintf(msgbuf, bufsize,
                       "must be tuple of length %d, not %zd",
                       n, len);
-        Py_DECREF(arg);
+        if (!istuple) {
+            Py_DECREF(arg);
+        }
         return msgbuf;
     }
 
@@ -567,13 +570,17 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                           msgbuf, bufsize, freelist);
         if (msg != NULL) {
             levels[0] = i+1;
-            Py_DECREF(arg);
+            if (!istuple) {
+                Py_DECREF(arg);
+            }
             return msg;
         }
     }
 
     *p_format = format;
-    Py_DECREF(arg);
+    if (!istuple) {
+        Py_DECREF(arg);
+    }
     return NULL;
 }
 
