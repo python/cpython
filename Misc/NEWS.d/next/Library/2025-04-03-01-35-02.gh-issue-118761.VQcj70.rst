@@ -1,0 +1,2 @@
+Improve import times by up to 27x for the :mod:`string` module.
+Patch by Adam Turner.

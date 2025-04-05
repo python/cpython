@@ -49,10 +49,17 @@ def capwords(s, sep=None):
 
 
 ####################################################################
-import re as _re
-from collections import ChainMap as _ChainMap
-
 _sentinel_dict = {}
+_sentinel_flags = object()
+
+
+class _TemplatePattern:
+    def __get__(self, instance, cls=None):
+        if cls is None:
+            return self
+        # This descriptor is overwritten in ``_compile_pattern()``.
+        return cls._compile_pattern()
+
 
 class Template:
     """A string class for supporting $-substitutions."""
@@ -64,14 +71,24 @@ class Template:
     # See https://bugs.python.org/issue31672
     idpattern = r'(?a:[_a-z][_a-z0-9]*)'
     braceidpattern = None
-    flags = _re.IGNORECASE
+    flags = _sentinel_flags  # default: re.IGNORECASE
+
+    pattern = _TemplatePattern()  # use a descriptor to compile the pattern
 
     def __init_subclass__(cls):
         super().__init_subclass__()
-        if 'pattern' in cls.__dict__:
-            pattern = cls.pattern
+        cls._compile_pattern()
+
+    @classmethod
+    def _compile_pattern(cls):
+        import re  # deferred import, for performance
+
+        cls_pattern = cls.__dict__.get('pattern')
+        if cls_pattern and not isinstance(cls_pattern, _TemplatePattern):
+            # Prefer a pattern defined on the class.
+            pattern = cls_pattern
         else:
-            delim = _re.escape(cls.delimiter)
+            delim = re.escape(cls.delimiter)
             id = cls.idpattern
             bid = cls.braceidpattern or cls.idpattern
             pattern = fr"""
@@ -82,7 +99,10 @@ class Template:
               (?P<invalid>)             # Other ill-formed delimiter exprs
             )
             """
-        cls.pattern = _re.compile(pattern, cls.flags | _re.VERBOSE)
+        if cls.flags is _sentinel_flags:
+            cls.flags = re.IGNORECASE
+        pat = cls.pattern = re.compile(pattern, cls.flags | re.VERBOSE)
+        return pat
 
     def __init__(self, template):
         self.template = template
@@ -105,7 +125,8 @@ class Template:
         if mapping is _sentinel_dict:
             mapping = kws
         elif kws:
-            mapping = _ChainMap(kws, mapping)
+            from collections import ChainMap
+            mapping = ChainMap(kws, mapping)
         # Helper function for .sub()
         def convert(mo):
             # Check the most common path first.
@@ -124,7 +145,8 @@ class Template:
         if mapping is _sentinel_dict:
             mapping = kws
         elif kws:
-            mapping = _ChainMap(kws, mapping)
+            from collections import ChainMap
+            mapping = ChainMap(kws, mapping)
         # Helper function for .sub()
         def convert(mo):
             named = mo.group('named') or mo.group('braced')
@@ -169,10 +191,6 @@ class Template:
                 raise ValueError('Unrecognized named group in pattern',
                     self.pattern)
         return ids
-
-# Initialize Template.pattern.  __init_subclass__() is automatically called
-# only for subclasses, not for the Template class itself.
-Template.__init_subclass__()
 
 
 ########################################################################
