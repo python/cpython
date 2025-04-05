@@ -5,8 +5,8 @@ See `json.__main__` for a usage example (invocation as
 """
 import argparse
 import json
-import sys
 import re
+import sys
 from _colorize import ANSIColors, can_colorize
 
 
