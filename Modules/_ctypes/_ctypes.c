@@ -2794,7 +2794,7 @@ PyCData_GetContainer_lock_held(CDataObject *self)
 }
 
 static CDataObject *
-PyCData_GetContainer_lock_held(CDataObject *self)
+PyCData_GetContainer(CDataObject *self)
 {
     CDataObject *res;
     Py_BEGIN_CRITICAL_SECTION(self);
@@ -2891,7 +2891,7 @@ KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep)
 {
     int res;
     Py_BEGIN_CRITICAL_SECTION(target);
-    target = KeepRef_lock_held(target, index, keep);
+    res = KeepRef_lock_held(target, index, keep);
     Py_END_CRITICAL_SECTION();
     return res;
 }
