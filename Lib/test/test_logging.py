@@ -4352,13 +4352,26 @@ class QueueHandlerTest(BaseTest):
     def test_queue_listener_context_manager(self):
         handler = TestHandler(support.Matcher())
         with logging.handlers.QueueListener(self.queue, handler) as listener:
-            self.assertIsIsintance(listener, logging.handlers.QueueListener)
+            self.assertIsInstance(listener, logging.handlers.QueueListener)
             self.assertIsNotNone(listener._thread)
         self.assertIsNone(listener._thread)
 
         # doesn't hurt to call stop() more than once.
         listener.stop()
         self.assertIsNone(listener._thread)
+
+    @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
+                         'logging.handlers.QueueListener required for this test')
+    def test_queue_listener_multi_start(self):
+        handler = TestHandler(support.Matcher())
+        with logging.handlers.QueueListener(self.queue, handler) as listener:
+            self.assertRaises(RuntimeError, listener.start)
+
+        with listener:
+            self.assertRaises(RuntimeError, listener.start)
+
+        listener.start()
+        listener.stop()
 
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')

@@ -1152,6 +1152,8 @@ possible, while any potentially slow operations (such as sending an email via
       :class:`QueueListener` can now be used as a context manager via
       :keyword:`with`. When entering the context, the listener is started. When
       exiting the context, the listener is stopped.
+      :meth:`~contextmanager.__enter__` returns the
+      :class:`QueueListener` object.
 
    .. method:: dequeue(block)
 
@@ -1183,6 +1185,10 @@ possible, while any potentially slow operations (such as sending an email via
 
       This starts up a background thread to monitor the queue for
       LogRecords to process.
+
+      .. versionchanged:: next
+         Raises :exc:`RuntimeError` if called and the listener is already
+         running.
 
    .. method:: stop()
 
