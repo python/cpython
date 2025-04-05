@@ -600,7 +600,7 @@ http
   (Contributed by Yorik Hansen in :gh:`123430`.)
 
 * The :mod:`http.server` module now supports serving over HTTPS using the
-  new :class:`http.server.HTTPSServer`. This functionality is exposed by
+  new :class:`http.server.HTTPSServer` class. This functionality is exposed by
   the command-line interface (``python -m http.server``) through the following
   options:
 
