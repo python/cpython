@@ -21,6 +21,8 @@ import unittest.mock
 import weakref
 import typing
 
+c_types = import_fresh_module("types", fresh=["_types"])
+py_types = import_fresh_module("types", blocked=["_types"])
 
 T = typing.TypeVar("T")
 
@@ -41,11 +43,22 @@ class TypesTests(unittest.TestCase):
         ignored = {'new_class', 'resolve_bases', 'prepare_class',
                    'get_original_bases', 'DynamicClassAttribute', 'coroutine'}
 
-        c_types = import_fresh_module('types', fresh=['_types'])
-        py_types = import_fresh_module('types', blocked=['_types'])
         for name in c_types.__all__:
             if name not in c_only_names | ignored:
                 self.assertIs(getattr(c_types, name), getattr(py_types, name))
+
+        all_names = ignored | {
+            'AsyncGeneratorType', 'BuiltinFunctionType', 'BuiltinMethodType',
+            'CapsuleType', 'CellType', 'ClassMethodDescriptorType', 'CodeType',
+            'CoroutineType', 'EllipsisType', 'FrameType', 'FunctionType',
+            'GeneratorType', 'GenericAlias', 'GetSetDescriptorType',
+            'LambdaType', 'MappingProxyType', 'MemberDescriptorType',
+            'MethodDescriptorType', 'MethodType', 'MethodWrapperType',
+            'ModuleType', 'NoneType', 'NotImplementedType', 'SimpleNamespace',
+            'TracebackType', 'UnionType', 'WrapperDescriptorType',
+        }
+        self.assertEqual(all_names, set(c_types.__all__))
+        self.assertEqual(all_names - c_only_names, set(py_types.__all__))
 
     def test_truth_values(self):
         if None: self.fail('None is true instead of false')
