@@ -5179,15 +5179,21 @@ PyCArrayType_from_ctype(ctypes_state *st, PyObject *itemtype, Py_ssize_t length)
 */
 
 /*[clinic input]
-class _ctypes.Simple "PyObject *" "clinic_state()->Simple_Type"
+class _ctypes.Simple "CDataObject *" "clinic_state()->Simple_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=016c476c7aa8b8a8]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e0493451fecf8cd4]*/
+
+/*[clinic input]
+@critical_section
+@setter
+_ctypes.Simple.value
+[clinic start generated code]*/
 
 static int
-Simple_set_value(PyObject *op, PyObject *value, void *Py_UNUSED(ignored))
+_ctypes_Simple_value_set_impl(CDataObject *self, PyObject *value)
+/*[clinic end generated code: output=f267186118939863 input=977af9dc9e71e857]*/
 {
     PyObject *result;
-    CDataObject *self = _CDataObject_CAST(op);
 
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -5197,21 +5203,20 @@ Simple_set_value(PyObject *op, PyObject *value, void *Py_UNUSED(ignored))
 
     ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *info;
-    if (PyStgInfo_FromObject(st, op, &info) < 0) {
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
         return -1;
     }
     assert(info); /* Cannot be NULL for CDataObject instances */
     assert(info->setfunc);
 
-    LOCK_PTR(self);
     result = info->setfunc(self->b_ptr, value, info->size);
-    UNLOCK_PTR(self);
     if (!result)
         return -1;
 
     /* consumes the refcount the setfunc returns */
     return KeepRef(self, 0, result);
 }
+
 
 static int
 Simple_init(PyObject *self, PyObject *args, PyObject *kw)
@@ -5220,31 +5225,35 @@ Simple_init(PyObject *self, PyObject *args, PyObject *kw)
     if (!PyArg_UnpackTuple(args, "__init__", 0, 1, &value))
         return -1;
     if (value)
-        return Simple_set_value(self, value, NULL);
+        return _ctypes_Simple_value_set(self, value, NULL);
     return 0;
 }
 
+
+/*[clinic input]
+@critical_section
+@getter
+_ctypes.Simple.value
+[clinic start generated code]*/
+
 static PyObject *
-Simple_get_value(PyObject *op, void *Py_UNUSED(ignored))
+_ctypes_Simple_value_get_impl(CDataObject *self)
+/*[clinic end generated code: output=ce5a26570830a243 input=3ed3f735cec89282]*/
 {
-    CDataObject *self = _CDataObject_CAST(op);
     ctypes_state *st = get_module_state_by_def(Py_TYPE(Py_TYPE(self)));
     StgInfo *info;
-    if (PyStgInfo_FromObject(st, op, &info) < 0) {
+    if (PyStgInfo_FromObject(st, (PyObject *)self, &info) < 0) {
         return NULL;
     }
     assert(info); /* Cannot be NULL for CDataObject instances */
     assert(info->getfunc);
     PyObject *res;
-    LOCK_PTR(self);
     res = info->getfunc(self->b_ptr, self->b_size);
-    UNLOCK_PTR(self);
     return res;
 }
 
 static PyGetSetDef Simple_getsets[] = {
-    { "value", Simple_get_value, Simple_set_value,
-      "current value", NULL },
+    _CTYPES_SIMPLE_VALUE_GETSETDEF
     { NULL, NULL }
 };
 
@@ -5265,7 +5274,7 @@ Simple_from_outparm_impl(PyObject *self, PyTypeObject *cls)
         return Py_NewRef(self);
     }
     /* call stginfo->getfunc */
-    return Simple_get_value(self, NULL);
+    return _ctypes_Simple_value_get(self, NULL);
 }
 
 static PyMethodDef Simple_methods[] = {
@@ -5296,7 +5305,7 @@ Simple_repr(PyObject *self)
                                    Py_TYPE(self)->tp_name, self);
     }
 
-    val = Simple_get_value(self, NULL);
+    val = _ctypes_Simple_value_get(self, NULL);
     if (val == NULL)
         return NULL;
 

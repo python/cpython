@@ -830,6 +830,56 @@ _ctypes_CFuncPtr_argtypes_get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
+#if !defined(_ctypes_Simple_value_DOCSTR)
+#  define _ctypes_Simple_value_DOCSTR NULL
+#endif
+#if defined(_CTYPES_SIMPLE_VALUE_GETSETDEF)
+#  undef _CTYPES_SIMPLE_VALUE_GETSETDEF
+#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, (setter)_ctypes_Simple_value_set, _ctypes_Simple_value_DOCSTR},
+#else
+#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", NULL, (setter)_ctypes_Simple_value_set, NULL},
+#endif
+
+static int
+_ctypes_Simple_value_set_impl(CDataObject *self, PyObject *value);
+
+static int
+_ctypes_Simple_value_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ctypes_Simple_value_set_impl((CDataObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(_ctypes_Simple_value_DOCSTR)
+#  define _ctypes_Simple_value_DOCSTR NULL
+#endif
+#if defined(_CTYPES_SIMPLE_VALUE_GETSETDEF)
+#  undef _CTYPES_SIMPLE_VALUE_GETSETDEF
+#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, (setter)_ctypes_Simple_value_set, _ctypes_Simple_value_DOCSTR},
+#else
+#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, NULL, _ctypes_Simple_value_DOCSTR},
+#endif
+
+static PyObject *
+_ctypes_Simple_value_get_impl(CDataObject *self);
+
+static PyObject *
+_ctypes_Simple_value_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ctypes_Simple_value_get_impl((CDataObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(Simple_from_outparm__doc__,
 "__ctypes_from_outparam__($self, /)\n"
 "--\n"
@@ -850,4 +900,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=2a1d935e9d8ceadd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bc7e53010b10b558 input=a9049054013a1b77]*/
