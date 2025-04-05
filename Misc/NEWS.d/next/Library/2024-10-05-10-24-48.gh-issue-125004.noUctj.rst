@@ -1,0 +1,2 @@
+Fix unpickling for :mod:`dataclasses` with hash-based data structures in their
+descendants in the presence of cycles.
