@@ -83,10 +83,10 @@ def main():
 
 
 color_pattern = re.compile(r'''
-    (?P<string>"(.*?)")     |   # String
-    (?P<number>[\d\-+.Ee]+) |   # Number
-    (?P<boolean>true|false) |   # Boolean
-    (?P<null>null)              # Null
+    (?P<string>"(\\"|[^"])*?") |   # String
+    (?P<number>[\d\-+.Ee]+)    |   # Number
+    (?P<boolean>true|false)    |   # Boolean
+    (?P<null>null)                 # Null
 ''', re.VERBOSE)
 
 
