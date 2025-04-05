@@ -122,6 +122,10 @@ The command, if run with ``-h``, will show the available options::
    Once an environment has been created, you may wish to activate it, e.g. by
    sourcing an activate script in its bin directory.
 
+.. option:: ENV_DIR
+
+     A required argument specifying the directory to create the environment in.
+
 .. option:: --system-site-packages
 
    Give the virtual environment access to the system site-packages directory.
