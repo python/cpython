@@ -1,1 +1,0 @@
-Optimize ``Py_BEGIN_CRITICAL_SECTION`` for simple recursive calls.

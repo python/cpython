@@ -1,0 +1,2 @@
+Improved performance of :func:`textwrap.dedent` by an average of ~1.3x.
+Patch by Adam Turner.

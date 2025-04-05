@@ -1,0 +1,3 @@
+Update bundled version of OpenSSL to 3.0.16. The new build also disables
+uplink support, which may be relevant to embedders but has no impact on
+normal use.

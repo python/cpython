@@ -740,6 +740,16 @@ class ClinicWholeFileTest(TestCase):
         err = "Cannot use @text_signature when cloning a function"
         self.expect_failure(block, err, lineno=11)
 
+    def test_ignore_preprocessor_in_comments(self):
+        for dsl in "clinic", "python":
+            raw = dedent(f"""\
+                /*[{dsl} input]
+                # CPP directives, valid or not, should be ignored in C comments.
+                #
+                [{dsl} start generated code]*/
+            """)
+            self.clinic.parse(raw)
+
 
 class ParseFileUnitTest(TestCase):
     def expect_parsing_failure(
@@ -2703,7 +2713,7 @@ class ClinicExternalTest(TestCase):
             # Verify by checking the checksum.
             checksum = (
                 "/*[clinic end generated code: "
-                "output=00512eb783a9b748 input=9543a8d2da235301]*/\n"
+                "output=a2957bc4d43a3c2f input=9543a8d2da235301]*/\n"
             )
             with open(fn, encoding='utf-8') as f:
                 generated = f.read()
