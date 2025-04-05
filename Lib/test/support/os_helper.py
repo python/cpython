@@ -792,9 +792,6 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
     def __enter__(self):
         return self
 
-    def __reduce__(self):
-        return (dict, (dict(self),))
-
     def __exit__(self, *ignore_exc):
         with self._lock:
             for (k, v) in self._changed.items():
@@ -804,6 +801,9 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
                     self._environ[k] = v
             self._changed.clear()
             os.environ = self._environ
+
+    def __reduce__(self):
+        return (dict, (dict(self),))
 
 try:
     if support.MS_WINDOWS:
