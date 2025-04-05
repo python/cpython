@@ -728,10 +728,6 @@ Using the comma or the underscore as a digit group separator::
    '100_1001_1001_0110_0000_0010_1101_0010'
    >>> '{:_x}'.format(1234567890)
    '4996_02d2'
-   >>> '{:,}'.format(123456789.123456789)
-   '123,456,789.12345679'
-   >>> '{:_}'.format(123456789.123456789)
-   '123_456_789.12345679'
 
 Expressing a percentage::
 
