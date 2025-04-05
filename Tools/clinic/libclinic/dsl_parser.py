@@ -430,7 +430,12 @@ class DSLParser:
             fail("Can't set @disable, function is not a normal callable")
         if not args:
             fail("@disable expects at least one argument")
-        self.disable_fastcall = 'fastcall' in args
+        features = list(args)
+        if 'fastcall' in features:
+            features.remove('fastcall')
+            self.disable_fastcall = True
+        if features:
+            fail("invalid argument for @disable:", features[0])
 
     def at_getter(self) -> None:
         match self.kind:
