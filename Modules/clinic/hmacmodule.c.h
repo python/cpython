@@ -170,7 +170,7 @@ PyDoc_STRVAR(_hmac_HMAC_digest__doc__,
 "This method may raise a MemoryError.");
 
 #define _HMAC_HMAC_DIGEST_METHODDEF    \
-    {"digest", (PyCFunction)_hmac_HMAC_digest, METH_NOARGS, _hmac_HMAC_digest__doc__},
+    {"digest", _hmac_HMAC_digest, METH_NOARGS, _hmac_HMAC_digest__doc__},
 
 static PyObject *
 _hmac_HMAC_digest_impl(HMACObject *self);
@@ -193,7 +193,7 @@ PyDoc_STRVAR(_hmac_HMAC_hexdigest__doc__,
 "This method may raise a MemoryError.");
 
 #define _HMAC_HMAC_HEXDIGEST_METHODDEF    \
-    {"hexdigest", (PyCFunction)_hmac_HMAC_hexdigest, METH_NOARGS, _hmac_HMAC_hexdigest__doc__},
+    {"hexdigest", _hmac_HMAC_hexdigest, METH_NOARGS, _hmac_HMAC_hexdigest__doc__},
 
 static PyObject *
 _hmac_HMAC_hexdigest_impl(HMACObject *self);
@@ -209,9 +209,9 @@ _hmac_HMAC_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 #endif
 #if defined(_HMAC_HMAC_NAME_GETSETDEF)
 #  undef _HMAC_HMAC_NAME_GETSETDEF
-#  define _HMAC_HMAC_NAME_GETSETDEF {"name", (getter)_hmac_HMAC_name_get, (setter)_hmac_HMAC_name_set, _hmac_HMAC_name_DOCSTR},
+#  define _HMAC_HMAC_NAME_GETSETDEF {"name", _hmac_HMAC_name_get, _hmac_HMAC_name_set, _hmac_HMAC_name_DOCSTR},
 #else
-#  define _HMAC_HMAC_NAME_GETSETDEF {"name", (getter)_hmac_HMAC_name_get, NULL, _hmac_HMAC_name_DOCSTR},
+#  define _HMAC_HMAC_NAME_GETSETDEF {"name", _hmac_HMAC_name_get, NULL, _hmac_HMAC_name_DOCSTR},
 #endif
 
 static PyObject *
@@ -228,9 +228,9 @@ _hmac_HMAC_name_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(_HMAC_HMAC_BLOCK_SIZE_GETSETDEF)
 #  undef _HMAC_HMAC_BLOCK_SIZE_GETSETDEF
-#  define _HMAC_HMAC_BLOCK_SIZE_GETSETDEF {"block_size", (getter)_hmac_HMAC_block_size_get, (setter)_hmac_HMAC_block_size_set, _hmac_HMAC_block_size_DOCSTR},
+#  define _HMAC_HMAC_BLOCK_SIZE_GETSETDEF {"block_size", _hmac_HMAC_block_size_get, _hmac_HMAC_block_size_set, _hmac_HMAC_block_size_DOCSTR},
 #else
-#  define _HMAC_HMAC_BLOCK_SIZE_GETSETDEF {"block_size", (getter)_hmac_HMAC_block_size_get, NULL, _hmac_HMAC_block_size_DOCSTR},
+#  define _HMAC_HMAC_BLOCK_SIZE_GETSETDEF {"block_size", _hmac_HMAC_block_size_get, NULL, _hmac_HMAC_block_size_DOCSTR},
 #endif
 
 static PyObject *
@@ -247,9 +247,9 @@ _hmac_HMAC_block_size_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(_HMAC_HMAC_DIGEST_SIZE_GETSETDEF)
 #  undef _HMAC_HMAC_DIGEST_SIZE_GETSETDEF
-#  define _HMAC_HMAC_DIGEST_SIZE_GETSETDEF {"digest_size", (getter)_hmac_HMAC_digest_size_get, (setter)_hmac_HMAC_digest_size_set, _hmac_HMAC_digest_size_DOCSTR},
+#  define _HMAC_HMAC_DIGEST_SIZE_GETSETDEF {"digest_size", _hmac_HMAC_digest_size_get, _hmac_HMAC_digest_size_set, _hmac_HMAC_digest_size_DOCSTR},
 #else
-#  define _HMAC_HMAC_DIGEST_SIZE_GETSETDEF {"digest_size", (getter)_hmac_HMAC_digest_size_get, NULL, _hmac_HMAC_digest_size_DOCSTR},
+#  define _HMAC_HMAC_DIGEST_SIZE_GETSETDEF {"digest_size", _hmac_HMAC_digest_size_get, NULL, _hmac_HMAC_digest_size_DOCSTR},
 #endif
 
 static PyObject *
@@ -670,4 +670,4 @@ _hmac_compute_blake2b_32(PyObject *module, PyObject *const *args, Py_ssize_t nar
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=30c0614482d963f5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8fc277191f6cc0bb input=a9049054013a1b77]*/
