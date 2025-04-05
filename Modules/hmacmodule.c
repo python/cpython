@@ -1736,6 +1736,9 @@ hmacmodule_init_cpu_features(hmacmodule_state *state)
     // TODO(picnixz): use py_cpuid_features (gh-125022) to improve detection
     state->can_run_simd128 = sse && sse2 && sse3 && sse41 && sse42 && cmov;
 #else
+    // fmt: off
+    (void)sse; (void)sse2; (void)sse3; (void)sse41; (void)sse42; (void)cmov;
+    // fmt: on
     state->can_run_simd128 = false;
 #endif
 
@@ -1743,6 +1746,9 @@ hmacmodule_init_cpu_features(hmacmodule_state *state)
     // TODO(picnixz): use py_cpuid_features (gh-125022) to improve detection
     state->can_run_simd256 = state->can_run_simd128 && avx && avx2;
 #else
+    // fmt: off
+    (void)avx; (void)avx2;
+    // fmt: on
     state->can_run_simd256 = false;
 #endif
 }
