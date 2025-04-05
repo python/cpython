@@ -5282,9 +5282,9 @@ Simple_bool(PyObject *op)
 {
     int cmp;
     CDataObject *self = _CDataObject_CAST(op);
-    Py_BEGIN_CRITICAL_SECTION(op);
+    LOCK_PTR(self);
     cmp = memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
-    Py_END_CRITICAL_SECTION();
+    UNLOCK_PTR(self);
     return cmp;
 }
 
