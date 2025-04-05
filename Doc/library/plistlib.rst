@@ -173,8 +173,7 @@ The module defines the following exceptions:
 
 .. exception:: InvalidFileException
 
-   Raised by plist file parser functions (e.g. :func:`load`)
-   when the file cannot be parsed.
+   Raised when a file cannot be parsed.
 
    .. versionadded:: 3.4
 
