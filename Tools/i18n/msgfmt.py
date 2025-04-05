@@ -264,13 +264,15 @@ def main():
                 if msgid == b'':
                     continue
                 strings += 1
-                if msgstr.strip() and msgstr != msgid:
+                if msgstr.strip():
                     translated += 1
 
-            print(
-                f"{translated} translated message{'s' if translated != 1 else ''}, "
-                f"{strings - translated} untranslated message{'s' if (strings - translated) != 1 else ''}."
-            )
+            untranslated = strings - translated
+            message = f"{translated} translated message{'s' if translated != 1 else ''}"
+            if untranslated > 0:
+                message += f", {untranslated} untranslated message{'s' if untranslated != 1 else ''}"
+            message += "."
+            print(message)
 
 
 if __name__ == '__main__':
