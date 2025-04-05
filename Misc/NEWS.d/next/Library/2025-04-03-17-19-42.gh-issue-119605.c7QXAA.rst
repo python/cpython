@@ -1,0 +1,1 @@
+Preserve class signature after wrapping with :func:`warnings.deprecated`. Patch by Xuehai Pan.
