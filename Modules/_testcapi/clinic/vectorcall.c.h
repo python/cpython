@@ -111,7 +111,7 @@ PyDoc_STRVAR(_testcapi_VectorCallClass_set_vectorcall__doc__,
 "Set self\'s vectorcall function for `type` to one that returns \"vectorcall\"");
 
 #define _TESTCAPI_VECTORCALLCLASS_SET_VECTORCALL_METHODDEF    \
-    {"set_vectorcall", (PyCFunction)_testcapi_VectorCallClass_set_vectorcall, METH_O, _testcapi_VectorCallClass_set_vectorcall__doc__},
+    {"set_vectorcall", _testcapi_VectorCallClass_set_vectorcall, METH_O, _testcapi_VectorCallClass_set_vectorcall__doc__},
 
 static PyObject *
 _testcapi_VectorCallClass_set_vectorcall_impl(PyObject *self,
@@ -180,7 +180,7 @@ PyDoc_STRVAR(_testcapi_has_vectorcall_flag__doc__,
 "Return true iff Py_TPFLAGS_HAVE_VECTORCALL is set on the class.");
 
 #define _TESTCAPI_HAS_VECTORCALL_FLAG_METHODDEF    \
-    {"has_vectorcall_flag", (PyCFunction)_testcapi_has_vectorcall_flag, METH_O, _testcapi_has_vectorcall_flag__doc__},
+    {"has_vectorcall_flag", _testcapi_has_vectorcall_flag, METH_O, _testcapi_has_vectorcall_flag__doc__},
 
 static int
 _testcapi_has_vectorcall_flag_impl(PyObject *module, PyTypeObject *type);
@@ -206,4 +206,4 @@ _testcapi_has_vectorcall_flag(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=210ae67caab177ba input=a9049054013a1b77]*/
+/*[clinic end generated code: output=02ce0c764988bb3e input=a9049054013a1b77]*/

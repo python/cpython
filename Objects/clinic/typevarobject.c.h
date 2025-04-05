@@ -130,7 +130,7 @@ PyDoc_STRVAR(typevar_typing_subst__doc__,
 "\n");
 
 #define TYPEVAR_TYPING_SUBST_METHODDEF    \
-    {"__typing_subst__", (PyCFunction)typevar_typing_subst, METH_O, typevar_typing_subst__doc__},
+    {"__typing_subst__", typevar_typing_subst, METH_O, typevar_typing_subst__doc__},
 
 static PyObject *
 typevar_typing_subst_impl(typevarobject *self, PyObject *arg);
@@ -181,7 +181,7 @@ PyDoc_STRVAR(typevar_reduce__doc__,
 "\n");
 
 #define TYPEVAR_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)typevar_reduce, METH_NOARGS, typevar_reduce__doc__},
+    {"__reduce__", typevar_reduce, METH_NOARGS, typevar_reduce__doc__},
 
 static PyObject *
 typevar_reduce_impl(typevarobject *self);
@@ -198,7 +198,7 @@ PyDoc_STRVAR(typevar_has_default__doc__,
 "\n");
 
 #define TYPEVAR_HAS_DEFAULT_METHODDEF    \
-    {"has_default", (PyCFunction)typevar_has_default, METH_NOARGS, typevar_has_default__doc__},
+    {"has_default", typevar_has_default, METH_NOARGS, typevar_has_default__doc__},
 
 static PyObject *
 typevar_has_default_impl(typevarobject *self);
@@ -437,7 +437,7 @@ PyDoc_STRVAR(paramspec_typing_subst__doc__,
 "\n");
 
 #define PARAMSPEC_TYPING_SUBST_METHODDEF    \
-    {"__typing_subst__", (PyCFunction)paramspec_typing_subst, METH_O, paramspec_typing_subst__doc__},
+    {"__typing_subst__", paramspec_typing_subst, METH_O, paramspec_typing_subst__doc__},
 
 static PyObject *
 paramspec_typing_subst_impl(paramspecobject *self, PyObject *arg);
@@ -488,7 +488,7 @@ PyDoc_STRVAR(paramspec_reduce__doc__,
 "\n");
 
 #define PARAMSPEC_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)paramspec_reduce, METH_NOARGS, paramspec_reduce__doc__},
+    {"__reduce__", paramspec_reduce, METH_NOARGS, paramspec_reduce__doc__},
 
 static PyObject *
 paramspec_reduce_impl(paramspecobject *self);
@@ -505,7 +505,7 @@ PyDoc_STRVAR(paramspec_has_default__doc__,
 "\n");
 
 #define PARAMSPEC_HAS_DEFAULT_METHODDEF    \
-    {"has_default", (PyCFunction)paramspec_has_default, METH_NOARGS, paramspec_has_default__doc__},
+    {"has_default", paramspec_has_default, METH_NOARGS, paramspec_has_default__doc__},
 
 static PyObject *
 paramspec_has_default_impl(paramspecobject *self);
@@ -591,7 +591,7 @@ PyDoc_STRVAR(typevartuple_typing_subst__doc__,
 "\n");
 
 #define TYPEVARTUPLE_TYPING_SUBST_METHODDEF    \
-    {"__typing_subst__", (PyCFunction)typevartuple_typing_subst, METH_O, typevartuple_typing_subst__doc__},
+    {"__typing_subst__", typevartuple_typing_subst, METH_O, typevartuple_typing_subst__doc__},
 
 static PyObject *
 typevartuple_typing_subst_impl(typevartupleobject *self, PyObject *arg);
@@ -642,7 +642,7 @@ PyDoc_STRVAR(typevartuple_reduce__doc__,
 "\n");
 
 #define TYPEVARTUPLE_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)typevartuple_reduce, METH_NOARGS, typevartuple_reduce__doc__},
+    {"__reduce__", typevartuple_reduce, METH_NOARGS, typevartuple_reduce__doc__},
 
 static PyObject *
 typevartuple_reduce_impl(typevartupleobject *self);
@@ -659,7 +659,7 @@ PyDoc_STRVAR(typevartuple_has_default__doc__,
 "\n");
 
 #define TYPEVARTUPLE_HAS_DEFAULT_METHODDEF    \
-    {"has_default", (PyCFunction)typevartuple_has_default, METH_NOARGS, typevartuple_has_default__doc__},
+    {"has_default", typevartuple_has_default, METH_NOARGS, typevartuple_has_default__doc__},
 
 static PyObject *
 typevartuple_has_default_impl(typevartupleobject *self);
@@ -676,7 +676,7 @@ PyDoc_STRVAR(typealias_reduce__doc__,
 "\n");
 
 #define TYPEALIAS_REDUCE_METHODDEF    \
-    {"__reduce__", (PyCFunction)typealias_reduce, METH_NOARGS, typealias_reduce__doc__},
+    {"__reduce__", typealias_reduce, METH_NOARGS, typealias_reduce__doc__},
 
 static PyObject *
 typealias_reduce_impl(typealiasobject *self);
@@ -757,4 +757,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9dad71445e079303 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ec488fe21dd2dfa9 input=a9049054013a1b77]*/

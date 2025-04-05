@@ -105,7 +105,7 @@ PyDoc_STRVAR(syslog_syslog__doc__,
 "Send the string message to the system logger.");
 
 #define SYSLOG_SYSLOG_METHODDEF    \
-    {"syslog", (PyCFunction)syslog_syslog, METH_VARARGS, syslog_syslog__doc__},
+    {"syslog", syslog_syslog, METH_VARARGS, syslog_syslog__doc__},
 
 static PyObject *
 syslog_syslog_impl(PyObject *module, int group_left_1, int priority,
@@ -150,7 +150,7 @@ PyDoc_STRVAR(syslog_closelog__doc__,
 "Reset the syslog module values and call the system library closelog().");
 
 #define SYSLOG_CLOSELOG_METHODDEF    \
-    {"closelog", (PyCFunction)syslog_closelog, METH_NOARGS, syslog_closelog__doc__},
+    {"closelog", syslog_closelog, METH_NOARGS, syslog_closelog__doc__},
 
 static PyObject *
 syslog_closelog_impl(PyObject *module);
@@ -174,7 +174,7 @@ PyDoc_STRVAR(syslog_setlogmask__doc__,
 "Set the priority mask to maskpri and return the previous mask value.");
 
 #define SYSLOG_SETLOGMASK_METHODDEF    \
-    {"setlogmask", (PyCFunction)syslog_setlogmask, METH_O, syslog_setlogmask__doc__},
+    {"setlogmask", syslog_setlogmask, METH_O, syslog_setlogmask__doc__},
 
 static long
 syslog_setlogmask_impl(PyObject *module, long maskpri);
@@ -207,7 +207,7 @@ PyDoc_STRVAR(syslog_LOG_MASK__doc__,
 "Calculates the mask for the individual priority pri.");
 
 #define SYSLOG_LOG_MASK_METHODDEF    \
-    {"LOG_MASK", (PyCFunction)syslog_LOG_MASK, METH_O, syslog_LOG_MASK__doc__},
+    {"LOG_MASK", syslog_LOG_MASK, METH_O, syslog_LOG_MASK__doc__},
 
 static long
 syslog_LOG_MASK_impl(PyObject *module, long pri);
@@ -240,7 +240,7 @@ PyDoc_STRVAR(syslog_LOG_UPTO__doc__,
 "Calculates the mask for all priorities up to and including pri.");
 
 #define SYSLOG_LOG_UPTO_METHODDEF    \
-    {"LOG_UPTO", (PyCFunction)syslog_LOG_UPTO, METH_O, syslog_LOG_UPTO__doc__},
+    {"LOG_UPTO", syslog_LOG_UPTO, METH_O, syslog_LOG_UPTO__doc__},
 
 static long
 syslog_LOG_UPTO_impl(PyObject *module, long pri);
@@ -265,4 +265,4 @@ syslog_LOG_UPTO(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f92ac9948fa6131e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=866c52f4edda0a73 input=a9049054013a1b77]*/

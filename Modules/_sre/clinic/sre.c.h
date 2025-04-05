@@ -15,7 +15,7 @@ PyDoc_STRVAR(_sre_getcodesize__doc__,
 "\n");
 
 #define _SRE_GETCODESIZE_METHODDEF    \
-    {"getcodesize", (PyCFunction)_sre_getcodesize, METH_NOARGS, _sre_getcodesize__doc__},
+    {"getcodesize", _sre_getcodesize, METH_NOARGS, _sre_getcodesize__doc__},
 
 static int
 _sre_getcodesize_impl(PyObject *module);
@@ -42,7 +42,7 @@ PyDoc_STRVAR(_sre_ascii_iscased__doc__,
 "\n");
 
 #define _SRE_ASCII_ISCASED_METHODDEF    \
-    {"ascii_iscased", (PyCFunction)_sre_ascii_iscased, METH_O, _sre_ascii_iscased__doc__},
+    {"ascii_iscased", _sre_ascii_iscased, METH_O, _sre_ascii_iscased__doc__},
 
 static int
 _sre_ascii_iscased_impl(PyObject *module, int character);
@@ -74,7 +74,7 @@ PyDoc_STRVAR(_sre_unicode_iscased__doc__,
 "\n");
 
 #define _SRE_UNICODE_ISCASED_METHODDEF    \
-    {"unicode_iscased", (PyCFunction)_sre_unicode_iscased, METH_O, _sre_unicode_iscased__doc__},
+    {"unicode_iscased", _sre_unicode_iscased, METH_O, _sre_unicode_iscased__doc__},
 
 static int
 _sre_unicode_iscased_impl(PyObject *module, int character);
@@ -106,7 +106,7 @@ PyDoc_STRVAR(_sre_ascii_tolower__doc__,
 "\n");
 
 #define _SRE_ASCII_TOLOWER_METHODDEF    \
-    {"ascii_tolower", (PyCFunction)_sre_ascii_tolower, METH_O, _sre_ascii_tolower__doc__},
+    {"ascii_tolower", _sre_ascii_tolower, METH_O, _sre_ascii_tolower__doc__},
 
 static int
 _sre_ascii_tolower_impl(PyObject *module, int character);
@@ -138,7 +138,7 @@ PyDoc_STRVAR(_sre_unicode_tolower__doc__,
 "\n");
 
 #define _SRE_UNICODE_TOLOWER_METHODDEF    \
-    {"unicode_tolower", (PyCFunction)_sre_unicode_tolower, METH_O, _sre_unicode_tolower__doc__},
+    {"unicode_tolower", _sre_unicode_tolower, METH_O, _sre_unicode_tolower__doc__},
 
 static int
 _sre_unicode_tolower_impl(PyObject *module, int character);
@@ -984,7 +984,7 @@ PyDoc_STRVAR(_sre_SRE_Pattern___copy____doc__,
 "\n");
 
 #define _SRE_SRE_PATTERN___COPY___METHODDEF    \
-    {"__copy__", (PyCFunction)_sre_SRE_Pattern___copy__, METH_NOARGS, _sre_SRE_Pattern___copy____doc__},
+    {"__copy__", _sre_SRE_Pattern___copy__, METH_NOARGS, _sre_SRE_Pattern___copy____doc__},
 
 static PyObject *
 _sre_SRE_Pattern___copy___impl(PatternObject *self);
@@ -1001,7 +1001,7 @@ PyDoc_STRVAR(_sre_SRE_Pattern___deepcopy____doc__,
 "\n");
 
 #define _SRE_SRE_PATTERN___DEEPCOPY___METHODDEF    \
-    {"__deepcopy__", (PyCFunction)_sre_SRE_Pattern___deepcopy__, METH_O, _sre_SRE_Pattern___deepcopy____doc__},
+    {"__deepcopy__", _sre_SRE_Pattern___deepcopy__, METH_O, _sre_SRE_Pattern___deepcopy____doc__},
 
 static PyObject *
 _sre_SRE_Pattern___deepcopy___impl(PatternObject *self, PyObject *memo);
@@ -1491,7 +1491,7 @@ PyDoc_STRVAR(_sre_SRE_Match___copy____doc__,
 "\n");
 
 #define _SRE_SRE_MATCH___COPY___METHODDEF    \
-    {"__copy__", (PyCFunction)_sre_SRE_Match___copy__, METH_NOARGS, _sre_SRE_Match___copy____doc__},
+    {"__copy__", _sre_SRE_Match___copy__, METH_NOARGS, _sre_SRE_Match___copy____doc__},
 
 static PyObject *
 _sre_SRE_Match___copy___impl(MatchObject *self);
@@ -1508,7 +1508,7 @@ PyDoc_STRVAR(_sre_SRE_Match___deepcopy____doc__,
 "\n");
 
 #define _SRE_SRE_MATCH___DEEPCOPY___METHODDEF    \
-    {"__deepcopy__", (PyCFunction)_sre_SRE_Match___deepcopy__, METH_O, _sre_SRE_Match___deepcopy____doc__},
+    {"__deepcopy__", _sre_SRE_Match___deepcopy__, METH_O, _sre_SRE_Match___deepcopy____doc__},
 
 static PyObject *
 _sre_SRE_Match___deepcopy___impl(MatchObject *self, PyObject *memo);
@@ -1568,4 +1568,4 @@ _sre_SRE_Scanner_search(PyObject *self, PyTypeObject *cls, PyObject *const *args
 #ifndef _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
     #define _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
 #endif /* !defined(_SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF) */
-/*[clinic end generated code: output=bbf42e1de3bdd3ae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f8d4fa20aa69b463 input=a9049054013a1b77]*/

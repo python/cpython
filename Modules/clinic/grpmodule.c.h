@@ -142,7 +142,7 @@ PyDoc_STRVAR(grp_getgrall__doc__,
 "to use YP/NIS and may not be accessible via getgrnam or getgrgid.");
 
 #define GRP_GETGRALL_METHODDEF    \
-    {"getgrall", (PyCFunction)grp_getgrall, METH_NOARGS, grp_getgrall__doc__},
+    {"getgrall", grp_getgrall, METH_NOARGS, grp_getgrall__doc__},
 
 static PyObject *
 grp_getgrall_impl(PyObject *module);
@@ -152,4 +152,4 @@ grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=35aa81c00dbd3229 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=946bc57698c739a6 input=a9049054013a1b77]*/

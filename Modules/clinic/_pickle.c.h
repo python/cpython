@@ -20,7 +20,7 @@ PyDoc_STRVAR(_pickle_Pickler_clear_memo__doc__,
 "re-using picklers.");
 
 #define _PICKLE_PICKLER_CLEAR_MEMO_METHODDEF    \
-    {"clear_memo", (PyCFunction)_pickle_Pickler_clear_memo, METH_NOARGS, _pickle_Pickler_clear_memo__doc__},
+    {"clear_memo", _pickle_Pickler_clear_memo, METH_NOARGS, _pickle_Pickler_clear_memo__doc__},
 
 static PyObject *
 _pickle_Pickler_clear_memo_impl(PicklerObject *self);
@@ -83,7 +83,7 @@ PyDoc_STRVAR(_pickle_Pickler___sizeof____doc__,
 "Returns size in memory, in bytes.");
 
 #define _PICKLE_PICKLER___SIZEOF___METHODDEF    \
-    {"__sizeof__", (PyCFunction)_pickle_Pickler___sizeof__, METH_NOARGS, _pickle_Pickler___sizeof____doc__},
+    {"__sizeof__", _pickle_Pickler___sizeof__, METH_NOARGS, _pickle_Pickler___sizeof____doc__},
 
 static size_t
 _pickle_Pickler___sizeof___impl(PicklerObject *self);
@@ -223,7 +223,7 @@ PyDoc_STRVAR(_pickle_PicklerMemoProxy_clear__doc__,
 "Remove all items from memo.");
 
 #define _PICKLE_PICKLERMEMOPROXY_CLEAR_METHODDEF    \
-    {"clear", (PyCFunction)_pickle_PicklerMemoProxy_clear, METH_NOARGS, _pickle_PicklerMemoProxy_clear__doc__},
+    {"clear", _pickle_PicklerMemoProxy_clear, METH_NOARGS, _pickle_PicklerMemoProxy_clear__doc__},
 
 static PyObject *
 _pickle_PicklerMemoProxy_clear_impl(PicklerMemoProxyObject *self);
@@ -241,7 +241,7 @@ PyDoc_STRVAR(_pickle_PicklerMemoProxy_copy__doc__,
 "Copy the memo to a new object.");
 
 #define _PICKLE_PICKLERMEMOPROXY_COPY_METHODDEF    \
-    {"copy", (PyCFunction)_pickle_PicklerMemoProxy_copy, METH_NOARGS, _pickle_PicklerMemoProxy_copy__doc__},
+    {"copy", _pickle_PicklerMemoProxy_copy, METH_NOARGS, _pickle_PicklerMemoProxy_copy__doc__},
 
 static PyObject *
 _pickle_PicklerMemoProxy_copy_impl(PicklerMemoProxyObject *self);
@@ -259,7 +259,7 @@ PyDoc_STRVAR(_pickle_PicklerMemoProxy___reduce____doc__,
 "Implement pickle support.");
 
 #define _PICKLE_PICKLERMEMOPROXY___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)_pickle_PicklerMemoProxy___reduce__, METH_NOARGS, _pickle_PicklerMemoProxy___reduce____doc__},
+    {"__reduce__", _pickle_PicklerMemoProxy___reduce__, METH_NOARGS, _pickle_PicklerMemoProxy___reduce____doc__},
 
 static PyObject *
 _pickle_PicklerMemoProxy___reduce___impl(PicklerMemoProxyObject *self);
@@ -402,7 +402,7 @@ PyDoc_STRVAR(_pickle_Unpickler___sizeof____doc__,
 "Returns size in memory, in bytes.");
 
 #define _PICKLE_UNPICKLER___SIZEOF___METHODDEF    \
-    {"__sizeof__", (PyCFunction)_pickle_Unpickler___sizeof__, METH_NOARGS, _pickle_Unpickler___sizeof____doc__},
+    {"__sizeof__", _pickle_Unpickler___sizeof__, METH_NOARGS, _pickle_Unpickler___sizeof____doc__},
 
 static size_t
 _pickle_Unpickler___sizeof___impl(UnpicklerObject *self);
@@ -564,7 +564,7 @@ PyDoc_STRVAR(_pickle_UnpicklerMemoProxy_clear__doc__,
 "Remove all items from memo.");
 
 #define _PICKLE_UNPICKLERMEMOPROXY_CLEAR_METHODDEF    \
-    {"clear", (PyCFunction)_pickle_UnpicklerMemoProxy_clear, METH_NOARGS, _pickle_UnpicklerMemoProxy_clear__doc__},
+    {"clear", _pickle_UnpicklerMemoProxy_clear, METH_NOARGS, _pickle_UnpicklerMemoProxy_clear__doc__},
 
 static PyObject *
 _pickle_UnpicklerMemoProxy_clear_impl(UnpicklerMemoProxyObject *self);
@@ -582,7 +582,7 @@ PyDoc_STRVAR(_pickle_UnpicklerMemoProxy_copy__doc__,
 "Copy the memo to a new object.");
 
 #define _PICKLE_UNPICKLERMEMOPROXY_COPY_METHODDEF    \
-    {"copy", (PyCFunction)_pickle_UnpicklerMemoProxy_copy, METH_NOARGS, _pickle_UnpicklerMemoProxy_copy__doc__},
+    {"copy", _pickle_UnpicklerMemoProxy_copy, METH_NOARGS, _pickle_UnpicklerMemoProxy_copy__doc__},
 
 static PyObject *
 _pickle_UnpicklerMemoProxy_copy_impl(UnpicklerMemoProxyObject *self);
@@ -600,7 +600,7 @@ PyDoc_STRVAR(_pickle_UnpicklerMemoProxy___reduce____doc__,
 "Implement pickling support.");
 
 #define _PICKLE_UNPICKLERMEMOPROXY___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)_pickle_UnpicklerMemoProxy___reduce__, METH_NOARGS, _pickle_UnpicklerMemoProxy___reduce____doc__},
+    {"__reduce__", _pickle_UnpicklerMemoProxy___reduce__, METH_NOARGS, _pickle_UnpicklerMemoProxy___reduce____doc__},
 
 static PyObject *
 _pickle_UnpicklerMemoProxy___reduce___impl(UnpicklerMemoProxyObject *self);
@@ -1098,4 +1098,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6331c72b3c427f63 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=64d5ac3cf2e6fc93 input=a9049054013a1b77]*/

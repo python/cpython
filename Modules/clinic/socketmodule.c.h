@@ -17,7 +17,7 @@ PyDoc_STRVAR(_socket_socket_close__doc__,
 "Close the socket.  It cannot be used after this call.");
 
 #define _SOCKET_SOCKET_CLOSE_METHODDEF    \
-    {"close", (PyCFunction)_socket_socket_close, METH_NOARGS, _socket_socket_close__doc__},
+    {"close", _socket_socket_close, METH_NOARGS, _socket_socket_close__doc__},
 
 static PyObject *
 _socket_socket_close_impl(PySocketSockObject *s);
@@ -122,7 +122,7 @@ PyDoc_STRVAR(_socket_socket_ntohs__doc__,
 "Convert a 16-bit unsigned integer from network to host byte order.");
 
 #define _SOCKET_SOCKET_NTOHS_METHODDEF    \
-    {"ntohs", (PyCFunction)_socket_socket_ntohs, METH_O, _socket_socket_ntohs__doc__},
+    {"ntohs", _socket_socket_ntohs, METH_O, _socket_socket_ntohs__doc__},
 
 static PyObject *
 _socket_socket_ntohs_impl(PySocketSockObject *self, int x);
@@ -150,7 +150,7 @@ PyDoc_STRVAR(_socket_socket_htons__doc__,
 "Convert a 16-bit unsigned integer from host to network byte order.");
 
 #define _SOCKET_SOCKET_HTONS_METHODDEF    \
-    {"htons", (PyCFunction)_socket_socket_htons, METH_O, _socket_socket_htons__doc__},
+    {"htons", _socket_socket_htons, METH_O, _socket_socket_htons__doc__},
 
 static PyObject *
 _socket_socket_htons_impl(PySocketSockObject *self, int x);
@@ -178,7 +178,7 @@ PyDoc_STRVAR(_socket_socket_inet_aton__doc__,
 "Convert an IP address in string format (123.45.67.89) to the 32-bit packed binary format used in low-level network functions.");
 
 #define _SOCKET_SOCKET_INET_ATON_METHODDEF    \
-    {"inet_aton", (PyCFunction)_socket_socket_inet_aton, METH_O, _socket_socket_inet_aton__doc__},
+    {"inet_aton", _socket_socket_inet_aton, METH_O, _socket_socket_inet_aton__doc__},
 
 static PyObject *
 _socket_socket_inet_aton_impl(PySocketSockObject *self, const char *ip_addr);
@@ -217,7 +217,7 @@ PyDoc_STRVAR(_socket_socket_inet_ntoa__doc__,
 "Convert an IP address from 32-bit packed binary format to string format.");
 
 #define _SOCKET_SOCKET_INET_NTOA_METHODDEF    \
-    {"inet_ntoa", (PyCFunction)_socket_socket_inet_ntoa, METH_O, _socket_socket_inet_ntoa__doc__},
+    {"inet_ntoa", _socket_socket_inet_ntoa, METH_O, _socket_socket_inet_ntoa__doc__},
 
 static PyObject *
 _socket_socket_inet_ntoa_impl(PySocketSockObject *self, Py_buffer *packed_ip);
@@ -253,7 +253,7 @@ PyDoc_STRVAR(_socket_socket_if_nametoindex__doc__,
 "Returns the interface index corresponding to the interface name if_name.");
 
 #define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF    \
-    {"if_nametoindex", (PyCFunction)_socket_socket_if_nametoindex, METH_O, _socket_socket_if_nametoindex__doc__},
+    {"if_nametoindex", _socket_socket_if_nametoindex, METH_O, _socket_socket_if_nametoindex__doc__},
 
 static PyObject *
 _socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname);
@@ -282,4 +282,4 @@ exit:
 #ifndef _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     #define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
 #endif /* !defined(_SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF) */
-/*[clinic end generated code: output=27bc54006551ab0c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cdbd7bc4f8f83dd1 input=a9049054013a1b77]*/

@@ -17,7 +17,7 @@ PyDoc_STRVAR(_csv_list_dialects__doc__,
 "    names = csv.list_dialects()");
 
 #define _CSV_LIST_DIALECTS_METHODDEF    \
-    {"list_dialects", (PyCFunction)_csv_list_dialects, METH_NOARGS, _csv_list_dialects__doc__},
+    {"list_dialects", _csv_list_dialects, METH_NOARGS, _csv_list_dialects__doc__},
 
 static PyObject *
 _csv_list_dialects_impl(PyObject *module);
@@ -215,4 +215,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=1fb09d5e7667ad0d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0588fb477d6a688b input=a9049054013a1b77]*/
