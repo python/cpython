@@ -2,7 +2,7 @@
 Define names for built-in types that aren't directly accessible as a builtin.
 """
 
-import sys
+import _types
 
 # Iterators in Python aren't a matter of type but of protocol.  A large
 # and changing number of builtin types implement *some* flavor of
@@ -14,7 +14,7 @@ FunctionType = type(_f)
 LambdaType = type(lambda: None)         # Same as FunctionType
 CodeType = type(_f.__code__)
 MappingProxyType = type(type.__dict__)
-SimpleNamespace = type(sys.implementation)
+SimpleNamespace = _types.SimpleNamespace
 
 def _cell_factory():
     a = 1
@@ -49,7 +49,7 @@ MethodWrapperType = type(object().__str__)
 MethodDescriptorType = type(str.join)
 ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
 
-ModuleType = type(sys)
+ModuleType = type(_types)
 
 try:
     raise TypeError
@@ -60,7 +60,9 @@ except TypeError as exc:
 GetSetDescriptorType = type(FunctionType.__code__)
 MemberDescriptorType = type(FunctionType.__globals__)
 
-del sys, _f, _g, _C, _c, _ag, _cell_factory  # Not for export
+CapsuleType = _types.CapsuleType
+
+del _types, _f, _g, _C, _c, _ag, _cell_factory  # Not for export
 
 
 # Provide a PEP 3115 compliant mechanism for class creation
@@ -331,11 +333,4 @@ EllipsisType = type(Ellipsis)
 NoneType = type(None)
 NotImplementedType = type(NotImplemented)
 
-def __getattr__(name):
-    if name == 'CapsuleType':
-        import _socket
-        return type(_socket.CAPI)
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
-__all__ = [n for n in globals() if n[:1] != '_']
-__all__ += ['CapsuleType']
+__all__ = [n for n in globals() if not n.startswith('_')]  # for pydoc

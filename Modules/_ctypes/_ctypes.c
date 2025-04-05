@@ -3007,7 +3007,8 @@ PyCData_nohash(PyObject *self)
 }
 
 /*[clinic input]
-_ctypes.PyCData.__reduce__ as PyCData_reduce
+@critical_section
+_ctypes.PyCData.__reduce__
 
     myself: self
     cls: defining_class
@@ -3015,8 +3016,8 @@ _ctypes.PyCData.__reduce__ as PyCData_reduce
 [clinic start generated code]*/
 
 static PyObject *
-PyCData_reduce_impl(PyObject *myself, PyTypeObject *cls)
-/*[clinic end generated code: output=1a025ccfdd8c935d input=34097a5226ea63c1]*/
+_ctypes_PyCData___reduce___impl(PyObject *myself, PyTypeObject *cls)
+/*[clinic end generated code: output=eaad97e111599294 input=6a464e1a1e2bbdbd]*/
 {
     CDataObject *self = _CDataObject_CAST(myself);
 
@@ -3037,33 +3038,33 @@ PyCData_reduce_impl(PyObject *myself, PyTypeObject *cls)
         return NULL;
     }
     PyObject *bytes;
-    LOCK_PTR(self);
     bytes = PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
-    UNLOCK_PTR(self);
     return Py_BuildValue("O(O(NN))", st->_unpickle, Py_TYPE(myself), dict,
                          bytes);
 }
 
+/*[clinic input]
+@critical_section
+_ctypes.PyCData.__setstate__
+
+    myself: self
+    dict: object(subclass_of="&PyDict_Type")
+    data: str(accept={str, robuffer}, zeroes=True)
+    /
+[clinic start generated code]*/
+
 static PyObject *
-PyCData_setstate(PyObject *myself, PyObject *args)
+_ctypes_PyCData___setstate___impl(PyObject *myself, PyObject *dict,
+                                  const char *data, Py_ssize_t data_length)
+/*[clinic end generated code: output=8bd4c0a5b4f254bd input=124f5070258254c6]*/
 {
-    void *data;
-    Py_ssize_t len;
-    int res;
-    PyObject *dict, *mydict;
     CDataObject *self = _CDataObject_CAST(myself);
-    if (!PyArg_ParseTuple(args, "O!s#",
-                          &PyDict_Type, &dict, &data, &len))
-    {
-        return NULL;
+
+    if (data_length > self->b_size) {
+        data_length = self->b_size;
     }
-    if (len > self->b_size)
-        len = self->b_size;
-    // XXX Can we use locked_memcpy_to()?
-    LOCK_PTR(self);
-    memmove(self->b_ptr, data, len);
-    UNLOCK_PTR(self);
-    mydict = PyObject_GetAttrString(myself, "__dict__");
+    memmove(self->b_ptr, data, data_length);
+    PyObject *mydict = PyObject_GetAttrString(myself, "__dict__");
     if (mydict == NULL) {
         return NULL;
     }
@@ -3074,26 +3075,30 @@ PyCData_setstate(PyObject *myself, PyObject *args)
         Py_DECREF(mydict);
         return NULL;
     }
-    res = PyDict_Update(mydict, dict);
+    int res = PyDict_Update(mydict, dict);
     Py_DECREF(mydict);
     if (res == -1)
         return NULL;
     Py_RETURN_NONE;
 }
 
-/*
- * default __ctypes_from_outparam__ method returns self.
- */
+/*[clinic input]
+_ctypes.PyCData.__ctypes_from_outparam__
+
+default __ctypes_from_outparam__ method returns self.
+[clinic start generated code]*/
+
 static PyObject *
-PyCData_from_outparam(PyObject *self, PyObject *args)
+_ctypes_PyCData___ctypes_from_outparam___impl(PyObject *self)
+/*[clinic end generated code: output=a7facc849097b549 input=910c5fec33e268c9]*/
 {
     return Py_NewRef(self);
 }
 
 static PyMethodDef PyCData_methods[] = {
-    { "__ctypes_from_outparam__", PyCData_from_outparam, METH_NOARGS, },
-    PYCDATA_REDUCE_METHODDEF
-    { "__setstate__", PyCData_setstate, METH_VARARGS, },
+    _CTYPES_PYCDATA___CTYPES_FROM_OUTPARAM___METHODDEF
+    _CTYPES_PYCDATA___SETSTATE___METHODDEF
+    _CTYPES_PYCDATA___REDUCE___METHODDEF
     { NULL, NULL },
 };
 
