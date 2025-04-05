@@ -1,0 +1,5 @@
+The :mod:`http.server` module now includes built-in support for HTTPS
+servers exposed by :class:`http.server.HTTPSServer`. This functionality
+is exposed by the command-line interface (``python -m http.server``) through
+the ``--tls-cert``, ``--tls-key`` and ``--tls-password-file`` options.
+Patch by Semyon Moroz.
