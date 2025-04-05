@@ -63,7 +63,7 @@ See :pep:`405` for more background on Python virtual environments.
 
 Creating virtual environments
 -----------------------------
-
+.. _venv-cli:
 .. program:: venv
 
 :ref:`Virtual environments <venv-def>` are created by executing the ``venv``
