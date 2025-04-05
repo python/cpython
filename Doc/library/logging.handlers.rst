@@ -1148,6 +1148,11 @@ possible, while any potentially slow operations (such as sending an email via
    .. versionchanged:: 3.5
       The ``respect_handler_level`` argument was added.
 
+   .. versionchanged:: next
+      :class:`QueueListener` can now be used as a context manager via
+      :keyword:`with`. When entering the context, the listener is started. When
+      exiting the context, the listener is stopped.
+
    .. method:: dequeue(block)
 
       Dequeues a record and return it, optionally blocking.

@@ -1532,6 +1532,19 @@ class QueueListener(object):
         self._thread = None
         self.respect_handler_level = respect_handler_level
 
+    def __enter__(self):
+        """
+        For use as a context manager. Starts the listener.
+        """
+        self.start()
+        return self
+
+    def __exit__(self, *args):
+        """
+        For use as a context manager. Stops the listener.
+        """
+        self.stop()
+
     def dequeue(self, block):
         """
         Dequeue a record and return it, optionally blocking.
