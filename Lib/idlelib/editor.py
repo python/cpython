@@ -1120,18 +1120,18 @@ class EditorWindow:
         self.close()
         return "break"
 
-    def maybesave(self):
+    def maybesave(self, force=False):
         if self.io:
             if not self.get_saved():
                 if self.top.state()!='normal':
                     self.top.deiconify()
                 self.top.lower()
                 self.top.lift()
-            return self.io.maybesave()
+            return self.io.maybesave(force=force)
 
-    def close(self):
+    def close(self, force=False):
         try:
-            reply = self.maybesave()
+            reply = self.maybesave(force=force)
             if str(reply) != "cancel":
                 self._close()
             return reply
