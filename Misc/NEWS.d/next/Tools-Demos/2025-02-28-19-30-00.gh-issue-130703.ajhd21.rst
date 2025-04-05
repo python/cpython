@@ -1,0 +1,1 @@
+Wrap msgids to specified ``width`` in :program:`pygettext`.
