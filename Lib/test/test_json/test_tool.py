@@ -102,7 +102,6 @@ class TestMain(unittest.TestCase):
         self.assertEqual(process.stdout, self.expect)
         self.assertEqual(process.stderr, '')
 
-    @no_color
     def _create_infile(self, data=None):
         infile = os_helper.TESTFN
         with open(infile, "w", encoding="utf-8") as fp:
@@ -110,15 +109,14 @@ class TestMain(unittest.TestCase):
             fp.write(data or self.data)
         return infile
 
-    @no_color
     def test_infile_stdout(self):
         infile = self._create_infile()
-        rc, out, err = assert_python_ok('-m', self.module, infile)
+        rc, out, err = assert_python_ok('-m', self.module, infile,
+                                        PYTHON_COLORS='0')
         self.assertEqual(rc, 0)
         self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
         self.assertEqual(err, b'')
 
-    @no_color
     def test_non_ascii_infile(self):
         data = '{"msg": "\u3053\u3093\u306b\u3061\u306f"}'
         expect = textwrap.dedent('''\
@@ -128,17 +126,18 @@ class TestMain(unittest.TestCase):
         ''').encode()
 
         infile = self._create_infile(data)
-        rc, out, err = assert_python_ok('-m', self.module, infile)
+        rc, out, err = assert_python_ok('-m', self.module, infile,
+                                        PYTHON_COLORS='0')
 
         self.assertEqual(rc, 0)
         self.assertEqual(out.splitlines(), expect.splitlines())
         self.assertEqual(err, b'')
 
-    @no_color
     def test_infile_outfile(self):
         infile = self._create_infile()
         outfile = os_helper.TESTFN + '.out'
-        rc, out, err = assert_python_ok('-m', self.module, infile, outfile)
+        rc, out, err = assert_python_ok('-m', self.module, infile, outfile,
+                                        PYTHON_COLORS='0')
         self.addCleanup(os.remove, outfile)
         with open(outfile, "r", encoding="utf-8") as fp:
             self.assertEqual(fp.read(), self.expect)
@@ -146,10 +145,10 @@ class TestMain(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
-    @no_color
     def test_writing_in_place(self):
         infile = self._create_infile()
-        rc, out, err = assert_python_ok('-m', self.module, infile, infile)
+        rc, out, err = assert_python_ok('-m', self.module, infile, infile,
+                                        PYTHON_COLORS='0')
         with open(infile, "r", encoding="utf-8") as fp:
             self.assertEqual(fp.read(), self.expect)
         self.assertEqual(rc, 0)
@@ -163,17 +162,17 @@ class TestMain(unittest.TestCase):
         self.assertEqual(process.stdout, self.jsonlines_expect)
         self.assertEqual(process.stderr, '')
 
-    @no_color
     def test_help_flag(self):
-        rc, out, err = assert_python_ok('-m', self.module, '-h')
+        rc, out, err = assert_python_ok('-m', self.module, '-h',
+                                        PYTHON_COLORS='0')
         self.assertEqual(rc, 0)
         self.assertTrue(out.startswith(b'usage: '))
         self.assertEqual(err, b'')
 
-    @no_color
     def test_sort_keys_flag(self):
         infile = self._create_infile()
-        rc, out, err = assert_python_ok('-m', self.module, '--sort-keys', infile)
+        rc, out, err = assert_python_ok('-m', self.module, '--sort-keys', infile,
+                                        PYTHON_COLORS='0')
         self.assertEqual(rc, 0)
         self.assertEqual(out.splitlines(),
                          self.expect_without_sort_keys.encode().splitlines())
@@ -220,24 +219,23 @@ class TestMain(unittest.TestCase):
         self.assertEqual(process.stdout, expect)
         self.assertEqual(process.stderr, '')
 
-    @no_color
     def test_no_ensure_ascii_flag(self):
         infile = self._create_infile('{"key":"💩"}')
         outfile = os_helper.TESTFN + '.out'
         self.addCleanup(os.remove, outfile)
-        assert_python_ok('-m', self.module, '--no-ensure-ascii', infile, outfile)
+        assert_python_ok('-m', self.module, '--no-ensure-ascii', infile,
+                         outfile, PYTHON_COLORS='0')
         with open(outfile, "rb") as f:
             lines = f.read().splitlines()
         # asserting utf-8 encoded output file
         expected = [b'{', b'    "key": "\xf0\x9f\x92\xa9"', b"}"]
         self.assertEqual(lines, expected)
 
-    @no_color
     def test_ensure_ascii_default(self):
         infile = self._create_infile('{"key":"💩"}')
         outfile = os_helper.TESTFN + '.out'
         self.addCleanup(os.remove, outfile)
-        assert_python_ok('-m', self.module, infile, outfile)
+        assert_python_ok('-m', self.module, infile, outfile, PYTHON_COLORS='0')
         with open(outfile, "rb") as f:
             lines = f.read().splitlines()
         # asserting an ascii encoded output file
