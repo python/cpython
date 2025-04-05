@@ -724,6 +724,8 @@ class SysModuleTest(unittest.TestCase):
         self.assertIn(sys.float_repr_style, ('short', 'legacy'))
         if not sys.platform.startswith('win'):
             self.assertIsInstance(sys.abiflags, str)
+        else:
+            self.assertFalse(hasattr(sys, 'abiflags'))
 
     def test_thread_info(self):
         info = sys.thread_info

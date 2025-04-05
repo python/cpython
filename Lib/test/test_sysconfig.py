@@ -9,6 +9,7 @@ import json
 import textwrap
 from copy import copy
 
+from test import support
 from test.support import (
     captured_stdout,
     is_android,
@@ -455,20 +456,19 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         library = sysconfig.get_config_var('LIBRARY')
         ldlibrary = sysconfig.get_config_var('LDLIBRARY')
         major, minor = sys.version_info[:2]
-        if sys.platform == 'win32':
-            self.assertTrue(library.startswith(f'python{major}{minor}'))
-            self.assertTrue(library.endswith('.dll'))
+        abiflags = sysconfig.get_config_var('ABIFLAGS')
+        if sys.platform.startswith('win'):
+            self.assertEqual(library, f'python{major}{minor}{abiflags}.dll')
             self.assertEqual(library, ldlibrary)
         elif is_apple_mobile:
             framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
             self.assertEqual(ldlibrary, f"{framework}.framework/{framework}")
         else:
-            self.assertTrue(library.startswith(f'libpython{major}.{minor}'))
-            self.assertTrue(library.endswith('.a'))
+            self.assertEqual(library, f'libpython{major}.{minor}{abiflags}.a')
             if sys.platform == 'darwin' and sys._framework:
                 self.skipTest('gh-110824: skip LDLIBRARY test for framework build')
             else:
-                self.assertTrue(ldlibrary.startswith(f'libpython{major}.{minor}'))
+                self.assertStartsWith(ldlibrary, f'libpython{major}.{minor}{abiflags}')
 
     @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
     @requires_subprocess()
@@ -591,6 +591,56 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
     def test_osx_ext_suffix(self):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
+
+    def test_always_set_abiflags(self):
+        self.assertIn('ABIFLAGS', sysconfig.get_config_vars())
+        self.assertIsInstance(sysconfig.get_config_var('ABIFLAGS'), str)
+        self.assertIn('abiflags', sysconfig.get_config_vars())
+        self.assertIsInstance(sysconfig.get_config_var('abiflags'), str)
+
+    def test_always_set_py_debug(self):
+        self.assertIn('Py_DEBUG', sysconfig.get_config_vars())
+        Py_DEBUG = sysconfig.get_config_var('Py_DEBUG')
+        self.assertIn(Py_DEBUG, (0, 1))
+        self.assertEqual(Py_DEBUG, support.Py_DEBUG)
+
+    def test_always_set_py_gil_disabled(self):
+        self.assertIn('Py_GIL_DISABLED', sysconfig.get_config_vars())
+        Py_GIL_DISABLED = sysconfig.get_config_var('Py_GIL_DISABLED')
+        self.assertIn(Py_GIL_DISABLED, (0, 1))
+        self.assertEqual(Py_GIL_DISABLED, support.Py_GIL_DISABLED)
+
+    def test_abiflags(self):
+        # XXX: If this test fails on some platforms, maintainers should add/update
+        # the definition of the ABIFLAGS variable and make this test pass.
+        abiflags = sysconfig.get_config_var('abiflags')
+        ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
+
+        self.assertIsInstance(abiflags, str)
+        self.assertIsInstance(ABIFLAGS, str)
+        self.assertIn(abiflags, ABIFLAGS)
+
+        if os.name == 'nt':
+            self.assertEqual(abiflags, '')
+            # Example values: '', 't', 't_d', '_d'
+            self.assertTrue(ABIFLAGS.count('_d') == 1 or '_' not in ABIFLAGS, ABIFLAGS)
+        else:
+            # Example values: '', 't', 'td', 'd'
+            self.assertNotIn('_', ABIFLAGS)
+        if ABIFLAGS:
+            self.assertTrue(ABIFLAGS.replace('_', '').isalpha(), ABIFLAGS)
+
+        if support.Py_DEBUG:
+            # The 'd' flag should always be the last one.
+            # On Windows, the debug flag is used differently with a underscore prefix.
+            # For example, `python{X}.{Y}td` on Unix and `python{X}.{Y}t_d.exe` on Windows.
+            self.assertEndsWith(ABIFLAGS, 'd')
+        else:
+            self.assertNotIn('d', ABIFLAGS)
+        if support.Py_GIL_DISABLED:
+            self.assertIn('t', ABIFLAGS)
+        else:
+            self.assertNotIn('t', ABIFLAGS)
 
     @requires_subprocess()
     def test_makefile_overwrites_config_vars(self):
