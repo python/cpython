@@ -42,14 +42,14 @@ import os
 import sys
 
 ROOT = os.getcwd()
-TOOL = os.path.join(ROOT, 'Tools/cpuinfo/cpuid_features_gen.py')
+TOOL = os.path.join(ROOT, "Tools/cpuinfo/cpuid_features_gen.py")
 TOOL = os.path.realpath(TOOL)
 
 if not os.path.exists(TOOL):
     raise FileNotFoundError(TOOL)
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(TOOL)))
-module = importlib.import_module('cpuinfo.cpuid_features_gen')
+module = importlib.import_module("cpuinfo.cpuid_features_gen")
 print(module.generate_cpuid_features_enum("py_cpuid_feature_mask"))
 [python start generated code]*/
 typedef enum py_cpuid_feature_mask {
@@ -96,7 +96,7 @@ typedef enum py_cpuid_feature_mask {
     Py_CPUID_MASK_EDX_L7S1_AVX_NE_CONVERT       = 0x00000020,    // bit = 5
     Py_CPUID_MASK_EDX_L7S1_AVX_VNNI_INT16       = 0x00000400,    // bit = 10
 } py_cpuid_feature_mask;
-/*[python end generated code: output=c4460242e465fa91 input=a07f431329efd11e]*/
+/*[python end generated code: output=c4460242e465fa91 input=61d2b5f1bc368b94]*/
 // fmt: on
 
 #endif // !Py_INTERNAL_CPUINFO_CPUID_FEATURES_H
