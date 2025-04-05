@@ -21,8 +21,8 @@ import unittest.mock
 import weakref
 import typing
 
-c_types = import_fresh_module("types", fresh=["_types"])
-py_types = import_fresh_module("types", blocked=["_types"])
+c_types = import_fresh_module('types', fresh=['_types'])
+py_types = import_fresh_module('types', blocked=['_types'])
 
 T = typing.TypeVar("T")
 
