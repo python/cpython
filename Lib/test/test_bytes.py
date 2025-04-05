@@ -755,7 +755,9 @@ class BaseBytesTest:
             ('%X format: an integer is required, not complex', b'%X', 2j),
             ('%o format: an integer is required, not complex', b'%o', 1j),
             ('%u format: a real number is required, not complex', b'%u', 3j),
-            ('%i format: a real number is required, not complex', b'%i', 2j),
+            # See https://github.com/python/cpython/issues/130928 as for why
+            # the exception message contains '%d' instead of '%i'.
+            ('%d format: a real number is required, not complex', b'%i', 2j),
             ('%d format: a real number is required, not complex', b'%d', 2j),
             (
                 r'%c requires an integer in range\(256\)'
