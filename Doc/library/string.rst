@@ -316,7 +316,7 @@ A general convention is that an empty format specification produces
 the same result as if you had called :func:`str` on the value. A
 non-empty format specification typically modifies the result.
 
-The general form of a *standard format specifier* is:
+The general form of  a *standard format specifier* is:
 
 .. productionlist:: format-spec
    format_spec: [`options`][`width`][`grouping`]["." `precision`][`type`]
