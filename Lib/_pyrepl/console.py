@@ -28,7 +28,6 @@ import linecache
 from dataclasses import dataclass, field
 import os.path
 import sys
-import warnings
 
 
 TYPE_CHECKING = False
@@ -189,19 +188,16 @@ class InteractiveColoredConsole(code.InteractiveConsole):
 
     def runsource(self, source, filename="<input>", symbol="single"):
         try:
-            with warnings.catch_warnings(record=True) as all_warnings:
-                warnings.simplefilter("always")
-                tree = self.compile.compiler(
-                    source,
-                    filename,
-                    "exec",
-                    ast.PyCF_ONLY_AST,
-                    incomplete_input=False,
-                )
+            tree = self.compile.compiler(
+                source,
+                filename,
+                "exec",
+                ast.PyCF_ONLY_AST,
+                incomplete_input=False,
+            )
         except (SyntaxError, OverflowError, ValueError):
             self.showsyntaxerror(filename, source=source)
             return False
-        _replay_warnings(all_warnings)
         if tree.body:
             *_, last_stmt = tree.body
         for stmt in tree.body:
@@ -209,9 +205,7 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             the_symbol = symbol if stmt is last_stmt else "exec"
             item = wrapper([stmt])
             try:
-                with warnings.catch_warnings(record=True) as stmt_warnings:
-                    warnings.simplefilter("always")
-                    code = self.compile.compiler(item, filename, the_symbol)
+                code = self.compile.compiler(item, filename, the_symbol)
                 linecache._register_code(code, source, filename)
             except SyntaxError as e:
                 if e.args[0] == "'await' outside function":
@@ -226,16 +220,6 @@ class InteractiveColoredConsole(code.InteractiveConsole):
                 self.showsyntaxerror(filename, source=source)
                 return False
 
-            # Only emit new warnings and throw away those
-            # which were already emitted when the source
-            # was compiled to AST.
-            # This prevents emitting duplicate warnings which are
-            # raised in the AST optimizer.
-            all_warnings = {str(w) for w in all_warnings}
-            new_warnings = [w for w in stmt_warnings
-                            if str(w) not in all_warnings]
-            _replay_warnings(new_warnings)
-
             if code is None:
                 return True
 
@@ -243,14 +227,3 @@ class InteractiveColoredConsole(code.InteractiveConsole):
             if result is self.STATEMENT_FAILED:
                 break
         return False
-
-
-def _replay_warnings(ws):
-    for w in ws:
-        warnings.warn_explicit(
-            message=w.message,
-            category=w.category,
-            filename=w.filename,
-            lineno=w.lineno,
-            source=w.source,
-        )
