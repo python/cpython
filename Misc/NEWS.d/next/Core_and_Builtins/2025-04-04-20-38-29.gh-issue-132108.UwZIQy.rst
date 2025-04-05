@@ -1,0 +1,2 @@
+Speed up :meth:`int.from_bytes` when passed a bytes-like object such as a
+:class:`bytearray`.

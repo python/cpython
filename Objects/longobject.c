@@ -6439,6 +6439,7 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
 {
     int little_endian;
     PyObject *long_obj, *bytes;
+    Py_buffer view;
 
     if (byteorder == NULL)
         little_endian = 0;
@@ -6452,14 +6453,26 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
         return NULL;
     }
 
-    bytes = PyObject_Bytes(bytes_obj);
-    if (bytes == NULL)
-        return NULL;
-
-    long_obj = _PyLong_FromByteArray(
-        (unsigned char *)PyBytes_AS_STRING(bytes), Py_SIZE(bytes),
-        little_endian, is_signed);
-    Py_DECREF(bytes);
+    /* Use buffer protocol to avoid copies. */
+    if (PyObject_CheckBuffer(bytes_obj)) {
+        if (PyObject_GetBuffer(bytes_obj, &view, PyBUF_SIMPLE) != 0) {
+            return NULL;
+        }
+        long_obj = _PyLong_FromByteArray(view.buf, view.len, little_endian,
+            is_signed);
+        PyBuffer_Release(&view);
+    }
+    else {
+        /* fallback: Construct a bytes then convert. */
+        bytes = PyObject_Bytes(bytes_obj);
+        if (bytes == NULL) {
+            return NULL;
+        }
+        long_obj = _PyLong_FromByteArray(
+            (unsigned char *)PyBytes_AS_STRING(bytes), Py_SIZE(bytes),
+            little_endian, is_signed);
+        Py_DECREF(bytes);
+    }
 
     if (long_obj != NULL && type != &PyLong_Type) {
         Py_SETREF(long_obj, PyObject_CallOneArg((PyObject *)type, long_obj));
