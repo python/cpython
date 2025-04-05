@@ -2546,4 +2546,5 @@ class TestColorized(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    setup.setup_process()
     unittest.main()

@@ -260,4 +260,12 @@ class ReadmoduleTests(TestCase):
 
 
 if __name__ == "__main__":
+    import importlib.util
+
+    # Adding the __spec__ attribute to the __main__ module
+    if getattr(sys.modules["__main__"], "__spec__", None) is None:
+        sys.modules["__main__"].__spec__ = importlib.machinery.ModuleSpec(
+            name="__main__", loader=None, origin="builtin"
+        )
+
     unittest_main()
