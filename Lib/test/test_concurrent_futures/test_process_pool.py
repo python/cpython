@@ -337,6 +337,20 @@ class ProcessPoolExecutorTest(ExecutorTest):
                 if not worker_process.is_alive():
                     break
 
+    class MyException(Exception):
+        def __bool__(self):
+            return False
+
+    @classmethod
+    def raiser(cls):
+        raise cls.MyException("foo")
+
+    def test_swallows_falsy_exceptions(self):
+        # fix gh-132063 issue
+        with self.assertRaisesRegex(self.MyException, "foo"):
+            with self.executor_type(max_workers=1) as executor:
+                executor.submit(self.raiser).result()
+
 
 create_executor_tests(globals(), ProcessPoolExecutorTest,
                       executor_mixins=(ProcessPoolForkMixin,
