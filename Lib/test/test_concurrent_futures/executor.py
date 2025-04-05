@@ -1,3 +1,4 @@
+import gc
 import itertools
 import threading
 import time
@@ -5,7 +6,7 @@ import weakref
 from concurrent import futures
 from operator import add
 from test import support
-from test.support import Py_GIL_DISABLED
+from test.support import Py_GIL_DISABLED, disable_gc
 
 
 def mul(x, y):
@@ -51,12 +52,43 @@ class ExecutorTest:
                 list(self.executor.map(pow, range(10), range(10), chunksize=3)),
                 list(map(pow, range(10), range(10))))
 
+    @disable_gc()
     def test_map_exception(self):
         i = self.executor.map(divmod, [1, 1, 1, 1], [2, 3, 0, 5])
         self.assertEqual(i.__next__(), (0, 1))
         self.assertEqual(i.__next__(), (0, 1))
-        with self.assertRaises(ZeroDivisionError):
-            i.__next__()
+
+        error = None
+        try:
+            next(i)
+        except Exception as e:
+            error = e
+        self.assertTrue(
+            isinstance(error, ZeroDivisionError),
+            msg="next should raise a ZeroDivisionError",
+        )
+
+        # TODO: remove only for debugging
+        self.assertFalse(
+            [
+                gc.get_referrers(y)
+                for x in gc.get_referrers(error)
+                for y in gc.get_referrers(x)
+            ],
+            msg="the exception should not have any referrers",
+        )
+
+        tb = error.__traceback__
+        while (tb := tb.tb_next):
+            self.assertFalse(
+                {
+                    var: val
+                    for var, val in tb.tb_frame.f_locals.items()
+                    if isinstance(val, Exception)
+                    and var in val.__traceback__.tb_frame.f_locals
+                },
+                msg=f"the exception's traceback should not contain an exception that captures itself in its own traceback",
+            )
 
     @support.requires_resource('walltime')
     def test_map_timeout(self):
@@ -140,7 +172,7 @@ class ExecutorTest:
         self.assertEqual(
             next(ints),
             buffersize,
-            msg="should have fetched only `buffersize` elements from `ints`.",
+            msg="should have fetched only `buffersize` elements from `ints`",
         )
 
     def test_shutdown_race_issue12456(self):
