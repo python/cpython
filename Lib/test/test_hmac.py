@@ -4,6 +4,7 @@ import hmac
 import hashlib
 import random
 import test.support.hashlib_helper as hashlib_helper
+import types
 import unittest
 import unittest.mock
 import warnings
@@ -47,7 +48,7 @@ class PyModuleMixin(ModuleMixin):
         cls.hmac = import_fresh_module('hmac', blocked=['_hashlib', '_hmac'])
 
 
-@unittest.skip("no builtin implementation for HMAC for now")
+@hashlib_helper.requires_builtin_hmac()
 class BuiltinModuleMixin(ModuleMixin):
     """Built-in HACL* implementation of HMAC."""
 
@@ -128,6 +129,16 @@ class ThroughOpenSSLAPIMixin(CreatorMixin, DigestMixin):
         return _hashlib.hmac_digest(key, msg, digest=digestmod)
 
 
+class ThroughBuiltinAPIMixin(BuiltinModuleMixin, CreatorMixin, DigestMixin):
+    """Mixin delegating to _hmac.new() and _hmac.compute_digest()."""
+
+    def hmac_new(self, key, msg=None, digestmod=None):
+        return self.hmac.new(key, msg, digestmod=digestmod)
+
+    def hmac_digest(self, key, msg=None, digestmod=None):
+        return self.hmac.compute_digest(key, msg, digest=digestmod)
+
+
 class ObjectCheckerMixin:
     """Mixin for checking HMAC objects (pure Python, OpenSSL or built-in)."""
 
@@ -205,6 +216,10 @@ class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
                 self.assert_hmac_hexdigest(
                     key, msg, hexdigest, digestmod, digest_size
                 )
+                self.assert_hmac_common_cases(
+                    key, msg, hexdigest, digestmod,
+                    hashname, digest_size, block_size
+                )
                 self.assert_hmac_extra_cases(
                     key, msg, hexdigest, digestmod,
                     hashname, digest_size, block_size
@@ -224,7 +239,7 @@ class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
 
         This test uses the `hmac_new()` method to create HMAC objects.
         """
-        self._check_hmac_new(
+        self.check_hmac_new(
             key, msg, hexdigest, hashname, digest_size, block_size,
             hmac_new_func=self.hmac_new,
             hmac_new_kwds={'digestmod': digestmod},
@@ -237,15 +252,15 @@ class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
 
         This test uses the `hmac_new_by_name()` method to create HMAC objects.
         """
-        self._check_hmac_new(
+        self.check_hmac_new(
             key, msg, hexdigest, hashname, digest_size, block_size,
             hmac_new_func=self.hmac_new_by_name,
             hmac_new_kwds={'hashname': hashname},
         )
 
-    def _check_hmac_new(
+    def check_hmac_new(
         self, key, msg, hexdigest, hashname, digest_size, block_size,
-        hmac_new_func, hmac_new_kwds,
+        hmac_new_func, hmac_new_kwds=types.MappingProxyType({}),
     ):
         """Check that HMAC(key, msg) == digest.
 
@@ -272,7 +287,7 @@ class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
         self, key, msg, hexdigest, digestmod, digest_size,
     ):
         """Check a HMAC digest computed by hmac_digest()."""
-        self._check_hmac_hexdigest(
+        self.check_hmac_hexdigest(
             key, msg, hexdigest, digest_size,
             hmac_digest_func=self.hmac_digest,
             hmac_digest_kwds={'digestmod': digestmod},
@@ -283,29 +298,43 @@ class AssertersMixin(CreatorMixin, DigestMixin, ObjectCheckerMixin):
     ):
         """Check a HMAC digest computed by hmac_digest_by_name()."""
         self.assertIsInstance(hashname, str)
-        self._check_hmac_hexdigest(
+        self.check_hmac_hexdigest(
             key, msg, hexdigest, digest_size,
             hmac_digest_func=self.hmac_digest_by_name,
             hmac_digest_kwds={'hashname': hashname},
         )
 
-    def _check_hmac_hexdigest(
+    def check_hmac_hexdigest(
         self, key, msg, hexdigest, digest_size,
-        hmac_digest_func, hmac_digest_kwds,
+        hmac_digest_func, hmac_digest_kwds=types.MappingProxyType({}),
     ):
+        """Check and return a HMAC digest computed by hmac_digest_func().
+
+        This HMAC digest is computed by:
+
+            hmac_digest_func(key, msg, **hmac_digest_kwds)
+
+        This is typically useful for checking one-shot HMAC functions.
+        """
         d = hmac_digest_func(key, msg, **hmac_digest_kwds)
         self.assertEqual(len(d), digest_size)
         self.assertEqual(d, binascii.unhexlify(hexdigest))
+        return d
 
-    def assert_hmac_extra_cases(
+    def assert_hmac_common_cases(
         self, key, msg, hexdigest, digestmod, hashname, digest_size, block_size
     ):
-        """Extra tests that can be added in subclasses."""
+        """Common tests executed by all subclasses."""
         h1 = self.hmac_new_by_name(key, hashname=hashname)
         h2 = h1.copy()
         h2.update(b"test update should not affect original")
         h1.update(msg)
         self.check_object(h1, hexdigest, hashname, digest_size, block_size)
+
+    def assert_hmac_extra_cases(
+        self, key, msg, hexdigest, digestmod, hashname, digest_size, block_size
+    ):
+        """Extra tests that can be added in subclasses."""
 
 
 class PyAssertersMixin(PyModuleMixin, AssertersMixin):
@@ -313,10 +342,6 @@ class PyAssertersMixin(PyModuleMixin, AssertersMixin):
     def assert_hmac_extra_cases(
         self, key, msg, hexdigest, digestmod, hashname, digest_size, block_size
     ):
-        super().assert_hmac_extra_cases(
-            key, msg, hexdigest, digestmod, hashname, digest_size, block_size
-        )
-
         h = self.hmac.HMAC.__new__(self.hmac.HMAC)
         h._init_old(key, msg, digestmod=digestmod)
         self.check_object(h, hexdigest, hashname, digest_size, block_size)
@@ -333,6 +358,10 @@ class OpenSSLAssertersMixin(ThroughOpenSSLAPIMixin, AssertersMixin):
         self.assertIsInstance(hashname, str)
         openssl_func = getattr(_hashlib, f"openssl_{hashname}")
         return self.hmac_digest(key, msg, digestmod=openssl_func)
+
+
+class BuiltinAssertersMixin(ThroughBuiltinAPIMixin, AssertersMixin):
+    pass
 
 
 class HashFunctionsTrait:
@@ -719,6 +748,24 @@ class OpenSSLRFCTestCase(OpenSSLAssertersMixin,
     """
 
 
+class BuiltinRFCTestCase(BuiltinAssertersMixin,
+                         WithNamedHashFunctions, RFCTestCaseMixin,
+                         unittest.TestCase):
+    """Built-in HACL* implementation of HMAC.
+
+    The underlying hash functions are also HACL*-based.
+    """
+
+    def assert_hmac_extra_cases(
+        self, key, msg, hexdigest, digestmod, hashname, digest_size, block_size
+    ):
+        # assert one-shot HMAC at the same time
+        with self.subTest(key=key, msg=msg, hashname=hashname):
+            func = getattr(self.hmac, f'compute_{hashname}')
+            self.assertTrue(callable(func))
+            self.check_hmac_hexdigest(key, msg, hexdigest, digest_size, func)
+
+
 # TODO(picnixz): once we have a HACL* HMAC, we should also test the Python
 # implementation of HMAC with a HACL*-based hash function. For now, we only
 # test it partially via the '_sha2' module, but for completeness we could
@@ -726,7 +773,7 @@ class OpenSSLRFCTestCase(OpenSSLAssertersMixin,
 
 
 class DigestModTestCaseMixin(CreatorMixin, DigestMixin):
-    """Tests for the 'digestmod' parameter."""
+    """Tests for the 'digestmod' parameter for hmac_new() and hmac_digest()."""
 
     def assert_raises_missing_digestmod(self):
         """A context manager catching errors when a digestmod is missing."""
@@ -869,11 +916,15 @@ class PyModuleConstructorTestCase(ThroughModuleAPIMixin, PyConstructorBaseMixin,
 class ExtensionConstructorTestCaseMixin(DigestModTestCaseMixin,
                                         ConstructorTestCaseMixin):
 
-    # The underlying C class.
-    obj_type = None
+    @property
+    def obj_type(self):
+        """The underlying (non-instantiable) C class."""
+        raise NotImplementedError
 
-    # The exact exception class raised when a 'digestmod' parameter is invalid.
-    exc_type = None
+    @property
+    def exc_type(self):
+        """The exact exception class raised upon invalid 'digestmod' values."""
+        raise NotImplementedError
 
     def test_internal_types(self):
         # internal C types are immutable and cannot be instantiated
@@ -915,6 +966,24 @@ class OpenSSLConstructorTestCase(ThroughOpenSSLAPIMixin,
     def test_hmac_digest_digestmod_parameter(self):
         # TODO(picnixz): remove default arguments in _hashlib.hmac_digest()
         # since the return value is not a HMAC object but a bytes object.
+        for value in [object, 'unknown', 1234, None]:
+            with self.subTest(value=value), self.assert_digestmod_error():
+                self.hmac_digest(b'key', b'msg', value)
+
+
+class BuiltinConstructorTestCase(ThroughBuiltinAPIMixin,
+                                 ExtensionConstructorTestCaseMixin,
+                                 unittest.TestCase):
+
+    @property
+    def obj_type(self):
+        return self.hmac.HMAC
+
+    @property
+    def exc_type(self):
+        return self.hmac.UnknownHashError
+
+    def test_hmac_digest_digestmod_parameter(self):
         for value in [object, 'unknown', 1234, None]:
             with self.subTest(value=value), self.assert_digestmod_error():
                 self.hmac_digest(b'key', b'msg', value)
@@ -975,6 +1044,20 @@ class OpenSSLSanityTestCase(ThroughOpenSSLAPIMixin, SanityTestCaseMixin,
         self.assertStartsWith(repr(h), f"<{self.digestname} HMAC object @")
 
 
+class BuiltinSanityTestCase(ThroughBuiltinAPIMixin, SanityTestCaseMixin,
+                            unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.hmac_class = cls.hmac.HMAC
+        cls.digestname = 'sha256'
+
+    def test_repr(self):
+        h = self.hmac_new(b"my secret key", digestmod=self.digestname)
+        self.assertStartsWith(repr(h), f"<{self.digestname} HMAC object @")
+
+
 class UpdateTestCaseMixin:
     """Tests for the update() method (streaming HMAC)."""
 
@@ -1006,7 +1089,7 @@ class PyUpdateTestCase(UpdateTestCaseMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.hmac = import_fresh_module('hmac', blocked=['_hashlib'])
+        cls.hmac = import_fresh_module('hmac', blocked=['_hashlib', '_hmac'])
 
     def HMAC(self, key, msg=None):
         return self.hmac.HMAC(key, msg, digestmod='sha256')
@@ -1016,7 +1099,16 @@ class PyUpdateTestCase(UpdateTestCaseMixin, unittest.TestCase):
 class OpenSSLUpdateTestCase(UpdateTestCaseMixin, unittest.TestCase):
 
     def HMAC(self, key, msg=None):
-        return hmac.new(key, msg, digestmod='sha256')
+        return _hashlib.hmac_new(key, msg, digestmod='sha256')
+
+
+class BuiltinUpdateTestCase(BuiltinModuleMixin,
+                            UpdateTestCaseMixin, unittest.TestCase):
+
+    def HMAC(self, key, msg=None):
+        # Even if Python does not build '_sha2', the HACL* sources
+        # are still built, making it possible to use SHA-2 hashes.
+        return self.hmac.new(key, msg, digestmod='sha256')
 
 
 class CopyBaseTestCase:
@@ -1107,7 +1199,16 @@ class ExtensionCopyTestCase(CopyBaseTestCase):
 class OpenSSLCopyTestCase(ExtensionCopyTestCase, unittest.TestCase):
 
     def init(self, h):
-        h._init_hmac(b"key", b"msg", digestmod="sha256")
+        h._init_openssl_hmac(b"key", b"msg", digestmod="sha256")
+
+
+@hashlib_helper.requires_builtin_hmac()
+class BuiltinCopyTestCase(ExtensionCopyTestCase, unittest.TestCase):
+
+    def init(self, h):
+        # Even if Python does not build '_sha2', the HACL* sources
+        # are still built, making it possible to use SHA-2 hashes.
+        h._init_builtin_hmac(b"key", b"msg", digestmod="sha256")
 
 
 class CompareDigestMixin:

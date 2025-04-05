@@ -204,12 +204,6 @@ Classes
       means may not have any information about their scope, so passing
       arguments to this method may be necessary to evaluate them successfully.
 
-      .. important::
-
-         Once a :class:`~ForwardRef` instance has been evaluated, it caches
-         the evaluated value, and future calls to :meth:`evaluate` will return
-         the cached value, regardless of the parameters passed in.
-
    .. versionadded:: 3.14
 
 

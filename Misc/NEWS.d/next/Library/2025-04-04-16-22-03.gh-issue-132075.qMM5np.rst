@@ -1,0 +1,2 @@
+Fix possible use of :mod:`socket` address structures with uninitialized
+members. Now all structure members are initialized with zeroes by default.

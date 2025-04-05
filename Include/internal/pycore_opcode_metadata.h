@@ -234,7 +234,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case INSTRUMENTED_END_SEND:
             return 2;
         case INSTRUMENTED_FOR_ITER:
-            return 0;
+            return 1;
         case INSTRUMENTED_INSTRUCTION:
             return 0;
         case INSTRUMENTED_JUMP_BACKWARD:
@@ -250,13 +250,13 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case INSTRUMENTED_POP_ITER:
             return 1;
         case INSTRUMENTED_POP_JUMP_IF_FALSE:
-            return 0;
+            return 1;
         case INSTRUMENTED_POP_JUMP_IF_NONE:
-            return 0;
+            return 1;
         case INSTRUMENTED_POP_JUMP_IF_NOT_NONE:
-            return 0;
+            return 1;
         case INSTRUMENTED_POP_JUMP_IF_TRUE:
-            return 0;
+            return 1;
         case INSTRUMENTED_RESUME:
             return 0;
         case INSTRUMENTED_RETURN_VALUE:
@@ -713,7 +713,7 @@ int _PyOpcode_num_pushed(int opcode, int oparg)  {
         case INSTRUMENTED_END_SEND:
             return 1;
         case INSTRUMENTED_FOR_ITER:
-            return 0;
+            return 2;
         case INSTRUMENTED_INSTRUCTION:
             return 0;
         case INSTRUMENTED_JUMP_BACKWARD:
