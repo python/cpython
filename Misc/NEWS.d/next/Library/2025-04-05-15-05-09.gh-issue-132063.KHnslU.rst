@@ -1,0 +1,1 @@
+Fix tests of exception attribute in `:method:process_result_item`of `:class:_ExecutorManagerThread` and `:method:__get_result` of `:class:Future` in module `:lib:concurrent`.
