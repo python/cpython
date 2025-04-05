@@ -4300,12 +4300,14 @@ dummy_func(
                 arguments--;
                 total_args++;
             }
+            EXIT_IF(total_args == 0);
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
             PyMethodDef *meth = method->d_method;
             EXIT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS));
             PyTypeObject *d_type = method->d_common.d_type;
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
+            assert(self != NULL);
             EXIT_IF(!Py_IS_TYPE(self, d_type));
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
@@ -4378,12 +4380,14 @@ dummy_func(
                 arguments--;
                 total_args++;
             }
+            EXIT_IF(total_args == 0);
             PyMethodDescrObject *method = (PyMethodDescrObject *)callable_o;
             /* Builtin METH_FASTCALL methods, without keywords */
             EXIT_IF(!Py_IS_TYPE(method, &PyMethodDescr_Type));
             PyMethodDef *meth = method->d_method;
             EXIT_IF(meth->ml_flags != METH_FASTCALL);
             PyObject *self = PyStackRef_AsPyObjectBorrow(arguments[0]);
+            assert(self != NULL);
             EXIT_IF(!Py_IS_TYPE(self, method->d_common.d_type));
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;

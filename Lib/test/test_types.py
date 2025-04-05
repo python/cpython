@@ -4,6 +4,7 @@ from test.support import (
     run_with_locale, cpython_only, no_rerun,
     MISSING_C_DOCSTRINGS, EqualToForwardRef,
 )
+from test.support.script_helper import assert_python_ok
 import collections.abc
 from collections import namedtuple, UserDict
 import copy
@@ -645,6 +646,25 @@ class TypesTests(unittest.TestCase):
 
     def test_capsule_type(self):
         self.assertIsInstance(_datetime.datetime_CAPI, types.CapsuleType)
+
+    def test_call_unbound_crash(self):
+        # GH-131998: The specialized instruction would get tricked into dereferencing
+        # a bound "self" that didn't exist if subsequently called unbound.
+        code = """if True:
+        # The optimizer is finicky, and the easiest way (that I know of)
+        # to get it to reproduce in CI is by importing a Python module at runtime.
+        import glob
+
+        def call(part):
+            part.pop()
+
+        call(['a'])
+        try:
+            call(list)
+        except TypeError:
+            pass
+        """
+        assert_python_ok("-c", code)
 
 
 class UnionTests(unittest.TestCase):
