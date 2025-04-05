@@ -4,6 +4,8 @@ from test.support import (
     run_with_locale, cpython_only, no_rerun,
     MISSING_C_DOCSTRINGS,
 )
+from test.support.import_helper import import_fresh_module
+
 import collections.abc
 from collections import namedtuple, UserDict
 import copy
@@ -33,6 +35,17 @@ def clear_typing_caches():
 
 
 class TypesTests(unittest.TestCase):
+
+    def test_names(self):
+        c_only_names = {'CapsuleType'}
+        ignored = {'new_class', 'resolve_bases', 'prepare_class',
+                   'get_original_bases', 'DynamicClassAttribute', 'coroutine'}
+
+        c_types = import_fresh_module('types', fresh=['_types'])
+        py_types = import_fresh_module('types', blocked=['_types'])
+        for name in c_types.__all__:
+            if name not in c_only_names | ignored:
+                self.assertIs(getattr(c_types, name), getattr(py_types, name))
 
     def test_truth_values(self):
         if None: self.fail('None is true instead of false')
