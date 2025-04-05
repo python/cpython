@@ -319,12 +319,12 @@ non-empty format specification typically modifies the result.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: format-spec
-   format_spec: [[`fill`]`align`][`sign`]["z"]["#"]["0"][`width`][`grouping_option`]["." `precision`][`type`]
+   format_spec: [[`fill`]`align`][`sign`]["z"]["#"]["0"][`width`][`grouping`]["." `precision`][`type`]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
    width: `~python-grammar:digit`+
-   grouping_option: "_" | ","
+   grouping: "," | "_"
    precision: `~python-grammar:digit`+
    type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
