@@ -767,6 +767,7 @@ class Cookie:
                  discard,
                  comment,
                  comment_url,
+                 samesite,
                  rest,
                  rfc2109=False,
                  ):
@@ -775,6 +776,8 @@ class Cookie:
         if expires is not None: expires = int(float(expires))
         if port is None and port_specified is True:
             raise ValueError("if port is None, port_specified must be false")
+        if samesite not in ("Lax", "Strict", "None"):
+            raise ValueError("Samesite attribute must be either 'Lax', 'Strict' or 'None'")
 
         self.version = version
         self.name = name
@@ -796,6 +799,7 @@ class Cookie:
         self.discard = discard
         self.comment = comment
         self.comment_url = comment_url
+        self.samesite = samesite
         self.rfc2109 = rfc2109
 
         self._rest = copy.copy(rest)
@@ -829,7 +833,7 @@ class Cookie:
                      "port", "port_specified",
                      "domain", "domain_specified", "domain_initial_dot",
                      "path", "path_specified",
-                     "secure", "expires", "discard", "comment", "comment_url",
+                     "secure", "expires", "discard", "comment", "comment_url", "samesite"
                      ):
             attr = getattr(self, name)
             args.append("%s=%s" % (name, repr(attr)))
@@ -1405,7 +1409,7 @@ class CookieJar:
         value_attrs = ("version",
                        "expires", "max-age",
                        "domain", "path", "port",
-                       "comment", "commenturl")
+                       "comment", "commenturl", "samesite")
 
         for cookie_attrs in attrs_set:
             name, value = cookie_attrs[0]
@@ -1443,6 +1447,23 @@ class CookieJar:
                         break
                     # RFC 2965 section 3.3.3
                     v = v.lower()
+
+                if k == "samesite":
+
+                    if v is None:
+                        _debug("   missing value for samesite attribute")
+                        bad_cookie = True
+                        break
+                    lv = v.lower()
+                    if lv not in ('lax', 'strict', 'none'):
+                        continue
+                    if lv == "lax":
+                        v = "Lax"
+                    elif lv == 'Strict':
+                        v = "Strict"
+                    else:
+                        v = "None"
+
                 if k == "expires":
                     if max_age_set:
                         # Prefer max-age to expires (like Mozilla)
@@ -1495,6 +1516,7 @@ class CookieJar:
 
         # set the easy defaults
         version = standard.get("version", None)
+        samesite = standard.get("samesite", "Lax")
         if version is not None:
             try:
                 version = int(version)
@@ -1573,6 +1595,7 @@ class CookieJar:
                       discard,
                       comment,
                       comment_url,
+                      samesite,
                       rest)
 
     def _cookies_from_attrs_set(self, attrs_set, request):
@@ -1847,6 +1870,7 @@ def lwp_cookie_str(cookie):
     if cookie.discard: h.append(("discard", None))
     if cookie.comment: h.append(("comment", cookie.comment))
     if cookie.comment_url: h.append(("commenturl", cookie.comment_url))
+    if cookie.samesite: h.append(("samesite", cookie.samesite))
 
     keys = sorted(cookie._rest.keys())
     for k in keys:
@@ -1915,7 +1939,7 @@ class LWPCookieJar(FileCookieJar):
         value_attrs = ("version",
                        "port", "path", "domain",
                        "expires",
-                       "comment", "commenturl")
+                       "comment", "commenturl", "samesite")
 
         try:
             while (line := f.readline()) != "":
@@ -1963,6 +1987,7 @@ class LWPCookieJar(FileCookieJar):
                                discard,
                                h("comment"),
                                h("commenturl"),
+                               h("samesite"),
                                rest)
                     if not ignore_discard and c.discard:
                         continue
@@ -2036,7 +2061,7 @@ class MozillaCookieJar(FileCookieJar):
                     line.strip() == ""):
                     continue
 
-                domain, domain_specified, path, secure, expires, name, value = \
+                domain, domain_specified, path, secure, expires, name, value, samesite = \
                         line.split("\t")
                 secure = (secure == "TRUE")
                 domain_specified = (domain_specified == "TRUE")
@@ -2054,7 +2079,6 @@ class MozillaCookieJar(FileCookieJar):
                 if expires == "":
                     expires = None
                     discard = True
-
                 # assume path_specified is false
                 c = Cookie(0, name, value,
                            None, False,
@@ -2065,6 +2089,7 @@ class MozillaCookieJar(FileCookieJar):
                            discard,
                            None,
                            None,
+                           samesite,
                            rest)
                 if not ignore_discard and c.discard:
                     continue
@@ -2117,5 +2142,5 @@ class MozillaCookieJar(FileCookieJar):
                     domain = HTTPONLY_PREFIX + domain
                 f.write(
                     "\t".join([domain, initial_dot, cookie.path,
-                               secure, expires, name, value])+
+                               secure, expires, name, value, cookie.samesite])+
                     "\n")
