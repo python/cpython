@@ -319,8 +319,9 @@ class ListTest(list_tests.CommonTest):
         import_module("_testcapi")
         code = textwrap.dedent("""
         import _testcapi, sys
-        # Prime the freelist
-        l = [None]
+        # Prime the freelist, size needs to larger than the small list freelists
+        l = [None, None, None, None, None, None, None, None, None, None, None,
+             None, None, None, None, None, None, None, None, None,]
         del l
         _testcapi.set_nomemory(0)
         l = [None]
