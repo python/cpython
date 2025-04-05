@@ -801,7 +801,6 @@ class EnvironmentVarGuard(collections.abc.MutableMapping):
                 else:
                     self._environ[k] = v
             self._changed.clear()
-            os.environ = self._environ
 
 try:
     if support.MS_WINDOWS:
