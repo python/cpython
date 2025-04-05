@@ -1,0 +1,1 @@
+:func:`inspect.getdoc` now correctly returns an inherited docstring on :class:`~functools.cached_property` objects if none is given in a subclass.
