@@ -1154,7 +1154,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                     "CGI script is not executable (%r)" % scriptname)
                 return
 
-        # Reference: https://web.archive.org/web/20090420032228/http://hoohoo.ncsa.uiuc.edu/cgi/env.html
+        # Reference: https://www6.uniovi.es/~antonio/ncsa_httpd/cgi/env.html
         # XXX Much of the following could be prepared ahead of time!
         env = copy.deepcopy(os.environ)
         env['SERVER_SOFTWARE'] = self.version_string()
