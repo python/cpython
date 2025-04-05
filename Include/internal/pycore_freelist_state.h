@@ -18,6 +18,8 @@ extern "C" {
 #  define Py_floats_MAXFREELIST 100
 #  define Py_ints_MAXFREELIST 100
 #  define Py_slices_MAXFREELIST 1
+#  define Py_ranges_MAXFREELIST 6
+#  define Py_range_iters_MAXFREELIST 6
 #  define Py_contexts_MAXFREELIST 255
 #  define Py_async_gens_MAXFREELIST 80
 #  define Py_async_gen_asends_MAXFREELIST 80
@@ -49,6 +51,8 @@ struct _Py_freelists {
     struct _Py_freelist dicts;
     struct _Py_freelist dictkeys;
     struct _Py_freelist slices;
+    struct _Py_freelist ranges;
+    struct _Py_freelist range_iters;
     struct _Py_freelist contexts;
     struct _Py_freelist async_gens;
     struct _Py_freelist async_gen_asends;
