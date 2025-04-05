@@ -620,6 +620,12 @@ given type object has a specified feature.
 #define Py_TPFLAGS_HAVE_FINALIZE (1UL << 0)
 #define Py_TPFLAGS_HAVE_VERSION_TAG   (1UL << 18)
 
+// Flag values for ob_flags (16 bits available, if SIZEOF_VOID_P > 4).
+#define _Py_IMMORTAL_FLAGS (1 << 0)
+#define _Py_STATICALLY_ALLOCATED_FLAG (1 << 2)
+#if defined(Py_GIL_DISABLED) && defined(Py_DEBUG)
+#define _Py_TYPE_REVEALED_FLAG (1 << 3)
+#endif
 
 #define Py_CONSTANT_NONE 0
 #define Py_CONSTANT_FALSE 1
@@ -776,11 +782,7 @@ PyType_HasFeature(PyTypeObject *type, unsigned long feature)
     // PyTypeObject is opaque in the limited C API
     flags = PyType_GetFlags(type);
 #else
-#   ifdef Py_GIL_DISABLED
-        flags = _Py_atomic_load_ulong_relaxed(&type->tp_flags);
-#   else
-        flags = type->tp_flags;
-#   endif
+    flags = type->tp_flags;
 #endif
     return ((flags & feature) != 0);
 }

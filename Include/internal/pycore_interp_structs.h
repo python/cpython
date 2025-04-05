@@ -566,6 +566,10 @@ struct types_state {
         managed_static_type_state initialized[_Py_MAX_MANAGED_STATIC_EXT_TYPES];
     } for_extensions;
     PyMutex mutex;
+#ifdef Py_GIL_DISABLED
+    // used to check correct usage of the above mutex
+    unsigned long long mutex_tid;
+#endif
 
     // Borrowed references to type objects whose
     // tp_version_tag % TYPE_VERSION_CACHE_SIZE
@@ -666,8 +670,11 @@ struct _Py_interp_cached_objects {
 
     /* object.__reduce__ */
     PyObject *objreduce;
+#ifndef Py_GIL_DISABLED
+    /* resolve_slotdups() */
     PyObject *type_slots_pname;
     pytype_slotdef *type_slots_ptrs[MAX_EQUIV];
+#endif
 
     /* TypeVar and related types */
     PyTypeObject *generic_type;
