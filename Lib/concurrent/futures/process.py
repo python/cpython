@@ -348,7 +348,7 @@ class _ExecutorManagerThread(threading.Thread):
             if result_item is not None:
                 exit_pid = result_item.exit_pid
                 work_id = result_item.work_id
-                exception = result_item.exeption
+                exception = result_item.exception
                 result = result_item.result
                 del result_item
                 # Process the received a result_item. This can be either the PID of a
