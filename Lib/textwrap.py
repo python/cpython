@@ -5,9 +5,25 @@
 # Copyright (C) 2002 Python Software Foundation.
 # Written by Greg Ward <gward@python.net>
 
-import re
-
 __all__ = ['TextWrapper', 'wrap', 'fill', 'dedent', 'indent', 'shorten']
+
+
+class _cached_regex:
+    def __init__(self, pattern):
+        self.pattern = pattern
+
+    def __set_name__(self, owner, name):
+        self.attr_name = name
+
+    def __get__(self, instance, owner=None):
+        if owner is None:
+            return self
+        import re
+        # replace this descriptor with the compiled pattern
+        pat = re.compile(self.pattern)
+        setattr(owner, self.attr_name, pat)
+        return pat
+
 
 # Hardcode the recognized whitespace characters to the US-ASCII
 # whitespace characters.  The main reason for doing this is that
@@ -73,41 +89,39 @@ class TextWrapper:
     # (after stripping out empty strings).
     word_punct = r'[\w!"\'&.,?]'
     letter = r'[^\d\W]'
-    whitespace = r'[%s]' % re.escape(_whitespace)
-    nowhitespace = '[^' + whitespace[1:]
-    wordsep_re = re.compile(r'''
+    whitespace = fr'[{_whitespace}]'
+    no_whitespace = f'[^{_whitespace}]'
+    wordsep_re = _cached_regex(fr'''(?x)
         ( # any whitespace
-          %(ws)s+
+          {whitespace}+
         | # em-dash between words
-          (?<=%(wp)s) -{2,} (?=\w)
+          (?<={word_punct}) -{{2,}} (?=\w)
         | # word, possibly hyphenated
-          %(nws)s+? (?:
+          {no_whitespace}+? (?:
             # hyphenated word
-              -(?: (?<=%(lt)s{2}-) | (?<=%(lt)s-%(lt)s-))
-              (?= %(lt)s -? %(lt)s)
+              -(?: (?<={letter}{{2}}-) | (?<={letter}-{letter}-))
+              (?= {letter} -? {letter})
             | # end of word
-              (?=%(ws)s|\Z)
+              (?={whitespace}|\Z)
             | # em-dash
-              (?<=%(wp)s) (?=-{2,}\w)
+              (?<={word_punct}) (?=-{{2,}}\w)
             )
-        )''' % {'wp': word_punct, 'lt': letter,
-                'ws': whitespace, 'nws': nowhitespace},
-        re.VERBOSE)
-    del word_punct, letter, nowhitespace
+        )''')
+    del word_punct, letter, no_whitespace
 
     # This less funky little regex just split on recognized spaces. E.g.
     #   "Hello there -- you goof-ball, use the -b option!"
     # splits into
     #   Hello/ /there/ /--/ /you/ /goof-ball,/ /use/ /the/ /-b/ /option!/
-    wordsep_simple_re = re.compile(r'(%s+)' % whitespace)
+    wordsep_simple_re = _cached_regex(fr'({whitespace}+)')
     del whitespace
 
     # XXX this is not locale- or charset-aware -- string.lowercase
     # is US-ASCII only (and therefore English-only)
-    sentence_end_re = re.compile(r'[a-z]'             # lowercase letter
-                                 r'[\.\!\?]'          # sentence-ending punct.
-                                 r'[\"\']?'           # optional end-of-quote
-                                 r'\Z')               # end of chunk
+    sentence_end_re = _cached_regex(r'[a-z]'          # lowercase letter
+                                    r'[\.\!\?]'       # sentence-ending punct.
+                                    r'[\"\']?'        # optional end-of-quote
+                                    r'\Z')            # end of chunk
 
     def __init__(self,
                  width=70,
@@ -250,7 +264,7 @@ class TextWrapper:
         """
         lines = []
         if self.width <= 0:
-            raise ValueError("invalid width %r (must be > 0)" % self.width)
+            raise ValueError(f"invalid width {self.width!r} (must be > 0)")
         if self.max_lines is not None:
             if self.max_lines > 1:
                 indent = self.subsequent_indent
