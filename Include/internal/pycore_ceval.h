@@ -351,6 +351,7 @@ PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyS
 
 #ifndef Py_SUPPORTS_REMOTE_DEBUG
     #if defined(__APPLE__)
+    #include <TargetConditionals.h>
     #  if !defined(TARGET_OS_OSX)
 // Older macOS SDKs do not define TARGET_OS_OSX
     #     define TARGET_OS_OSX 1
