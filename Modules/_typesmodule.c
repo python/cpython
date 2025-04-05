@@ -45,7 +45,7 @@ _types_exec(PyObject *m)
     EXPORT_STATIC_TYPE("TracebackType", PyTraceBack_Type);
     EXPORT_STATIC_TYPE("UnionType", _PyUnion_Type);
     EXPORT_STATIC_TYPE("WrapperDescriptorType", PyWrapperDescr_Type);
-#undef ADD_STATIC_TYPE
+#undef EXPORT_STATIC_TYPE
     return 0;
 }
 
