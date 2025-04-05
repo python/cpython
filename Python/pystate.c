@@ -1587,10 +1587,10 @@ new_threadstate(PyInterpreterState *interp, int whence)
 
     HEAD_UNLOCK(interp->runtime);
 #ifdef Py_GIL_DISABLED
-    if (id == 1) {
+    if (id > 1) {
         if (_Py_atomic_load_int(&interp->gc.immortalize) == 0) {
             // Immortalize objects marked as using deferred reference counting
-            // the first time a non-main thread is created.
+            // once a non-main thread is created, if we haven't already done so.
             _PyGC_ImmortalizeDeferredObjects(interp);
         }
     }
