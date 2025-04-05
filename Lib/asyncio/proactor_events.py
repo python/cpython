@@ -858,6 +858,8 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
                 if self.is_closed():
                     return
                 f = self._proactor.accept(sock)
+            except ConnectionResetError:
+                self.call_soon(loop)
             except OSError as exc:
                 if sock.fileno() != -1:
                     self.call_exception_handler({
