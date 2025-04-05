@@ -102,6 +102,10 @@ def generate():
 
 
 def make(filename, outfile):
+    # see gh-issue: 53950
+    global MESSAGES
+    MESSAGES.clear()
+
     ID = 1
     STR = 2
     CTXT = 3
