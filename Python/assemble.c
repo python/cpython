@@ -290,18 +290,15 @@ write_location_info_entry(struct assembler* a, location loc, int isize)
         assert(len > THEORETICAL_MAX_ENTRY_SIZE);
         RETURN_IF_ERROR(_PyBytes_Resize(&a->a_linetable, len*2));
     }
-    if (loc.lineno < 0) {
-        assert(loc.lineno == NO_LOCATION.lineno);
+    if (loc.lineno == NO_LOCATION.lineno) {
         write_location_info_none(a, isize);
         return SUCCESS;
     }
     int line_delta = loc.lineno - a->a_lineno;
     int column = loc.col_offset;
     int end_column = loc.end_col_offset;
-    assert(column >= -1);
-    assert(end_column >= -1);
     if (column < 0 || end_column < 0) {
-        if (loc.end_lineno == loc.lineno || loc.end_lineno == -1) {
+        if (loc.end_lineno == loc.lineno || loc.end_lineno < 0) {
             write_location_info_no_column(a, isize, line_delta);
             a->a_lineno = loc.lineno;
             return SUCCESS;
