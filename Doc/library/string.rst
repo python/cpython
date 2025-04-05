@@ -319,14 +319,16 @@ non-empty format specification typically modifies the result.
 The general form of a *standard format specifier* is:
 
 .. productionlist:: format-spec
-   format_spec: [[`fill`]`align`][`sign`]["z"]["#"]["0"][`width`][`grouping`]["." `precision`][`type`]
+   format_spec: [`options`][`width`][`grouping`]["." `precision`][`type`]
+   options: [[`fill`]`align`][`sign`]["z"]["#"]["0"]
    fill: <any character>
    align: "<" | ">" | "=" | "^"
    sign: "+" | "-" | " "
    width: `~python-grammar:digit`+
    grouping: "," | "_"
    precision: `~python-grammar:digit`+
-   type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
+   type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g"
+       : | "G" | "n" | "o" | "s" | "x" | "X" | "%"
 
 If a valid *align* value is specified, it can be preceded by a *fill*
 character that can be any character and defaults to a space if omitted.
