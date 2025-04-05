@@ -19,6 +19,7 @@ extern PyObject* PyInit__operator(void);
 extern PyObject* PyInit__signal(void);
 extern PyObject* PyInit__statistics(void);
 extern PyObject* PyInit__sysconfig(void);
+extern PyObject* PyInit__types(void);
 extern PyObject* PyInit__typing(void);
 extern PyObject* PyInit_time(void);
 extern PyObject* PyInit__thread(void);
@@ -107,6 +108,7 @@ struct _inittab _PyImport_Inittab[] = {
     {"time", PyInit_time},
     {"_thread", PyInit__thread},
     {"_tokenize", PyInit__tokenize},
+    {"_types", PyInit__types},
     {"_typing", PyInit__typing},
     {"_statistics", PyInit__statistics},
 
