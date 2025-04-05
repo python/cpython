@@ -53,6 +53,8 @@ The following functions are provided:
    invariant.  If the heap is empty, :exc:`IndexError` is raised.  To access the
    smallest item without popping it, use ``heap[0]``.
 
+   This is equivalent to performing ``heapremove_index(heap, 0)``.
+
 
 .. function:: heappushpop(heap, item)
 
@@ -80,6 +82,31 @@ The following functions are provided:
    desired, consider using :func:`heappushpop` instead.  Its push/pop
    combination returns the smaller of the two values, leaving the larger value
    on the heap.
+
+.. function:: heapremove(heap, value, *, key=None):
+
+   Remove the item corresponding to *value* from *heap* while maintaining
+   the heap invariant.
+
+   The heap is searched for the first item comparing equal to *value*.
+
+   If the _callable_ *key* is provided, it will be called for each item
+   before comparing the result with *value*.
+
+   Returns the removed item.
+
+   Raises :exc:`ValueError` if no item corresponding to *value* is found.
+
+   .. versionadded:: 3.13
+
+
+.. function:: heapremove_index(heap, index):
+
+   Remove the item at ``heap[index]`` while maintaining the heap invariant.
+
+   Returns the removed item.
+
+   .. versionadded:: 3.13
 
 
 The module also offers three general purpose functions based on heaps.
