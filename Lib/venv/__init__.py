@@ -314,9 +314,14 @@ class EnvBuilder:
             if not os.path.islink(path):
                 os.chmod(path, 0o755)
 
-            suffixes = ['python', 'python3', f'python3.{sys.version_info[1]}']
+            suffixes = {
+                'python',
+                'python3',
+                f'python3.{sys.version_info[1]}',
+                os.path.basename(sys.executable),
+            }
             if sys.version_info[:2] == (3, 14):
-                suffixes.append('𝜋thon')
+                suffixes.add('𝜋thon')
             for suffix in suffixes:
                 path = os.path.join(binpath, suffix)
                 if not os.path.exists(path):
@@ -339,6 +344,7 @@ class EnvBuilder:
             exename = os.path.basename(context.env_exe)
             exe_stem = os.path.splitext(exename)[0]
             exe_d = '_d' if os.path.normcase(exe_stem).endswith('_d') else ''
+            current_exename = os.path.basename(sys.executable)
             if sysconfig.is_python_build():
                 scripts = dirname
             else:
@@ -350,6 +356,7 @@ class EnvBuilder:
                 link_sources = {
                     'python.exe': python_exe,
                     f'python{exe_d}.exe': python_exe,
+                    current_exename: python_exe,
                     'pythonw.exe': pythonw_exe,
                     f'pythonw{exe_d}.exe': pythonw_exe,
                 }
@@ -358,6 +365,7 @@ class EnvBuilder:
                 copy_sources = {
                     'python.exe': python_exe,
                     f'python{exe_d}.exe': python_exe,
+                    current_exename: python_exe,
                     'pythonw.exe': pythonw_exe,
                     f'pythonw{exe_d}.exe': pythonw_exe,
                 }
@@ -370,6 +378,7 @@ class EnvBuilder:
                     f'python{exe_d}.exe': python_exe,
                     f'python{exe_t}.exe': python_exe,
                     f'python{exe_t}{exe_d}.exe': python_exe,
+                    current_exename: python_exe,
                     'pythonw.exe': pythonw_exe,
                     f'pythonw{exe_d}.exe': pythonw_exe,
                     f'pythonw{exe_t}.exe': pythonw_exe,
@@ -382,11 +391,16 @@ class EnvBuilder:
                     f'python{exe_d}.exe': python_exe,
                     f'python{exe_t}.exe': python_exe,
                     f'python{exe_t}{exe_d}.exe': python_exe,
+                    current_exename: python_exe,
                     'pythonw.exe': pythonw_exe,
                     f'pythonw{exe_d}.exe': pythonw_exe,
                     f'pythonw{exe_t}.exe': pythonw_exe,
                     f'pythonw{exe_t}{exe_d}.exe': pythonw_exe,
                 }
+
+            for sources_dict in (link_sources, copy_sources):
+                if exename not in sources_dict:
+                    sources_dict[exename] = python_exe
 
             do_copies = True
             if self.symlinks:
