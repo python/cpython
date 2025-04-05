@@ -1,0 +1,2 @@
+Allow to pass custom ``CFLAGS`` and ``LDFLAGS`` to the compilation of
+builtin extension modules. Patch by Pablo Galindo
