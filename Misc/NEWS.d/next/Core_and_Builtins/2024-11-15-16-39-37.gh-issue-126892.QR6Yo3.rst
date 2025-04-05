@@ -1,2 +1,0 @@
-Require cold or invalidated code to "warm up" before being JIT compiled
-again.

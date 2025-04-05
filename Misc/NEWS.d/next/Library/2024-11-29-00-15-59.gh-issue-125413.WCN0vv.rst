@@ -1,3 +1,0 @@
-Revert addition of :meth:`!pathlib.Path.scandir`. This method was added in
-3.14.0a2. The optimizations remain for file system paths, but other
-subclasses should only have to implement :meth:`pathlib.Path.iterdir`.

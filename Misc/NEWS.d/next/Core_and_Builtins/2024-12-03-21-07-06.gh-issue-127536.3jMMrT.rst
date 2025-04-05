@@ -1,2 +1,0 @@
-Add missing locks around some list assignment operations in the free
-threading build.

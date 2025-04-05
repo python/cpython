@@ -1,2 +1,0 @@
-Fix :meth:`!io.StringIO.__setstate__` crash, when :const:`None` was passed as
-the first value.

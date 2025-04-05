@@ -12,7 +12,7 @@ class MyException(Exception):
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class TestCM:
@@ -476,11 +476,11 @@ class TestAsyncCase(unittest.TestCase):
     def test_setup_get_event_loop(self):
         # See https://github.com/python/cpython/issues/95736
         # Make sure the default event loop is not used
-        asyncio.set_event_loop(None)
+        asyncio._set_event_loop(None)
 
         class TestCase1(unittest.IsolatedAsyncioTestCase):
             def setUp(self):
-                asyncio.get_event_loop_policy().get_event_loop()
+                asyncio._get_event_loop_policy().get_event_loop()
 
             async def test_demo1(self):
                 pass
@@ -490,7 +490,7 @@ class TestAsyncCase(unittest.TestCase):
         self.assertTrue(result.wasSuccessful())
 
     def test_loop_factory(self):
-        asyncio.set_event_loop_policy(None)
+        asyncio._set_event_loop_policy(None)
 
         class TestCase1(unittest.IsolatedAsyncioTestCase):
             loop_factory = asyncio.EventLoop

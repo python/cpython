@@ -1,1 +1,0 @@
-Make :func:`operator.methodcaller` thread-safe and re-entrant safe.
