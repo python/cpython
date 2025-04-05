@@ -73,14 +73,19 @@ class BaseEventQueue:
         """
         Processes a character by updating the buffer and handling special key mappings.
         """
-        ord_char = char if isinstance(char, int) else ord(char)
-        if ord_char > 255:
-            assert isinstance(char, str)
-            char = bytes(char.encode(self.encoding, "replace"))
+
+        if isinstance(char, bytes):
             self.buf.extend(char)
         else:
-            char = bytes(bytearray((ord_char,)))
-            self.buf.append(ord_char)
+
+            ord_char = char if isinstance(char, int) else ord(char)
+            if ord_char > 255:
+                assert isinstance(char, str)
+                char = bytes(char.encode(self.encoding, "replace"))
+                self.buf.extend(char)
+            else:
+                char = bytes(bytearray((ord_char,)))
+                self.buf.append(ord_char)
 
         if char in self.keymap:
             if self.keymap is self.compiled_keymap:
@@ -108,7 +113,9 @@ class BaseEventQueue:
             try:
                 decoded = bytes(self.buf).decode(self.encoding)
             except UnicodeError:
-                return
+                self.flush_buf()
+                raise
             else:
                 self.insert(Event('key', decoded, self.flush_buf()))
-            self.keymap = self.compiled_keymap
+            finally:
+                self.keymap = self.compiled_keymap

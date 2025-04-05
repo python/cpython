@@ -468,7 +468,8 @@ class WindowsConsole(Console):
                 return None
             elif self.__vt_support:
                 # If virtual terminal is enabled, scanning VT sequences
-                self.event_queue.push(rec.Event.KeyEvent.uChar.UnicodeChar)
+                key_bytes = raw_key.encode(self.event_queue.encoding)
+                self.event_queue.push(key_bytes)
                 continue
 
             if key_event.dwControlKeyState & ALT_ACTIVE:
