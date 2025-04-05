@@ -154,12 +154,12 @@ created.  Socket addresses are represented as follows:
   - :const:`BTPROTO_RFCOMM` accepts ``(bdaddr, channel)`` where ``bdaddr``
     is the Bluetooth address as a string and ``channel`` is an integer.
 
-  - :const:`BTPROTO_HCI` accepts format that depends on your OS.
-    On FreeBSD, NetBSD and DragonFlyBSD it accepts ``bdaddr`` where ``bdaddr``
-    is a :class:`bytes` object containing the Bluetooth address in a
-    string format. (ex. ``b'12:23:34:45:56:67'``)
-    On Linux it accepts a tuple ``(device_id,)`` where ``device_id``
-    is an integer specifying the number of the Bluetooth device.
+  - :const:`BTPROTO_HCI` accepts a format that depends on your OS.
+    - On FreeBSD, NetBSD and DragonFlyBSD it accepts ``bdaddr`` where ``bdaddr``
+      is a :class:`bytes` object containing the Bluetooth address in a
+      string format. (ex. ``b'12:23:34:45:56:67'``)
+    - On Linux it accepts a tuple ``(device_id,)`` where ``device_id``
+      is an integer specifying the number of the Bluetooth device.
 
     .. versionchanged:: 3.2
        NetBSD and DragonFlyBSD support added.
