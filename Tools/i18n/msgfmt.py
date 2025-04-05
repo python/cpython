@@ -264,7 +264,7 @@ def main():
                 if msgid == b'':
                     continue
                 strings += 1
-                if msgstr.strip():
+                if msgstr.strip() and msgstr != msgid:
                     translated += 1
 
             untranslated = strings - translated
