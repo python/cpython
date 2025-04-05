@@ -414,30 +414,7 @@ decimal-point character appears in the result of these conversions
 only if a digit follows it. In addition, for ``'g'`` and ``'G'``
 conversions, trailing zeros are not removed from the result.
 
-.. index:: single: , (comma); in string formatting
-
-The ``','`` option signals the use of a comma for a thousands separator for
-floating-point presentation types and for integer presentation type ``'d'``.
-For other presentation types, this option is an error.
-For a locale aware separator, use the ``'n'`` integer presentation type
-instead.
-
-.. versionchanged:: 3.1
-   Added the ``','`` option (see also :pep:`378`).
-
-.. index:: single: _ (underscore); in string formatting
-
-The ``'_'`` option signals the use of an underscore for a thousands
-separator for floating-point presentation types and for integer
-presentation type ``'d'``.  For integer presentation types ``'b'``,
-``'o'``, ``'x'``, and ``'X'``, underscores will be inserted every 4
-digits.  For other presentation types, specifying this option is an
-error.
-
-.. versionchanged:: 3.6
-   Added the ``'_'`` option (see also :pep:`515`).
-
-*width* is a decimal integer defining the minimum total field width,
+The *width* is a decimal integer defining the minimum total field width,
 including any prefixes, separators, and other formatting characters.
 If not specified, then the field width will be determined by the content.
 
@@ -449,6 +426,42 @@ excluding :class:`complex`.  This is equivalent to a *fill* character of
 .. versionchanged:: 3.10
    Preceding the *width* field by ``'0'`` no longer affects the default
    alignment for strings.
+
+
+The *grouping* option after the *width* field specifies
+a digit group separator for the integral part of a number.
+It can be one of the following:
+
+.. index::
+   single: , (comma); in string formatting
+   single: _ (underscore); in string formatting
+
++---------+----------------------------------------------------------+
+| Option  | Meaning                                                  |
++=========+==========================================================+
+| ``','`` | Inserts a comma every 3 digits for                       |
+|         | integer presentation type ``'d'`` and                    |
+|         | floating-point presentation types, excluding ``'n'``.    |
+|         | For other presentation types,                            |
+|         | this option is not supported.                            |
++---------+----------------------------------------------------------+
+| ``'_'`` | Inserts an underscore every 3 digits for                 |
+|         | integer presentation type ``'d'`` and                    |
+|         | floating-point presentation types, excluding ``'n'``.    |
+|         | For integer presentation types                           |
+|         | ``'b'``, ``'o'``, ``'x'``, and ``'X'``,                  |
+|         | underscores are inserted every 4 digits.                 |
+|         | For other presentation types,                            |
+|         | this option is not supported.                            |
++---------+----------------------------------------------------------+
+
+For a locale aware separator, use the ``'n'`` presentation type instead.
+
+.. versionchanged:: 3.1
+   Added the ``','`` option (see also :pep:`378`).
+
+.. versionchanged:: 3.6
+   Added the ``'_'`` option (see also :pep:`515`).
 
 The *precision* is a decimal integer indicating how many digits should be
 displayed after the decimal point for presentation types
