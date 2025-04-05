@@ -268,8 +268,13 @@ class SharedMemory:
         if not hasattr(_posixshmem, "shm_rename"):
             raise OSError("Unsupported operation on this platform")
 
-        newname = "/" + newname if self._prepend_leading_slash else newname
+        oldname = self._name
+        if _USE_POSIX and self._prepend_leading_slash:
+            newname = "/" + newname
         self._fd = _posixshmem.shm_rename(self._name, newname, flags)
+        if self._track:
+            resource_tracker.unregister(oldname, "shared_memory")
+            resource_tracker.register(newname, "shared_memory")
         self._name = newname
 
 
