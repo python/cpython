@@ -1462,9 +1462,9 @@ CharArray_get_raw(PyObject *op, void *Py_UNUSED(ignored))
 {
     PyObject *res;
     CDataObject *self = _CDataObject_CAST(op);
-    LOCK_PTR(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
     res = PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
-    UNLOCK_PTR(self);
+    Py_END_CRITICAL_SECTION();
     return res;
 }
 
@@ -1474,13 +1474,13 @@ CharArray_get_value(PyObject *op, void *Py_UNUSED(ignored))
     Py_ssize_t i;
     PyObject *res;
     CDataObject *self = _CDataObject_CAST(op);
-    LOCK_PTR(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
     char *ptr = self->b_ptr;
     for (i = 0; i < self->b_size; ++i)
         if (*ptr++ == '\0')
             break;
     res = PyBytes_FromStringAndSize(self->b_ptr, i);
-    UNLOCK_PTR(self);
+    Py_END_CRITICAL_SECTION();
     return res;
 }
 
@@ -1513,11 +1513,11 @@ CharArray_set_value(PyObject *op, PyObject *value, void *Py_UNUSED(ignored))
     }
 
     ptr = PyBytes_AS_STRING(value);
-    LOCK_PTR(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
     memcpy(self->b_ptr, ptr, size);
     if (size < self->b_size)
         self->b_ptr[size] = '\0';
-    UNLOCK_PTR(self);
+    Py_END_CRITICAL_SECTION();
     Py_DECREF(value);
 
     return 0;
@@ -1536,12 +1536,12 @@ WCharArray_get_value(PyObject *op, void *Py_UNUSED(ignored))
     PyObject *res;
     CDataObject *self = _CDataObject_CAST(op);
     wchar_t *ptr = (wchar_t *)self->b_ptr;
-    LOCK_PTR(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
     for (i = 0; i < self->b_size/(Py_ssize_t)sizeof(wchar_t); ++i)
         if (*ptr++ == (wchar_t)0)
             break;
     res = PyUnicode_FromWideChar((wchar_t *)self->b_ptr, i);
-    UNLOCK_PTR(self);
+    Py_END_CRITICAL_SECTION();
     return res;
 }
 
@@ -1575,9 +1575,9 @@ WCharArray_set_value(PyObject *op, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
     Py_ssize_t rc;
-    LOCK_PTR(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
     rc = PyUnicode_AsWideChar(value, (wchar_t *)self->b_ptr, size);
-    UNLOCK_PTR(self);
+    Py_END_CRITICAL_SECTION();
     return rc < 0 ? -1 : 0;
 }
 
@@ -2777,7 +2777,7 @@ static PyType_Spec pycfuncptr_type_spec = {
  */
 
 static CDataObject *
-PyCData_GetContainer(CDataObject *self)
+PyCData_GetContainer_lock_held(CDataObject *self)
 {
     while (self->b_base)
         self = self->b_base;
@@ -2791,6 +2791,16 @@ PyCData_GetContainer(CDataObject *self)
         }
     }
     return self;
+}
+
+static CDataObject *
+PyCData_GetContainer_lock_held(CDataObject *self)
+{
+    CDataObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = PyCData_GetContainer_lock_held(self);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject *
@@ -2826,26 +2836,8 @@ unique_key(CDataObject *target, Py_ssize_t index)
     return PyUnicode_FromStringAndSize(string, cp-string);
 }
 
-/*
- * Keep a reference to 'keep' in the 'target', at index 'index'.
- *
- * If 'keep' is None, do nothing.
- *
- * Otherwise create a dictionary (if it does not yet exist) id the root
- * objects 'b_objects' item, which will store the 'keep' object under a unique
- * key.
- *
- * The unique_key helper travels the target's b_base pointer down to the root,
- * building a string containing hex-formatted indexes found during traversal,
- * separated by colons.
- *
- * The index tuple is used as a key into the root object's b_objects dict.
- *
- * Note: This function steals a refcount of the third argument, even if it
- * fails!
- */
 static int
-KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep)
+KeepRef_lock_held(CDataObject *target, Py_ssize_t index, PyObject *keep)
 {
     int result;
     CDataObject *ob;
@@ -2874,6 +2866,34 @@ KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep)
     Py_DECREF(key);
     Py_DECREF(keep);
     return result;
+}
+
+/*
+ * Keep a reference to 'keep' in the 'target', at index 'index'.
+ *
+ * If 'keep' is None, do nothing.
+ *
+ * Otherwise create a dictionary (if it does not yet exist) id the root
+ * objects 'b_objects' item, which will store the 'keep' object under a unique
+ * key.
+ *
+ * The unique_key helper travels the target's b_base pointer down to the root,
+ * building a string containing hex-formatted indexes found during traversal,
+ * separated by colons.
+ *
+ * The index tuple is used as a key into the root object's b_objects dict.
+ *
+ * Note: This function steals a refcount of the third argument, even if it
+ * fails!
+ */
+static int
+KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep)
+{
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(target);
+    target = KeepRef_lock_held(target, index, keep);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 /******************************************************************/
@@ -3260,9 +3280,9 @@ PyCData_get(ctypes_state *st, PyObject *type, GETFUNC getfunc, PyObject *src,
     CDataObject *cdata = _CDataObject_CAST(src);
     if (getfunc) {
         PyObject *res;
-        LOCK_PTR(cdata);
+        Py_BEGIN_CRITICAL_SECTION(cdata);
         res = getfunc(adr, size);
-        UNLOCK_PTR(cdata);
+        Py_END_CRITICAL_SECTION();
         return res;
     }
     assert(type);
@@ -3272,9 +3292,9 @@ PyCData_get(ctypes_state *st, PyObject *type, GETFUNC getfunc, PyObject *src,
     }
     if (info && info->getfunc && !_ctypes_simple_instance(st, type)) {
         PyObject *res;
-        LOCK_PTR(cdata);
+        Py_BEGIN_CRITICAL_SECTION(cdata);
         res = info->getfunc(adr, size);
-        UNLOCK_PTR(cdata);
+        Py_END_CRITICAL_SECTION();
         return res;
     }
     return PyCData_FromBaseObj(st, type, src, index, adr);
@@ -3293,9 +3313,9 @@ _PyCData_set(ctypes_state *st,
 
     if (setfunc) {
         PyObject *res;
-        LOCK_PTR(dst);
+        Py_BEGIN_CRITICAL_SECTION(dst);
         res = setfunc(ptr, value, size);
-        UNLOCK_PTR(dst);
+        Py_END_CRITICAL_SECTION();
         return res;
     }
     if (!CDataObject_Check(st, value)) {
@@ -3305,9 +3325,9 @@ _PyCData_set(ctypes_state *st,
         }
         if (info && info->setfunc) {
             PyObject *res;
-            LOCK_PTR(dst);
+            Py_BEGIN_CRITICAL_SECTION(dst);
             res = info->setfunc(ptr, value, size);
-            UNLOCK_PTR(dst);
+            Py_END_CRITICAL_SECTION();
             return res;
         }
         /*
@@ -3329,9 +3349,9 @@ _PyCData_set(ctypes_state *st,
             Py_DECREF(ob);
             return result;
         } else if (value == Py_None && PyCPointerTypeObject_Check(st, type)) {
-            LOCK_PTR(dst);
+            Py_BEGIN_CRITICAL_SECTION(dst);
             *(void **)ptr = NULL;
-            UNLOCK_PTR(dst);
+            Py_END_CRITICAL_SECTION();
             Py_RETURN_NONE;
         } else {
             PyErr_Format(PyExc_TypeError,
@@ -3347,13 +3367,15 @@ _PyCData_set(ctypes_state *st,
     if (err == -1)
         return NULL;
     if (err) {
-        locked_memcpy_from(ptr, src, size);
+        Py_BEGIN_CRITICAL_SECTION(src);
+        memcpy(ptr, src->b_ptr, size);
 
         if (PyCPointerTypeObject_Check(st, type)) {
             /* XXX */
         }
 
         value = GetKeepedObjects(src);
+        Py_END_CRITICAL_SECTION();
         if (value == NULL)
             return NULL;
 
@@ -3381,9 +3403,9 @@ _PyCData_set(ctypes_state *st,
                          ((PyTypeObject *)type)->tp_name);
             return NULL;
         }
-        LOCK_PTR(src);
+        Py_BEGIN_CRITICAL_SECTION(src);
         *(void **)ptr = src->b_ptr;
-        UNLOCK_PTR(src);
+        Py_END_CRITICAL_SECTION();
 
         keep = GetKeepedObjects(src);
         if (keep == NULL)
@@ -4901,10 +4923,10 @@ Array_subscript(PyObject *myself, PyObject *item)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
                 PyObject *res;
-                LOCK_PTR(self);
+                Py_BEGIN_CRITICAL_SECTION(self);
                 res = PyBytes_FromStringAndSize(ptr + start,
                                                 slicelen);
-                UNLOCK_PTR(self);
+                Py_END_CRITICAL_SECTION();
                 return res;
             }
             dest = (char *)PyMem_Malloc(slicelen);
@@ -4912,12 +4934,12 @@ Array_subscript(PyObject *myself, PyObject *item)
             if (dest == NULL)
                 return PyErr_NoMemory();
 
-            LOCK_PTR(self);
+            Py_BEGIN_CRITICAL_SECTION(self);
             for (cur = start, i = 0; i < slicelen;
                  cur += step, i++) {
                 dest[i] = ptr[cur];
             }
-            UNLOCK_PTR(self);
+            Py_END_CRITICAL_SECTION();
 
             np = PyBytes_FromStringAndSize(dest, slicelen);
             PyMem_Free(dest);
@@ -4931,10 +4953,10 @@ Array_subscript(PyObject *myself, PyObject *item)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
                 PyObject *res;
-                LOCK_PTR(self);
+                Py_BEGIN_CRITICAL_SECTION(self);
                 res = PyUnicode_FromWideChar(ptr + start,
                                                        slicelen);
-                UNLOCK_PTR(self);
+                Py_END_CRITICAL_SECTION();
                 return res;
             }
 
@@ -4944,12 +4966,12 @@ Array_subscript(PyObject *myself, PyObject *item)
                 return NULL;
             }
 
-            LOCK_PTR(self);
+            Py_BEGIN_CRITICAL_SECTION(self);
             for (cur = start, i = 0; i < slicelen;
                  cur += step, i++) {
                 dest[i] = ptr[cur];
             }
-            UNLOCK_PTR(self);
+            Py_END_CRITICAL_SECTION();
 
             np = PyUnicode_FromWideChar(dest, slicelen);
             PyMem_Free(dest);
@@ -5287,9 +5309,9 @@ Simple_bool(PyObject *op)
 {
     int cmp;
     CDataObject *self = _CDataObject_CAST(op);
-    LOCK_PTR(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
     cmp = memcmp(self->b_ptr, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0", self->b_size);
-    UNLOCK_PTR(self);
+    Py_END_CRITICAL_SECTION();
     return cmp;
 }
 
@@ -5383,13 +5405,13 @@ Pointer_item(PyObject *myself, Py_ssize_t index)
 {
     CDataObject *self = _CDataObject_CAST(myself);
     PyObject *res;
-    // TODO: The plan is to make LOCK_PTR() a mutex instead of a critical
+    // TODO: The plan is to make Py_BEGIN_CRITICAL_SECTION() a mutex instead of a critical
     // section someday, so when that happens, this needs to get refactored
     // to be re-entrant safe.
     // This goes for all the locks here.
-    LOCK_PTR(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
     res = Pointer_item_lock_held(myself, index);
-    UNLOCK_PTR(self);
+    Py_END_CRITICAL_SECTION();
     return res;
 }
 
@@ -5443,9 +5465,9 @@ Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
 {
     CDataObject *self = _CDataObject_CAST(myself);
     int res;
-    LOCK_PTR(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
     res = Pointer_ass_item_lock_held(myself, index, value);
-    UNLOCK_PTR(self);
+    Py_END_CRITICAL_SECTION();
     return res;
 }
 
@@ -5474,9 +5496,9 @@ Pointer_get_contents(PyObject *myself, void *closure)
 {
     CDataObject *self = _CDataObject_CAST(myself);
     PyObject *res;
-    LOCK_PTR(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
     res = Pointer_get_contents_lock_held(myself, closure);
-    UNLOCK_PTR(self);
+    Py_END_CRITICAL_SECTION();
     return res;
 }
 
@@ -5514,13 +5536,13 @@ Pointer_set_contents(PyObject *op, PyObject *value, void *closure)
 
     dst = (CDataObject *)value;
     if (dst != self) {
-        LOCK_PTR(dst);
+        Py_BEGIN_CRITICAL_SECTION(dst);
         locked_deref_assign(self, dst->b_ptr);
-        UNLOCK_PTR(dst);
+        Py_END_CRITICAL_SECTION();
     } else {
-        LOCK_PTR(self);
+        Py_BEGIN_CRITICAL_SECTION(self);
         *((void **)self->b_ptr) = dst->b_ptr;
-        UNLOCK_PTR(self);
+        Py_END_CRITICAL_SECTION();
     }
 
     /*
@@ -5677,22 +5699,22 @@ Pointer_subscript(PyObject *myself, PyObject *item)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
                 PyObject *res;
-                LOCK_PTR(self);
+                Py_BEGIN_CRITICAL_SECTION(self);
                 char *ptr = *(void **)self->b_ptr;
                 res = PyBytes_FromStringAndSize(ptr + start,
                                                 len);
-                UNLOCK_PTR(self);
+                Py_END_CRITICAL_SECTION();
                 return res;
             }
             dest = (char *)PyMem_Malloc(len);
             if (dest == NULL)
                 return PyErr_NoMemory();
-            LOCK_PTR(self);
+            Py_BEGIN_CRITICAL_SECTION(self);
             char *ptr = *(void **)self->b_ptr;
             for (cur = start, i = 0; i < len; cur += step, i++) {
                 dest[i] = ptr[cur];
             }
-            UNLOCK_PTR(self);
+            Py_END_CRITICAL_SECTION();
             np = PyBytes_FromStringAndSize(dest, len);
             PyMem_Free(dest);
             return np;
@@ -5704,22 +5726,22 @@ Pointer_subscript(PyObject *myself, PyObject *item)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
                 PyObject *res;
-                LOCK_PTR(self);
+                Py_BEGIN_CRITICAL_SECTION(self);
                 wchar_t *ptr = *(wchar_t **)self->b_ptr;
                 res = PyUnicode_FromWideChar(ptr + start,
                                              len);
-                UNLOCK_PTR(self);
+                Py_END_CRITICAL_SECTION();
                 return res;
             }
             dest = PyMem_New(wchar_t, len);
             if (dest == NULL)
                 return PyErr_NoMemory();
-            LOCK_PTR(self);
+            Py_BEGIN_CRITICAL_SECTION(self);
             wchar_t *ptr = *(wchar_t **)self->b_ptr;
             for (cur = start, i = 0; i < len; cur += step, i++) {
                 dest[i] = ptr[cur];
             }
-            UNLOCK_PTR(self);
+            Py_END_CRITICAL_SECTION();
             np = PyUnicode_FromWideChar(dest, len);
             PyMem_Free(dest);
             return np;
@@ -5730,9 +5752,9 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             return NULL;
 
         int res;
-        LOCK_PTR(self);
+        Py_BEGIN_CRITICAL_SECTION(self);
         res = copy_pointer_to_list_lock_held(myself, np, len, start, step);
-        UNLOCK_PTR(self);
+        Py_END_CRITICAL_SECTION();
         if (res < 0) {
             Py_DECREF(np);
             return NULL;
