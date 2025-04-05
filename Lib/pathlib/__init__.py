@@ -182,7 +182,7 @@ class PurePath:
             return NotImplemented
 
     def __reduce__(self):
-        return self.__class__, tuple(self._raw_paths)
+        return self.__class__, self.segments
 
     def __repr__(self):
         return "{}({!r})".format(self.__class__.__name__, self.as_posix())
@@ -328,19 +328,19 @@ class PurePath:
         return str(self).replace(self.parser.sep, '/')
 
     @property
+    def segments(self):
+        """Sequence of raw path segments supplied to the path initializer.
+        """
+        return tuple(self._raw_paths)
+
+    @property
     def _raw_path(self):
         paths = self._raw_paths
         if len(paths) == 1:
             return paths[0]
         elif paths:
-            # Join path segments from the initializer.
-            path = self.parser.join(*paths)
-            # Cache the joined path.
-            paths.clear()
-            paths.append(path)
-            return path
+            return self.parser.join(*paths)
         else:
-            paths.append('')
             return ''
 
     @property
