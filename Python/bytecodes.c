@@ -3290,42 +3290,33 @@ dummy_func(
         op(_ITER_CHECK_RANGE, (iter -- iter)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
             EXIT_IF(Py_TYPE(r) != &PyRangeIter_Type);
-#ifdef Py_GIL_DISABLED
-            EXIT_IF(!_PyObject_IsUniquelyReferenced((PyObject *)r));
-#endif
         }
 
-        replaced op(_ITER_JUMP_RANGE, (iter -- iter)) {
+        replaced op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(r) == &PyRangeIter_Type);
-#ifdef Py_GIL_DISABLED
-            assert(_PyObject_IsUniquelyReferenced((PyObject *)r));
-#endif
             STAT_INC(FOR_ITER, hit);
-            if (r->len <= 0) {
+            long value;
+            long len = _PyRangeIter_GetLengthAndStart(r, &value);
+            if (len <= 0) {
                 // Jump over END_FOR instruction.
                 JUMPBY(oparg + 1);
                 DISPATCH();
             }
+            _PyRangeIter_SetLength(r, len - 1);
+            PyObject *res = PyLong_FromLong(value);
+            ERROR_IF(res == NULL, error);
+            next = PyStackRef_FromPyObjectSteal(res);
         }
 
         // Only used by Tier 2
-        op(_GUARD_NOT_EXHAUSTED_RANGE, (iter -- iter)) {
+        op(_ITER_NEXT_RANGE_TIER_TWO, (iter -- iter, next)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(r) == &PyRangeIter_Type);
-            EXIT_IF(r->len <= 0);
-        }
-
-        op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
-            _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
-            assert(Py_TYPE(r) == &PyRangeIter_Type);
-#ifdef Py_GIL_DISABLED
-            assert(_PyObject_IsUniquelyReferenced((PyObject *)r));
-#endif
-            assert(r->len > 0);
-            long value = r->start;
-            r->start = value + r->step;
-            r->len--;
+            long value;
+            long len = _PyRangeIter_GetLengthAndStart(r, &value);
+            EXIT_IF(len <= 0);
+            _PyRangeIter_SetLength(r, len - 1);
             PyObject *res = PyLong_FromLong(value);
             ERROR_IF(res == NULL, error);
             next = PyStackRef_FromPyObjectSteal(res);
@@ -3334,7 +3325,6 @@ dummy_func(
         macro(FOR_ITER_RANGE) =
             unused/1 +  // Skip over the counter
             _ITER_CHECK_RANGE +
-            _ITER_JUMP_RANGE +
             _ITER_NEXT_RANGE;
 
         op(_FOR_ITER_GEN_FRAME, (iter -- iter, gen_frame: _PyInterpreterFrame*)) {

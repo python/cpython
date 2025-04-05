@@ -5648,38 +5648,20 @@
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
-                #ifdef Py_GIL_DISABLED
-                if (!_PyObject_IsUniquelyReferenced((PyObject *)r)) {
-                    UPDATE_MISS_STATS(FOR_ITER);
-                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    JUMP_TO_PREDICTED(FOR_ITER);
-                }
-                #endif
-            }
-            // _ITER_JUMP_RANGE
-            {
-                _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
-                assert(Py_TYPE(r) == &PyRangeIter_Type);
-                #ifdef Py_GIL_DISABLED
-                assert(_PyObject_IsUniquelyReferenced((PyObject *)r));
-                #endif
-                STAT_INC(FOR_ITER, hit);
-                if (r->len <= 0) {
-                    JUMPBY(oparg + 1);
-                    DISPATCH();
-                }
             }
             // _ITER_NEXT_RANGE
             {
                 _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
                 assert(Py_TYPE(r) == &PyRangeIter_Type);
-                #ifdef Py_GIL_DISABLED
-                assert(_PyObject_IsUniquelyReferenced((PyObject *)r));
-                #endif
-                assert(r->len > 0);
-                long value = r->start;
-                r->start = value + r->step;
-                r->len--;
+                STAT_INC(FOR_ITER, hit);
+                long value;
+                long len = _PyRangeIter_GetLengthAndStart(r, &value);
+                if (len <= 0) {
+                    // Jump over END_FOR instruction.
+                    JUMPBY(oparg + 1);
+                    DISPATCH();
+                }
+                _PyRangeIter_SetLength(r, len - 1);
                 PyObject *res = PyLong_FromLong(value);
                 if (res == NULL) {
                     JUMP_TO_LABEL(error);
