@@ -1,0 +1,1 @@
+Always escape non-printable Unicode characters in :program:`pygettext`.
