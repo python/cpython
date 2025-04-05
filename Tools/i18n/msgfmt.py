@@ -23,6 +23,9 @@ Options:
     -V
     --version
         Display version information and exit.
+
+    --statistics
+        Print statistics about translations.
 """
 
 import os
@@ -229,11 +232,12 @@ def make(filename, outfile):
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hVo:',
-                                   ['help', 'version', 'output-file='])
+                                   ['help', 'version', 'output-file=', 'statistics'])
     except getopt.error as msg:
         usage(1, msg)
 
     outfile = None
+    print_statistics = False
     # parse options
     for opt, arg in opts:
         if opt in ('-h', '--help'):
@@ -243,6 +247,8 @@ def main():
             sys.exit(0)
         elif opt in ('-o', '--output-file'):
             outfile = arg
+        elif opt in ('--statistics',):
+            print_statistics = True
     # do it
     if not args:
         print('No input file given', file=sys.stderr)
@@ -251,6 +257,20 @@ def main():
 
     for filename in args:
         make(filename, outfile)
+
+        if print_statistics:
+            strings = translated = 0
+            for msgid, msgstr in MESSAGES.items():
+                if msgid == b'':
+                    continue
+                strings += 1
+                if msgstr.strip() and msgstr != msgid:
+                    translated += 1
+
+            print(
+                f"{translated} translated message{'s' if translated != 1 else ''}, "
+                f"{strings - translated} untranslated message{'s' if (strings - translated) != 1 else ''}."
+            )
 
 
 if __name__ == '__main__':
