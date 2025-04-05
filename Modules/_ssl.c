@@ -6113,7 +6113,7 @@ _ssl_enum_certificates_impl(PyObject *module, const char *store_name)
         return PyErr_SetFromWindowsErr(GetLastError());
     }
 
-    while (pCertCtx = CertEnumCertificatesInStore(hCollectionStore, pCertCtx)) {
+    while ((pCertCtx = CertEnumCertificatesInStore(hCollectionStore, pCertCtx))) {
         cert = PyBytes_FromStringAndSize((const char*)pCertCtx->pbCertEncoded,
                                             pCertCtx->cbCertEncoded);
         if (!cert) {
@@ -6212,7 +6212,7 @@ _ssl_enum_crls_impl(PyObject *module, const char *store_name)
         return PyErr_SetFromWindowsErr(GetLastError());
     }
 
-    while (pCrlCtx = CertEnumCRLsInStore(hCollectionStore, pCrlCtx)) {
+    while ((pCrlCtx = CertEnumCRLsInStore(hCollectionStore, pCrlCtx))) {
         crl = PyBytes_FromStringAndSize((const char*)pCrlCtx->pbCrlEncoded,
                                             pCrlCtx->cbCrlEncoded);
         if (!crl) {

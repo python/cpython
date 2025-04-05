@@ -660,6 +660,17 @@ also be used to improve performance.
    Add ``-fstrict-overflow`` to the C compiler flags (by default we add
    ``-fno-strict-overflow`` instead).
 
+.. option:: --without-remote-debug
+
+   Deactivate remote debugging support described in :pep:`768` (enabled by default).
+   When this flag is provided the code that allows the interpreter to schedule the
+   execution of a Python file in a separate process as described in :pep:`768` is
+   not compiled. This includes both the functionality to schedule code to be executed
+   and the functionality to receive code to be executed.
+
+
+   .. versionadded:: next
+
 
 .. _debug-build:
 

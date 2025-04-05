@@ -2,7 +2,7 @@
 
 from test.support import (
     run_with_locale, cpython_only, no_rerun,
-    MISSING_C_DOCSTRINGS,
+    MISSING_C_DOCSTRINGS, EqualToForwardRef,
 )
 import collections.abc
 from collections import namedtuple, UserDict
@@ -1089,7 +1089,13 @@ class UnionTests(unittest.TestCase):
         self.assertIs(int, types.UnionType[int])
         self.assertIs(int, types.UnionType[int, int])
         self.assertEqual(int | str, types.UnionType[int, str])
-        self.assertEqual(int | typing.ForwardRef("str"), types.UnionType[int, "str"])
+
+        for obj in (
+            int | typing.ForwardRef("str"),
+            typing.Union[int, "str"],
+        ):
+            self.assertIsInstance(obj, types.UnionType)
+            self.assertEqual(obj.__args__, (int, EqualToForwardRef("str")))
 
 
 class MappingProxyTests(unittest.TestCase):

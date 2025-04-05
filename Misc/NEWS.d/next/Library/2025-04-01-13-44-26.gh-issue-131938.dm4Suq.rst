@@ -1,0 +1,3 @@
+:mod:`xml.etree.ElementTree`: update the error message when an element to
+remove via :meth:`Element.remove <xml.etree.ElementTree.Element.remove>` is
+not found. Patch by Bénédikt Tran.
