@@ -3277,10 +3277,9 @@ PyObject *
 PyCData_get(ctypes_state *st, PyObject *type, GETFUNC getfunc, PyObject *src,
           Py_ssize_t index, Py_ssize_t size, char *adr)
 {
-    CDataObject *cdata = _CDataObject_CAST(src);
     if (getfunc) {
         PyObject *res;
-        Py_BEGIN_CRITICAL_SECTION(cdata);
+        Py_BEGIN_CRITICAL_SECTION(src);
         res = getfunc(adr, size);
         Py_END_CRITICAL_SECTION();
         return res;
@@ -3292,7 +3291,7 @@ PyCData_get(ctypes_state *st, PyObject *type, GETFUNC getfunc, PyObject *src,
     }
     if (info && info->getfunc && !_ctypes_simple_instance(st, type)) {
         PyObject *res;
-        Py_BEGIN_CRITICAL_SECTION(cdata);
+        Py_BEGIN_CRITICAL_SECTION(src);
         res = info->getfunc(adr, size);
         Py_END_CRITICAL_SECTION();
         return res;
@@ -5401,16 +5400,11 @@ Pointer_item_lock_held(PyObject *myself, Py_ssize_t index)
 }
 
 static PyObject *
-Pointer_item(PyObject *myself, Py_ssize_t index)
+Pointer_item(PyObject *self, Py_ssize_t index)
 {
-    CDataObject *self = _CDataObject_CAST(myself);
     PyObject *res;
-    // TODO: The plan is to make Py_BEGIN_CRITICAL_SECTION() a mutex instead of a critical
-    // section someday, so when that happens, this needs to get refactored
-    // to be re-entrant safe.
-    // This goes for all the locks here.
     Py_BEGIN_CRITICAL_SECTION(self);
-    res = Pointer_item_lock_held(myself, index);
+    res = Pointer_item_lock_held(self, index);
     Py_END_CRITICAL_SECTION();
     return res;
 }
@@ -5461,12 +5455,11 @@ Pointer_ass_item_lock_held(PyObject *myself, Py_ssize_t index, PyObject *value)
 }
 
 static int
-Pointer_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
+Pointer_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
 {
-    CDataObject *self = _CDataObject_CAST(myself);
     int res;
     Py_BEGIN_CRITICAL_SECTION(self);
-    res = Pointer_ass_item_lock_held(myself, index, value);
+    res = Pointer_ass_item_lock_held(self, index, value);
     Py_END_CRITICAL_SECTION();
     return res;
 }
@@ -5492,12 +5485,11 @@ Pointer_get_contents_lock_held(PyObject *self, void *closure)
 }
 
 static PyObject *
-Pointer_get_contents(PyObject *myself, void *closure)
+Pointer_get_contents(PyObject *self, void *closure)
 {
-    CDataObject *self = _CDataObject_CAST(myself);
     PyObject *res;
     Py_BEGIN_CRITICAL_SECTION(self);
-    res = Pointer_get_contents_lock_held(myself, closure);
+    res = Pointer_get_contents_lock_held(self, closure);
     Py_END_CRITICAL_SECTION();
     return res;
 }
