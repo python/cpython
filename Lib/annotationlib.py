@@ -37,11 +37,11 @@ _SLOTS = (
     "__forward_module__",
     "__weakref__",
     "__arg__",
-    "__ast_node__",
-    "__code__",
     "__globals__",
-    "__owner__",
+    "__code__",
+    "__ast_node__",
     "__cell__",
+    "__owner__",
     "__stringifier_dict__",
 )
 
@@ -77,9 +77,9 @@ class ForwardRef:
         self.__forward_is_argument__ = is_argument
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
+        self.__globals__ = None
         self.__code__ = None
         self.__ast_node__ = None
-        self.__globals__ = None
         self.__cell__ = None
         self.__owner__ = owner
 
@@ -221,12 +221,12 @@ class ForwardRef:
         return (
             self.__forward_arg__ == other.__forward_arg__
             and self.__forward_module__ == other.__forward_module__
-            and self.__forward_is_class__ == other.__forward_is_class__
-            and self.__code__ == other.__code__
-            and self.__ast_node__ == other.__ast_node__
             # Use "is" here because we use id() for this in __hash__
             # because dictionaries are not hashable.
             and self.__globals__ is other.__globals__
+            and self.__forward_is_class__ == other.__forward_is_class__
+            and self.__code__ == other.__code__
+            and self.__ast_node__ == other.__ast_node__
             and self.__cell__ == other.__cell__
             and self.__owner__ == other.__owner__
         )
@@ -235,10 +235,10 @@ class ForwardRef:
         return hash((
             self.__forward_arg__,
             self.__forward_module__,
+            id(self.__globals__),  # dictionaries are not hashable, so hash by identity
             self.__forward_is_class__,
             self.__code__,
             self.__ast_node__,
-            id(self.__globals__),  # dictionaries are not hashable, so hash by identity
             self.__cell__,
             self.__owner__,
         ))
