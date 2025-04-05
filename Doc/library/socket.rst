@@ -155,7 +155,6 @@ created.  Socket addresses are represented as follows:
     is the Bluetooth address as a string and ``channel`` is an integer.
 
   - :const:`BTPROTO_HCI` accepts a format that depends on your OS.
-  
     - On FreeBSD, NetBSD and DragonFlyBSD it accepts ``bdaddr`` where ``bdaddr``
       is a :class:`bytes` object containing the Bluetooth address in a
       string format. (ex. ``b'12:23:34:45:56:67'``)
