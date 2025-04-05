@@ -19,7 +19,7 @@ _types_exec(PyObject *m)
 
     EXPORT_STATIC_TYPE("AsyncGeneratorType", PyAsyncGen_Type);
     EXPORT_STATIC_TYPE("BuiltinFunctionType", PyCFunction_Type);
-    // Same as BuiltinFunctionType
+    // BuiltinMethodType is the same as BuiltinFunctionType
     EXPORT_STATIC_TYPE("BuiltinMethodType", PyCFunction_Type);
     EXPORT_STATIC_TYPE("CapsuleType", PyCapsule_Type);
     EXPORT_STATIC_TYPE("CellType", PyCell_Type);
@@ -32,7 +32,7 @@ _types_exec(PyObject *m)
     EXPORT_STATIC_TYPE("GeneratorType", PyGen_Type);
     EXPORT_STATIC_TYPE("GenericAlias", Py_GenericAliasType);
     EXPORT_STATIC_TYPE("GetSetDescriptorType", PyGetSetDescr_Type);
-    // Same as FunctionType
+    // LambdaType is the same as FunctionType
     EXPORT_STATIC_TYPE("LambdaType", PyFunction_Type);
     EXPORT_STATIC_TYPE("MappingProxyType", PyDictProxy_Type);
     EXPORT_STATIC_TYPE("MemberDescriptorType", PyMemberDescr_Type);
