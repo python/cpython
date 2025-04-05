@@ -1,0 +1,1 @@
+Fix data race and avoid jagged writes in ``list.list_ass_slice``.

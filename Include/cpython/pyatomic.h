@@ -545,6 +545,64 @@ static inline Py_ssize_t
 _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
 
 
+// --- _Py_atomic_memcpy / _Py_atomic_memmove ------------
+
+static inline void *
+_Py_atomic_memcpy_ptr_relaxed(void *dest, void *src, Py_ssize_t sn)
+{
+    size_t n = (size_t)sn;
+    assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
+    assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
+    assert(n % sizeof(void *) == 0);
+
+    if (dest != src) {
+        void **d = (void **)dest;
+        void **s = (void **)src;
+        void **e = d + n / sizeof(void *);
+
+        for (; d != e; d++, s++) {
+            void *v = _Py_atomic_load_ptr_relaxed(s);
+            _Py_atomic_store_ptr_relaxed(d, v);
+        }
+    }
+
+    return dest;
+}
+
+static inline void *
+_Py_atomic_memmove_ptr_relaxed(void *dest, void *src, Py_ssize_t sn)
+{
+    size_t n = (size_t)sn;
+    assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
+    assert(((uintptr_t)src & (sizeof (void *) - 1)) == 0);
+    assert(n % sizeof(void *) == 0);
+
+    if (dest < src || dest >= (void *)((char *)src + n)) {
+        void **d = (void **)dest;
+        void **s = (void **)src;
+        void **e = d + n / sizeof(void *);
+
+        for (; d != e; d++, s++) {
+            void *v = _Py_atomic_load_ptr_relaxed(s);
+            _Py_atomic_store_ptr_relaxed(d, v);
+        }
+    }
+    else if (dest > src) {
+        n = n / sizeof(void *) - 1;
+        void **d = (void **)dest + n;
+        void **s = (void **)src + n;
+        void **e = (void **)dest - 1;
+
+        for (; d != e; d--, s--) {
+            void *v = _Py_atomic_load_ptr_relaxed(s);
+            _Py_atomic_store_ptr_relaxed(d, v);
+        }
+    }
+
+    return dest;
+}
+
+
 
 
 // --- _Py_atomic_fence ------------------------------------------------------
