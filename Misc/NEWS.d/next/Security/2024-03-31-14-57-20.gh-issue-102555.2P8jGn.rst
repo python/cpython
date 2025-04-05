@@ -1,0 +1,1 @@
+Follow the `parsing recommendation <https://html.spec.whatwg.org/multipage/parsing.html#parse-error-incorrectly-closed-comment>`_ and `standard <https://html.spec.whatwg.org/#comments>`_ for closing comment tag in the :mod:`html.parser`. Increased compliance leads to predictable behavior, thus enhancing security.
