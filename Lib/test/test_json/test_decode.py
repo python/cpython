@@ -130,6 +130,10 @@ class TestDecode:
             with self.assertRaises(ValueError):
                 self.loads('1' * (maxdigits + 1))
 
+    def test_memoryview(self):
+        bom_json = "[1,2,3]".encode('utf-8-sig')
+        self.assertEqual(self.json.loads(memoryview(bom_json)), [1,2,3])
+
 
 class TestPyDecode(TestDecode, PyTest): pass
 class TestCDecode(TestDecode, CTest): pass
