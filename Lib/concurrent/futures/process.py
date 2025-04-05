@@ -358,13 +358,12 @@ class _ExecutorManagerThread(threading.Thread):
                 work_item = self.pending_work_items.pop(work_id, None)
                 # work_item can be None if another process terminated (see above)
                 if work_item is not None:
-                    f = work_item.future
+                    f_boxed = [work_item.future]
                     del work_item
                     if exception:
-                        f.set_exception(exception)
+                        f_boxed.pop().set_exception(exception)
                     else:
-                        f.set_result(result)
-                    del f
+                        f_boxed.pop().set_result(result)
 
                 # Delete reference to exception/result to avoid keeping references
                 # while waiting on new results.
