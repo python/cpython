@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "pycore_call.h"          // _Py_CheckFunctionResult()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
+#include "pycore_freelist.h"
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
@@ -85,9 +86,12 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
                             "flag but no class");
             return NULL;
         }
-        PyCMethodObject *om = PyObject_GC_New(PyCMethodObject, &PyCMethod_Type);
+        PyCMethodObject *om = _Py_FREELIST_POP(PyCMethodObject, pycmethodobject);
         if (om == NULL) {
-            return NULL;
+            om = PyObject_GC_New(PyCMethodObject, &PyCMethod_Type);
+            if (om == NULL) {
+                return NULL;
+            }
         }
         om->mm_class = (PyTypeObject*)Py_NewRef(cls);
         op = (PyCFunctionObject *)om;
@@ -98,9 +102,12 @@ PyCMethod_New(PyMethodDef *ml, PyObject *self, PyObject *module, PyTypeObject *c
                             "but no METH_METHOD flag");
             return NULL;
         }
-        op = PyObject_GC_New(PyCFunctionObject, &PyCFunction_Type);
+        op = _Py_FREELIST_POP(PyCFunctionObject, pycfunctionobject);
         if (op == NULL) {
-            return NULL;
+            op = PyObject_GC_New(PyCFunctionObject, &PyCFunction_Type);
+            if (op == NULL) {
+                return NULL;
+            }
         }
     }
 
@@ -171,7 +178,14 @@ meth_dealloc(PyObject *self)
     Py_XDECREF(PyCFunction_GET_CLASS(m));
     Py_XDECREF(m->m_self);
     Py_XDECREF(m->m_module);
-    PyObject_GC_Del(m);
+    if (m->m_ml->ml_flags & METH_METHOD) {
+        assert(Py_IS_TYPE(self, &PyCMethod_Type));
+        _Py_FREELIST_FREE(pycmethodobject, m, PyObject_GC_Del);
+    }
+    else {
+        assert(Py_IS_TYPE(self, &PyCFunction_Type));
+        _Py_FREELIST_FREE(pycfunctionobject, m, PyObject_GC_Del);
+    }
     Py_TRASHCAN_END;
 }
 
