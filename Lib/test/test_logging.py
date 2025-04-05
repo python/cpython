@@ -4352,6 +4352,7 @@ class QueueHandlerTest(BaseTest):
     def test_queue_listener_context_manager(self):
         handler = TestHandler(support.Matcher())
         with logging.handlers.QueueListener(self.queue, handler) as listener:
+            self.assertIsIsintance(listener, logging.handlers.QueueListener)
             self.assertIsNotNone(listener._thread)
         self.assertIsNone(listener._thread)
 
