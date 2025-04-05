@@ -268,6 +268,16 @@ class TestMain(unittest.TestCase):
             (r'" \"foo\" "', b'\x1b[32m" \\"foo\\" "\x1b[0m'),
             ('123', b'\x1b[33m123\x1b[0m'),
             ('-1.2345e+23', b'\x1b[33m-1.2345e+23\x1b[0m'),
+            (r'{"\\": ""}',
+             b'''\
+{
+    \x1b[32m"\\\\"\x1b[0m: \x1b[32m""\x1b[0m
+}'''),
+            (r'{"\\\\": ""}',
+             b'''\
+{
+    \x1b[32m"\\\\\\\\"\x1b[0m: \x1b[32m""\x1b[0m
+}'''),
             ('{"foo": "bar", "baz": 1234, "qux": [true, false, null]}',
              b'''\
 {
