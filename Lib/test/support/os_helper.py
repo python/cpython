@@ -7,6 +7,7 @@ import re
 import stat
 import string
 import sys
+import threading
 import time
 import unittest
 import warnings
@@ -736,64 +737,73 @@ else:
 
 
 class EnvironmentVarGuard(collections.abc.MutableMapping):
-    """Class to help protect the environment variable properly.
-
+    """Thread-safe class to help protect environment variables.
     Can be used as a context manager.
     """
 
     def __init__(self):
         self._environ = os.environ
         self._changed = {}
+        self._lock = threading.RLock()
 
     def __getitem__(self, envvar):
-        return self._environ[envvar]
+        with self._lock:
+            return self._environ[envvar]
 
     def __setitem__(self, envvar, value):
-        # Remember the initial value on the first access
-        if envvar not in self._changed:
-            self._changed[envvar] = self._environ.get(envvar)
-        self._environ[envvar] = value
+        with self._lock:
+            # Remember the initial value on the first access
+            if envvar not in self._changed:
+                self._changed[envvar] = self._environ.get(envvar)
+            self._environ[envvar] = value
 
     def __delitem__(self, envvar):
-        # Remember the initial value on the first access
-        if envvar not in self._changed:
-            self._changed[envvar] = self._environ.get(envvar)
-        if envvar in self._environ:
-            del self._environ[envvar]
+        with self._lock:
+            # Remember the initial value on the first access
+            if envvar not in self._changed:
+                self._changed[envvar] = self._environ.get(envvar)
+            self._environ.pop(envvar, None)
 
     def keys(self):
-        return self._environ.keys()
+        with self._lock:
+            return list(self._environ.keys())
 
     def __iter__(self):
-        return iter(self._environ)
+        with self._lock:
+            return iter(dict(self._environ))
 
     def __len__(self):
-        return len(self._environ)
+        with self._lock:
+            return len(self._environ)
 
     def set(self, envvar, value):
         self[envvar] = value
 
     def unset(self, envvar, /, *envvars):
         """Unset one or more environment variables."""
-        for ev in (envvar, *envvars):
-            del self[ev]
+        with self._lock:
+            for ev in (envvar, *envvars):
+                del self[ev]
 
     def copy(self):
-        # We do what os.environ.copy() does.
-        return dict(self)
+        with self._lock:
+            return dict(self._environ)
 
     def __enter__(self):
         return self
 
-    def __exit__(self, *ignore_exc):
-        for (k, v) in self._changed.items():
-            if v is None:
-                if k in self._environ:
-                    del self._environ[k]
-            else:
-                self._environ[k] = v
-        os.environ = self._environ
+    def __reduce__(self):
+        return (dict, (dict(self),))
 
+    def __exit__(self, *ignore_exc):
+        with self._lock:
+            for (k, v) in self._changed.items():
+                if v is None:
+                    self._environ.pop(k, None)
+                else:
+                    self._environ[k] = v
+            self._changed.clear()
+            os.environ = self._environ
 
 try:
     if support.MS_WINDOWS:
