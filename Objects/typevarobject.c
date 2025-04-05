@@ -529,7 +529,7 @@ typevar_repr(PyObject *self)
 }
 
 static PyMemberDef typevar_members[] = {
-    {"__name__", _Py_T_OBJECT, offsetof(typevarobject, name), Py_READONLY},
+    {"__name__", Py_T_OBJECT_EX, offsetof(typevarobject, name), Py_READONLY},
     {"__covariant__", Py_T_BOOL, offsetof(typevarobject, covariant), Py_READONLY},
     {"__contravariant__", Py_T_BOOL, offsetof(typevarobject, contravariant), Py_READONLY},
     {"__infer_variance__", Py_T_BOOL, offsetof(typevarobject, infer_variance), Py_READONLY},
@@ -987,7 +987,7 @@ paramspecattr_richcompare(PyObject *a, PyObject *b, int op)
 }
 
 static PyMemberDef paramspecattr_members[] = {
-    {"__origin__", _Py_T_OBJECT, offsetof(paramspecattrobject, __origin__), Py_READONLY},
+    {"__origin__", Py_T_OBJECT_EX, offsetof(paramspecattrobject, __origin__), Py_READONLY},
     {0}
 };
 
@@ -1219,8 +1219,8 @@ paramspec_repr(PyObject *self)
 }
 
 static PyMemberDef paramspec_members[] = {
-    {"__name__", _Py_T_OBJECT, offsetof(paramspecobject, name), Py_READONLY},
-    {"__bound__", _Py_T_OBJECT, offsetof(paramspecobject, bound), Py_READONLY},
+    {"__name__", Py_T_OBJECT_EX, offsetof(paramspecobject, name), Py_READONLY},
+    {"__bound__", Py_T_OBJECT_EX, offsetof(paramspecobject, bound), Py_READONLY},
     {"__covariant__", Py_T_BOOL, offsetof(paramspecobject, covariant), Py_READONLY},
     {"__contravariant__", Py_T_BOOL, offsetof(paramspecobject, contravariant), Py_READONLY},
     {"__infer_variance__", Py_T_BOOL, offsetof(paramspecobject, infer_variance), Py_READONLY},
@@ -1555,7 +1555,7 @@ typevartuple_repr(PyObject *self)
 }
 
 static PyMemberDef typevartuple_members[] = {
-    {"__name__", _Py_T_OBJECT, offsetof(typevartupleobject, name), Py_READONLY},
+    {"__name__", Py_T_OBJECT_EX, offsetof(typevartupleobject, name), Py_READONLY},
     {0}
 };
 
@@ -1882,7 +1882,7 @@ typealias_repr(PyObject *self)
 }
 
 static PyMemberDef typealias_members[] = {
-    {"__name__", _Py_T_OBJECT, offsetof(typealiasobject, name), Py_READONLY},
+    {"__name__", Py_T_OBJECT_EX, offsetof(typealiasobject, name), Py_READONLY},
     {0}
 };
 
