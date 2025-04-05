@@ -169,6 +169,16 @@ The following constants are available:
    .. versionadded:: 3.4
 
 
+The following exceptions are available:
+
+.. exception:: InvalidFileException
+
+   Raised by plist file parser functions (e.g. :func:`load`)
+   when the file cannot be parsed.
+
+   .. versionadded:: 3.4
+
+
 Examples
 --------
 
