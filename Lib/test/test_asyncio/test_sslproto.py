@@ -2,6 +2,7 @@
 
 import logging
 import socket
+import threading
 import unittest
 import weakref
 from test import support
@@ -652,6 +653,130 @@ class BaseStartTLS(func_tests.FunctionalTestCaseMixin):
             server.close()
             await server.wait_closed()
             self.assertEqual(answer, ANSWER)
+
+        self.loop.run_until_complete(run_main())
+
+    def test_start_tls_writing_paused(self):
+        # gh-109051: start_tls() should not break if called while transport has
+        # paused writing.
+
+        HELLO_MSG = b'1' * self.PAYLOAD_SIZE
+
+        server_context = test_utils.simple_server_sslcontext()
+        client_context = test_utils.simple_client_sslcontext()
+        has_paused_writing_event = threading.Event()
+        hello_count = 0
+
+        def client(sock, addr):
+            sock.settimeout(self.TIMEOUT)
+            sock.connect(addr)
+
+            # Wait until we know that the server transport has paused writing
+            has_paused_writing_event.wait(timeout=support.SHORT_TIMEOUT)
+            has_paused_writing_event.clear()
+
+            for _ in range(hello_count):
+                data = sock.recv_all(len(HELLO_MSG))
+                self.assertEqual(len(data), len(HELLO_MSG))
+
+            sock.start_tls(client_context)
+            self.assertFalse(has_paused_writing_event.is_set())
+            sock.sendall(HELLO_MSG)
+
+            # Wait once again
+            has_paused_writing_event.wait(timeout=support.SHORT_TIMEOUT)
+            for _ in range(hello_count):
+                data = sock.recv_all(len(HELLO_MSG))
+                self.assertEqual(len(data), len(HELLO_MSG))
+
+            sock.close()
+
+        class ServerProto(asyncio.Protocol):
+            def __init__(self, on_con, on_con_lost, on_got_hello):
+                self.on_con = on_con
+                self.on_con_lost = on_con_lost
+                self.on_got_hello = on_got_hello
+                self.data = b''
+                self.transport = None
+                self.is_writing_paused = False
+
+            def connection_made(self, tr):
+                self.transport = tr
+                self.on_con.set_result(tr)
+
+            def replace_transport(self, tr):
+                self.transport = tr
+
+            def data_received(self, data):
+                self.data += data
+                if len(self.data) >= len(HELLO_MSG):
+                    self.on_got_hello.set_result(None)
+
+            def pause_writing(self) -> None:
+                self.is_writing_paused = True
+
+            def resume_writing(self) -> None:
+                self.is_writing_paused = False
+
+            def connection_lost(self, exc):
+                self.transport = None
+                if exc is None:
+                    self.on_con_lost.set_result(None)
+                else:
+                    self.on_con_lost.set_exception(exc)
+
+        async def main(proto, on_con, on_con_lost, on_got_hello):
+            nonlocal hello_count
+            tr = await on_con
+
+            while not proto.is_writing_paused:
+                tr.write(HELLO_MSG)
+                hello_count += 1
+            has_paused_writing_event.set()
+
+            self.assertEqual(proto.data, b'')
+
+            new_tr = await self.loop.start_tls(
+                tr, proto, server_context,
+                server_side=True,
+                ssl_handshake_timeout=self.TIMEOUT)
+            proto.replace_transport(new_tr)
+
+            await on_got_hello
+
+            # Check pause/resume_writing are still being called after the
+            # protocol is switched.
+            self.assertFalse(proto.is_writing_paused)
+            self.assertFalse(has_paused_writing_event.is_set())
+            hello_count = 0
+            while not proto.is_writing_paused:
+                new_tr.write(HELLO_MSG)
+                hello_count += 1
+            has_paused_writing_event.set()
+
+            await on_con_lost
+            self.assertFalse(proto.is_writing_paused)
+            self.assertEqual(proto.data, HELLO_MSG)
+            new_tr.close()
+
+        async def run_main():
+            on_con = self.loop.create_future()
+            on_con_lost = self.loop.create_future()
+            on_got_hello = self.loop.create_future()
+            proto = ServerProto(on_con, on_con_lost, on_got_hello)
+
+            server = await self.loop.create_server(
+                lambda: proto, '127.0.0.1', 0)
+            addr = server.sockets[0].getsockname()
+
+            with self.tcp_client(lambda sock: client(sock, addr),
+                                 timeout=self.TIMEOUT):
+                await asyncio.wait_for(
+                    main(proto, on_con, on_con_lost, on_got_hello),
+                    timeout=self.TIMEOUT)
+
+            server.close()
+            await server.wait_closed()
 
         self.loop.run_until_complete(run_main())
 
