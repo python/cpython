@@ -232,6 +232,40 @@ class TestMain(unittest.TestCase):
         proc.communicate(b'"{}"')
         self.assertEqual(proc.returncode, errno.EPIPE)
 
+    def test_colors(self):
+        infile = os_helper.TESTFN
+        self.addCleanup(os.remove, infile)
+
+        cases = (
+            ('{}', b'{}'),
+            ('[]', b'[]'),
+            ('null', b'\x1b[36mnull\x1b[0m'),
+            ('true', b'\x1b[36mtrue\x1b[0m'),
+            ('false', b'\x1b[36mfalse\x1b[0m'),
+            ('"foo"', b'\x1b[32m"foo"\x1b[0m'),
+            ('123', b'\x1b[33m123\x1b[0m'),
+            ('-1.2345e+23', b'\x1b[33m-1.2345e+23\x1b[0m'),
+            ('{"foo": "bar", "baz": 1234, "qux": [true, false, null]}',
+             b'''\
+{
+    \x1b[32m"foo"\x1b[0m: \x1b[32m"bar"\x1b[0m,
+    \x1b[32m"baz"\x1b[0m: \x1b[33m1234\x1b[0m,
+    \x1b[32m"qux"\x1b[0m: [
+        \x1b[36mtrue\x1b[0m,
+        \x1b[36mfalse\x1b[0m,
+        \x1b[36mnull\x1b[0m
+    ]
+}'''),
+        )
+
+        for input_, expected in cases:
+            with self.subTest(input=input_):
+                with open(infile, "w", encoding="utf-8") as fp:
+                    fp.write(input_)
+                _, stdout, _ = assert_python_ok('-m', self.module, infile,
+                                                PYTHON_COLORS='1')
+                self.assertEqual(stdout.strip(), expected)
+
 
 @support.requires_subprocess()
 class TestTool(TestMain):

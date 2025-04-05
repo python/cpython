@@ -6,6 +6,8 @@ See `json.__main__` for a usage example (invocation as
 import argparse
 import json
 import sys
+import re
+from _colorize import ANSIColors, can_colorize
 
 
 def main():
@@ -48,6 +50,8 @@ def main():
         dump_args['indent'] = None
         dump_args['separators'] = ',', ':'
 
+    with_colors = can_colorize()
+
     try:
         if options.infile == '-':
             infile = sys.stdin
@@ -68,10 +72,40 @@ def main():
             outfile = open(options.outfile, 'w', encoding='utf-8')
         with outfile:
             for obj in objs:
-                json.dump(obj, outfile, **dump_args)
+                if with_colors:
+                    json_str = json.dumps(obj, **dump_args)
+                    outfile.write(colorize_json(json_str))
+                else:
+                    json.dump(obj, outfile, **dump_args)
                 outfile.write('\n')
     except ValueError as e:
         raise SystemExit(e)
+
+
+color_pattern = re.compile(r'''
+    (?P<string>"(.*?)")     |   # String
+    (?P<number>[\d\-+.Ee]+) |   # Number
+    (?P<boolean>true|false) |   # Boolean
+    (?P<null>null)              # Null
+''', re.VERBOSE)
+
+
+def colorize_json(json_str):
+    colors = {
+        'string': ANSIColors.GREEN,
+        'number': ANSIColors.YELLOW,
+        'boolean': ANSIColors.CYAN,
+        'null': ANSIColors.CYAN,
+    }
+
+    def replace(match):
+        for key in colors:
+            if match.group(key):
+                color = colors[key]
+                return f"{color}{match.group(key)}{ANSIColors.RESET}"
+        return match.group()
+
+    return re.sub(color_pattern, replace, json_str)
 
 
 if __name__ == '__main__':
