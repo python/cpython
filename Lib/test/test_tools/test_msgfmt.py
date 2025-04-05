@@ -177,7 +177,8 @@ class CLITest(unittest.TestCase):
             # Multiple input files
             res = assert_python_ok(msgfmt, '--statistics', '-o', 'temp.mo', data_dir / "general.po", data_dir / "fuzzy.po")
             out = res.out.decode('utf-8').strip()
-            self.assertEqual('7 translated messages, 1 untranslated message.\n0 translated messages.', out)
+            self.assertIn('general.po: 7 translated messages, 1 untranslated message.', out)
+            self.assertIn('fuzzy.po: 0 translated messages.', out)
 
 
 def update_catalog_snapshots():

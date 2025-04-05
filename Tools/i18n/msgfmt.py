@@ -272,7 +272,9 @@ def main():
                     translated += 1
 
             untranslated = strings - translated
-            message = f"{translated} translated message{'s' if translated != 1 else ''}"
+
+            message = (f"{os.path.basename(filename) + ': ' if len(args) > 1 else ''}"
+                       f"{translated} translated message{'s' if translated != 1 else ''}")
             if untranslated > 0:
                 message += f", {untranslated} untranslated message{'s' if untranslated != 1 else ''}"
             message += "."
