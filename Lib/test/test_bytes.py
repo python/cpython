@@ -10,6 +10,7 @@ import re
 import sys
 import copy
 import functools
+import operator
 import pickle
 import tempfile
 import textwrap
