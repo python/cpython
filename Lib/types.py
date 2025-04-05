@@ -14,7 +14,7 @@ except ImportError:
 
     def _f(): pass
     FunctionType = type(_f)
-    LambdaType = type(lambda: None)         # Same as FunctionType
+    LambdaType = type(lambda: None)  # Same as FunctionType
     CodeType = type(_f.__code__)
     MappingProxyType = type(type.__dict__)
     SimpleNamespace = type(sys.implementation)
@@ -45,7 +45,7 @@ except ImportError:
     MethodType = type(_C()._m)
 
     BuiltinFunctionType = type(len)
-    BuiltinMethodType = type([].append)     # Same as BuiltinFunctionType
+    BuiltinMethodType = type([].append)  # Same as BuiltinFunctionType
 
     WrapperDescriptorType = type(object.__init__)
     MethodWrapperType = type(object().__str__)
