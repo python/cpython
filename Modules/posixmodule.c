@@ -5372,7 +5372,7 @@ _testFileExistsByName(LPCWSTR path, BOOL followLinks)
                                      sizeof(info)))
     {
         if (!(info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ||
-            !followLinks && IsReparseTagNameSurrogate(info.ReparseTag))
+            (!followLinks && IsReparseTagNameSurrogate(info.ReparseTag)))
         {
             return TRUE;
         }
