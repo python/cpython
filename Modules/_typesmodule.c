@@ -3,8 +3,8 @@
 #include "Python.h"
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
-#include "pycore_object.h"       // _PyNone_Type, _PyNotImplemented_Type
-#include "pycore_unionobject.h"  // _PyUnion_Type
+#include "pycore_object.h"        // _PyNone_Type, _PyNotImplemented_Type
+#include "pycore_unionobject.h"   // _PyUnion_Type
 
 static int
 _types_exec(PyObject *m)
