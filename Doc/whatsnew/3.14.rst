@@ -791,7 +791,7 @@ logging.handlers
 
 * :class:`logging.handlers.QueueListener` now implements the context
   manager protocol, allowing it to be used in a :keyword:`with` statement.
-  (Contributed by Charles Machalow in :gh:`TBD`.)
+  (Contributed by Charles Machalow in :gh:`132107`.)
 
 
 mimetypes
