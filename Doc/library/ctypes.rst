@@ -871,6 +871,14 @@ invalid non-\ ``NULL`` pointers would crash Python)::
    ValueError: NULL pointer access
    >>>
 
+.. _ctypes-pointers-ctypes-like-types:
+
+Pointers for ctypes-like types
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In some cases you want that :func:`POINTER` can accept non-ctypes types. To do so
+just add to your types a class level attribute with the name ``__pointer_type__``.
+
 .. _ctypes-thread-safety:
 
 Thread safety without the GIL
@@ -2171,9 +2179,10 @@ Utility functions
 
 .. function:: POINTER(type, /)
 
-   Create and return a new ctypes pointer type. Pointer types are cached and
+   Create or return a ctypes pointer type. Pointer types are cached and
    reused internally, so calling this function repeatedly is cheap.
-   *type* must be a ctypes type.
+   *type* must be a ctypes-like type. The ctypes-like type is a type that
+   has class level attribute with the name ``__pointer_type__``.
 
 
 .. function:: pointer(obj, /)
@@ -2359,6 +2368,14 @@ Data types
       that need to be kept alive so that the memory block contents is kept
       valid.  This object is only exposed for debugging; never modify the
       contents of this dictionary.
+
+   .. attribute:: __pointer_type__
+
+      This attributes is a pointer type that was created by calling
+      :func:`POINTER` for corresponding ctypes data type. If ``POINTER`` was
+      not called then this attribute contains ``None``.
+
+      .. versionadded:: 3.14
 
 
 .. _ctypes-fundamental-data-types-2:

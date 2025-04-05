@@ -265,7 +265,40 @@ _check_size(c_void_p)
 class c_bool(_SimpleCData):
     _type_ = "?"
 
-from _ctypes import POINTER, pointer, _pointer_type_cache
+def POINTER(cls):
+    """Create and return a new ctypes pointer type.
+
+    Pointer types are cached and reused internally,
+    so calling this function repeatedly is cheap.
+
+    Pointer types for incomplete types are not cached,
+    so calling this function repeatedly will give
+    different types.
+    """
+    if cls is None:
+        return c_void_p
+    try:
+        pt = cls.__pointer_type__
+        if pt is not None:
+            return pt
+    except AttributeError:
+        pass
+    if isinstance(cls, str):
+        return type(f'LP_{cls}', (_Pointer,), {})
+    return type(f'LP_{cls.__name__}', (_Pointer,), {'_type_': cls})
+
+def pointer(obj):
+    """Create a new pointer instance, pointing to 'obj'.
+
+    The returned object is of the type POINTER(type(obj)). Note that if you
+    just want to pass a pointer to an object to a foreign function call, you
+    should use byref(obj) which is much faster.
+    """
+    typ = POINTER(type(obj))
+    return typ(obj)
+
+_pointer_type_cache = {}
+"""XXX: Subject to change."""
 
 class c_wchar_p(_SimpleCData):
     _type_ = "Z"
@@ -320,11 +353,9 @@ def SetPointerType(pointer, cls):
     warnings._deprecated("ctypes.SetPointerType", remove=(3, 15))
     if _pointer_type_cache.get(cls, None) is not None:
         raise RuntimeError("This type already exists in the cache")
-    if id(pointer) not in _pointer_type_cache:
-        raise RuntimeError("What's this???")
+
     pointer.set_type(cls)
     _pointer_type_cache[cls] = pointer
-    del _pointer_type_cache[id(pointer)]
 
 def ARRAY(typ, len):
     return typ * len

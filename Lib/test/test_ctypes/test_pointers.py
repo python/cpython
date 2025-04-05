@@ -1,15 +1,17 @@
 import array
 import ctypes
+import gc
 import sys
 import unittest
 from ctypes import (CDLL, CFUNCTYPE, Structure,
-                    POINTER, pointer, _Pointer, _pointer_type_cache,
+                    POINTER, pointer, _Pointer,
                     byref, sizeof,
                     c_void_p, c_char_p,
                     c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong,
                     c_float, c_double)
 from test.support import import_helper
+from weakref import WeakSet
 _ctypes_test = import_helper.import_module("_ctypes_test")
 from ._support import (_CData, PyCPointerType, Py_TPFLAGS_DISALLOW_INSTANTIATION,
                        Py_TPFLAGS_IMMUTABLETYPE)
@@ -127,6 +129,14 @@ class PointersTestCase(unittest.TestCase):
         addr = a.buffer_info()[0]
         p = POINTER(POINTER(c_int))
 
+    def test_pointer_from_pointer(self):
+        p1 = POINTER(c_int)
+        p2 = POINTER(p1)
+
+        self.assertIsNot(p1, p2)
+        self.assertIs(p1.__pointer_type__, p2)
+        self.assertIs(p2._type_, p1)
+
     def test_other(self):
         class Table(Structure):
             _fields_ = [("a", c_int),
@@ -140,8 +150,6 @@ class PointersTestCase(unittest.TestCase):
         self.assertEqual(pt.contents.c, 3)
 
         pt.contents.c = 33
-
-        del _pointer_type_cache[Table]
 
     def test_basic(self):
         p = pointer(c_int(42))
@@ -175,6 +183,7 @@ class PointersTestCase(unittest.TestCase):
         q = pointer(y)
         pp[0] = q         # <==
         self.assertEqual(p[0], 6)
+
     def test_c_void_p(self):
         # http://sourceforge.net/tracker/?func=detail&aid=1518190&group_id=5470&atid=105470
         if sizeof(c_void_p) == 4:
@@ -193,6 +202,30 @@ class PointersTestCase(unittest.TestCase):
         self.assertRaises(TypeError, c_void_p, 3.14) # make sure floats are NOT accepted
         self.assertRaises(TypeError, c_void_p, object()) # nor other objects
 
+    def test_read_null_pointer(self):
+        null_ptr = POINTER(c_int)()
+        with self.assertRaisesRegex(ValueError, "NULL pointer access"):
+            null_ptr[0]
+
+    def test_write_null_pointer(self):
+        null_ptr = POINTER(c_int)()
+        with self.assertRaisesRegex(ValueError, "NULL pointer access"):
+            null_ptr[0] = 1
+
+    def test_set_pointer_to_null_and_read(self):
+        class Bar(Structure):
+            _fields_ = [("values", POINTER(c_int))]
+
+        bar = Bar()
+        bar.values = (c_int * 3)(1, 2, 3)
+
+        values = [bar.values[0], bar.values[1], bar.values[2]]
+        self.assertEqual(values, [1, 2, 3])
+
+        bar.values = None
+        with self.assertRaisesRegex(ValueError, "NULL pointer access"):
+            bar.values[0]
+
     def test_pointers_bool(self):
         # NULL pointers have a boolean False value, non-NULL pointers True.
         self.assertEqual(bool(POINTER(c_int)()), False)
@@ -210,19 +243,113 @@ class PointersTestCase(unittest.TestCase):
         LargeNamedType = type('T' * 2 ** 25, (Structure,), {})
         self.assertTrue(POINTER(LargeNamedType))
 
-        # to not leak references, we must clean _pointer_type_cache
-        del _pointer_type_cache[LargeNamedType]
-
     def test_pointer_type_str_name(self):
         large_string = 'T' * 2 ** 25
         P = POINTER(large_string)
         self.assertTrue(P)
 
-        # to not leak references, we must clean _pointer_type_cache
-        del _pointer_type_cache[id(P)]
-
     def test_abstract(self):
         self.assertRaises(TypeError, _Pointer.set_type, 42)
+
+    def test_pointer_types_equal(self):
+        t1 = POINTER(c_int)
+        t2 = POINTER(c_int)
+
+        self.assertIs(t1, t2)
+
+        p1 = t1(c_int(1))
+        p2 = pointer(c_int(1))
+
+        self.assertIsInstance(p1, t1)
+        self.assertIsInstance(p2, t1)
+
+        self.assertIs(type(p1), t1)
+        self.assertIs(type(p2), t1)
+
+    def test_incomplete_pointer_types_not_equal(self):
+        t1 = POINTER("LP_C")
+        t2 = POINTER("LP_C")
+
+        self.assertIsNot(t1, t2)
+
+    def test_incomplete_pointer_types_cannot_instantiate(self):
+        t1 = POINTER("LP_C")
+        with self.assertRaisesRegex(TypeError, "has no _type_"):
+            t1()
+
+    def test_pointer_set_type_twice(self):
+        t1 = POINTER(c_int)
+        self.assertIs(c_int.__pointer_type__, t1)
+        self.assertIs(t1._type_, c_int)
+
+        t1.set_type(c_int)
+        self.assertIs(c_int.__pointer_type__, t1)
+        self.assertIs(t1._type_, c_int)
+
+    def test_pointer_set_wrong_type(self):
+        class C(c_int):
+            pass
+
+        t1 = POINTER(c_int)
+        with self.assertRaisesRegex(TypeError, "pointer type already set"):
+            t1.set_type(c_float)
+
+        with self.assertRaisesRegex(TypeError, "cls type already set"):
+            t1.set_type(C)
+
+    def test_pointer_not_ctypes_type(self):
+        with self.assertRaisesRegex(TypeError, "must have storage info"):
+            POINTER(int)
+
+        with self.assertRaisesRegex(TypeError, "must have storage info"):
+            pointer(int)
+
+        with self.assertRaisesRegex(TypeError, "must have storage info"):
+            pointer(int(1))
+
+    def test_pointer_set_python_type(self):
+        p1 = POINTER(c_int)
+        with self.assertRaisesRegex(TypeError, "must have storage info"):
+            p1.set_type(int)
+
+    def test_pointer_type_attribute_is_none(self):
+        class Cls(Structure):
+            _fields_ = (
+                ('a', c_int),
+                ('b', c_float),
+            )
+
+        self.assertIsNone(Cls.__pointer_type__)
+        p = POINTER(Cls)
+        self.assertIs(Cls.__pointer_type__, p)
+
+    def test_pointer_types_factory(self):
+        """Shouldn't leak"""
+        def factory():
+            class Cls(Structure):
+                _fields_ = (
+                    ('a', c_int),
+                    ('b', c_float),
+                )
+
+            return Cls
+
+        ws_typ = WeakSet()
+        ws_ptr = WeakSet()
+        for _ in range(10):
+            typ = factory()
+            ptr = POINTER(typ)
+
+            ws_typ.add(typ)
+            ws_ptr.add(ptr)
+
+        typ = None
+        ptr = None
+
+        gc.collect()
+
+        self.assertEqual(len(ws_typ), 0, ws_typ)
+        self.assertEqual(len(ws_ptr), 0, ws_ptr)
 
 
 if __name__ == '__main__':
