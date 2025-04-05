@@ -9,89 +9,43 @@
 static int
 _types_exec(PyObject *m)
 {
-    if (PyModule_AddObjectRef(m, "AsyncGeneratorType", (PyObject *)&PyAsyncGen_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "BuiltinFunctionType", (PyObject *)&PyCFunction_Type) < 0) {
-        return -1;
-    }
-    // Same as BuiltinMethodType
-    if (PyModule_AddObjectRef(m, "BuiltinMethodType", (PyObject *)&PyCFunction_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "CapsuleType", (PyObject *)&PyCapsule_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "CellType", (PyObject *)&PyCell_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "ClassMethodDescriptorType", (PyObject *)&PyClassMethodDescr_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "CodeType", (PyObject *)&PyCode_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "CoroutineType", (PyObject *)&PyCoro_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "EllipsisType", (PyObject *)&PyEllipsis_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "FrameType", (PyObject *)&PyFrame_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "FunctionType", (PyObject *)&PyFunction_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "GeneratorType", (PyObject *)&PyGen_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "GenericAlias", (PyObject *)&Py_GenericAliasType) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "GetSetDescriptorType", (PyObject *)&PyGetSetDescr_Type) < 0) {
-        return -1;
-    }
+#define EXPORT_STATIC_TYPE(NAME, TYPE)                                   \
+    do {                                                                 \
+        if (PyModule_AddObjectRef(m, (NAME), (PyObject *)&(TYPE)) < 0) { \
+            return -1;                                                   \
+        }                                                                \
+    } while (0)
+
+    EXPORT_STATIC_TYPE("AsyncGeneratorType", PyAsyncGen_Type);
+    EXPORT_STATIC_TYPE("BuiltinFunctionType", PyCFunction_Type);
+    // Same as BuiltinFunctionType
+    EXPORT_STATIC_TYPE("BuiltinMethodType", PyCFunction_Type);
+    EXPORT_STATIC_TYPE("CapsuleType", PyCapsule_Type);
+    EXPORT_STATIC_TYPE("CellType", PyCell_Type);
+    EXPORT_STATIC_TYPE("ClassMethodDescriptorType", PyClassMethodDescr_Type);
+    EXPORT_STATIC_TYPE("CodeType", PyCode_Type);
+    EXPORT_STATIC_TYPE("CoroutineType", PyCoro_Type);
+    EXPORT_STATIC_TYPE("EllipsisType", PyEllipsis_Type);
+    EXPORT_STATIC_TYPE("FrameType", PyFrame_Type);
+    EXPORT_STATIC_TYPE("FunctionType", PyFunction_Type);
+    EXPORT_STATIC_TYPE("GeneratorType", PyGen_Type);
+    EXPORT_STATIC_TYPE("GenericAlias", Py_GenericAliasType);
+    EXPORT_STATIC_TYPE("GetSetDescriptorType", PyGetSetDescr_Type);
     // Same as FunctionType
-    if (PyModule_AddObjectRef(m, "LambdaType", (PyObject *)&PyFunction_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "MappingProxyType", (PyObject *)&PyDictProxy_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "MemberDescriptorType", (PyObject *)&PyMemberDescr_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "MethodDescriptorType", (PyObject *)&PyMethodDescr_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "MethodType", (PyObject *)&PyMethod_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "MethodWrapperType", (PyObject *)&_PyMethodWrapper_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "ModuleType", (PyObject *)&PyModule_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "NoneType", (PyObject *)&_PyNone_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "NotImplementedType", (PyObject *)&_PyNotImplemented_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "SimpleNamespace", (PyObject *)&_PyNamespace_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "TracebackType", (PyObject *)&PyTraceBack_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "UnionType", (PyObject *)&_PyUnion_Type) < 0) {
-        return -1;
-    }
-    if (PyModule_AddObjectRef(m, "WrapperDescriptorType", (PyObject *)&PyWrapperDescr_Type) < 0) {
-        return -1;
-    }
+    EXPORT_STATIC_TYPE("LambdaType", PyFunction_Type);
+    EXPORT_STATIC_TYPE("MappingProxyType", PyDictProxy_Type);
+    EXPORT_STATIC_TYPE("MemberDescriptorType", PyMemberDescr_Type);
+    EXPORT_STATIC_TYPE("MethodDescriptorType", PyMethodDescr_Type);
+    EXPORT_STATIC_TYPE("MethodType", PyMethod_Type);
+    EXPORT_STATIC_TYPE("MethodWrapperType", _PyMethodWrapper_Type);
+    EXPORT_STATIC_TYPE("ModuleType", PyModule_Type);
+    EXPORT_STATIC_TYPE("NoneType", _PyNone_Type);
+    EXPORT_STATIC_TYPE("NotImplementedType", _PyNotImplemented_Type);
+    EXPORT_STATIC_TYPE("SimpleNamespace", _PyNamespace_Type);
+    EXPORT_STATIC_TYPE("TracebackType", PyTraceBack_Type);
+    EXPORT_STATIC_TYPE("UnionType", _PyUnion_Type);
+    EXPORT_STATIC_TYPE("WrapperDescriptorType", PyWrapperDescr_Type);
+#undef ADD_STATIC_TYPE
     return 0;
 }
 
