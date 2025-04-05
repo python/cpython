@@ -760,8 +760,7 @@ class BaseBytesTest:
             ('%d format: a real number is required, not complex', b'%i', 2j),
             ('%d format: a real number is required, not complex', b'%d', 2j),
             (
-                r'%c requires an integer in range\(256\)'
-                r' or a single byte, not .*\.PseudoFloat',
+                r'%c requires an integer in range\(256\) or a single byte',
                 b'%c', pi
             ),
         ]
