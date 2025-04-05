@@ -192,6 +192,9 @@ class DictReader:
                 d[key] = self.restval
         return d
 
+    def __repr__(self):
+        return "%s('%s')" % (self.__class__.__name__, self.dialect)
+
     __class_getitem__ = classmethod(types.GenericAlias)
 
 
@@ -207,6 +210,7 @@ class DictWriter:
             raise ValueError("extrasaction (%s) must be 'raise' or 'ignore'"
                              % extrasaction)
         self.extrasaction = extrasaction
+        self.dialect = dialect
         self.writer = writer(f, dialect, *args, **kwds)
 
     def writeheader(self):
@@ -226,6 +230,9 @@ class DictWriter:
 
     def writerows(self, rowdicts):
         return self.writer.writerows(map(self._dict_to_list, rowdicts))
+
+    def __repr__(self):
+        return "%s('%s')" % (self.__class__.__name__, self.dialect)
 
     __class_getitem__ = classmethod(types.GenericAlias)
 
