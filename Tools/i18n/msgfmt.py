@@ -162,7 +162,7 @@ def make(filename, outfile):
                     # Filter out POT-Creation-Date
                     # See issue #131852
                     msgstr = b''.join(line for line in msgstr.splitlines(True)
-                                      if not line.startswith(b'POT-Creation-Date'))
+                                      if not line.startswith(b'POT-Creation-Date:'))
 
                     # See whether there is an encoding declaration
                     p = HeaderParser()
