@@ -17,10 +17,11 @@ __all__ = [
 # Imports
 #
 
-import threading
-import sys
-import weakref
 import array
+import sys
+import threading
+import weakref
+import warnings
 
 from .connection import Pipe
 from threading import Lock, RLock, Semaphore, BoundedSemaphore
@@ -33,8 +34,8 @@ from queue import Queue
 
 class DummyProcess(threading.Thread):
 
-    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}):
-        threading.Thread.__init__(self, group, target, name, args, kwargs)
+    def __init__(self, group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None):
+        threading.Thread.__init__(self, group, target, name, args, kwargs, daemon=daemon)
         self._pid = None
         self._children = weakref.WeakKeyDictionary()
         self._start_called = False
@@ -119,7 +120,10 @@ def Manager():
 def shutdown():
     pass
 
-def Pool(processes=None, initializer=None, initargs=()):
+def Pool(processes=None, initializer=None, initargs=(), maxtasksperchild=None):
+    if maxtasksperchild is not None:
+        warnings.warn("maxtasksperchild makes no sense for a ThreadPool and is ignored")
+
     from ..pool import ThreadPool
     return ThreadPool(processes, initializer, initargs)
 
