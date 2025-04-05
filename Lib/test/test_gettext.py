@@ -813,7 +813,7 @@ if __name__ == '__main__':
     unittest.main()
 
 
-# For reference, here's the .po file used to created the GNU_MO_DATA above.
+# For reference, here's the .po file used to create the GNU_MO_DATA above.
 #
 # The original version was automatically generated from the sources with
 # pygettext. Later it was manually modified to add plural forms support.
