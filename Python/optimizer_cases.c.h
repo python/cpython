@@ -310,7 +310,6 @@
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -339,7 +338,6 @@
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -368,7 +366,6 @@
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -418,7 +415,6 @@
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -448,7 +444,6 @@
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -478,7 +473,6 @@
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -506,7 +500,6 @@
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -1257,7 +1250,6 @@
             else {
                 res = sym_new_type(ctx, &PyBool_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -2031,7 +2023,6 @@
             if (co == NULL) {
                 ctx->done = true;
             }
-            stack_pointer[-1] = res;
             break;
         }
 

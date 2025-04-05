@@ -2382,11 +2382,11 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
                 return SPEC_FAIL_BINARY_OP_SUBSCR_DEQUE;
             }
 
-            if (strcmp(_PyType_Name(container_type), "EnumDict") != 0) {
+            if (strcmp(_PyType_Name(container_type), "EnumDict") == 0) {
                 return SPEC_FAIL_BINARY_OP_SUBSCR_ENUMDICT;
             }
 
-            if (strcmp(container_type->tp_name, "StackSummary") != 0) {
+            if (strcmp(container_type->tp_name, "StackSummary") == 0) {
                 return SPEC_FAIL_BINARY_OP_SUBSCR_STACKSUMMARY;
             }
 
