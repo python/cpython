@@ -24,6 +24,16 @@ VALID_UNDERSCORE_LITERALS = [
     '.1_4j',
     '(1_2.5+3_3j)',
     '(.5_6j)',
+    '0x_.1p1',
+    '0X_.1p1',
+    '0x1_1.p1',
+    '0x_1_1.p1',
+    '0x1.1_1p1',
+    '0x1.p1_1',
+    '0xa.p1',
+    '0x.ap1',
+    '0xa_c.p1',
+    '0x.a_cp1',
 ]
 INVALID_UNDERSCORE_LITERALS = [
     # Trailing underscores:
@@ -35,6 +45,8 @@ INVALID_UNDERSCORE_LITERALS = [
     '0xf_',
     '0o5_',
     '0 if 1_Else 1',
+    '0x1p1_',
+    '0x1.1p1_',
     # Underscores in the base selector:
     '0_b0',
     '0_xf',
@@ -52,28 +64,39 @@ INVALID_UNDERSCORE_LITERALS = [
     '0o5__77',
     '1e1__0',
     '1e1__0j',
+    '0x1__1.1p1',
     # Underscore right before a dot:
     '1_.4',
     '1_.4j',
+    '0x1_.p1',
+    '0xa_.p1',
     # Underscore right after a dot:
     '1._4',
     '1._4j',
     '._5',
     '._5j',
+    '0x1._p1',
+    '0xa._p1',
     # Underscore right after a sign:
     '1.0e+_1',
     '1.0e+_1j',
     # Underscore right before j:
     '1.4_j',
     '1.4e5_j',
-    # Underscore right before e:
+    # Underscore right before e or p:
     '1_e1',
     '1.4_e1',
     '1.4_e1j',
-    # Underscore right after e:
+    '0x1_p1',
+    '0x1_P1',
+    '0x1.1_p1',
+    '0x1.1_P1',
+    # Underscore right after e or p:
     '1e_1',
     '1.4e_1',
     '1.4e_1j',
+    '0x1p_1',
+    '0x1.1p_1',
     # Complex cases with parens:
     '(1+1.5_j_)',
     '(1+1.5_j)',
