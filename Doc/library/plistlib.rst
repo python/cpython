@@ -169,7 +169,7 @@ The following constants are available:
    .. versionadded:: 3.4
 
 
-The following exceptions are available:
+The module defines the following exceptions:
 
 .. exception:: InvalidFileException
 
