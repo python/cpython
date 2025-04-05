@@ -1,12 +1,10 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
-from test.libregrtest.utils import get_build_info
 from test.support import import_helper, os_helper, threading_helper, MS_WINDOWS
 import unittest
 
 from collections import namedtuple
 import contextlib
-import io
 import json
 import os
 import os.path
@@ -628,6 +626,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'write_bytecode': True,
         'verbose': 0,
         'quiet': False,
+        'remote_debug': True,
         'user_site_directory': True,
         'configure_c_stdio': False,
         'buffered_stdio': True,
@@ -977,7 +976,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'verbose': True,
             'quiet': True,
             'buffered_stdio': False,
-
+            'remote_debug': True,
             'user_site_directory': False,
             'pathconfig_warnings': False,
         }
@@ -1033,6 +1032,7 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
             'write_bytecode': False,
             'verbose': 1,
             'quiet': True,
+            'remote_debug': True,
             'configure_c_stdio': True,
             'buffered_stdio': False,
             'user_site_directory': False,

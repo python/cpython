@@ -59,187 +59,24 @@ class TestEffects(unittest.TestCase):
     def test_effect_sizes(self):
         stack = Stack()
         inputs = [
-            x := StackItem("x", None, "", "1"),
-            y := StackItem("y", None, "", "oparg"),
-            z := StackItem("z", None, "", "oparg*2"),
+            x := StackItem("x", None, "1"),
+            y := StackItem("y", None, "oparg"),
+            z := StackItem("z", None, "oparg*2"),
         ]
         outputs = [
-            StackItem("x", None, "", "1"),
-            StackItem("b", None, "", "oparg*4"),
-            StackItem("c", None, "", "1"),
+            StackItem("x", None, "1"),
+            StackItem("b", None, "oparg*4"),
+            StackItem("c", None, "1"),
         ]
-        stack.pop(z)
-        stack.pop(y)
-        stack.pop(x)
+        null = CWriter.null()
+        stack.pop(z, null)
+        stack.pop(y, null)
+        stack.pop(x, null)
         for out in outputs:
             stack.push(Local.undefined(out))
         self.assertEqual(stack.base_offset.to_c(), "-1 - oparg - oparg*2")
-        self.assertEqual(stack.top_offset.to_c(), "1 - oparg - oparg*2 + oparg*4")
-
-
-class TestGenerateMaxStackEffect(unittest.TestCase):
-    def check(self, input, output):
-        analysis = analyze_forest(parse_src(input))
-        buf = StringIO()
-        writer = CWriter(buf, 0, False)
-        opcode_metadata_generator.generate_max_stack_effect_function(analysis, writer)
-        buf.seek(0)
-        generated = buf.read()
-        matches = re.search(r"(case OP: {[^}]+})", generated)
-        if matches is None:
-            self.fail(f"Couldn't find case statement for OP in:\n {generated}")
-        self.assertEqual(output.strip(), matches.group(1))
-
-    def test_push_one(self):
-        input = """
-        inst(OP, (a -- b, c)) {
-            SPAM();
-        }
-        """
-        output = """
-        case OP: {
-            *effect = 1;
-            return 0;
-        }
-        """
-        self.check(input, output)
-
-    def test_cond_push(self):
-        input = """
-        inst(OP, (a -- b, c if (oparg))) {
-            SPAM();
-        }
-        """
-        output = """
-        case OP: {
-            *effect = ((oparg) ? 1 : 0);
-            return 0;
-        }
-        """
-        self.check(input, output)
-
-    def test_ops_pass_two(self):
-        input = """
-        op(A, (-- val1)) {
-            val1 = SPAM();
-        }
-        op(B, (-- val2)) {
-            val2 = SPAM();
-        }
-        op(C, (val1, val2 --)) {
-        }
-        macro(OP) = A + B + C;
-        """
-        output = """
-        case OP: {
-            *effect = 2;
-            return 0;
-        }
-        """
-        self.check(input, output)
-
-    def test_ops_pass_two_cond_push(self):
-        input = """
-        op(A, (-- val1, val2)) {
-            val1 = 0;
-            val2 = 1;
-        }
-        op(B, (val1, val2 -- val1, val2, val3 if (oparg))) {
-            val3 = SPAM();
-        }
-        macro(OP) = A + B;
-        """
-        output = """
-        case OP: {
-            *effect = Py_MAX(2, 2 + ((oparg) ? 1 : 0));
-            return 0;
-        }
-        """
-        self.check(input, output)
-
-    def test_pop_push_array(self):
-        input = """
-        inst(OP, (values[oparg] -- values[oparg], above)) {
-            SPAM(values, oparg);
-            above = 0;
-        }
-        """
-        output = """
-        case OP: {
-            *effect = 1;
-            return 0;
-        }
-        """
-        self.check(input, output)
-
-    def test_family(self):
-        input = """
-        op(A, (-- val1, val2)) {
-            val1 = 0;
-            val2 = 1;
-        }
-        op(B, (val1, val2 -- val3)) {
-            val3 = 2;
-        }
-        macro(OP1) = A + B;
-
-        inst(OP, (-- val)) {
-            val = 0;
-        }
-
-        family(OP, 0) = { OP1 };
-        """
-        output = """
-        case OP: {
-            *effect = 2;
-            return 0;
-        }
-        """
-        self.check(input, output)
-
-    def test_family_intermediate_array(self):
-        input = """
-        op(A, (-- values[oparg])) {
-            val1 = 0;
-            val2 = 1;
-        }
-        op(B, (values[oparg] -- val3)) {
-            val3 = 2;
-        }
-        macro(OP1) = A + B;
-
-        inst(OP, (-- val)) {
-            val = 0;
-        }
-
-        family(OP, 0) = { OP1 };
-        """
-        output = """
-        case OP: {
-            *effect = Py_MAX(1, oparg);
-            return 0;
-        }
-        """
-        self.check(input, output)
-
-    def test_negative_effect(self):
-        input = """
-        op(A, (val1 -- )) {
-        }
-        op(B, (val2 --)) {
-        }
-        op(C, (val3 --)) {
-        }
-
-        macro(OP) = A + B + C;
-        """
-        output = """
-        case OP: {
-            *effect = -1;
-            return 0;
-        }
-        """
-        self.check(input, output)
+        self.assertEqual(stack.physical_sp.to_c(), "0")
+        self.assertEqual(stack.logical_sp.to_c(), "1 - oparg - oparg*2 + oparg*4")
 
 
 class TestGeneratedCases(unittest.TestCase):
@@ -287,12 +124,6 @@ class TestGeneratedCases(unittest.TestCase):
             _, labels_with_postlude = labels_with_prelude_and_postlude.split(tier1_generator.LABEL_START_MARKER)
             labels, _ = labels_with_postlude.split(tier1_generator.LABEL_END_MARKER)
             actual = instructions.strip() + "\n\n        " + labels.strip()
-        # if actual.strip() != expected.strip():
-        #     print("Actual:")
-        #     print(actual)
-        #     print("Expected:")
-        #     print(expected)
-        #     print("End")
 
         self.assertEqual(actual.strip(), expected.strip())
 
@@ -456,9 +287,11 @@ class TestGeneratedCases(unittest.TestCase):
     def test_predictions(self):
         input = """
         inst(OP1, (arg -- res)) {
+            DEAD(arg);
             res = Py_None;
         }
         inst(OP3, (arg -- res)) {
+            DEAD(arg);
             DEOPT_IF(xxx);
             res = Py_None;
         }
@@ -474,7 +307,9 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP1);
             PREDICTED_OP1:;
+            _PyStackRef arg;
             _PyStackRef res;
+            arg = stack_pointer[-1];
             res = Py_None;
             stack_pointer[-1] = res;
             DISPATCH();
@@ -491,7 +326,9 @@ class TestGeneratedCases(unittest.TestCase):
             next_instr += 1;
             INSTRUCTION_STATS(OP3);
             static_assert(INLINE_CACHE_ENTRIES_OP1 == 0, "incorrect cache size");
+            _PyStackRef arg;
             _PyStackRef res;
+            arg = stack_pointer[-1];
             if (xxx) {
                 UPDATE_MISS_STATS(OP1);
                 assert(_PyOpcode_Deopt[opcode] == (OP1));
@@ -507,11 +344,13 @@ class TestGeneratedCases(unittest.TestCase):
     def test_sync_sp(self):
         input = """
         inst(A, (arg -- res)) {
+            DEAD(arg);
             SYNC_SP();
             escaping_call();
             res = Py_None;
         }
         inst(B, (arg -- res)) {
+            DEAD(arg);
             res = Py_None;
             SYNC_SP();
             escaping_call();
@@ -526,7 +365,9 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(A);
+            _PyStackRef arg;
             _PyStackRef res;
+            arg = stack_pointer[-1];
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -547,7 +388,9 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(B);
+            _PyStackRef arg;
             _PyStackRef res;
+            arg = stack_pointer[-1];
             res = Py_None;
             stack_pointer[-1] = res;
             _PyFrame_SetStackPointer(frame, stack_pointer);
@@ -614,7 +457,6 @@ class TestGeneratedCases(unittest.TestCase):
             if (cond) {
                 JUMP_TO_LABEL(label);
             }
-            // Comment is ok
             DISPATCH();
         }
     """
@@ -693,6 +535,7 @@ class TestGeneratedCases(unittest.TestCase):
     def test_cache_effect(self):
         input = """
         inst(OP, (counter/1, extra/2, value --)) {
+            DEAD(value);
         }
     """
         output = """
@@ -706,6 +549,8 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 4;
             INSTRUCTION_STATS(OP);
+            _PyStackRef value;
+            value = stack_pointer[-1];
             uint16_t counter = read_u16(&this_instr[1].cache);
             (void)counter;
             uint32_t extra = read_u32(&this_instr[2].cache);
@@ -740,7 +585,6 @@ class TestGeneratedCases(unittest.TestCase):
 
         LABEL(somewhere)
         {
-
         }
     """
         self.run_cases_test(input, output)
@@ -964,6 +808,9 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (below, values[oparg*2], above --)) {
             SPAM(values, oparg);
+            DEAD(below);
+            DEAD(values);
+            DEAD(above);
         }
     """
         output = """
@@ -975,8 +822,12 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
+            _PyStackRef below;
             _PyStackRef *values;
+            _PyStackRef above;
+            above = stack_pointer[-1];
             values = &stack_pointer[-1 - oparg*2];
+            below = stack_pointer[-2 - oparg*2];
             SPAM(values, oparg);
             stack_pointer += -2 - oparg*2;
             assert(WITHIN_STACK_BOUNDS());
@@ -1050,6 +901,8 @@ class TestGeneratedCases(unittest.TestCase):
     def test_array_error_if(self):
         input = """
         inst(OP, (extra, values[oparg] --)) {
+            DEAD(extra);
+            DEAD(values);
             ERROR_IF(oparg == 0, somewhere);
         }
     """
@@ -1062,104 +915,16 @@ class TestGeneratedCases(unittest.TestCase):
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(OP);
+            _PyStackRef extra;
+            _PyStackRef *values;
+            values = &stack_pointer[-oparg];
+            extra = stack_pointer[-1 - oparg];
             if (oparg == 0) {
                 stack_pointer += -1 - oparg;
                 assert(WITHIN_STACK_BOUNDS());
                 JUMP_TO_LABEL(somewhere);
             }
             stack_pointer += -1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
-        }
-    """
-        self.run_cases_test(input, output)
-
-    def test_cond_effect(self):
-        input = """
-        inst(OP, (aa, input if ((oparg & 1) == 1), cc -- xx, output if (oparg & 2), zz)) {
-            output = SPAM(oparg, aa, cc, input);
-            INPUTS_DEAD();
-            xx = 0;
-            zz = 0;
-        }
-    """
-        output = """
-        TARGET(OP) {
-            #if Py_TAIL_CALL_INTERP
-            int opcode = OP;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(OP);
-            _PyStackRef aa;
-            _PyStackRef input = PyStackRef_NULL;
-            _PyStackRef cc;
-            _PyStackRef xx;
-            _PyStackRef output = PyStackRef_NULL;
-            _PyStackRef zz;
-            cc = stack_pointer[-1];
-            if ((oparg & 1) == 1) { input = stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)]; }
-            aa = stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)];
-            output = SPAM(oparg, aa, cc, input);
-            xx = 0;
-            zz = 0;
-            stack_pointer[-2 - (((oparg & 1) == 1) ? 1 : 0)] = xx;
-            if (oparg & 2) stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0)] = output;
-            stack_pointer[-1 - (((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0)] = zz;
-            stack_pointer += -(((oparg & 1) == 1) ? 1 : 0) + ((oparg & 2) ? 1 : 0);
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
-        }
-    """
-        self.run_cases_test(input, output)
-
-    def test_macro_cond_effect(self):
-        input = """
-        op(A, (left, middle, right --)) {
-            USE(left, middle, right);
-            INPUTS_DEAD();
-        }
-        op(B, (-- deep, extra if (oparg), res)) {
-            deep = -1;
-            res = 0;
-            extra = 1;
-            INPUTS_DEAD();
-        }
-        macro(M) = A + B;
-    """
-        output = """
-        TARGET(M) {
-            #if Py_TAIL_CALL_INTERP
-            int opcode = M;
-            (void)(opcode);
-            #endif
-            frame->instr_ptr = next_instr;
-            next_instr += 1;
-            INSTRUCTION_STATS(M);
-            _PyStackRef left;
-            _PyStackRef middle;
-            _PyStackRef right;
-            _PyStackRef deep;
-            _PyStackRef extra = PyStackRef_NULL;
-            _PyStackRef res;
-            // A
-            {
-                right = stack_pointer[-1];
-                middle = stack_pointer[-2];
-                left = stack_pointer[-3];
-                USE(left, middle, right);
-            }
-            // B
-            {
-                deep = -1;
-                res = 0;
-                extra = 1;
-            }
-            stack_pointer[-3] = deep;
-            if (oparg) stack_pointer[-2] = extra;
-            stack_pointer[-2 + ((oparg) ? 1 : 0)] = res;
-            stack_pointer += -1 + ((oparg) ? 1 : 0);
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
@@ -1319,6 +1084,7 @@ class TestGeneratedCases(unittest.TestCase):
         input = """
         inst(OP, (arg[1] -- out[1])) {
             out[0] = arg[0];
+            DEAD(arg);
         }
         """
         output = """
@@ -1583,7 +1349,6 @@ class TestGeneratedCases(unittest.TestCase):
             }
             // THIRD
             {
-                // Mark j and k as used
                 if (cond) {
                     JUMP_TO_LABEL(pop_2_error);
                 }
@@ -1989,17 +1754,14 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         LABEL(other_label)
         {
-
         }
 
         LABEL(other_label2)
         {
-
         }
 
         LABEL(my_label)
         {
-            // Comment
             _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing();
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -2027,7 +1789,6 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         LABEL(one)
         {
-            /* STACK SPILLED */
             stack_pointer = _PyFrame_GetStackPointer(frame);
             JUMP_TO_LABEL(two);
         }
@@ -2083,7 +1844,6 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         LABEL(my_label_1)
         {
-            // Comment
             _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing1();
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -2092,11 +1852,54 @@ class TestGeneratedCases(unittest.TestCase):
 
         LABEL(my_label_2)
         {
-            // Comment
             _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing2();
             stack_pointer = _PyFrame_GetStackPointer(frame);
             JUMP_TO_LABEL(my_label_1);
+        }
+        """
+        self.run_cases_test(input, output)
+
+    def test_reassigning_live_inputs(self):
+        input = """
+        inst(OP, (in -- )) {
+            in = 0;
+            DEAD(in);
+        }
+        """
+        with self.assertRaises(SyntaxError):
+            self.run_cases_test(input, "")
+
+    def test_reassigning_dead_inputs(self):
+        input = """
+        inst(OP, (in -- )) {
+            temp = use(in);
+            DEAD(in);
+            in = temp;
+            PyStackRef_CLOSE(in);
+        }
+        """
+        output = """
+        TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef in;
+            in = stack_pointer[-1];
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            temp = use(in);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            in = temp;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(in);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            DISPATCH();
         }
         """
         self.run_cases_test(input, output)

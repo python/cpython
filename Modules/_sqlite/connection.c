@@ -37,6 +37,7 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL
 #include "pycore_weakref.h"
 
 #include <stdbool.h>
@@ -1908,9 +1909,9 @@ Executes multiple SQL statements at once.
 [clinic start generated code]*/
 
 static PyObject *
-pysqlite_connection_executescript(pysqlite_Connection *self,
-                                  PyObject *script_obj)
-/*[clinic end generated code: output=4c4f9d77aa0ae37d input=f6e5f1ccfa313db4]*/
+pysqlite_connection_executescript_impl(pysqlite_Connection *self,
+                                       PyObject *script_obj)
+/*[clinic end generated code: output=e921c49e2291782c input=f6e5f1ccfa313db4]*/
 {
     PyObject* result = 0;
 

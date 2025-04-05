@@ -1,3 +1,0 @@
-Fix :class:`gzip.GzipFile` raising an unraisable exception during garbage
-collection when referring to a temporary object by breaking the reference
-loop with :mod:`weakref`.
