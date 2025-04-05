@@ -173,11 +173,11 @@ class CLITest(unittest.TestCase):
         with temp_cwd():
             res = assert_python_ok(msgfmt, '--statistics', data_dir / "general.po")
             out = res.out.decode('utf-8').strip()
-            self.assertEqual('7 translated messages, 1 untranslated message.', out)
+            self.assertEqual('8 translated messages, 1 untranslated message.', out)
             # Multiple input files
             res = assert_python_ok(msgfmt, '--statistics', '-o', 'temp.mo', data_dir / "general.po", data_dir / "fuzzy.po")
             out = res.out.decode('utf-8').strip()
-            self.assertIn('general.po: 7 translated messages, 1 untranslated message.', out)
+            self.assertIn('general.po: 8 translated messages, 1 untranslated message.', out)
             self.assertIn('fuzzy.po: 0 translated messages.', out)
 
 

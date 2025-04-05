@@ -41,6 +41,7 @@ __version__ = "1.2"
 
 
 MESSAGES = {}
+empty_translations = 0  # Counter for empty translations for --statistics
 
 
 def usage(code, msg=''):
@@ -52,12 +53,14 @@ def usage(code, msg=''):
 
 def add(ctxt, id, str, fuzzy):
     "Add a non-fuzzy translation to the dictionary."
-    global MESSAGES
+    global MESSAGES, empty_translations
     if not fuzzy and str:
         if ctxt is None:
             MESSAGES[id] = str
         else:
             MESSAGES[b"%b\x04%b" % (ctxt, id)] = str
+    elif not fuzzy and not str:
+        empty_translations += 1
 
 
 def generate():
@@ -103,8 +106,9 @@ def generate():
 
 def make(filename, outfile):
     # see gh-issue: 53950
-    global MESSAGES
+    global MESSAGES, empty_translations
     MESSAGES.clear()
+    empty_translations = 0
 
     ID = 1
     STR = 2
@@ -263,20 +267,17 @@ def main():
         make(filename, outfile)
 
         if print_statistics:
-            strings = translated = 0
+            translated = 0
             for msgid, msgstr in MESSAGES.items():
                 if msgid == b'':
                     continue
-                strings += 1
-                if msgstr.strip() and msgstr != msgid:
+                if msgstr.strip():
                     translated += 1
-
-            untranslated = strings - translated
 
             message = (f"{os.path.basename(filename) + ': ' if len(args) > 1 else ''}"
                        f"{translated} translated message{'s' if translated != 1 else ''}")
-            if untranslated > 0:
-                message += f", {untranslated} untranslated message{'s' if untranslated != 1 else ''}"
+            if empty_translations > 0:
+                message += f", {empty_translations} untranslated message{'s' if empty_translations != 1 else ''}"
             message += "."
             print(message)
 
