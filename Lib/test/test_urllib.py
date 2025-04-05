@@ -11,6 +11,7 @@ from test import support
 from test.support import os_helper
 from test.support import socket_helper
 import os
+import socket
 try:
     import ssl
 except ImportError:
@@ -1424,6 +1425,17 @@ class Pathname_Tests(unittest.TestCase):
                          "url2pathname() failed; %s != %s" %
                          (expect, result))
 
+    def test_pathname2url(self):
+        # Test cases common to Windows and POSIX.
+        fn = urllib.request.pathname2url
+        sep = os.path.sep
+        self.assertEqual(fn(''), '')
+        self.assertEqual(fn(sep), '///')
+        self.assertEqual(fn('a'), 'a')
+        self.assertEqual(fn(f'a{sep}b.c'), 'a/b.c')
+        self.assertEqual(fn(f'{sep}a{sep}b.c'), '///a/b.c')
+        self.assertEqual(fn(f'{sep}a{sep}b%#c'), '///a/b%25%23c')
+
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
     def test_pathname2url_win(self):
@@ -1466,12 +1478,9 @@ class Pathname_Tests(unittest.TestCase):
                      'test specific to POSIX pathnames')
     def test_pathname2url_posix(self):
         fn = urllib.request.pathname2url
-        self.assertEqual(fn('/'), '///')
-        self.assertEqual(fn('/a/b.c'), '///a/b.c')
         self.assertEqual(fn('//a/b.c'), '////a/b.c')
         self.assertEqual(fn('///a/b.c'), '/////a/b.c')
         self.assertEqual(fn('////a/b.c'), '//////a/b.c')
-        self.assertEqual(fn('/a/b%#c'), '///a/b%25%23c')
 
     @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
     def test_pathname2url_nonascii(self):
@@ -1480,11 +1489,25 @@ class Pathname_Tests(unittest.TestCase):
         url = urllib.parse.quote(os_helper.FS_NONASCII, encoding=encoding, errors=errors)
         self.assertEqual(urllib.request.pathname2url(os_helper.FS_NONASCII), url)
 
+    def test_url2pathname(self):
+        # Test cases common to Windows and POSIX.
+        fn = urllib.request.url2pathname
+        sep = os.path.sep
+        self.assertEqual(fn(''), '')
+        self.assertEqual(fn('/'), f'{sep}')
+        self.assertEqual(fn('///'), f'{sep}')
+        self.assertEqual(fn('////'), f'{sep}{sep}')
+        self.assertEqual(fn('foo'), 'foo')
+        self.assertEqual(fn('foo/bar'), f'foo{sep}bar')
+        self.assertEqual(fn('/foo/bar'), f'{sep}foo{sep}bar')
+        self.assertEqual(fn('//localhost/foo/bar'), f'{sep}foo{sep}bar')
+        self.assertEqual(fn('///foo/bar'), f'{sep}foo{sep}bar')
+        self.assertEqual(fn('////foo/bar'), f'{sep}{sep}foo{sep}bar')
+
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
     def test_url2pathname_win(self):
         fn = urllib.request.url2pathname
-        self.assertEqual(fn('/'), '\\')
         self.assertEqual(fn('/C:/'), 'C:\\')
         self.assertEqual(fn("///C|"), 'C:')
         self.assertEqual(fn("///C:"), 'C:')
@@ -1530,11 +1553,13 @@ class Pathname_Tests(unittest.TestCase):
                      'test specific to POSIX pathnames')
     def test_url2pathname_posix(self):
         fn = urllib.request.url2pathname
-        self.assertEqual(fn('/foo/bar'), '/foo/bar')
-        self.assertEqual(fn('//foo/bar'), '//foo/bar')
-        self.assertEqual(fn('///foo/bar'), '/foo/bar')
-        self.assertEqual(fn('////foo/bar'), '//foo/bar')
-        self.assertEqual(fn('//localhost/foo/bar'), '/foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//localhost:/foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//:80/foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//:/foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//c:80/foo/bar')
+        self.assertEqual(fn('//127.0.0.1/foo/bar'), '/foo/bar')
+        self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar'), '/foo/bar')
 
     @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
     def test_url2pathname_nonascii(self):
