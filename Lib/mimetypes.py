@@ -544,6 +544,8 @@ def _default_mime_types():
         '.rdf'    : 'application/xml',
         '.wsdl'   : 'application/xml',
         '.xpdl'   : 'application/xml',
+        '.yaml'   : 'application/yaml',
+        '.yml'    : 'application/yaml',
         '.zip'    : 'application/zip',
         '.3gp'    : 'audio/3gpp',
         '.3gpp'   : 'audio/3gpp',
