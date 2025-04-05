@@ -718,10 +718,18 @@ Replacing ``%x`` and ``%o`` and converting the value to different bases::
    >>> "int: {0:d};  hex: {0:#x};  oct: {0:#o};  bin: {0:#b}".format(42)
    'int: 42;  hex: 0x2a;  oct: 0o52;  bin: 0b101010'
 
-Using the comma as a thousands separator::
+Using the comma or the underscore as a digit group separator::
 
    >>> '{:,}'.format(1234567890)
    '1,234,567,890'
+   >>> '{:_}'.format(1234567890)
+   '1_234_567_890'
+   >>> '{:_b}'.format(1234567890)
+   '100_1001_1001_0110_0000_0010_1101_0010'
+   >>> '{:_x}'.format(1234567890)
+   '4996_02d2'
+   >>> '{:_}'.format(123456789.123456789)
+   '123_456_789.12345679'
 
 Expressing a percentage::
 
