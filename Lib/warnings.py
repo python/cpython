@@ -590,19 +590,17 @@ class deprecated:
         if category is None:
             arg.__deprecated__ = msg
             return arg
-
-        if isinstance(arg, type):
+        elif isinstance(arg, type):
             import functools
             from types import MethodType
 
             original_new = arg.__new__
-            is_object_new = original_new is object.__new__
 
             @functools.wraps(original_new)
             def __new__(cls, *args, **kwargs):
                 if cls is arg:
                     warn(msg, category=category, stacklevel=stacklevel + 1)
-                if not is_object_new:
+                if original_new is not object.__new__:
                     return original_new(cls, *args, **kwargs)
                 # Mirrors a similar check in object.__new__.
                 elif cls.__init__ is object.__init__ and (args or kwargs):
@@ -624,7 +622,6 @@ class deprecated:
                     return original_init_subclass(*args, **kwargs)
 
                 arg.__init_subclass__ = classmethod(__init_subclass__)
-
             # Or otherwise, which likely means it's a builtin such as
             # object's implementation of __init_subclass__.
             else:
