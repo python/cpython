@@ -1425,14 +1425,24 @@ static PyType_Spec pycpointer_type_spec = {
   PyCArrayType_init ensures that the new Array subclass created has a _length_
   attribute, and a _type_ attribute.
 */
+/*[clinic input]
+class _ctypes.PyCArrayType_Type "CDataObject *" "clinic_state()->PyCArrayType_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6340cbaead1bf3f3]*/
+
+/*[clinic input]
+@critical_section
+@setter
+_ctypes.PyCArrayType_Type.raw
+[clinic start generated code]*/
 
 static int
-CharArray_set_raw(PyObject *op, PyObject *value, void *Py_UNUSED(ignored))
+_ctypes_PyCArrayType_Type_raw_set_impl(CDataObject *self, PyObject *value)
+/*[clinic end generated code: output=cf9b2a9fd92e9ecb input=a3717561efc45efd]*/
 {
     char *ptr;
     Py_ssize_t size;
     Py_buffer view;
-    CDataObject *self = _CDataObject_CAST(op);
 
     if (value == NULL) {
         PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
@@ -1457,39 +1467,51 @@ CharArray_set_raw(PyObject *op, PyObject *value, void *Py_UNUSED(ignored))
     return -1;
 }
 
-static PyObject *
-CharArray_get_raw(PyObject *op, void *Py_UNUSED(ignored))
-{
-    PyObject *res;
-    CDataObject *self = _CDataObject_CAST(op);
-    LOCK_PTR(self);
-    res = PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
-    UNLOCK_PTR(self);
-    return res;
-}
+/*[clinic input]
+@critical_section
+@getter
+_ctypes.PyCArrayType_Type.raw
+[clinic start generated code]*/
 
 static PyObject *
-CharArray_get_value(PyObject *op, void *Py_UNUSED(ignored))
+_ctypes_PyCArrayType_Type_raw_get_impl(CDataObject *self)
+/*[clinic end generated code: output=3a90be6f43764e31 input=4c49bbb715235ba7]*/
+{
+    return PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
+}
+
+/*[clinic input]
+@critical_section
+@getter
+_ctypes.PyCArrayType_Type.value
+[clinic start generated code]*/
+
+static PyObject *
+_ctypes_PyCArrayType_Type_value_get_impl(CDataObject *self)
+/*[clinic end generated code: output=fb0636f4d8875483 input=2432a2aeb1ed78d1]*/
 {
     Py_ssize_t i;
     PyObject *res;
-    CDataObject *self = _CDataObject_CAST(op);
-    LOCK_PTR(self);
     char *ptr = self->b_ptr;
     for (i = 0; i < self->b_size; ++i)
         if (*ptr++ == '\0')
             break;
     res = PyBytes_FromStringAndSize(self->b_ptr, i);
-    UNLOCK_PTR(self);
     return res;
 }
 
+/*[clinic input]
+@critical_section
+@setter
+_ctypes.PyCArrayType_Type.value
+[clinic start generated code]*/
+
 static int
-CharArray_set_value(PyObject *op, PyObject *value, void *Py_UNUSED(ignored))
+_ctypes_PyCArrayType_Type_value_set_impl(CDataObject *self, PyObject *value)
+/*[clinic end generated code: output=39ad655636a28dd5 input=e2e6385fc6ab1a29]*/
 {
     const char *ptr;
     Py_ssize_t size;
-    CDataObject *self = _CDataObject_CAST(op);
 
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
@@ -1513,40 +1535,46 @@ CharArray_set_value(PyObject *op, PyObject *value, void *Py_UNUSED(ignored))
     }
 
     ptr = PyBytes_AS_STRING(value);
-    LOCK_PTR(self);
     memcpy(self->b_ptr, ptr, size);
     if (size < self->b_size)
         self->b_ptr[size] = '\0';
-    UNLOCK_PTR(self);
     Py_DECREF(value);
 
     return 0;
 }
 
 static PyGetSetDef CharArray_getsets[] = {
-    { "raw", CharArray_get_raw, CharArray_set_raw, "value", NULL },
-    { "value", CharArray_get_value, CharArray_set_value, "string value" },
+    _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF
+    _CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF
     { NULL, NULL }
 };
 
 static PyObject *
-WCharArray_get_value(PyObject *op, void *Py_UNUSED(ignored))
+WCharArray_get_value_lock_held(PyObject *op)
 {
     Py_ssize_t i;
     PyObject *res;
     CDataObject *self = _CDataObject_CAST(op);
     wchar_t *ptr = (wchar_t *)self->b_ptr;
-    LOCK_PTR(self);
     for (i = 0; i < self->b_size/(Py_ssize_t)sizeof(wchar_t); ++i)
         if (*ptr++ == (wchar_t)0)
             break;
     res = PyUnicode_FromWideChar((wchar_t *)self->b_ptr, i);
-    UNLOCK_PTR(self);
+    return res;
+}
+
+static PyObject *
+WCharArray_get_value(PyObject *op, void *Py_UNUSED(ignored))
+{
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    res = WCharArray_get_value_lock_held(op);
+    Py_END_CRITICAL_SECTION();
     return res;
 }
 
 static int
-WCharArray_set_value(PyObject *op, PyObject *value, void *Py_UNUSED(ignored))
+WCharArray_set_value_lock_held(PyObject *op, PyObject *value)
 {
     CDataObject *self = _CDataObject_CAST(op);
 
@@ -1575,10 +1603,18 @@ WCharArray_set_value(PyObject *op, PyObject *value, void *Py_UNUSED(ignored))
         return -1;
     }
     Py_ssize_t rc;
-    LOCK_PTR(self);
     rc = PyUnicode_AsWideChar(value, (wchar_t *)self->b_ptr, size);
-    UNLOCK_PTR(self);
     return rc < 0 ? -1 : 0;
+}
+
+static int
+WCharArray_set_value(PyObject *op, PyObject *value, void *Py_UNUSED(ignored))
+{
+    int rc;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    rc = WCharArray_set_value_lock_held(op, value);
+    Py_END_CRITICAL_SECTION();
+    return rc;
 }
 
 static PyGetSetDef WCharArray_getsets[] = {
@@ -2779,8 +2815,9 @@ static PyType_Spec pycfuncptr_type_spec = {
 static CDataObject *
 PyCData_GetContainer(CDataObject *self)
 {
-    while (self->b_base)
+    while (self->b_base) {
         self = self->b_base;
+    }
     if (self->b_objects == NULL) {
         if (self->b_length) {
             self->b_objects = PyDict_New();
