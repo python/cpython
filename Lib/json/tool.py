@@ -80,6 +80,10 @@ def main():
         raise SystemExit(e)
 
 
+# The string we are colorizing is a valid JSON,
+# so we can use a looser but simpler regex to match
+# the various parts, most notably strings and numbers,
+# where the regex given by the spec is much more complex.
 color_pattern = re.compile(r'''
     (?P<string>"(\\.|[^"\\])*")             |   # String
     (?P<number>NaN|-?Infinity|[0-9\-+.Ee]+) |   # Number
