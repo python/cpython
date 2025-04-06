@@ -317,20 +317,16 @@ def join(split_command):
     return ' '.join(quote(arg) for arg in split_command)
 
 
-def _find_unsafe(s, /):
-    # this function replaces itself with the compiled pattern on execution,
-    # to allow as deferred import of re for performance
-    global _find_unsafe
-    import re
-    _find_unsafe = re.compile(r'[^\w@%+=:,./-]', re.ASCII).search
-    return _find_unsafe(s)
-
-
 def quote(s):
     """Return a shell-escaped version of the string *s*."""
     if not s:
         return "''"
-    if _find_unsafe(s) is None:
+
+    # Use bytes.translate() for performance
+    safe_chars = (b'%+,-./0123456789:=@'
+                  b'ABCDEFGHIJKLMNOPQRSTUVWXYZ_'
+                  b'abcdefghijklmnopqrstuvwxyz')
+    if not s.encode().translate(None, delete=safe_chars):
         return s
 
     # use single quotes, and put single quotes into double quotes
