@@ -116,10 +116,14 @@ copying of data.
 
       Rename the underlying shared memory block to *newname*.
       By default, if *newname* already exists, it will be unlinked beforehand.
-      Passing the :data:`!os.SHM_RENAME_EXCHANGE` as *flags*,
-      an exchange with *newname* will be proceeded instead.
-      Passing the :data:`!os.SHM_RENAME_NOREPLACE` as *flags*,
-      an error will be triggered if *newname* already exists.
+
+      *flags* (0 by default) takes :ref:`bitwise ORed <bitwise>` flags together.
+      
+      * :data:`!os.SHM_RENAME_EXCHANGE` will let
+         an exchange with *newname* will be processed instead.
+      * :data:`!os.SHM_RENAME_NOREPLACE` will raise
+         an error will be triggered if *newname* already exists.
+
 
    .. attribute:: buf
 
