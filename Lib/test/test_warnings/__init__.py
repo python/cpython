@@ -1653,6 +1653,25 @@ class DeprecatedTests(PyPublicAPITests):
         instance = Child(42)
         self.assertEqual(instance.a, 42)
 
+    def test_do_not_shadow_user_arguments(self):
+        new_called = False
+        new_called_cls = None
+
+        @deprecated("MyMeta will go away soon")
+        class MyMeta(type):
+            def __new__(mcs, name, bases, attrs, cls=None):
+                nonlocal new_called, new_called_cls
+                new_called = True
+                new_called_cls = cls
+                return super().__new__(mcs, name, bases, attrs)
+
+        with self.assertWarnsRegex(DeprecationWarning, "MyMeta will go away soon"):
+            class Foo(metaclass=MyMeta, cls='haha'):
+                pass
+
+        self.assertTrue(new_called)
+        self.assertEqual(new_called_cls, 'haha')
+
     def test_existing_init_subclass(self):
         @deprecated("C will go away soon")
         class C:
