@@ -1911,7 +1911,12 @@ def _signature_get_user_defined_method(cls, method_name, *, follow_wrapper_chain
     else:
         meth = getattr_static(cls, method_name, None)
     if meth is not None and follow_wrapper_chains:
-        meth = unwrap(meth)
+        unwrapped_meth = unwrap(meth)
+        if isinstance(meth, (classmethod, staticmethod)):
+            # Rewrap with the original type
+            meth = type(meth)(unwrapped_meth)
+        else:
+            meth = unwrapped_meth
     if meth is None or isinstance(meth, _NonUserDefinedCallables):
         # Once '__signature__' will be added to 'C'-level
         # callables, this check won't be necessary
@@ -2575,8 +2580,7 @@ def _signature_from_callable(obj, *,
                 obj_new = unwrap(obj_new)
             # We have a class (not metaclass), but no user-defined
             # __init__ or __new__ for it
-            if (obj_init is object.__init__ and
-                obj_new is object.__new__):
+            if obj_init is object.__init__ and obj_new is object.__new__:
                 # Return a signature of 'object' builtin.
                 return sigcls.from_callable(object)
             else:
