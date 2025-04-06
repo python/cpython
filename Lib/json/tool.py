@@ -22,22 +22,24 @@ _color_pattern = re.compile(r'''
 ''', re.VERBOSE)
 
 
+_colors = {
+    'string': ANSIColors.GREEN,
+    'number': ANSIColors.YELLOW,
+    'boolean': ANSIColors.CYAN,
+    'null': ANSIColors.CYAN,
+}
+
+
+def _replace_match_callback(match):
+    for key in _colors:
+        if m := match.group(key):
+            color = _colors[key]
+            return f"{color}{m}{ANSIColors.RESET}"
+    return match.group()
+
+
 def _colorize_json(json_str):
-    colors = {
-        'string': ANSIColors.GREEN,
-        'number': ANSIColors.YELLOW,
-        'boolean': ANSIColors.CYAN,
-        'null': ANSIColors.CYAN,
-    }
-
-    def replace(match):
-        for key in colors:
-            if m := match.group(key):
-                color = colors[key]
-                return f"{color}{m}{ANSIColors.RESET}"
-        return match.group()
-
-    return re.sub(_color_pattern, replace, json_str)
+    return re.sub(_color_pattern, _replace_match_callback, json_str)
 
 
 def main():
