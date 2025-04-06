@@ -1112,7 +1112,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".exec",
+    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".run_string",
                                             "argument 2", "a string");
     if (script == NULL) {
         return NULL;
