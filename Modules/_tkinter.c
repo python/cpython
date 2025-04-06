@@ -1590,7 +1590,7 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
         Tkapp_CallDeallocArgs(objv, objStore, objc);
 
         ENTER_OVERLAP
-            
+
     }
         LEAVE_OVERLAP_TCL
     }
