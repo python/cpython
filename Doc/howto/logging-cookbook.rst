@@ -589,16 +589,18 @@ An example of using these two classes follows (imports omitted)::
     que = queue.Queue(-1)  # no limit on size
     queue_handler = QueueHandler(que)
     handler = logging.StreamHandler()
+    listener = QueueListener(que, handler)
     root = logging.getLogger()
     root.addHandler(queue_handler)
     formatter = logging.Formatter('%(threadName)s: %(message)s')
     handler.setFormatter(formatter)
-    with QueueListener(que, handler) as listener:
-        # The log output will display the thread which generated
-        # the event (the main thread) rather than the internal
-        # thread which monitors the internal queue. This is what
-        # you want to happen.
-        root.warning('Look out!')
+    listener.start()
+    # The log output will display the thread which generated
+    # the event (the main thread) rather than the internal
+    # thread which monitors the internal queue. This is what
+    # you want to happen.
+    root.warning('Look out!')
+    listener.stop()
 
 which, when run, will produce:
 
@@ -623,6 +625,19 @@ which, when run, will produce:
    listener's constructor. When this is done, the listener compares the level
    of each message with the handler's level, and only passes a message to a
    handler if it's appropriate to do so.
+
+.. versionchanged:: next
+   The :class:`QueueListener` can be started (and stopped) via the
+   :keyword:`with` statement. For example:
+
+    .. code-block:: python
+
+        with QueueListener(que, handler) as listener:
+             # the queue listener automatically starts
+             # when the with block is entered
+             pass
+        # the queue listener automatically stops once
+        # the with block is exited
 
 .. _network-logging:
 
