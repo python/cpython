@@ -320,3 +320,7 @@ class TestMain(unittest.TestCase):
 @support.requires_subprocess()
 class TestTool(TestMain):
     module = 'json.tool'
+
+
+if __name__ == "__main__":
+    unittest.main()
