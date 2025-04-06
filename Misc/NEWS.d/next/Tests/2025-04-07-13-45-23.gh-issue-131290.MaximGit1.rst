@@ -1,0 +1,3 @@
+Tests in :file:`Lib/test` can now be correctly executed as standalone scripts.
+
+Several tests were modified to correctly handle execution when called directly via `./python Lib/test/...`, ensuring that the `__spec__` attribute is properly set in certain modules like `__main__`.
