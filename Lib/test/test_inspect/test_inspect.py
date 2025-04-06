@@ -3845,7 +3845,6 @@ class TestSignatureObject(unittest.TestCase):
                            ('b', ..., ..., "positional_or_keyword")),
                           ...))
 
-
     def test_signature_on_class(self):
         class C:
             def __init__(self, a):
@@ -4018,6 +4017,45 @@ class TestSignatureObject(unittest.TestCase):
                            ('dct', ..., ..., "positional_or_keyword"),
                            ('bar', 2, ..., "keyword_only")),
                           ...))
+
+    def test_signature_on_class_with_decorated_new(self):
+        def identity(func):
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                return func(*args, **kwargs)
+            return wrapper
+
+        class Foo:
+            @identity
+            def __new__(cls, a, b):
+                pass
+
+        self.assertEqual(self.signature(Foo),
+                         ((('a', ..., ..., "positional_or_keyword"),
+                           ('b', ..., ..., "positional_or_keyword")),
+                          ...))
+
+        self.assertEqual(self.signature(Foo.__new__),
+                         ((('cls', ..., ..., "positional_or_keyword"),
+                           ('a', ..., ..., "positional_or_keyword"),
+                           ('b', ..., ..., "positional_or_keyword")),
+                          ...))
+
+        class Bar:
+            __new__ = identity(object.__new__)
+
+        object_new_signature = (
+            (('args', ..., ..., 'var_positional'),
+             ('kwargs', ..., ..., 'var_keyword')),
+            ...,
+        )
+
+        self.assertEqual(self.signature(Bar), ((), ...))
+        self.assertEqual(self.signature(Bar.__new__), object_new_signature)
+        self.assertEqual(self.signature(Bar, follow_wrapped=False),
+                         object_new_signature)
+        self.assertEqual(self.signature(Bar.__new__, follow_wrapped=False),
+                         object_new_signature)
 
     def test_signature_on_class_with_init(self):
         class C:
