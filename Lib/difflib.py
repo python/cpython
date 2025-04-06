@@ -361,8 +361,10 @@ class SequenceMatcher:
         # the unique 'b's and then matching the first two 'a's.
 
         a, b, b2j, isbjunk = self.a, self.b, self.b2j, self.bjunk.__contains__
-        ahi = ahi if ahi is not None else len(a)
-        bhi = bhi if bhi is not None else len(b)
+        if ahi is None:
+            ahi = len(a)
+        if bhi is None:
+            bhi = len(b)
 
         # Check if both sequences are the same before executing rest of the
         # method.
