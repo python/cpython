@@ -2744,6 +2744,10 @@ data and are closely related to string objects in a variety of other ways.
          :meth:`bytes.fromhex` now skips all ASCII whitespace in the string,
          not just spaces.
 
+      .. versionchanged:: 3.14
+         :meth:`bytes.fromhex` now accepts ASCII :class:`bytes` and
+         :term:`bytes-like objects <bytes-like object>` as input.
+
    A reverse conversion function exists to transform a bytes object into its
    hexadecimal representation.
 
@@ -2828,6 +2832,10 @@ objects.
       .. versionchanged:: 3.7
          :meth:`bytearray.fromhex` now skips all ASCII whitespace in the string,
          not just spaces.
+
+      .. versionchanged:: 3.14
+         :meth:`bytearray.fromhex` now accepts ASCII :class:`bytes` and
+         :term:`bytes-like objects <bytes-like object>` as input.
 
    A reverse conversion function exists to transform a bytearray object into its
    hexadecimal representation.
@@ -4772,7 +4780,7 @@ can be used interchangeably to index the same dictionary entry.
       such as an empty list.  To get distinct values, use a :ref:`dict
       comprehension <dict>` instead.
 
-   .. method:: get(key, default=None)
+   .. method:: get(key, default=None, /)
 
       Return the value for *key* if *key* is in the dictionary, else *default*.
       If *default* is not given, it defaults to ``None``, so that this method
@@ -4814,7 +4822,7 @@ can be used interchangeably to index the same dictionary entry.
 
       .. versionadded:: 3.8
 
-   .. method:: setdefault(key, default=None)
+   .. method:: setdefault(key, default=None, /)
 
       If *key* is in the dictionary, return its value.  If not, insert *key*
       with a value of *default* and return *default*.  *default* defaults to
@@ -5236,6 +5244,8 @@ list is non-exhaustive.
 * :class:`set`
 * :class:`frozenset`
 * :class:`type`
+* :class:`asyncio.Future`
+* :class:`asyncio.Task`
 * :class:`collections.deque`
 * :class:`collections.defaultdict`
 * :class:`collections.OrderedDict`

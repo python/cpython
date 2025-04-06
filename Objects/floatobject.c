@@ -14,6 +14,7 @@
 #include "pycore_object.h"        // _PyObject_Init(), _PyDebugAllocatorStats()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
 #include <float.h>                // DBL_MAX
@@ -134,43 +135,12 @@ PyFloat_FromDouble(double fval)
     return (PyObject *) op;
 }
 
-#ifdef Py_GIL_DISABLED
-
 _PyStackRef _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
 {
     PyStackRef_CLOSE_SPECIALIZED(left, _PyFloat_ExactDealloc);
     PyStackRef_CLOSE_SPECIALIZED(right, _PyFloat_ExactDealloc);
     return PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(value));
 }
-
-#else // Py_GIL_DISABLED
-
-_PyStackRef _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
-{
-    PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
-    PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
-    if (Py_REFCNT(left_o) == 1) {
-        ((PyFloatObject *)left_o)->ob_fval = value;
-        PyStackRef_CLOSE_SPECIALIZED(right, _PyFloat_ExactDealloc);
-        return left;
-    }
-    else if (Py_REFCNT(right_o) == 1)  {
-        ((PyFloatObject *)right_o)->ob_fval = value;
-        PyStackRef_CLOSE_SPECIALIZED(left, _PyFloat_ExactDealloc);
-        return right;
-    }
-    else {
-        PyObject *result = PyFloat_FromDouble(value);
-        PyStackRef_CLOSE_SPECIALIZED(left, _PyFloat_ExactDealloc);
-        PyStackRef_CLOSE_SPECIALIZED(right, _PyFloat_ExactDealloc);
-        if (result == NULL) {
-            return PyStackRef_NULL;
-        }
-        return PyStackRef_FromPyObjectStealMortal(result);
-    }
-}
-
-#endif // Py_GIL_DISABLED
 
 static PyObject *
 float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
@@ -1273,8 +1243,8 @@ Create a floating-point number from a hexadecimal string.
 [clinic start generated code]*/
 
 static PyObject *
-float_fromhex(PyTypeObject *type, PyObject *string)
-/*[clinic end generated code: output=46c0274d22b78e82 input=0407bebd354bca89]*/
+float_fromhex_impl(PyTypeObject *type, PyObject *string)
+/*[clinic end generated code: output=c54b4923552e5af5 input=0407bebd354bca89]*/
 {
     PyObject *result;
     double x;
@@ -1687,8 +1657,8 @@ Convert real number to a floating-point number.
 [clinic start generated code]*/
 
 static PyObject *
-float_from_number(PyTypeObject *type, PyObject *number)
-/*[clinic end generated code: output=bbcf05529fe907a3 input=1f8424d9bc11866a]*/
+float_from_number_impl(PyTypeObject *type, PyObject *number)
+/*[clinic end generated code: output=dda7e4466ab7068d input=1f8424d9bc11866a]*/
 {
     if (PyFloat_CheckExact(number) && type == &PyFloat_Type) {
         Py_INCREF(number);

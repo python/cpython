@@ -53,8 +53,10 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _Py_FatalRefcountError()
 #include "pycore_pathconfig.h"    // _Py_DumpPathConfig()
 #include "pycore_pyerrors.h"      // _PyUnicodeTranslateError_Create()
+#include "pycore_pyhash.h"        // _Py_HashSecret_t
 #include "pycore_pylifecycle.h"   // _Py_SetFileSystemEncoding()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_ucnhash.h"       // _PyUnicode_Name_CAPI
 #include "pycore_unicodeobject.h" // struct _Py_unicode_state
 #include "pycore_unicodeobject_generated.h"  // _PyUnicode_InitStaticStrings()
@@ -14314,7 +14316,7 @@ static PyMethodDef unicode_methods[] = {
     UNICODE_ISPRINTABLE_METHODDEF
     UNICODE_ZFILL_METHODDEF
     {"format", _PyCFunction_CAST(do_string_format), METH_VARARGS | METH_KEYWORDS, format__doc__},
-    {"format_map", (PyCFunction) do_string_format_map, METH_O, format_map__doc__},
+    {"format_map", do_string_format_map, METH_O, format_map__doc__},
     UNICODE___FORMAT___METHODDEF
     UNICODE_MAKETRANS_METHODDEF
     UNICODE_SIZEOF_METHODDEF
@@ -14338,14 +14340,14 @@ static PyNumberMethods unicode_as_number = {
 };
 
 static PySequenceMethods unicode_as_sequence = {
-    (lenfunc) unicode_length,       /* sq_length */
-    PyUnicode_Concat,           /* sq_concat */
-    (ssizeargfunc) unicode_repeat,  /* sq_repeat */
-    (ssizeargfunc) unicode_getitem,     /* sq_item */
+    unicode_length,     /* sq_length */
+    PyUnicode_Concat,   /* sq_concat */
+    unicode_repeat,     /* sq_repeat */
+    unicode_getitem,    /* sq_item */
     0,                  /* sq_slice */
     0,                  /* sq_ass_item */
     0,                  /* sq_ass_slice */
-    PyUnicode_Contains,         /* sq_contains */
+    PyUnicode_Contains, /* sq_contains */
 };
 
 static PyObject*
@@ -14419,9 +14421,9 @@ unicode_subscript(PyObject* self, PyObject* item)
 }
 
 static PyMappingMethods unicode_as_mapping = {
-    (lenfunc)unicode_length,        /* mp_length */
-    (binaryfunc)unicode_subscript,  /* mp_subscript */
-    (objobjargproc)0,           /* mp_ass_subscript */
+    unicode_length,     /* mp_length */
+    unicode_subscript,  /* mp_subscript */
+    0,                  /* mp_ass_subscript */
 };
 
 
@@ -15564,7 +15566,7 @@ PyTypeObject PyUnicode_Type = {
     sizeof(PyUnicodeObject),      /* tp_basicsize */
     0,                            /* tp_itemsize */
     /* Slots */
-    (destructor)unicode_dealloc,  /* tp_dealloc */
+    unicode_dealloc,              /* tp_dealloc */
     0,                            /* tp_vectorcall_offset */
     0,                            /* tp_getattr */
     0,                            /* tp_setattr */
@@ -15573,9 +15575,9 @@ PyTypeObject PyUnicode_Type = {
     &unicode_as_number,           /* tp_as_number */
     &unicode_as_sequence,         /* tp_as_sequence */
     &unicode_as_mapping,          /* tp_as_mapping */
-    (hashfunc) unicode_hash,      /* tp_hash*/
+    unicode_hash,                 /* tp_hash*/
     0,                            /* tp_call*/
-    (reprfunc) unicode_str,       /* tp_str */
+    unicode_str,                  /* tp_str */
     PyObject_GenericGetAttr,      /* tp_getattro */
     0,                            /* tp_setattro */
     0,                            /* tp_as_buffer */
@@ -15982,7 +15984,7 @@ _PyUnicode_ClearInterned(PyInterpreterState *interp)
         case SSTATE_INTERNED_MORTAL:
             // Restore 2 references held by the interned dict; these will
             // be decref'd by clear_interned_dict's PyDict_Clear.
-            Py_SET_REFCNT(s, Py_REFCNT(s) + 2);
+            _Py_RefcntAdd(s, 2);
 #ifdef Py_REF_DEBUG
             /* let's be pedantic with the ref total */
             _Py_IncRefTotal(_PyThreadState_GET());
@@ -16472,9 +16474,9 @@ _PyUnicode_Fini(PyInterpreterState *interp)
    to the string.Formatter class implemented in Python. */
 
 static PyMethodDef _string_methods[] = {
-    {"formatter_field_name_split", (PyCFunction) formatter_field_name_split,
+    {"formatter_field_name_split", formatter_field_name_split,
      METH_O, PyDoc_STR("split the argument as a field name")},
-    {"formatter_parser", (PyCFunction) formatter_parser,
+    {"formatter_parser", formatter_parser,
      METH_O, PyDoc_STR("parse the argument as a format string")},
     {NULL, NULL}
 };

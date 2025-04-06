@@ -102,16 +102,16 @@ else:
 
 
 if _winapi and hasattr(_winapi, 'CopyFile2'):
-    def _copyfile2(source, target):
+    def copyfile2(source, target):
         """
         Copy from one file to another using CopyFile2 (Windows only).
         """
         _winapi.CopyFile2(source, target, 0)
 else:
-    _copyfile2 = None
+    copyfile2 = None
 
 
-def _copyfileobj(source_f, target_f):
+def copyfileobj(source_f, target_f):
     """
     Copy data from file-like object source_f to file-like object target_f.
     """
@@ -186,6 +186,12 @@ def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
             pass
         else:
             return attr(path, buffering, encoding, errors, newline)
+    elif encoding is not None:
+        raise ValueError("binary mode doesn't take an encoding argument")
+    elif errors is not None:
+        raise ValueError("binary mode doesn't take an errors argument")
+    elif newline is not None:
+        raise ValueError("binary mode doesn't take a newline argument")
 
     try:
         attr = getattr(cls, f'__open_{mode}b__')
@@ -240,42 +246,6 @@ def ensure_different_files(source, target):
     err.filename = str(source)
     err.filename2 = str(target)
     raise err
-
-
-def copy_file(source, target, follow_symlinks=True, preserve_metadata=False):
-    """
-    Recursively copy the given source ReadablePath to the given target WritablePath.
-    """
-    info = source.info
-    if not follow_symlinks and info.is_symlink():
-        target.symlink_to(source.readlink(), info.is_dir())
-        if preserve_metadata:
-            target._write_info(info, follow_symlinks=False)
-    elif info.is_dir():
-        children = source.iterdir()
-        target.mkdir()
-        for src in children:
-            dst = target.joinpath(src.name)
-            copy_file(src, dst, follow_symlinks, preserve_metadata)
-        if preserve_metadata:
-            target._write_info(info)
-    else:
-        if _copyfile2:
-            # Use fast OS routine for local file copying where available.
-            try:
-                source_p = os.fspath(source)
-                target_p = os.fspath(target)
-            except TypeError:
-                pass
-            else:
-                _copyfile2(source_p, target_p)
-                return
-        ensure_different_files(source, target)
-        with magic_open(source, 'rb') as source_f:
-            with magic_open(target, 'wb') as target_f:
-                _copyfileobj(source_f, target_f)
-        if preserve_metadata:
-            target._write_info(info)
 
 
 def copy_info(info, target, follow_symlinks=True):

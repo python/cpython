@@ -16,7 +16,6 @@ import platform
 import random
 import re
 import sys
-import textwrap
 import traceback
 import types
 import typing
@@ -226,6 +225,8 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(all(x > 42 for x in S), True)
         S = [50, 40, 60]
         self.assertEqual(all(x > 42 for x in S), False)
+        S = [50, 40, 60, TestFailingBool()]
+        self.assertEqual(all(x > 42 for x in S), False)
 
     def test_any(self):
         self.assertEqual(any([None, None, None]), False)
@@ -239,8 +240,58 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(any([1, TestFailingBool()]), True) # Short-circuit
         S = [40, 60, 30]
         self.assertEqual(any(x > 42 for x in S), True)
+        S = [40, 60, 30, TestFailingBool()]
+        self.assertEqual(any(x > 42 for x in S), True)
         S = [10, 20, 30]
         self.assertEqual(any(x > 42 for x in S), False)
+
+    def test_all_any_tuple_optimization(self):
+        def f_all():
+            return all(x-2 for x in [1,2,3])
+
+        def f_any():
+            return any(x-1 for x in [1,2,3])
+
+        def f_tuple():
+            return tuple(2*x for x in [1,2,3])
+
+        funcs = [f_all, f_any, f_tuple]
+
+        for f in funcs:
+            # check that generator code object is not duplicated
+            code_objs = [c for c in f.__code__.co_consts if isinstance(c, type(f.__code__))]
+            self.assertEqual(len(code_objs), 1)
+
+
+        # check the overriding the builtins works
+
+        global all, any, tuple
+        saved = all, any, tuple
+        try:
+            all = lambda x : "all"
+            any = lambda x : "any"
+            tuple = lambda x : "tuple"
+
+            overridden_outputs = [f() for f in funcs]
+        finally:
+            all, any, tuple = saved
+
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
+
+        # Now repeat, overriding the builtins module as well
+        saved = all, any, tuple
+        try:
+            builtins.all = all = lambda x : "all"
+            builtins.any = any = lambda x : "any"
+            builtins.tuple = tuple = lambda x : "tuple"
+
+            overridden_outputs = [f() for f in funcs]
+        finally:
+            all, any, tuple = saved
+            builtins.all, builtins.any, builtins.tuple = saved
+
+        self.assertEqual(overridden_outputs, ['all', 'any', 'tuple'])
+
 
     def test_ascii(self):
         self.assertEqual(ascii(''), '\'\'')
@@ -555,7 +606,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         self.assertEqual(type(glob['ticker']()), AsyncGeneratorType)
 
     def test_compile_ast(self):
-        args = ("a*(1,2)", "f.py", "exec")
+        args = ("a*__debug__", "f.py", "exec")
         raw = compile(*args, flags = ast.PyCF_ONLY_AST).body[0]
         opt1 = compile(*args, flags = ast.PyCF_OPTIMIZED_AST).body[0]
         opt2 = compile(ast.parse(args[0]), *args[1:], flags = ast.PyCF_OPTIMIZED_AST).body[0]
@@ -566,14 +617,14 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.assertIsInstance(tree.value.left, ast.Name)
             self.assertEqual(tree.value.left.id, 'a')
 
-        raw_right = raw.value.right  # expect Tuple((1, 2))
-        self.assertIsInstance(raw_right, ast.Tuple)
-        self.assertListEqual([elt.value for elt in raw_right.elts], [1, 2])
+        raw_right = raw.value.right
+        self.assertIsInstance(raw_right, ast.Name)
+        self.assertEqual(raw_right.id, "__debug__")
 
         for opt in [opt1, opt2]:
-            opt_right = opt.value.right  # expect Constant((1,2))
+            opt_right = opt.value.right
             self.assertIsInstance(opt_right, ast.Constant)
-            self.assertEqual(opt_right.value, (1, 2))
+            self.assertEqual(opt_right.value, True)
 
     def test_delattr(self):
         sys.spam = 1
@@ -1569,8 +1620,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             # try to get a user preferred encoding different than the current
             # locale encoding to check that open() uses the current locale
             # encoding and not the user preferred encoding
-            for key in ('LC_ALL', 'LANG', 'LC_CTYPE'):
-                env.unset(key)
+            env.unset('LC_ALL', 'LANG', 'LC_CTYPE')
 
             self.write_testfile()
             current_locale_encoding = locale.getencoding()
@@ -1747,6 +1797,11 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
         a = {}
         a[0] = a
         self.assertEqual(repr(a), '{0: {...}}')
+
+    def test_repr_blocked(self):
+        class C:
+            __repr__ = None
+        self.assertRaises(TypeError, repr, C())
 
     def test_round(self):
         self.assertEqual(round(0.0), 0.0)

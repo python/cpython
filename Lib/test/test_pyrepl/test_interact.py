@@ -58,7 +58,7 @@ class TestSimpleInteract(unittest.TestCase):
         console = InteractiveColoredConsole()
         code = dedent("""\
         raise Exception('foobar')
-        print('spam&eggs')
+        print('spam', 'eggs', sep='&')
         """)
         f = io.StringIO()
         with contextlib.redirect_stderr(f):

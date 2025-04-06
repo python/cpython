@@ -1,0 +1,1 @@
+Allow JIT to omit str guard in truthiness test when str type is known.

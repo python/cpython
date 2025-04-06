@@ -1,2 +1,0 @@
-Ensure the path returned from :meth:`pathlib.Path.copy` or
-:meth:`~pathlib.Path.move` has fresh :attr:`~pathlib.Path.info`.

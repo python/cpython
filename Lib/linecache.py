@@ -51,14 +51,26 @@ def _getline_from_code(filename, lineno):
         return lines[lineno - 1]
     return ''
 
+def _make_key(code):
+    return (code.co_filename, code.co_qualname, code.co_firstlineno)
 
 def _getlines_from_code(code):
-    code_id = id(code)
+    code_id = _make_key(code)
     if code_id in _interactive_cache:
         entry = _interactive_cache[code_id]
         if len(entry) != 1:
             return _interactive_cache[code_id][2]
     return []
+
+
+def _source_unavailable(filename):
+    """Return True if the source code is unavailable for such file name."""
+    return (
+        not filename
+        or (filename.startswith('<')
+            and filename.endswith('>')
+            and not filename.startswith('<frozen '))
+    )
 
 
 def checkcache(filename=None):
@@ -116,10 +128,17 @@ def updatecache(filename, module_globals=None):
     if filename in cache:
         if len(cache[filename]) != 1:
             cache.pop(filename, None)
-    if not filename or (filename.startswith('<') and filename.endswith('>')):
+    if _source_unavailable(filename):
         return []
 
-    fullname = filename
+    if filename.startswith('<frozen ') and module_globals is not None:
+        # This is a frozen module, so we need to use the filename
+        # from the module globals.
+        fullname = module_globals.get('__file__')
+        if fullname is None:
+            return []
+    else:
+        fullname = filename
     try:
         stat = os.stat(fullname)
     except OSError:
@@ -215,7 +234,6 @@ def lazycache(filename, module_globals):
             return True
     return False
 
-
 def _register_code(code, string, name):
     entry = (len(string),
              None,
@@ -227,4 +245,4 @@ def _register_code(code, string, name):
         for const in code.co_consts:
             if isinstance(const, type(code)):
                 stack.append(const)
-        _interactive_cache[id(code)] = entry
+        _interactive_cache[_make_key(code)] = entry
