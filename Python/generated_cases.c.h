@@ -3265,7 +3265,11 @@
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
                 JUMP_TO_PREDICTED(CALL);
             }
-            assert(self_o != NULL);
+            if (self_o == NULL) {
+                UPDATE_MISS_STATS(CALL);
+                assert(_PyOpcode_Deopt[opcode] == (CALL));
+                JUMP_TO_PREDICTED(CALL);
+            }
             if (!PyList_Check(self_o)) {
                 UPDATE_MISS_STATS(CALL);
                 assert(_PyOpcode_Deopt[opcode] == (CALL));
