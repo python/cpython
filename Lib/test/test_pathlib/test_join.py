@@ -4,9 +4,13 @@ Tests for pathlib.types._JoinablePath
 
 import unittest
 
-from pathlib import PurePath, Path
-from pathlib.types import _PathParser, _JoinablePath
-from test.test_pathlib.support.lexical_path import LexicalPath
+from .support import is_pypi
+from .support.lexical_path import LexicalPath
+
+if is_pypi:
+    from pathlib_abc import _PathParser, _JoinablePath
+else:
+    from pathlib.types import _PathParser, _JoinablePath
 
 
 class JoinTestBase:
@@ -130,11 +134,6 @@ class JoinTestBase:
         self.assertFalse(P('a/b/c.py').full_match('**/a/b/c./**'))
         self.assertFalse(P('a/b/c.py').full_match('/a/b/c.py/**'))
         self.assertFalse(P('a/b/c.py').full_match('/**/a/b/c.py'))
-        # Case-sensitive flag
-        self.assertFalse(P('A.py').full_match('a.PY', case_sensitive=True))
-        self.assertTrue(P('A.py').full_match('a.PY', case_sensitive=False))
-        self.assertFalse(P('c:/a/B.Py').full_match('C:/A/*.pY', case_sensitive=True))
-        self.assertTrue(P('/a/b/c.py').full_match('/A/*/*.Py', case_sensitive=False))
         # Matching against empty path
         self.assertFalse(P('').full_match('*'))
         self.assertTrue(P('').full_match('**'))
@@ -360,12 +359,14 @@ class LexicalPathJoinTest(JoinTestBase, unittest.TestCase):
     cls = LexicalPath
 
 
-class PurePathJoinTest(JoinTestBase, unittest.TestCase):
-    cls = PurePath
+if not is_pypi:
+    from pathlib import PurePath, Path
 
+    class PurePathJoinTest(JoinTestBase, unittest.TestCase):
+        cls = PurePath
 
-class PathJoinTest(JoinTestBase, unittest.TestCase):
-    cls = Path
+    class PathJoinTest(JoinTestBase, unittest.TestCase):
+        cls = Path
 
 
 if __name__ == "__main__":

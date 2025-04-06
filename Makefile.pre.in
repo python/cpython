@@ -227,8 +227,12 @@ ENSUREPIP=      @ENSUREPIP@
 # Internal static libraries
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
+LIBHACL_MD5_A= Modules/_hacl/libHacl_Hash_MD5.a
+LIBHACL_SHA1_A= Modules/_hacl/libHacl_Hash_SHA1.a
 LIBHACL_SHA2_A= Modules/_hacl/libHacl_Hash_SHA2.a
+LIBHACL_SHA3_A= Modules/_hacl/libHacl_Hash_SHA3.a
 LIBHACL_BLAKE2_A= Modules/_hacl/libHacl_Hash_Blake2.a
+LIBHACL_HMAC_A= Modules/_hacl/libHacl_HMAC.a
 LIBHACL_CFLAGS=@LIBHACL_CFLAGS@
 LIBHACL_SIMD128_FLAGS=@LIBHACL_SIMD128_FLAGS@
 LIBHACL_SIMD256_FLAGS=@LIBHACL_SIMD256_FLAGS@
@@ -506,6 +510,7 @@ PYTHON_OBJS=	\
 		Python/suggestions.o \
 		Python/perf_trampoline.o \
 		Python/perf_jit_trampoline.o \
+		Python/remote_debugging.o \
 		Python/$(DYNLOADFILE) \
 		$(LIBOBJS) \
 		$(MACHDEP_OBJS) \
@@ -655,29 +660,65 @@ LIBEXPAT_HEADERS= \
 ##########################################################################
 # hashlib's HACL* library
 
+LIBHACL_MD5_OBJS= \
+		Modules/_hacl/Hacl_Hash_MD5.o
+
+LIBHACL_SHA1_OBJS= \
+		Modules/_hacl/Hacl_Hash_SHA1.o
+
 LIBHACL_SHA2_OBJS= \
-                Modules/_hacl/Hacl_Hash_SHA2.o
+		Modules/_hacl/Hacl_Hash_SHA2.o
+
+LIBHACL_SHA3_OBJS= \
+		Modules/_hacl/Hacl_Hash_SHA3.o
 
 LIBHACL_BLAKE2_OBJS= \
-                Modules/_hacl/Hacl_Hash_Blake2s.o \
-                Modules/_hacl/Hacl_Hash_Blake2b.o \
-                Modules/_hacl/Lib_Memzero0.o \
+		Modules/_hacl/Hacl_Hash_Blake2s.o \
+		Modules/_hacl/Hacl_Hash_Blake2b.o \
+		Modules/_hacl/Lib_Memzero0.o \
 		$(LIBHACL_SIMD128_OBJS) \
 		$(LIBHACL_SIMD256_OBJS)
 
+LIBHACL_HMAC_OBJS= \
+		Modules/_hacl/Hacl_HMAC.o \
+		Modules/_hacl/Hacl_Streaming_HMAC.o \
+		$(LIBHACL_MD5_OBJS) \
+		$(LIBHACL_SHA1_OBJS) \
+		$(LIBHACL_SHA2_OBJS) \
+		$(LIBHACL_SHA3_OBJS) \
+		$(LIBHACL_BLAKE2_OBJS)
+
 LIBHACL_HEADERS= \
-                Modules/_hacl/include/krml/FStar_UInt128_Verified.h \
-                Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h \
-                Modules/_hacl/include/krml/fstar_uint128_struct_endianness.h \
-                Modules/_hacl/include/krml/internal/target.h \
-                Modules/_hacl/include/krml/lowstar_endianness.h \
-                Modules/_hacl/include/krml/types.h \
+		Modules/_hacl/include/krml/FStar_UInt128_Verified.h \
+		Modules/_hacl/include/krml/FStar_UInt_8_16_32_64.h \
+		Modules/_hacl/include/krml/fstar_uint128_struct_endianness.h \
+		Modules/_hacl/include/krml/internal/compat.h \
+		Modules/_hacl/include/krml/internal/target.h \
+		Modules/_hacl/include/krml/internal/types.h \
+		Modules/_hacl/include/krml/lowstar_endianness.h \
 		Modules/_hacl/Hacl_Streaming_Types.h \
-                Modules/_hacl/python_hacl_namespaces.h
+		Modules/_hacl/internal/Hacl_Streaming_Types.h \
+		Modules/_hacl/libintvector.h \
+		Modules/_hacl/python_hacl_namespaces.h
+
+LIBHACL_MD5_HEADERS= \
+		Modules/_hacl/Hacl_Hash_MD5.h \
+		Modules/_hacl/internal/Hacl_Hash_MD5.h \
+		$(LIBHACL_HEADERS)
+
+LIBHACL_SHA1_HEADERS= \
+		Modules/_hacl/Hacl_Hash_SHA1.h \
+		Modules/_hacl/internal/Hacl_Hash_SHA1.h \
+		$(LIBHACL_HEADERS)
 
 LIBHACL_SHA2_HEADERS= \
-                Modules/_hacl/Hacl_Hash_SHA2.h \
-                Modules/_hacl/internal/Hacl_Hash_SHA2.h \
+		Modules/_hacl/Hacl_Hash_SHA2.h \
+		Modules/_hacl/internal/Hacl_Hash_SHA2.h \
+		$(LIBHACL_HEADERS)
+
+LIBHACL_SHA3_HEADERS= \
+		Modules/_hacl/Hacl_Hash_SHA3.h \
+		Modules/_hacl/internal/Hacl_Hash_SHA3.h \
 		$(LIBHACL_HEADERS)
 
 LIBHACL_BLAKE2_HEADERS= \
@@ -690,6 +731,20 @@ LIBHACL_BLAKE2_HEADERS= \
 		Modules/_hacl/internal/Hacl_Impl_Blake2_Constants.h \
 		Modules/_hacl/internal/Hacl_Hash_Blake2s_Simd128.h \
 		Modules/_hacl/internal/Hacl_Hash_Blake2b_Simd256.h \
+		Modules/_hacl/internal/Hacl_Streaming_Types.h \
+		$(LIBHACL_HEADERS)
+
+LIBHACL_HMAC_HEADERS= \
+		Modules/_hacl/Hacl_HMAC.h \
+		Modules/_hacl/Hacl_Streaming_HMAC.h \
+		Modules/_hacl/internal/Hacl_HMAC.h \
+		Modules/_hacl/internal/Hacl_Streaming_HMAC.h \
+		Modules/_hacl/libintvector-shim.h \
+		$(LIBHACL_MD5_HEADERS) \
+		$(LIBHACL_SHA1_HEADERS) \
+		$(LIBHACL_SHA2_HEADERS) \
+		$(LIBHACL_SHA3_HEADERS) \
+		$(LIBHACL_BLAKE2_HEADERS) \
 		$(LIBHACL_HEADERS)
 
 #########################################################################
@@ -1253,6 +1308,9 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_instruments.h \
 		$(srcdir)/Include/internal/pycore_instruction_sequence.h \
 		$(srcdir)/Include/internal/pycore_interp.h \
+		$(srcdir)/Include/internal/pycore_interp_structs.h \
+		$(srcdir)/Include/internal/pycore_interpframe.h \
+		$(srcdir)/Include/internal/pycore_interpframe_structs.h \
 		$(srcdir)/Include/internal/pycore_intrinsics.h \
 		$(srcdir)/Include/internal/pycore_jit.h \
 		$(srcdir)/Include/internal/pycore_list.h \
@@ -1295,28 +1353,32 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/internal/pycore_runtime.h \
 		$(srcdir)/Include/internal/pycore_runtime_init.h \
 		$(srcdir)/Include/internal/pycore_runtime_init_generated.h \
+		$(srcdir)/Include/internal/pycore_runtime_structs.h \
 		$(srcdir)/Include/internal/pycore_semaphore.h \
 		$(srcdir)/Include/internal/pycore_setobject.h \
 		$(srcdir)/Include/internal/pycore_signal.h \
 		$(srcdir)/Include/internal/pycore_sliceobject.h \
+		$(srcdir)/Include/internal/pycore_stats.h \
 		$(srcdir)/Include/internal/pycore_strhex.h \
+		$(srcdir)/Include/internal/pycore_stackref.h \
+		$(srcdir)/Include/internal/pycore_structs.h \
 		$(srcdir)/Include/internal/pycore_structseq.h \
 		$(srcdir)/Include/internal/pycore_symtable.h \
 		$(srcdir)/Include/internal/pycore_sysmodule.h \
-		$(srcdir)/Include/internal/pycore_stackref.h \
 		$(srcdir)/Include/internal/pycore_time.h \
 		$(srcdir)/Include/internal/pycore_token.h \
 		$(srcdir)/Include/internal/pycore_traceback.h \
 		$(srcdir)/Include/internal/pycore_tracemalloc.h \
 		$(srcdir)/Include/internal/pycore_tstate.h \
 		$(srcdir)/Include/internal/pycore_tuple.h \
-		$(srcdir)/Include/internal/pycore_uniqueid.h \
+		$(srcdir)/Include/internal/pycore_typedefs.h \
 		$(srcdir)/Include/internal/pycore_typeobject.h \
 		$(srcdir)/Include/internal/pycore_typevarobject.h \
 		$(srcdir)/Include/internal/pycore_ucnhash.h \
 		$(srcdir)/Include/internal/pycore_unicodeobject.h \
 		$(srcdir)/Include/internal/pycore_unicodeobject_generated.h \
 		$(srcdir)/Include/internal/pycore_unionobject.h \
+		$(srcdir)/Include/internal/pycore_uniqueid.h \
 		$(srcdir)/Include/internal/pycore_uop_ids.h \
 		$(srcdir)/Include/internal/pycore_uop_metadata.h \
 		$(srcdir)/Include/internal/pycore_warnings.h \
@@ -1398,9 +1460,24 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 	$(AR) $(ARFLAGS) $@ $(LIBEXPAT_OBJS)
 
 ##########################################################################
-# Build HACL* static libraries for hashlib: libHacl_Hash_SHA2.a, and
-# libHacl_Blake2.a -- the contents of the latter vary depending on whether we
+# Build HACL* static libraries for hashlib and HACL* HMAC.
+#
+# The contents of libHacl_Blake2.a vary depending on whether we
 # have the ability to compile vectorized versions
+
+Modules/_hacl/Hacl_Hash_MD5.o: $(srcdir)/Modules/_hacl/Hacl_Hash_MD5.c $(LIBHACL_MD5_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_MD5.c
+
+$(LIBHACL_MD5_A): $(LIBHACL_MD5_OBJS)
+	-rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBHACL_MD5_OBJS)
+
+Modules/_hacl/Hacl_Hash_SHA1.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA1.c $(LIBHACL_SHA1_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA1.c
+
+$(LIBHACL_SHA1_A): $(LIBHACL_SHA1_OBJS)
+	-rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA1_OBJS)
 
 Modules/_hacl/Hacl_Hash_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c $(LIBHACL_SHA2_HEADERS)
 	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
@@ -1408,6 +1485,13 @@ Modules/_hacl/Hacl_Hash_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c $(LIBHA
 $(LIBHACL_SHA2_A): $(LIBHACL_SHA2_OBJS)
 	-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA2_OBJS)
+
+Modules/_hacl/Hacl_Hash_SHA3.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA3.c $(LIBHACL_SHA3_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA3.c
+
+$(LIBHACL_SHA3_A): $(LIBHACL_SHA3_OBJS)
+	-rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA3_OBJS)
 
 Modules/_hacl/Hacl_Hash_Blake2s.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s.c $(LIBHACL_BLAKE2_HEADERS)
 	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s.c
@@ -1433,6 +1517,16 @@ Modules/_hacl/Lib_Memzero0.o: $(srcdir)/Modules/_hacl/Lib_Memzero0.c $(LIBHACL_B
 $(LIBHACL_BLAKE2_A): $(LIBHACL_BLAKE2_OBJS)
 	-rm -f $@
 	$(AR) $(ARFLAGS) $@ $(LIBHACL_BLAKE2_OBJS)
+
+Modules/_hacl/Hacl_HMAC.o: $(srcdir)/Modules/_hacl/Hacl_HMAC.c $(LIBHACL_HMAC_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_HMAC.c
+
+Modules/_hacl/Hacl_Streaming_HMAC.o: $(srcdir)/Modules/_hacl/Hacl_Streaming_HMAC.c $(LIBHACL_HMAC_HEADERS)
+	$(CC) -Wno-unused-variable -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Streaming_HMAC.c
+
+$(LIBHACL_HMAC_A): $(LIBHACL_HMAC_OBJS)
+	-rm -f $@
+	$(AR) $(ARFLAGS) $@ $(LIBHACL_HMAC_OBJS)
 
 # create relative links from build/lib.platform/egg.so to Modules/egg.so
 # pybuilddir.txt is created too late. We cannot use it in Makefile
@@ -2081,7 +2175,7 @@ Python/frozen.o: $(FROZEN_FILES_OUT)
 # an include guard, so we can't use a pipeline to transform its output.
 Include/pydtrace_probes.h: $(srcdir)/Include/pydtrace.d
 	$(MKDIR_P) Include
-	$(DTRACE) $(DFLAGS) -o $@ -h -s $<
+	CC="$(CC)" CFLAGS="$(CFLAGS)" $(DTRACE) $(DFLAGS) -o $@ -h -s $<
 	: sed in-place edit with POSIX-only tools
 	sed 's/PYTHON_/PyDTrace_/' $@ > $@.tmp
 	mv $@.tmp $@
@@ -2091,7 +2185,7 @@ Python/gc.o: $(srcdir)/Include/pydtrace.h
 Python/import.o: $(srcdir)/Include/pydtrace.h
 
 Python/pydtrace.o: $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
-	$(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
+	CC="$(CC)" CFLAGS="$(CFLAGS)" $(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
 
 Objects/typeobject.o: Objects/typeslots.inc
 
@@ -3206,11 +3300,12 @@ MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
-MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_MD5.h Modules/_hacl/internal/Hacl_Hash_MD5.h Modules/_hacl/Hacl_Hash_MD5.c
-MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_SHA1.h Modules/_hacl/internal/Hacl_Hash_SHA1.h Modules/_hacl/Hacl_Hash_SHA1.c
+MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_MD5_HEADERS) $(LIBHACL_MD5_A)
+MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA1_HEADERS) $(LIBHACL_SHA1_A)
 MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(LIBHACL_SHA2_A)
-MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_SHA3.h Modules/_hacl/internal/Hacl_Hash_SHA3.h Modules/_hacl/Hacl_Hash_SHA3.c
+MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA3_HEADERS) $(LIBHACL_SHA3_A)
 MODULE__BLAKE2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_BLAKE2_HEADERS) $(LIBHACL_BLAKE2_A)
+MODULE__HMAC_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HMAC_HEADERS) $(LIBHACL_HMAC_A)
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
 MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h

@@ -1,0 +1,4 @@
+Implement :pep:`768` (Safe external debugger interface for CPython). Add a
+new :func:`sys.remote_exec` function to the :mod:`sys` module. This function
+schedules the execution of a Python file in a separate process. Patch by
+Pablo Galindo, Matt Wozniski and Ivona Stojanovic.

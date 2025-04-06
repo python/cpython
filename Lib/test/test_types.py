@@ -1,10 +1,11 @@
 # Python test set -- part 6, built-in types
 
 from test.support import (
-    run_with_locale, is_apple_mobile, cpython_only, no_rerun,
-    iter_builtin_types, iter_slot_wrappers,
-    MISSING_C_DOCSTRINGS,
+    run_with_locale, cpython_only, no_rerun,
+    MISSING_C_DOCSTRINGS, EqualToForwardRef,
 )
+from test.support.import_helper import import_fresh_module
+
 import collections.abc
 from collections import namedtuple, UserDict
 import copy
@@ -20,6 +21,8 @@ import unittest.mock
 import weakref
 import typing
 
+c_types = import_fresh_module('types', fresh=['_types'])
+py_types = import_fresh_module('types', blocked=['_types'])
 
 T = typing.TypeVar("T")
 
@@ -34,6 +37,28 @@ def clear_typing_caches():
 
 
 class TypesTests(unittest.TestCase):
+
+    def test_names(self):
+        c_only_names = {'CapsuleType'}
+        ignored = {'new_class', 'resolve_bases', 'prepare_class',
+                   'get_original_bases', 'DynamicClassAttribute', 'coroutine'}
+
+        for name in c_types.__all__:
+            if name not in c_only_names | ignored:
+                self.assertIs(getattr(c_types, name), getattr(py_types, name))
+
+        all_names = ignored | {
+            'AsyncGeneratorType', 'BuiltinFunctionType', 'BuiltinMethodType',
+            'CapsuleType', 'CellType', 'ClassMethodDescriptorType', 'CodeType',
+            'CoroutineType', 'EllipsisType', 'FrameType', 'FunctionType',
+            'GeneratorType', 'GenericAlias', 'GetSetDescriptorType',
+            'LambdaType', 'MappingProxyType', 'MemberDescriptorType',
+            'MethodDescriptorType', 'MethodType', 'MethodWrapperType',
+            'ModuleType', 'NoneType', 'NotImplementedType', 'SimpleNamespace',
+            'TracebackType', 'UnionType', 'WrapperDescriptorType',
+        }
+        self.assertEqual(all_names, set(c_types.__all__))
+        self.assertEqual(all_names - c_only_names, set(py_types.__all__))
 
     def test_truth_values(self):
         if None: self.fail('None is true instead of false')
@@ -1090,7 +1115,13 @@ class UnionTests(unittest.TestCase):
         self.assertIs(int, types.UnionType[int])
         self.assertIs(int, types.UnionType[int, int])
         self.assertEqual(int | str, types.UnionType[int, str])
-        self.assertEqual(int | typing.ForwardRef("str"), types.UnionType[int, "str"])
+
+        for obj in (
+            int | typing.ForwardRef("str"),
+            typing.Union[int, "str"],
+        ):
+            self.assertIsInstance(obj, types.UnionType)
+            self.assertEqual(obj.__args__, (int, EqualToForwardRef("str")))
 
 
 class MappingProxyTests(unittest.TestCase):
