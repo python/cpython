@@ -434,6 +434,10 @@ Other language changes
   making it a :term:`generic type`.
   (Contributed by Brian Schubert in :gh:`126012`.)
 
+* The :class:`ctypes.py_object` type now supports subscription,
+  making it a :term:`generic type`.
+  (Contributed by Brian Schubert in :gh:`132168`.)
+
 * Support underscore and comma as thousands separators in the fractional part
   for floating-point presentation types of the new-style string formatting
   (with :func:`format` or :ref:`f-strings`).
