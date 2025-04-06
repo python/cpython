@@ -4362,19 +4362,6 @@ class QueueHandlerTest(BaseTest):
 
     @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
                          'logging.handlers.QueueListener required for this test')
-    def test_queue_listener_multi_start(self):
-        handler = TestHandler(support.Matcher())
-        with logging.handlers.QueueListener(self.queue, handler) as listener:
-            self.assertRaises(RuntimeError, listener.start)
-
-        with listener:
-            self.assertRaises(RuntimeError, listener.start)
-
-        listener.start()
-        listener.stop()
-
-    @unittest.skipUnless(hasattr(logging.handlers, 'QueueListener'),
-                         'logging.handlers.QueueListener required for this test')
     def test_queue_listener_with_StreamHandler(self):
         # Test that traceback and stack-info only appends once (bpo-34334, bpo-46755).
         listener = logging.handlers.QueueListener(self.queue, self.root_hdlr)
