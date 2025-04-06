@@ -1131,7 +1131,7 @@ typing
     this raised :exc:`TypeError`.
   - The ``__args__`` attribute of :class:`typing.Union` objects is no longer writable.
   - It is no longer possible to set any attributes on :class:`typing.Union` objects.
-    This only ever worked for dunder attributes on previous versions, was never 
+    This only ever worked for dunder attributes on previous versions, was never
     documented to work, and was subtly broken in many cases.
 
   (Contributed by Jelle Zijlstra in :gh:`105499`.)
