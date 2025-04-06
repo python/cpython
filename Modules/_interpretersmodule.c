@@ -330,7 +330,7 @@ get_code_str(PyObject *arg, Py_ssize_t *len_p, PyObject **bytes_p, int *flags_p)
     int flags = 0;
 
     if (PyUnicode_Check(arg)) {
-        assert(PyUnicode_CheckExact(arg)
+        assert(PyUnicode_Check(arg)
                && (check_code_str((PyUnicodeObject *)arg) == NULL));
         codestr = PyUnicode_AsUTF8AndSize(arg, &len);
         if (codestr == NULL) {
