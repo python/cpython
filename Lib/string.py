@@ -50,7 +50,6 @@ def capwords(s, sep=None):
 
 ####################################################################
 _sentinel_dict = {}
-_sentinel_flags = object()
 
 
 class _TemplatePattern:
@@ -71,7 +70,7 @@ class Template:
     # See https://bugs.python.org/issue31672
     idpattern = r'(?a:[_a-z][_a-z0-9]*)'
     braceidpattern = None
-    flags = _sentinel_flags  # default: re.IGNORECASE
+    flags = None  # default: re.IGNORECASE
 
     pattern = _TemplatePattern()  # use a descriptor to compile the pattern
 
@@ -99,7 +98,7 @@ class Template:
               (?P<invalid>)             # Other ill-formed delimiter exprs
             )
             """
-        if cls.flags is _sentinel_flags:
+        if cls.flags is None:
             cls.flags = re.IGNORECASE
         pat = cls.pattern = re.compile(pattern, cls.flags | re.VERBOSE)
         return pat
