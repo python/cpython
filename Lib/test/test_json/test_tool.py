@@ -264,6 +264,9 @@ class TestMain(unittest.TestCase):
             ('null', b'\x1b[36mnull\x1b[0m'),
             ('true', b'\x1b[36mtrue\x1b[0m'),
             ('false', b'\x1b[36mfalse\x1b[0m'),
+            ('NaN', b'\x1b[33mNaN\x1b[0m'),
+            ('Infinity', b'\x1b[33mInfinity\x1b[0m'),
+            ('-Infinity', b'\x1b[33m-Infinity\x1b[0m'),
             ('"foo"', b'\x1b[32m"foo"\x1b[0m'),
             (r'" \"foo\" "', b'\x1b[32m" \\"foo\\" "\x1b[0m'),
             ('123', b'\x1b[33m123\x1b[0m'),
@@ -278,7 +281,13 @@ class TestMain(unittest.TestCase):
 {
     \x1b[32m"\\\\\\\\"\x1b[0m: \x1b[32m""\x1b[0m
 }'''),
-            ('{"foo": "bar", "baz": 1234, "qux": [true, false, null]}',
+            ('''\
+{
+    "foo": "bar",
+    "baz": 1234,
+    "qux": [true, false, null],
+    "xyz": [NaN, -Infinity, Infinity]
+}''',
              b'''\
 {
     \x1b[32m"foo"\x1b[0m: \x1b[32m"bar"\x1b[0m,
@@ -287,6 +296,11 @@ class TestMain(unittest.TestCase):
         \x1b[36mtrue\x1b[0m,
         \x1b[36mfalse\x1b[0m,
         \x1b[36mnull\x1b[0m
+    ],
+    \x1b[32m"xyz"\x1b[0m: [
+        \x1b[33mNaN\x1b[0m,
+        \x1b[33m-Infinity\x1b[0m,
+        \x1b[33mInfinity\x1b[0m
     ]
 }'''),
         )
