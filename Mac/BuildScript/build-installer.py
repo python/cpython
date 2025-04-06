@@ -246,9 +246,9 @@ def library_recipes():
 
     result.extend([
           dict(
-              name="OpenSSL 3.0.9",
-              url="https://www.openssl.org/source/openssl-3.0.9.tar.gz",
-              checksum='eb1ab04781474360f77c318ab89d8c5a03abc38e63d65a603cabbf1b00a1dc90',
+              name="OpenSSL 3.0.15",
+              url="https://github.com/openssl/openssl/releases/download/openssl-3.0.15/openssl-3.0.15.tar.gz",
+              checksum='23c666d0edf20f14249b3d8f0368acaee9ab585b09e1de82107c66e1f3ec9533',
               buildrecipe=build_universal_openssl,
               configure=None,
               install=None,
@@ -261,14 +261,14 @@ def library_recipes():
             tcl_checksum='81656d3367af032e0ae6157eff134f89'
 
             tk_checksum='5e0faecba458ee1386078fb228d008ba'
-            tk_patches = ['tk868_on_10_8_10_9.patch']
+            tk_patches = ['backport_gh71383_fix.patch', 'tk868_on_10_8_10_9.patch', 'backport_gh110950_fix.patch']
 
         else:
-            tcl_tk_ver='8.6.13'
-            tcl_checksum='43a1fae7412f61ff11de2cfd05d28cfc3a73762f354a417c62370a54e2caf066'
+            tcl_tk_ver='8.6.15'
+            tcl_checksum='861e159753f2e2fbd6ec1484103715b0be56be3357522b858d3cbb5f893ffef1'
 
-            tk_checksum='2e65fa069a23365440a3c56c556b8673b5e32a283800d8d9b257e3f584ce0675'
-            tk_patches = [ ]
+            tk_checksum='550969f35379f952b3020f3ab7b9dd5bfd11c1ef7c9b7c6a75f5c49aca793fec'
+            tk_patches = []
 
 
         base_url = "https://prdownloads.sourceforge.net/tcl/{what}{version}-src.tar.gz"
@@ -359,9 +359,9 @@ def library_recipes():
                   ),
           ),
           dict(
-              name="SQLite 3.42.0",
-              url="https://sqlite.org/2023/sqlite-autoconf-3420000.tar.gz",
-              checksum="0c5a92bc51cf07cae45b4a1e94653dea",
+              name="SQLite 3.49.1",
+              url="https://sqlite.org/2025/sqlite-autoconf-3490100.tar.gz",
+              checksum="106642d8ccb36c5f7323b64e4152e9b719f7c0215acf5bfeac3d5e7f97b59254",
               extra_cflags=('-Os '
                             '-DSQLITE_ENABLE_FTS5 '
                             '-DSQLITE_ENABLE_FTS4 '
@@ -372,11 +372,10 @@ def library_recipes():
                             ),
               configure_pre=[
                   '--enable-threadsafe',
-                  '--enable-shared=no',
-                  '--enable-static=yes',
                   '--disable-readline',
                   '--disable-dependency-tracking',
-              ]
+              ],
+              install=f"make && ranlib libsqlite3.a && make install DESTDIR={shellQuote(os.path.join(WORKDIR, 'libraries'))}",
           ),
         ])
 

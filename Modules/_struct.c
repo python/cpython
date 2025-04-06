@@ -278,7 +278,7 @@ get_size_t(_structmodulestate *state, PyObject *v, size_t *p)
 #define RANGE_ERROR(state, f, flag) return _range_error(state, f, flag)
 
 
-/* Floating point helpers */
+/* Floating-point helpers */
 
 static PyObject *
 unpack_halffloat(const char *p,  /* start of 2-byte string */
@@ -483,9 +483,8 @@ nu_ulonglong(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 nu_bool(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    _Bool x;
-    memcpy((char *)&x, p, sizeof x);
-    return PyBool_FromLong(x != 0);
+    const _Bool bool_false = 0;
+    return PyBool_FromLong(memcmp(p, &bool_false, sizeof(_Bool)));
 }
 
 
@@ -1550,9 +1549,28 @@ prepare_s(PyStructObject *self)
     return -1;
 }
 
+static PyObject *
+s_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *self;
+
+    assert(type != NULL);
+    allocfunc alloc_func = PyType_GetSlot(type, Py_tp_alloc);
+    assert(alloc_func != NULL);
+
+    self = alloc_func(type, 0);
+    if (self != NULL) {
+        PyStructObject *s = (PyStructObject*)self;
+        s->s_format = Py_NewRef(Py_None);
+        s->s_codes = NULL;
+        s->s_size = -1;
+        s->s_len = -1;
+    }
+    return self;
+}
+
 /*[clinic input]
-@classmethod
-Struct.__new__
+Struct.__init__
 
     format: object
 
@@ -1564,24 +1582,16 @@ the format string.
 See help(struct) for more on format strings.
 [clinic start generated code]*/
 
-static PyObject *
-Struct_impl(PyTypeObject *type, PyObject *format)
-/*[clinic end generated code: output=49468b044e334308 input=8b91868eb1df0e28]*/
+static int
+Struct___init___impl(PyStructObject *self, PyObject *format)
+/*[clinic end generated code: output=b8e80862444e92d0 input=192a4575a3dde802]*/
 {
-    allocfunc alloc = PyType_GetSlot(type, Py_tp_alloc);
-    assert(alloc != NULL);
-    PyStructObject *self = (PyStructObject *)alloc(type, 0);
-
-    if (self == NULL) {
-        return NULL;
-    }
+    int ret = 0;
 
     if (PyUnicode_Check(format)) {
         format = PyUnicode_AsASCIIString(format);
-        if (format == NULL) {
-            Py_DECREF(self);
-            return NULL;
-        }
+        if (format == NULL)
+            return -1;
     }
     else {
         Py_INCREF(format);
@@ -1589,23 +1599,18 @@ Struct_impl(PyTypeObject *type, PyObject *format)
 
     if (!PyBytes_Check(format)) {
         Py_DECREF(format);
-        Py_DECREF(self);
         PyErr_Format(PyExc_TypeError,
                      "Struct() argument 1 must be a str or bytes object, "
                      "not %.200s",
                      _PyType_Name(Py_TYPE(format)));
-        return NULL;
+        return -1;
     }
 
-    self->s_format = format;
+    Py_SETREF(self->s_format, format);
 
-    if (prepare_s(self) < 0) {
-        Py_DECREF(self);
-        return NULL;
-    }
-    return (PyObject *)self;
+    ret = prepare_s(self);
+    return ret;
 }
-
 
 static int
 s_clear(PyStructObject *s)
@@ -1656,9 +1661,16 @@ s_unpack_internal(PyStructObject *soself, const char *startfrom,
             if (e->format == 's') {
                 v = PyBytes_FromStringAndSize(res, code->size);
             } else if (e->format == 'p') {
-                Py_ssize_t n = *(unsigned char*)res;
-                if (n >= code->size)
-                    n = code->size - 1;
+                Py_ssize_t n;
+                if (code->size == 0) {
+                    n = 0;
+                }
+                else {
+                    n = *(unsigned char*)res;
+                    if (n >= code->size) {
+                        n = code->size - 1;
+                    }
+                }
                 v = PyBytes_FromStringAndSize(res + 1, n);
             } else {
                 v = e->unpack(state, res, e);
@@ -1969,8 +1981,12 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
                     n = PyByteArray_GET_SIZE(v);
                     p = PyByteArray_AS_STRING(v);
                 }
-                if (n > (code->size - 1))
+                if (code->size == 0) {
+                    n = 0;
+                }
+                else if (n > (code->size - 1)) {
                     n = code->size - 1;
+                }
                 if (n > 0)
                     memcpy(res + 1, p, n);
                 if (n > 255)
@@ -2202,8 +2218,9 @@ static PyType_Slot PyStructType_slots[] = {
     {Py_tp_methods, s_methods},
     {Py_tp_members, s_members},
     {Py_tp_getset, s_getsetlist},
-    {Py_tp_new, Struct},
+    {Py_tp_init, Struct___init__},
     {Py_tp_alloc, PyType_GenericAlloc},
+    {Py_tp_new, s_new},
     {Py_tp_free, PyObject_GC_Del},
     {0, 0},
 };

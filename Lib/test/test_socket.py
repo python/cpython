@@ -44,8 +44,10 @@ HOST = socket_helper.HOST
 # test unicode string and carriage return
 MSG = 'Michael Gilfix was here\u1234\r\n'.encode('utf-8')
 
+VMADDR_CID_LOCAL = 1
 VSOCKPORT = 1234
 AIX = platform.system() == "AIX"
+WSL = "microsoft-standard-WSL" in platform.release()
 
 try:
     import _socket
@@ -127,8 +129,8 @@ def _have_socket_qipcrtr():
 
 def _have_socket_vsock():
     """Check whether AF_VSOCK sockets are supported on this host."""
-    ret = get_cid() is not None
-    return ret
+    cid = get_cid()
+    return (cid is not None)
 
 
 def _have_socket_bluetooth():
@@ -215,24 +217,6 @@ class SocketUDPLITETest(SocketUDPTest):
         self.serv = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDPLITE)
         self.port = socket_helper.bind_port(self.serv)
 
-class ThreadSafeCleanupTestCase:
-    """Subclass of unittest.TestCase with thread-safe cleanup methods.
-
-    This subclass protects the addCleanup() and doCleanups() methods
-    with a recursive lock.
-    """
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._cleanup_lock = threading.RLock()
-
-    def addCleanup(self, *args, **kwargs):
-        with self._cleanup_lock:
-            return super().addCleanup(*args, **kwargs)
-
-    def doCleanups(self, *args, **kwargs):
-        with self._cleanup_lock:
-            return super().doCleanups(*args, **kwargs)
 
 class SocketCANTest(unittest.TestCase):
 
@@ -499,10 +483,11 @@ class ThreadedRDSSocketTest(SocketRDSTest, ThreadableTest):
         ThreadableTest.clientTearDown(self)
 
 @unittest.skipIf(fcntl is None, "need fcntl")
+@unittest.skipIf(WSL, 'VSOCK does not work on Microsoft WSL')
 @unittest.skipUnless(HAVE_SOCKET_VSOCK,
           'VSOCK sockets required for this test.')
-@unittest.skipUnless(get_cid() != 2,
-          "This test can only be run on a virtual guest.")
+@unittest.skipUnless(get_cid() != 2,  # VMADDR_CID_HOST
+                     "This test can only be run on a virtual guest.")
 class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
 
     def __init__(self, methodName='runTest'):
@@ -515,6 +500,7 @@ class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
         self.serv.bind((socket.VMADDR_CID_ANY, VSOCKPORT))
         self.serv.listen()
         self.serverExplicitReady()
+        self.serv.settimeout(support.LOOPBACK_TIMEOUT)
         self.conn, self.connaddr = self.serv.accept()
         self.addCleanup(self.conn.close)
 
@@ -523,10 +509,16 @@ class ThreadedVSOCKSocketStreamTest(unittest.TestCase, ThreadableTest):
         self.cli = socket.socket(socket.AF_VSOCK, socket.SOCK_STREAM)
         self.addCleanup(self.cli.close)
         cid = get_cid()
+        if cid in (socket.VMADDR_CID_HOST, socket.VMADDR_CID_ANY):
+            # gh-119461: Use the local communication address (loopback)
+            cid = VMADDR_CID_LOCAL
         self.cli.connect((cid, VSOCKPORT))
 
     def testStream(self):
-        msg = self.conn.recv(1024)
+        try:
+            msg = self.conn.recv(1024)
+        except PermissionError as exc:
+            self.skipTest(repr(exc))
         self.assertEqual(msg, MSG)
 
     def _testStream(self):
@@ -571,19 +563,27 @@ class SocketPairTest(unittest.TestCase, ThreadableTest):
     def __init__(self, methodName='runTest'):
         unittest.TestCase.__init__(self, methodName=methodName)
         ThreadableTest.__init__(self)
+        self.cli = None
+        self.serv = None
+
+    def socketpair(self):
+        # To be overridden by some child classes.
+        return socket.socketpair()
 
     def setUp(self):
-        self.serv, self.cli = socket.socketpair()
+        self.serv, self.cli = self.socketpair()
 
     def tearDown(self):
-        self.serv.close()
+        if self.serv:
+            self.serv.close()
         self.serv = None
 
     def clientSetUp(self):
         pass
 
     def clientTearDown(self):
-        self.cli.close()
+        if self.cli:
+            self.cli.close()
         self.cli = None
         ThreadableTest.clientTearDown(self)
 
@@ -626,8 +626,7 @@ class SocketListeningTestMixin(SocketTestBase):
         self.serv.listen()
 
 
-class ThreadedSocketTestMixin(ThreadSafeCleanupTestCase, SocketTestBase,
-                              ThreadableTest):
+class ThreadedSocketTestMixin(SocketTestBase, ThreadableTest):
     """Mixin to add client socket and allow client/server tests.
 
     Client socket is self.cli and its address is self.cli_addr.  See
@@ -1101,7 +1100,20 @@ class GeneralModuleTests(unittest.TestCase):
                          'socket.if_indextoname() not available.')
     def testInvalidInterfaceIndexToName(self):
         self.assertRaises(OSError, socket.if_indextoname, 0)
+        self.assertRaises(OverflowError, socket.if_indextoname, -1)
+        self.assertRaises(OverflowError, socket.if_indextoname, 2**1000)
         self.assertRaises(TypeError, socket.if_indextoname, '_DEADBEEF')
+        if hasattr(socket, 'if_nameindex'):
+            indices = dict(socket.if_nameindex())
+            for index in indices:
+                index2 = index + 2**32
+                if index2 not in indices:
+                    with self.assertRaises((OverflowError, OSError)):
+                        socket.if_indextoname(index2)
+            for index in 2**32-1, 2**64-1:
+                if index not in indices:
+                    with self.assertRaises((OverflowError, OSError)):
+                        socket.if_indextoname(index)
 
     @unittest.skipUnless(hasattr(socket, 'if_nametoindex'),
                          'socket.if_nametoindex() not available.')
@@ -1624,7 +1636,7 @@ class GeneralModuleTests(unittest.TestCase):
         try:
             socket.getaddrinfo(None, ULONG_MAX + 1, type=socket.SOCK_STREAM)
         except OverflowError:
-            # Platforms differ as to what values consitute a getaddrinfo() error
+            # Platforms differ as to what values constitute a getaddrinfo() error
             # return. Some fail for LONG_MAX+1, others ULONG_MAX+1, and Windows
             # silently accepts such huge "port" aka "service" numeric values.
             self.fail("Either no error or socket.gaierror expected.")
@@ -2813,7 +2825,7 @@ class BasicUDPLITETest(ThreadedUDPLITESocketTest):
 # here assumes that datagram delivery on the local machine will be
 # reliable.
 
-class SendrecvmsgBase(ThreadSafeCleanupTestCase):
+class SendrecvmsgBase:
     # Base class for sendmsg()/recvmsg() tests.
 
     # Time in seconds to wait before considering a test failed, or
@@ -4679,7 +4691,6 @@ class InterruptedRecvTimeoutTest(InterruptedTimeoutBase, UDPTestBase):
 @unittest.skipUnless(hasattr(signal, "alarm") or hasattr(signal, "setitimer"),
                      "Don't have signal.alarm or signal.setitimer")
 class InterruptedSendTimeoutTest(InterruptedTimeoutBase,
-                                 ThreadSafeCleanupTestCase,
                                  SocketListeningTestMixin, TCPTestBase):
     # Test interrupting the interruptible send*() methods with signals
     # when a timeout is set.
@@ -4786,6 +4797,112 @@ class BasicSocketPairTest(SocketPairTest):
     def _testSend(self):
         msg = self.cli.recv(1024)
         self.assertEqual(msg, MSG)
+
+
+class PurePythonSocketPairTest(SocketPairTest):
+    # Explicitly use socketpair AF_INET or AF_INET6 to ensure that is the
+    # code path we're using regardless platform is the pure python one where
+    # `_socket.socketpair` does not exist.  (AF_INET does not work with
+    # _socket.socketpair on many platforms).
+    def socketpair(self):
+        # called by super().setUp().
+        try:
+            return socket.socketpair(socket.AF_INET6)
+        except OSError:
+            return socket.socketpair(socket.AF_INET)
+
+    # Local imports in this class make for easy security fix backporting.
+
+    def setUp(self):
+        if hasattr(_socket, "socketpair"):
+            self._orig_sp = socket.socketpair
+            # This forces the version using the non-OS provided socketpair
+            # emulation via an AF_INET socket in Lib/socket.py.
+            socket.socketpair = socket._fallback_socketpair
+        else:
+            # This platform already uses the non-OS provided version.
+            self._orig_sp = None
+        super().setUp()
+
+    def tearDown(self):
+        super().tearDown()
+        if self._orig_sp is not None:
+            # Restore the default socket.socketpair definition.
+            socket.socketpair = self._orig_sp
+
+    def test_recv(self):
+        msg = self.serv.recv(1024)
+        self.assertEqual(msg, MSG)
+
+    def _test_recv(self):
+        self.cli.send(MSG)
+
+    def test_send(self):
+        self.serv.send(MSG)
+
+    def _test_send(self):
+        msg = self.cli.recv(1024)
+        self.assertEqual(msg, MSG)
+
+    def test_ipv4(self):
+        cli, srv = socket.socketpair(socket.AF_INET)
+        cli.close()
+        srv.close()
+
+    def _test_ipv4(self):
+        pass
+
+    @unittest.skipIf(not hasattr(_socket, 'IPPROTO_IPV6') or
+                     not hasattr(_socket, 'IPV6_V6ONLY'),
+                     "IPV6_V6ONLY option not supported")
+    @unittest.skipUnless(socket_helper.IPV6_ENABLED, 'IPv6 required for this test')
+    def test_ipv6(self):
+        cli, srv = socket.socketpair(socket.AF_INET6)
+        cli.close()
+        srv.close()
+
+    def _test_ipv6(self):
+        pass
+
+    def test_injected_authentication_failure(self):
+        orig_getsockname = socket.socket.getsockname
+        inject_sock = None
+
+        def inject_getsocketname(self):
+            nonlocal inject_sock
+            sockname = orig_getsockname(self)
+            # Connect to the listening socket ahead of the
+            # client socket.
+            if inject_sock is None:
+                inject_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                inject_sock.setblocking(False)
+                try:
+                    inject_sock.connect(sockname[:2])
+                except (BlockingIOError, InterruptedError):
+                    pass
+                inject_sock.setblocking(True)
+            return sockname
+
+        sock1 = sock2 = None
+        try:
+            socket.socket.getsockname = inject_getsocketname
+            with self.assertRaises(OSError):
+                sock1, sock2 = socket.socketpair()
+        finally:
+            socket.socket.getsockname = orig_getsockname
+            if inject_sock:
+                inject_sock.close()
+            if sock1:  # This cleanup isn't needed on a successful test.
+                sock1.close()
+            if sock2:
+                sock2.close()
+
+    def _test_injected_authentication_failure(self):
+        # No-op.  Exists for base class threading infrastructure to call.
+        # We could refactor this test into its own lesser class along with the
+        # setUp and tearDown code to construct an ideal; it is simpler to keep
+        # it here and live with extra overhead one this _one_ failure test.
+        pass
 
 
 class NonBlockingTCPTests(ThreadedTCPSocketTest):
@@ -4945,6 +5062,36 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         self.event.wait()
 
         # send data: recv() will no longer block
+        self.cli.sendall(MSG)
+
+    @support.cpython_only
+    def testLargeTimeout(self):
+        # gh-126876: Check that a timeout larger than INT_MAX is replaced with
+        # INT_MAX in the poll() code path. The following assertion must not
+        # fail: assert(INT_MIN <= ms && ms <= INT_MAX).
+        import _testcapi
+        large_timeout = _testcapi.INT_MAX + 1
+
+        # test recv() with large timeout
+        conn, addr = self.serv.accept()
+        self.addCleanup(conn.close)
+        try:
+            conn.settimeout(large_timeout)
+        except OverflowError:
+            # On Windows, settimeout() fails with OverflowError, whereas
+            # we want to test recv(). Just give up silently.
+            return
+        msg = conn.recv(len(MSG))
+
+    def _testLargeTimeout(self):
+        # test sendall() with large timeout
+        import _testcapi
+        large_timeout = _testcapi.INT_MAX + 1
+        self.cli.connect((HOST, self.port))
+        try:
+            self.cli.settimeout(large_timeout)
+        except OverflowError:
+            return
         self.cli.sendall(MSG)
 
 
@@ -5149,6 +5296,8 @@ class UnbufferedFileObjectClassTestCase(FileObjectClassTestCase):
         self.write_file.write(self.write_msg)
         self.write_file.flush()
 
+    @unittest.skipUnless(hasattr(sys, 'getrefcount'),
+                         'test needs sys.getrefcount()')
     def testMakefileCloseSocketDestroy(self):
         refcount_before = sys.getrefcount(self.cli_conn)
         self.read_file.close()
@@ -5288,6 +5437,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
         finally:
             socket.socket = old_socket
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_connect(self):
         port = socket_helper.find_unused_port()
         cli = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -5296,6 +5446,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
             cli.connect((HOST, port))
         self.assertEqual(cm.exception.errno, errno.ECONNREFUSED)
 
+    @socket_helper.skip_if_tcp_blackhole
     def test_create_connection(self):
         # Issue #9792: errors raised by create_connection() should have
         # a proper errno attribute.
@@ -5354,6 +5505,7 @@ class NetworkConnectionNoServer(unittest.TestCase):
 
 
 class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
+    cli = None
 
     def __init__(self, methodName='runTest'):
         SocketTCPTest.__init__(self, methodName=methodName)
@@ -5363,7 +5515,8 @@ class NetworkConnectionAttributesTest(SocketTCPTest, ThreadableTest):
         self.source_port = socket_helper.find_unused_port()
 
     def clientTearDown(self):
-        self.cli.close()
+        if self.cli is not None:
+            self.cli.close()
         self.cli = None
         ThreadableTest.clientTearDown(self)
 
@@ -6472,12 +6625,16 @@ class LinuxKernelCryptoAPI(unittest.TestCase):
                 self.assertEqual(op.recv(512), expected)
 
     def test_hmac_sha1(self):
-        expected = bytes.fromhex("effcdf6ae5eb2fa2d27416d5f184df9c259a7c79")
+        # gh-109396: In FIPS mode, Linux 6.5 requires a key
+        # of at least 112 bits. Use a key of 152 bits.
+        key = b"Python loves AF_ALG"
+        data = b"what do ya want for nothing?"
+        expected = bytes.fromhex("193dbb43c6297b47ea6277ec0ce67119a3f3aa66")
         with self.create_alg('hash', 'hmac(sha1)') as algo:
-            algo.setsockopt(socket.SOL_ALG, socket.ALG_SET_KEY, b"Jefe")
+            algo.setsockopt(socket.SOL_ALG, socket.ALG_SET_KEY, key)
             op, _ = algo.accept()
             with op:
-                op.sendall(b"what do ya want for nothing?")
+                op.sendall(data)
                 self.assertEqual(op.recv(512), expected)
 
     # Although it should work with 3.19 and newer the test blocks on

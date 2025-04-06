@@ -1521,7 +1521,7 @@ class Logger(Filterer):
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.debug("Houston, we have a %s", "thorny problem", exc_info=1)
+        logger.debug("Houston, we have a %s", "thorny problem", exc_info=True)
         """
         if self.isEnabledFor(DEBUG):
             self._log(DEBUG, msg, args, **kwargs)
@@ -1533,7 +1533,7 @@ class Logger(Filterer):
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.info("Houston, we have a %s", "notable problem", exc_info=1)
+        logger.info("Houston, we have a %s", "notable problem", exc_info=True)
         """
         if self.isEnabledFor(INFO):
             self._log(INFO, msg, args, **kwargs)
@@ -1545,7 +1545,7 @@ class Logger(Filterer):
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.warning("Houston, we have a %s", "bit of a problem", exc_info=1)
+        logger.warning("Houston, we have a %s", "bit of a problem", exc_info=True)
         """
         if self.isEnabledFor(WARNING):
             self._log(WARNING, msg, args, **kwargs)
@@ -1562,7 +1562,7 @@ class Logger(Filterer):
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.error("Houston, we have a %s", "major problem", exc_info=1)
+        logger.error("Houston, we have a %s", "major problem", exc_info=True)
         """
         if self.isEnabledFor(ERROR):
             self._log(ERROR, msg, args, **kwargs)
@@ -1580,7 +1580,7 @@ class Logger(Filterer):
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.critical("Houston, we have a %s", "major disaster", exc_info=1)
+        logger.critical("Houston, we have a %s", "major disaster", exc_info=True)
         """
         if self.isEnabledFor(CRITICAL):
             self._log(CRITICAL, msg, args, **kwargs)
@@ -1598,7 +1598,7 @@ class Logger(Filterer):
         To pass exception information, use the keyword argument exc_info with
         a true value, e.g.
 
-        logger.log(level, "We have a %s", "mysterious problem", exc_info=1)
+        logger.log(level, "We have a %s", "mysterious problem", exc_info=True)
         """
         if not isinstance(level, int):
             if raiseExceptions:
@@ -1985,18 +1985,11 @@ class LoggerAdapter(object):
         """
         return self.logger.hasHandlers()
 
-    def _log(self, level, msg, args, exc_info=None, extra=None, stack_info=False):
+    def _log(self, level, msg, args, **kwargs):
         """
         Low-level log implementation, proxied to allow nested logger adapters.
         """
-        return self.logger._log(
-            level,
-            msg,
-            args,
-            exc_info=exc_info,
-            extra=extra,
-            stack_info=stack_info,
-        )
+        return self.logger._log(level, msg, args, **kwargs)
 
     @property
     def manager(self):
@@ -2056,7 +2049,7 @@ def basicConfig(**kwargs):
               that this argument is incompatible with 'filename' - if both
               are present, 'stream' is ignored.
     handlers  If specified, this should be an iterable of already created
-              handlers, which will be added to the root handler. Any handler
+              handlers, which will be added to the root logger. Any handler
               in the list which does not have a formatter assigned will be
               assigned the formatter created in this function.
     force     If this keyword  is specified as true, any existing handlers

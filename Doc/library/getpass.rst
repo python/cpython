@@ -1,5 +1,5 @@
-:mod:`getpass` --- Portable password input
-==========================================
+:mod:`!getpass` --- Portable password input
+===========================================
 
 .. module:: getpass
    :synopsis: Portable reading of passwords and retrieval of the userid.
@@ -43,10 +43,10 @@ The :mod:`getpass` module provides two functions:
    Return the "login name" of the user.
 
    This function checks the environment variables :envvar:`LOGNAME`,
-   :envvar:`USER`, :envvar:`LNAME` and :envvar:`USERNAME`, in order, and
+   :envvar:`USER`, :envvar:`!LNAME` and :envvar:`USERNAME`, in order, and
    returns the value of the first one which is set to a non-empty string.  If
    none are set, the login name from the password database is returned on
    systems which support the :mod:`pwd` module, otherwise, an exception is
    raised.
 
-   In general, this function should be preferred over :func:`os.getlogin()`.
+   In general, this function should be preferred over :func:`os.getlogin`.

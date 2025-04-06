@@ -76,7 +76,12 @@ class FunctionPropertiesTest(FuncAttrsTest):
                              (AttributeError, TypeError))
 
     def test___builtins__(self):
-        self.assertIs(self.b.__builtins__, __builtins__)
+        if __name__ == "__main__":
+            builtins_dict = __builtins__.__dict__
+        else:
+            builtins_dict = __builtins__
+
+        self.assertIs(self.b.__builtins__, builtins_dict)
         self.cannot_set_attr(self.b, '__builtins__', 2,
                              (AttributeError, TypeError))
 
@@ -86,7 +91,7 @@ class FunctionPropertiesTest(FuncAttrsTest):
         ns = {}
         func2 = type(func)(func.__code__, ns)
         self.assertIs(func2.__globals__, ns)
-        self.assertIs(func2.__builtins__, __builtins__)
+        self.assertIs(func2.__builtins__, builtins_dict)
 
         # Make sure that the function actually works.
         self.assertEqual(func2("abc"), 3)
@@ -194,16 +199,19 @@ class FunctionPropertiesTest(FuncAttrsTest):
     def test___type_params__(self):
         def generic[T](): pass
         def not_generic(): pass
+        lambda_ = lambda: ...
         T, = generic.__type_params__
         self.assertIsInstance(T, typing.TypeVar)
         self.assertEqual(generic.__type_params__, (T,))
-        self.assertEqual(not_generic.__type_params__, ())
-        with self.assertRaises(TypeError):
-            del not_generic.__type_params__
-        with self.assertRaises(TypeError):
-            not_generic.__type_params__ = 42
-        not_generic.__type_params__ = (T,)
-        self.assertEqual(not_generic.__type_params__, (T,))
+        for func in (not_generic, lambda_):
+            with self.subTest(func=func):
+                self.assertEqual(func.__type_params__, ())
+                with self.assertRaises(TypeError):
+                    del func.__type_params__
+                with self.assertRaises(TypeError):
+                    func.__type_params__ = 42
+                func.__type_params__ = (T,)
+                self.assertEqual(func.__type_params__, (T,))
 
     def test___code__(self):
         num_one, num_two = 7, 8

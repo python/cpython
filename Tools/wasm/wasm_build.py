@@ -316,8 +316,10 @@ WASI = Platform(
         # workaround for https://github.com/python/cpython/issues/95952
         "HOSTRUNNER": (
             "wasmtime run "
-            "--env PYTHONPATH=/{relbuilddir}/build/lib.wasi-wasm32-{version}:/Lib "
-            "--mapdir /::{srcdir} --"
+            "--wasm max-wasm-stack=8388608 "
+            "--wasi preview2 "
+            "--dir {srcdir}::/ "
+            "--env PYTHONPATH=/{relbuilddir}/build/lib.wasi-wasm32-{version}:/Lib"
         ),
         "PATH": [WASI_SDK_PATH / "bin", os.environ["PATH"]],
     },

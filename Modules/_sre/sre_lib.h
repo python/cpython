@@ -524,12 +524,27 @@ typedef struct {
     Py_ssize_t last_ctx_pos;
 } SRE(match_context);
 
-#define MAYBE_CHECK_SIGNALS                                        \
+#define _MAYBE_CHECK_SIGNALS                                       \
     do {                                                           \
         if ((0 == (++sigcount & 0xfff)) && PyErr_CheckSignals()) { \
             RETURN_ERROR(SRE_ERROR_INTERRUPTED);                   \
         }                                                          \
     } while (0)
+
+#ifdef Py_DEBUG
+# define MAYBE_CHECK_SIGNALS                                       \
+    do {                                                           \
+        _MAYBE_CHECK_SIGNALS;                                      \
+        if (state->fail_after_count >= 0) {                        \
+            if (state->fail_after_count-- == 0) {                  \
+                PyErr_SetNone(state->fail_after_exc);              \
+                RETURN_ERROR(SRE_ERROR_INTERRUPTED);               \
+            }                                                      \
+        }                                                          \
+    } while (0)
+#else
+# define MAYBE_CHECK_SIGNALS _MAYBE_CHECK_SIGNALS
+#endif /* Py_DEBUG */
 
 #ifdef HAVE_COMPUTED_GOTOS
     #ifndef USE_COMPUTED_GOTOS
@@ -563,7 +578,7 @@ SRE(match)(SRE_STATE* state, const SRE_CODE* pattern, int toplevel)
     Py_ssize_t alloc_pos, ctx_pos = -1;
     Py_ssize_t ret = 0;
     int jump;
-    unsigned int sigcount=0;
+    unsigned int sigcount = state->sigcount;
 
     SRE(match_context)* ctx;
     SRE(match_context)* nextctx;
@@ -589,8 +604,8 @@ entrance:
         /* optimization info block */
         /* <INFO> <1=skip> <2=flags> <3=min> ... */
         if (pattern[3] && (uintptr_t)(end - ptr) < pattern[3]) {
-            TRACE(("reject (got %zd chars, need %zd)\n",
-                   end - ptr, (Py_ssize_t) pattern[3]));
+            TRACE(("reject (got %tu chars, need %zu)\n",
+                   end - ptr, (size_t) pattern[3]));
             RETURN_FAILURE;
         }
         pattern += pattern[1] + 1;
@@ -1083,12 +1098,9 @@ dispatch:
                    pattern[1], pattern[2]));
 
             /* install new repeat context */
-            /* TODO(https://github.com/python/cpython/issues/67877): Fix this
-             * potential memory leak. */
-            ctx->u.rep = (SRE_REPEAT*) PyObject_Malloc(sizeof(*ctx->u.rep));
+            ctx->u.rep = repeat_pool_malloc(state);
             if (!ctx->u.rep) {
-                PyErr_NoMemory();
-                RETURN_FAILURE;
+                RETURN_ERROR(SRE_ERROR_MEMORY);
             }
             ctx->u.rep->count = -1;
             ctx->u.rep->pattern = pattern;
@@ -1099,7 +1111,7 @@ dispatch:
             state->ptr = ptr;
             DO_JUMP(JUMP_REPEAT, jump_repeat, pattern+pattern[0]);
             state->repeat = ctx->u.rep->prev;
-            PyObject_Free(ctx->u.rep);
+            repeat_pool_free(state, ctx->u.rep);
 
             if (ret) {
                 RETURN_ON_ERROR(ret);
@@ -1257,6 +1269,17 @@ dispatch:
                pointer */
             state->ptr = ptr;
 
+            /* Set state->repeat to non-NULL */
+            ctx->u.rep = repeat_pool_malloc(state);
+            if (!ctx->u.rep) {
+                RETURN_ERROR(SRE_ERROR_MEMORY);
+            }
+            ctx->u.rep->count = -1;
+            ctx->u.rep->pattern = NULL;
+            ctx->u.rep->prev = state->repeat;
+            ctx->u.rep->last_ptr = NULL;
+            state->repeat = ctx->u.rep;
+
             /* Initialize Count to 0 */
             ctx->count = 0;
 
@@ -1271,6 +1294,9 @@ dispatch:
                 }
                 else {
                     state->ptr = ptr;
+                    /* Restore state->repeat */
+                    state->repeat = ctx->u.rep->prev;
+                    repeat_pool_free(state, ctx->u.rep);
                     RETURN_FAILURE;
                 }
             }
@@ -1334,10 +1360,18 @@ dispatch:
                     MARK_POP(ctx->lastmark);
                     LASTMARK_RESTORE();
 
+                    /* Restore the global Input Stream pointer
+                       since it can change after jumps. */
+                    state->ptr = ptr;
+
                     /* We have sufficient matches, so exit loop. */
                     break;
                 }
             }
+
+            /* Restore state->repeat */
+            state->repeat = ctx->u.rep->prev;
+            repeat_pool_free(state, ctx->u.rep);
 
             /* Evaluate Tail */
             /* Jump to end of pattern indicated by skip, and then skip
@@ -1503,7 +1537,7 @@ dispatch:
             /* <ASSERT> <skip> <back> <pattern> */
             TRACE(("|%p|%p|ASSERT %d\n", pattern,
                    ptr, pattern[1]));
-            if (ptr - (SRE_CHAR *)state->beginning < (Py_ssize_t)pattern[1])
+            if ((uintptr_t)(ptr - (SRE_CHAR *)state->beginning) < pattern[1])
                 RETURN_FAILURE;
             state->ptr = ptr - pattern[1];
             DO_JUMP0(JUMP_ASSERT, jump_assert, pattern+2);
@@ -1516,7 +1550,7 @@ dispatch:
             /* <ASSERT_NOT> <skip> <back> <pattern> */
             TRACE(("|%p|%p|ASSERT_NOT %d\n", pattern,
                    ptr, pattern[1]));
-            if (ptr - (SRE_CHAR *)state->beginning >= (Py_ssize_t)pattern[1]) {
+            if ((uintptr_t)(ptr - (SRE_CHAR *)state->beginning) >= pattern[1]) {
                 state->ptr = ptr - pattern[1];
                 LASTMARK_SAVE();
                 if (state->repeat)
@@ -1561,8 +1595,10 @@ exit:
     ctx_pos = ctx->last_ctx_pos;
     jump = ctx->jump;
     DATA_POP_DISCARD(ctx);
-    if (ctx_pos == -1)
+    if (ctx_pos == -1) {
+        state->sigcount = sigcount;
         return ret;
+    }
     DATA_LOOKUP_AT(SRE(match_context), ctx, ctx_pos);
 
     switch (jump) {
@@ -1649,9 +1685,9 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
 
         flags = pattern[2];
 
-        if (pattern[3] && end - ptr < (Py_ssize_t)pattern[3]) {
-            TRACE(("reject (got %u chars, need %u)\n",
-                   (unsigned int)(end - ptr), pattern[3]));
+        if (pattern[3] && (uintptr_t)(end - ptr) < pattern[3]) {
+            TRACE(("reject (got %tu chars, need %zu)\n",
+                   end - ptr, (size_t) pattern[3]));
             return 0;
         }
         if (pattern[3] > 1) {

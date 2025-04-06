@@ -204,7 +204,11 @@ def _write_atomic(path, data, mode=0o666):
         # We first write data to a temporary file, and then use os.replace() to
         # perform an atomic rename.
         with _io.FileIO(fd, 'wb') as file:
-            file.write(data)
+            bytes_written = file.write(data)
+        if bytes_written != len(data):
+            # Raise an OSError so the 'except' below cleans up the partially
+            # written file.
+            raise OSError("os.write() didn't write the full pyc file")
         _os.replace(path_tmp, path)
     except OSError:
         try:
@@ -413,6 +417,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.11a7 3492 (make POP_JUMP_IF_NONE/NOT_NONE/TRUE/FALSE relative)
 #     Python 3.11a7 3493 (Make JUMP_IF_TRUE_OR_POP/JUMP_IF_FALSE_OR_POP relative)
 #     Python 3.11a7 3494 (New location info table)
+#     Python 3.11b4 3495 (Set line number of module's RESUME instr to 0 per PEP 626)
 #     Python 3.12a1 3500 (Remove PRECALL opcode)
 #     Python 3.12a1 3501 (YIELD_VALUE oparg == stack_depth)
 #     Python 3.12a1 3502 (LOAD_FAST_CHECK, no NULL-check in LOAD_FAST)
@@ -1448,6 +1453,9 @@ class PathFinder:
         # Also invalidate the caches of _NamespacePaths
         # https://bugs.python.org/issue45703
         _NamespacePath._epoch += 1
+
+        from importlib.metadata import MetadataPathFinder
+        MetadataPathFinder.invalidate_caches()
 
     @staticmethod
     def _path_hooks(path):

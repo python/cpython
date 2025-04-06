@@ -1,5 +1,5 @@
-:mod:`glob` --- Unix style pathname pattern expansion
-=====================================================
+:mod:`!glob` --- Unix style pathname pattern expansion
+======================================================
 
 .. module:: glob
    :synopsis: Unix shell style pathname pattern expansion.
@@ -77,6 +77,10 @@ For example, ``'[?]'`` matches the character ``'?'``.
       Using the "``**``" pattern in large directory trees may consume
       an inordinate amount of time.
 
+   .. note::
+      This function may return duplicate path names if *pathname*
+      contains multiple "``**``" patterns and *recursive* is true.
+
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".
 
@@ -95,6 +99,10 @@ For example, ``'[?]'`` matches the character ``'?'``.
 
    .. audit-event:: glob.glob pathname,recursive glob.iglob
    .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.iglob
+
+   .. note::
+      This function may return duplicate path names if *pathname*
+      contains multiple "``**``" patterns and *recursive* is true.
 
    .. versionchanged:: 3.5
       Support for recursive globs using "``**``".

@@ -1,6 +1,7 @@
 """Tests for tasks.py."""
 
 import collections
+import contextlib
 import contextvars
 import gc
 import io
@@ -2488,6 +2489,28 @@ class BaseTaskTests:
             self.assertIs(task.get_context(), context)
         finally:
             loop.close()
+
+    def test_proper_refcounts(self):
+        # see: https://github.com/python/cpython/issues/126083
+        class Break:
+            def __str__(self):
+                raise RuntimeError("break")
+
+        obj = object()
+        initial_refcount = sys.getrefcount(obj)
+
+        coro = coroutine_function()
+        with contextlib.closing(asyncio.new_event_loop()) as loop:
+            task = asyncio.Task.__new__(asyncio.Task)
+
+            for _ in range(5):
+                with self.assertRaisesRegex(RuntimeError, 'break'):
+                    task.__init__(coro, loop=loop, context=obj, name=Break())
+
+            coro.close()
+            del task
+
+            self.assertEqual(sys.getrefcount(obj), initial_refcount)
 
 
 def add_subclass_tests(cls):

@@ -464,6 +464,7 @@ _PyCode_Quicken(PyCodeObject *code)
 static int function_kind(PyCodeObject *code);
 static bool function_check_args(PyObject *o, int expected_argcount, int opcode);
 static uint32_t function_get_version(PyObject *o, int opcode);
+static uint32_t type_get_version(PyTypeObject *t, int opcode);
 
 static int
 specialize_module_load_attr(
@@ -746,6 +747,9 @@ _Py_Specialize_LoadAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
     PyObject *descr = NULL;
     DescriptorClassification kind = analyze_descriptor(type, name, &descr, 0);
     assert(descr != NULL || kind == ABSENT || kind == GETSET_OVERRIDDEN);
+    if (type_get_version(type, LOAD_ATTR) == 0) {
+        goto fail;
+    }
     switch(kind) {
         case OVERRIDING:
             SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_OVERRIDING_DESCRIPTOR);
@@ -917,6 +921,9 @@ _Py_Specialize_StoreAttr(PyObject *owner, _Py_CODEUNIT *instr, PyObject *name)
     }
     PyObject *descr;
     DescriptorClassification kind = analyze_descriptor(type, name, &descr, 1);
+    if (type_get_version(type, STORE_ATTR) == 0) {
+        goto fail;
+    }
     switch(kind) {
         case OVERRIDING:
             SPECIALIZATION_FAIL(STORE_ATTR, SPEC_FAIL_ATTR_OVERRIDING_DESCRIPTOR);
@@ -1043,6 +1050,9 @@ specialize_class_load_attr(PyObject *owner, _Py_CODEUNIT *instr,
     PyObject *descr = NULL;
     DescriptorClassification kind = 0;
     kind = analyze_descriptor((PyTypeObject *)owner, name, &descr, 0);
+    if (type_get_version((PyTypeObject *)owner, LOAD_ATTR) == 0) {
+        return -1;
+    }
     switch (kind) {
         case METHOD:
         case NON_DESCRIPTOR:
@@ -1310,6 +1320,18 @@ function_get_version(PyObject *o, int opcode)
     assert(Py_IS_TYPE(o, &PyFunction_Type));
     PyFunctionObject *func = (PyFunctionObject *)o;
     uint32_t version = _PyFunction_GetVersionForCurrentState(func);
+    if (version == 0) {
+        SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_VERSIONS);
+        return 0;
+    }
+    return version;
+}
+
+/* Returning 0 indicates a failure. */
+static uint32_t
+type_get_version(PyTypeObject *t, int opcode)
+{
+    uint32_t version = t->tp_version_tag;
     if (version == 0) {
         SPECIALIZATION_FAIL(opcode, SPEC_FAIL_OUT_OF_VERSIONS);
         return 0;

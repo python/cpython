@@ -2,9 +2,9 @@
 # Copyright 2012-2013 by Larry Hastings.
 # Licensed to the PSF under a contributor agreement.
 
+from functools import partial
 from test import support, test_tools
 from test.support import os_helper
-from test.support import SHORT_TIMEOUT, requires_subprocess
 from test.support.os_helper import TESTFN, unlink
 from textwrap import dedent
 from unittest import TestCase
@@ -19,6 +19,20 @@ test_tools.skip_if_missing('clinic')
 with test_tools.imports_under_tool('clinic'):
     import clinic
     from clinic import DSLParser
+
+
+def restore_dict(converters, old_converters):
+    converters.clear()
+    converters.update(old_converters)
+
+
+def save_restore_converters(testcase):
+    testcase.addCleanup(restore_dict, clinic.converters,
+                        clinic.converters.copy())
+    testcase.addCleanup(restore_dict, clinic.legacy_converters,
+                        clinic.legacy_converters.copy())
+    testcase.addCleanup(restore_dict, clinic.return_converters,
+                        clinic.return_converters.copy())
 
 
 class _ParserBase(TestCase):
@@ -107,6 +121,7 @@ class FakeClinic:
 
 class ClinicWholeFileTest(_ParserBase):
     def setUp(self):
+        save_restore_converters(self)
         self.clinic = clinic.Clinic(clinic.CLanguage(None), filename="test.c")
 
     def expect_failure(self, raw):
@@ -600,7 +615,6 @@ class ClinicParserTest(_ParserBase):
                 follow_symlinks: bool = True
                 something_else: str = ''
         """)
-        p = function.parameters['follow_symlinks']
         self.assertEqual(3, len(function.parameters))
         conv = function.parameters['something_else'].converter
         self.assertIsInstance(conv, clinic.str_converter)
@@ -1333,6 +1347,28 @@ class ClinicParserTest(_ParserBase):
                 parser_decl = p.simple_declaration(in_parser=True)
                 self.assertNotIn("Py_UNUSED", parser_decl)
 
+    def test_kind_defining_class(self):
+        function = self.parse_function("""
+            module m
+            class m.C "PyObject *" ""
+            m.C.meth
+                cls: defining_class
+        """, signatures_in_block=3, function_index=2)
+        p = function.parameters['cls']
+        self.assertEqual(p.kind, inspect.Parameter.POSITIONAL_ONLY)
+
+    def test_disallow_defining_class_at_module_level(self):
+        expected_error_msg = (
+            "Error on line 0:\n"
+            "A 'defining_class' parameter cannot be defined at module level.\n"
+        )
+        out = self.parse_function_should_fail("""
+            module m
+            m.func
+                cls: defining_class
+        """)
+        self.assertEqual(out, expected_error_msg)
+
     def parse(self, text):
         c = FakeClinic()
         parser = DSLParser(c)
@@ -1370,6 +1406,9 @@ class ClinicExternalTest(TestCase):
     maxDiff = None
     clinic_py = os.path.join(test_tools.toolsdir, "clinic", "clinic.py")
 
+    def setUp(self):
+        save_restore_converters(self)
+
     def _do_test(self, *args, expect_success=True):
         with subprocess.Popen(
             [sys.executable, "-Xutf8", self.clinic_py, *args],
@@ -1396,7 +1435,7 @@ class ClinicExternalTest(TestCase):
     def test_external(self):
         CLINIC_TEST = 'clinic.test.c'
         source = support.findfile(CLINIC_TEST)
-        with open(source, 'r', encoding='utf-8') as f:
+        with open(source, encoding='utf-8') as f:
             orig_contents = f.read()
 
         # Run clinic CLI and verify that it does not complain.
@@ -1404,7 +1443,7 @@ class ClinicExternalTest(TestCase):
         out = self.expect_success("-f", "-o", TESTFN, source)
         self.assertEqual(out, "")
 
-        with open(TESTFN, 'r', encoding='utf-8') as f:
+        with open(TESTFN, encoding='utf-8') as f:
             new_contents = f.read()
 
         self.assertEqual(new_contents, orig_contents)
@@ -1463,9 +1502,9 @@ class ClinicExternalTest(TestCase):
             # Verify by checking the checksum.
             checksum = (
                 "/*[clinic end generated code: "
-                "output=2124c291eb067d76 input=9543a8d2da235301]*/\n"
+                "output=99dd9b13ffdc660d input=9543a8d2da235301]*/\n"
             )
-            with open(fn, 'r', encoding='utf-8') as f:
+            with open(fn, encoding='utf-8') as f:
                 generated = f.read()
             self.assertTrue(generated.endswith(checksum))
 
@@ -2054,11 +2093,27 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.vararg(1, 2, 3, 4), (1, (2, 3, 4)))
 
     def test_vararg_with_default(self):
-        with self.assertRaises(TypeError):
-            ac_tester.vararg_with_default()
-        self.assertEqual(ac_tester.vararg_with_default(1, b=False), (1, (), False))
-        self.assertEqual(ac_tester.vararg_with_default(1, 2, 3, 4), (1, (2, 3, 4), False))
-        self.assertEqual(ac_tester.vararg_with_default(1, 2, 3, 4, b=True), (1, (2, 3, 4), True))
+        fn = ac_tester.vararg_with_default
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, 1, a=2)
+        self.assertEqual(fn(1, b=2), (1, (), True))
+        self.assertEqual(fn(1, 2, 3, 4), (1, (2, 3, 4), False))
+        self.assertEqual(fn(1, 2, 3, 4, b=5), (1, (2, 3, 4), True))
+        self.assertEqual(fn(a=1), (1, (), False))
+        self.assertEqual(fn(a=1, b=2), (1, (), True))
+
+    def test_vararg_with_default2(self):
+        fn = ac_tester.vararg_with_default2
+        self.assertRaises(TypeError, fn)
+        self.assertRaises(TypeError, fn, 1, a=2)
+        self.assertEqual(fn(1, b=2), (1, (), 2, None))
+        self.assertEqual(fn(1, b=2, c=3), (1, (), 2, 3))
+        self.assertEqual(fn(1, 2, 3), (1, (2, 3), None, None))
+        self.assertEqual(fn(1, 2, 3, b=4), (1, (2, 3), 4, None))
+        self.assertEqual(fn(1, 2, 3, b=4, c=5), (1, (2, 3), 4, 5))
+        self.assertEqual(fn(a=1), (1, (), None, None))
+        self.assertEqual(fn(a=1, b=2), (1, (), 2, None))
+        self.assertEqual(fn(a=1, b=2, c=3), (1, (), 2, 3))
 
     def test_vararg_with_only_defaults(self):
         self.assertEqual(ac_tester.vararg_with_only_defaults(), ((), None))
@@ -2097,6 +2152,26 @@ class ClinicFunctionalTest(unittest.TestCase):
             with self.subTest(name=name):
                 func = getattr(ac_tester, name)
                 self.assertEqual(func(), name)
+
+    def test_meth_method_no_params(self):
+        obj = ac_tester.TestClass()
+        meth = obj.meth_method_no_params
+        check = partial(self.assertRaisesRegex, TypeError, "no arguments")
+        check(meth, 1)
+        check(meth, a=1)
+
+    def test_meth_method_no_params_capi(self):
+        from _testcapi import pyobject_vectorcall
+        obj = ac_tester.TestClass()
+        meth = obj.meth_method_no_params
+        pyobject_vectorcall(meth, None, None)
+        pyobject_vectorcall(meth, (), None)
+        pyobject_vectorcall(meth, (), ())
+        pyobject_vectorcall(meth, None, ())
+
+        check = partial(self.assertRaisesRegex, TypeError, "no arguments")
+        check(pyobject_vectorcall, meth, (1,), None)
+        check(pyobject_vectorcall, meth, (1,), ("a",))
 
 
 class PermutationTests(unittest.TestCase):

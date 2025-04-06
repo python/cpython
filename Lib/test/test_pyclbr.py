@@ -10,6 +10,7 @@ import pyclbr
 from unittest import TestCase, main as unittest_main
 from test.test_importlib import util as test_importlib_util
 import warnings
+from test.support.testcase import ExtraAssertions
 
 
 StaticMethodType = type(staticmethod(lambda: None))
@@ -22,7 +23,7 @@ ClassMethodType = type(classmethod(lambda c: None))
 # is imperfect (as designed), testModule is called with a set of
 # members to ignore.
 
-class PyclbrTest(TestCase):
+class PyclbrTest(TestCase, ExtraAssertions):
 
     def assertListEq(self, l1, l2, ignore):
         ''' succeed iff {l1} - {ignore} == {l2} - {ignore} '''
@@ -30,14 +31,6 @@ class PyclbrTest(TestCase):
         if missing:
             print("l1=%r\nl2=%r\nignore=%r" % (l1, l2, ignore), file=sys.stderr)
             self.fail("%r missing" % missing.pop())
-
-    def assertHasattr(self, obj, attr, ignore):
-        ''' succeed iff hasattr(obj,attr) or attr in ignore. '''
-        if attr in ignore: return
-        if not hasattr(obj, attr): print("???", attr)
-        self.assertTrue(hasattr(obj, attr),
-                        'expected hasattr(%r, %r)' % (obj, attr))
-
 
     def assertHaskey(self, obj, key, ignore):
         ''' succeed iff key in obj or key in ignore. '''
@@ -78,14 +71,15 @@ class PyclbrTest(TestCase):
 
             objname = obj.__name__
             if objname.startswith("__") and not objname.endswith("__"):
-                objname = "_%s%s" % (oclass.__name__, objname)
+                if stripped_typename := oclass.__name__.lstrip('_'):
+                    objname = f"_{stripped_typename}{objname}"
             return objname == name
 
         # Make sure the toplevel functions and classes are the same.
         for name, value in dict.items():
             if name in ignore:
                 continue
-            self.assertHasattr(module, name, ignore)
+            self.assertHasAttr(module, name, ignore)
             py_item = getattr(module, name)
             if isinstance(value, pyclbr.Function):
                 self.assertIsInstance(py_item, (FunctionType, BuiltinFunctionType))
@@ -111,12 +105,16 @@ class PyclbrTest(TestCase):
                 for m in py_item.__dict__.keys():
                     if ismethod(py_item, getattr(py_item, m), m):
                         actualMethods.append(m)
-                foundMethods = []
-                for m in value.methods.keys():
-                    if m[:2] == '__' and m[-2:] != '__':
-                        foundMethods.append('_'+name+m)
-                    else:
-                        foundMethods.append(m)
+
+                if stripped_typename := name.lstrip('_'):
+                    foundMethods = []
+                    for m in value.methods.keys():
+                        if m.startswith('__') and not m.endswith('__'):
+                            foundMethods.append(f"_{stripped_typename}{m}")
+                        else:
+                            foundMethods.append(m)
+                else:
+                    foundMethods = list(value.methods.keys())
 
                 try:
                     self.assertListEq(foundMethods, actualMethods, ignore)
@@ -150,8 +148,9 @@ class PyclbrTest(TestCase):
                                             "DocTestCase", '_DocTestSuite'))
         self.checkModule('difflib', ignore=("Match",))
 
-    def test_decorators(self):
-        self.checkModule('test.pyclbr_input', ignore=['om'])
+    def test_cases(self):
+        # see test.pyclbr_input for the rationale behind the ignored symbols
+        self.checkModule('test.pyclbr_input', ignore=['om', 'f'])
 
     def test_nested(self):
         mb = pyclbr

@@ -19,10 +19,12 @@
 #include "pycore_fileutils.h"     // _Py_closerange()
 #include "pycore_import.h"        // _PyImport_ReInitLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_object.h"        // _PyObject_LookupSpecial()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // Py_NSIG
+#include "pycore_typeobject.h"    // _PyType_AddMethod()
 
 #ifdef MS_WINDOWS
 #  include <windows.h>
@@ -32,6 +34,8 @@
 #  include <winioctl.h>
 #  include <lmcons.h>             // UNLEN
 #  include "osdefs.h"             // SEP
+#  include <aclapi.h>             // SetEntriesInAcl
+#  include <sddl.h>               // SDDL_REVISION_1
 #  if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 #    define HAVE_SYMLINK
 #  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_SYSTEM */
@@ -45,10 +49,6 @@
 #  include "winreparse.h"
 #endif
 
-#if !defined(EX_OK) && defined(EXIT_SUCCESS)
-#  define EX_OK EXIT_SUCCESS
-#endif
-
 /* On android API level 21, 'AT_EACCESS' is not declared although
  * HAVE_FACCESSAT is defined. */
 #ifdef __ANDROID__
@@ -57,6 +57,9 @@
 
 #include <stdio.h>                // ctermid()
 #include <stdlib.h>               // system()
+#ifdef HAVE_SYS_PIDFD_H
+#  include <sys/pidfd.h>          // PIDFD_NONBLOCK
+#endif
 
 /*
  * A number of APIs are available on macOS from a certain macOS version.
@@ -226,14 +229,15 @@ corresponding Unix manual entries for more information on calls.");
 #  include <sys/uio.h>
 #endif
 
+#ifdef HAVE_SYS_TYPES_H
+/* Should be included before <sys/sysmacros.h> on HP-UX v3 */
+#  include <sys/types.h>
+#endif /* HAVE_SYS_TYPES_H */
+
 #ifdef HAVE_SYS_SYSMACROS_H
 /* GNU C Library: major(), minor(), makedev() */
 #  include <sys/sysmacros.h>
 #endif
-
-#ifdef HAVE_SYS_TYPES_H
-#  include <sys/types.h>
-#endif /* HAVE_SYS_TYPES_H */
 
 #ifdef HAVE_SYS_STAT_H
 #  include <sys/stat.h>
@@ -260,6 +264,10 @@ corresponding Unix manual entries for more information on calls.");
 
 #ifdef HAVE_SYSEXITS_H
 #  include <sysexits.h>
+#endif
+
+#if !defined(EX_OK) && defined(EXIT_SUCCESS)
+#  define EX_OK EXIT_SUCCESS
 #endif
 
 #ifdef HAVE_SYS_LOADAVG_H
@@ -917,16 +925,46 @@ fail:
 #endif /* MS_WINDOWS */
 
 
-#define _PyLong_FromDev PyLong_FromLongLong
+static PyObject *
+_PyLong_FromDev(dev_t dev)
+{
+#ifdef NODEV
+    if (dev == NODEV) {
+        return PyLong_FromLongLong((long long)dev);
+    }
+#endif
+    return PyLong_FromUnsignedLongLong((unsigned long long)dev);
+}
 
 
 #if (defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)) || defined(HAVE_DEVICE_MACROS)
 static int
 _Py_Dev_Converter(PyObject *obj, void *p)
 {
-    *((dev_t *)p) = PyLong_AsUnsignedLongLong(obj);
-    if (PyErr_Occurred())
+#ifdef NODEV
+    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
+        int overflow;
+        long long result = PyLong_AsLongLongAndOverflow(obj, &overflow);
+        if (result == -1 && PyErr_Occurred()) {
+            return 0;
+        }
+        if (!overflow && result == (long long)NODEV) {
+            *((dev_t *)p) = NODEV;
+            return 1;
+        }
+    }
+#endif
+
+    unsigned long long result = PyLong_AsUnsignedLongLong(obj);
+    if (result == (unsigned long long)-1 && PyErr_Occurred()) {
         return 0;
+    }
+    if ((unsigned long long)(dev_t)result != result) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large to convert to C dev_t");
+        return 0;
+    }
+    *((dev_t *)p) = (dev_t)result;
     return 1;
 }
 #endif /* (HAVE_MKNOD && HAVE_MAKEDEV) || HAVE_DEVICE_MACROS */
@@ -1031,16 +1069,15 @@ get_posix_state(PyObject *module)
  *
  * path_converter accepts (Unicode) strings and their
  * subclasses, and bytes and their subclasses.  What
- * it does with the argument depends on the platform:
+ * it does with the argument depends on path.make_wide:
  *
- *   * On Windows, if we get a (Unicode) string we
- *     extract the wchar_t * and return it; if we get
- *     bytes we decode to wchar_t * and return that.
+ *   * If path.make_wide is nonzero, if we get a (Unicode)
+ *     string we extract the wchar_t * and return it; if we
+ *     get bytes we decode to wchar_t * and return that.
  *
- *   * On all other platforms, strings are encoded
- *     to bytes using PyUnicode_FSConverter, then we
- *     extract the char * from the bytes object and
- *     return that.
+ *   * If path.make_wide is zero, if we get bytes we extract
+ *     the char_t * and return it; if we get a (Unicode)
+ *     string we encode to char_t * and return that.
  *
  * path_converter also optionally accepts signed
  * integers (representing open file descriptors) instead
@@ -1049,6 +1086,15 @@ get_posix_state(PyObject *module)
  * Input fields:
  *   path.nullable
  *     If nonzero, the path is permitted to be None.
+ *   path.nonstrict
+ *     If nonzero, the path is permitted to contain
+ *     embedded null characters and have any length.
+ *   path.make_wide
+ *     If nonzero, the converter always uses wide, decoding if necessary, else
+ *     it always uses narrow, encoding if necessary. The default value is
+ *     nonzero on Windows, else zero.
+ *   path.suppress_value_error
+ *     If nonzero, raising ValueError is suppressed.
  *   path.allow_fd
  *     If nonzero, the path is permitted to be a file handle
  *     (a signed int) instead of a string.
@@ -1064,12 +1110,10 @@ get_posix_state(PyObject *module)
  * Output fields:
  *   path.wide
  *     Points to the path if it was expressed as Unicode
- *     and was not encoded.  (Only used on Windows.)
+ *     or if it was bytes and decoded to Unicode.
  *   path.narrow
  *     Points to the path if it was expressed as bytes,
- *     or it was Unicode and was encoded to bytes. (On Windows,
- *     is a non-zero integer if the path was expressed as bytes.
- *     The type is deliberately incompatible to prevent misuse.)
+ *     or if it was Unicode and encoded to bytes.
  *   path.fd
  *     Contains a file descriptor if path.accept_fd was true
  *     and the caller provided a signed integer instead of any
@@ -1079,6 +1123,9 @@ get_posix_state(PyObject *module)
  *     unspecified, path_converter will never get called.
  *     So if you set allow_fd, you *MUST* initialize path.fd = -1
  *     yourself!
+ *   path.value_error
+ *     If nonzero, then suppress_value_error was specified and a ValueError
+ *     occurred.
  *   path.length
  *     The length of the path in characters, if specified as
  *     a string.
@@ -1111,28 +1158,38 @@ get_posix_state(PyObject *module)
  * path_cleanup().  However it is safe to do so.)
  */
 typedef struct {
+    // Input fields
     const char *function_name;
     const char *argument_name;
     int nullable;
+    int nonstrict;
+    int make_wide;
+    int suppress_value_error;
     int allow_fd;
+    // Output fields
     const wchar_t *wide;
-#ifdef MS_WINDOWS
-    BOOL narrow;
-#else
     const char *narrow;
-#endif
     int fd;
+    int value_error;
     Py_ssize_t length;
     PyObject *object;
     PyObject *cleanup;
 } path_t;
 
+#define PATH_T_INITIALIZE(function_name, argument_name, nullable, nonstrict, \
+                          make_wide, suppress_value_error, allow_fd) \
+    {function_name, argument_name, nullable, nonstrict, make_wide, \
+     suppress_value_error, allow_fd, NULL, NULL, -1, 0, 0, NULL, NULL}
 #ifdef MS_WINDOWS
-#define PATH_T_INITIALIZE(function_name, argument_name, nullable, allow_fd) \
-    {function_name, argument_name, nullable, allow_fd, NULL, FALSE, -1, 0, NULL, NULL}
+#define PATH_T_INITIALIZE_P(function_name, argument_name, nullable, \
+                            nonstrict, suppress_value_error, allow_fd) \
+    PATH_T_INITIALIZE(function_name, argument_name, nullable, nonstrict, 1, \
+                      suppress_value_error, allow_fd)
 #else
-#define PATH_T_INITIALIZE(function_name, argument_name, nullable, allow_fd) \
-    {function_name, argument_name, nullable, allow_fd, NULL, NULL, -1, 0, NULL, NULL}
+#define PATH_T_INITIALIZE_P(function_name, argument_name, nullable, \
+                            nonstrict, suppress_value_error, allow_fd) \
+    PATH_T_INITIALIZE(function_name, argument_name, nullable, nonstrict, 0, \
+                      suppress_value_error, allow_fd)
 #endif
 
 static void
@@ -1153,10 +1210,8 @@ path_converter(PyObject *o, void *p)
     Py_ssize_t length = 0;
     int is_index, is_bytes, is_unicode;
     const char *narrow;
-#ifdef MS_WINDOWS
     PyObject *wo = NULL;
     wchar_t *wide = NULL;
-#endif
 
 #define FORMAT_EXCEPTION(exc, fmt) \
     PyErr_Format(exc, "%s%s" fmt, \
@@ -1177,11 +1232,7 @@ path_converter(PyObject *o, void *p)
 
     if ((o == Py_None) && path->nullable) {
         path->wide = NULL;
-#ifdef MS_WINDOWS
-        path->narrow = FALSE;
-#else
         path->narrow = NULL;
-#endif
         path->fd = -1;
         goto success_exit;
     }
@@ -1225,30 +1276,33 @@ path_converter(PyObject *o, void *p)
     }
 
     if (is_unicode) {
+        if (path->make_wide) {
+            wide = PyUnicode_AsWideCharString(o, &length);
+            if (!wide) {
+                goto error_exit;
+            }
 #ifdef MS_WINDOWS
-        wide = PyUnicode_AsWideCharString(o, &length);
-        if (!wide) {
-            goto error_exit;
-        }
-        if (length > 32767) {
-            FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
-            goto error_exit;
-        }
-        if (wcslen(wide) != length) {
-            FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
-            goto error_exit;
-        }
-
-        path->wide = wide;
-        path->narrow = FALSE;
-        path->fd = -1;
-        wide = NULL;
-        goto success_exit;
-#else
-        if (!PyUnicode_FSConverter(o, &bytes)) {
-            goto error_exit;
-        }
+            if (!path->nonstrict && length > 32767) {
+                FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
+                goto error_exit;
+            }
 #endif
+            if (!path->nonstrict && wcslen(wide) != (size_t)length) {
+                FORMAT_EXCEPTION(PyExc_ValueError,
+                                 "embedded null character in %s");
+                goto error_exit;
+            }
+
+            path->wide = wide;
+            path->narrow = NULL;
+            path->fd = -1;
+            wide = NULL;
+            goto success_exit;
+        }
+        bytes = PyUnicode_EncodeFSDefault(o);
+        if (!bytes) {
+            goto error_exit;
+        }
     }
     else if (is_bytes) {
         bytes = Py_NewRef(o);
@@ -1258,11 +1312,7 @@ path_converter(PyObject *o, void *p)
             goto error_exit;
         }
         path->wide = NULL;
-#ifdef MS_WINDOWS
-        path->narrow = FALSE;
-#else
         path->narrow = NULL;
-#endif
         goto success_exit;
     }
     else {
@@ -1282,52 +1332,54 @@ path_converter(PyObject *o, void *p)
 
     length = PyBytes_GET_SIZE(bytes);
     narrow = PyBytes_AS_STRING(bytes);
-    if ((size_t)length != strlen(narrow)) {
+    if (!path->nonstrict && strlen(narrow) != (size_t)length) {
         FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
         goto error_exit;
     }
 
+    if (path->make_wide) {
+        wo = PyUnicode_DecodeFSDefaultAndSize(narrow, length);
+        if (!wo) {
+            goto error_exit;
+        }
+
+        wide = PyUnicode_AsWideCharString(wo, &length);
+        Py_DECREF(wo);
+        if (!wide) {
+            goto error_exit;
+        }
 #ifdef MS_WINDOWS
-    wo = PyUnicode_DecodeFSDefaultAndSize(
-        narrow,
-        length
-    );
-    if (!wo) {
-        goto error_exit;
-    }
-
-    wide = PyUnicode_AsWideCharString(wo, &length);
-    Py_DECREF(wo);
-    if (!wide) {
-        goto error_exit;
-    }
-    if (length > 32767) {
-        FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
-        goto error_exit;
-    }
-    if (wcslen(wide) != length) {
-        FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
-        goto error_exit;
-    }
-    path->wide = wide;
-    path->narrow = TRUE;
-    Py_DECREF(bytes);
-    wide = NULL;
-#else
-    path->wide = NULL;
-    path->narrow = narrow;
-    if (bytes == o) {
-        /* Still a reference owned by path->object, don't have to
-           worry about path->narrow is used after free. */
+        if (!path->nonstrict && length > 32767) {
+            FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
+            goto error_exit;
+        }
+#endif
+        if (!path->nonstrict && wcslen(wide) != (size_t)length) {
+            FORMAT_EXCEPTION(PyExc_ValueError,
+                             "embedded null character in %s");
+            goto error_exit;
+        }
+        path->wide = wide;
+        path->narrow = NULL;
         Py_DECREF(bytes);
+        wide = NULL;
     }
     else {
-        path->cleanup = bytes;
+        path->wide = NULL;
+        path->narrow = narrow;
+        if (bytes == o) {
+            /* Still a reference owned by path->object, don't have to
+            worry about path->narrow is used after free. */
+            Py_DECREF(bytes);
+        }
+        else {
+            path->cleanup = bytes;
+        }
     }
-#endif
     path->fd = -1;
 
  success_exit:
+    path->value_error = 0;
     path->length = length;
     path->object = o;
     return Py_CLEANUP_SUPPORTED;
@@ -1335,10 +1387,20 @@ path_converter(PyObject *o, void *p)
  error_exit:
     Py_XDECREF(o);
     Py_XDECREF(bytes);
-#ifdef MS_WINDOWS
     PyMem_Free(wide);
-#endif
-    return 0;
+    if (!path->suppress_value_error ||
+        !PyErr_ExceptionMatches(PyExc_ValueError))
+    {
+        return 0;
+    }
+    PyErr_Clear();
+    path->wide = NULL;
+    path->narrow = NULL;
+    path->fd = -1;
+    path->value_error = 1;
+    path->length = 0;
+    path->object = NULL;
+    return Py_CLEANUP_SUPPORTED;
 }
 
 static void
@@ -1388,11 +1450,7 @@ follow_symlinks_specified(const char *function_name, int follow_symlinks)
 static int
 path_and_dir_fd_invalid(const char *function_name, path_t *path, int dir_fd)
 {
-    if (!path->wide && (dir_fd != DEFAULT_DIR_FD)
-#ifndef MS_WINDOWS
-        && !path->narrow
-#endif
-    ) {
+    if (!path->wide && (dir_fd != DEFAULT_DIR_FD) && !path->narrow) {
         PyErr_Format(PyExc_ValueError,
                      "%s: can't specify dir_fd without matching path",
                      function_name);
@@ -1863,8 +1921,9 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
     HANDLE hFile;
     BY_HANDLE_FILE_INFORMATION fileInfo;
     FILE_BASIC_INFO basicInfo;
+    FILE_BASIC_INFO *pBasicInfo = NULL;
     FILE_ID_INFO idInfo;
-    FILE_ID_INFO *pIdInfo = &idInfo;
+    FILE_ID_INFO *pIdInfo = NULL;
     FILE_ATTRIBUTE_TAG_INFO tagInfo = { 0 };
     DWORD fileType, error;
     BOOL isUnhandledTag = FALSE;
@@ -2015,14 +2074,17 @@ win32_xstat_slow_impl(const wchar_t *path, struct _Py_stat_struct *result,
             retval = -1;
             goto cleanup;
         }
+
+        /* Successfully got FileBasicInfo, so we'll pass it along */
+        pBasicInfo = &basicInfo;
+
+        if (GetFileInformationByHandleEx(hFile, FileIdInfo, &idInfo, sizeof(idInfo))) {
+            /* Successfully got FileIdInfo, so pass it along */
+            pIdInfo = &idInfo;
+        }
     }
 
-    if (!GetFileInformationByHandleEx(hFile, FileIdInfo, &idInfo, sizeof(idInfo))) {
-        /* Failed to get FileIdInfo, so do not pass it along */
-        pIdInfo = NULL;
-    }
-
-    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, &basicInfo, pIdInfo, result);
+    _Py_attribute_data_to_stat(&fileInfo, tagInfo.ReparseTag, pBasicInfo, pIdInfo, result);
     update_st_mode_from_path(path, fileInfo.dwFileAttributes, result);
 
 cleanup:
@@ -2385,21 +2447,26 @@ _posix_free(void *module)
    _posix_clear((PyObject *)module);
 }
 
-static void
+static int
 fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index, time_t sec, unsigned long nsec)
 {
-    PyObject *s = _PyLong_FromTime_t(sec);
-    PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
+    assert(!PyErr_Occurred());
+
+    int res = -1;
     PyObject *s_in_ns = NULL;
     PyObject *ns_total = NULL;
     PyObject *float_s = NULL;
 
-    if (!(s && ns_fractional))
+    PyObject *s = _PyLong_FromTime_t(sec);
+    PyObject *ns_fractional = PyLong_FromUnsignedLong(nsec);
+    if (!(s && ns_fractional)) {
         goto exit;
+    }
 
     s_in_ns = PyNumber_Multiply(s, get_posix_state(module)->billion);
-    if (!s_in_ns)
+    if (!s_in_ns) {
         goto exit;
+    }
 
     ns_total = PyNumber_Add(s_in_ns, ns_fractional);
     if (!ns_total)
@@ -2422,12 +2489,17 @@ fill_time(PyObject *module, PyObject *v, int s_index, int f_index, int ns_index,
         PyStructSequence_SET_ITEM(v, ns_index, ns_total);
         ns_total = NULL;
     }
+
+    assert(!PyErr_Occurred());
+    res = 0;
+
 exit:
     Py_XDECREF(s);
     Py_XDECREF(ns_fractional);
     Py_XDECREF(s_in_ns);
     Py_XDECREF(ns_total);
     Py_XDECREF(float_s);
+    return res;
 }
 
 #ifdef MS_WINDOWS
@@ -2462,34 +2534,47 @@ _pystat_l128_from_l64_l64(uint64_t low, uint64_t high)
 static PyObject*
 _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 {
-    unsigned long ansec, mnsec, cnsec;
+    assert(!PyErr_Occurred());
+
     PyObject *StatResultType = get_posix_state(module)->StatResultType;
     PyObject *v = PyStructSequence_New((PyTypeObject *)StatResultType);
-    if (v == NULL)
+    if (v == NULL) {
         return NULL;
+    }
 
-    PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long)st->st_mode));
+#define SET_ITEM(pos, expr) \
+    do { \
+        PyObject *obj = (expr); \
+        if (obj == NULL) { \
+            goto error; \
+        } \
+        PyStructSequence_SET_ITEM(v, (pos), obj); \
+    } while (0)
+
+    SET_ITEM(0, PyLong_FromLong((long)st->st_mode));
 #ifdef MS_WINDOWS
-    PyStructSequence_SET_ITEM(v, 1, _pystat_l128_from_l64_l64(st->st_ino, st->st_ino_high));
-    PyStructSequence_SET_ITEM(v, 2, PyLong_FromUnsignedLongLong(st->st_dev));
+    SET_ITEM(1, _pystat_l128_from_l64_l64(st->st_ino, st->st_ino_high));
+    SET_ITEM(2, PyLong_FromUnsignedLongLong(st->st_dev));
 #else
     static_assert(sizeof(unsigned long long) >= sizeof(st->st_ino),
                   "stat.st_ino is larger than unsigned long long");
-    PyStructSequence_SET_ITEM(v, 1, PyLong_FromUnsignedLongLong(st->st_ino));
-    PyStructSequence_SET_ITEM(v, 2, _PyLong_FromDev(st->st_dev));
+    SET_ITEM(1, PyLong_FromUnsignedLongLong(st->st_ino));
+    SET_ITEM(2, _PyLong_FromDev(st->st_dev));
 #endif
-    PyStructSequence_SET_ITEM(v, 3, PyLong_FromLong((long)st->st_nlink));
+    SET_ITEM(3, PyLong_FromLong((long)st->st_nlink));
 #if defined(MS_WINDOWS)
-    PyStructSequence_SET_ITEM(v, 4, PyLong_FromLong(0));
-    PyStructSequence_SET_ITEM(v, 5, PyLong_FromLong(0));
+    SET_ITEM(4, PyLong_FromLong(0));
+    SET_ITEM(5, PyLong_FromLong(0));
 #else
-    PyStructSequence_SET_ITEM(v, 4, _PyLong_FromUid(st->st_uid));
-    PyStructSequence_SET_ITEM(v, 5, _PyLong_FromGid(st->st_gid));
+    SET_ITEM(4, _PyLong_FromUid(st->st_uid));
+    SET_ITEM(5, _PyLong_FromGid(st->st_gid));
 #endif
     static_assert(sizeof(long long) >= sizeof(st->st_size),
                   "stat.st_size is larger than long long");
-    PyStructSequence_SET_ITEM(v, 6, PyLong_FromLongLong(st->st_size));
+    SET_ITEM(6, PyLong_FromLongLong(st->st_size));
 
+    // Set st_atime, st_mtime and st_ctime
+    unsigned long ansec, mnsec, cnsec;
 #if defined(HAVE_STAT_TV_NSEC)
     ansec = st->st_atim.tv_nsec;
     mnsec = st->st_mtim.tv_nsec;
@@ -2505,67 +2590,67 @@ _pystat_fromstructstat(PyObject *module, STRUCT_STAT *st)
 #else
     ansec = mnsec = cnsec = 0;
 #endif
-    fill_time(module, v, 7, 10, 13, st->st_atime, ansec);
-    fill_time(module, v, 8, 11, 14, st->st_mtime, mnsec);
-    fill_time(module, v, 9, 12, 15, st->st_ctime, cnsec);
+    if (fill_time(module, v, 7, 10, 13, st->st_atime, ansec) < 0) {
+        goto error;
+    }
+    if (fill_time(module, v, 8, 11, 14, st->st_mtime, mnsec) < 0) {
+        goto error;
+    }
+    if (fill_time(module, v, 9, 12, 15, st->st_ctime, cnsec) < 0) {
+        goto error;
+    }
 
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
-    PyStructSequence_SET_ITEM(v, ST_BLKSIZE_IDX,
-                              PyLong_FromLong((long)st->st_blksize));
+    SET_ITEM(ST_BLKSIZE_IDX, PyLong_FromLong((long)st->st_blksize));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_BLOCKS
-    PyStructSequence_SET_ITEM(v, ST_BLOCKS_IDX,
-                              PyLong_FromLong((long)st->st_blocks));
+    SET_ITEM(ST_BLOCKS_IDX, PyLong_FromLong((long)st->st_blocks));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_RDEV
-    PyStructSequence_SET_ITEM(v, ST_RDEV_IDX,
-                              PyLong_FromLong((long)st->st_rdev));
+    SET_ITEM(ST_RDEV_IDX, PyLong_FromLong((long)st->st_rdev));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_GEN
-    PyStructSequence_SET_ITEM(v, ST_GEN_IDX,
-                              PyLong_FromLong((long)st->st_gen));
+    SET_ITEM(ST_GEN_IDX, PyLong_FromLong((long)st->st_gen));
 #endif
 #if defined(HAVE_STRUCT_STAT_ST_BIRTHTIME)
     {
-      PyObject *val;
-      unsigned long bsec,bnsec;
+      unsigned long bsec, bnsec;
       bsec = (long)st->st_birthtime;
 #ifdef HAVE_STAT_TV_NSEC2
       bnsec = st->st_birthtimespec.tv_nsec;
 #else
       bnsec = 0;
 #endif
-      val = PyFloat_FromDouble(bsec + 1e-9*bnsec);
-      PyStructSequence_SET_ITEM(v, ST_BIRTHTIME_IDX,
-                                val);
+      SET_ITEM(ST_BIRTHTIME_IDX, PyFloat_FromDouble(bsec + bnsec * 1e-9));
     }
 #elif defined(MS_WINDOWS)
-    fill_time(module, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
-              st->st_birthtime, st->st_birthtime_nsec);
+    if (fill_time(module, v, -1, ST_BIRTHTIME_IDX, ST_BIRTHTIME_NS_IDX,
+                  st->st_birthtime, st->st_birthtime_nsec) < 0) {
+        goto error;
+    }
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FLAGS
-    PyStructSequence_SET_ITEM(v, ST_FLAGS_IDX,
-                              PyLong_FromLong((long)st->st_flags));
+    SET_ITEM(ST_FLAGS_IDX, PyLong_FromLong((long)st->st_flags));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FILE_ATTRIBUTES
-    PyStructSequence_SET_ITEM(v, ST_FILE_ATTRIBUTES_IDX,
-                              PyLong_FromUnsignedLong(st->st_file_attributes));
+    SET_ITEM(ST_FILE_ATTRIBUTES_IDX,
+             PyLong_FromUnsignedLong(st->st_file_attributes));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_FSTYPE
-   PyStructSequence_SET_ITEM(v, ST_FSTYPE_IDX,
-                              PyUnicode_FromString(st->st_fstype));
+   SET_ITEM(ST_FSTYPE_IDX, PyUnicode_FromString(st->st_fstype));
 #endif
 #ifdef HAVE_STRUCT_STAT_ST_REPARSE_TAG
-    PyStructSequence_SET_ITEM(v, ST_REPARSE_TAG_IDX,
-                              PyLong_FromUnsignedLong(st->st_reparse_tag));
+    SET_ITEM(ST_REPARSE_TAG_IDX, PyLong_FromUnsignedLong(st->st_reparse_tag));
 #endif
 
-    if (PyErr_Occurred()) {
-        Py_DECREF(v);
-        return NULL;
-    }
-
+    assert(!PyErr_Occurred());
     return v;
+
+error:
+    Py_DECREF(v);
+    return NULL;
+
+#undef SET_ITEM
 }
 
 /* POSIX methods */
@@ -2822,7 +2907,9 @@ class path_t_converter(CConverter):
 
     converter = 'path_converter'
 
-    def converter_init(self, *, allow_fd=False, nullable=False):
+    def converter_init(self, *, allow_fd=False, make_wide=None,
+                       nonstrict=False, nullable=False,
+                       suppress_value_error=False):
         # right now path_t doesn't support default values.
         # to support a default value, you'll need to override initialize().
         if self.default not in (unspecified, None):
@@ -2832,6 +2919,9 @@ class path_t_converter(CConverter):
             raise RuntimeError("Can't specify a c_default to the path_t converter!")
 
         self.nullable = nullable
+        self.nonstrict = nonstrict
+        self.make_wide = make_wide
+        self.suppress_value_error = suppress_value_error
         self.allow_fd = allow_fd
 
     def pre_render(self):
@@ -2841,11 +2931,24 @@ class path_t_converter(CConverter):
             return str(int(bool(value)))
 
         # add self.py_name here when merging with posixmodule conversion
-        self.c_default = 'PATH_T_INITIALIZE("{}", "{}", {}, {})'.format(
-            self.function.name,
-            self.name,
-            strify(self.nullable),
-            strify(self.allow_fd),
+        if self.make_wide is None:
+            self.c_default = 'PATH_T_INITIALIZE_P("{}", "{}", {}, {}, {}, {})'.format(
+                self.function.name,
+                self.name,
+                strify(self.nullable),
+                strify(self.nonstrict),
+                strify(self.suppress_value_error),
+                strify(self.allow_fd),
+            )
+        else:
+            self.c_default = 'PATH_T_INITIALIZE("{}", "{}", {}, {}, {}, {}, {})'.format(
+                self.function.name,
+                self.name,
+                strify(self.nullable),
+                strify(self.nonstrict),
+                strify(self.make_wide),
+                strify(self.suppress_value_error),
+                strify(self.allow_fd),
             )
 
     def cleanup(self):
@@ -2925,7 +3028,7 @@ class sysconf_confname_converter(path_confname_converter):
     converter="conv_sysconf_confname"
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=3338733161aa7879]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=577cb476e5d64960]*/
 
 /*[clinic input]
 
@@ -3134,7 +3237,7 @@ os_access_impl(PyObject *module, path_t *path, int mode, int dir_fd,
 #endif
 
 
-#ifdef HAVE_TTYNAME
+#ifdef HAVE_TTYNAME_R
 /*[clinic input]
 os.ttyname
 
@@ -3877,9 +3980,10 @@ posix_getcwd(int use_bytes)
         return NULL;
     }
     if (!len) {
+        PyErr_SetFromWindowsErr(0);
         if (wbuf2 != wbuf)
             PyMem_RawFree(wbuf2);
-        return PyErr_SetFromWindowsErr(0);
+        return NULL;
     }
 
     PyObject *resobj = PyUnicode_FromWideChar(wbuf2, len);
@@ -3927,8 +4031,9 @@ posix_getcwd(int use_bytes)
         return PyErr_NoMemory();
     }
     if (cwd == NULL) {
+        posix_error();
         PyMem_RawFree(buf);
-        return posix_error();
+        return NULL;
     }
 
     PyObject *obj;
@@ -4101,7 +4206,7 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
 {
     PyObject *v;
     HANDLE hFindFile = INVALID_HANDLE_VALUE;
-    BOOL result;
+    BOOL result, return_bytes;
     wchar_t namebuf[MAX_PATH+4]; /* Overallocate for "\*.*" */
     /* only claim to have space for MAX_PATH */
     Py_ssize_t len = Py_ARRAY_LENGTH(namebuf)-4;
@@ -4113,9 +4218,11 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
     if (!path->wide) { /* Default arg: "." */
         po_wchars = L".";
         len = 1;
+        return_bytes = 0;
     } else {
         po_wchars = path->wide;
         len = wcslen(path->wide);
+        return_bytes = PyBytes_Check(path->object);
     }
     /* The +5 is so we can append "\\*.*\0" */
     wnamebuf = PyMem_New(wchar_t, len + 5);
@@ -4140,8 +4247,8 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
         int error = GetLastError();
         if (error == ERROR_FILE_NOT_FOUND)
             goto exit;
-        Py_DECREF(list);
-        list = path_error(path);
+        path_error(path);
+        Py_CLEAR(list);
         goto exit;
     }
     do {
@@ -4150,16 +4257,16 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
             wcscmp(wFileData.cFileName, L"..") != 0) {
             v = PyUnicode_FromWideChar(wFileData.cFileName,
                                        wcslen(wFileData.cFileName));
-            if (path->narrow && v) {
+            if (return_bytes && v) {
                 Py_SETREF(v, PyUnicode_EncodeFSDefault(v));
             }
             if (v == NULL) {
-                Py_SETREF(list, NULL);
+                Py_CLEAR(list);
                 break;
             }
             if (PyList_Append(list, v) != 0) {
                 Py_DECREF(v);
-                Py_SETREF(list, NULL);
+                Py_CLEAR(list);
                 break;
             }
             Py_DECREF(v);
@@ -4170,8 +4277,8 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
         /* FindNextFile sets error to ERROR_NO_MORE_FILES if
            it got to the end of the directory. */
         if (!result && GetLastError() != ERROR_NO_MORE_FILES) {
-            Py_DECREF(list);
-            list = path_error(path);
+            path_error(path);
+            Py_CLEAR(list);
             goto exit;
         }
     } while (result == TRUE);
@@ -4180,8 +4287,8 @@ exit:
     if (hFindFile != INVALID_HANDLE_VALUE) {
         if (FindClose(hFindFile) == FALSE) {
             if (list != NULL) {
-                Py_DECREF(list);
-                list = path_error(path);
+                path_error(path);
+                Py_CLEAR(list);
             }
         }
     }
@@ -4243,7 +4350,8 @@ _posix_listdir(path_t *path, PyObject *list)
     }
 
     if (dirp == NULL) {
-        list = path_error(path);
+        path_error(path);
+        list = NULL;
 #ifdef HAVE_FDOPENDIR
         if (fd != -1) {
             Py_BEGIN_ALLOW_THREADS
@@ -4265,8 +4373,8 @@ _posix_listdir(path_t *path, PyObject *list)
             if (errno == 0) {
                 break;
             } else {
-                Py_DECREF(list);
-                list = path_error(path);
+                path_error(path);
+                Py_CLEAR(list);
                 goto exit;
             }
         }
@@ -4692,7 +4800,7 @@ os__getfullpathname_impl(PyObject *module, path_t *path)
     if (str == NULL) {
         return NULL;
     }
-    if (path->narrow) {
+    if (PyBytes_Check(path->object)) {
         Py_SETREF(str, PyUnicode_EncodeFSDefault(str));
     }
     return str;
@@ -4765,7 +4873,7 @@ os__getfinalpathname_impl(PyObject *module, path_t *path)
     }
 
     result = PyUnicode_FromWideChar(target_path, result_length);
-    if (result && path->narrow) {
+    if (result && PyBytes_Check(path->object)) {
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
     }
 
@@ -4817,7 +4925,7 @@ os__getvolumepathname_impl(PyObject *module, path_t *path)
         goto exit;
     }
     result = PyUnicode_FromWideChar(mountpath, wcslen(mountpath));
-    if (path->narrow)
+    if (PyBytes_Check(path->object))
         Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
 
 exit:
@@ -4872,383 +4980,308 @@ os__path_splitroot_impl(PyObject *module, path_t *path)
 }
 
 
-/*[clinic input]
-os._path_isdir
+#define PY_IFREG  1 // Regular file
+#define PY_IFDIR  2 // Directory
+#define PY_IFLNK  4 // Symlink
+#define PY_IFMNT  8 // Mount Point (junction)
+#define PY_IFLRP 16 // Link Reparse Point (name-surrogate, symlink, junction)
+#define PY_IFRRP 32 // Regular Reparse Point
 
-    path: 'O'
+static inline BOOL
+_testInfo(DWORD attributes, DWORD reparseTag, BOOL diskDevice, int testedType)
+{
+    switch (testedType) {
+    case PY_IFREG:
+        return diskDevice && attributes &&
+               !(attributes & FILE_ATTRIBUTE_DIRECTORY);
+    case PY_IFDIR:
+        return attributes & FILE_ATTRIBUTE_DIRECTORY;
+    case PY_IFLNK:
+        return (attributes & FILE_ATTRIBUTE_REPARSE_POINT) &&
+               reparseTag == IO_REPARSE_TAG_SYMLINK;
+    case PY_IFMNT:
+        return (attributes & FILE_ATTRIBUTE_REPARSE_POINT) &&
+               reparseTag == IO_REPARSE_TAG_MOUNT_POINT;
+    case PY_IFLRP:
+        return (attributes & FILE_ATTRIBUTE_REPARSE_POINT) &&
+               IsReparseTagNameSurrogate(reparseTag);
+    case PY_IFRRP:
+        return (attributes & FILE_ATTRIBUTE_REPARSE_POINT) &&
+               reparseTag && !IsReparseTagNameSurrogate(reparseTag);
+    }
+
+    return FALSE;
+}
+
+static BOOL
+_testFileTypeByHandle(HANDLE hfile, int testedType, BOOL diskOnly)
+{
+    assert(testedType == PY_IFREG || testedType == PY_IFDIR ||
+           testedType == PY_IFLNK || testedType == PY_IFMNT ||
+           testedType == PY_IFLRP || testedType == PY_IFRRP);
+
+    BOOL diskDevice = GetFileType(hfile) == FILE_TYPE_DISK;
+    if (diskOnly && !diskDevice) {
+        return FALSE;
+    }
+    if (testedType != PY_IFREG && testedType != PY_IFDIR) {
+        FILE_ATTRIBUTE_TAG_INFO info;
+        return GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info,
+                                            sizeof(info)) &&
+               _testInfo(info.FileAttributes, info.ReparseTag, diskDevice,
+                         testedType);
+    }
+    FILE_BASIC_INFO info;
+    return GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
+                                        sizeof(info)) &&
+           _testInfo(info.FileAttributes, 0, diskDevice, testedType);
+}
+
+static BOOL
+_testFileTypeByName(LPCWSTR path, int testedType)
+{
+    assert(testedType == PY_IFREG || testedType == PY_IFDIR ||
+           testedType == PY_IFLNK || testedType == PY_IFMNT ||
+           testedType == PY_IFLRP || testedType == PY_IFRRP);
+
+    FILE_STAT_BASIC_INFORMATION info;
+    if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo, &info,
+                                     sizeof(info)))
+    {
+        BOOL diskDevice = info.DeviceType == FILE_DEVICE_DISK ||
+                          info.DeviceType == FILE_DEVICE_VIRTUAL_DISK ||
+                          info.DeviceType == FILE_DEVICE_CD_ROM;
+        BOOL result = _testInfo(info.FileAttributes, info.ReparseTag,
+                                diskDevice, testedType);
+        if (!result || (testedType != PY_IFREG && testedType != PY_IFDIR) ||
+            !(info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT))
+        {
+            return result;
+        }
+    }
+    else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(
+                GetLastError()))
+    {
+        return FALSE;
+    }
+
+    DWORD flags = FILE_FLAG_BACKUP_SEMANTICS;
+    if (testedType != PY_IFREG && testedType != PY_IFDIR) {
+        flags |= FILE_FLAG_OPEN_REPARSE_POINT;
+    }
+    HANDLE hfile = CreateFileW(path, FILE_READ_ATTRIBUTES, 0, NULL,
+                               OPEN_EXISTING, flags, NULL);
+    if (hfile != INVALID_HANDLE_VALUE) {
+        BOOL result = _testFileTypeByHandle(hfile, testedType, FALSE);
+        CloseHandle(hfile);
+        return result;
+    }
+
+    switch (GetLastError()) {
+    case ERROR_ACCESS_DENIED:
+    case ERROR_SHARING_VIOLATION:
+    case ERROR_CANT_ACCESS_FILE:
+    case ERROR_INVALID_PARAMETER:
+        int rc;
+        STRUCT_STAT st;
+        if (testedType == PY_IFREG || testedType == PY_IFDIR) {
+            rc = STAT(path, &st);
+        }
+        else {
+            // PY_IFRRP is not generally supported in this case, except for
+            // unhandled reparse points such as IO_REPARSE_TAG_APPEXECLINK.
+            rc = LSTAT(path, &st);
+        }
+        if (!rc) {
+            return _testInfo(st.st_file_attributes, st.st_reparse_tag,
+                             st.st_mode & S_IFREG, testedType);
+        }
+    }
+
+    return FALSE;
+}
+
+
+static BOOL
+_testFileExistsByName(LPCWSTR path, BOOL followLinks)
+{
+    FILE_STAT_BASIC_INFORMATION info;
+    if (_Py_GetFileInformationByName(path, FileStatBasicByNameInfo, &info,
+                                     sizeof(info)))
+    {
+        if (!(info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ||
+            !followLinks && IsReparseTagNameSurrogate(info.ReparseTag))
+        {
+            return TRUE;
+        }
+    }
+    else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(
+                    GetLastError()))
+    {
+        return FALSE;
+    }
+
+    DWORD flags = FILE_FLAG_BACKUP_SEMANTICS;
+    if (!followLinks) {
+        flags |= FILE_FLAG_OPEN_REPARSE_POINT;
+    }
+    HANDLE hfile = CreateFileW(path, FILE_READ_ATTRIBUTES, 0, NULL,
+                               OPEN_EXISTING, flags, NULL);
+    if (hfile != INVALID_HANDLE_VALUE) {
+        if (followLinks) {
+            CloseHandle(hfile);
+            return TRUE;
+        }
+        // Regular Reparse Points (PY_IFRRP) have to be traversed.
+        BOOL result = _testFileTypeByHandle(hfile, PY_IFRRP, FALSE);
+        CloseHandle(hfile);
+        if (!result) {
+            return TRUE;
+        }
+        hfile = CreateFileW(path, FILE_READ_ATTRIBUTES, 0, NULL, OPEN_EXISTING,
+                            FILE_FLAG_BACKUP_SEMANTICS, NULL);
+        if (hfile != INVALID_HANDLE_VALUE) {
+            CloseHandle(hfile);
+            return TRUE;
+        }
+    }
+
+    switch (GetLastError()) {
+    case ERROR_ACCESS_DENIED:
+    case ERROR_SHARING_VIOLATION:
+    case ERROR_CANT_ACCESS_FILE:
+    case ERROR_INVALID_PARAMETER:
+        STRUCT_STAT _st;
+        return followLinks ? !STAT(path, &_st): !LSTAT(path, &_st);
+    }
+
+    return FALSE;
+}
+
+
+static BOOL
+_testFileExists(path_t *path, BOOL followLinks)
+{
+    BOOL result = FALSE;
+    if (path->value_error) {
+        return FALSE;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    if (path->fd != -1) {
+        HANDLE hfile = _Py_get_osfhandle_noraise(path->fd);
+        if (hfile != INVALID_HANDLE_VALUE) {
+            if (GetFileType(hfile) != FILE_TYPE_UNKNOWN || !GetLastError()) {
+                result = TRUE;
+            }
+        }
+    }
+    else if (path->wide) {
+        result = _testFileExistsByName(path->wide, followLinks);
+    }
+    Py_END_ALLOW_THREADS
+
+    return result;
+}
+
+
+static BOOL
+_testFileType(path_t *path, int testedType)
+{
+    BOOL result = FALSE;
+    if (path->value_error) {
+        return FALSE;
+    }
+
+    Py_BEGIN_ALLOW_THREADS
+    if (path->fd != -1) {
+        HANDLE hfile = _Py_get_osfhandle_noraise(path->fd);
+        if (hfile != INVALID_HANDLE_VALUE) {
+            result = _testFileTypeByHandle(hfile, testedType, TRUE);
+        }
+    }
+    else if (path->wide) {
+        result = _testFileTypeByName(path->wide, testedType);
+    }
+    Py_END_ALLOW_THREADS
+
+    return result;
+}
+
+
+/*[clinic input]
+os._path_exists -> bool
+
+    path: path_t(allow_fd=True, suppress_value_error=True)
+
+Test whether a path exists.  Returns False for broken symbolic links.
+
+[clinic start generated code]*/
+
+static int
+os__path_exists_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=8da13acf666e16ba input=142beabfc66783eb]*/
+{
+    return _testFileExists(path, TRUE);
+}
+
+
+/*[clinic input]
+os._path_isdir -> bool
+
+    s as path: path_t(allow_fd=True, suppress_value_error=True)
 
 Return true if the pathname refers to an existing directory.
 
 [clinic start generated code]*/
 
-static PyObject *
-os__path_isdir_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=00faea0af309669d input=b1d2571cf7291aaf]*/
+static int
+os__path_isdir_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=d5786196f9e2fa7a input=132a3b5301aecf79]*/
 {
-    HANDLE hfile;
-    BOOL close_file = TRUE;
-    FILE_BASIC_INFO info;
-    path_t _path = PATH_T_INITIALIZE("isdir", "path", 0, 1);
-    int result;
-    BOOL slow_path = TRUE;
-    FILE_STAT_BASIC_INFORMATION statInfo;
-
-    if (!path_converter(path, &_path)) {
-        path_cleanup(&_path);
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            Py_RETURN_FALSE;
-        }
-        return NULL;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {
-        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
-                                         &statInfo, sizeof(statInfo))) {
-            if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
-                slow_path = FALSE;
-                result = statInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
-            } else if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-                slow_path = FALSE;
-                result = 0;
-            }
-        } else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(GetLastError())) {
-                    slow_path = FALSE;
-                    result = 0;
-        }
-    }
-    if (slow_path) {
-        if (_path.fd != -1) {
-            hfile = _Py_get_osfhandle_noraise(_path.fd);
-            close_file = FALSE;
-        }
-        else {
-            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
-                                OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-        }
-        if (hfile != INVALID_HANDLE_VALUE) {
-            if (GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
-                                            sizeof(info)))
-            {
-                result = info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY;
-            }
-            else {
-                result = 0;
-            }
-            if (close_file) {
-                CloseHandle(hfile);
-            }
-        }
-        else {
-            STRUCT_STAT st;
-            switch (GetLastError()) {
-            case ERROR_ACCESS_DENIED:
-            case ERROR_SHARING_VIOLATION:
-            case ERROR_CANT_ACCESS_FILE:
-            case ERROR_INVALID_PARAMETER:
-                if (STAT(_path.wide, &st)) {
-                    result = 0;
-                }
-                else {
-                    result = S_ISDIR(st.st_mode);
-                }
-                break;
-            default:
-                result = 0;
-            }
-        }
-    }
-    Py_END_ALLOW_THREADS
-
-    path_cleanup(&_path);
-    if (result) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return _testFileType(path, PY_IFDIR);
 }
 
 
 /*[clinic input]
-os._path_isfile
+os._path_isfile -> bool
 
-    path: 'O'
+    path: path_t(allow_fd=True, suppress_value_error=True)
 
 Test whether a path is a regular file
 
 [clinic start generated code]*/
 
-static PyObject *
-os__path_isfile_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=2394ed7c4b5cfd85 input=de22d74960ade365]*/
+static int
+os__path_isfile_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=5c3073bc212b9863 input=4ac1fd350b30a39e]*/
 {
-    HANDLE hfile;
-    BOOL close_file = TRUE;
-    FILE_BASIC_INFO info;
-    path_t _path = PATH_T_INITIALIZE("isfile", "path", 0, 1);
-    int result;
-    BOOL slow_path = TRUE;
-    FILE_STAT_BASIC_INFORMATION statInfo;
-
-    if (!path_converter(path, &_path)) {
-        path_cleanup(&_path);
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            Py_RETURN_FALSE;
-        }
-        return NULL;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {
-        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
-                                         &statInfo, sizeof(statInfo))) {
-            if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
-                slow_path = FALSE;
-                result = !(statInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-            } else if (statInfo.FileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-                slow_path = FALSE;
-                result = 0;
-            }
-        } else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(GetLastError())) {
-                    slow_path = FALSE;
-                    result = 0;
-        }
-    }
-    if (slow_path) {
-        if (_path.fd != -1) {
-            hfile = _Py_get_osfhandle_noraise(_path.fd);
-            close_file = FALSE;
-        }
-        else {
-            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
-                                OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-        }
-        if (hfile != INVALID_HANDLE_VALUE) {
-            if (GetFileInformationByHandleEx(hfile, FileBasicInfo, &info,
-                                            sizeof(info)))
-            {
-                result = !(info.FileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-            }
-            else {
-                result = 0;
-            }
-            if (close_file) {
-                CloseHandle(hfile);
-            }
-        }
-        else {
-            STRUCT_STAT st;
-            switch (GetLastError()) {
-            case ERROR_ACCESS_DENIED:
-            case ERROR_SHARING_VIOLATION:
-            case ERROR_CANT_ACCESS_FILE:
-            case ERROR_INVALID_PARAMETER:
-                if (STAT(_path.wide, &st)) {
-                    result = 0;
-                }
-                else {
-                    result = S_ISREG(st.st_mode);
-                }
-                break;
-            default:
-                result = 0;
-            }
-        }
-    }
-    Py_END_ALLOW_THREADS
-
-    path_cleanup(&_path);
-    if (result) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return _testFileType(path, PY_IFREG);
 }
 
 
 /*[clinic input]
-os._path_exists
+os._path_islink -> bool
 
-    path: 'O'
-
-Test whether a path exists.  Returns False for broken symbolic links
-
-[clinic start generated code]*/
-
-static PyObject *
-os__path_exists_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=f508c3b35e13a249 input=380f77cdfa0f7ae8]*/
-{
-    HANDLE hfile;
-    BOOL close_file = TRUE;
-    path_t _path = PATH_T_INITIALIZE("exists", "path", 0, 1);
-    int result;
-    BOOL slow_path = TRUE;
-    FILE_STAT_BASIC_INFORMATION statInfo;
-
-    if (!path_converter(path, &_path)) {
-        path_cleanup(&_path);
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            Py_RETURN_FALSE;
-        }
-        return NULL;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {
-        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
-                                         &statInfo, sizeof(statInfo))) {
-            if (!(statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT)) {
-                slow_path = FALSE;
-                result = 1;
-            }
-        } else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(GetLastError())) {
-                    slow_path = FALSE;
-                    result = 0;
-        }
-    }
-    if (slow_path) {
-        if (_path.fd != -1) {
-            hfile = _Py_get_osfhandle_noraise(_path.fd);
-            close_file = FALSE;
-        }
-        else {
-            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
-                                OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, NULL);
-        }
-        if (hfile != INVALID_HANDLE_VALUE) {
-            result = 1;
-            if (close_file) {
-                CloseHandle(hfile);
-            }
-        }
-        else {
-            STRUCT_STAT st;
-            switch (GetLastError()) {
-            case ERROR_ACCESS_DENIED:
-            case ERROR_SHARING_VIOLATION:
-            case ERROR_CANT_ACCESS_FILE:
-            case ERROR_INVALID_PARAMETER:
-                if (STAT(_path.wide, &st)) {
-                    result = 0;
-                }
-                else {
-                    result = 1;
-                }
-                break;
-            default:
-                result = 0;
-            }
-        }
-    }
-    Py_END_ALLOW_THREADS
-
-    path_cleanup(&_path);
-    if (result) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
-}
-
-
-/*[clinic input]
-os._path_islink
-
-    path: 'O'
+    path: path_t(allow_fd=True, suppress_value_error=True)
 
 Test whether a path is a symbolic link
 
 [clinic start generated code]*/
 
-static PyObject *
-os__path_islink_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=6d8640b1a390c054 input=38a3cb937ccf59bf]*/
+static int
+os__path_islink_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=30da7bda8296adcc input=7510ce05b547debb]*/
 {
-    HANDLE hfile;
-    BOOL close_file = TRUE;
-    FILE_ATTRIBUTE_TAG_INFO info;
-    path_t _path = PATH_T_INITIALIZE("islink", "path", 0, 1);
-    int result;
-    BOOL slow_path = TRUE;
-    FILE_STAT_BASIC_INFORMATION statInfo;
-
-    if (!path_converter(path, &_path)) {
-        path_cleanup(&_path);
-        if (PyErr_ExceptionMatches(PyExc_ValueError)) {
-            PyErr_Clear();
-            Py_RETURN_FALSE;
-        }
-        return NULL;
-    }
-
-    Py_BEGIN_ALLOW_THREADS
-    if (_path.wide) {
-        if (_Py_GetFileInformationByName(_path.wide, FileStatBasicByNameInfo,
-                                         &statInfo, sizeof(statInfo))) {
-            slow_path = FALSE;
-            if (statInfo.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) {
-                result = (statInfo.ReparseTag == IO_REPARSE_TAG_SYMLINK);
-            }
-            else {
-                result = 0;
-            }
-        } else if (_Py_GetFileInformationByName_ErrorIsTrustworthy(GetLastError())) {
-                    slow_path = FALSE;
-                    result = 0;
-        }
-    }
-    if (slow_path) {
-        if (_path.fd != -1) {
-            hfile = _Py_get_osfhandle_noraise(_path.fd);
-            close_file = FALSE;
-        }
-        else {
-            hfile = CreateFileW(_path.wide, FILE_READ_ATTRIBUTES, 0, NULL,
-                                OPEN_EXISTING,
-                                FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS,
-                                NULL);
-        }
-        if (hfile != INVALID_HANDLE_VALUE) {
-            if (GetFileInformationByHandleEx(hfile, FileAttributeTagInfo, &info,
-                                            sizeof(info)))
-            {
-                result = (info.ReparseTag == IO_REPARSE_TAG_SYMLINK);
-            }
-            else {
-                result = 0;
-            }
-            if (close_file) {
-                CloseHandle(hfile);
-            }
-        }
-        else {
-            STRUCT_STAT st;
-            switch (GetLastError()) {
-            case ERROR_ACCESS_DENIED:
-            case ERROR_SHARING_VIOLATION:
-            case ERROR_CANT_ACCESS_FILE:
-            case ERROR_INVALID_PARAMETER:
-                if (LSTAT(_path.wide, &st)) {
-                    result = 0;
-                }
-                else {
-                    result = S_ISLNK(st.st_mode);
-                }
-                break;
-            default:
-                result = 0;
-            }
-        }
-    }
-    Py_END_ALLOW_THREADS
-
-    path_cleanup(&_path);
-    if (result) {
-        Py_RETURN_TRUE;
-    }
-    Py_RETURN_FALSE;
+    return _testFileType(path, PY_IFLNK);
 }
+
+#undef PY_IFREG
+#undef PY_IFDIR
+#undef PY_IFLNK
+#undef PY_IFMNT
+#undef PY_IFLRP
+#undef PY_IFRRP
 
 #endif /* MS_WINDOWS */
 
@@ -5256,27 +5289,28 @@ os__path_islink_impl(PyObject *module, PyObject *path)
 /*[clinic input]
 os._path_normpath
 
-    path: object
+    path: path_t(make_wide=True, nonstrict=True)
 
-Basic path normalization.
+Normalize path, eliminating double slashes, etc.
 [clinic start generated code]*/
 
 static PyObject *
-os__path_normpath_impl(PyObject *module, PyObject *path)
-/*[clinic end generated code: output=b94d696d828019da input=5e90c39e12549dc0]*/
+os__path_normpath_impl(PyObject *module, path_t *path)
+/*[clinic end generated code: output=d353e7ed9410c044 input=3d4ac23b06332dcb]*/
 {
-    if (!PyUnicode_Check(path)) {
-        PyErr_Format(PyExc_TypeError, "expected 'str', not '%.200s'",
-            Py_TYPE(path)->tp_name);
-        return NULL;
+    PyObject *result;
+    Py_ssize_t norm_len;
+    wchar_t *norm_path = _Py_normpath_and_size((wchar_t *)path->wide,
+                                               path->length, &norm_len);
+    if (!norm_len) {
+        result = PyUnicode_FromOrdinal('.');
     }
-    Py_ssize_t len;
-    wchar_t *buffer = PyUnicode_AsWideCharString(path, &len);
-    if (!buffer) {
-        return NULL;
+    else {
+        result = PyUnicode_FromWideChar(norm_path, norm_len);
     }
-    PyObject *result = PyUnicode_FromWideChar(_Py_normpath(buffer, len), -1);
-    PyMem_Free(buffer);
+    if (PyBytes_Check(path->object)) {
+        Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
+    }
     return result;
 }
 
@@ -5309,6 +5343,12 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 /*[clinic end generated code: output=a70446903abe821f input=a61722e1576fab03]*/
 {
     int result;
+#ifdef MS_WINDOWS
+    int error = 0;
+    int pathError = 0;
+    SECURITY_ATTRIBUTES secAttr = { sizeof(secAttr) };
+    SECURITY_ATTRIBUTES *pSecAttr = NULL;
+#endif
 #ifdef HAVE_MKDIRAT
     int mkdirat_unavailable = 0;
 #endif
@@ -5320,11 +5360,38 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
 
 #ifdef MS_WINDOWS
     Py_BEGIN_ALLOW_THREADS
-    result = CreateDirectoryW(path->wide, NULL);
+    if (mode == 0700 /* 0o700 */) {
+        ULONG sdSize;
+        pSecAttr = &secAttr;
+        // Set a discretionary ACL (D) that is protected (P) and includes
+        // inheritable (OICI) entries that allow (A) full control (FA) to
+        // SYSTEM (SY), Administrators (BA), and the owner (OW).
+        if (!ConvertStringSecurityDescriptorToSecurityDescriptorW(
+            L"D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)(A;OICI;FA;;;OW)",
+            SDDL_REVISION_1,
+            &secAttr.lpSecurityDescriptor,
+            &sdSize
+        )) {
+            error = GetLastError();
+        }
+    }
+    if (!error) {
+        result = CreateDirectoryW(path->wide, pSecAttr);
+        if (secAttr.lpSecurityDescriptor &&
+            // uncommonly, LocalFree returns non-zero on error, but still uses
+            // GetLastError() to see what the error code is
+            LocalFree(secAttr.lpSecurityDescriptor)) {
+            error = GetLastError();
+        }
+    }
     Py_END_ALLOW_THREADS
 
-    if (!result)
+    if (error) {
+        return PyErr_SetFromWindowsErr(error);
+    }
+    if (!result) {
         return path_error(path);
+    }
 #else
     Py_BEGIN_ALLOW_THREADS
 #if HAVE_MKDIRAT
@@ -6607,8 +6674,9 @@ os_execv_impl(PyObject *module, path_t *path, PyObject *argv)
 
     /* If we get here it's definitely an error */
 
+    posix_error();
     free_string_array(argvlist, argc);
-    return posix_error();
+    return NULL;
 }
 
 
@@ -6912,11 +6980,12 @@ parse_file_actions(PyObject *file_actions,
                 }
                 errno = posix_spawn_file_actions_addopen(file_actionsp,
                         fd, PyBytes_AS_STRING(path), oflag, (mode_t)mode);
-                Py_DECREF(path);
                 if (errno) {
                     posix_error();
+                    Py_DECREF(path);
                     goto fail;
                 }
+                Py_DECREF(path);
                 break;
             }
             case POSIX_SPAWN_CLOSE: {
@@ -7313,12 +7382,15 @@ os_spawnv_impl(PyObject *module, int mode, path_t *path, PyObject *argv)
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
 
+    int saved_errno = errno;
     free_string_array(argvlist, argc);
 
-    if (spawnval == -1)
-        return posix_error();
-    else
-        return Py_BuildValue(_Py_PARSE_INTPTR, spawnval);
+    if (spawnval == -1) {
+        errno = saved_errno;
+        posix_error();
+        return NULL;
+    }
+    return Py_BuildValue(_Py_PARSE_INTPTR, spawnval);
 }
 
 /*[clinic input]
@@ -7510,6 +7582,7 @@ os_register_at_fork_impl(PyObject *module, PyObject *before,
 }
 #endif /* HAVE_FORK */
 
+#if defined(HAVE_FORK1) || defined(HAVE_FORKPTY) || defined(HAVE_FORK)
 // Common code to raise a warning if we detect there is more than one thread
 // running in the process. Best effort, silent if unable to count threads.
 // Constraint: Quick. Never overcounts. Never leaves an error set.
@@ -7608,6 +7681,7 @@ static void warn_about_fork_with_threads(const char* name) {
         PyErr_Clear();
     }
 }
+#endif  // HAVE_FORK1 || HAVE_FORKPTY || HAVE_FORK
 
 #ifdef HAVE_FORK1
 /*[clinic input]
@@ -7625,7 +7699,7 @@ os_fork1_impl(PyObject *module)
     pid_t pid;
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->finalizing) {
+    if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "can't fork at interpreter shutdown");
         return NULL;
@@ -7636,6 +7710,7 @@ os_fork1_impl(PyObject *module)
     }
     PyOS_BeforeFork();
     pid = fork1();
+    int saved_errno = errno;
     if (pid == 0) {
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
@@ -7644,8 +7719,10 @@ os_fork1_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
     }
-    if (pid == -1)
+    if (pid == -1) {
+        errno = saved_errno;
         return posix_error();
+    }
     return PyLong_FromPid(pid);
 }
 #endif /* HAVE_FORK1 */
@@ -7666,7 +7743,7 @@ os_fork_impl(PyObject *module)
 {
     pid_t pid;
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->finalizing) {
+    if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "can't fork at interpreter shutdown");
         return NULL;
@@ -7681,6 +7758,7 @@ os_fork_impl(PyObject *module)
     }
     PyOS_BeforeFork();
     pid = fork();
+    int saved_errno = errno;
     if (pid == 0) {
         /* child: this clobbers and resets the import lock. */
         PyOS_AfterFork_Child();
@@ -7689,8 +7767,10 @@ os_fork_impl(PyObject *module)
         /* parent: release the import lock. */
         PyOS_AfterFork_Parent();
     }
-    if (pid == -1)
+    if (pid == -1) {
+        errno = saved_errno;
         return posix_error();
+    }
     return PyLong_FromPid(pid);
 }
 #endif /* HAVE_FORK */
@@ -7789,6 +7869,16 @@ os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority)
     PyStructSequence_SET_ITEM(res, 0, Py_NewRef(sched_priority));
     return res;
 }
+
+static PyObject *
+os_sched_param_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return Py_BuildValue("(O(N))", Py_TYPE(self), PyStructSequence_GetItem(self, 0));
+}
+
+static PyMethodDef os_sched_param_reduce_method = {
+    "__reduce__", (PyCFunction)os_sched_param_reduce, METH_NOARGS|METH_COEXIST, NULL,
+};
 
 PyDoc_VAR(os_sched_param__doc__);
 
@@ -8227,13 +8317,17 @@ os_openpty_impl(PyObject *module)
 
     /* change permission of slave */
     if (grantpt(master_fd) < 0) {
+        int saved_errno = errno;
         PyOS_setsig(SIGCHLD, sig_saved);
+        errno = saved_errno;
         goto posix_error;
     }
 
     /* unlock slave */
     if (unlockpt(master_fd) < 0) {
+        int saved_errno = errno;
         PyOS_setsig(SIGCHLD, sig_saved);
+        errno = saved_errno;
         goto posix_error;
     }
 
@@ -8343,7 +8437,7 @@ os_forkpty_impl(PyObject *module)
     pid_t pid;
 
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (interp->finalizing) {
+    if (_PyInterpreterState_GetFinalizing(interp) != NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                         "can't fork at interpreter shutdown");
         return NULL;
@@ -8597,8 +8691,9 @@ os_getgroups_impl(PyObject *module)
 
     n = getgroups(n, grouplist);
     if (n == -1) {
+        posix_error();
         PyMem_Free(grouplist);
-        return posix_error();
+        return NULL;
     }
 
     PyObject *result = PyList_New(n);
@@ -8886,42 +8981,33 @@ os_kill_impl(PyObject *module, pid_t pid, Py_ssize_t signal)
 
     Py_RETURN_NONE;
 #else /* !MS_WINDOWS */
-    PyObject *result;
     DWORD sig = (DWORD)signal;
-    DWORD err;
-    HANDLE handle;
 
 #ifdef HAVE_WINDOWS_CONSOLE_IO
     /* Console processes which share a common console can be sent CTRL+C or
        CTRL+BREAK events, provided they handle said events. */
     if (sig == CTRL_C_EVENT || sig == CTRL_BREAK_EVENT) {
         if (GenerateConsoleCtrlEvent(sig, (DWORD)pid) == 0) {
-            err = GetLastError();
-            PyErr_SetFromWindowsErr(err);
+            return PyErr_SetFromWindowsErr(0);
         }
-        else {
-            Py_RETURN_NONE;
-        }
+        Py_RETURN_NONE;
     }
 #endif /* HAVE_WINDOWS_CONSOLE_IO */
 
     /* If the signal is outside of what GenerateConsoleCtrlEvent can use,
        attempt to open and terminate the process. */
-    handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, (DWORD)pid);
+    HANDLE handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, (DWORD)pid);
     if (handle == NULL) {
-        err = GetLastError();
-        return PyErr_SetFromWindowsErr(err);
+        return PyErr_SetFromWindowsErr(0);
     }
 
-    if (TerminateProcess(handle, sig) == 0) {
-        err = GetLastError();
-        result = PyErr_SetFromWindowsErr(err);
-    } else {
-        result = Py_NewRef(Py_None);
-    }
-
+    BOOL res = TerminateProcess(handle, sig);
     CloseHandle(handle);
-    return result;
+    if (res == 0) {
+        return PyErr_SetFromWindowsErr(0);
+    }
+
+    Py_RETURN_NONE;
 #endif /* !MS_WINDOWS */
 }
 #endif /* HAVE_KILL */
@@ -9161,8 +9247,9 @@ os_setgroups(PyObject *module, PyObject *groups)
     }
 
     if (setgroups(len, grouplist) < 0) {
+        posix_error();
         PyMem_Free(grouplist);
-        return posix_error();
+        return NULL;
     }
     PyMem_Free(grouplist);
     Py_RETURN_NONE;
@@ -9195,36 +9282,39 @@ wait_helper(PyObject *module, pid_t pid, int status, struct rusage *ru)
     if (!result)
         return NULL;
 
+    int pos = 0;
+
 #ifndef doubletime
 #define doubletime(TV) ((double)(TV).tv_sec + (TV).tv_usec * 0.000001)
 #endif
 
-    PyStructSequence_SET_ITEM(result, 0,
-                              PyFloat_FromDouble(doubletime(ru->ru_utime)));
-    PyStructSequence_SET_ITEM(result, 1,
-                              PyFloat_FromDouble(doubletime(ru->ru_stime)));
-#define SET_INT(result, index, value)\
-        PyStructSequence_SET_ITEM(result, index, PyLong_FromLong(value))
-    SET_INT(result, 2, ru->ru_maxrss);
-    SET_INT(result, 3, ru->ru_ixrss);
-    SET_INT(result, 4, ru->ru_idrss);
-    SET_INT(result, 5, ru->ru_isrss);
-    SET_INT(result, 6, ru->ru_minflt);
-    SET_INT(result, 7, ru->ru_majflt);
-    SET_INT(result, 8, ru->ru_nswap);
-    SET_INT(result, 9, ru->ru_inblock);
-    SET_INT(result, 10, ru->ru_oublock);
-    SET_INT(result, 11, ru->ru_msgsnd);
-    SET_INT(result, 12, ru->ru_msgrcv);
-    SET_INT(result, 13, ru->ru_nsignals);
-    SET_INT(result, 14, ru->ru_nvcsw);
-    SET_INT(result, 15, ru->ru_nivcsw);
-#undef SET_INT
+#define SET_RESULT(CALL)                                     \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            Py_DECREF(result);                               \
+            return NULL;                                     \
+        }                                                    \
+        PyStructSequence_SET_ITEM(result, pos++, item);      \
+    } while(0)
 
-    if (PyErr_Occurred()) {
-        Py_DECREF(result);
-        return NULL;
-    }
+    SET_RESULT(PyFloat_FromDouble(doubletime(ru->ru_utime)));
+    SET_RESULT(PyFloat_FromDouble(doubletime(ru->ru_stime)));
+    SET_RESULT(PyLong_FromLong(ru->ru_maxrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_ixrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_idrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_isrss));
+    SET_RESULT(PyLong_FromLong(ru->ru_minflt));
+    SET_RESULT(PyLong_FromLong(ru->ru_majflt));
+    SET_RESULT(PyLong_FromLong(ru->ru_nswap));
+    SET_RESULT(PyLong_FromLong(ru->ru_inblock));
+    SET_RESULT(PyLong_FromLong(ru->ru_oublock));
+    SET_RESULT(PyLong_FromLong(ru->ru_msgsnd));
+    SET_RESULT(PyLong_FromLong(ru->ru_msgrcv));
+    SET_RESULT(PyLong_FromLong(ru->ru_nsignals));
+    SET_RESULT(PyLong_FromLong(ru->ru_nvcsw));
+    SET_RESULT(PyLong_FromLong(ru->ru_nivcsw));
+#undef SET_RESULT
 
     return Py_BuildValue("NiN", PyLong_FromPid(pid), status, result);
 }
@@ -9347,15 +9437,25 @@ os_waitid_impl(PyObject *module, idtype_t idtype, id_t id, int options)
     if (!result)
         return NULL;
 
-    PyStructSequence_SET_ITEM(result, 0, PyLong_FromPid(si.si_pid));
-    PyStructSequence_SET_ITEM(result, 1, _PyLong_FromUid(si.si_uid));
-    PyStructSequence_SET_ITEM(result, 2, PyLong_FromLong((long)(si.si_signo)));
-    PyStructSequence_SET_ITEM(result, 3, PyLong_FromLong((long)(si.si_status)));
-    PyStructSequence_SET_ITEM(result, 4, PyLong_FromLong((long)(si.si_code)));
-    if (PyErr_Occurred()) {
-        Py_DECREF(result);
-        return NULL;
-    }
+    int pos = 0;
+
+#define SET_RESULT(CALL)                                     \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            Py_DECREF(result);                               \
+            return NULL;                                     \
+        }                                                    \
+        PyStructSequence_SET_ITEM(result, pos++, item);      \
+    } while(0)
+
+    SET_RESULT(PyLong_FromPid(si.si_pid));
+    SET_RESULT(_PyLong_FromUid(si.si_uid));
+    SET_RESULT(PyLong_FromLong((long)(si.si_signo)));
+    SET_RESULT(PyLong_FromLong((long)(si.si_status)));
+    SET_RESULT(PyLong_FromLong((long)(si.si_code)));
+
+#undef SET_RESULT
 
     return result;
 }
@@ -9669,7 +9769,7 @@ os_readlink_impl(PyObject *module, path_t *path, int dir_fd)
             name[1] = L'\\';
         }
         result = PyUnicode_FromWideChar(name, nameLen);
-        if (result && path->narrow) {
+        if (result && PyBytes_Check(path->object)) {
             Py_SETREF(result, PyUnicode_EncodeFSDefault(result));
         }
     }
@@ -9960,12 +10060,12 @@ Return a collection containing process timing information.
 
 The object returned behaves like a named tuple with these fields:
   (utime, stime, cutime, cstime, elapsed_time)
-All fields are floating point numbers.
+All fields are floating-point numbers.
 [clinic start generated code]*/
 
 static PyObject *
 os_times_impl(PyObject *module)
-/*[clinic end generated code: output=35f640503557d32a input=2bf9df3d6ab2e48b]*/
+/*[clinic end generated code: output=35f640503557d32a input=8dbfe33a2dcc3df3]*/
 #ifdef MS_WINDOWS
 {
     FILETIME create, exit, kernel, user;
@@ -10419,19 +10519,24 @@ os_lockf_impl(PyObject *module, int fd, int command, Py_off_t length)
 os.lseek -> Py_off_t
 
     fd: int
+        An open file descriptor, as returned by os.open().
     position: Py_off_t
-    how: int
+        Position, interpreted relative to 'whence'.
+    whence as how: int
+        The relative position to seek from. Valid values are:
+        - SEEK_SET: seek from the start of the file.
+        - SEEK_CUR: seek from the current file position.
+        - SEEK_END: seek from the end of the file.
     /
 
 Set the position of a file descriptor.  Return the new position.
 
-Return the new cursor position in number of bytes
-relative to the beginning of the file.
+The return value is the number of bytes relative to the beginning of the file.
 [clinic start generated code]*/
 
 static Py_off_t
 os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
-/*[clinic end generated code: output=971e1efb6b30bd2f input=902654ad3f96a6d3]*/
+/*[clinic end generated code: output=971e1efb6b30bd2f input=f096e754c5367504]*/
 {
     Py_off_t result;
 
@@ -10604,10 +10709,13 @@ os_readv_impl(PyObject *module, int fd, PyObject *buffers)
         Py_END_ALLOW_THREADS
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
+    int saved_errno = errno;
     iov_cleanup(iov, buf, cnt);
     if (n < 0) {
-        if (!async_err)
+        if (!async_err) {
+            errno = saved_errno;
             posix_error();
+        }
         return -1;
     }
 
@@ -10656,8 +10764,11 @@ os_pread_impl(PyObject *module, int fd, Py_ssize_t length, Py_off_t offset)
     } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
     if (n < 0) {
+        if (!async_err) {
+            posix_error();
+        }
         Py_DECREF(buffer);
-        return (!async_err) ? posix_error() : NULL;
+        return NULL;
     }
     if (n != length)
         _PyBytes_Resize(&buffer, n);
@@ -10754,9 +10865,11 @@ os_preadv_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
 #endif
 
+    int saved_errno = errno;
     iov_cleanup(iov, buf, cnt);
     if (n < 0) {
         if (!async_err) {
+            errno = saved_errno;
             posix_error();
         }
         return -1;
@@ -10925,24 +11038,26 @@ os_sendfile_impl(PyObject *module, int out_fd, int in_fd, PyObject *offobj,
     } while (ret < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     _Py_END_SUPPRESS_IPH
 
+    int saved_errno = errno;
     if (sf.headers != NULL)
         iov_cleanup(sf.headers, hbuf, sf.hdr_cnt);
     if (sf.trailers != NULL)
         iov_cleanup(sf.trailers, tbuf, sf.trl_cnt);
 
     if (ret < 0) {
-        if ((errno == EAGAIN) || (errno == EBUSY)) {
+        if ((saved_errno == EAGAIN) || (saved_errno == EBUSY)) {
             if (sbytes != 0) {
                 // some data has been sent
                 goto done;
             }
-            else {
-                // no data has been sent; upper application is supposed
-                // to retry on EAGAIN or EBUSY
-                return posix_error();
-            }
+            // no data has been sent; upper application is supposed
+            // to retry on EAGAIN or EBUSY
         }
-        return (!async_err) ? posix_error() : NULL;
+        if (!async_err) {
+            errno = saved_errno;
+            posix_error();
+        }
+        return NULL;
     }
     goto done;
 
@@ -11259,10 +11374,10 @@ os_writev_impl(PyObject *module, int fd, PyObject *buffers)
         Py_END_ALLOW_THREADS
     } while (result < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
 
-    iov_cleanup(iov, buf, cnt);
     if (result < 0 && !async_err)
         posix_error();
 
+    iov_cleanup(iov, buf, cnt);
     return result;
 }
 #endif /* HAVE_WRITEV */
@@ -11397,13 +11512,13 @@ os_pwritev_impl(PyObject *module, int fd, PyObject *buffers, Py_off_t offset,
 
 #endif
 
-    iov_cleanup(iov, buf, cnt);
     if (result < 0) {
         if (!async_err) {
             posix_error();
         }
-        return -1;
+        result = -1;
     }
+    iov_cleanup(iov, buf, cnt);
 
     return result;
 }
@@ -11675,8 +11790,30 @@ os_mknod_impl(PyObject *module, path_t *path, int mode, dev_t device,
 
 
 #ifdef HAVE_DEVICE_MACROS
+static PyObject *
+major_minor_conv(unsigned int value)
+{
+#ifdef NODEV
+    if (value == (unsigned int)NODEV) {
+        return PyLong_FromLong((int)NODEV);
+    }
+#endif
+    return PyLong_FromUnsignedLong(value);
+}
+
+static int
+major_minor_check(dev_t value)
+{
+#ifdef NODEV
+    if (value == NODEV) {
+        return 1;
+    }
+#endif
+    return (dev_t)(unsigned int)value == value;
+}
+
 /*[clinic input]
-os.major -> unsigned_int
+os.major
 
     device: dev_t
     /
@@ -11684,16 +11821,16 @@ os.major -> unsigned_int
 Extracts a device major number from a raw device number.
 [clinic start generated code]*/
 
-static unsigned int
+static PyObject *
 os_major_impl(PyObject *module, dev_t device)
-/*[clinic end generated code: output=5b3b2589bafb498e input=1e16a4d30c4d4462]*/
+/*[clinic end generated code: output=4071ffee17647891 input=b1a0a14ec9448229]*/
 {
-    return major(device);
+    return major_minor_conv(major(device));
 }
 
 
 /*[clinic input]
-os.minor -> unsigned_int
+os.minor
 
     device: dev_t
     /
@@ -11701,28 +11838,33 @@ os.minor -> unsigned_int
 Extracts a device minor number from a raw device number.
 [clinic start generated code]*/
 
-static unsigned int
+static PyObject *
 os_minor_impl(PyObject *module, dev_t device)
-/*[clinic end generated code: output=5e1a25e630b0157d input=0842c6d23f24c65e]*/
+/*[clinic end generated code: output=306cb78e3bc5004f input=2f686e463682a9da]*/
 {
-    return minor(device);
+    return major_minor_conv(minor(device));
 }
 
 
 /*[clinic input]
 os.makedev -> dev_t
 
-    major: int
-    minor: int
+    major: dev_t
+    minor: dev_t
     /
 
 Composes a raw device number from the major and minor device numbers.
 [clinic start generated code]*/
 
 static dev_t
-os_makedev_impl(PyObject *module, int major, int minor)
-/*[clinic end generated code: output=881aaa4aba6f6a52 input=4b9fd8fc73cbe48f]*/
+os_makedev_impl(PyObject *module, dev_t major, dev_t minor)
+/*[clinic end generated code: output=cad6125c51f5af80 input=2146126ec02e55c1]*/
 {
+    if (!major_minor_check(major) || !major_minor_check(minor)) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "Python int too large to convert to C unsigned int");
+        return (dev_t)-1;
+    }
     return makedev(major, minor);
 }
 #endif /* HAVE_DEVICE_MACROS */
@@ -11831,7 +11973,10 @@ os_truncate_impl(PyObject *module, path_t *path, Py_off_t length)
 #endif
 
 
-#if defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG)
+/* GH-111804: Due to posix_fallocate() not having consistent semantics across
+   OSs, support was dropped in WASI preview2. */
+#if defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG) && \
+    !defined(__wasi__)
 /*[clinic input]
 os.posix_fallocate
 
@@ -11869,7 +12014,7 @@ os_posix_fallocate_impl(PyObject *module, int fd, Py_off_t offset,
     errno = result;
     return posix_error();
 }
-#endif /* HAVE_POSIX_FALLOCATE) && !POSIX_FADVISE_AIX_BUG */
+#endif /* HAVE_POSIX_FALLOCATE) && !POSIX_FADVISE_AIX_BUG && !defined(__wasi__) */
 
 
 #if defined(HAVE_POSIX_FADVISE) && !defined(POSIX_FADVISE_AIX_BUG)
@@ -11943,7 +12088,6 @@ win32_putenv(PyObject *name, PyObject *value)
     }
 
     Py_ssize_t size;
-    /* PyUnicode_AsWideCharString() rejects embedded null characters */
     wchar_t *env = PyUnicode_AsWideCharString(unicode, &size);
     Py_DECREF(unicode);
 
@@ -11957,6 +12101,12 @@ win32_putenv(PyObject *name, PyObject *value)
         PyMem_Free(env);
         return NULL;
     }
+    if (wcslen(env) != (size_t)size) {
+        PyErr_SetString(PyExc_ValueError,
+                        "embedded null character");
+        PyMem_Free(env);
+        return NULL;
+    }
 
     /* _wputenv() and SetEnvironmentVariableW() update the environment in the
        Process Environment Block (PEB). _wputenv() also updates CRT 'environ'
@@ -11965,12 +12115,13 @@ win32_putenv(PyObject *name, PyObject *value)
        Prefer _wputenv() to be compatible with C libraries using CRT
        variables and CRT functions using these variables (ex: getenv()). */
     int err = _wputenv(env);
-    PyMem_Free(env);
 
     if (err) {
         posix_error();
+        PyMem_Free(env);
         return NULL;
     }
+    PyMem_Free(env);
 
     Py_RETURN_NONE;
 }
@@ -12284,46 +12435,50 @@ _pystatvfs_fromstructstatvfs(PyObject *module, struct statvfs st) {
     if (v == NULL)
         return NULL;
 
+    int pos = 0;
+
+#define SET_RESULT(CALL)                                     \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            Py_DECREF(v);                                    \
+            return NULL;                                     \
+        }                                                    \
+        PyStructSequence_SET_ITEM(v, pos++, item);           \
+    } while(0)
+
 #if !defined(HAVE_LARGEFILE_SUPPORT)
-    PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long) st.f_bsize));
-    PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long) st.f_frsize));
-    PyStructSequence_SET_ITEM(v, 2, PyLong_FromLong((long) st.f_blocks));
-    PyStructSequence_SET_ITEM(v, 3, PyLong_FromLong((long) st.f_bfree));
-    PyStructSequence_SET_ITEM(v, 4, PyLong_FromLong((long) st.f_bavail));
-    PyStructSequence_SET_ITEM(v, 5, PyLong_FromLong((long) st.f_files));
-    PyStructSequence_SET_ITEM(v, 6, PyLong_FromLong((long) st.f_ffree));
-    PyStructSequence_SET_ITEM(v, 7, PyLong_FromLong((long) st.f_favail));
-    PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
-    PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
+    SET_RESULT(PyLong_FromLong((long) st.f_bsize));
+    SET_RESULT(PyLong_FromLong((long) st.f_frsize));
+    SET_RESULT(PyLong_FromLong((long) st.f_blocks));
+    SET_RESULT(PyLong_FromLong((long) st.f_bfree));
+    SET_RESULT(PyLong_FromLong((long) st.f_bavail));
+    SET_RESULT(PyLong_FromLong((long) st.f_files));
+    SET_RESULT(PyLong_FromLong((long) st.f_ffree));
+    SET_RESULT(PyLong_FromLong((long) st.f_favail));
+    SET_RESULT(PyLong_FromLong((long) st.f_flag));
+    SET_RESULT(PyLong_FromLong((long) st.f_namemax));
 #else
-    PyStructSequence_SET_ITEM(v, 0, PyLong_FromLong((long) st.f_bsize));
-    PyStructSequence_SET_ITEM(v, 1, PyLong_FromLong((long) st.f_frsize));
-    PyStructSequence_SET_ITEM(v, 2,
-                              PyLong_FromLongLong((long long) st.f_blocks));
-    PyStructSequence_SET_ITEM(v, 3,
-                              PyLong_FromLongLong((long long) st.f_bfree));
-    PyStructSequence_SET_ITEM(v, 4,
-                              PyLong_FromLongLong((long long) st.f_bavail));
-    PyStructSequence_SET_ITEM(v, 5,
-                              PyLong_FromLongLong((long long) st.f_files));
-    PyStructSequence_SET_ITEM(v, 6,
-                              PyLong_FromLongLong((long long) st.f_ffree));
-    PyStructSequence_SET_ITEM(v, 7,
-                              PyLong_FromLongLong((long long) st.f_favail));
-    PyStructSequence_SET_ITEM(v, 8, PyLong_FromLong((long) st.f_flag));
-    PyStructSequence_SET_ITEM(v, 9, PyLong_FromLong((long) st.f_namemax));
+    SET_RESULT(PyLong_FromLong((long) st.f_bsize));
+    SET_RESULT(PyLong_FromLong((long) st.f_frsize));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_blocks));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_bfree));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_bavail));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_files));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_ffree));
+    SET_RESULT(PyLong_FromLongLong((long long) st.f_favail));
+    SET_RESULT(PyLong_FromLong((long) st.f_flag));
+    SET_RESULT(PyLong_FromLong((long) st.f_namemax));
 #endif
 /* The _ALL_SOURCE feature test macro defines f_fsid as a structure
  * (issue #32390). */
 #if defined(_AIX) && defined(_ALL_SOURCE)
-    PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid.val[0]));
+    SET_RESULT(PyLong_FromUnsignedLong(st.f_fsid.val[0]));
 #else
-    PyStructSequence_SET_ITEM(v, 10, PyLong_FromUnsignedLong(st.f_fsid));
+    SET_RESULT(PyLong_FromUnsignedLong(st.f_fsid));
 #endif
-    if (PyErr_Occurred()) {
-        Py_DECREF(v);
-        return NULL;
-    }
+
+#undef SET_RESULT
 
     return v;
 }
@@ -13812,10 +13967,12 @@ os_getxattr_impl(PyObject *module, path_t *path, path_t *attribute,
         Py_END_ALLOW_THREADS;
 
         if (result < 0) {
-            Py_DECREF(buffer);
-            if (errno == ERANGE)
+            if (errno == ERANGE) {
+                Py_DECREF(buffer);
                 continue;
+            }
             path_error(path);
+            Py_DECREF(buffer);
             return NULL;
         }
 
@@ -14251,12 +14408,23 @@ os_get_terminal_size_impl(PyObject *module, int fd)
     termsize = PyStructSequence_New((PyTypeObject *)TerminalSizeType);
     if (termsize == NULL)
         return NULL;
-    PyStructSequence_SET_ITEM(termsize, 0, PyLong_FromLong(columns));
-    PyStructSequence_SET_ITEM(termsize, 1, PyLong_FromLong(lines));
-    if (PyErr_Occurred()) {
-        Py_DECREF(termsize);
-        return NULL;
-    }
+
+    int pos = 0;
+
+#define SET_TERMSIZE(CALL)                                   \
+    do {                                                     \
+        PyObject *item = (CALL);                             \
+        if (item == NULL) {                                  \
+            Py_DECREF(termsize);                             \
+            return NULL;                                     \
+        }                                                    \
+        PyStructSequence_SET_ITEM(termsize, pos++, item);    \
+    } while(0)
+
+    SET_TERMSIZE(PyLong_FromLong(columns));
+    SET_TERMSIZE(PyLong_FromLong(lines));
+#undef SET_TERMSIZE
+
     return termsize;
 }
 #endif /* defined(TERMSIZE_USE_CONIO) || defined(TERMSIZE_USE_IOCTL) */
@@ -14465,6 +14633,7 @@ typedef struct {
 #ifdef MS_WINDOWS
     struct _Py_stat_struct win32_lstat;
     uint64_t win32_file_index;
+    uint64_t win32_file_index_high;
     int got_file_index;
 #else /* POSIX */
 #ifdef HAVE_DIRENT_D_TYPE
@@ -14582,14 +14751,19 @@ DirEntry_fetch_stat(PyObject *module, DirEntry *self, int follow_symlinks)
         }
         Py_END_ALLOW_THREADS
     }
+
+    int saved_errno = errno;
 #if defined(MS_WINDOWS)
     PyMem_Free(path);
 #else
     Py_DECREF(ub);
 #endif
 
-    if (result != 0)
-        return path_object_error(self->path);
+    if (result != 0) {
+        errno = saved_errno;
+        path_object_error(self->path);
+        return NULL;
+    }
 
     return _pystat_fromstructstat(module, &st);
 }
@@ -14781,17 +14955,20 @@ os_DirEntry_inode_impl(DirEntry *self)
         wchar_t *path = PyUnicode_AsWideCharString(unicode, NULL);
         Py_DECREF(unicode);
         result = LSTAT(path, &stat);
+
+        int saved_errno = errno;
         PyMem_Free(path);
 
-        if (result != 0)
+        if (result != 0) {
+            errno = saved_errno;
             return path_object_error(self->path);
+        }
 
         self->win32_file_index = stat.st_ino;
+        self->win32_file_index_high = stat.st_ino_high;
         self->got_file_index = 1;
     }
-    static_assert(sizeof(unsigned long long) >= sizeof(self->win32_file_index),
-                  "DirEntry.win32_file_index is larger than unsigned long long");
-    return PyLong_FromUnsignedLongLong(self->win32_file_index);
+    return _pystat_l128_from_l64_l64(self->win32_file_index, self->win32_file_index_high);
 #else /* POSIX */
     static_assert(sizeof(unsigned long long) >= sizeof(self->d_ino),
                   "DirEntry.d_ino is larger than unsigned long long");
@@ -14914,7 +15091,8 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
     entry->name = PyUnicode_FromWideChar(dataW->cFileName, -1);
     if (!entry->name)
         goto error;
-    if (path->narrow) {
+    int return_bytes = path->wide && PyBytes_Check(path->object);
+    if (return_bytes) {
         Py_SETREF(entry->name, PyUnicode_EncodeFSDefault(entry->name));
         if (!entry->name)
             goto error;
@@ -14928,7 +15106,7 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
     PyMem_Free(joined_path);
     if (!entry->path)
         goto error;
-    if (path->narrow) {
+    if (return_bytes) {
         Py_SETREF(entry->path, PyUnicode_EncodeFSDefault(entry->path));
         if (!entry->path)
             goto error;
@@ -14936,6 +15114,10 @@ DirEntry_from_find_data(PyObject *module, path_t *path, WIN32_FIND_DATAW *dataW)
 
     find_data_to_file_info(dataW, &file_info, &reparse_tag);
     _Py_attribute_data_to_stat(&file_info, reparse_tag, NULL, NULL, &entry->win32_lstat);
+
+    /* ctime is only deprecated from 3.12, so we copy birthtime across */
+    entry->win32_lstat.st_ctime = entry->win32_lstat.st_birthtime;
+    entry->win32_lstat.st_ctime_nsec = entry->win32_lstat.st_birthtime_nsec;
 
     return (PyObject *)entry;
 
@@ -15348,12 +15530,12 @@ os_scandir_impl(PyObject *module, path_t *path)
     iterator->handle = FindFirstFileW(path_strW, &iterator->file_data);
     Py_END_ALLOW_THREADS
 
-    PyMem_Free(path_strW);
-
     if (iterator->handle == INVALID_HANDLE_VALUE) {
         path_error(&iterator->path);
+        PyMem_Free(path_strW);
         goto error;
     }
+    PyMem_Free(path_strW);
 #else /* POSIX */
     errno = 0;
 #ifdef HAVE_FDOPENDIR
@@ -16824,6 +17006,12 @@ posixmodule_exec(PyObject *m)
         return -1;
     }
     ((PyTypeObject *)state->SchedParamType)->tp_new = os_sched_param;
+    if (_PyType_AddMethod((PyTypeObject *)state->SchedParamType,
+                          &os_sched_param_reduce_method) < 0)
+    {
+        return -1;
+    }
+    PyType_Modified((PyTypeObject *)state->SchedParamType);
 #endif
 
     /* initialize TerminalSize_info */

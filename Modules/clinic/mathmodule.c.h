@@ -34,9 +34,9 @@ PyDoc_STRVAR(math_fsum__doc__,
 "fsum($module, seq, /)\n"
 "--\n"
 "\n"
-"Return an accurate floating point sum of values in the iterable seq.\n"
+"Return an accurate floating-point sum of values in the iterable seq.\n"
 "\n"
-"Assumes IEEE-754 floating point arithmetic.");
+"Assumes IEEE-754 floating-point arithmetic.");
 
 #define MATH_FSUM_METHODDEF    \
     {"fsum", (PyCFunction)math_fsum, METH_O, math_fsum__doc__},
@@ -549,7 +549,7 @@ PyDoc_STRVAR(math_isclose__doc__,
 "isclose($module, /, a, b, *, rel_tol=1e-09, abs_tol=0.0)\n"
 "--\n"
 "\n"
-"Determine whether two floating point numbers are close in value.\n"
+"Determine whether two floating-point numbers are close in value.\n"
 "\n"
 "  rel_tol\n"
 "    maximum difference for being considered \"close\", relative to the\n"
@@ -587,7 +587,7 @@ math_isclose(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_item = { &_Py_ID(a), &_Py_ID(b), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
+        .ob_item = { _Py_LATIN1_CHR('a'), _Py_LATIN1_CHR('b'), &_Py_ID(rel_tol), &_Py_ID(abs_tol), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -950,4 +950,4 @@ math_ulp(PyObject *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=91a0357265a2a553 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c1335a499389a04e input=a9049054013a1b77]*/

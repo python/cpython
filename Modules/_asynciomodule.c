@@ -430,18 +430,22 @@ future_ensure_alive(FutureObj *fut)
 static int
 future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
 {
-    Py_ssize_t len;
-    Py_ssize_t i;
-
     if (fut->fut_callback0 != NULL) {
         /* There's a 1st callback */
 
-        int ret = call_soon(state,
-            fut->fut_loop, fut->fut_callback0,
-            (PyObject *)fut, fut->fut_context0);
+        // Beware: An evil call_soon could alter fut_callback0 or fut_context0.
+        // Since we are anyway clearing them after the call, whether call_soon
+        // succeeds or not, the idea is to transfer ownership so that external
+        // code is not able to alter them during the call.
+        PyObject *fut_callback0 = fut->fut_callback0;
+        fut->fut_callback0 = NULL;
+        PyObject *fut_context0 = fut->fut_context0;
+        fut->fut_context0 = NULL;
 
-        Py_CLEAR(fut->fut_callback0);
-        Py_CLEAR(fut->fut_context0);
+        int ret = call_soon(state, fut->fut_loop, fut_callback0,
+                            (PyObject *)fut, fut_context0);
+        Py_CLEAR(fut_callback0);
+        Py_CLEAR(fut_context0);
         if (ret) {
             /* If an error occurs in pure-Python implementation,
                all callbacks are cleared. */
@@ -458,27 +462,25 @@ future_schedule_callbacks(asyncio_state *state, FutureObj *fut)
         return 0;
     }
 
-    len = PyList_GET_SIZE(fut->fut_callbacks);
-    if (len == 0) {
-        /* The list of callbacks was empty; clear it and return. */
-        Py_CLEAR(fut->fut_callbacks);
-        return 0;
-    }
-
-    for (i = 0; i < len; i++) {
-        PyObject *cb_tup = PyList_GET_ITEM(fut->fut_callbacks, i);
+    // Beware: An evil call_soon could change fut->fut_callbacks.
+    // The idea is to transfer the ownership of the callbacks list
+    // so that external code is not able to mutate the list during
+    // the iteration.
+    PyObject *callbacks = fut->fut_callbacks;
+    fut->fut_callbacks = NULL;
+    Py_ssize_t n = PyList_GET_SIZE(callbacks);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        assert(PyList_GET_SIZE(callbacks) == n);
+        PyObject *cb_tup = PyList_GET_ITEM(callbacks, i);
         PyObject *cb = PyTuple_GET_ITEM(cb_tup, 0);
         PyObject *ctx = PyTuple_GET_ITEM(cb_tup, 1);
 
         if (call_soon(state, fut->fut_loop, cb, (PyObject *)fut, ctx)) {
-            /* If an error occurs in pure-Python implementation,
-               all callbacks are cleared. */
-            Py_CLEAR(fut->fut_callbacks);
+            Py_DECREF(callbacks);
             return -1;
         }
     }
-
-    Py_CLEAR(fut->fut_callbacks);
+    Py_DECREF(callbacks);
     return 0;
 }
 
@@ -594,12 +596,27 @@ future_set_exception(asyncio_state *state, FutureObj *fut, PyObject *exc)
         PyErr_SetString(PyExc_TypeError, "invalid exception object");
         return NULL;
     }
-    if (Py_IS_TYPE(exc_val, (PyTypeObject *)PyExc_StopIteration)) {
+    if (PyErr_GivenExceptionMatches(exc_val, PyExc_StopIteration)) {
+        const char *msg = "StopIteration interacts badly with "
+                          "generators and cannot be raised into a "
+                          "Future";
+        PyObject *message = PyUnicode_FromString(msg);
+        if (message == NULL) {
+            Py_DECREF(exc_val);
+            return NULL;
+        }
+        PyObject *err = PyObject_CallOneArg(PyExc_RuntimeError, message);
+        Py_DECREF(message);
+        if (err == NULL) {
+            Py_DECREF(exc_val);
+            return NULL;
+        }
+        assert(PyExceptionInstance_Check(err));
+
+        PyException_SetCause(err, Py_NewRef(exc_val));
+        PyException_SetContext(err, Py_NewRef(exc_val));
         Py_DECREF(exc_val);
-        PyErr_SetString(PyExc_TypeError,
-                        "StopIteration interacts badly with generators "
-                        "and cannot be raised into a Future");
-        return NULL;
+        exc_val = err;
     }
 
     assert(!fut->fut_exception);
@@ -1027,7 +1044,12 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
     ENSURE_FUTURE_ALIVE(state, self)
 
     if (self->fut_callback0 != NULL) {
-        int cmp = PyObject_RichCompareBool(self->fut_callback0, fn, Py_EQ);
+        // Beware: An evil PyObject_RichCompareBool could free fut_callback0
+        // before a recursive call is made with that same arg. For details, see
+        // https://github.com/python/cpython/pull/125967#discussion_r1816593340.
+        PyObject *fut_callback0 = Py_NewRef(self->fut_callback0);
+        int cmp = PyObject_RichCompareBool(fut_callback0, fn, Py_EQ);
+        Py_DECREF(fut_callback0);
         if (cmp == -1) {
             return NULL;
         }
@@ -1051,8 +1073,10 @@ _asyncio_Future_remove_done_callback_impl(FutureObj *self, PyTypeObject *cls,
 
     if (len == 1) {
         PyObject *cb_tup = PyList_GET_ITEM(self->fut_callbacks, 0);
+        Py_INCREF(cb_tup);
         int cmp = PyObject_RichCompareBool(
             PyTuple_GET_ITEM(cb_tup, 0), fn, Py_EQ);
+        Py_DECREF(cb_tup);
         if (cmp == -1) {
             return NULL;
         }
@@ -1275,52 +1299,49 @@ static PyObject *
 FutureObj_get_callbacks(FutureObj *fut, void *Py_UNUSED(ignored))
 {
     asyncio_state *state = get_asyncio_state_by_def((PyObject *)fut);
-    Py_ssize_t i;
-
     ENSURE_FUTURE_ALIVE(state, fut)
 
-    if (fut->fut_callback0 == NULL) {
-        if (fut->fut_callbacks == NULL) {
-            Py_RETURN_NONE;
-        }
-
-        return Py_NewRef(fut->fut_callbacks);
+    Py_ssize_t len = 0;
+    if (fut->fut_callback0 != NULL) {
+        len++;
     }
-
-    Py_ssize_t len = 1;
     if (fut->fut_callbacks != NULL) {
         len += PyList_GET_SIZE(fut->fut_callbacks);
     }
 
+    if (len == 0) {
+        Py_RETURN_NONE;
+    }
 
-    PyObject *new_list = PyList_New(len);
-    if (new_list == NULL) {
+    PyObject *callbacks = PyList_New(len);
+    if (callbacks == NULL) {
         return NULL;
     }
 
-    PyObject *tup0 = PyTuple_New(2);
-    if (tup0 == NULL) {
-        Py_DECREF(new_list);
-        return NULL;
+    Py_ssize_t i = 0;
+    if (fut->fut_callback0 != NULL) {
+        PyObject *tup0 = PyTuple_New(2);
+        if (tup0 == NULL) {
+            Py_DECREF(callbacks);
+            return NULL;
+        }
+        PyTuple_SET_ITEM(tup0, 0, Py_NewRef(fut->fut_callback0));
+        assert(fut->fut_context0 != NULL);
+        PyTuple_SET_ITEM(tup0, 1, Py_NewRef(fut->fut_context0));
+        PyList_SET_ITEM(callbacks, i, tup0);
+        i++;
     }
-
-    Py_INCREF(fut->fut_callback0);
-    PyTuple_SET_ITEM(tup0, 0, fut->fut_callback0);
-    assert(fut->fut_context0 != NULL);
-    Py_INCREF(fut->fut_context0);
-    PyTuple_SET_ITEM(tup0, 1, (PyObject *)fut->fut_context0);
-
-    PyList_SET_ITEM(new_list, 0, tup0);
 
     if (fut->fut_callbacks != NULL) {
-        for (i = 0; i < PyList_GET_SIZE(fut->fut_callbacks); i++) {
-            PyObject *cb = PyList_GET_ITEM(fut->fut_callbacks, i);
+        for (Py_ssize_t j = 0; j < PyList_GET_SIZE(fut->fut_callbacks); j++) {
+            PyObject *cb = PyList_GET_ITEM(fut->fut_callbacks, j);
             Py_INCREF(cb);
-            PyList_SET_ITEM(new_list, i + 1, cb);
+            PyList_SET_ITEM(callbacks, i, cb);
+            i++;
         }
     }
 
-    return new_list;
+    return callbacks;
 }
 
 static PyObject *
@@ -1590,11 +1611,25 @@ static void
 FutureIter_dealloc(futureiterobject *it)
 {
     PyTypeObject *tp = Py_TYPE(it);
-    asyncio_state *state = get_asyncio_state_by_def((PyObject *)it);
+
+    // FutureIter is a heap type so any subclass must also be a heap type.
+    assert(_PyType_HasFeature(tp, Py_TPFLAGS_HEAPTYPE));
+
+    PyObject *module = ((PyHeapTypeObject*)tp)->ht_module;
+    asyncio_state *state = NULL;
+
     PyObject_GC_UnTrack(it);
     tp->tp_clear((PyObject *)it);
 
-    if (state->fi_freelist_len < FI_FREELIST_MAXLEN) {
+    // GH-115874: We can't use PyType_GetModuleByDef here as the type might have
+    // already been cleared, which is also why we must check if ht_module != NULL.
+    // Due to this restriction, subclasses that belong to a different module
+    // will not be able to use the free list.
+    if (module && _PyModule_GetDef(module) == &_asynciomodule) {
+        state = get_asyncio_state(module);
+    }
+
+    if (state && state->fi_freelist_len < FI_FREELIST_MAXLEN) {
         state->fi_freelist_len++;
         it->future = (FutureObj*) state->fi_freelist;
         state->fi_freelist = it;
@@ -2110,7 +2145,7 @@ _asyncio_Task___init___impl(TaskObj *self, PyObject *coro, PyObject *loop,
             return -1;
         }
     } else {
-        self->task_context = Py_NewRef(context);
+        Py_XSETREF(self->task_context, Py_NewRef(context));
     }
 
     Py_CLEAR(self->task_fut_waiter);
@@ -2495,7 +2530,11 @@ static PyObject *
 _asyncio_Task_get_coro_impl(TaskObj *self)
 /*[clinic end generated code: output=bcac27c8cc6c8073 input=d2e8606c42a7b403]*/
 {
-    return Py_NewRef(self->task_coro);
+    if (self->task_coro) {
+        return Py_NewRef(self->task_coro);
+    }
+
+    Py_RETURN_NONE;
 }
 
 /*[clinic input]
@@ -2714,7 +2753,11 @@ task_call_step_soon(asyncio_state *state, TaskObj *task, PyObject *arg)
         return -1;
     }
 
-    int ret = call_soon(state, task->task_loop, cb, NULL, task->task_context);
+    // Beware: An evil call_soon could alter task_context.
+    // See: https://github.com/python/cpython/issues/126080.
+    PyObject *task_context = Py_NewRef(task->task_context);
+    int ret = call_soon(state, task->task_loop, cb, NULL, task_context);
+    Py_DECREF(task_context);
     Py_DECREF(cb);
     return ret;
 }
@@ -2953,8 +2996,17 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
         if (task->task_must_cancel) {
             PyObject *r;
             int is_true;
+
+            // Beware: An evil `__getattribute__` could
+            // prematurely delete task->task_cancel_msg before the
+            // task is cancelled, thereby causing a UAF crash.
+            //
+            // See https://github.com/python/cpython/issues/126138
+            PyObject *task_cancel_msg = Py_NewRef(task->task_cancel_msg);
             r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel),
-                                             task->task_cancel_msg);
+                                          task_cancel_msg);
+            Py_DECREF(task_cancel_msg);
+
             if (r == NULL) {
                 return NULL;
             }
@@ -3046,8 +3098,17 @@ task_step_handle_result_impl(asyncio_state *state, TaskObj *task, PyObject *resu
         if (task->task_must_cancel) {
             PyObject *r;
             int is_true;
+
+            // Beware: An evil `__getattribute__` could
+            // prematurely delete task->task_cancel_msg before the
+            // task is cancelled, thereby causing a UAF crash.
+            //
+            // See https://github.com/python/cpython/issues/126138
+            PyObject *task_cancel_msg = Py_NewRef(task->task_cancel_msg);
             r = PyObject_CallMethodOneArg(result, &_Py_ID(cancel),
-                                             task->task_cancel_msg);
+                                          task_cancel_msg);
+            Py_DECREF(task_cancel_msg);
+
             if (r == NULL) {
                 return NULL;
             }
@@ -3588,14 +3649,6 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->iscoroutine_typecache);
 
     Py_VISIT(state->context_kwname);
-
-    // Visit freelist.
-    PyObject *next = (PyObject*) state->fi_freelist;
-    while (next != NULL) {
-        PyObject *current = next;
-        Py_VISIT(current);
-        next = (PyObject*) ((futureiterobject*) current)->future;
-    }
     return 0;
 }
 

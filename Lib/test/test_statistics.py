@@ -1074,7 +1074,7 @@ class UnivariateCommonMixin:
     def test_order_doesnt_matter(self):
         # Test that the order of data points doesn't change the result.
 
-        # CAUTION: due to floating point rounding errors, the result actually
+        # CAUTION: due to floating-point rounding errors, the result actually
         # may depend on the order. Consider this test representing an ideal.
         # To avoid this test failing, only test with exact values such as ints
         # or Fractions.
@@ -2139,6 +2139,7 @@ class TestSqrtHelpers(unittest.TestCase):
             self.assertTrue(m * (r - 1)**2 < n < m * (r + 1)**2)
 
     @requires_IEEE_754
+    @support.requires_resource('cpu')
     def test_float_sqrt_of_frac(self):
 
         def is_root_correctly_rounded(x: Fraction, root: float) -> bool:
@@ -2770,6 +2771,7 @@ class TestNormalDist:
         self.assertTrue(math.isnan(X.cdf(float('NaN'))))
 
     @support.skip_if_pgo_task
+    @support.requires_resource('cpu')
     def test_inv_cdf(self):
         NormalDist = self.module.NormalDist
 

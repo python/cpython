@@ -232,7 +232,7 @@ class RunPyMixin:
             p.stdin.close()
             p.wait(10)
             out = p.stdout.read().decode("utf-8", "replace")
-            err = p.stderr.read().decode("ascii", "replace")
+            err = p.stderr.read().decode("ascii", "replace").replace("\uFFFD", "?")
         if p.returncode != expect_returncode and support.verbose and not allow_fail:
             print("++ COMMAND ++")
             print([self.py_exe, *args])
@@ -263,7 +263,10 @@ class RunPyMixin:
     @contextlib.contextmanager
     def script(self, content, encoding="utf-8"):
         file = Path(tempfile.mktemp(dir=os.getcwd()) + ".py")
-        file.write_text(content, encoding=encoding)
+        if isinstance(content, bytes):
+            file.write_bytes(content)
+        else:
+            file.write_text(content, encoding=encoding)
         try:
             yield file
         finally:
@@ -608,6 +611,25 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
         self.assertEqual("3.100", data["SearchInfo.tag"])
         self.assertEqual(f'X.Y.exe -prearg "{script}" -postarg', data["stdout"].strip())
 
+    def test_py_shebang_valid_bom(self):
+        with self.py_ini(TEST_PY_DEFAULTS):
+            content = "#! /usr/bin/python -prearg".encode("utf-8")
+            with self.script(b"\xEF\xBB\xBF" + content) as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y.exe -prearg {script} -postarg", data["stdout"].strip())
+
+    def test_py_shebang_invalid_bom(self):
+        with self.py_ini(TEST_PY_DEFAULTS):
+            content = "#! /usr/bin/python3 -prearg".encode("utf-8")
+            with self.script(b"\xEF\xAA\xBF" + content) as script:
+                data = self.run_py([script, "-postarg"])
+        self.assertIn("Invalid BOM", data["stderr"])
+        self.assertEqual("PythonTestSuite", data["SearchInfo.company"])
+        self.assertEqual("3.100", data["SearchInfo.tag"])
+        self.assertEqual(f"X.Y.exe {script} -postarg", data["stdout"].strip())
+
     def test_py_handle_64_in_ini(self):
         with self.py_ini("\n".join(["[defaults]", "python=3.999-64"])):
             # Expect this to fail, but should get oldStyleTag flipped on
@@ -717,3 +739,11 @@ class TestLauncher(unittest.TestCase, RunPyMixin):
             f"{expect} arg1 {script}",
             data["stdout"].strip(),
         )
+
+    def test_shebang_executable_extension(self):
+        with self.script('#! /usr/bin/env python3.99') as script:
+            data = self.run_py([script], expect_returncode=103)
+        expect = "# Search PATH for python3.99.exe"
+        actual = [line.strip() for line in data["stderr"].splitlines()
+                  if line.startswith("# Search PATH")]
+        self.assertEqual([expect], actual)

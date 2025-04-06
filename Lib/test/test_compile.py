@@ -10,7 +10,7 @@ import types
 import textwrap
 import warnings
 from test import support
-from test.support import (script_helper, requires_debug_ranges,
+from test.support import (script_helper, requires_debug_ranges, run_code,
                           requires_specialization, C_RECURSION_LIMIT)
 from test.support.os_helper import FakePath
 
@@ -443,6 +443,33 @@ class TestSpecifics(unittest.TestCase):
         self.assertIn("_A__mangled_mod", A.f.__code__.co_varnames)
         self.assertIn("__package__", A.f.__code__.co_varnames)
 
+    def test_compile_invalid_namedexpr(self):
+        # gh-109351
+        m = ast.Module(
+            body=[
+                ast.Expr(
+                    value=ast.ListComp(
+                        elt=ast.NamedExpr(
+                            target=ast.Constant(value=1),
+                            value=ast.Constant(value=3),
+                        ),
+                        generators=[
+                            ast.comprehension(
+                                target=ast.Name(id="x", ctx=ast.Store()),
+                                iter=ast.Name(id="y", ctx=ast.Load()),
+                                ifs=[],
+                                is_async=0,
+                            )
+                        ],
+                    )
+                )
+            ],
+            type_ignores=[],
+        )
+
+        with self.assertRaisesRegex(TypeError, "NamedExpr target must be a Name"):
+            compile(ast.fix_missing_locations(m), "<file>", "exec")
+
     def test_compile_ast(self):
         fname = __file__
         if fname.lower().endswith('pyc'):
@@ -477,6 +504,26 @@ class TestSpecifics(unittest.TestCase):
         ast = _ast.Module()
         ast.body = [_ast.BoolOp()]
         self.assertRaises(TypeError, compile, ast, '<ast>', 'exec')
+
+    def test_compile_invalid_typealias(self):
+        # gh-109341
+        m = ast.Module(
+            body=[
+                ast.TypeAlias(
+                    name=ast.Subscript(
+                        value=ast.Name(id="foo", ctx=ast.Load()),
+                        slice=ast.Constant(value="x"),
+                        ctx=ast.Store(),
+                    ),
+                    type_params=[],
+                    value=ast.Name(id="Callable", ctx=ast.Load()),
+                )
+            ],
+            type_ignores=[],
+        )
+
+        with self.assertRaisesRegex(TypeError, "TypeAlias with non-Name name"):
+            compile(ast.fix_missing_locations(m), "<file>", "exec")
 
     def test_dict_evaluation_order(self):
         i = 0
@@ -560,9 +607,9 @@ class TestSpecifics(unittest.TestCase):
         # Expected limit is C_RECURSION_LIMIT * 2
         # Duplicating the limit here is a little ugly.
         # Perhaps it should be exposed somewhere...
-        fail_depth = C_RECURSION_LIMIT * 2 + 1
+        fail_depth = C_RECURSION_LIMIT + 1
         crash_depth = C_RECURSION_LIMIT * 100
-        success_depth = int(C_RECURSION_LIMIT * 1.8)
+        success_depth = int(C_RECURSION_LIMIT * 0.9)
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
@@ -675,7 +722,7 @@ class TestSpecifics(unittest.TestCase):
                 return "unused"
 
         self.assertEqual(f.__code__.co_consts,
-                         ("docstring", "used"))
+                         (f.__doc__, "used"))
 
     @support.cpython_only
     def test_remove_unused_consts_no_docstring(self):
@@ -720,7 +767,7 @@ class TestSpecifics(unittest.TestCase):
         def f1():
             "docstring"
             return 42
-        self.assertEqual(f1.__code__.co_consts, ("docstring", 42))
+        self.assertEqual(f1.__code__.co_consts, (f1.__doc__, 42))
 
     # This is a regression test for a CPython specific peephole optimizer
     # implementation bug present in a few releases.  It's assertion verifies
@@ -784,6 +831,7 @@ class TestSpecifics(unittest.TestCase):
         # An implicit test for PyUnicode_FSDecoder().
         compile("42", FakePath("test_compile_pathlike"), "single")
 
+    @support.requires_resource('cpu')
     def test_stack_overflow(self):
         # bpo-31113: Stack overflow when compile a long sequence of
         # complex statements.
@@ -948,6 +996,8 @@ class TestSpecifics(unittest.TestCase):
 
         for func in (no_code1, no_code2):
             with self.subTest(func=func):
+                if func is no_code1 and no_code1.__doc__ is None:
+                    continue
                 code = func.__code__
                 [(start, end, line)] = code.co_lines()
                 self.assertEqual(start, 0)
@@ -1015,7 +1065,7 @@ class TestSpecifics(unittest.TestCase):
                     x
                     in
                     y)
-        genexp_lines = [0, 2, 0]
+        genexp_lines = [0, 4, 2, 0, 4]
 
         genexp_code = return_genexp.__code__.co_consts[1]
         code_lines = self.get_code_lines(genexp_code)
@@ -1030,6 +1080,20 @@ class TestSpecifics(unittest.TestCase):
         expected_lines = [0, 1, 2, 1]
         code_lines = self.get_code_lines(test.__code__)
         self.assertEqual(expected_lines, code_lines)
+
+    def test_lineno_of_backward_jump(self):
+        # Issue gh-107901
+        def f():
+            for i in x:
+                if y:
+                    pass
+
+        linenos = list(inst.positions.lineno
+                       for inst in dis.get_instructions(f.__code__)
+                       if inst.opname == 'JUMP_BACKWARD')
+
+        self.assertTrue(len(linenos) > 0)
+        self.assertTrue(all(l is not None for l in linenos))
 
     def test_big_dict_literal(self):
         # The compiler has a flushing point in "compiler_dict" that calls compiles
@@ -1181,6 +1245,36 @@ class TestSpecifics(unittest.TestCase):
             return a
         self.assertEqual(f("x", "y", "z"), "y")
 
+    def test_duplicated_small_exit_block(self):
+        # See gh-109627
+        def f():
+            while element and something:
+                try:
+                    return something
+                except:
+                    pass
+
+    def test_cold_block_moved_to_end(self):
+        # See gh-109719
+        def f():
+            while name:
+                try:
+                    break
+                except:
+                    pass
+            else:
+                1 if 1 else 1
+
+    def test_remove_empty_basic_block_with_jump_target_label(self):
+        # See gh-109823
+        def f(x):
+            while x:
+                0 if 1 else 0
+
+    def test_remove_redundant_nop_edge_case(self):
+        # See gh-109889
+        def f():
+            a if (1 if b else c) else d
 
 @requires_debug_ranges()
 class TestSourcePositions(unittest.TestCase):
@@ -1302,6 +1396,7 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(compiled_code, 'POP_JUMP_IF_TRUE',
             line=4, end_line=4, column=8, end_column=13, occurrence=2)
 
+    @unittest.skipIf(sys.flags.optimize, "Assertions are disabled in optimized mode")
     def test_multiline_assert(self):
         snippet = textwrap.dedent("""\
             assert (a > 0 and
@@ -1317,7 +1412,7 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(compiled_code, 'CALL',
             line=1, end_line=3, column=0, end_column=30, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'RAISE_VARARGS',
-            line=1, end_line=3, column=0, end_column=30, occurrence=1)
+            line=1, end_line=3, column=8, end_column=16, occurrence=1)
 
     def test_multiline_generator_expression(self):
         snippet = textwrap.dedent("""\
@@ -1336,7 +1431,7 @@ class TestSourcePositions(unittest.TestCase):
         self.assertOpcodeSourcePositionIs(compiled_code, 'JUMP_BACKWARD',
             line=1, end_line=2, column=1, end_column=8, occurrence=1)
         self.assertOpcodeSourcePositionIs(compiled_code, 'RETURN_CONST',
-            line=1, end_line=6, column=0, end_column=32, occurrence=1)
+            line=4, end_line=4, column=7, end_column=14, occurrence=1)
 
     def test_multiline_async_generator_expression(self):
         snippet = textwrap.dedent("""\
@@ -1726,6 +1821,73 @@ class TestSourcePositions(unittest.TestCase):
                     list(code.co_consts[0].co_positions()),
                     list(code.co_consts[1].co_positions()),
                 )
+
+    def test_load_super_attr(self):
+        source = "class C:\n  def __init__(self):\n    super().__init__()"
+        code = compile(source, "<test>", "exec").co_consts[0].co_consts[1]
+        self.assertOpcodeSourcePositionIs(
+            code, "LOAD_GLOBAL", line=3, end_line=3, column=4, end_column=9
+        )
+
+    def test_lambda_return_position(self):
+        snippets = [
+            "f = lambda: x",
+            "f = lambda: 42",
+            "f = lambda: 1 + 2",
+            "f = lambda: a + b",
+        ]
+        for snippet in snippets:
+            with self.subTest(snippet=snippet):
+                lamb = run_code(snippet)["f"]
+                positions = lamb.__code__.co_positions()
+                # assert that all positions are within the lambda
+                for i, pos in enumerate(positions):
+                    with self.subTest(i=i, pos=pos):
+                        start_line, end_line, start_col, end_col = pos
+                        if i == 0 and start_col == end_col == 0:
+                            # ignore the RESUME in the beginning
+                            continue
+                        self.assertEqual(start_line, 1)
+                        self.assertEqual(end_line, 1)
+                        code_start = snippet.find(":") + 2
+                        code_end = len(snippet)
+                        self.assertGreaterEqual(start_col, code_start)
+                        self.assertLessEqual(end_col, code_end)
+                        self.assertGreaterEqual(end_col, start_col)
+                        self.assertLessEqual(end_col, code_end)
+
+    def test_return_in_with_positions(self):
+        # See gh-98442
+        def f():
+            with xyz:
+                1
+                2
+                3
+                4
+                return R
+
+        # All instructions should have locations on a single line
+        for instr in dis.get_instructions(f):
+            start_line, end_line, _, _ = instr.positions
+            self.assertEqual(start_line, end_line)
+
+        # Expect three load None instructions for the no-exception __exit__ call,
+        # and one RETURN_VALUE.
+        # They should all have the locations of the context manager ('xyz').
+
+        load_none = [instr for instr in dis.get_instructions(f) if
+                     instr.opname == 'LOAD_CONST' and instr.argval is None]
+        return_value = [instr for instr in dis.get_instructions(f) if
+                        instr.opname == 'RETURN_VALUE']
+
+        self.assertEqual(len(load_none), 3)
+        self.assertEqual(len(return_value), 1)
+        for instr in load_none + return_value:
+            start_line, end_line, start_col, end_col = instr.positions
+            self.assertEqual(start_line, f.__code__.co_firstlineno + 1)
+            self.assertEqual(end_line, f.__code__.co_firstlineno + 1)
+            self.assertEqual(start_col, 17)
+            self.assertEqual(end_col, 20)
 
 
 class TestExpressionStackSize(unittest.TestCase):

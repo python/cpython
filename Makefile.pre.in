@@ -167,7 +167,7 @@ SHLIB_SUFFIX=	@SHLIB_SUFFIX@
 EXT_SUFFIX=	@EXT_SUFFIX@
 LDSHARED=	@LDSHARED@ $(PY_LDFLAGS)
 BLDSHARED=	@BLDSHARED@ $(PY_CORE_LDFLAGS)
-LDCXXSHARED=	@LDCXXSHARED@
+LDCXXSHARED=	@LDCXXSHARED@ $(PY_LDFLAGS)
 DESTSHARED=	$(BINLIBDEST)/lib-dynload
 
 # List of exported symbols for AIX
@@ -487,6 +487,7 @@ OBJECT_OBJS=	\
 		Objects/weakrefobject.o \
 		@PERF_TRAMPOLINE_OBJ@
 
+DEEPFREEZE_C = Python/deepfreeze/deepfreeze.c
 DEEPFREEZE_OBJS = Python/deepfreeze/deepfreeze.o
 
 ##########################################################################
@@ -577,7 +578,9 @@ LIBEXPAT_HEADERS= \
 		Modules/expat/utf8tab.h \
 		Modules/expat/xmlrole.h \
 		Modules/expat/xmltok.h \
-		Modules/expat/xmltok_impl.h
+		Modules/expat/xmltok_impl.h \
+		Modules/expat/xmltok_impl.c \
+		Modules/expat/xmltok_ns.c
 
 ##########################################################################
 # hashlib's HACL* library
@@ -622,12 +625,15 @@ build_wasm: check-clean-src $(BUILDPYTHON) platform sharedmods \
 .PHONY: check-clean-src
 check-clean-src:
 	@if test -n "$(VPATH)" -a \( \
-	    -f "$(srcdir)/Programs/python.o" \
-	    -o -f "$(srcdir)\Python/frozen_modules/importlib._bootstrap.h" \
+	    -f "$(srcdir)/$(BUILDPYTHON)" \
+	    -o -f "$(srcdir)/Programs/python.o" \
+	    -o -f "$(srcdir)/Python/frozen_modules/importlib._bootstrap.h" \
 	\); then \
 		echo "Error: The source directory ($(srcdir)) is not clean" ; \
 		echo "Building Python out of the source tree (in $(abs_builddir)) requires a clean source tree ($(abs_srcdir))" ; \
-		echo "Try to run: make -C \"$(srcdir)\" clean" ; \
+		echo "Build artifacts such as .o files, executables, and Python/frozen_modules/*.h must not exist within $(srcdir)." ; \
+		echo "Try to run:" ; \
+		echo "  (cd \"$(srcdir)\" && make clean || git clean -fdx -e Doc/venv)" ; \
 		exit 1; \
 	fi
 
@@ -774,7 +780,6 @@ coverage-report: regen-token regen-frozen
 .PHONY: clinic
 clinic: check-clean-src $(srcdir)/Modules/_blake2/blake2s_impl.c
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/clinic/clinic.py --make --srcdir $(srcdir)
-	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_global_objects.py
 
 # Build the interpreter
 $(BUILDPYTHON):	Programs/python.o $(LINK_PYTHON_DEPS)
@@ -1245,12 +1250,12 @@ regen-frozen: Tools/build/freeze_modules.py $(FROZEN_FILES_IN)
 # Deepfreeze targets
 
 .PHONY: regen-deepfreeze
-regen-deepfreeze: $(DEEPFREEZE_OBJS)
+regen-deepfreeze: $(DEEPFREEZE_C)
 
 DEEPFREEZE_DEPS=$(srcdir)/Tools/build/deepfreeze.py $(FREEZE_MODULE_DEPS) $(FROZEN_FILES_OUT)
 
 # BEGIN: deepfreeze modules
-Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
+$(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)
 	$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/build/deepfreeze.py \
 	Python/frozen_modules/importlib._bootstrap.h:importlib._bootstrap \
 	Python/frozen_modules/importlib._bootstrap_external.h:importlib._bootstrap_external \
@@ -1277,8 +1282,6 @@ Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)
 	Python/frozen_modules/frozen_only.h:frozen_only \
 	-o Python/deepfreeze/deepfreeze.c
 # END: deepfreeze modules
-	@echo "Note: Deepfreeze may have added some global objects,"
-	@echo "      so run 'make regen-global-objects' if necessary."
 
 # We keep this renamed target around for folks with muscle memory.
 .PHONY: regen-importlib
@@ -1287,11 +1290,12 @@ regen-importlib: regen-frozen
 ############################################################################
 # Global objects
 
+# Dependencies which can add and/or remove _Py_ID() identifiers:
+# - deepfreeze.c
+# - "make clinic"
 .PHONY: regen-global-objects
-regen-global-objects: $(srcdir)/Tools/build/generate_global_objects.py
+regen-global-objects: $(srcdir)/Tools/build/generate_global_objects.py $(DEEPFREEZE_C) clinic
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_global_objects.py
-	@echo "Note: Global objects can be added or removed by other tools (e.g. deepfreeze), "
-	@echo "      so be sure to re-run regen-global-objects after those tools."
 
 ############################################################################
 # ABI
@@ -1313,13 +1317,14 @@ regen-limited-abi: all
 ############################################################################
 # Regenerate all generated files
 
+# "clinic" is regenerated implicitly via "regen-global-objects".
 .PHONY: regen-all
 regen-all: regen-cases regen-opcode regen-opcode-targets regen-typeslots \
-	regen-token regen-ast regen-keyword regen-sre regen-frozen clinic \
+	regen-token regen-ast regen-keyword regen-sre regen-frozen \
 	regen-pegen-metaparser regen-pegen regen-test-frozenmain \
 	regen-test-levenshtein regen-global-objects
 	@echo
-	@echo "Note: make regen-stdlib-module-names and make regen-configure should be run manually"
+	@echo "Note: make regen-stdlib-module-names, make-regen-sbom, and make regen-configure should be run manually"
 
 ############################################################################
 # Special rules for object files
@@ -1396,8 +1401,8 @@ regen-pegen:
 	PYTHONPATH=$(srcdir)/Tools/peg_generator $(PYTHON_FOR_REGEN) -m pegen -q c \
 		$(srcdir)/Grammar/python.gram \
 		$(srcdir)/Grammar/Tokens \
-		-o $(srcdir)/Parser/parser.new.c
-	$(UPDATE_FILE) $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.new.c
+		-o $(srcdir)/Parser/parser.c.new
+	$(UPDATE_FILE) $(srcdir)/Parser/parser.c $(srcdir)/Parser/parser.c.new
 
 .PHONY: regen-ast
 regen-ast:
@@ -1569,7 +1574,7 @@ Python/frozen.o: $(FROZEN_FILES_OUT)
 # an include guard, so we can't use a pipeline to transform its output.
 Include/pydtrace_probes.h: $(srcdir)/Include/pydtrace.d
 	$(MKDIR_P) Include
-	$(DTRACE) $(DFLAGS) -o $@ -h -s $<
+	CC="$(CC)" CFLAGS="$(CFLAGS)" $(DTRACE) $(DFLAGS) -o $@ -h -s $<
 	: sed in-place edit with POSIX-only tools
 	sed 's/PYTHON_/PyDTrace_/' $@ > $@.tmp
 	mv $@.tmp $@
@@ -1579,7 +1584,7 @@ Python/import.o: $(srcdir)/Include/pydtrace.h
 Modules/gcmodule.o: $(srcdir)/Include/pydtrace.h
 
 Python/pydtrace.o: $(srcdir)/Include/pydtrace.d $(DTRACE_DEPS)
-	$(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
+	CC="$(CC)" CFLAGS="$(CFLAGS)" $(DTRACE) $(DFLAGS) -o $@ -G -s $< $(DTRACE_DEPS)
 
 Objects/typeobject.o: Objects/typeslots.inc
 
@@ -2115,10 +2120,13 @@ LIBSUBDIRS=	asyncio \
 		__phello__
 TESTSUBDIRS=	idlelib/idle_test \
 		test \
+		test/test_ast \
 		test/audiodata \
-		test/capath \
+		test/certdata \
+		test/certdata/capath \
 		test/cjkencodings \
 		test/crashers \
+		test/configdata \
 		test/data \
 		test/decimaltestdata \
 		test/dtracedata \
@@ -2126,15 +2134,25 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/imghdrdata \
 		test/leakers \
 		test/libregrtest \
+		test/regrtestdata \
+		test/regrtestdata/import_from_tests \
+		test/regrtestdata/import_from_tests/test_regrtest_b \
 		test/sndhdrdata \
 		test/subprocessdata \
 		test/support \
 		test/support/_hypothesis_stubs \
 		test/test_asyncio \
 		test/test_capi \
+		test/test_cext \
+		test/test_cppext \
 		test/test_ctypes \
+		test/test_dataclasses \
+		test/test_doctest \
 		test/test_email \
 		test/test_email/data \
+		test/test_future_stmt \
+		test/test_gdb \
+		test/test_inspect \
 		test/test_import \
 		test/test_import/data \
 		test/test_import/data/circular_imports \
@@ -2143,6 +2161,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_import/data/circular_imports/subpkg2/parent \
 		test/test_import/data/package \
 		test/test_import/data/package2 \
+		test/test_import/data/package3 \
+		test/test_import/data/package4 \
 		test/test_import/data/unwritable \
 		test/test_importlib \
 		test/test_importlib/builtin \
@@ -2192,7 +2212,9 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_lib2to3/data \
 		test/test_lib2to3/data/fixers \
 		test/test_lib2to3/data/fixers/myfixes \
+		test/test_module \
 		test/test_peg_generator \
+		test/test_pydoc \
 		test/test_sqlite3 \
 		test/test_tkinter \
 		test/test_tomllib \
@@ -2214,6 +2236,8 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_tomllib/data/valid/dates-and-times \
 		test/test_tomllib/data/valid/multiline-basic-str \
 		test/test_tools \
+		test/test_tools/i18n_data \
+		test/test_tools/msgfmt_data \
 		test/test_ttk \
 		test/test_unittest \
 		test/test_unittest/testmock \
@@ -2223,11 +2247,21 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/test_zipfile/_path \
 		test/test_zoneinfo \
 		test/test_zoneinfo/data \
+		test/tokenizedata \
 		test/tracedmodules \
+		test/translationdata \
+		test/translationdata/argparse \
+		test/translationdata/getopt \
+		test/translationdata/optparse \
 		test/typinganndata \
+		test/wheeldata \
 		test/xmltestdata \
 		test/xmltestdata/c14n-20 \
-		test/ziptestdata
+		test/ziptestdata \
+		test/test_concurrent_futures \
+		test/test_multiprocessing_fork \
+		test/test_multiprocessing_forkserver \
+		test/test_multiprocessing_spawn
 
 COMPILEALL_OPTS=-j0
 
@@ -2586,12 +2620,11 @@ autoconf:
 
 .PHONY: regen-configure
 regen-configure:
-	@if command -v podman >/dev/null; then RUNTIME="podman"; else RUNTIME="docker"; fi; \
-	if ! command -v $$RUNTIME; then echo "$@ needs either Podman or Docker container runtime." >&2; exit 1; fi; \
-	if command -v selinuxenabled >/dev/null && selinuxenabled; then OPT=":Z"; fi; \
-	CMD="$$RUNTIME run --rm --pull=always -v $(abs_srcdir):/src$$OPT quay.io/tiran/cpython_autoconf:271"; \
-	echo $$CMD; \
-	$$CMD || exit $?
+	$(srcdir)/Tools/build/regen-configure.sh
+
+.PHONY: regen-sbom
+regen-sbom:
+	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_sbom.py
 
 # Create a tags file for vi
 tags::
@@ -2790,7 +2823,7 @@ MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(LIBHACL_
 MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HEADERS) Modules/_hacl/Hacl_Hash_SHA3.h Modules/_hacl/Hacl_Hash_SHA3.c
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data.h $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
-MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/testcapi_long.h $(srcdir)/Modules/_testcapi/parts.h
+MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/testcapi_long.h $(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h
 MODULE__SQLITE3_DEPS=$(srcdir)/Modules/_sqlite/connection.h $(srcdir)/Modules/_sqlite/cursor.h $(srcdir)/Modules/_sqlite/microprotocols.h $(srcdir)/Modules/_sqlite/module.h $(srcdir)/Modules/_sqlite/prepare_protocol.h $(srcdir)/Modules/_sqlite/row.h $(srcdir)/Modules/_sqlite/util.h
 
 CODECS_COMMON_HEADERS=$(srcdir)/Modules/cjkcodecs/multibytecodec.h $(srcdir)/Modules/cjkcodecs/cjkcodecs.h

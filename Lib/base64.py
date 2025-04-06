@@ -334,7 +334,7 @@ def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
 
     wrapcol controls whether the output should have newline (b'\\n') characters
     added to it. If this is non-zero, each output line will be at most this
-    many characters long.
+    many characters long, excluding the trailing newline.
 
     pad controls whether the input is padded to a multiple of 4 before
     encoding. Note that the btoa implementation always pads.

@@ -1,5 +1,5 @@
-:mod:`types` --- Dynamic type creation and names for built-in types
-===================================================================
+:mod:`!types` --- Dynamic type creation and names for built-in types
+====================================================================
 
 .. module:: types
    :synopsis: Names for built-in types.
@@ -91,8 +91,8 @@ Dynamic Type Creation
 
     For classes that have an ``__orig_bases__`` attribute, this
     function returns the value of ``cls.__orig_bases__``.
-    For classes without the ``__orig_bases__`` attribute, ``cls.__bases__`` is
-    returned.
+    For classes without the ``__orig_bases__`` attribute,
+    :attr:`cls.__bases__ <type.__bases__>` is returned.
 
     Examples::
 
@@ -188,19 +188,13 @@ Standard names are defined for the following types:
 
    .. index:: pair: built-in function; compile
 
-   The type for code objects such as returned by :func:`compile`.
+   The type of :ref:`code objects <code-objects>` such as returned by :func:`compile`.
 
    .. audit-event:: code.__new__ code,filename,name,argcount,posonlyargcount,kwonlyargcount,nlocals,stacksize,flags types.CodeType
 
    Note that the audited arguments may not match the names or positions
    required by the initializer.  The audit event only occurs for direct
    instantiation of code objects, and is not raised for normal compilation.
-
-   .. method:: CodeType.replace(**kwargs)
-
-     Return a copy of the code object with new values for the specified fields.
-
-     .. versionadded:: 3.8
 
 .. data:: CellType
 
@@ -266,63 +260,18 @@ Standard names are defined for the following types:
    The type of :term:`modules <module>`. The constructor takes the name of the
    module to be created and optionally its :term:`docstring`.
 
-   .. note::
-      Use :func:`importlib.util.module_from_spec` to create a new module if you
-      wish to set the various import-controlled attributes.
+   .. seealso::
 
-   .. attribute:: __doc__
+      :ref:`Documentation on module objects <module-objects>`
+         Provides details on the special attributes that can be found on
+         instances of :class:`!ModuleType`.
 
-      The :term:`docstring` of the module. Defaults to ``None``.
-
-   .. attribute:: __loader__
-
-      The :term:`loader` which loaded the module. Defaults to ``None``.
-
-      This attribute is to match :attr:`importlib.machinery.ModuleSpec.loader`
-      as stored in the :attr:`__spec__` object.
-
-      .. note::
-         A future version of Python may stop setting this attribute by default.
-         To guard against this potential change, preferably read from the
-         :attr:`__spec__` attribute instead or use
-         ``getattr(module, "__loader__", None)`` if you explicitly need to use
-         this attribute.
-
-      .. versionchanged:: 3.4
-         Defaults to ``None``. Previously the attribute was optional.
-
-   .. attribute:: __name__
-
-      The name of the module. Expected to match
-      :attr:`importlib.machinery.ModuleSpec.name`.
-
-   .. attribute:: __package__
-
-      Which :term:`package` a module belongs to. If the module is top-level
-      (i.e. not a part of any specific package) then the attribute should be set
-      to ``''``, else it should be set to the name of the package (which can be
-      :attr:`__name__` if the module is a package itself). Defaults to ``None``.
-
-      This attribute is to match :attr:`importlib.machinery.ModuleSpec.parent`
-      as stored in the :attr:`__spec__` object.
-
-      .. note::
-         A future version of Python may stop setting this attribute by default.
-         To guard against this potential change, preferably read from the
-         :attr:`__spec__` attribute instead or use
-         ``getattr(module, "__package__", None)`` if you explicitly need to use
-         this attribute.
-
-      .. versionchanged:: 3.4
-         Defaults to ``None``. Previously the attribute was optional.
-
-   .. attribute:: __spec__
-
-      A record of the module's import-system-related state. Expected to be an
-      instance of :class:`importlib.machinery.ModuleSpec`.
-
-      .. versionadded:: 3.4
-
+      :func:`importlib.util.module_from_spec`
+         Modules created using the :class:`!ModuleType` constructor are
+         created with many of their special attributes unset or set to default
+         values. :func:`!module_from_spec` provides a more robust way of
+         creating :class:`!ModuleType` instances which ensures the various
+         attributes are set appropriately.
 
 .. data:: EllipsisType
 
@@ -376,17 +325,15 @@ Standard names are defined for the following types:
 
 .. data:: FrameType
 
-   The type of frame objects such as found in ``tb.tb_frame`` if ``tb`` is a
-   traceback object.
-
-   See :ref:`the language reference <frame-objects>` for details of the
-   available attributes and operations.
+   The type of :ref:`frame objects <frame-objects>` such as found in
+   :attr:`tb.tb_frame <traceback.tb_frame>` if ``tb`` is a traceback object.
 
 
 .. data:: GetSetDescriptorType
 
    The type of objects defined in extension modules with ``PyGetSetDef``, such
-   as ``FrameType.f_locals`` or ``array.array.typecode``.  This type is used as
+   as :attr:`FrameType.f_locals <frame.f_locals>` or ``array.array.typecode``.
+   This type is used as
    descriptor for object attributes; it has the same purpose as the
    :class:`property` type, but for classes defined in extension modules.
 
@@ -397,6 +344,10 @@ Standard names are defined for the following types:
    as ``datetime.timedelta.days``.  This type is used as descriptor for simple C
    data members which use standard conversion functions; it has the same purpose
    as the :class:`property` type, but for classes defined in extension modules.
+
+   In addition, when a class is defined with a :attr:`~object.__slots__` attribute, then for
+   each slot, an instance of :class:`!MemberDescriptorType` will be added as an attribute
+   on the class. This allows the slot to appear in the class's :attr:`~type.__dict__`.
 
    .. impl-detail::
 

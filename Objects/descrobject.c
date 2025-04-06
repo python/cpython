@@ -1697,15 +1697,12 @@ property_copy(PyObject *old, PyObject *get, PyObject *set, PyObject *del)
         return NULL;
 
     if (get == NULL || get == Py_None) {
-        Py_XDECREF(get);
         get = pold->prop_get ? pold->prop_get : Py_None;
     }
     if (set == NULL || set == Py_None) {
-        Py_XDECREF(set);
         set = pold->prop_set ? pold->prop_set : Py_None;
     }
     if (del == NULL || del == Py_None) {
-        Py_XDECREF(del);
         del = pold->prop_del ? pold->prop_del : Py_None;
     }
     if (pold->getter_doc && get != Py_None) {
@@ -1791,21 +1788,8 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
     /* if no docstring given and the getter has one, use that one */
     else if (fget != NULL) {
         int rc = _PyObject_LookupAttr(fget, &_Py_ID(__doc__), &prop_doc);
-        if (rc <= 0) {
+        if (rc < 0) {
             return rc;
-        }
-        if (!Py_IS_TYPE(self, &PyProperty_Type) &&
-            prop_doc != NULL && prop_doc != Py_None) {
-            // This oddity preserves the long existing behavior of surfacing
-            // an AttributeError when using a dict-less (__slots__) property
-            // subclass as a decorator on a getter method with a docstring.
-            // See PropertySubclassTest.test_slots_docstring_copy_exception.
-            int err = PyObject_SetAttr(
-                        (PyObject *)self, &_Py_ID(__doc__), prop_doc);
-            if (err < 0) {
-                Py_DECREF(prop_doc);  // release our new reference.
-                return -1;
-            }
         }
         if (prop_doc == Py_None) {
             prop_doc = NULL;
@@ -1834,7 +1818,9 @@ property_init_impl(propertyobject *self, PyObject *fget, PyObject *fset,
         Py_DECREF(prop_doc);
         if (err < 0) {
             assert(PyErr_Occurred());
-            if (PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            if (!self->getter_doc &&
+                PyErr_ExceptionMatches(PyExc_AttributeError))
+            {
                 PyErr_Clear();
                 // https://github.com/python/cpython/issues/98963#issuecomment-1574413319
                 // Python silently dropped this doc assignment through 3.11.

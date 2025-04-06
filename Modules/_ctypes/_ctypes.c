@@ -125,6 +125,7 @@ bytes(cdata)
 #include "ctypes.h"
 
 #include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_pyerrors.h"      // _PyErr_SetLocaleString()
 
 ctypes_state global_state;
 
@@ -778,31 +779,38 @@ CDataType_in_dll(PyObject *type, PyObject *args)
         return NULL;
     }
 
+#undef USE_DLERROR
 #ifdef MS_WIN32
     Py_BEGIN_ALLOW_THREADS
     address = (void *)GetProcAddress(handle, name);
     Py_END_ALLOW_THREADS
-    if (!address) {
-        PyErr_Format(PyExc_ValueError,
-                     "symbol '%s' not found",
-                     name);
-        return NULL;
-    }
 #else
+    #ifdef __CYGWIN__
+        // dlerror() isn't very helpful on cygwin
+    #else
+        #define USE_DLERROR
+        /* dlerror() always returns the latest error.
+         *
+         * Clear the previous value before calling dlsym(),
+         * to ensure we can tell if our call resulted in an error.
+         */
+        (void)dlerror();
+    #endif
     address = (void *)dlsym(handle, name);
-    if (!address) {
-#ifdef __CYGWIN__
-/* dlerror() isn't very helpful on cygwin */
-        PyErr_Format(PyExc_ValueError,
-                     "symbol '%s' not found",
-                     name);
-#else
-        PyErr_SetString(PyExc_ValueError, dlerror());
 #endif
+    if (address) {
+        return PyCData_AtAddress(type, address);
+    }
+    #ifdef USE_DLERROR
+    const char *dlerr = dlerror();
+    if (dlerr) {
+        _PyErr_SetLocaleString(PyExc_ValueError, dlerr);
         return NULL;
     }
-#endif
-    return PyCData_AtAddress(type, address);
+    #endif
+#undef USE_DLERROR
+    PyErr_Format(PyExc_ValueError, "symbol '%s' not found", name);
+    return NULL;
 }
 
 PyDoc_STRVAR(from_param_doc,
@@ -847,8 +855,13 @@ CDataType_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
         value = CDataType_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
+        _Py_LeaveRecursiveCall();
         return value;
     }
     PyErr_Format(PyExc_TypeError,
@@ -1716,8 +1729,13 @@ c_wchar_p_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
         value = c_wchar_p_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
+        _Py_LeaveRecursiveCall();
         return value;
     }
     /* XXX better message */
@@ -1780,8 +1798,13 @@ c_char_p_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
         value = c_char_p_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
+        _Py_LeaveRecursiveCall();
         return value;
     }
     /* XXX better message */
@@ -1915,8 +1938,13 @@ c_void_p_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
+            Py_DECREF(as_parameter);
+            return NULL;
+        }
         value = c_void_p_from_param(type, as_parameter);
         Py_DECREF(as_parameter);
+        _Py_LeaveRecursiveCall();
         return value;
     }
     /* XXX better message */
@@ -2164,9 +2192,15 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 Py_DECREF(result);
                 return NULL;
             }
-            x = PyDict_SetItemString(result->tp_dict,
-                                     ml->ml_name,
-                                     meth);
+            PyObject *name = PyUnicode_FromString(ml->ml_name);
+            if (name == NULL) {
+                Py_DECREF(meth);
+                Py_DECREF(result);
+                return NULL;
+            }
+            PyUnicode_InternInPlace(&name);
+            x = PyDict_SetItem(result->tp_dict, name, meth);
+            Py_DECREF(name);
             Py_DECREF(meth);
             if (x == -1) {
                 Py_DECREF(result);
@@ -2263,15 +2297,15 @@ PyCSimpleType_from_param(PyObject *type, PyObject *value)
         return NULL;
     }
     if (as_parameter) {
-        if (_Py_EnterRecursiveCall("while processing _as_parameter_")) {
+        if (_Py_EnterRecursiveCall(" while processing _as_parameter_")) {
             Py_DECREF(as_parameter);
             Py_XDECREF(exc);
             return NULL;
         }
         value = PyCSimpleType_from_param(type, as_parameter);
-        _Py_LeaveRecursiveCall();
         Py_DECREF(as_parameter);
         Py_XDECREF(exc);
+        _Py_LeaveRecursiveCall();
         return value;
     }
     if (exc) {
@@ -2792,6 +2826,7 @@ PyCData_NewGetBuffer(PyObject *myself, Py_buffer *view, int flags)
     StgDictObject *item_dict = PyType_stgdict(item_type);
 
     if (view == NULL) return 0;
+    assert(dict);
 
     view->buf = self->b_ptr;
     view->obj = Py_NewRef(myself);
@@ -2828,7 +2863,10 @@ PyCData_reduce(PyObject *myself, PyObject *args)
 {
     CDataObject *self = (CDataObject *)myself;
 
-    if (PyObject_stgdict(myself)->flags & (TYPEFLAG_ISPOINTER|TYPEFLAG_HASPOINTER)) {
+    StgDictObject *stgdict = PyObject_stgdict(myself);
+    assert(stgdict);
+
+    if (stgdict->flags & (TYPEFLAG_ISPOINTER|TYPEFLAG_HASPOINTER)) {
         PyErr_SetString(PyExc_ValueError,
                         "ctypes objects containing pointers cannot be pickled");
         return NULL;
@@ -3577,6 +3615,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
+#undef USE_DLERROR
 #ifdef MS_WIN32
     address = FindAddress(handle, name, (PyObject *)type);
     if (!address) {
@@ -3592,20 +3631,33 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 #else
+    #ifdef __CYGWIN__
+        //dlerror() isn't very helpful on cygwin */
+    #else
+        #define USE_DLERROR
+        /* dlerror() always returns the latest error.
+         *
+         * Clear the previous value before calling dlsym(),
+         * to ensure we can tell if our call resulted in an error.
+         */
+        (void)dlerror();
+    #endif
     address = (PPROC)dlsym(handle, name);
     if (!address) {
-#ifdef __CYGWIN__
-/* dlerror() isn't very helpful on cygwin */
-        PyErr_Format(PyExc_AttributeError,
-                     "function '%s' not found",
-                     name);
-#else
-        PyErr_SetString(PyExc_AttributeError, dlerror());
-#endif
+    #ifdef USE_DLERROR
+        const char *dlerr = dlerror();
+        if (dlerr) {
+            _PyErr_SetLocaleString(PyExc_AttributeError, dlerr);
+            Py_DECREF(ftuple);
+            return NULL;
+        }
+    #endif
+        PyErr_Format(PyExc_AttributeError, "function '%s' not found", name);
         Py_DECREF(ftuple);
         return NULL;
     }
 #endif
+#undef USE_DLERROR
     if (!_validate_paramflags(type, paramflags)) {
         Py_DECREF(ftuple);
         return NULL;
@@ -4352,10 +4404,10 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
         return index;
     }
 
-    for (i = 0;
-         i < dict->length && (i+index) < PyTuple_GET_SIZE(args);
+    for (i = index;
+         i < dict->length && i < PyTuple_GET_SIZE(args);
          ++i) {
-        PyObject *pair = PySequence_GetItem(fields, i);
+        PyObject *pair = PySequence_GetItem(fields, i - index);
         PyObject *name, *val;
         int res;
         if (!pair)
@@ -4365,7 +4417,7 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
             Py_DECREF(pair);
             return -1;
         }
-        val = PyTuple_GET_ITEM(args, i + index);
+        val = PyTuple_GET_ITEM(args, i);
         if (kwds) {
             res = PyDict_Contains(kwds, name);
             if (res != 0) {
@@ -4386,7 +4438,7 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
         if (res == -1)
             return -1;
     }
-    return index + dict->length;
+    return dict->length;
 }
 
 static int
@@ -5122,8 +5174,6 @@ static PyObject *
 Pointer_get_contents(CDataObject *self, void *closure)
 {
     StgDictObject *stgdict;
-    PyObject *keep, *ptr_probe;
-    CDataObject *ptr2ptr;
 
     if (*(void **)self->b_ptr == NULL) {
         PyErr_SetString(PyExc_ValueError,
@@ -5133,33 +5183,6 @@ Pointer_get_contents(CDataObject *self, void *closure)
 
     stgdict = PyObject_stgdict((PyObject *)self);
     assert(stgdict); /* Cannot be NULL for pointer instances */
-
-    keep = GetKeepedObjects(self);
-    if (keep != NULL) {
-        // check if it's a pointer to a pointer:
-        // pointers will have '0' key in the _objects
-        ptr_probe = PyDict_GetItemString(keep, "0");
-
-        if (ptr_probe != NULL) {
-            ptr2ptr = (CDataObject*) PyDict_GetItemString(keep, "1");
-            if (ptr2ptr ==  NULL) {
-                PyErr_SetString(PyExc_ValueError,
-                "Unexpected NULL pointer in _objects");
-                return NULL;
-            }
-            // don't construct a new object,
-            // return existing one instead to preserve refcount
-            assert(
-                *(void**) self->b_ptr == ptr2ptr->b_ptr ||
-                *(void**) self->b_value.c == ptr2ptr->b_ptr ||
-                *(void**) self->b_ptr == ptr2ptr->b_value.c ||
-                *(void**) self->b_value.c == ptr2ptr->b_value.c
-            ); // double-check that we are returning the same thing
-            Py_INCREF(ptr2ptr);
-            return (PyObject *) ptr2ptr;
-        }
-    }
-
     return PyCData_FromBaseObj(stgdict->proto,
                              (PyObject *)self, 0,
                              *(void **)self->b_ptr);

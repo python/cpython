@@ -1,5 +1,5 @@
-:mod:`os` --- Miscellaneous operating system interfaces
-=======================================================
+:mod:`!os` --- Miscellaneous operating system interfaces
+========================================================
 
 .. module:: os
    :synopsis: Miscellaneous operating system interfaces.
@@ -88,8 +88,8 @@ startup by the :c:func:`PyConfig_Read` function: see
    On some systems, conversion using the file system encoding may fail. In this
    case, Python uses the :ref:`surrogateescape encoding error handler
    <surrogateescape>`, which means that undecodable bytes are replaced by a
-   Unicode character U+DCxx on decoding, and these are again translated to the
-   original byte on encoding.
+   Unicode character U+DC\ *xx* on decoding, and these are again
+   translated to the original byte on encoding.
 
 
 The :term:`file system encoding <filesystem encoding and error handler>` must
@@ -113,8 +113,8 @@ of the UTF-8 encoding:
 
 * Use UTF-8 as the :term:`filesystem encoding <filesystem encoding and error
   handler>`.
-* :func:`sys.getfilesystemencoding()` returns ``'utf-8'``.
-* :func:`locale.getpreferredencoding()` returns ``'utf-8'`` (the *do_setlocale*
+* :func:`sys.getfilesystemencoding` returns ``'utf-8'``.
+* :func:`locale.getpreferredencoding` returns ``'utf-8'`` (the *do_setlocale*
   argument has no effect).
 * :data:`sys.stdin`, :data:`sys.stdout`, and :data:`sys.stderr` all use
   UTF-8 as their text encoding, with the ``surrogateescape``
@@ -133,8 +133,8 @@ level APIs also exhibit different default behaviours:
 
 * Command line arguments, environment variables and filenames are decoded
   to text using the UTF-8 encoding.
-* :func:`os.fsdecode()` and :func:`os.fsencode()` use the UTF-8 encoding.
-* :func:`open()`, :func:`io.open()`, and :func:`codecs.open()` use the UTF-8
+* :func:`os.fsdecode` and :func:`os.fsencode` use the UTF-8 encoding.
+* :func:`open`, :func:`io.open`, and :func:`codecs.open` use the UTF-8
   encoding by default. However, they still use the strict error handler by
   default so that attempting to open a binary file in text mode is likely
   to raise an exception rather than producing nonsense data.
@@ -215,7 +215,7 @@ process and user.
 
       On some platforms, including FreeBSD and macOS, setting ``environ`` may
       cause memory leaks.  Refer to the system documentation for
-      :c:func:`putenv`.
+      :c:func:`!putenv`.
 
    You can delete items in this mapping to unset environment variables.
    :func:`unsetenv` will be called automatically when an item is deleted from
@@ -299,7 +299,8 @@ process and user.
 
    .. versionadded:: 3.6
 
-   .. abstractmethod:: __fspath__()
+   .. method:: __fspath__()
+      :abstractmethod:
 
       Return the file system path representation of the object.
 
@@ -564,7 +565,7 @@ process and user.
    .. note::
 
       On some platforms, including FreeBSD and macOS, setting ``environ`` may
-      cause memory leaks. Refer to the system documentation for :c:func:`putenv`.
+      cause memory leaks. Refer to the system documentation for :c:func:`!putenv`.
 
    .. audit-event:: os.putenv key,value os.putenv
 
@@ -646,7 +647,7 @@ process and user.
 
 .. function:: setpgrp()
 
-   Call the system call :c:func:`setpgrp` or ``setpgrp(0, 0)`` depending on
+   Call the system call :c:func:`!setpgrp` or ``setpgrp(0, 0)`` depending on
    which version is implemented (if any).  See the Unix manual for the semantics.
 
    .. availability:: Unix, not Emscripten, not WASI.
@@ -654,7 +655,7 @@ process and user.
 
 .. function:: setpgid(pid, pgrp, /)
 
-   Call the system call :c:func:`setpgid` to set the process group id of the
+   Call the system call :c:func:`!setpgid` to set the process group id of the
    process with id *pid* to the process group with id *pgrp*.  See the Unix manual
    for the semantics.
 
@@ -918,10 +919,10 @@ as internal buffering of data.
 
    Copy *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
-   If *offset_src* is None, then *src* is read from the current position;
+   If *offset_src* is ``None``, then *src* is read from the current position;
    respectively for *offset_dst*.
 
-   In Linux kernel older than 5.3, the files pointed by *src* and *dst*
+   In Linux kernel older than 5.3, the files pointed to by *src* and *dst*
    must reside in the same filesystem, otherwise an :exc:`OSError` is
    raised with :attr:`~OSError.errno` set to :const:`errno.EXDEV`.
 
@@ -1077,7 +1078,7 @@ as internal buffering of data.
 .. function:: fsync(fd)
 
    Force write of file with filedescriptor *fd* to disk.  On Unix, this calls the
-   native :c:func:`fsync` function; on Windows, the MS :c:func:`_commit` function.
+   native :c:func:`!fsync` function; on Windows, the MS :c:func:`!_commit` function.
 
    If you're starting with a buffered Python :term:`file object` *f*, first do
    ``f.flush()``, and then do ``os.fsync(f.fileno())``, to ensure that all internal
@@ -1163,25 +1164,65 @@ as internal buffering of data.
    .. versionadded:: 3.11
 
 
-.. function:: lseek(fd, pos, how, /)
+.. function:: lseek(fd, pos, whence, /)
 
    Set the current position of file descriptor *fd* to position *pos*, modified
-   by *how*: :const:`SEEK_SET` or ``0`` to set the position relative to the
-   beginning of the file; :const:`SEEK_CUR` or ``1`` to set it relative to the
-   current position; :const:`SEEK_END` or ``2`` to set it relative to the end of
-   the file. Return the new cursor position in bytes, starting from the beginning.
+   by *whence*, and return the new position in bytes relative to
+   the start of the file.
+   Valid values for *whence* are:
+
+   * :const:`SEEK_SET` or ``0`` -- set *pos* relative to the beginning of the file
+   * :const:`SEEK_CUR` or ``1`` -- set *pos* relative to the current file position
+   * :const:`SEEK_END` or ``2`` -- set *pos* relative to the end of the file
+   * :const:`SEEK_HOLE` -- set *pos* to the next data location, relative to *pos*
+   * :const:`SEEK_DATA` -- set *pos* to the next data hole, relative to *pos*
+
+   .. versionchanged:: 3.3
+
+      Add support for :const:`!SEEK_HOLE` and :const:`!SEEK_DATA`.
 
 
 .. data:: SEEK_SET
           SEEK_CUR
           SEEK_END
 
-   Parameters to the :func:`lseek` function. Their values are 0, 1, and 2,
-   respectively.
+   Parameters to the :func:`lseek` function and the :meth:`~io.IOBase.seek`
+   method on :term:`file-like objects <file object>`,
+   for whence to adjust the file position indicator.
+
+   :const:`SEEK_SET`
+      Adjust the file position relative to the beginning of the file.
+   :const:`SEEK_CUR`
+      Adjust the file position relative to the current file position.
+   :const:`SEEK_END`
+      Adjust the file position relative to the end of the file.
+
+   Their values are 0, 1, and 2, respectively.
+
+
+.. data:: SEEK_HOLE
+          SEEK_DATA
+
+   Parameters to the :func:`lseek` function and the :meth:`~io.IOBase.seek`
+   method on :term:`file-like objects <file object>`,
+   for seeking file data and holes on sparsely allocated files.
+
+   :data:`!SEEK_DATA`
+      Adjust the file offset to the next location containing data,
+      relative to the seek position.
+
+   :data:`!SEEK_HOLE`
+      Adjust the file offset to the next location containing a hole,
+      relative to the seek position.
+      A hole is defined as a sequence of zeros.
+
+   .. note::
+
+      These operations only make sense for filesystems that support them.
+
+   .. availability:: Linux >= 3.1, macOS, Unix
 
    .. versionadded:: 3.3
-      Some operating systems could support additional values, like
-      :const:`os.SEEK_HOLE` or :const:`os.SEEK_DATA`.
 
 
 .. function:: open(path, flags, mode=0o777, *, dir_fd=None)
@@ -1211,8 +1252,8 @@ as internal buffering of data.
       :meth:`~file.read` and :meth:`~file.write` methods (and many more).  To
       wrap a file descriptor in a file object, use :func:`fdopen`.
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise an
@@ -1457,7 +1498,7 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 
 .. function:: pwritev(fd, buffers, offset, flags=0, /)
 
-   Write the *buffers* contents to file descriptor *fd* at a offset *offset*,
+   Write the *buffers* contents to file descriptor *fd* at an offset *offset*,
    leaving the file offset unchanged.  *buffers* must be a sequence of
    :term:`bytes-like objects <bytes-like object>`. Buffers are processed in
    array order. Entire contents of the first buffer is written before
@@ -1578,25 +1619,6 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
       Parameters *out* and *in* was renamed to *out_fd* and *in_fd*.
 
 
-.. function:: set_blocking(fd, blocking, /)
-
-   Set the blocking mode of the specified file descriptor. Set the
-   :data:`O_NONBLOCK` flag if blocking is ``False``, clear the flag otherwise.
-
-   See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
-
-   .. availability:: Unix, Windows.
-
-      The function is limited on Emscripten and WASI, see
-      :ref:`wasm-availability` for more information.
-
-      On Windows, this function is limited to pipes.
-
-   .. versionadded:: 3.5
-
-   .. versionchanged:: 3.12
-      Added support for pipes on Windows.
-
 .. data:: SF_NODISKIO
           SF_MNOWAIT
           SF_SYNC
@@ -1618,14 +1640,34 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
    .. versionadded:: 3.11
 
 
+.. function:: set_blocking(fd, blocking, /)
+
+   Set the blocking mode of the specified file descriptor. Set the
+   :data:`O_NONBLOCK` flag if blocking is ``False``, clear the flag otherwise.
+
+   See also :func:`get_blocking` and :meth:`socket.socket.setblocking`.
+
+   .. availability:: Unix, Windows.
+
+      The function is limited on Emscripten and WASI, see
+      :ref:`wasm-availability` for more information.
+
+      On Windows, this function is limited to pipes.
+
+   .. versionadded:: 3.5
+
+   .. versionchanged:: 3.12
+      Added support for pipes on Windows.
+
+
 .. function:: splice(src, dst, count, offset_src=None, offset_dst=None)
 
    Transfer *count* bytes from file descriptor *src*, starting from offset
    *offset_src*, to file descriptor *dst*, starting from offset *offset_dst*.
    At least one of the file descriptors must refer to a pipe. If *offset_src*
-   is None, then *src* is read from the current position; respectively for
+   is ``None``, then *src* is read from the current position; respectively for
    *offset_dst*. The offset associated to the file descriptor that refers to a
-   pipe must be ``None``. The files pointed by *src* and *dst* must reside in
+   pipe must be ``None``. The files pointed to by *src* and *dst* must reside in
    the same filesystem, otherwise an :exc:`OSError` is raised with
    :attr:`~OSError.errno` set to :const:`errno.EXDEV`.
 
@@ -1947,7 +1989,7 @@ features:
 
    .. audit-event:: os.chdir path os.chdir
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as a file descriptor
       on some platforms.
 
@@ -1979,8 +2021,8 @@ features:
 
    .. availability:: Unix, not Emscripten, not WASI.
 
-   .. versionadded:: 3.3
-      The *follow_symlinks* argument.
+   .. versionchanged:: 3.3
+      Added the *follow_symlinks* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2027,7 +2069,7 @@ features:
 
    .. audit-event:: os.chmod path,mode,dir_fd os.chmod
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor,
       and the *dir_fd* and *follow_symlinks* arguments.
 
@@ -2054,7 +2096,7 @@ features:
       The function is limited on Emscripten and WASI, see
       :ref:`wasm-availability` for more information.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor,
       and the *dir_fd* and *follow_symlinks* arguments.
 
@@ -2119,9 +2161,12 @@ features:
    for possible values of *mode*.  As of Python 3.3, this is equivalent to
    ``os.chmod(path, mode, follow_symlinks=False)``.
 
+   ``lchmod()`` is not part of POSIX, but Unix implementations may have it if
+   changing the mode of symbolic links is supported.
+
    .. audit-event:: os.chmod path,mode,dir_fd os.lchmod
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Linux, FreeBSD >= 1.3, NetBSD >= 1.3, not OpenBSD
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2155,8 +2200,8 @@ features:
    .. versionchanged:: 3.2
       Added Windows support.
 
-   .. versionadded:: 3.3
-      Added the *src_dir_fd*, *dst_dir_fd*, and *follow_symlinks* arguments.
+   .. versionchanged:: 3.3
+      Added the *src_dir_fd*, *dst_dir_fd*, and *follow_symlinks* parameters.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
@@ -2192,7 +2237,7 @@ features:
    .. versionchanged:: 3.2
       The *path* parameter became optional.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor.
 
    .. versionchanged:: 3.6
@@ -2264,7 +2309,7 @@ features:
 
 .. function:: lstat(path, *, dir_fd=None)
 
-   Perform the equivalent of an :c:func:`lstat` system call on the given path.
+   Perform the equivalent of an :c:func:`!lstat` system call on the given path.
    Similar to :func:`~os.stat`, but does not follow symbolic links. Return a
    :class:`stat_result` object.
 
@@ -2312,6 +2357,10 @@ features:
    platform-dependent.  On some platforms, they are ignored and you should call
    :func:`chmod` explicitly to set them.
 
+   On Windows, a *mode* of ``0o700`` is specifically handled to apply access
+   control to the new directory such that only the current user and
+   administrators have access. Other values of *mode* are ignored.
+
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
 
@@ -2320,11 +2369,14 @@ features:
 
    .. audit-event:: os.mkdir path,mode,dir_fd os.mkdir
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
+
+   .. versionchanged:: 3.12.4
+      Windows now handles a *mode* of ``0o700``.
 
 
 .. function:: makedirs(name, mode=0o777, exist_ok=False)
@@ -2354,8 +2406,8 @@ features:
 
    .. audit-event:: os.mkdir path,mode,dir_fd os.makedirs
 
-   .. versionadded:: 3.2
-      The *exist_ok* parameter.
+   .. versionchanged:: 3.2
+      Added the *exist_ok* parameter.
 
    .. versionchanged:: 3.4.1
 
@@ -2388,8 +2440,8 @@ features:
 
    .. availability:: Unix, not Emscripten, not WASI.
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2410,8 +2462,8 @@ features:
 
    .. availability:: Unix, not Emscripten, not WASI.
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2491,8 +2543,8 @@ features:
    .. versionchanged:: 3.2
       Added support for Windows 6.0 (Vista) symbolic links.
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` on Unix.
@@ -2500,7 +2552,6 @@ features:
    .. versionchanged:: 3.8
       Accepts a :term:`path-like object` and a bytes object on Windows.
 
-   .. versionchanged:: 3.8
       Added support for directory junctions, and changed to return the
       substitution path (which typically includes ``\\?\`` prefix) rather
       than the optional "print name" field that was previously returned.
@@ -2522,8 +2573,8 @@ features:
 
    .. audit-event:: os.remove path,dir_fd os.remove
 
-   .. versionadded:: 3.3
-      The *dir_fd* argument.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2573,8 +2624,8 @@ features:
 
    .. audit-event:: os.rename src,dst,src_dir_fd,dst_dir_fd os.rename
 
-   .. versionadded:: 3.3
-      The *src_dir_fd* and *dst_dir_fd* arguments.
+   .. versionchanged:: 3.3
+      Added the *src_dir_fd* and *dst_dir_fd* parameters.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object` for *src* and *dst*.
@@ -2629,8 +2680,8 @@ features:
 
    .. audit-event:: os.rmdir path,dir_fd os.rmdir
 
-   .. versionadded:: 3.3
-      The *dir_fd* parameter.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -2704,9 +2755,9 @@ features:
 
    .. versionadded:: 3.5
 
-   .. versionadded:: 3.6
+   .. versionchanged:: 3.6
       Added support for the :term:`context manager` protocol and the
-      :func:`~scandir.close()` method.  If a :func:`scandir` iterator is neither
+      :func:`~scandir.close` method.  If a :func:`scandir` iterator is neither
       exhausted nor explicitly closed a :exc:`ResourceWarning` will be emitted
       in its destructor.
 
@@ -2918,9 +2969,9 @@ features:
 
       :func:`fstat` and :func:`lstat` functions.
 
-   .. versionadded:: 3.3
-      Added the *dir_fd* and *follow_symlinks* arguments, specifying a file
-      descriptor instead of a path.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* and *follow_symlinks* parameters,
+      specifying a file descriptor instead of a path.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -3001,15 +3052,21 @@ features:
 
       Time of most recent access expressed in nanoseconds as an integer.
 
+      .. versionadded:: 3.3
+
    .. attribute:: st_mtime_ns
 
       Time of most recent content modification expressed in nanoseconds as an
       integer.
 
+      .. versionadded:: 3.3
+
    .. attribute:: st_ctime_ns
 
       Time of most recent metadata change expressed in nanoseconds as an
       integer.
+
+      .. versionadded:: 3.3
 
       .. versionchanged:: 3.12
          ``st_ctime_ns`` is deprecated on Windows. Use ``st_birthtime_ns``
@@ -3107,14 +3164,18 @@ features:
 
       Windows file attributes: ``dwFileAttributes`` member of the
       ``BY_HANDLE_FILE_INFORMATION`` structure returned by
-      :c:func:`GetFileInformationByHandle`. See the ``FILE_ATTRIBUTE_*``
+      :c:func:`!GetFileInformationByHandle`.
+      See the :const:`!FILE_ATTRIBUTE_* <stat.FILE_ATTRIBUTE_ARCHIVE>`
       constants in the :mod:`stat` module.
+
+      .. versionadded:: 3.5
 
    .. attribute:: st_reparse_tag
 
-      When :attr:`st_file_attributes` has the ``FILE_ATTRIBUTE_REPARSE_POINT``
+      When :attr:`st_file_attributes` has the :const:`~stat.FILE_ATTRIBUTE_REPARSE_POINT`
       set, this field contains the tag identifying the type of reparse point.
-      See the ``IO_REPARSE_TAG_*`` constants in the :mod:`stat` module.
+      See the :const:`IO_REPARSE_TAG_* <stat.IO_REPARSE_TAG_SYMLINK>`
+      constants in the :mod:`stat` module.
 
    The standard module :mod:`stat` defines functions and constants that are
    useful for extracting information from a :c:struct:`stat` structure. (On
@@ -3129,21 +3190,14 @@ features:
    some implementations. For compatibility with older Python versions,
    accessing :class:`stat_result` as a tuple always returns integers.
 
-   .. versionadded:: 3.3
-      Added the :attr:`st_atime_ns`, :attr:`st_mtime_ns`, and
-      :attr:`st_ctime_ns` members.
-
-   .. versionadded:: 3.5
-      Added the :attr:`st_file_attributes` member on Windows.
-
    .. versionchanged:: 3.5
       Windows now returns the file index as :attr:`st_ino` when
       available.
 
-   .. versionadded:: 3.7
+   .. versionchanged:: 3.7
       Added the :attr:`st_fstype` member to Solaris/derivatives.
 
-   .. versionadded:: 3.8
+   .. versionchanged:: 3.8
       Added the :attr:`st_reparse_tag` member on Windows.
 
    .. versionchanged:: 3.8
@@ -3157,22 +3211,19 @@ features:
       platforms, but for now still contains creation time.
       Use :attr:`st_birthtime` for the creation time.
 
-   .. versionchanged:: 3.12
       On Windows, :attr:`st_ino` may now be up to 128 bits, depending
       on the file system. Previously it would not be above 64 bits, and
       larger file identifiers would be arbitrarily packed.
 
-   .. versionchanged:: 3.12
       On Windows, :attr:`st_rdev` no longer returns a value. Previously
       it would contain the same as :attr:`st_dev`, which was incorrect.
 
-   .. versionadded:: 3.12
       Added the :attr:`st_birthtime` member on Windows.
 
 
 .. function:: statvfs(path)
 
-   Perform a :c:func:`statvfs` system call on the given path.  The return value is
+   Perform a :c:func:`!statvfs` system call on the given path.  The return value is
    an object whose attributes describe the filesystem on the given path, and
    correspond to the members of the :c:struct:`statvfs` structure, namely:
    :attr:`f_bsize`, :attr:`f_frsize`, :attr:`f_blocks`, :attr:`f_bfree`,
@@ -3200,7 +3251,7 @@ features:
    .. versionchanged:: 3.2
       The :const:`ST_RDONLY` and :const:`ST_NOSUID` constants were added.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor.
 
    .. versionchanged:: 3.4
@@ -3212,8 +3263,8 @@ features:
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
-   .. versionadded:: 3.7
-      Added :attr:`f_fsid`.
+   .. versionchanged:: 3.7
+      Added the :attr:`f_fsid` attribute.
 
 
 .. data:: supports_dir_fd
@@ -3337,8 +3388,8 @@ features:
    .. versionchanged:: 3.2
       Added support for Windows 6.0 (Vista) symbolic links.
 
-   .. versionadded:: 3.3
-      Added the *dir_fd* argument, and now allow *target_is_directory*
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter, and now allow *target_is_directory*
       on non-Windows platforms.
 
    .. versionchanged:: 3.6
@@ -3386,8 +3437,8 @@ features:
 
    .. audit-event:: os.remove path,dir_fd os.unlink
 
-   .. versionadded:: 3.3
-      The *dir_fd* parameter.
+   .. versionchanged:: 3.3
+      Added the *dir_fd* parameter.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -3425,7 +3476,7 @@ features:
 
    .. audit-event:: os.utime path,times,ns,dir_fd os.utime
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor,
       and the *dir_fd*, *follow_symlinks*, and *ns* parameters.
 
@@ -3496,16 +3547,16 @@ features:
 
    This example displays the number of bytes taken by non-directory files in each
    directory under the starting directory, except that it doesn't look under any
-   CVS subdirectory::
+   ``__pycache__`` subdirectory::
 
       import os
       from os.path import join, getsize
-      for root, dirs, files in os.walk('python/Lib/email'):
+      for root, dirs, files in os.walk('python/Lib/xml'):
           print(root, "consumes", end=" ")
           print(sum(getsize(join(root, name)) for name in files), end=" ")
           print("bytes in", len(files), "non-directory files")
-          if 'CVS' in dirs:
-              dirs.remove('CVS')  # don't visit CVS directories
+          if '__pycache__' in dirs:
+              dirs.remove('__pycache__')  # don't visit __pycache__ directories
 
    In the next example (simple implementation of :func:`shutil.rmtree`),
    walking the tree bottom-up is essential, :func:`rmdir` doesn't allow
@@ -3521,6 +3572,7 @@ features:
               os.remove(os.path.join(root, name))
           for name in dirs:
               os.rmdir(os.path.join(root, name))
+      os.rmdir(top)
 
    .. audit-event:: os.walk top,topdown,onerror,followlinks os.walk
 
@@ -3557,16 +3609,16 @@ features:
 
    This example displays the number of bytes taken by non-directory files in each
    directory under the starting directory, except that it doesn't look under any
-   CVS subdirectory::
+   ``__pycache__`` subdirectory::
 
       import os
-      for root, dirs, files, rootfd in os.fwalk('python/Lib/email'):
+      for root, dirs, files, rootfd in os.fwalk('python/Lib/xml'):
           print(root, "consumes", end="")
           print(sum([os.stat(name, dir_fd=rootfd).st_size for name in files]),
                 end="")
           print("bytes in", len(files), "non-directory files")
-          if 'CVS' in dirs:
-              dirs.remove('CVS')  # don't visit CVS directories
+          if '__pycache__' in dirs:
+              dirs.remove('__pycache__')  # don't visit __pycache__ directories
 
    In the next example, walking the tree bottom-up is essential:
    :func:`rmdir` doesn't allow deleting a directory before the directory is
@@ -3651,7 +3703,7 @@ features:
    new file descriptor is :ref:`non-inheritable <fd_inheritance>`.
 
    *initval* is the initial value of the event counter. The initial value
-   must be an 32 bit unsigned integer. Please note that the initial value is
+   must be a 32 bit unsigned integer. Please note that the initial value is
    limited to a 32 bit unsigned int although the event counter is an unsigned
    64 bit integer with a maximum value of 2\ :sup:`64`\ -\ 2.
 
@@ -3730,7 +3782,7 @@ features:
 
 .. data:: EFD_SEMAPHORE
 
-   Provide semaphore-like semantics for reads from a :func:`eventfd` file
+   Provide semaphore-like semantics for reads from an :func:`eventfd` file
    descriptor. On read the internal counter is decremented by one.
 
    .. availability:: Linux >= 2.6.30
@@ -3916,7 +3968,7 @@ to be ignored.
    The "l" and "v" variants of the :func:`exec\* <execl>` functions differ in how
    command-line arguments are passed.  The "l" variants are perhaps the easiest
    to work with if the number of parameters is fixed when the code is written; the
-   individual parameters simply become additional parameters to the :func:`execl\*`
+   individual parameters simply become additional parameters to the :func:`!execl\*`
    functions.  The "v" variants are good when the number of parameters is
    variable, with the arguments being passed in a list or tuple as the *args*
    parameter.  In either case, the arguments to the child process should start with
@@ -3949,7 +4001,7 @@ to be ignored.
 
    .. availability:: Unix, Windows, not Emscripten, not WASI.
 
-   .. versionadded:: 3.3
+   .. versionchanged:: 3.3
       Added support for specifying *path* as an open file descriptor
       for :func:`execve`.
 
@@ -4114,15 +4166,43 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.fork "" os.fork
 
+   .. warning::
+
+      If you use TLS sockets in an application calling ``fork()``, see
+      the warning in the :mod:`ssl` documentation.
+
+   .. warning::
+
+      On macOS the use of this function is unsafe when mixed with using
+      higher-level system APIs, and that includes using :mod:`urllib.request`.
+
    .. versionchanged:: 3.8
       Calling ``fork()`` in a subinterpreter is no longer supported
       (:exc:`RuntimeError` is raised).
 
-   .. warning::
+   .. versionchanged:: 3.12
+      If Python is able to detect that your process has multiple
+      threads, :func:`os.fork` now raises a :exc:`DeprecationWarning`.
 
-      See :mod:`ssl` for applications that use the SSL module with fork().
+      We chose to surface this as a warning, when detectable, to better
+      inform developers of a design problem that the POSIX platform
+      specifically notes as not supported. Even in code that
+      *appears* to work, it has never been safe to mix threading with
+      :func:`os.fork` on POSIX platforms. The CPython runtime itself has
+      always made API calls that are not safe for use in the child
+      process when threads existed in the parent (such as ``malloc`` and
+      ``free``).
 
-   .. availability:: Unix, not Emscripten, not WASI.
+      Users of macOS or users of libc or malloc implementations other
+      than those typically found in glibc to date are among those
+      already more likely to experience deadlocks running such code.
+
+      See `this discussion on fork being incompatible with threads
+      <https://discuss.python.org/t/33555>`_
+      for technical details of why we're surfacing this longstanding
+      platform compatibility problem to developers.
+
+   .. availability:: POSIX, not Emscripten, not WASI.
 
 
 .. function:: forkpty()
@@ -4135,9 +4215,19 @@ written in Python, such as a mail server's external command delivery program.
 
    .. audit-event:: os.forkpty "" os.forkpty
 
+   .. warning::
+
+      On macOS the use of this function is unsafe when mixed with using
+      higher-level system APIs, and that includes using :mod:`urllib.request`.
+
    .. versionchanged:: 3.8
       Calling ``forkpty()`` in a subinterpreter is no longer supported
       (:exc:`RuntimeError` is raised).
+
+   .. versionchanged:: 3.12
+      If Python is able to detect that your process has multiple
+      threads, this now raises a :exc:`DeprecationWarning`. See the
+      longer explanation on :func:`os.fork`.
 
    .. availability:: Unix, not Emscripten, not WASI.
 
@@ -4156,8 +4246,7 @@ written in Python, such as a mail server's external command delivery program.
    only be sent to console processes which share a common console window,
    e.g., some subprocesses. Any other value for *sig* will cause the process
    to be unconditionally killed by the TerminateProcess API, and the exit code
-   will be set to *sig*. The Windows version of :func:`kill` additionally takes
-   process handles to be killed.
+   will be set to *sig*.
 
    See also :func:`signal.pthread_kill`.
 
@@ -4165,8 +4254,8 @@ written in Python, such as a mail server's external command delivery program.
 
    .. availability:: Unix, Windows, not Emscripten, not WASI.
 
-   .. versionadded:: 3.2
-      Windows support.
+   .. versionchanged:: 3.2
+      Added Windows support.
 
 
 .. function:: killpg(pgid, sig, /)
@@ -4263,7 +4352,7 @@ written in Python, such as a mail server's external command delivery program.
                           setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
                           setsigdef=(), scheduler=None)
 
-   Wraps the :c:func:`posix_spawn` C library API for use from Python.
+   Wraps the :c:func:`!posix_spawn` C library API for use from Python.
 
    Most users should use :func:`subprocess.run` instead of :func:`posix_spawn`.
 
@@ -4299,16 +4388,16 @@ written in Python, such as a mail server's external command delivery program.
       Performs ``os.dup2(fd, new_fd)``.
 
    These tuples correspond to the C library
-   :c:func:`posix_spawn_file_actions_addopen`,
-   :c:func:`posix_spawn_file_actions_addclose`, and
-   :c:func:`posix_spawn_file_actions_adddup2` API calls used to prepare
-   for the :c:func:`posix_spawn` call itself.
+   :c:func:`!posix_spawn_file_actions_addopen`,
+   :c:func:`!posix_spawn_file_actions_addclose`, and
+   :c:func:`!posix_spawn_file_actions_adddup2` API calls used to prepare
+   for the :c:func:`!posix_spawn` call itself.
 
    The *setpgroup* argument will set the process group of the child to the value
    specified. If the value specified is 0, the child's process group ID will be
    made the same as its process ID. If the value of *setpgroup* is not set, the
    child will inherit the parent's process group ID. This argument corresponds
-   to the C library :c:macro:`POSIX_SPAWN_SETPGROUP` flag.
+   to the C library :c:macro:`!POSIX_SPAWN_SETPGROUP` flag.
 
    If the *resetids* argument is ``True`` it will reset the effective UID and
    GID of the child to the real UID and GID of the parent process. If the
@@ -4316,27 +4405,27 @@ written in Python, such as a mail server's external command delivery program.
    the parent. In either case, if the set-user-ID and set-group-ID permission
    bits are enabled on the executable file, their effect will override the
    setting of the effective UID and GID. This argument corresponds to the C
-   library :c:macro:`POSIX_SPAWN_RESETIDS` flag.
+   library :c:macro:`!POSIX_SPAWN_RESETIDS` flag.
 
    If the *setsid* argument is ``True``, it will create a new session ID
-   for ``posix_spawn``. *setsid* requires :c:macro:`POSIX_SPAWN_SETSID`
-   or :c:macro:`POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
+   for ``posix_spawn``. *setsid* requires :c:macro:`!POSIX_SPAWN_SETSID`
+   or :c:macro:`!POSIX_SPAWN_SETSID_NP` flag. Otherwise, :exc:`NotImplementedError`
    is raised.
 
    The *setsigmask* argument will set the signal mask to the signal set
    specified. If the parameter is not used, then the child inherits the
    parent's signal mask. This argument corresponds to the C library
-   :c:macro:`POSIX_SPAWN_SETSIGMASK` flag.
+   :c:macro:`!POSIX_SPAWN_SETSIGMASK` flag.
 
    The *sigdef* argument will reset the disposition of all signals in the set
    specified. This argument corresponds to the C library
-   :c:macro:`POSIX_SPAWN_SETSIGDEF` flag.
+   :c:macro:`!POSIX_SPAWN_SETSIGDEF` flag.
 
    The *scheduler* argument must be a tuple containing the (optional) scheduler
    policy and an instance of :class:`sched_param` with the scheduler parameters.
    A value of ``None`` in the place of the scheduler policy indicates that is
    not being provided. This argument is a combination of the C library
-   :c:macro:`POSIX_SPAWN_SETSCHEDPARAM` and :c:macro:`POSIX_SPAWN_SETSCHEDULER`
+   :c:macro:`!POSIX_SPAWN_SETSCHEDPARAM` and :c:macro:`!POSIX_SPAWN_SETSCHEDULER`
    flags.
 
    .. audit-event:: os.posix_spawn path,argv,env os.posix_spawn
@@ -4349,7 +4438,7 @@ written in Python, such as a mail server's external command delivery program.
                           setpgroup=None, resetids=False, setsid=False, setsigmask=(), \
                           setsigdef=(), scheduler=None)
 
-   Wraps the :c:func:`posix_spawnp` C library API for use from Python.
+   Wraps the :c:func:`!posix_spawnp` C library API for use from Python.
 
    Similar to :func:`posix_spawn` except that the system searches
    for the *executable* file in the list of directories specified by the
@@ -4426,7 +4515,7 @@ written in Python, such as a mail server's external command delivery program.
    command-line arguments are passed.  The "l" variants are perhaps the easiest
    to work with if the number of parameters is fixed when the code is written; the
    individual parameters simply become additional parameters to the
-   :func:`spawnl\*` functions.  The "v" variants are good when the number of
+   :func:`!spawnl\*` functions.  The "v" variants are good when the number of
    parameters is variable, with the arguments being passed in a list or tuple as
    the *args* parameter.  In either case, the arguments to the child process must
    start with the name of the command being run.
@@ -4476,7 +4565,7 @@ written in Python, such as a mail server's external command delivery program.
           P_NOWAITO
 
    Possible values for the *mode* parameter to the :func:`spawn\* <spawnl>` family of
-   functions.  If either of these values is given, the :func:`spawn\*` functions
+   functions.  If either of these values is given, the :func:`spawn\* <spawnl>` functions
    will return as soon as the new process has been created, with the process id as
    the return value.
 
@@ -4486,7 +4575,7 @@ written in Python, such as a mail server's external command delivery program.
 .. data:: P_WAIT
 
    Possible value for the *mode* parameter to the :func:`spawn\* <spawnl>` family of
-   functions.  If this is given as *mode*, the :func:`spawn\*` functions will not
+   functions.  If this is given as *mode*, the :func:`spawn\* <spawnl>` functions will not
    return until the new process has run to completion and will return the exit code
    of the process the run is successful, or ``-signal`` if a signal kills the
    process.
@@ -4530,7 +4619,7 @@ written in Python, such as a mail server's external command delivery program.
 
    Use *show_cmd* to override the default window style. Whether this has any
    effect will depend on the application being launched. Values are integers as
-   supported by the Win32 :c:func:`ShellExecute` function.
+   supported by the Win32 :c:func:`!ShellExecute` function.
 
    :func:`startfile` returns as soon as the associated application is launched.
    There is no option to wait for the application to close, and no way to retrieve
@@ -4540,7 +4629,7 @@ written in Python, such as a mail server's external command delivery program.
    :func:`os.path.normpath` function to ensure that paths are properly encoded for
    Win32.
 
-   To reduce interpreter startup overhead, the Win32 :c:func:`ShellExecute`
+   To reduce interpreter startup overhead, the Win32 :c:func:`!ShellExecute`
    function is not resolved until this function is first called.  If the function
    cannot be resolved, :exc:`NotImplementedError` will be raised.
 
@@ -4664,6 +4753,9 @@ written in Python, such as a mail server's external command delivery program.
    that could be waited for, :exc:`ChildProcessError` is raised.
 
    .. availability:: Unix, not Emscripten, not WASI.
+
+   .. note::
+      This function is not available on macOS.
 
    .. versionadded:: 3.3
 
@@ -4967,6 +5059,8 @@ information, consult your Unix manpages.
 The following scheduling policies are exposed if they are supported by the
 operating system.
 
+.. _os-scheduling-policy:
+
 .. data:: SCHED_OTHER
 
    The default scheduling policy.
@@ -5058,7 +5152,7 @@ operating system.
 
 .. function:: sched_yield()
 
-   Voluntarily relinquish the CPU.
+   Voluntarily relinquish the CPU. See :manpage:`sched_yield(2)` for details.
 
 
 .. function:: sched_setaffinity(pid, mask, /)
@@ -5070,8 +5164,10 @@ operating system.
 
 .. function:: sched_getaffinity(pid, /)
 
-   Return the set of CPUs the process with PID *pid* (or the current process
-   if zero) is restricted to.
+   Return the set of CPUs the process with PID *pid* is restricted to.
+
+   If *pid* is zero, return the set of CPUs the calling thread of the current
+   process is restricted to.
 
 
 .. _os-path:
@@ -5112,12 +5208,12 @@ Miscellaneous System Information
 
 .. function:: cpu_count()
 
-   Return the number of CPUs in the system. Returns ``None`` if undetermined.
+   Return the number of logical CPUs in the system. Returns ``None`` if
+   undetermined.
 
-   This number is not equivalent to the number of CPUs the current process can
-   use.  The number of usable CPUs can be obtained with
-   ``len(os.sched_getaffinity(0))``
-
+   This number is not equivalent to the number of logical CPUs the current
+   process can use. ``len(os.sched_getaffinity(0))`` gets the number of logical
+   CPUs the calling thread of the current process is restricted to
 
    .. versionadded:: 3.4
 
@@ -5300,19 +5396,19 @@ Random numbers
       easy-to-use interface to the random number generator provided by your
       platform, please see :class:`random.SystemRandom`.
 
-   .. versionchanged:: 3.6.0
-      On Linux, ``getrandom()`` is now used in blocking mode to increase the
-      security.
-
-   .. versionchanged:: 3.5.2
-      On Linux, if the ``getrandom()`` syscall blocks (the urandom entropy pool
-      is not initialized yet), fall back on reading ``/dev/urandom``.
-
    .. versionchanged:: 3.5
       On Linux 3.17 and newer, the ``getrandom()`` syscall is now used
       when available.  On OpenBSD 5.6 and newer, the C ``getentropy()``
       function is now used. These functions avoid the usage of an internal file
       descriptor.
+
+   .. versionchanged:: 3.5.2
+      On Linux, if the ``getrandom()`` syscall blocks (the urandom entropy pool
+      is not initialized yet), fall back on reading ``/dev/urandom``.
+
+   .. versionchanged:: 3.6
+      On Linux, ``getrandom()`` is now used in blocking mode to increase the
+      security.
 
    .. versionchanged:: 3.11
       On Windows, ``BCryptGenRandom()`` is used instead of ``CryptGenRandom()``

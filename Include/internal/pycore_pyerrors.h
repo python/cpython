@@ -75,6 +75,18 @@ PyAPI_FUNC(void) _PyErr_SetString(
     PyObject *exception,
     const char *string);
 
+/*
+ * Set an exception with the error message decoded from the current locale
+ * encoding (LC_CTYPE).
+ *
+ * Exceptions occurring in decoding take priority over the desired exception.
+ *
+ * Exported for '_ctypes' shared extensions.
+ */
+PyAPI_FUNC(void) _PyErr_SetLocaleString(
+    PyObject *exception,
+    const char *string);
+
 PyAPI_FUNC(PyObject *) _PyErr_Format(
     PyThreadState *tstate,
     PyObject *exception,

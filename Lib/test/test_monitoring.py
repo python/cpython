@@ -501,6 +501,22 @@ class MultipleMonitorsTest(MonitoringTestBase, unittest.TestCase):
             self.assertEqual(sys.monitoring._all_events(), {})
             sys.monitoring.restart_events()
 
+    def test_with_instruction_event(self):
+        """Test that the second tool can set events with instruction events set by the first tool."""
+        def f():
+            pass
+        code = f.__code__
+
+        try:
+            self.assertEqual(sys.monitoring._all_events(), {})
+            sys.monitoring.set_local_events(TEST_TOOL, code, E.INSTRUCTION | E.LINE)
+            sys.monitoring.set_local_events(TEST_TOOL2, code, E.LINE)
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
+            sys.monitoring.set_events(TEST_TOOL2, 0)
+            self.assertEqual(sys.monitoring._all_events(), {})
+
+
 class LineMonitoringTest(MonitoringTestBase, unittest.TestCase):
 
     def test_lines_single(self):
@@ -743,6 +759,13 @@ class ExceptionHandledRecorder(ExceptionRecorder):
     def __call__(self, code, offset, exc):
         self.events.append(("handled", type(exc)))
 
+class ThrowRecorder(ExceptionRecorder):
+
+    event_type = E.PY_THROW
+
+    def __call__(self, code, offset, exc):
+        self.events.append(("throw", type(exc)))
+
 class ExceptionMonitoringTest(CheckEvents):
 
 
@@ -887,6 +910,31 @@ class ExceptionMonitoringTest(CheckEvents):
         self.check_balanced(
             func,
             recorders = self.exception_recorders)
+
+    def test_throw(self):
+
+        def gen():
+            yield 1
+            yield 2
+
+        def func():
+            try:
+                g = gen()
+                next(g)
+                g.throw(IndexError)
+            except IndexError:
+                pass
+
+        self.check_balanced(
+            func,
+            recorders = self.exception_recorders)
+
+        events = self.get_events(
+            func,
+            TEST_TOOL,
+            self.exception_recorders + (ThrowRecorder,)
+        )
+        self.assertEqual(events[0], ("throw", IndexError))
 
 class LineRecorder:
 
@@ -1120,7 +1168,7 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func1', 14),
             ('line', 'get_events', 11)])
 
-class TestInstallIncrementallly(MonitoringTestBase, unittest.TestCase):
+class TestInstallIncrementally(MonitoringTestBase, unittest.TestCase):
 
     def check_events(self, func, must_include, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
         try:
@@ -1149,19 +1197,19 @@ class TestInstallIncrementallly(MonitoringTestBase, unittest.TestCase):
 
     MUST_INCLUDE_LI = [
             ('instruction', 'func1', 2),
-            ('line', 'func1', 1),
+            ('line', 'func1', 2),
             ('instruction', 'func1', 4),
             ('instruction', 'func1', 6)]
 
     def test_line_then_instruction(self):
         recorders = [ LineRecorder, InstructionRecorder ]
         self.check_events(self.func1,
-                          recorders = recorders, must_include = self.EXPECTED_LI)
+                          recorders = recorders, must_include = self.MUST_INCLUDE_LI)
 
     def test_instruction_then_line(self):
-        recorders = [ InstructionRecorder, LineRecorderLowNoise ]
+        recorders = [ InstructionRecorder, LineRecorder ]
         self.check_events(self.func1,
-                          recorders = recorders, must_include = self.EXPECTED_LI)
+                          recorders = recorders, must_include = self.MUST_INCLUDE_LI)
 
     @staticmethod
     def func2():
@@ -1176,19 +1224,21 @@ class TestInstallIncrementallly(MonitoringTestBase, unittest.TestCase):
 
 
 
-    def test_line_then_instruction(self):
+    def test_call_then_instruction(self):
         recorders = [ CallRecorder, InstructionRecorder ]
         self.check_events(self.func2,
                           recorders = recorders, must_include = self.MUST_INCLUDE_CI)
 
-    def test_instruction_then_line(self):
+    def test_instruction_then_call(self):
         recorders = [ InstructionRecorder, CallRecorder ]
         self.check_events(self.func2,
                           recorders = recorders, must_include = self.MUST_INCLUDE_CI)
 
+LOCAL_RECORDERS = CallRecorder, LineRecorder, CReturnRecorder, CRaiseRecorder
+
 class TestLocalEvents(MonitoringTestBase, unittest.TestCase):
 
-    def check_events(self, func, expected, tool=TEST_TOOL, recorders=(ExceptionRecorder,)):
+    def check_events(self, func, expected, tool=TEST_TOOL, recorders=()):
         try:
             self.assertEqual(sys.monitoring._all_events(), {})
             event_list = []
@@ -1216,7 +1266,7 @@ class TestLocalEvents(MonitoringTestBase, unittest.TestCase):
             line2 = 2
             line3 = 3
 
-        self.check_events(func1, recorders = MANY_RECORDERS, expected = [
+        self.check_events(func1, recorders = LOCAL_RECORDERS, expected = [
             ('line', 'func1', 1),
             ('line', 'func1', 2),
             ('line', 'func1', 3)])
@@ -1228,7 +1278,7 @@ class TestLocalEvents(MonitoringTestBase, unittest.TestCase):
             [].append(2)
             line3 = 3
 
-        self.check_events(func2, recorders = MANY_RECORDERS, expected = [
+        self.check_events(func2, recorders = LOCAL_RECORDERS, expected = [
             ('line', 'func2', 1),
             ('line', 'func2', 2),
             ('call', 'append', [2]),
@@ -1245,15 +1295,17 @@ class TestLocalEvents(MonitoringTestBase, unittest.TestCase):
                 line = 5
             line = 6
 
-        self.check_events(func3, recorders = MANY_RECORDERS, expected = [
+        self.check_events(func3, recorders = LOCAL_RECORDERS, expected = [
             ('line', 'func3', 1),
             ('line', 'func3', 2),
             ('line', 'func3', 3),
-            ('raise', KeyError),
             ('line', 'func3', 4),
             ('line', 'func3', 5),
             ('line', 'func3', 6)])
 
+    def test_set_non_local_event(self):
+        with self.assertRaises(ValueError):
+            sys.monitoring.set_local_events(TEST_TOOL, just_call.__code__, E.RAISE)
 
 def line_from_offset(code, offset):
     for start, end, line in code.co_lines():
@@ -1666,3 +1718,46 @@ class TestRegressions(MonitoringTestBase, unittest.TestCase):
             self.assertEqual(caught, "inner")
         finally:
             sys.monitoring.set_events(TEST_TOOL, 0)
+
+    def test_108390(self):
+
+        class Foo:
+            def __init__(self, set_event):
+                if set_event:
+                    sys.monitoring.set_events(TEST_TOOL, E.PY_RESUME)
+
+        def make_foo_optimized_then_set_event():
+            for i in range(100):
+                Foo(i == 99)
+
+        try:
+            make_foo_optimized_then_set_event()
+        finally:
+            sys.monitoring.set_events(TEST_TOOL, 0)
+
+    def test_gh108976(self):
+        sys.monitoring.use_tool_id(0, "test")
+        self.addCleanup(sys.monitoring.free_tool_id, 0)
+        sys.monitoring.set_events(0, 0)
+        sys.monitoring.register_callback(0, E.LINE, lambda *args: sys.monitoring.set_events(0, 0))
+        sys.monitoring.register_callback(0, E.INSTRUCTION, lambda *args: 0)
+        sys.monitoring.set_events(0, E.LINE | E.INSTRUCTION)
+        sys.monitoring.set_events(0, 0)
+
+    def test_call_function_ex(self):
+        def f(a=1, b=2):
+            return a + b
+        args = (1, 2)
+        empty_args = []
+
+        call_data = []
+        sys.monitoring.use_tool_id(0, "test")
+        self.addCleanup(sys.monitoring.free_tool_id, 0)
+        sys.monitoring.set_events(0, 0)
+        sys.monitoring.register_callback(0, E.CALL, lambda code, offset, callable, arg0: call_data.append((callable, arg0)))
+        sys.monitoring.set_events(0, E.CALL)
+        f(*args)
+        f(*empty_args)
+        sys.monitoring.set_events(0, 0)
+        self.assertEqual(call_data[0], (f, 1))
+        self.assertEqual(call_data[1], (f, sys.monitoring.MISSING))

@@ -11,59 +11,63 @@ History of the software
 =======================
 
 Python was created in the early 1990s by Guido van Rossum at Stichting
-Mathematisch Centrum (CWI, see https://www.cwi.nl/) in the Netherlands as a
+Mathematisch Centrum (CWI, see https://www.cwi.nl) in the Netherlands as a
 successor of a language called ABC.  Guido remains Python's principal author,
 although it includes many contributions from others.
 
 In 1995, Guido continued his work on Python at the Corporation for National
-Research Initiatives (CNRI, see https://www.cnri.reston.va.us/) in Reston,
+Research Initiatives (CNRI, see https://www.cnri.reston.va.us) in Reston,
 Virginia where he released several versions of the software.
 
 In May 2000, Guido and the Python core development team moved to BeOpen.com to
 form the BeOpen PythonLabs team.  In October of the same year, the PythonLabs
-team moved to Digital Creations (now Zope Corporation; see
-https://www.zope.org/).  In 2001, the Python Software Foundation (PSF, see
+team moved to Digital Creations, which became
+Zope Corporation.  In 2001, the Python Software Foundation (PSF, see
 https://www.python.org/psf/) was formed, a non-profit organization created
-specifically to own Python-related Intellectual Property.  Zope Corporation is a
+specifically to own Python-related Intellectual Property.  Zope Corporation was a
 sponsoring member of the PSF.
 
-All Python releases are Open Source (see https://opensource.org/ for the Open
+All Python releases are Open Source (see https://opensource.org for the Open
 Source Definition). Historically, most, but not all, Python releases have also
 been GPL-compatible; the table below summarizes the various releases.
 
-+----------------+--------------+------------+------------+-----------------+
-| Release        | Derived from | Year       | Owner      | GPL compatible? |
-+================+==============+============+============+=================+
-| 0.9.0 thru 1.2 | n/a          | 1991-1995  | CWI        | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 1.3 thru 1.5.2 | 1.2          | 1995-1999  | CNRI       | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 1.6            | 1.5.2        | 2000       | CNRI       | no              |
-+----------------+--------------+------------+------------+-----------------+
-| 2.0            | 1.6          | 2000       | BeOpen.com | no              |
-+----------------+--------------+------------+------------+-----------------+
-| 1.6.1          | 1.6          | 2001       | CNRI       | no              |
-+----------------+--------------+------------+------------+-----------------+
-| 2.1            | 2.0+1.6.1    | 2001       | PSF        | no              |
-+----------------+--------------+------------+------------+-----------------+
-| 2.0.1          | 2.0+1.6.1    | 2001       | PSF        | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 2.1.1          | 2.1+2.0.1    | 2001       | PSF        | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 2.1.2          | 2.1.1        | 2002       | PSF        | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 2.1.3          | 2.1.2        | 2002       | PSF        | yes             |
-+----------------+--------------+------------+------------+-----------------+
-| 2.2 and above  | 2.1.1        | 2001-now   | PSF        | yes             |
-+----------------+--------------+------------+------------+-----------------+
++----------------+--------------+------------+------------+---------------------+
+| Release        | Derived from | Year       | Owner      | GPL-compatible? (1) |
++================+==============+============+============+=====================+
+| 0.9.0 thru 1.2 | n/a          | 1991-1995  | CWI        | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 1.3 thru 1.5.2 | 1.2          | 1995-1999  | CNRI       | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 1.6            | 1.5.2        | 2000       | CNRI       | no                  |
++----------------+--------------+------------+------------+---------------------+
+| 2.0            | 1.6          | 2000       | BeOpen.com | no                  |
++----------------+--------------+------------+------------+---------------------+
+| 1.6.1          | 1.6          | 2001       | CNRI       | yes (2)             |
++----------------+--------------+------------+------------+---------------------+
+| 2.1            | 2.0+1.6.1    | 2001       | PSF        | no                  |
++----------------+--------------+------------+------------+---------------------+
+| 2.0.1          | 2.0+1.6.1    | 2001       | PSF        | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 2.1.1          | 2.1+2.0.1    | 2001       | PSF        | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 2.1.2          | 2.1.1        | 2002       | PSF        | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 2.1.3          | 2.1.2        | 2002       | PSF        | yes                 |
++----------------+--------------+------------+------------+---------------------+
+| 2.2 and above  | 2.1.1        | 2001-now   | PSF        | yes                 |
++----------------+--------------+------------+------------+---------------------+
 
 .. note::
 
-   GPL-compatible doesn't mean that we're distributing Python under the GPL.  All
-   Python licenses, unlike the GPL, let you distribute a modified version without
-   making your changes open source. The GPL-compatible licenses make it possible to
-   combine Python with other software that is released under the GPL; the others
-   don't.
+   (1) GPL-compatible doesn't mean that we're distributing Python under the GPL.
+       All Python licenses, unlike the GPL, let you distribute a modified version
+       without making your changes open source. The GPL-compatible licenses make
+       it possible to combine Python with other software that is released under
+       the GPL; the others don't.
+
+   (2) According to Richard Stallman, 1.6.1 is not GPL-compatible, because its license
+       has a choice of law clause. According to CNRI, however, Stallman's lawyer has
+       told CNRI's lawyer that 1.6.1 is "not incompatible" with the GPL.
 
 Thanks to the many outside volunteers who have worked under Guido's direction to
 make these releases possible.
@@ -73,10 +77,10 @@ Terms and conditions for accessing or otherwise using Python
 ============================================================
 
 Python software and documentation are licensed under the
-:ref:`PSF License Agreement <PSF-license>`.
+Python Software Foundation License Version 2.
 
 Starting with Python 3.8.6, examples, recipes, and other code in
-the documentation are dual licensed under the PSF License Agreement
+the documentation are dual licensed under the PSF License Version 2
 and the :ref:`Zero-Clause BSD license <BSD0>`.
 
 Some software incorporated into Python is under different licenses.
@@ -86,39 +90,38 @@ See :ref:`OtherLicenses` for an incomplete list of these licenses.
 
 .. _PSF-license:
 
-PSF LICENSE AGREEMENT FOR PYTHON |release|
-------------------------------------------
+PYTHON SOFTWARE FOUNDATION LICENSE VERSION 2
+--------------------------------------------
 
 .. parsed-literal::
 
    1. This LICENSE AGREEMENT is between the Python Software Foundation ("PSF"), and
-      the Individual or Organization ("Licensee") accessing and otherwise using Python
-      |release| software in source or binary form and its associated documentation.
+      the Individual or Organization ("Licensee") accessing and otherwise using this
+      software ("Python") in source or binary form and its associated documentation.
 
    2. Subject to the terms and conditions of this License Agreement, PSF hereby
       grants Licensee a nonexclusive, royalty-free, world-wide license to reproduce,
       analyze, test, perform and/or display publicly, prepare derivative works,
-      distribute, and otherwise use Python |release| alone or in any derivative
+      distribute, and otherwise use Python alone or in any derivative
       version, provided, however, that PSF's License Agreement and PSF's notice of
       copyright, i.e., "Copyright © 2001-2023 Python Software Foundation; All Rights
-      Reserved" are retained in Python |release| alone or in any derivative version
+      Reserved" are retained in Python alone or in any derivative version
       prepared by Licensee.
 
    3. In the event Licensee prepares a derivative work that is based on or
-      incorporates Python |release| or any part thereof, and wants to make the
+      incorporates Python or any part thereof, and wants to make the
       derivative work available to others as provided herein, then Licensee hereby
-      agrees to include in any such work a brief summary of the changes made to Python
-      |release|.
+      agrees to include in any such work a brief summary of the changes made to Python.
 
-   4. PSF is making Python |release| available to Licensee on an "AS IS" basis.
+   4. PSF is making Python available to Licensee on an "AS IS" basis.
       PSF MAKES NO REPRESENTATIONS OR WARRANTIES, EXPRESS OR IMPLIED.  BY WAY OF
       EXAMPLE, BUT NOT LIMITATION, PSF MAKES NO AND DISCLAIMS ANY REPRESENTATION OR
       WARRANTY OF MERCHANTABILITY OR FITNESS FOR ANY PARTICULAR PURPOSE OR THAT THE
-      USE OF PYTHON |release| WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
+      USE OF PYTHON WILL NOT INFRINGE ANY THIRD PARTY RIGHTS.
 
-   5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON |release|
+   5. PSF SHALL NOT BE LIABLE TO LICENSEE OR ANY OTHER USERS OF PYTHON
       FOR ANY INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES OR LOSS AS A RESULT OF
-      MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON |release|, OR ANY DERIVATIVE
+      MODIFYING, DISTRIBUTING, OR OTHERWISE USING PYTHON, OR ANY DERIVATIVE
       THEREOF, EVEN IF ADVISED OF THE POSSIBILITY THEREOF.
 
    6. This License Agreement will automatically terminate upon a material breach of
@@ -130,7 +133,7 @@ PSF LICENSE AGREEMENT FOR PYTHON |release|
       trademark sense to endorse or promote products or services of Licensee, or any
       third party.
 
-   8. By copying, installing or otherwise using Python |release|, Licensee agrees
+   8. By copying, installing or otherwise using Python, Licensee agrees
       to be bound by the terms and conditions of this License Agreement.
 
 
@@ -205,7 +208,7 @@ CNRI LICENSE AGREEMENT FOR PYTHON 1.6.1
       Agreement.  This Agreement together with Python 1.6.1 may be located on the
       internet using the following unique, persistent identifier (known as a handle):
       1895.22/1013.  This Agreement may also be obtained from a proxy server on the
-      internet using the following URL: http://hdl.handle.net/1895.22/1013."
+      internet using the following URL: http://hdl.handle.net/1895.22/1013".
 
    3. In the event Licensee prepares a derivative work that is based on or
       incorporates Python 1.6.1 or any part thereof, and wants to make the derivative
@@ -273,8 +276,8 @@ CWI LICENSE AGREEMENT FOR PYTHON 0.9.0 THROUGH 1.2
 
 .. _BSD0:
 
-ZERO-CLAUSE BSD LICENSE FOR CODE IN THE PYTHON |release| DOCUMENTATION
-----------------------------------------------------------------------
+ZERO-CLAUSE BSD LICENSE FOR CODE IN THE PYTHON DOCUMENTATION
+------------------------------------------------------------
 
 .. parsed-literal::
 
@@ -352,8 +355,8 @@ the verbatim comments from the original code::
 Sockets
 -------
 
-The :mod:`socket` module uses the functions, :func:`getaddrinfo`, and
-:func:`getnameinfo`, which are coded in separate source files from the WIDE
+The :mod:`socket` module uses the functions, :c:func:`!getaddrinfo`, and
+:c:func:`!getnameinfo`, which are coded in separate source files from the WIDE
 Project, https://www.wide.ad.jp/. ::
 
    Copyright (C) 1995, 1996, 1997, and 1998 WIDE Project.
@@ -371,7 +374,7 @@ Project, https://www.wide.ad.jp/. ::
       may be used to endorse or promote products derived from this software
       without specific prior written permission.
 
-   THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS ``AS IS'' AND
+   THIS SOFTWARE IS PROVIDED BY THE PROJECT AND CONTRIBUTORS "AS IS" AND
    ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
    ARE DISCLAIMED.  IN NO EVENT SHALL THE PROJECT OR CONTRIBUTORS BE LIABLE
@@ -387,7 +390,7 @@ Project, https://www.wide.ad.jp/. ::
 Asynchronous socket services
 ----------------------------
 
-The :mod:`test.support.asynchat` and :mod:`test.support.asyncore`
+The :mod:`!test.support.asynchat` and :mod:`!test.support.asyncore`
 modules contain the following notice::
 
    Copyright 1996 by Sam Rushing
@@ -539,7 +542,7 @@ The :mod:`xmlrpc.client` module contains the following notice::
 test_epoll
 ----------
 
-The :mod:`test_epoll` module contains the following notice::
+The :mod:`!test.test_epoll` module contains the following notice::
 
   Copyright (c) 2001-2006 Twisted Matrix Laboratories.
 
@@ -580,7 +583,7 @@ interface::
      notice, this list of conditions and the following disclaimer in the
      documentation and/or other materials provided with the distribution.
 
-  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+  THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND
   ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
   ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
@@ -844,7 +847,7 @@ and later releases derived from that, the Apache License v2 applies::
 expat
 -----
 
-The :mod:`pyexpat` extension is built using an included copy of the expat
+The :mod:`pyexpat <xml.parsers.expat>` extension is built using an included copy of the expat
 sources unless the build is configured ``--with-system-expat``::
 
   Copyright (c) 1998, 1999, 2000 Thai Open Source Software Center Ltd
@@ -881,7 +884,7 @@ sources unless the build is configured ``--with-system-libffi``::
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
-   ``Software''), to deal in the Software without restriction, including
+   "Software"), to deal in the Software without restriction, including
    without limitation the rights to use, copy, modify, merge, publish,
    distribute, sublicense, and/or sell copies of the Software, and to
    permit persons to whom the Software is furnished to do so, subject to
@@ -890,7 +893,7 @@ sources unless the build is configured ``--with-system-libffi``::
    The above copyright notice and this permission notice shall be included
    in all copies or substantial portions of the Software.
 
-   THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND,
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
    NONINFRINGEMENT.  IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
@@ -1045,26 +1048,58 @@ https://www.w3.org/TR/xml-c14n2-testcases/ and is distributed under the
 Audioop
 -------
 
-The audioop module uses the code base in g771.c file of the SoX project::
+The audioop module uses the code base in g771.c file of the SoX project.
+https://sourceforge.net/projects/sox/files/sox/12.17.7/sox-12.17.7.tar.gz
 
-    Programming the AdLib/Sound Blaster
-    FM Music Chips
-    Version 2.0 (24 Feb 1992)
-    Copyright (c) 1991, 1992 by Jeffrey S. Lee
-    jlee@smylex.uucp
-    Warranty and Copyright Policy
-    This document is provided on an "as-is" basis, and its author makes
-    no warranty or representation, express or implied, with respect to
-    its quality performance or fitness for a particular purpose.  In no
-    event will the author of this document be liable for direct, indirect,
-    special, incidental, or consequential damages arising out of the use
-    or inability to use the information contained within.  Use of this
-    document is at your own risk.
-    This file may be used and copied freely so long as the applicable
-    copyright notices are retained, and no modifications are made to the
-    text of the document.  No money shall be charged for its distribution
-    beyond reasonable shipping, handling and duplication costs, nor shall
-    proprietary changes be made to this document so that it cannot be
-    distributed freely.  This document may not be included in published
-    material or commercial packages without the written consent of its
-    author.
+   This source code is a product of Sun Microsystems, Inc. and is provided
+   for unrestricted use.  Users may copy or modify this source code without
+   charge.
+
+   SUN SOURCE CODE IS PROVIDED AS IS WITH NO WARRANTIES OF ANY KIND INCLUDING
+   THE WARRANTIES OF DESIGN, MERCHANTIBILITY AND FITNESS FOR A PARTICULAR
+   PURPOSE, OR ARISING FROM A COURSE OF DEALING, USAGE OR TRADE PRACTICE.
+
+   Sun source code is provided with no support and without any obligation on
+   the part of Sun Microsystems, Inc. to assist in its use, correction,
+   modification or enhancement.
+
+   SUN MICROSYSTEMS, INC. SHALL HAVE NO LIABILITY WITH RESPECT TO THE
+   INFRINGEMENT OF COPYRIGHTS, TRADE SECRETS OR ANY PATENTS BY THIS SOFTWARE
+   OR ANY PART THEREOF.
+
+   In no event will Sun Microsystems, Inc. be liable for any lost revenue
+   or profits or other special, indirect and consequential damages, even if
+   Sun has been advised of the possibility of such damages.
+
+   Sun Microsystems, Inc.
+   2550 Garcia Avenue
+   Mountain View, California  94043
+
+
+asyncio
+----------
+
+Parts of the :mod:`asyncio` module are incorporated from
+`uvloop 0.16 <https://github.com/MagicStack/uvloop/tree/v0.16.0>`_,
+which is distributed under the MIT license::
+
+  Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
+
+  Permission is hereby granted, free of charge, to any person obtaining
+  a copy of this software and associated documentation files (the
+  "Software"), to deal in the Software without restriction, including
+  without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to
+  permit persons to whom the Software is furnished to do so, subject to
+  the following conditions:
+
+  The above copyright notice and this permission notice shall be
+  included in all copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+  LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+  OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+  WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

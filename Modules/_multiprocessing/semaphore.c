@@ -23,6 +23,8 @@ typedef struct {
     char *name;
 } SemLockObject;
 
+#define _SemLockObject_CAST(op) ((SemLockObject *)(op))
+
 /*[python input]
 class SEM_HANDLE_converter(CConverter):
     type = "SEM_HANDLE"
@@ -516,12 +518,12 @@ _multiprocessing_SemLock_impl(PyTypeObject *type, int kind, int value,
     return result;
 
   failure:
-    if (handle != SEM_FAILED)
-        SEM_CLOSE(handle);
-    PyMem_Free(name_copy);
     if (!PyErr_Occurred()) {
         _PyMp_SetError(NULL, MP_STANDARD_ERROR);
     }
+    if (handle != SEM_FAILED)
+        SEM_CLOSE(handle);
+    PyMem_Free(name_copy);
     return NULL;
 }
 
@@ -556,8 +558,9 @@ _multiprocessing_SemLock__rebuild_impl(PyTypeObject *type, SEM_HANDLE handle,
     if (name != NULL) {
         handle = sem_open(name, 0);
         if (handle == SEM_FAILED) {
+            PyErr_SetFromErrno(PyExc_OSError);
             PyMem_Free(name_copy);
-            return PyErr_SetFromErrno(PyExc_OSError);
+            return NULL;
         }
     }
 #endif
@@ -566,8 +569,9 @@ _multiprocessing_SemLock__rebuild_impl(PyTypeObject *type, SEM_HANDLE handle,
 }
 
 static void
-semlock_dealloc(SemLockObject* self)
+semlock_dealloc(PyObject *op)
 {
+    SemLockObject *self = _SemLockObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     if (self->handle != SEM_FAILED)
@@ -705,7 +709,7 @@ _multiprocessing_SemLock___exit___impl(SemLockObject *self,
 }
 
 static int
-semlock_traverse(SemLockObject *s, visitproc visit, void *arg)
+semlock_traverse(PyObject *s, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(s));
     return 0;

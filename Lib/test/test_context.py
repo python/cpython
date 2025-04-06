@@ -6,6 +6,7 @@ import random
 import time
 import unittest
 import weakref
+from test import support
 from test.support import threading_helper
 
 try:
@@ -81,6 +82,15 @@ class ContextTest(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'any arguments'):
             contextvars.Context(a=1)
         contextvars.Context(**{})
+
+    def test_context_new_unhashable_str_subclass(self):
+        # gh-132002: it used to crash on unhashable str subtypes.
+        class weird_str(str):
+            def __eq__(self, other):
+                pass
+
+        with self.assertRaisesRegex(TypeError, 'unhashable type'):
+            contextvars.ContextVar(weird_str())
 
     def test_context_typerrors_1(self):
         ctx = contextvars.Context()
@@ -570,6 +580,7 @@ class HamtTest(unittest.TestCase):
 
         self.assertEqual({k.name for k in h.keys()}, {'C', 'D', 'E'})
 
+    @support.requires_resource('cpu')
     def test_hamt_stress(self):
         COLLECTION_SIZE = 7000
         TEST_ITERS_EVERY = 647

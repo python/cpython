@@ -219,10 +219,5 @@ PyInit__tracemalloc(void)
     if (m == NULL)
         return NULL;
 
-    if (_PyTraceMalloc_Init() < 0) {
-        Py_DECREF(m);
-        return NULL;
-    }
-
     return m;
 }

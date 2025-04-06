@@ -14,6 +14,11 @@ PyDoc_STRVAR(_io__IOBase_seek__doc__,
 "\n"
 "Change the stream position to the given byte offset.\n"
 "\n"
+"  offset\n"
+"    The stream position, relative to \'whence\'.\n"
+"  whence\n"
+"    The relative position to seek from.\n"
+"\n"
 "The offset is interpreted relative to the position indicated by whence.\n"
 "Values for whence are:\n"
 "\n"
@@ -260,7 +265,7 @@ _io__IOBase_fileno_impl(PyObject *self, PyTypeObject *cls);
 static PyObject *
 _io__IOBase_fileno(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "fileno() takes no arguments");
         return NULL;
     }
@@ -436,4 +441,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=301b22f8f75ce3dc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=60faa842b41185d2 input=a9049054013a1b77]*/

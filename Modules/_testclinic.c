@@ -1035,6 +1035,25 @@ vararg_with_default_impl(PyObject *module, PyObject *a, PyObject *args,
 
 
 /*[clinic input]
+vararg_with_default2
+
+    a: object
+    *args: object
+    b: object = None
+    c: object = None
+
+[clinic start generated code]*/
+
+static PyObject *
+vararg_with_default2_impl(PyObject *module, PyObject *a, PyObject *args,
+                          PyObject *b, PyObject *c)
+/*[clinic end generated code: output=a0fb7c37796e2129 input=59fb22f5f0a8925f]*/
+{
+    return pack_arguments_newref(4, a, args, b, c);
+}
+
+
+/*[clinic input]
 vararg_with_only_defaults
 
     *args: object
@@ -1194,6 +1213,40 @@ clone_with_conv_f2_impl(PyObject *module, custom_t path)
 }
 
 
+/*[clinic input]
+class _testclinic.TestClass "PyObject *" "PyObject"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=668a591c65bec947]*/
+
+/*[clinic input]
+_testclinic.TestClass.meth_method_no_params
+    cls: defining_class
+    /
+[clinic start generated code]*/
+
+static PyObject *
+_testclinic_TestClass_meth_method_no_params_impl(PyObject *self,
+                                                 PyTypeObject *cls)
+/*[clinic end generated code: output=c140f100080c2fc8 input=6bd34503d11c63c1]*/
+{
+    Py_RETURN_NONE;
+}
+
+static struct PyMethodDef test_class_methods[] = {
+    _TESTCLINIC_TESTCLASS_METH_METHOD_NO_PARAMS_METHODDEF
+    {NULL, NULL}
+};
+
+static PyTypeObject TestClass = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    .tp_name = "_testclinic.TestClass",
+    .tp_basicsize = sizeof(PyObject),
+    .tp_flags = Py_TPFLAGS_DEFAULT,
+    .tp_new = PyType_GenericNew,
+    .tp_methods = test_class_methods,
+};
+
+
 static PyMethodDef tester_methods[] = {
     TEST_EMPTY_FUNCTION_METHODDEF
     OBJECTS_CONVERTER_METHODDEF
@@ -1240,6 +1293,7 @@ static PyMethodDef tester_methods[] = {
     VARARG_AND_POSONLY_METHODDEF
     VARARG_METHODDEF
     VARARG_WITH_DEFAULT_METHODDEF
+    VARARG_WITH_DEFAULT2_METHODDEF
     VARARG_WITH_ONLY_DEFAULTS_METHODDEF
     GH_32092_OOB_METHODDEF
     GH_32092_KW_PASS_METHODDEF
@@ -1262,7 +1316,18 @@ static struct PyModuleDef _testclinic_module = {
 PyMODINIT_FUNC
 PyInit__testclinic(void)
 {
-    return PyModule_Create(&_testclinic_module);
+    PyObject *m = PyModule_Create(&_testclinic_module);
+    if (m == NULL) {
+        return NULL;
+    }
+    if (PyModule_AddType(m, &TestClass) < 0) {
+        goto error;
+    }
+    return m;
+
+error:
+    Py_DECREF(m);
+    return NULL;
 }
 
 #undef RETURN_PACKED_ARGS

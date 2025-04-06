@@ -232,8 +232,11 @@ public override bool Execute() {
   </Target>
 
   <Target Name="FindVCRuntime" Returns="VCRuntimeDLL" DependsOnTargets="FindVCRedistDir">
-    <ItemGroup Condition="$(VCInstallDir) != ''">
-      <VCRuntimeDLL Include="$(VCRedistDir)\Microsoft.VC*.CRT\vcruntime*.dll" />
+    <ItemGroup Condition="$(VCRuntimeDLL) != ''">
+      <VCRuntimeDLL Include="$(VCRuntimeDLL)" />
+    </ItemGroup>
+    <ItemGroup Condition="$(VCInstallDir) != '' and $(VCRuntimeDLL) == ''">
+      <VCRuntimeDLL Include="$(VCRedistDir)\Microsoft.VC*.CRT\vcruntime*.dll" Exclude="$(VCRedistDir)\Microsoft.VC*.CRT\vcruntime*_threads.dll" />
     </ItemGroup>
 
     <Warning Text="vcruntime*.dll not found under $(VCRedistDir)." Condition="@(VCRuntimeDLL) == ''" />

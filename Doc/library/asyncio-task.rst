@@ -158,7 +158,7 @@ other coroutines::
         # Nothing happens if we just call "nested()".
         # A coroutine object is created but not awaited,
         # so it *won't run at all*.
-        nested()
+        nested()  # will raise a "RuntimeWarning".
 
         # Let's do it differently now and await it:
         print(await nested())  # will print "42".
@@ -386,10 +386,58 @@ The same special case is made for
 :exc:`KeyboardInterrupt` and :exc:`SystemExit` as in the previous paragraph.
 
 
+Terminating a Task Group
+------------------------
+
+While terminating a task group is not natively supported by the standard
+library, termination can be achieved by adding an exception-raising task
+to the task group and ignoring the raised exception:
+
+.. code-block:: python
+
+   import asyncio
+   from asyncio import TaskGroup
+
+   class TerminateTaskGroup(Exception):
+       """Exception raised to terminate a task group."""
+
+   async def force_terminate_task_group():
+       """Used to force termination of a task group."""
+       raise TerminateTaskGroup()
+
+   async def job(task_id, sleep_time):
+       print(f'Task {task_id}: start')
+       await asyncio.sleep(sleep_time)
+       print(f'Task {task_id}: done')
+
+   async def main():
+       try:
+           async with TaskGroup() as group:
+               # spawn some tasks
+               group.create_task(job(1, 0.5))
+               group.create_task(job(2, 1.5))
+               # sleep for 1 second
+               await asyncio.sleep(1)
+               # add an exception-raising task to force the group to terminate
+               group.create_task(force_terminate_task_group())
+       except* TerminateTaskGroup:
+           pass
+
+   asyncio.run(main())
+
+Expected output:
+
+.. code-block:: text
+
+   Task 1: start
+   Task 2: start
+   Task 1: done
+
 Sleeping
 ========
 
-.. coroutinefunction:: sleep(delay, result=None)
+.. function:: sleep(delay, result=None)
+   :async:
 
    Block for *delay* seconds.
 
@@ -507,7 +555,7 @@ Running Tasks Concurrently
       #     [2, 6, 24]
 
    .. note::
-      If *return_exceptions* is False, cancelling gather() after it
+      If *return_exceptions* is false, cancelling gather() after it
       has been marked done won't cancel any submitted awaitables.
       For instance, gather can be marked done after propagating an
       exception to the caller, therefore, calling ``gather.cancel()``
@@ -628,9 +676,9 @@ Shielding From Cancellation
 Timeouts
 ========
 
-.. coroutinefunction:: timeout(delay)
+.. function:: timeout(delay)
 
-    An :ref:`asynchronous context manager <async-context-managers>`
+    Return an :ref:`asynchronous context manager <async-context-managers>`
     that can be used to limit the amount of time spent waiting on
     something.
 
@@ -721,7 +769,7 @@ Timeouts
 
     .. versionadded:: 3.11
 
-.. coroutinefunction:: timeout_at(when)
+.. function:: timeout_at(when)
 
    Similar to :func:`asyncio.timeout`, except *when* is the absolute time
    to stop waiting, or ``None``.
@@ -741,7 +789,8 @@ Timeouts
 
    .. versionadded:: 3.11
 
-.. coroutinefunction:: wait_for(aw, timeout)
+.. function:: wait_for(aw, timeout)
+   :async:
 
    Wait for the *aw* :ref:`awaitable <asyncio-awaitables>`
    to complete with a timeout.
@@ -763,9 +812,6 @@ Timeouts
    happens during cancellation, it is propagated.
 
    If the wait is cancelled, the future *aw* is also cancelled.
-
-   .. versionchanged:: 3.10
-      Removed the *loop* parameter.
 
    .. _asyncio_example_waitfor:
 
@@ -797,11 +843,15 @@ Timeouts
    .. versionchanged:: 3.10
       Removed the *loop* parameter.
 
+   .. versionchanged:: 3.11
+      Raises :exc:`TimeoutError` instead of :exc:`asyncio.TimeoutError`.
+
 
 Waiting Primitives
 ==================
 
-.. coroutinefunction:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
+.. function:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
+   :async:
 
    Run :class:`~asyncio.Future` and :class:`~asyncio.Task` instances in the *aws*
    iterable concurrently and block until the condition specified
@@ -825,23 +875,22 @@ Waiting Primitives
    *return_when* indicates when this function should return.  It must
    be one of the following constants:
 
-   .. tabularcolumns:: |l|L|
+   .. list-table::
+      :header-rows: 1
 
-   +-----------------------------+----------------------------------------+
-   | Constant                    | Description                            |
-   +=============================+========================================+
-   | :const:`FIRST_COMPLETED`    | The function will return when any      |
-   |                             | future finishes or is cancelled.       |
-   +-----------------------------+----------------------------------------+
-   | :const:`FIRST_EXCEPTION`    | The function will return when any      |
-   |                             | future finishes by raising an          |
-   |                             | exception.  If no future raises an     |
-   |                             | exception then it is equivalent to     |
-   |                             | :const:`ALL_COMPLETED`.                |
-   +-----------------------------+----------------------------------------+
-   | :const:`ALL_COMPLETED`      | The function will return when all      |
-   |                             | futures finish or are cancelled.       |
-   +-----------------------------+----------------------------------------+
+      * - Constant
+        - Description
+
+      * - .. data:: FIRST_COMPLETED
+        - The function will return when any future finishes or is cancelled.
+
+      * - .. data:: FIRST_EXCEPTION
+        - The function will return when any future finishes by raising an
+          exception. If no future raises an exception
+          then it is equivalent to :const:`ALL_COMPLETED`.
+
+      * - .. data:: ALL_COMPLETED
+        - The function will return when all futures finish or are cancelled.
 
    Unlike :func:`~asyncio.wait_for`, ``wait()`` does not cancel the
    futures when a timeout occurs.
@@ -886,7 +935,8 @@ Waiting Primitives
 Running in Threads
 ==================
 
-.. coroutinefunction:: to_thread(func, /, *args, **kwargs)
+.. function:: to_thread(func, /, *args, **kwargs)
+   :async:
 
    Asynchronously run function *func* in a separate thread.
 
@@ -1105,7 +1155,7 @@ Task Object
       a :exc:`CancelledError` exception.
 
       If the Task's result isn't yet available, this method raises
-      a :exc:`InvalidStateError` exception.
+      an :exc:`InvalidStateError` exception.
 
    .. method:: exception()
 
@@ -1321,7 +1371,7 @@ Task Object
       with :meth:`uncancel`.  :class:`TaskGroup` context managers use
       :func:`uncancel` in a similar fashion.
 
-      If end-user code is, for some reason, suppresing cancellation by
+      If end-user code is, for some reason, suppressing cancellation by
       catching :exc:`CancelledError`, it needs to call this method to remove
       the cancellation state.
 

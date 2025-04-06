@@ -9,6 +9,7 @@
 
 __all__ = [ 'Client', 'Listener', 'Pipe', 'wait' ]
 
+import errno
 import io
 import os
 import sys
@@ -271,12 +272,22 @@ if _winapi:
         with FILE_FLAG_OVERLAPPED.
         """
         _got_empty_message = False
+        _send_ov = None
 
         def _close(self, _CloseHandle=_winapi.CloseHandle):
+            ov = self._send_ov
+            if ov is not None:
+                # Interrupt WaitForMultipleObjects() in _send_bytes()
+                ov.cancel()
             _CloseHandle(self._handle)
 
         def _send_bytes(self, buf):
+            if self._send_ov is not None:
+                # A connection should only be used by a single thread
+                raise ValueError("concurrent send_bytes() calls "
+                                 "are not supported")
             ov, err = _winapi.WriteFile(self._handle, buf, overlapped=True)
+            self._send_ov = ov
             try:
                 if err == _winapi.ERROR_IO_PENDING:
                     waitres = _winapi.WaitForMultipleObjects(
@@ -286,7 +297,13 @@ if _winapi:
                 ov.cancel()
                 raise
             finally:
+                self._send_ov = None
                 nwritten, err = ov.GetOverlappedResult(True)
+            if err == _winapi.ERROR_OPERATION_ABORTED:
+                # close() was called by another thread while
+                # WaitForMultipleObjects() was waiting for the overlapped
+                # operation.
+                raise OSError(errno.EPIPE, "handle is closed")
             assert err == 0
             assert nwritten == len(buf)
 
@@ -459,8 +476,9 @@ class Listener(object):
         '''
         if self._listener is None:
             raise OSError('listener is closed')
+
         c = self._listener.accept()
-        if self._authkey:
+        if self._authkey is not None:
             deliver_challenge(c, self._authkey)
             answer_challenge(c, self._authkey)
         return c
@@ -828,7 +846,7 @@ _MD5_DIGEST_LEN = 16
 _LEGACY_LENGTHS = (_MD5ONLY_MESSAGE_LENGTH, _MD5_DIGEST_LEN)
 
 
-def _get_digest_name_and_payload(message: bytes) -> (str, bytes):
+def _get_digest_name_and_payload(message):  # type: (bytes) -> tuple[str, bytes]
     """Returns a digest name and the payload for a response hash.
 
     If a legacy protocol is detected based on the message length
@@ -938,7 +956,7 @@ def answer_challenge(connection, authkey: bytes):
                 f'Protocol error, expected challenge: {message=}')
     message = message[len(_CHALLENGE):]
     if len(message) < _MD5ONLY_MESSAGE_LENGTH:
-        raise AuthenticationError('challenge too short: {len(message)} bytes')
+        raise AuthenticationError(f'challenge too short: {len(message)} bytes')
     digest = _create_response(authkey, message)
     connection.send_bytes(digest)
     response = connection.recv_bytes(256)        # reject large message

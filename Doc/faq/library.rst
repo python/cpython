@@ -111,7 +111,7 @@ Is there an equivalent to C's onexit() in Python?
 -------------------------------------------------
 
 The :mod:`atexit` module provides a register function that is similar to C's
-:c:func:`onexit`.
+:c:func:`!onexit`.
 
 
 Why don't my signal handlers work?
@@ -397,7 +397,7 @@ These aren't::
    D[x] = D[x] + 1
 
 Operations that replace other objects may invoke those other objects'
-:meth:`__del__` method when their reference count reaches zero, and that can
+:meth:`~object.__del__` method when their reference count reaches zero, and that can
 affect things.  This is especially true for the mass updates to dictionaries and
 lists.  When in doubt, use a mutex!
 
@@ -610,8 +610,7 @@ use ``p.read(n)``.
    ("ptys") instead of pipes. Or you can use a Python interface to Don Libes'
    "expect" library.  A Python extension that interfaces to expect is called
    "expy" and available from https://expectpy.sourceforge.net.  A pure Python
-   solution that works like expect is `pexpect
-   <https://pypi.org/project/pexpect/>`_.
+   solution that works like expect is :pypi:`pexpect`.
 
 
 How do I access the serial (RS232) port?
@@ -619,7 +618,7 @@ How do I access the serial (RS232) port?
 
 For Win32, OSX, Linux, BSD, Jython, IronPython:
 
-   https://pypi.org/project/pyserial/
+   :pypi:`pyserial`
 
 For Unix, see a Usenet post by Mitch Chapman:
 
@@ -765,14 +764,17 @@ The :mod:`select` module is commonly used to help with asynchronous I/O on
 sockets.
 
 To prevent the TCP connect from blocking, you can set the socket to non-blocking
-mode.  Then when you do the :meth:`socket.connect`, you will either connect immediately
+mode.  Then when you do the :meth:`~socket.socket.connect`,
+you will either connect immediately
 (unlikely) or get an exception that contains the error number as ``.errno``.
 ``errno.EINPROGRESS`` indicates that the connection is in progress, but hasn't
 finished yet.  Different OSes will return different values, so you're going to
 have to check what's returned on your system.
 
-You can use the :meth:`socket.connect_ex` method to avoid creating an exception.  It will
-just return the errno value.  To poll, you can call :meth:`socket.connect_ex` again later
+You can use the :meth:`~socket.socket.connect_ex` method
+to avoid creating an exception.
+It will just return the errno value.
+To poll, you can call :meth:`~socket.socket.connect_ex` again later
 -- ``0`` or ``errno.EISCONN`` indicate that you're connected -- or you can pass this
 socket to :meth:`select.select` to check if it's writable.
 
@@ -823,12 +825,12 @@ is simple::
    import random
    random.random()
 
-This returns a random floating point number in the range [0, 1).
+This returns a random floating-point number in the range [0, 1).
 
 There are also many other specialized generators in this module, such as:
 
 * ``randrange(a, b)`` chooses an integer in the range [a, b).
-* ``uniform(a, b)`` chooses a floating point number in the range [a, b).
+* ``uniform(a, b)`` chooses a floating-point number in the range [a, b).
 * ``normalvariate(mean, sdev)`` samples the normal (Gaussian) distribution.
 
 Some higher-level functions operate on sequences directly, such as:

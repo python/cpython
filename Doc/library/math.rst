@@ -1,5 +1,5 @@
-:mod:`math` --- Mathematical functions
-======================================
+:mod:`!math` --- Mathematical functions
+=======================================
 
 .. module:: math
    :synopsis: Mathematical functions (sin() etc.).
@@ -84,7 +84,8 @@ Number-theoretic and representation functions
 
 .. function:: fmod(x, y)
 
-   Return ``fmod(x, y)``, as defined by the platform C library. Note that the
+   Return the floating-point remainder of ``x / y``,
+   as defined by the platform C library function ``fmod(x, y)``. Note that the
    Python expression ``x % y`` may not return the same result.  The intent of the C
    standard is that ``fmod(x, y)`` be exactly (mathematically; to infinite
    precision) equal to ``x - n*y`` for some integer *n* such that the result has
@@ -107,7 +108,7 @@ Number-theoretic and representation functions
 
 .. function:: fsum(iterable)
 
-   Return an accurate floating point sum of values in the iterable.  Avoids
+   Return an accurate floating-point sum of values in the iterable.  Avoids
    loss of precision by tracking multiple intermediate partial sums.
 
    The algorithm's accuracy depends on IEEE-754 arithmetic guarantees and the
@@ -117,8 +118,8 @@ Number-theoretic and representation functions
    least significant bit.
 
    For further discussion and two alternative approaches, see the `ASPN cookbook
-   recipes for accurate floating point summation
-   <https://code.activestate.com/recipes/393090/>`_\.
+   recipes for accurate floating-point summation
+   <https://code.activestate.com/recipes/393090-binary-floating-point-summation-accurate-to-full-p/>`_\.
 
 
 .. function:: gcd(*integers)
@@ -142,19 +143,21 @@ Number-theoretic and representation functions
    ``False`` otherwise.
 
    Whether or not two values are considered close is determined according to
-   given absolute and relative tolerances.
+   given absolute and relative tolerances.  If no errors occur, the result will
+   be: ``abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)``.
 
    *rel_tol* is the relative tolerance -- it is the maximum allowed difference
    between *a* and *b*, relative to the larger absolute value of *a* or *b*.
    For example, to set a tolerance of 5%, pass ``rel_tol=0.05``.  The default
    tolerance is ``1e-09``, which assures that the two values are the same
-   within about 9 decimal digits.  *rel_tol* must be greater than zero.
+   within about 9 decimal digits.  *rel_tol* must be nonnegative and less
+   than ``1.0``.
 
-   *abs_tol* is the minimum absolute tolerance -- useful for comparisons near
-   zero. *abs_tol* must be at least zero.
-
-   If no errors occur, the result will be:
-   ``abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)``.
+   *abs_tol* is the absolute tolerance; it defaults to ``0.0`` and it must be
+   nonnegative.  When comparing ``x`` to ``0.0``, ``isclose(x, 0)`` is computed
+   as ``abs(x) <= rel_tol  * abs(x)``, which is ``False`` for any nonzero ``x`` and
+   *rel_tol* less than ``1.0``.  So add an appropriate positive *abs_tol* argument
+   to the call.
 
    The IEEE 754 special values of ``NaN``, ``inf``, and ``-inf`` will be
    handled according to IEEE rules.  Specifically, ``NaN`` is not considered
@@ -239,10 +242,10 @@ Number-theoretic and representation functions
 
    See also :func:`math.ulp`.
 
+   .. versionadded:: 3.9
+
    .. versionchanged:: 3.12
       Added the *steps* argument.
-
-   .. versionadded:: 3.9
 
 .. function:: perm(n, k=None)
 
@@ -252,7 +255,7 @@ Number-theoretic and representation functions
    Evaluates to ``n! / (n - k)!`` when ``k <= n`` and evaluates
    to zero when ``k > n``.
 
-   If *k* is not specified or is None, then *k* defaults to *n*
+   If *k* is not specified or is ``None``, then *k* defaults to *n*
    and the function returns ``n!``.
 
    Raises :exc:`TypeError` if either of the arguments are not integers.
@@ -288,7 +291,7 @@ Number-theoretic and representation functions
    If the result of the remainder operation is zero, that zero will have
    the same sign as *x*.
 
-   On platforms using IEEE 754 binary floating-point, the result of this
+   On platforms using IEEE 754 binary floating point, the result of this
    operation is always exactly representable: no rounding error is introduced.
 
    .. versionadded:: 3.7
@@ -592,7 +595,7 @@ Special functions
 
    The :func:`erf` function can be used to compute traditional statistical
    functions such as the `cumulative standard normal distribution
-   <https://en.wikipedia.org/wiki/Normal_distribution#Cumulative_distribution_functions>`_::
+   <https://en.wikipedia.org/wiki/Cumulative_distribution_function>`_::
 
      def phi(x):
          'Cumulative distribution function for the standard normal distribution'
@@ -680,10 +683,10 @@ Constants
       >>> math.isnan(float('nan'))
       True
 
+   .. versionadded:: 3.5
+
    .. versionchanged:: 3.11
       It is now always available.
-
-   .. versionadded:: 3.5
 
 
 .. impl-detail::

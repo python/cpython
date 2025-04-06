@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - "Tools/clinic/**"
+      - "Tools/requirements-dev.txt"
       - ".github/workflows/mypy.yml"
   workflow_dispatch:
 
@@ -29,11 +30,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.x"
           cache: pip
-          cache-dependency-path: Tools/clinic/requirements-dev.txt
-      - run: pip install -r Tools/clinic/requirements-dev.txt
+          cache-dependency-path: Tools/requirements-dev.txt
+      - run: pip install -r Tools/requirements-dev.txt
       - run: mypy --config-file Tools/clinic/mypy.ini

@@ -294,6 +294,18 @@ class TestTypeWatchers(unittest.TestCase):
                 C2.hmm = "baz"
                 self.assert_events([C1, [C2]])
 
+    def test_all_watchers(self):
+        class C: pass
+        with ExitStack() as stack:
+            last_wid = -1
+            # don't make assumptions about how many watchers are already
+            # registered, just go until we reach the max ID
+            while last_wid < self.TYPE_MAX_WATCHERS - 1:
+                last_wid = stack.enter_context(self.watcher())
+            self.watch(last_wid, C)
+            C.foo = "bar"
+            self.assert_events([C])
+
     def test_watch_non_type(self):
         with self.watcher() as wid:
             with self.assertRaisesRegex(ValueError, r"Cannot watch non-type"):
@@ -339,12 +351,10 @@ class TestTypeWatchers(unittest.TestCase):
             self.clear_watcher(1)
 
     def test_no_more_ids_available(self):
-        contexts = [self.watcher() for i in range(self.TYPE_MAX_WATCHERS)]
-        with ExitStack() as stack:
-            for ctx in contexts:
-                stack.enter_context(ctx)
-            with self.assertRaisesRegex(RuntimeError, r"no more type watcher IDs"):
-                self.add_watcher()
+        with self.assertRaisesRegex(RuntimeError, r"no more type watcher IDs"):
+            with ExitStack() as stack:
+                for _ in range(self.TYPE_MAX_WATCHERS + 1):
+                    stack.enter_context(self.watcher())
 
 
 class TestCodeObjectWatchers(unittest.TestCase):

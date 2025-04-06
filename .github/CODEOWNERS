@@ -9,6 +9,7 @@
 
 # pre-commit
 .pre-commit-config.yaml       @hugovk @AlexWaygood
+.ruff.toml                    @hugovk @AlexWaygood
 
 # Build system
 configure*                    @erlend-aasland @corona10
@@ -140,8 +141,9 @@ Lib/ast.py                    @isidentical
 **/*dataclasses*              @ericvsmith
 
 **/*idlelib*                  @terryjreedy
+/Doc/library/idle.rst         @terryjreedy
 
-**/*typing*                   @gvanrossum @Fidget-Spinner @JelleZijlstra @AlexWaygood
+**/*typing*                   @gvanrossum @JelleZijlstra @AlexWaygood
 
 **/*ftplib                    @giampaolo
 **/*shutil                    @giampaolo
@@ -165,3 +167,8 @@ Lib/ast.py                    @isidentical
 
 # zipfile.Path
 **/*zipfile/_path/*           @jaraco
+
+# SBOM
+/Misc/externals.spdx.json     @sethmlarson
+/Misc/sbom.spdx.json          @sethmlarson
+/Tools/build/generate_sbom.py @sethmlarson

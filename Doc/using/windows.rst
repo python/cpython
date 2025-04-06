@@ -14,8 +14,8 @@ know about when using Python on Microsoft Windows.
 
 Unlike most Unix systems and services, Windows does not include a system
 supported installation of Python. To make Python available, the CPython team
-has compiled Windows installers (MSI packages) with every `release
-<https://www.python.org/download/releases/>`_ for many years. These installers
+has compiled Windows installers with every `release
+<https://www.python.org/downloads/>`_ for many years. These installers
 are primarily intended to add a per-user installation of Python, with the
 core interpreter and library being used by a single user. The installer is also
 able to install for all users of a single machine, and a separate ZIP file is
@@ -394,7 +394,7 @@ When writing to the Windows Registry, the following behaviors exist:
 For more detail on the technical basis for these limitations, please consult
 Microsoft's documentation on packaged full-trust apps, currently available at
 `docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes
-<https://docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes>`_
+<https://learn.microsoft.com/windows/msix/desktop/desktop-to-uwp-behind-the-scenes>`_
 
 
 .. _windows-nuget:
@@ -475,7 +475,7 @@ dependents, such as Idle), pip and the Python documentation are not included.
 .. note::
 
     The embedded distribution does not include the `Microsoft C Runtime
-    <https://docs.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist#visual-studio-2015-2017-2019-and-2022>`_ and it is
+    <https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist#visual-studio-2015-2017-2019-and-2022>`_ and it is
     the responsibility of the application installer to provide this. The
     runtime may have already been installed on a user's system previously or
     automatically via Windows Update, and can be detected by finding
@@ -548,7 +548,7 @@ key features:
     Popular scientific modules (such as numpy, scipy and pandas) and the
     ``conda`` package manager.
 
-`Enthought Deployment Manager <https://www.enthought.com/edm/>`_
+`Enthought Deployment Manager <https://assets.enthought.com/downloads/edm/>`_
     "The Next Generation Python Environment and Package Manager".
 
     Previously Enthought provided Canopy, but it `reached end of life in 2016
@@ -618,13 +618,13 @@ System variables, you need non-restricted access to your machine
 
 .. seealso::
 
-    https://docs.microsoft.com/en-us/windows/win32/procthread/environment-variables
+    https://learn.microsoft.com/windows/win32/procthread/environment-variables
       Overview of environment variables on Windows
 
-    https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/set_1
+    https://learn.microsoft.com/windows-server/administration/windows-commands/set_1
       The ``set`` command, for temporarily modifying environment variables
 
-    https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/setx
+    https://learn.microsoft.com/windows-server/administration/windows-commands/setx
       The ``setx`` command, for permanently modifying environment variables
 
 
@@ -889,7 +889,7 @@ minor version. I.e. ``/usr/bin/python3.7-32`` will request usage of the
 
    The "-64" suffix is deprecated, and now implies "any architecture that is
    not provably i386/32-bit". To request a specific environment, use the new
-   ``-V:<TAG>`` argument with the complete tag.
+   :samp:`-V:{TAG}` argument with the complete tag.
 
 The ``/usr/bin/env`` form of shebang line has one further special property.
 Before looking for installed Python interpreters, this form will search the
@@ -1187,21 +1187,22 @@ Otherwise, your users may experience problems using your application. Note that
 the first suggestion is the best, as the others may still be susceptible to
 non-standard paths in the registry and user site-packages.
 
-.. versionchanged::
-   3.6
+.. versionchanged:: 3.6
 
-      * Adds ``._pth`` file support and removes ``applocal`` option from
-        ``pyvenv.cfg``.
-      * Adds ``pythonXX.zip`` as a potential landmark when directly adjacent
-        to the executable.
+   Add ``._pth`` file support and removes ``applocal`` option from
+   ``pyvenv.cfg``.
 
-.. deprecated::
-   3.6
+.. versionchanged:: 3.6
 
-      Modules specified in the registry under ``Modules`` (not ``PythonPath``)
-      may be imported by :class:`importlib.machinery.WindowsRegistryFinder`.
-      This finder is enabled on Windows in 3.6.0 and earlier, but may need to
-      be explicitly added to :data:`sys.meta_path` in the future.
+   Add :file:`python{XX}.zip` as a potential landmark when directly adjacent
+   to the executable.
+
+.. deprecated:: 3.6
+
+   Modules specified in the registry under ``Modules`` (not ``PythonPath``)
+   may be imported by :class:`importlib.machinery.WindowsRegistryFinder`.
+   This finder is enabled on Windows in 3.6.0 and earlier, but may need to
+   be explicitly added to :data:`sys.meta_path` in the future.
 
 Additional modules
 ==================
@@ -1216,18 +1217,18 @@ The Windows-specific standard modules are documented in
 PyWin32
 -------
 
-The `PyWin32 <https://pypi.org/project/pywin32>`_ module by Mark Hammond
+The :pypi:`PyWin32` module by Mark Hammond
 is a collection of modules for advanced Windows-specific support.  This includes
 utilities for:
 
 * `Component Object Model
-  <https://docs.microsoft.com/en-us/windows/win32/com/component-object-model--com--portal>`_
+  <https://learn.microsoft.com/windows/win32/com/component-object-model--com--portal>`_
   (COM)
 * Win32 API calls
 * Registry
 * Event log
 * `Microsoft Foundation Classes
-  <https://docs.microsoft.com/en-us/cpp/mfc/mfc-desktop-applications>`_
+  <https://learn.microsoft.com/cpp/mfc/mfc-desktop-applications>`_
   (MFC) user interfaces
 
 `PythonWin <https://web.archive.org/web/20060524042422/
@@ -1236,7 +1237,7 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 
 .. seealso::
 
-   `Win32 How Do I...? <http://timgolden.me.uk/python/win32_how_do_i.html>`_
+   `Win32 How Do I...? <https://timgolden.me.uk/python/win32_how_do_i.html>`_
       by Tim Golden
 
    `Python and COM <https://www.boddie.org.uk/python/COM.html>`_
@@ -1246,8 +1247,8 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 cx_Freeze
 ---------
 
-`cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_ is a ``distutils``
-extension which wraps Python scripts into executable Windows programs
+`cx_Freeze <https://cx-freeze.readthedocs.io/en/latest/>`_
+wraps Python scripts into executable Windows programs
 (:file:`{*}.exe` files).  When you have done this, you can distribute your
 application without requiring your users to install Python.
 

@@ -91,6 +91,10 @@
 #endif
 #endif
 
+/* Thread sanitizer doesn't currently support sem_clockwait */
+#ifdef _Py_THREAD_SANITIZER
+#undef HAVE_SEM_CLOCKWAIT
+#endif
 
 /* Whether or not to use semaphores directly rather than emulating them with
  * mutexes and condition variables:

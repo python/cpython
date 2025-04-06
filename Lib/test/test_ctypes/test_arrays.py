@@ -178,10 +178,10 @@ class ArrayTestCase(unittest.TestCase):
             class T(Array):
                 pass
         with self.assertRaises(AttributeError):
-            class T(Array):
+            class T2(Array):
                 _type_ = c_int
         with self.assertRaises(AttributeError):
-            class T(Array):
+            class T3(Array):
                 _length_ = 13
 
     def test_bad_length(self):
@@ -190,15 +190,15 @@ class ArrayTestCase(unittest.TestCase):
                 _type_ = c_int
                 _length_ = - sys.maxsize * 2
         with self.assertRaises(ValueError):
-            class T(Array):
+            class T2(Array):
                 _type_ = c_int
                 _length_ = -1
         with self.assertRaises(TypeError):
-            class T(Array):
+            class T3(Array):
                 _type_ = c_int
                 _length_ = 1.87
         with self.assertRaises(OverflowError):
-            class T(Array):
+            class T4(Array):
                 _type_ = c_int
                 _length_ = sys.maxsize * 2
 
@@ -212,7 +212,7 @@ class ArrayTestCase(unittest.TestCase):
         class EmptyStruct(Structure):
             _fields_ = []
 
-        obj = (EmptyStruct * 2)()  # bpo37188: Floating point exception
+        obj = (EmptyStruct * 2)()  # bpo37188: Floating-point exception
         self.assertEqual(sizeof(obj), 0)
 
     def test_empty_element_array(self):
@@ -220,7 +220,7 @@ class ArrayTestCase(unittest.TestCase):
             _type_ = c_int
             _length_ = 0
 
-        obj = (EmptyArray * 2)()  # bpo37188: Floating point exception
+        obj = (EmptyArray * 2)()  # bpo37188: Floating-point exception
         self.assertEqual(sizeof(obj), 0)
 
     def test_bpo36504_signed_int_overflow(self):

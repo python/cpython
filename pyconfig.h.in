@@ -47,10 +47,6 @@
 /* Define if --enable-ipv6 is specified */
 #undef ENABLE_IPV6
 
-/* Define to 1 if your system stores words within floats with the most
-   significant word first */
-#undef FLOAT_WORDS_BIGENDIAN
-
 /* Define if getpgrp() must be called as getpgrp(0). */
 #undef GETPGRP_HAVE_ARG
 
@@ -989,6 +985,9 @@
 /* Define if you can turn off readline's signal handling. */
 #undef HAVE_RL_CATCH_SIGNAL
 
+/* Define if readline supports rl_compdisp_func_t */
+#undef HAVE_RL_COMPDISP_FUNC_T
+
 /* Define if you have readline 2.2 */
 #undef HAVE_RL_COMPLETION_APPEND_CHARACTER
 
@@ -1333,6 +1332,9 @@
 /* Define to 1 if you have the <sys/param.h> header file. */
 #undef HAVE_SYS_PARAM_H
 
+/* Define to 1 if you have the <sys/pidfd.h> header file. */
+#undef HAVE_SYS_PIDFD_H
+
 /* Define to 1 if you have the <sys/poll.h> header file. */
 #undef HAVE_SYS_POLL_H
 
@@ -1433,8 +1435,8 @@
 /* Define to 1 if you have the `truncate' function. */
 #undef HAVE_TRUNCATE
 
-/* Define to 1 if you have the `ttyname' function. */
-#undef HAVE_TTYNAME
+/* Define to 1 if you have the `ttyname_r' function. */
+#undef HAVE_TTYNAME_R
 
 /* Define to 1 if you don't have `tm_zone' but do have the external array
    `tzname'. */
@@ -1617,6 +1619,9 @@
 
 /* Define if you want to enable internal statistics gathering. */
 #undef Py_STATS
+
+/* The version of SunOS/Solaris as reported by `uname -r' without the dot. */
+#undef Py_SUNOS_VERSION
 
 /* Define if you want to enable tracing references for debugging purpose */
 #undef Py_TRACE_REFS

@@ -36,9 +36,18 @@ _Py_IsMainInterpreter(PyInterpreterState *interp)
 static inline int
 _Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
 {
-    return (_PyRuntimeState_GetFinalizing(interp->runtime) != NULL &&
-            interp == &interp->runtime->_main_interpreter);
+    /* bpo-39877: Access _PyRuntime directly rather than using
+       tstate->interp->runtime to support calls from Python daemon threads.
+       After Py_Finalize() has been called, tstate can be a dangling pointer:
+       point to PyThreadState freed memory. */
+    return (_PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL &&
+            interp == &_PyRuntime._main_interpreter);
 }
+
+// Export for _xxsubinterpreters module.
+PyAPI_FUNC(int) _PyInterpreterState_SetRunningMain(PyInterpreterState *);
+PyAPI_FUNC(void) _PyInterpreterState_SetNotRunningMain(PyInterpreterState *);
+PyAPI_FUNC(int) _PyInterpreterState_IsRunningMain(PyInterpreterState *);
 
 
 static inline const PyConfig *
@@ -67,6 +76,12 @@ _Py_ThreadCanHandleSignals(PyInterpreterState *interp)
 extern _Py_thread_local PyThreadState *_Py_tss_tstate;
 #endif
 PyAPI_DATA(PyThreadState *) _PyThreadState_GetCurrent(void);
+
+#ifndef NDEBUG
+extern int _PyThreadState_CheckConsistency(PyThreadState *tstate);
+#endif
+
+extern int _PyThreadState_MustExit(PyThreadState *tstate);
 
 /* Get the current Python thread state.
 
@@ -141,6 +156,8 @@ PyAPI_FUNC(PyStatus) _PyInterpreterState_Enable(_PyRuntimeState *runtime);
 extern PyStatus _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime);
 extern void _PySignal_AfterFork(void);
 #endif
+
+PyAPI_FUNC(int) _PyCrossInterpreterData_ReleaseAndRawFree(_PyCrossInterpreterData *);
 
 
 PyAPI_FUNC(int) _PyState_AddModule(

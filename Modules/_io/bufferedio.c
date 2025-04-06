@@ -1015,6 +1015,16 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
         Py_DECREF(res);
         return NULL;
     }
+    /* Flush the write buffer if necessary */
+    if (self->writable) {
+        PyObject *r = buffered_flush_and_rewind_unlocked(self);
+        if (r == NULL) {
+            LEAVE_BUFFERED(self)
+            Py_DECREF(res);
+            return NULL;
+        }
+        Py_DECREF(r);
+    }
     _bufferedreader_reset_buf(self);
     r = _bufferedreader_raw_read(self, PyBytes_AS_STRING(res), n);
     LEAVE_BUFFERED(self)
@@ -1276,7 +1286,11 @@ _io__Buffered_tell_impl(buffered *self)
     if (pos == -1)
         return NULL;
     pos -= RAW_OFFSET(self);
-    /* TODO: sanity check (pos >= 0) */
+
+    // GH-95782
+    if (pos < 0)
+        pos = 0;
+
     return PyLong_FromOff_t(pos);
 }
 
@@ -1345,6 +1359,11 @@ _io__Buffered_seek_impl(buffered *self, PyObject *targetobj, int whence)
                 offset = target;
             if (offset >= -self->pos && offset <= avail) {
                 self->pos += offset;
+
+                // GH-95782
+                if (current - avail + offset < 0)
+                    return PyLong_FromOff_t(0);
+
                 return PyLong_FromOff_t(current - avail + offset);
             }
         }

@@ -20,6 +20,7 @@
 #include "pycore_range.h"         // _PyRangeIterObject
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_sysmodule.h"     // _PySys_Audit()
+#include "pycore_traceback.h"     // _PyTraceBack_FromFrame
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
@@ -489,7 +490,9 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
         }
         if (match_self) {
             // Easy. Copy the subject itself, and move on to kwargs.
-            PyList_Append(attrs, subject);
+            if (PyList_Append(attrs, subject) < 0) {
+                goto fail;
+            }
         }
         else {
             for (Py_ssize_t i = 0; i < nargs; i++) {
@@ -505,7 +508,10 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
                 if (attr == NULL) {
                     goto fail;
                 }
-                PyList_Append(attrs, attr);
+                if (PyList_Append(attrs, attr) < 0) {
+                    Py_DECREF(attr);
+                    goto fail;
+                }
                 Py_DECREF(attr);
             }
         }
@@ -518,7 +524,10 @@ match_class(PyThreadState *tstate, PyObject *subject, PyObject *type,
         if (attr == NULL) {
             goto fail;
         }
-        PyList_Append(attrs, attr);
+        if (PyList_Append(attrs, attr) < 0) {
+            Py_DECREF(attr);
+            goto fail;
+        }
         Py_DECREF(attr);
     }
     Py_SETREF(attrs, PyList_AsTuple(attrs));
@@ -536,6 +545,7 @@ fail:
 
 static int do_raise(PyThreadState *tstate, PyObject *exc, PyObject *cause);
 static int exception_group_match(
+    _PyInterpreterFrame *frame,
     PyObject* exc_value, PyObject *match_type,
     PyObject **match, PyObject **rest);
 
@@ -1848,7 +1858,7 @@ raise_error:
 */
 
 static int
-exception_group_match(PyObject* exc_value, PyObject *match_type,
+exception_group_match(_PyInterpreterFrame *frame, PyObject* exc_value, PyObject *match_type,
                       PyObject **match, PyObject **rest)
 {
     if (Py_IsNone(exc_value)) {
@@ -1875,6 +1885,15 @@ exception_group_match(PyObject* exc_value, PyObject *match_type,
             if (wrapped == NULL) {
                 return -1;
             }
+            PyFrameObject *f = _PyFrame_GetFrameObject(frame);
+            if (f != NULL) {
+                PyObject *tb = _PyTraceBack_FromFrame(NULL, f);
+                if (tb == NULL) {
+                    return -1;
+                }
+                PyException_SetTraceback(wrapped, tb);
+                Py_DECREF(tb);
+            }
             *match = wrapped;
         }
         *rest = Py_NewRef(Py_None);
@@ -1890,8 +1909,25 @@ exception_group_match(PyObject* exc_value, PyObject *match_type,
         if (pair == NULL) {
             return -1;
         }
-        assert(PyTuple_CheckExact(pair));
-        assert(PyTuple_GET_SIZE(pair) == 2);
+
+        if (!PyTuple_CheckExact(pair)) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s.split must return a tuple, not %.200s",
+                         Py_TYPE(exc_value)->tp_name, Py_TYPE(pair)->tp_name);
+            Py_DECREF(pair);
+            return -1;
+        }
+
+        // allow tuples of length > 2 for backwards compatibility
+        if (PyTuple_GET_SIZE(pair) < 2) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.200s.split must return a 2-tuple, "
+                         "got tuple of size %zd",
+                         Py_TYPE(exc_value)->tp_name, PyTuple_GET_SIZE(pair));
+            Py_DECREF(pair);
+            return -1;
+        }
+
         *match = Py_NewRef(PyTuple_GET_ITEM(pair, 0));
         *rest = Py_NewRef(PyTuple_GET_ITEM(pair, 1));
         Py_DECREF(pair);
@@ -2021,28 +2057,30 @@ do_monitor_exc(PyThreadState *tstate, _PyInterpreterFrame *frame,
     return err;
 }
 
-static inline int
-no_tools_for_event(PyThreadState *tstate, _PyInterpreterFrame *frame, int event)
+static inline bool
+no_tools_for_global_event(PyThreadState *tstate, int event)
 {
+    return tstate->interp->monitors.tools[event] == 0;
+}
+
+static inline bool
+no_tools_for_local_event(PyThreadState *tstate, _PyInterpreterFrame *frame, int event)
+{
+    assert(event < _PY_MONITORING_LOCAL_EVENTS);
     _PyCoMonitoringData *data = frame->f_code->_co_monitoring;
     if (data) {
-        if (data->active_monitors.tools[event] == 0) {
-            return 1;
-        }
+        return data->active_monitors.tools[event] == 0;
     }
     else {
-        if (tstate->interp->monitors.tools[event] == 0) {
-            return 1;
-        }
+        return no_tools_for_global_event(tstate, event);
     }
-    return 0;
 }
 
 static void
 monitor_raise(PyThreadState *tstate, _PyInterpreterFrame *frame,
               _Py_CODEUNIT *instr)
 {
-    if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_RAISE)) {
+    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_RAISE)) {
         return;
     }
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RAISE);
@@ -2052,7 +2090,7 @@ static void
 monitor_reraise(PyThreadState *tstate, _PyInterpreterFrame *frame,
               _Py_CODEUNIT *instr)
 {
-    if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_RERAISE)) {
+    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_RERAISE)) {
         return;
     }
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_RERAISE);
@@ -2062,7 +2100,7 @@ static int
 monitor_stop_iteration(PyThreadState *tstate, _PyInterpreterFrame *frame,
                        _Py_CODEUNIT *instr)
 {
-    if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_STOP_ITERATION)) {
+    if (no_tools_for_local_event(tstate, frame, PY_MONITORING_EVENT_STOP_ITERATION)) {
         return 0;
     }
     return do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_STOP_ITERATION);
@@ -2073,7 +2111,7 @@ monitor_unwind(PyThreadState *tstate,
                _PyInterpreterFrame *frame,
                _Py_CODEUNIT *instr)
 {
-    if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_PY_UNWIND)) {
+    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_PY_UNWIND)) {
         return;
     }
     do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_PY_UNWIND);
@@ -2085,7 +2123,7 @@ monitor_handled(PyThreadState *tstate,
                 _PyInterpreterFrame *frame,
                 _Py_CODEUNIT *instr, PyObject *exc)
 {
-    if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_EXCEPTION_HANDLED)) {
+    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_EXCEPTION_HANDLED)) {
         return 0;
     }
     return _Py_call_instrumentation_arg(tstate, PY_MONITORING_EVENT_EXCEPTION_HANDLED, frame, instr, exc);
@@ -2096,10 +2134,10 @@ monitor_throw(PyThreadState *tstate,
               _PyInterpreterFrame *frame,
               _Py_CODEUNIT *instr)
 {
-    if (no_tools_for_event(tstate, frame, PY_MONITORING_EVENT_PY_THROW)) {
+    if (no_tools_for_global_event(tstate, PY_MONITORING_EVENT_PY_THROW)) {
         return;
     }
-    _Py_call_instrumentation_exc0(tstate, PY_MONITORING_EVENT_PY_THROW, frame, instr);
+    do_monitor_exc(tstate, frame, instr, PY_MONITORING_EVENT_PY_THROW);
 }
 
 void
@@ -2298,11 +2336,8 @@ PyObject *
 _PyEval_GetBuiltin(PyObject *name)
 {
     PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *attr = PyDict_GetItemWithError(PyEval_GetBuiltins(), name);
-    if (attr) {
-        Py_INCREF(attr);
-    }
-    else if (!_PyErr_Occurred(tstate)) {
+    PyObject *attr = PyObject_GetItem(PyEval_GetBuiltins(), name);
+    if (attr == NULL && _PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
         _PyErr_SetObject(tstate, PyExc_AttributeError, name);
     }
     return attr;
@@ -2457,9 +2492,9 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
     PyObject *import_func, *res;
     PyObject* stack[5];
 
-    import_func = _PyDict_GetItemWithError(frame->f_builtins, &_Py_ID(__import__));
+    import_func = PyObject_GetItem(frame->f_builtins, &_Py_ID(__import__));
     if (import_func == NULL) {
-        if (!_PyErr_Occurred(tstate)) {
+        if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
             _PyErr_SetString(tstate, PyExc_ImportError, "__import__ not found");
         }
         return NULL;
@@ -2467,6 +2502,7 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
     PyObject *locals = frame->f_locals;
     /* Fast path for not overloaded __import__. */
     if (_PyImport_IsDefaultImportFunc(tstate->interp, import_func)) {
+        Py_DECREF(import_func);
         int ilevel = _PyLong_AsInt(level);
         if (ilevel == -1 && _PyErr_Occurred(tstate)) {
             return NULL;
@@ -2479,8 +2515,6 @@ import_name(PyThreadState *tstate, _PyInterpreterFrame *frame,
                         ilevel);
         return res;
     }
-
-    Py_INCREF(import_func);
 
     stack[0] = name;
     stack[1] = frame->f_globals;

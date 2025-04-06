@@ -24,10 +24,16 @@ static PyMemberDef frame_memberlist[] = {
 static PyObject *
 frame_getlocals(PyFrameObject *f, void *closure)
 {
-    if (PyFrame_FastToLocalsWithError(f) < 0)
+    if (f == NULL) {
+        PyErr_BadInternalCall();
         return NULL;
-    PyObject *locals = f->f_frame->f_locals;
-    return Py_NewRef(locals);
+    }
+    assert(!_PyFrame_IsIncomplete(f->f_frame));
+    PyObject *locals = _PyFrame_GetLocals(f->f_frame, 1);
+    if (locals) {
+        f->f_fast_as_locals = 1;
+    }
+    return locals;
 }
 
 int
@@ -322,6 +328,8 @@ mark_stacks(PyCodeObject *code_obj, int len)
             switch (opcode) {
                 case POP_JUMP_IF_FALSE:
                 case POP_JUMP_IF_TRUE:
+                case POP_JUMP_IF_NONE:
+                case POP_JUMP_IF_NOT_NONE:
                 {
                     int64_t target_stack;
                     int j = next_i + oparg;
@@ -1351,11 +1359,11 @@ PyFrame_GetVarString(PyFrameObject *frame, const char *name)
 int
 PyFrame_FastToLocalsWithError(PyFrameObject *f)
 {
-    assert(!_PyFrame_IsIncomplete(f->f_frame));
     if (f == NULL) {
         PyErr_BadInternalCall();
         return -1;
     }
+    assert(!_PyFrame_IsIncomplete(f->f_frame));
     int err = _PyFrame_FastToLocalsWithError(f->f_frame);
     if (err == 0) {
         f->f_fast_as_locals = 1;
@@ -1395,6 +1403,9 @@ _PyFrame_LocalsToFast(_PyInterpreterFrame *frame, int clear)
 
         /* Same test as in PyFrame_FastToLocals() above. */
         if (kind & CO_FAST_FREE && !(co->co_flags & CO_OPTIMIZED)) {
+            continue;
+        }
+        if (kind & CO_FAST_HIDDEN) {
             continue;
         }
         PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, i);

@@ -188,37 +188,33 @@ static int fuzz_json_loads(const char* data, size_t size) {
 
 #define MAX_RE_TEST_SIZE 0x10000
 
-PyObject* sre_compile_method = NULL;
-PyObject* sre_error_exception = NULL;
-int SRE_FLAG_DEBUG = 0;
+PyObject* re_compile_method = NULL;
+PyObject* re_error_exception = NULL;
+int RE_FLAG_DEBUG = 0;
 /* Called by LLVMFuzzerTestOneInput for initialization */
 static int init_sre_compile(void) {
     /* Import sre_compile.compile and sre.error */
-    PyObject* sre_compile_module = PyImport_ImportModule("sre_compile");
-    if (sre_compile_module == NULL) {
+    PyObject* re_module = PyImport_ImportModule("re");
+    if (re_module == NULL) {
         return 0;
     }
-    sre_compile_method = PyObject_GetAttrString(sre_compile_module, "compile");
-    if (sre_compile_method == NULL) {
+    re_compile_method = PyObject_GetAttrString(re_module, "compile");
+    if (re_compile_method == NULL) {
         return 0;
     }
 
-    PyObject* sre_constants = PyImport_ImportModule("sre_constants");
-    if (sre_constants == NULL) {
+    re_error_exception = PyObject_GetAttrString(re_module, "error");
+    if (re_error_exception == NULL) {
         return 0;
     }
-    sre_error_exception = PyObject_GetAttrString(sre_constants, "error");
-    if (sre_error_exception == NULL) {
-        return 0;
-    }
-    PyObject* debug_flag = PyObject_GetAttrString(sre_constants, "SRE_FLAG_DEBUG");
+    PyObject* debug_flag = PyObject_GetAttrString(re_module, "DEBUG");
     if (debug_flag == NULL) {
         return 0;
     }
-    SRE_FLAG_DEBUG = PyLong_AsLong(debug_flag);
+    RE_FLAG_DEBUG = PyLong_AsLong(debug_flag);
     return 1;
 }
-/* Fuzz _sre.compile(x) */
+/* Fuzz re.compile(x) */
 static int fuzz_sre_compile(const char* data, size_t size) {
     /* Ignore really long regex patterns that will timeout the fuzzer */
     if (size > MAX_RE_TEST_SIZE) {
@@ -231,7 +227,7 @@ static int fuzz_sre_compile(const char* data, size_t size) {
     uint16_t flags = ((uint16_t*) data)[0];
     /* We remove the SRE_FLAG_DEBUG if present. This is because it
        prints to stdout which greatly decreases fuzzing speed */
-    flags &= ~SRE_FLAG_DEBUG;
+    flags &= ~RE_FLAG_DEBUG;
 
     /* Pull the pattern from the remaining bytes */
     PyObject* pattern_bytes = PyBytes_FromStringAndSize(data + 2, size - 2);
@@ -244,9 +240,9 @@ static int fuzz_sre_compile(const char* data, size_t size) {
         return 0;
     }
 
-    /* compiled = _sre.compile(data[2:], data[0:2] */
+    /* compiled = re.compile(data[2:], data[0:2] */
     PyObject* compiled = PyObject_CallFunctionObjArgs(
-        sre_compile_method, pattern_bytes, flags_obj, NULL);
+        re_compile_method, pattern_bytes, flags_obj, NULL);
     /* Ignore ValueError as the fuzzer will more than likely
        generate some invalid combination of flags */
     if (compiled == NULL && PyErr_ExceptionMatches(PyExc_ValueError)) {
@@ -262,7 +258,7 @@ static int fuzz_sre_compile(const char* data, size_t size) {
         PyErr_Clear();
     }
     /* Ignore re.error */
-    if (compiled == NULL && PyErr_ExceptionMatches(sre_error_exception)) {
+    if (compiled == NULL && PyErr_ExceptionMatches(re_error_exception)) {
         PyErr_Clear();
     }
 
@@ -526,13 +522,8 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
 #if !defined(_Py_FUZZ_ONE) || defined(_Py_FUZZ_fuzz_sre_compile)
     static int SRE_COMPILE_INITIALIZED = 0;
     if (!SRE_COMPILE_INITIALIZED && !init_sre_compile()) {
-        if (!PyErr_ExceptionMatches(PyExc_DeprecationWarning)) {
-            PyErr_Print();
-            abort();
-        }
-        else {
-            PyErr_Clear();
-        }
+        PyErr_Print();
+        abort();
     } else {
         SRE_COMPILE_INITIALIZED = 1;
     }

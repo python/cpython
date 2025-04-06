@@ -16,7 +16,15 @@ Object Protocol
 
    Properly handle returning :c:data:`Py_NotImplemented` from within a C
    function (that is, create a new :term:`strong reference`
-   to NotImplemented and return it).
+   to :const:`NotImplemented` and return it).
+
+
+.. c:macro:: Py_PRINT_RAW
+
+   Flag to be used with multiple functions that print the object (like
+   :c:func:`PyObject_Print` and :c:func:`PyFile_WriteObject`).
+   If passed, these function would use the :func:`str` of the object
+   instead of the :func:`repr`.
 
 
 .. c:function:: int PyObject_Print(PyObject *o, FILE *fp, int flags)
@@ -42,15 +50,15 @@ Object Protocol
 
 .. c:function:: int PyObject_HasAttrString(PyObject *o, const char *attr_name)
 
-   Returns ``1`` if *o* has the attribute *attr_name*, and ``0`` otherwise.  This
-   is equivalent to the Python expression ``hasattr(o, attr_name)``.  This function
-   always succeeds.
+   This is the same as :c:func:`PyObject_HasAttr`, but *attr_name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
    .. note::
 
       Exceptions that occur when this calls :meth:`~object.__getattr__` and
-      :meth:`~object.__getattribute__` methods or while creating the temporary :class:`str`
-      object are silently ignored.
+      :meth:`~object.__getattribute__` methods or while creating the temporary
+      :class:`str` object are silently ignored.
       For proper error handling, use :c:func:`PyObject_GetAttrString` instead.
 
 
@@ -63,9 +71,9 @@ Object Protocol
 
 .. c:function:: PyObject* PyObject_GetAttrString(PyObject *o, const char *attr_name)
 
-   Retrieve an attribute named *attr_name* from object *o*. Returns the attribute
-   value on success, or ``NULL`` on failure. This is the equivalent of the Python
-   expression ``o.attr_name``.
+   This is the same as :c:func:`PyObject_GetAttr`, but *attr_name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
 
 .. c:function:: PyObject* PyObject_GenericGetAttr(PyObject *o, PyObject *name)
@@ -92,14 +100,20 @@ Object Protocol
 
 .. c:function:: int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v)
 
-   Set the value of the attribute named *attr_name*, for object *o*, to the value
-   *v*. Raise an exception and return ``-1`` on failure;
-   return ``0`` on success.  This is the equivalent of the Python statement
-   ``o.attr_name = v``.
+   This is the same as :c:func:`PyObject_SetAttr`, but *attr_name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
 
    If *v* is ``NULL``, the attribute is deleted, but this feature is
    deprecated in favour of using :c:func:`PyObject_DelAttrString`.
 
+   The number of different attribute names passed to this function
+   should be kept small, usually by using a statically allocated string
+   as *attr_name*.
+   For attribute names that aren't known at compile time, prefer calling
+   :c:func:`PyUnicode_FromString` and :c:func:`PyObject_SetAttr` directly.
+   For more details, see :c:func:`PyUnicode_InternFromString`, which may be
+   used internally to create a key object.
 
 .. c:function:: int PyObject_GenericSetAttr(PyObject *o, PyObject *name, PyObject *value)
 
@@ -121,8 +135,17 @@ Object Protocol
 
 .. c:function:: int PyObject_DelAttrString(PyObject *o, const char *attr_name)
 
-   Delete attribute named *attr_name*, for object *o*. Returns ``-1`` on failure.
-   This is the equivalent of the Python statement ``del o.attr_name``.
+   This is the same as :c:func:`PyObject_DelAttr`, but *attr_name* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+   The number of different attribute names passed to this function
+   should be kept small, usually by using a statically allocated string
+   as *attr_name*.
+   For attribute names that aren't known at compile time, prefer calling
+   :c:func:`PyUnicode_FromString` and :c:func:`PyObject_DelAttr` directly.
+   For more details, see :c:func:`PyUnicode_InternFromString`, which may be
+   used internally to create a key object for lookup.
 
 
 .. c:function:: PyObject* PyObject_GenericGetDict(PyObject *o, void *context)
@@ -172,12 +195,8 @@ Object Protocol
 .. c:function:: int PyObject_RichCompareBool(PyObject *o1, PyObject *o2, int opid)
 
    Compare the values of *o1* and *o2* using the operation specified by *opid*,
-   which must be one of :c:macro:`Py_LT`, :c:macro:`Py_LE`, :c:macro:`Py_EQ`,
-   :c:macro:`Py_NE`, :c:macro:`Py_GT`, or :c:macro:`Py_GE`, corresponding to ``<``,
-   ``<=``, ``==``, ``!=``, ``>``, or ``>=`` respectively. Returns ``-1`` on error,
-   ``0`` if the result is false, ``1`` otherwise. This is the equivalent of the
-   Python expression ``o1 op o2``, where ``op`` is the operator corresponding to
-   *opid*.
+   like :c:func:`PyObject_RichCompare`, but returns ``-1`` on error, ``0`` if
+   the result is false, ``1`` otherwise.
 
 .. note::
    If *o1* and *o2* are the same object, :c:func:`PyObject_RichCompareBool`
@@ -249,14 +268,14 @@ Object Protocol
    The result will be ``1`` when at least one of the checks returns ``1``,
    otherwise it will be ``0``.
 
-   If *cls* has a :meth:`~class.__subclasscheck__` method, it will be called to
+   If *cls* has a :meth:`~type.__subclasscheck__` method, it will be called to
    determine the subclass status as described in :pep:`3119`.  Otherwise,
    *derived* is a subclass of *cls* if it is a direct or indirect subclass,
-   i.e. contained in ``cls.__mro__``.
+   i.e. contained in :attr:`cls.__mro__ <type.__mro__>`.
 
    Normally only class objects, i.e. instances of :class:`type` or a derived
    class, are considered classes.  However, objects can override this by having
-   a :attr:`~class.__bases__` attribute (which must be a tuple of base classes).
+   a :attr:`~type.__bases__` attribute (which must be a tuple of base classes).
 
 
 .. c:function:: int PyObject_IsInstance(PyObject *inst, PyObject *cls)
@@ -268,15 +287,15 @@ Object Protocol
    The result will be ``1`` when at least one of the checks returns ``1``,
    otherwise it will be ``0``.
 
-   If *cls* has a :meth:`~class.__instancecheck__` method, it will be called to
+   If *cls* has a :meth:`~type.__instancecheck__` method, it will be called to
    determine the subclass status as described in :pep:`3119`.  Otherwise, *inst*
    is an instance of *cls* if its class is a subclass of *cls*.
 
    An instance *inst* can override what is considered its class by having a
-   :attr:`~instance.__class__` attribute.
+   :attr:`~object.__class__` attribute.
 
    An object *cls* can override if it is considered a class, and what its base
-   classes are, by having a :attr:`~class.__bases__` attribute (which must be a tuple
+   classes are, by having a :attr:`~type.__bases__` attribute (which must be a tuple
    of base classes).
 
 
@@ -374,6 +393,13 @@ Object Protocol
    on failure.  This is equivalent to the Python statement ``del o[key]``.
 
 
+.. c:function:: int PyObject_DelItemString(PyObject *o, const char *key)
+
+   This is the same as :c:func:`PyObject_DelItem`, but *key* is
+   specified as a :c:expr:`const char*` UTF-8 encoded bytes string,
+   rather than a :c:expr:`PyObject*`.
+
+
 .. c:function:: PyObject* PyObject_Dir(PyObject *o)
 
    This is equivalent to the Python expression ``dir(o)``, returning a (possibly
@@ -389,6 +415,12 @@ Object Protocol
    iterator for the object argument, or the object  itself if the object is already
    an iterator.  Raises :exc:`TypeError` and returns ``NULL`` if the object cannot be
    iterated.
+
+
+.. c:function:: PyObject* PyObject_SelfIter(PyObject *obj)
+
+   This is equivalent to the Python ``__iter__(self): return self`` method.
+   It is intended for :term:`iterator` types, to be used in the :c:member:`PyTypeObject.tp_iter` slot.
 
 
 .. c:function:: PyObject* PyObject_GetAIter(PyObject *o)

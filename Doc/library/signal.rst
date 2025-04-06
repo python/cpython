@@ -1,5 +1,5 @@
-:mod:`signal` --- Set handlers for asynchronous events
-======================================================
+:mod:`!signal` --- Set handlers for asynchronous events
+=======================================================
 
 .. module:: signal
    :synopsis: Set handlers for asynchronous events.
@@ -156,6 +156,8 @@ The variables defined in the :mod:`signal` module are:
 .. data:: SIGCLD
 
    Alias to :data:`SIGCHLD`.
+
+   .. availability:: not macOS.
 
 .. data:: SIGCONT
 
@@ -423,7 +425,7 @@ The :mod:`signal` module defines the following functions:
    signal to a particular Python thread would be to force a running system call
    to fail with :exc:`InterruptedError`.
 
-   Use :func:`threading.get_ident()` or the :attr:`~threading.Thread.ident`
+   Use :func:`threading.get_ident` or the :attr:`~threading.Thread.ident`
    attribute of :class:`threading.Thread` objects to get a suitable value
    for *thread_id*.
 

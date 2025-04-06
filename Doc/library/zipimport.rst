@@ -1,5 +1,5 @@
-:mod:`zipimport` --- Import modules from Zip archives
-=====================================================
+:mod:`!zipimport` --- Import modules from Zip archives
+======================================================
 
 .. module:: zipimport
    :synopsis: Support for importing Python modules from ZIP archives.
@@ -113,7 +113,7 @@ zipimporter Objects
       file wasn't found.
 
       .. versionchanged:: 3.3
-         :exc:`IOError` used to be raised instead of :exc:`OSError`.
+         :exc:`IOError` used to be raised, it is now an alias of :exc:`OSError`.
 
 
    .. method:: get_filename(fullname)

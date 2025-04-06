@@ -62,7 +62,7 @@ module _locale
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ed98569b726feada]*/
 
-/* support functions for formatting floating point numbers */
+/* support functions for formatting floating-point numbers */
 
 /* the grouping is terminated by either 0 or CHAR_MAX */
 static PyObject*
@@ -595,6 +595,37 @@ static struct langinfo_constant{
     {0, 0}
 };
 
+#ifdef __GLIBC__
+#if defined(ALT_DIGITS) || defined(ERA)
+static PyObject *
+decode_strings(const char *result, size_t max_count)
+{
+    /* Convert a sequence of NUL-separated C strings to a Python string
+     * containing semicolon separated items. */
+    size_t i = 0;
+    size_t count = 0;
+    for (; count < max_count && result[i]; count++) {
+        i += strlen(result + i) + 1;
+    }
+    char *buf = PyMem_Malloc(i);
+    if (buf == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    memcpy(buf, result, i);
+    /* Replace all NULs with semicolons. */
+    i = 0;
+    while (--count) {
+        i += strlen(buf + i);
+        buf[i++] = ';';
+    }
+    PyObject *pyresult = PyUnicode_DecodeLocale(buf, NULL);
+    PyMem_Free(buf);
+    return pyresult;
+}
+#endif
+#endif
+
 /*[clinic input]
 _locale.nl_langinfo
 
@@ -618,7 +649,28 @@ _locale_nl_langinfo_impl(PyObject *module, int item)
                instead of an empty string for nl_langinfo(ERA).  */
             const char *result = nl_langinfo(item);
             result = result != NULL ? result : "";
-            return PyUnicode_DecodeLocale(result, NULL);
+            PyObject *pyresult;
+#ifdef __GLIBC__
+            /* According to the POSIX specification the result must be
+             * a sequence of semicolon-separated strings.
+             * But in Glibc they are NUL-separated. */
+#ifdef ALT_DIGITS
+            if (item == ALT_DIGITS && *result) {
+                pyresult = decode_strings(result, 100);
+            }
+            else
+#endif
+#ifdef ERA
+            if (item == ERA && *result) {
+                pyresult = decode_strings(result, SIZE_MAX);
+            }
+            else
+#endif
+#endif
+            {
+                pyresult = PyUnicode_DecodeLocale(result, NULL);
+            }
+            return pyresult;
         }
     PyErr_SetString(PyExc_ValueError, "unsupported langinfo constant");
     return NULL;
@@ -737,8 +789,8 @@ _locale_bindtextdomain_impl(PyObject *module, const char *domain,
     }
     current_dirname = bindtextdomain(domain, dirname);
     if (current_dirname == NULL) {
-        Py_XDECREF(dirname_bytes);
         PyErr_SetFromErrno(PyExc_OSError);
+        Py_XDECREF(dirname_bytes);
         return NULL;
     }
     result = PyUnicode_DecodeLocale(current_dirname, NULL);

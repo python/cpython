@@ -1,13 +1,16 @@
 # Adapted with permission from the EdgeDB project;
 # license: PSFL.
 
-
+import weakref
+import sys
+import gc
 import asyncio
 import contextvars
 import contextlib
 from asyncio import taskgroups
 import unittest
 
+from test.test_asyncio.utils import await_without_task
 
 # To prevent a warning "test altered the execution environment"
 def tearDownModule():
@@ -26,7 +29,25 @@ def get_error_types(eg):
     return {type(exc) for exc in eg.exceptions}
 
 
-class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
+def set_gc_state(enabled):
+    was_enabled = gc.isenabled()
+    if enabled:
+        gc.enable()
+    else:
+        gc.disable()
+    return was_enabled
+
+
+@contextlib.contextmanager
+def disable_gc():
+    was_enabled = set_gc_state(enabled=False)
+    try:
+        yield
+    finally:
+        set_gc_state(enabled=was_enabled)
+
+
+class BaseTestTaskGroup:
 
     async def test_taskgroup_01(self):
 
@@ -778,6 +799,237 @@ class TestTaskGroup(unittest.IsolatedAsyncioTestCase):
                 self.fail('CustomException not raised')
 
         await asyncio.create_task(main())
+
+    async def test_taskgroup_already_entered(self):
+        tg = taskgroups.TaskGroup()
+        async with tg:
+            with self.assertRaisesRegex(RuntimeError, "has already been entered"):
+                async with tg:
+                    pass
+
+    async def test_taskgroup_double_enter(self):
+        tg = taskgroups.TaskGroup()
+        async with tg:
+            pass
+        with self.assertRaisesRegex(RuntimeError, "has already been entered"):
+            async with tg:
+                pass
+
+    async def test_taskgroup_finished(self):
+        tg = taskgroups.TaskGroup()
+        async with tg:
+            pass
+        coro = asyncio.sleep(0)
+        with self.assertRaisesRegex(RuntimeError, "is finished"):
+            tg.create_task(coro)
+        # We still have to await coro to avoid a warning
+        await coro
+
+    async def test_taskgroup_not_entered(self):
+        tg = taskgroups.TaskGroup()
+        coro = asyncio.sleep(0)
+        with self.assertRaisesRegex(RuntimeError, "has not been entered"):
+            tg.create_task(coro)
+        # We still have to await coro to avoid a warning
+        await coro
+
+    async def test_taskgroup_without_parent_task(self):
+        tg = taskgroups.TaskGroup()
+        with self.assertRaisesRegex(RuntimeError, "parent task"):
+            await await_without_task(tg.__aenter__())
+        coro = asyncio.sleep(0)
+        with self.assertRaisesRegex(RuntimeError, "has not been entered"):
+            tg.create_task(coro)
+        # We still have to await coro to avoid a warning
+        await coro
+
+    async def test_exception_refcycles_direct(self):
+        """Test that TaskGroup doesn't keep a reference to the raised ExceptionGroup"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        try:
+            async with tg:
+                raise _Done
+        except ExceptionGroup as e:
+            exc = e
+
+        self.assertIsNotNone(exc)
+        self.assertListEqual(gc.get_referrers(exc), [])
+
+
+    async def test_exception_refcycles_errors(self):
+        """Test that TaskGroup deletes self._errors, and __aexit__ args"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        try:
+            async with tg:
+                raise _Done
+        except* _Done as excs:
+            exc = excs.exceptions[0]
+
+        self.assertIsInstance(exc, _Done)
+        self.assertListEqual(gc.get_referrers(exc), [])
+
+
+    async def test_exception_refcycles_parent_task(self):
+        """Test that TaskGroup deletes self._parent_task"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        async def coro_fn():
+            async with tg:
+                raise _Done
+
+        try:
+            async with asyncio.TaskGroup() as tg2:
+                tg2.create_task(coro_fn())
+        except* _Done as excs:
+            exc = excs.exceptions[0].exceptions[0]
+
+        self.assertIsInstance(exc, _Done)
+        self.assertListEqual(gc.get_referrers(exc), [])
+
+
+    async def test_exception_refcycles_parent_task_wr(self):
+        """Test that TaskGroup deletes self._parent_task and create_task() deletes task"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        class _Done(Exception):
+            pass
+
+        async def coro_fn():
+            async with tg:
+                raise _Done
+
+        with disable_gc():
+            try:
+                async with asyncio.TaskGroup() as tg2:
+                    task_wr = weakref.ref(tg2.create_task(coro_fn()))
+            except* _Done as excs:
+                exc = excs.exceptions[0].exceptions[0]
+
+        self.assertIsNone(task_wr())
+        self.assertIsInstance(exc, _Done)
+        self.assertListEqual(gc.get_referrers(exc), [])
+
+    async def test_exception_refcycles_propagate_cancellation_error(self):
+        """Test that TaskGroup deletes propagate_cancellation_error"""
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        try:
+            async with asyncio.timeout(-1):
+                async with tg:
+                    await asyncio.sleep(0)
+        except TimeoutError as e:
+            exc = e.__cause__
+
+        self.assertIsInstance(exc, asyncio.CancelledError)
+        self.assertListEqual(gc.get_referrers(exc), [])
+
+    async def test_exception_refcycles_base_error(self):
+        """Test that TaskGroup deletes self._base_error"""
+        class MyKeyboardInterrupt(KeyboardInterrupt):
+            pass
+
+        tg = asyncio.TaskGroup()
+        exc = None
+
+        try:
+            async with tg:
+                raise MyKeyboardInterrupt
+        except MyKeyboardInterrupt as e:
+            exc = e
+
+        self.assertIsNotNone(exc)
+        self.assertListEqual(gc.get_referrers(exc), [])
+
+    async def test_cancels_task_if_created_during_creation(self):
+        # regression test for gh-128550
+        ran = False
+        class MyError(Exception):
+            pass
+
+        exc = None
+        try:
+            async with asyncio.TaskGroup() as tg:
+                async def third_task():
+                    raise MyError("third task failed")
+
+                async def second_task():
+                    nonlocal ran
+                    tg.create_task(third_task())
+                    with self.assertRaises(asyncio.CancelledError):
+                        await asyncio.sleep(0)  # eager tasks cancel here
+                        await asyncio.sleep(0)  # lazy tasks cancel here
+                    ran = True
+
+                tg.create_task(second_task())
+        except* MyError as excs:
+            exc = excs.exceptions[0]
+
+        self.assertTrue(ran)
+        self.assertIsInstance(exc, MyError)
+
+    async def test_cancellation_does_not_leak_out_of_tg(self):
+        class MyError(Exception):
+            pass
+
+        async def throw_error():
+            raise MyError
+
+        try:
+            async with asyncio.TaskGroup() as tg:
+                tg.create_task(throw_error())
+        except* MyError:
+            pass
+        else:
+            self.fail("should have raised one MyError in group")
+
+        # if this test fails this current task will be cancelled
+        # outside the task group and inside unittest internals
+        # we yield to the event loop with sleep(0) so that
+        # cancellation happens here and error is more understandable
+        await asyncio.sleep(0)
+
+
+if sys.platform == "win32":
+    EventLoop = asyncio.ProactorEventLoop
+else:
+    EventLoop = asyncio.SelectorEventLoop
+
+
+class IsolatedAsyncioTestCase(unittest.IsolatedAsyncioTestCase):
+    loop_factory = None
+
+    def _setupAsyncioRunner(self):
+        assert self._asyncioRunner is None, 'asyncio runner is already initialized'
+        runner = asyncio.Runner(debug=True, loop_factory=self.loop_factory)
+        self._asyncioRunner = runner
+
+
+class TestTaskGroup(BaseTestTaskGroup, IsolatedAsyncioTestCase):
+    loop_factory = EventLoop
+
+
+class TestEagerTaskTaskGroup(BaseTestTaskGroup, IsolatedAsyncioTestCase):
+    @staticmethod
+    def loop_factory():
+        loop = EventLoop()
+        loop.set_task_factory(asyncio.eager_task_factory)
+        return loop
 
 
 if __name__ == "__main__":

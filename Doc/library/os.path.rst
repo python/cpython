@@ -1,10 +1,10 @@
-:mod:`os.path` --- Common pathname manipulations
-================================================
+:mod:`!os.path` --- Common pathname manipulations
+=================================================
 
 .. module:: os.path
    :synopsis: Operations on pathnames.
 
-**Source code:** :source:`Lib/posixpath.py` (for POSIX) and
+**Source code:** :source:`Lib/genericpath.py`, :source:`Lib/posixpath.py` (for POSIX) and
 :source:`Lib/ntpath.py` (for Windows).
 
 .. index:: single: path; operations
@@ -81,11 +81,9 @@ the :mod:`glob` module.)
 
    Return the longest common sub-path of each pathname in the sequence
    *paths*.  Raise :exc:`ValueError` if *paths* contain both absolute
-   and relative pathnames, the *paths* are on the different drives or
+   and relative pathnames, if *paths* are on different drives, or
    if *paths* is empty.  Unlike :func:`commonprefix`, this returns a
    valid path.
-
-   .. availability:: Unix, Windows.
 
    .. versionadded:: 3.5
 
@@ -144,7 +142,7 @@ the :mod:`glob` module.)
 
 .. function:: lexists(path)
 
-   Return ``True`` if *path* refers to an existing path. Returns ``True`` for
+   Return ``True`` if *path* refers to an existing path, including
    broken symbolic links.   Equivalent to :func:`exists` on platforms lacking
    :func:`os.lstat`.
 
@@ -200,14 +198,14 @@ the :mod:`glob` module.)
 
 .. function:: getatime(path)
 
-   Return the time of last access of *path*.  The return value is a floating point number giving
+   Return the time of last access of *path*.  The return value is a floating-point number giving
    the number of seconds since the epoch (see the  :mod:`time` module).  Raise
    :exc:`OSError` if the file does not exist or is inaccessible.
 
 
 .. function:: getmtime(path)
 
-   Return the time of last modification of *path*.  The return value is a floating point number
+   Return the time of last modification of *path*.  The return value is a floating-point number
    giving the number of seconds since the epoch (see the  :mod:`time` module).
    Raise :exc:`OSError` if the file does not exist or is inaccessible.
 
@@ -297,8 +295,8 @@ the :mod:`glob` module.)
    always mount points, and for any other path ``GetVolumePathName`` is called
    to see if it is different from the input path.
 
-   .. versionadded:: 3.4
-      Support for detecting non-root mount points on Windows.
+   .. versionchanged:: 3.4
+      Added support for detecting non-root mount points on Windows.
 
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
@@ -361,7 +359,7 @@ the :mod:`glob` module.)
    that contains symbolic links.  On Windows, it converts forward slashes to
    backward slashes. To normalize case, use :func:`normcase`.
 
-  .. note::
+   .. note::
       On POSIX systems, in accordance with `IEEE Std 1003.1 2013 Edition; 4.13
       Pathname Resolution <https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap04.html#tag_04_13>`_,
       if a pathname begins with exactly two slashes, the first component
@@ -412,8 +410,6 @@ the :mod:`glob` module.)
 
    *start* defaults to :data:`os.curdir`.
 
-   .. availability:: Unix, Windows.
-
    .. versionchanged:: 3.6
       Accepts a :term:`path-like object`.
 
@@ -423,8 +419,6 @@ the :mod:`glob` module.)
    Return ``True`` if both pathname arguments refer to the same file or directory.
    This is determined by the device number and i-node number and raises an
    exception if an :func:`os.stat` call on either pathname fails.
-
-   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.2
       Added Windows support.
@@ -440,8 +434,6 @@ the :mod:`glob` module.)
 
    Return ``True`` if the file descriptors *fp1* and *fp2* refer to the same file.
 
-   .. availability:: Unix, Windows.
-
    .. versionchanged:: 3.2
       Added Windows support.
 
@@ -455,8 +447,6 @@ the :mod:`glob` module.)
    These structures may have been returned by :func:`os.fstat`,
    :func:`os.lstat`, or :func:`os.stat`.  This function implements the
    underlying comparison used by :func:`samefile` and :func:`sameopenfile`.
-
-   .. availability:: Unix, Windows.
 
    .. versionchanged:: 3.4
       Added Windows support.

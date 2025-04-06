@@ -1,6 +1,10 @@
 # Python test set -- part 6, built-in types
 
-from test.support import run_with_locale, cpython_only
+from test.support import (
+    run_with_locale, cpython_only, iter_builtin_types, iter_slot_wrappers,
+    MISSING_C_DOCSTRINGS,
+)
+from test.test_import import no_rerun
 import collections.abc
 from collections import namedtuple
 import copy
@@ -9,6 +13,7 @@ import inspect
 import pickle
 import locale
 import sys
+import textwrap
 import types
 import unittest.mock
 import weakref
@@ -392,7 +397,7 @@ class TypesTests(unittest.TestCase):
         test(123456, "1=20", '11111111111111123456')
         test(123456, "*=20", '**************123456')
 
-    @run_with_locale('LC_NUMERIC', 'en_US.UTF8')
+    @run_with_locale('LC_NUMERIC', 'en_US.UTF8', '')
     def test_float__format__locale(self):
         # test locale support for __format__ code 'n'
 
@@ -401,7 +406,7 @@ class TypesTests(unittest.TestCase):
             self.assertEqual(locale.format_string('%g', x, grouping=True), format(x, 'n'))
             self.assertEqual(locale.format_string('%.10g', x, grouping=True), format(x, '.10n'))
 
-    @run_with_locale('LC_NUMERIC', 'en_US.UTF8')
+    @run_with_locale('LC_NUMERIC', 'en_US.UTF8', '')
     def test_int__format__locale(self):
         # test locale support for __format__ code 'n' for integers
 
@@ -597,6 +602,8 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(object.__lt__, types.WrapperDescriptorType)
         self.assertIsInstance(int.__lt__, types.WrapperDescriptorType)
 
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
     def test_dunder_get_signature(self):
         sig = inspect.signature(object.__init__.__get__)
         self.assertEqual(list(sig.parameters), ["instance", "owner"])
@@ -706,6 +713,26 @@ class UnionTests(unittest.TestCase):
     def test_hash(self):
         self.assertEqual(hash(int | str), hash(str | int))
         self.assertEqual(hash(int | str), hash(typing.Union[int, str]))
+
+    def test_union_of_unhashable(self):
+        class UnhashableMeta(type):
+            __hash__ = None
+
+        class A(metaclass=UnhashableMeta): ...
+        class B(metaclass=UnhashableMeta): ...
+
+        self.assertEqual((A | B).__args__, (A, B))
+        union1 = A | B
+        with self.assertRaises(TypeError):
+            hash(union1)
+
+        union2 = int | B
+        with self.assertRaises(TypeError):
+            hash(union2)
+
+        union3 = A | int
+        with self.assertRaises(TypeError):
+            hash(union3)
 
     def test_instancecheck_and_subclasscheck(self):
         for x in (int | str, typing.Union[int, str]):
@@ -2228,6 +2255,52 @@ class CoroutineTests(unittest.TestCase):
             '__await__', '__iter__', '__next__', 'cr_code', 'cr_running',
             'cr_frame', 'gi_code', 'gi_frame', 'gi_running', 'send',
             'close', 'throw'}))
+
+
+class SubinterpreterTests(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        global interpreters
+        try:
+            from test.support import interpreters
+        except ModuleNotFoundError:
+            raise unittest.SkipTest('subinterpreters required')
+
+    @cpython_only
+    @no_rerun('channels (and queues) might have a refleak; see gh-122199')
+    def test_static_types_inherited_slots(self):
+        rch, sch = interpreters.create_channel()
+
+        slots = []
+        script = ''
+        for cls in iter_builtin_types():
+            for slot, own in iter_slot_wrappers(cls):
+                slots.append((cls, slot, own))
+                attr = f'{cls.__name__}.{slot}'
+                script += textwrap.dedent(f"""
+                    sch.send_nowait('{attr}: ' + repr({attr}))
+                    """)
+
+        exec(script)
+        all_expected = []
+        for cls, slot, _ in slots:
+            result = rch.recv()
+            assert result.startswith(f'{cls.__name__}.{slot}: '), (cls, slot, result)
+            all_expected.append(result)
+
+        interp = interpreters.create()
+        interp.run(textwrap.dedent(f"""
+            from test.support import interpreters
+            sch = interpreters.SendChannel({sch.id})
+            """))
+        interp.run(script)
+
+        for i, (cls, slot, _) in enumerate(slots):
+            with self.subTest(cls=cls, slot=slot):
+                expected = all_expected[i]
+                result = rch.recv()
+                self.assertEqual(result, expected)
 
 
 if __name__ == '__main__':

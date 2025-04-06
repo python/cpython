@@ -626,6 +626,33 @@ _tkinter_tkapp_loadtk(TkappObject *self, PyObject *Py_UNUSED(ignored))
     return _tkinter_tkapp_loadtk_impl(self);
 }
 
+PyDoc_STRVAR(_tkinter_tkapp_settrace__doc__,
+"settrace($self, func, /)\n"
+"--\n"
+"\n"
+"Set the tracing function.");
+
+#define _TKINTER_TKAPP_SETTRACE_METHODDEF    \
+    {"settrace", (PyCFunction)_tkinter_tkapp_settrace, METH_O, _tkinter_tkapp_settrace__doc__},
+
+PyDoc_STRVAR(_tkinter_tkapp_gettrace__doc__,
+"gettrace($self, /)\n"
+"--\n"
+"\n"
+"Get the tracing function.");
+
+#define _TKINTER_TKAPP_GETTRACE_METHODDEF    \
+    {"gettrace", (PyCFunction)_tkinter_tkapp_gettrace, METH_NOARGS, _tkinter_tkapp_gettrace__doc__},
+
+static PyObject *
+_tkinter_tkapp_gettrace_impl(TkappObject *self);
+
+static PyObject *
+_tkinter_tkapp_gettrace(TkappObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _tkinter_tkapp_gettrace_impl(self);
+}
+
 PyDoc_STRVAR(_tkinter_tkapp_willdispatch__doc__,
 "willdispatch($self, /)\n"
 "--\n"
@@ -865,4 +892,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=2a4e3bf8448604b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=61ba8eef2e489a1b input=a9049054013a1b77]*/

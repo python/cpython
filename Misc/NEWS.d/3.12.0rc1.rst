@@ -38,7 +38,7 @@ from 800 to 1500. This should allow functions like ``list.__repr__`` and
 .. section: Core and Builtins
 
 Fix potential unaligned memory access on C APIs involving returned sequences
-of `char *` pointers within the :mod:`grp` and :mod:`socket` modules. These
+of ``char *`` pointers within the :mod:`grp` and :mod:`socket` modules. These
 were revealed using a ``-fsaniziter=alignment`` build on ARM macOS. Patch by
 Christopher Chavez.
 
@@ -259,7 +259,7 @@ Update the bundled copy of pip to version 23.2.1.
 .. nonce: BT1Yxw
 .. section: Library
 
-Fixed several bugs in zipfile.Path, including: in ``Path.match`, Windows
+Fixed several bugs in zipfile.Path, including: in ``Path.match``, Windows
 separators are no longer honored (and never were meant to be); Fixed
 ``name``/``suffix``/``suffixes``/``stem`` operations when no filename is
 present and the Path is not at the root of the zipfile; Reworked glob for
@@ -334,8 +334,8 @@ and not ``{}``.
 .. nonce: faPTlx
 .. section: Library
 
-Ensure `gettext(msg)` retrieve translations even if a plural form exists. In
-other words: `gettext(msg) == ngettext(msg, '', 1)`.
+Ensure ``gettext(msg)`` retrieve translations even if a plural form exists. In
+other words: ``gettext(msg) == ngettext(msg, '', 1)``.
 
 ..
 
@@ -424,7 +424,7 @@ Moved tests for ``zipfile.Path`` into ``Lib/test/test_zipfile/_path``. Made
 .. nonce: U3Ezdq
 .. section: Build
 
-Check for `linux/limits.h` before including it in `Modules/posixmodule.c`.
+Check for ``linux/limits.h`` before including it in ``Modules/posixmodule.c``.
 
 ..
 

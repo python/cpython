@@ -340,9 +340,9 @@ Initializing and finalizing the interpreter
       pair: module; __main__
       pair: module; sys
       triple: module; search; path
-      single: PySys_SetArgv()
-      single: PySys_SetArgvEx()
-      single: Py_FinalizeEx()
+      single: PySys_SetArgv (C function)
+      single: PySys_SetArgvEx (C function)
+      single: Py_FinalizeEx (C function)
 
    Initialize the Python interpreter.  In an application embedding  Python,
    this should be called before using any other Python/C API functions; see
@@ -388,9 +388,16 @@ Initializing and finalizing the interpreter
    :c:func:`Py_NewInterpreter` below) that were created and not yet destroyed since
    the last call to :c:func:`Py_Initialize`.  Ideally, this frees all memory
    allocated by the Python interpreter.  This is a no-op when called for a second
-   time (without calling :c:func:`Py_Initialize` again first).  Normally the
-   return value is ``0``.  If there were errors during finalization
-   (flushing buffered data), ``-1`` is returned.
+   time (without calling :c:func:`Py_Initialize` again first).
+
+   Since this is the reverse of :c:func:`Py_Initialize`, it should be called
+   in the same thread with the same interpreter active.  That means
+   the main thread and the main interpreter.
+   This should never be called while :c:func:`Py_RunMain` is running.
+
+   Normally the return value is ``0``.
+   If there were errors during finalization (flushing buffered data),
+   ``-1`` is returned.
 
    This function is provided for a number of reasons.  An embedding application
    might want to restart Python without having to restart the application itself.
@@ -485,7 +492,7 @@ Process-wide parameters
    interpreter will change the contents of this storage.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_t *` string.
+   :c:expr:`wchar_t*` string.
 
    .. deprecated:: 3.11
 
@@ -751,7 +758,7 @@ Process-wide parameters
      directory (``"."``).
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
+   :c:expr:`wchar_t*` string.
 
    See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
    members of the :ref:`Python Initialization Configuration <init-config>`.
@@ -760,7 +767,7 @@ Process-wide parameters
       It is recommended that applications embedding the Python interpreter
       for purposes other than executing a single script pass ``0`` as *updatepath*,
       and update :data:`sys.path` themselves if desired.
-      See `CVE-2008-5983 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_.
+      See :cve:`2008-5983`.
 
       On versions before 3.1.3, you can achieve the same effect by manually
       popping the first :data:`sys.path` element after having called
@@ -787,7 +794,7 @@ Process-wide parameters
    :option:`-I`.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
+   :c:expr:`wchar_t*` string.
 
    See also :c:member:`PyConfig.orig_argv` and :c:member:`PyConfig.argv`
    members of the :ref:`Python Initialization Configuration <init-config>`.
@@ -813,7 +820,7 @@ Process-wide parameters
    this storage.
 
    Use :c:func:`Py_DecodeLocale` to decode a bytes string to get a
-   :c:expr:`wchar_*` string.
+   :c:expr:`wchar_t*` string.
 
    .. deprecated:: 3.11
 
@@ -849,7 +856,7 @@ operations could cause problems in a multi-threaded program: for example, when
 two threads simultaneously increment the reference count of the same object, the
 reference count could end up being incremented only once instead of twice.
 
-.. index:: single: setswitchinterval() (in module sys)
+.. index:: single: setswitchinterval (in module sys)
 
 Therefore, the rule exists that only the thread that has acquired the
 :term:`GIL` may operate on Python objects or call Python/C API functions.
@@ -859,8 +866,7 @@ released around potentially blocking I/O operations like reading or writing
 a file, so that other Python threads can run in the meantime.
 
 .. index::
-   single: PyThreadState
-   single: PyThreadState
+   single: PyThreadState (C type)
 
 The Python interpreter keeps some thread-specific bookkeeping information
 inside a data structure called :c:type:`PyThreadState`.  There's also one
@@ -886,8 +892,8 @@ This is so common that a pair of macros exists to simplify it::
    Py_END_ALLOW_THREADS
 
 .. index::
-   single: Py_BEGIN_ALLOW_THREADS
-   single: Py_END_ALLOW_THREADS
+   single: Py_BEGIN_ALLOW_THREADS (C macro)
+   single: Py_END_ALLOW_THREADS (C macro)
 
 The :c:macro:`Py_BEGIN_ALLOW_THREADS` macro opens a new block and declares a
 hidden local variable; the :c:macro:`Py_END_ALLOW_THREADS` macro closes the
@@ -902,8 +908,8 @@ The block above expands to the following code::
    PyEval_RestoreThread(_save);
 
 .. index::
-   single: PyEval_RestoreThread()
-   single: PyEval_SaveThread()
+   single: PyEval_RestoreThread (C function)
+   single: PyEval_SaveThread (C function)
 
 Here is how these functions work: the global interpreter lock is used to protect the pointer to the
 current thread state.  When releasing the lock and saving the thread state,
@@ -1263,7 +1269,7 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
 .. c:function:: void PyThreadState_DeleteCurrent(void)
 
    Destroy the current thread state and release the global interpreter lock.
-   Like :c:func:`PyThreadState_Delete`, the global interpreter lock need not
+   Like :c:func:`PyThreadState_Delete`, the global interpreter lock must
    be held. The thread state must have been reset with a previous call
    to :c:func:`PyThreadState_Clear`.
 
@@ -1638,7 +1644,11 @@ function. You can create and destroy them using the following functions:
           .check_multi_interp_extensions = 1,
           .gil = PyInterpreterConfig_OWN_GIL,
       };
-      PyThreadState *tstate = Py_NewInterpreterFromConfig(&config);
+      PyThreadState *tstate = NULL;
+      PyStatus status = Py_NewInterpreterFromConfig(&tstate, &config);
+      if (PyStatus_Exception(status)) {
+          Py_ExitStatusException(status);
+      }
 
    Note that the config is used only briefly and does not get modified.
    During initialization the config's values are converted into various
@@ -1646,8 +1656,8 @@ function. You can create and destroy them using the following functions:
    may be stored internally on the :c:type:`PyInterpreterState`.
 
    .. index::
-      single: Py_FinalizeEx()
-      single: Py_Initialize()
+      single: Py_FinalizeEx (C function)
+      single: Py_Initialize (C function)
 
    Extension modules are shared between (sub-)interpreters as follows:
 
@@ -1675,7 +1685,7 @@ function. You can create and destroy them using the following functions:
       As with multi-phase initialization, this means that only C-level static
       and global variables are shared between these modules.
 
-   .. index:: single: close() (in module os)
+   .. index:: single: close (in module os)
 
 
 .. c:function:: PyThreadState* Py_NewInterpreter(void)
@@ -1698,7 +1708,7 @@ function. You can create and destroy them using the following functions:
 
 .. c:function:: void Py_EndInterpreter(PyThreadState *tstate)
 
-   .. index:: single: Py_FinalizeEx()
+   .. index:: single: Py_FinalizeEx (C function)
 
    Destroy the (sub-)interpreter represented by the given thread state.
    The given thread state must be the current thread state.  See the
@@ -1790,8 +1800,6 @@ pointer and a void pointer argument.
 
 .. c:function:: int Py_AddPendingCall(int (*func)(void *), void *arg)
 
-   .. index:: single: Py_AddPendingCall()
-
    Schedule a function to be called from the main interpreter thread.  On
    success, ``0`` is returned and *func* is queued for being called in the
    main thread.  On failure, ``-1`` is returned without setting any exception.
@@ -1825,13 +1833,13 @@ pointer and a void pointer argument.
       function is generally **not** suitable for calling Python code from
       arbitrary C threads.  Instead, use the :ref:`PyGILState API<gilstate>`.
 
+   .. versionadded:: 3.1
+
    .. versionchanged:: 3.9
       If this function is called in a subinterpreter, the function *func* is
       now scheduled to be called from the subinterpreter, rather than being
       called from the main interpreter. Each subinterpreter now has its own
       list of scheduled calls.
-
-   .. versionadded:: 3.1
 
 .. _profiling:
 
@@ -1909,7 +1917,8 @@ Python-level trace functions in previous versions.
 
    The value passed as the *what* parameter to a :c:type:`Py_tracefunc` function
    (but not a profiling function) when a line-number event is being reported.
-   It may be disabled for a frame by setting :attr:`f_trace_lines` to *0* on that frame.
+   It may be disabled for a frame by setting :attr:`~frame.f_trace_lines` to
+   *0* on that frame.
 
 
 .. c:var:: int PyTrace_RETURN
@@ -1941,7 +1950,7 @@ Python-level trace functions in previous versions.
    The value for the *what* parameter to :c:type:`Py_tracefunc` functions (but not
    profiling functions) when a new opcode is about to be executed.  This event is
    not emitted by default: it must be explicitly requested by setting
-   :attr:`f_trace_opcodes` to *1* on the frame.
+   :attr:`~frame.f_trace_opcodes` to *1* on the frame.
 
 
 .. c:function:: void PyEval_SetProfile(Py_tracefunc func, PyObject *obj)

@@ -61,7 +61,7 @@ class ForkServer(object):
 
     def set_forkserver_preload(self, modules_names):
         '''Set list of module names to try to load in forkserver process.'''
-        if not all(type(mod) is str for mod in self._preload_modules):
+        if not all(type(mod) is str for mod in modules_names):
             raise TypeError('module_names must be a list of strings')
         self._preload_modules = modules_names
 
@@ -167,6 +167,8 @@ class ForkServer(object):
 def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
     '''Run forkserver.'''
     if preload:
+        if sys_path is not None:
+            sys.path[:] = sys_path
         if '__main__' in preload and main_path is not None:
             process.current_process()._inheriting = True
             try:

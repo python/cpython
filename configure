@@ -912,6 +912,7 @@ CFLAGS_ALIASING
 OPT
 BOLT_APPLY_FLAGS
 BOLT_INSTRUMENT_FLAGS
+BOLT_COMMON_FLAGS
 BOLT_BINARIES
 MERGE_FDATA
 LLVM_BOLT
@@ -1089,6 +1090,7 @@ with_dsymutil
 with_address_sanitizer
 with_memory_sanitizer
 with_undefined_behavior_sanitizer
+with_thread_sanitizer
 with_hash_algorithm
 with_tzpath
 with_libs
@@ -1133,6 +1135,7 @@ CPPFLAGS
 CPP
 HOSTRUNNER
 PROFILE_TASK
+BOLT_COMMON_FLAGS
 BOLT_INSTRUMENT_FLAGS
 BOLT_APPLY_FLAGS
 LIBUUID_CFLAGS
@@ -1868,6 +1871,8 @@ Optional Packages:
   --with-undefined-behavior-sanitizer
                           enable UndefinedBehaviorSanitizer undefined
                           behaviour detector, 'ubsan' (default is no)
+  --with-thread-sanitizer enable ThreadSanitizer data race detector, 'tsan'
+                          (default is no)
   --with-hash-algorithm=[fnv|siphash13|siphash24]
                           select hash algorithm for use in Python/pyhash.c
                           (default is SipHash13)
@@ -1944,6 +1949,8 @@ Some influential environment variables:
   HOSTRUNNER  Program to run CPython for the host platform
   PROFILE_TASK
               Python args for PGO generation task
+  BOLT_COMMON_FLAGS
+              Common arguments to llvm-bolt when instrumenting and applying
   BOLT_INSTRUMENT_FLAGS
               Arguments to llvm-bolt when instrumenting binaries
   BOLT_APPLY_FLAGS
@@ -4304,6 +4311,15 @@ then
 	darwin*) MACHDEP="darwin";;
 	'')	MACHDEP="unknown";;
     esac
+
+    if test "$ac_sys_system" = "SunOS"; then
+	# For Solaris, there isn't an OS version specific macro defined
+	# in most compilers, so we define one here.
+	SUNOS_VERSION=`echo $ac_sys_release | sed -e 's!\.\(0-9\)$!.0\1!g' | tr -d '.'`
+
+printf "%s\n" "#define Py_SUNOS_VERSION $SUNOS_VERSION" >>confdefs.h
+
+    fi
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: \"$MACHDEP\"" >&5
 printf "%s\n" "\"$MACHDEP\"" >&6; }
@@ -7240,6 +7256,9 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $EXEEXT" >&5
 printf "%s\n" "$EXEEXT" >&6; }
 
+# Make sure we keep EXEEXT and ac_exeext sync'ed.
+ac_exeext=$EXEEXT
+
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
 
@@ -7711,7 +7730,7 @@ then :
 fi
      ;; #(
               WASI/*) :
-    HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --mapdir /::$(srcdir) --' ;; #(
+    HOSTRUNNER='wasmtime run --wasm max-wasm-stack=8388608 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/' ;; #(
   *) :
     HOSTRUNNER=''
    ;;
@@ -8190,13 +8209,13 @@ if test "$Py_OPT" = 'true' ; then
     *gcc*)
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -fno-semantic-interposition" >&5
 printf %s "checking whether C compiler accepts -fno-semantic-interposition... " >&6; }
-if test ${ax_cv_check_cflags___fno_semantic_interposition+y}
+if test ${ax_cv_check_cflags__Werror__fno_semantic_interposition+y}
 then :
   printf %s "(cached) " >&6
 else $as_nop
 
   ax_check_save_flags=$CFLAGS
-  CFLAGS="$CFLAGS  -fno-semantic-interposition"
+  CFLAGS="$CFLAGS -Werror -fno-semantic-interposition"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -8210,16 +8229,16 @@ main (void)
 _ACEOF
 if ac_fn_c_try_compile "$LINENO"
 then :
-  ax_cv_check_cflags___fno_semantic_interposition=yes
+  ax_cv_check_cflags__Werror__fno_semantic_interposition=yes
 else $as_nop
-  ax_cv_check_cflags___fno_semantic_interposition=no
+  ax_cv_check_cflags__Werror__fno_semantic_interposition=no
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
   CFLAGS=$ax_check_save_flags
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___fno_semantic_interposition" >&5
-printf "%s\n" "$ax_cv_check_cflags___fno_semantic_interposition" >&6; }
-if test "x$ax_cv_check_cflags___fno_semantic_interposition" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags__Werror__fno_semantic_interposition" >&5
+printf "%s\n" "$ax_cv_check_cflags__Werror__fno_semantic_interposition" >&6; }
+if test "x$ax_cv_check_cflags__Werror__fno_semantic_interposition" = xyes
 then :
 
       CFLAGS_NODIST="$CFLAGS_NODIST -fno-semantic-interposition"
@@ -8772,9 +8791,9 @@ case $CC in
   *clang*)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-    PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-    LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
-    LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
+    PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
+    LLVM_PROF_MERGER=" ${LLVM_PROFDATA} merge -output=\"\$(shell pwd)/code.profclangd\" \"\$(shell pwd)\"/*.profclangr "
+    LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
     if test $LLVM_PROF_FOUND = not-found
     then
       LLVM_PROF_ERR=yes
@@ -8788,9 +8807,9 @@ case $CC in
     case $ac_sys_system in
       Darwin*)
         PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-        PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-        LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
-        LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
+        PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
+        LLVM_PROF_MERGER=" ${LLVM_PROFDATA} merge -output=\"\$(shell pwd)/code.profclangd\" \"\$(shell pwd)\"/*.profclangr "
+        LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
         if test "${LLVM_PROF_FOUND}" = "not-found"
         then
           LLVM_PROF_ERR=yes
@@ -9141,11 +9160,21 @@ then :
 fi
 
 
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking BOLT_COMMON_FLAGS" >&5
+printf %s "checking BOLT_COMMON_FLAGS... " >&6; }
+if test -z "${BOLT_COMMON_FLAGS}"
+then
+  BOLT_COMMON_FLAGS=" -update-debug-sections -skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1 "
+
+fi
+
+
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking BOLT_INSTRUMENT_FLAGS" >&5
 printf %s "checking BOLT_INSTRUMENT_FLAGS... " >&6; }
 if test -z "${BOLT_INSTRUMENT_FLAGS}"
 then
-  BOLT_INSTRUMENT_FLAGS=
+  BOLT_INSTRUMENT_FLAGS="${BOLT_COMMON_FLAGS}"
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $BOLT_INSTRUMENT_FLAGS" >&5
 printf "%s\n" "$BOLT_INSTRUMENT_FLAGS" >&6; }
@@ -9155,7 +9184,7 @@ printf "%s\n" "$BOLT_INSTRUMENT_FLAGS" >&6; }
 printf %s "checking BOLT_APPLY_FLAGS... " >&6; }
 if test -z "${BOLT_APPLY_FLAGS}"
 then
-  BOLT_APPLY_FLAGS=" -update-debug-sections -reorder-blocks=ext-tsp -reorder-functions=hfsort+ -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot "
+  BOLT_APPLY_FLAGS=" ${BOLT_COMMON_FLAGS} -reorder-blocks=ext-tsp -reorder-functions=cdsort -split-functions -icf=1 -inline-all -split-eh -reorder-functions-use-hot-size -peepholes=none -jump-tables=aggressive -inline-ap -indirect-call-promotion=all -dyno-stats -use-gnu-stack -frame-opt=hot "
 
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $BOLT_APPLY_FLAGS" >&5
@@ -9430,10 +9459,15 @@ then :
       # without this, configure fails to find pthread_create, sem_init,
       # etc because they are only available in the sysroot for
       # wasm32-wasi-threads.
+      # Note: wasi-threads requires --import-memory.
+      # Note: wasi requires --export-memory.
+      # Note: --export-memory is implicit unless --import-memory is given
+      # Note: this requires LLVM >= 16.
       as_fn_append CFLAGS " -target wasm32-wasi-threads -pthread"
       as_fn_append CFLAGS_NODIST " -target wasm32-wasi-threads -pthread"
       as_fn_append LDFLAGS_NODIST " -target wasm32-wasi-threads -pthread"
       as_fn_append LDFLAGS_NODIST " -Wl,--import-memory"
+      as_fn_append LDFLAGS_NODIST " -Wl,--export-memory"
       as_fn_append LDFLAGS_NODIST " -Wl,--max-memory=10485760"
 
 fi
@@ -9492,7 +9526,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wextra -Werror"
+    as_fn_append CFLAGS " -Wextra -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9610,7 +9644,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunused-result -Werror"
+    as_fn_append CFLAGS " -Wunused-result -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9655,7 +9689,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunused-parameter -Werror"
+    as_fn_append CFLAGS " -Wunused-parameter -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9696,7 +9730,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wint-conversion -Werror"
+    as_fn_append CFLAGS " -Wint-conversion -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9737,7 +9771,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wmissing-field-initializers -Werror"
+    as_fn_append CFLAGS " -Wmissing-field-initializers -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9778,7 +9812,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wsign-compare -Werror"
+    as_fn_append CFLAGS " -Wsign-compare -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9819,7 +9853,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wunreachable-code -Werror"
+    as_fn_append CFLAGS " -Wunreachable-code -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -9871,7 +9905,7 @@ then :
 else $as_nop
 
     py_cflags=$CFLAGS
-    as_fn_append CFLAGS "-Wstrict-prototypes -Werror"
+    as_fn_append CFLAGS " -Wstrict-prototypes -Werror"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -10801,6 +10835,12 @@ ac_fn_c_check_header_compile "$LINENO" "sys/param.h" "ac_cv_header_sys_param_h" 
 if test "x$ac_cv_header_sys_param_h" = xyes
 then :
   printf "%s\n" "#define HAVE_SYS_PARAM_H 1" >>confdefs.h
+
+fi
+ac_fn_c_check_header_compile "$LINENO" "sys/pidfd.h" "ac_cv_header_sys_pidfd_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_pidfd_h" = xyes
+then :
+  printf "%s\n" "#define HAVE_SYS_PIDFD_H 1" >>confdefs.h
 
 fi
 ac_fn_c_check_header_compile "$LINENO" "sys/poll.h" "ac_cv_header_sys_poll_h" "$ac_includes_default"
@@ -12647,6 +12687,28 @@ with_ubsan="no"
 fi
 
 
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-thread-sanitizer" >&5
+printf %s "checking for --with-thread-sanitizer... " >&6; }
+
+# Check whether --with-thread_sanitizer was given.
+if test ${with_thread_sanitizer+y}
+then :
+  withval=$with_thread_sanitizer;
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $withval" >&5
+printf "%s\n" "$withval" >&6; }
+BASECFLAGS="-fsanitize=thread $BASECFLAGS"
+LDFLAGS="-fsanitize=thread $LDFLAGS"
+with_tsan="yes"
+
+else $as_nop
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+with_tsan="no"
+
+fi
+
+
 # Set info about shared libraries.
 
 
@@ -12750,7 +12812,7 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
-	Emscripten|WASI)
+	Emscripten*|WASI*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
@@ -13183,8 +13245,8 @@ then :
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for LIBUUID" >&5
-printf %s "checking for LIBUUID... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for uuid >= 2.20" >&5
+printf %s "checking for uuid >= 2.20... " >&6; }
 
 if test -n "$LIBUUID_CFLAGS"; then
     pkg_cv_LIBUUID_CFLAGS="$LIBUUID_CFLAGS"
@@ -13224,7 +13286,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -13248,7 +13310,7 @@ save_LIBS=$LIBS
 
 
         CPPFLAGS="$CPPFLAGS $LIBUUID_CFLAGS"
-        LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
+        LIBS="$LIBS $LIBUUID_LIBS"
                for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
@@ -13364,7 +13426,7 @@ LIBS=$save_LIBS
 
 
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
       save_CFLAGS=$CFLAGS
@@ -13374,7 +13436,7 @@ save_LIBS=$LIBS
 
 
         CPPFLAGS="$CPPFLAGS $LIBUUID_CFLAGS"
-        LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
+        LIBS="$LIBS $LIBUUID_LIBS"
                for ac_header in uuid/uuid.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "uuid/uuid.h" "ac_cv_header_uuid_uuid_h" "$ac_includes_default"
@@ -14072,8 +14134,8 @@ then :
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for LIBFFI" >&5
-printf %s "checking for LIBFFI... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libffi" >&5
+printf %s "checking for libffi... " >&6; }
 
 if test -n "$LIBFFI_CFLAGS"; then
     pkg_cv_LIBFFI_CFLAGS="$LIBFFI_CFLAGS"
@@ -14113,7 +14175,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -14137,7 +14199,7 @@ save_LIBS=$LIBS
 
 
       CPPFLAGS="$CPPFLAGS $LIBFFI_CFLAGS"
-      LDFLAGS="$LDFLAGS $LIBFFI_LIBS"
+      LIBS="$LIBS $LIBFFI_LIBS"
       ac_fn_c_check_header_compile "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
 if test "x$ac_cv_header_ffi_h" = xyes
 then :
@@ -14200,7 +14262,7 @@ LIBS=$save_LIBS
 
 
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
     save_CFLAGS=$CFLAGS
@@ -14210,7 +14272,7 @@ save_LIBS=$LIBS
 
 
       CPPFLAGS="$CPPFLAGS $LIBFFI_CFLAGS"
-      LDFLAGS="$LDFLAGS $LIBFFI_LIBS"
+      LIBS="$LIBS $LIBFFI_LIBS"
       ac_fn_c_check_header_compile "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
 if test "x$ac_cv_header_ffi_h" = xyes
 then :
@@ -14317,8 +14379,8 @@ save_LDFLAGS=$LDFLAGS
 save_LIBS=$LIBS
 
 
-    CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
-    LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
+    CFLAGS="$CFLAGS $LIBFFI_CFLAGS"
+    LIBS="$LIBS $LIBFFI_LIBS"
 
 
 
@@ -14590,8 +14652,8 @@ fi
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for LIBNSL" >&5
-printf %s "checking for LIBNSL... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libnsl" >&5
+printf %s "checking for libnsl... " >&6; }
 
 if test -n "$LIBNSL_CFLAGS"; then
     pkg_cv_LIBNSL_CFLAGS="$LIBNSL_CFLAGS"
@@ -14631,7 +14693,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -14735,7 +14797,7 @@ esac
   LIBNSL_LIBS=${LIBNSL_LIBS-$libnsl}
 
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
   LIBNSL_CFLAGS=${LIBNSL_CFLAGS-""}
@@ -14883,8 +14945,8 @@ fi
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for LIBSQLITE3" >&5
-printf %s "checking for LIBSQLITE3... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for sqlite3 >= 3.7.15" >&5
+printf %s "checking for sqlite3 >= 3.7.15... " >&6; }
 
 if test -n "$LIBSQLITE3_CFLAGS"; then
     pkg_cv_LIBSQLITE3_CFLAGS="$LIBSQLITE3_CFLAGS"
@@ -14924,7 +14986,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -14946,7 +15008,7 @@ fi
 
 
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
     LIBSQLITE3_CFLAGS=${LIBSQLITE3_CFLAGS-""}
@@ -14971,7 +15033,7 @@ save_LIBS=$LIBS
 
 
   CPPFLAGS="$CPPFLAGS $LIBSQLITE3_CFLAGS"
-  LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
+  LIBS="$LIBS $LIBSQLITE3_LIBS"
 
   ac_fn_c_check_header_compile "$LINENO" "sqlite3.h" "ac_cv_header_sqlite3_h" "$ac_includes_default"
 if test "x$ac_cv_header_sqlite3_h" = xyes
@@ -15647,8 +15709,8 @@ for _QUERY in \
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for TCLTK" >&5
-printf %s "checking for TCLTK... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for $_QUERY" >&5
+printf %s "checking for $_QUERY... " >&6; }
 
 if test -n "$TCLTK_CFLAGS"; then
     pkg_cv_TCLTK_CFLAGS="$TCLTK_CFLAGS"
@@ -15688,7 +15750,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -15706,7 +15768,7 @@ fi
 
 	found_tcltk=no
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 	found_tcltk=no
 else
@@ -15744,8 +15806,8 @@ case $ac_sys_system in #(
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for X11" >&5
-printf %s "checking for X11... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for x11" >&5
+printf %s "checking for x11... " >&6; }
 
 if test -n "$X11_CFLAGS"; then
     pkg_cv_X11_CFLAGS="$X11_CFLAGS"
@@ -15785,7 +15847,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -15812,7 +15874,7 @@ Alternatively, you may set the environment variables X11_CFLAGS
 and X11_LIBS to avoid the need to call pkg-config.
 See the pkg-config man page for more details." "$LINENO" 5
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 	{ { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
 printf "%s\n" "$as_me: error: in \`$ac_pwd':" >&2;}
@@ -15851,7 +15913,7 @@ save_LIBS=$LIBS
 
 
   CPPFLAGS="$CPPFLAGS $TCLTK_CFLAGS"
-  LIBS="$TCLTK_LIBS $LDFLAGS"
+  LIBS="$LIBS $TCLTK_LIBS"
 
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
@@ -15917,7 +15979,7 @@ save_LIBS=$LIBS
 
 
   CPPFLAGS="$CPPFLAGS $GDBM_CFLAGS"
-  LDFLAGS="$GDBM_LIBS $LDFLAGS"
+  LIBS="$LIBS $GDBM_LIBS"
          for ac_header in gdbm.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "gdbm.h" "ac_cv_header_gdbm_h" "$ac_includes_default"
@@ -16933,7 +16995,7 @@ ipv6type=unknown
 ipv6lib=none
 ipv6trylibc=no
 
-if test "$ipv6" = "yes"; then
+if test "$ipv6" = yes -a "$cross_compiling" = no; then
 	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking ipv6 stack type" >&5
 printf %s "checking ipv6 stack type... " >&6; }
 	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta;
@@ -18491,10 +18553,10 @@ then :
   printf "%s\n" "#define HAVE_TRUNCATE 1" >>confdefs.h
 
 fi
-ac_fn_c_check_func "$LINENO" "ttyname" "ac_cv_func_ttyname"
-if test "x$ac_cv_func_ttyname" = xyes
+ac_fn_c_check_func "$LINENO" "ttyname_r" "ac_cv_func_ttyname_r"
+if test "x$ac_cv_func_ttyname_r" = xyes
 then :
-  printf "%s\n" "#define HAVE_TTYNAME 1" >>confdefs.h
+  printf "%s\n" "#define HAVE_TTYNAME_R 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "umask" "ac_cv_func_umask"
@@ -19699,8 +19761,8 @@ fi
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ZLIB" >&5
-printf %s "checking for ZLIB... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for zlib >= 1.2.0" >&5
+printf %s "checking for zlib >= 1.2.0... " >&6; }
 
 if test -n "$ZLIB_CFLAGS"; then
     pkg_cv_ZLIB_CFLAGS="$ZLIB_CFLAGS"
@@ -19740,7 +19802,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -19764,7 +19826,7 @@ save_LIBS=$LIBS
 
 
     CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
-    LDFLAGS="$LDFLAGS $ZLIB_LIBS"
+    LIBS="$LIBS $ZLIB_LIBS"
            for ac_header in zlib.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
@@ -19883,7 +19945,7 @@ LIBS=$save_LIBS
 
 
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
   save_CFLAGS=$CFLAGS
@@ -19893,7 +19955,7 @@ save_LIBS=$LIBS
 
 
     CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
-    LDFLAGS="$LDFLAGS $ZLIB_LIBS"
+    LIBS="$LIBS $ZLIB_LIBS"
            for ac_header in zlib.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "zlib.h" "ac_cv_header_zlib_h" "$ac_includes_default"
@@ -20047,8 +20109,8 @@ fi
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for BZIP2" >&5
-printf %s "checking for BZIP2... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for bzip2" >&5
+printf %s "checking for bzip2... " >&6; }
 
 if test -n "$BZIP2_CFLAGS"; then
     pkg_cv_BZIP2_CFLAGS="$BZIP2_CFLAGS"
@@ -20088,7 +20150,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -20112,7 +20174,7 @@ save_LIBS=$LIBS
 
 
     CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
-    LDFLAGS="$LDFLAGS $BZIP2_LIBS"
+    LIBS="$LIBS $BZIP2_LIBS"
            for ac_header in bzlib.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "bzlib.h" "ac_cv_header_bzlib_h" "$ac_includes_default"
@@ -20184,7 +20246,7 @@ LIBS=$save_LIBS
 
 
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
   save_CFLAGS=$CFLAGS
@@ -20194,7 +20256,7 @@ save_LIBS=$LIBS
 
 
     CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
-    LDFLAGS="$LDFLAGS $BZIP2_LIBS"
+    LIBS="$LIBS $BZIP2_LIBS"
            for ac_header in bzlib.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "bzlib.h" "ac_cv_header_bzlib_h" "$ac_includes_default"
@@ -20275,8 +20337,8 @@ fi
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for LIBLZMA" >&5
-printf %s "checking for LIBLZMA... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for liblzma" >&5
+printf %s "checking for liblzma... " >&6; }
 
 if test -n "$LIBLZMA_CFLAGS"; then
     pkg_cv_LIBLZMA_CFLAGS="$LIBLZMA_CFLAGS"
@@ -20316,7 +20378,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -20340,7 +20402,7 @@ save_LIBS=$LIBS
 
 
     CPPFLAGS="$CPPFLAGS $LIBLZMA_CFLAGS"
-    LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
+    LIBS="$LIBS $LIBLZMA_LIBS"
            for ac_header in lzma.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "lzma.h" "ac_cv_header_lzma_h" "$ac_includes_default"
@@ -20412,7 +20474,7 @@ LIBS=$save_LIBS
 
 
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
   save_CFLAGS=$CFLAGS
@@ -20422,7 +20484,7 @@ save_LIBS=$LIBS
 
 
     CPPFLAGS="$CPPFLAGS $LIBLZMA_CFLAGS"
-    LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
+    LIBS="$LIBS $LIBLZMA_LIBS"
            for ac_header in lzma.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "lzma.h" "ac_cv_header_lzma_h" "$ac_includes_default"
@@ -21743,8 +21805,8 @@ fi
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for LIBCRYPT" >&5
-printf %s "checking for LIBCRYPT... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libxcrypt >= 3.1.1" >&5
+printf %s "checking for libxcrypt >= 3.1.1... " >&6; }
 
 if test -n "$LIBCRYPT_CFLAGS"; then
     pkg_cv_LIBCRYPT_CFLAGS="$LIBCRYPT_CFLAGS"
@@ -21784,7 +21846,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -21884,7 +21946,7 @@ LIBS=$save_LIBS
 
 
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
   save_CFLAGS=$CFLAGS
@@ -22002,16 +22064,18 @@ else $as_nop
           #include <crypt.h>
         #endif
         #include <unistd.h>
+        volatile void *func;
 
 int
 main (void)
 {
 
         #ifdef HAVE_CRYPT_R
-          void *x = crypt_r;
+          func = crypt_r;
         #else
-          void *x = crypt;
+          func = crypt;
         #endif
+          return (func != NULL);
 
   ;
   return 0;
@@ -22345,6 +22409,7 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #if defined(MAJOR_IN_MKDEV)
 #include <sys/mkdev.h>
 #elif defined(MAJOR_IN_SYSMACROS)
+#include <sys/types.h>
 #include <sys/sysmacros.h>
 #else
 #include <sys/types.h>
@@ -23480,18 +23545,26 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
 
-double d = 90904234967036810337470478905505011476211692735615632014797120844053488865816695273723469097858056257517020191247487429516932130503560650002327564517570778480236724525140520121371739201496540132640109977779420565776568942592.0;
+#include <stdlib.h>
+
+static double m[] = {9.090423496703681e+223, 0.0};
+
+int main (int argc, char *argv[])
+{
+    m[atoi (argv[1])] += atof (argv[2]);
+    return m[atoi (argv[3])] > 0.0;
+}
 
 
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_link "$LINENO"
 then :
 
 
-if grep noonsees conftest.$ac_objext >/dev/null ; then
+if grep noonsees conftest$EXEEXT >/dev/null ; then
   ax_cv_c_float_words_bigendian=yes
 fi
-if grep seesnoon conftest.$ac_objext >/dev/null ; then
+if grep seesnoon conftest$EXEEXT >/dev/null ; then
   if test "$ax_cv_c_float_words_bigendian" = unknown; then
     ax_cv_c_float_words_bigendian=no
   else
@@ -23501,7 +23574,8 @@ fi
 
 
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext conftest.beam \
+    conftest$ac_exeext conftest.$ac_ext
 fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_c_float_words_bigendian" >&5
 printf "%s\n" "$ax_cv_c_float_words_bigendian" >&6; }
@@ -23509,41 +23583,34 @@ printf "%s\n" "$ax_cv_c_float_words_bigendian" >&6; }
 case $ax_cv_c_float_words_bigendian in
   yes)
 
-printf "%s\n" "#define FLOAT_WORDS_BIGENDIAN 1" >>confdefs.h
+printf "%s\n" "#define DOUBLE_IS_BIG_ENDIAN_IEEE754 1" >>confdefs.h
  ;;
   no)
-     ;;
+
+printf "%s\n" "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
+ ;;
   *)
-    as_fn_error $? "
+    case $host_cpu in #(
+  *arm*) :
+    # Some ARM platforms use a mixed-endian representation for
+                     # doubles. While Python doesn't currently have full support
+                     # for these platforms (see e.g., issue 1762561), we can at
+                     # least make sure that float <-> string conversions work.
+                     # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case,
+                     # but if it's not big or little, then it must be this?
 
-Unknown float word ordering. You need to manually preset
-ax_cv_c_float_words_bigendian=no (or yes) according to your system.
+printf "%s\n" "#define DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
+ ;; #(
+  wasm*) :
 
-    " "$LINENO" 5 ;;
+printf "%s\n" "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
+ ;; #(
+  *) :
+     ;;
+esac ;;
 esac
 
 
-if test "$ax_cv_c_float_words_bigendian" = "yes"
-then
-
-printf "%s\n" "#define DOUBLE_IS_BIG_ENDIAN_IEEE754 1" >>confdefs.h
-
-elif test "$ax_cv_c_float_words_bigendian" = "no"
-then
-
-printf "%s\n" "#define DOUBLE_IS_LITTLE_ENDIAN_IEEE754 1" >>confdefs.h
-
-else
-  # Some ARM platforms use a mixed-endian representation for doubles.
-  # While Python doesn't currently have full support for these platforms
-  # (see e.g., issue 1762561), we can at least make sure that float <-> string
-  # conversions work.
-  # FLOAT_WORDS_BIGENDIAN doesnt actually detect this case, but if it's not big
-  # or little, then it must be this?
-
-printf "%s\n" "#define DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754 1" >>confdefs.h
-
-fi
 
 # The short float repr introduced in Python 3.1 requires the
 # correctly-rounded string <-> double conversion functions from
@@ -24552,8 +24619,8 @@ then :
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for LIBREADLINE" >&5
-printf %s "checking for LIBREADLINE... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for readline" >&5
+printf %s "checking for readline... " >&6; }
 
 if test -n "$LIBREADLINE_CFLAGS"; then
     pkg_cv_LIBREADLINE_CFLAGS="$LIBREADLINE_CFLAGS"
@@ -24593,7 +24660,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -24617,7 +24684,7 @@ save_LIBS=$LIBS
 
 
       CPPFLAGS="$CPPFLAGS $LIBREADLINE_CFLAGS"
-      LDFLAGS="$LDFLAGS $LIBREADLINE_LIBS"
+      LIBS="$LIBS $LIBREADLINE_LIBS"
              for ac_header in readline/readline.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "readline/readline.h" "ac_cv_header_readline_readline_h" "$ac_includes_default"
@@ -24686,7 +24753,7 @@ LIBS=$save_LIBS
 
 
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
     save_CFLAGS=$CFLAGS
@@ -24696,7 +24763,7 @@ save_LIBS=$LIBS
 
 
       CPPFLAGS="$CPPFLAGS $LIBREADLINE_CFLAGS"
-      LDFLAGS="$LDFLAGS $LIBREADLINE_LIBS"
+      LIBS="$LIBS $LIBREADLINE_LIBS"
              for ac_header in readline/readline.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "readline/readline.h" "ac_cv_header_readline_readline_h" "$ac_includes_default"
@@ -24783,8 +24850,8 @@ then :
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for LIBEDIT" >&5
-printf %s "checking for LIBEDIT... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libedit" >&5
+printf %s "checking for libedit... " >&6; }
 
 if test -n "$LIBEDIT_CFLAGS"; then
     pkg_cv_LIBEDIT_CFLAGS="$LIBEDIT_CFLAGS"
@@ -24824,7 +24891,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -24848,7 +24915,7 @@ save_LIBS=$LIBS
 
 
       CPPFLAGS="$CPPFLAGS $LIBEDIT_CFLAGS"
-      LDFLAGS="$LDFLAGS $LIBEDIT_LIBS"
+      LIBS="$LIBS $LIBEDIT_LIBS"
              for ac_header in editline/readline.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "editline/readline.h" "ac_cv_header_editline_readline_h" "$ac_includes_default"
@@ -24919,7 +24986,7 @@ LIBS=$save_LIBS
 
 
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
     save_CFLAGS=$CFLAGS
@@ -24929,7 +24996,7 @@ save_LIBS=$LIBS
 
 
       CPPFLAGS="$CPPFLAGS $LIBEDIT_CFLAGS"
-      LDFLAGS="$LDFLAGS $LIBEDIT_LIBS"
+      LIBS="$LIBS $LIBEDIT_LIBS"
              for ac_header in editline/readline.h
 do :
   ac_fn_c_check_header_compile "$LINENO" "editline/readline.h" "ac_cv_header_editline_readline_h" "$ac_includes_default"
@@ -25037,7 +25104,7 @@ save_LIBS=$LIBS
 
 
     CPPFLAGS="$CPPFLAGS $READLINE_CFLAGS"
-    LIBS="$READLINE_LIBS $LIBS"
+    LIBS="$LIBS $READLINE_LIBS"
     LIBS_SAVE=$LIBS
 
 
@@ -25344,6 +25411,25 @@ printf "%s\n" "#define HAVE_RL_APPEND_HISTORY 1" >>confdefs.h
 
 
 fi
+
+    # in readline as well as newer editline (April 2023)
+    ac_fn_c_check_type "$LINENO" "rl_compdisp_func_t" "ac_cv_type_rl_compdisp_func_t" "
+      #include <stdio.h> /* Must be first for Gnu Readline */
+      #ifdef WITH_EDITLINE
+      # include <editline/readline.h>
+      #else
+      # include <readline/readline.h>
+      # include <readline/history.h>
+      #endif
+
+"
+if test "x$ac_cv_type_rl_compdisp_func_t" = xyes
+then :
+
+printf "%s\n" "#define HAVE_RL_COMPDISP_FUNC_T 1" >>confdefs.h
+
+fi
+
 
 
 
@@ -25652,8 +25738,8 @@ then :
   if test "$ac_sys_system" != "Darwin"; then
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for CURSES" >&5
-printf %s "checking for CURSES... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ncursesw" >&5
+printf %s "checking for ncursesw... " >&6; }
 
 if test -n "$CURSES_CFLAGS"; then
     pkg_cv_CURSES_CFLAGS="$CURSES_CFLAGS"
@@ -25693,7 +25779,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -25771,7 +25857,7 @@ LIBS=$save_LIBS
 
 
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
       save_CFLAGS=$CFLAGS
@@ -25852,8 +25938,8 @@ then :
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for CURSES" >&5
-printf %s "checking for CURSES... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ncurses" >&5
+printf %s "checking for ncurses... " >&6; }
 
 if test -n "$CURSES_CFLAGS"; then
     pkg_cv_CURSES_CFLAGS="$CURSES_CFLAGS"
@@ -25893,7 +25979,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -25969,7 +26055,7 @@ LIBS=$save_LIBS
 
 
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
       save_CFLAGS=$CFLAGS
@@ -26046,7 +26132,7 @@ fi
 fi
 CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-if test "$have_curses" = no -a "$ac_sys_system" = "Darwin"; then
+if test "$have_curses" != no -a "$ac_sys_system" = "Darwin"; then
 
   as_fn_append CURSES_CFLAGS " -D_XOPEN_SOURCE_EXTENDED=1"
   printf "%s\n" "#define HAVE_NCURSESW 1" >>confdefs.h
@@ -26087,8 +26173,8 @@ then :
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for PANEL" >&5
-printf %s "checking for PANEL... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for panelw" >&5
+printf %s "checking for panelw... " >&6; }
 
 if test -n "$PANEL_CFLAGS"; then
     pkg_cv_PANEL_CFLAGS="$PANEL_CFLAGS"
@@ -26128,7 +26214,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -26204,7 +26290,7 @@ LIBS=$save_LIBS
 
 
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
         save_CFLAGS=$CFLAGS
@@ -26283,8 +26369,8 @@ then :
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for PANEL" >&5
-printf %s "checking for PANEL... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for panel" >&5
+printf %s "checking for panel... " >&6; }
 
 if test -n "$PANEL_CFLAGS"; then
     pkg_cv_PANEL_CFLAGS="$PANEL_CFLAGS"
@@ -26324,7 +26410,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -26400,7 +26486,7 @@ LIBS=$save_LIBS
 
 
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
       save_CFLAGS=$CFLAGS
@@ -28081,7 +28167,12 @@ then :
 
 else $as_nop
 
-  rpath_arg="-Wl,-rpath="
+  if test "$ac_sys_system" = "Darwin"
+  then
+     rpath_arg="-Wl,-rpath,"
+  else
+     rpath_arg="-Wl,-rpath="
+  fi
 
 fi
 
@@ -28390,8 +28481,8 @@ then :
 
 
 pkg_failed=no
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for LIBB2" >&5
-printf %s "checking for LIBB2... " >&6; }
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libb2" >&5
+printf %s "checking for libb2... " >&6; }
 
 if test -n "$LIBB2_CFLAGS"; then
     pkg_cv_LIBB2_CFLAGS="$LIBB2_CFLAGS"
@@ -28431,7 +28522,7 @@ fi
 
 
 if test $pkg_failed = yes; then
-   	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 
 if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
@@ -28449,7 +28540,7 @@ fi
 
 	have_libb2=no
 elif test $pkg_failed = untried; then
-     	{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+        { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
 	have_libb2=no
 else
@@ -28582,9 +28673,15 @@ case $ac_sys_system in #(
 
 
     py_cv_module__ctypes_test=n/a
+    py_cv_module__testexternalinspection=n/a
+    py_cv_module__testimportmultiple=n/a
+    py_cv_module__testmultiphase=n/a
+    py_cv_module__testsinglephase=n/a
     py_cv_module_fcntl=n/a
     py_cv_module_mmap=n/a
     py_cv_module_termios=n/a
+    py_cv_module_xxlimited=n/a
+    py_cv_module_xxlimited_35=n/a
     py_cv_module_=n/a
 
 

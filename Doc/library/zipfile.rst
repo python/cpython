@@ -1,5 +1,5 @@
-:mod:`zipfile` --- Work with ZIP archives
-=========================================
+:mod:`!zipfile` --- Work with ZIP archives
+==========================================
 
 .. module:: zipfile
    :synopsis: Read and write ZIP-format archive files.
@@ -213,7 +213,7 @@ ZipFile Objects
       That flag takes precedence over *metadata_encoding*, which is
       a Python-specific extension.
 
-   .. versionadded:: 3.2
+   .. versionchanged:: 3.2
       Added the ability to use :class:`ZipFile` as a context manager.
 
    .. versionchanged:: 3.3
@@ -236,8 +236,8 @@ ZipFile Objects
    .. versionchanged:: 3.7
       Add the *compresslevel* parameter.
 
-   .. versionadded:: 3.8
-      The *strict_timestamps* keyword-only argument
+   .. versionchanged:: 3.8
+      The *strict_timestamps* keyword-only parameter.
 
    .. versionchanged:: 3.11
       Added support for specifying member name encoding for reading
@@ -528,6 +528,14 @@ Path Objects
    e.g. 'dir/file.txt', 'dir/', or ''. Defaults to the empty string,
    indicating the root.
 
+   .. note::
+      The :class:`Path` class does not sanitize filenames within the ZIP archive. Unlike
+      the :meth:`ZipFile.extract` and :meth:`ZipFile.extractall` methods, it is the
+      caller's responsibility to validate or sanitize filenames to prevent path traversal
+      vulnerabilities (e.g., filenames containing ".." or absolute paths). When handling
+      untrusted archives, consider resolving filenames using :func:`os.path.abspath`
+      and checking against the target directory with :func:`os.path.commonpath`.
+
 Path objects expose the following features of :mod:`pathlib.Path`
 objects:
 
@@ -626,7 +634,7 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
       Prior to 3.10, ``joinpath`` was undocumented and accepted
       exactly one parameter.
 
-The `zipp <https://pypi.org/project/zipp>`_ project provides backports
+The :pypi:`zipp` project provides backports
 of the latest path object functionality to older Pythons. Use
 ``zipp.Path`` in place of ``zipfile.Path`` for early access to
 changes.
@@ -642,8 +650,8 @@ The :class:`PyZipFile` constructor takes the same parameters as the
 .. class:: PyZipFile(file, mode='r', compression=ZIP_STORED, allowZip64=True, \
                      optimize=-1)
 
-   .. versionadded:: 3.2
-      The *optimize* parameter.
+   .. versionchanged:: 3.2
+      Added the *optimize* parameter.
 
    .. versionchanged:: 3.4
       ZIP64 extensions are enabled by default.
@@ -698,8 +706,8 @@ The :class:`PyZipFile` constructor takes the same parameters as the
          test/bogus/__init__.pyc      # Subpackage directory
          test/bogus/myfile.pyc        # Submodule test.bogus.myfile
 
-      .. versionadded:: 3.4
-         The *filterfunc* parameter.
+      .. versionchanged:: 3.4
+         Added the *filterfunc* parameter.
 
       .. versionchanged:: 3.6.2
          The *pathname* parameter accepts a :term:`path-like object`.
@@ -743,8 +751,8 @@ file:
    .. versionchanged:: 3.6.2
       The *filename* parameter accepts a :term:`path-like object`.
 
-   .. versionadded:: 3.8
-      The *strict_timestamps* keyword-only argument
+   .. versionchanged:: 3.8
+      Added the *strict_timestamps* keyword-only parameter.
 
 
 Instances have the following methods and attributes:
@@ -905,27 +913,27 @@ For a list of the files in a ZIP archive, use the :option:`-l` option:
 Command-line options
 ~~~~~~~~~~~~~~~~~~~~
 
-.. cmdoption:: -l <zipfile>
-               --list <zipfile>
+.. option:: -l <zipfile>
+            --list <zipfile>
 
    List files in a zipfile.
 
-.. cmdoption:: -c <zipfile> <source1> ... <sourceN>
-               --create <zipfile> <source1> ... <sourceN>
+.. option:: -c <zipfile> <source1> ... <sourceN>
+            --create <zipfile> <source1> ... <sourceN>
 
    Create zipfile from source files.
 
-.. cmdoption:: -e <zipfile> <output_dir>
-               --extract <zipfile> <output_dir>
+.. option:: -e <zipfile> <output_dir>
+            --extract <zipfile> <output_dir>
 
    Extract zipfile into target directory.
 
-.. cmdoption:: -t <zipfile>
-               --test <zipfile>
+.. option:: -t <zipfile>
+            --test <zipfile>
 
    Test whether the zipfile is valid or not.
 
-.. cmdoption:: --metadata-encoding <encoding>
+.. option:: --metadata-encoding <encoding>
 
    Specify encoding of member names for :option:`-l`, :option:`-e` and
    :option:`-t`.

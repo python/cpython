@@ -135,6 +135,10 @@ class GenericTest:
         self.assertIs(self.pathmodule.exists(filename), False)
         self.assertIs(self.pathmodule.exists(bfilename), False)
 
+        if self.pathmodule is not genericpath:
+            self.assertIs(self.pathmodule.lexists(filename), False)
+            self.assertIs(self.pathmodule.lexists(bfilename), False)
+
         create_file(filename)
 
         self.assertIs(self.pathmodule.exists(filename), True)
@@ -153,6 +157,11 @@ class GenericTest:
             self.assertIs(self.pathmodule.lexists(bfilename + b'\xff'), False)
             self.assertIs(self.pathmodule.lexists(filename + '\x00'), False)
             self.assertIs(self.pathmodule.lexists(bfilename + b'\x00'), False)
+
+        # Keyword arguments are accepted
+        self.assertIs(self.pathmodule.exists(path=filename), True)
+        if self.pathmodule is not genericpath:
+            self.assertIs(self.pathmodule.lexists(path=filename), True)
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     @unittest.skipIf(is_emscripten, "Emscripten pipe fds have no stat")
@@ -459,6 +468,10 @@ class CommonTest(GenericTest):
         # Make sure normpath preserves unicode
         for path in ('', '.', '/', '\\', '///foo/.//bar//'):
             self.assertIsInstance(self.pathmodule.normpath(path), str)
+
+    def test_normpath_issue106242(self):
+        for path in ('\x00', 'foo\x00bar', '\x00\x00', '\x00foo', 'foo\x00'):
+            self.assertEqual(self.pathmodule.normpath(path), path)
 
     def test_abspath_issue3426(self):
         # Check that abspath returns unicode when the arg is unicode

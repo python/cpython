@@ -161,7 +161,7 @@ PyDoc_STRVAR(_winapi_CreateFile__doc__,
     {"CreateFile", _PyCFunction_CAST(_winapi_CreateFile), METH_FASTCALL, _winapi_CreateFile__doc__},
 
 static HANDLE
-_winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
+_winapi_CreateFile_impl(PyObject *module, LPCWSTR file_name,
                         DWORD desired_access, DWORD share_mode,
                         LPSECURITY_ATTRIBUTES security_attributes,
                         DWORD creation_disposition,
@@ -171,7 +171,7 @@ static PyObject *
 _winapi_CreateFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    LPCTSTR file_name;
+    LPCWSTR file_name = NULL;
     DWORD desired_access;
     DWORD share_mode;
     LPSECURITY_ATTRIBUTES security_attributes;
@@ -180,8 +180,8 @@ _winapi_CreateFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     HANDLE template_file;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "skk" F_POINTER "kk" F_HANDLE ":CreateFile",
-        &file_name, &desired_access, &share_mode, &security_attributes, &creation_disposition, &flags_and_attributes, &template_file)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&kk" F_POINTER "kk" F_HANDLE ":CreateFile",
+        _PyUnicode_WideCharString_Converter, &file_name, &desired_access, &share_mode, &security_attributes, &creation_disposition, &flags_and_attributes, &template_file)) {
         goto exit;
     }
     _return_value = _winapi_CreateFile_impl(module, file_name, desired_access, share_mode, security_attributes, creation_disposition, flags_and_attributes, template_file);
@@ -194,6 +194,9 @@ _winapi_CreateFile(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     return_value = HANDLE_TO_PYNUM(_return_value);
 
 exit:
+    /* Cleanup for file_name */
+    PyMem_Free((void *)file_name);
+
     return return_value;
 }
 
@@ -304,7 +307,7 @@ PyDoc_STRVAR(_winapi_CreateNamedPipe__doc__,
     {"CreateNamedPipe", _PyCFunction_CAST(_winapi_CreateNamedPipe), METH_FASTCALL, _winapi_CreateNamedPipe__doc__},
 
 static HANDLE
-_winapi_CreateNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD open_mode,
+_winapi_CreateNamedPipe_impl(PyObject *module, LPCWSTR name, DWORD open_mode,
                              DWORD pipe_mode, DWORD max_instances,
                              DWORD out_buffer_size, DWORD in_buffer_size,
                              DWORD default_timeout,
@@ -314,7 +317,7 @@ static PyObject *
 _winapi_CreateNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    LPCTSTR name;
+    LPCWSTR name = NULL;
     DWORD open_mode;
     DWORD pipe_mode;
     DWORD max_instances;
@@ -324,8 +327,8 @@ _winapi_CreateNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t narg
     LPSECURITY_ATTRIBUTES security_attributes;
     HANDLE _return_value;
 
-    if (!_PyArg_ParseStack(args, nargs, "skkkkkk" F_POINTER ":CreateNamedPipe",
-        &name, &open_mode, &pipe_mode, &max_instances, &out_buffer_size, &in_buffer_size, &default_timeout, &security_attributes)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&kkkkkk" F_POINTER ":CreateNamedPipe",
+        _PyUnicode_WideCharString_Converter, &name, &open_mode, &pipe_mode, &max_instances, &out_buffer_size, &in_buffer_size, &default_timeout, &security_attributes)) {
         goto exit;
     }
     _return_value = _winapi_CreateNamedPipe_impl(module, name, open_mode, pipe_mode, max_instances, out_buffer_size, in_buffer_size, default_timeout, security_attributes);
@@ -338,6 +341,9 @@ _winapi_CreateNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t narg
     return_value = HANDLE_TO_PYNUM(_return_value);
 
 exit:
+    /* Cleanup for name */
+    PyMem_Free((void *)name);
+
     return return_value;
 }
 
@@ -601,6 +607,76 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_winapi_GetLongPathName__doc__,
+"GetLongPathName($module, /, path)\n"
+"--\n"
+"\n"
+"Return the long version of the provided path.\n"
+"\n"
+"If the path is already in its long form, returns the same value.\n"
+"\n"
+"The path must already be a \'str\'. If the type is not known, use\n"
+"os.fsdecode before calling this function.");
+
+#define _WINAPI_GETLONGPATHNAME_METHODDEF    \
+    {"GetLongPathName", _PyCFunction_CAST(_winapi_GetLongPathName), METH_FASTCALL|METH_KEYWORDS, _winapi_GetLongPathName__doc__},
+
+static PyObject *
+_winapi_GetLongPathName_impl(PyObject *module, LPCWSTR path);
+
+static PyObject *
+_winapi_GetLongPathName(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "GetLongPathName",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    LPCWSTR path = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("GetLongPathName", "argument 'path'", "str", args[0]);
+        goto exit;
+    }
+    path = PyUnicode_AsWideCharString(args[0], NULL);
+    if (path == NULL) {
+        goto exit;
+    }
+    return_value = _winapi_GetLongPathName_impl(module, path);
+
+exit:
+    /* Cleanup for path */
+    PyMem_Free((void *)path);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(_winapi_GetModuleFileName__doc__,
 "GetModuleFileName($module, module_handle, /)\n"
 "--\n"
@@ -632,6 +708,76 @@ _winapi_GetModuleFileName(PyObject *module, PyObject *arg)
     return_value = _winapi_GetModuleFileName_impl(module, module_handle);
 
 exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_winapi_GetShortPathName__doc__,
+"GetShortPathName($module, /, path)\n"
+"--\n"
+"\n"
+"Return the short version of the provided path.\n"
+"\n"
+"If the path is already in its short form, returns the same value.\n"
+"\n"
+"The path must already be a \'str\'. If the type is not known, use\n"
+"os.fsdecode before calling this function.");
+
+#define _WINAPI_GETSHORTPATHNAME_METHODDEF    \
+    {"GetShortPathName", _PyCFunction_CAST(_winapi_GetShortPathName), METH_FASTCALL|METH_KEYWORDS, _winapi_GetShortPathName__doc__},
+
+static PyObject *
+_winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path);
+
+static PyObject *
+_winapi_GetShortPathName(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 1
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_item = { &_Py_ID(path), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"path", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "GetShortPathName",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[1];
+    LPCWSTR path = NULL;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    if (!PyUnicode_Check(args[0])) {
+        _PyArg_BadArgument("GetShortPathName", "argument 'path'", "str", args[0]);
+        goto exit;
+    }
+    path = PyUnicode_AsWideCharString(args[0], NULL);
+    if (path == NULL) {
+        goto exit;
+    }
+    return_value = _winapi_GetShortPathName_impl(module, path);
+
+exit:
+    /* Cleanup for path */
+    PyMem_Free((void *)path);
+
     return return_value;
 }
 
@@ -885,7 +1031,7 @@ PyDoc_STRVAR(_winapi_LCMapStringEx__doc__,
 
 static PyObject *
 _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
-                           LPCWSTR src);
+                           PyObject *src);
 
 static PyObject *
 _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -912,16 +1058,16 @@ _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
     static const char * const _keywords[] = {"locale", "flags", "src", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .format = "O&kO&:LCMapStringEx",
+        .format = "O&kU:LCMapStringEx",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
     LPCWSTR locale = NULL;
     DWORD flags;
-    LPCWSTR src = NULL;
+    PyObject *src;
 
     if (!_PyArg_ParseStackAndKeywords(args, nargs, kwnames, &_parser,
-        _PyUnicode_WideCharString_Converter, &locale, &flags, _PyUnicode_WideCharString_Converter, &src)) {
+        _PyUnicode_WideCharString_Converter, &locale, &flags, &src)) {
         goto exit;
     }
     return_value = _winapi_LCMapStringEx_impl(module, locale, flags, src);
@@ -929,8 +1075,6 @@ _winapi_LCMapStringEx(PyObject *module, PyObject *const *args, Py_ssize_t nargs,
 exit:
     /* Cleanup for locale */
     PyMem_Free((void *)locale);
-    /* Cleanup for src */
-    PyMem_Free((void *)src);
 
     return return_value;
 }
@@ -1094,22 +1238,25 @@ PyDoc_STRVAR(_winapi_WaitNamedPipe__doc__,
     {"WaitNamedPipe", _PyCFunction_CAST(_winapi_WaitNamedPipe), METH_FASTCALL, _winapi_WaitNamedPipe__doc__},
 
 static PyObject *
-_winapi_WaitNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD timeout);
+_winapi_WaitNamedPipe_impl(PyObject *module, LPCWSTR name, DWORD timeout);
 
 static PyObject *
 _winapi_WaitNamedPipe(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
-    LPCTSTR name;
+    LPCWSTR name = NULL;
     DWORD timeout;
 
-    if (!_PyArg_ParseStack(args, nargs, "sk:WaitNamedPipe",
-        &name, &timeout)) {
+    if (!_PyArg_ParseStack(args, nargs, "O&k:WaitNamedPipe",
+        _PyUnicode_WideCharString_Converter, &name, &timeout)) {
         goto exit;
     }
     return_value = _winapi_WaitNamedPipe_impl(module, name, timeout);
 
 exit:
+    /* Cleanup for name */
+    PyMem_Free((void *)name);
+
     return return_value;
 }
 
@@ -1481,4 +1628,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=be1343b3759e0c96 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=91b39b70024fa232 input=a9049054013a1b77]*/

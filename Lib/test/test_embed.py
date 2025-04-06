@@ -1,12 +1,11 @@
 # Run the tests in Programs/_testembed.c (tests for the CPython embedding APIs)
 from test import support
-from test.support import import_helper
-from test.support import os_helper
-from test.support import requires_specialization
+from test.support import import_helper, os_helper, MS_WINDOWS
 import unittest
 
 from collections import namedtuple
 import contextlib
+import io
 import json
 import os
 import os.path
@@ -21,7 +20,6 @@ import textwrap
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
 
-MS_WINDOWS = (os.name == 'nt')
 MACOS = (sys.platform == 'darwin')
 PYMEM_ALLOCATOR_NOT_SET = 0
 PYMEM_ALLOCATOR_DEBUG = 2
@@ -347,15 +345,15 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_simple_init")
         self.assertEqual(out, 'Finalized\n' * INIT_LOOPS)
 
-    @requires_specialization
+    @support.requires_specialization
     def test_specialized_static_code_gets_unspecialized_at_Py_FINALIZE(self):
         # https://github.com/python/cpython/issues/92031
+        from test.test_dis import ADAPTIVE_WARMUP_DELAY
 
-        code = textwrap.dedent("""\
+        code = textwrap.dedent(f"""\
             import dis
             import importlib._bootstrap
             import opcode
-            import test.test_dis
 
             def is_specialized(f):
                 for instruction in dis.get_instructions(f, adaptive=True):
@@ -375,7 +373,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
 
             assert not is_specialized(func), "specialized instructions found"
 
-            for i in range(test.test_dis.ADAPTIVE_WARMUP_DELAY):
+            for i in range({ADAPTIVE_WARMUP_DELAY}):
                 func(importlib._bootstrap, ["x"], lambda *args: None)
 
             assert is_specialized(func), "no specialized instructions found"
@@ -391,6 +389,70 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         code = "print('\\N{digit nine}')"
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '9\n' * INIT_LOOPS)
+
+    def test_static_types_inherited_slots(self):
+        script = textwrap.dedent("""
+            import test.support
+
+            results = {}
+            def add(cls, slot, own):
+                value = getattr(cls, slot)
+                try:
+                    subresults = results[cls.__name__]
+                except KeyError:
+                    subresults = results[cls.__name__] = {}
+                subresults[slot] = [repr(value), own]
+
+            for cls in test.support.iter_builtin_types():
+                for slot, own in test.support.iter_slot_wrappers(cls):
+                    add(cls, slot, own)
+            """)
+
+        ns = {}
+        exec(script, ns, ns)
+        all_expected = ns['results']
+        del ns
+
+        script += textwrap.dedent("""
+            import json
+            import sys
+            text = json.dumps(results)
+            print(text, file=sys.stderr)
+            """)
+        out, err = self.run_embedded_interpreter(
+                "test_repeated_init_exec", script, script)
+        results = err.split('--- Loop #')[1:]
+        results = [res.rpartition(' ---\n')[-1] for res in results]
+
+        self.maxDiff = None
+        for i, text in enumerate(results, start=1):
+            result = json.loads(text)
+            for classname, expected in all_expected.items():
+                with self.subTest(loop=i, cls=classname):
+                    slots = result.pop(classname)
+                    self.assertEqual(slots, expected)
+            self.assertEqual(result, {})
+        self.assertEqual(out, '')
+
+    def test_getargs_reset_static_parser(self):
+        # Test _PyArg_Parser initializations via _PyArg_UnpackKeywords()
+        # https://github.com/python/cpython/issues/122334
+        code = textwrap.dedent("""
+            try:
+                import _ssl
+            except ModuleNotFoundError:
+                _ssl = None
+            if _ssl is not None:
+                _ssl.txt2obj(txt='1.3')
+            print('1')
+
+            import _queue
+            _queue.SimpleQueue().put_nowait(item=None)
+            print('2')
+        """)
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, '1\n2\n' * INIT_LOOPS)
+
 
 class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
     maxDiff = 4096
@@ -1802,57 +1864,6 @@ class MiscTests(EmbeddingTestsMixin, unittest.TestCase):
             with self.subTest(frozen_modules=flag, stmt=stmt):
                 self.assertEqual(refs, 0, out)
                 self.assertEqual(blocks, 0, out)
-
-
-class StdPrinterTests(EmbeddingTestsMixin, unittest.TestCase):
-    # Test PyStdPrinter_Type which is used by _PySys_SetPreliminaryStderr():
-    #   "Set up a preliminary stderr printer until we have enough
-    #    infrastructure for the io module in place."
-
-    STDOUT_FD = 1
-
-    def create_printer(self, fd):
-        ctypes = import_helper.import_module('ctypes')
-        PyFile_NewStdPrinter = ctypes.pythonapi.PyFile_NewStdPrinter
-        PyFile_NewStdPrinter.argtypes = (ctypes.c_int,)
-        PyFile_NewStdPrinter.restype = ctypes.py_object
-        return PyFile_NewStdPrinter(fd)
-
-    def test_write(self):
-        message = "unicode:\xe9-\u20ac-\udc80!\n"
-
-        stdout_fd = self.STDOUT_FD
-        stdout_fd_copy = os.dup(stdout_fd)
-        self.addCleanup(os.close, stdout_fd_copy)
-
-        rfd, wfd = os.pipe()
-        self.addCleanup(os.close, rfd)
-        self.addCleanup(os.close, wfd)
-        try:
-            # PyFile_NewStdPrinter() only accepts fileno(stdout)
-            # or fileno(stderr) file descriptor.
-            os.dup2(wfd, stdout_fd)
-
-            printer = self.create_printer(stdout_fd)
-            printer.write(message)
-        finally:
-            os.dup2(stdout_fd_copy, stdout_fd)
-
-        data = os.read(rfd, 100)
-        self.assertEqual(data, message.encode('utf8', 'backslashreplace'))
-
-    def test_methods(self):
-        fd = self.STDOUT_FD
-        printer = self.create_printer(fd)
-        self.assertEqual(printer.fileno(), fd)
-        self.assertEqual(printer.isatty(), os.isatty(fd))
-        printer.flush()  # noop
-        printer.close()  # noop
-
-    def test_disallow_instantiation(self):
-        fd = self.STDOUT_FD
-        printer = self.create_printer(fd)
-        support.check_disallow_instantiation(self, type(printer))
 
 
 if __name__ == "__main__":

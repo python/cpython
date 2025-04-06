@@ -3,6 +3,8 @@ import sys
 import os
 import subprocess
 import shutil
+import json
+import textwrap
 from copy import copy
 
 from test.support import (
@@ -11,6 +13,7 @@ from test.support import (
 from test.support.import_helper import import_module
 from test.support.os_helper import (TESTFN, unlink, skip_unless_symlink,
                                     change_cwd)
+from test.support.venv import VirtualEnvironment
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -90,6 +93,12 @@ class TestSysConfig(unittest.TestCase):
         elif os.path.isdir(path):
             shutil.rmtree(path)
 
+    def venv(self, **venv_create_args):
+        return VirtualEnvironment.from_tmpdir(
+            prefix=f'{self.id()}-venv-',
+            **venv_create_args,
+        )
+
     def test_get_path_names(self):
         self.assertEqual(get_path_names(), sysconfig._SCHEME_KEYS)
 
@@ -149,17 +158,21 @@ class TestSysConfig(unittest.TestCase):
                                'python%d.%d' % sys.version_info[:2],
                                'site-packages')
 
-        # Resolve the paths in prefix
-        binpath = os.path.join(sys.prefix, binpath)
-        incpath = os.path.join(sys.prefix, incpath)
-        libpath = os.path.join(sys.prefix, libpath)
+        # Resolve the paths in an imaginary venv/ directory
+        binpath = os.path.join('venv', binpath)
+        incpath = os.path.join('venv', incpath)
+        libpath = os.path.join('venv', libpath)
 
-        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='posix_venv'))
-        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='posix_venv'))
+        # Mimic the venv module, set all bases to the venv directory
+        bases = ('base', 'platbase', 'installed_base', 'installed_platbase')
+        vars = {base: 'venv' for base in bases}
+
+        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='posix_venv', vars=vars))
+        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='posix_venv', vars=vars))
 
         # The include directory on POSIX isn't exactly the same as before,
         # but it is "within"
-        sysconfig_includedir = sysconfig.get_path('include', scheme='posix_venv')
+        sysconfig_includedir = sysconfig.get_path('include', scheme='posix_venv', vars=vars)
         self.assertTrue(sysconfig_includedir.startswith(incpath + os.sep))
 
     def test_nt_venv_scheme(self):
@@ -169,14 +182,19 @@ class TestSysConfig(unittest.TestCase):
         incpath = 'Include'
         libpath = os.path.join('Lib', 'site-packages')
 
-        # Resolve the paths in prefix
-        binpath = os.path.join(sys.prefix, binpath)
-        incpath = os.path.join(sys.prefix, incpath)
-        libpath = os.path.join(sys.prefix, libpath)
+        # Resolve the paths in an imaginary venv\ directory
+        venv = 'venv'
+        binpath = os.path.join(venv, binpath)
+        incpath = os.path.join(venv, incpath)
+        libpath = os.path.join(venv, libpath)
 
-        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='nt_venv'))
-        self.assertEqual(incpath, sysconfig.get_path('include', scheme='nt_venv'))
-        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='nt_venv'))
+        # Mimic the venv module, set all bases to the venv directory
+        bases = ('base', 'platbase', 'installed_base', 'installed_platbase')
+        vars = {base: 'venv' for base in bases}
+
+        self.assertEqual(binpath, sysconfig.get_path('scripts', scheme='nt_venv', vars=vars))
+        self.assertEqual(incpath, sysconfig.get_path('include', scheme='nt_venv', vars=vars))
+        self.assertEqual(libpath, sysconfig.get_path('purelib', scheme='nt_venv', vars=vars))
 
     def test_venv_scheme(self):
         if sys.platform == 'win32':
@@ -502,6 +520,72 @@ class TestSysConfig(unittest.TestCase):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
 
+    @requires_subprocess()
+    def test_config_vars_depend_on_site_initialization(self):
+        script = textwrap.dedent("""
+            import sysconfig
+
+            config_vars = sysconfig.get_config_vars()
+
+            import json
+            print(json.dumps(config_vars, indent=2))
+        """)
+
+        with self.venv() as venv:
+            site_config_vars = json.loads(venv.run('-c', script).stdout)
+            no_site_config_vars = json.loads(venv.run('-S', '-c', script).stdout)
+
+        self.assertNotEqual(site_config_vars, no_site_config_vars)
+        # With the site initialization, the virtual environment should be enabled.
+        self.assertEqual(site_config_vars['base'], venv.prefix)
+        self.assertEqual(site_config_vars['platbase'], venv.prefix)
+        #self.assertEqual(site_config_vars['prefix'], venv.prefix)  # # FIXME: prefix gets overwriten by _init_posix
+        # Without the site initialization, the virtual environment should be disabled.
+        self.assertEqual(no_site_config_vars['base'], site_config_vars['installed_base'])
+        self.assertEqual(no_site_config_vars['platbase'], site_config_vars['installed_platbase'])
+
+    @requires_subprocess()
+    def test_config_vars_recalculation_after_site_initialization(self):
+        script = textwrap.dedent("""
+            import sysconfig
+
+            before = sysconfig.get_config_vars()
+
+            import site
+            site.main()
+
+            after = sysconfig.get_config_vars()
+
+            import json
+            print(json.dumps({'before': before, 'after': after}, indent=2))
+        """)
+
+        with self.venv() as venv:
+            config_vars = json.loads(venv.run('-S', '-c', script).stdout)
+
+        self.assertNotEqual(config_vars['before'], config_vars['after'])
+        self.assertEqual(config_vars['after']['base'], venv.prefix)
+        #self.assertEqual(config_vars['after']['prefix'], venv.prefix)  # FIXME: prefix gets overwriten by _init_posix
+        #self.assertEqual(config_vars['after']['exec_prefix'], venv.prefix)  # FIXME: exec_prefix gets overwriten by _init_posix
+
+    @requires_subprocess()
+    def test_paths_depend_on_site_initialization(self):
+        script = textwrap.dedent("""
+            import sysconfig
+
+            paths = sysconfig.get_paths()
+
+            import json
+            print(json.dumps(paths, indent=2))
+        """)
+
+        with self.venv() as venv:
+            site_paths = json.loads(venv.run('-c', script).stdout)
+            no_site_paths = json.loads(venv.run('-S', '-c', script).stdout)
+
+        self.assertNotEqual(site_paths, no_site_paths)
+
+
 class MakefileTests(unittest.TestCase):
 
     @unittest.skipIf(sys.platform.startswith('win'),
@@ -530,6 +614,27 @@ class MakefileTests(unittest.TestCase):
             'var5': 'dollar$5',
             'var6': '42/lib/python3.5/config-b42dollar$5-x86_64-linux-gnu',
         })
+
+
+class DeprecationTests(unittest.TestCase):
+    def deprecated(self, removal_version, deprecation_msg=None, error=Exception, error_msg=None):
+        if sys.version_info >= removal_version:
+            return self.assertRaises(error, msg=error_msg)
+        else:
+            return self.assertWarns(DeprecationWarning, msg=deprecation_msg)
+
+    def test_is_python_build_check_home(self):
+        with self.deprecated(
+            removal_version=(3, 15),
+            deprecation_msg=(
+                'The check_home argument of sysconfig.is_python_build is '
+                'deprecated and its value is ignored. '
+                'It will be removed in Python 3.15.'
+            ),
+            error=TypeError,
+            error_msg="is_python_build() takes 0 positional arguments but 1 were given",
+        ):
+            sysconfig.is_python_build('foo')
 
 
 if __name__ == "__main__":

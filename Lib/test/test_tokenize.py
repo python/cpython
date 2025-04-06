@@ -1,20 +1,20 @@
-from test import support
-from test.support import os_helper
+import os
+import re
+import token
+import unittest
 from tokenize import (tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
                      open as tokenize_open, Untokenizer, generate_tokens,
                      NEWLINE, _generate_tokens_from_c_tokenizer, DEDENT, TokenInfo,
                      TokenError)
 from io import BytesIO, StringIO
-import unittest
 from textwrap import dedent
 from unittest import TestCase, mock
+from test import support
 from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
                                INVALID_UNDERSCORE_LITERALS)
 from test.support import os_helper
 from test.support.script_helper import run_test_script, make_script, run_python_until_end
-import os
-import token
 
 # Converts a source string into a list of textual representation
 # of the tokens such as:
@@ -233,7 +233,7 @@ def k(x):
     """)
 
     def test_float(self):
-        # Floating point numbers
+        # Floating-point numbers
         self.check_tokenize("x = 3.14159", """\
     NAME       'x'           (1, 0) (1, 1)
     OP         '='           (1, 2) (1, 3)
@@ -571,6 +571,65 @@ f'''{
     OP         '='           (3, 0) (3, 1)
     OP         '}'           (3, 1) (3, 2)
     FSTRING_END "'''"         (3, 2) (3, 5)
+    """)
+        self.check_tokenize("""\
+f'''__{
+    x:a
+}__'''""", """\
+    FSTRING_START "f'''"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '__'          (1, 4) (1, 6)
+    OP         '{'           (1, 6) (1, 7)
+    NL         '\\n'          (1, 7) (1, 8)
+    NAME       'x'           (2, 4) (2, 5)
+    OP         ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'a\\n'         (2, 6) (3, 0)
+    OP         '}'           (3, 0) (3, 1)
+    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
+    FSTRING_END "'''"         (3, 3) (3, 6)
+    """)
+        self.check_tokenize("""\
+f'''__{
+    x:a
+    b
+     c
+      d
+}__'''""", """\
+    FSTRING_START "f'''"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '__'          (1, 4) (1, 6)
+    OP         '{'           (1, 6) (1, 7)
+    NL         '\\n'          (1, 7) (1, 8)
+    NAME       'x'           (2, 4) (2, 5)
+    OP         ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'a\\n    b\\n     c\\n      d\\n' (2, 6) (6, 0)
+    OP         '}'           (6, 0) (6, 1)
+    FSTRING_MIDDLE '__'          (6, 1) (6, 3)
+    FSTRING_END "'''"         (6, 3) (6, 6)
+    """)
+        self.check_tokenize("""\
+f'__{
+    x:d
+}__'""", """\
+    FSTRING_START "f'"          (1, 0) (1, 2)
+    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
+    OP         '{'           (1, 4) (1, 5)
+    NL         '\\n'          (1, 5) (1, 6)
+    NAME       'x'           (2, 4) (2, 5)
+    OP         ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
+    NL         '\\n'          (2, 7) (2, 8)
+    OP         '}'           (3, 0) (3, 1)
+    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
+    FSTRING_END "'"           (3, 3) (3, 4)
+    """)
+
+        self.check_tokenize("""\
+    '''Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli
+    aktualni pracownicy, obecni pracownicy'''
+""", """\
+    INDENT     '    '        (1, 0) (1, 4)
+    STRING     "'''Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli\\n    aktualni pracownicy, obecni pracownicy'''" (1, 4) (2, 45)
+    NEWLINE    '\\n'          (2, 45) (2, 46)
+    DEDENT     ''            (3, 0) (3, 0)
     """)
 
     def test_function(self):
@@ -1145,6 +1204,31 @@ async def f():
     NAME       'x'           (1, 3) (1, 4)
     """)
 
+    def test_multiline_non_ascii_fstring(self):
+        self.check_tokenize("""\
+a = f'''
+    Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli'''""", """\
+    NAME       'a'           (1, 0) (1, 1)
+    OP         '='           (1, 2) (1, 3)
+    FSTRING_START "f\'\'\'"        (1, 4) (1, 8)
+    FSTRING_MIDDLE '\\n    Autorzy, którzy tą jednostkę mają wpisani jako AKTUALNA -- czyli' (1, 8) (2, 68)
+    FSTRING_END "\'\'\'"         (2, 68) (2, 71)
+    """)
+
+    def test_multiline_non_ascii_fstring_with_expr(self):
+        self.check_tokenize("""\
+f'''
+    🔗 This is a test {test_arg1}🔗
+🔗'''""", """\
+    FSTRING_START "f\'\'\'"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '\\n    🔗 This is a test ' (1, 4) (2, 21)
+    OP         '{'           (2, 21) (2, 22)
+    NAME       'test_arg1'   (2, 22) (2, 31)
+    OP         '}'           (2, 31) (2, 32)
+    FSTRING_MIDDLE '🔗\\n🔗'        (2, 32) (3, 1)
+    FSTRING_END "\'\'\'"         (3, 1) (3, 4)
+    """)
+
 class GenerateTokensTest(TokenizeTest):
     def check_tokenize(self, s, expected):
         # Format the tokens in s in a table format.
@@ -1198,7 +1282,7 @@ class TestTokenizerAdheresToPep0263(TestCase):
     """
 
     def _testFile(self, filename):
-        path = os.path.join(os.path.dirname(__file__), filename)
+        path = os.path.join(os.path.dirname(__file__), 'tokenizedata', filename)
         with open(path, 'rb') as f:
             TestRoundtrip.check_roundtrip(self, f)
 
@@ -1732,6 +1816,22 @@ class UntokenizeTest(TestCase):
         self.assertEqual(untokenize(iter(tokens)), b'Hello ')
 
 
+def contains_ambiguous_backslash(source):
+    """Return `True` if the source contains a backslash on a
+    line by itself. For example:
+
+    a = (1
+        \\
+    )
+
+    Code like this cannot be untokenized exactly. This is because
+    the tokenizer does not produce any tokens for the line containing
+    the backslash and so there is no way to know its indent.
+    """
+    pattern = re.compile(br'\n\s*\\\r?\n')
+    return pattern.search(source) is not None
+
+
 class TestRoundtrip(TestCase):
 
     def check_roundtrip(self, f):
@@ -1741,6 +1841,9 @@ class TestRoundtrip(TestCase):
         Both sequences are converted back to source code via
         tokenize.untokenize(), and the latter tokenized again to 2-tuples.
         The test fails if the 3 pair tokenizations do not match.
+
+        If the source code can be untokenized unambiguously, the
+        untokenized code must match the original code exactly.
 
         When untokenize bugs are fixed, untokenize with 5-tuples should
         reproduce code that does not contain a backslash continuation
@@ -1764,6 +1867,13 @@ class TestRoundtrip(TestCase):
         readline5 = iter(bytes_from5.splitlines(keepends=True)).__next__
         tokens2_from5 = [tok[:2] for tok in tokenize(readline5)]
         self.assertEqual(tokens2_from5, tokens2)
+
+        if not contains_ambiguous_backslash(code):
+            # The BOM does not produce a token so there is no way to preserve it.
+            code_without_bom = code.removeprefix(b'\xef\xbb\xbf')
+            readline = iter(code_without_bom.splitlines(keepends=True)).__next__
+            untokenized_code = untokenize(tokenize(readline))
+            self.assertEqual(code_without_bom, untokenized_code)
 
     def check_line_extraction(self, f):
         if isinstance(f, str):
@@ -1791,7 +1901,7 @@ class TestRoundtrip(TestCase):
 
         self.check_roundtrip("if x == 1 : \n"
                              "  print(x)\n")
-        fn = support.findfile("tokenize_tests.txt")
+        fn = support.findfile("tokenize_tests.txt", subdir="tokenizedata")
         with open(fn, 'rb') as f:
             self.check_roundtrip(f)
         self.check_roundtrip("if x == 1:\n"
@@ -1814,6 +1924,63 @@ class TestRoundtrip(TestCase):
                              "except ImportError: # comment\n"
                              "    print('Can not import' # comment2\n)"
                              "else:   print('Loaded')\n")
+
+        self.check_roundtrip("f'\\N{EXCLAMATION MARK}'")
+        self.check_roundtrip(r"f'\\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\N{{SNAKE}}'")
+        self.check_roundtrip(r"f'\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\\\\N{SNAKE}'")
+        self.check_roundtrip(r"f'\\\\\\\N{SNAKE}'")
+
+        self.check_roundtrip(r"f'\\N{1}'")
+        self.check_roundtrip(r"f'\\\\N{2}'")
+        self.check_roundtrip(r"f'\\\\\\N{3}'")
+        self.check_roundtrip(r"f'\\\\\\\\N{4}'")
+
+        self.check_roundtrip(r"f'\\N{{'")
+        self.check_roundtrip(r"f'\\\\N{{'")
+        self.check_roundtrip(r"f'\\\\\\N{{'")
+        self.check_roundtrip(r"f'\\\\\\\\N{{'")
+
+        self.check_roundtrip(r"f'\n{{foo}}'")
+        self.check_roundtrip(r"f'\\n{{foo}}'")
+        self.check_roundtrip(r"f'\\\n{{foo}}'")
+        self.check_roundtrip(r"f'\\\\n{{foo}}'")
+
+        self.check_roundtrip(r"f'\t{{foo}}'")
+        self.check_roundtrip(r"f'\\t{{foo}}'")
+        self.check_roundtrip(r"f'\\\t{{foo}}'")
+        self.check_roundtrip(r"f'\\\\t{{foo}}'")
+
+        self.check_roundtrip(r"rf'\t{{foo}}'")
+        self.check_roundtrip(r"rf'\\t{{foo}}'")
+        self.check_roundtrip(r"rf'\\\t{{foo}}'")
+        self.check_roundtrip(r"rf'\\\\t{{foo}}'")
+
+        self.check_roundtrip(r"rf'\{{foo}}'")
+        self.check_roundtrip(r"f'\\{{foo}}'")
+        self.check_roundtrip(r"rf'\\\{{foo}}'")
+        self.check_roundtrip(r"f'\\\\{{foo}}'")
+        cases = [
+    """
+if 1:
+    "foo"
+"bar"
+""",
+    """
+if 1:
+    ("foo"
+     "bar")
+""",
+    """
+if 1:
+    "foo"
+    "bar"
+""" ]
+        for case in cases:
+            self.check_roundtrip(case)
+
 
     def test_continuation(self):
         # Balancing continuation
@@ -1846,22 +2013,8 @@ class TestRoundtrip(TestCase):
         # pass the '-ucpu' option to process the full directory.
 
         import glob, random
-        fn = support.findfile("tokenize_tests.txt")
-        tempdir = os.path.dirname(fn) or os.curdir
+        tempdir = os.path.dirname(__file__) or os.curdir
         testfiles = glob.glob(os.path.join(glob.escape(tempdir), "test*.py"))
-
-        # Tokenize is broken on test_pep3131.py because regular expressions are
-        # broken on the obscure unicode identifiers in it. *sigh*
-        # With roundtrip extended to test the 5-tuple mode of untokenize,
-        # 7 more testfiles fail.  Remove them also until the failure is diagnosed.
-
-        testfiles.remove(os.path.join(tempdir, "test_unicode_identifiers.py"))
-
-        # TODO: Remove this once we can unparse PEP 701 syntax
-        testfiles.remove(os.path.join(tempdir, "test_fstring.py"))
-
-        for f in ('buffer', 'builtin', 'fileio', 'inspect', 'os', 'platform', 'sys'):
-            testfiles.remove(os.path.join(tempdir, "test_%s.py") % f)
 
         if not support.is_resource_enabled("cpu"):
             testfiles = random.sample(testfiles, 10)
@@ -2275,6 +2428,54 @@ def"', """\
     FSTRING_START \'f"\'          (1, 0) (1, 2)
     FSTRING_MIDDLE 'hola\\\\\\\\\\\\r\\\\ndfgf' (1, 2) (1, 16)
     FSTRING_END \'"\'           (1, 16) (1, 17)
+    """)
+
+        self.check_tokenize("""\
+f'''__{
+    x:a
+}__'''""", """\
+    FSTRING_START "f'''"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '__'          (1, 4) (1, 6)
+    LBRACE     '{'           (1, 6) (1, 7)
+    NAME       'x'           (2, 4) (2, 5)
+    COLON      ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'a\\n'         (2, 6) (3, 0)
+    RBRACE     '}'           (3, 0) (3, 1)
+    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
+    FSTRING_END "'''"         (3, 3) (3, 6)
+    """)
+
+        self.check_tokenize("""\
+f'''__{
+    x:a
+    b
+     c
+      d
+}__'''""", """\
+    FSTRING_START "f'''"        (1, 0) (1, 4)
+    FSTRING_MIDDLE '__'          (1, 4) (1, 6)
+    LBRACE     '{'           (1, 6) (1, 7)
+    NAME       'x'           (2, 4) (2, 5)
+    COLON      ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'a\\n    b\\n     c\\n      d\\n' (2, 6) (6, 0)
+    RBRACE     '}'           (6, 0) (6, 1)
+    FSTRING_MIDDLE '__'          (6, 1) (6, 3)
+    FSTRING_END "'''"         (6, 3) (6, 6)
+    """)
+
+        self.check_tokenize("""\
+f'__{
+    x:d
+}__'""", """\
+    FSTRING_START "f'"          (1, 0) (1, 2)
+    FSTRING_MIDDLE '__'          (1, 2) (1, 4)
+    LBRACE     '{'           (1, 4) (1, 5)
+    NAME       'x'           (2, 4) (2, 5)
+    COLON      ':'           (2, 5) (2, 6)
+    FSTRING_MIDDLE 'd'           (2, 6) (2, 7)
+    RBRACE     '}'           (3, 0) (3, 1)
+    FSTRING_MIDDLE '__'          (3, 1) (3, 3)
+    FSTRING_END "'"           (3, 3) (3, 4)
     """)
 
     def test_function(self):

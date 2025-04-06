@@ -975,6 +975,44 @@ PyDoc_STRVAR(_sre_SRE_Pattern___deepcopy____doc__,
 #define _SRE_SRE_PATTERN___DEEPCOPY___METHODDEF    \
     {"__deepcopy__", (PyCFunction)_sre_SRE_Pattern___deepcopy__, METH_O, _sre_SRE_Pattern___deepcopy____doc__},
 
+#if defined(Py_DEBUG)
+
+PyDoc_STRVAR(_sre_SRE_Pattern__fail_after__doc__,
+"_fail_after($self, count, exception, /)\n"
+"--\n"
+"\n"
+"For debugging.");
+
+#define _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF    \
+    {"_fail_after", _PyCFunction_CAST(_sre_SRE_Pattern__fail_after), METH_FASTCALL, _sre_SRE_Pattern__fail_after__doc__},
+
+static PyObject *
+_sre_SRE_Pattern__fail_after_impl(PatternObject *self, int count,
+                                  PyObject *exception);
+
+static PyObject *
+_sre_SRE_Pattern__fail_after(PatternObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int count;
+    PyObject *exception;
+
+    if (!_PyArg_CheckPositional("_fail_after", nargs, 2, 2)) {
+        goto exit;
+    }
+    count = _PyLong_AsInt(args[0]);
+    if (count == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    exception = args[1];
+    return_value = _sre_SRE_Pattern__fail_after_impl(self, count, exception);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(Py_DEBUG) */
+
 PyDoc_STRVAR(_sre_compile__doc__,
 "compile($module, /, pattern, flags, code, groups, groupindex,\n"
 "        indexgroup)\n"
@@ -1433,7 +1471,7 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls);
 static PyObject *
 _sre_SRE_Scanner_match(ScannerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "match() takes no arguments");
         return NULL;
     }
@@ -1454,10 +1492,14 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self, PyTypeObject *cls);
 static PyObject *
 _sre_SRE_Scanner_search(ScannerObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "search() takes no arguments");
         return NULL;
     }
     return _sre_SRE_Scanner_search_impl(self, cls);
 }
-/*[clinic end generated code: output=e3ba72156dd71572 input=a9049054013a1b77]*/
+
+#ifndef _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
+    #define _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
+#endif /* !defined(_SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF) */
+/*[clinic end generated code: output=2165ecf43a7c20e8 input=a9049054013a1b77]*/

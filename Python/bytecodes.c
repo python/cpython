@@ -1165,7 +1165,7 @@ dummy_func(
             }
         }
 
-        op(_LOAD_LOCALS, ( -- locals)) {
+        inst(LOAD_LOCALS, ( -- locals)) {
             locals = LOCALS();
             if (locals == NULL) {
                 _PyErr_SetString(tstate, PyExc_SystemError,
@@ -1175,9 +1175,7 @@ dummy_func(
             Py_INCREF(locals);
         }
 
-        macro(LOAD_LOCALS) = _LOAD_LOCALS;
-
-        op(_LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
+        inst(LOAD_FROM_DICT_OR_GLOBALS, (mod_or_class_dict -- v)) {
             PyObject *name = GETITEM(frame->f_code->co_names, oparg);
             if (PyDict_CheckExact(mod_or_class_dict)) {
                 v = PyDict_GetItemWithError(mod_or_class_dict, name);
@@ -1185,7 +1183,6 @@ dummy_func(
                     Py_INCREF(v);
                 }
                 else if (_PyErr_Occurred(tstate)) {
-                    Py_DECREF(mod_or_class_dict);
                     goto error;
                 }
             }
@@ -1193,13 +1190,82 @@ dummy_func(
                 v = PyObject_GetItem(mod_or_class_dict, name);
                 if (v == NULL) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                        Py_DECREF(mod_or_class_dict);
                         goto error;
                     }
                     _PyErr_Clear(tstate);
                 }
             }
-            Py_DECREF(mod_or_class_dict);
+            if (v == NULL) {
+                if (PyDict_CheckExact(GLOBALS())
+                    && PyDict_CheckExact(BUILTINS()))
+                {
+                    v = _PyDict_LoadGlobal((PyDictObject *)GLOBALS(),
+                                        (PyDictObject *)BUILTINS(),
+                                        name);
+                    if (v == NULL) {
+                        if (!_PyErr_Occurred(tstate)) {
+                            /* _PyDict_LoadGlobal() returns NULL without raising
+                            * an exception if the key doesn't exist */
+                            format_exc_check_arg(tstate, PyExc_NameError,
+                                                NAME_ERROR_MSG, name);
+                        }
+                        Py_DECREF(mod_or_class_dict);
+                        ERROR_IF(true, error);
+                    }
+                    Py_INCREF(v);
+                }
+                else {
+                    /* Slow-path if globals or builtins is not a dict */
+
+                    /* namespace 1: globals */
+                    v = PyObject_GetItem(GLOBALS(), name);
+                    if (v == NULL) {
+                        ERROR_IF(!_PyErr_ExceptionMatches(tstate, PyExc_KeyError), error);
+                        _PyErr_Clear(tstate);
+
+                        /* namespace 2: builtins */
+                        v = PyObject_GetItem(BUILTINS(), name);
+                        if (v == NULL) {
+                            if (_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                                format_exc_check_arg(
+                                            tstate, PyExc_NameError,
+                                            NAME_ERROR_MSG, name);
+                            }
+                            Py_DECREF(mod_or_class_dict);
+                            ERROR_IF(true, error);
+                        }
+                    }
+                }
+            }
+            DECREF_INPUTS();
+        }
+
+        inst(LOAD_NAME, (-- v)) {
+            PyObject *mod_or_class_dict = LOCALS();
+            if (mod_or_class_dict == NULL) {
+                _PyErr_SetString(tstate, PyExc_SystemError,
+                                 "no locals found");
+                ERROR_IF(true, error);
+            }
+            PyObject *name = GETITEM(frame->f_code->co_names, oparg);
+            if (PyDict_CheckExact(mod_or_class_dict)) {
+                v = PyDict_GetItemWithError(mod_or_class_dict, name);
+                if (v != NULL) {
+                    Py_INCREF(v);
+                }
+                else if (_PyErr_Occurred(tstate)) {
+                    goto error;
+                }
+            }
+            else {
+                v = PyObject_GetItem(mod_or_class_dict, name);
+                if (v == NULL) {
+                    if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
+                        goto error;
+                    }
+                    _PyErr_Clear(tstate);
+                }
+            }
             if (v == NULL) {
                 v = PyDict_GetItemWithError(GLOBALS(), name);
                 if (v != NULL) {
@@ -1235,10 +1301,6 @@ dummy_func(
                 }
             }
         }
-
-        macro(LOAD_NAME) = _LOAD_LOCALS + _LOAD_FROM_DICT_OR_GLOBALS;
-
-        macro(LOAD_FROM_DICT_OR_GLOBALS) = _LOAD_FROM_DICT_OR_GLOBALS;
 
         family(load_global, INLINE_CACHE_ENTRIES_LOAD_GLOBAL) = {
             LOAD_GLOBAL,
@@ -1371,7 +1433,6 @@ dummy_func(
                     Py_INCREF(value);
                 }
                 else if (_PyErr_Occurred(tstate)) {
-                    Py_DECREF(class_dict);
                     goto error;
                 }
             }
@@ -1379,13 +1440,11 @@ dummy_func(
                 value = PyObject_GetItem(class_dict, name);
                 if (value == NULL) {
                     if (!_PyErr_ExceptionMatches(tstate, PyExc_KeyError)) {
-                        Py_DECREF(class_dict);
                         goto error;
                     }
                     _PyErr_Clear(tstate);
                 }
             }
-            Py_DECREF(class_dict);
             if (!value) {
                 PyObject *cell = GETLOCAL(oparg);
                 value = PyCell_GET(cell);
@@ -1395,6 +1454,7 @@ dummy_func(
                 }
                 Py_INCREF(value);
             }
+            Py_DECREF(class_dict);
         }
 
         inst(LOAD_DEREF, ( -- value)) {
@@ -1489,9 +1549,6 @@ dummy_func(
                     values, 2,
                     values+1, 2,
                     oparg);
-            if (map == NULL)
-                goto error;
-
             DECREF_INPUTS();
             ERROR_IF(map == NULL, error);
         }
@@ -1942,14 +1999,15 @@ dummy_func(
                 new_version = _PyDict_NotifyEvent(tstate->interp, PyDict_EVENT_MODIFIED, dict, name, value);
                 ep->me_value = value;
             }
-            Py_DECREF(old_value);
-            STAT_INC(STORE_ATTR, hit);
             /* Ensure dict is GC tracked if it needs to be */
             if (!_PyObject_GC_IS_TRACKED(dict) && _PyObject_GC_MAY_BE_TRACKED(value)) {
                 _PyObject_GC_TRACK(dict);
             }
-            /* PEP 509 */
-            dict->ma_version_tag = new_version;
+            dict->ma_version_tag = new_version; // PEP 509
+            // old_value should be DECREFed after GC track checking is done, if not, it could raise a segmentation fault,
+            // when dict only holds the strong reference to value in ep->me_value.
+            Py_DECREF(old_value);
+            STAT_INC(STORE_ATTR, hit);
             Py_DECREF(owner);
         }
 
@@ -2056,7 +2114,7 @@ dummy_func(
 
             match = NULL;
             rest = NULL;
-            int res = exception_group_match(exc_value, match_type,
+            int res = exception_group_match(frame, exc_value, match_type,
                                             &match, &rest);
             DECREF_INPUTS();
             ERROR_IF(res < 0, error);
@@ -2992,9 +3050,9 @@ dummy_func(
         inst(CALL_NO_KW_LIST_APPEND, (unused/1, unused/2, method, self, args[oparg] -- unused)) {
             assert(kwnames == NULL);
             assert(oparg == 1);
-            assert(method != NULL);
             PyInterpreterState *interp = _PyInterpreterState_GET();
             DEOPT_IF(method != interp->callable_cache.list_append, CALL);
+            assert(self != NULL);
             DEOPT_IF(!PyList_Check(self), CALL);
             STAT_INC(CALL, hit);
             if (_PyList_AppendTakeRef((PyListObject *)self, args[0]) < 0) {
@@ -3158,27 +3216,27 @@ dummy_func(
             }
             assert(PyTuple_CheckExact(callargs));
             EVAL_CALL_STAT_INC_IF_FUNCTION(EVAL_CALL_FUNCTION_EX, func);
-            if (opcode == INSTRUMENTED_CALL_FUNCTION_EX &&
-                !PyFunction_Check(func) && !PyMethod_Check(func)
-            ) {
+            if (opcode == INSTRUMENTED_CALL_FUNCTION_EX) {
                 PyObject *arg = PyTuple_GET_SIZE(callargs) > 0 ?
-                    PyTuple_GET_ITEM(callargs, 0) : Py_None;
+                    PyTuple_GET_ITEM(callargs, 0) : &_PyInstrumentation_MISSING;
                 int err = _Py_call_instrumentation_2args(
                     tstate, PY_MONITORING_EVENT_CALL,
                     frame, next_instr-1, func, arg);
                 if (err) goto error;
                 result = PyObject_Call(func, callargs, kwargs);
-                if (result == NULL) {
-                    _Py_call_instrumentation_exc2(
-                        tstate, PY_MONITORING_EVENT_C_RAISE,
-                        frame, next_instr-1, func, arg);
-                }
-                else {
-                    int err = _Py_call_instrumentation_2args(
-                        tstate, PY_MONITORING_EVENT_C_RETURN,
-                        frame, next_instr-1, func, arg);
-                    if (err < 0) {
-                        Py_CLEAR(result);
+                if (!PyFunction_Check(func) && !PyMethod_Check(func)) {
+                    if (result == NULL) {
+                        _Py_call_instrumentation_exc2(
+                            tstate, PY_MONITORING_EVENT_C_RAISE,
+                            frame, next_instr-1, func, arg);
+                    }
+                    else {
+                        int err = _Py_call_instrumentation_2args(
+                            tstate, PY_MONITORING_EVENT_C_RETURN,
+                            frame, next_instr-1, func, arg);
+                        if (err < 0) {
+                            Py_CLEAR(result);
+                        }
                     }
                 }
             }

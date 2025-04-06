@@ -124,11 +124,12 @@ unshare_buffer(bytesio *self, size_t size)
 static int
 resize_buffer(bytesio *self, size_t size)
 {
+    assert(self->buf != NULL);
+    assert(self->exports == 0);
+
     /* Here, unsigned types are used to avoid dealing with signed integer
        overflow, which is undefined in C. */
     size_t alloc = PyBytes_GET_SIZE(self->buf);
-
-    assert(self->buf != NULL);
 
     /* For simplicity, stay in the range of the signed type. Anyway, Python
        doesn't allow strings to be longer than this. */
@@ -987,7 +988,9 @@ static int
 bytesio_clear(bytesio *self)
 {
     Py_CLEAR(self->dict);
-    Py_CLEAR(self->buf);
+    if (self->exports == 0) {
+        Py_CLEAR(self->buf);
+    }
     return 0;
 }
 
@@ -1072,7 +1075,7 @@ bytesiobuf_getbuffer(bytesiobuf *obj, Py_buffer *view, int flags)
             "bytesiobuf_getbuffer: view==NULL argument is obsolete");
         return -1;
     }
-    if (SHARED_BUF(b)) {
+    if (b->exports == 0 && SHARED_BUF(b)) {
         if (unshare_buffer(b, b->string_size) < 0)
             return -1;
     }
@@ -1093,13 +1096,6 @@ bytesiobuf_releasebuffer(bytesiobuf *obj, Py_buffer *view)
 }
 
 static int
-bytesiobuf_clear(bytesiobuf *self)
-{
-    Py_CLEAR(self->source);
-    return 0;
-}
-
-static int
 bytesiobuf_traverse(bytesiobuf *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
@@ -1113,7 +1109,7 @@ bytesiobuf_dealloc(bytesiobuf *self)
     PyTypeObject *tp = Py_TYPE(self);
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    (void)bytesiobuf_clear(self);
+    Py_CLEAR(self->source);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -1121,7 +1117,6 @@ bytesiobuf_dealloc(bytesiobuf *self)
 static PyType_Slot bytesiobuf_slots[] = {
     {Py_tp_dealloc, bytesiobuf_dealloc},
     {Py_tp_traverse, bytesiobuf_traverse},
-    {Py_tp_clear, bytesiobuf_clear},
 
     // Buffer protocol
     {Py_bf_getbuffer, bytesiobuf_getbuffer},

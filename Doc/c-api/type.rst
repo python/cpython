@@ -53,7 +53,8 @@ Type Objects
 .. c:function:: PyObject* PyType_GetDict(PyTypeObject* type)
 
    Return the type object's internal namespace, which is otherwise only
-   exposed via a read-only proxy (``cls.__dict__``).  This is a
+   exposed via a read-only proxy (:attr:`cls.__dict__ <type.__dict__>`).
+   This is a
    replacement for accessing :c:member:`~PyTypeObject.tp_dict` directly.
    The returned dictionary must be treated as read-only.
 
@@ -140,7 +141,7 @@ Type Objects
    Return true if *a* is a subtype of *b*.
 
    This function only checks for actual subtypes, which means that
-   :meth:`~class.__subclasscheck__` is not called on *b*.  Call
+   :meth:`~type.__subclasscheck__` is not called on *b*.  Call
    :c:func:`PyObject_IsSubclass` to do the same check that :func:`issubclass`
    would do.
 
@@ -174,14 +175,15 @@ Type Objects
 
 .. c:function:: PyObject* PyType_GetName(PyTypeObject *type)
 
-   Return the type's name. Equivalent to getting the type's ``__name__`` attribute.
+   Return the type's name. Equivalent to getting the type's
+   :attr:`~type.__name__` attribute.
 
    .. versionadded:: 3.11
 
 .. c:function:: PyObject* PyType_GetQualName(PyTypeObject *type)
 
    Return the type's qualified name. Equivalent to getting the
-   type's ``__qualname__`` attribute.
+   type's :attr:`~type.__qualname__` attribute.
 
    .. versionadded:: 3.11
 
@@ -395,6 +397,9 @@ The following functions and structs are used to create
       class need *in addition* to the superclass.
       Use :c:func:`PyObject_GetTypeData` to get a pointer to subclass-specific
       memory reserved this way.
+      For negative :c:member:`!basicsize`, Python will insert padding when
+      needed to meet :c:member:`~PyTypeObject.tp_basicsize`'s alignment
+      requirements.
 
       .. versionchanged:: 3.12
 
@@ -461,35 +466,47 @@ The following functions and structs are used to create
       * ``Py_nb_add`` to set :c:member:`PyNumberMethods.nb_add`
       * ``Py_sq_length`` to set :c:member:`PySequenceMethods.sq_length`
 
-      The following fields cannot be set at all using :c:type:`PyType_Spec` and
-      :c:type:`PyType_Slot`:
+      The following “offset” fields cannot be set using :c:type:`PyType_Slot`:
 
-      * :c:member:`~PyTypeObject.tp_dict`
-      * :c:member:`~PyTypeObject.tp_mro`
-      * :c:member:`~PyTypeObject.tp_cache`
-      * :c:member:`~PyTypeObject.tp_subclasses`
-      * :c:member:`~PyTypeObject.tp_weaklist`
-      * :c:member:`~PyTypeObject.tp_vectorcall`
       * :c:member:`~PyTypeObject.tp_weaklistoffset`
-        (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead)
+        (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead if possible)
       * :c:member:`~PyTypeObject.tp_dictoffset`
-        (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead)
+        (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead if possible)
       * :c:member:`~PyTypeObject.tp_vectorcall_offset`
-        (see :ref:`PyMemberDef <pymemberdef-offsets>`)
+        (use ``"__vectorcalloffset__"`` in
+        :ref:`PyMemberDef <pymemberdef-offsets>`)
+
+      If it is not possible to switch to a ``MANAGED`` flag (for example,
+      for vectorcall or to support Python older than 3.12), specify the
+      offset in :c:member:`Py_tp_members <PyTypeObject.tp_members>`.
+      See :ref:`PyMemberDef documentation <pymemberdef-offsets>`
+      for details.
+
+      The following fields cannot be set at all when creating a heap type:
+
+      * :c:member:`~PyTypeObject.tp_vectorcall`
+        (use :c:member:`~PyTypeObject.tp_new` and/or
+        :c:member:`~PyTypeObject.tp_init`)
+
+      * Internal fields:
+        :c:member:`~PyTypeObject.tp_dict`,
+        :c:member:`~PyTypeObject.tp_mro`,
+        :c:member:`~PyTypeObject.tp_cache`,
+        :c:member:`~PyTypeObject.tp_subclasses`, and
+        :c:member:`~PyTypeObject.tp_weaklist`.
 
       Setting :c:data:`Py_tp_bases` or :c:data:`Py_tp_base` may be
       problematic on some platforms.
       To avoid issues, use the *bases* argument of
       :c:func:`PyType_FromSpecWithBases` instead.
 
-     .. versionchanged:: 3.9
+      .. versionchanged:: 3.9
+         Slots in :c:type:`PyBufferProcs` may be set in the unlimited API.
 
-        Slots in :c:type:`PyBufferProcs` may be set in the unlimited API.
-
-     .. versionchanged:: 3.11
-        :c:member:`~PyBufferProcs.bf_getbuffer` and
-        :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
-        under the :ref:`limited API <limited-c-api>`.
+      .. versionchanged:: 3.11
+         :c:member:`~PyBufferProcs.bf_getbuffer` and
+         :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
+         under the :ref:`limited API <limited-c-api>`.
 
    .. c:member:: void *pfunc
 

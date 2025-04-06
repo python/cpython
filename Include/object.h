@@ -230,8 +230,7 @@ PyAPI_DATA(PyTypeObject) PyBool_Type;
 static inline Py_ssize_t Py_SIZE(PyObject *ob) {
     assert(ob->ob_type != &PyLong_Type);
     assert(ob->ob_type != &PyBool_Type);
-    PyVarObject *var_ob = _PyVarObject_CAST(ob);
-    return var_ob->ob_size;
+    return  _PyVarObject_CAST(ob)->ob_size;
 }
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 < 0x030b0000
 #  define Py_SIZE(ob) Py_SIZE(_PyObject_CAST(ob))
@@ -679,17 +678,15 @@ static inline void Py_DECREF(PyObject *op) {
 #elif defined(Py_REF_DEBUG)
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
+    if (op->ob_refcnt <= 0) {
+        _Py_NegativeRefcount(filename, lineno, op);
+    }
     if (_Py_IsImmortal(op)) {
         return;
     }
     _Py_DECREF_STAT_INC();
     _Py_DECREF_DecRefTotal();
-    if (--op->ob_refcnt != 0) {
-        if (op->ob_refcnt < 0) {
-            _Py_NegativeRefcount(filename, lineno, op);
-        }
-    }
-    else {
+    if (--op->ob_refcnt == 0) {
         _Py_Dealloc(op);
     }
 }

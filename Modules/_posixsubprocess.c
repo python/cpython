@@ -589,9 +589,10 @@ child_exec(char *const exec_array[],
            PyObject *preexec_fn,
            PyObject *preexec_fn_args_tuple)
 {
-    int i, saved_errno, reached_preexec = 0;
+    int i, saved_errno;
     PyObject *result;
-    const char* err_msg = "";
+    /* Indicate to the parent that the error happened before exec(). */
+    const char *err_msg = "noexec";
     /* Buffer large enough to hold a hex integer.  We can't malloc. */
     char hex_errno[sizeof(saved_errno)*2+1];
 
@@ -651,8 +652,12 @@ child_exec(char *const exec_array[],
     /* We no longer manually close p2cread, c2pwrite, and errwrite here as
      * _close_open_fds takes care when it is not already non-inheritable. */
 
-    if (cwd)
-        POSIX_CALL(chdir(cwd));
+    if (cwd) {
+        if (chdir(cwd) == -1) {
+            err_msg = "noexec:chdir";
+            goto error;
+        }
+    }
 
     if (child_umask >= 0)
         umask(child_umask);  /* umask() always succeeds. */
@@ -682,8 +687,10 @@ child_exec(char *const exec_array[],
 #endif
 
 #ifdef HAVE_SETGROUPS
-    if (extra_group_size > 0)
+    if (extra_group_size >= 0) {
+        assert((extra_group_size == 0) == (extra_groups == NULL));
         POSIX_CALL(setgroups(extra_group_size, extra_groups));
+    }
 #endif /* HAVE_SETGROUPS */
 
 #ifdef HAVE_SETREGID
@@ -697,7 +704,7 @@ child_exec(char *const exec_array[],
 #endif /* HAVE_SETREUID */
 
 
-    reached_preexec = 1;
+    err_msg = "";
     if (preexec_fn != Py_None && preexec_fn_args_tuple) {
         /* This is where the user has asked us to deadlock their program. */
         result = PyObject_Call(preexec_fn, preexec_fn_args_tuple, NULL);
@@ -755,16 +762,12 @@ error:
         }
         _Py_write_noraise(errpipe_write, cur, hex_errno + sizeof(hex_errno) - cur);
         _Py_write_noraise(errpipe_write, ":", 1);
-        if (!reached_preexec) {
-            /* Indicate to the parent that the error happened before exec(). */
-            _Py_write_noraise(errpipe_write, "noexec", 6);
-        }
         /* We can't call strerror(saved_errno).  It is not async signal safe.
          * The parent process will look the error message up. */
     } else {
         _Py_write_noraise(errpipe_write, "SubprocessError:0:", 18);
-        _Py_write_noraise(errpipe_write, err_msg, strlen(err_msg));
     }
+    _Py_write_noraise(errpipe_write, err_msg, strlen(err_msg));
 }
 
 
@@ -937,14 +940,15 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
     pid_t pid = -1;
     int need_to_reenable_gc = 0;
     char *const *argv = NULL, *const *envp = NULL;
-    Py_ssize_t extra_group_size = 0;
     int need_after_fork = 0;
     int saved_errno = 0;
     int *c_fds_to_keep = NULL;
     Py_ssize_t fds_to_keep_len = PyTuple_GET_SIZE(py_fds_to_keep);
 
     PyInterpreterState *interp = PyInterpreterState_Get();
-    if ((preexec_fn != Py_None) && interp->finalizing) {
+    if ((preexec_fn != Py_None) &&
+        _PyInterpreterState_GetFinalizing(interp) != NULL)
+    {
         PyErr_SetString(PyExc_RuntimeError,
                         "preexec_fn not supported at interpreter shutdown");
         return NULL;
@@ -1017,6 +1021,13 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
             goto cleanup;
         cwd = PyBytes_AsString(cwd_obj2);
     }
+
+    // Special initial value meaning that subprocess API was called with
+    // extra_groups=None leading to _posixsubprocess.fork_exec(gids=None).
+    // We use this to differentiate between code desiring a setgroups(0, NULL)
+    // call vs no call at all.  The fast vfork() code path could be used when
+    // there is no setgroups call.
+    Py_ssize_t extra_group_size = -2;
 
     if (extra_groups_packed != Py_None) {
 #ifdef HAVE_SETGROUPS

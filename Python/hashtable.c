@@ -128,6 +128,13 @@ _Py_hashtable_size(const _Py_hashtable_t *ht)
 }
 
 
+size_t
+_Py_hashtable_len(const _Py_hashtable_t *ht)
+{
+    return ht->nentries;
+}
+
+
 _Py_hashtable_entry_t *
 _Py_hashtable_get_entry_generic(_Py_hashtable_t *ht, const void *key)
 {

@@ -17,11 +17,15 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+import shlex
 from test.support import (captured_stdout, captured_stderr,
                           skip_if_broken_multiprocessing_synchronize, verbose,
                           requires_subprocess, is_emscripten, is_wasi,
-                          requires_venv_with_pip, TEST_HOME_DIR)
-from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree)
+                          requires_venv_with_pip, TEST_HOME_DIR,
+                          requires_resource, copy_python_src_ignore)
+from test.support.os_helper import (can_symlink, EnvironmentVarGuard, rmtree,
+                                    TESTFN, FakePath)
+from test.support.testcase import ExtraAssertions
 import unittest
 import venv
 from unittest.mock import patch, Mock
@@ -55,7 +59,7 @@ def check_output(cmd, encoding=None):
             p.returncode, cmd, out, err)
     return out, err
 
-class BaseTest(unittest.TestCase):
+class BaseTest(unittest.TestCase, ExtraAssertions):
     """Base class for venv tests."""
     maxDiff = 80 * 50
 
@@ -110,12 +114,12 @@ class BasicTest(BaseTest):
         self.run_with_capture(venv.create, self.env_dir)
         self._check_output_of_default_create()
 
-    def test_defaults_with_pathlib_path(self):
+    def test_defaults_with_pathlike(self):
         """
-        Test the create function with default arguments and a pathlib.Path path.
+        Test the create function with default arguments and a path-like path.
         """
         rmtree(self.env_dir)
-        self.run_with_capture(venv.create, pathlib.Path(self.env_dir))
+        self.run_with_capture(venv.create, FakePath(self.env_dir))
         self._check_output_of_default_create()
 
     def _check_output_of_default_create(self):
@@ -251,7 +255,8 @@ class BasicTest(BaseTest):
             ('base_exec_prefix', sys.base_exec_prefix)):
             cmd[2] = 'import sys; print(sys.%s)' % prefix
             out, err = check_output(cmd)
-            self.assertEqual(out.strip(), expected.encode(), prefix)
+            self.assertEqual(pathlib.Path(out.strip().decode()),
+                             pathlib.Path(expected), prefix)
 
     @requireVenvCreate
     def test_sysconfig(self):
@@ -443,6 +448,82 @@ class BasicTest(BaseTest):
             'import sys; print(sys.executable)'])
         self.assertEqual(out.strip(), envpy.encode())
 
+    # gh-124651: test quoted strings
+    @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
+    def test_special_chars_bash(self):
+        """
+        Test that the template strings are quoted properly (bash)
+        """
+        rmtree(self.env_dir)
+        bash = shutil.which('bash')
+        if bash is None:
+            self.skipTest('bash required for this test')
+        env_name = '"\';&&$e|\'"'
+        env_dir = os.path.join(os.path.realpath(self.env_dir), env_name)
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'activate')
+        test_script = os.path.join(self.env_dir, 'test_special_chars.sh')
+        with open(test_script, "w") as f:
+            f.write(f'source {shlex.quote(activate)}\n'
+                    'python -c \'import sys; print(sys.executable)\'\n'
+                    'python -c \'import os; print(os.environ["VIRTUAL_ENV"])\'\n'
+                    'deactivate\n')
+        out, err = check_output([bash, test_script])
+        lines = out.splitlines()
+        self.assertTrue(env_name.encode() in lines[0])
+        self.assertEndsWith(lines[1], env_name.encode())
+
+    # gh-124651: test quoted strings
+    @unittest.skipIf(os.name == 'nt', 'contains invalid characters on Windows')
+    def test_special_chars_csh(self):
+        """
+        Test that the template strings are quoted properly (csh)
+        """
+        rmtree(self.env_dir)
+        csh = shutil.which('tcsh') or shutil.which('csh')
+        if csh is None:
+            self.skipTest('csh required for this test')
+        env_name = '"\';&&$e|\'"'
+        env_dir = os.path.join(os.path.realpath(self.env_dir), env_name)
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'activate.csh')
+        test_script = os.path.join(self.env_dir, 'test_special_chars.csh')
+        with open(test_script, "w") as f:
+            f.write(f'source {shlex.quote(activate)}\n'
+                    'python -c \'import sys; print(sys.executable)\'\n'
+                    'python -c \'import os; print(os.environ["VIRTUAL_ENV"])\'\n'
+                    'deactivate\n')
+        out, err = check_output([csh, test_script])
+        lines = out.splitlines()
+        self.assertTrue(env_name.encode() in lines[0])
+        self.assertEndsWith(lines[1], env_name.encode())
+
+    # gh-124651: test quoted strings on Windows
+    @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
+    def test_special_chars_windows(self):
+        """
+        Test that the template strings are quoted properly on Windows
+        """
+        rmtree(self.env_dir)
+        env_name = "'&&^$e"
+        env_dir = os.path.join(os.path.realpath(self.env_dir), env_name)
+        builder = venv.EnvBuilder(clear=True)
+        builder.create(env_dir)
+        activate = os.path.join(env_dir, self.bindir, 'activate.bat')
+        test_batch = os.path.join(self.env_dir, 'test_special_chars.bat')
+        with open(test_batch, "w") as f:
+            f.write('@echo off\n'
+                    f'"{activate}" & '
+                    f'{self.exe} -c "import sys; print(sys.executable)" & '
+                    f'{self.exe} -c "import os; print(os.environ[\'VIRTUAL_ENV\'])" & '
+                    'deactivate')
+        out, err = check_output([test_batch])
+        lines = out.splitlines()
+        self.assertTrue(env_name.encode() in lines[0])
+        self.assertEndsWith(lines[1], env_name.encode())
+
     @unittest.skipUnless(os.name == 'nt', 'only relevant on Windows')
     def test_unicode_in_batch_file(self):
         """
@@ -493,7 +574,7 @@ class BasicTest(BaseTest):
         envpy = os.path.join(os.path.realpath(self.env_dir),
                              self.bindir, self.exe)
         script = os.path.join(TEST_HOME_DIR, '_test_venv_multiprocessing.py')
-        subprocess.check_call([envpy, script])
+        subprocess.check_call([envpy, "-I", script])
 
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     def test_deactivate_with_strict_bash_opts(self):
@@ -534,7 +615,7 @@ class BasicTest(BaseTest):
         rmtree(self.env_dir)
         bad_itempath = self.env_dir + os.pathsep
         self.assertRaises(ValueError, venv.create, bad_itempath)
-        self.assertRaises(ValueError, venv.create, pathlib.Path(bad_itempath))
+        self.assertRaises(ValueError, venv.create, FakePath(bad_itempath))
 
     @unittest.skipIf(os.name == 'nt', 'not relevant on Windows')
     @requireVenvCreate
@@ -560,6 +641,7 @@ class BasicTest(BaseTest):
                                     platlibdir,
                                     stdlib_zip)
         additional_pythonpath_for_non_installed = []
+
         # Copy stdlib files to the non-installed python so venv can
         # correctly calculate the prefix.
         for eachpath in sys.path:
@@ -569,14 +651,19 @@ class BasicTest(BaseTest):
                         eachpath,
                         os.path.join(non_installed_dir, platlibdir))
             elif os.path.isfile(os.path.join(eachpath, "os.py")):
-                for name in os.listdir(eachpath):
+                names = os.listdir(eachpath)
+                ignored_names = copy_python_src_ignore(eachpath, names)
+                for name in names:
+                    if name in ignored_names:
+                        continue
                     if name == "site-packages":
                         continue
                     fn = os.path.join(eachpath, name)
                     if os.path.isfile(fn):
                         shutil.copy(fn, libdir)
                     elif os.path.isdir(fn):
-                        shutil.copytree(fn, os.path.join(libdir, name))
+                        shutil.copytree(fn, os.path.join(libdir, name),
+                                        ignore=copy_python_src_ignore)
             else:
                 additional_pythonpath_for_non_installed.append(
                     eachpath)
@@ -630,6 +717,36 @@ class BasicTest(BaseTest):
             for i, line in enumerate(script, 1):
                 error_message = f"CR LF found in line {i}"
                 self.assertFalse(line.endswith(b'\r\n'), error_message)
+
+    def test_venv_same_path(self):
+        same_path = venv.EnvBuilder._same_path
+        if sys.platform == 'win32':
+            # Case-insensitive, and handles short/long names
+            tests = [
+                (True, TESTFN, TESTFN),
+                (True, TESTFN.lower(), TESTFN.upper()),
+            ]
+            import _winapi
+            # ProgramFiles is the most reliable path that will have short/long
+            progfiles = os.getenv('ProgramFiles')
+            if progfiles:
+                tests = [
+                    *tests,
+                    (True, progfiles, progfiles),
+                    (True, _winapi.GetShortPathName(progfiles), _winapi.GetLongPathName(progfiles)),
+                ]
+        else:
+            # Just a simple case-sensitive comparison
+            tests = [
+                (True, TESTFN, TESTFN),
+                (False, TESTFN.lower(), TESTFN.upper()),
+            ]
+        for r, path1, path2 in tests:
+            with self.subTest(f"{path1}-{path2}"):
+                if r:
+                    self.assertTrue(same_path(path1, path2))
+                else:
+                    self.assertFalse(same_path(path1, path2))
 
 @requireVenvCreate
 class EnsurePipTest(BaseTest):
@@ -743,6 +860,14 @@ class EnsurePipTest(BaseTest):
         err = re.sub("^(WARNING: )?The directory .* or its parent directory "
                      "is not owned or is not writable by the current user.*$", "",
                      err, flags=re.MULTILINE)
+        # Ignore warning about missing optional module:
+        try:
+            import ssl
+        except ImportError:
+            err = re.sub(
+                "^WARNING: Disabling truststore since ssl support is missing$",
+                "",
+                err, flags=re.MULTILINE)
         self.assertEqual(err.rstrip(), "")
         # Being fairly specific regarding the expected behaviour for the
         # initial bundling phase in Python 3.4. If the output changes in
@@ -775,6 +900,7 @@ class EnsurePipTest(BaseTest):
             )
 
     @requires_venv_with_pip()
+    @requires_resource('cpu')
     def test_with_pip(self):
         self.do_test_with_pip(False)
         self.do_test_with_pip(True)

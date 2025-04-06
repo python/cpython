@@ -1,5 +1,6 @@
 import enum
 import errno
+import functools
 import inspect
 import os
 import random
@@ -76,6 +77,9 @@ class PosixTests(unittest.TestCase):
     def trivial_signal_handler(self, *args):
         pass
 
+    def create_handler_with_partial(self, argument):
+        return functools.partial(self.trivial_signal_handler, argument)
+
     def test_out_of_range_signal_number_raises_error(self):
         self.assertRaises(ValueError, signal.getsignal, 4242)
 
@@ -96,6 +100,30 @@ class PosixTests(unittest.TestCase):
         signal.signal(signal.SIGHUP, hup)
         self.assertEqual(signal.getsignal(signal.SIGHUP), hup)
 
+    def test_no_repr_is_called_on_signal_handler(self):
+        # See https://github.com/python/cpython/issues/112559.
+
+        class MyArgument:
+            def __init__(self):
+                self.repr_count = 0
+
+            def __repr__(self):
+                self.repr_count += 1
+                return super().__repr__()
+
+        argument = MyArgument()
+        self.assertEqual(0, argument.repr_count)
+
+        handler = self.create_handler_with_partial(argument)
+        hup = signal.signal(signal.SIGHUP, handler)
+        self.assertIsInstance(hup, signal.Handlers)
+        self.assertEqual(signal.getsignal(signal.SIGHUP), handler)
+        signal.signal(signal.SIGHUP, hup)
+        self.assertEqual(signal.getsignal(signal.SIGHUP), hup)
+        self.assertEqual(0, argument.repr_count)
+
+    @unittest.skipIf(sys.platform.startswith("netbsd"),
+                     "gh-124083: strsignal is not supported on NetBSD")
     def test_strsignal(self):
         self.assertIn("Interrupt", signal.strsignal(signal.SIGINT))
         self.assertIn("Terminated", signal.strsignal(signal.SIGTERM))
@@ -671,7 +699,7 @@ class WakeupSocketSignalTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
 class SiginterruptTest(unittest.TestCase):
 
-    def readpipe_interrupted(self, interrupt):
+    def readpipe_interrupted(self, interrupt, timeout=support.SHORT_TIMEOUT):
         """Perform a read during which a signal will arrive.  Return True if the
         read is interrupted by the signal and raises an exception.  Return False
         if it returns normally.
@@ -719,7 +747,7 @@ class SiginterruptTest(unittest.TestCase):
                 # wait until the child process is loaded and has started
                 first_line = process.stdout.readline()
 
-                stdout, stderr = process.communicate(timeout=support.SHORT_TIMEOUT)
+                stdout, stderr = process.communicate(timeout=timeout)
             except subprocess.TimeoutExpired:
                 process.kill()
                 return False
@@ -745,11 +773,12 @@ class SiginterruptTest(unittest.TestCase):
         interrupted = self.readpipe_interrupted(True)
         self.assertTrue(interrupted)
 
+    @support.requires_resource('walltime')
     def test_siginterrupt_off(self):
         # If a signal handler is installed and siginterrupt is called with
         # a false value for the second argument, when that signal arrives, it
         # does not interrupt a syscall that's in progress.
-        interrupted = self.readpipe_interrupted(False)
+        interrupted = self.readpipe_interrupted(False, timeout=2)
         self.assertFalse(interrupted)
 
 
@@ -810,11 +839,11 @@ class ItimerTest(unittest.TestCase):
     def test_itimer_virtual(self):
         self.itimer = signal.ITIMER_VIRTUAL
         signal.signal(signal.SIGVTALRM, self.sig_vtalrm)
-        signal.setitimer(self.itimer, 0.3, 0.2)
+        signal.setitimer(self.itimer, 0.001, 0.001)
 
         for _ in support.busy_retry(support.LONG_TIMEOUT):
             # use up some virtual time by doing real work
-            _ = pow(12345, 67890, 10000019)
+            _ = sum(i * i for i in range(10**5))
             if signal.getitimer(self.itimer) == (0.0, 0.0):
                 # sig_vtalrm handler stopped this itimer
                 break
@@ -831,7 +860,7 @@ class ItimerTest(unittest.TestCase):
 
         for _ in support.busy_retry(support.LONG_TIMEOUT):
             # do some work
-            _ = pow(12345, 67890, 10000019)
+            _ = sum(i * i for i in range(10**5))
             if signal.getitimer(self.itimer) == (0.0, 0.0):
                 # sig_prof handler stopped this itimer
                 break
@@ -1317,6 +1346,7 @@ class StressTest(unittest.TestCase):
         # Python handler
         self.assertEqual(len(sigs), N, "Some signals were lost")
 
+    @unittest.skipIf(sys.platform == "darwin", "crashes due to system bug (FB13453490)")
     @unittest.skipUnless(hasattr(signal, "SIGUSR1"),
                          "test needs SIGUSR1")
     @threading_helper.requires_working_threading()
@@ -1338,7 +1368,7 @@ class StressTest(unittest.TestCase):
                 num_sent_signals += 1
 
         def cycle_handlers():
-            while num_sent_signals < 100:
+            while num_sent_signals < 100 or num_received_signals < 1:
                 for i in range(20000):
                     # Cycle between a Python-defined and a non-Python handler
                     for handler in [custom_handler, signal.SIG_IGN]:
@@ -1371,7 +1401,7 @@ class StressTest(unittest.TestCase):
             if not ignored:
                 # Sanity check that some signals were received, but not all
                 self.assertGreater(num_received_signals, 0)
-            self.assertLess(num_received_signals, num_sent_signals)
+            self.assertLessEqual(num_received_signals, num_sent_signals)
         finally:
             do_stop = True
             t.join()

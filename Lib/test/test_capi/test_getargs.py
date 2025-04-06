@@ -4,10 +4,17 @@ import string
 import sys
 from test import support
 from test.support import import_helper
+from test.support import script_helper
 from test.support import warnings_helper
+from test.support.testcase import FloatsAreIdenticalMixin
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
 from _testcapi import getargs_keywords, getargs_keyword_only
+
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = NULL
 
 # > How about the following counterproposal. This also changes some of
 # > the other format codes to be a little more regular.
@@ -54,6 +61,8 @@ NAN = float('nan')
 LLONG_MAX = 2**63-1
 LLONG_MIN = -2**63
 ULLONG_MAX = 2**64-1
+
+NULL = None
 
 class Index:
     def __index__(self):
@@ -151,6 +160,8 @@ class TupleSubclass(tuple):
 class DictSubclass(dict):
     pass
 
+NONCONTIG_WRITABLE = memoryview(bytearray(b'noncontig'))[::-2]
+NONCONTIG_READONLY = memoryview(b'noncontig')[::-2]
 
 class Unsigned_TestCase(unittest.TestCase):
     def test_b(self):
@@ -426,11 +437,7 @@ class LongLong_TestCase(unittest.TestCase):
         self.assertEqual(VERY_LARGE & ULLONG_MAX, getargs_K(VERY_LARGE))
 
 
-class Float_TestCase(unittest.TestCase):
-    def assertEqualWithSign(self, actual, expected):
-        self.assertEqual(actual, expected)
-        self.assertEqual(math.copysign(1, actual), math.copysign(1, expected))
-
+class Float_TestCase(unittest.TestCase, FloatsAreIdenticalMixin):
     def test_f(self):
         from _testcapi import getargs_f
         self.assertEqual(getargs_f(4.25), 4.25)
@@ -452,10 +459,10 @@ class Float_TestCase(unittest.TestCase):
             self.assertEqual(getargs_f(DBL_MAX), INF)
             self.assertEqual(getargs_f(-DBL_MAX), -INF)
         if FLT_MIN > DBL_MIN:
-            self.assertEqualWithSign(getargs_f(DBL_MIN), 0.0)
-            self.assertEqualWithSign(getargs_f(-DBL_MIN), -0.0)
-        self.assertEqualWithSign(getargs_f(0.0), 0.0)
-        self.assertEqualWithSign(getargs_f(-0.0), -0.0)
+            self.assertFloatsAreIdentical(getargs_f(DBL_MIN), 0.0)
+            self.assertFloatsAreIdentical(getargs_f(-DBL_MIN), -0.0)
+        self.assertFloatsAreIdentical(getargs_f(0.0), 0.0)
+        self.assertFloatsAreIdentical(getargs_f(-0.0), -0.0)
         r = getargs_f(NAN)
         self.assertNotEqual(r, r)
 
@@ -484,8 +491,8 @@ class Float_TestCase(unittest.TestCase):
             self.assertEqual(getargs_d(x), x)
         self.assertRaises(OverflowError, getargs_d, 1<<DBL_MAX_EXP)
         self.assertRaises(OverflowError, getargs_d, -1<<DBL_MAX_EXP)
-        self.assertEqualWithSign(getargs_d(0.0), 0.0)
-        self.assertEqualWithSign(getargs_d(-0.0), -0.0)
+        self.assertFloatsAreIdentical(getargs_d(0.0), 0.0)
+        self.assertFloatsAreIdentical(getargs_d(-0.0), -0.0)
         r = getargs_d(NAN)
         self.assertNotEqual(r, r)
 
@@ -509,10 +516,10 @@ class Float_TestCase(unittest.TestCase):
             self.assertEqual(getargs_D(c), c)
             c = complex(1.0, x)
             self.assertEqual(getargs_D(c), c)
-        self.assertEqualWithSign(getargs_D(complex(0.0, 1.0)).real, 0.0)
-        self.assertEqualWithSign(getargs_D(complex(-0.0, 1.0)).real, -0.0)
-        self.assertEqualWithSign(getargs_D(complex(1.0, 0.0)).imag, 0.0)
-        self.assertEqualWithSign(getargs_D(complex(1.0, -0.0)).imag, -0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(0.0, 1.0)).real, 0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(-0.0, 1.0)).real, -0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(1.0, 0.0)).imag, 0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(1.0, -0.0)).imag, -0.0)
 
 
 class Paradox:
@@ -835,6 +842,8 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertEqual(getargs_y_star(bytearray(b'bytearray')), b'bytearray')
         self.assertEqual(getargs_y_star(memoryview(b'memoryview')), b'memoryview')
         self.assertRaises(TypeError, getargs_y_star, None)
+        self.assertRaises(BufferError, getargs_y_star, NONCONTIG_WRITABLE)
+        self.assertRaises(BufferError, getargs_y_star, NONCONTIG_READONLY)
 
     def test_y_hash(self):
         from _testcapi import getargs_y_hash
@@ -844,6 +853,9 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_y_hash, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_y_hash, memoryview(b'memoryview'))
         self.assertRaises(TypeError, getargs_y_hash, None)
+        # TypeError: must be read-only bytes-like object, not memoryview
+        self.assertRaises(TypeError, getargs_y_hash, NONCONTIG_WRITABLE)
+        self.assertRaises(TypeError, getargs_y_hash, NONCONTIG_READONLY)
 
     def test_w_star(self):
         # getargs_w_star() modifies first and last byte
@@ -859,6 +871,8 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertEqual(getargs_w_star(memoryview(buf)), b'[emoryvie]')
         self.assertEqual(buf, bytearray(b'[emoryvie]'))
         self.assertRaises(TypeError, getargs_w_star, None)
+        self.assertRaises(TypeError, getargs_w_star, NONCONTIG_WRITABLE)
+        self.assertRaises(TypeError, getargs_w_star, NONCONTIG_READONLY)
 
 
 class String_TestCase(unittest.TestCase):
@@ -891,6 +905,8 @@ class String_TestCase(unittest.TestCase):
         self.assertEqual(getargs_s_star(bytearray(b'bytearray')), b'bytearray')
         self.assertEqual(getargs_s_star(memoryview(b'memoryview')), b'memoryview')
         self.assertRaises(TypeError, getargs_s_star, None)
+        self.assertRaises(BufferError, getargs_s_star, NONCONTIG_WRITABLE)
+        self.assertRaises(BufferError, getargs_s_star, NONCONTIG_READONLY)
 
     def test_s_hash(self):
         from _testcapi import getargs_s_hash
@@ -900,6 +916,9 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_s_hash, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_s_hash, memoryview(b'memoryview'))
         self.assertRaises(TypeError, getargs_s_hash, None)
+        # TypeError: must be read-only bytes-like object, not memoryview
+        self.assertRaises(TypeError, getargs_s_hash, NONCONTIG_WRITABLE)
+        self.assertRaises(TypeError, getargs_s_hash, NONCONTIG_READONLY)
 
     def test_s_hash_int(self):
         # "s#" without PY_SSIZE_T_CLEAN defined.
@@ -935,6 +954,8 @@ class String_TestCase(unittest.TestCase):
         self.assertEqual(getargs_z_star(bytearray(b'bytearray')), b'bytearray')
         self.assertEqual(getargs_z_star(memoryview(b'memoryview')), b'memoryview')
         self.assertIsNone(getargs_z_star(None))
+        self.assertRaises(BufferError, getargs_z_star, NONCONTIG_WRITABLE)
+        self.assertRaises(BufferError, getargs_z_star, NONCONTIG_READONLY)
 
     def test_z_hash(self):
         from _testcapi import getargs_z_hash
@@ -944,6 +965,9 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_z_hash, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_z_hash, memoryview(b'memoryview'))
         self.assertIsNone(getargs_z_hash(None))
+        # TypeError: must be read-only bytes-like object, not memoryview
+        self.assertRaises(TypeError, getargs_z_hash, NONCONTIG_WRITABLE)
+        self.assertRaises(TypeError, getargs_z_hash, NONCONTIG_READONLY)
 
     def test_es(self):
         from _testcapi import getargs_es
@@ -1021,7 +1045,7 @@ class String_TestCase(unittest.TestCase):
         buf = bytearray()
         self.assertRaises(ValueError, getargs_et_hash, 'abc\xe9', 'latin1', buf)
 
-    @support.requires_legacy_unicode_capi
+    @support.requires_legacy_unicode_capi()
     def test_u(self):
         from _testcapi import getargs_u
         with self.assertWarns(DeprecationWarning):
@@ -1037,7 +1061,7 @@ class String_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertRaises(TypeError, getargs_u, None)
 
-    @support.requires_legacy_unicode_capi
+    @support.requires_legacy_unicode_capi()
     def test_u_hash(self):
         from _testcapi import getargs_u_hash
         with self.assertWarns(DeprecationWarning):
@@ -1053,7 +1077,7 @@ class String_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertRaises(TypeError, getargs_u_hash, None)
 
-    @support.requires_legacy_unicode_capi
+    @support.requires_legacy_unicode_capi()
     def test_Z(self):
         from _testcapi import getargs_Z
         with self.assertWarns(DeprecationWarning):
@@ -1069,7 +1093,7 @@ class String_TestCase(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             self.assertIsNone(getargs_Z(None))
 
-    @support.requires_legacy_unicode_capi
+    @support.requires_legacy_unicode_capi()
     def test_Z_hash(self):
         from _testcapi import getargs_Z_hash
         with self.assertWarns(DeprecationWarning):
@@ -1241,6 +1265,27 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
         self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
                           (), {}, '', [42])
 
+    def test_basic(self):
+        parse = _testcapi.parse_tuple_and_keywords
+
+        self.assertEqual(parse((), {'a': 1}, 'O', ['a']), (1,))
+        self.assertEqual(parse((), {}, '|O', ['a']), (NULL,))
+        self.assertEqual(parse((1, 2), {}, 'OO', ['a', 'b']), (1, 2))
+        self.assertEqual(parse((1,), {'b': 2}, 'OO', ['a', 'b']), (1, 2))
+        self.assertEqual(parse((), {'a': 1, 'b': 2}, 'OO', ['a', 'b']), (1, 2))
+        self.assertEqual(parse((), {'b': 2}, '|OO', ['a', 'b']), (NULL, 2))
+
+        with self.assertRaisesRegex(TypeError,
+                "function missing required argument 'a'"):
+            parse((), {}, 'O', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "'b' is an invalid keyword argument"):
+            parse((), {'b': 1}, '|O', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                fr"argument for function given by name \('a'\) "
+                fr"and position \(1\)"):
+            parse((1,), {'a': 2}, 'O|O', ['a', 'b'])
+
     def test_bad_use(self):
         # Test handling invalid format and keywords in
         # PyArg_ParseTupleAndKeywords()
@@ -1268,20 +1313,23 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
     def test_positional_only(self):
         parse = _testcapi.parse_tuple_and_keywords
 
-        parse((1, 2, 3), {}, 'OOO', ['', '', 'a'])
-        parse((1, 2), {'a': 3}, 'OOO', ['', '', 'a'])
+        self.assertEqual(parse((1, 2, 3), {}, 'OOO', ['', '', 'a']), (1, 2, 3))
+        self.assertEqual(parse((1, 2), {'a': 3}, 'OOO', ['', '', 'a']), (1, 2, 3))
         with self.assertRaisesRegex(TypeError,
                r'function takes at least 2 positional arguments \(1 given\)'):
             parse((1,), {'a': 3}, 'OOO', ['', '', 'a'])
-        parse((1,), {}, 'O|OO', ['', '', 'a'])
+        self.assertEqual(parse((1,), {}, 'O|OO', ['', '', 'a']),
+                         (1, NULL, NULL))
         with self.assertRaisesRegex(TypeError,
                r'function takes at least 1 positional argument \(0 given\)'):
             parse((), {}, 'O|OO', ['', '', 'a'])
-        parse((1, 2), {'a': 3}, 'OO$O', ['', '', 'a'])
+        self.assertEqual(parse((1, 2), {'a': 3}, 'OO$O', ['', '', 'a']),
+                         (1, 2, 3))
         with self.assertRaisesRegex(TypeError,
                r'function takes exactly 2 positional arguments \(1 given\)'):
             parse((1,), {'a': 3}, 'OO$O', ['', '', 'a'])
-        parse((1,), {}, 'O|O$O', ['', '', 'a'])
+        self.assertEqual(parse((1,), {}, 'O|O$O', ['', '', 'a']),
+                         (1, NULL, NULL))
         with self.assertRaisesRegex(TypeError,
                r'function takes at least 1 positional argument \(0 given\)'):
             parse((), {}, 'O|O$O', ['', '', 'a'])
@@ -1295,6 +1343,61 @@ class Test_testcapi(unittest.TestCase):
     locals().update((name, getattr(_testcapi, name))
                     for name in dir(_testcapi)
                     if name.startswith('test_') and name.endswith('_code'))
+
+    def test_nested_tuple(self):
+        parse = _testcapi.parse_tuple_and_keywords
+
+        self.assertEqual(parse(((1, 2, 3),), {}, '(OOO)', ['a']), (1, 2, 3))
+        self.assertEqual(parse((1, (2, 3), 4), {}, 'O(OO)O', ['a', 'b', 'c']),
+                         (1, 2, 3, 4))
+        parse(((1, 2, 3),), {}, '(iii)', ['a'])
+
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be sequence of length 2, not 3"):
+            parse(((1, 2, 3),), {}, '(ii)', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be sequence of length 2, not 1"):
+            parse(((1,),), {}, '(ii)', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be 2-item sequence, not int"):
+            parse((1,), {}, '(ii)', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be 2-item sequence, not bytes"):
+            parse((b'ab',), {}, '(ii)', ['a'])
+
+        for f in 'es', 'et', 'es#', 'et#':
+            with self.assertRaises(LookupError):  # empty encoding ""
+                parse((('a',),), {}, '(' + f + ')', ['a'])
+            with self.assertRaisesRegex(TypeError,
+                    "argument 1 must be sequence of length 1, not 0"):
+                parse(((),), {}, '(' + f + ')', ['a'])
+
+    @unittest.skipIf(_testinternalcapi is None, 'needs _testinternalcapi')
+    def test_gh_119213(self):
+        rc, out, err = script_helper.assert_python_ok("-c", """if True:
+            from test import support
+            script = '''if True:
+                import _testinternalcapi
+                _testinternalcapi.gh_119213_getargs(spam='eggs')
+                '''
+            config = dict(
+                allow_fork=False,
+                allow_exec=False,
+                allow_threads=True,
+                allow_daemon_threads=False,
+                use_main_obmalloc=False,
+                gil=2,
+                check_multi_interp_extensions=True,
+            )
+            rc = support.run_in_subinterp_with_config(script, **config)
+            assert rc == 0
+
+            # The crash is different if the interpreter was not destroyed first.
+            #interpid = _testinternalcapi.create_interpreter()
+            #rc = _testinternalcapi.exec_interpreter(interpid, script)
+            #assert rc == 0
+            """)
+        self.assertEqual(rc, 0)
 
 
 if __name__ == "__main__":

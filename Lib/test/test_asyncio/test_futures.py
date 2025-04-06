@@ -31,6 +31,25 @@ def last_cb():
     pass
 
 
+class ReachableCode(Exception):
+    """Exception to raise to indicate that some code was reached.
+
+    Use this exception if using mocks is not a good alternative.
+    """
+
+
+class SimpleEvilEventLoop(asyncio.base_events.BaseEventLoop):
+    """Base class for UAF and other evil stuff requiring an evil event loop."""
+
+    def get_debug(self):  # to suppress tracebacks
+        return False
+
+    def __del__(self):
+        # Automatically close the evil event loop to avoid warnings.
+        if not self.is_closed() and not self.is_running():
+            self.close()
+
+
 class DuckFuture:
     # Class that does not inherit from Future but aims to be duck-type
     # compatible with it.
@@ -270,10 +289,6 @@ class BaseFutureTests:
         f = self._new_future(loop=self.loop)
         self.assertRaises(asyncio.InvalidStateError, f.exception)
 
-        # StopIteration cannot be raised into a Future - CPython issue26221
-        self.assertRaisesRegex(TypeError, "StopIteration .* cannot be raised",
-                               f.set_exception, StopIteration)
-
         f.set_exception(exc)
         self.assertFalse(f.cancelled())
         self.assertTrue(f.done())
@@ -282,6 +297,25 @@ class BaseFutureTests:
         self.assertRaises(asyncio.InvalidStateError, f.set_result, None)
         self.assertRaises(asyncio.InvalidStateError, f.set_exception, None)
         self.assertFalse(f.cancel())
+
+    def test_stop_iteration_exception(self, stop_iteration_class=StopIteration):
+        exc = stop_iteration_class()
+        f = self._new_future(loop=self.loop)
+        f.set_exception(exc)
+        self.assertFalse(f.cancelled())
+        self.assertTrue(f.done())
+        self.assertRaises(RuntimeError, f.result)
+        exc = f.exception()
+        cause = exc.__cause__
+        self.assertIsInstance(exc, RuntimeError)
+        self.assertRegex(str(exc), 'StopIteration .* cannot be raised')
+        self.assertIsInstance(cause, stop_iteration_class)
+
+    def test_stop_iteration_subclass_exception(self):
+        class MyStopIteration(StopIteration):
+            pass
+
+        self.test_stop_iteration_exception(MyStopIteration)
 
     def test_exception_class(self):
         f = self._new_future(loop=self.loop)
@@ -625,6 +659,28 @@ class BaseFutureTests:
             fut = self._new_future(loop=self.loop)
             fut.set_result(Evil())
 
+    def test_future_cancelled_result_refcycles(self):
+        f = self._new_future(loop=self.loop)
+        f.cancel()
+        exc = None
+        try:
+            f.result()
+        except asyncio.CancelledError as e:
+            exc = e
+        self.assertIsNotNone(exc)
+        self.assertListEqual(gc.get_referrers(exc), [])
+
+    def test_future_cancelled_exception_refcycles(self):
+        f = self._new_future(loop=self.loop)
+        f.cancel()
+        exc = None
+        try:
+            f.exception()
+        except asyncio.CancelledError as e:
+            exc = e
+        self.assertIsNotNone(exc)
+        self.assertListEqual(gc.get_referrers(exc), [])
+
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
                      'requires the C _asyncio module')
@@ -640,6 +696,32 @@ class CFutureTests(BaseFutureTests, test_utils.TestCase):
             del fut._asyncio_future_blocking
         with self.assertRaises(AttributeError):
             del fut._log_traceback
+
+    def test_future_iter_get_referents_segfault(self):
+        # See https://github.com/python/cpython/issues/122695
+        import _asyncio
+        it = iter(self._new_future(loop=self.loop))
+        del it
+        evil = gc.get_referents(_asyncio)
+        gc.collect()
+
+    def test_callbacks_copy(self):
+        # See https://github.com/python/cpython/issues/125789
+        # In C implementation, the `_callbacks` attribute
+        # always returns a new list to avoid mutations of internal state
+
+        fut = self._new_future(loop=self.loop)
+        f1 = lambda _: 1
+        f2 = lambda _: 2
+        fut.add_done_callback(f1)
+        fut.add_done_callback(f2)
+        callbacks = fut._callbacks
+        self.assertIsNot(callbacks, fut._callbacks)
+        fut.remove_done_callback(f1)
+        callbacks = fut._callbacks
+        self.assertIsNot(callbacks, fut._callbacks)
+        fut.remove_done_callback(f2)
+        self.assertIsNone(fut._callbacks)
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),
@@ -872,6 +954,107 @@ class BaseFutureDoneCallbackTests():
                 return False
 
         fut.remove_done_callback(evil())
+
+    def test_evil_call_soon_list_mutation(self):
+        # see: https://github.com/python/cpython/issues/125969
+        called_on_fut_callback0 = False
+
+        pad = lambda: ...
+
+        def evil_call_soon(*args, **kwargs):
+            nonlocal called_on_fut_callback0
+            if called_on_fut_callback0:
+                # Called when handling fut->fut_callbacks[0]
+                # and mutates the length fut->fut_callbacks.
+                fut.remove_done_callback(int)
+                fut.remove_done_callback(pad)
+            else:
+                called_on_fut_callback0 = True
+
+        fake_event_loop = SimpleEvilEventLoop()
+        fake_event_loop.call_soon = evil_call_soon
+
+        with mock.patch.object(self, 'loop', fake_event_loop):
+            fut = self._new_future()
+            self.assertIs(fut.get_loop(), fake_event_loop)
+
+            fut.add_done_callback(str)  # sets fut->fut_callback0
+            fut.add_done_callback(int)  # sets fut->fut_callbacks[0]
+            fut.add_done_callback(pad)  # sets fut->fut_callbacks[1]
+            fut.add_done_callback(pad)  # sets fut->fut_callbacks[2]
+            fut.set_result("boom")
+
+            # When there are no more callbacks, the Python implementation
+            # returns an empty list but the C implementation returns None.
+            self.assertIn(fut._callbacks, (None, []))
+
+    def test_use_after_free_on_fut_callback_0_with_evil__eq__(self):
+        # Special thanks to Nico-Posada for the original PoC.
+        # See https://github.com/python/cpython/issues/125966.
+
+        fut = self._new_future()
+
+        class cb_pad:
+            def __eq__(self, other):
+                return True
+
+        class evil(cb_pad):
+            def __eq__(self, other):
+                fut.remove_done_callback(None)
+                return NotImplemented
+
+        fut.add_done_callback(cb_pad())
+        fut.remove_done_callback(evil())
+
+    def test_use_after_free_on_fut_callback_0_with_evil__getattribute__(self):
+        # see: https://github.com/python/cpython/issues/125984
+
+        class EvilEventLoop(SimpleEvilEventLoop):
+            def call_soon(self, *args, **kwargs):
+                super().call_soon(*args, **kwargs)
+                raise ReachableCode
+
+            def __getattribute__(self, name):
+                nonlocal fut_callback_0
+                if name == 'call_soon':
+                    fut.remove_done_callback(fut_callback_0)
+                    del fut_callback_0
+                return object.__getattribute__(self, name)
+
+        evil_loop = EvilEventLoop()
+        with mock.patch.object(self, 'loop', evil_loop):
+            fut = self._new_future()
+            self.assertIs(fut.get_loop(), evil_loop)
+
+            fut_callback_0 = lambda: ...
+            fut.add_done_callback(fut_callback_0)
+            self.assertRaises(ReachableCode, fut.set_result, "boom")
+
+    def test_use_after_free_on_fut_context_0_with_evil__getattribute__(self):
+        # see: https://github.com/python/cpython/issues/125984
+
+        class EvilEventLoop(SimpleEvilEventLoop):
+            def call_soon(self, *args, **kwargs):
+                super().call_soon(*args, **kwargs)
+                raise ReachableCode
+
+            def __getattribute__(self, name):
+                if name == 'call_soon':
+                    # resets the future's event loop
+                    fut.__init__(loop=SimpleEvilEventLoop())
+                return object.__getattribute__(self, name)
+
+        evil_loop = EvilEventLoop()
+        with mock.patch.object(self, 'loop', evil_loop):
+            fut = self._new_future()
+            self.assertIs(fut.get_loop(), evil_loop)
+
+            fut_callback_0 = mock.Mock()
+            fut_context_0 = mock.Mock()
+            fut.add_done_callback(fut_callback_0, context=fut_context_0)
+            del fut_context_0
+            del fut_callback_0
+            self.assertRaises(ReachableCode, fut.set_result, "boom")
 
 
 @unittest.skipUnless(hasattr(futures, '_CFuture'),

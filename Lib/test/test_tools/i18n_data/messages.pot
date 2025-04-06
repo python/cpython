@@ -1,0 +1,67 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2000-01-01 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: messages.py:5
+msgid ""
+msgstr ""
+
+#: messages.py:8 messages.py:9
+msgid "parentheses"
+msgstr ""
+
+#: messages.py:12
+msgid "Hello, world!"
+msgstr ""
+
+#: messages.py:15
+msgid ""
+"Hello,\n"
+"    multiline!\n"
+msgstr ""
+
+#: messages.py:29
+msgid "Hello, {}!"
+msgstr ""
+
+#: messages.py:33
+msgid "1"
+msgstr ""
+
+#: messages.py:33
+msgid "2"
+msgstr ""
+
+#: messages.py:34 messages.py:35
+msgid "A"
+msgstr ""
+
+#: messages.py:34 messages.py:35
+msgid "B"
+msgstr ""
+
+#: messages.py:36
+msgid "set"
+msgstr ""
+
+#: messages.py:42
+msgid "nested string"
+msgstr ""
+
+#: messages.py:47
+msgid "baz"
+msgstr ""
+

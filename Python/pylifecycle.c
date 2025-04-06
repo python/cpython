@@ -650,6 +650,15 @@ pycore_create_interpreter(_PyRuntimeState *runtime,
         return status;
     }
 
+    // This could be done in init_interpreter() (in pystate.c) if it
+    // didn't depend on interp->feature_flags being set already.
+    _PyObject_InitState(interp);
+
+    status = _PyTraceMalloc_Init();
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
     PyThreadState *tstate = _PyThreadState_New(interp);
     if (tstate == NULL) {
         return _PyStatus_ERR("can't make first thread");
@@ -837,6 +846,13 @@ pycore_interp_init(PyThreadState *tstate)
     // can use it instead of creating a heap allocated string.
     if (_Py_Deepfreeze_Init() < 0) {
         return _PyStatus_ERR("failed to initialize deep-frozen modules");
+    }
+
+    // Per-interpreter interned string dict is created after deep-frozen
+    // modules have interned the global strings.
+    status = _PyUnicode_InitInternDict(interp);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
     }
 
     status = pycore_init_types(interp);
@@ -1173,8 +1189,12 @@ init_interp_main(PyThreadState *tstate)
 
     if (is_main_interp) {
         /* Initialize warnings. */
-        PyObject *warnoptions = PySys_GetObject("warnoptions");
-        if (warnoptions != NULL && PyList_Size(warnoptions) > 0)
+        PyObject *warnoptions;
+        if (_PySys_GetOptionalAttrString("warnoptions", &warnoptions) < 0) {
+            return _PyStatus_ERR("can't initialize warnings");
+        }
+        if (warnoptions != NULL && PyList_Check(warnoptions) &&
+            PyList_Size(warnoptions) > 0)
         {
             PyObject *warnings_module = PyImport_ImportModule("warnings");
             if (warnings_module == NULL) {
@@ -1183,6 +1203,7 @@ init_interp_main(PyThreadState *tstate)
             }
             Py_XDECREF(warnings_module);
         }
+        Py_XDECREF(warnoptions);
 
         interp->runtime->initialized = 1;
     }
@@ -1198,6 +1219,32 @@ init_interp_main(PyThreadState *tstate)
 #ifndef MS_WINDOWS
         emit_stderr_warning_for_legacy_locale(interp->runtime);
 #endif
+    }
+
+    if (!is_main_interp) {
+        // The main interpreter is handled in Py_Main(), for now.
+        wchar_t *sys_path_0 = interp->runtime->sys_path_0;
+        if (sys_path_0 != NULL) {
+            PyObject *path0 = PyUnicode_FromWideChar(sys_path_0, -1);
+            if (path0 == NULL) {
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            PyObject *sysdict = interp->sysdict;
+            if (sysdict == NULL) {
+                Py_DECREF(path0);
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            PyObject *sys_path = PyDict_GetItemWithError(sysdict, &_Py_ID(path));
+            if (sys_path == NULL) {
+                Py_DECREF(path0);
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+            int res = PyList_Insert(sys_path, 0, path0);
+            Py_DECREF(path0);
+            if (res) {
+                return _PyStatus_ERR("can't initialize sys.path[0]");
+            }
+        }
     }
 
     assert(!_PyErr_Occurred(tstate));
@@ -1625,24 +1672,32 @@ file_is_closed(PyObject *fobj)
 static int
 flush_std_files(void)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *fout = _PySys_GetAttr(tstate, &_Py_ID(stdout));
-    PyObject *ferr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *file;
     PyObject *tmp;
     int status = 0;
 
-    if (fout != NULL && fout != Py_None && !file_is_closed(fout)) {
-        tmp = PyObject_CallMethodNoArgs(fout, &_Py_ID(flush));
+    if (_PySys_GetOptionalAttr(&_Py_ID(stdout), &file) < 0) {
+        status = -1;
+    }
+    else if (file != NULL && file != Py_None && !file_is_closed(file)) {
+        tmp = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
         if (tmp == NULL) {
-            PyErr_WriteUnraisable(fout);
             status = -1;
         }
         else
             Py_DECREF(tmp);
     }
+    if (status < 0) {
+        PyErr_WriteUnraisable(file);
+    }
+    Py_XDECREF(file);
 
-    if (ferr != NULL && ferr != Py_None && !file_is_closed(ferr)) {
-        tmp = PyObject_CallMethodNoArgs(ferr, &_Py_ID(flush));
+    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &file) < 0) {
+        PyErr_Clear();
+        status = -1;
+    }
+    else if (file != NULL && file != Py_None && !file_is_closed(file)) {
+        tmp = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
         if (tmp == NULL) {
             PyErr_Clear();
             status = -1;
@@ -1650,6 +1705,7 @@ flush_std_files(void)
         else
             Py_DECREF(tmp);
     }
+    Py_XDECREF(file);
 
     return status;
 }
@@ -1729,6 +1785,7 @@ finalize_interp_clear(PyThreadState *tstate)
         _Py_ClearFileSystemEncoding();
         _Py_Deepfreeze_Fini();
         _PyPerfTrampoline_Fini();
+        _PyPerfTrampoline_FreeArenas();
     }
 
     finalize_interp_types(tstate->interp);
@@ -1786,7 +1843,6 @@ Py_FinalizeEx(void)
      */
 
     _PyAtExit_Call(tstate->interp);
-    PyUnstable_PerfMapState_Fini();
 
     /* Copy the core config, PyInterpreterState_Delete() free
        the core config memory */
@@ -1891,7 +1947,7 @@ Py_FinalizeEx(void)
 
     /* Disable tracemalloc after all Python objects have been destroyed,
        so it is possible to use tracemalloc in objects destructor. */
-    _PyTraceMalloc_Fini();
+    _PyTraceMalloc_Stop();
 
     /* Finalize any remaining import state */
     // XXX Move these up to where finalize_modules() is currently.
@@ -1920,11 +1976,11 @@ Py_FinalizeEx(void)
     }
 
     if (dump_refs) {
-        _Py_PrintReferences(stderr);
+        _Py_PrintReferences(tstate->interp, stderr);
     }
 
     if (dump_refs_fp != NULL) {
-        _Py_PrintReferences(dump_refs_fp);
+        _Py_PrintReferences(tstate->interp, dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */
 
@@ -1943,6 +1999,15 @@ Py_FinalizeEx(void)
     // XXX Ensure finalizer errors are handled properly.
 
     finalize_interp_clear(tstate);
+
+    _PyTraceMalloc_Fini();
+
+#ifdef WITH_PYMALLOC
+    if (malloc_stats) {
+        _PyObject_DebugMallocStats(stderr);
+    }
+#endif
+
     finalize_interp_delete(tstate->interp);
 
 #ifdef Py_REF_DEBUG
@@ -1960,19 +2025,14 @@ Py_FinalizeEx(void)
      */
 
     if (dump_refs) {
-        _Py_PrintReferenceAddresses(stderr);
+        _Py_PrintReferenceAddresses(tstate->interp, stderr);
     }
 
     if (dump_refs_fp != NULL) {
-        _Py_PrintReferenceAddresses(dump_refs_fp);
+        _Py_PrintReferenceAddresses(tstate->interp, dump_refs_fp);
         fclose(dump_refs_fp);
     }
 #endif /* Py_TRACE_REFS */
-#ifdef WITH_PYMALLOC
-    if (malloc_stats) {
-        _PyObject_DebugMallocStats(stderr);
-    }
-#endif
 
     call_ll_exitfuncs(runtime);
 
@@ -2068,11 +2128,17 @@ new_interpreter(PyThreadState **tstate_p, const PyInterpreterConfig *config)
         goto error;
     }
 
+    // This could be done in init_interpreter() (in pystate.c) if it
+    // didn't depend on interp->feature_flags being set already.
+    _PyObject_InitState(interp);
+
     status = init_interp_create_gil(tstate, config->gil);
     if (_PyStatus_EXCEPTION(status)) {
         goto error;
     }
     has_gil = 1;
+
+    /* No objects have been created yet. */
 
     status = pycore_interp_init(tstate);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2603,10 +2669,14 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
         return 0;
     }
 
-    PyObject *ferr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
+    PyObject *ferr;
+    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &ferr) < 0) {
+        _PyErr_Clear(tstate);
+    }
     if (ferr == NULL || ferr == Py_None) {
         /* sys.stderr is not set yet or set to None,
            no need to try to display the exception */
+        Py_XDECREF(ferr);
         Py_DECREF(exc);
         return 0;
     }
@@ -2626,6 +2696,7 @@ _Py_FatalError_PrintExc(PyThreadState *tstate)
     else {
         Py_DECREF(res);
     }
+    Py_DECREF(ferr);
 
     return has_tb;
 }

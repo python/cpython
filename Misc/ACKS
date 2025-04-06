@@ -31,6 +31,7 @@ Farhan Ahmad
 Matthew Ahrens
 Nir Aides
 Akira
+Ege Akman
 Yaniv Aknin
 Jyrki Alakuijala
 Tatiana Al-Chueyr
@@ -187,6 +188,7 @@ Stéphane Blondon
 Eric Blossom
 Sergey Bobrov
 Finn Bock
+Vojtěch Boček
 Paul Boddie
 Matthew Boedicker
 Robin Boerdijk
@@ -254,6 +256,7 @@ Curtis Bucher
 Colm Buckley
 Erik de Bueger
 Jan-Hein Bührman
+Marc Bürg
 Lars Buitinck
 Artem Bulgakov
 Dick Bulterman
@@ -490,6 +493,7 @@ David Edelsohn
 John Edmonds
 Benjamin Edwards
 Grant Edwards
+Vlad Efanov
 Zvi Effron
 John Ehresman
 Tal Einat
@@ -502,6 +506,7 @@ Daniel Ellis
 Phil Elson
 David Ely
 Victor van den Elzen
+Vlad Emelianov
 Jeff Epler
 Tom Epperly
 Gökcen Eraslan
@@ -512,6 +517,7 @@ Michael Ernst
 Ben Escoto
 Andy Eskilsson
 André Espaze
+Lucas Esposito
 Stefan Esser
 Nicolas Estibals
 Jonathan Eunice
@@ -718,6 +724,7 @@ Larry Hastings
 Tim Hatch
 Zac Hatfield-Dodds
 Shane Hathaway
+Akinori Hattori
 Michael Haubenwallner
 Janko Hauser
 Flavian Hautbois
@@ -740,6 +747,7 @@ Kasun Herath
 Chris Herborth
 Ivan Herman
 Jürgen Hermann
+Joshua Jay Herman
 Gary Herron
 Ernie Hershey
 Thomas Herve
@@ -749,6 +757,7 @@ Raymond Hettinger
 Lisa Hewus Fresh
 Kevan Heydon
 Wouter van Heyst
+Derek Higgins
 Kelsey Hightower
 Jason Hildebrand
 Ryan Hileman
@@ -956,6 +965,7 @@ Carsten Klein
 Bastian Kleineidam
 Joel Klimont
 Bob Kline
+Alois Klink
 Matthias Klose
 Jeremy Kloth
 Thomas Kluyver
@@ -1080,6 +1090,7 @@ Ivan Levkivskyi
 Ben Lewis
 William Lewis
 Akira Li
+Jiahao Li
 Robert Li
 Xuanji Li
 Zekun Li
@@ -1102,6 +1113,7 @@ Gregor Lingl
 Everett Lipman
 Mirko Liss
 Alexander Liu
+Hui Liu
 Yuan Liu
 Nick Lockwood
 Stephanie Lockwood
@@ -1129,6 +1141,7 @@ Mark Lutz
 Taras Lyapun
 Jim Lynch
 Mikael Lyngvig
+Ilya Lyubavski
 Jeff MacDonald
 John Machin
 Andrew I MacIntyre
@@ -1149,6 +1162,7 @@ Colin Marc
 Vincent Marchetti
 David Marek
 Doug Marien
+Chris Markiewicz
 Sven Marnach
 John Marshall
 Alex Martelli
@@ -1190,6 +1204,7 @@ Caolan McNamara
 Jeff McNeil
 Craig McPheeters
 Lambert Meertens
+Rihaan Meher
 Bill van Melle
 Lucas Prado Melo
 Ezio Melotti
@@ -1266,7 +1281,7 @@ R. David Murray
 Matti Mäki
 Jörg Müller
 Kaushik N
-Dong-hee Na
+Donghee Na
 Dale Nagata
 John Nagle
 Takahiro Nakayama
@@ -1296,6 +1311,7 @@ Hrvoje Nikšić
 Gregory Nofi
 Jesse Noller
 Bill Noon
+Janek Nouvertné
 Stefan Norberg
 Tim Northover
 Joe Norton
@@ -1328,6 +1344,7 @@ Ethan Onstott
 Ken Jin Ooi
 Piet van Oostrum
 Tomas Oppelstrup
+Itamar Oren
 Jason Orendorff
 Yan "yyyyyyyan" Orestes
 Bastien Orivel
@@ -1338,7 +1355,7 @@ Michele Orrù
 Tomáš Orsava
 Oleg Oshmyan
 Denis Osipov
-Itamar Ostricher
+Savannah Ostrowski
 Denis S. Otkidach
 Peter Otten
 Michael Otteneder
@@ -1450,6 +1467,7 @@ Paul Prescod
 Donovan Preston
 Eric Price
 Paul Price
+Matt Prodani
 Iuliia Proskurnia
 Dorian Pula
 Jyrki Pulliainen
@@ -1624,6 +1642,7 @@ Scott Schram
 Robin Schreiber
 Chad J. Schroeder
 Simon-Martin Schroeder
+Brian Schubert
 Christian Schubert
 Sam Schulenburg
 Andreas Schwab
@@ -1778,6 +1797,7 @@ Reuben Sumner
 Eryk Sun
 Sanjay Sundaresan
 Marek Šuppa
+Danica J. Sutherland
 Hisao Suzuki
 Kalle Svensson
 Andrew Svetlov
@@ -1864,6 +1884,7 @@ Steven Troxler
 Brent Tubbs
 Anthony Tuininga
 Erno Tukia
+Adam Turner
 David Turner
 Stephen Turner
 Itamar Turner-Trauring
@@ -2028,6 +2049,7 @@ Doug Wyatt
 Xiang Zhang
 Robert Xiao
 Florent Xicluna
+Yanbo, Xie
 Xinhang Xu
 Arnon Yaari
 Alakshendra Yadav
@@ -2071,7 +2093,5 @@ Jelle Zijlstra
 Gennadiy Zlobin
 Doug Zongker
 Peter Åstrand
-Vlad Emelianov
-Andrey Doroschenko
 
 (Entries should be added in rough alphabetical order by last names)

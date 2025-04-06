@@ -255,10 +255,15 @@ class MmapTests(unittest.TestCase):
             # Try writing with PROT_EXEC and without PROT_WRITE
             prot = mmap.PROT_READ | getattr(mmap, 'PROT_EXEC', 0)
             with open(TESTFN, "r+b") as f:
-                m = mmap.mmap(f.fileno(), mapsize, prot=prot)
-                self.assertRaises(TypeError, m.write, b"abcdef")
-                self.assertRaises(TypeError, m.write_byte, 0)
-                m.close()
+                try:
+                    m = mmap.mmap(f.fileno(), mapsize, prot=prot)
+                except PermissionError:
+                    # on macOS 14, PROT_READ | PROT_EXEC is not allowed
+                    pass
+                else:
+                    self.assertRaises(TypeError, m.write, b"abcdef")
+                    self.assertRaises(TypeError, m.write_byte, 0)
+                    m.close()
 
     def test_bad_file_desc(self):
         # Try opening a bad file descriptor...
@@ -666,14 +671,16 @@ class MmapTests(unittest.TestCase):
         m2.close()
         m1.close()
 
+        with self.assertRaisesRegex(TypeError, 'tagname'):
+            mmap.mmap(-1, 8, tagname=1)
+
     @cpython_only
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_sizeof(self):
         m1 = mmap.mmap(-1, 100)
         tagname = random_tagname()
         m2 = mmap.mmap(-1, 100, tagname=tagname)
-        self.assertEqual(sys.getsizeof(m2),
-                         sys.getsizeof(m1) + len(tagname) + 1)
+        self.assertGreater(sys.getsizeof(m2), sys.getsizeof(m1))
 
     @unittest.skipUnless(os.name == 'nt', 'requires Windows')
     def test_crasher_on_windows(self):

@@ -1,5 +1,5 @@
-:mod:`plistlib` --- Generate and parse Apple ``.plist`` files
-=============================================================
+:mod:`!plistlib` --- Generate and parse Apple ``.plist`` files
+==============================================================
 
 .. module:: plistlib
    :synopsis: Generate and parse Apple plist files.
@@ -74,8 +74,7 @@ This module defines the following functions:
    exceptions on ill-formed XML.  Unknown elements will simply be ignored
    by the plist parser.
 
-   The parser for the binary format raises :exc:`InvalidFileException`
-   when the file cannot be parsed.
+   The parser raises :exc:`InvalidFileException` when the file cannot be parsed.
 
    .. versionadded:: 3.4
 
@@ -90,7 +89,7 @@ This module defines the following functions:
 
 .. function:: dump(value, fp, *, fmt=FMT_XML, sort_keys=True, skipkeys=False)
 
-   Write *value* to a plist file. *Fp* should be a writable, binary
+   Write *value* to a plist file. *fp* should be a writable, binary
    file object.
 
    The *fmt* argument specifies the format of the plist file and can be
@@ -150,6 +149,15 @@ The following constants are available:
 .. data:: FMT_BINARY
 
    The binary format for plist files
+
+   .. versionadded:: 3.4
+
+
+The module defines the following exceptions:
+
+.. exception:: InvalidFileException
+
+   Raised when a file cannot be parsed.
 
    .. versionadded:: 3.4
 

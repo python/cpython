@@ -1,5 +1,5 @@
-:mod:`symtable` --- Access to the compiler's symbol tables
-==========================================================
+:mod:`!symtable` --- Access to the compiler's symbol tables
+===========================================================
 
 .. module:: symtable
    :synopsis: Interface to the compiler's internal symbol tables.
@@ -38,7 +38,13 @@ Examining Symbol Tables
    .. method:: get_type()
 
       Return the type of the symbol table.  Possible values are ``'class'``,
-      ``'module'``, and ``'function'``.
+      ``'module'``, ``'function'``, ``'annotation'``, ``'TypeVar bound'``,
+      ``'type alias'``, and ``'type parameter'``. The latter four refer to
+      different flavors of :ref:`annotation scopes <annotation-scopes>`.
+
+      .. versionchanged:: 3.12
+         Added ``'annotation'``,  ``'TypeVar bound'``, ``'type alias'``,
+         and ``'type parameter'`` as possible return values.
 
    .. method:: get_id()
 
@@ -49,6 +55,10 @@ Examining Symbol Tables
       Return the table's name.  This is the name of the class if the table is
       for a class, the name of the function if the table is for a function, or
       ``'top'`` if the table is global (:meth:`get_type` returns ``'module'``).
+      For type parameter scopes (which are used for generic classes, functions,
+      and type aliases), it is the name of the underlying class, function, or
+      type alias. For type alias scopes, it is the name of the type alias.
+      For :class:`~typing.TypeVar` bound scopes, it is the name of the ``TypeVar``.
 
    .. method:: get_lineno()
 
@@ -87,7 +97,7 @@ Examining Symbol Tables
 
 .. class:: Function
 
-   A namespace for a function or method.  This class inherits
+   A namespace for a function or method.  This class inherits from
    :class:`SymbolTable`.
 
    .. method:: get_parameters()
@@ -113,12 +123,43 @@ Examining Symbol Tables
 
 .. class:: Class
 
-   A namespace of a class.  This class inherits :class:`SymbolTable`.
+   A namespace of a class.  This class inherits from :class:`SymbolTable`.
 
    .. method:: get_methods()
 
-      Return a tuple containing the names of methods declared in the class.
+      Return a tuple containing the names of method-like functions declared
+      in the class.
 
+      Here, the term 'method' designates *any* function defined in the class
+      body via :keyword:`def` or :keyword:`async def`.
+
+      Functions defined in a deeper scope (e.g., in an inner class) are not
+      picked up by :meth:`get_methods`.
+
+      For example:
+
+         >>> import symtable
+         >>> st = symtable.symtable('''
+         ... def outer(): pass
+         ...
+         ... class A:
+         ...    def f():
+         ...        def w(): pass
+         ...
+         ...    def g(self): pass
+         ...
+         ...    @classmethod
+         ...    async def h(cls): pass
+         ...
+         ...    global outer
+         ...    def outer(self): pass
+         ... ''', 'test', 'exec')
+         >>> class_A = st.get_children()[1]
+         >>> class_A.get_methods()
+         ('f', 'g', 'h')
+
+      Although ``A().f()`` raises :exc:`TypeError` at runtime, ``A.f`` is still
+      considered as a method-like function.
 
 .. class:: Symbol
 

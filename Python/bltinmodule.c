@@ -9,6 +9,7 @@
 #include "pycore_object.h"        // _Py_AddToAllObjects()
 #include "pycore_pyerrors.h"      // _PyErr_NoMemory()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
 #include "pycore_ceval.h"         // _PyEval_Vector()
 
@@ -455,18 +456,16 @@ builtin_callable(PyObject *module, PyObject *obj)
 static PyObject *
 builtin_breakpoint(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *keywords)
 {
-    PyObject *hook = PySys_GetObject("breakpointhook");
-
+    PyObject *hook = _PySys_GetRequiredAttrString("breakpointhook");
     if (hook == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "lost sys.breakpointhook");
         return NULL;
     }
 
     if (PySys_Audit("builtins.breakpoint", "O", hook) < 0) {
+        Py_DECREF(hook);
         return NULL;
     }
 
-    Py_INCREF(hook);
     PyObject *retval = PyObject_Vectorcall(hook, args, nargs, keywords);
     Py_DECREF(hook);
     return retval;
@@ -840,32 +839,30 @@ finally:
     return result;
 }
 
-/*[clinic input]
-dir as builtin_dir
-
-    arg: object = NULL
-    /
-
-Show attributes of an object.
-
-If called without an argument, return the names in the current scope.
-Else, return an alphabetized list of names comprising (some of) the attributes
-of the given object, and of attributes reachable from it.
-If the object supplies a method named __dir__, it will be used; otherwise
-the default dir() logic is used and returns:
-  for a module object: the module's attributes.
-  for a class object:  its attributes, and recursively the attributes
-    of its bases.
-  for any other object: its attributes, its class's attributes, and
-    recursively the attributes of its class's base classes.
-[clinic start generated code]*/
-
+/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
-builtin_dir_impl(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=24f2c7a52c1e3b08 input=ed6d6ccb13d52251]*/
+builtin_dir(PyObject *self, PyObject *args)
 {
+    PyObject *arg = NULL;
+
+    if (!PyArg_UnpackTuple(args, "dir", 0, 1, &arg))
+        return NULL;
     return PyObject_Dir(arg);
 }
+
+PyDoc_STRVAR(dir_doc,
+"dir([object]) -> list of strings\n"
+"\n"
+"If called without an argument, return the names in the current scope.\n"
+"Else, return an alphabetized list of names comprising (some of) the attributes\n"
+"of the given object, and of attributes reachable from it.\n"
+"If the object supplies a method named __dir__, it will be used; otherwise\n"
+"the default dir() logic is used and returns:\n"
+"  for a module object: the module's attributes.\n"
+"  for a class object:  its attributes, and recursively the attributes\n"
+"    of its bases.\n"
+"  for any other object: its attributes, its class's attributes, and\n"
+"    recursively the attributes of its class's base classes.");
 
 /*[clinic input]
 divmod as builtin_divmod
@@ -1136,38 +1133,35 @@ builtin_exec_impl(PyObject *module, PyObject *source, PyObject *globals,
 }
 
 
-/*[clinic input]
-getattr as builtin_getattr
-
-    object: object
-    name: object
-    default: object = NULL
-    /
-
-Get a named attribute from an object.
-
-getattr(x, 'y') is equivalent to x.y
-When a default argument is given, it is returned when the attribute doesn't
-exist; without it, an exception is raised in that case.
-[clinic start generated code]*/
-
+/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
-builtin_getattr_impl(PyObject *module, PyObject *object, PyObject *name,
-                     PyObject *default_value)
-/*[clinic end generated code: output=74ad0e225e3f701c input=d7562cd4c3556171]*/
+builtin_getattr(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
-    PyObject *result;
+    PyObject *v, *name, *result;
 
-    if (default_value != NULL) {
-        if (_PyObject_LookupAttr(object, name, &result) == 0) {
-            return Py_NewRef(default_value);
+    if (!_PyArg_CheckPositional("getattr", nargs, 2, 3))
+        return NULL;
+
+    v = args[0];
+    name = args[1];
+    if (nargs > 2) {
+        if (_PyObject_LookupAttr(v, name, &result) == 0) {
+            PyObject *dflt = args[2];
+            return Py_NewRef(dflt);
         }
     }
     else {
-        result = PyObject_GetAttr(object, name);
+        result = PyObject_GetAttr(v, name);
     }
     return result;
 }
+
+PyDoc_STRVAR(getattr_doc,
+"getattr(object, name[, default]) -> value\n\
+\n\
+Get a named attribute from an object; getattr(x, 'y') is equivalent to x.y.\n\
+When a default argument is given, it is returned when the attribute doesn't\n\
+exist; without it, an exception is raised in that case.");
 
 
 /*[clinic input]
@@ -1480,43 +1474,34 @@ PyTypeObject PyMap_Type = {
 };
 
 
-/*[clinic input]
-next as builtin_next
-
-    iterator: object
-    default: object = NULL
-    /
-
-Return the next item from the iterator.
-
-If default is given and the iterator is exhausted,
-it is returned instead of raising StopIteration.
-[clinic start generated code]*/
-
+/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
-builtin_next_impl(PyObject *module, PyObject *iterator,
-                  PyObject *default_value)
-/*[clinic end generated code: output=a38a94eeb447fef9 input=180f9984f182020f]*/
+builtin_next(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
-    PyObject *res;
+    PyObject *it, *res;
 
-    if (!PyIter_Check(iterator)) {
+    if (!_PyArg_CheckPositional("next", nargs, 1, 2))
+        return NULL;
+
+    it = args[0];
+    if (!PyIter_Check(it)) {
         PyErr_Format(PyExc_TypeError,
             "'%.200s' object is not an iterator",
-            Py_TYPE(iterator)->tp_name);
+            Py_TYPE(it)->tp_name);
         return NULL;
     }
 
-    res = (*Py_TYPE(iterator)->tp_iternext)(iterator);
+    res = (*Py_TYPE(it)->tp_iternext)(it);
     if (res != NULL) {
         return res;
-    } else if (default_value != NULL) {
+    } else if (nargs > 1) {
+        PyObject *def = args[1];
         if (PyErr_Occurred()) {
             if(!PyErr_ExceptionMatches(PyExc_StopIteration))
                 return NULL;
             PyErr_Clear();
         }
-        return Py_NewRef(default_value);
+        return Py_NewRef(def);
     } else if (PyErr_Occurred()) {
         return NULL;
     } else {
@@ -1524,6 +1509,12 @@ builtin_next_impl(PyObject *module, PyObject *iterator,
         return NULL;
     }
 }
+
+PyDoc_STRVAR(next_doc,
+"next(iterator[, default])\n\
+\n\
+Return the next item from the iterator. If default is given and the iterator\n\
+is exhausted, it is returned instead of raising StopIteration.");
 
 
 /*[clinic input]
@@ -1617,32 +1608,33 @@ builtin_hex(PyObject *module, PyObject *number)
 }
 
 
-/*[clinic input]
-iter as builtin_iter
-
-    object: object
-    sentinel: object = NULL
-    /
-
-Get an iterator from an object.
-
-In the first form, the argument must supply its own iterator, or be a sequence.
-In the second form, the callable is called until it returns the sentinel.
-[clinic start generated code]*/
-
+/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
-builtin_iter_impl(PyObject *module, PyObject *object, PyObject *sentinel)
-/*[clinic end generated code: output=12cf64203c195a94 input=a5d64d9d81880ba6]*/
+builtin_iter(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
-    if (sentinel == NULL)
-        return PyObject_GetIter(object);
-    if (!PyCallable_Check(object)) {
+    PyObject *v;
+
+    if (!_PyArg_CheckPositional("iter", nargs, 1, 2))
+        return NULL;
+    v = args[0];
+    if (nargs == 1)
+        return PyObject_GetIter(v);
+    if (!PyCallable_Check(v)) {
         PyErr_SetString(PyExc_TypeError,
-                        "iter(object, sentinel): object must be callable");
+                        "iter(v, w): v must be callable");
         return NULL;
     }
-    return PyCallIter_New(object, sentinel);
+    PyObject *sentinel = args[1];
+    return PyCallIter_New(v, sentinel);
 }
+
+PyDoc_STRVAR(iter_doc,
+"iter(iterable) -> iterator\n\
+iter(callable, sentinel) -> iterator\n\
+\n\
+Get an iterator from an object.  In the first form, the argument must\n\
+supply its own iterator, or be a sequence.\n\
+In the second form, the callable is called until it returns the sentinel.");
 
 
 /*[clinic input]
@@ -1693,6 +1685,9 @@ builtin_anext_impl(PyObject *module, PyObject *aiterator,
     }
 
     awaitable = (*t->tp_as_async->am_anext)(aiterator);
+    if (awaitable == NULL) {
+        return NULL;
+    }
     if (default_value == NULL) {
         return awaitable;
     }
@@ -2010,17 +2005,19 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
     int i, err;
 
     if (file == Py_None) {
-        PyThreadState *tstate = _PyThreadState_GET();
-        file = _PySys_GetAttr(tstate, &_Py_ID(stdout));
+        file = _PySys_GetRequiredAttr(&_Py_ID(stdout));
         if (file == NULL) {
-            PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
             return NULL;
         }
 
         /* sys.stdout may be None when FILE* stdout isn't connected */
         if (file == Py_None) {
+            Py_DECREF(file);
             Py_RETURN_NONE;
         }
+    }
+    else {
+        Py_INCREF(file);
     }
 
     if (sep == Py_None) {
@@ -2030,6 +2027,7 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
         PyErr_Format(PyExc_TypeError,
                      "sep must be None or a string, not %.200s",
                      Py_TYPE(sep)->tp_name);
+        Py_DECREF(file);
         return NULL;
     }
     if (end == Py_None) {
@@ -2039,6 +2037,7 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
         PyErr_Format(PyExc_TypeError,
                      "end must be None or a string, not %.200s",
                      Py_TYPE(end)->tp_name);
+        Py_DECREF(file);
         return NULL;
     }
 
@@ -2051,11 +2050,13 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
                 err = PyFile_WriteObject(sep, file, Py_PRINT_RAW);
             }
             if (err) {
+                Py_DECREF(file);
                 return NULL;
             }
         }
         err = PyFile_WriteObject(PyTuple_GET_ITEM(args, i), file, Py_PRINT_RAW);
         if (err) {
+            Py_DECREF(file);
             return NULL;
         }
     }
@@ -2067,16 +2068,19 @@ builtin_print_impl(PyObject *module, PyObject *args, PyObject *sep,
         err = PyFile_WriteObject(end, file, Py_PRINT_RAW);
     }
     if (err) {
+        Py_DECREF(file);
         return NULL;
     }
 
     if (flush) {
         PyObject *tmp = PyObject_CallMethodNoArgs(file, &_Py_ID(flush));
         if (tmp == NULL) {
+            Py_DECREF(file);
             return NULL;
         }
         Py_DECREF(tmp);
     }
+    Py_DECREF(file);
 
     Py_RETURN_NONE;
 }
@@ -2101,36 +2105,41 @@ static PyObject *
 builtin_input_impl(PyObject *module, PyObject *prompt)
 /*[clinic end generated code: output=83db5a191e7a0d60 input=159c46d4ae40977e]*/
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-    PyObject *fin = _PySys_GetAttr(
-        tstate, &_Py_ID(stdin));
-    PyObject *fout = _PySys_GetAttr(
-        tstate, &_Py_ID(stdout));
-    PyObject *ferr = _PySys_GetAttr(
-        tstate, &_Py_ID(stderr));
+    PyObject *fin = NULL;
+    PyObject *fout = NULL;
+    PyObject *ferr = NULL;
     PyObject *tmp;
     long fd;
     int tty;
 
     /* Check that stdin/out/err are intact */
-    if (fin == NULL || fin == Py_None) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "input(): lost sys.stdin");
-        return NULL;
+    fin = _PySys_GetRequiredAttr(&_Py_ID(stdin));
+    if (fin == NULL) {
+        goto error;
     }
-    if (fout == NULL || fout == Py_None) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "input(): lost sys.stdout");
-        return NULL;
+    if (fin == Py_None) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.stdin");
+        goto error;
     }
-    if (ferr == NULL || ferr == Py_None) {
-        PyErr_SetString(PyExc_RuntimeError,
-                        "input(): lost sys.stderr");
-        return NULL;
+    fout = _PySys_GetRequiredAttr(&_Py_ID(stdout));
+    if (fout == NULL) {
+        goto error;
+    }
+    if (fout == Py_None) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.stdout");
+        goto error;
+    }
+    ferr = _PySys_GetRequiredAttr(&_Py_ID(stderr));
+    if (ferr == NULL) {
+        goto error;
+    }
+    if (ferr == Py_None) {
+        PyErr_SetString(PyExc_RuntimeError, "lost sys.stderr");
+        goto error;
     }
 
     if (PySys_Audit("builtins.input", "O", prompt ? prompt : Py_None) < 0) {
-        return NULL;
+        goto error;
     }
 
     /* First of all, flush stderr */
@@ -2151,8 +2160,9 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     else {
         fd = PyLong_AsLong(tmp);
         Py_DECREF(tmp);
-        if (fd < 0 && PyErr_Occurred())
-            return NULL;
+        if (fd < 0 && PyErr_Occurred()) {
+            goto error;
+        }
         tty = fd == fileno(stdin) && isatty(fd);
     }
     if (tty) {
@@ -2165,7 +2175,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
             fd = PyLong_AsLong(tmp);
             Py_DECREF(tmp);
             if (fd < 0 && PyErr_Occurred())
-                return NULL;
+                goto error;
             tty = fd == fileno(stdout) && isatty(fd);
         }
     }
@@ -2290,10 +2300,13 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
 
         if (result != NULL) {
             if (PySys_Audit("builtins.input/result", "O", result) < 0) {
-                return NULL;
+                goto error;
             }
         }
 
+        Py_DECREF(fin);
+        Py_DECREF(fout);
+        Py_DECREF(ferr);
         return result;
 
     _readline_errors:
@@ -2303,7 +2316,7 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
         Py_XDECREF(stdout_errors);
         Py_XDECREF(po);
         if (tty)
-            return NULL;
+            goto error;
 
         PyErr_Clear();
     }
@@ -2311,14 +2324,25 @@ builtin_input_impl(PyObject *module, PyObject *prompt)
     /* Fallback if we're not interactive */
     if (prompt != NULL) {
         if (PyFile_WriteObject(prompt, fout, Py_PRINT_RAW) != 0)
-            return NULL;
+            goto error;
     }
     tmp = PyObject_CallMethodNoArgs(fout, &_Py_ID(flush));
     if (tmp == NULL)
         PyErr_Clear();
     else
         Py_DECREF(tmp);
-    return PyFile_GetLine(fin, -1);
+
+    tmp = PyFile_GetLine(fin, -1);
+    Py_DECREF(fin);
+    Py_DECREF(fout);
+    Py_DECREF(ferr);
+    return tmp;
+
+error:
+    Py_XDECREF(fin);
+    Py_XDECREF(fout);
+    Py_XDECREF(ferr);
+    return NULL;
 }
 
 
@@ -2443,35 +2467,32 @@ builtin_sorted(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject
 }
 
 
-/*[clinic input]
-vars as builtin_vars
-
-    object: object = NULL
-    /
-
-Show vars.
-
-Without arguments, equivalent to locals().
-With an argument, equivalent to object.__dict__.
-[clinic start generated code]*/
-
+/* AC: cannot convert yet, as needs PEP 457 group support in inspect */
 static PyObject *
-builtin_vars_impl(PyObject *module, PyObject *object)
-/*[clinic end generated code: output=840a7f64007a3e0a input=80cbdef9182c4ba3]*/
+builtin_vars(PyObject *self, PyObject *args)
 {
+    PyObject *v = NULL;
     PyObject *d;
 
-    if (object == NULL) {
+    if (!PyArg_UnpackTuple(args, "vars", 0, 1, &v))
+        return NULL;
+    if (v == NULL) {
         d = _PyEval_GetFrameLocals();
     }
     else {
-        if (_PyObject_LookupAttr(object, &_Py_ID(__dict__), &d) == 0) {
+        if (_PyObject_LookupAttr(v, &_Py_ID(__dict__), &d) == 0) {
             PyErr_SetString(PyExc_TypeError,
                 "vars() argument must have __dict__ attribute");
         }
     }
     return d;
 }
+
+PyDoc_STRVAR(vars_doc,
+"vars([object]) -> dictionary\n\
+\n\
+Without arguments, equivalent to locals().\n\
+With an argument, equivalent to object.__dict__.");
 
 
 /*[clinic input]
@@ -2559,8 +2580,8 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
                     b = PyLong_AsLongAndOverflow(item, &overflow);
                 }
                 if (overflow == 0 &&
-                    (i_result >= 0 ? (b <= LONG_MAX - i_result)
-                                   : (b >= LONG_MIN - i_result)))
+                    (i_result >= 0 ? (b <= PY_SSIZE_T_MAX - i_result)
+                                   : (b >= PY_SSIZE_T_MIN - i_result)))
                 {
                     i_result += b;
                     Py_DECREF(item);
@@ -2605,7 +2626,10 @@ builtin_sum_impl(PyObject *module, PyObject *iterable, PyObject *start)
             }
             if (PyFloat_CheckExact(item)) {
                 // Improved Kahan–Babuška algorithm by Arnold Neumaier
-                // https://www.mat.univie.ac.at/~neum/scan/01.pdf
+                // Neumaier, A. (1974), Rundungsfehleranalyse einiger Verfahren
+                // zur Summation endlicher Summen.  Z. angew. Math. Mech.,
+                // 54: 39-51. https://doi.org/10.1002/zamm.19740540106
+                // https://en.wikipedia.org/wiki/Kahan_summation_algorithm#Further_enhancements
                 double x = PyFloat_AS_DOUBLE(item);
                 double t = f_result + x;
                 if (fabs(f_result) >= fabs(x)) {
@@ -3021,12 +3045,12 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_CHR_METHODDEF
     BUILTIN_COMPILE_METHODDEF
     BUILTIN_DELATTR_METHODDEF
-    BUILTIN_DIR_METHODDEF
+    {"dir", builtin_dir, METH_VARARGS, dir_doc},
     BUILTIN_DIVMOD_METHODDEF
     BUILTIN_EVAL_METHODDEF
     BUILTIN_EXEC_METHODDEF
     BUILTIN_FORMAT_METHODDEF
-    BUILTIN_GETATTR_METHODDEF
+    {"getattr", _PyCFunction_CAST(builtin_getattr), METH_FASTCALL, getattr_doc},
     BUILTIN_GLOBALS_METHODDEF
     BUILTIN_HASATTR_METHODDEF
     BUILTIN_HASH_METHODDEF
@@ -3035,13 +3059,13 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_INPUT_METHODDEF
     BUILTIN_ISINSTANCE_METHODDEF
     BUILTIN_ISSUBCLASS_METHODDEF
-    BUILTIN_ITER_METHODDEF
+    {"iter", _PyCFunction_CAST(builtin_iter), METH_FASTCALL, iter_doc},
     BUILTIN_AITER_METHODDEF
     BUILTIN_LEN_METHODDEF
     BUILTIN_LOCALS_METHODDEF
     {"max", _PyCFunction_CAST(builtin_max), METH_VARARGS | METH_KEYWORDS, max_doc},
     {"min", _PyCFunction_CAST(builtin_min), METH_VARARGS | METH_KEYWORDS, min_doc},
-    BUILTIN_NEXT_METHODDEF
+    {"next", _PyCFunction_CAST(builtin_next), METH_FASTCALL, next_doc},
     BUILTIN_ANEXT_METHODDEF
     BUILTIN_OCT_METHODDEF
     BUILTIN_ORD_METHODDEF
@@ -3052,7 +3076,7 @@ static PyMethodDef builtin_methods[] = {
     BUILTIN_SETATTR_METHODDEF
     BUILTIN_SORTED_METHODDEF
     BUILTIN_SUM_METHODDEF
-    BUILTIN_VARS_METHODDEF
+    {"vars",            builtin_vars,       METH_VARARGS, vars_doc},
     {NULL,              NULL},
 };
 

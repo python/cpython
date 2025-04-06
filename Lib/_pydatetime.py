@@ -402,6 +402,8 @@ def _parse_hh_mm_ss_ff(tstr):
             raise ValueError("Invalid microsecond component")
         else:
             pos += 1
+            if not all(map(_is_ascii_digit, tstr[pos:])):
+                raise ValueError("Non-digit values in fraction")
 
             len_remainder = len_str - pos
 
@@ -413,9 +415,6 @@ def _parse_hh_mm_ss_ff(tstr):
             time_comps[3] = int(tstr[pos:(pos+to_parse)])
             if to_parse < 6:
                 time_comps[3] *= _FRACTION_CORRECTION[to_parse-1]
-            if (len_remainder > to_parse
-                    and not all(map(_is_ascii_digit, tstr[(pos+to_parse):]))):
-                raise ValueError("Non-digit values in unparsed fraction")
 
     return time_comps
 
@@ -970,6 +969,8 @@ class date:
     @classmethod
     def fromtimestamp(cls, t):
         "Construct a date from a POSIX timestamp (like time.time())."
+        if t is None:
+            raise TypeError("'NoneType' object cannot be interpreted as an integer")
         y, m, d, hh, mm, ss, weekday, jday, dst = _time.localtime(t)
         return cls(y, m, d)
 
@@ -1015,13 +1016,9 @@ class date:
     def __repr__(self):
         """Convert to formal string, for repr().
 
-        >>> dt = datetime(2010, 1, 1)
-        >>> repr(dt)
-        'datetime.datetime(2010, 1, 1, 0, 0)'
-
-        >>> dt = datetime(2010, 1, 1, tzinfo=timezone.utc)
-        >>> repr(dt)
-        'datetime.datetime(2010, 1, 1, 0, 0, tzinfo=datetime.timezone.utc)'
+        >>> d = date(2010, 1, 1)
+        >>> repr(d)
+        'datetime.date(2010, 1, 1)'
         """
         return "%s.%s(%d, %d, %d)" % (_get_class_module(self),
                                       self.__class__.__qualname__,
@@ -1236,7 +1233,7 @@ date.resolution = timedelta(days=1)
 class tzinfo:
     """Abstract base class for time zone info classes.
 
-    Subclasses must override the name(), utcoffset() and dst() methods.
+    Subclasses must override the tzname(), utcoffset() and dst() methods.
     """
     __slots__ = ()
 
@@ -1809,10 +1806,10 @@ class datetime(date):
     def utcfromtimestamp(cls, t):
         """Construct a naive UTC datetime from a POSIX timestamp."""
         import warnings
-        warnings.warn("datetime.utcfromtimestamp() is deprecated and scheduled "
+        warnings.warn("datetime.datetime.utcfromtimestamp() is deprecated and scheduled "
                       "for removal in a future version. Use timezone-aware "
                       "objects to represent datetimes in UTC: "
-                      "datetime.fromtimestamp(t, datetime.UTC).",
+                      "datetime.datetime.fromtimestamp(t, datetime.UTC).",
                       DeprecationWarning,
                       stacklevel=2)
         return cls._fromtimestamp(t, True, None)
@@ -1827,10 +1824,10 @@ class datetime(date):
     def utcnow(cls):
         "Construct a UTC datetime from time.time()."
         import warnings
-        warnings.warn("datetime.utcnow() is deprecated and scheduled for "
-                      "removal in a future version. Instead, Use timezone-aware "
+        warnings.warn("datetime.datetime.utcnow() is deprecated and scheduled for "
+                      "removal in a future version. Use timezone-aware "
                       "objects to represent datetimes in UTC: "
-                      "datetime.now(datetime.UTC).",
+                      "datetime.datetime.now(datetime.UTC).",
                       DeprecationWarning,
                       stacklevel=2)
         t = _time.time()
@@ -2315,7 +2312,6 @@ datetime.resolution = timedelta(microseconds=1)
 
 def _isoweek1monday(year):
     # Helper to calculate the day number of the Monday starting week 1
-    # XXX This could be done more efficiently
     THURSDAY = 3
     firstday = _ymd2ord(year, 1, 1)
     firstweekday = (firstday + 6) % 7  # See weekday() above

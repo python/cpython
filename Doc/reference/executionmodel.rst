@@ -139,8 +139,9 @@ namespace.  Names are resolved in the top-level namespace by searching the
 global namespace, i.e. the namespace of the module containing the code block,
 and the builtins namespace, the namespace of the module :mod:`builtins`.  The
 global namespace is searched first.  If the names are not found there, the
-builtins namespace is searched.  The :keyword:`!global` statement must precede
-all uses of the listed names.
+builtins namespace is searched next. If the names are also not found in the
+builtins namespace, new variables are created in the global namespace.
+The global statement must precede all uses of the listed names.
 
 The :keyword:`global` statement has the same scope as a name binding operation
 in the same block.  If the nearest enclosing scope for a free variable contains
@@ -224,8 +225,8 @@ Annotation scopes differ from function scopes in the following ways:
   statements in inner scopes. This includes only type parameters, as no other
   syntactic elements that can appear within annotation scopes can introduce new names.
 * While annotation scopes have an internal name, that name is not reflected in the
-  :term:`__qualname__ <qualified name>` of objects defined within the scope.
-  Instead, the :attr:`!__qualname__`
+  :term:`qualified name` of objects defined within the scope.
+  Instead, the :attr:`~definition.__qualname__`
   of such objects is as if the object were defined in the enclosing scope.
 
 .. versionadded:: 3.12

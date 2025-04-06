@@ -618,30 +618,19 @@ gen_iternext(PyGenObject *gen)
 int
 _PyGen_SetStopIterationValue(PyObject *value)
 {
-    PyObject *e;
-
-    if (value == NULL ||
-        (!PyTuple_Check(value) && !PyExceptionInstance_Check(value)))
-    {
-        /* Delay exception instantiation if we can */
-        PyErr_SetObject(PyExc_StopIteration, value);
-        return 0;
-    }
-    /* Construct an exception instance manually with
-     * PyObject_CallOneArg and pass it to PyErr_SetObject.
-     *
-     * We do this to handle a situation when "value" is a tuple, in which
-     * case PyErr_SetObject would set the value of StopIteration to
-     * the first element of the tuple.
-     *
-     * (See PyErr_SetObject/_PyErr_CreateException code for details.)
-     */
-    e = PyObject_CallOneArg(PyExc_StopIteration, value);
-    if (e == NULL) {
+    assert(!PyErr_Occurred());
+    // Construct an exception instance manually with PyObject_CallOneArg()
+    // but use PyErr_SetRaisedException() instead of PyErr_SetObject() as
+    // PyErr_SetObject(exc_type, value) has a fast path when 'value'
+    // is a tuple, where the value of the StopIteration exception would be
+    // set to 'value[0]' instead of 'value'.
+    PyObject *exc = value == NULL
+        ? PyObject_CallNoArgs(PyExc_StopIteration)
+        : PyObject_CallOneArg(PyExc_StopIteration, value);
+    if (exc == NULL) {
         return -1;
     }
-    PyErr_SetObject(PyExc_StopIteration, e);
-    Py_DECREF(e);
+    PyErr_SetRaisedException(exc /* stolen */);
     return 0;
 }
 
@@ -750,7 +739,7 @@ _gen_getframe(PyGenObject *gen, const char *const name)
     if (PySys_Audit("object.__getattr__", "Os", gen, name) < 0) {
         return NULL;
     }
-    if (gen->gi_frame_state == FRAME_CLEARED) {
+    if (FRAME_STATE_FINISHED(gen->gi_frame_state)) {
         Py_RETURN_NONE;
     }
     return _Py_XNewRef((PyObject *)_PyFrame_GetFrameObject((_PyInterpreterFrame *)gen->gi_iframe));
@@ -1785,6 +1774,7 @@ async_gen_asend_send(PyAsyncGenASend *o, PyObject *arg)
 
     if (o->ags_state == AWAITABLE_STATE_INIT) {
         if (o->ags_gen->ag_running_async) {
+            o->ags_state = AWAITABLE_STATE_CLOSED;
             PyErr_SetString(
                 PyExc_RuntimeError,
                 "anext(): asynchronous generator is already running");
@@ -1828,10 +1818,24 @@ async_gen_asend_throw(PyAsyncGenASend *o, PyObject *const *args, Py_ssize_t narg
         return NULL;
     }
 
+    if (o->ags_state == AWAITABLE_STATE_INIT) {
+        if (o->ags_gen->ag_running_async) {
+            o->ags_state = AWAITABLE_STATE_CLOSED;
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                "anext(): asynchronous generator is already running");
+            return NULL;
+        }
+
+        o->ags_state = AWAITABLE_STATE_ITER;
+        o->ags_gen->ag_running_async = 1;
+    }
+
     result = gen_throw((PyGenObject*)o->ags_gen, args, nargs);
     result = async_gen_unwrap_value(o->ags_gen, result);
 
     if (result == NULL) {
+        o->ags_gen->ag_running_async = 0;
         o->ags_state = AWAITABLE_STATE_CLOSED;
     }
 
@@ -2220,9 +2224,34 @@ async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *const *args, Py_ssize_t na
         return NULL;
     }
 
+    if (o->agt_state == AWAITABLE_STATE_INIT) {
+        if (o->agt_gen->ag_running_async) {
+            o->agt_state = AWAITABLE_STATE_CLOSED;
+            if (o->agt_args == NULL) {
+                PyErr_SetString(
+                    PyExc_RuntimeError,
+                    "aclose(): asynchronous generator is already running");
+            }
+            else {
+                PyErr_SetString(
+                    PyExc_RuntimeError,
+                    "athrow(): asynchronous generator is already running");
+            }
+            return NULL;
+        }
+
+        o->agt_state = AWAITABLE_STATE_ITER;
+        o->agt_gen->ag_running_async = 1;
+    }
+
     retval = gen_throw((PyGenObject*)o->agt_gen, args, nargs);
     if (o->agt_args) {
-        return async_gen_unwrap_value(o->agt_gen, retval);
+        retval = async_gen_unwrap_value(o->agt_gen, retval);
+        if (retval == NULL) {
+            o->agt_gen->ag_running_async = 0;
+            o->agt_state = AWAITABLE_STATE_CLOSED;
+        }
+        return retval;
     } else {
         /* aclose() mode */
         if (retval && _PyAsyncGenWrappedValue_CheckExact(retval)) {
@@ -2231,6 +2260,10 @@ async_gen_athrow_throw(PyAsyncGenAThrow *o, PyObject *const *args, Py_ssize_t na
             Py_DECREF(retval);
             PyErr_SetString(PyExc_RuntimeError, ASYNC_GEN_IGNORED_EXIT_MSG);
             return NULL;
+        }
+        if (retval == NULL) {
+            o->agt_gen->ag_running_async = 0;
+            o->agt_state = AWAITABLE_STATE_CLOSED;
         }
         if (PyErr_ExceptionMatches(PyExc_StopAsyncIteration) ||
             PyErr_ExceptionMatches(PyExc_GeneratorExit))

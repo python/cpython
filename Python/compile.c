@@ -21,8 +21,6 @@
  * objects.
  */
 
-#include <stdbool.h>
-
 #include "Python.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
 #define NEED_OPCODE_TABLES
@@ -37,6 +35,8 @@
 #include "pycore_symtable.h"      // PySTEntryObject, _PyFuture_FromAST()
 
 #include "opcode_metadata.h"      // _PyOpcode_opcode_metadata, _PyOpcode_num_popped/pushed
+
+#include <stdbool.h>
 
 #define DEFAULT_CODE_SIZE 128
 #define DEFAULT_LNOTAB_SIZE 16
@@ -129,11 +129,13 @@ compiler IR.
 
 enum fblocktype { WHILE_LOOP, FOR_LOOP, TRY_EXCEPT, FINALLY_TRY, FINALLY_END,
                   WITH, ASYNC_WITH, HANDLER_CLEANUP, POP_VALUE, EXCEPTION_HANDLER,
-                  EXCEPTION_GROUP_HANDLER, ASYNC_COMPREHENSION_GENERATOR };
+                  EXCEPTION_GROUP_HANDLER, ASYNC_COMPREHENSION_GENERATOR,
+                  STOP_ITERATION };
 
 struct fblockinfo {
     enum fblocktype fb_type;
     jump_target_label fb_block;
+    location fb_loc;
     /* (optional) type-specific exit or cleanup block */
     jump_target_label fb_exit;
     /* (optional) additional information required for unwinding */
@@ -771,8 +773,7 @@ compiler_set_qualname(struct compiler *c)
     }
 
     if (base != NULL) {
-        _Py_DECLARE_STR(dot, ".");
-        name = PyUnicode_Concat(base, &_Py_STR(dot));
+        name = PyUnicode_Concat(base, _Py_LATIN1_CHR('.'));
         Py_DECREF(base);
         if (name == NULL) {
             return ERROR;
@@ -1070,7 +1071,7 @@ static int
 compiler_addop_name(struct compiler_unit *u, location loc,
                     int opcode, PyObject *dict, PyObject *o)
 {
-    PyObject *mangled = _Py_Mangle(u->u_private, o);
+    PyObject *mangled = _Py_MaybeMangle(u->u_private, u->u_ste, o);
     if (!mangled) {
         return ERROR;
     }
@@ -1466,6 +1467,7 @@ compiler_push_fblock(struct compiler *c, location loc,
     f = &c->u->u_fblock[c->u->u_nfblocks++];
     f->fb_type = t;
     f->fb_block = block_label;
+    f->fb_loc = loc;
     f->fb_exit = exit;
     f->fb_datum = datum;
     return SUCCESS;
@@ -1546,6 +1548,7 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
         case EXCEPTION_HANDLER:
         case EXCEPTION_GROUP_HANDLER:
         case ASYNC_COMPREHENSION_GENERATOR:
+        case STOP_ITERATION:
             return SUCCESS;
 
         case FOR_LOOP:
@@ -1592,7 +1595,7 @@ compiler_unwind_fblock(struct compiler *c, location *ploc,
 
         case WITH:
         case ASYNC_WITH:
-            *ploc = LOC((stmt_ty)info->fb_datum);
+            *ploc = info->fb_loc;
             ADDOP(c, *ploc, POP_BLOCK);
             if (preserve_tos) {
                 ADDOP_I(c, *ploc, SWAP, 2);
@@ -1832,7 +1835,7 @@ compiler_make_closure(struct compiler *c, location loc,
                     c->u->u_metadata.u_name,
                     co->co_name,
                     freevars);
-                Py_DECREF(freevars);
+                Py_XDECREF(freevars);
                 return ERROR;
             }
             ADDOP_I(c, loc, LOAD_CLOSURE, arg);
@@ -1887,7 +1890,7 @@ compiler_visit_kwonlydefaults(struct compiler *c, location loc,
         arg_ty arg = asdl_seq_GET(kwonlyargs, i);
         expr_ty default_ = asdl_seq_GET(kw_defaults, i);
         if (default_) {
-            PyObject *mangled = _Py_Mangle(c->u->u_private, arg->arg);
+            PyObject *mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, arg->arg);
             if (!mangled) {
                 goto error;
             }
@@ -1944,7 +1947,7 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
     if (!annotation) {
         return SUCCESS;
     }
-    PyObject *mangled = _Py_Mangle(c->u->u_private, id);
+    PyObject *mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, id);
     if (!mangled) {
         return ERROR;
     }
@@ -2235,14 +2238,26 @@ compiler_function_body(struct compiler *c, stmt_ty s, int is_async, Py_ssize_t f
     c->u->u_metadata.u_argcount = asdl_seq_LEN(args->args);
     c->u->u_metadata.u_posonlyargcount = asdl_seq_LEN(args->posonlyargs);
     c->u->u_metadata.u_kwonlyargcount = asdl_seq_LEN(args->kwonlyargs);
+
+    NEW_JUMP_TARGET_LABEL(c, start);
+    USE_LABEL(c, start);
+    bool add_stopiteration_handler = c->u->u_ste->ste_coroutine || c->u->u_ste->ste_generator;
+    if (add_stopiteration_handler) {
+        /* wrap_in_stopiteration_handler will push a block, so we need to account for that */
+        RETURN_IF_ERROR(
+            compiler_push_fblock(c, NO_LOCATION, STOP_ITERATION,
+                                 start, NO_LABEL, NULL));
+    }
+
     for (Py_ssize_t i = docstring ? 1 : 0; i < asdl_seq_LEN(body); i++) {
         VISIT_IN_SCOPE(c, stmt, (stmt_ty)asdl_seq_GET(body, i));
     }
-    if (c->u->u_ste->ste_coroutine || c->u->u_ste->ste_generator) {
+    if (add_stopiteration_handler) {
         if (wrap_in_stopiteration_handler(c) < 0) {
             compiler_exit_scope(c);
             return ERROR;
         }
+        compiler_pop_fblock(c, STOP_ITERATION, start);
     }
     PyCodeObject *co = optimize_and_assemble(c, 1);
     compiler_exit_scope(c);
@@ -2540,7 +2555,6 @@ compiler_class(struct compiler *c, stmt_ty s)
     asdl_type_param_seq *type_params = s->v.ClassDef.type_params;
     int is_generic = asdl_seq_LEN(type_params) > 0;
     if (is_generic) {
-        Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         ADDOP(c, loc, PUSH_NULL);
         PyObject *type_params_name = PyUnicode_FromFormat("<generic parameters of %U>",
                                                          s->v.ClassDef.name);
@@ -2553,6 +2567,7 @@ compiler_class(struct compiler *c, stmt_ty s)
             return ERROR;
         }
         Py_DECREF(type_params_name);
+        Py_XSETREF(c->u->u_private, Py_NewRef(s->v.ClassDef.name));
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_type_params(c, type_params));
         _Py_DECLARE_STR(type_params, ".type_params");
         RETURN_IF_ERROR_IN_SCOPE(c, compiler_nameop(c, loc, &_Py_STR(type_params), Store));
@@ -2952,7 +2967,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
         co = optimize_and_assemble(c, 0);
     }
     else {
-        location loc = LOCATION(e->lineno, e->lineno, 0, 0);
+        location loc = LOC(e->v.Lambda.body);
         ADDOP_IN_SCOPE(c, loc, RETURN_VALUE);
         co = optimize_and_assemble(c, 1);
     }
@@ -3010,10 +3025,17 @@ compiler_for(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(compiler_push_fblock(c, loc, FOR_LOOP, start, end, NULL));
 
     VISIT(c, expr, s->v.For.iter);
+
+    loc = LOC(s->v.For.iter);
     ADDOP(c, loc, GET_ITER);
 
     USE_LABEL(c, start);
     ADDOP_JUMP(c, loc, FOR_ITER, cleanup);
+
+    /* Add NOP to ensure correct line tracing of multiline for statements.
+     * It will be removed later if redundant.
+     */
+    ADDOP(c, LOC(s->v.For.target), NOP);
 
     USE_LABEL(c, body);
     VISIT(c, expr, s->v.For.target);
@@ -3048,7 +3070,7 @@ compiler_async_for(struct compiler *c, stmt_ty s)
     NEW_JUMP_TARGET_LABEL(c, end);
 
     VISIT(c, expr, s->v.AsyncFor.iter);
-    ADDOP(c, loc, GET_AITER);
+    ADDOP(c, LOC(s->v.AsyncFor.iter), GET_AITER);
 
     USE_LABEL(c, start);
     RETURN_IF_ERROR(compiler_push_fblock(c, loc, FOR_LOOP, start, end, NULL));
@@ -3184,18 +3206,6 @@ compiler_continue(struct compiler *c, location loc)
 }
 
 
-static location
-location_of_last_executing_statement(asdl_stmt_seq *stmts)
-{
-    for (Py_ssize_t i = asdl_seq_LEN(stmts) - 1; i >= 0; i++) {
-        location loc = LOC((stmt_ty)asdl_seq_GET(stmts, i));
-        if (loc.lineno > 0) {
-            return loc;
-        }
-    }
-    return NO_LOCATION;
-}
-
 /* Code generated for "try: <body> finally: <finalbody>" is as follows:
 
         SETUP_FINALLY           L
@@ -3264,9 +3274,9 @@ compiler_try_finally(struct compiler *c, stmt_ty s)
     RETURN_IF_ERROR(
         compiler_push_fblock(c, loc, FINALLY_END, end, NO_LABEL, NULL));
     VISIT_SEQ(c, stmt, s->v.Try.finalbody);
-    loc = location_of_last_executing_statement(s->v.Try.finalbody);
     compiler_pop_fblock(c, FINALLY_END, end);
 
+    loc = NO_LOCATION;
     ADDOP_I(c, loc, RERAISE, 0);
 
     USE_LABEL(c, cleanup);
@@ -3315,9 +3325,9 @@ compiler_try_star_finally(struct compiler *c, stmt_ty s)
         compiler_push_fblock(c, loc, FINALLY_END, end, NO_LABEL, NULL));
 
     VISIT_SEQ(c, stmt, s->v.TryStar.finalbody);
-    loc = location_of_last_executing_statement(s->v.Try.finalbody);
 
     compiler_pop_fblock(c, FINALLY_END, end);
+    loc = NO_LOCATION;
     ADDOP_I(c, loc, RERAISE, 0);
 
     USE_LABEL(c, cleanup);
@@ -3895,7 +3905,7 @@ compiler_assert(struct compiler *c, stmt_ty s)
         VISIT(c, expr, s->v.Assert.msg);
         ADDOP_I(c, LOC(s), CALL, 0);
     }
-    ADDOP_I(c, LOC(s), RAISE_VARARGS, 1);
+    ADDOP_I(c, LOC(s->v.Assert.test), RAISE_VARARGS, 1);
 
     USE_LABEL(c, end);
     return SUCCESS;
@@ -4121,7 +4131,7 @@ compiler_nameop(struct compiler *c, location loc,
         return ERROR;
     }
 
-    mangled = _Py_Mangle(c->u->u_private, name);
+    mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, name);
     if (!mangled) {
         return ERROR;
     }
@@ -4776,7 +4786,7 @@ load_args_for_super(struct compiler *c, expr_ty e) {
 
     // load super() global
     PyObject *super_name = e->v.Call.func->v.Name.id;
-    RETURN_IF_ERROR(compiler_nameop(c, loc, super_name, Load));
+    RETURN_IF_ERROR(compiler_nameop(c, LOC(e->v.Call.func), super_name, Load));
 
     if (asdl_seq_LEN(e->v.Call.args) == 2) {
         VISIT(c, expr, asdl_seq_GET(e->v.Call.args, 0));
@@ -5181,9 +5191,12 @@ ex_call:
 }
 
 
-/* List and set comprehensions and generator expressions work by creating a
-  nested function to perform the actual iteration. This means that the
-  iteration variables don't leak into the current scope.
+/* List and set comprehensions work by being inlined at the location where
+  they are defined. The isolation of iteration variables is provided by
+  pushing/popping clashing locals on the stack. Generator expressions work
+  by creating a nested function to perform the actual iteration.
+  This means that the iteration variables don't leak into the current scope.
+  See https://peps.python.org/pep-0709/ for additional information.
   The defined function is called immediately following its definition, with the
   result of that call being the result of the expression.
   The LC/SC version returns the populated container, while the GE version is
@@ -5263,14 +5276,15 @@ compiler_sync_comprehension_generator(struct compiler *c, location loc,
             }
             if (IS_LABEL(start)) {
                 VISIT(c, expr, gen->iter);
-                ADDOP(c, loc, GET_ITER);
+                ADDOP(c, LOC(gen->iter), GET_ITER);
             }
         }
     }
+
     if (IS_LABEL(start)) {
         depth++;
         USE_LABEL(c, start);
-        ADDOP_JUMP(c, loc, FOR_ITER, anchor);
+        ADDOP_JUMP(c, LOC(gen->iter), FOR_ITER, anchor);
     }
     VISIT(c, expr, gen->target);
 
@@ -5357,7 +5371,7 @@ compiler_async_comprehension_generator(struct compiler *c, location loc,
         else {
             /* Sub-iter - calculate on the fly */
             VISIT(c, expr, gen->iter);
-            ADDOP(c, loc, GET_AITER);
+            ADDOP(c, LOC(gen->iter), GET_AITER);
         }
     }
 
@@ -5438,6 +5452,8 @@ typedef struct {
     PyObject *pushed_locals;
     PyObject *temp_symbols;
     PyObject *fast_hidden;
+    jump_target_label cleanup;
+    jump_target_label end;
 } inlined_comprehension_state;
 
 static int
@@ -5454,10 +5470,48 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
     while (PyDict_Next(entry->ste_symbols, &pos, &k, &v)) {
         assert(PyLong_Check(v));
         long symbol = PyLong_AS_LONG(v);
-        // only values bound in the comprehension (DEF_LOCAL) need to be handled
-        // at all; DEF_LOCAL | DEF_NONLOCAL can occur in the case of an
-        // assignment expression to a nonlocal in the comprehension, these don't
-        // need handling here since they shouldn't be isolated
+        long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
+        PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
+        if (outv == NULL) {
+            if (PyErr_Occurred()) {
+                return ERROR;
+            }
+            outv = _PyLong_GetZero();
+        }
+        assert(PyLong_CheckExact(outv));
+        long outsc = (PyLong_AS_LONG(outv) >> SCOPE_OFFSET) & SCOPE_MASK;
+        // If a name has different scope inside than outside the comprehension,
+        // we need to temporarily handle it with the right scope while
+        // compiling the comprehension. If it's free in the comprehension
+        // scope, no special handling; it should be handled the same as the
+        // enclosing scope. (If it's free in outer scope and cell in inner
+        // scope, we can't treat it as both cell and free in the same function,
+        // but treating it as free throughout is fine; it's *_DEREF
+        // either way.)
+        if ((scope != outsc && scope != FREE && !(scope == CELL && outsc == FREE))
+                || in_class_block) {
+            if (state->temp_symbols == NULL) {
+                state->temp_symbols = PyDict_New();
+                if (state->temp_symbols == NULL) {
+                    return ERROR;
+                }
+            }
+            // update the symbol to the in-comprehension version and save
+            // the outer version; we'll restore it after running the
+            // comprehension
+            Py_INCREF(outv);
+            if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v) < 0) {
+                Py_DECREF(outv);
+                return ERROR;
+            }
+            if (PyDict_SetItem(state->temp_symbols, k, outv) < 0) {
+                Py_DECREF(outv);
+                return ERROR;
+            }
+            Py_DECREF(outv);
+        }
+        // locals handling for names bound in comprehension (DEF_LOCAL |
+        // DEF_NONLOCAL occurs in assignment expression to nonlocal)
         if ((symbol & DEF_LOCAL && !(symbol & DEF_NONLOCAL)) || in_class_block) {
             if (!_PyST_IsFunctionLike(c->u->u_ste)) {
                 // non-function scope: override this name to use fast locals
@@ -5476,41 +5530,6 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
                         return ERROR;
                     }
                 }
-            }
-            long scope = (symbol >> SCOPE_OFFSET) & SCOPE_MASK;
-            PyObject *outv = PyDict_GetItemWithError(c->u->u_ste->ste_symbols, k);
-            if (outv == NULL) {
-                outv = _PyLong_GetZero();
-            }
-            assert(PyLong_Check(outv));
-            long outsc = (PyLong_AS_LONG(outv) >> SCOPE_OFFSET) & SCOPE_MASK;
-            if (scope != outsc && !(scope == CELL && outsc == FREE)) {
-                // If a name has different scope inside than outside the
-                // comprehension, we need to temporarily handle it with the
-                // right scope while compiling the comprehension. (If it's free
-                // in outer scope and cell in inner scope, we can't treat it as
-                // both cell and free in the same function, but treating it as
-                // free throughout is fine; it's *_DEREF either way.)
-
-                if (state->temp_symbols == NULL) {
-                    state->temp_symbols = PyDict_New();
-                    if (state->temp_symbols == NULL) {
-                        return ERROR;
-                    }
-                }
-                // update the symbol to the in-comprehension version and save
-                // the outer version; we'll restore it after running the
-                // comprehension
-                Py_INCREF(outv);
-                if (PyDict_SetItem(c->u->u_ste->ste_symbols, k, v) < 0) {
-                    Py_DECREF(outv);
-                    return ERROR;
-                }
-                if (PyDict_SetItem(state->temp_symbols, k, outv) < 0) {
-                    Py_DECREF(outv);
-                    return ERROR;
-                }
-                Py_DECREF(outv);
             }
             // local names bound in comprehension must be isolated from
             // outer scope; push existing value (which may be NULL if
@@ -5543,8 +5562,42 @@ push_inlined_comprehension_state(struct compiler *c, location loc,
         // `pushed_locals` on the stack, but this will be reversed when we swap
         // out the comprehension result in pop_inlined_comprehension_state
         ADDOP_I(c, loc, SWAP, PyList_GET_SIZE(state->pushed_locals) + 1);
+
+        // Add our own cleanup handler to restore comprehension locals in case
+        // of exception, so they have the correct values inside an exception
+        // handler or finally block.
+        NEW_JUMP_TARGET_LABEL(c, cleanup);
+        state->cleanup = cleanup;
+        NEW_JUMP_TARGET_LABEL(c, end);
+        state->end = end;
+
+        // no need to push an fblock for this "virtual" try/finally; there can't
+        // be return/continue/break inside a comprehension
+        ADDOP_JUMP(c, loc, SETUP_FINALLY, cleanup);
     }
 
+    return SUCCESS;
+}
+
+static int
+restore_inlined_comprehension_locals(struct compiler *c, location loc,
+                                     inlined_comprehension_state state)
+{
+    PyObject *k;
+    // pop names we pushed to stack earlier
+    Py_ssize_t npops = PyList_GET_SIZE(state.pushed_locals);
+    // Preserve the comprehension result (or exception) as TOS. This
+    // reverses the SWAP we did in push_inlined_comprehension_state to get
+    // the outermost iterable to TOS, so we can still just iterate
+    // pushed_locals in simple reverse order
+    ADDOP_I(c, loc, SWAP, npops + 1);
+    for (Py_ssize_t i = npops - 1; i >= 0; --i) {
+        k = PyList_GetItem(state.pushed_locals, i);
+        if (k == NULL) {
+            return ERROR;
+        }
+        ADDOP_NAME(c, loc, STORE_FAST_MAYBE_NULL, k, varnames);
+    }
     return SUCCESS;
 }
 
@@ -5564,19 +5617,22 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
         Py_CLEAR(state.temp_symbols);
     }
     if (state.pushed_locals) {
-        // pop names we pushed to stack earlier
-        Py_ssize_t npops = PyList_GET_SIZE(state.pushed_locals);
-        // Preserve the list/dict/set result of the comprehension as TOS. This
-        // reverses the SWAP we did in push_inlined_comprehension_state to get
-        // the outermost iterable to TOS, so we can still just iterate
-        // pushed_locals in simple reverse order
-        ADDOP_I(c, loc, SWAP, npops + 1);
-        for (Py_ssize_t i = npops - 1; i >= 0; --i) {
-            k = PyList_GetItem(state.pushed_locals, i);
-            if (k == NULL) {
-                return ERROR;
-            }
-            ADDOP_NAME(c, loc, STORE_FAST_MAYBE_NULL, k, varnames);
+        ADDOP(c, NO_LOCATION, POP_BLOCK);
+        ADDOP_JUMP(c, NO_LOCATION, JUMP, state.end);
+
+        // cleanup from an exception inside the comprehension
+        USE_LABEL(c, state.cleanup);
+        // discard incomplete comprehension result (beneath exc on stack)
+        ADDOP_I(c, NO_LOCATION, SWAP, 2);
+        ADDOP(c, NO_LOCATION, POP_TOP);
+        if (restore_inlined_comprehension_locals(c, loc, state) < 0) {
+            return ERROR;
+        }
+        ADDOP_I(c, NO_LOCATION, RERAISE, 0);
+
+        USE_LABEL(c, state.end);
+        if (restore_inlined_comprehension_locals(c, loc, state) < 0) {
+            return ERROR;
         }
         Py_CLEAR(state.pushed_locals);
     }
@@ -5600,15 +5656,14 @@ pop_inlined_comprehension_state(struct compiler *c, location loc,
 }
 
 static inline int
-compiler_comprehension_iter(struct compiler *c, location loc,
-                            comprehension_ty comp)
+compiler_comprehension_iter(struct compiler *c, comprehension_ty comp)
 {
     VISIT(c, expr, comp->iter);
     if (comp->is_async) {
-        ADDOP(c, loc, GET_AITER);
+        ADDOP(c, LOC(comp->iter), GET_AITER);
     }
     else {
-        ADDOP(c, loc, GET_ITER);
+        ADDOP(c, LOC(comp->iter), GET_ITER);
     }
     return SUCCESS;
 }
@@ -5619,7 +5674,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
                        expr_ty val)
 {
     PyCodeObject *co = NULL;
-    inlined_comprehension_state inline_state = {NULL, NULL};
+    inlined_comprehension_state inline_state = {NULL, NULL, NULL, NO_LABEL, NO_LABEL};
     comprehension_ty outermost;
     int scope_type = c->u->u_scope_type;
     int is_top_level_await = IS_TOP_LEVEL_AWAIT(c);
@@ -5634,7 +5689,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
 
     outermost = (comprehension_ty) asdl_seq_GET(generators, 0);
     if (is_inlined) {
-        if (compiler_comprehension_iter(c, loc, outermost)) {
+        if (compiler_comprehension_iter(c, outermost)) {
             goto error;
         }
         if (push_inlined_comprehension_state(c, loc, entry, &inline_state)) {
@@ -5720,7 +5775,7 @@ compiler_comprehension(struct compiler *c, expr_ty e, int type,
     }
     Py_CLEAR(co);
 
-    if (compiler_comprehension_iter(c, loc, outermost)) {
+    if (compiler_comprehension_iter(c, outermost)) {
         goto error;
     }
 
@@ -5862,7 +5917,7 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
 
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
-
+    loc = LOC(item->context_expr);
     ADDOP(c, loc, BEFORE_ASYNC_WITH);
     ADDOP_I(c, loc, GET_AWAITABLE, 1);
     ADDOP_LOAD_CONST(c, loc, Py_None);
@@ -5960,7 +6015,7 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     /* Evaluate EXPR */
     VISIT(c, expr, item->context_expr);
     /* Will push bound __exit__ */
-    location loc = LOC(s);
+    location loc = LOC(item->context_expr);
     ADDOP(c, loc, BEFORE_WITH);
     ADDOP_JUMP(c, loc, SETUP_WITH, final);
 
@@ -5993,7 +6048,6 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
     /* For successful outcome:
      * call __exit__(None, None, None)
      */
-    loc = LOC(s);
     RETURN_IF_ERROR(compiler_call_exit_with_nones(c, loc));
     ADDOP(c, loc, POP_TOP);
     ADDOP_JUMP(c, loc, JUMP, exit);
@@ -6066,7 +6120,7 @@ compiler_visit_expr1(struct compiler *c, expr_ty e)
         break;
     case YieldFrom_kind:
         if (!_PyST_IsFunctionLike(c->u->u_ste)) {
-            return compiler_error(c, loc, "'yield' outside function");
+            return compiler_error(c, loc, "'yield from' outside function");
         }
         if (c->u->u_scope_type == COMPILER_SCOPE_ASYNC_FUNCTION) {
             return compiler_error(c, loc, "'yield from' inside async function");
@@ -6339,7 +6393,7 @@ compiler_annassign(struct compiler *c, stmt_ty s)
                 VISIT(c, expr, s->v.AnnAssign.annotation);
             }
             ADDOP_NAME(c, loc, LOAD_NAME, &_Py_ID(__annotations__), names);
-            mangled = _Py_Mangle(c->u->u_private, targ->v.Name.id);
+            mangled = _Py_MaybeMangle(c->u->u_private, c->u->u_ste, targ->v.Name.id);
             ADDOP_LOAD_CONST_NEW(c, loc, mangled);
             ADDOP(c, loc, STORE_SUBSCR);
         }
@@ -7638,7 +7692,7 @@ optimize_and_assemble_code_unit(struct compiler_unit *u, PyObject *const_cache,
     PyCodeObject *co = NULL;
     PyObject *consts = consts_dict_keys_inorder(u->u_metadata.u_consts);
     if (consts == NULL) {
-        goto error;
+        return NULL;
     }
     cfg_builder g;
     if (instr_sequence_to_cfg(&u->u_instr_sequence, &g) < 0) {

@@ -394,6 +394,10 @@ class TestNtpath(NtpathTestCase):
         d = drives.pop().encode()
         self.assertEqual(ntpath.realpath(d), d)
 
+        # gh-106242: Embedded nulls and non-strict fallback to abspath
+        self.assertEqual(ABSTFN + "\0spam",
+                         ntpath.realpath(os_helper.TESTFN + "\0spam", strict=False))
+
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
     def test_realpath_strict(self):
@@ -404,6 +408,8 @@ class TestNtpath(NtpathTestCase):
         self.addCleanup(os_helper.unlink, ABSTFN)
         self.assertRaises(FileNotFoundError, ntpath.realpath, ABSTFN, strict=True)
         self.assertRaises(FileNotFoundError, ntpath.realpath, ABSTFN + "2", strict=True)
+        # gh-106242: Embedded nulls should raise OSError (not ValueError)
+        self.assertRaises(OSError, ntpath.realpath, ABSTFN + "\0spam", strict=True)
 
     @os_helper.skip_unless_symlink
     @unittest.skipUnless(HAVE_GETFINALPATHNAME, 'need _getfinalpathname')
@@ -737,6 +743,9 @@ class TestNtpath(NtpathTestCase):
         tester('ntpath.abspath("C:\\spam. . .")', "C:\\spam")
         tester('ntpath.abspath("C:/nul")',  "\\\\.\\nul")
         tester('ntpath.abspath("C:\\nul")', "\\\\.\\nul")
+        self.assertTrue(ntpath.isabs(ntpath.abspath("C:spam")))
+        self.assertEqual(ntpath.abspath("C:\x00"), ntpath.join(ntpath.abspath("C:"), "\x00"))
+        self.assertEqual(ntpath.abspath("\x00:spam"), "\x00:\\spam")
         tester('ntpath.abspath("//..")',           "\\\\")
         tester('ntpath.abspath("//../")',          "\\\\..\\")
         tester('ntpath.abspath("//../..")',        "\\\\..\\")
@@ -970,6 +979,27 @@ class TestNtpath(NtpathTestCase):
             raise unittest.SkipTest('SystemDrive is not defined or malformed')
         self.assertFalse(os.path.isfile('\\\\.\\' + drive))
 
+    @unittest.skipUnless(hasattr(os, 'pipe'), "need os.pipe()")
+    def test_isfile_anonymous_pipe(self):
+        pr, pw = os.pipe()
+        try:
+            self.assertFalse(ntpath.isfile(pr))
+        finally:
+            os.close(pr)
+            os.close(pw)
+
+    @unittest.skipIf(sys.platform != 'win32', "windows only")
+    def test_isfile_named_pipe(self):
+        import _winapi
+        named_pipe = f'//./PIPE/python_isfile_test_{os.getpid()}'
+        h = _winapi.CreateNamedPipe(named_pipe,
+                                    _winapi.PIPE_ACCESS_INBOUND,
+                                    0, 1, 0, 0, 0, 0)
+        try:
+            self.assertFalse(ntpath.isfile(named_pipe))
+        finally:
+            _winapi.CloseHandle(h)
+
     @unittest.skipIf(sys.platform != 'win32', "windows only")
     def test_con_device(self):
         self.assertFalse(os.path.isfile(r"\\.\CON"))
@@ -983,6 +1013,8 @@ class TestNtpath(NtpathTestCase):
         # There are fast paths of these functions implemented in posixmodule.c.
         # Confirm that they are being used, and not the Python fallbacks in
         # genericpath.py.
+        self.assertTrue(os.path.normpath is nt._path_normpath)
+        self.assertFalse(inspect.isfunction(os.path.normpath))
         self.assertTrue(os.path.isdir is nt._path_isdir)
         self.assertFalse(inspect.isfunction(os.path.isdir))
         self.assertTrue(os.path.isfile is nt._path_isfile)
@@ -1036,6 +1068,7 @@ class PathLikeTests(NtpathTestCase):
         self._check_function(self.path.normcase)
         if sys.platform == 'win32':
             self.assertEqual(ntpath.normcase('\u03a9\u2126'), 'ωΩ')
+            self.assertEqual(ntpath.normcase('abc\x00def'), 'abc\x00def')
 
     def test_path_isabs(self):
         self._check_function(self.path.isabs)

@@ -52,6 +52,9 @@ AllowedVersions = ('IMAP4REV1', 'IMAP4')        # Most recent first
 # search command can be quite large, so we now use 1M.
 _MAXLINE = 1000000
 
+# Data larger than this will be read in chunks, to prevent extreme
+# overallocation.
+_SAFE_BUF_SIZE = 1 << 20
 
 #       Commands
 
@@ -315,7 +318,13 @@ class IMAP4:
 
     def read(self, size):
         """Read 'size' bytes from remote."""
-        return self.file.read(size)
+        cursize = min(size, _SAFE_BUF_SIZE)
+        data = self.file.read(cursize)
+        while cursize < size and len(data) == cursize:
+            delta = min(cursize, size - cursize)
+            data += self.file.read(delta)
+            cursize += delta
+        return data
 
 
     def readline(self):

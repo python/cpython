@@ -1,3 +1,12 @@
+"""
+A Path-like interface for zipfiles.
+
+This codebase is shared between zipfile.Path in the stdlib
+and zipp in PyPI. See
+https://github.com/python/importlib_metadata/wiki/Development-Methodology
+for more detail.
+"""
+
 import io
 import posixpath
 import zipfile
@@ -34,7 +43,7 @@ def _parents(path):
 def _ancestry(path):
     """
     Given a path with elements separated by
-    posixpath.sep, generate all elements of that path
+    posixpath.sep, generate all elements of that path.
 
     >>> list(_ancestry('b/d'))
     ['b/d', 'b']
@@ -46,9 +55,14 @@ def _ancestry(path):
     ['b']
     >>> list(_ancestry(''))
     []
+
+    Multiple separators are treated like a single.
+
+    >>> list(_ancestry('//b//d///f//'))
+    ['//b//d///f', '//b//d', '//b']
     """
     path = path.rstrip(posixpath.sep)
-    while path and path != posixpath.sep:
+    while path.rstrip(posixpath.sep):
         yield path
         path, tail = posixpath.split(path)
 
@@ -174,7 +188,10 @@ def _extract_text_encoding(encoding=None, *args, **kwargs):
 
 class Path:
     """
-    A pathlib-compatible interface for zip files.
+    A :class:`importlib.resources.abc.Traversable` interface for zip files.
+
+    Implements many of the features users enjoy from
+    :class:`pathlib.Path`.
 
     Consider a zip file with this structure::
 
@@ -286,7 +303,7 @@ class Path:
         if self.is_dir():
             raise IsADirectoryError(self)
         zip_mode = mode[0]
-        if not self.exists() and zip_mode == 'r':
+        if zip_mode == 'r' and not self.exists():
             raise FileNotFoundError(self)
         stream = self.root.open(self.at, zip_mode, pwd=pwd)
         if 'b' in mode:

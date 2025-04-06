@@ -4,15 +4,16 @@ import contextlib
 import pathlib
 import pickle
 import sys
+import time
 import unittest
 import zipfile
+
+from test.support.os_helper import temp_dir, FakePath
 
 from ._functools import compose
 from ._itertools import Counter
 
 from ._test_params import parameterize, Invoked
-
-from test.support.os_helper import temp_dir
 
 
 class jaraco:
@@ -271,13 +272,13 @@ class TestPath(unittest.TestCase):
         zipfile.Path should be constructable from a path-like object
         """
         zipfile_ondisk = self.zipfile_ondisk(alpharep)
-        pathlike = pathlib.Path(str(zipfile_ondisk))
+        pathlike = FakePath(str(zipfile_ondisk))
         zipfile.Path(pathlike)
 
     @pass_alpharep
     def test_traverse_pathlike(self, alpharep):
         root = zipfile.Path(alpharep)
-        root / pathlib.Path("a")
+        root / FakePath("a")
 
     @pass_alpharep
     def test_parent(self, alpharep):
@@ -473,6 +474,18 @@ class TestPath(unittest.TestCase):
         assert list(root.glob("**/*.txt")) == list(root.rglob("*.txt"))
 
     @pass_alpharep
+    def test_glob_dirs(self, alpharep):
+        root = zipfile.Path(alpharep)
+        assert list(root.glob('b')) == [zipfile.Path(alpharep, "b/")]
+        assert list(root.glob('b*')) == [zipfile.Path(alpharep, "b/")]
+
+    @pass_alpharep
+    def test_glob_subdir(self, alpharep):
+        root = zipfile.Path(alpharep)
+        assert list(root.glob('g/h')) == [zipfile.Path(alpharep, "g/h/")]
+        assert list(root.glob('g*/h*')) == [zipfile.Path(alpharep, "g/h/")]
+
+    @pass_alpharep
     def test_glob_subdirs(self, alpharep):
         root = zipfile.Path(alpharep)
 
@@ -546,12 +559,12 @@ class TestPath(unittest.TestCase):
         ['alpharep', 'path_type', 'subpath'],
         itertools.product(
             alpharep_generators,
-            [str, pathlib.Path],
+            [str, FakePath],
             ['', 'b/'],
         ),
     )
     def test_pickle(self, alpharep, path_type, subpath):
-        zipfile_ondisk = path_type(self.zipfile_ondisk(alpharep))
+        zipfile_ondisk = path_type(str(self.zipfile_ondisk(alpharep)))
 
         saved_1 = pickle.dumps(zipfile.Path(zipfile_ondisk, at=subpath))
         restored_1 = pickle.loads(saved_1)
@@ -577,3 +590,87 @@ class TestPath(unittest.TestCase):
         zipfile.Path(alpharep)
         with self.assertRaises(KeyError):
             alpharep.getinfo('does-not-exist')
+
+    def test_malformed_paths(self):
+        """
+        Path should handle malformed paths gracefully.
+
+        Paths with leading slashes are not visible.
+
+        Paths with dots are treated like regular files.
+        """
+        data = io.BytesIO()
+        zf = zipfile.ZipFile(data, "w")
+        zf.writestr("/one-slash.txt", b"content")
+        zf.writestr("//two-slash.txt", b"content")
+        zf.writestr("../parent.txt", b"content")
+        zf.filename = ''
+        root = zipfile.Path(zf)
+        assert list(map(str, root.iterdir())) == ['../']
+        assert root.joinpath('..').joinpath('parent.txt').read_bytes() == b'content'
+
+    def test_unsupported_names(self):
+        """
+        Path segments with special characters are readable.
+
+        On some platforms or file systems, characters like
+        ``:`` and ``?`` are not allowed, but they are valid
+        in the zip file.
+        """
+        data = io.BytesIO()
+        zf = zipfile.ZipFile(data, "w")
+        zf.writestr("path?", b"content")
+        zf.writestr("V: NMS.flac", b"fLaC...")
+        zf.filename = ''
+        root = zipfile.Path(zf)
+        contents = root.iterdir()
+        assert next(contents).name == 'path?'
+        assert next(contents).name == 'V: NMS.flac'
+        assert root.joinpath('V: NMS.flac').read_bytes() == b"fLaC..."
+
+    def test_backslash_not_separator(self):
+        """
+        In a zip file, backslashes are not separators.
+        """
+        data = io.BytesIO()
+        zf = zipfile.ZipFile(data, "w")
+        zf.writestr(DirtyZipInfo.for_name("foo\\bar", zf), b"content")
+        zf.filename = ''
+        root = zipfile.Path(zf)
+        (first,) = root.iterdir()
+        assert not first.is_dir()
+        assert first.name == 'foo\\bar'
+
+    @pass_alpharep
+    def test_interface(self, alpharep):
+        from importlib.resources.abc import Traversable
+
+        zf = zipfile.Path(alpharep)
+        assert isinstance(zf, Traversable)
+
+
+class DirtyZipInfo(zipfile.ZipInfo):
+    """
+    Bypass name sanitization.
+    """
+
+    def __init__(self, filename, *args, **kwargs):
+        super().__init__(filename, *args, **kwargs)
+        self.filename = filename
+
+    @classmethod
+    def for_name(cls, name, archive):
+        """
+        Construct the same way that ZipFile.writestr does.
+
+        TODO: extract this functionality and re-use
+        """
+        self = cls(filename=name, date_time=time.localtime(time.time())[:6])
+        self.compress_type = archive.compression
+        self.compress_level = archive.compresslevel
+        if self.filename.endswith('/'):  # pragma: no cover
+            self.external_attr = 0o40775 << 16  # drwxrwxr-x
+            self.external_attr |= 0x10  # MS-DOS directory flag
+        else:
+            self.external_attr = 0o600 << 16  # ?rw-------
+        return self

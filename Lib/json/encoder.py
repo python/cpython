@@ -174,7 +174,7 @@ class JSONEncoder(object):
                 else:
                     return list(iterable)
                 # Let the base class default method raise the TypeError
-                return JSONEncoder.default(self, o)
+                return super().default(o)
 
         """
         raise TypeError(f'Object of type {o.__class__.__name__} '

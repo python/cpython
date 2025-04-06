@@ -111,10 +111,7 @@ typedef struct pyruntimestate {
      tools. */
 
     // XXX Remove this field once we have a tp_* slot.
-    struct _xidregistry {
-        PyThread_type_lock mutex;
-        struct _xidregitem *head;
-    } xidregistry;
+    struct _xidregistry xidregistry;
 
     struct _pymem_allocators allocators;
     struct _obmalloc_global_state obmalloc;
@@ -161,6 +158,15 @@ typedef struct pyruntimestate {
 
     /* All the objects that are shared by the runtime's interpreters. */
     struct _Py_static_objects static_objects;
+    struct _Py_cached_objects cached_objects;
+
+    /* The ID of the OS thread in which we are finalizing.
+       We use _Py_atomic_address instead of adding a new _Py_atomic_ulong. */
+    _Py_atomic_address _finalizing_id;
+    /* The value to use for sys.path[0] in new subinterpreters.
+       Normally this would be part of the PyConfig struct.  However,
+       we cannot add it there in 3.12 since that's an ABI change. */
+    wchar_t *sys_path_0;
 
     /* The following fields are here to avoid allocation during init.
        The data is exposed through _PyRuntimeState pointer fields.
@@ -204,9 +210,23 @@ _PyRuntimeState_GetFinalizing(_PyRuntimeState *runtime) {
     return (PyThreadState*)_Py_atomic_load_relaxed(&runtime->_finalizing);
 }
 
+static inline unsigned long
+_PyRuntimeState_GetFinalizingID(_PyRuntimeState *runtime) {
+    return (unsigned long)_Py_atomic_load_relaxed(&runtime->_finalizing_id);
+}
+
 static inline void
 _PyRuntimeState_SetFinalizing(_PyRuntimeState *runtime, PyThreadState *tstate) {
     _Py_atomic_store_relaxed(&runtime->_finalizing, (uintptr_t)tstate);
+    if (tstate == NULL) {
+        _Py_atomic_store_relaxed(&runtime->_finalizing_id, 0);
+    }
+    else {
+        // XXX Re-enable this assert once gh-109860 is fixed.
+        //assert(tstate->thread_id == PyThread_get_thread_ident());
+        _Py_atomic_store_relaxed(&runtime->_finalizing_id,
+                                 (uintptr_t)tstate->thread_id);
+    }
 }
 
 #ifdef __cplusplus

@@ -467,6 +467,17 @@ def replace_block(lines, start_marker, end_marker, replacements, file):
     return lines[:start_pos + 1] + replacements + lines[end_pos:]
 
 
+class UniqueList(list):
+    def __init__(self):
+        self._seen = set()
+
+    def append(self, item):
+        if item in self._seen:
+            return
+        super().append(item)
+        self._seen.add(item)
+
+
 def regen_frozen(modules, frozen_modules: bool):
     headerlines = []
     parentdir = os.path.dirname(FROZEN_FILE)
@@ -477,7 +488,7 @@ def regen_frozen(modules, frozen_modules: bool):
             header = relpath_for_posix_display(src.frozenfile, parentdir)
             headerlines.append(f'#include "{header}"')
 
-    externlines = []
+    externlines = UniqueList()
     bootstraplines = []
     stdliblines = []
     testlines = []
@@ -585,7 +596,7 @@ def regen_makefile(modules):
     pyfiles = []
     frozenfiles = []
     rules = ['']
-    deepfreezerules = ["Python/deepfreeze/deepfreeze.c: $(DEEPFREEZE_DEPS)",
+    deepfreezerules = ["$(DEEPFREEZE_C): $(DEEPFREEZE_DEPS)",
                        "\t$(PYTHON_FOR_FREEZE) $(srcdir)/Tools/build/deepfreeze.py \\"]
     for src in _iter_sources(modules):
         frozen_header = relpath_for_posix_display(src.frozenfile, ROOT_DIR)

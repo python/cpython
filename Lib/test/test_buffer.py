@@ -1028,6 +1028,7 @@ class TestBufferProtocol(unittest.TestCase):
                     ndim=ndim, shape=shape, strides=strides,
                     lst=lst, sliced=sliced)
 
+    @support.requires_resource('cpu')
     def test_ndarray_getbuf(self):
         requests = (
             # distinct flags
@@ -2759,6 +2760,7 @@ class TestBufferProtocol(unittest.TestCase):
             m = memoryview(ex)
             iter_roundtrip(ex, m, items, fmt)
 
+    @support.requires_resource('cpu')
     def test_memoryview_cast_1D_ND(self):
         # Cast between C-contiguous buffers. At least one buffer must
         # be 1D, at least one format must be 'c', 'b' or 'B'.
@@ -3904,6 +3906,8 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(ValueError, memoryview, m)
         # memoryview.cast()
         self.assertRaises(ValueError, m.cast, 'c')
+        # memoryview.__iter__()
+        self.assertRaises(ValueError, m.__iter__)
         # getbuffer()
         self.assertRaises(ValueError, ndarray, m)
         # memoryview.tolist()
@@ -4437,6 +4441,21 @@ class TestBufferProtocol(unittest.TestCase):
         for format in ('', 'ii', '3s'):
             self.assertEqual(_testcapi.PyBuffer_SizeFromFormat(format),
                              struct.calcsize(format))
+
+    @support.cpython_only
+    def test_flags_overflow(self):
+        # gh-126594: Check for integer overlow on large flags
+        try:
+            from _testcapi import INT_MIN, INT_MAX
+        except ImportError:
+            INT_MIN = -(2 ** 31)
+            INT_MAX = 2 ** 31 - 1
+
+        obj = b'abc'
+        for flags in (INT_MIN - 1, INT_MAX + 1):
+            with self.subTest(flags=flags):
+                with self.assertRaises(OverflowError):
+                    obj.__buffer__(flags)
 
 
 class TestPythonBufferProtocol(unittest.TestCase):

@@ -99,7 +99,7 @@ To schedule a coroutine object from a different OS thread, the
      # Wait for the result:
      result = future.result()
 
-To handle signals and to execute subprocesses, the event loop must be
+To handle signals the event loop must be
 run in the main thread.
 
 The :meth:`loop.run_in_executor` method can be used with a

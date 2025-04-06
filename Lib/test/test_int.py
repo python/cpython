@@ -834,17 +834,28 @@ class PyLongModuleTests(unittest.TestCase):
         sys.set_int_max_str_digits(self._previous_limit)
         super().tearDown()
 
-    def test_pylong_int_to_decimal(self):
-        n = (1 << 100_000) - 1
-        suffix = '9883109375'
+    def _test_pylong_int_to_decimal(self, n, suffix):
         s = str(n)
-        assert s[-10:] == suffix
-        s = str(-n)
-        assert s[-10:] == suffix
-        s = '%d' % n
-        assert s[-10:] == suffix
-        s = b'%d' % n
-        assert s[-10:] == suffix.encode('ascii')
+        self.assertEqual(s[-10:], suffix)
+        s2 = str(-n)
+        self.assertEqual(s2, '-' + s)
+        s3 = '%d' % n
+        self.assertEqual(s3, s)
+        s4 = b'%d' % n
+        self.assertEqual(s4, s.encode('ascii'))
+
+    def test_pylong_int_to_decimal(self):
+        self._test_pylong_int_to_decimal((1 << 100_000), '9883109376')
+        self._test_pylong_int_to_decimal((1 << 100_000) - 1, '9883109375')
+        self._test_pylong_int_to_decimal(10**30_000, '0000000000')
+        self._test_pylong_int_to_decimal(10**30_000 - 1, '9999999999')
+        self._test_pylong_int_to_decimal(3**60_000, '9313200001')
+
+    @support.requires_resource('cpu')
+    def test_pylong_int_to_decimal_2(self):
+        self._test_pylong_int_to_decimal(2**1_000_000, '2747109376')
+        self._test_pylong_int_to_decimal(10**300_000, '0000000000')
+        self._test_pylong_int_to_decimal(3**600_000, '3132000001')
 
     def test_pylong_int_divmod(self):
         n = (1 << 100_000)

@@ -1139,7 +1139,7 @@ maybe_freelist_pop(Py_ssize_t size)
         return NULL;
     }
     assert(size > 0);
-    if (size < PyTuple_MAXSAVESIZE) {
+    if (size <= PyTuple_MAXSAVESIZE) {
         Py_ssize_t index = size - 1;
         PyTupleObject *op = STATE.free_list[index];
         if (op != NULL) {

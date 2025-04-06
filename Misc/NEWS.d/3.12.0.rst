@@ -1,0 +1,74 @@
+.. date: 2023-09-25-14-28-14
+.. gh-issue: 109823
+.. nonce: kbVTKF
+.. release date: 2023-10-02
+.. section: Core and Builtins
+
+Fix bug where compiler does not adjust labels when removing an empty basic
+block which is a jump target.
+
+..
+
+.. date: 2023-09-22-13-38-17
+.. gh-issue: 109719
+.. nonce: fx5OTz
+.. section: Core and Builtins
+
+Fix missing jump target labels when compiler reorders cold/warm blocks.
+
+..
+
+.. date: 2023-09-20-23-04-15
+.. gh-issue: 109627
+.. nonce: xxe7De
+.. section: Core and Builtins
+
+Fix bug where the compiler does not assign a new jump target label to a
+duplicated small exit block.
+
+..
+
+.. date: 2023-09-28-18-08-02
+.. gh-issue: 110045
+.. nonce: 0YIGKv
+.. section: Library
+
+Update the :mod:`symtable` module to support the new scopes introduced by
+:pep:`695`.
+
+..
+
+.. date: 2023-09-10-02-39-06
+.. gh-issue: 109209
+.. nonce: 0LBewo
+.. section: Documentation
+
+The minimum Sphinx version required for the documentation is now 4.2.
+
+..
+
+.. date: 2023-09-28-17-09-23
+.. gh-issue: 109991
+.. nonce: CIMftz
+.. section: Windows
+
+Update Windows build to use OpenSSL 3.0.11.
+
+..
+
+.. date: 2023-09-27-22-35-22
+.. gh-issue: 109991
+.. nonce: -xJzaF
+.. section: macOS
+
+Update macOS installer to use OpenSSL 3.0.11.
+
+..
+
+.. date: 2023-09-27-23-31-54
+.. gh-issue: 109991
+.. nonce: sUUYY8
+.. section: Tools/Demos
+
+Update GitHub CI workflows to use OpenSSL 3.0.11 and multissltests to use
+1.1.1w, 3.0.11, and 3.1.3.

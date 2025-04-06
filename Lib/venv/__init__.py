@@ -11,6 +11,7 @@ import subprocess
 import sys
 import sysconfig
 import types
+import shlex
 
 
 CORE_VENV_DEPS = ('pip',)
@@ -102,6 +103,33 @@ class EnvBuilder:
         }
         return sysconfig.get_path(name, scheme='venv', vars=vars)
 
+    @classmethod
+    def _same_path(cls, path1, path2):
+        """Check whether two paths appear the same.
+
+        Whether they refer to the same file is irrelevant; we're testing for
+        whether a human reader would look at the path string and easily tell
+        that they're the same file.
+        """
+        if sys.platform == 'win32':
+            if os.path.normcase(path1) == os.path.normcase(path2):
+                return True
+            # gh-90329: Don't display a warning for short/long names
+            import _winapi
+            try:
+                path1 = _winapi.GetLongPathName(os.fsdecode(path1))
+            except OSError:
+                pass
+            try:
+                path2 = _winapi.GetLongPathName(os.fsdecode(path2))
+            except OSError:
+                pass
+            if os.path.normcase(path1) == os.path.normcase(path2):
+                return True
+            return False
+        else:
+            return path1 == path2
+
     def ensure_directories(self, env_dir):
         """
         Create the directories for the environment.
@@ -162,7 +190,7 @@ class EnvBuilder:
             # bpo-45337: Fix up env_exec_cmd to account for file system redirections.
             # Some redirects only apply to CreateFile and not CreateProcess
             real_env_exe = os.path.realpath(context.env_exe)
-            if os.path.normcase(real_env_exe) != os.path.normcase(context.env_exe):
+            if not self._same_path(real_env_exe, context.env_exe):
                 logger.warning('Actual environment location may have moved due to '
                                'redirects, links or junctions.\n'
                                '  Requested location: "%s"\n'
@@ -395,11 +423,41 @@ class EnvBuilder:
         :param context: The information for the environment creation request
                         being processed.
         """
-        text = text.replace('__VENV_DIR__', context.env_dir)
-        text = text.replace('__VENV_NAME__', context.env_name)
-        text = text.replace('__VENV_PROMPT__', context.prompt)
-        text = text.replace('__VENV_BIN_NAME__', context.bin_name)
-        text = text.replace('__VENV_PYTHON__', context.env_exe)
+        replacements = {
+            '__VENV_DIR__': context.env_dir,
+            '__VENV_NAME__': context.env_name,
+            '__VENV_PROMPT__': context.prompt,
+            '__VENV_BIN_NAME__': context.bin_name,
+            '__VENV_PYTHON__': context.env_exe,
+        }
+
+        def quote_ps1(s):
+            """
+            This should satisfy PowerShell quoting rules [1], unless the quoted
+            string is passed directly to Windows native commands [2].
+            [1]: https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_quoting_rules
+            [2]: https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_parsing#passing-arguments-that-contain-quote-characters
+            """
+            s = s.replace("'", "''")
+            return f"'{s}'"
+
+        def quote_bat(s):
+            return s
+
+        # gh-124651: need to quote the template strings properly
+        quote = shlex.quote
+        script_path = context.script_path
+        if script_path.endswith('.ps1'):
+            quote = quote_ps1
+        elif script_path.endswith('.bat'):
+            quote = quote_bat
+        else:
+            # fallbacks to POSIX shell compliant quote
+            quote = shlex.quote
+
+        replacements = {key: quote(s) for key, s in replacements.items()}
+        for key, quoted in replacements.items():
+            text = text.replace(key, quoted)
         return text
 
     def install_scripts(self, context, path):
@@ -439,6 +497,7 @@ class EnvBuilder:
                 with open(srcfile, 'rb') as f:
                     data = f.read()
                 if not srcfile.endswith(('.exe', '.pdb')):
+                    context.script_path = srcfile
                     try:
                         data = data.decode('utf-8')
                         data = self.replace_variables(data, context)

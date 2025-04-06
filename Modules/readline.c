@@ -336,6 +336,12 @@ readline_append_history_file_impl(PyObject *module, int nelements,
                                   PyObject *filename_obj)
 /*[clinic end generated code: output=5df06fc9da56e4e4 input=784b774db3a4b7c5]*/
 {
+    if (nelements < 0)
+    {
+        PyErr_SetString(PyExc_ValueError, "nelements must be positive");
+        return NULL;
+    }
+
     PyObject *filename_bytes;
     const char *filename;
     int err;
@@ -442,7 +448,7 @@ readline_set_completion_display_matches_hook_impl(PyObject *module,
        default completion display. */
     rl_completion_display_matches_hook =
         readlinestate_global->completion_display_matches_hook ?
-#if defined(_RL_FUNCTION_TYPEDEF)
+#if defined(HAVE_RL_COMPDISP_FUNC_T)
         (rl_compdisp_func_t *)on_completion_display_matches_hook : 0;
 #else
         (VFunction *)on_completion_display_matches_hook : 0;
@@ -572,6 +578,13 @@ readline_set_completer_delims(PyObject *module, PyObject *string)
     if (break_chars) {
         free(completer_word_break_characters);
         completer_word_break_characters = break_chars;
+#ifdef WITH_EDITLINE
+        rl_basic_word_break_characters = break_chars;
+#else
+        if (using_libedit_emulation) {
+            rl_basic_word_break_characters = break_chars;
+        }
+#endif
         rl_completer_word_break_characters = break_chars;
         Py_RETURN_NONE;
     }
@@ -1259,6 +1272,15 @@ setup_readline(readlinestate *mod_state)
     completer_word_break_characters =
         strdup(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?");
         /* All nonalphanums except '.' */
+#ifdef WITH_EDITLINE
+    // libedit uses rl_basic_word_break_characters instead of
+    // rl_completer_word_break_characters as complete delimiter
+    rl_basic_word_break_characters = completer_word_break_characters;
+#else
+    if (using_libedit_emulation) {
+        rl_basic_word_break_characters = completer_word_break_characters;
+    }
+#endif
     rl_completer_word_break_characters = completer_word_break_characters;
 
     mod_state->begidx = PyLong_FromLong(0L);

@@ -15,6 +15,7 @@ import weakref
 from copy import deepcopy
 from contextlib import redirect_stdout
 from test import support
+from test.support.testcase import ExtraAssertions
 
 try:
     import _testcapi
@@ -403,15 +404,7 @@ class OperatorsTest(unittest.TestCase):
         self.assertEqual(range(sys.maxsize).__len__(), sys.maxsize)
 
 
-class ClassPropertiesAndMethods(unittest.TestCase):
-
-    def assertHasAttr(self, obj, name):
-        self.assertTrue(hasattr(obj, name),
-                        '%r has no attribute %r' % (obj, name))
-
-    def assertNotHasAttr(self, obj, name):
-        self.assertFalse(hasattr(obj, name),
-                         '%r has unexpected attribute %r' % (obj, name))
+class ClassPropertiesAndMethods(unittest.TestCase, ExtraAssertions):
 
     def test_python_dicts(self):
         # Testing Python subclass of dict...
@@ -1594,7 +1587,11 @@ order (MRO) for bases """
 
         cm = classmethod(f)
         cm_dict = {'__annotations__': {},
-                   '__doc__': "f docstring",
+                   '__doc__': (
+                       "f docstring"
+                       if support.HAVE_DOCSTRINGS
+                       else None
+                    ),
                    '__module__': __name__,
                    '__name__': 'f',
                    '__qualname__': f.__qualname__}
@@ -1989,7 +1986,7 @@ order (MRO) for bases """
         ns = {}
         exec(code, ns)
         number_attrs = ns["number_attrs"]
-        # Warm up the the function for quickening (PEP 659)
+        # Warm up the function for quickening (PEP 659)
         for _ in range(30):
             self.assertEqual(number_attrs(Numbers()), list(range(280)))
 
@@ -4457,6 +4454,7 @@ order (MRO) for bases """
         o.whatever = Provoker(o)
         del o
 
+    @support.requires_resource('cpu')
     def test_wrapper_segfault(self):
         # SF 927248: deeply nested wrappers could cause stack overflow
         f = lambda:None
@@ -4589,18 +4587,16 @@ order (MRO) for bases """
     def test_not_implemented(self):
         # Testing NotImplemented...
         # all binary methods should be able to return a NotImplemented
-        import operator
 
         def specialmethod(self, other):
             return NotImplemented
 
         def check(expr, x, y):
-            try:
-                exec(expr, {'x': x, 'y': y, 'operator': operator})
-            except TypeError:
-                pass
-            else:
-                self.fail("no TypeError from %r" % (expr,))
+            with (
+                self.subTest(expr=expr, x=x, y=y),
+                self.assertRaises(TypeError),
+            ):
+                exec(expr, {'x': x, 'y': y})
 
         N1 = sys.maxsize + 1    # might trigger OverflowErrors instead of
                                 # TypeErrors
@@ -4621,12 +4617,23 @@ order (MRO) for bases """
                 ('__and__',      'x & y',                   'x &= y'),
                 ('__or__',       'x | y',                   'x |= y'),
                 ('__xor__',      'x ^ y',                   'x ^= y')]:
-            rname = '__r' + name[2:]
+            # Defines 'left' magic method:
             A = type('A', (), {name: specialmethod})
             a = A()
             check(expr, a, a)
             check(expr, a, N1)
             check(expr, a, N2)
+            # Defines 'right' magic method:
+            rname = '__r' + name[2:]
+            B = type('B', (), {rname: specialmethod})
+            b = B()
+            check(expr, b, b)
+            check(expr, a, b)
+            check(expr, b, a)
+            check(expr, b, N1)
+            check(expr, b, N2)
+            check(expr, N1, b)
+            check(expr, N2, b)
             if iexpr:
                 check(iexpr, a, a)
                 check(iexpr, a, N1)

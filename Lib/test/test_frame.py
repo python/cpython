@@ -322,7 +322,7 @@ class TestIncompleteFrameAreInvisible(unittest.TestCase):
             sneaky_frame_object = None
             gc.enable()
             next(g)
-            # g.gi_frame should be the the frame object from the callback (the
+            # g.gi_frame should be the frame object from the callback (the
             # one that was *requested* second, but *created* first):
             self.assertIs(g.gi_frame, sneaky_frame_object)
         finally:

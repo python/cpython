@@ -166,6 +166,11 @@ def _dedent(text):
         lines[j] = l[i:]
     return '\n'.join(lines)
 
+class _not_given:
+    def __repr__(self):
+        return('<not given>')
+_not_given = _not_given()
+
 class _auto_null:
     def __repr__(self):
         return '_auto_null'
@@ -283,9 +288,10 @@ class _proto_member:
         enum_member._sort_order_ = len(enum_class._member_names_)
 
         if Flag is not None and issubclass(enum_class, Flag):
-            enum_class._flag_mask_ |= value
-            if _is_single_bit(value):
-                enum_class._singles_mask_ |= value
+            if isinstance(value, int):
+                enum_class._flag_mask_ |= value
+                if _is_single_bit(value):
+                    enum_class._singles_mask_ |= value
             enum_class._all_bits_ = 2 ** ((enum_class._flag_mask_).bit_length()) - 1
 
         # If another member with the same value was already defined, the
@@ -313,6 +319,7 @@ class _proto_member:
             elif (
                     Flag is not None
                     and issubclass(enum_class, Flag)
+                    and isinstance(value, int)
                     and _is_single_bit(value)
                 ):
                 # no other instances found, record this member in _member_names_
@@ -457,10 +464,11 @@ class _EnumDict(dict):
             if isinstance(value, auto):
                 single = True
                 value = (value, )
-            if type(value) is tuple and any(isinstance(v, auto) for v in value):
+            if isinstance(value, tuple) and any(isinstance(v, auto) for v in value):
                 # insist on an actual tuple, no subclasses, in keeping with only supporting
                 # top-level auto() usage (not contained in any other data structure)
                 auto_valued = []
+                t = type(value)
                 for v in value:
                     if isinstance(v, auto):
                         non_auto_store = False
@@ -475,7 +483,12 @@ class _EnumDict(dict):
                 if single:
                     value = auto_valued[0]
                 else:
-                    value = tuple(auto_valued)
+                    try:
+                        # accepts iterable as multiple arguments?
+                        value = t(auto_valued)
+                    except TypeError:
+                        # then pass them in singly
+                        value = t(*auto_valued)
             self._member_names[key] = None
             if non_auto_store:
                 self._last_values.append(value)
@@ -579,15 +592,13 @@ class EnumType(type):
         classdict['_all_bits_'] = 0
         classdict['_inverted_'] = None
         try:
-            exc = None
             enum_class = super().__new__(metacls, cls, bases, classdict, **kwds)
-        except RuntimeError as e:
-            # any exceptions raised by member.__new__ will get converted to a
-            # RuntimeError, so get that original exception back and raise it instead
-            exc = e.__cause__ or e
-        if exc is not None:
-            raise exc
-        #
+        except Exception as e:
+            # since 3.12 the note "Error calling __set_name__ on '_proto_member' instance ..."
+            # is tacked on to the error instead of raising a RuntimeError, so discard it
+            if hasattr(e, '__notes__'):
+                del e.__notes__
+            raise
         # update classdict with any changes made by __init_subclass__
         classdict.update(enum_class.__dict__)
         #
@@ -706,7 +717,7 @@ class EnumType(type):
         """
         return True
 
-    def __call__(cls, value, names=None, *values, module=None, qualname=None, type=None, start=1, boundary=None):
+    def __call__(cls, value, names=_not_given, *values, module=None, qualname=None, type=None, start=1, boundary=None):
         """
         Either returns an existing member, or creates a new enum class.
 
@@ -735,13 +746,18 @@ class EnumType(type):
         """
         if cls._member_map_:
             # simple value lookup if members exist
-            if names:
+            if names is not _not_given:
                 value = (value, names) + values
             return cls.__new__(cls, value)
         # otherwise, functional API: we're creating a new Enum type
+        if names is _not_given and type is None:
+            # no body? no data-type? possibly wrong usage
+            raise TypeError(
+                    f"{cls} has no members; specify `names=()` if you meant to create a new, empty, enum"
+                    )
         return cls._create_(
                 class_name=value,
-                names=names,
+                names=None if names is _not_given else names,
                 module=module,
                 qualname=qualname,
                 type=type,
@@ -755,10 +771,15 @@ class EnumType(type):
         `value` is in `cls` if:
         1) `value` is a member of `cls`, or
         2) `value` is the value of one of the `cls`'s members.
+        3) `value` is a pseudo-member (flags)
         """
         if isinstance(value, cls):
             return True
-        return value in cls._value2member_map_ or value in cls._unhashable_values_
+        try:
+            cls(value)
+            return True
+        except ValueError:
+            return value in cls._unhashable_values_
 
     def __delattr__(cls, attr):
         # nicer error message when someone tries to delete an attribute
@@ -865,6 +886,8 @@ class EnumType(type):
                 value = first_enum._generate_next_value_(name, start, count, last_values[:])
                 last_values.append(value)
                 names.append((name, value))
+        if names is None:
+            names = ()
 
         # Here, names is either an iterable of (name, value) or a mapping.
         for item in names:
@@ -1121,6 +1144,11 @@ class Enum(metaclass=EnumType):
             for member in cls._member_map_.values():
                 if member._value_ == value:
                     return member
+        # still not found -- verify that members exist, in-case somebody got here mistakenly
+        # (such as via super when trying to override __new__)
+        if not cls._member_map_:
+            raise TypeError("%r has no members defined" % cls)
+        #
         # still not found -- try _missing_ hook
         try:
             exc = None
@@ -1205,14 +1233,13 @@ class Enum(metaclass=EnumType):
 
     def __dir__(self):
         """
-        Returns all members and all public methods
+        Returns public methods and other interesting attributes.
         """
-        if self.__class__._member_type_ is object:
-            interesting = set(['__class__', '__doc__', '__eq__', '__hash__', '__module__', 'name', 'value'])
-        else:
+        interesting = set()
+        if self.__class__._member_type_ is not object:
             interesting = set(object.__dir__(self))
         for name in getattr(self, '__dict__', []):
-            if name[0] != '_':
+            if name[0] != '_' and name not in self._member_map_:
                 interesting.add(name)
         for cls in self.__class__.mro():
             for name, obj in cls.__dict__.items():
@@ -1225,7 +1252,7 @@ class Enum(metaclass=EnumType):
                     else:
                         # in case it was added by `dir(self)`
                         interesting.discard(name)
-                else:
+                elif name not in self._member_map_:
                     interesting.add(name)
         names = sorted(
                 set(['__class__', '__doc__', '__eq__', '__hash__', '__module__'])
@@ -1513,37 +1540,50 @@ class Flag(Enum, boundary=STRICT):
     def __bool__(self):
         return bool(self._value_)
 
+    def _get_value(self, flag):
+        if isinstance(flag, self.__class__):
+            return flag._value_
+        elif self._member_type_ is not object and isinstance(flag, self._member_type_):
+            return flag
+        return NotImplemented
+
     def __or__(self, other):
-        if isinstance(other, self.__class__):
-            other = other._value_
-        elif self._member_type_ is not object and isinstance(other, self._member_type_):
-            other = other
-        else:
+        other_value = self._get_value(other)
+        if other_value is NotImplemented:
             return NotImplemented
+
+        for flag in self, other:
+            if self._get_value(flag) is None:
+                raise TypeError(f"'{flag}' cannot be combined with other flags with |")
         value = self._value_
-        return self.__class__(value | other)
+        return self.__class__(value | other_value)
 
     def __and__(self, other):
-        if isinstance(other, self.__class__):
-            other = other._value_
-        elif self._member_type_ is not object and isinstance(other, self._member_type_):
-            other = other
-        else:
+        other_value = self._get_value(other)
+        if other_value is NotImplemented:
             return NotImplemented
+
+        for flag in self, other:
+            if self._get_value(flag) is None:
+                raise TypeError(f"'{flag}' cannot be combined with other flags with &")
         value = self._value_
-        return self.__class__(value & other)
+        return self.__class__(value & other_value)
 
     def __xor__(self, other):
-        if isinstance(other, self.__class__):
-            other = other._value_
-        elif self._member_type_ is not object and isinstance(other, self._member_type_):
-            other = other
-        else:
+        other_value = self._get_value(other)
+        if other_value is NotImplemented:
             return NotImplemented
+
+        for flag in self, other:
+            if self._get_value(flag) is None:
+                raise TypeError(f"'{flag}' cannot be combined with other flags with ^")
         value = self._value_
-        return self.__class__(value ^ other)
+        return self.__class__(value ^ other_value)
 
     def __invert__(self):
+        if self._get_value(self) is None:
+            raise TypeError(f"'{self}' cannot be inverted")
+
         if self._inverted_ is None:
             if self._boundary_ in (EJECT, KEEP):
                 self._inverted_ = self.__class__(~self._value_)
@@ -1610,7 +1650,7 @@ def global_flag_repr(self):
     cls_name = self.__class__.__name__
     if self._name_ is None:
         return "%s.%s(%r)" % (module, cls_name, self._value_)
-    if _is_single_bit(self):
+    if _is_single_bit(self._value_):
         return '%s.%s' % (module, self._name_)
     if self._boundary_ is not FlagBoundary.KEEP:
         return '|'.join(['%s.%s' % (module, name) for name in self.name.split('|')])

@@ -186,7 +186,6 @@ create_converter('LPCVOID', '" F_POINTER "')
 
 create_converter('BOOL', 'i') # F_BOOL used previously (always 'i')
 create_converter('DWORD', 'k') # F_DWORD is always "k" (which is much shorter)
-create_converter('LPCTSTR', 's')
 create_converter('UINT', 'I') # F_UINT used previously (always 'I')
 
 class LPCWSTR_converter(Py_UNICODE_converter):
@@ -221,7 +220,7 @@ class LPVOID_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = HANDLE_TO_PYNUM(_return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=011ee0c3a2244bfe]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=ae30321c4cb150dd]*/
 
 #include "clinic/_winapi.c.h"
 
@@ -439,7 +438,7 @@ _winapi_ConnectNamedPipe_impl(PyObject *module, HANDLE handle,
 /*[clinic input]
 _winapi.CreateFile -> HANDLE
 
-    file_name: LPCTSTR
+    file_name: LPCWSTR
     desired_access: DWORD
     share_mode: DWORD
     security_attributes: LPSECURITY_ATTRIBUTES
@@ -450,30 +449,31 @@ _winapi.CreateFile -> HANDLE
 [clinic start generated code]*/
 
 static HANDLE
-_winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
+_winapi_CreateFile_impl(PyObject *module, LPCWSTR file_name,
                         DWORD desired_access, DWORD share_mode,
                         LPSECURITY_ATTRIBUTES security_attributes,
                         DWORD creation_disposition,
                         DWORD flags_and_attributes, HANDLE template_file)
-/*[clinic end generated code: output=417ddcebfc5a3d53 input=6423c3e40372dbd5]*/
+/*[clinic end generated code: output=818c811e5e04d550 input=1fa870ed1c2e3d69]*/
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.CreateFile", "uIIII",
+    if (PySys_Audit("_winapi.CreateFile", "ukkkk",
                     file_name, desired_access, share_mode,
                     creation_disposition, flags_and_attributes) < 0) {
         return INVALID_HANDLE_VALUE;
     }
 
     Py_BEGIN_ALLOW_THREADS
-    handle = CreateFile(file_name, desired_access,
-                        share_mode, security_attributes,
-                        creation_disposition,
-                        flags_and_attributes, template_file);
+    handle = CreateFileW(file_name, desired_access,
+                         share_mode, security_attributes,
+                         creation_disposition,
+                         flags_and_attributes, template_file);
     Py_END_ALLOW_THREADS
 
-    if (handle == INVALID_HANDLE_VALUE)
+    if (handle == INVALID_HANDLE_VALUE) {
         PyErr_SetFromWindowsErr(0);
+    }
 
     return handle;
 }
@@ -530,7 +530,12 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 {
     /* Privilege adjustment */
     HANDLE token = NULL;
-    TOKEN_PRIVILEGES tp;
+    struct {
+        TOKEN_PRIVILEGES base;
+        /* overallocate by a few array elements */
+        LUID_AND_ATTRIBUTES privs[4];
+    } tp, previousTp;
+    int previousTpSize = 0;
 
     /* Reparse data buffer */
     const USHORT prefix_len = 4;
@@ -554,17 +559,21 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 
     /* Adjust privileges to allow rewriting directory entry as a
        junction point. */
-    if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &token))
+    if (!OpenProcessToken(GetCurrentProcess(),
+                          TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY, &token)) {
         goto cleanup;
+    }
 
-    if (!LookupPrivilegeValue(NULL, SE_RESTORE_NAME, &tp.Privileges[0].Luid))
+    if (!LookupPrivilegeValue(NULL, SE_RESTORE_NAME, &tp.base.Privileges[0].Luid)) {
         goto cleanup;
+    }
 
-    tp.PrivilegeCount = 1;
-    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
-    if (!AdjustTokenPrivileges(token, FALSE, &tp, sizeof(TOKEN_PRIVILEGES),
-                               NULL, NULL))
+    tp.base.PrivilegeCount = 1;
+    tp.base.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+    if (!AdjustTokenPrivileges(token, FALSE, &tp.base, sizeof(previousTp),
+                               &previousTp.base, &previousTpSize)) {
         goto cleanup;
+    }
 
     if (GetFileAttributesW(src_path) == INVALID_FILE_ATTRIBUTES)
         goto cleanup;
@@ -645,6 +654,11 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
 cleanup:
     ret = GetLastError();
 
+    if (previousTpSize) {
+        AdjustTokenPrivileges(token, FALSE, &previousTp.base, previousTpSize,
+                              NULL, NULL);
+    }
+
     if (token != NULL)
         CloseHandle(token);
     if (junction != NULL)
@@ -660,7 +674,7 @@ cleanup:
 /*[clinic input]
 _winapi.CreateNamedPipe -> HANDLE
 
-    name: LPCTSTR
+    name: LPCWSTR
     open_mode: DWORD
     pipe_mode: DWORD
     max_instances: DWORD
@@ -672,25 +686,25 @@ _winapi.CreateNamedPipe -> HANDLE
 [clinic start generated code]*/
 
 static HANDLE
-_winapi_CreateNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD open_mode,
+_winapi_CreateNamedPipe_impl(PyObject *module, LPCWSTR name, DWORD open_mode,
                              DWORD pipe_mode, DWORD max_instances,
                              DWORD out_buffer_size, DWORD in_buffer_size,
                              DWORD default_timeout,
                              LPSECURITY_ATTRIBUTES security_attributes)
-/*[clinic end generated code: output=80f8c07346a94fbc input=5a73530b84d8bc37]*/
+/*[clinic end generated code: output=7d6fde93227680ba input=5bd4e4a55639ee02]*/
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.CreateNamedPipe", "uII",
+    if (PySys_Audit("_winapi.CreateNamedPipe", "ukk",
                     name, open_mode, pipe_mode) < 0) {
         return INVALID_HANDLE_VALUE;
     }
 
     Py_BEGIN_ALLOW_THREADS
-    handle = CreateNamedPipe(name, open_mode, pipe_mode,
-                             max_instances, out_buffer_size,
-                             in_buffer_size, default_timeout,
-                             security_attributes);
+    handle = CreateNamedPipeW(name, open_mode, pipe_mode,
+                              max_instances, out_buffer_size,
+                              in_buffer_size, default_timeout,
+                              security_attributes);
     Py_END_ALLOW_THREADS
 
     if (handle == INVALID_HANDLE_VALUE)
@@ -772,12 +786,157 @@ gethandle(PyObject* obj, const char* name)
     return ret;
 }
 
+static PyObject *
+sortenvironmentkey(PyObject *module, PyObject *item)
+{
+    return _winapi_LCMapStringEx_impl(NULL, LOCALE_NAME_INVARIANT,
+                                      LCMAP_UPPERCASE, item);
+}
+
+static PyMethodDef sortenvironmentkey_def = {
+    "sortenvironmentkey", _PyCFunction_CAST(sortenvironmentkey), METH_O, "",
+};
+
+static int
+sort_environment_keys(PyObject *keys)
+{
+    PyObject *keyfunc = PyCFunction_New(&sortenvironmentkey_def, NULL);
+    if (keyfunc == NULL) {
+        return -1;
+    }
+    PyObject *kwnames = Py_BuildValue("(s)", "key");
+    if (kwnames == NULL) {
+        Py_DECREF(keyfunc);
+        return -1;
+    }
+    PyObject *args[] = { keys, keyfunc };
+    PyObject *ret = PyObject_VectorcallMethod(&_Py_ID(sort), args, 1, kwnames);
+    Py_DECREF(keyfunc);
+    Py_DECREF(kwnames);
+    if (ret == NULL) {
+        return -1;
+    }
+    Py_DECREF(ret);
+
+    return 0;
+}
+
+static int
+compare_string_ordinal(PyObject *str1, PyObject *str2, int *result)
+{
+    wchar_t *s1 = PyUnicode_AsWideCharString(str1, NULL);
+    if (s1 == NULL) {
+        return -1;
+    }
+    wchar_t *s2 = PyUnicode_AsWideCharString(str2, NULL);
+    if (s2 == NULL) {
+        PyMem_Free(s1);
+        return -1;
+    }
+    *result = CompareStringOrdinal(s1, -1, s2, -1, TRUE);
+    PyMem_Free(s1);
+    PyMem_Free(s2);
+    return 0;
+}
+
+static PyObject *
+dedup_environment_keys(PyObject *keys)
+{
+    PyObject *result = PyList_New(0);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    // Iterate over the pre-ordered keys, check whether the current key is equal
+    // to the next key (ignoring case), if different, insert the current value
+    // into the result list. If they are equal, do nothing because we always
+    // want to keep the last inserted one.
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(keys); i++) {
+        PyObject *key = PyList_GET_ITEM(keys, i);
+
+        // The last key will always be kept.
+        if (i + 1 == PyList_GET_SIZE(keys)) {
+            if (PyList_Append(result, key) < 0) {
+                Py_DECREF(result);
+                return NULL;
+            }
+            continue;
+        }
+
+        PyObject *next_key = PyList_GET_ITEM(keys, i + 1);
+        int compare_result;
+        if (compare_string_ordinal(key, next_key, &compare_result) < 0) {
+            Py_DECREF(result);
+            return NULL;
+        }
+        if (compare_result == CSTR_EQUAL) {
+            continue;
+        }
+        if (PyList_Append(result, key) < 0) {
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
+
+    return result;
+}
+
+static PyObject *
+normalize_environment(PyObject *environment)
+{
+    PyObject *keys = PyMapping_Keys(environment);
+    if (keys == NULL) {
+        return NULL;
+    }
+
+    if (sort_environment_keys(keys) < 0) {
+        Py_DECREF(keys);
+        return NULL;
+    }
+
+    PyObject *normalized_keys = dedup_environment_keys(keys);
+    Py_DECREF(keys);
+    if (normalized_keys == NULL) {
+        return NULL;
+    }
+
+    PyObject *result = PyDict_New();
+    if (result == NULL) {
+        Py_DECREF(normalized_keys);
+        return NULL;
+    }
+
+    for (int i = 0; i < PyList_GET_SIZE(normalized_keys); i++) {
+        PyObject *key = PyList_GET_ITEM(normalized_keys, i);
+        PyObject *value = PyObject_GetItem(environment, key);
+        if (value == NULL) {
+            Py_DECREF(normalized_keys);
+            Py_DECREF(result);
+            return NULL;
+        }
+
+        int ret = PyObject_SetItem(result, key, value);
+        Py_DECREF(value);
+        if (ret < 0) {
+            Py_DECREF(normalized_keys);
+            Py_DECREF(result);
+            return NULL;
+        }
+    }
+
+    Py_DECREF(normalized_keys);
+
+    return result;
+}
+
 static wchar_t *
 getenvironment(PyObject* environment)
 {
     Py_ssize_t i, envsize, totalsize;
     wchar_t *buffer = NULL, *p, *end;
-    PyObject *keys, *values;
+    PyObject *normalized_environment = NULL;
+    PyObject *keys = NULL;
+    PyObject *values = NULL;
 
     /* convert environment dictionary to windows environment string */
     if (! PyMapping_Check(environment)) {
@@ -786,11 +945,16 @@ getenvironment(PyObject* environment)
         return NULL;
     }
 
-    keys = PyMapping_Keys(environment);
-    if (!keys) {
+    normalized_environment = normalize_environment(environment);
+    if (normalized_environment == NULL) {
         return NULL;
     }
-    values = PyMapping_Values(environment);
+
+    keys = PyMapping_Keys(normalized_environment);
+    if (!keys) {
+        goto error;
+    }
+    values = PyMapping_Values(normalized_environment);
     if (!values) {
         goto error;
     }
@@ -882,6 +1046,7 @@ getenvironment(PyObject* environment)
 
 cleanup:
 error:
+    Py_XDECREF(normalized_environment);
     Py_XDECREF(keys);
     Py_XDECREF(values);
     return buffer;
@@ -1286,6 +1451,49 @@ _winapi_GetLastError_impl(PyObject *module)
     return GetLastError();
 }
 
+
+/*[clinic input]
+_winapi.GetLongPathName
+
+    path: LPCWSTR
+
+Return the long version of the provided path.
+
+If the path is already in its long form, returns the same value.
+
+The path must already be a 'str'. If the type is not known, use
+os.fsdecode before calling this function.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetLongPathName_impl(PyObject *module, LPCWSTR path)
+/*[clinic end generated code: output=c4774b080275a2d0 input=9872e211e3a4a88f]*/
+{
+    DWORD cchBuffer;
+    PyObject *result = NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    cchBuffer = GetLongPathNameW(path, NULL, 0);
+    Py_END_ALLOW_THREADS
+    if (cchBuffer) {
+        WCHAR *buffer = (WCHAR *)PyMem_Malloc(cchBuffer * sizeof(WCHAR));
+        if (buffer) {
+            Py_BEGIN_ALLOW_THREADS
+            cchBuffer = GetLongPathNameW(path, buffer, cchBuffer);
+            Py_END_ALLOW_THREADS
+            if (cchBuffer) {
+                result = PyUnicode_FromWideChar(buffer, cchBuffer);
+            } else {
+                PyErr_SetFromWindowsErr(0);
+            }
+            PyMem_Free((void *)buffer);
+        }
+    } else {
+        PyErr_SetFromWindowsErr(0);
+    }
+    return result;
+}
+
 /*[clinic input]
 _winapi.GetModuleFileName
 
@@ -1318,6 +1526,48 @@ _winapi_GetModuleFileName_impl(PyObject *module, HMODULE module_handle)
         return PyErr_SetFromWindowsErr(GetLastError());
 
     return PyUnicode_FromWideChar(filename, wcslen(filename));
+}
+
+/*[clinic input]
+_winapi.GetShortPathName
+
+    path: LPCWSTR
+
+Return the short version of the provided path.
+
+If the path is already in its short form, returns the same value.
+
+The path must already be a 'str'. If the type is not known, use
+os.fsdecode before calling this function.
+[clinic start generated code]*/
+
+static PyObject *
+_winapi_GetShortPathName_impl(PyObject *module, LPCWSTR path)
+/*[clinic end generated code: output=dab6ae494c621e81 input=43fa349aaf2ac718]*/
+{
+    DWORD cchBuffer;
+    PyObject *result = NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    cchBuffer = GetShortPathNameW(path, NULL, 0);
+    Py_END_ALLOW_THREADS
+    if (cchBuffer) {
+        WCHAR *buffer = (WCHAR *)PyMem_Malloc(cchBuffer * sizeof(WCHAR));
+        if (buffer) {
+            Py_BEGIN_ALLOW_THREADS
+            cchBuffer = GetShortPathNameW(path, buffer, cchBuffer);
+            Py_END_ALLOW_THREADS
+            if (cchBuffer) {
+                result = PyUnicode_FromWideChar(buffer, cchBuffer);
+            } else {
+                PyErr_SetFromWindowsErr(0);
+            }
+            PyMem_Free((void *)buffer);
+        }
+    } else {
+        PyErr_SetFromWindowsErr(0);
+    }
+    return result;
 }
 
 /*[clinic input]
@@ -1469,7 +1719,7 @@ _winapi_OpenProcess_impl(PyObject *module, DWORD desired_access,
 {
     HANDLE handle;
 
-    if (PySys_Audit("_winapi.OpenProcess", "II",
+    if (PySys_Audit("_winapi.OpenProcess", "kk",
                     process_id, desired_access) < 0) {
         return INVALID_HANDLE_VALUE;
     }
@@ -1538,40 +1788,56 @@ _winapi.LCMapStringEx
 
     locale: LPCWSTR
     flags: DWORD
-    src: LPCWSTR
+    src: unicode
 
 [clinic start generated code]*/
 
 static PyObject *
 _winapi_LCMapStringEx_impl(PyObject *module, LPCWSTR locale, DWORD flags,
-                           LPCWSTR src)
-/*[clinic end generated code: output=cf4713d80e2b47c9 input=9fe26f95d5ab0001]*/
+                           PyObject *src)
+/*[clinic end generated code: output=b90e6b26e028ff0a input=3e3dcd9b8164012f]*/
 {
     if (flags & (LCMAP_SORTHANDLE | LCMAP_HASH | LCMAP_BYTEREV |
                  LCMAP_SORTKEY)) {
         return PyErr_Format(PyExc_ValueError, "unsupported flags");
     }
 
-    int dest_size = LCMapStringEx(locale, flags, src, -1, NULL, 0,
+    Py_ssize_t src_size;
+    wchar_t *src_ = PyUnicode_AsWideCharString(src, &src_size);
+    if (!src_) {
+        return NULL;
+    }
+    if (src_size > INT_MAX) {
+        PyMem_Free(src_);
+        PyErr_SetString(PyExc_OverflowError, "input string is too long");
+        return NULL;
+    }
+
+    int dest_size = LCMapStringEx(locale, flags, src_, (int)src_size, NULL, 0,
                                   NULL, NULL, 0);
-    if (dest_size == 0) {
-        return PyErr_SetFromWindowsErr(0);
+    if (dest_size <= 0) {
+        DWORD error = GetLastError();
+        PyMem_Free(src_);
+        return PyErr_SetFromWindowsErr(error);
     }
 
     wchar_t* dest = PyMem_NEW(wchar_t, dest_size);
     if (dest == NULL) {
+        PyMem_Free(src_);
         return PyErr_NoMemory();
     }
 
-    int nmapped = LCMapStringEx(locale, flags, src, -1, dest, dest_size,
+    int nmapped = LCMapStringEx(locale, flags, src_, (int)src_size, dest, dest_size,
                                 NULL, NULL, 0);
-    if (nmapped == 0) {
+    if (nmapped <= 0) {
         DWORD error = GetLastError();
+        PyMem_Free(src_);
         PyMem_DEL(dest);
         return PyErr_SetFromWindowsErr(error);
     }
 
-    PyObject *ret = PyUnicode_FromWideChar(dest, dest_size - 1);
+    PyMem_Free(src_);
+    PyObject *ret = PyUnicode_FromWideChar(dest, nmapped);
     PyMem_DEL(dest);
 
     return ret;
@@ -1738,19 +2004,19 @@ _winapi_VirtualQuerySize_impl(PyObject *module, LPCVOID address)
 /*[clinic input]
 _winapi.WaitNamedPipe
 
-    name: LPCTSTR
+    name: LPCWSTR
     timeout: DWORD
     /
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_WaitNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD timeout)
-/*[clinic end generated code: output=c2866f4439b1fe38 input=36fc781291b1862c]*/
+_winapi_WaitNamedPipe_impl(PyObject *module, LPCWSTR name, DWORD timeout)
+/*[clinic end generated code: output=e161e2e630b3e9c2 input=099a4746544488fa]*/
 {
     BOOL success;
 
     Py_BEGIN_ALLOW_THREADS
-    success = WaitNamedPipe(name, timeout);
+    success = WaitNamedPipeW(name, timeout);
     Py_END_ALLOW_THREADS
 
     if (!success)
@@ -2002,7 +2268,7 @@ _winapi__mimetypes_read_windows_registry_impl(PyObject *module,
         }
 
         err = RegOpenKeyExW(hkcr, ext, 0, KEY_READ, &subkey);
-        if (err == ERROR_FILE_NOT_FOUND) {
+        if (err == ERROR_FILE_NOT_FOUND || err == ERROR_ACCESS_DENIED) {
             err = ERROR_SUCCESS;
             continue;
         } else if (err != ERROR_SUCCESS) {
@@ -2115,7 +2381,7 @@ _winapi_CopyFile2_impl(PyObject *module, LPCWSTR existing_file_name,
     HRESULT hr;
     COPYFILE2_EXTENDED_PARAMETERS params = { sizeof(COPYFILE2_EXTENDED_PARAMETERS) };
 
-    if (PySys_Audit("_winapi.CopyFile2", "uuI",
+    if (PySys_Audit("_winapi.CopyFile2", "uuk",
                     existing_file_name, new_file_name, flags) < 0) {
         return NULL;
     }
@@ -2163,7 +2429,9 @@ static PyMethodDef winapi_functions[] = {
     _WINAPI_GETCURRENTPROCESS_METHODDEF
     _WINAPI_GETEXITCODEPROCESS_METHODDEF
     _WINAPI_GETLASTERROR_METHODDEF
+    _WINAPI_GETLONGPATHNAME_METHODDEF
     _WINAPI_GETMODULEFILENAME_METHODDEF
+    _WINAPI_GETSHORTPATHNAME_METHODDEF
     _WINAPI_GETSTDHANDLE_METHODDEF
     _WINAPI_GETVERSION_METHODDEF
     _WINAPI_MAPVIEWOFFILE_METHODDEF

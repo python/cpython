@@ -68,22 +68,31 @@ _global_shutdown = False
 class _ThreadWakeup:
     def __init__(self):
         self._closed = False
+        self._lock = threading.Lock()
         self._reader, self._writer = mp.Pipe(duplex=False)
 
     def close(self):
-        if not self._closed:
-            self._closed = True
-            self._writer.close()
-            self._reader.close()
+        # Please note that we do not take the self._lock when
+        # calling clear() (to avoid deadlocking) so this method can
+        # only be called safely from the same thread as all calls to
+        # clear() even if you hold the lock. Otherwise we
+        # might try to read from the closed pipe.
+        with self._lock:
+            if not self._closed:
+                self._closed = True
+                self._writer.close()
+                self._reader.close()
 
     def wakeup(self):
-        if not self._closed:
-            self._writer.send_bytes(b"")
+        with self._lock:
+            if not self._closed:
+                self._writer.send_bytes(b"")
 
     def clear(self):
-        if not self._closed:
-            while self._reader.poll():
-                self._reader.recv_bytes()
+        if self._closed:
+            raise RuntimeError('operation on closed _ThreadWakeup')
+        while self._reader.poll():
+            self._reader.recv_bytes()
 
 
 def _python_exit():
@@ -162,10 +171,8 @@ class _CallItem(object):
 
 class _SafeQueue(Queue):
     """Safe Queue set exception to the future object linked to a job"""
-    def __init__(self, max_size=0, *, ctx, pending_work_items, shutdown_lock,
-                 thread_wakeup):
+    def __init__(self, max_size=0, *, ctx, pending_work_items, thread_wakeup):
         self.pending_work_items = pending_work_items
-        self.shutdown_lock = shutdown_lock
         self.thread_wakeup = thread_wakeup
         super().__init__(max_size, ctx=ctx)
 
@@ -174,8 +181,7 @@ class _SafeQueue(Queue):
             tb = format_exception(type(e), e, e.__traceback__)
             e.__cause__ = _RemoteTraceback('\n"""\n{}"""'.format(''.join(tb)))
             work_item = self.pending_work_items.pop(obj.work_id, None)
-            with self.shutdown_lock:
-                self.thread_wakeup.wakeup()
+            self.thread_wakeup.wakeup()
             # work_item can be None if another process terminated. In this
             # case, the executor_manager_thread fails all work_items
             # with BrokenProcessPool
@@ -300,12 +306,10 @@ class _ExecutorManagerThread(threading.Thread):
         # will wake up the queue management thread so that it can terminate
         # if there is no pending work item.
         def weakref_cb(_,
-                       thread_wakeup=self.thread_wakeup,
-                       shutdown_lock=self.shutdown_lock):
+                       thread_wakeup=self.thread_wakeup):
             mp.util.debug('Executor collected: triggering callback for'
                           ' QueueManager wakeup')
-            with shutdown_lock:
-                thread_wakeup.wakeup()
+            thread_wakeup.wakeup()
 
         self.executor_reference = weakref.ref(executor, weakref_cb)
 
@@ -336,7 +340,14 @@ class _ExecutorManagerThread(threading.Thread):
         # Main loop for the executor manager thread.
 
         while True:
-            self.add_call_item_to_queue()
+            # gh-109047: During Python finalization, self.call_queue.put()
+            # creation of a thread can fail with RuntimeError.
+            try:
+                self.add_call_item_to_queue()
+            except BaseException as exc:
+                cause = format_exception(exc)
+                self.terminate_broken(cause)
+                return
 
             result_item, is_broken, cause = self.wait_result_broken_or_wakeup()
 
@@ -420,14 +431,13 @@ class _ExecutorManagerThread(threading.Thread):
             try:
                 result_item = result_reader.recv()
                 is_broken = False
-            except BaseException as e:
-                cause = format_exception(type(e), e, e.__traceback__)
+            except BaseException as exc:
+                cause = format_exception(exc)
 
         elif wakeup_reader in ready:
             is_broken = False
 
-        with self.shutdown_lock:
-            self.thread_wakeup.clear()
+        self.thread_wakeup.clear()
 
         return result_item, is_broken, cause
 
@@ -464,7 +474,7 @@ class _ExecutorManagerThread(threading.Thread):
         return (_global_shutdown or executor is None
                 or executor._shutdown_thread)
 
-    def terminate_broken(self, cause):
+    def _terminate_broken(self, cause):
         # Terminate the executor because it is in a broken state. The cause
         # argument can be used to display more information on the error that
         # lead the executor into becoming broken.
@@ -489,7 +499,14 @@ class _ExecutorManagerThread(threading.Thread):
 
         # Mark pending tasks as failed.
         for work_id, work_item in self.pending_work_items.items():
-            work_item.future.set_exception(bpe)
+            try:
+                work_item.future.set_exception(bpe)
+            except _base.InvalidStateError:
+                # set_exception() fails if the future is cancelled: ignore it.
+                # Trying to check if the future is cancelled before calling
+                # set_exception() would leave a race condition if the future is
+                # cancelled between the check and set_exception().
+                pass
             # Delete references to object. See issue16284
             del work_item
         self.pending_work_items.clear()
@@ -499,12 +516,14 @@ class _ExecutorManagerThread(threading.Thread):
         for p in self.processes.values():
             p.terminate()
 
-        # Prevent queue writing to a pipe which is no longer read.
-        # https://github.com/python/cpython/issues/94777
-        self.call_queue._reader.close()
+        self.call_queue._terminate_broken()
 
         # clean up resources
-        self.join_executor_internals()
+        self._join_executor_internals(broken=True)
+
+    def terminate_broken(self, cause):
+        with self.shutdown_lock:
+            self._terminate_broken(cause)
 
     def flag_executor_shutting_down(self):
         # Flag the executor as shutting down and cancel remaining tasks if
@@ -547,15 +566,24 @@ class _ExecutorManagerThread(threading.Thread):
                     break
 
     def join_executor_internals(self):
-        self.shutdown_workers()
+        with self.shutdown_lock:
+            self._join_executor_internals()
+
+    def _join_executor_internals(self, broken=False):
+        # If broken, call_queue was closed and so can no longer be used.
+        if not broken:
+            self.shutdown_workers()
+
         # Release the queue's resources as soon as possible.
         self.call_queue.close()
         self.call_queue.join_thread()
-        with self.shutdown_lock:
-            self.thread_wakeup.close()
+        self.thread_wakeup.close()
+
         # If .join() is not called on the created processes then
         # some ctx.Queue methods may deadlock on Mac OS X.
         for p in self.processes.values():
+            if broken:
+                p.terminate()
             p.join()
 
     def get_n_children_alive(self):
@@ -706,7 +734,9 @@ class ProcessPoolExecutor(_base.Executor):
         # as it could result in a deadlock if a worker process dies with the
         # _result_queue write lock still acquired.
         #
-        # _shutdown_lock must be locked to access _ThreadWakeup.
+        # Care must be taken to only call clear and close from the
+        # executor_manager_thread, since _ThreadWakeup.clear() is not protected
+        # by a lock.
         self._executor_manager_thread_wakeup = _ThreadWakeup()
 
         # Create communication channels for the executor
@@ -717,7 +747,6 @@ class ProcessPoolExecutor(_base.Executor):
         self._call_queue = _SafeQueue(
             max_size=queue_size, ctx=self._mp_context,
             pending_work_items=self._pending_work_items,
-            shutdown_lock=self._shutdown_lock,
             thread_wakeup=self._executor_manager_thread_wakeup)
         # Killed worker processes can produce spurious "broken pipe"
         # tracebacks in the queue's own worker thread. But we detect killed

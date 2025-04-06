@@ -76,6 +76,7 @@ import bdb
 import dis
 import code
 import glob
+import token
 import pprint
 import signal
 import inspect
@@ -95,7 +96,7 @@ __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
            "post_mortem", "help"]
 
 def find_function(funcname, filename):
-    cre = re.compile(r'def\s+%s\s*[(]' % re.escape(funcname))
+    cre = re.compile(r'def\s+%s(\s*\[.+\])?\s*[(]' % re.escape(funcname))
     try:
         fp = tokenize.open(filename)
     except OSError:
@@ -136,6 +137,9 @@ class _ScriptTarget(str):
         if not os.path.exists(self):
             print('Error:', self.orig, 'does not exist')
             sys.exit(1)
+        if os.path.isdir(self):
+            print('Error:', self.orig, 'is a directory')
+            sys.exit(1)
 
         # Replace pdb's dir with script's dir in front of module search path.
         sys.path[0] = os.path.dirname(self)
@@ -150,6 +154,7 @@ class _ScriptTarget(str):
             __name__='__main__',
             __file__=self,
             __builtins__=__builtins__,
+            __spec__=None,
         )
 
     @property
@@ -162,6 +167,9 @@ class _ModuleTarget(str):
     def check(self):
         try:
             self._details
+        except ImportError as e:
+            print(f"ImportError: {e}")
+            sys.exit(1)
         except Exception:
             traceback.print_exc()
             sys.exit(1)
@@ -273,6 +281,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if hasattr(self, 'curframe') and self.curframe:
             self.curframe.f_globals.pop('__pdb_convenience_variables', None)
         self.curframe = None
+        self.curframe_locals = {}
         self.tb_lineno.clear()
 
     def setup(self, f, tb):
@@ -291,26 +300,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # cache it here to ensure that modifications are not overwritten.
         self.curframe_locals = self.curframe.f_locals
         self.set_convenience_variable(self.curframe, '_frame', self.curframe)
-        return self.execRcLines()
 
-    # Can be executed earlier than 'setup' if desired
-    def execRcLines(self):
-        if not self.rcLines:
-            return
-        # local copy because of recursion
-        rcLines = self.rcLines
-        rcLines.reverse()
-        # execute every line only once
-        self.rcLines = []
-        while rcLines:
-            line = rcLines.pop().strip()
-            if line and line[0] != '#':
-                if self.onecmd(line):
-                    # if onecmd returns True, the command wants to exit
-                    # from the interaction, save leftover rc lines
-                    # to execute before next interaction
-                    self.rcLines += reversed(rcLines)
-                    return True
+        if self.rcLines:
+            self.cmdqueue = [
+                line for line in self.rcLines
+                if line.strip() and not line.strip().startswith("#")
+            ]
+            self.rcLines = []
 
     # Override Bdb methods
 
@@ -326,8 +322,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     def user_line(self, frame):
         """This function is called when we stop or break at this line."""
         if self._wait_for_mainpyfile:
-            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)
-                or frame.f_lineno <= 0):
+            if (self.mainpyfile != self.canonic(frame.f_code.co_filename)):
                 return
             self._wait_for_mainpyfile = False
         if self.bp_commands(frame):
@@ -400,7 +395,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     # Called before loop, handles display expressions
     # Set up convenience variable containers
-    def preloop(self):
+    def _show_display(self):
         displaying = self.displaying.get(self.curframe)
         if displaying:
             for expr, oldvalue in displaying.items():
@@ -410,8 +405,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 # fields are changed to be displayed
                 if newvalue is not oldvalue and newvalue != oldvalue:
                     displaying[expr] = newvalue
-                    self.message('display %s: %r  [old: %r]' %
-                                 (expr, newvalue, oldvalue))
+                    self.message('display %s: %s  [old: %s]' %
+                                 (expr, self._safe_repr(newvalue, expr),
+                                  self._safe_repr(oldvalue, expr)))
 
     def interaction(self, frame, traceback):
         # Restore the previous signal handler at the Pdb prompt.
@@ -422,13 +418,17 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 pass
             else:
                 Pdb._previous_sigint_handler = None
-        if self.setup(frame, traceback):
-            # no interaction desired at this time (happens if .pdbrc contains
-            # a command like "continue")
-            self.forget()
-            return
-        self.print_stack_entry(self.stack[self.curindex])
+        self.setup(frame, traceback)
+        # We should print the stack entry if and only if the user input
+        # is expected, and we should print it right before the user input.
+        # We achieve this by appending _pdbcmd_print_frame_status to the
+        # command queue. If cmdqueue is not exausted, the user input is
+        # not expected and we will not print the stack entry.
+        self.cmdqueue.append('_pdbcmd_print_frame_status')
         self._cmdloop()
+        # If _pdbcmd_print_frame_status is not used, pop it out
+        if self.cmdqueue and self.cmdqueue[-1] == '_pdbcmd_print_frame_status':
+            self.cmdqueue.pop()
         self.forget()
 
     def displayhook(self, obj):
@@ -460,6 +460,39 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except:
             self._error_exc()
 
+    def _replace_convenience_variables(self, line):
+        """Replace the convenience variables in 'line' with their values.
+           e.g. $foo is replaced by __pdb_convenience_variables["foo"].
+           Note: such pattern in string literals will be skipped"""
+
+        if "$" not in line:
+            return line
+
+        dollar_start = dollar_end = -1
+        replace_variables = []
+        try:
+            for t in tokenize.generate_tokens(io.StringIO(line).readline):
+                token_type, token_string, start, end, _ = t
+                if token_type == token.OP and token_string == '$':
+                    dollar_start, dollar_end = start, end
+                elif start == dollar_end and token_type == token.NAME:
+                    # line is a one-line command so we only care about column
+                    replace_variables.append((dollar_start[1], end[1], token_string))
+        except tokenize.TokenError:
+            return line
+
+        if not replace_variables:
+            return line
+
+        last_end = 0
+        line_pieces = []
+        for start, end, name in replace_variables:
+            line_pieces.append(line[last_end:start] + f'__pdb_convenience_variables["{name}"]')
+            last_end = end
+        line_pieces.append(line[last_end:])
+
+        return ''.join(line_pieces)
+
     def precmd(self, line):
         """Handle alias expansion and ';;' separator."""
         if not line.strip():
@@ -481,11 +514,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             if marker >= 0:
                 # queue up everything after marker
                 next = line[marker+2:].lstrip()
-                self.cmdqueue.append(next)
+                self.cmdqueue.insert(0, next)
                 line = line[:marker].rstrip()
 
         # Replace all the convenience variables
-        line = re.sub(r'\$([a-zA-Z_][a-zA-Z0-9_]*)', r'__pdb_convenience_variables["\1"]', line)
+        line = self._replace_convenience_variables(line)
+
         return line
 
     def onecmd(self, line):
@@ -496,6 +530,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         a breakpoint command list definition.
         """
         if not self.commands_defining:
+            if line.startswith('_pdbcmd'):
+                command, arg, line = self.parseline(line)
+                if hasattr(self, command):
+                    return getattr(self, command)(arg)
             return cmd.Cmd.onecmd(self, line)
         else:
             return self.handle_command_def(line)
@@ -504,13 +542,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         """Handles one command line during command list definition."""
         cmd, arg, line = self.parseline(line)
         if not cmd:
-            return
+            return False
         if cmd == 'silent':
             self.commands_silent[self.commands_bnum] = True
-            return # continue to handle other cmd def in the cmd list
+            return False  # continue to handle other cmd def in the cmd list
         elif cmd == 'end':
-            self.cmdqueue = []
-            return 1 # end of cmd list
+            return True  # end of cmd list
         cmdlist = self.commands[self.commands_bnum]
         if arg:
             cmdlist.append(cmd+' '+arg)
@@ -524,9 +561,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         # one of the resuming commands
         if func.__name__ in self.commands_resuming:
             self.commands_doprompt[self.commands_bnum] = False
-            self.cmdqueue = []
-            return 1
-        return
+            return True
+        return False
 
     # interface abstraction functions
 
@@ -596,6 +632,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         else:
             # Complete a simple name.
             return [n for n in ns.keys() if n.startswith(text)]
+
+    # Pdb meta commands, only intended to be used internally by pdb
+
+    def _pdbcmd_print_frame_status(self, arg):
+        self.print_stack_entry(self.stack[self.curindex])
+        self._show_display()
 
     # Command definitions, called by cmdloop()
     # The argument is the remaining string on the command line
@@ -1264,7 +1306,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         for i in range(n):
             name = co.co_varnames[i]
             if name in dict:
-                self.message('%s = %r' % (name, dict[name]))
+                self.message('%s = %s' % (name, self._safe_repr(dict[name], name)))
             else:
                 self.message('%s = *** undefined ***' % (name,))
     do_a = do_args
@@ -1275,7 +1317,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         Print the return value for the last return of a function.
         """
         if '__return__' in self.curframe_locals:
-            self.message(repr(self.curframe_locals['__return__']))
+            self.message(self._safe_repr(self.curframe_locals['__return__'], "retval"))
         else:
             self.error('Not yet returned!')
     do_rv = do_retval
@@ -1309,6 +1351,12 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.message(func(val))
         except:
             self._error_exc()
+
+    def _safe_repr(self, obj, expr):
+        try:
+            return repr(obj)
+        except Exception as e:
+            return _rstr(f"*** repr({expr}) failed: {self._format_exc(e)} ***")
 
     def do_p(self, arg):
         """p expression
@@ -1486,8 +1534,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if not arg:
             if self.displaying:
                 self.message('Currently displaying:')
-                for item in self.displaying.get(self.curframe, {}).items():
-                    self.message('%s: %r' % item)
+                for key, val in self.displaying.get(self.curframe, {}).items():
+                    self.message('%s: %s' % (key, self._safe_repr(val, key)))
             else:
                 self.message('No expression is being displayed')
         else:
@@ -1496,7 +1544,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             else:
                 val = self._getval_except(arg)
                 self.displaying.setdefault(self.curframe, {})[arg] = val
-                self.message('display %s: %r' % (arg, val))
+                self.message('display %s: %s' % (arg, self._safe_repr(val, arg)))
 
     complete_display = _complete_expression
 
@@ -1559,8 +1607,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             for alias in keys:
                 self.message("%s = %s" % (alias, self.aliases[alias]))
             return
-        if args[0] in self.aliases and len(args) == 1:
-            self.message("%s = %s" % (args[0], self.aliases[args[0]]))
+        if len(args) == 1:
+            if args[0] in self.aliases:
+                self.message("%s = %s" % (args[0], self.aliases[args[0]]))
+            else:
+                self.error(f"Unknown alias '{args[0]}'")
         else:
             self.aliases[args[0]] = ' '.join(args[1:])
 

@@ -64,8 +64,8 @@ class _PythonRunResult(collections.namedtuple("_PythonRunResult",
     """Helper for reporting Python subprocess run results"""
     def fail(self, cmd_line):
         """Provide helpful details about failed subcommand runs"""
-        # Limit to 80 lines to ASCII characters
-        maxlen = 80 * 100
+        # Limit to 300 lines of ASCII characters
+        maxlen = 300 * 100
         out, err = self.out, self.err
         if len(out) > maxlen:
             out = b'(... truncated stdout ...)' + out[-maxlen:]
@@ -218,9 +218,13 @@ def make_script(script_dir, script_basename, source, omit_suffix=False):
     if not omit_suffix:
         script_filename += os.extsep + 'py'
     script_name = os.path.join(script_dir, script_filename)
-    # The script should be encoded to UTF-8, the default string encoding
-    with open(script_name, 'w', encoding='utf-8') as script_file:
-        script_file.write(source)
+    if isinstance(source, str):
+        # The script should be encoded to UTF-8, the default string encoding
+        with open(script_name, 'w', encoding='utf-8') as script_file:
+            script_file.write(source)
+    else:
+        with open(script_name, 'wb') as script_file:
+            script_file.write(source)
     importlib.invalidate_caches()
     return script_name
 

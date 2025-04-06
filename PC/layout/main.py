@@ -575,6 +575,15 @@ def main():
     ns.build = ns.build or Path(sys.executable).parent
     ns.temp = ns.temp or Path(tempfile.mkdtemp())
     ns.doc_build = ns.doc_build or (ns.source / "Doc" / "build")
+    if ns.copy and not ns.copy.is_absolute():
+        ns.copy = (Path.cwd() / ns.copy).resolve()
+    if not ns.temp:
+        # Put temp on a Dev Drive for speed if we're copying to one.
+        # If not, the regular temp dir will have to do.
+        if ns.copy and getattr(os.path, "isdevdrive", lambda d: False)(ns.copy):
+            ns.temp = ns.copy.with_name(ns.copy.name + "_temp")
+        else:
+            ns.temp = Path(tempfile.mkdtemp())
     if not ns.source.is_absolute():
         ns.source = (Path.cwd() / ns.source).resolve()
     if not ns.build.is_absolute():
@@ -588,8 +597,6 @@ def main():
     if not ns.arch:
         ns.arch = "amd64" if sys.maxsize > 2 ** 32 else "win32"
 
-    if ns.copy and not ns.copy.is_absolute():
-        ns.copy = (Path.cwd() / ns.copy).resolve()
     if ns.zip and not ns.zip.is_absolute():
         ns.zip = (Path.cwd() / ns.zip).resolve()
     if ns.catalog and not ns.catalog.is_absolute():

@@ -13,16 +13,30 @@ extern "C" {
 
 void _PyUnicode_ExactDealloc(PyObject *op);
 Py_ssize_t _PyUnicode_InternedSize(void);
+Py_ssize_t _PyUnicode_InternedSize_Immortal(void);
 
 /* runtime lifecycle */
 
 extern void _PyUnicode_InitState(PyInterpreterState *);
 extern PyStatus _PyUnicode_InitGlobalObjects(PyInterpreterState *);
+extern PyStatus _PyUnicode_InitInternDict(PyInterpreterState *);
 extern PyStatus _PyUnicode_InitTypes(PyInterpreterState *);
 extern void _PyUnicode_Fini(PyInterpreterState *);
 extern void _PyUnicode_FiniTypes(PyInterpreterState *);
 
 extern PyTypeObject _PyUnicodeASCIIIter_Type;
+
+/* Interning */
+
+// All these are "ref-neutral", like the public PyUnicode_InternInPlace.
+
+// Explicit interning routines:
+PyAPI_FUNC(void) _PyUnicode_InternMortal(PyInterpreterState *interp, PyObject **);
+PyAPI_FUNC(void) _PyUnicode_InternImmortal(PyInterpreterState *interp, PyObject **);
+// Left here to help backporting:
+PyAPI_FUNC(void) _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p);
+// Only for statically allocated strings:
+extern void _PyUnicode_InternStatic(PyInterpreterState *interp, PyObject **);
 
 /* other API */
 
@@ -60,8 +74,10 @@ struct _Py_unicode_state {
     struct _Py_unicode_ids ids;
 };
 
-extern void _PyUnicode_InternInPlace(PyInterpreterState *interp, PyObject **p);
 extern void _PyUnicode_ClearInterned(PyInterpreterState *interp);
+
+// Like PyUnicode_AsUTF8(), but check for embedded null characters.
+extern const char* _PyUnicode_AsUTF8NoNUL(PyObject *);
 
 
 #ifdef __cplusplus

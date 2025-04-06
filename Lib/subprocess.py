@@ -380,7 +380,7 @@ def _text_encoding():
 
 def call(*popenargs, timeout=None, **kwargs):
     """Run command with arguments.  Wait for command to complete or
-    timeout, then return the returncode attribute.
+    for timeout seconds, then return the returncode attribute.
 
     The arguments are the same as for the Popen constructor.  Example:
 
@@ -517,8 +517,8 @@ def run(*popenargs,
     in the returncode attribute, and output & stderr attributes if those streams
     were captured.
 
-    If timeout is given, and the process takes too long, a TimeoutExpired
-    exception will be raised.
+    If timeout (seconds) is given and the process takes too long,
+     a TimeoutExpired exception will be raised.
 
     There is an optional argument "input", allowing you to
     pass bytes or a string to the subprocess's stdin.  If you use this argument
@@ -1581,6 +1581,8 @@ class Popen:
             """Internal implementation of wait() on Windows."""
             if timeout is None:
                 timeout_millis = _winapi.INFINITE
+            elif timeout <= 0:
+                timeout_millis = 0
             else:
                 timeout_millis = int(timeout * 1000)
             if self.returncode is None:
@@ -1938,16 +1940,21 @@ class Popen:
                         SubprocessError)
                 if issubclass(child_exception_type, OSError) and hex_errno:
                     errno_num = int(hex_errno, 16)
-                    child_exec_never_called = (err_msg == "noexec")
-                    if child_exec_never_called:
+                    if err_msg == "noexec:chdir":
                         err_msg = ""
                         # The error must be from chdir(cwd).
                         err_filename = cwd
+                    elif err_msg == "noexec":
+                        err_msg = ""
+                        err_filename = None
                     else:
                         err_filename = orig_executable
                     if errno_num != 0:
                         err_msg = os.strerror(errno_num)
-                    raise child_exception_type(errno_num, err_msg, err_filename)
+                    if err_filename is not None:
+                        raise child_exception_type(errno_num, err_msg, err_filename)
+                    else:
+                        raise child_exception_type(errno_num, err_msg)
                 raise child_exception_type(err_msg)
 
 

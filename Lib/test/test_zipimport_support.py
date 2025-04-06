@@ -29,8 +29,9 @@ verbose = test.support.verbose
 #  test_cmd_line_script (covers the zipimport support in runpy)
 
 # Retrieve some helpers from other test cases
-from test import (test_doctest, sample_doctest, sample_doctest_no_doctests,
-                  sample_doctest_no_docstrings)
+from test.test_doctest import (test_doctest,
+                               sample_doctest, sample_doctest_no_doctests,
+                               sample_doctest_no_docstrings)
 
 
 def _run_object_doctest(obj, module):
@@ -100,18 +101,18 @@ class ZipSupportTests(unittest.TestCase):
         # everything still works correctly
         test_src = inspect.getsource(test_doctest)
         test_src = test_src.replace(
-                         "from test import test_doctest",
+                         "from test.test_doctest import test_doctest",
                          "import test_zipped_doctest as test_doctest")
-        test_src = test_src.replace("test.test_doctest",
+        test_src = test_src.replace("test.test_doctest.test_doctest",
                                     "test_zipped_doctest")
-        test_src = test_src.replace("test.sample_doctest",
+        test_src = test_src.replace("test.test_doctest.sample_doctest",
                                     "sample_zipped_doctest")
         # The sample doctest files rewritten to include in the zipped version.
         sample_sources = {}
         for mod in [sample_doctest, sample_doctest_no_doctests,
                     sample_doctest_no_docstrings]:
             src = inspect.getsource(mod)
-            src = src.replace("test.test_doctest", "test_zipped_doctest")
+            src = src.replace("test.test_doctest.test_doctest", "test_zipped_doctest")
             # Rewrite the module name so that, for example,
             # "test.sample_doctest" becomes "sample_zipped_doctest".
             mod_name = mod.__name__.split(".")[-1]

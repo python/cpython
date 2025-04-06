@@ -140,9 +140,11 @@ typedef struct {
            and the kind is PyUnicode_1BYTE_KIND. If ascii is set and compact is
            set, use the PyASCIIObject structure. */
         unsigned int ascii:1;
+        /* The object is statically allocated. */
+        unsigned int statically_allocated:1;
         /* Padding to ensure that PyUnicode_DATA() is always aligned to
            4 bytes (see issue #19537 on m68k). */
-        unsigned int :25;
+        unsigned int :24;
     } state;
 } PyASCIIObject;
 

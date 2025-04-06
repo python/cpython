@@ -1,5 +1,4 @@
 import builtins
-import contextlib
 import errno
 import glob
 import json
@@ -30,9 +29,10 @@ from test.support import (
     STDLIB_DIR, swap_attr, swap_item, cpython_only, is_emscripten,
     is_wasi, run_in_subinterp, run_in_subinterp_with_config)
 from test.support.import_helper import (
-    forget, make_legacy_pyc, unlink, unload, DirsOnSysPath, CleanImport)
+    forget, make_legacy_pyc, unlink, unload, ready_to_import,
+    DirsOnSysPath, CleanImport)
 from test.support.os_helper import (
-    TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE, temp_dir)
+    TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE)
 from test.support import script_helper
 from test.support import threading_helper
 from test.test_importlib.util import uncache
@@ -106,25 +106,23 @@ def remove_files(name):
     rmtree('__pycache__')
 
 
-@contextlib.contextmanager
-def _ready_to_import(name=None, source=""):
-    # sets up a temporary directory and removes it
-    # creates the module file
-    # temporarily clears the module from sys.modules (if any)
-    # reverts or removes the module when cleaning up
-    name = name or "spam"
-    with temp_dir() as tempdir:
-        path = script_helper.make_script(tempdir, name, source)
-        old_module = sys.modules.pop(name, None)
-        try:
-            sys.path.insert(0, tempdir)
-            yield name, path
-            sys.path.remove(tempdir)
-        finally:
-            if old_module is not None:
-                sys.modules[name] = old_module
-            elif name in sys.modules:
-                del sys.modules[name]
+def no_rerun(reason):
+    """Skip rerunning for a particular test.
+
+    WARNING: Use this decorator with care; skipping rerunning makes it
+    impossible to find reference leaks. Provide a clear reason for skipping the
+    test using the 'reason' parameter.
+    """
+    def deco(func):
+        _has_run = False
+        def wrapper(self):
+            nonlocal _has_run
+            if _has_run:
+                self.skipTest(reason)
+            func(self)
+            _has_run = True
+        return wrapper
+    return deco
 
 
 if _testsinglephase is not None:
@@ -382,7 +380,7 @@ class ImportTests(unittest.TestCase):
 
     def test_from_import_star_invalid_type(self):
         import re
-        with _ready_to_import() as (name, path):
+        with ready_to_import() as (name, path):
             with open(path, 'w', encoding='utf-8') as f:
                 f.write("__all__ = [b'invalid_type']")
             globals = {}
@@ -391,7 +389,7 @@ class ImportTests(unittest.TestCase):
             ):
                 exec(f"from {name} import *", globals)
             self.assertNotIn(b"invalid_type", globals)
-        with _ready_to_import() as (name, path):
+        with ready_to_import() as (name, path):
             with open(path, 'w', encoding='utf-8') as f:
                 f.write("globals()[b'invalid_type'] = object()")
             globals = {}
@@ -408,9 +406,12 @@ class ImportTests(unittest.TestCase):
             import RAnDoM
 
     def test_double_const(self):
-        # Another brief digression to test the accuracy of manifest float
-        # constants.
-        from test import double_const  # don't blink -- that *was* the test
+        # Importing double_const checks that float constants
+        # serialiazed by marshal as PYC files don't lose precision
+        # (SF bug 422177).
+        from test.test_import.data import double_const
+        unload('test.test_import.data.double_const')
+        from test.test_import.data import double_const
 
     def test_import(self):
         def test_with_extension(ext):
@@ -786,6 +787,19 @@ class ImportTests(unittest.TestCase):
         self.assertIn("Frozen object named 'x' is invalid",
                       str(cm.exception))
 
+    def test_create_dynamic_null(self):
+        with self.assertRaisesRegex(ValueError, 'embedded null character'):
+            class Spec:
+                name = "a\x00b"
+                origin = "abc"
+            _imp.create_dynamic(Spec())
+
+        with self.assertRaisesRegex(ValueError, 'embedded null character'):
+            class Spec2:
+                name = "abc"
+                origin = "a\x00b"
+            _imp.create_dynamic(Spec2())
+
 
 @skip_if_dont_write_bytecode
 class FilePermissionTests(unittest.TestCase):
@@ -799,7 +813,7 @@ class FilePermissionTests(unittest.TestCase):
     )
     def test_creation_mode(self):
         mask = 0o022
-        with temp_umask(mask), _ready_to_import() as (name, path):
+        with temp_umask(mask), ready_to_import() as (name, path):
             cached_path = importlib.util.cache_from_source(path)
             module = __import__(name)
             if not os.path.exists(cached_path):
@@ -818,7 +832,7 @@ class FilePermissionTests(unittest.TestCase):
     def test_cached_mode_issue_2051(self):
         # permissions of .pyc should match those of .py, regardless of mask
         mode = 0o600
-        with temp_umask(0o022), _ready_to_import() as (name, path):
+        with temp_umask(0o022), ready_to_import() as (name, path):
             cached_path = importlib.util.cache_from_source(path)
             os.chmod(path, mode)
             __import__(name)
@@ -834,7 +848,7 @@ class FilePermissionTests(unittest.TestCase):
     @os_helper.skip_unless_working_chmod
     def test_cached_readonly(self):
         mode = 0o400
-        with temp_umask(0o022), _ready_to_import() as (name, path):
+        with temp_umask(0o022), ready_to_import() as (name, path):
             cached_path = importlib.util.cache_from_source(path)
             os.chmod(path, mode)
             __import__(name)
@@ -849,7 +863,7 @@ class FilePermissionTests(unittest.TestCase):
     def test_pyc_always_writable(self):
         # Initially read-only .pyc files on Windows used to cause problems
         # with later updates, see issue #6074 for details
-        with _ready_to_import() as (name, path):
+        with ready_to_import() as (name, path):
             # Write a Python file, make it read-only and import it
             with open(path, 'w', encoding='utf-8') as f:
                 f.write("x = 'original'\n")
@@ -1087,6 +1101,34 @@ class RelativeImportTests(unittest.TestCase):
              DirsOnSysPath(os.path.join(os.path.dirname(__file__), 'data')):
             import package2.submodule1
             package2.submodule1.submodule2
+
+    def test_rebinding(self):
+        # The same data is also used for testing pkgutil.resolve_name()
+        # in test_pkgutil and mock.patch in test_unittest.
+        path = os.path.join(os.path.dirname(__file__), 'data')
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            from package3 import submodule
+            self.assertEqual(submodule.attr, 'rebound')
+            import package3.submodule as submodule
+            self.assertEqual(submodule.attr, 'rebound')
+        with uncache('package3', 'package3.submodule'), DirsOnSysPath(path):
+            import package3.submodule as submodule
+            self.assertEqual(submodule.attr, 'rebound')
+            from package3 import submodule
+            self.assertEqual(submodule.attr, 'rebound')
+
+    def test_rebinding2(self):
+        path = os.path.join(os.path.dirname(__file__), 'data')
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            import package4.submodule as submodule
+            self.assertEqual(submodule.attr, 'submodule')
+            from package4 import submodule
+            self.assertEqual(submodule.attr, 'submodule')
+        with uncache('package4', 'package4.submodule'), DirsOnSysPath(path):
+            from package4 import submodule
+            self.assertEqual(submodule.attr, 'origin')
+            import package4.submodule as submodule
+            self.assertEqual(submodule.attr, 'submodule')
 
 
 class OverridingImportBuiltinTests(unittest.TestCase):
@@ -1858,6 +1900,7 @@ class SubinterpImportTests(unittest.TestCase):
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_compat(self):
+        # Module with Py_MOD_PER_INTERPRETER_GIL_SUPPORTED
         module = '_testmultiphase'
         require_extension(module)
         with self.subTest(f'{module}: not strict'):
@@ -1869,6 +1912,8 @@ class SubinterpImportTests(unittest.TestCase):
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_non_isolated_compat(self):
+        # Module with Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED
+        # and Py_MOD_GIL_NOT_USED
         modname = '_test_non_isolated'
         filename = _testmultiphase.__file__
         loader = ExtensionFileLoader(modname, filename)
@@ -1887,23 +1932,33 @@ class SubinterpImportTests(unittest.TestCase):
 
     @unittest.skipIf(_testmultiphase is None, "test requires _testmultiphase module")
     def test_multi_init_extension_per_interpreter_gil_compat(self):
-        modname = '_test_shared_gil_only'
-        filename = _testmultiphase.__file__
-        loader = ExtensionFileLoader(modname, filename)
-        spec = importlib.util.spec_from_loader(modname, loader)
-        module = importlib.util.module_from_spec(spec)
-        loader.exec_module(module)
-        sys.modules[modname] = module
+        # _test_shared_gil_only:
+        #   Explicit Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED (default)
+        #   and Py_MOD_GIL_NOT_USED
+        # _test_no_multiple_interpreter_slot:
+        #   No Py_mod_multiple_interpreters slot
+        #   and Py_MOD_GIL_NOT_USED
+        for modname in ('_test_shared_gil_only',
+                        '_test_no_multiple_interpreter_slot'):
+            with self.subTest(modname=modname):
 
-        require_extension(module)
-        with self.subTest(f'{modname}: isolated, strict'):
-            self.check_incompatible_here(modname, filename, isolated=True)
-        with self.subTest(f'{modname}: not isolated, strict'):
-            self.check_compatible_here(modname, filename,
-                                       strict=True, isolated=False)
-        with self.subTest(f'{modname}: not isolated, not strict'):
-            self.check_compatible_here(modname, filename,
-                                       strict=False, isolated=False)
+                filename = _testmultiphase.__file__
+                loader = ExtensionFileLoader(modname, filename)
+                spec = importlib.util.spec_from_loader(modname, loader)
+                module = importlib.util.module_from_spec(spec)
+                loader.exec_module(module)
+                sys.modules[modname] = module
+
+                require_extension(module)
+                with self.subTest(f'{modname}: isolated, strict'):
+                    self.check_incompatible_here(modname, filename,
+                                                 isolated=True)
+                with self.subTest(f'{modname}: not isolated, strict'):
+                    self.check_compatible_here(modname, filename,
+                                               strict=True, isolated=False)
+                with self.subTest(f'{modname}: not isolated, not strict'):
+                    self.check_compatible_here(
+                        modname, filename, strict=False, isolated=False)
 
     def test_python_compat(self):
         module = 'threading'
@@ -2018,10 +2073,6 @@ class SinglephaseInitTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        if '-R' in sys.argv or '--huntrleaks' in sys.argv:
-            # https://github.com/python/cpython/issues/102251
-            raise unittest.SkipTest('unresolved refleaks (see gh-102251)')
-
         spec = importlib.util.find_spec(cls.NAME)
         from importlib.machinery import ExtensionFileLoader
         cls.FILE = spec.origin
@@ -2535,9 +2586,16 @@ class SinglephaseInitTests(unittest.TestCase):
         #  * m_copy was copied from interp2 (was from interp1)
         #  * module's global state was updated, not reset
 
+    @no_rerun(reason="rerun not possible; module state is never cleared (see gh-102251)")
     @requires_subinterpreters
     def test_basic_multiple_interpreters_deleted_no_reset(self):
         # without resetting; already loaded in a deleted interpreter
+
+        if hasattr(sys, 'getobjects'):
+            # It's a Py_TRACE_REFS build.
+            # This test breaks interpreter isolation a little,
+            # which causes problems on Py_TRACE_REF builds.
+            raise unittest.SkipTest('crashes on Py_TRACE_REFS builds')
 
         # At this point:
         #  * alive in 0 interpreters

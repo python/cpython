@@ -159,7 +159,7 @@ time_time(PyObject *self, PyObject *unused)
 
 
 PyDoc_STRVAR(time_doc,
-"time() -> floating point number\n\
+"time() -> floating-point number\n\
 \n\
 Return the current time in seconds since the Epoch.\n\
 Fractions of a second may be present if the system clock provides them.");
@@ -373,7 +373,7 @@ time_clock_getres(PyObject *self, PyObject *args)
 }
 
 PyDoc_STRVAR(clock_getres_doc,
-"clock_getres(clk_id) -> floating point number\n\
+"clock_getres(clk_id) -> floating-point number\n\
 \n\
 Return the resolution (precision) of the specified clock clk_id.");
 
@@ -432,7 +432,7 @@ PyDoc_STRVAR(sleep_doc,
 "sleep(seconds)\n\
 \n\
 Delay execution for a given number of seconds.  The argument may be\n\
-a floating point number for subsecond precision.");
+a floating-point number for subsecond precision.");
 
 static PyStructSequence_Field struct_time_type_fields[] = {
     {"tm_year", "year, for example, 1993"},
@@ -481,7 +481,18 @@ tmtotuple(time_module_state *state, struct tm *p
     if (v == NULL)
         return NULL;
 
-#define SET(i,val) PyStructSequence_SET_ITEM(v, i, PyLong_FromLong((long) val))
+#define SET_ITEM(INDEX, CALL)                       \
+    do {                                            \
+        PyObject *obj = (CALL);                     \
+        if (obj == NULL) {                          \
+            Py_DECREF(v);                           \
+            return NULL;                            \
+        }                                           \
+        PyStructSequence_SET_ITEM(v, (INDEX), obj); \
+    } while (0)
+
+#define SET(INDEX, VAL) \
+    SET_ITEM((INDEX), PyLong_FromLong((long) (VAL)))
 
     SET(0, p->tm_year + 1900);
     SET(1, p->tm_mon + 1);         /* Want January == 1 */
@@ -493,19 +504,15 @@ tmtotuple(time_module_state *state, struct tm *p
     SET(7, p->tm_yday + 1);        /* Want January, 1 == 1 */
     SET(8, p->tm_isdst);
 #ifdef HAVE_STRUCT_TM_TM_ZONE
-    PyStructSequence_SET_ITEM(v, 9,
-        PyUnicode_DecodeLocale(p->tm_zone, "surrogateescape"));
+    SET_ITEM(9, PyUnicode_DecodeLocale(p->tm_zone, "surrogateescape"));
     SET(10, p->tm_gmtoff);
 #else
-    PyStructSequence_SET_ITEM(v, 9,
-        PyUnicode_DecodeLocale(zone, "surrogateescape"));
-    PyStructSequence_SET_ITEM(v, 10, _PyLong_FromTime_t(gmtoff));
+    SET_ITEM(9, PyUnicode_DecodeLocale(zone, "surrogateescape"));
+    SET_ITEM(10, _PyLong_FromTime_t(gmtoff));
 #endif /* HAVE_STRUCT_TM_TM_ZONE */
+
 #undef SET
-    if (PyErr_Occurred()) {
-        Py_XDECREF(v);
-        return NULL;
-    }
+#undef SET_ITEM
 
     return v;
 }
@@ -788,27 +795,100 @@ the C library strftime function.\n"
 #endif
 
 static PyObject *
+time_strftime1(time_char **outbuf, size_t *bufsize,
+               time_char *format, size_t fmtlen,
+               struct tm *tm)
+{
+    size_t buflen;
+#if defined(MS_WINDOWS) && !defined(HAVE_WCSFTIME)
+    /* check that the format string contains only valid directives */
+    for (const time_char *f = strchr(format, '%');
+        f != NULL;
+        f = strchr(f + 2, '%'))
+    {
+        if (f[1] == '#')
+            ++f; /* not documented by python, */
+        if (f[1] == '\0')
+            break;
+        if ((f[1] == 'y') && tm->tm_year < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "format %y requires year >= 1900 on Windows");
+            return NULL;
+        }
+    }
+#elif (defined(_AIX) || (defined(__sun) && defined(__SVR4))) && defined(HAVE_WCSFTIME)
+    for (const time_char *f = wcschr(format, '%');
+        f != NULL;
+        f = wcschr(f + 2, '%'))
+    {
+        if (f[1] == L'\0')
+            break;
+        /* Issue #19634: On AIX, wcsftime("y", (1899, 1, 1, 0, 0, 0, 0, 0, 0))
+           returns "0/" instead of "99" */
+        if (f[1] == L'y' && tm->tm_year < 0) {
+            PyErr_SetString(PyExc_ValueError,
+                            "format %y requires year >= 1900 on AIX");
+            return NULL;
+        }
+    }
+#endif
+
+    /* I hate these functions that presume you know how big the output
+     * will be ahead of time...
+     */
+    while (1) {
+        if (*bufsize > PY_SSIZE_T_MAX/sizeof(time_char)) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+        *outbuf = (time_char *)PyMem_Realloc(*outbuf,
+                                             *bufsize*sizeof(time_char));
+        if (*outbuf == NULL) {
+            PyErr_NoMemory();
+            return NULL;
+        }
+#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
+        errno = 0;
+#endif
+        _Py_BEGIN_SUPPRESS_IPH
+        buflen = format_time(*outbuf, *bufsize, format, tm);
+        _Py_END_SUPPRESS_IPH
+#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
+        /* VisualStudio .NET 2005 does this properly */
+        if (buflen == 0 && errno == EINVAL) {
+            PyErr_SetString(PyExc_ValueError, "Invalid format string");
+            return NULL;
+        }
+#endif
+        if (buflen == 0 && *bufsize < 256 * fmtlen) {
+            *bufsize += *bufsize;
+            continue;
+        }
+        /* If the buffer is 256 times as long as the format,
+           it's probably not failing for lack of room!
+           More likely, the format yields an empty result,
+           e.g. an empty format, or %Z when the timezone
+           is unknown. */
+#ifdef HAVE_WCSFTIME
+        return PyUnicode_FromWideChar(*outbuf, buflen);
+#else
+        return PyUnicode_DecodeLocaleAndSize(*outbuf, buflen, "surrogateescape");
+#endif
+    }
+}
+
+static PyObject *
 time_strftime(PyObject *module, PyObject *args)
 {
     PyObject *tup = NULL;
     struct tm buf;
-    const time_char *fmt;
-#ifdef HAVE_WCSFTIME
-    wchar_t *format;
-#else
-    PyObject *format;
-#endif
     PyObject *format_arg;
-    size_t fmtlen, buflen;
-    time_char *outbuf = NULL;
-    size_t i;
-    PyObject *ret = NULL;
+    Py_ssize_t format_size;
+    time_char *format, *outbuf = NULL;
+    size_t fmtlen, bufsize = 1024;
 
     memset((void *) &buf, '\0', sizeof(buf));
 
-    /* Will always expect a unicode string to be passed as format.
-       Given that there's no str type anymore in py3k this seems safe.
-    */
     if (!PyArg_ParseTuple(args, "U|O:strftime", &format_arg, &tup))
         return NULL;
 
@@ -841,101 +921,65 @@ time_strftime(PyObject *module, PyObject *args)
     else if (buf.tm_isdst > 1)
         buf.tm_isdst = 1;
 
-#ifdef HAVE_WCSFTIME
-    format = PyUnicode_AsWideCharString(format_arg, NULL);
-    if (format == NULL)
+    format_size = PyUnicode_GET_LENGTH(format_arg);
+    if ((size_t)format_size > PY_SSIZE_T_MAX/sizeof(time_char) - 1) {
+        PyErr_NoMemory();
         return NULL;
-    fmt = format;
-#else
-    /* Convert the unicode string to an ascii one */
-    format = PyUnicode_EncodeLocale(format_arg, "surrogateescape");
-    if (format == NULL)
+    }
+    format = PyMem_Malloc((format_size + 1)*sizeof(time_char));
+    if (format == NULL) {
+        PyErr_NoMemory();
         return NULL;
-    fmt = PyBytes_AS_STRING(format);
-#endif
+    }
+    _PyUnicodeWriter writer;
+    _PyUnicodeWriter_Init(&writer);
+    writer.overallocate = 1;
+    Py_ssize_t i = 0;
+    while (i < format_size) {
+        fmtlen = 0;
+        for (; i < format_size; i++) {
+            Py_UCS4 c = PyUnicode_READ_CHAR(format_arg, i);
+            if (!c || c > 127) {
+                break;
+            }
+            format[fmtlen++] = (char)c;
+        }
+        if (fmtlen) {
+            format[fmtlen] = 0;
+            PyObject *unicode = time_strftime1(&outbuf, &bufsize,
+                                               format, fmtlen, &buf);
+            if (unicode == NULL) {
+                goto error;
+            }
+            if (_PyUnicodeWriter_WriteStr(&writer, unicode) < 0) {
+                Py_DECREF(unicode);
+                goto error;
+            }
+            Py_DECREF(unicode);
+        }
 
-#if defined(MS_WINDOWS) && !defined(HAVE_WCSFTIME)
-    /* check that the format string contains only valid directives */
-    for (outbuf = strchr(fmt, '%');
-        outbuf != NULL;
-        outbuf = strchr(outbuf+2, '%'))
-    {
-        if (outbuf[1] == '#')
-            ++outbuf; /* not documented by python, */
-        if (outbuf[1] == '\0')
-            break;
-        if ((outbuf[1] == 'y') && buf.tm_year < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                        "format %y requires year >= 1900 on Windows");
-            Py_DECREF(format);
-            return NULL;
+        Py_ssize_t start = i;
+        for (; i < format_size; i++) {
+            Py_UCS4 c = PyUnicode_READ_CHAR(format_arg, i);
+            if (c == '%') {
+                break;
+            }
+        }
+        if (start < i) {
+            if (_PyUnicodeWriter_WriteSubstring(&writer, format_arg, start, i) < 0) {
+                goto error;
+            }
         }
     }
-#elif (defined(_AIX) || (defined(__sun) && defined(__SVR4))) && defined(HAVE_WCSFTIME)
-    for (outbuf = wcschr(fmt, '%');
-        outbuf != NULL;
-        outbuf = wcschr(outbuf+2, '%'))
-    {
-        if (outbuf[1] == L'\0')
-            break;
-        /* Issue #19634: On AIX, wcsftime("y", (1899, 1, 1, 0, 0, 0, 0, 0, 0))
-           returns "0/" instead of "99" */
-        if (outbuf[1] == L'y' && buf.tm_year < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "format %y requires year >= 1900 on AIX");
-            PyMem_Free(format);
-            return NULL;
-        }
-    }
-#endif
 
-    fmtlen = time_strlen(fmt);
-
-    /* I hate these functions that presume you know how big the output
-     * will be ahead of time...
-     */
-    for (i = 1024; ; i += i) {
-        outbuf = (time_char *)PyMem_Malloc(i*sizeof(time_char));
-        if (outbuf == NULL) {
-            PyErr_NoMemory();
-            break;
-        }
-#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
-        errno = 0;
-#endif
-        _Py_BEGIN_SUPPRESS_IPH
-        buflen = format_time(outbuf, i, fmt, &buf);
-        _Py_END_SUPPRESS_IPH
-#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
-        /* VisualStudio .NET 2005 does this properly */
-        if (buflen == 0 && errno == EINVAL) {
-            PyErr_SetString(PyExc_ValueError, "Invalid format string");
-            PyMem_Free(outbuf);
-            break;
-        }
-#endif
-        if (buflen > 0 || i >= 256 * fmtlen) {
-            /* If the buffer is 256 times as long as the format,
-               it's probably not failing for lack of room!
-               More likely, the format yields an empty result,
-               e.g. an empty format, or %Z when the timezone
-               is unknown. */
-#ifdef HAVE_WCSFTIME
-            ret = PyUnicode_FromWideChar(outbuf, buflen);
-#else
-            ret = PyUnicode_DecodeLocaleAndSize(outbuf, buflen, "surrogateescape");
-#endif
-            PyMem_Free(outbuf);
-            break;
-        }
-        PyMem_Free(outbuf);
-    }
-#ifdef HAVE_WCSFTIME
+    PyMem_Free(outbuf);
     PyMem_Free(format);
-#else
-    Py_DECREF(format);
-#endif
-    return ret;
+    return _PyUnicodeWriter_Finish(&writer);
+error:
+    PyMem_Free(outbuf);
+    PyMem_Free(format);
+    _PyUnicodeWriter_Dealloc(&writer);
+    return NULL;
 }
 
 #undef time_char
@@ -1116,7 +1160,7 @@ time_mktime(PyObject *module, PyObject *tm_tuple)
 }
 
 PyDoc_STRVAR(mktime_doc,
-"mktime(tuple) -> floating point number\n\
+"mktime(tuple) -> floating-point number\n\
 \n\
 Convert a time tuple in local time to seconds since the Epoch.\n\
 Note that mktime(gmtime(0)) will not generally return zero for most\n\
@@ -1285,8 +1329,14 @@ _PyTime_GetProcessTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 #else
 
     /* clock_gettime */
+// gh-115714: Don't use CLOCK_PROCESS_CPUTIME_ID on WASI.
+/* CLOCK_PROF is defined on NetBSD, but not supported.
+ * CLOCK_PROCESS_CPUTIME_ID is broken on NetBSD for the same reason as
+ * CLOCK_THREAD_CPUTIME_ID (see comment below).
+ */
 #if defined(HAVE_CLOCK_GETTIME) \
-    && (defined(CLOCK_PROCESS_CPUTIME_ID) || defined(CLOCK_PROF))
+    && (defined(CLOCK_PROCESS_CPUTIME_ID) || defined(CLOCK_PROF)) \
+    && !defined(__NetBSD__)
     struct timespec ts;
 
     if (HAVE_CLOCK_GETTIME_RUNTIME) {
@@ -1492,9 +1542,16 @@ _PyTime_GetThreadTimeWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
     return 0;
 }
 
+/* CLOCK_THREAD_CPUTIME_ID is broken on NetBSD: the result of clock_gettime()
+ * includes the sleeping time, that defeats the purpose of the clock.
+ * Also, clock_getres() does not support it.
+ * https://github.com/python/cpython/issues/123978
+ * https://gnats.netbsd.org/57512
+ */
 #elif defined(HAVE_CLOCK_GETTIME) && \
-      defined(CLOCK_PROCESS_CPUTIME_ID) && \
-      !defined(__EMSCRIPTEN__) && !defined(__wasi__)
+      defined(CLOCK_THREAD_CPUTIME_ID) && \
+      !defined(__EMSCRIPTEN__) && !defined(__wasi__) && \
+      !defined(__NetBSD__)
 #define HAVE_THREAD_TIME
 
 #if defined(__APPLE__) && defined(__has_attribute) && __has_attribute(availability)
@@ -1737,6 +1794,12 @@ get_gmtoff(time_t t, struct tm *p)
 static int
 init_timezone(PyObject *m)
 {
+#define ADD_INT(NAME, VALUE) do {                       \
+    if (PyModule_AddIntConstant(m, NAME, VALUE) < 0) {  \
+        return -1;                                      \
+    }                                                   \
+} while (0)
+
     assert(!PyErr_Occurred());
 
     /* This code moved from PyInit_time wholesale to allow calling it from
@@ -1760,13 +1823,13 @@ init_timezone(PyObject *m)
 #if !defined(MS_WINDOWS) || defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
     tzset();
 #endif
-    PyModule_AddIntConstant(m, "timezone", _Py_timezone);
+    ADD_INT("timezone", _Py_timezone);
 #ifdef HAVE_ALTZONE
-    PyModule_AddIntConstant(m, "altzone", altzone);
+    ADD_INT("altzone", altzone);
 #else
-    PyModule_AddIntConstant(m, "altzone", _Py_timezone-3600);
+    ADD_INT("altzone", _Py_timezone-3600);
 #endif
-    PyModule_AddIntConstant(m, "daylight", _Py_daylight);
+    ADD_INT("daylight", _Py_daylight);
 #ifdef MS_WINDOWS
     TIME_ZONE_INFORMATION tzinfo = {0};
     GetTimeZoneInformation(&tzinfo);
@@ -1825,20 +1888,21 @@ init_timezone(PyObject *m)
     PyObject *tzname_obj;
     if (janzone < julyzone) {
         /* DST is reversed in the southern hemisphere */
-        PyModule_AddIntConstant(m, "timezone", julyzone);
-        PyModule_AddIntConstant(m, "altzone", janzone);
-        PyModule_AddIntConstant(m, "daylight", janzone != julyzone);
+        ADD_INT("timezone", julyzone);
+        ADD_INT("altzone", janzone);
+        ADD_INT("daylight", janzone != julyzone);
         tzname_obj = Py_BuildValue("(zz)", julyname, janname);
     } else {
-        PyModule_AddIntConstant(m, "timezone", janzone);
-        PyModule_AddIntConstant(m, "altzone", julyzone);
-        PyModule_AddIntConstant(m, "daylight", janzone != julyzone);
+        ADD_INT("timezone", janzone);
+        ADD_INT("altzone", julyzone);
+        ADD_INT("daylight", janzone != julyzone);
         tzname_obj = Py_BuildValue("(zz)", janname, julyname);
     }
     if (_PyModule_Add(m, "tzname", tzname_obj) < 0) {
         return -1;
     }
 #endif // !HAVE_DECL_TZNAME
+#undef ADD_INT
 
     if (PyErr_Occurred()) {
         return -1;
@@ -1899,9 +1963,9 @@ PyDoc_STRVAR(module_doc,
 \n\
 There are two standard representations of time.  One is the number\n\
 of seconds since the Epoch, in UTC (a.k.a. GMT).  It may be an integer\n\
-or a floating point number (to represent fractions of seconds).\n\
-The Epoch is system-defined; on Unix, it is generally January 1st, 1970.\n\
-The actual value can be retrieved by calling gmtime(0).\n\
+or a floating-point number (to represent fractions of seconds).\n\
+The epoch is the point where the time starts, the return value of time.gmtime(0).\n\
+It is January 1, 1970, 00:00:00 (UTC) on all platforms.\n\
 \n\
 The other representation is a tuple of 9 integers giving local time.\n\
 The tuple items are:\n\

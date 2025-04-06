@@ -41,6 +41,7 @@ from tkinter.constants import *
 import re
 
 wantobjects = 1
+_debug = False  # set to True to print executed Tcl/Tk commands
 
 TkVersion = float(_tkinter.TK_VERSION)
 TclVersion = float(_tkinter.TCL_VERSION)
@@ -69,7 +70,10 @@ def _stringify(value):
         else:
             value = '{%s}' % _join(value)
     else:
-        value = str(value)
+        if isinstance(value, bytes):
+            value = str(value, 'latin1')
+        else:
+            value = str(value)
         if not value:
             value = '{}'
         elif _magic_re.search(value):
@@ -411,7 +415,6 @@ class Variable:
             self._tk.globalunsetvar(self._name)
         if self._tclCommands is not None:
             for name in self._tclCommands:
-                #print '- Tkinter: deleted command', name
                 self._tk.deletecommand(name)
             self._tclCommands = None
 
@@ -683,7 +686,6 @@ class Misc:
         this widget in the Tcl interpreter."""
         if self._tclCommands is not None:
             for name in self._tclCommands:
-                #print '- Tkinter: deleted command', name
                 self.tk.deletecommand(name)
             self._tclCommands = None
 
@@ -691,7 +693,6 @@ class Misc:
         """Internal function.
 
         Delete the Tcl command provided in NAME."""
-        #print '- Tkinter: deleted command', name
         self.tk.deletecommand(name)
         try:
             self._tclCommands.remove(name)
@@ -1181,6 +1182,8 @@ class Misc:
 
     def winfo_pathname(self, id, displayof=0):
         """Return the pathname of the widget given by ID."""
+        if isinstance(id, int):
+            id = hex(id)
         args = ('winfo', 'pathname') \
                + self._displayof(displayof) + (id,)
         return self.tk.call(args)
@@ -1448,10 +1451,27 @@ class Misc:
         return self._bind(('bind', self._w), sequence, func, add)
 
     def unbind(self, sequence, funcid=None):
-        """Unbind for this widget for event SEQUENCE  the
-        function identified with FUNCID."""
-        self.tk.call('bind', self._w, sequence, '')
-        if funcid:
+        """Unbind for this widget the event SEQUENCE.
+
+        If FUNCID is given, only unbind the function identified with FUNCID
+        and also delete the corresponding Tcl command.
+
+        Otherwise destroy the current binding for SEQUENCE, leaving SEQUENCE
+        unbound.
+        """
+        self._unbind(('bind', self._w, sequence), funcid)
+
+    def _unbind(self, what, funcid=None):
+        if funcid is None:
+            self.tk.call(*what, '')
+        else:
+            lines = self.tk.call(what).split('\n')
+            prefix = f'if {{"[{funcid} '
+            keep = '\n'.join(line for line in lines
+                             if not line.startswith(prefix))
+            if not keep.strip():
+                keep = ''
+            self.tk.call(*what, keep)
             self.deletecommand(funcid)
 
     def bind_all(self, sequence=None, func=None, add=None):
@@ -1459,11 +1479,11 @@ class Misc:
         An additional boolean parameter ADD specifies whether FUNC will
         be called additionally to the other bound function or whether
         it will replace the previous function. See bind for the return value."""
-        return self._bind(('bind', 'all'), sequence, func, add, 0)
+        return self._root()._bind(('bind', 'all'), sequence, func, add, True)
 
     def unbind_all(self, sequence):
         """Unbind for all widgets for event SEQUENCE all functions."""
-        self.tk.call('bind', 'all' , sequence, '')
+        self._root()._unbind(('bind', 'all', sequence))
 
     def bind_class(self, className, sequence=None, func=None, add=None):
         """Bind to widgets with bindtag CLASSNAME at event
@@ -1473,12 +1493,12 @@ class Misc:
         whether it will replace the previous function. See bind for
         the return value."""
 
-        return self._bind(('bind', className), sequence, func, add, 0)
+        return self._root()._bind(('bind', className), sequence, func, add, True)
 
     def unbind_class(self, className, sequence):
         """Unbind for all widgets with bindtag CLASSNAME for event SEQUENCE
         all functions."""
-        self.tk.call('bind', className , sequence, '')
+        self._root()._unbind(('bind', className, sequence))
 
     def mainloop(self, n=0):
         """Call the mainloop of Tk."""
@@ -2130,7 +2150,7 @@ class Wm:
         explicitly.  DEFAULT can be the relative path to a .ico file
         (example: root.iconbitmap(default='myicon.ico') ).  See Tk
         documentation for more information."""
-        if default:
+        if default is not None:
             return self.tk.call('wm', 'iconbitmap', self._w, '-default', default)
         else:
             return self.tk.call('wm', 'iconbitmap', self._w, bitmap)
@@ -2324,6 +2344,8 @@ class Tk(Misc, Wm):
                 baseName = baseName + ext
         interactive = False
         self.tk = _tkinter.create(screenName, baseName, className, interactive, wantobjects, useTk, sync, use)
+        if _debug:
+            self.tk.settrace(_print_command)
         if useTk:
             self._loadtk()
         if not sys.flags.ignore_environment:
@@ -2409,6 +2431,14 @@ class Tk(Misc, Wm):
     def __getattr__(self, attr):
         "Delegate attribute access to the interpreter object"
         return getattr(self.tk, attr)
+
+
+def _print_command(cmd, *, file=sys.stderr):
+    # Print executed Tcl/Tk commands.
+    assert isinstance(cmd, tuple)
+    cmd = _join(cmd)
+    print(cmd, file=file)
+
 
 # Ideally, the classes Pack, Place and Grid disappear, the
 # pack/place/grid methods are defined on the Widget class, and
@@ -2596,6 +2626,8 @@ class BaseWidget(Misc):
             del cnf['name']
         if not name:
             name = self.__class__.__name__.lower()
+            if name[-1].isdigit():
+                name += "!"  # Avoid duplication when calculating names below
             if master._last_child_ids is None:
                 master._last_child_ids = {}
             count = master._last_child_ids.get(name, 0) + 1
@@ -2790,9 +2822,7 @@ class Canvas(Widget, XView, YView):
     def tag_unbind(self, tagOrId, sequence, funcid=None):
         """Unbind for all items with TAGORID for event SEQUENCE  the
         function identified with FUNCID."""
-        self.tk.call(self._w, 'bind', tagOrId, sequence, '')
-        if funcid:
-            self.deletecommand(funcid)
+        self._unbind((self._w, 'bind', tagOrId, sequence), funcid)
 
     def tag_bind(self, tagOrId, sequence=None, func=None, add=None):
         """Bind to all items with TAGORID at event SEQUENCE a call to function FUNC.
@@ -3057,11 +3087,16 @@ class Checkbutton(Widget):
         Widget.__init__(self, master, 'checkbutton', cnf, kw)
 
     def _setup(self, master, cnf):
+        # Because Checkbutton defaults to a variable with the same name as
+        # the widget, Checkbutton default names must be globally unique,
+        # not just unique within the parent widget.
         if not cnf.get('name'):
             global _checkbutton_count
             name = self.__class__.__name__.lower()
             _checkbutton_count += 1
-            cnf['name'] = f'!{name}{_checkbutton_count}'
+            # To avoid collisions with ttk.Checkbutton, use the different
+            # name template.
+            cnf['name'] = f'!{name}-{_checkbutton_count}'
         super()._setup(master, cnf)
 
     def deselect(self):
@@ -3899,9 +3934,7 @@ class Text(Widget, XView, YView):
     def tag_unbind(self, tagName, sequence, funcid=None):
         """Unbind for all characters with TAGNAME for event SEQUENCE  the
         function identified with FUNCID."""
-        self.tk.call(self._w, 'tag', 'bind', tagName, sequence, '')
-        if funcid:
-            self.deletecommand(funcid)
+        return self._unbind((self._w, 'tag', 'bind', tagName, sequence), funcid)
 
     def tag_bind(self, tagName, sequence, func, add=None):
         """Bind to all characters with TAGNAME at event SEQUENCE a call to function FUNC.
@@ -3909,6 +3942,11 @@ class Text(Widget, XView, YView):
         An additional boolean parameter ADD specifies whether FUNC will be
         called additionally to the other bound function or whether it will
         replace the previous function. See bind for the return value."""
+        return self._bind((self._w, 'tag', 'bind', tagName),
+                  sequence, func, add)
+
+    def _tag_bind(self, tagName, sequence=None, func=None, add=None):
+        # For tests only
         return self._bind((self._w, 'tag', 'bind', tagName),
                   sequence, func, add)
 
@@ -4069,8 +4107,6 @@ class Image:
         elif kw: cnf = kw
         options = ()
         for k, v in cnf.items():
-            if callable(v):
-                v = self._register(v)
             options = options + ('-'+k, v)
         self.tk.call(('image', 'create', imgtype, name,) + options)
         self.name = name
@@ -4097,8 +4133,6 @@ class Image:
         for k, v in _cnfmerge(kw).items():
             if v is not None:
                 if k[-1] == '_': k = k[:-1]
-                if callable(v):
-                    v = self._register(v)
                 res = res + ('-'+k, v)
         self.tk.call((self.name, 'config') + res)
 
@@ -4621,7 +4655,7 @@ class PanedWindow(Widget):
 
 def _test():
     root = Tk()
-    text = "This is Tcl/Tk version %s" % TclVersion
+    text = "This is Tcl/Tk %s" % root.globalgetvar('tk_patchLevel')
     text += "\nThis should be a cedilla: \xe7"
     label = Label(root, text=text)
     label.pack()

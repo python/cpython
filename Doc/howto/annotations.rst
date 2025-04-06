@@ -102,9 +102,9 @@ Your code will have to have a separate code path if the object
 you're examining is a class (``isinstance(o, type)``).
 In that case, best practice relies on an implementation detail
 of Python 3.9 and before: if a class has annotations defined,
-they are stored in the class's ``__dict__`` dictionary.  Since
+they are stored in the class's :attr:`~type.__dict__` dictionary.  Since
 the class may or may not have annotations defined, best practice
-is to call the ``get`` method on the class dict.
+is to call the :meth:`~dict.get` method on the class dict.
 
 To put it all together, here is some sample code that safely
 accesses the ``__annotations__`` attribute on an arbitrary
@@ -121,8 +121,8 @@ the type of ``ann`` using :func:`isinstance` before further
 examination.
 
 Note that some exotic or malformed type objects may not have
-a ``__dict__`` attribute, so for extra safety you may also wish
-to use :func:`getattr` to access ``__dict__``.
+a :attr:`~type.__dict__` attribute, so for extra safety you may also wish
+to use :func:`getattr` to access :attr:`!__dict__`.
 
 
 Manually Un-Stringizing Stringized Annotations
@@ -153,7 +153,8 @@ on an arbitrary object ``o``:
   unwrap it by accessing either ``o.__wrapped__`` or ``o.func`` as
   appropriate, until you have found the root unwrapped function.
 * If ``o`` is a callable (but not a class), use
-  ``o.__globals__`` as the globals when calling :func:`eval`.
+  :attr:`o.__globals__ <function.__globals__>` as the globals when calling
+  :func:`eval`.
 
 However, not all string values used as annotations can
 be successfully turned into Python values by :func:`eval`.

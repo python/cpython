@@ -1,15 +1,12 @@
-dnl ***************************************************
-dnl * Please run autoreconf -if to test your changes! *
-dnl ***************************************************
+dnl ************************************************************
+dnl * Please run autoreconf -ivf -Werror to test your changes! *
+dnl ************************************************************
 dnl
 dnl Python's configure script requires autoconf 2.71, autoconf-archive,
-dnl pkgconf's m4 macros.
+dnl aclocal 1.16, and pkg-config.
 dnl
-dnl It is recommended to use a cpython_autoconf container to regenerate the
-dnl configure script:
-dnl
-dnl podman run --rm --pull=always -v $(pwd):/src:Z quay.io/tiran/cpython_autoconf:271
-dnl docker run --rm --pull=always -v $(pwd):/src quay.io/tiran/cpython_autoconf:271
+dnl It is recommended to use the Tools/build/regen-configure.sh shell script
+dnl to regenerate the configure script.
 dnl
 
 # Set VERSION so we only need to edit in one place (i.e., here)
@@ -590,6 +587,14 @@ then
 	darwin*) MACHDEP="darwin";;
 	'')	MACHDEP="unknown";;
     esac
+
+    if test "$ac_sys_system" = "SunOS"; then
+	# For Solaris, there isn't an OS version specific macro defined
+	# in most compilers, so we define one here.
+	SUNOS_VERSION=`echo $ac_sys_release | sed -e 's!\.\([0-9]\)$!.0\1!g' | tr -d '.'`
+	AC_DEFINE_UNQUOTED([Py_SUNOS_VERSION], [$SUNOS_VERSION],
+	                   [The version of SunOS/Solaris as reported by `uname -r' without the dot.])
+    fi
 fi
 AC_MSG_RESULT(["$MACHDEP"])
 
@@ -1303,6 +1308,9 @@ AC_ARG_WITH([suffix],
 ])
 AC_MSG_RESULT([$EXEEXT])
 
+# Make sure we keep EXEEXT and ac_exeext sync'ed.
+AS_VAR_SET([ac_exeext], [$EXEEXT])
+
 # Test whether we're running on a non-case-sensitive system, in which
 # case we give a warning if no ext is given
 AC_SUBST([BUILDEXEEXT])
@@ -1594,9 +1602,9 @@ then
       AS_VAR_IF([host_cpu], [wasm64], [AS_VAR_APPEND([HOSTRUNNER], [" --experimental-wasm-memory64"])])
     ],
     dnl TODO: support other WASI runtimes
-    dnl wasmtime starts the proces with "/" as CWD. For OOT builds add the
+    dnl wasmtime starts the process with "/" as CWD. For OOT builds add the
     dnl directory containing _sysconfigdata to PYTHONPATH.
-    [WASI/*], [HOSTRUNNER='wasmtime run --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --mapdir /::$(srcdir) --'],
+    [WASI/*], [HOSTRUNNER='wasmtime run --wasm max-wasm-stack=8388608 --wasi preview2 --env PYTHONPATH=/$(shell realpath --relative-to $(abs_srcdir) $(abs_builddir))/$(shell cat pybuilddir.txt):/Lib --dir $(srcdir)::/'],
     [HOSTRUNNER='']
   )
 fi
@@ -1773,7 +1781,7 @@ if test "$Py_OPT" = 'true' ; then
       AX_CHECK_COMPILE_FLAG([-fno-semantic-interposition],[
       CFLAGS_NODIST="$CFLAGS_NODIST -fno-semantic-interposition"
       LDFLAGS_NODIST="$LDFLAGS_NODIST -fno-semantic-interposition"
-      ])
+      ], [], [-Werror])
       ;;
   esac
 elif test "$ac_sys_system" = "Emscripten" -o "$ac_sys_system" = "WASI"; then
@@ -1982,9 +1990,13 @@ case $CC in
   *clang*)
     # Any changes made here should be reflected in the GCC+Darwin case below
     PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-    PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-    LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
-    LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
+    PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
+    LLVM_PROF_MERGER=m4_normalize("
+        ${LLVM_PROFDATA} merge
+            -output=\"\$(shell pwd)/code.profclangd\"
+            \"\$(shell pwd)\"/*.profclangr
+    ")
+    LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
     if test $LLVM_PROF_FOUND = not-found
     then
       LLVM_PROF_ERR=yes
@@ -1998,9 +2010,13 @@ case $CC in
     case $ac_sys_system in
       Darwin*)
         PGO_PROF_GEN_FLAG="-fprofile-instr-generate"
-        PGO_PROF_USE_FLAG="-fprofile-instr-use=code.profclangd"
-        LLVM_PROF_MERGER="${LLVM_PROFDATA} merge -output=code.profclangd *.profclangr"
-        LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"code-%p.profclangr\""
+        PGO_PROF_USE_FLAG="-fprofile-instr-use=\"\$(shell pwd)/code.profclangd\""
+        LLVM_PROF_MERGER=m4_normalize("
+            ${LLVM_PROFDATA} merge
+                -output=\"\$(shell pwd)/code.profclangd\"
+                \"\$(shell pwd)\"/*.profclangr
+        ")
+        LLVM_PROF_FILE="LLVM_PROFILE_FILE=\"\$(shell pwd)/code-%p.profclangr\""
         if test "${LLVM_PROF_FOUND}" = "not-found"
         then
           LLVM_PROF_ERR=yes
@@ -2089,13 +2105,34 @@ AS_VAR_IF([enable_shared], [yes], [
 ])
 
 AC_ARG_VAR(
+  [BOLT_COMMON_FLAGS],
+  [Common arguments to llvm-bolt when instrumenting and applying]
+)
+
+AC_MSG_CHECKING([BOLT_COMMON_FLAGS])
+if test -z "${BOLT_COMMON_FLAGS}"
+then
+  AS_VAR_SET(
+    [BOLT_COMMON_FLAGS],
+    [m4_normalize("
+      [-update-debug-sections]
+
+      dnl At least LLVM 19.x doesn't support computed gotos in PIC compiled code.
+      dnl Exclude functions containing computed gotos.
+      dnl TODO this may be fixed in LLVM 20.x via https://github.com/llvm/llvm-project/pull/120267.
+      [-skip-funcs=_PyEval_EvalFrameDefault,sre_ucs1_match/1,sre_ucs2_match/1,sre_ucs4_match/1]
+    ")]
+  )
+fi
+
+AC_ARG_VAR(
   [BOLT_INSTRUMENT_FLAGS],
   [Arguments to llvm-bolt when instrumenting binaries]
 )
 AC_MSG_CHECKING([BOLT_INSTRUMENT_FLAGS])
 if test -z "${BOLT_INSTRUMENT_FLAGS}"
 then
-  BOLT_INSTRUMENT_FLAGS=
+  BOLT_INSTRUMENT_FLAGS="${BOLT_COMMON_FLAGS}"
 fi
 AC_MSG_RESULT([$BOLT_INSTRUMENT_FLAGS])
 
@@ -2109,9 +2146,9 @@ then
   AS_VAR_SET(
     [BOLT_APPLY_FLAGS],
     [m4_normalize("
-     -update-debug-sections
+     ${BOLT_COMMON_FLAGS}
      -reorder-blocks=ext-tsp
-     -reorder-functions=hfsort+
+     -reorder-functions=cdsort
      -split-functions
      -icf=1
      -inline-all
@@ -2318,10 +2355,15 @@ AS_CASE([$ac_sys_system],
       # without this, configure fails to find pthread_create, sem_init,
       # etc because they are only available in the sysroot for
       # wasm32-wasi-threads.
+      # Note: wasi-threads requires --import-memory.
+      # Note: wasi requires --export-memory.
+      # Note: --export-memory is implicit unless --import-memory is given
+      # Note: this requires LLVM >= 16.
       AS_VAR_APPEND([CFLAGS], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([CFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -target wasm32-wasi-threads -pthread"])
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--import-memory"])
+      AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--export-memory"])
       AS_VAR_APPEND([LDFLAGS_NODIST], [" -Wl,--max-memory=10485760"])
     ])
 
@@ -2353,7 +2395,7 @@ AC_DEFUN([PY_CHECK_CC_WARNING], [
   AS_VAR_PUSHDEF([py_var], [ac_cv_$1_]m4_normalize($2)[_warning])
   AC_CACHE_CHECK([m4_ifblank([$3], [if we can $1 $CC $2 warning], [$3])], [py_var], [
     AS_VAR_COPY([py_cflags], [CFLAGS])
-    AS_VAR_APPEND([CFLAGS], ["-W$2 -Werror"])
+    AS_VAR_APPEND([CFLAGS], [" -W$2 -Werror"])
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
                       [AS_VAR_SET([py_var], [yes])],
                       [AS_VAR_SET([py_var], [no])])
@@ -2853,7 +2895,7 @@ AC_CHECK_HEADERS([ \
   linux/tipc.h linux/wait.h netdb.h net/ethernet.h netinet/in.h netpacket/packet.h poll.h process.h pthread.h pty.h \
   sched.h setjmp.h shadow.h signal.h spawn.h stropts.h sys/audioio.h sys/bsdtty.h sys/devpoll.h \
   sys/endian.h sys/epoll.h sys/event.h sys/eventfd.h sys/file.h sys/ioctl.h sys/kern_control.h \
-  sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/poll.h \
+  sys/loadavg.h sys/lock.h sys/memfd.h sys/mkdev.h sys/mman.h sys/modem.h sys/param.h sys/pidfd.h sys/poll.h \
   sys/random.h sys/resource.h sys/select.h sys/sendfile.h sys/socket.h sys/soundcard.h sys/stat.h \
   sys/statvfs.h sys/sys_domain.h sys/syscall.h sys/sysmacros.h sys/termio.h sys/time.h sys/times.h \
   sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h sys/xattr.h sysexits.h syslog.h \
@@ -3220,6 +3262,24 @@ AC_MSG_RESULT([no])
 with_ubsan="no"
 ])
 
+AC_MSG_CHECKING([for --with-thread-sanitizer])
+AC_ARG_WITH(
+  [thread_sanitizer],
+  [AS_HELP_STRING(
+    [--with-thread-sanitizer],
+    [enable ThreadSanitizer data race detector, 'tsan' (default is no)]
+  )],
+[
+AC_MSG_RESULT([$withval])
+BASECFLAGS="-fsanitize=thread $BASECFLAGS"
+LDFLAGS="-fsanitize=thread $LDFLAGS"
+with_tsan="yes"
+],
+[
+AC_MSG_RESULT([no])
+with_tsan="no"
+])
+
 # Set info about shared libraries.
 AC_SUBST([SHLIB_SUFFIX])
 AC_SUBST([LDSHARED])
@@ -3320,7 +3380,7 @@ then
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
-	Emscripten|WASI)
+	Emscripten*|WASI*)
 		LDSHARED='$(CC) -shared'
 		LDCXXSHARED='$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
@@ -3366,7 +3426,7 @@ then
 		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
 	WASI*)
 		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
-			dnl not iplemented yet
+			dnl not implemented yet
 		]);;
 	CYGWIN*)
 		LDSHARED="gcc -shared -Wl,--enable-auto-image-base"
@@ -3536,7 +3596,7 @@ esac
 AC_MSG_RESULT([$SHLIBS])
 
 dnl perf trampoline is Linux specific and requires an arch-specific
-dnl trampoline in asssembly.
+dnl trampoline in assembly.
 AC_MSG_CHECKING([perf trampoline])
 AS_CASE([$PLATFORM_TRIPLET],
   [x86_64-linux-gnu], [perf_trampoline=yes],
@@ -3591,7 +3651,7 @@ AS_VAR_IF([have_uuid], [missing], [
     ], [
       WITH_SAVE_ENV([
         CPPFLAGS="$CPPFLAGS $LIBUUID_CFLAGS"
-        LDFLAGS="$LDFLAGS $LIBUUID_LIBS"
+        LIBS="$LIBS $LIBUUID_LIBS"
         AC_CHECK_HEADERS([uuid/uuid.h], [
           PY_CHECK_LIB([uuid], [uuid_generate_time], [have_uuid=yes])
           PY_CHECK_LIB([uuid], [uuid_generate_time_safe],
@@ -3818,7 +3878,7 @@ AS_VAR_IF([have_libffi], [missing], [
   PKG_CHECK_MODULES([LIBFFI], [libffi], [have_libffi=yes], [
     WITH_SAVE_ENV([
       CPPFLAGS="$CPPFLAGS $LIBFFI_CFLAGS"
-      LDFLAGS="$LDFLAGS $LIBFFI_LIBS"
+      LIBS="$LIBS $LIBFFI_LIBS"
       AC_CHECK_HEADER([ffi.h], [
         AC_CHECK_LIB([ffi], [ffi_call], [
           have_libffi=yes
@@ -3849,8 +3909,8 @@ AS_VAR_IF([have_libffi], [yes], [
   AS_VAR_IF([ac_cv_lib_dl_dlopen], [yes], [AS_VAR_APPEND([LIBFFI_LIBS], [" -ldl"])])
 
   WITH_SAVE_ENV([
-    CFLAGS="$LIBFFI_CFLAGS $CFLAGS"
-    LDFLAGS="$LIBFFI_LIBS $LDFLAGS"
+    CFLAGS="$CFLAGS $LIBFFI_CFLAGS"
+    LIBS="$LIBS $LIBFFI_LIBS"
 
     PY_CHECK_FUNC([ffi_prep_cif_var], [@%:@include <ffi.h>])
     PY_CHECK_FUNC([ffi_prep_closure_loc], [@%:@include <ffi.h>])
@@ -4017,7 +4077,7 @@ WITH_SAVE_ENV([
 dnl bpo-45774/GH-29507: The CPP check in AC_CHECK_HEADER can fail on FreeBSD,
 dnl hence CPPFLAGS instead of CFLAGS.
   CPPFLAGS="$CPPFLAGS $LIBSQLITE3_CFLAGS"
-  LDFLAGS="$LIBSQLITE3_LIBS $LDFLAGS"
+  LIBS="$LIBS $LIBSQLITE3_LIBS"
 
   AC_CHECK_HEADER([sqlite3.h], [
     have_sqlite3=yes
@@ -4120,7 +4180,7 @@ AS_CASE([$ac_sys_system],
 
 WITH_SAVE_ENV([
   CPPFLAGS="$CPPFLAGS $TCLTK_CFLAGS"
-  LIBS="$TCLTK_LIBS $LDFLAGS"
+  LIBS="$LIBS $TCLTK_LIBS"
 
   AC_LINK_IFELSE([
     AC_LANG_PROGRAM([
@@ -4162,7 +4222,7 @@ AC_ARG_VAR([GDBM_CFLAGS], [C compiler flags for gdbm])
 AC_ARG_VAR([GDBM_LIBS], [additional linker flags for gdbm])
 WITH_SAVE_ENV([
   CPPFLAGS="$CPPFLAGS $GDBM_CFLAGS"
-  LDFLAGS="$GDBM_LIBS $LDFLAGS"
+  LIBS="$LIBS $GDBM_LIBS"
   AC_CHECK_HEADERS([gdbm.h], [
     AC_CHECK_LIB([gdbm], [gdbm_open], [
       have_gdbm=yes
@@ -4530,7 +4590,7 @@ ipv6type=unknown
 ipv6lib=none
 ipv6trylibc=no
 
-if test "$ipv6" = "yes"; then
+if test "$ipv6" = yes -a "$cross_compiling" = no; then
 	AC_MSG_CHECKING([ipv6 stack type])
 	for i in inria kame linux-glibc linux-inet6 solaris toshiba v6d zeta;
 	do
@@ -4881,7 +4941,7 @@ AC_CHECK_FUNCS([ \
   sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
   sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
   sysconf system tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
-  tmpnam tmpnam_r truncate ttyname umask uname unlinkat utimensat utimes vfork \
+  tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
 
@@ -5041,7 +5101,7 @@ PKG_CHECK_MODULES([ZLIB], [zlib >= 1.2.0], [
 ], [
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $ZLIB_CFLAGS"
-    LDFLAGS="$LDFLAGS $ZLIB_LIBS"
+    LIBS="$LIBS $ZLIB_LIBS"
     AC_CHECK_HEADERS([zlib.h], [
       PY_CHECK_LIB([z], [gzread], [have_zlib=yes], [have_zlib=no])
     ], [have_zlib=no])
@@ -5065,7 +5125,7 @@ PY_CHECK_EMSCRIPTEN_PORT([BZIP2], [-sUSE_BZIP2])
 PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $BZIP2_CFLAGS"
-    LDFLAGS="$LDFLAGS $BZIP2_LIBS"
+    LIBS="$LIBS $BZIP2_LIBS"
     AC_CHECK_HEADERS([bzlib.h], [
       AC_CHECK_LIB([bz2], [BZ2_bzCompress], [have_bzip2=yes], [have_bzip2=no])
     ], [have_bzip2=no])
@@ -5079,7 +5139,7 @@ PKG_CHECK_MODULES([BZIP2], [bzip2], [have_bzip2=yes], [
 PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $LIBLZMA_CFLAGS"
-    LDFLAGS="$LDFLAGS $LIBLZMA_LIBS"
+    LIBS="$LIBS $LIBLZMA_LIBS"
     AC_CHECK_HEADERS([lzma.h], [
       AC_CHECK_LIB([lzma], [lzma_easy_encoder], [have_liblzma=yes], [have_liblzma=no])
     ], [have_liblzma=no])
@@ -5201,12 +5261,14 @@ WITH_SAVE_ENV([
           #include <crypt.h>
         #endif
         #include <unistd.h>
+        volatile void *func;
       ], [
         #ifdef HAVE_CRYPT_R
-          void *x = crypt_r;
+          func = crypt_r;
         #else
-          void *x = crypt;
+          func = crypt;
         #endif
+          return (func != NULL);
       ])
     ], [ac_cv_crypt_crypt=yes], [ac_cv_crypt_crypt=no])
   ])
@@ -5250,6 +5312,7 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #if defined(MAJOR_IN_MKDEV)
 #include <sys/mkdev.h>
 #elif defined(MAJOR_IN_SYSMACROS)
+#include <sys/types.h>
 #include <sys/sysmacros.h>
 #else
 #include <sys/types.h>
@@ -5637,28 +5700,26 @@ AS_VAR_IF([ac_cv_gcc_asm_for_x64], [yes], [
 # * Check for various properties of floating point *
 # **************************************************
 
-AX_C_FLOAT_WORDS_BIGENDIAN
-if test "$ax_cv_c_float_words_bigendian" = "yes"
-then
-  AC_DEFINE([DOUBLE_IS_BIG_ENDIAN_IEEE754], [1],
-  [Define if C doubles are 64-bit IEEE 754 binary format, stored
-   with the most significant byte first])
-elif test "$ax_cv_c_float_words_bigendian" = "no"
-then
-  AC_DEFINE([DOUBLE_IS_LITTLE_ENDIAN_IEEE754], [1],
-  [Define if C doubles are 64-bit IEEE 754 binary format, stored
-   with the least significant byte first])
-else
-  # Some ARM platforms use a mixed-endian representation for doubles.
-  # While Python doesn't currently have full support for these platforms
-  # (see e.g., issue 1762561), we can at least make sure that float <-> string
-  # conversions work.
-  # FLOAT_WORDS_BIGENDIAN doesnt actually detect this case, but if it's not big
-  # or little, then it must be this?
-  AC_DEFINE([DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754], [1],
-  [Define if C doubles are 64-bit IEEE 754 binary format, stored
-   in ARM mixed-endian order (byte order 45670123)])
-fi
+AX_C_FLOAT_WORDS_BIGENDIAN(
+  [AC_DEFINE([DOUBLE_IS_BIG_ENDIAN_IEEE754], [1],
+             [Define if C doubles are 64-bit IEEE 754 binary format,
+              stored with the most significant byte first])],
+  [AC_DEFINE([DOUBLE_IS_LITTLE_ENDIAN_IEEE754], [1],
+             [Define if C doubles are 64-bit IEEE 754 binary format,
+              stored with the least significant byte first])],
+  [AS_CASE([$host_cpu],
+           [*arm*], [# Some ARM platforms use a mixed-endian representation for
+                     # doubles. While Python doesn't currently have full support
+                     # for these platforms (see e.g., issue 1762561), we can at
+                     # least make sure that float <-> string conversions work.
+                     # FLOAT_WORDS_BIGENDIAN doesn't actually detect this case,
+                     # but if it's not big or little, then it must be this?
+                     AC_DEFINE([DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754], [1],
+                               [Define if C doubles are 64-bit IEEE 754 binary format,
+                                stored in ARM mixed-endian order (byte order 45670123)])],
+           [wasm*], [AC_DEFINE([DOUBLE_IS_LITTLE_ENDIAN_IEEE754], [1],
+                               [Define if C doubles are 64-bit IEEE 754 binary format,
+                                stored with the least significant byte first])])])
 
 # The short float repr introduced in Python 3.1 requires the
 # correctly-rounded string <-> double conversion functions from
@@ -6087,7 +6148,7 @@ AS_VAR_IF([with_readline], [readline], [
   ], [
     WITH_SAVE_ENV([
       CPPFLAGS="$CPPFLAGS $LIBREADLINE_CFLAGS"
-      LDFLAGS="$LDFLAGS $LIBREADLINE_LIBS"
+      LIBS="$LIBS $LIBREADLINE_LIBS"
       AC_CHECK_HEADERS([readline/readline.h], [
         AC_CHECK_LIB([readline], [readline], [
           LIBREADLINE=readline
@@ -6108,7 +6169,7 @@ AS_VAR_IF([with_readline], [edit], [
   ], [
     WITH_SAVE_ENV([
       CPPFLAGS="$CPPFLAGS $LIBEDIT_CFLAGS"
-      LDFLAGS="$LDFLAGS $LIBEDIT_LIBS"
+      LIBS="$LIBS $LIBEDIT_LIBS"
       AC_CHECK_HEADERS([editline/readline.h], [
         AC_CHECK_LIB([edit], [readline], [
           LIBREADLINE=edit
@@ -6132,7 +6193,7 @@ AS_VAR_IF([with_readline], [no], [
 
   WITH_SAVE_ENV([
     CPPFLAGS="$CPPFLAGS $READLINE_CFLAGS"
-    LIBS="$READLINE_LIBS $LIBS"
+    LIBS="$LIBS $READLINE_LIBS"
     LIBS_SAVE=$LIBS
 
     m4_define([readline_includes], [
@@ -6212,6 +6273,13 @@ AS_VAR_IF([with_readline], [no], [
     AS_VAR_IF([ac_cv_readline_append_history], [yes], [
       AC_DEFINE([HAVE_RL_APPEND_HISTORY], [1], [Define if readline supports append_history])
     ])
+
+    # in readline as well as newer editline (April 2023)
+    AC_CHECK_TYPE([rl_compdisp_func_t],
+                  [AC_DEFINE([HAVE_RL_COMPDISP_FUNC_T], [1],
+                             [Define if readline supports rl_compdisp_func_t])],
+                  [],
+                  [readline_includes])
 
     m4_undefine([readline_includes])
   ])dnl WITH_SAVE_ENV()
@@ -6419,9 +6487,11 @@ dnl remove _XOPEN_SOURCE macro from curses cflags. pyconfig.h sets
 dnl the macro to 700.
 CURSES_CFLAGS=$(echo $CURSES_CFLAGS | sed 's/-D_XOPEN_SOURCE=600//g')
 
-if test "$have_curses" = no -a "$ac_sys_system" = "Darwin"; then
+if test "$have_curses" != no -a "$ac_sys_system" = "Darwin"; then
   dnl On macOS, there is no separate /usr/lib/libncursesw nor libpanelw.
-  dnl If we are here, we found a locally-supplied version of libncursesw.
+  dnl System-supplied ncurses combines libncurses/libpanel and supports wide
+  dnl characters, so we can use it like ncursesw.
+  dnl If a locally-supplied version of libncursesw is found, we will use that.
   dnl There should also be a libpanelw.
   dnl _XOPEN_SOURCE defines are usually excluded for macOS, but we need
   dnl _XOPEN_SOURCE_EXTENDED here for ncurses wide char support.
@@ -6983,7 +7053,12 @@ AX_CHECK_OPENSSL([have_openssl=yes],[have_openssl=no])
 AS_VAR_IF([GNULD], [yes], [
   rpath_arg="-Wl,--enable-new-dtags,-rpath="
 ], [
-  rpath_arg="-Wl,-rpath="
+  if test "$ac_sys_system" = "Darwin"
+  then
+     rpath_arg="-Wl,-rpath,"
+  else
+     rpath_arg="-Wl,-rpath="
+  fi
 ])
 
 AC_MSG_CHECKING([for --with-openssl-rpath])
@@ -7249,11 +7324,19 @@ AS_CASE([$ac_sys_system],
       [Emscripten/node*], [],
       [WASI/*], [
         dnl WASI SDK 15.0 does not support file locking, mmap, and more.
+        dnl Test modules that must be compiled as shared libraries are not supported
+        dnl (see Modules/Setup.stdlib.in).
         PY_STDLIB_MOD_SET_NA(
           [_ctypes_test],
+          [_testexternalinspection],
+          [_testimportmultiple],
+          [_testmultiphase],
+          [_testsinglephase],
           [fcntl],
           [mmap],
           [termios],
+          [xxlimited],
+          [xxlimited_35],
         )
       ]
     )

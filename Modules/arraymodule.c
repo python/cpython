@@ -244,7 +244,7 @@ BB_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
     if (!PyArg_Parse(v, "b;array item must be integer", &x))
         return -1;
     if (i >= 0)
-        ((char *)ap->ob_item)[i] = x;
+        ((unsigned char *)ap->ob_item)[i] = x;
     return 0;
 }
 
@@ -2739,7 +2739,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 PyDoc_STRVAR(module_doc,
 "This module defines an object type which can efficiently represent\n\
-an array of basic values: characters, integers, floating point\n\
+an array of basic values: characters, integers, floating-point\n\
 numbers.  Arrays are sequence types and behave very much like lists,\n\
 except that the type of objects stored in them is constrained.\n");
 
@@ -2767,8 +2767,8 @@ The following type codes are defined:\n\
     'L'         unsigned integer   4\n\
     'q'         signed integer     8 (see note)\n\
     'Q'         unsigned integer   8 (see note)\n\
-    'f'         floating point     4\n\
-    'd'         floating point     8\n\
+    'f'         floating-point     4\n\
+    'd'         floating-point     8\n\
 \n\
 NOTE: The 'u' typecode corresponds to Python's unicode character. On\n\
 narrow builds this is 2-bytes on wide builds this is 4-bytes.\n\
@@ -2966,11 +2966,16 @@ array_arrayiterator___setstate__(arrayiterobject *self, PyObject *state)
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
-    if (index < 0)
-        index = 0;
-    else if (index > Py_SIZE(self->ao))
-        index = Py_SIZE(self->ao); /* iterator exhausted */
-    self->index = index;
+    arrayobject *ao = self->ao;
+    if (ao != NULL) {
+        if (index < 0) {
+            index = 0;
+        }
+        else if (index > Py_SIZE(ao)) {
+            index = Py_SIZE(ao); /* iterator exhausted */
+        }
+        self->index = index;
+    }
     Py_RETURN_NONE;
 }
 

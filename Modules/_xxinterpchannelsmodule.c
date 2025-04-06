@@ -2,8 +2,13 @@
 /* interpreters module */
 /* low-level access to interpreter primitives */
 
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
+
 #include "Python.h"
 #include "interpreteridobject.h"
+#include "pycore_pystate.h"       // _PyCrossInterpreterData_ReleaseAndRawFree()
 
 
 /*
@@ -161,20 +166,33 @@ add_new_type(PyObject *mod, PyType_Spec *spec, crossinterpdatafunc shared)
     return cls;
 }
 
+#define XID_IGNORE_EXC 1
+#define XID_FREE 2
+
 static int
-_release_xid_data(_PyCrossInterpreterData *data, int ignoreexc)
+_release_xid_data(_PyCrossInterpreterData *data, int flags)
 {
+    int ignoreexc = flags & XID_IGNORE_EXC;
     PyObject *exc;
     if (ignoreexc) {
         exc = PyErr_GetRaisedException();
     }
-    int res = _PyCrossInterpreterData_Release(data);
+    int res;
+    if (flags & XID_FREE) {
+        res = _PyCrossInterpreterData_ReleaseAndRawFree(data);
+    }
+    else {
+        res = _PyCrossInterpreterData_Release(data);
+    }
     if (res < 0) {
         /* The owning interpreter is already destroyed. */
         if (ignoreexc) {
             // XXX Emit a warning?
             PyErr_Clear();
         }
+    }
+    if (flags & XID_FREE) {
+        /* Either way, we free the data. */
     }
     if (ignoreexc) {
         PyErr_SetRaisedException(exc);
@@ -367,9 +385,8 @@ static void
 _channelitem_clear(_channelitem *item)
 {
     if (item->data != NULL) {
-        (void)_release_xid_data(item->data, 1);
         // It was allocated in _channel_send().
-        GLOBAL_FREE(item->data);
+        (void)_release_xid_data(item->data, XID_IGNORE_EXC & XID_FREE);
         item->data = NULL;
     }
     item->next = NULL;
@@ -1440,14 +1457,12 @@ _channel_recv(_channels *channels, int64_t id, PyObject **res)
     PyObject *obj = _PyCrossInterpreterData_NewObject(data);
     if (obj == NULL) {
         assert(PyErr_Occurred());
-        (void)_release_xid_data(data, 1);
-        // It was allocated in _channel_send().
-        GLOBAL_FREE(data);
+        // It was allocated in _channel_send(), so we free it.
+        (void)_release_xid_data(data, XID_IGNORE_EXC | XID_FREE);
         return -1;
     }
-    int release_res = _release_xid_data(data, 0);
-    // It was allocated in _channel_send().
-    GLOBAL_FREE(data);
+    // It was allocated in _channel_send(), so we free it.
+    int release_res = _release_xid_data(data, XID_FREE);
     if (release_res < 0) {
         // The source interpreter has been destroyed already.
         assert(PyErr_Occurred());

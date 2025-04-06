@@ -683,7 +683,10 @@ class Combobox(Entry):
         returns the index of the current value in the list of values
         or -1 if the current value does not appear in the list."""
         if newindex is None:
-            return self.tk.getint(self.tk.call(self._w, "current"))
+            res = self.tk.call(self._w, "current")
+            if res == '':
+                return -1
+            return self.tk.getint(res)
         return self.tk.call(self._w, "current", newindex)
 
 
@@ -1515,7 +1518,7 @@ class LabeledScale(Frame):
         self.label.place(anchor='n' if label_side == 'top' else 's')
 
         # update the label as scale or variable changes
-        self.__tracecb = self._variable.trace_variable('w', self._adjust)
+        self.__tracecb = self._variable.trace_add('write', self._adjust)
         self.bind('<Configure>', self._adjust)
         self.bind('<Map>', self._adjust)
 
@@ -1523,7 +1526,7 @@ class LabeledScale(Frame):
     def destroy(self):
         """Destroy this widget and possibly its associated variable."""
         try:
-            self._variable.trace_vdelete('w', self.__tracecb)
+            self._variable.trace_remove('write', self.__tracecb)
         except AttributeError:
             pass
         else:

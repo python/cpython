@@ -19,7 +19,7 @@ def importable(name):
     try:
         __import__(name)
         return True
-    except:
+    except ModuleNotFoundError:
         return False
 
 

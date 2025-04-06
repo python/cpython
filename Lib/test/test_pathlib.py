@@ -546,6 +546,7 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, P('.').with_name, 'd.xml')
         self.assertRaises(ValueError, P('/').with_name, 'd.xml')
         self.assertRaises(ValueError, P('a/b').with_name, '')
+        self.assertRaises(ValueError, P('a/b').with_name, '.')
         self.assertRaises(ValueError, P('a/b').with_name, '/c')
         self.assertRaises(ValueError, P('a/b').with_name, 'c/')
         self.assertRaises(ValueError, P('a/b').with_name, 'c/d')
@@ -563,6 +564,7 @@ class _BasePurePathTest(object):
         self.assertRaises(ValueError, P('.').with_stem, 'd')
         self.assertRaises(ValueError, P('/').with_stem, 'd')
         self.assertRaises(ValueError, P('a/b').with_stem, '')
+        self.assertRaises(ValueError, P('a/b').with_stem, '.')
         self.assertRaises(ValueError, P('a/b').with_stem, '/c')
         self.assertRaises(ValueError, P('a/b').with_stem, 'c/')
         self.assertRaises(ValueError, P('a/b').with_stem, 'c/d')
@@ -828,6 +830,14 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
             ('//a/b', 'c'), ('//a/b/', 'c'),
             ],
     })
+
+    def test_constructor_nested_foreign_flavour(self):
+        # See GH-125069.
+        p1 = pathlib.PurePosixPath('b/c:\\d')
+        p2 = pathlib.PurePosixPath('b/', 'c:\\d')
+        self.assertEqual(p1, p2)
+        self.assertEqual(self.cls(p1), self.cls('b/c:/d'))
+        self.assertEqual(self.cls(p2), self.cls('b/c:/d'))
 
     def test_drive_root_parts(self):
         check = self._check_drive_root_parts
@@ -1167,8 +1177,10 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertRaises(ValueError, P('c:').with_name, 'd.xml')
         self.assertRaises(ValueError, P('c:/').with_name, 'd.xml')
         self.assertRaises(ValueError, P('//My/Share').with_name, 'd.xml')
-        self.assertRaises(ValueError, P('c:a/b').with_name, 'd:')
-        self.assertRaises(ValueError, P('c:a/b').with_name, 'd:e')
+        self.assertEqual(str(P('a').with_name('d:')), '.\\d:')
+        self.assertEqual(str(P('a').with_name('d:e')), '.\\d:e')
+        self.assertEqual(P('c:a/b').with_name('d:'), P('c:a/d:'))
+        self.assertEqual(P('c:a/b').with_name('d:e'), P('c:a/d:e'))
         self.assertRaises(ValueError, P('c:a/b').with_name, 'd:/e')
         self.assertRaises(ValueError, P('c:a/b').with_name, '//My/Share')
 
@@ -1181,8 +1193,10 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertRaises(ValueError, P('c:').with_stem, 'd')
         self.assertRaises(ValueError, P('c:/').with_stem, 'd')
         self.assertRaises(ValueError, P('//My/Share').with_stem, 'd')
-        self.assertRaises(ValueError, P('c:a/b').with_stem, 'd:')
-        self.assertRaises(ValueError, P('c:a/b').with_stem, 'd:e')
+        self.assertEqual(str(P('a').with_stem('d:')), '.\\d:')
+        self.assertEqual(str(P('a').with_stem('d:e')), '.\\d:e')
+        self.assertEqual(P('c:a/b').with_stem('d:'), P('c:a/d:'))
+        self.assertEqual(P('c:a/b').with_stem('d:e'), P('c:a/d:e'))
         self.assertRaises(ValueError, P('c:a/b').with_stem, 'd:/e')
         self.assertRaises(ValueError, P('c:a/b').with_stem, '//My/Share')
 
@@ -2628,15 +2642,15 @@ class _BasePathTest(object):
         self.assertIs((P / 'fileA\x00').is_char_device(), False)
 
     def test_is_char_device_true(self):
-        # Under Unix, /dev/null should generally be a char device.
-        P = self.cls('/dev/null')
+        # os.devnull should generally be a char device.
+        P = self.cls(os.devnull)
         if not P.exists():
-            self.skipTest("/dev/null required")
+            self.skipTest("null device required")
         self.assertTrue(P.is_char_device())
         self.assertFalse(P.is_block_device())
         self.assertFalse(P.is_file())
-        self.assertIs(self.cls('/dev/null\udfff').is_char_device(), False)
-        self.assertIs(self.cls('/dev/null\x00').is_char_device(), False)
+        self.assertIs(self.cls(f'{os.devnull}\udfff').is_char_device(), False)
+        self.assertIs(self.cls(f'{os.devnull}\x00').is_char_device(), False)
 
     def test_pickling_common(self):
         p = self.cls(BASE, 'fileA')
@@ -3097,7 +3111,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         p7 = P(f'~{fakename}/Documents')
 
         with os_helper.EnvironmentVarGuard() as env:
-            env.pop('HOME', None)
+            env.unset('HOME')
 
             self.assertEqual(p1.expanduser(), P(userhome) / 'Documents')
             self.assertEqual(p2.expanduser(), P(userhome) / 'Documents')
@@ -3208,10 +3222,7 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
     def test_expanduser(self):
         P = self.cls
         with os_helper.EnvironmentVarGuard() as env:
-            env.pop('HOME', None)
-            env.pop('USERPROFILE', None)
-            env.pop('HOMEPATH', None)
-            env.pop('HOMEDRIVE', None)
+            env.unset('HOME', 'USERPROFILE', 'HOMEPATH', 'HOMEDRIVE')
             env['USERNAME'] = 'alice'
 
             # test that the path returns unchanged
@@ -3249,8 +3260,7 @@ class WindowsPathTest(_BasePathTest, unittest.TestCase):
             env['HOMEPATH'] = 'Users\\alice'
             check()
 
-            env.pop('HOMEDRIVE', None)
-            env.pop('HOMEPATH', None)
+            env.unset('HOMEDRIVE', 'HOMEPATH')
             env['USERPROFILE'] = 'C:\\Users\\alice'
             check()
 

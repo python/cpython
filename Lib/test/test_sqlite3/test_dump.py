@@ -117,6 +117,41 @@ class DumpTests(unittest.TestCase):
         got = list(self.cx.iterdump())
         self.assertEqual(expected, got)
 
+    def test_dump_custom_row_factory(self):
+        # gh-118221: iterdump should be able to cope with custom row factories.
+        def dict_factory(cu, row):
+            fields = [col[0] for col in cu.description]
+            return dict(zip(fields, row))
+
+        self.cx.row_factory = dict_factory
+        CREATE_TABLE = "CREATE TABLE test(t);"
+        expected = ["BEGIN TRANSACTION;", CREATE_TABLE, "COMMIT;"]
+
+        self.cu.execute(CREATE_TABLE)
+        actual = list(self.cx.iterdump())
+        self.assertEqual(expected, actual)
+        self.assertEqual(self.cx.row_factory, dict_factory)
+
+    def test_dump_virtual_tables(self):
+        # gh-64662
+        expected = [
+            "BEGIN TRANSACTION;",
+            "PRAGMA writable_schema=ON;",
+            ("INSERT INTO sqlite_master(type,name,tbl_name,rootpage,sql)"
+             "VALUES('table','test','test',0,'CREATE VIRTUAL TABLE test USING fts4(example)');"),
+            "CREATE TABLE 'test_content'(docid INTEGER PRIMARY KEY, 'c0example');",
+            "CREATE TABLE 'test_docsize'(docid INTEGER PRIMARY KEY, size BLOB);",
+            ("CREATE TABLE 'test_segdir'(level INTEGER,idx INTEGER,start_block INTEGER,"
+             "leaves_end_block INTEGER,end_block INTEGER,root BLOB,PRIMARY KEY(level, idx));"),
+            "CREATE TABLE 'test_segments'(blockid INTEGER PRIMARY KEY, block BLOB);",
+            "CREATE TABLE 'test_stat'(id INTEGER PRIMARY KEY, value BLOB);",
+            "PRAGMA writable_schema=OFF;",
+            "COMMIT;"
+        ]
+        self.cu.execute("CREATE VIRTUAL TABLE test USING fts4(example)")
+        actual = list(self.cx.iterdump())
+        self.assertEqual(expected, actual)
+
 
 if __name__ == "__main__":
     unittest.main()

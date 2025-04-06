@@ -436,6 +436,23 @@ def _checknetloc(netloc):
             raise ValueError("netloc '" + netloc + "' contains invalid " +
                              "characters under NFKC normalization")
 
+def _check_bracketed_netloc(netloc):
+    # Note that this function must mirror the splitting
+    # done in NetlocResultMixins._hostinfo().
+    hostname_and_port = netloc.rpartition('@')[2]
+    before_bracket, have_open_br, bracketed = hostname_and_port.partition('[')
+    if have_open_br:
+        # No data is allowed before a bracket.
+        if before_bracket:
+            raise ValueError("Invalid IPv6 URL")
+        hostname, _, port = bracketed.partition(']')
+        # No data is allowed after the bracket but before the port delimiter.
+        if port and not port.startswith(":"):
+            raise ValueError("Invalid IPv6 URL")
+    else:
+        hostname, _, port = hostname_and_port.partition(':')
+    _check_bracketed_host(hostname)
+
 # Valid bracketed hosts are defined in
 # https://www.rfc-editor.org/rfc/rfc3986#page-49 and https://url.spec.whatwg.org/
 def _check_bracketed_host(hostname):
@@ -496,8 +513,7 @@ def urlsplit(url, scheme='', allow_fragments=True):
                 (']' in netloc and '[' not in netloc)):
             raise ValueError("Invalid IPv6 URL")
         if '[' in netloc and ']' in netloc:
-            bracketed_host = netloc.partition('[')[2].partition(']')[0]
-            _check_bracketed_host(bracketed_host)
+            _check_bracketed_netloc(netloc)
     if allow_fragments and '#' in url:
         url, fragment = url.split('#', 1)
     if '?' in url:
@@ -525,9 +541,13 @@ def urlunsplit(components):
     empty query; the RFC states that these are equivalent)."""
     scheme, netloc, url, query, fragment, _coerce_result = (
                                           _coerce_args(*components))
-    if netloc or (scheme and scheme in uses_netloc and url[:2] != '//'):
+    if netloc:
         if url and url[:1] != '/': url = '/' + url
-        url = '//' + (netloc or '') + url
+        url = '//' + netloc + url
+    elif url[:2] == '//':
+        url = '//' + url
+    elif scheme and scheme in uses_netloc and (not url or url[:1] == '/'):
+        url = '//' + url
     if scheme:
         url = scheme + ':' + url
     if query:
@@ -763,42 +783,48 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
 
         Returns a list, as G-d intended.
     """
-    qs, _coerce_result = _coerce_args(qs)
-    separator, _ = _coerce_args(separator)
 
-    if not separator or (not isinstance(separator, (str, bytes))):
+    if not separator or not isinstance(separator, (str, bytes)):
         raise ValueError("Separator must be of type string or bytes.")
+    if isinstance(qs, str):
+        if not isinstance(separator, str):
+            separator = str(separator, 'ascii')
+        eq = '='
+        def _unquote(s):
+            return unquote_plus(s, encoding=encoding, errors=errors)
+    else:
+        if not qs:
+            return []
+        # Use memoryview() to reject integers and iterables,
+        # acceptable by the bytes constructor.
+        qs = bytes(memoryview(qs))
+        if isinstance(separator, str):
+            separator = bytes(separator, 'ascii')
+        eq = b'='
+        def _unquote(s):
+            return unquote_to_bytes(s.replace(b'+', b' '))
+
+    if not qs:
+        return []
 
     # If max_num_fields is defined then check that the number of fields
     # is less than max_num_fields. This prevents a memory exhaustion DOS
     # attack via post bodies with many fields.
     if max_num_fields is not None:
-        num_fields = 1 + qs.count(separator) if qs else 0
+        num_fields = 1 + qs.count(separator)
         if max_num_fields < num_fields:
             raise ValueError('Max number of fields exceeded')
 
     r = []
-    query_args = qs.split(separator) if qs else []
-    for name_value in query_args:
-        if not name_value and not strict_parsing:
-            continue
-        nv = name_value.split('=', 1)
-        if len(nv) != 2:
-            if strict_parsing:
+    for name_value in qs.split(separator):
+        if name_value or strict_parsing:
+            name, has_eq, value = name_value.partition(eq)
+            if not has_eq and strict_parsing:
                 raise ValueError("bad query field: %r" % (name_value,))
-            # Handle case of a control-name with no equal sign
-            if keep_blank_values:
-                nv.append('')
-            else:
-                continue
-        if len(nv[1]) or keep_blank_values:
-            name = nv[0].replace('+', ' ')
-            name = unquote(name, encoding=encoding, errors=errors)
-            name = _coerce_result(name)
-            value = nv[1].replace('+', ' ')
-            value = unquote(value, encoding=encoding, errors=errors)
-            value = _coerce_result(value)
-            r.append((name, value))
+            if value or keep_blank_values:
+                name = _unquote(name)
+                value = _unquote(value)
+                r.append((name, value))
     return r
 
 def unquote_plus(string, encoding='utf-8', errors='replace'):

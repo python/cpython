@@ -23,7 +23,7 @@
 #include <stddef.h> /* For offsetof */
 
 #ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
 #include <fcntl.h>
@@ -134,6 +134,71 @@ char _PyIO_get_console_type(PyObject *path_or_fd) {
     return m;
 }
 
+static DWORD
+_find_last_utf8_boundary(const unsigned char *buf, DWORD len)
+{
+    for (DWORD count = 1; count < 4 && count <= len; count++) {
+        unsigned char c = buf[len - count];
+        if (c < 0x80) {
+            /* No starting byte found. */
+            return len;
+        }
+        if (c >= 0xc0) {
+            if (c < 0xe0 /* 2-bytes sequence */ ? count < 2 :
+                c < 0xf0 /* 3-bytes sequence */ ? count < 3 :
+                c < 0xf8 /* 4-bytes sequence */)
+            {
+                /* Incomplete multibyte sequence. */
+                return len - count;
+            }
+            /* Either complete or invalid sequence. */
+            return len;
+        }
+    }
+    /* Either complete 4-bytes sequence or invalid sequence. */
+    return len;
+}
+
+/* Find the number of UTF-8 bytes that corresponds to the specified number of
+ * wchars.
+ * I.e. find x <= len so that MultiByteToWideChar(CP_UTF8, 0, s, x, NULL, 0) == n.
+ *
+ * WideCharToMultiByte() cannot be used for this, because the UTF-8 -> wchar
+ * conversion is not reversible (invalid UTF-8 byte produces \ufffd which
+ * will be converted back to 3-bytes UTF-8 sequence \xef\xbf\xbd).
+ * So we need to use binary search.
+ */
+static DWORD
+_wchar_to_utf8_count(const unsigned char *s, DWORD len, DWORD n)
+{
+    DWORD start = 0;
+    while (1) {
+        DWORD mid = 0;
+        for (DWORD i = len / 2; i <= len; i++) {
+            mid = _find_last_utf8_boundary(s, i);
+            if (mid != 0) {
+                break;
+            }
+            /* The middle could split the first multibytes sequence. */
+        }
+        if (mid == len) {
+            return start + len;
+        }
+        if (mid == 0) {
+            mid = len > 1 ? len - 1 : 1;
+        }
+        DWORD wlen = MultiByteToWideChar(CP_UTF8, 0, s, mid, NULL, 0);
+        if (wlen <= n) {
+            s += mid;
+            start += mid;
+            len -= mid;
+            n -= wlen;
+        }
+        else {
+            len = mid;
+        }
+    }
+}
 
 /*[clinic input]
 module _io
@@ -378,8 +443,8 @@ _io__WindowsConsoleIO___init___impl(winconsoleio *self, PyObject *nameobj,
         else
             self->fd = _Py_open_osfhandle_noraise(handle, _O_RDONLY | _O_BINARY);
         if (self->fd < 0) {
-            CloseHandle(handle);
             PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, nameobj);
+            CloseHandle(handle);
             goto error;
         }
     }
@@ -539,8 +604,10 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
     int err = 0, sig = 0;
 
     wchar_t *buf = (wchar_t*)PyMem_Malloc(maxlen * sizeof(wchar_t));
-    if (!buf)
+    if (!buf) {
+        PyErr_NoMemory();
         goto error;
+    }
 
     *readlen = 0;
 
@@ -598,6 +665,7 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
             Py_UNBLOCK_THREADS
             if (!newbuf) {
                 sig = -1;
+                PyErr_NoMemory();
                 break;
             }
             buf = newbuf;
@@ -621,8 +689,10 @@ read_console_w(HANDLE handle, DWORD maxlen, DWORD *readlen) {
     if (*readlen > 0 && buf[0] == L'\x1a') {
         PyMem_Free(buf);
         buf = (wchar_t *)PyMem_Malloc(sizeof(wchar_t));
-        if (!buf)
+        if (!buf) {
+            PyErr_NoMemory();
             goto error;
+        }
         buf[0] = L'\0';
         *readlen = 0;
     }
@@ -800,8 +870,10 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
     bufsize = BUFSIZ;
 
     buf = (wchar_t*)PyMem_Malloc((bufsize + 1) * sizeof(wchar_t));
-    if (buf == NULL)
+    if (buf == NULL) {
+        PyErr_NoMemory();
         return NULL;
+    }
 
     while (1) {
         wchar_t *subbuf;
@@ -823,6 +895,7 @@ _io__WindowsConsoleIO_readall_impl(winconsoleio *self)
                                          (bufsize + 1) * sizeof(wchar_t));
             if (tmp == NULL) {
                 PyMem_Free(buf);
+                PyErr_NoMemory();
                 return NULL;
             }
             buf = tmp;
@@ -975,7 +1048,7 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
 {
     BOOL res = TRUE;
     wchar_t *wbuf;
-    DWORD len, wlen, orig_len, n = 0;
+    DWORD len, wlen, n = 0;
     HANDLE handle;
 
     if (self->fd == -1)
@@ -998,56 +1071,49 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
         len = (DWORD)b->len;
 
     Py_BEGIN_ALLOW_THREADS
-    wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, NULL, 0);
-
     /* issue11395 there is an unspecified upper bound on how many bytes
        can be written at once. We cap at 32k - the caller will have to
        handle partial writes.
        Since we don't know how many input bytes are being ignored, we
        have to reduce and recalculate. */
-    while (wlen > 32766 / sizeof(wchar_t)) {
-        len /= 2;
-        orig_len = len;
-        /* Reduce the length until we hit the final byte of a UTF-8 sequence
-         * (top bit is unset). Fix for github issue 82052.
-         */
-        while (len > 0 && (((char *)b->buf)[len-1] & 0x80) != 0)
-            --len;
-        /* If we hit a length of 0, something has gone wrong. This shouldn't
-         * be possible, as valid UTF-8 can have at most 3 non-final bytes
-         * before a final one, and our buffer is way longer than that.
-         * But to be on the safe side, if we hit this issue we just restore
-         * the original length and let the console API sort it out.
-         */
-        if (len == 0) {
-            len = orig_len;
-        }
+    const DWORD max_wlen = 32766 / sizeof(wchar_t);
+    /* UTF-8 to wchar ratio is at most 3:1. */
+    len = Py_MIN(len, max_wlen * 3);
+    while (1) {
+        /* Fix for github issues gh-110913 and gh-82052. */
+        len = _find_last_utf8_boundary(b->buf, len);
         wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, NULL, 0);
+        if (wlen <= max_wlen) {
+            break;
+        }
+        len /= 2;
     }
     Py_END_ALLOW_THREADS
 
-    if (!wlen)
-        return PyErr_SetFromWindowsErr(0);
+    if (!wlen) {
+        return PyLong_FromLong(0);
+    }
 
     wbuf = (wchar_t*)PyMem_Malloc(wlen * sizeof(wchar_t));
+    if (!wbuf) {
+        PyErr_NoMemory();
+        return NULL;
+    }
 
     Py_BEGIN_ALLOW_THREADS
     wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len, wbuf, wlen);
     if (wlen) {
         res = WriteConsoleW(handle, wbuf, wlen, &n, NULL);
+#ifdef Py_DEBUG
+        if (res) {
+#else
         if (res && n < wlen) {
+#endif
             /* Wrote fewer characters than expected, which means our
              * len value may be wrong. So recalculate it from the
-             * characters that were written. As this could potentially
-             * result in a different value, we also validate that value.
+             * characters that were written.
              */
-            len = WideCharToMultiByte(CP_UTF8, 0, wbuf, n,
-                NULL, 0, NULL, NULL);
-            if (len) {
-                wlen = MultiByteToWideChar(CP_UTF8, 0, b->buf, len,
-                    NULL, 0);
-                assert(wlen == len);
-            }
+            len = _wchar_to_utf8_count(b->buf, len, n);
         }
     } else
         res = 0;

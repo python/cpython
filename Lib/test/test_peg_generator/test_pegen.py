@@ -42,6 +42,15 @@ class TestPegen(unittest.TestCase):
         )
         self.assertEqual(repr(rules["term"]), expected_repr)
 
+    def test_repeated_rules(self) -> None:
+        grammar_source = """
+        start: the_rule NEWLINE
+        the_rule: 'b' NEWLINE
+        the_rule: 'a' NEWLINE
+        """
+        with self.assertRaisesRegex(GrammarError, "Repeated rule 'the_rule'"):
+            parse_string(grammar_source, GrammarParser)
+
     def test_long_rule_str(self) -> None:
         grammar_source = """
         start: zero | one | one zero | one one | one zero zero | one zero one | one one zero | one one one

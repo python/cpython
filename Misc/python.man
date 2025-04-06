@@ -251,6 +251,7 @@ emitted by a process (even those that are otherwise ignored by default):
   -Wdefault  # Warn once per call location
   -Werror    # Convert to exceptions
   -Walways   # Warn every time
+  -Wall      # Same as -Walways
   -Wmodule   # Warn once per calling module
   -Wonce     # Warn once per Python process
   -Wignore   # Never warn
@@ -592,8 +593,8 @@ works on Mac OS X.
 .IP PYTHONUSERBASE
 Defines the user base directory, which is used to compute the path of the user
 .IR site-packages
-directory and Distutils installation paths for
-.IR "python setup\.py install \-\-user" .
+directory and installation paths for
+.IR "python \-m pip install \-\-user" .
 .IP PYTHONPROFILEIMPORTTIME
 If this environment variable is set to a non-empty string, Python will
 show how long each import takes. This is exactly equivalent to setting

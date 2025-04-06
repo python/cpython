@@ -74,6 +74,7 @@ import os
 import builtins
 import _sitebuiltins
 import io
+import stat
 
 # Prefixes for site-packages; add additional prefixes like /usr/local here
 PREFIXES = [sys.prefix, sys.exec_prefix]
@@ -168,37 +169,56 @@ def addpackage(sitedir, name, known_paths):
     else:
         reset = False
     fullname = os.path.join(sitedir, name)
-    _trace(f"Processing .pth file: {fullname!r}")
     try:
-        # locale encoding is not ideal especially on Windows. But we have used
-        # it for a long time. setuptools uses the locale encoding too.
-        f = io.TextIOWrapper(io.open_code(fullname), encoding="locale")
+        st = os.lstat(fullname)
     except OSError:
         return
-    with f:
-        for n, line in enumerate(f):
-            if line.startswith("#"):
+    if ((getattr(st, 'st_flags', 0) & stat.UF_HIDDEN) or
+        (getattr(st, 'st_file_attributes', 0) & stat.FILE_ATTRIBUTE_HIDDEN)):
+        _trace(f"Skipping hidden .pth file: {fullname!r}")
+        return
+    _trace(f"Processing .pth file: {fullname!r}")
+    try:
+        with io.open_code(fullname) as f:
+            pth_content = f.read()
+    except OSError:
+        return
+
+    try:
+        # Accept BOM markers in .pth files as we do in source files
+        # (Windows PowerShell 5.1 makes it hard to emit UTF-8 files without a BOM)
+        pth_content = pth_content.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        # Fallback to locale encoding for backward compatibility.
+        # We will deprecate this fallback in the future.
+        import locale
+        pth_content = pth_content.decode(locale.getencoding())
+        _trace(f"Cannot read {fullname!r} as UTF-8. "
+               f"Using fallback encoding {locale.getencoding()!r}")
+
+    for n, line in enumerate(pth_content.splitlines(), 1):
+        if line.startswith("#"):
+            continue
+        if line.strip() == "":
+            continue
+        try:
+            if line.startswith(("import ", "import\t")):
+                exec(line)
                 continue
-            if line.strip() == "":
-                continue
-            try:
-                if line.startswith(("import ", "import\t")):
-                    exec(line)
-                    continue
-                line = line.rstrip()
-                dir, dircase = makepath(sitedir, line)
-                if not dircase in known_paths and os.path.exists(dir):
-                    sys.path.append(dir)
-                    known_paths.add(dircase)
-            except Exception as exc:
-                print("Error processing line {:d} of {}:\n".format(n+1, fullname),
-                      file=sys.stderr)
-                import traceback
-                for record in traceback.format_exception(exc):
-                    for line in record.splitlines():
-                        print('  '+line, file=sys.stderr)
-                print("\nRemainder of file ignored", file=sys.stderr)
-                break
+            line = line.rstrip()
+            dir, dircase = makepath(sitedir, line)
+            if dircase not in known_paths and os.path.exists(dir):
+                sys.path.append(dir)
+                known_paths.add(dircase)
+        except Exception as exc:
+            print(f"Error processing line {n:d} of {fullname}:\n",
+                  file=sys.stderr)
+            import traceback
+            for record in traceback.format_exception(exc):
+                for line in record.splitlines():
+                    print('  '+line, file=sys.stderr)
+            print("\nRemainder of file ignored", file=sys.stderr)
+            break
     if reset:
         known_paths = None
     return known_paths
@@ -221,7 +241,8 @@ def addsitedir(sitedir, known_paths=None):
         names = os.listdir(sitedir)
     except OSError:
         return
-    names = [name for name in names if name.endswith(".pth")]
+    names = [name for name in names
+             if name.endswith(".pth") and not name.startswith(".")]
     for name in sorted(names):
         addpackage(sitedir, name, known_paths)
     if reset:
@@ -405,8 +426,9 @@ def setcopyright():
     """Set 'copyright' and 'credits' in builtins"""
     builtins.copyright = _sitebuiltins._Printer("copyright", sys.copyright)
     builtins.credits = _sitebuiltins._Printer("credits", """\
-    Thanks to CWI, CNRI, BeOpen.com, Zope Corporation and a cast of thousands
-    for supporting Python development.  See www.python.org for more information.""")
+    Thanks to CWI, CNRI, BeOpen, Zope Corporation, the Python Software
+    Foundation, and a cast of thousands for supporting Python
+    development.  See www.python.org for more information.""")
     files, dirs = [], []
     # Not all modules are required to have a __file__ attribute.  See
     # PEP 420 for more details.

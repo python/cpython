@@ -15,8 +15,8 @@ def _other_endian(typ):
     # if typ is array
     if isinstance(typ, _array_type):
         return _other_endian(typ._type_) * typ._length_
-    # if typ is structure
-    if issubclass(typ, Structure):
+    # if typ is structure or union
+    if issubclass(typ, (Structure, Union)):
         return typ
     raise TypeError("This type does not support other endian: %s" % typ)
 

@@ -207,7 +207,7 @@ def make_escapes(pass_nonascii):
     global escapes, escape
     if pass_nonascii:
         # Allow non-ascii characters to pass through so that e.g. 'msgid
-        # "Höhe"' would result not result in 'msgid "H\366he"'.  Otherwise we
+        # "Höhe"' would not result in 'msgid "H\366he"'.  Otherwise we
         # escape any character outside the 32..126 range.
         mod = 128
         escape = escape_ascii
@@ -341,6 +341,9 @@ class TokenEater:
             if ttype == tokenize.NAME and tstring in ('class', 'def'):
                 self.__state = self.__suiteseen
                 return
+        if ttype == tokenize.NAME and tstring in ('class', 'def'):
+            self.__state = self.__ignorenext
+            return
         if ttype == tokenize.NAME and tstring in opts.keywords:
             self.__state = self.__keywordseen
             return
@@ -447,6 +450,9 @@ class TokenEater:
                 'lineno': self.__lineno
                 }, file=sys.stderr)
             self.__state = self.__waiting
+
+    def __ignorenext(self, ttype, tstring, lineno):
+        self.__state = self.__waiting
 
     def __addentry(self, msg, lineno=None, isdocstring=0):
         if lineno is None:
