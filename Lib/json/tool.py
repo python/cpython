@@ -10,6 +10,36 @@ import sys
 from _colorize import ANSIColors, can_colorize
 
 
+# The string we are colorizing is a valid JSON,
+# so we can use a looser but simpler regex to match
+# the various parts, most notably strings and numbers,
+# where the regex given by the spec is much more complex.
+color_pattern = re.compile(r'''
+    (?P<string>"(\\.|[^"\\])*")             |   # String
+    (?P<number>NaN|-?Infinity|[0-9\-+.Ee]+) |   # Number
+    (?P<boolean>true|false)                 |   # Boolean
+    (?P<null>null)                              # Null
+''', re.VERBOSE)
+
+
+def colorize_json(json_str):
+    colors = {
+        'string': ANSIColors.GREEN,
+        'number': ANSIColors.YELLOW,
+        'boolean': ANSIColors.CYAN,
+        'null': ANSIColors.CYAN,
+    }
+
+    def replace(match):
+        for key in colors:
+            if m := match.group(key):
+                color = colors[key]
+                return f"{color}{m}{ANSIColors.RESET}"
+        return match.group()
+
+    return re.sub(color_pattern, replace, json_str)
+
+
 def main():
     description = ('A simple command line interface for json module '
                    'to validate and pretty-print JSON objects.')
@@ -78,36 +108,6 @@ def main():
                 outfile.write('\n')
     except ValueError as e:
         raise SystemExit(e)
-
-
-# The string we are colorizing is a valid JSON,
-# so we can use a looser but simpler regex to match
-# the various parts, most notably strings and numbers,
-# where the regex given by the spec is much more complex.
-color_pattern = re.compile(r'''
-    (?P<string>"(\\.|[^"\\])*")             |   # String
-    (?P<number>NaN|-?Infinity|[0-9\-+.Ee]+) |   # Number
-    (?P<boolean>true|false)                 |   # Boolean
-    (?P<null>null)                              # Null
-''', re.VERBOSE)
-
-
-def colorize_json(json_str):
-    colors = {
-        'string': ANSIColors.GREEN,
-        'number': ANSIColors.YELLOW,
-        'boolean': ANSIColors.CYAN,
-        'null': ANSIColors.CYAN,
-    }
-
-    def replace(match):
-        for key in colors:
-            if m := match.group(key):
-                color = colors[key]
-                return f"{color}{m}{ANSIColors.RESET}"
-        return match.group()
-
-    return re.sub(color_pattern, replace, json_str)
 
 
 if __name__ == '__main__':
