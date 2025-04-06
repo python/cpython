@@ -4376,11 +4376,8 @@ class _TestSharedMemory(BaseTestCase):
             self.addCleanup(shm2.unlink)
             self.assertEqual(shm2._name, names[1])
 
+    @unittest.skipUnless(hasattr(shared_memory, "rename"), "requires SharedMomery.rename")
     def test_shared_memory_rename(self):
-        _posixshmem = import_helper.import_module("_posixshmem")
-        if not hasattr(_posixshmem, "shm_rename"):
-            raise unittest.SkipTest('requires _posixshmem.shm_rename')
-
         name1 = self._new_shm_name('testrename01_tsmb')
         name2 = self._new_shm_name('testrename02_tsmb')
         sms = shared_memory.SharedMemory(name1, create=True, size=512)
