@@ -182,8 +182,22 @@ static PyMethodDef module_methods[ ] = {
     {NULL} /* Sentinel */
 };
 
+static int
+posixshmem_exec(PyObject *m)
+{
+#ifdef HAVE_SHM_RENAME
+#ifdef SHM_RENAME_EXCHANGE
+    if (PyModule_AddIntMacro(m, SHM_RENAME_EXCHANGE)) return -1;
+#endif
+#ifdef SHM_RENAME_NOREPLACE
+    if (PyModule_AddIntMacro(m, SHM_RENAME_NOREPLACE)) return -1;
+#endif
+#endif /* HAVE_SHM_RENAME */
+    return 0;
+}
 
 static PyModuleDef_Slot module_slots[] = {
+    {Py_mod_exec, posixshmem_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
