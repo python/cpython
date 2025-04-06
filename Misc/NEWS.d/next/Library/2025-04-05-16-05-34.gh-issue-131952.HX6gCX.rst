@@ -1,1 +1,1 @@
-Add color output to the :program:`json.tool` CLI.
+Add color output to the :program:`json` CLI.
