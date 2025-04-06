@@ -129,7 +129,7 @@ copying of data.
       Parameters to the :func:`rename` function.
 
       :const:`SHM_RENAME_EXCHANGE`
-         Atomically exchange the	SharedMemory to the *newname*.
+        Atomically exchange the SharedMemory to the *newname*.
 
       :const:`SHM_RENAME_NOREPLACE`
         Raise an error if *newname* exists, rather than unlinking it.
