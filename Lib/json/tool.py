@@ -83,7 +83,7 @@ def main():
 
 
 color_pattern = re.compile(r'''
-    (?P<string>"(\\.|[^"\\])*?")            |   # String
+    (?P<string>"(\\.|[^"\\])*")             |   # String
     (?P<number>NaN|-?Infinity|[0-9\-+.Ee]+) |   # Number
     (?P<boolean>true|false)                 |   # Boolean
     (?P<null>null)                              # Null
