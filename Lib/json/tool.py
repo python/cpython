@@ -50,8 +50,6 @@ def main():
         dump_args['indent'] = None
         dump_args['separators'] = ',', ':'
 
-    with_colors = can_colorize()
-
     try:
         if options.infile == '-':
             infile = sys.stdin
