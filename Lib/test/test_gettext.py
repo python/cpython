@@ -37,6 +37,9 @@ cyBmaWNoZXJvcyAoY29udGV4dCkAYmFjb24Ad2luayB3aW5rIChpbiAibXkgY29udGV4dCIpAHdp
 bmsgd2luayAoaW4gIm15IG90aGVyIGNvbnRleHQiKQB3aW5rIHdpbmsA
 '''
 
+# .mo file with an invalid magic number
+GNU_MO_DATA_BAD_MAGIC_NUMBER = base64.b64encode(b'ABCD')
+
 # This data contains an invalid major version number (5)
 # An unexpected major version number should be treated as an error when
 # parsing a .mo file
@@ -85,6 +88,32 @@ IHNiZSBsYmhlIENsZ3ViYSBjZWJ0ZW56ZiBvbCBjZWJpdnF2YXQgbmEgdmFncmVzbnByIGdiIGd1
 ciBUQUgKdHJnZ3JrZyB6cmZmbnRyIHBuZ255YnQgeXZvZW5lbC4AYmFjb24Ad2luayB3aW5rAA==
 '''
 
+# Corrupt .mo file
+# Generated from
+#
+# msgid "foo"
+# msgstr "bar"
+#
+# with msgfmt --no-hash
+#
+# The translation offset is changed to 0xFFFFFFFF,
+# making it larger than the file size, which should
+# raise an error when parsing.
+GNU_MO_DATA_CORRUPT = base64.b64encode(bytes([
+    0xDE, 0x12, 0x04, 0x95,  # Magic
+    0x00, 0x00, 0x00, 0x00,  # Version
+    0x01, 0x00, 0x00, 0x00,  # Message count
+    0x1C, 0x00, 0x00, 0x00,  # Message offset
+    0x24, 0x00, 0x00, 0x00,  # Translation offset
+    0x00, 0x00, 0x00, 0x00,  # Hash table size
+    0x2C, 0x00, 0x00, 0x00,  # Hash table offset
+    0x03, 0x00, 0x00, 0x00,  # 1st message length
+    0x2C, 0x00, 0x00, 0x00,  # 1st message offset
+    0x03, 0x00, 0x00, 0x00,  # 1st trans length
+    0xFF, 0xFF, 0xFF, 0xFF,  # 1st trans offset (Modified to make it invalid)
+    0x66, 0x6F, 0x6F, 0x00,  # Message data
+    0x62, 0x61, 0x72, 0x00,  # Message data
+]))
 
 UMO_DATA = b'''\
 3hIElQAAAAADAAAAHAAAADQAAAAAAAAAAAAAAAAAAABMAAAABAAAAE0AAAAQAAAAUgAAAA8BAABj
@@ -109,8 +138,10 @@ bGUKR2VuZXJhdGVkLUJ5OiBweWdldHRleHQucHkgMS4zCgA=
 
 LOCALEDIR = os.path.join('xx', 'LC_MESSAGES')
 MOFILE = os.path.join(LOCALEDIR, 'gettext.mo')
+MOFILE_BAD_MAGIC_NUMBER = os.path.join(LOCALEDIR, 'gettext_bad_magic_number.mo')
 MOFILE_BAD_MAJOR_VERSION = os.path.join(LOCALEDIR, 'gettext_bad_major_version.mo')
 MOFILE_BAD_MINOR_VERSION = os.path.join(LOCALEDIR, 'gettext_bad_minor_version.mo')
+MOFILE_CORRUPT = os.path.join(LOCALEDIR, 'gettext_corrupt.mo')
 UMOFILE = os.path.join(LOCALEDIR, 'ugettext.mo')
 MMOFILE = os.path.join(LOCALEDIR, 'metadata.mo')
 
@@ -129,10 +160,14 @@ class GettextBaseTest(unittest.TestCase):
             os.makedirs(LOCALEDIR)
         with open(MOFILE, 'wb') as fp:
             fp.write(base64.decodebytes(GNU_MO_DATA))
+        with open(MOFILE_BAD_MAGIC_NUMBER, 'wb') as fp:
+            fp.write(base64.decodebytes(GNU_MO_DATA_BAD_MAGIC_NUMBER))
         with open(MOFILE_BAD_MAJOR_VERSION, 'wb') as fp:
             fp.write(base64.decodebytes(GNU_MO_DATA_BAD_MAJOR_VERSION))
         with open(MOFILE_BAD_MINOR_VERSION, 'wb') as fp:
             fp.write(base64.decodebytes(GNU_MO_DATA_BAD_MINOR_VERSION))
+        with open(MOFILE_CORRUPT, 'wb') as fp:
+            fp.write(base64.decodebytes(GNU_MO_DATA_CORRUPT))
         with open(UMOFILE, 'wb') as fp:
             fp.write(base64.decodebytes(UMO_DATA))
         with open(MMOFILE, 'wb') as fp:
@@ -223,6 +258,16 @@ class GettextTestCase2(GettextBaseTest):
     def test_textdomain(self):
         self.assertEqual(gettext.textdomain(), 'gettext')
 
+    def test_bad_magic_number(self):
+        with open(MOFILE_BAD_MAGIC_NUMBER, 'rb') as fp:
+            with self.assertRaises(OSError) as cm:
+                gettext.GNUTranslations(fp)
+
+            exception = cm.exception
+            self.assertEqual(exception.errno, 0)
+            self.assertEqual(exception.strerror, "Bad magic number")
+            self.assertEqual(exception.filename, MOFILE_BAD_MAGIC_NUMBER)
+
     def test_bad_major_version(self):
         with open(MOFILE_BAD_MAJOR_VERSION, 'rb') as fp:
             with self.assertRaises(OSError) as cm:
@@ -237,6 +282,16 @@ class GettextTestCase2(GettextBaseTest):
         with open(MOFILE_BAD_MINOR_VERSION, 'rb') as fp:
             # Check that no error is thrown with a bad minor version number
             gettext.GNUTranslations(fp)
+
+    def test_corrupt_file(self):
+        with open(MOFILE_CORRUPT, 'rb') as fp:
+            with self.assertRaises(OSError) as cm:
+                gettext.GNUTranslations(fp)
+
+            exception = cm.exception
+            self.assertEqual(exception.errno, 0)
+            self.assertEqual(exception.strerror, "File is corrupt")
+            self.assertEqual(exception.filename, MOFILE_CORRUPT)
 
     def test_some_translations(self):
         eq = self.assertEqual
@@ -485,6 +540,7 @@ class PluralFormsInternalTestCase(unittest.TestCase):
         s = ''.join([ str(f(x)) for x in range(200) ])
         eq(s, "01233333333444444444444444444444444444444444444444444444444444444444444444444444444444444444444444445553333333344444444444444444444444444444444444444444444444444444444444444444444444444444444444444444")
 
+    @support.skip_wasi_stack_overflow()
     def test_security(self):
         raises = self.assertRaises
         # Test for a dangerous expression
@@ -716,6 +772,76 @@ class ExpandLangTestCase(unittest.TestCase):
                 with unittest.mock.patch("locale.normalize",
                                          return_value=locale):
                     self.assertEqual(gettext._expand_lang(locale), expanded)
+
+
+class FindTestCase(unittest.TestCase):
+
+    def setUp(self):
+        self.env = self.enterContext(os_helper.EnvironmentVarGuard())
+        self.tempdir = self.enterContext(os_helper.temp_cwd())
+
+        for key in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+            self.env.unset(key)
+
+    def create_mo_file(self, lang):
+        locale_dir = os.path.join(self.tempdir, "locale")
+        mofile_dir = os.path.join(locale_dir, lang, "LC_MESSAGES")
+        os.makedirs(mofile_dir)
+        mo_file = os.path.join(mofile_dir, "mofile.mo")
+        with open(mo_file, "wb") as f:
+            f.write(GNU_MO_DATA)
+        return mo_file
+
+    def test_find_with_env_vars(self):
+        # test that find correctly finds the environment variables
+        # when languages are not supplied
+        mo_file = self.create_mo_file("ga_IE")
+        for var in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+            self.env.set(var, 'ga_IE')
+            result = gettext.find("mofile",
+                                  localedir=os.path.join(self.tempdir, "locale"))
+            self.assertEqual(result, mo_file)
+            self.env.unset(var)
+
+    def test_find_with_languages(self):
+        # test that passed languages are used
+        self.env.set('LANGUAGE', 'pt_BR')
+        mo_file = self.create_mo_file("ga_IE")
+
+        result = gettext.find("mofile",
+                              localedir=os.path.join(self.tempdir, "locale"),
+                              languages=['ga_IE'])
+        self.assertEqual(result, mo_file)
+
+    @unittest.mock.patch('gettext._expand_lang')
+    def test_find_with_no_lang(self, patch_expand_lang):
+        # no language can be found
+        gettext.find('foo')
+        patch_expand_lang.assert_called_with('C')
+
+    @unittest.mock.patch('gettext._expand_lang')
+    def test_find_with_c(self, patch_expand_lang):
+        # 'C' is already in languages
+        self.env.set('LANGUAGE', 'C')
+        gettext.find('foo')
+        patch_expand_lang.assert_called_with('C')
+
+    def test_find_all(self):
+        # test that all are returned when all is set
+        paths = []
+        for lang in ["ga_IE", "es_ES"]:
+            paths.append(self.create_mo_file(lang))
+        result = gettext.find('mofile',
+                              localedir=os.path.join(self.tempdir, "locale"),
+                              languages=["ga_IE", "es_ES"], all=True)
+        self.assertEqual(sorted(result), sorted(paths))
+
+    def test_find_deduplication(self):
+        # test that find removes duplicate languages
+        mo_file = [self.create_mo_file('ga_IE')]
+        result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"),
+                              languages=['ga_IE', 'ga_IE'], all=True)
+        self.assertEqual(result, mo_file)
 
 
 class MiscTestCase(unittest.TestCase):

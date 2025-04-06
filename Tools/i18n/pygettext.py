@@ -188,7 +188,7 @@ def make_escapes(pass_nonascii):
     global escapes, escape
     if pass_nonascii:
         # Allow non-ascii characters to pass through so that e.g. 'msgid
-        # "Höhe"' would result not result in 'msgid "H\366he"'.  Otherwise we
+        # "Höhe"' would not result in 'msgid "H\366he"'.  Otherwise we
         # escape any character outside the 32..126 range.
         mod = 128
         escape = escape_ascii
@@ -729,12 +729,15 @@ def main():
 
     # calculate all keywords
     try:
-        options.keywords = dict(parse_spec(spec) for spec in options.keywords)
+        custom_keywords = dict(parse_spec(spec) for spec in options.keywords)
     except ValueError as e:
         print(e, file=sys.stderr)
         sys.exit(1)
+    options.keywords = {}
     if not no_default_keywords:
         options.keywords |= DEFAULTKEYWORDS
+    # custom keywords override default keywords
+    options.keywords |= custom_keywords
 
     # initialize list of strings to exclude
     if options.excludefilename:

@@ -4995,8 +4995,9 @@ malloc_error:
 }
 
 static Py_hash_t
-dec_hash(PyDecObject *self)
+dec_hash(PyObject *op)
 {
+    PyDecObject *self = _PyDecObject_CAST(op);
     if (self->hash == -1) {
         self->hash = _dec_hash(self);
     }

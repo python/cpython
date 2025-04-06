@@ -3,9 +3,11 @@
 if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
+import annotationlib
 import contextlib
 import functools
 import inspect
+import logging
 import _opcode
 import os
 import re
@@ -404,11 +406,12 @@ def skip_if_buildbot(reason=None):
     try:
         isbuildbot = getpass.getuser().lower() == 'buildbot'
     except (KeyError, OSError) as err:
-        warnings.warn(f'getpass.getuser() failed {err}.', RuntimeWarning)
+        logging.getLogger(__name__).warning('getpass.getuser() failed %s.', err, exc_info=err)
         isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
 
-def check_sanitizer(*, address=False, memory=False, ub=False, thread=False):
+def check_sanitizer(*, address=False, memory=False, ub=False, thread=False,
+                    function=True):
     """Returns True if Python is compiled with sanitizer support"""
     if not (address or memory or ub or thread):
         raise ValueError('At least one of address, memory, ub or thread must be True')
@@ -432,11 +435,15 @@ def check_sanitizer(*, address=False, memory=False, ub=False, thread=False):
         '-fsanitize=thread' in cflags or
         '--with-thread-sanitizer' in config_args
     )
+    function_sanitizer = (
+        '-fsanitize=function' in cflags
+    )
     return (
         (memory and memory_sanitizer) or
         (address and address_sanitizer) or
         (ub and ub_sanitizer) or
-        (thread and thread_sanitizer)
+        (thread and thread_sanitizer) or
+        (function and function_sanitizer)
     )
 
 
@@ -1089,8 +1096,7 @@ class _MemoryWatchdog:
         try:
             f = open(self.procfile, 'r')
         except OSError as e:
-            warnings.warn('/proc not available for stats: {}'.format(e),
-                          RuntimeWarning)
+            logging.getLogger(__name__).warning('/proc not available for stats: %s', e, exc_info=e)
             sys.stderr.flush()
             return
 
@@ -2855,8 +2861,7 @@ def no_color():
         swap_attr(_colorize, "can_colorize", lambda file=None: False),
         EnvironmentVarGuard() as env,
     ):
-        for var in {"FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS"}:
-            env.unset(var)
+        env.unset("FORCE_COLOR", "NO_COLOR", "PYTHON_COLORS")
         env.set("NO_COLOR", "1")
         yield
 
@@ -3015,3 +3020,78 @@ def is_libssl_fips_mode():
     except ImportError:
         return False  # more of a maybe, unless we add this to the _ssl module.
     return get_fips_mode() != 0
+
+
+class EqualToForwardRef:
+    """Helper to ease use of annotationlib.ForwardRef in tests.
+
+    This checks only attributes that can be set using the constructor.
+
+    """
+
+    def __init__(
+        self,
+        arg,
+        *,
+        module=None,
+        owner=None,
+        is_class=False,
+    ):
+        self.__forward_arg__ = arg
+        self.__forward_is_class__ = is_class
+        self.__forward_module__ = module
+        self.__owner__ = owner
+
+    def __eq__(self, other):
+        if not isinstance(other, (EqualToForwardRef, annotationlib.ForwardRef)):
+            return NotImplemented
+        return (
+            self.__forward_arg__ == other.__forward_arg__
+            and self.__forward_module__ == other.__forward_module__
+            and self.__forward_is_class__ == other.__forward_is_class__
+            and self.__owner__ == other.__owner__
+        )
+
+    def __repr__(self):
+        extra = []
+        if self.__forward_module__ is not None:
+            extra.append(f", module={self.__forward_module__!r}")
+        if self.__forward_is_class__:
+            extra.append(", is_class=True")
+        if self.__owner__ is not None:
+            extra.append(f", owner={self.__owner__!r}")
+        return f"EqualToForwardRef({self.__forward_arg__!r}{''.join(extra)})"
+
+
+_linked_to_musl = None
+def linked_to_musl():
+    """
+    Report if the Python executable is linked to the musl C library.
+
+    Return False if we don't think it is, or a version triple otherwise.
+    """
+    # This is can be a relatively expensive check, so we use a cache.
+    global _linked_to_musl
+    if _linked_to_musl is not None:
+        return _linked_to_musl
+
+    # emscripten (at least as far as we're concerned) and wasi use musl,
+    # but platform doesn't know how to get the version, so set it to zero.
+    if is_emscripten or is_wasi:
+        _linked_to_musl = (0, 0, 0)
+        return _linked_to_musl
+
+    # On all other non-linux platforms assume no musl.
+    if sys.platform != 'linux':
+        _linked_to_musl = False
+        return _linked_to_musl
+
+    # On linux, we'll depend on the platform module to do the check, so new
+    # musl platforms should add support in that module if possible.
+    import platform
+    lib, version = platform.libc_ver()
+    if lib != 'musl':
+        _linked_to_musl = False
+        return _linked_to_musl
+    _linked_to_musl = tuple(map(int, version.split('.')))
+    return _linked_to_musl

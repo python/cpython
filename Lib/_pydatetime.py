@@ -436,6 +436,8 @@ def _parse_hh_mm_ss_ff(tstr):
             raise ValueError("Invalid microsecond separator")
         else:
             pos += 1
+            if not all(map(_is_ascii_digit, tstr[pos:])):
+                raise ValueError("Non-digit values in fraction")
 
             len_remainder = len_str - pos
 
@@ -447,9 +449,6 @@ def _parse_hh_mm_ss_ff(tstr):
             time_comps[3] = int(tstr[pos:(pos+to_parse)])
             if to_parse < 6:
                 time_comps[3] *= _FRACTION_CORRECTION[to_parse-1]
-            if (len_remainder > to_parse
-                    and not all(map(_is_ascii_digit, tstr[(pos+to_parse):]))):
-                raise ValueError("Non-digit values in unparsed fraction")
 
     return time_comps
 
@@ -577,7 +576,7 @@ def _check_date_fields(year, month, day):
         raise ValueError(f"month must be in 1..12, not {month}")
     dim = _days_in_month(year, month)
     if not 1 <= day <= dim:
-        raise ValueError(f"day must be in 1..{dim}, not {day}")
+        raise ValueError(f"day {day} must be in range 1..{dim} for month {month} in year {year}")
     return year, month, day
 
 def _check_time_fields(hour, minute, second, microsecond, fold):

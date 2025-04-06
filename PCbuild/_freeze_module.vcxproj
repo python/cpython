@@ -92,6 +92,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -fno-lto</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -259,6 +260,7 @@
     <ClCompile Include="..\Python\Python-tokenize.c" />
     <ClCompile Include="..\Python\pytime.c" />
     <ClCompile Include="..\Python\qsbr.c" />
+    <ClCompile Include="..\Python\remote_debugging.c" />
     <ClCompile Include="..\Python\specialize.c" />
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\suggestions.c" />
