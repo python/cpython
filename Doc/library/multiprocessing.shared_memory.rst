@@ -118,7 +118,7 @@ copying of data.
       By default, if *newname* already exists, it will be unlinked beforehand.
 
       *flags* (0 by default) takes :ref:`bitwise ORed <bitwise>` flags together.
-      
+
       * :data:`!os.SHM_RENAME_EXCHANGE` will let
          an exchange with *newname* will be processed instead.
       * :data:`!os.SHM_RENAME_NOREPLACE` will raise
