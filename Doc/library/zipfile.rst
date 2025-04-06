@@ -1,5 +1,5 @@
-:mod:`zipfile` --- Work with ZIP archives
-=========================================
+:mod:`!zipfile` --- Work with ZIP archives
+==========================================
 
 .. module:: zipfile
    :synopsis: Read and write ZIP-format archive files.
@@ -83,6 +83,17 @@ The module defines the following items:
       A public :attr:`!compress_level` attribute has been added to expose the
       formerly protected :attr:`!_compresslevel`.  The older protected name
       continues to work as a property for backwards compatibility.
+
+
+   .. method:: _for_archive(archive)
+
+      Resolve the date_time, compression attributes, and external attributes
+      to suitable defaults as used by :meth:`ZipFile.writestr`.
+
+      Returns self for chaining.
+
+      .. versionadded:: 3.14
+
 
 .. function:: is_zipfile(filename)
 
@@ -301,6 +312,10 @@ ZipFile Objects
    attempting to read or write other files in the ZIP file will raise a
    :exc:`ValueError`.
 
+   In both cases the file-like object has also attributes :attr:`!name`,
+   which is equivalent to the name of a file within the archive, and
+   :attr:`!mode`, which is ``'rb'`` or ``'wb'`` depending on the input mode.
+
    When writing a file, if the file size is not known in advance but may exceed
    2 GiB, pass ``force_zip64=True`` to ensure that the header format is
    capable of supporting large files.  If the file size is known in advance,
@@ -324,6 +339,12 @@ ZipFile Objects
    .. versionchanged:: 3.6
       Calling :meth:`.open` on a closed ZipFile will raise a :exc:`ValueError`.
       Previously, a :exc:`RuntimeError` was raised.
+
+   .. versionchanged:: 3.13
+      Added attributes :attr:`!name` and :attr:`!mode` for the writeable
+      file-like object.
+      The value of the :attr:`!mode` attribute for the readable file-like
+      object was changed from ``'r'`` to ``'rb'``.
 
 
 .. method:: ZipFile.extract(member, path=None, pwd=None)
@@ -517,6 +538,14 @@ The following data attributes are also available:
    it should be no longer than 65535 bytes.  Comments longer than this will be
    truncated.
 
+.. attribute:: ZipFile.data_offset
+
+   The offset to the start of ZIP data from the beginning of the file. When the
+   :class:`ZipFile` is opened in either mode ``'w'`` or ``'x'`` and the
+   underlying file does not support ``tell()``, the value will be ``None``
+   instead.
+
+   .. versionadded:: 3.14
 
 .. _path-objects:
 
@@ -532,6 +561,14 @@ Path Objects
    ``at`` specifies the location of this Path within the zipfile,
    e.g. 'dir/file.txt', 'dir/', or ''. Defaults to the empty string,
    indicating the root.
+
+   .. note::
+      The :class:`Path` class does not sanitize filenames within the ZIP archive. Unlike
+      the :meth:`ZipFile.extract` and :meth:`ZipFile.extractall` methods, it is the
+      caller's responsibility to validate or sanitize filenames to prevent path traversal
+      vulnerabilities (e.g., filenames containing ".." or absolute paths). When handling
+      untrusted archives, consider resolving filenames using :func:`os.path.abspath`
+      and checking against the target directory with :func:`os.path.commonpath`.
 
 Path objects expose the following features of :mod:`pathlib.Path`
 objects:
@@ -574,6 +611,15 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
 .. method:: Path.is_file()
 
    Return ``True`` if the current context references a file.
+
+.. method:: Path.is_symlink()
+
+   Return ``True`` if the current context references a symbolic link.
+
+   .. versionadded:: 3.12
+
+   .. versionchanged:: 3.13
+      Previously, ``is_symlink`` would unconditionally return ``False``.
 
 .. method:: Path.exists()
 
@@ -632,7 +678,7 @@ Path objects are traversable using the ``/`` operator or ``joinpath``.
       Prior to 3.10, ``joinpath`` was undocumented and accepted
       exactly one parameter.
 
-The `zipp <https://pypi.org/project/zipp>`_ project provides backports
+The :pypi:`zipp` project provides backports
 of the latest path object functionality to older Pythons. Use
 ``zipp.Path`` in place of ``zipfile.Path`` for early access to
 changes.

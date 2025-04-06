@@ -5,7 +5,7 @@
 .. section: Security
 
 Disallow control characters in hostnames in http.client, addressing
-CVE-2019-18348. Such potentially malicious header injection URLs now cause a
+:cve:`2019-18348`. Such potentially malicious header injection URLs now cause a
 InvalidURL to be raised.
 
 ..
@@ -548,7 +548,7 @@ large for an AF_UNIX socket address. Patch by Pablo Galindo.
 .. nonce: mxr5m8
 .. section: Library
 
-:func:`ast.dump()` no longer outputs optional fields and attributes with
+:func:`ast.dump` no longer outputs optional fields and attributes with
 default values. The default values for optional fields and attributes of AST
 nodes are now set as class attributes (e.g. ``Constant.kind`` is set to
 ``None``).

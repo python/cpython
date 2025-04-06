@@ -1,0 +1,2 @@
+Fix several thread-safety issues in :mod:`ctypes` on the :term:`free
+threaded <free threading>` build.

@@ -247,7 +247,9 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, BaseTestCase
         # Errors in atexit hooks don't change the process exit code, check
         # stderr manually.
         self.assertFalse(err)
-        self.assertEqual(out.strip(), b"apple")
+        # gh-116682: stdout may be empty if shutdown happens before task
+        # starts executing.
+        self.assertIn(out.strip(), [b"apple", b""])
 
 
 class ProcessPoolShutdownTest(ExecutorShutdownTest):

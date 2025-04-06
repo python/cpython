@@ -187,7 +187,7 @@ def test_monkeypatch():
 
 
 def test_open(testfn):
-    # SSLContext.load_dh_params uses _Py_fopen_obj rather than normal open()
+    # SSLContext.load_dh_params uses Py_fopen() rather than normal open()
     try:
         import ssl
 
@@ -208,7 +208,15 @@ def test_open(testfn):
             if not fn:
                 continue
             with assertRaises(RuntimeError):
-                fn(*args)
+                try:
+                    fn(*args)
+                except NotImplementedError:
+                    if fn == load_dh_params:
+                        # Not callable in some builds
+                        load_dh_params = None
+                        raise RuntimeError
+                    else:
+                        raise
 
     actual_mode = [(a[0], a[1]) for e, a in hook.seen if e == "open" and a[1]]
     actual_flag = [(a[0], a[2]) for e, a in hook.seen if e == "open" and not a[1]]
@@ -554,6 +562,28 @@ def test_sys_monitoring_register_callback():
 
     sys.addaudithook(hook)
     sys.monitoring.register_callback(1, 1, None)
+
+
+def test_winapi_createnamedpipe(pipe_name):
+    import _winapi
+
+    def hook(event, args):
+        if event == "_winapi.CreateNamedPipe":
+            print(event, args)
+
+    sys.addaudithook(hook)
+    _winapi.CreateNamedPipe(pipe_name, _winapi.PIPE_ACCESS_DUPLEX, 8, 2, 0, 0, 0, 0)
+
+
+def test_assert_unicode():
+    import sys
+    sys.addaudithook(lambda *args: None)
+    try:
+        sys.audit(9)
+    except TypeError:
+        pass
+    else:
+        raise RuntimeError("Expected sys.audit(9) to fail.")
 
 
 if __name__ == "__main__":
