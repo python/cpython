@@ -1,0 +1,4 @@
+On hosts without the hmac-sha256 algorithm available (rare),
+:mod:`multiprocessing` will default to the ``"spawn"`` start method instead
+of ``"forkserver"`` which requires the algorithm for control socket
+authentication.
