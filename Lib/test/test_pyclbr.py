@@ -9,6 +9,7 @@ from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 from unittest import TestCase, main as unittest_main
 from test.test_importlib import util as test_importlib_util
+import importlib.util
 import warnings
 
 
@@ -142,7 +143,6 @@ class PyclbrTest(TestCase):
                     self.assertHaskey(dict, name, ignore)
 
     def test_easy(self):
-        import importlib.util
         if getattr(sys.modules["__main__"], "__spec__", None) is None:
             sys.modules["__main__"].__spec__ = importlib.machinery.ModuleSpec(
                 name="__main__", loader=None, origin="built-in"
@@ -221,7 +221,6 @@ class PyclbrTest(TestCase):
         compare(None, actual, None, expected)
 
     def test_pdb_module(self):
-        import importlib.util
         if getattr(sys.modules["__main__"], "__spec__", None) is None:
             sys.modules["__main__"].__spec__ = importlib.machinery.ModuleSpec(
                 name="__main__", loader=None, origin="builtin"
