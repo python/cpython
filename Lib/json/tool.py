@@ -15,10 +15,10 @@ from _colorize import ANSIColors, can_colorize
 # the various parts, most notably strings and numbers,
 # where the regex given by the spec is much more complex.
 _color_pattern = re.compile(r'''
-    (?P<string>"(\\.|[^"\\])*")             |   # String
-    (?P<number>NaN|-?Infinity|[0-9\-+.Ee]+) |   # Number
-    (?P<boolean>true|false)                 |   # Boolean
-    (?P<null>null)                              # Null
+    (?P<string>"(\\.|[^"\\])*")             |
+    (?P<number>NaN|-?Infinity|[0-9\-+.Ee]+) |
+    (?P<boolean>true|false)                 |
+    (?P<null>null)
 ''', re.VERBOSE)
 
 
