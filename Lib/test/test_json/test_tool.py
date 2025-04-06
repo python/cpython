@@ -6,16 +6,8 @@ import unittest
 import subprocess
 
 from test import support
-from test.support import os_helper
+from test.support import force_not_colorized, os_helper
 from test.support.script_helper import assert_python_ok
-
-
-def no_color(func):
-    def inner(*args, **kwargs):
-        with os_helper.EnvironmentVarGuard() as env:
-            env['PYTHON_COLORS'] = '0'
-            return func(*args, **kwargs)
-    return inner
 
 
 @support.requires_subprocess()
@@ -95,7 +87,7 @@ class TestMain(unittest.TestCase):
     }
     """)
 
-    @no_color
+    @force_not_colorized
     def test_stdin_stdout(self):
         args = sys.executable, '-m', self.module
         process = subprocess.run(args, input=self.data, capture_output=True, text=True, check=True)
@@ -155,7 +147,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
-    @no_color
+    @force_not_colorized
     def test_jsonlines(self):
         args = sys.executable, '-m', self.module, '--json-lines'
         process = subprocess.run(args, input=self.jsonlines_raw, capture_output=True, text=True, check=True)
@@ -178,7 +170,7 @@ class TestMain(unittest.TestCase):
                          self.expect_without_sort_keys.encode().splitlines())
         self.assertEqual(err, b'')
 
-    @no_color
+    @force_not_colorized
     def test_indent(self):
         input_ = '[1, 2]'
         expect = textwrap.dedent('''\
@@ -192,7 +184,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(process.stdout, expect)
         self.assertEqual(process.stderr, '')
 
-    @no_color
+    @force_not_colorized
     def test_no_indent(self):
         input_ = '[1,\n2]'
         expect = '[1, 2]\n'
@@ -201,7 +193,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(process.stdout, expect)
         self.assertEqual(process.stderr, '')
 
-    @no_color
+    @force_not_colorized
     def test_tab(self):
         input_ = '[1, 2]'
         expect = '[\n\t1,\n\t2\n]\n'
@@ -210,7 +202,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(process.stdout, expect)
         self.assertEqual(process.stderr, '')
 
-    @no_color
+    @force_not_colorized
     def test_compact(self):
         input_ = '[ 1 ,\n 2]'
         expect = '[1,2]\n'
@@ -242,8 +234,8 @@ class TestMain(unittest.TestCase):
         expected = [b'{', rb'    "key": "\ud83d\udca9"', b"}"]
         self.assertEqual(lines, expected)
 
+    @force_not_colorized
     @unittest.skipIf(sys.platform =="win32", "The test is failed with ValueError on Windows")
-    @no_color
     def test_broken_pipe_error(self):
         cmd = [sys.executable, '-m', self.module]
         proc = subprocess.Popen(cmd,
