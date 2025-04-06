@@ -1130,6 +1130,8 @@ typing
     For example, ``isinstance(int | str, typing.Union)`` will return ``True``; previously
     this raised :exc:`TypeError`.
   - The ``__args__`` attribute of :class:`typing.Union` objects is no longer writable.
+  - It is no longer possible to set arbitrary dunder attributes on :class:`typing.Union`
+    objects.
 
   (Contributed by Jelle Zijlstra in :gh:`105499`.)
 
