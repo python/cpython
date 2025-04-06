@@ -42,7 +42,7 @@ the function is then applied to the result of the conversion.
 **Conversions to and from polar coordinates**
 --------------------------------------------------------------------------------------------------
 :func:`phase(z) <phase>`                              Return the phase of *z*
-:func:`polar(z) <polar>`                              Return the representation of *z* in polar coordinates.
+:func:`polar(z) <polar>`                              Return the representation of *z* in polar coordinates
 :func:`rect(r, phi) <rect>`                           Return the complex number *z* with polar coordinates *r* and *phi*
 
 **Power and logarithmic functions**
