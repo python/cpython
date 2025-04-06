@@ -622,6 +622,11 @@ ctypes
   loaded by the current process.
   (Contributed by Brian Ward in :gh:`119349`.)
 
+* The :class:`ctypes.py_object` type now supports subscription,
+  making it a :term:`generic type`.
+  (Contributed by Brian Schubert in :gh:`132168`.)
+
+
 datetime
 --------
 
