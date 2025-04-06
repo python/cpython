@@ -98,9 +98,9 @@ def colorize_json(json_str):
 
     def replace(match):
         for key in colors:
-            if match.group(key):
+            if m := match.group(key):
                 color = colors[key]
-                return f"{color}{match.group(key)}{ANSIColors.RESET}"
+                return f"{color}{m}{ANSIColors.RESET}"
         return match.group()
 
     return re.sub(color_pattern, replace, json_str)
