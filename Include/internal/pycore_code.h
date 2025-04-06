@@ -8,29 +8,10 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_stackref.h"    // _PyStackRef
-#include "pycore_lock.h"        // PyMutex
 #include "pycore_backoff.h"     // _Py_BackoffCounter
+#include "pycore_structs.h"     // _Py_CODEUNIT
 #include "pycore_tstate.h"      // _PyThreadStateImpl
 
-
-/* Each instruction in a code object is a fixed-width value,
- * currently 2 bytes: 1-byte opcode + 1-byte oparg.  The EXTENDED_ARG
- * opcode allows for larger values but the current limit is 3 uses
- * of EXTENDED_ARG (see Python/compile.c), for a maximum
- * 32-bit value.  This aligns with the note in Python/compile.c
- * (compiler_addop_i_line) indicating that the max oparg value is
- * 2**32 - 1, rather than INT_MAX.
- */
-
-typedef union {
-    uint16_t cache;
-    struct {
-        uint8_t code;
-        uint8_t arg;
-    } op;
-    _Py_BackoffCounter counter;  // First cache entry of specializable op
-} _Py_CODEUNIT;
 
 #define _PyCode_CODE(CO) _Py_RVALUE((_Py_CODEUNIT *)(CO)->co_code_adaptive)
 #define _PyCode_NBYTES(CO) (Py_SIZE(CO) * (Py_ssize_t)sizeof(_Py_CODEUNIT))
@@ -67,16 +48,10 @@ _py_set_opcode(_Py_CODEUNIT *word, uint8_t opcode)
 #define _PyCode_HAS_INSTRUMENTATION(CODE) \
     (CODE->_co_instrumentation_version > 0)
 
-struct _py_code_state {
-    PyMutex mutex;
-    // Interned constants from code objects. Used by the free-threaded build.
-    struct _Py_hashtable_t *constants;
-};
 
 extern PyStatus _PyCode_Init(PyInterpreterState *interp);
 extern void _PyCode_Fini(PyInterpreterState *interp);
 
-#define CODE_MAX_WATCHERS 8
 
 /* PEP 659
  * Specialization and quickening structs and helper functions
@@ -117,12 +92,6 @@ typedef struct {
 } _PyCompareOpCache;
 
 #define INLINE_CACHE_ENTRIES_COMPARE_OP CACHE_ENTRIES(_PyCompareOpCache)
-
-typedef struct {
-    _Py_BackoffCounter counter;
-} _PyBinarySubscrCache;
-
-#define INLINE_CACHE_ENTRIES_BINARY_SUBSCR CACHE_ENTRIES(_PyBinarySubscrCache)
 
 typedef struct {
     _Py_BackoffCounter counter;
@@ -190,14 +159,6 @@ typedef struct {
 } _PyContainsOpCache;
 
 #define INLINE_CACHE_ENTRIES_CONTAINS_OP CACHE_ENTRIES(_PyContainsOpCache)
-
-// Borrowed references to common callables:
-struct callable_cache {
-    PyObject *isinstance;
-    PyObject *len;
-    PyObject *list_append;
-    PyObject *object__getattribute__;
-};
 
 /* "Locals plus" for a code object is the set of locals + cell vars +
  * free vars.  This relates to variable names as well as offsets into
@@ -354,68 +315,6 @@ extern void _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int op
 extern void _Py_Specialize_Send(_PyStackRef receiver, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
-
-#ifdef Py_STATS
-
-#include "pycore_bitutils.h"  // _Py_bit_length
-
-#define STAT_INC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name++; } while (0)
-#define STAT_DEC(opname, name) do { if (_Py_stats) _Py_stats->opcode_stats[opname].specialization.name--; } while (0)
-#define OPCODE_EXE_INC(opname) do { if (_Py_stats) _Py_stats->opcode_stats[opname].execution_count++; } while (0)
-#define CALL_STAT_INC(name) do { if (_Py_stats) _Py_stats->call_stats.name++; } while (0)
-#define OBJECT_STAT_INC(name) do { if (_Py_stats) _Py_stats->object_stats.name++; } while (0)
-#define OBJECT_STAT_INC_COND(name, cond) \
-    do { if (_Py_stats && cond) _Py_stats->object_stats.name++; } while (0)
-#define EVAL_CALL_STAT_INC(name) do { if (_Py_stats) _Py_stats->call_stats.eval_calls[name]++; } while (0)
-#define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) \
-    do { if (_Py_stats && PyFunction_Check(callable)) _Py_stats->call_stats.eval_calls[name]++; } while (0)
-#define GC_STAT_ADD(gen, name, n) do { if (_Py_stats) _Py_stats->gc_stats[(gen)].name += (n); } while (0)
-#define OPT_STAT_INC(name) do { if (_Py_stats) _Py_stats->optimization_stats.name++; } while (0)
-#define OPT_STAT_ADD(name, n) do { if (_Py_stats) _Py_stats->optimization_stats.name += (n); } while (0)
-#define UOP_STAT_INC(opname, name) do { if (_Py_stats) { assert(opname < 512); _Py_stats->optimization_stats.opcode[opname].name++; } } while (0)
-#define UOP_PAIR_INC(uopcode, lastuop)                                              \
-    do {                                                                            \
-        if (lastuop && _Py_stats) {                                                 \
-            _Py_stats->optimization_stats.opcode[lastuop].pair_count[uopcode]++;    \
-        }                                                                           \
-        lastuop = uopcode;                                                          \
-    } while (0)
-#define OPT_UNSUPPORTED_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.unsupported_opcode[opname]++; } while (0)
-#define OPT_ERROR_IN_OPCODE(opname) do { if (_Py_stats) _Py_stats->optimization_stats.error_in_opcode[opname]++; } while (0)
-#define OPT_HIST(length, name) \
-    do { \
-        if (_Py_stats) { \
-            int bucket = _Py_bit_length(length >= 1 ? length - 1 : 0); \
-            bucket = (bucket >= _Py_UOP_HIST_SIZE) ? _Py_UOP_HIST_SIZE - 1 : bucket; \
-            _Py_stats->optimization_stats.name[bucket]++; \
-        } \
-    } while (0)
-#define RARE_EVENT_STAT_INC(name) do { if (_Py_stats) _Py_stats->rare_event_stats.name++; } while (0)
-#define OPCODE_DEFERRED_INC(opname) do { if (_Py_stats && opcode == opname) _Py_stats->opcode_stats[opname].specialization.deferred++; } while (0)
-
-// Export for '_opcode' shared extension
-PyAPI_FUNC(PyObject*) _Py_GetSpecializationStats(void);
-
-#else
-#define STAT_INC(opname, name) ((void)0)
-#define STAT_DEC(opname, name) ((void)0)
-#define OPCODE_EXE_INC(opname) ((void)0)
-#define CALL_STAT_INC(name) ((void)0)
-#define OBJECT_STAT_INC(name) ((void)0)
-#define OBJECT_STAT_INC_COND(name, cond) ((void)0)
-#define EVAL_CALL_STAT_INC(name) ((void)0)
-#define EVAL_CALL_STAT_INC_IF_FUNCTION(name, callable) ((void)0)
-#define GC_STAT_ADD(gen, name, n) ((void)0)
-#define OPT_STAT_INC(name) ((void)0)
-#define OPT_STAT_ADD(name, n) ((void)0)
-#define UOP_STAT_INC(opname, name) ((void)0)
-#define UOP_PAIR_INC(uopcode, lastuop) ((void)0)
-#define OPT_UNSUPPORTED_OPCODE(opname) ((void)0)
-#define OPT_ERROR_IN_OPCODE(opname) ((void)0)
-#define OPT_HIST(length, name) ((void)0)
-#define RARE_EVENT_STAT_INC(name) ((void)0)
-#define OPCODE_DEFERRED_INC(opname) ((void)0)
-#endif  // !Py_STATS
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
 // Great care should be taken to ensure that these functions remain correct and

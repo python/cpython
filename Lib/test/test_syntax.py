@@ -858,7 +858,7 @@ Traceback (most recent call last):
 SyntaxError: 'function call' is an illegal expression for augmented assignment
 
 
-Test continue in finally in weird combinations.
+Test control flow in finally
 
 continue in for loop under finally should be ok.
 
@@ -872,51 +872,63 @@ continue in for loop under finally should be ok.
     >>> test()
     9
 
-continue in a finally should be ok.
+break in for loop under finally should be ok.
 
     >>> def test():
-    ...    for abc in range(10):
-    ...        try:
-    ...            pass
-    ...        finally:
-    ...            continue
-    ...    print(abc)
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         for abc in range(10):
+    ...             break
+    ...     print(abc)
     >>> test()
-    9
+    0
+
+return in function under finally should be ok.
 
     >>> def test():
-    ...    for abc in range(10):
-    ...        try:
-    ...            pass
-    ...        finally:
-    ...            try:
-    ...                continue
-    ...            except:
-    ...                pass
-    ...    print(abc)
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         def f():
+    ...             return 42
+    ...     print(f())
     >>> test()
-    9
+    42
+
+combine for loop and function def
+
+return in function under finally should be ok.
 
     >>> def test():
-    ...    for abc in range(10):
-    ...        try:
-    ...            pass
-    ...        finally:
-    ...            try:
-    ...                pass
-    ...            except:
-    ...                continue
-    ...    print(abc)
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         for i in range(10):
+    ...             def f():
+    ...                 return 42
+    ...     print(f())
     >>> test()
-    9
+    42
+
+    >>> def test():
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         def f():
+    ...             for i in range(10):
+    ...                 return 42
+    ...     print(f())
+    >>> test()
+    42
 
 A continue outside loop should not be allowed.
 
     >>> def foo():
     ...     try:
-    ...         pass
-    ...     finally:
     ...         continue
+    ...     finally:
+    ...         pass
     Traceback (most recent call last):
       ...
     SyntaxError: 'continue' not properly in loop
@@ -1655,28 +1667,14 @@ Make sure that the old "raise X, Y[, Z]" form is gone:
    SyntaxError: invalid syntax
 
 Check that an multiple exception types with missing parentheses
-raise a custom exception
-
-   >>> try:
-   ...   pass
-   ... except A, B:
-   ...   pass
-   Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
-
-   >>> try:
-   ...   pass
-   ... except A, B, C:
-   ...   pass
-   Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
+raise a custom exception only when using 'as'
 
    >>> try:
    ...   pass
    ... except A, B, C as blech:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized when using 'as'
 
    >>> try:
    ...   pass
@@ -1685,29 +1683,15 @@ raise a custom exception
    ... finally:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized when using 'as'
 
-
-   >>> try:
-   ...   pass
-   ... except* A, B:
-   ...   pass
-   Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
-
-   >>> try:
-   ...   pass
-   ... except* A, B, C:
-   ...   pass
-   Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
 
    >>> try:
    ...   pass
    ... except* A, B, C as blech:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized when using 'as'
 
    >>> try:
    ...   pass
@@ -1716,7 +1700,7 @@ raise a custom exception
    ... finally:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized when using 'as'
 
 Custom exception for 'except*' without an exception type
 
@@ -2393,7 +2377,88 @@ import unittest
 
 from test import support
 
-class SyntaxTestCase(unittest.TestCase):
+class SyntaxWarningTest(unittest.TestCase):
+    def check_warning(self, code, errtext, filename="<testcase>", mode="exec"):
+        """Check that compiling code raises SyntaxWarning with errtext.
+
+        errtest is a regular expression that must be present in the
+        text of the warning raised.
+        """
+        with self.assertWarnsRegex(SyntaxWarning, errtext):
+            compile(code, filename, mode)
+
+    def test_return_in_finally(self):
+        source = textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    return 42
+            """)
+        self.check_warning(source, "'return' in a 'finally' block")
+
+        source = textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    try:
+                        return 42
+                    except:
+                        pass
+            """)
+        self.check_warning(source, "'return' in a 'finally' block")
+
+        source = textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    try:
+                        pass
+                    except:
+                        return 42
+            """)
+        self.check_warning(source, "'return' in a 'finally' block")
+
+    def test_break_and_continue_in_finally(self):
+        for kw in ('break', 'continue'):
+
+            source = textwrap.dedent(f"""
+                for abc in range(10):
+                    try:
+                        pass
+                    finally:
+                        {kw}
+                """)
+            self.check_warning(source, f"'{kw}' in a 'finally' block")
+
+            source = textwrap.dedent(f"""
+                for abc in range(10):
+                    try:
+                        pass
+                    finally:
+                        try:
+                            {kw}
+                        except:
+                            pass
+                """)
+            self.check_warning(source, f"'{kw}' in a 'finally' block")
+
+            source = textwrap.dedent(f"""
+                for abc in range(10):
+                    try:
+                        pass
+                    finally:
+                        try:
+                            pass
+                        except:
+                            {kw}
+                """)
+            self.check_warning(source, f"'{kw}' in a 'finally' block")
+
+
+class SyntaxErrorTestCase(unittest.TestCase):
 
     def _check_error(self, code, errtext,
                      filename="<testcase>", mode="exec", subclass=None,
@@ -2401,7 +2466,7 @@ class SyntaxTestCase(unittest.TestCase):
         """Check that compiling code raises SyntaxError with errtext.
 
         errtest is a regular expression that must be present in the
-        test of the exception raised.  If subclass is specified it
+        text of the exception raised.  If subclass is specified it
         is the expected subclass of SyntaxError (e.g. IndentationError).
         """
         try:
@@ -2626,6 +2691,25 @@ if x:
         self.assertRaises(IndentationError, exec, code)
 
     @support.cpython_only
+    def test_disallowed_type_param_names(self):
+        # See gh-128632
+
+        self._check_error(f"class A[__classdict__]: pass",
+                        f"reserved name '__classdict__' cannot be used for type parameter")
+        self._check_error(f"def f[__classdict__](): pass",
+                        f"reserved name '__classdict__' cannot be used for type parameter")
+        self._check_error(f"type T[__classdict__] = tuple[__classdict__]",
+                        f"reserved name '__classdict__' cannot be used for type parameter")
+
+        # These compilations are here to make sure __class__, __classcell__ and __classdictcell__
+        # don't break in the future like __classdict__ did in this case.
+        for name in ('__class__', '__classcell__', '__classdictcell__'):
+            compile(f"""
+class A:
+    class B[{name}]: pass
+                """, "<testcase>", mode="exec")
+
+    @support.cpython_only
     def test_nested_named_except_blocks(self):
         code = ""
         for i in range(12):
@@ -2835,6 +2919,7 @@ while 1:
                     compile(source, "<string>", mode)
 
     @support.cpython_only
+    @support.skip_wasi_stack_overflow()
     def test_deep_invalid_rule(self):
         # Check that a very deep invalid rule in the PEG
         # parser doesn't have exponential backtracking.

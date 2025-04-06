@@ -7,6 +7,8 @@
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_dict.h"          // DICT_KEYS_UNICODE
 #include "pycore_function.h"      // _PyFunction_GetVersionForCurrentState()
+#include "pycore_interpframe.h"   // FRAME_SPECIALS_SIZE
+#include "pycore_list.h"          // _PyListIterObject
 #include "pycore_long.h"          // _PyLong_IsNonNegativeCompact()
 #include "pycore_moduleobject.h"
 #include "pycore_object.h"
@@ -16,6 +18,7 @@
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
 #include "pycore_pylifecycle.h"   // _PyOS_URandomNonblock()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_unicodeobject.h" // _PyUnicodeASCIIIter_Type
 
 #include <stdlib.h> // rand()
 
@@ -594,6 +597,13 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_BINARY_OP_SUBSCR_TUPLE_SLICE          35
 #define SPEC_FAIL_BINARY_OP_SUBSCR_STRING_SLICE         36
 #define SPEC_FAIL_BINARY_OP_SUBSCR_NOT_HEAP_TYPE        37
+#define SPEC_FAIL_BINARY_OP_SUBSCR_OTHER_SLICE          38
+#define SPEC_FAIL_BINARY_OP_SUBSCR_MAPPINGPROXY         39
+#define SPEC_FAIL_BINARY_OP_SUBSCR_RE_MATCH             40
+#define SPEC_FAIL_BINARY_OP_SUBSCR_ARRAY                41
+#define SPEC_FAIL_BINARY_OP_SUBSCR_DEQUE                42
+#define SPEC_FAIL_BINARY_OP_SUBSCR_ENUMDICT             43
+#define SPEC_FAIL_BINARY_OP_SUBSCR_STACKSUMMARY         44
 
 /* Calls */
 
@@ -1006,6 +1016,9 @@ specialize_dict_access_hint(
     _PyAttrCache *cache = (_PyAttrCache *)(instr + 1);
 
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(dict);
+#ifdef Py_GIL_DISABLED
+    _PyDict_EnsureSharedOnRead(dict);
+#endif
 
     // We found an instance with a __dict__.
     if (_PyDict_HasSplitTable(dict)) {
@@ -2352,6 +2365,34 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
                 }
             }
             Py_XDECREF(descriptor);
+
+            if (PyObject_TypeCheck(lhs, &PyDictProxy_Type)) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_MAPPINGPROXY;
+            }
+
+            if (strcmp(container_type->tp_name, "array.array") == 0) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_ARRAY;
+            }
+
+            if (strcmp(container_type->tp_name, "re.Match") == 0) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_RE_MATCH;
+            }
+
+            if (strcmp(container_type->tp_name, "collections.deque") == 0) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_DEQUE;
+            }
+
+            if (strcmp(_PyType_Name(container_type), "EnumDict") == 0) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_ENUMDICT;
+            }
+
+            if (strcmp(container_type->tp_name, "StackSummary") == 0) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_STACKSUMMARY;
+            }
+
+            if (PySlice_Check(rhs)) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_OTHER_SLICE;
+            }
             return SPEC_FAIL_BINARY_OP_SUBSCR;
     }
     Py_UNREACHABLE();

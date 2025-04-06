@@ -82,7 +82,7 @@
   <PropertyGroup>
     <KillPython>true</KillPython>
     <RequireProfileData>true</RequireProfileData>
-    <IncludeExternals Condition="$(IncludeExternals) == '' and Exists('$(zlibDir)\zlib.h')">true</IncludeExternals>
+    <IncludeExternals Condition="$(IncludeExternals) == '' and Exists('$(zlibNgDir)\zlib-ng.h.in')">true</IncludeExternals>
     <IncludeExternals Condition="$(IncludeExternals) == ''">false</IncludeExternals>
   </PropertyGroup>
   <ImportGroup Label="PropertySheets">
@@ -100,16 +100,19 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalOptions>/Zm200  %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalIncludeDirectories>$(PySourcePath)Modules\_hacl\include;$(PySourcePath)Modules\_hacl\internal;$(PySourcePath)Python;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="$(IncludeExternals)">$(zlibDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_BUILD_CORE_BUILTIN;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(PySourcePath)Modules\_hacl;$(PySourcePath)Modules\_hacl\include;$(PySourcePath)Python;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="$(IncludeExternals)">$(zlibNgDir);$(GeneratedZlibNgDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_USRDLL;Py_BUILD_CORE;Py_BUILD_CORE_BUILTIN;Py_ENABLE_SHARED;MS_DLL_ID="$(SysWinVer)";ZLIB_COMPAT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="$(IncludeExternals)">_Py_HAVE_ZLIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseJIT)' == 'true'">_Py_JIT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseTIER2)' != '' and '$(UseTIER2)' != '0'">_Py_TIER2=$(UseTIER2);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PreprocessorDefinitions Condition="'$(UseTailCallInterp)' == 'true'">Py_TAIL_CALL_INTERP=1;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(WITH_COMPUTED_GOTOS)' != ''">HAVE_COMPUTED_GOTOS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(DisableRemoteDebug)' != 'true'">Py_REMOTE_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>version.lib;ws2_32.lib;pathcch.lib;bcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies Condition="$(IncludeExternals)">zlib-ng$(PyDebugExt).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -258,6 +261,9 @@
     <ClInclude Include="..\Include\internal\pycore_initconfig.h" />
     <ClInclude Include="..\Include\internal\pycore_instruction_sequence.h" />
     <ClInclude Include="..\Include\internal\pycore_interp.h" />
+    <ClInclude Include="..\Include\internal\pycore_interp_structs.h" />
+    <ClInclude Include="..\Include\internal\pycore_interpframe.h" />
+    <ClInclude Include="..\Include\internal\pycore_interpframe_structs.h" />
     <ClInclude Include="..\Include\internal\pycore_intrinsics.h" />
     <ClInclude Include="..\Include\internal\pycore_jit.h" />
     <ClInclude Include="..\Include\internal\pycore_list.h" />
@@ -292,21 +298,25 @@
     <ClInclude Include="..\Include\internal\pycore_runtime.h" />
     <ClInclude Include="..\Include\internal\pycore_runtime_init.h" />
     <ClInclude Include="..\Include\internal\pycore_runtime_init_generated.h" />
+    <ClInclude Include="..\Include\internal\pycore_runtime_structs.h" />
     <ClInclude Include="..\Include\internal\pycore_semaphore.h" />
     <ClInclude Include="..\Include\internal\pycore_setobject.h" />
     <ClInclude Include="..\Include\internal\pycore_signal.h" />
     <ClInclude Include="..\Include\internal\pycore_sliceobject.h" />
+    <ClInclude Include="..\Include\internal\pycore_stackref.h" />
+    <ClInclude Include="..\Include\internal\pycore_stats.h" />
     <ClInclude Include="..\Include\internal\pycore_strhex.h" />
+    <ClInclude Include="..\Include\internal\pycore_structs.h" />
     <ClInclude Include="..\Include\internal\pycore_structseq.h" />
     <ClInclude Include="..\Include\internal\pycore_sysmodule.h" />
     <ClInclude Include="..\Include\internal\pycore_symtable.h" />
-    <ClInclude Include="..\Include\internal\pycore_stackref.h" />
     <ClInclude Include="..\Include\internal\pycore_time.h" />
     <ClInclude Include="..\Include\internal\pycore_token.h" />
     <ClInclude Include="..\Include\internal\pycore_traceback.h" />
     <ClInclude Include="..\Include\internal\pycore_tracemalloc.h" />
     <ClInclude Include="..\Include\internal\pycore_tstate.h" />
     <ClInclude Include="..\Include\internal\pycore_tuple.h" />
+    <ClInclude Include="..\Include\internal\pycore_typedefs.h" />
     <ClInclude Include="..\Include\internal\pycore_typeobject.h" />
     <ClInclude Include="..\Include\internal\pycore_typevarobject.h" />
     <ClInclude Include="..\Include\internal\pycore_ucnhash.h" />
@@ -402,19 +412,6 @@
     <ClInclude Include="..\Python\stdlib_module_names.h" />
     <ClInclude Include="..\Python\thread_nt.h" />
   </ItemGroup>
-  <ItemGroup Condition="$(IncludeExternals)">
-    <ClInclude Include="$(zlibDir)\crc32.h" />
-    <ClInclude Include="$(zlibDir)\deflate.h" />
-    <ClInclude Include="$(zlibDir)\inffast.h" />
-    <ClInclude Include="$(zlibDir)\inffixed.h" />
-    <ClInclude Include="$(zlibDir)\inflate.h" />
-    <ClInclude Include="$(zlibDir)\inftrees.h" />
-    <ClInclude Include="$(zlibDir)\trees.h" />
-    <ClInclude Include="$(zlibDir)\zconf.h" />
-    <ClInclude Include="$(zlibDir)\zconf.h.in" />
-    <ClInclude Include="$(zlibDir)\zlib.h" />
-    <ClInclude Include="$(zlibDir)\zutil.h" />
-  </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_abc.c" />
     <ClCompile Include="..\Modules\_bisectmodule.c" />
@@ -431,16 +428,18 @@
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA1.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA2.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_SHA3.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_HMAC.c" />
+    <ClCompile Include="..\Modules\_hacl\Hacl_Streaming_HMAC.c" />
     <ClCompile Include="..\Modules\_hacl\Lib_Memzero0.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2b.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2s.c" />
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2b_Simd256.c" Condition="'$(Platform)' == 'x64'">
       <PreprocessorDefinitions>HACL_CAN_COMPILE_VEC256;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalOptions>/arch:AVX2</AdditionalOptions>
+      <AdditionalOptions>/arch:AVX2 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\Modules\_hacl\Hacl_Hash_Blake2s_Simd128.c" Condition="'$(Platform)' == 'x64'">
       <PreprocessorDefinitions>HACL_CAN_COMPILE_VEC128;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalOptions>/arch:AVX</AdditionalOptions>
+      <AdditionalOptions>/arch:AVX %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="..\Modules\_heapqmodule.c" />
     <ClCompile Include="..\Modules\_json.c" />
@@ -467,6 +466,7 @@
     <ClCompile Include="..\Modules\faulthandler.c" />
     <ClCompile Include="..\Modules\gcmodule.c" />
     <ClCompile Include="..\Modules\getbuildinfo.c" />
+    <ClCompile Include="..\Modules\hmacmodule.c" />
     <ClCompile Include="..\Modules\itertoolsmodule.c" />
     <ClCompile Include="..\Modules\main.c" />
     <ClCompile Include="..\Modules\mathmodule.c" />
@@ -485,6 +485,7 @@
     <ClCompile Include="..\Modules\_sysconfig.c" />
     <ClCompile Include="..\Modules\_threadmodule.c" />
     <ClCompile Include="..\Modules\_tracemalloc.c" />
+    <ClCompile Include="..\Modules\_typesmodule.c" />
     <ClCompile Include="..\Modules\_typingmodule.c" />
     <ClCompile Include="..\Modules\timemodule.c" />
     <ClCompile Include="..\Modules\xxsubtype.c" />
@@ -644,6 +645,7 @@
     <ClCompile Include="..\Python\pystrcmp.c" />
     <ClCompile Include="..\Python\pystrhex.c" />
     <ClCompile Include="..\Python\pystrtod.c" />
+    <ClCompile Include="..\Python\remote_debugging.c" />
     <ClCompile Include="..\Python\qsbr.c" />
     <ClCompile Include="..\Python\dtoa.c" />
     <ClCompile Include="..\Python\Python-ast.c" />
@@ -663,25 +665,18 @@
   </ItemGroup>
   <ItemGroup Condition="$(IncludeExternals)">
     <ClCompile Include="..\Modules\zlibmodule.c" />
-    <ClCompile Include="$(zlibDir)\adler32.c" />
-    <ClCompile Include="$(zlibDir)\compress.c" />
-    <ClCompile Include="$(zlibDir)\crc32.c" />
-    <ClCompile Include="$(zlibDir)\deflate.c">
-      <DisableSpecificWarnings>4244</DisableSpecificWarnings>
-    </ClCompile>
-    <ClCompile Include="$(zlibDir)\infback.c" />
-    <ClCompile Include="$(zlibDir)\inffast.c" />
-    <ClCompile Include="$(zlibDir)\inflate.c" />
-    <ClCompile Include="$(zlibDir)\inftrees.c" />
-    <ClCompile Include="$(zlibDir)\trees.c" />
-    <ClCompile Include="$(zlibDir)\uncompr.c" />
-    <ClCompile Include="$(zlibDir)\zutil.c" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\PC\dl_nt.c" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="zlib-ng.vcxproj" Condition="$(IncludeExternals)">
+      <Project>{fb91c8b2-6fbc-3a01-b644-1637111f902d}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
@@ -744,7 +739,7 @@
     <Warning Text="Toolset $(PlatformToolset) is not used for official builds. Your build may have errors or incompatibilities." />
   </Target>
   <Target Name="_WarnAboutZlib" BeforeTargets="PrepareForBuild" Condition="!$(IncludeExternals)">
-    <Warning Text="Not including zlib is not a supported configuration." />
+    <Warning Text="Not including zlib or zlib-ng is not a supported configuration." />
   </Target>
 
   <Target Name="_CopyVCRuntime" AfterTargets="Build" Inputs="@(VCRuntimeDLL)" Outputs="$(OutDir)%(Filename)%(Extension)" DependsOnTargets="FindVCRuntime">

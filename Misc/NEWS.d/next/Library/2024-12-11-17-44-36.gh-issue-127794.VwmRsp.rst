@@ -1,0 +1,4 @@
+When headers are added to :class:`email.message.Message` objects, either through
+:meth:`email.message.Message.__setitem__` or :meth:`email.message.Message.add_header`,
+the field name is now validated according to :rfc:`RFC 5322, Section 2.2 <5322#section-2.2>`
+and a :exc:`ValueError` is raised if the field name contains any invalid characters.

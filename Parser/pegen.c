@@ -1,7 +1,10 @@
 #include <Python.h>
 #include "pycore_ast.h"           // _PyAST_Validate(),
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_parser.h"        // _PYPEGEN_NSTATISTICS
 #include "pycore_pyerrors.h"      // PyExc_IncompleteInputError
+#include "pycore_runtime.h"     // _PyRuntime
+#include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal
 #include <errcode.h>
 
 #include "lexer/lexer.h"
@@ -191,7 +194,7 @@ initialize_token(Parser *p, Token *parser_token, struct token *new_token, int to
     parser_token->metadata = NULL;
     if (new_token->metadata != NULL) {
         if (_PyArena_AddPyObject(p->arena, new_token->metadata) < 0) {
-            Py_DECREF(parser_token->metadata);
+            Py_DECREF(new_token->metadata);
             return -1;
         }
         parser_token->metadata = new_token->metadata;
@@ -403,11 +406,14 @@ _PyPegen_lookahead_with_int(int positive, Token *(func)(Parser *, int), Parser *
     return (res != NULL) == positive;
 }
 
-int
+// gh-111178: Use _Py_NO_SANITIZE_UNDEFINED to disable sanitizer checks on
+// undefined behavior (UBsan) in this function, rather than changing 'func'
+// callback API.
+int _Py_NO_SANITIZE_UNDEFINED
 _PyPegen_lookahead(int positive, void *(func)(Parser *), Parser *p)
 {
     int mark = p->mark;
-    void *res = (void*)func(p);
+    void *res = func(p);
     p->mark = mark;
     return (res != NULL) == positive;
 }

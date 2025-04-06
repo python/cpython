@@ -73,6 +73,7 @@ class CAPITests(unittest.TestCase):
             ("program_name", str, None),
             ("pycache_prefix", str | None, "pycache_prefix"),
             ("quiet", bool, None),
+            ("remote_debug", int, None),
             ("run_command", str | None, None),
             ("run_filename", str | None, None),
             ("run_module", str | None, None),

@@ -11,7 +11,16 @@ from parsing import (  # noqa: F401
     InputEffect,
     OpName,
     AstNode,
+    Stmt,
+    SimpleStmt,
+    IfStmt,
+    ForStmt,
+    WhileStmt,
+    BlockStmt,
+    MacroIfStmt,
 )
+
+import pprint
 
 CodeDef = InstDef | LabelDef
 
@@ -61,6 +70,7 @@ def parse_files(filenames: list[str]) -> list[AstNode]:
             assert node is not None
             result.append(node)  # type: ignore[arg-type]
         if not psr.eof():
+            pprint.pprint(result)
             psr.backup()
             raise psr.make_syntax_error(
                 f"Extra stuff at the end of {filename}", psr.next(True)
