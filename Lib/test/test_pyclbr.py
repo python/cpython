@@ -142,6 +142,12 @@ class PyclbrTest(TestCase):
                     self.assertHaskey(dict, name, ignore)
 
     def test_easy(self):
+        import importlib.util
+        if getattr(sys.modules["__main__"], "__spec__", None) is None:
+            sys.modules["__main__"].__spec__ = importlib.machinery.ModuleSpec(
+                name="__main__", loader=None, origin="built-in"
+            )
+
         self.checkModule('pyclbr')
         # XXX: Metaclasses are not supported
         # self.checkModule('ast')
@@ -214,6 +220,18 @@ class PyclbrTest(TestCase):
 
         compare(None, actual, None, expected)
 
+    def test_pdb_module(self):
+        import importlib.util
+        if getattr(sys.modules["__main__"], "__spec__", None) is None:
+            sys.modules["__main__"].__spec__ = importlib.machinery.ModuleSpec(
+                name="__main__", loader=None, origin="builtin"
+            )
+
+        self.checkModule(
+            'pdb',
+            ignore=('_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'Pdb'),
+        )
+
     def test_others(self):
         cm = self.checkModule
 
@@ -223,11 +241,6 @@ class PyclbrTest(TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)
             cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
-        cm(
-            'pdb',
-            # pyclbr does not handle elegantly `typing` or properties
-            ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'curframe_locals'),
-        )
         cm('pydoc', ignore=('input', 'output',)) # properties
 
         # Tests for modules inside packages
@@ -260,12 +273,4 @@ class ReadmoduleTests(TestCase):
 
 
 if __name__ == "__main__":
-    import importlib.util
-
-    # Adding the __spec__ attribute to the __main__ module
-    if getattr(sys.modules["__main__"], "__spec__", None) is None:
-        sys.modules["__main__"].__spec__ = importlib.machinery.ModuleSpec(
-            name="__main__", loader=None, origin="builtin"
-        )
-
     unittest_main()
