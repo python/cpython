@@ -1915,7 +1915,7 @@ def _signature_get_user_defined_method(cls, method_name, *, follow_wrapper_chain
 
     if follow_wrapper_chains:
         meth = unwrap(meth, stop=(lambda m: hasattr(m, "__signature__")
-                                  or isinstance(m, (classmethod, staticmethod))))
+                                  or _signature_is_builtin(m)))
     if isinstance(meth, _NonUserDefinedCallables):
         # Once '__signature__' will be added to 'C'-level
         # callables, this check won't be necessary
