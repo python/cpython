@@ -114,7 +114,7 @@ copying of data.
 
    .. method:: rename(newname, flags)
 
-      Renames the underlying shared memory block to *newname*.
+      Rename the underlying shared memory block to *newname*.
       By default, if *newname* already exists, it will be unlinked beforehand.
       Passing the :data:`!os.SHM_RENAME_EXCHANGE` as *flags*,
       an exchange with *newname* will be proceeded instead.
