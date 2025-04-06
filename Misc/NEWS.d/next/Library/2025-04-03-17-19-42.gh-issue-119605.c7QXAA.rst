@@ -1,1 +1,4 @@
-Preserve class signature after wrapping with :func:`warnings.deprecated`. Patch by Xuehai Pan.
+Unwrap :meth:`__new__` and :meth:`__init__` methods when getting the class
+signature for a class with :func:`inspect.signature`.
+Preserve class signature after wrapping with :func:`warnings.deprecated`.
+Patch by Xuehai Pan.
