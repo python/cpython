@@ -204,15 +204,9 @@ def make_escapes(pass_nonascii):
 
 
 def escape_ascii(s, encoding):
-    escaped = ''
-    for c in s:
-        if ord(c) < 128:
-            escaped += escapes[ord(c)]
-        elif c.isprintable():
-            escaped += c
-        else:
-            escaped += escape_nonascii(c, encoding)
-    return escaped
+    return ''.join(escapes[ord(c)] if ord(c) < 128 else c
+                   if c.isprintable() else escape_nonascii(c, encoding)
+                   for c in s)
 
 
 def escape_nonascii(s, encoding):
