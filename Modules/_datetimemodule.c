@@ -1028,6 +1028,40 @@ new_datetime_ex(int year, int month, int day, int hour, int minute,
                     &PyDateTime_DateTimeType)
 
 static PyObject *
+call_subclass_fold(PyObject *cls, int fold, const char *format, ...)
+{
+    PyObject *kwargs = NULL, *res = NULL;
+    va_list va;
+
+    va_start(va, format);
+    PyObject *args = Py_VaBuildValue(format, va);
+    va_end(va);
+    if (args == NULL) {
+        return NULL;
+    }
+    if (fold) {
+        kwargs = PyDict_New();
+        if (kwargs == NULL) {
+            goto Done;
+        }
+        PyObject *obj = PyLong_FromLong(fold);
+        if (obj == NULL) {
+            goto Done;
+        }
+        int err = PyDict_SetItemString(kwargs, "fold", obj);
+        Py_DECREF(obj);
+        if (err < 0) {
+            goto Done;
+        }
+    }
+    res = PyObject_Call(cls, args, kwargs);
+Done:
+    Py_DECREF(args);
+    Py_XDECREF(kwargs);
+    return res;
+}
+
+static PyObject *
 new_datetime_subclass_fold_ex(int year, int month, int day, int hour, int minute,
                               int second, int usecond, PyObject *tzinfo,
                               int fold, PyObject *cls) {
@@ -1036,17 +1070,11 @@ new_datetime_subclass_fold_ex(int year, int month, int day, int hour, int minute
         // Use the fast path constructor
         dt = new_datetime(year, month, day, hour, minute, second, usecond,
                           tzinfo, fold);
-    } else {
+    }
+    else {
         // Subclass
-        dt = PyObject_CallFunction(cls, "iiiiiiiO",
-                                   year,
-                                   month,
-                                   day,
-                                   hour,
-                                   minute,
-                                   second,
-                                   usecond,
-                                   tzinfo);
+        dt = call_subclass_fold(cls, fold, "iiiiiiiO", year, month, day,
+                                hour, minute, second, usecond, tzinfo);
     }
 
     return dt;
@@ -1101,6 +1129,24 @@ new_time_ex(int hour, int minute, int second, int usecond,
 
 #define new_time(hh, mm, ss, us, tzinfo, fold)                       \
     new_time_ex2(hh, mm, ss, us, tzinfo, fold, &PyDateTime_TimeType)
+
+static PyObject *
+new_time_subclass_fold_ex(int hour, int minute, int second, int usecond,
+                          PyObject *tzinfo, int fold, PyObject *cls)
+{
+    PyObject *t;
+    if ((PyTypeObject*)cls == &PyDateTime_TimeType) {
+        // Use the fast path constructor
+        t = new_time(hour, minute, second, usecond, tzinfo, fold);
+    }
+    else {
+        // Subclass
+        t = call_subclass_fold(cls, fold, "iiiiO", hour, minute, second,
+                               usecond, tzinfo);
+    }
+
+    return t;
+}
 
 /* Create a timedelta instance.  Normalize the members iff normalize is
  * true.  Passing false is a speed optimization, if you know for sure
@@ -3430,8 +3476,6 @@ date_timetuple(PyDateTime_Date *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 date_replace(PyDateTime_Date *self, PyObject *args, PyObject *kw)
 {
-    PyObject *clone;
-    PyObject *tuple;
     int year = GET_YEAR(self);
     int month = GET_MONTH(self);
     int day = GET_DAY(self);
@@ -3439,12 +3483,7 @@ date_replace(PyDateTime_Date *self, PyObject *args, PyObject *kw)
     if (! PyArg_ParseTupleAndKeywords(args, kw, "|iii:replace", date_kws,
                                       &year, &month, &day))
         return NULL;
-    tuple = Py_BuildValue("iii", year, month, day);
-    if (tuple == NULL)
-        return NULL;
-    clone = date_new(Py_TYPE(self), tuple, NULL);
-    Py_DECREF(tuple);
-    return clone;
+    return new_date_subclass_ex(year, month, day, (PyObject *)Py_TYPE(self));
 }
 
 static Py_hash_t
@@ -4533,8 +4572,6 @@ time_hash(PyDateTime_Time *self)
 static PyObject *
 time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 {
-    PyObject *clone;
-    PyObject *tuple;
     int hh = TIME_GET_HOUR(self);
     int mm = TIME_GET_MINUTE(self);
     int ss = TIME_GET_SECOND(self);
@@ -4551,15 +4588,8 @@ time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
                         "fold must be either 0 or 1");
         return NULL;
     }
-    tuple = Py_BuildValue("iiiiO", hh, mm, ss, us, tzinfo);
-    if (tuple == NULL)
-        return NULL;
-    clone = time_new(Py_TYPE(self), tuple, NULL);
-    if (clone != NULL) {
-        TIME_SET_FOLD(clone, fold);
-    }
-    Py_DECREF(tuple);
-    return clone;
+    return new_time_subclass_fold_ex(hh, mm, ss, us, tzinfo, fold,
+                                     (PyObject *)Py_TYPE(self));
 }
 
 static PyObject *
@@ -6003,8 +6033,6 @@ datetime_hash(PyDateTime_DateTime *self)
 static PyObject *
 datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 {
-    PyObject *clone;
-    PyObject *tuple;
     int y = GET_YEAR(self);
     int m = GET_MONTH(self);
     int d = GET_DAY(self);
@@ -6025,15 +6053,8 @@ datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
                         "fold must be either 0 or 1");
         return NULL;
     }
-    tuple = Py_BuildValue("iiiiiiiO", y, m, d, hh, mm, ss, us, tzinfo);
-    if (tuple == NULL)
-        return NULL;
-    clone = datetime_new(Py_TYPE(self), tuple, NULL);
-    if (clone != NULL) {
-        DATE_SET_FOLD(clone, fold);
-    }
-    Py_DECREF(tuple);
-    return clone;
+    return new_datetime_subclass_fold_ex(y, m, d, hh, mm, ss, us, tzinfo, fold,
+                                         (PyObject *)Py_TYPE(self));
 }
 
 static PyObject *

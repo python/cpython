@@ -821,19 +821,18 @@ contextvar_new(PyObject *name, PyObject *def)
         return NULL;
     }
 
-    var->var_hash = contextvar_generate_hash(var, name);
-    if (var->var_hash == -1) {
-        Py_DECREF(var);
-        return NULL;
-    }
-
     var->var_name = Py_NewRef(name);
-
     var->var_default = Py_XNewRef(def);
 
     var->var_cached = NULL;
     var->var_cached_tsid = 0;
     var->var_cached_tsver = 0;
+
+    var->var_hash = contextvar_generate_hash(var, name);
+    if (var->var_hash == -1) {
+        Py_DECREF(var);
+        return NULL;
+    }
 
     if (_PyObject_GC_MAY_BE_TRACKED(name) ||
             (def != NULL && _PyObject_GC_MAY_BE_TRACKED(def)))

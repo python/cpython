@@ -38,6 +38,7 @@ tags
 TAGS
 .vs/
 .vscode/
+.cache/
 gmon.out
 .coverage
 .mypy_cache/
