@@ -12,10 +12,12 @@ overview:
 .. toctree::
 
    sys.rst
+   sys.monitoring.rst
    sysconfig.rst
    builtins.rst
    __main__.rst
    warnings.rst
+   dataclasses.rst
    contextlib.rst
    abc.rst
    atexit.rst
@@ -23,4 +25,5 @@ overview:
    __future__.rst
    gc.rst
    inspect.rst
+   annotationlib.rst
    site.rst

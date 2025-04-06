@@ -38,6 +38,21 @@ class Percolator:
         filter.setdelegate(self.top)
         self.top = filter
 
+    def insertfilterafter(self, filter, after):
+        assert isinstance(filter, Delegator)
+        assert isinstance(after, Delegator)
+        assert filter.delegate is None
+
+        f = self.top
+        f.resetcache()
+        while f is not after:
+            assert f is not self.bottom
+            f = f.delegate
+            f.resetcache()
+
+        filter.setdelegate(f.delegate)
+        f.setdelegate(filter)
+
     def removefilter(self, filter):
         # XXX Perhaps should only support popfilter()?
         assert isinstance(filter, Delegator)
@@ -71,11 +86,11 @@ def _percolator(parent):  # htest #
             print(self.name, ": delete", args)
             self.delegate.delete(*args)
 
-    box = tk.Toplevel(parent)
-    box.title("Test Percolator")
+    top = tk.Toplevel(parent)
+    top.title("Test Percolator")
     x, y = map(int, parent.geometry().split('+')[1:])
-    box.geometry("+%d+%d" % (x, y + 175))
-    text = tk.Text(box)
+    top.geometry("+%d+%d" % (x, y + 175))
+    text = tk.Text(top)
     p = Percolator(text)
     pin = p.insertfilter
     pout = p.removefilter
@@ -88,17 +103,18 @@ def _percolator(parent):  # htest #
         (pin if var2.get() else pout)(t2)
 
     text.pack()
+    text.focus_set()
     var1 = tk.IntVar(parent)
-    cb1 = tk.Checkbutton(box, text="Tracer1", command=toggle1, variable=var1)
+    cb1 = tk.Checkbutton(top, text="Tracer1", command=toggle1, variable=var1)
     cb1.pack()
     var2 = tk.IntVar(parent)
-    cb2 = tk.Checkbutton(box, text="Tracer2", command=toggle2, variable=var2)
+    cb2 = tk.Checkbutton(top, text="Tracer2", command=toggle2, variable=var2)
     cb2.pack()
 
+
 if __name__ == "__main__":
-    import unittest
-    unittest.main('idlelib.idle_test.test_percolator', verbosity=2,
-                  exit=False)
+    from unittest import main
+    main('idlelib.idle_test.test_percolator', verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
     run(_percolator)

@@ -1,7 +1,6 @@
 """Implementation of the DOM Level 3 'LS-Load' feature."""
 
 import copy
-import warnings
 import xml.dom
 
 from xml.dom.NodeFilter import NodeFilter
@@ -190,7 +189,7 @@ class DOMBuilder:
         options.filter = self.filter
         options.errorHandler = self.errorHandler
         fp = input.byteStream
-        if fp is None and options.systemId:
+        if fp is None and input.systemId:
             import urllib.request
             fp = urllib.request.urlopen(input.systemId)
         return self._parse_bytestream(fp, options)
@@ -248,10 +247,12 @@ class DOMEntityResolver(object):
 
     def _guess_media_encoding(self, source):
         info = source.byteStream.info()
-        if "Content-Type" in info:
-            for param in info.getplist():
-                if param.startswith("charset="):
-                    return param.split("=", 1)[1].lower()
+        # import email.message
+        # assert isinstance(info, email.message.Message)
+        charset = info.get_param('charset')
+        if charset is not None:
+            return charset.lower()
+        return None
 
 
 class DOMInputSource(object):
@@ -332,29 +333,10 @@ class DOMBuilderFilter:
 del NodeFilter
 
 
-class _AsyncDeprecatedProperty:
-    def warn(self, cls):
-        clsname = cls.__name__
-        warnings.warn(
-            "{cls}.async is deprecated; use {cls}.async_".format(cls=clsname),
-            DeprecationWarning)
-
-    def __get__(self, instance, cls):
-        self.warn(cls)
-        if instance is not None:
-            return instance.async_
-        return False
-
-    def __set__(self, instance, value):
-        self.warn(type(instance))
-        setattr(instance, 'async_', value)
-
-
 class DocumentLS:
     """Mixin to create documents that conform to the load/save spec."""
 
     async_ = False
-    locals()['async'] = _AsyncDeprecatedProperty()  # Avoid DeprecationWarning
 
     def _get_async(self):
         return False
@@ -382,9 +364,6 @@ class DocumentLS:
         elif snode.ownerDocument is not self:
             raise xml.dom.WrongDocumentErr()
         return snode.toxml()
-
-
-del _AsyncDeprecatedProperty
 
 
 class DOMImplementationLS:

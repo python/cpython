@@ -10,12 +10,12 @@ for convenience.
 This is the pure Python implementation of the module.
 """
 
-__all__ = ['abs', 'add', 'and_', 'attrgetter', 'concat', 'contains', 'countOf',
+__all__ = ['abs', 'add', 'and_', 'attrgetter', 'call', 'concat', 'contains', 'countOf',
            'delitem', 'eq', 'floordiv', 'ge', 'getitem', 'gt', 'iadd', 'iand',
            'iconcat', 'ifloordiv', 'ilshift', 'imatmul', 'imod', 'imul',
            'index', 'indexOf', 'inv', 'invert', 'ior', 'ipow', 'irshift',
-           'is_', 'is_not', 'isub', 'itemgetter', 'itruediv', 'ixor', 'le',
-           'length_hint', 'lshift', 'lt', 'matmul', 'methodcaller', 'mod',
+           'is_', 'is_none', 'is_not', 'is_not_none', 'isub', 'itemgetter', 'itruediv',
+           'ixor', 'le', 'length_hint', 'lshift', 'lt', 'matmul', 'methodcaller', 'mod',
            'mul', 'ne', 'neg', 'not_', 'or_', 'pos', 'pow', 'rshift',
            'setitem', 'sub', 'truediv', 'truth', 'xor']
 
@@ -65,6 +65,14 @@ def is_(a, b):
 def is_not(a, b):
     "Same as a is not b."
     return a is not b
+
+def is_none(a):
+    "Same as a is None."
+    return a is None
+
+def is_not_none(a):
+    "Same as a is not None."
+    return a is not None
 
 # Mathematical/Bitwise Operations *********************************************#
 
@@ -155,10 +163,10 @@ def contains(a, b):
     return b in a
 
 def countOf(a, b):
-    "Return the number of times b occurs in a."
+    "Return the number of items in a which are, or which equal, b."
     count = 0
     for i in a:
-        if i == b:
+        if i is b or i == b:
             count += 1
     return count
 
@@ -173,7 +181,7 @@ def getitem(a, b):
 def indexOf(a, b):
     "Return the first index of b in a."
     for i, j in enumerate(a):
-        if j == b:
+        if j is b or j == b:
             return i
     else:
         raise ValueError('sequence.index(x): x not in sequence')
@@ -221,6 +229,12 @@ def length_hint(obj, default=0):
         raise ValueError(msg)
     return val
 
+# Other Operations ************************************************************#
+
+def call(obj, /, *args, **kwargs):
+    """Same as obj(*args, **kwargs)."""
+    return obj(*args, **kwargs)
+
 # Generalized Lookup Objects **************************************************#
 
 class attrgetter:
@@ -233,7 +247,7 @@ class attrgetter:
     """
     __slots__ = ('_attrs', '_call')
 
-    def __init__(self, attr, *attrs):
+    def __init__(self, attr, /, *attrs):
         if not attrs:
             if not isinstance(attr, str):
                 raise TypeError('attribute name must be a string')
@@ -251,7 +265,7 @@ class attrgetter:
                 return tuple(getter(obj) for getter in getters)
             self._call = func
 
-    def __call__(self, obj):
+    def __call__(self, obj, /):
         return self._call(obj)
 
     def __repr__(self):
@@ -270,7 +284,7 @@ class itemgetter:
     """
     __slots__ = ('_items', '_call')
 
-    def __init__(self, item, *items):
+    def __init__(self, item, /, *items):
         if not items:
             self._items = (item,)
             def func(obj):
@@ -282,7 +296,7 @@ class itemgetter:
                 return tuple(obj[i] for i in items)
             self._call = func
 
-    def __call__(self, obj):
+    def __call__(self, obj, /):
         return self._call(obj)
 
     def __repr__(self):
@@ -302,18 +316,14 @@ class methodcaller:
     """
     __slots__ = ('_name', '_args', '_kwargs')
 
-    def __init__(*args, **kwargs):
-        if len(args) < 2:
-            msg = "methodcaller needs at least one argument, the method name"
-            raise TypeError(msg)
-        self = args[0]
-        self._name = args[1]
+    def __init__(self, name, /, *args, **kwargs):
+        self._name = name
         if not isinstance(self._name, str):
             raise TypeError('method name must be a string')
-        self._args = args[2:]
+        self._args = args
         self._kwargs = kwargs
 
-    def __call__(self, obj):
+    def __call__(self, obj, /):
         return getattr(obj, self._name)(*self._args, **self._kwargs)
 
     def __repr__(self):
@@ -413,7 +423,7 @@ try:
 except ImportError:
     pass
 else:
-    from _operator import __doc__
+    from _operator import __doc__  # noqa: F401
 
 # All of these "__func__ = func" assignments have to happen after importing
 # from _operator to make sure they're set to the right function
@@ -427,6 +437,7 @@ __not__ = not_
 __abs__ = abs
 __add__ = add
 __and__ = and_
+__call__ = call
 __floordiv__ = floordiv
 __index__ = index
 __inv__ = inv

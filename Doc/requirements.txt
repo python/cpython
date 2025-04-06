@@ -1,0 +1,21 @@
+# Requirements to build the Python documentation
+#
+# Note that when updating this file, you will likely also have to update
+# the Doc/constraints.txt file.
+
+# The Sphinx version is pinned so that new versions that introduce new warnings
+# won't suddenly cause build failures. Updating the version is fine as long
+# as no warnings are raised by doing so.
+# Keep this version in sync with ``Doc/conf.py``.
+sphinx~=8.2.0
+
+blurb
+
+sphinxext-opengraph~=0.9.0
+sphinx-notfound-page~=1.0.0
+
+# The theme used by the documentation is stored separately, so we need
+# to install that as well.
+python-docs-theme>=2023.3.1,!=2023.7
+
+-c constraints.txt

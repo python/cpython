@@ -1,8 +1,8 @@
-:mod:`pyclbr` --- Python class browser support
-==============================================
+:mod:`!pyclbr` --- Python module browser support
+================================================
 
 .. module:: pyclbr
-   :synopsis: Supports information extraction for a Python class browser.
+   :synopsis: Supports information extraction for a Python module browser.
 
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
@@ -11,9 +11,9 @@
 --------------
 
 The :mod:`pyclbr` module provides limited information about the
-functions, classes, and methods defined in a python-coded module.  The
+functions, classes, and methods defined in a Python-coded module.  The
 information is sufficient to implement a module browser.  The
-information is extracted from the python source code rather than by
+information is extracted from the Python source code rather than by
 importing the module, so this module is safe to use with untrusted code.
 This restriction makes it impossible to use this module with modules not
 implemented in Python, including all standard and optional extension
@@ -28,6 +28,9 @@ modules.
    to read; it may be the name of a module within a package.  If given,
    *path* is a sequence of directory paths prepended to ``sys.path``,
    which is used to locate the module source code.
+
+   This function is the original interface and is only kept for back
+   compatibility.  It returns a filtered version of the following.
 
 
 .. function:: readmodule_ex(module, path=None)
@@ -44,7 +47,7 @@ modules.
 
 .. versionadded:: 3.7
    Descriptors for nested definitions.  They are accessed through the
-   new children attibute.  Each has a new parent attribute.
+   new children attribute.  Each has a new parent attribute.
 
 The descriptors returned by these functions are instances of
 Function and Class classes.  Users are not expected to create instances
@@ -55,99 +58,115 @@ of these classes.
 
 Function Objects
 ----------------
-Class :class:`Function` instances describe functions defined by def
-statements.  They have the following attributes:
+
+.. class:: Function
+
+   Class :class:`!Function` instances describe functions defined by def
+   statements.  They have the following attributes:
 
 
-.. attribute:: Function.file
+   .. attribute:: file
 
-   Name of the file in which the function is defined.
-
-
-.. attribute:: Function.module
-
-   The name of the module defining the function described.
+      Name of the file in which the function is defined.
 
 
-.. attribute:: Function.name
+   .. attribute:: module
 
-   The name of the function.
-
-
-.. attribute:: Function.lineno
-
-   The line number in the file where the definition starts.
+      The name of the module defining the function described.
 
 
-.. attribute:: Function.parent
+   .. attribute:: name
 
-   For top-level functions, None.  For nested functions, the parent.
-
-   .. versionadded:: 3.7
+      The name of the function.
 
 
-.. attribute:: Function.children
+   .. attribute:: lineno
 
-   A dictionary mapping names to descriptors for nested functions and
-   classes.
+      The line number in the file where the definition starts.
 
-   .. versionadded:: 3.7
+
+   .. attribute:: parent
+
+      For top-level functions, ``None``.  For nested functions, the parent.
+
+      .. versionadded:: 3.7
+
+
+   .. attribute:: children
+
+      A :class:`dictionary <dict>` mapping names to descriptors for nested functions and
+      classes.
+
+      .. versionadded:: 3.7
+
+
+   .. attribute:: is_async
+
+      ``True`` for functions that are defined with the
+      :keyword:`async <async def>` prefix, ``False`` otherwise.
+
+      .. versionadded:: 3.10
 
 
 .. _pyclbr-class-objects:
 
 Class Objects
 -------------
-Class :class:`Class` instances describe classes defined by class
-statements.  They have the same attributes as Functions and two more.
+
+.. class:: Class
+
+   Class :class:`!Class` instances describe classes defined by class
+   statements.  They have the same attributes as :class:`Functions <Function>`
+   and two more.
 
 
-.. attribute:: Class.file
+   .. attribute:: file
 
-   Name of the file in which the class is defined.
-
-
-.. attribute:: Class.module
-
-   The name of the module defining the class described.
+      Name of the file in which the class is defined.
 
 
-.. attribute:: Class.name
+   .. attribute:: module
 
-   The name of the class.
-
-
-.. attribute:: Class.lineno
-
-   The line number in the file where the definition starts.
+      The name of the module defining the class described.
 
 
-.. attribute:: Class.parent
+   .. attribute:: name
 
-   For top-level classes, None.  For nested classes, the parent.
-
-   .. versionadded:: 3.7
+      The name of the class.
 
 
-.. attribute:: Class.children
+   .. attribute:: lineno
 
-   A dictionary mapping names to descriptors for nested functions and
-   classes.
-
-   .. versionadded:: 3.7
+      The line number in the file where the definition starts.
 
 
-.. attribute:: Class.super
+   .. attribute:: parent
 
-   A list of :class:`Class` objects which describe the immediate base
-   classes of the class being described.  Classes which are named as
-   superclasses but which are not discoverable by :func:`readmodule_ex`
-   are listed as a string with the class name instead of as
-   :class:`Class` objects.
+      For top-level classes, ``None``.  For nested classes, the parent.
+
+      .. versionadded:: 3.7
 
 
-.. attribute:: Class.methods
+   .. attribute:: children
 
-   A dictionary mapping method names to line numbers.  This can be
-   derived from the newer children dictionary, but remains for
-   back-compatibility.
+      A dictionary mapping names to descriptors for nested functions and
+      classes.
+
+      .. versionadded:: 3.7
+
+
+   .. attribute:: super
+
+      A list of :class:`!Class` objects which describe the immediate base
+      classes of the class being described.  Classes which are named as
+      superclasses but which are not discoverable by :func:`readmodule_ex`
+      are listed as a string with the class name instead of as
+      :class:`!Class` objects.
+
+
+   .. attribute:: methods
+
+      A :class:`dictionary <dict>` mapping method names to line numbers.
+      This can be derived from the newer :attr:`children` dictionary,
+      but remains for
+      back-compatibility.

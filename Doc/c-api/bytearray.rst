@@ -1,11 +1,11 @@
-.. highlightlang:: c
+.. highlight:: c
 
 .. _bytearrayobjects:
 
 Byte Array Objects
 ------------------
 
-.. index:: object: bytearray
+.. index:: pair: object; bytearray
 
 
 .. c:type:: PyByteArrayObject
@@ -25,13 +25,13 @@ Type check macros
 .. c:function:: int PyByteArray_Check(PyObject *o)
 
    Return true if the object *o* is a bytearray object or an instance of a
-   subtype of the bytearray type.
+   subtype of the bytearray type.  This function always succeeds.
 
 
 .. c:function:: int PyByteArray_CheckExact(PyObject *o)
 
    Return true if the object *o* is a bytearray object, but not an instance of a
-   subtype of the bytearray type.
+   subtype of the bytearray type.  This function always succeeds.
 
 
 Direct API functions
@@ -42,35 +42,43 @@ Direct API functions
    Return a new bytearray object from any object, *o*, that implements the
    :ref:`buffer protocol <bufferobjects>`.
 
-   .. XXX expand about the buffer protocol, at least somewhere
+   On failure, return ``NULL`` with an exception set.
 
 
 .. c:function:: PyObject* PyByteArray_FromStringAndSize(const char *string, Py_ssize_t len)
 
-   Create a new bytearray object from *string* and its length, *len*.  On
-   failure, *NULL* is returned.
+   Create a new bytearray object from *string* and its length, *len*.
+
+   On failure, return ``NULL`` with an exception set.
 
 
 .. c:function:: PyObject* PyByteArray_Concat(PyObject *a, PyObject *b)
 
    Concat bytearrays *a* and *b* and return a new bytearray with the result.
 
+   On failure, return ``NULL`` with an exception set.
+
 
 .. c:function:: Py_ssize_t PyByteArray_Size(PyObject *bytearray)
 
-   Return the size of *bytearray* after checking for a *NULL* pointer.
+   Return the size of *bytearray* after checking for a ``NULL`` pointer.
 
 
 .. c:function:: char* PyByteArray_AsString(PyObject *bytearray)
 
    Return the contents of *bytearray* as a char array after checking for a
-   *NULL* pointer.  The returned array always has an extra
+   ``NULL`` pointer.  The returned array always has an extra
    null byte appended.
 
 
 .. c:function:: int PyByteArray_Resize(PyObject *bytearray, Py_ssize_t len)
 
    Resize the internal buffer of *bytearray* to *len*.
+   Failure is a ``-1`` return with an exception set.
+
+   .. versionchanged:: 3.14
+      A negative *len* will now result in an exception being set and -1 returned.
+
 
 Macros
 ^^^^^^
@@ -79,9 +87,9 @@ These macros trade safety for speed and they don't check pointers.
 
 .. c:function:: char* PyByteArray_AS_STRING(PyObject *bytearray)
 
-   Macro version of :c:func:`PyByteArray_AsString`.
+   Similar to :c:func:`PyByteArray_AsString`, but without error checking.
 
 
 .. c:function:: Py_ssize_t PyByteArray_GET_SIZE(PyObject *bytearray)
 
-   Macro version of :c:func:`PyByteArray_Size`.
+   Similar to :c:func:`PyByteArray_Size`, but without error checking.

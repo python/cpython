@@ -4,6 +4,11 @@ import socket
 import tempfile
 import urllib.response
 import unittest
+from test import support
+
+if support.is_wasi:
+    raise unittest.SkipTest("Cannot create socket on WASI")
+
 
 class TestResponse(unittest.TestCase):
 
@@ -42,6 +47,8 @@ class TestResponse(unittest.TestCase):
     def test_addinfo(self):
         info = urllib.response.addinfo(self.fp, self.test_headers)
         self.assertEqual(info.info(), self.test_headers)
+        self.assertEqual(info.headers, self.test_headers)
+        info.close()
 
     def test_addinfourl(self):
         url = "http://www.python.org"
@@ -51,6 +58,10 @@ class TestResponse(unittest.TestCase):
         self.assertEqual(infourl.info(), self.test_headers)
         self.assertEqual(infourl.geturl(), url)
         self.assertEqual(infourl.getcode(), code)
+        self.assertEqual(infourl.headers, self.test_headers)
+        self.assertEqual(infourl.url, url)
+        self.assertEqual(infourl.status, code)
+        infourl.close()
 
     def tearDown(self):
         self.sock.close()

@@ -1,7 +1,10 @@
 import unittest
+import dbm
 import shelve
-import glob
-from test import support
+import pickle
+import os
+
+from test.support import os_helper
 from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator
 
@@ -40,12 +43,8 @@ class byteskeydict(MutableMapping):
 
 
 class TestCase(unittest.TestCase):
-
-    fn = "shelftemp.db"
-
-    def tearDown(self):
-        for f in glob.glob(self.fn+"*"):
-            support.unlink(f)
+    dirname = os_helper.TESTFN
+    fn = os.path.join(os_helper.TESTFN, "shelftemp.db")
 
     def test_close(self):
         d1 = {}
@@ -62,41 +61,44 @@ class TestCase(unittest.TestCase):
         else:
             self.fail('Closed shelf should not find a key')
 
-    def test_ascii_file_shelf(self):
-        s = shelve.open(self.fn, protocol=0)
+    def test_open_template(self, filename=None, protocol=None):
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
+        s = shelve.open(filename=filename if filename is not None else self.fn,
+                        protocol=protocol)
         try:
             s['key1'] = (1,2,3,4)
             self.assertEqual(s['key1'], (1,2,3,4))
         finally:
             s.close()
+
+    def test_ascii_file_shelf(self):
+        self.test_open_template(protocol=0)
 
     def test_binary_file_shelf(self):
-        s = shelve.open(self.fn, protocol=1)
-        try:
-            s['key1'] = (1,2,3,4)
-            self.assertEqual(s['key1'], (1,2,3,4))
-        finally:
-            s.close()
+        self.test_open_template(protocol=1)
 
     def test_proto2_file_shelf(self):
-        s = shelve.open(self.fn, protocol=2)
-        try:
-            s['key1'] = (1,2,3,4)
-            self.assertEqual(s['key1'], (1,2,3,4))
-        finally:
-            s.close()
+        self.test_open_template(protocol=2)
+
+    def test_pathlib_path_file_shelf(self):
+        self.test_open_template(filename=os_helper.FakePath(self.fn))
+
+    def test_bytes_path_file_shelf(self):
+        self.test_open_template(filename=os.fsencode(self.fn))
+
+    def test_pathlib_bytes_path_file_shelf(self):
+        self.test_open_template(filename=os_helper.FakePath(os.fsencode(self.fn)))
 
     def test_in_memory_shelf(self):
         d1 = byteskeydict()
-        s = shelve.Shelf(d1, protocol=0)
-        s['key1'] = (1,2,3,4)
-        self.assertEqual(s['key1'], (1,2,3,4))
-        s.close()
+        with shelve.Shelf(d1, protocol=0) as s:
+            s['key1'] = (1,2,3,4)
+            self.assertEqual(s['key1'], (1,2,3,4))
         d2 = byteskeydict()
-        s = shelve.Shelf(d2, protocol=1)
-        s['key1'] = (1,2,3,4)
-        self.assertEqual(s['key1'], (1,2,3,4))
-        s.close()
+        with shelve.Shelf(d2, protocol=1) as s:
+            s['key1'] = (1,2,3,4)
+            self.assertEqual(s['key1'], (1,2,3,4))
 
         self.assertEqual(len(d1), 1)
         self.assertEqual(len(d2), 1)
@@ -104,20 +106,18 @@ class TestCase(unittest.TestCase):
 
     def test_mutable_entry(self):
         d1 = byteskeydict()
-        s = shelve.Shelf(d1, protocol=2, writeback=False)
-        s['key1'] = [1,2,3,4]
-        self.assertEqual(s['key1'], [1,2,3,4])
-        s['key1'].append(5)
-        self.assertEqual(s['key1'], [1,2,3,4])
-        s.close()
+        with shelve.Shelf(d1, protocol=2, writeback=False) as s:
+            s['key1'] = [1,2,3,4]
+            self.assertEqual(s['key1'], [1,2,3,4])
+            s['key1'].append(5)
+            self.assertEqual(s['key1'], [1,2,3,4])
 
         d2 = byteskeydict()
-        s = shelve.Shelf(d2, protocol=2, writeback=True)
-        s['key1'] = [1,2,3,4]
-        self.assertEqual(s['key1'], [1,2,3,4])
-        s['key1'].append(5)
-        self.assertEqual(s['key1'], [1,2,3,4,5])
-        s.close()
+        with shelve.Shelf(d2, protocol=2, writeback=True) as s:
+            s['key1'] = [1,2,3,4]
+            self.assertEqual(s['key1'], [1,2,3,4])
+            s['key1'].append(5)
+            self.assertEqual(s['key1'], [1,2,3,4,5])
 
         self.assertEqual(len(d1), 1)
         self.assertEqual(len(d2), 1)
@@ -140,11 +140,10 @@ class TestCase(unittest.TestCase):
         d = {}
         key = 'key'
         encodedkey = key.encode('utf-8')
-        s = shelve.Shelf(d, writeback=True)
-        s[key] = [1]
-        p1 = d[encodedkey]  # Will give a KeyError if backing store not updated
-        s['key'].append(2)
-        s.close()
+        with shelve.Shelf(d, writeback=True) as s:
+            s[key] = [1]
+            p1 = d[encodedkey]  # Will give a KeyError if backing store not updated
+            s['key'].append(2)
         p2 = d[encodedkey]
         self.assertNotEqual(p1, p2)  # Write creates new object in store
 
@@ -164,65 +163,54 @@ class TestCase(unittest.TestCase):
 
     def test_default_protocol(self):
         with shelve.Shelf({}) as s:
-            self.assertEqual(s._protocol, 3)
+            self.assertEqual(s._protocol, pickle.DEFAULT_PROTOCOL)
+
+
+class TestShelveBase:
+    type2test = shelve.Shelf
+
+    def _reference(self):
+        return {"key1":"value1", "key2":2, "key3":(1,2,3)}
+
+
+class TestShelveInMemBase(TestShelveBase):
+    def _empty_mapping(self):
+        return shelve.Shelf(byteskeydict(), **self._args)
+
+
+class TestShelveFileBase(TestShelveBase):
+    counter = 0
+
+    def _empty_mapping(self):
+        self.counter += 1
+        x = shelve.open(self.base_path + str(self.counter), **self._args)
+        self.addCleanup(x.close)
+        return x
+
+    def setUp(self):
+        dirname = os_helper.TESTFN
+        os.mkdir(dirname)
+        self.addCleanup(os_helper.rmtree, dirname)
+        self.base_path = os.path.join(dirname, "shelftemp.db")
+        self.addCleanup(setattr, dbm, '_defaultmod', dbm._defaultmod)
+        dbm._defaultmod = self.dbm_mod
+
 
 from test import mapping_tests
 
-class TestShelveBase(mapping_tests.BasicTestMappingProtocol):
-    fn = "shelftemp.db"
-    counter = 0
-    def __init__(self, *args, **kw):
-        self._db = []
-        mapping_tests.BasicTestMappingProtocol.__init__(self, *args, **kw)
-    type2test = shelve.Shelf
-    def _reference(self):
-        return {"key1":"value1", "key2":2, "key3":(1,2,3)}
-    def _empty_mapping(self):
-        if self._in_mem:
-            x= shelve.Shelf(byteskeydict(), **self._args)
-        else:
-            self.counter+=1
-            x= shelve.open(self.fn+str(self.counter), **self._args)
-        self._db.append(x)
-        return x
-    def tearDown(self):
-        for db in self._db:
-            db.close()
-        self._db = []
-        if not self._in_mem:
-            for f in glob.glob(self.fn+"*"):
-                support.unlink(f)
+for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+    bases = (TestShelveInMemBase, mapping_tests.BasicTestMappingProtocol)
+    name = f'TestProto{proto}MemShelve'
+    globals()[name] = type(name, bases,
+                           {'_args': {'protocol': proto}})
+    bases = (TestShelveFileBase, mapping_tests.BasicTestMappingProtocol)
+    for dbm_mod in dbm_iterator():
+        assert dbm_mod.__name__.startswith('dbm.')
+        suffix = dbm_mod.__name__[4:]
+        name = f'TestProto{proto}File_{suffix}Shelve'
+        globals()[name] = type(name, bases,
+                               {'dbm_mod': dbm_mod, '_args': {'protocol': proto}})
 
-class TestAsciiFileShelve(TestShelveBase):
-    _args={'protocol':0}
-    _in_mem = False
-class TestBinaryFileShelve(TestShelveBase):
-    _args={'protocol':1}
-    _in_mem = False
-class TestProto2FileShelve(TestShelveBase):
-    _args={'protocol':2}
-    _in_mem = False
-class TestAsciiMemShelve(TestShelveBase):
-    _args={'protocol':0}
-    _in_mem = True
-class TestBinaryMemShelve(TestShelveBase):
-    _args={'protocol':1}
-    _in_mem = True
-class TestProto2MemShelve(TestShelveBase):
-    _args={'protocol':2}
-    _in_mem = True
-
-def test_main():
-    for module in dbm_iterator():
-        support.run_unittest(
-            TestAsciiFileShelve,
-            TestBinaryFileShelve,
-            TestProto2FileShelve,
-            TestAsciiMemShelve,
-            TestBinaryMemShelve,
-            TestProto2MemShelve,
-            TestCase
-        )
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

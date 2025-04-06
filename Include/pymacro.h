@@ -1,6 +1,28 @@
 #ifndef Py_PYMACRO_H
 #define Py_PYMACRO_H
 
+// gh-91782: On FreeBSD 12, if the _POSIX_C_SOURCE and _XOPEN_SOURCE macros are
+// defined, <sys/cdefs.h> disables C11 support and <assert.h> does not define
+// the static_assert() macro.
+// https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=255290
+//
+// macOS <= 10.10 doesn't define static_assert in assert.h at all despite
+// having C11 compiler support.
+//
+// static_assert is defined in glibc from version 2.16. Compiler support for
+// the C11 _Static_assert keyword is in gcc >= 4.6.
+//
+// MSVC makes static_assert a keyword in C11-17, contrary to the standards.
+//
+// In C++11 and C2x, static_assert is a keyword, redefining is undefined
+// behaviour. So only define if building as C, not C++ (if __cplusplus is
+// not defined), and only for C11-17.
+#if !defined(static_assert) && (defined(__GNUC__) || defined(__clang__)) \
+     && !defined(__cplusplus) && defined(__STDC_VERSION__) \
+     && __STDC_VERSION__ >= 201112L && __STDC_VERSION__ <= 201710L
+#  define static_assert _Static_assert
+#endif
+
 /* Minimum value between x and y */
 #define Py_MIN(x, y) (((x) > (y)) ? (y) : (x))
 
@@ -24,24 +46,42 @@
 /* Argument must be a char or an int in [-128, 127] or [0, 255]. */
 #define Py_CHARMASK(c) ((unsigned char)((c) & 0xff))
 
-/* Assert a build-time dependency, as an expression.
-
-   Your compile will fail if the condition isn't true, or can't be evaluated
-   by the compiler. This can be used in an expression: its value is 0.
-
-   Example:
-
-   #define foo_to_char(foo)  \
-       ((char *)(foo)        \
-        + Py_BUILD_ASSERT_EXPR(offsetof(struct foo, string) == 0))
-
-   Written by Rusty Russell, public domain, http://ccodearchive.net/ */
-#define Py_BUILD_ASSERT_EXPR(cond) \
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L \
+     && !defined(__cplusplus) && !defined(_MSC_VER))
+#  define Py_BUILD_ASSERT_EXPR(cond) \
+    ((void)sizeof(struct { int dummy; _Static_assert(cond, #cond); }), \
+     0)
+#else
+   /* Assert a build-time dependency, as an expression.
+    *
+    * Your compile will fail if the condition isn't true, or can't be evaluated
+    * by the compiler. This can be used in an expression: its value is 0.
+    *
+    * Example:
+    *
+    * #define foo_to_char(foo)  \
+    *     ((char *)(foo)        \
+    *      + Py_BUILD_ASSERT_EXPR(offsetof(struct foo, string) == 0))
+    *
+    * Written by Rusty Russell, public domain, http://ccodearchive.net/
+    */
+#  define Py_BUILD_ASSERT_EXPR(cond) \
     (sizeof(char [1 - 2*!(cond)]) - 1)
+#endif
 
-#define Py_BUILD_ASSERT(cond)  do {         \
-        (void)Py_BUILD_ASSERT_EXPR(cond);   \
-    } while(0)
+#if ((defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L) \
+     || (defined(__cplusplus) && __cplusplus >= 201103L))
+   // Use static_assert() on C11 and newer
+#  define Py_BUILD_ASSERT(cond) \
+        do { \
+            static_assert((cond), #cond); \
+        } while (0)
+#else
+#  define Py_BUILD_ASSERT(cond)  \
+        do { \
+            (void)Py_BUILD_ASSERT_EXPR(cond); \
+        } while(0)
+#endif
 
 /* Get the number of elements in a visible array
 
@@ -67,7 +107,7 @@
 
 
 /* Define macros for inline documentation. */
-#define PyDoc_VAR(name) static char name[]
+#define PyDoc_VAR(name) static const char name[]
 #define PyDoc_STRVAR(name,str) PyDoc_VAR(name) = PyDoc_STR(str)
 #ifdef WITH_DOC_STRINGS
 #define PyDoc_STR(str) str
@@ -89,12 +129,74 @@
 /* Check if pointer "p" is aligned to "a"-bytes boundary. */
 #define _Py_IS_ALIGNED(p, a) (!((uintptr_t)(p) & (uintptr_t)((a) - 1)))
 
-#ifdef __GNUC__
-#define Py_UNUSED(name) _unused_ ## name __attribute__((unused))
+/* Use this for unused arguments in a function definition to silence compiler
+ * warnings. Example:
+ *
+ * int func(int a, int Py_UNUSED(b)) { return a; }
+ */
+#if defined(__GNUC__) || defined(__clang__)
+#  define Py_UNUSED(name) _unused_ ## name __attribute__((unused))
+#elif defined(_MSC_VER)
+   // Disable warning C4100: unreferenced formal parameter,
+   // declare the parameter,
+   // restore old compiler warnings.
+#  define Py_UNUSED(name) \
+        __pragma(warning(push)) \
+        __pragma(warning(suppress: 4100)) \
+        _unused_ ## name \
+        __pragma(warning(pop))
 #else
-#define Py_UNUSED(name) _unused_ ## name
+#  define Py_UNUSED(name) _unused_ ## name
 #endif
 
-#define Py_UNREACHABLE() abort()
+#if defined(RANDALL_WAS_HERE)
+#  define Py_UNREACHABLE() \
+    Py_FatalError( \
+        "If you're seeing this, the code is in what I thought was\n" \
+        "an unreachable state.\n\n" \
+        "I could give you advice for what to do, but honestly, why\n" \
+        "should you trust me?  I clearly screwed this up.  I'm writing\n" \
+        "a message that should never appear, yet I know it will\n" \
+        "probably appear someday.\n\n" \
+        "On a deep level, I know I'm not up to this task.\n" \
+        "I'm so sorry.\n" \
+        "https://xkcd.com/2200")
+#elif defined(Py_DEBUG)
+#  define Py_UNREACHABLE() \
+    Py_FatalError( \
+        "We've reached an unreachable state. Anything is possible.\n" \
+        "The limits were in our heads all along. Follow your dreams.\n" \
+        "https://xkcd.com/2200")
+#elif defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 5))
+#  define Py_UNREACHABLE() __builtin_unreachable()
+#elif defined(__clang__) || defined(__INTEL_COMPILER)
+#  define Py_UNREACHABLE() __builtin_unreachable()
+#elif defined(_MSC_VER)
+#  define Py_UNREACHABLE() __assume(0)
+#else
+#  define Py_UNREACHABLE() \
+    Py_FatalError("Unreachable C code path reached")
+#endif
+
+#define _Py_CONTAINER_OF(ptr, type, member) \
+    (type*)((char*)ptr - offsetof(type, member))
+
+// Prevent using an expression as a l-value.
+// For example, "int x; _Py_RVALUE(x) = 1;" fails with a compiler error.
+#define _Py_RVALUE(EXPR) ((void)0, (EXPR))
+
+// Return non-zero if the type is signed, return zero if it's unsigned.
+// Use "<= 0" rather than "< 0" to prevent the compiler warning:
+// "comparison of unsigned expression in '< 0' is always false".
+#define _Py_IS_TYPE_SIGNED(type) ((type)(-1) <= 0)
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030E0000 // 3.14
+// Version helpers. These are primarily macros, but have exported equivalents.
+PyAPI_FUNC(uint32_t) Py_PACK_FULL_VERSION(int x, int y, int z, int level, int serial);
+PyAPI_FUNC(uint32_t) Py_PACK_VERSION(int x, int y);
+#define Py_PACK_FULL_VERSION _Py_PACK_FULL_VERSION
+#define Py_PACK_VERSION(X, Y) Py_PACK_FULL_VERSION(X, Y, 0, 0, 0)
+#endif // Py_LIMITED_API < 3.14
+
 
 #endif /* Py_PYMACRO_H */

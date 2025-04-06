@@ -12,8 +12,8 @@ the user build or load random bytecodes anyway.  Otherwise, this is a
 
 """
 
-import types
+def f():
+    pass
 
-co = types.CodeType(0, 0, 0, 0, 0, b'\x04\x71\x00\x00',
-                    (), (), (), '', '', 1, b'')
-exec(co)
+f.__code__ = f.__code__.replace(co_code=b"")
+f()

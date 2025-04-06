@@ -1,5 +1,6 @@
 import unittest
 
+
 def funcattrs(**kwds):
     def decorate(func):
         func.__dict__.update(kwds)
@@ -76,11 +77,32 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(C.foo(), 42)
         self.assertEqual(C().foo(), 42)
 
-    def test_staticmethod_function(self):
-        @staticmethod
-        def notamethod(x):
+    def check_wrapper_attrs(self, method_wrapper, format_str):
+        def func(x):
             return x
-        self.assertRaises(TypeError, notamethod, 1)
+        wrapper = method_wrapper(func)
+
+        self.assertIs(wrapper.__func__, func)
+        self.assertIs(wrapper.__wrapped__, func)
+
+        for attr in ('__module__', '__qualname__', '__name__',
+                     '__doc__', '__annotations__'):
+            self.assertIs(getattr(wrapper, attr),
+                          getattr(func, attr))
+
+        self.assertEqual(repr(wrapper), format_str.format(func))
+        return wrapper
+
+    def test_staticmethod(self):
+        wrapper = self.check_wrapper_attrs(staticmethod, '<staticmethod({!r})>')
+
+        # bpo-43682: Static methods are callable since Python 3.10
+        self.assertEqual(wrapper(1), 1)
+
+    def test_classmethod(self):
+        wrapper = self.check_wrapper_attrs(classmethod, '<classmethod({!r})>')
+
+        self.assertRaises(TypeError, wrapper, 1)
 
     def test_dotted(self):
         decorators = MiscDecorators()
@@ -151,21 +173,18 @@ class TestDecorators(unittest.TestCase):
         self.assertEqual(counts['double'], 4)
 
     def test_errors(self):
-        # Test syntax restrictions - these are all compile-time errors:
-        #
-        for expr in [ "1+2", "x[3]", "(1, 2)" ]:
-            # Sanity check: is expr is a valid expression by itself?
-            compile(expr, "testexpr", "exec")
 
-            codestr = "@%s\ndef f(): pass" % expr
-            self.assertRaises(SyntaxError, compile, codestr, "test", "exec")
+        # Test SyntaxErrors:
+        for stmt in ("x,", "x, y", "x = y", "pass", "import sys"):
+            compile(stmt, "test", "exec")  # Sanity check.
+            with self.assertRaises(SyntaxError):
+                compile(f"@{stmt}\ndef f(): pass", "test", "exec")
 
-        # You can't put multiple decorators on a single line:
-        #
-        self.assertRaises(SyntaxError, compile,
-                          "@f1 @f2\ndef f(): pass", "test", "exec")
-
-        # Test runtime errors
+        # Test TypeErrors that used to be SyntaxErrors:
+        for expr in ("1.+2j", "[1, 2][-1]", "(1, 2)", "True", "...", "None"):
+            compile(expr, "test", "eval")  # Sanity check.
+            with self.assertRaises(TypeError):
+                exec(f"@{expr}\ndef f(): pass")
 
         def unimp(func):
             raise NotImplementedError
@@ -178,6 +197,13 @@ class TestDecorators(unittest.TestCase):
             codestr = "@%s\ndef f(): pass\nassert f() is None" % expr
             code = compile(codestr, "test", "exec")
             self.assertRaises(exc, eval, code, context)
+
+    def test_expressions(self):
+        for expr in (
+            "(x,)", "(x, y)", "x := y", "(x := y)", "x @y", "(x @ y)", "x[0]",
+            "w[x].y.z", "w + x - (y + z)", "x(y)()(z)", "[w, x, y][z]", "x.y",
+        ):
+            compile(f"@{expr}\ndef f(): pass", "test", "exec")
 
     def test_double(self):
         class C(object):
@@ -264,6 +290,17 @@ class TestDecorators(unittest.TestCase):
         bar = c1.make_decorator(c1.arg)(c2.make_decorator(c2.arg)(c3.make_decorator(c3.arg)(bar)))
         self.assertEqual(bar(), 42)
         self.assertEqual(actions, expected_actions)
+
+    def test_bound_function_inside_classmethod(self):
+        class A:
+            def foo(self, cls):
+                return 'spam'
+
+        class B:
+            bar = classmethod(A().foo)
+
+        self.assertEqual(B.bar(), 'spam')
+
 
 class TestClassDecorators(unittest.TestCase):
 

@@ -1,6 +1,7 @@
 import functools
 import inspect
 import reprlib
+import sys
 import traceback
 
 from . import constants
@@ -18,19 +19,26 @@ def _get_function_source(func):
     return None
 
 
-def _format_callback_source(func, args):
-    func_repr = _format_callback(func, args, None)
+def _format_callback_source(func, args, *, debug=False):
+    func_repr = _format_callback(func, args, None, debug=debug)
     source = _get_function_source(func)
     if source:
         func_repr += f' at {source[0]}:{source[1]}'
     return func_repr
 
 
-def _format_args_and_kwargs(args, kwargs):
+def _format_args_and_kwargs(args, kwargs, *, debug=False):
     """Format function arguments and keyword arguments.
 
     Special case for a single parameter: ('hello',) is formatted as ('hello').
+
+    Note that this function only returns argument details when
+    debug=True is specified, as arguments may contain sensitive
+    information.
     """
+    if not debug:
+        return '()'
+
     # use reprlib to limit the length of the output
     items = []
     if args:
@@ -40,19 +48,20 @@ def _format_args_and_kwargs(args, kwargs):
     return '({})'.format(', '.join(items))
 
 
-def _format_callback(func, args, kwargs, suffix=''):
+def _format_callback(func, args, kwargs, *, debug=False, suffix=''):
     if isinstance(func, functools.partial):
-        suffix = _format_args_and_kwargs(args, kwargs) + suffix
-        return _format_callback(func.func, func.args, func.keywords, suffix)
+        suffix = _format_args_and_kwargs(args, kwargs, debug=debug) + suffix
+        return _format_callback(func.func, func.args, func.keywords,
+                                debug=debug, suffix=suffix)
 
-    if hasattr(func, '__qualname__'):
-        func_repr = getattr(func, '__qualname__')
-    elif hasattr(func, '__name__'):
-        func_repr = getattr(func, '__name__')
+    if hasattr(func, '__qualname__') and func.__qualname__:
+        func_repr = func.__qualname__
+    elif hasattr(func, '__name__') and func.__name__:
+        func_repr = func.__name__
     else:
         func_repr = repr(func)
 
-    func_repr += _format_args_and_kwargs(args, kwargs)
+    func_repr += _format_args_and_kwargs(args, kwargs, debug=debug)
     if suffix:
         func_repr += suffix
     return func_repr

@@ -1,0 +1,9 @@
+# Files listed will be ignored by the compiler warning checker
+# for the macOS/build and test job.
+# Keep lines sorted lexicographically to help avoid merge conflicts.
+# Format example:
+# /path/to/file (number of warnings in file)
+Modules/expat/siphash.h 7
+Modules/expat/xmlparse.c 8
+Modules/expat/xmltok.c 3
+Modules/expat/xmltok_impl.c 26
