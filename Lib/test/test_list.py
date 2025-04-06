@@ -1,4 +1,5 @@
 import sys
+import textwrap
 from test import list_tests
 from test.support import cpython_only
 from test.support.script_helper import assert_python_ok
