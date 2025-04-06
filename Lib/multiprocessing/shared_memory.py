@@ -255,6 +255,9 @@ class SharedMemory:
                 resource_tracker.unregister(self._name, "shared_memory")
 
     if _USE_POSIX and hasattr(_posixshmem, "shm_rename"):
+        from _posixshmem import SHM_RENAME_EXCHANGE
+        from _posixshmem import SHM_RENAME_NOREPLACE
+
         def rename(self, newname, flags=0):
             """Renames a shared memory block.
 

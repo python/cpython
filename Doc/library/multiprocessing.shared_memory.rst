@@ -119,11 +119,24 @@ copying of data.
 
       *flags* (0 by default) takes :ref:`bitwise ORed <bitwise>` flags together.
 
-      * :data:`!os.SHM_RENAME_EXCHANGE` will let
-         an exchange with *newname* will be processed instead.
-      * :data:`!os.SHM_RENAME_NOREPLACE` will raise
-         an error will be triggered if *newname* already exists.
+   .. availability:: FreeBSD >= 13.0
 
+   .. versionadded:: next
+
+   .. data:: SHM_RENAME_EXCHANGE
+             SHM_RENAME_NOREPLACE
+
+      Parameters to the :func:`rename` function.
+
+      :const:`SHM_RENAME_EXCHANGE`
+         Atomically exchange the	SharedMemory to the *newname*.
+
+      :const:`SHM_RENAME_NOREPLACE`
+        Raise an error if *newname* exists, rather than unlinking it.
+
+   .. availability:: FreeBSD >= 13.0
+
+   .. versionadded:: next
 
    .. attribute:: buf
 
