@@ -1646,6 +1646,27 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_TO_BOOL_STR", uops)
         self.assertNotIn("_GUARD_TOS_UNICODE", uops)
 
+    def test_binary_subcsr_str_int_narrows_to_str(self):
+        def testfunc(n):
+            x = 0
+            s = "foo"
+            z = ""
+            for _ in range(n):
+                y = s[0]       # _BINARY_OP_SUBSCR_STR_INT
+                z = "bar" + y  # (_GUARD_TOS_UNICODE) + _BINARY_OP_ADD_UNICODE
+                x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBSCR_STR_INT", uops)
+        # _BINARY_OP_SUBSCR_STR_INT narrows the result to 'str' so
+        # the unicode guard before _BINARY_OP_ADD_UNICODE is removed.
+        self.assertNotIn("_GUARD_TOS_UNICODE", uops)
+        self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
+
 
 def global_identity(x):
     return x
