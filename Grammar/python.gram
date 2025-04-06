@@ -506,8 +506,8 @@ literal_pattern[pattern_ty]:
     | value=complex_number { _PyAST_MatchValue(value, EXTRA) }
     | value=strings { _PyAST_MatchValue(value, EXTRA) }
     | 'None' { _PyAST_MatchSingleton(Py_None, EXTRA) }
-    | 'True' { _PyAST_MatchSingleton(Py_True, EXTRA) }
-    | 'False' { _PyAST_MatchSingleton(Py_False, EXTRA) }
+    | 'true' { _PyAST_MatchSingleton(Py_true, EXTRA) }
+    | 'false' { _PyAST_MatchSingleton(Py_false, EXTRA) }
 
 # Literal expressions are used to restrict permitted mapping pattern keys
 literal_expr[expr_ty]:
@@ -515,8 +515,8 @@ literal_expr[expr_ty]:
     | complex_number
     | strings
     | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
-    | 'True' { _PyAST_Constant(Py_True, NULL, EXTRA) }
-    | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
+    | 'true' { _PyAST_Constant(Py_true, NULL, EXTRA) }
+    | 'false' { _PyAST_Constant(Py_false, NULL, EXTRA) }
 
 complex_number[expr_ty]:
     | real=signed_real_number '+' imag=imaginary_number {
@@ -850,8 +850,8 @@ slice[expr_ty]:
 
 atom[expr_ty]:
     | NAME
-    | 'True' { _PyAST_Constant(Py_True, NULL, EXTRA) }
-    | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
+    | 'true' { _PyAST_Constant(Py_true, NULL, EXTRA) }
+    | 'false' { _PyAST_Constant(Py_false, NULL, EXTRA) }
     | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
     | &(STRING|FSTRING_START) strings
     | NUMBER
@@ -1158,7 +1158,7 @@ invalid_arguments:
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, _PyPegen_get_last_comprehension_item(PyPegen_last_item(b, comprehension_ty)), "Generator expression must be parenthesized") }
     | a=args ',' args { _PyPegen_arguments_parsing_error(p, a) }
 invalid_kwarg:
-    | a[Token*]=('True'|'False'|'None') b='=' {
+    | a[Token*]=('true'|'false'|'None') b='=' {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "cannot assign to %s", PyBytes_AS_STRING(a->bytes)) }
     | a=NAME b='=' expression for_if_clauses {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?")}
@@ -1213,7 +1213,7 @@ invalid_named_expression(memo):
             a, "cannot use assignment expressions with %s", _PyPegen_get_expr_name(a)) }
     | a=NAME '=' b=bitwise_or !('='|':=') {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "invalid syntax. Maybe you meant '==' or ':=' instead of '='?") }
-    | !(list|tuple|genexp|'True'|'None'|'False') a=bitwise_or b='=' bitwise_or !('='|':=') {
+    | !(list|tuple|genexp|'true'|'None'|'false') a=bitwise_or b='=' bitwise_or !('='|':=') {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot assign to %s here. Maybe you meant '==' instead of '='?",
                                           _PyPegen_get_expr_name(a)) }
 
