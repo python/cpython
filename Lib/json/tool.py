@@ -72,7 +72,7 @@ def main():
             outfile = open(options.outfile, 'w', encoding='utf-8')
         with outfile:
             for obj in objs:
-                if with_colors:
+                if can_colorize(file=outfile):
                     json_str = json.dumps(obj, **dump_args)
                     outfile.write(colorize_json(json_str))
                 else:
