@@ -14,7 +14,7 @@ from _colorize import ANSIColors, can_colorize
 # so we can use a looser but simpler regex to match
 # the various parts, most notably strings and numbers,
 # where the regex given by the spec is much more complex.
-color_pattern = re.compile(r'''
+_color_pattern = re.compile(r'''
     (?P<string>"(\\.|[^"\\])*")             |   # String
     (?P<number>NaN|-?Infinity|[0-9\-+.Ee]+) |   # Number
     (?P<boolean>true|false)                 |   # Boolean
@@ -22,7 +22,7 @@ color_pattern = re.compile(r'''
 ''', re.VERBOSE)
 
 
-def colorize_json(json_str):
+def _colorize_json(json_str):
     colors = {
         'string': ANSIColors.GREEN,
         'number': ANSIColors.YELLOW,
@@ -37,7 +37,7 @@ def colorize_json(json_str):
                 return f"{color}{m}{ANSIColors.RESET}"
         return match.group()
 
-    return re.sub(color_pattern, replace, json_str)
+    return re.sub(_color_pattern, replace, json_str)
 
 
 def main():
@@ -102,7 +102,7 @@ def main():
             for obj in objs:
                 if can_colorize(file=outfile):
                     json_str = json.dumps(obj, **dump_args)
-                    outfile.write(colorize_json(json_str))
+                    outfile.write(_colorize_json(json_str))
                 else:
                     json.dump(obj, outfile, **dump_args)
                 outfile.write('\n')
