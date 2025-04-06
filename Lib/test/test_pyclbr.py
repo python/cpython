@@ -3,15 +3,16 @@
    Nick Mathewson
 '''
 
+import importlib.util
 import sys
-from textwrap import dedent
 from contextlib import contextmanager
+from textwrap import dedent
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
 import importlib.machinery
 from unittest import TestCase, main as unittest_main
 from test.test_importlib import util as test_importlib_util
-import importlib.util
+
 import warnings
 
 
