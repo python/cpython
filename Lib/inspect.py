@@ -1910,19 +1910,20 @@ def _signature_get_user_defined_method(cls, method_name, *, follow_wrapper_chain
         meth = getattr(cls, method_name, None)
     else:
         meth = getattr_static(cls, method_name, None)
-    if meth is not None and follow_wrapper_chains:
-        unwrapped_meth = unwrap(meth)
-        if isinstance(meth, (classmethod, staticmethod)):
-            # Rewrap with the original type
-            meth = type(meth)(unwrapped_meth)
-        else:
-            meth = unwrapped_meth
-    if meth is None or isinstance(meth, _NonUserDefinedCallables):
+    if meth is None:
+        return None
+
+    if follow_wrapper_chains:
+        meth = unwrap(meth, stop=(lambda m: hasattr(m, "__signature__")
+                                  or isinstance(m, (classmethod, staticmethod))))
+    if isinstance(meth, _NonUserDefinedCallables):
         # Once '__signature__' will be added to 'C'-level
         # callables, this check won't be necessary
         return None
     if method_name != '__new__':
         meth = _descriptor_get(meth, cls)
+        if follow_wrapper_chains:
+            meth = unwrap(meth, stop=lambda m: hasattr(m, "__signature__"))
     return meth
 
 
