@@ -234,7 +234,6 @@ _PyList_DebugMallocStats(FILE *out)
 static inline int
 maybe_small_list_freelist_push(PyObject *self)
 {
-    // todo: in the resizing there are some alignments on the allocation. can we use that here?
     assert(PyList_CheckExact(self));
 
     PyListObject *op = (PyListObject *)self;
@@ -259,17 +258,15 @@ PyList_New(Py_ssize_t size)
     if (size < PyList_MAXSAVESIZE) {
         op = (PyListObject *)_Py_FREELIST_POP(PyLongObject, small_lists[size]);
         if (op) {
+            assert (op->allocated >= size);
             // allocated with ob_item still allocated, but we need to set the other fields
             Py_SET_SIZE(op, size);
             if ( size>0) {
                 memset(op->ob_item, 0, size * sizeof(PyObject *));
             } else {
-                // might be relatex later
                 op->ob_item = NULL;
             }
-            assert (op->allocated >= size);
         }
-        //op=0;
     }
     if (op == NULL) {
         // do we still need this freelist? if so, we could store it at small_lists[0] with some special casing
