@@ -4376,7 +4376,7 @@ class _TestSharedMemory(BaseTestCase):
             self.addCleanup(shm2.unlink)
             self.assertEqual(shm2._name, names[1])
 
-    @unittest.skipUnless(HAS_SHMEM and hasattr(shared_memory, "rename"),
+    @unittest.skipUnless(hasattr(shared_memory, "rename"),
                          "requires SharedMomery.rename")
     def test_shared_memory_rename(self):
         name1 = self._new_shm_name('testrename01_tsmb')
