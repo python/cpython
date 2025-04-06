@@ -254,7 +254,7 @@ class SharedMemory:
             if self._track:
                 resource_tracker.unregister(self._name, "shared_memory")
 
-    def rename(self, newname, flags = 0):
+    def rename(self, newname, flags=0):
         """Renames a shared memory block.
 
         The policy how the operation is handled depends on the flag passed.
