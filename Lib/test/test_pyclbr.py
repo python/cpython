@@ -5,8 +5,10 @@
 
 import sys
 from textwrap import dedent
+from contextlib import contextmanager
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
+import importlib.machinery
 from unittest import TestCase, main as unittest_main
 from test.test_importlib import util as test_importlib_util
 import importlib.util
@@ -22,6 +24,27 @@ ClassMethodType = type(classmethod(lambda c: None))
 # of pyclbr with the introspected members of a module.  Because pyclbr
 # is imperfect (as designed), testModule is called with a set of
 # members to ignore.
+
+
+@contextmanager
+def temporary_main_spec():
+    """
+     A context manager that temporarily sets the `__spec__` attribute
+    of the `__main__` module if it's missing.
+    """
+    original_spec = getattr(sys.modules["__main__"], "__spec__", None)
+    try:
+        if original_spec is None:
+            sys.modules["__main__"].__spec__ = importlib.machinery.ModuleSpec(
+                name="__main__", loader=None, origin="built-in"
+            )
+        yield
+    finally:
+        if original_spec is None:
+            del sys.modules["__main__"].__spec__
+        else:
+            sys.modules["__main__"].__spec__ = original_spec
+
 
 class PyclbrTest(TestCase):
 
@@ -143,16 +166,12 @@ class PyclbrTest(TestCase):
                     self.assertHaskey(dict, name, ignore)
 
     def test_easy(self):
-        if getattr(sys.modules["__main__"], "__spec__", None) is None:
-            sys.modules["__main__"].__spec__ = importlib.machinery.ModuleSpec(
-                name="__main__", loader=None, origin="built-in"
-            )
-
         self.checkModule('pyclbr')
         # XXX: Metaclasses are not supported
         # self.checkModule('ast')
-        self.checkModule('doctest', ignore=("TestResults", "_SpoofOut",
-                                            "DocTestCase", '_DocTestSuite'))
+        with temporary_main_spec():
+            self.checkModule('doctest', ignore=("TestResults", "_SpoofOut",
+                                                "DocTestCase", '_DocTestSuite'))
         self.checkModule('difflib', ignore=("Match",))
 
     def test_cases(self):
@@ -221,15 +240,11 @@ class PyclbrTest(TestCase):
         compare(None, actual, None, expected)
 
     def test_pdb_module(self):
-        if getattr(sys.modules["__main__"], "__spec__", None) is None:
-            sys.modules["__main__"].__spec__ = importlib.machinery.ModuleSpec(
-                name="__main__", loader=None, origin="builtin"
+        with temporary_main_spec():
+            self.checkModule(
+                'pdb',
+                ignore=('_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'Pdb'),
             )
-
-        self.checkModule(
-            'pdb',
-            ignore=('_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'Pdb'),
-        )
 
     def test_others(self):
         cm = self.checkModule
