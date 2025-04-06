@@ -3,18 +3,19 @@ import itertools
 import lexer
 import parser
 import re
-from typing import Optional
+from typing import Optional, Callable
+
+from parser import Stmt, SimpleStmt, BlockStmt, IfStmt, WhileStmt
 
 @dataclass
 class EscapingCall:
-    start: lexer.Token
+    stmt: SimpleStmt
     call: lexer.Token
-    end: lexer.Token
     kills: lexer.Token | None
 
 @dataclass
 class Properties:
-    escaping_calls: dict[lexer.Token, EscapingCall]
+    escaping_calls: dict[SimpleStmt, EscapingCall]
     escapes: bool
     error_with_pop: bool
     error_without_pop: bool
@@ -48,7 +49,7 @@ class Properties:
 
     @staticmethod
     def from_list(properties: list["Properties"]) -> "Properties":
-        escaping_calls: dict[lexer.Token, EscapingCall] = {}
+        escaping_calls: dict[SimpleStmt, EscapingCall] = {}
         for p in properties:
             escaping_calls.update(p.escaping_calls)
         return Properties(
@@ -176,9 +177,8 @@ class Uop:
     annotations: list[str]
     stack: StackEffect
     caches: list[CacheEntry]
-    deferred_refs: dict[lexer.Token, str | None]
     local_stores: list[lexer.Token]
-    body: list[lexer.Token]
+    body: BlockStmt
     properties: Properties
     _size: int = -1
     implicitly_created: bool = False
@@ -221,7 +221,7 @@ class Uop:
         return self.why_not_viable() is None
 
     def is_super(self) -> bool:
-        for tkn in self.body:
+        for tkn in self.body.tokens():
             if tkn.kind == "IDENTIFIER" and tkn.text == "oparg1":
                 return True
         return False
@@ -229,7 +229,7 @@ class Uop:
 
 class Label:
 
-    def __init__(self, name: str, spilled: bool, body: list[lexer.Token], properties: Properties):
+    def __init__(self, name: str, spilled: bool, body: BlockStmt, properties: Properties):
         self.name = name
         self.spilled = spilled
         self.body = body
@@ -421,100 +421,102 @@ def analyze_caches(inputs: list[parser.InputEffect]) -> list[CacheEntry]:
     return [CacheEntry(i.name, int(i.size)) for i in caches]
 
 
-def find_assignment_target(node: parser.InstDef, idx: int) -> list[lexer.Token]:
-    """Find the tokens that make up the left-hand side of an assignment"""
-    offset = 0
-    for tkn in reversed(node.block.tokens[: idx]):
-        if tkn.kind in {"SEMI", "LBRACE", "RBRACE", "CMACRO"}:
-            return node.block.tokens[idx - offset : idx]
-        offset += 1
-    return []
-
-
 def find_variable_stores(node: parser.InstDef) -> list[lexer.Token]:
     res: list[lexer.Token] = []
     outnames = { out.name for out in node.outputs }
     innames = { out.name for out in node.inputs }
-    for idx, tkn in enumerate(node.block.tokens):
-        if tkn.kind == "AND":
-            name = node.block.tokens[idx+1]
-            if name.text in outnames:
-                res.append(name)
-        if tkn.kind != "EQUALS":
-            continue
-        lhs = find_assignment_target(node, idx)
-        assert lhs
-        while lhs and lhs[0].kind == "COMMENT":
-            lhs = lhs[1:]
-        if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
-            continue
-        name = lhs[0]
-        if name.text in outnames or name.text in innames:
-            res.append(name)
+
+    def find_stores_in_tokens(tokens: list[lexer.Token], callback: Callable[[lexer.Token], None]) -> None:
+        while tokens and tokens[0].kind == "COMMENT":
+            tokens = tokens[1:]
+        if len(tokens) < 4:
+            return
+        if tokens[1].kind == "EQUALS":
+            if tokens[0].kind == "IDENTIFIER":
+                name = tokens[0].text
+                if name in outnames or name in innames:
+                    callback(tokens[0])
+        #Passing the address of a local is also a definition
+        for idx, tkn in enumerate(tokens):
+            if tkn.kind == "AND":
+                name_tkn = tokens[idx+1]
+                if name_tkn.text in outnames:
+                    callback(name_tkn)
+
+    def visit(stmt: Stmt) -> None:
+        if isinstance(stmt, IfStmt):
+            def error(tkn: lexer.Token) -> None:
+                raise analysis_error("Cannot define variable in 'if' condition", tkn)
+            find_stores_in_tokens(stmt.condition, error)
+        elif isinstance(stmt, SimpleStmt):
+            find_stores_in_tokens(stmt.contents, res.append)
+
+    node.block.accept(visit)
     return res
 
-def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]:
-    """Look for PyStackRef_FromPyObjectNew() calls"""
 
-    def in_frame_push(idx: int) -> bool:
-        for tkn in reversed(node.block.tokens[: idx - 1]):
-            if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
-                return False
-            if tkn.kind == "IDENTIFIER" and tkn.text == "_PyFrame_PushUnchecked":
-                return True
-        return False
+#def analyze_deferred_refs(node: parser.InstDef) -> dict[lexer.Token, str | None]:
+    #"""Look for PyStackRef_FromPyObjectNew() calls"""
 
-    refs: dict[lexer.Token, str | None] = {}
-    for idx, tkn in enumerate(node.block.tokens):
-        if tkn.kind != "IDENTIFIER" or tkn.text != "PyStackRef_FromPyObjectNew":
-            continue
+    #def in_frame_push(idx: int) -> bool:
+        #for tkn in reversed(node.block.tokens[: idx - 1]):
+            #if tkn.kind in {"SEMI", "LBRACE", "RBRACE"}:
+                #return False
+            #if tkn.kind == "IDENTIFIER" and tkn.text == "_PyFrame_PushUnchecked":
+                #return True
+        #return False
 
-        if idx == 0 or node.block.tokens[idx - 1].kind != "EQUALS":
-            if in_frame_push(idx):
-                # PyStackRef_FromPyObjectNew() is called in _PyFrame_PushUnchecked()
-                refs[tkn] = None
-                continue
-            raise analysis_error("Expected '=' before PyStackRef_FromPyObjectNew", tkn)
+    #refs: dict[lexer.Token, str | None] = {}
+    #for idx, tkn in enumerate(node.block.tokens):
+        #if tkn.kind != "IDENTIFIER" or tkn.text != "PyStackRef_FromPyObjectNew":
+            #continue
 
-        lhs = find_assignment_target(node, idx - 1)
-        if len(lhs) == 0:
-            raise analysis_error(
-                "PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
-            )
+        #if idx == 0 or node.block.tokens[idx - 1].kind != "EQUALS":
+            #if in_frame_push(idx):
+                ## PyStackRef_FromPyObjectNew() is called in _PyFrame_PushUnchecked()
+                #refs[tkn] = None
+                #continue
+            #raise analysis_error("Expected '=' before PyStackRef_FromPyObjectNew", tkn)
 
-        if lhs[0].kind == "TIMES" or any(
-            t.kind == "ARROW" or t.kind == "LBRACKET" for t in lhs[1:]
-        ):
-            # Don't handle: *ptr = ..., ptr->field = ..., or ptr[field] = ...
-            # Assume that they are visible to the GC.
-            refs[tkn] = None
-            continue
+        #lhs = find_assignment_target(node, idx - 1)
+        #if len(lhs) == 0:
+            #raise analysis_error(
+                #"PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
+            #)
 
-        if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
-            raise analysis_error(
-                "PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
-            )
+        #if lhs[0].kind == "TIMES" or any(
+            #t.kind == "ARROW" or t.kind == "LBRACKET" for t in lhs[1:]
+        #):
+            ## Don't handle: *ptr = ..., ptr->field = ..., or ptr[field] = ...
+            ## Assume that they are visible to the GC.
+            #refs[tkn] = None
+            #continue
 
-        name = lhs[0].text
-        match = (
-            any(var.name == name for var in node.inputs)
-            or any(var.name == name for var in node.outputs)
-        )
-        if not match:
-            raise analysis_error(
-                f"PyStackRef_FromPyObjectNew() must be assigned to an input or output, not '{name}'",
-                tkn,
-            )
+        #if len(lhs) != 1 or lhs[0].kind != "IDENTIFIER":
+            #raise analysis_error(
+                #"PyStackRef_FromPyObjectNew() must be assigned to an output", tkn
+            #)
 
-        refs[tkn] = name
+        #name = lhs[0].text
+        #match = (
+            #any(var.name == name for var in node.inputs)
+            #or any(var.name == name for var in node.outputs)
+        #)
+        #if not match:
+            #raise analysis_error(
+                #f"PyStackRef_FromPyObjectNew() must be assigned to an input or output, not '{name}'",
+                #tkn,
+            #)
 
-    return refs
+        #refs[tkn] = name
+
+    #return refs
 
 
 def variable_used(node: parser.CodeDef, name: str) -> bool:
     """Determine whether a variable with a given name is used in a node."""
     return any(
-        token.kind == "IDENTIFIER" and token.text == name for token in node.block.tokens
+        token.kind == "IDENTIFIER" and token.text == name for token in node.block.tokens()
     )
 
 
@@ -678,93 +680,86 @@ NON_ESCAPING_FUNCTIONS = (
     "_Py_ReachedRecursionLimit",
 )
 
-def find_stmt_start(node: parser.CodeDef, idx: int) -> lexer.Token:
-    assert idx < len(node.block.tokens)
-    while True:
-        tkn = node.block.tokens[idx-1]
-        if tkn.kind in {"SEMI", "LBRACE", "RBRACE", "CMACRO"}:
-            break
-        idx -= 1
-        assert idx > 0
-    while node.block.tokens[idx].kind == "COMMENT":
-        idx += 1
-    return node.block.tokens[idx]
-
-
-def find_stmt_end(node: parser.CodeDef, idx: int) -> lexer.Token:
-    assert idx < len(node.block.tokens)
-    while True:
-        idx += 1
-        tkn = node.block.tokens[idx]
-        if tkn.kind == "SEMI":
-            return node.block.tokens[idx+1]
-
-def check_escaping_calls(instr: parser.CodeDef, escapes: dict[lexer.Token, EscapingCall]) -> None:
+def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, EscapingCall]) -> None:
+    error: lexer.Token | None = None
     calls = {e.call for e in escapes.values()}
-    in_if = 0
-    tkn_iter = iter(instr.block.tokens)
-    for tkn in tkn_iter:
-        if tkn.kind == "IF":
-            next(tkn_iter)
-            in_if = 1
-        if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF"):
-            next(tkn_iter)
-            in_if = 1
-        elif tkn.kind == "LPAREN" and in_if:
-            in_if += 1
-        elif tkn.kind == "RPAREN":
-            if in_if:
-                in_if -= 1
-        elif tkn in calls and in_if:
-            raise analysis_error(f"Escaping call '{tkn.text} in condition", tkn)
 
-def find_escaping_api_calls(instr: parser.CodeDef) -> dict[lexer.Token, EscapingCall]:
-    result: dict[lexer.Token, EscapingCall] = {}
-    tokens = instr.block.tokens
-    for idx, tkn in enumerate(tokens):
-        try:
-            next_tkn = tokens[idx+1]
-        except IndexError:
-            break
-        if tkn.kind == "SWITCH":
-            raise analysis_error(f"switch statements are not supported due to their complex flow control. Sorry.", tkn)
-        if next_tkn.kind != lexer.LPAREN:
-            continue
-        if tkn.kind == lexer.IDENTIFIER:
-            if tkn.text.upper() == tkn.text:
-                # simple macro
+    def visit(stmt: Stmt) -> None:
+        nonlocal error
+        if isinstance(stmt, IfStmt) or isinstance(stmt, WhileStmt):
+            for tkn in stmt.condition:
+                if tkn in calls:
+                    error = tkn
+        elif isinstance(stmt, SimpleStmt):
+            in_if = 0
+            tkn_iter = iter(stmt.contents)
+            for tkn in tkn_iter:
+                if tkn.kind == "IDENTIFIER" and tkn.text in ("DEOPT_IF", "ERROR_IF", "EXIT_IF"):
+                    in_if = 1
+                    next(tkn_iter)
+                elif tkn.kind == "LPAREN":
+                    if in_if:
+                        in_if += 1
+                elif tkn.kind == "RPAREN":
+                    if in_if:
+                        in_if -= 1
+                elif tkn in calls and in_if:
+                    error = tkn
+
+
+    instr.block.accept(visit)
+    if error is not None:
+        raise analysis_error(f"Escaping call '{error.text} in condition", error)
+
+def find_escaping_api_calls(instr: parser.CodeDef) -> dict[SimpleStmt, EscapingCall]:
+    result: dict[SimpleStmt, EscapingCall] = {}
+
+    def visit(stmt: Stmt) -> None:
+        if not isinstance(stmt, SimpleStmt):
+            return
+        tokens = stmt.contents
+        for idx, tkn in enumerate(tokens):
+            try:
+                next_tkn = tokens[idx+1]
+            except IndexError:
+                break
+            if next_tkn.kind != lexer.LPAREN:
                 continue
-            #if not tkn.text.startswith(("Py", "_Py", "monitor")):
-            #    continue
-            if tkn.text.startswith(("sym_", "optimize_")):
-                # Optimize functions
+            if tkn.kind == lexer.IDENTIFIER:
+                if tkn.text.upper() == tkn.text:
+                    # simple macro
+                    continue
+                #if not tkn.text.startswith(("Py", "_Py", "monitor")):
+                #    continue
+                if tkn.text.startswith(("sym_", "optimize_")):
+                    # Optimize functions
+                    continue
+                if tkn.text.endswith("Check"):
+                    continue
+                if tkn.text.startswith("Py_Is"):
+                    continue
+                if tkn.text.endswith("CheckExact"):
+                    continue
+                if tkn.text in NON_ESCAPING_FUNCTIONS:
+                    continue
+            elif tkn.kind == "RPAREN":
+                prev = tokens[idx-1]
+                if prev.text.endswith("_t") or prev.text == "*" or prev.text == "int":
+                    #cast
+                    continue
+            elif tkn.kind != "RBRACKET":
                 continue
-            if tkn.text.endswith("Check"):
-                continue
-            if tkn.text.startswith("Py_Is"):
-                continue
-            if tkn.text.endswith("CheckExact"):
-                continue
-            if tkn.text in NON_ESCAPING_FUNCTIONS:
-                continue
-        elif tkn.kind == "RPAREN":
-            prev = tokens[idx-1]
-            if prev.text.endswith("_t") or prev.text == "*" or prev.text == "int":
-                #cast
-                continue
-        elif tkn.kind != "RBRACKET":
-            continue
-        if tkn.text in ("PyStackRef_CLOSE", "PyStackRef_XCLOSE"):
-            if len(tokens) <= idx+2:
-                raise analysis_error("Unexpected end of file", next_tkn)
-            kills = tokens[idx+2]
-            if kills.kind != "IDENTIFIER":
-                raise analysis_error(f"Expected identifier, got '{kills.text}'", kills)
-        else:
-            kills = None
-        start = find_stmt_start(instr, idx)
-        end = find_stmt_end(instr, idx)
-        result[start] = EscapingCall(start, tkn, end, kills)
+            if tkn.text in ("PyStackRef_CLOSE", "PyStackRef_XCLOSE"):
+                if len(tokens) <= idx+2:
+                    raise analysis_error("Unexpected end of file", next_tkn)
+                kills = tokens[idx+2]
+                if kills.kind != "IDENTIFIER":
+                    raise analysis_error(f"Expected identifier, got '{kills.text}'", kills)
+            else:
+                kills = None
+            result[stmt] = EscapingCall(stmt, tkn, kills)
+
+    instr.block.accept(visit)
     check_escaping_calls(instr, result)
     return result
 
@@ -876,9 +871,8 @@ def make_uop(
         annotations=op.annotations,
         stack=analyze_stack(op),
         caches=analyze_caches(inputs),
-        deferred_refs=analyze_deferred_refs(op),
         local_stores=find_variable_stores(op),
-        body=op.block.tokens,
+        body=op.block,
         properties=compute_properties(op),
     )
     for anno in op.annotations:
@@ -898,9 +892,8 @@ def make_uop(
             annotations=op.annotations,
             stack=analyze_stack(op),
             caches=analyze_caches(inputs),
-            deferred_refs=analyze_deferred_refs(op),
             local_stores=find_variable_stores(op),
-            body=op.block.tokens,
+            body=op.block,
             properties=properties,
         )
         rep.replicates = result
@@ -1015,7 +1008,7 @@ def add_label(
     labels: dict[str, Label],
 ) -> None:
     properties = compute_properties(label)
-    labels[label.name] = Label(label.name, label.spilled, label.block.tokens, properties)
+    labels[label.name] = Label(label.name, label.spilled, label.block, properties)
 
 
 def assign_opcodes(
@@ -1109,9 +1102,9 @@ def get_instruction_size_for_uop(instructions: dict[str, Instruction], uop: Uop)
     If there is more than one instruction that contains the uop,
     ensure that they all have the same size.
     """
-    for tkn in uop.body:
-          if tkn.text == "INSTRUCTION_SIZE":
-               break
+    for tkn in uop.body.tokens():
+        if tkn.text == "INSTRUCTION_SIZE":
+            break
     else:
         return None
 
