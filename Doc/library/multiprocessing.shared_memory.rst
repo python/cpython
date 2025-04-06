@@ -112,7 +112,7 @@ copying of data.
       This method has no effect on Windows, where the only way to delete a
       shared memory block is to close all handles.
 
-   .. method:: rename(newname, flags)
+   .. method:: rename(newname, flags=0)
 
       Rename the underlying shared memory block to *newname*.
       By default, if *newname* already exists, it will be unlinked beforehand.
