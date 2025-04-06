@@ -269,6 +269,7 @@ class TestMain(unittest.TestCase):
             ('-Infinity', b'\x1b[33m-Infinity\x1b[0m'),
             ('"foo"', b'\x1b[32m"foo"\x1b[0m'),
             (r'" \"foo\" "', b'\x1b[32m" \\"foo\\" "\x1b[0m'),
+            ('"α"', b'\x1b[32m"\\u03b1"\x1b[0m'),
             ('123', b'\x1b[33m123\x1b[0m'),
             ('-1.2345e+23', b'\x1b[33m-1.2345e+23\x1b[0m'),
             (r'{"\\": ""}',
