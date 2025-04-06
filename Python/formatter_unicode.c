@@ -1090,21 +1090,25 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                                      || format->type == 'o'
                                      || format->type == 'X'))
             {
-                int64_t shift = precision;
-                int incr = 1, k = 1;
+                int dbits = 1;
 
                 if (format->type == 'x' || format->type == 'X') {
-                    k = 4;
+                    dbits = 4;
                 }
                 else if (format->type == 'o') {
-                    k = 3;
+                    dbits = 3;
                 }
-                shift = Py_MAX(shift*k, _PyLong_NumBits(value));
+
+                int64_t nbits = _PyLong_NumBits(value);
+                int64_t shift = Py_MAX(precision, (nbits + dbits - 1)/dbits);
+
+                shift *= dbits;
                 shift--;
 
                 /* expected value in range(-2**n, 2**n), where n=shift
-                   or n=shift+1 */
+                   or n=shift+dbits */
                 PyObject *mod = _PyLong_Lshift(PyLong_FromLong(1), shift);
+                int incr = 1;
 
                 if (mod == NULL) {
                     goto done;
@@ -1115,7 +1119,7 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                         goto done;
                     }
                     if (PyObject_RichCompareBool(value, mod, Py_LT)) {
-                        incr++;
+                        incr += dbits;
                     }
                     Py_SETREF(mod, _PyLong_Lshift(mod, incr));
                     tmp = PyNumber_Subtract(value, mod);
@@ -1127,13 +1131,13 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                 }
                 else {
                     if (PyObject_RichCompareBool(value, mod, Py_GE)) {
-                        incr++;
+                        incr += dbits;
                     }
                     Py_DECREF(mod);
                     tmp = _PyLong_Format(value, base);
                 }
                 shift += incr;
-                precision = (shift + k - 1)/k;
+                precision = shift/dbits;
             }
             else {
                 tmp = _PyLong_Format(value, base);

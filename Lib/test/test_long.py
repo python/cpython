@@ -709,7 +709,7 @@ class LongTest(unittest.TestCase):
         self.assertEqual(format(1234567890, '_X'), '4996_02D2')
         self.assertEqual(format(8086, 'z#.8x'), '0x00001f96')
         self.assertEqual(format(2048, 'z.3x'), '0800')
-        self.assertEqual(format(-2049, 'z.3x'), '17ff')
+        self.assertEqual(format(-2049, 'z.3x'), 'f7ff')
 
         # octal
         self.assertEqual(format(3, "o"), "3")
@@ -726,7 +726,7 @@ class LongTest(unittest.TestCase):
         self.assertEqual(format(1234567890, '_o'), '111_4540_1322')
         self.assertEqual(format(18, 'z#.3o'), '0o022')
         self.assertEqual(format(256, 'z.3o'), '0400')
-        self.assertEqual(format(-257, 'z.3o'), '1377')
+        self.assertEqual(format(-257, 'z.3o'), '7377')
 
         # binary
         self.assertEqual(format(3, "b"), "11")
