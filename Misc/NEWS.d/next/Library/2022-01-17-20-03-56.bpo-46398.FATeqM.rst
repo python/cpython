@@ -1,1 +1,1 @@
-Add :meth:`!rename` to the :mod:`multiprocessing.shared_memory` library for FreeBSD.
+Add the :mod:`multiprocessing.shared_memory.SharedMemory.rename` method for FreeBSD.
