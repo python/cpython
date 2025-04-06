@@ -38,13 +38,13 @@
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET
-
+#include "pycore_unicodeobject.h" // for Argument Clinic
 
 
 #ifndef WINDOWS_LEAN_AND_MEAN
-#define WINDOWS_LEAN_AND_MEAN
+#  define WINDOWS_LEAN_AND_MEAN
 #endif
-#include "windows.h"
+#include <windows.h>
 #include <winioctl.h>
 #include <crtdbg.h>
 #include "winreparse.h"
@@ -609,7 +609,7 @@ _winapi_CreateJunction_impl(PyObject *module, LPCWSTR src_path,
         /* overallocate by a few array elements */
         LUID_AND_ATTRIBUTES privs[4];
     } tp, previousTp;
-    int previousTpSize = 0;
+    DWORD previousTpSize = 0;
 
     /* Reparse data buffer */
     const USHORT prefix_len = 4;

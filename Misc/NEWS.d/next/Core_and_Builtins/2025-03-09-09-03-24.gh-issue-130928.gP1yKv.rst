@@ -1,0 +1,2 @@
+Fix error message when formatting bytes using the ``'i'`` flag.
+Patch by Maxim Ageev.
