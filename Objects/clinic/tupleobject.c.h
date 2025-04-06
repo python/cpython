@@ -57,7 +57,7 @@ PyDoc_STRVAR(tuple_count__doc__,
 "Return number of occurrences of value.");
 
 #define TUPLE_COUNT_METHODDEF    \
-    {"count", (PyCFunction)tuple_count, METH_O, tuple_count__doc__},
+    {"count", tuple_count, METH_O, tuple_count__doc__},
 
 static PyObject *
 tuple_count_impl(PyTupleObject *self, PyObject *value);
@@ -117,7 +117,7 @@ PyDoc_STRVAR(tuple___getnewargs____doc__,
 "\n");
 
 #define TUPLE___GETNEWARGS___METHODDEF    \
-    {"__getnewargs__", (PyCFunction)tuple___getnewargs__, METH_NOARGS, tuple___getnewargs____doc__},
+    {"__getnewargs__", tuple___getnewargs__, METH_NOARGS, tuple___getnewargs____doc__},
 
 static PyObject *
 tuple___getnewargs___impl(PyTupleObject *self);
@@ -127,4 +127,4 @@ tuple___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return tuple___getnewargs___impl((PyTupleObject *)self);
 }
-/*[clinic end generated code: output=bd11662d62d973c2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8345867f523906f3 input=a9049054013a1b77]*/

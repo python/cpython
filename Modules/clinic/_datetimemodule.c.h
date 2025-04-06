@@ -18,7 +18,7 @@ PyDoc_STRVAR(datetime_date_fromtimestamp__doc__,
 "as local time.");
 
 #define DATETIME_DATE_FROMTIMESTAMP_METHODDEF    \
-    {"fromtimestamp", (PyCFunction)datetime_date_fromtimestamp, METH_O|METH_CLASS, datetime_date_fromtimestamp__doc__},
+    {"fromtimestamp", datetime_date_fromtimestamp, METH_O|METH_CLASS, datetime_date_fromtimestamp__doc__},
 
 static PyObject *
 datetime_date_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp);
@@ -524,4 +524,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=809640e747529c72 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d6636f4b4c0e1286 input=a9049054013a1b77]*/

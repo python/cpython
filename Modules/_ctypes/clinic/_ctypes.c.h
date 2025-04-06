@@ -648,7 +648,7 @@ PyDoc_STRVAR(_ctypes_PyCData___ctypes_from_outparam____doc__,
 "default __ctypes_from_outparam__ method returns self.");
 
 #define _CTYPES_PYCDATA___CTYPES_FROM_OUTPARAM___METHODDEF    \
-    {"__ctypes_from_outparam__", (PyCFunction)_ctypes_PyCData___ctypes_from_outparam__, METH_NOARGS, _ctypes_PyCData___ctypes_from_outparam____doc__},
+    {"__ctypes_from_outparam__", _ctypes_PyCData___ctypes_from_outparam__, METH_NOARGS, _ctypes_PyCData___ctypes_from_outparam____doc__},
 
 static PyObject *
 _ctypes_PyCData___ctypes_from_outparam___impl(PyObject *self);
@@ -664,9 +664,9 @@ _ctypes_PyCData___ctypes_from_outparam__(PyObject *self, PyObject *Py_UNUSED(ign
 #endif
 #if defined(_CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF)
 #  undef _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF
-#  define _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF {"errcheck", (getter)_ctypes_CFuncPtr_errcheck_get, (setter)_ctypes_CFuncPtr_errcheck_set, _ctypes_CFuncPtr_errcheck_DOCSTR},
+#  define _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF {"errcheck", _ctypes_CFuncPtr_errcheck_get, _ctypes_CFuncPtr_errcheck_set, _ctypes_CFuncPtr_errcheck_DOCSTR},
 #else
-#  define _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF {"errcheck", NULL, (setter)_ctypes_CFuncPtr_errcheck_set, NULL},
+#  define _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF {"errcheck", NULL, _ctypes_CFuncPtr_errcheck_set, NULL},
 #endif
 
 static int
@@ -696,9 +696,9 @@ PyDoc_STRVAR(_ctypes_CFuncPtr_errcheck__doc__,
 #endif
 #if defined(_CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF)
 #  undef _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF
-#  define _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF {"errcheck", (getter)_ctypes_CFuncPtr_errcheck_get, (setter)_ctypes_CFuncPtr_errcheck_set, _ctypes_CFuncPtr_errcheck_DOCSTR},
+#  define _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF {"errcheck", _ctypes_CFuncPtr_errcheck_get, _ctypes_CFuncPtr_errcheck_set, _ctypes_CFuncPtr_errcheck_DOCSTR},
 #else
-#  define _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF {"errcheck", (getter)_ctypes_CFuncPtr_errcheck_get, NULL, _ctypes_CFuncPtr_errcheck_DOCSTR},
+#  define _CTYPES_CFUNCPTR_ERRCHECK_GETSETDEF {"errcheck", _ctypes_CFuncPtr_errcheck_get, NULL, _ctypes_CFuncPtr_errcheck_DOCSTR},
 #endif
 
 static PyObject *
@@ -721,9 +721,9 @@ _ctypes_CFuncPtr_errcheck_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(_CTYPES_CFUNCPTR_RESTYPE_GETSETDEF)
 #  undef _CTYPES_CFUNCPTR_RESTYPE_GETSETDEF
-#  define _CTYPES_CFUNCPTR_RESTYPE_GETSETDEF {"restype", (getter)_ctypes_CFuncPtr_restype_get, (setter)_ctypes_CFuncPtr_restype_set, _ctypes_CFuncPtr_restype_DOCSTR},
+#  define _CTYPES_CFUNCPTR_RESTYPE_GETSETDEF {"restype", _ctypes_CFuncPtr_restype_get, _ctypes_CFuncPtr_restype_set, _ctypes_CFuncPtr_restype_DOCSTR},
 #else
-#  define _CTYPES_CFUNCPTR_RESTYPE_GETSETDEF {"restype", NULL, (setter)_ctypes_CFuncPtr_restype_set, NULL},
+#  define _CTYPES_CFUNCPTR_RESTYPE_GETSETDEF {"restype", NULL, _ctypes_CFuncPtr_restype_set, NULL},
 #endif
 
 static int
@@ -753,9 +753,9 @@ PyDoc_STRVAR(_ctypes_CFuncPtr_restype__doc__,
 #endif
 #if defined(_CTYPES_CFUNCPTR_RESTYPE_GETSETDEF)
 #  undef _CTYPES_CFUNCPTR_RESTYPE_GETSETDEF
-#  define _CTYPES_CFUNCPTR_RESTYPE_GETSETDEF {"restype", (getter)_ctypes_CFuncPtr_restype_get, (setter)_ctypes_CFuncPtr_restype_set, _ctypes_CFuncPtr_restype_DOCSTR},
+#  define _CTYPES_CFUNCPTR_RESTYPE_GETSETDEF {"restype", _ctypes_CFuncPtr_restype_get, _ctypes_CFuncPtr_restype_set, _ctypes_CFuncPtr_restype_DOCSTR},
 #else
-#  define _CTYPES_CFUNCPTR_RESTYPE_GETSETDEF {"restype", (getter)_ctypes_CFuncPtr_restype_get, NULL, _ctypes_CFuncPtr_restype_DOCSTR},
+#  define _CTYPES_CFUNCPTR_RESTYPE_GETSETDEF {"restype", _ctypes_CFuncPtr_restype_get, NULL, _ctypes_CFuncPtr_restype_DOCSTR},
 #endif
 
 static PyObject *
@@ -778,9 +778,9 @@ _ctypes_CFuncPtr_restype_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(_CTYPES_CFUNCPTR_ARGTYPES_GETSETDEF)
 #  undef _CTYPES_CFUNCPTR_ARGTYPES_GETSETDEF
-#  define _CTYPES_CFUNCPTR_ARGTYPES_GETSETDEF {"argtypes", (getter)_ctypes_CFuncPtr_argtypes_get, (setter)_ctypes_CFuncPtr_argtypes_set, _ctypes_CFuncPtr_argtypes_DOCSTR},
+#  define _CTYPES_CFUNCPTR_ARGTYPES_GETSETDEF {"argtypes", _ctypes_CFuncPtr_argtypes_get, _ctypes_CFuncPtr_argtypes_set, _ctypes_CFuncPtr_argtypes_DOCSTR},
 #else
-#  define _CTYPES_CFUNCPTR_ARGTYPES_GETSETDEF {"argtypes", NULL, (setter)_ctypes_CFuncPtr_argtypes_set, NULL},
+#  define _CTYPES_CFUNCPTR_ARGTYPES_GETSETDEF {"argtypes", NULL, _ctypes_CFuncPtr_argtypes_set, NULL},
 #endif
 
 static int
@@ -810,9 +810,9 @@ PyDoc_STRVAR(_ctypes_CFuncPtr_argtypes__doc__,
 #endif
 #if defined(_CTYPES_CFUNCPTR_ARGTYPES_GETSETDEF)
 #  undef _CTYPES_CFUNCPTR_ARGTYPES_GETSETDEF
-#  define _CTYPES_CFUNCPTR_ARGTYPES_GETSETDEF {"argtypes", (getter)_ctypes_CFuncPtr_argtypes_get, (setter)_ctypes_CFuncPtr_argtypes_set, _ctypes_CFuncPtr_argtypes_DOCSTR},
+#  define _CTYPES_CFUNCPTR_ARGTYPES_GETSETDEF {"argtypes", _ctypes_CFuncPtr_argtypes_get, _ctypes_CFuncPtr_argtypes_set, _ctypes_CFuncPtr_argtypes_DOCSTR},
 #else
-#  define _CTYPES_CFUNCPTR_ARGTYPES_GETSETDEF {"argtypes", (getter)_ctypes_CFuncPtr_argtypes_get, NULL, _ctypes_CFuncPtr_argtypes_DOCSTR},
+#  define _CTYPES_CFUNCPTR_ARGTYPES_GETSETDEF {"argtypes", _ctypes_CFuncPtr_argtypes_get, NULL, _ctypes_CFuncPtr_argtypes_DOCSTR},
 #endif
 
 static PyObject *
@@ -835,9 +835,9 @@ _ctypes_CFuncPtr_argtypes_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(_CTYPES_SIMPLE_VALUE_GETSETDEF)
 #  undef _CTYPES_SIMPLE_VALUE_GETSETDEF
-#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, (setter)_ctypes_Simple_value_set, _ctypes_Simple_value_DOCSTR},
+#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", _ctypes_Simple_value_get, _ctypes_Simple_value_set, _ctypes_Simple_value_DOCSTR},
 #else
-#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", NULL, (setter)_ctypes_Simple_value_set, NULL},
+#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", NULL, _ctypes_Simple_value_set, NULL},
 #endif
 
 static int
@@ -860,9 +860,9 @@ _ctypes_Simple_value_set(PyObject *self, PyObject *value, void *Py_UNUSED(contex
 #endif
 #if defined(_CTYPES_SIMPLE_VALUE_GETSETDEF)
 #  undef _CTYPES_SIMPLE_VALUE_GETSETDEF
-#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, (setter)_ctypes_Simple_value_set, _ctypes_Simple_value_DOCSTR},
+#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", _ctypes_Simple_value_get, _ctypes_Simple_value_set, _ctypes_Simple_value_DOCSTR},
 #else
-#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, NULL, _ctypes_Simple_value_DOCSTR},
+#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", _ctypes_Simple_value_get, NULL, _ctypes_Simple_value_DOCSTR},
 #endif
 
 static PyObject *
@@ -900,4 +900,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=bc7e53010b10b558 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0020dbae3e2b858f input=a9049054013a1b77]*/

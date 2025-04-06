@@ -21,7 +21,7 @@ PyDoc_STRVAR(_lzma_LZMACompressor_compress__doc__,
 "flush() method to finish the compression process.");
 
 #define _LZMA_LZMACOMPRESSOR_COMPRESS_METHODDEF    \
-    {"compress", (PyCFunction)_lzma_LZMACompressor_compress, METH_O, _lzma_LZMACompressor_compress__doc__},
+    {"compress", _lzma_LZMACompressor_compress, METH_O, _lzma_LZMACompressor_compress__doc__},
 
 static PyObject *
 _lzma_LZMACompressor_compress_impl(Compressor *self, Py_buffer *data);
@@ -57,7 +57,7 @@ PyDoc_STRVAR(_lzma_LZMACompressor_flush__doc__,
 "The compressor object may not be used after this method is called.");
 
 #define _LZMA_LZMACOMPRESSOR_FLUSH_METHODDEF    \
-    {"flush", (PyCFunction)_lzma_LZMACompressor_flush, METH_NOARGS, _lzma_LZMACompressor_flush__doc__},
+    {"flush", _lzma_LZMACompressor_flush, METH_NOARGS, _lzma_LZMACompressor_flush__doc__},
 
 static PyObject *
 _lzma_LZMACompressor_flush_impl(Compressor *self);
@@ -271,7 +271,7 @@ PyDoc_STRVAR(_lzma_is_check_supported__doc__,
 "Always returns True for CHECK_NONE and CHECK_CRC32.");
 
 #define _LZMA_IS_CHECK_SUPPORTED_METHODDEF    \
-    {"is_check_supported", (PyCFunction)_lzma_is_check_supported, METH_O, _lzma_is_check_supported__doc__},
+    {"is_check_supported", _lzma_is_check_supported, METH_O, _lzma_is_check_supported__doc__},
 
 static PyObject *
 _lzma_is_check_supported_impl(PyObject *module, int check_id);
@@ -333,4 +333,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=6386084cb43d2533 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f839b34e83bd870d input=a9049054013a1b77]*/

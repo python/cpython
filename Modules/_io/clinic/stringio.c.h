@@ -17,7 +17,7 @@ PyDoc_STRVAR(_io_StringIO_getvalue__doc__,
 "Retrieve the entire contents of the object.");
 
 #define _IO_STRINGIO_GETVALUE_METHODDEF    \
-    {"getvalue", (PyCFunction)_io_StringIO_getvalue, METH_NOARGS, _io_StringIO_getvalue__doc__},
+    {"getvalue", _io_StringIO_getvalue, METH_NOARGS, _io_StringIO_getvalue__doc__},
 
 static PyObject *
 _io_StringIO_getvalue_impl(stringio *self);
@@ -41,7 +41,7 @@ PyDoc_STRVAR(_io_StringIO_tell__doc__,
 "Tell the current file position.");
 
 #define _IO_STRINGIO_TELL_METHODDEF    \
-    {"tell", (PyCFunction)_io_StringIO_tell, METH_NOARGS, _io_StringIO_tell__doc__},
+    {"tell", _io_StringIO_tell, METH_NOARGS, _io_StringIO_tell__doc__},
 
 static PyObject *
 _io_StringIO_tell_impl(stringio *self);
@@ -241,7 +241,7 @@ PyDoc_STRVAR(_io_StringIO_write__doc__,
 "the length of the string.");
 
 #define _IO_STRINGIO_WRITE_METHODDEF    \
-    {"write", (PyCFunction)_io_StringIO_write, METH_O, _io_StringIO_write__doc__},
+    {"write", _io_StringIO_write, METH_O, _io_StringIO_write__doc__},
 
 static PyObject *
 _io_StringIO_write_impl(stringio *self, PyObject *obj);
@@ -270,7 +270,7 @@ PyDoc_STRVAR(_io_StringIO_close__doc__,
 "This method has no effect if the file is already closed.");
 
 #define _IO_STRINGIO_CLOSE_METHODDEF    \
-    {"close", (PyCFunction)_io_StringIO_close, METH_NOARGS, _io_StringIO_close__doc__},
+    {"close", _io_StringIO_close, METH_NOARGS, _io_StringIO_close__doc__},
 
 static PyObject *
 _io_StringIO_close_impl(stringio *self);
@@ -367,7 +367,7 @@ PyDoc_STRVAR(_io_StringIO_readable__doc__,
 "Returns True if the IO object can be read.");
 
 #define _IO_STRINGIO_READABLE_METHODDEF    \
-    {"readable", (PyCFunction)_io_StringIO_readable, METH_NOARGS, _io_StringIO_readable__doc__},
+    {"readable", _io_StringIO_readable, METH_NOARGS, _io_StringIO_readable__doc__},
 
 static PyObject *
 _io_StringIO_readable_impl(stringio *self);
@@ -391,7 +391,7 @@ PyDoc_STRVAR(_io_StringIO_writable__doc__,
 "Returns True if the IO object can be written.");
 
 #define _IO_STRINGIO_WRITABLE_METHODDEF    \
-    {"writable", (PyCFunction)_io_StringIO_writable, METH_NOARGS, _io_StringIO_writable__doc__},
+    {"writable", _io_StringIO_writable, METH_NOARGS, _io_StringIO_writable__doc__},
 
 static PyObject *
 _io_StringIO_writable_impl(stringio *self);
@@ -415,7 +415,7 @@ PyDoc_STRVAR(_io_StringIO_seekable__doc__,
 "Returns True if the IO object can be seeked.");
 
 #define _IO_STRINGIO_SEEKABLE_METHODDEF    \
-    {"seekable", (PyCFunction)_io_StringIO_seekable, METH_NOARGS, _io_StringIO_seekable__doc__},
+    {"seekable", _io_StringIO_seekable, METH_NOARGS, _io_StringIO_seekable__doc__},
 
 static PyObject *
 _io_StringIO_seekable_impl(stringio *self);
@@ -438,7 +438,7 @@ PyDoc_STRVAR(_io_StringIO___getstate____doc__,
 "\n");
 
 #define _IO_STRINGIO___GETSTATE___METHODDEF    \
-    {"__getstate__", (PyCFunction)_io_StringIO___getstate__, METH_NOARGS, _io_StringIO___getstate____doc__},
+    {"__getstate__", _io_StringIO___getstate__, METH_NOARGS, _io_StringIO___getstate____doc__},
 
 static PyObject *
 _io_StringIO___getstate___impl(stringio *self);
@@ -461,7 +461,7 @@ PyDoc_STRVAR(_io_StringIO___setstate____doc__,
 "\n");
 
 #define _IO_STRINGIO___SETSTATE___METHODDEF    \
-    {"__setstate__", (PyCFunction)_io_StringIO___setstate__, METH_O, _io_StringIO___setstate____doc__},
+    {"__setstate__", _io_StringIO___setstate__, METH_O, _io_StringIO___setstate____doc__},
 
 static PyObject *
 _io_StringIO___setstate___impl(stringio *self, PyObject *state);
@@ -483,9 +483,9 @@ _io_StringIO___setstate__(PyObject *self, PyObject *state)
 #endif
 #if defined(_IO_STRINGIO_CLOSED_GETSETDEF)
 #  undef _IO_STRINGIO_CLOSED_GETSETDEF
-#  define _IO_STRINGIO_CLOSED_GETSETDEF {"closed", (getter)_io_StringIO_closed_get, (setter)_io_StringIO_closed_set, _io_StringIO_closed_DOCSTR},
+#  define _IO_STRINGIO_CLOSED_GETSETDEF {"closed", _io_StringIO_closed_get, _io_StringIO_closed_set, _io_StringIO_closed_DOCSTR},
 #else
-#  define _IO_STRINGIO_CLOSED_GETSETDEF {"closed", (getter)_io_StringIO_closed_get, NULL, _io_StringIO_closed_DOCSTR},
+#  define _IO_STRINGIO_CLOSED_GETSETDEF {"closed", _io_StringIO_closed_get, NULL, _io_StringIO_closed_DOCSTR},
 #endif
 
 static PyObject *
@@ -508,9 +508,9 @@ _io_StringIO_closed_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(_IO_STRINGIO_LINE_BUFFERING_GETSETDEF)
 #  undef _IO_STRINGIO_LINE_BUFFERING_GETSETDEF
-#  define _IO_STRINGIO_LINE_BUFFERING_GETSETDEF {"line_buffering", (getter)_io_StringIO_line_buffering_get, (setter)_io_StringIO_line_buffering_set, _io_StringIO_line_buffering_DOCSTR},
+#  define _IO_STRINGIO_LINE_BUFFERING_GETSETDEF {"line_buffering", _io_StringIO_line_buffering_get, _io_StringIO_line_buffering_set, _io_StringIO_line_buffering_DOCSTR},
 #else
-#  define _IO_STRINGIO_LINE_BUFFERING_GETSETDEF {"line_buffering", (getter)_io_StringIO_line_buffering_get, NULL, _io_StringIO_line_buffering_DOCSTR},
+#  define _IO_STRINGIO_LINE_BUFFERING_GETSETDEF {"line_buffering", _io_StringIO_line_buffering_get, NULL, _io_StringIO_line_buffering_DOCSTR},
 #endif
 
 static PyObject *
@@ -533,9 +533,9 @@ _io_StringIO_line_buffering_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(_IO_STRINGIO_NEWLINES_GETSETDEF)
 #  undef _IO_STRINGIO_NEWLINES_GETSETDEF
-#  define _IO_STRINGIO_NEWLINES_GETSETDEF {"newlines", (getter)_io_StringIO_newlines_get, (setter)_io_StringIO_newlines_set, _io_StringIO_newlines_DOCSTR},
+#  define _IO_STRINGIO_NEWLINES_GETSETDEF {"newlines", _io_StringIO_newlines_get, _io_StringIO_newlines_set, _io_StringIO_newlines_DOCSTR},
 #else
-#  define _IO_STRINGIO_NEWLINES_GETSETDEF {"newlines", (getter)_io_StringIO_newlines_get, NULL, _io_StringIO_newlines_DOCSTR},
+#  define _IO_STRINGIO_NEWLINES_GETSETDEF {"newlines", _io_StringIO_newlines_get, NULL, _io_StringIO_newlines_DOCSTR},
 #endif
 
 static PyObject *
@@ -552,4 +552,4 @@ _io_StringIO_newlines_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=5bfaaab7f41ee6b5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ca63df7a18f11eb6 input=a9049054013a1b77]*/

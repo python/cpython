@@ -11,7 +11,7 @@ PyDoc_STRVAR(float_is_integer__doc__,
 "Return True if the float is an integer.");
 
 #define FLOAT_IS_INTEGER_METHODDEF    \
-    {"is_integer", (PyCFunction)float_is_integer, METH_NOARGS, float_is_integer__doc__},
+    {"is_integer", float_is_integer, METH_NOARGS, float_is_integer__doc__},
 
 static PyObject *
 float_is_integer_impl(PyObject *self);
@@ -29,7 +29,7 @@ PyDoc_STRVAR(float___trunc____doc__,
 "Return the Integral closest to x between 0 and x.");
 
 #define FLOAT___TRUNC___METHODDEF    \
-    {"__trunc__", (PyCFunction)float___trunc__, METH_NOARGS, float___trunc____doc__},
+    {"__trunc__", float___trunc__, METH_NOARGS, float___trunc____doc__},
 
 static PyObject *
 float___trunc___impl(PyObject *self);
@@ -47,7 +47,7 @@ PyDoc_STRVAR(float___floor____doc__,
 "Return the floor as an Integral.");
 
 #define FLOAT___FLOOR___METHODDEF    \
-    {"__floor__", (PyCFunction)float___floor__, METH_NOARGS, float___floor____doc__},
+    {"__floor__", float___floor__, METH_NOARGS, float___floor____doc__},
 
 static PyObject *
 float___floor___impl(PyObject *self);
@@ -65,7 +65,7 @@ PyDoc_STRVAR(float___ceil____doc__,
 "Return the ceiling as an Integral.");
 
 #define FLOAT___CEIL___METHODDEF    \
-    {"__ceil__", (PyCFunction)float___ceil__, METH_NOARGS, float___ceil____doc__},
+    {"__ceil__", float___ceil__, METH_NOARGS, float___ceil____doc__},
 
 static PyObject *
 float___ceil___impl(PyObject *self);
@@ -117,7 +117,7 @@ PyDoc_STRVAR(float_conjugate__doc__,
 "Return self, the complex conjugate of any float.");
 
 #define FLOAT_CONJUGATE_METHODDEF    \
-    {"conjugate", (PyCFunction)float_conjugate, METH_NOARGS, float_conjugate__doc__},
+    {"conjugate", float_conjugate, METH_NOARGS, float_conjugate__doc__},
 
 static PyObject *
 float_conjugate_impl(PyObject *self);
@@ -140,7 +140,7 @@ PyDoc_STRVAR(float_hex__doc__,
 "\'0x1.921f9f01b866ep+1\'");
 
 #define FLOAT_HEX_METHODDEF    \
-    {"hex", (PyCFunction)float_hex, METH_NOARGS, float_hex__doc__},
+    {"hex", float_hex, METH_NOARGS, float_hex__doc__},
 
 static PyObject *
 float_hex_impl(PyObject *self);
@@ -163,7 +163,7 @@ PyDoc_STRVAR(float_fromhex__doc__,
 "-5e-324");
 
 #define FLOAT_FROMHEX_METHODDEF    \
-    {"fromhex", (PyCFunction)float_fromhex, METH_O|METH_CLASS, float_fromhex__doc__},
+    {"fromhex", float_fromhex, METH_O|METH_CLASS, float_fromhex__doc__},
 
 static PyObject *
 float_fromhex_impl(PyTypeObject *type, PyObject *string);
@@ -195,7 +195,7 @@ PyDoc_STRVAR(float_as_integer_ratio__doc__,
 "(-1, 4)");
 
 #define FLOAT_AS_INTEGER_RATIO_METHODDEF    \
-    {"as_integer_ratio", (PyCFunction)float_as_integer_ratio, METH_NOARGS, float_as_integer_ratio__doc__},
+    {"as_integer_ratio", float_as_integer_ratio, METH_NOARGS, float_as_integer_ratio__doc__},
 
 static PyObject *
 float_as_integer_ratio_impl(PyObject *self);
@@ -247,7 +247,7 @@ PyDoc_STRVAR(float_from_number__doc__,
 "Convert real number to a floating-point number.");
 
 #define FLOAT_FROM_NUMBER_METHODDEF    \
-    {"from_number", (PyCFunction)float_from_number, METH_O|METH_CLASS, float_from_number__doc__},
+    {"from_number", float_from_number, METH_O|METH_CLASS, float_from_number__doc__},
 
 static PyObject *
 float_from_number_impl(PyTypeObject *type, PyObject *number);
@@ -268,7 +268,7 @@ PyDoc_STRVAR(float___getnewargs____doc__,
 "\n");
 
 #define FLOAT___GETNEWARGS___METHODDEF    \
-    {"__getnewargs__", (PyCFunction)float___getnewargs__, METH_NOARGS, float___getnewargs____doc__},
+    {"__getnewargs__", float___getnewargs__, METH_NOARGS, float___getnewargs____doc__},
 
 static PyObject *
 float___getnewargs___impl(PyObject *self);
@@ -295,7 +295,7 @@ PyDoc_STRVAR(float___getformat____doc__,
 "C type named by typestr.");
 
 #define FLOAT___GETFORMAT___METHODDEF    \
-    {"__getformat__", (PyCFunction)float___getformat__, METH_O|METH_CLASS, float___getformat____doc__},
+    {"__getformat__", float___getformat__, METH_O|METH_CLASS, float___getformat____doc__},
 
 static PyObject *
 float___getformat___impl(PyTypeObject *type, const char *typestr);
@@ -332,7 +332,7 @@ PyDoc_STRVAR(float___format____doc__,
 "Formats the float according to format_spec.");
 
 #define FLOAT___FORMAT___METHODDEF    \
-    {"__format__", (PyCFunction)float___format__, METH_O, float___format____doc__},
+    {"__format__", float___format__, METH_O, float___format____doc__},
 
 static PyObject *
 float___format___impl(PyObject *self, PyObject *format_spec);
@@ -353,4 +353,4 @@ float___format__(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=927035897ea3573f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=188bb8fc6137be75 input=a9049054013a1b77]*/

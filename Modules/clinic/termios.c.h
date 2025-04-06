@@ -16,7 +16,7 @@ PyDoc_STRVAR(termios_tcgetattr__doc__,
 "done using the symbolic constants defined in this module.");
 
 #define TERMIOS_TCGETATTR_METHODDEF    \
-    {"tcgetattr", (PyCFunction)termios_tcgetattr, METH_O, termios_tcgetattr__doc__},
+    {"tcgetattr", termios_tcgetattr, METH_O, termios_tcgetattr__doc__},
 
 static PyObject *
 termios_tcgetattr_impl(PyObject *module, int fd);
@@ -130,7 +130,7 @@ PyDoc_STRVAR(termios_tcdrain__doc__,
 "Wait until all output written to file descriptor fd has been transmitted.");
 
 #define TERMIOS_TCDRAIN_METHODDEF    \
-    {"tcdrain", (PyCFunction)termios_tcdrain, METH_O, termios_tcdrain__doc__},
+    {"tcdrain", termios_tcdrain, METH_O, termios_tcdrain__doc__},
 
 static PyObject *
 termios_tcdrain_impl(PyObject *module, int fd);
@@ -242,7 +242,7 @@ PyDoc_STRVAR(termios_tcgetwinsize__doc__,
 "Returns a tuple (ws_row, ws_col).");
 
 #define TERMIOS_TCGETWINSIZE_METHODDEF    \
-    {"tcgetwinsize", (PyCFunction)termios_tcgetwinsize, METH_O, termios_tcgetwinsize__doc__},
+    {"tcgetwinsize", termios_tcgetwinsize, METH_O, termios_tcgetwinsize__doc__},
 
 static PyObject *
 termios_tcgetwinsize_impl(PyObject *module, int fd);
@@ -299,4 +299,4 @@ termios_tcsetwinsize(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c6c6192583b0da36 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2ee49d5de55b30c6 input=a9049054013a1b77]*/

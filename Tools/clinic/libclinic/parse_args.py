@@ -167,9 +167,9 @@ GETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
     #endif
     #if defined({getset_name}_GETSETDEF)
     #  undef {getset_name}_GETSETDEF
-    #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
+    #  define {getset_name}_GETSETDEF {{"{name}", {getset_basename}_get, {getset_basename}_set, {getset_basename}_DOCSTR}},
     #else
-    #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, NULL, {getset_basename}_DOCSTR}},
+    #  define {getset_name}_GETSETDEF {{"{name}", {getset_basename}_get, NULL, {getset_basename}_DOCSTR}},
     #endif
 """)
 SETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
@@ -178,9 +178,9 @@ SETTERDEF_PROTOTYPE_DEFINE: Final[str] = libclinic.normalize_snippet(r"""
     #endif
     #if defined({getset_name}_GETSETDEF)
     #  undef {getset_name}_GETSETDEF
-    #  define {getset_name}_GETSETDEF {{"{name}", (getter){getset_basename}_get, (setter){getset_basename}_set, {getset_basename}_DOCSTR}},
+    #  define {getset_name}_GETSETDEF {{"{name}", {getset_basename}_get, {getset_basename}_set, {getset_basename}_DOCSTR}},
     #else
-    #  define {getset_name}_GETSETDEF {{"{name}", NULL, (setter){getset_basename}_set, NULL}},
+    #  define {getset_name}_GETSETDEF {{"{name}", NULL, {getset_basename}_set, NULL}},
     #endif
 """)
 METHODDEF_PROTOTYPE_IFNDEF: Final[str] = libclinic.normalize_snippet("""
@@ -833,9 +833,9 @@ class ParseArgsCodeGen:
     def process_methoddef(self, clang: CLanguage) -> None:
         methoddef_cast_end = ""
         if self.flags in ('METH_NOARGS', 'METH_O', 'METH_VARARGS'):
-            methoddef_cast = "(PyCFunction)"
+            methoddef_cast = ""  # no need for a PyCFunction cast
         elif self.func.kind is GETTER:
-            methoddef_cast = "" # This should end up unused
+            methoddef_cast = ""  # this should end up unused
         elif self.limited_capi:
             methoddef_cast = "(PyCFunction)(void(*)(void))"
         else:

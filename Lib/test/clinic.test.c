@@ -133,11 +133,11 @@ PyDoc_STRVAR(test_object_converter_one_arg__doc__,
 "\n");
 
 #define TEST_OBJECT_CONVERTER_ONE_ARG_METHODDEF    \
-    {"test_object_converter_one_arg", (PyCFunction)test_object_converter_one_arg, METH_O, test_object_converter_one_arg__doc__},
+    {"test_object_converter_one_arg", test_object_converter_one_arg, METH_O, test_object_converter_one_arg__doc__},
 
 static PyObject *
 test_object_converter_one_arg(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=6da755f8502139df input=d635d92a421f1ca3]*/
+/*[clinic end generated code: output=a1272d4a621e3280 input=d635d92a421f1ca3]*/
 
 
 /*[clinic input]
@@ -315,7 +315,7 @@ PyDoc_STRVAR(test_PyBytesObject_converter__doc__,
 "\n");
 
 #define TEST_PYBYTESOBJECT_CONVERTER_METHODDEF    \
-    {"test_PyBytesObject_converter", (PyCFunction)test_PyBytesObject_converter, METH_O, test_PyBytesObject_converter__doc__},
+    {"test_PyBytesObject_converter", test_PyBytesObject_converter, METH_O, test_PyBytesObject_converter__doc__},
 
 static PyObject *
 test_PyBytesObject_converter_impl(PyObject *module, PyBytesObject *a);
@@ -339,7 +339,7 @@ exit:
 
 static PyObject *
 test_PyBytesObject_converter_impl(PyObject *module, PyBytesObject *a)
-/*[clinic end generated code: output=7539d628e6fceace input=12b10c7cb5750400]*/
+/*[clinic end generated code: output=a1f2b92832ee6372 input=12b10c7cb5750400]*/
 
 
 /*[clinic input]
@@ -356,7 +356,7 @@ PyDoc_STRVAR(test_PyByteArrayObject_converter__doc__,
 "\n");
 
 #define TEST_PYBYTEARRAYOBJECT_CONVERTER_METHODDEF    \
-    {"test_PyByteArrayObject_converter", (PyCFunction)test_PyByteArrayObject_converter, METH_O, test_PyByteArrayObject_converter__doc__},
+    {"test_PyByteArrayObject_converter", test_PyByteArrayObject_converter, METH_O, test_PyByteArrayObject_converter__doc__},
 
 static PyObject *
 test_PyByteArrayObject_converter_impl(PyObject *module, PyByteArrayObject *a);
@@ -380,7 +380,7 @@ exit:
 
 static PyObject *
 test_PyByteArrayObject_converter_impl(PyObject *module, PyByteArrayObject *a)
-/*[clinic end generated code: output=1245af9f5b3e355e input=5a657da535d194ae]*/
+/*[clinic end generated code: output=745c66001160f9cf input=5a657da535d194ae]*/
 
 
 /*[clinic input]
@@ -397,7 +397,7 @@ PyDoc_STRVAR(test_unicode_converter__doc__,
 "\n");
 
 #define TEST_UNICODE_CONVERTER_METHODDEF    \
-    {"test_unicode_converter", (PyCFunction)test_unicode_converter, METH_O, test_unicode_converter__doc__},
+    {"test_unicode_converter", test_unicode_converter, METH_O, test_unicode_converter__doc__},
 
 static PyObject *
 test_unicode_converter_impl(PyObject *module, PyObject *a);
@@ -421,7 +421,7 @@ exit:
 
 static PyObject *
 test_unicode_converter_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=8c1625cc272c1f3d input=aa33612df92aa9c5]*/
+/*[clinic end generated code: output=d3eba4040b357127 input=aa33612df92aa9c5]*/
 
 
 /*[clinic input]
@@ -1857,7 +1857,7 @@ PyDoc_STRVAR(test_Py_complex_converter__doc__,
 "\n");
 
 #define TEST_PY_COMPLEX_CONVERTER_METHODDEF    \
-    {"test_Py_complex_converter", (PyCFunction)test_Py_complex_converter, METH_O, test_Py_complex_converter__doc__},
+    {"test_Py_complex_converter", test_Py_complex_converter, METH_O, test_Py_complex_converter__doc__},
 
 static PyObject *
 test_Py_complex_converter_impl(PyObject *module, Py_complex a);
@@ -1880,7 +1880,7 @@ exit:
 
 static PyObject *
 test_Py_complex_converter_impl(PyObject *module, Py_complex a)
-/*[clinic end generated code: output=c2ecbec2144ca540 input=070f216a515beb79]*/
+/*[clinic end generated code: output=86f47ff04e11183c input=070f216a515beb79]*/
 
 
 /*[clinic input]
@@ -4041,7 +4041,7 @@ PyDoc_STRVAR(test_preprocessor_guarded_condition_a__doc__,
 "\n");
 
 #define TEST_PREPROCESSOR_GUARDED_CONDITION_A_METHODDEF    \
-    {"test_preprocessor_guarded_condition_a", (PyCFunction)test_preprocessor_guarded_condition_a, METH_NOARGS, test_preprocessor_guarded_condition_a__doc__},
+    {"test_preprocessor_guarded_condition_a", test_preprocessor_guarded_condition_a, METH_NOARGS, test_preprocessor_guarded_condition_a__doc__},
 
 static PyObject *
 test_preprocessor_guarded_condition_a(PyObject *module, PyObject *Py_UNUSED(ignored))
@@ -4059,7 +4059,7 @@ PyDoc_STRVAR(test_preprocessor_guarded_elif_condition_b__doc__,
 "\n");
 
 #define TEST_PREPROCESSOR_GUARDED_ELIF_CONDITION_B_METHODDEF    \
-    {"test_preprocessor_guarded_elif_condition_b", (PyCFunction)test_preprocessor_guarded_elif_condition_b, METH_NOARGS, test_preprocessor_guarded_elif_condition_b__doc__},
+    {"test_preprocessor_guarded_elif_condition_b", test_preprocessor_guarded_elif_condition_b, METH_NOARGS, test_preprocessor_guarded_elif_condition_b__doc__},
 
 static PyObject *
 test_preprocessor_guarded_elif_condition_b(PyObject *module, PyObject *Py_UNUSED(ignored))
@@ -4077,7 +4077,7 @@ PyDoc_STRVAR(test_preprocessor_guarded_else__doc__,
 "\n");
 
 #define TEST_PREPROCESSOR_GUARDED_ELSE_METHODDEF    \
-    {"test_preprocessor_guarded_else", (PyCFunction)test_preprocessor_guarded_else, METH_NOARGS, test_preprocessor_guarded_else__doc__},
+    {"test_preprocessor_guarded_else", test_preprocessor_guarded_else, METH_NOARGS, test_preprocessor_guarded_else__doc__},
 
 static PyObject *
 test_preprocessor_guarded_else(PyObject *module, PyObject *Py_UNUSED(ignored))
@@ -4095,7 +4095,7 @@ PyDoc_STRVAR(test_preprocessor_guarded_ifndef_condition_c__doc__,
 "\n");
 
 #define TEST_PREPROCESSOR_GUARDED_IFNDEF_CONDITION_C_METHODDEF    \
-    {"test_preprocessor_guarded_ifndef_condition_c", (PyCFunction)test_preprocessor_guarded_ifndef_condition_c, METH_NOARGS, test_preprocessor_guarded_ifndef_condition_c__doc__},
+    {"test_preprocessor_guarded_ifndef_condition_c", test_preprocessor_guarded_ifndef_condition_c, METH_NOARGS, test_preprocessor_guarded_ifndef_condition_c__doc__},
 
 static PyObject *
 test_preprocessor_guarded_ifndef_condition_c(PyObject *module, PyObject *Py_UNUSED(ignored))
@@ -4113,7 +4113,7 @@ PyDoc_STRVAR(test_preprocessor_guarded_ifndef_not_condition_c__doc__,
 "\n");
 
 #define TEST_PREPROCESSOR_GUARDED_IFNDEF_NOT_CONDITION_C_METHODDEF    \
-    {"test_preprocessor_guarded_ifndef_not_condition_c", (PyCFunction)test_preprocessor_guarded_ifndef_not_condition_c, METH_NOARGS, test_preprocessor_guarded_ifndef_not_condition_c__doc__},
+    {"test_preprocessor_guarded_ifndef_not_condition_c", test_preprocessor_guarded_ifndef_not_condition_c, METH_NOARGS, test_preprocessor_guarded_ifndef_not_condition_c__doc__},
 
 static PyObject *
 test_preprocessor_guarded_ifndef_not_condition_c(PyObject *module, PyObject *Py_UNUSED(ignored))
@@ -4131,7 +4131,7 @@ PyDoc_STRVAR(test_preprocessor_guarded_if_with_continuation__doc__,
 "\n");
 
 #define TEST_PREPROCESSOR_GUARDED_IF_WITH_CONTINUATION_METHODDEF    \
-    {"test_preprocessor_guarded_if_with_continuation", (PyCFunction)test_preprocessor_guarded_if_with_continuation, METH_NOARGS, test_preprocessor_guarded_if_with_continuation__doc__},
+    {"test_preprocessor_guarded_if_with_continuation", test_preprocessor_guarded_if_with_continuation, METH_NOARGS, test_preprocessor_guarded_if_with_continuation__doc__},
 
 static PyObject *
 test_preprocessor_guarded_if_with_continuation(PyObject *module, PyObject *Py_UNUSED(ignored))
@@ -4150,7 +4150,7 @@ PyDoc_STRVAR(test_preprocessor_guarded_if_e_or_f__doc__,
 "Makes sure cpp.Monitor handles other directives than preprocessor conditionals.");
 
 #define TEST_PREPROCESSOR_GUARDED_IF_E_OR_F_METHODDEF    \
-    {"test_preprocessor_guarded_if_e_or_f", (PyCFunction)test_preprocessor_guarded_if_e_or_f, METH_NOARGS, test_preprocessor_guarded_if_e_or_f__doc__},
+    {"test_preprocessor_guarded_if_e_or_f", test_preprocessor_guarded_if_e_or_f, METH_NOARGS, test_preprocessor_guarded_if_e_or_f__doc__},
 
 static PyObject *
 test_preprocessor_guarded_if_e_or_f(PyObject *module, PyObject *Py_UNUSED(ignored))
@@ -4187,7 +4187,7 @@ test_preprocessor_guarded_if_e_or_f(PyObject *module, PyObject *Py_UNUSED(ignore
 #ifndef TEST_PREPROCESSOR_GUARDED_IF_E_OR_F_METHODDEF
     #define TEST_PREPROCESSOR_GUARDED_IF_E_OR_F_METHODDEF
 #endif /* !defined(TEST_PREPROCESSOR_GUARDED_IF_E_OR_F_METHODDEF) */
-/*[clinic end generated code: output=fcfae7cac7a99e62 input=3fc80c9989d2f2e1]*/
+/*[clinic end generated code: output=e693034dd5190490 input=3fc80c9989d2f2e1]*/
 
 /*[clinic input]
 test_vararg_and_posonly
@@ -4988,7 +4988,7 @@ PyDoc_STRVAR(Test_metho_not_default_return_converter__doc__,
 "\n");
 
 #define TEST_METHO_NOT_DEFAULT_RETURN_CONVERTER_METHODDEF    \
-    {"metho_not_default_return_converter", (PyCFunction)Test_metho_not_default_return_converter, METH_O, Test_metho_not_default_return_converter__doc__},
+    {"metho_not_default_return_converter", Test_metho_not_default_return_converter, METH_O, Test_metho_not_default_return_converter__doc__},
 
 static int
 Test_metho_not_default_return_converter_impl(TestObj *self, PyObject *a);
@@ -5011,7 +5011,7 @@ exit:
 
 static int
 Test_metho_not_default_return_converter_impl(TestObj *self, PyObject *a)
-/*[clinic end generated code: output=8b03f5213c312138 input=428657129b521177]*/
+/*[clinic end generated code: output=463ed281a4a3746b input=428657129b521177]*/
 
 
 /*[clinic input]
@@ -5031,7 +5031,7 @@ PyDoc_STRVAR(Test_an_metho_arg_named_arg__doc__,
 "    Name should be mangled to \'arg_\' in generated output.");
 
 #define TEST_AN_METHO_ARG_NAMED_ARG_METHODDEF    \
-    {"an_metho_arg_named_arg", (PyCFunction)Test_an_metho_arg_named_arg, METH_O, Test_an_metho_arg_named_arg__doc__},
+    {"an_metho_arg_named_arg", Test_an_metho_arg_named_arg, METH_O, Test_an_metho_arg_named_arg__doc__},
 
 static PyObject *
 Test_an_metho_arg_named_arg_impl(TestObj *self, int arg);
@@ -5054,7 +5054,7 @@ exit:
 
 static PyObject *
 Test_an_metho_arg_named_arg_impl(TestObj *self, int arg)
-/*[clinic end generated code: output=38554f09950d07e7 input=2a53a57cf5624f95]*/
+/*[clinic end generated code: output=bc7ffcb6f7243cdd input=2a53a57cf5624f95]*/
 
 
 /*[clinic input]
@@ -5285,7 +5285,7 @@ PyDoc_STRVAR(Test_class_method__doc__,
 "\n");
 
 #define TEST_CLASS_METHOD_METHODDEF    \
-    {"class_method", (PyCFunction)Test_class_method, METH_NOARGS|METH_CLASS, Test_class_method__doc__},
+    {"class_method", Test_class_method, METH_NOARGS|METH_CLASS, Test_class_method__doc__},
 
 static PyObject *
 Test_class_method_impl(PyTypeObject *type);
@@ -5298,7 +5298,7 @@ Test_class_method(PyObject *type, PyObject *Py_UNUSED(ignored))
 
 static PyObject *
 Test_class_method_impl(PyTypeObject *type)
-/*[clinic end generated code: output=64f93e6252bde409 input=43bc4a0494547b80]*/
+/*[clinic end generated code: output=dbf944c1125c4c79 input=43bc4a0494547b80]*/
 
 
 /*[clinic input]
@@ -5312,7 +5312,7 @@ PyDoc_STRVAR(Test_static_method__doc__,
 "\n");
 
 #define TEST_STATIC_METHOD_METHODDEF    \
-    {"static_method", (PyCFunction)Test_static_method, METH_NOARGS|METH_STATIC, Test_static_method__doc__},
+    {"static_method", Test_static_method, METH_NOARGS|METH_STATIC, Test_static_method__doc__},
 
 static PyObject *
 Test_static_method_impl();
@@ -5325,7 +5325,7 @@ Test_static_method(PyObject *null, PyObject *Py_UNUSED(ignored))
 
 static PyObject *
 Test_static_method_impl()
-/*[clinic end generated code: output=9e401fb6ed56a4f3 input=dae892fac55ae72b]*/
+/*[clinic end generated code: output=e21462ae93b4645c input=dae892fac55ae72b]*/
 
 
 /*[clinic input]
@@ -5339,7 +5339,7 @@ PyDoc_STRVAR(Test_meth_coexist__doc__,
 "\n");
 
 #define TEST_METH_COEXIST_METHODDEF    \
-    {"meth_coexist", (PyCFunction)Test_meth_coexist, METH_NOARGS|METH_COEXIST, Test_meth_coexist__doc__},
+    {"meth_coexist", Test_meth_coexist, METH_NOARGS|METH_COEXIST, Test_meth_coexist__doc__},
 
 static PyObject *
 Test_meth_coexist_impl(TestObj *self);
@@ -5352,7 +5352,7 @@ Test_meth_coexist(PyObject *self, PyObject *Py_UNUSED(ignored))
 
 static PyObject *
 Test_meth_coexist_impl(TestObj *self)
-/*[clinic end generated code: output=7edf4e95b29f06fa input=2a1d75b5e6fec6dd]*/
+/*[clinic end generated code: output=9e43248bae46ad30 input=2a1d75b5e6fec6dd]*/
 
 /*[clinic input]
 @getter
@@ -5364,9 +5364,9 @@ Test.property
 #endif
 #if defined(TEST_PROPERTY_GETSETDEF)
 #  undef TEST_PROPERTY_GETSETDEF
-#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, (setter)Test_property_set, Test_property_DOCSTR},
+#  define TEST_PROPERTY_GETSETDEF {"property", Test_property_get, Test_property_set, Test_property_DOCSTR},
 #else
-#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, NULL, Test_property_DOCSTR},
+#  define TEST_PROPERTY_GETSETDEF {"property", Test_property_get, NULL, Test_property_DOCSTR},
 #endif
 
 static PyObject *
@@ -5380,7 +5380,7 @@ Test_property_get(PyObject *self, void *Py_UNUSED(context))
 
 static PyObject *
 Test_property_get_impl(TestObj *self)
-/*[clinic end generated code: output=b38d68abd3466a6e input=2d92b3449fbc7d2b]*/
+/*[clinic end generated code: output=4d600bc77ca96957 input=2d92b3449fbc7d2b]*/
 
 /*[clinic input]
 @setter
@@ -5392,9 +5392,9 @@ Test.property
 #endif
 #if defined(TEST_PROPERTY_GETSETDEF)
 #  undef TEST_PROPERTY_GETSETDEF
-#  define TEST_PROPERTY_GETSETDEF {"property", (getter)Test_property_get, (setter)Test_property_set, Test_property_DOCSTR},
+#  define TEST_PROPERTY_GETSETDEF {"property", Test_property_get, Test_property_set, Test_property_DOCSTR},
 #else
-#  define TEST_PROPERTY_GETSETDEF {"property", NULL, (setter)Test_property_set, NULL},
+#  define TEST_PROPERTY_GETSETDEF {"property", NULL, Test_property_set, NULL},
 #endif
 
 static int
@@ -5412,7 +5412,7 @@ Test_property_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 
 static int
 Test_property_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=49f925ab2a33b637 input=3bc3f46a23c83a88]*/
+/*[clinic end generated code: output=5d1024e9700a89dd input=3bc3f46a23c83a88]*/
 
 /*[clinic input]
 @setter
@@ -5424,9 +5424,9 @@ Test.setter_first_with_docstr
 #endif
 #if defined(TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF)
 #  undef TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF
-#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", (getter)Test_setter_first_with_docstr_get, (setter)Test_setter_first_with_docstr_set, Test_setter_first_with_docstr_DOCSTR},
+#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", Test_setter_first_with_docstr_get, Test_setter_first_with_docstr_set, Test_setter_first_with_docstr_DOCSTR},
 #else
-#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", NULL, (setter)Test_setter_first_with_docstr_set, NULL},
+#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", NULL, Test_setter_first_with_docstr_set, NULL},
 #endif
 
 static int
@@ -5444,7 +5444,7 @@ Test_setter_first_with_docstr_set(PyObject *self, PyObject *value, void *Py_UNUS
 
 static int
 Test_setter_first_with_docstr_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=5aaf44373c0af545 input=31a045ce11bbe961]*/
+/*[clinic end generated code: output=b3e243759a22bb02 input=31a045ce11bbe961]*/
 
 /*[clinic input]
 @getter
@@ -5465,9 +5465,9 @@ PyDoc_STRVAR(Test_setter_first_with_docstr__doc__,
 #endif
 #if defined(TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF)
 #  undef TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF
-#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", (getter)Test_setter_first_with_docstr_get, (setter)Test_setter_first_with_docstr_set, Test_setter_first_with_docstr_DOCSTR},
+#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", Test_setter_first_with_docstr_get, Test_setter_first_with_docstr_set, Test_setter_first_with_docstr_DOCSTR},
 #else
-#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", (getter)Test_setter_first_with_docstr_get, NULL, Test_setter_first_with_docstr_DOCSTR},
+#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", Test_setter_first_with_docstr_get, NULL, Test_setter_first_with_docstr_DOCSTR},
 #endif
 
 static PyObject *
@@ -5481,7 +5481,7 @@ Test_setter_first_with_docstr_get(PyObject *self, void *Py_UNUSED(context))
 
 static PyObject *
 Test_setter_first_with_docstr_get_impl(TestObj *self)
-/*[clinic end generated code: output=fe6e3aa844a24920 input=10af4e43b3cb34dc]*/
+/*[clinic end generated code: output=968a7642c38ef6e6 input=10af4e43b3cb34dc]*/
 
 /*[clinic input]
 output push
@@ -5621,7 +5621,7 @@ PyDoc_STRVAR(bool_return__doc__,
 "\n");
 
 #define BOOL_RETURN_METHODDEF    \
-    {"bool_return", (PyCFunction)bool_return, METH_NOARGS, bool_return__doc__},
+    {"bool_return", bool_return, METH_NOARGS, bool_return__doc__},
 
 static int
 bool_return_impl(PyObject *module);
@@ -5644,7 +5644,7 @@ exit:
 
 static int
 bool_return_impl(PyObject *module)
-/*[clinic end generated code: output=3a65f07830e48e98 input=93ba95d39ee98f39]*/
+/*[clinic end generated code: output=6c8ef775e67e345f input=93ba95d39ee98f39]*/
 
 
 /*[clinic input]
@@ -5657,7 +5657,7 @@ PyDoc_STRVAR(double_return__doc__,
 "\n");
 
 #define DOUBLE_RETURN_METHODDEF    \
-    {"double_return", (PyCFunction)double_return, METH_NOARGS, double_return__doc__},
+    {"double_return", double_return, METH_NOARGS, double_return__doc__},
 
 static double
 double_return_impl(PyObject *module);
@@ -5680,7 +5680,7 @@ exit:
 
 static double
 double_return_impl(PyObject *module)
-/*[clinic end generated code: output=076dc72595d3f66d input=da11b6255e4cbfd7]*/
+/*[clinic end generated code: output=9730b7e722925cec input=da11b6255e4cbfd7]*/
 
 
 /*[clinic input]
@@ -5974,7 +5974,7 @@ PyDoc_STRVAR(test_critical_section__doc__,
 "\n");
 
 #define TEST_CRITICAL_SECTION_METHODDEF    \
-    {"test_critical_section", (PyCFunction)test_critical_section, METH_NOARGS, test_critical_section__doc__},
+    {"test_critical_section", test_critical_section, METH_NOARGS, test_critical_section__doc__},
 
 static PyObject *
 test_critical_section_impl(PyObject *module);
@@ -5993,7 +5993,7 @@ test_critical_section(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 static PyObject *
 test_critical_section_impl(PyObject *module)
-/*[clinic end generated code: output=9d5a87bb28aa3f0c input=8c58956d6ff00f80]*/
+/*[clinic end generated code: output=94a82ca7cb65a84a input=8c58956d6ff00f80]*/
 
 
 /*[clinic input]
@@ -6009,7 +6009,7 @@ PyDoc_STRVAR(test_critical_section_meth_o__doc__,
 "\n");
 
 #define TEST_CRITICAL_SECTION_METH_O_METHODDEF    \
-    {"test_critical_section_meth_o", (PyCFunction)test_critical_section_meth_o, METH_O, test_critical_section_meth_o__doc__},
+    {"test_critical_section_meth_o", test_critical_section_meth_o, METH_O, test_critical_section_meth_o__doc__},
 
 static PyObject *
 test_critical_section_meth_o_impl(PyObject *module, PyObject *a);
@@ -6035,7 +6035,7 @@ exit:
 
 static PyObject *
 test_critical_section_meth_o_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=7a9d7420802d1202 input=376533f51eceb6c3]*/
+/*[clinic end generated code: output=6276bd911b60c196 input=376533f51eceb6c3]*/
 
 /*[clinic input]
 @critical_section a
@@ -6052,7 +6052,7 @@ PyDoc_STRVAR(test_critical_section_object__doc__,
 "test_critical_section_object");
 
 #define TEST_CRITICAL_SECTION_OBJECT_METHODDEF    \
-    {"test_critical_section_object", (PyCFunction)test_critical_section_object, METH_O, test_critical_section_object__doc__},
+    {"test_critical_section_object", test_critical_section_object, METH_O, test_critical_section_object__doc__},
 
 static PyObject *
 test_critical_section_object_impl(PyObject *module, PyObject *a);
@@ -6078,7 +6078,7 @@ exit:
 
 static PyObject *
 test_critical_section_object_impl(PyObject *module, PyObject *a)
-/*[clinic end generated code: output=ec06df92232b0fb5 input=6f67f91b523c875f]*/
+/*[clinic end generated code: output=975dc9674e9c5bfa input=6f67f91b523c875f]*/
 
 PyDoc_STRVAR(test_critical_section_object__doc__,
 "test_critical_section_object($module, a, /)\n"
