@@ -25,6 +25,7 @@ test.test_pathlib.PosixPathTest.test_is_mount_root
 test.test_pathlib.test_pathlib.PathSubclassTest.test_is_mount_root
 test.test_pathlib.test_pathlib.PathTest.test_is_mount_root
 test.test_pathlib.test_pathlib.PosixPathTest.test_is_mount_root
+test.test_posix.PosixTester.test_fexecve
 test.test_posix.TestPosixSpawn.test_close_file
 test.test_posix.TestPosixSpawnP.test_close_file
 test.test_posixpath.PosixPathTest.test_ismount
