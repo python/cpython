@@ -91,6 +91,7 @@ class WorkerContext(_thread.WorkerContext):
             try:
                 raise exc from wrapper
             finally:
+                # avoid a ref cycle where exc is captured in its traceback
                 exc = None
 
 
