@@ -366,7 +366,7 @@ class PosixPathTest(unittest.TestCase):
         maxusers = 2000 if support.is_resource_enabled('cpu') else 100
         if len(names) > maxusers:
             # Select random names, half of them with non-ASCII name,
-            # if evailable.
+            # if available.
             random.shuffle(names)
             names.sort(key=lambda name: name.isascii())
             del names[maxusers//2:-maxusers//2]
