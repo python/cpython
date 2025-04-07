@@ -252,7 +252,8 @@ class PyclbrTest(TestCase):
         with temporary_main_spec():
             cm(
                 'pdb',
-                ignore=('_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'Pdb'),
+                # pyclbr does not handle elegantly `typing` or properties
+                ignore=('Union', '_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'curframe_locals', 'Pdb'),
             )
         cm('pydoc', ignore=('input', 'output',))  # properties
 
