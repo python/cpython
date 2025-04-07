@@ -363,7 +363,8 @@ class PosixPathTest(unittest.TestCase):
         pwd = import_helper.import_module('pwd')
         getpwall = support.get_attribute(pwd, 'getpwall')
         names = [entry.pw_name for entry in getpwall()]
-        if not support.is_resource_enabled('cpu') and len(names) > 100:
+        maxusers = 10000 if support.is_resource_enabled('cpu') else 100
+        if len(names) > maxusers:
             # Select random names, half of them with non-ASCII name,
             # if evailable.
             random.shuffle(names)
