@@ -363,13 +363,14 @@ class PosixPathTest(unittest.TestCase):
         pwd = import_helper.import_module('pwd')
         getpwall = support.get_attribute(pwd, 'getpwall')
         names = [entry.pw_name for entry in getpwall()]
-        maxusers = 10000 if support.is_resource_enabled('cpu') else 100
+        names = [(n+'x')[:-1] for n in names for i in range(1000)]
+        maxusers = 2000 if support.is_resource_enabled('cpu') else 100
         if len(names) > maxusers:
             # Select random names, half of them with non-ASCII name,
             # if evailable.
             random.shuffle(names)
             names.sort(key=lambda name: name.isascii())
-            del names[50:-50]
+            del names[maxusers//2:-maxusers//2]
         for name in names:
             # gh-121200: pw_dir can be different between getpwall() and
             # getpwnam(), so use getpwnam() pw_dir as expanduser() does.
