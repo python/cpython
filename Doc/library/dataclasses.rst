@@ -164,7 +164,7 @@ Module contents
 
    - *match_args*: If true (the default is ``True``), the
      :attr:`~object.__match_args__` tuple will be created from the list of
-     parameters to the generated :meth:`~object.__init__` method (even if
+     non kw-only parameters to the generated :meth:`~object.__init__` method (even if
      :meth:`!__init__` is not generated, see above).  If false, or if
      :attr:`!__match_args__` is already defined in the class, then
      :attr:`!__match_args__` will not be generated.
