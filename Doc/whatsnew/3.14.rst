@@ -1225,6 +1225,16 @@ zipinfo
 Optimizations
 =============
 
+* The import time for several standard library modules has been improved,
+  including :mod:`ast`, :mod:`asyncio`, :mod:`base64`, :mod:`cmd`, :mod:`csv`,
+  :mod:`gettext`, :mod:`importlib.util`, :mod:`locale`, :mod:`mimetypes`,
+  :mod:`optparse`, :mod:`pickle`, :mod:`pprint`, :mod:`pstats`, :mod:`socket`,
+  :mod:`subprocess`, :mod:`threading`, :mod:`tomllib`, and :mod:`zipfile`.
+
+  (Contributed by Adam Turner, Bénédikt Tran, Chris Markiewicz, Eli Schwartz,
+  Hugo van Kemenade, Jelle Zijlstra, and others in :gh:`118761`.)
+
+
 asyncio
 -------
 
