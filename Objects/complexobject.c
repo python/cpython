@@ -1099,60 +1099,23 @@ PyComplex_FromString(PyObject *op)
 static PyObject *
 actual_complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    PyObject *res = NULL;
-    PyNumberMethods *nbr;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
 
-    if (PyTuple_GET_SIZE(args) > 1 || (kwargs != NULL && PyDict_GET_SIZE(kwargs))) {
+    if (nargs > 1 || (kwargs != NULL && PyDict_GET_SIZE(kwargs))) {
         return complex_new(type, args, kwargs);
     }
-    if (!PyTuple_GET_SIZE(args)) {
+    if (!nargs) {
         return complex_subtype_from_doubles(type, 0, 0);
     }
 
     PyObject *arg = PyTuple_GET_ITEM(args, 0);
-    /* Special-case for a single argument when type(arg) is complex. */
-    if (PyComplex_CheckExact(arg) && type == &PyComplex_Type) {
-        /* Note that we can't know whether it's safe to return
-           a complex *subclass* instance as-is, hence the restriction
-           to exact complexes here.  If either the input or the
-           output is a complex subclass, it will be handled below
-           as a non-orthogonal vector.  */
-        return Py_NewRef(arg);
-    }
-    if (PyUnicode_Check(arg)) {
-        return complex_subtype_from_string(type, arg);
-    }
-    PyObject *tmp = try_complex_special_method(arg);
-    if (tmp) {
-        Py_complex c = ((PyComplexObject*)tmp)->cval;
+    PyObject *res = PyNumber_Complex(arg);
+
+    if (res && type != &PyComplex_Type) {
+        Py_complex c = _PyComplexObject_CAST(res)->cval;
+
+        Py_DECREF(res);
         res = complex_subtype_from_doubles(type, c.real, c.imag);
-        Py_DECREF(tmp);
-    }
-    else if (PyErr_Occurred()) {
-        return NULL;
-    }
-    else if (PyComplex_Check(arg)) {
-        /* Note that if arg is of a complex subtype, we're only
-           retaining its real & imag parts here, and the return
-           value is (properly) of the builtin complex type. */
-        Py_complex c = ((PyComplexObject*)arg)->cval;
-        res = complex_subtype_from_doubles(type, c.real, c.imag);
-    }
-    else if ((nbr = Py_TYPE(arg)->tp_as_number) != NULL &&
-             (nbr->nb_float != NULL || nbr->nb_index != NULL))
-    {
-        /* The argument really is entirely real, and contributes
-           nothing in the imaginary direction.
-           Just treat it as a double. */
-        double r = PyFloat_AsDouble(arg);
-        if (r != -1.0 || !PyErr_Occurred()) {
-            res = complex_subtype_from_doubles(type, r, 0);
-        }
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "complex() argument must be a string or a number, not %T",
-                     arg);
     }
     return res;
 }

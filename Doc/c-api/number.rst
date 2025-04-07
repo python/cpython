@@ -252,6 +252,16 @@ Number Protocol
    This is the equivalent of the Python expression ``float(o)``.
 
 
+.. c:function:: PyObject* PyNumber_Complex(PyObject *o)
+
+   .. index:: pair: built-in function; complex
+
+   Returns the *o* converted to a complex object on success, or ``NULL`` on failure.
+   This is the equivalent of the Python expression ``complex(o)``.
+
+   .. versionadded:: next
+
+
 .. c:function:: PyObject* PyNumber_Index(PyObject *o)
 
    Returns the *o* converted to a Python int on success or ``NULL`` with a

@@ -1648,6 +1648,56 @@ PyNumber_Float(PyObject *o)
     return PyFloat_FromString(o);
 }
 
+PyObject *
+PyNumber_Complex(PyObject *o)
+{
+    if (o == NULL) {
+        return null_error();
+    }
+
+    if (PyComplex_CheckExact(o)) {
+        return Py_NewRef(o);
+    }
+
+    PyObject *f = _PyObject_LookupSpecial(o, &_Py_ID(__complex__));
+    if (f) {
+        PyObject *res = _PyObject_CallNoArgs(f);
+        Py_DECREF(f);
+        if (!res || PyComplex_CheckExact(res)) {
+            return res;
+        }
+        if (!PyComplex_Check(res)) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.50s.__complex__ returned non-complex (type %.50s)",
+                         Py_TYPE(o)->tp_name, Py_TYPE(res)->tp_name);
+            Py_DECREF(res);
+            return NULL;
+        }
+        /* Issue #26983: warn if 'res' not of exact type complex. */
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "%.50s.__complex__ returned non-complex (type %.50s).  "
+                "The ability to return an instance of a strict subclass of complex "
+                "is deprecated, and may be removed in a future version of Python.",
+                Py_TYPE(o)->tp_name, Py_TYPE(res)->tp_name)) {
+            Py_DECREF(res);
+            return NULL;
+        }
+        Py_complex cv = ((PyComplexObject *)res)->cval;
+        Py_DECREF(res);
+        return PyComplex_FromCComplex(cv);
+    }
+
+    PyNumberMethods *m = Py_TYPE(o)->tp_as_number;
+    if (m && (m->nb_float || m->nb_index)) {
+        double real = PyFloat_AsDouble(o);
+        if (real != -1 || !PyErr_Occurred()) {
+            return PyComplex_FromDoubles(real, 0.0);
+        }
+        return NULL;
+    }
+
+    return PyComplex_FromString(o);
+}
 
 PyObject *
 PyNumber_ToBase(PyObject *n, int base)

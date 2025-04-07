@@ -2546,3 +2546,5 @@
     added = '3.14'
 [function.PyComplex_FromString]
     added = '3.14'
+[function.PyNumber_Complex]
+    added = '3.14'

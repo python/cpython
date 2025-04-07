@@ -484,6 +484,7 @@ SYMBOL_NAMES = (
     "PyNumber_And",
     "PyNumber_AsSsize_t",
     "PyNumber_Check",
+    "PyNumber_Complex",
     "PyNumber_Divmod",
     "PyNumber_Float",
     "PyNumber_FloorDivide",
