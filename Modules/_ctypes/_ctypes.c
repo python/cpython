@@ -1478,16 +1478,6 @@ _ctypes_PyCArrayType_Type_raw_set_impl(CDataObject *self, PyObject *value)
     return -1;
 }
 
-static PyObject *
-CharArray_get_raw(PyObject *op, void *Py_UNUSED(ignored))
-{
-    PyObject *res;
-    CDataObject *self = _CDataObject_CAST(op);
-    Py_BEGIN_CRITICAL_SECTION(self);
-    res = PyBytes_FromStringAndSize(self->b_ptr, self->b_size);
-    Py_END_CRITICAL_SECTION();
-    return res;
-}
 /*[clinic input]
 @critical_section
 @getter
