@@ -1819,6 +1819,19 @@ class ClassCreationTests(unittest.TestCase):
         with self.assertRaises(RuntimeWarning):
             type("SouthPonies", (Model,), {})
 
+    def test_tuple_subclass_as_bases(self):
+        # gh-132176: it used to crash on using
+        # tuple subclass for as base classes.
+        class TupleSubclass(tuple): pass
+
+        typ = type("typ", TupleSubclass((int, object)), {})
+        self.assertTrue(issubclass(typ, int))
+        self.assertTrue(issubclass(typ, object))
+        self.assertFalse(issubclass(typ, tuple))
+        self.assertIsInstance(typ(), int)
+        self.assertIsInstance(typ(), object)
+        self.assertNotIsInstance(typ(), tuple)
+
 
 class SimpleNamespaceTests(unittest.TestCase):
 
