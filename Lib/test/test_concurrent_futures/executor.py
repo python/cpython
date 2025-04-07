@@ -2,9 +2,10 @@ import gc
 import itertools
 import threading
 import time
+import traceback
 import weakref
 from concurrent import futures
-from operator import add
+from operator import add, itemgetter
 from test import support
 from test.support import Py_GIL_DISABLED
 
@@ -75,17 +76,18 @@ class ExecutorTest:
             msg="the exception should not have any referrers",
         )
 
-        tb = exception.__traceback__
-        while (tb := tb.tb_next):
-            self.assertFalse(
-                {
-                    var: val
-                    for var, val in tb.tb_frame.f_locals.items()
-                    if isinstance(val, Exception)
-                    and val.__traceback__.tb_frame is tb.tb_frame
-                },
-                msg=f"the exception's traceback should not contain an exception that captures itself in its own traceback",
-            )
+        frames = map(itemgetter(0), traceback.walk_tb(exception.__traceback__))
+        next(frames)
+        self.assertFalse(
+            [
+                (var, val)
+                for frame in frames
+                for var, val in frame.f_locals.items()
+                if isinstance(val, Exception)
+                and frame in map(itemgetter(0), traceback.walk_tb(val.__traceback__))
+            ],
+            msg=f"the exception's traceback should not contain an exception that captures itself in its own traceback",
+        )
 
     @support.requires_resource('walltime')
     def test_map_timeout(self):
