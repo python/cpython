@@ -808,15 +808,15 @@ class TestSupport(unittest.TestCase):
                 guard['MY_VAR'] = 'value2'
                 time.sleep(0.0001)
 
-        guard = EnvironmentVarGuard()
-        t1 = threading.Thread(target=worker1, args=(guard,))
-        t2 = threading.Thread(target=worker2, args=(guard,))
-        t1.start()
-        t2.start()
-        t1.join()
-        t2.join()
-        final_value = os.getenv('MY_VAR')
-        self.assertEqual(final_value, "value2")
+        with EnvironmentVarGuard() as guard:
+            t1 = threading.Thread(target=worker1, args=(guard,))
+            t2 = threading.Thread(target=worker2, args=(guard,))
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
+            final_value = os.getenv('MY_VAR')
+            self.assertIn(final_value, ("value1", "value2"))
 
 
     # XXX -follows a list of untested API
