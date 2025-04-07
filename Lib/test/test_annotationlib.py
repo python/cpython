@@ -906,6 +906,18 @@ class TestGetAnnotations(unittest.TestCase):
             {"x": "int"},
         )
 
+    def test_no_annotations(self):
+        class CustomClass:
+            pass
+
+        for format in Format:
+            if format == Format.VALUE_WITH_FAKE_GLOBALS:
+                continue
+            for obj in (None, 1, object(), CustomClass()):
+                with self.subTest(format=format, obj=obj):
+                    with self.assertRaises(TypeError):
+                        annotationlib.get_annotations(obj, format=format)
+
     def test_pep695_generic_class_with_future_annotations(self):
         ann_module695 = inspect_stringized_annotations_pep695
         A_annotations = annotationlib.get_annotations(ann_module695.A, eval_str=True)

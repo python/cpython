@@ -317,11 +317,17 @@ Functions
    Compute the annotations dict for an object.
 
    *obj* may be a callable, class, module, or other object with
-   :attr:`~object.__annotate__` and :attr:`~object.__annotations__` attributes.
-   Passing in an object of any other type raises :exc:`TypeError`.
+   :attr:`~object.__annotate__` or :attr:`~object.__annotations__` attributes.
+   Passing any other object raises :exc:`TypeError`.
 
    The *format* parameter controls the format in which annotations are returned,
    and must be a member of the :class:`Format` enum or its integer equivalent.
+   For the VALUE format, the :attr:`~object.__annotations__` is tried first; if it
+   does not exist, the :attr:`~object.__annotate__` function is called. The
+   FORWARDREF format uses :attr:`~object.__annotations__` if it exists and can be
+   evaluated, and otherwise falls back to calling the :attr:`~object.__annotate__` function.
+   The SOURCE format tries :attr:`~object.__annotate__` first, and falls back to
+   using :attr:`~object.__annotations__`, stringified using :func:`annotations_to_string`.
 
    Returns a dict. :func:`!get_annotations` returns a new dict every time
    it's called; calling it twice on the same object will return two
