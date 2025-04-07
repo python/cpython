@@ -240,19 +240,17 @@ class PyclbrTest(TestCase):
 
         compare(None, actual, None, expected)
 
-    def test_pdb_module(self):
-        with temporary_main_spec():
-            self.checkModule(
-                'pdb',
-                ignore=('_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'Pdb'),
-            )
-
     def test_others(self):
         cm = self.checkModule
 
         # These were once some of the longest modules.
         cm('random', ignore=('Random',))  # from _random import Random as CoreGenerator
         cm('pickle', ignore=('partial', 'PickleBuffer'))
+        with temporary_main_spec():
+            self.checkModule(
+                'pdb',
+                ignore=('_ModuleTarget', '_ScriptTarget', '_ZipTarget', 'Pdb'),
+            )
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)
             cm('sre_parse', ignore=('dump', 'groups', 'pos')) # from sre_constants import *; property
