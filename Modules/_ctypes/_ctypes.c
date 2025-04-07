@@ -2838,9 +2838,8 @@ static PyType_Spec pycfuncptr_type_spec = {
  */
 
 static CDataObject *
-PyCData_GetContainer_lock_held(CDataObject *self)
+PyCData_GetContainer(CDataObject *self)
 {
-    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     while (self->b_base) {
         self = self->b_base;
     }
@@ -2854,16 +2853,6 @@ PyCData_GetContainer_lock_held(CDataObject *self)
         }
     }
     return self;
-}
-
-static CDataObject *
-PyCData_GetContainer(CDataObject *self)
-{
-    CDataObject *res;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    res = PyCData_GetContainer_lock_held(self);
-    Py_END_CRITICAL_SECTION();
-    return res;
 }
 
 static PyObject *
