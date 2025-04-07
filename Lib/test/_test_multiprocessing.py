@@ -6967,7 +6967,8 @@ class ManagerMixin(BaseMixin):
                                   f"{multiprocessing.active_children()} "
                                   f"active children after {dt:.1f} seconds")
 
-        gc.collect()                       # do garbage collection
+        # Garbage collect to ensure otherwise unreferenced cycles are cleaned up
+        support.gc_collect()
         if cls.manager._number_of_objects() != 0:
             # This is not really an error since some tests do not
             # ensure that all processes which hold a reference to a
