@@ -1469,7 +1469,7 @@ _ctypes_PyCArrayType_Type_raw_set_impl(CDataObject *self, PyObject *value)
         goto fail;
     }
 
-    locked_memcpy_to(self, ptr, size);
+    memcpy(self->b_ptr, ptr, size);
 
     PyBuffer_Release(&view);
     return 0;
@@ -2248,7 +2248,7 @@ static PyObject *CreateSwappedType(ctypes_state *st, PyTypeObject *type,
 }
 
 static PyCArgObject *
-PyCSimpleType_paramfunc(ctypes_state *st, CDataObject *self)
+PyCSimpleType_paramfunc_lock_held(ctypes_state *st, CDataObject *self)
 {
     const char *fmt;
     PyCArgObject *parg;
@@ -2272,8 +2272,18 @@ PyCSimpleType_paramfunc(ctypes_state *st, CDataObject *self)
     parg->tag = fmt[0];
     parg->pffi_type = fd->pffi_type;
     parg->obj = Py_NewRef(self);
-    locked_memcpy_from(&parg->value, self, self->b_size);
+    memcpy(&parg->value, self->b_ptr, self->b_size);
     return parg;
+}
+
+static PyCArgObject *
+PyCSimpleType_paramfunc(ctypes_state *st, CDataObject *self)
+{
+    PyCArgObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = PyCSimpleType_paramfunc_lock_held(st, self);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static int
@@ -5975,7 +5985,7 @@ cast_check_pointertype(ctypes_state *st, PyObject *arg)
 }
 
 static PyObject *
-cast(void *ptr, PyObject *src, PyObject *ctype)
+cast_lock_held(void *ptr, PyObject *src, PyObject *ctype)
 {
     PyObject *mod = PyType_GetModuleByDef(Py_TYPE(ctype), &_ctypesmodule);
     if (!mod) {
@@ -6030,7 +6040,7 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
         }
     }
     /* Should we assert that result is a pointer type? */
-    locked_memcpy_to(result, &ptr, sizeof(void *));
+    memcpy(result->b_ptr, &ptr, sizeof(void *));
     return (PyObject *)result;
 
   failed:
@@ -6038,6 +6048,15 @@ cast(void *ptr, PyObject *src, PyObject *ctype)
     return NULL;
 }
 
+static PyObject *
+cast(void *ptr, PyObject *src, PyObject *ctype)
+{
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(src);
+    res = cast_lock_held(ptr, src, ctype);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
 
 static PyObject *
 wstring_at(const wchar_t *ptr, int size)
