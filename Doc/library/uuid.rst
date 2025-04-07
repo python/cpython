@@ -436,7 +436,7 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> uuid.MAX
    UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 
-   >>> # get UUIDv7 creation (local) time as a timestamp in millisecond
+   >>> # get UUIDv7 creation (local) time as a timestamp in milliseconds
    >>> u = uuid.uuid7()
    >>> u.time  # doctest: +SKIP
    1743936859822
