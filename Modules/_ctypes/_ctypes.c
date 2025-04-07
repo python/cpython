@@ -598,6 +598,7 @@ PyType_Spec pyctype_type_spec = {
 static PyCArgObject *
 StructUnionType_paramfunc_lock_held(ctypes_state *st, CDataObject *self)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     PyCArgObject *parg;
     PyObject *obj;
     void *ptr;
@@ -1563,6 +1564,7 @@ static PyGetSetDef CharArray_getsets[] = {
 static PyObject *
 WCharArray_get_value_lock_held(PyObject *op)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     Py_ssize_t i;
     PyObject *res;
     CDataObject *self = _CDataObject_CAST(op);
@@ -1587,6 +1589,7 @@ WCharArray_get_value(PyObject *op, void *Py_UNUSED(ignored))
 static int
 WCharArray_set_value_lock_held(PyObject *op, PyObject *value)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     CDataObject *self = _CDataObject_CAST(op);
 
     if (value == NULL) {
@@ -2240,6 +2243,7 @@ static PyObject *CreateSwappedType(ctypes_state *st, PyTypeObject *type,
 static PyCArgObject *
 PyCSimpleType_paramfunc_lock_held(ctypes_state *st, CDataObject *self)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     const char *fmt;
     PyCArgObject *parg;
     struct fielddesc *fd;
@@ -2836,6 +2840,7 @@ static PyType_Spec pycfuncptr_type_spec = {
 static CDataObject *
 PyCData_GetContainer_lock_held(CDataObject *self)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     while (self->b_base) {
         self = self->b_base;
     }
@@ -2897,6 +2902,7 @@ unique_key(CDataObject *target, Py_ssize_t index)
 static int
 KeepRef_lock_held(CDataObject *target, Py_ssize_t index, PyObject *keep)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(target);
     int result;
     CDataObject *ob;
     PyObject *key;
@@ -4492,6 +4498,7 @@ _build_result(PyObject *result, PyObject *callargs,
 static PyObject *
 PyCFuncPtr_call_lock_held(PyObject *op, PyObject *inargs, PyObject *kwds)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     PyObject *restype;
     PyObject *converters;
     PyObject *checker;
@@ -5422,6 +5429,7 @@ static PyObject *
 Pointer_item_lock_held(PyObject *myself, Py_ssize_t index)
 {
     CDataObject *self = _CDataObject_CAST(myself);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     Py_ssize_t size;
     Py_ssize_t offset;
     PyObject *proto;
@@ -5471,6 +5479,7 @@ static int
 Pointer_ass_item_lock_held(PyObject *myself, Py_ssize_t index, PyObject *value)
 {
     CDataObject *self = _CDataObject_CAST(myself);
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     Py_ssize_t size;
     Py_ssize_t offset;
     PyObject *proto;
@@ -5525,6 +5534,7 @@ Pointer_ass_item(PyObject *self, Py_ssize_t index, PyObject *value)
 static PyObject *
 Pointer_get_contents_lock_held(PyObject *self, void *closure)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     void *deref = *(void **)_CDataObject_CAST(self)->b_ptr;
     if (deref == NULL) {
         PyErr_SetString(PyExc_ValueError,
@@ -5555,6 +5565,7 @@ Pointer_get_contents(PyObject *self, void *closure)
 static int
 Pointer_set_contents_lock_held(PyObject *op, PyObject *value, void *closure)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(op);
     CDataObject *dst;
     PyObject *keep;
     CDataObject *self = _CDataObject_CAST(op);
@@ -5651,6 +5662,7 @@ static int
 copy_pointer_to_list_lock_held(PyObject *myself, PyObject *np, Py_ssize_t len,
                                Py_ssize_t start, Py_ssize_t step)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(myself);
     Py_ssize_t i;
     size_t cur;
     for (cur = start, i = 0; i < len; cur += step, i++) {
@@ -5804,7 +5816,7 @@ Pointer_subscript(PyObject *myself, PyObject *item)
             return NULL;
 
         int res;
-        Py_BEGIN_CRITICAL_SECTION(self);
+        Py_BEGIN_CRITICAL_SECTION(myself);
         res = copy_pointer_to_list_lock_held(myself, np, len, start, step);
         Py_END_CRITICAL_SECTION();
         if (res < 0) {
@@ -5979,6 +5991,7 @@ cast_check_pointertype(ctypes_state *st, PyObject *arg)
 static PyObject *
 cast_lock_held(void *ptr, PyObject *src, PyObject *ctype)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(src);
     PyObject *mod = PyType_GetModuleByDef(Py_TYPE(ctype), &_ctypesmodule);
     if (!mod) {
         PyErr_SetString(PyExc_TypeError,
