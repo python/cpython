@@ -1,0 +1,2 @@
+The SAX XML parser can now handle XML processing instructions that appear
+before the root element of the XML document.  Patch by Jonathan Gossage.
