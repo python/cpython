@@ -67,6 +67,8 @@ class ExecutorTest:
             msg="next should raise a ZeroDivisionError",
         )
 
+        # free-threading builds need this pause on Ubuntu (ARM) and Windows
+        time.sleep(1)
         self.assertFalse(
             gc.get_referrers(error),
             msg="the exception should not have any referrers",
