@@ -1413,10 +1413,12 @@ class ZipFile:
                 self._didModify = True
                 try:
                     self.start_dir = self.fp.tell()
+                    self._data_offset = self.start_dir
                 except (AttributeError, OSError):
                     self.fp = _Tellable(self.fp)
                     self.start_dir = 0
                     self._seekable = False
+                    self._data_offset = None
                 else:
                     # Some file-like objects can provide tell() but not seek()
                     try:
@@ -1486,6 +1488,10 @@ class ZipFile:
             # If Zip64 extension structures are present, account for them
             concat -= (sizeEndCentDir64 + sizeEndCentDir64Locator)
 
+        # store the offset to the beginning of data for the
+        # .data_offset property
+        self._data_offset = concat
+
         if self.debug > 2:
             inferred = concat + offset_cd
             print("given, inferred, offset", offset_cd, inferred, concat)
@@ -1550,6 +1556,12 @@ class ZipFile:
                             reverse=True):
             zinfo._end_offset = end_offset
             end_offset = zinfo.header_offset
+
+    @property
+    def data_offset(self):
+        """The offset to the start of zip data in the file or None if
+        unavailable."""
+        return self._data_offset
 
     def namelist(self):
         """Return a list of file names in the archive."""
