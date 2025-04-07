@@ -76,11 +76,12 @@ typedef struct {
 } _PyCoCached;
 
 /* Ancillary data structure used for instrumentation.
-   Line instrumentation creates an array of
-   these. One entry per code unit.*/
+   Line instrumentation creates this with sufficient
+   space for one entry per code unit. The total size
+   of the data will be `bytes_per_entry * Py_SIZE(code)` */
 typedef struct {
-    uint8_t original_opcode;
-    int8_t line_delta;
+    uint8_t bytes_per_entry;
+    uint8_t data[1];
 } _PyCoLineInstrumentationData;
 
 /* Main data structure used for instrumentation.
