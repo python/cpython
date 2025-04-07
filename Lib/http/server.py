@@ -714,10 +714,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         '.xz': 'application/x-xz',
     }
 
-    def __init__(self, *args, directory=None, **kwargs):
+    def __init__(self, *args, directory=None, secure_root=False, **kwargs):
         if directory is None:
             directory = os.getcwd()
         self.directory = os.fspath(directory)
+        self.secure_root = secure_root
         super().__init__(*args, **kwargs)
 
     def do_GET(self):
@@ -888,6 +889,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         (e.g. drive or directory names) are ignored.  (XXX They should
         probably be diagnosed.)
 
+        If secure_root is enabled, forbid serving files outside self.directory.
         """
         # abandon query parameters
         path = path.split('?',1)[0]
@@ -909,6 +911,17 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             path = os.path.join(path, word)
         if trailing_slash:
             path += '/'
+
+        # Secure root check (added functionality, doesn't alter original behavior)
+        if getattr(self, 'secure_root', False):
+            real_base = os.path.realpath(self.directory)
+            real_path = os.path.realpath(path)
+
+            # Ensure the requested path is under the server's root directory
+            if not real_path.startswith(real_base + os.sep) and real_path != real_base:
+                self.send_error(403, "Forbidden")
+                return ""
+
         return path
 
     def copyfile(self, source, outputfile):
@@ -1307,7 +1320,8 @@ def _get_best_family(*address):
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
          protocol="HTTP/1.0", port=8000, bind=None,
-         tls_cert=None, tls_key=None, tls_password=None):
+         tls_cert=None, tls_key=None, tls_password=None,
+         secure_root=False):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
@@ -1362,6 +1376,9 @@ if __name__ == '__main__':
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
+    parser.add_argument('--secure-root', action='store_true',
+                        help='Disallow serving files outside the specified directory')
+
     args = parser.parse_args()
 
     if not args.tls_cert and args.tls_key:
