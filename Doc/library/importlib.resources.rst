@@ -99,11 +99,10 @@ for example, a package and its resources can be imported from a zip file using
        Added support for *traversable* representing a directory.
 
 
-Deprecated functions
-^^^^^^^^^^^^^^^^^^^^
+Functional API
+^^^^^^^^^^^^^^
 
-An older, deprecated set of functions is still available, but is
-scheduled for removal in a future version of Python.
+An older, previously deprecated set of functions is still available.
 The main drawback of these functions is that they do not support
 directories: they assume all resources are located directly within a *package*.
 
@@ -115,8 +114,6 @@ directories: they assume all resources are located directly within a *package*.
     ``__spec__.submodule_search_locations`` is not ``None``.
 
     The ``Package`` type is defined as ``Union[str, ModuleType]``.
-
-   .. deprecated:: 3.12
 
 
 .. data:: Resource
@@ -138,11 +135,9 @@ directories: they assume all resources are located directly within a *package*.
     sub-resources (i.e. it cannot be a directory).  This function returns a
     ``typing.BinaryIO`` instance, a binary I/O stream open for reading.
 
-    .. deprecated:: 3.11
+    This function is roughly equivalent to::
 
-       Calls to this function can be replaced by::
-
-          files(package).joinpath(resource).open('rb')
+       files(package).joinpath(resource).open('rb')
 
 
 .. function:: open_text(package, resource, encoding='utf-8', errors='strict')
@@ -159,11 +154,9 @@ directories: they assume all resources are located directly within a *package*.
     This function returns a ``typing.TextIO`` instance, a text I/O stream open
     for reading.
 
-    .. deprecated:: 3.11
+    This function is roughly equivalent to::
 
-       Calls to this function can be replaced by::
-
-          files(package).joinpath(resource).open('r', encoding=encoding)
+       files(package).joinpath(resource).open('r', encoding=encoding)
 
 
 .. function:: read_binary(package, resource)
@@ -177,11 +170,9 @@ directories: they assume all resources are located directly within a *package*.
     sub-resources (i.e. it cannot be a directory).  This function returns the
     contents of the resource as :class:`bytes`.
 
-    .. deprecated:: 3.11
+    This function is roughly equivalent to::
 
-       Calls to this function can be replaced by::
-
-          files(package).joinpath(resource).read_bytes()
+       files(package).joinpath(resource).read_bytes()
 
 
 .. function:: read_text(package, resource, encoding='utf-8', errors='strict')
@@ -196,11 +187,9 @@ directories: they assume all resources are located directly within a *package*.
     have the same meaning as with built-in :func:`open`.  This function
     returns the contents of the resource as :class:`str`.
 
-    .. deprecated:: 3.11
+    This function is roughly equivalent to::
 
-       Calls to this function can be replaced by::
-
-          files(package).joinpath(resource).read_text(encoding=encoding)
+       files(package).joinpath(resource).read_text(encoding=encoding)
 
 
 .. function:: path(package, resource)
@@ -217,11 +206,9 @@ directories: they assume all resources are located directly within a *package*.
     within *package*; it may not contain path separators and it may not have
     sub-resources (i.e. it cannot be a directory).
 
-    .. deprecated:: 3.11
+    This function is roughly equivalent to ::
 
-       Calls to this function can be replaced using :func:`as_file`::
-
-          as_file(files(package).joinpath(resource))
+       as_file(files(package).joinpath(resource))
 
 
 .. function:: is_resource(package, name)
@@ -232,11 +219,9 @@ directories: they assume all resources are located directly within a *package*.
     *package* is either a name or a module object which conforms to the
     ``Package`` requirements.
 
-    .. deprecated:: 3.11
+    This function is roughly equivalent to::
 
-       Calls to this function can be replaced by::
-
-          files(package).joinpath(resource).is_file()
+        files(package).joinpath(resource).is_file()
 
 
 .. function:: contents(package)
@@ -248,8 +233,6 @@ directories: they assume all resources are located directly within a *package*.
     *package* is either a name or a module object which conforms to the
     ``Package`` requirements.
 
-    .. deprecated:: 3.11
+    This function is roughly equivalent to::
 
-       Calls to this function can be replaced by::
-
-          (resource.name for resource in files(package).iterdir() if resource.is_file())
+       (resource.name for resource in files(package).iterdir() if resource.is_file())
