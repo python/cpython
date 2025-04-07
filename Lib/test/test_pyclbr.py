@@ -3,16 +3,14 @@
    Nick Mathewson
 '''
 
-import importlib.util
+import importlib.machinery
 import sys
 from contextlib import contextmanager
 from textwrap import dedent
 from types import FunctionType, MethodType, BuiltinFunctionType
 import pyclbr
-import importlib.machinery
 from unittest import TestCase, main as unittest_main
 from test.test_importlib import util as test_importlib_util
-
 import warnings
 
 
@@ -30,21 +28,23 @@ ClassMethodType = type(classmethod(lambda c: None))
 @contextmanager
 def temporary_main_spec():
     """
-     A context manager that temporarily sets the `__spec__` attribute
+    A context manager that temporarily sets the `__spec__` attribute
     of the `__main__` module if it's missing.
     """
-    original_spec = getattr(sys.modules["__main__"], "__spec__", None)
+    main_mod = sys.modules.get("__main__")
+    if main_mod is None:
+        yield  # Do nothing if __main__ is not present
+        return
+
+    original_spec = getattr(main_mod, "__spec__", None)
+    if original_spec is None:
+        main_mod.__spec__ = importlib.machinery.ModuleSpec(
+            name="__main__", loader=None, origin="built-in"
+        )
     try:
-        if original_spec is None:
-            sys.modules["__main__"].__spec__ = importlib.machinery.ModuleSpec(
-                name="__main__", loader=None, origin="built-in"
-            )
         yield
     finally:
-        if original_spec is None:
-            del sys.modules["__main__"].__spec__
-        else:
-            sys.modules["__main__"].__spec__ = original_spec
+        main_mod.__spec__ = original_spec
 
 
 class PyclbrTest(TestCase):
