@@ -57,24 +57,25 @@ class ExecutorTest:
         self.assertEqual(i.__next__(), (0, 1))
         self.assertEqual(i.__next__(), (0, 1))
 
-        error = None
+        exception = None
         try:
             next(i)
         except Exception as e:
-            error = e
+            exception = e
         self.assertTrue(
-            isinstance(error, ZeroDivisionError),
+            isinstance(exception, ZeroDivisionError),
             msg="next should raise a ZeroDivisionError",
         )
 
         # free-threading builds need this pause on Ubuntu (ARM) and Windows
         time.sleep(1)
+
         self.assertFalse(
-            gc.get_referrers(error),
+            gc.get_referrers(exception),
             msg="the exception should not have any referrers",
         )
 
-        tb = error.__traceback__
+        tb = exception.__traceback__
         while (tb := tb.tb_next):
             self.assertFalse(
                 {
