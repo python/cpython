@@ -2143,9 +2143,9 @@ set_richcompare(PyObject *self, PyObject *w, int op)
     case Py_EQ:
         if (PySet_GET_SIZE(v) != PySet_GET_SIZE(w))
             Py_RETURN_FALSE;
-        if (FT_ATOMIC_LOAD_SSIZE_RELAXED(v->hash) != -1  &&
-            FT_ATOMIC_LOAD_SSIZE_RELAXED(((PySetObject *)w)->hash) != -1 &&
-            FT_ATOMIC_LOAD_SSIZE_RELAXED(v->hash) != FT_ATOMIC_LOAD_SSIZE_RELAXED(((PySetObject *)w)->hash))
+        Py_hash_t v_hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(v->hash);
+        Py_hash_t w_hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(((PySetObject *)w)->hash);
+        if (v_hash != -1 && w_hash != -1 && v_hash != w_hash)
             Py_RETURN_FALSE;
         return set_issubset((PyObject*)v, w);
     case Py_NE:
