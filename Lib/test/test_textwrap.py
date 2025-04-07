@@ -475,6 +475,30 @@ What a mess!
                          'non-breaking\N{NARROW NO-BREAK SPACE}space.'],
                         break_on_hyphens=False)
 
+    def test_wrap_stability(self):
+        def wrap(s):
+            return fill(s, width=30)
+
+        # original is 31 characters long:
+        #           0        1         2         3
+        #           1234567890123456789012345678901
+        original = "xxxx xxxx xxxx xxxx xxxx.  xxxx"
+        wrapped = wrap(original)
+        wrapped2 = wrap(wrapped)
+        self.assertEqual(wrapped, wrapped2)
+
+    def test_wrap_stability_with_fix_sentence_endings(self):
+        def wrap(s):
+            return fill(s, width=30, fix_sentence_endings=True)
+
+        # original is 31 characters long:
+        #           0        1         2         3
+        #           1234567890123456789012345678901
+        original = "xxx xxxx xxxx xxxx xxxx.   xxxx"
+        wrapped = wrap(original)
+        wrapped2 = wrap(wrapped)
+        self.assertEqual(wrapped, wrapped2)
+
 
 class MaxLinesTestCase(BaseTestCase):
     text = "Hello there, how are you this fine day?  I'm glad to hear it!"
