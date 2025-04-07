@@ -242,7 +242,7 @@ class _RLock:
         self.release()
 
     def locked(self):
-        """Return whether or not this object is locked."""
+        """Return whether this object is locked."""
         return self._count > 0
 
     # Internal methods used by condition variables
