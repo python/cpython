@@ -2423,7 +2423,6 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
             if (PySlice_Check(rhs)) {
                 return SPEC_FAIL_BINARY_OP_SUBSCR_OTHER_SLICE;
             }
-
             return SPEC_FAIL_BINARY_OP_SUBSCR;
     }
     Py_UNREACHABLE();
