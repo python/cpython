@@ -330,7 +330,7 @@ get_code_str(PyObject *arg, Py_ssize_t *len_p, PyObject **bytes_p, int *flags_p)
     int flags = 0;
 
     if (PyUnicode_Check(arg)) {
-        assert(PyUnicode_CheckExact(arg)
+        assert(PyUnicode_Check(arg)
                && (check_code_str((PyUnicodeObject *)arg) == NULL));
         codestr = PyUnicode_AsUTF8AndSize(arg, &len);
         if (codestr == NULL) {
@@ -1112,7 +1112,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".exec",
+    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".run_string",
                                             "argument 2", "a string");
     if (script == NULL) {
         return NULL;

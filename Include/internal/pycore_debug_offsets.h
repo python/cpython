@@ -23,7 +23,9 @@ extern "C" {
    declaration                                      \
    _GENERATE_DEBUG_SECTION_LINUX(name)
 
-#if defined(MS_WINDOWS) && !defined(__clang__)
+// Please note that section names are truncated to eight bytes
+// on Windows!
+#if defined(MS_WINDOWS)
 #define _GENERATE_DEBUG_SECTION_WINDOWS(name)                       \
    _Pragma(Py_STRINGIFY(section(Py_STRINGIFY(name), read, write))) \
    __declspec(allocate(Py_STRINGIFY(name)))
@@ -73,6 +75,7 @@ typedef struct _Py_DebugOffsets {
         uint64_t id;
         uint64_t next;
         uint64_t threads_head;
+        uint64_t threads_main;
         uint64_t gc;
         uint64_t imports_modules;
         uint64_t sysdict;
@@ -206,6 +209,15 @@ typedef struct _Py_DebugOffsets {
         uint64_t gi_iframe;
         uint64_t gi_frame_state;
     } gen_object;
+
+    struct _debugger_support {
+        uint64_t eval_breaker;
+        uint64_t remote_debugger_support;
+        uint64_t remote_debugging_enabled;
+        uint64_t debugger_pending_call;
+        uint64_t debugger_script_path;
+        uint64_t debugger_script_path_size;
+    } debugger_support;
 } _Py_DebugOffsets;
 
 
@@ -223,6 +235,7 @@ typedef struct _Py_DebugOffsets {
         .id = offsetof(PyInterpreterState, id), \
         .next = offsetof(PyInterpreterState, next), \
         .threads_head = offsetof(PyInterpreterState, threads.head), \
+        .threads_main = offsetof(PyInterpreterState, threads.main), \
         .gc = offsetof(PyInterpreterState, gc), \
         .imports_modules = offsetof(PyInterpreterState, imports.modules), \
         .sysdict = offsetof(PyInterpreterState, sysdict), \
@@ -325,6 +338,14 @@ typedef struct _Py_DebugOffsets {
         .gi_name = offsetof(PyGenObject, gi_name), \
         .gi_iframe = offsetof(PyGenObject, gi_iframe), \
         .gi_frame_state = offsetof(PyGenObject, gi_frame_state), \
+    }, \
+    .debugger_support = { \
+        .eval_breaker = offsetof(PyThreadState, eval_breaker), \
+        .remote_debugger_support = offsetof(PyThreadState, remote_debugger_support),  \
+        .remote_debugging_enabled = offsetof(PyInterpreterState, config.remote_debug),  \
+        .debugger_pending_call = offsetof(_PyRemoteDebuggerSupport, debugger_pending_call),  \
+        .debugger_script_path = offsetof(_PyRemoteDebuggerSupport, debugger_script_path),  \
+        .debugger_script_path_size = MAX_SCRIPT_PATH_SIZE, \
     }, \
 }
 

@@ -1,0 +1,1 @@
+Fix function name in error message of ``_interpreters.run_string``.
