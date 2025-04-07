@@ -1,0 +1,1 @@
+Upgrade libexpat to 2.7.1 to fix an issue with a security patch in 2.7.0.
