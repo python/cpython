@@ -82,7 +82,7 @@ class ExecutorTest:
                     var: val
                     for var, val in tb.tb_frame.f_locals.items()
                     if isinstance(val, Exception)
-                    and var in val.__traceback__.tb_frame.f_locals
+                    and val.__traceback__.tb_frame is tb.tb_frame
                 },
                 msg=f"the exception's traceback should not contain an exception that captures itself in its own traceback",
             )
