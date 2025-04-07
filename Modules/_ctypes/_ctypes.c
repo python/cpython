@@ -110,6 +110,7 @@ bytes(cdata)
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 #include "pycore_pyatomic_ft_wrappers.h"
+#include "pycore_object.h"
 #ifdef MS_WIN32
 #  include "pycore_modsupport.h"  // _PyArg_NoKeywords()
 #endif
@@ -932,7 +933,8 @@ CDataType_from_buffer_copy_impl(PyObject *type, PyTypeObject *cls,
 
     result = generic_pycdata_new(st, (PyTypeObject *)type, NULL, NULL);
     if (result != NULL) {
-        locked_memcpy_to((CDataObject *) result, (char *)buffer->buf + offset, info->size);
+        assert(_PyObject_IsUniquelyReferenced(result));
+        memcpy(((CDataObject *) result)->b_ptr, (char *)buffer->buf + offset, info->size);
     }
     return result;
 }
