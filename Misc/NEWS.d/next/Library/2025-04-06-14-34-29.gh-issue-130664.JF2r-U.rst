@@ -1,2 +1,2 @@
-Support ``'_'`` digit separator in formatting of the integral part of
+Support the ``'_'`` digit separator in formatting of the integral part of
 :class:`~decimal.Decimal`'s.  Patch by Sergey B Kirpichev.
