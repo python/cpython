@@ -1,0 +1,5 @@
+Add the :attr:`zipfile.ZipFile.data_offset` attribute, which stores the
+offset to the beginning of ZIP data in a file when available. When the
+:class:`zipfile.ZipFile` is opened in either mode ``'w'`` or ``'x'`` and the
+underlying file does not support ``tell()``, the value will be ``None``
+instead.
