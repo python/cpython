@@ -644,9 +644,16 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             self.assertEndsWith(ABIFLAGS, 'd')
         else:
             self.assertNotIn('d', ABIFLAGS)
+
+    def test_abi_thread(self):
+        abi_thread = sysconfig.get_config_var('abi_thread')
+        ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
+        self.assertIsInstance(abi_thread, str)
         if support.Py_GIL_DISABLED:
+            self.assertEqual(abi_thread, 't')
             self.assertIn('t', ABIFLAGS)
         else:
+            self.assertEqual(abi_thread, '')
             self.assertNotIn('t', ABIFLAGS)
 
     @requires_subprocess()
