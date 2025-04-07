@@ -4,7 +4,8 @@ from test.support import (
     run_with_locale, cpython_only, no_rerun,
     MISSING_C_DOCSTRINGS, EqualToForwardRef,
 )
-from test.support.script_helper import assert_python_ok, import_fresh_module
+from test.support.script_helper import assert_python_ok
+from test.support.import_helper import import_fresh_module
 import collections.abc
 from collections import namedtuple, UserDict
 import copy
