@@ -2,6 +2,8 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(_testcapi_watch_dict__doc__,
 "watch_dict($module, watcher_id, dict, /)\n"
 "--\n"
@@ -189,4 +191,4 @@ _testcapi_set_func_kwdefaults_via_capi(PyObject *module, PyObject *const *args, 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5ad5771d6b29dfb9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0e07ce7f295917a5 input=a9049054013a1b77]*/

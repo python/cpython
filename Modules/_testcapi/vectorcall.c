@@ -1,3 +1,6 @@
+// clinic/vectorcall.c.h uses internal pycore_modsupport.h API
+#define PYTESTCAPI_NEED_INTERNAL_API
+
 #include "parts.h"
 #include "clinic/vectorcall.c.h"
 
@@ -345,6 +348,9 @@ static PyObject *
 MethodDescriptor2_new(PyTypeObject* type, PyObject* args, PyObject *kw)
 {
     MethodDescriptor2Object *op = PyObject_New(MethodDescriptor2Object, type);
+    if (op == NULL) {
+        return NULL;
+    }
     op->base.vectorcall = NULL;
     op->vectorcall = MethodDescriptor_vectorcall;
     return (PyObject *)op;

@@ -1,2 +1,0 @@
-Fix possible assertion failures and missing instrumentation events when
-:envvar:`PYTHONUOPS` or :option:`-X uops <-X>` is enabled.

@@ -2,12 +2,14 @@
 preserve
 [clinic start generated code]*/
 
+#include "pycore_modsupport.h"    // _PyArg_CheckPositional()
+
 PyDoc_STRVAR(subprocess_fork_exec__doc__,
 "fork_exec($module, args, executable_list, close_fds, pass_fds, cwd,\n"
 "          env, p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite,\n"
 "          errpipe_read, errpipe_write, restore_signals, call_setsid,\n"
 "          pgid_to_set, gid, extra_groups, uid, child_umask, preexec_fn,\n"
-"          allow_vfork, /)\n"
+"          /)\n"
 "--\n"
 "\n"
 "Spawn a fresh new child process.\n"
@@ -46,7 +48,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                           pid_t pgid_to_set, PyObject *gid_object,
                           PyObject *extra_groups_packed,
                           PyObject *uid_object, int child_umask,
-                          PyObject *preexec_fn, int allow_vfork);
+                          PyObject *preexec_fn);
 
 static PyObject *
 subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
@@ -74,9 +76,8 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *uid_object;
     int child_umask;
     PyObject *preexec_fn;
-    int allow_vfork;
 
-    if (!_PyArg_CheckPositional("fork_exec", nargs, 23, 23)) {
+    if (!_PyArg_CheckPositional("fork_exec", nargs, 22, 22)) {
         goto exit;
     }
     process_args = args[0];
@@ -144,13 +145,9 @@ subprocess_fork_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     preexec_fn = args[21];
-    allow_vfork = PyObject_IsTrue(args[22]);
-    if (allow_vfork < 0) {
-        goto exit;
-    }
-    return_value = subprocess_fork_exec_impl(module, process_args, executable_list, close_fds, py_fds_to_keep, cwd_obj, env_list, p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite, errpipe_read, errpipe_write, restore_signals, call_setsid, pgid_to_set, gid_object, extra_groups_packed, uid_object, child_umask, preexec_fn, allow_vfork);
+    return_value = subprocess_fork_exec_impl(module, process_args, executable_list, close_fds, py_fds_to_keep, cwd_obj, env_list, p2cread, p2cwrite, c2pread, c2pwrite, errread, errwrite, errpipe_read, errpipe_write, restore_signals, call_setsid, pgid_to_set, gid_object, extra_groups_packed, uid_object, child_umask, preexec_fn);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a83b11467169b97b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=942bc2748a9c2785 input=a9049054013a1b77]*/

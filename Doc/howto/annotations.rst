@@ -34,10 +34,15 @@ Accessing The Annotations Dict Of An Object In Python 3.10 And Newer
 
 Python 3.10 adds a new function to the standard library:
 :func:`inspect.get_annotations`.  In Python versions 3.10
-and newer, calling this function is the best practice for
+through 3.13, calling this function is the best practice for
 accessing the annotations dict of any object that supports
 annotations.  This function can also "un-stringize"
 stringized annotations for you.
+
+In Python 3.14, there is a new :mod:`annotationlib` module
+with functionality for working with annotations. This
+includes a :func:`annotationlib.get_annotations` function,
+which supersedes :func:`inspect.get_annotations`.
 
 If for some reason :func:`inspect.get_annotations` isn't
 viable for your use case, you may access the
@@ -102,9 +107,9 @@ Your code will have to have a separate code path if the object
 you're examining is a class (``isinstance(o, type)``).
 In that case, best practice relies on an implementation detail
 of Python 3.9 and before: if a class has annotations defined,
-they are stored in the class's ``__dict__`` dictionary.  Since
+they are stored in the class's :attr:`~type.__dict__` dictionary.  Since
 the class may or may not have annotations defined, best practice
-is to call the ``get`` method on the class dict.
+is to call the :meth:`~dict.get` method on the class dict.
 
 To put it all together, here is some sample code that safely
 accesses the ``__annotations__`` attribute on an arbitrary
@@ -121,8 +126,8 @@ the type of ``ann`` using :func:`isinstance` before further
 examination.
 
 Note that some exotic or malformed type objects may not have
-a ``__dict__`` attribute, so for extra safety you may also wish
-to use :func:`getattr` to access ``__dict__``.
+a :attr:`~type.__dict__` attribute, so for extra safety you may also wish
+to use :func:`getattr` to access :attr:`!__dict__`.
 
 
 Manually Un-Stringizing Stringized Annotations
@@ -153,7 +158,8 @@ on an arbitrary object ``o``:
   unwrap it by accessing either ``o.__wrapped__`` or ``o.func`` as
   appropriate, until you have found the root unwrapped function.
 * If ``o`` is a callable (but not a class), use
-  ``o.__globals__`` as the globals when calling :func:`eval`.
+  :attr:`o.__globals__ <function.__globals__>` as the globals when calling
+  :func:`eval`.
 
 However, not all string values used as annotations can
 be successfully turned into Python values by :func:`eval`.
@@ -183,7 +189,11 @@ Best Practices For ``__annotations__`` In Any Python Version
 * If you do assign directly to the ``__annotations__`` member
   of an object, you should always set it to a ``dict`` object.
 
-* If you directly access the ``__annotations__`` member
+* You should avoid accessing ``__annotations__`` directly on any object.
+  Instead, use :func:`annotationlib.get_annotations` (Python 3.14+)
+  or :func:`inspect.get_annotations` (Python 3.10+).
+
+* If you do directly access the ``__annotations__`` member
   of an object, you should ensure that it's a
   dictionary before attempting to examine its contents.
 
@@ -230,3 +240,12 @@ itself be quoted.  In effect the annotation is quoted
 
 This prints ``{'a': "'str'"}``.  This shouldn't really be considered
 a "quirk"; it's mentioned here simply because it might be surprising.
+
+If you use a class with a custom metaclass and access ``__annotations__``
+on the class, you may observe unexpected behavior; see
+:pep:`749 <749#pep749-metaclasses>` for some examples. You can avoid these
+quirks by using :func:`annotationlib.get_annotations` on Python 3.14+ or
+:func:`inspect.get_annotations` on Python 3.10+. On earlier versions of
+Python, you can avoid these bugs by accessing the annotations from the
+class's :attr:`~type.__dict__`
+(e.g., ``cls.__dict__.get('__annotations__', None)``).

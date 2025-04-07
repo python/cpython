@@ -1,0 +1,3 @@
+Usage of a name in a function-scope annotation no longer triggers creation
+of a cell for that variable. This fixes a regression in earlier alphas of
+Python 3.14.

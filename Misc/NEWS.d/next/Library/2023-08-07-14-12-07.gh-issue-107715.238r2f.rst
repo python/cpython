@@ -1,2 +1,0 @@
-Fix :meth:`doctest.DocTestFinder.find` in presence of class names with special
-characters. Patch by Gertjan van Zwieten.

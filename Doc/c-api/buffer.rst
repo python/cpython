@@ -29,7 +29,7 @@ without intermediate copying.
 Python provides such a facility at the C level in the form of the :ref:`buffer
 protocol <bufferobjects>`.  This protocol has two sides:
 
-.. index:: single: PyBufferProcs
+.. index:: single: PyBufferProcs (C type)
 
 - on the producer side, a type can export a "buffer interface" which allows
   objects of that type to expose information about their underlying buffer.
@@ -147,9 +147,9 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       or a :c:macro:`PyBUF_WRITABLE` request, the consumer must disregard
       :c:member:`~Py_buffer.itemsize` and assume ``itemsize == 1``.
 
-   .. c:member:: const char *format
+   .. c:member:: char *format
 
-      A *NUL* terminated string in :mod:`struct` module style syntax describing
+      A *NULL* terminated string in :mod:`struct` module style syntax describing
       the contents of a single item. If this is ``NULL``, ``"B"`` (unsigned bytes)
       is assumed.
 
@@ -244,7 +244,6 @@ The following fields are not influenced by *flags* and must always be filled in
 with the correct values: :c:member:`~Py_buffer.obj`, :c:member:`~Py_buffer.buf`,
 :c:member:`~Py_buffer.len`, :c:member:`~Py_buffer.itemsize`, :c:member:`~Py_buffer.ndim`.
 
-
 readonly, format
 ~~~~~~~~~~~~~~~~
 
@@ -253,7 +252,8 @@ readonly, format
       Controls the :c:member:`~Py_buffer.readonly` field. If set, the exporter
       MUST provide a writable buffer or else report failure. Otherwise, the
       exporter MAY provide either a read-only or writable buffer, but the choice
-      MUST be consistent for all consumers.
+      MUST be consistent for all consumers. For example, :c:expr:`PyBUF_SIMPLE | PyBUF_WRITABLE`
+      can be used to request a simple writable buffer.
 
    .. c:macro:: PyBUF_FORMAT
 
@@ -265,8 +265,9 @@ readonly, format
 Since :c:macro:`PyBUF_SIMPLE` is defined as 0, :c:macro:`PyBUF_WRITABLE`
 can be used as a stand-alone flag to request a simple writable buffer.
 
-:c:macro:`PyBUF_FORMAT` can be \|'d to any of the flags except :c:macro:`PyBUF_SIMPLE`.
-The latter already implies format ``B`` (unsigned bytes).
+:c:macro:`PyBUF_FORMAT` must be \|'d to any of the flags except :c:macro:`PyBUF_SIMPLE`, because
+the latter already implies format ``B`` (unsigned bytes). :c:macro:`!PyBUF_FORMAT` cannot be
+used on its own.
 
 
 shape, strides, suboffsets

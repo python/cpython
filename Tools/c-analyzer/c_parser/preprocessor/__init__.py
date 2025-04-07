@@ -2,6 +2,7 @@ import contextlib
 import logging
 import os
 import os.path
+import platform
 import re
 import sys
 
@@ -242,6 +243,8 @@ def _get_default_compiler():
         return 'unix'
     if os.name == 'nt':
         return 'msvc'
+    if sys.platform == 'darwin' and 'clang' in platform.python_compiler():
+        return 'clang'
     return 'unix'
 
 

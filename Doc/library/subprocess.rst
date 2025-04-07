@@ -1,5 +1,5 @@
-:mod:`subprocess` --- Subprocess management
-===========================================
+:mod:`!subprocess` --- Subprocess management
+============================================
 
 .. module:: subprocess
    :synopsis: Subprocess management.
@@ -25,7 +25,7 @@ modules and functions can be found in the following sections.
 
    :pep:`324` -- PEP proposing the subprocess module
 
-.. include:: ../includes/wasm-notavail.rst
+.. include:: ../includes/wasm-mobile-notavail.rst
 
 Using the :mod:`subprocess` Module
 ----------------------------------
@@ -52,10 +52,12 @@ underlying :class:`Popen` interface can be used directly.
 
    If *capture_output* is true, stdout and stderr will be captured.
    When used, the internal :class:`Popen` object is automatically created with
-   ``stdout=PIPE`` and ``stderr=PIPE``. The *stdout* and *stderr* arguments may
-   not be supplied at the same time as *capture_output*.  If you wish to capture
-   and combine both streams into one, use ``stdout=PIPE`` and ``stderr=STDOUT``
-   instead of *capture_output*.
+   *stdout* and *stderr* both set to :data:`~subprocess.PIPE`.
+   The *stdout* and *stderr* arguments may not be supplied at the same time as *capture_output*.
+   If you wish to capture and combine both streams into one,
+   set *stdout* to :data:`~subprocess.PIPE`
+   and *stderr* to :data:`~subprocess.STDOUT`,
+   instead of using *capture_output*.
 
    A *timeout* may be specified in seconds, it is internally passed on to
    :meth:`Popen.communicate`. If the timeout expires, the child process will be
@@ -69,7 +71,8 @@ underlying :class:`Popen` interface can be used directly.
    subprocess's stdin.  If used it must be a byte sequence, or a string if
    *encoding* or *errors* is specified or *text* is true.  When
    used, the internal :class:`Popen` object is automatically created with
-   ``stdin=PIPE``, and the *stdin* argument may not be used as well.
+   *stdin* set to :data:`~subprocess.PIPE`,
+   and the *stdin* argument may not be used as well.
 
    If *check* is true, and the process exits with a non-zero exit code, a
    :exc:`CalledProcessError` exception will be raised. Attributes of that
@@ -308,10 +311,10 @@ default values. The arguments that are most commonly needed are:
    If text mode is not used, *stdin*, *stdout* and *stderr* will be opened as
    binary streams. No encoding or line ending conversion is performed.
 
-   .. versionadded:: 3.6
-      Added *encoding* and *errors* parameters.
+   .. versionchanged:: 3.6
+      Added the *encoding* and *errors* parameters.
 
-   .. versionadded:: 3.7
+   .. versionchanged:: 3.7
       Added the *text* parameter as an alias for *universal_newlines*.
 
    .. note::
@@ -605,7 +608,7 @@ functions.
 
    If *group* is not ``None``, the setregid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided
-   value is a string, it will be looked up via :func:`grp.getgrnam()` and
+   value is a string, it will be looked up via :func:`grp.getgrnam` and
    the value in ``gr_gid`` will be used. If the value is an integer, it
    will be passed verbatim. (POSIX only)
 
@@ -615,7 +618,7 @@ functions.
    If *extra_groups* is not ``None``, the setgroups() system call will be
    made in the child process prior to the execution of the subprocess.
    Strings provided in *extra_groups* will be looked up via
-   :func:`grp.getgrnam()` and the values in ``gr_gid`` will be used.
+   :func:`grp.getgrnam` and the values in ``gr_gid`` will be used.
    Integer values will be passed verbatim. (POSIX only)
 
    .. availability:: POSIX
@@ -623,7 +626,7 @@ functions.
 
    If *user* is not ``None``, the setreuid() system call will be made in the
    child process prior to the execution of the subprocess. If the provided
-   value is a string, it will be looked up via :func:`pwd.getpwnam()` and
+   value is a string, it will be looked up via :func:`pwd.getpwnam` and
    the value in ``pw_uid`` will be used. If the value is an integer, it will
    be passed verbatim. (POSIX only)
 
@@ -664,28 +667,29 @@ functions.
 
    If given, *startupinfo* will be a :class:`STARTUPINFO` object, which is
    passed to the underlying ``CreateProcess`` function.
-   *creationflags*, if given, can be one or more of the following flags:
 
-      * :data:`CREATE_NEW_CONSOLE`
-      * :data:`CREATE_NEW_PROCESS_GROUP`
-      * :data:`ABOVE_NORMAL_PRIORITY_CLASS`
-      * :data:`BELOW_NORMAL_PRIORITY_CLASS`
-      * :data:`HIGH_PRIORITY_CLASS`
-      * :data:`IDLE_PRIORITY_CLASS`
-      * :data:`NORMAL_PRIORITY_CLASS`
-      * :data:`REALTIME_PRIORITY_CLASS`
-      * :data:`CREATE_NO_WINDOW`
-      * :data:`DETACHED_PROCESS`
-      * :data:`CREATE_DEFAULT_ERROR_MODE`
-      * :data:`CREATE_BREAKAWAY_FROM_JOB`
+   If given, *creationflags*, can be one or more of the following flags:
+
+   * :data:`CREATE_NEW_CONSOLE`
+   * :data:`CREATE_NEW_PROCESS_GROUP`
+   * :data:`ABOVE_NORMAL_PRIORITY_CLASS`
+   * :data:`BELOW_NORMAL_PRIORITY_CLASS`
+   * :data:`HIGH_PRIORITY_CLASS`
+   * :data:`IDLE_PRIORITY_CLASS`
+   * :data:`NORMAL_PRIORITY_CLASS`
+   * :data:`REALTIME_PRIORITY_CLASS`
+   * :data:`CREATE_NO_WINDOW`
+   * :data:`DETACHED_PROCESS`
+   * :data:`CREATE_DEFAULT_ERROR_MODE`
+   * :data:`CREATE_BREAKAWAY_FROM_JOB`
 
    *pipesize* can be used to change the size of the pipe when
    :data:`PIPE` is used for *stdin*, *stdout* or *stderr*. The size of the pipe
    is only changed on platforms that support this (only Linux at this time of
    writing). Other platforms will ignore this parameter.
 
-   .. versionadded:: 3.10
-      The ``pipesize`` parameter was added.
+   .. versionchanged:: 3.10
+      Added the *pipesize* parameter.
 
    Popen objects are supported as context managers via the :keyword:`with` statement:
    on exit, standard file descriptors are closed, and the process is waited for.
@@ -742,16 +746,16 @@ the timeout expires before the process exits.
 
 Exceptions defined in this module all inherit from :exc:`SubprocessError`.
 
-   .. versionadded:: 3.3
-      The :exc:`SubprocessError` base class was added.
+.. versionadded:: 3.3
+   The :exc:`SubprocessError` base class was added.
 
 .. _subprocess-security:
 
 Security Considerations
 -----------------------
 
-Unlike some other popen functions, this implementation will never
-implicitly call a system shell.  This means that all characters,
+Unlike some other popen functions, this library will not
+implicitly choose to call a system shell.  This means that all characters,
 including shell metacharacters, can safely be passed to child processes.
 If the shell is invoked explicitly, via ``shell=True``, it is the application's
 responsibility to ensure that all whitespace and metacharacters are
@@ -759,6 +763,14 @@ quoted appropriately to avoid
 `shell injection <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
 vulnerabilities. On :ref:`some platforms <shlex-quote-warning>`, it is possible
 to use :func:`shlex.quote` for this escaping.
+
+On Windows, batch files (:file:`*.bat` or :file:`*.cmd`) may be launched by the
+operating system in a system shell regardless of the arguments passed to this
+library. This could result in arguments being parsed according to shell rules,
+but without any escaping added by Python. If you are intentionally launching a
+batch file with arguments from untrusted sources, consider passing
+``shell=True`` to allow Python to escape special characters. See :gh:`114539`
+for additional discussion.
 
 
 Popen Objects
@@ -791,9 +803,10 @@ Instances of the :class:`Popen` class have the following methods:
 
    .. note::
 
-      The function is implemented using a busy loop (non-blocking call and
-      short sleeps). Use the :mod:`asyncio` module for an asynchronous wait:
-      see :class:`asyncio.create_subprocess_exec`.
+      When the ``timeout`` parameter is not ``None``, then (on POSIX) the
+      function is implemented using a busy loop (non-blocking call and short
+      sleeps). Use the :mod:`asyncio` module for an asynchronous wait: see
+      :class:`asyncio.create_subprocess_exec`.
 
    .. versionchanged:: 3.3
       *timeout* was added.
@@ -855,8 +868,8 @@ Instances of the :class:`Popen` class have the following methods:
 
 .. method:: Popen.terminate()
 
-   Stop the child. On POSIX OSs the method sends SIGTERM to the
-   child. On Windows the Win32 API function :c:func:`TerminateProcess` is called
+   Stop the child. On POSIX OSs the method sends :py:const:`~signal.SIGTERM` to the
+   child. On Windows the Win32 API function :c:func:`!TerminateProcess` is called
    to stop the child.
 
 
@@ -1053,6 +1066,22 @@ The :mod:`subprocess` module exposes the following constants.
    Specifies that the :attr:`STARTUPINFO.wShowWindow` attribute contains
    additional information.
 
+.. data:: STARTF_FORCEONFEEDBACK
+
+   A :attr:`STARTUPINFO.dwFlags` parameter to specify that the
+   *Working in Background* mouse cursor will be displayed while a
+   process is launching. This is the default behavior for GUI
+   processes.
+
+   .. versionadded:: 3.13
+
+.. data:: STARTF_FORCEOFFFEEDBACK
+
+   A :attr:`STARTUPINFO.dwFlags` parameter to specify that the mouse
+   cursor will not be changed when launching a process.
+
+   .. versionadded:: 3.13
+
 .. data:: CREATE_NEW_CONSOLE
 
    The new process has a new console, instead of inheriting its parent's
@@ -1097,7 +1126,7 @@ The :mod:`subprocess` module exposes the following constants.
 .. data:: NORMAL_PRIORITY_CLASS
 
    A :class:`Popen` ``creationflags`` parameter to specify that a new process
-   will have an normal priority. (default)
+   will have a normal priority. (default)
 
    .. versionadded:: 3.7
 
@@ -1414,36 +1443,8 @@ Environment example::
 
 
 
-Replacing :func:`os.popen`, :func:`os.popen2`, :func:`os.popen3`
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-::
-
-   (child_stdin, child_stdout) = os.popen2(cmd, mode, bufsize)
-   ==>
-   p = Popen(cmd, shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, close_fds=True)
-   (child_stdin, child_stdout) = (p.stdin, p.stdout)
-
-::
-
-   (child_stdin,
-    child_stdout,
-    child_stderr) = os.popen3(cmd, mode, bufsize)
-   ==>
-   p = Popen(cmd, shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, stderr=PIPE, close_fds=True)
-   (child_stdin,
-    child_stdout,
-    child_stderr) = (p.stdin, p.stdout, p.stderr)
-
-::
-
-   (child_stdin, child_stdout_and_stderr) = os.popen4(cmd, mode, bufsize)
-   ==>
-   p = Popen(cmd, shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, stderr=STDOUT, close_fds=True)
-   (child_stdin, child_stdout_and_stderr) = (p.stdin, p.stdout)
+Replacing :func:`os.popen`
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Return code handling translates as follows::
 
@@ -1458,44 +1459,6 @@ Return code handling translates as follows::
    process.stdin.close()
    if process.wait() != 0:
        print("There were some errors")
-
-
-Replacing functions from the :mod:`popen2` module
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. note::
-
-   If the cmd argument to popen2 functions is a string, the command is executed
-   through /bin/sh.  If it is a list, the command is directly executed.
-
-::
-
-   (child_stdout, child_stdin) = popen2.popen2("somestring", bufsize, mode)
-   ==>
-   p = Popen("somestring", shell=True, bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, close_fds=True)
-   (child_stdout, child_stdin) = (p.stdout, p.stdin)
-
-::
-
-   (child_stdout, child_stdin) = popen2.popen2(["mycmd", "myarg"], bufsize, mode)
-   ==>
-   p = Popen(["mycmd", "myarg"], bufsize=bufsize,
-             stdin=PIPE, stdout=PIPE, close_fds=True)
-   (child_stdout, child_stdin) = (p.stdout, p.stdin)
-
-:class:`popen2.Popen3` and :class:`popen2.Popen4` basically work as
-:class:`subprocess.Popen`, except that:
-
-* :class:`Popen` raises an exception if the execution fails.
-
-* The *capturestderr* argument is replaced with the *stderr* argument.
-
-* ``stdin=PIPE`` and ``stdout=PIPE`` must be specified.
-
-* popen2 closes all file descriptors by default, but you have to specify
-  ``close_fds=True`` with :class:`Popen` to guarantee this behavior on
-  all platforms or past Python versions.
 
 
 Legacy Shell Invocation Functions
@@ -1537,8 +1500,8 @@ handling consistency are valid for these functions.
       as it did in Python 3.3.3 and earlier.  exitcode has the same value as
       :attr:`~Popen.returncode`.
 
-   .. versionadded:: 3.11
-      Added *encoding* and *errors* arguments.
+   .. versionchanged:: 3.11
+      Added the *encoding* and *errors* parameters.
 
 .. function:: getoutput(cmd, *, encoding=None, errors=None)
 
@@ -1555,8 +1518,8 @@ handling consistency are valid for these functions.
    .. versionchanged:: 3.3.4
       Windows support added
 
-   .. versionadded:: 3.11
-      Added *encoding* and *errors* arguments.
+   .. versionchanged:: 3.11
+      Added the *encoding* and *errors* parameters.
 
 
 Notes
@@ -1598,36 +1561,22 @@ runtime):
       Module which provides function to parse and escape command lines.
 
 
-.. _disable_vfork:
 .. _disable_posix_spawn:
 
-Disabling use of ``vfork()`` or ``posix_spawn()``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Disable use of ``posix_spawn()``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 On Linux, :mod:`subprocess` defaults to using the ``vfork()`` system call
 internally when it is safe to do so rather than ``fork()``. This greatly
 improves performance.
 
-If you ever encounter a presumed highly unusual situation where you need to
-prevent ``vfork()`` from being used by Python, you can set the
-:const:`subprocess._USE_VFORK` attribute to a false value.
-
-::
-
-   subprocess._USE_VFORK = False  # See CPython issue gh-NNNNNN.
-
-Setting this has no impact on use of ``posix_spawn()`` which could use
-``vfork()`` internally within its libc implementation.  There is a similar
-:const:`subprocess._USE_POSIX_SPAWN` attribute if you need to prevent use of
-that.
-
 ::
 
    subprocess._USE_POSIX_SPAWN = False  # See CPython issue gh-NNNNNN.
 
-It is safe to set these to false on any Python version. They will have no
-effect on older versions when unsupported. Do not assume the attributes are
-available to read. Despite their names, a true value does not indicate that the
+It is safe to set this to false on any Python version. It will have no
+effect on older or newer versions where unsupported. Do not assume the attribute
+is available to read. Despite the name, a true value does not indicate the
 corresponding function will be used, only that it may be.
 
 Please file issues any time you have to use these private knobs with a way to
@@ -1635,4 +1584,3 @@ reproduce the issue you were seeing. Link to that issue from a comment in your
 code.
 
 .. versionadded:: 3.8 ``_USE_POSIX_SPAWN``
-.. versionadded:: 3.11 ``_USE_VFORK``

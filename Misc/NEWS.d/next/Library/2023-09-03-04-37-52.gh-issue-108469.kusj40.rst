@@ -1,3 +1,0 @@
-:func:`ast.unparse` now supports new :term:`f-string` syntax introduced in
-Python 3.12. Note that the :term:`f-string` quotes are reselected for simplicity
-under the new syntax. (Patch by Steven Sun)

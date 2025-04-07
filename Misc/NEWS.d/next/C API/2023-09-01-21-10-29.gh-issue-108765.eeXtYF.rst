@@ -1,4 +1,0 @@
-``Python.h`` no longer includes the ``<unistd.h>`` standard header file. If
-needed, it should now be included explicitly. For example, it provides the
-functions: ``close()``, ``getpagesize()``, ``getpid()`` and ``sysconf()``.
-Patch by Victor Stinner.

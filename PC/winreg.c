@@ -31,8 +31,6 @@ static BOOL clinic_HKEY_converter(winreg_state *st, PyObject *ob, void *p);
 static PyObject *PyHKEY_FromHKEY(winreg_state *st, HKEY h);
 static BOOL PyHKEY_Close(winreg_state *st, PyObject *obHandle);
 
-static char errNotAHandle[] = "Object is not a handle";
-
 /* The win32api module reports the function name that failed,
    but this concept is not in the Python core.
    Hopefully it will one day, and in the meantime I don't
@@ -200,7 +198,7 @@ PyHKEY_hashFunc(PyObject *ob)
     /* Just use the address.
        XXX - should we use the handle value?
     */
-    return _Py_HashPointer(ob);
+    return PyObject_GenericHash(ob);
 }
 
 
@@ -2074,7 +2072,7 @@ static struct PyMethodDef winreg_methods[] = {
     WINREG_SAVEKEY_METHODDEF
     WINREG_SETVALUE_METHODDEF
     WINREG_SETVALUEEX_METHODDEF
-    NULL,
+    {NULL},
 };
 
 #define ADD_INT(VAL) do {                               \
@@ -2179,6 +2177,7 @@ exec_module(PyObject *m)
 static PyModuleDef_Slot winreg_slots[] = {
     {Py_mod_exec, exec_module},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

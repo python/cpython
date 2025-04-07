@@ -615,6 +615,10 @@ exec_module(PyObject* m)
     INSERTPTR(m, "CRTDBG_FILE_STDERR", _CRTDBG_FILE_STDERR);
     INSERTPTR(m, "CRTDBG_FILE_STDOUT", _CRTDBG_FILE_STDOUT);
     INSERTPTR(m, "CRTDBG_REPORT_FILE", _CRTDBG_REPORT_FILE);
+    INSERTINT(m, "OUT_TO_DEFAULT", _OUT_TO_DEFAULT);
+    INSERTINT(m, "OUT_TO_STDERR", _OUT_TO_STDERR);
+    INSERTINT(m, "OUT_TO_MSGBOX", _OUT_TO_MSGBOX);
+    INSERTINT(m, "REPORT_ERRMODE", _REPORT_ERRMODE);
 #endif
 
 #undef INSERTINT
@@ -652,6 +656,7 @@ exec_module(PyObject* m)
 static PyModuleDef_Slot msvcrt_slots[] = {
     {Py_mod_exec, exec_module},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

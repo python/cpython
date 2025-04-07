@@ -1,1 +1,0 @@
-Add :c:func:`PyObject_GetOptionalAttr` and :c:func:`PyObject_GetOptionalAttrString` functions.

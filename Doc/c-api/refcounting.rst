@@ -17,26 +17,27 @@ of Python objects.
 
    Note that the returned value may not actually reflect how many
    references to the object are actually held.  For example, some
-   objects are "immortal" and have a very high refcount that does not
+   objects are :term:`immortal` and have a very high refcount that does not
    reflect the actual number of references.  Consequently, do not rely
    on the returned value to be accurate, other than a value of 0 or 1.
 
    Use the :c:func:`Py_SET_REFCNT()` function to set an object reference count.
 
-   .. versionchanged:: 3.11
-      The parameter type is no longer :c:expr:`const PyObject*`.
-
    .. versionchanged:: 3.10
       :c:func:`Py_REFCNT()` is changed to the inline static function.
+
+   .. versionchanged:: 3.11
+      The parameter type is no longer :c:expr:`const PyObject*`.
 
 
 .. c:function:: void Py_SET_REFCNT(PyObject *o, Py_ssize_t refcnt)
 
    Set the object *o* reference counter to *refcnt*.
 
-   Note that this function has no effect on
-   `immortal <https://peps.python.org/pep-0683/>`_
-   objects.
+   On :ref:`Python build with Free Threading <free-threading-build>`, if
+   *refcnt* is larger than ``UINT32_MAX``, the object is made :term:`immortal`.
+
+   This function has no effect on :term:`immortal` objects.
 
    .. versionadded:: 3.9
 
@@ -49,6 +50,8 @@ of Python objects.
    Indicate taking a new :term:`strong reference` to object *o*,
    indicating it is in use and should not be destroyed.
 
+   This function has no effect on :term:`immortal` objects.
+
    This function is usually used to convert a :term:`borrowed reference` to a
    :term:`strong reference` in-place. The :c:func:`Py_NewRef` function can be
    used to create a new :term:`strong reference`.
@@ -59,7 +62,7 @@ of Python objects.
    ``NULL``, use :c:func:`Py_XINCREF`.
 
    Do not expect this function to actually modify *o* in any way.
-   For at least `some objects <https://peps.python.org/pep-0683/>`_,
+   For at least :pep:`some objects <0683>`,
    this function has no effect.
 
    .. versionchanged:: 3.12
@@ -113,6 +116,8 @@ of Python objects.
    Release a :term:`strong reference` to object *o*, indicating the
    reference is no longer used.
 
+   This function has no effect on :term:`immortal` objects.
+
    Once the last :term:`strong reference` is released
    (i.e. the object's reference count reaches 0),
    the object's type's deallocation
@@ -125,7 +130,7 @@ of Python objects.
    use :c:func:`Py_XDECREF`.
 
    Do not expect this function to actually modify *o* in any way.
-   For at least `some objects <https://peps.python.org/pep-0683/>`_,
+   For at least :pep:`some objects <683>`,
    this function has no effect.
 
    .. warning::

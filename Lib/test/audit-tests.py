@@ -187,7 +187,7 @@ def test_monkeypatch():
 
 
 def test_open(testfn):
-    # SSLContext.load_dh_params uses _Py_fopen_obj rather than normal open()
+    # SSLContext.load_dh_params uses Py_fopen() rather than normal open()
     try:
         import ssl
 
@@ -208,7 +208,15 @@ def test_open(testfn):
             if not fn:
                 continue
             with assertRaises(RuntimeError):
-                fn(*args)
+                try:
+                    fn(*args)
+                except NotImplementedError:
+                    if fn == load_dh_params:
+                        # Not callable in some builds
+                        load_dh_params = None
+                        raise RuntimeError
+                    else:
+                        raise
 
     actual_mode = [(a[0], a[1]) for e, a in hook.seen if e == "open" and a[1]]
     actual_flag = [(a[0], a[2]) for e, a in hook.seen if e == "open" and not a[1]]
@@ -289,7 +297,7 @@ def test_excepthook():
 
 
 def test_unraisablehook():
-    from _testinternalcapi import write_unraisable_exc
+    from _testcapi import err_formatunraisable
 
     def unraisablehook(hookargs):
         pass
@@ -302,7 +310,8 @@ def test_unraisablehook():
 
     sys.addaudithook(hook)
     sys.unraisablehook = unraisablehook
-    write_unraisable_exc(RuntimeError("nonfatal-error"), "for audit hook test", None)
+    err_formatunraisable(RuntimeError("nonfatal-error"),
+                         "Exception ignored for audit hook test")
 
 
 def test_winreg():
@@ -454,6 +463,9 @@ def test_threading():
     i = _thread.start_new_thread(test_func(), ())
     lock.acquire()
 
+    handle = _thread.start_joinable_thread(test_func())
+    handle.join()
+
 
 def test_threading_abort():
     # Ensures that aborting PyThreadState_New raises the correct exception
@@ -483,7 +495,13 @@ def test_wmi_exec_query():
             print(event, args[0])
 
     sys.addaudithook(hook)
-    _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+    try:
+        _wmi.exec_query("SELECT * FROM Win32_OperatingSystem")
+    except WindowsError as e:
+        # gh-112278: WMI may be slow response when first called, but we still
+        # get the audit event, so just ignore the timeout
+        if e.winerror != 258:
+            raise
 
 def test_syslog():
     import syslog
@@ -544,6 +562,28 @@ def test_sys_monitoring_register_callback():
 
     sys.addaudithook(hook)
     sys.monitoring.register_callback(1, 1, None)
+
+
+def test_winapi_createnamedpipe(pipe_name):
+    import _winapi
+
+    def hook(event, args):
+        if event == "_winapi.CreateNamedPipe":
+            print(event, args)
+
+    sys.addaudithook(hook)
+    _winapi.CreateNamedPipe(pipe_name, _winapi.PIPE_ACCESS_DUPLEX, 8, 2, 0, 0, 0, 0)
+
+
+def test_assert_unicode():
+    import sys
+    sys.addaudithook(lambda *args: None)
+    try:
+        sys.audit(9)
+    except TypeError:
+        pass
+    else:
+        raise RuntimeError("Expected sys.audit(9) to fail.")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
-:mod:`graphlib` --- Functionality to operate with graph-like structures
-=========================================================================
+:mod:`!graphlib` --- Functionality to operate with graph-like structures
+========================================================================
 
 .. module:: graphlib
    :synopsis: Functionality to operate with graph-like structures
@@ -37,14 +37,14 @@
    In the general case, the steps required to perform the sorting of a given
    graph are as follows:
 
-         * Create an instance of the :class:`TopologicalSorter` with an optional
-           initial graph.
-         * Add additional nodes to the graph.
-         * Call :meth:`~TopologicalSorter.prepare` on the graph.
-         * While :meth:`~TopologicalSorter.is_active` is ``True``, iterate over
-           the nodes returned by :meth:`~TopologicalSorter.get_ready` and
-           process them. Call :meth:`~TopologicalSorter.done` on each node as it
-           finishes processing.
+   * Create an instance of the :class:`TopologicalSorter` with an optional
+     initial graph.
+   * Add additional nodes to the graph.
+   * Call :meth:`~TopologicalSorter.prepare` on the graph.
+   * While :meth:`~TopologicalSorter.is_active` is ``True``, iterate over
+     the nodes returned by :meth:`~TopologicalSorter.get_ready` and
+     process them. Call :meth:`~TopologicalSorter.done` on each node as it
+     finishes processing.
 
    In case just an immediate sorting of the nodes in the graph is required and
    no parallelism is involved, the convenience method
@@ -105,6 +105,14 @@
       nodes as possible until cycles block more progress. After a call to this
       function, the graph cannot be modified, and therefore no more nodes can be
       added using :meth:`~TopologicalSorter.add`.
+
+      A :exc:`ValueError` will be raised if the sort has been started by
+      :meth:`~.static_order` or :meth:`~.get_ready`.
+
+      .. versionchanged:: next
+
+         ``prepare()`` can now be called more than once as long as the sort has
+         not started. Previously this raised :exc:`ValueError`.
 
    .. method:: is_active()
 

@@ -5,8 +5,13 @@
 #include "Python.h"
 #include "compile.h"
 #include "opcode.h"
-#include "internal/pycore_code.h"
-#include "internal/pycore_intrinsics.h"
+#include "pycore_ceval.h"
+#include "pycore_code.h"
+#include "pycore_compile.h"
+#include "pycore_intrinsics.h"
+#include "pycore_optimizer.h"     // _Py_GetExecutor()
+#include "pycore_opcode_metadata.h" // IS_VALID_OPCODE, OPCODE_HAS_*, etc
+#include "pycore_opcode_utils.h"
 
 /*[clinic input]
 module _opcode
@@ -78,7 +83,7 @@ static int
 _opcode_is_valid_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=b0d918ea1d073f65 input=fe23e0aa194ddae0]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode);
+    return IS_VALID_OPCODE(opcode);
 }
 
 /*[clinic input]
@@ -94,8 +99,7 @@ static int
 _opcode_has_arg_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=7a062d3b2dcc0815 input=93d878ba6361db5f]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode) &&
-           PyUnstable_OpcodeHasArg(opcode);
+    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_ARG(opcode);
 }
 
 /*[clinic input]
@@ -111,8 +115,7 @@ static int
 _opcode_has_const_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=c646d5027c634120 input=a6999e4cf13f9410]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode) &&
-           PyUnstable_OpcodeHasConst(opcode);
+    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_CONST(opcode);
 }
 
 /*[clinic input]
@@ -128,8 +131,7 @@ static int
 _opcode_has_name_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=b49a83555c2fa517 input=448aa5e4bcc947ba]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode) &&
-           PyUnstable_OpcodeHasName(opcode);
+    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_NAME(opcode);
 }
 
 /*[clinic input]
@@ -145,9 +147,7 @@ static int
 _opcode_has_jump_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=e9c583c669f1c46a input=35f711274357a0c3]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode) &&
-           PyUnstable_OpcodeHasJump(opcode);
-
+    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_JUMP(opcode);
 }
 
 /*[clinic input]
@@ -168,9 +168,7 @@ static int
 _opcode_has_free_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=d81ae4d79af0ee26 input=117dcd5c19c1139b]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode) &&
-           PyUnstable_OpcodeHasFree(opcode);
-
+    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_FREE(opcode);
 }
 
 /*[clinic input]
@@ -186,8 +184,7 @@ static int
 _opcode_has_local_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=da5a8616b7a5097b input=9a798ee24aaef49d]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode) &&
-           PyUnstable_OpcodeHasLocal(opcode);
+    return IS_VALID_OPCODE(opcode) && OPCODE_HAS_LOCAL(opcode);
 }
 
 /*[clinic input]
@@ -203,8 +200,7 @@ static int
 _opcode_has_exc_impl(PyObject *module, int opcode)
 /*[clinic end generated code: output=41b68dff0ec82a52 input=db0e4bdb9bf13fa5]*/
 {
-    return PyUnstable_OpcodeIsValid(opcode) &&
-           PyUnstable_OpcodeHasExc(opcode);
+    return IS_VALID_OPCODE(opcode) && IS_BLOCK_PUSH_OPCODE(opcode);
 }
 
 /*[clinic input]
@@ -244,8 +240,7 @@ _opcode_get_nb_ops_impl(PyObject *module)
     }
 #define ADD_NB_OP(NUM, STR) \
     do { \
-        PyObject *pair = Py_BuildValue( \
-            "NN", PyUnicode_FromString(#NUM), PyUnicode_FromString(STR)); \
+        PyObject *pair = Py_BuildValue("ss", #NUM, STR); \
         if (pair == NULL) { \
             Py_DECREF(list); \
             return NULL; \
@@ -279,6 +274,7 @@ _opcode_get_nb_ops_impl(PyObject *module)
     ADD_NB_OP(NB_INPLACE_SUBTRACT, "-=");
     ADD_NB_OP(NB_INPLACE_TRUE_DIVIDE, "/=");
     ADD_NB_OP(NB_INPLACE_XOR, "^=");
+    ADD_NB_OP(NB_SUBSCR, "[]");
 
 #undef ADD_NB_OP
 
@@ -310,7 +306,7 @@ _opcode_get_intrinsic1_descs_impl(PyObject *module)
         return NULL;
     }
     for (int i=0; i <= MAX_INTRINSIC_1; i++) {
-        PyObject *name = PyUnstable_GetUnaryIntrinsicName(i);
+        PyObject *name = _PyCompile_GetUnaryIntrinsicName(i);
         if (name == NULL) {
             Py_DECREF(list);
             return NULL;
@@ -337,7 +333,7 @@ _opcode_get_intrinsic2_descs_impl(PyObject *module)
         return NULL;
     }
     for (int i=0; i <= MAX_INTRINSIC_2; i++) {
-        PyObject *name = PyUnstable_GetBinaryIntrinsicName(i);
+        PyObject *name = _PyCompile_GetBinaryIntrinsicName(i);
         if (name == NULL) {
             Py_DECREF(list);
             return NULL;
@@ -347,6 +343,60 @@ _opcode_get_intrinsic2_descs_impl(PyObject *module)
     return list;
 }
 
+/*[clinic input]
+
+_opcode.get_special_method_names
+
+Return a list of special method names.
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_get_special_method_names_impl(PyObject *module)
+/*[clinic end generated code: output=fce72614cd988d17 input=25f2115560bdf163]*/
+{
+    PyObject *list = PyList_New(SPECIAL_MAX + 1);
+    if (list == NULL) {
+        return NULL;
+    }
+    for (int i=0; i <= SPECIAL_MAX; i++) {
+        PyObject *name = _Py_SpecialMethods[i].name;
+        if (name == NULL) {
+            Py_DECREF(list);
+            return NULL;
+        }
+        PyList_SET_ITEM(list, i, name);
+    }
+    return list;
+}
+
+/*[clinic input]
+
+_opcode.get_executor
+
+  code: object
+  offset: int
+
+Return the executor object at offset in code if exists, None otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+_opcode_get_executor_impl(PyObject *module, PyObject *code, int offset)
+/*[clinic end generated code: output=c035c7a47b16648f input=85eff93ea7aac282]*/
+{
+    if (!PyCode_Check(code)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a code object, not '%.100s'",
+                     Py_TYPE(code)->tp_name);
+        return NULL;
+    }
+#ifdef _Py_TIER2
+    return (PyObject *)_Py_GetExecutor((PyCodeObject *)code, offset);
+#else
+    PyErr_Format(PyExc_RuntimeError,
+                 "Executors are not available in this build");
+    return NULL;
+#endif
+}
 
 static PyMethodDef
 opcode_functions[] =  {
@@ -363,12 +413,17 @@ opcode_functions[] =  {
     _OPCODE_GET_NB_OPS_METHODDEF
     _OPCODE_GET_INTRINSIC1_DESCS_METHODDEF
     _OPCODE_GET_INTRINSIC2_DESCS_METHODDEF
+    _OPCODE_GET_EXECUTOR_METHODDEF
+    _OPCODE_GET_SPECIAL_METHOD_NAMES_METHODDEF
     {NULL, NULL, 0, NULL}
 };
 
-int
+static int
 _opcode_exec(PyObject *m) {
     if (PyModule_AddIntMacro(m, ENABLE_SPECIALIZATION) < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntMacro(m, ENABLE_SPECIALIZATION_FT) < 0) {
         return -1;
     }
     return 0;
@@ -377,6 +432,7 @@ _opcode_exec(PyObject *m) {
 static PyModuleDef_Slot module_slots[] = {
     {Py_mod_exec, _opcode_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

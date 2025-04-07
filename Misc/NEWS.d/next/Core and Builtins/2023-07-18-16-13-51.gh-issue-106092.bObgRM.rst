@@ -1,2 +1,0 @@
-Fix a segmentation fault caused by a use-after-free bug in ``frame_dealloc``
-when the trashcan delays the deallocation of a ``PyFrameObject``.

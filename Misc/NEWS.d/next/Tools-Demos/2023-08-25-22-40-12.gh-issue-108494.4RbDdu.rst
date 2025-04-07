@@ -1,3 +1,0 @@
-:ref:`Argument Clinic <howto-clinic>` now has a partial support of the
-:ref:`Limited API <limited-c-api>`: see :ref:`clinic-howto-limited-capi`.
-Patch by Victor Stinner.

@@ -1,5 +1,5 @@
-:mod:`http.cookiejar` --- Cookie handling for HTTP clients
-==========================================================
+:mod:`!http.cookiejar` --- Cookie handling for HTTP clients
+===========================================================
 
 .. module:: http.cookiejar
    :synopsis: Classes for automatic handling of HTTP cookies.
@@ -44,8 +44,8 @@ The module defines the following exception:
    cookies from a file.  :exc:`LoadError` is a subclass of :exc:`OSError`.
 
    .. versionchanged:: 3.3
-      LoadError was made a subclass of :exc:`OSError` instead of
-      :exc:`IOError`.
+      :exc:`LoadError` used to be a subtype of :exc:`IOError`, which is now an
+      alias of :exc:`OSError`.
 
 
 The following classes are provided:
@@ -137,7 +137,7 @@ The following classes are provided:
       The Netscape protocol with the bugs fixed.  Uses :mailheader:`Set-Cookie2` in
       place of :mailheader:`Set-Cookie`.  Not widely used.
 
-   http://kristol.org/cookie/errata.html
+   https://kristol.org/cookie/errata.html
       Unfinished errata to :rfc:`2965`.
 
    :rfc:`2964` - Use of HTTP State Management
@@ -647,6 +647,11 @@ internal consistency, so you should know what you're doing if you do that.
 
    String representing a port or a set of ports (eg. '80', or '80,8080'), or
    :const:`None`.
+
+
+.. attribute:: Cookie.domain
+
+   Cookie domain (a string).
 
 
 .. attribute:: Cookie.path

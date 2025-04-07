@@ -46,7 +46,7 @@ class SqliteInteractiveConsole(InteractiveConsole):
         """Override runsource, the core of the InteractiveConsole REPL.
 
         Return True if more input is needed; buffering is done automatically.
-        Return False is input is a complete statement ready for execution.
+        Return False if input is a complete statement ready for execution.
         """
         match source:
             case ".version":
@@ -65,7 +65,6 @@ class SqliteInteractiveConsole(InteractiveConsole):
 def main(*args):
     parser = ArgumentParser(
         description="Python sqlite3 CLI",
-        prog="python -m sqlite3",
     )
     parser.add_argument(
         "filename", type=str, default=":memory:", nargs="?",
@@ -116,6 +115,10 @@ def main(*args):
         else:
             # No SQL provided; start the REPL.
             console = SqliteInteractiveConsole(con)
+            try:
+                import readline  # noqa: F401
+            except ImportError:
+                pass
             console.interact(banner, exitmsg="")
     finally:
         con.close()

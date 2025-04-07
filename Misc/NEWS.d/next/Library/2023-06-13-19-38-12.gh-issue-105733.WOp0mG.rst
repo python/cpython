@@ -1,2 +1,0 @@
-:mod:`ctypes`: Deprecate undocumented :func:`!ctypes.SetPointerType` and
-:func:`!ctypes.ARRAY` functions. Patch by Victor Stinner.

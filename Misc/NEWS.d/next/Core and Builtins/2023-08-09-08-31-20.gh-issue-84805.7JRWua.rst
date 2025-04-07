@@ -1,2 +1,0 @@
-Autogenerate signature for :c:macro:`METH_NOARGS` and :c:macro:`METH_O`
-extension functions.

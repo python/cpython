@@ -66,8 +66,7 @@ extern const char* _Py_DumpTracebackThreads(
 /* Write a Unicode object into the file descriptor fd. Encode the string to
    ASCII using the backslashreplace error handler.
 
-   Do nothing if text is not a Unicode object. The function accepts Unicode
-   string which is not ready (PyUnicode_WCHAR_KIND).
+   Do nothing if text is not a Unicode object.
 
    This function is signal safe. */
 extern void _Py_DumpASCII(int fd, PyObject *text);
@@ -95,9 +94,8 @@ extern PyObject* _PyTraceBack_FromFrame(
 
 /* Write the traceback tb to file f. Prefix each line with
    indent spaces followed by the margin (if it is not NULL). */
-extern int _PyTraceBack_Print_Indented(
-    PyObject *tb, int indent, const char* margin,
-    const char *header_margin, const char *header, PyObject *f);
+extern int _PyTraceBack_Print(
+    PyObject *tb, const char *header, PyObject *f);
 extern int _Py_WriteIndentedMargin(int, const char*, PyObject *);
 extern int _Py_WriteIndent(int, PyObject *);
 

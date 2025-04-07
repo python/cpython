@@ -1,3 +1,0 @@
-Add the exception as the third argument to ``PY_UNIND`` callbacks in
-``sys.monitoring``. This makes the ``PY_UNWIND`` callback consistent with
-the other exception hanlding callbacks.

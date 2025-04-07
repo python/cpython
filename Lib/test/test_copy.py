@@ -371,6 +371,7 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x, y)
         self.assertIsNot(x[0], y[0])
 
+    @support.skip_emscripten_stack_overflow()
     def test_deepcopy_reflexive_list(self):
         x = []
         x.append(x)
@@ -398,6 +399,7 @@ class TestCopy(unittest.TestCase):
         y = copy.deepcopy(x)
         self.assertIs(x, y)
 
+    @support.skip_emscripten_stack_overflow()
     def test_deepcopy_reflexive_tuple(self):
         x = ([],)
         x[0].append(x)
@@ -415,6 +417,7 @@ class TestCopy(unittest.TestCase):
         self.assertIsNot(x, y)
         self.assertIsNot(x["foo"], y["foo"])
 
+    @support.skip_emscripten_stack_overflow()
     def test_deepcopy_reflexive_dict(self):
         x = {}
         x['foo'] = x
@@ -936,14 +939,24 @@ class TestReplace(unittest.TestCase):
 
     def test_namedtuple(self):
         from collections import namedtuple
-        Point = namedtuple('Point', 'x y', defaults=(0,))
-        p = Point(11, 22)
-        self.assertEqual(copy.replace(p), (11, 22))
-        self.assertEqual(copy.replace(p, x=1), (1, 22))
-        self.assertEqual(copy.replace(p, y=2), (11, 2))
-        self.assertEqual(copy.replace(p, x=1, y=2), (1, 2))
-        with self.assertRaisesRegex(ValueError, 'unexpected field name'):
-            copy.replace(p, x=1, error=2)
+        from typing import NamedTuple
+        PointFromCall = namedtuple('Point', 'x y', defaults=(0,))
+        class PointFromInheritance(PointFromCall):
+            pass
+        class PointFromClass(NamedTuple):
+            x: int
+            y: int = 0
+        for Point in (PointFromCall, PointFromInheritance, PointFromClass):
+            with self.subTest(Point=Point):
+                p = Point(11, 22)
+                self.assertIsInstance(p, Point)
+                self.assertEqual(copy.replace(p), (11, 22))
+                self.assertIsInstance(copy.replace(p), Point)
+                self.assertEqual(copy.replace(p, x=1), (1, 22))
+                self.assertEqual(copy.replace(p, y=2), (11, 2))
+                self.assertEqual(copy.replace(p, x=1, y=2), (1, 2))
+                with self.assertRaisesRegex(TypeError, 'unexpected field name'):
+                    copy.replace(p, x=1, error=2)
 
     def test_dataclass(self):
         from dataclasses import dataclass
@@ -961,6 +974,10 @@ class TestReplace(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'unexpected keyword argument'):
             copy.replace(c, x=1, error=2)
 
+
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        support.check__all__(self, copy, not_exported={"dispatch_table", "error"})
 
 def global_foo(x, y): return x+y
 

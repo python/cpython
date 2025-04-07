@@ -1,2 +1,0 @@
-Document behavior of :func:`shutil.disk_usage` for non-mounted filesystems
-on Unix.
