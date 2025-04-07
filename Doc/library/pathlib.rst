@@ -93,6 +93,128 @@ Opening a file::
    '#!/bin/bash\n'
 
 
+Summary
+-------
+
+======================================================================================================  ==================
+**Pure path classes**
+--------------------------------------------------------------------------------------------------------------------------
+:class:`PurePath() <PurePath>`                                                                          Represents the system's path flavour
+:class:`PurePosixPath() <PurePosixPath>`                                                                Represents non-Windows filesystem paths
+:class:`PureWindowsPath() <PureWindowsPath>`                                                            Represents Windows filesystem paths
+
+**PurePath attributes**
+--------------------------------------------------------------------------------------------------------------------------
+:attr:`parts <PurePath.parts>`                                                                          Tuple of the path's various components
+:attr:`parser <PurePath.parser>`                                                                        Implementation of the :mod:`os.path` module used for low-level path operations
+:attr:`drive <PurePath.drive>`                                                                          Drive letter or name
+:attr:`root <PurePath.root>`                                                                            Root part
+:attr:`anchor <PurePath.anchor>`                                                                        Concatenation of the drive and root
+:attr:`parents <PurePath.parents>`                                                                      Logical ancestors of the path
+:attr:`parent <PurePath.parent>`                                                                        Logical parent of the path
+:attr:`name <PurePath.name>`                                                                            Final path component
+:attr:`suffix <PurePath.suffix>`                                                                        Last dot-separated portion of the final component
+:attr:`suffixes <PurePath.suffixes>`                                                                    List of the path's suffixes
+:attr:`stem <PurePath.stem>`                                                                            Final path component without its suffix
+
+**PurePath methods**
+--------------------------------------------------------------------------------------------------------------------------
+:meth:`as_posix() <PurePath.as_posix>`                                                                  String representation of the path with forward slashes (``/``)
+:meth:`is_absolute() <PurePath.is_absolute>`                                                            Whether the path is absolute or not
+:meth:`is_relative_to() <PurePath.is_relative_to>`                                                      Whether the path is relative to the *other* path
+:meth:`is_reserved() <PurePath.is_reserved>`                                                            Whether the path is considered reserved under Windows (deprecated)
+:meth:`joinpath() <PurePath.joinpath>`                                                                  Combine the path with each of the given *pathsegments*
+:meth:`full_match() <PurePath.full_match>`                                                              Match against the provided glob-style pattern
+:meth:`match() <PurePath.match>`                                                                        Match against the provided non-recursive glob-style pattern
+:meth:`relative_to() <PurePath.relative_to>`                                                            Version of this path relative to the *other* path
+:meth:`with_name() <PurePath.with_name>`                                                                New path with the :attr:`PurePath.name` changed
+:meth:`with_stem() <PurePath.with_stem>`                                                                New path with the :attr:`PurePath.stem` changed
+:meth:`with_suffix() <PurePath.with_suffix>`                                                            New path with the :attr:`PurePath.suffix` changed
+:meth:`with_segments() <PurePath.with_segments>`                                                        New path by combining the given *pathsegments*
+
+**Concrete path classes**
+--------------------------------------------------------------------------------------------------------------------------
+:class:`Path() <Path>`                                                                                  Represents concrete paths of the system's path flavour
+:class:`PosixPath() <PosixPath>`                                                                        Represents concrete non-Windows filesystem paths
+:class:`WindowsPath() <WindowsPath>`                                                                    Represents concrete Windows filesystem paths
+
+**Parsing and generating URIs**
+--------------------------------------------------------------------------------------------------------------------------
+:meth:`from_uri() <Path.from_uri>`                                                                      New path from parsing a 'file' URI
+:meth:`as_uri() <Path.as_uri>`                                                                          Represent the path as a 'file' URI
+
+**Expanding and resolving paths**
+--------------------------------------------------------------------------------------------------------------------------
+:meth:`home() <Path.home>`                                                                              New path representing the user's home directory
+:meth:`expanduser() <Path.expanduser>`                                                                  New path with expanded ``~`` and ``~user`` constructs
+:meth:`cwd() <Path.cwd>`                                                                                New path representing the current directory
+:meth:`absolute() <Path.absolute>`                                                                      Make the path absolute, without normalization or resolving symlinks
+:meth:`resolve() <Path.resolve>`                                                                        Make the path absolute, resolving any symlinks
+:meth:`readlink() <Path.readlink>`                                                                      Path to which the symbolic link points
+
+**Querying file type and status**
+--------------------------------------------------------------------------------------------------------------------------
+:meth:`stat() <Path.stat>`                                                                              :class:`os.stat_result` object containing information about this path
+:meth:`lstat() <Path.lstat>`                                                                            Like :meth:`Path.stat`, but return the symbolic link's information rather than its target's
+:meth:`exists() <Path.exists>`                                                                          Is this an existing file or directory
+:meth:`is_file() <Path.is_file>`                                                                        Is this a regular file
+:meth:`is_dir() <Path.is_dir>`                                                                          Is this a directory
+:meth:`is_symlink() <Path.is_symlink>`                                                                  Is this a symbolic link
+:meth:`is_junction() <Path.is_junction>`                                                                Is this a junction
+:meth:`is_mount() <Path.is_mount>`                                                                      Is this a mount point
+:meth:`is_socket() <Path.is_socket>`                                                                    Is this a Unix socket
+:meth:`is_fifo() <Path.is_fifo>`                                                                        Is this a FIFO
+:meth:`is_block_device() <Path.is_block_device>`                                                        Is this a block device
+:meth:`is_char_device() <Path.is_char_device>`                                                          Is this a character device
+:meth:`samefile() <Path.samefile>`                                                                      Is this the same file as another
+
+**Reading and writing files**
+--------------------------------------------------------------------------------------------------------------------------
+:meth:`open() <Path.open>`                                                                              Open the file pointed to by the path
+:meth:`read_text() <Path.read_text>`                                                                    Read the file as a string
+:meth:`read_bytes() <Path.read_bytes>`                                                                  Read the file as a bytes object
+:meth:`write_text() <Path.write_text>`                                                                  Write to the file as text
+:meth:`write_bytes() <Path.write_bytes>`                                                                Write to the file as bytes
+
+**Reading directories**
+--------------------------------------------------------------------------------------------------------------------------
+:meth:`iterdir() <Path.iterdir>`                                                                        Yield path objects of the directory contents
+:meth:`scandir() <Path.scandir>`                                                                        Iterator of :class:`os.DirEntry` objects corresponding to entries in the directory
+:meth:`glob() <Path.glob>`                                                                              Glob a pattern in the directory, yielding all matching files
+:meth:`rglob() <Path.rglob>`                                                                            Glob a pattern recursively
+:meth:`walk() <Path.walk>`                                                                              Generate the file names by walking the directory tree
+
+**Creating files and directories**
+--------------------------------------------------------------------------------------------------------------------------
+:meth:`touch() <Path.touch>`                                                                            Create a file at this given path
+:meth:`mkdir() <Path.mkdir>`                                                                            Create a new directory at this given path
+:meth:`symlink_to() <Path.symlink_to>`                                                                  Make this path a symbolic link to another file
+:meth:`hardlink_to() <Path.hardlink_to>`                                                                Make this path a hard link to another file
+
+**Copying, moving and deleting**
+--------------------------------------------------------------------------------------------------------------------------
+:meth:`copy() <Path.copy>`                                                                              Copy this file or directory tree to the given *target*
+:meth:`copy_into() <Path.copy_into>`                                                                    Copy this file or directory tree into the given *target_dir*
+:meth:`rename() <Path.rename>`                                                                          Rename this file or directory to the given *target*
+:meth:`replace() <Path.replace>`                                                                        Rename this file or directory to the given *target*, unconditionally replacing an existing file or empty directory
+:meth:`move() <Path.move>`                                                                              Move this file or directory tree to the given *target*
+:meth:`move_into() <Path.move_into>`                                                                    Move this file or directory tree into the given *target_dir*
+:meth:`unlink() <Path.unlink>`                                                                          Remove this file or symbolic link
+:meth:`rmdir() <Path.rmdir>`                                                                            Remove this empty directory
+
+**Permissions and ownership**
+--------------------------------------------------------------------------------------------------------------------------
+:meth:`owner() <Path.owner>`                                                                            Return the name of the user owning the file
+:meth:`group() <Path.group>`                                                                            Return the name of the group owning the file
+:meth:`chmod() <Path.chmod>`                                                                            Change the file mode and permissions
+:meth:`lchmod() <Path.lchmod>`                                                                          Change the file mode and permissions, but the symbolic link's mode is changed rather than its target's
+
+**Exceptions**
+--------------------------------------------------------------------------------------------------------------------------
+:exc:`UnsupportedOperation`                                                                             Raised when an unsupported operation is called on a path object
+
+======================================================================================================  ==================
+
 Exceptions
 ----------
 
