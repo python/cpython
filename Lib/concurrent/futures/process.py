@@ -346,32 +346,16 @@ class _ExecutorManagerThread(threading.Thread):
                 self.terminate_broken(cause)
                 return
             if result_item is not None:
-                exit_pid = result_item.exit_pid
-                work_id = result_item.work_id
-                exception = result_item.exception
-                result = result_item.result
-                del result_item
-                # Process the received a result_item. This can be either the PID of a
-                # worker that exited gracefully or a _ResultItem
+                self.process_result_item(result_item)
 
-                # Received a _ResultItem so mark the future as completed.
-                work_item = self.pending_work_items.pop(work_id, None)
-                # work_item can be None if another process terminated (see above)
-                if work_item is not None:
-                    f_boxed = [work_item.future]
-                    del work_item
-                    if exception:
-                        f_boxed.pop().set_exception(exception)
-                    else:
-                        f_boxed.pop().set_result(result)
-
-                # Delete reference to exception/result to avoid keeping references
-                # while waiting on new results.
-                del exception, result
-
-                process_exited = exit_pid is not None
+                process_exited = result_item.exit_pid is not None
                 if process_exited:
-                    self.processes.pop(exit_pid).join()
+                    p = self.processes.pop(result_item.exit_pid)
+                    p.join()
+
+                # Delete reference to result_item to avoid keeping references
+                # while waiting on new results.
+                del result_item
 
                 if executor := self.executor_reference():
                     if process_exited:
@@ -408,18 +392,15 @@ class _ExecutorManagerThread(threading.Thread):
             else:
                 work_item = self.pending_work_items[work_id]
 
-                try:
-                    if work_item.future.set_running_or_notify_cancel():
-                        self.call_queue.put(_CallItem(work_id,
-                                                      work_item.fn,
-                                                      work_item.args,
-                                                      work_item.kwargs),
-                                            block=True)
-                    else:
-                        del self.pending_work_items[work_id]
-                        continue
-                finally:
-                    del work_item
+                if work_item.future.set_running_or_notify_cancel():
+                    self.call_queue.put(_CallItem(work_id,
+                                                  work_item.fn,
+                                                  work_item.args,
+                                                  work_item.kwargs),
+                                        block=True)
+                else:
+                    del self.pending_work_items[work_id]
+                    continue
 
     def wait_result_broken_or_wakeup(self):
         # Wait for a result to be ready in the result_queue while checking
@@ -450,6 +431,19 @@ class _ExecutorManagerThread(threading.Thread):
         self.thread_wakeup.clear()
 
         return result_item, is_broken, cause
+
+    def process_result_item(self, result_item):
+        # Process the received a result_item. This can be either the PID of a
+        # worker that exited gracefully or a _ResultItem
+
+        # Received a _ResultItem so mark the future as completed.
+        work_item = self.pending_work_items.pop(result_item.work_id, None)
+        # work_item can be None if another process terminated (see above)
+        if work_item is not None:
+            if result_item.exception:
+                work_item.future.set_exception(result_item.exception)
+            else:
+                work_item.future.set_result(result_item.result)
 
     def is_shutting_down(self):
         # Check whether we should start shutting down the executor.
