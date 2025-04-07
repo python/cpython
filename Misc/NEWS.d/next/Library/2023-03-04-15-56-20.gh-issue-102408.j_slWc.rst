@@ -1,0 +1,2 @@
+Increase verbosity of :class:`NotImplementedError` raised by
+:meth:`zipfile._check_compression`. Patch by Drew McArthur.
