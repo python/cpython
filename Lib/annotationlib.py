@@ -740,7 +740,7 @@ def get_annotations(
             raise ValueError(f"Unsupported format {format!r}")
 
     if ann is None:
-        if isinstance(obj, type):
+        if isinstance(obj, type) or callable(obj):
             return {}
         raise TypeError(f"{obj!r} does not have annotations")
 

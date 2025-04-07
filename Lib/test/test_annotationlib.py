@@ -910,6 +910,10 @@ class TestGetAnnotations(unittest.TestCase):
         class CustomClass:
             pass
 
+        class MyCallable:
+            def __call__(self):
+                pass
+
         for format in Format:
             if format == Format.VALUE_WITH_FAKE_GLOBALS:
                 continue
@@ -917,6 +921,13 @@ class TestGetAnnotations(unittest.TestCase):
                 with self.subTest(format=format, obj=obj):
                     with self.assertRaises(TypeError):
                         annotationlib.get_annotations(obj, format=format)
+
+            # Callables and types with no annotations return an empty dict
+            for obj in (int, len, MyCallable()):
+                with self.subTest(format=format, obj=obj):
+                    self.assertEqual(
+                        annotationlib.get_annotations(obj, format=format), {}
+                    )
 
     def test_pep695_generic_class_with_future_annotations(self):
         ann_module695 = inspect_stringized_annotations_pep695
