@@ -2632,6 +2632,9 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`PyObject *` datatype.  Calling this without an
    argument creates a ``NULL`` :c:expr:`PyObject *` pointer.
 
+   .. versionchanged:: next
+      :class:`!py_object` is now a :term:`generic type`.
+
 The :mod:`!ctypes.wintypes` module provides quite some other Windows specific
 data types, for example :c:type:`!HWND`, :c:type:`!WPARAM`, or :c:type:`!DWORD`.
 Some useful structures like :c:type:`!MSG` or :c:type:`!RECT` are also defined.

@@ -163,7 +163,7 @@ dummy_func(
         op(_CHECK_PERIODIC_IF_NOT_YIELD_FROM, (--)) {
             if ((oparg & RESUME_OPARG_LOCATION_MASK) < RESUME_AFTER_YIELD_FROM) {
                 _Py_CHECK_EMSCRIPTEN_SIGNALS_PERIODICALLY();
-                QSBR_QUIESCENT_STATE(tstate); \
+                QSBR_QUIESCENT_STATE(tstate);
                 if (_Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker) & _PY_EVAL_EVENTS_MASK) {
                     int err = _Py_HandlePending(tstate);
                     ERROR_IF(err != 0, error);
@@ -204,7 +204,7 @@ dummy_func(
                 ptrdiff_t off = this_instr - _PyFrame_GetBytecode(frame);
                 frame->tlbc_index = ((_PyThreadStateImpl *)tstate)->tlbc_index;
                 frame->instr_ptr = bytecode + off;
-                // Make sure this_instr gets reset correctley for any uops that
+                // Make sure this_instr gets reset correctly for any uops that
                 // follow
                 next_instr = frame->instr_ptr;
                 DISPATCH();
@@ -1111,7 +1111,7 @@ dummy_func(
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
-            SYNC_SP(); /* Not strictly necessary, but prevents warnings */
+            LLTRACE_RESUME_FRAME();
             return result;
         }
 
@@ -1123,7 +1123,7 @@ dummy_func(
             _PyStackRef temp = PyStackRef_MakeHeapSafe(retval);
             DEAD(retval);
             SAVE_STACK();
-            assert(EMPTY());
+            assert(STACK_LEVEL() == 0);
             _Py_LeaveRecursiveCallPy(tstate);
             // GH-99729: We need to unlink the frame *before* clearing it:
             _PyInterpreterFrame *dying = frame;
@@ -1223,8 +1223,9 @@ dummy_func(
             {
                 PyGenObject *gen = (PyGenObject *)receiver_o;
                 _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
-                STACK_SHRINK(1);
                 _PyFrame_StackPush(gen_frame, PyStackRef_MakeHeapSafe(v));
+                DEAD(v);
+                SYNC_SP();
                 gen->gi_frame_state = FRAME_EXECUTING;
                 gen->gi_exc_state.previous_item = tstate->exc_info;
                 tstate->exc_info = &gen->gi_exc_state;
@@ -2245,7 +2246,8 @@ dummy_func(
             PyObject *attr_o = FT_ATOMIC_LOAD_PTR_ACQUIRE(*value_ptr);
             DEOPT_IF(attr_o == NULL);
             #ifdef Py_GIL_DISABLED
-            if (!_Py_TryIncrefCompareStackRef(value_ptr, attr_o, &attr)) {
+            int increfed = _Py_TryIncrefCompareStackRef(value_ptr, attr_o, &attr);
+            if (!increfed) {
                 DEOPT_IF(true);
             }
             #else
@@ -2322,7 +2324,8 @@ dummy_func(
             }
             STAT_INC(LOAD_ATTR, hit);
 #ifdef Py_GIL_DISABLED
-            if (!_Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr)) {
+            int increfed = _Py_TryIncrefCompareStackRef(&ep->me_value, attr_o, &attr);
+            if (!increfed) {
                 DEOPT_IF(true);
             }
 #else
@@ -2434,10 +2437,10 @@ dummy_func(
             PyObject *name = GETITEM(FRAME_CO_NAMES, oparg >> 1);
             _PyInterpreterFrame *new_frame = _PyFrame_PushUnchecked(
                 tstate, PyStackRef_FromPyObjectNew(f), 2, frame);
-            // Manipulate stack directly because we exit with DISPATCH_INLINED().
-            STACK_SHRINK(1);
             new_frame->localsplus[0] = owner;
             DEAD(owner);
+            // Manipulate stack directly because we exit with DISPATCH_INLINED().
+            SYNC_SP();
             new_frame->localsplus[1] = PyStackRef_FromPyObjectNew(name);
             frame->return_offset = INSTRUCTION_SIZE;
             DISPATCH_INLINED(new_frame);
@@ -3081,12 +3084,11 @@ dummy_func(
         macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
 
 
-        inst(INSTRUMENTED_FOR_ITER, (unused/1 -- )) {
-            _PyStackRef iter_stackref = TOP();
-            PyObject *iter = PyStackRef_AsPyObjectBorrow(iter_stackref);
-            PyObject *next = (*Py_TYPE(iter)->tp_iternext)(iter);
-            if (next != NULL) {
-                PUSH(PyStackRef_FromPyObjectSteal(next));
+        inst(INSTRUMENTED_FOR_ITER, (unused/1, iter -- iter, next)) {
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+            PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
+            if (next_o != NULL) {
+                next = PyStackRef_FromPyObjectSteal(next_o);
                 INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
             }
             else {
@@ -3103,6 +3105,7 @@ dummy_func(
                        next_instr[oparg].op.code == INSTRUMENTED_END_FOR);
                 /* Skip END_FOR */
                 JUMPBY(oparg + 1);
+                DISPATCH();
             }
         }
 
@@ -4020,7 +4023,6 @@ dummy_func(
             _PUSH_FRAME;
 
         inst(EXIT_INIT_CHECK, (should_be_none -- )) {
-            assert(STACK_LEVEL() == 2);
             if (!PyStackRef_IsNone(should_be_none)) {
                 PyErr_Format(PyExc_TypeError,
                     "__init__() should return None, not '%.200s'",
@@ -4233,7 +4235,7 @@ dummy_func(
 
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable_o != interp->callable_cache.list_append);
-            assert(self_o != NULL);
+            DEOPT_IF(self_o == NULL);
             DEOPT_IF(!PyList_Check(self_o));
             DEOPT_IF(!LOCK_OBJECT(self_o));
             STAT_INC(CALL, hit);
@@ -4815,7 +4817,7 @@ dummy_func(
             PyFunctionObject *func = (PyFunctionObject *)PyStackRef_AsPyObjectBorrow(frame->f_funcobj);
             PyGenObject *gen = (PyGenObject *)_Py_MakeCoro(func);
             ERROR_IF(gen == NULL, error);
-            assert(EMPTY());
+            assert(STACK_LEVEL() == 0);
             SAVE_STACK();
             _PyInterpreterFrame *gen_frame = &gen->gi_iframe;
             frame->instr_ptr++;
@@ -4934,6 +4936,7 @@ dummy_func(
                 }
                 next_instr = frame->instr_ptr;
                 if (next_instr != this_instr) {
+                    SYNC_SP();
                     DISPATCH();
                 }
             }
@@ -4978,45 +4981,47 @@ dummy_func(
             _CHECK_PERIODIC +
             _MONITOR_JUMP_BACKWARD;
 
-        inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1 -- )) {
-            _PyStackRef cond = POP();
+        inst(INSTRUMENTED_POP_JUMP_IF_TRUE, (unused/1, cond -- )) {
             assert(PyStackRef_BoolCheck(cond));
             int jump = PyStackRef_IsTrue(cond);
+            DEAD(cond);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, jump);
             if (jump) {
                 INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_RIGHT);
             }
         }
 
-        inst(INSTRUMENTED_POP_JUMP_IF_FALSE, (unused/1 -- )) {
-            _PyStackRef cond = POP();
+        inst(INSTRUMENTED_POP_JUMP_IF_FALSE, (unused/1, cond -- )) {
             assert(PyStackRef_BoolCheck(cond));
             int jump = PyStackRef_IsFalse(cond);
+            DEAD(cond);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, jump);
             if (jump) {
                 INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_RIGHT);
             }
         }
 
-        inst(INSTRUMENTED_POP_JUMP_IF_NONE, (unused/1 -- )) {
-            _PyStackRef value_stackref = POP();
-            int jump = PyStackRef_IsNone(value_stackref);
+        inst(INSTRUMENTED_POP_JUMP_IF_NONE, (unused/1, value -- )) {
+            int jump = PyStackRef_IsNone(value);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, jump);
             if (jump) {
+                DEAD(value);
                 INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_RIGHT);
             }
             else {
-                PyStackRef_CLOSE(value_stackref);
+                PyStackRef_CLOSE(value);
             }
         }
 
-        inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE, (unused/1 -- )) {
-            _PyStackRef value_stackref = POP();
-            int jump = !PyStackRef_IsNone(value_stackref);
+        inst(INSTRUMENTED_POP_JUMP_IF_NOT_NONE, (unused/1, value -- )) {
+            int jump = !PyStackRef_IsNone(value);
             RECORD_BRANCH_TAKEN(this_instr[1].cache, jump);
             if (jump) {
-                PyStackRef_CLOSE(value_stackref);
+                PyStackRef_CLOSE(value);
                 INSTRUMENTED_JUMP(this_instr, next_instr + oparg, PY_MONITORING_EVENT_BRANCH_RIGHT);
+            }
+            else {
+                DEAD(value);
             }
         }
 
@@ -5221,22 +5226,26 @@ dummy_func(
         }
 
         label(pop_4_error) {
-            STACK_SHRINK(4);
+            stack_pointer -= 4;
+            assert(WITHIN_STACK_BOUNDS());
             goto error;
         }
 
         label(pop_3_error) {
-            STACK_SHRINK(3);
+            stack_pointer -= 3;
+            assert(WITHIN_STACK_BOUNDS());
             goto error;
         }
 
         label(pop_2_error) {
-            STACK_SHRINK(2);
+            stack_pointer -= 2;
+            assert(WITHIN_STACK_BOUNDS());
             goto error;
         }
 
         label(pop_1_error) {
-            STACK_SHRINK(1);
+            stack_pointer -= 1;
+            assert(WITHIN_STACK_BOUNDS());
             goto error;
         }
 
