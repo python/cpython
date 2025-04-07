@@ -5,11 +5,11 @@
 # https://git-scm.com/docs/gitignore#_pattern_format
 
 # GitHub
-.github/**                    @ezio-melotti @hugovk
+.github/**                    @ezio-melotti @hugovk @AA-Turner
 
 # pre-commit
 .pre-commit-config.yaml       @hugovk @AlexWaygood
-.ruff.toml                    @hugovk @AlexWaygood
+.ruff.toml                    @hugovk @AlexWaygood @AA-Turner
 
 # Build system
 configure*                    @erlend-aasland @corona10
@@ -56,6 +56,14 @@ Tools/c-analyzer/             @ericsnowcurrently
 # dbm
 **/*dbm*                      @corona10 @erlend-aasland @serhiy-storchaka
 
+# Doc/ tools
+Doc/conf.py                   @AA-Turner @hugovk
+Doc/Makefile                  @AA-Turner @hugovk
+Doc/make.bat                  @AA-Turner @hugovk
+Doc/requirements.txt          @AA-Turner @hugovk
+Doc/_static/**                @AA-Turner @hugovk
+Doc/tools/**                  @AA-Turner @hugovk
+
 # runtime state/lifecycle
 **/*pylifecycle*              @ericsnowcurrently
 **/*pystate*                  @ericsnowcurrently
@@ -96,13 +104,15 @@ Doc/library/site.rst          @FFY00
 Lib/test/test_except*.py      @iritkatriel
 Objects/exceptions.c          @iritkatriel
 
-# Hashing
-**/*hashlib*                  @gpshead @tiran
+# Hashing & cryptographic primitives
+**/*hashlib*                  @gpshead @tiran @picnixz
+**/*hashopenssl*              @gpshead @tiran @picnixz
 **/*pyhash*                   @gpshead @tiran
-**/sha*                       @gpshead @tiran
-Modules/md5*                  @gpshead @tiran
-**/*blake*                    @gpshead @tiran
+**/sha*                       @gpshead @tiran @picnixz
+Modules/md5*                  @gpshead @tiran @picnixz
+**/*blake*                    @gpshead @tiran @picnixz
 Modules/_hacl/**              @gpshead
+**/*hmac*                     @gpshead @picnixz
 
 # logging
 **/*logging*                  @vsajip
@@ -292,6 +302,10 @@ Lib/configparser.py           @jaraco
 Lib/test/test_configparser.py @jaraco
 
 # Doc sections
-Doc/reference/                @willingc
+Doc/reference/                @willingc @AA-Turner
 
 **/*weakref*                  @kumaraditya303
+
+# Colorize
+Lib/_colorize.py              @hugovk
+Lib/test/test__colorize.py    @hugovk

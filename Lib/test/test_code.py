@@ -215,6 +215,8 @@ from test.support.script_helper import assert_python_ok
 from test.support import threading_helper, import_helper
 from test.support.bytecode_helper import instructions_with_positions
 from opcode import opmap, opname
+from _testcapi import code_offset_to_line
+
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
 
@@ -427,14 +429,14 @@ class CodeTest(unittest.TestCase):
         def foo():
             pass
 
-        # assert that opcode 229 is invalid
-        self.assertEqual(opname[229], '<229>')
+        # assert that opcode 135 is invalid
+        self.assertEqual(opname[135], '<135>')
 
-        # change first opcode to 0xeb (=229)
+        # change first opcode to 0x87 (=135)
         foo.__code__ = foo.__code__.replace(
-            co_code=b'\xe5' + foo.__code__.co_code[1:])
+            co_code=b'\x87' + foo.__code__.co_code[1:])
 
-        msg = "unknown opcode 229"
+        msg = "unknown opcode 135"
         with self.assertRaisesRegex(SystemError, msg):
             foo()
 
@@ -895,6 +897,44 @@ class CodeLocationTest(unittest.TestCase):
             ''')
 
         rc, out, err = assert_python_ok('-OO', '-c', code)
+
+    def test_co_branches(self):
+
+        def get_line_branches(func):
+            code = func.__code__
+            base = code.co_firstlineno
+            return [
+                (
+                    code_offset_to_line(code, src) - base,
+                    code_offset_to_line(code, left) - base,
+                    code_offset_to_line(code, right) - base
+                ) for (src, left, right) in
+                code.co_branches()
+            ]
+
+        def simple(x):
+            if x:
+                A
+            else:
+                B
+
+        self.assertEqual(
+            get_line_branches(simple),
+            [(1,2,4)])
+
+        def with_extended_args(x):
+            if x:
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+                A.x; A.x; A.x; A.x; A.x; A.x;
+            else:
+                B
+
+        self.assertEqual(
+            get_line_branches(with_extended_args),
+            [(1,2,8)])
 
 if check_impl_detail(cpython=True) and ctypes is not None:
     py = ctypes.pythonapi

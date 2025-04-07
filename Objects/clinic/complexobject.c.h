@@ -21,9 +21,9 @@ static PyObject *
 complex_conjugate_impl(PyComplexObject *self);
 
 static PyObject *
-complex_conjugate(PyComplexObject *self, PyObject *Py_UNUSED(ignored))
+complex_conjugate(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return complex_conjugate_impl(self);
+    return complex_conjugate_impl((PyComplexObject *)self);
 }
 
 PyDoc_STRVAR(complex___getnewargs____doc__,
@@ -38,9 +38,9 @@ static PyObject *
 complex___getnewargs___impl(PyComplexObject *self);
 
 static PyObject *
-complex___getnewargs__(PyComplexObject *self, PyObject *Py_UNUSED(ignored))
+complex___getnewargs__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return complex___getnewargs___impl(self);
+    return complex___getnewargs___impl((PyComplexObject *)self);
 }
 
 PyDoc_STRVAR(complex___format____doc__,
@@ -56,7 +56,7 @@ static PyObject *
 complex___format___impl(PyComplexObject *self, PyObject *format_spec);
 
 static PyObject *
-complex___format__(PyComplexObject *self, PyObject *arg)
+complex___format__(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *format_spec;
@@ -66,7 +66,7 @@ complex___format__(PyComplexObject *self, PyObject *arg)
         goto exit;
     }
     format_spec = arg;
-    return_value = complex___format___impl(self, format_spec);
+    return_value = complex___format___impl((PyComplexObject *)self, format_spec);
 
 exit:
     return return_value;
@@ -85,9 +85,9 @@ static PyObject *
 complex___complex___impl(PyComplexObject *self);
 
 static PyObject *
-complex___complex__(PyComplexObject *self, PyObject *Py_UNUSED(ignored))
+complex___complex__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return complex___complex___impl(self);
+    return complex___complex___impl((PyComplexObject *)self);
 }
 
 PyDoc_STRVAR(complex_new__doc__,
@@ -170,4 +170,4 @@ PyDoc_STRVAR(complex_from_number__doc__,
 
 #define COMPLEX_FROM_NUMBER_METHODDEF    \
     {"from_number", (PyCFunction)complex_from_number, METH_O|METH_CLASS, complex_from_number__doc__},
-/*[clinic end generated code: output=8c49a41c5a7f0aee input=a9049054013a1b77]*/
+/*[clinic end generated code: output=252cddef7f9169a0 input=a9049054013a1b77]*/

@@ -59,7 +59,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
             ('JUMP', loop_lbl),
             exit_lbl,
             ('END_FOR', None),
-            ('POP_TOP', None),
+            ('POP_ITER', None),
             ('LOAD_CONST', 0),
             ('RETURN_VALUE', None),
         ]

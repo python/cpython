@@ -3976,7 +3976,7 @@ test_preprocessor_guarded_if_with_continuation_impl(PyObject *module)
 /*[clinic end generated code: output=3d0712ca9e2d15b9 input=4a956fd91be30284]*/
 #endif
 
-#if CONDITION_E || CONDITION_F
+#if CONDITION_E || CONDITION_F
 #warning "different type of CPP directive"
 /*[clinic input]
 test_preprocessor_guarded_if_e_or_f
@@ -4758,7 +4758,7 @@ static PyObject *
 Test_cls_with_param_impl(TestObj *self, PyTypeObject *cls, int a);
 
 static PyObject *
-Test_cls_with_param(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+Test_cls_with_param(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -4798,7 +4798,7 @@ Test_cls_with_param(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_
     if (a == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = Test_cls_with_param_impl(self, cls, a);
+    return_value = Test_cls_with_param_impl((TestObj *)self, cls, a);
 
 exit:
     return return_value;
@@ -4806,7 +4806,7 @@ exit:
 
 static PyObject *
 Test_cls_with_param_impl(TestObj *self, PyTypeObject *cls, int a)
-/*[clinic end generated code: output=83a391eea66d08f8 input=af158077bd237ef9]*/
+/*[clinic end generated code: output=7e893134a81fef92 input=af158077bd237ef9]*/
 
 
 /*[clinic input]
@@ -4908,18 +4908,18 @@ static PyObject *
 Test_cls_no_params_impl(TestObj *self, PyTypeObject *cls);
 
 static PyObject *
-Test_cls_no_params(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+Test_cls_no_params(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "cls_no_params() takes no arguments");
         return NULL;
     }
-    return Test_cls_no_params_impl(self, cls);
+    return Test_cls_no_params_impl((TestObj *)self, cls);
 }
 
 static PyObject *
 Test_cls_no_params_impl(TestObj *self, PyTypeObject *cls)
-/*[clinic end generated code: output=4d68b4652c144af3 input=e7e2e4e344e96a11]*/
+/*[clinic end generated code: output=8845de054449f40a input=e7e2e4e344e96a11]*/
 
 
 /*[clinic input]
@@ -4945,7 +4945,7 @@ Test_metho_not_default_return_converter(TestObj *self, PyObject *a)
     PyObject *return_value = NULL;
     int _return_value;
 
-    _return_value = Test_metho_not_default_return_converter_impl(self, a);
+    _return_value = Test_metho_not_default_return_converter_impl((TestObj *)self, a);
     if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
     }
@@ -4957,7 +4957,7 @@ exit:
 
 static int
 Test_metho_not_default_return_converter_impl(TestObj *self, PyObject *a)
-/*[clinic end generated code: output=3350de11bd538007 input=428657129b521177]*/
+/*[clinic end generated code: output=b2cce75a7af2e6ce input=428657129b521177]*/
 
 
 /*[clinic input]
@@ -4983,7 +4983,7 @@ static PyObject *
 Test_an_metho_arg_named_arg_impl(TestObj *self, int arg);
 
 static PyObject *
-Test_an_metho_arg_named_arg(TestObj *self, PyObject *arg_)
+Test_an_metho_arg_named_arg(PyObject *self, PyObject *arg_)
 {
     PyObject *return_value = NULL;
     int arg;
@@ -4992,7 +4992,7 @@ Test_an_metho_arg_named_arg(TestObj *self, PyObject *arg_)
     if (arg == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = Test_an_metho_arg_named_arg_impl(self, arg);
+    return_value = Test_an_metho_arg_named_arg_impl((TestObj *)self, arg);
 
 exit:
     return return_value;
@@ -5000,7 +5000,7 @@ exit:
 
 static PyObject *
 Test_an_metho_arg_named_arg_impl(TestObj *self, int arg)
-/*[clinic end generated code: output=9f04de4a62287e28 input=2a53a57cf5624f95]*/
+/*[clinic end generated code: output=38554f09950d07e7 input=2a53a57cf5624f95]*/
 
 
 /*[clinic input]
@@ -5289,14 +5289,14 @@ static PyObject *
 Test_meth_coexist_impl(TestObj *self);
 
 static PyObject *
-Test_meth_coexist(TestObj *self, PyObject *Py_UNUSED(ignored))
+Test_meth_coexist(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return Test_meth_coexist_impl(self);
+    return Test_meth_coexist_impl((TestObj *)self);
 }
 
 static PyObject *
 Test_meth_coexist_impl(TestObj *self)
-/*[clinic end generated code: output=808a293d0cd27439 input=2a1d75b5e6fec6dd]*/
+/*[clinic end generated code: output=7edf4e95b29f06fa input=2a1d75b5e6fec6dd]*/
 
 /*[clinic input]
 @getter
@@ -5317,14 +5317,14 @@ static PyObject *
 Test_property_get_impl(TestObj *self);
 
 static PyObject *
-Test_property_get(TestObj *self, void *Py_UNUSED(context))
+Test_property_get(PyObject *self, void *Py_UNUSED(context))
 {
-    return Test_property_get_impl(self);
+    return Test_property_get_impl((TestObj *)self);
 }
 
 static PyObject *
 Test_property_get_impl(TestObj *self)
-/*[clinic end generated code: output=7cadd0f539805266 input=2d92b3449fbc7d2b]*/
+/*[clinic end generated code: output=b38d68abd3466a6e input=2d92b3449fbc7d2b]*/
 
 /*[clinic input]
 @setter
@@ -5345,18 +5345,87 @@ static int
 Test_property_set_impl(TestObj *self, PyObject *value);
 
 static int
-Test_property_set(TestObj *self, PyObject *value, void *Py_UNUSED(context))
+Test_property_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 {
     int return_value;
 
-    return_value = Test_property_set_impl(self, value);
+    return_value = Test_property_set_impl((TestObj *)self, value);
 
     return return_value;
 }
 
 static int
 Test_property_set_impl(TestObj *self, PyObject *value)
-/*[clinic end generated code: output=e4342fe9bb1d7817 input=3bc3f46a23c83a88]*/
+/*[clinic end generated code: output=49f925ab2a33b637 input=3bc3f46a23c83a88]*/
+
+/*[clinic input]
+@setter
+Test.setter_first_with_docstr
+[clinic start generated code]*/
+
+#if !defined(Test_setter_first_with_docstr_DOCSTR)
+#  define Test_setter_first_with_docstr_DOCSTR NULL
+#endif
+#if defined(TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF)
+#  undef TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF
+#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", (getter)Test_setter_first_with_docstr_get, (setter)Test_setter_first_with_docstr_set, Test_setter_first_with_docstr_DOCSTR},
+#else
+#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", NULL, (setter)Test_setter_first_with_docstr_set, NULL},
+#endif
+
+static int
+Test_setter_first_with_docstr_set_impl(TestObj *self, PyObject *value);
+
+static int
+Test_setter_first_with_docstr_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    return_value = Test_setter_first_with_docstr_set_impl((TestObj *)self, value);
+
+    return return_value;
+}
+
+static int
+Test_setter_first_with_docstr_set_impl(TestObj *self, PyObject *value)
+/*[clinic end generated code: output=5aaf44373c0af545 input=31a045ce11bbe961]*/
+
+/*[clinic input]
+@getter
+Test.setter_first_with_docstr
+
+my silly docstring
+[clinic start generated code]*/
+
+PyDoc_STRVAR(Test_setter_first_with_docstr__doc__,
+"my silly docstring");
+#if defined(Test_setter_first_with_docstr_DOCSTR)
+#   undef Test_setter_first_with_docstr_DOCSTR
+#endif
+#define Test_setter_first_with_docstr_DOCSTR Test_setter_first_with_docstr__doc__
+
+#if !defined(Test_setter_first_with_docstr_DOCSTR)
+#  define Test_setter_first_with_docstr_DOCSTR NULL
+#endif
+#if defined(TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF)
+#  undef TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF
+#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", (getter)Test_setter_first_with_docstr_get, (setter)Test_setter_first_with_docstr_set, Test_setter_first_with_docstr_DOCSTR},
+#else
+#  define TEST_SETTER_FIRST_WITH_DOCSTR_GETSETDEF {"setter_first_with_docstr", (getter)Test_setter_first_with_docstr_get, NULL, Test_setter_first_with_docstr_DOCSTR},
+#endif
+
+static PyObject *
+Test_setter_first_with_docstr_get_impl(TestObj *self);
+
+static PyObject *
+Test_setter_first_with_docstr_get(PyObject *self, void *Py_UNUSED(context))
+{
+    return Test_setter_first_with_docstr_get_impl((TestObj *)self);
+}
+
+static PyObject *
+Test_setter_first_with_docstr_get_impl(TestObj *self)
+/*[clinic end generated code: output=fe6e3aa844a24920 input=10af4e43b3cb34dc]*/
 
 /*[clinic input]
 output push
@@ -5639,7 +5708,7 @@ Test__pyarg_parsestackandkeywords_impl(TestObj *self, PyTypeObject *cls,
                                        Py_ssize_t key_length);
 
 static PyObject *
-Test__pyarg_parsestackandkeywords(TestObj *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+Test__pyarg_parsestackandkeywords(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -5662,7 +5731,7 @@ Test__pyarg_parsestackandkeywords(TestObj *self, PyTypeObject *cls, PyObject *co
         &key, &key_length)) {
         goto exit;
     }
-    return_value = Test__pyarg_parsestackandkeywords_impl(self, cls, key, key_length);
+    return_value = Test__pyarg_parsestackandkeywords_impl((TestObj *)self, cls, key, key_length);
 
 exit:
     return return_value;
@@ -5672,7 +5741,7 @@ static PyObject *
 Test__pyarg_parsestackandkeywords_impl(TestObj *self, PyTypeObject *cls,
                                        const char *key,
                                        Py_ssize_t key_length)
-/*[clinic end generated code: output=4fda8a7f2547137c input=fc72ef4b4cfafabc]*/
+/*[clinic end generated code: output=7060c213d7b8200e input=fc72ef4b4cfafabc]*/
 
 
 /*[clinic input]

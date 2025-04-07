@@ -55,6 +55,8 @@ typedef struct {
     Hacl_Hash_SHA1_state_t *hash_state;
 } SHA1object;
 
+#define _SHA1object_CAST(op)    ((SHA1object *)(op))
+
 #include "clinic/sha1module.c.h"
 
 
@@ -73,7 +75,7 @@ sha1_get_state(PyObject *module)
 static SHA1object *
 newSHA1object(SHA1State *st)
 {
-    SHA1object *sha = (SHA1object *)PyObject_GC_New(SHA1object, st->sha1_type);
+    SHA1object *sha = PyObject_GC_New(SHA1object, st->sha1_type);
     if (sha == NULL) {
         return NULL;
     }
@@ -93,8 +95,9 @@ SHA1_traverse(PyObject *ptr, visitproc visit, void *arg)
 }
 
 static void
-SHA1_dealloc(SHA1object *ptr)
+SHA1_dealloc(PyObject *op)
 {
+    SHA1object *ptr = _SHA1object_CAST(op);
     Hacl_Hash_SHA1_free(ptr->hash_state);
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
@@ -217,36 +220,27 @@ static PyMethodDef SHA1_methods[] = {
 };
 
 static PyObject *
-SHA1_get_block_size(PyObject *self, void *closure)
+SHA1_get_block_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(SHA1_BLOCKSIZE);
 }
 
 static PyObject *
-SHA1_get_name(PyObject *self, void *closure)
+SHA1_get_name(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyUnicode_FromStringAndSize("sha1", 4);
 }
 
 static PyObject *
-sha1_get_digest_size(PyObject *self, void *closure)
+sha1_get_digest_size(PyObject *Py_UNUSED(self), void *Py_UNUSED(closure))
 {
     return PyLong_FromLong(SHA1_DIGESTSIZE);
 }
 
 static PyGetSetDef SHA1_getseters[] = {
-    {"block_size",
-     (getter)SHA1_get_block_size, NULL,
-     NULL,
-     NULL},
-    {"name",
-     (getter)SHA1_get_name, NULL,
-     NULL,
-     NULL},
-    {"digest_size",
-     (getter)sha1_get_digest_size, NULL,
-     NULL,
-     NULL},
+    {"block_size", SHA1_get_block_size, NULL, NULL, NULL},
+    {"name", SHA1_get_name, NULL, NULL, NULL},
+    {"digest_size", sha1_get_digest_size, NULL, NULL, NULL},
     {NULL}  /* Sentinel */
 };
 
@@ -346,7 +340,7 @@ _sha1_clear(PyObject *module)
 static void
 _sha1_free(void *module)
 {
-    _sha1_clear((PyObject *)module);
+    (void)_sha1_clear((PyObject *)module);
 }
 
 static int

@@ -79,9 +79,17 @@ Events
 
 The following events are supported:
 
-.. monitoring-event:: BRANCH
+.. monitoring-event:: BRANCH_LEFT
 
-   A conditional branch is taken (or not).
+   A conditional branch goes left.
+
+   It is up to the tool to determine how to present "left" and "right" branches.
+   There is no guarantee which branch is "left" and which is "right", except
+   that it will be consistent for the duration of the program.
+
+.. monitoring-event:: BRANCH_RIGHT
+
+   A conditional branch goes right.
 
 .. monitoring-event:: CALL
 
@@ -180,8 +188,19 @@ The local events are:
 * :monitoring-event:`LINE`
 * :monitoring-event:`INSTRUCTION`
 * :monitoring-event:`JUMP`
-* :monitoring-event:`BRANCH`
+* :monitoring-event:`BRANCH_LEFT`
+* :monitoring-event:`BRANCH_RIGHT`
 * :monitoring-event:`STOP_ITERATION`
+
+Deprecated event
+''''''''''''''''
+
+* ``BRANCH``
+
+The ``BRANCH`` event is deprecated in 3.14.
+Using :monitoring-event:`BRANCH_LEFT` and :monitoring-event:`BRANCH_RIGHT`
+events will give much better performance as they can be disabled
+independently.
 
 Ancillary events
 ''''''''''''''''
@@ -357,13 +376,11 @@ Different events will provide the callback function with different arguments, as
 
     func(code: CodeType, line_number: int) -> DISABLE | Any
 
-* :monitoring-event:`BRANCH` and :monitoring-event:`JUMP`::
+* :monitoring-event:`BRANCH_LEFT`, :monitoring-event:`BRANCH_RIGHT` and :monitoring-event:`JUMP`::
 
     func(code: CodeType, instruction_offset: int, destination_offset: int) -> DISABLE | Any
 
   Note that the *destination_offset* is where the code will next execute.
-  For an untaken branch this will be the offset of the instruction following
-  the branch.
 
 * :monitoring-event:`INSTRUCTION`::
 

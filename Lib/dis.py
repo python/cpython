@@ -162,6 +162,7 @@ COMPILER_FLAG_NAMES = {
           256: "ITERABLE_COROUTINE",
           512: "ASYNC_GENERATOR",
     0x4000000: "HAS_DOCSTRING",
+    0x8000000: "METHOD",
 }
 
 def pretty_flags(flags):
@@ -1115,7 +1116,7 @@ class Bytecode:
             return output.getvalue()
 
 
-def main():
+def main(args=None):
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -1125,8 +1126,10 @@ def main():
                         help='show instruction offsets')
     parser.add_argument('-P', '--show-positions', action='store_true',
                         help='show instruction positions')
+    parser.add_argument('-S', '--specialized', action='store_true',
+                        help='show specialized bytecode')
     parser.add_argument('infile', nargs='?', default='-')
-    args = parser.parse_args()
+    args = parser.parse_args(args=args)
     if args.infile == '-':
         name = '<stdin>'
         source = sys.stdin.buffer.read()
@@ -1135,7 +1138,8 @@ def main():
         with open(args.infile, 'rb') as infile:
             source = infile.read()
     code = compile(source, name, "exec")
-    dis(code, show_caches=args.show_caches, show_offsets=args.show_offsets, show_positions=args.show_positions)
+    dis(code, show_caches=args.show_caches, adaptive=args.specialized,
+        show_offsets=args.show_offsets, show_positions=args.show_positions)
 
 if __name__ == "__main__":
     main()

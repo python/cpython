@@ -34,7 +34,7 @@ PyFile_FromFd(int fd, const char *name, const char *mode, int buffering, const c
     PyObject *open, *stream;
 
     /* import _io in case we are being used to open io.py */
-    open = _PyImport_GetModuleAttrString("_io", "open");
+    open = PyImport_ImportModuleAttrString("_io", "open");
     if (open == NULL)
         return NULL;
     stream = PyObject_CallFunction(open, "isisssO", fd, mode,
@@ -506,7 +506,7 @@ PyFile_OpenCodeObject(PyObject *path)
     if (hook) {
         f = hook(path, _PyRuntime.open_code_userdata);
     } else {
-        PyObject *open = _PyImport_GetModuleAttrString("_io", "open");
+        PyObject *open = PyImport_ImportModuleAttrString("_io", "open");
         if (open) {
             f = PyObject_CallFunction(open, "Os", path, "rb");
             Py_DECREF(open);

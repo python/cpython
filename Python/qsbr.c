@@ -205,15 +205,15 @@ _Py_qsbr_reserve(PyInterpreterState *interp)
         }
         _PyEval_StartTheWorld(interp);
     }
-    PyMutex_Unlock(&shared->mutex);
-
-    if (qsbr == NULL) {
-        return -1;
-    }
 
     // Return an index rather than the pointer because the array may be
     // resized and the pointer invalidated.
-    return (struct _qsbr_pad *)qsbr - shared->array;
+    Py_ssize_t index = -1;
+    if (qsbr != NULL) {
+        index = (struct _qsbr_pad *)qsbr - shared->array;
+    }
+    PyMutex_Unlock(&shared->mutex);
+    return index;
 }
 
 void

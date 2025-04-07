@@ -1632,13 +1632,22 @@ _file_template = """
 </html>"""
 
 _styles = """
+        :root {color-scheme: light dark}
         table.diff {font-family:Courier; border:medium;}
         .diff_header {background-color:#e0e0e0}
         td.diff_header {text-align:right}
         .diff_next {background-color:#c0c0c0}
-        .diff_add {background-color:#aaffaa}
+        .diff_add {background-color:palegreen}
         .diff_chg {background-color:#ffff77}
-        .diff_sub {background-color:#ffaaaa}"""
+        .diff_sub {background-color:#ffaaaa}
+
+        @media (prefers-color-scheme: dark) {
+            .diff_header {background-color:#666}
+            .diff_next {background-color:#393939}
+            .diff_add {background-color:darkgreen}
+            .diff_chg {background-color:#847415}
+            .diff_sub {background-color:darkred}
+        }"""
 
 _table_template = """
     <table class="diff" id="difflib_chg_%(prefix)s_top"

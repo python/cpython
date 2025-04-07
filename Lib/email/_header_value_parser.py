@@ -95,8 +95,16 @@ EXTENDED_ATTRIBUTE_ENDS = ATTRIBUTE_ENDS - set('%')
 NLSET = {'\n', '\r'}
 SPECIALSNL = SPECIALS | NLSET
 
+
+def make_quoted_pairs(value):
+    """Escape dquote and backslash for use within a quoted-string."""
+    return str(value).replace('\\', '\\\\').replace('"', '\\"')
+
+
 def quote_string(value):
-    return '"'+str(value).replace('\\', '\\\\').replace('"', r'\"')+'"'
+    escaped = make_quoted_pairs(value)
+    return f'"{escaped}"'
+
 
 # Match a RFC 2047 word, looks like =?utf-8?q?someword?=
 rfc2047_matcher = re.compile(r'''
@@ -2905,6 +2913,15 @@ def _refold_parse_tree(parse_tree, *, policy):
         if not hasattr(part, 'encode'):
             # It's not a terminal, try folding the subparts.
             newparts = list(part)
+            if part.token_type == 'bare-quoted-string':
+                # To fold a quoted string we need to create a list of terminal
+                # tokens that will render the leading and trailing quotes
+                # and use quoted pairs in the value as appropriate.
+                newparts = (
+                    [ValueTerminal('"', 'ptext')] +
+                    [ValueTerminal(make_quoted_pairs(p), 'ptext')
+                     for p in newparts] +
+                    [ValueTerminal('"', 'ptext')])
             if not part.as_ew_allowed:
                 wrap_as_ew_blocked += 1
                 newparts.append(end_ew_not_allowed)

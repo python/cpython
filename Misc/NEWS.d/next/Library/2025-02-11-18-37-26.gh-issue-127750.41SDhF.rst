@@ -1,0 +1,2 @@
+Remove broken :func:`functools.singledispatchmethod` caching introduced in
+:gh:`85160`. Achieve the same performance using different optimization.

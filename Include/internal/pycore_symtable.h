@@ -82,8 +82,6 @@ struct symtable {
     PyObject *st_private;           /* name of current class or NULL */
     _PyFutureFeatures *st_future;   /* module's future features that affect
                                        the symbol table */
-    int recursion_depth;            /* current recursion depth */
-    int recursion_limit;            /* recursion limit */
 };
 
 typedef struct _symtable_entry {
@@ -124,6 +122,7 @@ typedef struct _symtable_entry {
     unsigned ste_can_see_class_scope : 1; /* true if this block can see names bound in an
                                              enclosing class scope */
     unsigned ste_has_docstring : 1; /* true if docstring present */
+    unsigned ste_method : 1; /* true if block is a function block defined in class scope */
     int ste_comp_iter_expr; /* non-zero if visiting a comprehension range expression */
     _Py_SourceLocation ste_loc; /* source location of block */
     struct _symtable_entry *ste_annotation_block; /* symbol table entry for this entry's annotations */

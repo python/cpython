@@ -24,14 +24,17 @@ from generators_common import (
     Emitter,
 )
 from cwriter import CWriter
-from typing import TextIO
+from typing import TextIO, Callable
 from stack import Local, Stack, StackError, get_stack_effect, Storage
-
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
 
 
 FOOTER = "#undef TIER_ONE\n"
+INSTRUCTION_START_MARKER = "/* BEGIN INSTRUCTIONS */"
+INSTRUCTION_END_MARKER = "/* END INSTRUCTIONS */"
+LABEL_START_MARKER = "/* BEGIN LABELS */"
+LABEL_END_MARKER = "/* END LABELS */"
 
 
 def declare_variable(var: StackItem, out: CWriter) -> None:
@@ -125,43 +128,131 @@ def uses_this(inst: Instruction) -> bool:
         for cache in uop.caches:
             if cache.name != "unused":
                 return True
+    # Can't be merged into the loop above, because
+    # this must strictly be performed at the end.
+    for uop in inst.parts:
+        if not isinstance(uop, Uop):
+            continue
+        for tkn in uop.body:
+            if (tkn.kind == "IDENTIFIER"
+                    and (tkn.text in {"DEOPT_IF", "EXIT_IF"})):
+                return True
     return False
 
+
+UNKNOWN_OPCODE_HANDLER ="""\
+_PyErr_Format(tstate, PyExc_SystemError,
+              "%U:%d: unknown opcode %d",
+              _PyFrame_GetCode(frame)->co_filename,
+              PyUnstable_InterpreterFrame_GetLine(frame),
+              opcode);
+JUMP_TO_LABEL(error);
+"""
 
 def generate_tier1(
     filenames: list[str], analysis: Analysis, outfile: TextIO, lines: bool
 ) -> None:
     write_header(__file__, filenames, outfile)
-    outfile.write(
-        """
+    outfile.write("""
 #ifdef TIER_TWO
     #error "This file is for Tier 1 only"
 #endif
 #define TIER_ONE 1
+""")
+    outfile.write(f"""
+#if !Py_TAIL_CALL_INTERP
+#if !USE_COMPUTED_GOTOS
+    dispatch_opcode:
+        switch (opcode)
+#endif
+        {{
+#endif /* Py_TAIL_CALL_INTERP */
+            {INSTRUCTION_START_MARKER}
 """
     )
+    generate_tier1_cases(analysis, outfile, lines)
+    outfile.write(f"""
+            {INSTRUCTION_END_MARKER}
+#if !Py_TAIL_CALL_INTERP
+#if USE_COMPUTED_GOTOS
+        _unknown_opcode:
+#else
+        EXTRA_CASES  // From pycore_opcode_metadata.h, a 'case' for each unused opcode
+#endif
+            /* Tell C compilers not to hold the opcode variable in the loop.
+               next_instr points the current instruction without TARGET(). */
+            opcode = next_instr->op.code;
+            {UNKNOWN_OPCODE_HANDLER}
+
+        }}
+
+        /* This should never be reached. Every opcode should end with DISPATCH()
+           or goto error. */
+        Py_UNREACHABLE();
+#endif /* Py_TAIL_CALL_INTERP */
+        {LABEL_START_MARKER}
+""")
     out = CWriter(outfile, 2, lines)
-    emitter = Emitter(out)
+    emitter = Emitter(out, analysis.labels)
+    generate_tier1_labels(analysis, emitter)
+    outfile.write(f"{LABEL_END_MARKER}\n")
+    outfile.write(FOOTER)
+
+
+
+def generate_tier1_labels(
+    analysis: Analysis, emitter: Emitter
+) -> None:
+    emitter.emit("\n")
+    # Emit tail-callable labels as function defintions
+    for name, label in analysis.labels.items():
+        emitter.emit(f"LABEL({name})\n")
+        emitter.emit("{\n")
+        storage = Storage(Stack(), [], [], [])
+        if label.spilled:
+            storage.spilled = 1
+            emitter.emit("/* STACK SPILLED */\n")
+        emitter.emit_tokens(label, storage, None)
+        emitter.emit("\n")
+        emitter.emit("}\n")
+        emitter.emit("\n")
+
+
+def generate_tier1_cases(
+    analysis: Analysis, outfile: TextIO, lines: bool
+) -> None:
+    out = CWriter(outfile, 2, lines)
+    emitter = Emitter(out, analysis.labels)
     out.emit("\n")
     for name, inst in sorted(analysis.instructions.items()):
-        needs_this = uses_this(inst)
         out.emit("\n")
         out.emit(f"TARGET({name}) {{\n")
-        unused_guard = "(void)this_instr;\n" if inst.family is None else ""
+        # We need to ifdef it because this breaks platforms
+        # without computed gotos/tail calling.
+        out.emit(f"#if Py_TAIL_CALL_INTERP\n")
+        out.emit(f"int opcode = {name};\n")
+        out.emit(f"(void)(opcode);\n")
+        out.emit(f"#endif\n")
+        needs_this = uses_this(inst)
+        unused_guard = "(void)this_instr;\n"
         if inst.properties.needs_prev:
             out.emit(f"_Py_CODEUNIT* const prev_instr = frame->instr_ptr;\n")
+
         if needs_this and not inst.is_target:
-            out.emit(f"_Py_CODEUNIT* const this_instr = frame->instr_ptr = next_instr;\n")
+            out.emit(f"_Py_CODEUNIT* const this_instr = next_instr;\n")
             out.emit(unused_guard)
-        else:
+        if not inst.properties.no_save_ip:
             out.emit(f"frame->instr_ptr = next_instr;\n")
+
         out.emit(f"next_instr += {inst.size};\n")
         out.emit(f"INSTRUCTION_STATS({name});\n")
         if inst.is_target:
-            out.emit(f"PREDICTED({name});\n")
+            out.emit(f"PREDICTED_{name}:;\n")
             if needs_this:
                 out.emit(f"_Py_CODEUNIT* const this_instr = next_instr - {inst.size};\n")
                 out.emit(unused_guard)
+        if inst.properties.uses_opcode:
+            out.emit(f"opcode = {name};\n")
         if inst.family is not None:
             out.emit(
                 f"static_assert({inst.family.size} == {inst.size-1}"
@@ -182,7 +273,6 @@ def generate_tier1(
         out.start_line()
         out.emit("}")
         out.emit("\n")
-    outfile.write(FOOTER)
 
 
 arg_parser = argparse.ArgumentParser(

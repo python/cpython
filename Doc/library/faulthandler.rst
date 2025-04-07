@@ -91,6 +91,10 @@ Fault handler state
       The dump now mentions if a garbage collector collection is running
       if *all_threads* is true.
 
+   .. versionchanged:: 3.14
+      Only the current thread is dumped if the :term:`GIL` is disabled to
+      prevent the risk of data races.
+
 .. function:: disable()
 
    Disable the fault handler: uninstall the signal handlers installed by

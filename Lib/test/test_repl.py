@@ -70,6 +70,7 @@ def run_on_interactive_mode(source):
     return output
 
 
+@support.force_not_colorized_test_class
 class TestInteractiveInterpreter(unittest.TestCase):
 
     @cpython_only
@@ -273,6 +274,8 @@ class TestInteractiveInterpreter(unittest.TestCase):
 
         self.assertEqual(exit_code, 0, "".join(output))
 
+
+@support.force_not_colorized_test_class
 class TestInteractiveModeSyntaxErrors(unittest.TestCase):
 
     def test_interactive_syntax_error_correct_line(self):
@@ -291,7 +294,15 @@ class TestInteractiveModeSyntaxErrors(unittest.TestCase):
         self.assertEqual(traceback_lines, expected_lines)
 
 
-class TestAsyncioREPLContextVars(unittest.TestCase):
+class TestAsyncioREPL(unittest.TestCase):
+    def test_multiple_statements_fail_early(self):
+        user_input = "1 / 0; print('afterwards')"
+        p = spawn_repl("-m", "asyncio")
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        self.assertIn("ZeroDivisionError", output)
+        self.assertNotIn("afterwards", output)
+
     def test_toplevel_contextvars_sync(self):
         user_input = dedent("""\
         from contextvars import ContextVar

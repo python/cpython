@@ -39,7 +39,7 @@ def _make_test_object(cls):
                "hi",   # T_STRING_INPLACE
                12,     # T_LONGLONG
                13,     # T_ULONGLONG
-               "c",    # T_CHAR
+               b"c",   # T_CHAR
                )
 
 

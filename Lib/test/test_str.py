@@ -7,6 +7,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 """
 import _string
 import codecs
+import datetime
 import itertools
 import operator
 import pickle
@@ -851,6 +852,15 @@ class StrTest(string_tests.StringLikeTest,
 
         self.assertTrue('\U0001F46F'.isprintable())
         self.assertFalse('\U000E0020'.isprintable())
+
+    @support.requires_resource('cpu')
+    def test_isprintable_invariant(self):
+        for codepoint in range(sys.maxunicode + 1):
+            char = chr(codepoint)
+            category = unicodedata.category(char)
+            self.assertEqual(char.isprintable(),
+                             category[0] not in ('C', 'Z')
+                             or char == ' ')
 
     def test_surrogates(self):
         for s in ('a\uD800b\uDFFF', 'a\uDFFFb\uD800',
@@ -1907,6 +1917,12 @@ class StrTest(string_tests.StringLikeTest,
                               (b'\xF4'+cb+b'\x80\x80').decode, 'utf-8')
             self.assertRaises(UnicodeDecodeError,
                               (b'\xF4'+cb+b'\xBF\xBF').decode, 'utf-8')
+
+    def test_issue127903(self):
+        # gh-127903: ``_copy_characters`` crashes on DEBUG builds when
+        # there is nothing to copy.
+        d = datetime.datetime(2013, 11, 10, 14, 20, 59)
+        self.assertEqual(d.strftime('%z'), '')
 
     def test_issue8271(self):
         # Issue #8271: during the decoding of an invalid UTF-8 byte sequence,

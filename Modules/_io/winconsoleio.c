@@ -221,6 +221,8 @@ typedef struct {
     wchar_t wbuf;
 } winconsoleio;
 
+#define winconsoleio_CAST(op)   ((winconsoleio *)(op))
+
 int
 _PyWindowsConsoleIO_closed(PyObject *self)
 {
@@ -492,32 +494,35 @@ done:
 }
 
 static int
-winconsoleio_traverse(winconsoleio *self, visitproc visit, void *arg)
+winconsoleio_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    winconsoleio *self = winconsoleio_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->dict);
     return 0;
 }
 
 static int
-winconsoleio_clear(winconsoleio *self)
+winconsoleio_clear(PyObject *op)
 {
+    winconsoleio *self = winconsoleio_CAST(op);
     Py_CLEAR(self->dict);
     return 0;
 }
 
 static void
-winconsoleio_dealloc(winconsoleio *self)
+winconsoleio_dealloc(PyObject *op)
 {
+    winconsoleio *self = winconsoleio_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     self->finalizing = 1;
-    if (_PyIOBase_finalize((PyObject *) self) < 0)
+    if (_PyIOBase_finalize(op) < 0)
         return;
     _PyObject_GC_UNTRACK(self);
     if (self->weakreflist != NULL)
-        PyObject_ClearWeakRefs((PyObject *) self);
+        PyObject_ClearWeakRefs(op);
     Py_CLEAR(self->dict);
-    tp->tp_free((PyObject *)self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -1137,9 +1142,10 @@ _io__WindowsConsoleIO_write_impl(winconsoleio *self, PyTypeObject *cls,
 }
 
 static PyObject *
-winconsoleio_repr(winconsoleio *self)
+winconsoleio_repr(PyObject *op)
 {
-    const char *type_name = (Py_TYPE((PyObject *)self)->tp_name);
+    winconsoleio *self = winconsoleio_CAST(op);
+    const char *type_name = Py_TYPE(self)->tp_name;
 
     if (self->fd == -1) {
         return PyUnicode_FromFormat("<%.100s [closed]>", type_name);
@@ -1197,28 +1203,31 @@ static PyMethodDef winconsoleio_methods[] = {
 /* 'closed' and 'mode' are attributes for compatibility with FileIO. */
 
 static PyObject *
-get_closed(winconsoleio *self, void *closure)
+get_closed(PyObject *op, void *Py_UNUSED(closure))
 {
+    winconsoleio *self = winconsoleio_CAST(op);
     return PyBool_FromLong((long)(self->fd == -1));
 }
 
 static PyObject *
-get_closefd(winconsoleio *self, void *closure)
+get_closefd(PyObject *op, void *Py_UNUSED(closure))
 {
+    winconsoleio *self = winconsoleio_CAST(op);
     return PyBool_FromLong((long)(self->closefd));
 }
 
 static PyObject *
-get_mode(winconsoleio *self, void *closure)
+get_mode(PyObject *op, void *Py_UNUSED(closure))
 {
+    winconsoleio *self = winconsoleio_CAST(op);
     return PyUnicode_FromString(self->readable ? "rb" : "wb");
 }
 
 static PyGetSetDef winconsoleio_getsetlist[] = {
-    {"closed", (getter)get_closed, NULL, "True if the file is closed"},
-    {"closefd", (getter)get_closefd, NULL,
+    {"closed", get_closed, NULL, "True if the file is closed"},
+    {"closefd", get_closefd, NULL,
         "True if the file descriptor will be closed by close()."},
-    {"mode", (getter)get_mode, NULL, "String giving the file mode"},
+    {"mode", get_mode, NULL, "String giving the file mode"},
     {NULL},
 };
 

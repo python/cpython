@@ -10,7 +10,7 @@ from weakref import proxy
 from functools import wraps
 
 from test.support import (
-    cpython_only, swap_attr, gc_collect, is_emscripten, is_wasi,
+    cpython_only, swap_attr, gc_collect, is_wasi,
     infinite_recursion, strace_helper
 )
 from test.support.os_helper import (
@@ -531,7 +531,7 @@ class OtherFileTests:
             self.assertEqual(f.isatty(), False)
             f.close()
 
-            if sys.platform != "win32" and not is_emscripten:
+            if sys.platform != "win32":
                 try:
                     f = self.FileIO("/dev/tty", "a")
                 except OSError:
