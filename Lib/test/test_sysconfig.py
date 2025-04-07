@@ -611,7 +611,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertEqual(Py_GIL_DISABLED, support.Py_GIL_DISABLED)
 
     def test_abiflags(self):
-        # XXX: If this test fails on some platforms, maintainers should add/update
+        # If this test fails on some platforms, maintainers should add/update
         # the definition of the ABIFLAGS variable and make this test pass.
         abiflags = sysconfig.get_config_var('abiflags')
         ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
@@ -620,10 +620,17 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertIsInstance(ABIFLAGS, str)
         self.assertIn(abiflags, ABIFLAGS)
 
+        # Check all flags are alphabetic
         if os.name == 'nt':
             self.assertEqual(abiflags, '')
             # Example values: '', 't', 't_d', '_d'
-            self.assertTrue(ABIFLAGS.count('_d') == 1 or '_' not in ABIFLAGS, ABIFLAGS)
+            # '_' can only exist if 'd' is present
+            if '_' in ABIFLAGS:
+                # '_' is followed by 'd'
+                self.assertTrue(ABIFLAGS.count('_d') == 1, ABIFLAGS)
+                self.assertTrue(ABIFLAGS.count('_') == 1, ABIFLAGS)
+            else:
+                self.assertNotIn('d', ABIFLAGS)
         else:
             # Example values: '', 't', 'td', 'd'
             self.assertNotIn('_', ABIFLAGS)
