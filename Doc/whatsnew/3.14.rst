@@ -622,6 +622,11 @@ ctypes
   loaded by the current process.
   (Contributed by Brian Ward in :gh:`119349`.)
 
+* The :class:`ctypes.py_object` type now supports subscription,
+  making it a :term:`generic type`.
+  (Contributed by Brian Schubert in :gh:`132168`.)
+
+
 datetime
 --------
 
@@ -1130,6 +1135,9 @@ typing
     For example, ``isinstance(int | str, typing.Union)`` will return ``True``; previously
     this raised :exc:`TypeError`.
   - The ``__args__`` attribute of :class:`typing.Union` objects is no longer writable.
+  - It is no longer possible to set any attributes on :class:`typing.Union` objects.
+    This only ever worked for dunder attributes on previous versions, was never
+    documented to work, and was subtly broken in many cases.
 
   (Contributed by Jelle Zijlstra in :gh:`105499`.)
 

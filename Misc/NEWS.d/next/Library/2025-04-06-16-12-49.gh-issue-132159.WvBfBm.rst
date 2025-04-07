@@ -1,0 +1,1 @@
+Do not shadow user arguments in generated :meth:`!__new__` by decorator :class:`warnings.deprecated`. Patch by Xuehai Pan.
