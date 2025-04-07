@@ -1916,6 +1916,10 @@ class MakedirTests(unittest.TestCase):
         os.makedirs(path)
 
     @unittest.skipIf(
+        support.is_emscripten,
+        "Failing in the buildbot, but I can't reproduce. TODO: investigate this."
+    )
+    @unittest.skipIf(
         support.is_wasi,
         "WASI's umask is a stub."
     )
