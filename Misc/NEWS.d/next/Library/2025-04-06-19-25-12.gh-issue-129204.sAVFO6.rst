@@ -1,0 +1,2 @@
+Introduce new ``_PYTHON_SUBPROCESS_USE_POSIX_SPAWN`` environment variable knob in
+:mod:`subprocess` to control the use of :func:`os.posix_spawn`.
