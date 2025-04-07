@@ -1,1 +1,1 @@
-Fix formatting issues in `json.dumps()` when both `indent` and `skipkeys=True` are used.
+Fix formatting issues in :func:`json.dump` when both *indent* and *skipkeys* are used.
