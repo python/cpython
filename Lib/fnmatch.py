@@ -16,7 +16,8 @@ import os
 import posixpath
 import re
 
-__all__ = ["filter", "fnmatch", "fnmatchcase", "translate"]
+__all__ = ["filter", "filterfalse", "fnmatch", "fnmatchcase", "translate"]
+
 
 def fnmatch(name, pat):
     """Test whether FILENAME matches PATTERN.
@@ -37,6 +38,7 @@ def fnmatch(name, pat):
     pat = os.path.normcase(pat)
     return fnmatchcase(name, pat)
 
+
 @functools.lru_cache(maxsize=32768, typed=True)
 def _compile_pattern(pat):
     if isinstance(pat, bytes):
@@ -46,6 +48,7 @@ def _compile_pattern(pat):
     else:
         res = translate(pat)
     return re.compile(res).match
+
 
 def filter(names, pat):
     """Construct a list from those elements of the iterable NAMES that match PAT."""
@@ -63,6 +66,7 @@ def filter(names, pat):
                 result.append(name)
     return result
 
+
 def filterfalse(names, pat):
     """Construct a list from those elements of the iterable NAMES that do not match PAT."""
     pat = os.path.normcase(pat)
@@ -76,6 +80,7 @@ def filterfalse(names, pat):
         if match(os.path.normcase(name)) is None:
             result.append(name)
     return result
+
 
 def fnmatchcase(name, pat):
     """Test whether FILENAME matches PATTERN, including case.
@@ -96,8 +101,10 @@ def translate(pat):
     parts, star_indices = _translate(pat, '*', '.')
     return _join_translated_parts(parts, star_indices)
 
+
 _re_setops_sub = re.compile(r'([&~|])').sub
 _re_escape = functools.lru_cache(maxsize=512)(re.escape)
+
 
 def _translate(pat, star, question_mark):
     res = []
