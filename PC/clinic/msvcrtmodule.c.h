@@ -517,7 +517,7 @@ exit:
 
 #endif /* defined(MS_WINDOWS_DESKTOP) */
 
-#if defined(Py_DEBUG)
+#if defined(_DEBUG)
 
 PyDoc_STRVAR(msvcrt_CrtSetReportFile__doc__,
 "CrtSetReportFile($module, type, file, /)\n"
@@ -562,9 +562,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(Py_DEBUG) */
+#endif /* defined(_DEBUG) */
 
-#if defined(Py_DEBUG)
+#if defined(_DEBUG)
 
 PyDoc_STRVAR(msvcrt_CrtSetReportMode__doc__,
 "CrtSetReportMode($module, type, mode, /)\n"
@@ -609,9 +609,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(Py_DEBUG) */
+#endif /* defined(_DEBUG) */
 
-#if defined(Py_DEBUG)
+#if defined(_DEBUG)
 
 PyDoc_STRVAR(msvcrt_set_error_mode__doc__,
 "set_error_mode($module, mode, /)\n"
@@ -648,7 +648,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(Py_DEBUG) */
+#endif /* defined(_DEBUG) */
 
 #if (defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_APP) || defined(MS_WINDOWS_SYSTEM))
 
@@ -731,4 +731,4 @@ exit:
 #ifndef MSVCRT_GETERRORMODE_METHODDEF
     #define MSVCRT_GETERRORMODE_METHODDEF
 #endif /* !defined(MSVCRT_GETERRORMODE_METHODDEF) */
-/*[clinic end generated code: output=5cbbc70157dcfaed input=a9049054013a1b77]*/
+/*[clinic end generated code: output=692c6f52bb9193ce input=a9049054013a1b77]*/
