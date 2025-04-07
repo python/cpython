@@ -885,6 +885,27 @@ class TestGetAnnotations(unittest.TestCase):
             annotationlib.get_annotations(hb, format=Format.STRING), {"x": str}
         )
 
+    def test_only_annotate(self):
+        def f(x: int):
+            pass
+
+        class OnlyAnnotate:
+            @property
+            def __annotate__(self):
+                return f.__annotate__
+
+        oa = OnlyAnnotate()
+        self.assertEqual(
+            annotationlib.get_annotations(oa, format=Format.VALUE), {"x": int}
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(oa, format=Format.FORWARDREF), {"x": int}
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(oa, format=Format.STRING),
+            {"x": "int"},
+        )
+
     def test_pep695_generic_class_with_future_annotations(self):
         ann_module695 = inspect_stringized_annotations_pep695
         A_annotations = annotationlib.get_annotations(ann_module695.A, eval_str=True)

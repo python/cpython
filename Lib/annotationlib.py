@@ -649,8 +649,12 @@ def get_annotations(
 ):
     """Compute the annotations dict for an object.
 
-    obj may be a callable, class, or module.
-    Passing in an object of any other type raises TypeError.
+    obj may be a callable, class, module, or any other object with an
+    __annotations__ or __annotate__ attribute. For the VALUE and
+    FORWARDREF formats, __annotations__ is tried first, and __annotate__
+    is used as a fallback. The STRING format uses __annotate__ if it exists,
+    but falls back to accessing __annotations__ and using annotations_to_string()
+    to stringify the annotations.
 
     Returns a dict.  get_annotations() returns a new dict every time
     it's called; calling it twice on the same object will return two
@@ -696,14 +700,21 @@ def get_annotations(
 
     match format:
         case Format.VALUE:
-            # For VALUE, we only look at __annotations__
+            # For VALUE, we first look at __annotations__
             ann = _get_dunder_annotations(obj)
+
+            # If it's not there, try __annotate__ instead
+            if ann is None:
+                ann = _get_and_call_annotate(obj, format)
         case Format.FORWARDREF:
             # For FORWARDREF, we use __annotations__ if it exists
             try:
-                return dict(_get_dunder_annotations(obj))
+                ann = _get_dunder_annotations(obj)
             except NameError:
                 pass
+            else:
+                if ann is not None:
+                    return dict(ann)
 
             # But if __annotations__ threw a NameError, we try calling __annotate__
             ann = _get_and_call_annotate(obj, format)
@@ -713,7 +724,10 @@ def get_annotations(
             # If that didn't work either, we have a very weird object: evaluating
             # __annotations__ threw NameError and there is no __annotate__. In that case,
             # we fall back to trying __annotations__ again.
-            return dict(_get_dunder_annotations(obj))
+            ann = _get_dunder_annotations(obj)
+            if ann is None:
+                return {}
+            return dict(ann)
         case Format.STRING:
             # For STRING, we try to call __annotate__
             ann = _get_and_call_annotate(obj, format)
@@ -721,6 +735,8 @@ def get_annotations(
                 return ann
             # But if we didn't get it, we use __annotations__ instead.
             ann = _get_dunder_annotations(obj)
+            if ann is None:
+                return {}
             return annotations_to_string(ann)
         case Format.VALUE_WITH_FAKE_GLOBALS:
             raise ValueError("The VALUE_WITH_FAKE_GLOBALS format is for internal use only")
@@ -836,11 +852,11 @@ def _get_dunder_annotations(obj):
             ann = _BASE_GET_ANNOTATIONS(obj)
         except AttributeError:
             # For static types, the descriptor raises AttributeError.
-            return {}
+            return None
     else:
         ann = getattr(obj, "__annotations__", None)
         if ann is None:
-            return {}
+            return None
 
     if not isinstance(ann, dict):
         raise ValueError(f"{obj!r}.__annotations__ is neither a dict nor None")
