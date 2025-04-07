@@ -13,6 +13,8 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+import threading
+import time
 import unittest
 import warnings
 
@@ -22,6 +24,7 @@ from test.support import os_helper
 from test.support import script_helper
 from test.support import socket_helper
 from test.support import warnings_helper
+from test.support.os_helper import EnvironmentVarGuard
 
 TESTFN = os_helper.TESTFN
 
@@ -793,6 +796,27 @@ class TestSupport(unittest.TestCase):
             self.assertEqual(3, len(linked))
             for v in linked:
                 self.assertIsInstance(v, int)
+
+    def test_threadsafe_environmentvarguard(self):
+        def worker1(guard):
+            for i in range(1000):
+                guard['MY_VAR'] = 'value1'
+                time.sleep(0.0001)  # Small delay to increase chance of thread switching
+
+        def worker2(guard):
+            for i in range(1000):
+                guard['MY_VAR'] = 'value2'
+                time.sleep(0.0001)
+
+        guard = EnvironmentVarGuard()
+        t1 = threading.Thread(target=worker1, args=(guard,))
+        t2 = threading.Thread(target=worker2, args=(guard,))
+        t1.start()
+        t2.start()
+        t1.join()
+        t2.join()
+        final_value = os.getenv('MY_VAR')
+        self.assertEqual(final_value, "value2")
 
 
     # XXX -follows a list of untested API
