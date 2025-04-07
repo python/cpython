@@ -1,0 +1,1 @@
+Update macOS installer to use OpenSSL 3.0.16. Patch by Bénédikt Tran.
