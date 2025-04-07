@@ -1,0 +1,1 @@
+Make `EnvironmentVarGuard` thread safe
