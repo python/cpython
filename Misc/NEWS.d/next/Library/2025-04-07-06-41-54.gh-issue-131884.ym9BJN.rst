@@ -1,0 +1,1 @@
+Fix formatting issues in `json.dumps()` when both `indent` and `skipkeys=True` are used.
