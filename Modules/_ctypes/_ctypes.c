@@ -3472,9 +3472,9 @@ _PyCData_set(ctypes_state *st,
         }
         Py_BEGIN_CRITICAL_SECTION(src);
         *(void **)ptr = src->b_ptr;
-        Py_END_CRITICAL_SECTION();
 
         keep = GetKeepedObjects(src);
+        Py_END_CRITICAL_SECTION();
         if (keep == NULL)
             return NULL;
 
@@ -5563,7 +5563,7 @@ Pointer_get_contents(PyObject *self, void *closure)
 }
 
 static int
-Pointer_set_contents(PyObject *op, PyObject *value, void *closure)
+Pointer_set_contents_lock_held(PyObject *op, PyObject *value, void *closure)
 {
     CDataObject *dst;
     PyObject *keep;
@@ -5595,15 +5595,7 @@ Pointer_set_contents(PyObject *op, PyObject *value, void *closure)
     }
 
     dst = (CDataObject *)value;
-    if (dst != self) {
-        Py_BEGIN_CRITICAL_SECTION(dst);
-        locked_deref_assign(self, dst->b_ptr);
-        Py_END_CRITICAL_SECTION();
-    } else {
-        Py_BEGIN_CRITICAL_SECTION(self);
-        *((void **)self->b_ptr) = dst->b_ptr;
-        Py_END_CRITICAL_SECTION();
-    }
+    *((void **)self->b_ptr) = dst->b_ptr;
 
     /*
        A Pointer instance must keep the value it points to alive.  So, a
@@ -5620,6 +5612,16 @@ Pointer_set_contents(PyObject *op, PyObject *value, void *closure)
 
     Py_INCREF(keep);
     return KeepRef(self, 0, keep);
+}
+
+static int
+Pointer_set_contents(PyObject *op, PyObject *value, void *closure)
+{
+    int res;
+    Py_BEGIN_CRITICAL_SECTION2(op, value);
+    res = Pointer_set_contents_lock_held(op, value, closure);
+    Py_END_CRITICAL_SECTION2();
+    return res;
 }
 
 static PyGetSetDef Pointer_getsets[] = {

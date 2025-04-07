@@ -654,12 +654,3 @@ locked_deref(CDataObject *self)
     Py_END_CRITICAL_SECTION();
     return ptr;
 }
-
-/* Equivalent to *self->b_ptr = new_ptr with a lock. */
-static inline void
-locked_deref_assign(CDataObject *self, void *new_ptr)
-{
-    Py_BEGIN_CRITICAL_SECTION(self);
-    *(void **)self->b_ptr = new_ptr;
-    Py_END_CRITICAL_SECTION();
-}
