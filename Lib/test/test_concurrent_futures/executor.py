@@ -102,7 +102,10 @@ class ExecutorTest:
         )
 
         frames = map(itemgetter(0), traceback.walk_tb(exception.__traceback__))
+
+        # skip current frame
         next(frames)
+
         self.assertFalse(
             [
                 (var, val)
