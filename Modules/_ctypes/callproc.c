@@ -106,8 +106,9 @@ module _ctypes
 #if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
 #include "../_complex.h"          // complex
 #endif
-
+#define clinic_state() (get_module_state(module))
 #include "clinic/callproc.c.h"
+#undef clinic_state
 
 #define CTYPES_CAPSULE_NAME_PYMEM "_ctypes pymem"
 
@@ -1731,15 +1732,20 @@ call_cdeclfunction(PyObject *self, PyObject *args)
 /*****************************************************************
  * functions
  */
-PyDoc_STRVAR(sizeof_doc,
-"sizeof(C type) -> integer\n"
-"sizeof(C instance) -> integer\n"
-"Return the size in bytes of a C instance");
+
+/*[clinic input]
+_ctypes.sizeof
+    obj: object
+    /
+Return the size in bytes of a C instance.
+
+[clinic start generated code]*/
 
 static PyObject *
-sizeof_func(PyObject *self, PyObject *obj)
+_ctypes_sizeof(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=ed38a3f364d7bd3e input=321fd0f65cb2d623]*/
 {
-    ctypes_state *st = get_module_state(self);
+    ctypes_state *st = get_module_state(module);
 
     StgInfo *info;
     if (PyStgInfo_FromType(st, obj, &info) < 0) {
@@ -1750,7 +1756,11 @@ sizeof_func(PyObject *self, PyObject *obj)
     }
 
     if (CDataObject_Check(st, obj)) {
-        return PyLong_FromSsize_t(((CDataObject *)obj)->b_size);
+        PyObject *ret = NULL;
+        Py_BEGIN_CRITICAL_SECTION(obj);
+        ret = PyLong_FromSsize_t(((CDataObject *)obj)->b_size);
+        Py_END_CRITICAL_SECTION();
+        return ret;
     }
     PyErr_SetString(PyExc_TypeError,
                     "this type has no size");
@@ -1778,40 +1788,24 @@ align_func(PyObject *self, PyObject *obj)
     return NULL;
 }
 
-PyDoc_STRVAR(byref_doc,
-"byref(C instance[, offset=0]) -> byref-object\n"
-"Return a pointer lookalike to a C instance, only usable\n"
-"as function argument");
 
-/*
- * We must return something which can be converted to a parameter,
- * but still has a reference to self.
- */
+/*[clinic input]
+@critical_section obj
+_ctypes.byref
+    obj: object(subclass_of="clinic_state()->PyCData_Type")
+    offset: Py_ssize_t = 0
+    /
+Return a pointer lookalike to a C instance, only usable as function argument.
+
+[clinic start generated code]*/
+
 static PyObject *
-byref(PyObject *self, PyObject *args)
+_ctypes_byref_impl(PyObject *module, PyObject *obj, Py_ssize_t offset)
+/*[clinic end generated code: output=60dec5ed520c71de input=6ec02d95d15fbd56]*/
 {
-    PyCArgObject *parg;
-    PyObject *obj;
-    PyObject *pyoffset = NULL;
-    Py_ssize_t offset = 0;
+    ctypes_state *st = get_module_state(module);
 
-    if (!PyArg_UnpackTuple(args, "byref", 1, 2,
-                           &obj, &pyoffset))
-        return NULL;
-    if (pyoffset) {
-        offset = PyNumber_AsSsize_t(pyoffset, NULL);
-        if (offset == -1 && PyErr_Occurred())
-            return NULL;
-    }
-    ctypes_state *st = get_module_state(self);
-    if (!CDataObject_Check(st, obj)) {
-        PyErr_Format(PyExc_TypeError,
-                     "byref() argument must be a ctypes instance, not '%s'",
-                     Py_TYPE(obj)->tp_name);
-        return NULL;
-    }
-
-    parg = PyCArgObject_new(st);
+    PyCArgObject *parg = PyCArgObject_new(st);
     if (parg == NULL)
         return NULL;
 
@@ -1822,19 +1816,19 @@ byref(PyObject *self, PyObject *args)
     return (PyObject *)parg;
 }
 
-PyDoc_STRVAR(addressof_doc,
-"addressof(C instance) -> integer\n"
-"Return the address of the C instance internal buffer");
+/*[clinic input]
+@critical_section obj
+_ctypes.addressof
+    obj: object(subclass_of="clinic_state()->PyCData_Type")
+    /
+Return the address of the C instance internal buffer
+
+[clinic start generated code]*/
 
 static PyObject *
-addressof(PyObject *self, PyObject *obj)
+_ctypes_addressof_impl(PyObject *module, PyObject *obj)
+/*[clinic end generated code: output=30d8e80c4bab70c7 input=d83937d105d3a442]*/
 {
-    ctypes_state *st = get_module_state(self);
-    if (!CDataObject_Check(st, obj)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "invalid type");
-        return NULL;
-    }
     if (PySys_Audit("ctypes.addressof", "(O)", obj) < 0) {
         return NULL;
     }
@@ -1878,18 +1872,20 @@ My_Py_DECREF(PyObject *self, PyObject *arg)
     return arg;
 }
 
+/*[clinic input]
+@critical_section obj
+_ctypes.resize
+    obj: object(subclass_of="clinic_state()->PyCData_Type", type="CDataObject *")
+    size: Py_ssize_t
+    /
+
+[clinic start generated code]*/
+
 static PyObject *
-resize(PyObject *self, PyObject *args)
+_ctypes_resize_impl(PyObject *module, CDataObject *obj, Py_ssize_t size)
+/*[clinic end generated code: output=11c89c7dbdbcd53f input=bf5a6aaea8514261]*/
 {
-    CDataObject *obj;
-    Py_ssize_t size;
-
-    if (!PyArg_ParseTuple(args,
-                          "On:resize",
-                          &obj, &size))
-        return NULL;
-
-    ctypes_state *st = get_module_state(self);
+    ctypes_state *st = get_module_state(module);
     StgInfo *info;
     int result = PyStgInfo_FromObject(st, (PyObject *)obj, &info);
     if (result < 0) {
@@ -2103,7 +2099,7 @@ PyMethodDef _ctypes_module_methods[] = {
     CREATE_POINTER_INST_METHODDEF
     {"_unpickle", unpickle, METH_VARARGS },
     {"buffer_info", buffer_info, METH_O, "Return buffer interface information"},
-    {"resize", resize, METH_VARARGS, "Resize the memory buffer of a ctypes instance"},
+    _CTYPES_RESIZE_METHODDEF
 #ifdef MS_WIN32
     {"get_last_error", get_last_error, METH_NOARGS},
     {"set_last_error", set_last_error, METH_VARARGS},
@@ -2122,9 +2118,9 @@ PyMethodDef _ctypes_module_methods[] = {
      {"_dyld_shared_cache_contains_path", py_dyld_shared_cache_contains_path, METH_VARARGS, "check if path is in the shared cache"},
 #endif
     {"alignment", align_func, METH_O, alignment_doc},
-    {"sizeof", sizeof_func, METH_O, sizeof_doc},
-    {"byref", byref, METH_VARARGS, byref_doc},
-    {"addressof", addressof, METH_O, addressof_doc},
+    _CTYPES_SIZEOF_METHODDEF
+    _CTYPES_BYREF_METHODDEF
+    _CTYPES_ADDRESSOF_METHODDEF
     {"call_function", call_function, METH_VARARGS },
     {"call_cdeclfunction", call_cdeclfunction, METH_VARARGS },
     {"PyObj_FromPtr", My_PyObj_FromPtr, METH_VARARGS },
@@ -2132,9 +2128,3 @@ PyMethodDef _ctypes_module_methods[] = {
     {"Py_DECREF", My_Py_DECREF, METH_O },
     {NULL,      NULL}        /* Sentinel */
 };
-
-/*
- Local Variables:
- compile-command: "cd .. && python setup.py -q build -g && python setup.py -q build install --home ~"
- End:
-*/
