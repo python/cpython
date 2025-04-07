@@ -2421,6 +2421,120 @@ sys_is_stack_trampoline_active_impl(PyObject *module)
     Py_RETURN_FALSE;
 }
 
+
+/*[clinic input]
+sys.is_remote_debug_enabled
+
+Return True if remote debugging is enabled, False otherwise.
+[clinic start generated code]*/
+
+static PyObject *
+sys_is_remote_debug_enabled_impl(PyObject *module)
+/*[clinic end generated code: output=7ca3d38bdd5935eb input=7335c4a2fe8cf4f3]*/
+{
+#ifndef Py_REMOTE_DEBUG
+    Py_RETURN_FALSE;
+#else
+    const PyConfig *config = _Py_GetConfig();
+    return PyBool_FromLong(config->remote_debug);
+#endif
+}
+
+static PyObject *
+sys_remote_exec_unicode_path(PyObject *module, int pid, PyObject *script)
+{
+    const char *debugger_script_path = PyUnicode_AsUTF8(script);
+    if (debugger_script_path == NULL) {
+        return NULL;
+    }
+
+#ifdef MS_WINDOWS
+    // Use UTF-16 (wide char) version of the path for permission checks
+    wchar_t *debugger_script_path_w = PyUnicode_AsWideCharString(script, NULL);
+    if (debugger_script_path_w == NULL) {
+        return NULL;
+    }
+
+    // Check file attributes using wide character version (W) instead of ANSI (A)
+    DWORD attr = GetFileAttributesW(debugger_script_path_w);
+    PyMem_Free(debugger_script_path_w);
+    if (attr == INVALID_FILE_ATTRIBUTES) {
+        DWORD err = GetLastError();
+        if (err == ERROR_FILE_NOT_FOUND || err == ERROR_PATH_NOT_FOUND) {
+            PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
+        }
+        else if (err == ERROR_ACCESS_DENIED) {
+            PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
+        }
+        else {
+            PyErr_SetFromWindowsErr(0);
+        }
+        return NULL;
+    }
+#else
+    if (access(debugger_script_path, F_OK | R_OK) != 0) {
+        switch (errno) {
+            case ENOENT:
+                PyErr_SetString(PyExc_FileNotFoundError, "Script file does not exist");
+                break;
+            case EACCES:
+                PyErr_SetString(PyExc_PermissionError, "Script file cannot be read");
+                break;
+            default:
+                PyErr_SetFromErrno(PyExc_OSError);
+        }
+        return NULL;
+    }
+#endif
+
+    if (_PySysRemoteDebug_SendExec(pid, 0, debugger_script_path) < 0) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+sys.remote_exec
+
+    pid: int
+    script: object
+
+Executes a file containing Python code in a given remote Python process.
+
+This function returns immediately, and the code will be executed by the
+target process's main thread at the next available opportunity, similarly
+to how signals are handled. There is no interface to determine when the
+code has been executed. The caller is responsible for making sure that
+the file still exists whenever the remote process tries to read it and that
+it hasn't been overwritten.
+
+The remote process must be running a CPython interpreter of the same major
+and minor version as the local process. If either the local or remote
+interpreter is pre-release (alpha, beta, or release candidate) then the
+local and remote interpreters must be the same exact version.
+
+Args:
+     pid (int): The process ID of the target Python process.
+     script (str|bytes): The path to a file containing
+         the Python code to be executed.
+[clinic start generated code]*/
+
+static PyObject *
+sys_remote_exec_impl(PyObject *module, int pid, PyObject *script)
+/*[clinic end generated code: output=7d94c56afe4a52c0 input=39908ca2c5fe1eb0]*/
+{
+    PyObject *ret = NULL;
+    PyObject *path;
+    if (PyUnicode_FSDecoder(script, &path)) {
+        ret = sys_remote_exec_unicode_path(module, pid, path);
+        Py_DECREF(path);
+    }
+    return ret;
+}
+
+
+
 /*[clinic input]
 sys._dump_tracelets
 
@@ -2695,6 +2809,8 @@ static PyMethodDef sys_methods[] = {
     SYS_ACTIVATE_STACK_TRAMPOLINE_METHODDEF
     SYS_DEACTIVATE_STACK_TRAMPOLINE_METHODDEF
     SYS_IS_STACK_TRAMPOLINE_ACTIVE_METHODDEF
+    SYS_IS_REMOTE_DEBUG_ENABLED_METHODDEF
+    SYS_REMOTE_EXEC_METHODDEF
     SYS_UNRAISABLEHOOK_METHODDEF
     SYS_GET_INT_MAX_STR_DIGITS_METHODDEF
     SYS_SET_INT_MAX_STR_DIGITS_METHODDEF
