@@ -53,11 +53,12 @@ _sentinel_dict = {}
 
 
 class _TemplatePattern:
+    # This descriptor is overwritten in ``Template._compile_pattern()``.
     def __get__(self, instance, cls=None):
         if cls is None:
             return self
-        # This descriptor is overwritten in ``_compile_pattern()``.
         return cls._compile_pattern()
+_TemplatePattern = _TemplatePattern()
 
 
 class Template:
@@ -72,7 +73,7 @@ class Template:
     braceidpattern = None
     flags = None  # default: re.IGNORECASE
 
-    pattern = _TemplatePattern()  # use a descriptor to compile the pattern
+    pattern = _TemplatePattern  # use a descriptor to compile the pattern
 
     def __init_subclass__(cls):
         super().__init_subclass__()
@@ -83,7 +84,7 @@ class Template:
         import re  # deferred import, for performance
 
         cls_pattern = cls.__dict__.get('pattern')
-        if cls_pattern and not isinstance(cls_pattern, _TemplatePattern):
+        if cls_pattern is not None and cls_pattern is not _TemplatePattern:
             # Prefer a pattern defined on the class.
             pattern = cls_pattern
         else:
