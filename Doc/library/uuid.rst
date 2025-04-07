@@ -441,7 +441,8 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> u.time  # doctest: +SKIP
    1743936859822
    >>> # get UUIDv7 creation (local) time as a datetime object
-   >>> datetime.fromtimestamp(u.time / 1000)  # doctest: +SKIP
+   >>> import datetime as dt
+   >>> dt.datetime.fromtimestamp(u.time / 1000)  # doctest: +SKIP
    datetime.datetime(...)
 
 
