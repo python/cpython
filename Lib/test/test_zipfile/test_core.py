@@ -24,7 +24,6 @@ from test.support import script_helper, os_helper
 from test.support import (
     findfile, requires_zlib, requires_bz2, requires_lzma,
     captured_stdout, captured_stderr, requires_subprocess,
-    is_emscripten
 )
 from test.support.os_helper import (
     TESTFN, unlink, rmtree, temp_dir, temp_cwd, fd_count, FakePath
@@ -3311,6 +3310,54 @@ class TestExecutablePrependedZip(unittest.TestCase):
     def test_execute_zip64(self):
         output = subprocess.check_output([self.exe_zip64, sys.executable])
         self.assertIn(b'number in executable: 5', output)
+
+
+class TestDataOffsetPrependedZip(unittest.TestCase):
+    """Test .data_offset on reading zip files with an executable prepended."""
+
+    def setUp(self):
+        self.exe_zip = findfile('exe_with_zip', subdir='archivetestdata')
+        self.exe_zip64 = findfile('exe_with_z64', subdir='archivetestdata')
+
+    def _test_data_offset(self, name):
+        with zipfile.ZipFile(name) as zipfp:
+            self.assertEqual(zipfp.data_offset, 713)
+
+    def test_data_offset_with_exe_prepended(self):
+        self._test_data_offset(self.exe_zip)
+
+    def test_data_offset_with_exe_prepended_zip64(self):
+        self._test_data_offset(self.exe_zip64)
+
+class TestDataOffsetZipWrite(unittest.TestCase):
+    """Test .data_offset for ZipFile opened in write mode."""
+
+    def setUp(self):
+        os.mkdir(TESTFNDIR)
+        self.addCleanup(rmtree, TESTFNDIR)
+        self.test_path = os.path.join(TESTFNDIR, 'testoffset.zip')
+
+    def test_data_offset_write_no_prefix(self):
+        with io.BytesIO() as fp:
+            with zipfile.ZipFile(fp, "w") as zipfp:
+                self.assertEqual(zipfp.data_offset, 0)
+
+    def test_data_offset_write_with_prefix(self):
+        with io.BytesIO() as fp:
+            fp.write(b"this is a prefix")
+            with zipfile.ZipFile(fp, "w") as zipfp:
+                self.assertEqual(zipfp.data_offset, 16)
+
+    def test_data_offset_write_no_tell(self):
+        # The initializer in ZipFile checks if tell raises AttributeError or
+        # OSError when creating a file in write mode when deducing the offset
+        # of the beginning of zip data
+        class NoTellBytesIO(io.BytesIO):
+            def tell(self):
+                raise OSError("Unimplemented!")
+        with NoTellBytesIO() as fp:
+            with zipfile.ZipFile(fp, "w") as zipfp:
+                self.assertIs(zipfp.data_offset, None)
 
 
 class EncodedMetadataTests(unittest.TestCase):

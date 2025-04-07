@@ -657,12 +657,13 @@ Nested structures can also be initialized in the constructor in several ways::
    >>> r = RECT((1, 2), (3, 4))
 
 Field :term:`descriptor`\s can be retrieved from the *class*, they are useful
-for debugging because they can provide useful information::
+for debugging because they can provide useful information.
+See :class:`CField`::
 
-   >>> print(POINT.x)
-   <Field type=c_long, ofs=0, size=4>
-   >>> print(POINT.y)
-   <Field type=c_long, ofs=4, size=4>
+   >>> POINT.x
+   <ctypes.CField 'x' type=c_int, ofs=0, size=4>
+   >>> POINT.y
+   <ctypes.CField 'y' type=c_int, ofs=4, size=4>
    >>>
 
 
@@ -2631,6 +2632,9 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`PyObject *` datatype.  Calling this without an
    argument creates a ``NULL`` :c:expr:`PyObject *` pointer.
 
+   .. versionchanged:: next
+      :class:`!py_object` is now a :term:`generic type`.
+
 The :mod:`!ctypes.wintypes` module provides quite some other Windows specific
 data types, for example :c:type:`!HWND`, :c:type:`!WPARAM`, or :c:type:`!DWORD`.
 Some useful structures like :c:type:`!MSG` or :c:type:`!RECT` are also defined.
@@ -2810,6 +2814,98 @@ fields, or any other data types containing pointer type fields.
    constructor are interpreted as attribute assignments, so they will initialize
    :attr:`_fields_` with the same name, or create new attributes for names not
    present in :attr:`_fields_`.
+
+
+.. class:: CField(*args, **kw)
+
+   Descriptor for fields of a :class:`Structure` and :class:`Union`.
+   For example::
+
+      >>> class Color(Structure):
+      ...     _fields_ = (
+      ...         ('red', c_uint8),
+      ...         ('green', c_uint8),
+      ...         ('blue', c_uint8),
+      ...         ('intense', c_bool, 1),
+      ...         ('blinking', c_bool, 1),
+      ...    )
+      ...
+      >>> Color.red
+      <ctypes.CField 'red' type=c_ubyte, ofs=0, size=1>
+      >>> Color.green.type
+      <class 'ctypes.c_ubyte'>
+      >>> Color.blue.byte_offset
+      2
+      >>> Color.intense
+      <ctypes.CField 'intense' type=c_bool, ofs=3, bit_size=1, bit_offset=0>
+      >>> Color.blinking.bit_offset
+      1
+
+   All attributes are read-only.
+
+   :class:`!CField` objects are created via :attr:`~Structure._fields_`;
+   do not instantiate the class directly.
+
+   .. versionadded:: next
+
+      Previously, descriptors only had ``offset`` and ``size`` attributes
+      and a readable string representation; the :class:`!CField` class was not
+      available directly.
+
+   .. attribute:: name
+
+      Name of the field, as a string.
+
+   .. attribute:: type
+
+      Type of the field, as a :ref:`ctypes class <ctypes-data-types>`.
+
+   .. attribute:: offset
+                  byte_offset
+
+      Offset of the field, in bytes.
+
+      For bitfields, this is the offset of the underlying byte-aligned
+      *storage unit*; see :attr:`~CField.bit_offset`.
+
+   .. attribute:: byte_size
+
+      Size of the field, in bytes.
+
+      For bitfields, this is the size of the underlying *storage unit*.
+      Typically, it has the same size as the bitfield's type.
+
+   .. attribute:: size
+
+      For non-bitfields, equivalent to :attr:`~CField.byte_size`.
+
+      For bitfields, this contains a backwards-compatible bit-packed
+      value that combines :attr:`~CField.bit_size` and
+      :attr:`~CField.bit_offset`.
+      Prefer using the explicit attributes instead.
+
+   .. attribute:: is_bitfield
+
+      True if this is a bitfield.
+
+   .. attribute:: bit_offset
+                  bit_size
+
+      The location of a bitfield within its *storage unit*, that is, within
+      :attr:`~CField.byte_size` bytes of memory starting at
+      :attr:`~CField.byte_offset`.
+
+      To get the field's value, read the storage unit as an integer,
+      :ref:`shift left <shifting>` by :attr:`!bit_offset` and
+      take the :attr:`!bit_size` least significant bits.
+
+      For non-bitfields, :attr:`!bit_offset` is zero
+      and :attr:`!bit_size` is equal to ``byte_size * 8``.
+
+   .. attribute:: is_anonymous
+
+      True if this field is anonymous, that is, it contains nested sub-fields
+      that should be be merged into a containing structure or union.
 
 
 .. _ctypes-arrays-pointers:

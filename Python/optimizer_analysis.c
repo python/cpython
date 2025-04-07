@@ -21,6 +21,7 @@
 #include "pycore_uop_metadata.h"
 #include "pycore_dict.h"
 #include "pycore_long.h"
+#include "pycore_interpframe.h"  // _PyFrame_GetCode
 #include "pycore_optimizer.h"
 #include "pycore_object.h"
 #include "pycore_dict.h"
@@ -134,26 +135,6 @@ incorrect_keys(_PyUOpInstruction *inst, PyObject *obj)
         return 1;
     }
     return 0;
-}
-
-static int
-check_next_uop(_PyUOpInstruction *buffer, int size, int pc, uint16_t expected)
-{
-    if (pc + 1 >= size) {
-        DPRINTF(1, "Cannot rewrite %s at pc %d: buffer too small\n",
-                _PyOpcode_uop_name[buffer[pc].opcode], pc);
-        return 0;
-    }
-    uint16_t next_opcode = buffer[pc + 1].opcode;
-    if (next_opcode != expected) {
-        DPRINTF(1,
-                "Cannot rewrite %s at pc %d: unexpected next opcode %s, "
-                "expected %s\n",
-                _PyOpcode_uop_name[buffer[pc].opcode], pc,
-                _PyOpcode_uop_name[next_opcode], _PyOpcode_uop_name[expected]);
-        return 0;
-    }
-    return 1;
 }
 
 /* Returns 1 if successfully optimized
@@ -363,6 +344,7 @@ remove_globals(_PyInterpreterFrame *frame, _PyUOpInstruction *buffer,
 #define sym_tuple_getitem _Py_uop_sym_tuple_getitem
 #define sym_tuple_length _Py_uop_sym_tuple_length
 #define sym_is_immortal _Py_uop_sym_is_immortal
+#define sym_new_truthiness _Py_uop_sym_new_truthiness
 
 static int
 optimize_to_bool(
@@ -376,7 +358,7 @@ optimize_to_bool(
         *result_ptr = value;
         return 1;
     }
-    int truthiness = sym_truthiness(value);
+    int truthiness = sym_truthiness(ctx, value);
     if (truthiness >= 0) {
         PyObject *load = truthiness ? Py_True : Py_False;
         REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)load);
@@ -572,16 +554,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[pc].opcode = _NOP;
                 }
                 break;
-            case _CHECK_VALIDITY_AND_SET_IP:
-                if (may_have_escaped) {
-                    may_have_escaped = false;
-                    buffer[pc].opcode = _CHECK_VALIDITY;
-                }
-                else {
-                    buffer[pc].opcode = _NOP;
-                }
-                last_set_ip = pc;
-                break;
             case _POP_TOP:
             {
                 _PyUOpInstruction *last = &buffer[pc-1];
@@ -591,6 +563,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 if (last->opcode == _LOAD_CONST_INLINE  ||
                     last->opcode == _LOAD_CONST_INLINE_BORROW ||
                     last->opcode == _LOAD_FAST ||
+                    last->opcode == _LOAD_FAST_BORROW ||
                     last->opcode == _COPY
                 ) {
                     last->opcode = _NOP;
@@ -614,13 +587,8 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     may_have_escaped = true;
                 }
                 if (needs_ip && last_set_ip >= 0) {
-                    if (buffer[last_set_ip].opcode == _CHECK_VALIDITY) {
-                        buffer[last_set_ip].opcode = _CHECK_VALIDITY_AND_SET_IP;
-                    }
-                    else {
-                        assert(buffer[last_set_ip].opcode == _NOP);
-                        buffer[last_set_ip].opcode = _SET_IP;
-                    }
+                    assert(buffer[last_set_ip].opcode == _NOP);
+                    buffer[last_set_ip].opcode = _SET_IP;
                     last_set_ip = -1;
                 }
             }

@@ -9,6 +9,8 @@ from analyzer import (
     Analysis,
     Instruction,
     Uop,
+    Label,
+    CodeSection,
     Part,
     analyze_files,
     Skip,
@@ -22,9 +24,13 @@ from generators_common import (
     write_header,
     type_and_null,
     Emitter,
+    TokenIterator,
+    always_true,
+    emit_to,
 )
 from cwriter import CWriter
-from typing import TextIO, Callable
+from typing import TextIO
+from lexer import Token
 from stack import Local, Stack, StackError, get_stack_effect, Storage
 
 DEFAULT_OUTPUT = ROOT / "Python/generated_cases.c.h"
@@ -40,10 +46,7 @@ LABEL_END_MARKER = "/* END LABELS */"
 def declare_variable(var: StackItem, out: CWriter) -> None:
     type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
-    if var.condition:
-        out.emit(f"{type}{space}{var.name} = {null};\n")
-    else:
-        out.emit(f"{type}{space}{var.name};\n")
+    out.emit(f"{type}{space}{var.name};\n")
 
 
 def declare_variables(inst: Instruction, out: CWriter) -> None:
@@ -51,18 +54,17 @@ def declare_variables(inst: Instruction, out: CWriter) -> None:
         stack = get_stack_effect(inst)
     except StackError as ex:
         raise analysis_error(ex.args[0], inst.where) from None
-    required = set(stack.defined)
-    required.discard("unused")
+    seen = {"unused"}
     for part in inst.parts:
         if not isinstance(part, Uop):
             continue
         for var in part.stack.inputs:
-            if var.name in required:
-                required.remove(var.name)
+            if var.used and var.name not in seen:
+                seen.add(var.name)
                 declare_variable(var, out)
         for var in part.stack.outputs:
-            if var.name in required:
-                required.remove(var.name)
+            if var.used and var.name not in seen:
+                seen.add(var.name)
                 declare_variable(var, out)
 
 
@@ -73,50 +75,45 @@ def write_uop(
     stack: Stack,
     inst: Instruction,
     braces: bool,
-) -> tuple[int, Stack]:
+) -> tuple[bool, int, Stack]:
     # out.emit(stack.as_comment() + "\n")
     if isinstance(uop, Skip):
         entries = "entries" if uop.size > 1 else "entry"
         emitter.emit(f"/* Skip {uop.size} cache {entries} */\n")
-        return (offset + uop.size), stack
+        return True, (offset + uop.size), stack
     if isinstance(uop, Flush):
         emitter.emit(f"// flush\n")
         stack.flush(emitter.out)
-        return offset, stack
-    try:
-        locals: dict[str, Local] = {}
+        return True, offset, stack
+    locals: dict[str, Local] = {}
+    emitter.out.start_line()
+    if braces:
+        emitter.out.emit(f"// {uop.name}\n")
+        emitter.emit("{\n")
+        stack._print(emitter.out)
+    storage = Storage.for_uop(stack, uop, emitter.out)
+
+    for cache in uop.caches:
+        if cache.name != "unused":
+            if cache.size == 4:
+                type = "PyObject *"
+                reader = "read_obj"
+            else:
+                type = f"uint{cache.size*16}_t "
+                reader = f"read_u{cache.size*16}"
+            emitter.emit(
+                f"{type}{cache.name} = {reader}(&this_instr[{offset}].cache);\n"
+            )
+            if inst.family is None:
+                emitter.emit(f"(void){cache.name};\n")
+        offset += cache.size
+
+    reachable, storage = emitter.emit_tokens(uop, storage, inst, False)
+    if braces:
         emitter.out.start_line()
-        if braces:
-            emitter.out.emit(f"// {uop.name}\n")
-            emitter.emit("{\n")
-        code_list, storage = Storage.for_uop(stack, uop)
-        emitter._print_storage(storage)
-        for code in code_list:
-            emitter.emit(code)
-
-        for cache in uop.caches:
-            if cache.name != "unused":
-                if cache.size == 4:
-                    type = "PyObject *"
-                    reader = "read_obj"
-                else:
-                    type = f"uint{cache.size*16}_t "
-                    reader = f"read_u{cache.size*16}"
-                emitter.emit(
-                    f"{type}{cache.name} = {reader}(&this_instr[{offset}].cache);\n"
-                )
-                if inst.family is None:
-                    emitter.emit(f"(void){cache.name};\n")
-            offset += cache.size
-
-        storage = emitter.emit_tokens(uop, storage, inst)
-        if braces:
-            emitter.out.start_line()
-            emitter.emit("}\n")
-        # emitter.emit(stack.as_comment() + "\n")
-        return offset, storage.stack
-    except StackError as ex:
-        raise analysis_error(ex.args[0], uop.body[0])
+        emitter.emit("}\n")
+    # emitter.emit(stack.as_comment() + "\n")
+    return reachable, offset, storage.stack
 
 
 def uses_this(inst: Instruction) -> bool:
@@ -133,7 +130,7 @@ def uses_this(inst: Instruction) -> bool:
     for uop in inst.parts:
         if not isinstance(uop, Uop):
             continue
-        for tkn in uop.body:
+        for tkn in uop.body.tokens():
             if (tkn.kind == "IDENTIFIER"
                     and (tkn.text in {"DEOPT_IF", "EXIT_IF"})):
                 return True
@@ -207,16 +204,15 @@ def generate_tier1_labels(
     # Emit tail-callable labels as function defintions
     for name, label in analysis.labels.items():
         emitter.emit(f"LABEL({name})\n")
-        emitter.emit("{\n")
-        storage = Storage(Stack(), [], [], [])
+        storage = Storage(Stack(), [], [], False)
         if label.spilled:
             storage.spilled = 1
-            emitter.emit("/* STACK SPILLED */\n")
         emitter.emit_tokens(label, storage, None)
-        emitter.emit("\n")
-        emitter.emit("}\n")
-        emitter.emit("\n")
+        emitter.emit("\n\n")
 
+def get_popped(inst: Instruction, analysis: Analysis) -> str:
+    stack = get_stack_effect(inst)
+    return (-stack.base_offset).to_c()
 
 def generate_tier1_cases(
     analysis: Analysis, outfile: TextIO, lines: bool
@@ -227,6 +223,7 @@ def generate_tier1_cases(
     for name, inst in sorted(analysis.instructions.items()):
         out.emit("\n")
         out.emit(f"TARGET({name}) {{\n")
+        popped = get_popped(inst, analysis)
         # We need to ifdef it because this breaks platforms
         # without computed gotos/tail calling.
         out.emit(f"#if Py_TAIL_CALL_INTERP\n")
@@ -264,11 +261,10 @@ def generate_tier1_cases(
         for part in inst.parts:
             # Only emit braces if more than one uop
             insert_braces = len([p for p in inst.parts if isinstance(p, Uop)]) > 1
-            offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)
+            reachable, offset, stack = write_uop(part, emitter, offset, stack, inst, insert_braces)
         out.start_line()
-
-        stack.flush(out)
-        if not inst.parts[-1].properties.always_exits:
+        if reachable: # type: ignore[possibly-undefined]
+            stack.flush(out)
             out.emit("DISPATCH();\n")
         out.start_line()
         out.emit("}")

@@ -247,7 +247,7 @@ static PyObject *
 _io_StringIO_write_impl(stringio *self, PyObject *obj);
 
 static PyObject *
-_io_StringIO_write(stringio *self, PyObject *obj)
+_io_StringIO_write(PyObject *self, PyObject *obj)
 {
     PyObject *return_value = NULL;
 
@@ -310,9 +310,11 @@ _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(initial_value), &_Py_ID(newline), },
     };
     #undef NUM_KEYWORDS
@@ -465,7 +467,7 @@ static PyObject *
 _io_StringIO___setstate___impl(stringio *self, PyObject *state);
 
 static PyObject *
-_io_StringIO___setstate__(stringio *self, PyObject *state)
+_io_StringIO___setstate__(PyObject *self, PyObject *state)
 {
     PyObject *return_value = NULL;
 
@@ -550,4 +552,4 @@ _io_StringIO_newlines_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=7796e223e778a214 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5bfaaab7f41ee6b5 input=a9049054013a1b77]*/

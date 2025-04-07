@@ -330,6 +330,18 @@ the following constants:
    .. versionadded:: 3.3
 
 
+.. data:: ZLIBNG_VERSION
+
+   The version string of the zlib-ng library that was used for building the
+   module if zlib-ng was used. When present, the :data:`ZLIB_VERSION` and
+   :data:`ZLIB_RUNTIME_VERSION` constants reflect the version of the zlib API
+   provided by zlib-ng.
+
+   If zlib-ng was not used to build the module, this constant will be absent.
+
+   .. versionadded:: 3.14
+
+
 .. seealso::
 
    Module :mod:`gzip`

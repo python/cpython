@@ -21,7 +21,7 @@ from generators_common import (
     TokenIterator,
 )
 from cwriter import CWriter
-from typing import TextIO, Iterator
+from typing import TextIO
 from lexer import Token
 from stack import Local, Stack, StackError, Storage
 
@@ -48,19 +48,13 @@ def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
         for var in reversed(uop.stack.inputs):
             if var.used and var.name not in variables:
                 variables.add(var.name)
-                if var.condition:
-                    out.emit(f"{type_name(var)}{var.name} = NULL;\n")
-                else:
-                    out.emit(f"{type_name(var)}{var.name};\n")
+                out.emit(f"{type_name(var)}{var.name};\n")
     for var in uop.stack.outputs:
         if var.peek:
             continue
         if var.name not in variables:
             variables.add(var.name)
-            if var.condition:
-                out.emit(f"{type_name(var)}{var.name} = NULL;\n")
-            else:
-                out.emit(f"{type_name(var)}{var.name};\n")
+            out.emit(f"{type_name(var)}{var.name};\n")
 
 
 def decref_inputs(
@@ -78,19 +72,20 @@ def decref_inputs(
 
 
 def emit_default(out: CWriter, uop: Uop, stack: Stack) -> None:
+    null = CWriter.null()
     for var in reversed(uop.stack.inputs):
-        stack.pop(var)
-    top_offset = stack.top_offset.copy()
+        stack.pop(var, null)
+    offset = stack.base_offset - stack.physical_sp
     for var in uop.stack.outputs:
         if var.is_array() and not var.peek and not var.name == "unused":
-            c_offset = top_offset.to_c()
+            c_offset = offset.to_c()
             out.emit(f"{var.name} = &stack_pointer[{c_offset}];\n")
-        top_offset.push(var)
+        offset = offset.push(var)
     for var in uop.stack.outputs:
         local = Local.undefined(var)
         stack.push(local)
         if var.name != "unused" and not var.peek:
-            local.defined = True
+            local.in_local = True
             if var.is_array():
                 if var.size == "1":
                     out.emit(f"{var.name}[0] = sym_new_not_null(ctx);\n")
@@ -129,9 +124,7 @@ def write_uop(
     try:
         out.start_line()
         if override:
-            code_list, storage = Storage.for_uop(stack, prototype)
-            for code in code_list:
-                out.emit(code)
+            storage = Storage.for_uop(stack, prototype, out, check_liveness=False)
         if debug:
             args = []
             for input in prototype.stack.inputs:
@@ -151,8 +144,8 @@ def write_uop(
             emitter = OptimizerEmitter(out, {})
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
-                var.defined = False
-            storage = emitter.emit_tokens(override, storage, None)
+                var.in_local = False
+            _, storage = emitter.emit_tokens(override, storage, None, False)
             out.start_line()
             storage.flush(out)
         else:
@@ -160,7 +153,7 @@ def write_uop(
             out.start_line()
             stack.flush(out)
     except StackError as ex:
-        raise analysis_error(ex.args[0], prototype.body[0]) # from None
+        raise analysis_error(ex.args[0], prototype.body.open) # from None
 
 
 SKIPS = ("_EXTENDED_ARG",)
