@@ -66,9 +66,11 @@ Summary -- release highlights
 
 * :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
 * :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
+* :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
-* :ref:`A new type of interpreter  <whatsnew314-tail-call>`
 * :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
+* :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
+* :ref:`A new type of interpreter  <whatsnew314-tail-call>`
 
 
 Incompatible changes
@@ -90,7 +92,7 @@ If you encounter :exc:`NameError`\s or pickling errors coming out of
 New features
 ============
 
-.. _whatsnew314-pep678:
+.. _whatsnew314-pep768:
 
 PEP 768: Safe external debugger interface for CPython
 -----------------------------------------------------
@@ -437,7 +439,7 @@ Other language changes
 * Support underscore and comma as thousands separators in the fractional part
   for floating-point presentation types of the new-style string formatting
   (with :func:`format` or :ref:`f-strings`).
-  (Contrubuted by Sergey B Kirpichev in :gh:`87790`.)
+  (Contributed by Sergey B Kirpichev in :gh:`87790`.)
 
 * The :func:`bytes.fromhex` and :func:`bytearray.fromhex` methods now accept
   ASCII :class:`bytes` and :term:`bytes-like objects <bytes-like object>`.
