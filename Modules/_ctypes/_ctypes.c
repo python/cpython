@@ -594,14 +594,8 @@ PyType_Spec pyctype_type_spec = {
     .slots = ctype_type_slots,
 };
 
-/*
-  PyCStructType_Type - a meta type/class.  Creating a new class using this one as
-  __metaclass__ will call the constructor StructUnionType_new.
-  It initializes the C accessible fields somehow.
-*/
-
 static PyCArgObject *
-StructUnionType_paramfunc(ctypes_state *st, CDataObject *self)
+StructUnionType_paramfunc_lock_held(ctypes_state *st, CDataObject *self)
 {
     PyCArgObject *parg;
     PyObject *obj;
@@ -612,7 +606,7 @@ StructUnionType_paramfunc(ctypes_state *st, CDataObject *self)
         if (ptr == NULL) {
             return NULL;
         }
-        locked_memcpy_from(ptr, self, self->b_size);
+        memcpy(ptr, self->b_ptr, self->b_size);
 
         /* Create a Python object which calls PyMem_Free(ptr) in
            its deallocator. The object will be destroyed
@@ -651,6 +645,21 @@ StructUnionType_paramfunc(ctypes_state *st, CDataObject *self)
     parg->size = self->b_size;
     parg->obj = obj;
     return parg;
+}
+
+/*
+  PyCStructType_Type - a meta type/class.  Creating a new class using this one as
+  __metaclass__ will call the constructor StructUnionType_new.
+  It initializes the C accessible fields somehow.
+*/
+static PyCArgObject *
+StructUnionType_paramfunc(ctypes_state *st, CDataObject *self)
+{
+    PyCArgObject *res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = StructUnionType_paramfunc_lock_held(st, self);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static int

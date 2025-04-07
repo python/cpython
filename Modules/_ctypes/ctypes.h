@@ -644,24 +644,6 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
     return info;
 }
 
-/* Equivalent to memcpy(self->b_ptr, buf, size) with a lock. */
-static inline void
-locked_memcpy_to(CDataObject *self, void *buf, Py_ssize_t size)
-{
-    Py_BEGIN_CRITICAL_SECTION(self);
-    (void)memcpy(self->b_ptr, buf, size);
-    Py_END_CRITICAL_SECTION();
-}
-
-/* Equivalent to memcpy(buf, self->b_ptr, size) with a lock. */
-static inline void
-locked_memcpy_from(void *buf, CDataObject *self, Py_ssize_t size)
-{
-    Py_BEGIN_CRITICAL_SECTION(self);
-    (void)memcpy(buf, self->b_ptr, size);
-    Py_END_CRITICAL_SECTION();
-}
-
 /* Equivalent to *self->b_ptr with a lock. */
 static inline void *
 locked_deref(CDataObject *self)
