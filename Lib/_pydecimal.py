@@ -6099,7 +6099,11 @@ _parse_format_specifier_regex = re.compile(r"""\A
 (?P<zeropad>0)?
 (?P<minimumwidth>(?!0)\d+)?
 (?P<thousands_sep>,)?
-(?:\.(?P<precision>0|(?!0)\d+))?
+(?:\.
+    (?=\d|[,_])  # lookahead for digit or separator
+    (?P<precision>0|(?!0)\d+)?
+    (?P<frac_separators>[,_])?
+)?
 (?P<type>[eEfFgGn%])?
 \Z
 """, re.VERBOSE|re.DOTALL)
@@ -6191,6 +6195,9 @@ def _parse_format_specifier(format_spec, _localeconv=None):
             format_dict['thousands_sep'] = ''
         format_dict['grouping'] = [3, 0]
         format_dict['decimal_point'] = '.'
+
+    if format_dict['frac_separators'] is None:
+        format_dict['frac_separators'] = ''
 
     return format_dict
 
@@ -6310,6 +6317,11 @@ def _format_number(is_negative, intpart, fracpart, exp, spec):
     """
 
     sign = _format_sign(is_negative, spec)
+
+    frac_sep = spec['frac_separators']
+    if fracpart and frac_sep:
+        fracpart = frac_sep.join(fracpart[pos:pos + 3]
+                                 for pos in range(0, len(fracpart), 3))
 
     if fracpart or spec['alt']:
         fracpart = spec['decimal_point'] + fracpart
