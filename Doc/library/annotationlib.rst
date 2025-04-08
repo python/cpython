@@ -322,12 +322,17 @@ Functions
 
    The *format* parameter controls the format in which annotations are returned,
    and must be a member of the :class:`Format` enum or its integer equivalent.
-   For the VALUE format, the :attr:`~object.__annotations__` is tried first; if it
-   does not exist, the :attr:`~object.__annotate__` function is called. The
-   FORWARDREF format uses :attr:`~object.__annotations__` if it exists and can be
-   evaluated, and otherwise falls back to calling the :attr:`~object.__annotate__` function.
-   The SOURCE format tries :attr:`~object.__annotate__` first, and falls back to
-   using :attr:`~object.__annotations__`, stringified using :func:`annotations_to_string`.
+   The different formats work as follows:
+
+   * VALUE: :attr:`!object.__annotations__` is tried first; if that does not exist,
+     the :attr:`!object.__annotate__` function is called if it exists.
+   * FORWARDREF: If :attr:`!object.__annotations__` exists and can be evaluated successfully,
+     it is used; otherwise, the :attr:`!object.__annotate__` function is called. If it
+     does not exist either, :attr:`!object.__annotations__` is tried again and any error
+     from accessing it is re-raised.
+   * STRING: If :attr:`!object.__annotate__` exists, it is called first;
+     otherwise, :attr:`!object.__annotations__` is used and stringified
+     using :func:`annotations_to_string`.
 
    Returns a dict. :func:`!get_annotations` returns a new dict every time
    it's called; calling it twice on the same object will return two
