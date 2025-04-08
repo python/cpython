@@ -3912,10 +3912,10 @@ dummy_func(
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
-            DEOPT_IF(!PyStackRef_IsNull(null));
-            DEAD(null);
             DEOPT_IF(callable_o != (PyObject *)&PyType_Type);
             DEAD(callable);
+            assert(PyStackRef_IsNull(null));
+            DEAD(null);
             STAT_INC(CALL, hit);
             res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
             PyStackRef_CLOSE(arg);
@@ -3926,8 +3926,8 @@ dummy_func(
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
-            DEOPT_IF(!PyStackRef_IsNull(null));
             DEOPT_IF(callable_o != (PyObject *)&PyUnicode_Type);
+            assert(PyStackRef_IsNull(null));
             STAT_INC(CALL, hit);
             PyObject *res_o = PyObject_Str(arg_o);
             DEAD(null);
@@ -3948,8 +3948,8 @@ dummy_func(
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
-            DEOPT_IF(!PyStackRef_IsNull(null));
             DEOPT_IF(callable_o != (PyObject *)&PyTuple_Type);
+            assert(PyStackRef_IsNull(null));
             STAT_INC(CALL, hit);
             PyObject *res_o = PySequence_Tuple(arg_o);
             DEAD(null);
@@ -4036,20 +4036,15 @@ dummy_func(
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
             DEOPT_IF(!PyType_Check(callable_o));
             PyTypeObject *tp = (PyTypeObject *)callable_o;
-            int total_args = oparg;
-            _PyStackRef *arguments = args;
-            if (!PyStackRef_IsNull(self_or_null[0])) {
-                arguments--;
-                total_args++;
-            }
+            DEOPT_IF(!PyStackRef_IsNull(self_or_null[0]));
             DEOPT_IF(tp->tp_vectorcall == NULL);
             STAT_INC(CALL, hit);
-            STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
+            STACKREFS_TO_PYOBJECTS(args, oparg, args_o);
             if (CONVERSION_FAILED(args_o)) {
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
-            PyObject *res_o = tp->tp_vectorcall((PyObject *)tp, args_o, total_args, NULL);
+            PyObject *res_o = tp->tp_vectorcall((PyObject *)tp, args_o, oparg, NULL);
             STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
             DECREF_INPUTS();
             ERROR_IF(res_o == NULL, error);
@@ -4175,14 +4170,10 @@ dummy_func(
             /* len(o) */
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
 
-            int total_args = oparg;
-            if (!PyStackRef_IsNull(self_or_null[0])) {
-                args--;
-                total_args++;
-            }
-            DEOPT_IF(total_args != 1);
+            assert(oparg == 1);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable_o != interp->callable_cache.len);
+            assert(PyStackRef_IsNull(self_or_null[0]));
             STAT_INC(CALL, hit);
             _PyStackRef arg_stackref = args[0];
             PyObject *arg = PyStackRef_AsPyObjectBorrow(arg_stackref);
@@ -4206,24 +4197,18 @@ dummy_func(
             /* isinstance(o, o2) */
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
 
-            int total_args = oparg;
-            _PyStackRef *arguments = args;
-            if (!PyStackRef_IsNull(self_or_null[0])) {
-                arguments--;
-                total_args++;
-            }
-            DEOPT_IF(total_args != 2);
+            assert(oparg == 2);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable_o != interp->callable_cache.isinstance);
+            assert(PyStackRef_IsNull(self_or_null[0]));
             STAT_INC(CALL, hit);
-            _PyStackRef cls_stackref = arguments[1];
-            _PyStackRef inst_stackref = arguments[0];
+            _PyStackRef cls_stackref = args[1];
+            _PyStackRef inst_stackref = args[0];
             int retval = PyObject_IsInstance(PyStackRef_AsPyObjectBorrow(inst_stackref), PyStackRef_AsPyObjectBorrow(cls_stackref));
             if (retval < 0) {
                 ERROR_NO_POP();
             }
             res = retval ? PyStackRef_True : PyStackRef_False;
-            assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
             DECREF_INPUTS();
         }
 
