@@ -1087,6 +1087,19 @@ PyDoc_STRVAR(rlock_exit_doc,
 Release the lock.");
 
 static PyObject *
+rlock_locked(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    rlockobject *self = rlockobject_CAST(op);
+    int is_locked = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock);
+    return PyBool_FromLong(is_locked);
+}
+
+PyDoc_STRVAR(rlock_locked_doc,
+"locked()\n\
+\n\
+Return a boolean indicating whether this object is locked right now.");
+
+static PyObject *
 rlock_acquire_restore(PyObject *op, PyObject *args)
 {
     rlockobject *self = rlockobject_CAST(op);
@@ -1204,6 +1217,8 @@ static PyMethodDef rlock_methods[] = {
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"release",      rlock_release,
      METH_NOARGS, rlock_release_doc},
+    {"locked",       rlock_locked,
+     METH_NOARGS, rlock_locked_doc},
     {"_is_owned",     rlock_is_owned,
      METH_NOARGS, rlock_is_owned_doc},
     {"_acquire_restore", rlock_acquire_restore,
