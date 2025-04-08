@@ -2201,7 +2201,7 @@ void
 PyObject_GC_UnTrack(void *op_raw)
 {
     PyObject *op = _PyObject_CAST(op_raw);
-    /* Obscure:  the Py_TRASHCAN mechanism requires that we be able to
+    /* Obscure:  the trashcan mechanism requires that we be able to
      * call PyObject_GC_UnTrack twice on an object.
      */
     if (_PyObject_GC_IS_TRACKED(op)) {

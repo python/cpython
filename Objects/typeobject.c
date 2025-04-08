@@ -2555,7 +2555,6 @@ subtype_dealloc(PyObject *self)
     /* UnTrack and re-Track around the trashcan macro, alas */
     /* See explanation at end of function for full disclosure */
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, subtype_dealloc);
 
     /* Find the nearest base with a different tp_dealloc */
     base = type;
@@ -2657,7 +2656,6 @@ subtype_dealloc(PyObject *self)
     }
 
   endlabel:
-    Py_TRASHCAN_END
 
     /* Explanation of the weirdness around the trashcan macros:
 

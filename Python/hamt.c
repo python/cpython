@@ -1118,7 +1118,6 @@ hamt_node_bitmap_dealloc(PyObject *self)
     }
 
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, hamt_node_bitmap_dealloc)
 
     if (len > 0) {
         i = len;
@@ -1128,7 +1127,6 @@ hamt_node_bitmap_dealloc(PyObject *self)
     }
 
     Py_TYPE(self)->tp_free(self);
-    Py_TRASHCAN_END
 }
 
 #ifdef Py_DEBUG
@@ -1508,7 +1506,6 @@ hamt_node_collision_dealloc(PyObject *self)
     /* Collision's tp_dealloc */
     Py_ssize_t len = Py_SIZE(self);
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, hamt_node_collision_dealloc)
     if (len > 0) {
         PyHamtNode_Collision *node = _PyHamtNode_Collision_CAST(self);
         while (--len >= 0) {
@@ -1516,7 +1513,6 @@ hamt_node_collision_dealloc(PyObject *self)
         }
     }
     Py_TYPE(self)->tp_free(self);
-    Py_TRASHCAN_END
 }
 
 #ifdef Py_DEBUG
@@ -1878,13 +1874,11 @@ hamt_node_array_dealloc(PyObject *self)
 {
     /* Array's tp_dealloc */
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, hamt_node_array_dealloc)
     PyHamtNode_Array *obj = _PyHamtNode_Array_CAST(self);
     for (Py_ssize_t i = 0; i < HAMT_ARRAY_NODE_SIZE; i++) {
         Py_XDECREF(obj->a_array[i]);
     }
     Py_TYPE(self)->tp_free(self);
-    Py_TRASHCAN_END
 }
 
 #ifdef Py_DEBUG

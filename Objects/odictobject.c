@@ -1389,7 +1389,6 @@ odict_dealloc(PyObject *op)
 {
     PyODictObject *self = _PyODictObject_CAST(op);
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, odict_dealloc)
 
     Py_XDECREF(self->od_inst_dict);
     if (self->od_weakreflist != NULL)
@@ -1397,8 +1396,6 @@ odict_dealloc(PyObject *op)
 
     _odict_clear_nodes(self);
     PyDict_Type.tp_dealloc((PyObject *)self);
-
-    Py_TRASHCAN_END
 }
 
 /* tp_repr */
