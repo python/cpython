@@ -9939,7 +9939,7 @@ os_fpathconf(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd < 0) {
         goto exit;
     }
-    if (!conv_path_confname(args[1], &name)) {
+    if (!conv_confname(module, args[1], &name, "pathconf_names")) {
         goto exit;
     }
     _return_value = os_fpathconf_impl(module, fd, name);
@@ -10013,7 +10013,7 @@ os_pathconf(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!path_converter(args[0], &path)) {
         goto exit;
     }
-    if (!conv_path_confname(args[1], &name)) {
+    if (!conv_confname(module, args[1], &name, "pathconf_names")) {
         goto exit;
     }
     _return_value = os_pathconf_impl(module, &path, name);
@@ -10051,7 +10051,7 @@ os_confstr(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     int name;
 
-    if (!conv_confstr_confname(arg, &name)) {
+    if (!conv_confname(module, arg, &name, "confstr_names")) {
         goto exit;
     }
     return_value = os_confstr_impl(module, name);
@@ -10083,7 +10083,7 @@ os_sysconf(PyObject *module, PyObject *arg)
     int name;
     long _return_value;
 
-    if (!conv_sysconf_confname(arg, &name)) {
+    if (!conv_confname(module, arg, &name, "sysconf_names")) {
         goto exit;
     }
     _return_value = os_sysconf_impl(module, name);
@@ -12879,4 +12879,4 @@ os__is_inputhook_installed(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
     #define OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF
 #endif /* !defined(OS__SUPPORTS_VIRTUAL_TERMINAL_METHODDEF) */
-/*[clinic end generated code: output=a75be356cd4abca5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=616483d525403f7c input=a9049054013a1b77]*/

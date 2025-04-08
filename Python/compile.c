@@ -21,8 +21,6 @@
  * objects.
  */
 
-#include <stdbool.h>
-
 #include "Python.h"
 #include "opcode.h"
 #include "pycore_ast.h"           // _PyAST_GetDocString()
@@ -56,6 +54,8 @@
  * rare, so the exact value is unimportant.
  */
 #define STACK_USE_GUIDELINE 30
+
+#include <stdbool.h>
 
 #undef SUCCESS
 #undef ERROR

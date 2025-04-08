@@ -2,6 +2,7 @@ import builtins
 import codecs
 import _datetime
 import gc
+import io
 import locale
 import operator
 import os
@@ -79,6 +80,18 @@ class DisplayHookTest(unittest.TestCase):
         with support.swap_attr(sys, 'displayhook', baddisplayhook):
             code = compile("42", "<string>", "single")
             self.assertRaises(ValueError, eval, code)
+
+    def test_gh130163(self):
+        class X:
+            def __repr__(self):
+                sys.stdout = io.StringIO()
+                support.gc_collect()
+                return 'foo'
+
+        with support.swap_attr(sys, 'stdout', None):
+            sys.stdout = io.StringIO()  # the only reference
+            sys.displayhook(X())  # should not crash
+
 
 class ActiveExceptionTests(unittest.TestCase):
     def test_exc_info_no_exception(self):
@@ -271,6 +284,27 @@ class SysModuleTest(unittest.TestCase):
         check_exit_message(
             r'import sys; sys.exit("h\xe9")',
             b"h\xe9", PYTHONIOENCODING='latin-1')
+
+    @support.requires_subprocess()
+    def test_exit_codes_under_repl(self):
+        # GH-129900: SystemExit, or things that raised it, didn't
+        # get their return code propagated by the REPL
+        import tempfile
+
+        exit_ways = [
+            "exit",
+            "__import__('sys').exit",
+            "raise SystemExit"
+        ]
+
+        for exitfunc in exit_ways:
+            for return_code in (0, 123):
+                with self.subTest(exitfunc=exitfunc, return_code=return_code):
+                    with tempfile.TemporaryFile("w+") as stdin:
+                        stdin.write(f"{exitfunc}({return_code})\n")
+                        stdin.seek(0)
+                        proc = subprocess.run([sys.executable], stdin=stdin)
+                        self.assertEqual(proc.returncode, return_code)
 
     def test_getdefaultencoding(self):
         self.assertRaises(TypeError, sys.getdefaultencoding, 42)

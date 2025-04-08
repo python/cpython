@@ -32,6 +32,7 @@
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 #include "pycore_uop_ids.h"       // Uops
 #include "pycore_pyerrors.h"
+#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
 
 #include "pycore_dict.h"
 #include "dictobject.h"
@@ -69,6 +70,7 @@
         } \
         _Py_DECREF_STAT_INC(); \
         if (--op->ob_refcnt == 0) { \
+            _PyReftracerTrack(op, PyRefTracer_DESTROY); \
             destructor dealloc = Py_TYPE(op)->tp_dealloc; \
             (*dealloc)(op); \
         } \
@@ -802,8 +804,10 @@ resume_frame:
         int original_opcode = 0;
         if (tstate->tracing) {
             PyCodeObject *code = _PyFrame_GetCode(frame);
-            original_opcode = code->_co_monitoring->lines[(int)(here - _PyCode_CODE(code))].original_opcode;
-        } else {
+            int index = (int)(here - _PyCode_CODE(code));
+            original_opcode = code->_co_monitoring->lines->data[index*code->_co_monitoring->lines->bytes_per_entry];
+        }
+        else {
             _PyFrame_SetStackPointer(frame, stack_pointer);
             original_opcode = _Py_call_instrumentation_line(
                     tstate, frame, here, prev);
@@ -2805,13 +2809,18 @@ import_from(PyThreadState *tstate, PyObject *v, PyObject *name)
     }
     int is_possibly_shadowing_stdlib = 0;
     if (is_possibly_shadowing) {
-        PyObject *stdlib_modules = PySys_GetObject("stdlib_module_names");
+        PyObject *stdlib_modules;
+        if (_PySys_GetOptionalAttrString("stdlib_module_names", &stdlib_modules) < 0) {
+            goto done;
+        }
         if (stdlib_modules && PyAnySet_Check(stdlib_modules)) {
             is_possibly_shadowing_stdlib = PySet_Contains(stdlib_modules, mod_name_or_unknown);
             if (is_possibly_shadowing_stdlib < 0) {
+                Py_DECREF(stdlib_modules);
                 goto done;
             }
         }
+        Py_XDECREF(stdlib_modules);
     }
 
     if (origin == NULL && PyModule_Check(v)) {

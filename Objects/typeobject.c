@@ -1043,7 +1043,8 @@ type_modified_unlocked(PyTypeObject *type)
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
-        ((PyHeapTypeObject *)type)->_spec_cache.getitem = NULL;
+        FT_ATOMIC_STORE_PTR_RELAXED(
+            ((PyHeapTypeObject *)type)->_spec_cache.getitem, NULL);
     }
 }
 
@@ -1119,7 +1120,8 @@ type_mro_modified(PyTypeObject *type, PyObject *bases) {
     if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
         // This field *must* be invalidated if the type is modified (see the
         // comment on struct _specialization_cache):
-        ((PyHeapTypeObject *)type)->_spec_cache.getitem = NULL;
+        FT_ATOMIC_STORE_PTR_RELAXED(
+            ((PyHeapTypeObject *)type)->_spec_cache.getitem, NULL);
     }
 }
 

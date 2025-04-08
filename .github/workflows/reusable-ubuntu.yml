@@ -16,10 +16,10 @@ env:
   FORCE_COLOR: 1
 
 jobs:
-  build_ubuntu_reusable:
+  build-ubuntu-reusable:
     name: 'build and test'
-    timeout-minutes: 60
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:

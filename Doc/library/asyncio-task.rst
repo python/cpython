@@ -464,7 +464,8 @@ Expected output:
 Sleeping
 ========
 
-.. coroutinefunction:: sleep(delay, result=None)
+.. function:: sleep(delay, result=None)
+   :async:
 
    Block for *delay* seconds.
 
@@ -819,7 +820,8 @@ Timeouts
 
    .. versionadded:: 3.11
 
-.. coroutinefunction:: wait_for(aw, timeout)
+.. function:: wait_for(aw, timeout)
+   :async:
 
    Wait for the *aw* :ref:`awaitable <asyncio-awaitables>`
    to complete with a timeout.
@@ -879,7 +881,8 @@ Timeouts
 Waiting Primitives
 ==================
 
-.. coroutinefunction:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
+.. function:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
+   :async:
 
    Run :class:`~asyncio.Future` and :class:`~asyncio.Task` instances in the *aws*
    iterable concurrently and block until the condition specified
@@ -998,7 +1001,8 @@ Waiting Primitives
 Running in Threads
 ==================
 
-.. coroutinefunction:: to_thread(func, /, *args, **kwargs)
+.. function:: to_thread(func, /, *args, **kwargs)
+   :async:
 
    Asynchronously run function *func* in a separate thread.
 

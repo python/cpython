@@ -1,0 +1,2 @@
+Scheduled the deprecation of the ``check_home`` argument of
+:func:`sysconfig.is_python_build` to Python 3.15.

@@ -48,11 +48,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "373cc00d87782a736970644d863ff2ebbd0e4886"
+          "checksumValue": "6984055af7b4e01429d8ebc910fe2be900d8ee9c"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "0f750bc336e510d14ac9a3e63fc2399f60f3f04f0061c426e86751ed5fba90e4"
+          "checksumValue": "7c16a5cf0eea844ae579db083b8d75f23a71859cac77e3c4cb7a8fa3b7621685"
         }
       ],
       "fileName": "Modules/expat/expat.h"
@@ -90,11 +90,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "e23d160cc33cc2c25a4b48f7b242f906444418e0"
+          "checksumValue": "60b0ee8b4a93ef0276193ed1051c15ecab73c02e"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "f7523357d8009749e7dba94b0bd7d0fa60e011cc254e55c4ebccd6313f031122"
+          "checksumValue": "6af6e8fbf5c83c1431464a2811b10ea2d1ff64c0eabfd9f18b1d4e53bf400c35"
         }
       ],
       "fileName": "Modules/expat/internal.h"
@@ -132,11 +132,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "a9b0a33b8359cfe94b23972a1605daf8dcc605d9"
+          "checksumValue": "97e27b633549e2359401a6a7dfb4661e70f29684"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "19eb541460bc2ca8b87118acd3c048f6af77affbf8719ac29aa7b6c8d70f83fd"
+          "checksumValue": "8dec53bcc64db0f2d3f71aa99d7e2acaf2acc62576cc7065c72cbb6d674a5d70"
         }
       ],
       "fileName": "Modules/expat/refresh.sh"
@@ -188,11 +188,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "3199fbd38b6fb158f73d5c8de6b6e6e3812ef803"
+          "checksumValue": "3db0435d69e5eb904c9c88400a5ab073a81049bc"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "c1518244dd5ea397e345d00e12cc45d42f43453ed208218559c981c97a0583e2"
+          "checksumValue": "633b272fa893dfbef539edbba35f1b11ecf09a13b89189105b0dfa6c7ecfc3bf"
         }
       ],
       "fileName": "Modules/expat/xmlparse.c"

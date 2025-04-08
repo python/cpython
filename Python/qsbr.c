@@ -161,6 +161,7 @@ bool
 _Py_qsbr_poll(struct _qsbr_thread_state *qsbr, uint64_t goal)
 {
     assert(_Py_atomic_load_int_relaxed(&_PyThreadState_GET()->state) == _Py_THREAD_ATTACHED);
+    assert(((_PyThreadStateImpl *)_PyThreadState_GET())->qsbr == qsbr);
 
     if (_Py_qbsr_goal_reached(qsbr, goal)) {
         return true;

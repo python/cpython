@@ -907,9 +907,9 @@ Generator Types
 ---------------
 
 Python's :term:`generator`\s provide a convenient way to implement the iterator
-protocol.  If a container object's :meth:`~iterator.__iter__` method is implemented as a
+protocol.  If a container object's :meth:`~object.__iter__` method is implemented as a
 generator, it will automatically return an iterator object (technically, a
-generator object) supplying the :meth:`!__iter__` and :meth:`~generator.__next__`
+generator object) supplying the :meth:`~iterator.__iter__` and :meth:`~generator.__next__`
 methods.
 More information about generators can be found in :ref:`the documentation for
 the yield expression <yieldexpr>`.
@@ -4586,7 +4586,7 @@ can be used interchangeably to index the same dictionary entry.
       such as an empty list.  To get distinct values, use a :ref:`dict
       comprehension <dict>` instead.
 
-   .. method:: get(key, default=None)
+   .. method:: get(key, default=None, /)
 
       Return the value for *key* if *key* is in the dictionary, else *default*.
       If *default* is not given, it defaults to ``None``, so that this method
@@ -4628,7 +4628,7 @@ can be used interchangeably to index the same dictionary entry.
 
       .. versionadded:: 3.8
 
-   .. method:: setdefault(key, default=None)
+   .. method:: setdefault(key, default=None, /)
 
       If *key* is in the dictionary, return its value.  If not, insert *key*
       with a value of *default* and return *default*.  *default* defaults to
@@ -5050,6 +5050,8 @@ list is non-exhaustive.
 * :class:`set`
 * :class:`frozenset`
 * :class:`type`
+* :class:`asyncio.Future`
+* :class:`asyncio.Task`
 * :class:`collections.deque`
 * :class:`collections.defaultdict`
 * :class:`collections.OrderedDict`

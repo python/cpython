@@ -764,8 +764,8 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. function:: getdefaultencoding()
 
-   Return the name of the current default string encoding used by the Unicode
-   implementation.
+   Return ``'utf-8'``. This is the name of the default string encoding, used
+   in methods like :meth:`str.encode`.
 
 
 .. function:: getdlopenflags()
@@ -883,7 +883,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. function:: getswitchinterval()
 
-   Return the interpreter's "thread switch interval"; see
+   Return the interpreter's "thread switch interval" in seconds; see
    :func:`setswitchinterval`.
 
    .. versionadded:: 3.2
@@ -1235,6 +1235,9 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionadded:: 3.13
 
+   .. impl-detail::
+
+      It is not guaranteed to exist in all implementations of Python.
 
 .. function:: is_finalizing()
 

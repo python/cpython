@@ -292,7 +292,7 @@ Since these types are mutable, their value can also be changed afterwards::
 Assigning a new value to instances of the pointer types :class:`c_char_p`,
 :class:`c_wchar_p`, and :class:`c_void_p` changes the *memory location* they
 point to, *not the contents* of the memory block (of course not, because Python
-bytes objects are immutable)::
+string objects are immutable)::
 
    >>> s = "Hello, World"
    >>> c_s = c_wchar_p(s)
@@ -671,7 +671,7 @@ This must be set to a positive integer and specifies the maximum alignment for t
 This is what ``#pragma pack(n)`` also does in MSVC.
 It is also possible to set a minimum alignment for how the subclass itself is packed in the
 same way ``#pragma align(n)`` works in MSVC.
-This can be achieved by specifying a ::attr:`~Structure._align_` class attribute
+This can be achieved by specifying a :attr:`~Structure._align_` class attribute
 in the subclass definition.
 
 :mod:`ctypes` uses the native byte order for Structures and Unions.  To build

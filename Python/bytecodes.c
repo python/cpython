@@ -3631,7 +3631,7 @@ dummy_func(
             assert(oparg == 1);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable != interp->callable_cache.list_append);
-            assert(self != NULL);
+            DEOPT_IF(self == NULL);
             DEOPT_IF(!PyList_Check(self));
             STAT_INC(CALL, hit);
             if (_PyList_AppendTakeRef((PyListObject *)self, arg) < 0) {
