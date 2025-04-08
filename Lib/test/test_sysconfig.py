@@ -615,16 +615,15 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertIsInstance(ABIFLAGS, str)
         self.assertIn(abiflags, ABIFLAGS)
 
-        valid_abiflags = ('', 't', 'd', 'td')
+        if not sys.platform.startswith('win'):
+            valid_abiflags = ('', 't', 'd', 'td')
+        else:
+            # '_' can only exist if 'd' is present and can only followed by 'd'
+            valid_abiflags = ('', 't', '_d', 't_d')
+
         if os.name == 'nt':
             self.assertEqual(abiflags, '')
-            # '_' can only exist if 'd' is present and can only followed by 'd'
-            self.assertIn(
-                ABIFLAGS,
-                tuple(flags.replace('d', '_d') for flags in valid_abiflags),
-            )
-        else:
-            self.assertIn(ABIFLAGS, valid_abiflags)
+        self.assertIn(ABIFLAGS, valid_abiflags)
 
     def test_abi_debug(self):
         ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
