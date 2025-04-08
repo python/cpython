@@ -1643,7 +1643,7 @@ class TestUopsOptimization(unittest.TestCase):
             s = {1: 1, 2: 2, 3: 3}
             for _ in range(n):
                 a = 2
-                in_set = a in s
+                in_dict = a in s
                 if in_set:
                     x += 1
             return x
