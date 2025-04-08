@@ -7311,13 +7311,6 @@ _pickle_Unpickler___sizeof___impl(UnpicklerObject *self)
     size_t res = _PyObject_SIZE(Py_TYPE(self));
     if (self->memo != NULL)
         res += self->memo_size * sizeof(PyObject *);
-    if (self->memo_dict != NULL) {
-        size_t s = _PySys_GetSizeOf(self->memo_dict);
-        if (s == (size_t)-1) {
-            return -1;
-        }
-        res += s;
-    }
     if (self->marks != NULL)
         res += (size_t)self->marks_size * sizeof(Py_ssize_t);
     if (self->input_line != NULL)

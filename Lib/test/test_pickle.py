@@ -477,7 +477,7 @@ if has_c_implementation:
                 0)  # Write buffer is cleared after every dump().
 
         def test_unpickler(self):
-            basesize = support.calcobjsize('2P2n2P 2P2n2i5P 2P3n8P2n2i')
+            basesize = support.calcobjsize('2P2n3P 2P2n2i5P 2P3n8P2n2i')
             unpickler = _pickle.Unpickler
             P = struct.calcsize('P')  # Size of memo table entry.
             n = struct.calcsize('n')  # Size of mark table entry.
