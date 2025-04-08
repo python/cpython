@@ -354,25 +354,25 @@ struct _shared_bytes_data {
 };
 
 static PyObject *
-_new_bytes_object(_PyXIData_t *data)
+_new_bytes_object(_PyXIData_t *xidata)
 {
-    struct _shared_bytes_data *shared = (struct _shared_bytes_data *)(data->data);
+    struct _shared_bytes_data *shared = (struct _shared_bytes_data *)(xidata->data);
     return PyBytes_FromStringAndSize(shared->bytes, shared->len);
 }
 
 static int
-_bytes_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
+_bytes_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
 {
     if (_PyXIData_InitWithSize(
-            data, tstate->interp, sizeof(struct _shared_bytes_data), obj,
+            xidata, tstate->interp, sizeof(struct _shared_bytes_data), obj,
             _new_bytes_object
             ) < 0)
     {
         return -1;
     }
-    struct _shared_bytes_data *shared = (struct _shared_bytes_data *)data->data;
+    struct _shared_bytes_data *shared = (struct _shared_bytes_data *)xidata->data;
     if (PyBytes_AsStringAndSize(obj, &shared->bytes, &shared->len) < 0) {
-        _PyXIData_Clear(tstate->interp, data);
+        _PyXIData_Clear(tstate->interp, xidata);
         return -1;
     }
     return 0;
@@ -387,23 +387,23 @@ struct _shared_str_data {
 };
 
 static PyObject *
-_new_str_object(_PyXIData_t *data)
+_new_str_object(_PyXIData_t *xidata)
 {
-    struct _shared_str_data *shared = (struct _shared_str_data *)(data->data);
+    struct _shared_str_data *shared = (struct _shared_str_data *)(xidata->data);
     return PyUnicode_FromKindAndData(shared->kind, shared->buffer, shared->len);
 }
 
 static int
-_str_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
+_str_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
 {
     if (_PyXIData_InitWithSize(
-            data, tstate->interp, sizeof(struct _shared_str_data), obj,
+            xidata, tstate->interp, sizeof(struct _shared_str_data), obj,
             _new_str_object
             ) < 0)
     {
         return -1;
     }
-    struct _shared_str_data *shared = (struct _shared_str_data *)data->data;
+    struct _shared_str_data *shared = (struct _shared_str_data *)xidata->data;
     shared->kind = PyUnicode_KIND(obj);
     shared->buffer = PyUnicode_DATA(obj);
     shared->len = PyUnicode_GET_LENGTH(obj);
@@ -413,13 +413,13 @@ _str_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 // int
 
 static PyObject *
-_new_long_object(_PyXIData_t *data)
+_new_long_object(_PyXIData_t *xidata)
 {
-    return PyLong_FromSsize_t((Py_ssize_t)(data->data));
+    return PyLong_FromSsize_t((Py_ssize_t)(xidata->data));
 }
 
 static int
-_long_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
+_long_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
 {
     /* Note that this means the size of shareable ints is bounded by
      * sys.maxsize.  Hence on 32-bit architectures that is half the
@@ -432,31 +432,31 @@ _long_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
         }
         return -1;
     }
-    _PyXIData_Init(data, tstate->interp, (void *)value, NULL, _new_long_object);
-    // data->obj and data->free remain NULL
+    _PyXIData_Init(xidata, tstate->interp, (void *)value, NULL, _new_long_object);
+    // xidata->obj and xidata->free remain NULL
     return 0;
 }
 
 // float
 
 static PyObject *
-_new_float_object(_PyXIData_t *data)
+_new_float_object(_PyXIData_t *xidata)
 {
-    double * value_ptr = data->data;
+    double * value_ptr = xidata->data;
     return PyFloat_FromDouble(*value_ptr);
 }
 
 static int
-_float_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
+_float_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
 {
     if (_PyXIData_InitWithSize(
-            data, tstate->interp, sizeof(double), NULL,
+            xidata, tstate->interp, sizeof(double), NULL,
             _new_float_object
             ) < 0)
     {
         return -1;
     }
-    double *shared = (double *)data->data;
+    double *shared = (double *)xidata->data;
     *shared = PyFloat_AsDouble(obj);
     return 0;
 }
@@ -464,38 +464,38 @@ _float_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 // None
 
 static PyObject *
-_new_none_object(_PyXIData_t *data)
+_new_none_object(_PyXIData_t *xidata)
 {
     // XXX Singleton refcounts are problematic across interpreters...
     return Py_NewRef(Py_None);
 }
 
 static int
-_none_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
+_none_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
 {
-    _PyXIData_Init(data, tstate->interp, NULL, NULL, _new_none_object);
-    // data->data, data->obj and data->free remain NULL
+    _PyXIData_Init(xidata, tstate->interp, NULL, NULL, _new_none_object);
+    // xidata->data, xidata->obj and xidata->free remain NULL
     return 0;
 }
 
 // bool
 
 static PyObject *
-_new_bool_object(_PyXIData_t *data)
+_new_bool_object(_PyXIData_t *xidata)
 {
-    if (data->data){
+    if (xidata->data){
         Py_RETURN_TRUE;
     }
     Py_RETURN_FALSE;
 }
 
 static int
-_bool_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
+_bool_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
 {
-    _PyXIData_Init(data, tstate->interp,
+    _PyXIData_Init(xidata, tstate->interp,
             (void *) (Py_IsTrue(obj) ? (uintptr_t) 1 : (uintptr_t) 0), NULL,
             _new_bool_object);
-    // data->obj and data->free remain NULL
+    // xidata->obj and xidata->free remain NULL
     return 0;
 }
 
@@ -503,20 +503,20 @@ _bool_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 
 struct _shared_tuple_data {
     Py_ssize_t len;
-    _PyXIData_t **data;
+    _PyXIData_t **items;
 };
 
 static PyObject *
-_new_tuple_object(_PyXIData_t *data)
+_new_tuple_object(_PyXIData_t *xidata)
 {
-    struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(data->data);
+    struct _shared_tuple_data *shared = (struct _shared_tuple_data *)(xidata->data);
     PyObject *tuple = PyTuple_New(shared->len);
     if (tuple == NULL) {
         return NULL;
     }
 
     for (Py_ssize_t i = 0; i < shared->len; i++) {
-        PyObject *item = _PyXIData_NewObject(shared->data[i]);
+        PyObject *item = _PyXIData_NewObject(shared->items[i]);
         if (item == NULL){
             Py_DECREF(tuple);
             return NULL;
@@ -534,19 +534,19 @@ _tuple_shared_free(void* data)
     int64_t interpid = PyInterpreterState_GetID(_PyInterpreterState_GET());
 #endif
     for (Py_ssize_t i = 0; i < shared->len; i++) {
-        if (shared->data[i] != NULL) {
-            assert(_PyXIData_INTERPID(shared->data[i]) == interpid);
-            _PyXIData_Release(shared->data[i]);
-            PyMem_RawFree(shared->data[i]);
-            shared->data[i] = NULL;
+        if (shared->items[i] != NULL) {
+            assert(_PyXIData_INTERPID(shared->items[i]) == interpid);
+            _PyXIData_Release(shared->items[i]);
+            PyMem_RawFree(shared->items[i]);
+            shared->items[i] = NULL;
         }
     }
-    PyMem_Free(shared->data);
+    PyMem_Free(shared->items);
     PyMem_RawFree(shared);
 }
 
 static int
-_tuple_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
+_tuple_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
 {
     Py_ssize_t len = PyTuple_GET_SIZE(obj);
     if (len < 0) {
@@ -559,32 +559,32 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
     }
 
     shared->len = len;
-    shared->data = (_PyXIData_t **) PyMem_Calloc(shared->len, sizeof(_PyXIData_t *));
-    if (shared->data == NULL) {
+    shared->items = (_PyXIData_t **) PyMem_Calloc(shared->len, sizeof(_PyXIData_t *));
+    if (shared->items == NULL) {
         PyErr_NoMemory();
         return -1;
     }
 
     for (Py_ssize_t i = 0; i < shared->len; i++) {
-        _PyXIData_t *data = _PyXIData_New();
-        if (data == NULL) {
+        _PyXIData_t *xidata_i = _PyXIData_New();
+        if (xidata_i == NULL) {
             goto error;  // PyErr_NoMemory already set
         }
         PyObject *item = PyTuple_GET_ITEM(obj, i);
 
         int res = -1;
         if (!_Py_EnterRecursiveCallTstate(tstate, " while sharing a tuple")) {
-            res = _PyObject_GetXIData(tstate, item, data);
+            res = _PyObject_GetXIData(tstate, item, xidata_i);
             _Py_LeaveRecursiveCallTstate(tstate);
         }
         if (res < 0) {
-            PyMem_RawFree(data);
+            PyMem_RawFree(xidata_i);
             goto error;
         }
-        shared->data[i] = data;
+        shared->items[i] = xidata_i;
     }
-    _PyXIData_Init(data, tstate->interp, shared, obj, _new_tuple_object);
-    data->free = _tuple_shared_free;
+    _PyXIData_Init(xidata, tstate->interp, shared, obj, _new_tuple_object);
+    _PyXIData_SET_FREE(xidata, _tuple_shared_free);
     return 0;
 
 error:

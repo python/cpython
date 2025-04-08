@@ -1686,10 +1686,10 @@ interpreter_refcount_linked(PyObject *self, PyObject *idobj)
 static void
 _xid_capsule_destructor(PyObject *capsule)
 {
-    _PyXIData_t *data = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
-    if (data != NULL) {
-        assert(_PyXIData_Release(data) == 0);
-        _PyXIData_Free(data);
+    _PyXIData_t *xidata = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
+    if (xidata != NULL) {
+        assert(_PyXIData_Release(xidata) == 0);
+        _PyXIData_Free(xidata);
     }
 }
 
@@ -1703,18 +1703,18 @@ get_crossinterp_data(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    _PyXIData_t *data = _PyXIData_New();
-    if (data == NULL) {
+    _PyXIData_t *xidata = _PyXIData_New();
+    if (xidata == NULL) {
         return NULL;
     }
-    if (_PyObject_GetXIData(tstate, obj, data) != 0) {
-        _PyXIData_Free(data);
+    if (_PyObject_GetXIData(tstate, obj, xidata) != 0) {
+        _PyXIData_Free(xidata);
         return NULL;
     }
-    PyObject *capsule = PyCapsule_New(data, NULL, _xid_capsule_destructor);
+    PyObject *capsule = PyCapsule_New(xidata, NULL, _xid_capsule_destructor);
     if (capsule == NULL) {
-        assert(_PyXIData_Release(data) == 0);
-        _PyXIData_Free(data);
+        assert(_PyXIData_Release(xidata) == 0);
+        _PyXIData_Free(xidata);
     }
     return capsule;
 }
@@ -1727,11 +1727,11 @@ restore_crossinterp_data(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    _PyXIData_t *data = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
-    if (data == NULL) {
+    _PyXIData_t *xidata = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
+    if (xidata == NULL) {
         return NULL;
     }
-    return _PyXIData_NewObject(data);
+    return _PyXIData_NewObject(xidata);
 }
 
 
