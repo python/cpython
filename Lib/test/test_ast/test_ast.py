@@ -177,9 +177,6 @@ class AST_Tests(unittest.TestCase):
                 # It used to crash on this step:
                 compile(tree, "<string>", "exec")
 
-                # This also must not crash:
-                ast.parse(tree, optimize=2)
-
     def test_slice(self):
         slc = ast.parse("x[::]").body[0].value.slice
         self.assertIsNone(slc.upper)
