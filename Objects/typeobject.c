@@ -11005,22 +11005,15 @@ slotptr(PyTypeObject *type, int ioffset)
     return (void **)ptr;
 }
 
-/* Return a slot pointer for a given name, but ONLY if the attribute has
-   exactly one slot function.  The name must be an interned string. */
-static void **
-resolve_slotdups(PyTypeObject *type, PyObject *name)
+static int
+fill_type_slots_cache_from_slotdefs_cache(PyInterpreterState *interp,
+                                          PyObject *name)
 {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+#define ptrs _Py_INTERP_CACHED_OBJECT(interp, type_slots_ptrs)
 
-    /* XXX Maybe this could be optimized more -- but is it worth it? */
-    void **res, **ptr;
-    res = NULL;
-
+    int rc = 0;
     PyObject *cache = Py_XNewRef(interp->cached_objects.slotdefs_cache);
     if (cache) {
-        int rc = 0;
-        // Py_BEGIN_CRITICAL_SECTION(cache);
-
         PyObject* bytes=NULL;
         rc = PyDict_GetItemRef(cache, name, &bytes);
         if (rc > 0) {
@@ -11033,53 +11026,61 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
             assert(n >= 0);
             assert(n < MAX_EQUIV);
 
-            uint8_t i;
-            for(i = 0; i < n; i++) {
+            pytype_slotdef **pp = ptrs;
+            for(uint8_t i = 0; i < n; i++) {
                 uint8_t idx = data[i + 1];
                 assert (idx < Py_ARRAY_LENGTH(slotdefs));
 
-                pytype_slotdef *x = &slotdefs[idx];
-                ptr = slotptr(type, x->offset);
-                if (ptr == NULL || *ptr == NULL) {
-                    continue;
-                }
-                if (res != NULL) {
-                    res = NULL;
-                    break;
-                }
-                res = ptr;
+                *pp++ = &slotdefs[idx];
             }
+            *pp = NULL;
+
             Py_DECREF(bytes);
         } else if (rc < 0) {
             PyErr_Clear();
         }
 
         Py_DECREF(cache);
-        // Py_END_CRITICAL_SECTION();
-        if (rc > 0) {
-            return res;
-        }
     }
 
+    return rc;
+
+#undef ptrs
+}
+
+/* Return a slot pointer for a given name, but ONLY if the attribute has
+   exactly one slot function.  The name must be an interned string. */
+static void **
+resolve_slotdups(PyTypeObject *type, PyObject *name)
+{
+    /* XXX Maybe this could be optimized more -- but is it worth it? */
+
     /* pname and ptrs act as a little cache */
+    PyInterpreterState *interp = _PyInterpreterState_GET();
 #define pname _Py_INTERP_CACHED_OBJECT(interp, type_slots_pname)
 #define ptrs _Py_INTERP_CACHED_OBJECT(interp, type_slots_ptrs)
     pytype_slotdef *p, **pp;
+    void **res, **ptr;
 
     if (pname != name) {
         /* Collect all slotdefs that match name into ptrs. */
         pname = name;
-        pp = ptrs;
-        for (p = slotdefs; p->name_strobj; p++) {
-            if (p->name_strobj == name)
-                *pp++ = p;
+
+        int rc = fill_type_slots_cache_from_slotdefs_cache(interp, name);
+        if (rc <= 0) {
+            pp = ptrs;
+            for (p = slotdefs; p->name_strobj; p++) {
+                if (p->name_strobj == name)
+                    *pp++ = p;
+            }
+            *pp = NULL;
         }
-        *pp = NULL;
     }
 
     /* Look in all slots of the type matching the name. If exactly one of these
        has a filled-in slot, return a pointer to that slot.
        Otherwise, return NULL. */
+    res = NULL;
     for (pp = ptrs; *pp; pp++) {
         ptr = slotptr(type, (*pp)->offset);
         if (ptr == NULL || *ptr == NULL)
