@@ -633,7 +633,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             # '_' can only followed by 'd'
             self.assertIn(
                 ABIFLAGS,
-                tuple(flag.replace('d', '_d') for flag in valid_abiflags),
+                tuple(flags.replace('d', '_d') for flags in valid_abiflags),
             )
         else:
             # Example values: '', 't', 'td', 'd'
