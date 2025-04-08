@@ -1648,17 +1648,16 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_binary_subcsr_str_int_narrows_to_str(self):
         def testfunc(n):
-            x = 0
+            x = []
             s = "foo"
-            z = ""
             for _ in range(n):
                 y = s[0]       # _BINARY_OP_SUBSCR_STR_INT
                 z = "bar" + y  # (_GUARD_TOS_UNICODE) + _BINARY_OP_ADD_UNICODE
-                x += 1
+                x.append(z)
             return x
 
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertEqual(res, ["barf"] * TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_BINARY_OP_SUBSCR_STR_INT", uops)
