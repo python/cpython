@@ -909,6 +909,27 @@ class _FlagTests:
             self.assertIs(~XYZ_MASK, OpenXYZ(0))
             self.assertTrue(~OpenXYZ(0), (X|Y|Z))
 
+    def test_assigned_negative_value(self):
+        class X(self.enum_type):
+            A = auto()
+            B = auto()
+            C = A | B
+            D = ~A
+        self.assertEqual(list(X), [X.A, X.B])
+        self.assertIs(~X.A, X.B)
+        self.assertIs(X.D, X.B)
+        self.assertEqual(X.D.value, 2)
+        #
+        class Y(self.enum_type):
+            A = auto()
+            B = auto()
+            C = A | B
+            D = ~A
+            E = auto()
+        self.assertEqual(list(Y), [Y.A, Y.B, Y.E])
+        self.assertIs(~Y.A, Y.B|Y.E)
+        self.assertIs(Y.D, Y.B|Y.E)
+        self.assertEqual(Y.D.value, 6)
 
 class TestPlainEnum(_EnumTests, _PlainOutputTests, unittest.TestCase):
     enum_type = Enum
@@ -4273,6 +4294,8 @@ class TestVerify(unittest.TestCase):
             BLUE = 4
             WHITE = -1
         # no error means success
+        self.assertEqual(list(Color.WHITE), [Color.RED, Color.GREEN, Color.BLUE])
+        self.assertEqual(Color.WHITE.value, 7)
 
 
 class TestInternals(unittest.TestCase):
