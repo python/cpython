@@ -1,0 +1,5 @@
+# This list is also used in make_symlinks.py, only put actual concrete paths below
+# (no wildcards!).
+
+_colorize.py
+_pyrepl
