@@ -97,7 +97,7 @@ functions: :func:`fnmatch`, :func:`fnmatchcase`, :func:`.filter`.
    It is the same as ``[n for n in names if not fnmatch(n, pat)]``,
    but implemented more efficiently.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: translate(pat)

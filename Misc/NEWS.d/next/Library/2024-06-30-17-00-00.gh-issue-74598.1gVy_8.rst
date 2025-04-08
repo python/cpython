@@ -1,2 +1,0 @@
-Add :func:`fnmatch.filterfalse` for excluding names matching a pattern.
-Patch by Bénédikt Tran.
