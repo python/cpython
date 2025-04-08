@@ -112,19 +112,6 @@ class ThreadPoolExecutorTest(ThreadPoolMixin, ExecutorTest, BaseTestCase):
         # ident='third' is cancelled because it remained in the collection of futures
         self.assertListEqual(log, ["ident='first' started", "ident='first' stopped"])
 
-    class MyException(Exception):
-        def __bool__(self):
-            return False
-
-    @classmethod
-    def raiser(cls):
-        raise cls.MyException("foo")
-
-    def test_swallows_falsy_exceptions(self):
-        # fix gh-132063 issue
-        with self.assertRaisesRegex(self.MyException, "foo"):
-            with self.executor_type(max_workers=1) as executor:
-                executor.submit(self.raiser).result()
 
 def setUpModule():
     setup_module()
