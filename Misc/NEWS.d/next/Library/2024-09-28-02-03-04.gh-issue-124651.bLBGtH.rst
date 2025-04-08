@@ -1,1 +1,0 @@
-Properly quote template strings in :mod:`venv` activation scripts.

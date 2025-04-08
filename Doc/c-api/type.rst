@@ -82,6 +82,9 @@ Type Objects
    error (e.g. no more watcher IDs available), return ``-1`` and set an
    exception.
 
+   In free-threaded builds, :c:func:`PyType_AddWatcher` is not thread-safe,
+   so it must be called at start up (before spawning the first thread).
+
    .. versionadded:: 3.12
 
 
@@ -311,10 +314,6 @@ The following functions and structs are used to create
 
    Metaclasses that override :c:member:`~PyTypeObject.tp_new` are not
    supported, except if ``tp_new`` is ``NULL``.
-   (For backwards compatibility, other ``PyType_From*`` functions allow
-   such metaclasses. They ignore ``tp_new``, which may result in incomplete
-   initialization. This is deprecated and in Python 3.14+ such metaclasses will
-   not be supported.)
 
    The *bases* argument can be used to specify base classes; it can either
    be only one class or a tuple of classes.
@@ -456,6 +455,9 @@ The following functions and structs are used to create
       class need *in addition* to the superclass.
       Use :c:func:`PyObject_GetTypeData` to get a pointer to subclass-specific
       memory reserved this way.
+      For negative :c:member:`!basicsize`, Python will insert padding when
+      needed to meet :c:member:`~PyTypeObject.tp_basicsize`'s alignment
+      requirements.
 
       .. versionchanged:: 3.12
 
@@ -529,19 +531,19 @@ The following functions and structs are used to create
 
       The following “offset” fields cannot be set using :c:type:`PyType_Slot`:
 
-         * :c:member:`~PyTypeObject.tp_weaklistoffset`
-           (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead if possible)
-         * :c:member:`~PyTypeObject.tp_dictoffset`
-           (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead if possible)
-         * :c:member:`~PyTypeObject.tp_vectorcall_offset`
-           (use ``"__vectorcalloffset__"`` in
-           :ref:`PyMemberDef <pymemberdef-offsets>`)
+      * :c:member:`~PyTypeObject.tp_weaklistoffset`
+        (use :c:macro:`Py_TPFLAGS_MANAGED_WEAKREF` instead if possible)
+      * :c:member:`~PyTypeObject.tp_dictoffset`
+        (use :c:macro:`Py_TPFLAGS_MANAGED_DICT` instead if possible)
+      * :c:member:`~PyTypeObject.tp_vectorcall_offset`
+        (use ``"__vectorcalloffset__"`` in
+        :ref:`PyMemberDef <pymemberdef-offsets>`)
 
-         If it is not possible to switch to a ``MANAGED`` flag (for example,
-         for vectorcall or to support Python older than 3.12), specify the
-         offset in :c:member:`Py_tp_members <PyTypeObject.tp_members>`.
-         See :ref:`PyMemberDef documentation <pymemberdef-offsets>`
-         for details.
+      If it is not possible to switch to a ``MANAGED`` flag (for example,
+      for vectorcall or to support Python older than 3.12), specify the
+      offset in :c:member:`Py_tp_members <PyTypeObject.tp_members>`.
+      See :ref:`PyMemberDef documentation <pymemberdef-offsets>`
+      for details.
 
       The following internal fields cannot be set at all when creating a heap
       type:
@@ -557,20 +559,18 @@ The following functions and structs are used to create
       To avoid issues, use the *bases* argument of
       :c:func:`PyType_FromSpecWithBases` instead.
 
-     .. versionchanged:: 3.9
+      .. versionchanged:: 3.9
+         Slots in :c:type:`PyBufferProcs` may be set in the unlimited API.
 
-        Slots in :c:type:`PyBufferProcs` may be set in the unlimited API.
+      .. versionchanged:: 3.11
+         :c:member:`~PyBufferProcs.bf_getbuffer` and
+         :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
+         under the :ref:`limited API <limited-c-api>`.
 
-     .. versionchanged:: 3.11
-        :c:member:`~PyBufferProcs.bf_getbuffer` and
-        :c:member:`~PyBufferProcs.bf_releasebuffer` are now available
-        under the :ref:`limited API <limited-c-api>`.
-
-     .. versionchanged:: 3.14
-
-        The field :c:member:`~PyTypeObject.tp_vectorcall` can now set
-        using ``Py_tp_vectorcall``.  See the field's documentation
-        for details.
+      .. versionchanged:: 3.14
+         The field :c:member:`~PyTypeObject.tp_vectorcall` can now set
+         using ``Py_tp_vectorcall``.  See the field's documentation
+         for details.
 
    .. c:member:: void *pfunc
 

@@ -292,10 +292,12 @@ To add Python to an iOS Xcode project:
 10. Add Objective C code to initialize and use a Python interpreter in embedded
     mode. You should ensure that:
 
-   * :c:member:`UTF-8 mode <PyPreConfig.utf8_mode>` is *enabled*;
-   * :c:member:`Buffered stdio <PyConfig.buffered_stdio>` is *disabled*;
-   * :c:member:`Writing bytecode <PyConfig.write_bytecode>` is *disabled*;
-   * :c:member:`Signal handlers <PyConfig.install_signal_handlers>` are *enabled*;
+   * UTF-8 mode (:c:member:`PyPreConfig.utf8_mode`) is *enabled*;
+   * Buffered stdio (:c:member:`PyConfig.buffered_stdio`) is *disabled*;
+   * Writing bytecode (:c:member:`PyConfig.write_bytecode`) is *disabled*;
+   * Signal handlers (:c:member:`PyConfig.install_signal_handlers`) are *enabled*;
+   * System logging (:c:member:`PyConfig.use_system_logger`) is *enabled*
+     (optional, but strongly recommended; this is enabled by default);
    * ``PYTHONHOME`` for the interpreter is configured to point at the
      ``python`` subfolder of your app's bundle; and
    * The ``PYTHONPATH`` for the interpreter includes:
@@ -323,6 +325,49 @@ modules in your app, some additional steps will be required:
 
 * If you're using a separate folder for third-party packages, ensure that folder
   is included as part of the ``PYTHONPATH`` configuration in step 10.
+
+Testing a Python package
+------------------------
+
+The CPython source tree contains :source:`a testbed project <iOS/testbed>` that
+is used to run the CPython test suite on the iOS simulator. This testbed can also
+be used as a testbed project for running your Python library's test suite on iOS.
+
+After building or obtaining an iOS XCFramework (See :source:`iOS/README.rst`
+for details), create a clone of the Python iOS testbed project by running:
+
+.. code-block:: bash
+
+    $ python iOS/testbed clone --framework <path/to/Python.xcframework> --app <path/to/module1> --app <path/to/module2> app-testbed
+
+You will need to modify the ``iOS/testbed`` reference to point to that
+directory in the CPython source tree; any folders specified with the ``--app``
+flag will be copied into the cloned testbed project. The resulting testbed will
+be created in the ``app-testbed`` folder. In this example, the ``module1`` and
+``module2`` would be importable modules at runtime. If your project has
+additional dependencies, they can be installed into the
+``app-testbed/iOSTestbed/app_packages`` folder (using ``pip install --target
+app-testbed/iOSTestbed/app_packages`` or similar).
+
+You can then use the ``app-testbed`` folder to run the test suite for your app,
+For example, if ``module1.tests`` was the entry point to your test suite, you
+could run:
+
+.. code-block:: bash
+
+    $ python app-testbed run -- module1.tests
+
+This is the equivalent of running ``python -m module1.tests`` on a desktop
+Python build. Any arguments after the ``--`` will be passed to the testbed as
+if they were arguments to ``python -m`` on a desktop machine.
+
+You can also open the testbed project in Xcode by running:
+
+.. code-block:: bash
+
+    $ open app-testbed/iOSTestbed.xcodeproj
+
+This will allow you to use the full Xcode suite of tools for debugging.
 
 App Store Compliance
 ====================

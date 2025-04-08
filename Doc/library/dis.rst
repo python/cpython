@@ -60,6 +60,8 @@ interpreter.
       The :option:`-P <dis --show-positions>` command-line option
       and the ``show_positions`` argument were added.
 
+      The :option:`-S <dis --specialized>` command-line option is added.
+
 Example: Given the function :func:`!myfunc`::
 
    def myfunc(alist):
@@ -74,7 +76,7 @@ the following command can be used to display the disassembly of
      2           RESUME                   0
    <BLANKLINE>
      3           LOAD_GLOBAL              1 (len + NULL)
-                 LOAD_FAST                0 (alist)
+                 LOAD_FAST_BORROW         0 (alist)
                  CALL                     1
                  RETURN_VALUE
 
@@ -89,27 +91,39 @@ The :mod:`dis` module can be invoked as a script from the command line:
 
 .. code-block:: sh
 
-   python -m dis [-h] [-C] [-O] [-P] [infile]
+   python -m dis [-h] [-C] [-O] [-P] [-S] [infile]
 
 The following options are accepted:
 
 .. program:: dis
 
-.. cmdoption:: -h, --help
+.. option:: -h, --help
 
    Display usage and exit.
 
-.. cmdoption:: -C, --show-caches
+.. option:: -C, --show-caches
 
    Show inline caches.
 
-.. cmdoption:: -O, --show-offsets
+   .. versionadded:: 3.13
+
+.. option:: -O, --show-offsets
 
    Show offsets of instructions.
 
-.. cmdoption:: -P, --show-positions
+   .. versionadded:: 3.13
+
+.. option:: -P, --show-positions
 
    Show positions of instructions in the source code.
+
+   .. versionadded:: 3.14
+
+.. option:: -S, --specialized
+
+   Show specialized bytecode.
+
+   .. versionadded:: 3.14
 
 If :file:`infile` is specified, its disassembled code will be written to stdout.
 Otherwise, disassembly is performed on compiled source code received from stdin.
@@ -201,7 +215,7 @@ Example:
     ...
     RESUME
     LOAD_GLOBAL
-    LOAD_FAST
+    LOAD_FAST_BORROW
     CALL
     RETURN_VALUE
 
@@ -521,7 +535,7 @@ details of bytecode instructions as :class:`Instruction` instances:
       :class:`dis.Positions` object holding the
       start and end locations that are covered by this instruction.
 
-   .. data::cache_info
+   .. data:: cache_info
 
       Information about the cache entries of this instruction, as
       triplets of the form ``(name, size, data)``, where the ``name``
@@ -697,15 +711,8 @@ not have to be) the original ``STACK[-2]``.
       STACK.append(lhs op rhs)
 
    .. versionadded:: 3.11
-
-
-.. opcode:: BINARY_SUBSCR
-
-   Implements::
-
-      key = STACK.pop()
-      container = STACK.pop()
-      STACK.append(container[key])
+   .. versionchanged:: 3.14
+      With oparg :``NB_SUBSCR``, implements binary subscript (replaces opcode ``BINARY_SUBSCR``)
 
 
 .. opcode:: STORE_SUBSCR
@@ -1395,12 +1402,27 @@ iterations of the loop.
       This opcode is now only used in situations where the local variable is
       guaranteed to be initialized. It cannot raise :exc:`UnboundLocalError`.
 
+.. opcode:: LOAD_FAST_BORROW (var_num)
+
+   Pushes a borrowed reference to the local ``co_varnames[var_num]`` onto the
+   stack.
+
+   .. versionadded:: 3.14
+
 .. opcode:: LOAD_FAST_LOAD_FAST (var_nums)
 
    Pushes references to ``co_varnames[var_nums >> 4]`` and
    ``co_varnames[var_nums & 15]`` onto the stack.
 
    .. versionadded:: 3.13
+
+
+.. opcode:: LOAD_FAST_BORROW_LOAD_FAST_BORROW (var_nums)
+
+   Pushes borrowed references to ``co_varnames[var_nums >> 4]`` and
+   ``co_varnames[var_nums & 15]`` onto the stack.
+
+   .. versionadded:: 3.14
 
 .. opcode:: LOAD_FAST_CHECK (var_num)
 
@@ -2016,4 +2038,3 @@ instructions:
 
    .. deprecated:: 3.13
       All jumps are now relative. This list is empty.
-

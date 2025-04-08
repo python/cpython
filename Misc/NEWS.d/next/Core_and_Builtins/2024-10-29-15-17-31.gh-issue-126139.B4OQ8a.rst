@@ -1,2 +1,0 @@
-Provide better error location when attempting to use a :term:`future
-statement <__future__>` with an unknown future feature.

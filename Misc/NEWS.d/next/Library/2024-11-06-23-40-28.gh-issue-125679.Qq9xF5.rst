@@ -1,2 +1,0 @@
-The :class:`multiprocessing.Lock` and :class:`multiprocessing.RLock`
-``repr`` values no longer say "unknown" on macOS.

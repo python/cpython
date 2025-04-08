@@ -1,1 +1,0 @@
-Allow :class:`collections.abc.AsyncIterator` to be a base for Protocols.

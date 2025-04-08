@@ -5,7 +5,6 @@ import pathlib
 import pickle
 import stat
 import sys
-import time
 import unittest
 import zipfile
 import zipfile._path
@@ -634,7 +633,7 @@ class TestPath(unittest.TestCase):
         """
         data = io.BytesIO()
         zf = zipfile.ZipFile(data, "w")
-        zf.writestr(DirtyZipInfo.for_name("foo\\bar", zf), b"content")
+        zf.writestr(DirtyZipInfo("foo\\bar")._for_archive(zf), b"content")
         zf.filename = ''
         root = zipfile.Path(zf)
         (first,) = root.iterdir()
@@ -657,20 +656,3 @@ class DirtyZipInfo(zipfile.ZipInfo):
     def __init__(self, filename, *args, **kwargs):
         super().__init__(filename, *args, **kwargs)
         self.filename = filename
-
-    @classmethod
-    def for_name(cls, name, archive):
-        """
-        Construct the same way that ZipFile.writestr does.
-
-        TODO: extract this functionality and re-use
-        """
-        self = cls(filename=name, date_time=time.localtime(time.time())[:6])
-        self.compress_type = archive.compression
-        self.compress_level = archive.compresslevel
-        if self.filename.endswith('/'):  # pragma: no cover
-            self.external_attr = 0o40775 << 16  # drwxrwxr-x
-            self.external_attr |= 0x10  # MS-DOS directory flag
-        else:
-            self.external_attr = 0o600 << 16  # ?rw-------
-        return self

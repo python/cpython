@@ -1,1 +1,0 @@
-Avoid the exiting the interpreter if a null byte is given as input in the new REPL.

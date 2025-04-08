@@ -79,9 +79,6 @@ class LocaleTime_Tests(unittest.TestCase):
         self.assertEqual(self.LT_ins.am_pm[position], strftime_output,
                          "AM/PM representation in the wrong position within the tuple")
 
-    @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
-    )
     def test_timezone(self):
         # Make sure timezone is correct
         timezone = time.strftime("%Z", self.time_tuple).lower()
@@ -431,9 +428,6 @@ class StrptimeTests(unittest.TestCase):
         self.assertEqual("Inconsistent use of : in -01:3030", str(err.exception))
 
     @skip_if_buggy_ucrt_strfptime
-    @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
-    )
     def test_timezone(self):
         # Test timezone directives.
         # When gmtime() is used with %Z, entire result of strftime() is empty.
@@ -550,10 +544,7 @@ class StrptimeTests(unittest.TestCase):
         self.roundtrip('%x', slice(0, 3), time.localtime(now - 366*24*3600))
 
     # NB: Dates before 1969 do not roundtrip on many locales, including C.
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten, bpo-46390"
-    )
+    @unittest.skipIf(support.linked_to_musl(), "musl libc issue, bpo-46390")
     @run_with_locales('LC_TIME', 'en_US', 'fr_FR', 'de_DE', 'ja_JP',
                       'eu_ES', 'ar_AE', 'my_MM', 'shn_MM')
     def test_date_locale2(self):
