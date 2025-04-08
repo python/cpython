@@ -49,7 +49,7 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         root_dir = os.fspath(root_dir)
     else:
         root_dir = pathname[:0]
-    it = _iglob(pathname, root_dir, dir_fd, recursive, False,
+    it = _iglob(pathname, root_dir, dir_fd, recursive, False, False,
                 include_hidden=include_hidden)
     if not pathname or recursive and _isrecursive(pathname[:2]):
         try:
@@ -60,7 +60,7 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
             pass
     return it
 
-def _iglob(pathname, root_dir, dir_fd, recursive, dironly,
+def _iglob(pathname, root_dir, dir_fd, recursive, dironly, eager,
            include_hidden=False):
     dirname, basename = os.path.split(pathname)
     if not has_magic(pathname):
@@ -75,52 +75,62 @@ def _iglob(pathname, root_dir, dir_fd, recursive, dironly,
         return
     if not dirname:
         if recursive and _isrecursive(basename):
-            yield from _glob2(root_dir, basename, dir_fd, dironly,
-                             include_hidden=include_hidden)
+            yield from _glob2(root_dir, basename, dir_fd, dironly, eager,
+                              include_hidden=include_hidden)
         else:
-            yield from _glob1(root_dir, basename, dir_fd, dironly,
+            yield from _glob1(root_dir, basename, dir_fd, dironly, eager,
                               include_hidden=include_hidden)
         return
-    # `os.path.split()` returns the argument itself as a dirname if it is a
-    # drive or UNC path.  Prevent an infinite recursion if a drive or UNC path
-    # contains magic characters (i.e. r'\\?\C:').
-    if dirname != pathname and has_magic(dirname):
-        dirs = _iglob(dirname, root_dir, dir_fd, recursive, True,
-                      include_hidden=include_hidden)
-    else:
-        dirs = [dirname]
     if has_magic(basename):
         if recursive and _isrecursive(basename):
             glob_in_dir = _glob2
         else:
             glob_in_dir = _glob1
+        parenteager = True
     else:
         glob_in_dir = _glob0
-    for dirname in dirs:
-        for name in glob_in_dir(_join(root_dir, dirname), basename, dir_fd, dironly,
-                               include_hidden=include_hidden):
-            yield os.path.join(dirname, name)
+        parenteager = eager
+    # `os.path.split()` returns the argument itself as a dirname if it is a
+    # drive or UNC path.  Prevent an infinite recursion if a drive or UNC path
+    # contains magic characters (i.e. r'\\?\C:').
+    if dirname != pathname and has_magic(dirname):
+        dirs = _iglob(dirname, root_dir, dir_fd, recursive, True, parenteager,
+                      include_hidden=include_hidden)
+    else:
+        dirs = _yield(dirname)
+    with contextlib.closing(dirs):
+        for dirname in dirs:
+            names = glob_in_dir(_join(root_dir, dirname), basename, dir_fd,
+                                dironly, eager,
+                                include_hidden=include_hidden)
+            with contextlib.closing(names):
+                for name in names:
+                    yield os.path.join(dirname, name)
+
+def _yield(x):
+    yield x
 
 # These 2 helper functions non-recursively glob inside a literal directory.
 # They return a list of basenames.  _glob1 accepts a pattern while _glob0
 # takes a literal basename (so it only has to check for its existence).
 
-def _glob1(dirname, pattern, dir_fd, dironly, include_hidden=False):
-    names = _listdir(dirname, dir_fd, dironly)
-    if not (include_hidden or _ishidden(pattern)):
-        names = (x for x in names if not _ishidden(x))
-    return fnmatch.filter(names, pattern)
+def _glob1(dirname, pattern, dir_fd, dironly, eager, include_hidden=False):
+    with contextlib.closing(_iterdir(dirname, dir_fd, dironly)) as names:
+        if not (include_hidden or _ishidden(pattern)):
+            names = (x for x in names if not _ishidden(x))
+        if eager:
+            names = list(names)
+        yield from fnmatch.ifilter(names, pattern)
 
-def _glob0(dirname, basename, dir_fd, dironly, include_hidden=False):
+def _glob0(dirname, basename, dir_fd, dironly, eager, include_hidden=False):
     if basename:
         if _lexists(_join(dirname, basename), dir_fd):
-            return [basename]
+            yield basename
     else:
         # `os.path.split()` returns an empty basename for paths ending with a
         # directory separator.  'q*x/' should match only directories.
         if _isdir(dirname, dir_fd):
-            return [basename]
-    return []
+            yield basename
 
 _deprecated_function_message = (
     "{name} is deprecated and will be removed in Python {remove}. Use "
@@ -130,17 +140,17 @@ _deprecated_function_message = (
 def glob0(dirname, pattern):
     import warnings
     warnings._deprecated("glob.glob0", _deprecated_function_message, remove=(3, 15))
-    return _glob0(dirname, pattern, None, False)
+    return list(_glob0(dirname, pattern, None, False, False))
 
 def glob1(dirname, pattern):
     import warnings
     warnings._deprecated("glob.glob1", _deprecated_function_message, remove=(3, 15))
-    return _glob1(dirname, pattern, None, False)
+    return list(_glob1(dirname, pattern, None, False, True))
 
 # This helper function recursively yields relative pathnames inside a literal
 # directory.
 
-def _glob2(dirname, pattern, dir_fd, dironly, include_hidden=False):
+def _glob2(dirname, pattern, dir_fd, dironly, eager, include_hidden=False):
     assert _isrecursive(pattern)
     if not dirname or _isdir(dirname, dir_fd):
         yield pattern[:0]
