@@ -2415,7 +2415,36 @@ class OtherTests(unittest.TestCase):
                 self.assertRaises(RuntimeError, zf.extract, 'a.txt')
 
     @requires_zlib()
-    def test_full_overlap(self):
+    def test_full_overlap_different_names(self):
+        data = (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00b\xed'
+            b'\xc0\x81\x08\x00\x00\x00\xc00\xd6\xfbK\\d\x0b`P'
+            b'K\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2'
+            b'\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00aPK'
+            b'\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00bPK\x05'
+            b'\x06\x00\x00\x00\x00\x02\x00\x02\x00^\x00\x00\x00/\x00\x00'
+            b'\x00\x00\x00'
+        )
+        with zipfile.ZipFile(io.BytesIO(data), 'r') as zipf:
+            self.assertEqual(zipf.namelist(), ['a', 'b'])
+            zi = zipf.getinfo('a')
+            self.assertEqual(zi.header_offset, 0)
+            self.assertEqual(zi.compress_size, 16)
+            self.assertEqual(zi.file_size, 1033)
+            zi = zipf.getinfo('b')
+            self.assertEqual(zi.header_offset, 0)
+            self.assertEqual(zi.compress_size, 16)
+            self.assertEqual(zi.file_size, 1033)
+            self.assertEqual(len(zipf.read('b')), 1033)
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'File name.*differ'):
+                zipf.read('a')
+
+    @requires_zlib()
+    def test_full_overlap_different_names2(self):
         data = (
             b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
             b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00a\xed'
@@ -2439,9 +2468,43 @@ class OtherTests(unittest.TestCase):
             self.assertEqual(zi.header_offset, 0)
             self.assertEqual(zi.compress_size, 16)
             self.assertEqual(zi.file_size, 1033)
-            self.assertEqual(len(zipf.read('a')), 1033)
             with self.assertRaisesRegex(zipfile.BadZipFile, 'File name.*differ'):
                 zipf.read('b')
+            with self.assertWarnsRegex(UserWarning, 'Overlapped entries') as cm:
+                self.assertEqual(len(zipf.read('a')), 1033)
+            self.assertEqual(cm.filename, __file__)
+
+    @requires_zlib()
+    def test_full_overlap_same_name(self):
+        data = (
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00a\xed'
+            b'\xc0\x81\x08\x00\x00\x00\xc00\xd6\xfbK\\d\x0b`P'
+            b'K\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2'
+            b'\x1e8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00aPK'
+            b'\x01\x02\x14\x00\x14\x00\x00\x00\x08\x00\xa0lH\x05\xe2\x1e'
+            b'8\xbb\x10\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00aPK\x05'
+            b'\x06\x00\x00\x00\x00\x02\x00\x02\x00^\x00\x00\x00/\x00\x00'
+            b'\x00\x00\x00'
+        )
+        with zipfile.ZipFile(io.BytesIO(data), 'r') as zipf:
+            self.assertEqual(zipf.namelist(), ['a', 'a'])
+            self.assertEqual(len(zipf.infolist()), 2)
+            zi = zipf.getinfo('a')
+            self.assertEqual(zi.header_offset, 0)
+            self.assertEqual(zi.compress_size, 16)
+            self.assertEqual(zi.file_size, 1033)
+            self.assertEqual(len(zipf.read('a')), 1033)
+            self.assertEqual(len(zipf.read(zi)), 1033)
+            self.assertEqual(len(zipf.read(zipf.infolist()[1])), 1033)
+            with self.assertWarnsRegex(UserWarning, 'Overlapped entries') as cm:
+                self.assertEqual(len(zipf.read(zipf.infolist()[0])), 1033)
+            self.assertEqual(cm.filename, __file__)
+            with self.assertWarnsRegex(UserWarning, 'Overlapped entries') as cm:
+                zipf.open(zipf.infolist()[0]).close()
+            self.assertEqual(cm.filename, __file__)
 
     @requires_zlib()
     def test_quoted_overlap(self):
@@ -2473,6 +2536,47 @@ class OtherTests(unittest.TestCase):
             with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
                 zipf.read('a')
             self.assertEqual(len(zipf.read('b')), 1033)
+
+    @requires_zlib()
+    def test_overlap_with_central_dir(self):
+        data = (
+            b'PK\x01\x02\x14\x03\x14\x00\x00\x00\x08\x00G_|Z'
+            b'\xe2\x1e8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\xb4\x81\x00\x00\x00\x00aP'
+            b'K\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00/\x00\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00'
+        )
+        with zipfile.ZipFile(io.BytesIO(data), 'r') as zipf:
+            self.assertEqual(zipf.namelist(), ['a'])
+            self.assertEqual(len(zipf.infolist()), 1)
+            zi = zipf.getinfo('a')
+            self.assertEqual(zi.header_offset, 0)
+            self.assertEqual(zi.compress_size, 11)
+            self.assertEqual(zi.file_size, 1033)
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Bad magic number'):
+                zipf.read('a')
+
+    @requires_zlib()
+    def test_overlap_with_archive_comment(self):
+        data = (
+            b'PK\x01\x02\x14\x03\x14\x00\x00\x00\x08\x00G_|Z'
+            b'\xe2\x1e8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00'
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\xb4\x81E\x00\x00\x00aP'
+            b'K\x05\x06\x00\x00\x00\x00\x01\x00\x01\x00/\x00\x00\x00\x00'
+            b'\x00\x00\x00*\x00'
+            b'PK\x03\x04\x14\x00\x00\x00\x08\x00G_|Z\xe2\x1e'
+            b'8\xbb\x0b\x00\x00\x00\t\x04\x00\x00\x01\x00\x00\x00aK'
+            b'L\x1c\x05\xa3`\x14\x8cx\x00\x00'
+        )
+        with zipfile.ZipFile(io.BytesIO(data), 'r') as zipf:
+            self.assertEqual(zipf.namelist(), ['a'])
+            self.assertEqual(len(zipf.infolist()), 1)
+            zi = zipf.getinfo('a')
+            self.assertEqual(zi.header_offset, 69)
+            self.assertEqual(zi.compress_size, 11)
+            self.assertEqual(zi.file_size, 1033)
+            with self.assertRaisesRegex(zipfile.BadZipFile, 'Overlapped entries'):
+                zipf.read('a')
 
     def tearDown(self):
         unlink(TESTFN)
