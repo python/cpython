@@ -269,7 +269,7 @@ PyList_New(Py_ssize_t size)
         }
     }
     if (op == NULL) {
-        // do we still need this freelist? if so, we could store it at small_lists[0] with some special casing
+        // the size based freelist was empty, so we try the general freelist
         op = _Py_FREELIST_POP(PyListObject, lists);
         if (op == NULL) {
             op = PyObject_GC_New(PyListObject, &PyList_Type);
