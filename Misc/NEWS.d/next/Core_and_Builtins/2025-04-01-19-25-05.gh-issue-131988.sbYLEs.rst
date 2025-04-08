@@ -1,2 +1,0 @@
-Fix a performance regression that caused scaling bottlenecks in the free
-threaded build in 3.13.1 and 3.13.2.
