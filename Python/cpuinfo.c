@@ -162,6 +162,7 @@ detect_cpuid_maxleaf(void)
 static inline void
 detect_cpuid_features(py_cpuid_features *flags, CPUID_REG ecx, CPUID_REG edx)
 {
+    assert(flags->maxleaf >= 1);
     // Keep the ordering and newlines as they are declared in the structure.
 #ifdef SIMD_SSE_INSTRUCTIONS_DETECTION_GUARD
 #ifdef Py_CAN_COMPILE_SIMD_SSE_INSTRUCTIONS
@@ -206,6 +207,7 @@ static inline void
 detect_cpuid_extended_features_L7S0(py_cpuid_features *flags,
                                     CPUID_REG ebx, CPUID_REG ecx, CPUID_REG edx)
 {
+    assert(flags->maxleaf >= 7);
     (void)ebx, (void)ecx, (void)edx; // to suppress unused warnings
     // Keep the ordering and newlines as they are declared in the structure.
 #ifdef SIMD_AVX2_INSTRUCTIONS_DETECTION_GUARD
@@ -282,6 +284,7 @@ detect_cpuid_extended_features_L7S1(py_cpuid_features *flags,
                                     CPUID_REG ecx,
                                     CPUID_REG edx)
 {
+    assert(flags->maxleaf >= 7);
     (void)eax, (void)ebx, (void)ecx, (void)edx; // to suppress unused warnings
     // Keep the ordering and newlines as they are declared in the structure.
 #ifdef SIMD_AVX_INSTRUCTIONS_DETECTION_GUARD
@@ -309,6 +312,7 @@ static inline void
 detect_cpuid_xsave_state(py_cpuid_features *flags)
 {
     // Keep the ordering and newlines as they are declared in the structure.
+    assert(flags->maxleaf >= 1);
 #ifdef HAS_XGETBV_SUPPORT
     uint64_t xcr0 = flags->osxsave ? get_xgetbv(0) : 0;
     flags->xcr0_sse = XSAVE_CHECK_REG(xcr0, XCR0_SSE);
@@ -501,6 +505,7 @@ cpuid_detect_l1_features(py_cpuid_features *flags)
 static inline void
 cpuid_detect_l7s0_features(py_cpuid_features *flags)
 {
+    assert(flags->maxleaf >= 7);
     CPUID_REG eax = 0, ebx = 0, ecx = 0, edx = 0;
     get_cpuid_info(7, 0, &eax, &ebx, &ecx, &edx);
     detect_cpuid_extended_features_L7S0(flags, ebx, ecx, edx);
@@ -513,6 +518,7 @@ cpuid_detect_l7s0_features(py_cpuid_features *flags)
 static inline void
 cpuid_detect_l7s1_features(py_cpuid_features *flags)
 {
+    assert(flags->maxleaf >= 7);
     CPUID_REG eax = 0, ebx = 0, ecx = 0, edx = 0;
     get_cpuid_info(7, 1, &eax, &ebx, &ecx, &edx);
     detect_cpuid_extended_features_L7S1(flags, eax, ebx, ecx, edx);

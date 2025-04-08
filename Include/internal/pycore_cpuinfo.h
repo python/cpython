@@ -29,7 +29,11 @@ extern "C" {
 
 typedef struct py_cpuid_features {
     uint32_t maxleaf;
-    /* Macro to declare a member flag of 'py_cpuid_features' as a uint8_t. */
+    /*
+     * Macro to declare a member flag of 'py_cpuid_features' as a uint8_t.
+     * Whenever this macro is used, do not forget to update the number of
+     * fields and the bitsize of the 'ready' member (see structure end).
+     */
 #define _Py_CPUID_DECL_FLAG(MEMBER_NAME)    uint8_t MEMBER_NAME:1
     // --- Streaming SIMD Extensions ------------------------------------------
     _Py_CPUID_DECL_FLAG(sse);
@@ -94,8 +98,8 @@ typedef struct py_cpuid_features {
     _Py_CPUID_DECL_FLAG(popcnt);
     _Py_CPUID_DECL_FLAG(pclmulqdq);
 
-    _Py_CPUID_DECL_FLAG(xsave);     // XSAVE/XRSTOR/XSETBV/XGETBV
-    _Py_CPUID_DECL_FLAG(osxsave);   // XSAVE is enabled by the OS
+    _Py_CPUID_DECL_FLAG(xsave);   // XSAVE/XRSTOR/XSETBV/XGETBV
+    _Py_CPUID_DECL_FLAG(osxsave); // XSAVE is enabled by the OS
 
     // --- XCR0 register bits -------------------------------------------------
     _Py_CPUID_DECL_FLAG(xcr0_sse);
