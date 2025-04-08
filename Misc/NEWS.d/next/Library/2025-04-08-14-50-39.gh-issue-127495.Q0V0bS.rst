@@ -1,0 +1,3 @@
+Save (append new entry) the repl history to file every time new statement
+was succesful.  This should preserve command-line history after interpreter
+crash. Patch by Sergey B Kirpichev.

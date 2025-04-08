@@ -1341,6 +1341,26 @@ class TestMain(ReplTestCase):
             self.assertEqual(exit_code, 0)
             self.assertNotIn("\\040", pathlib.Path(hfile.name).read_text())
 
+    def test_history_survive_crash(self):
+        env = os.environ.copy()
+        commands = "1\nexit()\n"
+        output, exit_code = self.run_repl(commands, env=env)
+        if "can't use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+
+        with tempfile.NamedTemporaryFile() as hfile:
+            env["PYTHON_HISTORY"] = hfile.name
+            commands = "spam\nimport time\ntime.sleep(1000)\n"
+            try:
+                self.run_repl(commands, env=env)
+            except AssertionError:
+                pass
+
+            history = pathlib.Path(hfile.name).read_text()
+            self.assertIn("spam", history)
+            self.assertIn("time", history)
+            self.assertNotIn("sleep", history)
+
     def test_keyboard_interrupt_after_isearch(self):
         output, exit_code = self.run_repl(["\x12", "\x03", "exit"])
         self.assertEqual(exit_code, 0)
