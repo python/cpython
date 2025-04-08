@@ -947,10 +947,10 @@ list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyO
     if (d < 0) { /* Delete -d items */
         Py_ssize_t tail;
         tail = (Py_SIZE(a) - ihigh) * sizeof(PyObject *);
-        FT_ATOMIC_MEMMOVE_PTR_RELAXED(&item[ihigh+d], &item[ihigh], tail);
+        FT_ATOMIC_MEMMOVE_PTR_STORE_RELAXED(&item[ihigh+d], &item[ihigh], tail);
         if (list_resize(a, Py_SIZE(a) + d) < 0) {
-            FT_ATOMIC_MEMMOVE_PTR_RELAXED(&item[ihigh], &item[ihigh+d], tail);
-            FT_ATOMIC_MEMCPY_PTR_RELAXED(&item[ilow], recycle, s);
+            FT_ATOMIC_MEMMOVE_PTR_STORE_RELAXED(&item[ihigh], &item[ihigh+d], tail);
+            FT_ATOMIC_MEMCPY_PTR_STORE_RELAXED(&item[ilow], recycle, s);
             goto Error;
         }
         item = a->ob_item;
@@ -960,8 +960,8 @@ list_ass_slice_lock_held(PyListObject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyO
         if (list_resize(a, k+d) < 0)
             goto Error;
         item = a->ob_item;
-        FT_ATOMIC_MEMMOVE_PTR_RELAXED(&item[ihigh+d], &item[ihigh],
-                                      (k - ihigh)*sizeof(PyObject *));
+        FT_ATOMIC_MEMMOVE_PTR_STORE_RELAXED(&item[ihigh+d], &item[ihigh],
+                                            (k - ihigh)*sizeof(PyObject *));
     }
     for (k = 0; k < n; k++, ilow++) {
         PyObject *w = vitem[k];

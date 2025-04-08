@@ -60,7 +60,7 @@ _Py_memory_ptrs_repeat(char* dest, Py_ssize_t len_dest, Py_ssize_t len_src)
     Py_ssize_t copied = len_src;
     while (copied < len_dest) {
         Py_ssize_t bytes_to_copy = Py_MIN(copied, len_dest - copied);
-        FT_ATOMIC_MEMCPY_PTR_RELAXED(dest + copied, dest, (size_t)bytes_to_copy);
+        FT_ATOMIC_MEMCPY_PTR_STORE_RELAXED(dest + copied, dest, (size_t)bytes_to_copy);
         copied += bytes_to_copy;
     }
 }

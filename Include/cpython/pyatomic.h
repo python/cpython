@@ -548,7 +548,7 @@ _Py_atomic_load_ssize_acquire(const Py_ssize_t *obj);
 // --- _Py_atomic_memcpy / _Py_atomic_memmove ------------
 
 static inline void *
-_Py_atomic_memcpy_ptr_relaxed(void *dest, void *src, Py_ssize_t sn)
+_Py_atomic_memcpy_ptr_store_relaxed(void *dest, void *src, Py_ssize_t sn)
 {
     size_t n = (size_t)sn;
     assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
@@ -561,8 +561,7 @@ _Py_atomic_memcpy_ptr_relaxed(void *dest, void *src, Py_ssize_t sn)
         void **e = d + n / sizeof(void *);
 
         for (; d != e; d++, s++) {
-            void *v = _Py_atomic_load_ptr_relaxed(s);
-            _Py_atomic_store_ptr_relaxed(d, v);
+            _Py_atomic_store_ptr_relaxed(d, *s);
         }
     }
 
@@ -570,7 +569,7 @@ _Py_atomic_memcpy_ptr_relaxed(void *dest, void *src, Py_ssize_t sn)
 }
 
 static inline void *
-_Py_atomic_memmove_ptr_relaxed(void *dest, void *src, Py_ssize_t sn)
+_Py_atomic_memmove_ptr_store_relaxed(void *dest, void *src, Py_ssize_t sn)
 {
     size_t n = (size_t)sn;
     assert(((uintptr_t)dest & (sizeof (void *) - 1)) == 0);
@@ -583,8 +582,7 @@ _Py_atomic_memmove_ptr_relaxed(void *dest, void *src, Py_ssize_t sn)
         void **e = d + n / sizeof(void *);
 
         for (; d != e; d++, s++) {
-            void *v = _Py_atomic_load_ptr_relaxed(s);
-            _Py_atomic_store_ptr_relaxed(d, v);
+            _Py_atomic_store_ptr_relaxed(d, *s);
         }
     }
     else if (dest > src) {
@@ -594,8 +592,7 @@ _Py_atomic_memmove_ptr_relaxed(void *dest, void *src, Py_ssize_t sn)
         void **e = (void **)dest - 1;
 
         for (; d != e; d--, s--) {
-            void *v = _Py_atomic_load_ptr_relaxed(s);
-            _Py_atomic_store_ptr_relaxed(d, v);
+            _Py_atomic_store_ptr_relaxed(d, *s);
         }
     }
 
