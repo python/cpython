@@ -2,6 +2,7 @@ import contextlib
 import io
 import mimetypes
 import os
+import shlex
 import sys
 import unittest.mock
 from platform import win32_edition
@@ -389,61 +390,51 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, mimetypes)
 
 
-class MimetypesCliTestCase(unittest.TestCase):
+class CommandLineTest(unittest.TestCase):
+    def test_parse_args(self):
+        args, help_text = mimetypes._parse_args("-h")
+        self.assertTrue(help_text.startswith("usage: "))
 
-    def mimetypes_cmd(self, *args):
-        # We cannot use run_python_until_end() as the latter would not
-        # call setUpModule() which unsets mimetypes.knowfiles. Instead,
-        # we need to directly call the main() function in order to avoid
-        # re-initializing the database.
-        rc, out, err = 0, io.StringIO(), io.StringIO()
-        with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            try:
-                mimetypes._main(args)
-            except SystemExit as exc:
-                self.assertIsInstance(exc.code, int)
-                rc = exc.code
-        return rc, out.getvalue(), err.getvalue()
+        args, help_text = mimetypes._parse_args("--invalid")
+        self.assertTrue(help_text.startswith("usage: "))
 
-    def test_help_option(self):
-        retcode, out, err = self.mimetypes_cmd('-h')
-        self.assertEqual(retcode, 0)
-        self.assertStartsWith(out, 'usage: ')
-        self.assertEqual(err, '')
+        args, _ = mimetypes._parse_args(shlex.split("-l -e image/jpg"))
+        self.assertTrue(args.extension)
+        self.assertTrue(args.lenient)
+        self.assertEqual(args.type, ["image/jpg"])
 
-    def test_invalid_option(self):
-        retcode, out, err = self.mimetypes_cmd('--invalid')
-        self.assertEqual(retcode, 2)
-        self.assertEqual(out, '')
-        self.assertStartsWith(err, 'usage: ')
+        args, _ = mimetypes._parse_args(shlex.split("-e image/jpg"))
+        self.assertTrue(args.extension)
+        self.assertFalse(args.lenient)
+        self.assertEqual(args.type, ["image/jpg"])
 
-    def test_guess_extension(self):
-        retcode, out, err = self.mimetypes_cmd('-l', '-e', 'image/jpg')
-        self.assertEqual(retcode, 0)
-        self.assertEqual(out, '.jpg\n')
-        self.assertEqual(err, '')
+        args, _ = mimetypes._parse_args(shlex.split("-l foo.webp"))
+        self.assertFalse(args.extension)
+        self.assertTrue(args.lenient)
+        self.assertEqual(args.type, ["foo.webp"])
 
-        retcode, out, err = self.mimetypes_cmd('-e', 'image/jpg')
-        self.assertEqual(retcode, 1)
-        self.assertEqual(out, '')
-        self.assertEqual(err, 'error: unknown type image/jpg\n')
+        args, _ = mimetypes._parse_args(shlex.split("foo.pic"))
+        self.assertFalse(args.extension)
+        self.assertFalse(args.lenient)
+        self.assertEqual(args.type, ["foo.pic"])
 
-        retcode, out, err = self.mimetypes_cmd('-e', 'image/jpeg')
-        self.assertEqual(retcode, 0)
-        self.assertEqual(out, '.jpg\n')
-        self.assertEqual(err, '')
 
-    def test_guess_type(self):
-        retcode, out, err = self.mimetypes_cmd('-l', 'foo.webp')
-        self.assertEqual(retcode, 0)
-        self.assertEqual(out, 'type: image/webp encoding: None\n')
-        self.assertEqual(err, '')
+    def test_invocation(self):
+        for command, expected in [
+            ("-l -e image/jpg", ".jpg"),
+            ("-e image/jpeg", ".jpg"),
+            ("-l foo.webp", "type: image/webp encoding: None"),
+        ]:
+            self.assertEqual(mimetypes._main(shlex.split(command)), expected)
 
-    def test_guess_type_conflicting_with_mimetypes(self):
-        retcode, out, err = self.mimetypes_cmd('foo.pic')
-        self.assertEqual(retcode, 1)
-        self.assertEqual(out, '')
-        self.assertEqual(err, 'error: media type unknown for foo.pic\n')
+
+    def test_invocation_error(self):
+        for command, expected in [
+            ("-e image/jpg", "error: unknown type image/jpg"),
+            ("foo.pic", "error: media type unknown for foo.pic"),
+        ]:
+            with self.assertRaisesRegex(SystemExit, expected):
+                mimetypes._main(shlex.split(command))
 
 
 if __name__ == "__main__":
