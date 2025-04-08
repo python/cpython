@@ -746,6 +746,12 @@ class RunStringTests(TestBase):
         with self.assertRaises(TypeError):
             _interpreters.run_string(self.id, b'print("spam")')
 
+    def test_str_subclass_string(self):
+        class StrSubclass(str): pass
+
+        output = _run_output(self.id, StrSubclass('print(1 + 2)'))
+        self.assertEqual(output, '3\n')
+
     def test_with_shared(self):
         r, w = os.pipe()
 
