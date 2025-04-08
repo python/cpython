@@ -1,4 +1,4 @@
-# Those libraries in the stdlib can be type-checked.
+# These libraries in the stdlib can be type-checked.
 
 _colorize.py
 _pyrepl
