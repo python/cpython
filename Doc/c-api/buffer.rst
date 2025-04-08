@@ -67,7 +67,7 @@ resource leaks.
 .. versionadded:: 3.12
 
    Buffer protocol is now accessible in Python, see
-   :ref:`python-buffer-protocol` and :class:`memoryview`
+   :ref:`python-buffer-protocol` and :class:`memoryview`.
 
 .. _buffer-structure:
 
