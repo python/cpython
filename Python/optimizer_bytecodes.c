@@ -367,33 +367,38 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL, (value -- res)) {
-        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        if (!already_bool) {
             res = sym_new_truthiness(ctx, value, true);
         }
     }
 
     op(_TO_BOOL_BOOL, (value -- res)) {
-        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        if (!already_bool) {
             sym_set_type(value, &PyBool_Type);
             res = sym_new_truthiness(ctx, value, true);
         }
     }
 
     op(_TO_BOOL_INT, (value -- res)) {
-        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        if (!already_bool) {
             sym_set_type(value, &PyLong_Type);
             res = sym_new_truthiness(ctx, value, true);
         }
     }
 
     op(_TO_BOOL_LIST, (value -- res)) {
-        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        if (!already_bool) {
             res = sym_new_type(ctx, &PyBool_Type);
         }
     }
 
     op(_TO_BOOL_NONE, (value -- res)) {
-        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        if (!already_bool) {
             sym_set_const(value, Py_None);
             res = sym_new_const(ctx, Py_False);
         }
@@ -414,7 +419,8 @@ dummy_func(void) {
     }
 
     op(_TO_BOOL_STR, (value -- res)) {
-        if (!optimize_to_bool(this_instr, ctx, value, &res)) {
+        int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
+        if (!already_bool) {
             res = sym_new_truthiness(ctx, value, true);
         }
     }
@@ -467,6 +473,10 @@ dummy_func(void) {
     }
 
     op(_CONTAINS_OP, (left, right -- res)) {
+        res = sym_new_type(ctx, &PyBool_Type);
+    }
+
+    op(_CONTAINS_OP_SET, (left, right -- res)) {
         res = sym_new_type(ctx, &PyBool_Type);
     }
 
