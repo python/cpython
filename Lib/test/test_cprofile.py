@@ -142,8 +142,8 @@ class CProfileTest(ProfileTest):
     def test_bad_descriptor(self):
         """
         gh-132250
-        cProfile should not crash when profiling a function with a descriptor
-        that raises an exception.
+        cProfile should not crash when the profiler callback fails to locate
+        the actual function of a method.
         """
         with self.profilerclass() as prof:
             with self.assertRaises(TypeError):
