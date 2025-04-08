@@ -12,10 +12,12 @@ from test.support import os_helper
 from test.support import socket_helper
 from test.support import captured_stderr
 from test.support.os_helper import TESTFN, EnvironmentVarGuard
+from test.support.venv import VirtualEnvironmentMixin
 import ast
 import builtins
 import glob
 import io
+import json
 import os
 import re
 import shutil
@@ -24,6 +26,7 @@ import subprocess
 import sys
 import sysconfig
 import tempfile
+import textwrap
 import urllib.error
 import urllib.request
 from unittest import mock
@@ -454,7 +457,7 @@ class PthFile(object):
         if os.path.exists(self.bad_dir_path):
             os.rmdir(self.bad_dir_path)
 
-class ImportSideEffectTests(unittest.TestCase):
+class ImportSideEffectTests(unittest.TestCase, VirtualEnvironmentMixin):
     """Test side-effects from importing 'site'."""
 
     def setUp(self):
@@ -573,6 +576,31 @@ class ImportSideEffectTests(unittest.TestCase):
         except urllib.error.HTTPError as e:
             code = e.code
         self.assertEqual(code, 200, msg="Can't find " + url)
+
+    @support.requires_subprocess()
+    def test_system_site_packages(self):
+        script = textwrap.dedent("""
+            import sys, json
+
+            print(json.dumps(
+                sys.path,
+                indent=2,
+            ))
+        """)
+
+        # Use _get_preferred_schemes to find the system scheme, in case we are in a virtual environment
+        system_scheme_name = sysconfig._get_preferred_schemes()['prefix']
+        system_paths = sysconfig.get_paths(system_scheme_name)
+
+        with self.venv(system_site_packages=False) as venv:
+            sys_path = json.loads(venv.run('-c', script).stdout)
+        self.assertNotIn(system_paths['purelib'], sys_path)
+        self.assertNotIn(system_paths['platlib'], sys_path)
+
+        with self.venv(system_site_packages=True) as venv:
+            sys_path = json.loads(venv.run('-c', script).stdout)
+        self.assertIn(system_paths['purelib'], sys_path)
+        self.assertIn(system_paths['platlib'], sys_path)
 
 
 class StartupImportTests(unittest.TestCase):
