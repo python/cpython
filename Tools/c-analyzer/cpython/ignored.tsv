@@ -56,7 +56,7 @@ Python/pyhash.c	-	_Py_HashSecret	-
 Python/parking_lot.c	-	buckets	-
 
 ## data needed for introspecting asyncio state from debuggers and profilers
-Modules/_asynciomodule.c	-	AsyncioDebug	-
+Modules/_asynciomodule.c	-	_AsyncioDebug	-
 
 
 ##################################

@@ -164,7 +164,7 @@ Module contents
 
    - *match_args*: If true (the default is ``True``), the
      :attr:`~object.__match_args__` tuple will be created from the list of
-     parameters to the generated :meth:`~object.__init__` method (even if
+     non keyword-only parameters to the generated :meth:`~object.__init__` method (even if
      :meth:`!__init__` is not generated, see above).  If false, or if
      :attr:`!__match_args__` is already defined in the class, then
      :attr:`!__match_args__` will not be generated.
@@ -175,10 +175,11 @@ Module contents
      fields will be marked as keyword-only.  If a field is marked as
      keyword-only, then the only effect is that the :meth:`~object.__init__`
      parameter generated from a keyword-only field must be specified
-     with a keyword when :meth:`!__init__` is called.  There is no
-     effect on any other aspect of dataclasses.  See the
-     :term:`parameter` glossary entry for details.  Also see the
+     with a keyword when :meth:`!__init__` is called. See the :term:`parameter`
+     glossary entry for details.  Also see the
      :const:`KW_ONLY` section.
+
+     Keyword-only fields are not included in :attr:`!__match_args__`.
 
     .. versionadded:: 3.10
 
@@ -298,6 +299,8 @@ Module contents
    - *kw_only*: If true, this field will be marked as keyword-only.
      This is used when the generated :meth:`~object.__init__` method's
      parameters are computed.
+
+     Keyword-only fields are also not included in :attr:`!__match_args__`.
 
     .. versionadded:: 3.10
 
