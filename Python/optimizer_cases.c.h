@@ -218,7 +218,6 @@
             JitOptSymbol *res;
             value = stack_pointer[-1];
             if (!optimize_to_bool(this_instr, ctx, value, &res)) {
-                sym_set_type(value, &PyList_Type);
                 res = sym_new_type(ctx, &PyBool_Type);
             }
             stack_pointer[-1] = res;
@@ -873,7 +872,7 @@
             seq = stack_pointer[-1];
             values = &stack_pointer[-1];
             for (int i = 0; i < oparg; i++) {
-                values[i] = sym_tuple_getitem(ctx, seq, i);
+                values[i] = sym_tuple_getitem(ctx, seq, oparg - i - 1);
             }
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());

@@ -908,7 +908,7 @@ dummy_func(void) {
 
     op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg])) {
         for (int i = 0; i < oparg; i++) {
-            values[i] = sym_tuple_getitem(ctx, seq, i);
+            values[i] = sym_tuple_getitem(ctx, seq, oparg - i - 1);
         }
     }
 
