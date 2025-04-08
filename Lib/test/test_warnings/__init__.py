@@ -1432,6 +1432,17 @@ class PyEnvironmentVariableTests(EnvironmentVariableTests, unittest.TestCase):
     module = py_warnings
 
 
+class LocksTest(unittest.TestCase):
+    @support.cpython_only
+    @unittest.skipUnless(c_warnings, 'C module is required')
+    def test_release_lock_no_lock(self):
+        with self.assertRaisesRegex(
+            RuntimeError,
+            'cannot release un-acquired lock',
+        ):
+            c_warnings._release_lock()
+
+
 class _DeprecatedTest(BaseTest, unittest.TestCase):
 
     """Test _deprecated()."""
@@ -1521,7 +1532,7 @@ a=A()
         self.assertTrue(err.startswith(expected), ascii(err))
 
 
-class DeprecatedTests(unittest.TestCase):
+class DeprecatedTests(PyPublicAPITests):
     def test_dunder_deprecated(self):
         @deprecated("A will go away soon")
         class A:
@@ -1641,6 +1652,25 @@ class DeprecatedTests(unittest.TestCase):
 
         instance = Child(42)
         self.assertEqual(instance.a, 42)
+
+    def test_do_not_shadow_user_arguments(self):
+        new_called = False
+        new_called_cls = None
+
+        @deprecated("MyMeta will go away soon")
+        class MyMeta(type):
+            def __new__(mcs, name, bases, attrs, cls=None):
+                nonlocal new_called, new_called_cls
+                new_called = True
+                new_called_cls = cls
+                return super().__new__(mcs, name, bases, attrs)
+
+        with self.assertWarnsRegex(DeprecationWarning, "MyMeta will go away soon"):
+            class Foo(metaclass=MyMeta, cls='haha'):
+                pass
+
+        self.assertTrue(new_called)
+        self.assertEqual(new_called_cls, 'haha')
 
     def test_existing_init_subclass(self):
         @deprecated("C will go away soon")

@@ -13,6 +13,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK
 #include "pycore_pymem.h"         // PYMEM_CLEANBYTE
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
+#include "pycore_unicodeobject.h" // _PyUnicode_FormatLong()
 
 #include <stddef.h>
 
@@ -468,8 +469,6 @@ static PyObject *
 formatlong(PyObject *v, int flags, int prec, int type)
 {
     PyObject *result, *iobj;
-    if (type == 'i')
-        type = 'd';
     if (PyLong_Check(v))
         return _PyUnicode_FormatLong(v, flags & F_ALT, prec, type);
     if (PyNumber_Check(v)) {
@@ -1205,7 +1204,8 @@ PyObject *PyBytes_DecodeEscape(const char *s,
         unsigned char c = *first_invalid_escape;
         if ('4' <= c && c <= '7') {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "invalid octal escape sequence '\\%.3s'",
+                                 "b\"\\%.3s\" is an invalid octal escape sequence. "
+                                 "Such sequences will not work in the future. ",
                                  first_invalid_escape) < 0)
             {
                 Py_DECREF(result);
@@ -1214,7 +1214,8 @@ PyObject *PyBytes_DecodeEscape(const char *s,
         }
         else {
             if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                                 "invalid escape sequence '\\%c'",
+                                 "b\"\\%c\" is an invalid escape sequence. "
+                                 "Such sequences will not work in the future. ",
                                  c) < 0)
             {
                 Py_DECREF(result);
@@ -1223,7 +1224,6 @@ PyObject *PyBytes_DecodeEscape(const char *s,
         }
     }
     return result;
-
 }
 /* -------------------------------------------------------------------- */
 /* object api */
@@ -1882,8 +1882,8 @@ Example: b'.'.join([b'ab', b'pq', b'rs']) -> b'ab.pq.rs'.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_join(PyBytesObject *self, PyObject *iterable_of_bytes)
-/*[clinic end generated code: output=a046f379f626f6f8 input=7fe377b95bd549d2]*/
+bytes_join_impl(PyBytesObject *self, PyObject *iterable_of_bytes)
+/*[clinic end generated code: output=0687abb94d7d438e input=7fe377b95bd549d2]*/
 {
     return stringlib_bytes_join((PyObject*)self, iterable_of_bytes);
 }
@@ -2483,7 +2483,7 @@ bytes_splitlines_impl(PyBytesObject *self, int keepends)
 @classmethod
 bytes.fromhex
 
-    string: unicode
+    string: object
     /
 
 Create a bytes object from a string of hexadecimal numbers.
@@ -2494,7 +2494,7 @@ Example: bytes.fromhex('B9 01EF') -> b'\\xb9\\x01\\xef'.
 
 static PyObject *
 bytes_fromhex_impl(PyTypeObject *type, PyObject *string)
-/*[clinic end generated code: output=0973acc63661bb2e input=bf4d1c361670acd3]*/
+/*[clinic end generated code: output=0973acc63661bb2e input=f37d98ed51088a21]*/
 {
     PyObject *result = _PyBytes_FromHex(string, 0);
     if (type != &PyBytes_Type && result != NULL) {
@@ -2509,37 +2509,55 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
     char *buf;
     Py_ssize_t hexlen, invalid_char;
     unsigned int top, bot;
-    const Py_UCS1 *str, *end;
+    const Py_UCS1 *str, *start, *end;
     _PyBytesWriter writer;
+    Py_buffer view;
+    view.obj = NULL;
 
     _PyBytesWriter_Init(&writer);
     writer.use_bytearray = use_bytearray;
 
-    assert(PyUnicode_Check(string));
-    hexlen = PyUnicode_GET_LENGTH(string);
+    if (PyUnicode_Check(string)) {
+        hexlen = PyUnicode_GET_LENGTH(string);
 
-    if (!PyUnicode_IS_ASCII(string)) {
-        const void *data = PyUnicode_DATA(string);
-        int kind = PyUnicode_KIND(string);
-        Py_ssize_t i;
+        if (!PyUnicode_IS_ASCII(string)) {
+            const void *data = PyUnicode_DATA(string);
+            int kind = PyUnicode_KIND(string);
+            Py_ssize_t i;
 
-        /* search for the first non-ASCII character */
-        for (i = 0; i < hexlen; i++) {
-            if (PyUnicode_READ(kind, data, i) >= 128)
-                break;
+            /* search for the first non-ASCII character */
+            for (i = 0; i < hexlen; i++) {
+                if (PyUnicode_READ(kind, data, i) >= 128)
+                    break;
+            }
+            invalid_char = i;
+            goto error;
         }
-        invalid_char = i;
-        goto error;
-    }
 
-    assert(PyUnicode_KIND(string) == PyUnicode_1BYTE_KIND);
-    str = PyUnicode_1BYTE_DATA(string);
+        assert(PyUnicode_KIND(string) == PyUnicode_1BYTE_KIND);
+        str = PyUnicode_1BYTE_DATA(string);
+    }
+    else if (PyObject_CheckBuffer(string)) {
+        if (PyObject_GetBuffer(string, &view, PyBUF_SIMPLE) != 0) {
+            return NULL;
+        }
+        hexlen = view.len;
+        str = view.buf;
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "fromhex() argument must be str or bytes-like, not %T",
+                     string);
+        return NULL;
+    }
 
     /* This overestimates if there are spaces */
     buf = _PyBytesWriter_Alloc(&writer, hexlen / 2);
-    if (buf == NULL)
-        return NULL;
+    if (buf == NULL) {
+        goto release_buffer;
+    }
 
+    start = str;
     end = str + hexlen;
     while (str < end) {
         /* skip over spaces in the input */
@@ -2553,7 +2571,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
 
         top = _PyLong_DigitValue[*str];
         if (top >= 16) {
-            invalid_char = str - PyUnicode_1BYTE_DATA(string);
+            invalid_char = str - start;
             goto error;
         }
         str++;
@@ -2564,7 +2582,7 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
             if (str >= end){
                 invalid_char = -1;
             } else {
-                invalid_char = str - PyUnicode_1BYTE_DATA(string);
+                invalid_char = str - start;
             }
             goto error;
         }
@@ -2573,6 +2591,9 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
         *buf++ = (unsigned char)((top << 4) + bot);
     }
 
+    if (view.obj != NULL) {
+       PyBuffer_Release(&view);
+    }
     return _PyBytesWriter_Finish(&writer, buf);
 
   error:
@@ -2585,6 +2606,11 @@ _PyBytes_FromHex(PyObject *string, int use_bytearray)
                      "fromhex() arg at position %zd", invalid_char);
     }
     _PyBytesWriter_Dealloc(&writer);
+
+  release_buffer:
+    if (view.obj != NULL) {
+        PyBuffer_Release(&view);
+    }
     return NULL;
 }
 
@@ -2621,15 +2647,16 @@ bytes_hex_impl(PyBytesObject *self, PyObject *sep, int bytes_per_sep)
 }
 
 static PyObject *
-bytes_getnewargs(PyBytesObject *v, PyObject *Py_UNUSED(ignored))
+bytes_getnewargs(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
+    PyBytesObject *v = _PyBytes_CAST(op);
     return Py_BuildValue("(y#)", v->ob_sval, Py_SIZE(v));
 }
 
 
 static PyMethodDef
 bytes_methods[] = {
-    {"__getnewargs__",          (PyCFunction)bytes_getnewargs,  METH_NOARGS},
+    {"__getnewargs__", bytes_getnewargs,  METH_NOARGS},
     BYTES___BYTES___METHODDEF
     {"capitalize", stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
@@ -3085,7 +3112,7 @@ PyTypeObject PyBytes_Type = {
     bytes_doc,                                  /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
-    (richcmpfunc)bytes_richcompare,             /* tp_richcompare */
+    bytes_richcompare,                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     bytes_iter,                                 /* tp_iter */
     0,                                          /* tp_iternext */
@@ -3245,24 +3272,29 @@ typedef struct {
     PyBytesObject *it_seq; /* Set to NULL when iterator is exhausted */
 } striterobject;
 
+#define _striterobject_CAST(op)  ((striterobject *)(op))
+
 static void
-striter_dealloc(striterobject *it)
+striter_dealloc(PyObject *op)
 {
+    striterobject *it = _striterobject_CAST(op);
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
     PyObject_GC_Del(it);
 }
 
 static int
-striter_traverse(striterobject *it, visitproc visit, void *arg)
+striter_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    striterobject *it = _striterobject_CAST(op);
     Py_VISIT(it->it_seq);
     return 0;
 }
 
 static PyObject *
-striter_next(striterobject *it)
+striter_next(PyObject *op)
 {
+    striterobject *it = _striterobject_CAST(op);
     PyBytesObject *seq;
 
     assert(it != NULL);
@@ -3282,8 +3314,9 @@ striter_next(striterobject *it)
 }
 
 static PyObject *
-striter_len(striterobject *it, PyObject *Py_UNUSED(ignored))
+striter_len(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    striterobject *it = _striterobject_CAST(op);
     Py_ssize_t len = 0;
     if (it->it_seq)
         len = PyBytes_GET_SIZE(it->it_seq) - it->it_index;
@@ -3294,14 +3327,14 @@ PyDoc_STRVAR(length_hint_doc,
              "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-striter_reduce(striterobject *it, PyObject *Py_UNUSED(ignored))
+striter_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
 
     /* _PyEval_GetBuiltin can invoke arbitrary code,
      * call must be before access of iterator pointers.
      * see issue #101765 */
-
+    striterobject *it = _striterobject_CAST(op);
     if (it->it_seq != NULL) {
         return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
     } else {
@@ -3312,11 +3345,12 @@ striter_reduce(striterobject *it, PyObject *Py_UNUSED(ignored))
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 
 static PyObject *
-striter_setstate(striterobject *it, PyObject *state)
+striter_setstate(PyObject *op, PyObject *state)
 {
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
+    striterobject *it = _striterobject_CAST(op);
     if (it->it_seq != NULL) {
         if (index < 0)
             index = 0;
@@ -3330,12 +3364,9 @@ striter_setstate(striterobject *it, PyObject *state)
 PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyMethodDef striter_methods[] = {
-    {"__length_hint__", (PyCFunction)striter_len, METH_NOARGS,
-     length_hint_doc},
-    {"__reduce__",      (PyCFunction)striter_reduce, METH_NOARGS,
-     reduce_doc},
-    {"__setstate__",    (PyCFunction)striter_setstate, METH_O,
-     setstate_doc},
+    {"__length_hint__", striter_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__",      striter_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__",    striter_setstate, METH_O, setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -3345,7 +3376,7 @@ PyTypeObject PyBytesIter_Type = {
     sizeof(striterobject),                      /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)striter_dealloc,                /* tp_dealloc */
+    striter_dealloc,                            /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -3362,12 +3393,12 @@ PyTypeObject PyBytesIter_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)striter_traverse,     /* tp_traverse */
+    striter_traverse,                           /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     PyObject_SelfIter,                          /* tp_iter */
-    (iternextfunc)striter_next,                 /* tp_iternext */
+    striter_next,                               /* tp_iternext */
     striter_methods,                            /* tp_methods */
     0,
 };

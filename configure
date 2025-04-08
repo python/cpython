@@ -706,6 +706,8 @@ MODULE__CURSES_FALSE
 MODULE__CURSES_TRUE
 MODULE__CTYPES_FALSE
 MODULE__CTYPES_TRUE
+MODULE__HMAC_FALSE
+MODULE__HMAC_TRUE
 LIBHACL_SIMD256_OBJS
 LIBHACL_SIMD256_FLAGS
 LIBHACL_SIMD128_OBJS
@@ -781,6 +783,8 @@ MODULE__INTERPRETERS_FALSE
 MODULE__INTERPRETERS_TRUE
 MODULE__TYPING_FALSE
 MODULE__TYPING_TRUE
+MODULE__TYPES_FALSE
+MODULE__TYPES_TRUE
 MODULE__STRUCT_FALSE
 MODULE__STRUCT_TRUE
 MODULE_SELECT_FALSE
@@ -814,7 +818,7 @@ MODULE_TIME_TRUE
 MODULE__IO_FALSE
 MODULE__IO_TRUE
 MODULE_BUILDTYPE
-PYTHREAD_NAME_MAXLEN
+_PYTHREAD_NAME_MAXLEN
 TEST_MODULES
 OPENSSL_LDFLAGS
 OPENSSL_LIBS
@@ -1122,6 +1126,8 @@ with_platlibdir
 with_wheel_pkg_dir
 with_readline
 with_computed_gotos
+with_tail_call_interp
+with_remote_debug
 with_ensurepip
 with_openssl
 with_openssl_rpath
@@ -1929,6 +1935,9 @@ Optional Packages:
                           use libedit for backend or disable readline module
   --with-computed-gotos   enable computed gotos in evaluation loop (enabled by
                           default on supported compilers)
+  --with-tail-call-interp enable tail-calling interpreter in evaluation loop
+                          and rest of CPython
+  --with-remote-debug     enable remote debugging support (default is yes)
   --with-ensurepip[=install|upgrade|no]
                           "install" or "upgrade" using bundled pip (default is
                           upgrade)
@@ -4097,6 +4106,9 @@ then
 	*-apple-ios*)
 		ac_sys_system=iOS
 		;;
+	*-*-darwin*)
+		ac_sys_system=Darwin
+		;;
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
@@ -4129,6 +4141,7 @@ then
 
     case $MACHDEP in
 	aix*) MACHDEP="aix";;
+	freebsd*) MACHDEP="freebsd";;
 	linux-android*) MACHDEP="android";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
@@ -4589,6 +4602,15 @@ printf "%s\n" "$IPHONEOS_DEPLOYMENT_TARGET" >&6; }
 			*)
 				_host_ident=${IPHONEOS_DEPLOYMENT_TARGET}-$host_cpu-iphone${_host_device}
 				;;
+		esac
+		;;
+	*-*-darwin*)
+		case "$host_cpu" in
+		arm*)
+			_host_ident=arm
+			;;
+		*)
+			_host_ident=$host_cpu
 		esac
 		;;
 	*-*-vxworks*)
@@ -9615,7 +9637,7 @@ fi
 
         as_fn_append LINKFORSHARED " -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"
     as_fn_append LINKFORSHARED " -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"
-    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version"
+    as_fn_append LINKFORSHARED " -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET,_PyGILState_GetThisThreadState,__Py_DumpTraceback"
     as_fn_append LINKFORSHARED " -sSTACK_SIZE=5MB"
 
     if test "x$enable_wasm_dynamic_linking" = xyes
@@ -17146,26 +17168,28 @@ esac
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $have_ndbm ($dbm_ndbm)" >&5
 printf "%s\n" "$have_ndbm ($dbm_ndbm)" >&6; }
 
-{ ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gdbm/ndbm.h" >&5
+printf %s "checking for gdbm/ndbm.h... " >&6; }
 if test ${ac_cv_header_gdbm_slash_ndbm_h+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
-  e)
-  ac_fn_c_check_header_compile "$LINENO" "gdbm/ndbm.h" "ac_cv_header_gdbm_ndbm_h" "$ac_includes_default"
-if test "x$ac_cv_header_gdbm_ndbm_h" = xyes
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <gdbm/ndbm.h>
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"
 then :
   ac_cv_header_gdbm_slash_ndbm_h=yes
 else case e in #(
-  e) ac_cv_header_gdbm_slash_ndbm_h=no
-   ;;
+  e) ac_cv_header_gdbm_slash_ndbm_h=no ;;
 esac
 fi
-
- ;;
+rm -f conftest.err conftest.i conftest.$ac_ext ;;
 esac
 fi
-
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_gdbm_slash_ndbm_h" >&5
+printf "%s\n" "$ac_cv_header_gdbm_slash_ndbm_h" >&6; }
 if test "x$ac_cv_header_gdbm_slash_ndbm_h" = xyes
 then :
 
@@ -17175,26 +17199,28 @@ printf "%s\n" "#define HAVE_GDBM_NDBM_H 1" >>confdefs.h
 
 fi
 
-{ ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for gdbm-ndbm.h" >&5
+printf %s "checking for gdbm-ndbm.h... " >&6; }
 if test ${ac_cv_header_gdbm_dash_ndbm_h+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
-  e)
-  ac_fn_c_check_header_compile "$LINENO" "gdbm-ndbm.h" "ac_cv_header_gdbm_ndbm_h" "$ac_includes_default"
-if test "x$ac_cv_header_gdbm_ndbm_h" = xyes
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <gdbm-ndbm.h>
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"
 then :
   ac_cv_header_gdbm_dash_ndbm_h=yes
 else case e in #(
-  e) ac_cv_header_gdbm_dash_ndbm_h=no
-   ;;
+  e) ac_cv_header_gdbm_dash_ndbm_h=no ;;
 esac
 fi
-
- ;;
+rm -f conftest.err conftest.i conftest.$ac_ext ;;
 esac
 fi
-
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_header_gdbm_dash_ndbm_h" >&5
+printf "%s\n" "$ac_cv_header_gdbm_dash_ndbm_h" >&6; }
 if test "x$ac_cv_header_gdbm_dash_ndbm_h" = xyes
 then :
 
@@ -17203,7 +17229,6 @@ printf "%s\n" "#define HAVE_GDBM_DASH_NDBM_H 1" >>confdefs.h
 
 
 fi
-{ ac_cv_header_gdbm_ndbm_h=; unset ac_cv_header_gdbm_ndbm_h;}
 
 if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
   { ac_cv_search_dbm_open=; unset ac_cv_search_dbm_open;}
@@ -19590,16 +19615,34 @@ then :
   printf "%s\n" "#define HAVE_PTHREAD_KILL 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "pthread_get_name_np" "ac_cv_func_pthread_get_name_np"
+if test "x$ac_cv_func_pthread_get_name_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_GET_NAME_NP 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "pthread_getname_np" "ac_cv_func_pthread_getname_np"
 if test "x$ac_cv_func_pthread_getname_np" = xyes
 then :
   printf "%s\n" "#define HAVE_PTHREAD_GETNAME_NP 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "pthread_set_name_np" "ac_cv_func_pthread_set_name_np"
+if test "x$ac_cv_func_pthread_set_name_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_SET_NAME_NP 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "pthread_setname_np" "ac_cv_func_pthread_setname_np"
 if test "x$ac_cv_func_pthread_setname_np" = xyes
 then :
   printf "%s\n" "#define HAVE_PTHREAD_SETNAME_NP 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "pthread_getattr_np" "ac_cv_func_pthread_getattr_np"
+if test "x$ac_cv_func_pthread_getattr_np" = xyes
+then :
+  printf "%s\n" "#define HAVE_PTHREAD_GETATTR_NP 1" >>confdefs.h
 
 fi
 ac_fn_c_check_func "$LINENO" "ptsname" "ac_cv_func_ptsname"
@@ -29233,6 +29276,67 @@ printf "%s\n" "#define HAVE_COMPUTED_GOTOS 1" >>confdefs.h
 
 esac
 
+# Check for --with-tail-call-interp
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-tail-call-interp" >&5
+printf %s "checking for --with-tail-call-interp... " >&6; }
+
+# Check whether --with-tail-call-interp was given.
+if test ${with_tail_call_interp+y}
+then :
+  withval=$with_tail_call_interp;
+if test "$withval" = yes
+then
+
+printf "%s\n" "#define Py_TAIL_CALL_INTERP 1" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+fi
+if test "$withval" = no
+then
+
+printf "%s\n" "#define Py_TAIL_CALL_INTERP 0" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+else case e in #(
+  e) { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no value specified" >&5
+printf "%s\n" "no value specified" >&6; } ;;
+esac
+fi
+
+
+# Check for --with-remote-debug
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-remote-debug" >&5
+printf %s "checking for --with-remote-debug... " >&6; }
+
+# Check whether --with-remote-debug was given.
+if test ${with_remote_debug+y}
+then :
+  withval=$with_remote_debug;
+else case e in #(
+  e) with_remote_debug=yes ;;
+esac
+fi
+
+
+if test "$with_remote_debug" = yes; then
+
+printf "%s\n" "#define Py_REMOTE_DEBUG 1" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else
+
+printf "%s\n" "#define Py_REMOTE_DEBUG 0" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
+
 case $ac_sys_system in
 AIX*)
 
@@ -30391,17 +30495,18 @@ CPPFLAGS=$save_CPPFLAGS
 
 # gh-59705: Maximum length in bytes of a thread name
 case "$ac_sys_system" in
-  Linux*) PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
-  SunOS*) PYTHREAD_NAME_MAXLEN=31;;
-  NetBSD*) PYTHREAD_NAME_MAXLEN=31;;
-  Darwin) PYTHREAD_NAME_MAXLEN=63;;
-  iOS) PYTHREAD_NAME_MAXLEN=63;;
-  FreeBSD*) PYTHREAD_NAME_MAXLEN=98;;
-  *) PYTHREAD_NAME_MAXLEN=;;
+  Linux*) _PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
+  SunOS*) _PYTHREAD_NAME_MAXLEN=31;;
+  NetBSD*) _PYTHREAD_NAME_MAXLEN=15;; # gh-131268
+  Darwin) _PYTHREAD_NAME_MAXLEN=63;;
+  iOS) _PYTHREAD_NAME_MAXLEN=63;;
+  FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
+  OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
+  *) _PYTHREAD_NAME_MAXLEN=;;
 esac
-if test -n "$PYTHREAD_NAME_MAXLEN"; then
+if test -n "$_PYTHREAD_NAME_MAXLEN"; then
 
-printf "%s\n" "#define PYTHREAD_NAME_MAXLEN $PYTHREAD_NAME_MAXLEN" >>confdefs.h
+printf "%s\n" "#define _PYTHREAD_NAME_MAXLEN $_PYTHREAD_NAME_MAXLEN" >>confdefs.h
 
 fi
 
@@ -30900,6 +31005,28 @@ fi
 
   as_fn_append MODULE_BLOCK "MODULE__STRUCT_STATE=$py_cv_module__struct$as_nl"
   if test "x$py_cv_module__struct" = xyes
+then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__types" != "n/a"
+then :
+  py_cv_module__types=yes
+fi
+   if test "$py_cv_module__types" = yes; then
+  MODULE__TYPES_TRUE=
+  MODULE__TYPES_FALSE='#'
+else
+  MODULE__TYPES_TRUE='#'
+  MODULE__TYPES_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__TYPES_STATE=$py_cv_module__types$as_nl"
+  if test "x$py_cv_module__types" = xyes
 then :
 
 
@@ -32163,6 +32290,47 @@ fi
 
 fi
 
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _hmac" >&5
+printf %s "checking for stdlib extension module _hmac... " >&6; }
+        if test "$py_cv_module__hmac" != "n/a"
+then :
+
+    if true
+then :
+  if true
+then :
+  py_cv_module__hmac=yes
+else case e in #(
+  e) py_cv_module__hmac=missing ;;
+esac
+fi
+else case e in #(
+  e) py_cv_module__hmac=disabled ;;
+esac
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__HMAC_STATE=$py_cv_module__hmac$as_nl"
+  if test "x$py_cv_module__hmac" = xyes
+then :
+
+    as_fn_append MODULE_BLOCK "MODULE__HMAC_CFLAGS=$LIBHACL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HMAC_LDFLAGS=$LIBHACL_CFLAGS Modules/_hacl/libHacl_HMAC.a$as_nl"
+
+fi
+   if test "$py_cv_module__hmac" = yes; then
+  MODULE__HMAC_TRUE=
+  MODULE__HMAC_FALSE='#'
+else
+  MODULE__HMAC_TRUE='#'
+  MODULE__HMAC_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__hmac" >&5
+printf "%s\n" "$py_cv_module__hmac" >&6; }
 
 
 
@@ -33579,6 +33747,10 @@ if test -z "${MODULE__STRUCT_TRUE}" && test -z "${MODULE__STRUCT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__STRUCT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
+if test -z "${MODULE__TYPES_TRUE}" && test -z "${MODULE__TYPES_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TYPES\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
 if test -z "${MODULE__TYPING_TRUE}" && test -z "${MODULE__TYPING_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__TYPING\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -33717,6 +33889,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__BLAKE2_TRUE}" && test -z "${MODULE__BLAKE2_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__BLAKE2\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__HMAC_TRUE}" && test -z "${MODULE__HMAC_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__HMAC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CTYPES_TRUE}" && test -z "${MODULE__CTYPES_FALSE}"; then
