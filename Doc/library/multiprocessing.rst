@@ -1421,6 +1421,13 @@ object -- see :ref:`multiprocessing-managers`.
       when invoked on an unlocked lock, a :exc:`ValueError` is raised.
 
 
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: next
+
+
 .. class:: RLock()
 
    A recursive lock object: a close analog of :class:`threading.RLock`.  A
@@ -1479,6 +1486,13 @@ object -- see :ref:`multiprocessing-managers`.
       or thread other than the owner or if the lock is in an unlocked (unowned)
       state.  Note that the type of exception raised in this situation
       differs from the implemented behavior in :meth:`threading.RLock.release`.
+
+
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: next
 
 
 .. class:: Semaphore([value])

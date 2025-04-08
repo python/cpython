@@ -477,6 +477,10 @@ dummy_func(void) {
         res = sym_new_type(ctx, &PyBool_Type);
     }
 
+    op(_CONTAINS_OP_SET, (left, right -- res)) {
+        res = sym_new_type(ctx, &PyBool_Type);
+    }
+
     op(_LOAD_CONST, (-- value)) {
         PyObject *val = PyTuple_GET_ITEM(co->co_consts, this_instr->oparg);
         int opcode = _Py_IsImmortal(val) ? _LOAD_CONST_INLINE_BORROW : _LOAD_CONST_INLINE;

@@ -116,7 +116,7 @@ typedef struct _Py_AsyncioModuleDebugOffsets {
     } asyncio_thread_state;
 } Py_AsyncioModuleDebugOffsets;
 
-GENERATE_DEBUG_SECTION(AsyncioDebug, Py_AsyncioModuleDebugOffsets AsyncioDebug)
+GENERATE_DEBUG_SECTION(AsyncioDebug, Py_AsyncioModuleDebugOffsets _AsyncioDebug)
     = {.asyncio_task_object = {
            .size = sizeof(TaskObj),
            .task_name = offsetof(TaskObj, task_name),
