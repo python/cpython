@@ -1761,36 +1761,36 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
 inline static int
 normalize_century(void)
 {
-    static int _normalize_century = -1;
-    if (_normalize_century < 0) {
+    static int cache = -1;
+    if (cache < 0) {
         char year[5];
         struct tm date = {
             .tm_year = -1801,
             .tm_mon = 0,
             .tm_mday = 1
         };
-        _normalize_century = (strftime(year, sizeof(year), "%Y", &date) &&
-                              strcmp(year, "0099") != 0);
+        cache = (strftime(year, sizeof(year), "%Y", &date) &&
+                 strcmp(year, "0099") != 0);
     }
-    return _normalize_century;
+    return cache;
 }
 
 /* Check whether C99-specific strftime specifiers are supported. */
 inline static int
 strftime_c99_support(void)
 {
-    static int _strftime_c99_support = -1;
-    if (_strftime_c99_support < 0) {
+    static int cache = -1;
+    if (cache < 0) {
         char full_date[11];
         struct tm date = {
             .tm_year = 0,
             .tm_mon = 0,
             .tm_mday = 1
         };
-        _strftime_c99_support = (strftime(full_date, sizeof(full_date), "%F", &date) &&
-                                 strcmp(full_date, "1900-01-01") == 0);
+        cache = (strftime(full_date, sizeof(full_date), "%F", &date) &&
+                 strcmp(full_date, "1900-01-01") == 0);
     }
-    return _strftime_c99_support;
+    return cache;
 }
 
 static PyObject *
