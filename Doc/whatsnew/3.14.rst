@@ -677,6 +677,13 @@ errno
   (Contributed by James Roy in :gh:`126585`.)
 
 
+fnmatch
+-------
+
+* Added :func:`fnmatch.filterfalse` for excluding names matching a pattern.
+  (Contributed by Bénédikt Tran in :gh:`74598`.)
+
+
 fractions
 ---------
 
