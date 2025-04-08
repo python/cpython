@@ -709,6 +709,13 @@ call release as many times the lock has been acquired can lead to deadlock.
       There is no return value.
 
 
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: next
+
+
 .. _condition-objects:
 
 Condition Objects
@@ -800,6 +807,12 @@ item to the buffer only needs to wake up one consumer thread.
 
       Release the underlying lock. This method calls the corresponding method on
       the underlying lock; there is no return value.
+
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: next
 
    .. method:: wait(timeout=None)
 

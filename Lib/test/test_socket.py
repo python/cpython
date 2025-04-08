@@ -2725,7 +2725,12 @@ class BasicBluetoothTest(unittest.TestCase):
                 self.assertEqual(addr, socket.BDADDR_ANY)
             else:
                 dev = 0
-                s.bind((dev,))
+                try:
+                    s.bind((dev,))
+                except OSError as err:
+                    if err.errno in (errno.EINVAL, errno.ENODEV):
+                        self.skipTest(str(err))
+                    raise
                 addr = s.getsockname()
                 self.assertEqual(addr, dev)
 
