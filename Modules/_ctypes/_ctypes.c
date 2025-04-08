@@ -3848,8 +3848,7 @@ _validate_paramflags(ctypes_state *st, PyTypeObject *type, PyObject *paramflags)
         PyObject *name = Py_None;
         PyObject *defval;
         PyObject *typ;
-        if (!PyArg_ParseTuple(item, "i|U?O", &flag, &name, &defval))
-        {
+        if (!PyArg_ParseTuple(item, "i|U?O", &flag, &name, &defval)) {
             PyErr_SetString(PyExc_TypeError,
                    "paramflags must be a sequence of (int [,string [,value]]) tuples");
             return 0;

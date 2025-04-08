@@ -375,7 +375,7 @@ Other objects
    If the argument is not ``None``, it is parsed according to the specified
    format unit.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
 A few other characters have a meaning in a format string.  These may not occur
 inside nested parentheses.  They are:

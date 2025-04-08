@@ -505,9 +505,9 @@ converttuple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         levels[0] = 0;
         PyOS_snprintf(msgbuf, bufsize,
                       "must be %d-item sequence%s, not %.50s",
-                  n,
-                  nullable ? " or None" : "",
-                  arg == Py_None ? "None" : Py_TYPE(arg)->tp_name);
+                      n,
+                      nullable ? " or None" : "",
+                      arg == Py_None ? "None" : Py_TYPE(arg)->tp_name);
         return msgbuf;
     }
 
