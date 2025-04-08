@@ -311,7 +311,6 @@ list_new_prealloc(Py_ssize_t size)
     if (size < PyList_MAXSAVESIZE) {
         PyListObject *op = (PyListObject *)_Py_FREELIST_POP(PyLongObject, small_lists[size]);
         if (op) {
-            // allocated with ob_item still allocated, but we need to set the other fields
             assert (op->allocated >= size);
             return (PyObject *) op;
         }
