@@ -1,1 +1,2 @@
-Fix tests of exception attribute in :method:`process_result_item`of :class:`_ExecutorManagerThread` and :method:`__get_result` of :class:`Future` in module :lib:`concurrent`.
+Prevent exceptions, that evaluate as falsey (When `__bool__` method returns `False', when `__len__` method returns 0)
+from being ignored by :class:`concurrent.futures.ProcessPoolExecutor` and :class:`concurrent.futures.ThreadPoolExecutor`.
