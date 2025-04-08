@@ -3,7 +3,6 @@
 Implements the HMAC algorithm as described by RFC 2104.
 """
 
-import warnings as _warnings
 try:
     import _hashlib as _hashopenssl
 except ImportError:
@@ -14,7 +13,10 @@ else:
     compare_digest = _hashopenssl.compare_digest
     _functype = type(_hashopenssl.openssl_sha256)  # builtin type
 
-import hashlib as _hashlib
+try:
+    import _hmac
+except ImportError:
+    _hmac = None
 
 trans_5C = bytes((x ^ 0x5C) for x in range(256))
 trans_36 = bytes((x ^ 0x36) for x in range(256))
@@ -24,11 +26,27 @@ trans_36 = bytes((x ^ 0x36) for x in range(256))
 digest_size = None
 
 
+def _get_digest_constructor(digest_like):
+    if callable(digest_like):
+        return digest_like
+    if isinstance(digest_like, str):
+        def digest_wrapper(d=b''):
+            import hashlib
+            return hashlib.new(digest_like, d)
+    else:
+        def digest_wrapper(d=b''):
+            return digest_like.new(d)
+    return digest_wrapper
+
+
 class HMAC:
     """RFC 2104 HMAC class.  Also complies with RFC 4231.
 
     This supports the API for Cryptographic Hash Functions (PEP 247).
     """
+
+    # Note: self.blocksize is the default blocksize; self.block_size
+    # is effective block size as well as the public API attribute.
     blocksize = 64  # 512-bit HMAC; can be changed in subclasses.
 
     __slots__ = (
@@ -50,31 +68,47 @@ class HMAC:
         """
 
         if not isinstance(key, (bytes, bytearray)):
-            raise TypeError("key: expected bytes or bytearray, but got %r" % type(key).__name__)
+            raise TypeError(f"key: expected bytes or bytearray, "
+                            f"but got {type(key).__name__!r}")
 
         if not digestmod:
             raise TypeError("Missing required argument 'digestmod'.")
 
+        self.__init(key, msg, digestmod)
+
+    def __init(self, key, msg, digestmod):
         if _hashopenssl and isinstance(digestmod, (str, _functype)):
             try:
-                self._init_hmac(key, msg, digestmod)
+                self._init_openssl_hmac(key, msg, digestmod)
+                return
             except _hashopenssl.UnsupportedDigestmodError:
-                self._init_old(key, msg, digestmod)
-        else:
-            self._init_old(key, msg, digestmod)
+                pass
+        if _hmac and isinstance(digestmod, str):
+            try:
+                self._init_builtin_hmac(key, msg, digestmod)
+                return
+            except _hmac.UnknownHashError:
+                pass
+        self._init_old(key, msg, digestmod)
 
-    def _init_hmac(self, key, msg, digestmod):
+    def _init_openssl_hmac(self, key, msg, digestmod):
         self._hmac = _hashopenssl.hmac_new(key, msg, digestmod=digestmod)
+        self._inner = self._outer = None  # because the slots are defined
+        self.digest_size = self._hmac.digest_size
+        self.block_size = self._hmac.block_size
+
+    _init_hmac = _init_openssl_hmac  # for backward compatibility (if any)
+
+    def _init_builtin_hmac(self, key, msg, digestmod):
+        self._hmac = _hmac.new(key, msg, digestmod=digestmod)
+        self._inner = self._outer = None  # because the slots are defined
         self.digest_size = self._hmac.digest_size
         self.block_size = self._hmac.block_size
 
     def _init_old(self, key, msg, digestmod):
-        if callable(digestmod):
-            digest_cons = digestmod
-        elif isinstance(digestmod, str):
-            digest_cons = lambda d=b'': _hashlib.new(digestmod, d)
-        else:
-            digest_cons = lambda d=b'': digestmod.new(d)
+        import warnings
+
+        digest_cons = _get_digest_constructor(digestmod)
 
         self._hmac = None
         self._outer = digest_cons()
@@ -84,21 +118,19 @@ class HMAC:
         if hasattr(self._inner, 'block_size'):
             blocksize = self._inner.block_size
             if blocksize < 16:
-                _warnings.warn('block_size of %d seems too small; using our '
-                               'default of %d.' % (blocksize, self.blocksize),
-                               RuntimeWarning, 2)
+                warnings.warn(f"block_size of {blocksize} seems too small; "
+                              f"using our default of {self.blocksize}.",
+                              RuntimeWarning, 2)
                 blocksize = self.blocksize
         else:
-            _warnings.warn('No block_size attribute on given digest object; '
-                           'Assuming %d.' % (self.blocksize),
-                           RuntimeWarning, 2)
+            warnings.warn("No block_size attribute on given digest object; "
+                          f"Assuming {self.blocksize}.",
+                          RuntimeWarning, 2)
             blocksize = self.blocksize
 
         if len(key) > blocksize:
             key = digest_cons(key).digest()
 
-        # self.blocksize is the default blocksize. self.block_size is
-        # effective block size as well as the public API attribute.
         self.block_size = blocksize
 
         key = key.ljust(blocksize, b'\0')
@@ -164,6 +196,7 @@ class HMAC:
         h = self._current()
         return h.hexdigest()
 
+
 def new(key, msg=None, digestmod=''):
     """Create a new hashing object and return it.
 
@@ -193,25 +226,29 @@ def digest(key, msg, digest):
             A hashlib constructor returning a new hash object. *OR*
             A module supporting PEP 247.
     """
-    if _hashopenssl is not None and isinstance(digest, (str, _functype)):
+    if _hashopenssl and isinstance(digest, (str, _functype)):
         try:
             return _hashopenssl.hmac_digest(key, msg, digest)
         except _hashopenssl.UnsupportedDigestmodError:
             pass
 
-    if callable(digest):
-        digest_cons = digest
-    elif isinstance(digest, str):
-        digest_cons = lambda d=b'': _hashlib.new(digest, d)
-    else:
-        digest_cons = lambda d=b'': digest.new(d)
+    if _hmac and isinstance(digest, str):
+        try:
+            return _hmac.compute_digest(key, msg, digest)
+        except (OverflowError, _hmac.UnknownHashError):
+            pass
 
+    return _compute_digest_fallback(key, msg, digest)
+
+
+def _compute_digest_fallback(key, msg, digest):
+    digest_cons = _get_digest_constructor(digest)
     inner = digest_cons()
     outer = digest_cons()
     blocksize = getattr(inner, 'block_size', 64)
     if len(key) > blocksize:
         key = digest_cons(key).digest()
-    key = key + b'\x00' * (blocksize - len(key))
+    key = key.ljust(blocksize, b'\0')
     inner.update(key.translate(trans_36))
     outer.update(key.translate(trans_5C))
     inner.update(msg)

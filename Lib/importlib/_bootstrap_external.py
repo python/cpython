@@ -716,6 +716,12 @@ class WindowsRegistryFinder:
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
+        _warnings.warn('importlib.machinery.WindowsRegistryFinder is '
+                       'deprecated; use site configuration instead. '
+                       'Future versions of Python may not enable this '
+                       'finder by default.',
+                       DeprecationWarning, stacklevel=2)
+
         filepath = cls._search_registry(fullname)
         if filepath is None:
             return None
@@ -1238,7 +1244,7 @@ class PathFinder:
         if path == '':
             try:
                 path = _os.getcwd()
-            except FileNotFoundError:
+            except (FileNotFoundError, PermissionError):
                 # Don't cache the failure as the cwd can easily change to
                 # a valid directory later on.
                 return None

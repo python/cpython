@@ -2262,7 +2262,7 @@ value for :attr:`~Context.prec` as well [#]_::
     Decimal('904625697166532776746648320380374280103671755200316906558262375061821325312')
 
 
-For inexact results, :attr:`MAX_PREC` is far too large on 64-bit platforms and
+For inexact results, :const:`MAX_PREC` is far too large on 64-bit platforms and
 the available memory will be insufficient::
 
    >>> Decimal(1) / 3

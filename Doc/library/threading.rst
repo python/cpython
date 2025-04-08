@@ -380,6 +380,13 @@ since it is impossible to detect the termination of alien threads.
       This method will raise a :exc:`RuntimeError` if called more than once
       on the same thread object.
 
+      If supported, set the operating system thread name to
+      :attr:`threading.Thread.name`. The name can be truncated depending on the
+      operating system thread name limits.
+
+      .. versionchanged:: 3.14
+         Set the operating system thread name.
+
    .. method:: run()
 
       Method representing the thread's activity.
@@ -442,9 +449,6 @@ since it is impossible to detect the termination of alien threads.
       Changes to *name* are only reflected at the OS level when the currently
       running thread is renamed. (Setting the *name* attribute of a
       different thread only updates the Python Thread object.)
-
-      .. versionchanged:: 3.14
-         Set the operating system thread name.
 
    .. method:: getName()
                setName()
@@ -705,6 +709,13 @@ call release as many times the lock has been acquired can lead to deadlock.
       There is no return value.
 
 
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: next
+
+
 .. _condition-objects:
 
 Condition Objects
@@ -796,6 +807,12 @@ item to the buffer only needs to wake up one consumer thread.
 
       Release the underlying lock. This method calls the corresponding method on
       the underlying lock; there is no return value.
+
+   .. method:: locked()
+
+      Return a boolean indicating whether this object is locked right now.
+
+      .. versionadded:: next
 
    .. method:: wait(timeout=None)
 

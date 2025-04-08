@@ -117,6 +117,7 @@ typedef struct {
     uint32_t state[N];
 } RandomObject;
 
+#define RandomObject_CAST(op)   ((RandomObject *)(op))
 
 #include "clinic/_randommodule.c.h"
 
@@ -551,7 +552,7 @@ _random_Random_getrandbits_impl(RandomObject *self, int k)
 }
 
 static int
-random_init(RandomObject *self, PyObject *args, PyObject *kwds)
+random_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *arg = NULL;
     _randomstate *state = _randomstate_type(Py_TYPE(self));
@@ -570,7 +571,7 @@ random_init(RandomObject *self, PyObject *args, PyObject *kwds)
     if (PyTuple_GET_SIZE(args) == 1)
         arg = PyTuple_GET_ITEM(args, 0);
 
-    return random_seed(self, arg);
+    return random_seed(RandomObject_CAST(self), arg);
 }
 
 
@@ -665,7 +666,7 @@ _random_clear(PyObject *module)
 static void
 _random_free(void *module)
 {
-    _random_clear((PyObject *)module);
+    (void)_random_clear((PyObject *)module);
 }
 
 static struct PyModuleDef _randommodule = {
