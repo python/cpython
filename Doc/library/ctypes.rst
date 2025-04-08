@@ -2632,7 +2632,7 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`PyObject *` datatype.  Calling this without an
    argument creates a ``NULL`` :c:expr:`PyObject *` pointer.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       :class:`!py_object` is now a :term:`generic type`.
 
 The :mod:`!ctypes.wintypes` module provides quite some other Windows specific
@@ -2846,7 +2846,7 @@ fields, or any other data types containing pointer type fields.
    :class:`!CField` objects are created via :attr:`~Structure._fields_`;
    do not instantiate the class directly.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
       Previously, descriptors only had ``offset`` and ``size`` attributes
       and a readable string representation; the :class:`!CField` class was not

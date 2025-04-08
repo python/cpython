@@ -1,2 +1,0 @@
-``$_asynctask`` is added as a :mod:`pdb` convenience variable to
-access the current asyncio task if applicable.
