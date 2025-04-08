@@ -2912,7 +2912,7 @@ _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
 #ifdef Py_GIL_DISABLED
     op->ob_tid = (uintptr_t)tstate->delete_later;
 #else
-    op->ob_refcnt_full = (intptr_t)tstate->delete_later;
+    *((PyObject**)op) = tstate->delete_later;
 #endif
     tstate->delete_later = op;
 }
@@ -2931,8 +2931,8 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
         op->ob_tid = 0;
         _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, _Py_REF_MERGED);
 #else
-        tstate->delete_later = (PyObject*) op->ob_refcnt_full;
-        op->ob_refcnt_full = 0;
+        tstate->delete_later = *((PyObject**)op);
+        op->ob_refcnt = 0;
 #endif
 
         /* Call the deallocator directly.  This used to try to
