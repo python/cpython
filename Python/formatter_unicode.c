@@ -1100,7 +1100,15 @@ format_long_internal(PyObject *value, const InternalFormatSpec *format,
                 }
 
                 int64_t nbits = _PyLong_NumBits(value);
-                int64_t shift = Py_MAX(precision, (nbits + dbits - 1)/dbits);
+
+                if (nbits > PY_SSIZE_T_MAX) {
+                    PyErr_SetString(PyExc_OverflowError,
+                                    "int too large to format");
+                    goto done;
+                }
+
+                Py_ssize_t shift = Py_MAX(precision,
+                    ((Py_ssize_t)nbits + dbits - 1)/dbits);
 
                 shift *= dbits;
                 shift--;
