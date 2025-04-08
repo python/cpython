@@ -10962,10 +10962,6 @@ static pytype_slotdef slotdefs[] = {
     {NULL}
 };
 
-/* {name: [pytype_slotdef]}
-*/
-static PyObject *slotdefs_cache = NULL;
-
 
 /* Given a type pointer and an offset gotten from a slotdef entry, return a
    pointer to the actual slot.  This is not quite the same as simply adding
@@ -11014,61 +11010,55 @@ slotptr(PyTypeObject *type, int ioffset)
 static void **
 resolve_slotdups(PyTypeObject *type, PyObject *name)
 {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+
     /* XXX Maybe this could be optimized more -- but is it worth it? */
     void **res, **ptr;
     res = NULL;
 
-    if (slotdefs_cache) {
+    PyObject *cache = Py_XNewRef(interp->cached_objects.slotdefs_cache);
+    if (cache) {
         int rc = 0;
-        // PyObject *cache = Py_NewRef(slotdefs_cache);
-        Py_BEGIN_CRITICAL_SECTION(slotdefs_cache);
-        PyObject *cache = slotdefs_cache;
-        assert(Py_REFCNT(cache) >= 1);
-
-        Py_INCREF(cache);
-        assert(Py_REFCNT(cache) > 1);
+        // Py_BEGIN_CRITICAL_SECTION(cache);
 
         PyObject* list=NULL;
         rc = PyDict_GetItemRef(cache, name, &list);
-        assert(Py_REFCNT(cache) > 1);
         if (rc > 0) {
 
-        //     assert(list);
-        //     Py_ssize_t n = PyList_Size(list);
-        //     assert(n >= 0);
-        //     Py_ssize_t i;
-        //     for(i = 0; i < n; i++) {
-        //         PyObject *py_idx = PyList_GET_ITEM(list, i);
-        //         assert(PyLong_Check(py_idx));
-        //         Py_ssize_t idx = PyLong_AsSsize_t(py_idx);
-        //         assert (idx < Py_ARRAY_LENGTH(slotdefs));
-        //         pytype_slotdef *x = &slotdefs[idx];
-        //         ptr = slotptr(type, x->offset);
-        //         if (ptr == NULL || *ptr == NULL) {
-        //             continue;
-        //         }
-        //         if (res != NULL) {
-        //             res = NULL;
-        //             break;
-        //         }
-        //         res = ptr;
-        //     }
+            assert(list);
+            Py_ssize_t n = PyList_Size(list);
+            assert(n >= 0);
+            Py_ssize_t i;
+            for(i = 0; i < n; i++) {
+                PyObject *py_idx = PyList_GET_ITEM(list, i);
+                assert(PyLong_Check(py_idx));
+                Py_ssize_t idx = PyLong_AsSsize_t(py_idx);
+                assert (idx < Py_ARRAY_LENGTH(slotdefs));
+                pytype_slotdef *x = &slotdefs[idx];
+                ptr = slotptr(type, x->offset);
+                if (ptr == NULL || *ptr == NULL) {
+                    continue;
+                }
+                if (res != NULL) {
+                    res = NULL;
+                    break;
+                }
+                res = ptr;
+            }
             assert(Py_REFCNT(list) > 1);
             Py_DECREF(list);
         } else if (rc < 0) {
             PyErr_Clear();
         }
 
-        assert(Py_REFCNT(cache) > 1);
         Py_DECREF(cache);
-        Py_END_CRITICAL_SECTION();
+        // Py_END_CRITICAL_SECTION();
         if (rc > 0) {
             return res;
         }
     }
 
     /* pname and ptrs act as a little cache */
-    PyInterpreterState *interp = _PyInterpreterState_GET();
 #define pname _Py_INTERP_CACHED_OBJECT(interp, type_slots_pname)
 #define ptrs _Py_INTERP_CACHED_OBJECT(interp, type_slots_ptrs)
     pytype_slotdef *p, **pp;
@@ -11360,68 +11350,63 @@ fixup_slot_dispatchers(PyTypeObject *type)
         }
     }
 
-    if (!slotdefs_cache) {
-        PyObject *cache = PyDict_New();
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (!interp->cached_objects.slotdefs_cache) {
+
+        PyObject* cache = PyDict_New();
         if (cache) {
             pytype_slotdef *p;
             Py_ssize_t idx = 0;
             for (p = slotdefs; p->name_strobj; p++, idx++) {
-                // Py_hash_t hash = _PyObject_HashFast(p->name_strobj);
-                // if (hash == -1) {
-                //     Py_CLEAR(cache);
-                //     break;
-                // }
+                Py_hash_t hash = _PyObject_HashFast(p->name_strobj);
+                if (hash == -1) {
+                    Py_CLEAR(cache);
+                    break;
+                }
 
-                // PyObject *list;
-                // if (_PyDict_GetItemRef_KnownHash_LockHeld((PyDictObject *)cache, p->name_strobj, hash, &list) < 0) {
-                //     Py_CLEAR(cache);
-                //     break;
-                // }
+                PyObject *list;
+                if (_PyDict_GetItemRef_KnownHash_LockHeld((PyDictObject *)cache, p->name_strobj, hash, &list) < 0) {
+                    Py_CLEAR(cache);
+                    break;
+                }
 
-                // if (!list) {
-                //     list = PyList_New(0);
-                //     if (!list) {
-                //         Py_CLEAR(cache);
-                //         break;
-                //     }
+                if (!list) {
+                    list = PyList_New(0);
+                    if (!list) {
+                        Py_CLEAR(cache);
+                        break;
+                    }
 
-                //     if (_PyDict_SetItem_KnownHash_LockHeld((PyDictObject *)cache, p->name_strobj, list, hash) < 0) {
-                //         Py_DECREF(list);
-                //         Py_CLEAR(cache);
-                //         break;
-                //     }
-                // }
+                    if (_PyDict_SetItem_KnownHash_LockHeld((PyDictObject *)cache, p->name_strobj, list, hash) < 0) {
+                        Py_DECREF(list);
+                        Py_CLEAR(cache);
+                        break;
+                    }
+                }
 
-                // PyObject *py_idx = PyLong_FromSsize_t(idx);
-                // if (!py_idx) {
-                //     Py_DECREF(list);
-                //     Py_CLEAR(cache);
-                //     break;
-                // }
+                PyObject *py_idx = PyLong_FromSsize_t(idx);
+                if (!py_idx) {
+                    Py_DECREF(list);
+                    Py_CLEAR(cache);
+                    break;
+                }
 
-                // if (PyList_Append(list, py_idx) < 0) {
-                //     Py_DECREF(py_idx);
-                //     Py_DECREF(list);
-                //     Py_CLEAR(cache);
-                //     break;
-                // }
+                if (PyList_Append(list, py_idx) < 0) {
+                    Py_DECREF(py_idx);
+                    Py_DECREF(list);
+                    Py_CLEAR(cache);
+                    break;
+                }
 
-                // Py_DECREF(py_idx);
-                // Py_DECREF(list);
+                Py_DECREF(py_idx);
+                Py_DECREF(list);
             }
         }
 
         if (cache) {
-            Py_ssize_t pos = 0;
-            PyObject* key=NULL;
-            PyObject* value=NULL;
-            while (PyDict_Next(cache, &pos, &key, &value)) {
-                assert(Py_REFCNT(key) > 1);
-                assert(Py_REFCNT(value) == 1);
-            }
-
-            Py_XSETREF(slotdefs_cache, cache);
-        } else {
+            Py_XSETREF(interp->cached_objects.slotdefs_cache, cache);
+        }
+        else {
             PyErr_Clear();
         }
     }

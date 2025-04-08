@@ -699,6 +699,8 @@ init_interpreter(PyInterpreterState *interp,
     _Py_stackref_associate(interp, Py_True, PyStackRef_True);
 #endif
 
+
+    interp->cached_objects.slotdefs_cache = NULL;
     interp->_initialized = 1;
     return _PyStatus_OK();
 }
@@ -828,6 +830,8 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     if (_PySys_Audit(tstate, "cpython.PyInterpreterState_Clear", NULL) < 0) {
         _PyErr_Clear(tstate);
     }
+
+    Py_CLEAR(interp->cached_objects.slotdefs_cache);
 
     // Clear the current/main thread state last.
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
