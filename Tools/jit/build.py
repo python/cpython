@@ -8,7 +8,7 @@ import sys
 import _targets
 
 if __name__ == "__main__":
-    comment = f"$ {shlex.join([sys.executable] + sys.argv)}"
+    comment = f"$ {shlex.join([pathlib.Path(sys.executable).name] + sys.argv)}"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "target", type=_targets.get_target, help="a PEP 11 target triple to compile for"

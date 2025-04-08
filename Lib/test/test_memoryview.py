@@ -15,7 +15,13 @@ import copy
 import pickle
 import struct
 
-from test.support import import_helper
+from itertools import product
+from test import support
+from test.support import import_helper, threading_helper
+
+
+class MyObject:
+    pass
 
 
 class AbstractMemoryTests:
@@ -54,11 +60,52 @@ class AbstractMemoryTests:
         for tp in self._types:
             self.check_getitem_with_type(tp)
 
+    def test_index(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)  # may be a sub-view
+            l = m.tolist()
+            k = 2 * len(self._source)
+
+            for chi in self._source:
+                if chi in l:
+                    self.assertEqual(m.index(chi), l.index(chi))
+                else:
+                    self.assertRaises(ValueError, m.index, chi)
+
+                for start, stop in product(range(-k, k), range(-k, k)):
+                    index = -1
+                    try:
+                        index = l.index(chi, start, stop)
+                    except ValueError:
+                        pass
+
+                    if index == -1:
+                        self.assertRaises(ValueError, m.index, chi, start, stop)
+                    else:
+                        self.assertEqual(m.index(chi, start, stop), index)
+
     def test_iter(self):
         for tp in self._types:
             b = tp(self._source)
             m = self._view(b)
             self.assertEqual(list(m), [m[i] for i in range(len(m))])
+
+    def test_count(self):
+        for tp in self._types:
+            b = tp(self._source)
+            m = self._view(b)
+            l = m.tolist()
+            for ch in list(m):
+                self.assertEqual(m.count(ch), l.count(ch))
+
+            b = tp((b'a' * 5) + (b'c' * 3))
+            m = self._view(b)  # may be sliced
+            l = m.tolist()
+            with self.subTest('count', buffer=b):
+                self.assertEqual(m.count(ord('a')), l.count(ord('a')))
+                self.assertEqual(m.count(ord('b')), l.count(ord('b')))
+                self.assertEqual(m.count(ord('c')), l.count(ord('c')))
 
     def test_setitem_readonly(self):
         if not self.ro_type:
@@ -227,8 +274,6 @@ class AbstractMemoryTests:
                 def __init__(self, base):
                     self.m = memoryview(base)
             class MySource(tp):
-                pass
-            class MyObject:
                 pass
 
             # Create a reference cycle through a memoryview object.
@@ -435,6 +480,18 @@ class BaseMemoryviewTests:
 
     def _check_contents(self, tp, obj, contents):
         self.assertEqual(obj, tp(contents))
+
+    def test_count(self):
+        super().test_count()
+        for tp in self._types:
+            b = tp((b'a' * 5) + (b'c' * 3))
+            m = self._view(b)  # should not be sliced
+            self.assertEqual(len(b), len(m))
+            with self.subTest('count', buffer=b):
+                self.assertEqual(m.count(ord('a')), 5)
+                self.assertEqual(m.count(ord('b')), 0)
+                self.assertEqual(m.count(ord('c')), 3)
+
 
 class BaseMemorySliceTests:
     source_bytes = b"XabcdefY"
@@ -655,6 +712,53 @@ class OtherTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "operation forbidden"):
             m[0] = MyBool()
         self.assertEqual(ba[:8], b'\0'*8)
+
+    def test_buffer_reference_loop(self):
+        m = memoryview(b'abc').__buffer__(0)
+        o = MyObject()
+        o.m = m
+        o.o = o
+        wr = weakref.ref(o)
+        del m, o
+        gc.collect()
+        self.assertIsNone(wr())
+
+    def test_picklebuffer_reference_loop(self):
+        pb = pickle.PickleBuffer(memoryview(b'abc'))
+        o = MyObject()
+        o.pb = pb
+        o.o = o
+        wr = weakref.ref(o)
+        del pb, o
+        gc.collect()
+        self.assertIsNone(wr())
+
+
+@threading_helper.requires_working_threading()
+@support.requires_resource("cpu")
+class RacingTest(unittest.TestCase):
+    def test_racing_getbuf_and_releasebuf(self):
+        """Repeatly access the memoryview for racing."""
+        try:
+            from multiprocessing.managers import SharedMemoryManager
+        except ImportError:
+            self.skipTest("Test requires multiprocessing")
+        from threading import Thread
+
+        n = 100
+        with SharedMemoryManager() as smm:
+            obj = smm.ShareableList(range(100))
+            threads = []
+            for _ in range(n):
+                # Issue gh-127085, the `ShareableList.count` is just a convenient way to mess the `exports`
+                # counter of `memoryview`, this issue has no direct relation with `ShareableList`.
+                threads.append(Thread(target=obj.count, args=(1,)))
+
+            with threading_helper.start_threads(threads):
+                pass
+
+            del obj
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,5 +1,6 @@
 from test.support import (
     requires, _2G, _4G, gc_collect, cpython_only, is_emscripten, is_apple,
+    in_systemd_nspawn_sync_suppressed,
 )
 from test.support.import_helper import import_module
 from test.support.os_helper import TESTFN, unlink
@@ -839,7 +840,8 @@ class MmapTests(unittest.TestCase):
         mm.write(b'python')
         result = mm.flush()
         self.assertIsNone(result)
-        if sys.platform.startswith(('linux', 'android')):
+        if (sys.platform.startswith(('linux', 'android'))
+            and not in_systemd_nspawn_sync_suppressed()):
             # 'offset' must be a multiple of mmap.PAGESIZE on Linux.
             # See bpo-34754 for details.
             self.assertRaises(OSError, mm.flush, 1, len(b'python'))

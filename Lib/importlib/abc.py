@@ -13,7 +13,6 @@ except ImportError:
     _frozen_importlib_external = _bootstrap_external
 from ._abc import Loader
 import abc
-import warnings
 
 
 __all__ = [
@@ -70,6 +69,15 @@ class ResourceLoader(Loader):
     This ABC represents one of the optional protocols specified by PEP 302.
 
     """
+
+    def __init__(self):
+        import warnings
+        warnings.warn('importlib.abc.ResourceLoader is deprecated in '
+                      'favour of supporting resource loading through '
+                      'importlib.resources.abc.TraversableResources.',
+                      DeprecationWarning, stacklevel=2)
+        super().__init__()
+
 
     @abc.abstractmethod
     def get_data(self, path):
@@ -200,6 +208,10 @@ class SourceLoader(_bootstrap_external.SourceLoader, ResourceLoader, ExecutionLo
 
     def path_mtime(self, path):
         """Return the (int) modification time for the path (str)."""
+        import warnings
+        warnings.warn('SourceLoader.path_mtime is deprecated in favour of '
+                      'SourceLoader.path_stats().',
+                      DeprecationWarning, stacklevel=2)
         if self.path_stats.__func__ is SourceLoader.path_stats:
             raise OSError
         return int(self.path_stats(path)['mtime'])

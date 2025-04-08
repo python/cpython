@@ -127,7 +127,7 @@ and call :meth:`res.fetchone() <Cursor.fetchone>` to fetch the resulting row:
 We can see that the table has been created,
 as the query returns a :class:`tuple` containing the table's name.
 If we query ``sqlite_master`` for a non-existent table ``spam``,
-:meth:`!res.fetchone()` will return ``None``:
+:meth:`!res.fetchone` will return ``None``:
 
 .. doctest::
 
@@ -290,9 +290,6 @@ Module functions
        :const:`PARSE_DECLTYPES` and :const:`PARSE_COLNAMES`
        to enable this.
        Column names takes precedence over declared types if both flags are set.
-       Types cannot be detected for generated fields (for example ``max(data)``),
-       even when the *detect_types* parameter is set; :class:`str` will be
-       returned instead.
        By default (``0``), type detection is disabled.
 
    :param isolation_level:
@@ -436,21 +433,6 @@ Module constants
    old style (pre-Python 3.12) transaction control behaviour.
    See :ref:`sqlite3-transaction-control-isolation-level` for more information.
 
-.. data:: PARSE_COLNAMES
-
-   Pass this flag value to the *detect_types* parameter of
-   :func:`connect` to look up a converter function by
-   using the type name, parsed from the query column name,
-   as the converter dictionary key.
-   The type name must be wrapped in square brackets (``[]``).
-
-   .. code-block:: sql
-
-      SELECT p as "p [point]" FROM test;  ! will look up converter "point"
-
-   This flag may be combined with :const:`PARSE_DECLTYPES` using the ``|``
-   (bitwise or) operator.
-
 .. data:: PARSE_DECLTYPES
 
    Pass this flag value to the *detect_types* parameter of
@@ -470,6 +452,27 @@ Module constants
        )
 
    This flag may be combined with :const:`PARSE_COLNAMES` using the ``|``
+   (bitwise or) operator.
+
+   .. note::
+
+      Generated fields (for example ``MAX(p)``) are returned as :class:`str`.
+      Use :const:`!PARSE_COLNAMES` to enforce types for such queries.
+
+.. data:: PARSE_COLNAMES
+
+   Pass this flag value to the *detect_types* parameter of
+   :func:`connect` to look up a converter function by
+   using the type name, parsed from the query column name,
+   as the converter dictionary key.
+   The query column name must be wrapped in double quotes (``"``)
+   and the type name must be wrapped in square brackets (``[]``).
+
+   .. code-block:: sql
+
+      SELECT MAX(p) as "p [point]" FROM test;  ! will look up converter "point"
+
+   This flag may be combined with :const:`PARSE_DECLTYPES` using the ``|``
    (bitwise or) operator.
 
 .. data:: SQLITE_OK
@@ -525,21 +528,20 @@ Module constants
    The mappings from SQLite threading modes to DB-API 2.0 threadsafety levels
    are as follows:
 
-   +------------------+-----------------+----------------------+-------------------------------+
-   | SQLite threading | `threadsafety`_ | `SQLITE_THREADSAFE`_ | DB-API 2.0 meaning            |
-   | mode             |                 |                      |                               |
-   +==================+=================+======================+===============================+
-   | single-thread    | 0               | 0                    | Threads may not share the     |
-   |                  |                 |                      | module                        |
-   +------------------+-----------------+----------------------+-------------------------------+
-   | multi-thread     | 1               | 2                    | Threads may share the module, |
-   |                  |                 |                      | but not connections           |
-   +------------------+-----------------+----------------------+-------------------------------+
-   | serialized       | 3               | 1                    | Threads may share the module, |
-   |                  |                 |                      | connections and cursors       |
-   +------------------+-----------------+----------------------+-------------------------------+
+   +------------------+----------------------+----------------------+-------------------------------+
+   | SQLite threading | :pep:`threadsafety   | `SQLITE_THREADSAFE`_ | DB-API 2.0 meaning            |
+   | mode             | <0249#threadsafety>` |                      |                               |
+   +==================+======================+======================+===============================+
+   | single-thread    | 0                    | 0                    | Threads may not share the     |
+   |                  |                      |                      | module                        |
+   +------------------+----------------------+----------------------+-------------------------------+
+   | multi-thread     | 1                    | 2                    | Threads may share the module, |
+   |                  |                      |                      | but not connections           |
+   +------------------+----------------------+----------------------+-------------------------------+
+   | serialized       | 3                    | 1                    | Threads may share the module, |
+   |                  |                      |                      | connections and cursors       |
+   +------------------+----------------------+----------------------+-------------------------------+
 
-   .. _threadsafety: https://peps.python.org/pep-0249/#threadsafety
    .. _SQLITE_THREADSAFE: https://sqlite.org/compile.html#threadsafe
 
    .. versionchanged:: 3.11
@@ -1149,7 +1151,7 @@ Connection objects
           the *remaining* number of pages still to be copied,
           and the *total* number of pages.
           Defaults to ``None``.
-      :type progress: :term:`callback` | None
+      :type progress: :term:`callback` | None
 
       :param str name:
           The name of the database to back up.
@@ -2443,6 +2445,7 @@ Some useful URI tricks include:
    >>> con.execute("CREATE TABLE readonly(data)")
    Traceback (most recent call last):
    OperationalError: attempt to write a readonly database
+   >>> con.close()
 
 * Do not implicitly create a new database file if it does not already exist;
   will raise :exc:`~sqlite3.OperationalError` if unable to create a new file:

@@ -1,11 +1,12 @@
 import sys
-import time
 
 import unittest
 from unittest import mock
 from test import support
-from test.test_grammar import (VALID_UNDERSCORE_LITERALS,
-                               INVALID_UNDERSCORE_LITERALS)
+from test.support.numbers import (
+    VALID_UNDERSCORE_LITERALS,
+    INVALID_UNDERSCORE_LITERALS,
+)
 
 try:
     import _pylong
@@ -517,6 +518,7 @@ class IntTestCases(unittest.TestCase):
         self.assertEqual(int('1_2_3_4_5_6_7_8_9', 16), 0x123456789)
         self.assertEqual(int('1_2_3_4_5_6_7', 32), 1144132807)
 
+    @support.cpython_only
     def test_round_with_none_arg_direct_call(self):
         for val in [(1).__round__(None),
                     round(1),

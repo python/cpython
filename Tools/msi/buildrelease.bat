@@ -127,7 +127,7 @@ if "%1" EQU "x86" (
     set OUTDIR_PLAT=amd64
     set OBJDIR_PLAT=x64
 ) else if "%1" EQU "ARM64" (
-    set BUILD=%Py_OutDir%amd64\
+    set BUILD=%Py_OutDir%arm64\
     set PGO=%~2
     set BUILD_PLAT=ARM64
     set OUTDIR_PLAT=arm64

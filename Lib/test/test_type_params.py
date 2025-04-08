@@ -1,12 +1,12 @@
-import asyncio
+import annotationlib
 import textwrap
 import types
 import unittest
 import pickle
 import weakref
-from test.support import requires_working_socket, check_syntax_error, run_code
+from test.support import check_syntax_error, run_code, run_no_yield_async_fn
 
-from typing import Generic, NoDefault, Sequence, TypeVar, TypeVarTuple, ParamSpec, get_args
+from typing import Generic, NoDefault, Sequence, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, get_args
 
 
 class TypeParamsInvalidTest(unittest.TestCase):
@@ -950,6 +950,7 @@ class TypeParamsComplexCallsTest(unittest.TestCase):
         T, = C.__type_params__
         self.assertEqual(T.__name__, "T")
         self.assertEqual(C.kwargs, {"a": 1, "b": 2, "c": 3})
+        self.assertEqual(C.__bases__, (Base, Generic))
 
         bases = (Base,)
         class C2[T](*bases, **kwargs):
@@ -958,6 +959,22 @@ class TypeParamsComplexCallsTest(unittest.TestCase):
         T, = C2.__type_params__
         self.assertEqual(T.__name__, "T")
         self.assertEqual(C2.kwargs, {"c": 3})
+        self.assertEqual(C2.__bases__, (Base, Generic))
+
+    def test_starargs_base(self):
+        class C1[T](*()): pass
+
+        T, = C1.__type_params__
+        self.assertEqual(T.__name__, "T")
+        self.assertEqual(C1.__bases__, (Generic,))
+
+        class Base: pass
+        bases = [Base]
+        class C2[T](*bases): pass
+
+        T, = C2.__type_params__
+        self.assertEqual(T.__name__, "T")
+        self.assertEqual(C2.__bases__, (Base, Generic))
 
 
 class TypeParamsTraditionalTypeVarsTest(unittest.TestCase):
@@ -1033,7 +1050,6 @@ class TypeParamsTypeVarTest(unittest.TestCase):
         self.assertIsInstance(c, TypeVar)
         self.assertEqual(c.__name__, "C")
 
-    @requires_working_socket()
     def test_typevar_coroutine(self):
         def get_coroutine[A]():
             async def coroutine[B]():
@@ -1042,8 +1058,7 @@ class TypeParamsTypeVarTest(unittest.TestCase):
 
         co = get_coroutine()
 
-        self.addCleanup(asyncio.set_event_loop_policy, None)
-        a, b = asyncio.run(co())
+        a, b = run_no_yield_async_fn(co)
 
         self.assertIsInstance(a, TypeVar)
         self.assertEqual(a.__name__, "A")
@@ -1394,3 +1409,54 @@ class DefaultsTest(unittest.TestCase):
 
         self.assertEqual(ns["X1"].__type_params__[0].__default__, "A")
         self.assertEqual(ns["X2"].__type_params__[0].__default__, "B")
+
+
+class TestEvaluateFunctions(unittest.TestCase):
+    def test_general(self):
+        type Alias = int
+        Alias2 = TypeAliasType("Alias2", int)
+        def f[T: int = int, **P = int, *Ts = int](): pass
+        T, P, Ts = f.__type_params__
+        T2 = TypeVar("T2", bound=int, default=int)
+        P2 = ParamSpec("P2", default=int)
+        Ts2 = TypeVarTuple("Ts2", default=int)
+        cases = [
+            Alias.evaluate_value,
+            Alias2.evaluate_value,
+            T.evaluate_bound,
+            T.evaluate_default,
+            P.evaluate_default,
+            Ts.evaluate_default,
+            T2.evaluate_bound,
+            T2.evaluate_default,
+            P2.evaluate_default,
+            Ts2.evaluate_default,
+        ]
+        for case in cases:
+            with self.subTest(case=case):
+                self.assertIs(case(1), int)
+                self.assertIs(annotationlib.call_evaluate_function(case, annotationlib.Format.VALUE), int)
+                self.assertIs(annotationlib.call_evaluate_function(case, annotationlib.Format.FORWARDREF), int)
+                self.assertEqual(annotationlib.call_evaluate_function(case, annotationlib.Format.STRING), 'int')
+
+    def test_constraints(self):
+        def f[T: (int, str)](): pass
+        T, = f.__type_params__
+        T2 = TypeVar("T2", int, str)
+        for case in [T, T2]:
+            with self.subTest(case=case):
+                self.assertEqual(case.evaluate_constraints(1), (int, str))
+                self.assertEqual(annotationlib.call_evaluate_function(case.evaluate_constraints, annotationlib.Format.VALUE), (int, str))
+                self.assertEqual(annotationlib.call_evaluate_function(case.evaluate_constraints, annotationlib.Format.FORWARDREF), (int, str))
+                self.assertEqual(annotationlib.call_evaluate_function(case.evaluate_constraints, annotationlib.Format.STRING), '(int, str)')
+
+    def test_const_evaluator(self):
+        T = TypeVar("T", bound=int)
+        self.assertEqual(repr(T.evaluate_bound), "<constevaluator <class 'int'>>")
+
+        ConstEvaluator = type(T.evaluate_bound)
+
+        with self.assertRaisesRegex(TypeError, r"cannot create '_typing\._ConstEvaluator' instances"):
+            ConstEvaluator()  # This used to segfault.
+        with self.assertRaisesRegex(TypeError, r"cannot set 'attribute' attribute of immutable type '_typing\._ConstEvaluator'"):
+            ConstEvaluator.attribute = 1

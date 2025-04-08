@@ -4,9 +4,11 @@
 #endif
 
 #include "Python.h"
-#include "pycore_fileutils.h"
-#include "pycore_pystate.h"
+#include "pycore_fileutils.h"     // _Py_set_inheritable_async_safe()
+#include "pycore_interp.h"        // _PyInterpreterState_GetFinalizing()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_signal.h"        // _Py_RestoreSignals()
+
 #if defined(HAVE_PIPE2) && !defined(_GNU_SOURCE)
 #  define _GNU_SOURCE
 #endif
@@ -977,7 +979,6 @@ _posixsubprocess.fork_exec as subprocess_fork_exec
     uid as uid_object: object
     child_umask: int
     preexec_fn: object
-    allow_vfork: bool
     /
 
 Spawn a fresh new child process.
@@ -1014,8 +1015,8 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
                           pid_t pgid_to_set, PyObject *gid_object,
                           PyObject *extra_groups_packed,
                           PyObject *uid_object, int child_umask,
-                          PyObject *preexec_fn, int allow_vfork)
-/*[clinic end generated code: output=7ee4f6ee5cf22b5b input=51757287ef266ffa]*/
+                          PyObject *preexec_fn)
+/*[clinic end generated code: output=288464dc56e373c7 input=f311c3bcb5dd55c8]*/
 {
     PyObject *converted_args = NULL, *fast_args = NULL;
     PyObject *preexec_fn_args_tuple = NULL;
@@ -1218,7 +1219,7 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,
 #ifdef VFORK_USABLE
     /* Use vfork() only if it's safe. See the comment above child_exec(). */
     sigset_t old_sigs;
-    if (preexec_fn == Py_None && allow_vfork &&
+    if (preexec_fn == Py_None &&
         uid == (uid_t)-1 && gid == (gid_t)-1 && extra_group_size < 0) {
         /* Block all signals to ensure that no signal handlers are run in the
          * child process while it shares memory with us. Note that signals

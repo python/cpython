@@ -1,11 +1,11 @@
-import unittest
-import math
 import string
 import sys
+import unittest
 from test import support
 from test.support import import_helper
 from test.support import script_helper
 from test.support import warnings_helper
+from test.support.testcase import FloatsAreIdenticalMixin
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')
 from _testcapi import getargs_keywords, getargs_keyword_only
@@ -62,6 +62,9 @@ LLONG_MIN = -2**63
 ULLONG_MAX = 2**64-1
 
 NULL = None
+
+class CustomError(Exception):
+    pass
 
 class Index:
     def __index__(self):
@@ -436,11 +439,7 @@ class LongLong_TestCase(unittest.TestCase):
         self.assertEqual(VERY_LARGE & ULLONG_MAX, getargs_K(VERY_LARGE))
 
 
-class Float_TestCase(unittest.TestCase):
-    def assertEqualWithSign(self, actual, expected):
-        self.assertEqual(actual, expected)
-        self.assertEqual(math.copysign(1, actual), math.copysign(1, expected))
-
+class Float_TestCase(unittest.TestCase, FloatsAreIdenticalMixin):
     def test_f(self):
         from _testcapi import getargs_f
         self.assertEqual(getargs_f(4.25), 4.25)
@@ -462,10 +461,10 @@ class Float_TestCase(unittest.TestCase):
             self.assertEqual(getargs_f(DBL_MAX), INF)
             self.assertEqual(getargs_f(-DBL_MAX), -INF)
         if FLT_MIN > DBL_MIN:
-            self.assertEqualWithSign(getargs_f(DBL_MIN), 0.0)
-            self.assertEqualWithSign(getargs_f(-DBL_MIN), -0.0)
-        self.assertEqualWithSign(getargs_f(0.0), 0.0)
-        self.assertEqualWithSign(getargs_f(-0.0), -0.0)
+            self.assertFloatsAreIdentical(getargs_f(DBL_MIN), 0.0)
+            self.assertFloatsAreIdentical(getargs_f(-DBL_MIN), -0.0)
+        self.assertFloatsAreIdentical(getargs_f(0.0), 0.0)
+        self.assertFloatsAreIdentical(getargs_f(-0.0), -0.0)
         r = getargs_f(NAN)
         self.assertNotEqual(r, r)
 
@@ -494,8 +493,8 @@ class Float_TestCase(unittest.TestCase):
             self.assertEqual(getargs_d(x), x)
         self.assertRaises(OverflowError, getargs_d, 1<<DBL_MAX_EXP)
         self.assertRaises(OverflowError, getargs_d, -1<<DBL_MAX_EXP)
-        self.assertEqualWithSign(getargs_d(0.0), 0.0)
-        self.assertEqualWithSign(getargs_d(-0.0), -0.0)
+        self.assertFloatsAreIdentical(getargs_d(0.0), 0.0)
+        self.assertFloatsAreIdentical(getargs_d(-0.0), -0.0)
         r = getargs_d(NAN)
         self.assertNotEqual(r, r)
 
@@ -519,10 +518,10 @@ class Float_TestCase(unittest.TestCase):
             self.assertEqual(getargs_D(c), c)
             c = complex(1.0, x)
             self.assertEqual(getargs_D(c), c)
-        self.assertEqualWithSign(getargs_D(complex(0.0, 1.0)).real, 0.0)
-        self.assertEqualWithSign(getargs_D(complex(-0.0, 1.0)).real, -0.0)
-        self.assertEqualWithSign(getargs_D(complex(1.0, 0.0)).imag, 0.0)
-        self.assertEqualWithSign(getargs_D(complex(1.0, -0.0)).imag, -0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(0.0, 1.0)).real, 0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(-0.0, 1.0)).real, -0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(1.0, 0.0)).imag, 0.0)
+        self.assertFloatsAreIdentical(getargs_D(complex(1.0, -0.0)).imag, -0.0)
 
 
 class Paradox:
@@ -590,13 +589,13 @@ class Tuple_TestCase(unittest.TestCase):
         ret = getargs_tuple(1, (2, 3))
         self.assertEqual(ret, (1,2,3))
 
-        # make sure invalid tuple arguments are handled correctly
-        class seq:
+        # make sure invalid sequence arguments are handled correctly
+        class TestSeq:
             def __len__(self):
                 return 2
             def __getitem__(self, n):
-                raise ValueError
-        self.assertRaises(TypeError, getargs_tuple, 1, seq())
+                raise CustomError
+        self.assertRaises(CustomError, getargs_tuple, 1, TestSeq())
 
 class Keywords_TestCase(unittest.TestCase):
     def test_kwargs(self):
@@ -1324,33 +1323,69 @@ class ParseTupleAndKeywords_Test(unittest.TestCase):
                             f"this function got an unexpected keyword argument '{name2}'"):
                         parse((), {name2: 1, name3: 2}, '|OO', [name, name3])
 
-    def test_nested_tuple(self):
+    def test_nested_sequence(self):
         parse = _testcapi.parse_tuple_and_keywords
 
         self.assertEqual(parse(((1, 2, 3),), {}, '(OOO)', ['a']), (1, 2, 3))
         self.assertEqual(parse((1, (2, 3), 4), {}, 'O(OO)O', ['a', 'b', 'c']),
                          (1, 2, 3, 4))
         parse(((1, 2, 3),), {}, '(iii)', ['a'])
+        parse(([1, 2, 3],), {}, '(iii)', ['a'])
 
         with self.assertRaisesRegex(TypeError,
-                "argument 1 must be sequence of length 2, not 3"):
+                "argument 1 must be tuple of length 2, not 3"):
             parse(((1, 2, 3),), {}, '(ii)', ['a'])
         with self.assertRaisesRegex(TypeError,
-                "argument 1 must be sequence of length 2, not 1"):
+                "argument 1 must be tuple of length 2, not 1"):
             parse(((1,),), {}, '(ii)', ['a'])
         with self.assertRaisesRegex(TypeError,
-                "argument 1 must be 2-item sequence, not int"):
+                "argument 1 must be sequence of length 2, not 3"):
+            parse(([1, 2, 3],), {}, '(ii)', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be sequence of length 2, not 1"):
+            parse(([1,],), {}, '(ii)', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be 2-item tuple, not int"):
             parse((1,), {}, '(ii)', ['a'])
         with self.assertRaisesRegex(TypeError,
-                "argument 1 must be 2-item sequence, not bytes"):
+                "argument 1 must be 2-item tuple, not None$"):
+            parse((None,), {}, '(ii)', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be 2-item tuple, not str"):
+            parse(('ab',), {}, '(CC)', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be 2-item tuple, not bytes"):
             parse((b'ab',), {}, '(ii)', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be 2-item tuple, not bytearray"):
+            parse((bytearray(b'ab'),), {}, '(ii)', ['a'])
+        with self.assertRaisesRegex(TypeError,
+                "argument 1 must be 2-item tuple, not dict"):
+            parse(({},), {}, '(ii)', ['a'])
+
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument must be 3-item tuple, not list"):
+            self.assertEqual(parse(([1, 2, 3],), {}, '(OOO)', ['a']), (1, 2, 3))
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument must be 2-item tuple, not list"):
+            with self.assertRaisesRegex(TypeError,
+                    "argument 1 must be tuple of length 2, not 3"):
+                parse(([1, 2, 3],), {}, '(OO)', ['a'])
+        with self.assertWarnsRegex(DeprecationWarning,
+                "argument must be 2-item tuple, not list"):
+            with self.assertRaisesRegex(TypeError,
+                    "argument 1 must be tuple of length 2, not 1"):
+                parse(([1,],), {}, '(OO)', ['a'])
 
         for f in 'es', 'et', 'es#', 'et#':
             with self.assertRaises(LookupError):  # empty encoding ""
                 parse((('a',),), {}, '(' + f + ')', ['a'])
             with self.assertRaisesRegex(TypeError,
-                    "argument 1 must be sequence of length 1, not 0"):
+                    "argument 1 must be tuple of length 1, not 0"):
                 parse(((),), {}, '(' + f + ')', ['a'])
+            with self.assertRaisesRegex(TypeError,
+                    "argument 1 must be sequence of length 1, not 0"):
+                parse(([],), {}, '(' + f + ')', ['a'])
 
     @unittest.skipIf(_testinternalcapi is None, 'needs _testinternalcapi')
     def test_gh_119213(self):
