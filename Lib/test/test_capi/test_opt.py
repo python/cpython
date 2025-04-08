@@ -1629,6 +1629,33 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CONTAINS_OP_SET", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
 
+    def test_to_bool_bool_contains_op_dict(self):
+        """
+        Test that _TO_BOOL_BOOL is removed from code like:
+
+        res = foo in some_dict
+        if res:
+            ....
+
+        """
+        def testfunc(n):
+            x = 0
+            s = {1: 1, 2: 2, 3: 3}
+            for _ in range(n):
+                a = 2
+                in_dict = a in s
+                if in_dict:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CONTAINS_OP_DICT", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+
+
     def test_remove_guard_for_known_type_str(self):
         def f(n):
             for i in range(n):
