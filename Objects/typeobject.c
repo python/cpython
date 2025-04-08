@@ -11021,19 +11021,23 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
         int rc = 0;
         // Py_BEGIN_CRITICAL_SECTION(cache);
 
-        PyObject* list=NULL;
-        rc = PyDict_GetItemRef(cache, name, &list);
+        PyObject* bytes=NULL;
+        rc = PyDict_GetItemRef(cache, name, &bytes);
         if (rc > 0) {
+            assert(bytes);
+            assert(PyBytes_CheckExact(bytes));
 
-            assert(list);
-            Py_ssize_t n = PyList_Size(list);
+            uint8_t *data = (uint8_t *)PyBytes_AS_STRING(bytes);
+            uint8_t n = data[0];
+
             assert(n >= 0);
-            Py_ssize_t i;
+            assert(n < MAX_EQUIV);
+
+            uint8_t i;
             for(i = 0; i < n; i++) {
-                PyObject *py_idx = PyList_GET_ITEM(list, i);
-                assert(PyLong_Check(py_idx));
-                Py_ssize_t idx = PyLong_AsSsize_t(py_idx);
+                uint8_t idx = data[i + 1];
                 assert (idx < Py_ARRAY_LENGTH(slotdefs));
+
                 pytype_slotdef *x = &slotdefs[idx];
                 ptr = slotptr(type, x->offset);
                 if (ptr == NULL || *ptr == NULL) {
@@ -11045,8 +11049,7 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
                 }
                 res = ptr;
             }
-            assert(Py_REFCNT(list) > 1);
-            Py_DECREF(list);
+            Py_DECREF(bytes);
         } else if (rc < 0) {
             PyErr_Clear();
         }
@@ -11363,44 +11366,42 @@ fixup_slot_dispatchers(PyTypeObject *type)
                     Py_CLEAR(cache);
                     break;
                 }
+                assert (idx < 255);
 
-                PyObject *list;
-                if (_PyDict_GetItemRef_KnownHash_LockHeld((PyDictObject *)cache, p->name_strobj, hash, &list) < 0) {
+                PyObject *bytes;
+                if (_PyDict_GetItemRef_KnownHash_LockHeld((PyDictObject *)cache, p->name_strobj, hash, &bytes) < 0) {
                     Py_CLEAR(cache);
                     break;
                 }
 
-                if (!list) {
-                    list = PyList_New(0);
-                    if (!list) {
+                if (!bytes) {
+                    bytes = PyBytes_FromStringAndSize(NULL, sizeof(uint8_t) * (1 + MAX_EQUIV));
+                    if (!bytes) {
                         Py_CLEAR(cache);
                         break;
                     }
 
-                    if (_PyDict_SetItem_KnownHash_LockHeld((PyDictObject *)cache, p->name_strobj, list, hash) < 0) {
-                        Py_DECREF(list);
+                    uint8_t *data = (uint8_t *)PyBytes_AS_STRING(bytes);
+                    data[0] = 0;
+
+                    if (_PyDict_SetItem_KnownHash_LockHeld((PyDictObject *)cache, p->name_strobj, bytes, hash) < 0) {
+                        Py_DECREF(bytes);
                         Py_CLEAR(cache);
                         break;
                     }
                 }
 
-                PyObject *py_idx = PyLong_FromSsize_t(idx);
-                if (!py_idx) {
-                    Py_DECREF(list);
-                    Py_CLEAR(cache);
-                    break;
-                }
+                assert (PyBytes_CheckExact(bytes));
+                uint8_t *data = (uint8_t *)PyBytes_AS_STRING(bytes);
 
-                if (PyList_Append(list, py_idx) < 0) {
-                    Py_DECREF(py_idx);
-                    Py_DECREF(list);
-                    Py_CLEAR(cache);
-                    break;
-                }
+                data[0] += 1;
+                assert (data[0] < MAX_EQUIV);
 
-                Py_DECREF(py_idx);
-                Py_DECREF(list);
+                data[data[0]] = (uint8_t)idx;
+
+                Py_DECREF(bytes);
             }
+
         }
 
         if (cache) {
