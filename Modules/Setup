@@ -150,6 +150,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_socket socketmodule.c
 #_statistics _statisticsmodule.c
 #_struct _struct.c
+#_types _typesmodule.c
 #_typing _typingmodule.c
 #_zoneinfo _zoneinfo.c
 #array arraymodule.c
@@ -165,11 +166,12 @@ PYTHONPATH=$(COREPYTHONPATH)
 #pyexpat pyexpat.c
 
 # hashing builtins
-#_blake2 blake2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_Blake2.a
-#_md5 md5module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_MD5.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
-#_sha1 sha1module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA1.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
-#_sha2 sha2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_SHA2.a
-#_sha3 sha3module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA3.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
+#_blake2 blake2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_Blake2.a -D_BSD_SOURCE -D_DEFAULT_SOURCE
+#_md5 md5module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_MD5.a -D_BSD_SOURCE -D_DEFAULT_SOURCE
+#_sha1 sha1module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_SHA1.a -D_BSD_SOURCE -D_DEFAULT_SOURCE
+#_sha2 sha2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_SHA2.a -D_BSD_SOURCE -D_DEFAULT_SOURCE
+#_sha3 sha3module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_SHA3.a -D_BSD_SOURCE -D_DEFAULT_SOURCE
+#_hmac hmacmodule.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_HMAC.a -D_BSD_SOURCE -D_DEFAULT_SOURCE
 
 # text encodings and unicode
 #_codecs_cn cjkcodecs/_codecs_cn.c

@@ -144,6 +144,17 @@ Classes
 
       The exact values of these strings may change in future versions of Python.
 
+   .. attribute:: VALUE_WITH_FAKE_GLOBALS
+      :value: 4
+
+      Special value used to signal that an annotate function is being
+      evaluated in a special environment with fake globals. When passed this
+      value, annotate functions should either return the same value as for
+      the :attr:`Format.VALUE` format, or raise :exc:`NotImplementedError`
+      to signal that they do not support execution in this environment.
+      This format is only used internally and should not be passed to
+      the functions in this module.
+
    .. versionadded:: 3.14
 
 .. class:: ForwardRef
@@ -161,14 +172,30 @@ Classes
       :class:`~ForwardRef`. The string may not be exactly equivalent
       to the original source.
 
-   .. method:: evaluate(*, globals=None, locals=None, type_params=None, owner=None)
+   .. method:: evaluate(*, owner=None, globals=None, locals=None, type_params=None)
 
       Evaluate the forward reference, returning its value.
 
       This may throw an exception, such as :exc:`NameError`, if the forward
-      reference refers to names that do not exist. The arguments to this
+      reference refers to a name that cannot be resolved. The arguments to this
       method can be used to provide bindings for names that would otherwise
       be undefined.
+
+      The *owner* parameter provides the preferred mechanism for passing scope
+      information to this method. The owner of a :class:`~ForwardRef` is the
+      object that contains the annotation from which the :class:`~ForwardRef`
+      derives, such as a module object, type object, or function object.
+
+      The *globals*, *locals*, and *type_params* parameters provide a more precise
+      mechanism for influencing the names that are available when the :class:`~ForwardRef`
+      is evaluated. *globals* and *locals* are passed to :func:`eval`, representing
+      the global and local namespaces in which the name is evaluated.
+      The *type_params* parameter is relevant for objects created using the native
+      syntax for :ref:`generic classes <generic-classes>` and :ref:`functions <generic-functions>`.
+      It is a tuple of :ref:`type parameters <type-params>` that are in scope
+      while the forward reference is being evaluated. For example, if evaluating a
+      :class:`~ForwardRef` retrieved from an annotation found in the class namespace
+      of a generic class ``C``, *type_params* should be set to ``C.__type_params__``.
 
       :class:`~ForwardRef` instances returned by :func:`get_annotations`
       retain references to information about the scope they originated from,
@@ -176,20 +203,6 @@ Classes
       evaluate such objects. :class:`~ForwardRef` instances created by other
       means may not have any information about their scope, so passing
       arguments to this method may be necessary to evaluate them successfully.
-
-      *globals* and *locals* are passed to :func:`eval`, representing
-      the global and local namespaces in which the name is evaluated.
-      *type_params*, if given, must be a tuple of
-      :ref:`type parameters <type-params>` that are in scope while the forward
-      reference is being evaluated. *owner* is the object that owns the
-      annotation from which the forward reference derives, usually a function,
-      class, or module.
-
-      .. important::
-
-         Once a :class:`~ForwardRef` instance has been evaluated, it caches
-         the evaluated value, and future calls to :meth:`evaluate` will return
-         the cached value, regardless of the parameters passed in.
 
    .. versionadded:: 3.14
 

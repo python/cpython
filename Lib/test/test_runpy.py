@@ -12,8 +12,14 @@ import tempfile
 import textwrap
 import unittest
 import warnings
-from test.support import (infinite_recursion, no_tracing, verbose,
-                          requires_subprocess, requires_resource)
+from test.support import (
+    force_not_colorized_test_class,
+    infinite_recursion,
+    no_tracing,
+    requires_resource,
+    requires_subprocess,
+    verbose,
+)
 from test.support.import_helper import forget, make_legacy_pyc, unload
 from test.support.os_helper import create_empty_file, temp_dir, FakePath
 from test.support.script_helper import make_script, make_zip_script
@@ -758,6 +764,7 @@ s = "non-ASCII: h\xe9"
             self.assertEqual(result['s'], "non-ASCII: h\xe9")
 
 
+@force_not_colorized_test_class
 class TestExit(unittest.TestCase):
     STATUS_CONTROL_C_EXIT = 0xC000013A
     EXPECTED_CODE = (

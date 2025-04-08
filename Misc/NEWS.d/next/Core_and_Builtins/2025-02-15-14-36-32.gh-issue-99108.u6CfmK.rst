@@ -1,0 +1,2 @@
+Add support for built-in implementation of HMAC (:rfc:`2104`) based on
+HACL*. Patch by Bénédikt Tran.

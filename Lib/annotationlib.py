@@ -3,7 +3,6 @@
 import ast
 import builtins
 import enum
-import functools
 import keyword
 import sys
 import types
@@ -22,29 +21,28 @@ __all__ = [
 
 class Format(enum.IntEnum):
     VALUE = 1
-    FORWARDREF = 2
-    STRING = 3
+    VALUE_WITH_FAKE_GLOBALS = 2
+    FORWARDREF = 3
+    STRING = 4
 
 
-_Union = None
 _sentinel = object()
 
 # Slots shared by ForwardRef and _Stringifier. The __forward__ names must be
 # preserved for compatibility with the old typing.ForwardRef class. The remaining
 # names are private.
 _SLOTS = (
-    "__forward_evaluated__",
-    "__forward_value__",
     "__forward_is_argument__",
     "__forward_is_class__",
     "__forward_module__",
     "__weakref__",
     "__arg__",
-    "__ast_node__",
-    "__code__",
     "__globals__",
-    "__owner__",
+    "__code__",
+    "__ast_node__",
     "__cell__",
+    "__owner__",
+    "__stringifier_dict__",
 )
 
 
@@ -76,14 +74,12 @@ class ForwardRef:
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
 
         self.__arg__ = arg
-        self.__forward_evaluated__ = False
-        self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
+        self.__globals__ = None
         self.__code__ = None
         self.__ast_node__ = None
-        self.__globals__ = None
         self.__cell__ = None
         self.__owner__ = owner
 
@@ -95,17 +91,11 @@ class ForwardRef:
 
         If the forward reference cannot be evaluated, raise an exception.
         """
-        if self.__forward_evaluated__:
-            return self.__forward_value__
         if self.__cell__ is not None:
             try:
-                value = self.__cell__.cell_contents
+                return self.__cell__.cell_contents
             except ValueError:
                 pass
-            else:
-                self.__forward_evaluated__ = True
-                self.__forward_value__ = value
-                return value
         if owner is None:
             owner = self.__owner__
 
@@ -171,8 +161,6 @@ class ForwardRef:
         else:
             code = self.__forward_code__
             value = eval(code, globals=globals, locals=locals)
-        self.__forward_evaluated__ = True
-        self.__forward_value__ = value
         return value
 
     def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
@@ -230,37 +218,46 @@ class ForwardRef:
     def __eq__(self, other):
         if not isinstance(other, ForwardRef):
             return NotImplemented
-        if self.__forward_evaluated__ and other.__forward_evaluated__:
-            return (
-                self.__forward_arg__ == other.__forward_arg__
-                and self.__forward_value__ == other.__forward_value__
-            )
         return (
             self.__forward_arg__ == other.__forward_arg__
             and self.__forward_module__ == other.__forward_module__
+            # Use "is" here because we use id() for this in __hash__
+            # because dictionaries are not hashable.
+            and self.__globals__ is other.__globals__
+            and self.__forward_is_class__ == other.__forward_is_class__
+            and self.__code__ == other.__code__
+            and self.__ast_node__ == other.__ast_node__
+            and self.__cell__ == other.__cell__
+            and self.__owner__ == other.__owner__
         )
 
     def __hash__(self):
-        return hash((self.__forward_arg__, self.__forward_module__))
+        return hash((
+            self.__forward_arg__,
+            self.__forward_module__,
+            id(self.__globals__),  # dictionaries are not hashable, so hash by identity
+            self.__forward_is_class__,
+            self.__code__,
+            self.__ast_node__,
+            self.__cell__,
+            self.__owner__,
+        ))
 
     def __or__(self, other):
-        global _Union
-        if _Union is None:
-            from typing import Union as _Union
-        return _Union[self, other]
+        return types.UnionType[self, other]
 
     def __ror__(self, other):
-        global _Union
-        if _Union is None:
-            from typing import Union as _Union
-        return _Union[other, self]
+        return types.UnionType[other, self]
 
     def __repr__(self):
-        if self.__forward_module__ is None:
-            module_repr = ""
-        else:
-            module_repr = f", module={self.__forward_module__!r}"
-        return f"ForwardRef({self.__forward_arg__!r}{module_repr})"
+        extra = []
+        if self.__forward_module__ is not None:
+            extra.append(f", module={self.__forward_module__!r}")
+        if self.__forward_is_class__:
+            extra.append(", is_class=True")
+        if self.__owner__ is not None:
+            extra.append(f", owner={self.__owner__!r}")
+        return f"ForwardRef({self.__forward_arg__!r}{''.join(extra)})"
 
 
 class _Stringifier:
@@ -268,13 +265,20 @@ class _Stringifier:
     # instance of the other in place.
     __slots__ = _SLOTS
 
-    def __init__(self, node, globals=None, owner=None, is_class=False, cell=None):
+    def __init__(
+        self,
+        node,
+        globals=None,
+        owner=None,
+        is_class=False,
+        cell=None,
+        *,
+        stringifier_dict,
+    ):
         # Either an AST node or a simple str (for the common case where a ForwardRef
         # represent a single name).
         assert isinstance(node, (ast.AST, str))
         self.__arg__ = None
-        self.__forward_evaluated__ = False
-        self.__forward_value__ = None
         self.__forward_is_argument__ = False
         self.__forward_is_class__ = is_class
         self.__forward_module__ = None
@@ -283,6 +287,7 @@ class _Stringifier:
         self.__globals__ = globals
         self.__cell__ = cell
         self.__owner__ = owner
+        self.__stringifier_dict__ = stringifier_dict
 
     def __convert_to_ast(self, other):
         if isinstance(other, _Stringifier):
@@ -317,9 +322,15 @@ class _Stringifier:
         return node
 
     def __make_new(self, node):
-        return _Stringifier(
-            node, self.__globals__, self.__owner__, self.__forward_is_class__
+        stringifier = _Stringifier(
+            node,
+            self.__globals__,
+            self.__owner__,
+            self.__forward_is_class__,
+            stringifier_dict=self.__stringifier_dict__,
         )
+        self.__stringifier_dict__.stringifiers.append(stringifier)
+        return stringifier
 
     # Must implement this since we set __eq__. We hash by identity so that
     # stringifiers in dict keys are kept separate.
@@ -462,6 +473,7 @@ class _StringifierDict(dict):
             globals=self.globals,
             owner=self.owner,
             is_class=self.is_class,
+            stringifier_dict=self,
         )
         self.stringifiers.append(fwdref)
         return fwdref
@@ -495,6 +507,8 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
     on the generated ForwardRef objects.
 
     """
+    if format == Format.VALUE_WITH_FAKE_GLOBALS:
+        raise ValueError("The VALUE_WITH_FAKE_GLOBALS format is for internal use only")
     try:
         return annotate(format)
     except NotImplementedError:
@@ -516,7 +530,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
                     name = freevars[i]
                 else:
                     name = "__cell__"
-                fwdref = _Stringifier(name)
+                fwdref = _Stringifier(name, stringifier_dict=globals)
                 new_closure.append(types.CellType(fwdref))
             closure = tuple(new_closure)
         else:
@@ -528,7 +542,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             argdefs=annotate.__defaults__,
             kwdefaults=annotate.__kwdefaults__,
         )
-        annos = func(Format.VALUE)
+        annos = func(Format.VALUE_WITH_FAKE_GLOBALS)
         if _is_evaluate:
             return annos if isinstance(annos, str) else repr(annos)
         return {
@@ -573,6 +587,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
                         owner=owner,
                         globals=annotate.__globals__,
                         is_class=is_class,
+                        stringifier_dict=globals,
                     )
                     globals.stringifiers.append(fwdref)
                     new_closure.append(types.CellType(fwdref))
@@ -588,9 +603,10 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             argdefs=annotate.__defaults__,
             kwdefaults=annotate.__kwdefaults__,
         )
-        result = func(Format.VALUE)
+        result = func(Format.VALUE_WITH_FAKE_GLOBALS)
         for obj in globals.stringifiers:
             obj.__class__ = ForwardRef
+            obj.__stringifier_dict__ = None  # not needed for ForwardRef
             if isinstance(obj.__ast_node__, str):
                 obj.__arg__ = obj.__ast_node__
                 obj.__ast_node__ = None
@@ -685,11 +701,9 @@ def get_annotations(
         case Format.FORWARDREF:
             # For FORWARDREF, we use __annotations__ if it exists
             try:
-                ann = _get_dunder_annotations(obj)
+                return dict(_get_dunder_annotations(obj))
             except NameError:
                 pass
-            else:
-                return dict(ann)
 
             # But if __annotations__ threw a NameError, we try calling __annotate__
             ann = _get_and_call_annotate(obj, format)
@@ -708,6 +722,8 @@ def get_annotations(
             # But if we didn't get it, we use __annotations__ instead.
             ann = _get_dunder_annotations(obj)
             return annotations_to_string(ann)
+        case Format.VALUE_WITH_FAKE_GLOBALS:
+            raise ValueError("The VALUE_WITH_FAKE_GLOBALS format is for internal use only")
         case _:
             raise ValueError(f"Unsupported format {format!r}")
 
@@ -749,9 +765,10 @@ def get_annotations(
             if hasattr(unwrap, "__wrapped__"):
                 unwrap = unwrap.__wrapped__
                 continue
-            if isinstance(unwrap, functools.partial):
-                unwrap = unwrap.func
-                continue
+            if functools := sys.modules.get("functools"):
+                if isinstance(unwrap, functools.partial):
+                    unwrap = unwrap.func
+                    continue
             break
         if hasattr(unwrap, "__globals__"):
             obj_globals = unwrap.__globals__

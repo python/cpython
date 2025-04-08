@@ -1,3 +1,0 @@
-On WASI in debug mode, Python is now built with compiler flag ``-O3``
-instead of ``-Og``, to support more recursive calls. Patch by Victor
-Stinner.

@@ -603,6 +603,17 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
+   * ``-X disable_remote_debug`` disables the remote debugging support as described
+     in :pep:`768`.  This includes both the functionality to schedule code for
+     execution in another process and the functionality to receive code for
+     execution in the current process.
+
+     This option is only available on some platforms and will do nothing
+     if is not supported on the current system. See also
+     :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` and :pep:`768`.
+
+     .. versionadded:: next
+
    * :samp:`-X cpu_count={n}` overrides :func:`os.cpu_count`,
      :func:`os.process_cpu_count`, and :func:`multiprocessing.cpu_count`.
      *n* must be greater than or equal to 1.
@@ -662,14 +673,6 @@ output. To control the color output only in the Python interpreter, the
 :envvar:`PYTHON_COLORS` environment variable can be used. This variable takes
 precedence over ``NO_COLOR``, which in turn takes precedence over
 ``FORCE_COLOR``.
-
-.. Apparently this how you hack together a formatted link:
-
-.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
-.. _FORCE_COLOR: https://force-color.org/
-
-.. |NO_COLOR| replace:: ``NO_COLOR``
-.. _NO_COLOR: https://no-color.org/
 
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1168,7 +1171,16 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_DISABLE_REMOTE_DEBUG
 
+   If this variable is set to a non-empty string, it disables the remote
+   debugging feature described in :pep:`768`. This includes both the functionality
+   to schedule code for execution in another process and the functionality to
+   receive code for execution in the current process.
+
+   See also the :option:`-X disable_remote_debug` command-line option.
+
+   .. versionadded:: next
 
 .. envvar:: PYTHON_CPU_COUNT
 
@@ -1203,7 +1215,7 @@ conflict.
 
 .. envvar:: PYTHON_BASIC_REPL
 
-   If this variable is set to ``1``, the interpreter will not attempt to
+   If this variable is set to any value, the interpreter will not attempt to
    load the Python-based :term:`REPL` that requires :mod:`curses` and
    :mod:`readline`, and will instead use the traditional parser-based
    :term:`REPL`.

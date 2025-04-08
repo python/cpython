@@ -1,3 +1,0 @@
-Fix handling of multiple ``"--"`` (double dashes) in :mod:`argparse`. Only
-the first one has now been removed, all subsequent ones are now taken
-literally.

@@ -1,4 +1,4 @@
-# Copyright (C) 2001,2002 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # csv package unit tests
 
 import copy
@@ -1102,6 +1102,12 @@ class TestDialectValidity(unittest.TestCase):
 
         mydialect.quoting = None
         self.assertRaises(csv.Error, mydialect)
+
+        mydialect.quoting = 42
+        with self.assertRaises(csv.Error) as cm:
+            mydialect()
+        self.assertEqual(str(cm.exception),
+                         'bad "quoting" value')
 
         mydialect.doublequote = True
         mydialect.quoting = csv.QUOTE_ALL

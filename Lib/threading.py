@@ -3,7 +3,6 @@
 import os as _os
 import sys as _sys
 import _thread
-import warnings
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
@@ -48,6 +47,10 @@ try:
     __all__.append('get_native_id')
 except AttributeError:
     _HAVE_THREAD_NATIVE_ID = False
+try:
+    _set_name = _thread.set_name
+except AttributeError:
+    _set_name = None
 ThreadError = _thread.error
 try:
     _CRLock = _thread.RLock
@@ -129,6 +132,7 @@ def RLock(*args, **kwargs):
 
     """
     if args or kwargs:
+        import warnings
         warnings.warn(
             'Passing arguments to RLock is deprecated and will be removed in 3.15',
             DeprecationWarning,
@@ -237,6 +241,10 @@ class _RLock:
     def __exit__(self, t, v, tb):
         self.release()
 
+    def locked(self):
+        """Return whether this object is locked."""
+        return self._count > 0
+
     # Internal methods used by condition variables
 
     def _acquire_restore(self, state):
@@ -282,9 +290,10 @@ class Condition:
         if lock is None:
             lock = RLock()
         self._lock = lock
-        # Export the lock's acquire() and release() methods
+        # Export the lock's acquire(), release(), and locked() methods
         self.acquire = lock.acquire
         self.release = lock.release
+        self.locked = lock.locked
         # If the lock defines _release_save() and/or _acquire_restore(),
         # these override the default implementations (which just call
         # release() and acquire() on the lock).  Ditto for _is_owned().
@@ -690,7 +699,7 @@ class Barrier:
 
         """
         if parties < 1:
-            raise ValueError("parties must be > 0")
+            raise ValueError("parties must be >= 1")
         self._cond = Condition(Lock())
         self._action = action
         self._timeout = timeout
@@ -1022,11 +1031,20 @@ class Thread:
         def _set_native_id(self):
             self._native_id = get_native_id()
 
+    def _set_os_name(self):
+        if _set_name is None or not self._name:
+            return
+        try:
+            _set_name(self._name)
+        except OSError:
+            pass
+
     def _bootstrap_inner(self):
         try:
             self._set_ident()
             if _HAVE_THREAD_NATIVE_ID:
                 self._set_native_id()
+            self._set_os_name()
             self._started.set()
             with _active_limbo_lock:
                 _active[self._ident] = self
@@ -1106,6 +1124,8 @@ class Thread:
     def name(self, name):
         assert self._initialized, "Thread.__init__() not called"
         self._name = str(name)
+        if get_ident() == self._ident:
+            self._set_os_name()
 
     @property
     def ident(self):

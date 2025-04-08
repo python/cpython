@@ -164,7 +164,7 @@ Module contents
 
    - *match_args*: If true (the default is ``True``), the
      :attr:`~object.__match_args__` tuple will be created from the list of
-     parameters to the generated :meth:`~object.__init__` method (even if
+     non keyword-only parameters to the generated :meth:`~object.__init__` method (even if
      :meth:`!__init__` is not generated, see above).  If false, or if
      :attr:`!__match_args__` is already defined in the class, then
      :attr:`!__match_args__` will not be generated.
@@ -175,10 +175,11 @@ Module contents
      fields will be marked as keyword-only.  If a field is marked as
      keyword-only, then the only effect is that the :meth:`~object.__init__`
      parameter generated from a keyword-only field must be specified
-     with a keyword when :meth:`!__init__` is called.  There is no
-     effect on any other aspect of dataclasses.  See the
-     :term:`parameter` glossary entry for details.  Also see the
+     with a keyword when :meth:`!__init__` is called. See the :term:`parameter`
+     glossary entry for details.  Also see the
      :const:`KW_ONLY` section.
+
+     Keyword-only fields are not included in :attr:`!__match_args__`.
 
     .. versionadded:: 3.10
 
@@ -270,10 +271,11 @@ Module contents
      string returned by the generated :meth:`~object.__repr__` method.
 
    - *hash*: This can be a bool or ``None``.  If true, this field is
-     included in the generated :meth:`~object.__hash__` method.  If ``None`` (the
-     default), use the value of *compare*: this would normally be
-     the expected behavior.  A field should be considered in the hash
-     if it's used for comparisons.  Setting this value to anything
+     included in the generated :meth:`~object.__hash__` method.  If false,
+     this field is excluded from the generated :meth:`~object.__hash__`.
+     If ``None`` (the default), use the value of *compare*: this would
+     normally be the expected behavior, since a field should be included
+     in the hash if it's used for comparisons.  Setting this value to anything
      other than ``None`` is discouraged.
 
      One possible reason to set ``hash=False`` but ``compare=True``
@@ -297,6 +299,8 @@ Module contents
    - *kw_only*: If true, this field will be marked as keyword-only.
      This is used when the generated :meth:`~object.__init__` method's
      parameters are computed.
+
+     Keyword-only fields are also not included in :attr:`!__match_args__`.
 
     .. versionadded:: 3.10
 
@@ -399,7 +403,7 @@ Module contents
    :func:`!astuple` raises :exc:`TypeError` if *obj* is not a dataclass
    instance.
 
-.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None)
+.. function:: make_dataclass(cls_name, fields, *, bases=(), namespace=None, init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, match_args=True, kw_only=False, slots=False, weakref_slot=False, module=None, decorator=dataclass)
 
    Creates a new dataclass with name *cls_name*, fields as defined
    in *fields*, base classes as given in *bases*, and initialized
@@ -414,6 +418,11 @@ Module contents
    If *module* is defined, the :attr:`!__module__` attribute
    of the dataclass is set to that value.
    By default, it is set to the module name of the caller.
+
+   The *decorator* parameter is a callable that will be used to create the dataclass.
+   It should take the class object as a first argument and the same keyword arguments
+   as :func:`@dataclass <dataclass>`. By default, the :func:`@dataclass <dataclass>`
+   function is used.
 
    This function is not strictly required, because any Python
    mechanism for creating a new class with :attr:`!__annotations__` can
@@ -437,6 +446,9 @@ Module contents
 
          def add_one(self):
              return self.x + 1
+
+   .. versionadded:: 3.14
+      Added the *decorator* parameter.
 
 .. function:: replace(obj, /, **changes)
 

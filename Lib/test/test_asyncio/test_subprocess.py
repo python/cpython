@@ -37,7 +37,7 @@ PROGRAM_CAT = [
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class TestSubprocessTransport(base_subprocess.BaseSubprocessTransport):
@@ -886,8 +886,7 @@ if sys.platform != 'win32':
 
         def setUp(self):
             super().setUp()
-            policy = asyncio.get_event_loop_policy()
-            self.loop = policy.new_event_loop()
+            self.loop = asyncio.new_event_loop()
             self.set_event_loop(self.loop)
 
         def test_watcher_implementation(self):
@@ -902,9 +901,14 @@ if sys.platform != 'win32':
     class SubprocessThreadedWatcherTests(SubprocessWatcherMixin,
                                          test_utils.TestCase):
         def setUp(self):
+            self._original_can_use_pidfd = unix_events.can_use_pidfd
             # Force the use of the threaded child watcher
             unix_events.can_use_pidfd = mock.Mock(return_value=False)
             super().setUp()
+
+        def tearDown(self):
+            unix_events.can_use_pidfd = self._original_can_use_pidfd
+            return super().tearDown()
 
     @unittest.skipUnless(
         unix_events.can_use_pidfd(),

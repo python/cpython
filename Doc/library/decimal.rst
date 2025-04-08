@@ -598,6 +598,23 @@ Decimal objects
 
       .. versionadded:: 3.1
 
+   .. classmethod:: from_number(number)
+
+      Alternative constructor that only accepts instances of
+      :class:`float`, :class:`int` or :class:`Decimal`, but not strings
+      or tuples.
+
+      .. doctest::
+
+          >>> Decimal.from_number(314)
+          Decimal('314')
+          >>> Decimal.from_number(0.1)
+          Decimal('0.1000000000000000055511151231257827021181583404541015625')
+          >>> Decimal.from_number(Decimal('3.14'))
+          Decimal('3.14')
+
+      .. versionadded:: 3.14
+
    .. method:: fma(other, third, context=None)
 
       Fused multiply-add.  Return self*other+third with no rounding of the
@@ -1016,7 +1033,7 @@ New contexts can also be created using the :class:`Context` constructor
 described below. In addition, the module provides three pre-made contexts:
 
 
-.. class:: BasicContext
+.. data:: BasicContext
 
    This is a standard context defined by the General Decimal Arithmetic
    Specification.  Precision is set to nine.  Rounding is set to
@@ -1027,7 +1044,7 @@ described below. In addition, the module provides three pre-made contexts:
    Because many of the traps are enabled, this context is useful for debugging.
 
 
-.. class:: ExtendedContext
+.. data:: ExtendedContext
 
    This is a standard context defined by the General Decimal Arithmetic
    Specification.  Precision is set to nine.  Rounding is set to
@@ -1040,7 +1057,7 @@ described below. In addition, the module provides three pre-made contexts:
    presence of conditions that would otherwise halt the program.
 
 
-.. class:: DefaultContext
+.. data:: DefaultContext
 
    This context is used by the :class:`Context` constructor as a prototype for new
    contexts.  Changing a field (such a precision) has the effect of changing the
@@ -2245,7 +2262,7 @@ value for :attr:`~Context.prec` as well [#]_::
     Decimal('904625697166532776746648320380374280103671755200316906558262375061821325312')
 
 
-For inexact results, :attr:`MAX_PREC` is far too large on 64-bit platforms and
+For inexact results, :const:`MAX_PREC` is far too large on 64-bit platforms and
 the available memory will be insufficient::
 
    >>> Decimal(1) / 3
