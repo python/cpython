@@ -139,6 +139,16 @@ class CProfileTest(ProfileTest):
                 self.assertEqual(cc, 1)
                 self.assertEqual(nc, 1)
 
+    def test_bad_descriptor(self):
+        """
+        gh-132250
+        cProfile should not crash when profiling a function with a descriptor
+        that raises an exception.
+        """
+        with self.profilerclass() as prof:
+            with self.assertRaises(TypeError):
+                bytes.find(str())
+
 
 class TestCommandLine(unittest.TestCase):
     def test_sort(self):
