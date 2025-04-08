@@ -366,6 +366,10 @@ dummy_func(void) {
         ctx->done = true;
     }
 
+    op(_BINARY_OP_SUBSCR_STR_INT, (left, right -- res)) {
+        res = sym_new_type(ctx, &PyUnicode_Type);
+    }
+
     op(_TO_BOOL, (value -- res)) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
         if (!already_bool) {
