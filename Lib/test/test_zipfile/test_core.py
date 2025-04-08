@@ -3363,7 +3363,7 @@ class TestDataOffsetZipWrite(unittest.TestCase):
                 raise OSError("Unimplemented!")
         with NoTellBytesIO() as fp:
             with zipfile.ZipFile(fp, "w") as zipfp:
-                self.assertIs(zipfp.data_offset, None)
+                self.assertIsNone(zipfp.data_offset)
 
 
 class EncodedMetadataTests(unittest.TestCase):
