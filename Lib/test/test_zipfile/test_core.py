@@ -3348,6 +3348,12 @@ class TestDataOffsetZipWrite(unittest.TestCase):
             with zipfile.ZipFile(fp, "w") as zipfp:
                 self.assertEqual(zipfp.data_offset, 16)
 
+    def test_data_offset_append_with_bad_zip(self):
+        with io.BytesIO() as fp:
+            fp.write(b"this is a prefix")
+            with zipfile.ZipFile(fp, "a") as zipfp:
+                self.assertEqual(zipfp.data_offset, 16)
+
     def test_data_offset_write_no_tell(self):
         # The initializer in ZipFile checks if tell raises AttributeError or
         # OSError when creating a file in write mode when deducing the offset
@@ -3357,7 +3363,7 @@ class TestDataOffsetZipWrite(unittest.TestCase):
                 raise OSError("Unimplemented!")
         with NoTellBytesIO() as fp:
             with zipfile.ZipFile(fp, "w") as zipfp:
-                self.assertIs(zipfp.data_offset, None)
+                self.assertIsNone(zipfp.data_offset)
 
 
 class EncodedMetadataTests(unittest.TestCase):
