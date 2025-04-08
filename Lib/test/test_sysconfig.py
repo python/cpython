@@ -620,15 +620,14 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertIsInstance(ABIFLAGS, str)
         self.assertIn(abiflags, ABIFLAGS)
 
-        # Check all flags are alphabetic
         valid_abiflags = ('', 't', 'd', 'td')
-        for flags in valid_abiflags:
+        for flags in valid_abiflags:  # senity check
             self.assertTrue(len(flags) == len(set(flags)), flags)
             if flags:
                 self.assertIn(flags.isalpha(), flags)
         if os.name == 'nt':
             self.assertEqual(abiflags, '')
-            # Example values: '', 't', 't_d', '_d'
+            # Example values: '', '_d', 't', 't_d'
             # '_' can only exist if 'd' is present
             # '_' can only followed by 'd'
             self.assertIn(
@@ -636,9 +635,11 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
                 tuple(flags.replace('d', '_d') for flags in valid_abiflags),
             )
         else:
-            # Example values: '', 't', 'td', 'd'
+            # Example values: '', 'd', 't', 'td'
             self.assertIn(ABIFLAGS, valid_abiflags)
 
+    def test_abi_debug(self):
+        ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
         if support.Py_DEBUG:
             # The 'd' flag should always be the last one.
             # On Windows, the debug flag is used differently with a underscore prefix.
