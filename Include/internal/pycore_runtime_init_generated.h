@@ -585,6 +585,7 @@ extern "C" {
     INIT_ID(__and__), \
     INIT_ID(__anext__), \
     INIT_ID(__annotate__), \
+    INIT_ID(__annotate_func__), \
     INIT_ID(__annotations__), \
     INIT_ID(__args__), \
     INIT_ID(__await__), \

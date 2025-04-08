@@ -1915,7 +1915,7 @@ type_get_annotate(PyObject *tp, void *Py_UNUSED(closure))
 
     PyObject *annotate;
     PyObject *dict = PyType_GetDict(type);
-    if (PyDict_GetItemRef(dict, &_Py_ID(__annotate__), &annotate) < 0) {
+    if (PyDict_GetItemRef(dict, &_Py_ID(__annotate_func__), &annotate) < 0) {
         Py_DECREF(dict);
         return NULL;
     }
@@ -1927,7 +1927,7 @@ type_get_annotate(PyObject *tp, void *Py_UNUSED(closure))
     }
     else {
         annotate = Py_None;
-        int result = PyDict_SetItem(dict, &_Py_ID(__annotate__), annotate);
+        int result = PyDict_SetItem(dict, &_Py_ID(__annotate_func__), annotate);
         if (result < 0) {
             Py_DECREF(dict);
             return NULL;
@@ -1959,7 +1959,7 @@ type_set_annotate(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
 
     PyObject *dict = PyType_GetDict(type);
     assert(PyDict_Check(dict));
-    int result = PyDict_SetItem(dict, &_Py_ID(__annotate__), value);
+    int result = PyDict_SetItem(dict, &_Py_ID(__annotate_func__), value);
     if (result < 0) {
         Py_DECREF(dict);
         return -1;
