@@ -677,6 +677,13 @@ errno
   (Contributed by James Roy in :gh:`126585`.)
 
 
+fnmatch
+-------
+
+* Added :func:`fnmatch.filterfalse` for excluding names matching a pattern.
+  (Contributed by Bénédikt Tran in :gh:`74598`.)
+
+
 fractions
 ---------
 
@@ -1839,6 +1846,11 @@ New features
   file.
   (Contributed by Victor Stinner in :gh:`127350`.)
 
+* Add support of nullable arguments in :c:func:`PyArg_ParseTuple` and
+  similar functions.
+  Adding ``?`` after any format unit makes ``None`` be accepted as a value.
+  (Contributed by Serhiy Storchaka in :gh:`112068`.)
+
 * Add macros :c:func:`Py_PACK_VERSION` and :c:func:`Py_PACK_FULL_VERSION` for
   bit-packing Python version numbers.
   (Contributed by Petr Viktorin in :gh:`128629`.)
@@ -1930,6 +1942,13 @@ Deprecated
   use instead :c:macro:`!isnan`, :c:macro:`!isinf` and
   :c:macro:`!isfinite` available from :file:`math.h`
   since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
+
+* Non-tuple sequences are deprecated as argument for the ``(items)``
+  format unit in :c:func:`PyArg_ParseTuple` and other
+  :ref:`argument parsing <arg-parsing>` functions if *items* contains
+  format units which store a :ref:`borrowed buffer <c-arg-borrowed-buffer>`
+  or a :term:`borrowed reference`.
+  (Contributed by Serhiy Storchaka in :gh:`50333`.)
 
 * The previously undocumented function :c:func:`PySequence_In` is :term:`soft deprecated`.
   Use :c:func:`PySequence_Contains` instead.

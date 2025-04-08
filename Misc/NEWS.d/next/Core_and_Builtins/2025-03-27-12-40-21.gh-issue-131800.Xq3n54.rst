@@ -1,2 +1,0 @@
-Improve the experimental JIT's ability to remove type checks for certain
-subscripting operations.

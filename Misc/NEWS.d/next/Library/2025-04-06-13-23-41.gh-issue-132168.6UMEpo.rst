@@ -1,2 +1,0 @@
-The :class:`ctypes.py_object` type now supports subscription, making it a
-:term:`generic type`.

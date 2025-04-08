@@ -241,6 +241,10 @@ class _RLock:
     def __exit__(self, t, v, tb):
         self.release()
 
+    def locked(self):
+        """Return whether this object is locked."""
+        return self._count > 0
+
     # Internal methods used by condition variables
 
     def _acquire_restore(self, state):
@@ -286,9 +290,10 @@ class Condition:
         if lock is None:
             lock = RLock()
         self._lock = lock
-        # Export the lock's acquire() and release() methods
+        # Export the lock's acquire(), release(), and locked() methods
         self.acquire = lock.acquire
         self.release = lock.release
+        self.locked = lock.locked
         # If the lock defines _release_save() and/or _acquire_restore(),
         # these override the default implementations (which just call
         # release() and acquire() on the lock).  Ditto for _is_owned().

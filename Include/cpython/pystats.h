@@ -31,7 +31,7 @@
 
 #define PYSTATS_MAX_UOP_ID 512
 
-#define SPECIALIZATION_FAILURE_KINDS 44
+#define SPECIALIZATION_FAILURE_KINDS 50
 
 /* Stats for determining who is calling PyEval_EvalFrame */
 #define EVAL_CALL_TOTAL 0
