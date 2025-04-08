@@ -678,7 +678,6 @@ class TypesTests(unittest.TestCase):
         code = """if True:
         # The optimizer is finicky, and the easiest way (that I know of)
         # to get it to reproduce in CI is by importing a Python module at runtime.
-        import glob
 
         def call(part):
             [] + ([] + [])
