@@ -3108,6 +3108,7 @@ dummy_func(
                 args--;
                 total_args++;
             }
+            DEOPT_IF(total_args == 0, CALL);
             PyMethodDescrObject *callable =
                 (PyMethodDescrObject *)PEEK(total_args + 1);
             DEOPT_IF(!Py_IS_TYPE(callable, &PyMethodDescr_Type), CALL);
@@ -3115,6 +3116,7 @@ dummy_func(
             DEOPT_IF(meth->ml_flags != (METH_FASTCALL|METH_KEYWORDS), CALL);
             PyTypeObject *d_type = callable->d_common.d_type;
             PyObject *self = args[0];
+            assert(self != NULL);
             DEOPT_IF(!Py_IS_TYPE(self, d_type), CALL);
             STAT_INC(CALL, hit);
             int nargs = total_args - 1;
@@ -3173,6 +3175,7 @@ dummy_func(
                 args--;
                 total_args++;
             }
+            DEOPT_IF(total_args == 0, CALL);
             PyMethodDescrObject *callable =
                 (PyMethodDescrObject *)PEEK(total_args + 1);
             /* Builtin METH_FASTCALL methods, without keywords */
@@ -3180,6 +3183,7 @@ dummy_func(
             PyMethodDef *meth = callable->d_method;
             DEOPT_IF(meth->ml_flags != METH_FASTCALL, CALL);
             PyObject *self = args[0];
+            assert(self != NULL);
             DEOPT_IF(!Py_IS_TYPE(self, callable->d_common.d_type), CALL);
             STAT_INC(CALL, hit);
             _PyCFunctionFast cfunc =
