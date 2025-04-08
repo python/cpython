@@ -8540,6 +8540,36 @@ then
   fi
 fi
 
+# Look for parallel LTO support in GCC to speed up builds.
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking If GCC version supports parallel LTO" >&5
+printf %s "checking If GCC version supports parallel LTO... " >&6; }
+if test ${ac_cv_gcc_parallel_lto+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+                #if defined(__GNUC__) && (__GNUC__ >= 8)
+                  /* GCC parallel LTO supported! */
+                #else
+                  #error "GCC parallel lto unsupported"
+                #endif
+
+_ACEOF
+if ac_fn_c_try_cpp "$LINENO"
+then :
+  ac_cv_gcc_parallel_lto=yes
+else case e in #(
+  e) ac_cv_gcc_parallel_lto=no ;;
+esac
+fi
+rm -f conftest.err conftest.i conftest.$ac_ext ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_gcc_parallel_lto" >&5
+printf "%s\n" "$ac_cv_gcc_parallel_lto" >&6; }
+
 # Enable LTO flags
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-lto" >&5
 printf %s "checking for --with-lto... " >&6; }
@@ -8896,7 +8926,12 @@ fi
           LTOCFLAGS="-flto"
           ;;
         *)
+        if test $ac_cv_gcc_parallel_lto = yes
+        then
           LTOFLAGS="-flto=auto -fuse-linker-plugin -ffat-lto-objects"
+        else
+          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects"
+        fi
           ;;
       esac
       ;;
