@@ -592,12 +592,6 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         suffix = sysconfig.get_config_var('EXT_SUFFIX')
         self.assertTrue(suffix.endswith('-darwin.so'), suffix)
 
-    def test_always_set_abiflags(self):
-        self.assertIn('ABIFLAGS', sysconfig.get_config_vars())
-        self.assertIsInstance(sysconfig.get_config_var('ABIFLAGS'), str)
-        self.assertIn('abiflags', sysconfig.get_config_vars())
-        self.assertIsInstance(sysconfig.get_config_var('abiflags'), str)
-
     def test_always_set_py_debug(self):
         self.assertIn('Py_DEBUG', sysconfig.get_config_vars())
         Py_DEBUG = sysconfig.get_config_var('Py_DEBUG')
@@ -613,29 +607,23 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
     def test_abiflags(self):
         # If this test fails on some platforms, maintainers should update the
         # test to make it pass, rather than changing the definition of ABIFLAGS.
+        self.assertIn('ABIFLAGS', sysconfig.get_config_vars())
+        self.assertIn('abiflags', sysconfig.get_config_vars())
         abiflags = sysconfig.get_config_var('abiflags')
         ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
-
         self.assertIsInstance(abiflags, str)
         self.assertIsInstance(ABIFLAGS, str)
         self.assertIn(abiflags, ABIFLAGS)
 
         valid_abiflags = ('', 't', 'd', 'td')
-        for flags in valid_abiflags:  # senity check
-            self.assertTrue(len(flags) == len(set(flags)), flags)
-            if flags:
-                self.assertIn(flags.isalpha(), flags)
         if os.name == 'nt':
             self.assertEqual(abiflags, '')
-            # Example values: '', '_d', 't', 't_d'
-            # '_' can only exist if 'd' is present
-            # '_' can only followed by 'd'
+            # '_' can only exist if 'd' is present and can only followed by 'd'
             self.assertIn(
                 ABIFLAGS,
                 tuple(flags.replace('d', '_d') for flags in valid_abiflags),
             )
         else:
-            # Example values: '', 'd', 't', 'td'
             self.assertIn(ABIFLAGS, valid_abiflags)
 
     def test_abi_debug(self):
