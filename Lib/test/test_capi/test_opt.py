@@ -1629,6 +1629,33 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CONTAINS_OP_SET", uops)
         self.assertNotIn("_TO_BOOL_BOOL", uops)
 
+    def test_to_bool_bool_contains_op_dict(self):
+        """
+        Test that _TO_BOOL_BOOL is removed from code like:
+
+        res = foo in some_dict
+        if res:
+            ....
+
+        """
+        def testfunc(n):
+            x = 0
+            s = {1: 1, 2: 2, 3: 3}
+            for _ in range(n):
+                a = 2
+                in_dict = a in s
+                if in_dict:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CONTAINS_OP_DICT", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+
+
     def test_remove_guard_for_known_type_str(self):
         def f(n):
             for i in range(n):
@@ -1645,6 +1672,26 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_TO_BOOL_STR", uops)
         self.assertNotIn("_GUARD_TOS_UNICODE", uops)
+
+    def test_binary_subcsr_str_int_narrows_to_str(self):
+        def testfunc(n):
+            x = []
+            s = "foo"
+            for _ in range(n):
+                y = s[0]       # _BINARY_OP_SUBSCR_STR_INT
+                z = "bar" + y  # (_GUARD_TOS_UNICODE) + _BINARY_OP_ADD_UNICODE
+                x.append(z)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, ["barf"] * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBSCR_STR_INT", uops)
+        # _BINARY_OP_SUBSCR_STR_INT narrows the result to 'str' so
+        # the unicode guard before _BINARY_OP_ADD_UNICODE is removed.
+        self.assertNotIn("_GUARD_TOS_UNICODE", uops)
+        self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
 
 
 def global_identity(x):

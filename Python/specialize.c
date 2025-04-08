@@ -604,6 +604,12 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_BINARY_OP_SUBSCR_DEQUE                42
 #define SPEC_FAIL_BINARY_OP_SUBSCR_ENUMDICT             43
 #define SPEC_FAIL_BINARY_OP_SUBSCR_STACKSUMMARY         44
+#define SPEC_FAIL_BINARY_OP_SUBSCR_DEFAULTDICT          45
+#define SPEC_FAIL_BINARY_OP_SUBSCR_COUNTER              46
+#define SPEC_FAIL_BINARY_OP_SUBSCR_ORDEREDDICT          47
+#define SPEC_FAIL_BINARY_OP_SUBSCR_BYTES                48
+#define SPEC_FAIL_BINARY_OP_SUBSCR_STRUCTTIME           49
+#define SPEC_FAIL_BINARY_OP_SUBSCR_RANGE                50
 
 /* Calls */
 
@@ -2370,6 +2376,14 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
                 return SPEC_FAIL_BINARY_OP_SUBSCR_MAPPINGPROXY;
             }
 
+            if (PyObject_TypeCheck(lhs, &PyBytes_Type)) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_BYTES;
+            }
+
+            if (PyObject_TypeCheck(lhs, &PyRange_Type)) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_RANGE;
+            }
+
             if (strcmp(container_type->tp_name, "array.array") == 0) {
                 return SPEC_FAIL_BINARY_OP_SUBSCR_ARRAY;
             }
@@ -2388,6 +2402,22 @@ binary_op_fail_kind(int oparg, PyObject *lhs, PyObject *rhs)
 
             if (strcmp(container_type->tp_name, "StackSummary") == 0) {
                 return SPEC_FAIL_BINARY_OP_SUBSCR_STACKSUMMARY;
+            }
+
+            if (strcmp(container_type->tp_name, "collections.defaultdict") == 0) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_DEFAULTDICT;
+            }
+
+            if (strcmp(container_type->tp_name, "Counter") == 0) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_COUNTER;
+            }
+
+            if (strcmp(container_type->tp_name, "collections.OrderedDict") == 0) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_ORDEREDDICT;
+            }
+
+            if (strcmp(container_type->tp_name, "time.struct_time") == 0) {
+                return SPEC_FAIL_BINARY_OP_SUBSCR_STRUCTTIME;
             }
 
             if (PySlice_Check(rhs)) {
