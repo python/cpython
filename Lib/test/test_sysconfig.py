@@ -607,8 +607,8 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
     def test_abiflags(self):
         # If this test fails on some platforms, maintainers should update the
         # test to make it pass, rather than changing the definition of ABIFLAGS.
-        self.assertIn('ABIFLAGS', sysconfig.get_config_vars())
         self.assertIn('abiflags', sysconfig.get_config_vars())
+        self.assertIn('ABIFLAGS', sysconfig.get_config_vars())
         abiflags = sysconfig.get_config_var('abiflags')
         ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
         self.assertIsInstance(abiflags, str)
@@ -618,7 +618,9 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         if not sys.platform.startswith('win'):
             valid_abiflags = ('', 't', 'd', 'td')
         else:
-            # '_' can only exist if 'd' is present and can only followed by 'd'
+            # '_' can only exist if 'd' is present and can only followed by 'd'.
+            # That is `ABIFLAGS.replace('d', '_d')` above.
+            # See test_abi_debug() for more details.
             valid_abiflags = ('', 't', '_d', 't_d')
 
         if os.name == 'nt':
