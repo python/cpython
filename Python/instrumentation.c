@@ -271,7 +271,7 @@ get_original_opcode(_PyCoLineInstrumentationData *line_data, int index)
     return line_data->data[index*line_data->bytes_per_entry];
 }
 
-int
+static int
 instruction_length(PyCodeObject *code, int offset)
 {
     int opcode = _PyCode_CODE(code)[offset].op.code;
