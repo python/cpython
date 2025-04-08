@@ -1490,9 +1490,8 @@ class ZipFile:
                 print("total", total)
 
         end_offset = self.start_dir
-        for zinfo in sorted(self.filelist,
-                            key=lambda zinfo: zinfo.header_offset,
-                            reverse=True):
+        for zinfo in reversed(sorted(self.filelist,
+                                     key=lambda zinfo: zinfo.header_offset)):
             zinfo._end_offset = end_offset
             end_offset = zinfo.header_offset
 
@@ -1654,7 +1653,16 @@ class ZipFile:
 
             if (zinfo._end_offset is not None and
                 zef_file.tell() + zinfo.compress_size > zinfo._end_offset):
-                raise BadZipFile(f"Overlapped entries: {zinfo.orig_filename!r} (possible zip bomb)")
+                if zinfo._end_offset == zinfo.header_offset:
+                    import warnings
+                    warnings.warn(
+                        f"Overlapped entries: {zinfo.orig_filename!r} "
+                        f"(possible zip bomb)",
+                        skip_file_prefixes=(os.path.dirname(__file__),))
+                else:
+                    raise BadZipFile(
+                        f"Overlapped entries: {zinfo.orig_filename!r} "
+                        f"(possible zip bomb)")
 
             # check for encrypted flag & handle password
             is_encrypted = zinfo.flag_bits & _MASK_ENCRYPTED
