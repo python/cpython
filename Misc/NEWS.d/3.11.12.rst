@@ -1,0 +1,104 @@
+.. date: 2025-04-07-04-11-08
+.. gh-issue: 131809
+.. nonce: 4MBDuy
+.. release date: 2025-04-08
+.. section: Security
+
+Update bundled libexpat to 2.7.1
+
+..
+
+.. date: 2025-03-14-23-28-39
+.. gh-issue: 131261
+.. nonce: 0aB6nM
+.. section: Security
+
+Upgrade to libexpat 2.7.0
+
+..
+
+.. date: 2025-01-28-14-08-03
+.. gh-issue: 105704
+.. nonce: EnhHxu
+.. section: Security
+
+When using :func:`urllib.parse.urlsplit` and :func:`urllib.parse.urlparse`
+host parsing would not reject domain names containing square brackets (``[``
+and ``]``). Square brackets are only valid for IPv6 and IPvFuture hosts
+according to `RFC 3986 Section 3.2.2
+<https://www.rfc-editor.org/rfc/rfc3986#section-3.2.2>`__.
+
+..
+
+.. date: 2024-08-06-12-27-34
+.. gh-issue: 121284
+.. nonce: 8rwPxe
+.. section: Security
+
+Fix bug in the folding of rfc2047 encoded-words when flattening an email
+message using a modern email policy. Previously when an encoded-word was too
+long for a line, it would be decoded, split across lines, and re-encoded.
+But commas and other special characters in the original text could be left
+unencoded and unquoted. This could theoretically be used to spoof header
+lines using a carefully constructed encoded-word if the resulting rendered
+email was transmitted or re-parsed.
+
+..
+
+.. date: 2024-08-06-11-43-08
+.. gh-issue: 80222
+.. nonce: wfR4BU
+.. section: Security
+
+Fix bug in the folding of quoted strings when flattening an email message
+using a modern email policy. Previously when a quoted string was folded so
+that it spanned more than one line, the surrounding quotes and internal
+escapes would be omitted. This could theoretically be used to spoof header
+lines using a carefully constructed quoted string if the resulting rendered
+email was transmitted or re-parsed.
+
+..
+
+.. date: 2024-05-24-21-00-52
+.. gh-issue: 119511
+.. nonce: jKrXQ8
+.. section: Security
+
+Fix a potential denial of service in the :mod:`imaplib` module. When
+connecting to a malicious server, it could cause an arbitrary amount of
+memory to be allocated. On many systems this is harmless as unused virtual
+memory is only a mapping, but if this hit a virtual address size limit it
+could lead to a :exc:`MemoryError` or other process crash. On unusual
+systems or builds where all allocated memory is touched and backed by actual
+ram or storage it could've consumed resources doing so until similarly
+crashing.
+
+..
+
+.. date: 2024-11-28-14-14-46
+.. gh-issue: 127257
+.. nonce: n6-jU9
+.. section: Library
+
+In :mod:`ssl`, system call failures that OpenSSL reports using
+``ERR_LIB_SYS`` are now raised as :exc:`OSError`.
+
+..
+
+.. date: 2024-07-19-12-22-48
+.. gh-issue: 121277
+.. nonce: wF_zKd
+.. section: Documentation
+
+Writers of CPython's documentation can now use ``next`` as the version for
+the ``versionchanged``, ``versionadded``, ``deprecated`` directives.
+
+..
+
+.. date: 2024-04-05-14-32-21
+.. gh-issue: 106883
+.. nonce: OKmc0Q
+.. section: C API
+
+Disable GC during the _PyThread_CurrentFrames() and
+_PyThread_CurrentExceptions() calls to avoid the interpreter to deadlock.
