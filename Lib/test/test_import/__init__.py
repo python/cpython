@@ -50,6 +50,7 @@ from test.support.os_helper import (
     TESTFN, rmtree, temp_umask, TESTFN_UNENCODABLE)
 from test.support import script_helper
 from test.support import threading_helper
+from test.support.testcase import ExtraAssertions
 from test.test_importlib.util import uncache
 from types import ModuleType
 try:
@@ -364,7 +365,7 @@ class ModuleSnapshot(types.SimpleNamespace):
 
 
 @force_not_colorized_test_class
-class ImportTests(unittest.TestCase):
+class ImportTests(unittest.TestCase, ExtraAssertions):
 
     def setUp(self):
         remove_files(TESTFN)
@@ -570,7 +571,7 @@ class ImportTests(unittest.TestCase):
         import test as x
         import test.support
         self.assertIs(x, test, x.__name__)
-        self.assertTrue(hasattr(test.support, "__file__"))
+        self.assertHasAttr(test.support, "__file__")
 
         # import x.y.z as w binds z as w
         import test.support as y
@@ -641,7 +642,7 @@ class ImportTests(unittest.TestCase):
         sys.path.insert(0, os.curdir)
         try:
             mod = __import__(TESTFN)
-            self.assertTrue(mod.__file__.endswith('.py'))
+            self.assertEndsWith(mod.__file__, '.py')
             os.remove(source)
             del sys.modules[TESTFN]
             make_legacy_pyc(source)
@@ -1447,7 +1448,7 @@ func_filename = func.__code__.co_filename
         self.assertEqual(mod.constant.co_filename, foreign_code.co_filename)
 
 
-class PathsTests(unittest.TestCase):
+class PathsTests(unittest.TestCase, ExtraAssertions):
     SAMPLES = ('test', 'test\u00e4\u00f6\u00fc\u00df', 'test\u00e9\u00e8',
                'test\u00b0\u00b3\u00b2')
     path = TESTFN
@@ -1497,11 +1498,11 @@ class PathsTests(unittest.TestCase):
             self.fail("could not import 'test_unc_path' from %r: %r"
                       % (unc, e))
         self.assertEqual(mod.testdata, 'test_unc_path')
-        self.assertTrue(mod.__file__.startswith(unc), mod.__file__)
+        self.assertStartsWith(mod.__file__, unc)
         unload("test_unc_path")
 
 
-class RelativeImportTests(unittest.TestCase):
+class RelativeImportTests(unittest.TestCase, ExtraAssertions):
 
     def tearDown(self):
         unload("test.relimport")
@@ -1510,7 +1511,7 @@ class RelativeImportTests(unittest.TestCase):
     def test_relimport_star(self):
         # This will import * from .test_import.
         from .. import relimport
-        self.assertTrue(hasattr(relimport, "RelativeImportTests"))
+        self.assertHasAttr(relimport, "RelativeImportTests")
 
     def test_issue3221(self):
         # Note for mergers: the 'absolute' tests from the 2.x branch
@@ -1827,7 +1828,7 @@ class TestSymbolicallyLinkedPackage(unittest.TestCase):
 
 
 @cpython_only
-class ImportlibBootstrapTests(unittest.TestCase):
+class ImportlibBootstrapTests(unittest.TestCase, ExtraAssertions):
     # These tests check that importlib is bootstrapped.
 
     def test_frozen_importlib(self):
@@ -1840,7 +1841,7 @@ class ImportlibBootstrapTests(unittest.TestCase):
         self.assertIs(mod, _bootstrap)
         self.assertEqual(mod.__name__, 'importlib._bootstrap')
         self.assertEqual(mod.__package__, 'importlib')
-        self.assertTrue(mod.__file__.endswith('_bootstrap.py'), mod.__file__)
+        self.assertEndsWith(mod.__file__, '_bootstrap.py')
 
     def test_frozen_importlib_external_is_bootstrap_external(self):
         from importlib import _bootstrap_external
@@ -1848,7 +1849,7 @@ class ImportlibBootstrapTests(unittest.TestCase):
         self.assertIs(mod, _bootstrap_external)
         self.assertEqual(mod.__name__, 'importlib._bootstrap_external')
         self.assertEqual(mod.__package__, 'importlib')
-        self.assertTrue(mod.__file__.endswith('_bootstrap_external.py'), mod.__file__)
+        self.assertEndsWith(mod.__file__, '_bootstrap_external.py')
 
     def test_there_can_be_only_one(self):
         # Issue #15386 revealed a tricky loophole in the bootstrapping
@@ -2698,7 +2699,7 @@ class TestSinglePhaseSnapshot(ModuleSnapshot):
 
 
 @requires_singlephase_init
-class SinglephaseInitTests(unittest.TestCase):
+class SinglephaseInitTests(unittest.TestCase, ExtraAssertions):
 
     NAME = '_testsinglephase'
 
@@ -2869,7 +2870,7 @@ class SinglephaseInitTests(unittest.TestCase):
         self.assertEqual(mod.__file__, self.FILE)
         self.assertEqual(mod.__spec__.origin, self.ORIGIN)
         if not isolated:
-            self.assertTrue(issubclass(mod.error, Exception))
+            self.assertIsSubclass(mod.error, Exception)
         self.assertEqual(mod.int_const, 1969)
         self.assertEqual(mod.str_const, 'something different')
         self.assertIsInstance(mod._module_initialized, float)
