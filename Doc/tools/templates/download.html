@@ -12,6 +12,20 @@
   {% set dl_version = release %}
 {% endif %}
 
+{%- block extrahead -%}
+    {{ super() }}
+    <meta property="og:title" content="Download — Python {{ dl_version }} documentation">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://docs.python.org/3/download.html">
+    <meta property="og:site_name" content="Python documentation">
+    <meta property="og:description" content="Download Python documentation.">
+    <meta property="og:image" content="https://docs.python.org/3/_static/og-image.png">
+    <meta name="description" content="Download Python documentation.">
+    <meta property="og:image:width" content="200">
+    <meta property="og:image:height" content="200">
+    <meta name="theme-color" content="#3776ab">
+{%- endblock -%}
+
 {% block body %}
 <h1>{% trans %}Download Python {{ dl_version }} Documentation{% endtrans %}</h1>
 

@@ -2652,33 +2652,46 @@ class TimerTests(unittest.TestCase):
 
         h1 = asyncio.TimerHandle(when, callback, (), self.loop)
         h2 = asyncio.TimerHandle(when, callback, (), self.loop)
-        # TODO: Use assertLess etc.
-        self.assertFalse(h1 < h2)
-        self.assertFalse(h2 < h1)
-        self.assertTrue(h1 <= h2)
-        self.assertTrue(h2 <= h1)
-        self.assertFalse(h1 > h2)
-        self.assertFalse(h2 > h1)
-        self.assertTrue(h1 >= h2)
-        self.assertTrue(h2 >= h1)
-        self.assertTrue(h1 == h2)
-        self.assertFalse(h1 != h2)
+        with self.assertRaises(AssertionError):
+            self.assertLess(h1, h2)
+        with self.assertRaises(AssertionError):
+            self.assertLess(h2, h1)
+        with self.assertRaises(AssertionError):
+            self.assertGreater(h1, h2)
+        with self.assertRaises(AssertionError):
+            self.assertGreater(h2, h1)
+        with self.assertRaises(AssertionError):
+            self.assertNotEqual(h1, h2)
+
+        self.assertLessEqual(h1, h2)
+        self.assertLessEqual(h2, h1)
+        self.assertGreaterEqual(h1, h2)
+        self.assertGreaterEqual(h2, h1)
+        self.assertEqual(h1, h2)
 
         h2.cancel()
-        self.assertFalse(h1 == h2)
+        with self.assertRaises(AssertionError):
+            self.assertEqual(h1, h2)
+        self.assertNotEqual(h1, h2)
 
         h1 = asyncio.TimerHandle(when, callback, (), self.loop)
         h2 = asyncio.TimerHandle(when + 10.0, callback, (), self.loop)
-        self.assertTrue(h1 < h2)
-        self.assertFalse(h2 < h1)
-        self.assertTrue(h1 <= h2)
-        self.assertFalse(h2 <= h1)
-        self.assertFalse(h1 > h2)
-        self.assertTrue(h2 > h1)
-        self.assertFalse(h1 >= h2)
-        self.assertTrue(h2 >= h1)
-        self.assertFalse(h1 == h2)
-        self.assertTrue(h1 != h2)
+        with self.assertRaises(AssertionError):
+            self.assertLess(h2, h1)
+        with self.assertRaises(AssertionError):
+            self.assertLessEqual(h2, h1)
+        with self.assertRaises(AssertionError):
+            self.assertGreater(h1, h2)
+        with self.assertRaises(AssertionError):
+            self.assertGreaterEqual(h1, h2)
+        with self.assertRaises(AssertionError):
+            self.assertEqual(h1, h2)
+
+        self.assertLess(h1, h2)
+        self.assertGreater(h2, h1)
+        self.assertLessEqual(h1, h2)
+        self.assertGreaterEqual(h2, h1)
+        self.assertNotEqual(h1, h2)
 
         h3 = asyncio.Handle(callback, (), self.loop)
         self.assertIs(NotImplemented, h1.__eq__(h3))
@@ -2692,19 +2705,25 @@ class TimerTests(unittest.TestCase):
             h1 <= ()
         with self.assertRaises(TypeError):
             h1 >= ()
-        self.assertFalse(h1 == ())
-        self.assertTrue(h1 != ())
+        with self.assertRaises(AssertionError):
+            self.assertEqual(h1, ())
+        with self.assertRaises(AssertionError):
+            self.assertNotEqual(h1, ALWAYS_EQ)
+        with self.assertRaises(AssertionError):
+            self.assertGreater(h1, LARGEST)
+        with self.assertRaises(AssertionError):
+            self.assertGreaterEqual(h1, LARGEST)
+        with self.assertRaises(AssertionError):
+            self.assertLess(h1, SMALLEST)
+        with self.assertRaises(AssertionError):
+            self.assertLessEqual(h1, SMALLEST)
 
-        self.assertTrue(h1 == ALWAYS_EQ)
-        self.assertFalse(h1 != ALWAYS_EQ)
-        self.assertTrue(h1 < LARGEST)
-        self.assertFalse(h1 > LARGEST)
-        self.assertTrue(h1 <= LARGEST)
-        self.assertFalse(h1 >= LARGEST)
-        self.assertFalse(h1 < SMALLEST)
-        self.assertTrue(h1 > SMALLEST)
-        self.assertFalse(h1 <= SMALLEST)
-        self.assertTrue(h1 >= SMALLEST)
+        self.assertNotEqual(h1, ())
+        self.assertEqual(h1, ALWAYS_EQ)
+        self.assertLess(h1, LARGEST)
+        self.assertLessEqual(h1, LARGEST)
+        self.assertGreaterEqual(h1, SMALLEST)
+        self.assertGreater(h1, SMALLEST)
 
 
 class AbstractEventLoopTests(unittest.TestCase):

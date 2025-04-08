@@ -83,8 +83,10 @@ XXX To do:
 __version__ = "0.6"
 
 __all__ = [
-    "HTTPServer", "ThreadingHTTPServer", "BaseHTTPRequestHandler",
-    "SimpleHTTPRequestHandler", "CGIHTTPRequestHandler",
+    "HTTPServer", "ThreadingHTTPServer",
+    "HTTPSServer", "ThreadingHTTPSServer",
+    "BaseHTTPRequestHandler", "SimpleHTTPRequestHandler",
+    "CGIHTTPRequestHandler",
 ]
 
 import copy
@@ -146,6 +148,47 @@ class HTTPServer(socketserver.TCPServer):
 
 
 class ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
+    daemon_threads = True
+
+
+class HTTPSServer(HTTPServer):
+    def __init__(self, server_address, RequestHandlerClass,
+                 bind_and_activate=True, *, certfile, keyfile=None,
+                 password=None, alpn_protocols=None):
+        try:
+            import ssl
+        except ImportError:
+            raise RuntimeError("SSL module is missing; "
+                               "HTTPS support is unavailable")
+
+        self.ssl = ssl
+        self.certfile = certfile
+        self.keyfile = keyfile
+        self.password = password
+        # Support by default HTTP/1.1
+        self.alpn_protocols = (
+            ["http/1.1"] if alpn_protocols is None else alpn_protocols
+        )
+
+        super().__init__(server_address,
+                         RequestHandlerClass,
+                         bind_and_activate)
+
+    def server_activate(self):
+        """Wrap the socket in SSLSocket."""
+        super().server_activate()
+        context = self._create_context()
+        self.socket = context.wrap_socket(self.socket, server_side=True)
+
+    def _create_context(self):
+        """Create a secure SSL context."""
+        context = self.ssl.create_default_context(self.ssl.Purpose.CLIENT_AUTH)
+        context.load_cert_chain(self.certfile, self.keyfile, self.password)
+        context.set_alpn_protocols(self.alpn_protocols)
+        return context
+
+
+class ThreadingHTTPSServer(socketserver.ThreadingMixIn, HTTPSServer):
     daemon_threads = True
 
 
@@ -1111,7 +1154,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                     "CGI script is not executable (%r)" % scriptname)
                 return
 
-        # Reference: http://hoohoo.ncsa.uiuc.edu/cgi/env.html
+        # Reference: https://www6.uniovi.es/~antonio/ncsa_httpd/cgi/env.html
         # XXX Much of the following could be prepared ahead of time!
         env = copy.deepcopy(os.environ)
         env['SERVER_SOFTWARE'] = self.version_string()
@@ -1263,7 +1306,8 @@ def _get_best_family(*address):
 
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
-         protocol="HTTP/1.0", port=8000, bind=None):
+         protocol="HTTP/1.0", port=8000, bind=None,
+         tls_cert=None, tls_key=None, tls_password=None):
     """Test the HTTP request handler class.
 
     This runs an HTTP server on port 8000 (or the port argument).
@@ -1271,12 +1315,20 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     """
     ServerClass.address_family, addr = _get_best_family(bind, port)
     HandlerClass.protocol_version = protocol
-    with ServerClass(addr, HandlerClass) as httpd:
+
+    if tls_cert:
+        server = ThreadingHTTPSServer(addr, HandlerClass, certfile=tls_cert,
+                                      keyfile=tls_key, password=tls_password)
+    else:
+        server = ServerClass(addr, HandlerClass)
+
+    with server as httpd:
         host, port = httpd.socket.getsockname()[:2]
         url_host = f'[{host}]' if ':' in host else host
+        protocol = 'HTTPS' if tls_cert else 'HTTP'
         print(
-            f"Serving HTTP on {host} port {port} "
-            f"(http://{url_host}:{port}/) ..."
+            f"Serving {protocol} on {host} port {port} "
+            f"({protocol.lower()}://{url_host}:{port}/) ..."
         )
         try:
             httpd.serve_forever()
@@ -1301,10 +1353,31 @@ if __name__ == '__main__':
                         default='HTTP/1.0',
                         help='conform to this HTTP version '
                              '(default: %(default)s)')
+    parser.add_argument('--tls-cert', metavar='PATH',
+                        help='path to the TLS certificate chain file')
+    parser.add_argument('--tls-key', metavar='PATH',
+                        help='path to the TLS key file')
+    parser.add_argument('--tls-password-file', metavar='PATH',
+                        help='path to the password file for the TLS key')
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
     args = parser.parse_args()
+
+    if not args.tls_cert and args.tls_key:
+        parser.error("--tls-key requires --tls-cert to be set")
+
+    tls_key_password = None
+    if args.tls_password_file:
+        if not args.tls_cert:
+            parser.error("--tls-password-file requires --tls-cert to be set")
+
+        try:
+            with open(args.tls_password_file, "r", encoding="utf-8") as f:
+                tls_key_password = f.read().strip()
+        except OSError as e:
+            parser.error(f"Failed to read TLS password file: {e}")
+
     if args.cgi:
         handler_class = CGIHTTPRequestHandler
     else:
@@ -1330,4 +1403,7 @@ if __name__ == '__main__':
         port=args.port,
         bind=args.bind,
         protocol=args.protocol,
+        tls_cert=args.tls_cert,
+        tls_key=args.tls_key,
+        tls_password=tls_key_password,
     )
