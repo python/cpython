@@ -5,12 +5,22 @@ try:
 except ImportError:
     from . import _hypothesis_stubs as hypothesis
 else:
+    # Regrtest changes to use a tempdir as the working directory, so we have
+    # to tell Hypothesis to use the original in order to persist the database.
+    from .os_helper import SAVEDCWD
+    from hypothesis.configuration import set_hypothesis_home_dir
+
+    set_hypothesis_home_dir(os.path.join(SAVEDCWD, ".hypothesis"))
+
     # When using the real Hypothesis, we'll configure it to ignore occasional
     # slow tests (avoiding flakiness from random VM slowness in CI).
     hypothesis.settings.register_profile(
         "slow-is-ok",
         deadline=None,
-        suppress_health_check=[hypothesis.HealthCheck.too_slow],
+        suppress_health_check=[
+            hypothesis.HealthCheck.too_slow,
+            hypothesis.HealthCheck.differing_executors,
+        ],
     )
     hypothesis.settings.load_profile("slow-is-ok")
 

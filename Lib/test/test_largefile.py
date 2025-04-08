@@ -2,13 +2,12 @@
 """
 
 import os
-import stat
 import sys
 import unittest
 import socket
 import shutil
 import threading
-from test.support import requires, bigmemtest
+from test.support import requires, bigmemtest, requires_resource
 from test.support import SHORT_TIMEOUT
 from test.support import socket_helper
 from test.support.os_helper import TESTFN, unlink
@@ -29,7 +28,7 @@ class LargeFileTest:
             mode = 'w+b'
 
         with self.open(TESTFN, mode) as f:
-            current_size = os.fstat(f.fileno())[stat.ST_SIZE]
+            current_size = os.fstat(f.fileno()).st_size
             if current_size == size+1:
                 return
 
@@ -40,13 +39,13 @@ class LargeFileTest:
             f.seek(size)
             f.write(b'a')
             f.flush()
-            self.assertEqual(os.fstat(f.fileno())[stat.ST_SIZE], size+1)
+            self.assertEqual(os.fstat(f.fileno()).st_size, size+1)
 
     @classmethod
     def tearDownClass(cls):
         with cls.open(TESTFN, 'wb'):
             pass
-        if not os.stat(TESTFN)[stat.ST_SIZE] == 0:
+        if not os.stat(TESTFN).st_size == 0:
             raise cls.failureException('File was not truncated by opening '
                                        'with mode "wb"')
         unlink(TESTFN2)
@@ -67,7 +66,7 @@ class TestFileMethods(LargeFileTest):
             self.assertEqual(f.tell(), size + 1)
 
     def test_osstat(self):
-        self.assertEqual(os.stat(TESTFN)[stat.ST_SIZE], size+1)
+        self.assertEqual(os.stat(TESTFN).st_size, size+1)
 
     def test_seek_read(self):
         with self.open(TESTFN, 'rb') as f:
@@ -142,6 +141,9 @@ class TestFileMethods(LargeFileTest):
             f.truncate(1)
             self.assertEqual(f.tell(), 0)       # else pointer moved
             f.seek(0)
+            # Verify readall on a truncated file is well behaved. read()
+            # without a size can be unbounded, this should get just the byte
+            # that remains.
             self.assertEqual(len(f.read()), 1)  # else wasn't truncated
 
     def test_seekable(self):
@@ -152,6 +154,22 @@ class TestFileMethods(LargeFileTest):
                 f.seek(pos)
                 self.assertTrue(f.seekable())
 
+    @bigmemtest(size=size, memuse=2, dry_run=False)
+    def test_seek_readall(self, _size):
+        # Seek which doesn't change position should readall successfully.
+        with self.open(TESTFN, 'rb') as f:
+            self.assertEqual(f.seek(0, os.SEEK_CUR), 0)
+            self.assertEqual(len(f.read()), size + 1)
+
+        # Seek which changes (or might change) position should readall
+        # successfully.
+        with self.open(TESTFN, 'rb') as f:
+            self.assertEqual(f.seek(20, os.SEEK_SET), 20)
+            self.assertEqual(len(f.read()), size - 19)
+
+        with self.open(TESTFN, 'rb') as f:
+            self.assertEqual(f.seek(-3, os.SEEK_END), size - 2)
+            self.assertEqual(len(f.read()), 3)
 
 def skip_no_disk_space(path, required):
     def decorator(fun):
@@ -173,6 +191,7 @@ class TestCopyfile(LargeFileTest, unittest.TestCase):
     # Exact required disk space would be (size * 2), but let's give it a
     # bit more tolerance.
     @skip_no_disk_space(TESTFN, size * 2.5)
+    @requires_resource('cpu')
     def test_it(self):
         # Internally shutil.copyfile() can use "fast copy" methods like
         # os.sendfile().
@@ -222,6 +241,7 @@ class TestSocketSendfile(LargeFileTest, unittest.TestCase):
     # Exact required disk space would be (size * 2), but let's give it a
     # bit more tolerance.
     @skip_no_disk_space(TESTFN, size * 2.5)
+    @requires_resource('cpu')
     def test_it(self):
         port = socket_helper.find_unused_port()
         with socket.create_server(("", port)) as sock:

@@ -79,7 +79,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <PropertyGroup>
-    <TargetExt>.pyd</TargetExt>
+    <TargetExt>$(PyStdlibPydExt)</TargetExt>
   </PropertyGroup>
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
@@ -99,9 +99,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_ssl.c" />
-    <ClCompile Include="$(opensslIncludeDir)\applink.c">
-      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;$(PreprocessorDefinitions)</PreprocessorDefinitions>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\python_nt.rc" />

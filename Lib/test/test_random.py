@@ -4,6 +4,7 @@ import random
 import os
 import time
 import pickle
+import shlex
 import warnings
 import test.support
 
@@ -225,13 +226,25 @@ class TestBasicOps:
         with self.assertRaises(ValueError):
             sample(['red', 'green', 'blue'], counts=[-3, -7, -8], k=2)      # counts are negative
         with self.assertRaises(ValueError):
-            sample(['red', 'green', 'blue'], counts=[0, 0, 0], k=2)         # counts are zero
-        with self.assertRaises(ValueError):
             sample(['red', 'green'], counts=[10, 10], k=21)                 # population too small
         with self.assertRaises(ValueError):
             sample(['red', 'green', 'blue'], counts=[1, 2], k=2)            # too few counts
         with self.assertRaises(ValueError):
             sample(['red', 'green', 'blue'], counts=[1, 2, 3, 4], k=2)      # too many counts
+
+        # Cases with zero counts match equivalents without counts (see gh-130285)
+        self.assertEqual(
+            sample('abc', k=0, counts=[0, 0, 0]),
+            sample([], k=0),
+        )
+        self.assertEqual(
+            sample([], 0, counts=[]),
+            sample([], 0),
+        )
+        with self.assertRaises(ValueError):
+            sample([], 1, counts=[])
+        with self.assertRaises(ValueError):
+            sample('x', 1, counts=[0])
 
     def test_choices(self):
         choices = self.gen.choices
@@ -1081,12 +1094,16 @@ class TestDistributions(unittest.TestCase):
             B(n=1, p=-0.5)                     # Negative p
         with self.assertRaises(ValueError):
             B(n=1, p=1.5)                      # p > 1.0
+        self.assertEqual(B(0, 0.5), 0)         # n == 0
         self.assertEqual(B(10, 0.0), 0)        # p == 0.0
         self.assertEqual(B(10, 1.0), 10)       # p == 1.0
         self.assertTrue(B(1, 0.3) in {0, 1})   # n == 1 fast path
         self.assertTrue(B(1, 0.9) in {0, 1})   # n == 1 fast path
         self.assertTrue(B(1, 0.0) in {0})      # n == 1 fast path
         self.assertTrue(B(1, 1.0) in {1})      # n == 1 fast path
+
+        # BG method very small p
+        self.assertEqual(B(5, 1e-18), 0)
 
         # BG method p <= 0.5 and n*p=1.25
         self.assertTrue(B(5, 0.25) in set(range(6)))
@@ -1391,6 +1408,48 @@ class TestModule(unittest.TestCase):
             self.assertNotEqual(val, child_val)
 
             support.wait_process(pid, exitcode=0)
+
+
+class CommandLineTest(unittest.TestCase):
+    def test_parse_args(self):
+        args, help_text = random._parse_args(shlex.split("--choice a b c"))
+        self.assertEqual(args.choice, ["a", "b", "c"])
+        self.assertTrue(help_text.startswith("usage: "))
+
+        args, help_text = random._parse_args(shlex.split("--integer 5"))
+        self.assertEqual(args.integer, 5)
+        self.assertTrue(help_text.startswith("usage: "))
+
+        args, help_text = random._parse_args(shlex.split("--float 2.5"))
+        self.assertEqual(args.float, 2.5)
+        self.assertTrue(help_text.startswith("usage: "))
+
+        args, help_text = random._parse_args(shlex.split("a b c"))
+        self.assertEqual(args.input, ["a", "b", "c"])
+        self.assertTrue(help_text.startswith("usage: "))
+
+        args, help_text = random._parse_args(shlex.split("5"))
+        self.assertEqual(args.input, ["5"])
+        self.assertTrue(help_text.startswith("usage: "))
+
+        args, help_text = random._parse_args(shlex.split("2.5"))
+        self.assertEqual(args.input, ["2.5"])
+        self.assertTrue(help_text.startswith("usage: "))
+
+    def test_main(self):
+        for command, expected in [
+            ("--choice a b c", "b"),
+            ('"a b c"', "b"),
+            ("a b c", "b"),
+            ("--choice 'a a' 'b b' 'c c'", "b b"),
+            ("'a a' 'b b' 'c c'", "b b"),
+            ("--integer 5", 4),
+            ("5", 4),
+            ("--float 2.5", 2.1110546288126204),
+            ("2.5", 2.1110546288126204),
+        ]:
+            random.seed(0)
+            self.assertEqual(random.main(shlex.split(command)), expected)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
-:mod:`time` --- Time access and conversions
-===========================================
+:mod:`!time` --- Time access and conversions
+============================================
 
 .. module:: time
    :synopsis: Time access and conversions.
@@ -52,9 +52,13 @@ An explanation of some terminology and conventions is in order.
    single: Coordinated Universal Time
    single: Greenwich Mean Time
 
-* UTC is Coordinated Universal Time (formerly known as Greenwich Mean Time, or
-  GMT).  The acronym UTC is not a mistake but a compromise between English and
-  French.
+* UTC is `Coordinated Universal Time`_ and superseded `Greenwich Mean Time`_ or
+  GMT as the basis of international timekeeping. The acronym UTC is not a
+  mistake but conforms to an earlier, language-agnostic naming scheme for time
+  standards such as UT0, UT1, and UT2.
+
+.. _Coordinated Universal Time: https://en.wikipedia.org/wiki/Coordinated_Universal_Time
+.. _Greenwich Mean Time: https://en.wikipedia.org/wiki/Greenwich_Mean_Time
 
 .. index:: single: Daylight Saving Time
 
@@ -69,10 +73,10 @@ An explanation of some terminology and conventions is in order.
   systems, the clock "ticks" only 50 or 100 times a second.
 
 * On the other hand, the precision of :func:`.time` and :func:`sleep` is better
-  than their Unix equivalents: times are expressed as floating point numbers,
+  than their Unix equivalents: times are expressed as floating-point numbers,
   :func:`.time` returns the most accurate time available (using Unix
-  :c:func:`gettimeofday` where available), and :func:`sleep` will accept a time
-  with a nonzero fraction (Unix :c:func:`select` is used to implement this, where
+  :c:func:`!gettimeofday` where available), and :func:`sleep` will accept a time
+  with a nonzero fraction (Unix :c:func:`!select` is used to implement this, where
   available).
 
 * The time value as returned by :func:`gmtime`, :func:`localtime`, and
@@ -84,12 +88,14 @@ An explanation of some terminology and conventions is in order.
   See :class:`struct_time` for a description of these objects.
 
   .. versionchanged:: 3.3
-     The :class:`struct_time` type was extended to provide the :attr:`tm_gmtoff`
-     and :attr:`tm_zone` attributes when platform supports corresponding
+     The :class:`struct_time` type was extended to provide
+     the :attr:`~struct_time.tm_gmtoff` and :attr:`~struct_time.tm_zone`
+     attributes when platform supports corresponding
      ``struct tm`` members.
 
   .. versionchanged:: 3.6
-     The :class:`struct_time` attributes :attr:`tm_gmtoff` and :attr:`tm_zone`
+     The :class:`struct_time` attributes
+     :attr:`~struct_time.tm_gmtoff` and :attr:`~struct_time.tm_zone`
      are now available on all platforms.
 
 * Use the following functions to convert between time representations:
@@ -191,7 +197,7 @@ Functions
    Use :func:`clock_settime_ns` to avoid the precision loss caused by the
    :class:`float` type.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Android, not iOS.
 
    .. versionadded:: 3.3
 
@@ -200,7 +206,7 @@ Functions
 
    Similar to :func:`clock_settime` but set time with nanoseconds.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Android, not iOS.
 
    .. versionadded:: 3.7
 
@@ -271,7 +277,7 @@ Functions
    This is the inverse function of :func:`localtime`.  Its argument is the
    :class:`struct_time` or full 9-tuple (since the dst flag is needed; use ``-1``
    as the dst flag if it is unknown) which expresses the time in *local* time, not
-   UTC.  It returns a floating point number, for compatibility with :func:`.time`.
+   UTC.  It returns a floating-point number, for compatibility with :func:`.time`.
    If the input value cannot be represented as a valid time, either
    :exc:`OverflowError` or :exc:`ValueError` will be raised (which depends on
    whether the invalid value is caught by Python or the underlying C libraries).
@@ -284,6 +290,15 @@ Functions
    that cannot go backwards.  The clock is not affected by system clock updates.
    The reference point of the returned value is undefined, so that only the
    difference between the results of two calls is valid.
+
+   Clock:
+
+   * On Windows, call ``QueryPerformanceCounter()`` and
+     ``QueryPerformanceFrequency()``.
+   * On macOS, call ``mach_absolute_time()`` and ``mach_timebase_info()``.
+   * On HP-UX, call ``gethrtime()``.
+   * Call ``clock_gettime(CLOCK_HIGHRES)`` if available.
+   * Otherwise, call ``clock_gettime(CLOCK_MONOTONIC)``.
 
    Use :func:`monotonic_ns` to avoid the precision loss caused by the
    :class:`float` type.
@@ -314,6 +329,11 @@ Functions
    point of the returned value is undefined, so that only the difference between
    the results of two calls is valid.
 
+   .. impl-detail::
+
+      On CPython, use the same clock as :func:`time.monotonic` and is a
+      monotonic clock, i.e. a clock that cannot go backwards.
+
    Use :func:`perf_counter_ns` to avoid the precision loss caused by the
    :class:`float` type.
 
@@ -321,6 +341,10 @@ Functions
 
    .. versionchanged:: 3.10
       On Windows, the function is now system-wide.
+
+   .. versionchanged:: 3.13
+      Use the same clock as :func:`time.monotonic`.
+
 
 .. function:: perf_counter_ns() -> int
 
@@ -356,7 +380,7 @@ Functions
 .. function:: sleep(secs)
 
    Suspend execution of the calling thread for the given number of seconds.
-   The argument may be a floating point number to indicate a more precise sleep
+   The argument may be a floating-point number to indicate a more precise sleep
    time.
 
    If the sleep is interrupted by a signal and no exception is raised by the
@@ -365,29 +389,42 @@ Functions
    The suspension time may be longer than requested by an arbitrary amount,
    because of the scheduling of other activity in the system.
 
+   .. rubric:: Windows implementation
+
    On Windows, if *secs* is zero, the thread relinquishes the remainder of its
    time slice to any other thread that is ready to run. If there are no other
    threads ready to run, the function returns immediately, and the thread
    continues execution.  On Windows 8.1 and newer the implementation uses
    a `high-resolution timer
-   <https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/high-resolution-timers>`_
+   <https://learn.microsoft.com/windows-hardware/drivers/kernel/high-resolution-timers>`_
    which provides resolution of 100 nanoseconds. If *secs* is zero, ``Sleep(0)`` is used.
 
-   Unix implementation:
+   .. rubric:: Unix implementation
 
    * Use ``clock_nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``select()`` (resolution: 1 microsecond).
 
-   .. versionchanged:: 3.11
-      On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now
-      used if available. On Windows, a waitable timer is now used.
+   .. note::
+
+      To emulate a "no-op", use :keyword:`pass` instead of ``time.sleep(0)``.
+
+      To voluntarily relinquish the CPU, specify a real-time :ref:`scheduling
+      policy <os-scheduling-policy>` and use :func:`os.sched_yield` instead.
+
+   .. audit-event:: time.sleep secs
 
    .. versionchanged:: 3.5
       The function now sleeps at least *secs* even if the sleep is interrupted
       by a signal, except if the signal handler raises an exception (see
       :pep:`475` for the rationale).
 
+   .. versionchanged:: 3.11
+      On Unix, the ``clock_nanosleep()`` and ``nanosleep()`` functions are now
+      used if available. On Windows, a waitable timer is now used.
+
+   .. versionchanged:: 3.13
+      Raises an auditing event.
 
 .. index::
    single: % (percent); datetime format
@@ -426,6 +463,10 @@ Functions
    | ``%d``    | Day of the month as a decimal number [01,31].  |       |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
+   | ``%f``    | Microseconds as a decimal number               | \(1)  |
+   |           |    [000000,999999].                            |       |
+   |           |                                                |       |
+   +-----------+------------------------------------------------+-------+
    | ``%H``    | Hour (24-hour clock) as a decimal number       |       |
    |           | [00,23].                                       |       |
    +-----------+------------------------------------------------+-------+
@@ -441,13 +482,13 @@ Functions
    | ``%M``    | Minute as a decimal number [00,59].            |       |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
-   | ``%p``    | Locale's equivalent of either AM or PM.        | \(1)  |
+   | ``%p``    | Locale's equivalent of either AM or PM.        | \(2)  |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
-   | ``%S``    | Second as a decimal number [00,61].            | \(2)  |
+   | ``%S``    | Second as a decimal number [00,61].            | \(3)  |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
-   | ``%U``    | Week number of the year (Sunday as the first   | \(3)  |
+   | ``%U``    | Week number of the year (Sunday as the first   | \(4)  |
    |           | day of the week) as a decimal number [00,53].  |       |
    |           | All days in a new year preceding the first     |       |
    |           | Sunday are considered to be in week 0.         |       |
@@ -455,10 +496,13 @@ Functions
    |           |                                                |       |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
+   | ``%u``    | Day of the week (Monday is 1; Sunday is 7)     |       |
+   |           | as a decimal number [1, 7].                    |       |
+   +-----------+------------------------------------------------+-------+
    | ``%w``    | Weekday as a decimal number [0(Sunday),6].     |       |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
-   | ``%W``    | Week number of the year (Monday as the first   | \(3)  |
+   | ``%W``    | Week number of the year (Monday as the first   | \(4)  |
    |           | day of the week) as a decimal number [00,53].  |       |
    |           | All days in a new year preceding the first     |       |
    |           | Monday are considered to be in week 0.         |       |
@@ -487,21 +531,39 @@ Functions
    | ``%Z``    | Time zone name (no characters if no time zone  |       |
    |           | exists). Deprecated. [1]_                      |       |
    +-----------+------------------------------------------------+-------+
+   | ``%G``    | ISO 8601 year (similar to ``%Y`` but follows   |       |
+   |           | the rules for the ISO 8601 calendar year).     |       |
+   |           | The year starts with the week that contains    |       |
+   |           | the first Thursday of the calendar year.       |       |
+   +-----------+------------------------------------------------+-------+
+   | ``%V``    | ISO 8601 week number (as a decimal number      |       |
+   |           | [01,53]). The first week of the year is the    |       |
+   |           | one that contains the first Thursday of the    |       |
+   |           | year. Weeks start on Monday.                   |       |
+   +-----------+------------------------------------------------+-------+
    | ``%%``    | A literal ``'%'`` character.                   |       |
    +-----------+------------------------------------------------+-------+
 
    Notes:
 
    (1)
+       The ``%f`` format directive only applies to :func:`strptime`,
+       not to :func:`strftime`. However, see also :meth:`datetime.datetime.strptime` and
+       :meth:`datetime.datetime.strftime` where the ``%f`` format directive
+       :ref:`applies to microseconds <format-codes>`.
+
+   (2)
       When used with the :func:`strptime` function, the ``%p`` directive only affects
       the output hour field if the ``%I`` directive is used to parse the hour.
 
-   (2)
+   .. _leap-second:
+
+   (3)
       The range really is ``0`` to ``61``; value ``60`` is valid in
       timestamps representing `leap seconds`_ and value ``61`` is supported
       for historical reasons.
 
-   (3)
+   (4)
       When used with the :func:`strptime` function, ``%U`` and ``%W`` are only used in
       calculations when the day of the week and the year are specified.
 
@@ -566,32 +628,55 @@ Functions
    tuple` interface: values can be accessed by index and by attribute name.  The
    following values are present:
 
-   +-------+-------------------+---------------------------------+
-   | Index | Attribute         | Values                          |
-   +=======+===================+=================================+
-   | 0     | :attr:`tm_year`   | (for example, 1993)             |
-   +-------+-------------------+---------------------------------+
-   | 1     | :attr:`tm_mon`    | range [1, 12]                   |
-   +-------+-------------------+---------------------------------+
-   | 2     | :attr:`tm_mday`   | range [1, 31]                   |
-   +-------+-------------------+---------------------------------+
-   | 3     | :attr:`tm_hour`   | range [0, 23]                   |
-   +-------+-------------------+---------------------------------+
-   | 4     | :attr:`tm_min`    | range [0, 59]                   |
-   +-------+-------------------+---------------------------------+
-   | 5     | :attr:`tm_sec`    | range [0, 61]; see **(2)** in   |
-   |       |                   | :func:`strftime` description    |
-   +-------+-------------------+---------------------------------+
-   | 6     | :attr:`tm_wday`   | range [0, 6], Monday is 0       |
-   +-------+-------------------+---------------------------------+
-   | 7     | :attr:`tm_yday`   | range [1, 366]                  |
-   +-------+-------------------+---------------------------------+
-   | 8     | :attr:`tm_isdst`  | 0, 1 or -1; see below           |
-   +-------+-------------------+---------------------------------+
-   | N/A   | :attr:`tm_zone`   | abbreviation of timezone name   |
-   +-------+-------------------+---------------------------------+
-   | N/A   | :attr:`tm_gmtoff` | offset east of UTC in seconds   |
-   +-------+-------------------+---------------------------------+
+   .. list-table::
+
+      * - Index
+        - Attribute
+        - Values
+
+      * - 0
+        - .. attribute:: tm_year
+        - (for example, 1993)
+
+      * - 1
+        - .. attribute:: tm_mon
+        - range [1, 12]
+
+      * - 2
+        - .. attribute:: tm_mday
+        - range [1, 31]
+
+      * - 3
+        - .. attribute:: tm_hour
+        - range [0, 23]
+
+      * - 4
+        - .. attribute:: tm_min
+        - range [0, 59]
+
+      * - 5
+        - .. attribute:: tm_sec
+        - range [0, 61]; see :ref:`Note (2) <leap-second>` in :func:`strftime`
+
+      * - 6
+        - .. attribute:: tm_wday
+        - range [0, 6]; Monday is 0
+
+      * - 7
+        - .. attribute:: tm_yday
+        - range [1, 366]
+
+      * - 8
+        - .. attribute:: tm_isdst
+        - 0, 1 or -1; see below
+
+      * - N/A
+        - .. attribute:: tm_zone
+        - abbreviation of timezone name
+
+      * - N/A
+        - .. attribute:: tm_gmtoff
+        - offset east of UTC in seconds
 
    Note that unlike the C structure, the month value is a range of [1, 12], not
    [0, 11].
@@ -606,13 +691,13 @@ Functions
 
 .. function:: time() -> float
 
-   Return the time in seconds since the epoch_ as a floating point
+   Return the time in seconds since the epoch_ as a floating-point
    number. The handling of `leap seconds`_ is platform dependent.
    On Windows and most Unix systems, the leap seconds are not counted towards
    the time in seconds since the epoch_. This is commonly referred to as `Unix
    time <https://en.wikipedia.org/wiki/Unix_time>`_.
 
-   Note that even though the time is always returned as a floating point
+   Note that even though the time is always returned as a floating-point
    number, not all systems provide time with a better precision than 1 second.
    While this function normally returns non-decreasing values, it can return a
    lower value than a previous call if the system clock has been set back
@@ -624,6 +709,12 @@ Functions
    :func:`localtime` function. In both cases a
    :class:`struct_time` object is returned, from which the components
    of the calendar date may be accessed as attributes.
+
+   Clock:
+
+   * On Windows, call ``GetSystemTimeAsFileTime()``.
+   * Call ``clock_gettime(CLOCK_REALTIME)`` if available.
+   * Otherwise, call ``gettimeofday()``.
 
    Use :func:`time_ns` to avoid the precision loss caused by the :class:`float`
    type.
@@ -808,6 +899,15 @@ These constants are used as parameters for :func:`clock_getres` and
 
    .. versionadded:: 3.3
 
+.. data:: CLOCK_MONOTONIC_RAW_APPROX
+
+   Similar to :data:`CLOCK_MONOTONIC_RAW`, but reads a value cached by
+   the system at context switch and hence has less accuracy.
+
+   .. availability:: macOS >= 10.12.
+
+   .. versionadded:: 3.13
+
 
 .. data:: CLOCK_PROCESS_CPUTIME_ID
 
@@ -867,6 +967,15 @@ These constants are used as parameters for :func:`clock_getres` and
 
    .. versionadded:: 3.8
 
+.. data:: CLOCK_UPTIME_RAW_APPROX
+
+   Like :data:`CLOCK_UPTIME_RAW`, but the value is cached by the system
+   at context switches and therefore has less accuracy.
+
+   .. availability:: macOS >= 10.12.
+
+   .. versionadded:: 3.13
+
 The following constant is the only parameter that can be sent to
 :func:`clock_settime`.
 
@@ -912,8 +1021,8 @@ Timezone Constants
    For the above Timezone constants (:data:`altzone`, :data:`daylight`, :data:`timezone`,
    and :data:`tzname`), the value is determined by the timezone rules in effect
    at module load time or the last time :func:`tzset` is called and may be incorrect
-   for times in the past.  It is recommended to use the :attr:`tm_gmtoff` and
-   :attr:`tm_zone` results from :func:`localtime` to obtain timezone information.
+   for times in the past.  It is recommended to use the :attr:`~struct_time.tm_gmtoff` and
+   :attr:`~struct_time.tm_zone` results from :func:`localtime` to obtain timezone information.
 
 
 .. seealso::

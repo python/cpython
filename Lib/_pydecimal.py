@@ -13,104 +13,7 @@
 # bug) and will be backported.  At this point the spec is stabilizing
 # and the updates are becoming fewer, smaller, and less significant.
 
-"""
-This is an implementation of decimal floating point arithmetic based on
-the General Decimal Arithmetic Specification:
-
-    http://speleotrove.com/decimal/decarith.html
-
-and IEEE standard 854-1987:
-
-    http://en.wikipedia.org/wiki/IEEE_854-1987
-
-Decimal floating point has finite precision with arbitrarily large bounds.
-
-The purpose of this module is to support arithmetic using familiar
-"schoolhouse" rules and to avoid some of the tricky representation
-issues associated with binary floating point.  The package is especially
-useful for financial applications or for contexts where users have
-expectations that are at odds with binary floating point (for instance,
-in binary floating point, 1.00 % 0.1 gives 0.09999999999999995 instead
-of 0.0; Decimal('1.00') % Decimal('0.1') returns the expected
-Decimal('0.00')).
-
-Here are some examples of using the decimal module:
-
->>> from decimal import *
->>> setcontext(ExtendedContext)
->>> Decimal(0)
-Decimal('0')
->>> Decimal('1')
-Decimal('1')
->>> Decimal('-.0123')
-Decimal('-0.0123')
->>> Decimal(123456)
-Decimal('123456')
->>> Decimal('123.45e12345678')
-Decimal('1.2345E+12345680')
->>> Decimal('1.33') + Decimal('1.27')
-Decimal('2.60')
->>> Decimal('12.34') + Decimal('3.87') - Decimal('18.41')
-Decimal('-2.20')
->>> dig = Decimal(1)
->>> print(dig / Decimal(3))
-0.333333333
->>> getcontext().prec = 18
->>> print(dig / Decimal(3))
-0.333333333333333333
->>> print(dig.sqrt())
-1
->>> print(Decimal(3).sqrt())
-1.73205080756887729
->>> print(Decimal(3) ** 123)
-4.85192780976896427E+58
->>> inf = Decimal(1) / Decimal(0)
->>> print(inf)
-Infinity
->>> neginf = Decimal(-1) / Decimal(0)
->>> print(neginf)
--Infinity
->>> print(neginf + inf)
-NaN
->>> print(neginf * inf)
--Infinity
->>> print(dig / 0)
-Infinity
->>> getcontext().traps[DivisionByZero] = 1
->>> print(dig / 0)
-Traceback (most recent call last):
-  ...
-  ...
-  ...
-decimal.DivisionByZero: x / 0
->>> c = Context()
->>> c.traps[InvalidOperation] = 0
->>> print(c.flags[InvalidOperation])
-0
->>> c.divide(Decimal(0), Decimal(0))
-Decimal('NaN')
->>> c.traps[InvalidOperation] = 1
->>> print(c.flags[InvalidOperation])
-1
->>> c.flags[InvalidOperation] = 0
->>> print(c.flags[InvalidOperation])
-0
->>> print(c.divide(Decimal(0), Decimal(0)))
-Traceback (most recent call last):
-  ...
-  ...
-  ...
-decimal.InvalidOperation: 0 / 0
->>> print(c.flags[InvalidOperation])
-1
->>> c.flags[InvalidOperation] = 0
->>> c.traps[InvalidOperation] = 0
->>> print(c.divide(Decimal(0), Decimal(0)))
-NaN
->>> print(c.flags[InvalidOperation])
-1
->>>
-"""
+"""Python decimal arithmetic module"""
 
 __all__ = [
     # Two major classes
@@ -194,7 +97,7 @@ class DecimalException(ArithmeticError):
 
     Used exceptions derive from this.
     If an exception derives from another exception besides this (such as
-    Underflow (Inexact, Rounded, Subnormal) that indicates that it is only
+    Underflow (Inexact, Rounded, Subnormal)) that indicates that it is only
     called if the others are present.  This isn't actually used for
     anything, though.
 
@@ -242,7 +145,7 @@ class InvalidOperation(DecimalException):
     x ** (+-)INF
     An operand is invalid
 
-    The result of the operation after these is a quiet positive NaN,
+    The result of the operation after this is a quiet positive NaN,
     except when the cause is a signaling NaN, in which case the result is
     also a quiet NaN, but with the original sign, and an optional
     diagnostic information.
@@ -521,7 +424,7 @@ def localcontext(ctx=None, **kwargs):
 # numbers.py for more detail.
 
 class Decimal(object):
-    """Floating point class for decimal arithmetic."""
+    """Floating-point class for decimal arithmetic."""
 
     __slots__ = ('_exp','_int','_sign', '_is_special')
     # Generally, the value of the Decimal instance is given by
@@ -678,6 +581,21 @@ class Decimal(object):
             return self
 
         raise TypeError("Cannot convert %r to Decimal" % value)
+
+    @classmethod
+    def from_number(cls, number):
+        """Converts a real number to a decimal number, exactly.
+
+        >>> Decimal.from_number(314)              # int
+        Decimal('314')
+        >>> Decimal.from_number(0.1)              # float
+        Decimal('0.1000000000000000055511151231257827021181583404541015625')
+        >>> Decimal.from_number(Decimal('3.14'))  # another decimal instance
+        Decimal('3.14')
+        """
+        if isinstance(number, (int, Decimal, float)):
+            return cls(number)
+        raise TypeError("Cannot convert %r to Decimal" % number)
 
     @classmethod
     def from_float(cls, f):
@@ -2228,10 +2146,16 @@ class Decimal(object):
             else:
                 return None
 
-            if xc >= 10**p:
+            # An exact power of 10 is representable, but can convert to a
+            # string of any length. But an exact power of 10 shouldn't be
+            # possible at this point.
+            assert xc > 1, self
+            assert xc % 10 != 0, self
+            strxc = str(xc)
+            if len(strxc) > p:
                 return None
             xe = -e-xe
-            return _dec_from_triple(0, str(xc), xe)
+            return _dec_from_triple(0, strxc, xe)
 
         # now y is positive; find m and n such that y = m/n
         if ye >= 0:
@@ -2281,13 +2205,18 @@ class Decimal(object):
             return None
         xc = xc**m
         xe *= m
-        if xc > 10**p:
+        # An exact power of 10 is representable, but can convert to a string
+        # of any length. But an exact power of 10 shouldn't be possible at
+        # this point.
+        assert xc > 1, self
+        assert xc % 10 != 0, self
+        str_xc = str(xc)
+        if len(str_xc) > p:
             return None
 
         # by this point the result *is* exactly representable
         # adjust the exponent to get as close as possible to the ideal
         # exponent, if necessary
-        str_xc = str(xc)
         if other._isinteger() and other._sign == 0:
             ideal_exponent = self._exp*int(other)
             zeros = min(xe-ideal_exponent, p-len(str_xc))

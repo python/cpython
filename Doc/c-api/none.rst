@@ -9,17 +9,17 @@ The ``None`` Object
 
 Note that the :c:type:`PyTypeObject` for ``None`` is not directly exposed in the
 Python/C API.  Since ``None`` is a singleton, testing for object identity (using
-``==`` in C) is sufficient. There is no :c:func:`PyNone_Check` function for the
+``==`` in C) is sufficient. There is no :c:func:`!PyNone_Check` function for the
 same reason.
 
 
 .. c:var:: PyObject* Py_None
 
    The Python ``None`` object, denoting lack of value.  This object has no methods
-   and is `immortal <https://peps.python.org/pep-0683/>`_.
+   and is :term:`immortal`.
 
-.. versionchanged:: 3.12
-   :c:data:`Py_None` is immortal.
+   .. versionchanged:: 3.12
+      :c:data:`Py_None` is :term:`immortal`.
 
 .. c:macro:: Py_RETURN_NONE
 

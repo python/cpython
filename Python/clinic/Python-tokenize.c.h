@@ -3,10 +3,10 @@ preserve
 [clinic start generated code]*/
 
 #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-#  include "pycore_gc.h"            // PyGC_Head
-#  include "pycore_runtime.h"       // _Py_ID()
+#  include "pycore_gc.h"          // PyGC_Head
+#  include "pycore_runtime.h"     // _Py_ID()
 #endif
-
+#include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 static PyObject *
 tokenizeriter_new_impl(PyTypeObject *type, PyObject *readline,
@@ -22,9 +22,11 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(extra_tokens), &_Py_ID(encoding), },
     };
     #undef NUM_KEYWORDS
@@ -49,7 +51,8 @@ tokenizeriter_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     int extra_tokens;
     const char *encoding = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 1, 1, 1, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 1, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -80,4 +83,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=48be65a2808bdfa6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4c448f34d9c835c0 input=a9049054013a1b77]*/

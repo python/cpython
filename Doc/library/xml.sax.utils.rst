@@ -1,5 +1,5 @@
-:mod:`xml.sax.saxutils` --- SAX Utilities
-=========================================
+:mod:`!xml.sax.saxutils` --- SAX Utilities
+==========================================
 
 .. module:: xml.sax.saxutils
    :synopsis: Convenience functions and classes for use with SAX.
@@ -71,8 +71,8 @@ or as base classes.
    content:  if ``False`` (the default) they are emitted as a pair of start/end
    tags, if set to ``True`` they are emitted as a single self-closed tag.
 
-   .. versionadded:: 3.2
-      The *short_empty_elements* parameter.
+   .. versionchanged:: 3.2
+      Added the *short_empty_elements* parameter.
 
 
 .. class:: XMLFilterBase(base)
@@ -92,5 +92,5 @@ or as base classes.
    reading.  The input source can be given as a string, a file-like object, or
    an :class:`~xml.sax.xmlreader.InputSource` object; parsers will use this
    function to implement the polymorphic *source* argument to their
-   :meth:`parse` method.
+   :meth:`~xml.sax.xmlreader.XMLReader.parse` method.
 

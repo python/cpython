@@ -422,7 +422,7 @@ ddrem757 remainder  1    sNaN   ->  NaN  Invalid_operation
 ddrem758 remainder  1000 sNaN   ->  NaN  Invalid_operation
 ddrem759 remainder  Inf -sNaN   -> -NaN  Invalid_operation
 
--- propaging NaNs
+-- propagating NaNs
 ddrem760 remainder  NaN1   NaN7   ->  NaN1
 ddrem761 remainder sNaN2   NaN8   ->  NaN2 Invalid_operation
 ddrem762 remainder  NaN3  sNaN9   ->  NaN9 Invalid_operation

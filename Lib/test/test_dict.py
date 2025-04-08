@@ -594,9 +594,11 @@ class DictTest(unittest.TestCase):
         d = {1: BadRepr()}
         self.assertRaises(Exc, repr, d)
 
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     def test_repr_deep(self):
         d = {}
-        for i in range(sys.getrecursionlimit() + 100):
+        for i in range(support.exceeds_recursion_limit()):
             d = {1: d}
         self.assertRaises(RecursionError, repr, d)
 
@@ -879,115 +881,6 @@ class DictTest(unittest.TestCase):
             del obj, container
             gc.collect()
             self.assertIs(ref(), None, "Cycle was not collected")
-
-    def _not_tracked(self, t):
-        # Nested containers can take several collections to untrack
-        gc.collect()
-        gc.collect()
-        self.assertFalse(gc.is_tracked(t), t)
-
-    def _tracked(self, t):
-        self.assertTrue(gc.is_tracked(t), t)
-        gc.collect()
-        gc.collect()
-        self.assertTrue(gc.is_tracked(t), t)
-
-    def test_string_keys_can_track_values(self):
-        # Test that this doesn't leak.
-        for i in range(10):
-            d = {}
-            for j in range(10):
-                d[str(j)] = j
-            d["foo"] = d
-
-    @support.cpython_only
-    def test_track_literals(self):
-        # Test GC-optimization of dict literals
-        x, y, z, w = 1.5, "a", (1, None), []
-
-        self._not_tracked({})
-        self._not_tracked({x:(), y:x, z:1})
-        self._not_tracked({1: "a", "b": 2})
-        self._not_tracked({1: 2, (None, True, False, ()): int})
-        self._not_tracked({1: object()})
-
-        # Dicts with mutable elements are always tracked, even if those
-        # elements are not tracked right now.
-        self._tracked({1: []})
-        self._tracked({1: ([],)})
-        self._tracked({1: {}})
-        self._tracked({1: set()})
-
-    @support.cpython_only
-    def test_track_dynamic(self):
-        # Test GC-optimization of dynamically-created dicts
-        class MyObject(object):
-            pass
-        x, y, z, w, o = 1.5, "a", (1, object()), [], MyObject()
-
-        d = dict()
-        self._not_tracked(d)
-        d[1] = "a"
-        self._not_tracked(d)
-        d[y] = 2
-        self._not_tracked(d)
-        d[z] = 3
-        self._not_tracked(d)
-        self._not_tracked(d.copy())
-        d[4] = w
-        self._tracked(d)
-        self._tracked(d.copy())
-        d[4] = None
-        self._not_tracked(d)
-        self._not_tracked(d.copy())
-
-        # dd isn't tracked right now, but it may mutate and therefore d
-        # which contains it must be tracked.
-        d = dict()
-        dd = dict()
-        d[1] = dd
-        self._not_tracked(dd)
-        self._tracked(d)
-        dd[1] = d
-        self._tracked(dd)
-
-        d = dict.fromkeys([x, y, z])
-        self._not_tracked(d)
-        dd = dict()
-        dd.update(d)
-        self._not_tracked(dd)
-        d = dict.fromkeys([x, y, z, o])
-        self._tracked(d)
-        dd = dict()
-        dd.update(d)
-        self._tracked(dd)
-
-        d = dict(x=x, y=y, z=z)
-        self._not_tracked(d)
-        d = dict(x=x, y=y, z=z, w=w)
-        self._tracked(d)
-        d = dict()
-        d.update(x=x, y=y, z=z)
-        self._not_tracked(d)
-        d.update(w=w)
-        self._tracked(d)
-
-        d = dict([(x, y), (z, 1)])
-        self._not_tracked(d)
-        d = dict([(x, y), (z, w)])
-        self._tracked(d)
-        d = dict()
-        d.update([(x, y), (z, 1)])
-        self._not_tracked(d)
-        d.update([(x, y), (z, w)])
-        self._tracked(d)
-
-    @support.cpython_only
-    def test_track_subtypes(self):
-        # Dict subtypes are always tracked
-        class MyDict(dict):
-            pass
-        self._tracked(MyDict())
 
     def make_shared_key_dict(self, n):
         class C:
@@ -1476,6 +1369,24 @@ class DictTest(unittest.TestCase):
         gc.collect()
         self.assertTrue(gc.is_tracked(next(it)))
 
+    def test_store_evilattr(self):
+        class EvilAttr:
+            def __init__(self, d):
+                self.d = d
+
+            def __del__(self):
+                if 'attr' in self.d:
+                    del self.d['attr']
+                gc.collect()
+
+        class Obj:
+            pass
+
+        obj = Obj()
+        obj.__dict__ = {}
+        for _ in range(10):
+            obj.attr = EvilAttr(obj.__dict__)
+
     def test_str_nonstr(self):
         # cpython uses a different lookup function if the dict only contains
         # `str` keys. Make sure the unoptimized path is used when a non-`str`
@@ -1582,8 +1493,8 @@ class CAPITest(unittest.TestCase):
     # Test _PyDict_GetItem_KnownHash()
     @support.cpython_only
     def test_getitem_knownhash(self):
-        _testcapi = import_helper.import_module('_testcapi')
-        dict_getitem_knownhash = _testcapi.dict_getitem_knownhash
+        _testinternalcapi = import_helper.import_module('_testinternalcapi')
+        dict_getitem_knownhash = _testinternalcapi.dict_getitem_knownhash
 
         d = {'x': 1, 'y': 2, 'z': 3}
         self.assertEqual(dict_getitem_knownhash(d, 'x', hash('x')), 1)

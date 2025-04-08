@@ -1,5 +1,0 @@
-We've renamed the new (in 3.12) ``PyInterpreterConfig.own_gil`` to
-``PyInterpreterConfig.gil`` and changed the meaning of the value from "bool"
-to an integer with supported values of ``PyInterpreterConfig_DEFAULT_GIL``,
-``PyInterpreterConfig_SHARED_GIL``, and ``PyInterpreterConfig_OWN_GIL``. The
-default is "shared".

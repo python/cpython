@@ -1,51 +1,46 @@
 """sqlite3 CLI tests."""
-
-import sqlite3 as sqlite
-import subprocess
-import sys
+import sqlite3
 import unittest
 
-from test.support import SHORT_TIMEOUT, requires_subprocess
+from sqlite3.__main__ import main as cli
 from test.support.os_helper import TESTFN, unlink
+from test.support import captured_stdout, captured_stderr, captured_stdin
 
 
-@requires_subprocess()
 class CommandLineInterface(unittest.TestCase):
 
     def _do_test(self, *args, expect_success=True):
-        with subprocess.Popen(
-            [sys.executable, "-Xutf8", "-m", "sqlite3", *args],
-            encoding="utf-8",
-            bufsize=0,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        ) as proc:
-            proc.wait()
-            if expect_success == bool(proc.returncode):
-                self.fail("".join(proc.stderr))
-            stdout = proc.stdout.read()
-            stderr = proc.stderr.read()
-            if expect_success:
-                self.assertEqual(stderr, "")
-            else:
-                self.assertEqual(stdout, "")
-            return stdout, stderr
+        with (
+            captured_stdout() as out,
+            captured_stderr() as err,
+            self.assertRaises(SystemExit) as cm
+        ):
+            cli(args)
+        return out.getvalue(), err.getvalue(), cm.exception.code
 
     def expect_success(self, *args):
-        out, _ = self._do_test(*args)
+        out, err, code = self._do_test(*args)
+        self.assertEqual(code, 0,
+                         "\n".join([f"Unexpected failure: {args=}", out, err]))
+        self.assertEqual(err, "")
         return out
 
     def expect_failure(self, *args):
-        _, err = self._do_test(*args, expect_success=False)
+        out, err, code = self._do_test(*args, expect_success=False)
+        self.assertNotEqual(code, 0,
+                            "\n".join([f"Unexpected failure: {args=}", out, err]))
+        self.assertEqual(out, "")
         return err
 
     def test_cli_help(self):
         out = self.expect_success("-h")
-        self.assertIn("usage: python -m sqlite3", out)
+        self.assertIn("usage: ", out)
+        self.assertIn(" [-h] [-v] [filename] [sql]", out)
+        self.assertIn("Python sqlite3 CLI", out)
 
     def test_cli_version(self):
         out = self.expect_success("-v")
-        self.assertIn(sqlite.sqlite_version, out)
+        self.assertIn(sqlite3.sqlite_version, out)
 
     def test_cli_execute_sql(self):
         out = self.expect_success(":memory:", "select 1")
@@ -68,87 +63,94 @@ class CommandLineInterface(unittest.TestCase):
         self.assertIn("(0,)", out)
 
 
-@requires_subprocess()
 class InteractiveSession(unittest.TestCase):
-    TIMEOUT = SHORT_TIMEOUT / 10.
     MEMORY_DB_MSG = "Connected to a transient in-memory database"
     PS1 = "sqlite> "
     PS2 = "... "
 
-    def start_cli(self, *args):
-        return subprocess.Popen(
-            [sys.executable, "-Xutf8", "-m", "sqlite3", *args],
-            encoding="utf-8",
-            bufsize=0,
-            stdin=subprocess.PIPE,
-            # Note: the banner is printed to stderr, the prompt to stdout.
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
+    def run_cli(self, *args, commands=()):
+        with (
+            captured_stdin() as stdin,
+            captured_stdout() as stdout,
+            captured_stderr() as stderr,
+            self.assertRaises(SystemExit) as cm
+        ):
+            for cmd in commands:
+                stdin.write(cmd + "\n")
+            stdin.seek(0)
+            cli(args)
 
-    def expect_success(self, proc):
-        proc.wait()
-        if proc.returncode:
-            self.fail("".join(proc.stderr))
+        out = stdout.getvalue()
+        err = stderr.getvalue()
+        self.assertEqual(cm.exception.code, 0,
+                         f"Unexpected failure: {args=}\n{out}\n{err}")
+        return out, err
 
     def test_interact(self):
-        with self.start_cli() as proc:
-            out, err = proc.communicate(timeout=self.TIMEOUT)
-            self.assertIn(self.MEMORY_DB_MSG, err)
-            self.assertIn(self.PS1, out)
-            self.expect_success(proc)
+        out, err = self.run_cli()
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 1)
+        self.assertEqual(out.count(self.PS2), 0)
 
     def test_interact_quit(self):
-        with self.start_cli() as proc:
-            out, err = proc.communicate(input=".quit", timeout=self.TIMEOUT)
-            self.assertIn(self.MEMORY_DB_MSG, err)
-            self.assertIn(self.PS1, out)
-            self.expect_success(proc)
+        out, err = self.run_cli(commands=(".quit",))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 1)
+        self.assertEqual(out.count(self.PS2), 0)
 
     def test_interact_version(self):
-        with self.start_cli() as proc:
-            out, err = proc.communicate(input=".version", timeout=self.TIMEOUT)
-            self.assertIn(self.MEMORY_DB_MSG, err)
-            self.assertIn(sqlite.sqlite_version, out)
-            self.expect_success(proc)
+        out, err = self.run_cli(commands=(".version",))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertIn(sqlite3.sqlite_version + "\n", out)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 0)
+        self.assertIn(sqlite3.sqlite_version, out)
 
     def test_interact_valid_sql(self):
-        with self.start_cli() as proc:
-            out, err = proc.communicate(input="select 1;",
-                                        timeout=self.TIMEOUT)
-            self.assertIn(self.MEMORY_DB_MSG, err)
-            self.assertIn("(1,)", out)
-            self.expect_success(proc)
+        out, err = self.run_cli(commands=("SELECT 1;",))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertIn("(1,)\n", out)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 0)
+
+    def test_interact_incomplete_multiline_sql(self):
+        out, err = self.run_cli(commands=("SELECT 1",))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertEndsWith(out, self.PS2)
+        self.assertEqual(out.count(self.PS1), 1)
+        self.assertEqual(out.count(self.PS2), 1)
 
     def test_interact_valid_multiline_sql(self):
-        with self.start_cli() as proc:
-            out, err = proc.communicate(input="select 1\n;",
-                                        timeout=self.TIMEOUT)
-            self.assertIn(self.MEMORY_DB_MSG, err)
-            self.assertIn(self.PS2, out)
-            self.assertIn("(1,)", out)
-            self.expect_success(proc)
+        out, err = self.run_cli(commands=("SELECT 1\n;",))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertIn(self.PS2, out)
+        self.assertIn("(1,)\n", out)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 1)
 
     def test_interact_invalid_sql(self):
-        with self.start_cli() as proc:
-            out, err = proc.communicate(input="sel;", timeout=self.TIMEOUT)
-            self.assertIn(self.MEMORY_DB_MSG, err)
-            self.assertIn("OperationalError (SQLITE_ERROR)", err)
-            self.expect_success(proc)
+        out, err = self.run_cli(commands=("sel;",))
+        self.assertIn(self.MEMORY_DB_MSG, err)
+        self.assertIn("OperationalError (SQLITE_ERROR)", err)
+        self.assertEndsWith(out, self.PS1)
+        self.assertEqual(out.count(self.PS1), 2)
+        self.assertEqual(out.count(self.PS2), 0)
 
     def test_interact_on_disk_file(self):
         self.addCleanup(unlink, TESTFN)
-        with self.start_cli(TESTFN) as proc:
-            out, err = proc.communicate(input="create table t(t);",
-                                        timeout=self.TIMEOUT)
-            self.assertIn(TESTFN, err)
-            self.assertIn(self.PS1, out)
-            self.expect_success(proc)
-        with self.start_cli(TESTFN, "select count(t) from t") as proc:
-            out = proc.stdout.read()
-            err = proc.stderr.read()
-            self.assertIn("(0,)", out)
-            self.expect_success(proc)
+
+        out, err = self.run_cli(TESTFN, commands=("CREATE TABLE t(t);",))
+        self.assertIn(TESTFN, err)
+        self.assertEndsWith(out, self.PS1)
+
+        out, _ = self.run_cli(TESTFN, commands=("SELECT count(t) FROM t;",))
+        self.assertIn("(0,)\n", out)
 
 
 if __name__ == "__main__":

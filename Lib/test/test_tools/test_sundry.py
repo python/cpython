@@ -19,17 +19,11 @@ class TestSundryScripts(unittest.TestCase):
     # cleanly the logging module.
     @import_helper.mock_register_at_fork
     def test_sundry(self, mock_os):
-        old_modules = import_helper.modules_setup()
-        try:
-            for fn in os.listdir(scriptsdir):
-                if not fn.endswith('.py'):
-                    continue
-
-                name = fn[:-3]
-                import_tool(name)
-        finally:
-            # Unload all modules loaded in this test
-            import_helper.modules_cleanup(*old_modules)
+        for fn in os.listdir(scriptsdir):
+            if not fn.endswith('.py'):
+                continue
+            name = fn[:-3]
+            import_tool(name)
 
 
 if __name__ == '__main__':
