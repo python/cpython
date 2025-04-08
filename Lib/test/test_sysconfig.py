@@ -611,8 +611,8 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertEqual(Py_GIL_DISABLED, support.Py_GIL_DISABLED)
 
     def test_abiflags(self):
-        # If this test fails on some platforms, maintainers should add/update
-        # the definition of the ABIFLAGS variable and make this test pass.
+        # If this test fails on some platforms, maintainers should update the
+        # test to make it pass, rather than changing the definition of ABIFLAGS.
         abiflags = sysconfig.get_config_var('abiflags')
         ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
 
@@ -621,21 +621,23 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertIn(abiflags, ABIFLAGS)
 
         # Check all flags are alphabetic
+        valid_abiflags = ('', 't', 'd', 'td')
+        for flags in valid_abiflags:
+            self.assertTrue(len(flags) == len(set(flags)), flags)
+            if flags:
+                self.assertIn(flags.isalpha(), flags)
         if os.name == 'nt':
             self.assertEqual(abiflags, '')
             # Example values: '', 't', 't_d', '_d'
             # '_' can only exist if 'd' is present
-            if '_' in ABIFLAGS:
-                # '_' is followed by 'd'
-                self.assertTrue(ABIFLAGS.count('_d') == 1, ABIFLAGS)
-                self.assertTrue(ABIFLAGS.count('_') == 1, ABIFLAGS)
-            else:
-                self.assertNotIn('d', ABIFLAGS)
+            # '_' can only followed by 'd'
+            self.assertIn(
+                ABIFLAGS,
+                tuple(flag.replace('d', '_d') for flag in valid_abiflags),
+            )
         else:
             # Example values: '', 't', 'td', 'd'
-            self.assertNotIn('_', ABIFLAGS)
-        if ABIFLAGS:
-            self.assertTrue(ABIFLAGS.replace('_', '').isalpha(), ABIFLAGS)
+            self.assertIn(ABIFLAGS, valid_abiflags)
 
         if support.Py_DEBUG:
             # The 'd' flag should always be the last one.
