@@ -83,11 +83,8 @@ class Template:
     def _compile_pattern(cls):
         import re  # deferred import, for performance
 
-        cls_pattern = cls.__dict__.get('pattern')
-        if cls_pattern is not None and cls_pattern is not _TemplatePattern:
-            # Prefer a pattern defined on the class.
-            pattern = cls_pattern
-        else:
+        pattern = cls.__dict__.get('pattern', _TemplatePattern)
+        if pattern is _TemplatePattern:
             delim = re.escape(cls.delimiter)
             id = cls.idpattern
             bid = cls.braceidpattern or cls.idpattern
