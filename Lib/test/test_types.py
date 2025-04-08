@@ -681,9 +681,11 @@ class TypesTests(unittest.TestCase):
         import glob
 
         def call(part):
+            [] + ([] + [])
             part.pop()
 
-        call(['a'])
+        for _ in range(3):
+            call(['a'])
         try:
             call(list)
         except TypeError:
