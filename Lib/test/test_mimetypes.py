@@ -1,4 +1,3 @@
-import contextlib
 import io
 import mimetypes
 import os
