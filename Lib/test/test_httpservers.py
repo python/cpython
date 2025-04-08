@@ -4,7 +4,7 @@ Written by Cody A.W. Somerville <cody-somerville@ubuntu.com>,
 Josip Dzolonga, and Michael Otteneder for the 2007/08 GHOP contest.
 """
 from collections import OrderedDict
-from http.server import BaseHTTPRequestHandler, HTTPServer, \
+from http.server import BaseHTTPRequestHandler, HTTPServer, HTTPSServer, \
      SimpleHTTPRequestHandler, CGIHTTPRequestHandler
 from http import server, HTTPStatus
 
@@ -31,8 +31,13 @@ from io import BytesIO, StringIO
 import unittest
 from test import support
 from test.support import (
-    is_apple, os_helper, requires_subprocess, threading_helper
+    is_apple, import_helper, os_helper, requires_subprocess, threading_helper
 )
+
+try:
+    import ssl
+except ImportError:
+    ssl = None
 
 support.requires_working_socket(module=True)
 
@@ -45,14 +50,49 @@ class NoLogRequestHandler:
         return ''
 
 
+class DummyRequestHandler(NoLogRequestHandler, SimpleHTTPRequestHandler):
+    pass
+
+
+def create_https_server(
+    certfile,
+    keyfile=None,
+    password=None,
+    *,
+    address=('localhost', 0),
+    request_handler=DummyRequestHandler,
+):
+    return HTTPSServer(
+        address, request_handler,
+        certfile=certfile, keyfile=keyfile, password=password
+    )
+
+
+class TestSSLDisabled(unittest.TestCase):
+    def test_https_server_raises_runtime_error(self):
+        with import_helper.isolated_modules():
+            sys.modules['ssl'] = None
+            certfile = certdata_file("keycert.pem")
+            with self.assertRaises(RuntimeError):
+                create_https_server(certfile)
+
+
 class TestServerThread(threading.Thread):
-    def __init__(self, test_object, request_handler):
+    def __init__(self, test_object, request_handler, tls=None):
         threading.Thread.__init__(self)
         self.request_handler = request_handler
         self.test_object = test_object
+        self.tls = tls
 
     def run(self):
-        self.server = HTTPServer(('localhost', 0), self.request_handler)
+        if self.tls:
+            certfile, keyfile, password = self.tls
+            self.server = create_https_server(
+                certfile, keyfile, password,
+                request_handler=self.request_handler,
+            )
+        else:
+            self.server = HTTPServer(('localhost', 0), self.request_handler)
         self.test_object.HOST, self.test_object.PORT = self.server.socket.getsockname()
         self.test_object.server_started.set()
         self.test_object = None
@@ -67,11 +107,15 @@ class TestServerThread(threading.Thread):
 
 
 class BaseTestCase(unittest.TestCase):
+
+    # Optional tuple (certfile, keyfile, password) to use for HTTPS servers.
+    tls = None
+
     def setUp(self):
         self._threads = threading_helper.threading_setup()
         os.environ = os_helper.EnvironmentVarGuard()
         self.server_started = threading.Event()
-        self.thread = TestServerThread(self, self.request_handler)
+        self.thread = TestServerThread(self, self.request_handler, self.tls)
         self.thread.start()
         self.server_started.wait()
 
@@ -313,6 +357,74 @@ class BaseHTTPServerTestCase(BaseTestCase):
 
             data = res.read()
             self.assertEqual(b'', data)
+
+
+def certdata_file(*path):
+    return os.path.join(os.path.dirname(__file__), "certdata", *path)
+
+
+@unittest.skipIf(ssl is None, "requires ssl")
+class BaseHTTPSServerTestCase(BaseTestCase):
+    CERTFILE = certdata_file("keycert.pem")
+    ONLYCERT = certdata_file("ssl_cert.pem")
+    ONLYKEY = certdata_file("ssl_key.pem")
+    CERTFILE_PROTECTED = certdata_file("keycert.passwd.pem")
+    ONLYKEY_PROTECTED = certdata_file("ssl_key.passwd.pem")
+    EMPTYCERT = certdata_file("nullcert.pem")
+    BADCERT = certdata_file("badcert.pem")
+    KEY_PASSWORD = "somepass"
+    BADPASSWORD = "badpass"
+
+    tls = (ONLYCERT, ONLYKEY, None)  # values by default
+
+    request_handler = DummyRequestHandler
+
+    def test_get(self):
+        response = self.request('/')
+        self.assertEqual(response.status, HTTPStatus.OK)
+
+    def request(self, uri, method='GET', body=None, headers={}):
+        context = ssl._create_unverified_context()
+        self.connection = http.client.HTTPSConnection(
+            self.HOST, self.PORT, context=context
+        )
+        self.connection.request(method, uri, body, headers)
+        return self.connection.getresponse()
+
+    def test_valid_certdata(self):
+        valid_certdata= [
+            (self.CERTFILE, None, None),
+            (self.CERTFILE, self.CERTFILE, None),
+            (self.CERTFILE_PROTECTED, None, self.KEY_PASSWORD),
+            (self.ONLYCERT, self.ONLYKEY_PROTECTED, self.KEY_PASSWORD),
+        ]
+        for certfile, keyfile, password in valid_certdata:
+            with self.subTest(
+                certfile=certfile, keyfile=keyfile, password=password
+            ):
+                server = create_https_server(certfile, keyfile, password)
+                self.assertIsInstance(server, HTTPSServer)
+                server.server_close()
+
+    def test_invalid_certdata(self):
+        invalid_certdata = [
+            (self.BADCERT, None, None),
+            (self.EMPTYCERT, None, None),
+            (self.ONLYCERT, None, None),
+            (self.ONLYKEY, None, None),
+            (self.ONLYKEY, self.ONLYCERT, None),
+            (self.CERTFILE_PROTECTED, None, self.BADPASSWORD),
+            # TODO: test the next case and add same case to test_ssl (We
+            # specify a cert and a password-protected file, but no password):
+            # (self.CERTFILE_PROTECTED, None, None),
+            # see issue #132102
+        ]
+        for certfile, keyfile, password in invalid_certdata:
+            with self.subTest(
+                certfile=certfile, keyfile=keyfile, password=password
+            ):
+                with self.assertRaises(ssl.SSLError):
+                    create_https_server(certfile, keyfile, password)
 
 
 class RequestHandlerLoggingTestCase(BaseTestCase):
