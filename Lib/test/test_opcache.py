@@ -550,6 +550,58 @@ class TestCallCache(TestBase):
         with self.assertRaises(TypeError):
             instantiate()
 
+    def test_call_specialized_non_method_on_class(self):
+        class C:
+            pass
+        o = C()
+        for callable in (isinstance, len, str, tuple, type):
+            setattr(C, callable.__name__, callable)
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            self.assertIs(o.isinstance("Spam", str), True)
+            self.assertEqual(o.len("Spam"), 4)
+            self.assertEqual(o.str("Spam"), "Spam")
+            self.assertEqual(o.tuple("Spam"), ("S", "p", "a", "m"))
+            self.assertIs(o.type("Spam"), str)
+
+    def test_call_specialized_non_method_on_instance(self):
+        class C:
+            pass
+        o = C()
+        for callable in (isinstance, len, str, tuple, type):
+            setattr(o, callable.__name__, callable)
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            self.assertIs(o.isinstance("Spam", str), True)
+            self.assertEqual(o.len("Spam"), 4)
+            self.assertEqual(o.str("Spam"), "Spam")
+            self.assertEqual(o.tuple("Spam"), ("S", "p", "a", "m"))
+            self.assertIs(o.type("Spam"), str)
+
+    def test_call_specialized_method_on_class(self):
+        class C:
+            pass
+        o = C()
+        for callable in (isinstance, len, str, tuple, type):
+            setattr(C, callable.__name__, types.MethodType(callable, "Spam"))
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            self.assertIs(o.isinstance(str), True)
+            self.assertEqual(o.len(), 4)
+            self.assertEqual(o.str(), "Spam")
+            self.assertEqual(o.tuple(), ("S", "p", "a", "m"))
+            self.assertIs(o.type(), str)
+
+    def test_call_specialized_method_on_instance(self):
+        class C:
+            pass
+        o = C()
+        for callable in (isinstance, len, str, tuple, type):
+            setattr(o, callable.__name__, types.MethodType(callable, "Spam"))
+        for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+            self.assertIs(o.isinstance(str), True)
+            self.assertEqual(o.len(), 4)
+            self.assertEqual(o.str(), "Spam")
+            self.assertEqual(o.tuple(), ("S", "p", "a", "m"))
+            self.assertIs(o.type(), str)
+
 
 def make_deferred_ref_count_obj():
     """Create an object that uses deferred reference counting.
