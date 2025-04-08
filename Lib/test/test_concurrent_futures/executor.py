@@ -27,6 +27,7 @@ def make_dummy_object(_):
 def raiser(exception, msg='std'):
     raise exception(msg)
 
+
 class FalseyBoolException(Exception):
     def __bool__(self):
         return False
