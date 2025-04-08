@@ -11011,19 +11011,21 @@ fill_type_slots_cache_from_slotdefs_cache(PyInterpreterState *interp,
 {
 #define ptrs _Py_INTERP_CACHED_OBJECT(interp, type_slots_ptrs)
 
-    int rc = 0;
-    PyObject *cache = Py_XNewRef(interp->cached_objects.slotdefs_cache);
+    PyObject *cache = _Py_INTERP_CACHED_OBJECT(interp, slotdefs_cache);
     if (cache) {
-        PyObject* bytes=NULL;
-        rc = PyDict_GetItemRef(cache, name, &bytes);
-        if (rc > 0) {
-            assert(bytes);
+
+        PyObject* bytes = PyDict_GetItemWithError(cache, name);
+        if (PyErr_Occurred()) {
+            PyErr_Clear();
+            return -1;
+        }
+
+        if (bytes != NULL) {
             assert(PyBytes_CheckExact(bytes));
 
             uint8_t *data = (uint8_t *)PyBytes_AS_STRING(bytes);
             uint8_t n = data[0];
 
-            assert(n >= 0);
             assert(n < MAX_EQUIV);
 
             pytype_slotdef **pp = ptrs;
@@ -11035,15 +11037,11 @@ fill_type_slots_cache_from_slotdefs_cache(PyInterpreterState *interp,
             }
             *pp = NULL;
 
-            Py_DECREF(bytes);
-        } else if (rc < 0) {
-            PyErr_Clear();
+            return 1;
         }
-
-        Py_DECREF(cache);
     }
 
-    return rc;
+    return 0;
 
 #undef ptrs
 }
@@ -11354,65 +11352,6 @@ fixup_slot_dispatchers(PyTypeObject *type)
         }
     }
 
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!interp->cached_objects.slotdefs_cache) {
-
-        PyObject* cache = PyDict_New();
-        if (cache) {
-            pytype_slotdef *p;
-            Py_ssize_t idx = 0;
-            for (p = slotdefs; p->name_strobj; p++, idx++) {
-                Py_hash_t hash = _PyObject_HashFast(p->name_strobj);
-                if (hash == -1) {
-                    Py_CLEAR(cache);
-                    break;
-                }
-                assert (idx < 255);
-
-                PyObject *bytes;
-                if (_PyDict_GetItemRef_KnownHash_LockHeld((PyDictObject *)cache, p->name_strobj, hash, &bytes) < 0) {
-                    Py_CLEAR(cache);
-                    break;
-                }
-
-                if (!bytes) {
-                    bytes = PyBytes_FromStringAndSize(NULL, sizeof(uint8_t) * (1 + MAX_EQUIV));
-                    if (!bytes) {
-                        Py_CLEAR(cache);
-                        break;
-                    }
-
-                    uint8_t *data = (uint8_t *)PyBytes_AS_STRING(bytes);
-                    data[0] = 0;
-
-                    if (_PyDict_SetItem_KnownHash_LockHeld((PyDictObject *)cache, p->name_strobj, bytes, hash) < 0) {
-                        Py_DECREF(bytes);
-                        Py_CLEAR(cache);
-                        break;
-                    }
-                }
-
-                assert (PyBytes_CheckExact(bytes));
-                uint8_t *data = (uint8_t *)PyBytes_AS_STRING(bytes);
-
-                data[0] += 1;
-                assert (data[0] < MAX_EQUIV);
-
-                data[data[0]] = (uint8_t)idx;
-
-                Py_DECREF(bytes);
-            }
-
-        }
-
-        if (cache) {
-            Py_XSETREF(interp->cached_objects.slotdefs_cache, cache);
-        }
-        else {
-            PyErr_Clear();
-        }
-    }
-
     assert(!PyErr_Occurred());
     for (pytype_slotdef *p = slotdefs; p->name; ) {
         p = update_one_slot(type, p, mro_dict);
@@ -11437,6 +11376,68 @@ update_all_slots(PyTypeObject* type)
         /* update_slot returns int but can't actually fail */
         update_slot(type, p->name_strobj);
     }
+}
+
+int
+_PyType_InitSlotDefsCache(PyInterpreterState *interp)
+{
+    assert (!_Py_INTERP_CACHED_OBJECT(interp, slotdefs_cache));
+
+    PyObject *bytes = NULL;
+    PyObject* cache = PyDict_New();
+    if (!cache) {
+        goto error;
+    }
+    pytype_slotdef *p;
+    Py_ssize_t idx = 0;
+    for (p = slotdefs; p->name_strobj; p++, idx++) {
+        Py_hash_t hash = _PyObject_HashFast(p->name_strobj);
+        if (hash == -1) {
+            goto error;
+        }
+        assert (idx < 255);
+
+        if (_PyDict_GetItemRef_KnownHash_LockHeld((PyDictObject *)cache,
+                                                  p->name_strobj, hash,
+                                                  &bytes) < 0) {
+            goto error;
+        }
+
+        if (!bytes) {
+            Py_ssize_t size = sizeof(uint8_t) * (1 + MAX_EQUIV);
+            bytes = PyBytes_FromStringAndSize(NULL, size);
+            if (!bytes) {
+                goto error;
+            }
+
+            uint8_t *data = (uint8_t *)PyBytes_AS_STRING(bytes);
+            data[0] = 0;
+
+            if (_PyDict_SetItem_KnownHash_LockHeld((PyDictObject *)cache,
+                                                   p->name_strobj,
+                                                   bytes, hash) < 0) {
+                goto error;
+            }
+        }
+
+        assert (PyBytes_CheckExact(bytes));
+        uint8_t *data = (uint8_t *)PyBytes_AS_STRING(bytes);
+
+        data[0] += 1;
+        assert (data[0] < MAX_EQUIV);
+
+        data[data[0]] = (uint8_t)idx;
+
+        Py_CLEAR(bytes);
+    }
+
+    Py_XSETREF(_Py_INTERP_CACHED_OBJECT(interp, slotdefs_cache), cache);
+    return 0;
+
+error:
+    Py_XDECREF(bytes);
+    Py_XDECREF(cache);
+    return -1;
 }
 
 
