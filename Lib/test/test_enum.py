@@ -864,12 +864,18 @@ class _FlagTests:
             self.assertIs(~(A|B), OpenAB(252))
             self.assertIs(~AB_MASK, OpenAB(0))
             self.assertIs(~OpenAB(0), AB_MASK)
+            self.assertIs(OpenAB(~4), OpenAB(251))
         else:
             self.assertIs(~A, B)
             self.assertIs(~B, A)
+            self.assertIs(OpenAB(~1), B)
+            self.assertIs(OpenAB(~2), A)
             self.assertIs(~(A|B), OpenAB(0))
             self.assertIs(~AB_MASK, OpenAB(0))
             self.assertIs(~OpenAB(0), (A|B))
+            self.assertIs(OpenAB(~3), OpenAB(0))
+            self.assertIs(OpenAB(~4), OpenAB(3))
+            self.assertIs(OpenAB(~33), B)
         #
         class OpenXYZ(self.enum_type):
             X = 4
@@ -893,6 +899,9 @@ class _FlagTests:
             self.assertIs(~X, Y|Z)
             self.assertIs(~Y, X|Z)
             self.assertIs(~Z, X|Y)
+            self.assertIs(OpenXYZ(~4), Y|Z)
+            self.assertIs(OpenXYZ(~2), X|Z)
+            self.assertIs(OpenXYZ(~1), X|Y)
             self.assertIs(~(X|Y), Z)
             self.assertIs(~(X|Z), Y)
             self.assertIs(~(Y|Z), X)
@@ -3222,6 +3231,8 @@ class OldTestFlag(unittest.TestCase):
             C = 4 | B
         #
         self.assertTrue(SkipFlag.C in (SkipFlag.A|SkipFlag.C))
+        self.assertTrue(SkipFlag.B in SkipFlag.C)
+        self.assertIs(SkipFlag(~1), SkipFlag.B)
         self.assertRaisesRegex(ValueError, 'SkipFlag.. invalid value 42', SkipFlag, 42)
         #
         class SkipIntFlag(enum.IntFlag):
@@ -3230,6 +3241,8 @@ class OldTestFlag(unittest.TestCase):
             C = 4 | B
         #
         self.assertTrue(SkipIntFlag.C in (SkipIntFlag.A|SkipIntFlag.C))
+        self.assertTrue(SkipIntFlag.B in SkipIntFlag.C)
+        self.assertIs(SkipIntFlag(~1), SkipIntFlag.B|SkipIntFlag.C)
         self.assertEqual(SkipIntFlag(42).value, 42)
         #
         class MethodHint(Flag):

@@ -1398,7 +1398,10 @@ class Flag(Enum, boundary=STRICT):
                         )
         if value < 0:
             neg_value = value
-            value = all_bits + 1 + value
+            if cls._boundary_ in (EJECT, KEEP):
+                value = all_bits + 1 + value
+            else:
+                value = singles_mask & value
         # get members and unknown
         unknown = value & ~flag_mask
         aliases = value & ~singles_mask
