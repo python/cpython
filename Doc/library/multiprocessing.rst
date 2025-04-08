@@ -1425,7 +1425,7 @@ object -- see :ref:`multiprocessing-managers`.
 
       Return a boolean indicating whether this object is locked right now.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
 
 .. class:: RLock()
@@ -1492,7 +1492,7 @@ object -- see :ref:`multiprocessing-managers`.
 
       Return a boolean indicating whether this object is locked right now.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
 
 .. class:: Semaphore([value])
