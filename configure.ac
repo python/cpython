@@ -7787,6 +7787,7 @@ PY_STDLIB_MOD_SIMPLE([_queue])
 PY_STDLIB_MOD_SIMPLE([_random])
 PY_STDLIB_MOD_SIMPLE([select])
 PY_STDLIB_MOD_SIMPLE([_struct])
+PY_STDLIB_MOD_SIMPLE([_types])
 PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_interpreters])
 PY_STDLIB_MOD_SIMPLE([_interpchannels])
@@ -7919,6 +7920,13 @@ if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || tes
 fi
 AC_SUBST([LIBHACL_SIMD256_FLAGS])
 AC_SUBST([LIBHACL_SIMD256_OBJS])
+
+dnl HMAC builtin library does not need OpenSSL for now. In the future
+dnl we might want to rely on OpenSSL EVP/NID interface or implement
+dnl our own for algorithm resolution.
+PY_STDLIB_MOD([_hmac], [], [],
+  [$LIBHACL_CFLAGS],
+  [$LIBHACL_CFLAGS Modules/_hacl/libHacl_HMAC.a])
 
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],

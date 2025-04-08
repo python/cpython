@@ -1854,7 +1854,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    local and remote interpreters must be the same exact version.
 
    .. availability:: Unix, Windows.
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: _enablelegacywindowsfsencoding()
