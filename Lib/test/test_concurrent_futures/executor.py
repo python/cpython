@@ -23,6 +23,7 @@ class MyObject(object):
 def make_dummy_object(_):
     return MyObject()
 
+
 # Used in test_swallows_falsey_exceptions
 def raiser(exception, msg='std'):
     raise exception(msg)
@@ -223,12 +224,12 @@ class ExecutorTest:
     def test_swallows_falsey_exceptions(self):
         # see gh-132063: Prevent exceptions that evaluate as falsey
         # from being ignored.
-        # Falsey exceptions return 0 when `__len__` method is called,
-        # False when `__bool__` method is called.
+        # Recall: `x` is falsey if `len(x)` returns 0 or `bool(x)` returns False.
+
+        msg = 'boolbool'
+        with self.assertRaisesRegex(FalseyBoolException, msg):
+            self.executor.submit(raiser, FalseyBoolException, msg).result()
 
         msg = 'lenlen'
         with self.assertRaisesRegex(FalseyLenException, msg):
             self.executor.submit(raiser, FalseyLenException, msg).result()
-        msg = 'boolbool'
-        with self.assertRaisesRegex(FalseyBoolException, msg):
-            self.executor.submit(raiser, FalseyBoolException, msg).result()
