@@ -1,0 +1,2 @@
+Fix a crash when using an unbound method :term:`descriptor` object in a
+function where a bound method descriptor was used.
