@@ -205,37 +205,36 @@ _get_tcl_lib_path(void)
    waiting for events.
 
    To solve this problem, a separate lock for Tcl is introduced.
-   Holding it is incompatible with holding Python's interpreter lock.
-   The following four macros manipulate both locks together.
+   We normally treat holding it as incompatible with holding Python's
+   interpreter lock. The following macros manipulate both locks together.
 
-   ENTER_TCL and LEAVE_TCL are brackets, just like
-   Py_BEGIN_ALLOW_THREADS and Py_END_ALLOW_THREADS.  They should be
-   used whenever a call into Tcl is made that could call an event
-   handler, or otherwise affect the state of a Tcl interpreter.  These
-   assume that the surrounding code has the Python interpreter lock;
-   inside the brackets, the Python interpreter lock has been released
-   and the lock for Tcl has been acquired.
+   ENTER_TCL and LEAVE_TCL are brackets, just like Py_BEGIN_ALLOW_THREADS and
+   Py_END_ALLOW_THREADS.  They should be used whenever a call into Tcl is made
+   that could call an event handler, or otherwise affect the state of a Tcl
+   interpreter.  These assume that the surrounding code has the Python
+   interpreter lock: ENTER_TCL releases the Python lock, then acquires the Tcl
+   lock, and LEAVE_TCL does the reverse.
 
-   Sometimes, it is necessary to have both the Python lock and the Tcl
-   lock.  (For example, when transferring data from the Tcl
-   interpreter result to a Python string object.)  This can be done by
-   using different macros to close the ENTER_TCL block: ENTER_OVERLAP
-   reacquires the Python lock (and restores the thread state) but
-   doesn't release the Tcl lock; LEAVE_OVERLAP_TCL releases the Tcl
-   lock.
+   Sometimes, it is necessary to have both the Python lock and the Tcl lock.
+   (For example, when transferring data between the Tcl interpreter and/or
+   objects and Python objects.)  To avoid deadlocks, when acquiring, we always
+   acquire the Tcl lock first, then the Python lock.  The additional macros for
+   finer lock control are: ENTER_OVERLAP acquires the Python lock (and restores
+   the thread state) when already holding the Tcl lock; LEAVE_OVERLAP releases
+   the Python lock and keeps the Tcl lock; and LEAVE_OVERLAP_TCL releases the
+   Tcl lock and keeps the Python lock.
 
    By contrast, ENTER_PYTHON and LEAVE_PYTHON are used in Tcl event
    handlers when the handler needs to use Python.  Such event handlers
    are entered while the lock for Tcl is held; the event handler
-   presumably needs to use Python.  ENTER_PYTHON releases the lock for
-   Tcl and acquires the Python interpreter lock, restoring the
-   appropriate thread state, and LEAVE_PYTHON releases the Python
-   interpreter lock and re-acquires the lock for Tcl.  It is okay for
-   ENTER_TCL/LEAVE_TCL pairs to be contained inside the code between
-   ENTER_PYTHON and LEAVE_PYTHON.
-
-   These locks expand to several statements and brackets; they should
-   not be used in branches of if statements and the like.
+   presumably needs to use Python.  ENTER_PYTHON acquires the Python
+   interpreter lock, restoring the appropriate thread state, and
+   LEAVE_PYTHON releases the Python interpreter lock.  Tcl lock is not
+   released because that would lead to a race condition: another,
+   unrelated call that uses these macros may start (but not finish) in
+   the meantime, and a wrong Tcl stack frame will be on top when the original
+   handler regains the lock.  Since a handler's Python payload may need to make
+   Tkinter calls itself, the Tcl lock is made reentrant.
 
    If Tcl is threaded, this approach won't work anymore. The Tcl
    interpreter is only valid in the thread that created it, and all Tk
@@ -256,6 +255,10 @@ _get_tcl_lib_path(void)
 */
 
 static PyThread_type_lock tcl_lock = 0;
+/* Only the thread holding the lock can modify these */
+static unsigned long tcl_lock_thread_ident = 0;
+static unsigned int tcl_lock_reentry_count = 0;
+
 
 #ifdef TCL_THREADS
 static Tcl_ThreadDataKey state_key;
@@ -266,32 +269,68 @@ typedef PyThreadState *ThreadSpecificData;
 static PyThreadState *tcl_tstate = NULL;
 #endif
 
+
+#define ACQUIRE_TCL_LOCK \
+if (tcl_lock) { \
+    if (tcl_lock_thread_ident == PyThread_get_thread_ident()) { \
+        tcl_lock_reentry_count++; \
+        if(!tcl_lock_reentry_count) \
+            Py_FatalError("Tcl lock reentry count overflow"); \
+    } else { \
+        PyThread_acquire_lock(tcl_lock, 1); \
+        tcl_lock_thread_ident = PyThread_get_thread_ident(); \
+    } \
+}
+
+#define RELEASE_TCL_LOCK \
+if (tcl_lock) { \
+    if (tcl_lock_reentry_count) { \
+        tcl_lock_reentry_count--; \
+    } else { \
+        tcl_lock_thread_ident = 0; \
+        PyThread_release_lock(tcl_lock); \
+    } \
+}
+
+
 #define ENTER_TCL \
     { PyThreadState *tstate = PyThreadState_Get(); \
+        ENTER_TCL_CUSTOM_TSTATE(tstate)
+
+#define ENTER_TCL_CUSTOM_TSTATE(tstate) \
       Py_BEGIN_ALLOW_THREADS \
       if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
+    ACQUIRE_TCL_LOCK \
       tcl_tstate = tstate;
 
 #define LEAVE_TCL \
     tcl_tstate = NULL; \
-    if(tcl_lock)PyThread_release_lock(tcl_lock); \
+    RELEASE_TCL_LOCK \
     Py_END_ALLOW_THREADS}
+
+#define LEAVE_TCL_WITH_BUSYWAIT(result) \
+    tcl_tstate = NULL; \
+    RELEASE_TCL_LOCK \
+    if (result == 0) \
+        Sleep(Tkinter_busywaitinterval); \
+    Py_END_ALLOW_THREADS
+
 
 #define ENTER_OVERLAP \
     Py_END_ALLOW_THREADS
 
+#define LEAVE_OVERLAP \
+    Py_BEGIN_ALLOW_THREADS
+
 #define LEAVE_OVERLAP_TCL \
-    tcl_tstate = NULL; if(tcl_lock)PyThread_release_lock(tcl_lock); }
+    tcl_tstate = NULL; RELEASE_TCL_LOCK }
 
 #define ENTER_PYTHON \
-    { PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL; \
-      if(tcl_lock) \
-        PyThread_release_lock(tcl_lock); \
+    { PyThreadState *tstate = tcl_tstate; tcl_tstate = NULL;
       PyEval_RestoreThread((tstate)); }
 
 #define LEAVE_PYTHON \
-    { PyThreadState *tstate = PyEval_SaveThread(); \
-      if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1); \
+    { PyThreadState *tstate = PyEval_SaveThread();
       tcl_tstate = tstate; }
 
 #ifndef FREECAST
@@ -426,29 +465,29 @@ unicodeFromTclStringAndSize(const char *s, Py_ssize_t size)
     PyErr_Clear();
     /* Tcl encodes null character as \xc0\x80.
        https://en.wikipedia.org/wiki/UTF-8#Modified_UTF-8 */
-    if (memchr(s, '\xc0', size)) {
+        if (memchr(s, '\xc0', size)) {
         char *q;
-        const char *e = s + size;
-        q = buf = (char *)PyMem_Malloc(size);
-        if (buf == NULL) {
-            PyErr_NoMemory();
-            return NULL;
-        }
-        while (s != e) {
-            if (s + 1 != e && s[0] == '\xc0' && s[1] == '\x80') {
-                *q++ = '\0';
-                s += 2;
+            const char *e = s + size;
+            q = buf = (char *)PyMem_Malloc(size);
+            if (buf == NULL) {
+                PyErr_NoMemory();
+                return NULL;
             }
-            else
-                *q++ = *s++;
-        }
-        s = buf;
-        size = q - s;
+            while (s != e) {
+                if (s + 1 != e && s[0] == '\xc0' && s[1] == '\x80') {
+                    *q++ = '\0';
+                    s += 2;
+                }
+                else
+                    *q++ = *s++;
+            }
+            s = buf;
+            size = q - s;
     }
     r = PyUnicode_DecodeUTF8(s, size, "surrogateescape");
     if (buf != NULL) {
-        PyMem_Free(buf);
-    }
+            PyMem_Free(buf);
+        }
     if (r == NULL || PyUnicode_KIND(r) == PyUnicode_1BYTE_KIND) {
         return r;
     }
@@ -1430,7 +1469,7 @@ Tkapp_CallProc(Tcl_Event *evPtr, int flags)
         objv = NULL;
     }
     else {
-        objv = Tkapp_CallArgs(e->args, objStore, &objc);
+    objv = Tkapp_CallArgs(e->args, objStore, &objc);
     }
     if (!objv) {
         *(e->exc) = PyErr_GetRaisedException();
@@ -1518,7 +1557,7 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
             }
             else {
                 PyErr_SetObject(Tkinter_TclError, exc);
-            }
+        }
         }
         Tcl_ConditionFinalize(&cond);
     }
@@ -1527,11 +1566,15 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
         TRACE(self, ("(O)", args));
 
         int i;
-        objv = Tkapp_CallArgs(args, objStore, &objc);
-        if (!objv)
-            return NULL;
 
         ENTER_TCL
+        ENTER_OVERLAP
+
+        objv = Tkapp_CallArgs(args, objStore, &objc);
+
+        if (objv) {
+
+            LEAVE_OVERLAP
 
         i = Tcl_EvalObjv(self->interp, objc, objv, flags);
 
@@ -1542,9 +1585,14 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
         else
             res = Tkapp_ObjectResult(self);
 
-        LEAVE_OVERLAP_TCL
+            LEAVE_OVERLAP
 
         Tkapp_CallDeallocArgs(objv, objStore, objc);
+
+        ENTER_OVERLAP
+
+    }
+        LEAVE_OVERLAP_TCL
     }
     return res;
 }
@@ -1818,10 +1866,11 @@ SetVar(TkappObject *self, PyObject *args, int flags)
         if (!PyArg_ParseTuple(args, "O&O:setvar",
                               varname_converter, &name1, &newValue))
             return NULL;
-        /* XXX Acquire tcl lock??? */
+        ENTER_TCL
+        ENTER_OVERLAP
         newval = AsObj(newValue);
-        if (newval == NULL)
-            return NULL;
+        if (newval) {
+            LEAVE_OVERLAP
 
         if (flags & TCL_GLOBAL_ONLY) {
             TRACE(self, ("((ssssO))", "uplevel", "#0", "set",
@@ -1840,6 +1889,7 @@ SetVar(TkappObject *self, PyObject *args, int flags)
         else {
             res = Py_NewRef(Py_None);
         }
+        }
         LEAVE_OVERLAP_TCL
         break;
     case 3:
@@ -1848,8 +1898,8 @@ SetVar(TkappObject *self, PyObject *args, int flags)
             return NULL;
         CHECK_STRING_LENGTH(name1);
         CHECK_STRING_LENGTH(name2);
-
-        /* XXX must hold tcl lock already??? */
+        ENTER_TCL
+        ENTER_OVERLAP
         newval = AsObj(newValue);
         if (self->trace) {
             if (flags & TCL_GLOBAL_ONLY) {
@@ -1864,13 +1914,16 @@ SetVar(TkappObject *self, PyObject *args, int flags)
             }
         }
 
-        ENTER_TCL
-        ok = Tcl_SetVar2Ex(Tkapp_Interp(self), name1, name2, newval, flags);
+        if (newval) {
+            LEAVE_OVERLAP
+        ok = Tcl_SetVar2Ex(Tkapp_Interp(self), name1, name2,
+                               newval, flags);
         ENTER_OVERLAP
         if (!ok)
             Tkinter_Error(self);
         else {
             res = Py_NewRef(Py_None);
+        }
         }
         LEAVE_OVERLAP_TCL
         break;
@@ -2336,7 +2389,7 @@ typedef struct {
 } PythonCmd_ClientData;
 
 static int
-PythonCmd_Error(Tcl_Interp *interp)
+PythonCmd_Error(void)
 {
     errorInCmd = 1;
     excInCmd = PyErr_GetRaisedException();
@@ -2361,14 +2414,14 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
 
     /* Create argument tuple (objv1, ..., objvN) */
     if (!(args = PyTuple_New(objc - 1)))
-        return PythonCmd_Error(interp);
+        return PythonCmd_Error();
 
     for (i = 0; i < (objc - 1); i++) {
         PyObject *s = objargs ? FromObj(data->self, objv[i + 1])
                               : unicodeFromTclObj(data->self, objv[i + 1]);
         if (!s) {
             Py_DECREF(args);
-            return PythonCmd_Error(interp);
+            return PythonCmd_Error();
         }
         PyTuple_SET_ITEM(args, i, s);
     }
@@ -2377,14 +2430,14 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp,
     Py_DECREF(args);
 
     if (res == NULL)
-        return PythonCmd_Error(interp);
+        return PythonCmd_Error();
 
     obj_res = AsObj(res);
     if (obj_res == NULL) {
         Py_DECREF(res);
-        return PythonCmd_Error(interp);
+        return PythonCmd_Error();
     }
-    Tcl_SetObjResult(interp, obj_res);
+        Tcl_SetObjResult(interp, obj_res);
     Py_DECREF(res);
 
     LEAVE_PYTHON
@@ -2876,15 +2929,9 @@ _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
             LEAVE_TCL
         }
         else {
-            Py_BEGIN_ALLOW_THREADS
-            if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1);
-            tcl_tstate = tstate;
+            ENTER_TCL_CUSTOM_TSTATE(tstate)
             result = Tcl_DoOneEvent(TCL_DONT_WAIT);
-            tcl_tstate = NULL;
-            if(tcl_lock)PyThread_release_lock(tcl_lock);
-            if (result == 0)
-                Sleep(Tkinter_busywaitinterval);
-            Py_END_ALLOW_THREADS
+            LEAVE_TCL_WITH_BUSYWAIT(result)
         }
 
         if (PyErr_CheckSignals() != 0) {
@@ -3372,17 +3419,11 @@ EventHook(void)
             break;
         }
 #endif
-        Py_BEGIN_ALLOW_THREADS
-        if(tcl_lock)PyThread_acquire_lock(tcl_lock, 1);
-        tcl_tstate = event_tstate;
+        ENTER_TCL_CUSTOM_TSTATE(event_tstate)
 
         result = Tcl_DoOneEvent(TCL_DONT_WAIT);
 
-        tcl_tstate = NULL;
-        if(tcl_lock)PyThread_release_lock(tcl_lock);
-        if (result == 0)
-            Sleep(Tkinter_busywaitinterval);
-        Py_END_ALLOW_THREADS
+        LEAVE_TCL_WITH_BUSYWAIT(result)
 
         if (result < 0)
             break;

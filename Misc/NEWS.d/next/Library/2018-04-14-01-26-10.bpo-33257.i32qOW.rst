@@ -1,0 +1,1 @@
+Fixed race conditions in Tkinter with nonthreaded Tcl
