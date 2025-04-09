@@ -95,6 +95,7 @@ if "%~1"=="--experimental-jit" (set UseJIT=true) & (set UseTIER2=1) & shift & go
 if "%~1"=="--experimental-jit-off" (set UseJIT=true) & (set UseTIER2=3) & shift & goto CheckOpts
 if "%~1"=="--experimental-jit-interpreter" (set UseTIER2=4) & shift & goto CheckOpts
 if "%~1"=="--experimental-jit-interpreter-off" (set UseTIER2=6) & shift & goto CheckOpts
+if "%~1"=="--without-remote-debug" (set DisableRemoteDebug=true) & shift & goto CheckOpts
 if "%~1"=="--pystats" (set PyStats=1) & shift & goto CheckOpts
 if "%~1"=="--tail-call-interp" (set UseTailCallInterp=true) & shift & goto CheckOpts
 rem These use the actual property names used by MSBuild.  We could just let
@@ -192,6 +193,7 @@ echo on
  /p:UseTIER2=%UseTIER2%^
  /p:PyStats=%PyStats%^
  /p:UseTailCallInterp=%UseTailCallInterp%^
+ /p:DisableRemoteDebug=%DisableRemoteDebug%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
 @echo off

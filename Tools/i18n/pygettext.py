@@ -188,14 +188,12 @@ def make_escapes(pass_nonascii):
     global escapes, escape
     if pass_nonascii:
         # Allow non-ascii characters to pass through so that e.g. 'msgid
-        # "Höhe"' would result not result in 'msgid "H\366he"'.  Otherwise we
+        # "Höhe"' would not result in 'msgid "H\366he"'.  Otherwise we
         # escape any character outside the 32..126 range.
-        mod = 128
         escape = escape_ascii
     else:
-        mod = 256
         escape = escape_nonascii
-    escapes = [r"\%03o" % i for i in range(mod)]
+    escapes = [r"\%03o" % i for i in range(256)]
     for i in range(32, 127):
         escapes[i] = chr(i)
     escapes[ord('\\')] = r'\\'
@@ -206,7 +204,9 @@ def make_escapes(pass_nonascii):
 
 
 def escape_ascii(s, encoding):
-    return ''.join(escapes[ord(c)] if ord(c) < 128 else c for c in s)
+    return ''.join(escapes[ord(c)] if ord(c) < 128 else c
+                   if c.isprintable() else escape_nonascii(c, encoding)
+                   for c in s)
 
 
 def escape_nonascii(s, encoding):
