@@ -2,8 +2,6 @@
 /* Thread and interpreter state structures and their interfaces */
 
 #include "Python.h"
-#include "pycore_genobject.h"     // included first to break dependency cycle
-
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_audit.h"         // _Py_AuditHookEntry
 #include "pycore_ceval.h"         // _PyEval_AcquireLock()

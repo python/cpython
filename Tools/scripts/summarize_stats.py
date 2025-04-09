@@ -298,12 +298,20 @@ class OpcodeStats:
             return "kind " + str(kind)
 
         family_stats = self._get_stats_for_opcode(opcode)
-        failure_kinds = [0] * 40
+
+        def key_to_index(key):
+            return int(key[:-1].split("[")[1])
+
+        max_index = 0
+        for key in family_stats:
+            if key.startswith("specialization.failure_kind"):
+                max_index = max(max_index, key_to_index(key))
+
+        failure_kinds = [0] * (max_index + 1)
         for key in family_stats:
             if not key.startswith("specialization.failure_kind"):
                 continue
-            index = int(key[:-1].split("[")[1])
-            failure_kinds[index] = family_stats[key]
+            failure_kinds[key_to_index(key)] = family_stats[key]
         return {
             kind_to_text(index, opcode): value
             for (index, value) in enumerate(failure_kinds)

@@ -5,8 +5,9 @@
 #include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_lock.h"
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
@@ -383,8 +384,9 @@ exit:
 }
 
 static int
-force_done(ThreadHandle *handle)
+force_done(void *arg)
 {
+    ThreadHandle *handle = (ThreadHandle *)arg;
     assert(get_thread_handle_state(handle) == THREAD_HANDLE_STARTING);
     _PyEvent_Notify(&handle->thread_is_exiting);
     set_thread_handle_state(handle, THREAD_HANDLE_DONE);
@@ -457,7 +459,7 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
     return 0;
 
 start_failed:
-    _PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)force_done, self);
+    _PyOnceFlag_CallOnce(&self->once, force_done, self);
     return -1;
 }
 
@@ -649,12 +651,12 @@ PyThreadHandleObject_join(PyObject *op, PyObject *args)
     PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
 
     PyObject *timeout_obj = NULL;
-    if (!PyArg_ParseTuple(args, "|O:join", &timeout_obj)) {
+    if (!PyArg_ParseTuple(args, "|O?:join", &timeout_obj)) {
         return NULL;
     }
 
     PyTime_t timeout_ns = -1;
-    if (timeout_obj != NULL && timeout_obj != Py_None) {
+    if (timeout_obj != NULL) {
         if (_PyTime_FromSecondsObject(&timeout_ns, timeout_obj,
                                       _PyTime_ROUND_TIMEOUT) < 0) {
             return NULL;
@@ -1085,6 +1087,19 @@ PyDoc_STRVAR(rlock_exit_doc,
 Release the lock.");
 
 static PyObject *
+rlock_locked(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    rlockobject *self = rlockobject_CAST(op);
+    int is_locked = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock);
+    return PyBool_FromLong(is_locked);
+}
+
+PyDoc_STRVAR(rlock_locked_doc,
+"locked()\n\
+\n\
+Return a boolean indicating whether this object is locked right now.");
+
+static PyObject *
 rlock_acquire_restore(PyObject *op, PyObject *args)
 {
     rlockobject *self = rlockobject_CAST(op);
@@ -1202,6 +1217,8 @@ static PyMethodDef rlock_methods[] = {
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"release",      rlock_release,
      METH_NOARGS, rlock_release_doc},
+    {"locked",       rlock_locked,
+     METH_NOARGS, rlock_locked_doc},
     {"_is_owned",     rlock_is_owned,
      METH_NOARGS, rlock_is_owned_doc},
     {"_acquire_restore", rlock_acquire_restore,
@@ -1902,24 +1919,16 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *fargs,
     PyObject *func = NULL;
     int daemon = 1;
     thread_module_state *state = get_thread_state(module);
-    PyObject *hobj = NULL;
+    PyObject *hobj = Py_None;
     if (!PyArg_ParseTupleAndKeywords(fargs, fkwargs,
-                                     "O|Op:start_joinable_thread", keywords,
-                                     &func, &hobj, &daemon)) {
+                                     "O|O!?p:start_joinable_thread", keywords,
+                                     &func, state->thread_handle_type, &hobj, &daemon)) {
         return NULL;
     }
 
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
                         "thread function must be callable");
-        return NULL;
-    }
-
-    if (hobj == NULL) {
-        hobj = Py_None;
-    }
-    else if (hobj != Py_None && !Py_IS_TYPE(hobj, state->thread_handle_type)) {
-        PyErr_SetString(PyExc_TypeError, "'handle' must be a _ThreadHandle");
         return NULL;
     }
 
