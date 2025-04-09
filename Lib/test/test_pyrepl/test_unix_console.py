@@ -257,7 +257,7 @@ class TestConsole(TestCase):
         )
 
         console.height = 2
-        console.getheightwidth = MagicMock(lambda _: (2, 80))
+        console.getheightwidth = MagicMock(return_value=(2, 80))
 
         def same_reader(_):
             return reader
@@ -293,7 +293,7 @@ class TestConsole(TestCase):
         reader, console = handle_events_unix_console_height_3(events)
 
         console.height = 1
-        console.getheightwidth = MagicMock(lambda _: (1, 80))
+        console.getheightwidth = MagicMock(return_value=(1, 80))
 
         def same_reader(_):
             return reader

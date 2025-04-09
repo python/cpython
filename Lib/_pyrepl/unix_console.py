@@ -226,7 +226,7 @@ class UnixConsole(Console):
         """
         self.encoding = encoding
 
-    def refresh(self, screen, c_xy, repaint: bool = False):
+    def refresh(self, screen, c_xy):
         """
         Refresh the console screen.
 
@@ -293,14 +293,7 @@ class UnixConsole(Console):
             oldline,
             newline,
         ) in zip(range(offset, offset + height), oldscr, newscr):
-            if repaint:
-                # repaint the whole line
-                self.__hide_cursor()
-                self.__move(0, y)
-                self.__write_code(self._el)
-                self.__write(newline)
-                self.posxy = wlen(newline), y
-            elif oldline != newline:
+            if oldline != newline:
                 self.__write_changed_line(y, oldline, newline, px)
 
         y = len(newscr)
@@ -334,7 +327,7 @@ class UnixConsole(Console):
 
     def sync_screen(self):
         """
-        Synchronize self.posxy, self.width and self.height.
+        Synchronize self.posxy, self.screen, self.width and self.height.
         Assuming that the content of the screen doesn't change, only the width changes.
         """
         if not self.screen:
@@ -342,32 +335,50 @@ class UnixConsole(Console):
             return
 
         px, py = self.posxy
-
-        groups = []
-        new_line = True
-        for line in self.screen[:py]:
-            l = wlen(line)
-            if new_line:
-                groups.append(l)
-                new_line = False
-            else:
-                groups[-1] += l
-            if l != self.width:
-                new_line = True
-
-        if new_line:
-            groups.append(px)
-        else:
-            groups[-1] += px
-
+        old_height, old_width = self.height, self.width
         new_height, new_width = self.getheightwidth()
 
-        ny = 0
-        for group in groups:
-            ny += group // new_width
-        nx = groups[-1] % new_width
+        groups = []
+        x, y = 0, 0
+        new_line = True
+        for i, line in enumerate(self.screen):
+            l = wlen(line)
+            if i == py:
+                if new_line:
+                    y = sum(wlen(g) // new_width for g in groups) + len(groups) - 1
+                    x = px
+                else:
+                    y = sum(wlen(g) // new_width for g in groups[:-1]) + len(groups) - 1
+                    x = px + wlen(groups[-1])
+                if x >= new_width:
+                    y += x // new_width
+                    x %= new_width
 
-        self.posxy = nx, ny
+            if new_line:
+                groups.append(line)
+                new_line = False
+            else:
+                groups[-1] += line
+            if l != old_width:
+                new_line = True
+
+        new_screen = []
+        for group in groups:
+            l = 0
+            line = ""
+            for c in group:
+                cw = wlen(c)
+                if l + cw > new_width:
+                    new_screen.append(line)
+                    line = c
+                    l = cw
+                else:
+                    line += c
+                    l += cw
+            if line:
+                new_screen.append(line)
+
+        self.posxy = x, y
         self.height, self.width = new_height, new_width
 
     def prepare(self):
