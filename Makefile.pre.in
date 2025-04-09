@@ -1938,7 +1938,7 @@ regen-pegen:
 
 .PHONY: regen-ast
 regen-ast:
-	# Regenerate 3 files using using Parser/asdl_c.py:
+	# Regenerate 3 files using Parser/asdl_c.py:
 	# - Include/internal/pycore_ast.h
 	# - Include/internal/pycore_ast_state.h
 	# - Python/Python-ast.c
