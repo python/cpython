@@ -10,10 +10,10 @@
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup>
-    <_DLLSuffix>-1_1</_DLLSuffix>
+    <_DLLSuffix>-3</_DLLSuffix>
     <_DLLSuffix Condition="$(Platform) == 'ARM'">$(_DLLSuffix)-arm</_DLLSuffix>
     <_DLLSuffix Condition="$(Platform) == 'ARM64'">$(_DLLSuffix)-arm64</_DLLSuffix>
-    <OpenSSLDLLSuffix>$(_DLLSuffix)</OpenSSLDLLSuffix>
+    <OpenSSLDLLSuffix Condition="$(OpenSSLDLLSuffix) == ''">$(_DLLSuffix)</OpenSSLDLLSuffix>
   </PropertyGroup>
   <ItemGroup>
     <_SSLDLL Include="$(opensslOutDir)\libcrypto$(_DLLSuffix).dll" />

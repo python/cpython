@@ -129,6 +129,17 @@ class TestPrint(unittest.TestCase):
                 raise RuntimeError
         self.assertRaises(RuntimeError, print, 1, file=noflush(), flush=True)
 
+    def test_gh130163(self):
+        class X:
+            def __str__(self):
+                sys.stdout = StringIO()
+                support.gc_collect()
+                return 'foo'
+
+        with support.swap_attr(sys, 'stdout', None):
+            sys.stdout = StringIO()  # the only reference
+            print(X())  # should not crash
+
 
 class TestPy2MigrationHint(unittest.TestCase):
     """Test that correct hint is produced analogous to Python3 syntax,
@@ -187,38 +198,6 @@ class TestPy2MigrationHint(unittest.TestCase):
 
         self.assertIn("Missing parentheses in call to 'print'. Did you mean print(...)",
                 str(context.exception))
-
-    def test_stream_redirection_hint_for_py2_migration(self):
-        # Test correct hint produced for Py2 redirection syntax
-        with self.assertRaises(TypeError) as context:
-            print >> sys.stderr, "message"
-        self.assertIn('Did you mean "print(<message>, '
-                'file=<output_stream>)"?', str(context.exception))
-
-        # Test correct hint is produced in the case where RHS implements
-        # __rrshift__ but returns NotImplemented
-        with self.assertRaises(TypeError) as context:
-            print >> 42
-        self.assertIn('Did you mean "print(<message>, '
-                'file=<output_stream>)"?', str(context.exception))
-
-        # Test stream redirection hint is specific to print
-        with self.assertRaises(TypeError) as context:
-            max >> sys.stderr
-        self.assertNotIn('Did you mean ', str(context.exception))
-
-        # Test stream redirection hint is specific to rshift
-        with self.assertRaises(TypeError) as context:
-            print << sys.stderr
-        self.assertNotIn('Did you mean', str(context.exception))
-
-        # Ensure right operand implementing rrshift still works
-        class OverrideRRShift:
-            def __rrshift__(self, lhs):
-                return 42 # Force result independent of LHS
-
-        self.assertEqual(print >> OverrideRRShift(), 42)
-
 
 
 if __name__ == "__main__":

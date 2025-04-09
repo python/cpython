@@ -1,12 +1,18 @@
 #include "Python.h"
-#include "pycore_initconfig.h"
-#include "pycore_interp.h"        // PyInterpreterState.warnings
+#include "pycore_frame.h"         // PyFrameObject
+#include "pycore_genobject.h"     // PyAsyncGenObject
+#include "pycore_import.h"        // _PyImport_GetModules()
+#include "pycore_interpframe.h"   // _PyFrame_GetCode()
 #include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_pyerrors.h"
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "frameobject.h"          // PyFrame_GetBack()
-#include "pycore_frame.h"
+#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
+#include "pycore_traceback.h"     // _Py_DisplaySourceLine()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
+
+#include <stdbool.h>
 #include "clinic/_warnings.c.h"
+
 
 #define MODULE_NAME "_warnings"
 
@@ -186,8 +192,8 @@ check_matched(PyInterpreterState *interp, PyObject *obj, PyObject *arg)
     return rc;
 }
 
-#define GET_WARNINGS_ATTR(interp, attr, try_import) \
-    get_warnings_attr(interp, &_Py_ID(attr), try_import)
+#define GET_WARNINGS_ATTR(interp, ATTR, try_import) \
+    get_warnings_attr(interp, &_Py_ID(ATTR), try_import)
 
 /*
    Returns a new reference.
@@ -199,7 +205,7 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
     PyObject *warnings_module, *obj;
 
     /* don't try to import after the start of the Python finallization */
-    if (try_import && !_Py_IsFinalizing()) {
+    if (try_import && !_Py_IsInterpreterFinalizing(interp)) {
         warnings_module = PyImport_Import(&_Py_ID(warnings));
         if (warnings_module == NULL) {
             /* Fallback to the C implementation if we cannot get
@@ -215,7 +221,7 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
            gone, then we can't even use PyImport_GetModule without triggering
            an interpreter abort.
         */
-        if (!interp->modules) {
+        if (!_PyImport_GetModules(interp)) {
             return NULL;
         }
         warnings_module = PyImport_GetModule(&_Py_ID(warnings));
@@ -223,23 +229,79 @@ get_warnings_attr(PyInterpreterState *interp, PyObject *attr, int try_import)
             return NULL;
     }
 
-    (void)_PyObject_LookupAttr(warnings_module, attr, &obj);
+    (void)PyObject_GetOptionalAttr(warnings_module, attr, &obj);
     Py_DECREF(warnings_module);
     return obj;
 }
 
+static inline void
+warnings_lock(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    assert(st != NULL);
+    _PyRecursiveMutex_Lock(&st->lock);
+}
+
+static inline int
+warnings_unlock(PyInterpreterState *interp)
+{
+    WarningsState *st = warnings_get_state(interp);
+    assert(st != NULL);
+    return _PyRecursiveMutex_TryUnlock(&st->lock);
+}
+
+static inline bool
+warnings_lock_held(WarningsState *st)
+{
+    return PyMutex_IsLocked(&st->lock.mutex);
+}
+
+/*[clinic input]
+_acquire_lock as warnings_acquire_lock
+
+[clinic start generated code]*/
+
+static PyObject *
+warnings_acquire_lock_impl(PyObject *module)
+/*[clinic end generated code: output=594313457d1bf8e1 input=46ec20e55acca52f]*/
+{
+    PyInterpreterState *interp = get_current_interp();
+    if (interp == NULL) {
+        return NULL;
+    }
+    warnings_lock(interp);
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+_release_lock as warnings_release_lock
+
+[clinic start generated code]*/
+
+static PyObject *
+warnings_release_lock_impl(PyObject *module)
+/*[clinic end generated code: output=d73d5a8789396750 input=ea01bb77870c5693]*/
+{
+    PyInterpreterState *interp = get_current_interp();
+    if (interp == NULL) {
+        return NULL;
+    }
+    if (warnings_unlock(interp) < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "cannot release un-acquired lock");
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
 
 static PyObject *
 get_once_registry(PyInterpreterState *interp)
 {
-    PyObject *registry;
-
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
 
-    registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
+    assert(warnings_lock_held(st));
+
+    PyObject *registry = GET_WARNINGS_ATTR(interp, onceregistry, 0);
     if (registry == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -262,14 +324,12 @@ get_once_registry(PyInterpreterState *interp)
 static PyObject *
 get_default_action(PyInterpreterState *interp)
 {
-    PyObject *default_action;
-
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
 
-    default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
+    assert(warnings_lock_held(st));
+
+    PyObject *default_action = GET_WARNINGS_ATTR(interp, defaultaction, 0);
     if (default_action == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
@@ -296,15 +356,12 @@ get_filter(PyInterpreterState *interp, PyObject *category,
            PyObject *text, Py_ssize_t lineno,
            PyObject *module, PyObject **item)
 {
-    PyObject *action;
-    Py_ssize_t i;
-    PyObject *warnings_filters;
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
-        return NULL;
-    }
+    assert(st != NULL);
 
-    warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
+    assert(warnings_lock_held(st));
+
+    PyObject *warnings_filters = GET_WARNINGS_ATTR(interp, filters, 0);
     if (warnings_filters == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -321,7 +378,7 @@ get_filter(PyInterpreterState *interp, PyObject *category,
     }
 
     /* WarningsState.filters could change while we are iterating over it. */
-    for (i = 0; i < PyList_GET_SIZE(filters); i++) {
+    for (Py_ssize_t i = 0; i < PyList_GET_SIZE(filters); i++) {
         PyObject *tmp_item, *action, *msg, *cat, *mod, *ln_obj;
         Py_ssize_t ln;
         int is_subclass, good_msg, good_mod;
@@ -381,10 +438,9 @@ get_filter(PyInterpreterState *interp, PyObject *category,
         Py_DECREF(tmp_item);
     }
 
-    action = get_default_action(interp);
+    PyObject *action = get_default_action(interp);
     if (action != NULL) {
-        Py_INCREF(Py_None);
-        *item = Py_None;
+        *item = Py_NewRef(Py_None);
         return action;
     }
 
@@ -396,23 +452,26 @@ static int
 already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
                int should_set)
 {
-    PyObject *version_obj, *already_warned;
+    PyObject *already_warned;
 
     if (key == NULL)
         return -1;
 
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
+    assert(st != NULL);
+    assert(warnings_lock_held(st));
+
+    PyObject *version_obj;
+    if (PyDict_GetItemRef(registry, &_Py_ID(version), &version_obj) < 0) {
         return -1;
     }
-    version_obj = _PyDict_GetItemWithError(registry, &_Py_ID(version));
-    if (version_obj == NULL
+    bool should_update_version = (
+        version_obj == NULL
         || !PyLong_CheckExact(version_obj)
-        || PyLong_AsLong(version_obj) != st->filters_version)
-    {
-        if (PyErr_Occurred()) {
-            return -1;
-        }
+        || PyLong_AsLong(version_obj) != st->filters_version
+    );
+    Py_XDECREF(version_obj);
+    if (should_update_version) {
         PyDict_Clear(registry);
         version_obj = PyLong_FromLong(st->filters_version);
         if (version_obj == NULL)
@@ -424,14 +483,14 @@ already_warned(PyInterpreterState *interp, PyObject *registry, PyObject *key,
         Py_DECREF(version_obj);
     }
     else {
-        already_warned = PyDict_GetItemWithError(registry, key);
+        if (PyDict_GetItemRef(registry, key, &already_warned) < 0) {
+            return -1;
+        }
         if (already_warned != NULL) {
             int rc = PyObject_IsTrue(already_warned);
+            Py_DECREF(already_warned);
             if (rc != 0)
                 return rc;
-        }
-        else if (PyErr_Occurred()) {
-            return -1;
         }
     }
 
@@ -469,8 +528,7 @@ normalize_module(PyObject *filename)
         module = PyUnicode_Substring(filename, 0, len-3);
     }
     else {
-        module = filename;
-        Py_INCREF(module);
+        module = Py_NewRef(filename);
     }
     return module;
 }
@@ -496,7 +554,7 @@ static void
 show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
              PyObject *text, PyObject *category, PyObject *sourceline)
 {
-    PyObject *f_stderr;
+    PyObject *f_stderr = NULL;
     PyObject *name;
     char lineno_str[128];
 
@@ -507,8 +565,7 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         goto error;
     }
 
-    f_stderr = _PySys_GetAttr(tstate, &_Py_ID(stderr));
-    if (f_stderr == NULL) {
+    if (_PySys_GetOptionalAttr(&_Py_ID(stderr), &f_stderr) <= 0) {
         fprintf(stderr, "lost sys.stderr\n");
         goto error;
     }
@@ -536,9 +593,6 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
         Py_UCS4 ch;
         PyObject *truncated;
 
-        if (PyUnicode_READY(sourceline) < 1)
-            goto error;
-
         kind = PyUnicode_KIND(sourceline);
         data = PyUnicode_DATA(sourceline);
         len = PyUnicode_GET_LENGTH(sourceline);
@@ -561,6 +615,7 @@ show_warning(PyThreadState *tstate, PyObject *filename, int lineno,
     }
 
 error:
+    Py_XDECREF(f_stderr);
     Py_XDECREF(name);
     PyErr_Clear();
 }
@@ -574,10 +629,9 @@ call_show_warning(PyThreadState *tstate, PyObject *category,
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
     PyInterpreterState *interp = tstate->interp;
 
-    /* If the source parameter is set, try to get the Python implementation.
-       The Python implementation is able to log the traceback where the source
+    /* The Python implementation is able to log the traceback where the source
        was allocated, whereas the C implementation doesn't. */
-    show_fn = GET_WARNINGS_ATTR(interp, _showwarnmsg, source != NULL);
+    show_fn = GET_WARNINGS_ATTR(interp, _showwarnmsg, 1);
     if (show_fn == NULL) {
         if (PyErr_Occurred())
             return -1;
@@ -710,9 +764,9 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     }
 
     /* Store in the registry that we've been here, *except* when the action
-       is "always". */
+       is "always" or "all". */
     rc = 0;
-    if (!_PyUnicode_EqualToASCIIString(action, "always")) {
+    if (!_PyUnicode_EqualToASCIIString(action, "always") && !_PyUnicode_EqualToASCIIString(action, "all")) {
         if (registry != NULL && registry != Py_None &&
             PyDict_SetItem(registry, key, Py_True) < 0)
         {
@@ -752,8 +806,7 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
         goto cleanup;
 
  return_none:
-    result = Py_None;
-    Py_INCREF(result);
+    result = Py_NewRef(Py_None);
 
  cleanup:
     Py_XDECREF(item);
@@ -765,76 +818,100 @@ warn_explicit(PyThreadState *tstate, PyObject *category, PyObject *message,
     return result;  /* Py_None or NULL. */
 }
 
-static int
-is_internal_frame(PyFrameObject *frame)
+static PyObject *
+get_frame_filename(PyFrameObject *frame)
 {
-    static PyObject *importlib_string = NULL;
-    static PyObject *bootstrap_string = NULL;
-    int contains;
-
-    if (importlib_string == NULL) {
-        importlib_string = PyUnicode_FromString("importlib");
-        if (importlib_string == NULL) {
-            return 0;
-        }
-
-        bootstrap_string = PyUnicode_FromString("_bootstrap");
-        if (bootstrap_string == NULL) {
-            Py_DECREF(importlib_string);
-            return 0;
-        }
-        Py_INCREF(importlib_string);
-        Py_INCREF(bootstrap_string);
-    }
-
-    if (frame == NULL) {
-        return 0;
-    }
-
     PyCodeObject *code = PyFrame_GetCode(frame);
     PyObject *filename = code->co_filename;
     Py_DECREF(code);
+    return filename;
+}
 
-    if (filename == NULL) {
-        return 0;
-    }
+static bool
+is_internal_filename(PyObject *filename)
+{
     if (!PyUnicode_Check(filename)) {
-        return 0;
+        return false;
     }
 
-    contains = PyUnicode_Contains(filename, importlib_string);
+    int contains = PyUnicode_Contains(filename, &_Py_ID(importlib));
     if (contains < 0) {
-        return 0;
+        return false;
     }
     else if (contains > 0) {
-        contains = PyUnicode_Contains(filename, bootstrap_string);
+        contains = PyUnicode_Contains(filename, &_Py_ID(_bootstrap));
         if (contains < 0) {
-            return 0;
+            return false;
         }
         else if (contains > 0) {
-            return 1;
+            return true;
         }
     }
 
-    return 0;
+    return false;
+}
+
+static bool
+is_filename_to_skip(PyObject *filename, PyTupleObject *skip_file_prefixes)
+{
+    if (skip_file_prefixes) {
+        if (!PyUnicode_Check(filename)) {
+            return false;
+        }
+
+        Py_ssize_t prefixes = PyTuple_GET_SIZE(skip_file_prefixes);
+        for (Py_ssize_t idx = 0; idx < prefixes; ++idx)
+        {
+            PyObject *prefix = PyTuple_GET_ITEM(skip_file_prefixes, idx);
+            Py_ssize_t found = PyUnicode_Tailmatch(filename, prefix,
+                                                   0, PY_SSIZE_T_MAX, -1);
+            if (found == 1) {
+                return true;
+            }
+            if (found < 0) {
+                return false;
+            }
+        }
+    }
+    return false;
+}
+
+static bool
+is_internal_frame(PyFrameObject *frame)
+{
+    if (frame == NULL) {
+        return false;
+    }
+
+    PyObject *filename = get_frame_filename(frame);
+    if (filename == NULL) {
+        return false;
+    }
+
+    return is_internal_filename(filename);
 }
 
 static PyFrameObject *
-next_external_frame(PyFrameObject *frame)
+next_external_frame(PyFrameObject *frame, PyTupleObject *skip_file_prefixes)
 {
+    PyObject *frame_filename;
     do {
         PyFrameObject *back = PyFrame_GetBack(frame);
-        Py_DECREF(frame);
-        frame = back;
-    } while (frame != NULL && is_internal_frame(frame));
+        Py_SETREF(frame, back);
+    } while (frame != NULL && (frame_filename = get_frame_filename(frame)) &&
+             (is_internal_filename(frame_filename) ||
+              is_filename_to_skip(frame_filename, skip_file_prefixes)));
 
     return frame;
 }
 
 /* filename, module, and registry are new refs, globals is borrowed */
+/* skip_file_prefixes is either NULL or a tuple of strs. */
 /* Returns 0 on error (no new refs), 1 on success */
 static int
-setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
+setup_context(Py_ssize_t stack_level,
+              PyTupleObject *skip_file_prefixes,
+              PyObject **filename, int *lineno,
               PyObject **module, PyObject **registry)
 {
     PyObject *globals;
@@ -844,6 +921,21 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     if (tstate == NULL) {
         return 0;
     }
+    if (skip_file_prefixes) {
+        /* Type check our data structure up front. Later code that uses it
+         * isn't structured to report errors. */
+        Py_ssize_t prefixes = PyTuple_GET_SIZE(skip_file_prefixes);
+        for (Py_ssize_t idx = 0; idx < prefixes; ++idx)
+        {
+            PyObject *prefix = PyTuple_GET_ITEM(skip_file_prefixes, idx);
+            if (!PyUnicode_Check(prefix)) {
+                PyErr_Format(PyExc_TypeError,
+                             "Found non-str '%s' in skip_file_prefixes.",
+                             Py_TYPE(prefix)->tp_name);
+                return 0;
+            }
+        }
+    }
     PyInterpreterState *interp = tstate->interp;
     PyFrameObject *f = PyThreadState_GetFrame(tstate);
     // Stack level comparisons to Python code is off by one as there is no
@@ -851,25 +943,23 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     if (stack_level <= 0 || is_internal_frame(f)) {
         while (--stack_level > 0 && f != NULL) {
             PyFrameObject *back = PyFrame_GetBack(f);
-            Py_DECREF(f);
-            f = back;
+            Py_SETREF(f, back);
         }
     }
     else {
         while (--stack_level > 0 && f != NULL) {
-            f = next_external_frame(f);
+            f = next_external_frame(f, skip_file_prefixes);
         }
     }
 
     if (f == NULL) {
         globals = interp->sysdict;
-        *filename = PyUnicode_FromString("sys");
-        *lineno = 1;
+        *filename = PyUnicode_FromString("<sys>");
+        *lineno = 0;
     }
     else {
         globals = f->f_frame->f_globals;
-        *filename = f->f_frame->f_code->co_filename;
-        Py_INCREF(*filename);
+        *filename = Py_NewRef(_PyFrame_GetCode(f->f_frame)->co_filename);
         *lineno = PyFrame_GetLineNumber(f);
         Py_DECREF(f);
     }
@@ -879,13 +969,12 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
     /* Setup registry. */
     assert(globals != NULL);
     assert(PyDict_Check(globals));
-    *registry = _PyDict_GetItemWithError(globals, &_Py_ID(__warningregistry__));
+    int rc = PyDict_GetItemRef(globals, &_Py_ID(__warningregistry__),
+                               registry);
+    if (rc < 0) {
+        goto handle_error;
+    }
     if (*registry == NULL) {
-        int rc;
-
-        if (_PyErr_Occurred(tstate)) {
-            goto handle_error;
-        }
         *registry = PyDict_New();
         if (*registry == NULL)
             goto handle_error;
@@ -894,21 +983,21 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
          if (rc < 0)
             goto handle_error;
     }
-    else
-        Py_INCREF(*registry);
 
     /* Setup module. */
-    *module = _PyDict_GetItemWithError(globals, &_Py_ID(__name__));
-    if (*module == Py_None || (*module != NULL && PyUnicode_Check(*module))) {
-        Py_INCREF(*module);
-    }
-    else if (_PyErr_Occurred(tstate)) {
+    rc = PyDict_GetItemRef(globals, &_Py_ID(__name__), module);
+    if (rc < 0) {
         goto handle_error;
     }
-    else {
-        *module = PyUnicode_FromString("<string>");
-        if (*module == NULL)
-            goto handle_error;
+    if (rc > 0) {
+        if (Py_IsNone(*module) || PyUnicode_Check(*module)) {
+            return 1;
+        }
+        Py_DECREF(*module);
+    }
+    *module = PyUnicode_FromString("<string>");
+    if (*module == NULL) {
+        goto handle_error;
     }
 
     return 1;
@@ -951,7 +1040,7 @@ get_category(PyObject *message, PyObject *category)
 
 static PyObject *
 do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
-        PyObject *source)
+        PyObject *source, PyTupleObject *skip_file_prefixes)
 {
     PyObject *filename, *module, *registry, *res;
     int lineno;
@@ -961,11 +1050,14 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
         return NULL;
     }
 
-    if (!setup_context(stack_level, &filename, &lineno, &module, &registry))
+    if (!setup_context(stack_level, skip_file_prefixes,
+                       &filename, &lineno, &module, &registry))
         return NULL;
 
+    warnings_lock(tstate->interp);
     res = warn_explicit(tstate, category, message, filename, lineno, module, registry,
                         NULL, source);
+    warnings_unlock(tstate->interp);
     Py_DECREF(filename);
     Py_DECREF(registry);
     Py_DECREF(module);
@@ -976,22 +1068,42 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
 warn as warnings_warn
 
     message: object
+      Text of the warning message.
     category: object = None
+      The Warning category subclass. Defaults to UserWarning.
     stacklevel: Py_ssize_t = 1
+      How far up the call stack to make this warning appear. A value of 2 for
+      example attributes the warning to the caller of the code calling warn().
     source: object = None
+      If supplied, the destroyed object which emitted a ResourceWarning
+    *
+    skip_file_prefixes: object(type='PyTupleObject *', subclass_of='&PyTuple_Type') = NULL
+      An optional tuple of module filename prefixes indicating frames to skip
+      during stacklevel computations for stack frame attribution.
 
 Issue a warning, or maybe ignore it or raise an exception.
 [clinic start generated code]*/
 
 static PyObject *
 warnings_warn_impl(PyObject *module, PyObject *message, PyObject *category,
-                   Py_ssize_t stacklevel, PyObject *source)
-/*[clinic end generated code: output=31ed5ab7d8d760b2 input=bfdf5cf99f6c4edd]*/
+                   Py_ssize_t stacklevel, PyObject *source,
+                   PyTupleObject *skip_file_prefixes)
+/*[clinic end generated code: output=a68e0f6906c65f80 input=eb37c6a18bec4ea1]*/
 {
     category = get_category(message, category);
     if (category == NULL)
         return NULL;
-    return do_warn(message, category, stacklevel, source);
+    if (skip_file_prefixes) {
+        if (PyTuple_GET_SIZE(skip_file_prefixes) > 0) {
+            if (stacklevel < 2) {
+                stacklevel = 2;
+            }
+        } else {
+            Py_DECREF((PyObject *)skip_file_prefixes);
+            skip_file_prefixes = NULL;
+        }
+    }
+    return do_warn(message, category, stacklevel, source, skip_file_prefixes);
 }
 
 static PyObject *
@@ -1004,21 +1116,21 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     PyObject *source_list;
     PyObject *source_line;
 
-    /* Check/get the requisite pieces needed for the loader. */
-    loader = _PyDict_GetItemWithError(module_globals, &_Py_ID(__loader__));
+    /* stolen from import.c */
+    loader = _PyImport_BlessMyLoader(interp, module_globals);
     if (loader == NULL) {
         return NULL;
     }
-    Py_INCREF(loader);
-    module_name = _PyDict_GetItemWithError(module_globals, &_Py_ID(__name__));
-    if (!module_name) {
+
+    int rc = PyDict_GetItemRef(module_globals, &_Py_ID(__name__),
+                               &module_name);
+    if (rc < 0 || rc == 0) {
         Py_DECREF(loader);
         return NULL;
     }
-    Py_INCREF(module_name);
 
     /* Make sure the loader implements the optional get_source() method. */
-    (void)_PyObject_LookupAttr(loader, &_Py_ID(get_source), &get_source);
+    (void)PyObject_GetOptionalAttr(loader, &_Py_ID(get_source), &get_source);
     Py_DECREF(loader);
     if (!get_source) {
         Py_DECREF(module_name);
@@ -1050,27 +1162,30 @@ get_source_line(PyInterpreterState *interp, PyObject *module_globals, int lineno
     return source_line;
 }
 
+/*[clinic input]
+warn_explicit as warnings_warn_explicit
+
+    message: object
+    category: object
+    filename: unicode
+    lineno: int
+    module as mod: object = NULL
+    registry: object = None
+    module_globals: object = None
+    source as sourceobj: object = None
+
+Issue a warning, or maybe ignore it or raise an exception.
+[clinic start generated code]*/
+
 static PyObject *
-warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
+warnings_warn_explicit_impl(PyObject *module, PyObject *message,
+                            PyObject *category, PyObject *filename,
+                            int lineno, PyObject *mod, PyObject *registry,
+                            PyObject *module_globals, PyObject *sourceobj)
+/*[clinic end generated code: output=c49c62b15a49a186 input=df6eeb8b45e712f1]*/
 {
-    static char *kwd_list[] = {"message", "category", "filename", "lineno",
-                                "module", "registry", "module_globals",
-                                "source", 0};
-    PyObject *message;
-    PyObject *category;
-    PyObject *filename;
-    int lineno;
-    PyObject *module = NULL;
-    PyObject *registry = NULL;
-    PyObject *module_globals = NULL;
-    PyObject *sourceobj = NULL;
     PyObject *source_line = NULL;
     PyObject *returned;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOUi|OOOO:warn_explicit",
-                kwd_list, &message, &category, &filename, &lineno, &module,
-                &registry, &module_globals, &sourceobj))
-        return NULL;
 
     PyThreadState *tstate = get_current_tstate();
     if (tstate == NULL) {
@@ -1090,27 +1205,42 @@ warnings_warn_explicit(PyObject *self, PyObject *args, PyObject *kwds)
             return NULL;
         }
     }
-    returned = warn_explicit(tstate, category, message, filename, lineno, module,
-                             registry, source_line, sourceobj);
+
+    warnings_lock(tstate->interp);
+    returned = warn_explicit(tstate, category, message, filename, lineno,
+                             mod, registry, source_line, sourceobj);
+    warnings_unlock(tstate->interp);
     Py_XDECREF(source_line);
     return returned;
 }
 
+/*[clinic input]
+_filters_mutated_lock_held as warnings_filters_mutated_lock_held
+
+[clinic start generated code]*/
+
 static PyObject *
-warnings_filters_mutated(PyObject *self, PyObject *args)
+warnings_filters_mutated_lock_held_impl(PyObject *module)
+/*[clinic end generated code: output=df5c84f044e856ec input=34208bf03d70e432]*/
 {
     PyInterpreterState *interp = get_current_interp();
     if (interp == NULL) {
         return NULL;
     }
+
     WarningsState *st = warnings_get_state(interp);
-    if (st == NULL) {
+    assert(st != NULL);
+
+    // Note that the lock must be held by the caller.
+    if (!warnings_lock_held(st)) {
+        PyErr_SetString(PyExc_RuntimeError, "warnings lock is not held");
         return NULL;
     }
+
     st->filters_version++;
+
     Py_RETURN_NONE;
 }
-
 
 /* Function to issue a warning message; may raise an exception. */
 
@@ -1123,7 +1253,7 @@ warn_unicode(PyObject *category, PyObject *message,
     if (category == NULL)
         category = PyExc_RuntimeWarning;
 
-    res = do_warn(message, category, stack_level, source);
+    res = do_warn(message, category, stack_level, source, NULL);
     if (res == NULL)
         return -1;
     Py_DECREF(res);
@@ -1155,11 +1285,7 @@ PyErr_WarnFormat(PyObject *category, Py_ssize_t stack_level,
     int res;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     res = _PyErr_WarnFormatV(NULL, category, stack_level, format, vargs);
     va_end(vargs);
     return res;
@@ -1172,11 +1298,7 @@ _PyErr_WarnFormat(PyObject *source, PyObject *category, Py_ssize_t stack_level,
     int res;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     res = _PyErr_WarnFormatV(source, category, stack_level, format, vargs);
     va_end(vargs);
     return res;
@@ -1189,11 +1311,7 @@ PyErr_ResourceWarning(PyObject *source, Py_ssize_t stack_level,
     int res;
     va_list vargs;
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     res = _PyErr_WarnFormatV(source, PyExc_ResourceWarning,
                              stack_level, format, vargs);
     va_end(vargs);
@@ -1237,8 +1355,11 @@ PyErr_WarnExplicitObject(PyObject *category, PyObject *message,
     if (tstate == NULL) {
         return -1;
     }
+
+    warnings_lock(tstate->interp);
     res = warn_explicit(tstate, category, message, filename, lineno,
                         module, registry, NULL, NULL);
+    warnings_unlock(tstate->interp);
     if (res == NULL)
         return -1;
     Py_DECREF(res);
@@ -1251,25 +1372,29 @@ PyErr_WarnExplicit(PyObject *category, const char *text,
                    const char *module_str, PyObject *registry)
 {
     PyObject *message = PyUnicode_FromString(text);
+    if (message == NULL) {
+        return -1;
+    }
     PyObject *filename = PyUnicode_DecodeFSDefault(filename_str);
+    if (filename == NULL) {
+        Py_DECREF(message);
+        return -1;
+    }
     PyObject *module = NULL;
-    int ret = -1;
-
-    if (message == NULL || filename == NULL)
-        goto exit;
     if (module_str != NULL) {
         module = PyUnicode_FromString(module_str);
-        if (module == NULL)
-            goto exit;
+        if (module == NULL) {
+            Py_DECREF(filename);
+            Py_DECREF(message);
+            return -1;
+        }
     }
 
-    ret = PyErr_WarnExplicitObject(category, message, filename, lineno,
-                                   module, registry);
-
- exit:
-    Py_XDECREF(message);
+    int ret = PyErr_WarnExplicitObject(category, message, filename, lineno,
+                                       module, registry);
     Py_XDECREF(module);
-    Py_XDECREF(filename);
+    Py_DECREF(filename);
+    Py_DECREF(message);
     return ret;
 }
 
@@ -1293,18 +1418,16 @@ PyErr_WarnExplicitFormat(PyObject *category,
             goto exit;
     }
 
-#ifdef HAVE_STDARG_PROTOTYPES
     va_start(vargs, format);
-#else
-    va_start(vargs);
-#endif
     message = PyUnicode_FromFormatV(format, vargs);
     if (message != NULL) {
         PyObject *res;
         PyThreadState *tstate = get_current_tstate();
         if (tstate != NULL) {
+            warnings_lock(tstate->interp);
             res = warn_explicit(tstate, category, message, filename, lineno,
                                 module, registry, NULL, NULL);
+            warnings_unlock(tstate->interp);
             Py_DECREF(message);
             if (res != NULL) {
                 Py_DECREF(res);
@@ -1318,6 +1441,21 @@ exit:
     Py_XDECREF(filename);
     return ret;
 }
+
+void
+_PyErr_WarnUnawaitedAgenMethod(PyAsyncGenObject *agen, PyObject *method)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    if (_PyErr_WarnFormat((PyObject *)agen, PyExc_RuntimeWarning, 1,
+                          "coroutine method %R of %R was never awaited",
+                          method, agen->ag_qualname) < 0)
+    {
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "finalizing async generator %R", agen);
+    }
+    PyErr_SetRaisedException(exc);
+}
+
 
 void
 _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
@@ -1355,27 +1493,27 @@ _PyErr_WarnUnawaitedCoroutine(PyObject *coro)
     }
 
     if (PyErr_Occurred()) {
-        PyErr_WriteUnraisable(coro);
+        PyErr_FormatUnraisable("Exception ignored while "
+                               "finalizing coroutine %R", coro);
     }
+
     if (!warned) {
         if (_PyErr_WarnFormat(coro, PyExc_RuntimeWarning, 1,
                               "coroutine '%S' was never awaited",
                               ((PyCoroObject *)coro)->cr_qualname) < 0)
         {
-            PyErr_WriteUnraisable(coro);
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "finalizing coroutine %R", coro);
         }
     }
 }
 
-PyDoc_STRVAR(warn_explicit_doc,
-"Low-level interface to warnings functionality.");
-
 static PyMethodDef warnings_functions[] = {
     WARNINGS_WARN_METHODDEF
-    {"warn_explicit", (PyCFunction)(void(*)(void))warnings_warn_explicit,
-        METH_VARARGS | METH_KEYWORDS, warn_explicit_doc},
-    {"_filters_mutated", (PyCFunction)warnings_filters_mutated, METH_NOARGS,
-        NULL},
+    WARNINGS_WARN_EXPLICIT_METHODDEF
+    WARNINGS_FILTERS_MUTATED_LOCK_HELD_METHODDEF
+    WARNINGS_ACQUIRE_LOCK_METHODDEF
+    WARNINGS_RELEASE_LOCK_METHODDEF
     /* XXX(brett.cannon): add showwarning? */
     /* XXX(brett.cannon): Reasonable to add formatwarning? */
     {NULL, NULL}                /* sentinel */
@@ -1408,6 +1546,8 @@ warnings_module_exec(PyObject *module)
 
 static PyModuleDef_Slot warnings_slots[] = {
     {Py_mod_exec, warnings_module_exec},
+    {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

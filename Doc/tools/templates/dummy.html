@@ -1,12 +1,34 @@
 This file is not an actual template, but used to add some
 texts in extensions to sphinx.pot file.
 
-In extensions/pyspecific.py:
+In extensions/availability.py:
+
+{% trans %}Availability{% endtrans %}
+
+In extensions/c_annotations.py:
+
+{% trans %}Part of the{% endtrans %}
+{% trans %}Limited API{% endtrans %}
+{% trans %}Stable ABI{% endtrans %}
+{% trans %}(as an opaque struct){% endtrans %}
+{% trans %}(including all members){% endtrans %}
+{% trans %}since version %s{% endtrans %}
+{% trans %}(Only some members are part of the stable ABI.){% endtrans %}
+{% trans %}This is{% endtrans %}
+{% trans %}Unstable API{% endtrans %}
+{% trans %}. It may change without warning in minor releases.{% endtrans %}
+{% trans %}Return value: Always NULL.{% endtrans %}
+{% trans %}Return value: New reference.{% endtrans %}
+{% trans %}Return value: Borrowed reference.{% endtrans %}
+
+In extensions/implementation_detail.py:
 
 {% trans %}CPython implementation detail:{% endtrans %}
+
+In extensions/changes.py:
+
 {% trans %}Deprecated since version {deprecated}, will be removed in version {removed}{% endtrans %}
 {% trans %}Deprecated since version {deprecated}, removed in version {removed}{% endtrans %}
-
 
 In docsbuild-scripts, when rewriting indexsidebar.html with actual versions:
 
