@@ -1485,7 +1485,7 @@ decref_threadstate(_PyThreadStateImpl *tstate)
     }
 }
 
-static void
+void
 _PyThreadState_Decref(PyThreadState *tstate)
 {
     assert(tstate != NULL);
@@ -1493,7 +1493,7 @@ _PyThreadState_Decref(PyThreadState *tstate)
     decref_threadstate(tstate);
 }
 
-static void
+void
 _PyThreadState_Incref(PyThreadState *tstate)
 {
     assert(tstate != NULL);
