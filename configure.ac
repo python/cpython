@@ -1914,19 +1914,6 @@ then
   fi
 fi
 
-# Look for parallel LTO support in GCC to speed up builds.
-AC_CACHE_CHECK([If GCC version supports parallel LTO],
-               [ac_cv_gcc_parallel_lto],
-               [AC_PREPROC_IFELSE([AC_LANG_SOURCE([
-                #if defined(__GNUC__) && (__GNUC__ >= 8)
-                  /* GCC parallel LTO supported! */
-                #else
-                  #error "GCC parallel lto unsupported"
-                #endif
-               ], [])],
-               [ac_cv_gcc_parallel_lto=yes],
-               [ac_cv_gcc_parallel_lto=no])])
-
 # Enable LTO flags
 AC_MSG_CHECKING([for --with-lto])
 AC_ARG_WITH([lto],
@@ -2044,12 +2031,11 @@ if test "$Py_LTO" = 'true' ; then
           LTOCFLAGS="-flto"
           ;;
         *)
-        if test $ac_cv_gcc_parallel_lto = yes
-        then
-          LTOFLAGS="-flto=auto -fuse-linker-plugin -ffat-lto-objects"
-        else
-          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects"
-        fi
+          AX_CHECK_COMPILE_FLAG(
+            [-flto=auto],
+            [LTOFLAGS="-flto=auto -fuse-linker-plugin -ffat-lto-objects"],
+            [LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects"]
+          )        
           ;;
       esac
       ;;

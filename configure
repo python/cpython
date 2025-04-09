@@ -8540,36 +8540,6 @@ then
   fi
 fi
 
-# Look for parallel LTO support in GCC to speed up builds.
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking If GCC version supports parallel LTO" >&5
-printf %s "checking If GCC version supports parallel LTO... " >&6; }
-if test ${ac_cv_gcc_parallel_lto+y}
-then :
-  printf %s "(cached) " >&6
-else case e in #(
-  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-                #if defined(__GNUC__) && (__GNUC__ >= 8)
-                  /* GCC parallel LTO supported! */
-                #else
-                  #error "GCC parallel lto unsupported"
-                #endif
-
-_ACEOF
-if ac_fn_c_try_cpp "$LINENO"
-then :
-  ac_cv_gcc_parallel_lto=yes
-else case e in #(
-  e) ac_cv_gcc_parallel_lto=no ;;
-esac
-fi
-rm -f conftest.err conftest.i conftest.$ac_ext ;;
-esac
-fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_gcc_parallel_lto" >&5
-printf "%s\n" "$ac_cv_gcc_parallel_lto" >&6; }
-
 # Enable LTO flags
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-lto" >&5
 printf %s "checking for --with-lto... " >&6; }
@@ -8926,12 +8896,48 @@ fi
           LTOCFLAGS="-flto"
           ;;
         *)
-        if test $ac_cv_gcc_parallel_lto = yes
-        then
-          LTOFLAGS="-flto=auto -fuse-linker-plugin -ffat-lto-objects"
-        else
-          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects"
-        fi
+          { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -flto=auto" >&5
+printf %s "checking whether C compiler accepts -flto=auto... " >&6; }
+if test ${ax_cv_check_cflags___flto_auto+y}
+then :
+  printf %s "(cached) " >&6
+else case e in #(
+  e)
+  ax_check_save_flags=$CFLAGS
+  CFLAGS="$CFLAGS  -flto=auto"
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main (void)
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
+  ax_cv_check_cflags___flto_auto=yes
+else case e in #(
+  e) ax_cv_check_cflags___flto_auto=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+  CFLAGS=$ax_check_save_flags ;;
+esac
+fi
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ax_cv_check_cflags___flto_auto" >&5
+printf "%s\n" "$ax_cv_check_cflags___flto_auto" >&6; }
+if test "x$ax_cv_check_cflags___flto_auto" = xyes
+then :
+  LTOFLAGS="-flto=auto -fuse-linker-plugin -ffat-lto-objects"
+else case e in #(
+  e) LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects"
+           ;;
+esac
+fi
+
           ;;
       esac
       ;;
