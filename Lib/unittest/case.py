@@ -5,7 +5,6 @@ import functools
 import difflib
 import pprint
 import re
-from collections.abc import Iterator
 import warnings
 import collections
 import contextlib
@@ -192,7 +191,7 @@ def _is_subtype(expected, basetype):
     return isinstance(expected, type) and issubclass(expected, basetype)
 
 
-def _heuristic_diff(a: list[str], b: list[str]) -> Iterator[str]:
+def _heuristic_diff(a, b):
     """After testing the magnitude of the inputs, preferably return the output
     of difflib.ndiff, but fallback to difflib.unified_diff for prohibitively
     expensive inputs. How cost is calculated:

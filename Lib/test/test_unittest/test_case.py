@@ -10,7 +10,6 @@ import warnings
 import weakref
 import inspect
 import types
-from typing import Iterator
 
 from collections import UserString
 from copy import deepcopy
@@ -2334,7 +2333,7 @@ class Test_HeuristicDiff(unittest.TestCase):
     N = 50_000
 
     @staticmethod
-    def is_unified_diff(diff: Iterator[str]) -> bool:
+    def is_unified_diff(diff):
         """Check for the presence of the @@ ... @@ diff summary line."""
         diffstr = ''.join(diff)
         p = r'@@ -(\d(,)?(\d)?)+ \+(\d(,)?(\d)?)+ @@'
@@ -2348,7 +2347,7 @@ class Test_HeuristicDiff(unittest.TestCase):
         self.assertTrue(self.is_unified_diff(ud))
         self.assertFalse(self.is_unified_diff(nd))
 
-    def assertHeuristicDiffReturns(self, a, b, expect: tuple[str, ...]):
+    def assertHeuristicDiffReturns(self, a, b, expect):
         """check that _heuristic_diff(a, b) == expect"""
         diff_iterable = unittest.case._heuristic_diff(a, b)
         diff = tuple(diff_iterable)
@@ -2480,7 +2479,7 @@ class Test_HeuristicDiff(unittest.TestCase):
         # --- Execute test cases
         # ----------------------
 
-        def run_case(case: Case, N):
+        def run_case(case, N):
             """Given one of the test cases above, execute the test case for a
             given `N` constant value. Check if the test has passed as
             specified."""
