@@ -162,7 +162,7 @@ compilation options).
 Ignore environment variables like PYTHONPATH and PYTHONHOME that modify
 the behavior of the interpreter.
 .TP
-.B \-h ", " \-? ", "\-\-help
+.BR \-h ", " \-? ", " \-\-help
 Prints the usage for the interpreter executable and exits.
 .TP
 .B "\-\-help\-env"
@@ -170,7 +170,6 @@ Prints help about Python-specific environment variables and exits.
 .TP
 .B "\-\-help\-xoptions"
 Prints help about implementation-specific \fB\-X\fP options and exits.
-.TP
 .TP
 .B "\-\-help\-all"
 Prints complete usage information and exits.
@@ -243,7 +242,7 @@ twice, print a message for each file that is checked for when
 searching for a module.  Also provides information on module cleanup
 at exit.
 .TP
-.B \-V ", " \-\-version
+.BR \-V ", " \-\-version
 Prints the Python version number of the executable and exits.  When given
 twice, print more information about the build.
 
@@ -256,22 +255,24 @@ to
 The simplest settings apply a particular action unconditionally to all warnings
 emitted by a process (even those that are otherwise ignored by default):
 
-  -Wdefault  # Warn once per call location
-  -Werror    # Convert to exceptions
-  -Walways   # Warn every time
-  -Wall      # Same as -Walways
-  -Wmodule   # Warn once per calling module
-  -Wonce     # Warn once per Python process
-  -Wignore   # Never warn
+.nf
+  \-Wdefault  # Warn once per call location
+  \-Werror    # Convert to exceptions
+  \-Walways   # Warn every time
+  \-Wall      # Same as \-Walways
+  \-Wmodule   # Warn once per calling module
+  \-Wonce     # Warn once per Python process
+  \-Wignore   # Never warn
+.fi
 
 The action names can be abbreviated as desired and the interpreter will resolve
 them to the appropriate action name. For example,
 .B \-Wi
 is the same as
-.B \-Wignore .
+.BR \-Wignore .
 
 The full form of argument is:
-.IB action:message:category:module:lineno
+.IB action : message : category : module : lineno
 
 Empty fields match all values; trailing empty fields may be omitted. For
 example
@@ -320,7 +321,7 @@ a regular expression on the warning message.
 .TP
 .BI "\-X " option
 Set implementation-specific option. The following options are available:
-
+.nf
     \fB\-X cpu_count=\fIN\fR: override the return value of \fIos.cpu_count()\fR;
        \fB\-X cpu_count=default\fR cancels overriding; also \fBPYTHON_CPU_COUNT\fI
 
@@ -395,6 +396,7 @@ Set implementation-specific option. The following options are available:
         automatically). See \fBPYTHONUTF8\fR for more details
 
     \fB\-X warn_default_encoding\fR: enable opt-in EncodingWarning for 'encoding=None'
+.fi
 
 .TP
 .B \-x
@@ -434,7 +436,7 @@ is an empty string; if
 is used,
 .I sys.argv[0]
 contains the string
-.I '\-c'.
+.RI ' \-c "' ."
 Note that options interpreted by the Python interpreter itself
 are not placed in
 .IR sys.argv .
@@ -561,8 +563,8 @@ purpose is to allow repeatable hashing, such as for selftests for the
 interpreter itself, or to allow a cluster of python processes to share hash
 values.
 
-The integer must be a decimal number in the range [0,4294967295].  Specifying
-the value 0 will disable hash randomization.
+The integer must be a decimal number in the range [0,4\|294\|967\|295].
+Specifying the value 0 will disable hash randomization.
 .IP PYTHONHOME
 Change the location of the standard Python libraries.  By default, the
 libraries are searched in ${prefix}/lib/python<version> and
@@ -584,7 +586,7 @@ This is equivalent to the \fB\-X int_max_str_digits=\fINUMBER\fR option.
 .IP PYTHONIOENCODING
 If this is set before running the interpreter, it overrides the encoding used
 for stdin/stdout/stderr, in the syntax
-.IB encodingname ":" errorhandler
+.IB encodingname : errorhandler
 The
 .IB errorhandler
 part is optional and has the same meaning as in str.encode. For stderr, the
