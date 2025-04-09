@@ -569,7 +569,7 @@
 
         case _BINARY_OP_SUBSCR_STR_INT: {
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            res = sym_new_type(ctx, &PyUnicode_Type);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1292,9 +1292,9 @@
         }
 
         case _CONTAINS_OP_DICT: {
-            JitOptSymbol *b;
-            b = sym_new_not_null(ctx);
-            stack_pointer[-2] = b;
+            JitOptSymbol *res;
+            res = sym_new_type(ctx, &PyBool_Type);
+            stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;

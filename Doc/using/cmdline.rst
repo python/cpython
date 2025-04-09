@@ -612,7 +612,7 @@ Miscellaneous options
      if is not supported on the current system. See also
      :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` and :pep:`768`.
 
-     .. versionadded:: next
+     .. versionadded:: 3.14
 
    * :samp:`-X cpu_count={n}` overrides :func:`os.cpu_count`,
      :func:`os.process_cpu_count`, and :func:`multiprocessing.cpu_count`.
@@ -1180,7 +1180,7 @@ conflict.
 
    See also the :option:`-X disable_remote_debug` command-line option.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. envvar:: PYTHON_CPU_COUNT
 

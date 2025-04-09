@@ -706,7 +706,7 @@ def _main(args=None):
             if guess:
                 return f"type: {guess} encoding: {encoding}"
             sys.exit(f"error: media type unknown for {gtype}")
-    return parser.format_help()
+    return help_text
 
 
 if __name__ == '__main__':

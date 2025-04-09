@@ -713,7 +713,7 @@ call release as many times the lock has been acquired can lead to deadlock.
 
       Return a boolean indicating whether this object is locked right now.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
 
 .. _condition-objects:
@@ -812,7 +812,7 @@ item to the buffer only needs to wake up one consumer thread.
 
       Return a boolean indicating whether this object is locked right now.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    .. method:: wait(timeout=None)
 
