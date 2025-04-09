@@ -129,6 +129,7 @@ As a consequence of this, split keys have a maximum size of 16.
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_tuple.h"         // _PyTuple_Recycle()
 #include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 
 #include "stringlib/eq.h"                // unicode_eq()
@@ -1324,6 +1325,12 @@ ensure_shared_on_read(PyDictObject *mp)
         }
         Py_END_CRITICAL_SECTION();
     }
+}
+
+void
+_PyDict_EnsureSharedOnRead(PyDictObject *mp)
+{
+    ensure_shared_on_read(mp);
 }
 #endif
 
@@ -4940,12 +4947,12 @@ PyDict_GetItemString(PyObject *v, const char *key)
     if (kv == NULL) {
         PyErr_FormatUnraisable(
             "Exception ignored in PyDict_GetItemString(); consider using "
-            "PyDict_GetItemRefString()");
+            "PyDict_GetItemStringRef()");
         return NULL;
     }
     rv = dict_getitem(v, kv,
             "Exception ignored in PyDict_GetItemString(); consider using "
-            "PyDict_GetItemRefString()");
+            "PyDict_GetItemStringRef()");
     Py_DECREF(kv);
     return rv;  // borrowed reference
 }
@@ -5624,9 +5631,7 @@ dictiter_iternextitem(PyObject *self)
             Py_DECREF(oldvalue);
             // bpo-42536: The GC may have untracked this result tuple. Since we're
             // recycling it, make sure it's tracked again:
-            if (!_PyObject_GC_IS_TRACKED(result)) {
-                _PyObject_GC_TRACK(result);
-            }
+            _PyTuple_Recycle(result);
         }
         else {
             result = PyTuple_New(2);
@@ -5749,9 +5754,7 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
             Py_DECREF(oldvalue);
             // bpo-42536: The GC may have untracked this result tuple. Since
             // we're recycling it, make sure it's tracked again:
-            if (!_PyObject_GC_IS_TRACKED(result)) {
-                _PyObject_GC_TRACK(result);
-            }
+            _PyTuple_Recycle(result);
         }
         else {
             result = PyTuple_New(2);
@@ -5924,7 +5927,7 @@ dictview_mapping(PyObject *view, void *Py_UNUSED(ignored)) {
 }
 
 static PyGetSetDef dictview_getset[] = {
-    {"mapping", dictview_mapping, (setter)NULL,
+    {"mapping", dictview_mapping, NULL,
      PyDoc_STR("dictionary that this view refers to"), NULL},
     {0}
 };
@@ -6341,7 +6344,7 @@ dictviews_xor(PyObject* self, PyObject *other)
 
 static PyNumberMethods dictviews_as_number = {
     0,                                  /*nb_add*/
-    (binaryfunc)dictviews_sub,          /*nb_subtract*/
+    dictviews_sub,                      /*nb_subtract*/
     0,                                  /*nb_multiply*/
     0,                                  /*nb_remainder*/
     0,                                  /*nb_divmod*/
@@ -6353,9 +6356,9 @@ static PyNumberMethods dictviews_as_number = {
     0,                                  /*nb_invert*/
     0,                                  /*nb_lshift*/
     0,                                  /*nb_rshift*/
-    (binaryfunc)_PyDictView_Intersect,  /*nb_and*/
-    (binaryfunc)dictviews_xor,          /*nb_xor*/
-    (binaryfunc)dictviews_or,           /*nb_or*/
+    _PyDictView_Intersect,              /*nb_and*/
+    dictviews_xor,                      /*nb_xor*/
+    dictviews_or,                       /*nb_or*/
 };
 
 static PyObject*
@@ -6613,7 +6616,7 @@ static PySequenceMethods dictvalues_as_sequence = {
     0,                                  /* sq_slice */
     0,                                  /* sq_ass_item */
     0,                                  /* sq_ass_slice */
-    (objobjproc)0,                      /* sq_contains */
+    0,                                  /* sq_contains */
 };
 
 static PyObject* dictvalues_reversed(PyObject *dv, PyObject *Py_UNUSED(ignored));

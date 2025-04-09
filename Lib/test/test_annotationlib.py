@@ -97,27 +97,27 @@ class TestForwardRefFormat(unittest.TestCase):
         anno = annotationlib.get_annotations(f, format=Format.FORWARDREF)
         x_anno = anno["x"]
         self.assertIsInstance(x_anno, ForwardRef)
-        self.assertEqual(x_anno, ForwardRef("some.module"))
+        self.assertEqual(x_anno, support.EqualToForwardRef("some.module", owner=f))
 
         y_anno = anno["y"]
         self.assertIsInstance(y_anno, ForwardRef)
-        self.assertEqual(y_anno, ForwardRef("some[module]"))
+        self.assertEqual(y_anno, support.EqualToForwardRef("some[module]", owner=f))
 
         z_anno = anno["z"]
         self.assertIsInstance(z_anno, ForwardRef)
-        self.assertEqual(z_anno, ForwardRef("some(module)"))
+        self.assertEqual(z_anno, support.EqualToForwardRef("some(module)", owner=f))
 
         alpha_anno = anno["alpha"]
         self.assertIsInstance(alpha_anno, ForwardRef)
-        self.assertEqual(alpha_anno, ForwardRef("some | obj"))
+        self.assertEqual(alpha_anno, support.EqualToForwardRef("some | obj", owner=f))
 
         beta_anno = anno["beta"]
         self.assertIsInstance(beta_anno, ForwardRef)
-        self.assertEqual(beta_anno, ForwardRef("+some"))
+        self.assertEqual(beta_anno, support.EqualToForwardRef("+some", owner=f))
 
         gamma_anno = anno["gamma"]
         self.assertIsInstance(gamma_anno, ForwardRef)
-        self.assertEqual(gamma_anno, ForwardRef("some < obj"))
+        self.assertEqual(gamma_anno, support.EqualToForwardRef("some < obj", owner=f))
 
 
 class TestSourceFormat(unittest.TestCase):
@@ -362,12 +362,13 @@ class TestForwardRefClass(unittest.TestCase):
         obj = object()
         self.assertIs(ForwardRef("int").evaluate(globals={"int": obj}), obj)
 
-    def test_fwdref_value_is_cached(self):
+    def test_fwdref_value_is_not_cached(self):
         fr = ForwardRef("hello")
         with self.assertRaises(NameError):
             fr.evaluate()
         self.assertIs(fr.evaluate(globals={"hello": str}), str)
-        self.assertIs(fr.evaluate(), str)
+        with self.assertRaises(NameError):
+            fr.evaluate()
 
     def test_fwdref_with_owner(self):
         self.assertEqual(
@@ -457,7 +458,7 @@ class TestGetAnnotations(unittest.TestCase):
         )
         self.assertEqual(annotationlib.get_annotations(f1, format=1), {"a": int})
 
-        fwd = annotationlib.ForwardRef("undefined")
+        fwd = support.EqualToForwardRef("undefined", owner=f2)
         self.assertEqual(
             annotationlib.get_annotations(f2, format=Format.FORWARDREF),
             {"a": fwd},
@@ -517,7 +518,7 @@ class TestGetAnnotations(unittest.TestCase):
 
         foo.__annotations__ = {"a": "foo", "b": "str"}
         for format in Format:
-            if format is Format.VALUE_WITH_FAKE_GLOBALS:
+            if format == Format.VALUE_WITH_FAKE_GLOBALS:
                 continue
             with self.subTest(format=format):
                 self.assertEqual(
@@ -816,7 +817,7 @@ class TestGetAnnotations(unittest.TestCase):
 
         wa = WeirdAnnotations()
         for format in Format:
-            if format is Format.VALUE_WITH_FAKE_GLOBALS:
+            if format == Format.VALUE_WITH_FAKE_GLOBALS:
                 continue
             with (
                 self.subTest(format=format),
@@ -1014,7 +1015,7 @@ class TestCallEvaluateFunction(unittest.TestCase):
             annotationlib.call_evaluate_function(evaluate, Format.VALUE)
         self.assertEqual(
             annotationlib.call_evaluate_function(evaluate, Format.FORWARDREF),
-            annotationlib.ForwardRef("undefined"),
+            support.EqualToForwardRef("undefined"),
         )
         self.assertEqual(
             annotationlib.call_evaluate_function(evaluate, Format.STRING),
