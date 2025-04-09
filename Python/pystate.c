@@ -1898,7 +1898,7 @@ PyThreadState_Delete(PyThreadState *tstate)
     _Py_EnsureTstateNotNULL(tstate);
     tstate_verify_not_active(tstate);
     tstate_delete_common(tstate, 0);
-    free_threadstate((_PyThreadStateImpl *)tstate);
+    decref_threadstate((_PyThreadStateImpl *)tstate);
 }
 
 
@@ -1911,7 +1911,7 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 #endif
     current_fast_clear(tstate->interp->runtime);
     tstate_delete_common(tstate, 1);  // release GIL as part of call
-    free_threadstate((_PyThreadStateImpl *)tstate);
+    decref_threadstate((_PyThreadStateImpl *)tstate);
 }
 
 void

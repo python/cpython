@@ -2467,21 +2467,28 @@ PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *arg)
     _PyRuntimeState *runtime = &_PyRuntime;
     HEAD_LOCK(runtime);
     PyThreadState* ts = PyInterpreterState_ThreadHead(interp);
-    /* gh-132296: We need to prevent the thread state
-       from getting concurrently deallocated.
-       We can't stop-the-world because _PyEval_SetTrace() is re-entrant. */
+    /* gh-132296: We need to prevent the thread state from being concurrently
+       deallocated. We can't stop-the-world because _PyEval_SetTrace()
+       is re-entrant. */
     _PyThreadState_Incref(ts);
     HEAD_UNLOCK(runtime);
 
-    while (ts) {
+    while (ts != NULL) {
+        /*
         if (_PyEval_SetTrace(ts, func, arg) < 0) {
             PyErr_FormatUnraisable("Exception ignored in PyEval_SetTraceAllThreads");
         }
+        */
         HEAD_LOCK(runtime);
         PyThreadState *old = ts;
         ts = PyThreadState_Next(ts);
-        _PyThreadState_Decref(old);
+        /* Drop the reference to the prior thread state
+           and acquire a reference to the next one. */
+        if (ts != NULL) {
+            _PyThreadState_Incref(ts);
+        }
         HEAD_UNLOCK(runtime);
+        _PyThreadState_Decref(old);
     }
 }
 
