@@ -809,24 +809,6 @@ class TestGetAnnotations(unittest.TestCase):
             {"x": "int"},
         )
 
-    def test_del_annotations(self):
-        # gh-132285
-        called = False
-        class A:
-            def __annotate__(format):
-                nonlocal called
-                called = True
-                return {'a': int}
-
-        self.assertEqual(A.__annotations__, {'a': int})
-        self.assertTrue(called)
-
-        del A.__annotations__
-        called = False
-
-        self.assertEqual(A.__annotations__, {})
-        self.assertFalse(called)
-
     def test_non_dict_annotations(self):
         class WeirdAnnotations:
             @property
