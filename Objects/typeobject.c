@@ -11183,14 +11183,14 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p)
         }
         else {
             use_generic = 1;
-            // if (generic == NULL && Py_IS_TYPE(descr, &PyMethodDescr_Type) &&
-            //     *ptr == ((PyMethodDescrObject *)descr)->d_method->ml_meth)
-            // {
-            //     generic = *ptr;
-            // }
-            // else {
-            //     generic = p->function;
-            // }
+            if (generic == NULL && Py_IS_TYPE(descr, &PyMethodDescr_Type) &&
+                *ptr == ((PyMethodDescrObject *)descr)->d_method->ml_meth)
+            {
+                generic = *ptr;
+            }
+            else {
+                generic = p->function;
+            }
             generic = p->function;
             if (p->function == slot_tp_call) {
                 /* A generic __call__ is incompatible with vectorcall */
