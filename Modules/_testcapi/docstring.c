@@ -187,7 +187,8 @@ static PyMethodDef DocStringUnrepresentableSignatureTest_methods[] = {
     {"meth_multi",
         (PyCFunction)test_with_docstring, METH_VARARGS,
         PyDoc_STR(
-            "meth_multi($self, /, a, b=<x>)\n"
+            "meth_multi($self, /)\n"
+            "($self, /, a, b=<x>)\n"
             "--\n\n"
             "This docstring has a multisignature with unrepresentable default."
         )},
