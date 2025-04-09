@@ -2845,6 +2845,8 @@ PyCData_GetContainer(CDataObject *self)
     }
     CDataObject *res = self;
     Py_BEGIN_CRITICAL_SECTION(self);
+    // avoid using return directly in this block because critical section
+    // needs to be released before returning
     if (self->b_objects == NULL) {
         if (self->b_length) {
             self->b_objects = PyDict_New();
