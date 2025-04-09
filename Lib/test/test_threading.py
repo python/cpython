@@ -1043,17 +1043,21 @@ class ThreadTests(BaseTestCase):
     def test_settrace_all_threads_race(self):
         # GH-132296: settrace_all_threads() could be racy on the free-threaded build
         #if the threads were concurrently deleted.
+        old_trace = threading.gettrace()
         def dummy(*args):
             pass
 
         def do_settrace():
             threading.settrace_all_threads(dummy)
 
-        with threading_helper.catch_threading_exception() as cm:
-            with threading_helper.start_threads((threading.Thread(target=do_settrace) for _ in range(8))):
-                pass
+        try:
+            with threading_helper.catch_threading_exception() as cm:
+                with threading_helper.start_threads((threading.Thread(target=do_settrace) for _ in range(8))):
+                    pass
 
-            self.assertIsNone(cm.exc_value)
+                self.assertIsNone(cm.exc_value)
+        finally:
+            threading.settrace_all_threads(old_trace)
 
     def test_getprofile(self):
         def fn(*args): pass
