@@ -614,15 +614,15 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         self.assertIsInstance(abiflags, str)
         self.assertIsInstance(ABIFLAGS, str)
         self.assertIn(abiflags, ABIFLAGS)
+        if os.name == 'nt':
+            self.assertEqual(abiflags, '')
 
         if not sys.platform.startswith('win'):
             valid_abiflags = ('', 't', 'd', 'td')
         else:
-            # These are mapped with `f.replace('d', '_d')` above. See test_abi_debug().
+            # Windows uses '_d' rather than 'd'; see also test_abi_debug below
             valid_abiflags = ('', 't', '_d', 't_d')
 
-        if os.name == 'nt':
-            self.assertEqual(abiflags, '')
         self.assertIn(ABIFLAGS, valid_abiflags)
 
     def test_abi_debug(self):
