@@ -1,0 +1,1 @@
+20-30% performance improvement when generating integers lower than some power of 2. E.g. :func:`!random.randint(0, 2**32-1)`
