@@ -1,0 +1,4 @@
+Add ``PYTHON_GC_PRESET`` and the corresponding ``-X`` option
+``gc_preset``. This can be used indicate to the cyclic garbage collector
+what kind of performance trade-offs are preferred when tuning the GC
+parameters.
