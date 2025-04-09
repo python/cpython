@@ -11295,7 +11295,7 @@ update_all_slots(PyTypeObject* type)
 }
 
 int
-_PyType_InitSlotDefsCache(PyInterpreterState *interp)
+_PyType_InitSlotDefsNameCounts(PyInterpreterState *interp)
 {
     if (interp != interp->runtime->interpreters.main) {
         return 0;
