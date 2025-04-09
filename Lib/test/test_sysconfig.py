@@ -618,9 +618,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         if not sys.platform.startswith('win'):
             valid_abiflags = ('', 't', 'd', 'td')
         else:
-            # '_' can only exist if 'd' is present and can only followed by 'd'.
-            # That is `ABIFLAGS.replace('d', '_d')` above.
-            # See test_abi_debug() for more details.
+            # These are mapped with `f.replace('d', '_d')` above. See test_abi_debug().
             valid_abiflags = ('', 't', '_d', 't_d')
 
         if os.name == 'nt':
