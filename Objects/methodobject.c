@@ -174,7 +174,7 @@ meth_dealloc(PyObject *self)
         PyObject_ClearWeakRefs((PyObject*) m);
     }
     // We need to access ml_flags here rather than later.
-    // `m` might have the same lifetime
+    // `m->m_ml` might have the same lifetime
     // as `m_self` when it's dynamically allocated.
     int ml_flags = m->m_ml->ml_flags;
     // Dereference class before m_self: PyCFunction_GET_CLASS accesses
