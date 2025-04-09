@@ -631,14 +631,14 @@ class Reader:
         if self.dirty:
             self.refresh()
 
-    def refresh(self) -> None:
+    def refresh(self, repaint: bool = False) -> None:
         """Recalculate and refresh the screen."""
         if self.in_bracketed_paste and self.buffer and not self.buffer[-1] == "\n":
             return
 
         # this call sets up self.cxy, so call it first.
         self.screen = self.calc_screen()
-        self.console.refresh(self.screen, self.cxy)
+        self.console.refresh(self.screen, self.cxy, repaint)
         self.dirty = False
 
     def do_cmd(self, cmd: tuple[str, list[str]]) -> None:
@@ -716,7 +716,8 @@ class Reader:
             elif event.evt == "scroll":
                 self.refresh()
             elif event.evt == "resize":
-                self.refresh()
+                self.console.sync_screen()
+                self.refresh(repaint=True)
             else:
                 translate = False
 

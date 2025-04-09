@@ -158,13 +158,14 @@ class WindowsConsole(Console):
             # Console I/O is redirected, fallback...
             self.out = None
 
-    def refresh(self, screen: list[str], c_xy: tuple[int, int]) -> None:
+    def refresh(self, screen: list[str], c_xy: tuple[int, int], repaint: bool = False) -> None:
         """
         Refresh the console screen.
 
         Parameters:
         - screen (list): List of strings representing the screen contents.
         - c_xy (tuple): Cursor position (x, y) on the screen.
+        - repaint (bool): If True, overwrite the old screen and not reuse.
         """
         cx, cy = c_xy
 
@@ -211,7 +212,13 @@ class WindowsConsole(Console):
             oldline,
             newline,
         ) in zip(range(offset, offset + height), oldscr, newscr):
-            if oldline != newline:
+            if repaint:
+                self._hide_cursor()
+                self._move_relative(0, y)
+                self._erase_to_end()
+                self.__write(newline)
+                self.posxy = wlen(newline), y
+            elif oldline != newline:
                 self.__write_changed_line(y, oldline, newline, px)
 
         y = len(newscr)
@@ -383,6 +390,45 @@ class WindowsConsole(Console):
         else:
             self._move_relative(x, y)
             self.posxy = x, y
+
+    def sync_screen(self):
+        """
+        Synchronize self.posxy, self.width and self.height.
+        Assuming that the content of the screen doesn't change, only the width changes.
+        """
+        if not self.screen:
+            self.posxy = 0, 0
+            return
+
+        px, py = self.posxy
+
+        groups = []
+        new_line = True
+        for line in self.screen[:py]:
+            l = wlen(line)
+            if new_line:
+                groups.append(l)
+                new_line = False
+            else:
+                groups[-1] += l
+            if l != self.width:
+                new_line = True
+
+        if new_line:
+            groups.append(px)
+        else:
+            groups[-1] += px
+
+
+        new_height, new_width = self.getheightwidth()
+
+        ny = 0
+        for group in groups:
+            ny += group // new_width
+        nx = groups[-1] % new_width
+
+        self.posxy = nx, ny
+        self.height, self.width = new_height, new_width
 
     def set_cursor_vis(self, visible: bool) -> None:
         if visible:

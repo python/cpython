@@ -226,13 +226,14 @@ class UnixConsole(Console):
         """
         self.encoding = encoding
 
-    def refresh(self, screen, c_xy):
+    def refresh(self, screen, c_xy, repaint: bool = False):
         """
         Refresh the console screen.
 
         Parameters:
         - screen (list): List of strings representing the screen contents.
         - c_xy (tuple): Cursor position (x, y) on the screen.
+        - repaint (bool): If True, overwrite the old screen and not reuse.
         """
         cx, cy = c_xy
         if not self.__gone_tall:
@@ -292,7 +293,14 @@ class UnixConsole(Console):
             oldline,
             newline,
         ) in zip(range(offset, offset + height), oldscr, newscr):
-            if oldline != newline:
+            if repaint:
+                # repaint the whole line
+                self.__hide_cursor()
+                self.__move(0, y)
+                self.__write_code(self._el)
+                self.__write(newline)
+                self.posxy = wlen(newline), y
+            elif oldline != newline:
                 self.__write_changed_line(y, oldline, newline, px)
 
         y = len(newscr)
@@ -323,6 +331,44 @@ class UnixConsole(Console):
             self.__move(x, y)
             self.posxy = x, y
             self.flushoutput()
+
+    def sync_screen(self):
+        """
+        Synchronize self.posxy, self.width and self.height.
+        Assuming that the content of the screen doesn't change, only the width changes.
+        """
+        if not self.screen:
+            self.posxy = 0, 0
+            return
+
+        px, py = self.posxy
+
+        groups = []
+        new_line = True
+        for line in self.screen[:py]:
+            l = wlen(line)
+            if new_line:
+                groups.append(l)
+                new_line = False
+            else:
+                groups[-1] += l
+            if l != self.width:
+                new_line = True
+
+        if new_line:
+            groups.append(px)
+        else:
+            groups[-1] += px
+
+        new_height, new_width = self.getheightwidth()
+
+        ny = 0
+        for group in groups:
+            ny += group // new_width
+        nx = groups[-1] % new_width
+
+        self.posxy = nx, ny
+        self.height, self.width = new_height, new_width
 
     def prepare(self):
         """
@@ -757,7 +803,6 @@ class UnixConsole(Console):
         self.__write_code(self._cup, y - self.__offset, x)
 
     def __sigwinch(self, signum, frame):
-        self.height, self.width = self.getheightwidth()
         self.event_queue.insert(Event("resize", None))
 
     def __hide_cursor(self):
