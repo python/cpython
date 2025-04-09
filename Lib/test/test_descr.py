@@ -1198,7 +1198,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         # from the class above?
 
         # Test a single string is not expanded as a sequence.
-        class C(object):
+        class C(object):  # noqa: F811
             __slots__ = "abc"
         c = C()
         c.abc = 5
@@ -4159,21 +4159,21 @@ class ClassPropertiesAndMethods(unittest.TestCase):
             class X(type(None)):
                 pass
         with self.assertRaises(TypeError):
-            class X(object, type(None)):
+            class X(object, type(None)):  # noqa: F811
                 pass
         with self.assertRaises(TypeError):
-            class X(type(None), object):
+            class X(type(None), object):  # noqa: F811
                 pass
         class O(object):
             pass
         with self.assertRaises(TypeError):
-            class X(O, type(None)):
+            class X(O, type(None)):  # noqa: F811
                 pass
         with self.assertRaises(TypeError):
-            class X(type(None), O):
+            class X(type(None), O):  # noqa: F811
                 pass
 
-        class X(object):
+        class X(object):  # noqa: F811
             pass
         with self.assertRaises(TypeError):
             X.__bases__ = type(None),
