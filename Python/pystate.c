@@ -1485,6 +1485,22 @@ decref_threadstate(_PyThreadStateImpl *tstate)
     }
 }
 
+static void
+_PyThreadState_Decref(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    _PyThreadStateImpl *impl = (_PyThreadStateImpl *)tstate;
+    decref_threadstate(tstate);
+}
+
+static void
+_PyThreadState_Incref(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    _PyThreadStateImpl *impl = (_PyThreadStateImpl *)tstate;
+    _Py_atomic_add_ssize(&impl->refcount, 1);
+}
+
 /* Get the thread state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
