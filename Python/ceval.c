@@ -948,7 +948,18 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #include "generated_cases.c.h"
 #endif
 
-PyObject* _Py_HOT_FUNCTION
+#if (defined(__GNUC__) && !defined(__clang__)) && defined(__x86_64__)
+/*
+ * gh-129987: The SLP autovectorizer can cause poor code generation for opcode
+ * dispatch, negating any benefit we get from vectorization elsewhere in the
+ * interpreter loop.
+ */
+#define DONT_SLP_VECTORIZE __attribute__((optimize ("no-tree-slp-vectorize")))
+#else
+#define DONT_SLP_VECTORIZE
+#endif
+
+PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
