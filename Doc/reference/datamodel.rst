@@ -1526,10 +1526,7 @@ positional arguments; bit ``0x08`` is set if the function uses the
 if the function is a generator. See :ref:`inspect-module-co-flags` for details
 on the semantics of each flags that might be present.
 
-Future feature declarations (``from __future__ import division``) also use bits
-in :attr:`~codeobject.co_flags` to indicate whether a code object was compiled with a
-particular feature enabled: bit ``0x2000`` is set if the function was compiled
-with future division enabled; bits ``0x10`` and ``0x1000`` were used in earlier
+Bits ``0x10``, ``0x1000``, and ``0x2000`` were used in earlier
 versions of Python.
 
 Other bits in :attr:`~codeobject.co_flags` are reserved for internal use.
