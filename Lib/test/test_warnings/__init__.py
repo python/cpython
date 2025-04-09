@@ -1571,9 +1571,7 @@ class AsyncTests(BaseTest):
                 self.assertEqual(w[0].message.args[0], 'run_b warning')
 
         async def run_tasks():
-            task_a = asyncio.create_task(run_a())
-            task_b = asyncio.create_task(run_b())
-            await asyncio.gather(task_a, task_b)
+            await asyncio.gather(run_a(), run_b())
 
         asyncio.run(run_tasks())
 
@@ -1605,9 +1603,7 @@ class AsyncTests(BaseTest):
 
         async def run_parent():
             with self.module.catch_warnings(record=True) as w:
-                child1_task = asyncio.create_task(run_child1())
-                child2_task = asyncio.create_task(run_child2())
-                await step2.wait()
+                await asyncio.gather(run_child1(), run_child2())
                 self.assertEqual(len(w), 1)
                 self.assertEqual(w[0].message.args[0], 'child warning')
 
