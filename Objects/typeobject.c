@@ -144,9 +144,6 @@ types_mutex_set_owned(PyThread_ident_t tid)
 static void
 types_mutex_lock(void)
 {
-    if (types_world_is_stopped()) {
-        return;
-    }
     assert(!types_mutex_is_owned());
     PyMutex_Lock(TYPE_LOCK);
     types_mutex_set_owned(PyThread_get_thread_ident_ex());
@@ -155,15 +152,11 @@ types_mutex_lock(void)
 static void
 types_mutex_unlock(void)
 {
-    if (types_world_is_stopped()) {
-        return;
-    }
     types_mutex_set_owned(0);
     PyMutex_Unlock(TYPE_LOCK);
 }
 
-#define ASSERT_TYPE_LOCK_HELD() \
-    assert(types_world_is_stopped() || types_mutex_is_owned())
+#define ASSERT_TYPE_LOCK_HELD() assert(types_mutex_is_owned())
 
 #else
 
@@ -1094,7 +1087,6 @@ PyType_Unwatch(int watcher_id, PyObject* obj)
 static void
 set_version_unlocked(PyTypeObject *tp, unsigned int version)
 {
-    ASSERT_TYPE_LOCK_HELD();
     assert(version == 0 || (tp->tp_versions_used != _Py_ATTR_CACHE_UNUSED));
 #ifndef Py_GIL_DISABLED
     PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -1142,7 +1134,6 @@ type_modified_unlocked(PyTypeObject *type)
        We don't assign new version tags eagerly, but only as
        needed.
      */
-    ASSERT_TYPE_LOCK_HELD();
     if (type->tp_version_tag == 0) {
         return;
     }
@@ -1233,6 +1224,7 @@ has_custom_mro(PyTypeObject *tp)
 static void
 type_mro_modified(PyTypeObject *type, PyObject *bases)
 {
+    ASSERT_NEW_OR_STOPPED(type);
     /*
        Check that all base classes or elements of the MRO of type are
        able to be cached.  This function is called after the base
@@ -1250,7 +1242,6 @@ type_mro_modified(PyTypeObject *type, PyObject *bases)
 #endif
     bool is_custom = !Py_IS_TYPE(type, &PyType_Type) && has_custom_mro(type);
 
-    types_mutex_lock();
     if (is_custom) {
         goto clear;
     }
@@ -1274,7 +1265,7 @@ type_mro_modified(PyTypeObject *type, PyObject *bases)
             goto clear;
         }
     }
-    goto done;
+    return;
 
  clear:
     assert(!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN));
@@ -1286,9 +1277,6 @@ type_mro_modified(PyTypeObject *type, PyObject *bases)
         FT_ATOMIC_STORE_PTR_RELAXED(
             ((PyHeapTypeObject *)type)->_spec_cache.getitem, NULL);
     }
-
-done:
-    types_mutex_unlock();
 }
 
 /*
@@ -3582,9 +3570,7 @@ mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro)
 
     // XXX Expand this to Py_TPFLAGS_IMMUTABLETYPE?
     if (!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN)) {
-        types_mutex_lock();
         type_modified_unlocked(type);
-        types_mutex_unlock();
     }
     else {
         /* For static builtin types, this is only called during init
@@ -3693,9 +3679,7 @@ static int update_slot(PyTypeObject *, PyObject *);
 static void fixup_slot_dispatchers(PyTypeObject *);
 static int type_new_set_names(PyTypeObject *);
 static int type_new_init_subclass(PyTypeObject *, PyObject *);
-#ifdef Py_GIL_DISABLED
 static bool has_slotdef(PyObject *);
-#endif
 
 /*
  * Helpers for  __dict__ descriptor.  We don't want to expose the dicts
@@ -6167,13 +6151,11 @@ _Py_type_getattro(PyObject *tp, PyObject *name)
 }
 
 // Called by type_setattro().  Updates both the type dict and
-// any type slots that correspond to the modified entry.
+// the type versions.
 static int
 type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
                  PyObject *value, PyObject **old_value)
 {
-    ASSERT_TYPE_LOCK_HELD();
-
     // We don't want any re-entrancy between when we update the dict
     // and call type_modified_unlocked, including running the destructor
     // of the current value as it can observe the cache in an inconsistent
@@ -6195,27 +6177,8 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
         PyErr_Format(PyExc_AttributeError,
                      "type object '%.50s' has no attribute '%U'",
                      ((PyTypeObject*)type)->tp_name, name);
-        types_mutex_unlock();
-        // Note: reentrancy possible
-        _PyObject_SetAttributeErrorContext((PyObject *)type, name);
-        types_mutex_lock();
-        return -1;
+        return -2;
     }
-
-#ifdef Py_GIL_DISABLED
-    if (is_dunder_name(name) && has_slotdef(name)) {
-        // update is potentially changing one or more slots
-        int ret;
-        types_stop_world();
-        ret = update_slot(type, name);
-        types_start_world();
-        return ret;
-    }
-#else
-    if (is_dunder_name(name)) {
-        return update_slot(type, name);
-    }
-#endif
 
     return 0;
 }
@@ -6288,13 +6251,31 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
         }
     }
 
-    // FIXME: I'm not totaly sure this is safe from a deadlock. If so, how to avoid?
-    types_mutex_lock();
-    Py_BEGIN_CRITICAL_SECTION(dict);
-    res = type_update_dict(type, (PyDictObject *)dict, name, value, &old_value);
-    assert(_PyType_CheckConsistency(type));
-    Py_END_CRITICAL_SECTION();
-    types_mutex_unlock();
+    if (is_dunder_name(name) && has_slotdef(name)) {
+        // The name corresponds to a type slot.
+        types_stop_world();
+        Py_BEGIN_CRITICAL_SECTION(dict);
+        res = type_update_dict(type, (PyDictObject *)dict, name, value, &old_value);
+        if (res == 0) {
+            res = update_slot(type, name);
+        }
+        Py_END_CRITICAL_SECTION();
+        types_start_world();
+    } else {
+        // The name is not a slot, hold TYPE_LOCK while updating version tags.
+        types_mutex_lock();
+        Py_BEGIN_CRITICAL_SECTION(dict);
+        res = type_update_dict(type, (PyDictObject *)dict, name, value, &old_value);
+        Py_END_CRITICAL_SECTION();
+        types_mutex_unlock();
+    }
+    if (res == -2) {
+        // We handle the attribute error case here because reentrancy possible
+        // when calling this function.
+        _PyObject_SetAttributeErrorContext((PyObject *)type, name);
+        res = -1;
+    }
+    assert(res < 0 || _PyType_CheckConsistency(type));
 
 done:
     Py_DECREF(name);
@@ -11151,7 +11132,6 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
     return res;
 }
 
-#ifdef Py_GIL_DISABLED
 // Return true if "name" corresponds to at least one slot definition.  This is
 // a more accurate but more expensive test compared to is_dunder_name().
 static bool
@@ -11164,7 +11144,6 @@ has_slotdef(PyObject *name)
     }
     return false;
 }
-#endif
 
 /* Common code for update_slots_callback() and fixup_slot_dispatchers().
  *
