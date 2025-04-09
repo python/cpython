@@ -160,27 +160,27 @@ _PyInstructionSequence_InsertInstruction(instr_sequence *seq, int pos,
 }
 
 int
-_PyInstructionSequence_PrependSequence(instr_sequence *seq, int pos,
-                                       instr_sequence *nested)
+_PyInstructionSequence_InjectSequence(instr_sequence *seq, int pos,
+                                      instr_sequence *injected)
 {
     assert(pos >= 0 && pos <= seq->s_used);
     // Merging labelmaps is not supported
-    assert(nested->s_labelmap_size == 0 && nested->s_nested == NULL);
-    if (nested->s_used == 0) {
+    assert(injected->s_labelmap_size == 0 && injected->s_nested == NULL);
+    if (injected->s_used == 0) {
         return SUCCESS;
     }
 
-    int last_idx = instr_sequence_grow(seq, nested->s_used);
+    int last_idx = instr_sequence_grow(seq, injected->s_used);
 
     RETURN_IF_ERROR(last_idx);
-    for (int i = last_idx - nested->s_used; i >= pos; i--) {
-        seq->s_instrs[i + nested->s_used] = seq->s_instrs[i];
+    for (int i = last_idx - injected->s_used; i >= pos; i--) {
+        seq->s_instrs[i + injected->s_used] = seq->s_instrs[i];
     }
-    for (int i=0; i < nested->s_used; i++) {
-        seq->s_instrs[i + pos] = nested->s_instrs[i];
+    for (int i=0; i < injected->s_used; i++) {
+        seq->s_instrs[i + pos] = injected->s_instrs[i];
     }
     for(int lbl=0; lbl < seq->s_labelmap_size; lbl++) {
-        seq->s_labelmap[lbl] += nested->s_used;
+        seq->s_labelmap[lbl] += injected->s_used;
     }
     return SUCCESS;
 }

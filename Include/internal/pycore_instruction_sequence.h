@@ -66,8 +66,8 @@ _PyJumpTargetLabel _PyInstructionSequence_NewLabel(_PyInstructionSequence *seq);
 int _PyInstructionSequence_ApplyLabelMap(_PyInstructionSequence *seq);
 int _PyInstructionSequence_InsertInstruction(_PyInstructionSequence *seq, int pos,
                                              int opcode, int oparg, _Py_SourceLocation loc);
-int _PyInstructionSequence_PrependSequence(_PyInstructionSequence *seq, int pos,
-                                           _PyInstructionSequence *nested);
+int _PyInstructionSequence_InjectSequence(_PyInstructionSequence *seq, int pos,
+                                          _PyInstructionSequence *injected);
 int _PyInstructionSequence_AddNested(_PyInstructionSequence *seq, _PyInstructionSequence *nested);
 void PyInstructionSequence_Fini(_PyInstructionSequence *seq);
 
