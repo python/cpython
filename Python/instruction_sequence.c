@@ -160,23 +160,24 @@ _PyInstructionSequence_InsertInstruction(instr_sequence *seq, int pos,
 }
 
 int
-_PyInstructionSequence_PrependSequence(instr_sequence *seq,
+_PyInstructionSequence_PrependSequence(instr_sequence *seq, int pos,
                                        instr_sequence *nested)
 {
+    assert(pos >= 0 && pos <= seq->s_used);
+    // Merging labelmaps is not supported
+    assert(nested->s_labelmap_size == 0 && nested->s_nested == NULL);
     if (nested->s_used == 0) {
         return SUCCESS;
     }
-    // Merging labelmaps is not supported
-    assert(nested->s_labelmap_size == 0 && nested->s_nested == NULL);
 
     int last_idx = instr_sequence_grow(seq, nested->s_used);
 
     RETURN_IF_ERROR(last_idx);
-    for (int i = last_idx - nested->s_used; i >= 0; i--) {
+    for (int i = last_idx - nested->s_used; i >= pos; i--) {
         seq->s_instrs[i + nested->s_used] = seq->s_instrs[i];
     }
     for (int i=0; i < nested->s_used; i++) {
-        seq->s_instrs[i] = nested->s_instrs[i];
+        seq->s_instrs[i + pos] = nested->s_instrs[i];
     }
     for(int lbl=0; lbl < seq->s_labelmap_size; lbl++) {
         seq->s_labelmap[lbl] += nested->s_used;

@@ -829,7 +829,7 @@ codegen_process_deferred_annotations(compiler *c, location loc)
 
     if (nested_instr_seq != NULL) {
         RETURN_IF_ERROR(
-            _PyInstructionSequence_PrependSequence(old_instr_seq, nested_instr_seq));
+            _PyInstructionSequence_PrependSequence(old_instr_seq, 1, nested_instr_seq));
         _PyCompile_SetInstrSequence(c, old_instr_seq);
         PyInstructionSequence_Fini(nested_instr_seq);
     }
