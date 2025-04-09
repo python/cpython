@@ -1535,6 +1535,10 @@ class AsyncTests(BaseTest):
     the context manager uses a context variable.
     """
 
+    def setUp(self):
+        super().setUp()
+        self.module.resetwarnings()
+
     @unittest.skipIf(not sys.flags.context_aware_warnings,
                      "requires context aware warnings")
     def test_async_context(self):
@@ -1626,6 +1630,10 @@ class ThreadTests(BaseTest):
 
     ENABLE_THREAD_TESTS = (sys.flags.context_aware_warnings and
                            sys.flags.thread_inherit_context)
+
+    def setUp(self):
+        super().setUp()
+        self.module.resetwarnings()
 
     @unittest.skipIf(not ENABLE_THREAD_TESTS,
                      "requires thread-safe warnings flags")

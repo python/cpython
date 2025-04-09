@@ -291,6 +291,7 @@ class TestRaces(TestBase):
 class TestWarningsRaces(TestBase):
     def setUp(self):
         self.saved_filters = warnings.filters[:]
+        warnings.resetwarnings()
         # Add multiple filters to the list to increase odds of race.
         for lineno in range(20):
             warnings.filterwarnings('ignore', message='not matched', category=Warning, lineno=lineno)
