@@ -792,6 +792,17 @@ codegen_process_deferred_annotations(compiler *c, location loc)
         return SUCCESS;
     }
 
+    instr_sequence *old_instr_seq = INSTR_SEQUENCE(c);
+    instr_sequence *nested_instr_seq = NULL;
+    int scope_type = SCOPE_TYPE(c);
+    if (scope_type == COMPILE_SCOPE_MODULE) {
+        nested_instr_seq = (instr_sequence *)_PyInstructionSequence_New();
+        if (nested_instr_seq == NULL) {
+            goto error;
+        }
+        _PyCompile_SetInstrSequence(c, nested_instr_seq);
+    }
+
     // It's possible that ste_annotations_block is set but
     // u_deferred_annotations is not, because the former is still
     // set if there are only non-simple annotations (i.e., annotations
@@ -800,7 +811,6 @@ codegen_process_deferred_annotations(compiler *c, location loc)
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     assert(ste->ste_annotation_block != NULL);
     void *key = (void *)((uintptr_t)ste->ste_id + 1);
-    int scope_type = SCOPE_TYPE(c);
     if (codegen_setup_annotations_scope(c, loc, key,
                                         ste->ste_annotation_block->ste_name) < 0) {
         goto error;
@@ -817,8 +827,19 @@ codegen_process_deferred_annotations(compiler *c, location loc)
     RETURN_IF_ERROR(codegen_leave_annotations_scope(c, loc));
     RETURN_IF_ERROR(codegen_nameop(c, loc, &_Py_ID(__annotate__), Store));
 
+    if (nested_instr_seq != NULL) {
+        RETURN_IF_ERROR(
+            _PyInstructionSequence_PrependSequence(old_instr_seq, nested_instr_seq));
+        _PyCompile_SetInstrSequence(c, old_instr_seq);
+        PyInstructionSequence_Fini(nested_instr_seq);
+    }
+
     return SUCCESS;
 error:
+    if (nested_instr_seq != NULL) {
+        PyInstructionSequence_Fini(nested_instr_seq);
+        _PyCompile_SetInstrSequence(c, old_instr_seq);
+    }
     Py_XDECREF(deferred_anno);
     Py_XDECREF(conditional_annotation_indices);
     return ERROR;

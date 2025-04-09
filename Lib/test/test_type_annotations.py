@@ -115,11 +115,7 @@ class TypeAnnotationTests(unittest.TestCase):
             partialexe.a.__annotations__,
             {"v1": int, "v2": int},
         )
-        self.assertIsInstance(partialexe.b.exc, RuntimeError)
-        self.assertEqual(
-            str(partialexe.b.exc),
-            "cannot access __annotations__ while module is initializing",
-        )
+        self.assertEqual(partialexe.b.annos, {"v1": int})
 
     @cpython_only
     def test_no_cell(self):

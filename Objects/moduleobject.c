@@ -1251,6 +1251,7 @@ module_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
             Py_DECREF(dict);
             return NULL;
         }
+        bool is_initializing = false;
         if (spec != NULL) {
             int rc = _PyModuleSpec_IsInitializing(spec);
             if (rc < 0) {
@@ -1260,11 +1261,7 @@ module_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
             }
             Py_DECREF(spec);
             if (rc) {
-                PyErr_SetString(PyExc_RuntimeError,
-                                "cannot access __annotations__ "
-                                "while module is initializing");
-                Py_DECREF(dict);
-                return NULL;
+                is_initializing = true;
             }
         }
 
@@ -1295,7 +1292,8 @@ module_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
             annotations = PyDict_New();
         }
         Py_XDECREF(annotate);
-        if (annotations) {
+        // Do not cache annotations if the module is still initializing
+        if (annotations && !is_initializing) {
             int result = PyDict_SetItem(
                     dict, &_Py_ID(__annotations__), annotations);
             if (result) {

@@ -34,9 +34,8 @@ typedef _Py_SourceLocation location;
     }
 
 static int
-instr_sequence_next_inst(instr_sequence *seq) {
+instr_sequence_grow(instr_sequence *seq, int size) {
     assert(seq->s_instrs != NULL || seq->s_used == 0);
-
 
     _Py_c_array_t array = {
         .array = (void*)seq->s_instrs,
@@ -45,13 +44,19 @@ instr_sequence_next_inst(instr_sequence *seq) {
         .initial_num_entries = INITIAL_INSTR_SEQUENCE_SIZE,
     };
 
-    RETURN_IF_ERROR(_Py_CArray_EnsureCapacity(&array, seq->s_used + 1));
+    RETURN_IF_ERROR(_Py_CArray_EnsureCapacity(&array, seq->s_used + size));
     seq->s_instrs = array.array;
     seq->s_allocated = array.allocated_entries;
 
     assert(seq->s_allocated >= 0);
     assert(seq->s_used < seq->s_allocated);
-    return seq->s_used++;
+    seq->s_used += size;
+    return seq->s_used - 1;
+}
+
+static int
+instr_sequence_next_inst(instr_sequence *seq) {
+    return instr_sequence_grow(seq, 1);
 }
 
 _PyJumpTargetLabel
@@ -150,6 +155,31 @@ _PyInstructionSequence_InsertInstruction(instr_sequence *seq, int pos,
         if (seq->s_labelmap[lbl] >= pos) {
             seq->s_labelmap[lbl]++;
         }
+    }
+    return SUCCESS;
+}
+
+int
+_PyInstructionSequence_PrependSequence(instr_sequence *seq,
+                                       instr_sequence *nested)
+{
+    if (nested->s_used == 0) {
+        return SUCCESS;
+    }
+    // Merging labelmaps is not supported
+    assert(nested->s_labelmap_size == 0 && nested->s_nested == NULL);
+
+    int last_idx = instr_sequence_grow(seq, nested->s_used);
+
+    RETURN_IF_ERROR(last_idx);
+    for (int i = last_idx - nested->s_used; i >= 0; i--) {
+        seq->s_instrs[i + nested->s_used] = seq->s_instrs[i];
+    }
+    for (int i=0; i < nested->s_used; i++) {
+        seq->s_instrs[i] = nested->s_instrs[i];
+    }
+    for(int lbl=0; lbl < seq->s_labelmap_size; lbl++) {
+        seq->s_labelmap[lbl] += nested->s_used;
     }
     return SUCCESS;
 }
