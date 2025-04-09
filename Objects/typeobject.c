@@ -11005,47 +11005,6 @@ slotptr(PyTypeObject *type, int ioffset)
     return (void **)ptr;
 }
 
-static int
-fill_type_slots_cache_from_slotdefs_cache(PyInterpreterState *interp,
-                                          PyObject *name)
-{
-#define ptrs _Py_INTERP_CACHED_OBJECT(interp, type_slots_ptrs)
-
-    PyObject *cache = _Py_INTERP_CACHED_OBJECT(interp, slotdefs_cache);
-    if (cache) {
-
-        PyObject* bytes = PyDict_GetItemWithError(cache, name);
-        if (PyErr_Occurred()) {
-            PyErr_Clear();
-            return -1;
-        }
-
-        if (bytes != NULL) {
-            assert(PyBytes_CheckExact(bytes));
-
-            uint8_t *data = (uint8_t *)PyBytes_AS_STRING(bytes);
-            uint8_t n = data[0];
-
-            assert(n < MAX_EQUIV);
-
-            pytype_slotdef **pp = ptrs;
-            for(uint8_t i = 0; i < n; i++) {
-                uint8_t idx = data[i + 1];
-                assert (idx < Py_ARRAY_LENGTH(slotdefs));
-
-                *pp++ = &slotdefs[idx];
-            }
-            *pp = NULL;
-
-            return 1;
-        }
-    }
-
-    return 0;
-
-#undef ptrs
-}
-
 /* Return a slot pointer for a given name, but ONLY if the attribute has
    exactly one slot function.  The name must be an interned string. */
 static void **
@@ -11053,43 +11012,25 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
 {
     /* XXX Maybe this could be optimized more -- but is it worth it? */
 
-    /* pname and ptrs act as a little cache */
     PyInterpreterState *interp = _PyInterpreterState_GET();
-#define pname _Py_INTERP_CACHED_OBJECT(interp, type_slots_pname)
-#define ptrs _Py_INTERP_CACHED_OBJECT(interp, type_slots_ptrs)
-    pytype_slotdef *p, **pp;
-    void **res, **ptr;
+    PyObject *cache = _Py_INTERP_CACHED_OBJECT(interp, slotdefs_cache);
+    assert(cache);
 
-    if (pname != name) {
-        /* Collect all slotdefs that match name into ptrs. */
-        pname = name;
+    PyObject* bytes = PyDict_GetItemWithError(cache, name);
+    assert(!PyErr_Occurred());
+    assert(bytes);
+    assert(PyBytes_CheckExact(bytes));
 
-        int rc = fill_type_slots_cache_from_slotdefs_cache(interp, name);
-        if (rc <= 0) {
-            pp = ptrs;
-            for (p = slotdefs; p->name_strobj; p++) {
-                if (p->name_strobj == name)
-                    *pp++ = p;
-            }
-            *pp = NULL;
-        }
+    uint8_t *data = (uint8_t *)PyBytes_AS_STRING(bytes);
+    uint8_t n = data[0];
+
+    assert(n < MAX_EQUIV);
+    if (n == 1) {
+        pytype_slotdef *p = &slotdefs[data[1]];
+        return slotptr(type, p->offset);
     }
 
-    /* Look in all slots of the type matching the name. If exactly one of these
-       has a filled-in slot, return a pointer to that slot.
-       Otherwise, return NULL. */
-    res = NULL;
-    for (pp = ptrs; *pp; pp++) {
-        ptr = slotptr(type, (*pp)->offset);
-        if (ptr == NULL || *ptr == NULL)
-            continue;
-        if (res != NULL)
-            return NULL;
-        res = ptr;
-    }
-    return res;
-#undef pname
-#undef ptrs
+    return NULL;
 }
 
 
