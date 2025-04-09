@@ -111,6 +111,7 @@ class ReplTestCase(TestCase):
         else:
             os.close(master_fd)
             process.kill()
+            process.wait(timeout=SHORT_TIMEOUT)
             self.fail(f"Timeout while waiting for output, got: {''.join(output)}")
 
         os.close(master_fd)
