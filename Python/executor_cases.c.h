@@ -4291,42 +4291,24 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            #ifdef Py_GIL_DISABLED
-            if (!_PyObject_IsUniquelyReferenced((PyObject *)r)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            #endif
             break;
         }
 
-        /* _ITER_JUMP_RANGE is not a viable micro-op for tier 2 because it is replaced */
+        /* _ITER_NEXT_RANGE is not a viable micro-op for tier 2 because it is replaced */
 
-        case _GUARD_NOT_EXHAUSTED_RANGE: {
-            _PyStackRef iter;
-            iter = stack_pointer[-1];
-            _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
-            assert(Py_TYPE(r) == &PyRangeIter_Type);
-            if (r->len <= 0) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            break;
-        }
-
-        case _ITER_NEXT_RANGE: {
+        case _ITER_NEXT_RANGE_TIER_TWO: {
             _PyStackRef iter;
             _PyStackRef next;
             iter = stack_pointer[-1];
             _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(r) == &PyRangeIter_Type);
-            #ifdef Py_GIL_DISABLED
-            assert(_PyObject_IsUniquelyReferenced((PyObject *)r));
-            #endif
-            assert(r->len > 0);
-            long value = r->start;
-            r->start = value + r->step;
-            r->len--;
+            long value;
+            long len = _PyRangeIter_GetLengthAndStart(r, &value);
+            if (len <= 0) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            _PyRangeIter_SetLength(r, len - 1);
             PyObject *res = PyLong_FromLong(value);
             if (res == NULL) {
                 JUMP_TO_ERROR();
