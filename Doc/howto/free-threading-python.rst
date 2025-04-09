@@ -165,11 +165,11 @@ Context variables
 -----------------
 
 In the free-threaded build, the flag :data:`~sys.flags.thread_inherit_context`
-is set to true by default.  In the default GIL-enabled build, the flag
-defaults to false.  This will cause threads created with
+is set to true by default which causes threads created with
 :class:`threading.Thread` to start with a copy of the
 :class:`~contextvars.Context()` of the caller of
-:meth:`~threading.Thread.start`.  If the flag is false, threads start with an
+:meth:`~threading.Thread.start`.  In the default GIL-enabled build, the flag
+defaults to false so threads start with an
 empty :class:`~contextvars.Context()`.
 
 
