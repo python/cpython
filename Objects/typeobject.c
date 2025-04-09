@@ -11191,7 +11191,6 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p)
             else {
                 generic = p->function;
             }
-            generic = p->function;
             if (p->function == slot_tp_call) {
                 /* A generic __call__ is incompatible with vectorcall */
                 type_clear_flags(type, Py_TPFLAGS_HAVE_VECTORCALL);
