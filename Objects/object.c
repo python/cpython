@@ -3015,7 +3015,8 @@ _Py_Dealloc(PyObject *op)
     PyTypeObject *type = Py_TYPE(op);
     destructor dealloc = type->tp_dealloc;
     PyThreadState *tstate = _PyThreadState_GET();
-    if (_Py_ReachedRecursionLimitWithMargin(tstate, 2)) {
+    intptr_t margin = _Py_RecursionLimit_GetMargin(tstate);
+    if (margin < 2) {
         _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
         return;
     }
@@ -3061,7 +3062,7 @@ _Py_Dealloc(PyObject *op)
     Py_XDECREF(old_exc);
     Py_DECREF(type);
 #endif
-    if (tstate->delete_later && !_Py_ReachedRecursionLimitWithMargin(tstate, 4)) {
+    if (tstate->delete_later && margin >= 4) {
         _PyTrash_thread_destroy_chain(tstate);
     }
 }
