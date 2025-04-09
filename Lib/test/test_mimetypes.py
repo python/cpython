@@ -1,12 +1,13 @@
 import io
 import mimetypes
 import os
+import shlex
 import sys
 import unittest.mock
-
+from platform import win32_edition
 from test import support
 from test.support import os_helper
-from platform import win32_edition
+from test.support.script_helper import run_python_until_end
 
 try:
     import _winapi
@@ -224,17 +225,31 @@ class MimeTypesTestCase(unittest.TestCase):
     def test_preferred_extension(self):
         def check_extensions():
             for mime_type, ext in (
+                ("application/epub+zip", ".epub"),
                 ("application/octet-stream", ".bin"),
+                ("application/ogg", ".ogx"),
                 ("application/postscript", ".ps"),
                 ("application/vnd.apple.mpegurl", ".m3u"),
                 ("application/vnd.ms-excel", ".xls"),
                 ("application/vnd.ms-fontobject", ".eot"),
                 ("application/vnd.ms-powerpoint", ".ppt"),
+                ("application/vnd.oasis.opendocument.graphics", ".odg"),
+                ("application/vnd.oasis.opendocument.presentation", ".odp"),
+                ("application/vnd.oasis.opendocument.spreadsheet", ".ods"),
+                ("application/vnd.oasis.opendocument.text", ".odt"),
+                ("application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx"),
+                ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
+                ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"),
                 ("application/x-texinfo", ".texi"),
                 ("application/x-troff", ".roff"),
                 ("application/xml", ".xsl"),
+                ("audio/flac", ".flac"),
                 ("audio/matroska", ".mka"),
+                ("audio/mp4", ".m4a"),
                 ("audio/mpeg", ".mp3"),
+                ("audio/ogg", ".ogg"),
+                ("audio/vnd.wave", ".wav"),
+                ("audio/webm", ".weba"),
                 ("font/otf", ".otf"),
                 ("font/ttf", ".ttf"),
                 ("font/woff", ".woff"),
@@ -244,13 +259,13 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("image/fits", ".fits"),
                 ("image/g3fax", ".g3"),
                 ("image/jp2", ".jp2"),
+                ("image/jpeg", ".jpg"),
                 ("image/jpm", ".jpm"),
                 ("image/t38", ".t38"),
-                ("image/webp", ".webp"),
-                ("image/wmf", ".wmf"),
-                ("image/jpeg", ".jpg"),
                 ("image/tiff", ".tiff"),
                 ("image/tiff-fx", ".tfx"),
+                ("image/webp", ".webp"),
+                ("image/wmf", ".wmf"),
                 ("message/rfc822", ".eml"),
                 ("text/html", ".html"),
                 ("text/plain", ".txt"),
@@ -259,7 +274,9 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("video/matroska", ".mkv"),
                 ("video/matroska-3d", ".mk3d"),
                 ("video/mpeg", ".mpeg"),
+                ("video/ogg", ".ogv"),
                 ("video/quicktime", ".mov"),
+                ("video/vnd.avi", ".avi"),
             ):
                 with self.subTest(mime_type=mime_type, ext=ext):
                     self.assertEqual(mimetypes.guess_extension(mime_type), ext)
@@ -372,52 +389,51 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, mimetypes)
 
 
-class MimetypesCliTestCase(unittest.TestCase):
+class CommandLineTest(unittest.TestCase):
+    def test_parse_args(self):
+        args, help_text = mimetypes._parse_args("-h")
+        self.assertTrue(help_text.startswith("usage: "))
 
-    def mimetypes_cmd(self, *args, **kwargs):
-        support.patch(self, sys, "argv", [sys.executable, *args])
-        with support.captured_stdout() as output:
-            mimetypes._main()
-            return output.getvalue().strip()
+        args, help_text = mimetypes._parse_args("--invalid")
+        self.assertTrue(help_text.startswith("usage: "))
 
-    def test_help_option(self):
-        support.patch(self, sys, "argv", [sys.executable, "-h"])
-        with support.captured_stdout() as output:
-            with self.assertRaises(SystemExit) as cm:
-                mimetypes._main()
+        args, _ = mimetypes._parse_args(shlex.split("-l -e image/jpg"))
+        self.assertTrue(args.extension)
+        self.assertTrue(args.lenient)
+        self.assertEqual(args.type, ["image/jpg"])
 
-        self.assertIn("Usage: mimetypes.py", output.getvalue())
-        self.assertEqual(cm.exception.code, 0)
+        args, _ = mimetypes._parse_args(shlex.split("-e image/jpg"))
+        self.assertTrue(args.extension)
+        self.assertFalse(args.lenient)
+        self.assertEqual(args.type, ["image/jpg"])
 
-    def test_invalid_option(self):
-        support.patch(self, sys, "argv", [sys.executable, "--invalid"])
-        with support.captured_stdout() as output:
-            with self.assertRaises(SystemExit) as cm:
-                mimetypes._main()
+        args, _ = mimetypes._parse_args(shlex.split("-l foo.webp"))
+        self.assertFalse(args.extension)
+        self.assertTrue(args.lenient)
+        self.assertEqual(args.type, ["foo.webp"])
 
-        self.assertIn("Usage: mimetypes.py", output.getvalue())
-        self.assertEqual(cm.exception.code, 1)
+        args, _ = mimetypes._parse_args(shlex.split("foo.pic"))
+        self.assertFalse(args.extension)
+        self.assertFalse(args.lenient)
+        self.assertEqual(args.type, ["foo.pic"])
 
-    def test_guess_extension(self):
-        eq = self.assertEqual
+    def test_invocation(self):
+        for command, expected in [
+            ("-l -e image/jpg", ".jpg"),
+            ("-e image/jpeg", ".jpg"),
+            ("-l foo.webp", "type: image/webp encoding: None"),
+        ]:
+            self.assertEqual(mimetypes._main(shlex.split(command)), expected)
 
-        extension = self.mimetypes_cmd("-l", "-e", "image/jpg")
-        eq(extension, ".jpg")
+    def test_invocation_error(self):
+        for command, expected in [
+            ("-e image/jpg", "error: unknown type image/jpg"),
+            ("foo.bar_ext", "error: media type unknown for foo.bar_ext"),
+        ]:
+            with self.subTest(command=command):
+                with self.assertRaisesRegex(SystemExit, expected):
+                    mimetypes._main(shlex.split(command))
 
-        extension = self.mimetypes_cmd("-e", "image/jpg")
-        eq(extension, "I don't know anything about type image/jpg")
-
-        extension = self.mimetypes_cmd("-e", "image/jpeg")
-        eq(extension, ".jpg")
-
-    def test_guess_type(self):
-        eq = self.assertEqual
-
-        type_info = self.mimetypes_cmd("-l", "foo.pic")
-        eq(type_info, "type: image/pict encoding: None")
-
-        type_info = self.mimetypes_cmd("foo.pic")
-        eq(type_info, "I don't know anything about type foo.pic")
 
 if __name__ == "__main__":
     unittest.main()
