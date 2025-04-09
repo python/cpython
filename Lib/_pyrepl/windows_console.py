@@ -39,7 +39,7 @@ from ctypes.wintypes import (
 from ctypes import Structure, POINTER, Union
 from .console import Event, Console
 from .trace import trace
-from .utils import wlen
+from .utils import wlen, ANSI_ESCAPE_SEQUENCE
 from .windows_eventqueue import EventQueue
 
 try:
@@ -287,7 +287,7 @@ class WindowsConsole(Console):
             self._move_relative(0, y + 1)
             self.posxy = 0, y + 1
         else:
-            self.posxy = wlen(newline), y
+            self.posxy = min(wlen(newline), self.width - 1), y
 
             if "\x1b" in newline or y != self.posxy[1] or '\x1a' in newline:
                 # ANSI escape characters are present, so we can't assume
@@ -394,6 +394,79 @@ class WindowsConsole(Console):
         else:
             self._move_relative(x, y)
             self.posxy = x, y
+
+    def sync_screen(self):
+        """
+        Synchronize self.posxy, self.screen, self.width and self.height.
+        Assuming that the content of the screen doesn't change, only the width changes.
+        """
+        if not self.screen:
+            self.posxy = 0, 0
+            return
+
+        px, py = self.posxy
+        old_height, old_width = self.height, self.width
+        new_height, new_width = self.getheightwidth()
+
+        vlines = []
+        x, y = 0, 0
+        new_line = True
+        for i, line in enumerate(self.screen):
+            l = wlen(line)
+            if i == py:
+                if new_line:
+                    y = sum(wlen(g) // new_width for g in vlines) + len(vlines)
+                    x = px
+                else:
+                    y = sum(wlen(g) // new_width for g in vlines[:-1]) + len(vlines) - 1
+                    x = px + wlen(vlines[-1])
+                if x >= new_width:
+                    y += x // new_width
+                    x %= new_width
+
+            if new_line:
+                vlines.append(line)
+                new_line = False
+            else:
+                vlines[-1] += line
+            if l != old_width:
+                new_line = True
+
+        new_screen = []
+        for vline in vlines:
+            parts = []
+            last_end = 0
+            for match in ANSI_ESCAPE_SEQUENCE.finditer(vline):
+                if match.start() > last_end:
+                    parts.append((vline[last_end:match.start()], False))
+                parts.append((match.group(), True))
+                last_end = match.end()
+
+            if last_end < len(vline):
+                parts.append((vline[last_end:], False))
+
+            result = ""
+            length = 0
+            for part, is_escape in parts:
+                if is_escape:
+                    result += part
+                    continue
+                for char in part:
+                    lc = wlen(char)
+                    if lc + length > new_width:
+                        # save the current line
+                        new_screen.append(result)
+                        result = ""
+                        length = 0
+                    result += char
+                    length += lc
+
+            if result:
+                new_screen.append(result)
+
+        self.posxy = x, y
+        self.screen = new_screen
+        self.height, self.width = new_height, new_width
 
     def set_cursor_vis(self, visible: bool) -> None:
         if visible:

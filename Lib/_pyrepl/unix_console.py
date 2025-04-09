@@ -38,7 +38,7 @@ from .console import Console, Event
 from .fancy_termios import tcgetattr, tcsetattr
 from .trace import trace
 from .unix_eventqueue import EventQueue
-from .utils import wlen
+from .utils import wlen, ANSI_ESCAPE_SEQUENCE
 
 # declare posix optional to allow None assignment on other platforms
 posix: types.ModuleType | None
@@ -320,6 +320,79 @@ class UnixConsole(Console):
             self.__move(x, y)
             self.posxy = x, y
             self.flushoutput()
+
+    def sync_screen(self):
+        """
+        Synchronize self.posxy, self.screen, self.width and self.height.
+        Assuming that the content of the screen doesn't change, only the width changes.
+        """
+        if not self.screen:
+            self.posxy = 0, 0
+            return
+
+        px, py = self.posxy
+        old_height, old_width = self.height, self.width
+        new_height, new_width = self.getheightwidth()
+
+        vlines = []
+        x, y = 0, 0
+        new_line = True
+        for i, line in enumerate(self.screen):
+            l = wlen(line)
+            if i == py:
+                if new_line:
+                    y = sum(wlen(g) // new_width for g in vlines) + len(vlines)
+                    x = px
+                else:
+                    y = sum(wlen(g) // new_width for g in vlines[:-1]) + len(vlines) - 1
+                    x = px + wlen(vlines[-1])
+                if x >= new_width:
+                    y += x // new_width
+                    x %= new_width
+
+            if new_line:
+                vlines.append(line)
+                new_line = False
+            else:
+                vlines[-1] += line
+            if l != old_width:
+                new_line = True
+
+        new_screen = []
+        for vline in vlines:
+            parts = []
+            last_end = 0
+            for match in ANSI_ESCAPE_SEQUENCE.finditer(vline):
+                if match.start() > last_end:
+                    parts.append((vline[last_end:match.start()], False))
+                parts.append((match.group(), True))
+                last_end = match.end()
+
+            if last_end < len(vline):
+                parts.append((vline[last_end:], False))
+
+            result = ""
+            length = 0
+            for part, is_escape in parts:
+                if is_escape:
+                    result += part
+                    continue
+                for char in part:
+                    lc = wlen(char)
+                    if lc + length > new_width:
+                        # save the current line
+                        new_screen.append(result)
+                        result = ""
+                        length = 0
+                    result += char
+                    length += lc
+
+            if result:
+                new_screen.append(result)
+
+        self.posxy = x, y
+        self.screen = new_screen
+        self.height, self.width = new_height, new_width
 
     def prepare(self):
         """
@@ -683,13 +756,18 @@ class UnixConsole(Console):
             self.__write(newline[x_pos])
             self.posxy = character_width + 1, y
 
+            if newline[-1] != oldline[-1]:
+                self.__move(self.width, y)
+                self.__write(newline[-1])
+                self.posxy = self.width - 1, y
+
         else:
             self.__hide_cursor()
             self.__move(x_coord, y)
             if wlen(oldline) > wlen(newline):
                 self.__write_code(self._el)
             self.__write(newline[x_pos:])
-            self.posxy = wlen(newline), y
+            self.posxy = min(wlen(newline), self.width - 1), y
 
         if "\x1b" in newline:
             # ANSI escape characters are present, so we can't assume
@@ -752,7 +830,6 @@ class UnixConsole(Console):
         self.__write_code(self._cup, y - self.__offset, x)
 
     def __sigwinch(self, signum, frame):
-        self.height, self.width = self.getheightwidth()
         self.event_queue.insert(Event("resize", None))
 
     def __hide_cursor(self):

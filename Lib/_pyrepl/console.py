@@ -83,6 +83,9 @@ class Console(ABC):
     def move_cursor(self, x: int, y: int) -> None: ...
 
     @abstractmethod
+    def sync_screen(self) -> None: ...
+
+    @abstractmethod
     def set_cursor_vis(self, visible: bool) -> None: ...
 
     @abstractmethod

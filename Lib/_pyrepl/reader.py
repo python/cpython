@@ -344,7 +344,9 @@ class Reader:
             pos -= line_len + 1
             prompt, prompt_len = self.process_prompt(prompt)
             chars, char_widths = disp_str(line, colors, offset)
-            wrapcount = (sum(char_widths) + prompt_len) // self.console.width
+            wrapcount = (sum(char_widths) + prompt_len) // (self.console.width - 1) # 1 for line continuations
+            if (sum(char_widths) + prompt_len) % (self.console.width - 1) == 0:
+                wrapcount -= 1
             if wrapcount == 0 or not char_widths:
                 offset += line_len + 1  # Takes all of the line plus the newline
                 last_refresh_line_end_offsets.append(offset)
