@@ -11381,10 +11381,18 @@ update_all_slots(PyTypeObject* type)
 int
 _PyType_InitSlotDefsCache(PyInterpreterState *interp)
 {
-    assert (!_Py_INTERP_CACHED_OBJECT(interp, slotdefs_cache));
-
+    PyObject *cache;
     PyObject *bytes = NULL;
-    PyObject* cache = PyDict_New();
+
+    assert (!_Py_INTERP_CACHED_OBJECT(interp, slotdefs_cache));
+    PyInterpreterState *main = interp->runtime->interpreters.main;
+    if (interp != main) {
+        cache = _Py_INTERP_CACHED_OBJECT(main, slotdefs_cache);
+        _Py_INTERP_CACHED_OBJECT(interp, slotdefs_cache) = Py_NewRef(cache);
+        return 0;
+    }
+
+    cache = PyDict_New();
     if (!cache) {
         goto error;
     }
@@ -11431,7 +11439,7 @@ _PyType_InitSlotDefsCache(PyInterpreterState *interp)
         Py_CLEAR(bytes);
     }
 
-    Py_XSETREF(_Py_INTERP_CACHED_OBJECT(interp, slotdefs_cache), cache);
+    _Py_INTERP_CACHED_OBJECT(interp, slotdefs_cache) = cache;
     return 0;
 
 error:
