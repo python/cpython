@@ -6274,16 +6274,14 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
 
     PyObject *dict = type->tp_dict;
     if (dict == NULL) {
-        // We don't just do PyType_Ready because we could already be readying
-        dict = type->tp_dict;
-        if (dict == NULL) {
-            // FIXME: this can race with other threads.  However, it is rare
-            // that PyType_Ready() is not called before the type is used from
-            // multiple threads.  To do this safely, we have to ensure the
-            // type is not revealed to other threads or we stop-the-world before
-            // doing this assignment.
+        // This is an unlikely case.  PyType_Ready has not yet been done and
+        // we need to initialize tp_dict.  We don't just do PyType_Ready
+        // because we could already be readying.
+        types_stop_world();
+        if (type->tp_dict == NULL) {
             dict = type->tp_dict = PyDict_New();
         }
+        types_start_world();
         if (dict == NULL) {
             res = -1;
             goto done;
