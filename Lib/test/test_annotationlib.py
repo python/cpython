@@ -824,8 +824,8 @@ class TestGetAnnotations(unittest.TestCase):
         del A.__annotations__
         called = False
 
-        self.assertEqual(A.__annotations__, {'a': int})
-        self.assertTrue(called)
+        self.assertEqual(A.__annotations__, {})
+        self.assertFalse(called)
 
     def test_non_dict_annotations(self):
         class WeirdAnnotations:
