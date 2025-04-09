@@ -2474,11 +2474,9 @@ PyEval_SetTraceAllThreads(Py_tracefunc func, PyObject *arg)
     HEAD_UNLOCK(runtime);
 
     while (ts != NULL) {
-        /*
         if (_PyEval_SetTrace(ts, func, arg) < 0) {
             PyErr_FormatUnraisable("Exception ignored in PyEval_SetTraceAllThreads");
         }
-        */
         HEAD_LOCK(runtime);
         PyThreadState *old = ts;
         ts = PyThreadState_Next(ts);
