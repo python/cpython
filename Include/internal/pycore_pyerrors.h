@@ -60,6 +60,7 @@ extern PyObject* _PyErr_SetImportErrorWithNameFrom(
         PyObject *,
         PyObject *,
         PyObject *);
+extern int _PyErr_SetModuleNotFoundError(PyObject *name);
 
 
 /* runtime lifecycle */
