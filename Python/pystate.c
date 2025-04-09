@@ -1490,7 +1490,7 @@ _PyThreadState_Decref(PyThreadState *tstate)
 {
     assert(tstate != NULL);
     _PyThreadStateImpl *impl = (_PyThreadStateImpl *)tstate;
-    decref_threadstate(tstate);
+    decref_threadstate(impl);
 }
 
 void
