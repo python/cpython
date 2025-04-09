@@ -11,7 +11,6 @@ extend-exclude = [
     # and tests re-use the same names as only the grammar is being checked)
     "test_grammar.py",
     # TODO Fix: F811 Redefinition of unused name
-    "test_pkg.py",
     "test_yield_from.py",
 ]
 
