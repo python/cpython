@@ -22,14 +22,14 @@ class templatelib.Interpolation "interpolationobject *" "&_PyInterpolation_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=5b183514b4d7e5af]*/
 
 int
-_conversion_converter(PyObject *arg, PyObject **conv)
+_conversion_converter(PyObject *arg, PyObject **conversion)
 {
     if (arg == Py_None) {
         return 1;
     }
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("Interpolation", "argument 'conv'", "str", arg);
+        _PyArg_BadArgument("Interpolation", "argument 'conversion'", "str", arg);
         return 0;
     }
 
@@ -37,19 +37,19 @@ _conversion_converter(PyObject *arg, PyObject **conv)
     const char *conv_str = PyUnicode_AsUTF8AndSize(arg, &len);
     if (len != 1 || !(conv_str[0] == 'a' || conv_str[0] == 'r' || conv_str[0] == 's')) {
         PyErr_SetString(PyExc_ValueError,
-            "Interpolation() argument 'conv' must be one of 's', 'a' or 'r'");
+            "Interpolation() argument 'conversion' must be one of 's', 'a' or 'r'");
         return 0;
     }
 
-    *conv = arg;
+    *conversion = arg;
     return 1;
 }
 
 typedef struct {
     PyObject_HEAD
     PyObject *value;
-    PyObject *expr;
-    PyObject *conv;
+    PyObject *expression;
+    PyObject *conversion;
     PyObject *format_spec;
 } interpolationobject;
 
@@ -58,15 +58,16 @@ typedef struct {
 templatelib.Interpolation.__new__ as interpolation_new
 
     value: object
-    expr: object(subclass_of='&PyUnicode_Type')
-    conv: object(converter='_conversion_converter') = None
+    expression: object(subclass_of='&PyUnicode_Type')
+    conversion: object(converter='_conversion_converter') = None
     format_spec: object(subclass_of='&PyUnicode_Type', c_default='&_Py_STR(empty)') = ""
 [clinic start generated code]*/
 
 static PyObject *
-interpolation_new_impl(PyTypeObject *type, PyObject *value, PyObject *expr,
-                       PyObject *conv, PyObject *format_spec)
-/*[clinic end generated code: output=417d59bccab99648 input=348d81ee06c4be20]*/
+interpolation_new_impl(PyTypeObject *type, PyObject *value,
+                       PyObject *expression, PyObject *conversion,
+                       PyObject *format_spec)
+/*[clinic end generated code: output=6488e288765bc1a9 input=0abc8e498fb744a7]*/
 {
     interpolationobject *self = (interpolationobject *) type->tp_alloc(type, 0);
     if (!self) {
@@ -74,8 +75,8 @@ interpolation_new_impl(PyTypeObject *type, PyObject *value, PyObject *expr,
     }
 
     Py_XSETREF(self->value, Py_NewRef(value));
-    Py_XSETREF(self->expr, Py_NewRef(expr));
-    Py_XSETREF(self->conv, Py_NewRef(conv));
+    Py_XSETREF(self->expression, Py_NewRef(expression));
+    Py_XSETREF(self->conversion, Py_NewRef(conversion));
     Py_XSETREF(self->format_spec, Py_NewRef(format_spec));
     return (PyObject *) self;
 }
@@ -84,8 +85,8 @@ static void
 interpolation_dealloc(interpolationobject *self)
 {
     Py_CLEAR(self->value);
-    Py_CLEAR(self->expr);
-    Py_CLEAR(self->conv);
+    Py_CLEAR(self->expression);
+    Py_CLEAR(self->conversion);
     Py_CLEAR(self->format_spec);
     Py_TYPE(self)->tp_free(self);
 }
@@ -95,8 +96,8 @@ interpolation_repr(interpolationobject *self)
 {
     return PyUnicode_FromFormat("%s(%R, %R, %R, %R)",
                                 _PyType_Name(Py_TYPE(self)),
-                                self->value, self->expr,
-                                self->conv, self->format_spec);
+                                self->value, self->expression,
+                                self->conversion, self->format_spec);
 }
 
 static PyObject *
@@ -116,11 +117,11 @@ interpolation_compare(interpolationobject *self, PyObject *other, int op)
     if (valueeq == -1) {
         return NULL;
     }
-    int expreq = PyUnicode_Compare(self->expr, other_i->expr);
+    int expreq = PyUnicode_Compare(self->expression, other_i->expression);
     if (expreq == -1 && PyErr_Occurred()) {
         return NULL;
     }
-    int conveq = PyObject_RichCompareBool(self->conv, other_i->conv, Py_EQ); // conv might be Py_None
+    int conveq = PyObject_RichCompareBool(self->conversion, other_i->conversion, Py_EQ); // conversion might be Py_None
     if (conveq == -1) {
         return NULL;
     }
@@ -136,7 +137,7 @@ interpolation_compare(interpolationobject *self, PyObject *other, int op)
 static Py_hash_t
 interpolation_hash(interpolationobject *self)
 {
-    PyObject *tuple = PyTuple_Pack(4, self->value, self->expr, self->conv, self->format_spec);
+    PyObject *tuple = PyTuple_Pack(4, self->value, self->expression, self->conversion, self->format_spec);
     if (!tuple) {
         return -1;
     }
@@ -148,15 +149,15 @@ interpolation_hash(interpolationobject *self)
 
 static PyMemberDef interpolation_members[] = {
     {"value", Py_T_OBJECT_EX, offsetof(interpolationobject, value), Py_READONLY, "Value"},
-    {"expr", Py_T_OBJECT_EX, offsetof(interpolationobject, expr), Py_READONLY, "Expr"},
-    {"conv", Py_T_OBJECT_EX, offsetof(interpolationobject, conv), Py_READONLY, "Conversion"},
+    {"expression", Py_T_OBJECT_EX, offsetof(interpolationobject, expression), Py_READONLY, "Expression"},
+    {"conversion", Py_T_OBJECT_EX, offsetof(interpolationobject, conversion), Py_READONLY, "Conversion"},
     {"format_spec", Py_T_OBJECT_EX, offsetof(interpolationobject, format_spec), Py_READONLY, "Format specifier"},
     {NULL}
 };
 
 PyTypeObject _PyInterpolation_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "templatelib.Interpolation",
+    .tp_name = "string.templatelib.Interpolation",
     .tp_doc = PyDoc_STR("Interpolation object"),
     .tp_basicsize = sizeof(interpolationobject),
     .tp_itemsize = 0,
@@ -172,19 +173,19 @@ PyTypeObject _PyInterpolation_Type = {
 static PyObject *
 _get_match_args(void)
 {
-    PyObject *value = NULL, *expr = NULL, *conv = NULL, *format_spec = NULL;
+    PyObject *value = NULL, *expression = NULL, *conversion = NULL, *format_spec = NULL;
     PyObject *tuple = NULL;
 
     value = PyUnicode_FromString("value");
     if (!value) {
         goto error;
     }
-    expr = PyUnicode_FromString("expr");
-    if (!expr) {
+    expression = PyUnicode_FromString("expression");
+    if (!expression) {
         goto error;
     }
-    conv = PyUnicode_FromString("conv");
-    if (!conv) {
+    conversion = PyUnicode_FromString("conversion");
+    if (!conversion) {
         goto error;
     }
     format_spec = PyUnicode_FromString("format_spec");
@@ -192,12 +193,12 @@ _get_match_args(void)
         goto error;
     }
 
-    tuple = PyTuple_Pack(4, value, expr, conv, format_spec);
+    tuple = PyTuple_Pack(4, value, expression, conversion, format_spec);
 
 error:
     Py_XDECREF(value);
-    Py_XDECREF(expr);
-    Py_XDECREF(conv);
+    Py_XDECREF(expression);
+    Py_XDECREF(conversion);
     Py_XDECREF(format_spec);
     return tuple;
 
@@ -240,8 +241,8 @@ _PyInterpolation_FromStackRefSteal(_PyStackRef *values)
     PyTuple_SET_ITEM(args, 0, PyStackRef_AsPyObjectSteal(values[0]));
     PyTuple_SET_ITEM(args, 1, PyStackRef_AsPyObjectSteal(values[1]));
 
-    PyObject *conv = PyStackRef_AsPyObjectSteal(values[2]);
-    PyTuple_SET_ITEM(args, 2, conv ? conv : Py_NewRef(Py_None));
+    PyObject *conversion = PyStackRef_AsPyObjectSteal(values[2]);
+    PyTuple_SET_ITEM(args, 2, conversion ? conversion : Py_NewRef(Py_None));
 
     PyObject *format_spec = PyStackRef_AsPyObjectSteal(values[3]);
     PyTuple_SET_ITEM(args, 3, format_spec ? format_spec : &_Py_STR(empty));

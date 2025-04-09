@@ -39,7 +39,7 @@ templateiter_dealloc(templateiterobject *self)
 
 PyTypeObject _PyTemplateIter_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "templatelib.TemplateIter",
+    .tp_name = "string.templatelib.TemplateIter",
     .tp_doc = PyDoc_STR("Template iterator object"),
     .tp_basicsize = sizeof(templateiterobject),
     .tp_itemsize = 0,
@@ -438,7 +438,7 @@ static PySequenceMethods template_as_sequence = {
 
 PyTypeObject _PyTemplate_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    .tp_name = "templatelib.Template",
+    .tp_name = "string.templatelib.Template",
     .tp_doc = PyDoc_STR("Template object"),
     .tp_basicsize = sizeof(templateobject),
     .tp_itemsize = 0,

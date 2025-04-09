@@ -865,7 +865,7 @@ extern "C" {
     INIT_ID(consts), \
     INIT_ID(context), \
     INIT_ID(contravariant), \
-    INIT_ID(conv), \
+    INIT_ID(conversion), \
     INIT_ID(cookie), \
     INIT_ID(copy), \
     INIT_ID(copyreg), \
@@ -923,7 +923,7 @@ extern "C" {
     INIT_ID(exception), \
     INIT_ID(existing_file_name), \
     INIT_ID(exp), \
-    INIT_ID(expr), \
+    INIT_ID(expression), \
     INIT_ID(extend), \
     INIT_ID(extra_tokens), \
     INIT_ID(facility), \
