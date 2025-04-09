@@ -11,13 +11,14 @@
    Copyright (c) 2000-2005 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2001-2002 Greg Stein <gstein@users.sourceforge.net>
    Copyright (c) 2002-2016 Karl Waclawek <karl@waclawek.net>
-   Copyright (c) 2016-2024 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2025 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2016      Cristian Rodríguez <crrodriguez@opensuse.org>
    Copyright (c) 2016      Thomas Beutlich <tc@tbeu.de>
    Copyright (c) 2017      Rhodri James <rhodri@wildebeest.org.uk>
    Copyright (c) 2022      Thijs Schreijer <thijs@thijsschreijer.nl>
    Copyright (c) 2023      Hanno Böck <hanno@gentoo.org>
    Copyright (c) 2023      Sony Corporation / Snild Dolkow <snild@sony.com>
+   Copyright (c) 2024      Taichi Haradaguchi <20001722@ymail.ne.jp>
    Licensed under the MIT license:
 
    Permission is  hereby granted,  free of charge,  to any  person obtaining
@@ -129,7 +130,9 @@ enum XML_Error {
   /* Added in 2.3.0. */
   XML_ERROR_NO_BUFFER,
   /* Added in 2.4.0. */
-  XML_ERROR_AMPLIFICATION_LIMIT_BREACH
+  XML_ERROR_AMPLIFICATION_LIMIT_BREACH,
+  /* Added in 2.6.4. */
+  XML_ERROR_NOT_STARTED,
 };
 
 enum XML_Content_Type {
@@ -1042,7 +1045,7 @@ typedef struct {
 XMLPARSEAPI(const XML_Feature *)
 XML_GetFeatureList(void);
 
-#if XML_GE == 1
+#if defined(XML_DTD) || (defined(XML_GE) && XML_GE == 1)
 /* Added in Expat 2.4.0 for XML_DTD defined and
  * added in Expat 2.6.0 for XML_GE == 1. */
 XMLPARSEAPI(XML_Bool)
@@ -1064,8 +1067,8 @@ XML_SetReparseDeferralEnabled(XML_Parser parser, XML_Bool enabled);
    See https://semver.org
 */
 #define XML_MAJOR_VERSION 2
-#define XML_MINOR_VERSION 6
-#define XML_MICRO_VERSION 0
+#define XML_MINOR_VERSION 7
+#define XML_MICRO_VERSION 1
 
 #ifdef __cplusplus
 }

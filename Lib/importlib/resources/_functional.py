@@ -57,11 +57,7 @@ def contents(anchor, *path_names):
         DeprecationWarning,
         stacklevel=1,
     )
-    return (
-        resource.name
-        for resource
-        in _get_resource(anchor, path_names).iterdir()
-    )
+    return (resource.name for resource in _get_resource(anchor, path_names).iterdir())
 
 
 def _get_encoding_arg(path_names, encoding):

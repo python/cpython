@@ -51,6 +51,11 @@ typedef struct {
     int id;
 } _PyJumpTargetLabel;
 
+#define NO_LABEL ((const _PyJumpTargetLabel){-1})
+
+#define SAME_JUMP_TARGET_LABEL(L1, L2) ((L1).id == (L2).id)
+#define IS_JUMP_TARGET_LABEL(L) (!SAME_JUMP_TARGET_LABEL((L), (NO_LABEL)))
+
 PyAPI_FUNC(PyObject*)_PyInstructionSequence_New(void);
 
 int _PyInstructionSequence_UseLabel(_PyInstructionSequence *seq, int lbl);
@@ -61,6 +66,7 @@ _PyJumpTargetLabel _PyInstructionSequence_NewLabel(_PyInstructionSequence *seq);
 int _PyInstructionSequence_ApplyLabelMap(_PyInstructionSequence *seq);
 int _PyInstructionSequence_InsertInstruction(_PyInstructionSequence *seq, int pos,
                                              int opcode, int oparg, _Py_SourceLocation loc);
+int _PyInstructionSequence_AddNested(_PyInstructionSequence *seq, _PyInstructionSequence *nested);
 void PyInstructionSequence_Fini(_PyInstructionSequence *seq);
 
 extern PyTypeObject _PyInstructionSequence_Type;

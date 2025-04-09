@@ -1,5 +1,5 @@
-:mod:`fcntl` --- The ``fcntl`` and ``ioctl`` system calls
-=========================================================
+:mod:`!fcntl` --- The ``fcntl`` and ``ioctl`` system calls
+==========================================================
 
 .. module:: fcntl
    :platform: Unix

@@ -3,7 +3,8 @@ import unittest.mock
 from test import support
 from test.support import (verbose, refcount_test,
                           cpython_only, requires_subprocess,
-                          requires_gil_enabled)
+                          requires_gil_enabled,
+                          Py_GIL_DISABLED)
 from test.support.import_helper import import_module
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from test.support.script_helper import assert_python_ok, make_script
@@ -29,6 +30,11 @@ except ImportError:
                 raise unittest.SkipTest('requires _testcapi.with_tp_del')
         return C
     ContainerNoGC = None
+
+try:
+    import _testinternalcapi
+except ImportError:
+    _testinternalcapi = None
 
 ### Support code
 ###############################################################################
@@ -1040,6 +1046,85 @@ class GCTests(unittest.TestCase):
         callback.assert_not_called()
         gc.enable()
 
+    @cpython_only
+    def test_get_referents_on_capsule(self):
+        # gh-124538: Calling gc.get_referents() on an untracked capsule must not crash.
+        import _datetime
+        import _socket
+        untracked_capsule = _datetime.datetime_CAPI
+        tracked_capsule = _socket.CAPI
+
+        # For whoever sees this in the future: if this is failing
+        # after making datetime's capsule tracked, that's fine -- this isn't something
+        # users are relying on. Just find a different capsule that is untracked.
+        self.assertFalse(gc.is_tracked(untracked_capsule))
+        self.assertTrue(gc.is_tracked(tracked_capsule))
+
+        self.assertEqual(len(gc.get_referents(untracked_capsule)), 0)
+        gc.get_referents(tracked_capsule)
+
+    @cpython_only
+    def test_get_objects_during_gc(self):
+        # gh-125859: Calling gc.get_objects() or gc.get_referrers() during a
+        # collection should not crash.
+        test = self
+        collected = False
+
+        class GetObjectsOnDel:
+            def __del__(self):
+                nonlocal collected
+                collected = True
+                objs = gc.get_objects()
+                # NB: can't use "in" here because some objects override __eq__
+                for obj in objs:
+                    test.assertTrue(obj is not self)
+                test.assertEqual(gc.get_referrers(self), [])
+
+        obj = GetObjectsOnDel()
+        obj.cycle = obj
+        del obj
+
+        gc.collect()
+        self.assertTrue(collected)
+
+    def test_traverse_frozen_objects(self):
+        # See GH-126312: Objects that were not frozen could traverse over
+        # a frozen object on the free-threaded build, which would cause
+        # a negative reference count.
+        x = [1, 2, 3]
+        gc.freeze()
+        y = [x]
+        y.append(y)
+        del y
+        gc.collect()
+        gc.unfreeze()
+
+    def test_deferred_refcount_frozen(self):
+        # Also from GH-126312: objects that use deferred reference counting
+        # weren't ignored if they were frozen. Unfortunately, it's pretty
+        # difficult to come up with a case that triggers this.
+        #
+        # Calling gc.collect() while the garbage collector is frozen doesn't
+        # trigger this normally, but it *does* if it's inside unittest for whatever
+        # reason. We can't call unittest from inside a test, so it has to be
+        # in a subprocess.
+        source = textwrap.dedent("""
+        import gc
+        import unittest
+
+
+        class Test(unittest.TestCase):
+            def test_something(self):
+                gc.freeze()
+                gc.collect()
+                gc.unfreeze()
+
+
+        if __name__ == "__main__":
+            unittest.main()
+        """)
+        assert_python_ok("-c", source)
+
 
 class IncrementalGCTests(unittest.TestCase):
 
@@ -1050,6 +1135,7 @@ class IncrementalGCTests(unittest.TestCase):
     def tearDown(self):
         gc.disable()
 
+    @unittest.skipIf(_testinternalcapi is None, "requires _testinternalcapi")
     @requires_gil_enabled("Free threading does not support incremental GC")
     # Use small increments to emulate longer running process in a shorter time
     @gc_threshold(200, 10)
@@ -1087,20 +1173,15 @@ class IncrementalGCTests(unittest.TestCase):
         enabled = gc.isenabled()
         gc.enable()
         olds = []
+        initial_heap_size = _testinternalcapi.get_tracked_heap_size()
         for i in range(20_000):
             newhead = make_ll(20)
             count += 20
             newhead.surprise = head
             olds.append(newhead)
             if len(olds) == 20:
-                stats = gc.get_stats()
-                young = stats[0]
-                incremental = stats[1]
-                old = stats[2]
-                collected = young['collected'] + incremental['collected'] + old['collected']
-                count += CORRECTION
-                live = count - collected
-                self.assertLess(live, 25000)
+                new_objects = _testinternalcapi.get_tracked_heap_size() - initial_heap_size
+                self.assertLess(new_objects, 27_000, f"Heap growing. Reached limit after {i} iterations")
                 del olds[:]
         if not enabled:
             gc.disable()
@@ -1242,7 +1323,8 @@ class GCCallbackTests(unittest.TestCase):
             from test.support import gc_collect, SuppressCrashReport
 
             a = [1, 2, 3]
-            b = [a]
+            b = [a, a]
+            a.append(b)
 
             # Avoid coredump when Py_FatalError() calls abort()
             SuppressCrashReport().__enter__()
@@ -1252,6 +1334,8 @@ class GCCallbackTests(unittest.TestCase):
             # (to avoid deallocating it):
             import ctypes
             ctypes.pythonapi.Py_DecRef(ctypes.py_object(a))
+            del a
+            del b
 
             # The garbage collector should now have a fatal error
             # when it reaches the broken object
@@ -1280,7 +1364,7 @@ class GCCallbackTests(unittest.TestCase):
         self.assertRegex(stderr,
             br'object type name: list')
         self.assertRegex(stderr,
-            br'object repr     : \[1, 2, 3\]')
+            br'object repr     : \[1, 2, 3, \[\[...\], \[...\]\]\]')
 
 
 class GCTogglingTests(unittest.TestCase):
@@ -1347,6 +1431,10 @@ class GCTogglingTests(unittest.TestCase):
         junk = []
         i = 0
         detector = GC_Detector()
+        if Py_GIL_DISABLED:
+            # The free-threaded build doesn't have multiple generations, so
+            # just trigger a GC manually.
+            gc.collect()
         while not detector.gc_happened:
             i += 1
             if i > 10000:
@@ -1415,6 +1503,10 @@ class GCTogglingTests(unittest.TestCase):
         detector = GC_Detector()
         junk = []
         i = 0
+        if Py_GIL_DISABLED:
+            # The free-threaded build doesn't have multiple generations, so
+            # just trigger a GC manually.
+            gc.collect()
         while not detector.gc_happened:
             i += 1
             if i > 10000:

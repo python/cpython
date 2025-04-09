@@ -55,12 +55,26 @@ _query_thread(LPVOID param)
     IWbemLocator *locator = NULL;
     IWbemServices *services = NULL;
     IEnumWbemClassObject* enumerator = NULL;
+    HRESULT hr = S_OK;
     BSTR bstrQuery = NULL;
     struct _query_data *data = (struct _query_data*)param;
 
-    HRESULT hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    // gh-125315: Copy the query string first, so that if the main thread gives
+    // up on waiting we aren't left with a dangling pointer (and a likely crash)
+    bstrQuery = SysAllocString(data->query);
+    if (!bstrQuery) {
+        hr = HRESULT_FROM_WIN32(ERROR_NOT_ENOUGH_MEMORY);
+    }
+
+    if (SUCCEEDED(hr)) {
+        hr = CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+    }
+
     if (FAILED(hr)) {
         CloseHandle(data->writePipe);
+        if (bstrQuery) {
+            SysFreeString(bstrQuery);
+        }
         return (DWORD)hr;
     }
 
@@ -100,12 +114,6 @@ _query_thread(LPVOID param)
             RPC_C_AUTHN_LEVEL_CALL, RPC_C_IMP_LEVEL_IMPERSONATE,
             NULL, EOAC_NONE
         );
-    }
-    if (SUCCEEDED(hr)) {
-        bstrQuery = SysAllocString(data->query);
-        if (!bstrQuery) {
-            hr = HRESULT_FROM_WIN32(ERROR_NOT_ENOUGH_MEMORY);
-        }
     }
     if (SUCCEEDED(hr)) {
         hr = services->ExecQuery(
@@ -232,7 +240,6 @@ _wmi_exec_query_impl(PyObject *module, PyObject *query)
 
 /*[clinic end generated code]*/
 {
-    PyObject *result = NULL;
     HANDLE hThread = NULL;
     int err = 0;
     WCHAR buffer[8192];
@@ -362,12 +369,18 @@ static PyMethodDef wmi_functions[] = {
     { NULL, NULL, 0, NULL }
 };
 
+static PyModuleDef_Slot wmi_slots[] = {
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
+    {0, NULL},
+};
+
 static PyModuleDef wmi_def = {
     PyModuleDef_HEAD_INIT,
     "_wmi",
-    NULL,   // doc
-    0,      // m_size
-    wmi_functions
+    NULL,          // doc
+    0,             // m_size
+    wmi_functions, // m_methods
+    wmi_slots,     // m_slots
 };
 
 extern "C" {

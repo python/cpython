@@ -89,6 +89,30 @@ class ZipAppTest(unittest.TestCase):
             self.assertIn('test.py', z.namelist())
             self.assertNotIn('test.pyc', z.namelist())
 
+    def test_create_archive_self_insertion(self):
+        # When creating an archive, we shouldn't
+        # include the archive in the list of files to add.
+        source = self.tmpdir
+        (source / '__main__.py').touch()
+        (source / 'test.py').touch()
+        target = self.tmpdir / 'target.pyz'
+
+        zipapp.create_archive(source, target)
+        with zipfile.ZipFile(target, 'r') as z:
+            self.assertEqual(len(z.namelist()), 2)
+            self.assertIn('__main__.py', z.namelist())
+            self.assertIn('test.py', z.namelist())
+
+    def test_target_overwrites_source_file(self):
+        # The target cannot be one of the files to add.
+        source = self.tmpdir
+        (source / '__main__.py').touch()
+        target = source / 'target.pyz'
+        target.touch()
+
+        with self.assertRaises(zipapp.ZipAppError):
+            zipapp.create_archive(source, target)
+
     def test_create_archive_filter_exclude_dir(self):
         # Test packing a directory and using a filter to exclude a
         # subdirectory (ensures that the path supplied to include
@@ -265,14 +289,15 @@ class ZipAppTest(unittest.TestCase):
         zipapp.create_archive(str(target), new_target, interpreter='python2.7')
         self.assertTrue(new_target.getvalue().startswith(b'#!python2.7\n'))
 
-    def test_read_from_pathobj(self):
-        # Test that we can copy an archive using a pathlib.Path object
+    def test_read_from_pathlike_obj(self):
+        # Test that we can copy an archive using a path-like object
         # for the source.
         source = self.tmpdir / 'source'
         source.mkdir()
         (source / '__main__.py').touch()
-        target1 = self.tmpdir / 'target1.pyz'
-        target2 = self.tmpdir / 'target2.pyz'
+        source = os_helper.FakePath(str(source))
+        target1 = os_helper.FakePath(str(self.tmpdir / 'target1.pyz'))
+        target2 = os_helper.FakePath(str(self.tmpdir / 'target2.pyz'))
         zipapp.create_archive(source, target1, interpreter='python')
         zipapp.create_archive(target1, target2, interpreter='python2.7')
         self.assertEqual(zipapp.get_interpreter(target2), 'python2.7')

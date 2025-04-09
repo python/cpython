@@ -1,5 +1,5 @@
-:mod:`heapq` --- Heap queue algorithm
-=====================================
+:mod:`!heapq` --- Heap queue algorithm
+======================================
 
 .. module:: heapq
    :synopsis: Heap queue algorithm (a.k.a. priority queue).

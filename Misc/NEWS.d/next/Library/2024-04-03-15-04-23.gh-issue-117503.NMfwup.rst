@@ -1,2 +1,0 @@
-Fix support of non-ASCII user names in bytes paths in
-:func:`os.path.expanduser` on Posix.

@@ -97,7 +97,7 @@ class DecimalException(ArithmeticError):
 
     Used exceptions derive from this.
     If an exception derives from another exception besides this (such as
-    Underflow (Inexact, Rounded, Subnormal) that indicates that it is only
+    Underflow (Inexact, Rounded, Subnormal)) that indicates that it is only
     called if the others are present.  This isn't actually used for
     anything, though.
 
@@ -145,7 +145,7 @@ class InvalidOperation(DecimalException):
     x ** (+-)INF
     An operand is invalid
 
-    The result of the operation after these is a quiet positive NaN,
+    The result of the operation after this is a quiet positive NaN,
     except when the cause is a signaling NaN, in which case the result is
     also a quiet NaN, but with the original sign, and an optional
     diagnostic information.
@@ -424,7 +424,7 @@ def localcontext(ctx=None, **kwargs):
 # numbers.py for more detail.
 
 class Decimal(object):
-    """Floating point class for decimal arithmetic."""
+    """Floating-point class for decimal arithmetic."""
 
     __slots__ = ('_exp','_int','_sign', '_is_special')
     # Generally, the value of the Decimal instance is given by
@@ -581,6 +581,21 @@ class Decimal(object):
             return self
 
         raise TypeError("Cannot convert %r to Decimal" % value)
+
+    @classmethod
+    def from_number(cls, number):
+        """Converts a real number to a decimal number, exactly.
+
+        >>> Decimal.from_number(314)              # int
+        Decimal('314')
+        >>> Decimal.from_number(0.1)              # float
+        Decimal('0.1000000000000000055511151231257827021181583404541015625')
+        >>> Decimal.from_number(Decimal('3.14'))  # another decimal instance
+        Decimal('3.14')
+        """
+        if isinstance(number, (int, Decimal, float)):
+            return cls(number)
+        raise TypeError("Cannot convert %r to Decimal" % number)
 
     @classmethod
     def from_float(cls, f):
@@ -2131,10 +2146,16 @@ class Decimal(object):
             else:
                 return None
 
-            if xc >= 10**p:
+            # An exact power of 10 is representable, but can convert to a
+            # string of any length. But an exact power of 10 shouldn't be
+            # possible at this point.
+            assert xc > 1, self
+            assert xc % 10 != 0, self
+            strxc = str(xc)
+            if len(strxc) > p:
                 return None
             xe = -e-xe
-            return _dec_from_triple(0, str(xc), xe)
+            return _dec_from_triple(0, strxc, xe)
 
         # now y is positive; find m and n such that y = m/n
         if ye >= 0:
@@ -2184,13 +2205,18 @@ class Decimal(object):
             return None
         xc = xc**m
         xe *= m
-        if xc > 10**p:
+        # An exact power of 10 is representable, but can convert to a string
+        # of any length. But an exact power of 10 shouldn't be possible at
+        # this point.
+        assert xc > 1, self
+        assert xc % 10 != 0, self
+        str_xc = str(xc)
+        if len(str_xc) > p:
             return None
 
         # by this point the result *is* exactly representable
         # adjust the exponent to get as close as possible to the ideal
         # exponent, if necessary
-        str_xc = str(xc)
         if other._isinteger() and other._sign == 0:
             ideal_exponent = self._exp*int(other)
             zeros = min(xe-ideal_exponent, p-len(str_xc))

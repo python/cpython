@@ -1,2 +1,0 @@
-Speed up :meth:`pathlib.Path.iterdir` by using :func:`os.scandir`
-internally.

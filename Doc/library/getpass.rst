@@ -1,5 +1,5 @@
-:mod:`getpass` --- Portable password input
-==========================================
+:mod:`!getpass` --- Portable password input
+===========================================
 
 .. module:: getpass
    :synopsis: Portable reading of passwords and retrieval of the userid.
@@ -49,7 +49,7 @@ The :mod:`getpass` module provides two functions:
    systems which support the :mod:`pwd` module, otherwise, an :exc:`OSError`
    is raised.
 
-   In general, this function should be preferred over :func:`os.getlogin()`.
+   In general, this function should be preferred over :func:`os.getlogin`.
 
    .. versionchanged:: 3.13
       Previously, various exceptions beyond just :exc:`OSError` were raised.

@@ -15,6 +15,7 @@
 
 #ifdef HAVE_MP_SEMAPHORE
 
+// These match the values in Lib/multiprocessing/synchronize.py
 enum { RECURSIVE_MUTEX, SEMAPHORE };
 
 typedef struct {
@@ -26,6 +27,8 @@ typedef struct {
     int kind;
     char *name;
 } SemLockObject;
+
+#define _SemLockObject_CAST(op) ((SemLockObject *)(op))
 
 /*[python input]
 class SEM_HANDLE_converter(CConverter):
@@ -62,7 +65,7 @@ class _multiprocessing.SemLock "SemLockObject *" "&_PyMp_SemLockType"
 #define SEM_UNLINK(name) 0
 
 static int
-_GetSemaphoreValue(HANDLE handle, long *value)
+_GetSemaphoreValue(HANDLE handle, int *value)
 {
     long previous;
 
@@ -575,8 +578,9 @@ _multiprocessing_SemLock__rebuild_impl(PyTypeObject *type, SEM_HANDLE handle,
 }
 
 static void
-semlock_dealloc(SemLockObject* self)
+semlock_dealloc(PyObject *op)
 {
+    SemLockObject *self = _SemLockObject_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
     if (self->handle != SEM_FAILED)
@@ -682,6 +686,7 @@ _multiprocessing_SemLock__after_fork_impl(SemLockObject *self)
 }
 
 /*[clinic input]
+@critical_section
 _multiprocessing.SemLock.__enter__
 
 Enter the semaphore/lock.
@@ -689,12 +694,13 @@ Enter the semaphore/lock.
 
 static PyObject *
 _multiprocessing_SemLock___enter___impl(SemLockObject *self)
-/*[clinic end generated code: output=beeb2f07c858511f input=c5e27d594284690b]*/
+/*[clinic end generated code: output=beeb2f07c858511f input=d35c9860992ee790]*/
 {
     return _multiprocessing_SemLock_acquire_impl(self, 1, Py_None);
 }
 
 /*[clinic input]
+@critical_section
 _multiprocessing.SemLock.__exit__
 
     exc_type: object = None
@@ -709,13 +715,13 @@ static PyObject *
 _multiprocessing_SemLock___exit___impl(SemLockObject *self,
                                        PyObject *exc_type,
                                        PyObject *exc_value, PyObject *exc_tb)
-/*[clinic end generated code: output=3b37c1a9f8b91a03 input=7d644b64a89903f8]*/
+/*[clinic end generated code: output=3b37c1a9f8b91a03 input=1610c8cc3e0e337e]*/
 {
     return _multiprocessing_SemLock_release_impl(self);
 }
 
 static int
-semlock_traverse(SemLockObject *s, visitproc visit, void *arg)
+semlock_traverse(PyObject *s, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(s));
     return 0;

@@ -10,7 +10,8 @@ import operator
 import stat
 import sys
 
-__all__ = ["glob", "iglob", "escape"]
+
+__all__ = ["glob", "iglob", "escape", "translate"]
 
 def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         include_hidden=False):
@@ -311,7 +312,7 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
             if part:
                 if not include_hidden and part[0] in '*?':
                     results.append(r'(?!\.)')
-                results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep))
+                results.extend(fnmatch._translate(part, f'{not_sep}*', not_sep)[0])
             if idx < last_part_idx:
                 results.append(any_sep)
     res = ''.join(results)
@@ -319,16 +320,16 @@ def translate(pat, *, recursive=False, include_hidden=False, seps=None):
 
 
 @functools.lru_cache(maxsize=512)
-def _compile_pattern(pat, sep, case_sensitive, recursive=True):
+def _compile_pattern(pat, seps, case_sensitive, recursive=True):
     """Compile given glob pattern to a re.Pattern object (observing case
     sensitivity)."""
     flags = re.NOFLAG if case_sensitive else re.IGNORECASE
-    regex = translate(pat, recursive=recursive, include_hidden=True, seps=sep)
+    regex = translate(pat, recursive=recursive, include_hidden=True, seps=seps)
     return re.compile(regex, flags=flags).match
 
 
-class _Globber:
-    """Class providing shell-style pattern matching and globbing.
+class _GlobberBase:
+    """Abstract class providing shell-style pattern matching and globbing.
     """
 
     def __init__(self, sep, case_sensitive, case_pedantic=False, recursive=False):
@@ -337,31 +338,31 @@ class _Globber:
         self.case_pedantic = case_pedantic
         self.recursive = recursive
 
-    # Low-level methods
+    # Abstract methods
 
-    lstat = staticmethod(os.lstat)
-    scandir = staticmethod(os.scandir)
-    parse_entry = operator.attrgetter('path')
-    concat_path = operator.add
+    @staticmethod
+    def lexists(path):
+        """Implements os.path.lexists().
+        """
+        raise NotImplementedError
 
-    if os.name == 'nt':
-        @staticmethod
-        def add_slash(pathname):
-            tail = os.path.splitroot(pathname)[2]
-            if not tail or tail[-1] in '\\/':
-                return pathname
-            return f'{pathname}\\'
-    else:
-        @staticmethod
-        def add_slash(pathname):
-            if not pathname or pathname[-1] == '/':
-                return pathname
-            return f'{pathname}/'
+    @staticmethod
+    def scandir(path):
+        """Like os.scandir(), but generates (entry, name, path) tuples.
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    def concat_path(path, text):
+        """Implements path concatenation.
+        """
+        raise NotImplementedError
 
     # High-level methods
 
-    def compile(self, pat):
-        return _compile_pattern(pat, self.sep, self.case_sensitive, self.recursive)
+    def compile(self, pat, altsep=None):
+        seps = (self.sep, altsep) if altsep else self.sep
+        return _compile_pattern(pat, seps, self.case_sensitive, self.recursive)
 
     def selector(self, parts):
         """Returns a function that selects from a given path, walking and
@@ -383,10 +384,12 @@ class _Globber:
     def special_selector(self, part, parts):
         """Returns a function that selects special children of the given path.
         """
+        if parts:
+            part += self.sep
         select_next = self.selector(parts)
 
         def select_special(path, exists=False):
-            path = self.concat_path(self.add_slash(path), part)
+            path = self.concat_path(path, part)
             return select_next(path, exists)
         return select_special
 
@@ -396,14 +399,16 @@ class _Globber:
 
         # Optimization: consume and join any subsequent literal parts here,
         # rather than leaving them for the next selector. This reduces the
-        # number of string concatenation operations and calls to add_slash().
+        # number of string concatenation operations.
         while parts and magic_check.search(parts[-1]) is None:
             part += self.sep + parts.pop()
+        if parts:
+            part += self.sep
 
         select_next = self.selector(parts)
 
         def select_literal(path, exists=False):
-            path = self.concat_path(self.add_slash(path), part)
+            path = self.concat_path(path, part)
             return select_next(path, exists=False)
         return select_literal
 
@@ -419,23 +424,19 @@ class _Globber:
 
         def select_wildcard(path, exists=False):
             try:
-                # We must close the scandir() object before proceeding to
-                # avoid exhausting file descriptors when globbing deep trees.
-                with self.scandir(path) as scandir_it:
-                    entries = list(scandir_it)
+                entries = self.scandir(path)
             except OSError:
                 pass
             else:
-                for entry in entries:
-                    if match is None or match(entry.name):
+                for entry, entry_name, entry_path in entries:
+                    if match is None or match(entry_name):
                         if dir_only:
                             try:
                                 if not entry.is_dir():
                                     continue
                             except OSError:
                                 continue
-                        entry_path = self.parse_entry(entry)
-                        if dir_only:
+                            entry_path = self.concat_path(entry_path, self.sep)
                             yield from select_next(entry_path, exists=True)
                         else:
                             yield entry_path
@@ -465,7 +466,6 @@ class _Globber:
         select_next = self.selector(parts)
 
         def select_recursive(path, exists=False):
-            path = self.add_slash(path)
             match_pos = len(str(path))
             if match is None or match(str(path), match_pos):
                 yield from select_next(path, exists)
@@ -476,14 +476,11 @@ class _Globber:
         def select_recursive_step(stack, match_pos):
             path = stack.pop()
             try:
-                # We must close the scandir() object before proceeding to
-                # avoid exhausting file descriptors when globbing deep trees.
-                with self.scandir(path) as scandir_it:
-                    entries = list(scandir_it)
+                entries = self.scandir(path)
             except OSError:
                 pass
             else:
-                for entry in entries:
+                for entry, _entry_name, entry_path in entries:
                     is_dir = False
                     try:
                         if entry.is_dir(follow_symlinks=follow_symlinks):
@@ -492,8 +489,10 @@ class _Globber:
                         pass
 
                     if is_dir or not dir_only:
-                        entry_path = self.parse_entry(entry)
-                        if match is None or match(str(entry_path), match_pos):
+                        entry_path_str = str(entry_path)
+                        if dir_only:
+                            entry_path = self.concat_path(entry_path, self.sep)
+                        if match is None or match(entry_path_str, match_pos):
                             if dir_only:
                                 yield from select_next(entry_path, exists=True)
                             else:
@@ -512,46 +511,37 @@ class _Globber:
             # Optimization: this path is already known to exist, e.g. because
             # it was returned from os.scandir(), so we skip calling lstat().
             yield path
-        else:
-            try:
-                self.lstat(path)
-                yield path
-            except OSError:
-                pass
+        elif self.lexists(path):
+            yield path
 
-    @classmethod
-    def walk(cls, root, top_down, on_error, follow_symlinks):
-        """Walk the directory tree from the given root, similar to os.walk().
-        """
-        paths = [root]
-        while paths:
-            path = paths.pop()
-            if isinstance(path, tuple):
-                yield path
-                continue
-            try:
-                with cls.scandir(path) as scandir_it:
-                    dirnames = []
-                    filenames = []
-                    if not top_down:
-                        paths.append((path, dirnames, filenames))
-                    for entry in scandir_it:
-                        name = entry.name
-                        try:
-                            if entry.is_dir(follow_symlinks=follow_symlinks):
-                                if not top_down:
-                                    paths.append(cls.parse_entry(entry))
-                                dirnames.append(name)
-                            else:
-                                filenames.append(name)
-                        except OSError:
-                            filenames.append(name)
-            except OSError as error:
-                if on_error is not None:
-                    on_error(error)
-            else:
-                if top_down:
-                    yield path, dirnames, filenames
-                    if dirnames:
-                        prefix = cls.add_slash(path)
-                        paths += [cls.concat_path(prefix, d) for d in reversed(dirnames)]
+
+class _StringGlobber(_GlobberBase):
+    """Provides shell-style pattern matching and globbing for string paths.
+    """
+    lexists = staticmethod(os.path.lexists)
+    concat_path = operator.add
+
+    @staticmethod
+    def scandir(path):
+        # We must close the scandir() object before proceeding to
+        # avoid exhausting file descriptors when globbing deep trees.
+        with os.scandir(path) as scandir_it:
+            entries = list(scandir_it)
+        return ((entry, entry.name, entry.path) for entry in entries)
+
+
+class _PathGlobber(_GlobberBase):
+    """Provides shell-style pattern matching and globbing for pathlib paths.
+    """
+
+    @staticmethod
+    def lexists(path):
+        return path.info.exists(follow_symlinks=False)
+
+    @staticmethod
+    def scandir(path):
+        return ((child.info, child.name, child) for child in path.iterdir())
+
+    @staticmethod
+    def concat_path(path, text):
+        return path.with_segments(str(path) + text)
