@@ -1577,6 +1577,42 @@ class AsyncTests(BaseTest):
 
         asyncio.run(run_tasks())
 
+    @unittest.skipIf(not sys.flags.context_aware_warnings,
+                     "requires context aware warnings")
+    def test_async_task_inherit(self):
+        """Check that a new asyncio task inherits warnings context from the
+        coroutine that spawns it.
+        """
+        import asyncio
+
+        step1 = asyncio.Event()
+        step2 = asyncio.Event()
+
+        async def run_child1():
+            await step1.wait()
+            # This should be recorded by the run_parent() catch_warnings
+            # context.
+            self.module.warn('child warning', UserWarning)
+            step2.set()
+
+        async def run_child2():
+            # This establishes a new catch_warnings() context.  The
+            # run_child1() task should still be using the context from
+            # run_parent() if context-aware warnings are enabled.
+            with self.module.catch_warnings(record=True) as w:
+                step1.set()
+                await step2.wait()
+
+        async def run_parent():
+            with self.module.catch_warnings(record=True) as w:
+                child1_task = asyncio.create_task(run_child1())
+                child2_task = asyncio.create_task(run_child2())
+                await step2.wait()
+                self.assertEqual(len(w), 1)
+                self.assertEqual(w[0].message.args[0], 'child warning')
+
+        asyncio.run(run_parent())
+
 
 class CAsyncTests(AsyncTests, unittest.TestCase):
     module = c_warnings
