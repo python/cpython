@@ -677,7 +677,6 @@ struct _Py_interp_cached_objects {
     PyTypeObject *paramspecargs_type;
     PyTypeObject *paramspeckwargs_type;
     PyTypeObject *constevaluator_type;
-    PyObject *slotdefs_cache;
 };
 
 struct _Py_interp_static_objects {

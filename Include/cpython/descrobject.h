@@ -16,6 +16,7 @@ struct wrapperbase {
     const char *doc;
     int flags;
     PyObject *name_strobj;
+    uint8_t name_count;
 };
 
 /* Flags for above struct */

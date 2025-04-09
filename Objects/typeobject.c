@@ -11005,34 +11005,6 @@ slotptr(PyTypeObject *type, int ioffset)
     return (void **)ptr;
 }
 
-/* Return a slot pointer for a given name, but ONLY if the attribute has
-   exactly one slot function.  The name must be an interned string. */
-static void **
-resolve_slotdups(PyTypeObject *type, PyObject *name)
-{
-    /* XXX Maybe this could be optimized more -- but is it worth it? */
-
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    PyObject *cache = _Py_INTERP_CACHED_OBJECT(interp, slotdefs_cache);
-    assert(cache);
-
-    PyObject* bytes = PyDict_GetItemWithError(cache, name);
-    assert(!PyErr_Occurred());
-    assert(bytes);
-    assert(PyBytes_CheckExact(bytes));
-
-    uint8_t *data = (uint8_t *)PyBytes_AS_STRING(bytes);
-    uint8_t n = data[0];
-
-    assert(n < MAX_EQUIV);
-    if (n == 1) {
-        pytype_slotdef *p = &slotdefs[data[1]];
-        return slotptr(type, p->offset);
-    }
-
-    return NULL;
-}
-
 
 /* Common code for update_slots_callback() and fixup_slot_dispatchers().
  *
@@ -11139,7 +11111,10 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, PyObject *mro_dict)
         }
         if (Py_IS_TYPE(descr, &PyWrapperDescr_Type) &&
             ((PyWrapperDescrObject *)descr)->d_base->name_strobj == p->name_strobj) {
-            void **tptr = resolve_slotdups(type, p->name_strobj);
+            void **tptr = NULL;
+            if (p->name_count == 1)
+                tptr = slotptr(type, p->offset);
+
             if (tptr == NULL || tptr == ptr)
                 generic = p->function;
             d = (PyWrapperDescrObject *)descr;
@@ -11322,21 +11297,15 @@ update_all_slots(PyTypeObject* type)
 int
 _PyType_InitSlotDefsCache(PyInterpreterState *interp)
 {
-    PyObject *cache;
-    PyObject *bytes = NULL;
-
-    assert (!_Py_INTERP_CACHED_OBJECT(interp, slotdefs_cache));
-    PyInterpreterState *main = interp->runtime->interpreters.main;
-    if (interp != main) {
-        cache = _Py_INTERP_CACHED_OBJECT(main, slotdefs_cache);
-        _Py_INTERP_CACHED_OBJECT(interp, slotdefs_cache) = Py_NewRef(cache);
+    if (interp != interp->runtime->interpreters.main) {
         return 0;
     }
-
-    cache = PyDict_New();
+    PyObject *bytes = NULL;
+    PyObject *cache = PyDict_New();
     if (!cache) {
-        goto error;
+        return -1;
     }
+
     pytype_slotdef *p;
     Py_ssize_t idx = 0;
     for (p = slotdefs; p->name_strobj; p++, idx++) {
@@ -11380,12 +11349,25 @@ _PyType_InitSlotDefsCache(PyInterpreterState *interp)
         Py_CLEAR(bytes);
     }
 
-    _Py_INTERP_CACHED_OBJECT(interp, slotdefs_cache) = cache;
+    Py_ssize_t pos=0;
+    PyObject *key=NULL;
+    PyObject *value=NULL;
+    while (PyDict_Next(cache, &pos, &key, &value)) {
+        uint8_t *data = (uint8_t *)PyBytes_AS_STRING(value);
+        uint8_t n = data[0];
+        uint8_t i = 0;
+        for(; i < n; i++) {
+            uint8_t idx = data[i + 1];
+            slotdefs[idx].name_count = n;
+        }
+    }
+
+    Py_DECREF(cache);
     return 0;
 
 error:
     Py_XDECREF(bytes);
-    Py_XDECREF(cache);
+    Py_DECREF(cache);
     return -1;
 }
 
