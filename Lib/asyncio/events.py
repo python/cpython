@@ -16,7 +16,6 @@ __all__ = (
     "set_event_loop_policy",
     "get_event_loop",
     "set_event_loop",
-    "set_event_loop",
     "new_event_loop",
     "_set_running_loop",
     "get_running_loop",
