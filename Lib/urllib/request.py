@@ -1466,17 +1466,16 @@ class FileHandler(BaseHandler):
     def open_local_file(self, req):
         import email.utils
         import mimetypes
-        filename = _splittype(req.full_url)[1]
-        localfile = url2pathname(filename)
+        localfile = url2pathname(req.full_url, True)
         try:
             stats = os.stat(localfile)
             size = stats.st_size
             modified = email.utils.formatdate(stats.st_mtime, usegmt=True)
-            mtype = mimetypes.guess_type(filename)[0]
+            mtype = mimetypes.guess_file_type(localfile)[0]
             headers = email.message_from_string(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified))
-            origurl = f'file:{pathname2url(localfile)}'
+            origurl = pathname2url(localfile, True)
             return addinfourl(open(localfile, 'rb'), headers, origurl)
         except OSError as exp:
             raise URLError(exp, exp.filename)
@@ -1635,9 +1634,13 @@ class DataHandler(BaseHandler):
 
 # Code move from the old urllib module
 
-def url2pathname(url):
+def url2pathname(url, has_scheme=False):
     """OS-specific conversion from a relative URL of the 'file' scheme
     to a file system path; not recommended for general use."""
+    if has_scheme:
+        scheme, url = _splittype(url)
+        if scheme != 'file':
+            raise URLError("URL does not use file: scheme")
     authority, url = _splithost(url)
     if os.name == 'nt':
         if not _is_local_authority(authority):
@@ -1661,13 +1664,14 @@ def url2pathname(url):
     return unquote(url, encoding=encoding, errors=errors)
 
 
-def pathname2url(pathname):
+def pathname2url(pathname, add_scheme=False):
     """OS-specific conversion from a file system path to a relative URL
     of the 'file' scheme; not recommended for general use."""
     if os.name == 'nt':
         pathname = pathname.replace('\\', '/')
     encoding = sys.getfilesystemencoding()
     errors = sys.getfilesystemencodeerrors()
+    scheme = 'file:' if add_scheme else ''
     drive, root, tail = os.path.splitroot(pathname)
     if drive:
         # First, clean up some special forms. We are going to sacrifice the
@@ -1689,7 +1693,7 @@ def pathname2url(pathname):
         # avoids interpreting the path as a URL authority.
         root = '//' + root
     tail = quote(tail, encoding=encoding, errors=errors)
-    return drive + root + tail
+    return scheme + drive + root + tail
 
 
 # Utility functions
