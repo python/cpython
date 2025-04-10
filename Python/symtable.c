@@ -2749,8 +2749,10 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
     // Annotations in local scopes are not executed and should not affect the symtable
     bool is_unevaluated = st->st_cur->ste_type == FunctionBlock;
 
-    if ((st->st_cur->ste_type == ClassBlock || st->st_cur->ste_type == ModuleBlock)
-            && st->st_cur->ste_in_conditional_block
+    // Module-level annotations are always considered conditional because the module
+    // may be partially executed.
+    if ((((st->st_cur->ste_type == ClassBlock && st->st_cur->ste_in_conditional_block)
+            || st->st_cur->ste_type == ModuleBlock))
             && !st->st_cur->ste_has_conditional_annotations)
     {
         st->st_cur->ste_has_conditional_annotations = 1;

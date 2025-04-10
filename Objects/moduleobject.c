@@ -1246,6 +1246,25 @@ module_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
 
     PyObject *annotations;
     if (PyDict_GetItemRef(dict, &_Py_ID(__annotations__), &annotations) == 0) {
+        PyObject *spec;
+        if (PyDict_GetItemRef(m->md_dict, &_Py_ID(__spec__), &spec) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+        bool is_initializing = false;
+        if (spec != NULL) {
+            int rc = _PyModuleSpec_IsInitializing(spec);
+            if (rc < 0) {
+                Py_DECREF(spec);
+                Py_DECREF(dict);
+                return NULL;
+            }
+            Py_DECREF(spec);
+            if (rc) {
+                is_initializing = true;
+            }
+        }
+
         PyObject *annotate;
         int annotate_result = PyDict_GetItemRef(dict, &_Py_ID(__annotate__), &annotate);
         if (annotate_result < 0) {
@@ -1273,7 +1292,8 @@ module_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
             annotations = PyDict_New();
         }
         Py_XDECREF(annotate);
-        if (annotations) {
+        // Do not cache annotations if the module is still initializing
+        if (annotations && !is_initializing) {
             int result = PyDict_SetItem(
                     dict, &_Py_ID(__annotations__), annotations);
             if (result) {

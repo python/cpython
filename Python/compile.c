@@ -1154,7 +1154,7 @@ _PyCompile_AddDeferredAnnotation(compiler *c, stmt_ty s,
     }
     Py_DECREF(ptr);
     PyObject *index;
-    if (c->u->u_in_conditional_block) {
+    if (c->u->u_scope_type == COMPILE_SCOPE_MODULE || c->u->u_in_conditional_block) {
         index = PyLong_FromLong(c->u->u_next_conditional_annotation_index);
         if (index == NULL) {
             return ERROR;
@@ -1229,6 +1229,12 @@ instr_sequence *
 _PyCompile_InstrSequence(compiler *c)
 {
     return c->u->u_instr_sequence;
+}
+
+void
+_PyCompile_SetInstrSequence(compiler *c, instr_sequence *seq)
+{
+    c->u->u_instr_sequence = seq;
 }
 
 int
