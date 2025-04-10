@@ -1635,8 +1635,8 @@ class DataHandler(BaseHandler):
 # Code move from the old urllib module
 
 def url2pathname(url, has_scheme=False):
-    """OS-specific conversion from a relative URL of the 'file' scheme
-    to a file system path; not recommended for general use."""
+    """Convert the given file URL to a local file system path. The 'file:'
+    scheme prefix must be omitted unless *has_scheme* is set to true."""
     if has_scheme:
         scheme, url = _splittype(url)
         if scheme != 'file':
@@ -1665,8 +1665,8 @@ def url2pathname(url, has_scheme=False):
 
 
 def pathname2url(pathname, add_scheme=False):
-    """OS-specific conversion from a file system path to a relative URL
-    of the 'file' scheme; not recommended for general use."""
+    """Convert the given local file system path to a file URL. The 'file:'
+    scheme prefix is omitted unless *add_scheme* is set to true."""
     if os.name == 'nt':
         pathname = pathname.replace('\\', '/')
     encoding = sys.getfilesystemencoding()

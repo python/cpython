@@ -1205,7 +1205,7 @@ urllib
   - Accept a complete URL when the new *has_scheme* argument is set to true.
   - Discard URL authorities that resolve to a local IP address.
   - Raise :exc:`~urllib.error.URLError` if a URL authority doesn't resolve
-    to ``localhost``, except on Windows where we return a UNC path.
+    to a local IP address, except on Windows where we return a UNC path.
 
   In :func:`urllib.request.pathname2url`:
 
