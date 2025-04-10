@@ -4772,9 +4772,10 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     }
     Py_CLEAR(co);
 
-    if (codegen_comprehension_iter(c, outermost)) {
-        goto error;
-    }
+    VISIT(c, expr, outermost->iter);
+    //if (codegen_comprehension_iter(c, outermost)) {
+    //    goto error;
+    //}
 
     ADDOP_I(c, loc, CALL, 0);
 
