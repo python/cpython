@@ -15,7 +15,7 @@ operating system::
 
    >>> import os
    >>> os.getcwd()      # Return the current working directory
-   'C:\\Python312'
+   'C:\\Python314'
    >>> os.chdir('/server/accesslogs')   # Change current working directory
    >>> os.system('mkdir today')   # Run the command mkdir in the system shell
    0
@@ -138,7 +138,7 @@ Mathematics
 ===========
 
 The :mod:`math` module gives access to the underlying C library functions for
-floating point math::
+floating-point math::
 
    >>> import math
    >>> math.cos(math.pi / 4)

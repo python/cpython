@@ -7,6 +7,7 @@ preserve
 #  include "pycore_runtime.h"     // _Py_ID()
 #endif
 #include "pycore_abstract.h"      // _PyNumber_Index()
+#include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(list_insert__doc__,
@@ -22,7 +23,7 @@ static PyObject *
 list_insert_impl(PyListObject *self, Py_ssize_t index, PyObject *object);
 
 static PyObject *
-list_insert(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
+list_insert(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t index;
@@ -44,7 +45,9 @@ list_insert(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
         index = ival;
     }
     object = args[1];
-    return_value = list_insert_impl(self, index, object);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = list_insert_impl((PyListObject *)self, index, object);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -63,9 +66,15 @@ static PyObject *
 py_list_clear_impl(PyListObject *self);
 
 static PyObject *
-py_list_clear(PyListObject *self, PyObject *Py_UNUSED(ignored))
+py_list_clear(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return py_list_clear_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = py_list_clear_impl((PyListObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(list_copy__doc__,
@@ -81,9 +90,15 @@ static PyObject *
 list_copy_impl(PyListObject *self);
 
 static PyObject *
-list_copy(PyListObject *self, PyObject *Py_UNUSED(ignored))
+list_copy(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return list_copy_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = list_copy_impl((PyListObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(list_append__doc__,
@@ -95,14 +110,42 @@ PyDoc_STRVAR(list_append__doc__,
 #define LIST_APPEND_METHODDEF    \
     {"append", (PyCFunction)list_append, METH_O, list_append__doc__},
 
-PyDoc_STRVAR(py_list_extend__doc__,
+static PyObject *
+list_append_impl(PyListObject *self, PyObject *object);
+
+static PyObject *
+list_append(PyObject *self, PyObject *object)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = list_append_impl((PyListObject *)self, object);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+PyDoc_STRVAR(list_extend__doc__,
 "extend($self, iterable, /)\n"
 "--\n"
 "\n"
 "Extend list by appending elements from the iterable.");
 
-#define PY_LIST_EXTEND_METHODDEF    \
-    {"extend", (PyCFunction)py_list_extend, METH_O, py_list_extend__doc__},
+#define LIST_EXTEND_METHODDEF    \
+    {"extend", (PyCFunction)list_extend, METH_O, list_extend__doc__},
+
+static PyObject *
+list_extend_impl(PyListObject *self, PyObject *iterable);
+
+static PyObject *
+list_extend(PyObject *self, PyObject *iterable)
+{
+    PyObject *return_value = NULL;
+
+    return_value = list_extend_impl((PyListObject *)self, iterable);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(list_pop__doc__,
 "pop($self, index=-1, /)\n"
@@ -119,7 +162,7 @@ static PyObject *
 list_pop_impl(PyListObject *self, Py_ssize_t index);
 
 static PyObject *
-list_pop(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
+list_pop(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     Py_ssize_t index = -1;
@@ -143,7 +186,9 @@ list_pop(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
         index = ival;
     }
 skip_optional:
-    return_value = list_pop_impl(self, index);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = list_pop_impl((PyListObject *)self, index);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -170,7 +215,7 @@ static PyObject *
 list_sort_impl(PyListObject *self, PyObject *keyfunc, int reverse);
 
 static PyObject *
-list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+list_sort(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -179,9 +224,11 @@ list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(key), &_Py_ID(reverse), },
     };
     #undef NUM_KEYWORDS
@@ -203,7 +250,8 @@ list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
     PyObject *keyfunc = Py_None;
     int reverse = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 0, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 0, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -221,7 +269,9 @@ list_sort(PyListObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject 
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = list_sort_impl(self, keyfunc, reverse);
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = list_sort_impl((PyListObject *)self, keyfunc, reverse);
+    Py_END_CRITICAL_SECTION();
 
 exit:
     return return_value;
@@ -240,9 +290,15 @@ static PyObject *
 list_reverse_impl(PyListObject *self);
 
 static PyObject *
-list_reverse(PyListObject *self, PyObject *Py_UNUSED(ignored))
+list_reverse(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return list_reverse_impl(self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = list_reverse_impl((PyListObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(list_index__doc__,
@@ -261,7 +317,7 @@ list_index_impl(PyListObject *self, PyObject *value, Py_ssize_t start,
                 Py_ssize_t stop);
 
 static PyObject *
-list_index(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
+list_index(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyObject *value;
@@ -285,7 +341,7 @@ list_index(PyListObject *self, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
 skip_optional:
-    return_value = list_index_impl(self, value, start, stop);
+    return_value = list_index_impl((PyListObject *)self, value, start, stop);
 
 exit:
     return return_value;
@@ -300,6 +356,19 @@ PyDoc_STRVAR(list_count__doc__,
 #define LIST_COUNT_METHODDEF    \
     {"count", (PyCFunction)list_count, METH_O, list_count__doc__},
 
+static PyObject *
+list_count_impl(PyListObject *self, PyObject *value);
+
+static PyObject *
+list_count(PyObject *self, PyObject *value)
+{
+    PyObject *return_value = NULL;
+
+    return_value = list_count_impl((PyListObject *)self, value);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(list_remove__doc__,
 "remove($self, value, /)\n"
 "--\n"
@@ -310,6 +379,21 @@ PyDoc_STRVAR(list_remove__doc__,
 
 #define LIST_REMOVE_METHODDEF    \
     {"remove", (PyCFunction)list_remove, METH_O, list_remove__doc__},
+
+static PyObject *
+list_remove_impl(PyListObject *self, PyObject *value);
+
+static PyObject *
+list_remove(PyObject *self, PyObject *value)
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = list_remove_impl((PyListObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
 
 PyDoc_STRVAR(list___init____doc__,
 "list(iterable=(), /)\n"
@@ -362,9 +446,9 @@ static PyObject *
 list___sizeof___impl(PyListObject *self);
 
 static PyObject *
-list___sizeof__(PyListObject *self, PyObject *Py_UNUSED(ignored))
+list___sizeof__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return list___sizeof___impl(self);
+    return list___sizeof___impl((PyListObject *)self);
 }
 
 PyDoc_STRVAR(list___reversed____doc__,
@@ -380,8 +464,8 @@ static PyObject *
 list___reversed___impl(PyListObject *self);
 
 static PyObject *
-list___reversed__(PyListObject *self, PyObject *Py_UNUSED(ignored))
+list___reversed__(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return list___reversed___impl(self);
+    return list___reversed___impl((PyListObject *)self);
 }
-/*[clinic end generated code: output=f2d7b63119464ff4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae13fc2b56dc27c2 input=a9049054013a1b77]*/

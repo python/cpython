@@ -1,5 +1,6 @@
 import unittest
 
+from test.support import force_not_colorized
 from test.test_unittest.support import LoggingResult
 
 
@@ -103,16 +104,16 @@ class Test_TestSkipping(unittest.TestCase):
             result = LoggingResult(events)
             self.assertIs(suite.run(result), result)
             self.assertEqual(len(result.skipped), 1)
-            expected = ['addSkip', 'stopTest', 'startTest',
-                        'addSuccess', 'stopTest']
+            expected = ['startTest', 'addSkip', 'stopTest',
+                        'startTest', 'addSuccess', 'stopTest']
             self.assertEqual(events, expected)
-            self.assertEqual(result.testsRun, 1)
+            self.assertEqual(result.testsRun, 2)
             self.assertEqual(result.skipped, [(test_do_skip, "testing")])
             self.assertTrue(result.wasSuccessful())
 
             events = []
             result = test_do_skip.run()
-            self.assertEqual(events, ['startTestRun', 'addSkip',
+            self.assertEqual(events, ['startTestRun', 'startTest', 'addSkip',
                                       'stopTest', 'stopTestRun'])
             self.assertEqual(result.skipped, [(test_do_skip, "testing")])
 
@@ -135,13 +136,13 @@ class Test_TestSkipping(unittest.TestCase):
         test = Foo("test_1")
         suite = unittest.TestSuite([test])
         self.assertIs(suite.run(result), result)
-        self.assertEqual(events, ['addSkip', 'stopTest'])
+        self.assertEqual(events, ['startTest', 'addSkip', 'stopTest'])
         self.assertEqual(result.skipped, [(test, "testing")])
         self.assertEqual(record, [])
 
         events = []
         result = test.run()
-        self.assertEqual(events, ['startTestRun', 'addSkip',
+        self.assertEqual(events, ['startTestRun', 'startTest', 'addSkip',
                                   'stopTest', 'stopTestRun'])
         self.assertEqual(result.skipped, [(test, "testing")])
         self.assertEqual(record, [])
@@ -293,6 +294,7 @@ class Test_TestSkipping(unittest.TestCase):
         self.assertFalse(result.unexpectedSuccesses)
         self.assertTrue(result.wasSuccessful())
 
+    @force_not_colorized
     def test_expected_failure_and_fail_in_cleanup(self):
         class Foo(unittest.TestCase):
             @unittest.expectedFailure
@@ -372,6 +374,7 @@ class Test_TestSkipping(unittest.TestCase):
         self.assertEqual(result.unexpectedSuccesses, [test])
         self.assertFalse(result.wasSuccessful())
 
+    @force_not_colorized
     def test_unexpected_success_and_fail_in_cleanup(self):
         class Foo(unittest.TestCase):
             @unittest.expectedFailure

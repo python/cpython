@@ -65,8 +65,14 @@ the :mod:`io` APIs instead.
    Overrides the normal behavior of :func:`io.open_code` to pass its parameter
    through the provided handler.
 
-   The handler is a function of type :c:expr:`PyObject *(\*)(PyObject *path,
-   void *userData)`, where *path* is guaranteed to be :c:type:`PyUnicodeObject`.
+   The *handler* is a function of type:
+
+   .. c:namespace:: NULL
+   .. c:type:: PyObject * (*Py_OpenCodeHookFunction)(PyObject *, void *)
+
+      Equivalent of :c:expr:`PyObject *(\*)(PyObject *path,
+      void *userData)`, where *path* is guaranteed to be
+      :c:type:`PyUnicodeObject`.
 
    The *userData* pointer is passed into the hook function. Since hook
    functions may be called from different runtimes, this pointer should not
@@ -90,7 +96,7 @@ the :mod:`io` APIs instead.
 
 .. c:function:: int PyFile_WriteObject(PyObject *obj, PyObject *p, int flags)
 
-   .. index:: single: Py_PRINT_RAW
+   .. index:: single: Py_PRINT_RAW (C macro)
 
    Write object *obj* to file object *p*.  The only supported flag for *flags* is
    :c:macro:`Py_PRINT_RAW`; if given, the :func:`str` of the object is written

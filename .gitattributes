@@ -27,8 +27,6 @@ Lib/test/cjkencodings/*                    noeol
 Lib/test/tokenizedata/coding20731.py       noeol
 Lib/test/decimaltestdata/*.decTest         noeol
 Lib/test/test_email/data/*.txt             noeol
-Lib/test/test_importlib/resources/data01/*           noeol
-Lib/test/test_importlib/resources/namespacedata01/*  noeol
 Lib/test/xmltestdata/*                     noeol
 
 # Shell scripts should have LF even on Windows because of Cygwin
@@ -77,11 +75,14 @@ Include/internal/pycore_opcode.h                    generated
 Include/internal/pycore_opcode_metadata.h           generated
 Include/internal/pycore_*_generated.h               generated
 Include/internal/pycore_uop_ids.h                   generated
+Include/internal/pycore_uop_metadata.h              generated
 Include/opcode.h                                    generated
 Include/opcode_ids.h                                generated
 Include/token.h                                     generated
 Lib/_opcode_metadata.py                             generated
 Lib/keyword.py                                      generated
+Lib/test/certdata/*.pem                             generated
+Lib/test/certdata/*.0                               generated
 Lib/test/levenshtein_examples.json                  generated
 Lib/test/test_stable_abi_ctypes.py                  generated
 Lib/token.py                                        generated
@@ -94,6 +95,7 @@ Programs/test_frozenmain.h                          generated
 Python/Python-ast.c                                 generated
 Python/executor_cases.c.h                           generated
 Python/generated_cases.c.h                          generated
+Python/optimizer_cases.c.h                          generated
 Python/opcode_targets.h                             generated
 Python/stdlib_module_names.h                        generated
 Tools/peg_generator/pegen/grammar_parser.py         generated

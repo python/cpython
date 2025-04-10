@@ -37,8 +37,7 @@ struct llist_node {
 };
 
 // Get the struct containing a node.
-#define llist_data(node, type, member) \
-    (type*)((char*)node - offsetof(type, member))
+#define llist_data(node, type, member) (_Py_CONTAINER_OF(node, type, member))
 
 // Iterate over a list.
 #define llist_for_each(node, head) \

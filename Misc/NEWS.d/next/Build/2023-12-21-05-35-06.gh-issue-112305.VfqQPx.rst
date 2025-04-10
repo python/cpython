@@ -1,3 +1,0 @@
-Fixed the ``check-clean-src`` step performed on out of tree builds to detect
-errant ``$(srcdir)/Python/frozen_modules/*.h`` files and recommend
-appropriate source tree cleanup steps to get a working build again.

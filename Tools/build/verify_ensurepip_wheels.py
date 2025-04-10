@@ -14,7 +14,6 @@ import re
 from pathlib import Path
 from urllib.request import urlopen
 
-PACKAGE_NAMES = ("pip",)
 ENSURE_PIP_ROOT = Path(__file__).parent.parent.parent / "Lib/ensurepip"
 WHEEL_DIR = ENSURE_PIP_ROOT / "_bundled"
 ENSURE_PIP_INIT_PY_TEXT = (ENSURE_PIP_ROOT / "__init__.py").read_text(encoding="utf-8")
@@ -97,8 +96,5 @@ def verify_wheel(package_name: str) -> bool:
 
 
 if __name__ == "__main__":
-    exit_status = 0
-    for package_name in PACKAGE_NAMES:
-        if not verify_wheel(package_name):
-            exit_status = 1
+    exit_status = int(not verify_wheel("pip"))
     raise SystemExit(exit_status)

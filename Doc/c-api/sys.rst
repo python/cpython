@@ -5,6 +5,7 @@
 Operating System Utilities
 ==========================
 
+
 .. c:function:: PyObject* PyOS_FSPath(PyObject *path)
 
    Return the file system representation for *path*. If the object is a
@@ -97,27 +98,30 @@ Operating System Utilities
 
 .. c:function:: int PyOS_CheckStack()
 
+   .. index:: single: USE_STACKCHECK (C macro)
+
    Return true when the interpreter runs out of stack space.  This is a reliable
-   check, but is only available when :c:macro:`USE_STACKCHECK` is defined (currently
+   check, but is only available when :c:macro:`!USE_STACKCHECK` is defined (currently
    on certain versions of Windows using the Microsoft Visual C++ compiler).
-   :c:macro:`USE_STACKCHECK` will be defined automatically; you should never
+   :c:macro:`!USE_STACKCHECK` will be defined automatically; you should never
    change the definition in your own code.
+
+
+.. c:type::  void (*PyOS_sighandler_t)(int)
 
 
 .. c:function:: PyOS_sighandler_t PyOS_getsig(int i)
 
    Return the current signal handler for signal *i*.  This is a thin wrapper around
    either :c:func:`!sigaction` or :c:func:`!signal`.  Do not call those functions
-   directly! :c:type:`PyOS_sighandler_t` is a typedef alias for :c:expr:`void
-   (\*)(int)`.
+   directly!
 
 
 .. c:function:: PyOS_sighandler_t PyOS_setsig(int i, PyOS_sighandler_t h)
 
    Set the signal handler for signal *i* to be *h*; return the old signal handler.
    This is a thin wrapper around either :c:func:`!sigaction` or :c:func:`!signal`.  Do
-   not call those functions directly!  :c:type:`PyOS_sighandler_t` is a typedef
-   alias for :c:expr:`void (\*)(int)`.
+   not call those functions directly!
 
 .. c:function:: wchar_t* Py_DecodeLocale(const char* arg, size_t *size)
 
@@ -211,6 +215,38 @@ Operating System Utilities
    .. versionchanged:: 3.8
       The function now uses the UTF-8 encoding on Windows if
       :c:member:`PyPreConfig.legacy_windows_fs_encoding` is zero.
+
+.. c:function:: FILE* Py_fopen(PyObject *path, const char *mode)
+
+   Similar to :c:func:`!fopen`, but *path* is a Python object and
+   an exception is set on error.
+
+   *path* must be a :class:`str` object, a :class:`bytes` object,
+   or a :term:`path-like object`.
+
+   On success, return the new file pointer.
+   On error, set an exception and return ``NULL``.
+
+   The file must be closed by :c:func:`Py_fclose` rather than calling directly
+   :c:func:`!fclose`.
+
+   The file descriptor is created non-inheritable (:pep:`446`).
+
+   The caller must have an :term:`attached thread state`.
+
+   .. versionadded:: 3.14
+
+
+.. c:function:: int Py_fclose(FILE *file)
+
+   Close a file that was opened by :c:func:`Py_fopen`.
+
+   On success, return ``0``.
+   On error, return ``EOF`` and ``errno`` is set to indicate the error.
+   In either case, any further access (including another call to
+   :c:func:`Py_fclose`) to the stream results in undefined behavior.
+
+   .. versionadded:: 3.14
 
 
 .. _systemfunctions:
@@ -342,10 +378,8 @@ accessible to C code.  They all work with the current interpreter thread's
    silently abort the operation by raising an error subclassed from
    :class:`Exception` (other errors will not be silenced).
 
-   The hook function is of type :c:expr:`int (*)(const char *event, PyObject
-   *args, void *userData)`, where *args* is guaranteed to be a
-   :c:type:`PyTupleObject`. The hook function is always called with the GIL
-   held by the Python interpreter that raised the event.
+   The hook function is always called with an :term:`attached thread state` by
+   the Python interpreter that raised the event.
 
    See :pep:`578` for a detailed description of auditing.  Functions in the
    runtime and standard library that raise events are listed in the
@@ -354,11 +388,20 @@ accessible to C code.  They all work with the current interpreter thread's
 
    .. audit-event:: sys.addaudithook "" c.PySys_AddAuditHook
 
-      If the interpreter is initialized, this function raises a auditing event
+      If the interpreter is initialized, this function raises an auditing event
       ``sys.addaudithook`` with no arguments. If any existing hooks raise an
       exception derived from :class:`Exception`, the new hook will not be
       added and the exception is cleared. As a result, callers cannot assume
       that their hook has been added unless they control all existing hooks.
+
+   .. c:namespace:: NULL
+   .. c:type:: int (*Py_AuditHookFunction) (const char *event, PyObject *args, void *userData)
+
+      The type of the hook function.
+      *event* is the C string event argument passed to :c:func:`PySys_Audit` or
+      :c:func:`PySys_AuditTuple`.
+      *args* is guaranteed to be a :c:type:`PyTupleObject`.
+      *userData* is the argument passed to PySys_AddAuditHook().
 
    .. versionadded:: 3.8
 
@@ -371,7 +414,7 @@ Process Control
 
 .. c:function:: void Py_FatalError(const char *message)
 
-   .. index:: single: abort()
+   .. index:: single: abort (C function)
 
    Print a fatal error message and kill the process.  No cleanup is performed.
    This function should only be invoked when a condition is detected that would
@@ -391,8 +434,8 @@ Process Control
 .. c:function:: void Py_Exit(int status)
 
    .. index::
-      single: Py_FinalizeEx()
-      single: exit()
+      single: Py_FinalizeEx (C function)
+      single: exit (C function)
 
    Exit the current process.  This calls :c:func:`Py_FinalizeEx` and then calls the
    standard C library function ``exit(status)``.  If :c:func:`Py_FinalizeEx`
@@ -405,7 +448,7 @@ Process Control
 .. c:function:: int Py_AtExit(void (*func) ())
 
    .. index::
-      single: Py_FinalizeEx()
+      single: Py_FinalizeEx (C function)
       single: cleanup functions
 
    Register a cleanup function to be called by :c:func:`Py_FinalizeEx`.  The cleanup
@@ -415,3 +458,7 @@ Process Control
    function registered last is called first. Each cleanup function will be called
    at most once.  Since Python's internal finalization will have completed before
    the cleanup function, no Python APIs should be called by *func*.
+
+   .. seealso::
+
+      :c:func:`PyUnstable_AtExit` for passing a ``void *data`` argument.

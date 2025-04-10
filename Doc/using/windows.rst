@@ -14,8 +14,8 @@ know about when using Python on Microsoft Windows.
 
 Unlike most Unix systems and services, Windows does not include a system
 supported installation of Python. To make Python available, the CPython team
-has compiled Windows installers (MSI packages) with every `release
-<https://www.python.org/download/releases/>`_ for many years. These installers
+has compiled Windows installers with every `release
+<https://www.python.org/downloads/>`_ for many years. These installers
 are primarily intended to add a per-user installation of Python, with the
 core interpreter and library being used by a single user. The installer is also
 able to install for all users of a single machine, and a separate ZIP file is
@@ -23,8 +23,9 @@ available for application-local distributions.
 
 As specified in :pep:`11`, a Python release only supports a Windows platform
 while Microsoft considers the platform under extended support. This means that
-Python |version| supports Windows 8.1 and newer. If you require Windows 7
-support, please install Python 3.8.
+Python |version| supports Windows 10 and newer. If you require Windows 7
+support, please install Python 3.8. If you require Windows 8.1 support,
+please install Python 3.12.
 
 There are a number of different installers available for Windows, each with
 certain benefits and downsides.
@@ -307,6 +308,46 @@ settings and replace any that have been removed or modified.
 "Uninstall" will remove Python entirely, with the exception of the
 :ref:`launcher`, which has its own entry in Programs and Features.
 
+.. _install-freethreaded-windows:
+
+Installing Free-threaded Binaries
+---------------------------------
+
+.. versionadded:: 3.13 (Experimental)
+
+.. note::
+
+   Everything described in this section is considered experimental,
+   and should be expected to change in future releases.
+
+To install pre-built binaries with free-threading enabled (see :pep:`703`), you
+should select "Customize installation". The second page of options includes the
+"Download free-threaded binaries" checkbox.
+
+.. image:: win_install_freethreaded.png
+
+Selecting this option will download and install additional binaries to the same
+location as the main Python install. The main executable is called
+``python3.13t.exe``, and other binaries either receive a ``t`` suffix or a full
+ABI suffix. Python source files and bundled third-party dependencies are shared
+with the main install.
+
+The free-threaded version is registered as a regular Python install with the
+tag ``3.13t`` (with a ``-32`` or ``-arm64`` suffix as normal for those
+platforms). This allows tools to discover it, and for the :ref:`launcher` to
+support ``py.exe -3.13t``. Note that the launcher will interpret ``py.exe -3``
+(or a ``python3`` shebang) as "the latest 3.x install", which will prefer the
+free-threaded binaries over the regular ones, while ``py.exe -3.13`` will not.
+If you use the short style of option, you may prefer to not install the
+free-threaded binaries at this time.
+
+To specify the install option at the command line, use
+``Include_freethreaded=1``. See :ref:`install-layout-option` for instructions on
+pre-emptively downloading the additional binaries for offline install. The
+options to include debug symbols and binaries also apply to the free-threaded
+builds.
+
+Free-threaded binaries are also available :ref:`on nuget.org <windows-nuget>`.
 
 .. _windows-store:
 
@@ -394,7 +435,7 @@ When writing to the Windows Registry, the following behaviors exist:
 For more detail on the technical basis for these limitations, please consult
 Microsoft's documentation on packaged full-trust apps, currently available at
 `docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes
-<https://docs.microsoft.com/en-us/windows/msix/desktop/desktop-to-uwp-behind-the-scenes>`_
+<https://learn.microsoft.com/windows/msix/desktop/desktop-to-uwp-behind-the-scenes>`_
 
 
 .. _windows-nuget:
@@ -450,9 +491,29 @@ automatically use the headers and import libraries in your build.
 
 The package information pages on nuget.org are
 `www.nuget.org/packages/python <https://www.nuget.org/packages/python>`_
-for the 64-bit version and `www.nuget.org/packages/pythonx86
-<https://www.nuget.org/packages/pythonx86>`_ for the 32-bit version.
+for the 64-bit version, `www.nuget.org/packages/pythonx86
+<https://www.nuget.org/packages/pythonx86>`_ for the 32-bit version, and
+`www.nuget.org/packages/pythonarm64
+<https://www.nuget.org/packages/pythonarm64>`_ for the ARM64 version
 
+Free-threaded packages
+----------------------
+
+.. versionadded:: 3.13 (Experimental)
+
+.. note::
+
+   Everything described in this section is considered experimental,
+   and should be expected to change in future releases.
+
+Packages containing free-threaded binaries are named
+`python-freethreaded <https://www.nuget.org/packages/python-freethreaded>`_
+for the 64-bit version, `pythonx86-freethreaded
+<https://www.nuget.org/packages/pythonx86-freethreaded>`_ for the 32-bit
+version, and `pythonarm64-freethreaded
+<https://www.nuget.org/packages/pythonarm64-freethreaded>`_ for the ARM64
+version. These packages contain both the ``python3.13t.exe`` and
+``python.exe`` entry points, both of which run free threaded.
 
 .. _windows-embeddable:
 
@@ -475,7 +536,7 @@ dependents, such as Idle), pip and the Python documentation are not included.
 .. note::
 
     The embedded distribution does not include the `Microsoft C Runtime
-    <https://docs.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist#visual-studio-2015-2017-2019-and-2022>`_ and it is
+    <https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist#visual-studio-2015-2017-2019-and-2022>`_ and it is
     the responsibility of the application installer to provide this. The
     runtime may have already been installed on a user's system previously or
     automatically via Windows Update, and can be detected by finding
@@ -548,7 +609,7 @@ key features:
     Popular scientific modules (such as numpy, scipy and pandas) and the
     ``conda`` package manager.
 
-`Enthought Deployment Manager <https://www.enthought.com/edm/>`_
+`Enthought Deployment Manager <https://assets.enthought.com/downloads/edm/>`_
     "The Next Generation Python Environment and Package Manager".
 
     Previously Enthought provided Canopy, but it `reached end of life in 2016
@@ -618,13 +679,13 @@ System variables, you need non-restricted access to your machine
 
 .. seealso::
 
-    https://docs.microsoft.com/en-us/windows/win32/procthread/environment-variables
+    https://learn.microsoft.com/windows/win32/procthread/environment-variables
       Overview of environment variables on Windows
 
-    https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/set_1
+    https://learn.microsoft.com/windows-server/administration/windows-commands/set_1
       The ``set`` command, for temporarily modifying environment variables
 
-    https://docs.microsoft.com/en-us/windows-server/administration/windows-commands/setx
+    https://learn.microsoft.com/windows-server/administration/windows-commands/setx
       The ``setx`` command, for permanently modifying environment variables
 
 
@@ -777,8 +838,8 @@ The short form of the argument (``-3``) only ever selects from core Python
 releases, and not other distributions. However, the longer form (``-V:3``) will
 select from any.
 
-The Company is matched on the full string, case-insenitive. The Tag is matched
-oneither the full string, or a prefix, provided the next character is a dot or a
+The Company is matched on the full string, case-insensitive. The Tag is matched
+on either the full string, or a prefix, provided the next character is a dot or a
 hyphen. This allows ``-V:3.1`` to match ``3.1-32``, but not ``3.10``. Tags are
 sorted using numerical ordering (``3.10`` is newer than ``3.1``), but are
 compared using text (``-V:3.01`` does not match ``3.1``).
@@ -1225,18 +1286,18 @@ The Windows-specific standard modules are documented in
 PyWin32
 -------
 
-The `PyWin32 <https://pypi.org/project/pywin32>`_ module by Mark Hammond
+The :pypi:`PyWin32` module by Mark Hammond
 is a collection of modules for advanced Windows-specific support.  This includes
 utilities for:
 
 * `Component Object Model
-  <https://docs.microsoft.com/en-us/windows/win32/com/component-object-model--com--portal>`_
+  <https://learn.microsoft.com/windows/win32/com/component-object-model--com--portal>`_
   (COM)
 * Win32 API calls
 * Registry
 * Event log
 * `Microsoft Foundation Classes
-  <https://docs.microsoft.com/en-us/cpp/mfc/mfc-desktop-applications>`_
+  <https://learn.microsoft.com/cpp/mfc/mfc-desktop-applications>`_
   (MFC) user interfaces
 
 `PythonWin <https://web.archive.org/web/20060524042422/
@@ -1245,7 +1306,7 @@ shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 
 .. seealso::
 
-   `Win32 How Do I...? <http://timgolden.me.uk/python/win32_how_do_i.html>`_
+   `Win32 How Do I...? <https://timgolden.me.uk/python/win32_how_do_i.html>`_
       by Tim Golden
 
    `Python and COM <https://www.boddie.org.uk/python/COM.html>`_
