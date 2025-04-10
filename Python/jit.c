@@ -23,6 +23,8 @@
 #include "pycore_sliceobject.h"
 #include "pycore_tuple.h"
 #include "pycore_unicodeobject.h"
+#include "pycore_interpolation.h"
+#include "pycore_template.h"
 
 #include "pycore_jit.h"
 
