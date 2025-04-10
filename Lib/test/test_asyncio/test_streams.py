@@ -836,7 +836,7 @@ class StreamTests(test_utils.TestCase):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         # Deprecated in 3.10, undeprecated in 3.12
-        self.addCleanup(asyncio._set_event_loop, None)
+        self.addCleanup(asyncio.set_event_loop, None)
         asyncio.set_event_loop(self.loop)
         reader = asyncio.StreamReader()
         self.assertIs(reader._loop, self.loop)
@@ -860,7 +860,7 @@ class StreamTests(test_utils.TestCase):
         # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         # Deprecated in 3.10, undeprecated in 3.12
-        self.addCleanup(asyncio._set_event_loop, None)
+        self.addCleanup(asyncio.set_event_loop, None)
         asyncio.set_event_loop(self.loop)
         reader = mock.Mock()
         protocol = asyncio.StreamReaderProtocol(reader)

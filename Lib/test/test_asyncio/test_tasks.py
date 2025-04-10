@@ -213,7 +213,7 @@ class BaseTaskTests:
 
         # Deprecated in 3.10, undeprecated in 3.12
         asyncio.set_event_loop(self.loop)
-        self.addCleanup(asyncio._set_event_loop, None)
+        self.addCleanup(asyncio.set_event_loop, None)
         t = asyncio.ensure_future(notmuch())
         self.assertIs(t._loop, self.loop)
         self.loop.run_until_complete(t)
@@ -2203,7 +2203,7 @@ class BaseTaskTests:
             return 42
 
         asyncio.set_event_loop(self.loop)
-        self.addCleanup(asyncio._set_event_loop, None)
+        self.addCleanup(asyncio.set_event_loop, None)
         outer = asyncio.shield(coro())
         self.assertEqual(outer._loop, self.loop)
         res = self.loop.run_until_complete(outer)
@@ -3323,7 +3323,7 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
     def test_constructor_empty_sequence_use_global_loop(self):
         # Deprecated in 3.10, undeprecated in 3.12
         asyncio.set_event_loop(self.one_loop)
-        self.addCleanup(asyncio._set_event_loop, None)
+        self.addCleanup(asyncio.set_event_loop, None)
         fut = asyncio.gather()
         self.assertIsInstance(fut, asyncio.Future)
         self.assertIs(fut._loop, self.one_loop)
@@ -3431,7 +3431,7 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         async def coro():
             return 'abc'
         asyncio.set_event_loop(self.other_loop)
-        self.addCleanup(asyncio._set_event_loop, None)
+        self.addCleanup(asyncio.set_event_loop, None)
         gen1 = coro()
         gen2 = coro()
         fut = asyncio.gather(gen1, gen2)

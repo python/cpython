@@ -32,7 +32,6 @@ Pending removal in Python 3.16
     * :class:`asyncio.WindowsProactorEventLoopPolicy`
     * :func:`asyncio.get_event_loop_policy`
     * :func:`asyncio.set_event_loop_policy`
-    * :func:`asyncio.set_event_loop`
 
     Users should use :func:`asyncio.run` or :class:`asyncio.Runner` with
     *loop_factory* to use the desired event loop implementation.
