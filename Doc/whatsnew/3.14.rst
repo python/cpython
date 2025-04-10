@@ -390,8 +390,9 @@ For further information on how to build Python, see
     `compiler bug <https://github.com/llvm/llvm-project/issues/106846>`_ found in
     Clang/LLVM 19, which causes the normal interpreter to be slower. We were unaware of this bug,
     resulting in inaccurate results. We sincerely apologize for
-    communicating results that were only accurate for certain versions of LLVM 19
-    and 20. At the time of writing, this bug has not yet been fixed in LLVM 19-21. Thus
+    communicating results that were only accurate for LLVM v19.1.x and v20.1.0. In the meantime,
+    the bug has been fixed in LLVM v20.1.1 and for the upcoming v21.1, but it will remain
+    unfixed for LLVM v19.1.x and v20.1.0. Thus
     any benchmarks with those versions of LLVM may produce inaccurate numbers.
     (Thanks to Nelson Elhage for bringing this to light.)
 

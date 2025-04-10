@@ -1890,8 +1890,10 @@ class SizeofTest(unittest.TestCase):
         # symtable entry
         # XXX
         # sys.flags
-        # FIXME: The +1 will not be necessary once gh-122575 is fixed
-        check(sys.flags, vsize('') + self.P + self.P * (1 + len(sys.flags)))
+        # FIXME: The +3 is for the 'gil', 'thread_inherit_context' and
+        # 'context_aware_warnings' flags and will not be necessary once
+        # gh-122575 is fixed
+        check(sys.flags, vsize('') + self.P + self.P * (3 + len(sys.flags)))
 
     def test_asyncgen_hooks(self):
         old = sys.get_asyncgen_hooks()
