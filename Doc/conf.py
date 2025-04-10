@@ -70,7 +70,7 @@ manpages_url = 'https://manpages.debian.org/{path}'
 
 # Intersphinx configuration
 intersphinx_mapping = {
-    'typing': ('https://typing.readthedocs.io/en/latest/', None),
+    'typing': ('https://typing.python.org/en/latest/', None),
 }
 intersphinx_disabled_reftypes = []
 
