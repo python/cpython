@@ -2233,8 +2233,6 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
 .. c:member:: uint16_t PyTypeObject.tp_versions_used
 
-   Internal counter tracking the number of version tags used by this type.
-
    Internal. Do not use.
 
    **Inheritance:**
