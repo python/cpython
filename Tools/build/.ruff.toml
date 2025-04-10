@@ -18,3 +18,8 @@ select = [
     "W",       # pycodestyle
     "YTT",     # flake8-2020
 ]
+
+[lint.per-file-ignores]
+"check_extension_modules.py" = [
+    "E501",  # Line too long
+]

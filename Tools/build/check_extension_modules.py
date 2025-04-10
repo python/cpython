@@ -17,8 +17,9 @@ Module information is parsed from several sources:
 
 See --help for more information
 """
+
+import _imp
 import argparse
-import collections
 import enum
 import logging
 import os
@@ -27,12 +28,15 @@ import re
 import sys
 import sysconfig
 import warnings
-import _imp
-
+from collections.abc import Iterable
 from importlib._bootstrap import _load as bootstrap_load
-from importlib.machinery import BuiltinImporter, ExtensionFileLoader, ModuleSpec
+from importlib.machinery import (
+    BuiltinImporter,
+    ExtensionFileLoader,
+    ModuleSpec,
+)
 from importlib.util import spec_from_file_location, spec_from_loader
-from typing import Iterable
+from typing import NamedTuple
 
 SRC_DIR = pathlib.Path(__file__).parent.parent.parent
 
@@ -124,7 +128,9 @@ class ModuleState(enum.Enum):
         return self.value in {"builtin", "shared"}
 
 
-ModuleInfo = collections.namedtuple("ModuleInfo", "name state")
+class ModuleInfo(NamedTuple):
+    name: str
+    state: ModuleState
 
 
 class ModuleChecker:
@@ -195,8 +201,10 @@ class ModuleChecker:
             # guarantee zip() doesn't drop anything
             while len(names) % 3:
                 names.append("")
-            for l, m, r in zip(names[::3], names[1::3], names[2::3]):
-                print("%-*s   %-*s   %-*s" % (longest, l, longest, m, longest, r))
+            for c1, c2, c3 in zip(names[::3], names[1::3], names[2::3]):
+                format_args = (longest, c1, longest, c2, longest, c3)
+                # the '%-*s' format specification is not support by str.format()
+                print("%-*s   %-*s   %-*s" % format_args)  # noqa: UP031
 
         if verbose and self.builtin_ok:
             print("The following *built-in* modules have been successfully built:")
@@ -219,9 +227,7 @@ class ModuleChecker:
             print()
 
         if verbose and self.notavailable:
-            print(
-                f"The following modules are not available on platform '{self.platform}':"
-            )
+            print(f"The following modules are not available on platform {self.platform!r}:")
             print_three_column(self.notavailable)
             print()
 
@@ -420,7 +426,7 @@ class ModuleChecker:
         except ImportError as e:
             logger.error("%s failed to import: %s", modinfo.name, e)
             raise
-        except Exception as e:
+        except Exception:
             if not hasattr(_imp, 'create_dynamic'):
                 logger.warning("Dynamic extension '%s' ignored", modinfo.name)
                 return
