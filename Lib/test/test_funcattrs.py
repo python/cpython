@@ -486,20 +486,23 @@ class BuiltinFunctionPropertiesTest(unittest.TestCase):
         import time
 
         # builtin function:
-        self.assertEqual(len.__self__, builtins)
-        self.assertEqual(time.sleep.__self__, time)
+        self.assertIs(len.__self__, builtins)
+        self.assertIs(time.sleep.__self__, time)
 
         # builtin classmethod:
-        self.assertEqual(dict.fromkeys.__self__, dict)
-        self.assertEqual(float.__getformat__.__self__, float)
+        self.assertIs(dict.fromkeys.__self__, dict)
+        self.assertIs(float.__getformat__.__self__, float)
 
         # builtin staticmethod:
-        self.assertEqual(str.maketrans.__self__, None)
-        self.assertEqual(bytes.maketrans.__self__, None)
+        self.assertIsNone(str.maketrans.__self__)
+        self.assertIsNone(bytes.maketrans.__self__)
 
         # builtin bound instance method:
-        self.assertEqual([1, 2, 3].append.__self__, [1, 2, 3])
-        self.assertEqual({'foo': 'bar'}.pop.__self__, {'foo': 'bar'})
+        l = [1, 2, 3]
+        self.assertIs(l.append.__self__, l)
+
+        d = {'foo': 'bar'}
+        self.assertEqual(d.pop.__self__, d)
 
 
 if __name__ == "__main__":
