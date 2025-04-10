@@ -6,7 +6,7 @@ import random
 import test.support.hashlib_helper as hashlib_helper
 import types
 import unittest
-import unittest.mock
+import unittest.mock as mock
 import warnings
 from _operator import _compare_digest as operator_compare_digest
 from test.support import check_disallow_instantiation
@@ -1000,6 +1000,9 @@ class SanityTestCaseMixin(CreatorMixin):
     hmac_class: type
     # The underlying hash function name (should be accepted by the HMAC class).
     digestname: str
+    # The expected digest and block sizes (must be hardcoded).
+    digest_size: int
+    block_size: int
 
     def test_methods(self):
         h = self.hmac_new(b"my secret key", digestmod=self.digestname)
@@ -1008,6 +1011,12 @@ class SanityTestCaseMixin(CreatorMixin):
         self.assertIsInstance(h.digest(), bytes)
         self.assertIsInstance(h.hexdigest(), str)
         self.assertIsInstance(h.copy(), self.hmac_class)
+
+    def test_properties(self):
+        h = self.hmac_new(b"my secret key", digestmod=self.digestname)
+        self.assertEqual(h.name, f"hmac-{self.digestname}")
+        self.assertEqual(h.digest_size, self.digest_size)
+        self.assertEqual(h.block_size, self.block_size)
 
     def test_repr(self):
         # HMAC object representation may differ across implementations
@@ -1023,6 +1032,8 @@ class PySanityTestCase(ThroughObjectMixin, PyModuleMixin, SanityTestCaseMixin,
         super().setUpClass()
         cls.hmac_class = cls.hmac.HMAC
         cls.digestname = 'sha256'
+        cls.digest_size = 32
+        cls.block_size = 64
 
     def test_repr(self):
         h = self.hmac_new(b"my secret key", digestmod=self.digestname)
@@ -1038,6 +1049,8 @@ class OpenSSLSanityTestCase(ThroughOpenSSLAPIMixin, SanityTestCaseMixin,
         super().setUpClass()
         cls.hmac_class = _hashlib.HMAC
         cls.digestname = 'sha256'
+        cls.digest_size = 32
+        cls.block_size = 64
 
     def test_repr(self):
         h = self.hmac_new(b"my secret key", digestmod=self.digestname)
@@ -1052,6 +1065,8 @@ class BuiltinSanityTestCase(ThroughBuiltinAPIMixin, SanityTestCaseMixin,
         super().setUpClass()
         cls.hmac_class = cls.hmac.HMAC
         cls.digestname = 'sha256'
+        cls.digest_size = 32
+        cls.block_size = 64
 
     def test_repr(self):
         h = self.hmac_new(b"my secret key", digestmod=self.digestname)
@@ -1344,6 +1359,32 @@ class OperatorCompareDigestTestCase(CompareDigestMixin, unittest.TestCase):
 
 class PyMiscellaneousTests(unittest.TestCase):
     """Miscellaneous tests for the pure Python HMAC module."""
+
+    @hashlib_helper.requires_builtin_hmac()
+    def test_hmac_constructor_uses_builtin(self):
+        # Block the OpenSSL implementation and check that
+        # HMAC() uses the built-in implementation instead.
+        hmac = import_fresh_module("hmac", blocked=["_hashlib"])
+
+        def watch_method(cls, name):
+            return mock.patch.object(
+                cls, name, autospec=True, wraps=getattr(cls, name)
+            )
+
+        with (
+            watch_method(hmac.HMAC, '_init_openssl_hmac') as f,
+            watch_method(hmac.HMAC, '_init_builtin_hmac') as g,
+        ):
+            _ = hmac.HMAC(b'key', b'msg', digestmod="sha256")
+            f.assert_not_called()
+            g.assert_called_once()
+
+    @hashlib_helper.requires_hashdigest('sha256')
+    def test_hmac_delegated_properties(self):
+        h = hmac.HMAC(b'key', b'msg', digestmod="sha256")
+        self.assertEqual(h.name, "hmac-sha256")
+        self.assertEqual(h.digest_size, 32)
+        self.assertEqual(h.block_size, 64)
 
     @hashlib_helper.requires_hashdigest('sha256')
     def test_legacy_block_size_warnings(self):
