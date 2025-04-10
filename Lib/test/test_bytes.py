@@ -1889,6 +1889,41 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             with self.assertRaises(IndexError):
                 self._testlimitedcapi.sequence_setitem(b, 0, Boom())
 
+        class BoomContinued:
+            def __index__(self):
+                nonlocal new_ba
+                # Clear the original bytearray, mutating it during index assignment.
+                # If the internal buffers are held over this operation, they become dangling
+                # However, this will fail a bounds check as above (as the clear sets bounds to zero)
+                ba.clear()
+                # At this moment, the bytearray potentially has a dangling pointer
+                # Create a new bytearray to catch any writes
+                new_ba = bytearray(0x180)
+                # Ensure bounds check passes
+                ba.extend([0] * 0x180)
+                return 0
+
+        with self.subTest("skip_bounds_safety"):
+            new_ba: bytearray
+            ba = bytearray(0x180)
+            ba[BoomContinued()] = ord("?")
+            self.assertEqual(ba[0], ord("?"), "Assigned bytearray not altered")
+            self.assertEqual(new_ba, bytearray(0x180), "Wrong object altered")
+
+        with self.subTest("skip_bounds_safety_capi"):
+            new_ba: bytearray
+            ba = bytearray(0x180)
+            self._testlimitedcapi.sequence_setitem(ba, BoomContinued(), ord("?"))
+            self.assertEqual(ba[0], ord("?"), "Assigned bytearray not altered")
+            self.assertEqual(new_ba, bytearray(0x180), "Wrong object altered")
+
+        with self.subTest("skip_bounds_safety_slice"):
+            new_ba: bytearray
+            ba = bytearray(0x180)
+            ba[BoomContinued():1] = [ord("?")]
+            self.assertEqual(ba[0], ord("?"), "Assigned bytearray not altered")
+            self.assertEqual(new_ba, bytearray(0x180), "Wrong object altered")
+
 
 class AssortedBytesTest(unittest.TestCase):
     #
