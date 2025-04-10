@@ -67,3 +67,6 @@ select = [
 "umarshal.py" = [
     "E501",  # Line too long
 ]
+"verify_ensurepip_wheels.py" = [
+    "E501",  # Line too long
+]
