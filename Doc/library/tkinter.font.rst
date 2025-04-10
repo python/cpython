@@ -47,7 +47,20 @@ The different font weights and slants are:
 
    .. method:: actual(option=None, displayof=None)
 
-      Return the attributes of the font.
+      Returns the actual value for attributes when the given font is used on
+      the widget given by *displayof*. *displayof* accepts any tkinter widget
+      and, if omitted, will default to the main window (in most circumstances,
+      this will be your ``Tk`` instance).
+
+      Due to some differences between operating systems (such as pointsizes
+      and the availability of font families), some values returned by this
+      method may vary from those given as keyword arguments to either the
+      constructor or :meth:`Font.config` (and retrieved by :meth:`Font.cget`).
+
+      If *option* is specified, the value of just that attribute is returned.
+      If it is omitted or ``None``, the returned value is a dictionary of all
+      the attributes and their values. See above for a list of acceptable
+      attributes.
 
    .. method:: cget(option)
 
@@ -59,7 +72,7 @@ The different font weights and slants are:
 
    .. method:: copy()
 
-      Return new instance of the current font.
+      Return new instance of the current font with a different *name*.
 
    .. method:: measure(text, displayof=None)
 
