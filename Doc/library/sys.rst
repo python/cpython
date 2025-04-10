@@ -603,7 +603,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
           :envvar:`PYTHON_THREAD_INHERIT_CONTEXT`
 
       * - .. attribute:: flags.context_aware_warnings
-        - :option:`-X thread_inherit_context <-X>` and
+        - :option:`-X context_aware_warnings <-X>` and
           :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`
 
 
