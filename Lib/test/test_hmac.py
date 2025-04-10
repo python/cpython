@@ -1102,16 +1102,30 @@ class UpdateTestCaseMixin:
         """Create a HMAC object."""
         raise NotImplementedError
 
+    def check_update(self, key, chunks):
+        chunks = list(chunks)
+        msg = b''.join(chunks)
+        h1 = self.HMAC(key, msg)
+
+        h2 = self.HMAC(key)
+        for chunk in chunks:
+            h2.update(chunk)
+
+        self.assertEqual(h1.digest(), h2.digest())
+        self.assertEqual(h1.hexdigest(), h2.hexdigest())
+
     def test_update(self):
         key, msg = random.randbytes(16), random.randbytes(16)
         with self.subTest(key=key, msg=msg):
-            h1 = self.HMAC(key, msg)
+            self.check_update(key, [msg])
 
-            h2 = self.HMAC(key)
-            h2.update(msg)
+    def test_update_large(self):
+        HASHLIB_GIL_MINSIZE = 2048
 
-            self.assertEqual(h1.digest(), h2.digest())
-            self.assertEqual(h1.hexdigest(), h2.hexdigest())
+        key = random.randbytes(16)
+        top = random.randbytes(HASHLIB_GIL_MINSIZE + 1)
+        bot = random.randbytes(HASHLIB_GIL_MINSIZE + 1)
+        self.check_update(key, [top, bot])
 
     def test_update_exceptions(self):
         h = self.HMAC(b"key")
@@ -1121,12 +1135,7 @@ class UpdateTestCaseMixin:
 
 
 @hashlib_helper.requires_hashdigest('sha256')
-class PyUpdateTestCase(UpdateTestCaseMixin, unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.hmac = import_fresh_module('hmac', blocked=['_hashlib', '_hmac'])
+class PyUpdateTestCase(PyModuleMixin, UpdateTestCaseMixin, unittest.TestCase):
 
     def HMAC(self, key, msg=None):
         return self.hmac.HMAC(key, msg, digestmod='sha256')
@@ -1146,8 +1155,6 @@ class BuiltinUpdateTestCase(BuiltinModuleMixin,
         # Even if Python does not build '_sha2', the HACL* sources
         # are still built, making it possible to use SHA-2 hashes.
         return self.hmac.new(key, msg, digestmod='sha256')
-
-    # TODO(picnix): test when the data size exceeds HASHLIB_GIL_MINSIZE
 
 
 class CopyBaseTestCase:
