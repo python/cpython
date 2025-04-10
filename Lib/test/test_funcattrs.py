@@ -482,8 +482,8 @@ class BuiltinFunctionPropertiesTest(unittest.TestCase):
     @support.cpython_only
     def test_builtin__self__(self):
         # See https://github.com/python/cpython/issues/58211.
-        import time
         import builtins
+        import time
 
         # builtin function:
         self.assertEqual(len.__self__, builtins)
