@@ -45,6 +45,7 @@ from test.support import warnings_helper
 import random
 import inspect
 import threading
+import contextvars
 
 
 if sys.platform == 'darwin':
@@ -1726,8 +1727,13 @@ class ThreadingTest:
         self.finish1 = threading.Event()
         self.finish2 = threading.Event()
 
-        th1 = threading.Thread(target=thfunc1, args=(self,))
-        th2 = threading.Thread(target=thfunc2, args=(self,))
+        # This test wants to start threads with an empty context, no matter
+        # the setting of sys.flags.thread_inherit_context.  We pass the
+        # 'context' argument explicitly with an empty context instance.
+        th1 = threading.Thread(target=thfunc1, args=(self,),
+                               context=contextvars.Context())
+        th2 = threading.Thread(target=thfunc2, args=(self,),
+                               context=contextvars.Context())
 
         th1.start()
         th2.start()

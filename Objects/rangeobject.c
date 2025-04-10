@@ -3,6 +3,7 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_freelist.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_range.h"
@@ -51,16 +52,18 @@ static rangeobject *
 make_range_object(PyTypeObject *type, PyObject *start,
                   PyObject *stop, PyObject *step)
 {
-    rangeobject *obj = NULL;
     PyObject *length;
     length = compute_range_length(start, stop, step);
     if (length == NULL) {
         return NULL;
     }
-    obj = PyObject_New(rangeobject, type);
+    rangeobject *obj = _Py_FREELIST_POP(rangeobject, ranges);
     if (obj == NULL) {
-        Py_DECREF(length);
-        return NULL;
+        obj = PyObject_New(rangeobject, type);
+        if (obj == NULL) {
+            Py_DECREF(length);
+            return NULL;
+        }
     }
     obj->start = start;
     obj->stop = stop;
@@ -171,7 +174,7 @@ range_dealloc(PyObject *op)
     Py_DECREF(r->stop);
     Py_DECREF(r->step);
     Py_DECREF(r->length);
-    PyObject_Free(r);
+    _Py_FREELIST_FREE(ranges, r, PyObject_Free);
 }
 
 static unsigned long
@@ -733,7 +736,7 @@ range_subscript(PyObject *op, PyObject *item)
 static PyMappingMethods range_as_mapping = {
         range_length,                /* mp_length */
         range_subscript,             /* mp_subscript */
-        (objobjargproc)0,            /* mp_ass_subscript */
+        0,                           /* mp_ass_subscript */
 };
 
 static int
@@ -895,6 +898,12 @@ rangeiter_setstate(PyObject *op, PyObject *state)
     Py_RETURN_NONE;
 }
 
+static void
+rangeiter_dealloc(PyObject *self)
+{
+    _Py_FREELIST_FREE(range_iters, (_PyRangeIterObject *)self, PyObject_Free);
+}
+
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
@@ -911,7 +920,7 @@ PyTypeObject PyRangeIter_Type = {
         sizeof(_PyRangeIterObject),             /* tp_basicsize */
         0,                                      /* tp_itemsize */
         /* methods */
-        0,                                      /* tp_dealloc */
+        rangeiter_dealloc,                      /* tp_dealloc */
         0,                                      /* tp_vectorcall_offset */
         0,                                      /* tp_getattr */
         0,                                      /* tp_setattr */
@@ -972,9 +981,14 @@ get_len_of_range(long lo, long hi, long step)
 static PyObject *
 fast_range_iter(long start, long stop, long step, long len)
 {
-    _PyRangeIterObject *it = PyObject_New(_PyRangeIterObject, &PyRangeIter_Type);
-    if (it == NULL)
-        return NULL;
+    _PyRangeIterObject *it = _Py_FREELIST_POP(_PyRangeIterObject, range_iters);
+    if (it == NULL) {
+        it = PyObject_New(_PyRangeIterObject, &PyRangeIter_Type);
+        if (it == NULL) {
+            return NULL;
+        }
+    }
+    assert(Py_IS_TYPE(it, &PyRangeIter_Type));
     it->start = start;
     it->step = step;
     it->len = len;

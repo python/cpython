@@ -103,28 +103,31 @@ which relays any information about the UUID's safety, using this enumeration:
      - Meaning
 
    * - .. attribute:: UUID.time_low
-     - The first 32 bits of the UUID.
+     - The first 32 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.time_mid
-     - The next 16 bits of the UUID.
+     - The next 16 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.time_hi_version
-     - The next 16 bits of the UUID.
+     - The next 16 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.clock_seq_hi_variant
-     - The next 8 bits of the UUID.
+     - The next 8 bits of the UUID. Only relevant to versions 1 and 6.
 
    * - .. attribute:: UUID.clock_seq_low
-     - The next 8 bits of the UUID.
+     - The next 8 bits of the UUID. Only relevant to versions 1 and 6.
 
    * - .. attribute:: UUID.node
-     - The last 48 bits of the UUID.
+     - The last 48 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.time
-     - The 60-bit timestamp.
+     - The 60-bit timestamp as a count of 100-nanosecond intervals since
+       Gregorian epoch (1582-10-15 00:00:00) for versions 1 and 6, or the
+       48-bit timestamp in milliseconds since Unix epoch (1970-01-01 00:00:00)
+       for version 7.
 
    * - .. attribute:: UUID.clock_seq
-     - The 14-bit sequence number.
+     - The 14-bit sequence number. Only relevant to versions 1 and 6.
 
 
 .. attribute:: UUID.hex
@@ -382,7 +385,7 @@ The following options are accepted:
 
    Generate *num* fresh UUIDs.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. _uuid-example:
@@ -432,6 +435,15 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> # get the Max UUID
    >>> uuid.MAX
    UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
+
+   >>> # get UUIDv7 creation (local) time as a timestamp in milliseconds
+   >>> u = uuid.uuid7()
+   >>> u.time  # doctest: +SKIP
+   1743936859822
+   >>> # get UUIDv7 creation (local) time as a datetime object
+   >>> import datetime as dt
+   >>> dt.datetime.fromtimestamp(u.time / 1000)  # doctest: +SKIP
+   datetime.datetime(...)
 
 
 .. _uuid-cli-example:
