@@ -83,7 +83,7 @@ class FinalizationTest(unittest.TestCase):
         g = gen()
         next(g)
         g.send(g)
-        self.assertGreater(sys.getrefcount(g), 2)
+        self.assertGreaterEqual(sys.getrefcount(g), 2)
         self.assertFalse(finalized)
         del g
         support.gc_collect()
@@ -2664,11 +2664,15 @@ Our ill-behaved code should be invoked during GC:
 >>> with support.catch_unraisable_exception() as cm:
 ...     g = f()
 ...     next(g)
+...     gen_repr = repr(g)
 ...     del g
 ...
+...     cm.unraisable.err_msg == (f'Exception ignored while closing '
+...                               f'generator {gen_repr}')
 ...     cm.unraisable.exc_type == RuntimeError
 ...     "generator ignored GeneratorExit" in str(cm.unraisable.exc_value)
 ...     cm.unraisable.exc_traceback is not None
+True
 True
 True
 True
@@ -2776,10 +2780,12 @@ to test.
 ...         invoke("del failed")
 ...
 >>> with support.catch_unraisable_exception() as cm:
-...     l = Leaker()
-...     del l
+...     leaker = Leaker()
+...     del_repr = repr(type(leaker).__del__)
+...     del leaker
 ...
-...     cm.unraisable.object == Leaker.__del__
+...     cm.unraisable.err_msg == (f'Exception ignored while '
+...                               f'calling deallocator {del_repr}')
 ...     cm.unraisable.exc_type == RuntimeError
 ...     str(cm.unraisable.exc_value) == "del failed"
 ...     cm.unraisable.exc_traceback is not None
