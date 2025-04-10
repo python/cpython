@@ -256,8 +256,14 @@ extern "C" {
 #define _MONITOR_RESUME 471
 #define _NOP NOP
 #define _POP_EXCEPT POP_EXCEPT
+<<<<<<< HEAD
 #define _POP_JUMP_IF_FALSE 472
 #define _POP_JUMP_IF_TRUE 473
+=======
+#define _POP_ITER POP_ITER
+#define _POP_JUMP_IF_FALSE 465
+#define _POP_JUMP_IF_TRUE 466
+>>>>>>> d908cf7e4c1 (FOR_ITER now pushes NULL as well as the iterator. Preparation for virtual iterators)
 #define _POP_TOP POP_TOP
 #define _POP_TOP_LOAD_CONST_INLINE 474
 #define _POP_TOP_LOAD_CONST_INLINE_BORROW 475
