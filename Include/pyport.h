@@ -320,7 +320,7 @@ extern "C" {
  * its time must use it. Use a profiler when running performance benchmark
  * suite to find these functions.
  */
-#if defined(__GNUC__) \
+#if defined(__clang__) || defined(__GNUC__) \
     && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))
 #define _Py_HOT_FUNCTION __attribute__((hot))
 #else
