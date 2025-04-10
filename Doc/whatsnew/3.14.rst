@@ -1197,6 +1197,25 @@ urllib
   supporting SHA-256 digest authentication as specified in :rfc:`7616`.
   (Contributed by Calvin Bui in :gh:`128193`.)
 
+* Improve standards compliance when parsing and emitting ``file:`` URLs.
+
+  In :func:`urllib.request.url2pathname`:
+
+  - Discard URL authorities that resolve to a local IP address.
+  - Raise :exc:`~urllib.error.URLError` if a URL authority doesn't resolve
+    to ``localhost``, except on Windows where we return a UNC path.
+
+  In :func:`urllib.request.pathname2url`:
+
+  - Include an empty URL authority when a path begins with a slash. For
+    example, the path ``/etc/hosts`` is converted to the URL ``///etc/hosts``.
+
+  On Windows, drive letters are no longer converted to uppercase, and ``:``
+  characters not following a drive letter no longer cause an :exc:`OSError`
+  exception to be raised.
+
+  (Contributed by Barney Gale in :gh:`125866`.)
+
 
 uuid
 ----

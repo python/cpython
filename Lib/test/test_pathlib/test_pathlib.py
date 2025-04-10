@@ -3285,10 +3285,14 @@ class PathTest(PurePathTest):
     def test_from_uri_posix(self):
         P = self.cls
         self.assertEqual(P.from_uri('file:/foo/bar'), P('/foo/bar'))
-        self.assertEqual(P.from_uri('file://foo/bar'), P('//foo/bar'))
+        self.assertRaises(ValueError, P.from_uri, 'file://foo/bar')
         self.assertEqual(P.from_uri('file:///foo/bar'), P('/foo/bar'))
         self.assertEqual(P.from_uri('file:////foo/bar'), P('//foo/bar'))
         self.assertEqual(P.from_uri('file://localhost/foo/bar'), P('/foo/bar'))
+        if not is_wasi:
+            self.assertEqual(P.from_uri('file://127.0.0.1/foo/bar'), P('/foo/bar'))
+            self.assertEqual(P.from_uri(f'file://{socket.gethostname()}/foo/bar'),
+                             P('/foo/bar'))
         self.assertRaises(ValueError, P.from_uri, 'foo/bar')
         self.assertRaises(ValueError, P.from_uri, '/foo/bar')
         self.assertRaises(ValueError, P.from_uri, '//foo/bar')
