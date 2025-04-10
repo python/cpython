@@ -626,6 +626,7 @@ Building values
    ``z#`` (:class:`str` or ``None``) [const char \*, :c:type:`Py_ssize_t`]
       Same as ``s#``.
 
+   .. _capi-py-buildvalue-format-u:
    ``u`` (:class:`str`) [const wchar_t \*]
       Convert a null-terminated :c:type:`wchar_t` buffer of Unicode (UTF-16 or UCS-4)
       data to a Python Unicode object.  If the Unicode buffer pointer is ``NULL``,
@@ -669,6 +670,7 @@ Building values
    ``L`` (:class:`int`) [long long]
       Convert a C :c:expr:`long long` to a Python integer object.
 
+   .. _capi-py-buildvalue-format-K:
    ``K`` (:class:`int`) [unsigned long long]
       Convert a C :c:expr:`unsigned long long` to a Python integer object.
 

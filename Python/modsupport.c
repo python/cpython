@@ -268,6 +268,30 @@ do_mktuple(const char **p_format, va_list *p_va, char endchar, Py_ssize_t n)
     return v;
 }
 
+static Py_ssize_t
+safe_strlen(const char *u)
+{
+    size_t m = strlen(u);
+    if (m > PY_SSIZE_T_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "string too long for Python string");
+        return -1;
+    }
+    return (Py_ssize_t)m;
+}
+
+static Py_ssize_t
+safe_wcslen(const wchar_t *u)
+{
+    size_t m = wcslen(u);
+    if (m > PY_SSIZE_T_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "string too long for Python string");
+        return -1;
+    }
+    return (Py_ssize_t)m;
+}
+
 static PyObject *
 do_mkvalue(const char **p_format, va_list *p_va)
 {
@@ -318,32 +342,41 @@ do_mkvalue(const char **p_format, va_list *p_va)
         }
 
         case 'L':
-            return PyLong_FromLongLong((long long)va_arg(*p_va, long long));
+        {
+            long long v = va_arg(*p_va, long long);
+            return PyLong_FromLongLong(v);
+        }
 
         case 'K':
-            return PyLong_FromUnsignedLongLong((long long)va_arg(*p_va, unsigned long long));
+        {
+            unsigned long long v = va_arg(*p_va, unsigned long long);
+            return PyLong_FromUnsignedLongLong(v);
+        }
 
         case 'u':
         {
             PyObject *v;
-            const wchar_t *u = va_arg(*p_va, wchar_t*);
-            Py_ssize_t n;
+            const wchar_t *u = va_arg(*p_va, const wchar_t *);
+            Py_ssize_t n = -1;
             if (**p_format == '#') {
                 ++*p_format;
                 n = va_arg(*p_va, Py_ssize_t);
             }
-            else
-                n = -1;
             if (u == NULL) {
                 v = Py_NewRef(Py_None);
             }
             else {
-                if (n < 0)
-                    n = wcslen(u);
+                if (n < 0) {
+                    n = safe_wcslen(u);
+                    if (n < 0) {
+                        return NULL;
+                    }
+                }
                 v = PyUnicode_FromWideChar(u, n);
             }
             return v;
         }
+
         case 'f':
         case 'd':
             return PyFloat_FromDouble(
@@ -376,25 +409,20 @@ do_mkvalue(const char **p_format, va_list *p_va)
         {
             PyObject *v;
             const char *str = va_arg(*p_va, const char *);
-            Py_ssize_t n;
+            Py_ssize_t n = -1;
             if (**p_format == '#') {
                 ++*p_format;
                 n = va_arg(*p_va, Py_ssize_t);
             }
-            else
-                n = -1;
             if (str == NULL) {
                 v = Py_NewRef(Py_None);
             }
             else {
                 if (n < 0) {
-                    size_t m = strlen(str);
-                    if (m > PY_SSIZE_T_MAX) {
-                        PyErr_SetString(PyExc_OverflowError,
-                            "string too long for Python string");
+                    n = safe_strlen(str);
+                    if (n < 0) {
                         return NULL;
                     }
-                    n = (Py_ssize_t)m;
                 }
                 v = PyUnicode_FromStringAndSize(str, n);
             }
@@ -405,25 +433,20 @@ do_mkvalue(const char **p_format, va_list *p_va)
         {
             PyObject *v;
             const char *str = va_arg(*p_va, const char *);
-            Py_ssize_t n;
+            Py_ssize_t n = -1;
             if (**p_format == '#') {
                 ++*p_format;
                 n = va_arg(*p_va, Py_ssize_t);
             }
-            else
-                n = -1;
             if (str == NULL) {
                 v = Py_NewRef(Py_None);
             }
             else {
                 if (n < 0) {
-                    size_t m = strlen(str);
-                    if (m > PY_SSIZE_T_MAX) {
-                        PyErr_SetString(PyExc_OverflowError,
-                            "string too long for Python bytes");
+                    n = safe_strlen(str);
+                    if (n < 0) {
                         return NULL;
                     }
-                    n = (Py_ssize_t)m;
                 }
                 v = PyBytes_FromStringAndSize(str, n);
             }
