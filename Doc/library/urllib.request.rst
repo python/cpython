@@ -187,10 +187,11 @@ The :mod:`urllib.request` module defines the following functions:
       :exc:`OSError` exception to be raised on Windows.
 
    .. versionchanged:: next
-      If a URL authority (e.g. a hostname) is present and resolves to a local
-      address, it is discarded. If an authority is present and *doesn't*
-      resolve to a local address, then on Windows a UNC path is returned (as
-      before), and on other platforms :exc:`~urllib.error.URLError` is raised.
+      This function calls :func:`socket.gethostbyname` if the URL authority
+      isn't empty or ``localhost``. If the authority resolves to a local IP
+      address then it is discarded; otherwise, on Windows a UNC path is
+      returned (as before), and on other platforms a
+      :exc:`~urllib.error.URLError` is raised.
 
 
 .. function:: getproxies()
