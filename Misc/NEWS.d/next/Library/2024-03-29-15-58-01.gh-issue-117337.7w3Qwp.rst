@@ -1,3 +1,0 @@
-Deprecate undocumented :func:`!glob.glob0` and :func:`!glob.glob1`
-functions. Use :func:`glob.glob` and pass a directory to its
-*root_dir* argument instead.

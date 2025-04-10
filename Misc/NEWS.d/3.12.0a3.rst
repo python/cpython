@@ -70,7 +70,7 @@ Fix bug where compiler crashes on an if expression with an empty body block.
 .. nonce: DcKoBJ
 .. section: Core and Builtins
 
-Fix a reference bug in :func:`_imp.create_builtin()` after the creation of
+Fix a reference bug in :func:`!_imp.create_builtin` after the creation of
 the first sub-interpreter for modules ``builtins`` and ``sys``. Patch by
 Victor Stinner.
 
@@ -82,7 +82,7 @@ Victor Stinner.
 .. section: Core and Builtins
 
 Fixed a bug that was causing a buffer overflow if the tokenizer copies a
-line missing the newline caracter from a file that is as long as the
+line missing the newline character from a file that is as long as the
 available tokenizer buffer. Patch by Pablo galindo
 
 ..
@@ -221,7 +221,7 @@ returns an invalid file descriptor.
 
 Also \ escape \s in the http.server BaseHTTPRequestHandler.log_message so
 that it is technically possible to parse the line and reconstruct what the
-original data was.  Without this a \xHH is ambiguious as to if it is a hex
+original data was.  Without this a \xHH is ambiguous as to if it is a hex
 replacement we put in or the characters r"\x" came through in the original
 request line.
 
@@ -399,7 +399,7 @@ Fix refcount error when arguments are packed to tuple in Argument Clinic.
 .. nonce: 7uCiIB
 .. section: Library
 
-:meth:`pathlib.PurePath.relative_to()` now treats naked Windows drive paths
+:meth:`pathlib.PurePath.relative_to` now treats naked Windows drive paths
 as relative. This brings its behaviour in line with other parts of pathlib.
 
 ..
@@ -496,7 +496,7 @@ Created packages from zipfile and test_zipfile modules, separating
 
 Fix :attr:`~ipaddress.IPv4Address.is_private` properties in the
 :mod:`ipaddress` module. Previously non-private networks (0.0.0.0/0) would
-return True from this method; now they correctly return False.
+return ``True`` from this method; now they correctly return ``False``.
 
 ..
 

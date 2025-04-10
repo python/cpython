@@ -111,7 +111,7 @@ class ConfigDialog(Toplevel):
             load_configs: Load pages except for extensions.
             activate_config_changes: Tell editors to reload.
         """
-        self.frame = frame = Frame(self, padding="5px")
+        self.frame = frame = Frame(self, padding=5)
         self.frame.grid(sticky="nwes")
         self.note = note = Notebook(frame)
         self.extpage = ExtPage(note)

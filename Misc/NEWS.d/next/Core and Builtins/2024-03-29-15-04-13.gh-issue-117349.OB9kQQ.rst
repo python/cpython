@@ -1,1 +1,0 @@
-Optimise several functions in :mod:`os.path`.

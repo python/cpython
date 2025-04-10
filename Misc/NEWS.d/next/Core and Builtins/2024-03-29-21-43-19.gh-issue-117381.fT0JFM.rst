@@ -1,1 +1,0 @@
-Fix error message for :func:`ntpath.commonpath`.

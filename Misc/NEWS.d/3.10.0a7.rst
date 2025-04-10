@@ -4,7 +4,7 @@
 .. release date: 2021-04-05
 .. section: Security
 
-CVE-2021-3426: Remove the ``getfile`` feature of the :mod:`pydoc` module
+:cve:`2021-3426`: Remove the ``getfile`` feature of the :mod:`pydoc` module
 which could be abused to read arbitrary files on the disk (directory
 traversal vulnerability). Moreover, even source code of Python modules can
 contain sensitive data like passwords. Vulnerability reported by David
@@ -83,7 +83,7 @@ instruction dispatch a bit.
 .. nonce: PhaT-B
 .. section: Core and Builtins
 
-Fix reference leak in the :mod:`_hashopenssl` extension. Patch by Pablo
+Fix reference leak in the :mod:`!_hashopenssl` extension. Patch by Pablo
 Galindo.
 
 ..
@@ -654,7 +654,7 @@ support importlib.invalidate_caches(). Patch by Desmond Cheong.
 .. nonce: 3r0HFY
 .. section: Library
 
-Fail fast in :func:`shutil.move()` to avoid creating destination directories
+Fail fast in :func:`shutil.move` to avoid creating destination directories
 on failure.
 
 ..
@@ -701,8 +701,8 @@ sessions in :mod:`pdb`'s interactive mode.
 When the :data:`tempfile.tempdir` global variable is set to a value of type
 bytes, it is now handled consistently.  Previously exceptions could be
 raised from some tempfile APIs when the directory did not already exist in
-this situation.  Also ensures that the :func:`tempfile.gettempdir()` and
-:func:`tempfile.gettempdirb()` functions *always* return ``str`` and
+this situation.  Also ensures that the :func:`tempfile.gettempdir` and
+:func:`tempfile.gettempdirb` functions *always* return ``str`` and
 ``bytes`` respectively.
 
 ..
@@ -715,7 +715,7 @@ this situation.  Also ensures that the :func:`tempfile.gettempdir()` and
 Expose ``X509_V_FLAG_ALLOW_PROXY_CERTS`` as
 :const:`~ssl.VERIFY_ALLOW_PROXY_CERTS` to allow proxy certificate validation
 as explained in
-https://www.openssl.org/docs/man1.1.1/man7/proxy-certificates.html.
+https://docs.openssl.org/1.1.1/man7/proxy-certificates/.
 
 ..
 

@@ -38,13 +38,16 @@ class TestExt(unittest.TestCase):
 
     @unittest.skipIf(support.MS_WINDOWS, "MSVC doesn't support /std:c99")
     def test_build_c99(self):
+        # In public docs, we say C API is compatible with C11. However,
+        # in practice we do maintain C99 compatibility in public headers.
+        # Please ask the C API WG before adding a new C11-only feature.
         self.check_build('_test_c99_cext', std='c99')
 
-    @unittest.skipIf(support.Py_GIL_DISABLED, 'incompatible with Free Threading')
+    @support.requires_gil_enabled('incompatible with Free Threading')
     def test_build_limited(self):
         self.check_build('_test_limited_cext', limited=True)
 
-    @unittest.skipIf(support.Py_GIL_DISABLED, 'broken for now with Free Threading')
+    @support.requires_gil_enabled('broken for now with Free Threading')
     def test_build_limited_c11(self):
         self.check_build('_test_limited_c11_cext', limited=True, std='c11')
 
@@ -86,6 +89,8 @@ class TestExt(unittest.TestCase):
         cmd = [python_exe, '-X', 'dev',
                '-m', 'pip', 'install', '--no-build-isolation',
                os.path.abspath(pkg_dir)]
+        if support.verbose:
+            cmd.append('-v')
         run_cmd('Install', cmd)
 
         # Do a reference run. Until we test that running python

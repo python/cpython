@@ -1,1 +1,0 @@
-Fixed ``_get_slots`` bug which caused error when defining dataclasses with slots and a weakref_slot.

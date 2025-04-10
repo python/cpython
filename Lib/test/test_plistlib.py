@@ -1,4 +1,4 @@
-# Copyright (C) 2003-2013 Python Software Foundation
+# Copyright (C) 2003 Python Software Foundation
 import copy
 import operator
 import pickle
@@ -13,7 +13,6 @@ import codecs
 import subprocess
 import binascii
 import collections
-import time
 import zoneinfo
 from test import support
 from test.support import os_helper
