@@ -49,3 +49,6 @@ select = [
 "generate_sre_constants.py" = [
     "UP031",  # Use format specifiers instead of percent format
 ]
+"generate_token.py" = [
+    "E501",  # Line too long
+]
