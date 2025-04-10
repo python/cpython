@@ -1074,11 +1074,12 @@ handle_legacy_finalizers(PyThreadState *tstate,
  * Note that this may remove some (or even all) of the objects from the
  * list, due to refcounts falling to 0.
  */
-static void
+static int
 finalize_garbage(PyThreadState *tstate, PyGC_Head *collectable)
 {
     destructor finalize;
     PyGC_Head seen;
+    int finalizer_run = 0;
 
     /* While we're going through the loop, `finalize(op)` may cause op, or
      * other objects, to be reclaimed via refcounts falling to zero.  So
@@ -1097,6 +1098,7 @@ finalize_garbage(PyThreadState *tstate, PyGC_Head *collectable)
         if (!_PyGC_FINALIZED(op) &&
             (finalize = Py_TYPE(op)->tp_finalize) != NULL)
         {
+            finalizer_run = 1;
             _PyGC_SET_FINALIZED(op);
             Py_INCREF(op);
             finalize(op);
@@ -1105,6 +1107,7 @@ finalize_garbage(PyThreadState *tstate, PyGC_Head *collectable)
         }
     }
     gc_list_merge(&seen, collectable);
+    return finalizer_run;
 }
 
 /* Break reference cycles by clearing the containers involved.  This is
@@ -1736,13 +1739,20 @@ gc_collect_region(PyThreadState *tstate,
     validate_list(&unreachable, collecting_set_unreachable_clear);
 
     /* Call tp_finalize on objects which have one. */
-    finalize_garbage(tstate, &unreachable);
-    /* Handle any objects that may have resurrected after the call
-     * to 'finalize_garbage' and continue the collection with the
-     * objects that are still unreachable */
+    int check_resurrected = finalize_garbage(tstate, &unreachable);
+
+    /* If no finalizers have run, no objects can have been resurrected: in that
+     * case skip the resurrection check. Otherwise we need to check and handle
+     * any objects that may have resurrected after the call to
+     * 'finalize_garbage' and continue the collection with the objects that are
+     * still unreachable */
     PyGC_Head final_unreachable;
     gc_list_init(&final_unreachable);
-    handle_resurrected_objects(&unreachable, &final_unreachable, to);
+    if (check_resurrected) {
+        handle_resurrected_objects(&unreachable, &final_unreachable, to);
+    } else {
+        gc_list_merge(&unreachable, &final_unreachable);
+    }
 
     /* Call tp_clear on objects in the final_unreachable set.  This will cause
     * the reference cycles to be broken.  It may also cause some objects
