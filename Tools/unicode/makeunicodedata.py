@@ -437,7 +437,7 @@ def makeunicodetype(unicode, trace):
                 flags |= ALPHA_MASK
             if "Lowercase" in properties:
                 flags |= LOWER_MASK
-            if 'Line_Break' in properties or bidirectional == "B":
+            if 'Line_Break' in properties:
                 flags |= LINEBREAK_MASK
                 linebreaks.append(char)
             if category == "Zs" or bidirectional in ("WS", "B", "S"):
@@ -603,8 +603,7 @@ def makeunicodetype(unicode, trace):
 
         # Generate code for _PyUnicode_IsLinebreak()
         fprint("/* Returns 1 for Unicode characters having the line break")
-        fprint(" * property 'BK', 'CR', 'LF' or 'NL' or having bidirectional")
-        fprint(" * type 'B', 0 otherwise.")
+        fprint(" * property 'BK', 'CR', 'LF' or 'NL', 0 otherwise.")
         fprint(" */")
         fprint('int _PyUnicode_IsLinebreak(const Py_UCS4 ch)')
         fprint('{')
