@@ -9270,29 +9270,34 @@
             INSTRUCTION_STATS(LOAD_SPECIAL);
             _PyStackRef self;
             _PyStackRef *method_and_self;
-            self = stack_pointer[-1];
-            method_and_self = &stack_pointer[-1];
-            method_and_self[1] = self;
-            method_and_self[0] = PyStackRef_NULL;
-            PyObject *name = _Py_SpecialMethods[oparg].name;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            int err = _PyObject_LookupSpecialMethod(name, method_and_self);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (err < 0) {
-                JUMP_TO_LABEL(error);
+            // INSERT_NULL
+            {
+                self = stack_pointer[-1];
+                method_and_self = &stack_pointer[-1];
+                method_and_self[1] = self;
+                method_and_self[0] = PyStackRef_NULL;
             }
-            else if (err == 0) {
+            // _LOAD_SPECIAL
+            {
+                method_and_self = &stack_pointer[-1];
+                PyObject *name = _Py_SpecialMethods[oparg].name;
+                stack_pointer += 1;
+                assert(WITHIN_STACK_BOUNDS());
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyErr_Format(tstate, PyExc_TypeError,
+                int err = _PyObject_LookupSpecialMethod(name, method_and_self);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (err < 0) {
+                    JUMP_TO_LABEL(error);
+                }
+                else if (err == 0) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyErr_Format(tstate, PyExc_TypeError,
                               _Py_SpecialMethods[oparg].error,
                               PyStackRef_TYPE(method_and_self[1])->tp_name);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                JUMP_TO_LABEL(error);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    JUMP_TO_LABEL(error);
+                }
             }
-            stack_pointer += 2;
-            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 

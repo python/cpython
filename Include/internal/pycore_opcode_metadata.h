@@ -1427,7 +1427,7 @@ _PyOpcode_macro_expansion[256] = {
     [LOAD_LOCALS] = { .nuops = 1, .uops = { { _LOAD_LOCALS, OPARG_SIMPLE, 0 } } },
     [LOAD_NAME] = { .nuops = 1, .uops = { { _LOAD_NAME, OPARG_SIMPLE, 0 } } },
     [LOAD_SMALL_INT] = { .nuops = 1, .uops = { { _LOAD_SMALL_INT, OPARG_SIMPLE, 0 } } },
-    [LOAD_SPECIAL] = { .nuops = 1, .uops = { { _LOAD_SPECIAL, OPARG_SIMPLE, 0 } } },
+    [LOAD_SPECIAL] = { .nuops = 2, .uops = { { INSERT_NULL, OPARG_SIMPLE, 0 }, { _LOAD_SPECIAL, OPARG_SIMPLE, 0 } } },
     [LOAD_SUPER_ATTR_ATTR] = { .nuops = 1, .uops = { { _LOAD_SUPER_ATTR_ATTR, OPARG_SIMPLE, 1 } } },
     [LOAD_SUPER_ATTR_METHOD] = { .nuops = 1, .uops = { { _LOAD_SUPER_ATTR_METHOD, OPARG_SIMPLE, 1 } } },
     [MAKE_CELL] = { .nuops = 1, .uops = { { _MAKE_CELL, OPARG_SIMPLE, 0 } } },

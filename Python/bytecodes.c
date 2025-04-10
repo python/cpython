@@ -3365,10 +3365,13 @@ dummy_func(
             _FOR_ITER_GEN_FRAME +
             _PUSH_FRAME;
 
-        inst(LOAD_SPECIAL, (self -- method_and_self[2])) {
+        op(_INSERT_NULL, (self -- method_and_self[2])) {
             method_and_self[1] = self;
             method_and_self[0] = PyStackRef_NULL;
             DEAD(self);
+        }
+
+        op(_LOAD_SPECIAL, (method_and_self[2] -- method_and_self[2])) {
             PyObject *name = _Py_SpecialMethods[oparg].name;
             int err = _PyObject_LookupSpecialMethod(name, method_and_self);
             if (err < 0) {
@@ -3381,6 +3384,10 @@ dummy_func(
                 ERROR_NO_POP();
             }
         }
+
+        macro(LOAD_SPECIAL) =
+            _INSERT_NULL +
+            _LOAD_SPECIAL;
 
         inst(WITH_EXCEPT_START, (exit_func, exit_self, lasti, unused, val -- exit_func, exit_self, lasti, unused, val, res)) {
             /* At the top of the stack are 4 values:

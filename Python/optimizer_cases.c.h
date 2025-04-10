@@ -1482,6 +1482,17 @@
             break;
         }
 
+        case INSERT_NULL: {
+            JitOptSymbol **method_and_self;
+            method_and_self = &stack_pointer[-1];
+            for (int _i = 2; --_i >= 0;) {
+                method_and_self[_i] = sym_new_not_null(ctx);
+            }
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _LOAD_SPECIAL: {
             JitOptSymbol *attr;
             JitOptSymbol *self_or_null;
