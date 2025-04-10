@@ -30,3 +30,6 @@ select = [
     "E501",    # Line too long
     "PYI024",  # Use `typing.NamedTuple` instead of `collections.namedtuple`
 ]
+"generate-build-details.py" = [
+    "E501",  # Line too long
+]
