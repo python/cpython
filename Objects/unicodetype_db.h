@@ -2971,7 +2971,7 @@ static const unsigned short index1[] = {
 
 static const unsigned short index2[] = {
     0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 2, 2, 2, 1, 3, 4, 4, 4, 4, 4, 4, 5, 4, 4, 4, 4, 4, 4, 5, 4,
+    0, 0, 0, 0, 1, 1, 1, 1, 3, 4, 4, 4, 4, 4, 4, 5, 4, 4, 4, 4, 4, 4, 5, 4,
     6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 5, 4, 4, 4, 4, 4, 4, 16, 16, 16, 16,
     16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16,
     16, 16, 16, 16, 4, 4, 4, 5, 17, 5, 18, 18, 18, 18, 18, 18, 18, 18, 18,
@@ -6711,8 +6711,7 @@ int _PyUnicode_IsWhitespace(const Py_UCS4 ch)
 }
 
 /* Returns 1 for Unicode characters having the line break
- * property 'BK', 'CR', 'LF' or 'NL' or having bidirectional
- * type 'B', 0 otherwise.
+ * property 'BK', 'CR', 'LF' or 'NL', 0 otherwise.
  */
 int _PyUnicode_IsLinebreak(const Py_UCS4 ch)
 {
@@ -6721,9 +6720,6 @@ int _PyUnicode_IsLinebreak(const Py_UCS4 ch)
     case 0x000B:
     case 0x000C:
     case 0x000D:
-    case 0x001C:
-    case 0x001D:
-    case 0x001E:
     case 0x0085:
     case 0x2028:
     case 0x2029:
