@@ -23,3 +23,6 @@ select = [
 "check_extension_modules.py" = [
     "E501",  # Line too long
 ]
+"deepfreeze.py" = [
+    "E501",   # Line too long
+]

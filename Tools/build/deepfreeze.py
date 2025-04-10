@@ -5,6 +5,7 @@ Shared library extension modules are not available in that case.
 On Windows, and in cross-compilation cases, it is executed
 by Python 3.10, and 3.11 features are not available.
 """
+
 import argparse
 import builtins
 import collections
@@ -13,7 +14,7 @@ import os
 import re
 import time
 import types
-from typing import Dict, FrozenSet, TextIO, Tuple
+from typing import TextIO
 
 import umarshal
 
@@ -57,8 +58,8 @@ def get_localsplus(code: types.CodeType):
 
 
 def get_localsplus_counts(code: types.CodeType,
-                          names: Tuple[str, ...],
-                          kinds: bytes) -> Tuple[int, int, int, int]:
+                          names: tuple[str, ...],
+                          kinds: bytes) -> tuple[int, int, int]:
     nlocals = 0
     ncellvars = 0
     nfreevars = 0
@@ -84,7 +85,7 @@ PyUnicode_2BYTE_KIND = 2
 PyUnicode_4BYTE_KIND = 4
 
 
-def analyze_character_width(s: str) -> Tuple[int, bool]:
+def analyze_character_width(s: str) -> tuple[int, bool]:
     maxchar = ' '
     for c in s:
         maxchar = max(maxchar, c)
@@ -109,7 +110,7 @@ class Printer:
     def __init__(self, file: TextIO) -> None:
         self.level = 0
         self.file = file
-        self.cache: Dict[tuple[type, object, str], str] = {}
+        self.cache: dict[tuple[type, object, str], str] = {}
         self.hits, self.misses = 0, 0
         self.finis: list[str] = []
         self.inits: list[str] = []
@@ -235,7 +236,7 @@ class Printer:
                     utf8 = s.encode('utf-8')
                     self.write(f'.utf8 = {make_string_literal(utf8)},')
                     self.write(f'.utf8_length = {len(utf8)},')
-                with self.block(f"._data =", ","):
+                with self.block("._data =", ","):
                     for i in range(0, len(s), 16):
                         data = s[i:i+16]
                         self.write(", ".join(map(str, map(ord, data))) + ",")
@@ -292,7 +293,7 @@ class Printer:
             self.write(f".co_name = {co_name},")
             self.write(f".co_qualname = {co_qualname},")
             self.write(f".co_linetable = {co_linetable},")
-            self.write(f"._co_cached = NULL,")
+            self.write("._co_cached = NULL,")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
             first_traceable = 0
             for op in code.co_code[::2]:
@@ -305,9 +306,9 @@ class Printer:
         self.inits.append(f"_PyStaticCode_Init({name_as_code})")
         return f"& {name}.ob_base.ob_base"
 
-    def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
+    def generate_tuple(self, name: str, t: tuple[object, ...]) -> str:
         if len(t) == 0:
-            return f"(PyObject *)& _Py_SINGLETON(tuple_empty)"
+            return "(PyObject *)& _Py_SINGLETON(tuple_empty)"
         items = [self.generate(f"{name}_{i}", it) for i, it in enumerate(t)]
         self.write("static")
         with self.indent():
@@ -321,7 +322,7 @@ class Printer:
             with self.block("._object =", ","):
                 self.object_var_head("PyTuple_Type", len(t))
                 if items:
-                    with self.block(f".ob_item =", ","):
+                    with self.block(".ob_item =", ","):
                         for item in items:
                             self.write(item + ",")
         return f"& {name}._object.ob_base.ob_base"
@@ -379,7 +380,7 @@ class Printer:
             self.write(f".cval = {{ {z.real}, {z.imag} }},")
         return f"&{name}.ob_base"
 
-    def generate_frozenset(self, name: str, fs: FrozenSet[object]) -> str:
+    def generate_frozenset(self, name: str, fs: frozenset[object]) -> str:
         try:
             fs = sorted(fs)
         except TypeError:
@@ -402,7 +403,7 @@ class Printer:
             # print(f"Cache hit {key!r:.40}: {self.cache[key]!r:.40}")
             return self.cache[key]
         self.misses += 1
-        if isinstance(obj, (types.CodeType, umarshal.Code)) :
+        if isinstance(obj, types.CodeType | umarshal.Code):
             val = self.generate_code(name, obj)
         elif isinstance(obj, tuple):
             val = self.generate_tuple(name, obj)
@@ -465,17 +466,17 @@ def generate(args: list[str], output: TextIO) -> None:
     printer = Printer(output)
     for arg in args:
         file, modname = arg.rsplit(':', 1)
-        with open(file, "r", encoding="utf8") as fd:
+        with open(file, encoding="utf8") as fd:
             source = fd.read()
             if is_frozen_header(source):
                 code = decode_frozen_data(source)
             else:
                 code = compile(fd.read(), f"<frozen {modname}>", "exec")
             printer.generate_file(modname, code)
-    with printer.block(f"void\n_Py_Deepfreeze_Fini(void)"):
+    with printer.block("void\n_Py_Deepfreeze_Fini(void)"):
         for p in printer.finis:
             printer.write(p)
-    with printer.block(f"int\n_Py_Deepfreeze_Init(void)"):
+    with printer.block("int\n_Py_Deepfreeze_Init(void)"):
         for p in printer.inits:
             with printer.block(f"if ({p} < 0)"):
                 printer.write("return -1;")
@@ -513,7 +514,7 @@ def main() -> None:
     if args.file:
         if verbose:
             print(f"Reading targets from {args.file}")
-        with open(args.file, "rt", encoding="utf-8-sig") as fin:
+        with open(args.file, "rt", encoding="utf-8-sig") as fin:  # noqa: UP015
             rules = [x.strip() for x in fin]
     else:
         rules = args.args
