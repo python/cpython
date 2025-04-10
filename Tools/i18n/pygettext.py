@@ -509,7 +509,7 @@ class GettextVisitor(ast.NodeVisitor):
                   file=sys.stderr)
         else:
             # There are multiple keyword specs for the function name and
-            # none of them could be exxtracted. Print a general error
+            # none of them could be extracted. Print a general error
             # message and list the errors for each keyword spec.
             print(f'*** {self.filename}:{node.lineno}: '
                   f'No keywords matched gettext call "{func_name}":',
