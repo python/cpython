@@ -391,10 +391,9 @@ def unparse_spec(name, spec):
 
 
 def process_keywords(keywords, *, no_default_keywords):
-    custom_keywords_list = [parse_spec(spec) for
-                            spec in dict.fromkeys(keywords)]
     custom_keywords = {}
-    for name, spec in custom_keywords_list:
+    for spec in dict.fromkeys(keywords):
+        name, spec = parse_spec(spec)
         if name not in custom_keywords:
             custom_keywords[name] = []
         custom_keywords[name].append(spec)
