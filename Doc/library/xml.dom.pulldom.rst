@@ -1,5 +1,5 @@
-:mod:`xml.dom.pulldom` --- Support for building partial DOM trees
-=================================================================
+:mod:`!xml.dom.pulldom` --- Support for building partial DOM trees
+==================================================================
 
 .. module:: xml.dom.pulldom
    :synopsis: Support for building partial DOM trees from SAX events.
@@ -115,7 +115,7 @@ DOMEventStream Objects
 .. class:: DOMEventStream(stream, parser, bufsize)
 
    .. versionchanged:: 3.11
-      Support for :meth:`__getitem__` method has been removed.
+      Support for :meth:`~object.__getitem__` method has been removed.
 
    .. method:: getEvent()
 

@@ -15,8 +15,8 @@ two types exist -- :ref:`GenericAlias <types-genericalias>` and
    Equivalent to calling the Python class
    :class:`types.GenericAlias`.  The *origin* and *args* arguments set the
    ``GenericAlias``\ 's ``__origin__`` and ``__args__`` attributes respectively.
-   *origin* should be a :c:type:`PyTypeObject*`, and *args* can be a
-   :c:type:`PyTupleObject*` or any ``PyObject*``.  If *args* passed is
+   *origin* should be a :c:expr:`PyTypeObject*`, and *args* can be a
+   :c:expr:`PyTupleObject*` or any ``PyObject*``.  If *args* passed is
    not a tuple, a 1-tuple is automatically constructed and ``__args__`` is set
    to ``(args,)``.
    Minimal checking is done for the arguments, so the function will succeed even
@@ -35,7 +35,7 @@ two types exist -- :ref:`GenericAlias <types-genericalias>` and
           ...
       }
 
-   .. seealso:: The data model method :meth:`__class_getitem__`.
+   .. seealso:: The data model method :meth:`~object.__class_getitem__`.
 
    .. versionadded:: 3.9
 

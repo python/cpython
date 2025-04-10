@@ -65,7 +65,7 @@ class History:
                     self.text.bell()
                     return
         nprefix = len(prefix)
-        while 1:
+        while True:
             pointer += -1 if reverse else 1
             if pointer < 0 or pointer >= nhist:
                 self.text.bell()

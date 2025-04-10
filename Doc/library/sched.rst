@@ -1,5 +1,5 @@
-:mod:`sched` --- Event scheduler
-================================
+:mod:`!sched` --- Event scheduler
+=================================
 
 .. module:: sched
    :synopsis: General purpose event scheduler.
@@ -44,16 +44,22 @@ Example::
    ...     print(time.time())
    ...     s.enter(10, 1, print_time)
    ...     s.enter(5, 2, print_time, argument=('positional',))
+   ...     # despite having higher priority, 'keyword' runs after 'positional' as enter() is relative
    ...     s.enter(5, 1, print_time, kwargs={'a': 'keyword'})
+   ...     s.enterabs(1_650_000_000, 10, print_time, argument=("first enterabs",))
+   ...     s.enterabs(1_650_000_000, 5, print_time, argument=("second enterabs",))
    ...     s.run()
    ...     print(time.time())
    ...
    >>> print_some_times()
-   930343690.257
-   From print_time 930343695.274 positional
-   From print_time 930343695.275 keyword
-   From print_time 930343700.273 default
-   930343700.276
+   1652342830.3640375
+   From print_time 1652342830.3642538 second enterabs
+   From print_time 1652342830.3643398 first enterabs
+   From print_time 1652342835.3694863 positional
+   From print_time 1652342835.3696074 keyword
+   From print_time 1652342840.369612 default
+   1652342840.3697174
+
 
 .. _scheduler-objects:
 
@@ -109,7 +115,7 @@ Scheduler Objects
 
 .. method:: scheduler.run(blocking=True)
 
-   Run all scheduled events. This method will wait  (using the :func:`delayfunc`
+   Run all scheduled events. This method will wait  (using the *delayfunc*
    function passed to the constructor) for the next event, then execute it and so
    on until there are no more scheduled events.
 

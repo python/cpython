@@ -8,7 +8,7 @@ Run this script with -h or --help for documentation.
 
 import os
 import sys
-from test.libregrtest import main
+from test.libregrtest.main import main
 
 
 # Alias for backward compatibility (just in case)

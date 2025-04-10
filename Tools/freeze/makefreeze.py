@@ -45,9 +45,9 @@ def makefreeze(base, dict, debug=0, entry_point=None, fail_import=()):
                     print("freezing", mod, "...")
                 str = marshal.dumps(m.__code__)
                 size = len(str)
-                is_package = 'false'
+                is_package = '0'
                 if m.__path__:
-                    is_package = 'true'
+                    is_package = '1'
                 done.append((mod, mangled, size, is_package))
                 writecode(outfp, mangled, str)
     if debug:

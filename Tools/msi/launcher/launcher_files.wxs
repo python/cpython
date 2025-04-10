@@ -22,14 +22,20 @@
             </Component>
 
             <Component Id="pyshellext_amd64.dll" Directory="LauncherInstallDirectory" Guid="{E7411EFD-F1DD-40EB-B0C7-4BA02BF3E75F}" Win64="yes">
-                <Condition>VersionNT64</Condition>
+                <Condition>VersionNT64 AND NOT ARM64_SHELLEXT</Condition>
                 <File Id="pyshellext_amd64.dll" Name="pyshellext.amd64.dll" Source="!(bindpath.Build64)\pyshellext.dll">
                     <Class Id="{BEA218D2-6950-497B-9434-61683EC065FE}" Advertise="no" Context="InprocServer32" ThreadingModel="apartment" />
                 </File>
             </Component>
             <Component Id="pyshellext_win32.dll" Directory="LauncherInstallDirectory" Guid="{C5936696-9A5A-45A0-A830-D172C3329282}">
-                <Condition>NOT VersionNT64</Condition>
+                <Condition>NOT VersionNT64 AND NOT ARM64_SHELLEXT</Condition>
                 <File Id="pyshellext_win32.dll" Name="pyshellext.win32.dll" Source="!(bindpath.Build32)\pyshellext.dll">
+                    <Class Id="{BEA218D2-6950-497B-9434-61683EC065FE}" Advertise="no" Context="InprocServer32" ThreadingModel="apartment" />
+                </File>
+            </Component>
+            <Component Id="pyshellext_arm64.dll" Directory="LauncherInstallDirectory" Guid="{C591963D-7FC6-4FCE-8642-5E01E6B8848F}" Win64="yes">
+                <Condition>ARM64_SHELLEXT</Condition>
+                <File Id="pyshellext_arm64.dll" Name="pyshellext.arm64.dll" Source="!(bindpath.BuildARM64)\pyshellext.dll">
                     <Class Id="{BEA218D2-6950-497B-9434-61683EC065FE}" Advertise="no" Context="InprocServer32" ThreadingModel="apartment" />
                 </File>
             </Component>

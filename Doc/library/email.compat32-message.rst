@@ -7,6 +7,7 @@
    :synopsis: The base class representing email messages in a fashion
               backward compatible with Python 3.2
    :noindex:
+   :no-index:
 
 
 The :class:`Message` class is very similar to the
@@ -83,7 +84,7 @@ Here are the methods of the :class:`Message` class:
       Note that this method is provided as a convenience and may not always
       format the message the way you want.  For example, by default it does
       not do the mangling of lines that begin with ``From`` that is
-      required by the unix mbox format.  For more flexibility, instantiate a
+      required by the Unix mbox format.  For more flexibility, instantiate a
       :class:`~email.generator.Generator` instance and use its
       :meth:`~email.generator.Generator.flatten` method directly.  For example::
 
@@ -104,7 +105,7 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: __str__()
 
-      Equivalent to :meth:`.as_string()`.  Allows ``str(msg)`` to produce a
+      Equivalent to :meth:`.as_string`.  Allows ``str(msg)`` to produce a
       string containing the formatted message.
 
 
@@ -125,7 +126,7 @@ Here are the methods of the :class:`Message` class:
       Note that this method is provided as a convenience and may not always
       format the message the way you want.  For example, by default it does
       not do the mangling of lines that begin with ``From`` that is
-      required by the unix mbox format.  For more flexibility, instantiate a
+      required by the Unix mbox format.  For more flexibility, instantiate a
       :class:`~email.generator.BytesGenerator` instance and use its
       :meth:`~email.generator.BytesGenerator.flatten` method directly.
       For example::
@@ -142,7 +143,7 @@ Here are the methods of the :class:`Message` class:
 
    .. method:: __bytes__()
 
-      Equivalent to :meth:`.as_bytes()`.  Allows ``bytes(msg)`` to produce a
+      Equivalent to :meth:`.as_bytes`.  Allows ``bytes(msg)`` to produce a
       bytes object containing the formatted message.
 
       .. versionadded:: 3.4
@@ -298,7 +299,7 @@ Here are the methods of the :class:`Message` class:
    In a model generated from bytes, any header values that (in contravention of
    the RFCs) contain non-ASCII bytes will, when retrieved through this
    interface, be represented as :class:`~email.header.Header` objects with
-   a charset of `unknown-8bit`.
+   a charset of ``unknown-8bit``.
 
 
    .. method:: __len__()
@@ -367,7 +368,7 @@ Here are the methods of the :class:`Message` class:
    .. method:: get(name, failobj=None)
 
       Return the value of the named header field.  This is identical to
-      :meth:`__getitem__` except that optional *failobj* is returned if the
+      :meth:`~object.__getitem__` except that optional *failobj* is returned if the
       named header is missing (defaults to ``None``).
 
    Here are some additional useful methods:

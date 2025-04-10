@@ -1,4 +1,0 @@
-Building Python now requires a C99 ``<math.h>`` header file providing a ``NAN``
-constant, or the ``__builtin_nan()`` built-in function. If a platform does not
-support Not-a-Number (NaN), the ``Py_NO_NAN`` macro can be defined in the
-``pyconfig.h`` file. Patch by Victor Stinner.

@@ -714,6 +714,18 @@ class TestContentTypeHeader(TestHeaderBase):
             " charset*=unknown-8bit''utf-8%E2%80%9D\n",
             ),
 
+        'rfc2231_nonascii_in_charset_of_charset_parameter_value': (
+            "text/plain; charset*=utf-8”''utf-8%E2%80%9D",
+            'text/plain',
+            'text',
+            'plain',
+            {'charset': 'utf-8”'},
+            [],
+            'text/plain; charset="utf-8”"',
+            "Content-Type: text/plain;"
+            " charset*=utf-8''utf-8%E2%80%9D\n",
+            ),
+
         'rfc2231_encoded_then_unencoded_segments': (
             ('application/x-foo;'
                 '\tname*0*="us-ascii\'en-us\'My";'
@@ -824,6 +836,11 @@ class TestContentTransferEncoding(TestHeaderBase):
             '7bit and a bunch more',
             '7bit',
             [errors.InvalidHeaderDefect]),
+
+        'extra_space_after_cte': (
+            'base64 ',
+            'base64',
+            []),
 
     }
 
@@ -1225,6 +1242,26 @@ class TestAddressHeader(TestHeaderBase):
             'example.com',
             None),
 
+        'name_ending_with_dot_without_space':
+            ('John X.<jxd@example.com>',
+             [errors.ObsoleteHeaderDefect],
+             '"John X." <jxd@example.com>',
+             'John X.',
+             'jxd@example.com',
+             'jxd',
+             'example.com',
+             None),
+
+        'name_starting_with_dot':
+            ('. Doe <jxd@example.com>',
+             [errors.InvalidHeaderDefect, errors.ObsoleteHeaderDefect],
+             '". Doe" <jxd@example.com>',
+             '. Doe',
+             'jxd@example.com',
+             'jxd',
+             'example.com',
+             None),
+
         }
 
         # XXX: Need many more examples, and in particular some with names in
@@ -1616,7 +1653,7 @@ class TestFolding(TestHeaderBase):
                     'Lôrem ipsum dôlôr sit amet, cônsectetuer adipiscing. '
                     'Suspendisse pôtenti. Aliquam nibh. Suspendisse pôtenti.',
                     '=?utf-8?q?L=C3=B4rem_ipsum_d=C3=B4l=C3=B4r_sit_amet=2C_c'
-                    '=C3=B4nsectetuer?=\n =?utf-8?q?adipiscing=2E_Suspendisse'
+                    '=C3=B4nsectetuer?=\n =?utf-8?q?_adipiscing=2E_Suspendisse'
                     '_p=C3=B4tenti=2E_Aliquam_nibh=2E?=\n Suspendisse =?utf-8'
                     '?q?p=C3=B4tenti=2E?=',
                     ),

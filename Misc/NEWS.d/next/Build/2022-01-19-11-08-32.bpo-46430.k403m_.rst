@@ -1,1 +1,0 @@
-Intern strings in deep-frozen modules. Patch by Kumar Aditya.

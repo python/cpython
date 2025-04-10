@@ -104,6 +104,25 @@ def format_filename(filename, relroot=USE_CWD, *,
     return filename
 
 
+def match_path_tail(path1, path2):
+    """Return True if one path ends the other."""
+    if path1 == path2:
+        return True
+    if os.path.isabs(path1):
+        if os.path.isabs(path2):
+            return False
+        return _match_tail(path1, path2)
+    elif os.path.isabs(path2):
+        return _match_tail(path2, path1)
+    else:
+        return _match_tail(path1, path2) or _match_tail(path2, path1)
+
+
+def _match_tail(path, tail):
+    assert not os.path.isabs(tail), repr(tail)
+    return path.endswith(os.path.sep + tail)
+
+
 ##################################
 # find files
 
