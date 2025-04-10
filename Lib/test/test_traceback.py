@@ -3784,7 +3784,7 @@ class TestTracebackException(unittest.TestCase):
 
         for exc in (FalseyBoolException, FalseyLenException):
             try:
-                raise exc(0) from KeyError
+                raise exc from KeyError
             except exc as e:
                 self.assertIn(cause_message, traceback.format_exception(e))
 
@@ -3793,7 +3793,7 @@ class TestTracebackException(unittest.TestCase):
                 try:
                     1/0
                 except:
-                    raise exc(1)
+                    raise exc
             except exc as e:
                 self.assertIn(context_message, traceback.format_exception(e))
 
@@ -4004,7 +4004,7 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
         # Recall: `x` is falsey if `len(x)` returns 0 or `bool(x)` returns False.
 
         try:
-            raise FalseyExceptionGroup("Gih", (KeyError(2), NameError('Guh')))
+            raise FalseyExceptionGroup("Gih", (KeyError(), NameError()))
         except Exception as ee:
             str_exc = ''.join(traceback.format_exception(ee))
             self.assertIn('+---------------- 1 ----------------', str_exc)
@@ -4013,10 +4013,11 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
         # Test with a falsey exception, in last position, as sub-exceptions.
         msg = 'bool'
         try:
-            raise FalseyExceptionGroup("Gih", (KeyError(2), FalseyBoolException(msg)))
+            raise FalseyExceptionGroup("Gah", (KeyError(), FalseyBoolException(msg)))
         except Exception as ee:
             str_exc = traceback.format_exception(ee)
             self.assertIn(f'{FalseyBoolException.__name__}: {msg}', str_exc[-2])
+
 
 global_for_suggestions = None
 
