@@ -36,3 +36,6 @@ select = [
 "generate_global_objects.py" = [
     "E501",  # Line too long
 ]
+"generate_levenshtein_examples.py" = [
+    "E501",  # Line too long
+]
