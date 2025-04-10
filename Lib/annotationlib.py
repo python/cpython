@@ -619,14 +619,6 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         raise ValueError(f"Invalid format: {format!r}")
 
 
-# We use the descriptors from builtins.type instead of accessing
-# .__annotations__ and .__annotate__ directly on class objects, because
-# otherwise we could get wrong results in some cases involving metaclasses.
-# See PEP 749.
-_BASE_GET_ANNOTATE = type.__dict__["__annotate__"].__get__
-_BASE_GET_ANNOTATIONS = type.__dict__["__annotations__"].__get__
-
-
 def get_annotate_function(obj):
     """Get the __annotate__ function for an object.
 
@@ -635,12 +627,11 @@ def get_annotate_function(obj):
 
     Returns the __annotate__ function or None.
     """
-    if isinstance(obj, type):
+    if isinstance(obj, dict):
         try:
-            return _BASE_GET_ANNOTATE(obj)
-        except AttributeError:
-            # AttributeError is raised for static types.
-            return None
+            return obj["__annotate__"]
+        except KeyError:
+            return obj.get("__annotate_func__", None)
     return getattr(obj, "__annotate__", None)
 
 
@@ -833,7 +824,7 @@ def _get_and_call_annotate(obj, format):
 def _get_dunder_annotations(obj):
     if isinstance(obj, type):
         try:
-            ann = _BASE_GET_ANNOTATIONS(obj)
+            ann = obj.__annotations__
         except AttributeError:
             # For static types, the descriptor raises AttributeError.
             return {}
