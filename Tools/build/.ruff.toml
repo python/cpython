@@ -55,3 +55,6 @@ select = [
 "parse_html5_entities.py" = [
     "E501",  # Line too long
 ]
+"smelly.py" = [
+    "E501",  # Line too long
+]
