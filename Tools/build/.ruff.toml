@@ -64,3 +64,6 @@ select = [
 "stable_abi.py" = [
     "E501",  # Line too long
 ]
+"umarshal.py" = [
+    "E501",  # Line too long
+]
