@@ -19,6 +19,9 @@ select = [
     "YTT",     # flake8-2020
 ]
 
+[per-file-target-version]
+"stable_abi.py" = "py311"  # requires 'tomllib'
+
 [lint.per-file-ignores]
 "check_extension_modules.py" = [
     "E501",  # Line too long
@@ -56,5 +59,8 @@ select = [
     "E501",  # Line too long
 ]
 "smelly.py" = [
+    "E501",  # Line too long
+]
+"stable_abi.py" = [
     "E501",  # Line too long
 ]
