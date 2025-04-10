@@ -669,6 +669,8 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getdoc_inherited_cached_property(self):
         self.assertEqual(inspect.getdoc(mod3.ChildInheritDoc.foo),
                          'docstring for foo defined in parent')
+        self.assertEqual(inspect.getdoc(mod3.ChildInheritDefineDoc.foo),
+                         'docstring for foo defined in parent')
 
     def test_getdoc_redefine_cached_property_as_other(self):
         self.assertEqual(inspect.getdoc(mod3.ChildPropertyFoo.foo),
@@ -679,6 +681,10 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getdoc_define_cached_property(self):
         self.assertEqual(inspect.getdoc(mod3.ChildDefineDoc.foo),
                          'docstring for foo defined in child')
+
+    def test_getdoc_nodoc_inherited(self):
+        self.assertEqual(inspect.getdoc(mod3.ChildNoDoc.foo),
+                         None)
 
     @unittest.skipIf(MISSING_C_DOCSTRINGS, "test requires docstrings")
     def test_finddoc(self):

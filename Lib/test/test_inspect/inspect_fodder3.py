@@ -1,17 +1,19 @@
 from functools import cached_property
 
-# Docstring in parent, inherited in child
+# docstring in parent, inherited in child
 class ParentInheritDoc:
     @cached_property
     def foo(self):
         """docstring for foo defined in parent"""
 
-class ChildInheritDoc(ParentInheritDoc):
+class ChildInheritDoc(ParentInheritDoc): pass
+
+class ChildInheritDefineDoc(ParentInheritDoc):
     @cached_property
     def foo(self):
         pass
 
-# Redine foo as something other than cached_property
+# Redefine foo as something other than cached_property
 class ChildPropertyFoo(ParentInheritDoc):
     @property
     def foo(self):
@@ -22,11 +24,13 @@ class ChildMethodFoo(ParentInheritDoc):
     def foo(self):
         """docstring for the method foo"""
 
-# Docstring in child but not parent
+# docstring in child but not parent
 class ParentNoDoc:
     @cached_property
     def foo(self):
         pass
+
+class ChildNoDoc(ParentNoDoc): pass
 
 class ChildDefineDoc(ParentNoDoc):
     @cached_property
