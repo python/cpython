@@ -5800,16 +5800,18 @@ _PyTypes_AfterFork(void)
 static unsigned int
 type_assign_version(PyTypeObject *type)
 {
-    unsigned int version;
-    types_mutex_lock();
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (assign_version_tag(interp, type)) {
-        version = type->tp_version_tag;
+    unsigned int version = FT_ATOMIC_LOAD_UINT32_RELAXED((type)->tp_version_tag);
+    if (version == 0) {
+        types_mutex_lock();
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        if (assign_version_tag(interp, type)) {
+            version = type->tp_version_tag;
+        }
+        else {
+            version = 0;
+        }
+        types_mutex_unlock();
     }
-    else {
-        version = 0;
-    }
-    types_mutex_unlock();
     return version;
 }
 
