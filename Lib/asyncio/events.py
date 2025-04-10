@@ -835,13 +835,9 @@ def get_event_loop():
     return _get_event_loop_policy().get_event_loop()
 
 
-def _set_event_loop(loop):
-    _get_event_loop_policy().set_event_loop(loop)
-
 def set_event_loop(loop):
     """Equivalent to calling get_event_loop_policy().set_event_loop(loop)."""
-    warnings._deprecated('asyncio.set_event_loop', remove=(3,16))
-    _set_event_loop(loop)
+    _get_event_loop_policy().set_event_loop(loop)
 
 
 def new_event_loop():

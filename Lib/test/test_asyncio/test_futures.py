@@ -178,7 +178,7 @@ class BaseFutureTests:
 
     def test_constructor_use_global_loop(self):
         # Deprecated in 3.10, undeprecated in 3.12
-        asyncio._set_event_loop(self.loop)
+        asyncio.set_event_loop(self.loop)
         self.addCleanup(asyncio._set_event_loop, None)
         f = self._new_future()
         self.assertIs(f._loop, self.loop)
@@ -566,7 +566,7 @@ class BaseFutureTests:
 
     def test_wrap_future_use_global_loop(self):
         # Deprecated in 3.10, undeprecated in 3.12
-        asyncio._set_event_loop(self.loop)
+        asyncio.set_event_loop(self.loop)
         self.addCleanup(asyncio._set_event_loop, None)
         def run(arg):
             return (arg, threading.get_ident())
