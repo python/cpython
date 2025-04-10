@@ -1403,21 +1403,22 @@
             dict_st = stack_pointer[-2];
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
-            if (!PyDict_CheckExact(dict)) {
+            if (!PyDict_Check(dict)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (!Py_TYPE(dict)->tp_as_mapping) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (Py_TYPE(dict)->tp_as_mapping->mp_subscript !=
+                     PyDict_Type.tp_as_mapping->mp_subscript) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(BINARY_OP, hit);
-            PyObject *res_o;
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            int rc = PyDict_GetItemRef(dict, sub, &res_o);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (rc == 0) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyErr_SetKeyError(sub);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-            }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *res_o = PyDict_Type.tp_as_mapping->mp_subscript(dict, sub);
             _PyStackRef tmp = sub_st;
             sub_st = PyStackRef_NULL;
             stack_pointer[-1] = sub_st;
@@ -1429,7 +1430,7 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
-            if (rc <= 0) {
+            if (res_o == NULL) {
                 JUMP_TO_ERROR();
             }
             res = PyStackRef_FromPyObjectSteal(res_o);

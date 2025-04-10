@@ -939,15 +939,14 @@ dummy_func(
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
-            DEOPT_IF(!PyDict_CheckExact(dict));
+            DEOPT_IF(!PyDict_Check(dict));
+            DEOPT_IF(!Py_TYPE(dict)->tp_as_mapping);
+            DEOPT_IF(Py_TYPE(dict)->tp_as_mapping->mp_subscript !=
+                     PyDict_Type.tp_as_mapping->mp_subscript);
             STAT_INC(BINARY_OP, hit);
-            PyObject *res_o;
-            int rc = PyDict_GetItemRef(dict, sub, &res_o);
-            if (rc == 0) {
-                _PyErr_SetKeyError(sub);
-            }
+            PyObject *res_o = PyDict_Type.tp_as_mapping->mp_subscript(dict, sub);
             DECREF_INPUTS();
-            ERROR_IF(rc <= 0, error); // not found or error
+            ERROR_IF(res_o == NULL, error); // not found or error
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
