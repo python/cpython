@@ -1,7 +1,6 @@
 import io
 import os
 import unittest
-import warnings
 from test import support
 from test.support import import_helper, os_helper, warnings_helper
 

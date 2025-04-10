@@ -29,6 +29,13 @@ typedef int (*Py_tracefunc)(PyObject *, PyFrameObject *, int, PyObject *);
 #define PyTrace_C_RETURN 6
 #define PyTrace_OPCODE 7
 
+/* Remote debugger support */
+#define MAX_SCRIPT_PATH_SIZE 512
+typedef struct _remote_debugger_support {
+    int32_t debugger_pending_call;
+    char debugger_script_path[MAX_SCRIPT_PATH_SIZE];
+} _PyRemoteDebuggerSupport;
+
 typedef struct _err_stackitem {
     /* This struct represents a single execution context where we might
      * be currently handling an exception.  It is a per-coroutine state
@@ -83,8 +90,6 @@ struct _ts {
         unsigned int bound_gilstate:1;
         /* Currently in use (maybe holds the GIL). */
         unsigned int active:1;
-        /* Currently holds the GIL. */
-        unsigned int holds_gil:1;
 
         /* various stages of finalization */
         unsigned int finalizing:1;
@@ -92,7 +97,7 @@ struct _ts {
         unsigned int finalized:1;
 
         /* padding to align to 4 bytes */
-        unsigned int :23;
+        unsigned int :24;
     } _status;
 #ifdef Py_BUILD_CORE
 #  define _PyThreadState_WHENCE_NOTSET -1
@@ -103,6 +108,10 @@ struct _ts {
 #  define _PyThreadState_WHENCE_GILSTATE 4
 #  define _PyThreadState_WHENCE_EXEC 5
 #endif
+
+    /* Currently holds the GIL. Must be its own field to avoid data races */
+    int holds_gil;
+
     int _whence;
 
     /* Thread state (_Py_THREAD_ATTACHED, _Py_THREAD_DETACHED, _Py_THREAD_SUSPENDED).
@@ -200,6 +209,7 @@ struct _ts {
        The PyThreadObject must hold the only reference to this value.
     */
     PyObject *threading_local_sentinel;
+    _PyRemoteDebuggerSupport remote_debugger_support;
 };
 
 # define Py_C_RECURSION_LIMIT 5000
