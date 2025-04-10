@@ -2066,8 +2066,7 @@ type_set_annotations(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
     if (result < 0) {
         Py_DECREF(dict);
         return -1;
-    }
-    else if (result == 0) {
+    } else {  // result can be 0 or 1
         if (PyDict_Pop(dict, &_Py_ID(__annotate__), NULL) < 0) {
             PyType_Modified(type);
             Py_DECREF(dict);
