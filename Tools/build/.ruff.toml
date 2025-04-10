@@ -43,3 +43,6 @@ select = [
     "E501",   # Line too long
     "UP031",  # Use format specifiers instead of percent format
 ]
+"generate_sbom.py" = [
+    "E501",  # Line too long
+]
