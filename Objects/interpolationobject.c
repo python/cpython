@@ -9,19 +9,7 @@
 
 #include "pycore_interpolation.h"
 
-/*[clinic input]
-module templatelib
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=dbb2236a3de68808]*/
-
-#include "clinic/interpolationobject.c.h"
-
-/*[clinic input]
-class templatelib.Interpolation "interpolationobject *" "&_PyInterpolation_Type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5b183514b4d7e5af]*/
-
-int
+static int
 _conversion_converter(PyObject *arg, PyObject **conversion)
 {
     if (arg == Py_None) {
@@ -29,7 +17,10 @@ _conversion_converter(PyObject *arg, PyObject **conversion)
     }
 
     if (!PyUnicode_Check(arg)) {
-        _PyArg_BadArgument("Interpolation", "argument 'conversion'", "str", arg);
+        PyErr_Format(PyExc_TypeError,
+            "%.200s() %.200s must be %.50s, not %.50s",
+            "Interpolation", "argument 'conversion'", "str",
+            arg == Py_None ? "None" : Py_TYPE(arg)->tp_name);
         return 0;
     }
 
@@ -45,6 +36,13 @@ _conversion_converter(PyObject *arg, PyObject **conversion)
     return 1;
 }
 
+#include "clinic/interpolationobject.c.h"
+
+/*[clinic input]
+class Interpolation "interpolationobject *" "&_PyInterpolation_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=161c64a16f9c4544]*/
+
 typedef struct {
     PyObject_HEAD
     PyObject *value;
@@ -55,7 +53,7 @@ typedef struct {
 
 /*[clinic input]
 @classmethod
-templatelib.Interpolation.__new__ as interpolation_new
+Interpolation.__new__ as interpolation_new
 
     value: object
     expression: object(subclass_of='&PyUnicode_Type')
@@ -67,7 +65,7 @@ static PyObject *
 interpolation_new_impl(PyTypeObject *type, PyObject *value,
                        PyObject *expression, PyObject *conversion,
                        PyObject *format_spec)
-/*[clinic end generated code: output=6488e288765bc1a9 input=0abc8e498fb744a7]*/
+/*[clinic end generated code: output=6488e288765bc1a9 input=d91711024068528c]*/
 {
     interpolationobject *self = (interpolationobject *) type->tp_alloc(type, 0);
     if (!self) {

@@ -11,8 +11,6 @@ extern "C" {
 
 #include "pycore_stackref.h"    // _PyStackRef
 
-extern int _conversion_converter(PyObject *arg, PyObject **conv);
-
 extern PyTypeObject _PyInterpolation_Type;
 
 PyAPI_FUNC(PyObject *) _PyInterpolation_FromStackRefSteal(_PyStackRef *values);
