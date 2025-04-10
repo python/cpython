@@ -5095,23 +5095,23 @@ PyObject_GetItemData(PyObject *obj)
 static PyObject *
 find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
 {
-    ASSERT_TYPE_LOCK_HELD();
-
     Py_hash_t hash = _PyObject_HashFast(name);
     if (hash == -1) {
         *error = -1;
         return NULL;
     }
 
-    /* Look in tp_dict of types in MRO */
-    PyObject *mro = lookup_tp_mro(type);
+    /* Look in tp_dict of types in MRO.  Keep a strong reference to mro
+    because type->tp_mro can be replaced during dict lookup, e.g. when
+    comparing to non-string keys. */
+    PyObject *mro = _PyType_GetMRO(type);
     if (mro == NULL) {
         if (!is_readying(type)) {
             if (PyType_Ready(type) < 0) {
                 *error = -1;
                 return NULL;
             }
-            mro = lookup_tp_mro(type);
+            mro = _PyType_GetMRO(type);
         }
         if (mro == NULL) {
             *error = 1;
@@ -5120,9 +5120,6 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
     }
 
     PyObject *res = NULL;
-    /* Keep a strong reference to mro because type->tp_mro can be replaced
-       during dict lookup, e.g. when comparing to non-string keys. */
-    Py_INCREF(mro);
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *base = PyTuple_GET_ITEM(mro, i);
@@ -5218,6 +5215,26 @@ _PyTypes_AfterFork(void)
 #endif
 }
 
+// Try to assign a new type version tag, return it if successful.  Return 0
+// if no version was assigned.
+static unsigned int
+type_assign_version(PyTypeObject *type)
+{
+    unsigned int version = FT_ATOMIC_LOAD_UINT32_RELAXED((type)->tp_version_tag);
+    if (version == 0) {
+        BEGIN_TYPE_LOCK();
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        if (assign_version_tag(interp, type)) {
+            version = type->tp_version_tag;
+        }
+        else {
+            version = 0;
+        }
+        END_TYPE_LOCK();
+    }
+    return version;
+}
+
 /* Internal API to look for a name through the MRO.
    This returns a borrowed reference, and doesn't set an exception! */
 PyObject *
@@ -5225,8 +5242,6 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
 {
     PyObject *res;
     int error;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-
     unsigned int h = MCACHE_HASH_METHOD(type, name);
     struct type_cache *cache = get_type_cache();
     struct type_cache_entry *entry = &cache->hashtable[h];
@@ -5274,18 +5289,16 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
     /* We may end up clearing live exceptions below, so make sure it's ours. */
     assert(!PyErr_Occurred());
 
-    // We need to atomically do the lookup and capture the version before
-    // anyone else can modify our mro or mutate the type.
-
-    int has_version = 0;
-    int version = 0;
-    BEGIN_TYPE_LOCK();
-    res = find_name_in_mro(type, name, &error);
+    unsigned int assigned_version = 0; // 0 is not a valid version
     if (MCACHE_CACHEABLE_NAME(name)) {
-        has_version = assign_version_tag(interp, type);
-        version = type->tp_version_tag;
+        assigned_version = type_assign_version(type);
     }
-    END_TYPE_LOCK();
+    // Calling find_name_in_mro() might cause the type version to change.  For
+    // example, if a __hash__ or __eq__ method mutates the types.  Since this
+    // case is expected to be rare, it seems better to not explicitly check
+    // for it (by checking if the version changed) and to do the useless cache
+    // update anyhow.
+    res = find_name_in_mro(type, name, &error);
 
     /* Only put NULL results into cache if there was no error. */
     if (error) {
@@ -5303,11 +5316,11 @@ _PyType_LookupRef(PyTypeObject *type, PyObject *name)
         return NULL;
     }
 
-    if (has_version) {
+    if (assigned_version != 0) {
 #if Py_GIL_DISABLED
-        update_cache_gil_disabled(entry, name, version, res);
+        update_cache_gil_disabled(entry, name, assigned_version, res);
 #else
-        PyObject *old_value = update_cache(entry, name, version, res);
+        PyObject *old_value = update_cache(entry, name, assigned_version, res);
         Py_DECREF(old_value);
 #endif
     }
