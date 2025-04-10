@@ -180,8 +180,10 @@ The :mod:`urllib.request` module defines the following functions:
    Convert the given ``file:`` URL to a local path. This function uses
    :func:`~urllib.parse.unquote` to decode the URL.
 
-   If *has_scheme* is false (the default), the given value should omit the
-   ``file:`` scheme prefix. Set *has_scheme* to true to supply a complete URL.
+   If *has_scheme* is false (the default), the given value should omit a
+   ``file:`` scheme prefix. If *has_scheme* is set to true, the given value
+   should include the prefix; a :exc:`~urllib.error.URLError` is raised if it
+   doesn't.
 
    This example shows the function being used on Windows::
 
