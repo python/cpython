@@ -46,3 +46,6 @@ select = [
 "generate_sbom.py" = [
     "E501",  # Line too long
 ]
+"generate_sre_constants.py" = [
+    "UP031",  # Use format specifiers instead of percent format
+]
