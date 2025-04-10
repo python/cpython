@@ -1,0 +1,1 @@
+make ``asyncio.events.Handle.cancel`` atomic for use in call_soon_threadsafe
