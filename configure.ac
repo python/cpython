@@ -2031,11 +2031,7 @@ if test "$Py_LTO" = 'true' ; then
           LTOCFLAGS="-flto"
           ;;
         *)
-          AX_CHECK_COMPILE_FLAG(
-            [-flto=auto],
-            [LTOFLAGS="-flto=auto -fuse-linker-plugin -ffat-lto-objects"],
-            [LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects"]
-          )        
+          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects"
           ;;
       esac
       ;;
