@@ -32,6 +32,8 @@
 #include "pycore_stackref.h"
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
+#include "pycore_interpolation.h"
+#include "pycore_template.h"
 
 #include "pycore_dict.h"
 #include "dictobject.h"
@@ -1891,7 +1893,7 @@ dummy_func(
 
         inst(BUILD_TEMPLATE_LIST, (list -- template)) {
             PyObject *template_o = _PyTemplate_FromListStackRef(list);
-            DECREF_INPUTS();
+            INPUTS_DEAD();
             ERROR_IF(template_o == NULL, error);
             template = PyStackRef_FromPyObjectSteal(template_o);
         }

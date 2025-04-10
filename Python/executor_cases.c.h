@@ -2643,20 +2643,14 @@
             list = stack_pointer[-1];
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *template_o = _PyTemplate_FromListStackRef(list);
-            _PyStackRef tmp = list;
-            list = PyStackRef_NULL;
-            stack_pointer[-1] = list;
-            PyStackRef_CLOSE(tmp);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
             if (template_o == NULL) {
+                stack_pointer += -1;
+                assert(WITHIN_STACK_BOUNDS());
                 JUMP_TO_ERROR();
             }
             template = PyStackRef_FromPyObjectSteal(template_o);
-            stack_pointer[0] = template;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
+            stack_pointer[-1] = template;
             break;
         }
 
