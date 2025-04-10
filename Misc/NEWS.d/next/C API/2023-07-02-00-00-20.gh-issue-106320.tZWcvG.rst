@@ -1,3 +1,0 @@
-Remove ``_PyInterpreterState_Get()`` alias to
-:c:func:`PyInterpreterState_Get()` which was kept for backward compatibility
-with Python 3.8. Patch by Victor Stinner.

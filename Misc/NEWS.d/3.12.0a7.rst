@@ -24,7 +24,7 @@ Reduce the number of inline :opcode:`CACHE` entries for
 .. nonce: PRkGca
 .. section: Core and Builtins
 
-Removed :opcode:`JUMP_IF_FALSE_OR_POP` and :opcode:`JUMP_IF_TRUE_OR_POP`
+Removed :opcode:`!JUMP_IF_FALSE_OR_POP` and :opcode:`!JUMP_IF_TRUE_OR_POP`
 instructions.
 
 ..
@@ -219,7 +219,7 @@ Aasland.
 .. nonce: DqNehf
 .. section: Library
 
-Pure python :func:`locale.getencoding()` will not warn deprecation.
+Pure python :func:`locale.getencoding` will not warn deprecation.
 
 ..
 
@@ -429,7 +429,7 @@ an awaitable object. Patch by Kumar Aditya.
 Speed up setting or deleting mutable attributes on non-dataclass subclasses
 of frozen dataclasses. Due to the implementation of ``__setattr__`` and
 ``__delattr__`` for frozen dataclasses, this previously had a time
-complexity of ``O(n)``. It now has a time complexity of ``O(1)``.
+complexity of *O*\ (*n*). It now has a time complexity of *O*\ (1).
 
 ..
 
@@ -605,7 +605,7 @@ reported unauthenticated EOFs (i.e. without close_notify) as a clean
 TLS-level EOF. It now raises :exc:`~ssl.SSLEOFError`, matching the behavior
 in previous versions of OpenSSL. The :attr:`~ssl.SSLContext.options`
 attribute on :class:`~ssl.SSLContext` also no longer includes
-:data:`~ssl.OP_IGNORE_UNEXPECTED_EOF` by default. This option may be set to
+:const:`~ssl.OP_IGNORE_UNEXPECTED_EOF` by default. This option may be set to
 specify the previous OpenSSL 3.0 behavior.
 
 ..

@@ -1,4 +1,4 @@
-# Implementat marshal.loads() in pure Python
+# Implementation of marshal.loads() in pure Python
 
 import ast
 
@@ -125,10 +125,10 @@ class Reader:
         x |= buf[1] << 8
         x |= buf[2] << 16
         x |= buf[3] << 24
-        x |= buf[1] << 32
-        x |= buf[1] << 40
-        x |= buf[1] << 48
-        x |= buf[1] << 56
+        x |= buf[4] << 32
+        x |= buf[5] << 40
+        x |= buf[6] << 48
+        x |= buf[7] << 56
         x |= -(x & (1<<63))  # Sign-extend
         return x
 

@@ -1,2 +1,0 @@
-Improve error handling in :c:func:`PyUnicode_BuildEncodingMap` where an
-exception could end up being overwritten.

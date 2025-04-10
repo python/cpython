@@ -1,3 +1,6 @@
+import doctest
+import unittest
+
 doctests = """
 
 Setup
@@ -317,10 +320,10 @@ is *not* valid syntax.)
 
 __test__ = {'doctests' : doctests}
 
-def test_main(verbose=False):
-    from test import support
-    from test import test_pep646_syntax
-    support.run_doctest(test_pep646_syntax, verbose)
+def load_tests(loader, tests, pattern):
+    tests.addTest(doctest.DocTestSuite())
+    return tests
+
 
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

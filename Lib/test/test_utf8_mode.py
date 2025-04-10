@@ -9,10 +9,9 @@ import textwrap
 import unittest
 from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
-from test.support import os_helper
+from test.support import os_helper, MS_WINDOWS
 
 
-MS_WINDOWS = (sys.platform == 'win32')
 POSIX_LOCALES = ('C', 'POSIX')
 VXWORKS = (sys.platform == "vxworks")
 

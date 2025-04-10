@@ -18,6 +18,7 @@ except ImportError:
 
 from unittest import TestCase, skipUnless
 from test import support
+from test.support import requires_subprocess
 from test.support import threading_helper
 from test.support import socket_helper
 from test.support import warnings_helper
@@ -32,7 +33,7 @@ TIMEOUT = support.LOOPBACK_TIMEOUT
 DEFAULT_ENCODING = 'utf-8'
 # the dummy data returned by server over the data channel when
 # RETR, LIST, NLST, MLSD commands are issued
-RETR_DATA = 'abcde12345\r\n' * 1000 + 'non-ascii char \xAE\r\n'
+RETR_DATA = 'abcde\xB9\xB2\xB3\xA4\xA6\r\n' * 1000
 LIST_DATA = 'foo\r\nbar\r\n non-ascii char \xAE\r\n'
 NLST_DATA = 'foo\r\nbar\r\n non-ascii char \xAE\r\n'
 MLSD_DATA = ("type=cdir;perm=el;unique==keVO1+ZF4; test\r\n"
@@ -67,11 +68,11 @@ class DummyDTPHandler(asynchat.async_chat):
     def __init__(self, conn, baseclass):
         asynchat.async_chat.__init__(self, conn)
         self.baseclass = baseclass
-        self.baseclass.last_received_data = ''
+        self.baseclass.last_received_data = bytearray()
         self.encoding = baseclass.encoding
 
     def handle_read(self):
-        new_data = self.recv(1024).decode(self.encoding, 'replace')
+        new_data = self.recv(1024)
         self.baseclass.last_received_data += new_data
 
     def handle_close(self):
@@ -80,7 +81,7 @@ class DummyDTPHandler(asynchat.async_chat):
         # (behaviour witnessed with test_data_connection)
         if not self.dtp_conn_closed:
             self.baseclass.push('226 transfer complete')
-            self.close()
+            self.shutdown()
             self.dtp_conn_closed = True
 
     def push(self, what):
@@ -93,6 +94,9 @@ class DummyDTPHandler(asynchat.async_chat):
 
     def handle_error(self):
         default_error_handler()
+
+    def shutdown(self):
+        self.close()
 
 
 class DummyFTPHandler(asynchat.async_chat):
@@ -107,7 +111,7 @@ class DummyFTPHandler(asynchat.async_chat):
         self.in_buffer = []
         self.dtp = None
         self.last_received_cmd = None
-        self.last_received_data = ''
+        self.last_received_data = bytearray()
         self.next_response = ''
         self.next_data = None
         self.rest = None
@@ -226,7 +230,7 @@ class DummyFTPHandler(asynchat.async_chat):
 
     def cmd_quit(self, arg):
         self.push('221 quit ok')
-        self.close()
+        self.shutdown()
 
     def cmd_abor(self, arg):
         self.push('226 abor ok')
@@ -313,7 +317,7 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
         self.handler_instance = self.handler(conn, encoding=self.encoding)
 
     def handle_connect(self):
-        self.close()
+        self.shutdown()
     handle_read = handle_connect
 
     def writable(self):
@@ -325,8 +329,8 @@ class DummyFTPServer(asyncore.dispatcher, threading.Thread):
 
 if ssl is not None:
 
-    CERTFILE = os.path.join(os.path.dirname(__file__), "keycert3.pem")
-    CAFILE = os.path.join(os.path.dirname(__file__), "pycacert.pem")
+    CERTFILE = os.path.join(os.path.dirname(__file__), "certdata", "keycert3.pem")
+    CAFILE = os.path.join(os.path.dirname(__file__), "certdata", "pycacert.pem")
 
     class SSLConnection(asyncore.dispatcher):
         """An asyncore.dispatcher subclass supporting TLS/SSL."""
@@ -425,12 +429,12 @@ if ssl is not None:
         def handle_error(self):
             default_error_handler()
 
-        def close(self):
+        def shutdown(self):
             if (isinstance(self.socket, ssl.SSLSocket) and
                     self.socket._sslobj is not None):
                 self._do_ssl_shutdown()
             else:
-                super(SSLConnection, self).close()
+                self.close()
 
 
     class DummyTLS_DTPHandler(SSLConnection, DummyDTPHandler):
@@ -542,8 +546,8 @@ class TestFTPClass(TestCase):
         self.assertFalse(self.client.passiveserver)
 
     def test_voidcmd(self):
-        self.client.voidcmd('echo 200')
-        self.client.voidcmd('echo 299')
+        self.assertEqual(self.client.voidcmd('echo 200'), '200')
+        self.assertEqual(self.client.voidcmd('echo 299'), '299')
         self.assertRaises(ftplib.error_reply, self.client.voidcmd, 'echo 199')
         self.assertRaises(ftplib.error_reply, self.client.voidcmd, 'echo 300')
 
@@ -590,19 +594,17 @@ class TestFTPClass(TestCase):
         self.client.abort()
 
     def test_retrbinary(self):
-        def callback(data):
-            received.append(data.decode(self.client.encoding))
         received = []
-        self.client.retrbinary('retr', callback)
-        self.check_data(''.join(received), RETR_DATA)
+        self.client.retrbinary('retr', received.append)
+        self.check_data(b''.join(received),
+                        RETR_DATA.encode(self.client.encoding))
 
     def test_retrbinary_rest(self):
-        def callback(data):
-            received.append(data.decode(self.client.encoding))
         for rest in (0, 10, 20):
             received = []
-            self.client.retrbinary('retr', callback, rest=rest)
-            self.check_data(''.join(received), RETR_DATA[rest:])
+            self.client.retrbinary('retr', received.append, rest=rest)
+            self.check_data(b''.join(received),
+                            RETR_DATA[rest:].encode(self.client.encoding))
 
     def test_retrlines(self):
         received = []
@@ -612,7 +614,8 @@ class TestFTPClass(TestCase):
     def test_storbinary(self):
         f = io.BytesIO(RETR_DATA.encode(self.client.encoding))
         self.client.storbinary('stor', f)
-        self.check_data(self.server.handler_instance.last_received_data, RETR_DATA)
+        self.check_data(self.server.handler_instance.last_received_data,
+                        RETR_DATA.encode(self.server.encoding))
         # test new callback arg
         flag = []
         f.seek(0)
@@ -631,7 +634,8 @@ class TestFTPClass(TestCase):
         data = RETR_DATA.replace('\r\n', '\n').encode(self.client.encoding)
         f = io.BytesIO(data)
         self.client.storlines('stor', f)
-        self.check_data(self.server.handler_instance.last_received_data, RETR_DATA)
+        self.check_data(self.server.handler_instance.last_received_data,
+                        RETR_DATA.encode(self.server.encoding))
         # test new callback arg
         flag = []
         f.seek(0)
@@ -649,7 +653,7 @@ class TestFTPClass(TestCase):
 
     def test_dir(self):
         l = []
-        self.client.dir(lambda x: l.append(x))
+        self.client.dir(l.append)
         self.assertEqual(''.join(l), LIST_DATA.replace('\r\n', ''))
 
     def test_mlsd(self):
@@ -889,12 +893,10 @@ class TestIPv6Environment(TestCase):
 
     def test_transfer(self):
         def retr():
-            def callback(data):
-                received.append(data.decode(self.client.encoding))
             received = []
-            self.client.retrbinary('retr', callback)
-            self.assertEqual(len(''.join(received)), len(RETR_DATA))
-            self.assertEqual(''.join(received), RETR_DATA)
+            self.client.retrbinary('retr', received.append)
+            self.assertEqual(b''.join(received),
+                             RETR_DATA.encode(self.client.encoding))
         self.client.set_pasv(True)
         retr()
         self.client.set_pasv(False)
@@ -902,6 +904,7 @@ class TestIPv6Environment(TestCase):
 
 
 @skipUnless(ssl, "SSL not available")
+@requires_subprocess()
 class TestTLS_FTPClassMixin(TestFTPClass):
     """Repeat TestFTPClass tests starting the TLS layer for both control
     and data connections first.
@@ -918,6 +921,7 @@ class TestTLS_FTPClassMixin(TestFTPClass):
 
 
 @skipUnless(ssl, "SSL not available")
+@requires_subprocess()
 class TestTLS_FTPClass(TestCase):
     """Specific TLS_FTP class tests."""
 

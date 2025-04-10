@@ -1,2 +1,0 @@
-Fix spurious newline character if file ends on a comment without a newline.
-Patch by Pablo Galindo

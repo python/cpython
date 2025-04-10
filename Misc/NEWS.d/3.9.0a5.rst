@@ -5,7 +5,7 @@
 .. section: Security
 
 Disallow control characters in hostnames in http.client, addressing
-CVE-2019-18348. Such potentially malicious header injection URLs now cause a
+:cve:`2019-18348`. Such potentially malicious header injection URLs now cause a
 InvalidURL to be raised.
 
 ..
@@ -96,7 +96,7 @@ Port itertools module to multiphase initialization (:pep:`489`).
 .. section: Core and Builtins
 
 Speed up calls to ``frozenset()`` by using the :pep:`590` ``vectorcall``
-calling convention. Patch by Dong-hee Na.
+calling convention. Patch by Donghee Na.
 
 ..
 
@@ -117,7 +117,7 @@ own variable.
 .. section: Core and Builtins
 
 Speed up calls to ``set()`` by using the :pep:`590` ``vectorcall`` calling
-convention. Patch by Dong-hee Na.
+convention. Patch by Donghee Na.
 
 ..
 
@@ -166,7 +166,7 @@ Allow executing asynchronous comprehensions on the top level when the
 .. section: Core and Builtins
 
 Speed up calls to ``tuple()`` by using the :pep:`590` ``vectorcall`` calling
-convention. Patch by Dong-hee Na.
+convention. Patch by Donghee Na.
 
 ..
 
@@ -548,7 +548,7 @@ large for an AF_UNIX socket address. Patch by Pablo Galindo.
 .. nonce: mxr5m8
 .. section: Library
 
-:func:`ast.dump()` no longer outputs optional fields and attributes with
+:func:`ast.dump` no longer outputs optional fields and attributes with
 default values. The default values for optional fields and attributes of AST
 nodes are now set as class attributes (e.g. ``Constant.kind`` is set to
 ``None``).
@@ -571,7 +571,7 @@ Fixed :func:`ast.unparse` for extended slices containing a single element
 .. nonce: yWq9NJ
 .. section: Library
 
-Fix :mod:`json.tool` to catch :exc:`BrokenPipeError`. Patch by Dong-hee Na.
+Fix :mod:`json.tool` to catch :exc:`BrokenPipeError`. Patch by Donghee Na.
 
 ..
 
@@ -582,7 +582,7 @@ Fix :mod:`json.tool` to catch :exc:`BrokenPipeError`. Patch by Dong-hee Na.
 
 Avoid a possible *"RuntimeError: dictionary changed size during iteration"*
 from :func:`inspect.getmodule` when it tried to loop through
-:attr:`sys.modules`.
+:data:`sys.modules`.
 
 ..
 
@@ -691,7 +691,7 @@ Fix AttributeError when calling get_stack on a PyAsyncGenObject Task
 .. section: Library
 
 The :func:`compileall.compile_dir` function's *ddir* parameter and the
-compileall command line flag `-d` no longer write the wrong pathname to the
+compileall command line flag ``-d`` no longer write the wrong pathname to the
 generated pyc file for submodules beneath the root of the directory tree
 being compiled.  This fixes a regression introduced with Python 3.5.
 
@@ -783,7 +783,7 @@ when the optional ``qop`` parameter is not present.
 .. section: Library
 
 HTTP status codes ``103 EARLY_HINTS`` and ``425 TOO_EARLY`` are added to
-:class:`http.HTTPStatus`. Patch by Dong-hee Na.
+:class:`http.HTTPStatus`. Patch by Donghee Na.
 
 ..
 
@@ -989,7 +989,7 @@ modules are built.
 
 Add ``--with-platlibdir`` option to the configure script: name of the
 platform-specific library directory, stored in the new
-:attr:`sys.platlibdir` attribute. It is used to build the path of
+:data:`sys.platlibdir` attribute. It is used to build the path of
 platform-specific extension modules and the path of the standard library. It
 is equal to ``"lib"`` on most platforms. On Fedora and SuSE, it is equal to
 ``"lib64"`` on 64-bit platforms. Patch by Jan Matějek, Matěj Cepl,
@@ -1122,7 +1122,7 @@ a different condition than the GIL.
 .. nonce: Nbl7lF
 .. section: Tools/Demos
 
-Added support to fix ``getproxies`` in the :mod:`lib2to3.fixes.fix_urllib`
+Added support to fix ``getproxies`` in the :mod:`!lib2to3.fixes.fix_urllib`
 module. Patch by José Roberto Meza Cabrera.
 
 ..
@@ -1133,7 +1133,7 @@ module. Patch by José Roberto Meza Cabrera.
 .. section: C API
 
 Add :c:func:`PyModule_AddType` helper function: add a type to a module.
-Patch by Dong-hee Na.
+Patch by Donghee Na.
 
 ..
 
@@ -1163,7 +1163,7 @@ Python thread state.
 .. nonce: R3jaTy
 .. section: C API
 
-Add _PyArg_NoKwnames helper function. Patch by Dong-hee Na.
+Add _PyArg_NoKwnames helper function. Patch by Donghee Na.
 
 ..
 
@@ -1234,8 +1234,8 @@ method name in the SystemError "bad call flags" error message to ease debug.
 .. nonce: GOYtIm
 .. section: C API
 
-Deprecated :c:func:`PyEval_InitThreads` and
-:c:func:`PyEval_ThreadsInitialized`. Calling :c:func:`PyEval_InitThreads`
+Deprecated :c:func:`!PyEval_InitThreads` and
+:c:func:`!PyEval_ThreadsInitialized`. Calling :c:func:`!PyEval_InitThreads`
 now does nothing.
 
 ..
