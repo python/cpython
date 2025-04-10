@@ -4773,10 +4773,6 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     Py_CLEAR(co);
 
     VISIT(c, expr, outermost->iter);
-    //if (codegen_comprehension_iter(c, outermost)) {
-    //    goto error;
-    //}
-
     ADDOP_I(c, loc, CALL, 0);
 
     if (is_async_comprehension && type != COMP_GENEXP) {
