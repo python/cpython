@@ -1008,9 +1008,7 @@ _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
             }
             // bpo-42536: The GC may have untracked this args tuple. Since we're
             // recycling it, make sure it's tracked again:
-            if (!_PyObject_GC_IS_TRACKED(args)) {
-                _PyObject_GC_TRACK(args);
-            }
+            _PyTuple_Recycle(args);
         }
     }
 
@@ -1636,19 +1634,19 @@ _functools__lru_cache_wrapper_cache_clear_impl(PyObject *self)
 }
 
 static PyObject *
-lru_cache_reduce(PyObject *self, PyObject *unused)
+lru_cache_reduce(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     return PyObject_GetAttrString(self, "__qualname__");
 }
 
 static PyObject *
-lru_cache_copy(PyObject *self, PyObject *unused)
+lru_cache_copy(PyObject *self, PyObject *Py_UNUSED(args))
 {
     return Py_NewRef(self);
 }
 
 static PyObject *
-lru_cache_deepcopy(PyObject *self, PyObject *unused)
+lru_cache_deepcopy(PyObject *self, PyObject *Py_UNUSED(args))
 {
     return Py_NewRef(self);
 }
@@ -1695,9 +1693,9 @@ cache_info_type:    namedtuple class with the fields:\n\
 static PyMethodDef lru_cache_methods[] = {
     _FUNCTOOLS__LRU_CACHE_WRAPPER_CACHE_INFO_METHODDEF
     _FUNCTOOLS__LRU_CACHE_WRAPPER_CACHE_CLEAR_METHODDEF
-    {"__reduce__", (PyCFunction)lru_cache_reduce, METH_NOARGS},
-    {"__copy__", (PyCFunction)lru_cache_copy, METH_VARARGS},
-    {"__deepcopy__", (PyCFunction)lru_cache_deepcopy, METH_VARARGS},
+    {"__reduce__", lru_cache_reduce, METH_NOARGS},
+    {"__copy__", lru_cache_copy, METH_VARARGS},
+    {"__deepcopy__", lru_cache_deepcopy, METH_VARARGS},
     {NULL}
 };
 

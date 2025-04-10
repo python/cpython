@@ -90,6 +90,16 @@ functions: :func:`fnmatch`, :func:`fnmatchcase`, :func:`.filter`.
    but implemented more efficiently.
 
 
+.. function:: filterfalse(names, pat)
+
+   Construct a list from those elements of the :term:`iterable` of filename
+   strings *names* that do not match the pattern string *pat*.
+   It is the same as ``[n for n in names if not fnmatch(n, pat)]``,
+   but implemented more efficiently.
+
+   .. versionadded:: 3.14
+
+
 .. function:: translate(pat)
 
    Return the shell-style pattern *pat* converted to a regular expression for

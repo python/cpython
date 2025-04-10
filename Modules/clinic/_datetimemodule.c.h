@@ -21,6 +21,19 @@ PyDoc_STRVAR(datetime_date_fromtimestamp__doc__,
     {"fromtimestamp", (PyCFunction)datetime_date_fromtimestamp, METH_O|METH_CLASS, datetime_date_fromtimestamp__doc__},
 
 static PyObject *
+datetime_date_fromtimestamp_impl(PyTypeObject *type, PyObject *timestamp);
+
+static PyObject *
+datetime_date_fromtimestamp(PyObject *type, PyObject *timestamp)
+{
+    PyObject *return_value = NULL;
+
+    return_value = datetime_date_fromtimestamp_impl((PyTypeObject *)type, timestamp);
+
+    return return_value;
+}
+
+static PyObject *
 iso_calendar_date_new_impl(PyTypeObject *type, int year, int week,
                            int weekday);
 
@@ -34,9 +47,11 @@ iso_calendar_date_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(year), &_Py_ID(week), &_Py_ID(weekday), },
     };
     #undef NUM_KEYWORDS
@@ -106,9 +121,11 @@ datetime_date_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(year), &_Py_ID(month), &_Py_ID(day), },
     };
     #undef NUM_KEYWORDS
@@ -193,9 +210,11 @@ datetime_time_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(hour), &_Py_ID(minute), &_Py_ID(second), &_Py_ID(microsecond), &_Py_ID(tzinfo), &_Py_ID(fold), },
     };
     #undef NUM_KEYWORDS
@@ -304,7 +323,7 @@ static PyObject *
 datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz);
 
 static PyObject *
-datetime_datetime_now(PyTypeObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+datetime_datetime_now(PyObject *type, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -313,9 +332,11 @@ datetime_datetime_now(PyTypeObject *type, PyObject *const *args, Py_ssize_t narg
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(tz), },
     };
     #undef NUM_KEYWORDS
@@ -346,7 +367,7 @@ datetime_datetime_now(PyTypeObject *type, PyObject *const *args, Py_ssize_t narg
     }
     tz = args[0];
 skip_optional_pos:
-    return_value = datetime_datetime_now_impl(type, tz);
+    return_value = datetime_datetime_now_impl((PyTypeObject *)type, tz);
 
 exit:
     return return_value;
@@ -379,9 +400,11 @@ datetime_datetime_replace(PyObject *self, PyObject *const *args, Py_ssize_t narg
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(year), &_Py_ID(month), &_Py_ID(day), &_Py_ID(hour), &_Py_ID(minute), &_Py_ID(second), &_Py_ID(microsecond), &_Py_ID(tzinfo), &_Py_ID(fold), },
     };
     #undef NUM_KEYWORDS
@@ -501,4 +524,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8acf62fbc7328f79 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=809640e747529c72 input=a9049054013a1b77]*/
