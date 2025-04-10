@@ -39,3 +39,7 @@ select = [
 "generate_levenshtein_examples.py" = [
     "E501",  # Line too long
 ]
+"generate_re_casefix.py" = [
+    "E501",   # Line too long
+    "UP031",  # Use format specifiers instead of percent format
+]
