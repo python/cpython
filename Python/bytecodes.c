@@ -389,7 +389,7 @@ dummy_func(
         }
 
         pure inst(POP_TOP, (value --)) {
-            PyStackRef_CLOSE(value);
+            PyStackRef_XCLOSE(value);
         }
 
         pure inst(PUSH_NULL, (-- res)) {
@@ -405,9 +405,14 @@ dummy_func(
             PyStackRef_CLOSE(value);
         }
 
-        macro(POP_ITER) = POP_TOP;
 
-        no_save_ip tier1 inst(INSTRUMENTED_END_FOR, (receiver, value -- receiver)) {
+        inst(POP_ITER, (iter, index_or_null -- )) {
+            (void)index_or_null;
+            DEAD(index_or_null);
+            PyStackRef_CLOSE(iter);
+        }
+
+        no_save_ip tier1 inst(INSTRUMENTED_END_FOR, (receiver, index_or_null, value -- receiver, index_or_null)) {
             /* Need to create a fake StopIteration error here,
              * to conform to PEP 380 */
             if (PyStackRef_GenCheck(receiver)) {
@@ -419,7 +424,9 @@ dummy_func(
             PyStackRef_CLOSE(value);
         }
 
-        tier1 inst(INSTRUMENTED_POP_ITER, (iter -- )) {
+        tier1 inst(INSTRUMENTED_POP_ITER, (iter, index_or_null -- )) {
+            (void)index_or_null;
+            DEAD(index_or_null);
             INSTRUMENTED_JUMP(prev_instr, this_instr+1, PY_MONITORING_EVENT_BRANCH_RIGHT);
             PyStackRef_CLOSE(iter);
         }
@@ -3016,12 +3023,13 @@ dummy_func(
             values_or_none = PyStackRef_FromPyObjectSteal(values_or_none_o);
         }
 
-        inst(GET_ITER, (iterable -- iter)) {
+        inst(GET_ITER, (iterable -- iter, null)) {
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
             PyStackRef_CLOSE(iterable);
             ERROR_IF(iter_o == NULL, error);
             iter = PyStackRef_FromPyObjectSteal(iter_o);
+            null = PyStackRef_NULL;
         }
 
         inst(GET_YIELD_FROM_ITER, (iterable -- iter)) {
@@ -3068,7 +3076,7 @@ dummy_func(
             FOR_ITER_GEN,
         };
 
-        specializing op(_SPECIALIZE_FOR_ITER, (counter/1, iter -- iter)) {
+        specializing op(_SPECIALIZE_FOR_ITER, (counter/1, iter, null_or_index -- iter, null_or_index)) {
             #if ENABLE_SPECIALIZATION_FT
             if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
                 next_instr = this_instr;
@@ -3080,7 +3088,7 @@ dummy_func(
             #endif  /* ENABLE_SPECIALIZATION_FT */
         }
 
-        replaced op(_FOR_ITER, (iter -- iter, next)) {
+        replaced op(_FOR_ITER, (iter, null_or_index -- iter, null_or_index, next)) {
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
@@ -3104,7 +3112,7 @@ dummy_func(
             // Common case: no jump, leave it to the code generator
         }
 
-        op(_FOR_ITER_TIER_TWO, (iter -- iter, next)) {
+        op(_FOR_ITER_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
@@ -3128,7 +3136,7 @@ dummy_func(
         macro(FOR_ITER) = _SPECIALIZE_FOR_ITER + _FOR_ITER;
 
 
-        inst(INSTRUMENTED_FOR_ITER, (unused/1, iter -- iter, next)) {
+        inst(INSTRUMENTED_FOR_ITER, (unused/1, iter, null_or_index -- iter, null_or_index, next)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
             if (next_o != NULL) {
@@ -3154,7 +3162,7 @@ dummy_func(
         }
 
 
-        op(_ITER_CHECK_LIST, (iter -- iter)) {
+        op(_ITER_CHECK_LIST, (iter, null_or_index -- iter, null_or_index)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             EXIT_IF(Py_TYPE(iter_o) != &PyListIter_Type);
 #ifdef Py_GIL_DISABLED
@@ -3165,7 +3173,7 @@ dummy_func(
 #endif
         }
 
-        replaced op(_ITER_JUMP_LIST, (iter -- iter)) {
+        replaced op(_ITER_JUMP_LIST, (iter, null_or_index -- iter, null_or_index)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(iter_o) == &PyListIter_Type);
 // For free-threaded Python, the loop exit can happen at any point during
@@ -3193,7 +3201,7 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_GUARD_NOT_EXHAUSTED_LIST, (iter -- iter)) {
+        op(_GUARD_NOT_EXHAUSTED_LIST, (iter, null_or_index -- iter, null_or_index)) {
 #ifndef Py_GIL_DISABLED
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyListIterObject *it = (_PyListIterObject *)iter_o;
@@ -3207,7 +3215,7 @@ dummy_func(
 #endif
         }
 
-        replaced op(_ITER_NEXT_LIST, (iter -- iter, next)) {
+        replaced op(_ITER_NEXT_LIST, (iter, null_or_index -- iter, null_or_index, next)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyListIterObject *it = (_PyListIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyListIter_Type);
@@ -3236,7 +3244,7 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_ITER_NEXT_LIST_TIER_TWO, (iter -- iter, next)) {
+        op(_ITER_NEXT_LIST_TIER_TWO, (iter, null_or_index -- iter, null_or_index, next)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyListIterObject *it = (_PyListIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyListIter_Type);
@@ -3268,7 +3276,7 @@ dummy_func(
             _ITER_JUMP_LIST +
             _ITER_NEXT_LIST;
 
-        op(_ITER_CHECK_TUPLE, (iter -- iter)) {
+        op(_ITER_CHECK_TUPLE, (iter, null_or_index -- iter, null_or_index)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             EXIT_IF(Py_TYPE(iter_o) != &PyTupleIter_Type);
 #ifdef Py_GIL_DISABLED
@@ -3276,7 +3284,7 @@ dummy_func(
 #endif
         }
 
-        replaced op(_ITER_JUMP_TUPLE, (iter -- iter)) {
+        replaced op(_ITER_JUMP_TUPLE, (iter, null_or_index -- iter, null_or_index)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             (void)iter_o;
             assert(Py_TYPE(iter_o) == &PyTupleIter_Type);
@@ -3300,7 +3308,7 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_GUARD_NOT_EXHAUSTED_TUPLE, (iter -- iter)) {
+        op(_GUARD_NOT_EXHAUSTED_TUPLE, (iter, null_or_index -- iter, null_or_index)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyTupleIter_Type);
@@ -3312,7 +3320,7 @@ dummy_func(
             EXIT_IF(it->it_index >= PyTuple_GET_SIZE(seq));
         }
 
-        op(_ITER_NEXT_TUPLE, (iter -- iter, next)) {
+        op(_ITER_NEXT_TUPLE, (iter, null_or_index -- iter, null_or_index, next)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             _PyTupleIterObject *it = (_PyTupleIterObject *)iter_o;
             assert(Py_TYPE(iter_o) == &PyTupleIter_Type);
@@ -3331,7 +3339,7 @@ dummy_func(
             _ITER_JUMP_TUPLE +
             _ITER_NEXT_TUPLE;
 
-        op(_ITER_CHECK_RANGE, (iter -- iter)) {
+        op(_ITER_CHECK_RANGE, (iter, null_or_index -- iter, null_or_index)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
             EXIT_IF(Py_TYPE(r) != &PyRangeIter_Type);
 #ifdef Py_GIL_DISABLED
@@ -3339,7 +3347,7 @@ dummy_func(
 #endif
         }
 
-        replaced op(_ITER_JUMP_RANGE, (iter -- iter)) {
+        replaced op(_ITER_JUMP_RANGE, (iter, null_or_index -- iter, null_or_index)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(r) == &PyRangeIter_Type);
 #ifdef Py_GIL_DISABLED
@@ -3354,13 +3362,13 @@ dummy_func(
         }
 
         // Only used by Tier 2
-        op(_GUARD_NOT_EXHAUSTED_RANGE, (iter -- iter)) {
+        op(_GUARD_NOT_EXHAUSTED_RANGE, (iter, null_or_index -- iter, null_or_index)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(r) == &PyRangeIter_Type);
             EXIT_IF(r->len <= 0);
         }
 
-        op(_ITER_NEXT_RANGE, (iter -- iter, next)) {
+        op(_ITER_NEXT_RANGE, (iter, null_or_index -- iter, null_or_index, next)) {
             _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
             assert(Py_TYPE(r) == &PyRangeIter_Type);
 #ifdef Py_GIL_DISABLED
@@ -3381,7 +3389,7 @@ dummy_func(
             _ITER_JUMP_RANGE +
             _ITER_NEXT_RANGE;
 
-        op(_FOR_ITER_GEN_FRAME, (iter -- iter, gen_frame: _PyInterpreterFrame*)) {
+        op(_FOR_ITER_GEN_FRAME, (iter, null -- iter, null, gen_frame: _PyInterpreterFrame*)) {
             PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(iter);
             DEOPT_IF(Py_TYPE(gen) != &PyGen_Type);
 #ifdef Py_GIL_DISABLED
