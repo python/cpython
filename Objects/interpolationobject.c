@@ -241,11 +241,19 @@ _PyInterpolation_FromStackRefSteal(_PyStackRef *values)
     PyTuple_SET_ITEM(args, 0, PyStackRef_AsPyObjectSteal(values[0]));
     PyTuple_SET_ITEM(args, 1, PyStackRef_AsPyObjectSteal(values[1]));
 
-    PyObject *conversion = PyStackRef_AsPyObjectSteal(values[2]);
-    PyTuple_SET_ITEM(args, 2, conversion ? conversion : Py_NewRef(Py_None));
+    if (PyStackRef_IsNull(values[2])) {
+        PyTuple_SET_ITEM(args, 2, Py_NewRef(Py_None));
+    } else {
+        PyObject *conversion = PyStackRef_AsPyObjectSteal(values[2]);
+        PyTuple_SET_ITEM(args, 2, conversion);
+    }
 
-    PyObject *format_spec = PyStackRef_AsPyObjectSteal(values[3]);
-    PyTuple_SET_ITEM(args, 3, format_spec ? format_spec : &_Py_STR(empty));
+    if (PyStackRef_IsNull(values[3])) {
+        PyTuple_SET_ITEM(args, 3, &_Py_STR(empty));
+    } else {
+        PyObject *format_spec = PyStackRef_AsPyObjectSteal(values[3]);
+        PyTuple_SET_ITEM(args, 3, format_spec);
+    }
 
     PyObject *interpolation = PyObject_CallObject((PyObject *) &_PyInterpolation_Type, args);
     Py_DECREF(args);
