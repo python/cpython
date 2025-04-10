@@ -57,6 +57,26 @@ class TypeAnnotationTests(unittest.TestCase):
         del C.__annotations__
         self.assertFalse("__annotations__" in C.__dict__)
 
+    def test_del_annotations_and_annotate(self):
+        # gh-132285
+        called = False
+        class A:
+            def __annotate__(format):
+                nonlocal called
+                called = True
+                return {'a': int}
+
+        self.assertEqual(A.__annotations__, {'a': int})
+        self.assertTrue(called)
+        self.assertTrue(A.__annotate__)
+
+        del A.__annotations__
+        called = False
+
+        self.assertEqual(A.__annotations__, {})
+        self.assertFalse(called)
+        self.assertIs(A.__annotate__, None)
+
     def test_descriptor_still_works(self):
         class C:
             def __init__(self, name=None, bases=None, d=None):
