@@ -5,6 +5,7 @@ import re
 import sys
 import unittest
 from textwrap import dedent
+from types import SimpleNamespace
 from pathlib import Path
 
 from test.support.script_helper import assert_python_ok
@@ -18,7 +19,7 @@ DATA_DIR = Path(__file__).resolve().parent / 'i18n_data'
 
 
 with imports_under_tool("i18n"):
-    from pygettext import parse_spec
+    from pygettext import parse_spec, make_escapes, normalize
 
 
 def normalize_POT_file(pot):
@@ -515,6 +516,51 @@ class Test_pygettext(unittest.TestCase):
                 with self.assertRaises(ValueError) as cm:
                     parse_spec(spec)
                 self.assertEqual(str(cm.exception), message)
+
+    def setUp(self):
+        # required to set up normalize
+        make_escapes(True)
+
+    def test_normalize_multiline(self):
+        s = 'multi-line\n translation'
+        s_expected = '""\n"multi-line\\n"\n" translation"'
+
+        data = normalize(s, 'UTF-8', 'msgid', 78)
+        self.assertEqual(s_expected, data)
+
+    def test_normalize_wrap(self):
+        cases = (
+            ('multi-line\n translation', '""\n"multi-line\\n"\n" translation"'),
+            ('fee fi fo fum fee fi ', '"fee fi fo fum fee fi "'),         # len = 29
+            ('fee fi fo fum fee fi f',  '"fee fi fo fum fee fi f"'),      # len = 30
+            ('fee fi fo fum fee fi fo', '""\n"fee fi fo fum fee fi fo"' ),# len = 31
+        )
+        for raw, expected in cases:
+            with self.subTest(raw):
+                data = normalize(raw, 'UTF-8', 'msgid', 30)
+                self.assertEqual(expected, data)
+
+    def test_normalize_empty_str(self):
+        data = normalize('', 'UTF-8', 'msgid', 30)
+        self.assertEqual('""', data)
+
+    def test_normalize_single_word(self):
+        for s in ("fee", "fi", "fo", "fums"):
+            data = normalize(s, 'UTF-8', 'msgid', 8)
+            self.assertNotIn('""', data) # did not wrap
+
+    def test_normalize_split_on_whitespace(self):
+        for space in (' ', ' ', ' ', '\t', '\r'):
+            s = f'longlonglong{space}word'
+            space = {'\t': '\\t', '\r': '\\r'}.get(space, space)
+            s_expected = f'""\n"longlonglong{space}"\n"word"'
+            data = normalize(s, 'UTF-8', 'msgid', 10)
+            self.assertEqual(s_expected, data)
+
+        s = f'longlonglong\r\nword'
+        s_expected = f'""\n"longlonglong\\r\\n"\n"word"'
+        data = normalize(s, 'UTF-8', 'msgid', 30)
+        self.assertEqual(s_expected, data)
 
 
 def extract_from_snapshots():
