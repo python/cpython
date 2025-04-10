@@ -52,3 +52,6 @@ select = [
 "generate_token.py" = [
     "E501",  # Line too long
 ]
+"parse_html5_entities.py" = [
+    "E501",  # Line too long
+]
