@@ -26,3 +26,7 @@ select = [
 "deepfreeze.py" = [
     "E501",   # Line too long
 ]
+"freeze_modules.py" = [
+    "E501",    # Line too long
+    "PYI024",  # Use `typing.NamedTuple` instead of `collections.namedtuple`
+]

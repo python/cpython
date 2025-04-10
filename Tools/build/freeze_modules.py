@@ -3,14 +3,13 @@
 See the notes at the top of Python/frozen.c for more info.
 """
 
-from collections import namedtuple
 import hashlib
 import ntpath
 import os
 import posixpath
+from collections import namedtuple
 
 from update_file import updating_file_with_tmpfile
-
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 ROOT_DIR = os.path.abspath(ROOT_DIR)
@@ -482,7 +481,6 @@ def regen_frozen(modules):
         header = relpath_for_posix_display(src.frozenfile, parentdir)
         headerlines.append(f'#include "{header}"')
 
-    externlines = UniqueList()
     bootstraplines = []
     stdliblines = []
     testlines = []
@@ -509,11 +507,11 @@ def regen_frozen(modules):
 
         if mod.isalias:
             if not mod.orig:
-                entry = '{"%s", NULL},' % (mod.name,)
+                entry = '{"%s", NULL},' % (mod.name,)  # noqa: UP031
             elif mod.source.ispkg:
-                entry = '{"%s", "<%s"},' % (mod.name, mod.orig)
+                entry = '{"%s", "<%s"},' % (mod.name, mod.orig)  # noqa: UP031
             else:
-                entry = '{"%s", "%s"},' % (mod.name, mod.orig)
+                entry = '{"%s", "%s"},' % (mod.name, mod.orig)  # noqa: UP031
             aliaslines.append(indent + entry)
 
     for lines in (bootstraplines, stdliblines, testlines):
@@ -625,7 +623,6 @@ def regen_makefile(modules):
 def regen_pcbuild(modules):
     projlines = []
     filterlines = []
-    corelines = []
     for src in _iter_sources(modules):
         pyfile = relpath_for_windows_display(src.pyfile, ROOT_DIR)
         header = relpath_for_windows_display(src.frozenfile, ROOT_DIR)
@@ -634,7 +631,7 @@ def regen_pcbuild(modules):
         projlines.append(f'      <ModName>{src.frozenid}</ModName>')
         projlines.append(f'      <IntFile>$(IntDir){intfile}</IntFile>')
         projlines.append(f'      <OutFile>$(GeneratedFrozenModulesDir){header}</OutFile>')
-        projlines.append(f'    </None>')
+        projlines.append('    </None>')
 
         filterlines.append(f'    <None Include="..\\{pyfile}">')
         filterlines.append('      <Filter>Python Files</Filter>')
