@@ -35,6 +35,7 @@ extensions = [
     'misc_news',
     'pydoc_topics',
     'pyspecific',
+    'refwarn',
     'sphinx.ext.coverage',
     'sphinx.ext.doctest',
     'sphinx.ext.extlinks',
