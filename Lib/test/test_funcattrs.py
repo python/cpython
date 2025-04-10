@@ -479,8 +479,9 @@ class BuiltinFunctionPropertiesTest(unittest.TestCase):
         self.assertEqual([1, 2, 3].append.__qualname__, 'list.append')
         self.assertEqual({'foo': 'bar'}.pop.__qualname__, 'dict.pop')
 
-    @support.cpython_only   # See gh-58211
+    @support.cpython_only
     def test_builtin__self__(self):
+        # See https://github.com/python/cpython/issues/58211.
         import time
         import builtins
 
