@@ -33,3 +33,6 @@ select = [
 "generate-build-details.py" = [
     "E501",  # Line too long
 ]
+"generate_global_objects.py" = [
+    "E501",  # Line too long
+]
