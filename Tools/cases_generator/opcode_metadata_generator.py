@@ -21,7 +21,7 @@ from generators_common import (
 from cwriter import CWriter
 from dataclasses import dataclass
 from typing import TextIO
-from stack import Stack, get_stack_effect, get_stack_effects
+from stack import get_stack_effect
 
 # Constants used instead of size for macro expansions.
 # Note: 1, 2, 4 must match actual cache entry sizes.
@@ -100,7 +100,7 @@ def generate_stack_effect_functions(analysis: Analysis, out: CWriter) -> None:
     def add(inst: Instruction | PseudoInstruction) -> None:
         stack = get_stack_effect(inst)
         popped = (-stack.base_offset).to_c()
-        pushed = (stack.top_offset - stack.base_offset).to_c()
+        pushed = (stack.logical_sp - stack.base_offset).to_c()
         popped_data.append((inst.name, popped))
         pushed_data.append((inst.name, pushed))
 
@@ -111,101 +111,6 @@ def generate_stack_effect_functions(analysis: Analysis, out: CWriter) -> None:
 
     emit_stack_effect_function(out, "popped", sorted(popped_data))
     emit_stack_effect_function(out, "pushed", sorted(pushed_data))
-
-    generate_max_stack_effect_function(analysis, out)
-
-
-def emit_max_stack_effect_function(
-    out: CWriter, effects: list[tuple[str, list[str]]]
-) -> None:
-    out.emit("extern int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect);\n")
-    out.emit("#ifdef NEED_OPCODE_METADATA\n")
-    out.emit(f"int _PyOpcode_max_stack_effect(int opcode, int oparg, int *effect)  {{\n")
-    out.emit("switch(opcode) {\n")
-    for name, exprs in effects:
-        out.emit(f"case {name}: {{\n")
-        if len(exprs) == 1:
-            out.emit(f"*effect = {exprs[0]};\n")
-        elif len(exprs) == 2:
-            out.emit(f"*effect = Py_MAX({exprs[0]}, {exprs[1]});\n")
-        else:
-            assert len(exprs) > 2
-            out.emit(f"int max_eff = Py_MAX({exprs[0]}, {exprs[1]});\n")
-            for expr in exprs[2:]:
-                out.emit(f"max_eff = Py_MAX(max_eff, {expr});\n")
-            out.emit(f"*effect = max_eff;\n")
-        out.emit(f"return 0;\n")
-        out.emit("}\n")
-    out.emit("default:\n")
-    out.emit("    return -1;\n")
-    out.emit("}\n")
-    out.emit("}\n\n")
-    out.emit("#endif\n\n")
-
-
-@dataclass
-class MaxStackEffectSet:
-    int_effect: int | None
-    cond_effects: set[str]
-
-    def __init__(self) -> None:
-        self.int_effect = None
-        self.cond_effects = set()
-
-    def add(self, stack: Stack) -> None:
-        top_off = stack.top_offset
-        top_off_int = top_off.as_int()
-        if top_off_int is not None:
-            if self.int_effect is None or top_off_int > self.int_effect:
-                self.int_effect = top_off_int
-        else:
-            self.cond_effects.add(top_off.to_c())
-
-    def update(self, other: "MaxStackEffectSet") -> None:
-        if self.int_effect is None:
-            if other.int_effect is not None:
-                self.int_effect = other.int_effect
-        elif other.int_effect is not None:
-            self.int_effect = max(self.int_effect, other.int_effect)
-        self.cond_effects.update(other.cond_effects)
-
-
-def generate_max_stack_effect_function(analysis: Analysis, out: CWriter) -> None:
-    """Generate a function that returns the maximum stack effect of an
-    instruction while it is executing.
-
-    Specialized instructions that are composed of uops may have a greater stack
-    effect during instruction execution than the net stack effect of the
-    instruction if the uops pass values on the stack.
-    """
-    effects: dict[str, MaxStackEffectSet] = {}
-
-    def add(inst: Instruction | PseudoInstruction) -> None:
-        inst_effect = MaxStackEffectSet()
-        for stack in get_stack_effects(inst):
-            inst_effect.add(stack)
-        effects[inst.name] = inst_effect
-
-    # Collect unique stack effects for each instruction
-    for inst in analysis.instructions.values():
-        add(inst)
-    for pseudo in analysis.pseudos.values():
-        add(pseudo)
-
-    # Merge the effects of all specializations in a family into the generic
-    # instruction
-    for family in analysis.families.values():
-        for inst in family.members:
-            effects[family.name].update(effects[inst.name])
-
-    data: list[tuple[str, list[str]]] = []
-    for name, effs in sorted(effects.items(), key=lambda kv: kv[0]):
-        exprs = []
-        if effs.int_effect is not None:
-            exprs.append(str(effs.int_effect))
-        exprs.extend(sorted(effs.cond_effects))
-        data.append((name, exprs))
-    emit_max_stack_effect_function(out, data)
 
 
 def generate_is_pseudo(analysis: Analysis, out: CWriter) -> None:
@@ -322,9 +227,10 @@ def generate_expansion_table(analysis: Analysis, out: CWriter) -> None:
         expansions: list[tuple[str, str, int]] = []  # [(name, size, offset), ...]
         if inst.is_super():
             pieces = inst.name.split("_")
-            assert len(pieces) == 4, f"{inst.name} doesn't look like a super-instr"
-            name1 = "_".join(pieces[:2])
-            name2 = "_".join(pieces[2:])
+            assert len(pieces) % 2 == 0, f"{inst.name} doesn't look like a super-instr"
+            parts_per_piece = int(len(pieces) / 2)
+            name1 = "_".join(pieces[:parts_per_piece])
+            name2 = "_".join(pieces[parts_per_piece:])
             assert name1 in analysis.instructions, f"{name1} doesn't match any instr"
             assert name2 in analysis.instructions, f"{name2} doesn't match any instr"
             instr1 = analysis.instructions[name1]

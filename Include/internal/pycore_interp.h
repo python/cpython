@@ -8,7 +8,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_genobject.h"     // _PyGen_FetchStopIterationValue
+#include "pycore_interp_structs.h" // PyInterpreterState
 
 
 /* interpreter state */
@@ -26,7 +26,6 @@ extern "C" {
 /* other API */
 
 extern void _PyInterpreterState_Clear(PyThreadState *tstate);
-
 
 static inline PyThreadState*
 _PyInterpreterState_GetFinalizing(PyInterpreterState *interp) {
@@ -51,7 +50,6 @@ _PyInterpreterState_SetFinalizing(PyInterpreterState *interp, PyThreadState *tst
                                        tstate->thread_id);
     }
 }
-
 
 
 // Exports for the _testinternalcapi module.
