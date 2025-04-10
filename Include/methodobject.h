@@ -49,8 +49,16 @@ typedef PyCFunctionFastWithKeywords _PyCFunctionFastWithKeywords;
 // used to prevent a compiler warning. If the function has a single parameter,
 // it triggers an undefined behavior when Python calls it with 2 parameters
 // (bpo-33012).
-#define _PyCFunction_CAST(func) \
-    _Py_CAST(PyCFunction, _Py_CAST(void(*)(void), (func)))
+#define _PyCFunction_CAST(func)                         \
+    _Py_FUNC_CAST(PyCFunction, func)
+// Other casts are given for semantic conveniences, allowing
+// users to see whether a cast to suppress a UB is necessary.
+#define _PyCFunctionFast_CAST(func)                     \
+    _Py_FUNC_CAST(PyCFunctionFast, func)
+#define _PyCFunctionWithKeywords_CAST(func)             \
+    _Py_FUNC_CAST(PyCFunctionWithKeywords, func)
+#define _PyCFunctionFastWithKeywords_CAST(func)         \
+    _Py_FUNC_CAST(PyCFunctionFastWithKeywords, func)
 
 PyAPI_FUNC(PyCFunction) PyCFunction_GetFunction(PyObject *);
 PyAPI_FUNC(PyObject *) PyCFunction_GetSelf(PyObject *);
