@@ -7529,7 +7529,7 @@ LDVERSION="$VERSION"
 printf %s "checking LINKCC... " >&6; }
 if test -z "$LINKCC"
 then
-	LINKCC='$(PURIFY) $(CC)'
+	LINKCC='$(PURIFY) +$(CC)'
 	case $ac_sys_system in
 	QNX*)
 	   # qcc must be used because the other compilers do not
