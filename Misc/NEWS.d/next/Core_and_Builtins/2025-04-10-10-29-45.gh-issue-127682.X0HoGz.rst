@@ -1,0 +1,4 @@
+No longer call ``__iter__`` twice when creating and executing a generator
+expression. Creating a generator expression with non-interable will only
+raise when the generator expression is exeuted. This brings the behavior of
+generator expressions in line with other generators
