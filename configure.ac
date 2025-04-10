@@ -1426,7 +1426,7 @@ AC_SUBST([LINKCC])
 AC_MSG_CHECKING([LINKCC])
 if test -z "$LINKCC"
 then
-	LINKCC='$(PURIFY) $(CC)'
+	LINKCC='$(PURIFY) +$(CC)'
 	case $ac_sys_system in
 	QNX*)
 	   # qcc must be used because the other compilers do not
@@ -2031,11 +2031,7 @@ if test "$Py_LTO" = 'true' ; then
           LTOCFLAGS="-flto"
           ;;
         *)
-          AX_CHECK_COMPILE_FLAG(
-            [-flto=auto],
-            [LTOFLAGS="-flto=auto -fuse-linker-plugin -ffat-lto-objects"],
-            [LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects"]
-          )        
+          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects"
           ;;
       esac
       ;;
@@ -3394,27 +3390,27 @@ if test -z "$LDSHARED"
 then
 	case $ac_sys_system/$ac_sys_release in
 	AIX*)
-		BLDSHARED="Modules/ld_so_aix \$(CC) -bI:Modules/python.exp"
-		LDSHARED="\$(LIBPL)/ld_so_aix \$(CC) -bI:\$(LIBPL)/python.exp"
+		BLDSHARED="Modules/ld_so_aix +\$(CC) -bI:Modules/python.exp"
+		LDSHARED="\$(LIBPL)/ld_so_aix +\$(CC) -bI:\$(LIBPL)/python.exp"
 		;;
 	SunOS/5*)
 		if test "$ac_cv_gcc_compat" = "yes" ; then
-			LDSHARED='$(CC) -shared'
+			LDSHARED='+$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
-			LDSHARED='$(CC) -G'
+			LDSHARED='+$(CC) -G'
 			LDCXXSHARED='$(CXX) -G'
 		fi ;;
 	hp*|HP*)
 		if test "$ac_cv_gcc_compat" = "yes" ; then
-			LDSHARED='$(CC) -shared'
+			LDSHARED='+$(CC) -shared'
 			LDCXXSHARED='$(CXX) -shared'
 		else
-			LDSHARED='$(CC) -b'
+			LDSHARED='+$(CC) -b'
 			LDCXXSHARED='$(CXX) -b'
 		fi ;;
 	Darwin/1.3*)
-		LDSHARED='$(CC) -bundle'
+		LDSHARED='+$(CC) -bundle'
 		LDCXXSHARED='$(CXX) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
@@ -3427,7 +3423,7 @@ then
 			LDCXXSHARED="$LDCXXSHARED -undefined suppress"
 		fi ;;
 	Darwin/1.4*|Darwin/5.*|Darwin/6.*)
-		LDSHARED='$(CC) -bundle'
+		LDSHARED='+$(CC) -bundle'
 		LDCXXSHARED='$(CXX) -bundle'
 		if test "$enable_framework" ; then
 			# Link against the framework. All externals should be defined.
@@ -3455,60 +3451,60 @@ then
 			AC_MSG_ERROR([MACOSX_DEPLOYMENT_TARGET too old ($MACOSX_DEPLOYMENT_TARGET), only 10.3 or later is supported])
 		else
 			# building for OS X 10.3 and later
-			LDSHARED='$(CC) -bundle -undefined dynamic_lookup'
-			LDCXXSHARED='$(CXX) -bundle -undefined dynamic_lookup'
+			LDSHARED='+$(CC) -bundle -undefined dynamic_lookup'
+			LDCXXSHARED='+$(CXX) -bundle -undefined dynamic_lookup'
 			BLDSHARED="$LDSHARED"
 		fi
 		;;
 	iOS/*)
-		LDSHARED='$(CC) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
-		LDCXXSHARED='$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
+		LDSHARED='+$(CC) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
+		LDCXXSHARED='+$(CXX) -dynamiclib -F . -framework $(PYTHONFRAMEWORK)'
 		BLDSHARED="$LDSHARED"
 		;;
 	Emscripten*|WASI*)
-		LDSHARED='$(CC) -shared'
-		LDCXXSHARED='$(CXX) -shared';;
+		LDSHARED='+$(CC) -shared'
+		LDCXXSHARED='+$(CXX) -shared';;
 	Linux*|GNU*|QNX*|VxWorks*|Haiku*)
-		LDSHARED='$(CC) -shared'
-		LDCXXSHARED='$(CXX) -shared';;
+		LDSHARED='+$(CC) -shared'
+		LDCXXSHARED='+$(CXX) -shared';;
 	FreeBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
-			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
+			LDSHARED='+$(CC) -shared'
+			LDCXXSHARED='+$(CXX) -shared'
 		else
 			LDSHARED="ld -Bshareable"
 		fi;;
 	OpenBSD*)
 		if [[ "`$CC -dM -E - </dev/null | grep __ELF__`" != "" ]]
 		then
-				LDSHARED='$(CC) -shared $(CCSHARED)'
-				LDCXXSHARED='$(CXX) -shared $(CCSHARED)'
+				LDSHARED='+$(CC) -shared $(CCSHARED)'
+				LDCXXSHARED='+$(CXX) -shared $(CCSHARED)'
 		else
 				case `uname -r` in
 				[[01]].* | 2.[[0-7]] | 2.[[0-7]].*)
 				   LDSHARED="ld -Bshareable ${LDFLAGS}"
 				   ;;
 				*)
-				   LDSHARED='$(CC) -shared $(CCSHARED)'
-				   LDCXXSHARED='$(CXX) -shared $(CCSHARED)'
+				   LDSHARED='+$(CC) -shared $(CCSHARED)'
+				   LDCXXSHARED='+$(CXX) -shared $(CCSHARED)'
 				   ;;
 				esac
 		fi;;
 	NetBSD*|DragonFly*)
-		LDSHARED='$(CC) -shared'
-		LDCXXSHARED='$(CXX) -shared';;
+		LDSHARED='+$(CC) -shared'
+		LDCXXSHARED='+$(CXX) -shared';;
 	OpenUNIX*|UnixWare*)
 		if test "$ac_cv_gcc_compat" = "yes" ; then
-			LDSHARED='$(CC) -shared'
-			LDCXXSHARED='$(CXX) -shared'
+			LDSHARED='+$(CC) -shared'
+			LDCXXSHARED='+$(CXX) -shared'
 		else
-			LDSHARED='$(CC) -G'
-			LDCXXSHARED='$(CXX) -G'
+			LDSHARED='+$(CC) -G'
+			LDCXXSHARED='+$(CXX) -G'
 		fi;;
 	SCO_SV*)
-		LDSHARED='$(CC) -Wl,-G,-Bexport'
-		LDCXXSHARED='$(CXX) -Wl,-G,-Bexport';;
+		LDSHARED='+$(CC) -Wl,-G,-Bexport'
+		LDCXXSHARED='+$(CXX) -Wl,-G,-Bexport';;
 	WASI*)
 		AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
 			dnl not implemented yet
@@ -3523,7 +3519,7 @@ fi
 dnl Emscripten's emconfigure sets LDSHARED. Set BLDSHARED outside the
 dnl test -z $LDSHARED block to configure BLDSHARED for side module support.
 if test "$enable_wasm_dynamic_linking" = "yes" -a "$ac_sys_system" = "Emscripten"; then
-  BLDSHARED='$(CC) -shared -sSIDE_MODULE=1'
+  BLDSHARED='+$(CC) -shared -sSIDE_MODULE=1'
 fi
 
 AC_MSG_RESULT([$LDSHARED])

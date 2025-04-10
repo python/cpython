@@ -995,23 +995,23 @@ build-details.json: pybuilddir.txt
 # Build static library
 $(LIBRARY): $(LIBRARY_OBJS)
 	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBRARY_OBJS)
+	+$(AR) $(ARFLAGS) $@ $(LIBRARY_OBJS)
 
 libpython$(LDVERSION).so: $(LIBRARY_OBJS) $(DTRACE_OBJS)
-	$(BLDSHARED) -Wl,-h$(INSTSONAME) -o $(INSTSONAME) $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM)
+	+$(BLDSHARED) -Wl,-h$(INSTSONAME) -o $(INSTSONAME) $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM)
 	if test $(INSTSONAME) != $@; then \
 		$(LN) -f $(INSTSONAME) $@; \
 	fi
 
 libpython3.so:	libpython$(LDVERSION).so
-	$(BLDSHARED) $(NO_AS_NEEDED) -o $@ -Wl,-h$@ $^
+	+$(BLDSHARED) $(NO_AS_NEEDED) -o $@ -Wl,-h$@ $^
 
 libpython$(LDVERSION).dylib: $(LIBRARY_OBJS)
-	 $(CC) -dynamiclib $(PY_CORE_LDFLAGS) -undefined dynamic_lookup -Wl,-install_name,$(prefix)/lib/libpython$(LDVERSION).dylib -Wl,-compatibility_version,$(VERSION) -Wl,-current_version,$(VERSION) -o $@ $(LIBRARY_OBJS) $(DTRACE_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
+	 +$(CC) -dynamiclib $(PY_CORE_LDFLAGS) -undefined dynamic_lookup -Wl,-install_name,$(prefix)/lib/libpython$(LDVERSION).dylib -Wl,-compatibility_version,$(VERSION) -Wl,-current_version,$(VERSION) -o $@ $(LIBRARY_OBJS) $(DTRACE_OBJS) $(SHLIBS) $(LIBC) $(LIBM); \
 
 
 libpython$(VERSION).sl: $(LIBRARY_OBJS)
-	$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM)
+	+$(LDSHARED) -o $@ $(LIBRARY_OBJS) $(MODLIBS) $(SHLIBS) $(LIBC) $(LIBM)
 
 # List of exported symbols for AIX
 Modules/python.exp: $(LIBRARY)
@@ -1036,7 +1036,7 @@ $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)/$(PYTHONFRAMEWORK): \
 		$(LIBRARY) \
 		$(RESSRCDIR)/Info.plist
 	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKDIR)/Versions/$(VERSION)
-	$(CC) -o $(LDLIBRARY) $(PY_CORE_LDFLAGS) -dynamiclib \
+	+$(CC) -o $(LDLIBRARY) $(PY_CORE_LDFLAGS) -dynamiclib \
 		-all_load $(LIBRARY) \
 		-install_name $(DESTDIR)$(PYTHONFRAMEWORKINSTALLNAMEPREFIX)/$(PYTHONFRAMEWORK) \
 		-compatibility_version $(VERSION) \
@@ -1057,7 +1057,7 @@ $(PYTHONFRAMEWORKDIR)/$(PYTHONFRAMEWORK): \
 		$(LIBRARY) \
 		$(RESSRCDIR)/Info.plist
 	$(INSTALL) -d -m $(DIRMODE) $(PYTHONFRAMEWORKDIR)
-	$(CC) -o $(LDLIBRARY) $(PY_CORE_LDFLAGS) -dynamiclib \
+	+$(CC) -o $(LDLIBRARY) $(PY_CORE_LDFLAGS) -dynamiclib \
 		-all_load $(LIBRARY) \
 		-install_name $(PYTHONFRAMEWORKINSTALLNAMEPREFIX)/$(PYTHONFRAMEWORK) \
 		-compatibility_version $(VERSION) \
@@ -1394,70 +1394,70 @@ LIBMPDEC_CFLAGS=@LIBMPDEC_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
 # "%.o: %c" is not portable
 Modules/_decimal/libmpdec/basearith.o: $(srcdir)/Modules/_decimal/libmpdec/basearith.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/basearith.c
+	+$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/basearith.c
 
 Modules/_decimal/libmpdec/constants.o: $(srcdir)/Modules/_decimal/libmpdec/constants.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/constants.c
+	+$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/constants.c
 
 Modules/_decimal/libmpdec/context.o: $(srcdir)/Modules/_decimal/libmpdec/context.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/context.c
+	+$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/context.c
 
 Modules/_decimal/libmpdec/convolute.o: $(srcdir)/Modules/_decimal/libmpdec/convolute.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/convolute.c
+	+$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/convolute.c
 
 Modules/_decimal/libmpdec/crt.o: $(srcdir)/Modules/_decimal/libmpdec/crt.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/crt.c
+	+$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/crt.c
 
 Modules/_decimal/libmpdec/difradix2.o: $(srcdir)/Modules/_decimal/libmpdec/difradix2.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/difradix2.c
+	+$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/difradix2.c
 
 Modules/_decimal/libmpdec/fnt.o: $(srcdir)/Modules/_decimal/libmpdec/fnt.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fnt.c
+	+$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fnt.c
 
 Modules/_decimal/libmpdec/fourstep.o: $(srcdir)/Modules/_decimal/libmpdec/fourstep.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fourstep.c
+	+$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/fourstep.c
 
 Modules/_decimal/libmpdec/io.o: $(srcdir)/Modules/_decimal/libmpdec/io.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/io.c
+	+$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/io.c
 
 Modules/_decimal/libmpdec/mpalloc.o: $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c
+	+$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpalloc.c
 
 Modules/_decimal/libmpdec/mpdecimal.o: $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c
+	+$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpdecimal.c
 
 Modules/_decimal/libmpdec/mpsignal.o: $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c
+	+$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/mpsignal.c
 
 Modules/_decimal/libmpdec/numbertheory.o: $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c
+	+$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/numbertheory.c
 
 Modules/_decimal/libmpdec/sixstep.o: $(srcdir)/Modules/_decimal/libmpdec/sixstep.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/sixstep.c
+	+$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/sixstep.c
 
 Modules/_decimal/libmpdec/transpose.o: $(srcdir)/Modules/_decimal/libmpdec/transpose.c $(LIBMPDEC_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/transpose.c
+	+$(CC) -c $(LIBMPDEC_CFLAGS) -o $@ $(srcdir)/Modules/_decimal/libmpdec/transpose.c
 
 $(LIBMPDEC_A): $(LIBMPDEC_OBJS)
 	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBMPDEC_OBJS)
+	+$(AR) $(ARFLAGS) $@ $(LIBMPDEC_OBJS)
 
 ##########################################################################
 # Build static libexpat.a
 LIBEXPAT_CFLAGS=@LIBEXPAT_CFLAGS@ $(PY_STDMODULE_CFLAGS) $(CCSHARED)
 
 Modules/expat/xmlparse.o: $(srcdir)/Modules/expat/xmlparse.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlparse.c
+	+$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlparse.c
 
 Modules/expat/xmlrole.o: $(srcdir)/Modules/expat/xmlrole.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlrole.c
+	+$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmlrole.c
 
 Modules/expat/xmltok.o: $(srcdir)/Modules/expat/xmltok.c $(LIBEXPAT_HEADERS) $(PYTHON_HEADERS)
-	$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmltok.c
+	+$(CC) -c $(LIBEXPAT_CFLAGS) -o $@ $(srcdir)/Modules/expat/xmltok.c
 
 $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBEXPAT_OBJS)
+	+$(AR) $(ARFLAGS) $@ $(LIBEXPAT_OBJS)
 
 ##########################################################################
 # Build HACL* static libraries for hashlib and HACL* HMAC.
@@ -1466,67 +1466,67 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 # have the ability to compile vectorized versions
 
 Modules/_hacl/Hacl_Hash_MD5.o: $(srcdir)/Modules/_hacl/Hacl_Hash_MD5.c $(LIBHACL_MD5_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_MD5.c
+	+$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_MD5.c
 
 $(LIBHACL_MD5_A): $(LIBHACL_MD5_OBJS)
 	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBHACL_MD5_OBJS)
+	+$(AR) $(ARFLAGS) $@ $(LIBHACL_MD5_OBJS)
 
 Modules/_hacl/Hacl_Hash_SHA1.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA1.c $(LIBHACL_SHA1_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA1.c
+	+$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA1.c
 
 $(LIBHACL_SHA1_A): $(LIBHACL_SHA1_OBJS)
 	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA1_OBJS)
+	+$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA1_OBJS)
 
 Modules/_hacl/Hacl_Hash_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c $(LIBHACL_SHA2_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
+	+$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
 
 $(LIBHACL_SHA2_A): $(LIBHACL_SHA2_OBJS)
 	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA2_OBJS)
+	+$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA2_OBJS)
 
 Modules/_hacl/Hacl_Hash_SHA3.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA3.c $(LIBHACL_SHA3_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA3.c
+	+$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA3.c
 
 $(LIBHACL_SHA3_A): $(LIBHACL_SHA3_OBJS)
 	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA3_OBJS)
+	+$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA3_OBJS)
 
 Modules/_hacl/Hacl_Hash_Blake2s.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s.c $(LIBHACL_BLAKE2_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s.c
+	+$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s.c
 
 Modules/_hacl/Hacl_Hash_Blake2b.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2b.c $(LIBHACL_BLAKE2_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2b.c
+	+$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2b.c
 
 Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s_Simd128.c $(LIBHACL_BLAKE2_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) $(LIBHACL_SIMD128_FLAGS) -DHACL_CAN_COMPILE_VEC128 -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s_Simd128.c
+	+$(CC) -c $(LIBHACL_CFLAGS) $(LIBHACL_SIMD128_FLAGS) -DHACL_CAN_COMPILE_VEC128 -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s_Simd128.c
 
 Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.c $(LIBHACL_BLAKE2_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) $(LIBHACL_SIMD128_FLAGS) -DHACL_CAN_COMPILE_VEC128 -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.c
+	+$(CC) -c $(LIBHACL_CFLAGS) $(LIBHACL_SIMD128_FLAGS) -DHACL_CAN_COMPILE_VEC128 -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.c
 
 Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2b_Simd256.c $(LIBHACL_BLAKE2_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) $(LIBHACL_SIMD256_FLAGS) -DHACL_CAN_COMPILE_VEC256 -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2b_Simd256.c
+	+$(CC) -c $(LIBHACL_CFLAGS) $(LIBHACL_SIMD256_FLAGS) -DHACL_CAN_COMPILE_VEC256 -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2b_Simd256.c
 
 Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.c $(LIBHACL_BLAKE2_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) $(LIBHACL_SIMD256_FLAGS) -DHACL_CAN_COMPILE_VEC256 -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.c
+	+$(CC) -c $(LIBHACL_CFLAGS) $(LIBHACL_SIMD256_FLAGS) -DHACL_CAN_COMPILE_VEC256 -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.c
 
 Modules/_hacl/Lib_Memzero0.o: $(srcdir)/Modules/_hacl/Lib_Memzero0.c $(LIBHACL_BLAKE2_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Lib_Memzero0.c
+	+$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Lib_Memzero0.c
 
 $(LIBHACL_BLAKE2_A): $(LIBHACL_BLAKE2_OBJS)
 	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBHACL_BLAKE2_OBJS)
+	+$(AR) $(ARFLAGS) $@ $(LIBHACL_BLAKE2_OBJS)
 
 Modules/_hacl/Hacl_HMAC.o: $(srcdir)/Modules/_hacl/Hacl_HMAC.c $(LIBHACL_HMAC_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_HMAC.c
+	+$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_HMAC.c
 
 Modules/_hacl/Hacl_Streaming_HMAC.o: $(srcdir)/Modules/_hacl/Hacl_Streaming_HMAC.c $(LIBHACL_HMAC_HEADERS)
-	$(CC) -Wno-unused-variable -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Streaming_HMAC.c
+	+$(CC) -Wno-unused-variable -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Streaming_HMAC.c
 
 $(LIBHACL_HMAC_A): $(LIBHACL_HMAC_OBJS)
 	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBHACL_HMAC_OBJS)
+	+$(AR) $(ARFLAGS) $@ $(LIBHACL_HMAC_OBJS)
 
 # create relative links from build/lib.platform/egg.so to Modules/egg.so
 # pybuilddir.txt is created too late. We cannot use it in Makefile
@@ -1854,14 +1854,14 @@ Modules/getbuildinfo.o: $(PARSER_OBJS) \
 		$(MODOBJS) \
 		$(DTRACE_OBJS) \
 		$(srcdir)/Modules/getbuildinfo.c
-	$(CC) -c $(PY_CORE_CFLAGS) \
+	+$(CC) -c $(PY_CORE_CFLAGS) \
 	      -DGITVERSION="\"`LC_ALL=C $(GITVERSION)`\"" \
 	      -DGITTAG="\"`LC_ALL=C $(GITTAG)`\"" \
 	      -DGITBRANCH="\"`LC_ALL=C $(GITBRANCH)`\"" \
 	      -o $@ $(srcdir)/Modules/getbuildinfo.c
 
 Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h Makefile $(PYTHON_HEADERS)
-	$(CC) -c $(PY_CORE_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
+	+$(CC) -c $(PY_CORE_CFLAGS) -DPYTHONPATH='"$(PYTHONPATH)"' \
 		-DPREFIX='"$(host_prefix)"' \
 		-DEXEC_PREFIX='"$(host_exec_prefix)"' \
 		-DVERSION='"$(VERSION)"' \
@@ -1871,10 +1871,10 @@ Modules/getpath.o: $(srcdir)/Modules/getpath.c Python/frozen_modules/getpath.h M
 		-o $@ $(srcdir)/Modules/getpath.c
 
 Programs/python.o: $(srcdir)/Programs/python.c
-	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/python.c
+	+$(CC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/python.c
 
 Programs/_testembed.o: $(srcdir)/Programs/_testembed.c Programs/test_frozenmain.h $(PYTHON_HEADERS)
-	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/_testembed.c
+	+$(CC) -c $(PY_CORE_CFLAGS) -o $@ $(srcdir)/Programs/_testembed.c
 
 Modules/_sre/sre.o: $(srcdir)/Modules/_sre/sre.c $(srcdir)/Modules/_sre/sre.h $(srcdir)/Modules/_sre/sre_constants.h $(srcdir)/Modules/_sre/sre_lib.h
 
@@ -1899,17 +1899,17 @@ Python/initconfig.o: $(srcdir)/Python/initconfig.c $(srcdir)/Python/config_commo
 Python/interpconfig.o: $(srcdir)/Python/interpconfig.c $(srcdir)/Python/config_common.h
 
 Python/dynload_shlib.o: $(srcdir)/Python/dynload_shlib.c Makefile
-	$(CC) -c $(PY_CORE_CFLAGS) \
+	+$(CC) -c $(PY_CORE_CFLAGS) \
 		-DSOABI='"$(SOABI)"' \
 		-o $@ $(srcdir)/Python/dynload_shlib.c
 
 Python/dynload_hpux.o: $(srcdir)/Python/dynload_hpux.c Makefile
-	$(CC) -c $(PY_CORE_CFLAGS) \
+	+$(CC) -c $(PY_CORE_CFLAGS) \
 		-DSHLIB_EXT='"$(EXT_SUFFIX)"' \
 		-o $@ $(srcdir)/Python/dynload_hpux.c
 
 Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile $(srcdir)/Include/pydtrace.h
-	$(CC) -c $(PY_CORE_CFLAGS) \
+	+$(CC) -c $(PY_CORE_CFLAGS) \
 		-DABIFLAGS='"$(ABIFLAGS)"' \
 		$(MULTIARCH_CPPFLAGS) \
 		-o $@ $(srcdir)/Python/sysmodule.c
@@ -2008,10 +2008,10 @@ regen-sre:
 Python/compile.o Python/codegen.o Python/symtable.o Python/ast_unparse.o Python/ast.o Python/future.o: $(srcdir)/Include/internal/pycore_ast.h $(srcdir)/Include/internal/pycore_ast.h
 
 Python/getplatform.o: $(srcdir)/Python/getplatform.c
-		$(CC) -c $(PY_CORE_CFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
+		+$(CC) -c $(PY_CORE_CFLAGS) -DPLATFORM='"$(MACHDEP)"' -o $@ $(srcdir)/Python/getplatform.c
 
 Python/importdl.o: $(srcdir)/Python/importdl.c
-		$(CC) -c $(PY_CORE_CFLAGS) -I$(DLINCLDIR) -o $@ $(srcdir)/Python/importdl.c
+		+$(CC) -c $(PY_CORE_CFLAGS) -I$(DLINCLDIR) -o $@ $(srcdir)/Python/importdl.c
 
 Objects/unicodectype.o:	$(srcdir)/Objects/unicodectype.c \
 				$(srcdir)/Objects/unicodetype_db.h
@@ -3045,7 +3045,7 @@ config.status:	$(srcdir)/configure
 .PRECIOUS: config.status $(BUILDPYTHON) Makefile Makefile.pre
 
 Python/asm_trampoline.o: $(srcdir)/Python/asm_trampoline.S
-	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+	+$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 
 JIT_DEPS = \
@@ -3058,7 +3058,7 @@ jit_stencils.h: $(JIT_DEPS)
 	@REGEN_JIT_COMMAND@
 
 Python/jit.o: $(srcdir)/Python/jit.c @JIT_STENCILS_H@
-	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+	+$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 .PHONY: regen-jit
 regen-jit:
@@ -3066,14 +3066,14 @@ regen-jit:
 
 # Some make's put the object file in the current directory
 .c.o:
-	$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
+	+$(CC) -c $(PY_CORE_CFLAGS) -o $@ $<
 
 # bpo-30104: dtoa.c uses union to cast double to unsigned long[2]. clang 4.0
 # with -O2 or higher and strict aliasing miscompiles the ratio() function
 # causing rounding issues. Compile dtoa.c using -fno-strict-aliasing on clang.
 # https://bugs.llvm.org//show_bug.cgi?id=31928
 Python/dtoa.o: Python/dtoa.c
-	$(CC) -c $(PY_CORE_CFLAGS) $(CFLAGS_ALIASING) -o $@ $<
+	+$(CC) -c $(PY_CORE_CFLAGS) $(CFLAGS_ALIASING) -o $@ $<
 
 # Run reindent on the library
 .PHONY: reindent
