@@ -1666,8 +1666,7 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError(
                 'ssl_shutdown_timeout is only meaningful with ssl')
 
-        if sock is not None:
-            _check_ssl_socket(sock)
+        _check_ssl_socket(sock)
 
         transport, protocol = await self._create_connection_transport(
             sock, protocol_factory, ssl, '', server_side=True,

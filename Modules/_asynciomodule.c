@@ -116,7 +116,7 @@ typedef struct _Py_AsyncioModuleDebugOffsets {
     } asyncio_thread_state;
 } Py_AsyncioModuleDebugOffsets;
 
-GENERATE_DEBUG_SECTION(AsyncioDebug, Py_AsyncioModuleDebugOffsets AsyncioDebug)
+GENERATE_DEBUG_SECTION(AsyncioDebug, Py_AsyncioModuleDebugOffsets _AsyncioDebug)
     = {.asyncio_task_object = {
            .size = sizeof(TaskObj),
            .task_name = offsetof(TaskObj, task_name),
@@ -2956,7 +2956,7 @@ static PyType_Slot Task_slots[] = {
     {Py_tp_iter, future_new_iter},
     {Py_tp_methods, TaskType_methods},
     {Py_tp_getset, TaskType_getsetlist},
-    {Py_tp_init, (initproc)_asyncio_Task___init__},
+    {Py_tp_init, _asyncio_Task___init__},
     {Py_tp_new, PyType_GenericNew},
     {Py_tp_finalize, TaskObj_finalize},
 
@@ -4396,7 +4396,7 @@ static struct PyModuleDef _asynciomodule = {
     .m_slots = module_slots,
     .m_traverse = module_traverse,
     .m_clear = module_clear,
-    .m_free = (freefunc)module_free,
+    .m_free = module_free,
 };
 
 PyMODINIT_FUNC
