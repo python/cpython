@@ -521,7 +521,8 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
         args = ["-fms-runtime-lib=dll"]
         target = _COFF(host, alignment=8, args=args)
     elif re.fullmatch(r"aarch64-.*-linux-gnu", host):
-        args = ["-fpic",
+        args = [
+            "-fpic",
             # On aarch64 Linux, intrinsics were being emitted and this flag
             # was required to disable them.
             "-mno-outline-atomics",
