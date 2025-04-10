@@ -1,0 +1,1 @@
+Document return value for :func:`asyncio.Task.cancel`.
