@@ -1,1 +1,3 @@
-Prevent attributes of exceptions or exception groups that evaluate as falsey (namely, when their ``__bool__`` method returns ``False`` or their ``__len__`` method returns 0) from being ignored by the :class:`traceback.TracebackException`.
+The class:`traceback.TracebackException` must include the  `__context__`, `__cause__` attributes
+from falsey Exception, and the `exceptions` attribute from falsey ExceptionGroup' in its render.
+For remind: ``x`` is falsey if ``len(x)`` returns 0 or ``bool(x)`` returns False.
