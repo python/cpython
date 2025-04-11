@@ -250,7 +250,7 @@ world"""
         t = tr"{path}\Documents"
         self.assertEqual(t.strings, ("", r"\Documents",))
         self.assertEqual(t.interpolations[0].value, path)
-        
+
 
     def test_template_concatenation(self):
         # Test template + template
@@ -304,7 +304,7 @@ world"""
         self.assertEqual(t.interpolations[0].expression, "inner")
         self.assertEqual(t.interpolations[0].conversion, None)
         self.assertEqual(t.interpolations[0].format_spec, "")
-        
+
     def test_ast_structure(self):
         # Test AST structure for simple t-string
         tree = ast.parse('t"Hello"')
@@ -324,7 +324,7 @@ world"""
 
         with self.assertRaisesRegex(SyntaxError, "t-string: expecting '}'"):
             eval("t'{a'")
-            
+
         with self.assertRaisesRegex(SyntaxError, "t-string: single '}' is not allowed"):
             eval("t'}'")
 
