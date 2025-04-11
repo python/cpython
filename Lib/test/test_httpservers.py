@@ -447,8 +447,7 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
             self.con.request('GET', '/')
             self.con.getresponse()
 
-        self.assertTrue(
-            err.getvalue().endswith('"GET / HTTP/1.1" 200 -\n'))
+        self.assertEndsWith(err.getvalue(), '"GET / HTTP/1.1" 200 -\n')
 
     def test_err(self):
         self.con = http.client.HTTPConnection(self.HOST, self.PORT)
@@ -459,8 +458,8 @@ class RequestHandlerLoggingTestCase(BaseTestCase):
             self.con.getresponse()
 
         lines = err.getvalue().split('\n')
-        self.assertTrue(lines[0].endswith('code 404, message File not found'))
-        self.assertTrue(lines[1].endswith('"ERROR / HTTP/1.1" 404 -'))
+        self.assertEndsWith(lines[0], 'code 404, message File not found')
+        self.assertEndsWith(lines[1], '"ERROR / HTTP/1.1" 404 -')
 
 
 class SimpleHTTPServerTestCase(BaseTestCase):
@@ -584,7 +583,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         response = self.request(attack_url)
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
         location = response.getheader('Location')
-        self.assertFalse(location.startswith('//'), msg=location)
+        self.assertNotStartsWith(location, '//')
         self.assertEqual(location, expected_location,
                 msg='Expected Location header to start with a single / and '
                 'end with a / as this is a directory redirect.')
@@ -607,7 +606,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         # We're just ensuring that the scheme and domain make it through, if
         # there are or aren't multiple slashes at the start of the path that
         # follows that isn't important in this Location: header.
-        self.assertTrue(location.startswith('https://pypi.org/'), msg=location)
+        self.assertStartsWith(location, 'https://pypi.org/')
 
     def test_get(self):
         #constructs the path relative to the root directory of the HTTPServer
@@ -1206,7 +1205,7 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
             b'Host: dummy\r\n'
             b'\r\n'
         )
-        self.assertTrue(result[0].startswith(b'HTTP/1.1 400 '))
+        self.assertStartsWith(result[0], b'HTTP/1.1 400 ')
         self.verify_expected_headers(result[1:result.index(b'\r\n')])
         self.assertFalse(self.handler.get_called)
 
