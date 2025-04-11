@@ -107,7 +107,7 @@ class FieldsTestBase(StructCheckMixin):
             class TooBig(Structure):
                 _fields_ = [('largeField', X * (max_field_size + 1))]
         with self.assertRaises(OverflowError):
-            class TooBig(Structure):
+            class TooBig(Structure):  # noqa: F811
                 _fields_ = [('largeField', c_char * (max_field_size + 1))]
 
         # Also test around edge case for the bit_size calculation
