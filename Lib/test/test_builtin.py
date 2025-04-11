@@ -1061,8 +1061,24 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             three_freevars.__code__,
             three_freevars.__globals__,
             closure=my_closure)
+        my_closure = tuple(my_closure)
+
+        # should fail: anything passed to closure= isn't allowed
+        # when the source is a string
+        self.assertRaises(TypeError,
+            exec,
+            "pass",
+            closure=int)
+
+        # should fail: correct closure= argument isn't allowed
+        # when the source is a string
+        self.assertRaises(TypeError,
+            exec,
+            "pass",
+            closure=my_closure)
 
         # should fail: closure tuple with one non-cell-var
+        my_closure = list(my_closure)
         my_closure[0] = int
         my_closure = tuple(my_closure)
         self.assertRaises(TypeError,
