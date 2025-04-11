@@ -1654,8 +1654,8 @@ _build_concatenated_unicode(Parser *p, asdl_expr_seq *strings, int lineno,
                            end_lineno, end_col_offset, arena);
 }
 
-static expr_ty
-_build_concatenated_joined_str(Parser *p, asdl_expr_seq *strings,
+static asdl_expr_seq *
+_build_concatenated_str(Parser *p, asdl_expr_seq *strings,
                                int lineno, int col_offset, int end_lineno,
                                int end_col_offset, PyArena *arena)
 {
@@ -1668,6 +1668,9 @@ _build_concatenated_joined_str(Parser *p, asdl_expr_seq *strings,
         switch(elem->kind) {
             case JoinedStr_kind:
                 n_flattened_elements += asdl_seq_LEN(elem->v.JoinedStr.values);
+                break;
+            case TemplateStr_kind:
+                n_flattened_elements += asdl_seq_LEN(elem->v.TemplateStr.values);
                 break;
             default:
                 n_flattened_elements++;
@@ -1689,6 +1692,15 @@ _build_concatenated_joined_str(Parser *p, asdl_expr_seq *strings,
             case JoinedStr_kind:
                 for (Py_ssize_t j = 0; j < asdl_seq_LEN(elem->v.JoinedStr.values); j++) {
                     expr_ty subvalue = asdl_seq_GET(elem->v.JoinedStr.values, j);
+                    if (subvalue == NULL) {
+                        return NULL;
+                    }
+                    asdl_seq_SET(flattened, current_pos++, subvalue);
+                }
+                break;
+            case TemplateStr_kind:
+                for (Py_ssize_t j = 0; j < asdl_seq_LEN(elem->v.TemplateStr.values); j++) {
+                    expr_ty subvalue = asdl_seq_GET(elem->v.TemplateStr.values, j);
                     if (subvalue == NULL) {
                         return NULL;
                     }
@@ -1795,6 +1807,16 @@ _build_concatenated_joined_str(Parser *p, asdl_expr_seq *strings,
     }
 
     assert(current_pos == n_elements);
+    return values;
+}
+
+static expr_ty
+_build_concatenated_joined_str(Parser *p, asdl_expr_seq *strings,
+                               int lineno, int col_offset, int end_lineno,
+                               int end_col_offset, PyArena *arena)
+{
+    asdl_expr_seq *values = _build_concatenated_str(p, strings, lineno,
+        col_offset, end_lineno, end_col_offset, arena);
     return _PyAST_JoinedStr(values, lineno, col_offset, end_lineno, end_col_offset, p->arena);
 }
 
@@ -1803,53 +1825,9 @@ _build_concatenated_template_str(Parser *p, asdl_expr_seq *strings,
                                int lineno, int col_offset, int end_lineno,
                                int end_col_offset, PyArena *arena)
 {
-    Py_ssize_t len = asdl_seq_LEN(strings);
-    assert(len > 0);
-
-    Py_ssize_t n_flattened_elements = 0;
-    for (Py_ssize_t i = 0; i < len; i++) {
-        expr_ty elem = asdl_seq_GET(strings, i);
-        switch(elem->kind) {
-            case TemplateStr_kind:
-                n_flattened_elements += asdl_seq_LEN(elem->v.JoinedStr.values);
-                break;
-            default:
-                n_flattened_elements++;
-                break;
-        }
-    }
-
-
-    asdl_expr_seq* flattened = _Py_asdl_expr_seq_new(n_flattened_elements, p->arena);
-    if (flattened == NULL) {
-        return NULL;
-    }
-
-    Py_ssize_t pos = 0;
-    for (Py_ssize_t i = 0; i < len; i++) {
-        expr_ty elem = asdl_seq_GET(strings, i);
-
-        switch (elem->kind) {
-            case TemplateStr_kind:
-                for (Py_ssize_t j = 0; j < asdl_seq_LEN(elem->v.TemplateStr.values); j++) {
-                    expr_ty subitem = asdl_seq_GET(elem->v.TemplateStr.values, j);
-                    asdl_seq_SET(flattened, pos++, subitem);
-                }
-                break;
-            case JoinedStr_kind: {
-                expr_ty joined_str = _build_concatenated_joined_str(p,
-                    elem->v.JoinedStr.values, lineno, col_offset,
-                    end_lineno, end_col_offset, arena);
-                asdl_seq_SET(flattened, pos++, joined_str);
-                break;
-            }
-            default:
-                asdl_seq_SET(flattened, pos++, elem);
-                break;
-        }
-    }
-
-    return _PyAST_TemplateStr(flattened, lineno, col_offset, end_lineno,
+    asdl_expr_seq *values = _build_concatenated_str(p, strings, lineno,
+        col_offset, end_lineno, end_col_offset, arena);
+    return _PyAST_TemplateStr(values, lineno, col_offset, end_lineno,
         end_col_offset, arena);
 }
 
