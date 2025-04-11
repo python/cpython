@@ -1,0 +1,1 @@
+Fix bug in :mod:`tarfile` where calling :func:`TarFile.extract()` or :func:`TarFile.extractall()` would continue to extract filtered unsafe files when :attr:`errorlevel` was set to 0. Rather, this fix implements a 'skip-but-log' behavior that ensures unsafe members are not extracted, as was expected from the docs.
