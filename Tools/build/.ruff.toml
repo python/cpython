@@ -25,52 +25,16 @@ select = [
 
 [lint.per-file-ignores]
 "check_extension_modules.py" = [
-    "E501",    # Line too long
     "PYI024",  # Use `typing.NamedTuple` instead of `collections.namedtuple`
     "UP031",   # Use format specifiers instead of percent format
-]
-"deepfreeze.py" = [
-    "E501",   # Line too long
 ]
 "freeze_modules.py" = [
-    "E501",    # Line too long
     "PYI024",  # Use `typing.NamedTuple` instead of `collections.namedtuple`
     "UP031",   # Use format specifiers instead of percent format
 ]
-"generate-build-details.py" = [
-    "E501",  # Line too long
-]
-"generate_global_objects.py" = [
-    "E501",  # Line too long
-]
-"generate_levenshtein_examples.py" = [
-    "E501",  # Line too long
-]
 "generate_re_casefix.py" = [
-    "E501",   # Line too long
     "UP031",  # Use format specifiers instead of percent format
-]
-"generate_sbom.py" = [
-    "E501",  # Line too long
 ]
 "generate_sre_constants.py" = [
     "UP031",  # Use format specifiers instead of percent format
-]
-"generate_token.py" = [
-    "E501",  # Line too long
-]
-"parse_html5_entities.py" = [
-    "E501",  # Line too long
-]
-"smelly.py" = [
-    "E501",  # Line too long
-]
-"stable_abi.py" = [
-    "E501",  # Line too long
-]
-"umarshal.py" = [
-    "E501",  # Line too long
-]
-"verify_ensurepip_wheels.py" = [
-    "E501",  # Line too long
 ]
