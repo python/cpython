@@ -20,6 +20,7 @@ select = [
 ]
 
 [per-file-target-version]
+"deepfreeze.py" = "py310"
 "stable_abi.py" = "py311"  # requires 'tomllib'
 
 [lint.per-file-ignores]
