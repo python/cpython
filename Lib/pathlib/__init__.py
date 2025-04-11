@@ -1278,8 +1278,12 @@ class Path(PurePath):
         """Return a new path from the given 'file' URI."""
         if not uri.startswith('file:'):
             raise ValueError(f"URI does not start with 'file:': {uri!r}")
+        from urllib.error import URLError
         from urllib.request import url2pathname
-        path = cls(url2pathname(uri.removeprefix('file:')))
+        try:
+            path = cls(url2pathname(uri.removeprefix('file:')))
+        except URLError as exc:
+            raise ValueError(exc.reason) from None
         if not path.is_absolute():
             raise ValueError(f"URI is not absolute: {uri!r}")
         return path
