@@ -532,7 +532,7 @@ def get_target(host: str) -> _COFF | _ELF | _MachO:
             # was required to disable them.
             "-mno-outline-atomics",
         ]
-        condition = "aarch64__) && defined(__linux__)"
+        condition = "defined(__aarch64__) && defined(__linux__)"
         target = _ELF(host, condition, alignment=8, args=args)
     elif re.fullmatch(r"i686-pc-windows-msvc", host):
         args = [
