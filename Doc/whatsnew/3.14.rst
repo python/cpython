@@ -812,6 +812,14 @@ linecache
   (Contributed by Tian Gao in :gh:`131638`.)
 
 
+logging.handlers
+----------------
+
+* :class:`logging.handlers.QueueListener` now implements the context
+  manager protocol, allowing it to be used in a :keyword:`with` statement.
+  (Contributed by Charles Machalow in :gh:`132106`.)
+
+
 mimetypes
 ---------
 
