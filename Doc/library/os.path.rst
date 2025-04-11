@@ -277,19 +277,6 @@ The module provides these I/O functions:
       Accepts a :term:`path-like object`.
 
 
-.. function:: basename(path)
-
-   Return the base name of pathname *path*.  This is the second element of the
-   pair returned by passing *path* to the function :func:`split`.  Note that
-   the result of this function is different
-   from the Unix :program:`basename` program; where :program:`basename` for
-   ``'/foo/bar/'`` returns ``'bar'``, the :func:`basename` function returns an
-   empty string (``''``).
-
-   .. versionchanged:: 3.6
-      Accepts a :term:`path-like object`.
-
-
 .. function:: exists(path)
 
    Return ``True`` if *path* refers to an existing path or an open
