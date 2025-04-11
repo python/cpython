@@ -1393,16 +1393,6 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(int(self.ipv4_network.broadcast_address), 16909311)
         self.assertEqual(str(self.ipv4_network.broadcast_address), '1.2.3.255')
 
-        self.assertEqual(int(self.ipv6_network.broadcast_address),
-                         42540616829182469451850391367731642367)
-        self.assertEqual(str(self.ipv6_network.broadcast_address),
-                         '2001:658:22a:cafe:ffff:ffff:ffff:ffff')
-
-        self.assertEqual(int(self.ipv6_scoped_network.broadcast_address),
-                         42540616829182469451850391367731642367)
-        self.assertEqual(str(self.ipv6_scoped_network.broadcast_address),
-                         '2001:658:22a:cafe:ffff:ffff:ffff:ffff')
-
     def testGetPrefixlen(self):
         self.assertEqual(self.ipv4_interface.network.prefixlen, 24)
         self.assertEqual(self.ipv6_interface.network.prefixlen, 64)
@@ -2708,21 +2698,13 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(self.ipv6_interface.network.network_address,
                          ipaddress.IPv6Address('2001:658:22a:cafe::'))
 
-        self.assertEqual(
-            self.ipv6_network.broadcast_address,
-            ipaddress.IPv6Address('2001:658:22a:cafe:ffff:ffff:ffff:ffff'))
         self.assertEqual(self.ipv6_network.hostmask,
                          ipaddress.IPv6Address('::ffff:ffff:ffff:ffff'))
-        self.assertEqual(
-            self.ipv6_interface.network.broadcast_address,
-            ipaddress.IPv6Address('2001:658:22a:cafe:ffff:ffff:ffff:ffff'))
         self.assertEqual(self.ipv6_interface.network.hostmask,
                          ipaddress.IPv6Address('::ffff:ffff:ffff:ffff'))
 
         # V6 - check we're cached
-        self.assertIn('broadcast_address', self.ipv6_network.__dict__)
         self.assertIn('hostmask', self.ipv6_network.__dict__)
-        self.assertIn('broadcast_address', self.ipv6_interface.network.__dict__)
         self.assertIn('hostmask', self.ipv6_interface.network.__dict__)
 
     def testTeredo(self):

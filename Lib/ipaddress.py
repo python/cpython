@@ -12,6 +12,7 @@ __version__ = '1.0'
 
 
 import functools
+import warnings
 
 IPV4LENGTH = 32
 IPV6LENGTH = 128
@@ -295,7 +296,7 @@ def _collapse_addresses_internal(addresses):
         if last is not None:
             # Since they are sorted, last.network_address <= net.network_address
             # is a given.
-            if last.broadcast_address >= net.broadcast_address:
+            if last.last_address >= net.last_address:
                 continue
         yield net
         last = net
@@ -685,28 +686,28 @@ class _BaseNetwork(_IPAddressBase):
 
         """
         network = int(self.network_address)
-        broadcast = int(self.broadcast_address)
-        for x in range(network + 1, broadcast):
+        last = int(self.last_address)
+        for x in range(network + 1, last):
             yield self._address_class(x)
 
     def __iter__(self):
         network = int(self.network_address)
-        broadcast = int(self.broadcast_address)
-        for x in range(network, broadcast + 1):
+        last = int(self.last_address)
+        for x in range(network, last + 1):
             yield self._address_class(x)
 
     def __getitem__(self, n):
         network = int(self.network_address)
-        broadcast = int(self.broadcast_address)
+        last = int(self.last_address)
         if n >= 0:
-            if network + n > broadcast:
+            if network + n > last:
                 raise IndexError('address out of range')
             return self._address_class(network + n)
         else:
             n += 1
-            if broadcast + n < network:
+            if last + n < network:
                 raise IndexError('address out of range')
-            return self._address_class(broadcast + n)
+            return self._address_class(last + n)
 
     def __lt__(self, other):
         if not isinstance(other, _BaseNetwork):
@@ -746,14 +747,9 @@ class _BaseNetwork(_IPAddressBase):
     def overlaps(self, other):
         """Tell if self is partly contained in other."""
         return self.network_address in other or (
-            self.broadcast_address in other or (
+            self.last_address in other or (
                 other.network_address in self or (
-                    other.broadcast_address in self)))
-
-    @functools.cached_property
-    def broadcast_address(self):
-        return self._address_class(int(self.network_address) |
-                                   int(self.hostmask))
+                    other.last_address in self)))
 
     @functools.cached_property
     def hostmask(self):
@@ -774,7 +770,7 @@ class _BaseNetwork(_IPAddressBase):
     @property
     def num_addresses(self):
         """Number of hosts in the current subnet."""
-        return int(self.broadcast_address) - int(self.network_address) + 1
+        return int(self.last_address) - int(self.network_address) + 1
 
     @property
     def _address_class(self):
@@ -968,7 +964,7 @@ class _BaseNetwork(_IPAddressBase):
                     new_prefixlen, self))
 
         start = int(self.network_address)
-        end = int(self.broadcast_address) + 1
+        end = int(self.last_address) + 1
         step = (int(self.hostmask) + 1) >> prefixlen_diff
         for new_addr in range(start, end, step):
             current = self.__class__((new_addr, new_prefixlen))
@@ -1025,7 +1021,7 @@ class _BaseNetwork(_IPAddressBase):
 
         """
         return (self.network_address.is_multicast and
-                self.broadcast_address.is_multicast)
+                self.last_address.is_multicast)
 
     @staticmethod
     def _is_subnet_of(a, b):
@@ -1034,7 +1030,7 @@ class _BaseNetwork(_IPAddressBase):
             if a.version != b.version:
                 raise TypeError(f"{a} and {b} are not of the same version")
             return (b.network_address <= a.network_address and
-                    b.broadcast_address >= a.broadcast_address)
+                    b.last_address >= a.last_address)
         except AttributeError:
             raise TypeError(f"Unable to test subnet containment "
                             f"between {a} and {b}")
@@ -1057,7 +1053,7 @@ class _BaseNetwork(_IPAddressBase):
 
         """
         return (self.network_address.is_reserved and
-                self.broadcast_address.is_reserved)
+                self.last_address.is_reserved)
 
     @property
     def is_link_local(self):
@@ -1068,7 +1064,7 @@ class _BaseNetwork(_IPAddressBase):
 
         """
         return (self.network_address.is_link_local and
-                self.broadcast_address.is_link_local)
+                self.last_address.is_link_local)
 
     @property
     def is_private(self):
@@ -1080,10 +1076,10 @@ class _BaseNetwork(_IPAddressBase):
 
         """
         return any(self.network_address in priv_network and
-                   self.broadcast_address in priv_network
+                   self.last_address in priv_network
                    for priv_network in self._constants._private_networks) and all(
                     self.network_address not in network and
-                    self.broadcast_address not in network
+                    self.last_address not in network
                     for network in self._constants._private_networks_exceptions
                 )
 
@@ -1108,7 +1104,7 @@ class _BaseNetwork(_IPAddressBase):
 
         """
         return (self.network_address.is_unspecified and
-                self.broadcast_address.is_unspecified)
+                self.last_address.is_unspecified)
 
     @property
     def is_loopback(self):
@@ -1120,7 +1116,7 @@ class _BaseNetwork(_IPAddressBase):
 
         """
         return (self.network_address.is_loopback and
-                self.broadcast_address.is_loopback)
+                self.last_address.is_loopback)
 
 
 class _BaseConstants:
@@ -1560,6 +1556,15 @@ class IPv4Network(_BaseV4, _BaseNetwork):
         return (not (self.network_address in IPv4Network('100.64.0.0/10') and
                     self.broadcast_address in IPv4Network('100.64.0.0/10')) and
                 not self.is_private)
+
+    @functools.cached_property
+    def last_address(self):
+        return self._address_class(int(self.network_address) |
+                                   int(self.hostmask))
+
+    @functools.cached_property
+    def broadcast_address(self):
+        return self.last_address
 
 
 class _IPv4Constants:
@@ -2272,7 +2277,7 @@ class IPv6Network(_BaseV6, _BaseNetwork):
     Attributes: [examples for IPv6('2001:db8::1000/124')]
         .network_address: IPv6Address('2001:db8::1000')
         .hostmask: IPv6Address('::f')
-        .broadcast_address: IPv6Address('2001:db8::100f')
+        .last_address: IPv6Address('2001:db8::100f')
         .netmask: IPv6Address('ffff:ffff:ffff:ffff:ffff:ffff:ffff:fff0')
         .prefixlen: 124
 
@@ -2337,8 +2342,8 @@ class IPv6Network(_BaseV6, _BaseNetwork):
 
         """
         network = int(self.network_address)
-        broadcast = int(self.broadcast_address)
-        for x in range(network + 1, broadcast + 1):
+        last = int(self.last_address)
+        for x in range(network + 1, last + 1):
             yield self._address_class(x)
 
     @property
@@ -2354,7 +2359,18 @@ class IPv6Network(_BaseV6, _BaseNetwork):
 
         """
         return (self.network_address.is_site_local and
-                self.broadcast_address.is_site_local)
+                self.last_address.is_site_local)
+
+    @property
+    def last_address(self):
+        """The last address in the network, the address with all the host bits set."""
+        return self._address_class(int(self.network_address) |
+                                   int(self.hostmask))
+
+    @property
+    @warnings.deprecated("IPv6 has no broadcast addresses, use last_address instead for the address with all the host bits set.")
+    def broadcast_address(self):
+        return self.last_address
 
 
 class _IPv6Constants:
