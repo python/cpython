@@ -7,6 +7,8 @@
 #include "pycore_ceval.h"         // _PyEval_SetProfile()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_time.h"          // _PyTime_FromLong()
+#include "pycore_typeobject.h"    // _PyType_GetModuleState()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include "rotatingtree.h"
 
@@ -56,6 +58,8 @@ typedef struct {
     PyObject* missing;
 } ProfilerObject;
 
+#define ProfilerObject_CAST(op) ((ProfilerObject *)(op))
+
 #define POF_ENABLED     0x001
 #define POF_SUBCALLS    0x002
 #define POF_BUILTINS    0x004
@@ -97,7 +101,8 @@ static PyTime_t CallExternalTimer(ProfilerObject *pObj)
     pObj->flags &= ~POF_EXT_TIMER;
 
     if (o == NULL) {
-        PyErr_WriteUnraisable(pObj->externalTimer);
+        PyErr_FormatUnraisable("Exception ignored while calling "
+                               "_lsprof timer %R", pObj->externalTimer);
         return 0;
     }
 
@@ -116,7 +121,8 @@ static PyTime_t CallExternalTimer(ProfilerObject *pObj)
     }
     Py_DECREF(o);
     if (err < 0) {
-        PyErr_WriteUnraisable(pObj->externalTimer);
+        PyErr_FormatUnraisable("Exception ignored while calling "
+                               "_lsprof timer %R", pObj->externalTimer);
         return 0;
     }
     return result;
@@ -665,6 +671,7 @@ PyObject* get_cfunc_from_callable(PyObject* callable, PyObject* self_arg, PyObje
         PyObject *meth = Py_TYPE(callable)->tp_descr_get(
             callable, self_arg, (PyObject*)Py_TYPE(self_arg));
         if (meth == NULL) {
+            PyErr_Clear();
             return NULL;
         }
         if (PyCFunction_Check(meth)) {
@@ -775,7 +782,7 @@ _lsprof_Profiler_enable_impl(ProfilerObject *self, int subcalls,
         return NULL;
     }
 
-    PyObject* monitoring = _PyImport_GetModuleAttrString("sys", "monitoring");
+    PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
     if (!monitoring) {
         return NULL;
     }
@@ -857,7 +864,7 @@ _lsprof_Profiler_disable_impl(ProfilerObject *self)
     }
     if (self->flags & POF_ENABLED) {
         PyObject* result = NULL;
-        PyObject* monitoring = _PyImport_GetModuleAttrString("sys", "monitoring");
+        PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
 
         if (!monitoring) {
             return NULL;
@@ -919,29 +926,32 @@ _lsprof_Profiler_clear_impl(ProfilerObject *self)
 }
 
 static int
-profiler_traverse(ProfilerObject *op, visitproc visit, void *arg)
+profiler_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    ProfilerObject *self = ProfilerObject_CAST(op);
     Py_VISIT(Py_TYPE(op));
-    Py_VISIT(op->externalTimer);
+    Py_VISIT(self->externalTimer);
     return 0;
 }
 
 static void
-profiler_dealloc(ProfilerObject *op)
+profiler_dealloc(PyObject *op)
 {
-    PyObject_GC_UnTrack(op);
-    if (op->flags & POF_ENABLED) {
+    ProfilerObject *self = ProfilerObject_CAST(op);
+    PyObject_GC_UnTrack(self);
+    if (self->flags & POF_ENABLED) {
         PyThreadState *tstate = _PyThreadState_GET();
         if (_PyEval_SetProfile(tstate, NULL, NULL) < 0) {
-            PyErr_FormatUnraisable("Exception ignored when destroying _lsprof profiler");
+            PyErr_FormatUnraisable("Exception ignored while "
+                                   "destroying _lsprof profiler");
         }
     }
 
-    flush_unmatched(op);
-    clearEntries(op);
-    Py_XDECREF(op->externalTimer);
-    PyTypeObject *tp = Py_TYPE(op);
-    tp->tp_free(op);
+    flush_unmatched(self);
+    clearEntries(self);
+    Py_XDECREF(self->externalTimer);
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
     Py_DECREF(tp);
 }
 
@@ -973,7 +983,7 @@ profiler_init_impl(ProfilerObject *self, PyObject *timer, double timeunit,
     Py_XSETREF(self->externalTimer, Py_XNewRef(timer));
     self->tool_id = PY_MONITORING_PROFILER_ID;
 
-    PyObject* monitoring = _PyImport_GetModuleAttrString("sys", "monitoring");
+    PyObject* monitoring = PyImport_ImportModuleAttrString("sys", "monitoring");
     if (!monitoring) {
         return -1;
     }
@@ -1042,7 +1052,7 @@ _lsprof_clear(PyObject *module)
 static void
 _lsprof_free(void *module)
 {
-    _lsprof_clear((PyObject *)module);
+    (void)_lsprof_clear((PyObject *)module);
 }
 
 static int

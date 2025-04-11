@@ -1,6 +1,7 @@
 from collections import namedtuple
 import contextlib
 import json
+import logging
 import os
 import os.path
 #import select
@@ -66,8 +67,8 @@ def pack_exception(exc=None):
 def unpack_exception(packed):
     try:
         data = json.loads(packed)
-    except json.decoder.JSONDecodeError:
-        warnings.warn('incomplete exception data', RuntimeWarning)
+    except json.decoder.JSONDecodeError as e:
+        logging.getLogger(__name__).warning('incomplete exception data', exc_info=e)
         print(packed if isinstance(packed, str) else packed.decode('utf-8'))
         return None
     exc = types.SimpleNamespace(**data)

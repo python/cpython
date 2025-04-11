@@ -280,7 +280,7 @@ class TextFactoryTests(MemoryDatabaseMixin, unittest.TestCase):
         austria = "Österreich"
         row = self.con.execute("select ?", (austria,)).fetchone()
         self.assertEqual(type(row[0]), str, "type of row[0] must be unicode")
-        self.assertTrue(row[0].endswith("reich"), "column must contain original data")
+        self.assertEndsWith(row[0], "reich", "column must contain original data")
 
 
 class TextFactoryTestsWithEmbeddedZeroBytes(unittest.TestCase):
