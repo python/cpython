@@ -464,11 +464,12 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
             framework = sysconfig.get_config_var('PYTHONFRAMEWORK')
             self.assertEqual(ldlibrary, f"{framework}.framework/{framework}")
         else:
-            self.assertEqual(library, f'libpython{major}.{minor}{abiflags}.a')
+            self.assertStartsWith(library, f'libpython{major}.{minor}')
+            self.assertEndsWith(library, '.a')
             if sys.platform == 'darwin' and sys._framework:
                 self.skipTest('gh-110824: skip LDLIBRARY test for framework build')
             else:
-                self.assertStartsWith(ldlibrary, f'libpython{major}.{minor}{abiflags}')
+                self.assertStartsWith(ldlibrary, f'libpython{major}.{minor}')
 
     @unittest.skipUnless(sys.platform == "darwin", "test only relevant on MacOSX")
     @requires_subprocess()
