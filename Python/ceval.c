@@ -891,7 +891,7 @@ extern void _PyUOpPrint(const _PyUOpInstruction *uop);
    if computed gotos aren't used. */
 
 /* TBD - what about other compilers? */
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wunused-label"
 #elif defined(_MSC_VER) /* MS_WINDOWS */
@@ -1179,7 +1179,7 @@ early_exit:
 #  pragma optimize("", on)
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 #  pragma GCC diagnostic pop
 #elif defined(_MSC_VER) /* MS_WINDOWS */
 #  pragma warning(pop)
