@@ -13,7 +13,7 @@ repos:
       - id: ruff
         name: Run Ruff (lint) on Tools/build
         args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
-        files: ^Tools/build/*.py
+        files: ^Tools/build/
       - id: ruff
         name: Run Ruff (lint) on Argument Clinic
         args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
