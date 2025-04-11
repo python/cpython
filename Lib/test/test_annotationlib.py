@@ -3,6 +3,7 @@
 import annotationlib
 import builtins
 import collections
+import enum
 import functools
 import itertools
 import pickle
@@ -50,6 +51,14 @@ class TestFormat(unittest.TestCase):
 
         self.assertEqual(Format.STRING.value, 4)
         self.assertEqual(Format.STRING, 4)
+
+    def test_simple_enum(self):
+        class Format(enum.IntEnum):
+            VALUE = 1
+            VALUE_WITH_FAKE_GLOBALS = 2
+            FORWARDREF = 3
+            STRING = 4
+        enum._test_simple_enum(Format, annotationlib.Format)
 
 
 class TestForwardRefFormat(unittest.TestCase):
