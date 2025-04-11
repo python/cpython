@@ -1,0 +1,2 @@
+Add :attr:`pathlib.PurePath.segments`, which stores the flattened path
+segments given to the path object initializer.

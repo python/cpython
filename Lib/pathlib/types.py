@@ -43,6 +43,7 @@ class _PathParser(Protocol):
 
     sep: str
     altsep: Optional[str]
+    def join(self, path: str, *paths: str) -> str: ...
     def split(self, path: str) -> tuple[str, str]: ...
     def splitext(self, path: str) -> tuple[str, str]: ...
     def normcase(self, path: str) -> str: ...
@@ -76,6 +77,13 @@ class _JoinablePath(ABC):
         """
         raise NotImplementedError
 
+    @property
+    @abstractmethod
+    def segments(self):
+        """Sequence of raw path segments supplied to the path initializer.
+        """
+        raise NotImplementedError
+
     @abstractmethod
     def with_segments(self, *pathsegments):
         """Construct a new path object from any number of path-like objects.
@@ -84,11 +92,11 @@ class _JoinablePath(ABC):
         """
         raise NotImplementedError
 
-    @abstractmethod
     def __str__(self):
-        """Return the string representation of the path, suitable for
-        passing to system calls."""
-        raise NotImplementedError
+        """Return the string representation of the path."""
+        if not self.segments:
+            return ''
+        return self.parser.join(*self.segments)
 
     @property
     def anchor(self):
@@ -178,17 +186,17 @@ class _JoinablePath(ABC):
         paths) or a totally different path (if one of the arguments is
         anchored).
         """
-        return self.with_segments(str(self), *pathsegments)
+        return self.with_segments(*self.segments, *pathsegments)
 
     def __truediv__(self, key):
         try:
-            return self.with_segments(str(self), key)
+            return self.with_segments(*self.segments, key)
         except TypeError:
             return NotImplemented
 
     def __rtruediv__(self, key):
         try:
-            return self.with_segments(key, str(self))
+            return self.with_segments(key, *self.segments)
         except TypeError:
             return NotImplemented
 
