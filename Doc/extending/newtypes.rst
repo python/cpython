@@ -387,8 +387,8 @@ size of an internal pointer is equal::
    static PyObject *
    newdatatype_richcmp(PyObject *lhs, PyObject *rhs, int op)
    {
-       newdatatypeobject *obj1 = (newdatatypeobject *) obj1;
-       newdatatypeobject *obj2 = (newdatatypeobject *) obj2;
+       newdatatypeobject *obj1 = (newdatatypeobject *) lhs;
+       newdatatypeobject *obj2 = (newdatatypeobject *) rhs;
        PyObject *result;
        int c, size1, size2;
 
