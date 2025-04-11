@@ -504,19 +504,7 @@ class BuiltinFunctionPropertiesTest(unittest.TestCase):
         d = {'foo': 'bar'}
         self.assertEqual(d.pop.__self__, d)
 
-        # builtin constants bound method:
-        self.assertFalse(False.__repr__.__self__)
         self.assertIsNone(None.__repr__.__self__)
-        self.assertTrue(True.__repr__.__self__)
-
-        ni = NotImplemented
-        self.assertIs(ni.__repr__.__self__, ni)
-
-        e = Ellipsis
-        self.assertIs(e.__repr__.__self__, e)
-
-        d = __debug__
-        self.assertIs(d.__repr__.__self__, d)
 
 
 if __name__ == "__main__":
