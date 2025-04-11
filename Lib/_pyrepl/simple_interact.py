@@ -31,7 +31,7 @@ import os
 import sys
 import code
 
-from .readline import _get_reader, multiline_input
+from .readline import _get_reader, multiline_input, append_history_file
 
 
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -143,6 +143,10 @@ def run_multiline_interactive_console(
 
             input_name = f"<python-input-{input_n}>"
             more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
+            try:
+                append_history_file()
+            except (FileNotFoundError, PermissionError):
+                pass
             assert not more
             input_n += 1
         except KeyboardInterrupt:
