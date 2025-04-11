@@ -23,7 +23,7 @@ please ensure that the PR title is in the following format:
 [X.Y] <title from the original PR> (GH-NNNNNN)
 ```
 
-Where: [X.Y] is the branch name, e.g. [3.13].
+Where: [X.Y] is the branch name, for example: [3.13].
 
 GH-NNNNNN refers to the PR number from `main`.
 
