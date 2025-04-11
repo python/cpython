@@ -130,7 +130,7 @@ for iterability
     Traceback (most recent call last):
       File "<pyshell#4>", line 1, in -toplevel-
         (i for i in 6)
-    TypeError: 'int' object is not iterable
+    TypeError: 'int' object is not iterable. Did you mean: 'range('int')'?
 
 Verify late binding for the outermost if-expression
 
