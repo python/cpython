@@ -560,7 +560,7 @@ dictionaries.
       
    .. attribute:: broadcast_address
 
-      The broadcast address for the network. Packets sent to the broadcast
+      The same as :attr:`last_address` for IPv4 networks. Packets sent to this
       address should be received by every host on the network.
 
    .. attribute:: hostmask
