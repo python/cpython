@@ -298,7 +298,7 @@ class AST_Tests(unittest.TestCase):
         x = ast.arguments()
         self.assertEqual(x._fields, ('posonlyargs', 'args', 'vararg', 'kwonlyargs',
                                      'kw_defaults', 'kwarg', 'defaults'))
-        self.assertEqual(x.__annotations__, {
+        self.assertEqual(ast.arguments.__annotations__, {
             'posonlyargs': list[ast.arg],
             'args': list[ast.arg],
             'vararg': ast.arg | None,

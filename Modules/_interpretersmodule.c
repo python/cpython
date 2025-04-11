@@ -1252,13 +1252,10 @@ interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *idobj = NULL;
     int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$p:get_config", kwlist,
+                                     "O?|$p:get_config", kwlist,
                                      &idobj, &restricted))
     {
         return NULL;
-    }
-    if (idobj == Py_None) {
-        idobj = NULL;
     }
 
     int reqready = 0;
@@ -1376,14 +1373,14 @@ capture_exception(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"exc", NULL};
     PyObject *exc_arg = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "|O:capture_exception", kwlist,
+                                     "|O?:capture_exception", kwlist,
                                      &exc_arg))
     {
         return NULL;
     }
 
     PyObject *exc = exc_arg;
-    if (exc == NULL || exc == Py_None) {
+    if (exc == NULL) {
         exc = PyErr_GetRaisedException();
         if (exc == NULL) {
             Py_RETURN_NONE;
