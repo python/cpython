@@ -298,7 +298,7 @@ the bytes over a shared :mod:`socket <socket>` or
 
    The optional *initializer* and *initargs* arguments have the same
    meaning as for :class:`!ThreadPoolExecutor`: the initializer is run
-   when each worker is created, though in this case it is run.in
+   when each worker is created, though in this case it is run in
    the worker's interpreter.  The executor serializes the *initializer*
    and *initargs* using :mod:`pickle` when sending them to the worker's
    interpreter.

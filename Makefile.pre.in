@@ -424,6 +424,7 @@ PARSER_HEADERS= \
 # Python
 
 PYTHON_OBJS=	\
+		Python/_contextvars.o \
 		Python/_warnings.o \
 		Python/Python-ast.o \
 		Python/Python-tokenize.o \
@@ -1938,7 +1939,7 @@ regen-pegen:
 
 .PHONY: regen-ast
 regen-ast:
-	# Regenerate 3 files using using Parser/asdl_c.py:
+	# Regenerate 3 files using Parser/asdl_c.py:
 	# - Include/internal/pycore_ast.h
 	# - Include/internal/pycore_ast_state.h
 	# - Python/Python-ast.c
@@ -1960,7 +1961,8 @@ regen-token:
 	# using Tools/build/generate_token.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_token.py rst \
 		$(srcdir)/Grammar/Tokens \
-		$(srcdir)/Doc/library/token-list.inc
+		$(srcdir)/Doc/library/token-list.inc \
+		$(srcdir)/Doc/library/token.rst
 	# Regenerate Include/internal/pycore_token.h from Grammar/Tokens
 	# using Tools/build/generate_token.py
 	$(PYTHON_FOR_REGEN) $(srcdir)/Tools/build/generate_token.py h \
