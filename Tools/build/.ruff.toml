@@ -26,6 +26,7 @@ select = [
 [lint.per-file-ignores]
 "check_extension_modules.py" = [
     "E501",  # Line too long
+    "PYI024",  # Use `typing.NamedTuple` instead of `collections.namedtuple`
 ]
 "deepfreeze.py" = [
     "E501",   # Line too long

@@ -20,6 +20,7 @@ See --help for more information
 
 import _imp
 import argparse
+import collections
 import enum
 import logging
 import os
@@ -36,7 +37,6 @@ from importlib.machinery import (
     ModuleSpec,
 )
 from importlib.util import spec_from_file_location, spec_from_loader
-from typing import NamedTuple
 
 SRC_DIR = pathlib.Path(__file__).parent.parent.parent
 
@@ -128,9 +128,7 @@ class ModuleState(enum.Enum):
         return self.value in {"builtin", "shared"}
 
 
-class ModuleInfo(NamedTuple):
-    name: str
-    state: ModuleState
+ModuleInfo = collections.namedtuple("ModuleInfo", "name state")
 
 
 class ModuleChecker:
