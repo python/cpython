@@ -53,7 +53,7 @@ class TestExt(unittest.TestCase):
 
     def check_build(self, extension_name, std=None, limited=False):
         venv_dir = 'env'
-        with support.setup_venv_with_pip_setuptools_wheel(venv_dir) as python_exe:
+        with support.setup_venv_with_pip_setuptools(venv_dir) as python_exe:
             self._check_build(extension_name, python_exe,
                               std=std, limited=limited)
 
