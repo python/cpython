@@ -507,11 +507,11 @@ def regen_frozen(modules):
 
         if mod.isalias:
             if not mod.orig:
-                entry = '{"%s", NULL},' % (mod.name,)  # noqa: UP031
+                entry = '{"%s", NULL},' % (mod.name,)
             elif mod.source.ispkg:
-                entry = '{"%s", "<%s"},' % (mod.name, mod.orig)  # noqa: UP031
+                entry = '{"%s", "<%s"},' % (mod.name, mod.orig)
             else:
-                entry = '{"%s", "%s"},' % (mod.name, mod.orig)  # noqa: UP031
+                entry = '{"%s", "%s"},' % (mod.name, mod.orig)
             aliaslines.append(indent + entry)
 
     for lines in (bootstraplines, stdliblines, testlines):
