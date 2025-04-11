@@ -1,3 +1,7 @@
+/* Namespace external symbols to allow multiple libexpat version to
+   co-exist. */
+#include "pyexpatns.h"
+
 /*
                             __  __            _
                          ___\ \/ /_ __   __ _| |_
