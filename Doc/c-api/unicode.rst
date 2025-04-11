@@ -600,8 +600,8 @@ APIs:
 
    Create a Unicode Object from the given Unicode code point *ordinal*.
 
-   The ordinal must be in ``range(0x110000)``. A :exc:`ValueError` is
-   raised in case it is not.
+   The ordinal must be in ``range(0x110000)``. A :exc:`ValueError` is  
+   raised in the case it is not.
 
 
 .. c:function:: PyObject* PyUnicode_FromEncodedObject(PyObject *obj, \
