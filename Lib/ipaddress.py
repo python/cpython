@@ -2383,7 +2383,6 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         return self.last_address
 
 
-
 class _IPv6Constants:
 
     _linklocal_network = IPv6Network('fe80::/10')
