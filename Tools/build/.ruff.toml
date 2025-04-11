@@ -18,6 +18,9 @@ select = [
     "W",       # pycodestyle
     "YTT",     # flake8-2020
 ]
+ignore = [
+    "E501",    # Line too long
+]
 
 [per-file-target-version]
 "deepfreeze.py" = "py310"
