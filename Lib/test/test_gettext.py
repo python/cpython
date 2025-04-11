@@ -1,3 +1,4 @@
+import locale
 import os
 import base64
 import gettext
@@ -848,7 +849,8 @@ class FindTestCase(unittest.TestCase):
             f.write(GNU_MO_DATA)
         return mo_file
 
-    def test_find_with_env_vars(self):
+    @unittest.mock.patch("locale.getlocale", return_value=(None, None))
+    def test_find_with_env_vars(self, patch_getlocale):
         # test that find correctly finds the environment variables
         # when languages are not supplied
         mo_file = self.create_mo_file("ga_IE")
@@ -858,6 +860,19 @@ class FindTestCase(unittest.TestCase):
                                   localedir=os.path.join(self.tempdir, "locale"))
             self.assertEqual(result, mo_file)
             self.env.unset(var)
+        # test fallbacks
+        for var in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+            self.env.set(var, 'es_ES:ga_IE:fr_FR')
+            result = gettext.find("mofile",
+                                  localedir=os.path.join(self.tempdir, "locale"))
+            self.assertEqual(result, mo_file)
+            self.env.unset(var)
+
+    @unittest.mock.patch("locale.getlocale", return_value=('ga_IE', 'UTF-8'))
+    def test_process_vars_override(self, patch_getlocale):
+        mo_file = self.create_mo_file("ga_IE")
+        result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
+        self.assertEqual(result, mo_file)
 
     def test_find_with_languages(self):
         # test that passed languages are used
@@ -910,7 +925,7 @@ if __name__ == '__main__':
     unittest.main()
 
 
-# For reference, here's the .po file used to created the GNU_MO_DATA above.
+# For reference, here's the .po file used to create the GNU_MO_DATA above.
 #
 # The original version was automatically generated from the sources with
 # pygettext. Later it was manually modified to add plural forms support.
