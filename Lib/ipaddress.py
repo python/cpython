@@ -757,11 +757,11 @@ class _BaseNetwork(_IPAddressBase):
 
     @functools.cached_property
     def first_address(self):
-        return self._address_class(int(self.network_address))
+        return self._address_class(int(self.first_address))
 
     @functools.cached_property
     def last_address(self):
-        return self._address_class(int(self.network_address) |
+        return self._address_class(int(self.first_address) |
                                    int(self.hostmask))
 
     @property
@@ -1563,7 +1563,7 @@ class IPv4Network(_BaseV4, _BaseNetwork):
 
         """
         return (not (self.first_address in IPv4Network('100.64.0.0/10') and
-                    self.broadcast_address in IPv4Network('100.64.0.0/10')) and
+                    self.last_address in IPv4Network('100.64.0.0/10')) and
                 not self.is_private)
 
     @functools.cached_property
@@ -2373,12 +2373,12 @@ class IPv6Network(_BaseV6, _BaseNetwork):
         return self.first_address
 
     @functools.cached_property
-    @warnings.deprecated("IPv6 has no network addresses, use first_address or subnet_router_anycast_address instead.")
+    @warnings.deprecated("IPv6 has no network addresses, consider using first_address or subnet_router_anycast_address instead.")
     def network_address(self):
         return self.first_address
 
     @functools.cached_property
-    @warnings.deprecated("IPv6 has no broadcast addresses, use last_address instead for the address with all the host bits set.")
+    @warnings.deprecated("IPv6 has no broadcast addresses, consider using last_address instead.")
     def broadcast_address(self):
         return self.last_address
 
