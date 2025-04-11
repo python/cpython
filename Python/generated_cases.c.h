@@ -3515,7 +3515,7 @@
                 }
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyCFunctionFastWithKeywords cfunc =
-                _PyCFunctionFastWithKeywords_CAST(meth->ml_met);
+                _PyCFunctionFastWithKeywords_CAST(meth->ml_meth);
                 PyObject *res_o = cfunc(self, (args_o + 1), nargs, NULL);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);

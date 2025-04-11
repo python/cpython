@@ -4370,7 +4370,7 @@ dummy_func(
                 ERROR_IF(true, error);
             }
             PyCFunctionFastWithKeywords cfunc =
-                _PyCFunctionFastWithKeywords_CAST(meth->ml_met);
+                _PyCFunctionFastWithKeywords_CAST(meth->ml_meth);
             PyObject *res_o = cfunc(self, (args_o + 1), nargs, NULL);
             STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
