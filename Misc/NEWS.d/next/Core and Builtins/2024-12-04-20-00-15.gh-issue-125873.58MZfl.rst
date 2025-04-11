@@ -1,0 +1,2 @@
+We now error out early when unable to find the standard library path(s)
+during ref:`Python Path initialization <init-path-config>`.
