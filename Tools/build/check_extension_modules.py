@@ -17,7 +17,6 @@ Module information is parsed from several sources:
 
 See --help for more information
 """
-
 import _imp
 import argparse
 import collections

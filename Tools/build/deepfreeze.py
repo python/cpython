@@ -5,7 +5,6 @@ Shared library extension modules are not available in that case.
 On Windows, and in cross-compilation cases, it is executed
 by Python 3.10, and 3.11 features are not available.
 """
-
 import argparse
 import builtins
 import collections
