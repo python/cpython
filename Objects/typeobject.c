@@ -10816,7 +10816,7 @@ static pytype_slotdef slotdefs[] = {
            wrap_descr_delete,
            "__delete__($self, instance, /)\n--\n\nDelete an attribute of instance."),
     FLSLOT(__init__, tp_init, slot_tp_init,
-           _Py_FUNC_CAST(wrapperfunc, wrap_call),
+           _Py_FUNC_CAST(wrapperfunc, wrap_init),
            "__init__($self, /, *args, **kwargs)\n--\n\n"
            "Initialize self.  See help(type(self)) for accurate signature.",
            PyWrapperFlag_KEYWORDS),
