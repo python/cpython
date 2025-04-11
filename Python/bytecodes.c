@@ -4170,7 +4170,7 @@ dummy_func(
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
-            PyObject *res_o = ((PyCFunctionFast)(void(*)(void))cfunc)(
+            PyObject *res_o = _PyCFunctionFast_CAST(cfunc)(
                 PyCFunction_GET_SELF(callable_o),
                 args_o,
                 total_args);
@@ -4202,8 +4202,7 @@ dummy_func(
             STAT_INC(CALL, hit);
             /* res = func(self, arguments, nargs, kwnames) */
             PyCFunctionFastWithKeywords cfunc =
-                (PyCFunctionFastWithKeywords)(void(*)(void))
-                PyCFunction_GET_FUNCTION(callable_o);
+                _PyCFunctionFastWithKeywords_CAST(PyCFunction_GET_FUNCTION(callable_o));
 
             STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
             if (CONVERSION_FAILED(args_o)) {
@@ -4371,7 +4370,7 @@ dummy_func(
                 ERROR_IF(true, error);
             }
             PyCFunctionFastWithKeywords cfunc =
-                (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+                _PyCFunctionFastWithKeywords_CAST(meth->ml_meth);
             PyObject *res_o = cfunc(self, (args_o + 1), nargs, NULL);
             STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -4450,8 +4449,7 @@ dummy_func(
                 DECREF_INPUTS();
                 ERROR_IF(true, error);
             }
-            PyCFunctionFast cfunc =
-                (PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            PyCFunctionFast cfunc = _PyCFunctionFast_CAST(meth->ml_meth);
             PyObject *res_o = cfunc(self, (args_o + 1), nargs);
             STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
