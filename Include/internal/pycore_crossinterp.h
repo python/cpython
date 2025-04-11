@@ -97,26 +97,22 @@ PyAPI_FUNC(void) _PyXIData_Free(_PyXIData_t *data);
 
 typedef int (*xidatafunc)(PyThreadState *tstate, PyObject *, _PyXIData_t *);
 
-typedef struct _xid_lookup_state _PyXIData_lookup_t;
-
-typedef struct {
-    _PyXIData_lookup_t *global;
-    _PyXIData_lookup_t *local;
-    PyObject *PyExc_NotShareableError;
-} _PyXIData_lookup_context_t;
-
-PyAPI_FUNC(int) _PyXIData_GetLookupContext(
-        PyInterpreterState *,
-        _PyXIData_lookup_context_t *);
+PyAPI_FUNC(PyObject *) _PyXIData_GetNotShareableErrorType(PyThreadState *);
+PyAPI_FUNC(void) _PyXIData_SetNotShareableError(PyThreadState *, const char *);
+PyAPI_FUNC(void) _PyXIData_FormatNotShareableError(
+        PyThreadState *,
+        const char *,
+        ...);
 
 PyAPI_FUNC(xidatafunc) _PyXIData_Lookup(
-        _PyXIData_lookup_context_t *,
+        PyThreadState *,
         PyObject *);
 PyAPI_FUNC(int) _PyObject_CheckXIData(
-        _PyXIData_lookup_context_t *,
+        PyThreadState *,
         PyObject *);
+
 PyAPI_FUNC(int) _PyObject_GetXIData(
-        _PyXIData_lookup_context_t *,
+        PyThreadState *,
         PyObject *,
         _PyXIData_t *);
 
@@ -170,6 +166,8 @@ PyAPI_FUNC(void) _PyXIData_Clear( PyInterpreterState *, _PyXIData_t *);
 /*****************************/
 /* runtime state & lifecycle */
 /*****************************/
+
+typedef struct _xid_lookup_state _PyXIData_lookup_t;
 
 typedef struct {
     // builtin types

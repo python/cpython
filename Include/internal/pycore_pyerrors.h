@@ -149,6 +149,12 @@ PyAPI_FUNC(PyObject*) _PyErr_Format(
     const char *format,
     ...);
 
+PyAPI_FUNC(PyObject*) _PyErr_FormatV(
+    PyThreadState *tstate,
+    PyObject *exception,
+    const char *format,
+    va_list vargs);
+
 extern void _PyErr_NormalizeException(
     PyThreadState *tstate,
     PyObject **exc,

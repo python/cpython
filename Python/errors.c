@@ -21,11 +21,6 @@
 #endif
 
 
-/* Forward declarations */
-static PyObject *
-_PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
-               const char *format, va_list vargs);
-
 void
 _PyErr_SetRaisedException(PyThreadState *tstate, PyObject *exc)
 {
@@ -1195,7 +1190,7 @@ PyErr_BadInternalCall(void)
 #define PyErr_BadInternalCall() _PyErr_BadInternalCall(__FILE__, __LINE__)
 
 
-static PyObject *
+PyObject *
 _PyErr_FormatV(PyThreadState *tstate, PyObject *exception,
                const char *format, va_list vargs)
 {

@@ -25,6 +25,60 @@ static PyTypeObject _PyExc_InterpreterNotFoundError = {
 };
 PyObject *PyExc_InterpreterNotFoundError = (PyObject *)&_PyExc_InterpreterNotFoundError;
 
+/* NotShareableError extends ValueError */
+
+static int
+_init_notshareableerror(exceptions_t *state)
+{
+    const char *name = "interpreters.NotShareableError";
+    // XXX Inherit from TypeError.
+    PyObject *base = PyExc_ValueError;
+    PyObject *ns = NULL;
+    PyObject *exctype = PyErr_NewException(name, base, ns);
+    if (exctype == NULL) {
+        return -1;
+    }
+    state->PyExc_NotShareableError = exctype;
+    return 0;
+}
+
+static void
+_fini_notshareableerror(exceptions_t *state)
+{
+    Py_CLEAR(state->PyExc_NotShareableError);
+}
+
+static PyObject *
+get_notshareableerror_type(PyThreadState *tstate)
+{
+    _PyXI_state_t *local = _PyXI_GET_STATE(tstate->interp);
+    if (local == NULL) {
+        PyErr_Clear();
+        return NULL;
+    }
+    return local->exceptions.PyExc_NotShareableError;
+}
+
+static void
+set_notshareableerror(PyThreadState *tstate, const char *msg)
+{
+    PyObject *exctype = get_notshareableerror_type(tstate);
+    if (exctype == NULL) {
+        exctype = PyExc_ValueError;
+    }
+    _PyErr_SetString(tstate, exctype, msg);
+}
+
+static void
+format_notshareableerror_v(PyThreadState *tstate, const char *format, va_list vargs)
+{
+    PyObject *exctype = get_notshareableerror_type(tstate);
+    if (exctype == NULL) {
+        exctype = PyExc_ValueError;
+    }
+    _PyErr_FormatV(tstate, exctype, format, vargs);
+}
+
 
 /* lifecycle */
 
@@ -76,18 +130,9 @@ fini_static_exctypes(exceptions_t *state, PyInterpreterState *interp)
 static int
 init_heap_exctypes(exceptions_t *state)
 {
-    PyObject *exctype;
-
-    /* NotShareableError extends ValueError */
-    const char *name = "interpreters.NotShareableError";
-    PyObject *base = PyExc_ValueError;
-    PyObject *ns = NULL;
-    exctype = PyErr_NewException(name, base, ns);
-    if (exctype == NULL) {
+    if (_init_notshareableerror(state) < 0) {
         goto error;
     }
-    state->PyExc_NotShareableError = exctype;
-
     return 0;
 
 error:
@@ -98,5 +143,5 @@ error:
 static void
 fini_heap_exctypes(exceptions_t *state)
 {
-    Py_CLEAR(state->PyExc_NotShareableError);
+    _fini_notshareableerror(state);
 }
