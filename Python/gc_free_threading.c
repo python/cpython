@@ -420,7 +420,7 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
 static inline void
 gc_visit_stackref(_PyStackRef stackref)
 {
-    if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNull(stackref)) {
+    if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNullOrInt(stackref)) {
         PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
         if (_PyObject_GC_IS_TRACKED(obj) && !gc_is_frozen(obj)) {
             gc_add_refs(obj, 1);
@@ -805,7 +805,7 @@ gc_abort_mark_alive(PyInterpreterState *interp,
 static int
 gc_visit_stackref_mark_alive(gc_mark_args_t *args, _PyStackRef stackref)
 {
-    if (!PyStackRef_IsNull(stackref)) {
+    if (!PyStackRef_IsNullOrInt(stackref)) {
         PyObject *op = PyStackRef_AsPyObjectBorrow(stackref);
         if (gc_mark_enqueue(op, args) < 0) {
             return -1;
