@@ -455,7 +455,7 @@ class _ReadlineWrapper:
             f = open(os.path.expanduser(filename), "w",
                      encoding="utf-8", newline="\n")
         except OSError as e:
-            warnings.warn(f"failed to open the history file: {e}")
+            warnings.warn(f"failed to open the history file for writing: {e}")
             return
 
         with f:
