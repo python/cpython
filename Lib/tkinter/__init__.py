@@ -4026,9 +4026,7 @@ class Text(Widget, XView, YView):
         scan_mark."""
         self.tk.call(self._w, 'scan', 'dragto', x, y)
 
-    def search(self, pattern, index, stopindex=None,
-           forwards=None, backwards=None, exact=None,
-           regexp=None, nocase=None, count=None, elide=None):
+    def search(self, pattern, index, stopindex=None, forwards=None, backwards=None, exact=None, regexp=None, nocase=None, count=None, elide=None, nolinestop=None, all=None, overlap=None, strictlimits=None):
         """Search PATTERN beginning from INDEX until STOPINDEX.
         Return the index of the first character of a match or an
         empty string."""
@@ -4040,11 +4038,17 @@ class Text(Widget, XView, YView):
         if nocase: args.append('-nocase')
         if elide: args.append('-elide')
         if count: args.append('-count'); args.append(count)
+        if nolinestop: args.append('-nolinestop')
+        if all: args.append('-all')
+        if overlap: args.append('-overlap')
+        if strictlimits: args.append('-strictlimits')
         if pattern and pattern[0] == '-': args.append('--')
         args.append(pattern)
         args.append(index)
         if stopindex: args.append(stopindex)
         return str(self.tk.call(tuple(args)))
+
+
 
     def see(self, index):
         """Scroll such that the character at INDEX is visible."""
