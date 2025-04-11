@@ -199,9 +199,9 @@ class ModuleChecker:
             # guarantee zip() doesn't drop anything
             while len(names) % 3:
                 names.append("")
-            for c1, c2, c3 in zip(names[::3], names[1::3], names[2::3]):
+            for l, m, r in zip(names[::3], names[1::3], names[2::3]):  # noqa: E741
                 # the '%-*s' format specification is not support by str.format()
-                print("%-*s   %-*s   %-*s" % (longest, c1, longest, c2, longest, c3))
+                print("%-*s   %-*s   %-*s" % (longest, l, longest, m, longest, r))
 
         if verbose and self.builtin_ok:
             print("The following *built-in* modules have been successfully built:")
