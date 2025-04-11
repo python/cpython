@@ -212,7 +212,7 @@ decoding_table = (
     '\xa7'     #  0xA4 -> SECTION SIGN
     '\u2022'   #  0xA5 -> BULLET
     '\xb6'     #  0xA6 -> PILCROW SIGN
-    '\u0406'   #  0xA7 -> CYRILLIC CAPITAL LETTER BELORUSSIAN-UKRAINIAN I
+    '\u0406'   #  0xA7 -> CYRILLIC CAPITAL LETTER BYELORUSSIAN-UKRAINIAN I
     '\xae'     #  0xA8 -> REGISTERED SIGN
     '\xa9'     #  0xA9 -> COPYRIGHT SIGN
     '\u2122'   #  0xAA -> TRADE MARK SIGN
@@ -225,7 +225,7 @@ decoding_table = (
     '\xb1'     #  0xB1 -> PLUS-MINUS SIGN
     '\u2264'   #  0xB2 -> LESS-THAN OR EQUAL TO
     '\u2265'   #  0xB3 -> GREATER-THAN OR EQUAL TO
-    '\u0456'   #  0xB4 -> CYRILLIC SMALL LETTER BELORUSSIAN-UKRAINIAN I
+    '\u0456'   #  0xB4 -> CYRILLIC SMALL LETTER BYELORUSSIAN-UKRAINIAN I
     '\xb5'     #  0xB5 -> MICRO SIGN
     '\u0491'   #  0xB6 -> CYRILLIC SMALL LETTER GHE WITH UPTURN
     '\u0408'   #  0xB7 -> CYRILLIC CAPITAL LETTER JE
