@@ -781,7 +781,7 @@ class PathTest(test_pathlib_abc.DummyPathTest, PurePathTest):
         os.chown(link, -1, gid_2, follow_symlinks=False)
 
         expected_gid = link.stat(follow_symlinks=False).st_gid
-        expected_name = self._get_pw_name_or_skip_test(expected_gid)
+        expected_name = self._get_gr_name_or_skip_test(expected_gid)
 
         self.assertEqual(expected_gid, gid_2)
         self.assertEqual(expected_name, link.group(follow_symlinks=False))
