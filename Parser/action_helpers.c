@@ -1295,7 +1295,7 @@ _PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant, Token* tok
 }
 
 static asdl_expr_seq *
-_get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b)
+_get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b, int tstring)
 {
     Py_ssize_t n_items = asdl_seq_LEN(raw_expressions);
     Py_ssize_t total_items = n_items;
@@ -1323,13 +1323,14 @@ _get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b
 
         // This should correspond to a JoinedStr node of two elements
         // created _PyPegen_formatted_value. This situation can only be the result of
-        // a f-string debug expression where the first element is a constant with the text and the second
+        // a (f|t)-string debug expression where the first element is a constant with the text and the second
         // a formatted value with the expression.
         if (item->kind == JoinedStr_kind) {
             asdl_expr_seq *values = item->v.JoinedStr.values;
             if (asdl_seq_LEN(values) != 2) {
                 PyErr_Format(PyExc_SystemError,
-                             "unexpected JoinedStr node without debug data in f-string at line %d",
+                             tstring ? "unexpected TemplateStr node without debug data in t-string at line %d"
+                                     : "unexpected JoinedStr node without debug data in f-string at line %d",
                              item->lineno);
                 return NULL;
             }
@@ -1339,7 +1340,7 @@ _get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b
             asdl_seq_SET(seq, index++, first);
 
             expr_ty second = asdl_seq_GET(values, 1);
-            assert(second->kind == FormattedValue_kind);
+            assert((tstring && second->kind == Interpolation_kind) || second->kind == FormattedValue_kind);
             asdl_seq_SET(seq, index++, second);
 
             continue;
@@ -1381,7 +1382,7 @@ _get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b
 expr_ty
 _PyPegen_template_str(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b) {
 
-    asdl_expr_seq *resized_exprs = _get_resized_exprs(p, a, raw_expressions, b);
+    asdl_expr_seq *resized_exprs = _get_resized_exprs(p, a, raw_expressions, b, 1);
     return _PyAST_TemplateStr(resized_exprs, a->lineno, a->col_offset,
                               b->end_lineno, b->end_col_offset,
                               p->arena);
@@ -1390,7 +1391,7 @@ _PyPegen_template_str(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token
 expr_ty
 _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b) {
 
-    asdl_expr_seq *resized_exprs = _get_resized_exprs(p, a, raw_expressions, b);
+    asdl_expr_seq *resized_exprs = _get_resized_exprs(p, a, raw_expressions, b, 0);
     return _PyAST_JoinedStr(resized_exprs, a->lineno, a->col_offset,
                             b->end_lineno, b->end_col_offset,
                             p->arena);
