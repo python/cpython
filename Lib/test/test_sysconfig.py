@@ -636,7 +636,7 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
         # The 'd' flag should always be the last one on Windows.
         # On Windows, the debug flag is used differently with a underscore prefix.
         # For example, `python{X}.{Y}td` on Unix and `python{X}.{Y}t_d.exe` on Windows.
-        if support.Py_DEBUG and sys.platform.endswith('win'):
+        if support.Py_DEBUG and sys.platform.startswith('win'):
             self.assertEndsWith(ABIFLAGS, '_d')
 
     def test_abi_thread(self):
