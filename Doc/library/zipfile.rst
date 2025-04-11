@@ -137,6 +137,29 @@ The module defines the following items:
       methods, and may either refuse to process the ZIP file altogether,
       or fail to extract individual files.
 
+.. data:: PreserveMode.NONE
+
+    Constant for use in :meth:`ZipFile.extractall` and :meth:`ZipFile.extract` methods. Do not
+    preserve permissions of zipped files.
+
+    .. versionadded:: next
+
+.. data:: PreserveMode.SAFE
+
+    Constant for use in :meth:`ZipFile.extractall` and :meth:`ZipFile.extract` methods.
+    Preserve safe subset of permissions of the zipped files only: permissions
+    for reading, writing, execution for user, group and others.
+
+    .. versionadded:: next
+
+.. data:: PreserveMode.ALL
+
+    Constant for use in :meth:`ZipFile.extractall` and :meth:`ZipFile.extract` methods.
+    Preserve all the permissions of the zipped files, including unsafe ones:
+    UID bit (:data:`stat.S_ISUID`), group UID bit (:data:`stat.S_ISGID`),
+    sticky bit (:data:`stat.S_ISVTX`).
+
+    .. versionadded:: next
 
 .. seealso::
 
@@ -347,13 +370,15 @@ ZipFile Objects
       object was changed from ``'r'`` to ``'rb'``.
 
 
-.. method:: ZipFile.extract(member, path=None, pwd=None)
+.. method:: ZipFile.extract(member, path=None, pwd=None, \
+                            preserve_permissions=PreserveMode.NONE)
 
    Extract a member from the archive to the current working directory; *member*
    must be its full name or a :class:`ZipInfo` object.  Its file information is
-   extracted as accurately as possible.  *path* specifies a different directory
-   to extract to.  *member* can be a filename or a :class:`ZipInfo` object.
-   *pwd* is the password used for encrypted files as a :class:`bytes` object.
+   extracted as accurately as possible.  *member* can be a filename or a
+   :class:`ZipInfo` object.
+
+   *path*, *pwd*, and *preserve_permissions* have the same meaning as for :meth:`extract`.
 
    Returns the normalized path created (a directory or new file).
 
@@ -374,13 +399,17 @@ ZipFile Objects
    .. versionchanged:: 3.6.2
       The *path* parameter accepts a :term:`path-like object`.
 
+   .. versionchanged:: next
+      The *preserve_permissions* parameter was added.
 
-.. method:: ZipFile.extractall(path=None, members=None, pwd=None)
 
-   Extract all members from the archive to the current working directory.  *path*
-   specifies a different directory to extract to.  *members* is optional and must
-   be a subset of the list returned by :meth:`namelist`.  *pwd* is the password
-   used for encrypted files as a :class:`bytes` object.
+.. method:: ZipFile.extractall(path=None, members=None, pwd=None, \
+                               preserve_permissions=PreserveMode.NONE)
+
+   Extract all members from the archive to the current working directory.
+   *members* is optional and must be a subset of the list returned by :meth:`namelist`.
+
+   *path*, *pwd*, and *preserve_permissions* have the same meaning as for :meth:`extract`.
 
    .. warning::
 
@@ -396,6 +425,9 @@ ZipFile Objects
 
    .. versionchanged:: 3.6.2
       The *path* parameter accepts a :term:`path-like object`.
+
+   .. versionchanged:: next
+      The *preserve_permissions* parameter was added.
 
 
 .. method:: ZipFile.printdir()
