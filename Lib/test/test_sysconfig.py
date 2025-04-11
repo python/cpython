@@ -628,12 +628,15 @@ class TestSysConfig(unittest.TestCase, VirtualEnvironmentMixin):
     def test_abi_debug(self):
         ABIFLAGS = sysconfig.get_config_var('ABIFLAGS')
         if support.Py_DEBUG:
-            # The 'd' flag should always be the last one.
-            # On Windows, the debug flag is used differently with a underscore prefix.
-            # For example, `python{X}.{Y}td` on Unix and `python{X}.{Y}t_d.exe` on Windows.
-            self.assertEndsWith(ABIFLAGS, 'd')
+            self.assertIn('d', ABIFLAGS)
         else:
             self.assertNotIn('d', ABIFLAGS)
+
+        # The 'd' flag should always be the last one on Windows.
+        # On Windows, the debug flag is used differently with a underscore prefix.
+        # For example, `python{X}.{Y}td` on Unix and `python{X}.{Y}t_d.exe` on Windows.
+        if support.Py_DEBUG and sys.platform.endswith('win'):
+            self.assertEndsWith(ABIFLAGS, '_d')
 
     def test_abi_thread(self):
         abi_thread = sysconfig.get_config_var('abi_thread')
