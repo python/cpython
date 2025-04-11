@@ -1,9 +1,11 @@
+import gc
 import itertools
 import threading
 import time
+import traceback
 import weakref
 from concurrent import futures
-from operator import add
+from operator import add, itemgetter
 from test import support
 from test.support import Py_GIL_DISABLED
 
@@ -70,8 +72,40 @@ class ExecutorTest:
         i = self.executor.map(divmod, [1, 1, 1, 1], [2, 3, 0, 5])
         self.assertEqual(i.__next__(), (0, 1))
         self.assertEqual(i.__next__(), (0, 1))
-        with self.assertRaises(ZeroDivisionError):
-            i.__next__()
+
+        exception = None
+        try:
+            next(i)
+        except Exception as e:
+            exception = e
+        self.assertTrue(
+            isinstance(exception, ZeroDivisionError),
+            msg="next should raise a ZeroDivisionError",
+        )
+
+        # free-threading builds need this pause on Ubuntu (ARM) and Windows
+        time.sleep(1)
+
+        self.assertFalse(
+            gc.get_referrers(exception),
+            msg="the exception should not have any referrers",
+        )
+
+        frames = map(itemgetter(0), traceback.walk_tb(exception.__traceback__))
+
+        # skip current frame
+        next(frames)
+
+        self.assertFalse(
+            [
+                (var, val)
+                for frame in frames
+                for var, val in frame.f_locals.items()
+                if isinstance(val, Exception)
+                and frame in map(itemgetter(0), traceback.walk_tb(val.__traceback__))
+            ],
+            msg=f"the exception's traceback should not contain an exception that captures itself in its own traceback",
+        )
 
     @support.requires_resource('walltime')
     def test_map_timeout(self):
@@ -155,7 +189,7 @@ class ExecutorTest:
         self.assertEqual(
             next(ints),
             buffersize,
-            msg="should have fetched only `buffersize` elements from `ints`.",
+            msg="should have fetched only `buffersize` elements from `ints`",
         )
 
     def test_shutdown_race_issue12456(self):
