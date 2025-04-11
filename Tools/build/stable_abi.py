@@ -548,8 +548,7 @@ def gcc_get_limited_api_macros(headers):
         text=True,
     )
 
-    matches = re.findall(r"#define (\w+)", preprocessor_output_with_macros)
-    return set(matches)
+    return set(re.findall(r"#define (\w+)", preprocessor_output_with_macros))
 
 
 def gcc_get_limited_api_definitions(headers):
@@ -607,7 +606,7 @@ def check_private_names(manifest):
         if name.startswith('_') and not item.abi_only:
             raise ValueError(
                 f'`{name}` is private (underscore-prefixed) and should be '
-                f'removed from the stable ABI list or marked `abi_only`')
+                'removed from the stable ABI list or marked `abi_only`')
 
 def check_dump(manifest, filename):
     """Check that manifest.dump() corresponds to the data.
@@ -647,8 +646,8 @@ def main():
     )
     parser.add_argument(
         "--generate-all", action='store_true',
-        help="as --generate, but generate all file(s) using default filenames. "
-             "(unlike --all, does not run any extra checks)",
+        help="as --generate, but generate all file(s) using default filenames."
+        " (unlike --all, does not run any extra checks)",
     )
     parser.add_argument(
         "-a", "--all", action='store_true',

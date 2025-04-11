@@ -434,7 +434,7 @@ def get_identifiers_and_strings() -> 'tuple[set[str], dict[str, str]]':
                 # Give a nice message for common mistakes.
                 # To cover tricky cases (like "\n") we also generate C asserts.
                 raise ValueError(
-                    f'do not use &_Py_ID or &_Py_STR for one-character latin-1 '
+                    'do not use &_Py_ID or &_Py_STR for one-character latin-1 '
                     f'strings, use _Py_LATIN1_CHR instead: {string!r}')
             if string not in strings:
                 strings[string] = name

@@ -6,19 +6,18 @@ set -e -x
 # sync with this script. Use the same container image than the job so the job
 # doesn't need to run autoreconf in a container.
 IMAGE="ghcr.io/python/autoconf:2025.01.02.12581854023"
-# shellcheck disable=SC2034
 AUTORECONF="autoreconf -ivf -Werror"
 
 WORK_DIR="/src"
 
-abs_srcdir="$(cd "$(dirname "$0")/../.."; pwd)"
+abs_srcdir=$(cd $(dirname $0)/../..; pwd)
 
 if podman --version &>/dev/null; then
     RUNTIME="podman"
 elif docker --version &>/dev/null; then
     RUNTIME="docker"
 else
-    echo "$* needs either Podman or Docker container runtime." >&2
+    echo "$@ needs either Podman or Docker container runtime." >&2
     exit 1
 fi
 

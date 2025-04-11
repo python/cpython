@@ -12,7 +12,6 @@ select = [
     "LOG",     # flake8-logging
     "PGH",     # pygrep-hooks
     "PT",      # flake8-pytest-style
-    "PYI",     # flake8-pyi
     "RUF100",  # Ban unused `# noqa` comments
     "UP",      # pyupgrade
     "W",       # pycodestyle
@@ -29,11 +28,4 @@ ignore = [
 [lint.per-file-ignores]
 "{check_extension_modules,freeze_modules,generate_re_casefix,generate_sre_constants}.py" = [
     "UP031",  # Use format specifiers instead of percent format
-]
-
-"check_extension_modules.py" = [
-    "PYI024",  # Use `typing.NamedTuple` instead of `collections.namedtuple`
-]
-"freeze_modules.py" = [
-    "PYI024",  # Use `typing.NamedTuple` instead of `collections.namedtuple`
 ]
