@@ -26,31 +26,22 @@ if __name__ == "__main__":
         "-v", "--verbose", action="store_true", help="echo commands as they are run"
     )
     args = parser.parse_args()
-
-    if len(args.target) == 1:
-        target = args.target[0]
+    for target in args.target:
         target.debug = args.debug
+        target.force = args.force
         target.verbose = args.verbose
-        target.build(pathlib.Path.cwd(), comment=comment, force=args.force)
+        target.build(
+            pathlib.Path.cwd(),
+            comment=comment,
+            stencils_h=f"jit_stencils-{target.triple}.h",
+            force=args.force,
+        )
 
-    else:
-        # Build for multiple targets (e.g. universal2)
-        for target in args.target:
-            target.debug = args.debug
-            target.force = args.force
-            target.verbose = args.verbose
-            target.build(
-                pathlib.Path.cwd(),
-                comment=comment,
-                stencils_h=f"jit_stencils-{target.triple}.h",
-                force=args.force,
-            )
+    with open("jit_stencils.h", "w") as fp:
+        for idx, target in enumerate(args.target):
+            fp.write(f"#{'if' if idx == 0 else 'elif'} {target.condition}\n")
+            fp.write(f'#include "jit_stencils-{target.triple}.h"\n')
 
-        with open("jit_stencils.h", "w") as fp:
-            for idx, target in enumerate(args.target):
-                fp.write(f"#{'if' if idx == 0 else 'elif'} {target.condition}\n")
-                fp.write(f'#   include "jit_stencils-{target.triple}.h"\n')
-
-            fp.write("#else\n")
-            fp.write('#  error "unexpected target"\n')
-            fp.write("#endif\n")
+        fp.write("#else\n")
+        fp.write('#error "unexpected target"\n')
+        fp.write("#endif\n")
