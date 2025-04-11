@@ -565,6 +565,9 @@ all_ins(PyObject* m)
 #ifdef F_NOTIFY
     if (PyModule_AddIntMacro(m, F_NOTIFY)) return -1;
 #endif
+#ifdef F_DUPFD_QUERY
+    if (PyModule_AddIntMacro(m, F_DUPFD_QUERY)) return -1;
+#endif
 /* Old BSD flock(). */
 #ifdef F_EXLCK
     if (PyModule_AddIntMacro(m, F_EXLCK)) return -1;
