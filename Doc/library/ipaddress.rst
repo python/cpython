@@ -562,7 +562,7 @@ dictionaries.
 
       The last address in the network, the address with all the host bits set.
       This is the same as the broadcast_address for IPv4 networks.
-      
+
    .. attribute:: broadcast_address
 
       The same as :attr:`last_address` for IPv4 networks. Packets sent to this
