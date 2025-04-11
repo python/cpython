@@ -497,10 +497,11 @@ _PyType_GetBases(PyTypeObject *self)
 static inline void
 set_tp_bases(PyTypeObject *self, PyObject *bases, int initial)
 {
-    assert(PyTuple_CheckExact(bases));
+    assert(PyTuple_Check(bases));
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         // XXX tp_bases can probably be statically allocated for each
         // static builtin type.
+        assert(PyTuple_CheckExact(bases));
         assert(initial);
         assert(self->tp_bases == NULL);
         if (PyTuple_GET_SIZE(bases) == 0) {
