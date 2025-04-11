@@ -1,0 +1,2 @@
+Fix a crash when using :c:func:`PyEval_SetTrace` on the :term:`free threaded
+<free threading>` build.
