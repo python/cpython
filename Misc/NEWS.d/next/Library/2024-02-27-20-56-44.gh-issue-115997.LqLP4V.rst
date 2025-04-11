@@ -1,0 +1,5 @@
+Make ``http.client.HTTPResponse.read1`` and
+``http.client.HTTPResponse.readline`` raise :exc:`http.client.IncompleteRead`
+instead of returning zero bytes if a connection is closed before an expected
+number of bytes has been read. Also, ``http.client.HTTPResponse.readline``
+raises when an expected newline has not been reached. Patch by Illia Volochii.
