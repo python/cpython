@@ -1,0 +1,1 @@
+Make :class:`EnvironmentVarGuard <test.support.os_helper.EnvironmentVarGuard>` thread safe
