@@ -585,12 +585,13 @@ class RunStringTests(TestBase):
 
     def setUp(self):
         super().setUp()
-        self.id = _interpreters.create()
+        # Use `_id`, because `id()` is part of TestCase API.
+        self._id = _interpreters.create()
 
     def test_success(self):
         script, file = _captured_script('print("it worked!", end="")')
         with file:
-            _interpreters.run_string(self.id, script)
+            _interpreters.run_string(self._id, script)
             out = file.read()
 
         self.assertEqual(out, 'it worked!')
@@ -599,7 +600,7 @@ class RunStringTests(TestBase):
         script, file = _captured_script('print("it worked!", end="")')
         with file:
             def f():
-                _interpreters.run_string(self.id, script)
+                _interpreters.run_string(self._id, script)
 
             t = threading.Thread(target=f)
             t.start()
@@ -712,16 +713,16 @@ class RunStringTests(TestBase):
                     with open('{file.name}', 'w', encoding='utf-8') as out:
                         out.write('{expected}')
                 """)
-            _interpreters.run_string(self.id, script)
+            _interpreters.run_string(self._id, script)
 
             file.seek(0)
             content = file.read()
             self.assertEqual(content, expected)
 
     def test_already_running(self):
-        with _running(self.id):
+        with _running(self._id):
             with self.assertRaises(_interpreters.InterpreterError):
-                _interpreters.run_string(self.id, 'print("spam")')
+                _interpreters.run_string(self._id, 'print("spam")')
 
     def test_does_not_exist(self):
         id = 0
@@ -740,11 +741,11 @@ class RunStringTests(TestBase):
 
     def test_bad_script(self):
         with self.assertRaises(TypeError):
-            _interpreters.run_string(self.id, 10)
+            _interpreters.run_string(self._id, 10)
 
     def test_bytes_for_script(self):
         with self.assertRaises(TypeError):
-            _interpreters.run_string(self.id, b'print("spam")')
+            _interpreters.run_string(self._id, b'print("spam")')
 
     def test_str_subclass_string(self):
         class StrSubclass(str): pass
@@ -771,8 +772,8 @@ class RunStringTests(TestBase):
             with open({w}, 'wb') as chan:
                 pickle.dump(ns, chan)
             """)
-        _interpreters.set___main___attrs(self.id, shared)
-        _interpreters.run_string(self.id, script)
+        _interpreters.set___main___attrs(self._id, shared)
+        _interpreters.run_string(self._id, script)
         with open(r, 'rb') as chan:
             ns = pickle.load(chan)
 
@@ -782,7 +783,7 @@ class RunStringTests(TestBase):
         self.assertIsNone(ns['cheddar'])
 
     def test_shared_overwrites(self):
-        _interpreters.run_string(self.id, dedent("""
+        _interpreters.run_string(self._id, dedent("""
             spam = 'eggs'
             ns1 = dict(vars())
             del ns1['__builtins__']
@@ -793,8 +794,8 @@ class RunStringTests(TestBase):
             ns2 = dict(vars())
             del ns2['__builtins__']
         """)
-        _interpreters.set___main___attrs(self.id, shared)
-        _interpreters.run_string(self.id, script)
+        _interpreters.set___main___attrs(self._id, shared)
+        _interpreters.run_string(self._id, script)
 
         r, w = os.pipe()
         script = dedent(f"""
@@ -804,7 +805,7 @@ class RunStringTests(TestBase):
             with open({w}, 'wb') as chan:
                 pickle.dump(ns, chan)
             """)
-        _interpreters.run_string(self.id, script)
+        _interpreters.run_string(self._id, script)
         with open(r, 'rb') as chan:
             ns = pickle.load(chan)
 
@@ -825,8 +826,8 @@ class RunStringTests(TestBase):
             with open({w}, 'wb') as chan:
                 pickle.dump(ns, chan)
             """)
-        _interpreters.set___main___attrs(self.id, shared)
-        _interpreters.run_string(self.id, script)
+        _interpreters.set___main___attrs(self._id, shared)
+        _interpreters.run_string(self._id, script)
         with open(r, 'rb') as chan:
             ns = pickle.load(chan)
 
@@ -834,7 +835,7 @@ class RunStringTests(TestBase):
 
     def test_main_reused(self):
         r, w = os.pipe()
-        _interpreters.run_string(self.id, dedent(f"""
+        _interpreters.run_string(self._id, dedent(f"""
             spam = True
 
             ns = dict(vars())
@@ -848,7 +849,7 @@ class RunStringTests(TestBase):
             ns1 = pickle.load(chan)
 
         r, w = os.pipe()
-        _interpreters.run_string(self.id, dedent(f"""
+        _interpreters.run_string(self._id, dedent(f"""
             eggs = False
 
             ns = dict(vars())
@@ -877,7 +878,7 @@ class RunStringTests(TestBase):
             with open({w}, 'wb') as chan:
                 pickle.dump(ns, chan)
             """)
-        _interpreters.run_string(self.id, script)
+        _interpreters.run_string(self._id, script)
         with open(r, 'rb') as chan:
             ns = pickle.load(chan)
 
@@ -921,13 +922,14 @@ class RunFailedTests(TestBase):
 
     def setUp(self):
         super().setUp()
-        self.id = _interpreters.create()
+        # Use `_id`, because `id()` is part of TestCase API.
+        self._id = _interpreters.create()
 
     def add_module(self, modname, text):
         import tempfile
         tempdir = tempfile.mkdtemp()
         self.addCleanup(lambda: os_helper.rmtree(tempdir))
-        _interpreters.run_string(self.id, dedent(f"""
+        _interpreters.run_string(self._id, dedent(f"""
             import sys
             sys.path.insert(0, {tempdir!r})
             """))
@@ -949,11 +951,11 @@ class RunFailedTests(TestBase):
                 raise NeverError  # never raised
                 """).format(dedent(text))
             if fails:
-                err = _interpreters.run_string(self.id, script)
+                err = _interpreters.run_string(self._id, script)
                 self.assertIsNot(err, None)
                 return err
             else:
-                err = _interpreters.run_string(self.id, script)
+                err = _interpreters.run_string(self._id, script)
                 self.assertIs(err, None)
                 return None
         except:
@@ -1078,7 +1080,8 @@ class RunFuncTests(TestBase):
 
     def setUp(self):
         super().setUp()
-        self.id = _interpreters.create()
+        # Use `_id`, because `id()` is part of TestCase API.
+        self._id = _interpreters.create()
 
     def test_success(self):
         r, w = os.pipe()
@@ -1088,8 +1091,8 @@ class RunFuncTests(TestBase):
             with open(w, 'w', encoding="utf-8") as spipe:
                 with contextlib.redirect_stdout(spipe):
                     print('it worked!', end='')
-        _interpreters.set___main___attrs(self.id, dict(w=w))
-        _interpreters.run_func(self.id, script)
+        _interpreters.set___main___attrs(self._id, dict(w=w))
+        _interpreters.run_func(self._id, script)
 
         with open(r, encoding="utf-8") as outfile:
             out = outfile.read()
@@ -1105,8 +1108,8 @@ class RunFuncTests(TestBase):
                 with contextlib.redirect_stdout(spipe):
                     print('it worked!', end='')
         def f():
-            _interpreters.set___main___attrs(self.id, dict(w=w))
-            _interpreters.run_func(self.id, script)
+            _interpreters.set___main___attrs(self._id, dict(w=w))
+            _interpreters.run_func(self._id, script)
         t = threading.Thread(target=f)
         t.start()
         t.join()
@@ -1126,8 +1129,8 @@ class RunFuncTests(TestBase):
                 with contextlib.redirect_stdout(spipe):
                     print('it worked!', end='')
         code = script.__code__
-        _interpreters.set___main___attrs(self.id, dict(w=w))
-        _interpreters.run_func(self.id, code)
+        _interpreters.set___main___attrs(self._id, dict(w=w))
+        _interpreters.run_func(self._id, code)
 
         with open(r, encoding="utf-8") as outfile:
             out = outfile.read()
@@ -1140,7 +1143,7 @@ class RunFuncTests(TestBase):
             assert spam
 
         with self.assertRaises(ValueError):
-            _interpreters.run_func(self.id, script)
+            _interpreters.run_func(self._id, script)
 
     # XXX This hasn't been fixed yet.
     @unittest.expectedFailure
@@ -1148,38 +1151,38 @@ class RunFuncTests(TestBase):
         def script():
             return 'spam'
         with self.assertRaises(ValueError):
-            _interpreters.run_func(self.id, script)
+            _interpreters.run_func(self._id, script)
 
     def test_args(self):
         with self.subTest('args'):
             def script(a, b=0):
                 assert a == b
             with self.assertRaises(ValueError):
-                _interpreters.run_func(self.id, script)
+                _interpreters.run_func(self._id, script)
 
         with self.subTest('*args'):
             def script(*args):
                 assert not args
             with self.assertRaises(ValueError):
-                _interpreters.run_func(self.id, script)
+                _interpreters.run_func(self._id, script)
 
         with self.subTest('**kwargs'):
             def script(**kwargs):
                 assert not kwargs
             with self.assertRaises(ValueError):
-                _interpreters.run_func(self.id, script)
+                _interpreters.run_func(self._id, script)
 
         with self.subTest('kwonly'):
             def script(*, spam=True):
                 assert spam
             with self.assertRaises(ValueError):
-                _interpreters.run_func(self.id, script)
+                _interpreters.run_func(self._id, script)
 
         with self.subTest('posonly'):
             def script(spam, /):
                 assert spam
             with self.assertRaises(ValueError):
-                _interpreters.run_func(self.id, script)
+                _interpreters.run_func(self._id, script)
 
 
 if __name__ == '__main__':
