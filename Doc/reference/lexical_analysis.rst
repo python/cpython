@@ -99,7 +99,7 @@ which is recognized by Bram Moolenaar's VIM.
 
 If no encoding declaration is found, the default encoding is UTF-8.  If the
 implicit or explicit encoding of a file is UTF-8, an initial UTF-8 byte-order
-mark (b'\xef\xbb\xbf') is ignored rather than being a syntax error.
+mark (``b'\xef\xbb\xbf'``) is ignored rather than being a syntax error.
 
 If an encoding is declared, the encoding name must be recognized by Python
 (see :ref:`standard-encodings`). The
