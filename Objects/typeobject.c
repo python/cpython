@@ -4163,9 +4163,8 @@ type_new_set_name(const type_new_ctx *ctx, PyTypeObject *type)
 
 /* Set __module__ in the dict */
 static int
-type_new_set_module(PyTypeObject *type)
+type_new_set_module(PyObject *dict)
 {
-    PyObject *dict = lookup_tp_dict(type);
     int r = PyDict_Contains(dict, &_Py_ID(__module__));
     if (r < 0) {
         return -1;
@@ -4192,10 +4191,9 @@ type_new_set_module(PyTypeObject *type)
 /* Set ht_qualname to dict['__qualname__'] if available, else to
    __name__.  The __qualname__ accessor will look for ht_qualname. */
 static int
-type_new_set_ht_name(PyTypeObject *type)
+type_new_set_ht_name(PyTypeObject *type, PyObject *dict)
 {
     PyHeapTypeObject *et = (PyHeapTypeObject *)type;
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *qualname;
     if (PyDict_GetItemRef(dict, &_Py_ID(__qualname__), &qualname) < 0) {
         return -1;
@@ -4224,9 +4222,8 @@ type_new_set_ht_name(PyTypeObject *type)
    and is a string.  The __doc__ accessor will first look for tp_doc;
    if that fails, it will still look into __dict__. */
 static int
-type_new_set_doc(PyTypeObject *type)
+type_new_set_doc(PyTypeObject *type, PyObject* dict)
 {
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *doc = PyDict_GetItemWithError(dict, &_Py_ID(__doc__));
     if (doc == NULL) {
         if (PyErr_Occurred()) {
@@ -4260,9 +4257,8 @@ type_new_set_doc(PyTypeObject *type)
 
 
 static int
-type_new_staticmethod(PyTypeObject *type, PyObject *attr)
+type_new_staticmethod(PyObject *dict, PyObject *attr)
 {
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *func = PyDict_GetItemWithError(dict, attr);
     if (func == NULL) {
         if (PyErr_Occurred()) {
@@ -4288,9 +4284,8 @@ type_new_staticmethod(PyTypeObject *type, PyObject *attr)
 
 
 static int
-type_new_classmethod(PyTypeObject *type, PyObject *attr)
+type_new_classmethod(PyObject *dict, PyObject *attr)
 {
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *func = PyDict_GetItemWithError(dict, attr);
     if (func == NULL) {
         if (PyErr_Occurred()) {
@@ -4391,9 +4386,8 @@ type_new_set_slots(const type_new_ctx *ctx, PyTypeObject *type)
 
 /* store type in class' cell if one is supplied */
 static int
-type_new_set_classcell(PyTypeObject *type)
+type_new_set_classcell(PyTypeObject *type, PyObject *dict)
 {
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *cell = PyDict_GetItemWithError(dict, &_Py_ID(__classcell__));
     if (cell == NULL) {
         if (PyErr_Occurred()) {
@@ -4418,9 +4412,8 @@ type_new_set_classcell(PyTypeObject *type)
 }
 
 static int
-type_new_set_classdictcell(PyTypeObject *type)
+type_new_set_classdictcell(PyObject *dict)
 {
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *cell = PyDict_GetItemWithError(dict, &_Py_ID(__classdictcell__));
     if (cell == NULL) {
         if (PyErr_Occurred()) {
@@ -4451,30 +4444,33 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
         return -1;
     }
 
-    if (type_new_set_module(type) < 0) {
+    PyObject *dict = lookup_tp_dict(type);
+    assert(dict);
+
+    if (type_new_set_module(dict) < 0) {
         return -1;
     }
 
-    if (type_new_set_ht_name(type) < 0) {
+    if (type_new_set_ht_name(type, dict) < 0) {
         return -1;
     }
 
-    if (type_new_set_doc(type) < 0) {
+    if (type_new_set_doc(type, dict) < 0) {
         return -1;
     }
 
     /* Special-case __new__: if it's a plain function,
        make it a static function */
-    if (type_new_staticmethod(type, &_Py_ID(__new__)) < 0) {
+    if (type_new_staticmethod(dict, &_Py_ID(__new__)) < 0) {
         return -1;
     }
 
     /* Special-case __init_subclass__ and __class_getitem__:
        if they are plain functions, make them classmethods */
-    if (type_new_classmethod(type, &_Py_ID(__init_subclass__)) < 0) {
+    if (type_new_classmethod(dict, &_Py_ID(__init_subclass__)) < 0) {
         return -1;
     }
-    if (type_new_classmethod(type, &_Py_ID(__class_getitem__)) < 0) {
+    if (type_new_classmethod(dict, &_Py_ID(__class_getitem__)) < 0) {
         return -1;
     }
 
@@ -4484,10 +4480,10 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
 
     type_new_set_slots(ctx, type);
 
-    if (type_new_set_classcell(type) < 0) {
+    if (type_new_set_classcell(type, dict) < 0) {
         return -1;
     }
-    if (type_new_set_classdictcell(type) < 0) {
+    if (type_new_set_classdictcell(dict) < 0) {
         return -1;
     }
     return 0;
@@ -5652,6 +5648,26 @@ find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
     *error = 0;
 done:
     Py_DECREF(mro);
+    return res;
+}
+
+static PyObject *
+find_name_in_mro_new(PyObject *mro_dict, PyObject *name, int *error)
+{
+    ASSERT_TYPE_LOCK_HELD();
+
+    Py_hash_t hash = _PyObject_HashFast(name);
+    if (hash == -1) {
+        *error = -1;
+        return NULL;
+    }
+
+    PyObject *res = NULL;
+    if (_PyDict_GetItemRef_KnownHash((PyDictObject *)mro_dict, name, hash, &res) < 0) {
+        *error = -1;
+    } else {
+        *error = 0;
+    }
     return res;
 }
 
@@ -10965,6 +10981,7 @@ static pytype_slotdef slotdefs[] = {
     {NULL}
 };
 
+
 /* Given a type pointer and an offset gotten from a slotdef entry, return a
    pointer to the actual slot.  This is not quite the same as simply adding
    the offset to the type pointer, since it takes care to indirect through the
@@ -11005,48 +11022,6 @@ slotptr(PyTypeObject *type, int ioffset)
     if (ptr != NULL)
         ptr += offset;
     return (void **)ptr;
-}
-
-/* Return a slot pointer for a given name, but ONLY if the attribute has
-   exactly one slot function.  The name must be an interned string. */
-static void **
-resolve_slotdups(PyTypeObject *type, PyObject *name)
-{
-    /* XXX Maybe this could be optimized more -- but is it worth it? */
-
-    /* pname and ptrs act as a little cache */
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-#define pname _Py_INTERP_CACHED_OBJECT(interp, type_slots_pname)
-#define ptrs _Py_INTERP_CACHED_OBJECT(interp, type_slots_ptrs)
-    pytype_slotdef *p, **pp;
-    void **res, **ptr;
-
-    if (pname != name) {
-        /* Collect all slotdefs that match name into ptrs. */
-        pname = name;
-        pp = ptrs;
-        for (p = slotdefs; p->name_strobj; p++) {
-            if (p->name_strobj == name)
-                *pp++ = p;
-        }
-        *pp = NULL;
-    }
-
-    /* Look in all slots of the type matching the name. If exactly one of these
-       has a filled-in slot, return a pointer to that slot.
-       Otherwise, return NULL. */
-    res = NULL;
-    for (pp = ptrs; *pp; pp++) {
-        ptr = slotptr(type, (*pp)->offset);
-        if (ptr == NULL || *ptr == NULL)
-            continue;
-        if (res != NULL)
-            return NULL;
-        res = ptr;
-    }
-    return res;
-#undef pname
-#undef ptrs
 }
 
 
@@ -11105,7 +11080,7 @@ resolve_slotdups(PyTypeObject *type, PyObject *name)
  * because that's convenient for fixup_slot_dispatchers(). This function never
  * sets an exception: if an internal error happens (unlikely), it's ignored. */
 static pytype_slotdef *
-update_one_slot(PyTypeObject *type, pytype_slotdef *p)
+update_one_slot(PyTypeObject *type, pytype_slotdef *p, PyObject *mro_dict)
 {
     ASSERT_TYPE_LOCK_HELD();
 
@@ -11136,7 +11111,11 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p)
     assert(!PyErr_Occurred());
     do {
         /* Use faster uncached lookup as we won't get any cache hits during type setup. */
-        descr = find_name_in_mro(type, p->name_strobj, &error);
+        if (mro_dict == NULL) {
+            descr = find_name_in_mro(type, p->name_strobj, &error);
+        } else {
+            descr = find_name_in_mro_new(mro_dict, p->name_strobj, &error);
+        }
         if (descr == NULL) {
             if (error == -1) {
                 /* It is unlikely but not impossible that there has been an exception
@@ -11151,7 +11130,10 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p)
         }
         if (Py_IS_TYPE(descr, &PyWrapperDescr_Type) &&
             ((PyWrapperDescrObject *)descr)->d_base->name_strobj == p->name_strobj) {
-            void **tptr = resolve_slotdups(type, p->name_strobj);
+            void **tptr = NULL;
+            if (p->name_count == 1)
+                tptr = slotptr(type, p->offset);
+
             if (tptr == NULL || tptr == ptr)
                 generic = p->function;
             d = (PyWrapperDescrObject *)descr;
@@ -11227,7 +11209,7 @@ update_slots_callback(PyTypeObject *type, void *data)
 
     pytype_slotdef **pp = (pytype_slotdef **)data;
     for (; *pp; pp++) {
-        update_one_slot(type, *pp);
+        update_one_slot(type, *pp, NULL);
     }
     return 0;
 }
@@ -11280,10 +11262,37 @@ fixup_slot_dispatchers(PyTypeObject *type)
     // where we'd like to assert that the type is locked.
     BEGIN_TYPE_LOCK();
 
+    PyObject *mro = lookup_tp_mro(type);
+    assert(mro);
+
+    PyObject *mro_dict = NULL;
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *base = PyTuple_GET_ITEM(mro, n-i-1);
+        PyObject *dict = lookup_tp_dict(_PyType_CAST(base));
+        assert(dict && PyDict_Check(dict));
+
+        if (i == 0) {
+            mro_dict = PyDict_Copy(dict);
+            if (!mro_dict) {
+                PyErr_Clear();
+                break;
+            }
+        } else {
+            if (PyDict_Merge(mro_dict, dict, 1) < 0) {
+                Py_CLEAR(mro_dict);
+                PyErr_Clear();
+                break;
+            }
+        }
+    }
+
     assert(!PyErr_Occurred());
     for (pytype_slotdef *p = slotdefs; p->name; ) {
-        p = update_one_slot(type, p);
+        p = update_one_slot(type, p, mro_dict);
     }
+
+    Py_XDECREF(mro_dict);
 
     END_TYPE_LOCK();
 }
@@ -11302,6 +11311,83 @@ update_all_slots(PyTypeObject* type)
         /* update_slot returns int but can't actually fail */
         update_slot(type, p->name_strobj);
     }
+}
+
+int
+_PyType_InitSlotDefsNameCounts(PyInterpreterState *interp)
+{
+    if (interp != interp->runtime->interpreters.main) {
+        return 0;
+    }
+    PyObject *bytes = NULL;
+    PyObject *cache = PyDict_New();
+    if (!cache) {
+        return -1;
+    }
+
+    pytype_slotdef *p;
+    Py_ssize_t idx = 0;
+    for (p = slotdefs; p->name_strobj; p++, idx++) {
+        Py_hash_t hash = _PyObject_HashFast(p->name_strobj);
+        if (hash == -1) {
+            goto error;
+        }
+        assert (idx < 255);
+
+        if (_PyDict_GetItemRef_KnownHash_LockHeld((PyDictObject *)cache,
+                                                  p->name_strobj, hash,
+                                                  &bytes) < 0) {
+            goto error;
+        }
+
+        if (!bytes) {
+            Py_ssize_t size = sizeof(uint8_t) * (1 + MAX_EQUIV);
+            bytes = PyBytes_FromStringAndSize(NULL, size);
+            if (!bytes) {
+                goto error;
+            }
+
+            uint8_t *data = (uint8_t *)PyBytes_AS_STRING(bytes);
+            data[0] = 0;
+
+            if (_PyDict_SetItem_KnownHash_LockHeld((PyDictObject *)cache,
+                                                   p->name_strobj,
+                                                   bytes, hash) < 0) {
+                goto error;
+            }
+        }
+
+        assert (PyBytes_CheckExact(bytes));
+        uint8_t *data = (uint8_t *)PyBytes_AS_STRING(bytes);
+
+        data[0] += 1;
+        assert (data[0] < MAX_EQUIV);
+
+        data[data[0]] = (uint8_t)idx;
+
+        Py_CLEAR(bytes);
+    }
+
+    Py_ssize_t pos=0;
+    PyObject *key=NULL;
+    PyObject *value=NULL;
+    while (PyDict_Next(cache, &pos, &key, &value)) {
+        uint8_t *data = (uint8_t *)PyBytes_AS_STRING(value);
+        uint8_t n = data[0];
+        uint8_t i = 0;
+        for(; i < n; i++) {
+            uint8_t idx = data[i + 1];
+            slotdefs[idx].name_count = n;
+        }
+    }
+
+    Py_DECREF(cache);
+    return 0;
+
+error:
+    Py_XDECREF(bytes);
+    Py_DECREF(cache);
+    return -1;
 }
 
 

@@ -1,0 +1,1 @@
+Improve class creation times by up to 40%. Patch by Sergey Miryanov.
