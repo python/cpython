@@ -1090,9 +1090,9 @@
             _PyStackRef *values;
             _PyStackRef interpolation;
             values = &stack_pointer[-4];
-            PyObject *interpolation_o = _PyInterpolation_FromStackRefSteal(values);
+            PyObject *interpolation_o = _PyInterpolation_FromStackRefStealOnSuccess(values);
             if (interpolation_o == NULL) {
-                JUMP_TO_LABEL(pop_4_error);
+                JUMP_TO_LABEL(error);
             }
             interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
             stack_pointer[-4] = interpolation;
@@ -1341,7 +1341,9 @@
                 assert(WITHIN_STACK_BOUNDS());
                 JUMP_TO_LABEL(error);
             }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *template_o = _PyTemplate_FromValues(pieces_o, oparg);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef tmp;
@@ -1374,12 +1376,20 @@
             _PyStackRef list;
             _PyStackRef template;
             list = stack_pointer[-1];
-            PyObject *template_o = _PyTemplate_FromListStackRef(list);
+            PyObject *list_o = PyStackRef_AsPyObjectBorrow(list);
+            PyObject *template_o = _PyTemplate_FromList(list_o);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(list);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (template_o == NULL) {
-                JUMP_TO_LABEL(pop_1_error);
+                JUMP_TO_LABEL(error);
             }
             template = PyStackRef_FromPyObjectSteal(template_o);
-            stack_pointer[-1] = template;
+            stack_pointer[0] = template;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 

@@ -13,7 +13,7 @@ extern "C" {
 
 extern PyTypeObject _PyInterpolation_Type;
 
-PyAPI_FUNC(PyObject *) _PyInterpolation_FromStackRefSteal(_PyStackRef *values);
+PyAPI_FUNC(PyObject *) _PyInterpolation_FromStackRefStealOnSuccess(_PyStackRef *values);
 
 extern PyStatus _PyInterpolation_InitTypes(PyInterpreterState *interp);
 extern PyObject *_PyInterpolation_GetValue(PyObject *interpolation);

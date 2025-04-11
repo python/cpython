@@ -484,23 +484,20 @@ _PyTemplate_FromValues(PyObject **values, Py_ssize_t oparg)
         PyTuple_SET_ITEM(tuple, i, Py_NewRef(values[i]));
     }
 
-    PyObject *template = PyObject_CallObject((PyObject *) &_PyTemplate_Type, tuple);
+    PyObject *template = (PyObject *) template_new(&_PyTemplate_Type, tuple, NULL);
     Py_DECREF(tuple);
     return template;
 }
 
 PyObject *
-_PyTemplate_FromListStackRef(_PyStackRef ref)
+_PyTemplate_FromList(PyObject *list)
 {
-    PyObject *list = PyStackRef_AsPyObjectSteal(ref);
-
-    PyObject *tuple = PySequence_Tuple(list);
+    PyObject *tuple = PyList_AsTuple(list);
     if (!tuple) {
-        PyStackRef_CLOSE(ref);
         return NULL;
     }
 
-    PyObject *template = PyObject_CallObject((PyObject *) &_PyTemplate_Type, tuple);
+    PyObject *template = (PyObject *) template_new(&_PyTemplate_Type, tuple, NULL);
     Py_DECREF(tuple);
     return template;
 }

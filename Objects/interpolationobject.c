@@ -225,37 +225,29 @@ error:
 }
 
 PyObject *
-_PyInterpolation_FromStackRefSteal(_PyStackRef *values)
+_PyInterpolation_FromStackRefStealOnSuccess(_PyStackRef *values)
 {
-    PyObject *args = PyTuple_New(4);
-    if (!args) {
-        PyStackRef_CLOSE(values[0]);
-        PyStackRef_CLOSE(values[1]);
-        PyStackRef_XCLOSE(values[2]);
-        PyStackRef_XCLOSE(values[3]);
+    interpolationobject *interpolation = (interpolationobject *) _PyInterpolation_Type.tp_alloc(&_PyInterpolation_Type, 0);
+    if (!interpolation) {
         return NULL;
     }
 
-    PyTuple_SET_ITEM(args, 0, PyStackRef_AsPyObjectSteal(values[0]));
-    PyTuple_SET_ITEM(args, 1, PyStackRef_AsPyObjectSteal(values[1]));
+    interpolation->value = PyStackRef_AsPyObjectSteal(values[0]);
+    interpolation->expression = PyStackRef_AsPyObjectSteal(values[1]);
 
     if (PyStackRef_IsNull(values[2])) {
-        PyTuple_SET_ITEM(args, 2, Py_NewRef(Py_None));
+        interpolation->conversion = Py_NewRef(Py_None);
     } else {
-        PyObject *conversion = PyStackRef_AsPyObjectSteal(values[2]);
-        PyTuple_SET_ITEM(args, 2, conversion);
+        interpolation->conversion = PyStackRef_AsPyObjectSteal(values[2]);
     }
 
     if (PyStackRef_IsNull(values[3])) {
-        PyTuple_SET_ITEM(args, 3, &_Py_STR(empty));
+        interpolation->format_spec = Py_NewRef(&_Py_STR(empty));
     } else {
-        PyObject *format_spec = PyStackRef_AsPyObjectSteal(values[3]);
-        PyTuple_SET_ITEM(args, 3, format_spec);
+        interpolation->format_spec = PyStackRef_AsPyObjectSteal(values[3]);
     }
 
-    PyObject *interpolation = PyObject_CallObject((PyObject *) &_PyInterpolation_Type, args);
-    Py_DECREF(args);
-    return interpolation;
+    return (PyObject *) interpolation;
 }
 
 PyObject *
