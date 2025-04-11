@@ -11,6 +11,7 @@
 #include "pycore_pylifecycle.h"   // _Py_PreInitializeFromPyArgv()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_pythonrun.h"     // _PyRun_AnyFileObject()
+#include "pycore_unicodeobject.h" // _PyUnicode_Dedent()
 
 /* Includes for exit_sigint() */
 #include <stdio.h>                // perror()
@@ -242,6 +243,11 @@ pymain_run_command(wchar_t *command)
 
     if (PySys_Audit("cpython.run_command", "O", unicode) < 0) {
         return pymain_exit_err_print();
+    }
+
+    Py_SETREF(unicode, _PyUnicode_Dedent(unicode));
+    if (unicode == NULL) {
+        goto error;
     }
 
     bytes = PyUnicode_AsUTF8String(unicode);
