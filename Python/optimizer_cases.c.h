@@ -195,13 +195,32 @@
             break;
         }
 
+        case _GUARD_NOS_LIST: {
+            JitOptSymbol *nos;
+            nos = stack_pointer[-2];
+            if (sym_matches_type(nos, &PyList_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(nos, &PyList_Type);
+            break;
+        }
+
+        case _GUARD_TOS_LIST: {
+            JitOptSymbol *tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PyList_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(tos, &PyList_Type);
+            break;
+        }
+
         case _TO_BOOL_LIST: {
             JitOptSymbol *value;
             JitOptSymbol *res;
             value = stack_pointer[-1];
             int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
             if (!already_bool) {
-                sym_set_type(value, &PyList_Type);
                 res = sym_new_type(ctx, &PyBool_Type);
             }
             stack_pointer[-1] = res;
@@ -310,7 +329,6 @@
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -339,7 +357,6 @@
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -368,7 +385,6 @@
             else {
                 res = sym_new_type(ctx, &PyLong_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -418,7 +434,6 @@
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -448,7 +463,6 @@
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -478,7 +492,6 @@
             else {
                 res = sym_new_type(ctx, &PyFloat_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -506,7 +519,6 @@
             else {
                 res = sym_new_type(ctx, &PyUnicode_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -576,10 +588,30 @@
 
         case _BINARY_OP_SUBSCR_STR_INT: {
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            res = sym_new_type(ctx, &PyUnicode_Type);
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _GUARD_NOS_TUPLE: {
+            JitOptSymbol *nos;
+            nos = stack_pointer[-2];
+            if (sym_matches_type(nos, &PyTuple_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(nos, &PyTuple_Type);
+            break;
+        }
+
+        case _GUARD_TOS_TUPLE: {
+            JitOptSymbol *tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PyTuple_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(tos, &PyTuple_Type);
             break;
         }
 
@@ -589,6 +621,26 @@
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _GUARD_NOS_DICT: {
+            JitOptSymbol *nos;
+            nos = stack_pointer[-2];
+            if (sym_matches_type(nos, &PyDict_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(nos, &PyDict_Type);
+            break;
+        }
+
+        case _GUARD_TOS_DICT: {
+            JitOptSymbol *tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PyDict_Type)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_type(tos, &PyDict_Type);
             break;
         }
 
@@ -801,7 +853,7 @@
             seq = stack_pointer[-1];
             values = &stack_pointer[-1];
             for (int i = 0; i < oparg; i++) {
-                values[i] = sym_tuple_getitem(ctx, seq, i);
+                values[i] = sym_tuple_getitem(ctx, seq, oparg - i - 1);
             }
             stack_pointer += -1 + oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1257,7 +1309,6 @@
             else {
                 res = sym_new_type(ctx, &PyBool_Type);
                 stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
             }
             stack_pointer[-1] = res;
             break;
@@ -1290,19 +1341,30 @@
             break;
         }
 
+        case _GUARD_TOS_ANY_SET: {
+            JitOptSymbol *tos;
+            tos = stack_pointer[-1];
+            if (sym_matches_type(tos, &PySet_Type) ||
+                sym_matches_type(tos, &PyFrozenSet_Type))
+            {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            break;
+        }
+
         case _CONTAINS_OP_SET: {
-            JitOptSymbol *b;
-            b = sym_new_not_null(ctx);
-            stack_pointer[-2] = b;
+            JitOptSymbol *res;
+            res = sym_new_type(ctx, &PyBool_Type);
+            stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _CONTAINS_OP_DICT: {
-            JitOptSymbol *b;
-            b = sym_new_not_null(ctx);
-            stack_pointer[-2] = b;
+            JitOptSymbol *res;
+            res = sym_new_type(ctx, &PyBool_Type);
+            stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
@@ -2031,7 +2093,6 @@
             if (co == NULL) {
                 ctx->done = true;
             }
-            stack_pointer[-1] = res;
             break;
         }
 
