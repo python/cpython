@@ -32,18 +32,16 @@ _sentinel = object()
 # preserved for compatibility with the old typing.ForwardRef class. The remaining
 # names are private.
 _SLOTS = (
-    "__forward_evaluated__",
-    "__forward_value__",
     "__forward_is_argument__",
     "__forward_is_class__",
     "__forward_module__",
     "__weakref__",
     "__arg__",
-    "__ast_node__",
-    "__code__",
     "__globals__",
-    "__owner__",
+    "__code__",
+    "__ast_node__",
     "__cell__",
+    "__owner__",
     "__stringifier_dict__",
 )
 
@@ -76,14 +74,12 @@ class ForwardRef:
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
 
         self.__arg__ = arg
-        self.__forward_evaluated__ = False
-        self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
+        self.__globals__ = None
         self.__code__ = None
         self.__ast_node__ = None
-        self.__globals__ = None
         self.__cell__ = None
         self.__owner__ = owner
 
@@ -95,17 +91,11 @@ class ForwardRef:
 
         If the forward reference cannot be evaluated, raise an exception.
         """
-        if self.__forward_evaluated__:
-            return self.__forward_value__
         if self.__cell__ is not None:
             try:
-                value = self.__cell__.cell_contents
+                return self.__cell__.cell_contents
             except ValueError:
                 pass
-            else:
-                self.__forward_evaluated__ = True
-                self.__forward_value__ = value
-                return value
         if owner is None:
             owner = self.__owner__
 
@@ -171,8 +161,6 @@ class ForwardRef:
         else:
             code = self.__forward_code__
             value = eval(code, globals=globals, locals=locals)
-        self.__forward_evaluated__ = True
-        self.__forward_value__ = value
         return value
 
     def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
@@ -230,18 +218,30 @@ class ForwardRef:
     def __eq__(self, other):
         if not isinstance(other, ForwardRef):
             return NotImplemented
-        if self.__forward_evaluated__ and other.__forward_evaluated__:
-            return (
-                self.__forward_arg__ == other.__forward_arg__
-                and self.__forward_value__ == other.__forward_value__
-            )
         return (
             self.__forward_arg__ == other.__forward_arg__
             and self.__forward_module__ == other.__forward_module__
+            # Use "is" here because we use id() for this in __hash__
+            # because dictionaries are not hashable.
+            and self.__globals__ is other.__globals__
+            and self.__forward_is_class__ == other.__forward_is_class__
+            and self.__code__ == other.__code__
+            and self.__ast_node__ == other.__ast_node__
+            and self.__cell__ == other.__cell__
+            and self.__owner__ == other.__owner__
         )
 
     def __hash__(self):
-        return hash((self.__forward_arg__, self.__forward_module__))
+        return hash((
+            self.__forward_arg__,
+            self.__forward_module__,
+            id(self.__globals__),  # dictionaries are not hashable, so hash by identity
+            self.__forward_is_class__,
+            self.__code__,
+            self.__ast_node__,
+            self.__cell__,
+            self.__owner__,
+        ))
 
     def __or__(self, other):
         return types.UnionType[self, other]
@@ -250,11 +250,14 @@ class ForwardRef:
         return types.UnionType[other, self]
 
     def __repr__(self):
-        if self.__forward_module__ is None:
-            module_repr = ""
-        else:
-            module_repr = f", module={self.__forward_module__!r}"
-        return f"ForwardRef({self.__forward_arg__!r}{module_repr})"
+        extra = []
+        if self.__forward_module__ is not None:
+            extra.append(f", module={self.__forward_module__!r}")
+        if self.__forward_is_class__:
+            extra.append(", is_class=True")
+        if self.__owner__ is not None:
+            extra.append(f", owner={self.__owner__!r}")
+        return f"ForwardRef({self.__forward_arg__!r}{''.join(extra)})"
 
 
 class _Stringifier:
@@ -276,8 +279,6 @@ class _Stringifier:
         # represent a single name).
         assert isinstance(node, (ast.AST, str))
         self.__arg__ = None
-        self.__forward_evaluated__ = False
-        self.__forward_value__ = None
         self.__forward_is_argument__ = False
         self.__forward_is_class__ = is_class
         self.__forward_module__ = None
@@ -618,14 +619,6 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         raise ValueError(f"Invalid format: {format!r}")
 
 
-# We use the descriptors from builtins.type instead of accessing
-# .__annotations__ and .__annotate__ directly on class objects, because
-# otherwise we could get wrong results in some cases involving metaclasses.
-# See PEP 749.
-_BASE_GET_ANNOTATE = type.__dict__["__annotate__"].__get__
-_BASE_GET_ANNOTATIONS = type.__dict__["__annotations__"].__get__
-
-
 def get_annotate_function(obj):
     """Get the __annotate__ function for an object.
 
@@ -634,12 +627,11 @@ def get_annotate_function(obj):
 
     Returns the __annotate__ function or None.
     """
-    if isinstance(obj, type):
+    if isinstance(obj, dict):
         try:
-            return _BASE_GET_ANNOTATE(obj)
-        except AttributeError:
-            # AttributeError is raised for static types.
-            return None
+            return obj["__annotate__"]
+        except KeyError:
+            return obj.get("__annotate_func__", None)
     return getattr(obj, "__annotate__", None)
 
 
@@ -832,7 +824,7 @@ def _get_and_call_annotate(obj, format):
 def _get_dunder_annotations(obj):
     if isinstance(obj, type):
         try:
-            ann = _BASE_GET_ANNOTATIONS(obj)
+            ann = obj.__annotations__
         except AttributeError:
             # For static types, the descriptor raises AttributeError.
             return {}
