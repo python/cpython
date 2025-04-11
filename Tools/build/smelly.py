@@ -52,7 +52,7 @@ def get_exported_symbols(library, dynamic=False):
         args.append('--dynamic')
     args.append(library)
     print(f"+ {' '.join(args)}")
-    proc = subprocess.run(args, stdout=subprocess.PIPE, text=True)
+    proc = subprocess.run(args, stdout=subprocess.PIPE, encoding='utf-8')
     if proc.returncode:
         sys.stdout.write(proc.stdout)
         sys.exit(proc.returncode)

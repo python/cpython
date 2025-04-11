@@ -475,7 +475,7 @@ def binutils_get_exported_symbols(library, dynamic=False):
     if dynamic:
         args.append("--dynamic")
     args.append(library)
-    proc = subprocess.run(args, stdout=subprocess.PIPE, text=True)
+    proc = subprocess.run(args, stdout=subprocess.PIPE, encoding='utf-8')
     if proc.returncode:
         sys.stdout.write(proc.stdout)
         sys.exit(proc.returncode)
@@ -545,7 +545,7 @@ def gcc_get_limited_api_macros(headers):
             "-E",
         ]
         + [str(file) for file in headers],
-        text=True,
+        encoding='utf-8',
     )
 
     return set(re.findall(r"#define (\w+)", preprocessor_output_with_macros))
@@ -583,7 +583,7 @@ def gcc_get_limited_api_definitions(headers):
             "-E",
         ]
         + [str(file) for file in headers],
-        text=True,
+        encoding='utf-8',
         stderr=subprocess.DEVNULL,
     )
     stable_functions = set(
