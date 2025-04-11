@@ -173,12 +173,16 @@ meth_dealloc(PyObject *self)
     if (m->m_weakreflist != NULL) {
         PyObject_ClearWeakRefs((PyObject*) m);
     }
+    // We need to access ml_flags here rather than later.
+    // `m->m_ml` might have the same lifetime
+    // as `m_self` when it's dynamically allocated.
+    int ml_flags = m->m_ml->ml_flags;
     // Dereference class before m_self: PyCFunction_GET_CLASS accesses
     // PyMethodDef m_ml, which could be kept alive by m_self
     Py_XDECREF(PyCFunction_GET_CLASS(m));
     Py_XDECREF(m->m_self);
     Py_XDECREF(m->m_module);
-    if (m->m_ml->ml_flags & METH_METHOD) {
+    if (ml_flags & METH_METHOD) {
         assert(Py_IS_TYPE(self, &PyCMethod_Type));
         _Py_FREELIST_FREE(pycmethodobject, m, PyObject_GC_Del);
     }

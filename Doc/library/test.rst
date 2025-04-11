@@ -1468,7 +1468,7 @@ The :mod:`test.support.os_helper` module provides support for os tests.
 
    Temporarily unset one or more environment variables.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       More than one environment variable can be unset.
 
 
