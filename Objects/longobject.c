@@ -6592,7 +6592,7 @@ static PyNumberMethods long_as_number = {
     long_xor,                   /*nb_xor*/
     long_or,                    /*nb_or*/
     long_long,                  /*nb_int*/
-    0,                          /*nb_reserved*/
+    0,                          /*nb_complex*/
     long_float,                 /*nb_float*/
     0,                          /* nb_inplace_add */
     0,                          /* nb_inplace_subtract */

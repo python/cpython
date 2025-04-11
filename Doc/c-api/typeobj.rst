@@ -276,7 +276,7 @@ sub-slots
    +---------------------------------------------------------+-----------------------------------+---------------+
    | :c:member:`~PyNumberMethods.nb_int`                     | :c:type:`unaryfunc`               | __int__       |
    +---------------------------------------------------------+-----------------------------------+---------------+
-   | :c:member:`~PyNumberMethods.nb_reserved`                | void *                            |               |
+   | :c:member:`~PyNumberMethods.nb_complex`                 | :c:type:`unaryfunc`               | __complex__   |
    +---------------------------------------------------------+-----------------------------------+---------------+
    | :c:member:`~PyNumberMethods.nb_float`                   | :c:type:`unaryfunc`               | __float__     |
    +---------------------------------------------------------+-----------------------------------+---------------+
@@ -2304,7 +2304,7 @@ Number Object Structures
             binaryfunc nb_xor;
             binaryfunc nb_or;
             unaryfunc nb_int;
-            void *nb_reserved;
+            unaryfunc nb_complex;
             unaryfunc nb_float;
 
             binaryfunc nb_inplace_add;
@@ -2338,11 +2338,6 @@ Number Object Structures
       ``Py_NotImplemented``, if another error occurred they must return ``NULL``
       and set an exception.
 
-   .. note::
-
-      The :c:member:`~PyNumberMethods.nb_reserved` field should always be ``NULL``.  It
-      was previously called :c:member:`!nb_long`, and was renamed in
-      Python 3.0.1.
 
 .. c:member:: binaryfunc PyNumberMethods.nb_add
 .. c:member:: binaryfunc PyNumberMethods.nb_subtract
@@ -2361,7 +2356,7 @@ Number Object Structures
 .. c:member:: binaryfunc PyNumberMethods.nb_xor
 .. c:member:: binaryfunc PyNumberMethods.nb_or
 .. c:member:: unaryfunc PyNumberMethods.nb_int
-.. c:member:: void *PyNumberMethods.nb_reserved
+.. c:member:: unaryfunc PyNumberMethods.nb_complex
 .. c:member:: unaryfunc PyNumberMethods.nb_float
 .. c:member:: binaryfunc PyNumberMethods.nb_inplace_add
 .. c:member:: binaryfunc PyNumberMethods.nb_inplace_subtract
