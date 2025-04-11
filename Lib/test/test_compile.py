@@ -1636,6 +1636,16 @@ class TestSpecifics(unittest.TestCase):
                     pass
             [[]]
 
+    def test_globals_dict_subclass(self):
+        # gh-132386
+        class WeirdDict(dict):
+            pass
+
+        ns = {}
+        exec('def foo(): return a', WeirdDict(), ns)
+
+        self.assertRaises(NameError, ns['foo'])
+
 class TestBooleanExpression(unittest.TestCase):
     class Value:
         def __init__(self):
