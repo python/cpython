@@ -74,6 +74,17 @@ class TokenTests(unittest.TestCase):
         else:
             self.fail('Weird maxsize value %r' % maxsize)
 
+    def test_attrs_on_hexintegers(self):
+        good_meth = [m for m in dir(int) if not m.startswith('_')]
+        for m in good_meth:
+            with self.assertWarns(SyntaxWarning):
+                v = eval('0x1.' + m)
+            self.assertEqual(v, eval('(0x1).' + m))
+        self.check_syntax_error('0x1.spam', "invalid hexadecimal literal",
+                                lineno=1, offset=4)
+        self.check_syntax_error('0x1.foo', "invalid hexadecimal literal",
+                                lineno=1, offset=5)
+
     def test_long_integers(self):
         x = 0
         x = 0xffffffffffffffff
@@ -97,6 +108,23 @@ class TokenTests(unittest.TestCase):
         x = 3.e14
         x = .3e14
         x = 3.1e4
+        x = 0x1.2p1
+        x = 0x1.2p+1
+        x = 0x1.p1
+        x = 0x1.p-1
+        x = 0x1p0
+        x = 0x1ap1
+        x = 0x1P1
+        x = 0x1cp2
+        x = 0x1.p1
+        x = 0x1.P1
+        x = 0x001.1p2
+        x = 0X1p1
+        x = 0x1.1_1p1
+        x = 0x1.1p1_1
+        x = 0x1.
+        x = 0x1.1
+        x = 0x.1
 
     def test_float_exponent_tokenization(self):
         # See issue 21642.
@@ -134,7 +162,14 @@ class TokenTests(unittest.TestCase):
               "use an 0o prefix for octal integers")
         check("1.2_", "invalid decimal literal")
         check("1e2_", "invalid decimal literal")
-        check("1e+", "invalid decimal literal")
+        check("1e+", "invalid float literal")
+        check("0x.p", "invalid float literal")
+        check("0x_.p", "invalid float literal")
+        check("0x1.1p", "invalid float literal")
+        check("0x1.1_p", "invalid float literal")
+        check("0x1.1p_", "invalid float literal")
+        check("0xp", "invalid hexadecimal literal")
+        check("0xP", "invalid hexadecimal literal")
 
     def test_end_of_numerical_literals(self):
         def check(test, error=False):
