@@ -327,8 +327,9 @@ The general form of a *standard format specifier* is:
    width_and_precision: [`width_with_grouping`][`precision_with_grouping`]
    width_with_grouping: [`width`][`grouping`]
    precision_with_grouping: "." [`precision`][`grouping`]
-   width: `~python-grammar:digit`+
-   precision: `~python-grammar:digit`+
+   width: "0" | `digits`
+   precision: "0" | `digits`
+   digits: `~python-grammar:nonzerodigit` `~python-grammar:digit`*
    grouping: "," | "_"
    type: "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g"
        : | "G" | "n" | "o" | "s" | "x" | "X" | "%"
