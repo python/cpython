@@ -578,6 +578,8 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     if (result < 0) {
         return NULL;
     }
+
+    /* Actual registration */
     _abc_data *impl = _get_impl(module, self);
     if (impl == NULL) {
         return NULL;
@@ -587,6 +589,50 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
         return NULL;
     }
     Py_DECREF(impl);
+
+    /* Recursively register the subclass in all ABC bases, to avoid recursive lookups.
+        >>> class Ancestor1(ABC): pass
+        >>> class Ancestor2(Ancestor1): pass
+        >>> class Other: pass
+        >>> Ancestor2.register(Other)  # same result for Ancestor1.register(Other)
+        >>> issubclass(Other, Ancestor2) is True
+        >>> issubclass(Other, Ancestor1) is True
+    */
+    PyObject *mro = PyObject_GetAttrString(self, "__mro__");
+    if (mro == NULL) {
+        return NULL;
+    }
+
+    if (!PyTuple_CheckExact(mro)) {
+        PyErr_SetString(PyExc_TypeError, "__mro__ must be an exact tuple");
+        goto error;
+    }
+
+    for (Py_ssize_t pos = 0; pos < PyTuple_GET_SIZE(mro); pos++) {
+        PyObject *base_class = PyTuple_GET_ITEM(mro, pos);  // borrowed
+        PyObject *base_class_data;
+
+        if (PyObject_GetOptionalAttr(base_class,
+                                     &_Py_ID(_abc_impl),
+                                     &base_class_data) < 0)
+        {
+            goto error;
+        }
+
+        if (base_class_data == NULL) {
+            // not ABC class
+            continue;
+        }
+
+        _abc_data *base_class_state = _abc_data_CAST(base_class_data);
+        int res = _add_to_weak_set(base_class_state,
+                                   &base_class_state->_abc_registry,
+                                   subclass);
+        Py_DECREF(base_class_data);
+        if (res < 0) {
+            goto error;
+        }
+    }
 
     /* Invalidate negative cache */
     increment_invalidation_counter(get_abc_state(module));
@@ -602,6 +648,10 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
         }
     }
     return Py_NewRef(subclass);
+
+error:
+    Py_XDECREF(mro);
+    return NULL;
 }
 
 
@@ -713,7 +763,6 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 
     PyObject *ok, *subclasses = NULL, *result = NULL;
     _abcmodule_state *state = NULL;
-    Py_ssize_t pos;
     int incache;
     _abc_data *impl = _get_impl(module, self);
     if (impl == NULL) {
@@ -798,34 +847,6 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
     if (subclasscheck_check_registry(impl, subclass, &result)) {
         // Exception occurred or result is set.
         goto end;
-    }
-
-    /* 6. Check if it's a subclass of a subclass (recursive). */
-    subclasses = PyObject_CallMethod(self, "__subclasses__", NULL);
-    if (subclasses == NULL) {
-        goto end;
-    }
-    if (!PyList_Check(subclasses)) {
-        PyErr_SetString(PyExc_TypeError, "__subclasses__() must return a list");
-        goto end;
-    }
-    for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
-        PyObject *scls = PyList_GetItemRef(subclasses, pos);
-        if (scls == NULL) {
-            goto end;
-        }
-        int r = PyObject_IsSubclass(subclass, scls);
-        Py_DECREF(scls);
-        if (r > 0) {
-            if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
-                goto end;
-            }
-            result = Py_True;
-            goto end;
-        }
-        if (r < 0) {
-            goto end;
-        }
     }
 
     /* No dice; update negative cache. */
