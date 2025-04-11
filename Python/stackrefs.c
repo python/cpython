@@ -216,4 +216,12 @@ PyStackRef_IsNullOrInt(_PyStackRef ref)
     return PyStackRef_IsNull(ref) || PyStackRef_IsTaggedInt(ref);
 }
 
+_PyStackRef
+PyStackRef_IncrementTaggedInt(_PyStackRef ref)
+{
+    assert(ref.index != (uintptr_t)-1); // Overflow
+    return (_PyStackRef){ .index = ref.index + 2 };
+}
+
+
 #endif

@@ -155,6 +155,9 @@ dump_item(_PyStackRef item)
         printf("<nil>");
         return;
     }
+    if (PyList_CheckExact(obj)) {
+        printf("len=%ld ", Py_SIZE(obj));
+    }
     // Don't call __repr__(), it might recurse into the interpreter.
     printf("<%s at %p>", Py_TYPE(obj)->tp_name, (void *)obj);
 }
@@ -271,6 +274,7 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, PyObject *globals)
             lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
         }
     }
+    // lltrace = 5;
     if (lltrace >= 5) {
         lltrace_resume_frame(frame);
     }
@@ -3419,6 +3423,20 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
                     NAME_ERROR_MSG, name);
     }
     return value;
+}
+
+_PyStackRef
+_PyForIter_NextWithIndex(PyObject *seq, _PyStackRef index)
+{
+    assert(PyStackRef_IsTaggedInt(index));
+    assert(Py_TYPE(seq) == &PyTuple_Type || Py_TYPE(seq) == &PyList_Type);
+    size_t size = Py_SIZE(seq);
+    intptr_t i = PyStackRef_UntagInt(index);
+    if ((size_t)i >= size) {
+        return PyStackRef_NULL;
+    }
+    PyObject *next_o = PySequence_Fast_GET_ITEM(seq, i);
+    return PyStackRef_FromPyObjectNew(next_o);
 }
 
 /* Check if a 'cls' provides the given special method. */

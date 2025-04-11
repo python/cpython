@@ -4477,9 +4477,9 @@ codegen_async_comprehension_generator(compiler *c, location loc,
         else {
             /* Sub-iter - calculate on the fly */
             VISIT(c, expr, gen->iter);
-            ADDOP(c, LOC(gen->iter), GET_AITER);
         }
     }
+    ADDOP(c, LOC(gen->iter), GET_AITER);
 
     USE_LABEL(c, start);
     /* Runtime will push a block here, so we need to account for that */

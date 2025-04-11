@@ -1490,11 +1490,11 @@
 
         case _GET_ITER: {
             JitOptSymbol *iter;
-            JitOptSymbol *null;
+            JitOptSymbol *index_or_null;
             iter = sym_new_not_null(ctx);
-            null = sym_new_null(ctx);
+            index_or_null = sym_new_not_null(ctx);
             stack_pointer[-1] = iter;
-            stack_pointer[0] = null;
+            stack_pointer[0] = index_or_null;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
