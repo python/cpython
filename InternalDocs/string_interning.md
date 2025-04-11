@@ -2,6 +2,7 @@
 
 *Interned* strings are conceptually part of an interpreter-global
 *set* of interned strings, meaning that:
+
 - no two interned strings have the same content (across an interpreter);
 - two interned strings can be safely compared using pointer equality
   (Python `is`).
@@ -61,6 +62,7 @@ if it's interned and mortal it needs extra processing in
 
 The converse is not true: interned strings can be mortal.
 For mortal interned strings:
+
 - the 2 references from the interned dict (key & value) are excluded from
   their refcount
 - the deallocator (`unicode_dealloc`) removes the string from the interned dict
@@ -90,6 +92,7 @@ modify in place.
 The functions take ownership of (“steal”) the reference to their argument,
 and update the argument with a *new* reference.
 This means:
+
 - They're “reference neutral”.
 - They must not be called with a borrowed reference.
 

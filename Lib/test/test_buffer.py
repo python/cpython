@@ -3910,6 +3910,8 @@ class TestBufferProtocol(unittest.TestCase):
         self.assertRaises(ValueError, memoryview, m)
         # memoryview.cast()
         self.assertRaises(ValueError, m.cast, 'c')
+        # memoryview.__iter__()
+        self.assertRaises(ValueError, m.__iter__)
         # getbuffer()
         self.assertRaises(ValueError, ndarray, m)
         # memoryview.tolist()
@@ -4437,12 +4439,35 @@ class TestBufferProtocol(unittest.TestCase):
         x = ndarray([1,2,3], shape=[3], flags=ND_GETBUF_FAIL)
         self.assertRaises(BufferError, memoryview, x)
 
+    def test_bytearray_release_buffer_read_flag(self):
+        # See https://github.com/python/cpython/issues/126980
+        obj = bytearray(b'abc')
+        with self.assertRaises(SystemError):
+            obj.__buffer__(inspect.BufferFlags.READ)
+        with self.assertRaises(SystemError):
+            obj.__buffer__(inspect.BufferFlags.WRITE)
+
     @support.cpython_only
     def test_pybuffer_size_from_format(self):
         # basic tests
         for format in ('', 'ii', '3s'):
             self.assertEqual(_testcapi.PyBuffer_SizeFromFormat(format),
                              struct.calcsize(format))
+
+    @support.cpython_only
+    def test_flags_overflow(self):
+        # gh-126594: Check for integer overlow on large flags
+        try:
+            from _testcapi import INT_MIN, INT_MAX
+        except ImportError:
+            INT_MIN = -(2 ** 31)
+            INT_MAX = 2 ** 31 - 1
+
+        obj = b'abc'
+        for flags in (INT_MIN - 1, INT_MAX + 1):
+            with self.subTest(flags=flags):
+                with self.assertRaises(OverflowError):
+                    obj.__buffer__(flags)
 
 
 class TestPythonBufferProtocol(unittest.TestCase):

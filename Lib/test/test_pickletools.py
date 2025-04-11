@@ -361,6 +361,125 @@ highest protocol among opcodes = 0
 highest protocol among opcodes = 0
 ''', annotate=20)
 
+    def test_string(self):
+        self.check_dis(b"S'abc'\n.", '''\
+    0: S    STRING     'abc'
+    7: .    STOP
+highest protocol among opcodes = 0
+''')
+        self.check_dis(b'S"abc"\n.', '''\
+    0: S    STRING     'abc'
+    7: .    STOP
+highest protocol among opcodes = 0
+''')
+        self.check_dis(b"S'\xc3\xb5'\n.", '''\
+    0: S    STRING     '\\xc3\\xb5'
+    6: .    STOP
+highest protocol among opcodes = 0
+''')
+
+    def test_string_without_quotes(self):
+        self.check_dis_error(b"Sabc'\n.", '',
+                             'no string quotes around b"abc\'"')
+        self.check_dis_error(b'Sabc"\n.', '',
+                             "no string quotes around b'abc\"'")
+        self.check_dis_error(b"S'abc\n.", '',
+                             '''strinq quote b"'" not found at both ends of b"'abc"''')
+        self.check_dis_error(b'S"abc\n.', '',
+                             r"""strinq quote b'"' not found at both ends of b'"abc'""")
+        self.check_dis_error(b"S'abc\"\n.", '',
+                             r"""strinq quote b"'" not found at both ends of b'\\'abc"'""")
+        self.check_dis_error(b"S\"abc'\n.", '',
+                             r"""strinq quote b'"' not found at both ends of b'"abc\\''""")
+
+    def test_binstring(self):
+        self.check_dis(b"T\x03\x00\x00\x00abc.", '''\
+    0: T    BINSTRING  'abc'
+    8: .    STOP
+highest protocol among opcodes = 1
+''')
+        self.check_dis(b"T\x02\x00\x00\x00\xc3\xb5.", '''\
+    0: T    BINSTRING  '\\xc3\\xb5'
+    7: .    STOP
+highest protocol among opcodes = 1
+''')
+
+    def test_short_binstring(self):
+        self.check_dis(b"U\x03abc.", '''\
+    0: U    SHORT_BINSTRING 'abc'
+    5: .    STOP
+highest protocol among opcodes = 1
+''')
+        self.check_dis(b"U\x02\xc3\xb5.", '''\
+    0: U    SHORT_BINSTRING '\\xc3\\xb5'
+    4: .    STOP
+highest protocol among opcodes = 1
+''')
+
+    def test_global(self):
+        self.check_dis(b"cmodule\nname\n.", '''\
+    0: c    GLOBAL     'module name'
+   13: .    STOP
+highest protocol among opcodes = 0
+''')
+        self.check_dis(b"cm\xc3\xb6dule\nn\xc3\xa4me\n.", '''\
+    0: c    GLOBAL     'm\xf6dule n\xe4me'
+   15: .    STOP
+highest protocol among opcodes = 0
+''')
+
+    def test_inst(self):
+        self.check_dis(b"(imodule\nname\n.", '''\
+    0: (    MARK
+    1: i        INST       'module name' (MARK at 0)
+   14: .    STOP
+highest protocol among opcodes = 0
+''')
+
+    def test_persid(self):
+        self.check_dis(b"Pabc\n.", '''\
+    0: P    PERSID     'abc'
+    5: .    STOP
+highest protocol among opcodes = 0
+''')
+
+    def test_constants(self):
+        self.check_dis(b"(NI00\nI01\n\x89\x88t.", '''\
+    0: (    MARK
+    1: N        NONE
+    2: I        INT        False
+    6: I        INT        True
+   10: \\x89     NEWFALSE
+   11: \\x88     NEWTRUE
+   12: t        TUPLE      (MARK at 0)
+   13: .    STOP
+highest protocol among opcodes = 2
+''')
+
+    def test_integers(self):
+        self.check_dis(b"(I0\nI1\nI10\nI011\nL12\nL13L\nL014\nL015L\nt.", '''\
+    0: (    MARK
+    1: I        INT        0
+    4: I        INT        1
+    7: I        INT        10
+   11: I        INT        11
+   16: L        LONG       12
+   20: L        LONG       13
+   25: L        LONG       14
+   30: L        LONG       15
+   36: t        TUPLE      (MARK at 0)
+   37: .    STOP
+highest protocol among opcodes = 0
+''')
+
+    def test_nondecimal_integers(self):
+        self.check_dis_error(b'I0b10\n.', '', 'invalid literal for int')
+        self.check_dis_error(b'I0o10\n.', '', 'invalid literal for int')
+        self.check_dis_error(b'I0x10\n.', '', 'invalid literal for int')
+        self.check_dis_error(b'L0b10L\n.', '', 'invalid literal for int')
+        self.check_dis_error(b'L0o10L\n.', '', 'invalid literal for int')
+        self.check_dis_error(b'L0x10L\n.', '', 'invalid literal for int')
+
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):

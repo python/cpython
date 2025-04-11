@@ -6,7 +6,7 @@ from types import GenericAlias
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class QueueBasicTests(unittest.IsolatedAsyncioTestCase):
@@ -18,7 +18,7 @@ class QueueBasicTests(unittest.IsolatedAsyncioTestCase):
         appear in fn(Queue()).
         """
         q = asyncio.Queue()
-        self.assertTrue(fn(q).startswith('<Queue'), fn(q))
+        self.assertStartsWith(fn(q), '<Queue')
         id_is_present = hex(id(q)) in fn(q)
         self.assertEqual(expect_id, id_is_present)
 

@@ -301,8 +301,6 @@ class TimeRE(dict):
             'V': r"(?P<V>5[0-3]|0[1-9]|[1-4]\d|\d)",
             # W is set below by using 'U'
             'y': r"(?P<y>\d\d)",
-            #XXX: Does 'Y' need to worry about having less or more than
-            #     4 digits?
             'Y': r"(?P<Y>\d\d\d\d)",
             'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|(?-i:Z))",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
@@ -367,7 +365,7 @@ class TimeRE(dict):
                     nonlocal day_of_month_in_format
                     day_of_month_in_format = True
             return self[format_char]
-        format = re_sub(r'%(O?.)', repl, format)
+        format = re_sub(r'%([OE]?\\?.?)', repl, format)
         if day_of_month_in_format and not year_in_format:
             import warnings
             warnings.warn("""\
@@ -441,14 +439,13 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             # \\, in which case it was a stray % but with a space after it
             except KeyError as err:
                 bad_directive = err.args[0]
-                if bad_directive == "\\":
-                    bad_directive = "%"
                 del err
+                bad_directive = bad_directive.replace('\\s', '')
+                if not bad_directive:
+                    raise ValueError("stray %% in format '%s'" % format) from None
+                bad_directive = bad_directive.replace('\\', '', 1)
                 raise ValueError("'%s' is a bad directive in format '%s'" %
                                     (bad_directive, format)) from None
-            # IndexError only occurs when the format string is "%"
-            except IndexError:
-                raise ValueError("stray %% in format '%s'" % format) from None
             _regex_cache[format] = format_regex
     found = format_regex.match(data_string)
     if not found:

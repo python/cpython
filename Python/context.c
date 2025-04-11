@@ -419,6 +419,9 @@ class _contextvars.Context "PyContext *" "&PyContext_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=bdf87f8e0cb580e8]*/
 
 
+#define _PyContext_CAST(op)     ((PyContext *)(op))
+
+
 static inline PyContext *
 _context_alloc(void)
 {
@@ -513,28 +516,30 @@ context_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-context_tp_clear(PyContext *self)
+context_tp_clear(PyObject *op)
 {
+    PyContext *self = _PyContext_CAST(op);
     Py_CLEAR(self->ctx_prev);
     Py_CLEAR(self->ctx_vars);
     return 0;
 }
 
 static int
-context_tp_traverse(PyContext *self, visitproc visit, void *arg)
+context_tp_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyContext *self = _PyContext_CAST(op);
     Py_VISIT(self->ctx_prev);
     Py_VISIT(self->ctx_vars);
     return 0;
 }
 
 static void
-context_tp_dealloc(PyContext *self)
+context_tp_dealloc(PyObject *self)
 {
     _PyObject_GC_UNTRACK(self);
-
-    if (self->ctx_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)self);
+    PyContext *ctx = _PyContext_CAST(self);
+    if (ctx->ctx_weakreflist != NULL) {
+        PyObject_ClearWeakRefs(self);
     }
     (void)context_tp_clear(self);
 
@@ -542,8 +547,9 @@ context_tp_dealloc(PyContext *self)
 }
 
 static PyObject *
-context_tp_iter(PyContext *self)
+context_tp_iter(PyObject *op)
 {
+    PyContext *self = _PyContext_CAST(op);
     return _PyHamt_NewIterKeys(self->ctx_vars);
 }
 
@@ -575,18 +581,20 @@ context_tp_richcompare(PyObject *v, PyObject *w, int op)
 }
 
 static Py_ssize_t
-context_tp_len(PyContext *self)
+context_tp_len(PyObject *op)
 {
+    PyContext *self = _PyContext_CAST(op);
     return _PyHamt_Len(self->ctx_vars);
 }
 
 static PyObject *
-context_tp_subscript(PyContext *self, PyObject *key)
+context_tp_subscript(PyObject *op, PyObject *key)
 {
     if (context_check_key_type(key)) {
         return NULL;
     }
     PyObject *val = NULL;
+    PyContext *self = _PyContext_CAST(op);
     int found = _PyHamt_Find(self->ctx_vars, key, &val);
     if (found < 0) {
         return NULL;
@@ -599,12 +607,13 @@ context_tp_subscript(PyContext *self, PyObject *key)
 }
 
 static int
-context_tp_contains(PyContext *self, PyObject *key)
+context_tp_contains(PyObject *op, PyObject *key)
 {
     if (context_check_key_type(key)) {
         return -1;
     }
     PyObject *val = NULL;
+    PyContext *self = _PyContext_CAST(op);
     return _PyHamt_Find(self->ctx_vars, key, &val);
 }
 
@@ -701,7 +710,7 @@ _contextvars_Context_copy_impl(PyContext *self)
 
 
 static PyObject *
-context_run(PyContext *self, PyObject *const *args,
+context_run(PyObject *self, PyObject *const *args,
             Py_ssize_t nargs, PyObject *kwnames)
 {
     PyThreadState *ts = _PyThreadState_GET();
@@ -712,14 +721,14 @@ context_run(PyContext *self, PyObject *const *args,
         return NULL;
     }
 
-    if (_PyContext_Enter(ts, (PyObject *)self)) {
+    if (_PyContext_Enter(ts, self)) {
         return NULL;
     }
 
     PyObject *call_result = _PyObject_VectorcallTstate(
         ts, args[0], args + 1, nargs - 1, kwnames);
 
-    if (_PyContext_Exit(ts, (PyObject *)self)) {
+    if (_PyContext_Exit(ts, self)) {
         Py_XDECREF(call_result);
         return NULL;
     }
@@ -739,21 +748,12 @@ static PyMethodDef PyContext_methods[] = {
 };
 
 static PySequenceMethods PyContext_as_sequence = {
-    0,                                   /* sq_length */
-    0,                                   /* sq_concat */
-    0,                                   /* sq_repeat */
-    0,                                   /* sq_item */
-    0,                                   /* sq_slice */
-    0,                                   /* sq_ass_item */
-    0,                                   /* sq_ass_slice */
-    (objobjproc)context_tp_contains,     /* sq_contains */
-    0,                                   /* sq_inplace_concat */
-    0,                                   /* sq_inplace_repeat */
+    .sq_contains = context_tp_contains
 };
 
 static PyMappingMethods PyContext_as_mapping = {
-    (lenfunc)context_tp_len,             /* mp_length */
-    (binaryfunc)context_tp_subscript,    /* mp_subscript */
+    .mp_length = context_tp_len,
+    .mp_subscript = context_tp_subscript
 };
 
 PyTypeObject PyContext_Type = {
@@ -763,13 +763,13 @@ PyTypeObject PyContext_Type = {
     .tp_methods = PyContext_methods,
     .tp_as_mapping = &PyContext_as_mapping,
     .tp_as_sequence = &PyContext_as_sequence,
-    .tp_iter = (getiterfunc)context_tp_iter,
-    .tp_dealloc = (destructor)context_tp_dealloc,
+    .tp_iter = context_tp_iter,
+    .tp_dealloc = context_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_richcompare = context_tp_richcompare,
-    .tp_traverse = (traverseproc)context_tp_traverse,
-    .tp_clear = (inquiry)context_tp_clear,
+    .tp_traverse = context_tp_traverse,
+    .tp_clear = context_tp_clear,
     .tp_new = context_tp_new,
     .tp_weaklistoffset = offsetof(PyContext, ctx_weakreflist),
     .tp_hash = PyObject_HashNotImplemented,
@@ -860,7 +860,7 @@ contextvar_generate_hash(void *addr, PyObject *name)
         return -1;
     }
 
-    Py_hash_t res = _Py_HashPointer(addr) ^ name_hash;
+    Py_hash_t res = Py_HashPointer(addr) ^ name_hash;
     return res == -1 ? -2 : res;
 }
 
@@ -878,14 +878,7 @@ contextvar_new(PyObject *name, PyObject *def)
         return NULL;
     }
 
-    var->var_hash = contextvar_generate_hash(var, name);
-    if (var->var_hash == -1) {
-        Py_DECREF(var);
-        return NULL;
-    }
-
     var->var_name = Py_NewRef(name);
-
     var->var_default = Py_XNewRef(def);
 
 #ifndef Py_GIL_DISABLED
@@ -893,6 +886,12 @@ contextvar_new(PyObject *name, PyObject *def)
     var->var_cached_tsid = 0;
     var->var_cached_tsver = 0;
 #endif
+
+    var->var_hash = contextvar_generate_hash(var, name);
+    if (var->var_hash == -1) {
+        Py_DECREF(var);
+        return NULL;
+    }
 
     if (_PyObject_GC_MAY_BE_TRACKED(name) ||
             (def != NULL && _PyObject_GC_MAY_BE_TRACKED(def)))
@@ -907,6 +906,9 @@ contextvar_new(PyObject *name, PyObject *def)
 class _contextvars.ContextVar "PyContextVar *" "&PyContextVar_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=445da935fa8883c3]*/
+
+
+#define _PyContextVar_CAST(op)  ((PyContextVar *)(op))
 
 
 static PyObject *
@@ -926,8 +928,9 @@ contextvar_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-contextvar_tp_clear(PyContextVar *self)
+contextvar_tp_clear(PyObject *op)
 {
+    PyContextVar *self = _PyContextVar_CAST(op);
     Py_CLEAR(self->var_name);
     Py_CLEAR(self->var_default);
 #ifndef Py_GIL_DISABLED
@@ -939,15 +942,16 @@ contextvar_tp_clear(PyContextVar *self)
 }
 
 static int
-contextvar_tp_traverse(PyContextVar *self, visitproc visit, void *arg)
+contextvar_tp_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyContextVar *self = _PyContextVar_CAST(op);
     Py_VISIT(self->var_name);
     Py_VISIT(self->var_default);
     return 0;
 }
 
 static void
-contextvar_tp_dealloc(PyContextVar *self)
+contextvar_tp_dealloc(PyObject *self)
 {
     PyObject_GC_UnTrack(self);
     (void)contextvar_tp_clear(self);
@@ -955,14 +959,16 @@ contextvar_tp_dealloc(PyContextVar *self)
 }
 
 static Py_hash_t
-contextvar_tp_hash(PyContextVar *self)
+contextvar_tp_hash(PyObject *op)
 {
+    PyContextVar *self = _PyContextVar_CAST(op);
     return self->var_hash;
 }
 
 static PyObject *
-contextvar_tp_repr(PyContextVar *self)
+contextvar_tp_repr(PyObject *op)
 {
+    PyContextVar *self = _PyContextVar_CAST(op);
     // Estimation based on the shortest name and default value,
     // but maximize the pointer size.
     // "<ContextVar name='a' at 0x1234567812345678>"
@@ -1051,8 +1057,8 @@ value via the `ContextVar.reset()` method.
 [clinic start generated code]*/
 
 static PyObject *
-_contextvars_ContextVar_set(PyContextVar *self, PyObject *value)
-/*[clinic end generated code: output=446ed5e820d6d60b input=c0a6887154227453]*/
+_contextvars_ContextVar_set_impl(PyContextVar *self, PyObject *value)
+/*[clinic end generated code: output=1b562d35cc79c806 input=c0a6887154227453]*/
 {
     return PyContextVar_Set((PyObject *)self, value);
 }
@@ -1069,8 +1075,8 @@ created the token was used.
 [clinic start generated code]*/
 
 static PyObject *
-_contextvars_ContextVar_reset(PyContextVar *self, PyObject *token)
-/*[clinic end generated code: output=d4ee34d0742d62ee input=ebe2881e5af4ffda]*/
+_contextvars_ContextVar_reset_impl(PyContextVar *self, PyObject *token)
+/*[clinic end generated code: output=3205d2bdff568521 input=ebe2881e5af4ffda]*/
 {
     if (!PyContextToken_CheckExact(token)) {
         PyErr_Format(PyExc_TypeError,
@@ -1106,15 +1112,15 @@ PyTypeObject PyContextVar_Type = {
     sizeof(PyContextVar),
     .tp_methods = PyContextVar_methods,
     .tp_members = PyContextVar_members,
-    .tp_dealloc = (destructor)contextvar_tp_dealloc,
+    .tp_dealloc = contextvar_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)contextvar_tp_traverse,
-    .tp_clear = (inquiry)contextvar_tp_clear,
+    .tp_traverse = contextvar_tp_traverse,
+    .tp_clear = contextvar_tp_clear,
     .tp_new = contextvar_tp_new,
     .tp_free = PyObject_GC_Del,
-    .tp_hash = (hashfunc)contextvar_tp_hash,
-    .tp_repr = (reprfunc)contextvar_tp_repr,
+    .tp_hash = contextvar_tp_hash,
+    .tp_repr = contextvar_tp_repr,
 };
 
 
@@ -1129,6 +1135,9 @@ class _contextvars.Token "PyContextToken *" "&PyContextToken_Type"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=338a5e2db13d3f5b]*/
 
 
+#define _PyContextToken_CAST(op)    ((PyContextToken *)(op))
+
+
 static PyObject *
 token_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -1138,8 +1147,9 @@ token_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static int
-token_tp_clear(PyContextToken *self)
+token_tp_clear(PyObject *op)
 {
+    PyContextToken *self = _PyContextToken_CAST(op);
     Py_CLEAR(self->tok_ctx);
     Py_CLEAR(self->tok_var);
     Py_CLEAR(self->tok_oldval);
@@ -1147,8 +1157,9 @@ token_tp_clear(PyContextToken *self)
 }
 
 static int
-token_tp_traverse(PyContextToken *self, visitproc visit, void *arg)
+token_tp_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    PyContextToken *self = _PyContextToken_CAST(op);
     Py_VISIT(self->tok_ctx);
     Py_VISIT(self->tok_var);
     Py_VISIT(self->tok_oldval);
@@ -1156,7 +1167,7 @@ token_tp_traverse(PyContextToken *self, visitproc visit, void *arg)
 }
 
 static void
-token_tp_dealloc(PyContextToken *self)
+token_tp_dealloc(PyObject *self)
 {
     PyObject_GC_UnTrack(self);
     (void)token_tp_clear(self);
@@ -1164,8 +1175,9 @@ token_tp_dealloc(PyContextToken *self)
 }
 
 static PyObject *
-token_tp_repr(PyContextToken *self)
+token_tp_repr(PyObject *op)
 {
+    PyContextToken *self = _PyContextToken_CAST(op);
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(0);
     if (writer == NULL) {
         return NULL;
@@ -1195,14 +1207,16 @@ error:
 }
 
 static PyObject *
-token_get_var(PyContextToken *self, void *Py_UNUSED(ignored))
+token_get_var(PyObject *op, void *Py_UNUSED(ignored))
 {
+    PyContextToken *self = _PyContextToken_CAST(op);
     return Py_NewRef(self->tok_var);;
 }
 
 static PyObject *
-token_get_old_value(PyContextToken *self, void *Py_UNUSED(ignored))
+token_get_old_value(PyObject *op, void *Py_UNUSED(ignored))
 {
+    PyContextToken *self = _PyContextToken_CAST(op);
     if (self->tok_oldval == NULL) {
         return get_token_missing();
     }
@@ -1211,14 +1225,52 @@ token_get_old_value(PyContextToken *self, void *Py_UNUSED(ignored))
 }
 
 static PyGetSetDef PyContextTokenType_getsetlist[] = {
-    {"var", (getter)token_get_var, NULL, NULL},
-    {"old_value", (getter)token_get_old_value, NULL, NULL},
+    {"var", token_get_var, NULL, NULL},
+    {"old_value", token_get_old_value, NULL, NULL},
     {NULL}
 };
+
+/*[clinic input]
+_contextvars.Token.__enter__ as token_enter
+
+Enter into Token context manager.
+[clinic start generated code]*/
+
+static PyObject *
+token_enter_impl(PyContextToken *self)
+/*[clinic end generated code: output=9af4d2054e93fb75 input=41a3d6c4195fd47a]*/
+{
+    return Py_NewRef(self);
+}
+
+/*[clinic input]
+_contextvars.Token.__exit__ as token_exit
+
+    type: object
+    val: object
+    tb: object
+    /
+
+Exit from Token context manager, restore the linked ContextVar.
+[clinic start generated code]*/
+
+static PyObject *
+token_exit_impl(PyContextToken *self, PyObject *type, PyObject *val,
+                PyObject *tb)
+/*[clinic end generated code: output=3e6a1c95d3da703a input=7f117445f0ccd92e]*/
+{
+    int ret = PyContextVar_Reset((PyObject *)self->tok_var, (PyObject *)self);
+    if (ret < 0) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
 
 static PyMethodDef PyContextTokenType_methods[] = {
     {"__class_getitem__",    Py_GenericAlias,
     METH_O|METH_CLASS,       PyDoc_STR("See PEP 585")},
+    TOKEN_ENTER_METHODDEF
+    TOKEN_EXIT_METHODDEF
     {NULL}
 };
 
@@ -1228,15 +1280,15 @@ PyTypeObject PyContextToken_Type = {
     sizeof(PyContextToken),
     .tp_methods = PyContextTokenType_methods,
     .tp_getset = PyContextTokenType_getsetlist,
-    .tp_dealloc = (destructor)token_tp_dealloc,
+    .tp_dealloc = token_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_traverse = (traverseproc)token_tp_traverse,
-    .tp_clear = (inquiry)token_tp_clear,
+    .tp_traverse = token_tp_traverse,
+    .tp_clear = token_tp_clear,
     .tp_new = token_tp_new,
     .tp_free = PyObject_GC_Del,
     .tp_hash = PyObject_HashNotImplemented,
-    .tp_repr = (reprfunc)token_tp_repr,
+    .tp_repr = token_tp_repr,
 };
 
 static PyContextToken *
@@ -1270,7 +1322,7 @@ context_token_missing_tp_repr(PyObject *self)
 }
 
 static void
-context_token_missing_tp_dealloc(_PyContextTokenMissing *Py_UNUSED(self))
+context_token_missing_tp_dealloc(PyObject *Py_UNUSED(self))
 {
 #ifdef Py_DEBUG
     /* The singleton is statically allocated. */
@@ -1285,7 +1337,7 @@ PyTypeObject _PyContextTokenMissing_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "Token.MISSING",
     sizeof(_PyContextTokenMissing),
-    .tp_dealloc = (destructor)context_token_missing_tp_dealloc,
+    .tp_dealloc = context_token_missing_tp_dealloc,
     .tp_getattro = PyObject_GenericGetAttr,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_repr = context_token_missing_tp_repr,

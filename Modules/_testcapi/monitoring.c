@@ -14,6 +14,7 @@ typedef struct {
     /* Other fields */
 } PyCodeLikeObject;
 
+#define PyCodeLikeObject_CAST(op)   ((PyCodeLikeObject *)(op))
 
 static PyObject *
 CodeLike_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -40,8 +41,9 @@ CodeLike_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 }
 
 static void
-CodeLike_dealloc(PyCodeLikeObject *self)
+CodeLike_dealloc(PyObject *op)
 {
+    PyCodeLikeObject *self = PyCodeLikeObject_CAST(op);
     if (self->monitoring_states) {
         PyMem_Free(self->monitoring_states);
     }
@@ -49,8 +51,9 @@ CodeLike_dealloc(PyCodeLikeObject *self)
 }
 
 static PyObject *
-CodeLike_str(PyCodeLikeObject *self)
+CodeLike_str(PyObject *op)
 {
+    PyCodeLikeObject *self = PyCodeLikeObject_CAST(op);
     PyObject *res = NULL;
     PyObject *sep = NULL;
     PyObject *parts = NULL;
@@ -101,8 +104,8 @@ static PyTypeObject PyCodeLike_Type = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT,
     .tp_new = CodeLike_new,
-    .tp_dealloc = (destructor) CodeLike_dealloc,
-    .tp_str = (reprfunc) CodeLike_str,
+    .tp_dealloc = CodeLike_dealloc,
+    .tp_str = CodeLike_str,
 };
 
 #define RAISE_UNLESS_CODELIKE(v)  if (!Py_IS_TYPE((v), &PyCodeLike_Type)) { \
@@ -286,7 +289,7 @@ fire_event_jump(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-fire_event_branch(PyObject *self, PyObject *args)
+fire_event_branch_right(PyObject *self, PyObject *args)
 {
     PyObject *codelike;
     int offset;
@@ -299,7 +302,25 @@ fire_event_branch(PyObject *self, PyObject *args)
     if (state == NULL) {
         return NULL;
     }
-    int res = PyMonitoring_FireBranchEvent(state, codelike, offset, target_offset);
+    int res = PyMonitoring_FireBranchRightEvent(state, codelike, offset, target_offset);
+    RETURN_INT(teardown_fire(res, state, exception));
+}
+
+static PyObject *
+fire_event_branch_left(PyObject *self, PyObject *args)
+{
+    PyObject *codelike;
+    int offset;
+    PyObject *target_offset;
+    if (!PyArg_ParseTuple(args, "OiO", &codelike, &offset, &target_offset)) {
+        return NULL;
+    }
+    PyObject *exception = NULL;
+    PyMonitoringState *state = setup_fire(codelike, offset, exception);
+    if (state == NULL) {
+        return NULL;
+    }
+    int res = PyMonitoring_FireBranchLeftEvent(state, codelike, offset, target_offset);
     RETURN_INT(teardown_fire(res, state, exception));
 }
 
@@ -478,7 +499,8 @@ static PyMethodDef TestMethods[] = {
     {"fire_event_call", fire_event_call, METH_VARARGS},
     {"fire_event_line", fire_event_line, METH_VARARGS},
     {"fire_event_jump", fire_event_jump, METH_VARARGS},
-    {"fire_event_branch", fire_event_branch, METH_VARARGS},
+    {"fire_event_branch_left", fire_event_branch_left, METH_VARARGS},
+    {"fire_event_branch_right", fire_event_branch_right, METH_VARARGS},
     {"fire_event_py_throw", fire_event_py_throw, METH_VARARGS},
     {"fire_event_raise", fire_event_raise, METH_VARARGS},
     {"fire_event_c_raise", fire_event_c_raise, METH_VARARGS},

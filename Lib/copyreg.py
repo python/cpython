@@ -36,6 +36,11 @@ def pickle_union(obj):
 
 pickle(type(int | str), pickle_union)
 
+def pickle_super(obj):
+    return super, (obj.__thisclass__, obj.__self__)
+
+pickle(super, pickle_super)
+
 # Support for pickling new-style objects
 
 def _reconstructor(cls, base, state):
