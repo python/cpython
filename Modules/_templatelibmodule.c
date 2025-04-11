@@ -1,12 +1,8 @@
-/* interpreter-internal types for templatelib */
-
-#ifndef Py_BUILD_CORE
-#define Py_BUILD_CORE
-#endif
+/* interpreter-internal types for string.templatelib */
 
 #include "Python.h"
-#include "pycore_template.h"
-#include "pycore_interpolation.h"
+#include "pycore_template.h"      // _PyTemplate_Type
+#include "pycore_interpolation.h" // _PyInterpolation_Type
 
 static int
 _templatelib_exec(PyObject *m)
@@ -20,9 +16,6 @@ _templatelib_exec(PyObject *m)
     return 0;
 }
 
-PyDoc_STRVAR(_templatelib_doc,
-"Interpreter-internal types for t-string templates.\n");
-
 static struct PyModuleDef_Slot _templatelib_slots[] = {
     {Py_mod_exec, _templatelib_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
@@ -31,15 +24,11 @@ static struct PyModuleDef_Slot _templatelib_slots[] = {
 };
 
 static struct PyModuleDef _templatemodule = {
-    PyModuleDef_HEAD_INIT,
-    "_templatelib",
-    _templatelib_doc,
-    0,
-    NULL,
-    _templatelib_slots,
-    NULL,
-    NULL,
-    NULL
+    .m_base = PyModuleDef_HEAD_INIT,
+    .m_name = "_templatelib",
+    .m_doc = "Interpreter-internal types for t-string templates.",
+    .m_size = 0,
+    .m_slots = _templatelib_slots,
 };
 
 PyMODINIT_FUNC

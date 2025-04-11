@@ -1,4 +1,4 @@
-/* Interpolation object implementation */
+/* t-string Interpolation object implementation */
 #include "Python.h"
 #include <stddef.h>
 

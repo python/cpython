@@ -1,3 +1,3 @@
-from _templatelib import Template, Interpolation
+"""Support for template string literals (t-strings)."""
 
-__all__ = ['Template', 'Interpolation']
+from _templatelib import Template, Interpolation
