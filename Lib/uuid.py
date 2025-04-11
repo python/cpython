@@ -82,6 +82,8 @@ _MAC_OMITS_LEADING_ZEROES = False
 if _AIX:
     _MAC_DELIM = b'.'
     _MAC_OMITS_LEADING_ZEROES = True
+if sys.platform == 'darwin':
+    _MAC_OMITS_LEADING_ZEROES = True
 
 RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
     'reserved for NCS compatibility', 'specified in RFC 4122',
@@ -491,8 +493,8 @@ def _find_mac_near_keyword(command, args, keywords, get_word_index):
             if words[i] in keywords:
                 try:
                     word = words[get_word_index(i)]
-                    mac = int(word.replace(_MAC_DELIM, b''), 16)
-                except (ValueError, IndexError):
+                    mac = _parse_mac(word)
+                except IndexError:
                     # Virtual interfaces, such as those provided by
                     # VPNs, do not have a colon-delimited MAC address
                     # as expected, but a 16-byte HWAddr separated by
@@ -500,7 +502,7 @@ def _find_mac_near_keyword(command, args, keywords, get_word_index):
                     # real MAC address
                     pass
                 else:
-                    if _is_universal(mac):
+                    if mac and _is_universal(mac):
                         return mac
                     first_local_mac = first_local_mac or mac
     return first_local_mac or None
@@ -517,10 +519,12 @@ def _parse_mac(word):
     if len(parts) != 6:
         return
     if _MAC_OMITS_LEADING_ZEROES:
-        # (Only) on AIX the macaddr value given is not prefixed by 0, e.g.
+        # on AIX and darwin the macaddr value given is not prefixed by 0, e.g. on AIX
         # en0   1500  link#2      fa.bc.de.f7.62.4 110854824     0 160133733     0     0
         # not
         # en0   1500  link#2      fa.bc.de.f7.62.04 110854824     0 160133733     0     0
+        # and on darwin
+        # ? (224.0.0.251) at 1:0:5e:0:0:fb on en0 ifscope permanent [ethernet]
         if not all(1 <= len(part) <= 2 for part in parts):
             return
         hexstr = b''.join(part.rjust(2, b'0') for part in parts)
