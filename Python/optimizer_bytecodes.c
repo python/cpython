@@ -992,12 +992,8 @@ dummy_func(void) {
     }
 
     op(_GUARD_CALLABLE_TYPE_1, (callable, unused, unused2 -- callable, unused, unused2)) {
-        if (sym_is_const(ctx, callable)) {
-            PyObject *value = sym_get_const(ctx, callable);
-            assert(value != NULL);
-            if (value == (PyObject *)&PyType_Type) {
-                REPLACE_OP(this_instr, _NOP, 0, 0);
-            }
+        if (sym_get_const(ctx, callable) == (PyObject *)&PyType_Type) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
         }
         sym_set_const(callable, (PyObject *)&PyType_Type);
     }
