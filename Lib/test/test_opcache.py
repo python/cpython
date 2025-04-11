@@ -1,3 +1,4 @@
+import collections
 import copy
 import pickle
 import dis
@@ -1729,9 +1730,43 @@ class TestSpecializer(TestBase):
                 self.assertEqual(a[1], 2)
                 self.assertEqual(a[2], 3)
 
-        binary_subscr_dict()
-        self.assert_specialized(binary_subscr_dict, "BINARY_OP_SUBSCR_DICT")
-        self.assert_no_opcode(binary_subscr_dict, "BINARY_OP")
+        def binary_subscr_dict_subclass_defaultdict():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = collections.defaultdict(lambda : 42, {1: 2, 2: 3})
+                self.assertEqual(a[1], 2)
+                self.assertEqual(a[2], 3)
+                self.assertEqual(a[7], 42)
+
+        def binary_subscr_dict_subclass_Counter():
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = collections.Counter('abcdeabcdabcaba')
+                self.assertEqual(a['a'], 5)
+                self.assertEqual(a['b'], 4)
+                self.assertEqual(a['m'], 0)
+
+        for f in [binary_subscr_dict,
+                  binary_subscr_dict_subclass_defaultdict,
+                  binary_subscr_dict_subclass_Counter]:
+
+            with self.subTest(f=f):
+                f()
+                self.assert_specialized(f, "BINARY_OP_SUBSCR_DICT")
+                self.assert_no_opcode(f, "BINARY_OP")
+
+        def binary_subscr_dict_subclass_with_subscript_override():
+            class MyDict(dict):
+                def __getitem__(self, key):
+                    return 42
+
+            for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
+                a = MyDict()
+                self.assertEqual(a['a'], 42)
+                self.assertEqual(a['b'], 42)
+
+        binary_subscr_dict_subclass_with_subscript_override()
+        self.assert_no_opcode(
+            binary_subscr_dict_subclass_with_subscript_override,
+            "BINARY_OP_SUBSCR_DICT")
 
         def binary_subscr_str_int():
             for _ in range(_testinternalcapi.SPECIALIZATION_THRESHOLD):
