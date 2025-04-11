@@ -1107,7 +1107,7 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | cp852           | 852, IBM852                    | Central and Eastern Europe     |
 +-----------------+--------------------------------+--------------------------------+
-| cp855           | 855, IBM855                    | Bulgarian, Byelorussian,       |
+| cp855           | 855, IBM855                    | Belarusian, Bulgarian,         |
 |                 |                                | Macedonian, Russian, Serbian   |
 +-----------------+--------------------------------+--------------------------------+
 | cp856           |                                | Hebrew                         |
@@ -1155,7 +1155,7 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | cp1250          | windows-1250                   | Central and Eastern Europe     |
 +-----------------+--------------------------------+--------------------------------+
-| cp1251          | windows-1251                   | Bulgarian, Byelorussian,       |
+| cp1251          | windows-1251                   | Belarusian, Bulgarian,         |
 |                 |                                | Macedonian, Russian, Serbian   |
 +-----------------+--------------------------------+--------------------------------+
 | cp1252          | windows-1252                   | Western Europe                 |
@@ -1220,7 +1220,7 @@ particular, the following variants typically exist:
 +-----------------+--------------------------------+--------------------------------+
 | iso8859_4       | iso-8859-4, latin4, L4         | Baltic languages               |
 +-----------------+--------------------------------+--------------------------------+
-| iso8859_5       | iso-8859-5, cyrillic           | Bulgarian, Byelorussian,       |
+| iso8859_5       | iso-8859-5, cyrillic           | Belarusian, Bulgarian,         |
 |                 |                                | Macedonian, Russian, Serbian   |
 +-----------------+--------------------------------+--------------------------------+
 | iso8859_6       | iso-8859-6, arabic             | Arabic                         |
@@ -1257,7 +1257,7 @@ particular, the following variants typically exist:
 |                 |                                |                                |
 |                 |                                | .. versionadded:: 3.5          |
 +-----------------+--------------------------------+--------------------------------+
-| mac_cyrillic    | maccyrillic                    | Bulgarian, Byelorussian,       |
+| mac_cyrillic    | maccyrillic                    | Belarusian, Bulgarian,         |
 |                 |                                | Macedonian, Russian, Serbian   |
 +-----------------+--------------------------------+--------------------------------+
 | mac_greek       | macgreek                       | Greek                          |
