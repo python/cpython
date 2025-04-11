@@ -319,8 +319,15 @@ that only one process prints to standard output at a time::
    if __name__ == '__main__':
        lock = Lock()
 
+       processes = []
+
        for num in range(10):
-           Process(target=f, args=(lock, num)).start()
+           p = Process(target=f, args=(lock, num))
+           processes.append(p)
+           p.start()
+
+       for p in processes:
+           p.join()
 
 Without using the lock output from the different processes is liable to get all
 mixed up.
