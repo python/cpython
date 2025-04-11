@@ -5,6 +5,7 @@ import itertools
 import math
 import opcode
 import os
+import re
 import unittest
 import sys
 import ast
@@ -23,6 +24,35 @@ from test.support import (script_helper, requires_debug_ranges, run_code,
                           requires_specialization)
 from test.support.bytecode_helper import instructions_with_positions
 from test.support.os_helper import FakePath
+
+
+class DummyEnter:
+    def __enter__(self, *args, **kwargs):
+        pass
+
+
+class DummyExit:
+    def __exit__(self, *args, **kwargs):
+        pass
+
+
+class SyncDummy(DummyEnter, DummyExit):
+    pass
+
+
+class AsyncDummyEnter:
+    async def __aenter__(self, *args, **kwargs):
+        pass
+
+
+class AsyncDummyExit:
+    async def __aexit__(self, *args, **kwargs):
+        pass
+
+
+class AsyncDummy(AsyncDummyEnter, AsyncDummyExit):
+    pass
+
 
 class TestSpecifics(unittest.TestCase):
 
@@ -1635,6 +1665,69 @@ class TestSpecifics(unittest.TestCase):
                 case []:
                     pass
             [[]]
+
+    def test_invalid_with_usages(self):
+        def f(obj):
+            with obj:
+                pass
+
+        with self.assertRaisesRegex(TypeError, re.escape((
+            "object does not support the context manager protocol "
+            "(missed __exit__ method)"
+        ))):
+            f(DummyEnter())
+
+        with self.assertRaisesRegex(TypeError, re.escape((
+            "object does not support the context manager protocol "
+            "(missed __enter__ method)"
+        ))):
+            f(DummyExit())
+
+        # a missing __exit__ is reported missing before a missing __enter__
+        with self.assertRaisesRegex(TypeError, re.escape((
+            "object does not support the context manager protocol "
+            "(missed __exit__ method)"
+        ))):
+            f(object())
+
+        with self.assertRaisesRegex(TypeError, re.escape((
+            "object does not support the context manager protocol "
+            "(missed __exit__ method) but it supports the asynchronous "
+            "context manager protocol. Did you mean to use 'async with'?"
+        ))):
+            f(AsyncDummy())
+
+    def test_invalid_async_with_usages(self):
+        async def f(obj):
+            async with obj:
+                pass
+
+        with self.assertRaisesRegex(TypeError, re.escape((
+            "object does not support the asynchronous context manager protocol "
+            "(missed __aexit__ method)"
+        ))):
+            f(AsyncDummyEnter()).send(None)
+
+        with self.assertRaisesRegex(TypeError, re.escape((
+            "object does not support the asynchronous context manager protocol "
+            "(missed __aenter__ method)"
+        ))):
+            f(AsyncDummyExit()).send(None)
+
+        # a missing __aexit__ is reported missing before a missing __aenter__
+        with self.assertRaisesRegex(TypeError, re.escape((
+            "object does not support the asynchronous context manager protocol "
+            "(missed __aexit__ method)"
+        ))):
+            f(object()).send(None)
+
+        with self.assertRaisesRegex(TypeError, re.escape((
+            "object does not support the asynchronous context manager protocol "
+            "(missed __aexit__ method) but it supports the context manager "
+            "protocol. Did you mean to use 'with'?"
+        ))):
+            f(SyncDummy()).send(None)
+
 
 class TestBooleanExpression(unittest.TestCase):
     class Value:
