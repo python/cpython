@@ -78,11 +78,6 @@ CLASSES
      |  __weakref__%s
 
     class B(builtins.object)
-     |  Methods defined here:
-     |
-     |  __annotate__(format, /)
-     |
-     |  ----------------------------------------------------------------------
      |  Data descriptors defined here:
      |
      |  __dict__%s
@@ -180,9 +175,6 @@ class A(builtins.object)
             list of weak references to the object
 
 class B(builtins.object)
-    Methods defined here:
-        __annotate__(format, /)
-    ----------------------------------------------------------------------
     Data descriptors defined here:
         __dict__
             dictionary for instance variables
