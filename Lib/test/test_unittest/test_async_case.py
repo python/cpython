@@ -476,7 +476,7 @@ class TestAsyncCase(unittest.TestCase):
     def test_setup_get_event_loop(self):
         # See https://github.com/python/cpython/issues/95736
         # Make sure the default event loop is not used
-        asyncio._set_event_loop(None)
+        asyncio.set_event_loop(None)
 
         class TestCase1(unittest.IsolatedAsyncioTestCase):
             def setUp(self):
