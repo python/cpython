@@ -396,7 +396,6 @@ dummy_func(void) {
     op(_TO_BOOL_LIST, (value -- res)) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
         if (!already_bool) {
-            sym_set_type(value, &PyList_Type);
             res = sym_new_type(ctx, &PyBool_Type);
         }
     }
@@ -927,7 +926,57 @@ dummy_func(void) {
 
     op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg])) {
         for (int i = 0; i < oparg; i++) {
-            values[i] = sym_tuple_getitem(ctx, seq, i);
+            values[i] = sym_tuple_getitem(ctx, seq, oparg - i - 1);
+        }
+    }
+
+    op(_GUARD_TOS_LIST, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyList_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(tos, &PyList_Type);
+    }
+
+    op(_GUARD_NOS_LIST, (nos, unused -- nos, unused)) {
+        if (sym_matches_type(nos, &PyList_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(nos, &PyList_Type);
+    }
+
+    op(_GUARD_TOS_TUPLE, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyTuple_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(tos, &PyTuple_Type);
+    }
+
+    op(_GUARD_NOS_TUPLE, (nos, unused -- nos, unused)) {
+        if (sym_matches_type(nos, &PyTuple_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(nos, &PyTuple_Type);
+    }
+
+    op(_GUARD_TOS_DICT, (tos -- tos)) {
+        if (sym_matches_type(tos, &PyDict_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(tos, &PyDict_Type);
+    }
+
+    op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
+        if (sym_matches_type(nos, &PyDict_Type)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_type(nos, &PyDict_Type);
+    }
+
+    op(_GUARD_TOS_ANY_SET, (tos -- tos)) {
+        if (sym_matches_type(tos, &PySet_Type) ||
+            sym_matches_type(tos, &PyFrozenSet_Type))
+        {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
         }
     }
 

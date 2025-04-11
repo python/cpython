@@ -510,9 +510,21 @@ dummy_func(
             }
         }
 
-        inst(TO_BOOL_LIST, (unused/1, unused/2, value -- res)) {
+        op(_GUARD_NOS_LIST, (nos, unused -- nos, unused)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            EXIT_IF(!PyList_CheckExact(o));
+        }
+
+        op(_GUARD_TOS_LIST, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            EXIT_IF(!PyList_CheckExact(o));
+        }
+
+        macro(TO_BOOL_LIST) = _GUARD_TOS_LIST + unused/1 + unused/2 + _TO_BOOL_LIST;
+
+        op(_TO_BOOL_LIST, (value -- res)) {
             PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
-            EXIT_IF(!PyList_CheckExact(value_o));
+            assert(PyList_CheckExact(value_o));
             STAT_INC(TO_BOOL, hit);
             res = PyList_GET_SIZE(value_o) ? PyStackRef_True : PyStackRef_False;
             DECREF_INPUTS();
@@ -526,8 +538,7 @@ dummy_func(
             res = PyStackRef_False;
         }
 
-        op(_GUARD_NOS_UNICODE, (nos, tos -- nos, tos)) {
-            (void)tos;
+        op(_GUARD_NOS_UNICODE, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
             EXIT_IF(!PyUnicode_CheckExact(o));
         }
@@ -589,8 +600,7 @@ dummy_func(
             BINARY_OP_EXTEND,
         };
 
-        op(_GUARD_NOS_INT, (left, right -- left, right)) {
-            (void)right;
+        op(_GUARD_NOS_INT, (left, unused -- left, unused)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             EXIT_IF(!PyLong_CheckExact(left_o));
         }
@@ -652,8 +662,7 @@ dummy_func(
         macro(BINARY_OP_SUBTRACT_INT) =
             _GUARD_TOS_INT + _GUARD_NOS_INT + unused/5 + _BINARY_OP_SUBTRACT_INT;
 
-        op(_GUARD_NOS_FLOAT, (left, right -- left, right)) {
-            (void)right;
+        op(_GUARD_NOS_FLOAT, (left, unused -- left, unused)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             EXIT_IF(!PyFloat_CheckExact(left_o));
         }
@@ -864,14 +873,14 @@ dummy_func(
         macro(STORE_SLICE) = _SPECIALIZE_STORE_SLICE + _STORE_SLICE;
 
         macro(BINARY_OP_SUBSCR_LIST_INT) =
-            _GUARD_TOS_INT + unused/5 + _BINARY_OP_SUBSCR_LIST_INT;
+            _GUARD_TOS_INT + _GUARD_NOS_LIST + unused/5 + _BINARY_OP_SUBSCR_LIST_INT;
 
         op(_BINARY_OP_SUBSCR_LIST_INT, (list_st, sub_st -- res)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
 
             assert(PyLong_CheckExact(sub));
-            DEOPT_IF(!PyList_CheckExact(list));
+            assert(PyList_CheckExact(list));
 
             // Deopt unless 0 <= sub < PyList_Size(list)
             DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
@@ -915,15 +924,25 @@ dummy_func(
             res = PyStackRef_FromPyObjectImmortal(res_o);
         }
 
+        op(_GUARD_NOS_TUPLE, (nos, unused -- nos, unused)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            EXIT_IF(!PyTuple_CheckExact(o));
+        }
+
+        op(_GUARD_TOS_TUPLE, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            EXIT_IF(!PyTuple_CheckExact(o));
+        }
+
         macro(BINARY_OP_SUBSCR_TUPLE_INT) =
-            _GUARD_TOS_INT + unused/5 + _BINARY_OP_SUBSCR_TUPLE_INT;
+            _GUARD_TOS_INT + _GUARD_NOS_TUPLE + unused/5 + _BINARY_OP_SUBSCR_TUPLE_INT;
 
         op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *tuple = PyStackRef_AsPyObjectBorrow(tuple_st);
 
             assert(PyLong_CheckExact(sub));
-            DEOPT_IF(!PyTuple_CheckExact(tuple));
+            assert(PyTuple_CheckExact(tuple));
 
             // Deopt unless 0 <= sub < PyTuple_Size(list)
             DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
@@ -937,11 +956,24 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(BINARY_OP_SUBSCR_DICT, (unused/5, dict_st, sub_st -- res)) {
+        op(_GUARD_NOS_DICT, (nos, unused -- nos, unused)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            EXIT_IF(!PyDict_CheckExact(o));
+        }
+
+        op(_GUARD_TOS_DICT, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            EXIT_IF(!PyDict_CheckExact(o));
+        }
+
+        macro(BINARY_OP_SUBSCR_DICT) =
+            _GUARD_NOS_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT;
+
+        op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
-            DEOPT_IF(!PyDict_CheckExact(dict));
+            assert(PyDict_CheckExact(dict));
             STAT_INC(BINARY_OP, hit);
             PyObject *res_o;
             int rc = PyDict_GetItemRef(dict, sub, &res_o);
@@ -1023,14 +1055,14 @@ dummy_func(
         macro(STORE_SUBSCR) = _SPECIALIZE_STORE_SUBSCR + _STORE_SUBSCR;
 
         macro(STORE_SUBSCR_LIST_INT) =
-            _GUARD_TOS_INT + unused/1 + _STORE_SUBSCR_LIST_INT;
+            _GUARD_TOS_INT + _GUARD_NOS_LIST + unused/1 + _STORE_SUBSCR_LIST_INT;
 
         op(_STORE_SUBSCR_LIST_INT, (value, list_st, sub_st -- )) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
 
             assert(PyLong_CheckExact(sub));
-            DEOPT_IF(!PyList_CheckExact(list));
+            assert(PyList_CheckExact(list));
 
             // Ensure nonnegative, zero-or-one-digit ints.
             DEOPT_IF(!_PyLong_IsNonNegativeCompact((PyLongObject *)sub));
@@ -1054,10 +1086,13 @@ dummy_func(
             Py_DECREF(old_value);
         }
 
-        inst(STORE_SUBSCR_DICT, (unused/1, value, dict_st, sub -- )) {
+        macro(STORE_SUBSCR_DICT) =
+            _GUARD_NOS_DICT + unused/1 + _STORE_SUBSCR_DICT;
+
+        op(_STORE_SUBSCR_DICT, (value, dict_st, sub -- )) {
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
-            DEOPT_IF(!PyDict_CheckExact(dict));
+            assert(PyDict_CheckExact(dict));
             STAT_INC(STORE_SUBSCR, hit);
             int err = _PyDict_SetItem_Take2((PyDictObject *)dict,
                                             PyStackRef_AsPyObjectSteal(sub),
@@ -1504,10 +1539,13 @@ dummy_func(
 
         macro(UNPACK_SEQUENCE) = _SPECIALIZE_UNPACK_SEQUENCE + _UNPACK_SEQUENCE;
 
-        inst(UNPACK_SEQUENCE_TWO_TUPLE, (unused/1, seq -- val1, val0)) {
+        macro(UNPACK_SEQUENCE_TWO_TUPLE) =
+            _GUARD_TOS_TUPLE + unused/1 + _UNPACK_SEQUENCE_TWO_TUPLE;
+
+        op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
             assert(oparg == 2);
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
-            DEOPT_IF(!PyTuple_CheckExact(seq_o));
+            assert(PyTuple_CheckExact(seq_o));
             DEOPT_IF(PyTuple_GET_SIZE(seq_o) != 2);
             STAT_INC(UNPACK_SEQUENCE, hit);
             val0 = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq_o, 0));
@@ -1515,9 +1553,12 @@ dummy_func(
             PyStackRef_CLOSE(seq);
         }
 
-        inst(UNPACK_SEQUENCE_TUPLE, (unused/1, seq -- values[oparg])) {
+        macro(UNPACK_SEQUENCE_TUPLE) =
+            _GUARD_TOS_TUPLE + unused/1 + _UNPACK_SEQUENCE_TUPLE;
+
+        op(_UNPACK_SEQUENCE_TUPLE, (seq -- values[oparg])) {
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
-            DEOPT_IF(!PyTuple_CheckExact(seq_o));
+            assert(PyTuple_CheckExact(seq_o));
             DEOPT_IF(PyTuple_GET_SIZE(seq_o) != oparg);
             STAT_INC(UNPACK_SEQUENCE, hit);
             PyObject **items = _PyTuple_ITEMS(seq_o);
@@ -1527,9 +1568,12 @@ dummy_func(
             DECREF_INPUTS();
         }
 
-        inst(UNPACK_SEQUENCE_LIST, (unused/1, seq -- values[oparg])) {
+        macro(UNPACK_SEQUENCE_LIST) =
+            _GUARD_TOS_LIST + unused/1 + _UNPACK_SEQUENCE_LIST;
+
+        op(_UNPACK_SEQUENCE_LIST, (seq -- values[oparg])) {
             PyObject *seq_o = PyStackRef_AsPyObjectBorrow(seq);
-            DEOPT_IF(!PyList_CheckExact(seq_o));
+            assert(PyList_CheckExact(seq_o));
             DEOPT_IF(!LOCK_OBJECT(seq_o));
             if (PyList_GET_SIZE(seq_o) != oparg) {
                 UNLOCK_OBJECT(seq_o);
@@ -2718,11 +2762,18 @@ dummy_func(
 
         macro(CONTAINS_OP) = _SPECIALIZE_CONTAINS_OP + _CONTAINS_OP;
 
-        inst(CONTAINS_OP_SET, (unused/1, left, right -- b)) {
+        op(_GUARD_TOS_ANY_SET, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            DEOPT_IF(!PyAnySet_CheckExact(o));
+        }
+
+        macro(CONTAINS_OP_SET) = _GUARD_TOS_ANY_SET + unused/1 + _CONTAINS_OP_SET;
+
+        op(_CONTAINS_OP_SET, (left, right -- b)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
-            DEOPT_IF(!(PySet_CheckExact(right_o) || PyFrozenSet_CheckExact(right_o)));
+            assert(PyAnySet_CheckExact(right_o));
             STAT_INC(CONTAINS_OP, hit);
             // Note: both set and frozenset use the same seq_contains method!
             int res = _PySet_Contains((PySetObject *)right_o, left_o);
@@ -2731,11 +2782,13 @@ dummy_func(
             b = (res ^ oparg) ? PyStackRef_True : PyStackRef_False;
         }
 
-        inst(CONTAINS_OP_DICT, (unused/1, left, right -- b)) {
+        macro(CONTAINS_OP_DICT) = _GUARD_TOS_DICT + unused/1 + _CONTAINS_OP_DICT;
+
+        op(_CONTAINS_OP_DICT, (left, right -- b)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
 
-            DEOPT_IF(!PyDict_CheckExact(right_o));
+            assert(PyDict_CheckExact(right_o));
             STAT_INC(CONTAINS_OP, hit);
             int res = PyDict_Contains(right_o, left_o);
             DECREF_INPUTS();
