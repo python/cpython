@@ -753,6 +753,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_feature_version));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_field_types));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_fields_));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_filters));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_finalizing));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_find_and_load));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(_fix_up_module));
@@ -1195,6 +1196,7 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(salt));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(sched_priority));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(scheduler));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(script));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(second));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(security_attributes));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(seek));
