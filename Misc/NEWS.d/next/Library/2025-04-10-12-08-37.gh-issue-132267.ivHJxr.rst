@@ -1,0 +1,1 @@
+Add function Console.sync_screen to recalculate the cursor position and the screen buffer.
