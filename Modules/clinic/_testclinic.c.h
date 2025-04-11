@@ -4067,48 +4067,56 @@ exit:
     return return_value;
 }
 
-static PyObject *
-varpos_no_fastcall_impl(PyTypeObject *type, PyObject *args);
+PyDoc_STRVAR(_testclinic_TestClass_varpos_no_fastcall__doc__,
+"varpos_no_fastcall($type, /, *args)\n"
+"--\n"
+"\n");
+
+#define _TESTCLINIC_TESTCLASS_VARPOS_NO_FASTCALL_METHODDEF    \
+    {"varpos_no_fastcall", (PyCFunction)_testclinic_TestClass_varpos_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_varpos_no_fastcall__doc__},
 
 static PyObject *
-varpos_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+_testclinic_TestClass_varpos_no_fastcall_impl(PyTypeObject *type,
+                                              PyObject *args);
+
+static PyObject *
+_testclinic_TestClass_varpos_no_fastcall(PyObject *type, PyObject *args)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &PyBaseObject_Type;
     PyObject *__clinic_args = NULL;
 
-    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("TestClass", kwargs)) {
-        goto exit;
-    }
     __clinic_args = Py_NewRef(args);
-    return_value = varpos_no_fastcall_impl(type, __clinic_args);
+    return_value = _testclinic_TestClass_varpos_no_fastcall_impl((PyTypeObject *)type, __clinic_args);
 
-exit:
     /* Cleanup for args */
     Py_XDECREF(__clinic_args);
 
     return return_value;
 }
 
-static PyObject *
-posonly_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a, PyObject *b,
-                                PyObject *args);
+PyDoc_STRVAR(_testclinic_TestClass_posonly_varpos_no_fastcall__doc__,
+"posonly_varpos_no_fastcall($type, a, b, /, *args)\n"
+"--\n"
+"\n");
+
+#define _TESTCLINIC_TESTCLASS_POSONLY_VARPOS_NO_FASTCALL_METHODDEF    \
+    {"posonly_varpos_no_fastcall", (PyCFunction)_testclinic_TestClass_posonly_varpos_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_posonly_varpos_no_fastcall__doc__},
 
 static PyObject *
-posonly_varpos_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+_testclinic_TestClass_posonly_varpos_no_fastcall_impl(PyTypeObject *type,
+                                                      PyObject *a,
+                                                      PyObject *b,
+                                                      PyObject *args);
+
+static PyObject *
+_testclinic_TestClass_posonly_varpos_no_fastcall(PyObject *type, PyObject *args)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &PyBaseObject_Type;
     PyObject *a;
     PyObject *b;
     PyObject *__clinic_args = NULL;
 
-    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("TestClass", kwargs)) {
-        goto exit;
-    }
-    if (!_PyArg_CheckPositional("TestClass", PyTuple_GET_SIZE(args), 2, PY_SSIZE_T_MAX)) {
+    if (!_PyArg_CheckPositional("posonly_varpos_no_fastcall", PyTuple_GET_SIZE(args), 2, PY_SSIZE_T_MAX)) {
         goto exit;
     }
     a = PyTuple_GET_ITEM(args, 0);
@@ -4117,7 +4125,7 @@ posonly_varpos_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!__clinic_args) {
         goto exit;
     }
-    return_value = posonly_varpos_no_fastcall_impl(type, a, b, __clinic_args);
+    return_value = _testclinic_TestClass_posonly_varpos_no_fastcall_impl((PyTypeObject *)type, a, b, __clinic_args);
 
 exit:
     /* Cleanup for args */
@@ -4126,24 +4134,29 @@ exit:
     return return_value;
 }
 
-static PyObject *
-posonly_req_opt_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a,
-                                        PyObject *b, PyObject *args);
+PyDoc_STRVAR(_testclinic_TestClass_posonly_req_opt_varpos_no_fastcall__doc__,
+"posonly_req_opt_varpos_no_fastcall($type, a, b=False, /, *args)\n"
+"--\n"
+"\n");
+
+#define _TESTCLINIC_TESTCLASS_POSONLY_REQ_OPT_VARPOS_NO_FASTCALL_METHODDEF    \
+    {"posonly_req_opt_varpos_no_fastcall", (PyCFunction)_testclinic_TestClass_posonly_req_opt_varpos_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_posonly_req_opt_varpos_no_fastcall__doc__},
 
 static PyObject *
-posonly_req_opt_varpos_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+_testclinic_TestClass_posonly_req_opt_varpos_no_fastcall_impl(PyTypeObject *type,
+                                                              PyObject *a,
+                                                              PyObject *b,
+                                                              PyObject *args);
+
+static PyObject *
+_testclinic_TestClass_posonly_req_opt_varpos_no_fastcall(PyObject *type, PyObject *args)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &PyBaseObject_Type;
     PyObject *a;
     PyObject *b = Py_False;
     PyObject *__clinic_args = NULL;
 
-    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("TestClass", kwargs)) {
-        goto exit;
-    }
-    if (!_PyArg_CheckPositional("TestClass", PyTuple_GET_SIZE(args), 1, PY_SSIZE_T_MAX)) {
+    if (!_PyArg_CheckPositional("posonly_req_opt_varpos_no_fastcall", PyTuple_GET_SIZE(args), 1, PY_SSIZE_T_MAX)) {
         goto exit;
     }
     a = PyTuple_GET_ITEM(args, 0);
@@ -4156,7 +4169,7 @@ skip_optional:
     if (!__clinic_args) {
         goto exit;
     }
-    return_value = posonly_req_opt_varpos_no_fastcall_impl(type, a, b, __clinic_args);
+    return_value = _testclinic_TestClass_posonly_req_opt_varpos_no_fastcall_impl((PyTypeObject *)type, a, b, __clinic_args);
 
 exit:
     /* Cleanup for args */
@@ -4165,12 +4178,22 @@ exit:
     return return_value;
 }
 
-static PyObject *
-posonly_poskw_varpos_no_fastcall_impl(PyTypeObject *type, PyObject *a,
-                                      PyObject *b, PyObject *args);
+PyDoc_STRVAR(_testclinic_TestClass_posonly_poskw_varpos_no_fastcall__doc__,
+"posonly_poskw_varpos_no_fastcall($type, a, /, b, *args)\n"
+"--\n"
+"\n");
+
+#define _TESTCLINIC_TESTCLASS_POSONLY_POSKW_VARPOS_NO_FASTCALL_METHODDEF    \
+    {"posonly_poskw_varpos_no_fastcall", _PyCFunction_CAST(_testclinic_TestClass_posonly_poskw_varpos_no_fastcall), METH_VARARGS|METH_KEYWORDS|METH_CLASS, _testclinic_TestClass_posonly_poskw_varpos_no_fastcall__doc__},
 
 static PyObject *
-posonly_poskw_varpos_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+_testclinic_TestClass_posonly_poskw_varpos_no_fastcall_impl(PyTypeObject *type,
+                                                            PyObject *a,
+                                                            PyObject *b,
+                                                            PyObject *args);
+
+static PyObject *
+_testclinic_TestClass_posonly_poskw_varpos_no_fastcall(PyObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -4196,7 +4219,7 @@ posonly_poskw_varpos_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *k
     static const char * const _keywords[] = {"", "b", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "TestClass",
+        .fname = "posonly_poskw_varpos_no_fastcall",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -4218,7 +4241,7 @@ posonly_poskw_varpos_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *k
     if (!__clinic_args) {
         goto exit;
     }
-    return_value = posonly_poskw_varpos_no_fastcall_impl(type, a, b, __clinic_args);
+    return_value = _testclinic_TestClass_posonly_poskw_varpos_no_fastcall_impl((PyTypeObject *)type, a, b, __clinic_args);
 
 exit:
     /* Cleanup for args */
@@ -4227,83 +4250,95 @@ exit:
     return return_value;
 }
 
-static PyObject *
-varpos_array_no_fastcall_impl(PyTypeObject *type, PyObject * const *args,
-                              Py_ssize_t args_length);
+PyDoc_STRVAR(_testclinic_TestClass_varpos_array_no_fastcall__doc__,
+"varpos_array_no_fastcall($type, /, *args)\n"
+"--\n"
+"\n");
+
+#define _TESTCLINIC_TESTCLASS_VARPOS_ARRAY_NO_FASTCALL_METHODDEF    \
+    {"varpos_array_no_fastcall", (PyCFunction)_testclinic_TestClass_varpos_array_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_varpos_array_no_fastcall__doc__},
 
 static PyObject *
-varpos_array_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+_testclinic_TestClass_varpos_array_no_fastcall_impl(PyTypeObject *type,
+                                                    PyObject * const *args,
+                                                    Py_ssize_t args_length);
+
+static PyObject *
+_testclinic_TestClass_varpos_array_no_fastcall(PyObject *type, PyObject *args)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &PyBaseObject_Type;
     PyObject * const *__clinic_args;
     Py_ssize_t args_length;
 
-    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("TestClass", kwargs)) {
-        goto exit;
-    }
     __clinic_args = _PyTuple_ITEMS(args);
     args_length = PyTuple_GET_SIZE(args);
-    return_value = varpos_array_no_fastcall_impl(type, __clinic_args, args_length);
+    return_value = _testclinic_TestClass_varpos_array_no_fastcall_impl((PyTypeObject *)type, __clinic_args, args_length);
 
-exit:
     return return_value;
 }
 
-static PyObject *
-posonly_varpos_array_no_fastcall_impl(PyTypeObject *type, PyObject *a,
-                                      PyObject *b, PyObject * const *args,
-                                      Py_ssize_t args_length);
+PyDoc_STRVAR(_testclinic_TestClass_posonly_varpos_array_no_fastcall__doc__,
+"posonly_varpos_array_no_fastcall($type, a, b, /, *args)\n"
+"--\n"
+"\n");
+
+#define _TESTCLINIC_TESTCLASS_POSONLY_VARPOS_ARRAY_NO_FASTCALL_METHODDEF    \
+    {"posonly_varpos_array_no_fastcall", (PyCFunction)_testclinic_TestClass_posonly_varpos_array_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_posonly_varpos_array_no_fastcall__doc__},
 
 static PyObject *
-posonly_varpos_array_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+_testclinic_TestClass_posonly_varpos_array_no_fastcall_impl(PyTypeObject *type,
+                                                            PyObject *a,
+                                                            PyObject *b,
+                                                            PyObject * const *args,
+                                                            Py_ssize_t args_length);
+
+static PyObject *
+_testclinic_TestClass_posonly_varpos_array_no_fastcall(PyObject *type, PyObject *args)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &PyBaseObject_Type;
     PyObject *a;
     PyObject *b;
     PyObject * const *__clinic_args;
     Py_ssize_t args_length;
 
-    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("TestClass", kwargs)) {
-        goto exit;
-    }
-    if (!_PyArg_CheckPositional("TestClass", PyTuple_GET_SIZE(args), 2, PY_SSIZE_T_MAX)) {
+    if (!_PyArg_CheckPositional("posonly_varpos_array_no_fastcall", PyTuple_GET_SIZE(args), 2, PY_SSIZE_T_MAX)) {
         goto exit;
     }
     a = PyTuple_GET_ITEM(args, 0);
     b = PyTuple_GET_ITEM(args, 1);
     __clinic_args = _PyTuple_ITEMS(args) + 2;
     args_length = PyTuple_GET_SIZE(args) - 2;
-    return_value = posonly_varpos_array_no_fastcall_impl(type, a, b, __clinic_args, args_length);
+    return_value = _testclinic_TestClass_posonly_varpos_array_no_fastcall_impl((PyTypeObject *)type, a, b, __clinic_args, args_length);
 
 exit:
     return return_value;
 }
 
-static PyObject *
-posonly_req_opt_varpos_array_no_fastcall_impl(PyTypeObject *type,
-                                              PyObject *a, PyObject *b,
-                                              PyObject * const *args,
-                                              Py_ssize_t args_length);
+PyDoc_STRVAR(_testclinic_TestClass_posonly_req_opt_varpos_array_no_fastcall__doc__,
+"posonly_req_opt_varpos_array_no_fastcall($type, a, b=False, /, *args)\n"
+"--\n"
+"\n");
+
+#define _TESTCLINIC_TESTCLASS_POSONLY_REQ_OPT_VARPOS_ARRAY_NO_FASTCALL_METHODDEF    \
+    {"posonly_req_opt_varpos_array_no_fastcall", (PyCFunction)_testclinic_TestClass_posonly_req_opt_varpos_array_no_fastcall, METH_VARARGS|METH_CLASS, _testclinic_TestClass_posonly_req_opt_varpos_array_no_fastcall__doc__},
 
 static PyObject *
-posonly_req_opt_varpos_array_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+_testclinic_TestClass_posonly_req_opt_varpos_array_no_fastcall_impl(PyTypeObject *type,
+                                                                    PyObject *a,
+                                                                    PyObject *b,
+                                                                    PyObject * const *args,
+                                                                    Py_ssize_t args_length);
+
+static PyObject *
+_testclinic_TestClass_posonly_req_opt_varpos_array_no_fastcall(PyObject *type, PyObject *args)
 {
     PyObject *return_value = NULL;
-    PyTypeObject *base_tp = &PyBaseObject_Type;
     PyObject *a;
     PyObject *b = Py_False;
     PyObject * const *__clinic_args;
     Py_ssize_t args_length;
 
-    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
-        !_PyArg_NoKeywords("TestClass", kwargs)) {
-        goto exit;
-    }
-    if (!_PyArg_CheckPositional("TestClass", PyTuple_GET_SIZE(args), 1, PY_SSIZE_T_MAX)) {
+    if (!_PyArg_CheckPositional("posonly_req_opt_varpos_array_no_fastcall", PyTuple_GET_SIZE(args), 1, PY_SSIZE_T_MAX)) {
         goto exit;
     }
     a = PyTuple_GET_ITEM(args, 0);
@@ -4314,20 +4349,29 @@ posonly_req_opt_varpos_array_no_fastcall(PyTypeObject *type, PyObject *args, PyO
 skip_optional:
     __clinic_args = PyTuple_GET_SIZE(args) > 2 ? _PyTuple_ITEMS(args) + 2 : _PyTuple_ITEMS(args);
     args_length = Py_MAX(0, PyTuple_GET_SIZE(args) - 2);
-    return_value = posonly_req_opt_varpos_array_no_fastcall_impl(type, a, b, __clinic_args, args_length);
+    return_value = _testclinic_TestClass_posonly_req_opt_varpos_array_no_fastcall_impl((PyTypeObject *)type, a, b, __clinic_args, args_length);
 
 exit:
     return return_value;
 }
 
-static PyObject *
-posonly_poskw_varpos_array_no_fastcall_impl(PyTypeObject *type, PyObject *a,
-                                            PyObject *b,
-                                            PyObject * const *args,
-                                            Py_ssize_t args_length);
+PyDoc_STRVAR(_testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall__doc__,
+"posonly_poskw_varpos_array_no_fastcall($type, a, /, b, *args)\n"
+"--\n"
+"\n");
+
+#define _TESTCLINIC_TESTCLASS_POSONLY_POSKW_VARPOS_ARRAY_NO_FASTCALL_METHODDEF    \
+    {"posonly_poskw_varpos_array_no_fastcall", _PyCFunction_CAST(_testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall), METH_VARARGS|METH_KEYWORDS|METH_CLASS, _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall__doc__},
 
 static PyObject *
-posonly_poskw_varpos_array_no_fastcall(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+_testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall_impl(PyTypeObject *type,
+                                                                  PyObject *a,
+                                                                  PyObject *b,
+                                                                  PyObject * const *args,
+                                                                  Py_ssize_t args_length);
+
+static PyObject *
+_testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -4353,7 +4397,7 @@ posonly_poskw_varpos_array_no_fastcall(PyTypeObject *type, PyObject *args, PyObj
     static const char * const _keywords[] = {"", "b", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
-        .fname = "TestClass",
+        .fname = "posonly_poskw_varpos_array_no_fastcall",
         .kwtuple = KWTUPLE,
     };
     #undef KWTUPLE
@@ -4374,9 +4418,9 @@ posonly_poskw_varpos_array_no_fastcall(PyTypeObject *type, PyObject *args, PyObj
     b = fastargs[1];
     __clinic_args = PyTuple_GET_SIZE(args) > 2 ? _PyTuple_ITEMS(args) + 2 : _PyTuple_ITEMS(args);
     args_length = Py_MAX(0, PyTuple_GET_SIZE(args) - 2);
-    return_value = posonly_poskw_varpos_array_no_fastcall_impl(type, a, b, __clinic_args, args_length);
+    return_value = _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall_impl((PyTypeObject *)type, a, b, __clinic_args, args_length);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a3726ee0a94090d1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ea0b8fb0949fa49f input=a9049054013a1b77]*/
