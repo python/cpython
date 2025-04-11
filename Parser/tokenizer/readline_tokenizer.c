@@ -90,7 +90,7 @@ tok_underflow_readline(struct tok_state* tok) {
         tok->implicit_newline = 1;
     }
 
-    if (tok->tok_mode_stack_index && !_PyLexer_update_fstring_expr(tok, 0)) {
+    if (tok->tok_mode_stack_index && !_PyLexer_update_ftstring_expr(tok, 0)) {
         return 0;
     }
 

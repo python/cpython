@@ -108,12 +108,12 @@ tok_backup(struct tok_state *tok, int c)
 }
 
 static int
-set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
+set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
     assert(token != NULL);
     assert(c == '}' || c == ':' || c == '!');
     tokenizer_mode *tok_mode = TOK_GET_MODE(tok);
 
-    if (!tok_mode->f_string_debug || token->metadata) {
+    if (!(tok_mode->f_string_debug || tok_mode->tstring) || token->metadata) {
         return 0;
     }
     PyObject *res = NULL;
@@ -173,7 +173,7 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
 }
 
 int
-_PyLexer_update_fstring_expr(struct tok_state *tok, char cur)
+_PyLexer_update_ftstring_expr(struct tok_state *tok, char cur)
 {
     assert(tok->cur != NULL);
 
@@ -1152,10 +1152,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
          int cursor_in_format_with_debug =
              cursor == 1 && (current_tok->f_string_debug || in_format_spec);
          int cursor_valid = cursor == 0 || cursor_in_format_with_debug;
-        if ((cursor_valid) && !_PyLexer_update_fstring_expr(tok, c)) {
+        if ((cursor_valid) && !_PyLexer_update_ftstring_expr(tok, c)) {
             return MAKE_TOKEN(ENDMARKER);
         }
-        if ((cursor_valid) && c != '{' && set_fstring_expr(tok, token, c)) {
+        if ((cursor_valid) && c != '{' && set_ftstring_expr(tok, token, c)) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
 
@@ -1404,7 +1404,7 @@ f_string_middle:
         }
 
         if (c == '{') {
-            if (!_PyLexer_update_fstring_expr(tok, c)) {
+            if (!_PyLexer_update_ftstring_expr(tok, c)) {
                 return MAKE_TOKEN(ENDMARKER);
             }
             int peek = tok_nextc(tok);

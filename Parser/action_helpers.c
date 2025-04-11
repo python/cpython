@@ -1479,11 +1479,6 @@ expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, Resu
                                  ResultTokenWithMetadata *format, Token *closing_brace, int lineno, int col_offset,
                                  int end_lineno, int end_col_offset, PyArena *arena) {
 
-    constant exprstr = _PyAST_ExprAsUnicode(expression);
-    if (exprstr == NULL) {
-        return NULL;
-    }
-
     constant convstr = NULL;
     int conversion_val = _get_interpolation_conversion(p, debug, conversion, format);
     if (conversion_val >= 0) {
@@ -1495,6 +1490,28 @@ expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, Resu
         }
     }
 
+    /* Find the non whitespace token after the "=" */
+    int debug_end_line, debug_end_offset;
+    PyObject *debug_metadata;
+    constant exprstr;
+
+    if (conversion) {
+        debug_end_line = ((expr_ty) conversion->result)->lineno;
+        debug_end_offset = ((expr_ty) conversion->result)->col_offset;
+        debug_metadata = exprstr = conversion->metadata;
+    }
+    else if (format) {
+        debug_end_line = ((expr_ty) format->result)->lineno;
+        debug_end_offset = ((expr_ty) format->result)->col_offset + 1;
+        debug_metadata = exprstr = format->metadata;
+    }
+    else {
+        debug_end_line = end_lineno;
+        debug_end_offset = end_col_offset;
+        debug_metadata = exprstr = closing_brace->metadata;
+    }
+
+    assert(exprstr != NULL);
     expr_ty interpolation = _PyAST_Interpolation(
         expression, exprstr, convstr, format ? (expr_ty) format->result : NULL,
         lineno, col_offset, end_lineno,
@@ -1505,25 +1522,6 @@ expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, Resu
         return interpolation;
     }
 
-    /* Find the non whitespace token after the "=" */
-    int debug_end_line, debug_end_offset;
-    PyObject *debug_metadata;
-
-    if (conversion) {
-        debug_end_line = ((expr_ty) conversion->result)->lineno;
-        debug_end_offset = ((expr_ty) conversion->result)->col_offset;
-        debug_metadata = conversion->metadata;
-    }
-    else if (format) {
-        debug_end_line = ((expr_ty) format->result)->lineno;
-        debug_end_offset = ((expr_ty) format->result)->col_offset + 1;
-        debug_metadata = format->metadata;
-    }
-    else {
-        debug_end_line = end_lineno;
-        debug_end_offset = end_col_offset;
-        debug_metadata = closing_brace->metadata;
-    }
     expr_ty debug_text = _PyAST_Constant(debug_metadata, NULL, lineno, col_offset + 1, debug_end_line,
                                             debug_end_offset - 1, p->arena);
     if (!debug_text) {
