@@ -1039,6 +1039,17 @@ _Py_DumpTraceback(int fd, PyThreadState *tstate)
     dump_traceback(fd, tstate, 1);
 }
 
+#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)
+# if defined(__OpenBSD__)
+    /* pthread_*_np functions, especially pthread_{get,set}_name_np().
+       pthread_np.h exists on both OpenBSD and FreeBSD but the latter declares
+       pthread_getname_np() and pthread_setname_np() in pthread.h as long as
+       __BSD_VISIBLE remains set.
+     */
+#   include <pthread_np.h>
+# endif
+#endif
+
 /* Write the thread identifier into the file 'fd': "Current thread 0xHHHH:\" if
    is_current is true, "Thread 0xHHHH:\n" otherwise.
 
