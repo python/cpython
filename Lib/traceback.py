@@ -1534,7 +1534,7 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
             self = frame.f_locals['self']
             try:
                 has_wrong_name = hasattr(self, wrong_name)
-            except BaseException:
+            except Exception:
                 has_wrong_name = False
             if has_wrong_name:
                 return f"self.{wrong_name}"

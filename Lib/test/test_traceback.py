@@ -4509,7 +4509,7 @@ class SuggestionFormattingTestBase:
         class A:
             def __getattr__(self, key):
                 if key == 'foo':
-                    raise SystemExit('foo')
+                    raise AttributeError('foo')
                 if key == 'spam':
                     raise ValueError('spam')
 
