@@ -6529,6 +6529,13 @@ class ForwardRefTests(BaseTestCase):
         self.assertEqual(X | "x", Union[X, "x"])
         self.assertEqual("x" | X, Union["x", X])
 
+    def test_multiple_ways_to_create(self):
+        X1 = Union["X"]
+        self.assertIsInstance(X1, ForwardRef)
+        X2 = ForwardRef("X")
+        self.assertIsInstance(X2, ForwardRef)
+        self.assertEqual(X1, X2)
+
 
 class InternalsTests(BaseTestCase):
     def test_deprecation_for_no_type_params_passed_to__evaluate(self):

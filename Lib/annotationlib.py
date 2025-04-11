@@ -225,8 +225,6 @@ class ForwardRef:
             # because dictionaries are not hashable.
             and self.__globals__ is other.__globals__
             and self.__forward_is_class__ == other.__forward_is_class__
-            and self.__code__ == other.__code__
-            and self.__ast_node__ == other.__ast_node__
             and self.__cell__ == other.__cell__
             and self.__owner__ == other.__owner__
         )
@@ -237,8 +235,6 @@ class ForwardRef:
             self.__forward_module__,
             id(self.__globals__),  # dictionaries are not hashable, so hash by identity
             self.__forward_is_class__,
-            self.__code__,
-            self.__ast_node__,
             self.__cell__,
             self.__owner__,
         ))
