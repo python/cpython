@@ -1,0 +1,1 @@
+Test ``os.sync()`` only if "largefile" resource is enabled.
