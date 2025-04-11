@@ -611,7 +611,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    Note that the :c:member:`~PyVarObject.ob_size` field may later be used for
    other purposes. For example, :py:type:`int` instances use the bits of
    :c:member:`~PyVarObject.ob_size` in an implementation-defined
-   way; the underlying storage and its size should be acessed using
+   way; the underlying storage and its size should be accessed using
    :c:func:`PyLong_Export`.
 
    .. note::
