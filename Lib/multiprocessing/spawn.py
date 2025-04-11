@@ -170,7 +170,10 @@ def get_preparation_data(name):
     if util._logger is not None:
         d['log_level'] = util._logger.getEffectiveLevel()
 
-    sys_path=sys.path.copy()
+    sys_path=[]
+    for path in sys.path:
+        if sys.base_prefix not in os.path.abspath(path):
+            sys_path.append(path) # For cross-interpreter support
     try:
         i = sys_path.index('')
     except ValueError:
@@ -226,7 +229,11 @@ def prepare(data):
         util.get_logger().setLevel(data['log_level'])
 
     if 'sys_path' in data:
-        sys.path = data['sys_path']
+        sys_path = data['sys_path'].copy()
+        for path in data['sys_path']:
+            if path in sys.path:
+                sys_path.remove(path)
+        sys.path.extend(sys_path) # For cross-interpreter support
 
     if 'sys_argv' in data:
         sys.argv = data['sys_argv']
