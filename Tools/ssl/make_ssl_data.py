@@ -135,7 +135,7 @@ def main():
     reasons.extend(parse_openssl_error_text(args))
     reasons.extend(parse_extra_reasons(args))
     # sort by libname, numeric error code
-    args.reasons = sorted(reasons, key=operator.itemgetter(0, 3))
+    args.reasons = sorted(set(reasons), key=operator.itemgetter(0, 3))
 
     git_describe = subprocess.run(
         ['git', 'describe', '--long', '--dirty'],
