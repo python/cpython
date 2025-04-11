@@ -402,7 +402,7 @@ class Printer:
             # print(f"Cache hit {key!r:.40}: {self.cache[key]!r:.40}")
             return self.cache[key]
         self.misses += 1
-        if isinstance(obj, types.CodeType | umarshal.Code):
+        if isinstance(obj, (types.CodeType, umarshal.Code)) :
             val = self.generate_code(name, obj)
         elif isinstance(obj, tuple):
             val = self.generate_tuple(name, obj)

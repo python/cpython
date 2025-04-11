@@ -20,6 +20,7 @@ select = [
 ignore = [
     "E501",    # Line too long
     "F541",    # f-string without any placeholders
+    "UP038",   # Use `X | Y` in `isinstance` call instead of `(X, Y)`
 ]
 
 [per-file-target-version]
