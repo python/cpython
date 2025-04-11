@@ -721,7 +721,8 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    .. code-block:: c
 
      static void
-     foo_dealloc(PyObject *op) {
+     foo_dealloc(PyObject *op)
+     {
          PyTypeObject *tp = Py_TYPE(op);
          // free references and buffers here
          tp->tp_free(op);
