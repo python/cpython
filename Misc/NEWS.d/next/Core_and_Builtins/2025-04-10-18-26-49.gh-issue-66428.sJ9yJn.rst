@@ -1,0 +1,4 @@
+Remove Unicode characters that have the bidirectional B property but are not
+mandatory line breakers (U+001C, U+001D and U+001E) from the list of
+line-breaking characters. ``str.splitlines()`` will not break on these
+characters any more.
