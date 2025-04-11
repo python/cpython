@@ -233,6 +233,8 @@ extern intptr_t PyStackRef_UntagInt(_PyStackRef ref);
 
 extern _PyStackRef PyStackRef_TagInt(intptr_t i);
 
+extern _PyStackRef PyStackRef_IncrementTaggedInt(_PyStackRef ref);
+
 extern bool
 PyStackRef_IsNullOrInt(_PyStackRef ref);
 
@@ -259,6 +261,14 @@ PyStackRef_UntagInt(_PyStackRef i)
     assert((i.bits & Py_INT_TAG) == Py_INT_TAG);
     intptr_t val = (intptr_t)i.bits;
     return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, val, 2);
+}
+
+
+static inline _PyStackRef
+PyStackRef_IncrementTaggedInt(_PyStackRef ref)
+{
+    assert(ref.bits != (uintptr_t)-1); // Overflow
+    return (_PyStackRef){ .bits = ref.bits + 4 };
 }
 
 
@@ -686,7 +696,13 @@ PyStackRef_XCLOSE(_PyStackRef ref)
 
 #endif // !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
 
-#define PyStackRef_TYPE(stackref) Py_TYPE(PyStackRef_AsPyObjectBorrow(stackref))
+static inline PyTypeObject *
+PyStackRef_TYPE(_PyStackRef stackref) {
+    if (PyStackRef_IsTaggedInt(stackref)) {
+        return &PyLong_Type;
+    }
+    return Py_TYPE(PyStackRef_AsPyObjectBorrow(stackref));
+}
 
 // Converts a PyStackRef back to a PyObject *, converting the
 // stackref to a new reference.

@@ -602,6 +602,10 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_None",
     "PyStackRef_TYPE",
     "PyStackRef_True",
+    "PyStackRef_TagInt",
+    "PyStackRef_UntagInt",
+    "PyStackRef_IsTaggedInt",
+    "PyStackRef_IncrementTaggedInt",
     "PyTuple_GET_ITEM",
     "PyTuple_GET_SIZE",
     "PyType_HasFeature",
@@ -682,6 +686,7 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_TagInt",
     "PyStackRef_UntagInt",
 )
+
 
 def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, EscapingCall]) -> None:
     error: lexer.Token | None = None
