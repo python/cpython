@@ -210,7 +210,31 @@ _PyStackRef_FromPyObjectNewMortal(PyObject *obj, const char *filename, int linen
 
 extern int PyStackRef_Is(_PyStackRef a, _PyStackRef b);
 
+extern _PyStackRef PyStackRef_TagInt(intptr_t i);
+
 #else
+
+#define Py_INT_TAG 3
+
+static inline bool
+PyStackRef_IsTaggedInt(_PyStackRef i)
+{
+    return (i.bits & Py_INT_TAG) == Py_INT_TAG;
+}
+
+static inline _PyStackRef
+PyStackRef_TagInt(intptr_t i)
+{
+    assert(Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, (i << 2), 2) == i);
+    return (_PyStackRef){ .bits = ((((uintptr_t)i) << 2) | Py_INT_TAG) };
+}
+
+static inline intptr_t
+PyStackRef_UntagInt(_PyStackRef i)
+{
+    assert((i.bits & Py_INT_TAG) == Py_INT_TAG);
+    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, i.bits, 2);
+}
 
 
 #ifdef Py_GIL_DISABLED
@@ -231,6 +255,8 @@ static const _PyStackRef PyStackRef_NULL = { .bits = Py_TAG_DEFERRED};
 #define PyStackRef_IsNone(ref) (PyStackRef_AsPyObjectBorrow(ref) == Py_None)
 #define PyStackRef_IsTrue(ref) (PyStackRef_AsPyObjectBorrow(ref) == Py_True)
 #define PyStackRef_IsFalse(ref) (PyStackRef_AsPyObjectBorrow(ref) == Py_False)
+
+#define PyStackRef_IsNullOrInt(stackref) (PyStackRef_IsNull(stackref) || PyStackRef_IsTaggedInt(stackref))
 
 static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
@@ -451,6 +477,7 @@ PyStackRef_RefcountOnObject(_PyStackRef ref)
 static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef ref)
 {
+    assert(!PyStackRef_IsTaggedInt(ref));
     return BITS_TO_PTR_MASKED(ref);
 }
 
@@ -586,6 +613,12 @@ PyStackRef_CLOSE(_PyStackRef ref)
     }
 }
 #endif
+
+static inline bool
+PyStackRef_IsNullOrInt(_PyStackRef ref)
+{
+    return PyStackRef_IsNull(ref) || PyStackRef_IsTaggedInt(ref);
+}
 
 static inline void
 PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
@@ -726,7 +759,7 @@ _Py_TryXGetStackRef(PyObject **src, _PyStackRef *out)
 // Like Py_VISIT but for _PyStackRef fields
 #define _Py_VISIT_STACKREF(ref)                                         \
     do {                                                                \
-        if (!PyStackRef_IsNull(ref)) {                                  \
+        if (!PyStackRef_IsNullOrInt(ref)) {                             \
             int vret = _PyGC_VisitStackRef(&(ref), visit, arg);         \
             if (vret)                                                   \
                 return vret;                                            \
