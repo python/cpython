@@ -19,6 +19,7 @@ select = [
 ]
 ignore = [
     "E501",    # Line too long
+    "F541",    # f-string without any placeholders
 ]
 
 [per-file-target-version]

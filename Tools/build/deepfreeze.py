@@ -235,7 +235,7 @@ class Printer:
                     utf8 = s.encode('utf-8')
                     self.write(f'.utf8 = {make_string_literal(utf8)},')
                     self.write(f'.utf8_length = {len(utf8)},')
-                with self.block("._data =", ","):
+                with self.block(f"._data =", ","):
                     for i in range(0, len(s), 16):
                         data = s[i:i+16]
                         self.write(", ".join(map(str, map(ord, data))) + ",")
@@ -292,7 +292,7 @@ class Printer:
             self.write(f".co_name = {co_name},")
             self.write(f".co_qualname = {co_qualname},")
             self.write(f".co_linetable = {co_linetable},")
-            self.write("._co_cached = NULL,")
+            self.write(f"._co_cached = NULL,")
             self.write(f".co_code_adaptive = {co_code_adaptive},")
             first_traceable = 0
             for op in code.co_code[::2]:
@@ -307,7 +307,7 @@ class Printer:
 
     def generate_tuple(self, name: str, t: tuple[object, ...]) -> str:
         if len(t) == 0:
-            return "(PyObject *)& _Py_SINGLETON(tuple_empty)"
+            return f"(PyObject *)& _Py_SINGLETON(tuple_empty)"
         items = [self.generate(f"{name}_{i}", it) for i, it in enumerate(t)]
         self.write("static")
         with self.indent():
@@ -321,7 +321,7 @@ class Printer:
             with self.block("._object =", ","):
                 self.object_var_head("PyTuple_Type", len(t))
                 if items:
-                    with self.block(".ob_item =", ","):
+                    with self.block(f".ob_item =", ","):
                         for item in items:
                             self.write(item + ",")
         return f"& {name}._object.ob_base.ob_base"
@@ -472,10 +472,10 @@ def generate(args: list[str], output: TextIO) -> None:
             else:
                 code = compile(fd.read(), f"<frozen {modname}>", "exec")
             printer.generate_file(modname, code)
-    with printer.block("void\n_Py_Deepfreeze_Fini(void)"):
+    with printer.block(f"void\n_Py_Deepfreeze_Fini(void)"):
         for p in printer.finis:
             printer.write(p)
-    with printer.block("int\n_Py_Deepfreeze_Init(void)"):
+    with printer.block(f"int\n_Py_Deepfreeze_Init(void)"):
         for p in printer.inits:
             with printer.block(f"if ({p} < 0)"):
                 printer.write("return -1;")

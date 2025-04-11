@@ -631,7 +631,7 @@ def regen_pcbuild(modules):
         projlines.append(f'      <ModName>{src.frozenid}</ModName>')
         projlines.append(f'      <IntFile>$(IntDir){intfile}</IntFile>')
         projlines.append(f'      <OutFile>$(GeneratedFrozenModulesDir){header}</OutFile>')
-        projlines.append('    </None>')
+        projlines.append(f'    </None>')
 
         filterlines.append(f'    <None Include="..\\{pyfile}">')
         filterlines.append('      <Filter>Python Files</Filter>')

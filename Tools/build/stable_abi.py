@@ -337,7 +337,7 @@ def gen_ctypes_test(manifest, args, outfile):
     write(")")
     for ifdef, names in optional_items.items():
         write(f"if feature_macros[{ifdef!r}]:")
-        write("    SYMBOL_NAMES += (")
+        write(f"    SYMBOL_NAMES += (")
         for name in names:
             write(f"        {name!r},")
         write("    )")
