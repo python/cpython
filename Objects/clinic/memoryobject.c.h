@@ -147,7 +147,8 @@ memoryview_release(PyObject *self, PyObject *Py_UNUSED(ignored))
 }
 
 PyDoc_STRVAR(memoryview_cast__doc__,
-"cast($self, /, format, shape=<unrepresentable>)\n"
+"cast($self, format, /)\n"
+"($self, format, shape, /)\n"
 "--\n"
 "\n"
 "Cast a memoryview to a new format or shape.");
@@ -339,7 +340,8 @@ exit:
 }
 
 PyDoc_STRVAR(memoryview_hex__doc__,
-"hex($self, /, sep=<unrepresentable>, bytes_per_sep=1)\n"
+"hex($self, /, *, bytes_per_sep=1)\n"
+"($self, /, sep, bytes_per_sep=1)\n"
 "--\n"
 "\n"
 "Return the data in the buffer as a str of hexadecimal numbers.\n"
@@ -496,4 +498,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=154f4c04263ccb24 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0b7bb36e002a2ab8 input=a9049054013a1b77]*/

@@ -170,20 +170,25 @@ def get_argspec(ob):
 
     # Initialize argspec and wrap it to get lines.
     try:
-        argspec = str(inspect.signature(fob))
+        signatures = inspect.signatures(fob)
     except Exception as err:
         msg = str(err)
         if msg.startswith(_invalid_method):
             return _invalid_method
         else:
-            argspec = ''
+            signatures = []
 
-    if isinstance(fob, type) and argspec == '()':
+    lines = []
+    for sig in signatures:
+        line = str(sig)
+        if len(line) > _MAX_COLS:
+            lines.extend(textwrap.wrap(line, _MAX_COLS, subsequent_indent=_INDENT))
+        else:
+            lines.append(line)
+    if isinstance(fob, type) and lines == ['()']:
         # If fob has no argument, use default callable argspec.
-        argspec = _default_callable_argspec
+        lines = [_default_callable_argspec]
 
-    lines = (textwrap.wrap(argspec, _MAX_COLS, subsequent_indent=_INDENT)
-             if len(argspec) > _MAX_COLS else [argspec] if argspec else [])
 
     # Augment lines from docstring, if any, and join to get argspec.
     doc = inspect.getdoc(ob)
