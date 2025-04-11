@@ -188,6 +188,11 @@ def _heappop_max(heap):
         return returnitem
     return lastelt
 
+def _heappush_max(heap, item):
+    """Maxheap version of a heappush."""
+    heap.append(item)
+    _siftdown_max(heap, 0, len(heap)-1)
+
 def _heapreplace_max(heap, item):
     """Maxheap version of a heappop followed by a heappush."""
     returnitem = heap[0]    # raises appropriate IndexError if heap is empty
