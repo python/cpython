@@ -553,6 +553,11 @@ dictionaries.
       The network address for the network. The network address and the
       prefix length together uniquely define a network.
 
+   .. attribute:: last_address
+
+      The last address in the network, the address with all the host bits set.
+      This is the same as the broadcast_address for IPv4 networks.
+      
    .. attribute:: broadcast_address
 
       The broadcast address for the network. Packets sent to the broadcast
@@ -757,7 +762,7 @@ dictionaries.
    .. attribute:: is_loopback
    .. attribute:: is_link_local
    .. attribute:: network_address
-   .. attribute:: broadcast_address
+   .. attribute:: last_address
    .. attribute:: hostmask
    .. attribute:: netmask
    .. attribute:: with_prefixlen
