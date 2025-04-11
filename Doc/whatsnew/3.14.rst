@@ -1078,12 +1078,21 @@ sys.monitoring
 * Two new events are added: :monitoring-event:`BRANCH_LEFT` and
   :monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
 
+
+sysconfig
+---------
+
+* Add ``ABIFLAGS`` key to :func:`sysconfig.get_config_vars` on Windows.
+  (Contributed by Xuehai Pan in :gh:`131799`.)
+
+
 threading
 ---------
 
 * :meth:`threading.Thread.start` now sets the operating system thread name
   to :attr:`threading.Thread.name`.
   (Contributed by Victor Stinner in :gh:`59705`.)
+
 
 tkinter
 -------
