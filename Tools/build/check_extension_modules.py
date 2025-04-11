@@ -200,9 +200,8 @@ class ModuleChecker:
             while len(names) % 3:
                 names.append("")
             for c1, c2, c3 in zip(names[::3], names[1::3], names[2::3]):
-                format_args = (longest, c1, longest, c2, longest, c3)
                 # the '%-*s' format specification is not support by str.format()
-                print("%-*s   %-*s   %-*s" % format_args)  # noqa: UP031
+                print("%-*s   %-*s   %-*s" % (longest, c1, longest, c2, longest, c3))
 
         if verbose and self.builtin_ok:
             print("The following *built-in* modules have been successfully built:")
@@ -225,7 +224,9 @@ class ModuleChecker:
             print()
 
         if verbose and self.notavailable:
-            print(f"The following modules are not available on platform {self.platform!r}:")
+            print(
+                f"The following modules are not available on platform '{self.platform}':"
+            )
             print_three_column(self.notavailable)
             print()
 
