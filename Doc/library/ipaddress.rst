@@ -548,6 +548,11 @@ dictionaries.
       These attributes are true for the network as a whole if they are true
       for both the network address and the broadcast address.
 
+   .. attribute:: first_address
+
+      The first address in the network, the one with all the host bits cleared.
+      This is the same as the network_address for IPv4 networks.
+
    .. attribute:: network_address
 
       The network address for the network. The network address and the
@@ -761,8 +766,21 @@ dictionaries.
    .. attribute:: is_reserved
    .. attribute:: is_loopback
    .. attribute:: is_link_local
-   .. attribute:: network_address
+   .. attribute:: first_address
+
+      The first address in the network, the one with all the host bits cleared.
+      This is the same as the subnet_router_anycast_address for IPv6 networks.
+
+   .. attribute:: subnet_router_anycast_address
+
+      The Subnet-Router anycast address for the network, which is the first address
+      in the network.
+
    .. attribute:: last_address
+
+      The last address in the network, the one with all the host bits set.
+      This has no special meaning for IPv6 networks.
+
    .. attribute:: hostmask
    .. attribute:: netmask
    .. attribute:: with_prefixlen
