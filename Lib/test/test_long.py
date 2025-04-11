@@ -675,6 +675,7 @@ class LongTest(unittest.TestCase):
         self.assertEqual(format(123456789, 'd'), '123456789')
         self.assertEqual(format(123456789, ','), '123,456,789')
         self.assertEqual(format(123456789, '_'), '123_456_789')
+        self.assertEqual(format(3, '1.3'), '003')
 
         # sign and aligning are interdependent
         self.assertEqual(format(1, "-"), '1')
@@ -706,6 +707,9 @@ class LongTest(unittest.TestCase):
         self.assertRaises(ValueError, format, 1234567890, ',x')
         self.assertEqual(format(1234567890, '_x'), '4996_02d2')
         self.assertEqual(format(1234567890, '_X'), '4996_02D2')
+        self.assertEqual(format(8086, 'z#.8x'), '0x00001f96')
+        self.assertEqual(format(2048, 'z.3x'), '0800')
+        self.assertEqual(format(-2049, 'z.3x'), 'f7ff')
 
         # octal
         self.assertEqual(format(3, "o"), "3")
@@ -720,6 +724,9 @@ class LongTest(unittest.TestCase):
         self.assertEqual(format(-1234, "+o"), "-2322")
         self.assertRaises(ValueError, format, 1234567890, ',o')
         self.assertEqual(format(1234567890, '_o'), '111_4540_1322')
+        self.assertEqual(format(18, 'z#.3o'), '0o022')
+        self.assertEqual(format(256, 'z.3o'), '0400')
+        self.assertEqual(format(-257, 'z.3o'), '7377')
 
         # binary
         self.assertEqual(format(3, "b"), "11")
@@ -734,9 +741,19 @@ class LongTest(unittest.TestCase):
         self.assertEqual(format(-1234, "+b"), "-10011010010")
         self.assertRaises(ValueError, format, 1234567890, ',b')
         self.assertEqual(format(12345, '_b'), '11_0000_0011_1001')
+        self.assertEqual(format(-12, 'z.8b'), '11110100')
+        self.assertEqual(format(73, 'z.8b'), '01001001')
+        self.assertEqual(format(73, 'z#.8b'), '0b01001001')
+        self.assertEqual(format(300, 'z.8b'), '0100101100')
+        self.assertEqual(format(200, '.8b'), '11001000')
+        self.assertEqual(format(200, 'z.8b'), '011001000')
+        self.assertEqual(format(-200, 'z.8b'), '100111000')
+        self.assertEqual(format(128, 'z.8b'), '010000000')
+        self.assertEqual(format(-129, 'z.8b'), '101111111')
+        self.assertEqual(format(256, 'z.8b'), '0100000000')
 
         # make sure these are errors
-        self.assertRaises(ValueError, format, 3, "1.3")  # precision disallowed
+        self.assertRaises(ValueError, format, 3, "1.3c")  # precision disallowed with 'c',
         self.assertRaises(ValueError, format, 3, "_c")   # underscore,
         self.assertRaises(ValueError, format, 3, ",c")   # comma, and
         self.assertRaises(ValueError, format, 3, "+c")   # sign not allowed
