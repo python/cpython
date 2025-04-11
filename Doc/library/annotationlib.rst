@@ -303,12 +303,12 @@ Functions
 .. function:: get_annotate_function(obj)
 
    Retrieve the :term:`annotate function` for *obj*. Return :const:`!None`
-   if *obj* does not have an annotate function.
+   if *obj* does not have an annotate function. *obj* may be a class, function,
+   module, or a namespace dictionary for a class. The last case is useful during
+   class creation, e.g. in the ``__new__`` method of a metaclass.
 
    This is usually equivalent to accessing the :attr:`~object.__annotate__`
-   attribute of *obj*, but direct access to the attribute may return the wrong
-   object in certain situations involving metaclasses. This function should be
-   used instead of accessing the attribute directly.
+   attribute of *obj*, but access through this public function is preferred.
 
    .. versionadded:: 3.14
 
