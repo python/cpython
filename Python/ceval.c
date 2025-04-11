@@ -146,6 +146,9 @@ dump_item(_PyStackRef item)
         printf("<NULL>");
         return;
     }
+    if (PyStackRef_IsTaggedInt(item)) {
+        printf("%ld", PyStackRef_UntagInt(item));
+    }
     PyObject *obj = PyStackRef_AsPyObjectBorrow(item);
     if (obj == NULL) {
         printf("<nil>");

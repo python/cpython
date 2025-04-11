@@ -1694,6 +1694,7 @@ _PyGC_VisitStackRef(_PyStackRef *ref, visitproc visit, void *arg)
     // This is a bit tricky! We want to ignore deferred references when
     // computing the incoming references, but otherwise treat them like
     // regular references.
+    assert(!PyStackRef_IsTaggedInt(*ref));
     if (!PyStackRef_IsDeferred(*ref) ||
         (visit != visit_decref && visit != visit_decref_unreachable))
     {
