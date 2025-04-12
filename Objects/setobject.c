@@ -718,11 +718,7 @@ _shuffle_bits(Py_uhash_t h)
    large primes with "interesting bit patterns" and that passed tests
    for good collision statistics on a variety of problematic datasets
    including powersets and graph structures (such as David Eppstein's
-   graph recipes in Lib/test/test_set.py).
-
-   This hash algorithm can be used on either a frozenset or a set.
-   When it is used on a set, it computes the hash value of the equivalent
-   frozenset without creating a new frozenset object. */
+   graph recipes in Lib/test/test_set.py). */
 
 static Py_hash_t
 frozenset_hash_impl(PyObject *self)
