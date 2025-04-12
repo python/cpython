@@ -466,6 +466,7 @@ remove_unusable_flags(PyObject *m)
 #define BTPROTO_L2CAP BLUETOOTH_PROTO_L2CAP
 #define BTPROTO_RFCOMM BLUETOOTH_PROTO_RFCOMM
 #define BTPROTO_HCI BLUETOOTH_PROTO_HCI
+#define BTPROTO_SCO BLUETOOTH_PROTO_SCO
 #define SOL_HCI SOL_HCI_RAW
 #define HCI_FILTER SO_HCI_RAW_FILTER
 #define sockaddr_l2 sockaddr_l2cap
@@ -474,6 +475,7 @@ remove_unusable_flags(PyObject *m)
 #define _BT_L2_MEMB(sa, memb) ((sa)->l2cap_##memb)
 #define _BT_RC_MEMB(sa, memb) ((sa)->rfcomm_##memb)
 #define _BT_HCI_MEMB(sa, memb) ((sa)->hci_##memb)
+#define _BT_SCO_MEMB(sa, memb) ((sa)->sco_##memb)
 #elif defined(__NetBSD__) || defined(__DragonFly__)
 #define sockaddr_l2 sockaddr_bt
 #define sockaddr_rc sockaddr_bt
@@ -1536,15 +1538,15 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
             return ret;
 #endif
         }
+#endif /* BTPROTO_HCI */
 
-#if !defined(__FreeBSD__)
+#ifdef BTPROTO_SCO
         case BTPROTO_SCO:
         {
             struct sockaddr_sco *a = (struct sockaddr_sco *) addr;
             return makebdaddr(&_BT_SCO_MEMB(a, bdaddr));
         }
-#endif /* !__FreeBSD__ */
-#endif /* BTPROTO_HCI */
+#endif /* BTPROTO_SCO */
 
         default:
             PyErr_SetString(PyExc_ValueError,
@@ -2156,7 +2158,8 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             *len_ret = sizeof *addr;
             return 1;
         }
-#if !defined(__FreeBSD__)
+#endif /* BTPROTO_HCI */
+#ifdef BTPROTO_SCO
         case BTPROTO_SCO:
         {
             const char *straddr;
@@ -2176,8 +2179,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             *len_ret = sizeof *addr;
             return 1;
         }
-#endif /* !__FreeBSD__ */
-#endif /* BTPROTO_HCI */
+#endif /* BTPROTO_SCO */
         default:
             PyErr_Format(PyExc_OSError,
                          "%s(): unknown Bluetooth protocol", caller);
@@ -2732,11 +2734,11 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
         case BTPROTO_HCI:
             *len_ret = sizeof (struct sockaddr_hci);
             return 1;
-#if !defined(__FreeBSD__)
+#endif /* BTPROTO_HCI */
+#ifdef BTPROTO_SCO
         case BTPROTO_SCO:
             *len_ret = sizeof (struct sockaddr_sco);
             return 1;
-#endif /* !__FreeBSD__ */
 #endif /* BTPROTO_HCI */
         default:
             PyErr_SetString(PyExc_OSError, "getsockaddrlen: "
