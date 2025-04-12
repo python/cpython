@@ -190,7 +190,7 @@ def main():
     )
     args = parser.parse_args()
     if args.filenames == ['-']:
-        filenames = sys.stdin.readlines()
+        filenames = [filename.rstrip('\n') for filename in sys.stdin.readlines()]
     else:
         filenames = args.filenames
     for filename in filenames:

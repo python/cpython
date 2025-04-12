@@ -4,7 +4,7 @@ from ..source import (
 from . import common as _common
 
 
-def preprocess(lines, filename=None):
+def preprocess(lines, filename=None, cwd=None):
     if isinstance(lines, str):
         with _open_source(lines, filename) as (lines, filename):
             yield from preprocess(lines, filename)
