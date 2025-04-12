@@ -1226,11 +1226,12 @@ class TestLineAndInstructionEvents(CheckEvents):
             ('instruction', 'func2', 28),
             ('instruction', 'func2', 30),
             ('instruction', 'func2', 38),
-            ('line', 'func2', 3),
             ('instruction', 'func2', 40),
+            ('line', 'func2', 3),
             ('instruction', 'func2', 42),
             ('instruction', 'func2', 44),
             ('instruction', 'func2', 46),
+            ('instruction', 'func2', 48),
             ('line', 'get_events', 11)])
 
     def test_try_except(self):
@@ -1589,11 +1590,11 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch right', 'whilefunc', 1, 3)])
 
         self.check_events(func, recorders = BRANCH_OFFSET_RECORDERS, expected = [
-            ('branch left', 'func', 28, 32),
-            ('branch right', 'func', 44, 58),
-            ('branch left', 'func', 28, 32),
-            ('branch left', 'func', 44, 50),
-            ('branch right', 'func', 28, 70)])
+            ('branch left', 'func', 30, 34),
+            ('branch right', 'func', 46, 60),
+            ('branch left', 'func', 30, 34),
+            ('branch left', 'func', 46, 52),
+            ('branch right', 'func', 30, 72)])
 
     def test_except_star(self):
 
@@ -1620,8 +1621,8 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('branch', 'func', 4, 4),
             ('line', 'func', 5),
             ('line', 'meth', 1),
-            ('jump', 'func', 5, '[offset=120]'),
-            ('branch', 'func', '[offset=124]', '[offset=130]'),
+            ('jump', 'func', 5, '[offset=124]'),
+            ('branch', 'func', '[offset=128]', '[offset=134]'),
             ('line', 'get_events', 11)])
 
         self.check_events(func, recorders = FLOW_AND_LINE_RECORDERS, expected = [
@@ -1635,8 +1636,8 @@ class TestBranchAndJumpEvents(CheckEvents):
             ('line', 'func', 5),
             ('line', 'meth', 1),
             ('return', 'meth', None),
-            ('jump', 'func', 5, '[offset=120]'),
-            ('branch', 'func', '[offset=124]', '[offset=130]'),
+            ('jump', 'func', 5, '[offset=124]'),
+            ('branch', 'func', '[offset=128]', '[offset=134]'),
             ('return', 'func', None),
             ('line', 'get_events', 11)])
 
