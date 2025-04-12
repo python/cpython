@@ -2620,9 +2620,7 @@ class BasicBluetoothTest(unittest.TestCase):
             socket.BTPROTO_HCI
             socket.SOL_HCI
             socket.BTPROTO_L2CAP
-
-            if not sys.platform.startswith("freebsd"):
-                socket.BTPROTO_SCO
+            socket.BTPROTO_SCO
 
     def testCreateRfcommSocket(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as s:
@@ -2638,8 +2636,7 @@ class BasicBluetoothTest(unittest.TestCase):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_RAW, socket.BTPROTO_HCI) as s:
             pass
 
-    @unittest.skipIf(sys.platform == "win32" or sys.platform.startswith("freebsd"),
-                     "windows and freebsd do not support SCO sockets")
+    @unittest.skipIf(sys.platform == "win32", "windows does not support SCO sockets")
     def testCreateScoSocket(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_SCO) as s:
             pass
