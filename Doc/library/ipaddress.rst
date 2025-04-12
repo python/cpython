@@ -781,6 +781,8 @@ dictionaries.
 
       The Subnet-Router anycast address for the network, which is the first address
       in the network.
+      
+      .. versionadded:: next
 
    .. attribute:: last_address
 
