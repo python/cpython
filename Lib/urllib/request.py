@@ -1466,7 +1466,7 @@ class FileHandler(BaseHandler):
     def open_local_file(self, req):
         import email.utils
         import mimetypes
-        localfile = url2pathname(req.full_url, True)
+        localfile = url2pathname(req.full_url, has_scheme=True)
         try:
             stats = os.stat(localfile)
             size = stats.st_size
@@ -1475,7 +1475,7 @@ class FileHandler(BaseHandler):
             headers = email.message_from_string(
                 'Content-type: %s\nContent-length: %d\nLast-modified: %s\n' %
                 (mtype or 'text/plain', size, modified))
-            origurl = pathname2url(localfile, True)
+            origurl = pathname2url(localfile, add_scheme=True)
             return addinfourl(open(localfile, 'rb'), headers, origurl)
         except OSError as exp:
             raise URLError(exp, exp.filename)

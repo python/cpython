@@ -146,7 +146,7 @@ The :mod:`urllib.request` module defines the following functions:
    attribute to modify its position in the handlers list.
 
 
-.. function:: pathname2url(path, add_scheme=False)
+.. function:: pathname2url(path, *, add_scheme=False)
 
    Convert the given local path to a ``file:`` URL. This function uses
    :func:`~urllib.parse.quote` function to encode the path.
@@ -175,7 +175,7 @@ The :mod:`urllib.request` module defines the following functions:
       The *add_scheme* argument was added.
 
 
-.. function:: url2pathname(url, has_scheme=False)
+.. function:: url2pathname(url, *, has_scheme=False)
 
    Convert the given ``file:`` URL to a local path. This function uses
    :func:`~urllib.parse.unquote` to decode the URL.

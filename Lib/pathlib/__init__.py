@@ -1271,7 +1271,7 @@ class Path(PurePath):
         if not self.is_absolute():
             raise ValueError("relative paths can't be expressed as file URIs")
         from urllib.request import pathname2url
-        return pathname2url(str(self), True)
+        return pathname2url(str(self), add_scheme=True)
 
     @classmethod
     def from_uri(cls, uri):
@@ -1279,7 +1279,7 @@ class Path(PurePath):
         from urllib.error import URLError
         from urllib.request import url2pathname
         try:
-            path = cls(url2pathname(uri, True))
+            path = cls(url2pathname(uri, has_scheme=True))
         except URLError as exc:
             raise ValueError(exc.reason) from None
         if not path.is_absolute():
