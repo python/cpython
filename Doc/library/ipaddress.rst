@@ -551,7 +551,9 @@ dictionaries.
    .. attribute:: first_address
 
       The first address in the network, the one with all the host bits cleared.
-      This is the same as the network_address for IPv4 networks.
+      This is the same as :attr:`network_address` for IPv4 networks.
+      
+      .. versionadded:: next
 
    .. attribute:: network_address
 
