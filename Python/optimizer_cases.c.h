@@ -1061,7 +1061,7 @@
 
         case _BUILD_MAP: {
             JitOptSymbol *map;
-            map = sym_new_type(ctx, &PyMap_Type);
+            map = sym_new_type(ctx, &PyDict_Type);
             stack_pointer[-oparg*2] = map;
             stack_pointer += 1 - oparg*2;
             assert(WITHIN_STACK_BOUNDS());
