@@ -1838,6 +1838,23 @@ class ClassCreationTests(unittest.TestCase):
         with self.assertRaises(RuntimeWarning):
             type("SouthPonies", (Model,), {})
 
+    def test_subclass_inherited_slot_update(self):
+        # gh-132284: Make sure slot update still works after fix.
+        # Note that after assignment to D.__getitem__ the actual C slot will
+        # never go back to dict_subscript as it was on class type creation but
+        # rather be set to slot_mp_subscript, unfortunately there is no way to
+        # check that here.
+
+        class D(dict):
+            pass
+
+        d = D({None: None})
+        self.assertIs(d[None], None)
+        D.__getitem__ = lambda self, item: 42
+        self.assertEqual(d[None], 42)
+        D.__getitem__ = dict.__getitem__
+        self.assertIs(d[None], None)
+
 
 class SimpleNamespaceTests(unittest.TestCase):
 
