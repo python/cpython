@@ -49,7 +49,10 @@ import weakref
 import warnings
 import types
 
-from test.support import captured_stderr, cpython_only, infinite_recursion, requires_docstrings, import_helper, run_code
+from test.support import (
+    captured_stderr, cpython_only, infinite_recursion, requires_docstrings, import_helper, run_code,
+    EqualToForwardRef,
+)
 from test.typinganndata import ann_module695, mod_generics_cache, _typed_dict_helper
 
 
@@ -468,8 +471,8 @@ class TypeVarTests(BaseTestCase):
         self.assertEqual(X | "x", Union[X, "x"])
         self.assertEqual("x" | X, Union["x", X])
         # make sure the order is correct
-        self.assertEqual(get_args(X | "x"), (X, ForwardRef("x")))
-        self.assertEqual(get_args("x" | X), (ForwardRef("x"), X))
+        self.assertEqual(get_args(X | "x"), (X, EqualToForwardRef("x")))
+        self.assertEqual(get_args("x" | X), (EqualToForwardRef("x"), X))
 
     def test_union_constrained(self):
         A = TypeVar('A', str, bytes)
@@ -812,7 +815,7 @@ def template_replace(templates: list[str], replacements: dict[str, list[str]]) -
 
     Example 1: Suppose that:
       templates = ["dog_breed are awesome", "dog_breed are cool"]
-      replacements = ["dog_breed": ["Huskies", "Beagles"]]
+      replacements = {"dog_breed": ["Huskies", "Beagles"]}
     Then we would return:
       [
           ("Huskies are awesome", "Huskies are cool"),
@@ -3822,6 +3825,7 @@ class ProtocolTests(BaseTestCase):
         acceptable_extra_attrs = {
             '_is_protocol', '_is_runtime_protocol', '__parameters__',
             '__init__', '__annotations__', '__subclasshook__', '__annotate__',
+            '__annotations_cache__', '__annotate_func__',
         }
         self.assertLessEqual(vars(NonP).keys(), vars(C).keys() | acceptable_extra_attrs)
         self.assertLessEqual(
@@ -4992,7 +4996,7 @@ class GenericTests(BaseTestCase):
         def f(x: X): ...
         self.assertEqual(
             get_type_hints(f, globals(), locals()),
-            {'x': list[list[ForwardRef('X')]]}
+            {'x': list[list[EqualToForwardRef('X')]]}
         )
 
     def test_pep695_generic_class_with_future_annotations(self):
@@ -6186,7 +6190,7 @@ class ForwardRefTests(BaseTestCase):
             return a
 
         self.assertEqual(namespace1(), namespace1())
-        self.assertNotEqual(namespace1(), namespace2())
+        self.assertEqual(namespace1(), namespace2())
 
     def test_forward_repr(self):
         self.assertEqual(repr(List['int']), "typing.List[ForwardRef('int')]")
@@ -6244,14 +6248,10 @@ class ForwardRefTests(BaseTestCase):
             ret = get_type_hints(fun, globals(), locals())
             return a
 
-        def cmp(o1, o2):
-            return o1 == o2
-
-        with infinite_recursion(25):
-            r1 = namespace1()
-            r2 = namespace2()
-            self.assertIsNot(r1, r2)
-            self.assertRaises(RecursionError, cmp, r1, r2)
+        r1 = namespace1()
+        r2 = namespace2()
+        self.assertIsNot(r1, r2)
+        self.assertEqual(r1, r2)
 
     def test_union_forward_recursion(self):
         ValueList = List['Value']
@@ -7173,7 +7173,8 @@ class GetTypeHintTests(BaseTestCase):
         # FORWARDREF
         self.assertEqual(
             get_type_hints(func, format=annotationlib.Format.FORWARDREF),
-            {'x': ForwardRef('undefined'), 'return': ForwardRef('undefined')},
+            {'x': EqualToForwardRef('undefined', owner=func),
+             'return': EqualToForwardRef('undefined', owner=func)},
         )
 
         # STRING
@@ -8044,7 +8045,7 @@ class NamedTupleTests(BaseTestCase):
         class Z(NamedTuple):
             a: None
             b: "str"
-        annos = {'a': type(None), 'b': ForwardRef("str")}
+        annos = {'a': type(None), 'b': EqualToForwardRef("str")}
         self.assertEqual(Z.__annotations__, annos)
         self.assertEqual(Z.__annotate__(annotationlib.Format.VALUE), annos)
         self.assertEqual(Z.__annotate__(annotationlib.Format.FORWARDREF), annos)
@@ -8060,7 +8061,7 @@ class NamedTupleTests(BaseTestCase):
         """
         ns = run_code(textwrap.dedent(code))
         X = ns['X']
-        self.assertEqual(X.__annotations__, {'a': ForwardRef("int"), 'b': ForwardRef("None")})
+        self.assertEqual(X.__annotations__, {'a': EqualToForwardRef("int"), 'b': EqualToForwardRef("None")})
 
     def test_deferred_annotations(self):
         class X(NamedTuple):
@@ -9079,7 +9080,7 @@ class TypedDictTests(BaseTestCase):
         class Y(TypedDict):
             a: None
             b: "int"
-        fwdref = ForwardRef('int', module=__name__)
+        fwdref = EqualToForwardRef('int', module=__name__)
         self.assertEqual(Y.__annotations__, {'a': type(None), 'b': fwdref})
         self.assertEqual(Y.__annotate__(annotationlib.Format.FORWARDREF), {'a': type(None), 'b': fwdref})
 
