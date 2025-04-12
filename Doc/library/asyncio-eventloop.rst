@@ -65,17 +65,13 @@ an event loop:
    .. note::
 
       The :mod:`!asyncio` policy system is deprecated and will be removed
-      in Python 3.16; from there on, this function will always return the
-      running event loop.
-
+      in Python 3.16; from there on, this function will return the current
+      running event loop if present else it will return the
+      loop set by :func:`set_event_loop`.
 
 .. function:: set_event_loop(loop)
 
    Set *loop* as the current event loop for the current OS thread.
-
-   .. deprecated:: 3.14
-      The :func:`set_event_loop` function is deprecated and will be removed
-      in Python 3.16.
 
 .. function:: new_event_loop()
 

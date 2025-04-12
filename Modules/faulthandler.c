@@ -40,23 +40,6 @@
 #define PUTS(fd, str) (void)_Py_write_noraise(fd, str, strlen(str))
 
 
-// Clang and GCC 9.0+ use __attribute__((no_sanitize("undefined")))
-#if defined(__has_feature)
-#  if __has_feature(undefined_behavior_sanitizer)
-#    define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
-#  endif
-#endif
-
-// GCC 4.9+ uses __attribute__((no_sanitize_undefined))
-#if !defined(_Py_NO_SANITIZE_UNDEFINED) && defined(__GNUC__) \
-    && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 9))
-#  define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
-#endif
-#ifndef _Py_NO_SANITIZE_UNDEFINED
-#  define _Py_NO_SANITIZE_UNDEFINED
-#endif
-
-
 typedef struct {
     int signum;
     int enabled;
@@ -406,7 +389,6 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
 {
     const int fd = fatal_error.fd;
     DWORD code = exc_info->ExceptionRecord->ExceptionCode;
-    DWORD flags = exc_info->ExceptionRecord->ExceptionFlags;
 
     if (faulthandler_ignore_exception(code)) {
         /* ignore the exception: call the next exception handler */
@@ -1126,7 +1108,7 @@ faulthandler_fatal_error_c_thread(PyObject *self, PyObject *args)
 }
 
 static PyObject* _Py_NO_SANITIZE_UNDEFINED
-faulthandler_sigfpe(PyObject *self, PyObject *args)
+faulthandler_sigfpe(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     faulthandler_suppress_crash_report();
 
@@ -1292,7 +1274,7 @@ static PyMethodDef module_methods[] = {
     {"_sigabrt", faulthandler_sigabrt, METH_NOARGS,
      PyDoc_STR("_sigabrt($module, /)\n--\n\n"
                "Raise a SIGABRT signal.")},
-    {"_sigfpe", (PyCFunction)faulthandler_sigfpe, METH_NOARGS,
+    {"_sigfpe", faulthandler_sigfpe, METH_NOARGS,
      PyDoc_STR("_sigfpe($module, /)\n--\n\n"
                "Raise a SIGFPE signal.")},
 #ifdef FAULTHANDLER_STACK_OVERFLOW

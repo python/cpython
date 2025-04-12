@@ -164,8 +164,10 @@ created.  Socket addresses are represented as follows:
 
   - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is a
     :class:`bytes` object containing the Bluetooth address in a
-    string format. (ex. ``b'12:23:34:45:56:67'``) This protocol is not
-    supported under FreeBSD.
+    string format. (ex. ``b'12:23:34:45:56:67'``)
+
+    .. versionchanged:: next
+       FreeBSD support added.
 
 - :const:`AF_ALG` is a Linux-only socket based interface to Kernel
   cryptography. An algorithm socket is configured with a tuple of two to four
@@ -882,10 +884,10 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    , a default reasonable value is chosen.
    *reuse_port* dictates whether to set the :data:`SO_REUSEPORT` socket option.
 
-   If *dualstack_ipv6* is true and the platform supports it the socket will
-   be able to accept both IPv4 and IPv6 connections, else it will raise
-   :exc:`ValueError`. Most POSIX platforms and Windows are supposed to support
-   this functionality.
+   If *dualstack_ipv6* is true, *family* is :data:`AF_INET6` and the platform
+   supports it the socket will be able to accept both IPv4 and IPv6 connections,
+   else it will raise :exc:`ValueError`. Most POSIX platforms and Windows are
+   supposed to support this functionality.
    When this functionality is enabled the address returned by
    :meth:`socket.getpeername` when an IPv4 connection occurs will be an IPv6
    address represented as an IPv4-mapped IPv6 address.
