@@ -6,7 +6,6 @@ import enum
 import keyword
 import sys
 import types
-import typing
 
 __all__ = [
     "Format",
@@ -628,7 +627,9 @@ def get_annotate_function(obj):
 
     Returns the __annotate__ function or None.
     """
-    if isinstance(obj, typing.Mapping):
+    from collections.abc import Mapping
+
+    if isinstance(obj, Mapping):
         try:
             return obj["__annotate__"]
         except KeyError:
