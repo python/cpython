@@ -1779,7 +1779,7 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_CALL_TYPE_1", uops)
         self.assertNotIn("_GUARD_NOS_NULL", uops)
-        self.assertNotIn("_GUARD_NOS_TYPE", uops)
+        self.assertNotIn("_GUARD_CALLABLE_TYPE_1", uops)
 
 
 def global_identity(x):
