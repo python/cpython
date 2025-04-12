@@ -928,7 +928,7 @@ dummy_func(void) {
     }
 
     op(_BUILD_MAP, (values[oparg*2] -- map)) {
-        map = sym_new_type(ctx, &PyMap_Type);
+        map = sym_new_type(ctx, &PyDict_Type);
     }
 
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
