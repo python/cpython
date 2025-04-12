@@ -33,7 +33,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #define MI_MAX_ALIGN_SIZE  16   // sizeof(max_align_t)
 #endif
 
-#define MI_CACHE_LINE          8
+#define MI_CACHE_LINE          64
 #if defined(_MSC_VER)
 #pragma warning(disable:4127)   // suppress constant conditional warning (due to MI_SECURE paths)
 #pragma warning(disable:26812)  // unscoped enum warning
