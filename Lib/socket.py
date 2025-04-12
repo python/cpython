@@ -349,7 +349,8 @@ class socket(_socket.socket):
         text.mode = mode
         return text
 
-    def _sendfile_zerocopy(self, zerocopy_func, giveup_err, file, offset=0, count=None):
+    def _sendfile_zerocopy(self, zerocopy_func, giveup_exc_type, file,
+                           offset=0, count=None):
         """
         Send a file using a zero-copy function.
         """
@@ -360,11 +361,11 @@ class socket(_socket.socket):
         try:
             fileno = file.fileno()
         except (AttributeError, io.UnsupportedOperation) as err:
-            raise giveup_err(err)  # not a regular file
+            raise giveup_exc_type(err)  # not a regular file
         try:
             fsize = os.fstat(fileno).st_size
         except OSError as err:
-            raise giveup_err(err)  # not a regular file
+            raise giveup_exc_type(err)  # not a regular file
         if not fsize:
             return 0  # empty file
         # Truncate to 1GiB to avoid OverflowError, see bpo-38319.
@@ -406,7 +407,7 @@ class socket(_socket.socket):
                         # one being 'file' is not a regular mmap(2)-like
                         # file, in which case we'll fall back on using
                         # plain send().
-                        raise giveup_err(err)
+                        raise giveup_exc_type(err)
                     raise err from None
                 else:
                     if sent == 0:
@@ -418,17 +419,17 @@ class socket(_socket.socket):
             if total_sent > 0 and hasattr(file, 'seek'):
                 file.seek(offset)
 
-    def _sendfile_use_sendfile(self, file, offset=0, count=None):
-        if not (sendfile := getattr(os, 'sendfile', None)):
+    if hasattr(os, 'sendfile'):
+        def _sendfile_use_sendfile(self, file, offset=0, count=None):
+            return self._sendfile_zerocopy(
+                partial(os.sendfile, self.fileno()),
+                _GiveupOnSendfile,
+                file, offset, count,
+            )
+    else:
+        def _sendfile_use_sendfile(self, file, offset=0, count=None):
             raise _GiveupOnSendfile(
                 "os.sendfile() not available on this platform")
-        return self._sendfile_zerocopy(
-            zerocopy_func=partial(sendfile, self.fileno()),
-            giveup_err=_GiveupOnSendfile,
-            file=file,
-            offset=offset,
-            count=count,
-        )
 
     def _sendfile_use_send(self, file, offset=0, count=None):
         self._check_sendfile_params(file, offset, count)

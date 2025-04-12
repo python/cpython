@@ -1276,7 +1276,7 @@ class SSLSocket(socket):
             )
         return self._sendfile_zerocopy(
             zerocopy_func=ssl_sendfile,
-            giveup_err=_GiveupOnSSLSendfile,
+            giveup_exc_type=_GiveupOnSSLSendfile,
             file=file,
             offset=offset,
             count=count,
@@ -1288,12 +1288,20 @@ class SSLSocket(socket):
         """
         if self._sslobj is None:
             return super().sendfile(file, offset, count)
-        if self._sslobj.uses_ktls_for_send():
-            try:
-                return self._sendfile_use_ssl_sendfile(file, offset, count)
-            except _GiveupOnSSLSendfile:
-                pass
-        return self._sendfile_use_send(file, offset, count)
+
+        if not self._sslobj.uses_ktls_for_send():
+            return self._sendfile_use_send(file, offset, count)
+
+        sendfile = getattr(self._sslobj, "sendfile", None)
+        if sendfile is None:
+            return self._sendfile_use_send(file, offset, count)
+
+        try:
+            return self._sendfile_zerocopy(
+                sendfile, _GiveupOnSSLSendfile, file, offset, count,
+            )
+        except _GiveupOnSSLSendfile:
+            return self._sendfile_use_send(file, offset, count)
 
     def recv(self, buflen=1024, flags=0):
         self._checkClosed()
