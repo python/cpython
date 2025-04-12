@@ -227,10 +227,6 @@ ENSUREPIP=      @ENSUREPIP@
 # Internal static libraries
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
-LIBHACL_MD5_A= Modules/_hacl/libHacl_Hash_MD5.a
-LIBHACL_SHA1_A= Modules/_hacl/libHacl_Hash_SHA1.a
-LIBHACL_SHA2_A= Modules/_hacl/libHacl_Hash_SHA2.a
-LIBHACL_SHA3_A= Modules/_hacl/libHacl_Hash_SHA3.a
 LIBHACL_BLAKE2_A= Modules/_hacl/libHacl_Hash_Blake2.a
 LIBHACL_HMAC_A= Modules/_hacl/libHacl_HMAC.a
 LIBHACL_CFLAGS=@LIBHACL_CFLAGS@
@@ -1465,34 +1461,6 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 #
 # The contents of libHacl_Blake2.a vary depending on whether we
 # have the ability to compile vectorized versions
-
-Modules/_hacl/Hacl_Hash_MD5.o: $(srcdir)/Modules/_hacl/Hacl_Hash_MD5.c $(LIBHACL_MD5_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_MD5.c
-
-$(LIBHACL_MD5_A): $(LIBHACL_MD5_OBJS)
-	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBHACL_MD5_OBJS)
-
-Modules/_hacl/Hacl_Hash_SHA1.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA1.c $(LIBHACL_SHA1_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA1.c
-
-$(LIBHACL_SHA1_A): $(LIBHACL_SHA1_OBJS)
-	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA1_OBJS)
-
-Modules/_hacl/Hacl_Hash_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c $(LIBHACL_SHA2_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
-
-$(LIBHACL_SHA2_A): $(LIBHACL_SHA2_OBJS)
-	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA2_OBJS)
-
-Modules/_hacl/Hacl_Hash_SHA3.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA3.c $(LIBHACL_SHA3_HEADERS)
-	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA3.c
-
-$(LIBHACL_SHA3_A): $(LIBHACL_SHA3_OBJS)
-	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBHACL_SHA3_OBJS)
 
 Modules/_hacl/Hacl_Hash_Blake2s.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s.c $(LIBHACL_BLAKE2_HEADERS)
 	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s.c
@@ -3302,10 +3270,10 @@ MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
-MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_MD5_HEADERS) $(LIBHACL_MD5_A)
-MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA1_HEADERS) $(LIBHACL_SHA1_A)
-MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(LIBHACL_SHA2_A)
-MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA3_HEADERS) $(LIBHACL_SHA3_A)
+MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_MD5_HEADERS) $(srcdir)/Modules/_hacl/Hacl_Hash_MD5.c
+MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA1_HEADERS) $(srcdir)/Modules/_hacl/Hacl_Hash_SHA1.c
+MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
+MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA3_HEADERS) $(srcdir)/Modules/_hacl/Hacl_Hash_SHA3.c
 MODULE__BLAKE2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_BLAKE2_HEADERS) $(LIBHACL_BLAKE2_A)
 MODULE__HMAC_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HMAC_HEADERS) $(LIBHACL_HMAC_A)
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
