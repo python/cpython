@@ -2530,7 +2530,6 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
     Py_ssize_t retval;
     int sockstate;
     _PySSLError err;
-    int nonblocking;
     PySocketSockObject *sock = GET_SOCKET(self);
     PyTime_t timeout, deadline = 0;
     int has_timeout;
@@ -2547,7 +2546,7 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
 
     if (sock != NULL) {
         /* just in case the blocking state of the socket has been changed */
-        nonblocking = (sock->sock_timeout >= 0);
+        int nonblocking = (sock->sock_timeout >= 0);
         BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
         BIO_set_nbio(SSL_get_wbio(self->ssl), nonblocking);
     }
@@ -2559,18 +2558,19 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
     }
 
     sockstate = PySSL_select(sock, 1, timeout);
-    if (sockstate == SOCKET_HAS_TIMED_OUT) {
-        PyErr_SetString(PyExc_TimeoutError,
-                        "The write operation timed out");
-        goto error;
-    } else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
-        PyErr_SetString(get_state_sock(self)->PySSLErrorObject,
-                        "Underlying socket has been closed.");
-        goto error;
-    } else if (sockstate == SOCKET_TOO_LARGE_FOR_SELECT) {
-        PyErr_SetString(get_state_sock(self)->PySSLErrorObject,
-                        "Underlying socket too large for select().");
-        goto error;
+    switch (sockstate) {
+        case SOCKET_HAS_TIMED_OUT:
+            PyErr_SetString(PyExc_TimeoutError,
+                            "The write operation timed out");
+            goto error;
+        case SOCKET_HAS_BEEN_CLOSED:
+            PyErr_SetString(get_state_sock(self)->PySSLErrorObject,
+                            "Underlying socket has been closed.");
+            goto error;
+        case SOCKET_TOO_LARGE_FOR_SELECT:
+            PyErr_SetString(get_state_sock(self)->PySSLErrorObject,
+                            "Underlying socket too large for select().");
+            goto error;
     }
 
     do {
@@ -2588,23 +2588,29 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
             timeout = _PyDeadline_Get(deadline);
         }
 
-        if (err.ssl == SSL_ERROR_WANT_READ) {
-            sockstate = PySSL_select(sock, 0, timeout);
-        } else if (err.ssl == SSL_ERROR_WANT_WRITE) {
-            sockstate = PySSL_select(sock, 1, timeout);
-        } else {
-            sockstate = SOCKET_OPERATION_OK;
+        switch (err.ssl) {
+            case SSL_ERROR_WANT_READ:
+                sockstate = PySSL_select(sock, 0, timeout);
+                break;
+            case SSL_ERROR_WANT_WRITE:
+                sockstate = PySSL_select(sock, 1, timeout);
+                break;
+            default:
+                sockstate = SOCKET_OPERATION_OK;
+                break;
         }
 
         if (sockstate == SOCKET_HAS_TIMED_OUT) {
             PyErr_SetString(PyExc_TimeoutError,
                             "The sendfile operation timed out");
             goto error;
-        } else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
+        }
+        else if (sockstate == SOCKET_HAS_BEEN_CLOSED) {
             PyErr_SetString(get_state_sock(self)->PySSLErrorObject,
                             "Underlying socket has been closed.");
             goto error;
-        } else if (sockstate == SOCKET_IS_NONBLOCKING) {
+        }
+        else if (sockstate == SOCKET_IS_NONBLOCKING) {
             break;
         }
     } while (err.ssl == SSL_ERROR_WANT_READ ||
