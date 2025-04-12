@@ -1635,12 +1635,15 @@ class DataHandler(BaseHandler):
 # Code move from the old urllib module
 
 def url2pathname(url, has_scheme=False):
-    """Convert the given file URL to a local file system path. The 'file:'
-    scheme prefix must be omitted unless *has_scheme* is set to true."""
+    """Convert the given file URL to a local file system path.
+
+    The 'file:' scheme prefix must be omitted unless *has_scheme*
+    is set to true.
+    """
     if has_scheme:
         scheme, url = _splittype(url)
         if scheme != 'file':
-            raise URLError("URL does not use file: scheme")
+            raise URLError("URL is missing a 'file:' scheme")
     authority, url = _splithost(url)
     if os.name == 'nt':
         if not _is_local_authority(authority):
@@ -1665,8 +1668,11 @@ def url2pathname(url, has_scheme=False):
 
 
 def pathname2url(pathname, add_scheme=False):
-    """Convert the given local file system path to a file URL. The 'file:'
-    scheme prefix is omitted unless *add_scheme* is set to true."""
+    """Convert the given local file system path to a file URL.
+
+    The 'file:' scheme prefix is omitted unless *add_scheme*
+    is set to true.
+    """
     if os.name == 'nt':
         pathname = pathname.replace('\\', '/')
     encoding = sys.getfilesystemencoding()
