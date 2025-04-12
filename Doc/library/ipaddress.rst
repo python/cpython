@@ -788,6 +788,8 @@ dictionaries.
 
       The last address in the network, the one with all the host bits set.
       This has no special meaning for IPv6 networks.
+      
+      .. versionadded:: next
 
    .. attribute:: hostmask
    .. attribute:: netmask
