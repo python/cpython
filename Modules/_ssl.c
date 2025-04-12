@@ -74,7 +74,6 @@
 #endif
 
 
-
 #ifdef BIO_get_ktls_send
 #ifdef MS_WINDOWS
     typedef long long Py_off_t;
@@ -90,9 +89,7 @@ Py_off_t_converter(PyObject *arg, void *addr)
 #else
     *((Py_off_t *)addr) = PyLong_AsLong(arg);
 #endif
-    if (PyErr_Occurred())
-        return 0;
-    return 1;
+    return PyErr_Occurred() ? 0 : 1;
 }
 
 /*[python input]
@@ -2482,9 +2479,9 @@ _ssl__SSLSocket_uses_ktls_for_send_impl(PySSLSocket *self)
 {
 #ifdef BIO_get_ktls_send
     int uses = BIO_get_ktls_send(SSL_get_wbio(self->ssl));
-    return PyBool_FromLong((long)uses);
+    return PyBool_FromLong(uses);
 #else
-    return Py_False;
+    Py_RETURN_FALSE;
 #endif
 }
 
@@ -2500,9 +2497,9 @@ _ssl__SSLSocket_uses_ktls_for_read_impl(PySSLSocket *self)
 {
 #ifdef BIO_get_ktls_recv
     int uses = BIO_get_ktls_recv(SSL_get_rbio(self->ssl));
-    return PyBool_FromLong((long)uses);
+    return PyBool_FromLong(uses);
 #else
-    return Py_False;
+    Py_RETURN_FALSE;
 #endif
 }
 
@@ -2539,7 +2536,7 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
     int has_timeout;
 
     if (sock != NULL) {
-        if (((PyObject*)sock) == Py_None) {
+        if ((PyObject *)sock == Py_None) {
             _setSSLError(get_state_sock(self),
                          "Underlying socket connection gone",
                          PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
@@ -2583,8 +2580,9 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
         PySSL_END_ALLOW_THREADS
         self->err = err;
 
-        if (PyErr_CheckSignals())
+        if (PyErr_CheckSignals()) {
             goto error;
+        }
 
         if (has_timeout) {
             timeout = _PyDeadline_Get(deadline);
@@ -2613,7 +2611,8 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
              err.ssl == SSL_ERROR_WANT_WRITE);
 
     if (err.ssl == SSL_ERROR_SSL
-        && ERR_GET_REASON(ERR_peek_error()) == SSL_R_UNINITIALIZED) {
+        && ERR_GET_REASON(ERR_peek_error()) == SSL_R_UNINITIALIZED)
+    {
         /* OpenSSL fails to return SSL_ERROR_SYSCALL if an error
          * happens in sendfile(), and returns SSL_ERROR_SSL with
          * SSL_R_UNINITIALIZED reason instead. */
@@ -2623,14 +2622,16 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
         goto error;
     }
     Py_XDECREF(sock);
-    if (retval < 0)
+    if (retval < 0) {
         return PySSL_SetError(self, __FILE__, __LINE__);
-    if (PySSL_ChainExceptions(self) < 0)
+    }
+    if (PySSL_ChainExceptions(self) < 0) {
         return NULL;
+    }
     return PyLong_FromSize_t(retval);
 error:
     Py_XDECREF(sock);
-    PySSL_ChainExceptions(self);
+    (void)PySSL_ChainExceptions(self);
     return NULL;
 }
 #endif /* BIO_get_ktls_send */
