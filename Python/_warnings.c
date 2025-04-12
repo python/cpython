@@ -1383,6 +1383,7 @@ _PyErr_WarnExplicitObjectWithContext(PyObject *category, PyObject *message,
     int rc = PyErr_WarnExplicitObject(category, message, filename, lineno,
                                       module, registry);
     Py_DECREF(unused_filename);
+    Py_DECREF(registry);
     Py_DECREF(module);
     return rc;
 }
