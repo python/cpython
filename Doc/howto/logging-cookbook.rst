@@ -630,14 +630,14 @@ which, when run, will produce:
    The :class:`QueueListener` can be started (and stopped) via the
    :keyword:`with` statement. For example:
 
-    .. code-block:: python
+   .. code-block:: python
 
-        with QueueListener(que, handler) as listener:
-             # the queue listener automatically starts
-             # when the with block is entered
-             pass
-        # the queue listener automatically stops once
-        # the with block is exited
+      with QueueListener(que, handler) as listener:
+          # The queue listener automatically starts
+          # when the 'with' block is entered.
+          pass
+      # The queue listener automatically stops once
+      # the 'with' block is exited.
 
 .. _network-logging:
 
