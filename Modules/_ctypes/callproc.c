@@ -1016,11 +1016,12 @@ static PyObject *GetResult(ctypes_state *st,
     if (info->getfunc && !_ctypes_simple_instance(st, restype)) {
         retval = info->getfunc(result, info->size);
         /* If restype is py_object (detected by comparing getfunc with
-           O_get), we have to call Py_DECREF because O_get has already
-           called Py_INCREF.
+           O_get), we have to call Py_XDECREF because O_get has already
+           called Py_INCREF, unless the result was NULL, in which case
+           an error is set (by the called function, or by O_get).
         */
         if (info->getfunc == _ctypes_get_fielddesc("O")->getfunc) {
-            Py_DECREF(retval);
+            Py_XDECREF(retval);
         }
     }
     else {
