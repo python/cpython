@@ -773,7 +773,9 @@ dictionaries.
    .. attribute:: first_address
 
       The first address in the network, the one with all the host bits cleared.
-      This is the same as the subnet_router_anycast_address for IPv6 networks.
+      This is the same as :attr:`subnet_router_anycast_address` for IPv6 networks.
+      
+      .. versionadded:: next
 
    .. attribute:: subnet_router_anycast_address
 
