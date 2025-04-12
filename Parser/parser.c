@@ -1014,7 +1014,7 @@ interactive_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ interactive[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "statement_newline"));
-            _res = _PyAST_Interactive ( a , p -> arena );
+            _res = _PyAST_Interactive ( _PyPegen_register_stmts ( p , a ) , p -> arena );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -1167,7 +1167,7 @@ statements_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ statements[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "statement+"));
-            _res = ( asdl_stmt_seq* ) _PyPegen_seq_flatten ( p , a );
+            _res = _PyPegen_register_stmts ( p , ( asdl_stmt_seq* ) _PyPegen_seq_flatten ( p , a ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

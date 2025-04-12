@@ -1711,3 +1711,26 @@ _PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq * na
     }
     return _PyAST_ImportFrom(module, names, level, lineno, col_offset, end_lineno, end_col_offset, arena);
 }
+
+stmt_ty
+_PyPegen_register_stmt(Parser *p, stmt_ty stmt) {
+    p->last_stmt_location.lineno = stmt->lineno;
+    p->last_stmt_location.col_offset = stmt->col_offset;
+    p->last_stmt_location.end_lineno = stmt->end_lineno;
+    p->last_stmt_location.end_col_offset = stmt->end_col_offset;
+    return stmt;
+}
+
+asdl_stmt_seq*
+_PyPegen_register_stmts(Parser *p, asdl_stmt_seq* stmts) {
+    Py_ssize_t len = asdl_seq_LEN(stmts);
+    if (len == 0) {
+        return stmts;
+    }
+    stmt_ty last_stmt = asdl_seq_GET(stmts, len - 1);
+    p->last_stmt_location.lineno = last_stmt->lineno;
+    p->last_stmt_location.col_offset = last_stmt->col_offset;
+    p->last_stmt_location.end_lineno = last_stmt->end_lineno;
+    p->last_stmt_location.end_col_offset = last_stmt->end_col_offset;
+    return stmts;
+}

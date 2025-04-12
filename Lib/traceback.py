@@ -6,6 +6,10 @@ import linecache
 import sys
 import textwrap
 import warnings
+import codeop
+import keyword
+import tokenize
+import io
 from contextlib import suppress
 import _colorize
 from _colorize import ANSIColors
@@ -1090,6 +1094,7 @@ class TracebackException:
             self.end_offset = exc_value.end_offset
             self.msg = exc_value.msg
             self._is_syntax_error = True
+            self._exc_metadata = getattr(exc_value, "_metadata", None)
         elif exc_type and issubclass(exc_type, ImportError) and \
                 getattr(exc_value, "name_from", None) is not None:
             wrong_name = getattr(exc_value, "name_from", None)
@@ -1272,6 +1277,86 @@ class TracebackException:
         if self.exceptions and show_group:
             for ex in self.exceptions:
                 yield from ex.format_exception_only(show_group=show_group, _depth=_depth+1, colorize=colorize)
+    
+    def _find_keyword_typos(self):
+        try:
+            import _suggestions
+        except ImportError:
+            return
+        
+        assert self._is_syntax_error
+
+        # Only try to find keyword typos if there is no custom message
+        if self.msg != "invalid syntax":
+            return
+
+        if not self._exc_metadata:
+            return
+        
+        line, offset, source = self._exc_metadata
+        end_line = int(self.lineno) if self.lineno is not None else 0
+        lines = None
+        from_filename = False
+
+        if source is None:
+            if self.filename:
+                try:
+                    with open(self.filename) as f:
+                        lines = f.readlines()
+                except Exception:
+                    line, end_line, offset = 0,1,0
+                else:
+                    from_filename = True
+            lines = lines if lines is not None else self.text.splitlines()
+        else:
+            lines = source.splitlines()
+        
+        error_code = lines[line -1 if line > 0 else 0:end_line]
+        error_code[0] = error_code[0][offset:]
+        error_code = textwrap.dedent(''.join(error_code))
+
+        # Do not continue if the source is too large
+        if len(error_code) > 1024:
+            return
+
+        tokens = tokenize.generate_tokens(io.StringIO(error_code).readline)
+        tokens_left_to_process = 10
+        for token in tokens:
+            tokens_left_to_process -= 1
+            if tokens_left_to_process < 0:
+                break
+            start, end = token.start, token.end
+            if token.type != tokenize.NAME:
+                continue
+            if from_filename and token.start[0]+line != end_line+1:
+                continue
+            wrong_name = token.string
+            if wrong_name in keyword.kwlist:
+                continue
+            suggestion = _suggestions._generate_suggestions(keyword.kwlist, wrong_name)
+            if not suggestion or suggestion == wrong_name:
+                continue
+            # Try to replace the token with the keyword
+            the_lines = error_code.splitlines()
+            the_line = the_lines[start[0] - 1]
+            chars = list(the_line)
+            chars[token.start[1]:token.end[1]] = suggestion
+            the_lines[start[0] - 1] = ''.join(chars)
+            code = ''.join(the_lines)
+            # Check if it works
+            try:
+                codeop.compile_command(code, symbol="exec", flags=codeop.PyCF_ONLY_AST)
+            except SyntaxError as e:
+                continue
+            # Keep token.line but handle offsets correctly
+            self.text = token.line
+            self.offset = token.start[1] + 1
+            self.end_offset = token.end[1] + 1
+            self.lineno = start[0]
+            self.end_lineno = end[0]
+            self.msg = f"invalid syntax. Did you mean '{suggestion}'?"
+            return
+        
 
     def _format_syntax_error(self, stype, **kwargs):
         """Format SyntaxError exceptions (internal helper)."""
@@ -1299,6 +1384,9 @@ class TracebackException:
             # text  = "   foo\n"
             # rtext = "   foo"
             # ltext =    "foo"
+            with suppress(Exception):
+                self._find_keyword_typos()
+            text = self.text
             rtext = text.rstrip('\n')
             ltext = rtext.lstrip(' \n\f')
             spaces = len(rtext) - len(ltext)

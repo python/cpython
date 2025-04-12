@@ -2462,7 +2462,7 @@ class SyntaxErrorTests(unittest.TestCase):
         args = ("bad.py", 1, 2)
         self.assertRaises(TypeError, SyntaxError, "bad bad", args)
 
-        args = ("bad.py", 1, 2, 4, 5, 6, 7)
+        args = ("bad.py", 1, 2, 4, 5, 6, 7, 8)
         self.assertRaises(TypeError, SyntaxError, "bad bad", args)
 
         args = ("bad.py", 1, 2, "abcdefg", 1)
