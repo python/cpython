@@ -1769,12 +1769,13 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_call_type_1(self):
         def testfunc(n):
+            x = 0
             for _ in range(n):
-                x = type(42)
+                x += type(42) is int
             return x
 
         res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
-        self.assertEqual(res, int)
+        self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertIn("_CALL_TYPE_1", uops)
