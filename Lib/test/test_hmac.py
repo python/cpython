@@ -985,7 +985,7 @@ class OpenSSLConstructorTestCase(ThroughOpenSSLAPIMixin,
         for value in [object, 'unknown', 1234, None]:
             with (
                 self.subTest(value=value),
-                self.assert_raises_unknown_digestmod()
+                self.assert_raises_unknown_digestmod(),
             ):
                 self.hmac_digest(b'key', b'msg', value)
 
