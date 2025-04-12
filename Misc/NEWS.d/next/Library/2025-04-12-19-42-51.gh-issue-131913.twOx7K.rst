@@ -1,1 +1,1 @@
-add :func:`Process.interrupt`
+add :func:`multiprocessing.Process.interrupt`
