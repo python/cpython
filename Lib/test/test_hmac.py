@@ -10,7 +10,7 @@ import unittest.mock as mock
 import warnings
 from _operator import _compare_digest as operator_compare_digest
 from test.support import check_disallow_instantiation
-from test.support.import_helper import import_fresh_module
+from test.support.import_helper import import_fresh_module, import_module
 
 try:
     import _hashlib
@@ -1007,7 +1007,7 @@ class BuiltinConstructorTestCase(ThroughBuiltinAPIMixin,
             with (
                 self.subTest(value=value),
                 self.assert_raises_unknown_digestmod(),
-          ):
+            ):
                 self.hmac_digest(b'key', b'msg', value)
 
 
@@ -1451,6 +1451,37 @@ class PyMiscellaneousTests(unittest.TestCase):
             self.assertEqual(hexdigest, expected)
         finally:
             cache.pop('foo')
+
+
+class BuiiltinMiscellaneousTests(BuiltinModuleMixin, unittest.TestCase):
+    """HMAC-BLAKE2 is not standardized as BLAKE2 is a keyed hash function.
+
+    In particular, there is no official test vectors for HMAC-BLAKE2.
+    However, we can test that the HACL* interface is correctly used by
+    checking against the pure Python implementation output.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.blake2 = blake2 = import_module("_blake2")
+        cls.blake2b = blake2.blake2b
+        cls.blake2s = blake2.blake2s
+
+    def assert_hmac_blake_correctness(self, digest, key, msg, hashfunc):
+        self.assertIsInstance(digest, bytes)
+        expect = hmac._compute_digest_fallback(key, msg, hashfunc)
+        self.assertEqual(digest, expect)
+
+    def test_compute_blake2b_32(self):
+        key, msg = random.randbytes(8), random.randbytes(16)
+        digest = self.hmac.compute_blake2b_32(key, msg)
+        self.assert_hmac_blake_correctness(digest, key, msg, self.blake2b)
+
+    def test_compute_blake2s_32(self):
+        key, msg = random.randbytes(8), random.randbytes(16)
+        digest = self.hmac.compute_blake2s_32(key, msg)
+        self.assert_hmac_blake_correctness(digest, key, msg, self.blake2s)
 
 
 if __name__ == "__main__":
