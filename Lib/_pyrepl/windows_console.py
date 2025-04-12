@@ -459,16 +459,16 @@ class WindowsConsole(Console):
                         key = f"ctrl {key}"
                     elif key_event.dwControlKeyState & ALT_ACTIVE:
                         # queue the key, return the meta command
-                        self.event_queue.insert(Event(evt="key", data=key, raw=key))
+                        self.event_queue.insert(Event(evt="key", data=key, raw=raw_key))
                         return Event(evt="key", data="\033")  # keymap.py uses this for meta
-                    return Event(evt="key", data=key, raw=key)
+                    return Event(evt="key", data=key, raw=raw_key)
                 if block:
                     continue
 
                 return None
             elif self.__vt_support:
                 # If virtual terminal is enabled, scanning VT sequences
-                self.event_queue.push(rec.Event.KeyEvent.uChar.UnicodeChar)
+                self.event_queue.push(raw_key)
                 continue
 
             if key_event.dwControlKeyState & ALT_ACTIVE:
