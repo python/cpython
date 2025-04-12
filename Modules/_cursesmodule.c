@@ -850,6 +850,8 @@ static int
 PyCursesWindow_traverse(PyObject *self, visitproc visit, void *arg)
 {
     Py_VISIT(Py_TYPE(self));
+    PyCursesWindowObject *wo = (PyCursesWindowObject *)self;
+    Py_VISIT(wo->orig);
     return 0;
 }
 
