@@ -959,13 +959,18 @@ dummy_func(
             EXIT_IF(!PyDict_CheckExact(o));
         }
 
+        op(_GUARD_NOS_DICT_NOT_EXACT, (nos, unused -- nos, unused)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            EXIT_IF(!PyDict_Check(o));
+        }
+
         op(_GUARD_TOS_DICT, (tos -- tos)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
             EXIT_IF(!PyDict_CheckExact(o));
         }
 
         macro(BINARY_OP_SUBSCR_DICT) =
-            _GUARD_NOS_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT;
+            _GUARD_NOS_DICT_NOT_EXACT + unused/5 + _BINARY_OP_SUBSCR_DICT;
 
         op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);

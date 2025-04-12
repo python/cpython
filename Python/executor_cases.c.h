@@ -1432,6 +1432,17 @@
             break;
         }
 
+        case _GUARD_NOS_DICT_NOT_EXACT: {
+            _PyStackRef nos;
+            nos = stack_pointer[-2];
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            if (!PyDict_Check(o)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
         case _GUARD_TOS_DICT: {
             _PyStackRef tos;
             tos = stack_pointer[-1];

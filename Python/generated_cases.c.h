@@ -539,11 +539,11 @@
             _PyStackRef dict_st;
             _PyStackRef sub_st;
             _PyStackRef res;
-            // _GUARD_NOS_DICT
+            // _GUARD_NOS_DICT_NOT_EXACT
             {
                 nos = stack_pointer[-2];
                 PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-                if (!PyDict_CheckExact(o)) {
+                if (!PyDict_Check(o)) {
                     UPDATE_MISS_STATS(BINARY_OP);
                     assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
                     JUMP_TO_PREDICTED(BINARY_OP);
