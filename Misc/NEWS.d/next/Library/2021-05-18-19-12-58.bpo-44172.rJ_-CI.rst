@@ -1,3 +1,2 @@
-Keep a reference to original PyCursesWindowObject in subwindows so
-that the original WINDOW does not get deleted before the subwindow
-WINDOW.
+Keep a reference to original :mod:`curses` windows in subwindows so
+that the original window does not get deleted before subwindows.
