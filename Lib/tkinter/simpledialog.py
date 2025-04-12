@@ -40,6 +40,9 @@ class SimpleDialog:
         if title:
             self.root.title(title)
             self.root.iconname(title)
+
+        _setup_dialog(self.root)
+
         self.message = Message(self.root, text=text, aspect=400)
         self.message.pack(expand=1, fill=BOTH)
         self.frame = Frame(self.root)
@@ -114,6 +117,8 @@ class Dialog(Toplevel):
 
         if title:
             self.title(title)
+
+        _setup_dialog(self)
 
         self.parent = parent
 
@@ -252,6 +257,13 @@ def _place_window(w, parent=None):
     w.wm_deiconify() # Become visible at the desired location
 
 
+def _setup_dialog(w):
+    if w._windowingsystem == "aqua":
+        w.tk.call("::tk::unsupported::MacWindowStyle", "style",
+                  w, "moveableModal", "")
+    elif w._windowingsystem == "x11":
+        w.wm_attributes(type="dialog")
+
 # --------------------------------------------------------------------
 # convenience dialogues
 
@@ -345,7 +357,7 @@ def askinteger(title, prompt, **kw):
 
 
 class _QueryFloat(_QueryDialog):
-    errormessage = "Not a floating point value."
+    errormessage = "Not a floating-point value."
 
     def getresult(self):
         return self.getdouble(self.entry.get())

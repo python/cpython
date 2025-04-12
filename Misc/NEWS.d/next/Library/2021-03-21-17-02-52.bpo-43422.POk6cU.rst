@@ -1,1 +1,0 @@
-Revert the _decimal C API which was added in bpo-41324.

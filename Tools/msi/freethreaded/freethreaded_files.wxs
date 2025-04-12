@@ -1,0 +1,183 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <Fragment>
+        <Property Id="FREETHREADED_REGISTRYKEY" Value="Software\Python\PythonCore\$(var.ShortVersion)t$(var.PyArchExt)$(var.PyTestExt)" />
+
+        <ComponentGroup Id="freethreaded_reg">
+            <Component Id="PythonRegistration" Directory="InstallDirectory" Guid="$(var.PythonRegComponentGuid)">
+                <RegistryKey Root="HKMU" Key="[FREETHREADED_REGISTRYKEY]">
+                    <RegistryValue Name="DisplayName" Type="string" Value="!(loc.ShortcutName)" KeyPath="yes" />
+                    <RegistryValue Name="SupportUrl" Type="string" Value="!(loc.SupportUrl)" KeyPath="no" />
+                    <RegistryValue Name="Version" Type="string" Value="$(var.LongVersion)" KeyPath="no" />
+                    <RegistryValue Name="SysVersion" Type="string" Value="$(var.ShortVersion)" KeyPath="no" />
+                    <RegistryValue Name="SysArchitecture" Type="string" Value="$(var.PlatformArchitecture)" KeyPath="no" />
+                </RegistryKey>
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    <Fragment>
+        <DirectoryRef Id="Lib">
+            <Directory Id="Lib_venv__freethreaded" Name="venv">
+                <Directory Id="Lib_venv_scripts__freethreaded" Name="scripts">
+                    <Directory Id="Lib_venv_scripts_nt__freethreaded" Name="nt" />
+                </Directory>
+            </Directory>
+        </DirectoryRef>
+    </Fragment>
+    <Fragment>
+        <PropertyRef Id="FREETHREADED_REGISTRYKEY" />
+        
+        <ComponentGroup Id="freethreaded_exe">
+            <Component Id="freethreaded_python.exe" Directory="InstallDirectory" Guid="$(var.FreethreadedPythonExeComponentGuid)">
+                <File Name="python$(var.ShortVersion)t.exe" KeyPath="yes" />
+                
+                <RegistryKey Root="HKMU" Key="[FREETHREADED_REGISTRYKEY]">
+                    <RegistryValue Key="InstallPath" Type="string" Value="[InstallDirectory]" KeyPath="no" />
+                    <RegistryValue Key="InstallPath" Name="ExecutablePath" Type="string" Value="[#python$(var.ShortVersion)t.exe]" KeyPath="no" />
+                </RegistryKey>
+            </Component>
+            <Component Id="freethreaded_pythonw.exe" Directory="InstallDirectory" Guid="$(var.FreethreadedPythonwExeComponentGuid)">
+                <File Name="pythonw$(var.ShortVersion)t.exe" KeyPath="yes" />
+                <RegistryKey Root="HKMU" Key="[FREETHREADED_REGISTRYKEY]">
+                    <RegistryValue Key="InstallPath" Name="WindowedExecutablePath" Type="string" Value="[#pythonw$(var.ShortVersion)t.exe]" KeyPath="no" />
+                </RegistryKey>
+            </Component>
+            <Component Id="freethreaded_python_stable.dll" Directory="InstallDirectory" Guid="*">
+                <File Id="freethreaded_python_stable.dll" Name="python$(var.MajorVersionNumber)t.dll" KeyPath="yes" />
+            </Component>
+            <Component Id="freethreaded_python.dll" Directory="InstallDirectory" Guid="*">
+                <File Id="freethreaded_python.dll" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.dll" KeyPath="yes" />
+            </Component>
+            <Component Id="freethreaded_python_stable.lib" Directory="libs" Guid="*">
+                <File Id="freethreaded_python_stable.lib" Name="python$(var.MajorVersionNumber)t.lib" KeyPath="yes" />
+            </Component>
+            <Component Id="freethreaded_python.lib" Directory="libs" Guid="*">
+                <File Id="freethreaded_python.lib" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.lib" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="freethreaded_symbols">
+            <Component Id="freethreaded_python_dll.pdb" Directory="InstallDirectory" Guid="*">
+                <File Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t.pdb" KeyPath="yes" />
+            </Component>
+            <Component Id="freethreaded_python.pdb" Directory="InstallDirectory" Guid="*">
+                <File Name="python$(var.ShortVersion)t.pdb" />
+            </Component>
+            <Component Id="freethreaded_pythonw.pdb" Directory="InstallDirectory" Guid="*">
+                <File Name="pythonw$(var.ShortVersion)t.pdb" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="freethreaded_dll_d">
+            <Component Id="freethreaded_python_stable_d.dll" Directory="InstallDirectory" Guid="*">
+                <File Id="freethreaded_python_stable_d.dll" Name="python$(var.MajorVersionNumber)t_d.dll" KeyPath="yes" />
+            </Component>
+            <Component Id="freethreaded_python_d.dll" Directory="InstallDirectory" Guid="*">
+                <File Id="freethreaded_python_d.dll" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t_d.dll" KeyPath="yes" />
+                <File Id="freethreaded_python_d.pdb" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t_d.pdb" KeyPath="no" />
+            </Component>
+            <Component Id="freethreaded_python_stable_d.lib" Directory="libs" Guid="*">
+                <File Id="freethreaded_python_stable_d.lib" Name="python$(var.MajorVersionNumber)t_d.lib" KeyPath="yes" />
+            </Component>
+            <Component Id="freethreaded_python_d.lib" Directory="libs" Guid="*">
+                <File Id="freethreaded_python_d.lib" Name="python$(var.MajorVersionNumber)$(var.MinorVersionNumber)t_d.lib" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    <Fragment>
+        <ComponentGroup Id="freethreaded_exe_d">
+            <Component Id="freethreaded_python_d.exe" Directory="InstallDirectory" Guid="*">
+                <File Name="python$(var.ShortVersion)t_d.exe" />
+            </Component>
+            <Component Id="freethreaded_python_d.pdb" Directory="InstallDirectory" Guid="*">
+                <File Name="python$(var.ShortVersion)t_d.pdb" />
+            </Component>
+            <Component Id="freethreaded_pythonw_d.exe" Directory="InstallDirectory" Guid="*">
+                <File Name="pythonw$(var.ShortVersion)t_d.exe" />
+            </Component>
+            <Component Id="freethreaded_pythonw_d.pdb" Directory="InstallDirectory" Guid="*">
+                <File Name="pythonw$(var.ShortVersion)t_d.pdb" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+
+    <?define exts=pyexpat;select;unicodedata;winsound;_bz2;_elementtree;_socket;_ssl;_ctypes;_hashlib;_multiprocessing;_lzma;_decimal;_overlapped;_sqlite3;_asyncio;_queue;_uuid;_wmi;_zoneinfo;_testcapi;_ctypes_test;_testbuffer;_testimportmultiple;_testmultiphase;_testsinglephase;_testconsole;_testinternalcapi;_testclinic;_testclinic_limited;_tkinter ?>
+    <Fragment>
+        <DirectoryRef Id="Lib_venv_scripts_nt__freethreaded" />
+
+        <ComponentGroup Id="freethreaded_lib_extensions">
+            <?foreach ext in $(var.exts)?>
+        
+            <Component Id="freethreaded_$(var.ext).pyd" Directory="DLLs" Guid="*">
+                <File Name="$(var.ext)$(var.FreethreadedPydTag).pyd" KeyPath="yes" />
+            </Component>
+            
+            <?endforeach ?>
+            
+            <Component Id="venvlaunchert.exe" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
+                <File Name="venvlaunchert.exe" KeyPath="yes" />
+            </Component>
+            <Component Id="venvwlaunchert.exe" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
+                <File Name="venvwlaunchert.exe" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    
+    <Fragment>
+        <DirectoryRef Id="Lib_venv_scripts_nt__freethreaded" />
+
+        <ComponentGroup Id="freethreaded_lib_extensions_symbols">
+            <?foreach ext in $(var.exts)?>
+            
+            <Component Id="freethreaded_$(var.ext).pdb" Directory="DLLs" Guid="*">
+                <File Name="$(var.ext)$(var.FreethreadedPydTag).pdb" />
+            </Component>
+            
+            <?endforeach ?>
+            
+            <Component Id="venvlaunchert.pdb" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
+                <File Name="venvlaunchert.pdb" KeyPath="yes" />
+            </Component>
+            <Component Id="venvwlaunchert.pdb" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
+                <File Name="venvwlaunchert.pdb" KeyPath="yes" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    
+    <Fragment>
+        <ComponentGroup Id="freethreaded_lib_extensions_d">
+            <?foreach ext in $(var.exts)?>
+            
+            <Component Id="freethreaded_$(var.ext)_d.pyd" Directory="DLLs" Guid="*">
+                <File Name="$(var.ext)_d$(var.FreethreadedPydTag).pyd" />
+            </Component>
+            <Component Id="freethreaded_$(var.ext)_d.pdb" Directory="DLLs" Guid="*">
+                <File Name="$(var.ext)_d$(var.FreethreadedPydTag).pdb" />
+            </Component>
+            
+            <?endforeach ?>
+            
+            <Component Id="venvlaunchert_d.exe" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
+                <File Name="venvlaunchert_d.exe" KeyPath="yes" />
+                <File Name="venvlaunchert_d.pdb" />
+            </Component>
+            <Component Id="venvwlaunchert_d.exe" Directory="Lib_venv_scripts_nt__freethreaded" Guid="*">
+                <File Name="venvwlaunchert_d.exe" KeyPath="yes" />
+                <File Name="venvwlaunchert_d.pdb" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+    <Fragment>
+        <PropertyRef Id="FREETHREADED_REGISTRYKEY" />
+        
+        <ComponentGroup Id="freethreaded_lib_files">
+            <Component Id="PythonPathRegistry" Directory="Lib" Guid="*">
+                <RegistryKey Root="HKMU" Key="[FREETHREADED_REGISTRYKEY]">
+                    <RegistryValue Key="PythonPath" Type="string" Value="[Lib];[DLLs]" />
+                </RegistryKey>
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>

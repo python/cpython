@@ -27,7 +27,7 @@ Further information is available in the bundled documentation, and from
   http://docs.python.org/library/unittest.html
 
 Copyright (c) 1999-2003 Steve Purcell
-Copyright (c) 2003-2010 Python Software Foundation
+Copyright (c) 2003 Python Software Foundation
 This module is free software, and you may redistribute it and/or modify
 it under the same terms as Python itself, so long as this copyright message
 and disclaimer are retained in their original form.
@@ -49,35 +49,20 @@ __all__ = ['TestResult', 'TestCase', 'IsolatedAsyncioTestCase', 'TestSuite',
            'defaultTestLoader', 'SkipTest', 'skip', 'skipIf', 'skipUnless',
            'expectedFailure', 'TextTestResult', 'installHandler',
            'registerResult', 'removeResult', 'removeHandler',
-           'addModuleCleanup']
-
-# Expose obsolete functions for backwards compatibility
-__all__.extend(['getTestCaseNames', 'makeSuite', 'findTestCases'])
+           'addModuleCleanup', 'doModuleCleanups', 'enterModuleContext']
 
 __unittest = True
 
 from .result import TestResult
 from .case import (addModuleCleanup, TestCase, FunctionTestCase, SkipTest, skip,
-                   skipIf, skipUnless, expectedFailure)
-from .suite import BaseTestSuite, TestSuite
-from .loader import (TestLoader, defaultTestLoader, makeSuite, getTestCaseNames,
-                     findTestCases)
-from .main import TestProgram, main
+                   skipIf, skipUnless, expectedFailure, doModuleCleanups,
+                   enterModuleContext)
+from .suite import BaseTestSuite, TestSuite  # noqa: F401
+from .loader import TestLoader, defaultTestLoader
+from .main import TestProgram, main  # noqa: F401
 from .runner import TextTestRunner, TextTestResult
 from .signals import installHandler, registerResult, removeResult, removeHandler
 # IsolatedAsyncioTestCase will be imported lazily.
-
-# deprecated
-_TextTestResult = TextTestResult
-
-# There are no tests here, so don't try to run anything discovered from
-# introspecting the symbols (e.g. FunctionTestCase). Instead, all our
-# tests come from within unittest.test.
-def load_tests(loader, tests, pattern):
-    import os.path
-    # top level directory cached on loader instance
-    this_dir = os.path.dirname(__file__)
-    return loader.discover(start_dir=this_dir, pattern=pattern)
 
 
 # Lazy import of IsolatedAsyncioTestCase from .async_case

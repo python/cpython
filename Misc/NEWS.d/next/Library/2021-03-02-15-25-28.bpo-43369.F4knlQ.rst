@@ -1,3 +1,0 @@
-Improve :mod:`sqlite3` error handling: If ``sqlite3_column_text()`` and
-``sqlite3_column_blob()`` set ``SQLITE_NOMEM``, :exc:`MemoryError` is now
-raised. Patch by Erlend E. Aasland.

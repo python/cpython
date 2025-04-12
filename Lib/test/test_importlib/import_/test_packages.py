@@ -1,7 +1,6 @@
-from .. import util
+from test.test_importlib import util
 import sys
 import unittest
-from test import support
 from test.support import import_helper
 
 

@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <_PegenSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\Tokens" />
+    <_PegenOutputs Include="$(PySourcePath)Parser\parser.c" />
+    <_ASTSources Include="$(PySourcePath)Parser\Python.asdl" />
+    <_ASTOutputs Include="$(PySourcePath)Include\internal\pycore_ast.h">
+      <Argument>-H</Argument>
+    </_ASTOutputs>
+    <_ASTOutputs Include="$(PySourcePath)Include\internal\pycore_ast_state.h">
+      <Argument>-I</Argument>
+    </_ASTOutputs>
+    <_ASTOutputs Include="$(PySourcePath)Python\Python-ast.c">
+      <Argument>-C</Argument>
+    </_ASTOutputs>
+    <_TokenSources Include="$(PySourcePath)Grammar\Tokens" />
+    <_TokenOutputs Include="$(PySourcePath)Doc\library\token-list.inc">
+      <Format>rst</Format>
+    </_TokenOutputs>
+    <_TokenOutputs Include="$(PySourcePath)Include\internal\pycore_token.h">
+      <Format>h</Format>
+    </_TokenOutputs>
+    <_TokenOutputs Include="$(PySourcePath)Parser\token.c">
+      <Format>c</Format>
+    </_TokenOutputs>
+    <_TokenOutputs Include="$(PySourcePath)Lib\token.py">
+      <Format>py</Format>
+    </_TokenOutputs>
+    <_KeywordSources Include="$(PySourcePath)Grammar\python.gram;$(PySourcePath)Grammar\Tokens" />
+    <_KeywordOutputs Include="$(PySourcePath)Lib\keyword.py" />
+    <!-- Taken from _Target._compute_digest in Tools\jit\_targets.py: -->
+    <_JITSources Include="$(PySourcePath)Python\executor_cases.c.h;$(GeneratedPyConfigDir)pyconfig.h;$(PySourcePath)Tools\jit\**"/>
+    <_JITOutputs Include="$(GeneratedPyConfigDir)jit_stencils.h"/>
+    <_CasesSources Include="$(PySourcePath)Python\bytecodes.c;$(PySourcePath)Python\optimizer_bytecodes.c;"/>
+    <_CasesOutputs Include="$(PySourcePath)Python\generated_cases.c.h;$(PySourcePath)Include\opcode_ids.h;$(PySourcePath)Include\internal\pycore_uop_ids.h;$(PySourcePath)Python\opcode_targets.h;$(PySourcePath)Include\internal\pycore_opcode_metadata.h;$(PySourcePath)Include\internal\pycore_uop_metadata.h;$(PySourcePath)Python\optimizer_cases.c.h;$(PySourcePath)Lib\_opcode_metadata.py"/>
+    <_SbomSources Include="$(PySourcePath)PCbuild\get_externals.bat" />
+    <_SbomOutputs Include="$(PySourcePath)Misc\externals.spdx.json;$(PySourcePath)Misc\sbom.spdx.json">
+      <Format>json</Format>
+    </_SbomOutputs>
+  </ItemGroup>
+
+  <Target Name="_TouchRegenSources" Condition="$(ForceRegen) == 'true'">
+    <Message Text="Touching source files to force regeneration" Importance="high" />
+    <Touch Files="@(_PegenSources);@(_ASTSources);@(_TokenSources);@(_KeywordOutputs);@(_CasesSources);@(_SbomSources)"
+           AlwaysCreate="False" />
+  </Target>
+
+  <Target Name="_RegenPegen"
+          Inputs="@(_PegenSources)" Outputs="@(_PegenOutputs)"
+          DependsOnTargets="FindPythonForBuild">
+    <Message Text="Regenerate @(_PegenOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
+    <!-- Specify python.gram with POSIX-like path because the argument gets written into the file verbatim -->
+    <Exec Command="set PYTHONPATH=Tools\peg_generator%0D%0A$(PythonForBuild) -m pegen -q c ./Grammar/python.gram Grammar\Tokens -o Parser\parser.c"
+          WorkingDirectory="$(PySourcePath)" />
+  </Target>
+
+  <Target Name="_RegenAST_H"
+          Inputs="@(_ASTSources)" Outputs="@(_ASTOutputs)"
+          DependsOnTargets="FindPythonForBuild">
+    <Message Text="Regenerate @(_ASTOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
+    <Exec Command="$(PythonForBuild) Parser\asdl_c.py Parser\Python.asdl @(_ASTOutputs->'%(Argument) &quot;%(Identity)&quot;',' ')"
+          WorkingDirectory="$(PySourcePath)" />
+  </Target>
+
+  <Target Name="_RegenTokens"
+          Inputs="@(_TokenSources)" Outputs="@(_TokenOutputs)"
+          DependsOnTargets="FindPythonForBuild">
+    <Message Text="Regenerate @(_TokenOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
+    <Exec Command="$(PythonForBuild) Tools\build\generate_token.py %(_TokenOutputs.Format) Grammar\Tokens &quot;%(_TokenOutputs.Identity)&quot;"
+          WorkingDirectory="$(PySourcePath)" />
+    <Touch Files="@(_TokenOutputs)" />
+  </Target>
+
+  <Target Name="_RegenKeywords"
+          Inputs="@(_KeywordSources)" Outputs="@(_KeywordOutputs)"
+          DependsOnTargets="FindPythonForBuild">
+    <Message Text="Regenerate @(_KeywordOutputs->'%(Filename)%(Extension)',' ')" Importance="high" />
+    <Exec Command="set PYTHONPATH=Tools\peg_generator%0D%0A$(PythonForBuild) -m pegen.keywordgen Grammar\python.gram Grammar\Tokens Lib\keyword.py"
+          WorkingDirectory="$(PySourcePath)" />
+  </Target>
+
+  <Target Name="_RegenGlobalObjects"
+          DependsOnTargets="FindPythonForBuild">
+    <Message Text="Regenerate Global Objects" Importance="high" />
+    <Exec Command="$(PythonForBuild) Tools\build\generate_global_objects.py"
+          WorkingDirectory="$(PySourcePath)" />
+  </Target>
+
+  <Target Name="_RegenCases"
+          Inputs="@(_CasesSources)" Outputs="@(_CasesOutputs)"
+          DependsOnTargets="FindPythonForBuild">
+    <Message Text="Regenerate cases" Importance="high" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\opcode_id_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\target_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\uop_id_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\py_metadata_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\tier1_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\tier2_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\optimizer_generator.py Python\optimizer_bytecodes.c Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\opcode_metadata_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+    <Exec Command="$(PythonForBuild) Tools\cases_generator\uop_metadata_generator.py Python\bytecodes.c"
+          WorkingDirectory="$(PySourcePath)" />
+  </Target>
+
+  <Target Name="_RegenJIT"
+          Condition="'$(UseJIT)' == 'true'"
+          DependsOnTargets="_UpdatePyconfig;FindPythonForBuild"
+          Inputs="@(_JITSources)"
+          Outputs="@(_JITOutputs)">
+    <PropertyGroup>
+      <JITArgs Condition="$(Platform) == 'ARM64'">aarch64-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Platform) == 'Win32'">i686-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Platform) == 'x64'">x86_64-pc-windows-msvc</JITArgs>
+      <JITArgs Condition="$(Configuration) == 'Debug'">$(JITArgs) --debug</JITArgs>
+    </PropertyGroup>
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\jit\build.py" $(JITArgs)'
+          WorkingDirectory="$(GeneratedPyConfigDir)"/>
+  </Target>
+
+  <Target Name="_RegenNoPGUpdate"
+          Condition="$(Configuration) != 'PGUpdate'"
+          DependsOnTargets="_TouchRegenSources;_RegenPegen;_RegenAST_H;_RegenTokens;_RegenKeywords;_RegenGlobalObjects">
+  </Target>
+
+  <Target Name="_RegenSbom"
+          DependsOnTargets="FindPythonForBuild"
+          Inputs="@(_SbomSources)"
+          Outputs="@(_SbomOutputs)">
+    <Exec Command='$(PythonForBuild) "$(PySourcePath)Tools\build\generate_sbom.py"'/>
+  </Target>
+
+  <Target Name="Regen" DependsOnTargets="_RegenNoPGUpdate;_RegenJIT;_RegenCases;_RegenSbom">
+    <Message Text="Generated sources are up to date" Importance="high" />
+  </Target>
+
+
+  <ItemGroup>
+    <_TestFrozenSources Include="$(PySourcePath)Programs\freeze_test_frozenmain.py;
+                                 $(PySourcePath)Programs\test_frozenmain.py;
+                                 @(_OpcodeOutputs)" />
+    <_TestFrozenOutputs Include="$(PySourcePath)Programs\test_frozenmain.h" />
+    <_LicenseSources Include="$(PySourcePath)LICENSE;
+                              $(PySourcePath)PC\crtlicense.txt;
+                              $(bz2Dir)LICENSE;
+                              $(libffiDir)LICENSE;" />
+    <_LicenseSources Include="$(opensslOutDir)LICENSE.txt" Condition="Exists('$(opensslOutDir)LICENSE.txt')" />
+    <_LicenseSources Include="$(opensslOutDir)LICENSE" Condition="!Exists('$(opensslOutDir)LICENSE.txt')" />
+    <_LicenseSources Include="$(tcltkDir)tcllicense.terms;
+                              $(tcltkDir)tklicense.terms" Condition="$(IncludeTkinter)" />
+  </ItemGroup>
+
+  <Target Name="_RegenTestFrozenmain" Inputs="@(_TestFrozenSources)" Outputs="@(_TestFrozenOutputs)"
+          Condition="($(Platform) == 'Win32' or $(Platform) == 'x64') and
+                     $(Configuration) != 'PGInstrument' and $(Configuration) != 'PGUpdate'">
+    <Message Text="Regenerate @(_TestFrozenOutputs->'%(Filename)%(Extension)', ' ')" Importance="high" />
+    <Exec Command='setlocal%0D%0Aset PYTHONPATH=$(PySourcePath)Lib%0D%0A"$(PythonExe)" Programs\freeze_test_frozenmain.py Programs\test_frozenmain.h'
+          WorkingDirectory="$(PySourcePath)" />
+  </Target>
+
+  <Target Name="_RegenLicense">
+    <ItemGroup>
+      <_Text1 Include="@(_LicenseSources)">
+        <Content Condition="Exists(%(FullPath))">$([System.IO.File]::ReadAllText(%(FullPath)))</Content>
+      </_Text1>
+      <_Text Include="@(_Text1->'%(Content)')" />
+    </ItemGroup>
+
+    <WriteLinesToFile File="$(OutDir)LICENSE.txt" Overwrite="true" Lines="@(_Text)" />
+    <Warning Text="License file %(_LicenseSources.FullPath) is missing"
+             Condition="!Exists(@(_LicenseSources))" />
+    <Message Text="Wrote $(OutDir)LICENSE.txt" Importance="high" />
+  </Target>
+
+  <Target Name="PostBuildRegen" DependsOnTargets="_RegenTestFrozenmain;_RegenLicense" />
+</Project>
