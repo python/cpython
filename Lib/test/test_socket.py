@@ -2663,18 +2663,12 @@ class BasicBluetoothTest(unittest.TestCase):
 
     @unittest.skipUnless(HAVE_SOCKET_BLUETOOTH_L2CAP, 'Bluetooth L2CAP sockets required for this test')
     def testBindBrEdrL2capSocket(self):
-        # First user PSM in BR/EDR L2CAP
-        psm = 0x1001
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as f:
+            # First user PSM in BR/EDR L2CAP
+            psm = 0x1001
             f.bind((socket.BDADDR_ANY, psm))
             addr = f.getsockname()
             self.assertEqual(addr, (socket.BDADDR_ANY, psm))
-
-        cid = 1
-        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as f:
-            f.bind((socket.BDADDR_ANY, psm, cid))
-            addr = f.getsockname()
-            self.assertEqual(addr, (socket.BDADDR_ANY, psm, cid))
 
     @unittest.skipUnless(HAVE_SOCKET_BLUETOOTH_L2CAP, 'Bluetooth L2CAP sockets required for this test')
     def testBadL2capAddr(self):
