@@ -346,7 +346,7 @@ Module contents
 
 .. class:: InitVar
 
-   ``InitVar[T]`` type hints describe variables that are :ref:`init-only
+   ``InitVar[T]`` type annotations describe variables that are :ref:`init-only
    <dataclasses-init-only-variables>`. Fields annotated with :class:`!InitVar`
    are considered pseudo-fields, and thus are neither returned by the
    :func:`fields` function nor used in any way except passing them to
