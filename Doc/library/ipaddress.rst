@@ -563,7 +563,9 @@ dictionaries.
    .. attribute:: last_address
 
       The last address in the network, the address with all the host bits set.
-      This is the same as the broadcast_address for IPv4 networks.
+      This is the same as :attr:`broadcast_address` for IPv4 networks.
+      
+      .. versionadded:: next
 
    .. attribute:: broadcast_address
 
