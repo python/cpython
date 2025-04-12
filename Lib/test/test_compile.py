@@ -1664,6 +1664,24 @@ class TestSpecifics(unittest.TestCase):
 
         self.assertEqual(len(caught), 2)
 
+    def test_compile_warning_in_finally(self):
+        # Ensure that warnings inside finally blocks are
+        # only emitted once despite the block being
+        # compiled twice (for normal execution and for
+        # exception handling).
+        source = textwrap.dedent("""
+            try:
+                pass
+            finally:
+                1 is 1
+        """)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("default")
+            compile(source, '<stdin>', 'exec')
+
+        self.assertEqual(len(caught), 1)
+
 class TestBooleanExpression(unittest.TestCase):
     class Value:
         def __init__(self):
