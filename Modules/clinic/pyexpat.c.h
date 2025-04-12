@@ -22,7 +22,7 @@ pyexpat_xmlparser_SetReparseDeferralEnabled_impl(xmlparseobject *self,
                                                  int enabled);
 
 static PyObject *
-pyexpat_xmlparser_SetReparseDeferralEnabled(xmlparseobject *self, PyObject *arg)
+pyexpat_xmlparser_SetReparseDeferralEnabled(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int enabled;
@@ -31,7 +31,7 @@ pyexpat_xmlparser_SetReparseDeferralEnabled(xmlparseobject *self, PyObject *arg)
     if (enabled < 0) {
         goto exit;
     }
-    return_value = pyexpat_xmlparser_SetReparseDeferralEnabled_impl(self, enabled);
+    return_value = pyexpat_xmlparser_SetReparseDeferralEnabled_impl((xmlparseobject *)self, enabled);
 
 exit:
     return return_value;
@@ -50,9 +50,9 @@ static PyObject *
 pyexpat_xmlparser_GetReparseDeferralEnabled_impl(xmlparseobject *self);
 
 static PyObject *
-pyexpat_xmlparser_GetReparseDeferralEnabled(xmlparseobject *self, PyObject *Py_UNUSED(ignored))
+pyexpat_xmlparser_GetReparseDeferralEnabled(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return pyexpat_xmlparser_GetReparseDeferralEnabled_impl(self);
+    return pyexpat_xmlparser_GetReparseDeferralEnabled_impl((xmlparseobject *)self);
 }
 
 PyDoc_STRVAR(pyexpat_xmlparser_Parse__doc__,
@@ -71,7 +71,7 @@ pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyTypeObject *cls,
                              PyObject *data, int isfinal);
 
 static PyObject *
-pyexpat_xmlparser_Parse(xmlparseobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+pyexpat_xmlparser_Parse(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -105,7 +105,7 @@ pyexpat_xmlparser_Parse(xmlparseobject *self, PyTypeObject *cls, PyObject *const
         goto exit;
     }
 skip_optional_posonly:
-    return_value = pyexpat_xmlparser_Parse_impl(self, cls, data, isfinal);
+    return_value = pyexpat_xmlparser_Parse_impl((xmlparseobject *)self, cls, data, isfinal);
 
 exit:
     return return_value;
@@ -125,7 +125,7 @@ pyexpat_xmlparser_ParseFile_impl(xmlparseobject *self, PyTypeObject *cls,
                                  PyObject *file);
 
 static PyObject *
-pyexpat_xmlparser_ParseFile(xmlparseobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+pyexpat_xmlparser_ParseFile(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -150,7 +150,7 @@ pyexpat_xmlparser_ParseFile(xmlparseobject *self, PyTypeObject *cls, PyObject *c
         goto exit;
     }
     file = args[0];
-    return_value = pyexpat_xmlparser_ParseFile_impl(self, cls, file);
+    return_value = pyexpat_xmlparser_ParseFile_impl((xmlparseobject *)self, cls, file);
 
 exit:
     return return_value;
@@ -169,7 +169,7 @@ static PyObject *
 pyexpat_xmlparser_SetBase_impl(xmlparseobject *self, const char *base);
 
 static PyObject *
-pyexpat_xmlparser_SetBase(xmlparseobject *self, PyObject *arg)
+pyexpat_xmlparser_SetBase(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     const char *base;
@@ -187,7 +187,7 @@ pyexpat_xmlparser_SetBase(xmlparseobject *self, PyObject *arg)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    return_value = pyexpat_xmlparser_SetBase_impl(self, base);
+    return_value = pyexpat_xmlparser_SetBase_impl((xmlparseobject *)self, base);
 
 exit:
     return return_value;
@@ -206,9 +206,9 @@ static PyObject *
 pyexpat_xmlparser_GetBase_impl(xmlparseobject *self);
 
 static PyObject *
-pyexpat_xmlparser_GetBase(xmlparseobject *self, PyObject *Py_UNUSED(ignored))
+pyexpat_xmlparser_GetBase(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return pyexpat_xmlparser_GetBase_impl(self);
+    return pyexpat_xmlparser_GetBase_impl((xmlparseobject *)self);
 }
 
 PyDoc_STRVAR(pyexpat_xmlparser_GetInputContext__doc__,
@@ -227,9 +227,9 @@ static PyObject *
 pyexpat_xmlparser_GetInputContext_impl(xmlparseobject *self);
 
 static PyObject *
-pyexpat_xmlparser_GetInputContext(xmlparseobject *self, PyObject *Py_UNUSED(ignored))
+pyexpat_xmlparser_GetInputContext(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return pyexpat_xmlparser_GetInputContext_impl(self);
+    return pyexpat_xmlparser_GetInputContext_impl((xmlparseobject *)self);
 }
 
 PyDoc_STRVAR(pyexpat_xmlparser_ExternalEntityParserCreate__doc__,
@@ -249,7 +249,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
                                                   const char *encoding);
 
 static PyObject *
-pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+pyexpat_xmlparser_ExternalEntityParserCreate(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -309,7 +309,7 @@ pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyTypeObject 
         goto exit;
     }
 skip_optional_posonly:
-    return_value = pyexpat_xmlparser_ExternalEntityParserCreate_impl(self, cls, context, encoding);
+    return_value = pyexpat_xmlparser_ExternalEntityParserCreate_impl((xmlparseobject *)self, cls, context, encoding);
 
 exit:
     return return_value;
@@ -333,7 +333,7 @@ static PyObject *
 pyexpat_xmlparser_SetParamEntityParsing_impl(xmlparseobject *self, int flag);
 
 static PyObject *
-pyexpat_xmlparser_SetParamEntityParsing(xmlparseobject *self, PyObject *arg)
+pyexpat_xmlparser_SetParamEntityParsing(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int flag;
@@ -342,7 +342,7 @@ pyexpat_xmlparser_SetParamEntityParsing(xmlparseobject *self, PyObject *arg)
     if (flag == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = pyexpat_xmlparser_SetParamEntityParsing_impl(self, flag);
+    return_value = pyexpat_xmlparser_SetParamEntityParsing_impl((xmlparseobject *)self, flag);
 
 exit:
     return return_value;
@@ -368,7 +368,7 @@ pyexpat_xmlparser_UseForeignDTD_impl(xmlparseobject *self, PyTypeObject *cls,
                                      int flag);
 
 static PyObject *
-pyexpat_xmlparser_UseForeignDTD(xmlparseobject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+pyexpat_xmlparser_UseForeignDTD(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -400,7 +400,7 @@ pyexpat_xmlparser_UseForeignDTD(xmlparseobject *self, PyTypeObject *cls, PyObjec
         goto exit;
     }
 skip_optional_posonly:
-    return_value = pyexpat_xmlparser_UseForeignDTD_impl(self, cls, flag);
+    return_value = pyexpat_xmlparser_UseForeignDTD_impl((xmlparseobject *)self, cls, flag);
 
 exit:
     return return_value;
@@ -432,9 +432,11 @@ pyexpat_ParserCreate(PyObject *module, PyObject *const *args, Py_ssize_t nargs, 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(encoding), &_Py_ID(namespace_separator), &_Py_ID(intern), },
     };
     #undef NUM_KEYWORDS
@@ -550,4 +552,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=63be65cb1823b5f8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4dbdc959c67dc2d5 input=a9049054013a1b77]*/

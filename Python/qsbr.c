@@ -32,10 +32,10 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "Python.h"
-#include "pycore_initconfig.h"      // _PyStatus_NO_MEMORY()
-#include "pycore_lock.h"            // PyMutex_Lock()
-#include "pycore_qsbr.h"
+#include "pycore_interp.h"          // PyInterpreterState
 #include "pycore_pystate.h"         // _PyThreadState_GET()
+#include "pycore_qsbr.h"
+#include "pycore_tstate.h"          // _PyThreadStateImpl
 
 
 // Starting size of the array of qsbr thread states
@@ -161,6 +161,7 @@ bool
 _Py_qsbr_poll(struct _qsbr_thread_state *qsbr, uint64_t goal)
 {
     assert(_Py_atomic_load_int_relaxed(&_PyThreadState_GET()->state) == _Py_THREAD_ATTACHED);
+    assert(((_PyThreadStateImpl *)_PyThreadState_GET())->qsbr == qsbr);
 
     if (_Py_qbsr_goal_reached(qsbr, goal)) {
         return true;
@@ -205,15 +206,15 @@ _Py_qsbr_reserve(PyInterpreterState *interp)
         }
         _PyEval_StartTheWorld(interp);
     }
-    PyMutex_Unlock(&shared->mutex);
-
-    if (qsbr == NULL) {
-        return -1;
-    }
 
     // Return an index rather than the pointer because the array may be
     // resized and the pointer invalidated.
-    return (struct _qsbr_pad *)qsbr - shared->array;
+    Py_ssize_t index = -1;
+    if (qsbr != NULL) {
+        index = (struct _qsbr_pad *)qsbr - shared->array;
+    }
+    PyMutex_Unlock(&shared->mutex);
+    return index;
 }
 
 void
@@ -240,7 +241,7 @@ _Py_qsbr_unregister(PyThreadState *tstate)
     // gh-119369: GIL must be released (if held) to prevent deadlocks, because
     // we might not have an active tstate, which means that blocking on PyMutex
     // locks will not implicitly release the GIL.
-    assert(!tstate->_status.holds_gil);
+    assert(!tstate->holds_gil);
 
     PyMutex_Lock(&shared->mutex);
     // NOTE: we must load (or reload) the thread state's qbsr inside the mutex

@@ -92,6 +92,7 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Disabled</Optimization>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -fno-lto</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -259,6 +260,7 @@
     <ClCompile Include="..\Python\Python-tokenize.c" />
     <ClCompile Include="..\Python\pytime.c" />
     <ClCompile Include="..\Python\qsbr.c" />
+    <ClCompile Include="..\Python\remote_debugging.c" />
     <ClCompile Include="..\Python\specialize.c" />
     <ClCompile Include="..\Python\structmember.c" />
     <ClCompile Include="..\Python\suggestions.c" />
@@ -448,7 +450,7 @@
       <OldPyConfigH Condition="Exists('$(IntDir)pyconfig.h')">$([System.IO.File]::ReadAllText('$(IntDir)pyconfig.h'))</OldPyConfigH>
     </PropertyGroup>
     <PropertyGroup Condition="$(DisableGil) == 'true'">
-      <PyConfigHText>$(PyConfigHText.Replace('#undef Py_GIL_DISABLED', '#define Py_GIL_DISABLED 1'))</PyConfigHText>
+      <PyConfigHText>$(PyConfigHText.Replace('/* #define Py_GIL_DISABLED 1 */', '#define Py_GIL_DISABLED 1'))</PyConfigHText>
     </PropertyGroup>
     <Message Text="Updating pyconfig.h" Condition="$(PyConfigHText.TrimEnd()) != $(OldPyConfigH.TrimEnd())" />
     <WriteLinesToFile File="$(IntDir)pyconfig.h"
