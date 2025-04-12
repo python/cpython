@@ -567,6 +567,11 @@ class _TestProcess(BaseTestCase):
 
         return p.exitcode
 
+    def test_interrupt(self):
+        if os.name != 'nt':
+            exitcode = self._kill_process(multiprocessing.Process.interrupt)
+            self.assertEqual(exitcode, -signal.SIGINT)
+
     def test_terminate(self):
         exitcode = self._kill_process(multiprocessing.Process.terminate)
         self.assertEqual(exitcode, -signal.SIGTERM)

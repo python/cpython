@@ -2440,12 +2440,6 @@ class POSIXProcessTestCase(BaseTestCase):
         self.assertIn(b'KeyboardInterrupt', stderr)
         self.assertNotEqual(p.wait(), 0)
 
-    def test_interrupt(self):
-        p = self._kill_process('interrupt')
-        _, stderr = p.communicate()
-        self.assertIn(b'KeyboardInterrupt', stderr)
-        self.assertNotEqual(p.wait(), 0)
-
     def test_kill(self):
         p = self._kill_process('kill')
         _, stderr = p.communicate()
