@@ -532,12 +532,8 @@ def extract_from_snapshots():
         # Escape only ascii and let unicode pass through:
         ('escapes.py', 'ascii-escapes.pot'): ('--add-comments=',),
         # Test input files with various encodings:
-        ('encodings/ascii.py', 'encodings/ascii.pot'): ('--add-comments=',),
-        ('encodings/ascii.py', 'encodings/ascii_escaped.pot'): ('--add-comments=', '--escape'),
-        ('encodings/latin1.py', 'encodings/latin1.pot'): ('--add-comments=',),
-        ('encodings/latin1.py', 'encodings/latin1_escaped.pot'): ('--add-comments=', '--escape'),
-        ('encodings/windows1252.py', 'encodings/windows1252.pot'): ('--add-comments=',),
-        ('encodings/windows1252.py', 'encodings/windows1252_escaped.pot'): ('--add-comments=', '--escape'),
+        ('encodings/latin2.py', 'encodings/latin2.pot'): ('--add-comments=',),
+        ('encodings/latin2.py', 'encodings/latin2_escaped.pot'): ('--add-comments=', '--escape'),
     }
 
     for filename, args in snapshots.items():

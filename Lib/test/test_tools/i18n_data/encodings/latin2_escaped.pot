@@ -16,12 +16,23 @@ msgstr ""
 
 
 #. ascii text
-#: ascii.py:7
+#: latin2.py:7
 msgid "foo"
 msgstr ""
 
-#. non-ascii text
-#: ascii.py:10
+#. latin-2 text
+#: latin2.py:10
+msgid "\305\230 \305\231"
+msgstr ""
+
+#. non-latin-2 text
+#: latin2.py:13
 msgid "\316\261 \316\262"
+msgstr ""
+
+#. ascii text with non-ascii comment
+#. Ř ř
+#: latin2.py:17
+msgid "bar"
 msgstr ""
 
