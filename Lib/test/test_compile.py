@@ -1681,6 +1681,8 @@ class TestSpecifics(unittest.TestCase):
             compile(source, '<stdin>', 'exec')
 
         self.assertEqual(len(caught), 1)
+        self.assertEqual(caught[0].category, SyntaxWarning)
+        self.assertIn("\"is\" with 'int' literal", str(caught[0].message))
 
 class TestBooleanExpression(unittest.TestCase):
     class Value:
