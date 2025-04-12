@@ -472,9 +472,13 @@ class WindowsConsole(Console):
                 continue
 
             if key_event.dwControlKeyState & ALT_ACTIVE:
-                # queue the key, return the meta command
-                self.event_queue.insert(Event(evt="key", data=key, raw=raw_key))
-                return Event(evt="key", data="\033")  # keymap.py uses this for meta
+                # Do not swallow characters that have been entered via AltGr:
+                # Windows internally converts AltGr to CTRL+ALT, see
+                # https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-vkkeyscanw
+                if not key_event.dwControlKeyState & CTRL_ACTIVE:
+                    # queue the key, return the meta command
+                    self.event_queue.insert(Event(evt="key", data=key, raw=raw_key))
+                    return Event(evt="key", data="\033")  # keymap.py uses this for meta
 
             return Event(evt="key", data=key, raw=raw_key)
         return self.event_queue.get()
