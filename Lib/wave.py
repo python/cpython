@@ -478,7 +478,7 @@ class Wave_write:
     # User visible methods.
     #
     def setnchannels(self, nchannels):
-        if self._datawritten:
+        if self._datawritten and self.getnchannels() != nchannels:
             raise Error('cannot change parameters after starting to write')
         if nchannels < 1:
             raise Error('bad # of channels')
@@ -490,7 +490,7 @@ class Wave_write:
         return self._nchannels
 
     def setsampwidth(self, sampwidth):
-        if self._datawritten:
+        if self._datawritten and self.getsampwidth() != sampwidth:
             raise Error('cannot change parameters after starting to write')
         if sampwidth < 1 or sampwidth > 4:
             raise Error('bad sample width')
@@ -502,7 +502,7 @@ class Wave_write:
         return self._sampwidth
 
     def setframerate(self, framerate):
-        if self._datawritten:
+        if self._datawritten and self.getframerate() != framerate:
             raise Error('cannot change parameters after starting to write')
         if framerate <= 0:
             raise Error('bad frame rate')
@@ -514,7 +514,7 @@ class Wave_write:
         return self._framerate
 
     def setnframes(self, nframes):
-        if self._datawritten:
+        if self._datawritten and self.getnframes() != nframes:
             raise Error('cannot change parameters after starting to write')
         self._nframes = nframes
 
@@ -522,7 +522,7 @@ class Wave_write:
         return self._nframeswritten
 
     def setcomptype(self, comptype, compname):
-        if self._datawritten:
+        if self._datawritten and self.getcomptype() != comptype and self.getcompname() != compname:
             raise Error('cannot change parameters after starting to write')
         if comptype not in ('NONE',):
             raise Error('unsupported compression type')
@@ -537,7 +537,7 @@ class Wave_write:
 
     def setparams(self, params):
         nchannels, sampwidth, framerate, nframes, comptype, compname = params
-        if self._datawritten:
+        if self._datawritten and self.getparams() != params:
             raise Error('cannot change parameters after starting to write')
         self.setnchannels(nchannels)
         self.setsampwidth(sampwidth)
