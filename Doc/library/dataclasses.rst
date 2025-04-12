@@ -349,7 +349,7 @@ Module contents
    ``InitVar[T]`` type annotations describe variables that are :ref:`init-only
    <dataclasses-init-only-variables>`. Fields annotated with :class:`!InitVar`
    are considered pseudo-fields, and thus are neither returned by the
-   :func:`fields` function nor used in any way except adding them as 
+   :func:`fields` function nor used in any way except adding them as
    parameters to :meth:`~object.__init__` and an optional 
    :meth:`__post_init__`.
 
