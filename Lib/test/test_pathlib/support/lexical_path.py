@@ -2,11 +2,19 @@
 Simple implementation of JoinablePath, for use in pathlib tests.
 """
 
+import ntpath
 import os.path
-import pathlib.types
+import posixpath
+
+from . import is_pypi
+
+if is_pypi:
+    from pathlib_abc import _JoinablePath
+else:
+    from pathlib.types import _JoinablePath
 
 
-class LexicalPath(pathlib.types._JoinablePath):
+class LexicalPath(_JoinablePath):
     __slots__ = ('_segments',)
     parser = os.path
 
@@ -31,3 +39,13 @@ class LexicalPath(pathlib.types._JoinablePath):
 
     def with_segments(self, *pathsegments):
         return type(self)(*pathsegments)
+
+
+class LexicalPosixPath(LexicalPath):
+    __slots__ = ()
+    parser = posixpath
+
+
+class LexicalWindowsPath(LexicalPath):
+    __slots__ = ()
+    parser = ntpath

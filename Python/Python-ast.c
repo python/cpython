@@ -3,15 +3,16 @@
 #include "Python.h"
 #include "pycore_ast.h"
 #include "pycore_ast_state.h"     // struct ast_state
-#include "pycore_ceval.h"         // _Py_EnterRecursiveCall
+#include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_lock.h"          // _PyOnceFlag
-#include "pycore_interp.h"        // _PyInterpreterState.ast
 #include "pycore_modsupport.h"    // _PyArg_NoPositional()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
-#include "pycore_setobject.h"     // _PySet_NextEntry(), _PySet_Update()
+#include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_unionobject.h"   // _Py_union_type_or
-#include "structmember.h"
-#include <stddef.h>
+
+#include <stddef.h>               // offsetof()
+
 
 // Forward declaration
 static int init_types(void *arg);

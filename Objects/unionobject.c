@@ -2,6 +2,7 @@
 #include "Python.h"
 #include "pycore_object.h"  // _PyObject_GC_TRACK/UNTRACK
 #include "pycore_typevarobject.h"  // _PyTypeAlias_Type, _Py_typing_type_repr
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString
 #include "pycore_unionobject.h"
 
 
@@ -379,7 +380,7 @@ static PyGetSetDef union_properties[] = {
      PyDoc_STR("Qualified name of the type"), NULL},
     {"__origin__", union_origin, NULL,
      PyDoc_STR("Always returns the type"), NULL},
-    {"__parameters__", union_parameters, (setter)NULL,
+    {"__parameters__", union_parameters, NULL,
      PyDoc_STR("Type variables in the types.UnionType."), NULL},
     {0}
 };

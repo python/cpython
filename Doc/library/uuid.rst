@@ -103,28 +103,31 @@ which relays any information about the UUID's safety, using this enumeration:
      - Meaning
 
    * - .. attribute:: UUID.time_low
-     - The first 32 bits of the UUID.
+     - The first 32 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.time_mid
-     - The next 16 bits of the UUID.
+     - The next 16 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.time_hi_version
-     - The next 16 bits of the UUID.
+     - The next 16 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.clock_seq_hi_variant
-     - The next 8 bits of the UUID.
+     - The next 8 bits of the UUID. Only relevant to versions 1 and 6.
 
    * - .. attribute:: UUID.clock_seq_low
-     - The next 8 bits of the UUID.
+     - The next 8 bits of the UUID. Only relevant to versions 1 and 6.
 
    * - .. attribute:: UUID.node
-     - The last 48 bits of the UUID.
+     - The last 48 bits of the UUID. Only relevant to version 1.
 
    * - .. attribute:: UUID.time
-     - The 60-bit timestamp.
+     - The 60-bit timestamp as a count of 100-nanosecond intervals since
+       Gregorian epoch (1582-10-15 00:00:00) for versions 1 and 6, or the
+       48-bit timestamp in milliseconds since Unix epoch (1970-01-01 00:00:00)
+       for version 7.
 
    * - .. attribute:: UUID.clock_seq
-     - The 14-bit sequence number.
+     - The 14-bit sequence number. Only relevant to versions 1 and 6.
 
 
 .. attribute:: UUID.hex
@@ -154,7 +157,7 @@ which relays any information about the UUID's safety, using this enumeration:
    The UUID version number (1 through 8, meaningful only when the variant is
    :const:`RFC_4122`).
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Added UUID versions 6, 7 and 8.
 
 
@@ -228,7 +231,7 @@ The :mod:`uuid` module defines the following functions:
    If *node* or *clock_seq* exceed their expected bit count, only their least
    significant bits are kept.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: uuid7()
@@ -240,7 +243,7 @@ The :mod:`uuid` module defines the following functions:
    produced by this function embed a 48-bit timestamp and use a 42-bit counter
    to guarantee monotonicity within a millisecond.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. function:: uuid8(a=None, b=None, c=None)
@@ -361,7 +364,7 @@ The following options are accepted:
    Specify the function name to use to generate the uuid. By default :func:`uuid4`
    is used.
 
-   .. versionchanged:: next
+   .. versionchanged:: 3.14
       Allow generating UUID versions 6, 7 and 8.
 
 .. option:: -n <namespace>
@@ -376,6 +379,13 @@ The following options are accepted:
 
    The name used as part of generating the uuid. Only required for
    :func:`uuid3` / :func:`uuid5` functions.
+
+.. option:: -C <num>
+            --count <num>
+
+   Generate *num* fresh UUIDs.
+
+   .. versionadded:: 3.14
 
 
 .. _uuid-example:
@@ -426,22 +436,33 @@ Here are some examples of typical usage of the :mod:`uuid` module::
    >>> uuid.MAX
    UUID('ffffffff-ffff-ffff-ffff-ffffffffffff')
 
+   >>> # get UUIDv7 creation (local) time as a timestamp in milliseconds
+   >>> u = uuid.uuid7()
+   >>> u.time  # doctest: +SKIP
+   1743936859822
+   >>> # get UUIDv7 creation (local) time as a datetime object
+   >>> import datetime as dt
+   >>> dt.datetime.fromtimestamp(u.time / 1000)  # doctest: +SKIP
+   datetime.datetime(...)
+
 
 .. _uuid-cli-example:
 
 Command-Line Example
 --------------------
 
-Here are some examples of typical usage of the :mod:`uuid` command line interface:
+Here are some examples of typical usage of the :mod:`uuid` command-line interface:
 
 .. code-block:: shell
 
-   # generate a random uuid - by default uuid4() is used
+   # generate a random UUID - by default uuid4() is used
    $ python -m uuid
 
-   # generate a uuid using uuid1()
+   # generate a UUID using uuid1()
    $ python -m uuid -u uuid1
 
-   # generate a uuid using uuid5
+   # generate a UUID using uuid5
    $ python -m uuid -u uuid5 -n @url -N example.com
 
+   # generate 42 random UUIDs
+   $ python -m uuid -C 42
