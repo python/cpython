@@ -1646,6 +1646,24 @@ class TestSpecifics(unittest.TestCase):
 
         self.assertRaises(NameError, ns['foo'])
 
+    def test_compile_warnings(self):
+        # See gh-131927
+        # Compile warnings originating from the same file and
+        # line are now only emitted once.
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("default")
+            compile('1 is 1', '<stdin>', 'eval')
+            compile('1 is 1', '<stdin>', 'eval')
+
+        self.assertEqual(len(caught), 1)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            compile('1 is 1', '<stdin>', 'eval')
+            compile('1 is 1', '<stdin>', 'eval')
+
+        self.assertEqual(len(caught), 2)
+
 class TestBooleanExpression(unittest.TestCase):
     class Value:
         def __init__(self):
