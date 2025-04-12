@@ -124,5 +124,20 @@ class ModuleIsolationTest(unittest.TestCase):
         script_helper.assert_python_ok("-c", script)
 
 
+class PyObjectRestypeTest(unittest.TestCase):
+    def test_restype_py_object_with_null_return(self):
+        # Test that a function which returns a NULL PyObject *
+        # without setting an exception does not crash.
+        PyErr_Occurred = ctypes.pythonapi.PyErr_Occurred
+        PyErr_Occurred.argtypes = []
+        PyErr_Occurred.restype = ctypes.py_object
+
+        # At this point, there's no exception set, so PyErr_Occurred
+        # returns NULL. Given the restype is py_object, the
+        # ctypes machinery will raise a custom error.
+        with self.assertRaisesRegex(ValueError, "PyObject is NULL"):
+            PyErr_Occurred()
+
+
 if __name__ == '__main__':
     unittest.main()
