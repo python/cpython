@@ -3312,6 +3312,8 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
                 _PyEval_FormatExcCheckArg(
                             PyThreadState_GET(), PyExc_NameError,
                             NAME_ERROR_MSG, name);
+                *writeto = PyStackRef_NULL;
+                return;
             }
         }
         *writeto = PyStackRef_FromPyObjectSteal(res);
