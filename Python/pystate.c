@@ -608,9 +608,7 @@ free_interpreter(PyInterpreterState *interp)
         assert(_Py_IS_ALIGNED(interp, _Alignof(PyInterpreterState)));
         char *mem_location = (char *)interp - RAW_ALIGN_PTR_OFFSET;
         void *mem = *((void **)mem_location);
-        if (mem != NULL) {
-            PyMem_RawFree(mem);
-        }
+        PyMem_RawFree(mem);
 #else
         PyMem_RawFree(interp);
 #endif
