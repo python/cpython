@@ -1381,9 +1381,8 @@ Task Object
 
       Request the Task to be cancelled.
 
-      If the Task is already *done* or *cancelled*, return ``False``.
-      Otherwise, change the Task's state to *cancelled*,
-      schedule the callbacks, and return ``True``.
+      If the Task is already *done* or *cancelled*, return ``False``,
+      otherwise, return ``True``.
 
       The method arranges for a :exc:`CancelledError` exception to be thrown
       into the wrapped coroutine on the next cycle of the event loop.
