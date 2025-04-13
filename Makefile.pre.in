@@ -227,13 +227,13 @@ ENSUREPIP=      @ENSUREPIP@
 # Internal static libraries
 LIBMPDEC_A= Modules/_decimal/libmpdec/libmpdec.a
 LIBEXPAT_A= Modules/expat/libexpat.a
-LIBHACL_BLAKE2_A= Modules/_hacl/libHacl_Hash_Blake2.a
-LIBHACL_HMAC_A= Modules/_hacl/libHacl_HMAC.a
 LIBHACL_CFLAGS=@LIBHACL_CFLAGS@
 LIBHACL_SIMD128_FLAGS=@LIBHACL_SIMD128_FLAGS@
 LIBHACL_SIMD256_FLAGS=@LIBHACL_SIMD256_FLAGS@
 LIBHACL_SIMD128_OBJS=@LIBHACL_SIMD128_OBJS@
+LIBHACL_SIMD128_SRCS=$(LIBHACL_SIMD128_OBJS:.o=.c)
 LIBHACL_SIMD256_OBJS=@LIBHACL_SIMD256_OBJS@
+LIBHACL_SIMD256_SRCS=$(LIBHACL_SIMD256_OBJS:.o=.c)
 
 # Module state, compiler flags and linker flags
 # Empty CFLAGS and LDFLAGS are omitted.
@@ -657,18 +657,32 @@ LIBEXPAT_HEADERS= \
 ##########################################################################
 # hashlib's HACL* library
 
+LIBHACL_MD5_SRCS= \
+		Modules/_hacl/Hacl_Hash_MD5.c
 LIBHACL_MD5_OBJS= \
 		Modules/_hacl/Hacl_Hash_MD5.o
 
+LIBHACL_SHA1_SRCS= \
+		Modules/_hacl/Hacl_Hash_SHA1.c
 LIBHACL_SHA1_OBJS= \
 		Modules/_hacl/Hacl_Hash_SHA1.o
 
+LIBHACL_SHA2_SRCS= \
+		Modules/_hacl/Hacl_Hash_SHA2.c
 LIBHACL_SHA2_OBJS= \
 		Modules/_hacl/Hacl_Hash_SHA2.o
 
+LIBHACL_SHA3_SRCS= \
+		Modules/_hacl/Hacl_Hash_SHA3.c
 LIBHACL_SHA3_OBJS= \
 		Modules/_hacl/Hacl_Hash_SHA3.o
 
+LIBHACL_BLAKE2_SRCS= \
+		Modules/_hacl/Hacl_Hash_Blake2s.c \
+		Modules/_hacl/Hacl_Hash_Blake2b.c \
+		Modules/_hacl/Lib_Memzero0.c \
+		$(LIBHACL_SIMD128_SRCS) \
+		$(LIBHACL_SIMD256_SRCS)
 LIBHACL_BLAKE2_OBJS= \
 		Modules/_hacl/Hacl_Hash_Blake2s.o \
 		Modules/_hacl/Hacl_Hash_Blake2b.o \
@@ -1460,7 +1474,25 @@ $(LIBEXPAT_A): $(LIBEXPAT_OBJS)
 # Build HACL* static libraries for hashlib and HACL* HMAC.
 #
 # The contents of libHacl_Blake2.a vary depending on whether we
-# have the ability to compile vectorized versions
+# have the ability to compile vectorized versions.
+#
+# The HACL* modules are dynamically compiled and linked with the
+# corresponding CPython built-in modules on demand, depending on
+# whether the module is built or not. Since HMAC however requires
+# them to be built, we need rules that are always enabled and that
+# are not overwritten by those automatically deduced by makesetup.
+
+Modules/_hacl/Hacl_Hash_MD5.o: $(srcdir)/Modules/_hacl/Hacl_Hash_MD5.c $(LIBHACL_MD5_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_MD5.c
+
+Modules/_hacl/Hacl_Hash_SHA1.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA1.c $(LIBHACL_SHA1_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA1.c
+
+Modules/_hacl/Hacl_Hash_SHA2.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c $(LIBHACL_SHA2_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
+
+Modules/_hacl/Hacl_Hash_SHA3.o: $(srcdir)/Modules/_hacl/Hacl_Hash_SHA3.c $(LIBHACL_SHA3_HEADERS)
+	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_SHA3.c
 
 Modules/_hacl/Hacl_Hash_Blake2s.o: $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s.c $(LIBHACL_BLAKE2_HEADERS)
 	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Hash_Blake2s.c
@@ -1483,19 +1515,11 @@ Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o: $(srcdir)/Modules/_hacl/Ha
 Modules/_hacl/Lib_Memzero0.o: $(srcdir)/Modules/_hacl/Lib_Memzero0.c $(LIBHACL_BLAKE2_HEADERS)
 	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Lib_Memzero0.c
 
-$(LIBHACL_BLAKE2_A): $(LIBHACL_BLAKE2_OBJS)
-	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBHACL_BLAKE2_OBJS)
-
 Modules/_hacl/Hacl_HMAC.o: $(srcdir)/Modules/_hacl/Hacl_HMAC.c $(LIBHACL_HMAC_HEADERS)
 	$(CC) -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_HMAC.c
 
 Modules/_hacl/Hacl_Streaming_HMAC.o: $(srcdir)/Modules/_hacl/Hacl_Streaming_HMAC.c $(LIBHACL_HMAC_HEADERS)
 	$(CC) -Wno-unused-variable -c $(LIBHACL_CFLAGS) -o $@ $(srcdir)/Modules/_hacl/Hacl_Streaming_HMAC.c
-
-$(LIBHACL_HMAC_A): $(LIBHACL_HMAC_OBJS)
-	-rm -f $@
-	$(AR) $(ARFLAGS) $@ $(LIBHACL_HMAC_OBJS)
 
 # create relative links from build/lib.platform/egg.so to Modules/egg.so
 # pybuilddir.txt is created too late. We cannot use it in Makefile
@@ -3270,12 +3294,12 @@ MODULE__DECIMAL_DEPS=$(srcdir)/Modules/_decimal/docstrings.h @LIBMPDEC_INTERNAL@
 MODULE__ELEMENTTREE_DEPS=$(srcdir)/Modules/pyexpat.c @LIBEXPAT_INTERNAL@
 MODULE__HASHLIB_DEPS=$(srcdir)/Modules/hashlib.h
 MODULE__IO_DEPS=$(srcdir)/Modules/_io/_iomodule.h
-MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_MD5_HEADERS) $(srcdir)/Modules/_hacl/Hacl_Hash_MD5.c
-MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA1_HEADERS) $(srcdir)/Modules/_hacl/Hacl_Hash_SHA1.c
-MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(srcdir)/Modules/_hacl/Hacl_Hash_SHA2.c
-MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA3_HEADERS) $(srcdir)/Modules/_hacl/Hacl_Hash_SHA3.c
-MODULE__BLAKE2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_BLAKE2_HEADERS) $(LIBHACL_BLAKE2_A)
-MODULE__HMAC_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HMAC_HEADERS) $(LIBHACL_HMAC_A)
+MODULE__MD5_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_MD5_HEADERS) $(LIBHACL_MD5_OBJS)
+MODULE__SHA1_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA1_HEADERS) $(LIBHACL_SHA1_OBJS)
+MODULE__SHA2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA2_HEADERS) $(LIBHACL_SHA2_OBJS)
+MODULE__SHA3_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_SHA3_HEADERS) $(LIBHACL_SHA3_OBJS)
+MODULE__BLAKE2_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_BLAKE2_HEADERS) $(LIBHACL_BLAKE2_OBJS)
+MODULE__HMAC_DEPS=$(srcdir)/Modules/hashlib.h $(LIBHACL_HMAC_HEADERS) $(LIBHACL_HMAC_OBJS)
 MODULE__SOCKET_DEPS=$(srcdir)/Modules/socketmodule.h $(srcdir)/Modules/addrinfo.h $(srcdir)/Modules/getaddrinfo.c $(srcdir)/Modules/getnameinfo.c
 MODULE__SSL_DEPS=$(srcdir)/Modules/_ssl.h $(srcdir)/Modules/_ssl/cert.c $(srcdir)/Modules/_ssl/debughelpers.c $(srcdir)/Modules/_ssl/misc.c $(srcdir)/Modules/_ssl_data_111.h $(srcdir)/Modules/_ssl_data_300.h $(srcdir)/Modules/socketmodule.h
 MODULE__TESTCAPI_DEPS=$(srcdir)/Modules/_testcapi/parts.h $(srcdir)/Modules/_testcapi/util.h

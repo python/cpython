@@ -140,6 +140,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		'*shared*')	doconfig=no; continue;;
 		'*disabled*')	doconfig=disabled; continue;;
 		esac
+		objs=
 		srcs=
 		cpps=
 		libs=
@@ -180,6 +181,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			\$\(*_LIBS\))		libs="$libs $arg";;
 			\$\(*_LDFLAGS\))	libs="$libs $arg";;
 			\$\(*_RPATH\))		libs="$libs $arg";;
+			\$\(*_OBJS\))	    objs="$objs $arg";;
 			\$*)		libs="$libs $arg"
 					cpps="$cpps $arg";;
 			*.*)		echo 1>&2 "bad word $arg in $line"
@@ -224,7 +226,6 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		case $noobjects in
 		yes)	continue;;
 		esac
-		objs=''
 		for src in $srcs
 		do
 			case $src in

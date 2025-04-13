@@ -77,13 +77,17 @@
 @MODULE_READLINE_TRUE@readline readline.c
 
 # hashing builtins, can be disabled with --without-builtin-hashlib-hashes
-@MODULE__MD5_TRUE@_md5 md5module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_MD5.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
-@MODULE__SHA1_TRUE@_sha1 sha1module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA1.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
-@MODULE__SHA2_TRUE@_sha2 sha2module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA2.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
-@MODULE__SHA3_TRUE@_sha3 sha3module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA3.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
-@MODULE__BLAKE2_TRUE@_blake2 blake2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_Blake2.a -D_BSD_SOURCE -D_DEFAULT_SOURCE
+# HACL* dependencies are compiled separately, but they should be linked
+# against the module when needed. In order for the extension module to
+# be correctly linked, we should however specify which *.o will be used
+# (but for which no Makefile rule will be auto-generated).
+@MODULE__MD5_TRUE@_md5 md5module.c -I$(srcdir)/Modules/_hacl/include $(LIBHACL_MD5_OBJS)
+@MODULE__SHA1_TRUE@_sha1 sha1module.c -I$(srcdir)/Modules/_hacl/include $(LIBHACL_SHA1_OBJS)
+@MODULE__SHA2_TRUE@_sha2 sha2module.c -I$(srcdir)/Modules/_hacl/include $(LIBHACL_SHA2_OBJS)
+@MODULE__SHA3_TRUE@_sha3 sha3module.c -I$(srcdir)/Modules/_hacl/include $(LIBHACL_SHA3_OBJS)
+@MODULE__BLAKE2_TRUE@_blake2 blake2module.c -I$(srcdir)/Modules/_hacl/include $(LIBHACL_BLAKE2_OBJS)
 
-@MODULE__HMAC_TRUE@_hmac hmacmodule.c
+@MODULE__HMAC_TRUE@_hmac hmacmodule.c $(LIBHACL_HMAC_OBJS)
 
 ############################################################################
 # XML and text

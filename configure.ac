@@ -7923,9 +7923,7 @@ AC_SUBST([LIBHACL_SIMD256_OBJS])
 dnl HMAC builtin library does not need OpenSSL for now. In the future
 dnl we might want to rely on OpenSSL EVP/NID interface or implement
 dnl our own for algorithm resolution.
-PY_STDLIB_MOD([_hmac], [], [],
-  [$LIBHACL_CFLAGS],
-  [$LIBHACL_CFLAGS Modules/_hacl/libHacl_HMAC.a])
+PY_STDLIB_MOD([_hmac], [], [], [$LIBHACL_CFLAGS], [$LIBHACL_CFLAGS])
 
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
