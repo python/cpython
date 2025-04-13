@@ -2169,6 +2169,70 @@ if not SKIP_CORO_TESTS:
             (Pdb) continue
             """
 
+        def test_pdb_await_support():
+            """Testing await support in pdb
+
+            >>> import asyncio
+
+            >>> async def test():
+            ...     print("hello")
+            ...     await asyncio.sleep(0)
+            ...     print("world")
+            ...     return 42
+
+            >>> async def main():
+            ...     import pdb;
+            ...     task = asyncio.create_task(test())
+            ...     await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            ...     pass
+
+            >>> def test_function():
+            ...     asyncio.run(main(), loop_factory=asyncio.EventLoop)
+
+            >>> with PdbTestInput([  # doctest: +ELLIPSIS
+            ...     'x = await task',
+            ...     'p x',
+            ...     'x = await test()',
+            ...     'p x',
+            ...     'new_task = asyncio.create_task(test())',
+            ...     'await new_task',
+            ...     'await non_exist()',
+            ...     's',
+            ...     'continue',
+            ... ]):
+            ...     test_function()
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) x = await task
+            hello
+            world
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p x
+            42
+            (Pdb) x = await test()
+            hello
+            world
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p x
+            42
+            (Pdb) new_task = asyncio.create_task(test())
+            (Pdb) await new_task
+            hello
+            world
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) await non_exist()
+            *** NameError: name 'non_exist' is not defined
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) s
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(5)main()
+            -> pass
+            (Pdb) continue
+            """
+
     def test_pdb_next_command_for_coroutine():
         """Testing skip unwinding stack on yield for coroutines for "next" command
 

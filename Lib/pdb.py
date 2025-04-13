@@ -378,6 +378,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.commands_bnum = None # The breakpoint number for which we are
                                   # defining a list
 
+        self.async_shim_frame = None
+        self.async_awaitable = None
+
         self._chained_exceptions = tuple()
         self._chained_exception_index = 0
 
@@ -392,6 +395,57 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             self.rcLines.extend(commands)
 
         super().set_trace(frame)
+
+    async def set_trace_async(self, frame=None, *, commands=None):
+        if self.async_awaitable is not None:
+            # We are already in a set_trace_async call, do not mess with it
+            return
+
+        if frame is None:
+            frame = sys._getframe().f_back
+
+        # We need set_trace to set up the basics, however, this will call
+        # set_stepinstr() will we need to compensate for, because we don't
+        # want to trigger on calls
+        self.set_trace(frame, commands=commands)
+        # Changing the stopframe will disable trace dispatch on calls
+        self.stopframe = frame
+        # We need to stop tracing because we don't have the privilege to avoid
+        # triggering tracing functions as normal, as we are not already in
+        # tracing functions
+        self.stop_trace()
+
+        self.async_shim_frame = sys._getframe()
+        self.async_awaitable = None
+
+        while True:
+            self.async_awaitable = None
+            # Simulate a trace event
+            # This should bring up pdb and make pdb believe it's debugging the
+            # caller frame
+            self.trace_dispatch(frame, "opcode", None)
+            if self.async_awaitable is not None:
+                try:
+                    if self.breaks:
+                        with self.set_enterframe(frame):
+                            # set_continue requires enterframe to work
+                            self.set_continue()
+                        self.start_trace()
+                    await self.async_awaitable
+                except Exception:
+                    self._error_exc()
+            else:
+                break
+
+        self.async_shim_frame = None
+
+        # start the trace (the actual command is already set by set_* calls)
+        if self.returnframe is None and self.stoplineno == -1 and not self.breaks:
+            # This means we did a continue without any breakpoints, we should not
+            # start the trace
+            return
+
+        self.start_trace()
 
     def sigint_handler(self, signum, frame):
         if self.allow_kbdint:
@@ -775,6 +829,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
         return True
 
+    def _exec_await(self, source, globals, locals):
+        """ Run source code that contains await by playing with async shim frame"""
+        # Put the source in an async function
+        source_async = (
+            "async def __pdb_await():\n" +
+            textwrap.indent(source, "    ") + '\n' +
+            "    __pdb_locals.update(locals())"
+        )
+        ns = globals | locals
+        # We use __pdb_locals to do write back
+        ns["__pdb_locals"] = locals
+        exec(source_async, ns)
+        self.async_awaitable = ns["__pdb_await"]()
+
     def default(self, line):
         if line[:1] == '!': line = line[1:].strip()
         locals = self.curframe.f_locals
@@ -820,8 +888,20 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 sys.stdout = save_stdout
                 sys.stdin = save_stdin
                 sys.displayhook = save_displayhook
-        except:
-            self._error_exc()
+        except Exception as e:
+            # Maybe it's an await expression/statement
+            if (
+                isinstance(e, SyntaxError)
+                and e.msg == "'await' outside function"
+                and self.async_shim_frame is not None
+            ):
+                try:
+                    self._exec_await(buffer, globals, locals)
+                    return True
+                except:
+                    self._error_exc()
+            else:
+                self._error_exc()
 
     def _replace_convenience_variables(self, line):
         """Replace the convenience variables in 'line' with their values.
@@ -2490,6 +2570,21 @@ def set_trace(*, header=None, commands=None):
     if header is not None:
         pdb.message(header)
     pdb.set_trace(sys._getframe().f_back, commands=commands)
+
+async def set_trace_async(*, header=None, commands=None):
+    """Enter the debugger at the calling stack frame, but in async mode.
+
+    This should be used as await pdb.set_trace_async(). Users can do await
+    if they enter the debugger with this function. Otherwise it's the same
+    as set_trace().
+    """
+    if Pdb._last_pdb_instance is not None:
+        pdb = Pdb._last_pdb_instance
+    else:
+        pdb = Pdb(mode='inline', backend='monitoring')
+    if header is not None:
+        pdb.message(header)
+    await pdb.set_trace_async(sys._getframe().f_back, commands=commands)
 
 # Post-Mortem interface
 
