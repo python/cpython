@@ -6616,8 +6616,8 @@ compiler_warn(struct compiler *c, location loc,
     if (msg == NULL) {
         return ERROR;
     }
-    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, c->c_filename,
-                                 loc.lineno, NULL, NULL) < 0)
+    if (_PyErr_WarnExplicitObjectWithContext(PyExc_SyntaxWarning, msg,
+                                             c->c_filename, loc.lineno) < 0)
     {
         if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
             /* Replace the SyntaxWarning exception with a SyntaxError
