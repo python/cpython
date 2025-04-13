@@ -585,7 +585,9 @@ extern "C" {
     INIT_ID(__and__), \
     INIT_ID(__anext__), \
     INIT_ID(__annotate__), \
+    INIT_ID(__annotate_func__), \
     INIT_ID(__annotations__), \
+    INIT_ID(__annotations_cache__), \
     INIT_ID(__args__), \
     INIT_ID(__await__), \
     INIT_ID(__bases__), \
@@ -751,6 +753,7 @@ extern "C" {
     INIT_ID(_feature_version), \
     INIT_ID(_field_types), \
     INIT_ID(_fields_), \
+    INIT_ID(_filters), \
     INIT_ID(_finalizing), \
     INIT_ID(_find_and_load), \
     INIT_ID(_fix_up_module), \

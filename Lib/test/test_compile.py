@@ -1666,67 +1666,33 @@ class TestSpecifics(unittest.TestCase):
                     pass
             [[]]
 
-    def test_invalid_with_usages(self):
-        def f(obj):
-            with obj:
-                pass
+    def test_globals_dict_subclass(self):
+        # gh-132386
+        class WeirdDict(dict):
+            pass
 
-        with self.assertRaisesRegex(TypeError, re.escape((
-            "object does not support the context manager protocol "
-            "(missed __exit__ method)"
-        ))):
-            f(DummyEnter())
+        ns = {}
+        exec('def foo(): return a', WeirdDict(), ns)
 
-        with self.assertRaisesRegex(TypeError, re.escape((
-            "object does not support the context manager protocol "
-            "(missed __enter__ method)"
-        ))):
-            f(DummyExit())
+        self.assertRaises(NameError, ns['foo'])
 
-        # a missing __exit__ is reported missing before a missing __enter__
-        with self.assertRaisesRegex(TypeError, re.escape((
-            "object does not support the context manager protocol "
-            "(missed __exit__ method)"
-        ))):
-            f(object())
+    def test_compile_warnings(self):
+        # See gh-131927
+        # Compile warnings originating from the same file and
+        # line are now only emitted once.
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("default")
+            compile('1 is 1', '<stdin>', 'eval')
+            compile('1 is 1', '<stdin>', 'eval')
 
-        with self.assertRaisesRegex(TypeError, re.escape((
-            "object does not support the context manager protocol "
-            "(missed __exit__ method) but it supports the asynchronous "
-            "context manager protocol. Did you mean to use 'async with'?"
-        ))):
-            f(AsyncDummy())
+        self.assertEqual(len(caught), 1)
 
-    def test_invalid_async_with_usages(self):
-        async def f(obj):
-            async with obj:
-                pass
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            compile('1 is 1', '<stdin>', 'eval')
+            compile('1 is 1', '<stdin>', 'eval')
 
-        with self.assertRaisesRegex(TypeError, re.escape((
-            "object does not support the asynchronous context manager protocol "
-            "(missed __aexit__ method)"
-        ))):
-            f(AsyncDummyEnter()).send(None)
-
-        with self.assertRaisesRegex(TypeError, re.escape((
-            "object does not support the asynchronous context manager protocol "
-            "(missed __aenter__ method)"
-        ))):
-            f(AsyncDummyExit()).send(None)
-
-        # a missing __aexit__ is reported missing before a missing __aenter__
-        with self.assertRaisesRegex(TypeError, re.escape((
-            "object does not support the asynchronous context manager protocol "
-            "(missed __aexit__ method)"
-        ))):
-            f(object()).send(None)
-
-        with self.assertRaisesRegex(TypeError, re.escape((
-            "object does not support the asynchronous context manager protocol "
-            "(missed __aexit__ method) but it supports the context manager "
-            "protocol. Did you mean to use 'with'?"
-        ))):
-            f(SyncDummy()).send(None)
+        self.assertEqual(len(caught), 2)
 
 
 class TestBooleanExpression(unittest.TestCase):

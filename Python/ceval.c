@@ -437,7 +437,7 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
 #else
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
-#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX)
+#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && !defined(__NetBSD__)
     size_t stack_size, guard_size;
     void *stack_addr;
     pthread_attr_t attr;
@@ -919,7 +919,7 @@ extern void _PyUOpPrint(const _PyUOpInstruction *uop);
    if computed gotos aren't used. */
 
 /* TBD - what about other compilers? */
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wunused-label"
 #elif defined(_MSC_VER) /* MS_WINDOWS */
@@ -976,7 +976,18 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #include "generated_cases.c.h"
 #endif
 
-PyObject* _Py_HOT_FUNCTION
+#if (defined(__GNUC__) && !defined(__clang__)) && defined(__x86_64__)
+/*
+ * gh-129987: The SLP autovectorizer can cause poor code generation for opcode
+ * dispatch, negating any benefit we get from vectorization elsewhere in the
+ * interpreter loop.
+ */
+#define DONT_SLP_VECTORIZE __attribute__((optimize ("no-tree-slp-vectorize")))
+#else
+#define DONT_SLP_VECTORIZE
+#endif
+
+PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
@@ -1196,7 +1207,7 @@ early_exit:
 #  pragma optimize("", on)
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 #  pragma GCC diagnostic pop
 #elif defined(_MSC_VER) /* MS_WINDOWS */
 #  pragma warning(pop)
@@ -1444,7 +1455,7 @@ skip_to_next_entry(unsigned char *p, unsigned char *end) {
 
 #define MAX_LINEAR_SEARCH 40
 
-static int
+static Py_NO_INLINE int
 get_exception_handler(PyCodeObject *code, int index, int *level, int *handler, int *lasti)
 {
     unsigned char *start = (unsigned char *)PyBytes_AS_STRING(code->co_exceptiontable);
@@ -3329,6 +3340,8 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
                 _PyEval_FormatExcCheckArg(
                             PyThreadState_GET(), PyExc_NameError,
                             NAME_ERROR_MSG, name);
+                *writeto = PyStackRef_NULL;
+                return;
             }
         }
         *writeto = PyStackRef_FromPyObjectSteal(res);

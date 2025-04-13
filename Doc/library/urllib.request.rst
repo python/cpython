@@ -159,14 +159,14 @@ The :mod:`urllib.request` module defines the following functions:
       'file:///C:/Program%20Files'
 
    .. versionchanged:: 3.14
-      Paths beginning with a slash are converted to URLs with authority
-      sections. For example, the path ``/etc/hosts`` is converted to
-      the URL ``///etc/hosts``.
-
-   .. versionchanged:: 3.14
       Windows drive letters are no longer converted to uppercase, and ``:``
       characters not following a drive letter no longer cause an
       :exc:`OSError` exception to be raised on Windows.
+
+   .. versionchanged:: 3.14
+      Paths beginning with a slash are converted to URLs with authority
+      sections. For example, the path ``/etc/hosts`` is converted to
+      the URL ``///etc/hosts``.
 
 
 .. function:: url2pathname(url)
@@ -185,6 +185,13 @@ The :mod:`urllib.request` module defines the following functions:
       Windows drive letters are no longer converted to uppercase, and ``:``
       characters not following a drive letter no longer cause an
       :exc:`OSError` exception to be raised on Windows.
+
+   .. versionchanged:: next
+      This function calls :func:`socket.gethostbyname` if the URL authority
+      isn't empty or ``localhost``. If the authority resolves to a local IP
+      address then it is discarded; otherwise, on Windows a UNC path is
+      returned (as before), and on other platforms a
+      :exc:`~urllib.error.URLError` is raised.
 
 
 .. function:: getproxies()
