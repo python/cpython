@@ -1881,6 +1881,8 @@ class BaseEventLoop(events.AbstractEventLoop):
         - 'socket' (optional): Socket instance;
         - 'asyncgen' (optional): Asynchronous generator that caused
                                  the exception.
+        - 'source_traceback' (optional): Traceback of the source;
+        - 'handle_traceback' (optional): Traceback of the handle;
 
         New keys maybe introduced in the future.
 

@@ -1442,6 +1442,9 @@ Allows customizing how exceptions are handled in the event loop.
    * 'socket' (optional): :class:`socket.socket` instance;
    * 'asyncgen' (optional): Asynchronous generator that caused
                             the exception.
+   * 'source_traceback' (optional): Traceback of the source;
+   * 'handle_traceback' (optional): Traceback of the handle;
+
 
    .. note::
 
