@@ -1269,19 +1269,6 @@ class SSLSocket(socket):
         else:
             return super().sendall(data, flags)
 
-    def _sendfile_use_ssl_sendfile(self, file, offset=0, count=None):
-        if not (ssl_sendfile := getattr(self._sslobj, "sendfile", None)):
-            raise _GiveupOnSSLSendfile(
-                "SSL_sendfile() not available on this platform",
-            )
-        return self._sendfile_zerocopy(
-            zerocopy_func=ssl_sendfile,
-            giveup_exc_type=_GiveupOnSSLSendfile,
-            file=file,
-            offset=offset,
-            count=count,
-        )
-
     def sendfile(self, file, offset=0, count=None):
         """Send a file, possibly by using an efficient sendfile() call if
         the system supports it.  Return the total number of bytes sent.
