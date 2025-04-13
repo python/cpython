@@ -127,7 +127,7 @@ class BaseProcess(object):
 
     def interrupt(self):
         '''
-        Terminate process; sends SIGINT signal or uses TerminateProcess()
+        Terminate process; sends SIGINT signal
         '''
         self._check_closed()
         self._popen.interrupt()
