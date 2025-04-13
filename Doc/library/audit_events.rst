@@ -44,6 +44,7 @@ public API of CPython:
 | _winapi.TerminateProcess   | ``handle``, ``exit_code``                 |
 +----------------------------+-------------------------------------------+
 | _posixsubprocess.fork_exec | ``exec_list``, ``args``, ``env``          |
+| .. versionadded:: next     |                                           |
 +----------------------------+-------------------------------------------+
 | ctypes.PyObj_FromPtr       | ``obj``                                   |
 +----------------------------+-------------------------------------------+

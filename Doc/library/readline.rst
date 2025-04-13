@@ -76,6 +76,9 @@ The following functions relate to the init file and user configuration:
    if given, and :code:`"<readline_init_file>"` otherwise, regardless of
    which file the library resolves.
 
+   .. versionchanged:: next
+      The auditing event was added.
+
 
 Line buffer
 -----------
@@ -116,6 +119,9 @@ The following functions operate on a history file:
    and raises an :ref:`auditing event <auditing>` ``open`` with the file
    name if given and :code:`"~/.history"` otherwise.
 
+   .. versionchanged:: next
+      The auditing event was added.
+
 
 .. function:: write_history_file([filename])
 
@@ -124,6 +130,9 @@ The following functions operate on a history file:
    :c:func:`!write_history` in the underlying library and raises an
    :ref:`auditing event <auditing>` ``open`` with the file name if given and
    :code:`"~/.history"` otherwise.
+
+   .. versionchanged:: next
+      The auditing event was added.
 
 
 .. function:: append_history_file(nelements[, filename])
@@ -136,6 +145,9 @@ The following functions operate on a history file:
    with the file name if given and :code:`"~/.history"` otherwise.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: next
+      The auditing event was added.
 
 
 .. function:: get_history_length()
