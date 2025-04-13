@@ -264,6 +264,7 @@ class FileTests(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'get_blocking'),
                      'needs os.get_blocking() and os.set_blocking()')
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    @unittest.skipIf(support.is_emscripten, "set_blocking does not work correctly")
     def test_readinto_non_blocking(self):
         # Verify behavior of a readinto which would block on a non-blocking fd.
         r, w = os.pipe()
@@ -2554,14 +2555,17 @@ class TestInvalidFD(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'fpathconf'), 'test needs os.fpathconf()')
     def test_fpathconf(self):
         self.assertIn("PC_NAME_MAX", os.pathconf_names)
-        if not (support.is_emscripten or support.is_wasi):
-            # musl libc pathconf ignores the file descriptor and always returns
-            # a constant, so the assertion that it should notice a bad file
-            # descriptor and return EBADF fails.
-            self.check(os.pathconf, "PC_NAME_MAX")
-            self.check(os.fpathconf, "PC_NAME_MAX")
         self.check_bool(os.pathconf, "PC_NAME_MAX")
         self.check_bool(os.fpathconf, "PC_NAME_MAX")
+
+    @unittest.skipUnless(hasattr(os, 'fpathconf'), 'test needs os.fpathconf()')
+    @unittest.skipIf(
+        support.linked_to_musl(),
+        'musl pathconf ignores the file descriptor and returns a constant',
+        )
+    def test_fpathconf_bad_fd(self):
+        self.check(os.pathconf, "PC_NAME_MAX")
+        self.check(os.fpathconf, "PC_NAME_MAX")
 
     @unittest.skipUnless(hasattr(os, 'ftruncate'), 'test needs os.ftruncate()')
     def test_ftruncate(self):
@@ -4348,6 +4352,9 @@ class TimerfdTests(unittest.TestCase):
         # confirm if timerfd is readable and read() returns 1 as bytes.
         self.assertEqual(self.read_count_signaled(fd), 1)
 
+    @unittest.skipIf(sys.platform.startswith('netbsd'),
+                     "gh-131263: Skip on NetBSD due to system freeze "
+                     "with negative timer values")
     def test_timerfd_negative(self):
         one_sec_in_nsec = 10**9
         fd = self.timerfd_create(time.CLOCK_REALTIME)
@@ -5093,7 +5100,6 @@ class TestScandir(unittest.TestCase):
         self.assertRaises(TypeError, pickle.dumps, scandir_iter, filename)
         scandir_iter.close()
 
-    @unittest.skipIf(support.is_emscripten, "Fixed by emscripten-core/emscripten#23139, remove when next Emscripten release comes out")
     def check_entry(self, entry, name, is_dir, is_file, is_symlink):
         self.assertIsInstance(entry, os.DirEntry)
         self.assertEqual(entry.name, name)
