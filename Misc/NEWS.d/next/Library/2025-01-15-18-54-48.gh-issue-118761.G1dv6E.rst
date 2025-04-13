@@ -1,2 +1,0 @@
-Reduce the import time of :mod:`optparse` when no help text is printed.
-Patch by Eli Schwartz.

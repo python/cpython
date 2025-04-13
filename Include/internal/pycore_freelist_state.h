@@ -18,12 +18,16 @@ extern "C" {
 #  define Py_floats_MAXFREELIST 100
 #  define Py_ints_MAXFREELIST 100
 #  define Py_slices_MAXFREELIST 1
+#  define Py_ranges_MAXFREELIST 6
+#  define Py_range_iters_MAXFREELIST 6
 #  define Py_contexts_MAXFREELIST 255
 #  define Py_async_gens_MAXFREELIST 80
 #  define Py_async_gen_asends_MAXFREELIST 80
 #  define Py_futureiters_MAXFREELIST 255
 #  define Py_object_stack_chunks_MAXFREELIST 4
 #  define Py_unicode_writers_MAXFREELIST 1
+#  define Py_pycfunctionobject_MAXFREELIST 16
+#  define Py_pycmethodobject_MAXFREELIST 16
 #  define Py_pymethodobjects_MAXFREELIST 20
 
 // A generic freelist of either PyObjects or other data structures.
@@ -47,12 +51,16 @@ struct _Py_freelists {
     struct _Py_freelist dicts;
     struct _Py_freelist dictkeys;
     struct _Py_freelist slices;
+    struct _Py_freelist ranges;
+    struct _Py_freelist range_iters;
     struct _Py_freelist contexts;
     struct _Py_freelist async_gens;
     struct _Py_freelist async_gen_asends;
     struct _Py_freelist futureiters;
     struct _Py_freelist object_stack_chunks;
     struct _Py_freelist unicode_writers;
+    struct _Py_freelist pycfunctionobject;
+    struct _Py_freelist pycmethodobject;
     struct _Py_freelist pymethodobjects;
 };
 

@@ -15,15 +15,17 @@ from ctypes.util import find_library
 from collections import namedtuple
 from test import support
 from test.support import import_helper
+from ._support import StructCheckMixin
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 
-class StructureTestCase(unittest.TestCase):
+class StructureTestCase(unittest.TestCase, StructCheckMixin):
     def test_packed(self):
         class X(Structure):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 1
+        self.check_struct(X)
 
         self.assertEqual(sizeof(X), 9)
         self.assertEqual(X.b.offset, 1)
@@ -32,6 +34,7 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 2
+        self.check_struct(X)
         self.assertEqual(sizeof(X), 10)
         self.assertEqual(X.b.offset, 2)
 
@@ -42,6 +45,7 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 4
+        self.check_struct(X)
         self.assertEqual(sizeof(X), min(4, longlong_align) + longlong_size)
         self.assertEqual(X.b.offset, min(4, longlong_align))
 
@@ -49,6 +53,7 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = [("a", c_byte),
                         ("b", c_longlong)]
             _pack_ = 8
+        self.check_struct(X)
 
         self.assertEqual(sizeof(X), min(8, longlong_align) + longlong_size)
         self.assertEqual(X.b.offset, min(8, longlong_align))
@@ -89,6 +94,7 @@ class StructureTestCase(unittest.TestCase):
     def test_conflicting_initializers(self):
         class POINT(Structure):
             _fields_ = [("phi", c_float), ("rho", c_float)]
+        self.check_struct(POINT)
         # conflicting positional and keyword args
         self.assertRaisesRegex(TypeError, "phi", POINT, 2, 3, phi=4)
         self.assertRaisesRegex(TypeError, "rho", POINT, 2, 3, rho=4)
@@ -99,6 +105,7 @@ class StructureTestCase(unittest.TestCase):
     def test_keyword_initializers(self):
         class POINT(Structure):
             _fields_ = [("x", c_int), ("y", c_int)]
+        self.check_struct(POINT)
         pt = POINT(1, 2)
         self.assertEqual((pt.x, pt.y), (1, 2))
 
@@ -110,11 +117,13 @@ class StructureTestCase(unittest.TestCase):
         class Phone(Structure):
             _fields_ = [("areacode", c_char*6),
                         ("number", c_char*12)]
+        self.check_struct(Phone)
 
         class Person(Structure):
             _fields_ = [("name", c_char * 12),
                         ("phone", Phone),
                         ("age", c_int)]
+        self.check_struct(Person)
 
         p = Person(b"Someone", (b"1234", b"5678"), 5)
 
@@ -127,6 +136,7 @@ class StructureTestCase(unittest.TestCase):
         class PersonW(Structure):
             _fields_ = [("name", c_wchar * 12),
                         ("age", c_int)]
+        self.check_struct(PersonW)
 
         p = PersonW("Someone \xe9")
         self.assertEqual(p.name, "Someone \xe9")
@@ -142,11 +152,13 @@ class StructureTestCase(unittest.TestCase):
         class Phone(Structure):
             _fields_ = [("areacode", c_char*6),
                         ("number", c_char*12)]
+        self.check_struct(Phone)
 
         class Person(Structure):
             _fields_ = [("name", c_char * 12),
                         ("phone", Phone),
                         ("age", c_int)]
+        self.check_struct(Person)
 
         cls, msg = self.get_except(Person, b"Someone", (1, 2))
         self.assertEqual(cls, RuntimeError)
@@ -169,12 +181,19 @@ class StructureTestCase(unittest.TestCase):
         # see also http://bugs.python.org/issue5042
         class W(Structure):
             _fields_ = [("a", c_int), ("b", c_int)]
+        self.check_struct(W)
+
         class X(W):
             _fields_ = [("c", c_int)]
+        self.check_struct(X)
+
         class Y(X):
             pass
+        self.check_struct(Y)
+
         class Z(Y):
             _fields_ = [("d", c_int), ("e", c_int), ("f", c_int)]
+        self.check_struct(Z)
 
         z = Z(1, 2, 3, 4, 5, 6)
         self.assertEqual((z.a, z.b, z.c, z.d, z.e, z.f),
@@ -193,6 +212,7 @@ class StructureTestCase(unittest.TestCase):
                 ('second', c_ulong),
                 ('third', c_ulong),
             ]
+        self.check_struct(Test)
 
         s = Test()
         s.first = 0xdeadbeef
@@ -222,6 +242,7 @@ class StructureTestCase(unittest.TestCase):
             ]
             def __del__(self):
                 finalizer_calls.append("called")
+        self.check_struct(Test)
 
         s = Test(1, 2, 3)
         # Test the StructUnionType_paramfunc() code path which copies the
@@ -251,6 +272,7 @@ class StructureTestCase(unittest.TestCase):
                 ('first', c_uint),
                 ('second', c_uint)
             ]
+        self.check_struct(X)
 
         s = X()
         s.first = 0xdeadbeef
@@ -339,36 +361,43 @@ class StructureTestCase(unittest.TestCase):
             _fields_ = [
                 ('data', c_ubyte * 16),
             ]
+        self.check_struct(Test2)
 
         class Test3AParent(Structure):
             _fields_ = [
                 ('data', c_float * 2),
             ]
+        self.check_struct(Test3AParent)
 
         class Test3A(Test3AParent):
             _fields_ = [
                 ('more_data', c_float * 2),
             ]
+        self.check_struct(Test3A)
 
         class Test3B(Structure):
             _fields_ = [
                 ('data', c_double * 2),
             ]
+        self.check_struct(Test3B)
 
         class Test3C(Structure):
             _fields_ = [
                 ("data", c_double * 4)
             ]
+        self.check_struct(Test3C)
 
         class Test3D(Structure):
             _fields_ = [
                 ("data", c_double * 8)
             ]
+        self.check_struct(Test3D)
 
         class Test3E(Structure):
             _fields_ = [
                 ("data", c_double * 9)
             ]
+        self.check_struct(Test3E)
 
 
         # Tests for struct Test2
@@ -467,6 +496,8 @@ class StructureTestCase(unittest.TestCase):
                 ('f2', c_uint16 * 8),
                 ('f3', c_uint32 * 4),
             ]
+        self.check_union(U)
+
         u = U()
         u.f3[0] = 0x01234567
         u.f3[1] = 0x89ABCDEF
@@ -493,18 +524,21 @@ class StructureTestCase(unittest.TestCase):
                 ('an_int', c_int),
                 ('another_int', c_int),
             ]
+        self.check_struct(Nested1)
 
         class Test4(Union):
             _fields_ = [
                 ('a_long', c_long),
                 ('a_struct', Nested1),
             ]
+        self.check_struct(Test4)
 
         class Nested2(Structure):
             _fields_ = [
                 ('an_int', c_int),
                 ('a_union', Test4),
             ]
+        self.check_struct(Nested2)
 
         class Test5(Structure):
             _fields_ = [
@@ -512,6 +546,7 @@ class StructureTestCase(unittest.TestCase):
                 ('nested', Nested2),
                 ('another_int', c_int),
             ]
+        self.check_struct(Test5)
 
         test4 = Test4()
         dll = CDLL(_ctypes_test.__file__)
@@ -576,6 +611,7 @@ class StructureTestCase(unittest.TestCase):
                 ('C', c_int, 3),
                 ('D', c_int, 2),
             ]
+        self.check_struct(Test6)
 
         test6 = Test6()
         # As these are signed int fields, all are logically -1 due to sign
@@ -611,6 +647,8 @@ class StructureTestCase(unittest.TestCase):
                 ('C', c_uint, 3),
                 ('D', c_uint, 2),
             ]
+        self.check_struct(Test7)
+
         test7 = Test7()
         test7.A = 1
         test7.B = 3
@@ -634,6 +672,7 @@ class StructureTestCase(unittest.TestCase):
                 ('C', c_int, 3),
                 ('D', c_int, 2),
             ]
+        self.check_union(Test8)
 
         test8 = Test8()
         with self.assertRaises(TypeError) as ctx:
