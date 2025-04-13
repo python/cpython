@@ -5,7 +5,6 @@ import itertools
 import math
 import opcode
 import os
-import re
 import unittest
 import sys
 import ast
@@ -24,7 +23,6 @@ from test.support import (script_helper, requires_debug_ranges, run_code,
                           requires_specialization)
 from test.support.bytecode_helper import instructions_with_positions
 from test.support.os_helper import FakePath
-
 
 class TestSpecifics(unittest.TestCase):
 
@@ -1665,7 +1663,6 @@ class TestSpecifics(unittest.TestCase):
             compile('1 is 1', '<stdin>', 'eval')
 
         self.assertEqual(len(caught), 2)
-
 
 class TestBooleanExpression(unittest.TestCase):
     class Value:
