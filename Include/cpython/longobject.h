@@ -86,7 +86,7 @@ PyAPI_FUNC(int) PyLong_IsZero(PyObject *obj);
    - On failure, set an exception, and return -1. */
 PyAPI_FUNC(int) PyLong_GetSign(PyObject *v, int *sign);
 
-PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
+Py_DEPRECATED(3.14) PyAPI_FUNC(int) _PyLong_Sign(PyObject *v);
 
 /* _PyLong_NumBits.  Return the number of bits needed to represent the
    absolute value of a long.  For example, this returns 1 for 1 and -1, 2

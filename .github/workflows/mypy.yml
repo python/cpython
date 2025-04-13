@@ -33,6 +33,9 @@ concurrency:
 
 jobs:
   mypy:
+    name: Run mypy on ${{ matrix.target }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -46,9 +49,6 @@ jobs:
           "Tools/peg_generator",
           "Tools/wasm",
         ]
-    name: Run mypy on ${{ matrix.target }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,4 +59,5 @@ jobs:
           cache: pip
           cache-dependency-path: Tools/requirements-dev.txt
       - run: pip install -r Tools/requirements-dev.txt
+      - run: python3 Misc/mypy/make_symlinks.py --symlink
       - run: mypy --config-file ${{ matrix.target }}/mypy.ini
