@@ -723,10 +723,11 @@ class SysModuleTest(unittest.TestCase):
         self.assertIsInstance(sys.float_repr_style, str)
         self.assertIn(sys.float_repr_style, ('short', 'legacy'))
         if not sys.platform.startswith('win'):
-            self.assertIsInstance(sys.abiflags, str)
-            # test hasattr(sys, 'abiflags') == (os.name != 'nt)
             self.assertEqual(os.name, 'posix')
+            self.assertIsInstance(sys.abiflags, str)
         else:
+            self.assertEqual(os.name, 'nt')
+            # TODO: sys.abiflags will be defined on Windows in Python 3.16.
             absent = object()
             with self.assertWarnsRegex(
                 DeprecationWarning,
@@ -749,9 +750,6 @@ class SysModuleTest(unittest.TestCase):
                     r'sys\.abiflags will be set\b.*\bon all platforms',
                 ):
                     _ = sys.abiflags
-
-            # test hasattr(sys, 'abiflags') == (os.name != 'nt)
-            self.assertEqual(os.name, 'nt')
 
     def test_thread_info(self):
         info = sys.thread_info
