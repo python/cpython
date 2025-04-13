@@ -1466,7 +1466,7 @@ class FileHandler(BaseHandler):
     def open_local_file(self, req):
         import email.utils
         import mimetypes
-        localfile = url2pathname(req.full_url, has_scheme=True)
+        localfile = url2pathname(req.full_url, require_scheme=True)
         try:
             stats = os.stat(localfile)
             size = stats.st_size
@@ -1634,13 +1634,13 @@ class DataHandler(BaseHandler):
 
 # Code move from the old urllib module
 
-def url2pathname(url, has_scheme=False):
+def url2pathname(url, require_scheme=False):
     """Convert the given file URL to a local file system path.
 
-    The 'file:' scheme prefix must be omitted unless *has_scheme*
+    The 'file:' scheme prefix must be omitted unless *require_scheme*
     is set to true.
     """
-    if has_scheme:
+    if require_scheme:
         scheme, url = _splittype(url)
         if scheme != 'file':
             raise URLError("URL is missing a 'file:' scheme")

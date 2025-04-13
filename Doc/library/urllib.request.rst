@@ -175,21 +175,21 @@ The :mod:`urllib.request` module defines the following functions:
       The *add_scheme* argument was added.
 
 
-.. function:: url2pathname(url, *, has_scheme=False)
+.. function:: url2pathname(url, *, require_scheme=False)
 
    Convert the given ``file:`` URL to a local path. This function uses
    :func:`~urllib.parse.unquote` to decode the URL.
 
-   If *has_scheme* is false (the default), the given value should omit a
-   ``file:`` scheme prefix. If *has_scheme* is set to true, the given value
-   should include the prefix; a :exc:`~urllib.error.URLError` is raised if it
-   doesn't.
+   If *require_scheme* is false (the default), the given value should omit a
+   ``file:`` scheme prefix. If *require_scheme* is set to true, the given
+   value should include the prefix; a :exc:`~urllib.error.URLError` is raised
+   if it doesn't.
 
    This example shows the function being used on Windows::
 
       >>> from urllib.request import url2pathname
       >>> url = 'file:///C:/Program%20Files'
-      >>> url2pathname(url, has_scheme=True)
+      >>> url2pathname(url, require_scheme=True)
       'C:\\Program Files'
 
    .. versionchanged:: 3.14
@@ -205,7 +205,7 @@ The :mod:`urllib.request` module defines the following functions:
       :exc:`~urllib.error.URLError` is raised.
 
    .. versionchanged:: next
-      The *has_scheme* argument was added.
+      The *require_scheme* argument was added.
 
 
 .. function:: getproxies()

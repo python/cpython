@@ -1279,7 +1279,7 @@ class Path(PurePath):
         from urllib.error import URLError
         from urllib.request import url2pathname
         try:
-            path = cls(url2pathname(uri, has_scheme=True))
+            path = cls(url2pathname(uri, require_scheme=True))
         except URLError as exc:
             raise ValueError(exc.reason) from None
         if not path.is_absolute():
