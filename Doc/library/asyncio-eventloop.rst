@@ -1445,7 +1445,6 @@ Allows customizing how exceptions are handled in the event loop.
    * 'asyncgen' (optional): Asynchronous generator that caused
                             the exception.
 
-
    .. note::
 
        This method should not be overloaded in subclassed
