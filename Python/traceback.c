@@ -1191,48 +1191,33 @@ format_entry(char *entry_str, const char *the_entry, Py_ssize_t *length_ptr)
     *length_ptr = (Py_ssize_t)length;
 }
 
-#if __ELF_NATIVE_CLASS == 32
-# define WORD_WIDTH 8
-#else
-/* We assume 64bits.  */
-# define WORD_WIDTH 16
-#endif
-
 /* Based on glibc's implementation of backtrace_symbols(), but only uses stack memory. */
 void
 _Py_backtrace_symbols(void *const *array, Py_ssize_t size,
                       Py_ssize_t line_size, char **result)
 {
-    Dl_info info[size];
-    int status[size];
-    Py_ssize_t total = 0;
-    /* Fill in the information we can get from `dladdr'.  */
+    Dl_info info[size] = {};
+    int status[size] = {};
+    /* Fill in the information we can get from dladdr() */
     for (Py_ssize_t i = 0; i < size; ++i)
     {
         struct link_map *map;
+        assert(array[i] != NULL);
         status[i] = dladdr1(array[i], &info[i], (void **)&map, RTLD_DL_LINKMAP);
-        if (status[i]
-            && info[i].dli_fname
+        if (status[i] != 0
+            && info[i].dli_fname != NULL
             && info[i].dli_fname[0] != '\0') {
-          /* We have some info, compute the length of the string which will be
-             "<file-name>(<sym-name>+offset) [address].  */
-          total += (strlen (info[i].dli_fname ?: "")
-                + strlen (info[i].dli_sname ?: "")
-                + 3 + WORD_WIDTH + 3 + WORD_WIDTH + 5);
-          /* The load bias is more useful to the user than the load
-             address.  The use of these addresses is to calculate an
-             address in the ELF file, so its prelinked bias is not
-             something we want to subtract out.  */
-          info[i].dli_fbase = (void *) map->l_addr;
-        }
-        else {
-            total += 5 + WORD_WIDTH;
+            /* The load bias is more useful to the user than the load
+               address. The use of these addresses is to calculate an
+               address in the ELF file, so its prelinked bias is not
+               something we want to subtract out */
+            info[i].dli_fbase = (void *) map->l_addr;
         }
     }
     char *last = (char *) (result + size);
     for (Py_ssize_t i = 0; i < size; ++i) {
 	    result[i] = last;
-        if (!status[i]
+        if (status[i] == 0
             || info[i].dli_fname == NULL
             || info[i].dli_fname[0] == '\0'
         ) {
@@ -1242,13 +1227,13 @@ _Py_backtrace_symbols(void *const *array, Py_ssize_t size,
 
         if (info[i].dli_sname == NULL) {
             /* We found no symbol name to use, so describe it as
-               relative to the file.  */
+               relative to the file. */
             info[i].dli_saddr = info[i].dli_fbase;
         }
 
         if (info[i].dli_sname == NULL
             && info[i].dli_saddr == 0) {
-            last += 1 + PyOS_snprintf(last, line_size, "%s(%s) [%p]",
+            last += 1 + PyOS_snprintf("%s(%s) [%p]",
                                       info[i].dli_fname ?: "",
                                       info[i].dli_sname ?: "",
                                       array[i]);
@@ -1271,14 +1256,13 @@ _Py_backtrace_symbols(void *const *array, Py_ssize_t size,
         }
     }
 }
-#undef WORD_WIDTH
 
 void
 _Py_DumpStack(int fd)
 {
 #define BACKTRACE_SIZE 32
     PUTS(fd, "Current thread's C stack trace (most recent call first):\n");
-    void *callstack[BACKTRACE_SIZE];
+    void *callstack[BACKTRACE_SIZE] = {};
     int frames = backtrace(callstack, BACKTRACE_SIZE);
     if (frames == 0) {
         // Some systems won't return anything for the stack trace
@@ -1287,7 +1271,7 @@ _Py_DumpStack(int fd)
     }
 
     char *strings[BACKTRACE_SIZE];
-    _Py_backtrace_symbols(callstack, BACKTRACE_SIZE, TRACEBACK_ENTRY_MAX_SIZE, strings);
+    _Py_backtrace_symbols(callstack, frames, TRACEBACK_ENTRY_MAX_SIZE, strings);
     for (int i = 0; i < frames; ++i) {
         char entry_str[TRACEBACK_ENTRY_MAX_SIZE];
         Py_ssize_t length;
