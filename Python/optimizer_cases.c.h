@@ -1870,8 +1870,9 @@
             JitOptSymbol *res;
             arg = stack_pointer[-1];
             if (sym_has_type(arg)) {
-                res = sym_new_const(ctx, (PyObject*)sym_get_type(arg));
-            } else {
+                res = sym_new_const(ctx, (PyObject *)sym_get_type(arg));
+            }
+            else {
                 res = sym_new_not_null(ctx);
             }
             stack_pointer[-3] = res;
