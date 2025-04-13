@@ -99,7 +99,12 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                      "type of field %R must be a C type", name);
         goto error;
     }
-    assert(byte_size == info->size);
+    if (byte_size != info->size) {
+        PyErr_Format(PyExc_ValueError,
+                     "byte size of field %R (%zd) does not match type size (%zd)",
+                     name, byte_size, info->size);
+        goto error;
+    }
 
     Py_ssize_t bitfield_size = 0;
     Py_ssize_t bit_offset = 0;
