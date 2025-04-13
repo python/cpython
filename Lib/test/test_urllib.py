@@ -1435,12 +1435,21 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn(f'a{sep}b.c'), 'a/b.c')
         self.assertEqual(fn(f'{sep}a{sep}b.c'), '///a/b.c')
         self.assertEqual(fn(f'{sep}a{sep}b%#c'), '///a/b%25%23c')
-        self.assertEqual(fn('', add_scheme=True), 'file:')
-        self.assertEqual(fn(sep, add_scheme=True), 'file:///')
-        self.assertEqual(fn('a', add_scheme=True), 'file:a')
-        self.assertEqual(fn(f'a{sep}b.c', add_scheme=True), 'file:a/b.c')
-        self.assertEqual(fn(f'{sep}a{sep}b.c', add_scheme=True), 'file:///a/b.c')
-        self.assertEqual(fn(f'{sep}a{sep}b%#c', add_scheme=True), 'file:///a/b%25%23c')
+
+    def test_pathname2url_add_scheme(self):
+        sep = os.path.sep
+        subtests = [
+            ('', 'file:'),
+            (sep, 'file:///'),
+            ('a', 'file:a'),
+            (f'a{sep}b.c', 'file:a/b.c'),
+            (f'{sep}a{sep}b.c', 'file:///a/b.c'),
+            (f'{sep}a{sep}b%#c', 'file:///a/b%25%23c'),
+        ]
+        for path, expected_url in subtests:
+            with self.subTest(path=path):
+                self.assertEqual(
+                    urllib.request.pathname2url(path, add_scheme=True), expected_url)
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
@@ -1511,28 +1520,46 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('////foo/bar'), f'{sep}{sep}foo{sep}bar')
         self.assertEqual(fn('data:blah'), 'data:blah')
         self.assertEqual(fn('data://blah'), f'data:{sep}{sep}blah')
-        self.assertEqual(fn('file:', require_scheme=True), '')
-        self.assertEqual(fn('FILE:', require_scheme=True), '')
-        self.assertEqual(fn('FiLe:', require_scheme=True), '')
-        self.assertEqual(fn('file:/', require_scheme=True), f'{sep}')
-        self.assertEqual(fn('file:///', require_scheme=True), f'{sep}')
-        self.assertEqual(fn('file:////', require_scheme=True), f'{sep}{sep}')
-        self.assertEqual(fn('file:foo', require_scheme=True), 'foo')
-        self.assertEqual(fn('file:foo/bar', require_scheme=True), f'foo{sep}bar')
-        self.assertEqual(fn('file:/foo/bar', require_scheme=True), f'{sep}foo{sep}bar')
-        self.assertEqual(fn('file://localhost/foo/bar', require_scheme=True), f'{sep}foo{sep}bar')
-        self.assertEqual(fn('file:///foo/bar', require_scheme=True), f'{sep}foo{sep}bar')
-        self.assertEqual(fn('file:////foo/bar', require_scheme=True), f'{sep}{sep}foo{sep}bar')
-        self.assertEqual(fn('file:data:blah', require_scheme=True), 'data:blah')
-        self.assertEqual(fn('file:data://blah', require_scheme=True), f'data:{sep}{sep}blah')
-        self.assertRaises(urllib.error.URLError, fn, '', require_scheme=True)
-        self.assertRaises(urllib.error.URLError, fn, ':', require_scheme=True)
-        self.assertRaises(urllib.error.URLError, fn, 'foo', require_scheme=True)
-        self.assertRaises(urllib.error.URLError, fn, 'http:foo', require_scheme=True)
-        self.assertRaises(urllib.error.URLError, fn, 'localfile:foo', require_scheme=True)
-        self.assertRaises(urllib.error.URLError, fn, 'data:foo', require_scheme=True)
-        self.assertRaises(urllib.error.URLError, fn, 'data:file:foo', require_scheme=True)
-        self.assertRaises(urllib.error.URLError, fn, 'data:file://foo', require_scheme=True)
+
+    def test_url2pathname_require_scheme(self):
+        sep = os.path.sep
+        subtests = [
+            ('file:', ''),
+            ('FILE:', ''),
+            ('FiLe:', ''),
+            ('file:/', f'{sep}'),
+            ('file:///', f'{sep}'),
+            ('file:////', f'{sep}{sep}'),
+            ('file:foo', 'foo'),
+            ('file:foo/bar', f'foo{sep}bar'),
+            ('file:/foo/bar', f'{sep}foo{sep}bar'),
+            ('file://localhost/foo/bar', f'{sep}foo{sep}bar'),
+            ('file:///foo/bar', f'{sep}foo{sep}bar'),
+            ('file:////foo/bar', f'{sep}{sep}foo{sep}bar'),
+            ('file:data:blah', 'data:blah'),
+            ('file:data://blah', f'data:{sep}{sep}blah'),
+        ]
+        for url, expected_path in subtests:
+            with self.subTest(url=url):
+                self.assertEqual(
+                    urllib.request.url2pathname(url, require_scheme=True),
+                    expected_path)
+        error_subtests = [
+            '',
+            ':',
+            'foo',
+            'http:foo',
+            'localfile:foo',
+            'data:foo',
+            'data:file:foo',
+            'data:file://foo',
+        ]
+        for url in error_subtests:
+            with self.subTest(url=url):
+                self.assertRaises(
+                    urllib.error.URLError,
+                    urllib.request.url2pathname,
+                    url, require_scheme=True)
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
