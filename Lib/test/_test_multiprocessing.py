@@ -514,7 +514,7 @@ class _TestProcess(BaseTestCase):
 
     @classmethod
     def _sleep_no_int_handler(cls):
-        signal.signal(signal.SIGINT, signal.SIG_IGN)
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
         cls._sleep_some()
 
     @classmethod
