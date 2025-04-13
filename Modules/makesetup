@@ -178,10 +178,10 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			*.cpp)		srcs="$srcs $arg";;
 			\$\(*_CFLAGS\))		cpps="$cpps $arg";;
 			\$\(*_INCLUDES\))	cpps="$cpps $arg";;
-			\$\(*_LIBS\))		libs="$libs $arg";;
+			\$\(*_LIBS\))		  libs="$libs $arg";;
+			\$\(*_LIBDEPS\))	libs="$libs $arg";;
 			\$\(*_LDFLAGS\))	libs="$libs $arg";;
 			\$\(*_RPATH\))		libs="$libs $arg";;
-			\$\(*_OBJS\))	    objs="$objs $arg";;
 			\$*)		libs="$libs $arg"
 					cpps="$cpps $arg";;
 			*.*)		echo 1>&2 "bad word $arg in $line"
@@ -226,6 +226,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		case $noobjects in
 		yes)	continue;;
 		esac
+		objs=''
 		for src in $srcs
 		do
 			case $src in
@@ -253,11 +254,13 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			case $doconfig in
 			no)
 				cc="$cc $cpps \$(PY_STDMODULE_CFLAGS) \$(CCSHARED)"
-				rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(MODULE_DEPS_SHARED) \$(PYTHON_HEADERS); $cc -c $src -o $obj"
+				rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(MODULE_DEPS_SHARED) \$(PYTHON_HEADERS)"
+				rule="$rule; $cc -c $src -o $obj"
 				;;
 			*)
 				cc="$cc $cpps \$(PY_BUILTIN_MODULE_CFLAGS)"
-				rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(MODULE_DEPS_STATIC) \$(PYTHON_HEADERS); $cc -c $src -o $obj"
+				rule="$obj: $src \$(MODULE_${mods_upper}_DEPS) \$(MODULE_DEPS_STATIC) \$(PYTHON_HEADERS)"
+				rule="$rule; $cc -c $src -o $obj"
 				;;
 			esac
 			echo "$rule" >>$rulesf
@@ -274,7 +277,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 				BUILT_SHARED="$BUILT_SHARED $mod"
 				;;
 			esac
-			rule="$file: $objs"
+			rule="$file: $objs \$(MODULE_${mods_upper}_LIBDEPS)"
 			rule="$rule; \$(BLDSHARED) $objs $libs \$(LIBPYTHON) -o $file"
 			echo "$rule" >>$rulesf
 		done
