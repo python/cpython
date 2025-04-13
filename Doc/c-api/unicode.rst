@@ -622,7 +622,7 @@ APIs:
 
    On error, set *\*p_left* to ``NULL`` and set an exception.
 
-   On sucess, set *\*p_left* to a new strong reference to the result.
+   On success, set *\*p_left* to a new strong reference to the result.
 
 
 .. c:function:: void PyUnicode_AppendAndDel(PyObject **p_left, PyObject *right)
