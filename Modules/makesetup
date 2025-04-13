@@ -140,7 +140,6 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 		'*shared*')	doconfig=no; continue;;
 		'*disabled*')	doconfig=disabled; continue;;
 		esac
-		objs=
 		srcs=
 		cpps=
 		libs=
