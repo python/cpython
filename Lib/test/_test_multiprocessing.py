@@ -567,10 +567,10 @@ class _TestProcess(BaseTestCase):
 
         return p.exitcode
 
+    @unittest.skipIf(os.name == 'nt', "POSIX only")
     def test_interrupt(self):
-        if os.name != 'nt':
-            exitcode = self._kill_process(multiprocessing.Process.interrupt)
-            self.assertEqual(exitcode, 1)
+        exitcode = self._kill_process(multiprocessing.Process.interrupt)
+        self.assertEqual(exitcode, 1)
 
     def test_terminate(self):
         exitcode = self._kill_process(multiprocessing.Process.terminate)
