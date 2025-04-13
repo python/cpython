@@ -107,14 +107,14 @@ def make_h(infile, outfile='Include/internal/pycore_token.h'):
 
     defines = []
     for value, name in enumerate(tok_names[:ERRORTOKEN + 1]):
-        defines.append("#define %-15s %d\n" % (name, value))  # noqa: UP031
+        defines.append("#define %-15s %d\n" % (name, value))
 
     if update_file(outfile, token_h_template % (
             ''.join(defines),
             len(tok_names),
             NT_OFFSET
         )):
-        print(f"{outfile} regenerated from {infile}")
+        print("%s regenerated from %s" % (outfile, infile))
 
 
 token_c_template = f"""\
@@ -160,17 +160,17 @@ def generate_chars_to_token(mapping, n=1):
     write = result.append
     indent = '    ' * n
     write(indent)
-    write('switch (c%d) {\n' % (n,))  # noqa: UP031
+    write('switch (c%d) {\n' % (n,))
     for c in sorted(mapping):
         write(indent)
         value = mapping[c]
         if isinstance(value, dict):
-            write("case '%s':\n" % (c,))  # noqa: UP031
+            write("case '%s':\n" % (c,))
             write(generate_chars_to_token(value, n + 1))
             write(indent)
             write('    break;\n')
         else:
-            write("case '%s': return %s;\n" % (c, value))  # noqa: UP031
+            write("case '%s': return %s;\n" % (c, value))
     write(indent)
     write('}\n')
     return ''.join(result)
@@ -190,8 +190,8 @@ def make_c(infile, outfile='Parser/token.c'):
     names = []
     for value, name in enumerate(tok_names):
         if value >= ERRORTOKEN:
-            name = '<%s>' % name  # noqa: UP031
-        names.append('    "%s",\n' % name)  # noqa: UP031
+            name = '<%s>' % name
+        names.append('    "%s",\n' % name)
     names.append('    "<N_TOKENS>",\n')
 
     if update_file(outfile, token_c_template % (
@@ -200,7 +200,7 @@ def make_c(infile, outfile='Parser/token.c'):
             generate_chars_to_token(chars_to_token[2]),
             generate_chars_to_token(chars_to_token[3])
         )):
-        print(f"{outfile} regenerated from {infile}")
+        print("%s regenerated from %s" % (outfile, infile))
 
 
 token_inc_template = f"""\
@@ -252,7 +252,7 @@ def make_rst(infile, outfile='Doc/library/token-list.inc',
         exit('\n'.join(message_parts))
 
     if update_file(outfile, token_inc_template % '\n'.join(names)):
-        print(f"{outfile} regenerated from {infile}")
+        print("%s regenerated from %s" % (outfile, infile))
 
 
 token_py_template = f'''\
@@ -292,13 +292,13 @@ def make_py(infile, outfile='Lib/token.py'):
 
     constants = []
     for value, name in enumerate(tok_names):
-        constants.append('%s = %d' % (name, value))  # noqa: UP031
+        constants.append('%s = %d' % (name, value))
     constants.insert(ERRORTOKEN,
         "# These aren't used by the C tokenizer but are needed for tokenize.py")
 
     token_types = []
     for s, value in sorted(string_to_tok.items()):
-        token_types.append('    %r: %s,' % (s, tok_names[value]))  # noqa: UP031
+        token_types.append('    %r: %s,' % (s, tok_names[value]))
 
     if update_file(outfile, token_py_template % (
             '\n'.join(constants),
@@ -306,7 +306,7 @@ def make_py(infile, outfile='Lib/token.py'):
             NT_OFFSET,
             '\n'.join(token_types),
         )):
-        print(f"{outfile} regenerated from {infile}")
+        print("%s regenerated from %s" % (outfile, infile))
 
 
 def main(op, infile='Grammar/Tokens', *args):

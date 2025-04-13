@@ -28,6 +28,9 @@ ignore = [
 "stable_abi.py" = "py311"  # requires 'tomllib'
 
 [lint.per-file-ignores]
-"{check_extension_modules,freeze_modules,generate_re_casefix,generate_sre_constants}.py" = [
+"{check_extension_modules,freeze_modules}.py" = [
+    "UP031",  # Use format specifiers instead of percent format
+]
+"generate_{re_casefix,sre_constants,token}.py" = [
     "UP031",  # Use format specifiers instead of percent format
 ]
