@@ -1402,6 +1402,16 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(self.ipv4_network.supernet().prefixlen, 23)
         self.assertEqual(str(self.ipv4_network.supernet().network_address),
                          '1.2.2.0')
+        self.assertEqual(int(self.ipv6_network.broadcast_address),
+                          42540616829182469451850391367731642367)
+        self.assertEqual(str(self.ipv6_network.broadcast_address),
+                          '2001:658:22a:cafe:ffff:ffff:ffff:ffff')
+        self.assertEqual(int(self.ipv6_scoped_network.broadcast_address),
+                          42540616829182469451850391367731642367)
+        self.assertEqual(str(self.ipv6_scoped_network.broadcast_address),
+                          '2001:658:22a:cafe:ffff:ffff:ffff:ffff')
+
+        self.assertEqual(self.ipv4_network.supernet(new_prefix=22).prefixlen, 22)
         self.assertEqual(
             ipaddress.IPv4Interface('0.0.0.0/0').network.supernet(),
             ipaddress.IPv4Network('0.0.0.0/0'))
@@ -2030,9 +2040,9 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertTrue(ipaddress.ip_interface('::1%scope/80') >
                         ipaddress.ip_interface('::1/64'))
         self.assertTrue(ipaddress.ip_interface('::2%scope/64') >
-                        ipaddress.ip_interface('::1/64'))
+                        ipaddress.ip_interface('::1%scope/64'))
         self.assertTrue(ipaddress.ip_interface('::1%scope/64') >
-                        ipaddress.ip_interface('::2/48'))
+                        ipaddress.ip_interface('::2%scope/48'))
 
         self.assertFalse(ipaddress.ip_interface('::1/64') ==
                         ipaddress.ip_interface('::1%scope/64'))
@@ -2744,6 +2754,26 @@ class IpaddrUnitTest(unittest.TestCase):
         ipv6_address2 = ipaddress.IPv6Interface("2001:658:22a:cafe:200:0:0:2")
         self.assertNotEqual(ipv6_address1.__hash__(), ipv6_address2.__hash__())
 
+    def test_ipv6_network_address_deprecation(self):
+        network = ipaddress.IPv6Network('2001:658:22a:cafe::/64')
+        with self.assertWarns(DeprecationWarning) as warn:
+            addr = network.network_address
+            self.assertEqual(str(addr), "2001:658:22a:cafe::")
+            self.assertEqual(int(addr), 42540616829182469433403647294022090752)
+            self.assertEqual(addr, network.first_address)
+            self.assertEqual(addr, network.subnet_router_anycast_address)
+        self.assertIn("IPv6 has no network addresses", str(warn.warning))
+        self.assertIn("consider using first_address or subnet_router_anycast_address instead", str(warn.warning))
+
+    def test_ipv6_broadcast_address_deprecation(self):
+        network = ipaddress.IPv6Network('2001:658:22a:cafe::/64')
+        with self.assertWarns(DeprecationWarning) as warn:
+            addr = network.broadcast_address
+            self.assertEqual(str(addr), "2001:658:22a:cafe:ffff:ffff:ffff:ffff")
+            self.assertEqual(int(addr), 42540616829182469451850391367731642367)
+            self.assertEqual(addr, network.last_address)
+        self.assertIn("IPv6 has no broadcast addresses", str(warn.warning))
+        self.assertIn("consider using last_address instead", str(warn.warning))
 
 if __name__ == '__main__':
     unittest.main()
