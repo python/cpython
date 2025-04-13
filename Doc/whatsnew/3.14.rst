@@ -1127,6 +1127,8 @@ the ABI of the Python interpreter.
 The :data:`!sys.abiflags` member will be set to a meaningful value on
 Windows in Python 3.16. This means the :data:`!sys.abiflags` member will
 always be available on all platforms starting from Python 3.16.
+Before this incoming change is made, :func:`sysconfig.get_config_vars` would be
+useful. See also :ref:`Changes of **sysconfig** <whatsnew314-sysconfig-abiflags>`.
 
 The following table shows how to migrate from the old code to the new code
 without changing the behavior:
@@ -1148,6 +1150,8 @@ sys.monitoring
 * Two new events are added: :monitoring-event:`BRANCH_LEFT` and
   :monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
 
+
+.. _whatsnew314-sysconfig-abiflags:
 
 sysconfig
 ---------
