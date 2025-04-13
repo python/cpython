@@ -819,6 +819,10 @@ logging.handlers
   manager protocol, allowing it to be used in a :keyword:`with` statement.
   (Contributed by Charles Machalow in :gh:`132106`.)
 
+* :meth:`QueueListener.start <logging.handlers.QueueListener.start>` now
+  raises a :exc:`RuntimeError` if the listener is already started.
+  (Contributed by Charles Machalow in :gh:`132106`.)
+
 
 mimetypes
 ---------

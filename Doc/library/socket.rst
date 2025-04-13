@@ -149,18 +149,24 @@ created.  Socket addresses are represented as follows:
       :const:`BDADDR_LE_RANDOM`.
 
     .. versionchanged:: 3.14
-      Added ``cid`` and ``bdaddr_type`` fields.
+       Added ``cid`` and ``bdaddr_type`` fields.
 
   - :const:`BTPROTO_RFCOMM` accepts ``(bdaddr, channel)`` where ``bdaddr``
     is the Bluetooth address as a string and ``channel`` is an integer.
 
-  - :const:`BTPROTO_HCI` accepts ``(device_id,)`` where ``device_id`` is
-    either an integer or a string with the Bluetooth address of the
-    interface. (This depends on your OS; NetBSD and DragonFlyBSD expect
-    a Bluetooth address while everything else expects an integer.)
+  - :const:`BTPROTO_HCI` accepts a format that depends on your OS.
+
+    - On Linux it accepts a tuple ``(device_id,)`` where ``device_id``
+      is an integer specifying the number of the Bluetooth device.
+    - On FreeBSD, NetBSD and DragonFly BSD it accepts ``bdaddr`` where ``bdaddr``
+      is a :class:`bytes` object containing the Bluetooth address in a
+      string format. (ex. ``b'12:23:34:45:56:67'``)
 
     .. versionchanged:: 3.2
        NetBSD and DragonFlyBSD support added.
+
+    .. versionchanged:: 3.13.3
+       FreeBSD support added.
 
   - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is a
     :class:`bytes` object containing the Bluetooth address in a
@@ -662,16 +668,15 @@ Constants
    These constants describe the Bluetooth address type when binding or
    connecting a :const:`BTPROTO_L2CAP` socket.
 
-    .. versionadded:: 3.14
+   .. versionadded:: 3.14
 
 .. data:: HCI_FILTER
           HCI_TIME_STAMP
           HCI_DATA_DIR
 
-   For use with :const:`BTPROTO_HCI`. :const:`HCI_FILTER` is not
-   available for NetBSD or DragonFlyBSD. :const:`HCI_TIME_STAMP` and
-   :const:`HCI_DATA_DIR` are not available for FreeBSD, NetBSD, or
-   DragonFlyBSD.
+   For use with :const:`BTPROTO_HCI`. :const:`!HCI_FILTER` is only
+   available on Linux and FreeBSD. :const:`!HCI_TIME_STAMP` and
+   :const:`!HCI_DATA_DIR` are only available on Linux.
 
 .. data:: AF_QIPCRTR
 
