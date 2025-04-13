@@ -2643,21 +2643,23 @@ class BasicBluetoothTest(unittest.TestCase):
 
     @unittest.skipUnless(HAVE_SOCKET_BLUETOOTH_L2CAP, 'Bluetooth L2CAP sockets required for this test')
     def testBindLeAttL2capSocket(self):
+        BDADDR_LE_PUBLIC = support.get_attribute(socket, 'BDADDR_LE_PUBLIC')
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as f:
             # ATT is the only CID allowed in userspace by the Linux kernel
             CID_ATT = 4
-            f.bind((socket.BDADDR_ANY, 0, CID_ATT, socket.BDADDR_LE_PUBLIC))
+            f.bind((socket.BDADDR_ANY, 0, CID_ATT, BDADDR_LE_PUBLIC))
             addr = f.getsockname()
-            self.assertEqual(addr, (socket.BDADDR_ANY, 0, CID_ATT, socket.BDADDR_LE_PUBLIC))
+            self.assertEqual(addr, (socket.BDADDR_ANY, 0, CID_ATT, BDADDR_LE_PUBLIC))
 
     @unittest.skipUnless(HAVE_SOCKET_BLUETOOTH_L2CAP, 'Bluetooth L2CAP sockets required for this test')
     def testBindLePsmL2capSocket(self):
+        BDADDR_LE_RANDOM = support.get_attribute(socket, 'BDADDR_LE_RANDOM')
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as f:
             # First user PSM in LE L2CAP
             psm = 0x80
-            f.bind((socket.BDADDR_ANY, psm, 0, socket.BDADDR_LE_RANDOM))
+            f.bind((socket.BDADDR_ANY, psm, 0, BDADDR_LE_RANDOM))
             addr = f.getsockname()
-            self.assertEqual(addr, (socket.BDADDR_ANY, psm, 0, socket.BDADDR_LE_RANDOM))
+            self.assertEqual(addr, (socket.BDADDR_ANY, psm, 0, BDADDR_LE_RANDOM))
 
     @unittest.skipUnless(HAVE_SOCKET_BLUETOOTH_L2CAP, 'Bluetooth L2CAP sockets required for this test')
     def testBindBrEdrL2capSocket(self):
@@ -2672,7 +2674,7 @@ class BasicBluetoothTest(unittest.TestCase):
     def testBadL2capAddr(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_L2CAP) as f:
             with self.assertRaises(OSError):
-                f.bind((socket.BDADDR_ANY, 0, 0, socket.BDADDR_BREDR, 0))
+                f.bind((socket.BDADDR_ANY, 0, 0, 0, 0))
             with self.assertRaises(OSError):
                 f.bind((socket.BDADDR_ANY,))
             with self.assertRaises(OSError):
