@@ -11876,12 +11876,15 @@ fi
 
 
 # for faulthandler
-       for ac_header in execinfo.h
+       for ac_header in execinfo.h link.h
 do :
-  ac_fn_c_check_header_compile "$LINENO" "execinfo.h" "ac_cv_header_execinfo_h" "$ac_includes_default"
-if test "x$ac_cv_header_execinfo_h" = xyes
+  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | sed "$as_sed_sh"`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"
 then :
-  printf "%s\n" "#define HAVE_EXECINFO_H 1" >>confdefs.h
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_header" | sed "$as_sed_cpp"` 1
+_ACEOF
  ac_fn_c_check_func "$LINENO" "backtrace" "ac_cv_func_backtrace"
 if test "x$ac_cv_func_backtrace" = xyes
 then :

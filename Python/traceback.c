@@ -18,11 +18,12 @@
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // lseek()
 #endif
-#ifdef HAVE_EXECINFO_H
+#if defined(HAVE_EXECINFO_H) && defined(HAVE_DLFCN_H) && defined(HAVE_LINK_H)
 #  include <execinfo.h>           // backtrace(), backtrace_symbols()
+#  include <dlfcn.h>              // dladdr1()
+#  include <link.h>               // struct DL_info
+#  define CAN_C_BACKTRACE
 #endif
-#include <dlfcn.h>
-#include <link.h>
 
 #define OFF(x) offsetof(PyTracebackObject, x)
 #define PUTS(fd, str) (void)_Py_write_noraise(fd, str, strlen(str))
@@ -1170,6 +1171,7 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     return NULL;
 }
 
+#ifdef CAN_C_BACKTRACE
 /* Based on glibc's implementation of backtrace_symbols(), but only uses stack memory. */
 void
 _Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
@@ -1253,7 +1255,6 @@ _Py_DumpStack(int fd)
 
 #undef BACKTRACE_SIZE
 }
-/*
 #else
 void
 _Py_DumpStack(int fd)
@@ -1262,4 +1263,3 @@ _Py_DumpStack(int fd)
     PUTS(fd, "  <cannot get C stack on this system>\n");
 }
 #endif
-*/
