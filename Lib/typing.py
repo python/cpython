@@ -1784,7 +1784,7 @@ _SPECIAL_NAMES = frozenset({
     '__init__', '__module__', '__new__', '__slots__',
     '__subclasshook__', '__weakref__', '__class_getitem__',
     '__match_args__', '__static_attributes__', '__firstlineno__',
-    '__annotate__',
+    '__annotate__', '__annotate_func__', '__annotations_cache__',
 })
 
 # These special attributes will be not collected as protocol members.
@@ -2875,7 +2875,8 @@ _prohibited = frozenset({'__new__', '__init__', '__slots__', '__getnewargs__',
                          '_fields', '_field_defaults',
                          '_make', '_replace', '_asdict', '_source'})
 
-_special = frozenset({'__module__', '__name__', '__annotations__', '__annotate__'})
+_special = frozenset({'__module__', '__name__', '__annotations__', '__annotate__',
+                      '__annotate_func__', '__annotations_cache__'})
 
 
 class NamedTupleMeta(type):
@@ -2893,8 +2894,7 @@ class NamedTupleMeta(type):
             types = ns["__annotations__"]
             field_names = list(types)
             annotate = _make_eager_annotate(types)
-        elif "__annotate__" in ns:
-            original_annotate = ns["__annotate__"]
+        elif (original_annotate := _lazy_annotationlib.get_annotate_function(ns)) is not None:
             types = _lazy_annotationlib.call_annotate_function(
                 original_annotate, _lazy_annotationlib.Format.FORWARDREF)
             field_names = list(types)
@@ -3080,8 +3080,7 @@ class _TypedDictMeta(type):
         if "__annotations__" in ns:
             own_annotate = None
             own_annotations = ns["__annotations__"]
-        elif "__annotate__" in ns:
-            own_annotate = ns["__annotate__"]
+        elif (own_annotate := _lazy_annotationlib.get_annotate_function(ns)) is not None:
             own_annotations = _lazy_annotationlib.call_annotate_function(
                 own_annotate, _lazy_annotationlib.Format.FORWARDREF, owner=tp_dict
             )

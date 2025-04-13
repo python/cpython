@@ -1,0 +1,2 @@
+:meth:`QueueListener.start <logging.handlers.QueueListener.start>` now
+raises a :exc:`RuntimeError` if the listener is already started.
