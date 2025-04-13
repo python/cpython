@@ -5,7 +5,7 @@ preserve
 #if defined(HAVE_SHM_OPEN)
 
 PyDoc_STRVAR(_posixshmem_shm_open__doc__,
-"shm_open($module, path, /, flags, mode=511)\n"
+"shm_open($module, /, path, flags, mode=511)\n"
 "--\n"
 "\n"
 "Open a shared memory object.  Returns a file descriptor (integer).");
@@ -21,7 +21,7 @@ static PyObject *
 _posixshmem_shm_open(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"", "flags", "mode", NULL};
+    static char *_keywords[] = {"path", "flags", "mode", NULL};
     PyObject *path;
     int flags;
     int mode = 511;
@@ -86,4 +86,4 @@ exit:
 #ifndef _POSIXSHMEM_SHM_UNLINK_METHODDEF
     #define _POSIXSHMEM_SHM_UNLINK_METHODDEF
 #endif /* !defined(_POSIXSHMEM_SHM_UNLINK_METHODDEF) */
-/*[clinic end generated code: output=649877fc45a65129 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=74588a5abba6e36c input=a9049054013a1b77]*/

@@ -60,7 +60,7 @@ class InputTranslator(ABC):
 
 
 class KeymapTranslator(InputTranslator):
-    def __init__(self, keymap, verbose=0, invalid_cls=None, character_cls=None):
+    def __init__(self, keymap, verbose=False, invalid_cls=None, character_cls=None):
         self.verbose = verbose
         from .keymap import compile_keymap, parse_keys
 
@@ -110,5 +110,5 @@ class KeymapTranslator(InputTranslator):
         else:
             return None
 
-    def empty(self):
+    def empty(self) -> bool:
         return not self.results

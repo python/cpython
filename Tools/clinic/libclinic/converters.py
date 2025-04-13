@@ -60,6 +60,7 @@ class defining_class_converter(CConverter):
     type = 'PyTypeObject *'
     format_unit = ''
     show_in_signature = False
+    specified_type: str | None = None
 
     def converter_init(self, *, type: str | None = None) -> None:
         self.specified_type = type
@@ -89,10 +90,24 @@ class char_converter(CConverter):
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'c':
             return self.format_code("""
-                if (PyBytes_Check({argname}) && PyBytes_GET_SIZE({argname}) == 1) {{{{
+                if (PyBytes_Check({argname})) {{{{
+                    if (PyBytes_GET_SIZE({argname}) != 1) {{{{
+                        PyErr_Format(PyExc_TypeError,
+                            "{{name}}(): {displayname} must be a byte string of length 1, "
+                            "not a bytes object of length %zd",
+                            PyBytes_GET_SIZE({argname}));
+                        goto exit;
+                    }}}}
                     {paramname} = PyBytes_AS_STRING({argname})[0];
                 }}}}
-                else if (PyByteArray_Check({argname}) && PyByteArray_GET_SIZE({argname}) == 1) {{{{
+                else if (PyByteArray_Check({argname})) {{{{
+                    if (PyByteArray_GET_SIZE({argname}) != 1) {{{{
+                        PyErr_Format(PyExc_TypeError,
+                            "{{name}}(): {displayname} must be a byte string of length 1, "
+                            "not a bytearray object of length %zd",
+                            PyByteArray_GET_SIZE({argname}));
+                        goto exit;
+                    }}}}
                     {paramname} = PyByteArray_AS_STRING({argname})[0];
                 }}}}
                 else {{{{
@@ -101,6 +116,7 @@ class char_converter(CConverter):
                 }}}}
                 """,
                 argname=argname,
+                displayname=displayname,
                 bad_argument=self.bad_argument(displayname, 'a byte string of length 1', limited_capi=limited_capi),
             )
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
@@ -272,12 +288,16 @@ class int_converter(CConverter):
                     goto exit;
                 }}}}
                 if (PyUnicode_GET_LENGTH({argname}) != 1) {{{{
-                    {bad_argument}
+                    PyErr_Format(PyExc_TypeError,
+                        "{{name}}(): {displayname} must be a unicode character, "
+                        "not a string of length %zd",
+                        PyUnicode_GET_LENGTH({argname}));
                     goto exit;
                 }}}}
                 {paramname} = PyUnicode_READ_CHAR({argname}, 0);
                 """,
                 argname=argname,
+                displayname=displayname,
                 bad_argument=self.bad_argument(displayname, 'a unicode character', limited_capi=limited_capi),
             )
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
@@ -1087,15 +1107,24 @@ class Py_buffer_converter(CConverter):
 
 
 def correct_name_for_self(
-        f: Function
+        f: Function,
+        parser: bool = False
 ) -> tuple[str, str]:
     if f.kind in {CALLABLE, METHOD_INIT, GETTER, SETTER}:
         if f.cls:
             return "PyObject *", "self"
         return "PyObject *", "module"
     if f.kind is STATIC_METHOD:
-        return "void *", "null"
-    if f.kind in (CLASS_METHOD, METHOD_NEW):
+        if parser:
+            return "PyObject *", "null"
+        else:
+            return "void *", "null"
+    if f.kind == CLASS_METHOD:
+        if parser:
+            return "PyObject *", "type"
+        else:
+            return "PyTypeObject *", "type"
+    if f.kind == METHOD_NEW:
         return "PyTypeObject *", "type"
     raise AssertionError(f"Unhandled type of function f: {f.kind!r}")
 
@@ -1107,6 +1136,7 @@ class self_converter(CConverter):
     """
     type: str | None = None
     format_unit = ''
+    specified_type: str | None = None
 
     def converter_init(self, *, type: str | None = None) -> None:
         self.specified_type = type
@@ -1163,10 +1193,8 @@ class self_converter(CConverter):
     @property
     def parser_type(self) -> str:
         assert self.type is not None
-        if self.function.kind in {METHOD_INIT, METHOD_NEW, STATIC_METHOD, CLASS_METHOD}:
-            tp, _ = correct_name_for_self(self.function)
-            return tp
-        return self.type
+        tp, _ = correct_name_for_self(self.function, parser=True)
+        return tp
 
     def render(self, parameter: Parameter, data: CRenderData) -> None:
         """
@@ -1209,3 +1237,106 @@ class self_converter(CConverter):
             type_object = cls.type_object
             type_ptr = f'PyTypeObject *base_tp = {type_object};'
             template_dict['base_type_ptr'] = type_ptr
+
+    def use_pyobject_self(self, func: Function) -> bool:
+        conv_type = self.type
+        if conv_type is None:
+            conv_type, _ = correct_name_for_self(func)
+        return (conv_type in ('PyObject *', None)
+                and self.specified_type in ('PyObject *', None))
+
+
+# Converters for var-positional parameter.
+
+class VarPosCConverter(CConverter):
+    format_unit = ''
+
+    def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
+        raise AssertionError('should never be called')
+
+    def parse_vararg(self, *, pos_only: int, min_pos: int, max_pos: int,
+                     fastcall: bool, limited_capi: bool) -> str:
+        raise NotImplementedError
+
+
+class varpos_tuple_converter(VarPosCConverter):
+    type = 'PyObject *'
+    format_unit = ''
+    c_default = 'NULL'
+
+    def cleanup(self) -> str:
+        return f"""Py_XDECREF({self.parser_name});\n"""
+
+    def parse_vararg(self, *, pos_only: int, min_pos: int, max_pos: int,
+                     fastcall: bool, limited_capi: bool) -> str:
+        paramname = self.parser_name
+        if fastcall:
+            if limited_capi:
+                if min(pos_only, min_pos) < max_pos:
+                    size = f'Py_MAX(nargs - {max_pos}, 0)'
+                else:
+                    size = f'nargs - {max_pos}' if max_pos else 'nargs'
+                return f"""
+                    {paramname} = PyTuple_New({size});
+                    if (!{paramname}) {{{{
+                        goto exit;
+                    }}}}
+                    for (Py_ssize_t i = {max_pos}; i < nargs; ++i) {{{{
+                        PyTuple_SET_ITEM({paramname}, i - {max_pos}, Py_NewRef(args[i]));
+                    }}}}
+                    """
+            else:
+                self.add_include('pycore_tuple.h', '_PyTuple_FromArray()')
+                start = f'args + {max_pos}' if max_pos else 'args'
+                size = f'nargs - {max_pos}' if max_pos else 'nargs'
+                if min(pos_only, min_pos) < max_pos:
+                    return f"""
+                        {paramname} = nargs > {max_pos}
+                            ? _PyTuple_FromArray({start}, {size})
+                            : PyTuple_New(0);
+                        if ({paramname} == NULL) {{{{
+                            goto exit;
+                        }}}}
+                        """
+                else:
+                    return f"""
+                        {paramname} = _PyTuple_FromArray({start}, {size});
+                        if ({paramname} == NULL) {{{{
+                            goto exit;
+                        }}}}
+                        """
+        else:
+            if max_pos:
+                return f"""
+                    {paramname} = PyTuple_GetSlice(args, {max_pos}, PY_SSIZE_T_MAX);
+                    if (!{paramname}) {{{{
+                        goto exit;
+                    }}}}
+                    """
+            else:
+                return f"{paramname} = Py_NewRef(args);\n"
+
+
+class varpos_array_converter(VarPosCConverter):
+    type = 'PyObject * const *'
+    length = True
+    c_ignored_default = ''
+
+    def parse_vararg(self, *, pos_only: int, min_pos: int, max_pos: int,
+                     fastcall: bool, limited_capi: bool) -> str:
+        paramname = self.parser_name
+        if not fastcall:
+            self.add_include('pycore_tuple.h', '_PyTuple_ITEMS()')
+        start = 'args' if fastcall else '_PyTuple_ITEMS(args)'
+        size = 'nargs' if fastcall else 'PyTuple_GET_SIZE(args)'
+        if max_pos:
+            if min(pos_only, min_pos) < max_pos:
+                start = f'{size} > {max_pos} ? {start} + {max_pos} : {start}'
+                size = f'Py_MAX(0, {size} - {max_pos})'
+            else:
+                start = f'{start} + {max_pos}'
+                size = f'{size} - {max_pos}'
+        return f"""
+            {paramname} = {start};
+            {self.length_name} = {size};
+            """

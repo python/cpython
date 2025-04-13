@@ -121,17 +121,18 @@ See also :ref:`Reflection <reflection>`.
 .. c:function:: PyObject* PyFrame_GetLocals(PyFrameObject *frame)
 
    Get the *frame*'s :attr:`~frame.f_locals` attribute.
-   If the frame refers to a function or comprehension, this returns
-   a write-through proxy object that allows modifying the locals.
-   In all other cases (classes, modules) it returns the :class:`dict`
-   representing the frame locals directly.
+   If the frame refers to an :term:`optimized scope`, this returns a
+   write-through proxy object that allows modifying the locals.
+   In all other cases (classes, modules, :func:`exec`, :func:`eval`) it returns
+   the mapping representing the frame locals directly (as described for
+   :func:`locals`).
 
    Return a :term:`strong reference`.
 
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.13
-      Return a proxy object for functions and comprehensions.
+      As part of :pep:`667`, return an instance of :c:var:`PyFrameLocalsProxy_Type`.
 
 
 .. c:function:: int PyFrame_GetLineNumber(PyFrameObject *frame)
@@ -139,6 +140,26 @@ See also :ref:`Reflection <reflection>`.
    Return the line number that *frame* is currently executing.
 
 
+Frame Locals Proxies
+^^^^^^^^^^^^^^^^^^^^
+
+.. versionadded:: 3.13
+
+The :attr:`~frame.f_locals` attribute on a :ref:`frame object <frame-objects>`
+is an instance of a "frame-locals proxy". The proxy object exposes a
+write-through view of the underlying locals dictionary for the frame. This
+ensures that the variables exposed by ``f_locals`` are always up to date with
+the live local variables in the frame itself.
+
+See :pep:`667` for more information.
+
+.. c:var:: PyTypeObject PyFrameLocalsProxy_Type
+
+   The type of frame :func:`locals` proxy objects.
+
+.. c:function:: int PyFrameLocalsProxy_Check(PyObject *obj)
+
+   Return non-zero if *obj* is a frame :func:`locals` proxy.
 
 Internal Frames
 ^^^^^^^^^^^^^^^

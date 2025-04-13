@@ -19,7 +19,6 @@ devnull = 'nul'
 
 import os
 import sys
-import stat
 import genericpath
 from genericpath import *
 
@@ -168,19 +167,12 @@ def splitdrive(p):
 
 
 try:
-    from nt import _path_splitroot_ex
+    from nt import _path_splitroot_ex as splitroot
 except ImportError:
     def splitroot(p):
-        """Split a pathname into drive, root and tail. The drive is defined
-        exactly as in splitdrive(). On Windows, the root may be a single path
-        separator or an empty string. The tail contains anything after the root.
-        For example:
+        """Split a pathname into drive, root and tail.
 
-            splitroot('//server/share/') == ('//server/share', '/', '')
-            splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
-            splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
-            splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
-        """
+        The tail contains anything after the root."""
         p = os.fspath(p)
         if isinstance(p, bytes):
             sep = b'\\'
@@ -220,23 +212,6 @@ except ImportError:
         else:
             # Relative path, e.g. Windows
             return empty, empty, p
-else:
-    def splitroot(p):
-        """Split a pathname into drive, root and tail. The drive is defined
-        exactly as in splitdrive(). On Windows, the root may be a single path
-        separator or an empty string. The tail contains anything after the root.
-        For example:
-
-            splitroot('//server/share/') == ('//server/share', '/', '')
-            splitroot('C:/Users/Barney') == ('C:', '/', 'Users/Barney')
-            splitroot('C:///spam///ham') == ('C:', '/', '//spam///ham')
-            splitroot('Windows/notepad') == ('', '', 'Windows/notepad')
-        """
-        p = os.fspath(p)
-        if isinstance(p, bytes):
-            drive, root, tail = _path_splitroot_ex(os.fsdecode(p))
-            return os.fsencode(drive), os.fsencode(root), os.fsencode(tail)
-        return _path_splitroot_ex(p)
 
 
 # Split a path in head (everything up to the last '/') and tail (the
@@ -286,21 +261,6 @@ def basename(p):
 def dirname(p):
     """Returns the directory component of a pathname"""
     return split(p)[0]
-
-
-# Is a path a junction?
-
-if hasattr(os.stat_result, 'st_reparse_tag'):
-    def isjunction(path):
-        """Test whether a path is a junction"""
-        try:
-            st = os.lstat(path)
-        except (OSError, ValueError, AttributeError):
-            return False
-        return st.st_reparse_tag == stat.IO_REPARSE_TAG_MOUNT_POINT
-else:
-    # Use genericpath.isjunction as imported above
-    pass
 
 
 # Is a path a mount point?
@@ -553,7 +513,7 @@ def expandvars(path):
 # Previously, this function also truncated pathnames to 8+3 format,
 # but as this module is called "ntpath", that's obviously wrong!
 try:
-    from nt import _path_normpath
+    from nt import _path_normpath as normpath
 
 except ImportError:
     def normpath(path):
@@ -592,37 +552,22 @@ except ImportError:
             comps.append(curdir)
         return prefix + sep.join(comps)
 
-else:
-    def normpath(path):
-        """Normalize path, eliminating double slashes, etc."""
-        path = os.fspath(path)
-        if isinstance(path, bytes):
-            return os.fsencode(_path_normpath(os.fsdecode(path))) or b"."
-        return _path_normpath(path) or "."
-
-
-def _abspath_fallback(path):
-    """Return the absolute version of a path as a fallback function in case
-    `nt._getfullpathname` is not available or raises OSError. See bpo-31047 for
-    more.
-
-    """
-
-    path = os.fspath(path)
-    if not isabs(path):
-        if isinstance(path, bytes):
-            cwd = os.getcwdb()
-        else:
-            cwd = os.getcwd()
-        path = join(cwd, path)
-    return normpath(path)
 
 # Return an absolute path.
 try:
     from nt import _getfullpathname
 
 except ImportError: # not running on Windows - mock up something sensible
-    abspath = _abspath_fallback
+    def abspath(path):
+        """Return the absolute version of a path."""
+        path = os.fspath(path)
+        if not isabs(path):
+            if isinstance(path, bytes):
+                cwd = os.getcwdb()
+            else:
+                cwd = os.getcwd()
+            path = join(cwd, path)
+        return normpath(path)
 
 else:  # use native Windows method on Windows
     def abspath(path):
@@ -630,7 +575,27 @@ else:  # use native Windows method on Windows
         try:
             return _getfullpathname(normpath(path))
         except (OSError, ValueError):
-            return _abspath_fallback(path)
+            # See gh-75230, handle outside for cleaner traceback
+            pass
+        path = os.fspath(path)
+        if not isabs(path):
+            if isinstance(path, bytes):
+                sep = b'\\'
+                getcwd = os.getcwdb
+            else:
+                sep = '\\'
+                getcwd = os.getcwd
+            drive, root, path = splitroot(path)
+            # Either drive or root can be nonempty, but not both.
+            if drive or root:
+                try:
+                    path = join(_getfullpathname(drive + root), path)
+                except (OSError, ValueError):
+                    # Drive "\0:" cannot exist; use the root directory.
+                    path = drive + sep + path
+            else:
+                path = join(getcwd(), path)
+        return normpath(path)
 
 try:
     from nt import _findfirstfile, _getfinalpathname, readlink as _nt_readlink
@@ -911,13 +876,15 @@ def commonpath(paths):
 
 
 try:
-    # The isdir(), isfile(), islink() and exists() implementations in
-    # genericpath use os.stat(). This is overkill on Windows. Use simpler
+    # The isdir(), isfile(), islink(), exists() and lexists() implementations
+    # in genericpath use os.stat(). This is overkill on Windows. Use simpler
     # builtin functions if they are available.
     from nt import _path_isdir as isdir
     from nt import _path_isfile as isfile
     from nt import _path_islink as islink
+    from nt import _path_isjunction as isjunction
     from nt import _path_exists as exists
+    from nt import _path_lexists as lexists
 except ImportError:
     # Use genericpath.* as imported above
     pass

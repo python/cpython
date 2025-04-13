@@ -12,6 +12,8 @@ typedef struct {
     PyObject *ns_dict;
 } _PyNamespaceObject;
 
+#define _PyNamespace_CAST(op) _Py_CAST(_PyNamespaceObject*, (op))
+
 
 static PyMemberDef namespace_members[] = {
     {"__dict__", _Py_T_OBJECT, offsetof(_PyNamespaceObject, ns_dict), Py_READONLY},
@@ -41,8 +43,9 @@ namespace_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
 
 static int
-namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
+namespace_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
+    _PyNamespaceObject *ns = _PyNamespace_CAST(op);
     PyObject *arg = NULL;
     if (!PyArg_UnpackTuple(args, _PyType_Name(Py_TYPE(ns)), 0, 1, &arg)) {
         return -1;
@@ -76,8 +79,9 @@ namespace_init(_PyNamespaceObject *ns, PyObject *args, PyObject *kwds)
 
 
 static void
-namespace_dealloc(_PyNamespaceObject *ns)
+namespace_dealloc(PyObject *op)
 {
+    _PyNamespaceObject *ns = _PyNamespace_CAST(op);
     PyObject_GC_UnTrack(ns);
     Py_CLEAR(ns->ns_dict);
     Py_TYPE(ns)->tp_free((PyObject *)ns);
@@ -141,6 +145,10 @@ namespace_repr(PyObject *ns)
             goto error;
     }
 
+    if (PyErr_Occurred()) {
+        goto error;
+    }
+
     separator = PyUnicode_FromString(", ");
     if (separator == NULL)
         goto error;
@@ -165,16 +173,18 @@ error:
 
 
 static int
-namespace_traverse(_PyNamespaceObject *ns, visitproc visit, void *arg)
+namespace_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    _PyNamespaceObject *ns = _PyNamespace_CAST(op);
     Py_VISIT(ns->ns_dict);
     return 0;
 }
 
 
 static int
-namespace_clear(_PyNamespaceObject *ns)
+namespace_clear(PyObject *op)
 {
+    _PyNamespaceObject *ns = _PyNamespace_CAST(op);
     Py_CLEAR(ns->ns_dict);
     return 0;
 }
@@ -194,8 +204,9 @@ namespace_richcompare(PyObject *self, PyObject *other, int op)
 PyDoc_STRVAR(namespace_reduce__doc__, "Return state information for pickling");
 
 static PyObject *
-namespace_reduce(_PyNamespaceObject *ns, PyObject *Py_UNUSED(ignored))
+namespace_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    _PyNamespaceObject *ns = (_PyNamespaceObject*)op;
     PyObject *result, *args = PyTuple_New(0);
 
     if (!args)
@@ -235,7 +246,7 @@ namespace_replace(PyObject *self, PyObject *args, PyObject *kwargs)
 
 
 static PyMethodDef namespace_methods[] = {
-    {"__reduce__", (PyCFunction)namespace_reduce, METH_NOARGS,
+    {"__reduce__", namespace_reduce, METH_NOARGS,
      namespace_reduce__doc__},
     {"__replace__", _PyCFunction_CAST(namespace_replace), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"
@@ -254,12 +265,12 @@ PyTypeObject _PyNamespace_Type = {
     "types.SimpleNamespace",                    /* tp_name */
     sizeof(_PyNamespaceObject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
-    (destructor)namespace_dealloc,              /* tp_dealloc */
+    namespace_dealloc,                          /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)namespace_repr,                   /* tp_repr */
+    namespace_repr,                             /* tp_repr */
     0,                                          /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
@@ -272,8 +283,8 @@ PyTypeObject _PyNamespace_Type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,                    /* tp_flags */
     namespace_doc,                              /* tp_doc */
-    (traverseproc)namespace_traverse,           /* tp_traverse */
-    (inquiry)namespace_clear,                   /* tp_clear */
+    namespace_traverse,                         /* tp_traverse */
+    namespace_clear,                            /* tp_clear */
     namespace_richcompare,                      /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
@@ -286,9 +297,9 @@ PyTypeObject _PyNamespace_Type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     offsetof(_PyNamespaceObject, ns_dict),      /* tp_dictoffset */
-    (initproc)namespace_init,                   /* tp_init */
+    namespace_init,                             /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
-    (newfunc)namespace_new,                     /* tp_new */
+    namespace_new,                              /* tp_new */
     PyObject_GC_Del,                            /* tp_free */
 };
 

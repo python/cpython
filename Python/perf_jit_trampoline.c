@@ -2,6 +2,7 @@
 #include "pycore_ceval.h"         // _PyPerf_Callbacks
 #include "pycore_frame.h"
 #include "pycore_interp.h"
+#include "pycore_runtime.h"       // _PyRuntime
 
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
@@ -174,8 +175,8 @@ static const uint8_t DwarfDataRel = 0x30;
 typedef struct {
     unsigned char version;
     unsigned char eh_frame_ptr_enc;
-    unsigned char	fde_count_enc;
-    unsigned char	table_enc;
+    unsigned char fde_count_enc;
+    unsigned char table_enc;
     int32_t eh_frame_ptr;
     int32_t eh_fde_count;
     int32_t from;

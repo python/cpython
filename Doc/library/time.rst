@@ -52,9 +52,13 @@ An explanation of some terminology and conventions is in order.
    single: Coordinated Universal Time
    single: Greenwich Mean Time
 
-* UTC is Coordinated Universal Time (formerly known as Greenwich Mean Time, or
-  GMT).  The acronym UTC is not a mistake but a compromise between English and
-  French.
+* UTC is `Coordinated Universal Time`_ and superseded `Greenwich Mean Time`_ or
+  GMT as the basis of international timekeeping. The acronym UTC is not a
+  mistake but conforms to an earlier, language-agnostic naming scheme for time
+  standards such as UT0, UT1, and UT2.
+
+.. _Coordinated Universal Time: https://en.wikipedia.org/wiki/Coordinated_Universal_Time
+.. _Greenwich Mean Time: https://en.wikipedia.org/wiki/Greenwich_Mean_Time
 
 .. index:: single: Daylight Saving Time
 
@@ -69,7 +73,7 @@ An explanation of some terminology and conventions is in order.
   systems, the clock "ticks" only 50 or 100 times a second.
 
 * On the other hand, the precision of :func:`.time` and :func:`sleep` is better
-  than their Unix equivalents: times are expressed as floating point numbers,
+  than their Unix equivalents: times are expressed as floating-point numbers,
   :func:`.time` returns the most accurate time available (using Unix
   :c:func:`!gettimeofday` where available), and :func:`sleep` will accept a time
   with a nonzero fraction (Unix :c:func:`!select` is used to implement this, where
@@ -193,7 +197,7 @@ Functions
    Use :func:`clock_settime_ns` to avoid the precision loss caused by the
    :class:`float` type.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Android, not iOS.
 
    .. versionadded:: 3.3
 
@@ -202,7 +206,7 @@ Functions
 
    Similar to :func:`clock_settime` but set time with nanoseconds.
 
-   .. availability:: Unix.
+   .. availability:: Unix, not Android, not iOS.
 
    .. versionadded:: 3.7
 
@@ -273,7 +277,7 @@ Functions
    This is the inverse function of :func:`localtime`.  Its argument is the
    :class:`struct_time` or full 9-tuple (since the dst flag is needed; use ``-1``
    as the dst flag if it is unknown) which expresses the time in *local* time, not
-   UTC.  It returns a floating point number, for compatibility with :func:`.time`.
+   UTC.  It returns a floating-point number, for compatibility with :func:`.time`.
    If the input value cannot be represented as a valid time, either
    :exc:`OverflowError` or :exc:`ValueError` will be raised (which depends on
    whether the invalid value is caught by Python or the underlying C libraries).
@@ -327,7 +331,7 @@ Functions
 
    .. impl-detail::
 
-      On CPython, use the same clock than :func:`time.monotonic()` and is a
+      On CPython, use the same clock as :func:`time.monotonic` and is a
       monotonic clock, i.e. a clock that cannot go backwards.
 
    Use :func:`perf_counter_ns` to avoid the precision loss caused by the
@@ -339,7 +343,7 @@ Functions
       On Windows, the function is now system-wide.
 
    .. versionchanged:: 3.13
-      Use the same clock than :func:`time.monotonic()`.
+      Use the same clock as :func:`time.monotonic`.
 
 
 .. function:: perf_counter_ns() -> int
@@ -376,7 +380,7 @@ Functions
 .. function:: sleep(secs)
 
    Suspend execution of the calling thread for the given number of seconds.
-   The argument may be a floating point number to indicate a more precise sleep
+   The argument may be a floating-point number to indicate a more precise sleep
    time.
 
    If the sleep is interrupted by a signal and no exception is raised by the
@@ -385,19 +389,28 @@ Functions
    The suspension time may be longer than requested by an arbitrary amount,
    because of the scheduling of other activity in the system.
 
+   .. rubric:: Windows implementation
+
    On Windows, if *secs* is zero, the thread relinquishes the remainder of its
    time slice to any other thread that is ready to run. If there are no other
    threads ready to run, the function returns immediately, and the thread
    continues execution.  On Windows 8.1 and newer the implementation uses
    a `high-resolution timer
-   <https://docs.microsoft.com/en-us/windows-hardware/drivers/kernel/high-resolution-timers>`_
+   <https://learn.microsoft.com/windows-hardware/drivers/kernel/high-resolution-timers>`_
    which provides resolution of 100 nanoseconds. If *secs* is zero, ``Sleep(0)`` is used.
 
-   Unix implementation:
+   .. rubric:: Unix implementation
 
    * Use ``clock_nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``nanosleep()`` if available (resolution: 1 nanosecond);
    * Or use ``select()`` (resolution: 1 microsecond).
+
+   .. note::
+
+      To emulate a "no-op", use :keyword:`pass` instead of ``time.sleep(0)``.
+
+      To voluntarily relinquish the CPU, specify a real-time :ref:`scheduling
+      policy <os-scheduling-policy>` and use :func:`os.sched_yield` instead.
 
    .. audit-event:: time.sleep secs
 
@@ -483,6 +496,9 @@ Functions
    |           |                                                |       |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
+   | ``%u``    | Day of the week (Monday is 1; Sunday is 7)     |       |
+   |           | as a decimal number [1, 7].                    |       |
+   +-----------+------------------------------------------------+-------+
    | ``%w``    | Weekday as a decimal number [0(Sunday),6].     |       |
    |           |                                                |       |
    +-----------+------------------------------------------------+-------+
@@ -514,6 +530,16 @@ Functions
    +-----------+------------------------------------------------+-------+
    | ``%Z``    | Time zone name (no characters if no time zone  |       |
    |           | exists). Deprecated. [1]_                      |       |
+   +-----------+------------------------------------------------+-------+
+   | ``%G``    | ISO 8601 year (similar to ``%Y`` but follows   |       |
+   |           | the rules for the ISO 8601 calendar year).     |       |
+   |           | The year starts with the week that contains    |       |
+   |           | the first Thursday of the calendar year.       |       |
+   +-----------+------------------------------------------------+-------+
+   | ``%V``    | ISO 8601 week number (as a decimal number      |       |
+   |           | [01,53]). The first week of the year is the    |       |
+   |           | one that contains the first Thursday of the    |       |
+   |           | year. Weeks start on Monday.                   |       |
    +-----------+------------------------------------------------+-------+
    | ``%%``    | A literal ``'%'`` character.                   |       |
    +-----------+------------------------------------------------+-------+
@@ -617,7 +643,7 @@ Functions
         - range [1, 12]
 
       * - 2
-        - .. attribute:: tm_day
+        - .. attribute:: tm_mday
         - range [1, 31]
 
       * - 3
@@ -665,13 +691,13 @@ Functions
 
 .. function:: time() -> float
 
-   Return the time in seconds since the epoch_ as a floating point
+   Return the time in seconds since the epoch_ as a floating-point
    number. The handling of `leap seconds`_ is platform dependent.
    On Windows and most Unix systems, the leap seconds are not counted towards
    the time in seconds since the epoch_. This is commonly referred to as `Unix
    time <https://en.wikipedia.org/wiki/Unix_time>`_.
 
-   Note that even though the time is always returned as a floating point
+   Note that even though the time is always returned as a floating-point
    number, not all systems provide time with a better precision than 1 second.
    While this function normally returns non-decreasing values, it can return a
    lower value than a previous call if the system clock has been set back

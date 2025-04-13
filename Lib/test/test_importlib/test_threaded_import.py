@@ -17,7 +17,7 @@ from test import support
 from test.support import verbose
 from test.support.import_helper import forget, mock_register_at_fork
 from test.support.os_helper import (TESTFN, unlink, rmtree)
-from test.support import script_helper, threading_helper, requires_gil_enabled
+from test.support import script_helper, threading_helper
 
 threading_helper.requires_working_threading(module=True)
 
@@ -248,9 +248,6 @@ class ThreadedImportTests(unittest.TestCase):
                           'partial', 'cfimport.py')
         script_helper.assert_python_ok(fn)
 
-    # gh-118727 and gh-118729: pool_in_threads.py may crash in free-threaded
-    # builds, which can hang the Tsan test so temporarily skip it for now.
-    @requires_gil_enabled("gh-118727: test may crash in free-threaded builds")
     def test_multiprocessing_pool_circular_import(self):
         # Regression test for bpo-41567
         fn = os.path.join(os.path.dirname(__file__),

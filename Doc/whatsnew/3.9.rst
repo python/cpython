@@ -352,7 +352,7 @@ that schedules a shutdown for the default executor that waits on the
 :func:`asyncio.run` has been updated to use the new :term:`coroutine`.
 (Contributed by Kyle Stanley in :issue:`34037`.)
 
-Added :class:`asyncio.PidfdChildWatcher`, a Linux-specific child watcher
+Added :class:`!asyncio.PidfdChildWatcher`, a Linux-specific child watcher
 implementation that polls process file descriptors. (:issue:`38692`)
 
 Added a new :term:`coroutine` :func:`asyncio.to_thread`. It is mainly used for
@@ -408,8 +408,8 @@ Added :func:`curses.get_escdelay`, :func:`curses.set_escdelay`,
 
 datetime
 --------
-The :meth:`~datetime.date.isocalendar()` of :class:`datetime.date`
-and :meth:`~datetime.datetime.isocalendar()` of :class:`datetime.datetime`
+The :meth:`~datetime.date.isocalendar` of :class:`datetime.date`
+and :meth:`~datetime.datetime.isocalendar` of :class:`datetime.datetime`
 methods now returns a :func:`~collections.namedtuple` instead of a :class:`tuple`.
 (Contributed by Donghee Na in :issue:`24416`.)
 
@@ -610,7 +610,7 @@ convert a wait status to an exit code.
 pathlib
 -------
 
-Added :meth:`pathlib.Path.readlink()` which acts similarly to
+Added :meth:`pathlib.Path.readlink` which acts similarly to
 :func:`os.readlink`.
 (Contributed by Girts Folkmanis in :issue:`30618`)
 
@@ -637,7 +637,8 @@ pydoc
 -----
 
 The documentation string is now shown not only for class, function,
-method etc, but for any object that has its own ``__doc__`` attribute.
+method etc, but for any object that has its own :attr:`~definition.__doc__`
+attribute.
 (Contributed by Serhiy Storchaka in :issue:`40257`.)
 
 random
@@ -891,7 +892,7 @@ Deprecated
 
 * Deprecated the ``split()`` method of :class:`!_tkinter.TkappType` in
   favour of the ``splitlist()`` method which has more consistent and
-  predicable behavior.
+  predictable behavior.
   (Contributed by Serhiy Storchaka in :issue:`38371`.)
 
 * The explicit passing of coroutine objects to :func:`asyncio.wait` has been
@@ -983,13 +984,13 @@ Removed
   (Contributed by Victor Stinner in :issue:`37312`.)
 
 * ``aifc.openfp()`` alias to ``aifc.open()``, ``sunau.openfp()`` alias to
-  ``sunau.open()``, and ``wave.openfp()`` alias to :func:`wave.open()` have been
+  ``sunau.open()``, and ``wave.openfp()`` alias to :func:`wave.open` have been
   removed. They were deprecated since Python 3.7.
   (Contributed by Victor Stinner in :issue:`37320`.)
 
-* The :meth:`!isAlive()` method of :class:`threading.Thread`
+* The :meth:`!isAlive` method of :class:`threading.Thread`
   has been removed. It was deprecated since Python 3.8.
-  Use :meth:`~threading.Thread.is_alive()` instead.
+  Use :meth:`~threading.Thread.is_alive` instead.
   (Contributed by Donghee Na in :issue:`37804`.)
 
 * Methods ``getchildren()`` and ``getiterator()`` of classes
@@ -1160,7 +1161,8 @@ Changes in the C API
     .. code-block:: c
 
         int
-        foo_traverse(foo_struct *self, visitproc visit, void *arg) {
+        foo_traverse(PyObject *self, visitproc visit, void *arg)
+        {
         // Rest of the traverse function
         #if PY_VERSION_HEX >= 0x03090000
             // This was not needed before Python 3.9 (Python issue 35810 and 40217)
@@ -1202,7 +1204,7 @@ Changes in the C API
 CPython bytecode changes
 ------------------------
 
-* The :opcode:`LOAD_ASSERTION_ERROR` opcode was added for handling the
+* The :opcode:`!LOAD_ASSERTION_ERROR` opcode was added for handling the
   :keyword:`assert` statement. Previously, the assert statement would not work
   correctly if the :exc:`AssertionError` exception was being shadowed.
   (Contributed by Zackery Spytz in :issue:`34880`.)

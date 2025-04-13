@@ -24,6 +24,7 @@ you're working through IDLE, you can import this test module and call test()
 with the corresponding argument.
 """
 
+import logging
 import math
 import os, sys
 import operator
@@ -44,6 +45,7 @@ from test.support import warnings_helper
 import random
 import inspect
 import threading
+import contextvars
 
 
 if sys.platform == 'darwin':
@@ -752,7 +754,7 @@ class ExplicitConstructionTest:
         for v in [-2**63-1, -2**63, -2**31-1, -2**31, 0,
                    2**31-1, 2**31, 2**63-1, 2**63]:
             d = nc.create_decimal(v)
-            self.assertTrue(isinstance(d, Decimal))
+            self.assertIsInstance(d, Decimal)
             self.assertEqual(int(d), v)
 
         nc.prec = 3
@@ -811,6 +813,29 @@ class ExplicitConstructionTest:
         for i in range(200):
             x = random.expovariate(0.01) * (random.random() * 2.0 - 1.0)
             self.assertEqual(x, float(nc.create_decimal(x))) # roundtrip
+
+    def test_from_number(self, cls=None):
+        Decimal = self.decimal.Decimal
+        if cls is None:
+            cls = Decimal
+
+        def check(arg, expected):
+            d = cls.from_number(arg)
+            self.assertIs(type(d), cls)
+            self.assertEqual(d, expected)
+
+        check(314, Decimal(314))
+        check(3.14, Decimal.from_float(3.14))
+        check(Decimal('3.14'), Decimal('3.14'))
+        self.assertRaises(TypeError, cls.from_number, 3+4j)
+        self.assertRaises(TypeError, cls.from_number, '314')
+        self.assertRaises(TypeError, cls.from_number, (0, (3, 1, 4), 0))
+        self.assertRaises(TypeError, cls.from_number, object())
+
+    def test_from_number_subclass(self, cls=None):
+        class DecimalSubclass(self.decimal.Decimal):
+            pass
+        self.test_from_number(DecimalSubclass)
 
     def test_unicode_digits(self):
         Decimal = self.decimal.Decimal
@@ -1253,7 +1278,7 @@ class FormatTest:
             self.assertRaises(ValueError, format, h, '10Nf')
             self.assertRaises(ValueError, format, h, 'Nx')
 
-    @run_with_locale('LC_ALL', 'ps_AF')
+    @run_with_locale('LC_ALL', 'ps_AF', '')
     def test_wide_char_separator_decimal_point(self):
         # locale with wide char separator and decimal point
         Decimal = self.decimal.Decimal
@@ -1702,8 +1727,13 @@ class ThreadingTest:
         self.finish1 = threading.Event()
         self.finish2 = threading.Event()
 
-        th1 = threading.Thread(target=thfunc1, args=(self,))
-        th2 = threading.Thread(target=thfunc2, args=(self,))
+        # This test wants to start threads with an empty context, no matter
+        # the setting of sys.flags.thread_inherit_context.  We pass the
+        # 'context' argument explicitly with an empty context instance.
+        th1 = threading.Thread(target=thfunc1, args=(self,),
+                               context=contextvars.Context())
+        th2 = threading.Thread(target=thfunc2, args=(self,),
+                               context=contextvars.Context())
 
         th1.start()
         th2.start()
@@ -2071,7 +2101,9 @@ class UsabilityTest:
         #to quantize, which is already extensively tested
         test_triples = [
             ('123.456', -4, '0E+4'),
+            ('-123.456', -4, '-0E+4'),
             ('123.456', -3, '0E+3'),
+            ('-123.456', -3, '-0E+3'),
             ('123.456', -2, '1E+2'),
             ('123.456', -1, '1.2E+2'),
             ('123.456', 0, '123'),
@@ -2565,8 +2597,8 @@ class PythonAPItests:
     def test_abc(self):
         Decimal = self.decimal.Decimal
 
-        self.assertTrue(issubclass(Decimal, numbers.Number))
-        self.assertFalse(issubclass(Decimal, numbers.Real))
+        self.assertIsSubclass(Decimal, numbers.Number)
+        self.assertNotIsSubclass(Decimal, numbers.Real)
         self.assertIsInstance(Decimal(0), numbers.Number)
         self.assertNotIsInstance(Decimal(0), numbers.Real)
 
@@ -2665,7 +2697,7 @@ class PythonAPItests:
             def __init__(self, _):
                 self.x = 'y'
 
-        self.assertTrue(issubclass(MyDecimal, Decimal))
+        self.assertIsSubclass(MyDecimal, Decimal)
 
         r = MyDecimal.from_float(0.1)
         self.assertEqual(type(r), MyDecimal)
@@ -2883,31 +2915,31 @@ class PythonAPItests:
         Rounded = decimal.Rounded
         Clamped = decimal.Clamped
 
-        self.assertTrue(issubclass(DecimalException, ArithmeticError))
+        self.assertIsSubclass(DecimalException, ArithmeticError)
 
-        self.assertTrue(issubclass(InvalidOperation, DecimalException))
-        self.assertTrue(issubclass(FloatOperation, DecimalException))
-        self.assertTrue(issubclass(FloatOperation, TypeError))
-        self.assertTrue(issubclass(DivisionByZero, DecimalException))
-        self.assertTrue(issubclass(DivisionByZero, ZeroDivisionError))
-        self.assertTrue(issubclass(Overflow, Rounded))
-        self.assertTrue(issubclass(Overflow, Inexact))
-        self.assertTrue(issubclass(Overflow, DecimalException))
-        self.assertTrue(issubclass(Underflow, Inexact))
-        self.assertTrue(issubclass(Underflow, Rounded))
-        self.assertTrue(issubclass(Underflow, Subnormal))
-        self.assertTrue(issubclass(Underflow, DecimalException))
+        self.assertIsSubclass(InvalidOperation, DecimalException)
+        self.assertIsSubclass(FloatOperation, DecimalException)
+        self.assertIsSubclass(FloatOperation, TypeError)
+        self.assertIsSubclass(DivisionByZero, DecimalException)
+        self.assertIsSubclass(DivisionByZero, ZeroDivisionError)
+        self.assertIsSubclass(Overflow, Rounded)
+        self.assertIsSubclass(Overflow, Inexact)
+        self.assertIsSubclass(Overflow, DecimalException)
+        self.assertIsSubclass(Underflow, Inexact)
+        self.assertIsSubclass(Underflow, Rounded)
+        self.assertIsSubclass(Underflow, Subnormal)
+        self.assertIsSubclass(Underflow, DecimalException)
 
-        self.assertTrue(issubclass(Subnormal, DecimalException))
-        self.assertTrue(issubclass(Inexact, DecimalException))
-        self.assertTrue(issubclass(Rounded, DecimalException))
-        self.assertTrue(issubclass(Clamped, DecimalException))
+        self.assertIsSubclass(Subnormal, DecimalException)
+        self.assertIsSubclass(Inexact, DecimalException)
+        self.assertIsSubclass(Rounded, DecimalException)
+        self.assertIsSubclass(Clamped, DecimalException)
 
-        self.assertTrue(issubclass(decimal.ConversionSyntax, InvalidOperation))
-        self.assertTrue(issubclass(decimal.DivisionImpossible, InvalidOperation))
-        self.assertTrue(issubclass(decimal.DivisionUndefined, InvalidOperation))
-        self.assertTrue(issubclass(decimal.DivisionUndefined, ZeroDivisionError))
-        self.assertTrue(issubclass(decimal.InvalidContext, InvalidOperation))
+        self.assertIsSubclass(decimal.ConversionSyntax, InvalidOperation)
+        self.assertIsSubclass(decimal.DivisionImpossible, InvalidOperation)
+        self.assertIsSubclass(decimal.DivisionUndefined, InvalidOperation)
+        self.assertIsSubclass(decimal.DivisionUndefined, ZeroDivisionError)
+        self.assertIsSubclass(decimal.InvalidContext, InvalidOperation)
 
 @requires_cdecimal
 class CPythonAPItests(PythonAPItests, unittest.TestCase):
@@ -4379,7 +4411,8 @@ class CheckAttributes(unittest.TestCase):
 
         self.assertEqual(C.__version__, P.__version__)
 
-        self.assertEqual(dir(C), dir(P))
+        self.assertLessEqual(set(dir(C)), set(dir(P)))
+        self.assertEqual([n for n in dir(C) if n[:2] != '__'], sorted(P.__all__))
 
     def test_context_attributes(self):
 
@@ -4455,6 +4488,15 @@ class Coverage:
             self.assertIs(Decimal("NaN").fma(7, 1).is_nan(), True)
             # three arg power
             self.assertEqual(pow(Decimal(10), 2, 7), 2)
+            if self.decimal == C:
+                self.assertEqual(pow(10, Decimal(2), 7), 2)
+                self.assertEqual(pow(10, 2, Decimal(7)), 2)
+            else:
+                # XXX: Three-arg power doesn't use __rpow__.
+                self.assertRaises(TypeError, pow, 10, Decimal(2), 7)
+                # XXX: There is no special method to dispatch on the
+                # third arg of three-arg power.
+                self.assertRaises(TypeError, pow, 10, 2, Decimal(7))
             # exp
             self.assertEqual(Decimal("1.01").exp(), 3)
             # is_normal
@@ -5892,13 +5934,17 @@ def load_tests(loader, tests, pattern):
 
     if TODO_TESTS is None:
         from doctest import DocTestSuite, IGNORE_EXCEPTION_DETAIL
+        orig_context = orig_sys_decimal.getcontext().copy()
         for mod in C, P:
             if not mod:
                 continue
             def setUp(slf, mod=mod):
                 sys.modules['decimal'] = mod
-            def tearDown(slf):
+                init(mod)
+            def tearDown(slf, mod=mod):
                 sys.modules['decimal'] = orig_sys_decimal
+                mod.setcontext(ORIGINAL_CONTEXT[mod].copy())
+                orig_sys_decimal.setcontext(orig_context.copy())
             optionflags = IGNORE_EXCEPTION_DETAIL if mod is C else 0
             sys.modules['decimal'] = mod
             tests.addTest(DocTestSuite(mod, setUp=setUp, tearDown=tearDown,
@@ -5913,11 +5959,12 @@ def setUpModule():
     TEST_ALL = ARITH if ARITH is not None else is_resource_enabled('decimal')
 
 def tearDownModule():
-    if C: C.setcontext(ORIGINAL_CONTEXT[C])
-    P.setcontext(ORIGINAL_CONTEXT[P])
+    if C: C.setcontext(ORIGINAL_CONTEXT[C].copy())
+    P.setcontext(ORIGINAL_CONTEXT[P].copy())
     if not C:
-        warnings.warn('C tests skipped: no module named _decimal.',
-                      UserWarning)
+        logging.getLogger(__name__).warning(
+            'C tests skipped: no module named _decimal.'
+        )
     if not orig_sys_decimal is sys.modules['decimal']:
         raise TestFailed("Internal error: unbalanced number of changes to "
                          "sys.modules['decimal'].")
