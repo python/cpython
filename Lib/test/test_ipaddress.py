@@ -2775,5 +2775,18 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertIn("IPv6 has no broadcast addresses", str(warn.warning))
         self.assertIn("consider using last_address instead", str(warn.warning))
 
+    def test_ipv4_first_address(self):
+        network = ipaddress.IPv4Network('192.0.2.0/24')
+        addr = network.first_address
+        self.assertEqual(addr, ipaddress.IPv4Address("192.0.2.0"))
+        self.assertEqual(int(addr), 3221225984)
+
+    def test_ipv4_last_address(self):
+        network = ipaddress.IPv4Network('192.0.2.0/24')
+        addr = network.last_address
+        self.assertEqual(addr, ipaddress.IPv4Address("192.0.2.255"))
+        self.assertEqual(int(addr), 3221226239)
+
+
 if __name__ == '__main__':
     unittest.main()
