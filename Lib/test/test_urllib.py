@@ -1510,7 +1510,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('///foo/bar'), f'{sep}foo{sep}bar')
         self.assertEqual(fn('////foo/bar'), f'{sep}{sep}foo{sep}bar')
         self.assertEqual(fn('data:blah'), 'data:blah')
-        self.assertEqual(fn('data://blah'), f'data:{sep}{sep}')
+        self.assertEqual(fn('data://blah'), f'data:{sep}{sep}blah')
         self.assertEqual(fn('file:', has_scheme=True), '')
         self.assertEqual(fn('FILE:', has_scheme=True), '')
         self.assertEqual(fn('FiLe:', has_scheme=True), '')
