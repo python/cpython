@@ -1486,8 +1486,10 @@ class _TestLock(BaseTestCase):
     def test_lock(self):
         lock = self.Lock()
         self.assertEqual(lock.acquire(), True)
+        self.assertTrue(lock.locked())
         self.assertEqual(lock.acquire(False), False)
         self.assertEqual(lock.release(), None)
+        self.assertFalse(lock.locked())
         self.assertRaises((ValueError, threading.ThreadError), lock.release)
 
     @staticmethod
@@ -1549,16 +1551,23 @@ class _TestLock(BaseTestCase):
     def test_rlock(self):
         lock = self.RLock()
         self.assertEqual(lock.acquire(), True)
+        self.assertTrue(lock.locked())
         self.assertEqual(lock.acquire(), True)
         self.assertEqual(lock.acquire(), True)
         self.assertEqual(lock.release(), None)
+        self.assertTrue(lock.locked())
         self.assertEqual(lock.release(), None)
         self.assertEqual(lock.release(), None)
+        self.assertFalse(lock.locked())
         self.assertRaises((AssertionError, RuntimeError), lock.release)
 
     def test_lock_context(self):
-        with self.Lock():
-            pass
+        with self.Lock() as locked:
+            self.assertTrue(locked)
+
+    def test_rlock_context(self):
+        with self.RLock() as locked:
+            self.assertTrue(locked)
 
 
 class _TestSemaphore(BaseTestCase):
@@ -1654,12 +1663,10 @@ class _TestCondition(BaseTestCase):
         p = self.Process(target=self.f, args=(cond, sleeping, woken))
         p.daemon = True
         p.start()
-        self.addCleanup(p.join)
 
-        p = threading.Thread(target=self.f, args=(cond, sleeping, woken))
-        p.daemon = True
-        p.start()
-        self.addCleanup(p.join)
+        t = threading.Thread(target=self.f, args=(cond, sleeping, woken))
+        t.daemon = True
+        t.start()
 
         # wait for both children to start sleeping
         sleeping.acquire()
@@ -1686,7 +1693,9 @@ class _TestCondition(BaseTestCase):
 
         # check state is not mucked up
         self.check_invariant(cond)
-        p.join()
+
+        threading_helper.join_thread(t)
+        join_process(p)
 
     def test_notify_all(self):
         cond = self.Condition()
@@ -1694,18 +1703,19 @@ class _TestCondition(BaseTestCase):
         woken = self.Semaphore(0)
 
         # start some threads/processes which will timeout
+        workers = []
         for i in range(3):
             p = self.Process(target=self.f,
                              args=(cond, sleeping, woken, TIMEOUT1))
             p.daemon = True
             p.start()
-            self.addCleanup(p.join)
+            workers.append(p)
 
             t = threading.Thread(target=self.f,
                                  args=(cond, sleeping, woken, TIMEOUT1))
             t.daemon = True
             t.start()
-            self.addCleanup(t.join)
+            workers.append(t)
 
         # wait for them all to sleep
         for i in range(6):
@@ -1724,12 +1734,12 @@ class _TestCondition(BaseTestCase):
             p = self.Process(target=self.f, args=(cond, sleeping, woken))
             p.daemon = True
             p.start()
-            self.addCleanup(p.join)
+            workers.append(p)
 
             t = threading.Thread(target=self.f, args=(cond, sleeping, woken))
             t.daemon = True
             t.start()
-            self.addCleanup(t.join)
+            workers.append(t)
 
         # wait for them to all sleep
         for i in range(6):
@@ -1745,10 +1755,16 @@ class _TestCondition(BaseTestCase):
         cond.release()
 
         # check they have all woken
-        self.assertReachesEventually(lambda: get_value(woken), 6)
+        for i in range(6):
+            woken.acquire()
+        self.assertReturnsIfImplemented(0, get_value, woken)
 
         # check state is not mucked up
         self.check_invariant(cond)
+
+        for w in workers:
+            # NOTE: join_process and join_thread are the same
+            threading_helper.join_thread(w)
 
     def test_notify_n(self):
         cond = self.Condition()
@@ -1756,16 +1772,17 @@ class _TestCondition(BaseTestCase):
         woken = self.Semaphore(0)
 
         # start some threads/processes
+        workers = []
         for i in range(3):
             p = self.Process(target=self.f, args=(cond, sleeping, woken))
             p.daemon = True
             p.start()
-            self.addCleanup(p.join)
+            workers.append(p)
 
             t = threading.Thread(target=self.f, args=(cond, sleeping, woken))
             t.daemon = True
             t.start()
-            self.addCleanup(t.join)
+            workers.append(t)
 
         # wait for them to all sleep
         for i in range(6):
@@ -1799,6 +1816,10 @@ class _TestCondition(BaseTestCase):
 
         # check state is not mucked up
         self.check_invariant(cond)
+
+        for w in workers:
+            # NOTE: join_process and join_thread are the same
+            threading_helper.join_thread(w)
 
     def test_timeout(self):
         cond = self.Condition()
@@ -6242,6 +6263,7 @@ class TestSyncManagerTypes(unittest.TestCase):
     @classmethod
     def _test_lock(cls, obj):
         obj.acquire()
+        obj.locked()
 
     def test_lock(self, lname="Lock"):
         o = getattr(self.manager, lname)()
@@ -6253,8 +6275,9 @@ class TestSyncManagerTypes(unittest.TestCase):
     def _test_rlock(cls, obj):
         obj.acquire()
         obj.release()
+        obj.locked()
 
-    def test_rlock(self, lname="Lock"):
+    def test_rlock(self, lname="RLock"):
         o = getattr(self.manager, lname)()
         self.run_worker(self._test_rlock, o)
 

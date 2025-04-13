@@ -230,7 +230,7 @@ _ssl
     again when building.
 
 _sqlite3
-    Wraps SQLite 3.45.3, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.49.1, which is itself built by sqlite3.vcxproj
     Homepage:
         https://www.sqlite.org/
 _tkinter
@@ -252,6 +252,16 @@ _tkinter
     Win32 and "tcltk64" on x64.  They also copy the Tcl and Tk DLLs
     into the current output directory, which should ensure that Tkinter
     is able to load Tcl/Tk without having to change your PATH.
+zlib-ng
+    Compiles zlib-ng as a static library, which is later included by
+    pythoncore.vcxproj. This was generated using CMake against zlib-ng
+    version 2.2.4, and should be minimally updated as needed to adapt
+    to changes in their source layout. The zbuild.h, zconf.h and
+    zconf-ng.h file in the PC directory were likewise generated and
+    vendored.
+
+    Sources for zlib-ng are imported unmodified into our source
+    repository at https://github.com/python/cpython-source-deps.
 
 
 Getting External Sources
@@ -308,6 +318,27 @@ You can customize the job for profiling with `--pgo-job <job>` option.
 See
     https://docs.microsoft.com/en-us/cpp/build/profile-guided-optimizations
 for more on this topic.
+
+
+Optimization flags
+------------------
+
+You can set optimization flags either via
+
+* environment variables, for example:
+
+    set WITH_COMPUTED_GOTOS=true
+
+* or pass them as parameters to `build.bat`, for example:
+
+    build.bat "/p:WITH_COMPUTED_GOTOS=true"
+
+* or put them in `msbuild.rsp` in the `PCbuild` directory, one flag per line.
+
+Supported flags are:
+
+* WITH_COMPUTED_GOTOS: build the interpreter using "computed gotos".
+  Currently only supported by clang-cl.
 
 
 Static library

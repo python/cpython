@@ -1,2 +1,0 @@
-Make :mod:`datetime` subclass :meth:`~object.__repr__` consistent both
-implementations. Patch by Semyon Moroz.

@@ -218,9 +218,11 @@ _lsprof_Profiler_enable(PyObject *self, PyObject *const *args, Py_ssize_t nargs,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(subcalls), &_Py_ID(builtins), },
     };
     #undef NUM_KEYWORDS
@@ -331,9 +333,11 @@ profiler_init(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(timer), &_Py_ID(timeunit), &_Py_ID(subcalls), &_Py_ID(builtins), },
     };
     #undef NUM_KEYWORDS
@@ -407,4 +411,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d983dbf23fd8ac3b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fe231309776df7a7 input=a9049054013a1b77]*/

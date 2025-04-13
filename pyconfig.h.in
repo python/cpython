@@ -993,6 +993,9 @@
 /* Define to 1 if you have the 'pthread_getname_np' function. */
 #undef HAVE_PTHREAD_GETNAME_NP
 
+/* Define to 1 if you have the 'pthread_get_name_np' function. */
+#undef HAVE_PTHREAD_GET_NAME_NP
+
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
 
@@ -1004,6 +1007,9 @@
 
 /* Define to 1 if you have the 'pthread_setname_np' function. */
 #undef HAVE_PTHREAD_SETNAME_NP
+
+/* Define to 1 if you have the 'pthread_set_name_np' function. */
+#undef HAVE_PTHREAD_SET_NAME_NP
 
 /* Define to 1 if you have the 'pthread_sigmask' function. */
 #undef HAVE_PTHREAD_SIGMASK
@@ -1711,6 +1717,9 @@
 
 /* Define if year with century should be normalized for strftime. */
 #undef Py_NORMALIZE_CENTURY
+
+/* Define if you want to enable remote debugging support. */
+#undef Py_REMOTE_DEBUG
 
 /* Define if rl_startup_hook takes arguments */
 #undef Py_RL_STARTUP_HOOK_TAKES_ARGS

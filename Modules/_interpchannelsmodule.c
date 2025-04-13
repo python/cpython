@@ -11,7 +11,9 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GetIDObject()
 
 #ifdef MS_WINDOWS
-#define WIN32_LEAN_AND_MEAN
+#ifndef WIN32_LEAN_AND_MEAN
+#  define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>        // SwitchToThread()
 #elif defined(HAVE_SCHED_H)
 #include <sched.h>          // sched_yield()
@@ -3593,7 +3595,7 @@ static struct PyModuleDef moduledef = {
     .m_slots = module_slots,
     .m_traverse = module_traverse,
     .m_clear = module_clear,
-    .m_free = (freefunc)module_free,
+    .m_free = module_free,
 };
 
 PyMODINIT_FUNC
