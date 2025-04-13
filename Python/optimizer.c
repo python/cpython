@@ -1429,7 +1429,7 @@ _Py_ExecutorDetach(_PyExecutorObject *executor)
 }
 
 int
-_Py_ExecutorClear(_PyExecutorObject *executor)
+_Py_ExecutorClear(PyObject *op)
 {
     _PyExecutorObject *executor = _PyExecutorObject_CAST(op);
     if (!executor->vm_data.valid) {
@@ -1453,7 +1453,7 @@ _Py_ExecutorClear(_PyExecutorObject *executor)
 }
 
 static int
-executor_clear(_PyExecutorObject *executor)
+executor_clear(PyObject *executor)
 {
     return _Py_ExecutorClear(executor);
 }
