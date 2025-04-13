@@ -1634,7 +1634,7 @@ class DataHandler(BaseHandler):
 
 # Code move from the old urllib module
 
-def url2pathname(url, require_scheme=False):
+def url2pathname(url, *, require_scheme=False):
     """Convert the given file URL to a local file system path.
 
     The 'file:' scheme prefix must be omitted unless *require_scheme*
@@ -1667,7 +1667,7 @@ def url2pathname(url, require_scheme=False):
     return unquote(url, encoding=encoding, errors=errors)
 
 
-def pathname2url(pathname, add_scheme=False):
+def pathname2url(pathname, *, add_scheme=False):
     """Convert the given local file system path to a file URL.
 
     The 'file:' scheme prefix is omitted unless *add_scheme*
