@@ -682,7 +682,7 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       Note: if the child process catches and discards :exc:`KeyboardInterrupt`, the
       process will not be terminated.
 
-      Note: the default behavior will also set :attr:`exitcode` to `1` as if an
+      Note: the default behavior will also set :attr:`exitcode` to ``1`` as if an
       uncaught exception was raised in the child process. To have a different
       :attr:`exitcode` you may simply catch :exc:`KeyboardInterrupt` and call
       ``exit(your_code)``.
