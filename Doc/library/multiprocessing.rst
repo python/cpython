@@ -675,9 +675,11 @@ The :mod:`multiprocessing` package mostly replicates the API of the
       Terminate the process. Works on POSIX using the :py:const:`~signal.SIGINT` signal.
       Behavior on Windows is undefined.
 
-      By default, will terminate the child process by raising :exc:`KeyboardInterrupt`.
+      By default, this terminates the child process by raising :exc:`KeyboardInterrupt`.
       This behavior can be altered by setting the respective signal handler in the child
       process :func:`signal.signal` for :py:const:`~signal.SIGINT`.
+
+      .. versionadded:: next
 
    .. method:: terminate()
 
