@@ -1,4 +1,5 @@
 """Tool for generating Software Bill of Materials (SBOM) for Python's dependencies"""
+
 import glob
 import hashlib
 import json
