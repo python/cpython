@@ -1236,9 +1236,10 @@ _Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
                 sign = '-';
                 offset = info[i].dli_saddr - array[i];
             }
+            const char *symbol_name = info[i].dli_sname != NULL ? info[i].dli_sname : "";
             dprintf(fd, "  Binary file \"%s\", at %s%c%#tx [%p]\n",
                     info[i].dli_fname,
-                    info[i].dli_sname,
+                    symbol_name,
                     sign, offset, array[i]);
         }
     }
