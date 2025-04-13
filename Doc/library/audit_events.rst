@@ -49,4 +49,4 @@ public API of CPython:
 +----------------------------+-------------------------------------------+
 
 .. versionadded:: next
-   The `_posixsubprocess.fork_exec` audit event was added.
+   The ``_posixsubprocess.fork_exec`` internal audit event.
