@@ -59,7 +59,7 @@ def temporary_filename():
 ADDRESS_EXPR = "0x[0-9a-f]+"
 C_STACK_REGEX = [
     r"Current thread's C stack trace \(most recent call first\):",
-    fr"  ((\/.+)+\(.*\+{ADDRESS_EXPR}\) \[{ADDRESS_EXPR}\])|(<.+>)"
+    fr'(  Binary file ".+"(, at .*(\+|-){ADDRESS_EXPR})? \[{ADDRESS_EXPR}\])|(<.+>)'
 ]
 
 class FaultHandlerTests(unittest.TestCase):
