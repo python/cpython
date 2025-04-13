@@ -1,1 +1,0 @@
-Removed an incorrect optimization relating to eager tasks in :class:`asyncio.TaskGroup` that resulted in cancellations being missed.

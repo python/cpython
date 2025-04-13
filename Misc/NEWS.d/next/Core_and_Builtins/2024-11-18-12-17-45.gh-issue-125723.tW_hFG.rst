@@ -1,2 +1,0 @@
-Fix crash with ``gi_frame.f_locals`` when generator frames outlive their
-generator. Patch by Mikhail Efimov.

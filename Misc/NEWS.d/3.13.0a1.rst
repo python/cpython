@@ -5716,7 +5716,7 @@ Tools/wasm/build_wasi.sh as a reference implementation of the docs.
 .. section: Build
 
 Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
-:file:`!configure`.
+:file:`configure`.
 
 ..
 

@@ -2147,7 +2147,7 @@ class MiscTestCase(unittest.TestCase):
         if os_helper.TESTFN_UNENCODABLE:
             tests.append(os_helper.TESTFN_UNENCODABLE)
 
-        if sys.platform.startswith("solaris"):
+        if sys.platform.startswith("sunos"):
             encoding = "utf-8"
         else:
             encoding = sys.getfilesystemencoding()
@@ -2163,7 +2163,7 @@ class MiscTestCase(unittest.TestCase):
                     encoded = encoded.split(b'\0', 1)[0]
                 if truncate is not None:
                     encoded = encoded[:truncate]
-                if sys.platform.startswith("solaris"):
+                if sys.platform.startswith("sunos"):
                     expected = encoded.decode("utf-8", "surrogateescape")
                 else:
                     expected = os.fsdecode(encoded)
