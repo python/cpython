@@ -683,7 +683,9 @@ static int ConvParam(ctypes_state *st,
         PyCArgObject *carg;
         assert(info->paramfunc);
         /* If it has an stginfo, it is a CDataObject */
+        Py_BEGIN_CRITICAL_SECTION(obj);
         carg = info->paramfunc(st, (CDataObject *)obj);
+        Py_END_CRITICAL_SECTION();
         if (carg == NULL)
             return -1;
         pa->ffi_type = carg->pffi_type;
