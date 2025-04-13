@@ -25,6 +25,17 @@
 #  define CAN_C_BACKTRACE
 #endif
 
+#if defined(__STDC_NO_VLA__) && (__STDC_NO_VLA__ == 1)
+/* Use alloca() for VLAs. */
+#  define VLA(type, name, size) type *name = alloca(size)
+#elif !defined(__STDC_NO_VLA__) || (__STDC_NO_VLA__ == 0)
+/* Use actual C VLAs.*/
+#  define VLA(type, name, size) type name[size]
+#elif defined(CAN_C_BACKTRACE)
+/* VLAs are not possible. Disable C stack trace functions. */
+#  undef CAN_C_BACKTRACE
+#endif
+
 #define OFF(x) offsetof(PyTracebackObject, x)
 #define PUTS(fd, str) (void)_Py_write_noraise(fd, str, strlen(str))
 
@@ -1176,13 +1187,12 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
 void
 _Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
 {
-    Dl_info info[size] = {};
-    int status[size] = {};
+    VLA(Dl_info, info, size);
+    VLA(int, status, size);
     /* Fill in the information we can get from dladdr() */
     for (Py_ssize_t i = 0; i < size; ++i)
     {
         struct link_map *map;
-        assert(array[i] != NULL);
         status[i] = dladdr1(array[i], &info[i], (void **)&map, RTLD_DL_LINKMAP);
         if (status[i] != 0
             && info[i].dli_fname != NULL
@@ -1240,7 +1250,7 @@ _Py_DumpStack(int fd)
 {
 #define BACKTRACE_SIZE 32
     PUTS(fd, "Current thread's C stack trace (most recent call first):\n");
-    void *callstack[BACKTRACE_SIZE] = {};
+    VLA(void *, callstack, BACKTRACE_SIZE);
     int frames = backtrace(callstack, BACKTRACE_SIZE);
     if (frames == 0) {
         // Some systems won't return anything for the stack trace
