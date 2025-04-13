@@ -647,7 +647,7 @@ def main():
     parser.add_argument(
         "--generate-all", action='store_true',
         help="as --generate, but generate all file(s) using default filenames."
-        " (unlike --all, does not run any extra checks)",
+             " (unlike --all, does not run any extra checks)",
     )
     parser.add_argument(
         "-a", "--all", action='store_true',
