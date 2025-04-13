@@ -75,8 +75,8 @@ class FieldsTestBase(StructCheckMixin):
                                     'ctypes state is not initialized'):
             class Subclass(BrokenStructure): ...
 
-    def test_invalid_byte_size_raises(self):
-        with self.assertRaises(ValueError) as cm:
+    def test_invalid_byte_size_raises_gh132470(self):
+        with self.assertRaisesRegex(ValueError, r"does not match type size"):
             CField(
                 name="a",
                 type=c_byte,
@@ -85,8 +85,6 @@ class FieldsTestBase(StructCheckMixin):
                 index=1,
                 _internal_use=True
             )
-
-            self.assertIn("does not match type size", str(cm.exception))
 
     def test_max_field_size_gh126937(self):
         # Classes for big structs should be created successfully.
