@@ -26,34 +26,6 @@ from test.support.bytecode_helper import instructions_with_positions
 from test.support.os_helper import FakePath
 
 
-class DummyEnter:
-    def __enter__(self, *args, **kwargs):
-        pass
-
-
-class DummyExit:
-    def __exit__(self, *args, **kwargs):
-        pass
-
-
-class SyncDummy(DummyEnter, DummyExit):
-    pass
-
-
-class AsyncDummyEnter:
-    async def __aenter__(self, *args, **kwargs):
-        pass
-
-
-class AsyncDummyExit:
-    async def __aexit__(self, *args, **kwargs):
-        pass
-
-
-class AsyncDummy(AsyncDummyEnter, AsyncDummyExit):
-    pass
-
-
 class TestSpecifics(unittest.TestCase):
 
     def compile_single(self, source):
