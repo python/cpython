@@ -1170,31 +1170,9 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     return NULL;
 }
 
-#define TRACEBACK_ENTRY_MAX_SIZE 128
-
-static void
-format_entry(char *entry_str, const char *the_entry, Py_ssize_t *length_ptr)
-{
-    int length = PyOS_snprintf(entry_str, TRACEBACK_ENTRY_MAX_SIZE, "  %s\n", the_entry);
-    if (length == TRACEBACK_ENTRY_MAX_SIZE) {
-        /* We exceeded the size, make it look prettier */
-        // Add ellipsis to last 3 characters
-        entry_str[TRACEBACK_ENTRY_MAX_SIZE - 5] = '.';
-        entry_str[TRACEBACK_ENTRY_MAX_SIZE - 4] = '.';
-        entry_str[TRACEBACK_ENTRY_MAX_SIZE - 3] = '.';
-        // Ensure trailing newline
-        entry_str[TRACEBACK_ENTRY_MAX_SIZE - 2] = '\n';
-        // Ensure that it's null-terminated
-        entry_str[TRACEBACK_ENTRY_MAX_SIZE - 1] = '\0';
-    }
-
-    *length_ptr = (Py_ssize_t)length;
-}
-
 /* Based on glibc's implementation of backtrace_symbols(), but only uses stack memory. */
 void
-_Py_backtrace_symbols(void *const *array, Py_ssize_t size,
-                      Py_ssize_t line_size, char **result)
+_Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
 {
     Dl_info info[size] = {};
     int status[size] = {};
@@ -1214,14 +1192,12 @@ _Py_backtrace_symbols(void *const *array, Py_ssize_t size,
             info[i].dli_fbase = (void *) map->l_addr;
         }
     }
-    char *last = (char *) (result + size);
     for (Py_ssize_t i = 0; i < size; ++i) {
-	    result[i] = last;
         if (status[i] == 0
             || info[i].dli_fname == NULL
             || info[i].dli_fname[0] == '\0'
         ) {
-            last += 1 + PyOS_snprintf(last, line_size, "[%p]", array[i]);
+            dprintf(fd, "  [%p]\n", array[i]);
             continue;
         }
 
@@ -1233,10 +1209,10 @@ _Py_backtrace_symbols(void *const *array, Py_ssize_t size,
 
         if (info[i].dli_sname == NULL
             && info[i].dli_saddr == 0) {
-            last += 1 + PyOS_snprintf("%s(%s) [%p]",
-                                      info[i].dli_fname ?: "",
-                                      info[i].dli_sname ?: "",
-                                      array[i]);
+            dprintf(fd, "  %s(%s) [%p]\n",
+                    info[i].dli_fname ?: "",
+                    info[i].dli_sname ?: "",
+                    array[i]);
         }
         else {
             char sign;
@@ -1249,10 +1225,10 @@ _Py_backtrace_symbols(void *const *array, Py_ssize_t size,
                 sign = '-';
                 offset = info[i].dli_saddr - array[i];
             }
-            last += 1 + PyOS_snprintf(last, line_size, "%s(%s%c%#tx) [%p]",
-                                      info[i].dli_fname ?: "",
-                                      info[i].dli_sname ?: "",
-                                      sign, offset, array[i]);
+            dprintf(fd, "  %s(%s%c%#tx) [%p]\n",
+                    info[i].dli_fname ?: "",
+                    info[i].dli_sname ?: "",
+                    sign, offset, array[i]);
         }
     }
 }
@@ -1270,21 +1246,12 @@ _Py_DumpStack(int fd)
         return;
     }
 
-    char *strings[BACKTRACE_SIZE];
-    _Py_backtrace_symbols(callstack, frames, TRACEBACK_ENTRY_MAX_SIZE, strings);
-    for (int i = 0; i < frames; ++i) {
-        char entry_str[TRACEBACK_ENTRY_MAX_SIZE];
-        Py_ssize_t length;
-        format_entry(entry_str, strings[i], &length);
-        _Py_write_noraise(fd, entry_str, length);
-    }
-
+    _Py_backtrace_symbols_fd(fd, callstack, frames);
     if (frames == BACKTRACE_SIZE) {
         PUTS(fd, "  <truncated rest of calls>\n");
     }
 
 #undef BACKTRACE_SIZE
-#undef TRACEBACK_ENTRY_MAX_SIZE
 }
 /*
 #else
