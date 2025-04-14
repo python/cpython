@@ -1,0 +1,1 @@
+Fix excessive memory usage when freeing large blocks via QSBR in :term:`free-threaded <free threading>` build.
