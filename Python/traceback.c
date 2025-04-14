@@ -1192,8 +1192,7 @@ _Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
     VLA(Dl_info, info, size);
     VLA(int, status, size);
     /* Fill in the information we can get from dladdr() */
-    for (Py_ssize_t i = 0; i < size; ++i)
-    {
+    for (Py_ssize_t i = 0; i < size; ++i) {
         struct link_map *map;
         status[i] = dladdr1(array[i], &info[i], (void **)&map, RTLD_DL_LINKMAP);
         if (status[i] != 0

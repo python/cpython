@@ -288,8 +288,9 @@ faulthandler_dump_c_stack_py(PyObject *self,
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
         "|O:dump_c_stack", kwlist,
-        &file))
+        &file)) {
         return NULL;
+    }
 
     int fd = faulthandler_get_fileno(&file);
     if (fd < 0) {
