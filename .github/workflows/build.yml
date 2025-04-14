@@ -687,3 +687,4 @@ jobs:
             || ''
           }}
         jobs: ${{ toJSON(needs) }}
+        traceback_timestamps: 'iso'
