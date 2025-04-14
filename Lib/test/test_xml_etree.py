@@ -344,9 +344,9 @@ class ElementTreeTest(unittest.TestCase):
         self.serialize_check(element, '<tag key="value"><subtag /></tag>') # 4
         element.remove(subelement)
         self.serialize_check(element, '<tag key="value" />') # 5
-        with self.assertRaises(ValueError) as cm:
+        with self.assertRaisesRegex(ValueError,
+                                    r'Element\.remove\(.+\): element not found'):
             element.remove(subelement)
-        self.assertEqual(str(cm.exception), 'list.remove(x): x not in list')
         self.serialize_check(element, '<tag key="value" />') # 6
         element[0:0] = [subelement, subelement, subelement]
         self.serialize_check(element[1], '<subtag />')

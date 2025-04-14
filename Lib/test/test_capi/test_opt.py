@@ -1603,6 +1603,59 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_COMPARE_OP_INT", uops)
         self.assertIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
+    def test_to_bool_bool_contains_op_set(self):
+        """
+        Test that _TO_BOOL_BOOL is removed from code like:
+
+        res = foo in some_set
+        if res:
+            ....
+
+        """
+        def testfunc(n):
+            x = 0
+            s = {1, 2, 3}
+            for _ in range(n):
+                a = 2
+                in_set = a in s
+                if in_set:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CONTAINS_OP_SET", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+
+    def test_to_bool_bool_contains_op_dict(self):
+        """
+        Test that _TO_BOOL_BOOL is removed from code like:
+
+        res = foo in some_dict
+        if res:
+            ....
+
+        """
+        def testfunc(n):
+            x = 0
+            s = {1: 1, 2: 2, 3: 3}
+            for _ in range(n):
+                a = 2
+                in_dict = a in s
+                if in_dict:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CONTAINS_OP_DICT", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+
+
     def test_remove_guard_for_known_type_str(self):
         def f(n):
             for i in range(n):
@@ -1619,6 +1672,100 @@ class TestUopsOptimization(unittest.TestCase):
         uops = get_opnames(ex)
         self.assertIn("_TO_BOOL_STR", uops)
         self.assertNotIn("_GUARD_TOS_UNICODE", uops)
+
+    def test_remove_guard_for_known_type_dict(self):
+        def f(n):
+            x = 0
+            for _ in range(n):
+                d = {}
+                d["Spam"] = 1  # Guarded...
+                x += d["Spam"]  # ...unguarded!
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT"), 1)
+        self.assertEqual(uops.count("_STORE_SUBSCR_DICT"), 1)
+        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT"), 1)
+
+    def test_remove_guard_for_known_type_list(self):
+        def f(n):
+            x = 0
+            for _ in range(n):
+                l = [0]
+                l[0] = 1  # Guarded...
+                [a] = l  # ...unguarded!
+                b = l[0]  # ...unguarded!
+                if l:  # ...unguarded!
+                    x += a + b
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 2 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertEqual(uops.count("_GUARD_NOS_LIST"), 1)
+        self.assertEqual(uops.count("_STORE_SUBSCR_LIST_INT"), 1)
+        self.assertEqual(uops.count("_GUARD_TOS_LIST"), 0)
+        self.assertEqual(uops.count("_UNPACK_SEQUENCE_LIST"), 1)
+        self.assertEqual(uops.count("_BINARY_OP_SUBSCR_LIST_INT"), 1)
+        self.assertEqual(uops.count("_TO_BOOL_LIST"), 1)
+
+    def test_remove_guard_for_known_type_set(self):
+        def f(n):
+            x = 0
+            for _ in range(n):
+                x += "Spam" in {"Spam"}  # Unguarded!
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_GUARD_TOS_ANY_SET", uops)
+        self.assertIn("_CONTAINS_OP_SET", uops)
+
+    def test_remove_guard_for_known_type_tuple(self):
+        def f(n):
+            x = 0
+            for _ in range(n):
+                t = (1, 2, (3, (4,)))
+                t_0, t_1, (t_2_0, t_2_1) = t  # Unguarded!
+                t_2_1_0 = t_2_1[0]  # Unguarded!
+                x += t_0 + t_1 + t_2_0 + t_2_1_0
+            return x
+
+        res, ex = self._run_with_optimizer(f, TIER2_THRESHOLD)
+        self.assertEqual(res, 10 * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertNotIn("_GUARD_TOS_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_TUPLE", uops)
+        self.assertIn("_UNPACK_SEQUENCE_TWO_TUPLE", uops)
+        self.assertNotIn("_GUARD_NOS_TUPLE", uops)
+        self.assertIn("_BINARY_OP_SUBSCR_TUPLE_INT", uops)
+
+    def test_binary_subcsr_str_int_narrows_to_str(self):
+        def testfunc(n):
+            x = []
+            s = "foo"
+            for _ in range(n):
+                y = s[0]       # _BINARY_OP_SUBSCR_STR_INT
+                z = "bar" + y  # (_GUARD_TOS_UNICODE) + _BINARY_OP_ADD_UNICODE
+                x.append(z)
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, ["barf"] * TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_BINARY_OP_SUBSCR_STR_INT", uops)
+        # _BINARY_OP_SUBSCR_STR_INT narrows the result to 'str' so
+        # the unicode guard before _BINARY_OP_ADD_UNICODE is removed.
+        self.assertNotIn("_GUARD_TOS_UNICODE", uops)
+        self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
 
 
 def global_identity(x):
