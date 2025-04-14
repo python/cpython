@@ -2,20 +2,20 @@
 #include "Python.h"
 #include "pycore_brc.h"           // struct _brc_thread_state
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
-#include "pycore_context.h"
 #include "pycore_dict.h"          // _PyInlineValuesSize()
+#include "pycore_frame.h"         // FRAME_CLEARED
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
-#include "pycore_initconfig.h"
+#include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
+#include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY()
 #include "pycore_interp.h"        // PyInterpreterState.gc
-#include "pycore_object.h"
+#include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
-#include "pycore_object_stack.h"
-#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tstate.h"        // _PyThreadStateImpl
+#include "pycore_tuple.h"         // _PyTuple_MaybeUntrack()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
+
 #include "pydtrace.h"
-#include "pycore_uniqueid.h"      // _PyObject_MergeThreadLocalRefcounts()
 
 
 // enable the "mark alive" pass of GC
@@ -433,6 +433,12 @@ static void
 gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *state)
 {
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
+        _PyCStackRef *c_ref = ((_PyThreadStateImpl *)p)->c_stack_refs;
+        while (c_ref != NULL) {
+            gc_visit_stackref(c_ref->ref);
+            c_ref = c_ref->next;
+        }
+
         for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
             if (f->owner >= FRAME_OWNED_BY_INTERPRETER) {
                 continue;
@@ -682,6 +688,12 @@ gc_mark_enqueue_no_buffer(PyObject *op, gc_mark_args_t *args)
     return 0;
 }
 
+static inline int
+gc_mark_enqueue_no_buffer_visitproc(PyObject *op, void *args)
+{
+    return gc_mark_enqueue_no_buffer(op, (gc_mark_args_t *)args);
+}
+
 static int
 gc_mark_enqueue_buffer(PyObject *op, gc_mark_args_t *args)
 {
@@ -693,6 +705,12 @@ gc_mark_enqueue_buffer(PyObject *op, gc_mark_args_t *args)
     else {
         return gc_mark_stack_push(&args->stack, op);
     }
+}
+
+static inline int
+gc_mark_enqueue_buffer_visitproc(PyObject *op, void *args)
+{
+    return gc_mark_enqueue_buffer(op, (gc_mark_args_t *)args);
 }
 
 // Called when we find an object that needs to be marked alive (either from a
@@ -980,12 +998,12 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
 }
 
 static int
-visit_clear_unreachable(PyObject *op, _PyObjectStack *stack)
+visit_clear_unreachable(PyObject *op, void *stack)
 {
     if (gc_is_unreachable(op)) {
         _PyObject_ASSERT(op, _PyObject_GC_IS_TRACKED(op));
         gc_clear_unreachable(op);
-        return _PyObjectStack_Push(stack, op);
+        return _PyObjectStack_Push((_PyObjectStack *)stack, op);
     }
     return 0;
 }
@@ -997,7 +1015,7 @@ mark_reachable(PyObject *op)
     _PyObjectStack stack = { NULL };
     do {
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
-        if (traverse(op, (visitproc)&visit_clear_unreachable, &stack) < 0) {
+        if (traverse(op, visit_clear_unreachable, &stack) < 0) {
             _PyObjectStack_Clear(&stack);
             return -1;
         }
@@ -1267,7 +1285,7 @@ gc_propagate_alive_prefetch(gc_mark_args_t *args)
                 return -1;
             }
         }
-        else if (traverse(op, (visitproc)&gc_mark_enqueue_buffer, args) < 0) {
+        else if (traverse(op, gc_mark_enqueue_buffer_visitproc, args) < 0) {
             return -1;
         }
     }
@@ -1288,7 +1306,7 @@ gc_propagate_alive(gc_mark_args_t *args)
             assert(_PyObject_GC_IS_TRACKED(op));
             assert(gc_is_alive(op));
             traverseproc traverse = Py_TYPE(op)->tp_traverse;
-            if (traverse(op, (visitproc)&gc_mark_enqueue_no_buffer, args) < 0) {
+            if (traverse(op, gc_mark_enqueue_no_buffer_visitproc, args) < 0) {
                 return -1;
             }
         }
@@ -1745,9 +1763,7 @@ handle_resurrected_objects(struct collection_state *state)
         op->ob_ref_local -= 1;
 
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
-        (void) traverse(op,
-            (visitproc)visit_decref_unreachable,
-            NULL);
+        (void)traverse(op, visit_decref_unreachable, NULL);
     }
 
     // Find resurrected objects
