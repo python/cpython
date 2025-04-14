@@ -79,7 +79,7 @@ Dumping the C stack
    does not provide a stack trace, then this prints an error in place
    of a dumped C stack.
 
-.. _c-stack-compatibility
+.. _c-stack-compatibility:
 
 C Stack Compatibility
 *********************
