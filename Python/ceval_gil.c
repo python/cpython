@@ -1350,6 +1350,9 @@ _Py_HandlePending(PyThreadState *tstate)
         _Py_unset_eval_breaker_bit(tstate, _PY_EVAL_EXPLICIT_MERGE_BIT);
         _Py_brc_merge_refcounts(tstate);
     }
+
+    /* Keep memory usage down if QSBR freeing large blocks. */
+    _PyMem_ProcessDelayed(tstate);
 #endif
 
     /* GC scheduled to run */
