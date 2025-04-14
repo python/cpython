@@ -205,7 +205,7 @@ match _TIMESTAMP_FORMAT := getattr(sys.flags, "traceback_timestamps", ""):
 
 # The regular expression to match timestamps as formatted in tracebacks.
 # Not compiled to avoid importing the re module by default.
-TIMESTAMP_AFTER_EXC_MSG_RE_GROUP = r"(?P<timestamp> <@[0-9:.Tsnu-]{18,26}>)"
+TIMESTAMP_AFTER_EXC_MSG_RE_GROUP = r"(?P<timestamp> <@[0-9:.Tsnu-]{18,26}Z?>)"
 
 
 def strip_exc_timestamps(output):

@@ -177,7 +177,7 @@ The following exceptions are used mostly as base classes for other exceptions.
          Traceback (most recent call last):
            File "<python-input-0>", line 1, in <module>
              raise RuntimeError("example")
-         RuntimeError: example <@2025-02-08T01:21:28.675309>
+         RuntimeError: example <@2025-02-08T01:21:28.675309Z>
 
       With ``PYTHON_TRACEBACK_TIMESTAMPS=ns`` in the environment ::
 

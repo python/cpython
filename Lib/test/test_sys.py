@@ -863,11 +863,7 @@ class SysModuleTest(unittest.TestCase):
                  "warn_default_encoding", "safe_path", "int_max_str_digits")
         for attr in attrs:
             self.assertTrue(hasattr(sys.flags, attr), attr)
-            match attr:
-                case "dev_mode" | "safe_path":
-                    attr_type = bool
-                case _:
-                    attr_type = int
+            attr_type = bool if attr in ("dev_mode", "safe_path") else int
             self.assertEqual(type(getattr(sys.flags, attr)), attr_type, attr)
         self.assertTrue(repr(sys.flags))
         self.assertEqual(len(sys.flags), len(attrs))
