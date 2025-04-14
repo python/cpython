@@ -31,9 +31,11 @@ sys_addaudithook(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyOb
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(hook), },
     };
     #undef NUM_KEYWORDS
@@ -619,9 +621,11 @@ sys_set_coroutine_origin_tracking_depth(PyObject *module, PyObject *const *args,
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(depth), },
     };
     #undef NUM_KEYWORDS
@@ -921,9 +925,11 @@ sys_set_int_max_str_digits(PyObject *module, PyObject *const *args, Py_ssize_t n
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(maxdigits), },
     };
     #undef NUM_KEYWORDS
@@ -1071,9 +1077,11 @@ sys_getunicodeinternedsize(PyObject *module, PyObject *const *args, Py_ssize_t n
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(_only_immortal), },
     };
     #undef NUM_KEYWORDS
@@ -1511,6 +1519,104 @@ sys_is_stack_trampoline_active(PyObject *module, PyObject *Py_UNUSED(ignored))
     return sys_is_stack_trampoline_active_impl(module);
 }
 
+PyDoc_STRVAR(sys_is_remote_debug_enabled__doc__,
+"is_remote_debug_enabled($module, /)\n"
+"--\n"
+"\n"
+"Return True if remote debugging is enabled, False otherwise.");
+
+#define SYS_IS_REMOTE_DEBUG_ENABLED_METHODDEF    \
+    {"is_remote_debug_enabled", (PyCFunction)sys_is_remote_debug_enabled, METH_NOARGS, sys_is_remote_debug_enabled__doc__},
+
+static PyObject *
+sys_is_remote_debug_enabled_impl(PyObject *module);
+
+static PyObject *
+sys_is_remote_debug_enabled(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return sys_is_remote_debug_enabled_impl(module);
+}
+
+PyDoc_STRVAR(sys_remote_exec__doc__,
+"remote_exec($module, /, pid, script)\n"
+"--\n"
+"\n"
+"Executes a file containing Python code in a given remote Python process.\n"
+"\n"
+"This function returns immediately, and the code will be executed by the\n"
+"target process\'s main thread at the next available opportunity, similarly\n"
+"to how signals are handled. There is no interface to determine when the\n"
+"code has been executed. The caller is responsible for making sure that\n"
+"the file still exists whenever the remote process tries to read it and that\n"
+"it hasn\'t been overwritten.\n"
+"\n"
+"The remote process must be running a CPython interpreter of the same major\n"
+"and minor version as the local process. If either the local or remote\n"
+"interpreter is pre-release (alpha, beta, or release candidate) then the\n"
+"local and remote interpreters must be the same exact version.\n"
+"\n"
+"Args:\n"
+"     pid (int): The process ID of the target Python process.\n"
+"     script (str|bytes): The path to a file containing\n"
+"         the Python code to be executed.");
+
+#define SYS_REMOTE_EXEC_METHODDEF    \
+    {"remote_exec", _PyCFunction_CAST(sys_remote_exec), METH_FASTCALL|METH_KEYWORDS, sys_remote_exec__doc__},
+
+static PyObject *
+sys_remote_exec_impl(PyObject *module, int pid, PyObject *script);
+
+static PyObject *
+sys_remote_exec(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+{
+    PyObject *return_value = NULL;
+    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+
+    #define NUM_KEYWORDS 2
+    static struct {
+        PyGC_Head _this_is_not_used;
+        PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
+        PyObject *ob_item[NUM_KEYWORDS];
+    } _kwtuple = {
+        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
+        .ob_item = { &_Py_ID(pid), &_Py_ID(script), },
+    };
+    #undef NUM_KEYWORDS
+    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
+
+    #else  // !Py_BUILD_CORE
+    #  define KWTUPLE NULL
+    #endif  // !Py_BUILD_CORE
+
+    static const char * const _keywords[] = {"pid", "script", NULL};
+    static _PyArg_Parser _parser = {
+        .keywords = _keywords,
+        .fname = "remote_exec",
+        .kwtuple = KWTUPLE,
+    };
+    #undef KWTUPLE
+    PyObject *argsbuf[2];
+    int pid;
+    PyObject *script;
+
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
+    if (!args) {
+        goto exit;
+    }
+    pid = PyLong_AsInt(args[0]);
+    if (pid == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    script = args[1];
+    return_value = sys_remote_exec_impl(module, pid, script);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(sys__dump_tracelets__doc__,
 "_dump_tracelets($module, /, outpath)\n"
 "--\n"
@@ -1533,9 +1639,11 @@ sys__dump_tracelets(PyObject *module, PyObject *const *args, Py_ssize_t nargs, P
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(outpath), },
     };
     #undef NUM_KEYWORDS
@@ -1595,9 +1703,11 @@ sys__getframemodulename(PyObject *module, PyObject *const *args, Py_ssize_t narg
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(depth), },
     };
     #undef NUM_KEYWORDS
@@ -1754,4 +1864,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=1e5f608092c12636 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1aca52cefbeb800f input=a9049054013a1b77]*/

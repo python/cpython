@@ -272,8 +272,10 @@ typedef struct {
 } HandoffData;
 
 static void
-maybe_handoff_item(HandoffData *data, PyObject **item, int has_more_waiters)
+maybe_handoff_item(void *arg, void *park_arg, int has_more_waiters)
 {
+    HandoffData *data = (HandoffData*)arg;
+    PyObject **item = (PyObject**)park_arg;
     if (item == NULL) {
         // No threads were waiting
         data->handed_off = false;
@@ -313,7 +315,7 @@ _queue_SimpleQueue_put_impl(simplequeueobject *self, PyObject *item,
     if (self->has_threads_waiting) {
         // Try to hand the item off directly if there are threads waiting
         _PyParkingLot_Unpark(&self->has_threads_waiting,
-                             (_Py_unpark_fn_t *)maybe_handoff_item, &data);
+                             maybe_handoff_item, &data);
     }
     if (!data.handed_off) {
         if (RingBuf_Put(&self->buf, item) < 0) {

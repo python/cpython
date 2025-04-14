@@ -8,13 +8,16 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "dynamic_annotations.h" // _Py_ANNOTATE_RWLOCK_CREATE
+#include "dynamic_annotations.h"  // _Py_ANNOTATE_RWLOCK_CREATE
 
+#include "pycore_code.h"          // _PyCode_GetTLBCFast()
 #include "pycore_interp.h"        // PyInterpreterState.eval_frame
 #include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_stats.h"         // EVAL_CALL_STAT_INC()
+#include "pycore_typedefs.h"      // _PyInterpreterFrame
+
 
 /* Forward declarations */
-struct pyruntimestate;
 struct _ceval_runtime_state;
 
 // Export for '_lsprof' shared extension
@@ -109,7 +112,7 @@ extern _PyPerf_Callbacks _Py_perfmap_jit_callbacks;
 #endif
 
 static inline PyObject*
-_PyEval_EvalFrame(PyThreadState *tstate, struct _PyInterpreterFrame *frame, int throwflag)
+_PyEval_EvalFrame(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     EVAL_CALL_STAT_INC(EVAL_CALL_TOTAL);
     if (tstate->interp->eval_frame == NULL) {
@@ -193,7 +196,7 @@ extern void _PyEval_DeactivateOpCache(void);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-#if !_Py__has_builtin(__builtin_frame_address)
+#if !_Py__has_builtin(__builtin_frame_address) && !defined(_MSC_VER)
 static uintptr_t return_pointer_as_int(char* p) {
     return (uintptr_t)p;
 }
@@ -203,6 +206,8 @@ static inline uintptr_t
 _Py_get_machine_stack_pointer(void) {
 #if _Py__has_builtin(__builtin_frame_address)
     return (uintptr_t)__builtin_frame_address(0);
+#elif defined(_MSC_VER)
+    return (uintptr_t)_AddressOfReturnAddress();
 #else
     char here;
     /* Avoid compiler warning about returning stack address */
@@ -256,7 +261,7 @@ static inline int _Py_ReachedRecursionLimit(PyThreadState *tstate)  {
 static inline void _Py_LeaveRecursiveCall(void)  {
 }
 
-extern struct _PyInterpreterFrame* _PyEval_GetFrame(void);
+extern _PyInterpreterFrame* _PyEval_GetFrame(void);
 
 PyAPI_FUNC(PyObject *)_Py_MakeCoro(PyFunctionObject *func);
 
@@ -342,7 +347,20 @@ _Py_eval_breaker_bit_is_set(PyThreadState *tstate, uintptr_t bit)
 void _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 
-PyAPI_FUNC(PyObject *) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
+PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
+
+#ifndef Py_SUPPORTS_REMOTE_DEBUG
+    #if defined(__APPLE__)
+    #include <TargetConditionals.h>
+    #  if !defined(TARGET_OS_OSX)
+// Older macOS SDKs do not define TARGET_OS_OSX
+    #     define TARGET_OS_OSX 1
+    #  endif
+    #endif
+    #if ((defined(__APPLE__) && TARGET_OS_OSX) || defined(MS_WINDOWS) || (defined(__linux__) && HAVE_PROCESS_VM_READV))
+    #    define Py_SUPPORTS_REMOTE_DEBUG 1
+    #endif
+#endif
 
 #ifdef __cplusplus
 }
