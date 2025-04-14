@@ -1,2 +1,0 @@
-Fix a crash when :func:`type` receives a :class:`tuple` subclass as the
-second *bases* argument.
