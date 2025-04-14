@@ -15,7 +15,7 @@ __all__ = [
     "get_annotate_function",
     "get_annotations",
     "annotations_to_string",
-    "value_to_string",
+    "type_repr",
 ]
 
 
@@ -799,7 +799,7 @@ def get_annotations(
     return return_value
 
 
-def value_to_string(value):
+def type_repr(value):
     """Convert a Python value to a format suitable for use with the STRING format.
 
     This is inteded as a helper for tools that support the STRING format but do
@@ -807,21 +807,19 @@ def value_to_string(value):
     repr() for most objects.
 
     """
-    if isinstance(value, type):
+    if isinstance(value, (type, types.FunctionType, types.BuiltinFunctionType)):
         if value.__module__ == "builtins":
             return value.__qualname__
         return f"{value.__module__}.{value.__qualname__}"
     if value is ...:
         return "..."
-    if isinstance(value, (types.FunctionType, types.BuiltinFunctionType)):
-        return value.__name__
     return repr(value)
 
 
 def annotations_to_string(annotations):
     """Convert an annotation dict containing values to approximately the STRING format."""
     return {
-        n: t if isinstance(t, str) else value_to_string(t)
+        n: t if isinstance(t, str) else type_repr(t)
         for n, t in annotations.items()
     }
 
