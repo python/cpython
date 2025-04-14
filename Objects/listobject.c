@@ -12,7 +12,9 @@
 #include "pycore_long.h"          // _PyLong_DigitCount
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
+#include "pycore_stackref.h"      // _Py_TryIncrefCompareStackRef()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_typeobject.h"    // _Py_TYPE_VERSION_LIST
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include <stddef.h>
 
@@ -3871,7 +3873,7 @@ PyTypeObject PyList_Type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    (initproc)list___init__,                    /* tp_init */
+    list___init__,                              /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */

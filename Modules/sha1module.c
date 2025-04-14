@@ -30,15 +30,6 @@ class SHA1Type "SHA1object *" "&PyType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3dc9a20d1becb759]*/
 
-/* Some useful types */
-
-#if SIZEOF_INT == 4
-typedef unsigned int SHA1_INT32;        /* 32-bit integer */
-typedef long long SHA1_INT64;        /* 64-bit integer */
-#else
-/* not defined. compilation will die. */
-#endif
-
 /* The SHA1 block size and message digest sizes, in bytes */
 
 #define SHA1_BLOCKSIZE    64
@@ -98,7 +89,10 @@ static void
 SHA1_dealloc(PyObject *op)
 {
     SHA1object *ptr = _SHA1object_CAST(op);
-    Hacl_Hash_SHA1_free(ptr->hash_state);
+    if (ptr->hash_state != NULL) {
+        Hacl_Hash_SHA1_free(ptr->hash_state);
+        ptr->hash_state = NULL;
+    }
     PyTypeObject *tp = Py_TYPE(ptr);
     PyObject_GC_UnTrack(ptr);
     PyObject_GC_Del(ptr);
@@ -123,12 +117,17 @@ SHA1Type_copy_impl(SHA1object *self, PyTypeObject *cls)
     SHA1State *st = _PyType_GetModuleState(cls);
 
     SHA1object *newobj;
-    if ((newobj = newSHA1object(st)) == NULL)
+    if ((newobj = newSHA1object(st)) == NULL) {
         return NULL;
+    }
 
     ENTER_HASHLIB(self);
     newobj->hash_state = Hacl_Hash_SHA1_copy(self->hash_state);
     LEAVE_HASHLIB(self);
+    if (newobj->hash_state == NULL) {
+        Py_DECREF(newobj);
+        return PyErr_NoMemory();
+    }
     return (PyObject *)newobj;
 }
 
@@ -166,15 +165,23 @@ SHA1Type_hexdigest_impl(SHA1object *self)
     return _Py_strhex((const char *)digest, SHA1_DIGESTSIZE);
 }
 
-static void update(Hacl_Hash_SHA1_state_t *state, uint8_t *buf, Py_ssize_t len) {
+static void
+update(Hacl_Hash_SHA1_state_t *state, uint8_t *buf, Py_ssize_t len)
+{
+    /*
+     * Note: we explicitly ignore the error code on the basis that it would
+     * take more than 1 billion years to overflow the maximum admissible length
+     * for SHA-1 (2^61 - 1).
+     */
 #if PY_SSIZE_T_MAX > UINT32_MAX
-  while (len > UINT32_MAX) {
-    Hacl_Hash_SHA1_update(state, buf, UINT32_MAX);
-    len -= UINT32_MAX;
-    buf += UINT32_MAX;
-  }
+    while (len > UINT32_MAX) {
+        (void)Hacl_Hash_SHA1_update(state, buf, UINT32_MAX);
+        len -= UINT32_MAX;
+        buf += UINT32_MAX;
+    }
 #endif
-  Hacl_Hash_SHA1_update(state, buf, (uint32_t) len);
+    /* cast to uint32_t is now safe */
+    (void)Hacl_Hash_SHA1_update(state, buf, (uint32_t)len);
 }
 
 /*[clinic input]
@@ -279,23 +286,26 @@ _sha1_sha1_impl(PyObject *module, PyObject *string, int usedforsecurity)
     SHA1object *new;
     Py_buffer buf;
 
-    if (string)
+    if (string) {
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
+    }
 
     SHA1State *st = sha1_get_state(module);
     if ((new = newSHA1object(st)) == NULL) {
-        if (string)
+        if (string) {
             PyBuffer_Release(&buf);
+        }
         return NULL;
     }
 
     new->hash_state = Hacl_Hash_SHA1_malloc();
 
-    if (PyErr_Occurred()) {
+    if (new->hash_state == NULL) {
         Py_DECREF(new);
-        if (string)
+        if (string) {
             PyBuffer_Release(&buf);
-        return NULL;
+        }
+        return PyErr_NoMemory();
     }
     if (string) {
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
@@ -304,7 +314,8 @@ _sha1_sha1_impl(PyObject *module, PyObject *string, int usedforsecurity)
             Py_BEGIN_ALLOW_THREADS
             update(new->hash_state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS
-        } else {
+        }
+        else {
             update(new->hash_state, buf.buf, buf.len);
         }
         PyBuffer_Release(&buf);

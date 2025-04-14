@@ -23,6 +23,7 @@ class AuditTest(unittest.TestCase):
         with subprocess.Popen(
             [sys.executable, "-X utf8", AUDIT_TESTS_PY, *args],
             encoding="utf-8",
+            errors="backslashreplace",
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
         ) as p:
@@ -78,6 +79,14 @@ class AuditTest(unittest.TestCase):
 
     def test_mmap(self):
         self.do_test("test_mmap")
+
+    def test_ctypes_call_function(self):
+        import_helper.import_module("ctypes")
+        self.do_test("test_ctypes_call_function")
+
+    def test_posixsubprocess(self):
+        import_helper.import_module("_posixsubprocess")
+        self.do_test("test_posixsubprocess")
 
     def test_excepthook(self):
         returncode, events, stderr = self.run_python("test_excepthook")

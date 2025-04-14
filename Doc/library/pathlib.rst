@@ -871,6 +871,12 @@ conforming to :rfc:`8089`.
 
    .. versionadded:: 3.13
 
+   .. versionchanged:: next
+      If a URL authority (e.g. a hostname) is present and resolves to a local
+      address, it is discarded. If an authority is present and *doesn't*
+      resolve to a local address, then on Windows a UNC path is returned (as
+      before), and on other platforms a :exc:`ValueError` is raised.
+
 
 .. method:: Path.as_uri()
 
@@ -886,9 +892,11 @@ conforming to :rfc:`8089`.
       >>> p.as_uri()
       'file:///c:/Windows'
 
-   For historical reasons, this method is also available from
-   :class:`PurePath` objects. However, its use of :func:`os.fsencode` makes
-   it strictly impure.
+   .. deprecated-removed:: 3.14 3.19
+
+      Calling this method from :class:`PurePath` rather than :class:`Path` is
+      possible but deprecated. The method's use of :func:`os.fsencode` makes
+      it strictly impure.
 
 
 Expanding and resolving paths
