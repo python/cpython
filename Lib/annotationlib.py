@@ -802,7 +802,7 @@ def get_annotations(
 def type_repr(value):
     """Convert a Python value to a format suitable for use with the STRING format.
 
-    This is inteded as a helper for tools that support the STRING format but do
+    This is intended as a helper for tools that support the STRING format but do
     not have access to the code that originally produced the annotations. It uses
     repr() for most objects.
 
