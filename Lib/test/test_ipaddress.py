@@ -2754,7 +2754,7 @@ class IpaddrUnitTest(unittest.TestCase):
         ipv6_address2 = ipaddress.IPv6Interface("2001:658:22a:cafe:200:0:0:2")
         self.assertNotEqual(ipv6_address1.__hash__(), ipv6_address2.__hash__())
 
-    def test_ipv6_network_address_deprecation(self):
+    def testV6NetworkAddressDeprecation(self):
         network = ipaddress.IPv6Network('2001:658:22a:cafe::/64')
         with self.assertWarns(DeprecationWarning) as warn:
             addr = network.network_address
@@ -2765,7 +2765,7 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertIn("IPv6 has no network addresses", str(warn.warning))
         self.assertIn("consider using first_address or subnet_router_anycast_address instead", str(warn.warning))
 
-    def test_ipv6_broadcast_address_deprecation(self):
+    def testV6NetworkBroadcastAddressDeprecation(self):
         network = ipaddress.IPv6Network('2001:658:22a:cafe::/64')
         with self.assertWarns(DeprecationWarning) as warn:
             addr = network.broadcast_address
@@ -2775,13 +2775,13 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertIn("IPv6 has no broadcast addresses", str(warn.warning))
         self.assertIn("consider using last_address instead", str(warn.warning))
 
-    def test_ipv4_first_address(self):
+    def testV4NetworkFirstAddress(self):
         network = ipaddress.IPv4Network('192.0.2.0/24')
         addr = network.first_address
         self.assertEqual(addr, ipaddress.IPv4Address("192.0.2.0"))
         self.assertEqual(int(addr), 3221225984)
 
-    def test_ipv4_last_address(self):
+    def testV6NetworkLastAddress(self):
         network = ipaddress.IPv4Network('192.0.2.0/24')
         addr = network.last_address
         self.assertEqual(addr, ipaddress.IPv4Address("192.0.2.255"))
