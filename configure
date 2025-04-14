@@ -11876,7 +11876,7 @@ fi
 
 
 # for faulthandler
-       for ac_header in execinfo.h link.h
+       for ac_header in execinfo.h link.h dlfcn.h
 do :
   as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | sed "$as_sed_sh"`
 ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -11895,6 +11895,12 @@ ac_fn_c_check_func "$LINENO" "backtrace_symbols" "ac_cv_func_backtrace_symbols"
 if test "x$ac_cv_func_backtrace_symbols" = xyes
 then :
   printf "%s\n" "#define HAVE_BACKTRACE_SYMBOLS 1" >>confdefs.h
+
+fi
+ac_fn_c_check_func "$LINENO" "dladdr1" "ac_cv_func_dladdr1"
+if test "x$ac_cv_func_dladdr1" = xyes
+then :
+  printf "%s\n" "#define HAVE_DLADDR1 1" >>confdefs.h
 
 fi
 

@@ -22,7 +22,9 @@
 #  include <execinfo.h>           // backtrace(), backtrace_symbols()
 #  include <dlfcn.h>              // dladdr1()
 #  include <link.h>               // struct DL_info
-#  define CAN_C_BACKTRACE
+#  if defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) && defined(HAVE_DLADDR1)
+#    define CAN_C_BACKTRACE
+#  endif
 #endif
 
 #if defined(__STDC_NO_VLA__) && (__STDC_NO_VLA__ == 1)
