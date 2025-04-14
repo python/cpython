@@ -2787,6 +2787,21 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(addr, ipaddress.IPv4Address("192.0.2.255"))
         self.assertEqual(int(addr), 3221226239)
 
+    def testV6NetworkSubnetRouterAnycastAddress(self):
+        network = ipaddress.IPv6Network('2001:658:22a:cafe::/64')
+        addr = network.subnet_router_anycast_address
+        self.assertEqual(addr, ipaddress.IPv6Address("2001:658:22a:cafe::"))
+        self.assertEqual(int(addr), 42540616829182469433403647294022090752)
+
+    def testV6NetworkSubnetRouterAnycastAddressWithPrefix127(self):
+        network = ipaddress.IPv6Network('2001:658:22a:cafe::/127')
+        addr = network.subnet_router_anycast_address
+        self.assertIsNone(addr)
+
+    def testV6NetworkSubnetRouterAnycastAddressWithPrefix128(self):
+        network = ipaddress.IPv6Network('2001:658:22a:cafe::/128')
+        addr = network.subnet_router_anycast_address
+        self.assertIsNone(addr)
 
 if __name__ == '__main__':
     unittest.main()
