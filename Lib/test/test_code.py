@@ -18,6 +18,32 @@ freevars: ()
 nlocals: 2
 flags: 3
 consts: ('<code object g>',)
+variable counts:
+  total:           2
+  locals:
+    total:         2
+    args:
+      total:       1
+      posonly:     0
+      posorkw:     1
+      kwonly:      0
+      varargs:     False
+      varkwargs:   False
+    pure:          1
+    cells:
+      total:       1
+      args:        1
+      others:      0
+    hidden:
+      total:       0
+      pure:        0
+      cells:       0
+  free (nonlocal): 0
+  unbound:
+    total:         0
+    global:        0
+    attrs:         0
+    unknown:       0
 
 >>> dump(f(4).__code__)
 name: g
@@ -31,6 +57,32 @@ freevars: ('x',)
 nlocals: 1
 flags: 19
 consts: ('None',)
+variable counts:
+  total:           2
+  locals:
+    total:         1
+    args:
+      total:       1
+      posonly:     0
+      posorkw:     1
+      kwonly:      0
+      varargs:     False
+      varkwargs:   False
+    pure:          0
+    cells:
+      total:       0
+      args:        0
+      others:      0
+    hidden:
+      total:       0
+      pure:        0
+      cells:       0
+  free (nonlocal): 1
+  unbound:
+    total:         0
+    global:        0
+    attrs:         0
+    unknown:       0
 
 >>> def h(x, y):
 ...     a = x + y
@@ -51,6 +103,32 @@ freevars: ()
 nlocals: 5
 flags: 3
 consts: ('None',)
+variable counts:
+  total:           5
+  locals:
+    total:         5
+    args:
+      total:       2
+      posonly:     0
+      posorkw:     2
+      kwonly:      0
+      varargs:     False
+      varkwargs:   False
+    pure:          3
+    cells:
+      total:       0
+      args:        0
+      others:      0
+    hidden:
+      total:       0
+      pure:        0
+      cells:       0
+  free (nonlocal): 0
+  unbound:
+    total:         0
+    global:        0
+    attrs:         0
+    unknown:       0
 
 >>> def attrs(obj):
 ...     print(obj.attr1)
@@ -69,6 +147,32 @@ freevars: ()
 nlocals: 1
 flags: 3
 consts: ('None',)
+variable counts:
+  total:           5
+  locals:
+    total:         1
+    args:
+      total:       1
+      posonly:     0
+      posorkw:     1
+      kwonly:      0
+      varargs:     False
+      varkwargs:   False
+    pure:          0
+    cells:
+      total:       0
+      args:        0
+      others:      0
+    hidden:
+      total:       0
+      pure:        0
+      cells:       0
+  free (nonlocal): 0
+  unbound:
+    total:         4
+    global:        1
+    attrs:         3
+    unknown:       0
 
 >>> def optimize_away():
 ...     'doc string'
@@ -105,6 +209,32 @@ freevars: ()
 nlocals: 3
 flags: 3
 consts: ('None',)
+variable counts:
+  total:           3
+  locals:
+    total:         3
+    args:
+      total:       3
+      posonly:     0
+      posorkw:     2
+      kwonly:      1
+      varargs:     False
+      varkwargs:   False
+    pure:          0
+    cells:
+      total:       0
+      args:        0
+      others:      0
+    hidden:
+      total:       0
+      pure:        0
+      cells:       0
+  free (nonlocal): 0
+  unbound:
+    total:         0
+    global:        0
+    attrs:         0
+    unknown:       0
 
 >>> def posonly_args(a,b,/,c):
 ...     return a,b,c
@@ -122,6 +252,32 @@ freevars: ()
 nlocals: 3
 flags: 3
 consts: ('None',)
+variable counts:
+  total:           3
+  locals:
+    total:         3
+    args:
+      total:       3
+      posonly:     2
+      posorkw:     1
+      kwonly:      0
+      varargs:     False
+      varkwargs:   False
+    pure:          0
+    cells:
+      total:       0
+      args:        0
+      others:      0
+    hidden:
+      total:       0
+      pure:        0
+      cells:       0
+  free (nonlocal): 0
+  unbound:
+    total:         0
+    global:        0
+    attrs:         0
+    unknown:       0
 
 >>> def has_docstring(x: str):
 ...     'This is a one-line doc string'
@@ -776,6 +932,158 @@ class CodeTest(unittest.TestCase):
                 expected = funcs[func]
                 kinds = _testinternalcapi.get_co_localskinds(func.__code__)
                 self.assertEqual(kinds, expected)
+
+    @unittest.skipIf(_testinternalcapi is None, "missing _testinternalcapi")
+    def test_var_counts(self):
+        self.maxDiff = None
+        def new_var_counts(*,
+                           posonly=0,
+                           posorkw=0,
+                           kwonly=0,
+                           varargs=0,
+                           varkwargs=0,
+                           purelocals=0,
+                           argcells=0,
+                           othercells=0,
+                           freevars=0,
+                           globalvars=0,
+                           attrs=0,
+                           unknown=0,
+                           ):
+            nargvars = posonly + posorkw + kwonly + varargs + varkwargs
+            nlocals = nargvars + purelocals + othercells
+            unbound = globalvars + attrs + unknown
+            return {
+                'total': nlocals + freevars + unbound,
+                'locals': {
+                    'total': nlocals,
+                    'args': {
+                        'total': nargvars,
+                        'numposonly': posonly,
+                        'numposorkw': posorkw,
+                        'numkwonly': kwonly,
+                        'varargs': varargs,
+                        'varkwargs': varkwargs,
+                    },
+                    'numpure': purelocals,
+                    'cells': {
+                        'total': argcells + othercells,
+                        'numargs': argcells,
+                        'numothers': othercells,
+                    },
+                    'hidden': {
+                        'total': 0,
+                        'numpure': 0,
+                        'numcells': 0,
+                    },
+                },
+                'numfree': freevars,
+                'unbound': {
+                    'total': unbound,
+                    'numglobal': globalvars,
+                    'numattrs': attrs,
+                    'numunknown': unknown,
+                },
+            }
+
+        import test._code_definitions as defs
+        funcs = {
+            defs.spam_minimal: new_var_counts(),
+            defs.spam_full: new_var_counts(
+                posonly=2,
+                posorkw=2,
+                kwonly=2,
+                varargs=1,
+                varkwargs=1,
+                purelocals=4,
+                globalvars=3,
+                attrs=1,
+            ),
+            defs.spam: new_var_counts(
+                posorkw=1,
+            ),
+            defs.spam_N: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+            ),
+            defs.spam_C: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+                argcells=1,
+                othercells=1,
+            ),
+            defs.spam_NN: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+            ),
+            defs.spam_NC: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+                argcells=1,
+                othercells=1,
+            ),
+            defs.spam_CN: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+                argcells=1,
+                othercells=1,
+            ),
+            defs.spam_CC: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+                argcells=1,
+                othercells=1,
+            ),
+            defs.eggs_nested: new_var_counts(
+                posorkw=1,
+            ),
+            defs.eggs_closure: new_var_counts(
+                posorkw=1,
+                freevars=2,
+            ),
+            defs.eggs_nested_N: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+            ),
+            defs.eggs_nested_C: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+                argcells=1,
+                freevars=2,
+            ),
+            defs.eggs_closure_N: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+                freevars=2,
+            ),
+            defs.eggs_closure_C: new_var_counts(
+                posorkw=1,
+                purelocals=1,
+                argcells=1,
+                othercells=1,
+                freevars=2,
+            ),
+            defs.ham_nested: new_var_counts(
+                posorkw=1,
+            ),
+            defs.ham_closure: new_var_counts(
+                posorkw=1,
+                freevars=3,
+            ),
+            defs.ham_C_nested: new_var_counts(
+                posorkw=1,
+            ),
+            defs.ham_C_closure: new_var_counts(
+                posorkw=1,
+                freevars=4,
+            ),
+        }
+        assert len(funcs) == len(defs.FUNCTIONS), (len(funcs), len(defs.FUNCTIONS))
+        for func in defs.FUNCTIONS:
+            with self.subTest(func):
+                expected = funcs[func]
+                counts = _testinternalcapi.get_code_var_counts(func.__code__)
+                self.assertEqual(counts, expected)
 
 
 def isinterned(s):
