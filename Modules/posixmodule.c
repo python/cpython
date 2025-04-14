@@ -4341,7 +4341,7 @@ src_dir_fd, dst_dir_fd, and follow_symlinks may not be implemented on your
 static PyObject *
 os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
              int dst_dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=7f00f6007fd5269a input=f6a681a558380a15]*/
+/*[clinic end generated code: output=7f00f6007fd5269a input=1d5e602d115fed7b]*/
 {
 #ifdef MS_WINDOWS
     BOOL result = FALSE;

@@ -1471,7 +1471,7 @@ os_getcwdb(PyObject *module, PyObject *Py_UNUSED(ignored))
 
 PyDoc_STRVAR(os_link__doc__,
 "link($module, /, src, dst, *, src_dir_fd=None, dst_dir_fd=None,\n"
-"     follow_symlinks=True)\n"
+"     follow_symlinks=(os.name != \'nt\'))\n"
 "--\n"
 "\n"
 "Create a hard link to a file.\n"
@@ -13398,4 +13398,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=27f684c2f99c83c6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=12932e9cd3f9afb9 input=a9049054013a1b77]*/
