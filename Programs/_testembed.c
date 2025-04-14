@@ -2348,7 +2348,7 @@ do_gilstate_ensure(void *semaphore_ptr)
     _PySemaphore *semaphore = (_PySemaphore *)semaphore_ptr;
     // Signal to the calling thread that we've started
     _PySemaphore_Wakeup(semaphore);
-    PyGILState_STATE gstate = PyGILState_Ensure(); // This should hang
+    PyGILState_Ensure(); // This should hang
     assert(NULL);
 }
 
