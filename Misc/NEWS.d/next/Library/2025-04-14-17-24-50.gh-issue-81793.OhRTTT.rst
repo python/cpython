@@ -1,0 +1,7 @@
+Fix :func:`os.link` on platforms (like Linux and OpenIndiana) where the
+system :c:finc:`!link` function does not follow symlinks. On Linux and
+OpenIndiana, it now follows symlinks by default and if
+``follow_symlinks=True`` is specified. On Windows, it now raises error if
+``follow_symlinks=True`` is passed. On macOS, it now raises error if
+``follow_symlinks=False`` is passed and the system :c:finc:`!linkat`
+function is not available at runtime.

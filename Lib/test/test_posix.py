@@ -1521,6 +1521,45 @@ class PosixTester(unittest.TestCase):
         self.assertEqual(cm.exception.errno, errno.EINVAL)
         os.close(os.pidfd_open(os.getpid(), 0))
 
+    @unittest.skipUnless(hasattr(os, "link"), "test needs os.link()")
+    def test_link_follow_symlinks(self):
+        orig = os_helper.TESTFN
+        symlink = orig + 'symlink'
+        posix.symlink(orig, symlink)
+        self.addCleanup(os_helper.unlink, symlink)
+
+        link = orig + 'link'
+        posix.link(symlink, link)
+        self.addCleanup(os_helper.unlink, link)
+        default_follow = sys.platform.startswith(('darwin', 'freebsd', 'netbsd', 'openbsd', 'dragonfly'))
+        default_no_follow = sys.platform.startswith(('win32', 'linux', 'sunos5'))
+        if os.link in os.supports_follow_symlinks or default_follow:
+            self.assertEqual(posix.lstat(link), posix.lstat(orig))
+        elif default_no_follow:
+            self.assertEqual(posix.lstat(link), posix.lstat(symlink))
+
+        # follow_symlinks=False -> duplicate the symlink itself
+        link_nofollow = orig + 'link_nofollow'
+        try:
+            posix.link(symlink, link_nofollow, follow_symlinks=False)
+        except NotImplementedError:
+            if os.link in os.supports_follow_symlinks or default_no_follow:
+                raise
+        else:
+            self.addCleanup(os_helper.unlink, link_nofollow)
+            self.assertEqual(posix.lstat(link_nofollow), posix.lstat(symlink))
+
+        # follow_symlinks=True -> duplicate the target file
+        link_following = orig + 'link_following'
+        try:
+            posix.link(symlink, link_following, follow_symlinks=True)
+        except NotImplementedError:
+            if os.link in os.supports_follow_symlinks or default_follow:
+                raise
+        else:
+            self.addCleanup(os_helper.unlink, link_following)
+            self.assertEqual(posix.lstat(link_following), posix.lstat(orig))
+
 
 # tests for the posix *at functions follow
 class TestPosixDirFd(unittest.TestCase):
