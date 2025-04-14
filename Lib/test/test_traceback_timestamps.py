@@ -230,8 +230,8 @@ if __name__ == "__main__":
                 # Verify original strings have timestamps and stripped ones don't
                 self.assertIn("ZeroDivisionError: division by zero <@", output)
                 self.assertNotIn("ZeroDivisionError: division by zero\n", output)
-                self.assertRegex(stripped_output, r"(?m)ZeroDivisionError: division by zero$")
-                self.assertRegex(stripped_output, r"(?m)FakeError: not an exception$")
+                self.assertRegex(stripped_output, "(?m)ZeroDivisionError: division by zero(\r|\n|$)")
+                self.assertRegex(stripped_output, "(?m)FakeError: not an exception(\r|\n|$)")
 
     @force_not_colorized
     def test_strip_exc_timestamps_with_disabled_timestamps(self):
@@ -249,10 +249,10 @@ if __name__ == "__main__":
         stripped_output = result.out.decode() + result.err.decode(errors='ignore')
 
         # All strings should be unchanged by the strip function
-        self.assertRegex(stripped_output, r"(?m)ZeroDivisionError: division by zero$")
+        self.assertRegex(stripped_output, "(?m)ZeroDivisionError: division by zero(\r|\n|$)")
         # it fits the pattern but traceback timestamps were disabled to strip_exc_timestamps does nothing.
         self.assertRegex(
-            stripped_output, r"(?m)FakeError: not an exception <@1234567890.123456>$"
+            stripped_output, "(?m)FakeError: not an exception <@1234567890.123456>(\r|\n|$)"
         )
 
     def test_timestamp_regex_pattern(self):
