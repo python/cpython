@@ -2681,6 +2681,8 @@ class BasicBluetoothTest(unittest.TestCase):
                 f.bind(socket.BDADDR_ANY)
             with self.assertRaises(OSError):
                 f.bind((socket.BDADDR_ANY.encode(), 0x1001))
+            with self.assertRaises(OSError):
+                f.bind(('\ud812', 0x1001))
 
     def testBindRfcommSocket(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as s:
@@ -2713,13 +2715,15 @@ class BasicBluetoothTest(unittest.TestCase):
             with self.assertRaises(OSError):
                 s.bind((socket.BDADDR_ANY + '\0', channel))
             with self.assertRaises(OSError):
+                s.bind('\ud812')
+            with self.assertRaises(OSError):
                 s.bind(('invalid', channel))
 
     @unittest.skipUnless(hasattr(socket, 'BTPROTO_HCI'), 'Bluetooth HCI sockets required for this test')
     def testBindHciSocket(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_RAW, socket.BTPROTO_HCI) as s:
             if sys.platform.startswith(('netbsd', 'dragonfly', 'freebsd')):
-                s.bind(socket.BDADDR_ANY.encode())
+                s.bind(socket.BDADDR_ANY)
                 addr = s.getsockname()
                 self.assertEqual(addr, socket.BDADDR_ANY)
             else:
@@ -2738,14 +2742,17 @@ class BasicBluetoothTest(unittest.TestCase):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_RAW, socket.BTPROTO_HCI) as s:
             if sys.platform.startswith(('netbsd', 'dragonfly', 'freebsd')):
                 with self.assertRaises(OSError):
-                    s.bind(socket.BDADDR_ANY)
+                    s.bind(socket.BDADDR_ANY.encode())
                 with self.assertRaises(OSError):
-                    s.bind((socket.BDADDR_ANY.encode(),))
-                if sys.platform.startswith('freebsd'):
-                    with self.assertRaises(ValueError):
-                        s.bind(socket.BDADDR_ANY.encode() + b'\0')
-                    with self.assertRaises(ValueError):
-                        s.bind(socket.BDADDR_ANY.encode() + b' '*100)
+                    s.bind((socket.BDADDR_ANY,))
+                with self.assertRaises(OSError):
+                    s.bind(socket.BDADDR_ANY + '\0')
+                with self.assertRaises((ValueError, OSError)):
+                    s.bind(socket.BDADDR_ANY + ' '*100)
+                with self.assertRaises(OSError):
+                    s.bind('\ud812')
+                with self.assertRaises(OSError):
+                    s.bind('invalid')
                 with self.assertRaises(OSError):
                     s.bind(b'invalid')
             else:
@@ -2757,10 +2764,17 @@ class BasicBluetoothTest(unittest.TestCase):
                 with self.assertRaises(OSError):
                     s.bind(dev)
                 with self.assertRaises(OSError):
+                    s.bind(socket.BDADDR_ANY)
+                with self.assertRaises(OSError):
                     s.bind(socket.BDADDR_ANY.encode())
 
     @unittest.skipUnless(hasattr(socket, 'BTPROTO_SCO'), 'Bluetooth SCO sockets required for this test')
     def testBindScoSocket(self):
+        with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_SCO) as s:
+            s.bind(socket.BDADDR_ANY)
+            addr = s.getsockname()
+            self.assertEqual(addr, socket.BDADDR_ANY)
+
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_SCO) as s:
             s.bind(socket.BDADDR_ANY.encode())
             addr = s.getsockname()
@@ -2770,9 +2784,17 @@ class BasicBluetoothTest(unittest.TestCase):
     def testBadScoAddr(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_SEQPACKET, socket.BTPROTO_SCO) as s:
             with self.assertRaises(OSError):
-                s.bind(socket.BDADDR_ANY)
+                s.bind((socket.BDADDR_ANY,))
             with self.assertRaises(OSError):
                 s.bind((socket.BDADDR_ANY.encode(),))
+            with self.assertRaises(ValueError):
+                s.bind(socket.BDADDR_ANY + '\0')
+            with self.assertRaises(ValueError):
+                s.bind(socket.BDADDR_ANY.encode() + b'\0')
+            with self.assertRaises(UnicodeEncodeError):
+                s.bind('\ud812')
+            with self.assertRaises(OSError):
+                s.bind('invalid')
             with self.assertRaises(OSError):
                 s.bind(b'invalid')
 
