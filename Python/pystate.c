@@ -71,7 +71,11 @@ to avoid the expense of doing their own locking).
 #ifdef HAVE_THREAD_LOCAL
 /* The attached thread state for the current thread. */
 _Py_thread_local PyThreadState *_Py_tss_tstate = NULL;
-/* The bound gilstate for the current thread. */
+
+/* The bound gilstate for the current thread.
+   Basically, this is used for caching the right interpreter
+   for subsequent PyGILState_Ensure() calls. Despite the name,
+   this doesn't have much to do with the actual GIL. */
 _Py_thread_local PyThreadState *_Py_tss_gilstate = NULL;
 #endif
 
