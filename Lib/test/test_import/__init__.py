@@ -828,7 +828,7 @@ class ImportTests(unittest.TestCase):
             str(cm.exception),
         )
         with self.assertRaises(ImportError) as cm:
-            from sys import this_will_never_exist  # noqa: F811
+            from sys import this_will_never_exist
         self.assertIn(
             "cannot import name 'this_will_never_exist' from 'sys' (unknown location)",
             str(cm.exception),

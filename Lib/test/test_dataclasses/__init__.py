@@ -591,7 +591,7 @@ class TestCase(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, unhashable_re):
             @dataclass
-            class A:  # noqa: F811
+            class A:
                 a: Any = Unhashable()
 
         # Make sure that the machinery looking for hashability is using the
@@ -601,7 +601,7 @@ class TestCase(unittest.TestCase):
             # This shouldn't make the variable hashable.
             unhashable.__hash__ = lambda: 0
             @dataclass
-            class A:  # noqa: F811
+            class A:
                 a: Any = unhashable
 
     def test_hash_field_rules(self):
@@ -755,7 +755,7 @@ class TestCase(unittest.TestCase):
                                             f'mutable default {typ} for field '
                                             'y is not allowed'):
                     @dataclass
-                    class Point:  # noqa: F811
+                    class Point:
                         y: typ = non_empty
 
                 # Check subtypes also fail.
@@ -766,7 +766,7 @@ class TestCase(unittest.TestCase):
                                             " for field z is not allowed"
                                             ):
                     @dataclass
-                    class Point:  # noqa: F811
+                    class Point:
                         z: typ = Subclass()
 
                 # Because this is a ClassVar, it can be mutable.
@@ -776,7 +776,7 @@ class TestCase(unittest.TestCase):
 
                 # Because this is a ClassVar, it can be mutable.
                 @dataclass
-                class C:  # noqa: F811
+                class C:
                     x: ClassVar[typ] = Subclass()
 
     def test_deliberately_mutable_defaults(self):
@@ -2054,7 +2054,7 @@ class TestCase(unittest.TestCase):
         # Make sure an empty dict works.
         d = {}
         @dataclass
-        class C:  # noqa: F811
+        class C:
             i: int = field(metadata=d)
         self.assertFalse(fields(C)[0].metadata)
         self.assertEqual(len(fields(C)[0].metadata), 0)
@@ -2648,7 +2648,7 @@ class TestOrdering(unittest.TestCase):
                                     'Cannot overwrite attribute __le__'
                                     '.*using functools.total_ordering'):
             @dataclass(order=True)
-            class C:  # noqa: F811
+            class C:
                 x: int
                 def __le__(self):
                     pass
@@ -2657,7 +2657,7 @@ class TestOrdering(unittest.TestCase):
                                     'Cannot overwrite attribute __gt__'
                                     '.*using functools.total_ordering'):
             @dataclass(order=True)
-            class C:  # noqa: F811
+            class C:
                 x: int
                 def __gt__(self):
                     pass
@@ -2666,7 +2666,7 @@ class TestOrdering(unittest.TestCase):
                                     'Cannot overwrite attribute __ge__'
                                     '.*using functools.total_ordering'):
             @dataclass(order=True)
-            class C:  # noqa: F811
+            class C:
                 x: int
                 def __ge__(self):
                     pass
@@ -3178,13 +3178,13 @@ class TestFrozen(unittest.TestCase):
         with self.assertRaisesRegex(TypeError,
                                     'Cannot overwrite attribute __delattr__'):
             @dataclass(frozen=True)
-            class C:  # noqa: F811
+            class C:
                 x: int
                 def __delattr__(self):
                     pass
 
         @dataclass(frozen=False)
-        class C:  # noqa: F811
+        class C:
             x: int
             def __setattr__(self, name, value):
                 self.__dict__['x'] = value * 2
@@ -4700,12 +4700,12 @@ class TestKeywordArgs(unittest.TestCase):
 
         with self.assertRaisesRegex(TypeError, msg):
             @dataclass
-            class A:  # noqa: F811
+            class A:
                 a: ClassVar[int] = field(kw_only=False)
 
         with self.assertRaisesRegex(TypeError, msg):
             @dataclass(kw_only=True)
-            class A:  # noqa: F811
+            class A:
                 a: ClassVar[int] = field(kw_only=False)
 
     def test_field_marked_as_kwonly(self):
@@ -4847,7 +4847,7 @@ class TestKeywordArgs(unittest.TestCase):
 
         with self.assertRaisesRegex(TypeError, msg):
             @dataclass
-            class A:  # noqa: F811
+            class A:
                 a: int
                 X: KW_ONLY
                 b: int
@@ -4856,7 +4856,7 @@ class TestKeywordArgs(unittest.TestCase):
 
         with self.assertRaisesRegex(TypeError, msg):
             @dataclass
-            class A:  # noqa: F811
+            class A:
                 a: int
                 X: KW_ONLY
                 b: int
@@ -4865,7 +4865,7 @@ class TestKeywordArgs(unittest.TestCase):
 
         # But this usage is okay, since it's not using KW_ONLY.
         @dataclass
-        class A:  # noqa: F811
+        class A:
             a: int
             _: KW_ONLY
             b: int
@@ -4873,7 +4873,7 @@ class TestKeywordArgs(unittest.TestCase):
 
         # And if inheriting, it's okay.
         @dataclass
-        class A:  # noqa: F811
+        class A:
             a: int
             _: KW_ONLY
             b: int
@@ -4892,7 +4892,7 @@ class TestKeywordArgs(unittest.TestCase):
                 b: int
                 c: int
             @dataclass
-            class B(A):  # noqa: F811
+            class B(A):
                 X: KW_ONLY
                 d: int
                 Y: KW_ONLY

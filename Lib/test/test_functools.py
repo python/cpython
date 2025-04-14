@@ -674,10 +674,10 @@ class TestPartialMethod(unittest.TestCase):
             class B(object):
                 method = functools.partialmethod(None, 1)
         with self.assertRaises(TypeError):
-            class B:  # noqa: F811
+            class B:
                 method = functools.partialmethod()
         with self.assertRaises(TypeError):
-            class B:  # noqa: F811
+            class B:
                 method = functools.partialmethod(func=capture, a=1)
 
     def test_repr(self):

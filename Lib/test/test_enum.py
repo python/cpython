@@ -634,16 +634,16 @@ class _EnumTests:
             class Wrong(self.enum_type):
                 mro = 9
         with self.assertRaises(ValueError):
-            class Wrong(self.enum_type):  # noqa: F811
+            class Wrong(self.enum_type):
                 _create_= 11
         with self.assertRaises(ValueError):
-            class Wrong(self.enum_type):  # noqa: F811
+            class Wrong(self.enum_type):
                 _get_mixins_ = 9
         with self.assertRaises(ValueError):
-            class Wrong(self.enum_type):  # noqa: F811
+            class Wrong(self.enum_type):
                 _find_new_ = 1
         with self.assertRaises(ValueError):
-            class Wrong(self.enum_type):  # noqa: F811
+            class Wrong(self.enum_type):
                 _any_name_ = 9
 
     def test_object_str_override(self):
@@ -1348,7 +1348,7 @@ class TestSpecial(unittest.TestCase):
                 red = 4
         #
         with self.assertRaises(TypeError):
-            class Color(Enum):  # noqa: F811
+            class Color(Enum):
                 red = 1
                 green = 2
                 blue = 3
@@ -1356,7 +1356,7 @@ class TestSpecial(unittest.TestCase):
                     return 'red'
         #
         with self.assertRaises(TypeError):
-            class Color(Enum):  # noqa: F811
+            class Color(Enum):
                 @enum.property
                 def red(self):
                     return 'redder'
@@ -1762,7 +1762,7 @@ class TestSpecial(unittest.TestCase):
             def repr(self):
                 return hex(self)
         with self.assertRaisesRegex(TypeError, 'too many data types'):
-            class Huh(MyStr, MyInt, Enum):  # noqa: F811
+            class Huh(MyStr, MyInt, Enum):
                 One = 1
 
     @reraise_if_not_enum(Stooges)
@@ -2592,7 +2592,7 @@ class TestSpecial(unittest.TestCase):
             green = 2
             blue = 3
         with self.assertRaises(ValueError):
-            class Color(UniqueEnum):  # noqa: F811
+            class Color(UniqueEnum):
                 red = 1
                 green = 2
                 blue = 3
@@ -3015,11 +3015,11 @@ class TestSpecial(unittest.TestCase):
                 one = '1'
                 two = 2
         with self.assertRaisesRegex(TypeError, 'encoding must be a string, not %r' % (sys.getdefaultencoding, )):
-            class ThirdFailedStrEnum(StrEnum):  # noqa: F811
+            class ThirdFailedStrEnum(StrEnum):
                 one = '1'
                 two = b'2', sys.getdefaultencoding
         with self.assertRaisesRegex(TypeError, 'errors must be a string, not 9'):
-            class ThirdFailedStrEnum(StrEnum):  # noqa: F811
+            class ThirdFailedStrEnum(StrEnum):
                 one = '1'
                 two = b'2', 'ascii', 9
 
@@ -3075,12 +3075,12 @@ class TestSpecial(unittest.TestCase):
             two = 2  # this will become '2'
         with self.assertRaisesRegex(TypeError,
                 r"argument (2|'encoding') must be str, not "):
-            class ThirdFailedStrEnum(CustomStrEnum):  # noqa: F811
+            class ThirdFailedStrEnum(CustomStrEnum):
                 one = '1'
                 two = b'2', sys.getdefaultencoding
         with self.assertRaisesRegex(TypeError,
                 r"argument (3|'errors') must be str, not "):
-            class ThirdFailedStrEnum(CustomStrEnum):  # noqa: F811
+            class ThirdFailedStrEnum(CustomStrEnum):
                 one = '1'
                 two = b'2', 'ascii', 9
 
@@ -3382,7 +3382,7 @@ class TestSpecial(unittest.TestCase):
                 def __init__(self, y):
                     self.y = y
         with self.assertRaises(ValueError):
-            class MyEnum(Base, enum.Enum):  # noqa: F811
+            class MyEnum(Base, enum.Enum):
                 A = 'a'
                 def __init__(self, y):
                     self.y = y
