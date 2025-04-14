@@ -727,7 +727,8 @@ class SysModuleTest(unittest.TestCase):
             self.assertIsInstance(sys.abiflags, str)
         else:
             self.assertEqual(os.name, 'nt')
-            # TODO: sys.abiflags will be defined on Windows in Python 3.16.
+            # TODO: Simpify the tests.
+            # sys.abiflags will be defined on Windows in Python 3.16.
             absent = object()
             with self.assertWarnsRegex(
                 DeprecationWarning,

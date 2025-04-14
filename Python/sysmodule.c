@@ -76,7 +76,8 @@ module sys
 
 #ifndef ABIFLAGS
 
-// XXX: remove this and related code after set sys.abiflags on Windows in 3.16.
+// TODO: Remove this and related code in Python 3.16. Set the `ABIFLAGS` macro
+//       and `sys.abiflags` on Windows.
 static inline int
 _warn_incoming_sys_abiflags_change(void)
 {

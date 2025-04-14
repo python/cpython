@@ -48,7 +48,7 @@ class PythonInfo:
 def copy_attributes(info_add, obj, name_fmt, attributes, *, formatter=None):
     for attr in attributes:
         if attr == 'abiflags':
-            # XXX: Remove this special case handling in Python 3.16
+            # TODO: Remove this special case handling in Python 3.16
             with warnings.catch_warnings():
                 # ignore DeprecationWarning on sys.abiflags change on Windows
                 warnings.filterwarnings('ignore', r'sys\.abiflags', category=DeprecationWarning)

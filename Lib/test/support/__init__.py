@@ -883,8 +883,8 @@ def check_bolt_optimized():
     return '--enable-bolt' in config_args
 
 
-# XXX: Remove this in Python 3.16
-# This flag will always be True since Python 3.16
+# TODO: Remove this in Python 3.16.
+# This flag will always be True since Python 3.16.
 with warnings.catch_warnings():
     # ignore DeprecationWarning on sys.abiflags change on Windows
     warnings.filterwarnings('ignore', r'sys\.abiflags', category=DeprecationWarning)
