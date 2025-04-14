@@ -9,7 +9,6 @@
 #include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
-
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // _exit()
 #endif
