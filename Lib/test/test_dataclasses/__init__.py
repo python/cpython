@@ -3715,7 +3715,7 @@ class TestSlots(unittest.TestCase):
         self.assertTrue(F.__weakref__)
         F()
 
-    def test_dataclass_derived_generic_from_slotted_base_with_weakref(self):
+    def test_dataclass_derived_generic_from_slotted_base(self):  # noqa: F811
         T = typing.TypeVar('T')
 
         class WithWeakrefSlot:
