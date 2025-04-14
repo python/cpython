@@ -1487,7 +1487,7 @@ def _is_local_authority(authority):
         return True
     try:
         hostname = socket.gethostname()
-    except socket.gaierror:
+    except (socket.gaierror, AttributeError):
         pass
     else:
         if authority == hostname:
