@@ -145,8 +145,11 @@ static inline void _PyObject_GC_SET_SHARED_INLINE(PyObject *op) {
 #define _PyGC_PREV_MASK_FINALIZED  (1)
 /* Bit 1 is set when the object is in generation which is GCed currently. */
 #define _PyGC_PREV_MASK_COLLECTING (2)
-/* The (N-2) most significant bits contain the real address. */
-#define _PyGC_PREV_SHIFT           (2)
+/* Bit 2 is to mark the object as alive due to being reachable from a root
+ * object.  This is used when the incremental mark process is running. */
+#define _PyGC_PREV_MASK_OLD (4)
+/* The number of least least significant bits used for flags. */
+#define _PyGC_PREV_SHIFT (3)
 #define _PyGC_PREV_MASK            (((uintptr_t) -1) << _PyGC_PREV_SHIFT)
 
 /* set for debugging information */
@@ -279,6 +282,62 @@ struct gc_generation_stats {
     Py_ssize_t uncollectable;
 };
 
+// if true, enable GC timing statistics
+#define WITH_GC_TIMING_STATS 1
+
+#if WITH_GC_TIMING_STATS
+
+#define QUANTILE_COUNT 5
+#define MARKER_COUNT (QUANTILE_COUNT * 3 + 2)
+
+typedef struct {
+    double q[MARKER_COUNT];
+    double dn[MARKER_COUNT];
+    double np[MARKER_COUNT];
+    int n[MARKER_COUNT];
+    int count;
+    double max;
+} p2_engine;
+
+struct gc_timing_state {
+    /* timing statistics computed by P^2 algorithm */
+    p2_engine auto_all; // timing for all automatic collections
+    p2_engine auto_full; // timing for full (gen2) automatic collections
+    /* Total time spent inside cyclic GC */
+    PyTime_t gc_total_time;
+    /* Time spent inside incremental mark part of cyclic GC */
+    PyTime_t gc_mark_time;
+    /* Maximum GC pause time */
+    PyTime_t gc_max_pause;
+    /* Total number of times GC was run */
+    PyTime_t gc_runs;
+};
+#endif // WITH_GC_TIMING_STATS
+
+
+// if true, enable the GC mark alive feature
+#define WITH_GC_MARK_ALIVE 1
+
+#if WITH_GC_MARK_ALIVE
+struct gc_mark_state {
+    /* Objects in oldest generation that have be determined to be alive */
+    PyGC_Head old_alive;
+    /* Marker object for incremental mark alive process */
+    PyObject *thumb;
+    /* Size of oldest generation, on start of incremental mark process */
+    Py_ssize_t old_size;
+    /* Number of alive objects found in oldest generation */
+    Py_ssize_t old_alive_size;
+    /* The phase of the mark process */
+    int mark_phase;
+    /* Number of incremental mark steps done */
+    int mark_steps;
+    /* Number of steps available before full collection */
+    int mark_steps_total;
+};
+#endif // WITH_GC_MARK_ALIVE
+
+
 struct _gc_runtime_state {
     /* List of objects that still need to be cleaned up, singly linked
      * via their gc headers' gc_prev pointers.  */
@@ -301,6 +360,14 @@ struct _gc_runtime_state {
     PyObject *garbage;
     /* a list of callbacks to be invoked when collection is performed */
     PyObject *callbacks;
+#if WITH_GC_MARK_ALIVE
+    /* state for the incremental "mark alive" logic */
+    struct gc_mark_state mark_state;
+#endif
+#if WITH_GC_TIMING_STATS
+    /* state for GC timing statistics */
+    struct gc_timing_state timing_state;
+#endif
 
     /* This is the number of objects that survived the last full
        collection. It approximates the number of long lived objects
