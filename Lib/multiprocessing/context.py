@@ -23,6 +23,12 @@ class TimeoutError(ProcessError):
 class AuthenticationError(ProcessError):
     pass
 
+# The default digest for multiprocessing.connection to use for auth.
+# We configure it here so that it can be tested when choosing a
+# default context without a circular import.
+# Must be the str of a value seen in connection._ALLOWED_DIGESTS.
+_DIGEST_FOR_CONNECTION_HMAC = 'sha256'
+
 #
 # Base type for contexts. Bound methods of an instance of this type are included in __all__ of __init__.py
 #
@@ -313,6 +319,21 @@ if sys.platform != 'win32':
         def _check_available(self):
             if not reduction.HAVE_SEND_HANDLE:
                 raise ValueError('forkserver start method not available')
+            if not _test_if_connection_can_work():
+                raise ValueError(f'forkserver start method not available due to missing hmac-{_DIGEST_FOR_CONNECTION_HMAC}')
+
+    def _test_if_connection_can_work() -> bool:
+        # Authenticated connections required for forkserver using hmac.
+        # If the algorithm is unavailable (poor FIPS mode config?) at
+        # import time, we cannot default to forkserver.  If a user
+        # changes the _DIGEST_FOR_CONNECTION_HMAC to one that works in
+        # their strange config, the forkserver context will still work.
+        import hmac
+        try:
+            hmac.new(b'test-key'*8, b'', _DIGEST_FOR_CONNECTION_HMAC)
+        except ValueError:
+            return False
+        return True
 
     _concrete_contexts = {
         'fork': ForkContext(),
@@ -322,7 +343,8 @@ if sys.platform != 'win32':
     # bpo-33725: running arbitrary code after fork() is no longer reliable
     # on macOS since macOS 10.14 (Mojave). Use spawn by default instead.
     # gh-84559: We changed everyones default to a thread safeish one in 3.14.
-    if reduction.HAVE_SEND_HANDLE and sys.platform != 'darwin':
+    if (reduction.HAVE_SEND_HANDLE and sys.platform != 'darwin' and
+        _test_if_connection_can_work()):
         _default_context = DefaultContext(_concrete_contexts['forkserver'])
     else:
         _default_context = DefaultContext(_concrete_contexts['spawn'])

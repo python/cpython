@@ -40,6 +40,13 @@ def _decorate_func_or_class(func_or_class, decorator_func):
     return decorated_class
 
 
+def in_openssl_fips_mode() -> bool:
+    """Is OpenSSL based _hashlib is present & operating in FIPS mode?"""
+    if _hashlib and _hashlib.get_fips_mode() != 0:
+        return True
+    return False
+
+
 def requires_hashdigest(digestname, openssl=None, usedforsecurity=True):
     """Decorator raising SkipTest if a hashing algorithm is not available.
 
