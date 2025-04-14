@@ -3,8 +3,9 @@ import sys
 import unittest
 import subprocess
 import re
+from traceback import TIMESTAMP_AFTER_EXC_MSG_RE_GROUP
 
-from test.support import script_helper
+from test.support import force_not_colorized, script_helper
 from test.support.os_helper import TESTFN, unlink
 
 
@@ -209,6 +210,7 @@ if __name__ == "__main__":
             script_file.write(self.script_strip_test)
         self.addCleanup(unlink, self.script_strip_path)
 
+    @force_not_colorized
     def test_strip_exc_timestamps_function(self):
         """Test the strip_exc_timestamps function with various inputs"""
         for mode in ("us", "ns", "iso"):
@@ -232,6 +234,7 @@ if __name__ == "__main__":
                 self.assertIn("ZeroDivisionError: division by zero\n", stripped_output)
                 self.assertIn("FakeError: not an exception\n", stripped_output)
 
+    @force_not_colorized
     def test_strip_exc_timestamps_with_disabled_timestamps(self):
         """Test the strip_exc_timestamps function when timestamps are disabled"""
         # Run with timestamps disabled
@@ -257,10 +260,7 @@ if __name__ == "__main__":
 
     def test_timestamp_regex_pattern(self):
         """Test the regex pattern used by strip_exc_timestamps"""
-        # Get the pattern from traceback module
-        from traceback import TIMESTAMP_AFTER_EXC_MSG_RE_GROUP
-
-        pattern = re.compile(TIMESTAMP_AFTER_EXC_MSG_RE_GROUP)
+        pattern = re.compile(TIMESTAMP_AFTER_EXC_MSG_RE_GROUP, flags=re.MULTILINE)
 
         # Test microsecond format
         self.assertTrue(pattern.search(" <@1234567890.123456>"))
