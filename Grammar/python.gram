@@ -435,14 +435,18 @@ try_stmt[stmt_ty]:
 
 except_block[excepthandler_ty]:
     | invalid_except_stmt_indent
-    | 'except' e=expression t=['as' z=NAME { z }] ':' b=block {
-        _PyAST_ExceptHandler(e, (t) ? ((expr_ty) t)->v.Name.id : NULL, b, EXTRA) }
+    | 'except' e=expressions ':' b=block {
+        _PyAST_ExceptHandler(e,  NULL, b, EXTRA) }
+    | 'except' e=expression 'as' t=NAME  ':' b=block {
+        _PyAST_ExceptHandler(e, ((expr_ty) t)->v.Name.id, b, EXTRA) }
     | 'except' ':' b=block { _PyAST_ExceptHandler(NULL, NULL, b, EXTRA) }
     | invalid_except_stmt
 except_star_block[excepthandler_ty]:
     | invalid_except_star_stmt_indent
-    | 'except' '*' e=expression t=['as' z=NAME { z }] ':' b=block {
-        _PyAST_ExceptHandler(e, (t) ? ((expr_ty) t)->v.Name.id : NULL, b, EXTRA) }
+    | 'except' '*' e=expressions ':' b=block {
+        _PyAST_ExceptHandler(e, NULL, b, EXTRA) }
+    | 'except' '*' e=expression 'as' t=NAME ':' b=block {
+        _PyAST_ExceptHandler(e, ((expr_ty) t)->v.Name.id, b, EXTRA) }
     | invalid_except_star_stmt
 finally_block[asdl_stmt_seq*]:
     | invalid_finally_stmt
@@ -1356,16 +1360,16 @@ invalid_try_stmt:
     | 'try' ':' block* except_star_block+ a='except' [expression ['as' NAME]] ':' {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "cannot have both 'except' and 'except*' on the same 'try'") }
 invalid_except_stmt:
-    | 'except' a=expression ',' expressions ['as' NAME ] ':' {
-        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized") }
+    | 'except' a=expression ',' expressions 'as' NAME  ':' {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized when using 'as'") }
     | a='except' expression ['as' NAME ] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='except' NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | 'except' expression 'as' a=expression {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(
             a, "cannot use except statement with %s", _PyPegen_get_expr_name(a)) }
 invalid_except_star_stmt:
-    | 'except' '*' a=expression ',' expressions ['as' NAME ] ':' {
-        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized") }
+    | 'except' '*' a=expression ',' expressions 'as' NAME  ':' {
+        RAISE_SYNTAX_ERROR_STARTING_FROM(a, "multiple exception types must be parenthesized when using 'as'") }
     | a='except' '*' expression ['as' NAME ] NEWLINE { RAISE_SYNTAX_ERROR("expected ':'") }
     | a='except' '*' (NEWLINE | ':') { RAISE_SYNTAX_ERROR("expected one or more exception types") }
     | 'except' '*' expression 'as' a=expression {

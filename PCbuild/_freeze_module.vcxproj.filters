@@ -406,6 +406,9 @@
     <ClCompile Include="..\Objects\sliceobject.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\Python\remote_debugging.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="..\Python\specialize.c">
       <Filter>Source Files</Filter>
     </ClCompile>

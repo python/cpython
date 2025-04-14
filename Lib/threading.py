@@ -3,6 +3,7 @@
 import os as _os
 import sys as _sys
 import _thread
+import _contextvars
 
 from time import monotonic as _time
 from _weakrefset import WeakSet
@@ -241,6 +242,10 @@ class _RLock:
     def __exit__(self, t, v, tb):
         self.release()
 
+    def locked(self):
+        """Return whether this object is locked."""
+        return self._count > 0
+
     # Internal methods used by condition variables
 
     def _acquire_restore(self, state):
@@ -286,9 +291,10 @@ class Condition:
         if lock is None:
             lock = RLock()
         self._lock = lock
-        # Export the lock's acquire() and release() methods
+        # Export the lock's acquire(), release(), and locked() methods
         self.acquire = lock.acquire
         self.release = lock.release
+        self.locked = lock.locked
         # If the lock defines _release_save() and/or _acquire_restore(),
         # these override the default implementations (which just call
         # release() and acquire() on the lock).  Ditto for _is_owned().
@@ -871,7 +877,7 @@ class Thread:
     _initialized = False
 
     def __init__(self, group=None, target=None, name=None,
-                 args=(), kwargs=None, *, daemon=None):
+                 args=(), kwargs=None, *, daemon=None, context=None):
         """This constructor should always be called with keyword arguments. Arguments are:
 
         *group* should be None; reserved for future extension when a ThreadGroup
@@ -887,6 +893,14 @@ class Thread:
 
         *kwargs* is a dictionary of keyword arguments for the target
         invocation. Defaults to {}.
+
+        *context* is the contextvars.Context value to use for the thread.
+        The default value is None, which means to check
+        sys.flags.thread_inherit_context.  If that flag is true, use a copy
+        of the context of the caller.  If false, use an empty context.  To
+        explicitly start with an empty context, pass a new instance of
+        contextvars.Context().  To explicitly start with a copy of the current
+        context, pass the value from contextvars.copy_context().
 
         If a subclass overrides the constructor, it must make sure to invoke
         the base class constructor (Thread.__init__()) before doing anything
@@ -917,6 +931,7 @@ class Thread:
             self._daemonic = daemon
         else:
             self._daemonic = current_thread().daemon
+        self._context = context
         self._ident = None
         if _HAVE_THREAD_NATIVE_ID:
             self._native_id = None
@@ -972,6 +987,16 @@ class Thread:
 
         with _active_limbo_lock:
             _limbo[self] = self
+
+        if self._context is None:
+            # No context provided
+            if _sys.flags.thread_inherit_context:
+                # start with a copy of the context of the caller
+                self._context = _contextvars.copy_context()
+            else:
+                # start with an empty context
+                self._context = _contextvars.Context()
+
         try:
             # Start joinable thread
             _start_joinable_thread(self._bootstrap, handle=self._handle,
@@ -1051,7 +1076,7 @@ class Thread:
                 _sys.setprofile(_profile_hook)
 
             try:
-                self.run()
+                self._context.run(self.run)
             except:
                 self._invoke_excepthook(self)
         finally:

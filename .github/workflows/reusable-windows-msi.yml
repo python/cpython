@@ -3,6 +3,10 @@ name: Reusable Windows MSI
 on:
   workflow_call:
     inputs:
+      os:
+        description: OS to run on
+        required: true
+        type: string
       arch:
         description: CPU architecture
         required: true
@@ -17,7 +21,7 @@ env:
 jobs:
   build:
     name: installer for ${{ inputs.arch }}
-    runs-on: windows-latest
+    runs-on: ${{ inputs.os }}
     timeout-minutes: 60
     env:
       ARCH: ${{ inputs.arch }}
@@ -27,5 +31,7 @@ jobs:
       with:
         persist-credentials: false
     - name: Build CPython installer
+      # Forks don't have access to Windows on Arm runners. Skip those:
+      if: inputs.arch != 'arm64' || github.repository_owner == 'python'
       run: ./Tools/msi/build.bat --doc -"${ARCH}"
       shell: bash

@@ -4,7 +4,7 @@ import textwrap
 from test import list_tests, support
 from test.support import cpython_only
 from test.support.import_helper import import_module
-from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure, assert_python_ok
 import pickle
 import unittest
 
@@ -331,6 +331,26 @@ class ListTest(list_tests.CommonTest):
             self.assertNotEqual(rc, 0xC0000005)
         else:
             self.assertNotEqual(rc, -int(signal.SIGSEGV))
+
+    def test_deopt_from_append_list(self):
+        # gh-132011: it used to crash, because
+        # of `CALL_LIST_APPEND` specialization failure.
+        code = textwrap.dedent("""
+            l = []
+            def lappend(l, x, y):
+                l.append((x, y))
+            for x in range(3):
+                lappend(l, None, None)
+            try:
+                lappend(list, None, None)
+            except TypeError:
+                pass
+            else:
+                raise AssertionError
+        """)
+
+        rc, _, _ = assert_python_ok("-c", code)
+        self.assertEqual(rc, 0)
 
 if __name__ == "__main__":
     unittest.main()

@@ -188,6 +188,7 @@ Python/ast_opt.c              @isidentical @eclips4
 Parser/asdl.py                @isidentical @JelleZijlstra @eclips4
 Parser/asdl_c.py              @isidentical @JelleZijlstra @eclips4
 Lib/ast.py                    @isidentical @JelleZijlstra @eclips4
+Lib/_ast_unparse.py           @isidentical @JelleZijlstra @eclips4
 Lib/test/test_ast/            @eclips4
 
 # Mock

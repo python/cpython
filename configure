@@ -706,6 +706,8 @@ MODULE__CURSES_FALSE
 MODULE__CURSES_TRUE
 MODULE__CTYPES_FALSE
 MODULE__CTYPES_TRUE
+MODULE__HMAC_FALSE
+MODULE__HMAC_TRUE
 LIBHACL_SIMD256_OBJS
 LIBHACL_SIMD256_FLAGS
 LIBHACL_SIMD128_OBJS
@@ -781,6 +783,8 @@ MODULE__INTERPRETERS_FALSE
 MODULE__INTERPRETERS_TRUE
 MODULE__TYPING_FALSE
 MODULE__TYPING_TRUE
+MODULE__TYPES_FALSE
+MODULE__TYPES_TRUE
 MODULE__STRUCT_FALSE
 MODULE__STRUCT_TRUE
 MODULE_SELECT_FALSE
@@ -801,8 +805,6 @@ MODULE__HEAPQ_FALSE
 MODULE__HEAPQ_TRUE
 MODULE__CSV_FALSE
 MODULE__CSV_TRUE
-MODULE__CONTEXTVARS_FALSE
-MODULE__CONTEXTVARS_TRUE
 MODULE__BISECT_FALSE
 MODULE__BISECT_TRUE
 MODULE__ASYNCIO_FALSE
@@ -1123,6 +1125,7 @@ with_wheel_pkg_dir
 with_readline
 with_computed_gotos
 with_tail_call_interp
+with_remote_debug
 with_ensurepip
 with_openssl
 with_openssl_rpath
@@ -1932,6 +1935,7 @@ Optional Packages:
                           default on supported compilers)
   --with-tail-call-interp enable tail-calling interpreter in evaluation loop
                           and rest of CPython
+  --with-remote-debug     enable remote debugging support (default is yes)
   --with-ensurepip[=install|upgrade|no]
                           "install" or "upgrade" using bundled pip (default is
                           upgrade)
@@ -8890,7 +8894,7 @@ fi
           LTOCFLAGS="-flto"
           ;;
         *)
-          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects -flto-partition=none"
+          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects"
           ;;
       esac
       ;;
@@ -29302,6 +29306,34 @@ esac
 fi
 
 
+# Check for --with-remote-debug
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --with-remote-debug" >&5
+printf %s "checking for --with-remote-debug... " >&6; }
+
+# Check whether --with-remote-debug was given.
+if test ${with_remote_debug+y}
+then :
+  withval=$with_remote_debug;
+else case e in #(
+  e) with_remote_debug=yes ;;
+esac
+fi
+
+
+if test "$with_remote_debug" = yes; then
+
+printf "%s\n" "#define Py_REMOTE_DEBUG 1" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+printf "%s\n" "yes" >&6; }
+else
+
+printf "%s\n" "#define Py_REMOTE_DEBUG 0" >>confdefs.h
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
+printf "%s\n" "no" >&6; }
+fi
+
 
 case $ac_sys_system in
 AIX*)
@@ -30737,28 +30769,6 @@ then :
 fi
 
 
-        if test "$py_cv_module__contextvars" != "n/a"
-then :
-  py_cv_module__contextvars=yes
-fi
-   if test "$py_cv_module__contextvars" = yes; then
-  MODULE__CONTEXTVARS_TRUE=
-  MODULE__CONTEXTVARS_FALSE='#'
-else
-  MODULE__CONTEXTVARS_TRUE='#'
-  MODULE__CONTEXTVARS_FALSE=
-fi
-
-  as_fn_append MODULE_BLOCK "MODULE__CONTEXTVARS_STATE=$py_cv_module__contextvars$as_nl"
-  if test "x$py_cv_module__contextvars" = xyes
-then :
-
-
-
-
-fi
-
-
         if test "$py_cv_module__csv" != "n/a"
 then :
   py_cv_module__csv=yes
@@ -30971,6 +30981,28 @@ fi
 
   as_fn_append MODULE_BLOCK "MODULE__STRUCT_STATE=$py_cv_module__struct$as_nl"
   if test "x$py_cv_module__struct" = xyes
+then :
+
+
+
+
+fi
+
+
+        if test "$py_cv_module__types" != "n/a"
+then :
+  py_cv_module__types=yes
+fi
+   if test "$py_cv_module__types" = yes; then
+  MODULE__TYPES_TRUE=
+  MODULE__TYPES_FALSE='#'
+else
+  MODULE__TYPES_TRUE='#'
+  MODULE__TYPES_FALSE=
+fi
+
+  as_fn_append MODULE_BLOCK "MODULE__TYPES_STATE=$py_cv_module__types$as_nl"
+  if test "x$py_cv_module__types" = xyes
 then :
 
 
@@ -32234,6 +32266,47 @@ fi
 
 fi
 
+
+
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _hmac" >&5
+printf %s "checking for stdlib extension module _hmac... " >&6; }
+        if test "$py_cv_module__hmac" != "n/a"
+then :
+
+    if true
+then :
+  if true
+then :
+  py_cv_module__hmac=yes
+else case e in #(
+  e) py_cv_module__hmac=missing ;;
+esac
+fi
+else case e in #(
+  e) py_cv_module__hmac=disabled ;;
+esac
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__HMAC_STATE=$py_cv_module__hmac$as_nl"
+  if test "x$py_cv_module__hmac" = xyes
+then :
+
+    as_fn_append MODULE_BLOCK "MODULE__HMAC_CFLAGS=$LIBHACL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HMAC_LDFLAGS=$LIBHACL_CFLAGS Modules/_hacl/libHacl_HMAC.a$as_nl"
+
+fi
+   if test "$py_cv_module__hmac" = yes; then
+  MODULE__HMAC_TRUE=
+  MODULE__HMAC_FALSE='#'
+else
+  MODULE__HMAC_TRUE='#'
+  MODULE__HMAC_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__hmac" >&5
+printf "%s\n" "$py_cv_module__hmac" >&6; }
 
 
 
@@ -33606,10 +33679,6 @@ if test -z "${MODULE__BISECT_TRUE}" && test -z "${MODULE__BISECT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__BISECT\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${MODULE__CONTEXTVARS_TRUE}" && test -z "${MODULE__CONTEXTVARS_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__CONTEXTVARS\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
 if test -z "${MODULE__CSV_TRUE}" && test -z "${MODULE__CSV_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__CSV\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
@@ -33648,6 +33717,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__STRUCT_TRUE}" && test -z "${MODULE__STRUCT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__STRUCT\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__TYPES_TRUE}" && test -z "${MODULE__TYPES_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__TYPES\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TYPING_TRUE}" && test -z "${MODULE__TYPING_FALSE}"; then
@@ -33788,6 +33861,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__BLAKE2_TRUE}" && test -z "${MODULE__BLAKE2_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__BLAKE2\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${MODULE__HMAC_TRUE}" && test -z "${MODULE__HMAC_FALSE}"; then
+  as_fn_error $? "conditional \"MODULE__HMAC\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__CTYPES_TRUE}" && test -z "${MODULE__CTYPES_FALSE}"; then

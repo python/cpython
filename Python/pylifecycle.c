@@ -967,7 +967,7 @@ _Py_PreInitializeFromPyArgv(const PyPreConfig *src_config, const _PyArgv *args)
         return _PyStatus_OK();
     }
 
-    /* Note: preinitialized remains 1 on error, it is only set to 0
+    /* Note: preinitializing remains 1 on error, it is only set to 0
        at exit on success. */
     runtime->preinitializing = 1;
 

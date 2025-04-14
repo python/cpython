@@ -8,9 +8,18 @@ try:
 except ImportError:
     _hashlib = None
 
+try:
+    import _hmac
+except ImportError:
+    _hmac = None
+
 
 def requires_hashlib():
     return unittest.skipIf(_hashlib is None, "requires _hashlib")
+
+
+def requires_builtin_hmac():
+    return unittest.skipIf(_hmac is None, "requires _hmac")
 
 
 def _decorate_func_or_class(func_or_class, decorator_func):

@@ -407,6 +407,106 @@ exit:
     return return_value;
 }
 
+#if !defined(_ctypes_PyCArrayType_Type_raw_DOCSTR)
+#  define _ctypes_PyCArrayType_Type_raw_DOCSTR NULL
+#endif
+#if defined(_CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF)
+#  undef _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF
+#  define _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF {"raw", (getter)_ctypes_PyCArrayType_Type_raw_get, (setter)_ctypes_PyCArrayType_Type_raw_set, _ctypes_PyCArrayType_Type_raw_DOCSTR},
+#else
+#  define _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF {"raw", NULL, (setter)_ctypes_PyCArrayType_Type_raw_set, NULL},
+#endif
+
+static int
+_ctypes_PyCArrayType_Type_raw_set_impl(CDataObject *self, PyObject *value);
+
+static int
+_ctypes_PyCArrayType_Type_raw_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ctypes_PyCArrayType_Type_raw_set_impl((CDataObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(_ctypes_PyCArrayType_Type_raw_DOCSTR)
+#  define _ctypes_PyCArrayType_Type_raw_DOCSTR NULL
+#endif
+#if defined(_CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF)
+#  undef _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF
+#  define _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF {"raw", (getter)_ctypes_PyCArrayType_Type_raw_get, (setter)_ctypes_PyCArrayType_Type_raw_set, _ctypes_PyCArrayType_Type_raw_DOCSTR},
+#else
+#  define _CTYPES_PYCARRAYTYPE_TYPE_RAW_GETSETDEF {"raw", (getter)_ctypes_PyCArrayType_Type_raw_get, NULL, _ctypes_PyCArrayType_Type_raw_DOCSTR},
+#endif
+
+static PyObject *
+_ctypes_PyCArrayType_Type_raw_get_impl(CDataObject *self);
+
+static PyObject *
+_ctypes_PyCArrayType_Type_raw_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ctypes_PyCArrayType_Type_raw_get_impl((CDataObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(_ctypes_PyCArrayType_Type_value_DOCSTR)
+#  define _ctypes_PyCArrayType_Type_value_DOCSTR NULL
+#endif
+#if defined(_CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF)
+#  undef _CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF
+#  define _CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF {"value", (getter)_ctypes_PyCArrayType_Type_value_get, (setter)_ctypes_PyCArrayType_Type_value_set, _ctypes_PyCArrayType_Type_value_DOCSTR},
+#else
+#  define _CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF {"value", (getter)_ctypes_PyCArrayType_Type_value_get, NULL, _ctypes_PyCArrayType_Type_value_DOCSTR},
+#endif
+
+static PyObject *
+_ctypes_PyCArrayType_Type_value_get_impl(CDataObject *self);
+
+static PyObject *
+_ctypes_PyCArrayType_Type_value_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ctypes_PyCArrayType_Type_value_get_impl((CDataObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(_ctypes_PyCArrayType_Type_value_DOCSTR)
+#  define _ctypes_PyCArrayType_Type_value_DOCSTR NULL
+#endif
+#if defined(_CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF)
+#  undef _CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF
+#  define _CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF {"value", (getter)_ctypes_PyCArrayType_Type_value_get, (setter)_ctypes_PyCArrayType_Type_value_set, _ctypes_PyCArrayType_Type_value_DOCSTR},
+#else
+#  define _CTYPES_PYCARRAYTYPE_TYPE_VALUE_GETSETDEF {"value", NULL, (setter)_ctypes_PyCArrayType_Type_value_set, NULL},
+#endif
+
+static int
+_ctypes_PyCArrayType_Type_value_set_impl(CDataObject *self, PyObject *value);
+
+static int
+_ctypes_PyCArrayType_Type_value_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ctypes_PyCArrayType_Type_value_set_impl((CDataObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(c_wchar_p_from_param__doc__,
 "from_param($self, value, /)\n"
 "--\n"
@@ -581,25 +681,82 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(PyCData_reduce__doc__,
+PyDoc_STRVAR(_ctypes_PyCData___reduce____doc__,
 "__reduce__($self, /)\n"
 "--\n"
 "\n");
 
-#define PYCDATA_REDUCE_METHODDEF    \
-    {"__reduce__", _PyCFunction_CAST(PyCData_reduce), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, PyCData_reduce__doc__},
+#define _CTYPES_PYCDATA___REDUCE___METHODDEF    \
+    {"__reduce__", _PyCFunction_CAST(_ctypes_PyCData___reduce__), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _ctypes_PyCData___reduce____doc__},
 
 static PyObject *
-PyCData_reduce_impl(PyObject *myself, PyTypeObject *cls);
+_ctypes_PyCData___reduce___impl(PyObject *myself, PyTypeObject *cls);
 
 static PyObject *
-PyCData_reduce(PyObject *myself, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_ctypes_PyCData___reduce__(PyObject *myself, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
+    PyObject *return_value = NULL;
+
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "__reduce__() takes no arguments");
-        return NULL;
+        goto exit;
     }
-    return PyCData_reduce_impl(myself, cls);
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = _ctypes_PyCData___reduce___impl(myself, cls);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_ctypes_PyCData___setstate____doc__,
+"__setstate__($self, dict, data, /)\n"
+"--\n"
+"\n");
+
+#define _CTYPES_PYCDATA___SETSTATE___METHODDEF    \
+    {"__setstate__", _PyCFunction_CAST(_ctypes_PyCData___setstate__), METH_FASTCALL, _ctypes_PyCData___setstate____doc__},
+
+static PyObject *
+_ctypes_PyCData___setstate___impl(PyObject *myself, PyObject *dict,
+                                  const char *data, Py_ssize_t data_length);
+
+static PyObject *
+_ctypes_PyCData___setstate__(PyObject *myself, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *dict;
+    const char *data;
+    Py_ssize_t data_length;
+
+    if (!_PyArg_ParseStack(args, nargs, "O!s#:__setstate__",
+        &PyDict_Type, &dict, &data, &data_length)) {
+        goto exit;
+    }
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    return_value = _ctypes_PyCData___setstate___impl(myself, dict, data, data_length);
+    Py_END_CRITICAL_SECTION();
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_ctypes_PyCData___ctypes_from_outparam____doc__,
+"__ctypes_from_outparam__($self, /)\n"
+"--\n"
+"\n"
+"default __ctypes_from_outparam__ method returns self.");
+
+#define _CTYPES_PYCDATA___CTYPES_FROM_OUTPARAM___METHODDEF    \
+    {"__ctypes_from_outparam__", (PyCFunction)_ctypes_PyCData___ctypes_from_outparam__, METH_NOARGS, _ctypes_PyCData___ctypes_from_outparam____doc__},
+
+static PyObject *
+_ctypes_PyCData___ctypes_from_outparam___impl(PyObject *self);
+
+static PyObject *
+_ctypes_PyCData___ctypes_from_outparam__(PyObject *self, PyObject *Py_UNUSED(ignored))
+{
+    return _ctypes_PyCData___ctypes_from_outparam___impl(self);
 }
 
 #if !defined(_ctypes_CFuncPtr_errcheck_DOCSTR)
@@ -773,6 +930,56 @@ _ctypes_CFuncPtr_argtypes_get(PyObject *self, void *Py_UNUSED(context))
     return return_value;
 }
 
+#if !defined(_ctypes_Simple_value_DOCSTR)
+#  define _ctypes_Simple_value_DOCSTR NULL
+#endif
+#if defined(_CTYPES_SIMPLE_VALUE_GETSETDEF)
+#  undef _CTYPES_SIMPLE_VALUE_GETSETDEF
+#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, (setter)_ctypes_Simple_value_set, _ctypes_Simple_value_DOCSTR},
+#else
+#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", NULL, (setter)_ctypes_Simple_value_set, NULL},
+#endif
+
+static int
+_ctypes_Simple_value_set_impl(CDataObject *self, PyObject *value);
+
+static int
+_ctypes_Simple_value_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
+{
+    int return_value;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ctypes_Simple_value_set_impl((CDataObject *)self, value);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
+#if !defined(_ctypes_Simple_value_DOCSTR)
+#  define _ctypes_Simple_value_DOCSTR NULL
+#endif
+#if defined(_CTYPES_SIMPLE_VALUE_GETSETDEF)
+#  undef _CTYPES_SIMPLE_VALUE_GETSETDEF
+#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, (setter)_ctypes_Simple_value_set, _ctypes_Simple_value_DOCSTR},
+#else
+#  define _CTYPES_SIMPLE_VALUE_GETSETDEF {"value", (getter)_ctypes_Simple_value_get, NULL, _ctypes_Simple_value_DOCSTR},
+#endif
+
+static PyObject *
+_ctypes_Simple_value_get_impl(CDataObject *self);
+
+static PyObject *
+_ctypes_Simple_value_get(PyObject *self, void *Py_UNUSED(context))
+{
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ctypes_Simple_value_get_impl((CDataObject *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
+}
+
 PyDoc_STRVAR(Simple_from_outparm__doc__,
 "__ctypes_from_outparam__($self, /)\n"
 "--\n"
@@ -793,4 +1000,4 @@ Simple_from_outparm(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py
     }
     return Simple_from_outparm_impl(self, cls);
 }
-/*[clinic end generated code: output=a18d87239b6fb8ca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9fb75bf7e9a17df2 input=a9049054013a1b77]*/

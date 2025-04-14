@@ -74,7 +74,8 @@ jobs:
             runner: windows-latest
           - target: aarch64-pc-windows-msvc/msvc
             architecture: ARM64
-            runner: windows-latest
+            # Forks don't have access to Windows on Arm runners. These jobs are skipped below:
+            runner: ${{ github.repository_owner == 'python' && 'windows-aarch64' || 'windows-latest' }}
           - target: x86_64-apple-darwin/clang
             architecture: x86_64
             runner: macos-13
@@ -95,25 +96,19 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Native Windows
-        if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
+      - name: Windows
+        # Forks don't have access to Windows on Arm runners. Skip those:
+        if: runner.os == 'Windows' && (matrix.architecture != 'ARM64' || github.repository_owner == 'python')
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
           ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-      # No tests (yet):
-      - name: Emulated Windows
-        if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
-        run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
-
         # The `find` line is required as a result of https://github.com/actions/runner-images/issues/9966.
         # This is a bug in the macOS runner image where the pre-installed Python is installed in the same
         # directory as the Homebrew Python, which causes the build to fail for macos-13. This line removes
         # the symlink to the pre-installed Python so that the Homebrew Python is used instead.
-      - name: Native macOS
+      - name: macOS
         if: runner.os == 'macOS'
         run: |
           brew update
@@ -124,7 +119,7 @@ jobs:
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-      - name: Native Linux
+      - name: Linux
         if: runner.os == 'Linux'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}

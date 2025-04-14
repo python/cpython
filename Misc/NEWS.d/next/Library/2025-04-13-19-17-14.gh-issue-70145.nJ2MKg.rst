@@ -1,0 +1,2 @@
+Add support for channels in Bluetooth HCI protocol
+(:const:`~socket.BTPROTO_HCI`).

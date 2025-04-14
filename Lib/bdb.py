@@ -62,8 +62,7 @@ class _MonitoringTracer:
             sys.monitoring.register_callback(self._tool_id, event, callback)
             if event != E.INSTRUCTION:
                 all_events |= event
-        self.check_trace_func()
-        self.check_trace_opcodes()
+        self.update_local_events()
         sys.monitoring.set_events(self._tool_id, self.GLOBAL_EVENTS)
         self._enabled = True
 
@@ -74,7 +73,6 @@ class _MonitoringTracer:
         if curr_tool != self._name:
             return
         sys.monitoring.clear_tool_id(self._tool_id)
-        self.check_trace_opcodes()
         sys.monitoring.free_tool_id(self._tool_id)
 
     def disable_current_event(self):
@@ -95,7 +93,7 @@ class _MonitoringTracer:
                 frame = sys._getframe().f_back
                 ret = func(self, frame, *args)
                 if self._enabled and frame.f_trace:
-                    self.check_trace_func()
+                    self.update_local_events()
                 if self._disable_current_event:
                     return sys.monitoring.DISABLE
                 else:
@@ -159,27 +157,18 @@ class _MonitoringTracer:
         if frame.f_trace and frame.f_trace_opcodes:
             frame.f_trace(frame, 'opcode', None)
 
-    def check_trace_opcodes(self, frame=None):
-        if frame is None:
-            frame = sys._getframe().f_back
-        while frame is not None:
-            self.set_trace_opcodes(frame, frame.f_trace_opcodes)
-            frame = frame.f_back
-
-    def set_trace_opcodes(self, frame, trace_opcodes):
+    def update_local_events(self, frame=None):
         if sys.monitoring.get_tool(self._tool_id) != self._name:
             return
-        if trace_opcodes:
-            sys.monitoring.set_local_events(self._tool_id, frame.f_code, E.INSTRUCTION)
-        else:
-            sys.monitoring.set_local_events(self._tool_id, frame.f_code, 0)
-
-    def check_trace_func(self, frame=None):
         if frame is None:
             frame = sys._getframe().f_back
         while frame is not None:
             if frame.f_trace is not None:
-                sys.monitoring.set_local_events(self._tool_id, frame.f_code, self.LOCAL_EVENTS)
+                if frame.f_trace_opcodes:
+                    events = self.LOCAL_EVENTS | E.INSTRUCTION
+                else:
+                    events = self.LOCAL_EVENTS
+                sys.monitoring.set_local_events(self._tool_id, frame.f_code, events)
             frame = frame.f_back
 
     def _get_lineno(self, code, offset):
@@ -544,11 +533,11 @@ class Bdb:
             frame = self.enterframe
             while frame is not None:
                 frame.f_trace_opcodes = trace_opcodes
-                if self.monitoring_tracer:
-                    self.monitoring_tracer.set_trace_opcodes(frame, trace_opcodes)
                 if frame is self.botframe:
                     break
                 frame = frame.f_back
+            if self.monitoring_tracer:
+                self.monitoring_tracer.update_local_events()
 
     def _set_stopinfo(self, stopframe, returnframe, stoplineno=0, opcode=False):
         """Set the attributes for stopping.
@@ -642,8 +631,8 @@ class Bdb:
                 frame = frame.f_back
             for frame, (trace_lines, trace_opcodes) in self.frame_trace_lines_opcodes.items():
                 frame.f_trace_lines, frame.f_trace_opcodes = trace_lines, trace_opcodes
-                if self.backend == 'monitoring':
-                    self.monitoring_tracer.set_trace_opcodes(frame, trace_opcodes)
+            if self.backend == 'monitoring':
+                self.monitoring_tracer.update_local_events()
             self.frame_trace_lines_opcodes = {}
 
     def set_quit(self):

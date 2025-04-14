@@ -99,7 +99,7 @@ class CWriter:
         self.maybe_dedent(tkn.text)
         self.set_position(tkn)
         self.emit_text(tkn.text)
-        if tkn.kind == "CMACRO":
+        if tkn.kind.startswith("CMACRO"):
             self.newline = True
         self.maybe_indent(tkn.text)
 

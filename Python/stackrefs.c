@@ -55,6 +55,12 @@ _Py_stackref_get_object(_PyStackRef ref)
     return entry->obj;
 }
 
+int
+PyStackRef_Is(_PyStackRef a, _PyStackRef b)
+{
+    return _Py_stackref_get_object(a) == _Py_stackref_get_object(b);
+}
+
 PyObject *
 _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber)
 {
@@ -65,6 +71,9 @@ _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber)
     }
     PyObject *obj;
     if (ref.index <= LAST_PREDEFINED_STACKREF_INDEX) {
+        if (ref.index == 0) {
+            _Py_FatalErrorFormat(__func__, "Passing NULL to PyStackRef_CLOSE at %s:%d\n", filename, linenumber);
+        }
         // Pre-allocated reference to None, False or True -- Do not clear
         TableEntry *entry = _Py_hashtable_get(interp->open_stackrefs_table, (void *)ref.index);
         obj = entry->obj;
@@ -182,9 +191,9 @@ _Py_stackref_report_leaks(PyInterpreterState *interp)
 }
 
 void
-PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
+_PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct, const char *filename, int linenumber)
 {
-    PyObject *obj = _Py_stackref_close(ref);
+    PyObject *obj = _Py_stackref_close(ref, filename, linenumber);
     _Py_DECREF_SPECIALIZED(obj, destruct);
 }
 

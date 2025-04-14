@@ -152,3 +152,33 @@ to re-enable it in a thread-safe way in the 3.14 release.  This overhead is
 expected to be reduced in upcoming Python release.   We are aiming for an
 overhead of 10% or less on the pyperformance suite compared to the default
 GIL-enabled build.
+
+
+Behavioral changes
+==================
+
+This section describes CPython behavioural changes with the free-threaded
+build.
+
+
+Context variables
+-----------------
+
+In the free-threaded build, the flag :data:`~sys.flags.thread_inherit_context`
+is set to true by default which causes threads created with
+:class:`threading.Thread` to start with a copy of the
+:class:`~contextvars.Context()` of the caller of
+:meth:`~threading.Thread.start`.  In the default GIL-enabled build, the flag
+defaults to false so threads start with an
+empty :class:`~contextvars.Context()`.
+
+
+Warning filters
+---------------
+
+In the free-threaded build, the flag :data:`~sys.flags.context_aware_warnings`
+is set to true by default.  In the default GIL-enabled build, the flag defaults
+to false.  If the flag is true then the :class:`warnings.catch_warnings`
+context manager uses a context variable for warning filters.  If the flag is
+false then :class:`~warnings.catch_warnings` modifies the global filters list,
+which is not thread-safe.  See the :mod:`warnings` module for more details.

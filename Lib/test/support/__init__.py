@@ -3,6 +3,7 @@
 if __name__ != 'test.support':
     raise ImportError('support must be imported from the test package')
 
+import annotationlib
 import contextlib
 import functools
 import inspect
@@ -409,7 +410,8 @@ def skip_if_buildbot(reason=None):
         isbuildbot = False
     return unittest.skipIf(isbuildbot, reason)
 
-def check_sanitizer(*, address=False, memory=False, ub=False, thread=False):
+def check_sanitizer(*, address=False, memory=False, ub=False, thread=False,
+                    function=True):
     """Returns True if Python is compiled with sanitizer support"""
     if not (address or memory or ub or thread):
         raise ValueError('At least one of address, memory, ub or thread must be True')
@@ -433,11 +435,15 @@ def check_sanitizer(*, address=False, memory=False, ub=False, thread=False):
         '-fsanitize=thread' in cflags or
         '--with-thread-sanitizer' in config_args
     )
+    function_sanitizer = (
+        '-fsanitize=function' in cflags
+    )
     return (
         (memory and memory_sanitizer) or
         (address and address_sanitizer) or
         (ub and ub_sanitizer) or
-        (thread and thread_sanitizer)
+        (thread and thread_sanitizer) or
+        (function and function_sanitizer)
     )
 
 
@@ -2364,8 +2370,9 @@ def clear_ignored_deprecations(*tokens: object) -> None:
         raise ValueError("Provide token or tokens returned by ignore_deprecations_from")
 
     new_filters = []
+    old_filters = warnings._get_filters()
     endswith = tuple(rf"(?#support{id(token)})" for token in tokens)
-    for action, message, category, module, lineno in warnings.filters:
+    for action, message, category, module, lineno in old_filters:
         if action == "ignore" and category is DeprecationWarning:
             if isinstance(message, re.Pattern):
                 msg = message.pattern
@@ -2374,8 +2381,8 @@ def clear_ignored_deprecations(*tokens: object) -> None:
             if msg.endswith(endswith):
                 continue
         new_filters.append((action, message, category, module, lineno))
-    if warnings.filters != new_filters:
-        warnings.filters[:] = new_filters
+    if old_filters != new_filters:
+        old_filters[:] = new_filters
         warnings._filters_mutated()
 
 
@@ -3014,6 +3021,47 @@ def is_libssl_fips_mode():
     except ImportError:
         return False  # more of a maybe, unless we add this to the _ssl module.
     return get_fips_mode() != 0
+
+
+class EqualToForwardRef:
+    """Helper to ease use of annotationlib.ForwardRef in tests.
+
+    This checks only attributes that can be set using the constructor.
+
+    """
+
+    def __init__(
+        self,
+        arg,
+        *,
+        module=None,
+        owner=None,
+        is_class=False,
+    ):
+        self.__forward_arg__ = arg
+        self.__forward_is_class__ = is_class
+        self.__forward_module__ = module
+        self.__owner__ = owner
+
+    def __eq__(self, other):
+        if not isinstance(other, (EqualToForwardRef, annotationlib.ForwardRef)):
+            return NotImplemented
+        return (
+            self.__forward_arg__ == other.__forward_arg__
+            and self.__forward_module__ == other.__forward_module__
+            and self.__forward_is_class__ == other.__forward_is_class__
+            and self.__owner__ == other.__owner__
+        )
+
+    def __repr__(self):
+        extra = []
+        if self.__forward_module__ is not None:
+            extra.append(f", module={self.__forward_module__!r}")
+        if self.__forward_is_class__:
+            extra.append(", is_class=True")
+        if self.__owner__ is not None:
+            extra.append(f", owner={self.__owner__!r}")
+        return f"EqualToForwardRef({self.__forward_arg__!r}{''.join(extra)})"
 
 
 _linked_to_musl = None

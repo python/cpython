@@ -582,6 +582,7 @@ struct _warnings_runtime_state {
     PyObject *default_action; /* String */
     _PyRecursiveMutex lock;
     long filters_version;
+    PyObject *context;
 };
 
 struct _Py_mem_interp_free_queue {
