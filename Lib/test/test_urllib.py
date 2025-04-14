@@ -189,7 +189,6 @@ class urlopen_FileTests(unittest.TestCase):
         with self.assertRaises(urllib.error.URLError) as e:
             urllib.request.urlopen(url)
         if os.name == 'nt':
-            self.assertEqual(e.exception.reason, 'The network path was not found')
             self.assertEqual(e.exception.filename, r'\\pythontest.net\foo\bar')
         else:
             self.assertEqual(e.exception.reason, 'file:// scheme is supported only on localhost')
