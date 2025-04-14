@@ -218,7 +218,7 @@ def strip_exc_timestamps(output):
        else:
            pattern = TIMESTAMP_AFTER_EXC_MSG_RE_GROUP.encode()
            empty = b""
-       return re.sub(pattern, empty, output)
+       return re.sub(pattern, empty, output, flags=re.MULTILINE)
    return output
 
 

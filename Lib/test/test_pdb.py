@@ -9,7 +9,6 @@ import codecs
 import unittest
 import subprocess
 import textwrap
-import traceback
 import linecache
 import zipapp
 import zipfile
@@ -4102,8 +4101,11 @@ def bœr():
             'debug doesnotexist',
             'c',
         ])
-        stdout, _ = self.run_pdb_script('pass', commands + '\n')
-        stdout = traceback.strip_exc_timestamps(stdout)
+        stdout, _ = self.run_pdb_script(
+            'pass',
+            commands + '\n',
+            extra_env={'PYTHON_TRACEBACK_TIMESTAMPS':'0'},
+        )
 
         self.assertEqual(stdout.splitlines()[1:], [
             '-> pass',
