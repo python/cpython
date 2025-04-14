@@ -218,14 +218,14 @@ if __name__ == "__main__":
                     "-X", f"traceback_timestamps={mode}",
                     self.script_strip_path
                 )
-                output = result.out.decode() + result.err.decode(errors='replace')
+                output = result.out.decode() + result.err.decode(errors='ignore')
 
                 # call strip_exc_timestamps in a process using the same mode as what generated our output.
                 result = script_helper.assert_python_ok(
                     "-X", f"traceback_timestamps={mode}",
                     self.script_strip_path, output
                 )
-                stripped_output = result.out.decode() + result.err.decode(errors='replace')
+                stripped_output = result.out.decode() + result.err.decode(errors='ignore')
 
                 # Verify original strings have timestamps and stripped ones don't
                 self.assertIn("ZeroDivisionError: division by zero <@", output)
@@ -240,13 +240,13 @@ if __name__ == "__main__":
         result = script_helper.assert_python_failure(
             "-X", "traceback_timestamps=0", self.script_strip_path
         )
-        output = result.out.decode() + result.err.decode(errors='replace')
+        output = result.out.decode() + result.err.decode(errors='ignore')
 
         # call strip_exc_timestamps in a process using the same mode as what generated our output.
         result = script_helper.assert_python_ok(
             "-X", "traceback_timestamps=0", self.script_strip_path, output
         )
-        stripped_output = result.out.decode() + result.err.decode(errors='replace')
+        stripped_output = result.out.decode() + result.err.decode(errors='ignore')
 
         # All strings should be unchanged by the strip function
         self.assertIn("ZeroDivisionError: division by zero\n", stripped_output)
