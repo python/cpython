@@ -194,48 +194,8 @@ GETITEM(PyObject *v, Py_ssize_t i) {
 #define JUMPBY(x)       (next_instr += (x))
 #define SKIP_OVER(x)    (next_instr += (x))
 
-
-/* Stack manipulation macros */
-
-/* The stack can grow at most MAXINT deep, as co_nlocals and
-   co_stacksize are ints. */
 #define STACK_LEVEL()     ((int)(stack_pointer - _PyFrame_Stackbase(frame)))
 #define STACK_SIZE()      (_PyFrame_GetCode(frame)->co_stacksize)
-#define EMPTY()           (STACK_LEVEL() == 0)
-#define TOP()             (stack_pointer[-1])
-#define SECOND()          (stack_pointer[-2])
-#define THIRD()           (stack_pointer[-3])
-#define FOURTH()          (stack_pointer[-4])
-#define PEEK(n)           (stack_pointer[-(n)])
-#define POKE(n, v)        (stack_pointer[-(n)] = (v))
-#define SET_TOP(v)        (stack_pointer[-1] = (v))
-#define SET_SECOND(v)     (stack_pointer[-2] = (v))
-#define BASIC_STACKADJ(n) (stack_pointer += n)
-#define BASIC_PUSH(v)     (*stack_pointer++ = (v))
-#define BASIC_POP()       (*--stack_pointer)
-
-#ifdef Py_DEBUG
-#define PUSH(v)         do { \
-                            BASIC_PUSH(v); \
-                            assert(STACK_LEVEL() <= STACK_SIZE()); \
-                        } while (0)
-#define POP()           (assert(STACK_LEVEL() > 0), BASIC_POP())
-#define STACK_GROW(n)   do { \
-                            assert(n >= 0); \
-                            BASIC_STACKADJ(n); \
-                            assert(STACK_LEVEL() <= STACK_SIZE()); \
-                        } while (0)
-#define STACK_SHRINK(n) do { \
-                            assert(n >= 0); \
-                            assert(STACK_LEVEL() >= n); \
-                            BASIC_STACKADJ(-(n)); \
-                        } while (0)
-#else
-#define PUSH(v)                BASIC_PUSH(v)
-#define POP()                  BASIC_POP()
-#define STACK_GROW(n)          BASIC_STACKADJ(n)
-#define STACK_SHRINK(n)        BASIC_STACKADJ(-(n))
-#endif
 
 #define WITHIN_STACK_BOUNDS() \
    (frame->owner == FRAME_OWNED_BY_INTERPRETER || (STACK_LEVEL() >= 0 && STACK_LEVEL() <= STACK_SIZE()))
