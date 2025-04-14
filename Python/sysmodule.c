@@ -3453,6 +3453,7 @@ set_flags_from_config(PyInterpreterState *interp, PyObject *flags)
 
     /* Set the flag with our string value */
     SetFlagObj(ts_str);
+
     /* REMEMBER: the order of the SetFlag ops MUST match that of flags_fields */
 #undef SetFlagObj
 #undef SetFlag

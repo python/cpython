@@ -237,9 +237,9 @@ BaseException_repr(PyObject *op)
 
 /* Pickling support */
 
-/* Returns dict on success, after having added a __timestamp_ns__ key; NULL
-   otherwise.  dict does not have to be self->dict as the getstate use case
-   often uses a copy.  No key is added if its value would be 0. */
+/* Returns dict on success, after having maybe added a __timestamp_ns__ key;
+   NULL on error.  dict does not have to be self->dict as the getstate use
+   case often uses a copy.  No key is added if its value would be 0. */
 static PyObject* BaseException_add_timestamp_to_dict(PyBaseExceptionObject *self, PyObject *dict)
 {
     assert(dict != NULL);
@@ -249,7 +249,7 @@ static PyObject* BaseException_add_timestamp_to_dict(PyBaseExceptionObject *self
     PyObject *ts = PyLong_FromLongLong(self->timestamp_ns);
     if (!ts)
         return NULL;
-    if (PyDict_SetItemString(dict, "__timestamp_ns__", ts) == -1) {
+    if (PyDict_SetItemString(dict, &_Py_ID(__timestamp_ns__), ts) == -1) {
         Py_DECREF(ts);
         return NULL;
     }
@@ -1878,21 +1878,6 @@ ImportError_getstate(PyObject *op)
     dict = dict ? PyDict_Copy(dict) : PyDict_New();
     if (dict == NULL) {
         return NULL;
-    }
-    if (self->name || self->path || self->name_from) {
-        if (self->name && PyDict_SetItem(dict, &_Py_ID(name), self->name) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-        if (self->path && PyDict_SetItem(dict, &_Py_ID(path), self->path) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-        if (self->name_from && PyDict_SetItem(dict, &_Py_ID(name_from), self->name_from) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-        return dict;
     }
     if (!BaseException_add_timestamp_to_dict((PyBaseExceptionObject *)self, dict)) {
         Py_DECREF(dict);
