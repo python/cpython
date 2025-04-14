@@ -8,6 +8,7 @@
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
 #include "pycore_modsupport.h"    // _PyArg_UnpackStack()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 
@@ -1349,7 +1350,7 @@ wrapper_hash(PyObject *self)
     wrapperobject *wp = (wrapperobject *)self;
     Py_hash_t x, y;
     x = PyObject_GenericHash(wp->self);
-    y = _Py_HashPointer(wp->descr);
+    y = Py_HashPointer(wp->descr);
     x = x ^ y;
     if (x == -1)
         x = -2;

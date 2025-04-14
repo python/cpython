@@ -538,13 +538,17 @@ class FileTestCase(unittest.TestCase):
 
     def test_init(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ)) as f:
-            pass
+            self.assertIsInstance(f, LZMAFile)
+            self.assertEqual(f.mode, "rb")
         with LZMAFile(BytesIO(), "w") as f:
-            pass
+            self.assertIsInstance(f, LZMAFile)
+            self.assertEqual(f.mode, "wb")
         with LZMAFile(BytesIO(), "x") as f:
-            pass
+            self.assertIsInstance(f, LZMAFile)
+            self.assertEqual(f.mode, "wb")
         with LZMAFile(BytesIO(), "a") as f:
-            pass
+            self.assertIsInstance(f, LZMAFile)
+            self.assertEqual(f.mode, "wb")
 
     def test_init_with_PathLike_filename(self):
         filename = FakePath(TESTFN)
@@ -573,26 +577,32 @@ class FileTestCase(unittest.TestCase):
 
     def test_init_mode(self):
         with TempFile(TESTFN):
-            with LZMAFile(TESTFN, "r"):
-                pass
-            with LZMAFile(TESTFN, "rb"):
-                pass
-            with LZMAFile(TESTFN, "w"):
-                pass
-            with LZMAFile(TESTFN, "wb"):
-                pass
-            with LZMAFile(TESTFN, "a"):
-                pass
-            with LZMAFile(TESTFN, "ab"):
-                pass
+            with LZMAFile(TESTFN, "r") as f:
+                self.assertIsInstance(f, LZMAFile)
+                self.assertEqual(f.mode, "rb")
+            with LZMAFile(TESTFN, "rb") as f:
+                self.assertIsInstance(f, LZMAFile)
+                self.assertEqual(f.mode, "rb")
+            with LZMAFile(TESTFN, "w") as f:
+                self.assertIsInstance(f, LZMAFile)
+                self.assertEqual(f.mode, "wb")
+            with LZMAFile(TESTFN, "wb") as f:
+                self.assertIsInstance(f, LZMAFile)
+                self.assertEqual(f.mode, "wb")
+            with LZMAFile(TESTFN, "a") as f:
+                self.assertIsInstance(f, LZMAFile)
+                self.assertEqual(f.mode, "wb")
+            with LZMAFile(TESTFN, "ab") as f:
+                self.assertIsInstance(f, LZMAFile)
+                self.assertEqual(f.mode, "wb")
 
     def test_init_with_x_mode(self):
         self.addCleanup(unlink, TESTFN)
         for mode in ("x", "xb"):
             unlink(TESTFN)
             with LZMAFile(TESTFN, mode) as f:
-                pass
-            self.assertEqual(f.mode, 'wb')
+                self.assertIsInstance(f, LZMAFile)
+                self.assertEqual(f.mode, 'wb')
             with self.assertRaises(FileExistsError):
                 LZMAFile(TESTFN, mode)
 

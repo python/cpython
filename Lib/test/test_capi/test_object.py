@@ -1,9 +1,12 @@
 import enum
+import textwrap
 import unittest
 from test import support
 from test.support import import_helper
 from test.support import os_helper
 from test.support import threading_helper
+from test.support.script_helper import assert_python_failure
+
 
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')
 _testcapi = import_helper.import_module('_testcapi')
@@ -169,6 +172,56 @@ class EnableDeferredRefcountingTest(unittest.TestCase):
         if support.Py_GIL_DISABLED:
             self.assertTrue(_testinternalcapi.has_deferred_refcount(silly_list))
 
+
+class CAPITest(unittest.TestCase):
+    def check_negative_refcount(self, code):
+        # bpo-35059: Check that Py_DECREF() reports the correct filename
+        # when calling _Py_NegativeRefcount() to abort Python.
+        code = textwrap.dedent(code)
+        rc, out, err = assert_python_failure('-c', code)
+        self.assertRegex(err,
+                         br'object\.c:[0-9]+: '
+                         br'_Py_NegativeRefcount: Assertion failed: '
+                         br'object has negative ref count')
+
+    @unittest.skipUnless(hasattr(_testcapi, 'negative_refcount'),
+                         'need _testcapi.negative_refcount()')
+    def test_negative_refcount(self):
+        code = """
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.negative_refcount()
+        """
+        self.check_negative_refcount(code)
+
+    @unittest.skipUnless(hasattr(_testcapi, 'decref_freed_object'),
+                         'need _testcapi.decref_freed_object()')
+    @support.skip_if_sanitizer("use after free on purpose",
+                               address=True, memory=True, ub=True)
+    def test_decref_freed_object(self):
+        code = """
+            import _testcapi
+            from test import support
+
+            with support.SuppressCrashReport():
+                _testcapi.decref_freed_object()
+        """
+        self.check_negative_refcount(code)
+
+    def test_decref_delayed(self):
+        # gh-130519: Test that _PyObject_XDecRefDelayed() and QSBR code path
+        # handles destructors that are possibly re-entrant or trigger a GC.
+        import gc
+
+        class MyObj:
+            def __del__(self):
+                gc.collect()
+
+        for _ in range(1000):
+            obj = MyObj()
+            _testinternalcapi.incref_decref_delayed(obj)
 
 if __name__ == "__main__":
     unittest.main()

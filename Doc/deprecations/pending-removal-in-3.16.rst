@@ -32,7 +32,6 @@ Pending removal in Python 3.16
     * :class:`asyncio.WindowsProactorEventLoopPolicy`
     * :func:`asyncio.get_event_loop_policy`
     * :func:`asyncio.set_event_loop_policy`
-    * :func:`asyncio.set_event_loop`
 
     Users should use :func:`asyncio.run` or :class:`asyncio.Runner` with
     *loop_factory* to use the desired event loop implementation.
@@ -82,7 +81,7 @@ Pending removal in Python 3.16
 
 * :mod:`sysconfig`:
 
-  * The ``~sysconfig.expand_makefile_vars`` function
+  * The :func:`!sysconfig.expand_makefile_vars` function
     has been deprecated since Python 3.14.
     Use the ``vars`` argument of :func:`sysconfig.get_paths` instead.
 

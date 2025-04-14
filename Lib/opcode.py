@@ -9,6 +9,7 @@ __all__ = ["cmp_op", "stack_effect", "hascompare", "opname", "opmap",
            "HAVE_ARGUMENT", "EXTENDED_ARG", "hasarg", "hasconst", "hasname",
            "hasjump", "hasjrel", "hasjabs", "hasfree", "haslocal", "hasexc"]
 
+import builtins
 import _opcode
 from _opcode import stack_effect
 
@@ -38,7 +39,8 @@ hasexc = [op for op in opmap.values() if _opcode.has_exc(op)]
 _intrinsic_1_descs = _opcode.get_intrinsic1_descs()
 _intrinsic_2_descs = _opcode.get_intrinsic2_descs()
 _special_method_names = _opcode.get_special_method_names()
-_common_constants = [AssertionError, NotImplementedError]
+_common_constants = [builtins.AssertionError, builtins.NotImplementedError,
+                     builtins.tuple, builtins.all, builtins.any]
 _nb_ops = _opcode.get_nb_ops()
 
 hascompare = [opmap["COMPARE_OP"]]
@@ -63,25 +65,13 @@ _cache_format = {
     "CONTAINS_OP": {
         "counter": 1,
     },
-    "BINARY_SUBSCR": {
-        "counter": 1,
-    },
     "FOR_ITER": {
         "counter": 1,
     },
     "LOAD_SUPER_ATTR": {
         "counter": 1,
     },
-    "LOAD_SUPER_METHOD": {
-        "counter": 1,
-    },
     "LOAD_ATTR": {
-        "counter": 1,
-        "version": 2,
-        "keys_version": 2,
-        "descr": 4,
-    },
-    "LOAD_METHOD": {
         "counter": 1,
         "version": 2,
         "keys_version": 2,
