@@ -871,7 +871,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertIn(sys.flags.utf8_mode, {0, 1, 2})
 
         # non-tuple sequence fields
-        self.assertIsInstance(sys.flags.gil, int)
+        self.assertIsInstance(sys.flags.gil, int|type(None))
         self.assertIsInstance(sys.flags.traceback_timestamps, str)
 
 

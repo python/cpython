@@ -214,13 +214,15 @@ if __name__ == "__main__":
         for mode in ("us", "ns", "iso"):
             with self.subTest(mode):
                 result = script_helper.assert_python_failure(
-                    "-X", f"traceback_timestamps={mode}", self.script_strip_path
+                    "-X", f"traceback_timestamps={mode}",
+                    "-X", "utf8=1", self.script_strip_path
                 )
                 output = result.out.decode() + result.err.decode()
 
                 # call strip_exc_timestamps in a process using the same mode as what generated our output.
                 result = script_helper.assert_python_ok(
-                    "-X", f"traceback_timestamps={mode}", self.script_strip_path, output
+                    "-X", f"traceback_timestamps={mode}",
+                    "-X", "utf8=1", self.script_strip_path, output
                 )
                 stripped_output = result.out.decode() + result.err.decode()
 
@@ -234,13 +236,15 @@ if __name__ == "__main__":
         """Test the strip_exc_timestamps function when timestamps are disabled"""
         # Run with timestamps disabled
         result = script_helper.assert_python_failure(
-            "-X", "traceback_timestamps=0", self.script_strip_path
+            "-X", "traceback_timestamps=0",
+            "-X", "utf8=1", self.script_strip_path
         )
         output = result.out.decode() + result.err.decode()
 
         # call strip_exc_timestamps in a process using the same mode as what generated our output.
         result = script_helper.assert_python_ok(
-            "-X", "traceback_timestamps=0", self.script_strip_path, output
+            "-X", "traceback_timestamps=0",
+            "-X", "utf8=1", self.script_strip_path, output
         )
         stripped_output = result.out.decode() + result.err.decode()
 
