@@ -1,5 +1,6 @@
 #ifndef Py_BUILD_CORE_MODULE
 #  define Py_BUILD_CORE_MODULE
+#include "pystate.h"
 #endif
 
 /* Always enable assertion (even in release mode) */
@@ -2341,6 +2342,27 @@ test_get_incomplete_frame(void)
     return result;
 }
 
+static void do_gilstate_ensure(void *unused)
+{
+    for (int i = 0; i < 50; ++i) {
+        PyGILState_STATE gstate = PyGILState_Ensure();
+        assert(PyGILState_Check()); // Yuck
+        PyGILState_Release(gstate);
+    }
+}
+
+static int
+test_gilstate_after_finalization(void)
+{
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    _testembed_Py_Initialize();
+    if (PyThread_start_joinable_thread(&do_gilstate_ensure, NULL, &ident, &handle) < 0) {
+        return -1;
+    }
+    Py_Finalize();
+    return PyThread_join_thread(handle);
+}
 
 /* *********************************************************
  * List of test cases and the function that implements it.
@@ -2431,7 +2453,7 @@ static struct TestCase TestCases[] = {
     {"test_frozenmain", test_frozenmain},
 #endif
     {"test_get_incomplete_frame", test_get_incomplete_frame},
-
+    {"test_gilstate_after_finalization", test_gilstate_after_finalization},
     {NULL, NULL}
 };
 
