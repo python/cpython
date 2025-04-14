@@ -113,7 +113,8 @@ _Py_stackref_create(PyObject *obj, const char *filename, int linenumber)
         Py_FatalError("Cannot create a stackref for NULL");
     }
     PyInterpreterState *interp = PyInterpreterState_Get();
-    uint64_t new_id = interp->next_stackref++;
+    uint64_t new_id = interp->next_stackref;
+    interp->next_stackref = new_id + 2;
     TableEntry *entry = make_table_entry(obj, filename, linenumber);
     if (entry == NULL) {
         Py_FatalError("No memory left for stackref debug table");
@@ -152,7 +153,7 @@ void
 _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef ref)
 {
     assert(interp->next_stackref >= ref.index);
-    interp->next_stackref = ref.index+1;
+    interp->next_stackref = ref.index+2;
     TableEntry *entry = make_table_entry(obj, "builtin-object", 0);
     if (entry == NULL) {
         Py_FatalError("No memory left for stackref debug table");
@@ -195,6 +196,29 @@ _PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct, const char *
 {
     PyObject *obj = _Py_stackref_close(ref, filename, linenumber);
     _Py_DECREF_SPECIALIZED(obj, destruct);
+}
+
+_PyStackRef PyStackRef_TagInt(intptr_t i)
+{
+    return (_PyStackRef){ .index = (i << 1) + 1 };
+}
+
+intptr_t
+PyStackRef_UntagInt(_PyStackRef i)
+{
+    assert(is_tagged_int(i));
+    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, i.index, 1);
+}
+
+bool PyStackRef_IsTaggedInt(_PyStackRef ref)
+{
+    return is_tagged_int(ref);
+}
+
+bool
+PyStackRef_IsNullOrInt(_PyStackRef ref)
+{
+    return PyStackRef_IsNull(ref) || PyStackRef_IsTaggedInt(ref);
 }
 
 #endif

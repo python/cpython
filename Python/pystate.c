@@ -673,7 +673,7 @@ init_interpreter(PyInterpreterState *interp,
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
     }
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
-    interp->next_stackref = 1;
+    interp->next_stackref = 2;
     _Py_hashtable_allocator_t alloc = {
         .malloc = malloc,
         .free = free,

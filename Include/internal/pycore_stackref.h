@@ -63,11 +63,11 @@ extern void _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _P
 
 static const _PyStackRef PyStackRef_NULL = { .index = 0 };
 
-#define PyStackRef_None ((_PyStackRef){ .index = 1 } )
-#define PyStackRef_False ((_PyStackRef){ .index = 2 })
-#define PyStackRef_True ((_PyStackRef){ .index = 3 })
+#define PyStackRef_None ((_PyStackRef){ .index = 2 } )
+#define PyStackRef_False ((_PyStackRef){ .index = 4 })
+#define PyStackRef_True ((_PyStackRef){ .index = 6 })
 
-#define LAST_PREDEFINED_STACKREF_INDEX 3
+#define LAST_PREDEFINED_STACKREF_INDEX 6
 
 static inline int
 PyStackRef_IsNull(_PyStackRef ref)
@@ -96,6 +96,7 @@ PyStackRef_IsNone(_PyStackRef ref)
 static inline PyObject *
 _PyStackRef_AsPyObjectBorrow(_PyStackRef ref, const char *filename, int linenumber)
 {
+    assert((ref.index & 1) == 0);
     _Py_stackref_record_borrow(ref, filename, linenumber);
     return _Py_stackref_get_object(ref);
 }
@@ -132,13 +133,23 @@ _PyStackRef_FromPyObjectImmortal(PyObject *obj, const char *filename, int linenu
 }
 #define PyStackRef_FromPyObjectImmortal(obj) _PyStackRef_FromPyObjectImmortal(_PyObject_CAST(obj), __FILE__, __LINE__)
 
+static inline bool
+is_tagged_int(_PyStackRef ref)
+{
+    return (ref.index & 1) == 1;
+}
+
 static inline void
 _PyStackRef_CLOSE(_PyStackRef ref, const char *filename, int linenumber)
 {
+    if (is_tagged_int(ref)) {
+        return;
+    }
     PyObject *obj = _Py_stackref_close(ref, filename, linenumber);
     Py_DECREF(obj);
 }
 #define PyStackRef_CLOSE(REF) _PyStackRef_CLOSE((REF), __FILE__, __LINE__)
+
 
 static inline void
 _PyStackRef_XCLOSE(_PyStackRef ref, const char *filename, int linenumber)
@@ -146,17 +157,21 @@ _PyStackRef_XCLOSE(_PyStackRef ref, const char *filename, int linenumber)
     if (PyStackRef_IsNull(ref)) {
         return;
     }
-    PyObject *obj = _Py_stackref_close(ref, filename, linenumber);
-    Py_DECREF(obj);
+    _PyStackRef_CLOSE(ref, filename, linenumber);
 }
 #define PyStackRef_XCLOSE(REF) _PyStackRef_XCLOSE((REF), __FILE__, __LINE__)
 
 static inline _PyStackRef
 _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
 {
-    PyObject *obj = _Py_stackref_get_object(ref);
-    Py_INCREF(obj);
-    return _Py_stackref_create(obj, filename, linenumber);
+    if (ref.index & 1) {
+        return ref;
+    }
+    else {
+        PyObject *obj = _Py_stackref_get_object(ref);
+        Py_INCREF(obj);
+        return _Py_stackref_create(obj, filename, linenumber);
+    }
 }
 #define PyStackRef_DUP(REF) _PyStackRef_DUP(REF, __FILE__, __LINE__)
 
@@ -210,7 +225,14 @@ _PyStackRef_FromPyObjectNewMortal(PyObject *obj, const char *filename, int linen
 
 extern int PyStackRef_Is(_PyStackRef a, _PyStackRef b);
 
+extern bool PyStackRef_IsTaggedInt(_PyStackRef ref);
+
+extern intptr_t PyStackRef_UntagInt(_PyStackRef ref);
+
 extern _PyStackRef PyStackRef_TagInt(intptr_t i);
+
+extern bool
+PyStackRef_IsNullOrInt(_PyStackRef ref);
 
 #else
 
