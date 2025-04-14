@@ -12,6 +12,7 @@ import _opcode
 import os
 import re
 import stat
+import struct
 import sys
 import sysconfig
 import textwrap
@@ -899,16 +900,28 @@ if Py_GIL_DISABLED:
     _header = 'PHBBInP'
 else:
     _header = 'nP'
-_align = '0n'
 _vheader = _header + 'n'
 
+def _align(fmt):
+    """Pad the struct the way a C compiler does.
+
+    C alignment pads the struct total size so that arrays keep the largest
+    alignment element aligned in an array.
+    """
+    align = '0n'
+    if 'q' in fmt or 'Q' in fmt:
+        align = '0q'
+    if 'd' in fmt:
+        align = '0d'
+    return align
+
 def calcobjsize(fmt):
-    import struct
-    return struct.calcsize(_header + fmt + _align)
+    whole_fmt = _header + fmt
+    return struct.calcsize(whole_fmt + _align(whole_fmt))
 
 def calcvobjsize(fmt):
-    import struct
-    return struct.calcsize(_vheader + fmt + _align)
+    whole_fmt = _vheader + fmt
+    return struct.calcsize(whole_fmt + _align(whole_fmt))
 
 
 _TPFLAGS_STATIC_BUILTIN = 1<<1
