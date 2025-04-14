@@ -681,7 +681,7 @@ not have to be) the original ``STACK[-2]``.
    Resolves ``__aenter__`` and ``__aexit__`` from ``STACK[-1]``.
    Pushes ``__aexit__`` and result of ``__aenter__()`` to the stack::
 
-      STACK.extend((__aexit__, __aenter__())
+      STACK.extend((__aexit__, __aenter__()))
 
    .. versionadded:: 3.5
 
