@@ -158,7 +158,7 @@ created.  Socket addresses are represented as follows:
 
     - On Linux it accepts an integer ``device_id`` or a tuple
       ``(device_id, [channel])`` where ``device_id``
-      is specifies the number of the Bluetooth device,
+      specifies the number of the Bluetooth device,
       and ``channel`` is an optional integer specifying the HCI channel
       (:const:`HCI_CHANNEL_RAW` by default).
     - On FreeBSD, NetBSD and DragonFly BSD it accepts ``bdaddr``
