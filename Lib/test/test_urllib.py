@@ -121,9 +121,7 @@ class urlopen_FileTests(unittest.TestCase):
         # Make sure object returned by urlopen() has the specified methods
         for attr in ("read", "readline", "readlines", "fileno",
                      "close", "info", "geturl", "getcode", "__iter__"):
-            self.assertTrue(hasattr(self.returned_obj, attr),
-                         "object returned by urlopen() lacks %s attribute" %
-                         attr)
+            self.assertHasAttr(self.returned_obj, attr)
 
     def test_read(self):
         self.assertEqual(self.text, self.returned_obj.read())
@@ -544,9 +542,7 @@ class urlopen_DataTests(unittest.TestCase):
         # Make sure object returned by urlopen() has the specified methods
         for attr in ("read", "readline", "readlines",
                      "close", "info", "geturl", "getcode", "__iter__"):
-            self.assertTrue(hasattr(self.text_url_resp, attr),
-                         "object returned by urlopen() lacks %s attribute" %
-                         attr)
+            self.assertHasAttr(self.text_url_resp, attr)
 
     def test_info(self):
         self.assertIsInstance(self.text_url_resp.info(), email.message.Message)
