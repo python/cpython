@@ -1531,8 +1531,9 @@ class PosixTester(unittest.TestCase):
         link = orig + 'link'
         posix.link(symlink, link)
         self.addCleanup(os_helper.unlink, link)
-        default_follow = sys.platform.startswith(('darwin', 'freebsd', 'netbsd', 'openbsd', 'dragonfly'))
-        default_no_follow = sys.platform.startswith(('win32', 'linux', 'sunos5'))
+        default_follow = sys.platform.startswith(
+            ('darwin', 'freebsd', 'netbsd', 'openbsd', 'dragonfly', 'sunos5'))
+        default_no_follow = sys.platform.startswith(('win32', 'linux'))
         if os.link in os.supports_follow_symlinks or default_follow:
             self.assertEqual(posix.lstat(link), posix.lstat(orig))
         elif default_no_follow:

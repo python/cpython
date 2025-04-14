@@ -4364,12 +4364,12 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
         }
 /* See issue 41355: link() on Linux works like linkat without AT_SYMLINK_FOLLOW,
    but on Mac it works like linkat *with* AT_SYMLINK_FOLLOW. */
-#if defined(MS_WINDOWS) || defined(__linux__) || (defined(__sun) && defined(__SVR4))
+#if defined(MS_WINDOWS) || defined(__linux__)
         if (follow_symlinks == 1) {
             argument_unavailable_error("link", "follow_symlinks=True");
             return NULL;
         }
-#elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__DragonFly__)
+#elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__) || defined(__DragonFly__) || (defined(__sun) && defined(__SVR4))
         if (follow_symlinks == 0) {
             argument_unavailable_error("link", "follow_symlinks=False");
             return NULL;
