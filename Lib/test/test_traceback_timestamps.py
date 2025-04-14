@@ -229,7 +229,7 @@ if __name__ == "__main__":
 
                 # Verify original strings have timestamps and stripped ones don't
                 self.assertIn("ZeroDivisionError: division by zero <@", output)
-                self.assertNotIn("ZeroDivisionError: division by zero\n", output)
+                self.assertNotRegex(output, "(?m)ZeroDivisionError: division by zero(\n|\r|$)")
                 self.assertRegex(stripped_output, "(?m)ZeroDivisionError: division by zero(\r|\n|$)")
                 self.assertRegex(stripped_output, "(?m)FakeError: not an exception(\r|\n|$)")
 
