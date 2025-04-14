@@ -147,9 +147,8 @@ created.  Socket addresses are represented as follows:
 
     - On Linux it accepts a tuple ``(device_id,)`` where ``device_id``
       is an integer specifying the number of the Bluetooth device.
-    - On FreeBSD, NetBSD and DragonFly BSD it accepts ``bdaddr`` where ``bdaddr``
-      is a :class:`bytes` object containing the Bluetooth address in a
-      string format. (ex. ``b'12:23:34:45:56:67'``)
+    - On FreeBSD, NetBSD and DragonFly BSD it accepts ``bdaddr``
+      where ``bdaddr`` is the Bluetooth address as a string.
 
     .. versionchanged:: 3.2
        NetBSD and DragonFlyBSD support added.
@@ -157,10 +156,10 @@ created.  Socket addresses are represented as follows:
     .. versionchanged:: 3.13.3
        FreeBSD support added.
 
-  - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is a
-    :class:`bytes` object containing the Bluetooth address in a
-    string format. (ex. ``b'12:23:34:45:56:67'``) This protocol is not
-    supported under FreeBSD.
+  - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is
+    the Bluetooth address as a string or a :class:`bytes` object.
+    (ex. ``'12:23:34:45:56:67'`` or ``b'12:23:34:45:56:67'``)
+    This protocol is not supported under FreeBSD.
 
 - :const:`AF_ALG` is a Linux-only socket based interface to Kernel
   cryptography. An algorithm socket is configured with a tuple of two to four
