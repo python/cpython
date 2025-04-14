@@ -8,6 +8,7 @@
 #include <Python.h>
 #include "pycore_initconfig.h"    // _PyConfig_InitCompatConfig()
 #include "pycore_runtime.h"       // _PyRuntime
+#include "pycore_semaphore.h"     // _PySemaphore
 #include "pycore_pythread.h"      // PyThread_start_joinable_thread()
 #include "pycore_import.h"        // _PyImport_FrozenBootstrap
 #include <inttypes.h>
@@ -2342,26 +2343,32 @@ test_get_incomplete_frame(void)
 }
 
 static void
-do_gilstate_ensure(void *unused)
+do_gilstate_ensure(void *semaphore_ptr)
 {
-    for (int i = 0; i < 50; ++i) {
-        PyGILState_STATE gstate = PyGILState_Ensure();
-        assert(PyGILState_Check()); // Yuck
-        PyGILState_Release(gstate);
-    }
+    _PySemaphore *semaphore = (_PySemaphore *)semaphore_ptr;
+    // Signal to the calling thread that we've started
+    _PySemaphore_Wakeup(semaphore);
+    PyGILState_STATE gstate = PyGILState_Ensure(); // This should hang
+    assert(NULL);
 }
 
 static int
 test_gilstate_after_finalization(void)
 {
     _testembed_Py_Initialize();
+    Py_Finalize();
     PyThread_handle_t handle;
     PyThread_ident_t ident;
-    if (PyThread_start_joinable_thread(&do_gilstate_ensure, NULL, &ident, &handle) < 0) {
+    _PySemaphore semaphore;
+    _PySemaphore_Init(&semaphore);
+    if (PyThread_start_joinable_thread(&do_gilstate_ensure, &semaphore, &ident, &handle) < 0) {
         return -1;
     }
-    Py_Finalize();
-    return PyThread_join_thread(handle);
+    _PySemaphore_Wait(&semaphore, /*timeout_ns=*/-1, /*detach=*/0);
+    // We're now pretty confident that the thread went for
+    // PyGILState_Ensure(), but that means it got hung.
+    _PySemaphore_Destroy(&semaphore);
+    return PyThread_detach_thread(handle);
 }
 
 /* *********************************************************

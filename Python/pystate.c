@@ -271,9 +271,9 @@ unbind_gilstate_tstate(PyThreadState *tstate)
     assert(tstate_is_bound(tstate));
     // XXX assert(!tstate->_status.active);
     assert(tstate->_status.bound_gilstate);
-    assert(tstate == gilstate_get());
-
-    gilstate_clear();
+    if (tstate == gilstate_get()) {
+        gilstate_clear();
+    }
     tstate->_status.bound_gilstate = 0;
 }
 
@@ -2695,8 +2695,9 @@ PyGILState_Ensure(void)
 
     /* Ensure that _PyEval_InitThreads() and _PyGILState_Init() have been
        called by Py_Initialize() */
-    assert(_PyEval_ThreadsInitialized());
-    assert(runtime->gilstate.autoInterpreterState != NULL);
+    if (!_PyEval_ThreadsInitialized() || runtime->gilstate.autoInterpreterState == NULL) {
+        PyThread_hang_thread();
+    }
 
     PyThreadState *tcur = gilstate_get();
     int has_gil;
