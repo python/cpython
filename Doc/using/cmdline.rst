@@ -546,7 +546,7 @@ Miscellaneous options
 
      .. versionadded:: 3.7
 
-     .. versionchanged:: 3.14
+     .. versionchanged:: next
          Added ``-X importtime=2`` to also trace imports of loaded modules.
 
    * ``-X dev``: enable :ref:`Python Development Mode <devmode>`, introducing
