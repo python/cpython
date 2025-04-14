@@ -961,7 +961,9 @@ dummy_func(
 
         op(_GUARD_NOS_DICT_NOT_EXACT, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
-            EXIT_IF(!PyDict_Check(o));
+            DEOPT_IF(!Py_TYPE(o)->tp_as_mapping);
+            DEOPT_IF(Py_TYPE(o)->tp_as_mapping->mp_subscript !=
+                     PyDict_Type.tp_as_mapping->mp_subscript);
         }
 
         op(_GUARD_TOS_DICT, (tos -- tos)) {
@@ -976,12 +978,8 @@ dummy_func(
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
-            assert(PyDict_Check(dict));
-            DEOPT_IF(!Py_TYPE(dict)->tp_as_mapping);
-            DEOPT_IF(Py_TYPE(dict)->tp_as_mapping->mp_subscript !=
-                     PyDict_Type.tp_as_mapping->mp_subscript);
             STAT_INC(BINARY_OP, hit);
-            PyObject *res_o = PyDict_Type.tp_as_mapping->mp_subscript(dict, sub);
+            PyObject *res_o = _PyDict_Subscript(dict, sub);
             DECREF_INPUTS();
             ERROR_IF(res_o == NULL, error); // not found or error
             res = PyStackRef_FromPyObjectSteal(res_o);
