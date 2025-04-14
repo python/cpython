@@ -720,11 +720,11 @@ def get_annotations(
             # For STRING, we try to call __annotate__
             ann = _get_and_call_annotate(obj, format)
             if ann is not None:
-                return ann
+                return dict(ann)
             # But if we didn't get it, we use __annotations__ instead.
             ann = _get_dunder_annotations(obj)
             if ann is not None:
-                 ann = annotations_to_string(ann)
+                 return annotations_to_string(ann)
         case Format.VALUE_WITH_FAKE_GLOBALS:
             raise ValueError("The VALUE_WITH_FAKE_GLOBALS format is for internal use only")
         case _:
@@ -832,22 +832,15 @@ def _get_and_call_annotate(obj, format):
         ann = call_annotate_function(annotate, format, owner=obj)
         if not isinstance(ann, dict):
             raise ValueError(f"{obj!r}.__annotate__ returned a non-dict")
-        return dict(ann)
+        return ann
     return None
 
 
 def _get_dunder_annotations(obj):
-    if isinstance(obj, type):
-        try:
-            ann = obj.__annotations__
-        except AttributeError:
-            # For static types, the descriptor raises AttributeError.
-            return None
-    else:
-        ann = getattr(obj, "__annotations__", None)
-        if ann is None:
-            return None
+    ann = getattr(obj, "__annotations__", None)
+    if ann is None:
+        return None
 
     if not isinstance(ann, dict):
         raise ValueError(f"{obj!r}.__annotations__ is neither a dict nor None")
-    return dict(ann)
+    return ann
