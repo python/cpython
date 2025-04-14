@@ -249,7 +249,7 @@ static PyObject* BaseException_add_timestamp_to_dict(PyBaseExceptionObject *self
     PyObject *ts = PyLong_FromLongLong(self->timestamp_ns);
     if (!ts)
         return NULL;
-    if (PyDict_SetItemString(dict, &_Py_ID(__timestamp_ns__), ts) == -1) {
+    if (PyDict_SetItem(dict, &_Py_ID(__timestamp_ns__), ts) == -1) {
         Py_DECREF(ts);
         return NULL;
     }
