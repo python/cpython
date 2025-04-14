@@ -1544,6 +1544,7 @@ class Pathname_Tests(unittest.TestCase):
                 self.assertEqual(
                     urllib.request.url2pathname(url, require_scheme=True),
                     expected_path)
+
         error_subtests = [
             '',
             ':',
