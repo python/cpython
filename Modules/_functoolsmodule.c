@@ -1299,7 +1299,7 @@ bounded_lru_cache_get_lock_held(lru_cache_object *self, PyObject *args, PyObject
         lru_cache_extract_link(link);
         lru_cache_append_link(self, link);
         *result = link->result;
-        self->hits++;
+        FT_ATOMIC_ADD_SSIZE(self->hits, 1);
         Py_INCREF(link->result);
         Py_DECREF(link);
         Py_DECREF(key_);
@@ -1309,7 +1309,7 @@ bounded_lru_cache_get_lock_held(lru_cache_object *self, PyObject *args, PyObject
         Py_DECREF(key_);
         return -1;
     }
-    self->misses++;
+    FT_ATOMIC_ADD_SSIZE(self->misses, 1);
     return 0;
 }
 
