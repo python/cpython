@@ -160,9 +160,8 @@ created.  Socket addresses are represented as follows:
       is an integer specifying the number of the Bluetooth device,
       and ``channel`` is an optional integer specifying the HCI channel
       (:const:`HCI_CHANNEL_RAW` by default).
-    - On FreeBSD, NetBSD and DragonFly BSD it accepts ``bdaddr`` where ``bdaddr``
-      is a :class:`bytes` object containing the Bluetooth address in a
-      string format. (ex. ``b'12:23:34:45:56:67'``)
+    - On FreeBSD, NetBSD and DragonFly BSD it accepts ``bdaddr``
+      where ``bdaddr`` is the Bluetooth address as a string.
 
     .. versionchanged:: 3.2
        NetBSD and DragonFlyBSD support added.
@@ -173,9 +172,9 @@ created.  Socket addresses are represented as follows:
     .. versionchanged:: next
        Added ``channel`` field.
 
-  - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is a
-    :class:`bytes` object containing the Bluetooth address in a
-    string format. (ex. ``b'12:23:34:45:56:67'``)
+  - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is
+    the Bluetooth address as a string or a :class:`bytes` object.
+    (ex. ``'12:23:34:45:56:67'`` or ``b'12:23:34:45:56:67'``)
 
     .. versionchanged:: next
        FreeBSD support added.

@@ -809,7 +809,7 @@ class HandlerTests(unittest.TestCase):
 
         TESTFN = os_helper.TESTFN
         towrite = b"hello, world\n"
-        canonurl = 'file:' + urllib.request.pathname2url(os.path.abspath(TESTFN))
+        canonurl = urllib.request.pathname2url(os.path.abspath(TESTFN), add_scheme=True)
         parsed = urlsplit(canonurl)
         if parsed.netloc:
             raise unittest.SkipTest("non-local working directory")
