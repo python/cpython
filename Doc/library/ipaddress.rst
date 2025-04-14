@@ -552,7 +552,7 @@ dictionaries.
 
       The first address in the network, the one with all the host bits cleared.
       This is the same as :attr:`network_address` for IPv4 networks.
-      
+
       .. versionadded:: next
 
    .. attribute:: network_address
@@ -564,7 +564,7 @@ dictionaries.
 
       The last address in the network, the address with all the host bits set.
       This is the same as :attr:`broadcast_address` for IPv4 networks.
-      
+
       .. versionadded:: next
 
    .. attribute:: broadcast_address
@@ -774,21 +774,21 @@ dictionaries.
 
       The first address in the network, the one with all the host bits cleared.
       This is the same as :attr:`subnet_router_anycast_address` for IPv6 networks.
-      
+
       .. versionadded:: next
 
    .. attribute:: subnet_router_anycast_address
 
       The Subnet-Router anycast address for the network, which is the first address
       in the network.
-      
+
       .. versionadded:: next
 
    .. attribute:: last_address
 
       The last address in the network, the one with all the host bits set.
       This has no special meaning for IPv6 networks.
-      
+
       .. versionadded:: next
 
    .. attribute:: hostmask
@@ -800,6 +800,22 @@ dictionaries.
    .. attribute:: with_hostmask
    .. attribute:: num_addresses
    .. attribute:: prefixlen
+   .. attribute:: network_address
+
+      The first address in the network. The name "network address" has meaning for IPv4 networks,
+      but not for IPv6, hence this use is deprecated.
+
+      .. deprecated:: next
+         Use :attr:`first_address` or :attr:`subnet_router_anycast_address` instead.
+
+   .. attribute:: broadcast_address
+
+      The last address in the network. The name "broadcast address" has meaning for IPv4 networks,
+      but not for IPv6, hence this use is deprecated.
+
+      .. deprecated:: next
+         Use :attr:`last_address` instead.
+
    .. method:: hosts()
 
       Returns an iterator over the usable hosts in the network.  The usable
