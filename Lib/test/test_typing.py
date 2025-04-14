@@ -4554,6 +4554,18 @@ class ProtocolTests(BaseTestCase):
         )
         self.assertIs(type(exc.__cause__), CustomError)
 
+    def test_isinstance_with_deffered_evaluation_of_annotations(self):
+        @runtime_checkable
+        class P(Protocol):
+            x: undefined
+            def meth(self):
+                ...
+
+        class DeferredClass:
+            x: undefined
+
+        self.assertFalse(isinstance(DeferredClass(), P))
+
 
 class GenericTests(BaseTestCase):
 

@@ -1801,7 +1801,7 @@ def _get_protocol_attrs(cls):
     for base in cls.__mro__[:-1]:  # without object
         if base.__name__ in {'Protocol', 'Generic'}:
             continue
-        annotations = getattr(base, '__annotations__', {})
+        annotations = _lazy_annotationlib.get_annotations(base, format=_lazy_annotationlib.Format.FORWARDREF)
         for attr in (*base.__dict__, *annotations):
             if not attr.startswith('_abc_') and attr not in EXCLUDED_ATTRIBUTES:
                 attrs.add(attr)
@@ -2018,7 +2018,7 @@ def _proto_hook(cls, other):
                 break
 
             # ...or in annotations, if it is a sub-protocol.
-            annotations = getattr(base, '__annotations__', {})
+            annotations = _lazy_annotationlib.get_annotations(base, format=_lazy_annotationlib.Format.FORWARDREF)
             if (isinstance(annotations, collections.abc.Mapping) and
                     attr in annotations and
                     issubclass(other, Generic) and getattr(other, '_is_protocol', False)):
