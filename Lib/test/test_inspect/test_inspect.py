@@ -4021,9 +4021,9 @@ class TestSignatureObject(unittest.TestCase):
     def test_signature_on_class_with_decorated_new(self):
         def identity(func):
             @functools.wraps(func)
-            def wrapper(*args, **kwargs):
+            def wrapped(*args, **kwargs):
                 return func(*args, **kwargs)
-            return wrapper
+            return wrapped
 
         class Foo:
             @identity
@@ -4044,18 +4044,18 @@ class TestSignatureObject(unittest.TestCase):
         class Bar:
             __new__ = identity(object.__new__)
 
-        object_new_signature = (
+        varargs_signature = (
             (('args', ..., ..., 'var_positional'),
              ('kwargs', ..., ..., 'var_keyword')),
             ...,
         )
 
         self.assertEqual(self.signature(Bar), ((), ...))
-        self.assertEqual(self.signature(Bar.__new__), object_new_signature)
+        self.assertEqual(self.signature(Bar.__new__), varargs_signature)
         self.assertEqual(self.signature(Bar, follow_wrapped=False),
-                         object_new_signature)
+                         varargs_signature)
         self.assertEqual(self.signature(Bar.__new__, follow_wrapped=False),
-                         object_new_signature)
+                         varargs_signature)
 
     def test_signature_on_class_with_init(self):
         class C:
