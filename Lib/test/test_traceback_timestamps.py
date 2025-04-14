@@ -65,7 +65,8 @@ print(repr(sys.flags.traceback_timestamps))
         result = script_helper.assert_python_ok("-X", "traceback_timestamps=iso", self.script_path)
         stderr = result.err.decode()
         self.assertIn("<@", stderr)  # Timestamp should be present
-        self.assertRegex(stderr, r"<@\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}")  # ISO format
+        # ISO format with Z suffix for UTC
+        self.assertRegex(stderr, r"<@\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z>")
 
     def test_traceback_timestamps_flag_value(self):
         """Test that sys.flags.traceback_timestamps shows the right value"""

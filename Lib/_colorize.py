@@ -17,6 +17,7 @@ class ANSIColors:
     BLUE = "\x1b[34m"
     CYAN = "\x1b[36m"
     GREEN = "\x1b[32m"
+    GREY = "\x1b[90m"
     MAGENTA = "\x1b[35m"
     RED = "\x1b[31m"
     WHITE = "\x1b[37m"  # more like LIGHT GRAY

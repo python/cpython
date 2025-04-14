@@ -192,8 +192,13 @@ match _TIMESTAMP_FORMAT := getattr(sys.flags, "traceback_timestamps", ""):
             return f"<@{ns}ns>"
     case "iso":
         def _timestamp_formatter(ns):
-            from datetime import datetime
-            return f"<@{datetime.fromtimestamp(ns/1e9).isoformat()}>"
+            # Less logic in a critical path than using datetime.
+            from time import strftime, gmtime
+            seconds = ns / 1e9
+            # Use gmtime for UTC time
+            timestr = strftime("%Y-%m-%dT%H:%M:%S", gmtime(seconds))
+            fractional = f"{seconds - int(seconds):.6f}"[2:]  # Get just the decimal part
+            return f"<@{timestr}.{fractional}Z>"  # Z suffix indicates UTC/Zulu time
     case _:
         raise ValueError(f"Invalid sys.flags.traceback_timestamp={_TIMESTAMP_FORMAT!r}")
 
