@@ -243,6 +243,112 @@ depend on your extension, but some common patterns include:
   `thread-local storage <https://en.cppreference.com/w/c/language/storage_duration>`_.
 
 
+Critical Sections
+=================
+
+.. _critical-sections:
+
+In the free-threaded build, CPython provides a mechanism called "critical
+sections" to protect data that would otherwise be protected by the GIL.
+While extension authors may not interact with the internal critical section
+implementation directly, understanding their behavior is crucial when using
+certain C API functions or managing shared state in the free-threaded build.
+
+What Are Critical Sections?
+...........................
+
+Conceptually, critical sections act as a deadlock avoidance layer built on
+top of simple mutexes. Each thread maintains a stack of active critical
+sections. When a thread needs to acquire a lock associated with a critical
+section (e.g., implicitly when calling a thread-safe C API function like
+:c:func:`PyDict_SetItem`, or explicitly using macros), it attempts to acquire
+the underlying mutex.
+
+Using Critical Sections
+.......................
+
+The primary APIs for using critical sections are:
+
+* :c:macro:`Py_BEGIN_CRITICAL_SECTION` and :c:macro:`Py_END_CRITICAL_SECTION` -
+  For locking a single object
+
+* :c:macro:`Py_BEGIN_CRITICAL_SECTION2` and :c:macro:`Py_END_CRITICAL_SECTION2`
+  - For locking two objects simultaneously
+
+These macros are no-ops in non-free-threaded builds, so they can be safely
+added to code that needs to support both build types.
+
+How Critical Sections Work
+..........................
+
+Unlike traditional locks, critical sections do not guarantee exclusive access
+throughout their entire duration. If a thread would block while holding a
+critical section (e.g., by acquiring another lock or performing I/O), the
+critical section is temporarily suspended—all locks are released—and then
+resumed when the blocking operation completes.
+
+This behavior is similar to what happens with the GIL when a thread makes a
+blocking call. The key differences are:
+
+* Critical sections operate on a per-object basis rather than globally
+
+* Critical sections follow a stack discipline within each thread
+
+* Critical sections automatically release and reacquire locks around potential
+  blocking operations
+
+Deadlock Avoidance
+..................
+
+Critical sections help avoid deadlocks in two ways:
+
+1. If a thread tries to acquire a lock that's already held by another thread,
+   it first suspends all of its active critical sections, temporarily releasing
+   their locks
+
+2. When the blocking operation completes, only the top-most critical section is
+   reacquired first
+
+This means you cannot rely on nested critical sections to lock multiple objects
+at once, as the inner critical section may suspend the outer ones. Instead, use
+:c:macro:`Py_BEGIN_CRITICAL_SECTION2` to lock two objects simultaneously.
+
+Important Considerations
+........................
+
+* Critical sections may temporarily release their locks, allowing other threads
+  to modify the protected data. Be careful about making assumptions about the
+  state of the data after operations that might block.
+
+* Because locks can be temporarily released (suspended), entering a critical
+  section does not guarantee exclusive access to the protected resource
+  throughout the section's duration. If code within a critical section calls
+  another function that blocks (e.g., acquires another lock, performs blocking
+  I/O), all locks held by the thread via critical sections will be released.
+  This is similar to how the GIL can be released during blocking calls.
+
+* Only the lock(s) associated with the most recently entered (top-most)
+  critical section are guaranteed to be held at any given time. Locks for
+  outer, nested critical sections might have been suspended.
+
+* You can lock at most two objects simultaneously with these APIs. If you need
+  to lock more objects, you'll need to restructure your code.
+
+* While critical sections will not deadlock if you attempt to lock the same
+  object twice, they are less efficient than purpose-built reentrant locks for
+  this use case.
+
+* When using :c:macro:`Py_BEGIN_CRITICAL_SECTION2`, the order of the objects
+  doesn't affect correctness (the implementation handles deadlock avoidance),
+  but it's good practice to always lock objects in a consistent order.
+
+* Remember that the critical section macros are primarily for protecting access
+  to *Python objects* that might be involved in internal CPython operations
+  susceptible to the deadlock scenarios described above. For protecting purely
+  internal extension state, standard mutexes or other synchronization
+  primitives might be more appropriate.
+
+
 Building Extensions for the Free-Threaded Build
 ===============================================
 
