@@ -1561,7 +1561,7 @@ inherited by child processes.
    *typecode_or_type* determines the type of the elements of the returned array:
    it is either a :ref:`ctypes type <ctypes-fundamental-data-types>` or a one
    character typecode of the kind used by the :mod:`array` module.  In addition,
-   the ``c`` typecode is an alias for :class:`ctypes.c_char`.  If
+   the ``'c'`` typecode is an alias for :class:`ctypes.c_char`.  If
    *size_or_initializer* is an integer, then it determines the length of the
    array, and the array will be initially zeroed. Otherwise,
    *size_or_initializer* is a sequence which is used to initialize the array
