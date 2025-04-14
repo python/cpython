@@ -1016,7 +1016,7 @@ _functools_reduce_impl(PyObject *module, PyObject *func, PyObject *seq,
 
     if (result == NULL)
         PyErr_SetString(PyExc_TypeError,
-                   "reduce() of empty iterable with no initial value");
+                        "reduce() of empty iterable with no initial value");
 
     Py_DECREF(it);
     return result;
@@ -1401,7 +1401,7 @@ bounded_lru_cache_update_lock_held(lru_cache_object *self,
        We created one other reference when the link was created.
        The linked list only has borrowed references. */
     res = _PyDict_Pop_KnownHash((PyDictObject*)self->cache, link->key,
-                                    link->hash, &popresult);
+                                link->hash, &popresult);
     if (res < 0) {
         /* An error arose while trying to remove the oldest key (the one
            being evicted) from the cache.  We restore the link to its
