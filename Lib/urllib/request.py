@@ -1483,6 +1483,7 @@ class FileHandler(BaseHandler):
     file_open = open_local_file
 
 def _is_local_authority(authority):
+    # Compare hostnames
     if not authority or authority == 'localhost':
         return True
     try:
@@ -1492,6 +1493,7 @@ def _is_local_authority(authority):
     else:
         if authority == hostname:
             return True
+    # Compare IP addresses
     try:
         address = socket.gethostbyname(authority)
     except (socket.gaierror, AttributeError):
