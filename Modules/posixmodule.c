@@ -427,7 +427,7 @@ extern char *ctermid_r(char *);
 /* Something to implement in autoconf, not present in autoconf 2.69 */
 #  define HAVE_STRUCT_STAT_ST_FSTYPE 1
 #endif
-#undef HAVE_LINKAT
+
 
 // --- Apple __builtin_available() macros -----------------------------------
 
