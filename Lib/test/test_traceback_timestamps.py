@@ -6,7 +6,7 @@ import re
 from traceback import TIMESTAMP_AFTER_EXC_MSG_RE_GROUP
 
 from test.support import force_not_colorized, script_helper
-from test.support.os_helper import TESTFN, unlink
+from test.support.os_helper import EnvironmentVarGuard, TESTFN, unlink
 
 
 class TracebackTimestampsTests(unittest.TestCase):
@@ -37,6 +37,11 @@ print(repr(sys.flags.traceback_timestamps))
         with open(self.flags_script_path, "w") as script_file:
             script_file.write(self.flags_script)
         self.addCleanup(unlink, self.flags_script_path)
+
+        self.env = EnvironmentVarGuard()
+        self.env.set('PYTHONUTF8', '1')  # -X utf8=1
+        self.addCleanup(self.env.__exit__)
+
 
     def test_no_traceback_timestamps(self):
         """Test that traceback timestamps are not shown by default"""
@@ -217,14 +222,14 @@ if __name__ == "__main__":
             with self.subTest(mode):
                 result = script_helper.assert_python_failure(
                     "-X", f"traceback_timestamps={mode}",
-                    "-X", "utf8=1", self.script_strip_path
+                    self.script_strip_path
                 )
                 output = result.out.decode() + result.err.decode()
 
                 # call strip_exc_timestamps in a process using the same mode as what generated our output.
                 result = script_helper.assert_python_ok(
                     "-X", f"traceback_timestamps={mode}",
-                    "-X", "utf8=1", self.script_strip_path, output
+                    self.script_strip_path, output
                 )
                 stripped_output = result.out.decode() + result.err.decode()
 
@@ -239,15 +244,13 @@ if __name__ == "__main__":
         """Test the strip_exc_timestamps function when timestamps are disabled"""
         # Run with timestamps disabled
         result = script_helper.assert_python_failure(
-            "-X", "traceback_timestamps=0",
-            "-X", "utf8=1", self.script_strip_path
+            "-X", "traceback_timestamps=0", self.script_strip_path
         )
         output = result.out.decode() + result.err.decode()
 
         # call strip_exc_timestamps in a process using the same mode as what generated our output.
         result = script_helper.assert_python_ok(
-            "-X", "traceback_timestamps=0",
-            "-X", "utf8=1", self.script_strip_path, output
+            "-X", "traceback_timestamps=0", self.script_strip_path, output
         )
         stripped_output = result.out.decode() + result.err.decode()
 
