@@ -6,26 +6,28 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCallTstate()
 #include "pycore_context.h"       // _PyContextTokenMissing_Type
-#include "pycore_critical_section.h"     // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION
 #include "pycore_descrobject.h"   // _PyMethodWrapper_Type
-#include "pycore_dict.h"          // _PyObject_MakeDictFromInstanceAttributes()
+#include "pycore_dict.h"          // _PyObject_MaterializeManagedDict()
 #include "pycore_floatobject.h"   // _PyFloat_DebugMallocStats()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
-#include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
+#include "pycore_genobject.h"     // _PyAsyncGenAThrow_Type
+#include "pycore_hamt.h"          // _PyHamtItems_Type
+#include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
-#include "pycore_hashtable.h"     // _Py_hashtable_new()
+#include "pycore_list.h"          // _PyList_DebugMallocStats()
+#include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_namespace.h"     // _PyNamespace_Type
-#include "pycore_object.h"        // PyAPI_DATA() _Py_SwappedOp definition
-#include "pycore_object_state.h"  // struct _reftracer_runtime_state
-#include "pycore_long.h"          // _PyLong_GetZero()
-#include "pycore_optimizer.h"     // _PyUOpExecutor_Type, ...
+#include "pycore_object.h"        // export _Py_SwappedOp
+#include "pycore_optimizer.h"     // _PyUOpExecutor_Type
 #include "pycore_pyerrors.h"      // _PyErr_Occurred()
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
+#include "pycore_tuple.h"         // _PyTuple_DebugMallocStats()
 #include "pycore_typeobject.h"    // _PyBufferWrapper_Type
-#include "pycore_typevarobject.h" // _PyTypeAlias_Type, _Py_initialize_generic
+#include "pycore_typevarobject.h" // _PyTypeAlias_Type
 #include "pycore_unionobject.h"   // _PyUnion_Type
 
 
@@ -929,6 +931,8 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
     clear_freelist(&freelists->dicts, is_finalization, free_object);
     clear_freelist(&freelists->dictkeys, is_finalization, PyMem_Free);
     clear_freelist(&freelists->slices, is_finalization, free_object);
+    clear_freelist(&freelists->ranges, is_finalization, free_object);
+    clear_freelist(&freelists->range_iters, is_finalization, free_object);
     clear_freelist(&freelists->contexts, is_finalization, free_object);
     clear_freelist(&freelists->async_gens, is_finalization, free_object);
     clear_freelist(&freelists->async_gen_asends, is_finalization, free_object);
@@ -940,6 +944,8 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
     }
     clear_freelist(&freelists->unicode_writers, is_finalization, PyMem_Free);
     clear_freelist(&freelists->ints, is_finalization, free_object);
+    clear_freelist(&freelists->pycfunctionobject, is_finalization, PyObject_GC_Del);
+    clear_freelist(&freelists->pycmethodobject, is_finalization, PyObject_GC_Del);
     clear_freelist(&freelists->pymethodobjects, is_finalization, free_object);
 }
 
@@ -1678,14 +1684,20 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
                      Py_TYPE(name)->tp_name);
         return NULL;
     }
-    Py_INCREF(name);
 
     if (!_PyType_IsReady(tp)) {
         if (PyType_Ready(tp) < 0)
-            goto done;
+            return NULL;
     }
 
-    descr = _PyType_LookupRef(tp, name);
+    Py_INCREF(name);
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+
+    _PyType_LookupStackRefAndVersion(tp, name, &cref.ref);
+    descr = PyStackRef_AsPyObjectBorrow(cref.ref);
 
     f = NULL;
     if (descr != NULL) {
@@ -1756,8 +1768,8 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
     }
 
     if (descr != NULL) {
-        res = descr;
-        descr = NULL;
+        res = PyStackRef_AsPyObjectSteal(cref.ref);
+        cref.ref = PyStackRef_NULL;
         goto done;
     }
 
@@ -1769,7 +1781,7 @@ _PyObject_GenericGetAttrWithDict(PyObject *obj, PyObject *name,
         _PyObject_SetAttributeErrorContext(obj, name);
     }
   done:
-    Py_XDECREF(descr);
+    _PyThreadState_PopCStackRef(tstate, &cref);
     Py_DECREF(name);
     return res;
 }
@@ -1803,7 +1815,13 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
 
     Py_INCREF(name);
     Py_INCREF(tp);
-    descr = _PyType_LookupRef(tp, name);
+
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyCStackRef cref;
+    _PyThreadState_PushCStackRef(tstate, &cref);
+
+    _PyType_LookupStackRefAndVersion(tp, name, &cref.ref);
+    descr = PyStackRef_AsPyObjectBorrow(cref.ref);
 
     if (descr != NULL) {
         f = Py_TYPE(descr)->tp_descr_set;
@@ -1870,7 +1888,7 @@ _PyObject_GenericSetAttrWithDict(PyObject *obj, PyObject *name,
         _PyObject_SetAttributeErrorContext(obj, name);
     }
   done:
-    Py_XDECREF(descr);
+    _PyThreadState_PopCStackRef(tstate, &cref);
     Py_DECREF(tp);
     Py_DECREF(name);
     return res;
@@ -2092,7 +2110,7 @@ static PyNumberMethods none_as_number = {
     0,                          /* nb_negative */
     0,                          /* nb_positive */
     0,                          /* nb_absolute */
-    (inquiry)none_bool,         /* nb_bool */
+    none_bool,                  /* nb_bool */
     0,                          /* nb_invert */
     0,                          /* nb_lshift */
     0,                          /* nb_rshift */
@@ -2138,7 +2156,7 @@ PyTypeObject _PyNone_Type = {
     &none_as_number,    /*tp_as_number*/
     0,                  /*tp_as_sequence*/
     0,                  /*tp_as_mapping*/
-    (hashfunc)none_hash,/*tp_hash */
+    none_hash,          /*tp_hash */
     0,                  /*tp_call */
     0,                  /*tp_str */
     0,                  /*tp_getattro */

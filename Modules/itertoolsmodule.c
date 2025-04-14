@@ -386,9 +386,7 @@ pairwise_next(PyObject *op)
         Py_DECREF(last_new);
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
     }
     else {
         result = PyTuple_New(2);
@@ -2126,8 +2124,8 @@ product_next(PyObject *op)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        else if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
+        else {
+            _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place */
         assert (npools==0 || Py_REFCNT(result) == 1);
@@ -2355,8 +2353,8 @@ combinations_next(PyObject *op)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        else if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
+        else {
+            _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place
          * CPython's empty tuple is a singleton and cached in
@@ -2601,8 +2599,8 @@ cwr_next(PyObject *op)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        else if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
+        else {
+            _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place CPython's
            empty tuple is a singleton and cached in PyTuple's freelist. */
@@ -2862,8 +2860,8 @@ permutations_next(PyObject *op)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        else if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
+        else {
+            _PyTuple_Recycle(result);
         }
         /* Now, we've got the only copy so we can update it in-place */
         assert(r == 0 || Py_REFCNT(result) == 1);
@@ -3630,10 +3628,14 @@ static PyObject *
 repeat_next(PyObject *op)
 {
     repeatobject *ro = repeatobject_CAST(op);
-    if (ro->cnt == 0)
+    Py_ssize_t cnt = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->cnt);
+    if (cnt == 0) {
         return NULL;
-    if (ro->cnt > 0)
-        ro->cnt--;
+    }
+    if (cnt > 0) {
+        cnt--;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(ro->cnt, cnt);
+    }
     return Py_NewRef(ro->element);
 }
 
@@ -3843,9 +3845,7 @@ zip_longest_next(PyObject *op)
         }
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
     } else {
         result = PyTuple_New(tuplesize);
         if (result == NULL)

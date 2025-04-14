@@ -412,12 +412,18 @@ class PurePathTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             P() < {}
 
+    def make_uri(self, path):
+        if isinstance(path, pathlib.Path):
+            return path.as_uri()
+        with self.assertWarns(DeprecationWarning):
+            return path.as_uri()
+
     def test_as_uri_common(self):
         P = self.cls
         with self.assertRaises(ValueError):
-            P('a').as_uri()
+            self.make_uri(P('a'))
         with self.assertRaises(ValueError):
-            P().as_uri()
+            self.make_uri(P())
 
     def test_repr_roundtrips(self):
         for pathstr in ('a', 'a/b', 'a/b/c', '/', '/a/b', '/a/b/c'):
@@ -645,9 +651,9 @@ class PurePathTest(unittest.TestCase):
     @needs_posix
     def test_as_uri_posix(self):
         P = self.cls
-        self.assertEqual(P('/').as_uri(), 'file:///')
-        self.assertEqual(P('/a/b.c').as_uri(), 'file:///a/b.c')
-        self.assertEqual(P('/a/b%#c').as_uri(), 'file:///a/b%25%23c')
+        self.assertEqual(self.make_uri(P('/')), 'file:///')
+        self.assertEqual(self.make_uri(P('/a/b.c')), 'file:///a/b.c')
+        self.assertEqual(self.make_uri(P('/a/b%#c')), 'file:///a/b%25%23c')
 
     @needs_posix
     def test_as_uri_non_ascii(self):
@@ -657,7 +663,7 @@ class PurePathTest(unittest.TestCase):
             os.fsencode('\xe9')
         except UnicodeEncodeError:
             self.skipTest("\\xe9 cannot be encoded to the filesystem encoding")
-        self.assertEqual(P('/a/b\xe9').as_uri(),
+        self.assertEqual(self.make_uri(P('/a/b\xe9')),
                          'file:///a/b' + quote_from_bytes(os.fsencode('\xe9')))
 
     @needs_posix
@@ -751,17 +757,17 @@ class PurePathTest(unittest.TestCase):
     def test_as_uri_windows(self):
         P = self.cls
         with self.assertRaises(ValueError):
-            P('/a/b').as_uri()
+            self.make_uri(P('/a/b'))
         with self.assertRaises(ValueError):
-            P('c:a/b').as_uri()
-        self.assertEqual(P('c:/').as_uri(), 'file:///c:/')
-        self.assertEqual(P('c:/a/b.c').as_uri(), 'file:///c:/a/b.c')
-        self.assertEqual(P('c:/a/b%#c').as_uri(), 'file:///c:/a/b%25%23c')
-        self.assertEqual(P('c:/a/b\xe9').as_uri(), 'file:///c:/a/b%C3%A9')
-        self.assertEqual(P('//some/share/').as_uri(), 'file://some/share/')
-        self.assertEqual(P('//some/share/a/b.c').as_uri(),
+            self.make_uri(P('c:a/b'))
+        self.assertEqual(self.make_uri(P('c:/')), 'file:///c:/')
+        self.assertEqual(self.make_uri(P('c:/a/b.c')), 'file:///c:/a/b.c')
+        self.assertEqual(self.make_uri(P('c:/a/b%#c')), 'file:///c:/a/b%25%23c')
+        self.assertEqual(self.make_uri(P('c:/a/b\xe9')), 'file:///c:/a/b%C3%A9')
+        self.assertEqual(self.make_uri(P('//some/share/')), 'file://some/share/')
+        self.assertEqual(self.make_uri(P('//some/share/a/b.c')),
                          'file://some/share/a/b.c')
-        self.assertEqual(P('//some/share/a/b%#c\xe9').as_uri(),
+        self.assertEqual(self.make_uri(P('//some/share/a/b%#c\xe9')),
                          'file://some/share/a/b%25%23c%C3%A9')
 
     @needs_windows
@@ -2059,7 +2065,7 @@ class PathTest(PurePathTest):
         os.chown(link, -1, gid_2, follow_symlinks=False)
 
         expected_gid = link.stat(follow_symlinks=False).st_gid
-        expected_name = self._get_pw_name_or_skip_test(expected_gid)
+        expected_name = self._get_gr_name_or_skip_test(expected_gid)
 
         self.assertEqual(expected_gid, gid_2)
         self.assertEqual(expected_name, link.group(follow_symlinks=False))
@@ -3232,7 +3238,7 @@ class PathTest(PurePathTest):
         p7 = P(f'~{fakename}/Documents')
 
         with os_helper.EnvironmentVarGuard() as env:
-            env.pop('HOME', None)
+            env.unset('HOME')
 
             self.assertEqual(p1.expanduser(), P(userhome) / 'Documents')
             self.assertEqual(p2.expanduser(), P(userhome) / 'Documents')
@@ -3279,10 +3285,14 @@ class PathTest(PurePathTest):
     def test_from_uri_posix(self):
         P = self.cls
         self.assertEqual(P.from_uri('file:/foo/bar'), P('/foo/bar'))
-        self.assertEqual(P.from_uri('file://foo/bar'), P('//foo/bar'))
+        self.assertRaises(ValueError, P.from_uri, 'file://foo/bar')
         self.assertEqual(P.from_uri('file:///foo/bar'), P('/foo/bar'))
         self.assertEqual(P.from_uri('file:////foo/bar'), P('//foo/bar'))
         self.assertEqual(P.from_uri('file://localhost/foo/bar'), P('/foo/bar'))
+        if not is_wasi:
+            self.assertEqual(P.from_uri('file://127.0.0.1/foo/bar'), P('/foo/bar'))
+            self.assertEqual(P.from_uri(f'file://{socket.gethostname()}/foo/bar'),
+                             P('/foo/bar'))
         self.assertRaises(ValueError, P.from_uri, 'foo/bar')
         self.assertRaises(ValueError, P.from_uri, '/foo/bar')
         self.assertRaises(ValueError, P.from_uri, '//foo/bar')
@@ -3292,8 +3302,8 @@ class PathTest(PurePathTest):
     @needs_posix
     def test_from_uri_pathname2url_posix(self):
         P = self.cls
-        self.assertEqual(P.from_uri('file:' + pathname2url('/foo/bar')), P('/foo/bar'))
-        self.assertEqual(P.from_uri('file:' + pathname2url('//foo/bar')), P('//foo/bar'))
+        self.assertEqual(P.from_uri(pathname2url('/foo/bar', add_scheme=True)), P('/foo/bar'))
+        self.assertEqual(P.from_uri(pathname2url('//foo/bar', add_scheme=True)), P('//foo/bar'))
 
     @needs_windows
     def test_absolute_windows(self):
@@ -3345,10 +3355,7 @@ class PathTest(PurePathTest):
     def test_expanduser_windows(self):
         P = self.cls
         with os_helper.EnvironmentVarGuard() as env:
-            env.pop('HOME', None)
-            env.pop('USERPROFILE', None)
-            env.pop('HOMEPATH', None)
-            env.pop('HOMEDRIVE', None)
+            env.unset('HOME', 'USERPROFILE', 'HOMEPATH', 'HOMEDRIVE')
             env['USERNAME'] = 'alice'
 
             # test that the path returns unchanged
@@ -3386,8 +3393,7 @@ class PathTest(PurePathTest):
             env['HOMEPATH'] = 'Users\\alice'
             check()
 
-            env.pop('HOMEDRIVE', None)
-            env.pop('HOMEPATH', None)
+            env.unset('HOMEDRIVE', 'HOMEPATH')
             env['USERPROFILE'] = 'C:\\Users\\alice'
             check()
 

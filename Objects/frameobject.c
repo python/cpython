@@ -1,20 +1,25 @@
 /* Frame object implementation */
 
 #include "Python.h"
+#include "pycore_cell.h"          // PyCell_GetRef()
 #include "pycore_ceval.h"         // _PyEval_SetOpcodeTrace()
-#include "pycore_code.h"          // CO_FAST_LOCAL, etc.
+#include "pycore_code.h"          // CO_FAST_LOCAL
 #include "pycore_dict.h"          // _PyDict_LoadBuiltinsFromGlobals()
+#include "pycore_frame.h"         // PyFrameObject
 #include "pycore_function.h"      // _PyFunction_FromConstructor()
-#include "pycore_moduleobject.h"  // _PyModule_GetDict()
+#include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
+#include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
-#include "pycore_cell.h"          // PyCell_GetRef() PyCell_SetTakeRef()
-#include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
+#include "pycore_opcode_metadata.h" // _PyOpcode_Caches
+#include "pycore_optimizer.h"     // _Py_Executors_InvalidateDependency()
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
-
-#include "frameobject.h"          // PyFrameObject
-#include "pycore_frame.h"
+#include "frameobject.h"          // PyFrameLocalsProxyObject
 #include "opcode.h"               // EXTENDED_ARG
+
+#include "clinic/frameobject.c.h"
+
 
 #define PyFrameObject_CAST(op)  \
     (assert(PyObject_TypeCheck((op), &PyFrame_Type)), (PyFrameObject *)(op))
@@ -26,6 +31,11 @@
     )
 
 #define OFF(x) offsetof(PyFrameObject, x)
+
+/*[clinic input]
+class frame "PyFrameObject *" "&PyFrame_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2d1dbf2e06cf351f]*/
 
 
 // Returns new reference or NULL
@@ -206,6 +216,33 @@ framelocalsproxy_getitem(PyObject *self, PyObject *key)
 }
 
 static int
+add_overwritten_fast_local(PyFrameObject *frame, PyObject *obj)
+{
+    Py_ssize_t new_size;
+    if (frame->f_overwritten_fast_locals == NULL) {
+        new_size = 1;
+    }
+    else {
+        Py_ssize_t size = PyTuple_Size(frame->f_overwritten_fast_locals);
+        if (size == -1) {
+            return -1;
+        }
+        new_size = size + 1;
+    }
+    PyObject *new_tuple = PyTuple_New(new_size);
+    if (new_tuple == NULL) {
+        return -1;
+    }
+    for (Py_ssize_t i = 0; i < new_size - 1; i++) {
+        PyObject *o = PyTuple_GET_ITEM(frame->f_overwritten_fast_locals, i);
+        PyTuple_SET_ITEM(new_tuple, i, Py_NewRef(o));
+    }
+    PyTuple_SET_ITEM(new_tuple, new_size - 1, Py_NewRef(obj));
+    Py_XSETREF(frame->f_overwritten_fast_locals, new_tuple);
+    return 0;
+}
+
+static int
 framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
 {
     /* Merge locals into fast locals */
@@ -243,7 +280,13 @@ framelocalsproxy_setitem(PyObject *self, PyObject *key, PyObject *value)
             Py_XINCREF(value);
             PyCell_SetTakeRef((PyCellObject *)cell, value);
         } else if (value != PyStackRef_AsPyObjectBorrow(oldvalue)) {
-            PyStackRef_XCLOSE(fast[i]);
+            PyObject *old_obj = PyStackRef_AsPyObjectBorrow(fast[i]);
+            if (old_obj != NULL && !_Py_IsImmortal(old_obj)) {
+                if (add_overwritten_fast_local(frame, old_obj) < 0) {
+                    return -1;
+                }
+                PyStackRef_CLOSE(fast[i]);
+            }
             fast[i] = PyStackRef_FromPyObjectNew(value);
         }
         return 0;
@@ -910,32 +953,36 @@ static PyMemberDef frame_memberlist[] = {
     {NULL}      /* Sentinel */
 };
 
+/*[clinic input]
+@critical_section
+@getter
+frame.f_locals as frame_locals
+
+Return the mapping used by the frame to look up local variables.
+[clinic start generated code]*/
+
 static PyObject *
-frame_getlocals(PyObject *op, void *Py_UNUSED(closure))
+frame_locals_get_impl(PyFrameObject *self)
+/*[clinic end generated code: output=b4ace8bb4cae71f4 input=7bd444d0dc8ddf44]*/
 {
-    PyFrameObject *f = PyFrameObject_CAST(op);
-    if (f == NULL) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-    assert(!_PyFrame_IsIncomplete(f->f_frame));
+    assert(!_PyFrame_IsIncomplete(self->f_frame));
 
-    PyCodeObject *co = _PyFrame_GetCode(f->f_frame);
+    PyCodeObject *co = _PyFrame_GetCode(self->f_frame);
 
-    if (!(co->co_flags & CO_OPTIMIZED) && !_PyFrame_HasHiddenLocals(f->f_frame)) {
-        if (f->f_frame->f_locals == NULL) {
+    if (!(co->co_flags & CO_OPTIMIZED) && !_PyFrame_HasHiddenLocals(self->f_frame)) {
+        if (self->f_frame->f_locals == NULL) {
             // We found cases when f_locals is NULL for non-optimized code.
             // We fill the f_locals with an empty dict to avoid crash until
             // we find the root cause.
-            f->f_frame->f_locals = PyDict_New();
-            if (f->f_frame->f_locals == NULL) {
+            self->f_frame->f_locals = PyDict_New();
+            if (self->f_frame->f_locals == NULL) {
                 return NULL;
             }
         }
-        return Py_NewRef(f->f_frame->f_locals);
+        return Py_NewRef(self->f_frame->f_locals);
     }
 
-    return _PyFrameLocalsProxy_New(f);
+    return _PyFrameLocalsProxy_New(self);
 }
 
 int
@@ -958,99 +1005,155 @@ PyFrame_GetLineNumber(PyFrameObject *f)
     return PyUnstable_InterpreterFrame_GetLine(f->f_frame);
 }
 
+/*[clinic input]
+@critical_section
+@getter
+frame.f_lineno as frame_lineno
+
+Return the current line number in the frame.
+[clinic start generated code]*/
+
 static PyObject *
-frame_getlineno(PyObject *op, void *Py_UNUSED(closure))
+frame_lineno_get_impl(PyFrameObject *self)
+/*[clinic end generated code: output=70f35de5ac7ad630 input=87b9ec648b742936]*/
 {
-    PyFrameObject *f = PyFrameObject_CAST(op);
-    int lineno = PyFrame_GetLineNumber(f);
+    int lineno = PyFrame_GetLineNumber(self);
     if (lineno < 0) {
         Py_RETURN_NONE;
     }
-    else {
-        return PyLong_FromLong(lineno);
-    }
+    return PyLong_FromLong(lineno);
 }
 
+/*[clinic input]
+@critical_section
+@getter
+frame.f_lasti as frame_lasti
+
+Return the index of the last attempted instruction in the frame.
+[clinic start generated code]*/
+
 static PyObject *
-frame_getlasti(PyObject *op, void *Py_UNUSED(closure))
+frame_lasti_get_impl(PyFrameObject *self)
+/*[clinic end generated code: output=03275b4f0327d1a2 input=0225ed49cb1fbeeb]*/
 {
-    PyFrameObject *f = PyFrameObject_CAST(op);
-    int lasti = _PyInterpreterFrame_LASTI(f->f_frame);
+    int lasti = _PyInterpreterFrame_LASTI(self->f_frame);
     if (lasti < 0) {
         return PyLong_FromLong(-1);
     }
     return PyLong_FromLong(lasti * sizeof(_Py_CODEUNIT));
 }
 
+/*[clinic input]
+@critical_section
+@getter
+frame.f_globals as frame_globals
+
+Return the global variables in the frame.
+[clinic start generated code]*/
+
 static PyObject *
-frame_getglobals(PyObject *op, void *Py_UNUSED(closure))
+frame_globals_get_impl(PyFrameObject *self)
+/*[clinic end generated code: output=7758788c32885528 input=7fff7241357d314d]*/
 {
-    PyFrameObject *f = PyFrameObject_CAST(op);
-    PyObject *globals = f->f_frame->f_globals;
+    PyObject *globals = self->f_frame->f_globals;
     if (globals == NULL) {
         globals = Py_None;
     }
     return Py_NewRef(globals);
 }
 
+/*[clinic input]
+@critical_section
+@getter
+frame.f_builtins as frame_builtins
+
+Return the built-in variables in the frame.
+[clinic start generated code]*/
+
 static PyObject *
-frame_getbuiltins(PyObject *op, void *Py_UNUSED(closure))
+frame_builtins_get_impl(PyFrameObject *self)
+/*[clinic end generated code: output=45362faa6d42c702 input=27c696d6ffcad2c7]*/
 {
-    PyFrameObject *f = PyFrameObject_CAST(op);
-    PyObject *builtins = f->f_frame->f_builtins;
+    PyObject *builtins = self->f_frame->f_builtins;
     if (builtins == NULL) {
         builtins = Py_None;
     }
     return Py_NewRef(builtins);
 }
 
-static PyObject *
-frame_getcode(PyObject *op, void *Py_UNUSED(closure))
-{
-    PyFrameObject *f = PyFrameObject_CAST(op);
-    if (PySys_Audit("object.__getattr__", "Os", f, "f_code") < 0) {
-        return NULL;
-    }
-    return (PyObject *)PyFrame_GetCode(f);
-}
+/*[clinic input]
+@getter
+frame.f_code as frame_code
+
+Return the code object being executed in this frame.
+[clinic start generated code]*/
 
 static PyObject *
-frame_getback(PyObject *op, void *Py_UNUSED(closure))
+frame_code_get_impl(PyFrameObject *self)
+/*[clinic end generated code: output=a5ed6207395a8cef input=e127e7098c124816]*/
 {
-    PyFrameObject *f = PyFrameObject_CAST(op);
-    PyObject *res = (PyObject *)PyFrame_GetBack(f);
+    if (PySys_Audit("object.__getattr__", "Os", self, "f_code") < 0) {
+        return NULL;
+    }
+    return (PyObject *)PyFrame_GetCode(self);
+}
+
+/*[clinic input]
+@critical_section
+@getter
+frame.f_back as frame_back
+[clinic start generated code]*/
+
+static PyObject *
+frame_back_get_impl(PyFrameObject *self)
+/*[clinic end generated code: output=3a84c22a55a63c79 input=9e528570d0e1f44a]*/
+{
+    PyObject *res = (PyObject *)PyFrame_GetBack(self);
     if (res == NULL) {
         Py_RETURN_NONE;
     }
     return res;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+frame.f_trace_opcodes as frame_trace_opcodes
+
+Return True if opcode tracing is enabled, False otherwise.
+[clinic start generated code]*/
+
 static PyObject *
-frame_gettrace_opcodes(PyObject *op, void *Py_UNUSED(closure))
+frame_trace_opcodes_get_impl(PyFrameObject *self)
+/*[clinic end generated code: output=53ff41d09cc32e87 input=4eb91dc88e04677a]*/
 {
-    PyFrameObject *f = PyFrameObject_CAST(op);
-    PyObject *result = f->f_trace_opcodes ? Py_True : Py_False;
-    return Py_NewRef(result);
+    return self->f_trace_opcodes ? Py_True : Py_False;
 }
 
+/*[clinic input]
+@critical_section
+@setter
+frame.f_trace_opcodes as frame_trace_opcodes
+[clinic start generated code]*/
+
 static int
-frame_settrace_opcodes(PyObject *op, PyObject* value, void *Py_UNUSED(closure))
+frame_trace_opcodes_set_impl(PyFrameObject *self, PyObject *value)
+/*[clinic end generated code: output=92619da2bfccd449 input=7e286eea3c0333ff]*/
 {
-    PyFrameObject *f = PyFrameObject_CAST(op);
     if (!PyBool_Check(value)) {
         PyErr_SetString(PyExc_TypeError,
                         "attribute value type must be bool");
         return -1;
     }
     if (value == Py_True) {
-        f->f_trace_opcodes = 1;
-        if (f->f_trace) {
-            return _PyEval_SetOpcodeTrace(f, true);
+        self->f_trace_opcodes = 1;
+        if (self->f_trace) {
+            return _PyEval_SetOpcodeTrace(self, true);
         }
     }
     else {
-        f->f_trace_opcodes = 0;
-        return _PyEval_SetOpcodeTrace(f, false);
+        self->f_trace_opcodes = 0;
+        return _PyEval_SetOpcodeTrace(self, false);
     }
     return 0;
 }
@@ -1527,23 +1630,29 @@ static bool frame_is_suspended(PyFrameObject *frame)
  *    'return' or 'exception' event since the eval loop has been exited at
  *    that time.
  */
+/*[clinic input]
+@critical_section
+@setter
+frame.f_lineno as frame_lineno
+[clinic start generated code]*/
+
 static int
-frame_setlineno(PyObject *op, PyObject* p_new_lineno, void *Py_UNUSED(closure))
+frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
+/*[clinic end generated code: output=e64c86ff6be64292 input=36ed3c896b27fb91]*/
 {
-    PyFrameObject *f = PyFrameObject_CAST(op);
-    PyCodeObject *code = _PyFrame_GetCode(f->f_frame);
-    if (p_new_lineno == NULL) {
+    PyCodeObject *code = _PyFrame_GetCode(self->f_frame);
+    if (value == NULL) {
         PyErr_SetString(PyExc_AttributeError, "cannot delete attribute");
         return -1;
     }
     /* f_lineno must be an integer. */
-    if (!PyLong_CheckExact(p_new_lineno)) {
+    if (!PyLong_CheckExact(value)) {
         PyErr_SetString(PyExc_ValueError,
                         "lineno must be an integer");
         return -1;
     }
 
-    bool is_suspended = frame_is_suspended(f);
+    bool is_suspended = frame_is_suspended(self);
     /*
      * This code preserves the historical restrictions on
      * setting the line number of a frame.
@@ -1596,7 +1705,7 @@ frame_setlineno(PyObject *op, PyObject* p_new_lineno, void *Py_UNUSED(closure))
     /* Fail if the line falls outside the code block and
         select first line with actual code. */
     int overflow;
-    long l_new_lineno = PyLong_AsLongAndOverflow(p_new_lineno, &overflow);
+    long l_new_lineno = PyLong_AsLongAndOverflow(value, &overflow);
     if (overflow
 #if SIZEOF_LONG > SIZEOF_INT
         || l_new_lineno > INT_MAX
@@ -1641,7 +1750,7 @@ frame_setlineno(PyObject *op, PyObject* p_new_lineno, void *Py_UNUSED(closure))
 
     int64_t best_stack = OVERFLOWED;
     int best_addr = -1;
-    int64_t start_stack = stacks[_PyInterpreterFrame_LASTI(f->f_frame)];
+    int64_t start_stack = stacks[_PyInterpreterFrame_LASTI(self->f_frame)];
     int err = -1;
     const char *msg = "cannot find bytecode for specified line";
     for (int i = 0; i < len; i++) {
@@ -1681,7 +1790,7 @@ frame_setlineno(PyObject *op, PyObject* p_new_lineno, void *Py_UNUSED(closure))
     for (int i = 0; i < code->co_nlocalsplus; i++) {
         // Counting every unbound local is overly-cautious, but a full flow
         // analysis (like we do in the compiler) is probably too expensive:
-        unbound += PyStackRef_IsNull(f->f_frame->localsplus[i]);
+        unbound += PyStackRef_IsNull(self->f_frame->localsplus[i]);
     }
     if (unbound) {
         const char *e = "assigning None to %d unbound local%s";
@@ -1692,8 +1801,8 @@ frame_setlineno(PyObject *op, PyObject* p_new_lineno, void *Py_UNUSED(closure))
         // Do this in a second pass to avoid writing a bunch of Nones when
         // warnings are being treated as errors and the previous bit raises:
         for (int i = 0; i < code->co_nlocalsplus; i++) {
-            if (PyStackRef_IsNull(f->f_frame->localsplus[i])) {
-                f->f_frame->localsplus[i] = PyStackRef_None;
+            if (PyStackRef_IsNull(self->f_frame->localsplus[i])) {
+                self->f_frame->localsplus[i] = PyStackRef_None;
                 unbound--;
             }
         }
@@ -1706,53 +1815,77 @@ frame_setlineno(PyObject *op, PyObject* p_new_lineno, void *Py_UNUSED(closure))
     while (start_stack > best_stack) {
         if (top_of_stack(start_stack) == Except) {
             /* Pop exception stack as well as the evaluation stack */
-            PyObject *exc = PyStackRef_AsPyObjectBorrow(_PyFrame_StackPop(f->f_frame));
+            PyObject *exc = PyStackRef_AsPyObjectBorrow(_PyFrame_StackPop(self->f_frame));
             assert(PyExceptionInstance_Check(exc) || exc == Py_None);
             PyThreadState *tstate = _PyThreadState_GET();
             Py_XSETREF(tstate->exc_info->exc_value, exc == Py_None ? NULL : exc);
         }
         else {
-            PyStackRef_XCLOSE(_PyFrame_StackPop(f->f_frame));
+            PyStackRef_XCLOSE(_PyFrame_StackPop(self->f_frame));
         }
         start_stack = pop_value(start_stack);
     }
     /* Finally set the new lasti and return OK. */
-    f->f_lineno = 0;
-    f->f_frame->instr_ptr = _PyFrame_GetBytecode(f->f_frame) + best_addr;
+    self->f_lineno = 0;
+    self->f_frame->instr_ptr = _PyFrame_GetBytecode(self->f_frame) + best_addr;
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+frame.f_trace as frame_trace
+
+Return the trace function for this frame, or None if no trace function is set.
+[clinic start generated code]*/
+
 static PyObject *
-frame_gettrace(PyObject *op, void *Py_UNUSED(closure))
+frame_trace_get_impl(PyFrameObject *self)
+/*[clinic end generated code: output=5475cbfce07826cd input=f382612525829773]*/
 {
-    PyFrameObject *f = PyFrameObject_CAST(op);
-    PyObject* trace = f->f_trace;
-    if (trace == NULL)
+    PyObject* trace = self->f_trace;
+    if (trace == NULL) {
         trace = Py_None;
+    }
     return Py_NewRef(trace);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+frame.f_trace as frame_trace
+[clinic start generated code]*/
+
 static int
-frame_settrace(PyObject *op, PyObject* v, void *Py_UNUSED(closure))
+frame_trace_set_impl(PyFrameObject *self, PyObject *value)
+/*[clinic end generated code: output=d6fe08335cf76ae4 input=d96a18bda085707f]*/
 {
-    PyFrameObject *f = PyFrameObject_CAST(op);
-    if (v == Py_None) {
-        v = NULL;
+    if (value == Py_None) {
+        value = NULL;
     }
-    if (v != f->f_trace) {
-        Py_XSETREF(f->f_trace, Py_XNewRef(v));
-        if (v != NULL && f->f_trace_opcodes) {
-            return _PyEval_SetOpcodeTrace(f, true);
+    if (value != self->f_trace) {
+        Py_XSETREF(self->f_trace, Py_XNewRef(value));
+        if (value != NULL && self->f_trace_opcodes) {
+            return _PyEval_SetOpcodeTrace(self, true);
         }
     }
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+@getter
+frame.f_generator as frame_generator
+
+Return the generator or coroutine associated with this frame, or None.
+[clinic start generated code]*/
+
 static PyObject *
-frame_getgenerator(PyObject *op, void *Py_UNUSED(closure)) {
-    PyFrameObject *f = PyFrameObject_CAST(op);
-    if (f->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
-        PyObject *gen = (PyObject *)_PyGen_GetGeneratorFromFrame(f->f_frame);
+frame_generator_get_impl(PyFrameObject *self)
+/*[clinic end generated code: output=97aeb2392562e55b input=00a2bd008b239ab0]*/
+{
+    if (self->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
+        PyObject *gen = (PyObject *)_PyGen_GetGeneratorFromFrame(self->f_frame);
         return Py_NewRef(gen);
     }
     Py_RETURN_NONE;
@@ -1760,16 +1893,16 @@ frame_getgenerator(PyObject *op, void *Py_UNUSED(closure)) {
 
 
 static PyGetSetDef frame_getsetlist[] = {
-    {"f_back", frame_getback, NULL, NULL},
-    {"f_locals", frame_getlocals, NULL, NULL},
-    {"f_lineno", frame_getlineno, frame_setlineno, NULL},
-    {"f_trace", frame_gettrace, frame_settrace, NULL},
-    {"f_lasti", frame_getlasti, NULL, NULL},
-    {"f_globals", frame_getglobals, NULL, NULL},
-    {"f_builtins", frame_getbuiltins, NULL, NULL},
-    {"f_code", frame_getcode, NULL, NULL},
-    {"f_trace_opcodes", frame_gettrace_opcodes, frame_settrace_opcodes, NULL},
-    {"f_generator", frame_getgenerator, NULL, NULL},
+    FRAME_BACK_GETSETDEF
+    FRAME_LOCALS_GETSETDEF
+    FRAME_LINENO_GETSETDEF
+    FRAME_TRACE_GETSETDEF
+    FRAME_LASTI_GETSETDEF
+    FRAME_GLOBALS_GETSETDEF
+    FRAME_BUILTINS_GETSETDEF
+    FRAME_CODE_GETSETDEF
+    FRAME_TRACE_OPCODES_GETSETDEF
+    FRAME_GENERATOR_GETSETDEF
     {0}
 };
 
@@ -1806,6 +1939,7 @@ frame_dealloc(PyObject *op)
     Py_CLEAR(f->f_trace);
     Py_CLEAR(f->f_extra_locals);
     Py_CLEAR(f->f_locals_cache);
+    Py_CLEAR(f->f_overwritten_fast_locals);
     PyObject_GC_Del(f);
     Py_TRASHCAN_END;
 }
@@ -1818,6 +1952,7 @@ frame_traverse(PyObject *op, visitproc visit, void *arg)
     Py_VISIT(f->f_trace);
     Py_VISIT(f->f_extra_locals);
     Py_VISIT(f->f_locals_cache);
+    Py_VISIT(f->f_overwritten_fast_locals);
     if (f->f_frame->owner != FRAME_OWNED_BY_FRAME_OBJECT) {
         return 0;
     }
@@ -1832,6 +1967,7 @@ frame_tp_clear(PyObject *op)
     Py_CLEAR(f->f_trace);
     Py_CLEAR(f->f_extra_locals);
     Py_CLEAR(f->f_locals_cache);
+    Py_CLEAR(f->f_overwritten_fast_locals);
 
     /* locals and stack */
     _PyStackRef *locals = _PyFrame_GetLocalsArray(f->f_frame);
@@ -1846,12 +1982,19 @@ frame_tp_clear(PyObject *op)
     return 0;
 }
 
+/*[clinic input]
+@critical_section
+frame.clear
+
+Clear all references held by the frame.
+[clinic start generated code]*/
+
 static PyObject *
-frame_clear(PyObject *op, PyObject *Py_UNUSED(ignored))
+frame_clear_impl(PyFrameObject *self)
+/*[clinic end generated code: output=864c662f16e9bfcc input=c358f9cff5f9b681]*/
 {
-    PyFrameObject *f = PyFrameObject_CAST(op);
-    if (f->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
-        PyGenObject *gen = _PyGen_GetGeneratorFromFrame(f->f_frame);
+    if (self->f_frame->owner == FRAME_OWNED_BY_GENERATOR) {
+        PyGenObject *gen = _PyGen_GetGeneratorFromFrame(self->f_frame);
         if (gen->gi_frame_state == FRAME_EXECUTING) {
             goto running;
         }
@@ -1860,12 +2003,12 @@ frame_clear(PyObject *op, PyObject *Py_UNUSED(ignored))
         }
         _PyGen_Finalize((PyObject *)gen);
     }
-    else if (f->f_frame->owner == FRAME_OWNED_BY_THREAD) {
+    else if (self->f_frame->owner == FRAME_OWNED_BY_THREAD) {
         goto running;
     }
     else {
-        assert(f->f_frame->owner == FRAME_OWNED_BY_FRAME_OBJECT);
-        (void)frame_tp_clear(op);
+        assert(self->f_frame->owner == FRAME_OWNED_BY_FRAME_OBJECT);
+        (void)frame_tp_clear((PyObject *)self);
     }
     Py_RETURN_NONE;
 running:
@@ -1878,22 +2021,23 @@ suspended:
     return NULL;
 }
 
-PyDoc_STRVAR(clear__doc__,
-"F.clear(): clear all references held by the frame");
+/*[clinic input]
+@critical_section
+frame.__sizeof__
+
+Return the size of the frame in memory, in bytes.
+[clinic start generated code]*/
 
 static PyObject *
-frame_sizeof(PyObject *op, PyObject *Py_UNUSED(ignored))
+frame___sizeof___impl(PyFrameObject *self)
+/*[clinic end generated code: output=82948688e81078e2 input=908f90a83e73131d]*/
 {
-    PyFrameObject *f = PyFrameObject_CAST(op);
     Py_ssize_t res;
     res = offsetof(PyFrameObject, _f_frame_data) + offsetof(_PyInterpreterFrame, localsplus);
-    PyCodeObject *code = _PyFrame_GetCode(f->f_frame);
+    PyCodeObject *code = _PyFrame_GetCode(self->f_frame);
     res += _PyFrame_NumSlotsForCodeObject(code) * sizeof(PyObject *);
     return PyLong_FromSsize_t(res);
 }
-
-PyDoc_STRVAR(sizeof__doc__,
-"F.__sizeof__() -> size of F in memory, in bytes");
 
 static PyObject *
 frame_repr(PyObject *op)
@@ -1907,8 +2051,8 @@ frame_repr(PyObject *op)
 }
 
 static PyMethodDef frame_methods[] = {
-    {"clear", frame_clear, METH_NOARGS, clear__doc__},
-    {"__sizeof__", frame_sizeof, METH_NOARGS, sizeof__doc__},
+    FRAME_CLEAR_METHODDEF
+    FRAME___SIZEOF___METHODDEF
     {NULL, NULL}  /* sentinel */
 };
 
@@ -1973,6 +2117,7 @@ _PyFrame_New_NoTrack(PyCodeObject *code)
     f->f_lineno = 0;
     f->f_extra_locals = NULL;
     f->f_locals_cache = NULL;
+    f->f_overwritten_fast_locals = NULL;
     return f;
 }
 
@@ -2227,10 +2372,12 @@ PyCodeObject *
 PyFrame_GetCode(PyFrameObject *frame)
 {
     assert(frame != NULL);
+    PyObject *code;
+    Py_BEGIN_CRITICAL_SECTION(frame);
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    PyCodeObject *code = _PyFrame_GetCode(frame->f_frame);
-    assert(code != NULL);
-    return (PyCodeObject*)Py_NewRef(code);
+    code = Py_NewRef(_PyFrame_GetCode(frame->f_frame));
+    Py_END_CRITICAL_SECTION();
+    return (PyCodeObject *)code;
 }
 
 
@@ -2254,41 +2401,38 @@ PyObject*
 PyFrame_GetLocals(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    return frame_getlocals((PyObject *)frame, NULL);
+    return frame_locals_get((PyObject *)frame, NULL);
 }
 
 PyObject*
 PyFrame_GetGlobals(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    return frame_getglobals((PyObject *)frame, NULL);
+    return frame_globals_get((PyObject *)frame, NULL);
 }
 
 PyObject*
 PyFrame_GetBuiltins(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    return frame_getbuiltins((PyObject *)frame, NULL);
+    return frame_builtins_get((PyObject *)frame, NULL);
 }
 
 int
 PyFrame_GetLasti(PyFrameObject *frame)
 {
+    int ret;
+    Py_BEGIN_CRITICAL_SECTION(frame);
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
     int lasti = _PyInterpreterFrame_LASTI(frame->f_frame);
-    if (lasti < 0) {
-        return -1;
-    }
-    return lasti * sizeof(_Py_CODEUNIT);
+    ret = lasti < 0 ? -1 : lasti * (int)sizeof(_Py_CODEUNIT);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 PyObject *
 PyFrame_GetGenerator(PyFrameObject *frame)
 {
     assert(!_PyFrame_IsIncomplete(frame->f_frame));
-    if (frame->f_frame->owner != FRAME_OWNED_BY_GENERATOR) {
-        return NULL;
-    }
-    PyGenObject *gen = _PyGen_GetGeneratorFromFrame(frame->f_frame);
-    return Py_NewRef(gen);
+    return frame_generator_get((PyObject *)frame, NULL);
 }

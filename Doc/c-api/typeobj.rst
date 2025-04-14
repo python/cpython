@@ -473,7 +473,7 @@ PyTypeObject Definition
 -----------------------
 
 The structure definition for :c:type:`PyTypeObject` can be found in
-:file:`Include/object.h`.  For convenience of reference, this repeats the
+:file:`Include/cpython/object.h`.  For convenience of reference, this repeats the
 definition found there:
 
 .. XXX Drop this?
@@ -611,7 +611,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    Note that the :c:member:`~PyVarObject.ob_size` field may later be used for
    other purposes. For example, :py:type:`int` instances use the bits of
    :c:member:`~PyVarObject.ob_size` in an implementation-defined
-   way; the underlying storage and its size should be acessed using
+   way; the underlying storage and its size should be accessed using
    :c:func:`PyLong_Export`.
 
    .. note::
@@ -703,10 +703,13 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. code-block:: c
 
-     static void foo_dealloc(foo_object *self) {
+     static void
+     foo_dealloc(PyObject *op)
+     {
+         foo_object *self = (foo_object *) op;
          PyObject_GC_UnTrack(self);
          Py_CLEAR(self->ref);
-         Py_TYPE(self)->tp_free((PyObject *)self);
+         Py_TYPE(self)->tp_free(self);
      }
 
    Finally, if the type is heap allocated (:c:macro:`Py_TPFLAGS_HEAPTYPE`), the
@@ -717,10 +720,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. code-block:: c
 
-     static void foo_dealloc(foo_object *self) {
-         PyTypeObject *tp = Py_TYPE(self);
+     static void
+     foo_dealloc(PyObject *op)
+     {
+         PyTypeObject *tp = Py_TYPE(op);
          // free references and buffers here
-         tp->tp_free(self);
+         tp->tp_free(op);
          Py_DECREF(tp);
      }
 
@@ -731,7 +736,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       object becomes part of a refcount cycle, that cycle might be collected by
       a garbage collection on any thread).  This is not a problem for Python
       API calls, since the thread on which :c:member:`!tp_dealloc` is called
-      will own the Global Interpreter Lock (GIL).  However, if the object being
+      with an :term:`attached thread state`.  However, if the object being
       destroyed in turn destroys objects from some other C or C++ library, care
       should be taken to ensure that destroying those objects on the thread
       which called :c:member:`!tp_dealloc` will not violate any assumptions of
@@ -1416,8 +1421,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :mod:`!_thread` extension module::
 
       static int
-      local_traverse(localobject *self, visitproc visit, void *arg)
+      local_traverse(PyObject *op, visitproc visit, void *arg)
       {
+          localobject *self = (localobject *) op;
           Py_VISIT(self->args);
           Py_VISIT(self->kw);
           Py_VISIT(self->dict);
@@ -1511,8 +1517,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    members to ``NULL``, as in the following example::
 
       static int
-      local_clear(localobject *self)
+      local_clear(PyObject *op)
       {
+          localobject *self = (localobject *) op;
           Py_CLEAR(self->key);
           Py_CLEAR(self->args);
           Py_CLEAR(self->kw);
@@ -2154,15 +2161,13 @@ and :c:data:`PyType_Type` effectively act as defaults.)
       static void
       local_finalize(PyObject *self)
       {
-          PyObject *error_type, *error_value, *error_traceback;
-
           /* Save the current exception, if any. */
-          PyErr_Fetch(&error_type, &error_value, &error_traceback);
+          PyObject *exc = PyErr_GetRaisedException();
 
           /* ... */
 
           /* Restore the saved exception. */
-          PyErr_Restore(error_type, error_value, error_traceback);
+          PyErr_SetRaisedException(exc);
       }
 
    **Inheritance:**
