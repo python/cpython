@@ -245,7 +245,7 @@ def parentname(object, modname):
     if necessary) or module."""
     if '.' in object.__qualname__:
         name = object.__qualname__.rpartition('.')[0]
-        if object.__module__ != modname:
+        if object.__module__ != modname and object.__module__ is not None:
             return object.__module__ + '.' + name
         else:
             return name
@@ -330,7 +330,8 @@ def visiblename(name, all=None, obj=None):
                 '__date__', '__doc__', '__file__', '__spec__',
                 '__loader__', '__module__', '__name__', '__package__',
                 '__path__', '__qualname__', '__slots__', '__version__',
-                '__static_attributes__', '__firstlineno__'}:
+                '__static_attributes__', '__firstlineno__',
+                '__annotate_func__', '__annotations_cache__'}:
         return 0
     # Private names are hidden, but special names are displayed.
     if name.startswith('__') and name.endswith('__'): return 1
@@ -1435,7 +1436,8 @@ location listed above.
         # List the built-in subclasses, if any:
         subclasses = sorted(
             (str(cls.__name__) for cls in type.__subclasses__(object)
-             if not cls.__name__.startswith("_") and cls.__module__ == "builtins"),
+             if (not cls.__name__.startswith("_") and
+                 getattr(cls, '__module__', '') == "builtins")),
             key=str.lower
         )
         no_of_subclasses = len(subclasses)
