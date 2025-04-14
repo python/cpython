@@ -476,7 +476,7 @@ Connection: close
 
     def test_file_notexists(self):
         fd, tmp_file = tempfile.mkstemp()
-        tmp_file_canon_url = 'file:' + urllib.request.pathname2url(tmp_file)
+        tmp_file_canon_url = urllib.request.pathname2url(tmp_file, add_scheme=True)
         parsed = urllib.parse.urlsplit(tmp_file_canon_url)
         tmp_fileurl = parsed._replace(netloc='localhost').geturl()
         try:
@@ -620,7 +620,7 @@ class urlretrieve_FileTests(unittest.TestCase):
 
     def constructLocalFileUrl(self, filePath):
         filePath = os.path.abspath(filePath)
-        return "file:" + urllib.request.pathname2url(filePath)
+        return urllib.request.pathname2url(filePath, add_scheme=True)
 
     def createNewTempFile(self, data=b""):
         """Creates a new temporary file containing the specified data,
@@ -1436,6 +1436,21 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn(f'{sep}a{sep}b.c'), '///a/b.c')
         self.assertEqual(fn(f'{sep}a{sep}b%#c'), '///a/b%25%23c')
 
+    def test_pathname2url_add_scheme(self):
+        sep = os.path.sep
+        subtests = [
+            ('', 'file:'),
+            (sep, 'file:///'),
+            ('a', 'file:a'),
+            (f'a{sep}b.c', 'file:a/b.c'),
+            (f'{sep}a{sep}b.c', 'file:///a/b.c'),
+            (f'{sep}a{sep}b%#c', 'file:///a/b%25%23c'),
+        ]
+        for path, expected_url in subtests:
+            with self.subTest(path=path):
+                self.assertEqual(
+                    urllib.request.pathname2url(path, add_scheme=True), expected_url)
+
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
     def test_pathname2url_win(self):
@@ -1503,6 +1518,49 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('//localhost/foo/bar'), f'{sep}foo{sep}bar')
         self.assertEqual(fn('///foo/bar'), f'{sep}foo{sep}bar')
         self.assertEqual(fn('////foo/bar'), f'{sep}{sep}foo{sep}bar')
+        self.assertEqual(fn('data:blah'), 'data:blah')
+        self.assertEqual(fn('data://blah'), f'data:{sep}{sep}blah')
+
+    def test_url2pathname_require_scheme(self):
+        sep = os.path.sep
+        subtests = [
+            ('file:', ''),
+            ('FILE:', ''),
+            ('FiLe:', ''),
+            ('file:/', f'{sep}'),
+            ('file:///', f'{sep}'),
+            ('file:////', f'{sep}{sep}'),
+            ('file:foo', 'foo'),
+            ('file:foo/bar', f'foo{sep}bar'),
+            ('file:/foo/bar', f'{sep}foo{sep}bar'),
+            ('file://localhost/foo/bar', f'{sep}foo{sep}bar'),
+            ('file:///foo/bar', f'{sep}foo{sep}bar'),
+            ('file:////foo/bar', f'{sep}{sep}foo{sep}bar'),
+            ('file:data:blah', 'data:blah'),
+            ('file:data://blah', f'data:{sep}{sep}blah'),
+        ]
+        for url, expected_path in subtests:
+            with self.subTest(url=url):
+                self.assertEqual(
+                    urllib.request.url2pathname(url, require_scheme=True),
+                    expected_path)
+
+        error_subtests = [
+            '',
+            ':',
+            'foo',
+            'http:foo',
+            'localfile:foo',
+            'data:foo',
+            'data:file:foo',
+            'data:file://foo',
+        ]
+        for url in error_subtests:
+            with self.subTest(url=url):
+                self.assertRaises(
+                    urllib.error.URLError,
+                    urllib.request.url2pathname,
+                    url, require_scheme=True)
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
