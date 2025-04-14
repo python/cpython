@@ -12,7 +12,7 @@ __all__ = [
     "ForwardRef",
     "call_annotate_function",
     "call_evaluate_function",
-    "get_annotate_function",
+    "get_annotate_from_class_namespace",
     "get_annotations",
     "annotations_to_string",
     "value_to_string",
@@ -619,7 +619,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         raise ValueError(f"Invalid format: {format!r}")
 
 
-def get_annotate_function(obj):
+def get_annotate_from_class_namespace(obj):
     """Get the __annotate__ function for an object.
 
     obj may be a function, class, or module, or a user-defined type with
@@ -627,12 +627,10 @@ def get_annotate_function(obj):
 
     Returns the __annotate__ function or None.
     """
-    if isinstance(obj, dict):
-        try:
-            return obj["__annotate__"]
-        except KeyError:
-            return obj.get("__annotate_func__", None)
-    return getattr(obj, "__annotate__", None)
+    try:
+        return obj["__annotate__"]
+    except KeyError:
+        return obj.get("__annotate_func__", None)
 
 
 def get_annotations(
@@ -827,7 +825,7 @@ def annotations_to_string(annotations):
 
 
 def _get_and_call_annotate(obj, format):
-    annotate = get_annotate_function(obj)
+    annotate = getattr(obj, "__annotate__", None)
     if annotate is not None:
         ann = call_annotate_function(annotate, format, owner=obj)
         if not isinstance(ann, dict):
