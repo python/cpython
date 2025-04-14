@@ -780,7 +780,8 @@ dictionaries.
    .. attribute:: subnet_router_anycast_address
 
       The Subnet-Router anycast address for the network, which is the first address
-      in the network.
+      in the network or None if the network is a /127 or /128, which do not have
+      a subnet router, as defined in IETF RFC 6164, section 8.
 
       .. versionadded:: next
 

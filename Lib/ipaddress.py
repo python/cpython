@@ -2370,6 +2370,8 @@ class IPv6Network(_BaseV6, _BaseNetwork):
 
     @functools.cached_property
     def subnet_router_anycast_address(self):
+        if self._prefixlen == 127 or self._prefixlen == 128:
+            return None
         return self.first_address
 
     @functools.cached_property
