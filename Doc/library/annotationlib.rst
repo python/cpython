@@ -303,12 +303,9 @@ Functions
 .. function:: get_annotate_from_class_namespace(namespace)
 
    Retrieve the :term:`annotate function` from a class namespace dictionary *namespace*.
-   Return :const:`!None` if the namespace does not contain an annotate function. *obj* may be a class, function,
-   module, or a namespace dictionary for a class. The last case is useful during
-   class creation, e.g. in the ``__new__`` method of a metaclass.
-
-   This is usually equivalent to accessing the :attr:`~object.__annotate__`
-   attribute of *obj*, but access through this public function is preferred.
+   Return :const:`!None` if the namespace does not contain an annotate function.
+   This is useful in :ref:`metaclasses <metaclasses>` to retrieve the annotate function;
+   see :ref:`below <annotationlib-metaclass>` for an example.
 
    .. versionadded:: 3.14
 
@@ -410,6 +407,8 @@ Functions
 
 Recipes
 -------
+
+.. _annotationlib-metaclass:
 
 Using annotations in a metaclass
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -620,12 +620,10 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
 
 
 def get_annotate_from_class_namespace(obj):
-    """Get the __annotate__ function for an object.
+    """Retrieve the annotate function from a class namespace dictionary.
 
-    obj may be a function, class, or module, or a user-defined type with
-    an `__annotate__` attribute.
-
-    Returns the __annotate__ function or None.
+    Return None if the namespace does not contain an annotate function.
+    This is useful in metaclass ``__new__`` methods to retrieve the annotate function.
     """
     try:
         return obj["__annotate__"]
