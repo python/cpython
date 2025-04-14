@@ -75,9 +75,27 @@ Dumping the C stack
 
    Dump the C stack trace of the current thread into *file*.
 
-   If the system does not support the C-level :manpage:`backtrace(3)`
-   or :manpage:`backtrace_symbols(3)` functions, then an error message
-   is displayed instead of the C stack.
+   If the Python build does not support it or the operating system
+   does not provide a stack trace, then this prints an error in place
+   of a dumped C stack.
+
+.. _c-stack-compatibility
+
+C Stack Compatibility
+*********************
+
+If the system does not support the C-level :manpage:`backtrace(3)`,
+:manpage:`backtrace_symbols(3)`, or :manpage:`dladdr(3)`, then C stack dumps
+will not work. An error will be printed instead of the stack.
+
+Additionally, some compilers do not support :term:`CPython's <CPython>`
+implementation of C stack dumps. As a result, a different error may be printed
+instead of the stack, even if the the operating system supports dumping stacks.
+
+.. note::
+
+   Dumping C stacks can be arbitrarily slow, depending on the DWARF level
+   of the binaries in the call stack.
 
 Fault handler state
 -------------------
