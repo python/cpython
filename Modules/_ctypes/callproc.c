@@ -1199,8 +1199,8 @@ PyObject *_ctypes_callproc(ctypes_state *st,
     PyObject *retval = NULL;
 
     // Both call_function and call_cdeclfunction call us:
-    if (PySys_Audit("ctypes.call_function", "nO",
-                    (Py_ssize_t)pProc, argtuple) < 0) {
+    if (PySys_Audit("ctypes.call_function", "KO",
+                    (unsigned long long)pProc, argtuple) < 0) {
         return NULL;
     }
 
