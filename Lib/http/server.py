@@ -106,6 +106,8 @@ import socketserver
 import sys
 import time
 import urllib.parse
+import argparse
+import contextlib
 
 from http import HTTPStatus
 
@@ -150,6 +152,20 @@ class HTTPServer(socketserver.TCPServer):
 class ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
     daemon_threads = True
 
+class CommandLineServerClass(ThreadingHTTPServer):
+    def __init__(self, server_address, RequestHandlerClass, directory=None):
+        super().__init__(server_address, RequestHandlerClass)
+        self.directory = directory
+    def server_bind(self):
+        # suppress exception when protocol is IPv4
+        with contextlib.suppress(Exception):
+            self.socket.setsockopt(
+                socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+        return super().server_bind()
+
+    def finish_request(self, request, client_address):
+        self.RequestHandlerClass(request, client_address, self,
+                                 directory=self.directory)
 
 class HTTPSServer(HTTPServer):
     def __init__(self, server_address, RequestHandlerClass,
@@ -1336,10 +1352,7 @@ def test(HandlerClass=BaseHTTPRequestHandler,
             print("\nKeyboard interrupt received, exiting.")
             sys.exit(0)
 
-if __name__ == '__main__':
-    import argparse
-    import contextlib
-
+def _main(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--cgi', action='store_true',
                         help='run as CGI server')
@@ -1362,7 +1375,7 @@ if __name__ == '__main__':
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
-    args = parser.parse_args()
+    args = parser.parse_args(args=args)
 
     if not args.tls_cert and args.tls_key:
         parser.error("--tls-key requires --tls-cert to be set")
@@ -1399,7 +1412,7 @@ if __name__ == '__main__':
 
     test(
         HandlerClass=handler_class,
-        ServerClass=DualStackServer,
+        ServerClass=CommandLineServerClass,
         port=args.port,
         bind=args.bind,
         protocol=args.protocol,
@@ -1407,3 +1420,7 @@ if __name__ == '__main__':
         tls_key=args.tls_key,
         tls_password=tls_key_password,
     )
+
+
+if __name__ == '__main__':
+    _main()

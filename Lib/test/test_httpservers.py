@@ -8,6 +8,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer, HTTPSServer, \
      SimpleHTTPRequestHandler, CGIHTTPRequestHandler
 from http import server, HTTPStatus
 
+import http.server
 import os
 import socket
 import sys
@@ -27,6 +28,8 @@ import datetime
 import threading
 from unittest import mock
 from io import BytesIO, StringIO
+import textwrap
+import contextlib
 
 import unittest
 from test import support
@@ -1466,7 +1469,7 @@ class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
 class MiscTestCase(unittest.TestCase):
     def test_all(self):
         expected = []
-        denylist = {'executable', 'nobody_uid', 'test'}
+        denylist = {'executable', 'nobody_uid', 'test', 'CommandLineServerClass', 'CommandLineServerClass'}
         for name in dir(server):
             if name.startswith('_') or name in denylist:
                 continue
@@ -1535,6 +1538,158 @@ class ScriptTestCase(unittest.TestCase):
             server.test(ServerClass=mock_server, bind=bind)
             self.assertEqual(mock_server.address_family, socket.AF_INET)
 
+class CommandLineTestCase(unittest.TestCase):
+    def setUp(self):
+        self.default_port = 8000
+        self.default_bind = None
+        self.default_protocol = 'HTTP/1.0'
+        self.default_handler = SimpleHTTPRequestHandler
+        self.default_server = http.server.CommandLineServerClass
+        self.tls_cert = '-----BEGIN CERTIFICATE-----\n' + '-----END CERTIFICATE-----\n'
+        self.tls_key = '-----BEGIN RSA PRIVATE KEY-----\n' + '-----END RSA PRIVATE KEY-----\n'
+        
+        self.tls_password = '<PASSWORD>'
+        tls_password_file_object = tempfile.NamedTemporaryFile(mode='w+', delete=False)
+        tls_password_file_object.write(self.tls_password)
+        self.tls_password_file = tls_password_file_object.name
+        tls_password_file_object.close()
+        return super().setUp()
+
+    def tearDown(self):
+        if os.path.exists(self.tls_password_file):
+            os.remove(self.tls_password_file)
+        return super().tearDown()
+
+    def text_normalizer(self, string):
+        return textwrap.dedent(string).strip()
+
+    def invoke_httpd(self, args=[]):
+        output = StringIO()
+        with contextlib.redirect_stdout(output):
+            server._main(args)
+        return self.text_normalizer(output.getvalue())
+
+    @mock.patch('http.server.test')
+    def test_port_flag(self, mock_func):
+        ports = [8000, 65535,]
+        for port in ports:
+            with self.subTest(port=port):
+                self.invoke_httpd([str(port)])
+                mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
+                                                  protocol=self.default_protocol, port=port, bind=self.default_bind, tls_cert=None,
+                                                  tls_key=None, tls_password=None)
+                mock_func.reset_mock()
+
+    @mock.patch('http.server.test')
+    def test_directory_flag(self, mock_func):
+        options = ['-d', '--directory']
+        directories = ['.', '/foo', '\\bar', '/', 'C:\\', 'C:\\foo', 'C:\\bar',]
+        for flag in options:
+            for directory in directories:
+                with self.subTest(flag=flag, directory=directory):
+                    self.invoke_httpd([flag, directory])
+                    mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
+                                                      protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
+                                                      tls_cert=None, tls_key=None, tls_password=None)
+                    mock_func.reset_mock()
+
+    @mock.patch('http.server.test')
+    def test_bind_flag(self, mock_func):
+        options = ['-b', '--bind']
+        bind_addresses = ['localhost', '127.0.0.1', '::1', '0.0.0.0', '8.8.8.8',]
+        for flag in options:
+            for bind_address in bind_addresses:
+                with self.subTest(flag=flag, bind_address=bind_address):
+                    self.invoke_httpd([flag, bind_address])
+                    mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
+                                                      protocol=self.default_protocol, port=self.default_port, bind=bind_address,
+                                                      tls_cert=None, tls_key=None, tls_password=None)
+                    mock_func.reset_mock()
+
+    @mock.patch('http.server.test')
+    def test_protocol_flag(self, mock_func):
+        options = ['-p', '--protocol']
+        protocols = ['HTTP/1.0', 'HTTP/1.1', 'HTTP/2.0', 'HTTP/3.0',]
+        for flag in options:
+            for protocol in protocols:
+                with self.subTest(flag=flag, protocol=protocol):
+                    self.invoke_httpd([flag, protocol])
+                    mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
+                                                      protocol=protocol, port=self.default_port, bind=self.default_bind,
+                                                      tls_cert=None, tls_key=None, tls_password=None)
+                    mock_func.reset_mock()
+
+    @mock.patch('http.server.test')
+    def test_cgi_flag(self, mock_func):
+        self.invoke_httpd(['--cgi'])
+        mock_func.assert_called_once_with(HandlerClass=CGIHTTPRequestHandler, ServerClass=self.default_server,
+                                          protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
+                                          tls_cert=None, tls_key=None, tls_password=None)  
+
+    @mock.patch('http.server.test')
+    def test_tls_flag(self, mock_func):
+        tls_cert_options = ['--tls-cert', ]
+        tls_key_options = ['--tls-key', ]
+        tls_password_options = ['--tls-password-file', ]
+        # Normal: --tls-cert and --tls-key
+        
+        for tls_cert_option in tls_cert_options:
+            for tls_key_option in tls_key_options:
+                self.invoke_httpd([tls_cert_option, self.tls_cert, tls_key_option, self.tls_key])
+                mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
+                                                  protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
+                                                  tls_cert=self.tls_cert, tls_key=self.tls_key, tls_password=None)
+                mock_func.reset_mock()
+        
+        # Normal: --tls-cert, --tls-key and --tls-password-file
+        
+        for tls_cert_option in tls_cert_options:
+            for tls_key_option in tls_key_options:
+                for tls_password_option in tls_password_options:
+                    self.invoke_httpd([tls_cert_option, self.tls_cert, tls_key_option, self.tls_key, tls_password_option, self.tls_password_file])
+                    
+                    mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
+                                                      protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
+                                                      tls_cert=self.tls_cert, tls_key=self.tls_key, tls_password=self.tls_password)
+                    mock_func.reset_mock()
+        
+        # Abnormal: --tls-key without --tls-cert
+        
+        for tls_key_option in tls_key_options:
+            for tls_cert_option in tls_cert_options:
+                with self.assertRaises(SystemExit):
+                    self.invoke_httpd([tls_key_option, self.tls_key])
+                    mock_func.reset_mock()
+        
+        # Abnormal: --tls-password-file without --tls-cert
+        
+        for tls_password_option in tls_password_options:
+            with self.assertRaises(SystemExit):
+                self.invoke_httpd([tls_password_option, self.tls_password_file])
+                mock_func.reset_mock()
+        
+        # Abnormal: --tls-password-file cannot be opened
+        
+        non_existent_file = os.path.join(tempfile.gettempdir(), os.urandom(16).hex())
+        retry_count = 0
+        while os.path.exists(non_existent_file) and retry_count < 10:
+            non_existent_file = os.path.join(tempfile.gettempdir(), os.urandom(16).hex())
+        if not os.path.exists(non_existent_file):
+            for tls_password_option in tls_password_options:
+                for tls_cert_option in tls_cert_options:
+                    with self.assertRaises(SystemExit):
+                        self.invoke_httpd([tls_cert_option, self.tls_cert, tls_password_option, non_existent_file])
+
+    def test_help_flag(self):
+        options = ['-h', '--help']
+        for option in options:
+            with self.assertRaises(SystemExit):
+                output = self.invoke_httpd([option])
+                self.assertIn('usage:', output)
+
+    def test_unknown_flag(self):
+        with self.assertRaises(SystemExit):
+            self.invoke_httpd(['--unknown-flag'])
 
 def setUpModule():
     unittest.addModuleCleanup(os.chdir, os.getcwd())
