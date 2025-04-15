@@ -70,7 +70,7 @@ _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber)
 
     }
     PyObject *obj;
-    if (ref.index <= LAST_PREDEFINED_STACKREF_INDEX) {
+    if (ref.index < INITIAL_STACKREF_INDEX) {
         if (ref.index == 0) {
             _Py_FatalErrorFormat(__func__, "Passing NULL to PyStackRef_CLOSE at %s:%d\n", filename, linenumber);
         }
@@ -128,7 +128,7 @@ _Py_stackref_create(PyObject *obj, const char *filename, int linenumber)
 void
 _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber)
 {
-    if (ref.index <= LAST_PREDEFINED_STACKREF_INDEX) {
+    if (ref.index < INITIAL_STACKREF_INDEX) {
         return;
     }
     PyInterpreterState *interp = PyInterpreterState_Get();
@@ -152,8 +152,7 @@ _Py_stackref_record_borrow(_PyStackRef ref, const char *filename, int linenumber
 void
 _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _PyStackRef ref)
 {
-    assert(interp->next_stackref >= ref.index);
-    interp->next_stackref = ref.index+2;
+    assert(ref.index < INITIAL_STACKREF_INDEX);
     TableEntry *entry = make_table_entry(obj, "builtin-object", 0);
     if (entry == NULL) {
         Py_FatalError("No memory left for stackref debug table");

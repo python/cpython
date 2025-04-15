@@ -63,11 +63,13 @@ extern void _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _P
 
 static const _PyStackRef PyStackRef_NULL = { .index = 0 };
 
+// Use the first 3 even numbers for None, True and False.
+// Odd numbers are reserved for (tagged) integers
 #define PyStackRef_None ((_PyStackRef){ .index = 2 } )
 #define PyStackRef_False ((_PyStackRef){ .index = 4 })
 #define PyStackRef_True ((_PyStackRef){ .index = 6 })
 
-#define LAST_PREDEFINED_STACKREF_INDEX 6
+#define INITIAL_STACKREF_INDEX 8
 
 static inline int
 PyStackRef_IsNull(_PyStackRef ref)
