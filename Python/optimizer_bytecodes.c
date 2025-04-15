@@ -919,16 +919,6 @@ dummy_func(void) {
         tup = sym_new_tuple(ctx, oparg, values);
     }
 
-    op(_BUILD_SLICE, (values[oparg] -- slice)) {
-        if (sym_is_const(ctx, values[oparg])) {
-            PyObject *val = sym_get_const(ctx, values[oparg]);
-            slice = sym_new_const(ctx, val);
-            Py_DecRef(val);
-        }
-        else {
-            slice = sym_new_type(ctx, &PySlice_Type);
-        }
-    }
     op(_BUILD_STRING, (values[oparg] -- str)) {
         if (sym_is_const(ctx, values[oparg])) {
             PyObject *val = sym_get_const(ctx, values[oparg]);
