@@ -257,7 +257,8 @@ static inline intptr_t
 PyStackRef_UntagInt(_PyStackRef i)
 {
     assert((i.bits & Py_INT_TAG) == Py_INT_TAG);
-    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, i.bits, 2);
+    intptr_t val = (intptr_t)i.bits;
+    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, val, 2);
 }
 
 
