@@ -275,8 +275,28 @@ The primary APIs for using critical sections are:
 * :c:macro:`Py_BEGIN_CRITICAL_SECTION2` and :c:macro:`Py_END_CRITICAL_SECTION2`
   - For locking two objects simultaneously
 
-These macros are no-ops in non-free-threaded builds, so they can be safely
-added to code that needs to support both build types.
+These macros must be used in matching pairs and must appear in the same C
+scope, since they establish a new local scope.  These macros are no-ops in
+non-free-threaded builds, so they can be safely added to code that needs to
+support both build types.
+
+A common use of a critical section would be to lock an object while accessing
+an internal attribute of it.  For example, if an extension type has an internal
+count field, you could use a critical section while reading or writing that
+field::
+
+    // read the count, returns new reference to internal count value
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    result = Py_NewRef(obj->count);
+    Py_END_CRITICAL_SECTION();
+    return result;
+
+    // write the count, consumes reference from new_count
+    Py_BEGIN_CRITICAL_SECTION(obj);
+    obj->count = new_count;
+    Py_END_CRITICAL_SECTION();
+
 
 How Critical Sections Work
 ..........................
@@ -292,7 +312,8 @@ blocking call. The key differences are:
 
 * Critical sections operate on a per-object basis rather than globally
 
-* Critical sections follow a stack discipline within each thread
+* Critical sections follow a stack discipline within each thread (the "begin" and
+  "end" macros enforce this since they must be paired and within the same scope)
 
 * Critical sections automatically release and reacquire locks around potential
   blocking operations
@@ -312,6 +333,14 @@ Critical sections help avoid deadlocks in two ways:
 This means you cannot rely on nested critical sections to lock multiple objects
 at once, as the inner critical section may suspend the outer ones. Instead, use
 :c:macro:`Py_BEGIN_CRITICAL_SECTION2` to lock two objects simultaneously.
+
+Note that the locks described above are only `PyMutex` based locks.  The
+critical section implementation does not know about or affect other locking
+mechanisms that might be in use, like POSIX mutexes.  Also note that while
+blocking on any `PyMutex` causes the critical sections to be suspended, only
+the mutexes that are part of the critical sections are released.  If `PyMutex`
+is used without a critical section, it will not be released and therefore does
+not get the same deadlock avoidance.
 
 Important Considerations
 ........................
