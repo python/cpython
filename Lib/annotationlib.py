@@ -819,7 +819,10 @@ def value_to_string(value):
 
 
 def annotations_to_string(annotations):
-    """Convert an annotation dict containing values to approximately the STRING format."""
+    """Convert an annotation dict containing values to approximately the STRING format.
+
+    Always returns a fresh a dictionary.
+    """
     return {
         n: t if isinstance(t, str) else value_to_string(t)
         for n, t in annotations.items()
@@ -827,6 +830,10 @@ def annotations_to_string(annotations):
 
 
 def _get_and_call_annotate(obj, format):
+    """Get the __annotate__ function and call it.
+
+    May not return a fresh dictionary.
+    """
     annotate = get_annotate_function(obj)
     if annotate is not None:
         ann = call_annotate_function(annotate, format, owner=obj)
@@ -837,6 +844,10 @@ def _get_and_call_annotate(obj, format):
 
 
 def _get_dunder_annotations(obj):
+    """Return the annotations for an object, checking that it is a dictionary.
+
+    Does not return a fresh dictionary.
+    """
     ann = getattr(obj, "__annotations__", None)
     if ann is None:
         return None
