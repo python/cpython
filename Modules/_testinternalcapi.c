@@ -1730,6 +1730,11 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
             goto error;
         }
     }
+    else if (strcmp(mode, "pickle") == 0) {
+        if (_PyPickle_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
     else {
         PyErr_Format(PyExc_ValueError, "unsupported mode %R", modeobj);
         goto error;
