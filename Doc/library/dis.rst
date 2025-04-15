@@ -1721,6 +1721,13 @@ iterations of the loop.
       Previously, this instruction also pushed a boolean value indicating
       success (``True``) or failure (``False``).
 
+.. opcode:: CHECK_PERIODIC
+
+   Detects and handles certain conditions of interpreter state, such as
+   signals and async exceptions. This bytecode is emitted alongside calls
+   and backward jumps to ensure that it appears in any long execution path.
+
+   .. versionadded:: 3.14
 
 .. opcode:: RESUME (context)
 

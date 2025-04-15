@@ -1696,6 +1696,9 @@ CPython Bytecode Changes
 * Replaced the opcode ``BINARY_SUBSCR`` by :opcode:`BINARY_OP` with oparg ``NB_SUBSCR``.
   (Contributed by Irit Katriel in :gh:`100239`.)
 
+* Added opcode ``CHECK_PERIODIC`` which detects and handles signals, async exceptions,
+  etc. (Contributed by Irit Katriel in :gh:`132532`.)
+
 Porting to Python 3.14
 ======================
 
