@@ -2944,13 +2944,13 @@ class _PdbClient:
             return None
 
 
-def _connect(host, port):
+def _connect(host, port, frame):
     with closing(socket.create_connection((host, port))) as conn:
         sockfile = conn.makefile("rwb")
 
     remote_pdb = _RemotePdb(sockfile)
     weakref.finalize(remote_pdb, sockfile.close)
-    remote_pdb.set_trace()
+    remote_pdb.set_trace(frame=frame)
 
 
 def attach(pid):
@@ -2960,7 +2960,8 @@ def attach(pid):
 
         with tempfile.NamedTemporaryFile("w", delete_on_close=False) as script:
             script.write(
-                f'from pdb import _connect; _connect("localhost", {port})\n'
+                f'import pdb, sys\n'
+                f'pdb._connect("localhost", {port}, sys._getframe().f_back)\n'
             )
             script.close()
             sys.remote_exec(pid, script.name)
