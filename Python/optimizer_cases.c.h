@@ -1013,8 +1013,15 @@
             JitOptSymbol **values;
             JitOptSymbol *str;
             values = &stack_pointer[-oparg];
-            if (sym_is_const(ctx, values[oparg])) {
-                PyObject *val = sym_get_const(ctx, values[oparg]);
+            bool is_const = true;
+            for (int i = 0; i < oparg; i++) {
+                if (!sym_is_const(ctx, values[i])) {
+                    is_const = false;
+                    break;
+                }
+            }
+            if (is_const) {
+                PyObject *val = sym_get_const(ctx, values[0]);
                 str = sym_new_const(ctx, val);
                 stack_pointer[-oparg] = str;
                 stack_pointer += 1 - oparg;
@@ -2102,22 +2109,11 @@
         }
 
         case _BUILD_SLICE: {
-            JitOptSymbol **values;
             JitOptSymbol *slice;
-            values = &stack_pointer[-oparg];
-            if (sym_is_const(ctx, values[oparg])) {
-                PyObject *val = sym_get_const(ctx, values[oparg]);
-                slice = sym_new_const(ctx, val);
-                stack_pointer[-oparg] = slice;
-                stack_pointer += 1 - oparg;
-                assert(WITHIN_STACK_BOUNDS());
-                Py_DecRef(val);
-            }
-            else {
-                slice = sym_new_type(ctx, &PySlice_Type);
-                stack_pointer += 1 - oparg;
-            }
-            stack_pointer[-1] = slice;
+            slice = sym_new_not_null(ctx);
+            stack_pointer[-oparg] = slice;
+            stack_pointer += 1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
             break;
         }
 

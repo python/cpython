@@ -920,8 +920,15 @@ dummy_func(void) {
     }
 
     op(_BUILD_STRING, (values[oparg] -- str)) {
-        if (sym_is_const(ctx, values[oparg])) {
-            PyObject *val = sym_get_const(ctx, values[oparg]);
+        bool is_const = true;
+        for (int i = 0; i < oparg; i++) {
+            if (!sym_is_const(ctx, values[i])) {
+                is_const = false;
+                break;
+            }
+        }
+        if (is_const) {
+            PyObject *val = sym_get_const(ctx, values[0]);
             str = sym_new_const(ctx, val);
             Py_DecRef(val);
         }
