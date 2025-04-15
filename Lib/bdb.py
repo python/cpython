@@ -96,7 +96,7 @@ class _MonitoringTracer:
                     self.update_local_events()
                 if (
                     self._disable_current_event
-                    #and event not in (E.PY_THROW, E.PY_UNWIND, E.RAISE)
+                    and event not in (E.PY_THROW, E.PY_UNWIND, E.RAISE)
                 ):
                     return sys.monitoring.DISABLE
                 else:
