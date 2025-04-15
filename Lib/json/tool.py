@@ -15,6 +15,7 @@ from _colorize import ANSIColors, can_colorize
 # the various parts, most notably strings and numbers,
 # where the regex given by the spec is much more complex.
 _color_pattern = re.compile(r'''
+    (?P<key>"(\\.|[^"\\])*")(?=:)           |
     (?P<string>"(\\.|[^"\\])*")             |
     (?P<number>NaN|-?Infinity|[0-9\-+.Ee]+) |
     (?P<boolean>true|false)                 |
@@ -23,6 +24,7 @@ _color_pattern = re.compile(r'''
 
 
 _colors = {
+    'key': ANSIColors.INTENSE_BLUE,
     'string': ANSIColors.GREEN,
     'number': ANSIColors.YELLOW,
     'boolean': ANSIColors.CYAN,
