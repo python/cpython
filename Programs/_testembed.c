@@ -2343,11 +2343,11 @@ test_get_incomplete_frame(void)
 }
 
 static void
-do_gilstate_ensure(void *semaphore_ptr)
+do_gilstate_ensure(void *event_ptr)
 {
-    _PySemaphore *semaphore = (_PySemaphore *)semaphore_ptr;
+    PyEvent *event = (PyEvent *)event_ptr;
     // Signal to the calling thread that we've started
-    _PySemaphore_Wakeup(semaphore);
+    _PyEvent_Notify(event);
     PyGILState_Ensure(); // This should hang
     assert(NULL);
 }
@@ -2359,15 +2359,13 @@ test_gilstate_after_finalization(void)
     Py_Finalize();
     PyThread_handle_t handle;
     PyThread_ident_t ident;
-    _PySemaphore semaphore;
-    _PySemaphore_Init(&semaphore);
-    if (PyThread_start_joinable_thread(&do_gilstate_ensure, &semaphore, &ident, &handle) < 0) {
+    PyEvent event = {};
+    if (PyThread_start_joinable_thread(&do_gilstate_ensure, &event, &ident, &handle) < 0) {
         return -1;
     }
-    _PySemaphore_Wait(&semaphore, /*timeout_ns=*/-1, /*detach=*/0);
+    PyEvent_Wait(&event);
     // We're now pretty confident that the thread went for
     // PyGILState_Ensure(), but that means it got hung.
-    _PySemaphore_Destroy(&semaphore);
     return PyThread_detach_thread(handle);
 }
 
