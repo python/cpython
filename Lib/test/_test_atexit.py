@@ -100,9 +100,11 @@ class GeneralTest(unittest.TestCase):
         def dec():
             a[0] -= 1
 
+        # Registers 4 instances of inc.
         for i in range(4):
             atexit.register(inc)
         atexit.register(dec)
+        # De-registers all 4 instances of inc.
         atexit.unregister(inc)
         atexit._run_exitfuncs()
 
