@@ -1547,7 +1547,7 @@ class CommandLineTestCase(unittest.TestCase):
         self.default_server = http.server.CommandLineServerClass
         self.tls_cert = '-----BEGIN CERTIFICATE-----\n' + '-----END CERTIFICATE-----\n'
         self.tls_key = '-----BEGIN RSA PRIVATE KEY-----\n' + '-----END RSA PRIVATE KEY-----\n'
-        
+
         self.tls_password = '<PASSWORD>'
         tls_password_file_object = tempfile.NamedTemporaryFile(mode='w+', delete=False)
         tls_password_file_object.write(self.tls_password)
@@ -1624,7 +1624,7 @@ class CommandLineTestCase(unittest.TestCase):
         self.invoke_httpd(['--cgi'])
         mock_func.assert_called_once_with(HandlerClass=CGIHTTPRequestHandler, ServerClass=self.default_server,
                                           protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
-                                          tls_cert=None, tls_key=None, tls_password=None)  
+                                          tls_cert=None, tls_key=None, tls_password=None)
 
     @mock.patch('http.server.test')
     def test_tls_flag(self, mock_func):
@@ -1632,7 +1632,7 @@ class CommandLineTestCase(unittest.TestCase):
         tls_key_options = ['--tls-key', ]
         tls_password_options = ['--tls-password-file', ]
         # Normal: --tls-cert and --tls-key
-        
+
         for tls_cert_option in tls_cert_options:
             for tls_key_option in tls_key_options:
                 self.invoke_httpd([tls_cert_option, self.tls_cert, tls_key_option, self.tls_key])
@@ -1640,36 +1640,36 @@ class CommandLineTestCase(unittest.TestCase):
                                                   protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
                                                   tls_cert=self.tls_cert, tls_key=self.tls_key, tls_password=None)
                 mock_func.reset_mock()
-        
+
         # Normal: --tls-cert, --tls-key and --tls-password-file
-        
+
         for tls_cert_option in tls_cert_options:
             for tls_key_option in tls_key_options:
                 for tls_password_option in tls_password_options:
                     self.invoke_httpd([tls_cert_option, self.tls_cert, tls_key_option, self.tls_key, tls_password_option, self.tls_password_file])
-                    
+
                     mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
                                                       protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
                                                       tls_cert=self.tls_cert, tls_key=self.tls_key, tls_password=self.tls_password)
                     mock_func.reset_mock()
-        
+
         # Abnormal: --tls-key without --tls-cert
-        
+
         for tls_key_option in tls_key_options:
             for tls_cert_option in tls_cert_options:
                 with self.assertRaises(SystemExit):
                     self.invoke_httpd([tls_key_option, self.tls_key])
                     mock_func.reset_mock()
-        
+
         # Abnormal: --tls-password-file without --tls-cert
-        
+
         for tls_password_option in tls_password_options:
             with self.assertRaises(SystemExit):
                 self.invoke_httpd([tls_password_option, self.tls_password_file])
                 mock_func.reset_mock()
-        
+
         # Abnormal: --tls-password-file cannot be opened
-        
+
         non_existent_file = os.path.join(tempfile.gettempdir(), os.urandom(16).hex())
         retry_count = 0
         while os.path.exists(non_existent_file) and retry_count < 10:
