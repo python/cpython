@@ -1,2 +1,1 @@
-Added the missing 'w' typecode to the error message which is issued by
-array.array() if used with an unknown typecode like array('x').
+Include valid typecode 'w' in the error message when an invalid typecode is passed to :class:`array.array`.
