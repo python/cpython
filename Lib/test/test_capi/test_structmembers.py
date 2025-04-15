@@ -204,19 +204,10 @@ class ReadWriteTests_NewAPI(ReadWriteTests, unittest.TestCase):
         self._test_int_range('T_INT64', -2**63, 2**63-1)
         self._test_int_range('T_UINT64', 0, 2**64-1, negvalueerror=ValueError)
 
-    def test_intmax(self):
-        bits = 8*SIZEOF_INTMAX_T
-        self._test_int_range('T_INTMAX', -2**(bits-1), 2**(bits-1)-1)
-        self._test_int_range('T_UINTMAX', 0, 2**bits-1, negvalueerror=ValueError)
-
     def test_intptr(self):
         bits = 8*SIZEOF_INTPTR_T
         self._test_int_range('T_INTPTR', -2**(bits-1), 2**(bits-1)-1)
         self._test_int_range('T_UINTPTR', 0, 2**bits-1, negvalueerror=ValueError)
-
-    def test_ptrdiff(self):
-        bits = 8*SIZEOF_PTRDIFF_T
-        self._test_int_range('T_PTRDIFF', -2**(bits-1), 2**(bits-1)-1)
 
     def test_off(self):
         bits = 8*SIZEOF_OFF_T

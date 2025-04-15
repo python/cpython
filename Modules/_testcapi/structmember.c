@@ -32,11 +32,8 @@ typedef struct {
     uint32_t uint32_member;
     int64_t int64_member;
     uint64_t uint64_member;
-    intmax_t intmax_member;
-    uintmax_t uintmax_member;
     intptr_t intptr_member;
     uintptr_t uintptr_member;
-    ptrdiff_t ptrdiff_member;
 #ifdef MS_WINDOWS
     long long off_member;
 #else
@@ -77,11 +74,8 @@ static struct PyMemberDef test_members_newapi[] = {
     {"T_UINT32", Py_T_INTEGER(uint32_t), offsetof(test_structmembers, structmembers.uint32_member), 0, NULL},
     {"T_INT64", Py_T_INTEGER(int64_t), offsetof(test_structmembers, structmembers.int64_member), 0, NULL},
     {"T_UINT64", Py_T_INTEGER(uint64_t), offsetof(test_structmembers, structmembers.uint64_member), 0, NULL},
-    {"T_INTMAX", Py_T_INTEGER(intmax_t), offsetof(test_structmembers, structmembers.intmax_member), 0, NULL},
-    {"T_UINTMAX", Py_T_INTEGER(uintmax_t), offsetof(test_structmembers, structmembers.uintmax_member), 0, NULL},
     {"T_INTPTR", Py_T_INTEGER(intptr_t), offsetof(test_structmembers, structmembers.intptr_member), 0, NULL},
     {"T_UINTPTR", Py_T_INTEGER(uintptr_t), offsetof(test_structmembers, structmembers.uintptr_member), 0, NULL},
-    {"T_PTRDIFF", Py_T_INTEGER(ptrdiff_t), offsetof(test_structmembers, structmembers.ptrdiff_member), 0, NULL},
 #ifdef MS_WINDOWS
     {"T_OFF", Py_T_INTEGER(long long), offsetof(test_structmembers, structmembers.off_member), 0, NULL},
 #else
