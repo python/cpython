@@ -1825,12 +1825,7 @@ class ClassCreationTests(unittest.TestCase):
         class TupleSubclass(tuple): pass
 
         typ = type("typ", TupleSubclass((int, object)), {})
-        self.assertTrue(issubclass(typ, int))
-        self.assertTrue(issubclass(typ, object))
-        self.assertFalse(issubclass(typ, tuple))
-        self.assertIsInstance(typ(), int)
-        self.assertIsInstance(typ(), object)
-        self.assertNotIsInstance(typ(), tuple)
+        self.assertEqual(typ.__bases__, (int, object))
 
 
 class SimpleNamespaceTests(unittest.TestCase):
