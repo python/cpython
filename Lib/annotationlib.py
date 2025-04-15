@@ -77,6 +77,8 @@ class ForwardRef:
         self.__forward_is_argument__ = is_argument
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
+        # These are always set to None here but may be non-None if a ForwardRef
+        # is created through __class__ assignment on a _Stringifier object.
         self.__globals__ = None
         self.__code__ = None
         self.__ast_node__ = None
