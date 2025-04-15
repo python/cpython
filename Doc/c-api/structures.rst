@@ -637,7 +637,7 @@ Macro name                       C type                        Python type
 .. c:macro:: Py_T_OBJECT_EX      :c:expr:`PyObject *`          :py:class:`object` (D)
 ================================ ============================= ======================
 
-   (INT): Macro :c:macro:`Py_T_INTEGER(type) <Py_T_INTEGER>` represents arbitrary
+   (INT): Macro :c:macro:`Py_T_INTEGER(type) <Py_T_INTEGER>` represents an arbitrary
    C integer type *type*.
 
    (STR): Zero-terminated, UTF8-encoded C string.
