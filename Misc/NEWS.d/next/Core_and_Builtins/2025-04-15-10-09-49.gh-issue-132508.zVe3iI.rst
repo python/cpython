@@ -1,0 +1,3 @@
+Uses tagged integers on the evaluation stack to represent the instruction
+offsets when reraising an exception. This avoids the need to box the integer
+which could fail in low memory conditions.
