@@ -1210,10 +1210,10 @@ Querying file type and status
    any filesystem queries.
 
    To fetch up-to-date information, it's best to call :meth:`Path.is_dir`,
-   :meth:`~Path.is_file`, :meth:`~Path.is_symlink`, and :meth:`~is_junction`
-   rather than methods of this attribute. There is no way to reset the cache;
-   instead you can create a new path object with an empty info cache via
-   ``p = Path(p)``.
+   :meth:`~Path.is_file`, :meth:`~Path.is_symlink`, and
+   :meth:`~Path.is_junction` rather than methods of this attribute. There is
+   no way to reset the cache; instead you can create a new path object with an
+   empty info cache via ``p = Path(p)``.
 
    .. versionadded:: 3.14
 
