@@ -683,7 +683,9 @@ static int ConvParam(ctypes_state *st,
         PyCArgObject *carg;
         assert(info->paramfunc);
         /* If it has an stginfo, it is a CDataObject */
+        Py_BEGIN_CRITICAL_SECTION(obj);
         carg = info->paramfunc(st, (CDataObject *)obj);
+        Py_END_CRITICAL_SECTION();
         if (carg == NULL)
             return -1;
         pa->ffi_type = carg->pffi_type;
@@ -1199,8 +1201,17 @@ PyObject *_ctypes_callproc(ctypes_state *st,
     PyObject *retval = NULL;
 
     // Both call_function and call_cdeclfunction call us:
+#if SIZEOF_VOID_P == SIZEOF_LONG
+    if (PySys_Audit("ctypes.call_function", "kO",
+                    (unsigned long)pProc, argtuple) < 0) {
+#elif SIZEOF_VOID_P == SIZEOF_LONG_LONG
+    if (PySys_Audit("ctypes.call_function", "KO",
+                    (unsigned long long)pProc, argtuple) < 0) {
+#else
+# warning "unexpected pointer size, you may see odd values in audit hooks"
     if (PySys_Audit("ctypes.call_function", "nO",
                     (Py_ssize_t)pProc, argtuple) < 0) {
+#endif
         return NULL;
     }
 
