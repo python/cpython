@@ -1818,6 +1818,10 @@ New features
 
   (Contributed by Victor Stinner in :gh:`120389`.)
 
+* Add support of arbitrary C integer types in :c:member:`PyMemberDef.type`.
+  Macro :c:macro:`Py_T_INTEGER(type)` represents a C type *type*.
+  (Contributed by Serhiy Storchaka and Petr Viktorin in :gh:`117031`.)
+
 * Add :c:func:`PyBytes_Join(sep, iterable) <PyBytes_Join>` function,
   similar to ``sep.join(iterable)`` in Python.
   (Contributed by Victor Stinner in :gh:`121645`.)
