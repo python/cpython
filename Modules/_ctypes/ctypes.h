@@ -643,14 +643,3 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
     info->initialized = 1;
     return info;
 }
-
-/* Equivalent to *self->b_ptr with a lock. */
-static inline void *
-locked_deref(CDataObject *self)
-{
-    void *ptr;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    ptr = *(void **)self->b_ptr;
-    Py_END_CRITICAL_SECTION();
-    return ptr;
-}
