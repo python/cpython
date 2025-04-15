@@ -4576,6 +4576,15 @@ class ProtocolTests(BaseTestCase):
         self.assertFalse(isinstance(DeferredClass(), P))
         self.assertTrue(isinstance(DeferredClassImplementingP(), P))
 
+    def test_deferred_evaluation_of_annotations(self):
+        class DeferredProto(Protocol):
+            x: DoesNotExist
+        self.assertEqual(get_protocol_members(DeferredProto), {"x"})
+        self.assertEqual(
+            annotationlib.get_annotations(DeferredProto, format=annotationlib.Format.STRING),
+            {'x': 'DoesNotExist'}
+        )
+
 
 class GenericTests(BaseTestCase):
 

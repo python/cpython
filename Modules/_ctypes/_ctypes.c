@@ -6239,6 +6239,8 @@ _ctypes_mod_exec(PyObject *mod)
     }
     Py_ffi_closure_free(ptr);
 
+    _ctypes_init_fielddesc();
+
     ctypes_state *st = get_module_state(mod);
     st->_unpickle = PyObject_GetAttrString(mod, "_unpickle");
     if (st->_unpickle == NULL) {
