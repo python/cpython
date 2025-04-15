@@ -78,6 +78,7 @@ the following command can be used to display the disassembly of
      3           LOAD_GLOBAL              1 (len + NULL)
                  LOAD_FAST_BORROW         0 (alist)
                  CALL                     1
+                 CHECK_PERIODIC
                  RETURN_VALUE
 
 (The "2" is a line number).
@@ -217,6 +218,7 @@ Example:
     LOAD_GLOBAL
     LOAD_FAST_BORROW
     CALL
+    CHECK_PERIODIC
     RETURN_VALUE
 
 
