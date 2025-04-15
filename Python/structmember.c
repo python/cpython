@@ -145,29 +145,23 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = PyLong_FromUnsignedLongLong(*(uint64_t*)addr);
         break;
     case Py_T_INTMAX:
-        v = _PyLong_FromByteArray((const unsigned char *)addr,
-                                  sizeof(intmax_t), PY_LITTLE_ENDIAN, 1);
+        v = PyLong_FromNativeBytes(addr, sizeof(intmax_t), -1);
         break;
     case Py_T_UINTMAX:
-        v = _PyLong_FromByteArray((const unsigned char *)addr,
-                                  sizeof(uintmax_t), PY_LITTLE_ENDIAN, 0);
+        v = PyLong_FromUnsignedNativeBytes(addr, sizeof(uintmax_t), -1);
         break;
     case Py_T_INTPTR:
-        v = _PyLong_FromByteArray((const unsigned char *)addr,
-                                  sizeof(intptr_t), PY_LITTLE_ENDIAN, 1);
+        v = PyLong_FromNativeBytes(addr, sizeof(intptr_t), -1);
         break;
     case Py_T_UINTPTR:
-        v = _PyLong_FromByteArray((const unsigned char *)addr,
-                                  sizeof(uintptr_t), PY_LITTLE_ENDIAN, 0);
+        v = PyLong_FromUnsignedNativeBytes(addr, sizeof(uintptr_t), -1);
         break;
     case Py_T_PTRDIFF:
-        v = _PyLong_FromByteArray((const unsigned char *)addr,
-                                  sizeof(ptrdiff_t), PY_LITTLE_ENDIAN, 1);
+        v = PyLong_FromNativeBytes(addr, sizeof(ptrdiff_t), -1);
         break;
 #ifndef MS_WINDOWS
     case Py_T_OFF:
-        v = _PyLong_FromByteArray((const unsigned char *)addr,
-                                  sizeof(off_t), PY_LITTLE_ENDIAN, 1);
+        v = PyLong_FromNativeBytes(addr, sizeof(off_t), -1);
         break;
 #endif
     case Py_T_PID:
@@ -187,23 +181,31 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
     } while (0)
 
 #define SET_UNSIGNED_INT(N)  do {                                           \
-        if (!PyLong_Check(v)) {                                             \
-            PyErr_SetString(PyExc_TypeError, "an integer is required");     \
+        Py_ssize_t bytes = PyLong_AsNativeBytes(v, addr, (N),               \
+            Py_ASNATIVEBYTES_NATIVE_ENDIAN |                                \
+            Py_ASNATIVEBYTES_ALLOW_INDEX |                                  \
+            Py_ASNATIVEBYTES_UNSIGNED_BUFFER |                              \
+            Py_ASNATIVEBYTES_REJECT_NEGATIVE);                              \
+        if (bytes < 0) {                                                    \
             return -1;                                                      \
         }                                                                   \
-        return _PyLong_AsByteArray((PyLongObject *)v, (unsigned char *)addr,\
-                                   (N), PY_LITTLE_ENDIAN, 0, 1);            \
+        if ((size_t)bytes > (N)) {                                          \
+            PyErr_SetString(PyExc_OverflowError, "int too big to convert"); \
+            return -1;                                                      \
+        }                                                                   \
     } while (0)
 
 #define SET_SIGNED_INT(N)  do {                                             \
-        v = _PyNumber_Index(v);                                             \
-        if (v == NULL) {                                                    \
+        Py_ssize_t bytes = PyLong_AsNativeBytes(v, addr, (N),               \
+            Py_ASNATIVEBYTES_NATIVE_ENDIAN |                                \
+            Py_ASNATIVEBYTES_ALLOW_INDEX);                                  \
+        if (bytes < 0) {                                                    \
             return -1;                                                      \
         }                                                                   \
-        int rc = _PyLong_AsByteArray((PyLongObject *)v, (unsigned char *)addr,\
-                                     (N), PY_LITTLE_ENDIAN, 1, 1);          \
-        Py_DECREF(v);                                                       \
-        return rc;                                                          \
+        if ((size_t)bytes > (N)) {                                          \
+            PyErr_SetString(PyExc_OverflowError, "int too big to convert"); \
+            return -1;                                                      \
+        }                                                                   \
     } while (0)
 
 int
