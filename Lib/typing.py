@@ -2021,9 +2021,11 @@ def _proto_hook(cls, other):
 
             # ...or in annotations, if it is a sub-protocol.
             annotations = _lazy_annotationlib.get_annotations(base, format=_lazy_annotationlib.Format.FORWARDREF)
-            if (attr in annotations
-                and issubclass(other, Generic)
-                and getattr(other, '_is_protocol', False)):
+            if (
+                issubclass(other, Generic)
+                and getattr(other, "_is_protocol", False)
+                and attr in annotations
+            ):
                 break
         else:
             return NotImplemented
