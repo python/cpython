@@ -13,7 +13,7 @@ from annotationlib import (
     get_annotations,
     get_annotate_function,
     annotations_to_string,
-    value_to_string,
+    type_repr,
 )
 from typing import Unpack
 
@@ -1173,18 +1173,28 @@ class TestGetAnnotateFunction(unittest.TestCase):
 
 
 class TestToSource(unittest.TestCase):
-    def test_value_to_string(self):
-        self.assertEqual(value_to_string(int), "int")
-        self.assertEqual(value_to_string(MyClass), "test.test_annotationlib.MyClass")
-        self.assertEqual(value_to_string(len), "len")
-        self.assertEqual(value_to_string(value_to_string), "value_to_string")
-        self.assertEqual(value_to_string(times_three), "times_three")
-        self.assertEqual(value_to_string(...), "...")
-        self.assertEqual(value_to_string(None), "None")
-        self.assertEqual(value_to_string(1), "1")
-        self.assertEqual(value_to_string("1"), "'1'")
-        self.assertEqual(value_to_string(Format.VALUE), repr(Format.VALUE))
-        self.assertEqual(value_to_string(MyClass()), "my repr")
+    def test_type_repr(self):
+        class Nested:
+            pass
+
+        def nested():
+            pass
+
+        self.assertEqual(type_repr(int), "int")
+        self.assertEqual(type_repr(MyClass), f"{__name__}.MyClass")
+        self.assertEqual(
+            type_repr(Nested), f"{__name__}.TestToSource.test_type_repr.<locals>.Nested")
+        self.assertEqual(
+            type_repr(nested), f"{__name__}.TestToSource.test_type_repr.<locals>.nested")
+        self.assertEqual(type_repr(len), "len")
+        self.assertEqual(type_repr(type_repr), "annotationlib.type_repr")
+        self.assertEqual(type_repr(times_three), f"{__name__}.times_three")
+        self.assertEqual(type_repr(...), "...")
+        self.assertEqual(type_repr(None), "None")
+        self.assertEqual(type_repr(1), "1")
+        self.assertEqual(type_repr("1"), "'1'")
+        self.assertEqual(type_repr(Format.VALUE), repr(Format.VALUE))
+        self.assertEqual(type_repr(MyClass()), "my repr")
 
     def test_annotations_to_string(self):
         self.assertEqual(annotations_to_string({}), {})

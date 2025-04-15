@@ -253,7 +253,7 @@ def _type_repr(obj):
     if isinstance(obj, tuple):
         # Special case for `repr` of types with `ParamSpec`:
         return '[' + ', '.join(_type_repr(t) for t in obj) + ']'
-    return _lazy_annotationlib.value_to_string(obj)
+    return _lazy_annotationlib.type_repr(obj)
 
 
 def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
