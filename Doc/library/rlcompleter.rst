@@ -1,5 +1,5 @@
-:mod:`rlcompleter` --- Completion function for GNU readline
-===========================================================
+:mod:`!rlcompleter` --- Completion function for GNU readline
+============================================================
 
 .. module:: rlcompleter
    :synopsis: Python identifier completion, suitable for the GNU readline library.

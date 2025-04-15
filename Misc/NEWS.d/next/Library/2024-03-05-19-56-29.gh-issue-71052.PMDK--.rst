@@ -1,1 +1,0 @@
-Implement :func:`ctypes.util.find_library` on Android.

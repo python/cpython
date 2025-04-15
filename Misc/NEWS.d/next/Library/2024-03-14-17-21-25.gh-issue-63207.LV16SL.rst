@@ -1,4 +1,0 @@
-On Windows, :func:`time.time()` now uses the
-``GetSystemTimePreciseAsFileTime()`` clock to have a resolution better than 1
-us, instead of the ``GetSystemTimeAsFileTime()`` clock which has a resolution
-of 15.6 ms. Patch by Victor Stinner.

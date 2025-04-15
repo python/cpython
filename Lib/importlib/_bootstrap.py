@@ -382,6 +382,9 @@ class _ModuleLock:
                     self.waiters.pop()
                     self.wakeup.release()
 
+    def locked(self):
+        return bool(self.count)
+
     def __repr__(self):
         return f'_ModuleLock({self.name!r}) at {id(self)}'
 
@@ -526,7 +529,7 @@ def _load_module_shim(self, fullname):
 
     """
     msg = ("the load_module() method is deprecated and slated for removal in "
-          "Python 3.12; use exec_module() instead")
+           "Python 3.15; use exec_module() instead")
     _warnings.warn(msg, DeprecationWarning)
     spec = spec_from_loader(fullname, self)
     if fullname in sys.modules:
@@ -1134,7 +1137,7 @@ class FrozenImporter:
         # part of the importer), instead of here (the finder part).
         # The loader is the usual place to get the data that will
         # be loaded into the module.  (For example, see _LoaderBasics
-        # in _bootstra_external.py.)  Most importantly, this importer
+        # in _bootstrap_external.py.)  Most importantly, this importer
         # is simpler if we wait to get the data.
         # However, getting as much data in the finder as possible
         # to later load the module is okay, and sometimes important.
@@ -1241,10 +1244,12 @@ def _find_spec(name, path, target=None):
     """Find a module's spec."""
     meta_path = sys.meta_path
     if meta_path is None:
-        # PyImport_Cleanup() is running or has been called.
         raise ImportError("sys.meta_path is None, Python is likely "
                           "shutting down")
 
+    # gh-130094: Copy sys.meta_path so that we have a consistent view of the
+    # list while iterating over it.
+    meta_path = list(meta_path)
     if not meta_path:
         _warnings.warn('sys.meta_path is empty', ImportWarning)
 
@@ -1299,7 +1304,6 @@ def _sanity_check(name, package, level):
 
 
 _ERR_MSG_PREFIX = 'No module named '
-_ERR_MSG = _ERR_MSG_PREFIX + '{!r}'
 
 def _find_and_load_unlocked(name, import_):
     path = None
@@ -1309,8 +1313,9 @@ def _find_and_load_unlocked(name, import_):
         if parent not in sys.modules:
             _call_with_frames_removed(import_, parent)
         # Crazy side-effects!
-        if name in sys.modules:
-            return sys.modules[name]
+        module = sys.modules.get(name)
+        if module is not None:
+            return module
         parent_module = sys.modules[parent]
         try:
             path = parent_module.__path__
@@ -1318,6 +1323,12 @@ def _find_and_load_unlocked(name, import_):
             msg = f'{_ERR_MSG_PREFIX}{name!r}; {parent!r} is not a package'
             raise ModuleNotFoundError(msg, name=name) from None
         parent_spec = parent_module.__spec__
+        if getattr(parent_spec, '_initializing', False):
+            _call_with_frames_removed(import_, parent)
+        # Crazy side-effects (again)!
+        module = sys.modules.get(name)
+        if module is not None:
+            return module
         child = name.rpartition('.')[2]
     spec = _find_spec(name, path)
     if spec is None:

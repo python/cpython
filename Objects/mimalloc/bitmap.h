@@ -7,7 +7,7 @@ terms of the MIT license. A copy of the license can be found in the file
 
 /* ----------------------------------------------------------------------------
 Concurrent bitmap that can set/reset sequences of bits atomically,
-represeted as an array of fields where each field is a machine word (`size_t`)
+represented as an array of fields where each field is a machine word (`size_t`)
 
 There are two api's; the standard one cannot have sequences that cross
 between the bitmap fields (and a sequence must be <= MI_BITMAP_FIELD_BITS).
@@ -72,7 +72,7 @@ bool _mi_bitmap_try_find_claim_field(mi_bitmap_t bitmap, size_t idx, const size_
 // For now, `count` can be at most MI_BITMAP_FIELD_BITS and will never cross fields.
 bool _mi_bitmap_try_find_from_claim(mi_bitmap_t bitmap, const size_t bitmap_fields, const size_t start_field_idx, const size_t count, mi_bitmap_index_t* bitmap_idx);
 
-// Like _mi_bitmap_try_find_from_claim but with an extra predicate that must be fullfilled
+// Like _mi_bitmap_try_find_from_claim but with an extra predicate that must be fulfilled
 typedef bool (mi_cdecl *mi_bitmap_pred_fun_t)(mi_bitmap_index_t bitmap_idx, void* pred_arg);
 bool _mi_bitmap_try_find_from_claim_pred(mi_bitmap_t bitmap, const size_t bitmap_fields, const size_t start_field_idx, const size_t count, mi_bitmap_pred_fun_t pred_fun, void* pred_arg, mi_bitmap_index_t* bitmap_idx);
 

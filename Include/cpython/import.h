@@ -2,8 +2,6 @@
 #  error "this header file must not be included directly"
 #endif
 
-PyMODINIT_FUNC PyInit__imp(void);
-
 struct _inittab {
     const char *name;           /* ASCII encoded string */
     PyObject* (*initfunc)(void);
@@ -23,3 +21,10 @@ struct _frozen {
    collection of frozen modules: */
 
 PyAPI_DATA(const struct _frozen *) PyImport_FrozenModules;
+
+PyAPI_FUNC(PyObject*) PyImport_ImportModuleAttr(
+    PyObject *mod_name,
+    PyObject *attr_name);
+PyAPI_FUNC(PyObject*) PyImport_ImportModuleAttrString(
+    const char *mod_name,
+    const char *attr_name);

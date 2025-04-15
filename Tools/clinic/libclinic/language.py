@@ -11,7 +11,7 @@ from libclinic.function import (
     Module, Class, Function)
 
 if typing.TYPE_CHECKING:
-    from clinic import Clinic
+    from libclinic.app import Clinic
 
 
 class Language(metaclass=abc.ABCMeta):

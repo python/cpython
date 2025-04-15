@@ -8,6 +8,7 @@ import tokenize
 from importlib.machinery import ModuleSpec
 from test import support
 from test.support import os_helper
+from test.support.script_helper import assert_python_ok
 
 
 FILENAME = linecache.__file__
@@ -280,6 +281,56 @@ class LineCacheTests(unittest.TestCase):
         self.assertEqual(linecache.getlines(filename, module_globals),
                          ['source for x.y.z\n'])
 
+    def test_frozen(self):
+        filename = '<frozen fakemodule>'
+        module_globals = {'__file__': FILENAME}
+        empty = linecache.getlines(filename)
+        self.assertEqual(empty, [])
+        lines = linecache.getlines(filename, module_globals)
+        self.assertGreater(len(lines), 0)
+        lines_cached = linecache.getlines(filename)
+        self.assertEqual(lines, lines_cached)
+        linecache.clearcache()
+        empty = linecache.getlines(filename)
+        self.assertEqual(empty, [])
+
+    def test_invalid_names(self):
+        for name, desc in [
+            ('\x00', 'NUL bytes filename'),
+            (__file__ + '\x00', 'filename with embedded NUL bytes'),
+            # A filename with surrogate codes. A UnicodeEncodeError is raised
+            # by os.stat() upon querying, which is a subclass of ValueError.
+            ("\uD834\uDD1E.py", 'surrogate codes (MUSICAL SYMBOL G CLEF)'),
+            # For POSIX platforms, an OSError will be raised but for Windows
+            # platforms, a ValueError is raised due to the path_t converter.
+            # See: https://github.com/python/cpython/issues/122170
+            ('a' * 1_000_000, 'very long filename'),
+        ]:
+            with self.subTest(f'updatecache: {desc}'):
+                linecache.clearcache()
+                lines = linecache.updatecache(name)
+                self.assertListEqual(lines, [])
+                self.assertNotIn(name, linecache.cache)
+
+            # hack into the cache (it shouldn't be allowed
+            # but we never know what people do...)
+            for key, fullname in [(name, 'ok'), ('key', name), (name, name)]:
+                with self.subTest(f'checkcache: {desc}',
+                                  key=key, fullname=fullname):
+                    linecache.clearcache()
+                    linecache.cache[key] = (0, 1234, [], fullname)
+                    linecache.checkcache(key)
+                    self.assertNotIn(key, linecache.cache)
+
+        # just to be sure that we did not mess with cache
+        linecache.clearcache()
+
+    def test_linecache_python_string(self):
+        cmdline = "import linecache;assert len(linecache.cache) == 0"
+        retcode, stdout, stderr = assert_python_ok('-c', cmdline)
+        self.assertEqual(retcode, 0)
+        self.assertEqual(stdout, b'')
+        self.assertEqual(stderr, b'')
 
 class LineCacheInvalidationTests(unittest.TestCase):
     def setUp(self):

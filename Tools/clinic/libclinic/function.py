@@ -4,10 +4,13 @@ import copy
 import enum
 import functools
 import inspect
+from collections.abc import Iterable, Iterator, Sequence
 from typing import Final, Any, TYPE_CHECKING
 if TYPE_CHECKING:
-    from clinic import Clinic, CReturnConverter, self_converter
     from libclinic.converter import CConverter
+    from libclinic.converters import self_converter
+    from libclinic.return_converters import CReturnConverter
+    from libclinic.app import Clinic
 
 from libclinic import VersionTuple, unspecified
 
@@ -50,7 +53,6 @@ class Class:
 
 
 class FunctionKind(enum.Enum):
-    INVALID         = enum.auto()
     CALLABLE        = enum.auto()
     STATIC_METHOD   = enum.auto()
     CLASS_METHOD    = enum.auto()
@@ -67,7 +69,6 @@ class FunctionKind(enum.Enum):
         return f"<clinic.FunctionKind.{self.name}>"
 
 
-INVALID: Final = FunctionKind.INVALID
 CALLABLE: Final = FunctionKind.CALLABLE
 STATIC_METHOD: Final = FunctionKind.STATIC_METHOD
 CLASS_METHOD: Final = FunctionKind.CLASS_METHOD
@@ -106,6 +107,7 @@ class Function:
     # functions with optional groups because we can't represent
     # those accurately with inspect.Signature in 3.4.
     docstring_only: bool = False
+    forced_text_signature: str | None = None
     critical_section: bool = False
     target_critical_section: list[str] = dc.field(default_factory=list)
 
@@ -236,3 +238,73 @@ class Parameter:
         lines = [f"  {self.name}"]
         lines.extend(f"    {line}" for line in self.docstring.split("\n"))
         return "\n".join(lines).rstrip()
+
+
+ParamTuple = tuple["Parameter", ...]
+
+
+def permute_left_option_groups(
+    l: Sequence[Iterable[Parameter]]
+) -> Iterator[ParamTuple]:
+    """
+    Given [(1,), (2,), (3,)], should yield:
+       ()
+       (3,)
+       (2, 3)
+       (1, 2, 3)
+    """
+    yield tuple()
+    accumulator: list[Parameter] = []
+    for group in reversed(l):
+        accumulator = list(group) + accumulator
+        yield tuple(accumulator)
+
+
+def permute_right_option_groups(
+    l: Sequence[Iterable[Parameter]]
+) -> Iterator[ParamTuple]:
+    """
+    Given [(1,), (2,), (3,)], should yield:
+      ()
+      (1,)
+      (1, 2)
+      (1, 2, 3)
+    """
+    yield tuple()
+    accumulator: list[Parameter] = []
+    for group in l:
+        accumulator.extend(group)
+        yield tuple(accumulator)
+
+
+def permute_optional_groups(
+    left: Sequence[Iterable[Parameter]],
+    required: Iterable[Parameter],
+    right: Sequence[Iterable[Parameter]]
+) -> tuple[ParamTuple, ...]:
+    """
+    Generator function that computes the set of acceptable
+    argument lists for the provided iterables of
+    argument groups.  (Actually it generates a tuple of tuples.)
+
+    Algorithm: prefer left options over right options.
+
+    If required is empty, left must also be empty.
+    """
+    required = tuple(required)
+    if not required:
+        if left:
+            raise ValueError("required is empty but left is not")
+
+    accumulator: list[ParamTuple] = []
+    counts = set()
+    for r in permute_right_option_groups(right):
+        for l in permute_left_option_groups(left):
+            t = l + required + r
+            if len(t) in counts:
+                continue
+            counts.add(len(t))
+            accumulator.append(t)
+
+    accumulator.sort(key=len)
+    return tuple(accumulator)
