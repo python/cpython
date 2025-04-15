@@ -1461,8 +1461,8 @@ _Py_COMP_DIAG_PUSH
 
 /* Delayed initialization. Windows cannot statically reference dynamically
    loaded addresses from DLLs. */
-static void
-_ctypes_init_fielddesc_locked(void)
+void
+_ctypes_init_fielddesc(void)
 {
     /* Fixed-width integers */
 
@@ -1659,30 +1659,14 @@ print(f"    formattable.simple_type_chars[i] = 0;")
 #undef FIXINT_FIELDDESC_FOR
 _Py_COMP_DIAG_POP
 
-static void
-_ctypes_init_fielddesc(void)
-{
-    static bool initialized = false;
-    static PyMutex mutex = {0};
-    PyMutex_Lock(&mutex);
-    if (!initialized) {
-        _ctypes_init_fielddesc_locked();
-        initialized = true;
-    }
-    PyMutex_Unlock(&mutex);
-}
-
 char *
 _ctypes_get_simple_type_chars(void) {
-    _ctypes_init_fielddesc();
     return formattable.simple_type_chars;
 }
 
 struct fielddesc *
 _ctypes_get_fielddesc(const char *fmt)
 {
-    _ctypes_init_fielddesc();
-
     struct fielddesc *result = NULL;
     switch(fmt[0]) {
 /*[python input]
