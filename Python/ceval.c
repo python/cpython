@@ -147,7 +147,8 @@ dump_item(_PyStackRef item)
         return;
     }
     if (PyStackRef_IsTaggedInt(item)) {
-        printf("%ld", PyStackRef_UntagInt(item));
+        printf("%" PRId64, (int64_t)PyStackRef_UntagInt(item));
+        return;
     }
     PyObject *obj = PyStackRef_AsPyObjectBorrow(item);
     if (obj == NULL) {
