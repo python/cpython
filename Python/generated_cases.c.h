@@ -10096,12 +10096,7 @@
             PyObject *exc = PyStackRef_AsPyObjectSteal(exc_st);
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                _PyFrame_SetStackPointer(frame, stack_pointer);
                 frame->instr_ptr = _PyFrame_GetBytecode(frame) + PyStackRef_UntagInt(values[0]);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                stack_pointer += 1;
             }
             assert(exc && PyExceptionInstance_Check(exc));
             stack_pointer += -1;
@@ -11956,9 +11951,7 @@
             if (tb == NULL) {
                 tb = Py_None;
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             assert(PyStackRef_IsTaggedInt(lasti));
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             (void)lasti;
             PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);

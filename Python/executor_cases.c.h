@@ -4462,9 +4462,7 @@
             if (tb == NULL) {
                 tb = Py_None;
             }
-            _PyFrame_SetStackPointer(frame, stack_pointer);
             assert(PyStackRef_IsTaggedInt(lasti));
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             (void)lasti;
             PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);
