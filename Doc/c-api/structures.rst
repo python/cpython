@@ -706,7 +706,7 @@ Macro name                       C type                        Python type
 
       Always ``None``. Must be used with :c:macro:`Py_READONLY`.
 
-.. versionadded:: 3.13
+.. versionadded:: next
 
    Added :c:macro:`Py_T_SSIZE` (as alias of :c:macro:`Py_T_PYSSIZET`),
    :c:macro:`Py_T_SIZE`, :c:macro:`Py_T_INT8`, :c:macro:`Py_T_UINT8`,
