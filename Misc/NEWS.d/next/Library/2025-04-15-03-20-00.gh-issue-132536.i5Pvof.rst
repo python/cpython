@@ -1,1 +1,1 @@
-Do not disable ``PY_THROW`` event in :mod:`bdb` because it can't be disabled.
+Do not disable :monitoring-event:`PY_THROW` event in :mod:`bdb` because it can't be disabled.
