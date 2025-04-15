@@ -199,9 +199,9 @@ The :mod:`urllib.request` module defines the following functions:
 
    .. versionchanged:: next
       This function calls :func:`socket.gethostbyname` if the URL authority
-      isn't empty or ``localhost``. If the authority resolves to a local IP
-      address then it is discarded; otherwise, on Windows a UNC path is
-      returned (as before), and on other platforms a
+      isn't empty, ``localhost``, or the machine hostname. If the authority
+      resolves to a local IP address then it is discarded; otherwise, on
+      Windows a UNC path is returned (as before), and on other platforms a
       :exc:`~urllib.error.URLError` is raised.
 
    .. versionchanged:: next

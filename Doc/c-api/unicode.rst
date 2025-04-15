@@ -596,6 +596,14 @@ APIs:
    Objects other than Unicode or its subtypes will cause a :exc:`TypeError`.
 
 
+.. c:function:: PyObject* PyUnicode_FromOrdinal(int ordinal)
+
+   Create a Unicode Object from the given Unicode code point *ordinal*.
+
+   The ordinal must be in ``range(0x110000)``. A :exc:`ValueError` is
+   raised in the case it is not.
+
+
 .. c:function:: PyObject* PyUnicode_FromEncodedObject(PyObject *obj, \
                                const char *encoding, const char *errors)
 

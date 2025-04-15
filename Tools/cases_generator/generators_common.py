@@ -500,9 +500,6 @@ class Emitter:
                         if tkn in local_stores:
                             for var in storage.inputs:
                                 if var.name == tkn.text:
-                                    if var.in_local or var.in_memory():
-                                        msg = f"Cannot assign to already defined input variable '{tkn.text}'"
-                                        raise analysis_error(msg, tkn)
                                     var.in_local = True
                                     var.memory_offset = None
                                     break
