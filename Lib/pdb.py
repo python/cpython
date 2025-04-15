@@ -2708,8 +2708,6 @@ class _RemotePdb(Pdb):
 
         self.commands_bnum = bnum
         self.commands[bnum] = []
-        self.commands_doprompt[bnum] = True
-        self.commands_silent[bnum] = False
 
         for line in commands:
             if self.handle_command_def(line):
