@@ -179,18 +179,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-        - windows-latest
         arch:
         - x86
         - x64
-        include:
-          # Forks don't have access to Windows on Arm runners. These jobs are skipped below:
-          - os: ${{ github.repository_owner == 'python' && 'windows-aarch64' || 'windows-latest' }}
-            arch: arm64
+        - arm64
     uses: ./.github/workflows/reusable-windows-msi.yml
     with:
-      os: ${{ matrix.os }}
       arch: ${{ matrix.arch }}
 
   build-macos:
