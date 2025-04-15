@@ -3427,13 +3427,12 @@ dummy_func(
         op(_LOAD_SPECIAL, (method_and_self[2] -- method_and_self[2])) {
             PyObject *name = _Py_SpecialMethods[oparg].name;
             int err = _PyObject_LookupSpecialMethod(name, method_and_self);
-            if (err < 0) {
-                ERROR_NO_POP();
-            }
-            else if (err == 0) {
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              _Py_SpecialMethods[oparg].error,
-                              PyStackRef_TYPE(method_and_self[1])->tp_name);
+            if (err <= 0) {
+                if (err == 0) {
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                _Py_SpecialMethods[oparg].error,
+                                PyStackRef_TYPE(method_and_self[1])->tp_name);
+                }
                 ERROR_NO_POP();
             }
         }

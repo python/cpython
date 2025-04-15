@@ -4428,15 +4428,14 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int err = _PyObject_LookupSpecialMethod(name, method_and_self);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (err < 0) {
-                JUMP_TO_ERROR();
-            }
-            else if (err == 0) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyErr_Format(tstate, PyExc_TypeError,
-                              _Py_SpecialMethods[oparg].error,
-                              PyStackRef_TYPE(method_and_self[1])->tp_name);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (err <= 0) {
+                if (err == 0) {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _PyErr_Format(tstate, PyExc_TypeError,
+                                  _Py_SpecialMethods[oparg].error,
+                                  PyStackRef_TYPE(method_and_self[1])->tp_name);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                }
                 JUMP_TO_ERROR();
             }
             break;
