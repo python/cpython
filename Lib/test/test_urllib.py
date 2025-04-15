@@ -181,6 +181,16 @@ class urlopen_FileTests(unittest.TestCase):
     def test_relativelocalfile(self):
         self.assertRaises(ValueError,urllib.request.urlopen,'./' + self.pathname)
 
+    def test_remote_authority(self):
+        # Test for GH-90812.
+        url = 'file://pythontest.net/foo/bar'
+        with self.assertRaises(urllib.error.URLError) as e:
+            urllib.request.urlopen(url)
+        if os.name == 'nt':
+            self.assertEqual(e.exception.filename, r'\\pythontest.net\foo\bar')
+        else:
+            self.assertEqual(e.exception.reason, 'file:// scheme is supported only on localhost')
+
 
 class ProxyTests(unittest.TestCase):
 
