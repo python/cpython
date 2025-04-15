@@ -253,26 +253,26 @@ class TestMain(unittest.TestCase):
         cases = (
             ('{}', b'{}'),
             ('[]', b'[]'),
-            ('null', b'\x1b[36mnull\x1b[0m'),
-            ('true', b'\x1b[36mtrue\x1b[0m'),
-            ('false', b'\x1b[36mfalse\x1b[0m'),
-            ('NaN', b'\x1b[33mNaN\x1b[0m'),
-            ('Infinity', b'\x1b[33mInfinity\x1b[0m'),
-            ('-Infinity', b'\x1b[33m-Infinity\x1b[0m'),
-            ('"foo"', b'\x1b[32m"foo"\x1b[0m'),
-            (r'" \"foo\" "', b'\x1b[32m" \\"foo\\" "\x1b[0m'),
-            ('"α"', b'\x1b[32m"\\u03b1"\x1b[0m'),
-            ('123', b'\x1b[33m123\x1b[0m'),
-            ('-1.2345e+23', b'\x1b[33m-1.2345e+23\x1b[0m'),
+            ('null', b'\x1b[1;36mnull\x1b[0m'),
+            ('true', b'\x1b[1;36mtrue\x1b[0m'),
+            ('false', b'\x1b[1;36mfalse\x1b[0m'),
+            ('NaN', b'\x1b[1;33mNaN\x1b[0m'),
+            ('Infinity', b'\x1b[1;33mInfinity\x1b[0m'),
+            ('-Infinity', b'\x1b[1;33m-Infinity\x1b[0m'),
+            ('"foo"', b'\x1b[1;32m"foo"\x1b[0m'),
+            (r'" \"foo\" "', b'\x1b[1;32m" \\"foo\\" "\x1b[0m'),
+            ('"α"', b'\x1b[1;32m"\\u03b1"\x1b[0m'),
+            ('123', b'\x1b[1;33m123\x1b[0m'),
+            ('-1.2345e+23', b'\x1b[1;33m-1.2345e+23\x1b[0m'),
             (r'{"\\": ""}',
              b'''\
 {
-    \x1b[32m"\\\\"\x1b[0m: \x1b[32m""\x1b[0m
+    \x1b[94m"\\\\"\x1b[0m: \x1b[1;32m""\x1b[0m
 }'''),
             (r'{"\\\\": ""}',
              b'''\
 {
-    \x1b[32m"\\\\\\\\"\x1b[0m: \x1b[32m""\x1b[0m
+    \x1b[94m"\\\\\\\\"\x1b[0m: \x1b[1;32m""\x1b[0m
 }'''),
             ('''\
 {
@@ -283,17 +283,17 @@ class TestMain(unittest.TestCase):
 }''',
              b'''\
 {
-    \x1b[32m"foo"\x1b[0m: \x1b[32m"bar"\x1b[0m,
-    \x1b[32m"baz"\x1b[0m: \x1b[33m1234\x1b[0m,
-    \x1b[32m"qux"\x1b[0m: [
-        \x1b[36mtrue\x1b[0m,
-        \x1b[36mfalse\x1b[0m,
-        \x1b[36mnull\x1b[0m
+    \x1b[94m"foo"\x1b[0m: \x1b[1;32m"bar"\x1b[0m,
+    \x1b[94m"baz"\x1b[0m: \x1b[1;33m1234\x1b[0m,
+    \x1b[94m"qux"\x1b[0m: [
+        \x1b[1;36mtrue\x1b[0m,
+        \x1b[1;36mfalse\x1b[0m,
+        \x1b[1;36mnull\x1b[0m
     ],
-    \x1b[32m"xyz"\x1b[0m: [
-        \x1b[33mNaN\x1b[0m,
-        \x1b[33m-Infinity\x1b[0m,
-        \x1b[33mInfinity\x1b[0m
+    \x1b[94m"xyz"\x1b[0m: [
+        \x1b[1;33mNaN\x1b[0m,
+        \x1b[1;33m-Infinity\x1b[0m,
+        \x1b[1;33mInfinity\x1b[0m
     ]
 }'''),
         )

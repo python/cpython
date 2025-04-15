@@ -25,10 +25,10 @@ _color_pattern = re.compile(r'''
 
 _colors = {
     'key': ANSIColors.INTENSE_BLUE,
-    'string': ANSIColors.GREEN,
-    'number': ANSIColors.YELLOW,
-    'boolean': ANSIColors.CYAN,
-    'null': ANSIColors.CYAN,
+    'string': ANSIColors.BOLD_GREEN,
+    'number': ANSIColors.BOLD_YELLOW,
+    'boolean': ANSIColors.BOLD_CYAN,
+    'null': ANSIColors.BOLD_CYAN,
 }
 
 
