@@ -1553,25 +1553,22 @@
         }
 
         case _INSERT_NULL: {
+            JitOptSymbol *self;
             JitOptSymbol **method_and_self;
+            self = stack_pointer[-1];
             method_and_self = &stack_pointer[-1];
-            for (int _i = 2; --_i >= 0;) {
-                method_and_self[_i] = sym_new_not_null(ctx);
-            }
+            method_and_self[1] = self;
+            method_and_self[0] = sym_new_null(ctx);
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
         case _LOAD_SPECIAL: {
-            JitOptSymbol *attr;
-            JitOptSymbol *self_or_null;
-            attr = sym_new_not_null(ctx);
-            self_or_null = sym_new_unknown(ctx);
-            stack_pointer[-1] = attr;
-            stack_pointer[0] = self_or_null;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
+            JitOptSymbol **method_and_self;
+            method_and_self = &stack_pointer[-2];
+            method_and_self[0] = sym_new_not_null(ctx);
+            method_and_self[1] = sym_new_unknown(ctx);
             break;
         }
 
