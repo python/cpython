@@ -1217,33 +1217,33 @@ class A:
 
 class ForwardRefTests(unittest.TestCase):
     def test_forwardref_instance_type_error(self):
-        fr = typing.ForwardRef('int')
+        fr = ForwardRef('int')
         with self.assertRaises(TypeError):
             isinstance(42, fr)
 
     def test_forwardref_subclass_type_error(self):
-        fr = typing.ForwardRef('int')
+        fr = ForwardRef('int')
         with self.assertRaises(TypeError):
             issubclass(int, fr)
 
     def test_forwardref_only_str_arg(self):
         with self.assertRaises(TypeError):
-            typing.ForwardRef(1)  # only `str` type is allowed
+            ForwardRef(1)  # only `str` type is allowed
 
     def test_forward_equality(self):
-        fr = typing.ForwardRef('int')
-        self.assertEqual(fr, typing.ForwardRef('int'))
+        fr = ForwardRef('int')
+        self.assertEqual(fr, ForwardRef('int'))
         self.assertNotEqual(List['int'], List[int])
-        self.assertNotEqual(fr, typing.ForwardRef('int', module=__name__))
-        frm = typing.ForwardRef('int', module=__name__)
-        self.assertEqual(frm, typing.ForwardRef('int', module=__name__))
-        self.assertNotEqual(frm, typing.ForwardRef('int', module='__other_name__'))
+        self.assertNotEqual(fr, ForwardRef('int', module=__name__))
+        frm = ForwardRef('int', module=__name__)
+        self.assertEqual(frm, ForwardRef('int', module=__name__))
+        self.assertNotEqual(frm, ForwardRef('int', module='__other_name__'))
 
     def test_forward_equality_gth(self):
-        c1 = typing.ForwardRef('C')
-        c1_gth = typing.ForwardRef('C')
-        c2 = typing.ForwardRef('C')
-        c2_gth = typing.ForwardRef('C')
+        c1 = ForwardRef('C')
+        c1_gth = ForwardRef('C')
+        c2 = ForwardRef('C')
+        c2_gth = ForwardRef('C')
 
         class C:
             pass
@@ -1261,10 +1261,10 @@ class ForwardRefTests(unittest.TestCase):
         self.assertEqual(Union[c1, c1_gth, int], Union[c1, int])
 
     def test_forward_equality_hash(self):
-        c1 = typing.ForwardRef('int')
-        c1_gth = typing.ForwardRef('int')
-        c2 = typing.ForwardRef('int')
-        c2_gth = typing.ForwardRef('int')
+        c1 = ForwardRef('int')
+        c1_gth = ForwardRef('int')
+        c2 = ForwardRef('int')
+        c2_gth = ForwardRef('int')
 
         def foo(a: c1_gth, b: c2_gth):
             pass
