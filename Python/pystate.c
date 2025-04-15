@@ -72,10 +72,8 @@ to avoid the expense of doing their own locking).
 /* The attached thread state for the current thread. */
 _Py_thread_local PyThreadState *_Py_tss_tstate = NULL;
 
-/* The bound gilstate for the current thread.
-   Basically, this is used for caching the right interpreter
-   for subsequent PyGILState_Ensure() calls. Despite the name,
-   this doesn't have much to do with the actual GIL. */
+/* The "bound" thread state used by PyGILState_Ensure(),
+   also known as a "gilstate." */
 _Py_thread_local PyThreadState *_Py_tss_gilstate = NULL;
 #endif
 
@@ -126,9 +124,8 @@ _PyThreadState_GetCurrent(void)
 
 
 //---------------------------------------------
-// the GIL state bound to the current OS thread
+// The thread state used by PyGILState_Ensure()
 //---------------------------------------------
-
 
 /*
    The stored thread state is set by bind_tstate() (AKA PyThreadState_Bind().
