@@ -5720,12 +5720,9 @@
                     DISPATCH();
                 }
                 #else
-                intptr_t i = PyStackRef_UntagInt(null_or_index);
-                assert(i < PyList_GET_SIZE(list_o));
-                next = PyStackRef_FromPyObjectNew(PyList_GET_ITEM(list_o, i));
+                next = PyStackRef_FromPyObjectNew(PyList_GET_ITEM(list_o, PyStackRef_UntagInt(null_or_index)));
                 #endif
                 null_or_index = PyStackRef_IncrementTaggedInt(null_or_index);
-                assert(PyStackRef_UntagInt(null_or_index) == i + 1);
             }
             stack_pointer[-1] = null_or_index;
             stack_pointer[0] = next;
