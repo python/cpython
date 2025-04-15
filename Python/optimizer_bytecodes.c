@@ -919,9 +919,9 @@ dummy_func(void) {
         tup = sym_new_tuple(ctx, oparg, values);
     }
 
-    op(_BUILD_SLICE, (value -- slice)) {
-        if (sym_is_const(ctx, value)) {
-            PyObject *val = sym_get_const(ctx, value);
+    op(_BUILD_SLICE, (values[oparg] -- slice)) {
+        if (sym_is_const(ctx, values[oparg])) {
+            PyObject *val = sym_get_const(ctx, values[oparg]);
             slice = sym_new_const(ctx, val);
             Py_DecRef(val);
         }
@@ -929,9 +929,9 @@ dummy_func(void) {
             slice = sym_new_type(ctx, &PySlice_Type);
         }
     }
-    op(_BUILD_STRING, (value -- str)) {
-        if (sym_is_const(ctx, value)) {
-            PyObject *val = sym_get_const(ctx, value);
+    op(_BUILD_STRING, (values[oparg] -- str)) {
+        if (sym_is_const(ctx, values[oparg])) {
+            PyObject *val = sym_get_const(ctx, values[oparg]);
             str = sym_new_const(ctx, val);
             Py_DecRef(val);
         }
