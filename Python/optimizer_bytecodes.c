@@ -919,6 +919,27 @@ dummy_func(void) {
         tup = sym_new_tuple(ctx, oparg, values);
     }
 
+    op(_BUILD_SLICE, (value -- slice)) {
+        if (sym_is_const(ctx, value)) {
+            PyObject *val = sym_get_const(ctx, value);
+            slice = sym_new_const(ctx, val);
+            Py_DecRef(val);
+        }
+        else {
+            slice = sym_new_type(ctx, &PySlice_Type);
+        }
+    }
+    op(_BUILD_STRING, (value -- str)) {
+        if (sym_is_const(ctx, value)) {
+            PyObject *val = sym_get_const(ctx, value);
+            str = sym_new_const(ctx, val);
+            Py_DecRef(val);
+        }
+        else {
+            str = sym_new_type(ctx, &PyUnicode_Type);
+        }
+    }
+
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
         val0 = sym_tuple_getitem(ctx, seq, 0);
         val1 = sym_tuple_getitem(ctx, seq, 1);

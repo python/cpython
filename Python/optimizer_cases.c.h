@@ -1010,11 +1010,19 @@
         }
 
         case _BUILD_STRING: {
+            JitOptSymbol *value;
             JitOptSymbol *str;
-            str = sym_new_not_null(ctx);
-            stack_pointer[-oparg] = str;
-            stack_pointer += 1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
+            value = stack_pointer[-1];
+            if (sym_is_const(ctx, value)) {
+                PyObject *val = sym_get_const(ctx, value);
+                str = sym_new_const(ctx, val);
+                stack_pointer[-1] = str;
+                Py_DecRef(val);
+            }
+            else {
+                str = sym_new_type(ctx, &PyUnicode_Type);
+            }
+            stack_pointer[-1] = str;
             break;
         }
 
@@ -2091,11 +2099,19 @@
         }
 
         case _BUILD_SLICE: {
+            JitOptSymbol *value;
             JitOptSymbol *slice;
-            slice = sym_new_not_null(ctx);
-            stack_pointer[-oparg] = slice;
-            stack_pointer += 1 - oparg;
-            assert(WITHIN_STACK_BOUNDS());
+            value = stack_pointer[-1];
+            if (sym_is_const(ctx, value)) {
+                PyObject *val = sym_get_const(ctx, value);
+                slice = sym_new_const(ctx, val);
+                stack_pointer[-1] = slice;
+                Py_DecRef(val);
+            }
+            else {
+                slice = sym_new_type(ctx, &PySlice_Type);
+            }
+            stack_pointer[-1] = slice;
             break;
         }
 
