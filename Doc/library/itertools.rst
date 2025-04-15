@@ -1129,8 +1129,8 @@ The following recipes have a more mathematical flavor:
 
    def multinomial(*counts):
        "Number of distinct arrangements of a multiset."
-       # Counter('abracadabra').values() -> 5 2 1 1 2
-       # multinomial(5, 2, 1, 1, 2) → 83160
+       # Counter('abracadabra').values() → 5 2 2 1 1
+       # multinomial(5, 2, 2, 1, 1) → 83160
        return prod(map(comb, accumulate(counts), counts))
 
 
@@ -1736,7 +1736,7 @@ The following recipes have a more mathematical flavor:
     >>> ''.join(it)
     'DEF1'
 
-    >>> multinomial(5, 2, 1, 1, 2)
+    >>> multinomial(5, 2, 2, 1, 1)
     83160
     >>> word = 'coffee'
     >>> multinomial(*Counter(word).values()) == len(set(permutations(word)))
