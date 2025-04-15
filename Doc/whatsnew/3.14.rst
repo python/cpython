@@ -1218,16 +1218,20 @@ urllib
   supporting SHA-256 digest authentication as specified in :rfc:`7616`.
   (Contributed by Calvin Bui in :gh:`128193`.)
 
-* Improve standards compliance when parsing and emitting ``file:`` URLs.
+* Improve ergonomics and standards compliance when parsing and emitting
+  ``file:`` URLs.
 
   In :func:`urllib.request.url2pathname`:
 
+  - Accept a complete URL when the new *require_scheme* argument is set to
+    true.
   - Discard URL authorities that resolve to a local IP address.
   - Raise :exc:`~urllib.error.URLError` if a URL authority doesn't resolve
-    to ``localhost``, except on Windows where we return a UNC path.
+    to a local IP address, except on Windows where we return a UNC path.
 
   In :func:`urllib.request.pathname2url`:
 
+  - Return a complete URL when the new *add_scheme* argument is set to true.
   - Include an empty URL authority when a path begins with a slash. For
     example, the path ``/etc/hosts`` is converted to the URL ``///etc/hosts``.
 
