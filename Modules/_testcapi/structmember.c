@@ -62,7 +62,6 @@ static struct PyMemberDef test_members_newapi[] = {
     {"T_LONG", Py_T_LONG, offsetof(test_structmembers, structmembers.long_member), 0, NULL},
     {"T_ULONG", Py_T_ULONG, offsetof(test_structmembers, structmembers.ulong_member), 0, NULL},
     {"T_PYSSIZET", Py_T_PYSSIZET, offsetof(test_structmembers, structmembers.pyssizet_member), 0, NULL},
-    {"T_SSIZE", Py_T_INTEGER(ssize_t), offsetof(test_structmembers, structmembers.pyssizet_member), 0, NULL},
     {"T_SIZE", Py_T_INTEGER(size_t), offsetof(test_structmembers, structmembers.size_member), 0, NULL},
     {"T_FLOAT", Py_T_FLOAT, offsetof(test_structmembers, structmembers.float_member), 0, NULL},
     {"T_DOUBLE", Py_T_DOUBLE, offsetof(test_structmembers, structmembers.double_member), 0, NULL},

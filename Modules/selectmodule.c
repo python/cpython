@@ -1823,11 +1823,11 @@ typedef struct kqueue_queue_Object {
  * kevent is not standard and its members vary across BSDs.
  */
 #ifdef __NetBSD__
-#   define FILTER_TYPE      Py_T_UINT32
+#   define FILTER_TYPE      Py_T_INTEGER(uint32_t)
 #   define FILTER_FMT_UNIT  UINT32_FMT_UNIT
-#   define FLAGS_TYPE       Py_T_UINT32
+#   define FLAGS_TYPE       Py_T_INTEGER(uint32_t)
 #   define FLAGS_FMT_UNIT   UINT32_FMT_UNIT
-#   define FFLAGS_TYPE      Py_T_UINT32
+#   define FFLAGS_TYPE      Py_T_INTEGER(uint32_t)
 #   define FFLAGS_FMT_UNIT  UINT32_FMT_UNIT
 #else
 #   define FILTER_TYPE      Py_T_SHORT
@@ -1839,10 +1839,10 @@ typedef struct kqueue_queue_Object {
 #endif
 
 #if defined(__NetBSD__) || defined(__OpenBSD__)
-#   define DATA_TYPE        Py_T_INT64
+#   define DATA_TYPE        Py_T_INTEGER(int64_t)
 #   define DATA_FMT_UNIT    INT64_FMT_UNIT
 #else
-#   define DATA_TYPE        Py_T_INTPTR
+#   define DATA_TYPE        Py_T_INTEGER(intptr_t)
 #   define DATA_FMT_UNIT    _Py_PARSE_INTPTR
 #endif
 
