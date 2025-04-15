@@ -1783,6 +1783,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.error('Jump failed: %s' % e)
     do_j = do_jump
 
+    def _create_recursive_debugger(self):
+        return Pdb(self.completekey, self.stdin, self.stdout)
+
     def do_debug(self, arg):
         """debug code
 
@@ -1796,7 +1799,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.stop_trace()
         globals = self.curframe.f_globals
         locals = self.curframe.f_locals
-        p = Pdb(self.completekey, self.stdin, self.stdout)
+        p = self._create_recursive_debugger()
         p.prompt = "(%s) " % self.prompt.strip()
         self.message("ENTERING RECURSIVE DEBUGGER")
         try:
@@ -2713,21 +2716,9 @@ class _RemotePdb(Pdb):
             if self.handle_command_def(line):
                 break
 
-    def do_debug(self, arg):
-        # Enter a recursive _RemotePdb, telling it not to close the socket.
-        sys.settrace(None)
-        globals = self.curframe.f_globals
-        locals = self.curframe_locals
-        p = _RemotePdb(self._sockfile, owns_sockfile=False)
-        p.prompt = "(%s) " % self.prompt.strip()
-        self.message("ENTERING RECURSIVE DEBUGGER")
-        try:
-            sys.call_tracing(p.run, (arg, globals, locals))
-        except Exception:
-            self._error_exc()
-        self.message("LEAVING RECURSIVE DEBUGGER")
-        sys.settrace(self.trace_dispatch)
-        self.lastcmd = p.lastcmd
+    @typing.override
+    def _create_recursive_debugger(self):
+        return _RemotePdb(self._sockfile, owns_sockfile=False)
 
     def do_run(self, arg):
         self.error("remote PDB cannot restart the program")
