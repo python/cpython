@@ -144,20 +144,11 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
     case Py_T_UINT64:
         v = PyLong_FromUnsignedLongLong(*(uint64_t*)addr);
         break;
-    case Py_T_INTMAX:
-        v = PyLong_FromNativeBytes(addr, sizeof(intmax_t), -1);
-        break;
-    case Py_T_UINTMAX:
-        v = PyLong_FromUnsignedNativeBytes(addr, sizeof(uintmax_t), -1);
-        break;
     case Py_T_INTPTR:
         v = PyLong_FromNativeBytes(addr, sizeof(intptr_t), -1);
         break;
     case Py_T_UINTPTR:
         v = PyLong_FromUnsignedNativeBytes(addr, sizeof(uintptr_t), -1);
-        break;
-    case Py_T_PTRDIFF:
-        v = PyLong_FromNativeBytes(addr, sizeof(ptrdiff_t), -1);
         break;
 #ifndef MS_WINDOWS
     case Py_T_OFF:
@@ -473,20 +464,11 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
     case Py_T_UINT64:
         SET_UNSIGNED_INT(8);
         break;
-    case Py_T_INTMAX:
-        SET_SIGNED_INT(sizeof(intmax_t));
-        break;
-    case Py_T_UINTMAX:
-        SET_UNSIGNED_INT(sizeof(uintmax_t));
-        break;
     case Py_T_INTPTR:
         SET_SIGNED_INT(sizeof(intptr_t));
         break;
     case Py_T_UINTPTR:
         SET_UNSIGNED_INT(sizeof(uintptr_t));
-        break;
-    case Py_T_PTRDIFF:
-        SET_SIGNED_INT(sizeof(ptrdiff_t));
         break;
 #ifndef MS_WINDOWS
     case Py_T_OFF:

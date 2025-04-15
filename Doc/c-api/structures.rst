@@ -636,11 +636,8 @@ Macro name                       C type                        Python type
 .. c:macro:: Py_T_UINT32         :c:expr:`uint32_t`            :py:class:`int`
 .. c:macro:: Py_T_INT64          :c:expr:`int64_t`             :py:class:`int`
 .. c:macro:: Py_T_UINT64         :c:expr:`uint64_t`            :py:class:`int`
-.. c:macro:: Py_T_INTMAX         :c:expr:`intmax_t`            :py:class:`int`
-.. c:macro:: Py_T_UINTMAX        :c:expr:`uintmax_t`           :py:class:`int`
 .. c:macro:: Py_T_INTPTR         :c:expr:`intptr_t`            :py:class:`int`
 .. c:macro:: Py_T_UINTPTR        :c:expr:`uintptr_t`           :py:class:`int`
-.. c:macro:: Py_T_PTRDIFF        :c:expr:`ptrdiff_t`           :py:class:`int`
 .. c:macro:: Py_T_OFF            :c:expr:`off_t` or            :py:class:`int`
                                  :c:expr:`long long`
                                  (on Windows)
@@ -713,9 +710,8 @@ Macro name                       C type                        Python type
    :c:macro:`Py_T_INT16`, :c:macro:`Py_T_UINT16`,
    :c:macro:`Py_T_INT32`, :c:macro:`Py_T_UINT32`,
    :c:macro:`Py_T_INT64`, :c:macro:`Py_T_UINT64`,
-   :c:macro:`Py_T_INTMAX`, :c:macro:`Py_T_UINTMAX`,
    :c:macro:`Py_T_INTPTR`, :c:macro:`Py_T_UINTPTR`,
-   :c:macro:`Py_T_PTRDIFF`, :c:macro:`Py_T_OFF`, and :c:macro:`Py_T_PID`.
+   :c:macro:`Py_T_OFF`, and :c:macro:`Py_T_PID`.
 
 
 Defining Getters and Setters

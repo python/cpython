@@ -90,17 +90,15 @@ struct PyMemberDef {
 #define Py_T_UINT32    27
 #define Py_T_INT64     28
 #define Py_T_UINT64    29
-#define Py_T_INTMAX    30
-#define Py_T_UINTMAX   31
-#define Py_T_INTPTR    32
-#define Py_T_UINTPTR   33
-#define Py_T_PTRDIFF   34
+
+#define Py_T_INTPTR    30
+#define Py_T_UINTPTR   31
 #ifdef MS_WINDOWS
 # define Py_T_OFF      Py_T_LONGLONG
 #else
-# define Py_T_OFF      35
+# define Py_T_OFF      32
 #endif
-#define Py_T_PID       36
+#define Py_T_PID       33
 
 /* Flags */
 #define Py_READONLY            1
