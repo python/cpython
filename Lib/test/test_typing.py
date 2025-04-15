@@ -4557,6 +4557,7 @@ class ProtocolTests(BaseTestCase):
     def test_isinstance_with_deferred_evaluation_of_annotations(self):
         @runtime_checkable
         class P(Protocol):
+            x: int
             def meth(self):
                 ...
 
@@ -4572,6 +4573,7 @@ class ProtocolTests(BaseTestCase):
             def meth(self):
                 ...
 
+        # override meth with a non-method attribute to make it part of __annotations__ instead of __dict__
         class SubProtocol(P, Protocol):
             meth: undefined
 
