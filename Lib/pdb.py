@@ -2600,31 +2600,16 @@ class _RemotePdb(Pdb):
             stop = self.postcmd(stop, line)
         self.postloop()
 
+    def postloop(self):
+        super().postloop()
+        if self.quitting:
+            self.detach()
+
     def detach(self):
         # Detach the debugger and close the socket without raising BdbQuit
         self.quitting = False
         if self._owns_sockfile:
             self._sockfile.close()
-
-    def do_EOF(self, arg):
-        ret = super().do_EOF(arg)
-        self.detach()
-        return ret
-
-    def do_q(self, arg):
-        ret = super().do_q(arg)
-        self.detach()
-        return ret
-
-    def do_quit(self, arg):
-        ret = super().do_quit(arg)
-        self.detach()
-        return ret
-
-    def do_exit(self, arg):
-        ret = super().do_exit(arg)
-        self.detach()
-        return ret
 
     def do_alias(self, arg):
         # Clear our cached list of valid commands; one might be added.
