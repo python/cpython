@@ -1826,6 +1826,7 @@ class ClassCreationTests(unittest.TestCase):
 
         typ = type("typ", TupleSubclass((int, object)), {})
         self.assertEqual(typ.__bases__, (int, object))
+        self.assertEqual(type(typ.__bases__), TupleSubclass)
 
 
 class SimpleNamespaceTests(unittest.TestCase):
