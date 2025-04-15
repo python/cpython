@@ -1557,8 +1557,8 @@
             JitOptSymbol **method_and_self;
             self = stack_pointer[-1];
             method_and_self = &stack_pointer[-1];
-            method_and_self[1] = self;
             method_and_self[0] = sym_new_null(ctx);
+            method_and_self[1] = self;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             break;

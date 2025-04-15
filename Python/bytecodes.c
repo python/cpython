@@ -3430,8 +3430,8 @@ dummy_func(
             if (err <= 0) {
                 if (err == 0) {
                     _PyErr_Format(tstate, PyExc_TypeError,
-                                _Py_SpecialMethods[oparg].error,
-                                PyStackRef_TYPE(method_and_self[1])->tp_name);
+                                  _Py_SpecialMethods[oparg].error,
+                                  PyStackRef_TYPE(method_and_self[1])->tp_name);
                 }
                 ERROR_NO_POP();
             }

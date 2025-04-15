@@ -898,8 +898,8 @@ dummy_func(void) {
     }
 
     op(_INSERT_NULL, (self -- method_and_self[2])) {
-        method_and_self[1] = self;
         method_and_self[0] = sym_new_null(ctx);
+        method_and_self[1] = self;
     }
 
     op(_LOAD_SPECIAL, (method_and_self[2] -- method_and_self[2])) {
