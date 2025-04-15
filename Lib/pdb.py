@@ -2706,6 +2706,7 @@ class _RemotePdb(Pdb):
             ]
             # fmt: on
 
+            end_cmds += ["end"]  # pseudo-command
             self._send(commands_entry={"bpnum": bnum, "terminators": end_cmds})
             return
 
@@ -2875,8 +2876,10 @@ class _PdbClient:
                 cmd = self.pdb_instance.parseline(line)[0]
                 if cmd in self.command_list_terminators:
                     break
-            except EOFError:
-                return
+            except (KeyboardInterrupt, EOFError):
+                print(flush=True)
+                print("command definition aborted, old commands restored")
+                break
             finally:
                 self.commands_mode = False
 
