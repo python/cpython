@@ -2828,7 +2828,7 @@ class _PdbClient:
                     payload = json.loads(payload_bytes)
                 except json.JSONDecodeError:
                     print(
-                        "***", f"Invalid JSON from remote: {payload}", flush=True
+                        "***", f"Invalid JSON from remote: {payload_bytes}", flush=True
                     )
                     continue
 
