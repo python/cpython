@@ -30,6 +30,7 @@ import functools
 import os
 import sys
 import code
+import warnings
 
 from .readline import _get_reader, multiline_input, append_history_file
 
@@ -143,8 +144,8 @@ def run_multiline_interactive_console(
 
             try:
                 append_history_file()
-            except (FileNotFoundError, PermissionError):
-                pass
+            except (FileNotFoundError, PermissionError, OSError) as e:
+                warnings.warn(f"failed to open the history file for writing: {e}")
             input_name = f"<python-input-{input_n}>"
             more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
             assert not more
