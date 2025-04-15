@@ -1862,13 +1862,28 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_reassigning_live_inputs(self):
         input = """
-        inst(OP, (in -- )) {
+        inst(OP, (in -- in)) {
             in = 0;
-            DEAD(in);
         }
         """
-        with self.assertRaises(SyntaxError):
-            self.run_cases_test(input, "")
+
+        output = """
+        TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef in;
+            in = stack_pointer[-1];
+            in = 0;
+            stack_pointer[-1] = in;
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
 
     def test_reassigning_dead_inputs(self):
         input = """

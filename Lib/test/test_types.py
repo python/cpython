@@ -1855,6 +1855,15 @@ class ClassCreationTests(unittest.TestCase):
         D.__getitem__ = dict.__getitem__
         self.assertIs(d[None], None)
 
+    def test_tuple_subclass_as_bases(self):
+        # gh-132176: it used to crash on using
+        # tuple subclass for as base classes.
+        class TupleSubclass(tuple): pass
+
+        typ = type("typ", TupleSubclass((int, object)), {})
+        self.assertEqual(typ.__bases__, (int, object))
+        self.assertEqual(type(typ.__bases__), TupleSubclass)
+
 
 class SimpleNamespaceTests(unittest.TestCase):
 
