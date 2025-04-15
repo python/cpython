@@ -1440,8 +1440,7 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
-            if (Py_TYPE(o)->tp_as_mapping->mp_subscript !=
-                     PyDict_Type.tp_as_mapping->mp_subscript) {
+            if (Py_TYPE(o)->tp_as_mapping->mp_subscript != _PyDict_Subscript) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }

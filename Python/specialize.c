@@ -2650,7 +2650,7 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
             }
             if (PyDict_Check(lhs)) {
                 if ((Py_TYPE(lhs)->tp_as_mapping != NULL) &&
-                    (Py_TYPE(lhs)->tp_as_mapping->mp_subscript == PyDict_Type.tp_as_mapping->mp_subscript))
+                    (Py_TYPE(lhs)->tp_as_mapping->mp_subscript == _PyDict_Subscript))
                 {
                     specialize(instr, BINARY_OP_SUBSCR_DICT);
                     return;

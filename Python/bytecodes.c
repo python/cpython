@@ -962,8 +962,7 @@ dummy_func(
         op(_GUARD_NOS_DICT_NOT_EXACT, (nos, unused -- nos, unused)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
             DEOPT_IF(!Py_TYPE(o)->tp_as_mapping);
-            DEOPT_IF(Py_TYPE(o)->tp_as_mapping->mp_subscript !=
-                     PyDict_Type.tp_as_mapping->mp_subscript);
+            DEOPT_IF(Py_TYPE(o)->tp_as_mapping->mp_subscript != _PyDict_Subscript);
         }
 
         op(_GUARD_TOS_DICT, (tos -- tos)) {
