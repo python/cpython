@@ -4557,7 +4557,6 @@ class ProtocolTests(BaseTestCase):
     def test_isinstance_with_deferred_evaluation_of_annotations(self):
         @runtime_checkable
         class P(Protocol):
-            x: undefined | int
             def meth(self):
                 ...
 
@@ -4573,6 +4572,11 @@ class ProtocolTests(BaseTestCase):
             def meth(self):
                 ...
 
+        class SubProtocol(P, Protocol):
+            meth: undefined
+
+
+        self.assertTrue(issubclass(SubProtocol, P))
         self.assertFalse(isinstance(DeferredClass(), P))
         self.assertTrue(isinstance(DeferredClassImplementingP(), P))
 
