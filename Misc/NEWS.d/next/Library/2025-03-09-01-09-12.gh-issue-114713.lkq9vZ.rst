@@ -1,1 +1,1 @@
-Handle case of an empty string passed to ZoneInfo
+Handle case of an empty string passed to :class:`zoneinfo.ZoneInfo`.
