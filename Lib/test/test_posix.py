@@ -1540,9 +1540,6 @@ class PosixTester(unittest.TestCase):
                 self.assertEqual(posix.lstat(link), posix.lstat(orig))
             elif default_no_follow:
                 self.assertEqual(posix.lstat(link), posix.lstat(symlink))
-            if sys.platform.startswith('wasi'):
-                self.assertEqual(posix.lstat(link), posix.lstat(orig))
-                self.assertEqual(posix.lstat(link), posix.lstat(symlink))
 
         with self.subTest('follow_symlinks=False'):
             # follow_symlinks=False -> duplicate the symlink itself
