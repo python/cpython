@@ -1446,11 +1446,25 @@ Glossary
    whitespace
       Characters that represent horizontal or vertical space.
       In an ASCII context, Python recognizes these characters as whitespace:
-      ``' \t\n\v\f\r'`` (space, tab, newline, vertical tab, form feed, carriage return).
+
+      +-----------+-----------------+
+      |  ``' '``  | space           |
+      +-----------+-----------------+
+      | ``'\t'``  | tab             |
+      +-----------+-----------------+
+      | ``'\n'``  | newline         |
+      +-----------+-----------------+
+      | ``'\v'``  | vertical tab    |
+      +-----------+-----------------+
+      | ``'\f'``  | form feed       |
+      +-----------+-----------------+
+      | ``'\r'``  | carriage return |
+      +-----------+-----------------+
 
       In a Unicode context, whitespace characters are the
-      characters defined in the Unicode character database as "Other" or "Separator"
-      and those with bidirectional property being one of "WS", "B", or "S".
+      characters defined in the `Unicode Character Database
+      <https://www.unicode.org/reports/tr44/>`_ as "Other" or "Separator"
+      and those with bidirectional property being one of "WS," "B," or "S."
 
       This is used, for example, to :meth:`~str.split` or
       :meth:`~str.strip` strings.

@@ -3522,8 +3522,9 @@ place, and instead produce new objects.
 .. method:: bytes.isspace()
             bytearray.isspace()
 
-   Return ``True`` if all bytes in the sequence are :term:`ASCII whitespace <whitespace>`
-   and the sequence is not empty, ``False`` otherwise.
+   Return ``True`` if all bytes in the sequence are
+   :term:`ASCII whitespace <whitespace>` and the sequence is not empty,
+   ``False`` otherwise.
 
 
 .. method:: bytes.istitle()
