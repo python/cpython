@@ -178,7 +178,6 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 			\$\(*_CFLAGS\))		cpps="$cpps $arg";;
 			\$\(*_INCLUDES\))	cpps="$cpps $arg";;
 			\$\(*_LIBS\))		  libs="$libs $arg";;
-			\$\(*_LIBDEPS\))	libs="$libs $arg";;
 			\$\(*_LDFLAGS\))	libs="$libs $arg";;
 			\$\(*_RPATH\))		libs="$libs $arg";;
 			\$*)		libs="$libs $arg"
@@ -276,7 +275,7 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 				BUILT_SHARED="$BUILT_SHARED $mod"
 				;;
 			esac
-			rule="$file: $objs \$(MODULE_${mods_upper}_LIBDEPS)"
+			rule="$file: $objs \$(MODULE_${mods_upper}_LDEPS)"
 			rule="$rule; \$(BLDSHARED) $objs $libs \$(LIBPYTHON) -o $file"
 			echo "$rule" >>$rulesf
 		done
