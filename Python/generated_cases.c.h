@@ -2330,9 +2330,6 @@
             opcode = CALL_FUNCTION_EX;
             _PyStackRef func;
             _PyStackRef callargs;
-            _PyStackRef kwargs_in;
-            _PyStackRef tuple;
-            _PyStackRef kwargs_out;
             _PyStackRef func_st;
             _PyStackRef null;
             _PyStackRef callargs_st;
@@ -2340,15 +2337,10 @@
             _PyStackRef result;
             // _MAKE_CALLARGS_A_TUPLE
             {
-                kwargs_in = stack_pointer[-1];
                 callargs = stack_pointer[-2];
                 func = stack_pointer[-4];
                 PyObject *callargs_o = PyStackRef_AsPyObjectBorrow(callargs);
-                if (PyTuple_CheckExact(callargs_o)) {
-                    tuple = callargs;
-                    kwargs_out = kwargs_in;
-                }
-                else {
+                if (!PyTuple_CheckExact(callargs_o)) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_Check_ArgsIterable(tstate, PyStackRef_AsPyObjectBorrow(func), callargs_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -2361,20 +2353,18 @@
                     if (tuple_o == NULL) {
                         JUMP_TO_LABEL(error);
                     }
-                    kwargs_out = kwargs_in;
-                    stack_pointer += -2;
-                    assert(WITHIN_STACK_BOUNDS());
+                    _PyStackRef temp = callargs;
+                    callargs = PyStackRef_FromPyObjectSteal(tuple_o);
+                    stack_pointer[-2] = callargs;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    PyStackRef_CLOSE(callargs);
+                    PyStackRef_CLOSE(temp);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    tuple = PyStackRef_FromPyObjectSteal(tuple_o);
-                    stack_pointer += 2;
                 }
             }
             // _DO_CALL_FUNCTION_EX
             {
-                kwargs_st = kwargs_out;
-                callargs_st = tuple;
+                kwargs_st = stack_pointer[-1];
+                callargs_st = callargs;
                 null = stack_pointer[-3];
                 func_st = func;
                 (void)null;
@@ -2390,7 +2380,6 @@
                     PyObject *arg = PyTuple_GET_SIZE(callargs) > 0 ?
                     PyTuple_GET_ITEM(callargs, 0) : &_PyInstrumentation_MISSING;
                     stack_pointer[-2] = callargs_st;
-                    stack_pointer[-1] = kwargs_st;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_call_instrumentation_2args(
                         tstate, PY_MONITORING_EVENT_CALL,
@@ -2456,7 +2445,6 @@
                     PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
                     assert(kwargs == NULL || PyDict_CheckExact(kwargs));
                     stack_pointer[-2] = callargs_st;
-                    stack_pointer[-1] = kwargs_st;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     result_o = PyObject_Call(func, callargs, kwargs);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -6289,9 +6277,6 @@
             opcode = INSTRUMENTED_CALL_FUNCTION_EX;
             _PyStackRef func;
             _PyStackRef callargs;
-            _PyStackRef kwargs_in;
-            _PyStackRef tuple;
-            _PyStackRef kwargs_out;
             _PyStackRef func_st;
             _PyStackRef null;
             _PyStackRef callargs_st;
@@ -6299,15 +6284,10 @@
             _PyStackRef result;
             // _MAKE_CALLARGS_A_TUPLE
             {
-                kwargs_in = stack_pointer[-1];
                 callargs = stack_pointer[-2];
                 func = stack_pointer[-4];
                 PyObject *callargs_o = PyStackRef_AsPyObjectBorrow(callargs);
-                if (PyTuple_CheckExact(callargs_o)) {
-                    tuple = callargs;
-                    kwargs_out = kwargs_in;
-                }
-                else {
+                if (!PyTuple_CheckExact(callargs_o)) {
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_Check_ArgsIterable(tstate, PyStackRef_AsPyObjectBorrow(func), callargs_o);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -6320,20 +6300,18 @@
                     if (tuple_o == NULL) {
                         JUMP_TO_LABEL(error);
                     }
-                    kwargs_out = kwargs_in;
-                    stack_pointer += -2;
-                    assert(WITHIN_STACK_BOUNDS());
+                    _PyStackRef temp = callargs;
+                    callargs = PyStackRef_FromPyObjectSteal(tuple_o);
+                    stack_pointer[-2] = callargs;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
-                    PyStackRef_CLOSE(callargs);
+                    PyStackRef_CLOSE(temp);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
-                    tuple = PyStackRef_FromPyObjectSteal(tuple_o);
-                    stack_pointer += 2;
                 }
             }
             // _DO_CALL_FUNCTION_EX
             {
-                kwargs_st = kwargs_out;
-                callargs_st = tuple;
+                kwargs_st = stack_pointer[-1];
+                callargs_st = callargs;
                 null = stack_pointer[-3];
                 func_st = func;
                 (void)null;
@@ -6349,7 +6327,6 @@
                     PyObject *arg = PyTuple_GET_SIZE(callargs) > 0 ?
                     PyTuple_GET_ITEM(callargs, 0) : &_PyInstrumentation_MISSING;
                     stack_pointer[-2] = callargs_st;
-                    stack_pointer[-1] = kwargs_st;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     int err = _Py_call_instrumentation_2args(
                         tstate, PY_MONITORING_EVENT_CALL,
@@ -6415,7 +6392,6 @@
                     PyObject *kwargs = PyStackRef_AsPyObjectBorrow(kwargs_st);
                     assert(kwargs == NULL || PyDict_CheckExact(kwargs));
                     stack_pointer[-2] = callargs_st;
-                    stack_pointer[-1] = kwargs_st;
                     _PyFrame_SetStackPointer(frame, stack_pointer);
                     result_o = PyObject_Call(func, callargs, kwargs);
                     stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -11358,14 +11334,16 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(SWAP);
-            _PyStackRef *bottom;
-            _PyStackRef *top;
-            top = &stack_pointer[-1];
-            bottom = &stack_pointer[-2 - (oparg-2)];
-            _PyStackRef temp = bottom[0];
-            bottom[0] = top[0];
-            top[0] = temp;
+            _PyStackRef bottom;
+            _PyStackRef top;
+            top = stack_pointer[-1];
+            bottom = stack_pointer[-2 - (oparg-2)];
+            _PyStackRef temp = bottom;
+            bottom = top;
+            top = temp;
             assert(oparg >= 2);
+            stack_pointer[-2 - (oparg-2)] = bottom;
+            stack_pointer[-1] = top;
             DISPATCH();
         }
 

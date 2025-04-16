@@ -595,8 +595,14 @@ PyType_Spec pyctype_type_spec = {
     .slots = ctype_type_slots,
 };
 
+/*
+  PyCStructType_Type - a meta type/class.  Creating a new class using this one as
+  __metaclass__ will call the constructor StructUnionType_new.
+  It initializes the C accessible fields somehow.
+*/
+
 static PyCArgObject *
-StructUnionType_paramfunc_lock_held(ctypes_state *st, CDataObject *self)
+StructUnionType_paramfunc(ctypes_state *st, CDataObject *self)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     PyCArgObject *parg;
@@ -649,20 +655,6 @@ StructUnionType_paramfunc_lock_held(ctypes_state *st, CDataObject *self)
     return parg;
 }
 
-/*
-  PyCStructType_Type - a meta type/class.  Creating a new class using this one as
-  __metaclass__ will call the constructor StructUnionType_new.
-  It initializes the C accessible fields somehow.
-*/
-static PyCArgObject *
-StructUnionType_paramfunc(ctypes_state *st, CDataObject *self)
-{
-    PyCArgObject *res;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    res = StructUnionType_paramfunc_lock_held(st, self);
-    Py_END_CRITICAL_SECTION();
-    return res;
-}
 
 static int
 StructUnionType_init(PyObject *self, PyObject *args, PyObject *kwds, int isStruct)
@@ -1213,6 +1205,7 @@ PyCPointerType_SetProto(ctypes_state *st, StgInfo *stginfo, PyObject *proto)
 static PyCArgObject *
 PyCPointerType_paramfunc(ctypes_state *st, CDataObject *self)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     PyCArgObject *parg;
 
     parg = PyCArgObject_new(st);
@@ -1222,7 +1215,7 @@ PyCPointerType_paramfunc(ctypes_state *st, CDataObject *self)
     parg->tag = 'P';
     parg->pffi_type = &ffi_type_pointer;
     parg->obj = Py_NewRef(self);
-    parg->value.p = locked_deref(self);
+    parg->value.p = *(void **)self->b_ptr;
     return parg;
 }
 
@@ -1665,6 +1658,7 @@ add_getset(PyTypeObject *type, PyGetSetDef *gsp)
 static PyCArgObject *
 PyCArrayType_paramfunc(ctypes_state *st, CDataObject *self)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     PyCArgObject *p = PyCArgObject_new(st);
     if (p == NULL)
         return NULL;
@@ -2159,7 +2153,9 @@ c_void_p_from_param_impl(PyObject *type, PyTypeObject *cls, PyObject *value)
             parg->tag = 'Z';
             parg->obj = Py_NewRef(value);
             /* Remember: b_ptr points to where the pointer is stored! */
-            parg->value.p = locked_deref((CDataObject *)value);
+            Py_BEGIN_CRITICAL_SECTION(value);
+            parg->value.p = *(void **)_CDataObject_CAST(value)->b_ptr;
+            Py_END_CRITICAL_SECTION();
             return (PyObject *)parg;
         }
     }
@@ -2241,7 +2237,7 @@ static PyObject *CreateSwappedType(ctypes_state *st, PyTypeObject *type,
 }
 
 static PyCArgObject *
-PyCSimpleType_paramfunc_lock_held(ctypes_state *st, CDataObject *self)
+PyCSimpleType_paramfunc(ctypes_state *st, CDataObject *self)
 {
     _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     const char *fmt;
@@ -2270,15 +2266,6 @@ PyCSimpleType_paramfunc_lock_held(ctypes_state *st, CDataObject *self)
     return parg;
 }
 
-static PyCArgObject *
-PyCSimpleType_paramfunc(ctypes_state *st, CDataObject *self)
-{
-    PyCArgObject *res;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    res = PyCSimpleType_paramfunc_lock_held(st, self);
-    Py_END_CRITICAL_SECTION();
-    return res;
-}
 
 static int
 PyCSimpleType_init(PyObject *self, PyObject *args, PyObject *kwds)
@@ -2766,6 +2753,7 @@ make_funcptrtype_dict(ctypes_state *st, PyObject *attrdict, StgInfo *stginfo)
 static PyCArgObject *
 PyCFuncPtrType_paramfunc(ctypes_state *st, CDataObject *self)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(self);
     PyCArgObject *parg;
 
     parg = PyCArgObject_new(st);
@@ -2775,7 +2763,7 @@ PyCFuncPtrType_paramfunc(ctypes_state *st, CDataObject *self)
     parg->tag = 'P';
     parg->pffi_type = &ffi_type_pointer;
     parg->obj = Py_NewRef(self);
-    parg->value.p = locked_deref(self);
+    parg->value.p = *(void **)self->b_ptr;
     return parg;
 }
 
@@ -5827,7 +5815,11 @@ Pointer_subscript(PyObject *myself, PyObject *item)
 static int
 Pointer_bool(PyObject *self)
 {
-    return locked_deref(_CDataObject_CAST(self)) != NULL;
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    res = *(void **)_CDataObject_CAST(self)->b_ptr != NULL;
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyType_Slot pycpointer_slots[] = {
