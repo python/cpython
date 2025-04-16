@@ -562,35 +562,39 @@ is enabled only if the number of long-lived objects exceeds a threshold.  If
 the set of objects being garbage collected is small, the accessed memory is
 likely to fit entirely in the CPU cache and software prefetch is not helpful.
 
-The details of how prefetch is implemented for the GC is intricate, with the
-source code being the best reference for details.  However, the rest of this
-section gives a high level description of how it works.
+The details of this optimization are intricate, with the source code being the
+best reference.  However, the rest of this section gives a high level
+description of how it works and explains some design decisions.
 
 Software prefetching is only used during the "mark alive" phase of the GC.
 Specifically, when we are performing the transitive closure of the "alive"
 status of objects (i.e. objects reachable from known alive objects, known as
 roots).  For each object we find, we need to traverse all objects directly
 reachable from that object.  If that set of referred objects is in scattered
-locations of memory, the hardware prefetch is unlikely to predict what memory
-location will be accessed next.
+locations of memory, the hardware prefetch is unlikely to predict the next
+accessed memory location.
 
 Making software prefetch work well hinges on a key principle: allow enough time
 between issuing the prefetch instruction for a memory location and actually
 accessing that location's data.  We can call that time difference the prefetch
 window.  If the window is too large, we fill up the CPU caches with data that's
 not needed yet.  Worse, the data might be discarded from the cache before we
-actually use it.  If too small then the memory system does not have enough time
-to finish loading the memory and the CPU will have to wait.  The window is
-indirectly tuned by the prefetch buffer parameters.  The buffer will be
-explained in more detail later.
+actually use it.  If the window is too small then the memory system does not
+have enough time to finish loading the memory and the CPU will have to wait.
+The window is indirectly tuned by the prefetch buffer parameters.  The buffer
+will be explained next.
+
+The prefetch buffer is a FIFO queue of fixed size.  When we enqueue an object
+reference into the buffer, we also issue a software prefetch instruction for
+that memory location.   When we dequeue an object reference from the buffer, we
+assume or hope that enough time has elapsed so that the memory has been loaded
+into the cache.  This is the mechanism that provides the window.
 
 When performing the transitive closure of "alive" status, the set of objects
-yet to visit are stored in one of two places.  First, there is a fixed size
-FIFO queue, known as the prefetch buffer.  Second, there is a LIFO stack, of
-unlimited size.  When an object reference is enqueued in the buffer, we issue a
-prefetch instruction for that memory location.  When processing the references
-for an object, we enqueue them into the prefetch buffer if it is not yet full,
-otherwise we push it to the stack.
+yet to visit are stored in one of two places.  First, they can be stored in the
+prefech buffer. Second, there is a LIFO stack, of unlimited size.  When object
+references are found using `tp_traverse`, they are enqueued in the buffer if
+it is not full, otherwise they are pushed to the stack.
 
 We must take special care not to access the memory referred to by an object
 pointer until we take that reference out of the prefetch buffer.  That means we
@@ -598,7 +602,9 @@ cannot check if an object is a "container" (if the `PyObject_IS_GC()` test is
 true) or if the object already has the "alive" flag set.  Both of those tests
 would require that the object memory is accessed.  There are some additional
 elaborations that try to keep the buffer filled to the optimal size but to keep
-things simple we will ignore those.
+things simple we will omit those details here.  Not discussed in details are
+"spans", which help reduce the amount of stack used and make it easier to
+control the size of the buffer.
 
 As mentioned, the prefetch window is the time delay between the issue of the
 prefetch instruction, on buffer enqueue, and the memory access, after buffer
@@ -627,8 +633,8 @@ Time to actually process the object was assumed to be zero.  A histogram of the
 windows is shown below.  These traces suggest the buffer length is mostly being
 kept between the low and high thresholds, which is what we want.  Variations of
 the buffer parameters were benchmarked and the best performing parameters were
-chosen.  Obviously it is highly unlikely these parameters will be optimal for
-all hardware and programs.
+chosen.  Obviously it is unlikely these parameters will be optimal for all
+hardware and programs.
 
 ```
 Prefetch window stats
@@ -654,14 +660,16 @@ examined by the GC does not fit into CPU caches.  Otherwise, using the buffer
 and prefetch instructions is just overhead.  Using the long lived object count
 seems a good estimate of if things will fit in the cache.  On 64-bit platforms,
 the minimum object size is 32 bytes.  A 4MB L2 cache would hold about 130,000
-objects.  Therefore, the current threshold for enabling prefetch is that the
-number of long-lived objects must exceed 200,000.  Based on benchmarking, this
-seems in the range where prefetch becomes a net gain.  Obviously it depends on
-hardware details and also the "shape" of the object graph.  For example, your object
-graph may be constructed by linearly allocating objects in memory.  Then,
-traversing the object graph might naturally result in mostly ordered memory
-access.  In that case, the hardware prefetch is likely to do a nearly perfect
-job without any software prefetch hints.
+objects.
+
+The current threshold for enabling prefetch is that the number of long-lived
+objects must exceed 200,000.  Based on benchmarking, this seems in the range
+where prefetch becomes a net gain.  Obviously it depends on hardware details
+and also the "shape" of the object graph.  For example, your object graph may
+be constructed by linearly allocating objects in memory.  Then, traversing the
+object graph might naturally result in mostly ordered memory access.  In that
+case, the hardware prefetch is likely to do a nearly perfect job without any
+software prefetch hints.
 
 This optimization, as of March 2025, was tuned on the following hardware
 platforms:
