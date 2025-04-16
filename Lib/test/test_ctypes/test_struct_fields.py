@@ -80,7 +80,7 @@ class FieldsTestBase(StructCheckMixin):
             CField(
                 name="a",
                 type=c_byte,
-                byte_size=2, # Wrong size: c_byte is only 1 byte
+                byte_size=2,  # Wrong size: c_byte is only 1 byte
                 byte_offset=2,
                 index=1,
                 _internal_use=True
