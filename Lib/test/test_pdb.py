@@ -4683,7 +4683,7 @@ def load_tests(loader, tests, pattern):
         # asyncio features are used.
         _set_event_loop_policy(None)
 
-        # The doctest of pdb could have residues. For example, pdb could still
+        # A doctest of pdb could have residues. For example, pdb could still
         # be running, or breakpoints might be left uncleared. These residues
         # could potentially interfere with the following test, especially
         # when we switch backends. Here we clear all the residues to restore
