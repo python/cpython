@@ -156,26 +156,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os:
-          - windows-latest
         arch:
           - x64
+          - Win32
+          - arm64
         free-threading:
           - false
           - true
-        include:
-          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
-            arch: arm64
-            free-threading: false
-          - os: windows-latest # FIXME(diegorusso): change to os: windows-aarch64
-            arch: arm64
-            free-threading: true
-          - os: windows-latest
-            arch: Win32
-            free-threading: false
+        exclude:
+          # Skip Win32 on free-threaded builds
+          - { arch: Win32, free-threading: true }
     uses: ./.github/workflows/reusable-windows.yml
     with:
-      os: ${{ matrix.os }}
       arch: ${{ matrix.arch }}
       free-threading: ${{ matrix.free-threading }}
 
