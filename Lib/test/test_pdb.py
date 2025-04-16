@@ -2233,6 +2233,59 @@ if not SKIP_CORO_TESTS:
             (Pdb) continue
             """
 
+        def test_pdb_await_with_breakpoint():
+            """Testing await support with breakpoints set in tasks
+
+            >>> reset_Breakpoint()
+
+           >>> import asyncio
+
+            >>> async def test():
+            ...     x = 2
+            ...     await asyncio.sleep(0)
+            ...     return 42
+
+            >>> async def main():
+            ...     import pdb;
+            ...     task = asyncio.create_task(test())
+            ...     await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+
+            >>> def test_function():
+            ...     asyncio.run(main(), loop_factory=asyncio.EventLoop)
+
+            >>> with PdbTestInput([  # doctest: +ELLIPSIS
+            ...     'b test',
+            ...     'k = await task',
+            ...     'n',
+            ...     'p x',
+            ...     'continue',
+            ...     'p k',
+            ...     'clear 1',
+            ...     'continue',
+            ... ]):
+            ...     test_function()
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[3]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) b test
+            Breakpoint 1 at <doctest test.test_pdb.test_pdb_await_with_breakpoint[2]>:2
+            (Pdb) k = await task
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[2]>(2)test()
+            -> x = 2
+            (Pdb) n
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[2]>(3)test()
+            -> await asyncio.sleep(0)
+            (Pdb) p x
+            2
+            (Pdb) continue
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[3]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p k
+            42
+            (Pdb) clear 1
+            Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_await_with_breakpoint[2]>:2
+            (Pdb) continue
+            """
+
     def test_pdb_next_command_for_coroutine():
         """Testing skip unwinding stack on yield for coroutines for "next" command
 
