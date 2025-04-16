@@ -624,7 +624,7 @@ class AsyncGenAsyncioTest(unittest.TestCase):
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
-        asyncio._set_event_loop(None)
+        asyncio.set_event_loop(None)
 
     def tearDown(self):
         self.loop.close()

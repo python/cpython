@@ -1,2 +1,0 @@
-Improve the import time of the :mod:`ast` module by extracting the
-:func:`~ast.unparse` function to a helper module.
