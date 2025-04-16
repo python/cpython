@@ -1,6 +1,7 @@
 # A test suite for pdb; not very comprehensive at the moment.
 
 import doctest
+import gc
 import os
 import pdb
 import sys
@@ -2209,9 +2210,7 @@ if not SKIP_CORO_TESTS:
         def test_pdb_await_with_breakpoint():
             """Testing await support with breakpoints set in tasks
 
-            >>> reset_Breakpoint()
-
-           >>> import asyncio
+            >>> import asyncio
 
             >>> async def test():
             ...     x = 2
@@ -2233,29 +2232,26 @@ if not SKIP_CORO_TESTS:
             ...     'p x',
             ...     'continue',
             ...     'p k',
-            ...     'clear 1',
             ...     'continue',
             ... ]):
             ...     test_function()
-            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[3]>(4)main()
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[2]>(4)main()
             -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
             (Pdb) b test
-            Breakpoint 1 at <doctest test.test_pdb.test_pdb_await_with_breakpoint[2]>:2
+            Breakpoint 1 at <doctest test.test_pdb.test_pdb_await_with_breakpoint[1]>:2
             (Pdb) k = await task
-            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[2]>(2)test()
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[1]>(2)test()
             -> x = 2
             (Pdb) n
-            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[2]>(3)test()
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[1]>(3)test()
             -> await asyncio.sleep(0)
             (Pdb) p x
             2
             (Pdb) continue
-            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[3]>(4)main()
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[2]>(4)main()
             -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
             (Pdb) p k
             42
-            (Pdb) clear 1
-            Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_await_with_breakpoint[2]>:2
             (Pdb) continue
             """
 
@@ -4814,6 +4810,10 @@ def load_tests(loader, tests, pattern):
         if pdb.Pdb._last_pdb_instance:
             pdb.Pdb._last_pdb_instance.stop_trace()
             pdb.Pdb._last_pdb_instance = None
+
+        # If garbage objects are collected right after we start tracing, we
+        # could stop at __del__ of the object which would fail the test.
+        gc.collect()
 
     tests.addTest(
         doctest.DocTestSuite(
