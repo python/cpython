@@ -905,8 +905,10 @@ class Fraction(numbers.Rational):
         else:
             return NotImplemented
 
-    def __rpow__(b, a):
+    def __rpow__(b, a, modulo=None):
         """a ** b"""
+        if modulo is not None:
+            return NotImplemented
         if b._denominator == 1 and b._numerator >= 0:
             # If a is an int, keep it that way if possible.
             return a ** b._numerator
