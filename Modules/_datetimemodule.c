@@ -12,6 +12,7 @@
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_time.h"          // _PyTime_ObjectToTime_t()
 #include "pycore_unicodeobject.h" // _PyUnicode_Copy()
 
@@ -133,18 +134,13 @@ get_current_module(PyInterpreterState *interp, int *p_reloading)
     if (dict == NULL) {
         goto error;
     }
-    PyObject *ref = NULL;
-    if (PyDict_GetItemRef(dict, INTERP_KEY, &ref) < 0) {
+    if (PyDict_GetItemRef(dict, INTERP_KEY, &mod) < 0) {
         goto error;
     }
-    if (ref != NULL) {
+    if (mod != NULL) {
         reloading = 1;
-        if (ref != Py_None) {
-            (void)PyWeakref_GetRef(ref, &mod);
-            if (mod == Py_None) {
-                Py_CLEAR(mod);
-            }
-            Py_DECREF(ref);
+        if (mod == Py_None) {
+            mod = NULL;
         }
     }
     if (p_reloading != NULL) {
@@ -194,12 +190,7 @@ set_current_module(PyInterpreterState *interp, PyObject *mod)
     if (dict == NULL) {
         return -1;
     }
-    PyObject *ref = PyWeakref_NewRef(mod, NULL);
-    if (ref == NULL) {
-        return -1;
-    }
-    int rc = PyDict_SetItem(dict, INTERP_KEY, ref);
-    Py_DECREF(ref);
+    int rc = PyDict_SetItem(dict, INTERP_KEY, mod);
     return rc;
 }
 
@@ -208,28 +199,26 @@ clear_current_module(PyInterpreterState *interp, PyObject *expected)
 {
     PyObject *exc = PyErr_GetRaisedException();
 
+    if (interp->dict == NULL) {
+        // Do not resurrect a dict during interp-shutdown to avoid the leak
+        assert(_Py_IsInterpreterFinalizing(interp));
+        return;
+    }
+
     PyObject *dict = PyInterpreterState_GetDict(interp);
     if (dict == NULL) {
         goto error;
     }
 
     if (expected != NULL) {
-        PyObject *ref = NULL;
-        if (PyDict_GetItemRef(dict, INTERP_KEY, &ref) < 0) {
+        PyObject *current;
+        if (PyDict_GetItemRef(dict, INTERP_KEY, &current) < 0) {
             goto error;
         }
-        if (ref != NULL) {
-            PyObject *current = NULL;
-            int rc = PyWeakref_GetRef(ref, &current);
-            /* We only need "current" for pointer comparison. */
-            Py_XDECREF(current);
-            Py_DECREF(ref);
-            if (rc < 0) {
-                goto error;
-            }
-            if (current != expected) {
-                goto finally;
-            }
+        /* We only need "current" for pointer comparison. */
+        Py_XDECREF(current);
+        if (current != expected) {
+            goto finally;
         }
     }
 
