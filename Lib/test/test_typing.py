@@ -2933,6 +2933,13 @@ class ProtocolTests(BaseTestCase):
         self.assertNotIsInstance(D(), E)
         self.assertNotIsInstance(E(), D)
 
+    def test_inheritance_from_object(self):
+        # Inheritance from object is specifically allowed, unlike other nominal classes
+        class P(Protocol, object):
+            x: int
+
+        self.assertEqual(typing.get_protocol_members(P), {'x'})
+
     def test_no_instantiation(self):
         class P(Protocol): pass
 
