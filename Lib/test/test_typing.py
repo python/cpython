@@ -4554,6 +4554,33 @@ class ProtocolTests(BaseTestCase):
         )
         self.assertIs(type(exc.__cause__), CustomError)
 
+    def test_isinstance_with_deferred_evaluation_of_annotations(self):
+        @runtime_checkable
+        class P(Protocol):
+            def meth(self):
+                ...
+
+        class DeferredClass:
+            x: undefined
+
+        class DeferredClassImplementingP:
+            x: undefined | int
+
+            def __init__(self):
+                self.x = 0
+
+            def meth(self):
+                ...
+
+        # override meth with a non-method attribute to make it part of __annotations__ instead of __dict__
+        class SubProtocol(P, Protocol):
+            meth: undefined
+
+
+        self.assertIsSubclass(SubProtocol, P)
+        self.assertNotIsInstance(DeferredClass(), P)
+        self.assertIsInstance(DeferredClassImplementingP(), P)
+
     def test_deferred_evaluation_of_annotations(self):
         class DeferredProto(Protocol):
             x: DoesNotExist
