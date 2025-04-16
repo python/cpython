@@ -1572,7 +1572,6 @@ class Pathname_Tests(unittest.TestCase):
     def test_url2pathname_resolve_netloc(self):
         fn = urllib.request.url2pathname
         sep = os.path.sep
-        self.assertRaises(urllib.error.URLError, fn, '//127.0.0.1/foo/bar')
         self.assertEqual(fn('//127.0.0.1/foo/bar', resolve_netloc=True), f'{sep}foo{sep}bar')
         self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar'), f'{sep}foo{sep}bar')
         self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar', resolve_netloc=True), f'{sep}foo{sep}bar')
@@ -1607,6 +1606,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertEqual(fn('//server/path/to/file'), '\\\\server\\path\\to\\file')
         self.assertEqual(fn('////server/path/to/file'), '\\\\server\\path\\to\\file')
         self.assertEqual(fn('/////server/path/to/file'), '\\\\server\\path\\to\\file')
+        self.assertEqual(fn('//127.0.0.1/path/to/file'), '\\\\127.0.0.1\\path\\to\\file')
         # Localhost paths
         self.assertEqual(fn('//localhost/C:/path/to/file'), 'C:\\path\\to\\file')
         self.assertEqual(fn('//localhost/C|/path/to/file'), 'C:\\path\\to\\file')
@@ -1631,6 +1631,7 @@ class Pathname_Tests(unittest.TestCase):
         self.assertRaises(urllib.error.URLError, fn, '//:80/foo/bar')
         self.assertRaises(urllib.error.URLError, fn, '//:/foo/bar')
         self.assertRaises(urllib.error.URLError, fn, '//c:80/foo/bar')
+        self.assertRaises(urllib.error.URLError, fn, '//127.0.0.1/foo/bar')
 
     @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
     def test_url2pathname_nonascii(self):

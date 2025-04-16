@@ -872,10 +872,9 @@ conforming to :rfc:`8089`.
    .. versionadded:: 3.13
 
    .. versionchanged:: next
-      If a URL authority matches the current hostname, it is discarded.
-      Otherwise, if the authority isn't empty or ``localhost``, then on
-      Windows a UNC path is returned (as before), and on other platforms a
-      :exc:`ValueError` is raised.
+      The URL authority is discarded if it matches the machine hostname.
+      Otherwise, on Windows a UNC path is returned (as before), and on other
+      platforms a :exc:`ValueError` is raised.
 
 
 .. method:: Path.as_uri()
