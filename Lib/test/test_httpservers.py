@@ -8,7 +8,6 @@ from http.server import BaseHTTPRequestHandler, HTTPServer, HTTPSServer, \
      SimpleHTTPRequestHandler, CGIHTTPRequestHandler
 from http import server, HTTPStatus
 
-import http.server
 import os
 import socket
 import sys
