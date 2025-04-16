@@ -1,0 +1,1 @@
+Add :func:`pdb.set_trace_async` function to support :keyword:`await` statements in :mod:`pdb`.
