@@ -3137,6 +3137,7 @@ class ProtocolTests(BaseTestCase):
         class Base(Protocol):
             x: int
 
+        @runtime_checkable
         class Child(Base, Protocol):
             y: str
 

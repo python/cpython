@@ -1925,9 +1925,11 @@ class _ProtocolMeta(ABCMeta):
     # This metaclass is somewhat unfortunate,
     # but is necessary for several reasons...
     def __new__(mcls, name, bases, namespace, /, **kwargs):
+        is_protocol = False
         if name == "Protocol" and bases == (Generic,):
             pass
         elif Protocol in bases:
+            is_protocol = True
             for base in bases:
                 if not (
                     base in {object, Generic}
@@ -1942,7 +1944,8 @@ class _ProtocolMeta(ABCMeta):
                         f"got {base!r}"
                     )
         cls = super().__new__(mcls, name, bases, namespace, **kwargs)
-        cls.__protocol_attrs_cache__ = None
+        if is_protocol:
+            cls.__protocol_attrs_cache__ = None
         return cls
 
     def __subclasscheck__(cls, other):
@@ -2015,7 +2018,7 @@ class _ProtocolMeta(ABCMeta):
     def __non_callable_proto_members__(cls):
         # PEP 544 prohibits using issubclass()
         # with protocols that have non-method members.
-        non_callable_members = cls.__non_callable_proto_members_cache__
+        non_callable_members = cls.__non_callable_proto_members_cache__  # set by @runtime_checkable
         if non_callable_members is None:
             non_callable_members = set()
             for attr in cls.__protocol_attrs__:
