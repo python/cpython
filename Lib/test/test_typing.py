@@ -4575,15 +4575,10 @@ class ProtocolTests(BaseTestCase):
             def __get__(self, instance, type):
                 raise CustomError
 
-        @runtime_checkable
-        class Commentable(Protocol):
-            evil = classproperty()
-
-        class Normal:
-            evil = None
-
         with self.assertRaises(TypeError) as cm:
-            isinstance(Normal(), Commentable)
+            @runtime_checkable
+            class Commentable(Protocol):
+                evil = classproperty()
 
         exc = cm.exception
         self.assertEqual(

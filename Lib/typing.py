@@ -1777,8 +1777,6 @@ _TYPING_INTERNALS = frozenset({
     '__parameters__', '__orig_bases__',  '__orig_class__',
     '_is_protocol', '_is_runtime_protocol', '__protocol_attrs__',
     '__non_callable_proto_members__', '__type_params__',
-    '__protocol_attrs_cache__', '__non_callable_proto_members_cache__',
-    '__final__',
 })
 
 _SPECIAL_NAMES = frozenset({
@@ -1803,9 +1801,13 @@ def _get_protocol_attrs(cls):
     for base in cls.__mro__[:-1]:  # without object
         if base.__name__ in {'Protocol', 'Generic'}:
             continue
-        annotations = _lazy_annotationlib.get_annotations(
-            base, format=_lazy_annotationlib.Format.FORWARDREF
-        )
+        try:
+            annotations = base.__annotations__
+        except Exception:
+            # Only go through annotationlib to handle deferred annotations if we need to
+            annotations = _lazy_annotationlib.get_annotations(
+                base, format=_lazy_annotationlib.Format.FORWARDREF
+            )
         for attr in (*base.__dict__, *annotations):
             if not attr.startswith('_abc_') and attr not in EXCLUDED_ATTRIBUTES:
                 attrs.add(attr)
@@ -1925,11 +1927,9 @@ class _ProtocolMeta(ABCMeta):
     # This metaclass is somewhat unfortunate,
     # but is necessary for several reasons...
     def __new__(mcls, name, bases, namespace, /, **kwargs):
-        is_protocol = False
         if name == "Protocol" and bases == (Generic,):
             pass
         elif Protocol in bases:
-            is_protocol = True
             for base in bases:
                 if not (
                     base in {object, Generic}
@@ -1943,10 +1943,12 @@ class _ProtocolMeta(ABCMeta):
                         f"Protocols can only inherit from other protocols, "
                         f"got {base!r}"
                     )
-        cls = super().__new__(mcls, name, bases, namespace, **kwargs)
-        if is_protocol:
-            cls.__protocol_attrs_cache__ = None
-        return cls
+        return super().__new__(mcls, name, bases, namespace, **kwargs)
+
+    def __init__(cls, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if getattr(cls, "_is_protocol", False):
+            cls.__protocol_attrs__ = _get_protocol_attrs(cls)
 
     def __subclasscheck__(cls, other):
         if cls is Protocol:
@@ -1999,41 +2001,13 @@ class _ProtocolMeta(ABCMeta):
                 val = getattr_static(instance, attr)
             except AttributeError:
                 break
+            # this attribute is set by @runtime_checkable:
             if val is None and attr not in cls.__non_callable_proto_members__:
                 break
         else:
             return True
 
         return False
-
-    @property
-    def __protocol_attrs__(cls):
-        protocol_attrs = cls.__protocol_attrs_cache__
-        if protocol_attrs is None:
-            protocol_attrs = _get_protocol_attrs(cls)
-            cls.__protocol_attrs_cache__ = protocol_attrs
-        return protocol_attrs
-
-    @property
-    def __non_callable_proto_members__(cls):
-        # PEP 544 prohibits using issubclass()
-        # with protocols that have non-method members.
-        non_callable_members = cls.__non_callable_proto_members_cache__  # set by @runtime_checkable
-        if non_callable_members is None:
-            non_callable_members = set()
-            for attr in cls.__protocol_attrs__:
-                try:
-                    is_callable = callable(getattr(cls, attr, None))
-                except Exception as e:
-                    raise TypeError(
-                        f"Failed to determine whether protocol member {attr!r} "
-                        "is a method member"
-                    ) from e
-                else:
-                    if not is_callable:
-                        non_callable_members.add(attr)
-            cls.__non_callable_proto_members_cache__ = non_callable_members
-        return non_callable_members
 
 
 @classmethod
@@ -2050,14 +2024,15 @@ def _proto_hook(cls, other):
                 break
 
             # ...or in annotations, if it is a sub-protocol.
-            if (
-                issubclass(other, Generic)
-                and getattr(other, "_is_protocol", False)
-                and attr in _lazy_annotationlib.get_annotations(
-                    base, format=_lazy_annotationlib.Format.FORWARDREF
-                )
-            ):
-                break
+            if issubclass(other, Generic) and getattr(other, "_is_protocol", False):
+                try:
+                    annos = base.__annotations__
+                except Exception:
+                    annos = _lazy_annotationlib.get_annotations(
+                        base, format=_lazy_annotationlib.Format.FORWARDREF
+                    )
+                if attr in annos:
+                    break
         else:
             return NotImplemented
     return True
@@ -2253,7 +2228,22 @@ def runtime_checkable(cls):
         raise TypeError('@runtime_checkable can be only applied to protocol classes,'
                         ' got %r' % cls)
     cls._is_runtime_protocol = True
-    cls.__non_callable_proto_members_cache__ = None
+    # PEP 544 prohibits using issubclass()
+    # with protocols that have non-method members.
+    # See gh-113320 for why we compute this attribute here,
+    # rather than in `_ProtocolMeta.__init__`
+    cls.__non_callable_proto_members__ = set()
+    for attr in cls.__protocol_attrs__:
+        try:
+            is_callable = callable(getattr(cls, attr, None))
+        except Exception as e:
+            raise TypeError(
+                f"Failed to determine whether protocol member {attr!r} "
+                "is a method member"
+            ) from e
+        else:
+            if not is_callable:
+                cls.__non_callable_proto_members__.add(attr)
     return cls
 
 

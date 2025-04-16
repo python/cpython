@@ -1,1 +1,0 @@
-Speed up the creation of :class:`typing.Protocol` subclasses.
