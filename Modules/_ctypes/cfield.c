@@ -1461,8 +1461,8 @@ _Py_COMP_DIAG_PUSH
 
 /* Delayed initialization. Windows cannot statically reference dynamically
    loaded addresses from DLLs. */
-static void
-_ctypes_init_fielddesc_locked(void)
+void
+_ctypes_init_fielddesc(void)
 {
     /* Fixed-width integers */
 
@@ -1480,7 +1480,7 @@ for nbytes in 8, 16, 32, 64:
             f'{sgn}{nbytes}_get_sw',
         ]
         print(f'    formattable.fmt_{sgn}{nbytes} = (struct fielddesc){{')
-        print(f'            {', '.join(parts)} }};')
+        print(f'            {", ".join(parts)} }};')
 [python start generated code]*/
     formattable.fmt_i8 = (struct fielddesc){
             0, &ffi_type_sint8, i8_set, i8_get, i8_set_sw, i8_get_sw };
@@ -1498,7 +1498,7 @@ for nbytes in 8, 16, 32, 64:
             0, &ffi_type_sint64, i64_set, i64_get, i64_set_sw, i64_get_sw };
     formattable.fmt_u64 = (struct fielddesc){
             0, &ffi_type_uint64, u64_set, u64_get, u64_set_sw, u64_get_sw };
-/*[python end generated code: output=16806fe0ca3a9c4c input=850b8dd6388b1b10]*/
+/*[python end generated code: output=16806fe0ca3a9c4c input=96348a06e575f801]*/
 
 
     /* Native C integers.
@@ -1659,30 +1659,14 @@ print(f"    formattable.simple_type_chars[i] = 0;")
 #undef FIXINT_FIELDDESC_FOR
 _Py_COMP_DIAG_POP
 
-static void
-_ctypes_init_fielddesc(void)
-{
-    static bool initialized = false;
-    static PyMutex mutex = {0};
-    PyMutex_Lock(&mutex);
-    if (!initialized) {
-        _ctypes_init_fielddesc_locked();
-        initialized = true;
-    }
-    PyMutex_Unlock(&mutex);
-}
-
 char *
 _ctypes_get_simple_type_chars(void) {
-    _ctypes_init_fielddesc();
     return formattable.simple_type_chars;
 }
 
 struct fielddesc *
 _ctypes_get_fielddesc(const char *fmt)
 {
-    _ctypes_init_fielddesc();
-
     struct fielddesc *result = NULL;
     switch(fmt[0]) {
 /*[python input]

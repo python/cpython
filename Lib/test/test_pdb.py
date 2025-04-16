@@ -2581,6 +2581,41 @@ def test_pdb_next_command_subiterator():
     (Pdb) continue
     """
 
+def test_pdb_breakpoint_with_throw():
+    """GH-132536: PY_THROW event should not be turned off
+
+    >>> reset_Breakpoint()
+
+    >>> def gen():
+    ...    yield 0
+
+    >>> def test_function():
+    ...     import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    ...     g = gen()
+    ...     try:
+    ...         g.throw(TypeError)
+    ...     except TypeError:
+    ...         pass
+
+    >>> with PdbTestInput([
+    ...     'b 7',
+    ...     'continue',
+    ...     'clear 1',
+    ...     'continue',
+    ... ]):
+    ...     test_function()
+    > <doctest test.test_pdb.test_pdb_breakpoint_with_throw[2]>(2)test_function()
+    -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
+    (Pdb) b 7
+    Breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_with_throw[2]>:7
+    (Pdb) continue
+    > <doctest test.test_pdb.test_pdb_breakpoint_with_throw[2]>(7)test_function()
+    -> pass
+    (Pdb) clear 1
+    Deleted breakpoint 1 at <doctest test.test_pdb.test_pdb_breakpoint_with_throw[2]>:7
+    (Pdb) continue
+    """
+
 def test_pdb_multiline_statement():
     """Test for multiline statement
 
