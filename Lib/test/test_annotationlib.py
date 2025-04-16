@@ -1239,7 +1239,7 @@ class ForwardRefTests(unittest.TestCase):
         self.assertEqual(frm, ForwardRef('int', module=__name__))
         self.assertNotEqual(frm, ForwardRef('int', module='__other_name__'))
 
-    def test_forward_equality_gth(self):
+    def test_forward_equality_get_type_hints(self):
         c1 = ForwardRef('C')
         c1_gth = ForwardRef('C')
         c2 = ForwardRef('C')
