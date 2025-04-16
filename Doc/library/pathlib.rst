@@ -872,7 +872,7 @@ conforming to :rfc:`8089`.
    .. versionadded:: 3.13
 
    .. versionchanged:: next
-      The URL authority is discarded if it matches the machine hostname.
+      The URL authority is discarded if it matches the local hostname.
       Otherwise, if the authority isn't empty or ``localhost``, then on
       Windows a UNC path is returned (as before), and on other platforms a
       :exc:`ValueError` is raised.

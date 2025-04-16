@@ -185,7 +185,7 @@ The :mod:`urllib.request` module defines the following functions:
    value should include the prefix; a :exc:`~urllib.error.URLError` is raised
    if it doesn't.
 
-   The URL authority is discarded if it empty, ``localhost``, or the current
+   The URL authority is discarded if it empty, ``localhost``, or the local
    hostname. Otherwise, if *resolve_netloc* is set to true, the authority is
    resolved using :func:`socket.gethostbyname`, and discarded if it matches a
    local IP address. If the authority is still unhandled, then on Windows a
@@ -205,7 +205,7 @@ The :mod:`urllib.request` module defines the following functions:
       :exc:`OSError` exception to be raised on Windows.
 
    .. versionchanged:: next
-      The URL authority is discarded if it matches the machine hostname.
+      The URL authority is discarded if it matches the local hostname.
       Otherwise, if the authority isn't empty or ``localhost``, then on
       Windows a UNC path is returned (as before), and on other platforms a
       :exc:`~urllib.error.URLError` is raised.
