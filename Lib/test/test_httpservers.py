@@ -8,6 +8,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer, HTTPSServer, \
      SimpleHTTPRequestHandler, CGIHTTPRequestHandler
 from http import server, HTTPStatus
 
+import contextlib
 import os
 import socket
 import sys
@@ -22,6 +23,7 @@ import html
 import http, http.client
 import urllib.parse
 import tempfile
+import textwrap
 import time
 import datetime
 import threading
@@ -1466,7 +1468,7 @@ class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
 class MiscTestCase(unittest.TestCase):
     def test_all(self):
         expected = []
-        denylist = {'executable', 'nobody_uid', 'test', 'CommandLineServerClass'}
+        denylist = {'executable', 'nobody_uid', 'test'}
         for name in dir(server):
             if name.startswith('_') or name in denylist:
                 continue
@@ -1542,7 +1544,7 @@ class CommandLineTestCase(unittest.TestCase):
         self.default_protocol = 'HTTP/1.0'
         self.default_directory = os.getcwd()
         self.default_handler = SimpleHTTPRequestHandler
-        self.default_server = http.server.ThreadingHTTPServer
+        self.default_server = unittest.mock.ANY
         self.tls_cert = certdata_file('ssl_cert.pem')
         self.tls_key = certdata_file('ssl_key.pem')
         self.tls_password = 'somepass'
@@ -1573,7 +1575,7 @@ class CommandLineTestCase(unittest.TestCase):
             with self.subTest(port=port):
                 self.invoke_httpd([str(port)])
                 mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
-                                                  protocol=self.default_protocol, port=port, bind=self.default_bind, directory=self.default_directory,
+                                                  protocol=self.default_protocol, port=port, bind=self.default_bind,
                                                   tls_cert=None, tls_key=None, tls_password=None)
                 mock_func.reset_mock()
 
@@ -1586,7 +1588,7 @@ class CommandLineTestCase(unittest.TestCase):
                 with self.subTest(flag=flag, directory=directory):
                     self.invoke_httpd([flag, directory])
                     mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
-                                                      protocol=self.default_protocol, port=self.default_port, bind=self.default_bind, directory=directory,
+                                                      protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
                                                       tls_cert=None, tls_key=None, tls_password=None)
                     mock_func.reset_mock()
 
@@ -1599,7 +1601,7 @@ class CommandLineTestCase(unittest.TestCase):
                 with self.subTest(flag=flag, bind_address=bind_address):
                     self.invoke_httpd([flag, bind_address])
                     mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
-                                                      protocol=self.default_protocol, port=self.default_port, bind=bind_address, directory=self.default_directory,
+                                                      protocol=self.default_protocol, port=self.default_port, bind=bind_address,
                                                       tls_cert=None, tls_key=None, tls_password=None)
                     mock_func.reset_mock()
 
@@ -1612,7 +1614,7 @@ class CommandLineTestCase(unittest.TestCase):
                 with self.subTest(flag=flag, protocol=protocol):
                     self.invoke_httpd([flag, protocol])
                     mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
-                                                      protocol=protocol, port=self.default_port, bind=self.default_bind, directory=self.default_directory,
+                                                      protocol=protocol, port=self.default_port, bind=self.default_bind,
                                                       tls_cert=None, tls_key=None, tls_password=None)
                     mock_func.reset_mock()
 
@@ -1620,9 +1622,10 @@ class CommandLineTestCase(unittest.TestCase):
     def test_cgi_flag(self, mock_func):
         self.invoke_httpd(['--cgi'])
         mock_func.assert_called_once_with(HandlerClass=CGIHTTPRequestHandler, ServerClass=self.default_server,
-                                          protocol=self.default_protocol, port=self.default_port, bind=self.default_bind, directory=self.default_directory,
+                                          protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
                                           tls_cert=None, tls_key=None, tls_password=None)
 
+    @unittest.skipIf(ssl is None, "requires ssl")
     @mock.patch('http.server.test')
     def test_tls_flag(self, mock_func):
         tls_cert_options = ['--tls-cert', ]
@@ -1634,7 +1637,7 @@ class CommandLineTestCase(unittest.TestCase):
             for tls_key_option in tls_key_options:
                 self.invoke_httpd([tls_cert_option, self.tls_cert, tls_key_option, self.tls_key])
                 mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
-                                                  protocol=self.default_protocol, port=self.default_port, bind=self.default_bind, directory=self.default_directory,
+                                                  protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
                                                   tls_cert=self.tls_cert, tls_key=self.tls_key, tls_password=None)
                 mock_func.reset_mock()
 
@@ -1646,7 +1649,7 @@ class CommandLineTestCase(unittest.TestCase):
                     self.invoke_httpd([tls_cert_option, self.tls_cert, tls_key_option, self.tls_key, tls_password_option, self.tls_password_file])
 
                     mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
-                                                      protocol=self.default_protocol, port=self.default_port, bind=self.default_bind, directory=self.default_directory,
+                                                      protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
                                                       tls_cert=self.tls_cert, tls_key=self.tls_key, tls_password=self.tls_password)
                     mock_func.reset_mock()
 
