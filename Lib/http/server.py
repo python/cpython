@@ -1336,6 +1336,9 @@ def test(HandlerClass=BaseHTTPRequestHandler,
             sys.exit(0)
 
 def _main(args=None):
+    import argparse
+    import contextlib
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--cgi', action='store_true',
                         help='run as CGI server')
