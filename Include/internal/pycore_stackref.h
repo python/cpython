@@ -506,11 +506,6 @@ PyStackRef_AsPyObjectBorrow(_PyStackRef ref)
     return BITS_TO_PTR_MASKED(ref);
 }
 
-#ifdef Py_DEBUG
-#define PyStackRef_AsPyObjectBorrow(REF) \
-    (assert(!PyStackRef_IsTaggedInt(REF)), PyStackRef_AsPyObjectBorrow(REF))
-#endif
-
 static inline _PyStackRef
 PyStackRef_Borrow(_PyStackRef ref)
 {
