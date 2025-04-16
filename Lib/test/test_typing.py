@@ -4577,9 +4577,9 @@ class ProtocolTests(BaseTestCase):
             meth: undefined
 
 
-        self.assertTrue(issubclass(SubProtocol, P))
-        self.assertFalse(isinstance(DeferredClass(), P))
-        self.assertTrue(isinstance(DeferredClassImplementingP(), P))
+        self.assertIsSubclass(SubProtocol, P)
+        self.assertNotIsInstance(DeferredClass(), P)
+        self.assertIsInstance(DeferredClassImplementingP(), P)
 
     def test_deferred_evaluation_of_annotations(self):
         class DeferredProto(Protocol):
