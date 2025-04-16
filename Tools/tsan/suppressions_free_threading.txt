@@ -43,3 +43,7 @@ race_top:rangeiter_next
 # of ptr-sized copies to be thread-safe. (Issue #129069)
 race:list_ass_slice_lock_held
 race:list_inplace_repeat_lock_held
+
+# PyObject_Realloc internally does memcpy which isn't atomic so can race
+# with non-locking reads. See #132070
+race:PyObject_Realloc
