@@ -11253,7 +11253,7 @@ _PyType_InitSlotDefs(PyInterpreterState *interp)
     if (interp != interp->runtime->interpreters.main) {
         return 0;
     }
-    PyObject *bytes = NULL;
+    PyObject *bytearray = NULL;
     PyObject *cache = PyDict_New();
     if (!cache) {
         return -1;
@@ -11262,51 +11262,43 @@ _PyType_InitSlotDefs(PyInterpreterState *interp)
     pytype_slotdef *p;
     Py_ssize_t idx = 0;
     for (p = slotdefs; p->name_strobj; p++, idx++) {
-        Py_hash_t hash = _PyObject_HashFast(p->name_strobj);
-        if (hash == -1) {
-            goto error;
-        }
         assert (idx < 255);
 
-        if (_PyDict_GetItemRef_KnownHash_LockHeld((PyDictObject *)cache,
-                                                  p->name_strobj, hash,
-                                                  &bytes) < 0) {
+        if (PyDict_GetItemRef(cache, p->name_strobj, &bytearray) < 0) {
             goto error;
         }
 
-        if (!bytes) {
+        if (!bytearray) {
             Py_ssize_t size = sizeof(uint8_t) * (1 + MAX_EQUIV);
-            bytes = PyBytes_FromStringAndSize(NULL, size);
-            if (!bytes) {
+            bytearray = PyByteArray_FromStringAndSize(NULL, size);
+            if (!bytearray) {
                 goto error;
             }
 
-            uint8_t *data = (uint8_t *)PyBytes_AS_STRING(bytes);
+            uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(bytearray);
             data[0] = 0;
 
-            if (_PyDict_SetItem_KnownHash_LockHeld((PyDictObject *)cache,
-                                                   p->name_strobj,
-                                                   bytes, hash) < 0) {
+            if (PyDict_SetItem(cache, p->name_strobj, bytearray) < 0) {
                 goto error;
             }
         }
 
-        assert (PyBytes_CheckExact(bytes));
-        uint8_t *data = (uint8_t *)PyBytes_AS_STRING(bytes);
+        assert (PyByteArray_CheckExact(bytearray));
+        uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(bytearray);
 
         data[0] += 1;
         assert (data[0] < MAX_EQUIV);
 
         data[data[0]] = (uint8_t)idx;
 
-        Py_CLEAR(bytes);
+        Py_CLEAR(bytearray);
     }
 
     Py_ssize_t pos=0;
     PyObject *key=NULL;
     PyObject *value=NULL;
     while (PyDict_Next(cache, &pos, &key, &value)) {
-        uint8_t *data = (uint8_t *)PyBytes_AS_STRING(value);
+        uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(value);
         uint8_t n = data[0];
         uint8_t i = 0;
         for(; i < n; i++) {
@@ -11319,7 +11311,7 @@ _PyType_InitSlotDefs(PyInterpreterState *interp)
     return 0;
 
 error:
-    Py_XDECREF(bytes);
+    Py_XDECREF(bytearray);
     Py_DECREF(cache);
     return -1;
 }

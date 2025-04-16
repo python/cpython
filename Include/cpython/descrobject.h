@@ -16,6 +16,11 @@ struct wrapperbase {
     const char *doc;
     int flags;
     PyObject *name_strobj;
+
+    /* Stores the number of times where slotdefs has elements with this name.
+       This counter precalculated by _PyType_InitSlotDefs when main
+       interprepter starts.
+     */
     uint8_t name_count;
 };
 
