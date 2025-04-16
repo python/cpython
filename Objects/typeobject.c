@@ -5604,7 +5604,7 @@ PyObject_GetItemData(PyObject *obj)
 }
 
 /* Internal API to look for a name through the MRO, bypassing the method cache.
-   This returns a borrowed reference, and might set an exception.
+   This returns a strong reference, and might set an exception.
    'error' is set to: -1: error with exception; 1: error without exception; 0: ok */
 static PyObject *
 find_name_in_mro(PyTypeObject *type, PyObject *name, int *error)
