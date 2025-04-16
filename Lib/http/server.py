@@ -1362,7 +1362,7 @@ def _main(args=None):
     parser.add_argument('port', default=8000, type=int, nargs='?',
                         help='bind to this port '
                              '(default: %(default)s)')
-    args = parser.parse_args(args=args)
+    args = parser.parse_args(args)
 
     if not args.tls_cert and args.tls_key:
         parser.error("--tls-key requires --tls-cert to be set")
