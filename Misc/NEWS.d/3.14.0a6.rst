@@ -160,7 +160,7 @@ Use monospace font from System Font Stack for cross-platform support in
 .. nonce: 3sBFv2
 .. section: Library
 
-Improve perfomance of :attr:`uuid.UUID.hex` and :meth:`uuid.UUID.__str__
+Improve performance of :attr:`uuid.UUID.hex` and :meth:`uuid.UUID.__str__
 <object.__str__>`.
 
 ..
@@ -535,7 +535,7 @@ the correct type, when called with optimize=False.
 
 Forbid the use of colon (":") as a fractional component separator and other
 improvements to the consistency of error raising between the C and Python
-implementaitons of :meth:`datetime.time.fromisoformat` and
+implementations of :meth:`datetime.time.fromisoformat` and
 :meth:`datetime.datetime.fromisoformat`. Patch by Semyon Moroz.
 
 ..
@@ -1109,7 +1109,7 @@ Fix two more :class:`bytearray` functions for :term:`free threading`.
 
 Use tagged references (``_PyStackRef``) for the default build as well as for
 the free-threading build. This has a small negative performance impact
-short-term but will enable larger speedups in the future and signficantly
+short-term but will enable larger speedups in the future and significantly
 reduce maintenance costs by allowing a single implementation of tagged
 references in the future.
 
@@ -1209,7 +1209,7 @@ is called concurrently with ``set.clear()``.
 .. section: Core and Builtins
 
 The internal (evaluation) stack is now spilled to memory whenever execution
-esacpes from the interpreter or JIT compiled code. This should have no
+escapes from the interpreter or JIT compiled code. This should have no
 observable effect in either Python or builtin extensions, but will allow
 various important optimizations in the future.
 

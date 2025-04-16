@@ -3302,8 +3302,8 @@ class PathTest(PurePathTest):
     @needs_posix
     def test_from_uri_pathname2url_posix(self):
         P = self.cls
-        self.assertEqual(P.from_uri('file:' + pathname2url('/foo/bar')), P('/foo/bar'))
-        self.assertEqual(P.from_uri('file:' + pathname2url('//foo/bar')), P('//foo/bar'))
+        self.assertEqual(P.from_uri(pathname2url('/foo/bar', add_scheme=True)), P('/foo/bar'))
+        self.assertEqual(P.from_uri(pathname2url('//foo/bar', add_scheme=True)), P('//foo/bar'))
 
     @needs_windows
     def test_absolute_windows(self):

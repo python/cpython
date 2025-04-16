@@ -1453,7 +1453,7 @@ class PyMiscellaneousTests(unittest.TestCase):
             cache.pop('foo')
 
 
-class BuiiltinMiscellaneousTests(BuiltinModuleMixin, unittest.TestCase):
+class BuiltinMiscellaneousTests(BuiltinModuleMixin, unittest.TestCase):
     """HMAC-BLAKE2 is not standardized as BLAKE2 is a keyed hash function.
 
     In particular, there is no official test vectors for HMAC-BLAKE2.
@@ -1464,9 +1464,9 @@ class BuiiltinMiscellaneousTests(BuiltinModuleMixin, unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.blake2 = blake2 = import_module("_blake2")
-        cls.blake2b = blake2.blake2b
-        cls.blake2s = blake2.blake2s
+        cls.blake2 = import_module("_blake2")
+        cls.blake2b = cls.blake2.blake2b
+        cls.blake2s = cls.blake2.blake2s
 
     def assert_hmac_blake_correctness(self, digest, key, msg, hashfunc):
         self.assertIsInstance(digest, bytes)

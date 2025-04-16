@@ -4725,15 +4725,9 @@ dummy_func(
             _CALL_KW_NON_PY +
             _CHECK_PERIODIC;
 
-        op(_MAKE_CALLARGS_A_TUPLE, (func, unused, callargs, kwargs_in -- func, unused, tuple, kwargs_out)) {
+        op(_MAKE_CALLARGS_A_TUPLE, (func, unused, callargs, kwargs -- func, unused, callargs, kwargs)) {
             PyObject *callargs_o = PyStackRef_AsPyObjectBorrow(callargs);
-            if (PyTuple_CheckExact(callargs_o)) {
-                tuple = callargs;
-                kwargs_out = kwargs_in;
-                DEAD(kwargs_in);
-                DEAD(callargs);
-            }
-            else {
+            if (!PyTuple_CheckExact(callargs_o)) {
                 int err = _Py_Check_ArgsIterable(tstate, PyStackRef_AsPyObjectBorrow(func), callargs_o);
                 if (err < 0) {
                     ERROR_NO_POP();
@@ -4742,10 +4736,9 @@ dummy_func(
                 if (tuple_o == NULL) {
                     ERROR_NO_POP();
                 }
-                kwargs_out = kwargs_in;
-                DEAD(kwargs_in);
-                PyStackRef_CLOSE(callargs);
-                tuple = PyStackRef_FromPyObjectSteal(tuple_o);
+                _PyStackRef temp = callargs;
+                callargs = PyStackRef_FromPyObjectSteal(tuple_o);
+                PyStackRef_CLOSE(temp);
             }
         }
 
@@ -4965,11 +4958,11 @@ dummy_func(
 
         macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + unused/4 + _BINARY_OP;
 
-        pure inst(SWAP, (bottom[1], unused[oparg-2], top[1] --
-                    bottom[1], unused[oparg-2], top[1])) {
-            _PyStackRef temp = bottom[0];
-            bottom[0] = top[0];
-            top[0] = temp;
+        pure inst(SWAP, (bottom, unused[oparg-2], top --
+                    bottom, unused[oparg-2], top)) {
+            _PyStackRef temp = bottom;
+            bottom = top;
+            top = temp;
             assert(oparg >= 2);
         }
 

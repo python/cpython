@@ -485,10 +485,10 @@ class _CallableGenericAlias(GenericAlias):
     def __repr__(self):
         if len(self.__args__) == 2 and _is_param_expr(self.__args__[0]):
             return super().__repr__()
-        from annotationlib import value_to_string
+        from annotationlib import type_repr
         return (f'collections.abc.Callable'
-                f'[[{", ".join([value_to_string(a) for a in self.__args__[:-1]])}], '
-                f'{value_to_string(self.__args__[-1])}]')
+                f'[[{", ".join([type_repr(a) for a in self.__args__[:-1]])}], '
+                f'{type_repr(self.__args__[-1])}]')
 
     def __reduce__(self):
         args = self.__args__
