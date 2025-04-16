@@ -1493,8 +1493,9 @@ class _TestLock(BaseTestCase):
         self.assertRaises((ValueError, threading.ThreadError), lock.release)
 
     @classmethod
-    def _test_lock_locked_2processes(cls, lock, event):
+    def _test_lock_locked_2processes(cls, lock, event, res):
         lock.acquire()
+        res.value = lock.locked()
         event.set()
 
     def test_lock_locked_2processes(self):
@@ -1503,11 +1504,13 @@ class _TestLock(BaseTestCase):
 
         lock = self.Lock()
         event = self.Event()
+        res = self.Value('b', 0)
         p = self.Process(target=self._test_lock_locked_2processes,
-                         args=(lock, event))
+                         args=(lock, event, res))
         p.start()
         event.wait()
         self.assertTrue(lock.locked())
+        self.assertTrue(res.value)
         p.join()
 
     @staticmethod
@@ -1585,12 +1588,14 @@ class _TestLock(BaseTestCase):
 
         rlock = self.RLock()
         event = self.Event()
+        res = Value('b', 0)
         # target is the same as for the test_lock_locked_2processes test.
         p = self.Process(target=self._test_lock_locked_2processes,
-                         args=(rlock, event))
+                         args=(rlock, event, res))
         p.start()
         event.wait()
         self.assertTrue(rlock.locked())
+        self.assertTrue(res.value)
         p.join()
 
     def test_lock_context(self):
