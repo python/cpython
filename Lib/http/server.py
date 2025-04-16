@@ -106,8 +106,6 @@ import socketserver
 import sys
 import time
 import urllib.parse
-import argparse
-import contextlib
 
 from http import HTTPStatus
 
