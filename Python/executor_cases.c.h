@@ -4217,8 +4217,7 @@
             }
             assert(PyStackRef_IsTaggedInt(null_or_index));
             #ifdef Py_GIL_DISABLED
-            if (!_Py_IsOwnedByCurrentThread(iter_o) ||
-                   !_PyObject_GC_IS_SHARED(iter_o)) {
+            if (!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }

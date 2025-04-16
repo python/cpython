@@ -3202,8 +3202,7 @@ dummy_func(
             EXIT_IF(Py_TYPE(iter_o) != &PyList_Type);
             assert(PyStackRef_IsTaggedInt(null_or_index));
 #ifdef Py_GIL_DISABLED
-            EXIT_IF(!_Py_IsOwnedByCurrentThread(iter_o) ||
-                    !_PyObject_GC_IS_SHARED(iter_o));
+            EXIT_IF(!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o));
 #endif
         }
 

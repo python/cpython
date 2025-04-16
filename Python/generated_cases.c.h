@@ -5673,8 +5673,7 @@
                 }
                 assert(PyStackRef_IsTaggedInt(null_or_index));
                 #ifdef Py_GIL_DISABLED
-                if (!_Py_IsOwnedByCurrentThread(iter_o) ||
-                    !_PyObject_GC_IS_SHARED(iter_o)) {
+                if (!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o)) {
                     UPDATE_MISS_STATS(FOR_ITER);
                     assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
                     JUMP_TO_PREDICTED(FOR_ITER);
