@@ -154,7 +154,7 @@ _PyXIData_InitWithSize(_PyXIData_t *xidata,
     // where it was allocated, so the interpreter is required.
     assert(interp != NULL);
     _PyXIData_Init(xidata, interp, NULL, obj, new_object);
-    xidata->data = PyMem_RawMalloc(size);
+    xidata->data = PyMem_RawCalloc(1, size);
     if (xidata->data == NULL) {
         return -1;
     }
