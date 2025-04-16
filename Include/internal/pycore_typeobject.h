@@ -150,7 +150,7 @@ extern int _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsign
 extern int _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor, uint32_t tp_version);
 
 // Precalculates count of non-unique slots
-extern int _PyType_InitSlotDefsNameCounts(PyInterpreterState *interp);
+extern int _PyType_InitSlotDefs(PyInterpreterState *interp);
 
 #ifdef __cplusplus
 }

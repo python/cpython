@@ -822,7 +822,7 @@ pycore_init_builtins(PyThreadState *tstate)
     }
     interp->callable_cache.object__getattribute__ = object__getattribute__;
 
-    if (_PyType_InitSlotDefsNameCounts(interp) < 0) {
+    if (_PyType_InitSlotDefs(interp) < 0) {
         return _PyStatus_ERR("failed to precalculate slotdefs unique names");
     }
 
