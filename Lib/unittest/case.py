@@ -190,6 +190,46 @@ def _is_subtype(expected, basetype):
         return all(_is_subtype(e, basetype) for e in expected)
     return isinstance(expected, type) and issubclass(expected, basetype)
 
+
+def _heuristic_diff(a, b):
+    """After testing the magnitude of the inputs, preferably return the output
+    of difflib.ndiff, but fallback to difflib.unified_diff for prohibitively
+    expensive inputs. How cost is calculated:
+
+    Cost is calculated according to this heuristic:
+
+        cost = (number of differing lines
+                * total length of all differing lines)
+
+    This heuristic is used because the time complexity of ndiff is
+    approximately O((diff)^2), where `diff` is the product of the number of
+    differing lines, and the total length of differing lines. On the other
+    hand, unified_diff's cost is the same as the cost of producing `diff`
+    by itself: O(a + b).
+
+    See bpo-19217 for additional context.
+    """
+    COST_LIMIT = 1_000_000
+
+    # call unified_diff
+    udiff = list(difflib.unified_diff(a, b, fromfile="expected", tofile="got"))
+    udiff_differing_lines = [l for l in udiff
+                             if l.startswith(('-', '+'))]
+
+    # inspect unified_diff output
+    num_difflines = len(udiff_differing_lines)
+    total_diffline_length = sum(len(l) for l in udiff_differing_lines)
+
+    # now, we know what it will cost to call `ndiff`, according to the
+    # heuristic
+    diff_cost = num_difflines * total_diffline_length
+
+    if diff_cost > COST_LIMIT:
+        yield from udiff
+    else:
+        yield from difflib.ndiff(a, b)
+
+
 class _BaseTestCaseContext:
 
     def __init__(self, test_case):
@@ -1095,9 +1135,9 @@ class TestCase(object):
                     differing += ('Unable to index element %d '
                                   'of second %s\n' % (len1, seq_type_name))
         standardMsg = differing
-        diffMsg = '\n' + '\n'.join(
-            difflib.ndiff(pprint.pformat(seq1).splitlines(),
-                          pprint.pformat(seq2).splitlines()))
+        diffMsg = _heuristic_diff(pprint.pformat(seq1).splitlines(),
+                                  pprint.pformat(seq2).splitlines())
+        diffMsg = '\n' + '\n'.join(diffMsg)
 
         standardMsg = self._truncateMessage(standardMsg, diffMsg)
         msg = self._formatMessage(msg, standardMsg)
@@ -1208,7 +1248,7 @@ class TestCase(object):
 
         if d1 != d2:
             standardMsg = '%s != %s' % _common_shorten_repr(d1, d2)
-            diff = ('\n' + '\n'.join(difflib.ndiff(
+            diff = ('\n' + '\n'.join(_heuristic_diff(
                            pprint.pformat(d1).splitlines(),
                            pprint.pformat(d2).splitlines())))
             standardMsg = self._truncateMessage(standardMsg, diff)
@@ -1277,7 +1317,7 @@ class TestCase(object):
 
             # Generate the message and diff, then raise the exception
             standardMsg = '%s != %s' % _common_shorten_repr(first, second)
-            diff = '\n' + ''.join(difflib.ndiff(firstlines, secondlines))
+            diff = '\n' + ''.join(_heuristic_diff(firstlines, secondlines))
             standardMsg = self._truncateMessage(standardMsg, diff)
             self.fail(self._formatMessage(msg, standardMsg))
 

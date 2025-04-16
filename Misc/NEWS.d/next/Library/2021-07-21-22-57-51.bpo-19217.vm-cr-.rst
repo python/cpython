@@ -1,0 +1,9 @@
+Optimize :meth:`~unittest.TestCase.assertEqual` for long sequences of varied
+items. Based on an internal heuristic, the algorithm used to produce the diff
+method will switch based on the relevant magnitude of inputs. As a result, diff
+output after a failing assertion may appear differently for large inputs.
+Specifically, unittest will internally switch from using :func:`difflib.ndiff`
+(slow) to using :func:`difflib.unified_diff` (less likely to be slow).
+
+This optimization reduces that chance that non-linear time complexity of
+diff algorithms do not cause a test suite's failing test to hang.
