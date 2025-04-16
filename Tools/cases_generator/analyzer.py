@@ -602,10 +602,6 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_None",
     "PyStackRef_TYPE",
     "PyStackRef_True",
-    "PyStackRef_TagInt",
-    "PyStackRef_UntagInt",
-    "PyStackRef_IsTaggedInt",
-    "PyStackRef_IncrementTaggedInt",
     "PyTuple_GET_ITEM",
     "PyTuple_GET_SIZE",
     "PyType_HasFeature",
@@ -685,6 +681,8 @@ NON_ESCAPING_FUNCTIONS = (
     "PyStackRef_IsTaggedInt",
     "PyStackRef_TagInt",
     "PyStackRef_UntagInt",
+    "PyStackRef_IncrementTaggedInt",
+    "PyStackRef_IsNullOrInt",
 )
 
 
