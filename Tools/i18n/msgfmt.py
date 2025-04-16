@@ -267,19 +267,23 @@ def main():
         make(filename, outfile)
 
         if print_statistics:
-            translated = 0
-            for msgid, msgstr in MESSAGES.items():
-                if msgid == b'':
-                    continue
-                if msgstr.strip():
-                    translated += 1
+            _print_statistics(filename, args)
 
-            message = (f"{os.path.basename(filename) + ': ' if len(args) > 1 else ''}"
-                       f"{translated} translated message{'s' if translated != 1 else ''}")
-            if empty_translations > 0:
-                message += f", {empty_translations} untranslated message{'s' if empty_translations != 1 else ''}"
-            message += "."
-            print(message)
+# Utility to print --statistics
+def _print_statistics(filename, args):
+    translated = 0
+    for msgid, msgstr in MESSAGES.items():
+        if not msgid:
+            continue
+        if msgstr:
+            translated += 1
+
+    message = (f"{os.path.basename(filename) + ': ' if len(args) > 1 else ''}"
+               f"{translated} translated message{'s' if translated != 1 else ''}")
+    if empty_translations > 0:
+        message += f", {empty_translations} untranslated message{'s' if empty_translations != 1 else ''}"
+    message += "."
+    print(message)
 
 
 if __name__ == '__main__':
