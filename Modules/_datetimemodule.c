@@ -197,13 +197,13 @@ set_current_module(PyInterpreterState *interp, PyObject *mod)
 static void
 clear_current_module(PyInterpreterState *interp, PyObject *expected)
 {
-    PyObject *exc = PyErr_GetRaisedException();
-
     if (interp->dict == NULL) {
         // Do not resurrect a dict during interp-shutdown to avoid the leak
         assert(_Py_IsInterpreterFinalizing(interp));
         return;
     }
+
+    PyObject *exc = PyErr_GetRaisedException();
 
     PyObject *dict = PyInterpreterState_GetDict(interp);
     if (dict == NULL) {
