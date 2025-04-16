@@ -27,8 +27,6 @@ import datetime
 import threading
 from unittest import mock
 from io import BytesIO, StringIO
-import textwrap
-import contextlib
 
 import unittest
 from test import support
