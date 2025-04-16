@@ -1305,7 +1305,7 @@ def _get_best_family(*address):
 
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
-         protocol="HTTP/1.0", port=8000, bind=None, directory=None,
+         protocol="HTTP/1.0", port=8000, bind=None,
          tls_cert=None, tls_key=None, tls_password=None):
     """Test the HTTP request handler class.
 
