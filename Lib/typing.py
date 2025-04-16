@@ -1777,6 +1777,8 @@ _TYPING_INTERNALS = frozenset({
     '__parameters__', '__orig_bases__',  '__orig_class__',
     '_is_protocol', '_is_runtime_protocol', '__protocol_attrs__',
     '__non_callable_proto_members__', '__type_params__',
+    '__protocol_attrs_cache__', '__non_callable_proto_members_cache__',
+    '__final__',
 })
 
 _SPECIAL_NAMES = frozenset({
@@ -1941,11 +1943,6 @@ class _ProtocolMeta(ABCMeta):
                     )
         return super().__new__(mcls, name, bases, namespace, **kwargs)
 
-    def __init__(cls, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        if getattr(cls, "_is_protocol", False):
-            cls.__protocol_attrs__ = _get_protocol_attrs(cls)
-
     def __subclasscheck__(cls, other):
         if cls is Protocol:
             return type.__subclasscheck__(cls, other)
@@ -1997,13 +1994,43 @@ class _ProtocolMeta(ABCMeta):
                 val = getattr_static(instance, attr)
             except AttributeError:
                 break
-            # this attribute is set by @runtime_checkable:
             if val is None and attr not in cls.__non_callable_proto_members__:
                 break
         else:
             return True
 
         return False
+
+    @property
+    def __protocol_attrs__(cls):
+        try:
+            return cls.__protocol_attrs_cache__
+        except AttributeError:
+            protocol_attrs = _get_protocol_attrs(cls)
+            cls.__protocol_attrs_cache__ = protocol_attrs
+            return protocol_attrs
+
+    @property
+    def __non_callable_proto_members__(cls):
+        # PEP 544 prohibits using issubclass()
+        # with protocols that have non-method members.
+        try:
+            return cls.__non_callable_proto_members_cache__
+        except AttributeError:
+            non_callable_members = set()
+            for attr in cls.__protocol_attrs__:
+                try:
+                    is_callable = callable(getattr(cls, attr, None))
+                except Exception as e:
+                    raise TypeError(
+                        f"Failed to determine whether protocol member {attr!r} "
+                        "is a method member"
+                    ) from e
+                else:
+                    if not is_callable:
+                        non_callable_members.add(attr)
+            cls.__non_callable_proto_members_cache__ = non_callable_members
+            return non_callable_members
 
 
 @classmethod
@@ -2220,22 +2247,6 @@ def runtime_checkable(cls):
         raise TypeError('@runtime_checkable can be only applied to protocol classes,'
                         ' got %r' % cls)
     cls._is_runtime_protocol = True
-    # PEP 544 prohibits using issubclass()
-    # with protocols that have non-method members.
-    # See gh-113320 for why we compute this attribute here,
-    # rather than in `_ProtocolMeta.__init__`
-    cls.__non_callable_proto_members__ = set()
-    for attr in cls.__protocol_attrs__:
-        try:
-            is_callable = callable(getattr(cls, attr, None))
-        except Exception as e:
-            raise TypeError(
-                f"Failed to determine whether protocol member {attr!r} "
-                "is a method member"
-            ) from e
-        else:
-            if not is_callable:
-                cls.__non_callable_proto_members__.add(attr)
     return cls
 
 
