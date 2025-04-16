@@ -150,6 +150,7 @@ class HTTPServer(socketserver.TCPServer):
 class ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
     daemon_threads = True
 
+
 class HTTPSServer(HTTPServer):
     def __init__(self, server_address, RequestHandlerClass,
                  bind_and_activate=True, *, certfile, keyfile=None,
