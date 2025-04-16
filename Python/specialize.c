@@ -146,6 +146,7 @@ print_spec_stats(FILE *out, OpcodeStats *stats)
      * even though we don't specialize them yet. */
     fprintf(out, "opcode[BINARY_SLICE].specializable : 1\n");
     fprintf(out, "opcode[STORE_SLICE].specializable : 1\n");
+    fprintf(out, "opcode[GET_ITER].specializable : 1\n");
     for (int i = 0; i < 256; i++) {
         if (_PyOpcode_Caches[i]) {
             /* Ignore jumps as they cannot be specialized */
@@ -3113,6 +3114,17 @@ _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
     unspecialize(instr);
     return;
 }
+
+#ifdef Py_STATS
+void
+_Py_GatherStats_GetIter(_PyStackRef iterable)
+{
+    PyObject *obj = PyStackRef_AsPyObjectBorrow(iterable);
+    int kind =  _PySpecialization_ClassifyIterator(obj);
+    SPECIALIZATION_FAIL(GET_ITER, kind);
+}
+#endif
+
 
 /* Code init cleanup.
  * CALL_ALLOC_AND_ENTER_INIT will set up
