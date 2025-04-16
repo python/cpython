@@ -1399,11 +1399,10 @@ def _main(args=None):
 
     test(
         HandlerClass=handler_class,
-        ServerClass=ThreadingHTTPServer,
+        ServerClass=DualStackServer,
         port=args.port,
         bind=args.bind,
         protocol=args.protocol,
-        directory=args.directory,
         tls_cert=args.tls_cert,
         tls_key=args.tls_key,
         tls_password=tls_key_password,
