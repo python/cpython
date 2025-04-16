@@ -5,16 +5,21 @@
 # SPDX-FileCopyrightText: Copyright (c) 2015-2021 MagicStack Inc.  http://magic.io
 
 __all__ = (
-    'AbstractEventLoopPolicy',
-    'AbstractEventLoop', 'AbstractServer',
-    'Handle', 'TimerHandle',
-    '_get_event_loop_policy',
-    'get_event_loop_policy',
-    '_set_event_loop_policy',
-    'set_event_loop_policy',
-    'get_event_loop', 'set_event_loop', 'new_event_loop',
-    '_set_running_loop', 'get_running_loop',
-    '_get_running_loop',
+    "_AbstractEventLoopPolicy",
+    "AbstractEventLoop",
+    "AbstractServer",
+    "Handle",
+    "TimerHandle",
+    "_get_event_loop_policy",
+    "get_event_loop_policy",
+    "_set_event_loop_policy",
+    "set_event_loop_policy",
+    "get_event_loop",
+    "set_event_loop",
+    "new_event_loop",
+    "_set_running_loop",
+    "get_running_loop",
+    "_get_running_loop",
 )
 
 import contextvars
@@ -106,6 +111,34 @@ class Handle:
                 context['source_traceback'] = self._source_traceback
             self._loop.call_exception_handler(context)
         self = None  # Needed to break cycles when an exception occurs.
+
+# _ThreadSafeHandle is used for callbacks scheduled with call_soon_threadsafe
+# and is thread safe unlike Handle which is not thread safe.
+class _ThreadSafeHandle(Handle):
+
+    __slots__ = ('_lock',)
+
+    def __init__(self, callback, args, loop, context=None):
+        super().__init__(callback, args, loop, context)
+        self._lock = threading.RLock()
+
+    def cancel(self):
+        with self._lock:
+            return super().cancel()
+
+    def cancelled(self):
+        with self._lock:
+            return super().cancelled()
+
+    def _run(self):
+        # The event loop checks for cancellation without holding the lock
+        # It is possible that the handle is cancelled after the check
+        # but before the callback is called so check it again after acquiring
+        # the lock and return without calling the callback if it is cancelled.
+        with self._lock:
+            if self._cancelled:
+                return
+            return super()._run()
 
 
 class TimerHandle(Handle):
@@ -295,7 +328,7 @@ class AbstractEventLoop:
 
     # Method scheduling a coroutine object: create a task.
 
-    def create_task(self, coro, *, name=None, context=None):
+    def create_task(self, coro, **kwargs):
         raise NotImplementedError
 
     # Methods for interacting with threads.
@@ -632,7 +665,7 @@ class AbstractEventLoop:
         raise NotImplementedError
 
 
-class AbstractEventLoopPolicy:
+class _AbstractEventLoopPolicy:
     """Abstract policy for accessing the event loop."""
 
     def get_event_loop(self):
@@ -655,7 +688,7 @@ class AbstractEventLoopPolicy:
         the current context, set_event_loop must be called explicitly."""
         raise NotImplementedError
 
-class BaseDefaultEventLoopPolicy(AbstractEventLoopPolicy):
+class _BaseDefaultEventLoopPolicy(_AbstractEventLoopPolicy):
     """Default policy implementation for accessing the event loop.
 
     In this policy, each thread has its own event loop.  However, we
@@ -758,8 +791,8 @@ def _init_event_loop_policy():
     global _event_loop_policy
     with _lock:
         if _event_loop_policy is None:  # pragma: no branch
-            from . import DefaultEventLoopPolicy
-            _event_loop_policy = DefaultEventLoopPolicy()
+            from . import _DefaultEventLoopPolicy
+            _event_loop_policy = _DefaultEventLoopPolicy()
 
 
 def _get_event_loop_policy():
@@ -777,7 +810,7 @@ def _set_event_loop_policy(policy):
 
     If policy is None, the default policy is restored."""
     global _event_loop_policy
-    if policy is not None and not isinstance(policy, AbstractEventLoopPolicy):
+    if policy is not None and not isinstance(policy, _AbstractEventLoopPolicy):
         raise TypeError(f"policy must be an instance of AbstractEventLoopPolicy or None, not '{type(policy).__name__}'")
     _event_loop_policy = policy
 
@@ -838,7 +871,7 @@ if hasattr(os, 'fork'):
     def on_fork():
         # Reset the loop and wakeupfd in the forked child process.
         if _event_loop_policy is not None:
-            _event_loop_policy._local = BaseDefaultEventLoopPolicy._Local()
+            _event_loop_policy._local = _BaseDefaultEventLoopPolicy._Local()
         _set_running_loop(None)
         signal.set_wakeup_fd(-1)
 

@@ -242,7 +242,7 @@ class BaseFutureTests:
 
     def test_future_cancel_message_getter(self):
         f = self._new_future(loop=self.loop)
-        self.assertTrue(hasattr(f, '_cancel_message'))
+        self.assertHasAttr(f, '_cancel_message')
         self.assertEqual(f._cancel_message, None)
 
         f.cancel('my message')

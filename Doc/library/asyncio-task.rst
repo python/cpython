@@ -464,7 +464,8 @@ Expected output:
 Sleeping
 ========
 
-.. coroutinefunction:: sleep(delay, result=None)
+.. function:: sleep(delay, result=None)
+   :async:
 
    Block for *delay* seconds.
 
@@ -819,7 +820,8 @@ Timeouts
 
    .. versionadded:: 3.11
 
-.. coroutinefunction:: wait_for(aw, timeout)
+.. function:: wait_for(aw, timeout)
+   :async:
 
    Wait for the *aw* :ref:`awaitable <asyncio-awaitables>`
    to complete with a timeout.
@@ -879,7 +881,8 @@ Timeouts
 Waiting Primitives
 ==================
 
-.. coroutinefunction:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
+.. function:: wait(aws, *, timeout=None, return_when=ALL_COMPLETED)
+   :async:
 
    Run :class:`~asyncio.Future` and :class:`~asyncio.Task` instances in the *aws*
    iterable concurrently and block until the condition specified
@@ -998,7 +1001,8 @@ Waiting Primitives
 Running in Threads
 ==================
 
-.. coroutinefunction:: to_thread(func, /, *args, **kwargs)
+.. function:: to_thread(func, /, *args, **kwargs)
+   :async:
 
    Asynchronously run function *func* in a separate thread.
 
@@ -1067,14 +1071,59 @@ Scheduling From Other Threads
    This function is meant to be called from a different OS thread
    than the one where the event loop is running.  Example::
 
-     # Create a coroutine
-     coro = asyncio.sleep(1, result=3)
+     def in_thread(loop: asyncio.AbstractEventLoop) -> None:
+         # Run some blocking IO
+         pathlib.Path("example.txt").write_text("hello world", encoding="utf8")
 
-     # Submit the coroutine to a given loop
-     future = asyncio.run_coroutine_threadsafe(coro, loop)
+         # Create a coroutine
+         coro = asyncio.sleep(1, result=3)
 
-     # Wait for the result with an optional timeout argument
-     assert future.result(timeout) == 3
+         # Submit the coroutine to a given loop
+         future = asyncio.run_coroutine_threadsafe(coro, loop)
+
+         # Wait for the result with an optional timeout argument
+         assert future.result(timeout=2) == 3
+
+     async def amain() -> None:
+         # Get the running loop
+         loop = asyncio.get_running_loop()
+
+         # Run something in a thread
+         await asyncio.to_thread(in_thread, loop)
+
+   It's also possible to run the other way around.  Example::
+
+     @contextlib.contextmanager
+     def loop_in_thread() -> Generator[asyncio.AbstractEventLoop]:
+         loop_fut = concurrent.futures.Future[asyncio.AbstractEventLoop]()
+         stop_event = asyncio.Event()
+
+         async def main() -> None:
+             loop_fut.set_result(asyncio.get_running_loop())
+             await stop_event.wait()
+
+         with concurrent.futures.ThreadPoolExecutor(1) as tpe:
+             complete_fut = tpe.submit(asyncio.run, main())
+             for fut in concurrent.futures.as_completed((loop_fut, complete_fut)):
+                 if fut is loop_fut:
+                     loop = loop_fut.result()
+                     try:
+                         yield loop
+                     finally:
+                         loop.call_soon_threadsafe(stop_event.set)
+                 else:
+                     fut.result()
+
+     # Create a loop in another thread
+     with loop_in_thread() as loop:
+         # Create a coroutine
+         coro = asyncio.sleep(1, result=3)
+
+         # Submit the coroutine to a given loop
+         future = asyncio.run_coroutine_threadsafe(coro, loop)
+
+         # Wait for the result with an optional timeout argument
+         assert future.result(timeout=2) == 3
 
    If an exception is raised in the coroutine, the returned Future
    will be notified.  It can also be used to cancel the task in
@@ -1332,7 +1381,10 @@ Task Object
 
       Request the Task to be cancelled.
 
-      This arranges for a :exc:`CancelledError` exception to be thrown
+      If the Task is already *done* or *cancelled*, return ``False``,
+      otherwise, return ``True``.
+
+      The method arranges for a :exc:`CancelledError` exception to be thrown
       into the wrapped coroutine on the next cycle of the event loop.
 
       The coroutine then has a chance to clean up or even deny the
