@@ -3164,8 +3164,9 @@
             }
             #if TIER_ONE
 
-            assert(next_instr->op.code == POP_TOP);
-            SKIP_OVER(1);
+            assert(next_instr->op.code == CHECK_PERIODIC);
+            assert((next_instr+1)->op.code == POP_TOP);
+            SKIP_OVER(2);
             #endif
             DISPATCH();
         }

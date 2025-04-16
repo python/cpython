@@ -4293,10 +4293,11 @@ dummy_func(
             PyStackRef_CLOSE(callable);
             ERROR_IF(err, error);
         #if TIER_ONE
-            // Skip the following POP_TOP. This is done here in tier one, and
+            // Skip the following CHECK_PERIODIC and POP_TOP. This is done here in tier one, and
             // during trace projection in tier two:
-            assert(next_instr->op.code == POP_TOP);
-            SKIP_OVER(1);
+            assert(next_instr->op.code == CHECK_PERIODIC);
+            assert((next_instr+1)->op.code == POP_TOP);
+            SKIP_OVER(2);
         #endif
         }
 

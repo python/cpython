@@ -2037,7 +2037,8 @@ specialize_method_descriptor(PyMethodDescrObject *descr, _Py_CODEUNIT *instr,
             }
             PyInterpreterState *interp = _PyInterpreterState_GET();
             PyObject *list_append = interp->callable_cache.list_append;
-            _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_CALL + 1];
+            assert(instr[INLINE_CACHE_ENTRIES_CALL + 1].op.code == CHECK_PERIODIC);
+            _Py_CODEUNIT next = instr[INLINE_CACHE_ENTRIES_CALL + 2];
             bool pop = (next.op.code == POP_TOP);
             int oparg = instr->op.arg;
             if ((PyObject *)descr == list_append && oparg == 1 && pop) {
