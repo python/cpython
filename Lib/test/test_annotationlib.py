@@ -13,7 +13,7 @@ from annotationlib import (
     get_annotations,
     get_annotate_function,
     annotations_to_string,
-    value_to_string,
+    type_repr,
 )
 from typing import Unpack
 
@@ -885,6 +885,50 @@ class TestGetAnnotations(unittest.TestCase):
             annotationlib.get_annotations(hb, format=Format.STRING), {"x": str}
         )
 
+    def test_only_annotate(self):
+        def f(x: int):
+            pass
+
+        class OnlyAnnotate:
+            @property
+            def __annotate__(self):
+                return f.__annotate__
+
+        oa = OnlyAnnotate()
+        self.assertEqual(
+            annotationlib.get_annotations(oa, format=Format.VALUE), {"x": int}
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(oa, format=Format.FORWARDREF), {"x": int}
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(oa, format=Format.STRING),
+            {"x": "int"},
+        )
+
+    def test_no_annotations(self):
+        class CustomClass:
+            pass
+
+        class MyCallable:
+            def __call__(self):
+                pass
+
+        for format in Format:
+            if format == Format.VALUE_WITH_FAKE_GLOBALS:
+                continue
+            for obj in (None, 1, object(), CustomClass()):
+                with self.subTest(format=format, obj=obj):
+                    with self.assertRaises(TypeError):
+                        annotationlib.get_annotations(obj, format=format)
+
+            # Callables and types with no annotations return an empty dict
+            for obj in (int, len, MyCallable()):
+                with self.subTest(format=format, obj=obj):
+                    self.assertEqual(
+                        annotationlib.get_annotations(obj, format=format), {}
+                    )
+
     def test_pep695_generic_class_with_future_annotations(self):
         ann_module695 = inspect_stringized_annotations_pep695
         A_annotations = annotationlib.get_annotations(ann_module695.A, eval_str=True)
@@ -1129,18 +1173,28 @@ class TestGetAnnotateFunction(unittest.TestCase):
 
 
 class TestToSource(unittest.TestCase):
-    def test_value_to_string(self):
-        self.assertEqual(value_to_string(int), "int")
-        self.assertEqual(value_to_string(MyClass), "test.test_annotationlib.MyClass")
-        self.assertEqual(value_to_string(len), "len")
-        self.assertEqual(value_to_string(value_to_string), "value_to_string")
-        self.assertEqual(value_to_string(times_three), "times_three")
-        self.assertEqual(value_to_string(...), "...")
-        self.assertEqual(value_to_string(None), "None")
-        self.assertEqual(value_to_string(1), "1")
-        self.assertEqual(value_to_string("1"), "'1'")
-        self.assertEqual(value_to_string(Format.VALUE), repr(Format.VALUE))
-        self.assertEqual(value_to_string(MyClass()), "my repr")
+    def test_type_repr(self):
+        class Nested:
+            pass
+
+        def nested():
+            pass
+
+        self.assertEqual(type_repr(int), "int")
+        self.assertEqual(type_repr(MyClass), f"{__name__}.MyClass")
+        self.assertEqual(
+            type_repr(Nested), f"{__name__}.TestToSource.test_type_repr.<locals>.Nested")
+        self.assertEqual(
+            type_repr(nested), f"{__name__}.TestToSource.test_type_repr.<locals>.nested")
+        self.assertEqual(type_repr(len), "len")
+        self.assertEqual(type_repr(type_repr), "annotationlib.type_repr")
+        self.assertEqual(type_repr(times_three), f"{__name__}.times_three")
+        self.assertEqual(type_repr(...), "...")
+        self.assertEqual(type_repr(None), "None")
+        self.assertEqual(type_repr(1), "1")
+        self.assertEqual(type_repr("1"), "'1'")
+        self.assertEqual(type_repr(Format.VALUE), repr(Format.VALUE))
+        self.assertEqual(type_repr(MyClass()), "my repr")
 
     def test_annotations_to_string(self):
         self.assertEqual(annotations_to_string({}), {})

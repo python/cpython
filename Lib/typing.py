@@ -253,7 +253,7 @@ def _type_repr(obj):
     if isinstance(obj, tuple):
         # Special case for `repr` of types with `ParamSpec`:
         return '[' + ', '.join(_type_repr(t) for t in obj) + ']'
-    return _lazy_annotationlib.value_to_string(obj)
+    return _lazy_annotationlib.type_repr(obj)
 
 
 def _collect_type_parameters(args, *, enforce_default_ordering: bool = True):
@@ -1801,7 +1801,9 @@ def _get_protocol_attrs(cls):
     for base in cls.__mro__[:-1]:  # without object
         if base.__name__ in {'Protocol', 'Generic'}:
             continue
-        annotations = getattr(base, '__annotations__', {})
+        annotations = _lazy_annotationlib.get_annotations(
+            base, format=_lazy_annotationlib.Format.FORWARDREF
+        )
         for attr in (*base.__dict__, *annotations):
             if not attr.startswith('_abc_') and attr not in EXCLUDED_ATTRIBUTES:
                 attrs.add(attr)

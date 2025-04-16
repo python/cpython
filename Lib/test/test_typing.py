@@ -4554,6 +4554,15 @@ class ProtocolTests(BaseTestCase):
         )
         self.assertIs(type(exc.__cause__), CustomError)
 
+    def test_deferred_evaluation_of_annotations(self):
+        class DeferredProto(Protocol):
+            x: DoesNotExist
+        self.assertEqual(get_protocol_members(DeferredProto), {"x"})
+        self.assertEqual(
+            annotationlib.get_annotations(DeferredProto, format=annotationlib.Format.STRING),
+            {'x': 'DoesNotExist'}
+        )
+
 
 class GenericTests(BaseTestCase):
 
@@ -6529,6 +6538,13 @@ class ForwardRefTests(BaseTestCase):
         # __or__/__ror__ itself
         self.assertEqual(X | "x", Union[X, "x"])
         self.assertEqual("x" | X, Union["x", X])
+
+    def test_multiple_ways_to_create(self):
+        X1 = Union["X"]
+        self.assertIsInstance(X1, ForwardRef)
+        X2 = ForwardRef("X")
+        self.assertIsInstance(X2, ForwardRef)
+        self.assertEqual(X1, X2)
 
 
 class InternalsTests(BaseTestCase):

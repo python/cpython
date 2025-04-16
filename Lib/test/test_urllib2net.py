@@ -150,7 +150,7 @@ class OtherNetworkTests(unittest.TestCase):
             f.write('hi there\n')
             f.close()
             urls = [
-                'file:' + urllib.request.pathname2url(os.path.abspath(TESTFN)),
+                urllib.request.pathname2url(os.path.abspath(TESTFN), add_scheme=True),
                 ('file:///nonsensename/etc/passwd', None,
                  urllib.error.URLError),
                 ]
