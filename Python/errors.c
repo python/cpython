@@ -1906,8 +1906,8 @@ int
 _PyErr_EmitSyntaxWarning(PyObject *msg, PyObject *filename, int lineno, int col_offset,
                          int end_lineno, int end_col_offset)
 {
-    if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning, msg, filename,
-                                 lineno, NULL, NULL) < 0)
+    if (_PyErr_WarnExplicitObjectWithContext(PyExc_SyntaxWarning, msg,
+                                             filename, lineno) < 0)
     {
         if (PyErr_ExceptionMatches(PyExc_SyntaxWarning)) {
             /* Replace the SyntaxWarning exception with a SyntaxError

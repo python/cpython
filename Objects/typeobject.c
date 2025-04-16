@@ -497,10 +497,11 @@ _PyType_GetBases(PyTypeObject *self)
 static inline void
 set_tp_bases(PyTypeObject *self, PyObject *bases, int initial)
 {
-    assert(PyTuple_CheckExact(bases));
+    assert(PyTuple_Check(bases));
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         // XXX tp_bases can probably be statically allocated for each
         // static builtin type.
+        assert(PyTuple_CheckExact(bases));
         assert(initial);
         assert(self->tp_bases == NULL);
         if (PyTuple_GET_SIZE(bases) == 0) {
@@ -1915,9 +1916,16 @@ type_get_annotate(PyObject *tp, void *Py_UNUSED(closure))
 
     PyObject *annotate;
     PyObject *dict = PyType_GetDict(type);
+    // First try __annotate__, in case that's been set explicitly
     if (PyDict_GetItemRef(dict, &_Py_ID(__annotate__), &annotate) < 0) {
         Py_DECREF(dict);
         return NULL;
+    }
+    if (!annotate) {
+        if (PyDict_GetItemRef(dict, &_Py_ID(__annotate_func__), &annotate) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
     }
     if (annotate) {
         descrgetfunc get = Py_TYPE(annotate)->tp_descr_get;
@@ -1927,7 +1935,7 @@ type_get_annotate(PyObject *tp, void *Py_UNUSED(closure))
     }
     else {
         annotate = Py_None;
-        int result = PyDict_SetItem(dict, &_Py_ID(__annotate__), annotate);
+        int result = PyDict_SetItem(dict, &_Py_ID(__annotate_func__), annotate);
         if (result < 0) {
             Py_DECREF(dict);
             return NULL;
@@ -1959,13 +1967,13 @@ type_set_annotate(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
 
     PyObject *dict = PyType_GetDict(type);
     assert(PyDict_Check(dict));
-    int result = PyDict_SetItem(dict, &_Py_ID(__annotate__), value);
+    int result = PyDict_SetItem(dict, &_Py_ID(__annotate_func__), value);
     if (result < 0) {
         Py_DECREF(dict);
         return -1;
     }
     if (!Py_IsNone(value)) {
-        if (PyDict_Pop(dict, &_Py_ID(__annotations__), NULL) == -1) {
+        if (PyDict_Pop(dict, &_Py_ID(__annotations_cache__), NULL) == -1) {
             Py_DECREF(dict);
             PyType_Modified(type);
             return -1;
@@ -1987,10 +1995,18 @@ type_get_annotations(PyObject *tp, void *Py_UNUSED(closure))
 
     PyObject *annotations;
     PyObject *dict = PyType_GetDict(type);
+    // First try __annotations__ (e.g. for "from __future__ import annotations")
     if (PyDict_GetItemRef(dict, &_Py_ID(__annotations__), &annotations) < 0) {
         Py_DECREF(dict);
         return NULL;
     }
+    if (!annotations) {
+        if (PyDict_GetItemRef(dict, &_Py_ID(__annotations_cache__), &annotations) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+
     if (annotations) {
         descrgetfunc get = Py_TYPE(annotations)->tp_descr_get;
         if (get) {
@@ -1998,7 +2014,7 @@ type_get_annotations(PyObject *tp, void *Py_UNUSED(closure))
         }
     }
     else {
-        PyObject *annotate = type_get_annotate(tp, NULL);
+        PyObject *annotate = PyObject_GetAttrString((PyObject *)type, "__annotate__");
         if (annotate == NULL) {
             Py_DECREF(dict);
             return NULL;
@@ -2026,7 +2042,7 @@ type_get_annotations(PyObject *tp, void *Py_UNUSED(closure))
         Py_DECREF(annotate);
         if (annotations) {
             int result = PyDict_SetItem(
-                    dict, &_Py_ID(__annotations__), annotations);
+                    dict, &_Py_ID(__annotations_cache__), annotations);
             if (result) {
                 Py_CLEAR(annotations);
             } else {
@@ -2053,10 +2069,10 @@ type_set_annotations(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
     PyObject *dict = PyType_GetDict(type);
     if (value != NULL) {
         /* set */
-        result = PyDict_SetItem(dict, &_Py_ID(__annotations__), value);
+        result = PyDict_SetItem(dict, &_Py_ID(__annotations_cache__), value);
     } else {
         /* delete */
-        result = PyDict_Pop(dict, &_Py_ID(__annotations__), NULL);
+        result = PyDict_Pop(dict, &_Py_ID(__annotations_cache__), NULL);
         if (result == 0) {
             PyErr_SetString(PyExc_AttributeError, "__annotations__");
             Py_DECREF(dict);
@@ -2067,6 +2083,11 @@ type_set_annotations(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
         Py_DECREF(dict);
         return -1;
     } else {  // result can be 0 or 1
+        if (PyDict_Pop(dict, &_Py_ID(__annotate_func__), NULL) < 0) {
+            PyType_Modified(type);
+            Py_DECREF(dict);
+            return -1;
+        }
         if (PyDict_Pop(dict, &_Py_ID(__annotate__), NULL) < 0) {
             PyType_Modified(type);
             Py_DECREF(dict);
