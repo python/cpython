@@ -334,13 +334,13 @@ This means you cannot rely on nested critical sections to lock multiple objects
 at once, as the inner critical section may suspend the outer ones. Instead, use
 :c:macro:`Py_BEGIN_CRITICAL_SECTION2` to lock two objects simultaneously.
 
-Note that the locks described above are only `PyMutex` based locks.  The
-critical section implementation does not know about or affect other locking
+Note that the locks described above are only :c:type:`!PyMutex` based locks.
+The critical section implementation does not know about or affect other locking
 mechanisms that might be in use, like POSIX mutexes.  Also note that while
-blocking on any `PyMutex` causes the critical sections to be suspended, only
-the mutexes that are part of the critical sections are released.  If `PyMutex`
-is used without a critical section, it will not be released and therefore does
-not get the same deadlock avoidance.
+blocking on any :c:type:`!PyMutex` causes the critical sections to be
+suspended, only the mutexes that are part of the critical sections are
+released.  If :c:type:`!PyMutex` is used without a critical section, it will
+not be released and therefore does not get the same deadlock avoidance.
 
 Important Considerations
 ........................
