@@ -28,10 +28,6 @@ class TestBytesIO(TestCase):
     def test_free_threading(self):
         """Test for segfaults and aborts."""
 
-        def read(barrier, b, *ignore):
-            barrier.wait()
-            b.read()
-
         def write(barrier, b, *ignore):
             barrier.wait()
             try: b.write(b'0' * randint(100, 1000))
