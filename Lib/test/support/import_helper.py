@@ -5,6 +5,7 @@ import importlib.util
 import os
 import shutil
 import sys
+import textwrap
 import unittest
 import warnings
 
@@ -309,3 +310,22 @@ def ready_to_import(name=None, source=""):
                 sys.modules[name] = old_module
             else:
                 sys.modules.pop(name, None)
+
+
+def ensure_lazy_imports(imported_module, modules_to_block):
+    """Test that when imported_module is imported, none of the modules in
+    modules_to_block are imported as a side effect."""
+    script = textwrap.dedent(
+        f"""
+        import sys
+        modules_to_block = {modules_to_block}
+        for mod in modules_to_block:
+            assert mod not in sys.modules, f"{{mod}} was imported at startup"
+
+        import {imported_module}
+        for mod in modules_to_block:
+            assert mod not in sys.modules, f"{{mod}} was imported after importing {imported_module}"
+        """
+    )
+    from .script_helper import assert_python_ok
+    assert_python_ok("-S", "-c", script)
