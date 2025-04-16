@@ -152,21 +152,6 @@ class HTTPServer(socketserver.TCPServer):
 class ThreadingHTTPServer(socketserver.ThreadingMixIn, HTTPServer):
     daemon_threads = True
 
-class CommandLineServerClass(ThreadingHTTPServer):
-    def __init__(self, server_address, RequestHandlerClass, directory=None):
-        super().__init__(server_address, RequestHandlerClass)
-        self.directory = directory
-    def server_bind(self):
-        # suppress exception when protocol is IPv4
-        with contextlib.suppress(Exception):
-            self.socket.setsockopt(
-                socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
-        return super().server_bind()
-
-    def finish_request(self, request, client_address):
-        self.RequestHandlerClass(request, client_address, self,
-                                 directory=self.directory)
-
 class HTTPSServer(HTTPServer):
     def __init__(self, server_address, RequestHandlerClass,
                  bind_and_activate=True, *, certfile, keyfile=None,
@@ -1322,7 +1307,7 @@ def _get_best_family(*address):
 
 def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=ThreadingHTTPServer,
-         protocol="HTTP/1.0", port=8000, bind=None,
+         protocol="HTTP/1.0", port=8000, bind=None, directory=None,
          tls_cert=None, tls_key=None, tls_password=None):
     """Test the HTTP request handler class.
 
@@ -1335,6 +1320,24 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     if tls_cert:
         server = ThreadingHTTPSServer(addr, HandlerClass, certfile=tls_cert,
                                       keyfile=tls_key, password=tls_password)
+    elif ServerClass is ThreadingHTTPServer:
+        # ensure dual-stack is not disabled; ref #38907
+        class DualStackServer(ThreadingHTTPServer):
+            def __init__(self, server_address, RequestHandlerClass, directory=None):
+                super().__init__(server_address, RequestHandlerClass)
+                self.directory = directory
+
+            def server_bind(self):
+                # suppress exception when protocol is IPv4
+                with contextlib.suppress(Exception):
+                    self.socket.setsockopt(
+                        socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
+                return super().server_bind()
+
+            def finish_request(self, request, client_address):
+                self.RequestHandlerClass(request, client_address, self,
+                                        directory=self.directory)
+        server = DualStackServer(addr, HandlerClass, directory=directory)
     else:
         server = ServerClass(addr, HandlerClass)
 
@@ -1396,26 +1399,13 @@ def _main(args=None):
     else:
         handler_class = SimpleHTTPRequestHandler
 
-    # ensure dual-stack is not disabled; ref #38907
-    class DualStackServer(ThreadingHTTPServer):
-
-        def server_bind(self):
-            # suppress exception when protocol is IPv4
-            with contextlib.suppress(Exception):
-                self.socket.setsockopt(
-                    socket.IPPROTO_IPV6, socket.IPV6_V6ONLY, 0)
-            return super().server_bind()
-
-        def finish_request(self, request, client_address):
-            self.RequestHandlerClass(request, client_address, self,
-                                     directory=args.directory)
-
     test(
         HandlerClass=handler_class,
-        ServerClass=CommandLineServerClass,
+        ServerClass=ThreadingHTTPServer,
         port=args.port,
         bind=args.bind,
         protocol=args.protocol,
+        directory=args.directory,
         tls_cert=args.tls_cert,
         tls_key=args.tls_key,
         tls_password=tls_key_password,
