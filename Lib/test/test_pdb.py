@@ -4683,10 +4683,11 @@ def load_tests(loader, tests, pattern):
         # asyncio features are used.
         _set_event_loop_policy(None)
 
-        # We should cleanup after each doctest to make sure they are not
-        # interfering with each other, especially with two backends.
-        # If the pdb instance is tracing from the previous test, it might
-        # interfere with the next test.
+        # The doctest of pdb could have residues. For example, pdb could still
+        # be running, or breakpoints might be left uncleared. These residues
+        # could potentially interfere with the following test, especially
+        # when we switch backends. Here we clear all the residues to restore
+        # to its pre-test state.
 
         # clear all the breakpoints left
         import bdb
