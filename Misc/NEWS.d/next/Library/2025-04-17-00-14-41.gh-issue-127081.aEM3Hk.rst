@@ -1,0 +1,2 @@
+Fix thread safety issues with getservbyname, getservbyport, and
+getprotobyname.
