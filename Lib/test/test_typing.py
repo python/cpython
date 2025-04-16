@@ -3149,7 +3149,7 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, only_classes_allowed):
             issubclass(1, BadPG)
 
-    def test_lazy_evaluation_with_subprotocols(self):
+    def test_isinstance_against_superproto_doesnt_affect_subproto_instance(self):
         @runtime_checkable
         class Base(Protocol):
             x: int
@@ -3858,7 +3858,6 @@ class ProtocolTests(BaseTestCase):
             '_is_protocol', '_is_runtime_protocol', '__parameters__',
             '__init__', '__annotations__', '__subclasshook__', '__annotate__',
             '__annotations_cache__', '__annotate_func__',
-            '__protocol_attrs_cache__',
         }
         self.assertLessEqual(vars(NonP).keys(), vars(C).keys() | acceptable_extra_attrs)
         self.assertLessEqual(
