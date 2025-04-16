@@ -16,7 +16,7 @@ env:
   FORCE_COLOR: 1
 
 jobs:
-  build_tsan_reusable:
+  build-tsan-reusable:
     name: 'Thread sanitizer'
     runs-on: ubuntu-24.04
     timeout-minutes: 60

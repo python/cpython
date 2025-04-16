@@ -3515,6 +3515,10 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         self.assertEqual(repr(2 ** I(3)), "I(8)")
         self.assertEqual(repr(I(2) ** 3), "I(8)")
         self.assertEqual(repr(pow(I(2), I(3), I(5))), "I(3)")
+        self.assertEqual(repr(pow(I(2), I(3), 5)), "I(3)")
+        self.assertEqual(repr(pow(I(2), 3, 5)), "I(3)")
+        self.assertEqual(repr(pow(2, I(3), 5)), "I(3)")
+        self.assertEqual(repr(pow(2, 3, I(5))), "3")
         class S(str):
             def __eq__(self, other):
                 return self.lower() == other.lower()
@@ -3658,6 +3662,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
                            encoding='latin1', errors='replace')
         self.assertEqual(ba, b'abc\xbd?')
 
+    @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
     def test_recursive_call(self):
         # Testing recursive __call__() by setting to instance of class...
@@ -4518,6 +4523,7 @@ class ClassPropertiesAndMethods(unittest.TestCase):
         o.whatever = Provoker(o)
         del o
 
+    @support.skip_wasi_stack_overflow()
     @support.requires_resource('cpu')
     def test_wrapper_segfault(self):
         # SF 927248: deeply nested wrappers could cause stack overflow

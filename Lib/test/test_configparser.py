@@ -1328,6 +1328,47 @@ class ConfigParserTestCaseNoValue(ConfigParserTestCase):
     allow_no_value = True
 
 
+class NoValueAndExtendedInterpolation(CfgParserTestCaseClass):
+    interpolation = configparser.ExtendedInterpolation()
+    allow_no_value = True
+
+    def test_interpolation_with_allow_no_value(self):
+        config = textwrap.dedent("""
+            [dummy]
+            a
+            b = ${a}
+        """)
+        cf = self.fromstring(config)
+
+        self.assertIs(cf["dummy"]["a"], None)
+        self.assertEqual(cf["dummy"]["b"], "")
+
+    def test_explicit_none(self):
+        config = textwrap.dedent("""
+            [dummy]
+            a = None
+            b = ${a}
+        """)
+        cf = self.fromstring(config)
+
+        self.assertEqual(cf["dummy"]["a"], "None")
+        self.assertEqual(cf["dummy"]["b"], "None")
+
+
+class ConfigParserNoValueAndExtendedInterpolationTest(
+    NoValueAndExtendedInterpolation,
+    unittest.TestCase,
+):
+    config_class = configparser.ConfigParser
+
+
+class RawConfigParserNoValueAndExtendedInterpolationTest(
+    NoValueAndExtendedInterpolation,
+    unittest.TestCase,
+):
+    config_class = configparser.RawConfigParser
+
+
 class ConfigParserTestCaseTrickyFile(CfgParserTestCaseClass, unittest.TestCase):
     config_class = configparser.ConfigParser
     delimiters = {'='}
@@ -2190,6 +2231,30 @@ class SectionlessTestCase(unittest.TestCase):
         self.assertEqual([configparser.UNNAMED_SECTION], cfg.sections())
         self.assertEqual('1', cfg[configparser.UNNAMED_SECTION]['a'])
         self.assertEqual('2', cfg[configparser.UNNAMED_SECTION]['b'])
+
+
+class InvalidInputTestCase(unittest.TestCase):
+    """Tests for issue #65697, where configparser will write configs
+    it parses back differently. Ex: keys containing delimiters or
+    matching the section pattern"""
+
+    def test_delimiter_in_key(self):
+        cfg = configparser.ConfigParser(delimiters=('='))
+        cfg.add_section('section1')
+        cfg.set('section1', 'a=b', 'c')
+        output = io.StringIO()
+        with self.assertRaises(configparser.InvalidWriteError):
+            cfg.write(output)
+        output.close()
+
+    def test_section_bracket_in_key(self):
+        cfg = configparser.ConfigParser()
+        cfg.add_section('section1')
+        cfg.set('section1', '[this parses back as a section]', 'foo')
+        output = io.StringIO()
+        with self.assertRaises(configparser.InvalidWriteError):
+            cfg.write(output)
+        output.close()
 
 
 class MiscTestCase(unittest.TestCase):
