@@ -2456,7 +2456,7 @@ types.
    :func:`runtime_checkable` (described later) act as simple-minded runtime
    protocols that check only the presence of given attributes, ignoring their
    type signatures. Protocol classes without this decorator cannot be used
-   with :func:`isinstance` and :func:`issubclass`.
+   as the second argument to :func:`isinstance` or :func:`issubclass`.
 
    Protocol classes can be generic, for example::
 
