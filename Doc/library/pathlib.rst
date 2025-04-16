@@ -872,10 +872,10 @@ conforming to :rfc:`8089`.
    .. versionadded:: 3.13
 
    .. versionchanged:: next
-      If a URL authority (e.g. a hostname) is present and resolves to a local
-      address, it is discarded. If an authority is present and *doesn't*
-      resolve to a local address, then on Windows a UNC path is returned (as
-      before), and on other platforms a :exc:`ValueError` is raised.
+      If a URL authority matches the current hostname, it is discarded.
+      Otherwise, if the authority isn't empty or ``localhost``, then on
+      Windows a UNC path is returned (as before), and on other platforms a
+      :exc:`ValueError` is raised.
 
 
 .. method:: Path.as_uri()

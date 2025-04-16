@@ -1551,7 +1551,8 @@ class Pathname_Tests(unittest.TestCase):
                     urllib.request.url2pathname(url, require_scheme=True),
                     expected_path)
 
-        error_subtests = [
+    def test_url2pathname_require_scheme_errors(self):
+        subtests = [
             '',
             ':',
             'foo',
@@ -1561,12 +1562,20 @@ class Pathname_Tests(unittest.TestCase):
             'data:file:foo',
             'data:file://foo',
         ]
-        for url in error_subtests:
+        for url in subtests:
             with self.subTest(url=url):
                 self.assertRaises(
                     urllib.error.URLError,
                     urllib.request.url2pathname,
                     url, require_scheme=True)
+
+    def test_url2pathname_resolve_netloc(self):
+        fn = urllib.request.url2pathname
+        sep = os.path.sep
+        self.assertRaises(urllib.error.URLError, fn, '//127.0.0.1/foo/bar')
+        self.assertEqual(fn('//127.0.0.1/foo/bar', resolve_netloc=True), f'{sep}foo{sep}bar')
+        self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar'), f'{sep}foo{sep}bar')
+        self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar', resolve_netloc=True), f'{sep}foo{sep}bar')
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
@@ -1622,8 +1631,6 @@ class Pathname_Tests(unittest.TestCase):
         self.assertRaises(urllib.error.URLError, fn, '//:80/foo/bar')
         self.assertRaises(urllib.error.URLError, fn, '//:/foo/bar')
         self.assertRaises(urllib.error.URLError, fn, '//c:80/foo/bar')
-        self.assertEqual(fn('//127.0.0.1/foo/bar'), '/foo/bar')
-        self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar'), '/foo/bar')
 
     @unittest.skipUnless(os_helper.FS_NONASCII, 'need os_helper.FS_NONASCII')
     def test_url2pathname_nonascii(self):
