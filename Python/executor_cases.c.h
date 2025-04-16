@@ -4249,7 +4249,6 @@
             _PyStackRef null_or_index;
             _PyStackRef iter;
             _PyStackRef next;
-            oparg = CURRENT_OPARG();
             null_or_index = stack_pointer[-1];
             iter = stack_pointer[-2];
             PyObject *list_o = PyStackRef_AsPyObjectBorrow(iter);
@@ -4261,15 +4260,9 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int result = _PyList_GetItemRefNoLock((PyListObject *)list_o, PyStackRef_UntagInt(null_or_index), &next);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (result < 0) {
+            if (result <= 0) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
-            }
-            if (result == 0) {
-                null_or_index = PyStackRef_TagInt(-1);
-                JUMPBY(oparg + 1);
-                stack_pointer[-1] = null_or_index;
-                DISPATCH();
             }
             #else
             assert(PyStackRef_UntagInt(null_or_index) < PyList_GET_SIZE(list_o));

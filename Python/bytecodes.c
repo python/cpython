@@ -3268,13 +3268,7 @@ dummy_func(
             int result = _PyList_GetItemRefNoLock((PyListObject *)list_o, PyStackRef_UntagInt(null_or_index), &next);
             // A negative result means we lost a race with another thread
             // and we need to take the slow path.
-            DEOPT_IF(result < 0);
-            if (result == 0) {
-                null_or_index = PyStackRef_TagInt(-1);
-                /* Jump forward oparg, then skip following END_FOR instruction */
-                JUMPBY(oparg + 1);
-                DISPATCH();
-            }
+            DEOPT_IF(result <= 0);
 #else
             assert(PyStackRef_UntagInt(null_or_index) < PyList_GET_SIZE(list_o));
             next = PyStackRef_FromPyObjectNew(PyList_GET_ITEM(list_o, PyStackRef_UntagInt(null_or_index)));
