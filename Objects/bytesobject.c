@@ -2855,7 +2855,7 @@ fail:
 }
 
 static PyObject*
-_PyBytes_FromSequence(PyObject *x)
+_PyBytes_FromSequence_lock_held(PyObject *x)
 {
     Py_ssize_t size = PySequence_Fast_GET_SIZE(x);
     PyObject *bytes = _PyBytes_FromSize(size, 0);
@@ -2864,13 +2864,11 @@ _PyBytes_FromSequence(PyObject *x)
     }
     char *str = PyBytes_AS_STRING(bytes);
     PyObject *const *items = PySequence_Fast_ITEMS(x);
-    Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(x);
     for (Py_ssize_t i = 0; i < size; i++) {
         if (!PyLong_Check(items[i])) {
             Py_DECREF(bytes);
             /* Py_None as a fallback sentinel to the slow path */
-            bytes = Py_None;
-            goto done;
+            Py_RETURN_NONE;
         }
         Py_ssize_t value = PyNumber_AsSsize_t(items[i], NULL);
         if (value == -1 && PyErr_Occurred()) {
@@ -2883,18 +2881,11 @@ _PyBytes_FromSequence(PyObject *x)
         }
         *str++ = (char) value;
     }
-    goto done;
+    return bytes;
+
   error:
     Py_DECREF(bytes);
-    bytes = NULL;
-  done:
-    /* some C parsers require a label not to be at the end of a compound
-       statement, which the ending macro of a critical section introduces, so
-       we need an empty statement here to satisfy that syntax rule */
-    ;
-    /* both success and failure need to end the critical section */
-    Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
-    return bytes;
+    return NULL;
 }
 
 static PyObject *
@@ -2978,10 +2969,12 @@ PyBytes_FromObject(PyObject *x)
         return _PyBytes_FromBuffer(x);
 
     if (PyList_CheckExact(x) || PyTuple_CheckExact(x)) {
-        PyObject *bytes = _PyBytes_FromSequence(x);
+        Py_BEGIN_CRITICAL_SECTION_SEQUENCE_FAST(x);
+        result = _PyBytes_FromSequence_lock_held(x);
+        Py_END_CRITICAL_SECTION_SEQUENCE_FAST();
         /* Py_None as a fallback sentinel to the slow path */
-        if (bytes != Py_None) {
-            return bytes;
+        if (result != Py_None) {
+            return result;
         }
     }
 
