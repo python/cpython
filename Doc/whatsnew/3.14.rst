@@ -1230,7 +1230,7 @@ urllib
 
   - Accept a complete URL when the new *require_scheme* argument is set to
     true.
-  - Discard URL authority if it matches the current hostname.
+  - Discard URL authority if it matches the local hostname.
   - Discard URL authority if it resolves to a local IP address when the new
     *resolve_netloc* argument is set to true.
   - Raise :exc:`~urllib.error.URLError` if a URL authority isn't local,

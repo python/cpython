@@ -187,7 +187,7 @@ The :mod:`urllib.request` module defines the following functions:
 
    The URL authority is discarded if it empty, ``localhost``, or the local
    hostname. Otherwise, if *resolve_netloc* is set to true, the authority is
-   resolved using :func:`socket.gethostbyname`, and discarded if it matches a
+   resolved using :func:`socket.gethostbyname` and discarded if it matches a
    local IP address. If the authority is still unhandled, then on Windows a
    UNC path is returned, and on other platforms a
    :exc:`~urllib.error.URLError` is raised.
