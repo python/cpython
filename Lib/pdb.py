@@ -891,9 +891,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except Exception as e:
             # Maybe it's an await expression/statement
             if (
-                isinstance(e, SyntaxError)
+                self.async_shim_frame is not None
+                and isinstance(e, SyntaxError)
                 and e.msg == "'await' outside function"
-                and self.async_shim_frame is not None
             ):
                 try:
                     self._exec_await(buffer, globals, locals)
