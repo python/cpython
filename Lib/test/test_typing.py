@@ -3132,6 +3132,20 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, only_classes_allowed):
             issubclass(1, BadPG)
 
+    def test_lazy_evaluation_with_subprotocols(self):
+        @runtime_checkable
+        class Base(Protocol):
+            x: int
+
+        class Child(Base, Protocol):
+            y: str
+
+        class Capybara:
+            x = 43
+
+        self.assertIsInstance(Capybara(), Base)
+        self.assertNotIsInstance(Capybara(), Child)
+
     def test_implicit_issubclass_between_two_protocols(self):
         @runtime_checkable
         class CallableMembersProto(Protocol):
@@ -3826,6 +3840,7 @@ class ProtocolTests(BaseTestCase):
             '_is_protocol', '_is_runtime_protocol', '__parameters__',
             '__init__', '__annotations__', '__subclasshook__', '__annotate__',
             '__annotations_cache__', '__annotate_func__',
+            '__protocol_attrs_cache__',
         }
         self.assertLessEqual(vars(NonP).keys(), vars(C).keys() | acceptable_extra_attrs)
         self.assertLessEqual(

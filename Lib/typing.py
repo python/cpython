@@ -1941,7 +1941,9 @@ class _ProtocolMeta(ABCMeta):
                         f"Protocols can only inherit from other protocols, "
                         f"got {base!r}"
                     )
-        return super().__new__(mcls, name, bases, namespace, **kwargs)
+        cls = super().__new__(mcls, name, bases, namespace, **kwargs)
+        cls.__protocol_attrs_cache__ = None
+        return cls
 
     def __subclasscheck__(cls, other):
         if cls is Protocol:
@@ -2003,20 +2005,18 @@ class _ProtocolMeta(ABCMeta):
 
     @property
     def __protocol_attrs__(cls):
-        try:
-            return cls.__protocol_attrs_cache__
-        except AttributeError:
+        protocol_attrs = cls.__protocol_attrs_cache__
+        if protocol_attrs is None:
             protocol_attrs = _get_protocol_attrs(cls)
             cls.__protocol_attrs_cache__ = protocol_attrs
-            return protocol_attrs
+        return protocol_attrs
 
     @property
     def __non_callable_proto_members__(cls):
         # PEP 544 prohibits using issubclass()
         # with protocols that have non-method members.
-        try:
-            return cls.__non_callable_proto_members_cache__
-        except AttributeError:
+        non_callable_members = cls.__non_callable_proto_members_cache__
+        if non_callable_members is None:
             non_callable_members = set()
             for attr in cls.__protocol_attrs__:
                 try:
@@ -2030,7 +2030,7 @@ class _ProtocolMeta(ABCMeta):
                     if not is_callable:
                         non_callable_members.add(attr)
             cls.__non_callable_proto_members_cache__ = non_callable_members
-            return non_callable_members
+        return non_callable_members
 
 
 @classmethod
@@ -2247,6 +2247,7 @@ def runtime_checkable(cls):
         raise TypeError('@runtime_checkable can be only applied to protocol classes,'
                         ' got %r' % cls)
     cls._is_runtime_protocol = True
+    cls.__non_callable_proto_members_cache__ = None
     return cls
 
 
