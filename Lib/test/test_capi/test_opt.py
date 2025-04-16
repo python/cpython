@@ -1678,7 +1678,7 @@ class TestUopsOptimization(unittest.TestCase):
             x = 0
             for _ in range(n):
                 d = {}
-                d["Spam"] = 1  # Guarded...
+                d["Spam"] = 1  # unguarded!
                 x += d["Spam"]  # ...unguarded!
             return x
 
@@ -1695,7 +1695,7 @@ class TestUopsOptimization(unittest.TestCase):
             x = 0
             for _ in range(n):
                 l = [0]
-                l[0] = 1  # Guarded...
+                l[0] = 1  # unguarded!
                 [a] = l  # ...unguarded!
                 b = l[0]  # ...unguarded!
                 if l:  # ...unguarded!
