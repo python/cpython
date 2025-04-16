@@ -87,7 +87,7 @@ def _validate_tzfile_path(path, _base=_TEST_PATH):
         raise ValueError(
             "ZoneInfo key must not be an empty string"
         )
-    elif path == b"":
+    elif isinstance(path, bytes) and path == b"":
         raise ValueError(
             "ZoneInfo key must not be an empty bytes object"
         )
