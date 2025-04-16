@@ -1466,8 +1466,8 @@ Glossary
       <https://www.unicode.org/reports/tr44/>`_ as "Other" or "Separator"
       and those with bidirectional property being one of "WS," "B," or "S."
 
-      This is used, for example, to :meth:`~str.split` or
-      :meth:`~str.strip` strings.
+      For example, this is used to :meth:`~str.split` or :meth:`~str.strip`
+      strings.
 
    Zen of Python
       Listing of Python design principles and philosophies that are helpful in

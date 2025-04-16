@@ -2350,9 +2350,9 @@ expression support in the :mod:`re` module).
 
    Return a copy of the string with the leading and trailing characters removed.
    The *chars* argument is a string specifying the set of characters to be removed.
-   If omitted or ``None``, the *chars* argument defaults to removing :term:`whitespace`.
-   The *chars* argument is not a prefix or suffix; rather, all combinations of its
-   values are stripped::
+   If omitted or ``None``, the *chars* argument defaults to removing
+   :term:`whitespace`. The *chars* argument is not a prefix or suffix; rather,
+   all combinations of its values are stripped::
 
       >>> '   spacious   '.strip()
       'spacious'
@@ -3290,8 +3290,8 @@ produce new objects.
    as the delimiter string. If *maxsplit* is given, at most *maxsplit* splits
    are done, the *rightmost* ones.  If *sep* is not specified or ``None``,
    any subsequence consisting solely of :term:`ASCII whitespace <whitespace>`
-   is a separator. Except for splitting from the right, :meth:`rsplit` behaves like
-   :meth:`split` which is described in detail below.
+   is a separator. Except for splitting from the right, :meth:`rsplit` behaves
+   like :meth:`split` which is described in detail below.
 
 
 .. method:: bytes.rstrip([chars])
@@ -3379,9 +3379,9 @@ produce new objects.
    removed. The *chars* argument is a binary sequence specifying the set of
    byte values to be removed - the name refers to the fact this method is
    usually used with ASCII characters.  If omitted or ``None``, the *chars*
-   argument defaults to removing :term:`ASCII whitespace <whitespace>`. The *chars*
-   argument is not a prefix or suffix; rather, all combinations of its values are
-   stripped::
+   argument defaults to removing :term:`ASCII whitespace <whitespace>`.
+   The *chars* argument is not a prefix or suffix; rather, all combinations of
+   its values are stripped::
 
       >>> b'   spacious   '.strip()
       b'spacious'
