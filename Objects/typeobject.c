@@ -2777,7 +2777,7 @@ _PyObject_LookupSpecial(PyObject *self, PyObject *attr)
 // is null and `method_and_self[1]` is `self`. On exit, `method_and_self[0]`
 // is the method object and `method_and_self[1]` is `self` if the method is
 // not bound.
-// Return 0 on success, -1 on error or if the method is missing.
+// Return 1 on success, -1 on error, and 0 if the method is missing.
 int
 _PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self)
 {
