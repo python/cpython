@@ -2872,20 +2872,18 @@ _PyBytes_FromSequence_lock_held(PyObject *x)
         }
         Py_ssize_t value = PyNumber_AsSsize_t(items[i], NULL);
         if (value == -1 && PyErr_Occurred()) {
-            goto error;
+            Py_DECREF(bytes);
+            return NULL
         }
         if (value < 0 || value >= 256) {
             PyErr_SetString(PyExc_ValueError,
                             "bytes must be in range(0, 256)");
-            goto error;
+            Py_DECREF(bytes);
+            return NULL
         }
         *str++ = (char) value;
     }
     return bytes;
-
-  error:
-    Py_DECREF(bytes);
-    return NULL;
 }
 
 static PyObject *
