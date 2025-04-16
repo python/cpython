@@ -3119,8 +3119,41 @@ _Py_Specialize_ContainsOp(_PyStackRef value_st, _Py_CODEUNIT *instr)
 void
 _Py_GatherStats_GetIter(_PyStackRef iterable)
 {
-    PyObject *obj = PyStackRef_AsPyObjectBorrow(iterable);
-    int kind =  _PySpecialization_ClassifyIterator(obj);
+    PyTypeObject *tp = PyStackRef_TYPE(iterable);
+    int kind = SPEC_FAIL_OTHER;
+    if (tp == &PyTuple_Type) {
+        kind = SPEC_FAIL_ITER_TUPLE;
+    }
+    else if (tp == &PyList_Type) {
+        kind = SPEC_FAIL_ITER_LIST;
+    }
+    else if (tp == &PyDict_Type) {
+        kind = SPEC_FAIL_ITER_DICT_KEYS;
+    }
+    else if (tp == &PySet_Type) {
+        kind = SPEC_FAIL_ITER_SET;
+    }
+    else if (tp == &PyBytes_Type) {
+        kind = SPEC_FAIL_ITER_BYTES;
+    }
+    else if (tp == &PyEnum_Type) {
+        kind = SPEC_FAIL_ITER_ENUMERATE;
+    }
+    else if (tp == &PyUnicode_Type) {
+        kind = SPEC_FAIL_ITER_STRING;
+    }
+    else if (tp == &PyGen_Type) {
+        kind = SPEC_FAIL_ITER_GENERATOR;
+    }
+    else if (tp == &PyCoro_Type) {
+        kind = SPEC_FAIL_ITER_COROUTINE;
+    }
+    else if (tp == &PyAsyncGen_Type) {
+        kind = SPEC_FAIL_ITER_ASYNC_GENERATOR;
+    }
+    else if (tp == &_PyAsyncGenASend_Type) {
+        kind = SPEC_FAIL_ITER_ASYNC_GENERATOR_SEND;
+    }
     SPECIALIZATION_FAIL(GET_ITER, kind);
 }
 #endif
