@@ -2622,6 +2622,8 @@ class _RemotePdb(Pdb):
         # Detach the debugger and close the socket without raising BdbQuit
         self.quitting = False
         if self._owns_sockfile:
+            # Don't try to reuse this instance, it's not valid anymore.
+            Pdb._last_pdb_instance = None
             try:
                 self._sockfile.close()
             except OSError:
