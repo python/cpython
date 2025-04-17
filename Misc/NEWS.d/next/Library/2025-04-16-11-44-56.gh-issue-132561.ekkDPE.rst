@@ -1,0 +1,2 @@
+Fix the public ``locked`` method of ``multiprocessing.SemLock`` class.
+Also adding 2 tests for the derivated :class:`multiprocessing.Lock` and :class:`multiprocessing.RLock` classes.
