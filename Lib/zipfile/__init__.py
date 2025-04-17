@@ -1403,6 +1403,7 @@ class ZipFile:
         self._lock = threading.RLock()
         self._seekable = True
         self._writing = False
+        self._data_offset = None
 
         try:
             if mode == 'r':
@@ -1418,7 +1419,6 @@ class ZipFile:
                     self.fp = _Tellable(self.fp)
                     self.start_dir = 0
                     self._seekable = False
-                    self._data_offset = None
                 else:
                     # Some file-like objects can provide tell() but not seek()
                     try:
@@ -1439,6 +1439,7 @@ class ZipFile:
                     # even if no files are added to the archive
                     self._didModify = True
                     self.start_dir = self.fp.tell()
+                    self._data_offset = self.start_dir
             else:
                 raise ValueError("Mode must be 'r', 'w', 'x', or 'a'")
         except:
@@ -1551,9 +1552,8 @@ class ZipFile:
                 print("total", total)
 
         end_offset = self.start_dir
-        for zinfo in sorted(self.filelist,
-                            key=lambda zinfo: zinfo.header_offset,
-                            reverse=True):
+        for zinfo in reversed(sorted(self.filelist,
+                                     key=lambda zinfo: zinfo.header_offset)):
             zinfo._end_offset = end_offset
             end_offset = zinfo.header_offset
 
@@ -1721,7 +1721,16 @@ class ZipFile:
 
             if (zinfo._end_offset is not None and
                 zef_file.tell() + zinfo.compress_size > zinfo._end_offset):
-                raise BadZipFile(f"Overlapped entries: {zinfo.orig_filename!r} (possible zip bomb)")
+                if zinfo._end_offset == zinfo.header_offset:
+                    import warnings
+                    warnings.warn(
+                        f"Overlapped entries: {zinfo.orig_filename!r} "
+                        f"(possible zip bomb)",
+                        skip_file_prefixes=(os.path.dirname(__file__),))
+                else:
+                    raise BadZipFile(
+                        f"Overlapped entries: {zinfo.orig_filename!r} "
+                        f"(possible zip bomb)")
 
             # check for encrypted flag & handle password
             is_encrypted = zinfo.flag_bits & _MASK_ENCRYPTED

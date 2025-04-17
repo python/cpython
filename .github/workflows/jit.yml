@@ -74,8 +74,7 @@ jobs:
             runner: windows-latest
           - target: aarch64-pc-windows-msvc/msvc
             architecture: ARM64
-            # Forks don't have access to Windows on Arm runners. These jobs are skipped below:
-            runner: ${{ github.repository_owner == 'python' && 'windows-aarch64' || 'windows-latest' }}
+            runner: windows-11-arm
           - target: x86_64-apple-darwin/clang
             architecture: x86_64
             runner: macos-13
@@ -97,8 +96,7 @@ jobs:
           python-version: '3.11'
 
       - name: Windows
-        # Forks don't have access to Windows on Arm runners. Skip those:
-        if: runner.os == 'Windows' && (matrix.architecture != 'ARM64' || github.repository_owner == 'python')
+        if: runner.os == 'Windows'
         run: |
           choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
