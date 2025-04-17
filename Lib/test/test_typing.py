@@ -6332,6 +6332,15 @@ class InternalsTests(BaseTestCase):
             typing._collect_parameters
         self.assertEqual(cm.filename, __file__)
 
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports("typing", {
+            "warnings",
+            "inspect",
+            "re",
+            "contextlib",
+            # "annotationlib",  # TODO
+        })
+
 
 @lru_cache()
 def cached_func(x, y):

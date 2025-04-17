@@ -4164,9 +4164,8 @@ type_new_set_name(const type_new_ctx *ctx, PyTypeObject *type)
 
 /* Set __module__ in the dict */
 static int
-type_new_set_module(PyTypeObject *type)
+type_new_set_module(PyObject *dict)
 {
-    PyObject *dict = lookup_tp_dict(type);
     int r = PyDict_Contains(dict, &_Py_ID(__module__));
     if (r < 0) {
         return -1;
@@ -4193,10 +4192,9 @@ type_new_set_module(PyTypeObject *type)
 /* Set ht_qualname to dict['__qualname__'] if available, else to
    __name__.  The __qualname__ accessor will look for ht_qualname. */
 static int
-type_new_set_ht_name(PyTypeObject *type)
+type_new_set_ht_name(PyTypeObject *type, PyObject *dict)
 {
     PyHeapTypeObject *et = (PyHeapTypeObject *)type;
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *qualname;
     if (PyDict_GetItemRef(dict, &_Py_ID(__qualname__), &qualname) < 0) {
         return -1;
@@ -4225,9 +4223,8 @@ type_new_set_ht_name(PyTypeObject *type)
    and is a string.  The __doc__ accessor will first look for tp_doc;
    if that fails, it will still look into __dict__. */
 static int
-type_new_set_doc(PyTypeObject *type)
+type_new_set_doc(PyTypeObject *type, PyObject* dict)
 {
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *doc = PyDict_GetItemWithError(dict, &_Py_ID(__doc__));
     if (doc == NULL) {
         if (PyErr_Occurred()) {
@@ -4261,9 +4258,8 @@ type_new_set_doc(PyTypeObject *type)
 
 
 static int
-type_new_staticmethod(PyTypeObject *type, PyObject *attr)
+type_new_staticmethod(PyObject *dict, PyObject *attr)
 {
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *func = PyDict_GetItemWithError(dict, attr);
     if (func == NULL) {
         if (PyErr_Occurred()) {
@@ -4289,9 +4285,8 @@ type_new_staticmethod(PyTypeObject *type, PyObject *attr)
 
 
 static int
-type_new_classmethod(PyTypeObject *type, PyObject *attr)
+type_new_classmethod(PyObject *dict, PyObject *attr)
 {
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *func = PyDict_GetItemWithError(dict, attr);
     if (func == NULL) {
         if (PyErr_Occurred()) {
@@ -4392,9 +4387,8 @@ type_new_set_slots(const type_new_ctx *ctx, PyTypeObject *type)
 
 /* store type in class' cell if one is supplied */
 static int
-type_new_set_classcell(PyTypeObject *type)
+type_new_set_classcell(PyTypeObject *type, PyObject *dict)
 {
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *cell = PyDict_GetItemWithError(dict, &_Py_ID(__classcell__));
     if (cell == NULL) {
         if (PyErr_Occurred()) {
@@ -4419,9 +4413,8 @@ type_new_set_classcell(PyTypeObject *type)
 }
 
 static int
-type_new_set_classdictcell(PyTypeObject *type)
+type_new_set_classdictcell(PyObject *dict)
 {
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *cell = PyDict_GetItemWithError(dict, &_Py_ID(__classdictcell__));
     if (cell == NULL) {
         if (PyErr_Occurred()) {
@@ -4452,30 +4445,33 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
         return -1;
     }
 
-    if (type_new_set_module(type) < 0) {
+    PyObject *dict = lookup_tp_dict(type);
+    assert(dict);
+
+    if (type_new_set_module(dict) < 0) {
         return -1;
     }
 
-    if (type_new_set_ht_name(type) < 0) {
+    if (type_new_set_ht_name(type, dict) < 0) {
         return -1;
     }
 
-    if (type_new_set_doc(type) < 0) {
+    if (type_new_set_doc(type, dict) < 0) {
         return -1;
     }
 
     /* Special-case __new__: if it's a plain function,
        make it a static function */
-    if (type_new_staticmethod(type, &_Py_ID(__new__)) < 0) {
+    if (type_new_staticmethod(dict, &_Py_ID(__new__)) < 0) {
         return -1;
     }
 
     /* Special-case __init_subclass__ and __class_getitem__:
        if they are plain functions, make them classmethods */
-    if (type_new_classmethod(type, &_Py_ID(__init_subclass__)) < 0) {
+    if (type_new_classmethod(dict, &_Py_ID(__init_subclass__)) < 0) {
         return -1;
     }
-    if (type_new_classmethod(type, &_Py_ID(__class_getitem__)) < 0) {
+    if (type_new_classmethod(dict, &_Py_ID(__class_getitem__)) < 0) {
         return -1;
     }
 
@@ -4485,10 +4481,10 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
 
     type_new_set_slots(ctx, type);
 
-    if (type_new_set_classcell(type) < 0) {
+    if (type_new_set_classcell(type, dict) < 0) {
         return -1;
     }
-    if (type_new_set_classdictcell(type) < 0) {
+    if (type_new_set_classdictcell(dict) < 0) {
         return -1;
     }
     return 0;
