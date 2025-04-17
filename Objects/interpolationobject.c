@@ -77,11 +77,22 @@ interpolation_new_impl(PyTypeObject *type, PyObject *value,
 static void
 interpolation_dealloc(interpolationobject *self)
 {
+    PyObject_GC_UnTrack(self);
     Py_CLEAR(self->value);
     Py_CLEAR(self->expression);
     Py_CLEAR(self->conversion);
     Py_CLEAR(self->format_spec);
     Py_TYPE(self)->tp_free(self);
+}
+
+static int
+interpolation_traverse(interpolationobject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->value);
+    Py_VISIT(self->expression);
+    Py_VISIT(self->conversion);
+    Py_VISIT(self->format_spec);
+    return 0;
 }
 
 static PyObject *
@@ -107,11 +118,14 @@ PyTypeObject _PyInterpolation_Type = {
     .tp_doc = PyDoc_STR("Interpolation object"),
     .tp_basicsize = sizeof(interpolationobject),
     .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | _Py_TPFLAGS_MATCH_SELF,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | _Py_TPFLAGS_MATCH_SELF,
     .tp_new = (newfunc) interpolation_new,
+    .tp_alloc = PyType_GenericAlloc,
     .tp_dealloc = (destructor) interpolation_dealloc,
+    .tp_free = PyObject_GC_Del,
     .tp_repr = (reprfunc) interpolation_repr,
     .tp_members = interpolation_members,
+    .tp_traverse = (traverseproc) interpolation_traverse,
 };
 
 static PyObject *

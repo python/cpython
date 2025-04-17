@@ -32,9 +32,18 @@ templateiter_next(templateiterobject *self)
 static void
 templateiter_dealloc(templateiterobject *self)
 {
+    PyObject_GC_UnTrack(self);
     Py_CLEAR(self->stringsiter);
     Py_CLEAR(self->interpolationsiter);
     Py_TYPE(self)->tp_free(self);
+}
+
+static int
+templateiter_traverse(templateiterobject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->stringsiter);
+    Py_VISIT(self->interpolationsiter);
+    return 0;
 }
 
 PyTypeObject _PyTemplateIter_Type = {
@@ -43,7 +52,11 @@ PyTypeObject _PyTemplateIter_Type = {
     .tp_doc = PyDoc_STR("Template iterator object"),
     .tp_basicsize = sizeof(templateiterobject),
     .tp_itemsize = 0,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
+    .tp_alloc = PyType_GenericAlloc,
     .tp_dealloc = (destructor) templateiter_dealloc,
+    .tp_free = PyObject_GC_Del,
+    .tp_traverse = (traverseproc) templateiter_traverse,
     .tp_iter = PyObject_SelfIter,
     .tp_iternext = (iternextfunc) templateiter_next,
 };
@@ -155,9 +168,18 @@ error:
 static void
 template_dealloc(templateobject *self)
 {
+    PyObject_GC_UnTrack(self);
     Py_CLEAR(self->strings);
     Py_CLEAR(self->interpolations);
     Py_TYPE(self)->tp_free(self);
+}
+
+static int
+template_traverse(templateobject *self, visitproc visit, void *arg)
+{
+    Py_VISIT(self->strings);
+    Py_VISIT(self->interpolations);
+    return 0;
 }
 
 static PyObject *
@@ -172,7 +194,7 @@ template_repr(templateobject *self)
 static templateiterobject *
 template_iter(templateobject *self)
 {
-    templateiterobject *iter = PyObject_New(templateiterobject, &_PyTemplateIter_Type);
+    templateiterobject *iter = PyObject_GC_New(templateiterobject, &_PyTemplateIter_Type);
     if (iter == NULL) {
         return NULL;
     }
@@ -193,6 +215,7 @@ template_iter(templateobject *self)
     iter->stringsiter = stringsiter;
     iter->interpolationsiter = interpolationsiter;
     iter->from_strings = 1;
+    PyObject_GC_Track(iter);
     return iter;
 }
 
@@ -456,14 +479,17 @@ PyTypeObject _PyTemplate_Type = {
     .tp_doc = PyDoc_STR("Template object"),
     .tp_basicsize = sizeof(templateobject),
     .tp_itemsize = 0,
-    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_as_sequence = &template_as_sequence,
     .tp_new = (newfunc) template_new,
+    .tp_alloc = PyType_GenericAlloc,
     .tp_dealloc = (destructor) template_dealloc,
+    .tp_free = PyObject_GC_Del,
     .tp_repr = (reprfunc) template_repr,
     .tp_members = template_members,
     .tp_getset = template_getset,
     .tp_iter = (getiterfunc) template_iter,
+    .tp_traverse = (traverseproc) template_traverse,
 };
 
 PyObject *
