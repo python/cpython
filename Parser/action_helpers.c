@@ -1475,6 +1475,24 @@ _get_interpolation_conversion(Parser *p, Token *debug, ResultTokenWithMetadata *
     return -1;
 }
 
+static PyObject *
+_strip_interpolation_expr(PyObject *exprstr)
+{
+    Py_ssize_t len = PyUnicode_GET_LENGTH(exprstr);
+
+    for (Py_ssize_t i = len - 1; i >= 0; i--) {
+        Py_UCS4 c = PyUnicode_READ_CHAR(exprstr, i);
+        if (_PyUnicode_IsWhitespace(c) || c == '=') {
+            len--;
+        }
+        else {
+            break;
+        }
+    }
+
+    return PyUnicode_Substring(exprstr, 0, len);
+}
+
 expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, ResultTokenWithMetadata *conversion,
                                  ResultTokenWithMetadata *format, Token *closing_brace, int lineno, int col_offset,
                                  int end_lineno, int end_col_offset, PyArena *arena) {
@@ -1485,7 +1503,8 @@ expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, Resu
         char buf[1];
         buf[0] = conversion_val;
         convstr = PyUnicode_FromStringAndSize(buf, 1);
-        if (convstr == NULL) {
+        if (convstr == NULL || _PyArena_AddPyObject(arena, convstr) < 0) {
+            Py_XDECREF(convstr);
             return NULL;
         }
     }
@@ -1512,8 +1531,14 @@ expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, Resu
     }
 
     assert(exprstr != NULL);
+    PyObject *final_exprstr = _strip_interpolation_expr(exprstr);
+    if (!final_exprstr || _PyArena_AddPyObject(arena, final_exprstr) < 0) {
+        Py_XDECREF(final_exprstr);
+        return NULL;
+    }
+
     expr_ty interpolation = _PyAST_Interpolation(
-        expression, exprstr, convstr, format ? (expr_ty) format->result : NULL,
+        expression, final_exprstr, convstr, format ? (expr_ty) format->result : NULL,
         lineno, col_offset, end_lineno,
         end_col_offset, arena
     );

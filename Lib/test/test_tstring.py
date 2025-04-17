@@ -207,7 +207,7 @@ world"""
         t = t"Value: {value=}"
         self.assertEqual(t.strings, ("Value: value=", ""))
         self.assertEqual(t.interpolations[0].value, value)
-        self.assertEqual(t.interpolations[0].expression, "value=")
+        self.assertEqual(t.interpolations[0].expression, "value")
         self.assertEqual(t.interpolations[0].conversion, "r")
         self.assertEqual(t.interpolations[0].format_spec, "")
         self.assertEqual(f(t), "Value: value=42")
@@ -216,7 +216,7 @@ world"""
         t = t"Value: {value=:.2f}"
         self.assertEqual(t.strings, ("Value: value=", ""))
         self.assertEqual(t.interpolations[0].value, value)
-        self.assertEqual(t.interpolations[0].expression, "value=")
+        self.assertEqual(t.interpolations[0].expression, "value")
         self.assertEqual(t.interpolations[0].conversion, None)
         self.assertEqual(t.interpolations[0].format_spec, ".2f")
         self.assertEqual(f(t), "Value: value=42.00")
@@ -225,7 +225,7 @@ world"""
         t = t"Value: {value=!s}"
         self.assertEqual(t.strings, ("Value: value=", ""))
         self.assertEqual(t.interpolations[0].value, value)
-        self.assertEqual(t.interpolations[0].expression, "value=")
+        self.assertEqual(t.interpolations[0].expression, "value")
         self.assertEqual(t.interpolations[0].conversion, "s")
         self.assertEqual(t.interpolations[0].format_spec, "")
 
@@ -233,7 +233,7 @@ world"""
         t = t"Value: {value = }"
         self.assertEqual(t.strings, ("Value: value = ", ""))
         self.assertEqual(t.interpolations[0].value, value)
-        self.assertEqual(t.interpolations[0].expression, "value = ")
+        self.assertEqual(t.interpolations[0].expression, "value")
         self.assertEqual(t.interpolations[0].conversion, "r")
         self.assertEqual(t.interpolations[0].format_spec, "")
         self.assertEqual(f(t), "Value: value = 42")
