@@ -1,3 +1,3 @@
 """Support for template string literals (t-strings)."""
 
-from _templatelib import Template, Interpolation
+from _templatelib import Interpolation, Template

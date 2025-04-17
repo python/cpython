@@ -4,7 +4,7 @@ import unittest
 from string.templatelib import Template, Interpolation
 
 
-def convert(value, conversion) -> object:
+def convert(value, conversion):
     if conversion == "a":
         return ascii(value)
     elif conversion == "r":
@@ -14,7 +14,7 @@ def convert(value, conversion) -> object:
     return value
 
 
-def f(template) -> str:
+def f(template):
     parts = []
     for item in template:
         match item:

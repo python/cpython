@@ -9,8 +9,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_stackref.h"    // _PyStackRef
-
 extern PyTypeObject _PyTemplate_Type;
 extern PyTypeObject _PyTemplateIter_Type;
 

@@ -1,13 +1,8 @@
 /* t-string Template object implementation */
+
 #include "Python.h"
-#include <stddef.h>
-
-#include "pycore_stackref.h"        // _PyStackRef
-#include "pycore_global_objects.h"  // _Py_STR
-#include "pycore_runtime.h"         // _Py_STR
-
+#include "pycore_interpolation.h" // _PyInterpolation_Check()
 #include "pycore_template.h"
-#include "pycore_interpolation.h"
 
 typedef struct {
     PyObject_HEAD

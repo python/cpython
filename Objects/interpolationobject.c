@@ -1,12 +1,7 @@
 /* t-string Interpolation object implementation */
+
 #include "Python.h"
-#include <stddef.h>
-
 #include "pycore_initconfig.h"      // _PyStatus_OK
-#include "pycore_stackref.h"        // _PyStackRef
-#include "pycore_global_objects.h"  // _Py_STR
-#include "pycore_runtime.h"         // _Py_STR
-
 #include "pycore_interpolation.h"
 
 static int
