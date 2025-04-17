@@ -1158,6 +1158,9 @@ type_modified_unlocked(PyTypeObject *type)
 
     // Notify registered type watchers, if any
     if (type->tp_watched) {
+        // We must unlock here because at least the PyErr_FormatUnraisable
+        // call is re-entrant and the watcher callback might be too.
+        types_mutex_unlock();
         PyInterpreterState *interp = _PyInterpreterState_GET();
         int bits = type->tp_watched;
         int i = 0;
@@ -1174,6 +1177,7 @@ type_modified_unlocked(PyTypeObject *type)
             i++;
             bits >>= 1;
         }
+        types_mutex_lock();
     }
 
     set_version_unlocked(type, 0); /* 0 is not a valid version tag */
@@ -1694,8 +1698,8 @@ type_get_mro(PyObject *tp, void *Py_UNUSED(closure))
     return mro;
 }
 
-static PyTypeObject *best_base(PyObject *);
-static int mro_internal(PyTypeObject *, int, PyObject **);
+static PyTypeObject *find_best_base(PyObject *);
+static int mro_internal(PyTypeObject *, int, PyObject **, bool);
 static int type_is_subtype_base_chain(PyTypeObject *, PyTypeObject *);
 static int compatible_for_assignment(PyTypeObject *, PyTypeObject *, const char *);
 static int add_subclass(PyTypeObject*, PyTypeObject*);
@@ -1711,12 +1715,17 @@ static int recurse_down_subclasses(PyTypeObject *type, PyObject *name,
                                    update_callback callback, void *data);
 
 static int
-mro_hierarchy(PyTypeObject *type, PyObject *temp)
+mro_hierarchy(PyTypeObject *type, PyObject *temp, bool is_new_type)
 {
-    ASSERT_NEW_OR_STOPPED(type);
-
+#ifdef Py_DEBUG
+    if (is_new_type) {
+        assert(!TYPE_IS_REVEALED(type));
+    } else {
+        assert(types_world_is_stopped());
+    }
+#endif
     PyObject *old_mro;
-    int res = mro_internal(type, 0, &old_mro);
+    int res = mro_internal(type, 0, &old_mro, is_new_type);
     if (res <= 0) {
         /* error / reentrance */
         return res;
@@ -1766,7 +1775,7 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
         Py_ssize_t n = PyList_GET_SIZE(subclasses);
         for (Py_ssize_t i = 0; i < n; i++) {
             PyTypeObject *subclass = _PyType_CAST(PyList_GET_ITEM(subclasses, i));
-            res = mro_hierarchy(subclass, temp);
+            res = mro_hierarchy(subclass, temp, is_new_type);
             if (res < 0) {
                 break;
             }
@@ -1778,14 +1787,13 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
 }
 
 static int
-type_set_bases_world_stopped(PyTypeObject *type, PyObject *new_bases)
+type_check_new_bases(PyTypeObject *type, PyObject *new_bases, PyTypeObject **best_base)
 {
-    // Check arguments
+    // Check arguments, this re-entrant due to the PySys_Audit() call
     if (!check_set_special_type_attr(type, new_bases, "__bases__")) {
         return -1;
     }
     assert(new_bases != NULL);
-    assert(types_world_is_stopped());
 
     if (!PyTuple_Check(new_bases)) {
         PyErr_Format(PyExc_TypeError,
@@ -1830,26 +1838,34 @@ type_set_bases_world_stopped(PyTypeObject *type, PyObject *new_bases)
     }
 
     // Compute the new MRO and the new base class
-    PyTypeObject *new_base = best_base(new_bases);
-    if (new_base == NULL)
+    *best_base = find_best_base(new_bases);
+    if (*best_base == NULL)
         return -1;
 
-    if (!compatible_for_assignment(type->tp_base, new_base, "__bases__")) {
+    if (!compatible_for_assignment(type->tp_base, *best_base, "__bases__")) {
         return -1;
     }
+
+    return 0;
+}
+
+static int
+type_set_bases_world_stopped(PyTypeObject *type, PyObject *new_bases, PyTypeObject *best_base)
+{
+    assert(types_world_is_stopped());
 
     PyObject *old_bases = lookup_tp_bases(type);
     assert(old_bases != NULL);
     PyTypeObject *old_base = type->tp_base;
 
     set_tp_bases(type, Py_NewRef(new_bases), 0);
-    type->tp_base = (PyTypeObject *)Py_NewRef(new_base);
+    type->tp_base = (PyTypeObject *)Py_NewRef(best_base);
 
     PyObject *temp = PyList_New(0);
     if (temp == NULL) {
         goto bail;
     }
-    if (mro_hierarchy(type, temp) < 0) {
+    if (mro_hierarchy(type, temp, false) < 0) {
         goto undo;
     }
     Py_DECREF(temp);
@@ -1881,7 +1897,7 @@ type_set_bases_world_stopped(PyTypeObject *type, PyObject *new_bases)
     return res;
 
   undo:
-    n = PyList_GET_SIZE(temp);
+    Py_ssize_t n = PyList_GET_SIZE(temp);
     for (Py_ssize_t i = n - 1; i >= 0; i--) {
         PyTypeObject *cls;
         PyObject *new_mro, *old_mro = NULL;
@@ -1898,13 +1914,13 @@ type_set_bases_world_stopped(PyTypeObject *type, PyObject *new_bases)
 
   bail:
     if (lookup_tp_bases(type) == new_bases) {
-        assert(type->tp_base == new_base);
+        assert(type->tp_base == best_base);
 
         set_tp_bases(type, old_bases, 0);
         type->tp_base = old_base;
 
         Py_DECREF(new_bases);
-        Py_DECREF(new_base);
+        Py_DECREF(best_base);
     }
     else {
         Py_DECREF(old_bases);
@@ -1919,9 +1935,13 @@ static int
 type_set_bases(PyObject *tp, PyObject *new_bases, void *Py_UNUSED(closure))
 {
     PyTypeObject *type = PyTypeObject_CAST(tp);
+    PyTypeObject *best_base;
+    if (type_check_new_bases(type, new_bases, &best_base) < 0) {
+        return -1;
+    }
     int res;
     types_stop_world();
-    res = type_set_bases_world_stopped(type, new_bases);
+    res = type_set_bases_world_stopped(type, new_bases, best_base);
     types_start_world();
     return res;
 }
@@ -3458,7 +3478,7 @@ mro_check(PyTypeObject *type, PyObject *mro)
       - through a finalizer of the return value of mro().
 */
 static PyObject *
-mro_invoke(PyTypeObject *type)
+mro_invoke(PyTypeObject *type, bool is_new_type)
 {
     PyObject *mro_result;
     PyObject *new_mro;
@@ -3467,10 +3487,8 @@ mro_invoke(PyTypeObject *type)
 
     if (custom) {
         // Custom mro() method on metaclass.  This is potentially re-entrant.
-        // We are called either from type_ready() or from type_set_bases()
-        // (assignment to __bases__).
-        bool stopped = types_world_is_stopped();
-        if (stopped) {
+        // We are called either from type_ready() or from type_set_bases().
+        if (!is_new_type) {
             // Called for type_set_bases(), re-assigment of __bases__
             types_start_world();
         }
@@ -3482,7 +3500,7 @@ mro_invoke(PyTypeObject *type)
         else {
             new_mro = NULL;
         }
-        if (stopped) {
+        if (!is_new_type) {
             types_stop_world();
         }
     }
@@ -3538,9 +3556,15 @@ mro_invoke(PyTypeObject *type)
      - Returns -1 in case of an error.
 */
 static int
-mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro)
+mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro, bool is_new_type)
 {
-    ASSERT_NEW_OR_STOPPED(type);
+#ifdef Py_DEBUG
+    if (is_new_type) {
+        assert(!TYPE_IS_REVEALED(type));
+    } else {
+        assert(types_world_is_stopped());
+    }
+#endif
 
     PyObject *new_mro, *old_mro;
     int reent;
@@ -3549,7 +3573,7 @@ mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro)
        Don't let old_mro be GC'ed and its address be reused for
        another object, like (suddenly!) a new tp_mro.  */
     old_mro = Py_XNewRef(lookup_tp_mro(type));
-    new_mro = mro_invoke(type);  /* might cause reentrance */
+    new_mro = mro_invoke(type, is_new_type);  /* might cause reentrance */
     reent = (lookup_tp_mro(type) != old_mro);
     Py_XDECREF(old_mro);
     if (new_mro == NULL) {
@@ -3590,7 +3614,7 @@ mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro)
    This is the first one that's on the path to the "solid base". */
 
 static PyTypeObject *
-best_base(PyObject *bases)
+find_best_base(PyObject *bases)
 {
     Py_ssize_t i, n;
     PyTypeObject *base, *winner, *candidate;
@@ -4725,7 +4749,7 @@ type_new_get_bases(type_new_ctx *ctx, PyObject **type)
     }
 
     /* Calculate best base, and check that all bases are type objects */
-    PyTypeObject *base = best_base(ctx->bases);
+    PyTypeObject *base = find_best_base(ctx->bases);
     if (base == NULL) {
         return -1;
     }
@@ -5140,12 +5164,12 @@ PyType_FromMetaclass(
     }
 
     /* Calculate best base, and check that all bases are type objects */
-    PyTypeObject *base = best_base(bases);  // borrowed ref
+    PyTypeObject *base = find_best_base(bases);  // borrowed ref
     if (base == NULL) {
         goto finally;
     }
-    // best_base should check Py_TPFLAGS_BASETYPE & raise a proper exception,
-    // here we just check its work
+    // find_best_base() should check Py_TPFLAGS_BASETYPE & raise a proper
+    // exception, here we just check its work
     assert(_PyType_HasFeature(base, Py_TPFLAGS_BASETYPE));
 
     /* Calculate sizes */
@@ -8617,7 +8641,7 @@ type_ready_mro(PyTypeObject *type, int initial)
     }
 
     /* Calculate method resolution order */
-    if (mro_internal(type, initial, NULL) < 0) {
+    if (mro_internal(type, initial, NULL, true) < 0) {
         return -1;
     }
     PyObject *mro = lookup_tp_mro(type);
