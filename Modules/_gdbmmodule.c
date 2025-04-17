@@ -189,7 +189,7 @@ gdbm_length(PyObject *op)
 #endif
     }
     result = dp->di_size;
-done:
+done:;
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -229,7 +229,7 @@ gdbm_bool(PyObject *op)
     free(key.dptr);
     result = 1;
 
-done:
+done:;
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -280,7 +280,7 @@ gdbm_subscript(PyObject *op, PyObject *key)
     }
     v = PyBytes_FromStringAndSize(drec.dptr, drec.dsize);
     free(drec.dptr);
-done:
+done:;
     Py_END_CRITICAL_SECTION();
     return v;
 }
@@ -357,7 +357,7 @@ gdbm_ass_sub(PyObject *op, PyObject *v, PyObject *w)
     }
     result = 0;
 
-done:
+done:;
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -494,7 +494,7 @@ gdbm_contains(PyObject *self, PyObject *arg)
     }
     result = gdbm_exists(dp->di_dbm, key);
 
-done:
+done:;
     Py_END_CRITICAL_SECTION();
     return result;
 }

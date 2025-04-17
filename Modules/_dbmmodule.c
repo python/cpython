@@ -140,7 +140,7 @@ dbm_length(PyObject *self)
         dp->di_size = size;
     }
     result = dp->di_size;
-done:
+done:;
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -181,7 +181,7 @@ dbm_bool(PyObject *self)
 
     /* Non-empty. Don't cache the length since we don't know. */
     result = 1;
-done:
+done:;
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -213,7 +213,7 @@ dbm_subscript(PyObject *self, PyObject *key)
         goto done;
     }
     result = PyBytes_FromStringAndSize(drec.dptr, drec.dsize);
-done:
+done:;
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -276,7 +276,7 @@ dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
     }
 
     result = 0;
-done:
+done:;
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -375,7 +375,7 @@ dbm_contains(PyObject *self, PyObject *arg)
     }
     val = dbm_fetch(dp->di_dbm, key);
     result = val.dptr != NULL;
-done:
+done:;
     Py_END_CRITICAL_SECTION();
     return result;
 }
