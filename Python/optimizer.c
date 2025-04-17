@@ -569,13 +569,11 @@ translate_bytecode_to_trace(
             goto done;
         }
         assert(opcode != ENTER_EXECUTOR && opcode != EXTENDED_ARG);
-        if (OPCODE_HAS_NO_SAVE_IP(opcode)) {
-            RESERVE_RAW(2, "_CHECK_VALIDITY");
-            ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
-        }
-        else {
-            RESERVE_RAW(2, "_CHECK_VALIDITY_AND_SET_IP");
-            ADD_TO_TRACE(_CHECK_VALIDITY_AND_SET_IP, 0, (uintptr_t)instr, target);
+        RESERVE_RAW(2, "_CHECK_VALIDITY");
+        ADD_TO_TRACE(_CHECK_VALIDITY, 0, 0, target);
+        if (!OPCODE_HAS_NO_SAVE_IP(opcode)) {
+            RESERVE_RAW(2, "_SET_IP");
+            ADD_TO_TRACE(_SET_IP, 0, (uintptr_t)instr, target);
         }
 
         /* Special case the first instruction,

@@ -47,13 +47,14 @@ def generate_names_and_flags(analysis: Analysis, out: CWriter) -> None:
     out.emit("};\n")
     out.emit("int _PyUop_num_popped(int opcode, int oparg)\n{\n")
     out.emit("switch(opcode) {\n")
+    null = CWriter.null()
     for uop in analysis.uops.values():
         if uop.is_viable() and uop.properties.tier != 1:
             stack = Stack()
             for var in reversed(uop.stack.inputs):
                 if var.peek:
                     break
-                stack.pop(var)
+                stack.pop(var, null)
             popped = (-stack.base_offset).to_c()
             out.emit(f"case {uop.name}:\n")
             out.emit(f"    return {popped};\n")
