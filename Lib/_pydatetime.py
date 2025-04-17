@@ -1860,7 +1860,7 @@ class datetime(date):
             frac, t = _math.modf(t)
             us = round(frac * 1e6)
             ns = 0
-        
+
         if us >= 1000000:
             t += 1
             us -= 1000000
