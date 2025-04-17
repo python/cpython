@@ -2,6 +2,9 @@
 
 // Need limited C API version 3.13 for PyLong_AsInt()
 #include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_BUILD_CORE_BUILTIN
+#  define Py_BUILD_CORE_MODULE 1
+#endif
 
 #include "Python.h"
 
