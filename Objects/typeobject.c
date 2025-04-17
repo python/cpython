@@ -1856,6 +1856,7 @@ type_set_bases_world_stopped(PyTypeObject *type, PyObject *new_bases, PyTypeObje
 {
     assert(types_world_is_stopped());
 
+    Py_ssize_t n;
     PyObject *old_bases = lookup_tp_bases(type);
     assert(old_bases != NULL);
     PyTypeObject *old_base = type->tp_base;
@@ -1899,7 +1900,7 @@ type_set_bases_world_stopped(PyTypeObject *type, PyObject *new_bases, PyTypeObje
     return res;
 
   undo:
-    Py_ssize_t n = PyList_GET_SIZE(temp);
+    n = PyList_GET_SIZE(temp);
     for (Py_ssize_t i = n - 1; i >= 0; i--) {
         PyTypeObject *cls;
         PyObject *new_mro, *old_mro = NULL;
