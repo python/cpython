@@ -196,6 +196,7 @@ iteration of the loop::
     Found an odd number 9
 
 .. _tut-for-else:
+.. _break-and-continue-statements-and-else-clauses-on-loops:
 
 :keyword:`!else` Clauses on Loops
 =================================
@@ -209,8 +210,10 @@ after the loop finishes its final iteration, that is, if no break occurred.
 
 In a :keyword:`while` loop, it's executed after the loop's condition becomes false.
 
-In either kind of loop, the :keyword:`!else` clause is **not** executed
-if the loop was terminated by a :keyword:`break`.
+In either kind of loop, the :keyword:`!else` clause is **not** executed if the
+loop was terminated by a :keyword:`break`.  Of course, other ways of ending the
+loop early, such as a :keyword:`return` or a raised exception, will also skip
+execution of the :keyword:`else` clause.
 
 This is exemplified in the following :keyword:`!for` loop,
 which searches for prime numbers::
@@ -286,7 +289,8 @@ similar to a switch statement in C, Java or JavaScript (and many
 other languages), but it's more similar to pattern matching in
 languages like Rust or Haskell. Only the first pattern that matches
 gets executed and it can also extract components (sequence elements
-or object attributes) from the value into variables.
+or object attributes) from the value into variables. If no case matches,
+none of the branches is executed.
 
 The simplest form compares a subject value against one or more literals::
 
@@ -302,7 +306,7 @@ The simplest form compares a subject value against one or more literals::
                 return "Something's wrong with the internet"
 
 Note the last block: the "variable name" ``_`` acts as a *wildcard* and
-never fails to match. If no case matches, none of the branches is executed.
+never fails to match.
 
 You can combine several literals in a single pattern using ``|`` ("or")::
 
@@ -459,8 +463,8 @@ Defining Functions
 We can create a function that writes the Fibonacci series to an arbitrary
 boundary::
 
-   >>> def fib(n):    # write Fibonacci series up to n
-   ...     """Print a Fibonacci series up to n."""
+   >>> def fib(n):    # write Fibonacci series less than n
+   ...     """Print a Fibonacci series less than n."""
    ...     a, b = 0, 1
    ...     while a < n:
    ...         print(a, end=' ')
@@ -830,7 +834,7 @@ parameters as there is a ``/`` in the function definition::
      File "<stdin>", line 1, in <module>
    TypeError: pos_only_arg() got some positional-only arguments passed as keyword arguments: 'arg'
 
-The third function ``kwd_only_args`` only allows keyword arguments as indicated
+The third function ``kwd_only_arg`` only allows keyword arguments as indicated
 by a ``*`` in the function definition::
 
    >>> kwd_only_arg(3)

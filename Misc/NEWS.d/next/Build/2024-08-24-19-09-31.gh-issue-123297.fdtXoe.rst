@@ -1,2 +1,0 @@
-Propagate the value of ``LDFLAGS`` to ``LDCXXSHARED`` in :mod:`sysconfig`.
-Patch by Pablo Galindo

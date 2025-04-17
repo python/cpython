@@ -45,25 +45,19 @@ class TestType(TestCase):
         class C:
             x = 0
 
-        DONE = False
         def writer_func():
-            for i in range(3000):
+            for _ in range(3000):
                 C.x
                 C.x
                 C.x += 1
-            nonlocal DONE
-            DONE = True
 
         def reader_func():
-            while True:
+            for _ in range(3000):
                 # We should always see a greater value read from the type than the
                 # dictionary
                 a = C.__dict__['x']
                 b = C.x
                 self.assertGreaterEqual(b, a)
-
-                if DONE:
-                    break
 
         self.run_one(writer_func, reader_func)
 
@@ -74,25 +68,19 @@ class TestType(TestCase):
         class D(C):
             pass
 
-        DONE = False
         def writer_func():
-            for i in range(3000):
+            for _ in range(3000):
                 D.x
                 D.x
                 C.x += 1
-            nonlocal DONE
-            DONE = True
 
         def reader_func():
-            while True:
+            for _ in range(3000):
                 # We should always see a greater value read from the type than the
                 # dictionary
                 a = C.__dict__['x']
                 b = D.x
                 self.assertGreaterEqual(b, a)
-
-                if DONE:
-                    break
 
         self.run_one(writer_func, reader_func)
 
@@ -124,11 +112,34 @@ class TestType(TestCase):
         for thread in threads:
             thread.join()
 
+    def test_object_class_change(self):
+        class Base:
+            def __init__(self):
+                self.attr = 123
+        class ClassA(Base):
+            pass
+        class ClassB(Base):
+            pass
+
+        obj = ClassA()
+        # keep reference to __dict__
+        d = obj.__dict__
+        obj.__class__ = ClassB
+
+
     def run_one(self, writer_func, reader_func):
-        writer = Thread(target=writer_func)
+        barrier = threading.Barrier(NTHREADS)
+
+        def wrap_target(target):
+            def wrapper():
+                barrier.wait()
+                target()
+            return wrapper
+
+        writer = Thread(target=wrap_target(writer_func))
         readers = []
-        for x in range(30):
-            reader = Thread(target=reader_func)
+        for x in range(NTHREADS - 1):
+            reader = Thread(target=wrap_target(reader_func))
             readers.append(reader)
             reader.start()
 

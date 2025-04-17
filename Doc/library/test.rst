@@ -192,6 +192,10 @@ top-level directory where Python was built. On Windows,
 executing :program:`rt.bat` from your :file:`PCbuild` directory will run all
 regression tests.
 
+.. versionadded:: 3.14
+   Output is colorized by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
 
 :mod:`test.support` --- Utilities for the Python test suite
 ===========================================================
@@ -242,7 +246,27 @@ The :mod:`test.support` module defines the following constants:
 
 .. data:: is_android
 
-   ``True`` if the system is Android.
+   ``True`` if ``sys.platform`` is ``android``.
+
+
+.. data:: is_emscripten
+
+   ``True`` if ``sys.platform`` is ``emscripten``.
+
+
+.. data:: is_wasi
+
+   ``True`` if ``sys.platform`` is ``wasi``.
+
+
+.. data:: is_apple_mobile
+
+   ``True`` if ``sys.platform`` is ``ios``, ``tvos``, or ``watchos``.
+
+
+.. data:: is_apple
+
+   ``True`` if ``sys.platform`` is ``darwin`` or ``is_apple_mobile`` is ``True``.
 
 
 .. data:: unix_shell
@@ -788,6 +812,11 @@ The :mod:`test.support` module defines the following functions:
    Decorator for invoking :func:`check_impl_detail` on *guards*.  If that
    returns ``False``, then uses *msg* as the reason for skipping the test.
 
+.. decorator:: thread_unsafe(reason=None)
+
+   Decorator for marking tests as thread-unsafe.  This test always runs in one
+   thread even when invoked with ``--parallel-threads``.
+
 
 .. decorator:: no_tracing
 
@@ -820,6 +849,15 @@ The :mod:`test.support` module defines the following functions:
 .. decorator:: bigaddrspacetest
 
    Decorator for tests that fill the address space.
+
+
+.. function:: linked_with_musl()
+
+   Return ``False`` if there is no evidence the interpreter was compiled with
+   ``musl``, otherwise return a version triple, either ``(0, 0, 0)`` if the
+   version is unknown, or the actual version if it is known.  Intended for use
+   in ``skip`` decorators.  ``emscripten`` and ``wasi`` are assumed to be
+   compiled with ``musl``; otherwise ``platform.libc_ver`` is checked.
 
 
 .. function:: check_syntax_error(testcase, statement, errtext='', *, lineno=None, offset=None)
@@ -1426,9 +1464,12 @@ The :mod:`test.support.os_helper` module provides support for os tests.
    ``value``.
 
 
-.. method:: EnvironmentVarGuard.unset(envvar)
+.. method:: EnvironmentVarGuard.unset(envvar, *others)
 
-   Temporarily unset the environment variable ``envvar``.
+   Temporarily unset one or more environment variables.
+
+   .. versionchanged:: 3.14
+      More than one environment variable can be unset.
 
 
 .. function:: can_symlink()

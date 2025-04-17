@@ -1,2 +1,0 @@
-Direct call to the :meth:`!int.__round__` now accepts ``None``
-as a valid argument.

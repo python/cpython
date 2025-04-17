@@ -14,7 +14,6 @@ import sys
 import threading
 import unittest
 import weakref
-import warnings
 from ast import literal_eval
 from unittest import mock
 

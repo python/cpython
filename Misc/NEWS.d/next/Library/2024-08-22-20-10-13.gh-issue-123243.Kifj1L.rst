@@ -1,1 +1,0 @@
-Fix memory leak in :mod:`!_decimal`.

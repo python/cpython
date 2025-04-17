@@ -12,6 +12,7 @@ import builtins
 import types
 import weakref
 import traceback
+import textwrap
 import unittest
 from unittest.mock import Mock
 from typing import ClassVar, Any, List, Union, Tuple, Dict, Generic, TypeVar, Optional, Protocol, DefaultDict
@@ -61,7 +62,7 @@ class TestCase(unittest.TestCase):
                 x: int = field(default=1, default_factory=int)
 
     def test_field_repr(self):
-        int_field = field(default=1, init=True, repr=False)
+        int_field = field(default=1, init=True, repr=False, doc='Docstring')
         int_field.name = "id"
         repr_output = repr(int_field)
         expected_output = "Field(name='id',type=None," \
@@ -69,6 +70,7 @@ class TestCase(unittest.TestCase):
                            "init=True,repr=False,hash=None," \
                            "compare=True,metadata=mappingproxy({})," \
                            f"kw_only={MISSING!r}," \
+                           "doc='Docstring'," \
                            "_field_type=None)"
 
         self.assertEqual(repr_output, expected_output)
@@ -2312,7 +2314,7 @@ class TestDocString(unittest.TestCase):
         class C:
             x: Union[int, type(None)] = None
 
-        self.assertDocStrEqual(C.__doc__, "C(x:Optional[int]=None)")
+        self.assertDocStrEqual(C.__doc__, "C(x:int|None=None)")
 
     def test_docstring_list_field(self):
         @dataclass
@@ -2341,6 +2343,31 @@ class TestDocString(unittest.TestCase):
             x: deque = field(default_factory=deque)
 
         self.assertDocStrEqual(C.__doc__, "C(x:collections.deque=<factory>)")
+
+    def test_docstring_undefined_name(self):
+        @dataclass
+        class C:
+            x: undef
+
+        self.assertDocStrEqual(C.__doc__, "C(x:undef)")
+
+    def test_docstring_with_unsolvable_forward_ref_in_init(self):
+        # See: https://github.com/python/cpython/issues/128184
+        ns = {}
+        exec(
+            textwrap.dedent(
+                """
+                from dataclasses import dataclass
+
+                @dataclass
+                class C:
+                    def __init__(self, x: X, num: int) -> None: ...
+                """,
+            ),
+            ns,
+        )
+
+        self.assertDocStrEqual(ns['C'].__doc__, "C(x:X,num:int)")
 
     def test_docstring_with_no_signature(self):
         # See https://github.com/python/cpython/issues/103449
@@ -3304,7 +3331,7 @@ class TestSlots(unittest.TestCase):
             j: str
             h: str
 
-        self.assertEqual(Base.__slots__, ('y', ))
+        self.assertEqual(Base.__slots__, ('y',))
 
         @dataclass(slots=True)
         class Derived(Base):
@@ -3314,13 +3341,31 @@ class TestSlots(unittest.TestCase):
             k: str
             h: str
 
-        self.assertEqual(Derived.__slots__, ('z', ))
+        self.assertEqual(Derived.__slots__, ('z',))
 
         @dataclass
         class AnotherDerived(Base):
             z: int
 
         self.assertNotIn('__slots__', AnotherDerived.__dict__)
+
+    def test_slots_with_docs(self):
+        class Root:
+            __slots__ = {'x': 'x'}
+
+        @dataclass(slots=True)
+        class Base(Root):
+            y1: int = field(doc='y1')
+            y2: int
+
+        self.assertEqual(Base.__slots__, {'y1': 'y1', 'y2': None})
+
+        @dataclass(slots=True)
+        class Child(Base):
+            z1: int = field(doc='z1')
+            z2: int
+
+        self.assertEqual(Child.__slots__, {'z1': 'z1', 'z2': None})
 
     def test_cant_inherit_from_iterator_slots(self):
 
@@ -3590,7 +3635,6 @@ class TestSlots(unittest.TestCase):
         a_ref = weakref.ref(a)
         self.assertIs(a.__weakref__, a_ref)
 
-
     def test_dataclass_derived_weakref_slot(self):
         class A:
             pass
@@ -3670,7 +3714,7 @@ class TestSlots(unittest.TestCase):
         self.assertTrue(F.__weakref__)
         F()
 
-    def test_dataclass_derived_generic_from_slotted_base(self):
+    def test_dataclass_derived_generic_from_slotted_base_with_weakref(self):
         T = typing.TypeVar('T')
 
         class WithWeakrefSlot:
@@ -4297,6 +4341,23 @@ class TestMakeDataclass(unittest.TestCase):
             with self.subTest(classname=classname):
                 C = make_dataclass(classname, ['a', 'b'])
                 self.assertEqual(C.__name__, classname)
+
+    def test_dataclass_decorator_default(self):
+        C = make_dataclass('C', [('x', int)], decorator=dataclass)
+        c = C(10)
+        self.assertEqual(c.x, 10)
+
+    def test_dataclass_custom_decorator(self):
+        def custom_dataclass(cls, *args, **kwargs):
+            dc = dataclass(cls, *args, **kwargs)
+            dc.__custom__ = True
+            return dc
+
+        C = make_dataclass('C', [('x', int)], decorator=custom_dataclass)
+        c = C(10)
+        self.assertEqual(c.x, 10)
+        self.assertEqual(c.__custom__, True)
+
 
 class TestReplace(unittest.TestCase):
     def test(self):

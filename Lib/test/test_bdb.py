@@ -1217,6 +1217,19 @@ class IssuesTestCase(BaseTestCase):
             with TracerRun(self) as tracer:
                 tracer.runcall(tfunc_import)
 
+    def test_next_to_botframe(self):
+        # gh-125422
+        # Check that next command won't go to the bottom frame.
+        code = """
+            lno = 2
+        """
+        self.expect_set = [
+            ('line', 2, '<module>'),   ('step', ),
+            ('return', 2, '<module>'), ('next', ),
+        ]
+        with TracerRun(self) as tracer:
+            tracer.run(compile(textwrap.dedent(code), '<string>', 'exec'))
+
 
 class TestRegressions(unittest.TestCase):
     def test_format_stack_entry_no_lineno(self):

@@ -131,8 +131,8 @@ any DWARF information available for them).
 
 #include "Python.h"
 #include "pycore_ceval.h"         // _PyPerf_Callbacks
-#include "pycore_frame.h"
-#include "pycore_interp.h"
+#include "pycore_interpframe.h"   // _PyFrame_GetCode()
+#include "pycore_runtime.h"       // _PyRuntime
 
 
 #ifdef PY_HAVE_PERF_TRAMPOLINE
@@ -484,11 +484,11 @@ _PyPerfTrampoline_Init(int activate)
         return -1;
     }
     if (!activate) {
-        tstate->interp->eval_frame = NULL;
+        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, NULL);
         perf_status = PERF_STATUS_NO_INIT;
     }
     else {
-        tstate->interp->eval_frame = py_trampoline_evaluator;
+        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, py_trampoline_evaluator);
         if (new_code_arena() < 0) {
             return -1;
         }
@@ -514,7 +514,7 @@ _PyPerfTrampoline_Fini(void)
     }
     PyThreadState *tstate = _PyThreadState_GET();
     if (tstate->interp->eval_frame == py_trampoline_evaluator) {
-        tstate->interp->eval_frame = NULL;
+        _PyInterpreterState_SetEvalFrameFunc(tstate->interp, NULL);
     }
     if (perf_status == PERF_STATUS_OK) {
         trampoline_api.free_state(trampoline_api.state);

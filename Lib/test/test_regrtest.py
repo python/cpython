@@ -4,6 +4,7 @@ Tests of regrtest.py.
 Note: test_regrtest cannot be run twice in parallel.
 """
 
+import _colorize
 import contextlib
 import dataclasses
 import glob
@@ -21,6 +22,7 @@ import sysconfig
 import tempfile
 import textwrap
 import unittest
+import unittest.mock
 from xml.etree import ElementTree
 
 from test import support
@@ -40,6 +42,17 @@ if not support.has_subprocess_support:
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
 LOG_PREFIX = r'[0-9]+:[0-9]+:[0-9]+ (?:load avg: [0-9]+\.[0-9]{2} )?'
+RESULT_REGEX = (
+    'passed',
+    'failed',
+    'skipped',
+    'interrupted',
+    'env changed',
+    'timed out',
+    'ran no tests',
+    'worker non-zero exit code',
+)
+RESULT_REGEX = fr'(?:{"|".join(RESULT_REGEX)})'
 
 EXITCODE_BAD_TEST = 2
 EXITCODE_ENV_CHANGED = 3
@@ -409,8 +422,7 @@ class ParseArgsTestCase(unittest.TestCase):
         # which has an unclear API
         with os_helper.EnvironmentVarGuard() as env:
             # Ignore SOURCE_DATE_EPOCH env var if it's set
-            if 'SOURCE_DATE_EPOCH' in env:
-                del env['SOURCE_DATE_EPOCH']
+            del env['SOURCE_DATE_EPOCH']
 
             regrtest = main.Regrtest(ns)
 
@@ -553,8 +565,8 @@ class BaseTestCase(unittest.TestCase):
         self.assertRegex(output, regex)
 
     def parse_executed_tests(self, output):
-        regex = (r'^%s\[ *[0-9]+(?:/ *[0-9]+)*\] (%s)'
-                 % (LOG_PREFIX, self.TESTNAME_REGEX))
+        regex = (fr'^{LOG_PREFIX}\[ *[0-9]+(?:/ *[0-9]+)*\] '
+                 fr'({self.TESTNAME_REGEX}) {RESULT_REGEX}')
         parser = re.finditer(regex, output, re.MULTILINE)
         return list(match.group(1) for match in parser)
 
@@ -790,6 +802,7 @@ class CheckActualTests(BaseTestCase):
                            f'{", ".join(output.splitlines())}')
 
 
+@support.force_not_colorized_test_class
 class ProgramsTestCase(BaseTestCase):
     """
     Test various ways to run the Python test suite. Use options close
@@ -903,6 +916,7 @@ class ProgramsTestCase(BaseTestCase):
         self.run_batch(script, *rt_args, *self.regrtest_args, *self.tests)
 
 
+@support.force_not_colorized_test_class
 class ArgsTestCase(BaseTestCase):
     """
     Test arguments of the Python test suite.
@@ -1138,7 +1152,7 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests("--coverage", test)
         self.check_executed_tests(output, [test], stats=1)
         regex = (r'lines +cov% +module +\(path\)\n'
-                 r'(?: *[0-9]+ *[0-9]{1,2}% *[^ ]+ +\([^)]+\)+)+')
+                 r'(?: *[0-9]+ *[0-9]{1,2}\.[0-9]% *[^ ]+ +\([^)]+\)+)+')
         self.check_line(output, regex)
 
     def test_wait(self):
@@ -1181,7 +1195,7 @@ class ArgsTestCase(BaseTestCase):
                                   stats=TestStats(4, 1),
                                   forever=True)
 
-    @support.without_optimizer
+    @support.requires_jit_disabled
     def check_leak(self, code, what, *, run_workers=False):
         test = self.create_test('huntrleaks', code=code)
 
@@ -2143,25 +2157,25 @@ class ArgsTestCase(BaseTestCase):
             import unittest
             from test import support
             try:
-                from _testinternalcapi import get_config
+                from _testcapi import config_get
             except ImportError:
-                get_config = None
+                config_get = None
 
             # WASI/WASM buildbots don't use -E option
             use_environment = (support.is_emscripten or support.is_wasi)
 
             class WorkerTests(unittest.TestCase):
-                @unittest.skipUnless(get_config is None, 'need get_config()')
+                @unittest.skipUnless(config_get is None, 'need config_get()')
                 def test_config(self):
-                    config = get_config()['config']
+                    config = config_get()
                     # -u option
-                    self.assertEqual(config['buffered_stdio'], 0)
+                    self.assertEqual(config_get('buffered_stdio'), 0)
                     # -W default option
-                    self.assertTrue(config['warnoptions'], ['default'])
+                    self.assertTrue(config_get('warnoptions'), ['default'])
                     # -bb option
-                    self.assertTrue(config['bytes_warning'], 2)
+                    self.assertTrue(config_get('bytes_warning'), 2)
                     # -E option
-                    self.assertTrue(config['use_environment'], use_environment)
+                    self.assertTrue(config_get('use_environment'), use_environment)
 
                 def test_python_opts(self):
                     # -u option
@@ -2487,5 +2501,50 @@ class TestUtils(unittest.TestCase):
                          'valid t\xe9xt \u20ac')
 
 
+from test.libregrtest.results import TestResults
+
+
+class TestColorized(unittest.TestCase):
+    def test_test_result_get_state(self):
+        # Arrange
+        green = _colorize.ANSIColors.GREEN
+        red = _colorize.ANSIColors.BOLD_RED
+        reset = _colorize.ANSIColors.RESET
+        yellow = _colorize.ANSIColors.YELLOW
+
+        good_results = TestResults()
+        good_results.good = ["good1", "good2"]
+        bad_results = TestResults()
+        bad_results.bad = ["bad1", "bad2"]
+        no_results = TestResults()
+        no_results.bad = []
+        interrupted_results = TestResults()
+        interrupted_results.interrupted = True
+        interrupted_worker_bug = TestResults()
+        interrupted_worker_bug.interrupted = True
+        interrupted_worker_bug.worker_bug = True
+
+        for results, expected in (
+            (good_results, f"{green}SUCCESS{reset}"),
+            (bad_results, f"{red}FAILURE{reset}"),
+            (no_results, f"{yellow}NO TESTS RAN{reset}"),
+            (interrupted_results, f"{yellow}INTERRUPTED{reset}"),
+            (
+                interrupted_worker_bug,
+                f"{yellow}INTERRUPTED{reset}, {red}WORKER BUG{reset}",
+            ),
+        ):
+            with self.subTest(results=results, expected=expected):
+                # Act
+                with unittest.mock.patch(
+                    "_colorize.can_colorize", return_value=True
+                ):
+                    result = results.get_state(fail_env_changed=False)
+
+                # Assert
+                self.assertEqual(result, expected)
+
+
 if __name__ == '__main__':
+    setup.setup_process()
     unittest.main()
