@@ -1,0 +1,1 @@
+Replaced usage of deprecated attributes `addinfourl.status` and `HTTPResponse.info` with their modern equivalents.
