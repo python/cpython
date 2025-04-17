@@ -1055,28 +1055,32 @@ class CmdLineTest(unittest.TestCase):
         # test that -c auto-dedents its arguments
         from textwrap import dedent
         test_cases = [
-            {
-                'code': '''
+            (
+                """
                     print('space-auto-dedent')
-                ''',
-                'expected': b'space-auto-dedent',
-            },
-            {
-                'code': dedent('''
+                """,
+                "space-auto-dedent",
+            ),
+            (
+                dedent(
+                    """
                 ^^^print('tab-auto-dedent')
-                ''').replace('^', '\t'),
-                'expected': b'tab-auto-dedent',
-            },
-            {
-                'code': dedent('''
+                """
+                ).replace("^", "\t"),
+                "tab-auto-dedent",
+            ),
+            (
+                dedent(
+                    """
                 ^^if 1:
                 ^^^^print('mixed-auto-dedent-1')
                 ^^print('mixed-auto-dedent-2')
-                ''').replace('^', '\t \t'),
-                'expected': b'mixed-auto-dedent-1\nmixed-auto-dedent-2',
-            },
-            {
-                'code': '''
+                """
+                ).replace("^", "\t \t"),
+                "mixed-auto-dedent-1\nmixed-auto-dedent-2",
+            ),
+            (
+                '''
                     data = """$
 
                     this data has an empty newline above and a newline with spaces below $
@@ -1084,28 +1088,30 @@ class CmdLineTest(unittest.TestCase):
                     """$
                     if 1:         $
                         print(repr(data))$
-                '''.replace('$', ''),
+                '''.replace(
+                    "$", ""
+                ),
                 # Note: entirely blank lines are normalized to \n, even if they
                 # are part of a data string. This is consistent with
                 # textwrap.dedent behavior, but might not be intuitive.
-                'expected': b"'\\n\\nthis data has an empty newline above and a newline with spaces below \\n\\n'",
-            },
+                "'\\n\\nthis data has an empty newline above and a newline with spaces below \\n\\n'",
+            ),
         ]
-        for case in test_cases:
+        for code, expected in test_cases:
             # Run the auto-dedent case
-            args1 = sys.executable, '-c', case['code']
+            args1 = sys.executable, '-c', code
             proc1 = subprocess.run(args1, stdout=subprocess.PIPE)
             self.assertEqual(proc1.returncode, 0, proc1)
             output1 = proc1.stdout.strip().decode(encoding='utf-8')
 
             # Manually dedent beforehand, check the result is the same.
-            args2 = sys.executable, '-c', dedent(case['code'])
+            args2 = sys.executable, '-c', dedent(code)
             proc2 = subprocess.run(args2, stdout=subprocess.PIPE)
             self.assertEqual(proc2.returncode, 0, proc2)
             output2 = proc2.stdout.strip().decode(encoding='utf-8')
 
             self.assertEqual(output1, output2)
-            self.assertEqual(output1.replace(b'\r\n', b'\n'), case['expected'])
+            self.assertEqual(output1.replace('\r\n', '\n'), expected)
 
     def test_cmd_dedent_failcase(self):
         # Mixing tabs and spaces is not allowed
