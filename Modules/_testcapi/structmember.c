@@ -26,12 +26,16 @@ typedef struct {
     char char_member;
     int8_t int8_member;
     uint8_t uint8_member;
+    uint8_t xint8_member;
     int16_t int16_member;
     uint16_t uint16_member;
+    uint16_t xint16_member;
     int32_t int32_member;
     uint32_t uint32_member;
+    uint32_t xint32_member;
     int64_t int64_member;
     uint64_t uint64_member;
+    uint64_t xint64_member;
     intptr_t intptr_member;
     uintptr_t uintptr_member;
 #ifdef MS_WINDOWS
@@ -69,12 +73,16 @@ static struct PyMemberDef test_members_newapi[] = {
     {"T_CHAR", Py_T_CHAR, offsetof(test_structmembers, structmembers.char_member), 0, NULL},
     {"T_INT8", Py_T_INT8, offsetof(test_structmembers, structmembers.int8_member), 0, NULL},
     {"T_UINT8", Py_T_UINT8, offsetof(test_structmembers, structmembers.uint8_member), 0, NULL},
+    {"T_XINT8", Py_T_INT8|Py_T_UINT8, offsetof(test_structmembers, structmembers.xint8_member), 0, NULL},
     {"T_INT16", Py_T_INT16, offsetof(test_structmembers, structmembers.int16_member), 0, NULL},
     {"T_UINT16", Py_T_UINT16, offsetof(test_structmembers, structmembers.uint16_member), 0, NULL},
+    {"T_XINT16", Py_T_INT16|Py_T_UINT16, offsetof(test_structmembers, structmembers.xint16_member), 0, NULL},
     {"T_INT32", Py_T_INT32, offsetof(test_structmembers, structmembers.int32_member), 0, NULL},
     {"T_UINT32", Py_T_UINT32, offsetof(test_structmembers, structmembers.uint32_member), 0, NULL},
+    {"T_XINT32", Py_T_INT32|Py_T_UINT32, offsetof(test_structmembers, structmembers.xint32_member), 0, NULL},
     {"T_INT64", Py_T_INT64, offsetof(test_structmembers, structmembers.int64_member), 0, NULL},
     {"T_UINT64", Py_T_UINT64, offsetof(test_structmembers, structmembers.uint64_member), 0, NULL},
+    {"T_XINT64", Py_T_INT64|Py_T_UINT64, offsetof(test_structmembers, structmembers.xint64_member), 0, NULL},
     {"T_INTPTR", Py_T_INTPTR, offsetof(test_structmembers, structmembers.intptr_member), 0, NULL},
     {"T_UINTPTR", Py_T_UINTPTR, offsetof(test_structmembers, structmembers.uintptr_member), 0, NULL},
     {"T_OFF", Py_T_OFF, offsetof(test_structmembers, structmembers.off_member), 0, NULL},

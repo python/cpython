@@ -121,24 +121,28 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         v = Py_NewRef(Py_None);
         break;
     case Py_T_INT8:
+    case Py_T_INT8|Py_T_UINT8:
         v = PyLong_FromLong(*(int8_t*)addr);
         break;
     case Py_T_UINT8:
         v = PyLong_FromUnsignedLong(*(uint8_t*)addr);
         break;
     case Py_T_INT16:
+    case Py_T_INT16|Py_T_UINT16:
         v = PyLong_FromLong(*(int16_t*)addr);
         break;
     case Py_T_UINT16:
         v = PyLong_FromUnsignedLong(*(uint16_t*)addr);
         break;
     case Py_T_INT32:
+    case Py_T_INT32|Py_T_UINT32:
         v = PyLong_FromLong(*(int32_t*)addr);
         break;
     case Py_T_UINT32:
         v = PyLong_FromUnsignedLong(*(uint32_t*)addr);
         break;
     case Py_T_INT64:
+    case Py_T_INT64|Py_T_UINT64:
         v = PyLong_FromLongLong(*(int64_t*)addr);
         break;
     case Py_T_UINT64:
@@ -190,6 +194,20 @@ PyMember_GetOne(const char *obj_addr, PyMemberDef *l)
         Py_ssize_t bytes = PyLong_AsNativeBytes(v, addr, (N),               \
             Py_ASNATIVEBYTES_NATIVE_ENDIAN |                                \
             Py_ASNATIVEBYTES_ALLOW_INDEX);                                  \
+        if (bytes < 0) {                                                    \
+            return -1;                                                      \
+        }                                                                   \
+        if ((size_t)bytes > (N)) {                                          \
+            PyErr_SetString(PyExc_OverflowError, "int too big to convert"); \
+            return -1;                                                      \
+        }                                                                   \
+    } while (0)
+
+#define SET_COMBINED_INT(N)  do {                                             \
+        Py_ssize_t bytes = PyLong_AsNativeBytes(v, addr, (N),               \
+            Py_ASNATIVEBYTES_NATIVE_ENDIAN |                                \
+            Py_ASNATIVEBYTES_ALLOW_INDEX |                                  \
+            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);                              \
         if (bytes < 0) {                                                    \
             return -1;                                                      \
         }                                                                   \
@@ -446,11 +464,17 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
     case Py_T_UINT8:
         SET_UNSIGNED_INT(1);
         break;
+    case Py_T_INT8|Py_T_UINT8:
+        SET_COMBINED_INT(1);
+        break;
     case Py_T_INT16:
         SET_SIGNED_INT(2);
         break;
     case Py_T_UINT16:
         SET_UNSIGNED_INT(2);
+        break;
+    case Py_T_INT16|Py_T_UINT16:
+        SET_COMBINED_INT(2);
         break;
     case Py_T_INT32:
         SET_SIGNED_INT(4);
@@ -458,11 +482,17 @@ PyMember_SetOne(char *addr, PyMemberDef *l, PyObject *v)
     case Py_T_UINT32:
         SET_UNSIGNED_INT(4);
         break;
+    case Py_T_INT32|Py_T_UINT32:
+        SET_COMBINED_INT(4);
+        break;
     case Py_T_INT64:
         SET_SIGNED_INT(8);
         break;
     case Py_T_UINT64:
         SET_UNSIGNED_INT(8);
+        break;
+    case Py_T_INT64|Py_T_UINT64:
+        SET_COMBINED_INT(8);
         break;
     case Py_T_INTPTR:
         SET_SIGNED_INT(sizeof(intptr_t));
