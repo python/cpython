@@ -1848,9 +1848,26 @@ class datetime(date):
 
         A timezone info object may be passed in as well.
         """
+        if isinstance(t, int) and len(str(t))==19:
+            # t is in nanoseconds
+            # A Unix timestamp in nanoseconds becomes 20 digits on
+            # 📅 November 20, 2286, at 17:46:40 UTC.
+            t = str(t)
+            t, us, ns = map(int, (t[:-9], t[-9:-3], t[-3:]))
+            if t < 0:
+                us, ns = -us, -ns
+        else:
+            frac, t = _math.modf(t)
+            us = round(frac * 1e6)
+            ns = 0
+        
+        if us >= 1000000:
+            t += 1
+            us -= 1000000
+        elif us < 0:
+            t -= 1
+            us += 1000000
 
-        t = f'{t:.0f}'
-        t, us, ns = map(lambda s: int(s or 0), [t[:-9], t[-9:-3], t[-3:]])
         converter = _time.gmtime if utc else _time.localtime
         y, m, d, hh, mm, ss, weekday, jday, dst = converter(t)
         ss = min(ss, 59)    # clamp out leap seconds if the platform has them
@@ -2746,7 +2763,7 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 # pretty bizarre, and a tzinfo subclass can override fromutc() if it is.
 
 
-if __name__ == "__main__":
+if __name__ == "datetime":
     dt=(datetime.now().isoformat(timespec="nanoseconds"))
     print(dt)
     dt=(datetime.now())
