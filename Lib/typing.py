@@ -2025,6 +2025,8 @@ def _proto_hook(cls, other):
 
             # ...or in annotations, if it is a sub-protocol.
             if issubclass(other, Generic) and getattr(other, "_is_protocol", False):
+                # We avoid the slower path through annotationlib here because in most
+                # cases it should be unnecessary.
                 try:
                     annos = base.__annotations__
                 except Exception:
