@@ -10,7 +10,7 @@ import sys
 import tempfile
 from unittest import TestCase, skipUnless, skipIf
 from unittest.mock import patch
-from test.support import force_not_colorized, make_clean_env
+from test.support import force_not_colorized, make_clean_env, patch_list
 from test.support import SHORT_TIMEOUT
 from test.support.import_helper import import_module
 from test.support.os_helper import unlink
@@ -904,7 +904,17 @@ class TestPyReplModuleCompleter(TestCase):
         reader = ReadlineAlikeReader(console=console, config=config)
         return reader
 
+    @patch_list(sys.meta_path)
     def test_import_completions(self):
+        from importlib.machinery import BuiltinImporter
+        # Remove all importers except for the builtin one
+        # to prevent searching anything but the builtin modules.
+        # This makes the test more reliable in case there are
+        # other user packages/scripts on PYTHONPATH which can
+        # intefere with the completions.
+        sys.meta_path = [finder for finder in sys.meta_path
+                         if isinstance(finder, BuiltinImporter)]
+
         cases = (
             ("import path\t\n", "import pathlib"),
             ("import importlib.\t\tres\t\n", "import importlib.resources"),
