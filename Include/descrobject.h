@@ -79,7 +79,7 @@ struct PyMemberDef {
 #define Py_T_PYSSIZET  19      /* Py_ssize_t */
 #define _Py_T_NONE     20 // Deprecated. Value is always None.
 
-#define Py_T_INTEGER(type) ((sizeof(type) << 8) | (_Py_IS_TYPE_SIGNED(type) ? 0 : 1))
+#define Py_T_INTEGER(type) ((sizeof(type) << 8) | (_Py_IS_TYPE_SIGNED(type) ? 1 : 2))
 
 /* Flags */
 #define Py_READONLY            1
