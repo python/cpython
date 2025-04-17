@@ -2971,7 +2971,11 @@ def _connect(host, port, frame):
 
     remote_pdb = _RemotePdb(sockfile)
     weakref.finalize(remote_pdb, sockfile.close)
-    remote_pdb.set_trace(frame=frame)
+
+    if Pdb._last_pdb_instance is not None:
+        remote_pdb.error("Another PDB instance is already attached.")
+    else:
+        remote_pdb.set_trace(frame=frame)
 
 
 def attach(pid):
