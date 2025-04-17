@@ -1560,25 +1560,24 @@ class CommandLineTestCase(unittest.TestCase):
 
     def invoke_httpd(self, *args):
         output = StringIO()
-        with contextlib.redirect_stdout(output):
-<<<<<<< HEAD
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(output):
             server._main(args)
         return textwrap.dedent(output.getvalue()).strip()
-=======
-            with contextlib.redirect_stderr(output):
-                server._main(args)
-        return self.text_normalizer(output.getvalue())
->>>>>>> 26e6b963f04 (add no argument test and redirect stderr)
 
     @mock.patch('http.server.test')
     def test_port_flag(self, mock_func):
         ports = [8000, 65535,]
         for port in ports:
             with self.subTest(port=port):
-                self.invoke_httpd([str(port)])
-                mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
-                                                  protocol=self.default_protocol, port=port, bind=self.default_bind,
-                                                  tls_cert=None, tls_key=None, tls_password=None)
+                self.invoke_httpd(str(port))
+                mock_func.assert_called_once_with(HandlerClass=self.default_handler,
+                                                  ServerClass=self.default_server,
+                                                  protocol=self.default_protocol,
+                                                  port=port,
+                                                  bind=self.default_bind,
+                                                  tls_cert=None,
+                                                  tls_key=None,
+                                                  tls_password=None)
                 mock_func.reset_mock()
 
     @mock.patch('http.server.test')
@@ -1588,10 +1587,15 @@ class CommandLineTestCase(unittest.TestCase):
         for flag in options:
             for directory in directories:
                 with self.subTest(flag=flag, directory=directory):
-                    self.invoke_httpd([flag, directory])
-                    mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
-                                                      protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
-                                                      tls_cert=None, tls_key=None, tls_password=None)
+                    self.invoke_httpd(flag, directory)
+                    mock_func.assert_called_once_with(HandlerClass=self.default_handler,
+                                                      ServerClass=self.default_server,
+                                                      protocol=self.default_protocol,
+                                                      port=self.default_port,
+                                                      bind=self.default_bind,
+                                                      tls_cert=None,
+                                                      tls_key=None,
+                                                      tls_password=None)
                     mock_func.reset_mock()
 
     @mock.patch('http.server.test')
@@ -1601,10 +1605,15 @@ class CommandLineTestCase(unittest.TestCase):
         for flag in options:
             for bind_address in bind_addresses:
                 with self.subTest(flag=flag, bind_address=bind_address):
-                    self.invoke_httpd([flag, bind_address])
-                    mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
-                                                      protocol=self.default_protocol, port=self.default_port, bind=bind_address,
-                                                      tls_cert=None, tls_key=None, tls_password=None)
+                    self.invoke_httpd(flag, bind_address)
+                    mock_func.assert_called_once_with(HandlerClass=self.default_handler,
+                                                      ServerClass=self.default_server,
+                                                      protocol=self.default_protocol,
+                                                      port=self.default_port,
+                                                      bind=bind_address,
+                                                      tls_cert=None,
+                                                      tls_key=None,
+                                                      tls_password=None)
                     mock_func.reset_mock()
 
     @mock.patch('http.server.test')
@@ -1614,18 +1623,28 @@ class CommandLineTestCase(unittest.TestCase):
         for flag in options:
             for protocol in protocols:
                 with self.subTest(flag=flag, protocol=protocol):
-                    self.invoke_httpd([flag, protocol])
-                    mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
-                                                      protocol=protocol, port=self.default_port, bind=self.default_bind,
-                                                      tls_cert=None, tls_key=None, tls_password=None)
+                    self.invoke_httpd(flag, protocol)
+                    mock_func.assert_called_once_with(HandlerClass=self.default_handler,
+                                                      ServerClass=self.default_server,
+                                                      protocol=protocol,
+                                                      port=self.default_port,
+                                                      bind=self.default_bind,
+                                                      tls_cert=None,
+                                                      tls_key=None,
+                                                      tls_password=None)
                     mock_func.reset_mock()
 
     @mock.patch('http.server.test')
     def test_cgi_flag(self, mock_func):
-        self.invoke_httpd(['--cgi'])
-        mock_func.assert_called_once_with(HandlerClass=CGIHTTPRequestHandler, ServerClass=self.default_server,
-                                          protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
-                                          tls_cert=None, tls_key=None, tls_password=None)
+        self.invoke_httpd('--cgi')
+        mock_func.assert_called_once_with(HandlerClass=CGIHTTPRequestHandler,
+                                          ServerClass=self.default_server,
+                                          protocol=self.default_protocol,
+                                          port=self.default_port,
+                                          bind=self.default_bind,
+                                          tls_cert=None,
+                                          tls_key=None,
+                                          tls_password=None)
 
     @unittest.skipIf(ssl is None, "requires ssl")
     @mock.patch('http.server.test')
@@ -1637,10 +1656,15 @@ class CommandLineTestCase(unittest.TestCase):
 
         for tls_cert_option in tls_cert_options:
             for tls_key_option in tls_key_options:
-                self.invoke_httpd([tls_cert_option, self.tls_cert, tls_key_option, self.tls_key])
-                mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
-                                                  protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
-                                                  tls_cert=self.tls_cert, tls_key=self.tls_key, tls_password=None)
+                self.invoke_httpd(tls_cert_option, self.tls_cert, tls_key_option, self.tls_key)
+                mock_func.assert_called_once_with(HandlerClass=self.default_handler,
+                                                  ServerClass=self.default_server,
+                                                  protocol=self.default_protocol,
+                                                  port=self.default_port,
+                                                  bind=self.default_bind,
+                                                  tls_cert=self.tls_cert,
+                                                  tls_key=self.tls_key,
+                                                  tls_password=None)
                 mock_func.reset_mock()
 
         # Normal: --tls-cert, --tls-key and --tls-password-file
@@ -1648,11 +1672,16 @@ class CommandLineTestCase(unittest.TestCase):
         for tls_cert_option in tls_cert_options:
             for tls_key_option in tls_key_options:
                 for tls_password_option in tls_password_options:
-                    self.invoke_httpd([tls_cert_option, self.tls_cert, tls_key_option, self.tls_key, tls_password_option, self.tls_password_file])
+                    self.invoke_httpd(tls_cert_option, self.tls_cert, tls_key_option, self.tls_key, tls_password_option, self.tls_password_file)
 
-                    mock_func.assert_called_once_with(HandlerClass=self.default_handler, ServerClass=self.default_server,
-                                                      protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
-                                                      tls_cert=self.tls_cert, tls_key=self.tls_key, tls_password=self.tls_password)
+                    mock_func.assert_called_once_with(HandlerClass=self.default_handler,
+                                                      ServerClass=self.default_server,
+                                                      protocol=self.default_protocol,
+                                                      port=self.default_port,
+                                                      bind=self.default_bind,
+                                                      tls_cert=self.tls_cert,
+                                                      tls_key=self.tls_key,
+                                                      tls_password=self.tls_password)
                     mock_func.reset_mock()
 
         # Abnormal: --tls-key without --tls-cert
@@ -1660,14 +1689,14 @@ class CommandLineTestCase(unittest.TestCase):
         for tls_key_option in tls_key_options:
             for tls_cert_option in tls_cert_options:
                 with self.assertRaises(SystemExit):
-                    self.invoke_httpd([tls_key_option, self.tls_key])
+                    self.invoke_httpd(tls_key_option, self.tls_key)
                     mock_func.reset_mock()
 
         # Abnormal: --tls-password-file without --tls-cert
 
         for tls_password_option in tls_password_options:
             with self.assertRaises(SystemExit):
-                self.invoke_httpd([tls_password_option, self.tls_password_file])
+                self.invoke_httpd(tls_password_option, self.tls_password_file)
                 mock_func.reset_mock()
 
         # Abnormal: --tls-password-file cannot be opened
@@ -1687,20 +1716,24 @@ class CommandLineTestCase(unittest.TestCase):
         self.invoke_httpd()
         mock_func.assert_called_once_with(HandlerClass=self.default_handler,
                                           ServerClass=self.default_server,
-                                          protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
-                                          tls_cert=None, tls_key=None, tls_password=None)
+                                          protocol=self.default_protocol,
+                                          port=self.default_port,
+                                          bind=self.default_bind,
+                                          tls_cert=None,
+                                          tls_key=None,
+                                          tls_password=None)
         mock_func.reset_mock()
 
     def test_help_flag(self):
         options = ['-h', '--help']
         for option in options:
             with self.assertRaises(SystemExit):
-                output = self.invoke_httpd([option])
+                output = self.invoke_httpd(option)
                 self.assertStartsWith(output, 'usage: ')
 
     def test_unknown_flag(self):
         with self.assertRaises(SystemExit):
-            self.invoke_httpd(['--unknown-flag'])
+            self.invoke_httpd('--unknown-flag')
 
 def setUpModule():
     unittest.addModuleCleanup(os.chdir, os.getcwd())
