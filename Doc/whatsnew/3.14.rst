@@ -469,6 +469,11 @@ Other language changes
   of HMAC is not available.
   (Contributed by Bénédikt Tran in :gh:`99108`.)
 
+* :option:`-X importtime <-X>` now accepts value ``2``, which indicates that
+  an ``importtime`` entry should also be printed if an imported module has
+  already been loaded. The ``self`` and ``cumulative`` times for such entries
+  are replaced by the string ``cached``.
+  (Contributed by Noah Kim in :gh:`118655`.)
 
 .. _whatsnew314-pep765:
 
