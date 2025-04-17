@@ -594,7 +594,7 @@ class HTTPErrorProcessor(BaseHandler):
     handler_order = 1000  # after all other processing
 
     def http_response(self, request, response):
-        code, msg, hdrs = response.status, response.msg, response.info()
+        code, msg, hdrs = response.status, response.msg, response.headers
 
         # According to RFC 2616, "2xx" code indicates that the client's
         # request was successfully received, understood, and accepted.
