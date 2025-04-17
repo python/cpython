@@ -241,10 +241,9 @@ def _load_testfile(filename, package, module_relative, encoding):
     if module_relative:
         package = _normalize_module(package, 3)
         with contextlib.suppress(Exception):
-            return (
-                importlib.resources.read_text(package, filename, encoding=encoding),
-                filename,
-            )
+            text = importlib.resources.read_text(package, filename,
+                                                 encoding=encoding)
+            return text, filename
 
         filename = _module_relative_path(package, filename)
 
