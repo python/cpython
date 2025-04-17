@@ -2516,12 +2516,21 @@ class _RemotePdb(Pdb):
         self._interact_state = None
         self._sockfile = sockfile
         self._command_name_cache = []
+        self._write_failed = False
         super().__init__(**kwargs)
 
     def _send(self, **kwargs) -> None:
         json_payload = json.dumps(kwargs)
-        self._sockfile.write(json_payload.encode() + b"\n")
-        self._sockfile.flush()
+        try:
+            self._sockfile.write(json_payload.encode() + b"\n")
+            self._sockfile.flush()
+        except OSError:
+            # This means that the client has abruptly disconnected, but we'll
+            # handle that the next time we try to read from the client instead
+            # of trying to handle it from everywhere _send() may be called.
+            # Track this with a flag rather than assuming readline() will ever
+            # return an empty string because the socket may be half-closed.
+            self._write_failed = True
 
     def message(self, msg, end="\n"):
         self._send(message=msg + end)
@@ -2533,9 +2542,13 @@ class _RemotePdb(Pdb):
         # Loop until we get a command for PDB or an 'interact' REPL.
         # Process out-of-band completion messages without returning.
         while True:
+            if self._write_failed:
+                return "EOF"
+
             payload = self._sockfile.readline()
             if not payload:
                 return "EOF"
+
             try:
                 match json.loads(payload):
                     case {"command": str(line)}:
@@ -2609,7 +2622,11 @@ class _RemotePdb(Pdb):
         # Detach the debugger and close the socket without raising BdbQuit
         self.quitting = False
         if self._owns_sockfile:
-            self._sockfile.close()
+            try:
+                self._sockfile.close()
+            except OSError:
+                # close() can fail if the connection was broken unexpectedly.
+                pass
 
     def do_alias(self, arg):
         # Clear our cached list of valid commands; one might be added.
