@@ -12,7 +12,6 @@
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
-#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_time.h"          // _PyTime_ObjectToTime_t()
 #include "pycore_unicodeobject.h" // _PyUnicode_Copy()
 
@@ -162,7 +161,6 @@ static datetime_state *
 _get_current_state(PyObject **p_mod)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    assert(interp->dict != NULL);
     PyObject *mod = get_current_module(interp, NULL);
     if (mod == NULL) {
         assert(!PyErr_Occurred());
@@ -187,11 +185,10 @@ _get_current_state(PyObject **p_mod)
     Py_DECREF(MOD_VAR)
 
 static int
-set_current_module(PyInterpreterState *interp, PyObject *mod)
+set_current_module(datetime_state *st, PyObject *mod)
 {
-    assert(interp->dict != NULL);
     assert(mod != NULL);
-    PyObject *dict = PyInterpreterState_GetDict(interp);
+    PyObject *dict = st->interp_dict;
     if (dict == NULL) {
         return -1;
     }
@@ -200,19 +197,13 @@ set_current_module(PyInterpreterState *interp, PyObject *mod)
 }
 
 static void
-clear_current_module(PyInterpreterState *interp, PyObject *expected)
+clear_current_module(datetime_state *st, PyObject *expected)
 {
-    if (interp->dict == NULL) {
-        // Do not resurrect a dict during interp-shutdown to avoid the leak
-        assert(_Py_IsInterpreterFinalizing(interp));
-        return;
-    }
-
     PyObject *exc = PyErr_GetRaisedException();
 
-    PyObject *dict = PyInterpreterState_GetDict(interp);
+    PyObject *dict = st->interp_dict;
     if (dict == NULL) {
-        goto error;
+        return;  /* Already cleared */
     }
 
     if (expected != NULL) {
@@ -7206,8 +7197,15 @@ create_timezone_from_delta(int days, int sec, int ms, int normalize)
  */
 
 static int
-init_state(datetime_state *st, PyObject *module, PyObject *old_module)
+init_state(datetime_state *st,
+           PyInterpreterState *interp, PyObject *module, PyObject *old_module)
 {
+    PyObject *dict = PyInterpreterState_GetDict(interp);
+    if (dict == NULL) {
+        return -1;
+    }
+    st->interp_dict = Py_NewRef(dict);
+
     /* Each module gets its own heap types. */
 #define ADD_TYPE(FIELD, SPEC, BASE)                 \
     do {                                            \
@@ -7226,6 +7224,7 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
         assert(old_module != module);
         datetime_state *st_old = get_module_state(old_module);
         *st = (datetime_state){
+            .interp_dict = st->interp_dict,
             .isocalendar_date_type = st->isocalendar_date_type,
             .us_per_ms = Py_NewRef(st_old->us_per_ms),
             .us_per_second = Py_NewRef(st_old->us_per_second),
@@ -7278,13 +7277,6 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
     if (st->epoch == NULL) {
         return -1;
     }
-
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    PyObject *dict = PyInterpreterState_GetDict(interp);
-    if (dict == NULL) {
-        return -1;
-    }
-    st->interp_dict = Py_NewRef(dict);
 
     return 0;
 }
@@ -7379,7 +7371,7 @@ _datetime_exec(PyObject *module)
         }
     }
 
-    if (init_state(st, module, old_module) < 0) {
+    if (init_state(st, interp, module, old_module) < 0) {
         goto error;
     }
 
@@ -7485,7 +7477,7 @@ _datetime_exec(PyObject *module)
     static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
     assert(DI100Y == days_before_year(100+1));
 
-    if (set_current_module(interp, module) < 0) {
+    if (set_current_module(st, module) < 0) {
         goto error;
     }
 
@@ -7518,10 +7510,8 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 static int
 module_clear(PyObject *mod)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    clear_current_module(interp, mod);
-
     datetime_state *st = get_module_state(mod);
+    clear_current_module(st, mod);
     clear_state(st);
 
     // The runtime takes care of the static types for us.
