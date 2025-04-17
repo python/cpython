@@ -70,7 +70,7 @@ check_exports(bytesio *self)
         return NULL; \
     }
 
-#define SHARED_BUF(self) (Py_REFCNT((self)->buf) > 1)
+#define SHARED_BUF(self) (!_PyObject_IsUniquelyReferenced((self)->buf))
 
 
 /* Internal routine to get a line from the buffer of a BytesIO
