@@ -85,7 +85,7 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             }
             last_was_str = 1;
         }
-        else if (PyObject_TypeCheck(item, &_PyInterpolation_Type)) {
+        else if (_PyInterpolation_Check(item)) {
             if (!last_was_str) {
                 stringslen++;
             }
@@ -134,7 +134,7 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             }
             last_was_str = 1;
         }
-        else if (PyObject_TypeCheck(item, &_PyInterpolation_Type)) {
+        else if (_PyInterpolation_Check(item)) {
             if (!last_was_str) {
                 PyTuple_SET_ITEM(strings, stringsidx++, &_Py_STR(empty));
             }
@@ -397,14 +397,13 @@ template_concat_str_template(templateobject *self, PyObject *other)
 PyObject *
 _PyTemplate_Concat(PyObject *self, PyObject *other)
 {
-    if (PyObject_TypeCheck(self, &_PyTemplate_Type) &&
-            PyObject_TypeCheck(other, &_PyTemplate_Type)) {
+    if (_PyTemplate_Check(self) && _PyTemplate_Check(other)) {
         return template_concat_templates((templateobject *) self, (templateobject *) other);
     }
-    else if (PyObject_TypeCheck(self, &_PyTemplate_Type) && PyUnicode_Check(other)) {
+    else if ((_PyTemplate_Check(self)) && PyUnicode_Check(other)) {
         return template_concat_template_str((templateobject *) self, other);
     }
-    else if (PyUnicode_Check(self) && PyObject_TypeCheck(other, &_PyTemplate_Type)) {
+    else if (PyUnicode_Check(self) && (_PyTemplate_Check(other))) {
         return template_concat_str_template((templateobject *) other, self);
     }
     else {
