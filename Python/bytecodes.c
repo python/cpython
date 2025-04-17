@@ -915,7 +915,7 @@ dummy_func(
             assert(PySlice_Check(sub));
             assert(PyList_CheckExact(list));
 
-            PyObject *res_o = _PyList_Subscript((PyListObject*)list, sub);
+            PyObject *res_o = _PyList_Subscript(list, sub);
             DEOPT_IF(res_o == NULL);
             STAT_INC(BINARY_OP, hit);
             res = PyStackRef_FromPyObjectSteal(res_o);
