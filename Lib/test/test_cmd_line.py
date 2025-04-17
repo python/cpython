@@ -1096,13 +1096,13 @@ class CmdLineTest(unittest.TestCase):
             args1 = sys.executable, '-c', case['code']
             proc1 = subprocess.run(args1, stdout=subprocess.PIPE)
             self.assertEqual(proc1.returncode, 0, proc1)
-            output1 = proc1.stdout.strip()
+            output1 = proc1.stdout.strip().decode(encoding='utf-8')
 
             # Manually dedent beforehand, check the result is the same.
             args2 = sys.executable, '-c', dedent(case['code'])
             proc2 = subprocess.run(args2, stdout=subprocess.PIPE)
             self.assertEqual(proc2.returncode, 0, proc2)
-            output2 = proc2.stdout.strip()
+            output2 = proc2.stdout.strip().decode(encoding='utf-8')
 
             self.assertEqual(output1, output2)
             self.assertEqual(output1.replace(b'\r\n', b'\n'), case['expected'])
