@@ -1585,7 +1585,7 @@ class time:
                 assert not m % timedelta(minutes=1), "whole minute"
                 m //= timedelta(minutes=1)
                 if 0 <= h < 24:
-                    self._hashcode = hash(time(h, m, self.second, self.microsecond, self.nanosecond))
+                    self._hashcode = hash(time(h, m, self.second, self.microsecond, nanosecond=self.nanosecond))
                 else:
                     self._hashcode = hash((h, m, self.second, self.microsecond, self.nanosecond))
         return self._hashcode
@@ -2171,7 +2171,7 @@ class datetime(date):
     def __repr__(self):
         """Convert to formal string, for repr()."""
         L = [self._year, self._month, self._day,  # These are never zero
-             self._hour, self._minute, self._second, self._microsecond, self._nanosecond]
+             self._hour, self._minute, self._second, self._microsecond]
         if L[-1] == 0:
             del L[-1]
         if L[-1] == 0:
@@ -2179,6 +2179,9 @@ class datetime(date):
         s = "%s%s(%s)" % (_get_class_module(self),
                           self.__class__.__qualname__,
                           ", ".join(map(str, L)))
+        if self._nanosecond:
+            assert s[-1:] == ")"
+            s = s[:-1] + ", nanosecond=%d" % self._nanosecond + ")"
         if self._tzinfo is not None:
             assert s[-1:] == ")"
             s = s[:-1] + ", tzinfo=%r" % self._tzinfo + ")"
