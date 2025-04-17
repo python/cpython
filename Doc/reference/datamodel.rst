@@ -1228,7 +1228,7 @@ Special attributes
        :attr:`__annotations__ attributes <object.__annotations__>`.
 
        For best practices on working with :attr:`~object.__annotations__`,
-       please see :mod:`annotationlib`. It is recommended to use
+       please see :mod:`annotationlib`. Where possible, use
        :func:`annotationlib.get_annotations` instead of accessing this
        attribute directly.
 

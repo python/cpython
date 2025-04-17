@@ -304,8 +304,9 @@ Functions
 
    Retrieve the :term:`annotate function` from a class namespace dictionary *namespace*.
    Return :const:`!None` if the namespace does not contain an annotate function.
-   This is useful in :ref:`metaclasses <metaclasses>` to retrieve the annotate function;
-   see :ref:`below <annotationlib-metaclass>` for an example.
+   This is primarily useful before the class has been fully created (e.g., in a metaclass);
+   after the class exists, the annotate function can be retrieved with ``cls.__annotate__``.
+   See :ref:`below <annotationlib-metaclass>` for an example using this function in a metaclass.
 
    .. versionadded:: 3.14
 
@@ -429,7 +430,9 @@ that calls the original annotate function, makes any necessary adjustments, and
 returns the result.
 
 Below is an example of a metaclass that filters out all :class:`typing.ClassVar`
-annotations from the class and puts them in a separate attribute::
+annotations from the class and puts them in a separate attribute:
+
+.. code-block:: python
 
    import annotationlib
    import typing
