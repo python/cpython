@@ -50,6 +50,9 @@ typedef struct {
 
     /* The interned Unix epoch datetime instance */
     PyObject *epoch;
+
+    /* Interpreter's dict holds the module */
+    PyObject *interp_dict;
 } datetime_state;
 
 /* The module has a fixed number of static objects, due to being exposed
@@ -7276,6 +7279,13 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
         return -1;
     }
 
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyObject *dict = PyInterpreterState_GetDict(interp);
+    if (dict == NULL) {
+        return -1;
+    }
+    st->interp_dict = Py_NewRef(dict);
+
     return 0;
 }
 
@@ -7284,6 +7294,7 @@ traverse_state(datetime_state *st, visitproc visit, void *arg)
 {
     /* heap types */
     Py_VISIT(st->isocalendar_date_type);
+    Py_VISIT(st->interp_dict);
 
     return 0;
 }
@@ -7300,6 +7311,7 @@ clear_state(datetime_state *st)
     Py_CLEAR(st->us_per_week);
     Py_CLEAR(st->seconds_per_day);
     Py_CLEAR(st->epoch);
+    Py_CLEAR(st->interp_dict);
     return 0;
 }
 
@@ -7506,11 +7518,11 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 static int
 module_clear(PyObject *mod)
 {
-    datetime_state *st = get_module_state(mod);
-    clear_state(st);
-
     PyInterpreterState *interp = PyInterpreterState_Get();
     clear_current_module(interp, mod);
+
+    datetime_state *st = get_module_state(mod);
+    clear_state(st);
 
     // The runtime takes care of the static types for us.
     // See _PyTypes_FiniExtTypes()..
