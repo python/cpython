@@ -3159,7 +3159,8 @@ static PyObject *
 class_name(PyObject *cls)
 {
 #ifdef Py_GIL_DISABLED
-    // Avoid re-entrancy and use tp_name
+    // Avoid re-entrancy and use tp_name.  This is only used for the
+    // mro_implementation() sanity check of the computed mro.
     return type_name(cls, NULL);
 #else
     PyObject *name;
