@@ -1561,8 +1561,14 @@ class CommandLineTestCase(unittest.TestCase):
     def invoke_httpd(self, *args):
         output = StringIO()
         with contextlib.redirect_stdout(output):
+<<<<<<< HEAD
             server._main(args)
         return textwrap.dedent(output.getvalue()).strip()
+=======
+            with contextlib.redirect_stderr(output):
+                server._main(args)
+        return self.text_normalizer(output.getvalue())
+>>>>>>> 26e6b963f04 (add no argument test and redirect stderr)
 
     @mock.patch('http.server.test')
     def test_port_flag(self, mock_func):
@@ -1675,6 +1681,15 @@ class CommandLineTestCase(unittest.TestCase):
                 for tls_cert_option in tls_cert_options:
                     with self.assertRaises(SystemExit):
                         self.invoke_httpd([tls_cert_option, self.tls_cert, tls_password_option, non_existent_file])
+
+    @mock.patch('http.server.test')
+    def test_no_arguments(self, mock_func):
+        self.invoke_httpd()
+        mock_func.assert_called_once_with(HandlerClass=self.default_handler,
+                                          ServerClass=self.default_server,
+                                          protocol=self.default_protocol, port=self.default_port, bind=self.default_bind,
+                                          tls_cert=None, tls_key=None, tls_password=None)
+        mock_func.reset_mock()
 
     def test_help_flag(self):
         options = ['-h', '--help']
