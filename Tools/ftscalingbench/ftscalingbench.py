@@ -27,6 +27,7 @@ import queue
 import sys
 import threading
 import time
+import copy
 
 # The iterations in individual benchmarks are scaled by this factor.
 WORK_SCALE = 100
@@ -37,10 +38,24 @@ threads = []
 in_queues = []
 out_queues = []
 
-
 def register_benchmark(func):
     ALL_BENCHMARKS[func.__name__] = func
     return func
+
+
+@register_benchmark
+def shallow_copy():
+    x = [1, 2, 3]
+    shallow_copy = copy.copy
+    for i in range(200 * WORK_SCALE):
+        shallow_copy(x)
+
+@register_benchmark
+def deepcopy():
+    x = {'list': [1, 2], 'tuple': (1, None)}
+    deepcopy = copy.deepcopy
+    for i in range(40 * WORK_SCALE):
+        deepcopy(x)
 
 @register_benchmark
 def object_cfunction():
