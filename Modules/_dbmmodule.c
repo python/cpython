@@ -201,7 +201,11 @@ dbm_subscript(PyObject *self, PyObject *key)
     krec.dsize = tmp_size;
 
     Py_BEGIN_CRITICAL_SECTION(self);
-    check_dbmobject_open(dp, state->dbm_error);
+    /* Can't use the macro here as it returns. */
+    if (dp->di_dbm == NULL) {
+        PyErr_SetString(state->dbm_error, "DBM object has already been closed");
+        goto done;
+    }
     drec = dbm_fetch(dp->di_dbm, krec);
     if ( drec.dptr == 0 ) {
         PyErr_SetObject(PyExc_KeyError, key);
