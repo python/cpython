@@ -147,7 +147,8 @@ check_invalid_reentrancy(void)
     // that's a bug somewhere (likely in the painfully complex typeobject code).
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(!interp->stoptheworld.world_stopped);
-    assert(interp->types.mutex_tid != PyThread_get_thread_ident_ex());
+    assert(_Py_atomic_load_ullong_relaxed(&interp->types.mutex_tid) !=
+           PyThread_get_thread_ident_ex());
 #endif
 }
 
