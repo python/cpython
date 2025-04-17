@@ -1,6 +1,5 @@
-Fix libc thread safety issues with:
-- socket: replace getservbyname, getservbyport, getprotobyname with *_r
-  re-entrant versions
-- pwd: lock access to getpwall
-- dbm: perform stateful operations in critical sections
-- os: replace getlogin with getlogin_r re-entrant version
+Fix libc thread safety issues with :mod:`socket` (replace ``getservbyname``,
+``getservbyport``, ``getprotobyname`` with ``*_r`` re-entrant versions),
+:mod:`pwd` (lock access to ``getpwall``), :mod:`dbm` (perform stateful
+operations in critical sections), and :mod:`os` (replace ``getlogin`` with
+``getlogin_r`` re-entrant version).
