@@ -68,15 +68,23 @@ typedef struct {
 } templateobject;
 
 static templateobject *
+template_from_strings_interpolations(PyTypeObject *type, PyObject *strings, PyObject *interpolations)
+{
+    templateobject *template = (templateobject *) type->tp_alloc(type, 0);
+    if (template == NULL) {
+        return NULL;
+    }
+
+    template->strings = Py_NewRef(strings);
+    template->interpolations = Py_NewRef(interpolations);
+    return template;
+}
+
+static templateobject *
 template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     if (kwds != NULL) {
         PyErr_SetString(PyExc_TypeError, "Template.__new__ only accepts *args arguments");
-        return NULL;
-    }
-
-    templateobject *self = (templateobject *) type->tp_alloc(type, 0);
-    if (!self) {
         return NULL;
     }
 
@@ -101,7 +109,6 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             last_was_str = 0;
         }
         else {
-            Py_DECREF(self);
             PyErr_SetString(PyExc_TypeError, "Template.__new__ *args need to be of type 'str' or 'Interpolation'");
             return NULL;
         }
@@ -112,13 +119,11 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     PyObject *strings = PyTuple_New(stringslen);
     if (!strings) {
-        Py_DECREF(self);
         return NULL;
     }
 
     PyObject *interpolations = PyTuple_New(interpolationslen);
     if (!interpolations) {
-        Py_DECREF(self);
         Py_DECREF(strings);
         return NULL;
     }
@@ -133,7 +138,9 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 PyObject *concat = PyUnicode_Concat(laststring, item);
                 Py_DECREF(laststring);
                 if (!concat) {
-                    goto error;
+                    Py_DECREF(strings);
+                    Py_DECREF(interpolations);
+                    return NULL;
                 }
                 PyTuple_SET_ITEM(strings, stringsidx - 1, concat);
             }
@@ -154,15 +161,10 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyTuple_SET_ITEM(strings, stringsidx++, &_Py_STR(empty));
     }
 
-    self->strings = strings;
-    self->interpolations = interpolations;
-    return self;
-
-error:
-    Py_DECREF(self);
+    templateobject *template = template_from_strings_interpolations(type, strings, interpolations);
     Py_DECREF(strings);
     Py_DECREF(interpolations);
-    return NULL;
+    return template;
 }
 
 static void
@@ -217,19 +219,6 @@ template_iter(templateobject *self)
     iter->from_strings = 1;
     PyObject_GC_Track(iter);
     return iter;
-}
-
-static PyObject *
-template_from_strings_interpolations(PyTypeObject *type, PyObject *strings, PyObject *interpolations)
-{
-    PyObject *template = type->tp_alloc(type, 0);
-    if (template == NULL) {
-        return NULL;
-    }
-
-    ((templateobject *) template)->strings = Py_NewRef(strings);
-    ((templateobject *) template)->interpolations = Py_NewRef(interpolations);
-    return template;
 }
 
 static PyObject *
@@ -360,12 +349,10 @@ template_concat_templates(templateobject *self, templateobject *other)
         return NULL;
     }
 
-    PyObject *newtemplate = template_from_strings_interpolations(Py_TYPE(self), newstrings, newinterpolations);
-
+    templateobject *newtemplate = template_from_strings_interpolations(Py_TYPE(self), newstrings, newinterpolations);
     Py_DECREF(newstrings);
     Py_DECREF(newinterpolations);
-
-    return newtemplate;
+    return (PyObject *) newtemplate;
 }
 
 static PyObject *
@@ -382,12 +369,10 @@ template_concat_template_str(templateobject *self, PyObject *other)
         return NULL;
     }
 
-    PyObject *newtemplate = template_from_strings_interpolations(Py_TYPE(self), newstrings, newinterpolations);
-
+    templateobject *newtemplate = template_from_strings_interpolations(Py_TYPE(self), newstrings, newinterpolations);
     Py_DECREF(newstrings);
     Py_DECREF(newinterpolations);
-
-    return newtemplate;
+    return (PyObject *) newtemplate;
 }
 
 static PyObject *
@@ -404,12 +389,10 @@ template_concat_str_template(templateobject *self, PyObject *other)
         return NULL;
     }
 
-    PyObject *newtemplate = template_from_strings_interpolations(Py_TYPE(self), newstrings, newinterpolations);
-
+    templateobject *newtemplate = template_from_strings_interpolations(Py_TYPE(self), newstrings, newinterpolations);
     Py_DECREF(newstrings);
     Py_DECREF(newinterpolations);
-
-    return newtemplate;
+    return (PyObject *) newtemplate;
 }
 
 PyObject *

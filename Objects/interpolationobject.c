@@ -67,10 +67,10 @@ interpolation_new_impl(PyTypeObject *type, PyObject *value,
         return NULL;
     }
 
-    Py_XSETREF(self->value, Py_NewRef(value));
-    Py_XSETREF(self->expression, Py_NewRef(expression));
-    Py_XSETREF(self->conversion, Py_NewRef(conversion));
-    Py_XSETREF(self->format_spec, Py_NewRef(format_spec));
+    self->value = Py_NewRef(value);
+    self->expression = Py_NewRef(expression);
+    self->conversion = Py_NewRef(conversion);
+    self->format_spec = Py_NewRef(format_spec);
     return (PyObject *) self;
 }
 
