@@ -24,6 +24,7 @@ from typing import (
 )
 
 from test import support
+from test.support import import_helper
 from test.test_inspect import inspect_stock_annotations
 from test.test_inspect import inspect_stringized_annotations
 from test.test_inspect import inspect_stringized_annotations_2
@@ -1367,3 +1368,9 @@ class ForwardRefTests(unittest.TestCase):
 class TestAnnotationLib(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, annotationlib)
+
+    def test_lazy_imports(self):
+        import_helper.ensure_lazy_imports("annotationlib", {
+            "typing",
+            "warnings",
+        })
