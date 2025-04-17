@@ -1277,28 +1277,6 @@ set_copy_impl(PySetObject *so)
 }
 
 /*[clinic input]
-@coexist
-frozenset.__contains__
-    so: setobject
-    object as key: object
-    /
-
-x.__contains__(y) <==> y in x.
-[clinic start generated code]*/
-
-static PyObject *
-frozenset___contains___impl(PySetObject *so, PyObject *key)
-/*[clinic end generated code: output=2301ed91bc3a6dd5 input=2f04922a98d8bab7]*/
-{
-    long result;
-
-    result = set_contains_lock_held(so, key);
-    if (result < 0)
-        return NULL;
-    return PyBool_FromLong(result);
-}
-
-/*[clinic input]
 @critical_section
 frozenset.copy
     so: setobject
@@ -2266,6 +2244,28 @@ x.__contains__(y) <==> y in x.
 static PyObject *
 set___contains___impl(PySetObject *so, PyObject *key)
 /*[clinic end generated code: output=b44863d034b3c70e input=4a7d568459617f24]*/
+{
+    long result;
+
+    result = set_contains_lock_held(so, key);
+    if (result < 0)
+        return NULL;
+    return PyBool_FromLong(result);
+}
+
+/*[clinic input]
+@coexist
+frozenset.__contains__
+    so: setobject
+    object as key: object
+    /
+
+x.__contains__(y) <==> y in x.
+[clinic start generated code]*/
+
+static PyObject *
+frozenset___contains___impl(PySetObject *so, PyObject *key)
+/*[clinic end generated code: output=2301ed91bc3a6dd5 input=2f04922a98d8bab7]*/
 {
     long result;
 
