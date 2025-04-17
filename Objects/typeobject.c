@@ -571,11 +571,12 @@ _PyType_GetBases(PyTypeObject *self)
 static inline void
 set_tp_bases(PyTypeObject *self, PyObject *bases, int initial)
 {
-    assert(PyTuple_CheckExact(bases));
+    assert(PyTuple_Check(bases));
     ASSERT_NEW_OR_STOPPED(self);
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         // XXX tp_bases can probably be statically allocated for each
         // static builtin type.
+        assert(PyTuple_CheckExact(bases));
         assert(initial);
         assert(self->tp_bases == NULL);
         if (PyTuple_GET_SIZE(bases) == 0) {
@@ -2007,9 +2008,16 @@ type_get_annotate(PyObject *tp, void *Py_UNUSED(closure))
 
     PyObject *annotate;
     PyObject *dict = PyType_GetDict(type);
+    // First try __annotate__, in case that's been set explicitly
     if (PyDict_GetItemRef(dict, &_Py_ID(__annotate__), &annotate) < 0) {
         Py_DECREF(dict);
         return NULL;
+    }
+    if (!annotate) {
+        if (PyDict_GetItemRef(dict, &_Py_ID(__annotate_func__), &annotate) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
     }
     if (annotate) {
         descrgetfunc get = Py_TYPE(annotate)->tp_descr_get;
@@ -2019,7 +2027,7 @@ type_get_annotate(PyObject *tp, void *Py_UNUSED(closure))
     }
     else {
         annotate = Py_None;
-        int result = PyDict_SetItem(dict, &_Py_ID(__annotate__), annotate);
+        int result = PyDict_SetItem(dict, &_Py_ID(__annotate_func__), annotate);
         if (result < 0) {
             Py_DECREF(dict);
             return NULL;
@@ -2051,13 +2059,13 @@ type_set_annotate(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
 
     PyObject *dict = PyType_GetDict(type);
     assert(PyDict_Check(dict));
-    int result = PyDict_SetItem(dict, &_Py_ID(__annotate__), value);
+    int result = PyDict_SetItem(dict, &_Py_ID(__annotate_func__), value);
     if (result < 0) {
         Py_DECREF(dict);
         return -1;
     }
     if (!Py_IsNone(value)) {
-        if (PyDict_Pop(dict, &_Py_ID(__annotations__), NULL) == -1) {
+        if (PyDict_Pop(dict, &_Py_ID(__annotations_cache__), NULL) == -1) {
             Py_DECREF(dict);
             PyType_Modified(type);
             return -1;
@@ -2079,10 +2087,18 @@ type_get_annotations(PyObject *tp, void *Py_UNUSED(closure))
 
     PyObject *annotations;
     PyObject *dict = PyType_GetDict(type);
+    // First try __annotations__ (e.g. for "from __future__ import annotations")
     if (PyDict_GetItemRef(dict, &_Py_ID(__annotations__), &annotations) < 0) {
         Py_DECREF(dict);
         return NULL;
     }
+    if (!annotations) {
+        if (PyDict_GetItemRef(dict, &_Py_ID(__annotations_cache__), &annotations) < 0) {
+            Py_DECREF(dict);
+            return NULL;
+        }
+    }
+
     if (annotations) {
         descrgetfunc get = Py_TYPE(annotations)->tp_descr_get;
         if (get) {
@@ -2090,7 +2106,7 @@ type_get_annotations(PyObject *tp, void *Py_UNUSED(closure))
         }
     }
     else {
-        PyObject *annotate = type_get_annotate(tp, NULL);
+        PyObject *annotate = PyObject_GetAttrString((PyObject *)type, "__annotate__");
         if (annotate == NULL) {
             Py_DECREF(dict);
             return NULL;
@@ -2118,7 +2134,7 @@ type_get_annotations(PyObject *tp, void *Py_UNUSED(closure))
         Py_DECREF(annotate);
         if (annotations) {
             int result = PyDict_SetItem(
-                    dict, &_Py_ID(__annotations__), annotations);
+                    dict, &_Py_ID(__annotations_cache__), annotations);
             if (result) {
                 Py_CLEAR(annotations);
             } else {
@@ -2145,10 +2161,10 @@ type_set_annotations(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
     PyObject *dict = PyType_GetDict(type);
     if (value != NULL) {
         /* set */
-        result = PyDict_SetItem(dict, &_Py_ID(__annotations__), value);
+        result = PyDict_SetItem(dict, &_Py_ID(__annotations_cache__), value);
     } else {
         /* delete */
-        result = PyDict_Pop(dict, &_Py_ID(__annotations__), NULL);
+        result = PyDict_Pop(dict, &_Py_ID(__annotations_cache__), NULL);
         if (result == 0) {
             PyErr_SetString(PyExc_AttributeError, "__annotations__");
             Py_DECREF(dict);
@@ -2158,8 +2174,12 @@ type_set_annotations(PyObject *tp, PyObject *value, void *Py_UNUSED(closure))
     if (result < 0) {
         Py_DECREF(dict);
         return -1;
-    }
-    else if (result == 0) {
+    } else {  // result can be 0 or 1
+        if (PyDict_Pop(dict, &_Py_ID(__annotate_func__), NULL) < 0) {
+            PyType_Modified(type);
+            Py_DECREF(dict);
+            return -1;
+        }
         if (PyDict_Pop(dict, &_Py_ID(__annotate__), NULL) < 0) {
             PyType_Modified(type);
             Py_DECREF(dict);
@@ -10090,13 +10110,46 @@ slot_nb_power(PyObject *self, PyObject *other, PyObject *modulus)
 {
     if (modulus == Py_None)
         return slot_nb_power_binary(self, other);
-    /* Three-arg power doesn't use __rpow__.  But ternary_op
-       can call this when the second argument's type uses
-       slot_nb_power, so check before calling self.__pow__. */
+
+    /* The following code is a copy of SLOT1BINFULL, but for three arguments. */
+    PyObject* stack[3];
+    PyThreadState *tstate = _PyThreadState_GET();
+    int do_other = !Py_IS_TYPE(self, Py_TYPE(other)) &&
+        Py_TYPE(other)->tp_as_number != NULL &&
+        Py_TYPE(other)->tp_as_number->nb_power == slot_nb_power;
     if (Py_TYPE(self)->tp_as_number != NULL &&
         Py_TYPE(self)->tp_as_number->nb_power == slot_nb_power) {
-        PyObject* stack[3] = {self, other, modulus};
-        return vectorcall_method(&_Py_ID(__pow__), stack, 3);
+        PyObject *r;
+        if (do_other && PyType_IsSubtype(Py_TYPE(other), Py_TYPE(self))) {
+            int ok = method_is_overloaded(self, other, &_Py_ID(__rpow__));
+            if (ok < 0) {
+                return NULL;
+            }
+            if (ok) {
+                stack[0] = other;
+                stack[1] = self;
+                stack[2] = modulus;
+                r = vectorcall_maybe(tstate, &_Py_ID(__rpow__), stack, 3);
+                if (r != Py_NotImplemented)
+                    return r;
+                Py_DECREF(r);
+                do_other = 0;
+            }
+        }
+        stack[0] = self;
+        stack[1] = other;
+        stack[2] = modulus;
+        r = vectorcall_maybe(tstate, &_Py_ID(__pow__), stack, 3);
+        if (r != Py_NotImplemented ||
+            Py_IS_TYPE(other, Py_TYPE(self)))
+            return r;
+        Py_DECREF(r);
+    }
+    if (do_other) {
+        stack[0] = other;
+        stack[1] = self;
+        stack[2] = modulus;
+        return vectorcall_maybe(tstate, &_Py_ID(__rpow__), stack, 3);
     }
     Py_RETURN_NOTIMPLEMENTED;
 }

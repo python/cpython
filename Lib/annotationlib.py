@@ -3,7 +3,6 @@
 import ast
 import builtins
 import enum
-import functools
 import keyword
 import sys
 import types
@@ -16,7 +15,7 @@ __all__ = [
     "get_annotate_function",
     "get_annotations",
     "annotations_to_string",
-    "value_to_string",
+    "type_repr",
 ]
 
 
@@ -27,25 +26,22 @@ class Format(enum.IntEnum):
     STRING = 4
 
 
-_Union = None
 _sentinel = object()
 
 # Slots shared by ForwardRef and _Stringifier. The __forward__ names must be
 # preserved for compatibility with the old typing.ForwardRef class. The remaining
 # names are private.
 _SLOTS = (
-    "__forward_evaluated__",
-    "__forward_value__",
     "__forward_is_argument__",
     "__forward_is_class__",
     "__forward_module__",
     "__weakref__",
     "__arg__",
-    "__ast_node__",
-    "__code__",
     "__globals__",
-    "__owner__",
+    "__code__",
+    "__ast_node__",
     "__cell__",
+    "__owner__",
     "__stringifier_dict__",
 )
 
@@ -78,16 +74,18 @@ class ForwardRef:
             raise TypeError(f"Forward reference must be a string -- got {arg!r}")
 
         self.__arg__ = arg
-        self.__forward_evaluated__ = False
-        self.__forward_value__ = None
         self.__forward_is_argument__ = is_argument
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
-        self.__code__ = None
-        self.__ast_node__ = None
+        self.__owner__ = owner
+        # These are always set to None here but may be non-None if a ForwardRef
+        # is created through __class__ assignment on a _Stringifier object.
         self.__globals__ = None
         self.__cell__ = None
-        self.__owner__ = owner
+        # These are initially None but serve as a cache and may be set to a non-None
+        # value later.
+        self.__code__ = None
+        self.__ast_node__ = None
 
     def __init_subclass__(cls, /, *args, **kwds):
         raise TypeError("Cannot subclass ForwardRef")
@@ -97,17 +95,11 @@ class ForwardRef:
 
         If the forward reference cannot be evaluated, raise an exception.
         """
-        if self.__forward_evaluated__:
-            return self.__forward_value__
         if self.__cell__ is not None:
             try:
-                value = self.__cell__.cell_contents
+                return self.__cell__.cell_contents
             except ValueError:
                 pass
-            else:
-                self.__forward_evaluated__ = True
-                self.__forward_value__ = value
-                return value
         if owner is None:
             owner = self.__owner__
 
@@ -173,8 +165,6 @@ class ForwardRef:
         else:
             code = self.__forward_code__
             value = eval(code, globals=globals, locals=locals)
-        self.__forward_evaluated__ = True
-        self.__forward_value__ = value
         return value
 
     def _evaluate(self, globalns, localns, type_params=_sentinel, *, recursive_guard):
@@ -232,37 +222,42 @@ class ForwardRef:
     def __eq__(self, other):
         if not isinstance(other, ForwardRef):
             return NotImplemented
-        if self.__forward_evaluated__ and other.__forward_evaluated__:
-            return (
-                self.__forward_arg__ == other.__forward_arg__
-                and self.__forward_value__ == other.__forward_value__
-            )
         return (
             self.__forward_arg__ == other.__forward_arg__
             and self.__forward_module__ == other.__forward_module__
+            # Use "is" here because we use id() for this in __hash__
+            # because dictionaries are not hashable.
+            and self.__globals__ is other.__globals__
+            and self.__forward_is_class__ == other.__forward_is_class__
+            and self.__cell__ == other.__cell__
+            and self.__owner__ == other.__owner__
         )
 
     def __hash__(self):
-        return hash((self.__forward_arg__, self.__forward_module__))
+        return hash((
+            self.__forward_arg__,
+            self.__forward_module__,
+            id(self.__globals__),  # dictionaries are not hashable, so hash by identity
+            self.__forward_is_class__,
+            self.__cell__,
+            self.__owner__,
+        ))
 
     def __or__(self, other):
-        global _Union
-        if _Union is None:
-            from typing import Union as _Union
-        return _Union[self, other]
+        return types.UnionType[self, other]
 
     def __ror__(self, other):
-        global _Union
-        if _Union is None:
-            from typing import Union as _Union
-        return _Union[other, self]
+        return types.UnionType[other, self]
 
     def __repr__(self):
-        if self.__forward_module__ is None:
-            module_repr = ""
-        else:
-            module_repr = f", module={self.__forward_module__!r}"
-        return f"ForwardRef({self.__forward_arg__!r}{module_repr})"
+        extra = []
+        if self.__forward_module__ is not None:
+            extra.append(f", module={self.__forward_module__!r}")
+        if self.__forward_is_class__:
+            extra.append(", is_class=True")
+        if self.__owner__ is not None:
+            extra.append(f", owner={self.__owner__!r}")
+        return f"ForwardRef({self.__forward_arg__!r}{''.join(extra)})"
 
 
 class _Stringifier:
@@ -284,8 +279,6 @@ class _Stringifier:
         # represent a single name).
         assert isinstance(node, (ast.AST, str))
         self.__arg__ = None
-        self.__forward_evaluated__ = False
-        self.__forward_value__ = None
         self.__forward_is_argument__ = False
         self.__forward_is_class__ = is_class
         self.__forward_module__ = None
@@ -626,14 +619,6 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         raise ValueError(f"Invalid format: {format!r}")
 
 
-# We use the descriptors from builtins.type instead of accessing
-# .__annotations__ and .__annotate__ directly on class objects, because
-# otherwise we could get wrong results in some cases involving metaclasses.
-# See PEP 749.
-_BASE_GET_ANNOTATE = type.__dict__["__annotate__"].__get__
-_BASE_GET_ANNOTATIONS = type.__dict__["__annotations__"].__get__
-
-
 def get_annotate_function(obj):
     """Get the __annotate__ function for an object.
 
@@ -642,12 +627,11 @@ def get_annotate_function(obj):
 
     Returns the __annotate__ function or None.
     """
-    if isinstance(obj, type):
+    if isinstance(obj, dict):
         try:
-            return _BASE_GET_ANNOTATE(obj)
-        except AttributeError:
-            # AttributeError is raised for static types.
-            return None
+            return obj["__annotate__"]
+        except KeyError:
+            return obj.get("__annotate_func__", None)
     return getattr(obj, "__annotate__", None)
 
 
@@ -656,12 +640,18 @@ def get_annotations(
 ):
     """Compute the annotations dict for an object.
 
-    obj may be a callable, class, or module.
-    Passing in an object of any other type raises TypeError.
+    obj may be a callable, class, module, or other object with
+    __annotate__ or __annotations__ attributes.
+    Passing any other object raises TypeError.
 
-    Returns a dict.  get_annotations() returns a new dict every time
-    it's called; calling it twice on the same object will return two
-    different but equivalent dicts.
+    The *format* parameter controls the format in which annotations are returned,
+    and must be a member of the Format enum or its integer equivalent.
+    For the VALUE format, the __annotations__ is tried first; if it
+    does not exist, the __annotate__ function is called. The
+    FORWARDREF format uses __annotations__ if it exists and can be
+    evaluated, and otherwise falls back to calling the __annotate__ function.
+    The SOURCE format tries __annotate__ first, and falls back to
+    using __annotations__, stringified using annotations_to_string().
 
     This function handles several details for you:
 
@@ -703,36 +693,47 @@ def get_annotations(
 
     match format:
         case Format.VALUE:
-            # For VALUE, we only look at __annotations__
+            # For VALUE, we first look at __annotations__
             ann = _get_dunder_annotations(obj)
+
+            # If it's not there, try __annotate__ instead
+            if ann is None:
+                ann = _get_and_call_annotate(obj, format)
         case Format.FORWARDREF:
             # For FORWARDREF, we use __annotations__ if it exists
             try:
-                return dict(_get_dunder_annotations(obj))
+                ann = _get_dunder_annotations(obj)
             except NameError:
                 pass
+            else:
+                if ann is not None:
+                    return dict(ann)
 
             # But if __annotations__ threw a NameError, we try calling __annotate__
             ann = _get_and_call_annotate(obj, format)
-            if ann is not None:
-                return ann
-
-            # If that didn't work either, we have a very weird object: evaluating
-            # __annotations__ threw NameError and there is no __annotate__. In that case,
-            # we fall back to trying __annotations__ again.
-            return dict(_get_dunder_annotations(obj))
+            if ann is None:
+                # If that didn't work either, we have a very weird object: evaluating
+                # __annotations__ threw NameError and there is no __annotate__. In that case,
+                # we fall back to trying __annotations__ again.
+                ann = _get_dunder_annotations(obj)
         case Format.STRING:
             # For STRING, we try to call __annotate__
             ann = _get_and_call_annotate(obj, format)
             if ann is not None:
-                return ann
+                return dict(ann)
             # But if we didn't get it, we use __annotations__ instead.
             ann = _get_dunder_annotations(obj)
-            return annotations_to_string(ann)
+            if ann is not None:
+                 return annotations_to_string(ann)
         case Format.VALUE_WITH_FAKE_GLOBALS:
             raise ValueError("The VALUE_WITH_FAKE_GLOBALS format is for internal use only")
         case _:
             raise ValueError(f"Unsupported format {format!r}")
+
+    if ann is None:
+        if isinstance(obj, type) or callable(obj):
+            return {}
+        raise TypeError(f"{obj!r} does not have annotations")
 
     if not ann:
         return {}
@@ -762,19 +763,18 @@ def get_annotations(
         obj_globals = getattr(obj, "__globals__", None)
         obj_locals = None
         unwrap = obj
-    elif ann is not None:
-        obj_globals = obj_locals = unwrap = None
     else:
-        raise TypeError(f"{obj!r} is not a module, class, or callable.")
+        obj_globals = obj_locals = unwrap = None
 
     if unwrap is not None:
         while True:
             if hasattr(unwrap, "__wrapped__"):
                 unwrap = unwrap.__wrapped__
                 continue
-            if isinstance(unwrap, functools.partial):
-                unwrap = unwrap.func
-                continue
+            if functools := sys.modules.get("functools"):
+                if isinstance(unwrap, functools.partial):
+                    unwrap = unwrap.func
+                    continue
             break
         if hasattr(unwrap, "__globals__"):
             obj_globals = unwrap.__globals__
@@ -799,55 +799,57 @@ def get_annotations(
     return return_value
 
 
-def value_to_string(value):
+def type_repr(value):
     """Convert a Python value to a format suitable for use with the STRING format.
 
-    This is inteded as a helper for tools that support the STRING format but do
+    This is intended as a helper for tools that support the STRING format but do
     not have access to the code that originally produced the annotations. It uses
     repr() for most objects.
 
     """
-    if isinstance(value, type):
+    if isinstance(value, (type, types.FunctionType, types.BuiltinFunctionType)):
         if value.__module__ == "builtins":
             return value.__qualname__
         return f"{value.__module__}.{value.__qualname__}"
     if value is ...:
         return "..."
-    if isinstance(value, (types.FunctionType, types.BuiltinFunctionType)):
-        return value.__name__
     return repr(value)
 
 
 def annotations_to_string(annotations):
-    """Convert an annotation dict containing values to approximately the STRING format."""
+    """Convert an annotation dict containing values to approximately the STRING format.
+
+    Always returns a fresh a dictionary.
+    """
     return {
-        n: t if isinstance(t, str) else value_to_string(t)
+        n: t if isinstance(t, str) else type_repr(t)
         for n, t in annotations.items()
     }
 
 
 def _get_and_call_annotate(obj, format):
+    """Get the __annotate__ function and call it.
+
+    May not return a fresh dictionary.
+    """
     annotate = get_annotate_function(obj)
     if annotate is not None:
         ann = call_annotate_function(annotate, format, owner=obj)
         if not isinstance(ann, dict):
             raise ValueError(f"{obj!r}.__annotate__ returned a non-dict")
-        return dict(ann)
+        return ann
     return None
 
 
 def _get_dunder_annotations(obj):
-    if isinstance(obj, type):
-        try:
-            ann = _BASE_GET_ANNOTATIONS(obj)
-        except AttributeError:
-            # For static types, the descriptor raises AttributeError.
-            return {}
-    else:
-        ann = getattr(obj, "__annotations__", None)
-        if ann is None:
-            return {}
+    """Return the annotations for an object, checking that it is a dictionary.
+
+    Does not return a fresh dictionary.
+    """
+    ann = getattr(obj, "__annotations__", None)
+    if ann is None:
+        return None
 
     if not isinstance(ann, dict):
         raise ValueError(f"{obj!r}.__annotations__ is neither a dict nor None")
-    return dict(ann)
+    return ann

@@ -6,6 +6,7 @@ import collections
 import functools
 import itertools
 import pickle
+import typing
 import unittest
 from annotationlib import (
     Format,
@@ -13,11 +14,17 @@ from annotationlib import (
     get_annotations,
     get_annotate_function,
     annotations_to_string,
-    value_to_string,
+    type_repr,
 )
-from typing import Unpack
+from typing import (
+    Unpack,
+    get_type_hints,
+    List,
+    Union,
+)
 
 from test import support
+from test.support import import_helper
 from test.test_inspect import inspect_stock_annotations
 from test.test_inspect import inspect_stringized_annotations
 from test.test_inspect import inspect_stringized_annotations_2
@@ -97,27 +104,27 @@ class TestForwardRefFormat(unittest.TestCase):
         anno = annotationlib.get_annotations(f, format=Format.FORWARDREF)
         x_anno = anno["x"]
         self.assertIsInstance(x_anno, ForwardRef)
-        self.assertEqual(x_anno, ForwardRef("some.module"))
+        self.assertEqual(x_anno, support.EqualToForwardRef("some.module", owner=f))
 
         y_anno = anno["y"]
         self.assertIsInstance(y_anno, ForwardRef)
-        self.assertEqual(y_anno, ForwardRef("some[module]"))
+        self.assertEqual(y_anno, support.EqualToForwardRef("some[module]", owner=f))
 
         z_anno = anno["z"]
         self.assertIsInstance(z_anno, ForwardRef)
-        self.assertEqual(z_anno, ForwardRef("some(module)"))
+        self.assertEqual(z_anno, support.EqualToForwardRef("some(module)", owner=f))
 
         alpha_anno = anno["alpha"]
         self.assertIsInstance(alpha_anno, ForwardRef)
-        self.assertEqual(alpha_anno, ForwardRef("some | obj"))
+        self.assertEqual(alpha_anno, support.EqualToForwardRef("some | obj", owner=f))
 
         beta_anno = anno["beta"]
         self.assertIsInstance(beta_anno, ForwardRef)
-        self.assertEqual(beta_anno, ForwardRef("+some"))
+        self.assertEqual(beta_anno, support.EqualToForwardRef("+some", owner=f))
 
         gamma_anno = anno["gamma"]
         self.assertIsInstance(gamma_anno, ForwardRef)
-        self.assertEqual(gamma_anno, ForwardRef("some < obj"))
+        self.assertEqual(gamma_anno, support.EqualToForwardRef("some < obj", owner=f))
 
 
 class TestSourceFormat(unittest.TestCase):
@@ -362,12 +369,13 @@ class TestForwardRefClass(unittest.TestCase):
         obj = object()
         self.assertIs(ForwardRef("int").evaluate(globals={"int": obj}), obj)
 
-    def test_fwdref_value_is_cached(self):
+    def test_fwdref_value_is_not_cached(self):
         fr = ForwardRef("hello")
         with self.assertRaises(NameError):
             fr.evaluate()
         self.assertIs(fr.evaluate(globals={"hello": str}), str)
-        self.assertIs(fr.evaluate(), str)
+        with self.assertRaises(NameError):
+            fr.evaluate()
 
     def test_fwdref_with_owner(self):
         self.assertEqual(
@@ -457,7 +465,7 @@ class TestGetAnnotations(unittest.TestCase):
         )
         self.assertEqual(annotationlib.get_annotations(f1, format=1), {"a": int})
 
-        fwd = annotationlib.ForwardRef("undefined")
+        fwd = support.EqualToForwardRef("undefined", owner=f2)
         self.assertEqual(
             annotationlib.get_annotations(f2, format=Format.FORWARDREF),
             {"a": fwd},
@@ -884,6 +892,50 @@ class TestGetAnnotations(unittest.TestCase):
             annotationlib.get_annotations(hb, format=Format.STRING), {"x": str}
         )
 
+    def test_only_annotate(self):
+        def f(x: int):
+            pass
+
+        class OnlyAnnotate:
+            @property
+            def __annotate__(self):
+                return f.__annotate__
+
+        oa = OnlyAnnotate()
+        self.assertEqual(
+            annotationlib.get_annotations(oa, format=Format.VALUE), {"x": int}
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(oa, format=Format.FORWARDREF), {"x": int}
+        )
+        self.assertEqual(
+            annotationlib.get_annotations(oa, format=Format.STRING),
+            {"x": "int"},
+        )
+
+    def test_no_annotations(self):
+        class CustomClass:
+            pass
+
+        class MyCallable:
+            def __call__(self):
+                pass
+
+        for format in Format:
+            if format == Format.VALUE_WITH_FAKE_GLOBALS:
+                continue
+            for obj in (None, 1, object(), CustomClass()):
+                with self.subTest(format=format, obj=obj):
+                    with self.assertRaises(TypeError):
+                        annotationlib.get_annotations(obj, format=format)
+
+            # Callables and types with no annotations return an empty dict
+            for obj in (int, len, MyCallable()):
+                with self.subTest(format=format, obj=obj):
+                    self.assertEqual(
+                        annotationlib.get_annotations(obj, format=format), {}
+                    )
+
     def test_pep695_generic_class_with_future_annotations(self):
         ann_module695 = inspect_stringized_annotations_pep695
         A_annotations = annotationlib.get_annotations(ann_module695.A, eval_str=True)
@@ -1014,7 +1066,7 @@ class TestCallEvaluateFunction(unittest.TestCase):
             annotationlib.call_evaluate_function(evaluate, Format.VALUE)
         self.assertEqual(
             annotationlib.call_evaluate_function(evaluate, Format.FORWARDREF),
-            annotationlib.ForwardRef("undefined"),
+            support.EqualToForwardRef("undefined"),
         )
         self.assertEqual(
             annotationlib.call_evaluate_function(evaluate, Format.STRING),
@@ -1128,18 +1180,28 @@ class TestGetAnnotateFunction(unittest.TestCase):
 
 
 class TestToSource(unittest.TestCase):
-    def test_value_to_string(self):
-        self.assertEqual(value_to_string(int), "int")
-        self.assertEqual(value_to_string(MyClass), "test.test_annotationlib.MyClass")
-        self.assertEqual(value_to_string(len), "len")
-        self.assertEqual(value_to_string(value_to_string), "value_to_string")
-        self.assertEqual(value_to_string(times_three), "times_three")
-        self.assertEqual(value_to_string(...), "...")
-        self.assertEqual(value_to_string(None), "None")
-        self.assertEqual(value_to_string(1), "1")
-        self.assertEqual(value_to_string("1"), "'1'")
-        self.assertEqual(value_to_string(Format.VALUE), repr(Format.VALUE))
-        self.assertEqual(value_to_string(MyClass()), "my repr")
+    def test_type_repr(self):
+        class Nested:
+            pass
+
+        def nested():
+            pass
+
+        self.assertEqual(type_repr(int), "int")
+        self.assertEqual(type_repr(MyClass), f"{__name__}.MyClass")
+        self.assertEqual(
+            type_repr(Nested), f"{__name__}.TestToSource.test_type_repr.<locals>.Nested")
+        self.assertEqual(
+            type_repr(nested), f"{__name__}.TestToSource.test_type_repr.<locals>.nested")
+        self.assertEqual(type_repr(len), "len")
+        self.assertEqual(type_repr(type_repr), "annotationlib.type_repr")
+        self.assertEqual(type_repr(times_three), f"{__name__}.times_three")
+        self.assertEqual(type_repr(...), "...")
+        self.assertEqual(type_repr(None), "None")
+        self.assertEqual(type_repr(1), "1")
+        self.assertEqual(type_repr("1"), "'1'")
+        self.assertEqual(type_repr(Format.VALUE), repr(Format.VALUE))
+        self.assertEqual(type_repr(MyClass()), "my repr")
 
     def test_annotations_to_string(self):
         self.assertEqual(annotations_to_string({}), {})
@@ -1150,6 +1212,165 @@ class TestToSource(unittest.TestCase):
         )
 
 
+class A:
+    pass
+
+
+class ForwardRefTests(unittest.TestCase):
+    def test_forwardref_instance_type_error(self):
+        fr = ForwardRef('int')
+        with self.assertRaises(TypeError):
+            isinstance(42, fr)
+
+    def test_forwardref_subclass_type_error(self):
+        fr = ForwardRef('int')
+        with self.assertRaises(TypeError):
+            issubclass(int, fr)
+
+    def test_forwardref_only_str_arg(self):
+        with self.assertRaises(TypeError):
+            ForwardRef(1)  # only `str` type is allowed
+
+    def test_forward_equality(self):
+        fr = ForwardRef('int')
+        self.assertEqual(fr, ForwardRef('int'))
+        self.assertNotEqual(List['int'], List[int])
+        self.assertNotEqual(fr, ForwardRef('int', module=__name__))
+        frm = ForwardRef('int', module=__name__)
+        self.assertEqual(frm, ForwardRef('int', module=__name__))
+        self.assertNotEqual(frm, ForwardRef('int', module='__other_name__'))
+
+    def test_forward_equality_get_type_hints(self):
+        c1 = ForwardRef('C')
+        c1_gth = ForwardRef('C')
+        c2 = ForwardRef('C')
+        c2_gth = ForwardRef('C')
+
+        class C:
+            pass
+        def foo(a: c1_gth, b: c2_gth):
+            pass
+
+        self.assertEqual(get_type_hints(foo, globals(), locals()), {'a': C, 'b': C})
+        self.assertEqual(c1, c2)
+        self.assertEqual(c1, c1_gth)
+        self.assertEqual(c1_gth, c2_gth)
+        self.assertEqual(List[c1], List[c1_gth])
+        self.assertNotEqual(List[c1], List[C])
+        self.assertNotEqual(List[c1_gth], List[C])
+        self.assertEqual(Union[c1, c1_gth], Union[c1])
+        self.assertEqual(Union[c1, c1_gth, int], Union[c1, int])
+
+    def test_forward_equality_hash(self):
+        c1 = ForwardRef('int')
+        c1_gth = ForwardRef('int')
+        c2 = ForwardRef('int')
+        c2_gth = ForwardRef('int')
+
+        def foo(a: c1_gth, b: c2_gth):
+            pass
+        get_type_hints(foo, globals(), locals())
+
+        self.assertEqual(hash(c1), hash(c2))
+        self.assertEqual(hash(c1_gth), hash(c2_gth))
+        self.assertEqual(hash(c1), hash(c1_gth))
+
+        c3 = ForwardRef('int', module=__name__)
+        c4 = ForwardRef('int', module='__other_name__')
+
+        self.assertNotEqual(hash(c3), hash(c1))
+        self.assertNotEqual(hash(c3), hash(c1_gth))
+        self.assertNotEqual(hash(c3), hash(c4))
+        self.assertEqual(hash(c3), hash(ForwardRef('int', module=__name__)))
+
+    def test_forward_equality_namespace(self):
+        def namespace1():
+            a = ForwardRef('A')
+            def fun(x: a):
+                pass
+            get_type_hints(fun, globals(), locals())
+            return a
+
+        def namespace2():
+            a = ForwardRef('A')
+
+            class A:
+                pass
+            def fun(x: a):
+                pass
+
+            get_type_hints(fun, globals(), locals())
+            return a
+
+        self.assertEqual(namespace1(), namespace1())
+        self.assertEqual(namespace1(), namespace2())
+
+    def test_forward_repr(self):
+        self.assertEqual(repr(List['int']), "typing.List[ForwardRef('int')]")
+        self.assertEqual(repr(List[ForwardRef('int', module='mod')]),
+                         "typing.List[ForwardRef('int', module='mod')]")
+
+    def test_forward_recursion_actually(self):
+        def namespace1():
+            a = ForwardRef('A')
+            A = a
+            def fun(x: a): pass
+
+            ret = get_type_hints(fun, globals(), locals())
+            return a
+
+        def namespace2():
+            a = ForwardRef('A')
+            A = a
+            def fun(x: a): pass
+
+            ret = get_type_hints(fun, globals(), locals())
+            return a
+
+        r1 = namespace1()
+        r2 = namespace2()
+        self.assertIsNot(r1, r2)
+        self.assertEqual(r1, r2)
+
+    def test_syntax_error(self):
+
+        with self.assertRaises(SyntaxError):
+            typing.Generic['/T']
+
+    def test_delayed_syntax_error(self):
+
+        def foo(a: 'Node[T'):
+            pass
+
+        with self.assertRaises(SyntaxError):
+            get_type_hints(foo)
+
+    def test_syntax_error_empty_string(self):
+        for form in [typing.List, typing.Set, typing.Type, typing.Deque]:
+            with self.subTest(form=form):
+                with self.assertRaises(SyntaxError):
+                    form['']
+
+    def test_or(self):
+        X = ForwardRef('X')
+        # __or__/__ror__ itself
+        self.assertEqual(X | "x", Union[X, "x"])
+        self.assertEqual("x" | X, Union["x", X])
+
+    def test_multiple_ways_to_create(self):
+        X1 = Union["X"]
+        self.assertIsInstance(X1, ForwardRef)
+        X2 = ForwardRef("X")
+        self.assertIsInstance(X2, ForwardRef)
+        self.assertEqual(X1, X2)
+
+
 class TestAnnotationLib(unittest.TestCase):
     def test__all__(self):
         support.check__all__(self, annotationlib)
+
+    def test_lazy_imports(self):
+        import_helper.ensure_lazy_imports("annotationlib", {
+            "typing",
+            "warnings",
+        })
