@@ -839,7 +839,7 @@ _io_BytesIO_close_impl(bytesio *self)
  */
 
  static PyObject *
- bytesio_getstate_lock_held(PyObject *op, PyObject *Py_UNUSED(dummy))
+ bytesio_getstate_lock_held(PyObject *op)
  {
      bytesio *self = bytesio_CAST(op);
      PyObject *initvalue = _io_BytesIO_getvalue_impl(self);
@@ -869,7 +869,7 @@ bytesio_getstate(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyObject *ret;
     Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytesio_getstate_lock_held(op, NULL);
+    ret = bytesio_getstate_lock_held(op);
     Py_END_CRITICAL_SECTION();
     return ret;
 }
@@ -1041,7 +1041,7 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
 }
 
 static PyObject *
-bytesio_sizeof_lock_held(PyObject *op, PyObject *Py_UNUSED(dummy))
+bytesio_sizeof_lock_held(PyObject *op)
 {
     bytesio *self = bytesio_CAST(op);
     size_t res = _PyObject_SIZE(Py_TYPE(self));
@@ -1060,7 +1060,7 @@ bytesio_sizeof(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyObject *ret;
     Py_BEGIN_CRITICAL_SECTION(op);
-    ret = bytesio_sizeof_lock_held(op, NULL);
+    ret = bytesio_sizeof_lock_held(op);
     Py_END_CRITICAL_SECTION();
     return ret;
 }
