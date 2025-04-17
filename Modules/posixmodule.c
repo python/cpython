@@ -9538,6 +9538,18 @@ os_getlogin_impl(PyObject *module)
     }
     else
         result = PyErr_SetFromWindowsErr(GetLastError());
+#elif defined (HAVE_GETLOGIN_R)
+    /* AFAIK the maximum length should be 32, but this is not checkable */
+    char name[64];
+    int err = getlogin_r(name, sizeof(name));
+    if (err) {
+        int old_errno = errno;
+        errno = -err;
+        posix_error();
+        errno = old_errno;
+    } else {
+        result = PyUnicode_DecodeFSDefault(name);
+    }
 #else
     char *name;
     int old_errno = errno;

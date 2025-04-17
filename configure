@@ -19241,6 +19241,12 @@ then :
   printf "%s\n" "#define HAVE_GETLOGIN 1" >>confdefs.h
 
 fi
+ac_fn_c_check_func "$LINENO" "getlogin_r" "ac_cv_func_getlogin_r"
+if test "x$ac_cv_func_getlogin_r" = xyes
+then :
+  printf "%s\n" "#define HAVE_GETLOGIN_R 1" >>confdefs.h
+
+fi
 ac_fn_c_check_func "$LINENO" "getpeername" "ac_cv_func_getpeername"
 if test "x$ac_cv_func_getpeername" = xyes
 then :
