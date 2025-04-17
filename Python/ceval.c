@@ -138,6 +138,20 @@
 #endif
 
 
+static void
+check_invalid_reentrancy(void)
+{
+#if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
+    // In the free-threaded build, the interpreter must not be re-entered if
+    // either the world-is-stopped or if the types mutex is held.  If so,
+    // that's a bug somewhere (likely in the painfully complex typeobject code).
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(!interp->stoptheworld.world_stopped);
+    assert(interp->types.mutex_tid != PyThread_get_thread_ident_ex());
+#endif
+}
+
+
 #ifdef Py_DEBUG
 static void
 dump_item(_PyStackRef item)
@@ -959,6 +973,7 @@ PyObject* _Py_HOT_FUNCTION
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
+    check_invalid_reentrancy();
     CALL_STAT_INC(pyeval_calls);
 
 #if USE_COMPUTED_GOTOS && !Py_TAIL_CALL_INTERP
