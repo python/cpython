@@ -3,7 +3,7 @@ import sys
 import test.support as support
 
 from test.support import import_helper
-from test.support.classes import IntSubclass, WithIndex, WithIntAndIndex
+from test.support.number_helper import IntSubclass, WithIndex, WithIntAndIndex
 
 # Skip this test if the _testcapi and _testlimitedcapi modules isn't available.
 _testcapi = import_helper.import_module('_testcapi')

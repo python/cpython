@@ -1,4 +1,4 @@
-# Common test classes.
+# Common test classes for numeric types.
 
 class WithIndex:
     def __init__(self, value):

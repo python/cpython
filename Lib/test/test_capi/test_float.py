@@ -4,7 +4,7 @@ import unittest
 import warnings
 
 from test.support import import_helper
-from test.support.classes import FloatSubclass, WithIndex, WithFloat
+from test.support.number_helper import FloatSubclass, WithIndex, WithFloat
 
 _testcapi = import_helper.import_module('_testcapi')
 _testlimitedcapi = import_helper.import_module('_testlimitedcapi')

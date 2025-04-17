@@ -5,8 +5,9 @@ from test import support
 from test.support import import_helper
 from test.support import script_helper
 from test.support import warnings_helper
-from test.support.classes import (ComplexSubclass, FloatSubclass, WithComplex,
-                                  WithFloat, WithIndex, WithInt)
+from test.support.number_helper import (ComplexSubclass, FloatSubclass,
+                                        WithComplex, WithFloat, WithIndex,
+                                        WithInt)
 from test.support.testcase import FloatsAreIdenticalMixin
 # Skip this test if the _testcapi module isn't available.
 _testcapi = import_helper.import_module('_testcapi')

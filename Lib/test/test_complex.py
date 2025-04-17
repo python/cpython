@@ -6,9 +6,9 @@ from test.support.numbers import (
     VALID_UNDERSCORE_LITERALS,
     INVALID_UNDERSCORE_LITERALS,
 )
-from test.support.classes import (ComplexSubclass, WithComplex,
-                                  WithFloat, WithIndex, WithInt,
-                                  OtherComplexSubclass)
+from test.support.number_helper import (ComplexSubclass, WithComplex,
+                                        WithFloat, WithIndex, WithInt,
+                                        OtherComplexSubclass)
 
 from random import random
 from math import isnan, copysign

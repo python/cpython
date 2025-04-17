@@ -4,8 +4,8 @@ import unittest
 import warnings
 
 from test.support import import_helper
-from test.support.classes import (ComplexSubclass, FloatSubclass,
-                                  WithFloat, WithComplex)
+from test.support.number_helper import (ComplexSubclass, FloatSubclass,
+                                        WithFloat, WithComplex)
 from test.support.testcase import ComplexesAreIdenticalMixin
 
 

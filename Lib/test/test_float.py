@@ -13,8 +13,9 @@ from test.support.numbers import (
     VALID_UNDERSCORE_LITERALS,
     INVALID_UNDERSCORE_LITERALS,
 )
-from test.support.classes import (FloatSubclass, OtherFloatSubclass, WithFloat,
-                                  FloatLikeSubclass, WithIndex, WithInt)
+from test.support.number_helper import (FloatSubclass, OtherFloatSubclass,
+                                        WithFloat, FloatLikeSubclass,
+                                        WithIndex, WithInt)
 from math import isinf, isnan, copysign, ldexp
 import math
 
