@@ -167,6 +167,7 @@ types_mutex_unlock(void)
 #define types_start_world()
 #define ASSERT_TYPE_LOCK_HELD()
 #define ASSERT_NEW_OR_STOPPED(tp)
+#define TYPE_IS_REVEALED(tp) 0
 
 #endif
 
