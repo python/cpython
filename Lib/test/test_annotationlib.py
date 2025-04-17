@@ -1370,7 +1370,7 @@ class TestAnnotationLib(unittest.TestCase):
         support.check__all__(self, annotationlib)
 
     def test_lazy_imports(self):
-        import_helper.ensure_lazy_imports("annotationlib", [
+        import_helper.ensure_lazy_imports("annotationlib", {
             "typing",
             "warnings",
-        ])
+        })

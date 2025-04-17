@@ -6318,13 +6318,13 @@ class InternalsTests(BaseTestCase):
         self.assertEqual(cm.filename, __file__)
 
     def test_lazy_import(self):
-        import_helper.ensure_lazy_imports("typing", [
+        import_helper.ensure_lazy_imports("typing", {
             "warnings",
             "inspect",
             "re",
             "contextlib",
             # "annotationlib",  # TODO
-        ])
+        })
 
 
 @lru_cache()
