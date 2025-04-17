@@ -658,6 +658,12 @@ class ModuleCompleter:
 
     def find_modules(self, path: str, prefix: str) -> list[str]:
         """Find all modules under 'path' that start with 'prefix'."""
+        modules = self._find_modules(path, prefix)
+        # Filter out invalid module names
+        # (for example those containing dashes that cannot be imported with 'import')
+        return [mod for mod in modules if mod.isidentifier()]
+
+    def _find_modules(self, path: str, prefix: str) -> list[str]:
         if not path:
             # Top-level import (e.g. `import foo<tab>`` or `from foo<tab>`)`
             return [name for _, name, _ in self.global_cache

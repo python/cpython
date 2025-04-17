@@ -938,6 +938,23 @@ class TestPyReplModuleCompleter(TestCase):
                 output = reader.readline()
                 self.assertEqual(output, expected)
 
+    @patch("pkgutil.iter_modules", lambda: [(None, 'valid_name', None),
+                                            (None, 'invalid-name', None)])
+    def test_invalid_identifiers(self):
+        # Make sure modules which are not valid identifiers
+        # are not suggested as those cannot be imported via 'import'.
+        cases = (
+            ("import valid\t\n", "import valid_name"),
+            # 'invalid-name' contains a dash and should not be completed
+            ("import invalid\t\n", "import invalid"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
     def test_get_path_and_prefix(self):
         cases = (
             ('', ('', '')),
