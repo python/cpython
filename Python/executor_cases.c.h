@@ -1347,7 +1347,7 @@
             assert(PySlice_Check(sub));
             assert(PyList_CheckExact(list));
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *res_o = _PyList_Subscript(list, sub);
+            PyObject *res_o = _PyList_SliceSubscript(list, sub);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (res_o == NULL) {
                 UOP_STAT_INC(uopcode, miss);
