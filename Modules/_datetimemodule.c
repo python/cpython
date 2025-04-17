@@ -159,6 +159,7 @@ static datetime_state *
 _get_current_state(PyObject **p_mod)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
+    assert(interp->dict != NULL);
     PyObject *mod = get_current_module(interp, NULL);
     if (mod == NULL) {
         assert(!PyErr_Occurred());
@@ -185,6 +186,7 @@ _get_current_state(PyObject **p_mod)
 static int
 set_current_module(PyInterpreterState *interp, PyObject *mod)
 {
+    assert(interp->dict != NULL);
     assert(mod != NULL);
     PyObject *dict = PyInterpreterState_GetDict(interp);
     if (dict == NULL) {
