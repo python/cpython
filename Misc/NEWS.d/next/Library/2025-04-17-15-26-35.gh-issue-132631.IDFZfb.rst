@@ -1,0 +1,2 @@
+Fix "I/O operation on closed file" when parsing JSON Lines file with JSON
+CLI.
