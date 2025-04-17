@@ -1558,14 +1558,11 @@ class CommandLineTestCase(unittest.TestCase):
             os.remove(self.tls_password_file)
         return super().tearDown()
 
-    def text_normalizer(self, string):
-        return textwrap.dedent(string).strip()
-
-    def invoke_httpd(self, args=[]):
+    def invoke_httpd(self, *args):
         output = StringIO()
         with contextlib.redirect_stdout(output):
             server._main(args)
-        return self.text_normalizer(output.getvalue())
+        return textwrap.dedent(output.getvalue()).strip()
 
     @mock.patch('http.server.test')
     def test_port_flag(self, mock_func):
