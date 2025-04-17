@@ -98,53 +98,6 @@ interpolation_repr(interpolationobject *self)
                                 self->conversion, self->format_spec);
 }
 
-static PyObject *
-interpolation_compare(interpolationobject *self, PyObject *other, int op)
-{
-    if (op == Py_LT || op == Py_LE || op == Py_GT || op == Py_GE) {
-        Py_RETURN_NOTIMPLEMENTED;
-    }
-
-    if (!PyObject_TypeCheck(other, &_PyInterpolation_Type)) {
-        return (op == Py_EQ) ? Py_False : Py_True;
-    }
-
-    interpolationobject *other_i = (interpolationobject *) other;
-
-    int valueeq = PyObject_RichCompareBool(self->value, other_i->value, Py_EQ);
-    if (valueeq == -1) {
-        return NULL;
-    }
-    int expreq = PyUnicode_Compare(self->expression, other_i->expression);
-    if (expreq == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-    int conveq = PyObject_RichCompareBool(self->conversion, other_i->conversion, Py_EQ); // conversion might be Py_None
-    if (conveq == -1) {
-        return NULL;
-    }
-    int formatspeceq = PyUnicode_Compare(self->format_spec, other_i->format_spec);
-    if (formatspeceq == -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-
-    int eq = valueeq && expreq == 0 && conveq && formatspeceq == 0;
-    return PyBool_FromLong(op == Py_EQ ? eq : !eq);
-}
-
-static Py_hash_t
-interpolation_hash(interpolationobject *self)
-{
-    PyObject *tuple = PyTuple_Pack(4, self->value, self->expression, self->conversion, self->format_spec);
-    if (!tuple) {
-        return -1;
-    }
-
-    Py_hash_t hash = PyObject_Hash(tuple);
-    Py_DECREF(tuple);
-    return hash;
-}
-
 static PyMemberDef interpolation_members[] = {
     {"value", Py_T_OBJECT_EX, offsetof(interpolationobject, value), Py_READONLY, "Value"},
     {"expression", Py_T_OBJECT_EX, offsetof(interpolationobject, expression), Py_READONLY, "Expression"},
@@ -163,8 +116,6 @@ PyTypeObject _PyInterpolation_Type = {
     .tp_new = (newfunc) interpolation_new,
     .tp_dealloc = (destructor) interpolation_dealloc,
     .tp_repr = (reprfunc) interpolation_repr,
-    .tp_richcompare = (richcmpfunc) interpolation_compare,
-    .tp_hash = (hashfunc) interpolation_hash,
     .tp_members = interpolation_members,
 };
 
