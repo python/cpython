@@ -9992,13 +9992,46 @@ slot_nb_power(PyObject *self, PyObject *other, PyObject *modulus)
 {
     if (modulus == Py_None)
         return slot_nb_power_binary(self, other);
-    /* Three-arg power doesn't use __rpow__.  But ternary_op
-       can call this when the second argument's type uses
-       slot_nb_power, so check before calling self.__pow__. */
+
+    /* The following code is a copy of SLOT1BINFULL, but for three arguments. */
+    PyObject* stack[3];
+    PyThreadState *tstate = _PyThreadState_GET();
+    int do_other = !Py_IS_TYPE(self, Py_TYPE(other)) &&
+        Py_TYPE(other)->tp_as_number != NULL &&
+        Py_TYPE(other)->tp_as_number->nb_power == slot_nb_power;
     if (Py_TYPE(self)->tp_as_number != NULL &&
         Py_TYPE(self)->tp_as_number->nb_power == slot_nb_power) {
-        PyObject* stack[3] = {self, other, modulus};
-        return vectorcall_method(&_Py_ID(__pow__), stack, 3);
+        PyObject *r;
+        if (do_other && PyType_IsSubtype(Py_TYPE(other), Py_TYPE(self))) {
+            int ok = method_is_overloaded(self, other, &_Py_ID(__rpow__));
+            if (ok < 0) {
+                return NULL;
+            }
+            if (ok) {
+                stack[0] = other;
+                stack[1] = self;
+                stack[2] = modulus;
+                r = vectorcall_maybe(tstate, &_Py_ID(__rpow__), stack, 3);
+                if (r != Py_NotImplemented)
+                    return r;
+                Py_DECREF(r);
+                do_other = 0;
+            }
+        }
+        stack[0] = self;
+        stack[1] = other;
+        stack[2] = modulus;
+        r = vectorcall_maybe(tstate, &_Py_ID(__pow__), stack, 3);
+        if (r != Py_NotImplemented ||
+            Py_IS_TYPE(other, Py_TYPE(self)))
+            return r;
+        Py_DECREF(r);
+    }
+    if (do_other) {
+        stack[0] = other;
+        stack[1] = self;
+        stack[2] = modulus;
+        return vectorcall_maybe(tstate, &_Py_ID(__rpow__), stack, 3);
     }
     Py_RETURN_NOTIMPLEMENTED;
 }

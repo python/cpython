@@ -2213,8 +2213,10 @@ loghelper(PyObject* arg, double (*func)(double))
 
         /* Negative or zero inputs give a ValueError. */
         if (!_PyLong_IsPositive((PyLongObject *)arg)) {
-            PyErr_Format(PyExc_ValueError,
-                         "expected a positive input, got %S", arg);
+            /* The input can be an arbitrary large integer, so we
+               don't include it's value in the error message. */
+            PyErr_SetString(PyExc_ValueError,
+                            "expected a positive input");
             return NULL;
         }
 

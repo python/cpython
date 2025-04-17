@@ -919,6 +919,18 @@ dummy_func(void) {
         tup = sym_new_tuple(ctx, oparg, values);
     }
 
+    op(_BUILD_LIST, (values[oparg] -- list)) {
+        list = sym_new_type(ctx, &PyList_Type);
+    }
+
+    op(_BUILD_SLICE, (values[oparg] -- slice)) {
+        slice = sym_new_type(ctx, &PySlice_Type);
+    }
+
+    op(_BUILD_MAP, (values[oparg*2] -- map)) {
+        map = sym_new_type(ctx, &PyDict_Type);
+    }
+
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
         val0 = sym_tuple_getitem(ctx, seq, 0);
         val1 = sym_tuple_getitem(ctx, seq, 1);
