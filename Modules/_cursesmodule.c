@@ -2709,7 +2709,7 @@ static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_SETSCRREG_METHODDEF
     {"standend",        PyCursesWindow_wstandend, METH_NOARGS},
     {"standout",        PyCursesWindow_wstandout, METH_NOARGS},
-    {"subpad", (PyCFunction)_curses_window_subwin, METH_VARARGS, _curses_window_subwin__doc__},
+    {"subpad",          _curses_window_subwin, METH_VARARGS, _curses_window_subwin__doc__},
     _CURSES_WINDOW_SUBWIN_METHODDEF
     {"syncdown",        PyCursesWindow_wsyncdown, METH_NOARGS},
 #ifdef HAVE_CURSES_SYNCOK

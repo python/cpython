@@ -27,6 +27,7 @@ extern "C" {
 #include "pycore_runtime_init_generated.h"  // _Py_bytes_characters_INIT
 #include "pycore_signal.h"        // _signals_RUNTIME_INIT
 #include "pycore_tracemalloc.h"   // _tracemalloc_runtime_state_INIT
+#include "pycore_tuple.h"         // _PyTuple_HASH_EMPTY
 
 
 extern PyTypeObject _PyExc_MemoryError;
@@ -106,6 +107,7 @@ extern PyTypeObject _PyExc_MemoryError;
                 }, \
                 .tuple_empty = { \
                     .ob_base = _PyVarObject_HEAD_INIT(&PyTuple_Type, 0), \
+                    .ob_hash = _PyTuple_HASH_EMPTY, \
                 }, \
                 .hamt_bitmap_node_empty = { \
                     .ob_base = _PyVarObject_HEAD_INIT(&_PyHamt_BitmapNode_Type, 0), \

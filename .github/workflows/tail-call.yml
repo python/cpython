@@ -45,7 +45,7 @@ jobs:
           - aarch64-unknown-linux-gnu/gcc
           - free-threading
         llvm:
-          - 19
+          - 20
         include:
 #          - target: i686-pc-windows-msvc/msvc
 #            architecture: Win32
@@ -83,21 +83,21 @@ jobs:
         if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
         shell: cmd
         run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.5
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
           set PlatformToolset=clangcl
-          set LLVMToolsVersion=${{ matrix.llvm }}.1.5
+          set LLVMToolsVersion=${{ matrix.llvm }}.1.0
           set LLVMInstallDir=C:\Program Files\LLVM
-          ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }}
-          ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+          call ./PCbuild/build.bat --tail-call-interp -d -p ${{ matrix.architecture }}
+          call ./PCbuild/rt.bat -d -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
       # No tests (yet):
       - name: Emulated Windows (release)
         if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
         shell: cmd
         run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.5
+          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
           set PlatformToolset=clangcl
-          set LLVMToolsVersion=${{ matrix.llvm }}.1.5
+          set LLVMToolsVersion=${{ matrix.llvm }}.1.0
           set LLVMInstallDir=C:\Program Files\LLVM
           ./PCbuild/build.bat --tail-call-interp -p ${{ matrix.architecture }}
 
@@ -105,6 +105,8 @@ jobs:
         # This is a bug in the macOS runner image where the pre-installed Python is installed in the same
         # directory as the Homebrew Python, which causes the build to fail for macos-13. This line removes
         # the symlink to the pre-installed Python so that the Homebrew Python is used instead.
+        # Note: when a new LLVM is released, the homebrew installation directory changes, so the builds will fail.
+        # We either need to upgrade LLVM or change the directory being pointed to.
       - name: Native macOS (release)
         if: runner.os == 'macOS'
         run: |
@@ -112,9 +114,9 @@ jobs:
           find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
-          export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
           export PATH="/usr/local/opt/llvm/bin:$PATH"
-          CC=clang-19 ./configure --with-tail-call-interp
+          export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+          CC=clang-20 ./configure --with-tail-call-interp
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
@@ -123,7 +125,7 @@ jobs:
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          CC=clang-19 ./configure --with-tail-call-interp --with-pydebug
+          CC=clang-20 ./configure --with-tail-call-interp --with-pydebug
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
@@ -132,7 +134,7 @@ jobs:
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          CC=clang-19 ./configure --with-tail-call-interp --disable-gil
+          CC=clang-20 ./configure --with-tail-call-interp --disable-gil
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 

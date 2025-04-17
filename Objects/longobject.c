@@ -6540,19 +6540,19 @@ static PyMethodDef long_methods[] = {
 
 static PyGetSetDef long_getset[] = {
     {"real",
-     long_long_getter, (setter)NULL,
+     long_long_getter, NULL,
      "the real part of a complex number",
      NULL},
     {"imag",
-     long_get0, (setter)NULL,
+     long_get0, NULL,
      "the imaginary part of a complex number",
      NULL},
     {"numerator",
-     long_long_getter, (setter)NULL,
+     long_long_getter, NULL,
      "the numerator of a rational number in lowest terms",
      NULL},
     {"denominator",
-     long_get1, (setter)NULL,
+     long_get1, NULL,
      "the denominator of a rational number in lowest terms",
      NULL},
     {NULL}  /* Sentinel */
@@ -6749,16 +6749,24 @@ PyUnstable_Long_CompactValue(const PyLongObject* op) {
 
 
 PyObject* PyLong_FromInt32(int32_t value)
-{ return PyLong_FromNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_INT(uint32_t, int32_t, value);
+}
 
 PyObject* PyLong_FromUInt32(uint32_t value)
-{ return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_UINT(uint32_t, value);
+}
 
 PyObject* PyLong_FromInt64(int64_t value)
-{ return PyLong_FromNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_INT(uint64_t, int64_t, value);
+}
 
 PyObject* PyLong_FromUInt64(uint64_t value)
-{ return PyLong_FromUnsignedNativeBytes(&value, sizeof(value), -1); }
+{
+    PYLONG_FROM_UINT(uint64_t, value);
+}
 
 #define LONG_TO_INT(obj, value, type_name) \
     do { \

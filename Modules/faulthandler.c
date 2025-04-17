@@ -1108,7 +1108,7 @@ faulthandler_fatal_error_c_thread(PyObject *self, PyObject *args)
 }
 
 static PyObject* _Py_NO_SANITIZE_UNDEFINED
-faulthandler_sigfpe(PyObject *self, PyObject *args)
+faulthandler_sigfpe(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     faulthandler_suppress_crash_report();
 
@@ -1274,7 +1274,7 @@ static PyMethodDef module_methods[] = {
     {"_sigabrt", faulthandler_sigabrt, METH_NOARGS,
      PyDoc_STR("_sigabrt($module, /)\n--\n\n"
                "Raise a SIGABRT signal.")},
-    {"_sigfpe", (PyCFunction)faulthandler_sigfpe, METH_NOARGS,
+    {"_sigfpe", faulthandler_sigfpe, METH_NOARGS,
      PyDoc_STR("_sigfpe($module, /)\n--\n\n"
                "Raise a SIGFPE signal.")},
 #ifdef FAULTHANDLER_STACK_OVERFLOW
