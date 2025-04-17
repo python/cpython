@@ -573,7 +573,7 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
 #define RAW_ALIGN_PTR_OFFSET sizeof(void *)
 #endif
 
-static inline PyInterpreterState *
+static PyInterpreterState *
 alloc_interpreter(void)
 {
 #ifdef _Py_HAS_UNDEFINED_BEHAVIOR_SANITIZER
