@@ -1542,7 +1542,6 @@ class CommandLineTestCase(unittest.TestCase):
         self.default_port = 8000
         self.default_bind = None
         self.default_protocol = 'HTTP/1.0'
-        self.default_directory = os.getcwd()
         self.default_handler = SimpleHTTPRequestHandler
         self.default_server = unittest.mock.ANY
         self.tls_cert = certdata_file('ssl_cert.pem')
