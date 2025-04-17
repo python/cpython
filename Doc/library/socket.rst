@@ -156,8 +156,9 @@ created.  Socket addresses are represented as follows:
 
   - :const:`BTPROTO_HCI` accepts a format that depends on your OS.
 
-    - On Linux it accepts a tuple ``(device_id, [channel])`` where ``device_id``
-      is an integer specifying the number of the Bluetooth device,
+    - On Linux it accepts an integer ``device_id`` or a tuple
+      ``(device_id, [channel])`` where ``device_id``
+      specifies the number of the Bluetooth device,
       and ``channel`` is an optional integer specifying the HCI channel
       (:const:`HCI_CHANNEL_RAW` by default).
     - On FreeBSD, NetBSD and DragonFly BSD it accepts ``bdaddr``
@@ -171,6 +172,7 @@ created.  Socket addresses are represented as follows:
 
     .. versionchanged:: next
        Added ``channel`` field.
+       ``device_id`` not packed in a tuple is now accepted.
 
   - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is
     the Bluetooth address as a string or a :class:`bytes` object.

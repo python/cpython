@@ -58,7 +58,7 @@ class _MonitoringTracer:
         E = sys.monitoring.events
         all_events = 0
         for event, cb_name in self.EVENT_CALLBACK_MAP.items():
-            callback = getattr(self, f'{cb_name}_callback')
+            callback = self.callback_wrapper(getattr(self, f'{cb_name}_callback'), event)
             sys.monitoring.register_callback(self._tool_id, event, callback)
             if event != E.INSTRUCTION:
                 all_events |= event
@@ -82,19 +82,22 @@ class _MonitoringTracer:
         if sys.monitoring.get_tool(self._tool_id) == self._name:
             sys.monitoring.restart_events()
 
-    def callback_wrapper(func):
+    def callback_wrapper(self, func, event):
         import functools
 
         @functools.wraps(func)
-        def wrapper(self, *args):
+        def wrapper(*args):
             if self._tracing_thread != threading.current_thread():
                 return
             try:
                 frame = sys._getframe().f_back
-                ret = func(self, frame, *args)
+                ret = func(frame, *args)
                 if self._enabled and frame.f_trace:
                     self.update_local_events()
-                if self._disable_current_event:
+                if (
+                    self._disable_current_event
+                    and event not in (E.PY_THROW, E.PY_UNWIND, E.RAISE)
+                ):
                     return sys.monitoring.DISABLE
                 else:
                     return ret
@@ -107,7 +110,6 @@ class _MonitoringTracer:
 
         return wrapper
 
-    @callback_wrapper
     def call_callback(self, frame, code, *args):
         local_tracefunc = self._tracefunc(frame, 'call', None)
         if local_tracefunc is not None:
@@ -115,22 +117,18 @@ class _MonitoringTracer:
             if self._enabled:
                 sys.monitoring.set_local_events(self._tool_id, code, self.LOCAL_EVENTS)
 
-    @callback_wrapper
     def return_callback(self, frame, code, offset, retval):
         if frame.f_trace:
             frame.f_trace(frame, 'return', retval)
 
-    @callback_wrapper
     def unwind_callback(self, frame, code, *args):
         if frame.f_trace:
             frame.f_trace(frame, 'return', None)
 
-    @callback_wrapper
     def line_callback(self, frame, code, *args):
         if frame.f_trace and frame.f_trace_lines:
             frame.f_trace(frame, 'line', None)
 
-    @callback_wrapper
     def jump_callback(self, frame, code, inst_offset, dest_offset):
         if dest_offset > inst_offset:
             return sys.monitoring.DISABLE
@@ -141,7 +139,6 @@ class _MonitoringTracer:
         if frame.f_trace and frame.f_trace_lines:
             frame.f_trace(frame, 'line', None)
 
-    @callback_wrapper
     def exception_callback(self, frame, code, offset, exc):
         if frame.f_trace:
             if exc.__traceback__ and hasattr(exc.__traceback__, 'tb_frame'):
@@ -152,7 +149,6 @@ class _MonitoringTracer:
                     tb = tb.tb_next
             frame.f_trace(frame, 'exception', (type(exc), exc, exc.__traceback__))
 
-    @callback_wrapper
     def opcode_callback(self, frame, code, offset):
         if frame.f_trace and frame.f_trace_opcodes:
             frame.f_trace(frame, 'opcode', None)

@@ -2147,7 +2147,12 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 #if defined(HAVE_BLUETOOTH_BLUETOOTH_H)
             unsigned short dev;
             unsigned short channel = HCI_CHANNEL_RAW;
-            if (!PyArg_ParseTuple(args, "H|H", &dev, &channel)) {
+            if (PyLong_Check(args)) {
+                if (!PyArg_Parse(args, "H", &dev)) {
+                    return 0;
+                }
+            }
+            else if (!PyArg_ParseTuple(args, "H|H", &dev, &channel)) {
                 PyErr_Format(PyExc_OSError,
                              "%s(): wrong format", caller);
                 return 0;
