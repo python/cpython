@@ -415,7 +415,7 @@ The available slot types are:
    in one module definition.
 
    If ``Py_mod_multiple_interpreters`` is not specified, the import
-   machinery defaults to ``Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED``.
+   machinery defaults to ``Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED``.
 
    .. versionadded:: 3.12
 
@@ -709,7 +709,7 @@ since multiple such modules can be created from a single definition.
    mechanisms (either by calling it directly, or by referring to its
    implementation for details of the required state updates).
 
-   The caller must hold the GIL.
+   The caller must have an :term:`attached thread state`.
 
    Return ``-1`` with an exception set on error, ``0`` on success.
 
@@ -720,6 +720,6 @@ since multiple such modules can be created from a single definition.
    Removes the module object created from *def* from the interpreter state.
    Return ``-1`` with an exception set on error, ``0`` on success.
 
-   The caller must hold the GIL.
+   The caller must have an :term:`attached thread state`.
 
    .. versionadded:: 3.3

@@ -49,9 +49,8 @@ as the arguments on the stack are (usually) already in the correct
 location for the parameters. However, it requires the VM to maintain
 an extra pointer for the locals, which can hurt performance.
 
-### Generators and Coroutines
+### Specials
 
-Generators and coroutines contain a `_PyInterpreterFrame`
 The specials section contains the following pointers:
 
 * Globals dict
@@ -127,7 +126,7 @@ to see in an exception traceback.
 The `return_offset` field determines where a `RETURN` should go in the caller,
 relative to `instr_ptr`.  It is only meaningful to the callee, so it needs to
 be set in any instruction that implements a call (to a Python function),
-including CALL, SEND and BINARY_SUBSCR_GETITEM, among others. If there is no
+including CALL, SEND and BINARY_OP_SUBSCR_GETITEM, among others. If there is no
 callee, then return_offset is meaningless. It is necessary to have a separate
 field for the return offset because (1) if we apply this offset to `instr_ptr`
 while executing the `RETURN`, this is too early and would lose us information

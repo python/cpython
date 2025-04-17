@@ -5,8 +5,6 @@ may change at any time.
 """
 
 import sys
-import warnings
-import struct
 
 from _ctypes import CField, buffer_info
 import ctypes
@@ -20,29 +18,6 @@ def round_up(n, multiple):
     assert n >= 0
     assert multiple > 0
     return ((n + multiple - 1) // multiple) * multiple
-
-def LOW_BIT(offset):
-    return offset & 0xFFFF
-
-def NUM_BITS(bitsize):
-    return bitsize >> 16
-
-def BUILD_SIZE(bitsize, offset):
-    assert 0 <= offset, offset
-    assert offset <= 0xFFFF, offset
-    # We don't support zero length bitfields.
-    # And GET_BITFIELD uses NUM_BITS(size) == 0,
-    # to figure out whether we are handling a bitfield.
-    assert bitsize > 0, bitsize
-    result = (bitsize << 16) + offset
-    assert bitsize == NUM_BITS(result), (bitsize, result)
-    assert offset == LOW_BIT(result), (offset, result)
-    return result
-
-def build_size(bit_size, bit_offset, big_endian, type_size):
-    if big_endian:
-        return BUILD_SIZE(bit_size, 8 * type_size - bit_offset - bit_size)
-    return BUILD_SIZE(bit_size, bit_offset)
 
 _INT_MAX = (1 << (ctypes.sizeof(ctypes.c_int) * 8) - 1) - 1
 
@@ -215,13 +190,10 @@ def get_layout(cls, input_fields, is_struct, base):
 
             offset = round_down(next_bit_offset, type_bit_align) // 8
             if is_bitfield:
-                effective_bit_offset = next_bit_offset - 8 * offset
-                size = build_size(bit_size, effective_bit_offset,
-                                  big_endian, type_size)
-                assert effective_bit_offset <= type_bit_size
+                bit_offset = next_bit_offset - 8 * offset
+                assert bit_offset <= type_bit_size
             else:
                 assert offset == next_bit_offset / 8
-                size = type_size
 
             next_bit_offset += bit_size
             struct_size = round_up(next_bit_offset, 8) // 8
@@ -255,18 +227,17 @@ def get_layout(cls, input_fields, is_struct, base):
             offset = next_byte_offset - last_field_bit_size // 8
             if is_bitfield:
                 assert 0 <= (last_field_bit_size + next_bit_offset)
-                size = build_size(bit_size,
-                                  last_field_bit_size + next_bit_offset,
-                                  big_endian, type_size)
-            else:
-                size = type_size
+                bit_offset = last_field_bit_size + next_bit_offset
             if type_bit_size:
                 assert (last_field_bit_size + next_bit_offset) < type_bit_size
 
             next_bit_offset += bit_size
             struct_size = next_byte_offset
 
-        assert (not is_bitfield) or (LOW_BIT(size) <= size * 8)
+        if is_bitfield and big_endian:
+            # On big-endian architectures, bit fields are also laid out
+            # starting with the big end.
+            bit_offset = type_bit_size - bit_size - bit_offset
 
         # Add the format spec parts
         if is_struct:
@@ -288,16 +259,21 @@ def get_layout(cls, input_fields, is_struct, base):
                 # a bytes name would be rejected later, but we check early
                 # to avoid a BytesWarning with `python -bb`
                 raise TypeError(
-                    "field {name!r}: name must be a string, not bytes")
+                    f"field {name!r}: name must be a string, not bytes")
             format_spec_parts.append(f"{fieldfmt}:{name}:")
 
         result_fields.append(CField(
             name=name,
             type=ctype,
-            size=size,
-            offset=offset,
+            byte_size=type_size,
+            byte_offset=offset,
             bit_size=bit_size if is_bitfield else None,
+            bit_offset=bit_offset if is_bitfield else None,
             index=i,
+
+            # Do not use CField outside ctypes, yet.
+            # The constructor is internal API and may change without warning.
+            _internal_use=True,
         ))
         if is_bitfield and not gcc_layout:
             assert type_bit_size > 0

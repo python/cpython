@@ -79,7 +79,7 @@ Examples                                         Results
 ``product('ABCD', repeat=2)``                    ``AA AB AC AD BA BB BC BD CA CB CC CD DA DB DC DD``
 ``permutations('ABCD', 2)``                      ``AB AC AD BA BC BD CA CB CD DA DB DC``
 ``combinations('ABCD', 2)``                      ``AB AC AD BC BD CD``
-``combinations_with_replacement('ABCD', 2)``     ``AA AB AC AD BB BC BD CC CD DD``
+``combinations_with_replacement('ABCD', 2)``     ``AA AB AC AD BB BC BD CC CD DD``
 ==============================================   =============================================================
 
 
@@ -1129,8 +1129,8 @@ The following recipes have a more mathematical flavor:
 
    def multinomial(*counts):
        "Number of distinct arrangements of a multiset."
-       # Counter('abracadabra').values() -> 5 2 1 1 2
-       # multinomial(5, 2, 1, 1, 2) → 83160
+       # Counter('abracadabra').values() → 5 2 2 1 1
+       # multinomial(5, 2, 2, 1, 1) → 83160
        return prod(map(comb, accumulate(counts), counts))
 
 
@@ -1736,7 +1736,7 @@ The following recipes have a more mathematical flavor:
     >>> ''.join(it)
     'DEF1'
 
-    >>> multinomial(5, 2, 1, 1, 2)
+    >>> multinomial(5, 2, 2, 1, 1)
     83160
     >>> word = 'coffee'
     >>> multinomial(*Counter(word).values()) == len(set(permutations(word)))

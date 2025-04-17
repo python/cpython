@@ -2,13 +2,14 @@
 /* Support for dynamic loading of extension modules */
 
 #include "Python.h"
-#include "pycore_call.h"
-#include "pycore_import.h"
-#include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
-#include "pycore_pystate.h"
-#include "pycore_runtime.h"
-
+#include "pycore_call.h"          // _PyObject_CallMethod()
+#include "pycore_import.h"        // _PyImport_SwapPackageContext()
 #include "pycore_importdl.h"
+#include "pycore_moduleobject.h"  // _PyModule_GetDef()
+#include "pycore_moduleobject.h"  // _PyModule_GetDef()
+#include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
+#include "pycore_runtime.h"       // _Py_ID()
+
 
 /* ./configure sets HAVE_DYNAMIC_LOADING if dynamic loading of modules is
    supported on this platform. configure will then compile and link in one

@@ -5,8 +5,8 @@
 #include "pycore_ceval.h"         // _Py_simple_func
 #include "pycore_crossinterp.h"   // _PyXIData_t
 #include "pycore_initconfig.h"    // _PyStatus_OK()
-#include "pycore_namespace.h"     //_PyNamespace_New()
-#include "pycore_pyerrors.h"      // _PyErr_Clear()
+#include "pycore_namespace.h"     // _PyNamespace_New()
+#include "pycore_typeobject.h"    // _PyStaticType_InitBuiltin()
 
 
 /**************/

@@ -2,17 +2,14 @@
 /* Traceback implementation */
 
 #include "Python.h"
-
-#include "pycore_ast.h"           // asdl_seq_GET()
 #include "pycore_call.h"          // _PyObject_CallMethodFormat()
 #include "pycore_fileutils.h"     // _Py_BEGIN_SUPPRESS_IPH
-#include "pycore_frame.h"         // _PyFrame_GetCode()
+#include "pycore_frame.h"         // PyFrameObject
 #include "pycore_interp.h"        // PyInterpreterState.gc
-#include "pycore_parser.h"        // _PyParser_ASTFromString
-#include "pycore_pyarena.h"       // _PyArena_Free()
+#include "pycore_interpframe.h"   // _PyFrame_GetCode()
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
-#include "pycore_sysmodule.h"     // _PySys_GetAttr()
+#include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
 #include "pycore_traceback.h"     // EXCEPTION_TB_HEADER
 
 #include "frameobject.h"          // PyFrame_New()
@@ -24,7 +21,7 @@
 
 
 #define OFF(x) offsetof(PyTracebackObject, x)
-#define PUTS(fd, str) (void)_Py_write_noraise(fd, str, (int)strlen(str))
+#define PUTS(fd, str) (void)_Py_write_noraise(fd, str, strlen(str))
 
 #define MAX_STRING_LENGTH 500
 #define MAX_FRAME_DEPTH 100
@@ -99,10 +96,16 @@ tb_dir(PyObject *Py_UNUSED(self), PyObject *Py_UNUSED(ignored))
                                    "tb_lasti", "tb_lineno");
 }
 
+/*[clinic input]
+@critical_section
+@getter
+traceback.tb_next
+[clinic start generated code]*/
+
 static PyObject *
-tb_next_get(PyObject *op, void *Py_UNUSED(_))
+traceback_tb_next_get_impl(PyTracebackObject *self)
+/*[clinic end generated code: output=963634df7d5fc837 input=8f6345f2b73cb965]*/
 {
-    PyTracebackObject *self = _PyTracebackObject_CAST(op);
     PyObject* ret = (PyObject*)self->tb_next;
     if (!ret) {
         ret = Py_None;
@@ -133,37 +136,48 @@ tb_lineno_get(PyObject *op, void *Py_UNUSED(_))
     return PyLong_FromLong(lineno);
 }
 
+/*[clinic input]
+@critical_section
+@setter
+traceback.tb_next
+[clinic start generated code]*/
+
 static int
-tb_next_set(PyObject *op, PyObject *new_next, void *Py_UNUSED(_))
+traceback_tb_next_set_impl(PyTracebackObject *self, PyObject *value)
+/*[clinic end generated code: output=d4868cbc48f2adac input=ce66367f85e3c443]*/
 {
-    if (!new_next) {
+    if (!value) {
         PyErr_Format(PyExc_TypeError, "can't delete tb_next attribute");
         return -1;
     }
 
     /* We accept None or a traceback object, and map None -> NULL (inverse of
        tb_next_get) */
-    if (new_next == Py_None) {
-        new_next = NULL;
-    } else if (!PyTraceBack_Check(new_next)) {
+    if (value == Py_None) {
+        value = NULL;
+    } else if (!PyTraceBack_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "expected traceback object, got '%s'",
-                     Py_TYPE(new_next)->tp_name);
+                     Py_TYPE(value)->tp_name);
         return -1;
     }
 
     /* Check for loops */
-    PyTracebackObject *self = _PyTracebackObject_CAST(op);
-    PyTracebackObject *cursor = (PyTracebackObject *)new_next;
+    PyTracebackObject *cursor = (PyTracebackObject *)value;
+    Py_XINCREF(cursor);
     while (cursor) {
         if (cursor == self) {
             PyErr_Format(PyExc_ValueError, "traceback loop detected");
+            Py_DECREF(cursor);
             return -1;
         }
-        cursor = cursor->tb_next;
+        Py_BEGIN_CRITICAL_SECTION(cursor);
+        Py_XINCREF(cursor->tb_next);
+        Py_SETREF(cursor, cursor->tb_next);
+        Py_END_CRITICAL_SECTION();
     }
 
-    Py_XSETREF(self->tb_next, (PyTracebackObject *)Py_XNewRef(new_next));
+    Py_XSETREF(self->tb_next, (PyTracebackObject *)Py_XNewRef(value));
 
     return 0;
 }
@@ -181,7 +195,7 @@ static PyMemberDef tb_memberlist[] = {
 };
 
 static PyGetSetDef tb_getsetters[] = {
-    {"tb_next", tb_next_get, tb_next_set, NULL, NULL},
+    TRACEBACK_TB_NEXT_GETSETDEF
     {"tb_lineno", tb_lineno_get, NULL, NULL, NULL},
     {NULL}      /* Sentinel */
 };
@@ -356,9 +370,13 @@ _Py_FindSourceFile(PyObject *filename, char* namebuf, size_t namelen, PyObject *
     taillen = strlen(tail);
 
     PyThreadState *tstate = _PyThreadState_GET();
-    syspath = _PySys_GetAttr(tstate, &_Py_ID(path));
-    if (syspath == NULL || !PyList_Check(syspath))
+    if (_PySys_GetOptionalAttr(&_Py_ID(path), &syspath) < 0) {
+        PyErr_Clear();
         goto error;
+    }
+    if (syspath == NULL || !PyList_Check(syspath)) {
+        goto error;
+    }
     npath = PyList_Size(syspath);
 
     open = PyObject_GetAttr(io, &_Py_ID(open));
@@ -401,6 +419,7 @@ error:
     result = NULL;
 finally:
     Py_XDECREF(open);
+    Py_XDECREF(syspath);
     Py_DECREF(filebytes);
     return result;
 }
@@ -729,17 +748,21 @@ _PyTraceBack_Print(PyObject *v, const char *header, PyObject *f)
         PyErr_BadInternalCall();
         return -1;
     }
-    limitv = PySys_GetObject("tracebacklimit");
-    if (limitv && PyLong_Check(limitv)) {
+    if (_PySys_GetOptionalAttrString("tracebacklimit", &limitv) < 0) {
+        return -1;
+    }
+    else if (limitv != NULL && PyLong_Check(limitv)) {
         int overflow;
         limit = PyLong_AsLongAndOverflow(limitv, &overflow);
         if (overflow > 0) {
             limit = LONG_MAX;
         }
         else if (limit <= 0) {
+            Py_DECREF(limitv);
             return 0;
         }
     }
+    Py_XDECREF(limitv);
 
     if (PyFile_WriteString(header, f) < 0) {
         return -1;
@@ -1016,6 +1039,17 @@ _Py_DumpTraceback(int fd, PyThreadState *tstate)
     dump_traceback(fd, tstate, 1);
 }
 
+#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)
+# if defined(__OpenBSD__)
+    /* pthread_*_np functions, especially pthread_{get,set}_name_np().
+       pthread_np.h exists on both OpenBSD and FreeBSD but the latter declares
+       pthread_getname_np() and pthread_setname_np() in pthread.h as long as
+       __BSD_VISIBLE remains set.
+     */
+#   include <pthread_np.h>
+# endif
+#endif
+
 /* Write the thread identifier into the file 'fd': "Current thread 0xHHHH:\" if
    is_current is true, "Thread 0xHHHH:\n" otherwise.
 
@@ -1031,6 +1065,27 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
     _Py_DumpHexadecimal(fd,
                         tstate->thread_id,
                         sizeof(unsigned long) * 2);
+
+    // Write the thread name
+#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)
+    char name[100];
+    pthread_t thread = (pthread_t)tstate->thread_id;
+#ifdef HAVE_PTHREAD_GETNAME_NP
+    int rc = pthread_getname_np(thread, name, Py_ARRAY_LENGTH(name));
+#else /* defined(HAVE_PTHREAD_GET_NAME_NP) */
+    int rc = 0; /* pthread_get_name_np() returns void */
+    pthread_get_name_np(thread, name, Py_ARRAY_LENGTH(name));
+#endif
+    if (!rc) {
+        size_t len = strlen(name);
+        if (len) {
+            PUTS(fd, " [");
+            (void)_Py_write_noraise(fd, name, len);
+            PUTS(fd, "]");
+        }
+    }
+#endif
+
     PUTS(fd, " (most recent call first):\n");
 }
 

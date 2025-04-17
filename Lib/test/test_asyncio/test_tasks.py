@@ -212,8 +212,8 @@ class BaseTaskTests:
         self.assertEqual(t.result(), 'ok')
 
         # Deprecated in 3.10, undeprecated in 3.12
-        asyncio._set_event_loop(self.loop)
-        self.addCleanup(asyncio._set_event_loop, None)
+        asyncio.set_event_loop(self.loop)
+        self.addCleanup(asyncio.set_event_loop, None)
         t = asyncio.ensure_future(notmuch())
         self.assertIs(t._loop, self.loop)
         self.loop.run_until_complete(t)
@@ -2202,8 +2202,8 @@ class BaseTaskTests:
         async def coro():
             return 42
 
-        asyncio._set_event_loop(self.loop)
-        self.addCleanup(asyncio._set_event_loop, None)
+        asyncio.set_event_loop(self.loop)
+        self.addCleanup(asyncio.set_event_loop, None)
         outer = asyncio.shield(coro())
         self.assertEqual(outer._loop, self.loop)
         res = self.loop.run_until_complete(outer)
@@ -2272,10 +2272,8 @@ class BaseTaskTests:
 
         self.assertEqual(self.all_tasks(loop=self.loop), {task})
 
-        asyncio._set_event_loop(None)
-
         # execute the task so it waits for future
-        self.loop._run_once()
+        self.loop.run_until_complete(asyncio.sleep(0))
         self.assertEqual(len(self.loop._ready), 0)
 
         coro = None
@@ -2303,15 +2301,18 @@ class BaseTaskTests:
             def __del__(self):
                 pass
 
-        async def coro():
+        async def corofn():
             await asyncio.sleep(0.01)
 
-        task = Subclass(coro(), loop = self.loop)
+        coro = corofn()
+        task = Subclass(coro, loop = self.loop)
         task._log_destroy_pending = False
 
         del task
 
         support.gc_collect()
+
+        coro.close()
 
     @mock.patch('asyncio.base_events.logger')
     def test_tb_logger_not_called_after_cancel(self, m_log):
@@ -2718,12 +2719,12 @@ class BaseTaskTests:
         coro = coroutine_function()
         with contextlib.closing(asyncio.EventLoop()) as loop:
             task = asyncio.Task.__new__(asyncio.Task)
-
             for _ in range(5):
                 with self.assertRaisesRegex(RuntimeError, 'break'):
                     task.__init__(coro, loop=loop, context=obj, name=Break())
 
             coro.close()
+            task._log_destroy_pending = False
             del task
 
             self.assertEqual(sys.getrefcount(obj), initial_refcount)
@@ -3321,8 +3322,8 @@ class FutureGatherTests(GatherTestsBase, test_utils.TestCase):
 
     def test_constructor_empty_sequence_use_global_loop(self):
         # Deprecated in 3.10, undeprecated in 3.12
-        asyncio._set_event_loop(self.one_loop)
-        self.addCleanup(asyncio._set_event_loop, None)
+        asyncio.set_event_loop(self.one_loop)
+        self.addCleanup(asyncio.set_event_loop, None)
         fut = asyncio.gather()
         self.assertIsInstance(fut, asyncio.Future)
         self.assertIs(fut._loop, self.one_loop)
@@ -3429,8 +3430,8 @@ class CoroutineGatherTests(GatherTestsBase, test_utils.TestCase):
         # Deprecated in 3.10, undeprecated in 3.12
         async def coro():
             return 'abc'
-        asyncio._set_event_loop(self.other_loop)
-        self.addCleanup(asyncio._set_event_loop, None)
+        asyncio.set_event_loop(self.other_loop)
+        self.addCleanup(asyncio.set_event_loop, None)
         gen1 = coro()
         gen2 = coro()
         fut = asyncio.gather(gen1, gen2)

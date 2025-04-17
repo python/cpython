@@ -38,7 +38,7 @@ from itertools import chain
 from tokenize import TokenInfo
 
 import os
-from site import gethistoryfile   # type: ignore[attr-defined]
+from site import gethistoryfile
 import sys
 from rlcompleter import Completer as RLCompleter
 

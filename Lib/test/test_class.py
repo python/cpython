@@ -2,7 +2,7 @@
 
 import unittest
 from test import support
-from test.support import cpython_only, import_helper, script_helper, skip_emscripten_stack_overflow
+from test.support import cpython_only, import_helper, script_helper
 
 testmeths = [
 
@@ -556,7 +556,8 @@ class ClassTests(unittest.TestCase):
         self.assertFalse(hasattr(o, "__call__"))
         self.assertFalse(hasattr(c, "__call__"))
 
-    @skip_emscripten_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
+    @support.skip_wasi_stack_overflow()
     def testSFBug532646(self):
         # Test for SF bug 532646
 
