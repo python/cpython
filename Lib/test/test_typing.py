@@ -6338,7 +6338,7 @@ class InternalsTests(BaseTestCase):
             "inspect",
             "re",
             "contextlib",
-            # "annotationlib",  # TODO
+            "annotationlib",
         })
 
 
