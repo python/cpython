@@ -7283,7 +7283,8 @@ class ExtensionModuleTests(unittest.TestCase):
                     yield
                 finally:
                     assert not sys.modules
-                    _datetime.timedelta(days=1)
+                    td = _datetime.timedelta(days=1)  # crash
+                    assert td.days == 1
 
             it = gen()
             next(it)
