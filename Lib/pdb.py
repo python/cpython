@@ -2731,8 +2731,10 @@ class _RemotePdb(Pdb):
 
 
 class _PdbClient:
-    def __init__(self, sockfile):
+    def __init__(self, pid, sockfile, interrupt_script):
+        self.pid = pid
         self.sockfile = sockfile
+        self.interrupt_script = interrupt_script
         self.pdb_instance = Pdb()
         self.pdb_commands = set()
         self.completion_matches = []
@@ -2808,16 +2810,31 @@ class _PdbClient:
 
     def cmdloop(self):
         with self.readline_completion():
-            while payload_bytes := self.sockfile.readline():
+            while True:
+                try:
+                    if not (payload_bytes := self.sockfile.readline()):
+                        break
+                except KeyboardInterrupt:
+                    self.send_interrupt()
+                    continue
+
                 try:
                     payload = json.loads(payload_bytes)
                 except json.JSONDecodeError:
                     print(
-                        "***", f"Invalid JSON from remote: {payload_bytes}", flush=True
+                        f"*** Invalid JSON from remote: {payload_bytes}",
+                        flush=True,
                     )
                     continue
 
                 self.process_payload(payload)
+
+    def send_interrupt(self):
+        print(
+            "\n*** Program will stop at the next bytecode instruction."
+            " (Use 'cont' to resume)."
+        )
+        sys.remote_exec(self.pid, self.interrupt_script)
 
     def process_payload(self, payload):
         match payload:
@@ -2958,7 +2975,16 @@ def attach(pid):
         sockfile = client_sock.makefile("rwb")
 
     with closing(sockfile):
-        _PdbClient(sockfile).cmdloop()
+        with tempfile.NamedTemporaryFile("w", delete_on_close=False) as script:
+            script.write(
+                'import pdb, sys\n'
+                'if inst := pdb.Pdb._last_pdb_instance:\n'
+                '    inst.set_step()\n'
+                '    inst.set_trace(sys._getframe(1))\n'
+            )
+            script.close()
+
+            _PdbClient(pid, sockfile, script.name).cmdloop()
 
 
 # Post-Mortem interface
