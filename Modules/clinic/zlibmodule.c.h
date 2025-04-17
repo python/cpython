@@ -1028,9 +1028,21 @@ zlib_adler32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    value = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (value == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &value, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional:
     return_value = zlib_adler32_impl(module, &data, value);
@@ -1078,9 +1090,21 @@ zlib_crc32(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (nargs < 2) {
         goto skip_optional;
     }
-    value = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (value == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &value, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional:
     _return_value = zlib_crc32_impl(module, &data, value);
@@ -1121,4 +1145,4 @@ exit:
 #ifndef ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
     #define ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF
 #endif /* !defined(ZLIB_DECOMPRESS___DEEPCOPY___METHODDEF) */
-/*[clinic end generated code: output=33938c7613a8c1c7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8d7226784a8b2379 input=a9049054013a1b77]*/

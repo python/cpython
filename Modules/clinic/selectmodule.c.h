@@ -783,9 +783,21 @@ select_epoll_register(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     if (!noptargs) {
         goto skip_optional_pos;
     }
-    eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &eventmask, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
 skip_optional_pos:
     return_value = select_epoll_register_impl((pyEpoll_Object *)self, fd, eventmask);
@@ -860,9 +872,21 @@ select_epoll_modify(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyO
     if (fd < 0) {
         goto exit;
     }
-    eventmask = (unsigned int)PyLong_AsUnsignedLongMask(args[1]);
-    if (eventmask == (unsigned int)-1 && PyErr_Occurred()) {
-        goto exit;
+    {
+        Py_ssize_t _bytes = PyLong_AsNativeBytes(args[1], &eventmask, sizeof(unsigned int),
+                Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
+                Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+        if (_bytes < 0) {
+            goto exit;
+        }
+        if ((size_t)_bytes > sizeof(unsigned int)) {
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                "integer value out of range", 1) < 0)
+            {
+                goto exit;
+            }
+        }
     }
     return_value = select_epoll_modify_impl((pyEpoll_Object *)self, fd, eventmask);
 
@@ -1375,4 +1399,4 @@ exit:
 #ifndef SELECT_KQUEUE_CONTROL_METHODDEF
     #define SELECT_KQUEUE_CONTROL_METHODDEF
 #endif /* !defined(SELECT_KQUEUE_CONTROL_METHODDEF) */
-/*[clinic end generated code: output=6fc20d78802511d1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a66dd831f22c696 input=a9049054013a1b77]*/
