@@ -170,7 +170,7 @@ void *_PyPegen_raise_error_known_location(Parser *p, PyObject *errtype,
 void _Pypegen_set_syntax_error(Parser* p, Token* last_token);
 void _Pypegen_stack_overflow(Parser *p);
 
-Py_LOCAL_INLINE(void *)
+static inline void *
 RAISE_ERROR_KNOWN_LOCATION(Parser *p, PyObject *errtype,
                            Py_ssize_t lineno, Py_ssize_t col_offset,
                            Py_ssize_t end_lineno, Py_ssize_t end_col_offset,
@@ -346,6 +346,8 @@ mod_ty _PyPegen_make_module(Parser *, asdl_stmt_seq *);
 void *_PyPegen_arguments_parsing_error(Parser *, expr_ty);
 expr_ty _PyPegen_get_last_comprehension_item(comprehension_ty comprehension);
 void *_PyPegen_nonparen_genexp_in_call(Parser *p, expr_ty args, asdl_comprehension_seq *comprehensions);
+stmt_ty _PyPegen_checked_future_import(Parser *p, identifier module, asdl_alias_seq *,
+                                       int , int, int , int , int , PyArena *);
 
 // Parser API
 

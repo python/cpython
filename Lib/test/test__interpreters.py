@@ -365,6 +365,7 @@ class CreateTests(TestBase):
 
         self.assertEqual(len(seen), 100)
 
+    @support.skip_if_sanitizer('gh-129824: race on tp_flags', thread=True)
     def test_in_thread(self):
         lock = threading.Lock()
         id = None
@@ -744,6 +745,12 @@ class RunStringTests(TestBase):
     def test_bytes_for_script(self):
         with self.assertRaises(TypeError):
             _interpreters.run_string(self.id, b'print("spam")')
+
+    def test_str_subclass_string(self):
+        class StrSubclass(str): pass
+
+        output = _run_output(self.id, StrSubclass('print(1 + 2)'))
+        self.assertEqual(output, '3\n')
 
     def test_with_shared(self):
         r, w = os.pipe()

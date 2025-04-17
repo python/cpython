@@ -22,7 +22,7 @@ fi
 
 # Update this when updating to a new version after verifying that the changes
 # the update brings in are good.
-expected_hacl_star_rev=f218923ef2417d963d7efc7951593ae6aef613f7
+expected_hacl_star_rev=322f6d58290e0ed7f4ecb84fcce12917aa0f594b
 
 hacl_dir="$(realpath "$1")"
 cd "$(dirname "$0")"
@@ -41,6 +41,8 @@ fi
 declare -a dist_files
 dist_files=(
   Hacl_Streaming_Types.h
+  internal/Hacl_Streaming_Types.h
+# Cryptographic Hash Functions (headers)
   Hacl_Hash_MD5.h
   Hacl_Hash_SHA1.h
   Hacl_Hash_SHA2.h
@@ -49,6 +51,10 @@ dist_files=(
   Hacl_Hash_Blake2s.h
   Hacl_Hash_Blake2b_Simd256.h
   Hacl_Hash_Blake2s_Simd128.h
+# Cryptographic Primitives (headers)
+  Hacl_HMAC.h
+  Hacl_Streaming_HMAC.h
+# Cryptographic Hash Functions (internal headers)
   internal/Hacl_Hash_MD5.h
   internal/Hacl_Hash_SHA1.h
   internal/Hacl_Hash_SHA2.h
@@ -58,6 +64,10 @@ dist_files=(
   internal/Hacl_Hash_Blake2b_Simd256.h
   internal/Hacl_Hash_Blake2s_Simd128.h
   internal/Hacl_Impl_Blake2_Constants.h
+# Cryptographic Primitives (internal headers)
+  internal/Hacl_HMAC.h
+  internal/Hacl_Streaming_HMAC.h
+# Cryptographic Hash Functions (sources)
   Hacl_Hash_MD5.c
   Hacl_Hash_SHA1.c
   Hacl_Hash_SHA2.c
@@ -66,7 +76,12 @@ dist_files=(
   Hacl_Hash_Blake2s.c
   Hacl_Hash_Blake2b_Simd256.c
   Hacl_Hash_Blake2s_Simd128.c
+# Cryptographic Primitives (sources)
+  Hacl_HMAC.c
+  Hacl_Streaming_HMAC.c
+# Miscellaneous
   libintvector.h
+  libintvector-shim.h
   lib_memzero0.h
   Lib_Memzero0.c
 )
@@ -74,7 +89,9 @@ dist_files=(
 declare -a include_files
 include_files=(
   include/krml/lowstar_endianness.h
+  include/krml/internal/compat.h
   include/krml/internal/target.h
+  include/krml/internal/types.h
 )
 
 declare -a lib_files
@@ -110,32 +127,12 @@ fi
 
 readarray -t all_files < <(find . -name '*.h' -or -name '*.c')
 
-# types.h originally contains a complex series of if-defs and auxiliary type
-# definitions; here, we just need a proper uint128 type in scope
-# is a simple wrapper that defines the uint128 type
-cat > include/krml/types.h <<EOF
-#pragma once
-
-#include <inttypes.h>
-
-typedef struct FStar_UInt128_uint128_s {
-  uint64_t low;
-  uint64_t high;
-} FStar_UInt128_uint128, uint128_t;
-
-#define KRML_VERIFIED_UINT128
-
-#include "krml/lowstar_endianness.h"
-#include "krml/fstar_uint128_struct_endianness.h"
-#include "krml/FStar_UInt128_Verified.h"
-EOF
 # Adjust the include path to reflect the local directory structure
-$sed -i 's!#include.*types.h"!#include "krml/types.h"!g' "${all_files[@]}"
-$sed -i 's!#include.*compat.h"!!g' "${all_files[@]}"
+$sed -i 's!#include "FStar_UInt128_Verified.h"!#include "krml/FStar_UInt128_Verified.h"!g' include/krml/internal/types.h
+$sed -i 's!#include "fstar_uint128_struct_endianness.h"!#include "krml/fstar_uint128_struct_endianness.h"!g' include/krml/internal/types.h
 
-# FStar_UInt_8_16_32_64 contains definitions useful in the general case, but not
-# for us; trim!
-$sed -i -z 's!\(extern\|typedef\)[^;]*;\n\n!!g' include/krml/FStar_UInt_8_16_32_64.h
+# use KRML_VERIFIED_UINT128
+$sed -i -z 's!#define KRML_TYPES_H!#define KRML_TYPES_H\n#define KRML_VERIFIED_UINT128!g' include/krml/internal/types.h
 
 # This contains static inline prototypes that are defined in
 # FStar_UInt_8_16_32_64; they are by default repeated for safety of separate
@@ -143,14 +140,10 @@ $sed -i -z 's!\(extern\|typedef\)[^;]*;\n\n!!g' include/krml/FStar_UInt_8_16_32_
 $sed -i 's!#include.*Hacl_Krmllib.h"!!g' "${all_files[@]}"
 
 # Use globally unique names for the Hacl_ C APIs to avoid linkage conflicts.
-$sed -i -z 's!#include <string.h>\n!#include <string.h>\n#include "python_hacl_namespaces.h"\n!' Hacl_Hash_*.h
-
-# Finally, we remove a bunch of ifdefs from target.h that are, again, useful in
-# the general case, but not exercised by the subset of HACL* that we vendor.
-$sed -z -i 's!#ifndef KRML_\(HOST_TIME\)\n\(\n\|#  [^\n]*\n\|[^#][^\n]*\n\)*#endif\n\n!!g' include/krml/internal/target.h
-$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#define KRML_\(EABORT\|EXIT\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
-$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#define  KRML_\(EABORT\|EXIT\|CHECK_SIZE\)[^\n]*\(\n  [^\n]*\)*!!g' include/krml/internal/target.h
-$sed -z -i 's!\n\n\([^#][^\n]*\n\)*#if [^\n]*\n\(  [^\n]*\n\)*#  define _\?KRML_\(DEPRECATED\|HOST_SNPRINTF\)[^\n]*\n\([^#][^\n]*\n\|#el[^\n]*\n\|#  [^\n]*\n\)*#endif!!g' include/krml/internal/target.h
+$sed -i -z 's!#include <string.h>!#include <string.h>\n#include "python_hacl_namespaces.h"!' \
+  Hacl_Hash_*.h \
+  Hacl_HMAC.h \
+  Hacl_Streaming_HMAC.h
 
 # Step 3: trim whitespace (for the linter)
 

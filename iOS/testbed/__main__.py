@@ -1,11 +1,14 @@
 import argparse
 import asyncio
+import fcntl
 import json
+import os
 import plistlib
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
@@ -34,6 +37,46 @@ def exit(*args):
 
 class MySystemExit(Exception):
     pass
+
+
+class SimulatorLock:
+    # An fcntl-based filesystem lock that can be used to ensure that
+    def __init__(self, timeout):
+        self.filename = Path(tempfile.gettempdir()) / "python-ios-testbed"
+        self.timeout = timeout
+
+        self.fd = None
+
+    async def acquire(self):
+        # Ensure the lockfile exists
+        self.filename.touch(exist_ok=True)
+
+        # Try `timeout` times to acquire the lock file, with a 1 second pause
+        # between each attempt. Report status every 10 seconds.
+        for i in range(0, self.timeout):
+            try:
+                fd = os.open(self.filename, os.O_RDWR | os.O_TRUNC, 0o644)
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                os.close(fd)
+                if i % 10 == 0:
+                    print("... waiting", flush=True)
+                await asyncio.sleep(1)
+            else:
+                self.fd = fd
+                return
+
+        # If we reach the end of the loop, we've exceeded the allowed number of
+        # attempts.
+        raise ValueError("Unable to obtain lock on iOS simulator creation")
+
+    def release(self):
+        # If a lock is held, release it.
+        if self.fd is not None:
+            # Release the lock.
+            fcntl.flock(self.fd, fcntl.LOCK_UN)
+            os.close(self.fd)
+            self.fd = None
 
 
 # All subprocesses are executed through this context manager so that no matter
@@ -82,22 +125,32 @@ async def async_check_output(*args, **kwargs):
 
 # Return a list of UDIDs associated with booted simulators
 async def list_devices():
-    # List the testing simulators, in JSON format
-    raw_json = await async_check_output(
-        "xcrun", "simctl", "--set", "testing", "list", "-j"
-    )
-    json_data = json.loads(raw_json)
+    try:
+        # List the testing simulators, in JSON format
+        raw_json = await async_check_output(
+            "xcrun", "simctl", "--set", "testing", "list", "-j"
+        )
+        json_data = json.loads(raw_json)
 
-    # Filter out the booted iOS simulators
-    return [
-        simulator["udid"]
-        for runtime, simulators in json_data["devices"].items()
-        for simulator in simulators
-        if runtime.split(".")[-1].startswith("iOS") and simulator["state"] == "Booted"
-    ]
+        # Filter out the booted iOS simulators
+        return [
+            simulator["udid"]
+            for runtime, simulators in json_data["devices"].items()
+            for simulator in simulators
+            if runtime.split(".")[-1].startswith("iOS") and simulator["state"] == "Booted"
+        ]
+    except subprocess.CalledProcessError as e:
+        # If there's no ~/Library/Developer/XCTestDevices folder (which is the
+        # case on fresh installs, and in some CI environments), `simctl list`
+        # returns error code 1, rather than an empty list. Handle that case,
+        # but raise all other errors.
+        if e.returncode == 1:
+            return []
+        else:
+            raise
 
 
-async def find_device(initial_devices):
+async def find_device(initial_devices, lock):
     while True:
         new_devices = set(await list_devices()).difference(initial_devices)
         if len(new_devices) == 0:
@@ -105,15 +158,16 @@ async def find_device(initial_devices):
         elif len(new_devices) == 1:
             udid = new_devices.pop()
             print(f"{datetime.now():%Y-%m-%d %H:%M:%S}: New test simulator detected")
-            print(f"UDID: {udid}")
+            print(f"UDID: {udid}", flush=True)
+            lock.release()
             return udid
         else:
             exit(f"Found more than one new device: {new_devices}")
 
 
-async def log_stream_task(initial_devices):
+async def log_stream_task(initial_devices, lock):
     # Wait up to 5 minutes for the build to complete and the simulator to boot.
-    udid = await asyncio.wait_for(find_device(initial_devices), 5 * 60)
+    udid = await asyncio.wait_for(find_device(initial_devices, lock), 5 * 60)
 
     # Stream the iOS device's logs, filtering out messages that come from the
     # XCTest test suite (catching NSLog messages from the test method), or
@@ -161,7 +215,7 @@ async def log_stream_task(initial_devices):
 
 async def xcode_test(location, simulator, verbose):
     # Run the test suite on the named simulator
-    print("Starting xcodebuild...")
+    print("Starting xcodebuild...", flush=True)
     args = [
         "xcodebuild",
         "test",
@@ -230,33 +284,69 @@ def clone_testbed(
     shutil.copytree(source, target, symlinks=True)
     print(" done")
 
+    xc_framework_path = target / "Python.xcframework"
+    sim_framework_path = xc_framework_path / "ios-arm64_x86_64-simulator"
     if framework is not None:
         if framework.suffix == ".xcframework":
             print("  Installing XCFramework...", end="", flush=True)
-            xc_framework_path = (target / "Python.xcframework").resolve()
             if xc_framework_path.is_dir():
                 shutil.rmtree(xc_framework_path)
             else:
-                xc_framework_path.unlink()
+                xc_framework_path.unlink(missing_ok=True)
             xc_framework_path.symlink_to(
                 framework.relative_to(xc_framework_path.parent, walk_up=True)
             )
             print(" done")
         else:
             print("  Installing simulator framework...", end="", flush=True)
-            sim_framework_path = (
-                target / "Python.xcframework" / "ios-arm64_x86_64-simulator"
-            ).resolve()
             if sim_framework_path.is_dir():
                 shutil.rmtree(sim_framework_path)
             else:
-                sim_framework_path.unlink()
+                sim_framework_path.unlink(missing_ok=True)
             sim_framework_path.symlink_to(
                 framework.relative_to(sim_framework_path.parent, walk_up=True)
             )
             print(" done")
     else:
-        print("  Using pre-existing iOS framework.")
+        if (
+            xc_framework_path.is_symlink()
+            and not xc_framework_path.readlink().is_absolute()
+        ):
+            # XCFramework is a relative symlink. Rewrite the symlink relative
+            # to the new location.
+            print("  Rewriting symlink to XCframework...", end="", flush=True)
+            orig_xc_framework_path = (
+                source
+                / xc_framework_path.readlink()
+            ).resolve()
+            xc_framework_path.unlink()
+            xc_framework_path.symlink_to(
+                orig_xc_framework_path.relative_to(
+                    xc_framework_path.parent, walk_up=True
+                )
+            )
+            print(" done")
+        elif (
+            sim_framework_path.is_symlink()
+            and not sim_framework_path.readlink().is_absolute()
+        ):
+            print("  Rewriting symlink to simulator framework...", end="", flush=True)
+            # Simulator framework is a relative symlink. Rewrite the symlink
+            # relative to the new location.
+            orig_sim_framework_path = (
+                source
+                / "Python.XCframework"
+                / sim_framework_path.readlink()
+            ).resolve()
+            sim_framework_path.unlink()
+            sim_framework_path.symlink_to(
+                orig_sim_framework_path.relative_to(
+                    sim_framework_path.parent, walk_up=True
+                )
+            )
+            print(" done")
+        else:
+            print("  Using pre-existing iOS framework.")
 
     for app_src in apps:
         print(f"  Installing app {app_src.name!r}...", end="", flush=True)
@@ -285,7 +375,17 @@ async def run_testbed(simulator: str, args: list[str], verbose: bool=False):
     location = Path(__file__).parent
     print("Updating plist...", end="", flush=True)
     update_plist(location, args)
-    print(" done.")
+    print(" done.", flush=True)
+
+    # We need to get an exclusive lock on simulator creation, to avoid issues
+    # with multiple simulators starting and being unable to tell which
+    # simulator is due to which testbed instance. See
+    # https://github.com/python/cpython/issues/130294 for details. Wait up to
+    # 10 minutes for a simulator to boot.
+    print("Obtaining lock on simulator creation...", flush=True)
+    simulator_lock = SimulatorLock(timeout=10*60)
+    await simulator_lock.acquire()
+    print("Simulator lock acquired.", flush=True)
 
     # Get the list of devices that are booted at the start of the test run.
     # The simulator started by the test suite will be detected as the new
@@ -294,13 +394,15 @@ async def run_testbed(simulator: str, args: list[str], verbose: bool=False):
 
     try:
         async with asyncio.TaskGroup() as tg:
-            tg.create_task(log_stream_task(initial_devices))
+            tg.create_task(log_stream_task(initial_devices, simulator_lock))
             tg.create_task(xcode_test(location, simulator=simulator, verbose=verbose))
     except* MySystemExit as e:
         raise SystemExit(*e.exceptions[0].args) from None
     except* subprocess.CalledProcessError as e:
         # Extract it from the ExceptionGroup so it can be handled by `main`.
         raise e.exceptions[0]
+    finally:
+        simulator_lock.release()
 
 
 def main():
@@ -372,8 +474,8 @@ def main():
 
     if context.subcommand == "clone":
         clone_testbed(
-            source=Path(__file__).parent,
-            target=Path(context.location),
+            source=Path(__file__).parent.resolve(),
+            target=Path(context.location).resolve(),
             framework=Path(context.framework).resolve() if context.framework else None,
             apps=[Path(app) for app in context.apps],
         )
