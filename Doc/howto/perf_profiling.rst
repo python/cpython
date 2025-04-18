@@ -265,17 +265,17 @@ that were created by Python.
     incomplete. On the other hand, if the size is too big, then ``perf`` won't
     be able to sample the process as frequently as it would like as the overhead
     will be higher.
-    
+
     The stack size is particularly important when profiling Python code compiled
     with low optimization levels (like ``-O0``), as these builds tend to have
     larger stack frames. If you are compiling Python with ``-O0`` and not seeing
     Python functions in your profiling output, try increasing the stack dump
     size to 65528 bytes (the maximum)::
-    
+
         $ perf record -F 9999 -g -k 1 --call-graph dwarf,65528 -o perf.data python -Xperf_jit my_script.py
-    
+
     Different compilation flags can significantly impact stack sizes:
-    
+
     - Builds with ``-O0`` typically have much larger stack frames than those with ``-O1`` or higher
     - Adding optimizations (``-O1``, ``-O2``, etc.) typically reduces stack size
     - Frame pointers (``-fno-omit-frame-pointer``) generally provide more reliable stack unwinding
