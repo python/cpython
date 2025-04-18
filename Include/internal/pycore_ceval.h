@@ -310,7 +310,13 @@ PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFra
 PyAPI_FUNC(int)
 _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args);
 
-PyAPI_FUNC(int) _PyEval_SpecialMethodCanSuggest(PyObject *self, int oparg);
+/*
+ * Indicate whether a special method of given 'oparg' can use the (improved)
+ * alternative errror message instead. Only methods loaded by LOAD_SPECIAL
+ * support alternative errror messages.
+ */
+extern int
+_PyEval_SpecialMethodCanSuggest(PyObject *self, int oparg);
 
 /* Bits that can be set in PyThreadState.eval_breaker */
 #define _PY_GIL_DROP_REQUEST_BIT (1U << 0)
