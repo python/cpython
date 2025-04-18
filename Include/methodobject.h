@@ -51,8 +51,9 @@ typedef PyCFunctionFastWithKeywords _PyCFunctionFastWithKeywords;
 // (bpo-33012).
 #define _PyCFunction_CAST(func)                         \
     _Py_FUNC_CAST(PyCFunction, func)
-// Other casts are given for semantic conveniences, allowing
-// users to see whether a cast to suppress an undefined behavior is necessary.
+// The macros below are given for semantic convenience, allowing users
+// to see whether a cast to suppress an undefined behavior is necessary.
+// Note: At runtime, the original function signature must be respected.
 #define _PyCFunctionFast_CAST(func)                     \
     _Py_FUNC_CAST(PyCFunctionFast, func)
 #define _PyCFunctionWithKeywords_CAST(func)             \
