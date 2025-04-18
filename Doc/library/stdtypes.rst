@@ -2476,7 +2476,7 @@ Formatted String Literals (f-strings)
 .. versionadded:: 3.6
 .. versionchanged:: 3.7
    The :keyword:`await` and :keyword:`async for` can be used in expressions
-within f-strings.
+   within f-strings.
 .. versionchanged:: 3.8
    Added the debugging operator (``=``)
 .. versionchanged:: 3.12
