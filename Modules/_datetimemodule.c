@@ -158,6 +158,7 @@ error:
 }
 
 static PyModuleDef datetimemodule;
+static int set_current_module(PyInterpreterState *interp, PyObject *mod);
 
 static datetime_state *
 _get_current_state(PyObject **p_mod)
@@ -173,7 +174,28 @@ _get_current_state(PyObject **p_mod)
          * so we must re-import the module. */
         mod = PyImport_ImportModule("_datetime");
         if (mod == NULL) {
-            return NULL;
+            PyErr_Clear();
+            /* Create a module at shutdown */
+            PyObject *dict = PyInterpreterState_GetDict(interp);
+            if (dict == NULL) {
+                return NULL;
+            }
+            PyObject *spec;
+            if (PyDict_GetItemStringRef(dict, "datetime_module_spec", &spec) != 1) {
+                return NULL;
+            }
+            mod = PyModule_FromDefAndSpec(&datetimemodule, spec);
+            if (mod == NULL) {
+                Py_DECREF(spec);
+                return NULL;
+            }
+            Py_DECREF(spec);
+
+            /* The module will be held by heaptypes. Prefer
+            /* it not to be cached in the interp-dict. */
+            if (PyModule_ExecDef(mod, &datetimemodule) < 0) {
+                return NULL;
+            }
         }
     }
     datetime_state *st = get_module_state(mod);
@@ -198,6 +220,19 @@ set_current_module(PyInterpreterState *interp, PyObject *mod)
     if (ref == NULL) {
         return -1;
     }
+
+    if (!PyDict_ContainsString(dict, "datetime_module_spec")) {
+        PyObject *spec;
+        if (PyDict_GetItemRef(PyModule_GetDict(mod), &_Py_ID(__spec__), &spec) != 1) {
+            return -1;
+        }
+        if (PyDict_SetItemString(dict, "datetime_module_spec", spec) < 0) {
+            Py_DECREF(spec);
+            return -1;
+        }
+        Py_DECREF(spec);
+    }
+
     int rc = PyDict_SetItem(dict, INTERP_KEY, ref);
     Py_DECREF(ref);
     return rc;
