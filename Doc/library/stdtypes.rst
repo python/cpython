@@ -2744,6 +2744,10 @@ data and are closely related to string objects in a variety of other ways.
          :meth:`bytes.fromhex` now skips all ASCII whitespace in the string,
          not just spaces.
 
+      .. versionchanged:: 3.14
+         :meth:`bytes.fromhex` now accepts ASCII :class:`bytes` and
+         :term:`bytes-like objects <bytes-like object>` as input.
+
    A reverse conversion function exists to transform a bytes object into its
    hexadecimal representation.
 
@@ -2828,6 +2832,10 @@ objects.
       .. versionchanged:: 3.7
          :meth:`bytearray.fromhex` now skips all ASCII whitespace in the string,
          not just spaces.
+
+      .. versionchanged:: 3.14
+         :meth:`bytearray.fromhex` now accepts ASCII :class:`bytes` and
+         :term:`bytes-like objects <bytes-like object>` as input.
 
    A reverse conversion function exists to transform a bytearray object into its
    hexadecimal representation.
@@ -4772,7 +4780,7 @@ can be used interchangeably to index the same dictionary entry.
       such as an empty list.  To get distinct values, use a :ref:`dict
       comprehension <dict>` instead.
 
-   .. method:: get(key, default=None)
+   .. method:: get(key, default=None, /)
 
       Return the value for *key* if *key* is in the dictionary, else *default*.
       If *default* is not given, it defaults to ``None``, so that this method
@@ -4814,7 +4822,7 @@ can be used interchangeably to index the same dictionary entry.
 
       .. versionadded:: 3.8
 
-   .. method:: setdefault(key, default=None)
+   .. method:: setdefault(key, default=None, /)
 
       If *key* is in the dictionary, return its value.  If not, insert *key*
       with a value of *default* and return *default*.  *default* defaults to
@@ -5236,6 +5244,8 @@ list is non-exhaustive.
 * :class:`set`
 * :class:`frozenset`
 * :class:`type`
+* :class:`asyncio.Future`
+* :class:`asyncio.Task`
 * :class:`collections.deque`
 * :class:`collections.defaultdict`
 * :class:`collections.OrderedDict`
@@ -5364,7 +5374,7 @@ Union Type
 A union object holds the value of the ``|`` (bitwise or) operation on
 multiple :ref:`type objects <bltin-type-objects>`.  These types are intended
 primarily for :term:`type annotations <annotation>`. The union type expression
-enables cleaner type hinting syntax compared to :data:`typing.Union`.
+enables cleaner type hinting syntax compared to subscripting :class:`typing.Union`.
 
 .. describe:: X | Y | ...
 
@@ -5400,9 +5410,10 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
 
       int | str == str | int
 
-   * It is compatible with :data:`typing.Union`::
+   * It creates instances of :class:`typing.Union`::
 
       int | str == typing.Union[int, str]
+      type(int | str) is typing.Union
 
    * Optional types can be spelled as a union with ``None``::
 
@@ -5428,16 +5439,15 @@ enables cleaner type hinting syntax compared to :data:`typing.Union`.
       TypeError: isinstance() argument 2 cannot be a parameterized generic
 
 The user-exposed type for the union object can be accessed from
-:data:`types.UnionType` and used for :func:`isinstance` checks.  An object cannot be
-instantiated from the type::
+:class:`typing.Union` and used for :func:`isinstance` checks::
 
-   >>> import types
-   >>> isinstance(int | str, types.UnionType)
+   >>> import typing
+   >>> isinstance(int | str, typing.Union)
    True
-   >>> types.UnionType()
+   >>> typing.Union()
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: cannot create 'types.UnionType' instances
+   TypeError: cannot create 'typing.Union' instances
 
 .. note::
    The :meth:`!__or__` method for type objects was added to support the syntax
@@ -5463,6 +5473,11 @@ instantiated from the type::
    :pep:`604` -- PEP proposing the ``X | Y`` syntax and the Union type.
 
 .. versionadded:: 3.10
+
+.. versionchanged:: 3.14
+
+   Union objects are now instances of :class:`typing.Union`. Previously, they were instances
+   of :class:`types.UnionType`, which remains an alias for :class:`typing.Union`.
 
 
 .. _typesother:

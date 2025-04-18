@@ -233,20 +233,25 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.assertIsNone(self.loop._default_executor)
 
     def test_shutdown_default_executor_timeout(self):
+        event = threading.Event()
+
         class DummyExecutor(concurrent.futures.ThreadPoolExecutor):
             def shutdown(self, wait=True, *, cancel_futures=False):
                 if wait:
-                    time.sleep(0.1)
+                    event.wait()
 
         self.loop._process_events = mock.Mock()
         self.loop._write_to_self = mock.Mock()
         executor = DummyExecutor()
         self.loop.set_default_executor(executor)
 
-        with self.assertWarnsRegex(RuntimeWarning,
-                                   "The executor did not finishing joining"):
-            self.loop.run_until_complete(
-                self.loop.shutdown_default_executor(timeout=0.01))
+        try:
+            with self.assertWarnsRegex(RuntimeWarning,
+                                       "The executor did not finishing joining"):
+                self.loop.run_until_complete(
+                    self.loop.shutdown_default_executor(timeout=0.01))
+        finally:
+            event.set()
 
     def test_call_soon(self):
         def cb():
@@ -331,10 +336,10 @@ class BaseEventLoopTests(test_utils.TestCase):
                 if create_loop:
                     loop2 = base_events.BaseEventLoop()
                     try:
-                        asyncio._set_event_loop(loop2)
+                        asyncio.set_event_loop(loop2)
                         self.check_thread(loop, debug)
                     finally:
-                        asyncio._set_event_loop(None)
+                        asyncio.set_event_loop(None)
                         loop2.close()
                 else:
                     self.check_thread(loop, debug)
@@ -690,7 +695,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         loop = Loop()
         self.addCleanup(loop.close)
-        asyncio._set_event_loop(loop)
+        asyncio.set_event_loop(loop)
 
         def run_loop():
             def zero_error():
@@ -1983,7 +1988,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
         async def stop_loop_coro(loop):
             loop.stop()
 
-        asyncio._set_event_loop(self.loop)
+        asyncio.set_event_loop(self.loop)
         self.loop.set_debug(True)
         self.loop.slow_callback_duration = 0.0
 

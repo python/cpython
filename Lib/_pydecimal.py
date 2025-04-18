@@ -2440,12 +2440,12 @@ class Decimal(object):
 
         return ans
 
-    def __rpow__(self, other, context=None):
+    def __rpow__(self, other, modulo=None, context=None):
         """Swaps self/other and returns __pow__."""
         other = _convert_other(other)
         if other is NotImplemented:
             return other
-        return other.__pow__(self, context=context)
+        return other.__pow__(self, modulo, context=context)
 
     def normalize(self, context=None):
         """Normalize- strip trailing 0s, change anything equal to 0 to 0e0"""
@@ -6098,7 +6098,7 @@ _parse_format_specifier_regex = re.compile(r"""\A
 (?P<alt>\#)?
 (?P<zeropad>0)?
 (?P<minimumwidth>(?!0)\d+)?
-(?P<thousands_sep>,)?
+(?P<thousands_sep>[,_])?
 (?:\.(?P<precision>0|(?!0)\d+))?
 (?P<type>[eEfFgGn%])?
 \Z

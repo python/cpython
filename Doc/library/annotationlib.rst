@@ -172,14 +172,30 @@ Classes
       :class:`~ForwardRef`. The string may not be exactly equivalent
       to the original source.
 
-   .. method:: evaluate(*, globals=None, locals=None, type_params=None, owner=None)
+   .. method:: evaluate(*, owner=None, globals=None, locals=None, type_params=None)
 
       Evaluate the forward reference, returning its value.
 
       This may throw an exception, such as :exc:`NameError`, if the forward
-      reference refers to names that do not exist. The arguments to this
+      reference refers to a name that cannot be resolved. The arguments to this
       method can be used to provide bindings for names that would otherwise
       be undefined.
+
+      The *owner* parameter provides the preferred mechanism for passing scope
+      information to this method. The owner of a :class:`~ForwardRef` is the
+      object that contains the annotation from which the :class:`~ForwardRef`
+      derives, such as a module object, type object, or function object.
+
+      The *globals*, *locals*, and *type_params* parameters provide a more precise
+      mechanism for influencing the names that are available when the :class:`~ForwardRef`
+      is evaluated. *globals* and *locals* are passed to :func:`eval`, representing
+      the global and local namespaces in which the name is evaluated.
+      The *type_params* parameter is relevant for objects created using the native
+      syntax for :ref:`generic classes <generic-classes>` and :ref:`functions <generic-functions>`.
+      It is a tuple of :ref:`type parameters <type-params>` that are in scope
+      while the forward reference is being evaluated. For example, if evaluating a
+      :class:`~ForwardRef` retrieved from an annotation found in the class namespace
+      of a generic class ``C``, *type_params* should be set to ``C.__type_params__``.
 
       :class:`~ForwardRef` instances returned by :func:`get_annotations`
       retain references to information about the scope they originated from,
@@ -187,20 +203,6 @@ Classes
       evaluate such objects. :class:`~ForwardRef` instances created by other
       means may not have any information about their scope, so passing
       arguments to this method may be necessary to evaluate them successfully.
-
-      *globals* and *locals* are passed to :func:`eval`, representing
-      the global and local namespaces in which the name is evaluated.
-      *type_params*, if given, must be a tuple of
-      :ref:`type parameters <type-params>` that are in scope while the forward
-      reference is being evaluated. *owner* is the object that owns the
-      annotation from which the forward reference derives, usually a function,
-      class, or module.
-
-      .. important::
-
-         Once a :class:`~ForwardRef` instance has been evaluated, it caches
-         the evaluated value, and future calls to :meth:`evaluate` will return
-         the cached value, regardless of the parameters passed in.
 
    .. versionadded:: 3.14
 
@@ -212,7 +214,7 @@ Functions
 
    Convert an annotations dict containing runtime values to a
    dict containing only strings. If the values are not already strings,
-   they are converted using :func:`value_to_string`.
+   they are converted using :func:`type_repr`.
    This is meant as a helper for user-provided
    annotate functions that support the :attr:`~Format.STRING` format but
    do not have access to the code creating the annotations.
@@ -301,12 +303,12 @@ Functions
 .. function:: get_annotate_function(obj)
 
    Retrieve the :term:`annotate function` for *obj*. Return :const:`!None`
-   if *obj* does not have an annotate function.
+   if *obj* does not have an annotate function. *obj* may be a class, function,
+   module, or a namespace dictionary for a class. The last case is useful during
+   class creation, e.g. in the ``__new__`` method of a metaclass.
 
    This is usually equivalent to accessing the :attr:`~object.__annotate__`
-   attribute of *obj*, but direct access to the attribute may return the wrong
-   object in certain situations involving metaclasses. This function should be
-   used instead of accessing the attribute directly.
+   attribute of *obj*, but access through this public function is preferred.
 
    .. versionadded:: 3.14
 
@@ -315,11 +317,22 @@ Functions
    Compute the annotations dict for an object.
 
    *obj* may be a callable, class, module, or other object with
-   :attr:`~object.__annotate__` and :attr:`~object.__annotations__` attributes.
-   Passing in an object of any other type raises :exc:`TypeError`.
+   :attr:`~object.__annotate__` or :attr:`~object.__annotations__` attributes.
+   Passing any other object raises :exc:`TypeError`.
 
    The *format* parameter controls the format in which annotations are returned,
    and must be a member of the :class:`Format` enum or its integer equivalent.
+   The different formats work as follows:
+
+   * VALUE: :attr:`!object.__annotations__` is tried first; if that does not exist,
+     the :attr:`!object.__annotate__` function is called if it exists.
+   * FORWARDREF: If :attr:`!object.__annotations__` exists and can be evaluated successfully,
+     it is used; otherwise, the :attr:`!object.__annotate__` function is called. If it
+     does not exist either, :attr:`!object.__annotations__` is tried again and any error
+     from accessing it is re-raised.
+   * STRING: If :attr:`!object.__annotate__` exists, it is called first;
+     otherwise, :attr:`!object.__annotations__` is used and stringified
+     using :func:`annotations_to_string`.
 
    Returns a dict. :func:`!get_annotations` returns a new dict every time
    it's called; calling it twice on the same object will return two
@@ -380,7 +393,7 @@ Functions
 
    .. versionadded:: 3.14
 
-.. function:: value_to_string(value)
+.. function:: type_repr(value)
 
    Convert an arbitrary Python value to a format suitable for use by the
    :attr:`~Format.STRING` format. This calls :func:`repr` for most
