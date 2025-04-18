@@ -2682,7 +2682,7 @@ class _RemotePdb(Pdb):
         # to start treating all input as Python commands, not PDB ones.
         self._interact_state = _InteractState(
             compiler=codeop.CommandCompiler(),
-            ns={**self.curframe.f_globals, **self.curframe_locals},
+            ns={**self.curframe.f_globals, **self.curframe.f_locals},
         )
 
     def do_commands(self, arg):
