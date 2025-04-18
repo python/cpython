@@ -88,9 +88,9 @@ exit:
 #endif
 #if defined(TRACEBACK_TB_NEXT_GETSETDEF)
 #  undef TRACEBACK_TB_NEXT_GETSETDEF
-#  define TRACEBACK_TB_NEXT_GETSETDEF {"tb_next", (getter)traceback_tb_next_get, (setter)traceback_tb_next_set, traceback_tb_next_DOCSTR},
+#  define TRACEBACK_TB_NEXT_GETSETDEF {"tb_next", traceback_tb_next_get, traceback_tb_next_set, traceback_tb_next_DOCSTR},
 #else
-#  define TRACEBACK_TB_NEXT_GETSETDEF {"tb_next", (getter)traceback_tb_next_get, NULL, traceback_tb_next_DOCSTR},
+#  define TRACEBACK_TB_NEXT_GETSETDEF {"tb_next", traceback_tb_next_get, NULL, traceback_tb_next_DOCSTR},
 #endif
 
 static PyObject *
@@ -113,9 +113,9 @@ traceback_tb_next_get(PyObject *self, void *Py_UNUSED(context))
 #endif
 #if defined(TRACEBACK_TB_NEXT_GETSETDEF)
 #  undef TRACEBACK_TB_NEXT_GETSETDEF
-#  define TRACEBACK_TB_NEXT_GETSETDEF {"tb_next", (getter)traceback_tb_next_get, (setter)traceback_tb_next_set, traceback_tb_next_DOCSTR},
+#  define TRACEBACK_TB_NEXT_GETSETDEF {"tb_next", traceback_tb_next_get, traceback_tb_next_set, traceback_tb_next_DOCSTR},
 #else
-#  define TRACEBACK_TB_NEXT_GETSETDEF {"tb_next", NULL, (setter)traceback_tb_next_set, NULL},
+#  define TRACEBACK_TB_NEXT_GETSETDEF {"tb_next", NULL, traceback_tb_next_set, NULL},
 #endif
 
 static int
@@ -132,4 +132,4 @@ traceback_tb_next_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=5361141395da963e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0299839a87b2b51e input=a9049054013a1b77]*/

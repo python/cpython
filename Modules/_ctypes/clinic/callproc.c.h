@@ -13,7 +13,7 @@ PyDoc_STRVAR(_ctypes_sizeof__doc__,
 "Return the size in bytes of a C instance.");
 
 #define _CTYPES_SIZEOF_METHODDEF    \
-    {"sizeof", (PyCFunction)_ctypes_sizeof, METH_O, _ctypes_sizeof__doc__},
+    {"sizeof", _ctypes_sizeof, METH_O, _ctypes_sizeof__doc__},
 
 PyDoc_STRVAR(_ctypes_byref__doc__,
 "byref($module, obj, offset=0, /)\n"
@@ -73,7 +73,7 @@ PyDoc_STRVAR(_ctypes_addressof__doc__,
 "Return the address of the C instance internal buffer");
 
 #define _CTYPES_ADDRESSOF_METHODDEF    \
-    {"addressof", (PyCFunction)_ctypes_addressof, METH_O, _ctypes_addressof__doc__},
+    {"addressof", _ctypes_addressof, METH_O, _ctypes_addressof__doc__},
 
 static PyObject *
 _ctypes_addressof_impl(PyObject *module, PyObject *obj);
@@ -156,7 +156,7 @@ PyDoc_STRVAR(create_pointer_type__doc__,
 "so calling this function repeatedly is cheap.");
 
 #define CREATE_POINTER_TYPE_METHODDEF    \
-    {"POINTER", (PyCFunction)create_pointer_type, METH_O, create_pointer_type__doc__},
+    {"POINTER", create_pointer_type, METH_O, create_pointer_type__doc__},
 
 PyDoc_STRVAR(create_pointer_inst__doc__,
 "pointer($module, obj, /)\n"
@@ -169,5 +169,5 @@ PyDoc_STRVAR(create_pointer_inst__doc__,
 "should use byref(obj) which is much faster.");
 
 #define CREATE_POINTER_INST_METHODDEF    \
-    {"pointer", (PyCFunction)create_pointer_inst, METH_O, create_pointer_inst__doc__},
-/*[clinic end generated code: output=46a3841cbe5ddc96 input=a9049054013a1b77]*/
+    {"pointer", create_pointer_inst, METH_O, create_pointer_inst__doc__},
+/*[clinic end generated code: output=abdb718fdec648c2 input=a9049054013a1b77]*/

@@ -11,7 +11,7 @@ PyDoc_STRVAR(_weakref_getweakrefcount__doc__,
 "Return the number of weak references to \'object\'.");
 
 #define _WEAKREF_GETWEAKREFCOUNT_METHODDEF    \
-    {"getweakrefcount", (PyCFunction)_weakref_getweakrefcount, METH_O, _weakref_getweakrefcount__doc__},
+    {"getweakrefcount", _weakref_getweakrefcount, METH_O, _weakref_getweakrefcount__doc__},
 
 static Py_ssize_t
 _weakref_getweakrefcount_impl(PyObject *module, PyObject *object);
@@ -74,7 +74,7 @@ PyDoc_STRVAR(_weakref_getweakrefs__doc__,
 "Return a list of all weak reference objects pointing to \'object\'.");
 
 #define _WEAKREF_GETWEAKREFS_METHODDEF    \
-    {"getweakrefs", (PyCFunction)_weakref_getweakrefs, METH_O, _weakref_getweakrefs__doc__},
+    {"getweakrefs", _weakref_getweakrefs, METH_O, _weakref_getweakrefs__doc__},
 
 PyDoc_STRVAR(_weakref_proxy__doc__,
 "proxy($module, object, callback=None, /)\n"
@@ -112,4 +112,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=60f59adc1dc9eab8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eae8e52dc631b4fd input=a9049054013a1b77]*/

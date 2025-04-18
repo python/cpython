@@ -268,7 +268,7 @@ PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalEncoder_getstate__doc__,
 "\n");
 
 #define _MULTIBYTECODEC_MULTIBYTEINCREMENTALENCODER_GETSTATE_METHODDEF    \
-    {"getstate", (PyCFunction)_multibytecodec_MultibyteIncrementalEncoder_getstate, METH_NOARGS, _multibytecodec_MultibyteIncrementalEncoder_getstate__doc__},
+    {"getstate", _multibytecodec_MultibyteIncrementalEncoder_getstate, METH_NOARGS, _multibytecodec_MultibyteIncrementalEncoder_getstate__doc__},
 
 static PyObject *
 _multibytecodec_MultibyteIncrementalEncoder_getstate_impl(MultibyteIncrementalEncoderObject *self);
@@ -285,7 +285,7 @@ PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalEncoder_setstate__doc__,
 "\n");
 
 #define _MULTIBYTECODEC_MULTIBYTEINCREMENTALENCODER_SETSTATE_METHODDEF    \
-    {"setstate", (PyCFunction)_multibytecodec_MultibyteIncrementalEncoder_setstate, METH_O, _multibytecodec_MultibyteIncrementalEncoder_setstate__doc__},
+    {"setstate", _multibytecodec_MultibyteIncrementalEncoder_setstate, METH_O, _multibytecodec_MultibyteIncrementalEncoder_setstate__doc__},
 
 static PyObject *
 _multibytecodec_MultibyteIncrementalEncoder_setstate_impl(MultibyteIncrementalEncoderObject *self,
@@ -314,7 +314,7 @@ PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalEncoder_reset__doc__,
 "\n");
 
 #define _MULTIBYTECODEC_MULTIBYTEINCREMENTALENCODER_RESET_METHODDEF    \
-    {"reset", (PyCFunction)_multibytecodec_MultibyteIncrementalEncoder_reset, METH_NOARGS, _multibytecodec_MultibyteIncrementalEncoder_reset__doc__},
+    {"reset", _multibytecodec_MultibyteIncrementalEncoder_reset, METH_NOARGS, _multibytecodec_MultibyteIncrementalEncoder_reset__doc__},
 
 static PyObject *
 _multibytecodec_MultibyteIncrementalEncoder_reset_impl(MultibyteIncrementalEncoderObject *self);
@@ -407,7 +407,7 @@ PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalDecoder_getstate__doc__,
 "\n");
 
 #define _MULTIBYTECODEC_MULTIBYTEINCREMENTALDECODER_GETSTATE_METHODDEF    \
-    {"getstate", (PyCFunction)_multibytecodec_MultibyteIncrementalDecoder_getstate, METH_NOARGS, _multibytecodec_MultibyteIncrementalDecoder_getstate__doc__},
+    {"getstate", _multibytecodec_MultibyteIncrementalDecoder_getstate, METH_NOARGS, _multibytecodec_MultibyteIncrementalDecoder_getstate__doc__},
 
 static PyObject *
 _multibytecodec_MultibyteIncrementalDecoder_getstate_impl(MultibyteIncrementalDecoderObject *self);
@@ -424,7 +424,7 @@ PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalDecoder_setstate__doc__,
 "\n");
 
 #define _MULTIBYTECODEC_MULTIBYTEINCREMENTALDECODER_SETSTATE_METHODDEF    \
-    {"setstate", (PyCFunction)_multibytecodec_MultibyteIncrementalDecoder_setstate, METH_O, _multibytecodec_MultibyteIncrementalDecoder_setstate__doc__},
+    {"setstate", _multibytecodec_MultibyteIncrementalDecoder_setstate, METH_O, _multibytecodec_MultibyteIncrementalDecoder_setstate__doc__},
 
 static PyObject *
 _multibytecodec_MultibyteIncrementalDecoder_setstate_impl(MultibyteIncrementalDecoderObject *self,
@@ -453,7 +453,7 @@ PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalDecoder_reset__doc__,
 "\n");
 
 #define _MULTIBYTECODEC_MULTIBYTEINCREMENTALDECODER_RESET_METHODDEF    \
-    {"reset", (PyCFunction)_multibytecodec_MultibyteIncrementalDecoder_reset, METH_NOARGS, _multibytecodec_MultibyteIncrementalDecoder_reset__doc__},
+    {"reset", _multibytecodec_MultibyteIncrementalDecoder_reset, METH_NOARGS, _multibytecodec_MultibyteIncrementalDecoder_reset__doc__},
 
 static PyObject *
 _multibytecodec_MultibyteIncrementalDecoder_reset_impl(MultibyteIncrementalDecoderObject *self);
@@ -566,7 +566,7 @@ PyDoc_STRVAR(_multibytecodec_MultibyteStreamReader_reset__doc__,
 "\n");
 
 #define _MULTIBYTECODEC_MULTIBYTESTREAMREADER_RESET_METHODDEF    \
-    {"reset", (PyCFunction)_multibytecodec_MultibyteStreamReader_reset, METH_NOARGS, _multibytecodec_MultibyteStreamReader_reset__doc__},
+    {"reset", _multibytecodec_MultibyteStreamReader_reset, METH_NOARGS, _multibytecodec_MultibyteStreamReader_reset__doc__},
 
 static PyObject *
 _multibytecodec_MultibyteStreamReader_reset_impl(MultibyteStreamReaderObject *self);
@@ -695,5 +695,5 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 "\n");
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
-    {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=014f4f6bb9d29594 input=a9049054013a1b77]*/
+    {"__create_codec", _multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
+/*[clinic end generated code: output=5f4d4f2aa29b79b1 input=a9049054013a1b77]*/

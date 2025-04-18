@@ -79,7 +79,7 @@ PyDoc_STRVAR(_ssl_Certificate_get_info__doc__,
 "\n");
 
 #define _SSL_CERTIFICATE_GET_INFO_METHODDEF    \
-    {"get_info", (PyCFunction)_ssl_Certificate_get_info, METH_NOARGS, _ssl_Certificate_get_info__doc__},
+    {"get_info", _ssl_Certificate_get_info, METH_NOARGS, _ssl_Certificate_get_info__doc__},
 
 static PyObject *
 _ssl_Certificate_get_info_impl(PySSLCertificate *self);
@@ -89,4 +89,4 @@ _ssl_Certificate_get_info(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _ssl_Certificate_get_info_impl((PySSLCertificate *)self);
 }
-/*[clinic end generated code: output=bab2dba7dbc1523c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a1188d37625a51f9 input=a9049054013a1b77]*/

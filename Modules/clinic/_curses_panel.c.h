@@ -104,7 +104,7 @@ PyDoc_STRVAR(_curses_panel_panel_above__doc__,
 "Return the panel above the current panel.");
 
 #define _CURSES_PANEL_PANEL_ABOVE_METHODDEF    \
-    {"above", (PyCFunction)_curses_panel_panel_above, METH_NOARGS, _curses_panel_panel_above__doc__},
+    {"above", _curses_panel_panel_above, METH_NOARGS, _curses_panel_panel_above__doc__},
 
 static PyObject *
 _curses_panel_panel_above_impl(PyCursesPanelObject *self);
@@ -122,7 +122,7 @@ PyDoc_STRVAR(_curses_panel_panel_below__doc__,
 "Return the panel below the current panel.");
 
 #define _CURSES_PANEL_PANEL_BELOW_METHODDEF    \
-    {"below", (PyCFunction)_curses_panel_panel_below, METH_NOARGS, _curses_panel_panel_below__doc__},
+    {"below", _curses_panel_panel_below, METH_NOARGS, _curses_panel_panel_below__doc__},
 
 static PyObject *
 _curses_panel_panel_below_impl(PyCursesPanelObject *self);
@@ -140,7 +140,7 @@ PyDoc_STRVAR(_curses_panel_panel_hidden__doc__,
 "Return True if the panel is hidden (not visible), False otherwise.");
 
 #define _CURSES_PANEL_PANEL_HIDDEN_METHODDEF    \
-    {"hidden", (PyCFunction)_curses_panel_panel_hidden, METH_NOARGS, _curses_panel_panel_hidden__doc__},
+    {"hidden", _curses_panel_panel_hidden, METH_NOARGS, _curses_panel_panel_hidden__doc__},
 
 static PyObject *
 _curses_panel_panel_hidden_impl(PyCursesPanelObject *self);
@@ -211,7 +211,7 @@ PyDoc_STRVAR(_curses_panel_panel_window__doc__,
 "Return the window object associated with the panel.");
 
 #define _CURSES_PANEL_PANEL_WINDOW_METHODDEF    \
-    {"window", (PyCFunction)_curses_panel_panel_window, METH_NOARGS, _curses_panel_panel_window__doc__},
+    {"window", _curses_panel_panel_window, METH_NOARGS, _curses_panel_panel_window__doc__},
 
 static PyObject *
 _curses_panel_panel_window_impl(PyCursesPanelObject *self);
@@ -347,7 +347,7 @@ PyDoc_STRVAR(_curses_panel_bottom_panel__doc__,
 "Return the bottom panel in the panel stack.");
 
 #define _CURSES_PANEL_BOTTOM_PANEL_METHODDEF    \
-    {"bottom_panel", (PyCFunction)_curses_panel_bottom_panel, METH_NOARGS, _curses_panel_bottom_panel__doc__},
+    {"bottom_panel", _curses_panel_bottom_panel, METH_NOARGS, _curses_panel_bottom_panel__doc__},
 
 static PyObject *
 _curses_panel_bottom_panel_impl(PyObject *module);
@@ -365,7 +365,7 @@ PyDoc_STRVAR(_curses_panel_new_panel__doc__,
 "Return a panel object, associating it with the given window win.");
 
 #define _CURSES_PANEL_NEW_PANEL_METHODDEF    \
-    {"new_panel", (PyCFunction)_curses_panel_new_panel, METH_O, _curses_panel_new_panel__doc__},
+    {"new_panel", _curses_panel_new_panel, METH_O, _curses_panel_new_panel__doc__},
 
 static PyObject *
 _curses_panel_new_panel_impl(PyObject *module, PyCursesWindowObject *win);
@@ -394,7 +394,7 @@ PyDoc_STRVAR(_curses_panel_top_panel__doc__,
 "Return the top panel in the panel stack.");
 
 #define _CURSES_PANEL_TOP_PANEL_METHODDEF    \
-    {"top_panel", (PyCFunction)_curses_panel_top_panel, METH_NOARGS, _curses_panel_top_panel__doc__},
+    {"top_panel", _curses_panel_top_panel, METH_NOARGS, _curses_panel_top_panel__doc__},
 
 static PyObject *
 _curses_panel_top_panel_impl(PyObject *module);
@@ -414,7 +414,7 @@ PyDoc_STRVAR(_curses_panel_update_panels__doc__,
 "This does not call curses.doupdate(), so you\'ll have to do this yourself.");
 
 #define _CURSES_PANEL_UPDATE_PANELS_METHODDEF    \
-    {"update_panels", (PyCFunction)_curses_panel_update_panels, METH_NOARGS, _curses_panel_update_panels__doc__},
+    {"update_panels", _curses_panel_update_panels, METH_NOARGS, _curses_panel_update_panels__doc__},
 
 static PyObject *
 _curses_panel_update_panels_impl(PyObject *module);
@@ -424,4 +424,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=36853ecb4a979814 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7d7290f8008d8d11 input=a9049054013a1b77]*/

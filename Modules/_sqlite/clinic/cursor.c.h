@@ -119,7 +119,7 @@ PyDoc_STRVAR(pysqlite_cursor_executescript__doc__,
 "Executes multiple SQL statements at once.");
 
 #define PYSQLITE_CURSOR_EXECUTESCRIPT_METHODDEF    \
-    {"executescript", (PyCFunction)pysqlite_cursor_executescript, METH_O, pysqlite_cursor_executescript__doc__},
+    {"executescript", pysqlite_cursor_executescript, METH_O, pysqlite_cursor_executescript__doc__},
 
 static PyObject *
 pysqlite_cursor_executescript_impl(pysqlite_Cursor *self,
@@ -157,7 +157,7 @@ PyDoc_STRVAR(pysqlite_cursor_fetchone__doc__,
 "Fetches one row from the resultset.");
 
 #define PYSQLITE_CURSOR_FETCHONE_METHODDEF    \
-    {"fetchone", (PyCFunction)pysqlite_cursor_fetchone, METH_NOARGS, pysqlite_cursor_fetchone__doc__},
+    {"fetchone", pysqlite_cursor_fetchone, METH_NOARGS, pysqlite_cursor_fetchone__doc__},
 
 static PyObject *
 pysqlite_cursor_fetchone_impl(pysqlite_Cursor *self);
@@ -244,7 +244,7 @@ PyDoc_STRVAR(pysqlite_cursor_fetchall__doc__,
 "Fetches all rows from the resultset.");
 
 #define PYSQLITE_CURSOR_FETCHALL_METHODDEF    \
-    {"fetchall", (PyCFunction)pysqlite_cursor_fetchall, METH_NOARGS, pysqlite_cursor_fetchall__doc__},
+    {"fetchall", pysqlite_cursor_fetchall, METH_NOARGS, pysqlite_cursor_fetchall__doc__},
 
 static PyObject *
 pysqlite_cursor_fetchall_impl(pysqlite_Cursor *self);
@@ -262,7 +262,7 @@ PyDoc_STRVAR(pysqlite_cursor_setinputsizes__doc__,
 "Required by DB-API. Does nothing in sqlite3.");
 
 #define PYSQLITE_CURSOR_SETINPUTSIZES_METHODDEF    \
-    {"setinputsizes", (PyCFunction)pysqlite_cursor_setinputsizes, METH_O, pysqlite_cursor_setinputsizes__doc__},
+    {"setinputsizes", pysqlite_cursor_setinputsizes, METH_O, pysqlite_cursor_setinputsizes__doc__},
 
 static PyObject *
 pysqlite_cursor_setinputsizes_impl(pysqlite_Cursor *self, PyObject *sizes);
@@ -319,7 +319,7 @@ PyDoc_STRVAR(pysqlite_cursor_close__doc__,
 "Closes the cursor.");
 
 #define PYSQLITE_CURSOR_CLOSE_METHODDEF    \
-    {"close", (PyCFunction)pysqlite_cursor_close, METH_NOARGS, pysqlite_cursor_close__doc__},
+    {"close", pysqlite_cursor_close, METH_NOARGS, pysqlite_cursor_close__doc__},
 
 static PyObject *
 pysqlite_cursor_close_impl(pysqlite_Cursor *self);
@@ -329,4 +329,4 @@ pysqlite_cursor_close(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return pysqlite_cursor_close_impl((pysqlite_Cursor *)self);
 }
-/*[clinic end generated code: output=d05c7cbbc8bcab26 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=65108c2d5eb96b8d input=a9049054013a1b77]*/

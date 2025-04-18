@@ -279,7 +279,7 @@ PyDoc_STRVAR(_lsprof_Profiler_disable__doc__,
 "Stop collecting profiling information.");
 
 #define _LSPROF_PROFILER_DISABLE_METHODDEF    \
-    {"disable", (PyCFunction)_lsprof_Profiler_disable, METH_NOARGS, _lsprof_Profiler_disable__doc__},
+    {"disable", _lsprof_Profiler_disable, METH_NOARGS, _lsprof_Profiler_disable__doc__},
 
 static PyObject *
 _lsprof_Profiler_disable_impl(ProfilerObject *self);
@@ -297,7 +297,7 @@ PyDoc_STRVAR(_lsprof_Profiler_clear__doc__,
 "Clear all profiling information collected so far.");
 
 #define _LSPROF_PROFILER_CLEAR_METHODDEF    \
-    {"clear", (PyCFunction)_lsprof_Profiler_clear, METH_NOARGS, _lsprof_Profiler_clear__doc__},
+    {"clear", _lsprof_Profiler_clear, METH_NOARGS, _lsprof_Profiler_clear__doc__},
 
 static PyObject *
 _lsprof_Profiler_clear_impl(ProfilerObject *self);
@@ -411,4 +411,4 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=fe231309776df7a7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=44a0bcdd816d0c03 input=a9049054013a1b77]*/
