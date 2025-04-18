@@ -2479,7 +2479,14 @@ _ssl__SSLSocket_uses_ktls_for_send_impl(PySSLSocket *self)
 {
 #ifdef BIO_get_ktls_send
     int uses = BIO_get_ktls_send(SSL_get_wbio(self->ssl));
-    return PyBool_FromLong(uses);
+    // BIO_get_ktls_send() returns 1 if kTLS is used and 0 if not.
+    // Also, it returns -1 for failure before OpenSSL 3.0.4.
+    if (uses == 1) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
 #else
     Py_RETURN_FALSE;
 #endif
@@ -2497,7 +2504,14 @@ _ssl__SSLSocket_uses_ktls_for_read_impl(PySSLSocket *self)
 {
 #ifdef BIO_get_ktls_recv
     int uses = BIO_get_ktls_recv(SSL_get_rbio(self->ssl));
-    return PyBool_FromLong(uses);
+    // BIO_get_ktls_recv() returns 1 if kTLS is used and 0 if not.
+    // Also, it returns -1 for failure before OpenSSL 3.0.4.
+    if (uses == 1) {
+        Py_RETURN_TRUE;
+    }
+    else {
+        Py_RETURN_FALSE;
+    }
 #else
     Py_RETURN_FALSE;
 #endif
