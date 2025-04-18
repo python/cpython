@@ -674,7 +674,7 @@ APIs:
    a new string and copy characters), or create a new string.
 
    ``*unicode`` is modified to point to the new (resized) object and 0 is
-   returned on success. Otherwise, an exception is set, -1 is returned,
+   returned on success. Otherwise, ``-1`` is returned and an exception is set,
    and ``*unicode`` is left untouched.
 
    .. warning::
