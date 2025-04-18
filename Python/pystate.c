@@ -580,7 +580,7 @@ alloc_interpreter(void)
     }
     PyInterpreterState *interp = _Py_ALIGN_UP(mem, alignment);
     assert(_Py_IS_ALIGNED(interp, alignment));
-    interp->_malloced = (uintptr_t)mem;
+    interp->_malloced = mem;
     return interp;
 }
 
@@ -596,7 +596,7 @@ free_interpreter(PyInterpreterState *interp)
             interp->obmalloc = NULL;
         }
         assert(_Py_IS_ALIGNED(interp, _Alignof(PyInterpreterState)));
-        PyMem_RawFree((void *)interp->_malloced);
+        PyMem_RawFree(interp->_malloced);
     }
 }
 
