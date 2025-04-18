@@ -1720,25 +1720,65 @@ Check custom exceptions for keywords with typos
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Did you mean 'for'?
 
+>>> for a in b:
+...   pass
+... elso:
+...   pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'else'?
+
 >>> whille True:
 ...   pass
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Did you mean 'while'?
+
+>>> while True:
+...   pass
+... elso:
+...   pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'else'?
 
 >>> iff x > 5:
 ...   pass
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Did you mean 'if'?
 
+>>> if x:
+...   pass
+... elseif y:
+...   pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'elif'?
+
+>>> if x:
+...   pass
+... elif y:
+...   pass
+... elso:
+...   pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'else'?
+
+>>> tyo:
+...   pass
+... except y:
+...   pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'try'?
+
 >>> classe MyClass:
 ...   pass
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Did you mean 'class'?
 
-
 >>> impor math
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Did you mean 'import'?
+
+>>> form x import y
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'from'?
 
 >>> defn calculate_sum(a, b):
 ...   return a + b

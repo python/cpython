@@ -1302,7 +1302,7 @@ class TracebackException:
             if self.filename:
                 try:
                     with open(self.filename) as f:
-                        lines = f.readlines()
+                        lines = f.read().splitlines()
                 except Exception:
                     line, end_line, offset = 0,1,0
                 else:
@@ -1313,7 +1313,7 @@ class TracebackException:
 
         error_code = lines[line -1 if line > 0 else 0:end_line]
         error_code[0] = error_code[0][offset:]
-        error_code = textwrap.dedent(''.join(error_code))
+        error_code = textwrap.dedent('\n'.join(error_code))
 
         # Do not continue if the source is too large
         if len(error_code) > 1024:
@@ -1321,41 +1321,48 @@ class TracebackException:
 
         tokens = tokenize.generate_tokens(io.StringIO(error_code).readline)
         tokens_left_to_process = 10
+        import difflib
         for token in tokens:
-            tokens_left_to_process -= 1
-            if tokens_left_to_process < 0:
-                break
             start, end = token.start, token.end
             if token.type != tokenize.NAME:
                 continue
+            # Only consider NAME tokens on the same line as the error
             if from_filename and token.start[0]+line != end_line+1:
                 continue
             wrong_name = token.string
             if wrong_name in keyword.kwlist:
                 continue
-            suggestion = _suggestions._generate_suggestions(keyword.kwlist, wrong_name)
-            if not suggestion or suggestion == wrong_name:
-                continue
-            # Try to replace the token with the keyword
-            the_lines = error_code.splitlines()
-            the_line = the_lines[start[0] - 1]
-            chars = list(the_line)
-            chars[token.start[1]:token.end[1]] = suggestion
-            the_lines[start[0] - 1] = ''.join(chars)
-            code = ''.join(the_lines)
-            # Check if it works
-            try:
-                codeop.compile_command(code, symbol="exec", flags=codeop.PyCF_ONLY_AST)
-            except SyntaxError as e:
-                continue
-            # Keep token.line but handle offsets correctly
-            self.text = token.line
-            self.offset = token.start[1] + 1
-            self.end_offset = token.end[1] + 1
-            self.lineno = start[0]
-            self.end_lineno = end[0]
-            self.msg = f"invalid syntax. Did you mean '{suggestion}'?"
-            return
+
+            # Limit the number of valid tokens to consider to not spend
+            # to much time in this function
+            tokens_left_to_process -= 1
+            if tokens_left_to_process < 0:
+                break
+            # Limit the number of possible matches to try
+            matches = difflib.get_close_matches(wrong_name, keyword.kwlist, n=3)
+            for suggestion in matches:
+                if not suggestion or suggestion == wrong_name:
+                    continue
+                # Try to replace the token with the keyword
+                the_lines = error_code.splitlines()
+                the_line = the_lines[start[0] - 1]
+                chars = list(the_line)
+                chars[token.start[1]:token.end[1]] = suggestion
+                the_lines[start[0] - 1] = ''.join(chars)
+                code = '\n'.join(the_lines)
+                # Check if it works
+                try:
+                    codeop.compile_command(code, symbol="exec", flags=codeop.PyCF_ONLY_AST)
+                except SyntaxError as e:
+                    continue
+                # Keep token.line but handle offsets correctly
+                self.text = token.line
+                self.offset = token.start[1] + 1
+                self.end_offset = token.end[1] + 1
+                self.lineno = start[0]
+                self.end_lineno = end[0]
+                self.msg = f"invalid syntax. Did you mean '{suggestion}'?"
+                return
 
 
     def _format_syntax_error(self, stype, **kwargs):

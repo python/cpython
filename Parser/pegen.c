@@ -919,8 +919,8 @@ _PyPegen_set_syntax_error_metadata(Parser *p) {
     }
     PyObject* metadata = Py_BuildValue(
         "(iiN)",
-        p->last_stmt_location.end_lineno,
-        p->last_stmt_location.end_col_offset,
+        p->last_stmt_location.lineno,
+        p->last_stmt_location.col_offset,
         the_source // N gives ownership to metadata
     );
     if (!metadata) {

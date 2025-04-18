@@ -87,7 +87,7 @@ _PyPegen_parse(Parser *p)
 # ==============
 
 file[mod_ty]: a=[statements] ENDMARKER { _PyPegen_make_module(p, a) }
-interactive[mod_ty]: a=statement_newline { _PyAST_Interactive(_PyPegen_register_stmts(p, a), p->arena) }
+interactive[mod_ty]: a=statement_newline { _PyAST_Interactive(a, p->arena) }
 eval[mod_ty]: a=expressions NEWLINE* ENDMARKER { _PyAST_Expression(a, p->arena) }
 func_type[mod_ty]: '(' a=[type_expressions] ')' '->' b=expression NEWLINE* ENDMARKER { _PyAST_FunctionType(a, b, p->arena) }
 
@@ -100,8 +100,12 @@ statement[asdl_stmt_seq*]:
     | a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } 
     | a[asdl_stmt_seq*]=simple_stmts { a }
 
+single_compound_stmt[asdl_stmt_seq*]:
+    | a=compound_stmt { 
+        _PyPegen_register_stmts(p, (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a)) }
+
 statement_newline[asdl_stmt_seq*]:
-    | a=compound_stmt NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) }
+    | a=single_compound_stmt NEWLINE { a }
     | simple_stmts
     | NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, CHECK(stmt_ty, _PyAST_Pass(EXTRA))) }
     | ENDMARKER { _PyPegen_interactive_exit(p) }
