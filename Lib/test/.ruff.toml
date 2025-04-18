@@ -13,15 +13,6 @@ extend-exclude = [
 ]
 
 [lint]
-# Variables with single letters and an optional numeric prefix
-# are considered to be used, so that we do not need to always
-# add a 'F811' suppression.
-dummy-variable-rgx = """(?x:^(      \
-    _+                              \
-    |(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?) \
-    |([a-zA-Z][0-9]*)               \
-)$)"""
-
 select = [
     "F811",  # Redefinition of unused variable (useful for finding test methods with the same name)
 ]
