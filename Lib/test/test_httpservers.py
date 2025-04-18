@@ -1726,7 +1726,8 @@ class CommandLineTestCase(unittest.TestCase):
 
     def test_unknown_flag(self, _):
         with self.assertRaises(SystemExit):
-            self.invoke_httpd('--unknown-flag')
+            output = self.invoke_httpd('--unknown-flag')
+            self.assertStartsWith(output, 'usage: ')
 
 def setUpModule():
     unittest.addModuleCleanup(os.chdir, os.getcwd())
