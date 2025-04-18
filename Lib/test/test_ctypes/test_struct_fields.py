@@ -1,13 +1,12 @@
 import unittest
 import sys
-from ctypes import Structure, Union, sizeof, c_char, c_int
-from ._support import (CField, Py_TPFLAGS_DISALLOW_INSTANTIATION,
-                       Py_TPFLAGS_IMMUTABLETYPE)
+from ctypes import Structure, Union, sizeof, c_char, c_int, CField
+from ._support import Py_TPFLAGS_IMMUTABLETYPE, StructCheckMixin
 
 
 NOTHING = object()
 
-class FieldsTestBase:
+class FieldsTestBase(StructCheckMixin):
     # Structure/Union classes must get 'finalized' sooner or
     # later, when one of these things happen:
     #
@@ -79,24 +78,47 @@ class FieldsTestBase:
     def test_max_field_size_gh126937(self):
         # Classes for big structs should be created successfully.
         # (But they most likely can't be instantiated.)
-        # Here we test the exact limit: the number of *bits* must fit
-        # in Py_ssize_t.
+        # The size must fit in Py_ssize_t.
 
-        class X(self.cls):
+        max_field_size = sys.maxsize
+
+        class X(Structure):
             _fields_ = [('char', c_char),]
-        max_field_size = sys.maxsize // 8
+        self.check_struct(X)
 
-        class Y(self.cls):
+        class Y(Structure):
             _fields_ = [('largeField', X * max_field_size)]
-        class Z(self.cls):
-            _fields_ = [('largeField', c_char * max_field_size)]
+        self.check_struct(Y)
 
-        with self.assertRaises(ValueError):
-            class TooBig(self.cls):
+        class Z(Structure):
+            _fields_ = [('largeField', c_char * max_field_size)]
+        self.check_struct(Z)
+
+        # The *bit* size overflows Py_ssize_t.
+        self.assertEqual(Y.largeField.bit_size, max_field_size * 8)
+        self.assertEqual(Z.largeField.bit_size, max_field_size * 8)
+
+        self.assertEqual(Y.largeField.byte_size, max_field_size)
+        self.assertEqual(Z.largeField.byte_size, max_field_size)
+        self.assertEqual(sizeof(Y), max_field_size)
+        self.assertEqual(sizeof(Z), max_field_size)
+
+        with self.assertRaises(OverflowError):
+            class TooBig(Structure):
                 _fields_ = [('largeField', X * (max_field_size + 1))]
-        with self.assertRaises(ValueError):
-            class TooBig(self.cls):
+        with self.assertRaises(OverflowError):
+            class TooBig(Structure):
                 _fields_ = [('largeField', c_char * (max_field_size + 1))]
+
+        # Also test around edge case for the bit_size calculation
+        for size in (max_field_size // 8 - 1,
+                     max_field_size // 8,
+                     max_field_size // 8 + 1):
+            class S(Structure):
+                _fields_ = [('largeField', c_char * size),]
+            self.check_struct(S)
+            self.assertEqual(S.largeField.bit_size, size * 8)
+
 
     # __set__ and __get__ should raise a TypeError in case their self
     # argument is not a ctype instance.

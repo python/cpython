@@ -1,1 +1,0 @@
-Indicate through :data:`ssl.HAS_PHA` whether the :mod:`ssl` module supports TLSv1.3 post-handshake client authentication (PHA). Patch by Will Childs-Klein.

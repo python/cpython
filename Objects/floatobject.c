@@ -14,6 +14,7 @@
 #include "pycore_object.h"        // _PyObject_Init(), _PyDebugAllocatorStats()
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_stackref.h"      // PyStackRef_AsPyObjectBorrow()
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 
 #include <float.h>                // DBL_MAX
@@ -134,40 +135,12 @@ PyFloat_FromDouble(double fval)
     return (PyObject *) op;
 }
 
-#ifdef Py_GIL_DISABLED
-
-PyObject *_PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
+_PyStackRef _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
 {
-    PyStackRef_CLOSE(left);
-    PyStackRef_CLOSE(right);
-    return PyFloat_FromDouble(value);
+    PyStackRef_CLOSE_SPECIALIZED(left, _PyFloat_ExactDealloc);
+    PyStackRef_CLOSE_SPECIALIZED(right, _PyFloat_ExactDealloc);
+    return PyStackRef_FromPyObjectSteal(PyFloat_FromDouble(value));
 }
-
-#else // Py_GIL_DISABLED
-
-PyObject *_PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value)
-{
-    PyObject *left_o = PyStackRef_AsPyObjectSteal(left);
-    PyObject *right_o = PyStackRef_AsPyObjectSteal(right);
-    if (Py_REFCNT(left_o) == 1) {
-        ((PyFloatObject *)left_o)->ob_fval = value;
-        _Py_DECREF_SPECIALIZED(right_o, _PyFloat_ExactDealloc);
-        return left_o;
-    }
-    else if (Py_REFCNT(right_o) == 1)  {
-        ((PyFloatObject *)right_o)->ob_fval = value;
-        _Py_DECREF_NO_DEALLOC(left_o);
-        return right_o;
-    }
-    else {
-        PyObject *result = PyFloat_FromDouble(value);
-        _Py_DECREF_NO_DEALLOC(left_o);
-        _Py_DECREF_NO_DEALLOC(right_o);
-        return result;
-    }
-}
-
-#endif // Py_GIL_DISABLED
 
 static PyObject *
 float_from_string_inner(const char *s, Py_ssize_t len, void *obj)
@@ -369,8 +342,9 @@ _Py_convert_int_to_double(PyObject **v, double *dbl)
 }
 
 static PyObject *
-float_repr(PyFloatObject *v)
+float_repr(PyObject *op)
 {
+    PyFloatObject *v = _PyFloat_CAST(op);
     PyObject *result;
     char *buf;
 
@@ -428,9 +402,10 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 
     else if (PyLong_Check(w)) {
         int vsign = i == 0.0 ? 0 : i < 0.0 ? -1 : 1;
-        int wsign = _PyLong_Sign(w);
+        int wsign;
         int exponent;
 
+        (void)PyLong_GetSign(w, &wsign);
         if (vsign != wsign) {
             /* Magnitudes are irrelevant -- the signs alone
              * determine the outcome.
@@ -578,9 +553,10 @@ float_richcompare(PyObject *v, PyObject *w, int op)
 }
 
 static Py_hash_t
-float_hash(PyFloatObject *v)
+float_hash(PyObject *op)
 {
-    return _Py_HashDouble((PyObject *)v, v->ob_fval);
+    PyFloatObject *v = _PyFloat_CAST(op);
+    return _Py_HashDouble(op, v->ob_fval);
 }
 
 static PyObject *
@@ -850,20 +826,23 @@ float_pow(PyObject *v, PyObject *w, PyObject *z)
 #undef DOUBLE_IS_ODD_INTEGER
 
 static PyObject *
-float_neg(PyFloatObject *v)
+float_neg(PyObject *op)
 {
+    PyFloatObject *v = _PyFloat_CAST(op);
     return PyFloat_FromDouble(-v->ob_fval);
 }
 
 static PyObject *
-float_abs(PyFloatObject *v)
+float_abs(PyObject *op)
 {
+    PyFloatObject *v = _PyFloat_CAST(op);
     return PyFloat_FromDouble(fabs(v->ob_fval));
 }
 
 static int
-float_bool(PyFloatObject *v)
+float_bool(PyObject *op)
 {
+    PyFloatObject *v = _PyFloat_CAST(op);
     return v->ob_fval != 0.0;
 }
 
@@ -1205,7 +1184,7 @@ float_hex_impl(PyObject *self)
     CONVERT_TO_DOUBLE(self, x);
 
     if (isnan(x) || isinf(x))
-        return float_repr((PyFloatObject *)self);
+        return float_repr(self);
 
     if (x == 0.0) {
         if (copysign(1.0, x) == -1.0)
@@ -1264,8 +1243,8 @@ Create a floating-point number from a hexadecimal string.
 [clinic start generated code]*/
 
 static PyObject *
-float_fromhex(PyTypeObject *type, PyObject *string)
-/*[clinic end generated code: output=46c0274d22b78e82 input=0407bebd354bca89]*/
+float_fromhex_impl(PyTypeObject *type, PyObject *string)
+/*[clinic end generated code: output=c54b4923552e5af5 input=0407bebd354bca89]*/
 {
     PyObject *result;
     double x;
@@ -1650,7 +1629,7 @@ float_subtype_new(PyTypeObject *type, PyObject *x)
 }
 
 static PyObject *
-float_vectorcall(PyObject *type, PyObject * const*args,
+float_vectorcall(PyObject *type, PyObject *const *args,
                  size_t nargsf, PyObject *kwnames)
 {
     if (!_PyArg_NoKwnames("float", kwnames)) {
@@ -1678,8 +1657,8 @@ Convert real number to a floating-point number.
 [clinic start generated code]*/
 
 static PyObject *
-float_from_number(PyTypeObject *type, PyObject *number)
-/*[clinic end generated code: output=bbcf05529fe907a3 input=1f8424d9bc11866a]*/
+float_from_number_impl(PyTypeObject *type, PyObject *number)
+/*[clinic end generated code: output=dda7e4466ab7068d input=1f8424d9bc11866a]*/
 {
     if (PyFloat_CheckExact(number) && type == &PyFloat_Type) {
         Py_INCREF(number);
@@ -1770,13 +1749,13 @@ float___getformat___impl(PyTypeObject *type, const char *typestr)
 
 
 static PyObject *
-float_getreal(PyObject *v, void *closure)
+float_getreal(PyObject *v, void *Py_UNUSED(closure))
 {
     return float_float(v);
 }
 
 static PyObject *
-float_getimag(PyObject *v, void *closure)
+float_getimag(PyObject *Py_UNUSED(v), void *Py_UNUSED(closure))
 {
     return PyFloat_FromDouble(0.0);
 }
@@ -1828,11 +1807,11 @@ static PyMethodDef float_methods[] = {
 
 static PyGetSetDef float_getset[] = {
     {"real",
-     float_getreal, (setter)NULL,
+     float_getreal, NULL,
      "the real part of a complex number",
      NULL},
     {"imag",
-     float_getimag, (setter)NULL,
+     float_getimag, NULL,
      "the imaginary part of a complex number",
      NULL},
     {NULL}  /* Sentinel */
@@ -1846,10 +1825,10 @@ static PyNumberMethods float_as_number = {
     float_rem,          /* nb_remainder */
     float_divmod,       /* nb_divmod */
     float_pow,          /* nb_power */
-    (unaryfunc)float_neg, /* nb_negative */
+    float_neg,          /* nb_negative */
     float_float,        /* nb_positive */
-    (unaryfunc)float_abs, /* nb_absolute */
-    (inquiry)float_bool, /* nb_bool */
+    float_abs,          /* nb_absolute */
+    float_bool,         /* nb_bool */
     0,                  /* nb_invert */
     0,                  /* nb_lshift */
     0,                  /* nb_rshift */
@@ -1880,16 +1859,16 @@ PyTypeObject PyFloat_Type = {
     "float",
     sizeof(PyFloatObject),
     0,
-    (destructor)float_dealloc,                  /* tp_dealloc */
+    float_dealloc,                              /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     0,                                          /* tp_as_async */
-    (reprfunc)float_repr,                       /* tp_repr */
+    float_repr,                                 /* tp_repr */
     &float_as_number,                           /* tp_as_number */
     0,                                          /* tp_as_sequence */
     0,                                          /* tp_as_mapping */
-    (hashfunc)float_hash,                       /* tp_hash */
+    float_hash,                                 /* tp_hash */
     0,                                          /* tp_call */
     0,                                          /* tp_str */
     PyObject_GenericGetAttr,                    /* tp_getattro */
@@ -1915,7 +1894,7 @@ PyTypeObject PyFloat_Type = {
     0,                                          /* tp_init */
     0,                                          /* tp_alloc */
     float_new,                                  /* tp_new */
-    .tp_vectorcall = (vectorcallfunc)float_vectorcall,
+    .tp_vectorcall = float_vectorcall,
     .tp_version_tag = _Py_TYPE_VERSION_FLOAT,
 };
 

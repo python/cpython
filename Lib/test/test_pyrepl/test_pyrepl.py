@@ -10,20 +10,19 @@ import sys
 import tempfile
 from unittest import TestCase, skipUnless, skipIf
 from unittest.mock import patch
-from test.support import force_not_colorized
+from test.support import force_not_colorized, make_clean_env
 from test.support import SHORT_TIMEOUT
 from test.support.import_helper import import_module
 from test.support.os_helper import unlink
 
 from .support import (
     FakeConsole,
+    ScreenEqualMixin,
     handle_all_events,
     handle_events_narrow_console,
     more_lines,
     multiline_input,
     code_to_events,
-    clean_screen,
-    make_clean_env,
 )
 from _pyrepl.console import Event
 from _pyrepl.readline import (ReadlineAlikeReader, ReadlineConfig,
@@ -588,7 +587,7 @@ class TestPyReplAutoindent(TestCase):
         self.assertEqual(output, output_code)
 
 
-class TestPyReplOutput(TestCase):
+class TestPyReplOutput(ScreenEqualMixin, TestCase):
     def prepare_reader(self, events):
         console = FakeConsole(events)
         config = ReadlineConfig(readline_completer=None)
@@ -621,7 +620,7 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
-        self.assertEqual(clean_screen(reader.screen), "1+1")
+        self.assert_screen_equal(reader, "1+1", clean=True)
 
     def test_get_line_buffer_returns_str(self):
         reader = self.prepare_reader(code_to_events("\n"))
@@ -655,11 +654,13 @@ class TestPyReplOutput(TestCase):
         reader = self.prepare_reader(events)
 
         output = multiline_input(reader)
-        self.assertEqual(output, "def f():\n    ...\n    ")
-        self.assertEqual(clean_screen(reader.screen), "def f():\n    ...")
+        expected = "def f():\n    ...\n    "
+        self.assertEqual(output, expected)
+        self.assert_screen_equal(reader, expected, clean=True)
         output = multiline_input(reader)
-        self.assertEqual(output, "def g():\n    pass\n    ")
-        self.assertEqual(clean_screen(reader.screen), "def g():\n    pass")
+        expected = "def g():\n    pass\n    "
+        self.assertEqual(output, expected)
+        self.assert_screen_equal(reader, expected, clean=True)
 
     def test_history_navigation_with_up_arrow(self):
         events = itertools.chain(
@@ -678,16 +679,16 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
-        self.assertEqual(clean_screen(reader.screen), "1+1")
+        self.assert_screen_equal(reader, "1+1", clean=True)
         output = multiline_input(reader)
         self.assertEqual(output, "2+2")
-        self.assertEqual(clean_screen(reader.screen), "2+2")
+        self.assert_screen_equal(reader, "2+2", clean=True)
         output = multiline_input(reader)
         self.assertEqual(output, "2+2")
-        self.assertEqual(clean_screen(reader.screen), "2+2")
+        self.assert_screen_equal(reader, "2+2", clean=True)
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
-        self.assertEqual(clean_screen(reader.screen), "1+1")
+        self.assert_screen_equal(reader, "1+1", clean=True)
 
     def test_history_with_multiline_entries(self):
         code = "def foo():\nx = 1\ny = 2\nz = 3\n\ndef bar():\nreturn 42\n\n"
@@ -706,11 +707,9 @@ class TestPyReplOutput(TestCase):
         output = multiline_input(reader)
         output = multiline_input(reader)
         output = multiline_input(reader)
-        self.assertEqual(
-            clean_screen(reader.screen),
-            'def foo():\n    x = 1\n    y = 2\n    z = 3'
-        )
-        self.assertEqual(output, "def foo():\n    x = 1\n    y = 2\n    z = 3\n    ")
+        expected = "def foo():\n    x = 1\n    y = 2\n    z = 3\n    "
+        self.assert_screen_equal(reader, expected, clean=True)
+        self.assertEqual(output, expected)
 
 
     def test_history_navigation_with_down_arrow(self):
@@ -729,7 +728,7 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
-        self.assertEqual(clean_screen(reader.screen), "1+1")
+        self.assert_screen_equal(reader, "1+1", clean=True)
 
     def test_history_search(self):
         events = itertools.chain(
@@ -746,23 +745,23 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
-        self.assertEqual(clean_screen(reader.screen), "1+1")
+        self.assert_screen_equal(reader, "1+1", clean=True)
         output = multiline_input(reader)
         self.assertEqual(output, "2+2")
-        self.assertEqual(clean_screen(reader.screen), "2+2")
+        self.assert_screen_equal(reader, "2+2", clean=True)
         output = multiline_input(reader)
         self.assertEqual(output, "3+3")
-        self.assertEqual(clean_screen(reader.screen), "3+3")
+        self.assert_screen_equal(reader, "3+3", clean=True)
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
-        self.assertEqual(clean_screen(reader.screen), "1+1")
+        self.assert_screen_equal(reader, "1+1", clean=True)
 
     def test_control_character(self):
         events = code_to_events("c\x1d\n")
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
         self.assertEqual(output, "c\x1d")
-        self.assertEqual(clean_screen(reader.screen), "c")
+        self.assert_screen_equal(reader, "c\x1d", clean=True)
 
     def test_history_search_backward(self):
         # Test <page up> history search backward with "imp" input
@@ -782,7 +781,7 @@ class TestPyReplOutput(TestCase):
         # search for "imp" in history
         output = multiline_input(reader)
         self.assertEqual(output, "import os")
-        self.assertEqual(clean_screen(reader.screen), "import os")
+        self.assert_screen_equal(reader, "import os", clean=True)
 
     def test_history_search_backward_empty(self):
         # Test <page up> history search backward with an empty input
@@ -801,7 +800,7 @@ class TestPyReplOutput(TestCase):
         # search backward in history
         output = multiline_input(reader)
         self.assertEqual(output, "import os")
-        self.assertEqual(clean_screen(reader.screen), "import os")
+        self.assert_screen_equal(reader, "import os", clean=True)
 
 
 class TestPyReplCompleter(TestCase):
@@ -851,7 +850,7 @@ class TestPyReplCompleter(TestCase):
         output = multiline_input(reader, namespace)
         self.assertEqual(output, "python")
 
-    def test_updown_arrow_with_completion_menu(self):
+    def test_up_down_arrow_with_completion_menu(self):
         """Up arrow in the middle of unfinished tab completion when the menu is displayed
         should work and trigger going back in history. Down arrow should subsequently
         get us back to the incomplete command."""
@@ -861,6 +860,7 @@ class TestPyReplCompleter(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
+                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
             ],
@@ -1059,6 +1059,7 @@ class TestPasteEvent(TestCase):
 class TestDumbTerminal(ReplTestCase):
     def test_dumb_terminal_exits_cleanly(self):
         env = os.environ.copy()
+        env.pop('PYTHON_BASIC_REPL', None)
         env.update({"TERM": "dumb"})
         output, exit_code = self.run_repl("exit()\n", env=env)
         self.assertEqual(exit_code, 0)
@@ -1324,23 +1325,35 @@ class TestMain(ReplTestCase):
         if readline.backend != "editline":
             self.skipTest("GNU readline is not affected by this issue")
 
-        hfile = tempfile.NamedTemporaryFile()
-        self.addCleanup(unlink, hfile.name)
-        env = os.environ.copy()
-        env["PYTHON_HISTORY"] = hfile.name
+        with tempfile.NamedTemporaryFile() as hfile:
+            env = os.environ.copy()
+            env["PYTHON_HISTORY"] = hfile.name
 
-        env["PYTHON_BASIC_REPL"] = "1"
-        output, exit_code = self.run_repl("spam \nexit()\n", env=env)
-        self.assertEqual(exit_code, 0)
-        self.assertIn("spam ", output)
-        self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
-        self.assertIn("spam\\040", pathlib.Path(hfile.name).read_text())
+            env["PYTHON_BASIC_REPL"] = "1"
+            output, exit_code = self.run_repl("spam \nexit()\n", env=env)
+            self.assertEqual(exit_code, 0)
+            self.assertIn("spam ", output)
+            self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
+            self.assertIn("spam\\040", pathlib.Path(hfile.name).read_text())
 
-        env.pop("PYTHON_BASIC_REPL", None)
-        output, exit_code = self.run_repl("exit\n", env=env)
-        self.assertEqual(exit_code, 0)
-        self.assertNotIn("\\040", pathlib.Path(hfile.name).read_text())
+            env.pop("PYTHON_BASIC_REPL", None)
+            output, exit_code = self.run_repl("exit\n", env=env)
+            self.assertEqual(exit_code, 0)
+            self.assertNotIn("\\040", pathlib.Path(hfile.name).read_text())
 
     def test_keyboard_interrupt_after_isearch(self):
         output, exit_code = self.run_repl(["\x12", "\x03", "exit"])
         self.assertEqual(exit_code, 0)
+
+    def test_prompt_after_help(self):
+        output, exit_code = self.run_repl(["help", "q", "exit"])
+
+        # Regex pattern to remove ANSI escape sequences
+        ansi_escape = re.compile(r"(\x1B(=|>|(\[)[0-?]*[ -\/]*[@-~]))")
+        cleaned_output = ansi_escape.sub("", output)
+        self.assertEqual(exit_code, 0)
+
+        # Ensure that we don't see multiple prompts after exiting `help`
+        # Extra stuff (newline and `exit` rewrites) are necessary
+        # because of how run_repl works.
+        self.assertNotIn(">>> \n>>> >>>", cleaned_output)

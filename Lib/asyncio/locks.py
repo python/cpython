@@ -485,7 +485,7 @@ class Barrier(mixins._LoopBoundMixin):
     def __init__(self, parties):
         """Create a barrier, initialised to 'parties' tasks."""
         if parties < 1:
-            raise ValueError('parties must be > 0')
+            raise ValueError('parties must be >= 1')
 
         self._cond = Condition() # notify all tasks when state changes
 

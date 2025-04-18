@@ -368,8 +368,8 @@ The :mod:`functools` module defines the following functions:
 
    If :data:`Placeholder` sentinels are present in *args*, they will be filled first
    when :func:`!partial` is called. This makes it possible to pre-fill any positional
-   argument with a call to :func:`!partial`; without :data:`!Placeholder`, only the
-   first positional argument can be pre-filled.
+   argument with a call to :func:`!partial`; without :data:`!Placeholder`,
+   only the chosen number of leading positional arguments can be pre-filled.
 
    If any :data:`!Placeholder` sentinels are present, all must be filled at call time:
 
@@ -518,7 +518,7 @@ The :mod:`functools` module defines the following functions:
      ...     for i, elem in enumerate(arg):
      ...         print(i, elem)
 
-   :data:`types.UnionType` and :data:`typing.Union` can also be used::
+   :class:`typing.Union` can also be used::
 
     >>> @fun.register
     ... def _(arg: int | float, verbose=False):
@@ -654,8 +654,8 @@ The :mod:`functools` module defines the following functions:
       The :func:`register` attribute now supports using type annotations.
 
    .. versionchanged:: 3.11
-      The :func:`register` attribute now supports :data:`types.UnionType`
-      and :data:`typing.Union` as type annotations.
+      The :func:`register` attribute now supports
+      :class:`typing.Union` as a type annotation.
 
 
 .. class:: singledispatchmethod(func)

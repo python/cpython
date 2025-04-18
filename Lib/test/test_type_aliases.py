@@ -5,7 +5,7 @@ from test.support import check_syntax_error, run_code
 from test.typinganndata import mod_generics_cache
 
 from typing import (
-    Callable, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, get_args,
+    Callable, TypeAliasType, TypeVar, TypeVarTuple, ParamSpec, Unpack, get_args,
 )
 
 
@@ -316,6 +316,17 @@ class TypeAliasTypeTest(unittest.TestCase):
                          mod_generics_cache.__name__)
         self.assertEqual(mod_generics_cache.OldStyle.__module__,
                          mod_generics_cache.__name__)
+
+    def test_unpack(self):
+        type Alias = tuple[int, int]
+        unpacked = (*Alias,)[0]
+        self.assertEqual(unpacked, Unpack[Alias])
+
+        class Foo[*Ts]:
+            pass
+
+        x = Foo[str, *Alias]
+        self.assertEqual(x.__args__, (str, Unpack[Alias]))
 
 
 # All these type aliases are used for pickling tests:

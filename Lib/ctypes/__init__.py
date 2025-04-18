@@ -12,6 +12,7 @@ from _ctypes import __version__ as _ctypes_version
 from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 from _ctypes import ArgumentError
 from _ctypes import SIZEOF_TIME_T
+from _ctypes import CField
 
 from struct import calcsize as _calcsize
 
@@ -161,6 +162,7 @@ class py_object(_SimpleCData):
             return super().__repr__()
         except ValueError:
             return "%s(<NULL>)" % type(self).__name__
+    __class_getitem__ = classmethod(_types.GenericAlias)
 _check_size(py_object, "P")
 
 class c_short(_SimpleCData):
@@ -524,6 +526,7 @@ elif sizeof(c_ulonglong) == sizeof(c_void_p):
 # functions
 
 from _ctypes import _memmove_addr, _memset_addr, _string_at_addr, _cast_addr
+from _ctypes import _memoryview_at_addr
 
 ## void *memmove(void *, const void *, size_t);
 memmove = CFUNCTYPE(c_void_p, c_void_p, c_void_p, c_size_t)(_memmove_addr)
@@ -548,6 +551,14 @@ def string_at(ptr, size=-1):
 
     Return the byte string at void *ptr."""
     return _string_at(ptr, size)
+
+_memoryview_at = PYFUNCTYPE(
+    py_object, c_void_p, c_ssize_t, c_int)(_memoryview_at_addr)
+def memoryview_at(ptr, size, readonly=False):
+    """memoryview_at(ptr, size[, readonly]) -> memoryview
+
+    Return a memoryview representing the memory at void *ptr."""
+    return _memoryview_at(ptr, size, bool(readonly))
 
 try:
     from _ctypes import _wstring_at_addr
