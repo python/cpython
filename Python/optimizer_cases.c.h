@@ -1018,6 +1018,31 @@
             break;
         }
 
+        case _BUILD_INTERPOLATION: {
+            JitOptSymbol *interpolation;
+            interpolation = sym_new_not_null(ctx);
+            stack_pointer[-4] = interpolation;
+            stack_pointer += -3;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BUILD_TEMPLATE: {
+            JitOptSymbol *template;
+            template = sym_new_not_null(ctx);
+            stack_pointer[-oparg] = template;
+            stack_pointer += 1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BUILD_TEMPLATE_LIST: {
+            JitOptSymbol *template;
+            template = sym_new_not_null(ctx);
+            stack_pointer[-1] = template;
+            break;
+        }
+
         case _BUILD_TUPLE: {
             JitOptSymbol **values;
             JitOptSymbol *tup;

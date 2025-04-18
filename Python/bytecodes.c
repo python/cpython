@@ -16,6 +16,7 @@
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_function.h"
 #include "pycore_instruments.h"
+#include "pycore_interpolation.h" // _PyInterpolation_FromStackRefStealOnSuccess()
 #include "pycore_intrinsics.h"
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject
@@ -30,6 +31,7 @@
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_stackref.h"
+#include "pycore_template.h"      // _PyTemplate_From{List,Values}()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 
@@ -1910,6 +1912,36 @@ dummy_func(
             DECREF_INPUTS();
             ERROR_IF(str_o == NULL, error);
             str = PyStackRef_FromPyObjectSteal(str_o);
+        }
+
+        inst(BUILD_INTERPOLATION, (values[4] -- interpolation)) {
+            PyObject *interpolation_o = _PyInterpolation_FromStackRefStealOnSuccess(values);
+            if (interpolation_o == NULL) {
+                ERROR_NO_POP();
+            }
+            INPUTS_DEAD();
+            interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
+        }
+
+        inst(BUILD_TEMPLATE, (pieces[oparg] -- template)) {
+            STACKREFS_TO_PYOBJECTS(pieces, oparg, pieces_o);
+            if (CONVERSION_FAILED(pieces_o)) {
+                DECREF_INPUTS();
+                ERROR_IF(true, error);
+            }
+            PyObject *template_o = _PyTemplate_FromValues(pieces_o, oparg);
+            STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o);
+            DECREF_INPUTS();
+            ERROR_IF(template_o == NULL, error);
+            template = PyStackRef_FromPyObjectSteal(template_o);
+        }
+
+        inst(BUILD_TEMPLATE_LIST, (list -- template)) {
+            PyObject *list_o = PyStackRef_AsPyObjectBorrow(list);
+            PyObject *template_o = _PyTemplate_FromList(list_o);
+            PyStackRef_CLOSE(list);
+            ERROR_IF(template_o == NULL, error);
+            template = PyStackRef_FromPyObjectSteal(template_o);
         }
 
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {

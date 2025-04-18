@@ -131,6 +131,15 @@ The token constants are:
 
       The token string contains the closing quote(s).
 
+.. data:: TSTRING_START
+
+   Token value used to indicate the beginning of a t-string literal.
+
+   .. impl-detail::
+
+      The token string includes the prefix and the opening quote(s), but none
+      of the contents of the literal.
+
 .. data:: ENDMARKER
 
    Token value that indicates the end of input.

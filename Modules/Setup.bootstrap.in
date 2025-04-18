@@ -26,6 +26,7 @@ time timemodule.c
 _types _typesmodule.c
 _typing _typingmodule.c
 _weakref _weakref.c
+_templatelib _templatelibmodule.c
 
 # commonly used core modules
 _abc _abc.c

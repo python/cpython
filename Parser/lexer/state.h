@@ -59,6 +59,8 @@ typedef struct _tokenizer_mode {
     char* last_expr_buffer;
     int f_string_debug;
     int in_format_spec;
+
+    int tstring;
 } tokenizer_mode;
 
 /* Tokenizer state */

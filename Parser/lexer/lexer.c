@@ -108,12 +108,12 @@ tok_backup(struct tok_state *tok, int c)
 }
 
 static int
-set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
+set_ftstring_expr(struct tok_state* tok, struct token *token, char c) {
     assert(token != NULL);
     assert(c == '}' || c == ':' || c == '!');
     tokenizer_mode *tok_mode = TOK_GET_MODE(tok);
 
-    if (!tok_mode->f_string_debug || token->metadata) {
+    if (!(tok_mode->f_string_debug || tok_mode->tstring) || token->metadata) {
         return 0;
     }
     PyObject *res = NULL;
@@ -173,7 +173,7 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
 }
 
 int
-_PyLexer_update_fstring_expr(struct tok_state *tok, char cur)
+_PyLexer_update_ftstring_expr(struct tok_state *tok, char cur)
 {
     assert(tok->cur != NULL);
 
@@ -643,13 +643,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     nonascii = 0;
     if (is_potential_identifier_start(c)) {
         /* Process the various legal combinations of b"", r"", u"", and f"". */
-        int saw_b = 0, saw_r = 0, saw_u = 0, saw_f = 0;
+        int saw_b = 0, saw_r = 0, saw_u = 0, saw_f = 0, saw_t = 0;
         while (1) {
-            if (!(saw_b || saw_u || saw_f) && (c == 'b' || c == 'B'))
+            if (!(saw_b || saw_u || saw_f || saw_t) && (c == 'b' || c == 'B'))
                 saw_b = 1;
             /* Since this is a backwards compatibility support literal we don't
                want to support it in arbitrary order like byte literals. */
-            else if (!(saw_b || saw_u || saw_r || saw_f)
+            else if (!(saw_b || saw_u || saw_r || saw_f || saw_t)
                      && (c == 'u'|| c == 'U')) {
                 saw_u = 1;
             }
@@ -657,15 +657,18 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             else if (!(saw_r || saw_u) && (c == 'r' || c == 'R')) {
                 saw_r = 1;
             }
-            else if (!(saw_f || saw_b || saw_u) && (c == 'f' || c == 'F')) {
+            else if (!(saw_f || saw_b || saw_u || saw_t) && (c == 'f' || c == 'F')) {
                 saw_f = 1;
+            }
+            else if (!(saw_t || saw_b || saw_u || saw_f) && (c == 't' || c == 'T')) {
+                saw_t = 1;
             }
             else {
                 break;
             }
             c = tok_nextc(tok);
             if (c == '"' || c == '\'') {
-                if (saw_f) {
+                if (saw_f || saw_t) {
                     goto f_string_quote;
                 }
                 goto letter_quote;
@@ -939,7 +942,9 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     }
 
   f_string_quote:
-    if (((Py_TOLOWER(*tok->start) == 'f' || Py_TOLOWER(*tok->start) == 'r') && (c == '\'' || c == '"'))) {
+    if (((Py_TOLOWER(*tok->start) == 'f' || Py_TOLOWER(*tok->start) == 'r' || Py_TOLOWER(*tok->start) == 't')
+        && (c == '\'' || c == '"'))) {
+
         int quote = c;
         int quote_size = 1;             /* 1 or 3 */
 
@@ -971,7 +976,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         p_start = tok->start;
         p_end = tok->cur;
         if (tok->tok_mode_stack_index + 1 >= MAXFSTRINGLEVEL) {
-            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "too many nested f-strings"));
+            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "too many nested f-strings or t-strings"));
         }
         tokenizer_mode *the_current_tok = TOK_NEXT_MODE(tok);
         the_current_tok->kind = TOK_FSTRING_MODE;
@@ -988,7 +993,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         the_current_tok->in_format_spec = 0;
         the_current_tok->f_string_debug = 0;
 
+        int tstring = 0;
         switch (*tok->start) {
+            case 'T':
+            case 't':
+                the_current_tok->f_string_raw = Py_TOLOWER(*(tok->start + 1)) == 'r';
+                tstring = 1;
+                break;
             case 'F':
             case 'f':
                 the_current_tok->f_string_raw = Py_TOLOWER(*(tok->start + 1)) == 'r';
@@ -996,14 +1007,16 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             case 'R':
             case 'r':
                 the_current_tok->f_string_raw = 1;
+                tstring = Py_TOLOWER(*(tok->start + 1)) == 't';
                 break;
             default:
                 Py_UNREACHABLE();
         }
 
+        the_current_tok->tstring = tstring;
         the_current_tok->curly_bracket_depth = 0;
         the_current_tok->curly_bracket_expr_start_depth = -1;
-        return MAKE_TOKEN(FSTRING_START);
+        return tstring ? MAKE_TOKEN(TSTRING_START) : MAKE_TOKEN(FSTRING_START);
     }
 
   letter_quote:
@@ -1065,7 +1078,8 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     tokenizer_mode *the_current_tok = TOK_GET_MODE(tok);
                     if (the_current_tok->f_string_quote == quote &&
                         the_current_tok->f_string_quote_size == quote_size) {
-                        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: expecting '}'", start));
+                        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                            "%c-string: expecting '}'", TOK_GET_MODE(tok)->tstring ? 't' : 'f'));
                     }
                 }
 
@@ -1138,10 +1152,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
          int cursor_in_format_with_debug =
              cursor == 1 && (current_tok->f_string_debug || in_format_spec);
          int cursor_valid = cursor == 0 || cursor_in_format_with_debug;
-        if ((cursor_valid) && !_PyLexer_update_fstring_expr(tok, c)) {
+        if ((cursor_valid) && !_PyLexer_update_ftstring_expr(tok, c)) {
             return MAKE_TOKEN(ENDMARKER);
         }
-        if ((cursor_valid) && c != '{' && set_fstring_expr(tok, token, c)) {
+        if ((cursor_valid) && c != '{' && set_ftstring_expr(tok, token, c)) {
             return MAKE_TOKEN(ERRORTOKEN);
         }
 
@@ -1194,7 +1208,8 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
     case ']':
     case '}':
         if (INSIDE_FSTRING(tok) && !current_tok->curly_bracket_depth && c == '}') {
-            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: single '}' is not allowed"));
+            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                "%c-string: single '}' is not allowed", TOK_GET_MODE(tok)->tstring ? 't' : 'f'));
         }
         if (!tok->tok_extra_tokens && !tok->level) {
             return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "unmatched '%c'", c));
@@ -1214,7 +1229,8 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     assert(current_tok->curly_bracket_depth >= 0);
                     int previous_bracket = current_tok->curly_bracket_depth - 1;
                     if (previous_bracket == current_tok->curly_bracket_expr_start_depth) {
-                        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: unmatched '%c'", c));
+                        return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                            "%c-string: unmatched '%c'", TOK_GET_MODE(tok)->tstring ? 't' : 'f', c));
                     }
                 }
                 if (tok->parenlinenostack[tok->level] != tok->lineno) {
@@ -1235,7 +1251,8 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         if (INSIDE_FSTRING(tok)) {
             current_tok->curly_bracket_depth--;
             if (current_tok->curly_bracket_depth < 0) {
-                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: unmatched '%c'", c));
+                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "%c-string: unmatched '%c'",
+                    TOK_GET_MODE(tok)->tstring ? 't' : 'f', c));
             }
             if (c == '}' && current_tok->curly_bracket_depth == current_tok->curly_bracket_expr_start_depth) {
                 current_tok->curly_bracket_expr_start_depth--;
@@ -1285,7 +1302,8 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
         if (peek1 != '{') {
             current_tok->curly_bracket_expr_start_depth++;
             if (current_tok->curly_bracket_expr_start_depth >= MAX_EXPR_NESTING) {
-                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: expressions nested too deeply"));
+                return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                    "%c-string: expressions nested too deeply", TOK_GET_MODE(tok)->tstring ? 't' : 'f'));
             }
             TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
             return tok_get_normal_mode(tok, current_tok, token);
@@ -1371,8 +1389,9 @@ f_string_middle:
 
             if (current_tok->f_string_quote_size == 3) {
                 _PyTokenizer_syntaxerror(tok,
-                                    "unterminated triple-quoted f-string literal"
-                                    " (detected at line %d)", start);
+                                    "unterminated triple-quoted %c-string literal"
+                                    " (detected at line %d)",
+                                    TOK_GET_MODE(tok)->tstring ? 't' : 'f', start);
                 if (c != '\n') {
                     tok->done = E_EOFS;
                 }
@@ -1380,8 +1399,8 @@ f_string_middle:
             }
             else {
                 return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
-                                    "unterminated f-string literal (detected at"
-                                    " line %d)", start));
+                                    "unterminated %c-string literal (detected at"
+                                    " line %d)", TOK_GET_MODE(tok)->tstring ? 't' : 'f', start));
             }
         }
 
@@ -1393,7 +1412,7 @@ f_string_middle:
         }
 
         if (c == '{') {
-            if (!_PyLexer_update_fstring_expr(tok, c)) {
+            if (!_PyLexer_update_ftstring_expr(tok, c)) {
                 return MAKE_TOKEN(ENDMARKER);
             }
             int peek = tok_nextc(tok);
@@ -1402,7 +1421,8 @@ f_string_middle:
                 tok_backup(tok, c);
                 current_tok->curly_bracket_expr_start_depth++;
                 if (current_tok->curly_bracket_expr_start_depth >= MAX_EXPR_NESTING) {
-                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "f-string: expressions nested too deeply"));
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok,
+                        "%c-string: expressions nested too deeply", TOK_GET_MODE(tok)->tstring ? 't' : 'f'));
                 }
                 TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
                 current_tok->in_format_spec = 0;
