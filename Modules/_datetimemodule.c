@@ -192,7 +192,7 @@ _get_current_state(PyObject **p_mod)
             Py_DECREF(spec);
 
             /* The module will be held by heaptypes. Prefer
-            /* it not to be cached in the interp-dict. */
+             * it not to be cached in the interp-dict. */
             if (PyModule_ExecDef(mod, &datetimemodule) < 0) {
                 return NULL;
             }
