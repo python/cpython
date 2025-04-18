@@ -9,7 +9,6 @@
 #
 
 import unittest
-from test.support import warnings_helper
 
 from textwrap import TextWrapper, wrap, fill, dedent, indent, shorten
 
@@ -770,9 +769,7 @@ class DedentTestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "expected str object, not"):
             dedent(0)
 
-        # Suppress BytesWarning
-        with (warnings_helper.check_warnings(('', BytesWarning), quiet=True),
-              self.assertRaisesRegex(TypeError, "expected str object, not")):
+        with self.assertRaisesRegex(TypeError, "expected str object, not"):
             dedent(b'')
 
     def assertUnchanged(self, text):
