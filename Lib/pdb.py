@@ -89,6 +89,7 @@ import builtins
 import tempfile
 import textwrap
 import tokenize
+import functools
 import itertools
 import traceback
 import linecache
@@ -1466,6 +1467,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     complete_ignore = _complete_bpnumber
 
+    def _prompt_for_confirmation(self, prompt, choices, default):
+        try:
+            reply = input(prompt)
+        except EOFError:
+            reply = default
+        return reply.strip().lower()
+
     def do_clear(self, arg):
         """cl(ear) [filename:lineno | bpnumber ...]
 
@@ -1475,11 +1483,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         clear all breaks at that line in that file.
         """
         if not arg:
-            try:
-                reply = input('Clear all breaks? ')
-            except EOFError:
-                reply = 'no'
-            reply = reply.strip().lower()
+            reply = self._prompt_for_confirmation(
+                'Clear all breaks? ',
+                choices=('y', 'yes', 'n', 'no'),
+                default='no',
+            )
             if reply in ('y', 'yes'):
                 bplist = [bp for bp in bdb.Breakpoint.bpbynumber if bp]
                 self.clear_all_breaks()
@@ -2725,6 +2733,26 @@ class _RemotePdb(Pdb):
     def _create_recursive_debugger(self):
         return _RemotePdb(self._sockfile, owns_sockfile=False)
 
+    @typing.override
+    def _prompt_for_confirmation(self, prompt, choices, default):
+        self._send(
+            confirm={"prompt": prompt, "choices": choices, "default": default}
+        )
+        payload = self._sockfile.readline()
+
+        if not payload:
+            return default
+
+        try:
+            match json.loads(payload):
+                case {"confirmation_reply": str(reply)}:
+                    return reply
+        except json.JSONDecodeError:
+            pass
+
+        self.error(f"Ignoring unexpected remote message: {payload}")
+        return default
+
     def do_run(self, arg):
         self.error("remote PDB cannot restart the program")
 
@@ -2807,7 +2835,7 @@ class _PdbClient:
         return prefix + buffer
 
     @contextmanager
-    def readline_completion(self):
+    def readline_completion(self, completer):
         try:
             import readline
         except ImportError:
@@ -2816,7 +2844,7 @@ class _PdbClient:
 
         old_completer = readline.get_completer()
         try:
-            readline.set_completer(self.complete)
+            readline.set_completer(completer)
             if readline.backend == "editline":
                 # libedit uses "^I" instead of "tab"
                 command_string = "bind ^I rl_complete"
@@ -2828,7 +2856,7 @@ class _PdbClient:
             readline.set_completer(old_completer)
 
     def cmdloop(self):
-        with self.readline_completion():
+        with self.readline_completion(self.complete):
             while True:
                 try:
                     if not (payload_bytes := self.sockfile.readline()):
@@ -2876,6 +2904,14 @@ class _PdbClient:
                     self.prompt_for_breakpoint_command_list("(com) ")
                 else:
                     self.prompt_for_repl_command(prompt)
+            case {
+                "confirm": {
+                    "prompt": str(prompt),
+                    "choices": list(choices),
+                    "default": str(default),
+                }
+            } if all(isinstance(c, str) for c in choices):
+                self.prompt_for_confirmation(prompt, choices, default)
             case {
                 "commands_entry": {
                     "bpnum": int(bpnum),
@@ -2930,6 +2966,20 @@ class _PdbClient:
             self.sockfile.flush()
             return
 
+    def prompt_for_confirmation(self, prompt, choices, default):
+        try:
+            with self.readline_completion(
+                functools.partial(self.complete_choices, choices=choices)
+            ):
+                reply = input(prompt).strip()
+        except (KeyboardInterrupt, EOFError):
+            print(flush=True)
+            reply = default
+
+        payload = {"confirmation_reply": reply}
+        self.sockfile.write((json.dumps(payload) + "\n").encode())
+        self.sockfile.flush()
+
     def complete(self, text, state):
         import readline
 
@@ -2961,6 +3011,15 @@ class _PdbClient:
             self.completion_matches = payload["completion"]
         try:
             return self.completion_matches[state]
+        except IndexError:
+            return None
+
+    def complete_choices(self, text, state, choices):
+        if state == 0:
+            self.completion_matches = [c for c in choices if c.startswith(text)]
+
+        try:
+            return choices[state]
         except IndexError:
             return None
 
