@@ -1667,7 +1667,7 @@ iterations of the loop.
    * ``oparg == 2``: call :func:`repr` on *value*
    * ``oparg == 3``: call :func:`ascii` on *value*
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -1680,7 +1680,7 @@ iterations of the loop.
       result = value.__format__("")
       STACK.append(result)
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 
@@ -1693,7 +1693,7 @@ iterations of the loop.
       result = value.__format__(spec)
       STACK.append(result)
 
-   Used for implementing formatted literal strings (f-strings).
+   Used for implementing formatted string literals (f-strings).
 
    .. versionadded:: 3.13
 

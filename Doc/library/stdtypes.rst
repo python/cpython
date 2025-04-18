@@ -2474,6 +2474,14 @@ Formatted String Literals (f-strings)
 -------------------------------------
 
 .. versionadded:: 3.6
+.. versionchanged:: 3.7
+   The :keyword:`await` and :keyword:`async for` can be used in expressions
+within f-strings.
+.. versionchanged:: 3.8
+   Added the debugging operator (``=``)
+.. versionchanged:: 3.12
+   Many restrictions on expressions within f-strings have been removed.
+   Notably, nested strings, comments, and backslashes are now permitted.
 
 An :dfn:`f-string` (formally a :dfn:`formatted string literal`) is
 a string literal that is prefixed with ``f`` or ``F``.
