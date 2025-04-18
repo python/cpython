@@ -7269,7 +7269,28 @@ class ExtensionModuleTests(unittest.TestCase):
                 assert isinstance(_datetime.timezone.utc, _datetime.tzinfo)
                 del sys.modules['_datetime']
             """)
-        script_helper.assert_python_ok('-c', script)
+        res = script_helper.assert_python_ok('-c', script)
+        self.assertFalse(res.err)
+
+    def test_module_state_at_shutdown(self):
+        # gh-132413
+        script = textwrap.dedent("""
+            import sys
+            import _datetime
+
+            def gen():
+                try:
+                    yield
+                finally:
+                    assert not sys.modules
+                    td = _datetime.timedelta(days=1)  # crash
+                    assert td.days == 1
+
+            it = gen()
+            next(it)
+            """)
+        res = script_helper.assert_python_ok('-c', script)
+        self.assertFalse(res.err)
 
 
 def load_tests(loader, standard_tests, pattern):
