@@ -2254,6 +2254,28 @@ set___contains___impl(PySetObject *so, PyObject *key)
 }
 
 /*[clinic input]
+@coexist
+frozenset.__contains__
+    so: setobject
+    object as key: object
+    /
+
+x.__contains__(y) <==> y in x.
+[clinic start generated code]*/
+
+static PyObject *
+frozenset___contains___impl(PySetObject *so, PyObject *key)
+/*[clinic end generated code: output=2301ed91bc3a6dd5 input=2f04922a98d8bab7]*/
+{
+    long result;
+
+    result = set_contains_lock_held(so, key);
+    if (result < 0)
+        return NULL;
+    return PyBool_FromLong(result);
+}
+
+/*[clinic input]
 @critical_section
 set.remove
     so: setobject
@@ -2555,7 +2577,7 @@ PyTypeObject PySet_Type = {
 
 
 static PyMethodDef frozenset_methods[] = {
-    SET___CONTAINS___METHODDEF
+    FROZENSET___CONTAINS___METHODDEF
     FROZENSET_COPY_METHODDEF
     SET_DIFFERENCE_MULTI_METHODDEF
     SET_INTERSECTION_MULTI_METHODDEF
