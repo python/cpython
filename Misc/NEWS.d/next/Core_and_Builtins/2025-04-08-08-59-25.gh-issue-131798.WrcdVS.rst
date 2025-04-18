@@ -1,0 +1,2 @@
+Remove some unnecessary checks for some non-method :opcode:`CALL`
+specializations.
