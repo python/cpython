@@ -1579,7 +1579,6 @@ class CommandLineTestCase(unittest.TestCase):
             server._main(args)
         return output.getvalue()
 
-
     def test_port_flag(self, mock_func):
         ports = [8000, 65535,]
         for port in ports:
