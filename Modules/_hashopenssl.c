@@ -410,7 +410,7 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
                 digest = PY_EVP_MD_fetch(entry->ossl_name, NULL);
 #ifdef Py_GIL_DISABLED
                 // exchange just in case another thread did same thing at same time
-                other_digest = _Py_atomic_exchange_ptr(&entry->evp, digest);
+                other_digest = _Py_atomic_exchange_ptr(&entry->evp, (void *)digest);
 #else
                 entry->evp = digest;
 #endif
@@ -422,7 +422,7 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
                 digest = PY_EVP_MD_fetch(entry->ossl_name, "-fips");
 #ifdef Py_GIL_DISABLED
                 // exchange just in case another thread did same thing at same time
-                other_digest = _Py_atomic_exchange_ptr(&entry->evp_nosecurity, digest);
+                other_digest = _Py_atomic_exchange_ptr(&entry->evp_nosecurity, (void *)digest);
 #else
                 entry->evp_nosecurity = digest;
 #endif
