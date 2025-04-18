@@ -154,7 +154,7 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND{idx}();\n")
                 idx += 1
-        storage = emitter.emit_tokens(uop, storage, None, False)
+        _, storage = emitter.emit_tokens(uop, storage, None, False)
         storage.flush(emitter.out)
     except StackError as ex:
         raise analysis_error(ex.args[0], uop.body.open) from None

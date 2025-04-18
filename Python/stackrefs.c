@@ -71,6 +71,9 @@ _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber)
     }
     PyObject *obj;
     if (ref.index <= LAST_PREDEFINED_STACKREF_INDEX) {
+        if (ref.index == 0) {
+            _Py_FatalErrorFormat(__func__, "Passing NULL to PyStackRef_CLOSE at %s:%d\n", filename, linenumber);
+        }
         // Pre-allocated reference to None, False or True -- Do not clear
         TableEntry *entry = _Py_hashtable_get(interp->open_stackrefs_table, (void *)ref.index);
         obj = entry->obj;

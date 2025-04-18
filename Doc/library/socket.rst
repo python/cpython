@@ -149,23 +149,37 @@ created.  Socket addresses are represented as follows:
       :const:`BDADDR_LE_RANDOM`.
 
     .. versionchanged:: 3.14
-      Added ``cid`` and ``bdaddr_type`` fields.
+       Added ``cid`` and ``bdaddr_type`` fields.
 
   - :const:`BTPROTO_RFCOMM` accepts ``(bdaddr, channel)`` where ``bdaddr``
     is the Bluetooth address as a string and ``channel`` is an integer.
 
-  - :const:`BTPROTO_HCI` accepts ``(device_id,)`` where ``device_id`` is
-    either an integer or a string with the Bluetooth address of the
-    interface. (This depends on your OS; NetBSD and DragonFlyBSD expect
-    a Bluetooth address while everything else expects an integer.)
+  - :const:`BTPROTO_HCI` accepts a format that depends on your OS.
+
+    - On Linux it accepts an integer ``device_id`` or a tuple
+      ``(device_id, [channel])`` where ``device_id``
+      specifies the number of the Bluetooth device,
+      and ``channel`` is an optional integer specifying the HCI channel
+      (:const:`HCI_CHANNEL_RAW` by default).
+    - On FreeBSD, NetBSD and DragonFly BSD it accepts ``bdaddr``
+      where ``bdaddr`` is the Bluetooth address as a string.
 
     .. versionchanged:: 3.2
        NetBSD and DragonFlyBSD support added.
 
-  - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is a
-    :class:`bytes` object containing the Bluetooth address in a
-    string format. (ex. ``b'12:23:34:45:56:67'``) This protocol is not
-    supported under FreeBSD.
+    .. versionchanged:: 3.13.3
+       FreeBSD support added.
+
+    .. versionchanged:: next
+       Added ``channel`` field.
+       ``device_id`` not packed in a tuple is now accepted.
+
+  - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is
+    the Bluetooth address as a string or a :class:`bytes` object.
+    (ex. ``'12:23:34:45:56:67'`` or ``b'12:23:34:45:56:67'``)
+
+    .. versionchanged:: next
+       FreeBSD support added.
 
 - :const:`AF_ALG` is a Linux-only socket based interface to Kernel
   cryptography. An algorithm socket is configured with a tuple of two to four
@@ -660,16 +674,27 @@ Constants
    These constants describe the Bluetooth address type when binding or
    connecting a :const:`BTPROTO_L2CAP` socket.
 
-    .. versionadded:: 3.14
+   .. versionadded:: 3.14
 
 .. data:: HCI_FILTER
           HCI_TIME_STAMP
           HCI_DATA_DIR
 
-   For use with :const:`BTPROTO_HCI`. :const:`HCI_FILTER` is not
-   available for NetBSD or DragonFlyBSD. :const:`HCI_TIME_STAMP` and
-   :const:`HCI_DATA_DIR` are not available for FreeBSD, NetBSD, or
-   DragonFlyBSD.
+   For use with :const:`BTPROTO_HCI`. :const:`!HCI_FILTER` is only
+   available on Linux and FreeBSD. :const:`!HCI_TIME_STAMP` and
+   :const:`!HCI_DATA_DIR` are only available on Linux.
+
+.. data:: HCI_CHANNEL_RAW
+          HCI_CHANNEL_USER
+          HCI_CHANNEL_MONITOR
+          HCI_CHANNEL_CONTROL
+          HCI_CHANNEL_LOGGING
+
+   Possible values for ``channel`` field in the :const:`BTPROTO_HCI` address.
+
+   .. availability:: Linux
+
+   .. versionadded:: next
 
 .. data:: AF_QIPCRTR
 

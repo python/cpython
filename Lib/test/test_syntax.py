@@ -2691,6 +2691,25 @@ if x:
         self.assertRaises(IndentationError, exec, code)
 
     @support.cpython_only
+    def test_disallowed_type_param_names(self):
+        # See gh-128632
+
+        self._check_error(f"class A[__classdict__]: pass",
+                        f"reserved name '__classdict__' cannot be used for type parameter")
+        self._check_error(f"def f[__classdict__](): pass",
+                        f"reserved name '__classdict__' cannot be used for type parameter")
+        self._check_error(f"type T[__classdict__] = tuple[__classdict__]",
+                        f"reserved name '__classdict__' cannot be used for type parameter")
+
+        # These compilations are here to make sure __class__, __classcell__ and __classdictcell__
+        # don't break in the future like __classdict__ did in this case.
+        for name in ('__class__', '__classcell__', '__classdictcell__'):
+            compile(f"""
+class A:
+    class B[{name}]: pass
+                """, "<testcase>", mode="exec")
+
+    @support.cpython_only
     def test_nested_named_except_blocks(self):
         code = ""
         for i in range(12):
@@ -2900,6 +2919,7 @@ while 1:
                     compile(source, "<string>", mode)
 
     @support.cpython_only
+    @support.skip_wasi_stack_overflow()
     def test_deep_invalid_rule(self):
         # Check that a very deep invalid rule in the PEG
         # parser doesn't have exponential backtracking.

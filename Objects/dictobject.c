@@ -4947,12 +4947,12 @@ PyDict_GetItemString(PyObject *v, const char *key)
     if (kv == NULL) {
         PyErr_FormatUnraisable(
             "Exception ignored in PyDict_GetItemString(); consider using "
-            "PyDict_GetItemRefString()");
+            "PyDict_GetItemStringRef()");
         return NULL;
     }
     rv = dict_getitem(v, kv,
             "Exception ignored in PyDict_GetItemString(); consider using "
-            "PyDict_GetItemRefString()");
+            "PyDict_GetItemStringRef()");
     Py_DECREF(kv);
     return rv;  // borrowed reference
 }
