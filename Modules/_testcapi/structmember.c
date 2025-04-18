@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include "parts.h"
 #include <stddef.h>   // for offsetof()
 
@@ -23,6 +22,7 @@ typedef struct {
     char inplace_member[6];
     long long longlong_member;
     unsigned long long ulonglong_member;
+    char char_member;
 } all_structmembers;
 
 typedef struct {
@@ -47,6 +47,7 @@ static struct PyMemberDef test_members_newapi[] = {
     {"T_STRING_INPLACE", Py_T_STRING_INPLACE, offsetof(test_structmembers, structmembers.inplace_member), 0, NULL},
     {"T_LONGLONG", Py_T_LONGLONG, offsetof(test_structmembers, structmembers.longlong_member), 0, NULL},
     {"T_ULONGLONG", Py_T_ULONGLONG, offsetof(test_structmembers, structmembers.ulonglong_member), 0, NULL},
+    {"T_CHAR", Py_T_CHAR, offsetof(test_structmembers, structmembers.char_member), 0, NULL},
     {NULL}
 };
 
@@ -57,9 +58,9 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         "T_BOOL", "T_BYTE", "T_UBYTE", "T_SHORT", "T_USHORT",
         "T_INT", "T_UINT", "T_LONG", "T_ULONG", "T_PYSSIZET",
         "T_FLOAT", "T_DOUBLE", "T_STRING_INPLACE",
-        "T_LONGLONG", "T_ULONGLONG",
+        "T_LONGLONG", "T_ULONGLONG", "T_CHAR",
         NULL};
-    static const char fmt[] = "|bbBhHiIlknfds#LK";
+    static const char fmt[] = "|bbBhHiIlknfds#LKc";
     test_structmembers *ob;
     const char *s = NULL;
     Py_ssize_t string_len = 0;
@@ -83,7 +84,8 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
                                      &ob->structmembers.double_member,
                                      &s, &string_len,
                                      &ob->structmembers.longlong_member,
-                                     &ob->structmembers.ulonglong_member))
+                                     &ob->structmembers.ulonglong_member,
+                                     &ob->structmembers.char_member))
     {
         Py_DECREF(ob);
         return NULL;
@@ -133,6 +135,7 @@ static struct PyMemberDef test_members[] = {
     {"T_STRING_INPLACE", T_STRING_INPLACE, offsetof(test_structmembers, structmembers.inplace_member), 0, NULL},
     {"T_LONGLONG", T_LONGLONG, offsetof(test_structmembers, structmembers.longlong_member), 0, NULL},
     {"T_ULONGLONG", T_ULONGLONG, offsetof(test_structmembers, structmembers.ulonglong_member), 0, NULL},
+    {"T_CHAR", T_CHAR, offsetof(test_structmembers, structmembers.char_member), 0, NULL},
     {NULL}
 };
 
@@ -194,7 +197,7 @@ _PyTestCapi_Init_Structmember(PyObject *m)
     if (res < 0) {
         return -1;
     }
-    res = PyModule_AddObject(
+    res = PyModule_AddObjectRef(
         m,
         "_test_structmembersType_OldAPI",
         (PyObject *)&test_structmembersType_OldAPI);

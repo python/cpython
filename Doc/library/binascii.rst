@@ -1,19 +1,18 @@
-:mod:`binascii` --- Convert between binary and ASCII
-====================================================
+:mod:`!binascii` --- Convert between binary and ASCII
+=====================================================
 
 .. module:: binascii
    :synopsis: Tools for converting between binary and various ASCII-encoded binary
               representations.
 
 .. index::
-   pair: module; uu
    pair: module; base64
 
 --------------
 
 The :mod:`binascii` module contains a number of methods to convert between
 binary and various ASCII-encoded binary representations. Normally, you will not
-use these functions directly but use wrapper modules like :mod:`uu` or
+use these functions directly but use wrapper modules like
 :mod:`base64` instead. The :mod:`binascii` module contains
 low-level functions written in C for greater speed that are used by the
 higher-level modules.
@@ -58,10 +57,11 @@ The :mod:`binascii` module defines the following functions:
    data will raise :exc:`binascii.Error`.
 
    Valid base64:
-      * Conforms to :rfc:`3548`.
-      * Contains only characters from the base64 alphabet.
-      * Contains no excess data after padding (including excess padding, newlines, etc.).
-      * Does not start with a padding.
+
+   * Conforms to :rfc:`3548`.
+   * Contains only characters from the base64 alphabet.
+   * Contains no excess data after padding (including excess padding, newlines, etc.).
+   * Does not start with a padding.
 
    .. versionchanged:: 3.11
       Added the *strict_mode* parameter.
@@ -178,9 +178,6 @@ The :mod:`binascii` module defines the following functions:
    Module :mod:`base64`
       Support for RFC compliant base64-style encoding in base 16, 32, 64,
       and 85.
-
-   Module :mod:`uu`
-      Support for UU encoding used on Unix.
 
    Module :mod:`quopri`
       Support for quoted-printable encoding used in MIME email messages.

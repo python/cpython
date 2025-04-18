@@ -13,11 +13,16 @@ recommended command-line parsing module in the Python standard library.
 
 .. note::
 
-   There are two other modules that fulfill the same task, namely
-   :mod:`getopt` (an equivalent for ``getopt()`` from the C
-   language) and the deprecated :mod:`optparse`.
-   Note also that :mod:`argparse` is based on :mod:`optparse`,
-   and therefore very similar in terms of usage.
+   The standard library includes two other libraries directly related
+   to command-line parameter processing: the lower level :mod:`optparse`
+   module (which may require more code to configure for a given application,
+   but also allows an application to request behaviors that ``argparse``
+   doesn't support), and the very low level :mod:`getopt` (which specifically
+   serves as an equivalent to the :c:func:`!getopt` family of functions
+   available to C programmers).
+   While neither of those modules is covered directly in this guide, many of
+   the core concepts in ``argparse`` first originated in ``optparse``, so
+   some aspects of this tutorial will also be relevant to ``optparse`` users.
 
 
 Concepts
@@ -444,7 +449,7 @@ And the output:
 
    options:
      -h, --help            show this help message and exit
-     -v {0,1,2}, --verbosity {0,1,2}
+     -v, --verbosity {0,1,2}
                            increase output verbosity
 
 Note that the change also reflects both in the error message as well as the
@@ -787,6 +792,106 @@ but not both at the same time:
      -v, --verbose
      -q, --quiet
 
+
+How to translate the argparse output
+====================================
+
+The output of the :mod:`argparse` module such as its help text and error
+messages are all made translatable using the :mod:`gettext` module. This
+allows applications to easily localize messages produced by
+:mod:`argparse`. See also :ref:`i18n-howto`.
+
+For instance, in this :mod:`argparse` output:
+
+.. code-block:: shell-session
+
+   $ python prog.py --help
+   usage: prog.py [-h] [-v | -q] x y
+
+   calculate X to the power of Y
+
+   positional arguments:
+     x              the base
+     y              the exponent
+
+   options:
+     -h, --help     show this help message and exit
+     -v, --verbose
+     -q, --quiet
+
+The strings ``usage:``, ``positional arguments:``, ``options:`` and
+``show this help message and exit`` are all translatable.
+
+In order to translate these strings, they must first be extracted
+into a ``.po`` file. For example, using `Babel <https://babel.pocoo.org/>`__,
+run this command:
+
+.. code-block:: shell-session
+
+  $ pybabel extract -o messages.po /usr/lib/python3.12/argparse.py
+
+This command will extract all translatable strings from the :mod:`argparse`
+module and output them into a file named ``messages.po``. This command assumes
+that your Python installation is in ``/usr/lib``.
+
+You can find out the location of the :mod:`argparse` module on your system
+using this script::
+
+   import argparse
+   print(argparse.__file__)
+
+Once the messages in the ``.po`` file are translated and the translations are
+installed using :mod:`gettext`, :mod:`argparse` will be able to display the
+translated messages.
+
+To translate your own strings in the :mod:`argparse` output, use :mod:`gettext`.
+
+Custom type converters
+======================
+
+The :mod:`argparse` module allows you to specify custom type converters for
+your command-line arguments. This allows you to modify user input before it's
+stored in the :class:`argparse.Namespace`. This can be useful when you need to
+pre-process the input before it is used in your program.
+
+When using a custom type converter, you can use any callable that takes a
+single string argument (the argument value) and returns the converted value.
+However, if you need to handle more complex scenarios, you can use a custom
+action class with the **action** parameter instead.
+
+For example, let's say you want to handle arguments with different prefixes and
+process them accordingly::
+
+   import argparse
+
+   parser = argparse.ArgumentParser(prefix_chars='-+')
+
+   parser.add_argument('-a', metavar='<value>', action='append',
+                       type=lambda x: ('-', x))
+   parser.add_argument('+a', metavar='<value>', action='append',
+                       type=lambda x: ('+', x))
+
+   args = parser.parse_args()
+   print(args)
+
+Output:
+
+.. code-block:: shell-session
+
+   $ python prog.py -a value1 +a value2
+   Namespace(a=[('-', 'value1'), ('+', 'value2')])
+
+In this example, we:
+
+* Created a parser with custom prefix characters using the ``prefix_chars``
+  parameter.
+
+* Defined two arguments, ``-a`` and ``+a``, which used the ``type`` parameter to
+  create custom type converters to store the value in a tuple with the prefix.
+
+Without the custom type converters, the arguments would have treated the ``-a``
+and ``+a`` as the same argument, which would have been undesirable. By using custom
+type converters, we were able to differentiate between the two arguments.
 
 Conclusion
 ==========

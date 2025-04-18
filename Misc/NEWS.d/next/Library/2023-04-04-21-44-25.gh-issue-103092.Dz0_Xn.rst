@@ -1,1 +1,0 @@
-Adapt the :mod:`msvcrt` extension module to :pep:`687`.

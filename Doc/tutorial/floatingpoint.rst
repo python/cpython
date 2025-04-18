@@ -6,7 +6,7 @@
 .. _tut-fp-issues:
 
 **************************************************
-Floating Point Arithmetic:  Issues and Limitations
+Floating-Point Arithmetic:  Issues and Limitations
 **************************************************
 
 .. sectionauthor:: Tim Peters <tim_one@users.sourceforge.net>
@@ -88,7 +88,7 @@ the one with 17 significant digits, ``0.10000000000000001``.   Starting with
 Python 3.1, Python (on most systems) is now able to choose the shortest of
 these and simply display ``0.1``.
 
-Note that this is in the very nature of binary floating-point: this is not a bug
+Note that this is in the very nature of binary floating point: this is not a bug
 in Python, and it is not a bug in your code either.  You'll see the same kind of
 thing in all languages that support your hardware's floating-point arithmetic
 (although some languages may not *display* the difference by default, or in all
@@ -137,7 +137,7 @@ the :func:`math.isclose` function can be useful for comparing inexact values:
    True
 
 Alternatively, the :func:`round` function can be used to compare rough
-approximations::
+approximations:
 
 .. doctest::
 
@@ -150,11 +150,11 @@ section.  See `Examples of Floating Point Problems
 <https://jvns.ca/blog/2023/01/13/examples-of-floating-point-problems/>`_ for
 a pleasant summary of how binary floating point works and the kinds of
 problems commonly encountered in practice.  Also see
-`The Perils of Floating Point <https://www.lahey.com/float.htm>`_
+`The Perils of Floating Point <http://www.indowsway.com/floatingpoint.htm>`_
 for a more complete account of other common surprises.
 
 As that says near the end, "there are no easy answers."  Still, don't be unduly
-wary of floating-point!  The errors in Python float operations are inherited
+wary of floating point!  The errors in Python float operations are inherited
 from the floating-point hardware, and on most machines are on the order of no
 more than 1 part in 2\*\*53 per operation.  That's more than adequate for most
 tasks, but you do need to keep in mind that it's not decimal arithmetic and
@@ -174,7 +174,7 @@ Another form of exact arithmetic is supported by the :mod:`fractions` module
 which implements arithmetic based on rational numbers (so the numbers like
 1/3 can be represented exactly).
 
-If you are a heavy user of floating point operations you should take a look
+If you are a heavy user of floating-point operations you should take a look
 at the NumPy package and many other packages for mathematical and
 statistical operations supplied by the SciPy project. See <https://scipy.org>.
 
@@ -230,7 +230,7 @@ accumulate to the point where they affect the final total:
    >>> sum([0.1] * 10) == 1.0
    True
 
-The :func:`math.fsum()` goes further and tracks all of the "lost digits"
+The :func:`math.fsum` goes further and tracks all of the "lost digits"
 as values are added onto a running total so that the result has only a
 single rounding.  This is slower than :func:`sum` but will be more
 accurate in uncommon cases where large magnitude inputs mostly cancel
@@ -268,12 +268,14 @@ decimal fractions cannot be represented exactly as binary (base 2) fractions.
 This is the chief reason why Python (or Perl, C, C++, Java, Fortran, and many
 others) often won't display the exact decimal number you expect.
 
-Why is that?  1/10 is not exactly representable as a binary fraction. Almost all
-machines today (November 2000) use IEEE-754 floating point arithmetic, and
-almost all platforms map Python floats to IEEE-754 "double precision".  754
-doubles contain 53 bits of precision, so on input the computer strives to
-convert 0.1 to the closest fraction it can of the form *J*/2**\ *N* where *J* is
-an integer containing exactly 53 bits.  Rewriting ::
+Why is that?  1/10 is not exactly representable as a binary fraction.  Since at
+least 2000, almost all machines use IEEE 754 binary floating-point arithmetic,
+and almost all platforms map Python floats to IEEE 754 binary64 "double
+precision" values.  IEEE 754 binary64 values contain 53 bits of precision, so
+on input the computer strives to convert 0.1 to the closest fraction it can of
+the form *J*/2**\ *N* where *J* is an integer containing exactly 53 bits.
+Rewriting
+::
 
    1 / 10 ~= J / (2**N)
 
@@ -308,7 +310,8 @@ by rounding up:
    >>> q+1
    7205759403792794
 
-Therefore the best possible approximation to 1/10 in 754 double precision is::
+Therefore the best possible approximation to 1/10 in IEEE 754 double precision
+is::
 
    7205759403792794 / 2 ** 56
 
@@ -321,7 +324,7 @@ if we had not rounded up, the quotient would have been a little bit smaller than
 1/10.  But in no case can it be *exactly* 1/10!
 
 So the computer never "sees" 1/10:  what it sees is the exact fraction given
-above, the best 754 double approximation it can get:
+above, the best IEEE 754 double approximation it can get:
 
 .. doctest::
 

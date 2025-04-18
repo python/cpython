@@ -1,5 +1,0 @@
-We've added ``Py_NewInterpreterFromConfig()`` and ``PyInterpreterConfig`` to
-the public C-API (but not the stable ABI; not yet at least).  The new
-function may be used to create a new interpreter with various features
-configured.  The function was added to support PEP 684 (per-interpreter
-GIL).
