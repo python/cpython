@@ -1822,6 +1822,22 @@ SyntaxError: invalid syntax. Did you mean 'await'?
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Did you mean 'raise'?
 
+>>> [
+... x for x
+... in range(3)
+... of x
+... ]
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'if'?
+
+>>> [
+... 123 fur x
+... in range(3)
+... if x
+... ]
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'for'?
+
 >>> f(a=23, a=234)
 Traceback (most recent call last):
    ...

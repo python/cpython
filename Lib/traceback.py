@@ -1280,9 +1280,13 @@ class TracebackException:
 
     def _find_keyword_typos(self):
         assert self._is_syntax_error
+        try:
+            import _suggestions
+        except ImportError:
+            _suggestions = None
 
         # Only try to find keyword typos if there is no custom message
-        if self.msg != "invalid syntax":
+        if self.msg != "invalid syntax" and "Perhaps you forgot a comma" not in self.msg:
             return
 
         if not self._exc_metadata:
@@ -1336,6 +1340,9 @@ class TracebackException:
                 break
             # Limit the number of possible matches to try
             matches = difflib.get_close_matches(wrong_name, keyword.kwlist, n=3)
+            if not matches and _suggestions is not None:
+                suggestion = _suggestions._generate_suggestions(keyword.kwlist, wrong_name)
+                matches = [suggestion] if suggestion is not None else matches
             for suggestion in matches:
                 if not suggestion or suggestion == wrong_name:
                     continue
@@ -1350,8 +1357,9 @@ class TracebackException:
                 # Check if it works
                 try:
                     codeop.compile_command(code, symbol="exec", flags=codeop.PyCF_ONLY_AST)
-                except SyntaxError as e:
+                except SyntaxError:
                     continue
+
                 # Keep token.line but handle offsets correctly
                 self.text = token.line
                 self.offset = token.start[1] + 1
