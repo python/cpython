@@ -1,0 +1,2 @@
+Fix :exc:`AssertionError` raised on :class:`ctypes.Structure` with a
+``_align_ = 0``.
