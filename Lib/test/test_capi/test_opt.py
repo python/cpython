@@ -627,7 +627,7 @@ class TestUopsOptimization(unittest.TestCase):
 
         result = script_helper.run_python_until_end('-c', textwrap.dedent(f"""
         {EXTERNAL_SETUP}
-        
+
         def testfunc(n):
             for i in range(n):
                 x = range(i)
@@ -1799,7 +1799,7 @@ EXTERNAL_SETUP = """
         import _testinternalcapi
         import opcode
         import _opcode
-        
+
         def get_first_executor(func):
             code = func.__code__
             co_code = code.co_code
@@ -1809,7 +1809,7 @@ EXTERNAL_SETUP = """
                 except ValueError:
                     pass
             return None
-        
+
         def get_opnames(ex):
             return {item[0] for item in ex}
 """
