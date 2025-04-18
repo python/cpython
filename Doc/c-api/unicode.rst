@@ -673,7 +673,7 @@ APIs:
    Try to resize the string in place (which is usually faster than allocating
    a new string and copying characters), or create a new string.
 
-   ``*unicode`` is modified to point to the new (resized) object and 0 is
+   ``*unicode`` is modified to point to the new (resized) object and ``0`` is
    returned on success. Otherwise, ``-1`` is returned and an exception is set,
    and ``*unicode`` is left untouched.
 
