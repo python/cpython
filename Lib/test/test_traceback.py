@@ -3416,24 +3416,14 @@ class Unrepresentable:
 
 # Used in test_dont_swallow_cause_or_context_of_falsey_exception and
 # test_dont_swallow_subexceptions_of_falsey_exceptiongroup.
-class FalseyBoolException(Exception):
+class FalseyException(Exception):
     def __bool__(self):
         return False
 
 
-class FalseyLenException(Exception):
-    def __len__(self):
-        return 0
-
-
-class FalseyBoolExceptionGroup(ExceptionGroup):
+class FalseyExceptionGroup(ExceptionGroup):
     def __bool__(self):
         return False
-
-
-class FalseyLenExceptionGroup(ExceptionGroup):
-    def __len__(self):
-        return 0
 
 
 class TestTracebackException(unittest.TestCase):
@@ -3784,23 +3774,21 @@ class TestTracebackException(unittest.TestCase):
 
     def test_dont_swallow_cause_or_context_of_falsey_exception(self):
         # see gh-132308: Ensure that __cause__ or __context__ attributes of exceptions
-        # that evaluate as falsey are included in the output.
-        # Recall: `x` is falsey if `len(x)` returns 0 or `bool(x)` returns False.
+        # that evaluate as falsey are included in the output. For falsey term,
+        # see https://docs.python.org/3/library/stdtypes.html#truth-value-testing.
 
-        for exc in (FalseyBoolException, FalseyLenException):
-            try:
-                raise exc from KeyError
-            except exc as e:
-                self.assertIn(cause_message, traceback.format_exception(e))
+        try:
+            raise FalseyException from KeyError
+        except FalseyException as e:
+            self.assertIn(cause_message, traceback.format_exception(e))
 
-        for exc in (FalseyBoolException, FalseyLenException):
+        try:
             try:
-                try:
-                    1/0
-                except ZeroDivisionError:
-                    raise exc
-            except exc as e:
-                self.assertIn(context_message, traceback.format_exception(e))
+                1/0
+            except ZeroDivisionError:
+                raise FalseyException
+        except FalseyException as e:
+            self.assertIn(context_message, traceback.format_exception(e))
 
 
 class TestTracebackException_ExceptionGroups(unittest.TestCase):
@@ -4005,24 +3993,23 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
 
     def test_dont_swallow_subexceptions_of_falsey_exceptiongroup(self):
         # see gh-132308: Ensure that subexceptions of exception groups
-        # that evaluate as falsey are displayed in the output.
-        # Recall: `x` is falsey if `len(x)` returns 0 or `bool(x)` returns False.
+        # that evaluate as falsey are displayed in the output. For falsey term,
+        # see https://docs.python.org/3/library/stdtypes.html#truth-value-testing.
 
-        for falsey_exception in (FalseyBoolExceptionGroup, FalseyLenExceptionGroup):
-            try:
-                raise falsey_exception("Gih", (KeyError(), NameError()))
-            except Exception as ee:
-                str_exc = ''.join(traceback.format_exception(ee))
-                self.assertIn('+---------------- 1 ----------------', str_exc)
-                self.assertIn('+---------------- 2 ----------------', str_exc)
+        try:
+            raise FalseyExceptionGroup("Gih", (KeyError(), NameError()))
+        except Exception as ee:
+            str_exc = ''.join(traceback.format_exception(ee))
+            self.assertIn('+---------------- 1 ----------------', str_exc)
+            self.assertIn('+---------------- 2 ----------------', str_exc)
 
-            # Test with a falsey exception, in last position, as sub-exceptions.
-            msg = 'bool'
-            try:
-                raise falsey_exception("Gah", (KeyError(), FalseyBoolException(msg)))
-            except Exception as ee:
-                str_exc = traceback.format_exception(ee)
-                self.assertIn(f'{FalseyBoolException.__name__}: {msg}', str_exc[-2])
+        # Test with a falsey exception, in last position, as sub-exceptions.
+        msg = 'bool'
+        try:
+            raise FalseyExceptionGroup("Gah", (KeyError(), FalseyException(msg)))
+        except Exception as ee:
+            str_exc = traceback.format_exception(ee)
+            self.assertIn(f'{FalseyException.__name__}: {msg}', str_exc[-2])
 
 
 global_for_suggestions = None

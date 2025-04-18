@@ -1,2 +1,3 @@
 The :class:`traceback.TracebackException` must include the  ``__context__``, ``__cause__`` attributes
 from falsey Exception, and the ``exceptions`` attribute from falsey ``ExceptionGroup`` in its render.
+For *falsey* term, see https://docs.python.org/3/library/stdtypes.html#truth-value-testing.
