@@ -312,8 +312,8 @@ _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args);
 
 /*
  * Indicate whether a special method of given 'oparg' can use the (improved)
- * alternative errror message instead. Only methods loaded by LOAD_SPECIAL
- * support alternative errror messages.
+ * alternative error message instead. Only methods loaded by LOAD_SPECIAL
+ * support alternative error messages.
  */
 extern int
 _PyEval_SpecialMethodCanSuggest(PyObject *self, int oparg);
