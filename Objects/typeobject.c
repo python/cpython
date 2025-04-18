@@ -3621,7 +3621,7 @@ static void object_dealloc(PyObject *);
 static PyObject *object_new(PyTypeObject *, PyObject *, PyObject *);
 static int object_init(PyObject *, PyObject *, PyObject *);
 static int update_slot(PyTypeObject *, PyObject *);
-static int fixup_slot_dispatchers(PyTypeObject *);
+static void fixup_slot_dispatchers(PyTypeObject *);
 static int type_new_set_names(PyTypeObject *);
 static int type_new_init_subclass(PyTypeObject *, PyObject *);
 
@@ -4577,9 +4577,7 @@ type_new_impl(type_new_ctx *ctx)
     }
 
     // Put the proper slots in place
-    if (fixup_slot_dispatchers(type) < 0) {
-        goto error;
-    }
+    fixup_slot_dispatchers(type);
 
     if (!_PyDict_HasOnlyStringKeys(type->tp_dict)) {
         if (PyErr_WarnFormat(
@@ -11333,12 +11331,10 @@ update_slot(PyTypeObject *type, PyObject *name)
 
 /* Store the proper functions in the slot dispatches at class (type)
    definition time, based upon which operations the class overrides in its
-   dict. Returns -1 and exception set on error or 0 otherwise.*/
-static int
+   dict. */
+static void
 fixup_slot_dispatchers(PyTypeObject *type)
 {
-    int res = 0;
-
     // This lock isn't strictly necessary because the type has not been
     // exposed to anyone else yet, but update_ont_slot calls find_name_in_mro
     // where we'd like to assert that the type is locked.
@@ -11347,11 +11343,10 @@ fixup_slot_dispatchers(PyTypeObject *type)
     PyObject *mro = lookup_tp_mro(type);
     assert(mro);
 
-    // Try to prebuild MRO dict. We build it in bottom-top manner,
-    // from bottom base to the top one, because the bottommost base
-    // has more items then other and copying it is preferable than
-    // merging.
-    // If we fails, then stop init type.
+    // Try to prebuild MRO dict. If we fails then clear mro_dict and
+    // reset error flag because we don't expect any exceptions. If
+    // fails to prebuild MRO dict then update_on_slot will use
+    // previous version of find_name_in_mro.
     PyObject *mro_dict = NULL;
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 0; i < n; i++) {
@@ -11362,31 +11357,26 @@ fixup_slot_dispatchers(PyTypeObject *type)
         if (i == 0) {
             mro_dict = PyDict_Copy(dict);
             if (!mro_dict) {
-                res = -1;
-                goto finish;
+                PyErr_Clear();
+                break;
             }
         } else {
             if (PyDict_Merge(mro_dict, dict, 1) < 0) {
-                res = -1;
-                goto finish;
+                Py_CLEAR(mro_dict);
+                PyErr_Clear();
+                break;
             }
         }
     }
 
-    assert(!res);
-    assert(mro_dict);
     assert(!PyErr_Occurred());
     for (pytype_slotdef *p = slotdefs; p->name; ) {
         p = update_one_slot(type, p, mro_dict);
     }
 
-    assert(!PyErr_Occurred());
-
-finish:
     Py_XDECREF(mro_dict);
 
     END_TYPE_LOCK();
-    return res;
 }
 
 static void
