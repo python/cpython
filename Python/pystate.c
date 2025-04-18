@@ -2691,7 +2691,12 @@ PyGILState_Ensure(void)
        called Py_Initialize(). */
 
     /* Ensure that _PyEval_InitThreads() and _PyGILState_Init() have been
-       called by Py_Initialize() */
+       called by Py_Initialize()
+
+       TODO: This isn't thread-safe. There's no protection here against
+       concurrent finalization of the interpreter; it's simply a guard
+       for *after* the interpreter has finalized.
+     */
     if (!_PyEval_ThreadsInitialized() || runtime->gilstate.autoInterpreterState == NULL) {
         PyThread_hang_thread();
     }
