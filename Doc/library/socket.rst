@@ -498,6 +498,9 @@ Constants
    .. versionchanged:: 3.11
       NetBSD support was added.
 
+   .. versionchanged:: next
+      Restored missing ``CAN_RAW_ERR_FILTER`` on Linux.
+
 .. data:: CAN_BCM
           CAN_BCM_*
 
