@@ -1615,7 +1615,7 @@ class CommandLineTestCase(unittest.TestCase):
 
     def test_protocol_flag(self, mock_func):
         options = ['-p', '--protocol']
-        protocols = ['HTTP/1.0', 'HTTP/1.1', 'HTTP/2.0', 'HTTP/3.0',]
+        protocols = ['HTTP/1.0', 'HTTP/1.1', 'HTTP/2.0', 'HTTP/3.0']
         for flag in options:
             for protocol in protocols:
                 with self.subTest(flag=flag, protocol=protocol):
