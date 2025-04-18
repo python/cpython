@@ -419,7 +419,7 @@ def resources_list(string):
 
 
 def priority_list(string):
-    return [t for t in string.split(",")]
+    return string.split(",")
 
 
 def _parse_args(args, **kwargs):
@@ -569,8 +569,8 @@ def _parse_args(args, **kwargs):
 
     ns.prioritize = [
         test
-        for priority_list in (ns.prioritize or ())
-        for test in priority_list
+        for test_list in (ns.prioritize or ())
+        for test in test_list
     ]
 
     return ns
