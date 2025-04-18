@@ -493,7 +493,8 @@ class TestPerfProfiler(unittest.TestCase, TestPerfProfilerMixin):
 
 def _is_perf_version_at_least(major, minor):
     # The output of perf --version looks like "perf version 6.7-3" but
-    # it can also be perf version "perf version 5.15.143"
+    # it can also be perf version "perf version 5.15.143", or even include
+    # a commit hash in the version string, like "6.12.9.g242e6068fd5c"
     try:
         output = subprocess.check_output(["perf", "--version"], text=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
@@ -501,7 +502,7 @@ def _is_perf_version_at_least(major, minor):
     version = output.split()[2]
     version = version.split("-")[0]
     version = version.split(".")
-    version = tuple(map(int, version))
+    version = tuple(map(int, version[:2]))
     return version >= (major, minor)
 
 

@@ -189,6 +189,26 @@ class AST_Tests(unittest.TestCase):
         # Check that compilation doesn't crash. Note: this may crash explicitly only on debug mode.
         compile(tree, "<string>", "exec")
 
+    def test_negative_locations_for_compile(self):
+        # See https://github.com/python/cpython/issues/130775
+        alias = ast.alias(name='traceback', lineno=0, col_offset=0)
+        for attrs in (
+            {'lineno': -2, 'col_offset': 0},
+            {'lineno': 0, 'col_offset': -2},
+            {'lineno': 0, 'col_offset': -2, 'end_col_offset': -2},
+            {'lineno': -2, 'end_lineno': -2, 'col_offset': 0},
+        ):
+            with self.subTest(attrs=attrs):
+                tree = ast.Module(body=[
+                    ast.Import(names=[alias], **attrs)
+                ], type_ignores=[])
+
+                # It used to crash on this step:
+                compile(tree, "<string>", "exec")
+
+                # This also must not crash:
+                ast.parse(tree, optimize=2)
+
     def test_slice(self):
         slc = ast.parse("x[::]").body[0].value.slice
         self.assertIsNone(slc.upper)
@@ -278,7 +298,7 @@ class AST_Tests(unittest.TestCase):
         x = ast.arguments()
         self.assertEqual(x._fields, ('posonlyargs', 'args', 'vararg', 'kwonlyargs',
                                      'kw_defaults', 'kwarg', 'defaults'))
-        self.assertEqual(x.__annotations__, {
+        self.assertEqual(ast.arguments.__annotations__, {
             'posonlyargs': list[ast.arg],
             'args': list[ast.arg],
             'vararg': ast.arg | None,

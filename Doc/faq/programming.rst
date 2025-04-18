@@ -1868,15 +1868,15 @@ object identity is assured.  Generally, there are three circumstances where
 identity is guaranteed:
 
 1) Assignments create new names but do not change object identity.  After the
-assignment ``new = old``, it is guaranteed that ``new is old``.
+   assignment ``new = old``, it is guaranteed that ``new is old``.
 
 2) Putting an object in a container that stores object references does not
-change object identity.  After the list assignment ``s[0] = x``, it is
-guaranteed that ``s[0] is x``.
+   change object identity.  After the list assignment ``s[0] = x``, it is
+   guaranteed that ``s[0] is x``.
 
 3) If an object is a singleton, it means that only one instance of that object
-can exist.  After the assignments ``a = None`` and ``b = None``, it is
-guaranteed that ``a is b`` because ``None`` is a singleton.
+   can exist.  After the assignments ``a = None`` and ``b = None``, it is
+   guaranteed that ``a is b`` because ``None`` is a singleton.
 
 In most other circumstances, identity tests are inadvisable and equality tests
 are preferred.  In particular, identity tests should not be used to check

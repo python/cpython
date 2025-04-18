@@ -21,7 +21,7 @@
 
 
 #define OFF(x) offsetof(PyTracebackObject, x)
-#define PUTS(fd, str) (void)_Py_write_noraise(fd, str, (int)strlen(str))
+#define PUTS(fd, str) (void)_Py_write_noraise(fd, str, strlen(str))
 
 #define MAX_STRING_LENGTH 500
 #define MAX_FRAME_DEPTH 100
@@ -1039,6 +1039,17 @@ _Py_DumpTraceback(int fd, PyThreadState *tstate)
     dump_traceback(fd, tstate, 1);
 }
 
+#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)
+# if defined(__OpenBSD__)
+    /* pthread_*_np functions, especially pthread_{get,set}_name_np().
+       pthread_np.h exists on both OpenBSD and FreeBSD but the latter declares
+       pthread_getname_np() and pthread_setname_np() in pthread.h as long as
+       __BSD_VISIBLE remains set.
+     */
+#   include <pthread_np.h>
+# endif
+#endif
+
 /* Write the thread identifier into the file 'fd': "Current thread 0xHHHH:\" if
    is_current is true, "Thread 0xHHHH:\n" otherwise.
 
@@ -1054,6 +1065,27 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
     _Py_DumpHexadecimal(fd,
                         tstate->thread_id,
                         sizeof(unsigned long) * 2);
+
+    // Write the thread name
+#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)
+    char name[100];
+    pthread_t thread = (pthread_t)tstate->thread_id;
+#ifdef HAVE_PTHREAD_GETNAME_NP
+    int rc = pthread_getname_np(thread, name, Py_ARRAY_LENGTH(name));
+#else /* defined(HAVE_PTHREAD_GET_NAME_NP) */
+    int rc = 0; /* pthread_get_name_np() returns void */
+    pthread_get_name_np(thread, name, Py_ARRAY_LENGTH(name));
+#endif
+    if (!rc) {
+        size_t len = strlen(name);
+        if (len) {
+            PUTS(fd, " [");
+            (void)_Py_write_noraise(fd, name, len);
+            PUTS(fd, "]");
+        }
+    }
+#endif
+
     PUTS(fd, " (most recent call first):\n");
 }
 

@@ -931,6 +931,8 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
     clear_freelist(&freelists->dicts, is_finalization, free_object);
     clear_freelist(&freelists->dictkeys, is_finalization, PyMem_Free);
     clear_freelist(&freelists->slices, is_finalization, free_object);
+    clear_freelist(&freelists->ranges, is_finalization, free_object);
+    clear_freelist(&freelists->range_iters, is_finalization, free_object);
     clear_freelist(&freelists->contexts, is_finalization, free_object);
     clear_freelist(&freelists->async_gens, is_finalization, free_object);
     clear_freelist(&freelists->async_gen_asends, is_finalization, free_object);
@@ -942,6 +944,8 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
     }
     clear_freelist(&freelists->unicode_writers, is_finalization, PyMem_Free);
     clear_freelist(&freelists->ints, is_finalization, free_object);
+    clear_freelist(&freelists->pycfunctionobject, is_finalization, PyObject_GC_Del);
+    clear_freelist(&freelists->pycmethodobject, is_finalization, PyObject_GC_Del);
     clear_freelist(&freelists->pymethodobjects, is_finalization, free_object);
 }
 

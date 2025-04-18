@@ -151,6 +151,8 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(filesystem_errors, WSTR, READ_ONLY, NO_SYS),
     SPEC(hash_seed, ULONG, READ_ONLY, NO_SYS),
     SPEC(home, WSTR_OPT, READ_ONLY, NO_SYS),
+    SPEC(thread_inherit_context, INT, READ_ONLY, NO_SYS),
+    SPEC(context_aware_warnings, INT, READ_ONLY, NO_SYS),
     SPEC(import_time, BOOL, READ_ONLY, NO_SYS),
     SPEC(install_signal_handlers, BOOL, READ_ONLY, NO_SYS),
     SPEC(isolated, BOOL, READ_ONLY, NO_SYS),  // sys.flags.isolated
@@ -162,6 +164,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(parse_argv, BOOL, READ_ONLY, NO_SYS),
     SPEC(pathconfig_warnings, BOOL, READ_ONLY, NO_SYS),
     SPEC(perf_profiling, UINT, READ_ONLY, NO_SYS),
+    SPEC(remote_debug, BOOL, READ_ONLY, NO_SYS),
     SPEC(program_name, WSTR, READ_ONLY, NO_SYS),
     SPEC(run_command, WSTR_OPT, READ_ONLY, NO_SYS),
     SPEC(run_filename, WSTR_OPT, READ_ONLY, NO_SYS),
@@ -317,6 +320,7 @@ The following implementation-specific options are available:\n\
 -X perf: support the Linux \"perf\" profiler; also PYTHONPERFSUPPORT=1\n\
 -X perf_jit: support the Linux \"perf\" profiler with DWARF support;\n\
          also PYTHON_PERF_JIT_SUPPORT=1\n\
+-X disable-remote-debug: disable remote debugging; also PYTHON_DISABLE_REMOTE_DEBUG\n\
 "
 #ifdef Py_DEBUG
 "-X presite=MOD: import this module before site; also PYTHON_PRESITE\n"
@@ -337,6 +341,14 @@ The following implementation-specific options are available:\n\
          PYTHON_TLBC\n"
 #endif
 "\
+-X thread_inherit_context=[0|1]: enable (1) or disable (0) threads inheriting\n\
+         context vars by default; enabled by default in the free-threaded\n\
+         build and disabled otherwise; also PYTHON_THREAD_INHERIT_CONTEXT\n\
+-X context_aware_warnings=[0|1]: if true (1) then the warnings module will\n\
+         use a context variables; if false (0) then the warnings module will\n\
+         use module globals, which is not concurrent-safe; set to true for\n\
+         free-threaded builds and false otherwise; also\n\
+         PYTHON_CONTEXT_AWARE_WARNINGS\n\
 -X tracemalloc[=N]: trace Python memory allocations; N sets a traceback limit\n \
          of N frames (default: 1); also PYTHONTRACEMALLOC=N\n\
 -X utf8[=0|1]: enable (1) or disable (0) UTF-8 mode; also PYTHONUTF8\n\
@@ -424,6 +436,10 @@ static const char usage_envvars[] =
 #ifdef Py_GIL_DISABLED
 "PYTHON_TLBC     : when set to 0, disables thread-local bytecode (-X tlbc)\n"
 #endif
+"PYTHON_THREAD_INHERIT_CONTEXT: if true (1), threads inherit context vars\n"
+"                   (-X thread_inherit_context)\n"
+"PYTHON_CONTEXT_AWARE_WARNINGS: if true (1), enable thread-safe warnings module\n"
+"                   behaviour (-X context_aware_warnings)\n"
 "PYTHONTRACEMALLOC: trace Python memory allocations (-X tracemalloc)\n"
 "PYTHONUNBUFFERED: disable stdout/stderr buffering (-u)\n"
 "PYTHONUTF8      : control the UTF-8 mode (-X utf8)\n"
@@ -921,6 +937,8 @@ config_check_consistency(const PyConfig *config)
     assert(config->cpu_count != 0);
     // config->use_frozen_modules is initialized later
     // by _PyConfig_InitImportConfig().
+    assert(config->thread_inherit_context >= 0);
+    assert(config->context_aware_warnings >= 0);
 #ifdef __APPLE__
     assert(config->use_system_logger >= 0);
 #endif
@@ -994,6 +1012,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->faulthandler = -1;
     config->tracemalloc = -1;
     config->perf_profiling = -1;
+    config->remote_debug = -1;
     config->module_search_paths_set = 0;
     config->parse_argv = 0;
     config->site_import = -1;
@@ -1026,6 +1045,13 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     config->_is_python_build = 0;
     config->code_debug_ranges = 1;
     config->cpu_count = -1;
+#ifdef Py_GIL_DISABLED
+    config->thread_inherit_context = 1;
+    config->context_aware_warnings = 1;
+#else
+    config->thread_inherit_context = 0;
+    config->context_aware_warnings = 0;
+#endif
 #ifdef __APPLE__
     config->use_system_logger = USE_SYSTEM_LOGGER_DEFAULT;
 #endif
@@ -1057,6 +1083,13 @@ config_init_defaults(PyConfig *config)
     config->pathconfig_warnings = 1;
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
+#endif
+#ifdef Py_GIL_DISABLED
+    config->thread_inherit_context = 1;
+    config->context_aware_warnings = 1;
+#else
+    config->thread_inherit_context = 0;
+    config->context_aware_warnings = 0;
 #endif
 #ifdef __APPLE__
     config->use_system_logger = USE_SYSTEM_LOGGER_DEFAULT;
@@ -1092,6 +1125,11 @@ PyConfig_InitIsolatedConfig(PyConfig *config)
     config->int_max_str_digits = _PY_LONG_DEFAULT_MAX_STR_DIGITS;
     config->safe_path = 1;
     config->pathconfig_warnings = 0;
+#ifdef Py_GIL_DISABLED
+    config->thread_inherit_context = 1;
+#else
+    config->thread_inherit_context = 0;
+#endif
 #ifdef MS_WINDOWS
     config->legacy_windows_stdio = 0;
 #endif
@@ -1922,6 +1960,58 @@ error:
 }
 
 static PyStatus
+config_init_thread_inherit_context(PyConfig *config)
+{
+    const char *env = config_get_env(config, "PYTHON_THREAD_INHERIT_CONTEXT");
+    if (env) {
+        int enabled;
+        if (_Py_str_to_int(env, &enabled) < 0 || (enabled < 0) || (enabled > 1)) {
+            return _PyStatus_ERR(
+                "PYTHON_THREAD_INHERIT_CONTEXT=N: N is missing or invalid");
+        }
+        config->thread_inherit_context = enabled;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"thread_inherit_context");
+    if (xoption) {
+        int enabled;
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (!sep || (config_wstr_to_int(sep + 1, &enabled) < 0) || (enabled < 0) || (enabled > 1)) {
+            return _PyStatus_ERR(
+                "-X thread_inherit_context=n: n is missing or invalid");
+        }
+        config->thread_inherit_context = enabled;
+    }
+    return _PyStatus_OK();
+}
+
+static PyStatus
+config_init_context_aware_warnings(PyConfig *config)
+{
+    const char *env = config_get_env(config, "PYTHON_CONTEXT_AWARE_WARNINGS");
+    if (env) {
+        int enabled;
+        if (_Py_str_to_int(env, &enabled) < 0 || (enabled < 0) || (enabled > 1)) {
+            return _PyStatus_ERR(
+                "PYTHON_CONTEXT_AWARE_WARNINGS=N: N is missing or invalid");
+        }
+        config->context_aware_warnings = enabled;
+    }
+
+    const wchar_t *xoption = config_get_xoption(config, L"context_aware_warnings");
+    if (xoption) {
+        int enabled;
+        const wchar_t *sep = wcschr(xoption, L'=');
+        if (!sep || (config_wstr_to_int(sep + 1, &enabled) < 0) || (enabled < 0) || (enabled > 1)) {
+            return _PyStatus_ERR(
+                "-X context_aware_warnings=n: n is missing or invalid");
+        }
+        config->context_aware_warnings = enabled;
+    }
+    return _PyStatus_OK();
+}
+
+static PyStatus
 config_init_tlbc(PyConfig *config)
 {
 #ifdef Py_GIL_DISABLED
@@ -1982,6 +2072,28 @@ config_init_perf_profiling(PyConfig *config)
         config->perf_profiling = 2;
     }
 
+    return _PyStatus_OK();
+
+}
+
+static PyStatus
+config_init_remote_debug(PyConfig *config)
+{
+#ifndef Py_REMOTE_DEBUG
+    config->remote_debug = 0;
+#else
+    int active = 1;
+    const char *env = Py_GETENV("PYTHON_DISABLE_REMOTE_DEBUG");
+    if (env) {
+        active = 0;
+    }
+    const wchar_t *xoption = config_get_xoption(config, L"disable-remote-debug");
+    if (xoption) {
+        active = 0;
+    }
+
+    config->remote_debug = active;
+#endif
     return _PyStatus_OK();
 
 }
@@ -2170,6 +2282,13 @@ config_read_complex_options(PyConfig *config)
         }
     }
 
+    if (config->remote_debug < 0) {
+        status = config_init_remote_debug(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
+    }
+
     if (config->int_max_str_digits < 0) {
         status = config_init_int_max_str_digits(config);
         if (_PyStatus_EXCEPTION(status)) {
@@ -2199,6 +2318,16 @@ config_read_complex_options(PyConfig *config)
         }
     }
 #endif
+
+    status = config_init_thread_inherit_context(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
+
+    status = config_init_context_aware_warnings(config);
+    if (_PyStatus_EXCEPTION(status)) {
+        return status;
+    }
 
     status = config_init_tlbc(config);
     if (_PyStatus_EXCEPTION(status)) {
@@ -2530,6 +2659,9 @@ config_read(PyConfig *config, int compute_path_config)
     }
     if (config->perf_profiling < 0) {
         config->perf_profiling = 0;
+    }
+    if (config->remote_debug < 0) {
+        config->remote_debug = -1;
     }
     if (config->use_hash_seed < 0) {
         config->use_hash_seed = 0;

@@ -400,8 +400,10 @@ search_map_for_section(pid_t pid, const char* secname, const char* map)
     }
 
 exit:
-    if (close(fd) != 0) {
+    if (fd >= 0 && close(fd) != 0) {
+        PyObject *exc = PyErr_GetRaisedException();
         PyErr_SetFromErrno(PyExc_OSError);
+        _PyErr_ChainExceptions1(exc);
     }
     if (file_memory != NULL) {
         munmap(file_memory, file_stats.st_size);
