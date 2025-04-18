@@ -35,6 +35,7 @@
 #endif
 // Macro to use the more powerful/dangerous C-style cast even in C++.
 #define _Py_CAST(type, expr) ((type)(expr))
+
 // Cast a function to another function type T.
 //
 // The macro first casts the function to the "void func(void)" type
