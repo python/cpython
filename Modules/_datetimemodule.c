@@ -219,18 +219,16 @@ set_current_module(PyInterpreterState *interp, PyObject *mod)
     if (ref == NULL) {
         return -1;
     }
-
-    if (!PyDict_ContainsString(dict, "datetime_module_spec")) {
-        PyObject *spec;
-        if (PyDict_GetItemRef(PyModule_GetDict(mod), &_Py_ID(__spec__), &spec) != 1) {
-            return -1;
-        }
-        if (PyDict_SetItemString(dict, "datetime_module_spec", spec) < 0) {
-            Py_DECREF(spec);
-            return -1;
-        }
-        Py_DECREF(spec);
+    /* A module spec remains in the dict */
+    PyObject *spec;
+    if (PyDict_GetItemRef(PyModule_GetDict(mod), &_Py_ID(__spec__), &spec) != 1) {
+        return -1;
     }
+    if (PyDict_SetItemString(dict, "datetime_module_spec", spec) < 0) {
+        Py_DECREF(spec);
+        return -1;
+    }
+    Py_DECREF(spec);
 
     int rc = PyDict_SetItem(dict, INTERP_KEY, ref);
     Py_DECREF(ref);
