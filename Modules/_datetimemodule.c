@@ -219,7 +219,7 @@ set_current_module(PyInterpreterState *interp, PyObject *mod)
     if (ref == NULL) {
         return -1;
     }
-    /* A module spec remains in the interpreter's dict. */
+    /* Module spec remains in the interpreter's dict. */
     PyObject *mod_dict = PyModule_GetDict(mod);
     if (mod_dict == NULL) {
         return -1;
