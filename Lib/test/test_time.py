@@ -184,6 +184,11 @@ class TimeTestCase(unittest.TestCase):
         # Only test the date and time, ignore other gmtime() members
         self.assertEqual(tuple(epoch)[:6], (1970, 1, 1, 0, 0, 0), epoch)
 
+    def test_sleep_invalid(self):
+        with self.assertRaisesRegex(
+                TypeError, 'an integer or float is required'):
+            time.sleep('foo')
+
     def test_strftime(self):
         tt = time.gmtime(self.t)
         for directive in ('a', 'A', 'b', 'B', 'c', 'd', 'H', 'I',
