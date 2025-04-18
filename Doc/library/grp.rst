@@ -1,5 +1,5 @@
-:mod:`grp` --- The group database
-=================================
+:mod:`!grp` --- The group database
+==================================
 
 .. module:: grp
    :platform: Unix
@@ -10,7 +10,7 @@
 This module provides access to the Unix group database. It is available on all
 Unix versions.
 
-.. include:: ../includes/wasm-notavail.rst
+.. availability:: Unix, not WASI, not Android, not iOS.
 
 Group database entries are reported as a tuple-like object, whose attributes
 correspond to the members of the ``group`` structure (Attribute field below, see
@@ -63,7 +63,3 @@ It defines the following items:
 
    Module :mod:`pwd`
       An interface to the user database, similar to this.
-
-   Module :mod:`spwd`
-      An interface to the shadow password database, similar to this.
-

@@ -1,0 +1,18 @@
+fix = true
+extend-exclude = [
+    # Excluded (run with the other AC files in its own separate ruff job in pre-commit)
+    "test_clinic.py",
+    # Excluded (these aren't actually executed, they're just "data files")
+    "tokenizedata/*.py",
+    # Non UTF-8 files
+    "encoded_modules/module_iso_8859_1.py",
+    "encoded_modules/module_koi8_r.py",
+    # New grammar constructions may not yet be recognized by Ruff,
+    # and tests re-use the same names as only the grammar is being checked.
+    "test_grammar.py",
+]
+
+[lint]
+select = [
+    "F811",  # Redefinition of unused variable (useful for finding test methods with the same name)
+]

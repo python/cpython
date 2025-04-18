@@ -48,6 +48,42 @@ The return value (*rv*) for these functions should be interpreted as follows:
 
 The following functions provide locale-independent string to number conversions.
 
+.. c:function:: unsigned long PyOS_strtoul(const char *str, char **ptr, int base)
+
+   Convert the initial part of the string in ``str`` to an :c:expr:`unsigned
+   long` value according to the given ``base``, which must be between ``2`` and
+   ``36`` inclusive, or be the special value ``0``.
+
+   Leading white space and case of characters are ignored.  If ``base`` is zero
+   it looks for a leading ``0b``, ``0o`` or ``0x`` to tell which base.  If
+   these are absent it defaults to ``10``.  Base must be 0 or between 2 and 36
+   (inclusive).  If ``ptr`` is non-``NULL`` it will contain a pointer to the
+   end of the scan.
+
+   If the converted value falls out of range of corresponding return type,
+   range error occurs (:c:data:`errno` is set to :c:macro:`!ERANGE`) and
+   :c:macro:`!ULONG_MAX` is returned.  If no conversion can be performed, ``0``
+   is returned.
+
+   See also the Unix man page :manpage:`strtoul(3)`.
+
+   .. versionadded:: 3.2
+
+
+.. c:function:: long PyOS_strtol(const char *str, char **ptr, int base)
+
+   Convert the initial part of the string in ``str`` to an :c:expr:`long` value
+   according to the given ``base``, which must be between ``2`` and ``36``
+   inclusive, or be the special value ``0``.
+
+   Same as :c:func:`PyOS_strtoul`, but return a :c:expr:`long` value instead
+   and :c:macro:`LONG_MAX` on overflows.
+
+   See also the Unix man page :manpage:`strtol(3)`.
+
+   .. versionadded:: 3.2
+
+
 .. c:function:: double PyOS_string_to_double(const char *s, char **endptr, PyObject *overflow_exception)
 
    Convert a string ``s`` to a :c:expr:`double`, raising a Python
@@ -69,7 +105,7 @@ The following functions provide locale-independent string to number conversions.
 
    If ``s`` represents a value that is too large to store in a float
    (for example, ``"1e500"`` is such a string on many platforms) then
-   if ``overflow_exception`` is ``NULL`` return ``Py_HUGE_VAL`` (with
+   if ``overflow_exception`` is ``NULL`` return ``Py_INFINITY`` (with
    an appropriate sign) and don't set any exception.  Otherwise,
    ``overflow_exception`` must point to a Python exception object;
    raise that exception and return ``-1.0``.  In both cases, set
@@ -119,10 +155,10 @@ The following functions provide locale-independent string to number conversions.
 .. c:function:: int PyOS_stricmp(const char *s1, const char *s2)
 
    Case insensitive comparison of strings. The function works almost
-   identically to :c:func:`strcmp` except that it ignores the case.
+   identically to :c:func:`!strcmp` except that it ignores the case.
 
 
 .. c:function:: int PyOS_strnicmp(const char *s1, const char *s2, Py_ssize_t  size)
 
    Case insensitive comparison of strings. The function works almost
-   identically to :c:func:`strncmp` except that it ignores the case.
+   identically to :c:func:`!strncmp` except that it ignores the case.

@@ -3,7 +3,7 @@ import os.path
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import IO, Any, Dict, List, Optional, Set, Text, Tuple
+from typing import IO, Any, Callable, Dict, List, Optional, Set, Text, Tuple
 
 from pegen import grammar
 from pegen.grammar import (
@@ -38,9 +38,13 @@ EXTENSION_PREFIX = """\
 #endif
 
 #ifdef __wasi__
-#  define MAXSTACK 4000
+#  ifdef Py_DEBUG
+#    define MAXSTACK 1000
+#  else
+#    define MAXSTACK 4000
+#  endif
 #else
-#  define MAXSTACK 6000
+#  define MAXSTACK 4000
 #endif
 
 """
@@ -68,6 +72,7 @@ class NodeTypes(Enum):
     KEYWORD = 4
     SOFT_KEYWORD = 5
     CUT_OPERATOR = 6
+    F_STRING_CHUNK = 7
 
 
 BASE_NODETYPES = {
@@ -125,7 +130,7 @@ class CCallMakerVisitor(GrammarVisitor):
         self.gen = parser_generator
         self.exact_tokens = exact_tokens
         self.non_exact_tokens = non_exact_tokens
-        self.cache: Dict[Any, FunctionCall] = {}
+        self.cache: Dict[str, str] = {}
         self.cleanup_statements: List[str] = []
 
     def keyword_helper(self, keyword: str) -> FunctionCall:
@@ -201,21 +206,6 @@ class CCallMakerVisitor(GrammarVisitor):
                 comment=f"token='{val}'",
             )
 
-    def visit_Rhs(self, node: Rhs) -> FunctionCall:
-        if node in self.cache:
-            return self.cache[node]
-        if node.can_be_inlined:
-            self.cache[node] = self.generate_call(node.alts[0].items[0])
-        else:
-            name = self.gen.artifical_rule_from_rhs(node)
-            self.cache[node] = FunctionCall(
-                assigned_variable=f"{name}_var",
-                function=f"{name}_rule",
-                arguments=["p"],
-                comment=f"{node}",
-            )
-        return self.cache[node]
-
     def visit_NamedItem(self, node: NamedItem) -> FunctionCall:
         call = self.generate_call(node.item)
         if node.name:
@@ -248,7 +238,7 @@ class CCallMakerVisitor(GrammarVisitor):
         else:
             return FunctionCall(
                 function=f"_PyPegen_lookahead",
-                arguments=[positive, call.function, *call.arguments],
+                arguments=[positive, f"(void *(*)(Parser *)) {call.function}", *call.arguments],
                 return_type="int",
             )
 
@@ -297,44 +287,62 @@ class CCallMakerVisitor(GrammarVisitor):
             comment=f"{node}",
         )
 
-    def visit_Repeat0(self, node: Repeat0) -> FunctionCall:
-        if node in self.cache:
-            return self.cache[node]
-        name = self.gen.artificial_rule_from_repeat(node.node, False)
-        self.cache[node] = FunctionCall(
+    def _generate_artificial_rule_call(
+        self,
+        node: Any,
+        prefix: str,
+        rule_generation_func: Callable[[], str],
+        return_type: Optional[str] = None,
+    ) -> FunctionCall:
+        node_str = f"{node}"
+        key = f"{prefix}_{node_str}"
+        if key in self.cache:
+            name = self.cache[key]
+        else:
+            name = rule_generation_func()
+            self.cache[key] = name
+
+        return FunctionCall(
             assigned_variable=f"{name}_var",
             function=f"{name}_rule",
             arguments=["p"],
-            return_type="asdl_seq *",
-            comment=f"{node}",
+            return_type=return_type,
+            comment=node_str,
         )
-        return self.cache[node]
+
+    def visit_Rhs(self, node: Rhs) -> FunctionCall:
+        if node.can_be_inlined:
+            return self.generate_call(node.alts[0].items[0])
+
+        return self._generate_artificial_rule_call(
+            node,
+            "rhs",
+            lambda: self.gen.artificial_rule_from_rhs(node),
+        )
+
+    def visit_Repeat0(self, node: Repeat0) -> FunctionCall:
+        return self._generate_artificial_rule_call(
+            node,
+            "repeat0",
+            lambda: self.gen.artificial_rule_from_repeat(node.node, is_repeat1=False),
+            "asdl_seq *",
+        )
 
     def visit_Repeat1(self, node: Repeat1) -> FunctionCall:
-        if node in self.cache:
-            return self.cache[node]
-        name = self.gen.artificial_rule_from_repeat(node.node, True)
-        self.cache[node] = FunctionCall(
-            assigned_variable=f"{name}_var",
-            function=f"{name}_rule",
-            arguments=["p"],
-            return_type="asdl_seq *",
-            comment=f"{node}",
+        return self._generate_artificial_rule_call(
+            node,
+            "repeat1",
+            lambda: self.gen.artificial_rule_from_repeat(node.node, is_repeat1=True),
+            "asdl_seq *",
         )
-        return self.cache[node]
 
     def visit_Gather(self, node: Gather) -> FunctionCall:
-        if node in self.cache:
-            return self.cache[node]
-        name = self.gen.artifical_rule_from_gather(node)
-        self.cache[node] = FunctionCall(
-            assigned_variable=f"{name}_var",
-            function=f"{name}_rule",
-            arguments=["p"],
-            return_type="asdl_seq *",
-            comment=f"{node}",
+        return self._generate_artificial_rule_call(
+            node,
+            "gather",
+            lambda: self.gen.artificial_rule_from_gather(node),
+            "asdl_seq *",
         )
-        return self.cache[node]
 
     def visit_Group(self, node: Group) -> FunctionCall:
         return self.generate_call(node.rhs)
@@ -372,10 +380,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
         self.cleanup_statements: List[str] = []
 
     def add_level(self) -> None:
-        self.print("if (p->level++ == MAXSTACK) {")
+        self.print("if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {")
         with self.indent():
-            self.print("p->error_indicator = 1;")
-            self.print("PyErr_NoMemory();")
+            self.print("_Pypegen_stack_overflow(p);")
         self.print("}")
 
     def remove_level(self) -> None:
@@ -619,7 +626,8 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                     self.add_return("_res")
                 self.print("}")
             self.print("int _mark = p->mark;")
-            self.print("int _start_mark = p->mark;")
+            if memoize:
+                self.print("int _start_mark = p->mark;")
             self.print("void **_children = PyMem_Malloc(sizeof(void *));")
             self.out_of_memory_return(f"!_children")
             self.print("Py_ssize_t _children_capacity = 1;")
@@ -640,9 +648,9 @@ class CParserGenerator(ParserGenerator, GrammarVisitor):
                 self.print("}")
             self.print("asdl_seq *_seq = (asdl_seq*)_Py_asdl_generic_seq_new(_n, p->arena);")
             self.out_of_memory_return(f"!_seq", cleanup_code="PyMem_Free(_children);")
-            self.print("for (int i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);")
+            self.print("for (Py_ssize_t i = 0; i < _n; i++) asdl_seq_SET_UNTYPED(_seq, i, _children[i]);")
             self.print("PyMem_Free(_children);")
-            if node.name:
+            if memoize and node.name:
                 self.print(f"_PyPegen_insert_memo(p, _start_mark, {node.name}_type, _seq);")
             self.add_return("_seq")
 
