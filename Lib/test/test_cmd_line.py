@@ -17,6 +17,8 @@ from test.support.script_helper import (
     spawn_python, kill_python, assert_python_ok, assert_python_failure,
     interpreter_requires_environment
 )
+from textwrap import dedent
+
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
@@ -1053,7 +1055,6 @@ class CmdLineTest(unittest.TestCase):
 
     def test_cmd_dedent(self):
         # test that -c auto-dedents its arguments
-        from textwrap import dedent
         test_cases = [
             (
                 """
@@ -1095,6 +1096,14 @@ class CmdLineTest(unittest.TestCase):
                 # are part of a data string. This is consistent with
                 # textwrap.dedent behavior, but might not be intuitive.
                 "'\\n\\nthis data has an empty newline above and a newline with spaces below \\n\\n'",
+            ),
+            (
+                '',
+                '',
+            ),
+            (
+                '  \t\n\t\n \t\t\t  \t\t \t\n\t\t \n\n\n\t\t\t   ',
+                '',
             ),
         ]
         for code, expected in test_cases:
