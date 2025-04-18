@@ -1277,13 +1277,13 @@ class TracebackException:
         if self.exceptions and show_group:
             for ex in self.exceptions:
                 yield from ex.format_exception_only(show_group=show_group, _depth=_depth+1, colorize=colorize)
-    
+
     def _find_keyword_typos(self):
         try:
             import _suggestions
         except ImportError:
             return
-        
+
         assert self._is_syntax_error
 
         # Only try to find keyword typos if there is no custom message
@@ -1292,7 +1292,7 @@ class TracebackException:
 
         if not self._exc_metadata:
             return
-        
+
         line, offset, source = self._exc_metadata
         end_line = int(self.lineno) if self.lineno is not None else 0
         lines = None
@@ -1310,7 +1310,7 @@ class TracebackException:
             lines = lines if lines is not None else self.text.splitlines()
         else:
             lines = source.splitlines()
-        
+
         error_code = lines[line -1 if line > 0 else 0:end_line]
         error_code[0] = error_code[0][offset:]
         error_code = textwrap.dedent(''.join(error_code))
@@ -1356,7 +1356,7 @@ class TracebackException:
             self.end_lineno = end[0]
             self.msg = f"invalid syntax. Did you mean '{suggestion}'?"
             return
-        
+
 
     def _format_syntax_error(self, stype, **kwargs):
         """Format SyntaxError exceptions (internal helper)."""
