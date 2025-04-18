@@ -326,7 +326,8 @@ def quote(s):
     safe_chars = (b'%+,-./0123456789:=@'
                   b'ABCDEFGHIJKLMNOPQRSTUVWXYZ_'
                   b'abcdefghijklmnopqrstuvwxyz')
-    if not s.encode().translate(None, delete=safe_chars):
+    # No quoting is needed if `s` is an ASCII string consisting only of `safe_chars`
+    if s.isascii() and not s.encode().translate(None, delete=safe_chars):
         return s
 
     # use single quotes, and put single quotes into double quotes
