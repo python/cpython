@@ -769,6 +769,56 @@ class DedentTestCase(unittest.TestCase):
         """assert that dedent() has no effect on 'text'"""
         self.assertEqual(text, dedent(text))
 
+    def test_dedent_whitespace(self):
+        # The empty string.
+        text = ""
+        self.assertUnchanged(text)
+
+        # Only spaces.
+        text = "    "
+        expect = ""
+        self.assertEqual(expect, dedent(text))
+
+        # Only tabs.
+        text = "\t\t\t\t"
+        expect = ""
+        self.assertEqual(expect, dedent(text))
+
+        # A mixture.
+        text = " \t  \t\t  \t "
+        expect = ""
+        self.assertEqual(expect, dedent(text))
+
+        # ASCII whitespace.
+        text = "\f\n\r\t\v "
+        expect = "\n"
+        self.assertEqual(expect, dedent(text))
+
+        # One newline.
+        text = "\n"
+        expect = "\n"
+        self.assertEqual(expect, dedent(text))
+
+        # Windows-style newlines.
+        text = "\r\n" * 5
+        expect = "\n" * 5
+        self.assertEqual(expect, dedent(text))
+
+        # Whitespace mixture.
+        text = "    \n\t\n  \n\t\t\n\n\n       "
+        expect = "\n\n\n\n\n\n"
+        self.assertEqual(expect, dedent(text))
+
+        # Lines consisting only of whitespace are always normalised
+        text = "a\n \n\t\n"
+        expect = "a\n\n\n"
+        self.assertEqual(expect, dedent(text))
+
+        # Whitespace characters on non-empty lines are retained
+        text = "a\r\n\r\n\r\n"
+        expect = "a\r\n\n\n"
+        self.assertEqual(expect, dedent(text))
+
     def test_dedent_nomargin(self):
         # No lines indented.
         text = "Hello there.\nHow are you?\nOh good, I'm glad."

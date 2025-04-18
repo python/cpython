@@ -27,7 +27,7 @@ def get_displaylines(text, index):
     """Display height, in lines, of a logical line in a Tk text widget."""
     return text.count(f"{index} linestart",
                       f"{index} lineend",
-                      "displaylines")
+                      "displaylines", return_ints=True)
 
 def get_widget_padding(widget):
     """Get the total padding of a Tk widget, including its border."""

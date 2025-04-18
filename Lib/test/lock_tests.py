@@ -353,6 +353,18 @@ class RLockTests(BaseLockTests):
         lock.release()
         self.assertRaises(RuntimeError, lock.release)
 
+    def test_locked(self):
+        lock = self.locktype()
+        self.assertFalse(lock.locked())
+        lock.acquire()
+        self.assertTrue(lock.locked())
+        lock.acquire()
+        self.assertTrue(lock.locked())
+        lock.release()
+        self.assertTrue(lock.locked())
+        lock.release()
+        self.assertFalse(lock.locked())
+
     def test_release_save_unacquired(self):
         # Cannot _release_save an unacquired lock
         lock = self.locktype()
@@ -1012,6 +1024,10 @@ class BarrierTests(BaseTestCase):
             self.barrier.wait()
         self.assertEqual(self.barrier.n_waiting, 0)
         self.assertFalse(self.barrier.broken)
+
+    def test_constructor(self):
+        self.assertRaises(ValueError, self.barriertype, parties=0)
+        self.assertRaises(ValueError, self.barriertype, parties=-1)
 
     def test_barrier(self, passes=1):
         """

@@ -11,7 +11,7 @@ terms of the MIT license. A copy of the license can be found in the file
 // --------------------------------------------------------------------------------------------
 // Atomics
 // We need to be portable between C, C++, and MSVC.
-// We base the primitives on the C/C++ atomics and create a mimimal wrapper for MSVC in C compilation mode.
+// We base the primitives on the C/C++ atomics and create a minimal wrapper for MSVC in C compilation mode.
 // This is why we try to use only `uintptr_t` and `<type>*` as atomic types.
 // To gain better insight in the range of used atomics, we use explicitly named memory order operations
 // instead of passing the memory order as a parameter.
@@ -23,7 +23,9 @@ terms of the MIT license. A copy of the license can be found in the file
 #define  _Atomic(tp)            std::atomic<tp>
 #define  mi_atomic(name)        std::atomic_##name
 #define  mi_memory_order(name)  std::memory_order_##name
-#if !defined(ATOMIC_VAR_INIT) || (__cplusplus >= 202002L) // c++20, see issue #571
+#if (__cplusplus >= 202002L)    // c++20, see issue #571
+ #define MI_ATOMIC_VAR_INIT(x)  x
+#elif !defined(ATOMIC_VAR_INIT)
  #define MI_ATOMIC_VAR_INIT(x)  x
 #else
  #define MI_ATOMIC_VAR_INIT(x)  ATOMIC_VAR_INIT(x)
@@ -39,7 +41,9 @@ terms of the MIT license. A copy of the license can be found in the file
 #include <stdatomic.h>
 #define  mi_atomic(name)        atomic_##name
 #define  mi_memory_order(name)  memory_order_##name
-#if !defined(ATOMIC_VAR_INIT) || (__STDC_VERSION__ >= 201710L) // c17, see issue #735
+#if (__STDC_VERSION__ >= 201710L) // c17, see issue #735
+ #define MI_ATOMIC_VAR_INIT(x) x
+#elif !defined(ATOMIC_VAR_INIT)
  #define MI_ATOMIC_VAR_INIT(x) x
 #else
  #define MI_ATOMIC_VAR_INIT(x) ATOMIC_VAR_INIT(x)
@@ -334,8 +338,9 @@ static inline void mi_atomic_yield(void) {
   _mm_pause();
 }
 #elif (defined(__GNUC__) || defined(__clang__)) && \
-      (defined(__x86_64__) || defined(__i386__) || defined(__arm__) || defined(__armel__) || defined(__ARMEL__) || \
-       defined(__aarch64__) || defined(__powerpc__) || defined(__ppc__) || defined(__PPC__)) || defined(__POWERPC__)
+      (defined(__x86_64__) || defined(__i386__) || \
+       defined(__aarch64__) || defined(__arm__) || \
+       defined(__powerpc__) || defined(__ppc__) || defined(__PPC__) || defined(__POWERPC__))
 #if defined(__x86_64__) || defined(__i386__)
 static inline void mi_atomic_yield(void) {
   __asm__ volatile ("pause" ::: "memory");
@@ -344,10 +349,16 @@ static inline void mi_atomic_yield(void) {
 static inline void mi_atomic_yield(void) {
   __asm__ volatile("wfe");
 }
-#elif (defined(__arm__) && __ARM_ARCH__ >= 7)
+#elif defined(__arm__)
+#if __ARM_ARCH >= 7
 static inline void mi_atomic_yield(void) {
   __asm__ volatile("yield" ::: "memory");
 }
+#else
+static inline void mi_atomic_yield(void) {
+  __asm__ volatile ("nop" ::: "memory");
+}
+#endif
 #elif defined(__powerpc__) || defined(__ppc__) || defined(__PPC__) || defined(__POWERPC__)
 #ifdef __APPLE__
 static inline void mi_atomic_yield(void) {
@@ -358,10 +369,6 @@ static inline void mi_atomic_yield(void) {
   __asm__ __volatile__ ("or 27,27,27" ::: "memory");
 }
 #endif
-#elif defined(__armel__) || defined(__ARMEL__)
-static inline void mi_atomic_yield(void) {
-  __asm__ volatile ("nop" ::: "memory");
-}
 #endif
 #elif defined(__sun)
 // Fallback for other archs

@@ -166,7 +166,7 @@ a DeprecationWarning.  Patch by Emanuel Barry.
 .. nonce: aABzcL
 .. section: Core and Builtins
 
-`dict` implementation is changed like PyPy. It is more compact and preserves
+``dict`` implementation is changed like PyPy. It is more compact and preserves
 insertion order. (Concept developed by Raymond Hettinger and patch by Inada
 Naoki.)
 
@@ -949,7 +949,7 @@ Add scrypt (password-based key derivation function) to hashlib module
 .. section: Library
 
 Remove 3DES from ssl module's default cipher list to counter measure sweet32
-attack (CVE-2016-2183).
+attack (:cve:`2016-2183`).
 
 ..
 
@@ -1137,7 +1137,7 @@ chunked transfer-encoding.
 .. section: Library
 
 A new version of typing.py from https://github.com/python/typing: -
-Collection (only for 3.6) (Issue #27598) - Add FrozenSet to __all__
+Collection (only for 3.6) (issue #27598) - Add FrozenSet to __all__
 (upstream #261) - fix crash in _get_type_vars() (upstream #259) - Remove the
 dict constraint in ForwardRef._eval_type (upstream #252)
 
