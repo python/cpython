@@ -7285,6 +7285,7 @@ class ExtensionModuleTests(unittest.TestCase):
                     assert not sys.modules
                     td = _datetime.timedelta(days=1)  # crash
                     assert td.days == 1
+                    assert not sys.modules
 
             it = gen()
             next(it)
