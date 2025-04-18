@@ -2540,11 +2540,13 @@ class _RemotePdb(Pdb):
             # return an empty string because the socket may be half-closed.
             self._write_failed = True
 
+    @typing.override
     def message(self, msg, end="\n"):
-        self._send(message=msg + end)
+        self._send(message=str(msg) + end)
 
+    @typing.override
     def error(self, msg):
-        self._send(error=msg)
+        self._send(error=str(msg))
 
     def _read_command(self) -> str:
         # Loop until we get a command for PDB or an 'interact' REPL.
