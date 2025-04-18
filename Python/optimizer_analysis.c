@@ -567,7 +567,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 switch (last->opcode) {
                     case _POP_TWO_LOAD_CONST_INLINE_BORROW:
                         last->opcode = _POP_TOP;
-                        goto optimize_pop_top_again;
+                        break;
                     case _POP_TOP_LOAD_CONST_INLINE:
                     case _POP_TOP_LOAD_CONST_INLINE_BORROW:
                         last->opcode = _NOP;
