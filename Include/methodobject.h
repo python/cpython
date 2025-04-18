@@ -33,7 +33,7 @@ typedef PyObject *(*PyCMethod)(PyObject *, PyTypeObject *, PyObject *const *,
 typedef PyCFunctionFast _PyCFunctionFast;
 typedef PyCFunctionFastWithKeywords _PyCFunctionFastWithKeywords;
 
-// Cast an function to the PyCFunction type to use it with PyMethodDef.
+// Cast a function to the PyCFunction type to use it with PyMethodDef.
 //
 // This macro can be used to prevent compiler warnings if the first parameter
 // uses a different pointer type than PyObject* (ex: METH_VARARGS and METH_O
