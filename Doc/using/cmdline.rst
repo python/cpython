@@ -73,7 +73,7 @@ source.
 
    .. audit-event:: cpython.run_command command cmdoption-c
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       *command* is automatically dedented before execution.
 
 .. option:: -m <module-name>

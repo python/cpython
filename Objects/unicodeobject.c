@@ -14278,9 +14278,9 @@ point to the beginning of the common leading whitespace if length > 0.
 */
 static Py_ssize_t
 search_longest_common_leading_whitespace(
-    const char * const src,
-    const char * const end,
-    const char * * output)
+    const char *const src,
+    const char *const end,
+    const char **output)
 {
     // [_start, _start + _len)
     // describes the current longest common leading whitespace
@@ -14328,7 +14328,7 @@ search_longest_common_leading_whitespace(
             const char *_iter = _start, *line_iter = line_start;
 
             while (_iter < _start + _len && line_iter < leading_whitespace_end
-                && *_iter == *line_iter)
+                   && *_iter == *line_iter)
             {
                 ++_iter;
                 ++line_iter;
