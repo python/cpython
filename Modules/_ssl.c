@@ -75,11 +75,11 @@
 
 
 #ifdef BIO_get_ktls_send
-#ifdef MS_WINDOWS
-    typedef long long Py_off_t;
-#else
-    typedef off_t Py_off_t;
-#endif
+#  ifdef MS_WINDOWS
+typedef long long Py_off_t;
+#  else
+typedef off_t Py_off_t;
+#  endif
 
 static int
 Py_off_t_converter(PyObject *arg, void *addr)

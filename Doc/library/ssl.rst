@@ -1108,7 +1108,7 @@ SSL Sockets
       zero-length data no longer fails with a protocol violation error.
 
    .. versionchanged:: next
-      Python now uses ``SSL_sendifle`` internally when it is possible. The
+      Python now uses ``SSL_sendfile`` internally when possible. The
       function sends a file more efficiently because it performs TLS encryption
       in the kernel to avoid additional context switches.
 
