@@ -2359,7 +2359,7 @@ test_gilstate_after_finalization(void)
     Py_Finalize();
     PyThread_handle_t handle;
     PyThread_ident_t ident;
-    PyEvent event = {};
+    PyEvent event = {0};
     if (PyThread_start_joinable_thread(&do_gilstate_ensure, &event, &ident, &handle) < 0) {
         return -1;
     }
