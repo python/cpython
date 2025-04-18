@@ -14280,8 +14280,8 @@ static Py_ssize_t
 search_longest_common_leading_whitespace(
     const char * const src,
     const char * const end,
-    const char * * output
-) {
+    const char * * output)
+{
     // [_start, _start + _len)
     // describes the current longest common leading whitespace
     const char *_start = NULL;
@@ -14422,9 +14422,7 @@ _PyUnicode_Dedent(PyObject *unicode)
         }
     }
 
-    Py_ssize_t dest_len = dest_iter - dest;
-
-    PyObject *res = PyUnicode_FromStringAndSize(dest, dest_len);
+    PyObject *res = PyUnicode_FromStringAndSize(dest, dest_iter - dest);
     PyMem_Free(dest);
     return res;
 }
