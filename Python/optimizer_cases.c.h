@@ -1031,7 +1031,7 @@
 
         case _BUILD_LIST: {
             JitOptSymbol *list;
-            list = sym_new_not_null(ctx);
+            list = sym_new_type(ctx, &PyList_Type);
             stack_pointer[-oparg] = list;
             stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1061,7 +1061,7 @@
 
         case _BUILD_MAP: {
             JitOptSymbol *map;
-            map = sym_new_not_null(ctx);
+            map = sym_new_type(ctx, &PyDict_Type);
             stack_pointer[-oparg*2] = map;
             stack_pointer += 1 - oparg*2;
             assert(WITHIN_STACK_BOUNDS());
@@ -2047,12 +2047,6 @@
         }
 
         case _MAKE_CALLARGS_A_TUPLE: {
-            JitOptSymbol *tuple;
-            JitOptSymbol *kwargs_out;
-            tuple = sym_new_not_null(ctx);
-            kwargs_out = sym_new_not_null(ctx);
-            stack_pointer[-2] = tuple;
-            stack_pointer[-1] = kwargs_out;
             break;
         }
 
@@ -2098,7 +2092,7 @@
 
         case _BUILD_SLICE: {
             JitOptSymbol *slice;
-            slice = sym_new_not_null(ctx);
+            slice = sym_new_type(ctx, &PySlice_Type);
             stack_pointer[-oparg] = slice;
             stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());

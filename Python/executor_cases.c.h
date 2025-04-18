@@ -5507,7 +5507,7 @@
                 JUMP_TO_ERROR();
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *res_o = ((PyCFunctionFast)(void(*)(void))cfunc)(
+            PyObject *res_o = _PyCFunctionFast_CAST(cfunc)(
                 PyCFunction_GET_SELF(callable_o),
                 args_o,
                 total_args);
@@ -5567,8 +5567,7 @@
             STAT_INC(CALL, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyCFunctionFastWithKeywords cfunc =
-            (PyCFunctionFastWithKeywords)(void(*)(void))
-            PyCFunction_GET_FUNCTION(callable_o);
+            _PyCFunctionFastWithKeywords_CAST(PyCFunction_GET_FUNCTION(callable_o));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
             if (CONVERSION_FAILED(args_o)) {
@@ -5918,7 +5917,7 @@
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyCFunctionFastWithKeywords cfunc =
-            (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            _PyCFunctionFastWithKeywords_CAST(meth->ml_meth);
             PyObject *res_o = cfunc(self, (args_o + 1), nargs, NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
@@ -6073,8 +6072,7 @@
                 JUMP_TO_ERROR();
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyCFunctionFast cfunc =
-            (PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            PyCFunctionFast cfunc = _PyCFunctionFast_CAST(meth->ml_meth);
             PyObject *res_o = cfunc(self, (args_o + 1), nargs);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
@@ -6350,20 +6348,12 @@
         }
 
         case _MAKE_CALLARGS_A_TUPLE: {
-            _PyStackRef kwargs_in;
             _PyStackRef callargs;
             _PyStackRef func;
-            _PyStackRef tuple;
-            _PyStackRef kwargs_out;
-            kwargs_in = stack_pointer[-1];
             callargs = stack_pointer[-2];
             func = stack_pointer[-4];
             PyObject *callargs_o = PyStackRef_AsPyObjectBorrow(callargs);
-            if (PyTuple_CheckExact(callargs_o)) {
-                tuple = callargs;
-                kwargs_out = kwargs_in;
-            }
-            else {
+            if (!PyTuple_CheckExact(callargs_o)) {
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int err = _Py_Check_ArgsIterable(tstate, PyStackRef_AsPyObjectBorrow(func), callargs_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -6376,17 +6366,14 @@
                 if (tuple_o == NULL) {
                     JUMP_TO_ERROR();
                 }
-                kwargs_out = kwargs_in;
-                stack_pointer += -2;
-                assert(WITHIN_STACK_BOUNDS());
+                _PyStackRef temp = callargs;
+                callargs = PyStackRef_FromPyObjectSteal(tuple_o);
+                stack_pointer[-2] = callargs;
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(callargs);
+                PyStackRef_CLOSE(temp);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                tuple = PyStackRef_FromPyObjectSteal(tuple_o);
-                stack_pointer += 2;
             }
-            stack_pointer[-2] = tuple;
-            stack_pointer[-1] = kwargs_out;
+            stack_pointer[-2] = callargs;
             break;
         }
 
@@ -6631,15 +6618,17 @@
         }
 
         case _SWAP: {
-            _PyStackRef *top;
-            _PyStackRef *bottom;
+            _PyStackRef top;
+            _PyStackRef bottom;
             oparg = CURRENT_OPARG();
-            top = &stack_pointer[-1];
-            bottom = &stack_pointer[-2 - (oparg-2)];
-            _PyStackRef temp = bottom[0];
-            bottom[0] = top[0];
-            top[0] = temp;
+            top = stack_pointer[-1];
+            bottom = stack_pointer[-2 - (oparg-2)];
+            _PyStackRef temp = bottom;
+            bottom = top;
+            top = temp;
             assert(oparg >= 2);
+            stack_pointer[-2 - (oparg-2)] = bottom;
+            stack_pointer[-1] = top;
             break;
         }
 
