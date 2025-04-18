@@ -851,7 +851,6 @@ _PyPegen_Parser_New(struct tok_state *tok, int start_rule, int flags,
     p->last_stmt_location.col_offset = 0;
     p->last_stmt_location.end_lineno = 0;
     p->last_stmt_location.end_col_offset = 0;
-    p->source = source;
 #ifdef Py_DEBUG
     p->debug = _Py_GetConfig()->parser_debug;
 #endif
@@ -900,8 +899,11 @@ _PyPegen_set_syntax_error_metadata(Parser *p) {
         PyErr_SetRaisedException(exc);
         return;
     }
-    const char *source = p->source;
-    if (!p->source && p->tok->fp_interactive && p->tok->interactive_src_start) {
+    const char *source = NULL;
+    if (p->tok->str != NULL) {
+        source = p->tok->str;
+    }
+    if (!source && p->tok->fp_interactive && p->tok->interactive_src_start) {
         source = p->tok->interactive_src_start;
     }
     PyObject* the_source = NULL;

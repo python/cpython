@@ -86,7 +86,6 @@ typedef struct {
     int call_invalid_rules;
     int debug;
     location last_stmt_location;
-    const char *source;
 } Parser;
 
 typedef struct {
