@@ -317,7 +317,7 @@ _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args);
  *
  * Symbol is exported for the JIT (see discussion on GH-132218).
  */
-extern int
+PyAPI_FUNC(int)
 _PyEval_SpecialMethodCanSuggest(PyObject *self, int oparg);
 
 /* Bits that can be set in PyThreadState.eval_breaker */
