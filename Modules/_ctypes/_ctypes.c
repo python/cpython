@@ -4892,8 +4892,10 @@ Array_init(PyObject *self, PyObject *args, PyObject *kw)
 }
 
 static PyObject *
-Array_item(PyObject *myself, Py_ssize_t index)
+Array_item_lock_held(PyObject *myself, Py_ssize_t index)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(myself);
+
     CDataObject *self = _CDataObject_CAST(myself);
     Py_ssize_t offset, size;
 
@@ -4920,8 +4922,20 @@ Array_item(PyObject *myself, Py_ssize_t index)
 }
 
 static PyObject *
-Array_subscript(PyObject *myself, PyObject *item)
+Array_item(PyObject *myself, Py_ssize_t index)
 {
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    result = Array_item_lock_held(myself, index);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
+static PyObject *
+Array_subscript_lock_held(PyObject *myself, PyObject *item)
+{
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(myself);
+
     CDataObject *self = _CDataObject_CAST(myself);
 
     if (PyIndex_Check(item)) {
@@ -4931,7 +4945,7 @@ Array_subscript(PyObject *myself, PyObject *item)
             return NULL;
         if (i < 0)
             i += self->b_length;
-        return Array_item(myself, i);
+        return Array_item_lock_held(myself, i);
     }
     else if (PySlice_Check(item)) {
         PyObject *proto;
@@ -4966,10 +4980,8 @@ Array_subscript(PyObject *myself, PyObject *item)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_BYTES);
             if (step == 1) {
                 PyObject *res;
-                Py_BEGIN_CRITICAL_SECTION(self);
                 res = PyBytes_FromStringAndSize(ptr + start,
                                                 slicelen);
-                Py_END_CRITICAL_SECTION();
                 return res;
             }
             dest = (char *)PyMem_Malloc(slicelen);
@@ -4977,12 +4989,10 @@ Array_subscript(PyObject *myself, PyObject *item)
             if (dest == NULL)
                 return PyErr_NoMemory();
 
-            Py_BEGIN_CRITICAL_SECTION(self);
             for (cur = start, i = 0; i < slicelen;
                  cur += step, i++) {
                 dest[i] = ptr[cur];
             }
-            Py_END_CRITICAL_SECTION();
 
             np = PyBytes_FromStringAndSize(dest, slicelen);
             PyMem_Free(dest);
@@ -4996,10 +5006,8 @@ Array_subscript(PyObject *myself, PyObject *item)
                 return Py_GetConstant(Py_CONSTANT_EMPTY_STR);
             if (step == 1) {
                 PyObject *res;
-                Py_BEGIN_CRITICAL_SECTION(self);
                 res = PyUnicode_FromWideChar(ptr + start,
                                                        slicelen);
-                Py_END_CRITICAL_SECTION();
                 return res;
             }
 
@@ -5009,12 +5017,10 @@ Array_subscript(PyObject *myself, PyObject *item)
                 return NULL;
             }
 
-            Py_BEGIN_CRITICAL_SECTION(self);
             for (cur = start, i = 0; i < slicelen;
                  cur += step, i++) {
                 dest[i] = ptr[cur];
             }
-            Py_END_CRITICAL_SECTION();
 
             np = PyUnicode_FromWideChar(dest, slicelen);
             PyMem_Free(dest);
@@ -5027,7 +5033,7 @@ Array_subscript(PyObject *myself, PyObject *item)
 
         for (cur = start, i = 0; i < slicelen;
              cur += step, i++) {
-            PyObject *v = Array_item(myself, cur);
+            PyObject *v = Array_item_lock_held(myself, cur);
             if (v == NULL) {
                 Py_DECREF(np);
                 return NULL;
@@ -5041,12 +5047,24 @@ Array_subscript(PyObject *myself, PyObject *item)
                         "indices must be integers");
         return NULL;
     }
+}
 
+
+static PyObject *
+Array_subscript(PyObject *myself, PyObject *item)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    result = Array_subscript_lock_held(myself, item);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 static int
-Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
+Array_ass_item_lock_held(PyObject *myself, Py_ssize_t index, PyObject *value)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(myself);
+
     CDataObject *self = _CDataObject_CAST(myself);
     Py_ssize_t size, offset;
     char *ptr;
@@ -5078,7 +5096,18 @@ Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
 }
 
 static int
-Array_ass_subscript(PyObject *myself, PyObject *item, PyObject *value)
+Array_ass_item(PyObject *myself, Py_ssize_t index, PyObject *value)
+{
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    result = Array_ass_item_lock_held(myself, index, value);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
+
+static int
+Array_ass_subscript_lock_held(PyObject *myself, PyObject *item, PyObject *value)
 {
     CDataObject *self = _CDataObject_CAST(myself);
 
@@ -5095,7 +5124,7 @@ Array_ass_subscript(PyObject *myself, PyObject *item, PyObject *value)
             return -1;
         if (i < 0)
             i += self->b_length;
-        return Array_ass_item(myself, i, value);
+        return Array_ass_item_lock_held(myself, i, value);
     }
     else if (PySlice_Check(item)) {
         Py_ssize_t start, stop, step, slicelen, otherlen, i;
@@ -5120,7 +5149,7 @@ Array_ass_subscript(PyObject *myself, PyObject *item, PyObject *value)
             int result;
             if (item == NULL)
                 return -1;
-            result = Array_ass_item(myself, cur, item);
+            result = Array_ass_item_lock_held(myself, cur, item);
             Py_DECREF(item);
             if (result == -1)
                 return -1;
@@ -5133,6 +5162,17 @@ Array_ass_subscript(PyObject *myself, PyObject *item, PyObject *value)
         return -1;
     }
 }
+
+static int
+Array_ass_subscript(PyObject *myself, PyObject *item, PyObject *value)
+{
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(myself);
+    result = Array_ass_subscript_lock_held(myself, item, value);
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
 
 static Py_ssize_t
 Array_length(PyObject *myself)
