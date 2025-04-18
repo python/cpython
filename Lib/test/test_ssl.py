@@ -2852,7 +2852,7 @@ class ThreadedTests(unittest.TestCase):
                 self.test_alpn_protocols,
                 self.test_getpeercert,
                 self.test_crl_check,
-                partial(
+                functools.partial(
                     self.test_check_hostname_idn,
                     warnings_filters=warnings_filters,
                 ),
