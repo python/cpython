@@ -1577,7 +1577,7 @@ class CommandLineTestCase(unittest.TestCase):
         with contextlib.redirect_stdout(output), \
             contextlib.redirect_stderr(output):
             server._main(args)
-        return textwrap.dedent(output.getvalue()).strip()
+        return output.getvalue()
 
 
     def test_port_flag(self, mock_func):
