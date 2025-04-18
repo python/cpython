@@ -1570,7 +1570,7 @@ class CommandLineTestCase(unittest.TestCase):
         return super().tearDown()
 
     def get_random_temporary_file_name(self):
-            return os.path.join(tempfile.gettempdir(), os.urandom(16).hex())
+        return os.path.join(tempfile.gettempdir(), os.urandom(16).hex())
 
     def invoke_httpd(self, *args):
         output = StringIO()
