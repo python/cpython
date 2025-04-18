@@ -82,12 +82,24 @@ class TestAlignedStructures(unittest.TestCase, StructCheckMixin):
                     _align_ = -1
                     _fields_ = []
 
-    def test_zero_align(self):
+    def test_zero_align_no_fields(self):
         for base in (Structure, LittleEndianStructure, BigEndianStructure):
             with self.subTest(base=base):
                 class MyStructure(base):
                     _align_ = 0
                     _fields_ = []
+
+                self.assertEqual(alignment(MyStructure), 1)
+                self.assertEqual(alignment(MyStructure()), 1)
+
+    def test_zero_align_with_fields(self):
+        for base in (Structure, LittleEndianStructure, BigEndianStructure):
+            with self.subTest(base=base):
+                class MyStructure(base):
+                    _align_ = 0
+                    _fields_ = [
+                        ("x", c_ubyte),
+                    ]
 
                 self.assertEqual(alignment(MyStructure), 1)
                 self.assertEqual(alignment(MyStructure()), 1)
