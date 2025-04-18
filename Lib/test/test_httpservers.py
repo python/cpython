@@ -23,7 +23,6 @@ import html
 import http, http.client
 import urllib.parse
 import tempfile
-import textwrap
 import time
 import datetime
 import threading
