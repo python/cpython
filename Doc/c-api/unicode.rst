@@ -730,6 +730,19 @@ APIs:
    .. versionadded:: 3.3
 
 
+.. c:function:: int PyUnicode_Resize(PyObject **p_unicode, Py_ssize_t length)
+
+   Resize a Unicode object to the new *length* in code points. ``*p_unicode``
+   must point to a strong reference to a new, unshared Unicode object.
+
+   The string must not have been “used” yet.
+   See :c:func:`PyUnicode_New` for details.
+
+   Return ``0`` on success, or ``-1`` on error with an exception set.
+
+   .. versionadded:: 2.7
+
+
 .. c:function:: Py_UCS4* PyUnicode_AsUCS4(PyObject *unicode, Py_UCS4 *buffer, \
                                           Py_ssize_t buflen, int copy_null)
 

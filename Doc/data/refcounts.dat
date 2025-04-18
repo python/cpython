@@ -2659,6 +2659,10 @@ PyUnicode_Partition:PyObject*::+1:
 PyUnicode_Partition:PyObject*:unicode:0:
 PyUnicode_Partition:PyObject*:sep:0:
 
+PyUnicode_Resize:int:::
+PyUnicode_Resize:PyObject*:p_unicode:0:
+PyUnicode_Resize:Py_ssize_t:length::
+
 PyUnicode_RPartition:PyObject*::+1:
 PyUnicode_RPartition:PyObject*:unicode:0:
 PyUnicode_RPartition:PyObject*:sep:0:
