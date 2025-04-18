@@ -53,30 +53,30 @@ class BufferedSubFile(object):
     simple abstraction -- it parses until EOF closes the current message.
     """
     def __init__(self):
-        self._partial: list[str] = []
-        self._dangling_partial: bool = False
+        self._partial = []
+        self._dangling_partial = False
         # A deque of full, pushed lines
-        self._lines: deque[str] = deque()
+        self._lines = deque()
         # The stack of false-EOF checking predicates.
         self._eofstack = []
         # A flag indicating whether the file has been closed or not.
-        self._closed: bool = False
-        self._dump_destination: deque[str]|None = None
-        self._dump_result: str|None = None
+        self._closed = False
+        self._dump_destination = None
+        self._dump_result = None
 
-    def push_eof_matcher(self, pred) -> None:
+    def push_eof_matcher(self, pred):
         self._eofstack.append(pred)
 
     def pop_eof_matcher(self):
         return self._eofstack.pop()
 
-    def close(self) -> None:
+    def close(self):
         # Don't forget any trailing partial line.
         if self._partial:
             self._flush_partial()
         self._closed = True
 
-    def readline(self) -> str|object:
+    def readline(self):
         if not self._lines:
             if self._closed:
                 return ''
@@ -94,7 +94,7 @@ class BufferedSubFile(object):
 
         return line
 
-    def _check_eofstack(self, data, start=0, end=sys.maxsize) -> bool:
+    def _check_eofstack(self, data, start=0, end=sys.maxsize):
         for ateof in reversed(self._eofstack):
             if ateof(data, start, end):
                 # We're at the false EOF.
@@ -102,12 +102,12 @@ class BufferedSubFile(object):
 
         return False
 
-    def unreadline(self, line) -> None:
+    def unreadline(self, line):
         # Let the consumer push a line back into the buffer.
         assert line is not NeedMoreData
         self._lines.appendleft(line)
 
-    def _flush_partial(self) -> None:
+    def _flush_partial(self):
         line = EMPTYSTRING.join(self._partial)
         if not line:
             pass
@@ -125,7 +125,7 @@ class BufferedSubFile(object):
         self._partial.clear()
         self._dangling_partial = False
 
-    def push(self, data) -> None:
+    def push(self, data):
         """Push some new data into this object."""
         if not data:
             return
@@ -137,7 +137,7 @@ class BufferedSubFile(object):
 
         self._push_data(data)
 
-    def _can_dump_data(self, data) -> bool:
+    def _can_dump_data(self, data):
         if self._dump_destination is None:
             # We're not dumping data
             return False
@@ -170,7 +170,7 @@ class BufferedSubFile(object):
         # We're still dumping, but there's a potential boundary marker or EOF or similar issue. Force a proper parse.
         return False
 
-    def _can_dump_partial(self, line, start: int=0, end: int=sys.maxsize) -> bool:
+    def _can_dump_partial(self, line, start=0, end=sys.maxsize):
         # Very similar to _can_dump_data above, except we can make some additional assumptions for partials/lines.
         # This should only ever be checked when we have a new partial line, in which case we have no partial,
         # or when checking the partial itself, in which case it'll always be the first part
@@ -207,7 +207,7 @@ class BufferedSubFile(object):
         assert self._dump_destination[-1]  # Never push empty strings to _dump_destination
         return self._dump_destination[-1][-1] not in ('\n', '\r')
 
-    def _push_data(self, data) -> None:
+    def _push_data(self, data):
         # Find first newline character in the data
         unl_start_index = BufferedSubFile._find_unl(data)
         if unl_start_index < 0:
@@ -268,7 +268,7 @@ class BufferedSubFile(object):
         # unl_start_index is an index which points to the start of the next newline character, if there is one
         self._push_data_no_partial(data, data_start_index, unl_start_index)
 
-    def _push_data_no_partial(self, data, data_start_index: int, unl_start_index: int) -> None:
+    def _push_data_no_partial(self, data, data_start_index, unl_start_index):
         # _partial is now guaranteed to point to be empty
         # data_start_index is an index which points to the start of the next line
         # unl_start_index is an index which points to the start of the next newline character, if there is one
@@ -349,14 +349,14 @@ class BufferedSubFile(object):
             if data_start_index < len(data):
                 self._partial.append(data[data_start_index:])
 
-    def pushlines(self, lines) -> None:
+    def pushlines(self, lines):
         # This method is not documented on docs.python.org
         self._lines.extend(lines)
 
     def __iter__(self):
         return self
 
-    def __next__(self) -> str|object:
+    def __next__(self):
         line = self.readline()
         if line == '':
             raise StopIteration
@@ -394,13 +394,13 @@ class BufferedSubFile(object):
         self._dump_destination = None
         self._dump_result = EMPTYSTRING.join(_dump_destination)
 
-    def _pop_dump(self) -> str:
+    def _pop_dump(self):
         result = self._dump_result
         self._dump_result = None
         return result
 
     @staticmethod
-    def _find_unl(data, start=0) -> int:
+    def _find_unl(data, start=0):
         # Like str.find(), but for universal newlines
         # Originally, this iterated over the string, however just calling find() twice is drastically faster
         # This could be sped up by replacing with a similar function in C, so we don't pass over the string twice.
@@ -412,7 +412,7 @@ class BufferedSubFile(object):
         return nl_index if nl_index >= 0 else cr_index
 
     @staticmethod
-    def _find_unl_end(data, start) -> int:
+    def _find_unl_end(data, start):
         # A helper function which returns the 1-past-the-end index of a universal newline
         # This could be sped up by replacing with a similar function in C.
         #assert data[start] in '\r\n'
@@ -467,15 +467,15 @@ class FeedParser:
         self._headersonly = False
 
     # Non-public interface for supporting Parser's headersonly flag
-    def _set_headersonly(self) -> None:
+    def _set_headersonly(self):
         self._headersonly = True
 
-    def feed(self, data) -> None:
+    def feed(self, data):
         """Push more data into the parser."""
         self._input.push(data)
         self._call_parse()
 
-    def _call_parse(self) -> None:
+    def _call_parse(self):
         try:
             self._parse()  # Return value is always NeedMoreData or None, but discarded here in either case
         except StopIteration:
@@ -494,7 +494,7 @@ class FeedParser:
             self.policy.handle_defect(root, defect)
         return root
 
-    def _new_message(self) -> None:
+    def _new_message(self):
         if self._old_style_factory:
             msg = self._factory()
         else:
@@ -616,7 +616,7 @@ class FeedParser:
             # this onto the input stream until we've scanned past the
             # preamble.
             separator = '--' + boundary
-            def boundarymatch(line, pos: int = 0, endpos: int = sys.maxsize):
+            def boundarymatch(line, pos = 0, endpos = sys.maxsize):
                 if not line.startswith(separator, pos, endpos):
                     return None
                 return boundaryendRE.match(line, pos + len(separator), endpos)
@@ -749,7 +749,7 @@ class FeedParser:
         yield from self._input._get_dump()
         self._cur.set_payload(self._input._pop_dump())
 
-    def _parse_headers(self, lines) -> None:
+    def _parse_headers(self, lines):
         # Passed a list of lines that make up the headers for the current msg
         lastheader = ''
         lastvalue = []
@@ -813,5 +813,5 @@ class FeedParser:
 class BytesFeedParser(FeedParser):
     """Like FeedParser, but feed accepts bytes."""
 
-    def feed(self, data) -> None:
+    def feed(self, data):
         super().feed(data.decode('ascii', 'surrogateescape'))
