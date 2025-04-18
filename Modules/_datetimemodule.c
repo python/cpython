@@ -158,7 +158,6 @@ error:
 }
 
 static PyModuleDef datetimemodule;
-static int set_current_module(PyInterpreterState *interp, PyObject *mod);
 
 static datetime_state *
 _get_current_state(PyObject **p_mod)
@@ -192,7 +191,7 @@ _get_current_state(PyObject **p_mod)
             Py_DECREF(spec);
 
             /* The module will be held by heaptypes. Prefer
-             * it not to be cached in the interp-dict. */
+             * it not to be stored in the interp-dict. */
             if (PyModule_ExecDef(mod, &datetimemodule) < 0) {
                 return NULL;
             }
