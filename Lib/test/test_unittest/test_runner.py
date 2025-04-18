@@ -24,6 +24,13 @@ def getRunner():
                                    stream=io.StringIO())
 
 
+class CustomError(Exception):
+    pass
+
+# For test output compat:
+CustomErrorRepr = f"{__name__ + '.' if __name__ != '__main__' else ''}CustomError"
+
+
 def runTests(*cases):
     suite = unittest.TestSuite()
     for case in cases:
@@ -46,7 +53,7 @@ def cleanup(ordering, blowUp=False):
         ordering.append('cleanup_good')
     else:
         ordering.append('cleanup_exc')
-        raise Exception('CleanUpExc')
+        raise CustomError('CleanUpExc')
 
 
 class TestCM:
@@ -99,6 +106,7 @@ class TestCleanUp(unittest.TestCase):
         self.assertTrue(test.doCleanups())
         self.assertEqual(cleanups, [(2, (), {}), (1, (1, 2, 3), dict(four='hello', five='goodbye'))])
 
+    @support.force_not_colorized
     def testCleanUpWithErrors(self):
         class TestableTest(unittest.TestCase):
             def testNothing(self):
@@ -108,8 +116,8 @@ class TestCleanUp(unittest.TestCase):
         result = unittest.TestResult()
         outcome = test._outcome = _Outcome(result=result)
 
-        CleanUpExc = Exception('foo')
-        exc2 = Exception('bar')
+        CleanUpExc = CustomError('foo')
+        exc2 = CustomError('bar')
         def cleanup1():
             raise CleanUpExc
 
@@ -125,10 +133,10 @@ class TestCleanUp(unittest.TestCase):
         (_, msg2), (_, msg1) = result.errors
         self.assertIn('in cleanup1', msg1)
         self.assertIn('raise CleanUpExc', msg1)
-        self.assertIn('Exception: foo', msg1)
+        self.assertIn(f'{CustomErrorRepr}: foo', msg1)
         self.assertIn('in cleanup2', msg2)
         self.assertIn('raise exc2', msg2)
-        self.assertIn('Exception: bar', msg2)
+        self.assertIn(f'{CustomErrorRepr}: bar', msg2)
 
     def testCleanupInRun(self):
         blowUp = False
@@ -139,7 +147,7 @@ class TestCleanUp(unittest.TestCase):
                 ordering.append('setUp')
                 test.addCleanup(cleanup2)
                 if blowUp:
-                    raise Exception('foo')
+                    raise CustomError('foo')
 
             def testNothing(self):
                 ordering.append('test')
@@ -242,6 +250,7 @@ class TestCleanUp(unittest.TestCase):
         self.assertEqual(test._cleanups, [])
 
 
+@support.force_not_colorized_test_class
 class TestClassCleanup(unittest.TestCase):
     def test_addClassCleanUp(self):
         class TestableTest(unittest.TestCase):
@@ -280,7 +289,7 @@ class TestClassCleanup(unittest.TestCase):
                 ordering.append('setUpClass')
                 cls.addClassCleanup(cleanup, ordering)
                 if blowUp:
-                    raise Exception()
+                    raise CustomError()
             def testNothing(self):
                 ordering.append('test')
             @classmethod
@@ -306,7 +315,7 @@ class TestClassCleanup(unittest.TestCase):
                 ordering.append('setUpClass')
                 cls.addClassCleanup(cleanup, ordering)
                 if blowUp:
-                    raise Exception()
+                    raise CustomError()
             def testNothing(self):
                 ordering.append('test')
             @classmethod
@@ -346,7 +355,7 @@ class TestClassCleanup(unittest.TestCase):
         ordering = []
         blowUp = True
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestableTest)
-        with self.assertRaises(Exception) as cm:
+        with self.assertRaises(CustomError) as cm:
             suite.debug()
         self.assertEqual(str(cm.exception), 'CleanUpExc')
         self.assertEqual(ordering,
@@ -366,10 +375,10 @@ class TestClassCleanup(unittest.TestCase):
             @classmethod
             def tearDownClass(cls):
                 ordering.append('tearDownClass')
-                raise Exception('TearDownClassExc')
+                raise CustomError('TearDownClassExc')
 
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestableTest)
-        with self.assertRaises(Exception) as cm:
+        with self.assertRaises(CustomError) as cm:
             suite.debug()
         self.assertEqual(str(cm.exception), 'TearDownClassExc')
         self.assertEqual(ordering, ['setUpClass', 'test', 'tearDownClass'])
@@ -379,7 +388,7 @@ class TestClassCleanup(unittest.TestCase):
         ordering = []
         blowUp = True
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestableTest)
-        with self.assertRaises(Exception) as cm:
+        with self.assertRaises(CustomError) as cm:
             suite.debug()
         self.assertEqual(str(cm.exception), 'TearDownClassExc')
         self.assertEqual(ordering, ['setUpClass', 'test', 'tearDownClass'])
@@ -392,16 +401,22 @@ class TestClassCleanup(unittest.TestCase):
                 pass
 
         def cleanup1():
-            raise Exception('cleanup1')
+            raise CustomError('cleanup1')
 
         def cleanup2():
-            raise Exception('cleanup2')
+            raise CustomError('cleanup2')
 
         TestableTest.addClassCleanup(cleanup1)
         TestableTest.addClassCleanup(cleanup2)
-        with self.assertRaises(Exception) as e:
-            TestableTest.doClassCleanups()
-            self.assertEqual(e, 'cleanup1')
+        TestableTest.doClassCleanups()
+
+        self.assertEqual(len(TestableTest.tearDown_exceptions), 2)
+
+        e1, e2 = TestableTest.tearDown_exceptions
+        self.assertIsInstance(e1[1], CustomError)
+        self.assertEqual(str(e1[1]), 'cleanup2')
+        self.assertIsInstance(e2[1], CustomError)
+        self.assertEqual(str(e2[1]), 'cleanup1')
 
     def test_with_errors_addCleanUp(self):
         ordering = []
@@ -421,7 +436,7 @@ class TestClassCleanup(unittest.TestCase):
 
         result = runTests(TestableTest)
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: CleanUpExc')
+                         f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'setUp', 'cleanup_exc',
                           'tearDownClass', 'cleanup_good'])
@@ -444,7 +459,7 @@ class TestClassCleanup(unittest.TestCase):
 
         result = runTests(TestableTest)
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: CleanUpExc')
+                         f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'setUp', 'test', 'cleanup_good',
                           'tearDownClass', 'cleanup_exc'])
@@ -460,11 +475,11 @@ class TestClassCleanup(unittest.TestCase):
                 ordering.append('setUpClass')
                 cls.addClassCleanup(cleanup, ordering, blowUp=True)
                 if class_blow_up:
-                    raise Exception('ClassExc')
+                    raise CustomError('ClassExc')
             def setUp(self):
                 ordering.append('setUp')
                 if method_blow_up:
-                    raise Exception('MethodExc')
+                    raise CustomError('MethodExc')
             def testNothing(self):
                 ordering.append('test')
             @classmethod
@@ -473,7 +488,7 @@ class TestClassCleanup(unittest.TestCase):
 
         result = runTests(TestableTest)
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: CleanUpExc')
+                         f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'setUp', 'test',
                           'tearDownClass', 'cleanup_exc'])
@@ -483,9 +498,9 @@ class TestClassCleanup(unittest.TestCase):
         method_blow_up = False
         result = runTests(TestableTest)
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: ClassExc')
+                         f'{CustomErrorRepr}: ClassExc')
         self.assertEqual(result.errors[1][1].splitlines()[-1],
-                         'Exception: CleanUpExc')
+                         f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'cleanup_exc'])
 
@@ -494,9 +509,9 @@ class TestClassCleanup(unittest.TestCase):
         method_blow_up = True
         result = runTests(TestableTest)
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: MethodExc')
+                         f'{CustomErrorRepr}: MethodExc')
         self.assertEqual(result.errors[1][1].splitlines()[-1],
-                         'Exception: CleanUpExc')
+                         f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'setUp', 'tearDownClass',
                           'cleanup_exc'])
@@ -513,11 +528,11 @@ class TestClassCleanup(unittest.TestCase):
             @classmethod
             def tearDownClass(cls):
                 ordering.append('tearDownClass')
-                raise Exception('TearDownExc')
+                raise CustomError('TearDownExc')
 
         result = runTests(TestableTest)
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: TearDownExc')
+                         f'{CustomErrorRepr}: TearDownExc')
         self.assertEqual(ordering,
                          ['setUpClass', 'test', 'tearDownClass', 'cleanup_good'])
 
@@ -577,7 +592,18 @@ class TestClassCleanup(unittest.TestCase):
                 'inner setup', 'inner test', 'inner cleanup',
                 'end outer test', 'outer cleanup'])
 
+    def test_run_empty_suite_error_message(self):
+        class EmptyTest(unittest.TestCase):
+            pass
 
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(EmptyTest)
+        runner = getRunner()
+        runner.run(suite)
+
+        self.assertIn("\nNO TESTS RAN\n", runner.stream.getvalue())
+
+
+@support.force_not_colorized_test_class
 class TestModuleCleanUp(unittest.TestCase):
     def test_add_and_do_ModuleCleanup(self):
         module_cleanups = []
@@ -610,7 +636,7 @@ class TestModuleCleanUp(unittest.TestCase):
             module_cleanups.append((3, args, kwargs))
 
         def module_cleanup_bad(*args, **kwargs):
-            raise Exception('CleanUpExc')
+            raise CustomError('CleanUpExc')
 
         class Module(object):
             unittest.addModuleCleanup(module_cleanup_good, 1, 2, 3,
@@ -620,7 +646,7 @@ class TestModuleCleanUp(unittest.TestCase):
                          [(module_cleanup_good, (1, 2, 3),
                            dict(four='hello', five='goodbye')),
                           (module_cleanup_bad, (), {})])
-        with self.assertRaises(Exception) as e:
+        with self.assertRaises(CustomError) as e:
             unittest.case.doModuleCleanups()
         self.assertEqual(str(e.exception), 'CleanUpExc')
         self.assertEqual(unittest.case._module_cleanups, [])
@@ -649,7 +675,7 @@ class TestModuleCleanUp(unittest.TestCase):
                 ordering.append('setUpModule')
                 unittest.addModuleCleanup(cleanup, ordering)
                 if blowUp:
-                    raise Exception('setUpModule Exc')
+                    raise CustomError('setUpModule Exc')
             @staticmethod
             def tearDownModule():
                 ordering.append('tearDownModule')
@@ -669,7 +695,7 @@ class TestModuleCleanUp(unittest.TestCase):
         result = runTests(TestableTest)
         self.assertEqual(ordering, ['setUpModule', 'cleanup_good'])
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: setUpModule Exc')
+                         f'{CustomErrorRepr}: setUpModule Exc')
 
         ordering = []
         blowUp = False
@@ -689,7 +715,7 @@ class TestModuleCleanUp(unittest.TestCase):
                 ordering.append('setUpModule')
                 unittest.addModuleCleanup(cleanup, ordering)
                 if blowUp:
-                    raise Exception()
+                    raise CustomError()
             @staticmethod
             def tearDownModule():
                 ordering.append('tearDownModule')
@@ -700,7 +726,7 @@ class TestModuleCleanUp(unittest.TestCase):
                 ordering.append('setUpModule2')
                 unittest.addModuleCleanup(cleanup, ordering)
                 if blowUp2:
-                    raise Exception()
+                    raise CustomError()
             @staticmethod
             def tearDownModule():
                 ordering.append('tearDownModule2')
@@ -789,7 +815,7 @@ class TestModuleCleanUp(unittest.TestCase):
             @staticmethod
             def tearDownModule():
                 ordering.append('tearDownModule')
-                raise Exception('CleanUpExc')
+                raise CustomError('CleanUpExc')
 
         class TestableTest(unittest.TestCase):
             @classmethod
@@ -805,7 +831,7 @@ class TestModuleCleanUp(unittest.TestCase):
         sys.modules['Module'] = Module
         result = runTests(TestableTest)
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: CleanUpExc')
+                         f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'test',
                                     'tearDownClass', 'tearDownModule',
                                     'cleanup_good'])
@@ -845,7 +871,7 @@ class TestModuleCleanUp(unittest.TestCase):
         ordering = []
         blowUp = True
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestableTest)
-        with self.assertRaises(Exception) as cm:
+        with self.assertRaises(CustomError) as cm:
             suite.debug()
         self.assertEqual(str(cm.exception), 'CleanUpExc')
         self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'test',
@@ -863,7 +889,7 @@ class TestModuleCleanUp(unittest.TestCase):
             @staticmethod
             def tearDownModule():
                 ordering.append('tearDownModule')
-                raise Exception('TearDownModuleExc')
+                raise CustomError('TearDownModuleExc')
 
         class TestableTest(unittest.TestCase):
             @classmethod
@@ -878,7 +904,7 @@ class TestModuleCleanUp(unittest.TestCase):
         TestableTest.__module__ = 'Module'
         sys.modules['Module'] = Module
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestableTest)
-        with self.assertRaises(Exception) as cm:
+        with self.assertRaises(CustomError) as cm:
             suite.debug()
         self.assertEqual(str(cm.exception), 'TearDownModuleExc')
         self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'test',
@@ -889,7 +915,7 @@ class TestModuleCleanUp(unittest.TestCase):
         ordering = []
         blowUp = True
         suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestableTest)
-        with self.assertRaises(Exception) as cm:
+        with self.assertRaises(CustomError) as cm:
             suite.debug()
         self.assertEqual(str(cm.exception), 'TearDownModuleExc')
         self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'test',
@@ -968,7 +994,7 @@ class TestModuleCleanUp(unittest.TestCase):
 
         result = runTests(TestableTest)
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: CleanUpExc')
+                         f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpModule', 'setUpClass', 'test', 'tearDownClass',
                           'cleanup_exc', 'tearDownModule', 'cleanup_good'])
@@ -998,7 +1024,7 @@ class TestModuleCleanUp(unittest.TestCase):
 
         result = runTests(TestableTest)
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: CleanUpExc')
+                         f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpModule', 'setUp', 'test', 'tearDown',
                           'cleanup_exc', 'tearDownModule', 'cleanup_good'])
@@ -1014,7 +1040,7 @@ class TestModuleCleanUp(unittest.TestCase):
                 ordering.append('setUpModule')
                 unittest.addModuleCleanup(cleanup, ordering, blowUp=True)
                 if module_blow_up:
-                    raise Exception('ModuleExc')
+                    raise CustomError('ModuleExc')
             @staticmethod
             def tearDownModule():
                 ordering.append('tearDownModule')
@@ -1024,11 +1050,11 @@ class TestModuleCleanUp(unittest.TestCase):
             def setUpClass(cls):
                 ordering.append('setUpClass')
                 if class_blow_up:
-                    raise Exception('ClassExc')
+                    raise CustomError('ClassExc')
             def setUp(self):
                 ordering.append('setUp')
                 if method_blow_up:
-                    raise Exception('MethodExc')
+                    raise CustomError('MethodExc')
             def testNothing(self):
                 ordering.append('test')
             @classmethod
@@ -1040,7 +1066,7 @@ class TestModuleCleanUp(unittest.TestCase):
 
         result = runTests(TestableTest)
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: CleanUpExc')
+                         f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering,
                          ['setUpModule', 'setUpClass', 'setUp', 'test',
                           'tearDownClass', 'tearDownModule',
@@ -1052,9 +1078,9 @@ class TestModuleCleanUp(unittest.TestCase):
         method_blow_up = False
         result = runTests(TestableTest)
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: ModuleExc')
+                         f'{CustomErrorRepr}: ModuleExc')
         self.assertEqual(result.errors[1][1].splitlines()[-1],
-                         'Exception: CleanUpExc')
+                         f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering, ['setUpModule', 'cleanup_exc'])
 
         ordering = []
@@ -1063,9 +1089,9 @@ class TestModuleCleanUp(unittest.TestCase):
         method_blow_up = False
         result = runTests(TestableTest)
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: ClassExc')
+                         f'{CustomErrorRepr}: ClassExc')
         self.assertEqual(result.errors[1][1].splitlines()[-1],
-                         'Exception: CleanUpExc')
+                         f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering, ['setUpModule', 'setUpClass',
                                     'tearDownModule', 'cleanup_exc'])
 
@@ -1075,9 +1101,9 @@ class TestModuleCleanUp(unittest.TestCase):
         method_blow_up = True
         result = runTests(TestableTest)
         self.assertEqual(result.errors[0][1].splitlines()[-1],
-                         'Exception: MethodExc')
+                         f'{CustomErrorRepr}: MethodExc')
         self.assertEqual(result.errors[1][1].splitlines()[-1],
-                         'Exception: CleanUpExc')
+                         f'{CustomErrorRepr}: CleanUpExc')
         self.assertEqual(ordering, ['setUpModule', 'setUpClass', 'setUp',
                                     'tearDownClass', 'tearDownModule',
                                     'cleanup_exc'])
@@ -1295,6 +1321,7 @@ class Test_TextTestRunner(unittest.TestCase):
         expectedresult = (runner.stream, DESCRIPTIONS, VERBOSITY)
         self.assertEqual(runner._makeResult(), expectedresult)
 
+    @support.force_not_colorized
     @support.requires_subprocess()
     def test_warnings(self):
         """
@@ -1367,7 +1394,7 @@ class Test_TextTestRunner(unittest.TestCase):
         self.assertTrue(runner.stream.stream is f)
 
     def test_durations(self):
-        def run(test, expect_durations):
+        def run(test, *, expect_durations=True):
             stream = BufferedWriter()
             runner = unittest.TextTestRunner(stream=stream, durations=5, verbosity=2)
             result = runner.run(test)
@@ -1389,21 +1416,21 @@ class Test_TextTestRunner(unittest.TestCase):
             def test_1(self):
                 pass
 
-        run(Foo('test_1'), True)
+        run(Foo('test_1'), expect_durations=True)
 
         # failure
         class Foo(unittest.TestCase):
             def test_1(self):
                 self.assertEqual(0, 1)
 
-        run(Foo('test_1'), True)
+        run(Foo('test_1'), expect_durations=True)
 
         # error
         class Foo(unittest.TestCase):
             def test_1(self):
                 1 / 0
 
-        run(Foo('test_1'), True)
+        run(Foo('test_1'), expect_durations=True)
 
 
         # error in setUp and tearDown
@@ -1414,7 +1441,7 @@ class Test_TextTestRunner(unittest.TestCase):
             def test_1(self):
                 pass
 
-        run(Foo('test_1'), True)
+        run(Foo('test_1'), expect_durations=True)
 
         # skip (expect no durations)
         class Foo(unittest.TestCase):
@@ -1422,7 +1449,7 @@ class Test_TextTestRunner(unittest.TestCase):
             def test_1(self):
                 pass
 
-        run(Foo('test_1'), False)
+        run(Foo('test_1'), expect_durations=False)
 
 
 

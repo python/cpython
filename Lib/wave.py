@@ -21,9 +21,9 @@ This returns an instance of a class with the following public methods:
       getparams()     -- returns a namedtuple consisting of all of the
                          above in the above order
       getmarkers()    -- returns None (for compatibility with the
-                         aifc module)
+                         old aifc module)
       getmark(id)     -- raises an error since the mark does not
-                         exist (for compatibility with the aifc module)
+                         exist (for compatibility with the old aifc module)
       readframes(n)   -- returns at most n frames of audio
       rewind()        -- rewind to the beginning of the audio stream
       setpos(pos)     -- seek to the specified position
@@ -92,6 +92,7 @@ _array_fmts = None, 'b', 'h', None, 'i'
 _wave_params = namedtuple('_wave_params',
                      'nchannels sampwidth framerate nframes comptype compname')
 
+
 def _byteswap(data, width):
     swapped_data = bytearray(len(data))
 
@@ -104,7 +105,6 @@ def _byteswap(data, width):
 
 class _Chunk:
     def __init__(self, file, align=True, bigendian=True, inclheader=False):
-        import struct
         self.closed = False
         self.align = align      # whether to align to word (2-byte) boundaries
         if bigendian:
@@ -212,7 +212,6 @@ class _Chunk:
             dummy = self.read(n)
             if not dummy:
                 raise EOFError
-
 
 
 class Wave_read:
@@ -343,9 +342,13 @@ class Wave_read:
                        self.getcomptype(), self.getcompname())
 
     def getmarkers(self):
+        import warnings
+        warnings._deprecated("Wave_read.getmarkers", remove=(3, 15))
         return None
 
     def getmark(self, id):
+        import warnings
+        warnings._deprecated("Wave_read.getmark", remove=(3, 15))
         raise Error('no marks')
 
     def setpos(self, pos):
@@ -410,6 +413,7 @@ class Wave_read:
         self._framesize = self._nchannels * self._sampwidth
         self._comptype = 'NONE'
         self._compname = 'not compressed'
+
 
 class Wave_write:
     """Variables used in this class:
@@ -548,12 +552,18 @@ class Wave_write:
               self._nframes, self._comptype, self._compname)
 
     def setmark(self, id, pos, name):
+        import warnings
+        warnings._deprecated("Wave_write.setmark", remove=(3, 15))
         raise Error('setmark() not supported')
 
     def getmark(self, id):
+        import warnings
+        warnings._deprecated("Wave_write.getmark", remove=(3, 15))
         raise Error('no marks')
 
     def getmarkers(self):
+        import warnings
+        warnings._deprecated("Wave_write.getmarkers", remove=(3, 15))
         return None
 
     def tell(self):
@@ -637,6 +647,7 @@ class Wave_write:
         self._file.write(struct.pack('<L', self._datawritten))
         self._file.seek(curpos, 0)
         self._datalength = self._datawritten
+
 
 def open(f, mode=None):
     if mode is None:
