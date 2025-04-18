@@ -625,24 +625,9 @@ class TestUopsOptimization(unittest.TestCase):
 
     def test_promote_globals_to_constants(self):
 
-        result = script_helper.run_python_until_end('-c', textwrap.dedent("""
-        import _testinternalcapi
-        import opcode
-        import _opcode
-
-        def get_first_executor(func):
-            code = func.__code__
-            co_code = code.co_code
-            for i in range(0, len(co_code), 2):
-                try:
-                    return _opcode.get_executor(code, i)
-                except ValueError:
-                    pass
-            return None
-
-        def get_opnames(ex):
-            return {item[0] for item in ex}
-
+        result = script_helper.run_python_until_end('-c', textwrap.dedent(f"""
+        {EXTERNAL_SETUP}
+        
         def testfunc(n):
             for i in range(n):
                 x = range(i)
@@ -1767,6 +1752,67 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_UNICODE", uops)
         self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
 
+    def test_constant_promotion_guard_eliminate_call_builtin_o(self):
+        result = script_helper.run_python_until_end('-c', textwrap.dedent(f"""
+        import _testcapi
+        {EXTERNAL_SETUP}
+
+        def testfunc(n):
+            for _ in range(n):
+                # The guard for this function should be eliminated.
+                _testcapi.meth_o("")
+
+        testfunc(_testinternalcapi.TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        assert ex is not None
+        uops = get_opnames(ex)
+        assert "_LOAD_GLOBAL_BUILTINS" not in uops
+        assert "_GUARD_CALL_BUILTIN_O" not in uops
+        assert "_CALL_BUILTIN_O_1" in uops
+        """), PYTHON_JIT="1")
+        self.assertEqual(result[0].rc, 0, result)
+
+    def test_constant_promotion_guard_eliminate_call_builtin_fast(self):
+        result = script_helper.run_python_until_end('-c', textwrap.dedent(f"""
+        import _testcapi
+        {EXTERNAL_SETUP}
+
+        def testfunc(n):
+            for _ in range(n):
+                # The guard for this function should be eliminated.
+                _testcapi.meth_fastcall("")
+
+        testfunc(_testinternalcapi.TIER2_THRESHOLD)
+
+        ex = get_first_executor(testfunc)
+        assert ex is not None
+        uops = get_opnames(ex)
+        assert "_LOAD_GLOBAL_BUILTINS" not in uops
+        assert "_GUARD_CALL_BUILTIN_FAST" not in uops
+        assert "_CALL_BUILTIN_FAST" in uops
+        """), PYTHON_JIT="1")
+        self.assertEqual(result[0].rc, 0, result)
+
+
+EXTERNAL_SETUP = """
+        import _testinternalcapi
+        import opcode
+        import _opcode
+        
+        def get_first_executor(func):
+            code = func.__code__
+            co_code = code.co_code
+            for i in range(0, len(co_code), 2):
+                try:
+                    return _opcode.get_executor(code, i)
+                except ValueError:
+                    pass
+            return None
+        
+        def get_opnames(ex):
+            return {item[0] for item in ex}
+"""
 
 def global_identity(x):
     return x
