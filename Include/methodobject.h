@@ -52,7 +52,7 @@ typedef PyCFunctionFastWithKeywords _PyCFunctionFastWithKeywords;
 #define _PyCFunction_CAST(func)                         \
     _Py_FUNC_CAST(PyCFunction, func)
 // Other casts are given for semantic conveniences, allowing
-// users to see whether a cast to suppress a UB is necessary.
+// users to see whether a cast to suppress an undefined behavior is necessary.
 #define _PyCFunctionFast_CAST(func)                     \
     _Py_FUNC_CAST(PyCFunctionFast, func)
 #define _PyCFunctionWithKeywords_CAST(func)             \
