@@ -5507,7 +5507,7 @@
                 JUMP_TO_ERROR();
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *res_o = ((PyCFunctionFast)(void(*)(void))cfunc)(
+            PyObject *res_o = _PyCFunctionFast_CAST(cfunc)(
                 PyCFunction_GET_SELF(callable_o),
                 args_o,
                 total_args);
@@ -5567,8 +5567,7 @@
             STAT_INC(CALL, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyCFunctionFastWithKeywords cfunc =
-            (PyCFunctionFastWithKeywords)(void(*)(void))
-            PyCFunction_GET_FUNCTION(callable_o);
+            _PyCFunctionFastWithKeywords_CAST(PyCFunction_GET_FUNCTION(callable_o));
             stack_pointer = _PyFrame_GetStackPointer(frame);
             STACKREFS_TO_PYOBJECTS(arguments, total_args, args_o);
             if (CONVERSION_FAILED(args_o)) {
@@ -5918,7 +5917,7 @@
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyCFunctionFastWithKeywords cfunc =
-            (PyCFunctionFastWithKeywords)(void(*)(void))meth->ml_meth;
+            _PyCFunctionFastWithKeywords_CAST(meth->ml_meth);
             PyObject *res_o = cfunc(self, (args_o + 1), nargs, NULL);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
@@ -6073,8 +6072,7 @@
                 JUMP_TO_ERROR();
             }
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyCFunctionFast cfunc =
-            (PyCFunctionFast)(void(*)(void))meth->ml_meth;
+            PyCFunctionFast cfunc = _PyCFunctionFast_CAST(meth->ml_meth);
             PyObject *res_o = cfunc(self, (args_o + 1), nargs);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             STACKREFS_TO_PYOBJECTS_CLEANUP(args_o);
