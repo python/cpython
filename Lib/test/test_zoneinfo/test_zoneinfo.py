@@ -17,7 +17,7 @@ import unittest
 from datetime import date, datetime, time, timedelta, timezone
 from functools import cached_property
 
-from test.support import MISSING_C_DOCSTRINGS, requires_gil_enabled
+from test.support import MISSING_C_DOCSTRINGS
 from test.test_zoneinfo import _support as test_support
 from test.test_zoneinfo._support import OS_ENV_LOCK, TZPATH_TEST_LOCK, ZoneInfoTestBase
 from test.support.import_helper import import_module, CleanImport
@@ -222,6 +222,7 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
             "America.Los_Angeles",
             "🇨🇦",  # Non-ascii
             "America/New\ud800York",  # Contains surrogate character
+            "Europe",  # Is a directory, see issue gh-85702
         ]
 
         for bad_key in bad_keys:
@@ -235,6 +236,7 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
             "../zoneinfo/America/Los_Angeles",  # Traverses above TZPATH
             "America/../America/Los_Angeles",  # Not normalized
             "America/./Los_Angeles",
+            "",
         ]
 
         for bad_key in bad_keys:
@@ -1931,7 +1933,6 @@ class ExtensionBuiltTest(unittest.TestCase):
         self.assertFalse(hasattr(c_zoneinfo.ZoneInfo, "_weak_cache"))
         self.assertTrue(hasattr(py_zoneinfo.ZoneInfo, "_weak_cache"))
 
-    @requires_gil_enabled("gh-117783: types may be immortalized")
     def test_gc_tracked(self):
         import gc
 

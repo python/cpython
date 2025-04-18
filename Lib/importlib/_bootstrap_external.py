@@ -209,7 +209,11 @@ def _write_atomic(path, data, mode=0o666):
         # We first write data to a temporary file, and then use os.replace() to
         # perform an atomic rename.
         with _io.FileIO(fd, 'wb') as file:
-            file.write(data)
+            bytes_written = file.write(data)
+        if bytes_written != len(data):
+            # Raise an OSError so the 'except' below cleans up the partially
+            # written file.
+            raise OSError("os.write() didn't write the full pyc file")
         _os.replace(path_tmp, path)
     except OSError:
         try:
@@ -712,6 +716,12 @@ class WindowsRegistryFinder:
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
+        _warnings.warn('importlib.machinery.WindowsRegistryFinder is '
+                       'deprecated; use site configuration instead. '
+                       'Future versions of Python may not enable this '
+                       'finder by default.',
+                       DeprecationWarning, stacklevel=2)
+
         filepath = cls._search_registry(fullname)
         if filepath is None:
             return None
@@ -1234,7 +1244,7 @@ class PathFinder:
         if path == '':
             try:
                 path = _os.getcwd()
-            except FileNotFoundError:
+            except (FileNotFoundError, PermissionError):
                 # Don't cache the failure as the cwd can easily change to
                 # a valid directory later on.
                 return None

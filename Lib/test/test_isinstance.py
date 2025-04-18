@@ -263,17 +263,19 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         self.assertEqual(True, issubclass(int, (int, (float, int))))
         self.assertEqual(True, issubclass(str, (str, (Child, str))))
 
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     def test_subclass_recursion_limit(self):
         # make sure that issubclass raises RecursionError before the C stack is
         # blown
-        with support.infinite_recursion():
-            self.assertRaises(RecursionError, blowstack, issubclass, str, str)
+        self.assertRaises(RecursionError, blowstack, issubclass, str, str)
 
+    @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     def test_isinstance_recursion_limit(self):
         # make sure that issubclass raises RecursionError before the C stack is
         # blown
-        with support.infinite_recursion():
-            self.assertRaises(RecursionError, blowstack, isinstance, '', str)
+        self.assertRaises(RecursionError, blowstack, isinstance, '', str)
 
     def test_subclass_with_union(self):
         self.assertTrue(issubclass(int, int | float | int))
@@ -315,6 +317,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
             self.assertRaises(RecursionError, issubclass, int, X())
             self.assertRaises(RecursionError, isinstance, 1, X())
 
+    @support.skip_emscripten_stack_overflow()
     def test_infinite_recursion_via_bases_tuple(self):
         """Regression test for bpo-30570."""
         class Failure(object):
@@ -324,6 +327,7 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
             with self.assertRaises(RecursionError):
                 issubclass(Failure(), int)
 
+    @support.skip_emscripten_stack_overflow()
     def test_infinite_cycle_in_bases(self):
         """Regression test for bpo-30570."""
         class X:
@@ -352,8 +356,9 @@ def blowstack(fxn, arg, compare_to):
     # Make sure that calling isinstance with a deeply nested tuple for its
     # argument will raise RecursionError eventually.
     tuple_arg = (compare_to,)
-    for cnt in range(support.exceeds_recursion_limit()):
-        tuple_arg = (tuple_arg,)
+    while True:
+        for _ in range(100):
+            tuple_arg = (tuple_arg,)
         fxn(arg, tuple_arg)
 
 
