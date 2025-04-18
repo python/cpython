@@ -1,0 +1,1 @@
+Deprecated attributes urllib.response.addinfourl.status and http.client.HTTPResponse.info() have been replaced with their modern equivalents (HTTPResponse.headers) while maintaining backwards-compatibility.
