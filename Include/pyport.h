@@ -664,17 +664,14 @@ extern "C" {
 #if defined(__has_feature)
 #  if __has_feature(undefined_behavior_sanitizer)
 #    define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize("undefined")))
-#    define _Py_HAS_UNDEFINED_BEHAVIOR_SANITIZER
 #  endif
 #endif
 #if !defined(_Py_NO_SANITIZE_UNDEFINED) && defined(__GNUC__) \
     && ((__GNUC__ >= 5) || (__GNUC__ == 4) && (__GNUC_MINOR__ >= 9))
 #  define _Py_NO_SANITIZE_UNDEFINED __attribute__((no_sanitize_undefined))
-#  define _Py_HAS_UNDEFINED_BEHAVIOR_SANITIZER
 #endif
 #ifndef _Py_NO_SANITIZE_UNDEFINED
 #  define _Py_NO_SANITIZE_UNDEFINED
-#  undef _Py_HAS_UNDEFINED_BEHAVIOR_SANITIZER
 #endif
 
 

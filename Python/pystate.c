@@ -569,28 +569,19 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 
-#ifdef _Py_HAS_UNDEFINED_BEHAVIOR_SANITIZER
-#define RAW_ALIGN_PTR_OFFSET sizeof(void *)
-#endif
-
 static PyInterpreterState *
 alloc_interpreter(void)
 {
-#ifdef _Py_HAS_UNDEFINED_BEHAVIOR_SANITIZER
-    size_t statesize = sizeof(PyInterpreterState);
     size_t alignment = _Alignof(PyInterpreterState);
-    size_t allocsize = statesize + alignment - 1 + RAW_ALIGN_PTR_OFFSET;
+    size_t allocsize = sizeof(PyInterpreterState) + alignment - 1;
     void *mem = PyMem_RawCalloc(1, allocsize);
     if (mem == NULL) {
         return NULL;
     }
-    char *interp = _Py_ALIGN_UP((char *)mem + RAW_ALIGN_PTR_OFFSET, alignment);
-    *(void **)(interp - RAW_ALIGN_PTR_OFFSET) = mem;
+    PyInterpreterState *interp = _Py_ALIGN_UP(mem, alignment);
     assert(_Py_IS_ALIGNED(interp, alignment));
-    return (PyInterpreterState *)interp;
-#else
-    return PyMem_RawCalloc(1, sizeof(PyInterpreterState));
-#endif
+    interp->_malloced = (uintptr_t)mem;
+    return interp;
 }
 
 static void
@@ -604,20 +595,10 @@ free_interpreter(PyInterpreterState *interp)
             PyMem_RawFree(interp->obmalloc);
             interp->obmalloc = NULL;
         }
-#ifdef _Py_HAS_UNDEFINED_BEHAVIOR_SANITIZER
         assert(_Py_IS_ALIGNED(interp, _Alignof(PyInterpreterState)));
-        char *mem_location = (char *)interp - RAW_ALIGN_PTR_OFFSET;
-        void *mem = *((void **)mem_location);
-        PyMem_RawFree(mem);
-#else
-        PyMem_RawFree(interp);
-#endif
+        PyMem_RawFree((void *)interp->_malloced);
     }
 }
-
-#ifdef _Py_HAS_UNDEFINED_BEHAVIOR_SANITIZER
-#undef RAW_ALIGN_PTR_OFFSET
-#endif
 
 #ifndef NDEBUG
 static inline int check_interpreter_whence(long);

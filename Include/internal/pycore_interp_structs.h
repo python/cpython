@@ -748,6 +748,11 @@ struct _Py_unique_id_pool {
    The PyInterpreterState typedef is in Include/pytypedefs.h.
    */
 struct _is {
+    /* This structure is carefully allocated so that it's correctly aligned
+     * to avoid undefined behaviors during LOAD and STORE. The '_malloced'
+     * field stores the allocated pointer address that will later be freed.
+     */
+    uintptr_t _malloced;
 
     /* This struct contains the eval_breaker,
      * which is by far the hottest field in this struct
