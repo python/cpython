@@ -1,5 +1,4 @@
 # Test the support for SSL and sockets
-o
 import sys
 import unittest
 import unittest.mock
