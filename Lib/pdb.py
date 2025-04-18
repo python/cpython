@@ -3044,31 +3044,31 @@ def attach(pid):
     with closing(socket.create_server(("localhost", 0))) as server:
         port = server.getsockname()[1]
 
-        with tempfile.NamedTemporaryFile("w", delete_on_close=False) as script:
-            script.write(
+        with tempfile.NamedTemporaryFile("w", delete_on_close=False) as connect_script:
+            connect_script.write(
                 f'import pdb, sys\n'
                 f'pdb._connect("localhost", {port}, sys._getframe().f_back)\n'
             )
-            script.close()
-            sys.remote_exec(pid, script.name)
+            connect_script.close()
+            sys.remote_exec(pid, connect_script.name)
 
             # TODO Add a timeout? Or don't bother since the user can ^C?
             client_sock, _ = server.accept()
 
-    with closing(client_sock):
-        sockfile = client_sock.makefile("rwb")
+            with closing(client_sock):
+                sockfile = client_sock.makefile("rwb")
 
-    with closing(sockfile):
-        with tempfile.NamedTemporaryFile("w", delete_on_close=False) as script:
-            script.write(
-                'import pdb, sys\n'
-                'if inst := pdb.Pdb._last_pdb_instance:\n'
-                '    inst.set_step()\n'
-                '    inst.set_trace(sys._getframe(1))\n'
-            )
-            script.close()
+            with closing(sockfile):
+                with tempfile.NamedTemporaryFile("w", delete_on_close=False) as interrupt_script:
+                    interrupt_script.write(
+                        'import pdb, sys\n'
+                        'if inst := pdb.Pdb._last_pdb_instance:\n'
+                        '    inst.set_step()\n'
+                        '    inst.set_trace(sys._getframe(1))\n'
+                    )
+                    interrupt_script.close()
 
-            _PdbClient(pid, sockfile, script.name).cmdloop()
+                    _PdbClient(pid, sockfile, interrupt_script.name).cmdloop()
 
 
 # Post-Mortem interface
