@@ -1276,6 +1276,25 @@ class ThreadTests(BaseTestCase):
         ''')
         assert_python_ok("-c", script)
 
+    @skip_unless_reliable_fork
+    def test_native_id_after_fork(self):
+        script = """if True:
+            import threading
+            import os
+
+            print(threading.current_thread().native_id, flush=True)
+            assert threading.current_thread().native_id == threading.get_native_id()
+            if os.fork() == 0:
+                print(threading.current_thread().native_id, flush=True)
+                assert threading.current_thread().native_id == threading.get_native_id()
+            """
+        rc, out, err = assert_python_ok('-c', script)
+        self.assertEqual(rc, 0)
+        self.assertEqual(err, b"")
+        native_ids = out.strip().splitlines()
+        self.assertEqual(len(native_ids), 2)
+        self.assertNotEqual(native_ids[0], native_ids[1])
+
 class ThreadJoinOnShutdown(BaseTestCase):
 
     def _run_and_join(self, script):
