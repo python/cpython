@@ -474,6 +474,13 @@ Other language changes
   explicitly overridden in the subclass.
   (Contributed by Tomasz Pytel in :gh:`132329`.)
 
+* Improve error message when an object supporting the synchronous (resp.
+  asynchronous) context manager protocol is entered using :keyword:`async
+  with` (resp. :keyword:`with`) instead of :keyword:`with` (resp.
+  :keyword:`async with`).
+  (Contributed by Bénédikt Tran in :gh:`128398`.)
+
+
 .. _whatsnew314-pep765:
 
 PEP 765: Disallow return/break/continue that exit a finally block
