@@ -1006,7 +1006,7 @@ class AbstractBasicAuthHandler:
 
     def http_response(self, req, response):
         if hasattr(self.passwd, 'is_authenticated'):
-            if 200 <= response.code < 300:
+            if 200 <= response.status < 300:
                 self.passwd.update_authenticated(req.full_url, True)
             else:
                 self.passwd.update_authenticated(req.full_url, False)
