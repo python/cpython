@@ -1339,9 +1339,6 @@ iterations of the loop.
    If ``STACK[-1]`` is not ``None``, increments the bytecode counter by *delta*.
    ``STACK[-1]`` is popped.
 
-   This opcode is a pseudo-instruction, replaced in final bytecode by
-   the directed versions (forward/backward).
-
    .. versionadded:: 3.11
 
    .. versionchanged:: 3.12
@@ -1352,9 +1349,6 @@ iterations of the loop.
 
    If ``STACK[-1]`` is ``None``, increments the bytecode counter by *delta*.
    ``STACK[-1]`` is popped.
-
-   This opcode is a pseudo-instruction, replaced in final bytecode by
-   the directed versions (forward/backward).
 
    .. versionadded:: 3.11
 
