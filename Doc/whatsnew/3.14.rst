@@ -469,6 +469,10 @@ Other language changes
   of HMAC is not available.
   (Contributed by Bénédikt Tran in :gh:`99108`.)
 
+* When subclassing from a pure C type, the C slots for the new type are no
+  longer replaced with a wrapped version on class creation if they are not
+  explicitly overridden in the subclass.
+  (Contributed by Tomasz Pytel in :gh:`132329`.)
 
 .. _whatsnew314-pep765:
 
