@@ -769,6 +769,9 @@ class DedentTestCase(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, "expected str object, not"):
             dedent(0)
 
+        with self.assertRaisesRegex(TypeError, "expected str object, not"):
+            dedent(b'')
+
     def assertUnchanged(self, text):
         """assert that dedent() has no effect on 'text'"""
         self.assertEqual(text, dedent(text))

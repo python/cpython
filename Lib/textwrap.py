@@ -431,7 +431,7 @@ def dedent(text):
 
     try:
         lines = text.split('\n')
-    except AttributeError:
+    except (AttributeError, TypeError):
         msg = f'expected str object, not {type(text).__qualname__!r}'
         raise TypeError(msg) from None
 
