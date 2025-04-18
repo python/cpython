@@ -1981,7 +1981,7 @@ def _proxy_bypass_macosx_sysconf(host, proxy_settings):
             if (hostIP >> mask) == (base >> mask):
                 return True
 
-        elif fnmatch(host, value):
+        elif fnmatch(hostonly, value):
             return True
 
     return False
