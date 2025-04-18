@@ -11343,10 +11343,13 @@ fixup_slot_dispatchers(PyTypeObject *type)
     PyObject *mro = lookup_tp_mro(type);
     assert(mro);
 
-    // Try to prebuild MRO dict. If we fails then clear mro_dict and
-    // reset error flag because we don't expect any exceptions. If
-    // fails to prebuild MRO dict then update_on_slot will use
-    // previous version of find_name_in_mro.
+    // Try to prebuild MRO dict. We build it in bottom-top manner,
+    // from bottom base to the top one, because the bottommost base
+    // has more items then other and copying it is preferable than
+    // merging.
+    // If we fails then clear mro_dict and reset error flag because
+    // we don't expect any exceptions. If fails to prebuild MRO dict
+    // then update_on_slot will use previous version of find_name_in_mro.
     PyObject *mro_dict = NULL;
     Py_ssize_t n = PyTuple_GET_SIZE(mro);
     for (Py_ssize_t i = 0; i < n; i++) {
