@@ -191,7 +191,7 @@ _get_current_state(PyObject **p_mod)
             Py_DECREF(spec);
 
             /* The module will be held by heaptypes. Prefer
-             * it not to be stored in the interp-dict. */
+             * it not to be stored in the interpreter's dict. */
             if (PyModule_ExecDef(mod, &datetimemodule) < 0) {
                 return NULL;
             }
@@ -219,9 +219,13 @@ set_current_module(PyInterpreterState *interp, PyObject *mod)
     if (ref == NULL) {
         return -1;
     }
-    /* A module spec remains in the dict */
+    /* A module spec remains in the interpreter's dict. */
+    PyObject *mod_dict = PyModule_GetDict(mod);
+    if (mod_dict == NULL) {
+        return -1;
+    }
     PyObject *spec;
-    if (PyDict_GetItemRef(PyModule_GetDict(mod), &_Py_ID(__spec__), &spec) != 1) {
+    if (PyDict_GetItemRef(mod_dict, &_Py_ID(__spec__), &spec) != 1) {
         return -1;
     }
     if (PyDict_SetItemString(dict, "datetime_module_spec", spec) < 0) {
