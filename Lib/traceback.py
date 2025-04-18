@@ -1314,6 +1314,7 @@ class TracebackException:
         if len(error_code) > 1024:
             return
 
+        error_lines = error_code.splitlines()
         tokens = tokenize.generate_tokens(io.StringIO(error_code).readline)
         tokens_left_to_process = 10
         import difflib
@@ -1339,12 +1340,13 @@ class TracebackException:
                 if not suggestion or suggestion == wrong_name:
                     continue
                 # Try to replace the token with the keyword
-                the_lines = error_code.splitlines()
-                the_line = the_lines[start[0] - 1]
+                the_lines = error_lines.copy()
+                the_line = the_lines[start[0] - 1][:]
                 chars = list(the_line)
                 chars[token.start[1]:token.end[1]] = suggestion
                 the_lines[start[0] - 1] = ''.join(chars)
                 code = '\n'.join(the_lines)
+
                 # Check if it works
                 try:
                     codeop.compile_command(code, symbol="exec", flags=codeop.PyCF_ONLY_AST)
