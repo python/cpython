@@ -815,7 +815,10 @@ codegen_process_deferred_annotations(compiler *c, location loc)
     Py_DECREF(conditional_annotation_indices);
 
     RETURN_IF_ERROR(codegen_leave_annotations_scope(c, loc));
-    RETURN_IF_ERROR(codegen_nameop(c, loc, &_Py_ID(__annotate__), Store));
+    RETURN_IF_ERROR(codegen_nameop(
+        c, loc,
+        ste->ste_type == ClassBlock ? &_Py_ID(__annotate_func__) : &_Py_ID(__annotate__),
+        Store));
 
     return SUCCESS;
 error:
@@ -4772,10 +4775,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     }
     Py_CLEAR(co);
 
-    if (codegen_comprehension_iter(c, outermost)) {
-        goto error;
-    }
-
+    VISIT(c, expr, outermost->iter);
     ADDOP_I(c, loc, CALL, 0);
 
     if (is_async_comprehension && type != COMP_GENEXP) {
