@@ -569,7 +569,7 @@ def _parse_args(args, **kwargs):
 
     ns.prioritize = [
         test
-        for priority_list in ns.prioritize
+        for priority_list in (ns.prioritize or ())
         for test in priority_list
     ]
 
