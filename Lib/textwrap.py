@@ -426,7 +426,7 @@ def dedent(text):
 
     Entirely blank lines are normalized to a newline character.
     """
-    if not text:
+    if text == '':
         return text
 
     try:
