@@ -1,1 +1,0 @@
-Improve :func:`str.__getitem__` error message

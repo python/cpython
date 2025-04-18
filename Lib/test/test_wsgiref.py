@@ -137,7 +137,7 @@ class IntegrationTests(TestCase):
     def test_request_length(self):
         out, err = run_amock(data=b"GET " + (b"x" * 65537) + b" HTTP/1.0\n\n")
         self.assertEqual(out.splitlines()[0],
-                         b"HTTP/1.0 414 Request-URI Too Long")
+                         b"HTTP/1.0 414 URI Too Long")
 
     def test_validated_hello(self):
         out, err = run_amock(validator(hello_app))
@@ -556,7 +556,7 @@ class HandlerTests(TestCase):
         # Test handler.environ as a dict
         expected = {}
         setup_testing_defaults(expected)
-        # Handler inherits os_environ variables which are not overriden
+        # Handler inherits os_environ variables which are not overridden
         # by SimpleHandler.add_cgi_vars() (SimpleHandler.base_env)
         for key, value in os_environ.items():
             if key not in expected:

@@ -1,2 +1,0 @@
-Fixed a bug that was causing the parser to raise an incorrect custom
-:exc:`SyntaxError` for invalid 'if' expressions. Patch by Pablo Galindo.

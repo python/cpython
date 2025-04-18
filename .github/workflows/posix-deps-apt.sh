@@ -3,9 +3,11 @@ apt-get update
 
 apt-get -yq install \
     build-essential \
+    pkg-config \
     ccache \
     gdb \
     lcov \
+    libb2-dev \
     libbz2-dev \
     libffi-dev \
     libgdbm-dev \
@@ -17,6 +19,7 @@ apt-get -yq install \
     libssl-dev \
     lzma \
     lzma-dev \
+    strace \
     tk-dev \
     uuid-dev \
     xvfb \

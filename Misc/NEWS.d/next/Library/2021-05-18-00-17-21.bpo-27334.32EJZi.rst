@@ -1,2 +1,0 @@
-The :mod:`sqlite3` context manager now performs a rollback (thus releasing the
-database lock) if commit failed.  Patch by Luca Citi and Erlend E. Aasland.
