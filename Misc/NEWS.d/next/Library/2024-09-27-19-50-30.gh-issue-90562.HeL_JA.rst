@@ -1,0 +1,2 @@
+Modify dataclasses to enable zero argument support for ``super()``  when ``slots=True`` is
+specified and custom descriptor is used or ``property`` function is wrapped.
