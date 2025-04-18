@@ -362,6 +362,8 @@ PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyS
     #endif
 #endif
 
+_PyStackRef _PyForIter_NextWithIndex(PyObject *seq, _PyStackRef index);
+
 #ifdef __cplusplus
 }
 #endif
