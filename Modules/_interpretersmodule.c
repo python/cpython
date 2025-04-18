@@ -6,16 +6,14 @@
 #endif
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_code.h"          // _PyCode_HAS_EXECUTORS()
 #include "pycore_crossinterp.h"   // _PyXIData_t
 #include "pycore_interp.h"        // _PyInterpreterState_IDIncref()
-#include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
-#include "pycore_pyerrors.h"      // _Py_excinfo
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
-#include "pycore_pystate.h"       // _PyInterpreterState_SetRunningMain()
+#include "pycore_pystate.h"       // _PyInterpreterState_IsRunningMain()
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 
@@ -332,7 +330,7 @@ get_code_str(PyObject *arg, Py_ssize_t *len_p, PyObject **bytes_p, int *flags_p)
     int flags = 0;
 
     if (PyUnicode_Check(arg)) {
-        assert(PyUnicode_CheckExact(arg)
+        assert(PyUnicode_Check(arg)
                && (check_code_str((PyUnicodeObject *)arg) == NULL));
         codestr = PyUnicode_AsUTF8AndSize(arg, &len);
         if (codestr == NULL) {
@@ -1114,7 +1112,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".exec",
+    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".run_string",
                                             "argument 2", "a string");
     if (script == NULL) {
         return NULL;
@@ -1254,13 +1252,10 @@ interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *idobj = NULL;
     int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$p:get_config", kwlist,
+                                     "O?|$p:get_config", kwlist,
                                      &idobj, &restricted))
     {
         return NULL;
-    }
-    if (idobj == Py_None) {
-        idobj = NULL;
     }
 
     int reqready = 0;
@@ -1378,14 +1373,14 @@ capture_exception(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"exc", NULL};
     PyObject *exc_arg = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "|O:capture_exception", kwlist,
+                                     "|O?:capture_exception", kwlist,
                                      &exc_arg))
     {
         return NULL;
     }
 
     PyObject *exc = exc_arg;
-    if (exc == NULL || exc == Py_None) {
+    if (exc == NULL) {
         exc = PyErr_GetRaisedException();
         if (exc == NULL) {
             Py_RETURN_NONE;

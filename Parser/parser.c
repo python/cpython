@@ -14,61 +14,61 @@
 #    define MAXSTACK 4000
 #  endif
 #else
-#  define MAXSTACK 6000
+#  define MAXSTACK 4000
 #endif
 static const int n_keyword_lists = 9;
 static KeywordToken *reserved_keywords[] = {
     (KeywordToken[]) {{NULL, -1}},
     (KeywordToken[]) {{NULL, -1}},
     (KeywordToken[]) {
-        {"if", 675},
-        {"as", 673},
-        {"in", 686},
-        {"or", 584},
-        {"is", 592},
+        {"if", 677},
+        {"as", 675},
+        {"in", 688},
+        {"or", 586},
+        {"is", 594},
         {NULL, -1},
     },
     (KeywordToken[]) {
-        {"del", 620},
-        {"def", 690},
-        {"for", 685},
-        {"try", 649},
-        {"and", 585},
-        {"not", 694},
+        {"del", 622},
+        {"def", 692},
+        {"for", 687},
+        {"try", 651},
+        {"and", 587},
+        {"not", 696},
         {NULL, -1},
     },
     (KeywordToken[]) {
-        {"from", 628},
+        {"from", 630},
         {"pass", 526},
-        {"with", 640},
-        {"elif", 677},
-        {"else", 678},
-        {"None", 618},
-        {"True", 617},
+        {"with", 642},
+        {"elif", 679},
+        {"else", 680},
+        {"None", 620},
+        {"True", 619},
         {NULL, -1},
     },
     (KeywordToken[]) {
         {"raise", 525},
-        {"yield", 583},
+        {"yield", 585},
         {"break", 527},
-        {"async", 689},
-        {"class", 692},
-        {"while", 680},
-        {"False", 619},
-        {"await", 593},
+        {"async", 691},
+        {"class", 694},
+        {"while", 682},
+        {"False", 621},
+        {"await", 595},
         {NULL, -1},
     },
     (KeywordToken[]) {
         {"return", 522},
-        {"import", 629},
+        {"import", 631},
         {"assert", 532},
         {"global", 529},
-        {"except", 670},
-        {"lambda", 616},
+        {"except", 672},
+        {"lambda", 618},
         {NULL, -1},
     },
     (KeywordToken[]) {
-        {"finally", 666},
+        {"finally", 668},
         {NULL, -1},
     },
     (KeywordToken[]) {
@@ -947,7 +947,7 @@ static void *_tmp_172_rule(Parser *p);
 static mod_ty
 file_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -993,7 +993,7 @@ file_rule(Parser *p)
 static mod_ty
 interactive_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -1036,7 +1036,7 @@ interactive_rule(Parser *p)
 static mod_ty
 eval_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -1085,7 +1085,7 @@ eval_rule(Parser *p)
 static mod_ty
 func_type_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -1146,7 +1146,7 @@ func_type_rule(Parser *p)
 static asdl_stmt_seq*
 statements_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -1189,7 +1189,7 @@ statements_rule(Parser *p)
 static asdl_stmt_seq*
 statement_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -1256,7 +1256,7 @@ statement_rule(Parser *p)
 static asdl_stmt_seq*
 statement_newline_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -1387,7 +1387,7 @@ statement_newline_rule(Parser *p)
 static asdl_stmt_seq*
 simple_stmts_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -1480,7 +1480,7 @@ simple_stmts_rule(Parser *p)
 static stmt_ty
 simple_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -1667,7 +1667,7 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'del' del_stmt"));
         stmt_ty del_stmt_var;
         if (
-            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 620)  // token='del'
+            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 622)  // token='del'
             &&
             (del_stmt_var = del_stmt_rule(p))  // del_stmt
         )
@@ -1688,7 +1688,7 @@ simple_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c> simple_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'yield' yield_stmt"));
         stmt_ty yield_stmt_var;
         if (
-            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 583)  // token='yield'
+            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 585)  // token='yield'
             &&
             (yield_stmt_var = yield_stmt_rule(p))  // yield_stmt
         )
@@ -1825,7 +1825,7 @@ simple_stmt_rule(Parser *p)
 static stmt_ty
 compound_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -1863,7 +1863,7 @@ compound_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'if' if_stmt"));
         stmt_ty if_stmt_var;
         if (
-            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 675)  // token='if'
+            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 677)  // token='if'
             &&
             (if_stmt_var = if_stmt_rule(p))  // if_stmt
         )
@@ -1947,7 +1947,7 @@ compound_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'try' try_stmt"));
         stmt_ty try_stmt_var;
         if (
-            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 649)  // token='try'
+            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 651)  // token='try'
             &&
             (try_stmt_var = try_stmt_rule(p))  // try_stmt
         )
@@ -1968,7 +1968,7 @@ compound_stmt_rule(Parser *p)
         D(fprintf(stderr, "%*c> compound_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "&'while' while_stmt"));
         stmt_ty while_stmt_var;
         if (
-            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 680)  // token='while'
+            _PyPegen_lookahead_with_int(1, _PyPegen_expect_token, p, 682)  // token='while'
             &&
             (while_stmt_var = while_stmt_rule(p))  // while_stmt
         )
@@ -2015,7 +2015,7 @@ compound_stmt_rule(Parser *p)
 static stmt_ty
 assignment_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -2233,7 +2233,7 @@ assignment_rule(Parser *p)
 static expr_ty
 annotated_rhs_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -2303,7 +2303,7 @@ annotated_rhs_rule(Parser *p)
 static AugOperator*
 augassign_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -2634,7 +2634,7 @@ augassign_rule(Parser *p)
 static stmt_ty
 return_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -2698,7 +2698,7 @@ return_stmt_rule(Parser *p)
 static stmt_ty
 raise_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -2798,7 +2798,7 @@ raise_stmt_rule(Parser *p)
 static stmt_ty
 pass_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -2859,7 +2859,7 @@ pass_stmt_rule(Parser *p)
 static stmt_ty
 break_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -2920,7 +2920,7 @@ break_stmt_rule(Parser *p)
 static stmt_ty
 continue_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -2981,7 +2981,7 @@ continue_stmt_rule(Parser *p)
 static stmt_ty
 global_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -3045,7 +3045,7 @@ global_stmt_rule(Parser *p)
 static stmt_ty
 nonlocal_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -3109,7 +3109,7 @@ nonlocal_stmt_rule(Parser *p)
 static stmt_ty
 del_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -3136,7 +3136,7 @@ del_stmt_rule(Parser *p)
         Token * _keyword;
         asdl_expr_seq* a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 620))  // token='del'
+            (_keyword = _PyPegen_expect_token(p, 622))  // token='del'
             &&
             (a = del_targets_rule(p))  // del_targets
             &&
@@ -3194,7 +3194,7 @@ del_stmt_rule(Parser *p)
 static stmt_ty
 yield_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -3255,7 +3255,7 @@ yield_stmt_rule(Parser *p)
 static stmt_ty
 assert_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -3322,7 +3322,7 @@ assert_stmt_rule(Parser *p)
 static stmt_ty
 import_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -3398,7 +3398,7 @@ import_stmt_rule(Parser *p)
 static stmt_ty
 import_name_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -3425,7 +3425,7 @@ import_name_rule(Parser *p)
         Token * _keyword;
         asdl_alias_seq* a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 629))  // token='import'
+            (_keyword = _PyPegen_expect_token(p, 631))  // token='import'
             &&
             (a = dotted_as_names_rule(p))  // dotted_as_names
         )
@@ -3464,7 +3464,7 @@ import_name_rule(Parser *p)
 static stmt_ty
 import_from_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -3494,13 +3494,13 @@ import_from_rule(Parser *p)
         expr_ty b;
         asdl_alias_seq* c;
         if (
-            (_keyword = _PyPegen_expect_token(p, 628))  // token='from'
+            (_keyword = _PyPegen_expect_token(p, 630))  // token='from'
             &&
             (a = _loop0_18_rule(p))  // (('.' | '...'))*
             &&
             (b = dotted_name_rule(p))  // dotted_name
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 629))  // token='import'
+            (_keyword_1 = _PyPegen_expect_token(p, 631))  // token='import'
             &&
             (c = import_from_targets_rule(p))  // import_from_targets
         )
@@ -3538,11 +3538,11 @@ import_from_rule(Parser *p)
         asdl_seq * a;
         asdl_alias_seq* b;
         if (
-            (_keyword = _PyPegen_expect_token(p, 628))  // token='from'
+            (_keyword = _PyPegen_expect_token(p, 630))  // token='from'
             &&
             (a = _loop1_19_rule(p))  // (('.' | '...'))+
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 629))  // token='import'
+            (_keyword_1 = _PyPegen_expect_token(p, 631))  // token='import'
             &&
             (b = import_from_targets_rule(p))  // import_from_targets
         )
@@ -3583,7 +3583,7 @@ import_from_rule(Parser *p)
 static asdl_alias_seq*
 import_from_targets_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -3718,7 +3718,7 @@ import_from_targets_rule(Parser *p)
 static asdl_alias_seq*
 import_from_as_names_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -3761,7 +3761,7 @@ import_from_as_names_rule(Parser *p)
 static alias_ty
 import_from_as_name_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -3825,7 +3825,7 @@ import_from_as_name_rule(Parser *p)
 static asdl_alias_seq*
 dotted_as_names_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -3868,7 +3868,7 @@ dotted_as_names_rule(Parser *p)
 static alias_ty
 dotted_as_name_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -3934,7 +3934,7 @@ static expr_ty dotted_name_raw(Parser *);
 static expr_ty
 dotted_name_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
@@ -3968,7 +3968,7 @@ dotted_name_rule(Parser *p)
 static expr_ty
 dotted_name_raw(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -4036,7 +4036,7 @@ dotted_name_raw(Parser *p)
 static asdl_stmt_seq*
 block_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -4131,7 +4131,7 @@ block_rule(Parser *p)
 static asdl_expr_seq*
 decorators_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -4174,7 +4174,7 @@ decorators_rule(Parser *p)
 static stmt_ty
 class_def_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -4241,7 +4241,7 @@ class_def_rule(Parser *p)
 static stmt_ty
 class_def_raw_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -4291,7 +4291,7 @@ class_def_raw_rule(Parser *p)
         asdl_stmt_seq* c;
         void *t;
         if (
-            (_keyword = _PyPegen_expect_token(p, 692))  // token='class'
+            (_keyword = _PyPegen_expect_token(p, 694))  // token='class'
             &&
             (a = _PyPegen_name_token(p))  // NAME
             &&
@@ -4336,7 +4336,7 @@ class_def_raw_rule(Parser *p)
 static stmt_ty
 function_def_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -4404,7 +4404,7 @@ function_def_rule(Parser *p)
 static stmt_ty
 function_def_raw_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -4458,7 +4458,7 @@ function_def_raw_rule(Parser *p)
         void *t;
         void *tc;
         if (
-            (_keyword = _PyPegen_expect_token(p, 690))  // token='def'
+            (_keyword = _PyPegen_expect_token(p, 692))  // token='def'
             &&
             (n = _PyPegen_name_token(p))  // NAME
             &&
@@ -4519,9 +4519,9 @@ function_def_raw_rule(Parser *p)
         void *t;
         void *tc;
         if (
-            (_keyword = _PyPegen_expect_token(p, 689))  // token='async'
+            (_keyword = _PyPegen_expect_token(p, 691))  // token='async'
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 690))  // token='def'
+            (_keyword_1 = _PyPegen_expect_token(p, 692))  // token='def'
             &&
             (n = _PyPegen_name_token(p))  // NAME
             &&
@@ -4574,7 +4574,7 @@ function_def_raw_rule(Parser *p)
 static arguments_ty
 params_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -4636,7 +4636,7 @@ params_rule(Parser *p)
 static arguments_ty
 parameters_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -4799,7 +4799,7 @@ parameters_rule(Parser *p)
 static asdl_arg_seq*
 slash_no_default_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -4879,7 +4879,7 @@ slash_no_default_rule(Parser *p)
 static SlashWithDefault*
 slash_with_default_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -4968,7 +4968,7 @@ slash_with_default_rule(Parser *p)
 static StarEtc*
 star_etc_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -5129,7 +5129,7 @@ star_etc_rule(Parser *p)
 static arg_ty
 kwds_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -5194,7 +5194,7 @@ kwds_rule(Parser *p)
 static arg_ty
 param_no_default_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -5274,7 +5274,7 @@ param_no_default_rule(Parser *p)
 static arg_ty
 param_no_default_star_annotation_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -5352,7 +5352,7 @@ param_no_default_star_annotation_rule(Parser *p)
 static NameDefaultPair*
 param_with_default_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -5438,7 +5438,7 @@ param_with_default_rule(Parser *p)
 static NameDefaultPair*
 param_maybe_default_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -5522,7 +5522,7 @@ param_maybe_default_rule(Parser *p)
 static arg_ty
 param_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -5586,7 +5586,7 @@ param_rule(Parser *p)
 static arg_ty
 param_star_annotation_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -5650,7 +5650,7 @@ param_star_annotation_rule(Parser *p)
 static expr_ty
 annotation_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -5696,7 +5696,7 @@ annotation_rule(Parser *p)
 static expr_ty
 star_annotation_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -5742,7 +5742,7 @@ star_annotation_rule(Parser *p)
 static expr_ty
 default_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -5810,7 +5810,7 @@ default_rule(Parser *p)
 static stmt_ty
 if_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -5859,7 +5859,7 @@ if_stmt_rule(Parser *p)
         asdl_stmt_seq* b;
         stmt_ty c;
         if (
-            (_keyword = _PyPegen_expect_token(p, 675))  // token='if'
+            (_keyword = _PyPegen_expect_token(p, 677))  // token='if'
             &&
             (a = named_expression_rule(p))  // named_expression
             &&
@@ -5904,7 +5904,7 @@ if_stmt_rule(Parser *p)
         asdl_stmt_seq* b;
         void *c;
         if (
-            (_keyword = _PyPegen_expect_token(p, 675))  // token='if'
+            (_keyword = _PyPegen_expect_token(p, 677))  // token='if'
             &&
             (a = named_expression_rule(p))  // named_expression
             &&
@@ -5950,7 +5950,7 @@ if_stmt_rule(Parser *p)
 static stmt_ty
 elif_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -5999,7 +5999,7 @@ elif_stmt_rule(Parser *p)
         asdl_stmt_seq* b;
         stmt_ty c;
         if (
-            (_keyword = _PyPegen_expect_token(p, 677))  // token='elif'
+            (_keyword = _PyPegen_expect_token(p, 679))  // token='elif'
             &&
             (a = named_expression_rule(p))  // named_expression
             &&
@@ -6044,7 +6044,7 @@ elif_stmt_rule(Parser *p)
         asdl_stmt_seq* b;
         void *c;
         if (
-            (_keyword = _PyPegen_expect_token(p, 677))  // token='elif'
+            (_keyword = _PyPegen_expect_token(p, 679))  // token='elif'
             &&
             (a = named_expression_rule(p))  // named_expression
             &&
@@ -6087,7 +6087,7 @@ elif_stmt_rule(Parser *p)
 static asdl_stmt_seq*
 else_block_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -6125,7 +6125,7 @@ else_block_rule(Parser *p)
         Token * _literal;
         asdl_stmt_seq* b;
         if (
-            (_keyword = _PyPegen_expect_token(p, 678))  // token='else'
+            (_keyword = _PyPegen_expect_token(p, 680))  // token='else'
             &&
             (_literal = _PyPegen_expect_forced_token(p, 11, ":"))  // forced_token=':'
             &&
@@ -6155,7 +6155,7 @@ else_block_rule(Parser *p)
 static stmt_ty
 while_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -6204,7 +6204,7 @@ while_stmt_rule(Parser *p)
         asdl_stmt_seq* b;
         void *c;
         if (
-            (_keyword = _PyPegen_expect_token(p, 680))  // token='while'
+            (_keyword = _PyPegen_expect_token(p, 682))  // token='while'
             &&
             (a = named_expression_rule(p))  // named_expression
             &&
@@ -6251,7 +6251,7 @@ while_stmt_rule(Parser *p)
 static stmt_ty
 for_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -6304,11 +6304,11 @@ for_stmt_rule(Parser *p)
         expr_ty t;
         void *tc;
         if (
-            (_keyword = _PyPegen_expect_token(p, 685))  // token='for'
+            (_keyword = _PyPegen_expect_token(p, 687))  // token='for'
             &&
             (t = star_targets_rule(p))  // star_targets
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 686))  // token='in'
+            (_keyword_1 = _PyPegen_expect_token(p, 688))  // token='in'
             &&
             (_cut_var = 1)
             &&
@@ -6366,13 +6366,13 @@ for_stmt_rule(Parser *p)
         expr_ty t;
         void *tc;
         if (
-            (_keyword = _PyPegen_expect_token(p, 689))  // token='async'
+            (_keyword = _PyPegen_expect_token(p, 691))  // token='async'
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 685))  // token='for'
+            (_keyword_1 = _PyPegen_expect_token(p, 687))  // token='for'
             &&
             (t = star_targets_rule(p))  // star_targets
             &&
-            (_keyword_2 = _PyPegen_expect_token(p, 686))  // token='in'
+            (_keyword_2 = _PyPegen_expect_token(p, 688))  // token='in'
             &&
             (_cut_var = 1)
             &&
@@ -6448,7 +6448,7 @@ for_stmt_rule(Parser *p)
 static stmt_ty
 with_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -6501,7 +6501,7 @@ with_stmt_rule(Parser *p)
         asdl_stmt_seq* b;
         void *tc;
         if (
-            (_keyword = _PyPegen_expect_token(p, 640))  // token='with'
+            (_keyword = _PyPegen_expect_token(p, 642))  // token='with'
             &&
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
@@ -6552,7 +6552,7 @@ with_stmt_rule(Parser *p)
         asdl_stmt_seq* b;
         void *tc;
         if (
-            (_keyword = _PyPegen_expect_token(p, 640))  // token='with'
+            (_keyword = _PyPegen_expect_token(p, 642))  // token='with'
             &&
             (a = (asdl_withitem_seq*)_gather_35_rule(p))  // ','.with_item+
             &&
@@ -6601,9 +6601,9 @@ with_stmt_rule(Parser *p)
         asdl_withitem_seq* a;
         asdl_stmt_seq* b;
         if (
-            (_keyword = _PyPegen_expect_token(p, 689))  // token='async'
+            (_keyword = _PyPegen_expect_token(p, 691))  // token='async'
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 640))  // token='with'
+            (_keyword_1 = _PyPegen_expect_token(p, 642))  // token='with'
             &&
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
@@ -6653,9 +6653,9 @@ with_stmt_rule(Parser *p)
         asdl_stmt_seq* b;
         void *tc;
         if (
-            (_keyword = _PyPegen_expect_token(p, 689))  // token='async'
+            (_keyword = _PyPegen_expect_token(p, 691))  // token='async'
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 640))  // token='with'
+            (_keyword_1 = _PyPegen_expect_token(p, 642))  // token='with'
             &&
             (a = (asdl_withitem_seq*)_gather_35_rule(p))  // ','.with_item+
             &&
@@ -6720,7 +6720,7 @@ with_stmt_rule(Parser *p)
 static withitem_ty
 with_item_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -6741,7 +6741,7 @@ with_item_rule(Parser *p)
         if (
             (e = expression_rule(p))  // expression
             &&
-            (_keyword = _PyPegen_expect_token(p, 673))  // token='as'
+            (_keyword = _PyPegen_expect_token(p, 675))  // token='as'
             &&
             (t = star_target_rule(p))  // star_target
             &&
@@ -6818,7 +6818,7 @@ with_item_rule(Parser *p)
 static stmt_ty
 try_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -6866,7 +6866,7 @@ try_stmt_rule(Parser *p)
         asdl_stmt_seq* b;
         asdl_stmt_seq* f;
         if (
-            (_keyword = _PyPegen_expect_token(p, 649))  // token='try'
+            (_keyword = _PyPegen_expect_token(p, 651))  // token='try'
             &&
             (_literal = _PyPegen_expect_forced_token(p, 11, ":"))  // forced_token=':'
             &&
@@ -6910,7 +6910,7 @@ try_stmt_rule(Parser *p)
         asdl_excepthandler_seq* ex;
         void *f;
         if (
-            (_keyword = _PyPegen_expect_token(p, 649))  // token='try'
+            (_keyword = _PyPegen_expect_token(p, 651))  // token='try'
             &&
             (_literal = _PyPegen_expect_forced_token(p, 11, ":"))  // forced_token=':'
             &&
@@ -6958,7 +6958,7 @@ try_stmt_rule(Parser *p)
         asdl_excepthandler_seq* ex;
         void *f;
         if (
-            (_keyword = _PyPegen_expect_token(p, 649))  // token='try'
+            (_keyword = _PyPegen_expect_token(p, 651))  // token='try'
             &&
             (_literal = _PyPegen_expect_forced_token(p, 11, ":"))  // forced_token=':'
             &&
@@ -7001,13 +7001,14 @@ try_stmt_rule(Parser *p)
 
 // except_block:
 //     | invalid_except_stmt_indent
-//     | 'except' expression ['as' NAME] ':' block
+//     | 'except' expressions ':' block
+//     | 'except' expression 'as' NAME ':' block
 //     | 'except' ':' block
 //     | invalid_except_stmt
 static excepthandler_ty
 except_block_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -7044,30 +7045,27 @@ except_block_rule(Parser *p)
         D(fprintf(stderr, "%*c%s except_block[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_except_stmt_indent"));
     }
-    { // 'except' expression ['as' NAME] ':' block
+    { // 'except' expressions ':' block
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> except_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' expression ['as' NAME] ':' block"));
+        D(fprintf(stderr, "%*c> except_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' expressions ':' block"));
         Token * _keyword;
         Token * _literal;
         asdl_stmt_seq* b;
         expr_ty e;
-        void *t;
         if (
-            (_keyword = _PyPegen_expect_token(p, 670))  // token='except'
+            (_keyword = _PyPegen_expect_token(p, 672))  // token='except'
             &&
-            (e = expression_rule(p))  // expression
-            &&
-            (t = _tmp_22_rule(p), !p->error_indicator)  // ['as' NAME]
+            (e = expressions_rule(p))  // expressions
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
             (b = block_rule(p))  // block
         )
         {
-            D(fprintf(stderr, "%*c+ except_block[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' expression ['as' NAME] ':' block"));
+            D(fprintf(stderr, "%*c+ except_block[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' expressions ':' block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -7077,7 +7075,7 @@ except_block_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_ExceptHandler ( e , ( t ) ? ( ( expr_ty ) t ) -> v . Name . id : NULL , b , EXTRA );
+            _res = _PyAST_ExceptHandler ( e , NULL , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -7087,7 +7085,55 @@ except_block_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s except_block[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' expression ['as' NAME] ':' block"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' expressions ':' block"));
+    }
+    { // 'except' expression 'as' NAME ':' block
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> except_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' expression 'as' NAME ':' block"));
+        Token * _keyword;
+        Token * _keyword_1;
+        Token * _literal;
+        asdl_stmt_seq* b;
+        expr_ty e;
+        expr_ty t;
+        if (
+            (_keyword = _PyPegen_expect_token(p, 672))  // token='except'
+            &&
+            (e = expression_rule(p))  // expression
+            &&
+            (_keyword_1 = _PyPegen_expect_token(p, 675))  // token='as'
+            &&
+            (t = _PyPegen_name_token(p))  // NAME
+            &&
+            (_literal = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (b = block_rule(p))  // block
+        )
+        {
+            D(fprintf(stderr, "%*c+ except_block[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' expression 'as' NAME ':' block"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                p->level--;
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_ExceptHandler ( e , ( ( expr_ty ) t ) -> v . Name . id , b , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s except_block[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' expression 'as' NAME ':' block"));
     }
     { // 'except' ':' block
         if (p->error_indicator) {
@@ -7099,7 +7145,7 @@ except_block_rule(Parser *p)
         Token * _literal;
         asdl_stmt_seq* b;
         if (
-            (_keyword = _PyPegen_expect_token(p, 670))  // token='except'
+            (_keyword = _PyPegen_expect_token(p, 672))  // token='except'
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -7155,12 +7201,13 @@ except_block_rule(Parser *p)
 
 // except_star_block:
 //     | invalid_except_star_stmt_indent
-//     | 'except' '*' expression ['as' NAME] ':' block
+//     | 'except' '*' expressions ':' block
+//     | 'except' '*' expression 'as' NAME ':' block
 //     | invalid_except_star_stmt
 static excepthandler_ty
 except_star_block_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -7197,33 +7244,30 @@ except_star_block_rule(Parser *p)
         D(fprintf(stderr, "%*c%s except_star_block[%d-%d]: %s failed!\n", p->level, ' ',
                   p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "invalid_except_star_stmt_indent"));
     }
-    { // 'except' '*' expression ['as' NAME] ':' block
+    { // 'except' '*' expressions ':' block
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> except_star_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' '*' expression ['as' NAME] ':' block"));
+        D(fprintf(stderr, "%*c> except_star_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' '*' expressions ':' block"));
         Token * _keyword;
         Token * _literal;
         Token * _literal_1;
         asdl_stmt_seq* b;
         expr_ty e;
-        void *t;
         if (
-            (_keyword = _PyPegen_expect_token(p, 670))  // token='except'
+            (_keyword = _PyPegen_expect_token(p, 672))  // token='except'
             &&
             (_literal = _PyPegen_expect_token(p, 16))  // token='*'
             &&
-            (e = expression_rule(p))  // expression
-            &&
-            (t = _tmp_22_rule(p), !p->error_indicator)  // ['as' NAME]
+            (e = expressions_rule(p))  // expressions
             &&
             (_literal_1 = _PyPegen_expect_token(p, 11))  // token=':'
             &&
             (b = block_rule(p))  // block
         )
         {
-            D(fprintf(stderr, "%*c+ except_star_block[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' '*' expression ['as' NAME] ':' block"));
+            D(fprintf(stderr, "%*c+ except_star_block[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' '*' expressions ':' block"));
             Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
             if (_token == NULL) {
                 p->level--;
@@ -7233,7 +7277,7 @@ except_star_block_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_ExceptHandler ( e , ( t ) ? ( ( expr_ty ) t ) -> v . Name . id : NULL , b , EXTRA );
+            _res = _PyAST_ExceptHandler ( e , NULL , b , EXTRA );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -7243,7 +7287,58 @@ except_star_block_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s except_star_block[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' '*' expression ['as' NAME] ':' block"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' '*' expressions ':' block"));
+    }
+    { // 'except' '*' expression 'as' NAME ':' block
+        if (p->error_indicator) {
+            p->level--;
+            return NULL;
+        }
+        D(fprintf(stderr, "%*c> except_star_block[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' '*' expression 'as' NAME ':' block"));
+        Token * _keyword;
+        Token * _keyword_1;
+        Token * _literal;
+        Token * _literal_1;
+        asdl_stmt_seq* b;
+        expr_ty e;
+        expr_ty t;
+        if (
+            (_keyword = _PyPegen_expect_token(p, 672))  // token='except'
+            &&
+            (_literal = _PyPegen_expect_token(p, 16))  // token='*'
+            &&
+            (e = expression_rule(p))  // expression
+            &&
+            (_keyword_1 = _PyPegen_expect_token(p, 675))  // token='as'
+            &&
+            (t = _PyPegen_name_token(p))  // NAME
+            &&
+            (_literal_1 = _PyPegen_expect_token(p, 11))  // token=':'
+            &&
+            (b = block_rule(p))  // block
+        )
+        {
+            D(fprintf(stderr, "%*c+ except_star_block[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' '*' expression 'as' NAME ':' block"));
+            Token *_token = _PyPegen_get_last_nonnwhitespace_token(p);
+            if (_token == NULL) {
+                p->level--;
+                return NULL;
+            }
+            int _end_lineno = _token->end_lineno;
+            UNUSED(_end_lineno); // Only used by EXTRA macro
+            int _end_col_offset = _token->end_col_offset;
+            UNUSED(_end_col_offset); // Only used by EXTRA macro
+            _res = _PyAST_ExceptHandler ( e , ( ( expr_ty ) t ) -> v . Name . id , b , EXTRA );
+            if (_res == NULL && PyErr_Occurred()) {
+                p->error_indicator = 1;
+                p->level--;
+                return NULL;
+            }
+            goto done;
+        }
+        p->mark = _mark;
+        D(fprintf(stderr, "%*c%s except_star_block[%d-%d]: %s failed!\n", p->level, ' ',
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' '*' expression 'as' NAME ':' block"));
     }
     if (p->call_invalid_rules) { // invalid_except_star_stmt
         if (p->error_indicator) {
@@ -7274,7 +7369,7 @@ except_star_block_rule(Parser *p)
 static asdl_stmt_seq*
 finally_block_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -7312,7 +7407,7 @@ finally_block_rule(Parser *p)
         Token * _literal;
         asdl_stmt_seq* a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 666))  // token='finally'
+            (_keyword = _PyPegen_expect_token(p, 668))  // token='finally'
             &&
             (_literal = _PyPegen_expect_forced_token(p, 11, ":"))  // forced_token=':'
             &&
@@ -7344,7 +7439,7 @@ finally_block_rule(Parser *p)
 static stmt_ty
 match_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -7442,7 +7537,7 @@ match_stmt_rule(Parser *p)
 static expr_ty
 subject_expr_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -7528,7 +7623,7 @@ subject_expr_rule(Parser *p)
 static match_case_ty
 case_block_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -7602,7 +7697,7 @@ case_block_rule(Parser *p)
 static expr_ty
 guard_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -7620,7 +7715,7 @@ guard_rule(Parser *p)
         Token * _keyword;
         expr_ty guard;
         if (
-            (_keyword = _PyPegen_expect_token(p, 675))  // token='if'
+            (_keyword = _PyPegen_expect_token(p, 677))  // token='if'
             &&
             (guard = named_expression_rule(p))  // named_expression
         )
@@ -7648,7 +7743,7 @@ guard_rule(Parser *p)
 static pattern_ty
 patterns_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -7728,7 +7823,7 @@ patterns_rule(Parser *p)
 static pattern_ty
 pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -7785,7 +7880,7 @@ pattern_rule(Parser *p)
 static pattern_ty
 as_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -7815,7 +7910,7 @@ as_pattern_rule(Parser *p)
         if (
             (pattern = or_pattern_rule(p))  // or_pattern
             &&
-            (_keyword = _PyPegen_expect_token(p, 673))  // token='as'
+            (_keyword = _PyPegen_expect_token(p, 675))  // token='as'
             &&
             (target = pattern_capture_target_rule(p))  // pattern_capture_target
         )
@@ -7871,7 +7966,7 @@ as_pattern_rule(Parser *p)
 static pattern_ty
 or_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -7940,7 +8035,7 @@ or_pattern_rule(Parser *p)
 static pattern_ty
 closed_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -8122,7 +8217,7 @@ closed_pattern_rule(Parser *p)
 static pattern_ty
 literal_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -8249,7 +8344,7 @@ literal_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c> literal_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'None'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 618))  // token='None'
+            (_keyword = _PyPegen_expect_token(p, 620))  // token='None'
         )
         {
             D(fprintf(stderr, "%*c+ literal_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'None'"));
@@ -8282,7 +8377,7 @@ literal_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c> literal_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'True'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 617))  // token='True'
+            (_keyword = _PyPegen_expect_token(p, 619))  // token='True'
         )
         {
             D(fprintf(stderr, "%*c+ literal_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'True'"));
@@ -8315,7 +8410,7 @@ literal_pattern_rule(Parser *p)
         D(fprintf(stderr, "%*c> literal_pattern[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'False'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 619))  // token='False'
+            (_keyword = _PyPegen_expect_token(p, 621))  // token='False'
         )
         {
             D(fprintf(stderr, "%*c+ literal_pattern[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'False'"));
@@ -8356,7 +8451,7 @@ literal_pattern_rule(Parser *p)
 static expr_ty
 literal_expr_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -8441,7 +8536,7 @@ literal_expr_rule(Parser *p)
         D(fprintf(stderr, "%*c> literal_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'None'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 618))  // token='None'
+            (_keyword = _PyPegen_expect_token(p, 620))  // token='None'
         )
         {
             D(fprintf(stderr, "%*c+ literal_expr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'None'"));
@@ -8474,7 +8569,7 @@ literal_expr_rule(Parser *p)
         D(fprintf(stderr, "%*c> literal_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'True'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 617))  // token='True'
+            (_keyword = _PyPegen_expect_token(p, 619))  // token='True'
         )
         {
             D(fprintf(stderr, "%*c+ literal_expr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'True'"));
@@ -8507,7 +8602,7 @@ literal_expr_rule(Parser *p)
         D(fprintf(stderr, "%*c> literal_expr[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'False'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 619))  // token='False'
+            (_keyword = _PyPegen_expect_token(p, 621))  // token='False'
         )
         {
             D(fprintf(stderr, "%*c+ literal_expr[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'False'"));
@@ -8544,7 +8639,7 @@ literal_expr_rule(Parser *p)
 static expr_ty
 complex_number_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -8650,7 +8745,7 @@ complex_number_rule(Parser *p)
 static expr_ty
 signed_number_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -8733,7 +8828,7 @@ signed_number_rule(Parser *p)
 static expr_ty
 signed_real_number_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -8816,7 +8911,7 @@ signed_real_number_rule(Parser *p)
 static expr_ty
 real_number_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -8859,7 +8954,7 @@ real_number_rule(Parser *p)
 static expr_ty
 imaginary_number_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -8902,7 +8997,7 @@ imaginary_number_rule(Parser *p)
 static pattern_ty
 capture_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -8963,7 +9058,7 @@ capture_pattern_rule(Parser *p)
 static expr_ty
 pattern_capture_target_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -9010,7 +9105,7 @@ pattern_capture_target_rule(Parser *p)
 static pattern_ty
 wildcard_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -9071,7 +9166,7 @@ wildcard_pattern_rule(Parser *p)
 static pattern_ty
 value_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -9136,7 +9231,7 @@ static expr_ty attr_raw(Parser *);
 static expr_ty
 attr_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
@@ -9170,7 +9265,7 @@ attr_rule(Parser *p)
 static expr_ty
 attr_raw(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -9238,7 +9333,7 @@ attr_raw(Parser *p)
 static expr_ty
 name_or_attr_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -9295,7 +9390,7 @@ name_or_attr_rule(Parser *p)
 static pattern_ty
 group_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -9344,7 +9439,7 @@ group_pattern_rule(Parser *p)
 static pattern_ty
 sequence_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -9450,7 +9545,7 @@ sequence_pattern_rule(Parser *p)
 static asdl_seq*
 open_sequence_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -9499,7 +9594,7 @@ open_sequence_pattern_rule(Parser *p)
 static asdl_seq*
 maybe_sequence_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -9546,7 +9641,7 @@ maybe_sequence_pattern_rule(Parser *p)
 static pattern_ty
 maybe_star_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -9603,7 +9698,7 @@ maybe_star_pattern_rule(Parser *p)
 static pattern_ty
 star_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -9712,7 +9807,7 @@ star_pattern_rule(Parser *p)
 static pattern_ty
 mapping_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -9911,7 +10006,7 @@ mapping_pattern_rule(Parser *p)
 static asdl_seq*
 items_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -9949,7 +10044,7 @@ items_pattern_rule(Parser *p)
 static KeyPatternPair*
 key_value_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -9998,7 +10093,7 @@ key_value_pattern_rule(Parser *p)
 static expr_ty
 double_star_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -10049,7 +10144,7 @@ double_star_pattern_rule(Parser *p)
 static pattern_ty
 class_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -10279,7 +10374,7 @@ class_pattern_rule(Parser *p)
 static asdl_pattern_seq*
 positional_patterns_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -10322,7 +10417,7 @@ positional_patterns_rule(Parser *p)
 static asdl_seq*
 keyword_patterns_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -10360,7 +10455,7 @@ keyword_patterns_rule(Parser *p)
 static KeyPatternPair*
 keyword_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -10409,7 +10504,7 @@ keyword_pattern_rule(Parser *p)
 static stmt_ty
 type_alias_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -10482,7 +10577,7 @@ type_alias_rule(Parser *p)
 static asdl_type_param_seq*
 type_params_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -10550,7 +10645,7 @@ type_params_rule(Parser *p)
 static asdl_type_param_seq*
 type_param_seq_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -10601,7 +10696,7 @@ type_param_seq_rule(Parser *p)
 static type_param_ty
 type_param_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -10770,7 +10865,7 @@ type_param_rule(Parser *p)
 static expr_ty
 type_param_bound_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -10816,7 +10911,7 @@ type_param_bound_rule(Parser *p)
 static expr_ty
 type_param_default_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -10862,7 +10957,7 @@ type_param_default_rule(Parser *p)
 static expr_ty
 type_param_starred_default_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -10908,7 +11003,7 @@ type_param_starred_default_rule(Parser *p)
 static expr_ty
 expressions_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -11036,7 +11131,7 @@ expressions_rule(Parser *p)
 static expr_ty
 expression_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -11110,11 +11205,11 @@ expression_rule(Parser *p)
         if (
             (a = disjunction_rule(p))  // disjunction
             &&
-            (_keyword = _PyPegen_expect_token(p, 675))  // token='if'
+            (_keyword = _PyPegen_expect_token(p, 677))  // token='if'
             &&
             (b = disjunction_rule(p))  // disjunction
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 678))  // token='else'
+            (_keyword_1 = _PyPegen_expect_token(p, 680))  // token='else'
             &&
             (c = expression_rule(p))  // expression
         )
@@ -11190,7 +11285,7 @@ expression_rule(Parser *p)
 static expr_ty
 yield_expr_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -11218,9 +11313,9 @@ yield_expr_rule(Parser *p)
         Token * _keyword_1;
         expr_ty a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 583))  // token='yield'
+            (_keyword = _PyPegen_expect_token(p, 585))  // token='yield'
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 628))  // token='from'
+            (_keyword_1 = _PyPegen_expect_token(p, 630))  // token='from'
             &&
             (a = expression_rule(p))  // expression
         )
@@ -11256,7 +11351,7 @@ yield_expr_rule(Parser *p)
         Token * _keyword;
         void *a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 583))  // token='yield'
+            (_keyword = _PyPegen_expect_token(p, 585))  // token='yield'
             &&
             (a = star_expressions_rule(p), !p->error_indicator)  // star_expressions?
         )
@@ -11296,7 +11391,7 @@ yield_expr_rule(Parser *p)
 static expr_ty
 star_expressions_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -11419,7 +11514,7 @@ star_expressions_rule(Parser *p)
 static expr_ty
 star_expression_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -11507,7 +11602,7 @@ star_expression_rule(Parser *p)
 static asdl_expr_seq*
 star_named_expressions_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -11554,7 +11649,7 @@ star_named_expressions_rule(Parser *p)
 static expr_ty
 star_named_expression_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -11637,7 +11732,7 @@ star_named_expression_rule(Parser *p)
 static expr_ty
 assignment_expression_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -11711,7 +11806,7 @@ assignment_expression_rule(Parser *p)
 static expr_ty
 named_expression_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -11789,7 +11884,7 @@ named_expression_rule(Parser *p)
 static expr_ty
 disjunction_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -11877,7 +11972,7 @@ disjunction_rule(Parser *p)
 static expr_ty
 conjunction_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -11965,7 +12060,7 @@ conjunction_rule(Parser *p)
 static expr_ty
 inversion_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -11996,7 +12091,7 @@ inversion_rule(Parser *p)
         Token * _keyword;
         expr_ty a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 694))  // token='not'
+            (_keyword = _PyPegen_expect_token(p, 696))  // token='not'
             &&
             (a = inversion_rule(p))  // inversion
         )
@@ -12053,7 +12148,7 @@ inversion_rule(Parser *p)
 static expr_ty
 comparison_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -12146,7 +12241,7 @@ comparison_rule(Parser *p)
 static CmpopExprPair*
 compare_op_bitwise_or_pair_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -12355,7 +12450,7 @@ compare_op_bitwise_or_pair_rule(Parser *p)
 static CmpopExprPair*
 eq_bitwise_or_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -12401,7 +12496,7 @@ eq_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 noteq_bitwise_or_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -12447,7 +12542,7 @@ noteq_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 lte_bitwise_or_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -12493,7 +12588,7 @@ lte_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 lt_bitwise_or_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -12539,7 +12634,7 @@ lt_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 gte_bitwise_or_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -12585,7 +12680,7 @@ gte_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 gt_bitwise_or_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -12631,7 +12726,7 @@ gt_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 notin_bitwise_or_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -12650,9 +12745,9 @@ notin_bitwise_or_rule(Parser *p)
         Token * _keyword_1;
         expr_ty a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 694))  // token='not'
+            (_keyword = _PyPegen_expect_token(p, 696))  // token='not'
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 686))  // token='in'
+            (_keyword_1 = _PyPegen_expect_token(p, 688))  // token='in'
             &&
             (a = bitwise_or_rule(p))  // bitwise_or
         )
@@ -12680,7 +12775,7 @@ notin_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 in_bitwise_or_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -12698,7 +12793,7 @@ in_bitwise_or_rule(Parser *p)
         Token * _keyword;
         expr_ty a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 686))  // token='in'
+            (_keyword = _PyPegen_expect_token(p, 688))  // token='in'
             &&
             (a = bitwise_or_rule(p))  // bitwise_or
         )
@@ -12726,7 +12821,7 @@ in_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 isnot_bitwise_or_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -12745,9 +12840,9 @@ isnot_bitwise_or_rule(Parser *p)
         Token * _keyword_1;
         expr_ty a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 592))  // token='is'
+            (_keyword = _PyPegen_expect_token(p, 594))  // token='is'
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 694))  // token='not'
+            (_keyword_1 = _PyPegen_expect_token(p, 696))  // token='not'
             &&
             (a = bitwise_or_rule(p))  // bitwise_or
         )
@@ -12775,7 +12870,7 @@ isnot_bitwise_or_rule(Parser *p)
 static CmpopExprPair*
 is_bitwise_or_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -12793,7 +12888,7 @@ is_bitwise_or_rule(Parser *p)
         Token * _keyword;
         expr_ty a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 592))  // token='is'
+            (_keyword = _PyPegen_expect_token(p, 594))  // token='is'
             &&
             (a = bitwise_or_rule(p))  // bitwise_or
         )
@@ -12823,7 +12918,7 @@ static expr_ty bitwise_or_raw(Parser *);
 static expr_ty
 bitwise_or_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
@@ -12857,7 +12952,7 @@ bitwise_or_rule(Parser *p)
 static expr_ty
 bitwise_or_raw(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -12945,7 +13040,7 @@ static expr_ty bitwise_xor_raw(Parser *);
 static expr_ty
 bitwise_xor_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
@@ -12979,7 +13074,7 @@ bitwise_xor_rule(Parser *p)
 static expr_ty
 bitwise_xor_raw(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -13067,7 +13162,7 @@ static expr_ty bitwise_and_raw(Parser *);
 static expr_ty
 bitwise_and_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
@@ -13101,7 +13196,7 @@ bitwise_and_rule(Parser *p)
 static expr_ty
 bitwise_and_raw(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -13189,7 +13284,7 @@ static expr_ty shift_expr_raw(Parser *);
 static expr_ty
 shift_expr_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
@@ -13223,7 +13318,7 @@ shift_expr_rule(Parser *p)
 static expr_ty
 shift_expr_raw(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -13369,7 +13464,7 @@ static expr_ty sum_raw(Parser *);
 static expr_ty
 sum_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
@@ -13403,7 +13498,7 @@ sum_rule(Parser *p)
 static expr_ty
 sum_raw(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -13537,7 +13632,7 @@ static expr_ty term_raw(Parser *);
 static expr_ty
 term_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
@@ -13571,7 +13666,7 @@ term_rule(Parser *p)
 static expr_ty
 term_raw(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -13832,7 +13927,7 @@ term_raw(Parser *p)
 static expr_ty
 factor_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -13992,7 +14087,7 @@ factor_rule(Parser *p)
 static expr_ty
 power_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -14078,7 +14173,7 @@ power_rule(Parser *p)
 static expr_ty
 await_primary_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -14109,7 +14204,7 @@ await_primary_rule(Parser *p)
         Token * _keyword;
         expr_ty a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 593))  // token='await'
+            (_keyword = _PyPegen_expect_token(p, 595))  // token='await'
             &&
             (a = primary_rule(p))  // primary
         )
@@ -14173,7 +14268,7 @@ static expr_ty primary_raw(Parser *);
 static expr_ty
 primary_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
@@ -14207,7 +14302,7 @@ primary_rule(Parser *p)
 static expr_ty
 primary_raw(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -14413,7 +14508,7 @@ primary_raw(Parser *p)
 static expr_ty
 slices_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -14504,7 +14599,7 @@ slices_rule(Parser *p)
 static expr_ty
 slice_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -14608,7 +14703,7 @@ slice_rule(Parser *p)
 static expr_ty
 atom_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -14653,7 +14748,7 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'True'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 617))  // token='True'
+            (_keyword = _PyPegen_expect_token(p, 619))  // token='True'
         )
         {
             D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'True'"));
@@ -14686,7 +14781,7 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'False'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 619))  // token='False'
+            (_keyword = _PyPegen_expect_token(p, 621))  // token='False'
         )
         {
             D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'False'"));
@@ -14719,7 +14814,7 @@ atom_rule(Parser *p)
         D(fprintf(stderr, "%*c> atom[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'None'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 618))  // token='None'
+            (_keyword = _PyPegen_expect_token(p, 620))  // token='None'
         )
         {
             D(fprintf(stderr, "%*c+ atom[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'None'"));
@@ -14890,7 +14985,7 @@ atom_rule(Parser *p)
 static expr_ty
 group_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -14958,7 +15053,7 @@ group_rule(Parser *p)
 static expr_ty
 lambdef_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -14987,7 +15082,7 @@ lambdef_rule(Parser *p)
         void *a;
         expr_ty b;
         if (
-            (_keyword = _PyPegen_expect_token(p, 616))  // token='lambda'
+            (_keyword = _PyPegen_expect_token(p, 618))  // token='lambda'
             &&
             (a = lambda_params_rule(p), !p->error_indicator)  // lambda_params?
             &&
@@ -15028,7 +15123,7 @@ lambdef_rule(Parser *p)
 static arguments_ty
 lambda_params_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -15090,7 +15185,7 @@ lambda_params_rule(Parser *p)
 static arguments_ty
 lambda_parameters_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -15255,7 +15350,7 @@ lambda_parameters_rule(Parser *p)
 static asdl_arg_seq*
 lambda_slash_no_default_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -15335,7 +15430,7 @@ lambda_slash_no_default_rule(Parser *p)
 static SlashWithDefault*
 lambda_slash_with_default_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -15423,7 +15518,7 @@ lambda_slash_with_default_rule(Parser *p)
 static StarEtc*
 lambda_star_etc_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -15551,7 +15646,7 @@ lambda_star_etc_rule(Parser *p)
 static arg_ty
 lambda_kwds_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -15616,7 +15711,7 @@ lambda_kwds_rule(Parser *p)
 static arg_ty
 lambda_param_no_default_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -15688,7 +15783,7 @@ lambda_param_no_default_rule(Parser *p)
 static NameDefaultPair*
 lambda_param_with_default_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -15766,7 +15861,7 @@ lambda_param_with_default_rule(Parser *p)
 static NameDefaultPair*
 lambda_param_maybe_default_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -15844,7 +15939,7 @@ lambda_param_maybe_default_rule(Parser *p)
 static arg_ty
 lambda_param_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -15905,7 +16000,7 @@ lambda_param_rule(Parser *p)
 static expr_ty
 fstring_middle_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -15969,7 +16064,7 @@ fstring_middle_rule(Parser *p)
 static expr_ty
 fstring_replacement_field_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16064,7 +16159,7 @@ fstring_replacement_field_rule(Parser *p)
 static ResultTokenWithMetadata*
 fstring_conversion_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16110,7 +16205,7 @@ fstring_conversion_rule(Parser *p)
 static ResultTokenWithMetadata*
 fstring_full_format_spec_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16174,7 +16269,7 @@ fstring_full_format_spec_rule(Parser *p)
 static expr_ty
 fstring_format_spec_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16236,7 +16331,7 @@ fstring_format_spec_rule(Parser *p)
 static expr_ty
 fstring_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16285,7 +16380,7 @@ fstring_rule(Parser *p)
 static expr_ty
 string_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16328,7 +16423,7 @@ string_rule(Parser *p)
 static expr_ty
 strings_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16394,7 +16489,7 @@ strings_rule(Parser *p)
 static expr_ty
 list_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16461,7 +16556,7 @@ list_rule(Parser *p)
 static expr_ty
 tuple_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16528,7 +16623,7 @@ tuple_rule(Parser *p)
 static expr_ty
 set_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16595,7 +16690,7 @@ set_rule(Parser *p)
 static expr_ty
 dict_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16687,7 +16782,7 @@ dict_rule(Parser *p)
 static asdl_seq*
 double_starred_kvpairs_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16734,7 +16829,7 @@ double_starred_kvpairs_rule(Parser *p)
 static KeyValuePair*
 double_starred_kvpair_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16799,7 +16894,7 @@ double_starred_kvpair_rule(Parser *p)
 static KeyValuePair*
 kvpair_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16848,7 +16943,7 @@ kvpair_rule(Parser *p)
 static asdl_comprehension_seq*
 for_if_clauses_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16895,7 +16990,7 @@ for_if_clauses_rule(Parser *p)
 static comprehension_ty
 for_if_clause_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -16918,13 +17013,13 @@ for_if_clause_rule(Parser *p)
         expr_ty b;
         asdl_expr_seq* c;
         if (
-            (_keyword = _PyPegen_expect_token(p, 689))  // token='async'
+            (_keyword = _PyPegen_expect_token(p, 691))  // token='async'
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 685))  // token='for'
+            (_keyword_1 = _PyPegen_expect_token(p, 687))  // token='for'
             &&
             (a = star_targets_rule(p))  // star_targets
             &&
-            (_keyword_2 = _PyPegen_expect_token(p, 686))  // token='in'
+            (_keyword_2 = _PyPegen_expect_token(p, 688))  // token='in'
             &&
             (_cut_var = 1)
             &&
@@ -16963,11 +17058,11 @@ for_if_clause_rule(Parser *p)
         expr_ty b;
         asdl_expr_seq* c;
         if (
-            (_keyword = _PyPegen_expect_token(p, 685))  // token='for'
+            (_keyword = _PyPegen_expect_token(p, 687))  // token='for'
             &&
             (a = star_targets_rule(p))  // star_targets
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 686))  // token='in'
+            (_keyword_1 = _PyPegen_expect_token(p, 688))  // token='in'
             &&
             (_cut_var = 1)
             &&
@@ -17041,7 +17136,7 @@ for_if_clause_rule(Parser *p)
 static expr_ty
 listcomp_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -17130,7 +17225,7 @@ listcomp_rule(Parser *p)
 static expr_ty
 setcomp_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -17221,7 +17316,7 @@ setcomp_rule(Parser *p)
 static expr_ty
 genexp_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -17310,7 +17405,7 @@ genexp_rule(Parser *p)
 static expr_ty
 dictcomp_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -17399,7 +17494,7 @@ dictcomp_rule(Parser *p)
 static expr_ty
 arguments_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -17474,7 +17569,7 @@ arguments_rule(Parser *p)
 static expr_ty
 args_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -17574,7 +17669,7 @@ args_rule(Parser *p)
 static asdl_seq*
 kwargs_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -17664,7 +17759,7 @@ kwargs_rule(Parser *p)
 static expr_ty
 starred_expression_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -17766,7 +17861,7 @@ starred_expression_rule(Parser *p)
 static KeywordOrStarred*
 kwarg_or_starred_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -17876,7 +17971,7 @@ kwarg_or_starred_rule(Parser *p)
 static KeywordOrStarred*
 kwarg_or_double_starred_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -17998,7 +18093,7 @@ kwarg_or_double_starred_rule(Parser *p)
 static expr_ty
 star_targets_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -18092,7 +18187,7 @@ star_targets_rule(Parser *p)
 static asdl_expr_seq*
 star_targets_list_seq_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -18139,7 +18234,7 @@ star_targets_list_seq_rule(Parser *p)
 static asdl_expr_seq*
 star_targets_tuple_seq_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -18216,7 +18311,7 @@ star_targets_tuple_seq_rule(Parser *p)
 static expr_ty
 star_target_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -18307,7 +18402,7 @@ star_target_rule(Parser *p)
 static expr_ty
 target_with_star_atom_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -18448,7 +18543,7 @@ target_with_star_atom_rule(Parser *p)
 static expr_ty
 star_atom_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -18608,7 +18703,7 @@ star_atom_rule(Parser *p)
 static expr_ty
 single_target_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -18702,7 +18797,7 @@ single_target_rule(Parser *p)
 static expr_ty
 single_subscript_attribute_target_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -18822,7 +18917,7 @@ static expr_ty t_primary_raw(Parser *);
 static expr_ty
 t_primary_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     expr_ty _res = NULL;
@@ -18856,7 +18951,7 @@ t_primary_rule(Parser *p)
 static expr_ty
 t_primary_raw(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -19077,7 +19172,7 @@ t_primary_raw(Parser *p)
 static void *
 t_lookahead_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -19153,7 +19248,7 @@ t_lookahead_rule(Parser *p)
 static asdl_expr_seq*
 del_targets_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -19203,7 +19298,7 @@ del_targets_rule(Parser *p)
 static expr_ty
 del_target_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -19340,7 +19435,7 @@ del_target_rule(Parser *p)
 static expr_ty
 del_t_atom_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -19507,7 +19602,7 @@ del_t_atom_rule(Parser *p)
 static asdl_expr_seq*
 type_expressions_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -19751,7 +19846,7 @@ type_expressions_rule(Parser *p)
 static Token*
 func_type_comment_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -19844,7 +19939,7 @@ func_type_comment_rule(Parser *p)
 static void *
 invalid_arguments_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -20087,7 +20182,7 @@ invalid_arguments_rule(Parser *p)
 static void *
 invalid_kwarg_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -20233,7 +20328,7 @@ expression_without_invalid_rule(Parser *p)
 {
     int _prev_call_invalid = p->call_invalid_rules;
     p->call_invalid_rules = 0;
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -20268,11 +20363,11 @@ expression_without_invalid_rule(Parser *p)
         if (
             (a = disjunction_rule(p))  // disjunction
             &&
-            (_keyword = _PyPegen_expect_token(p, 675))  // token='if'
+            (_keyword = _PyPegen_expect_token(p, 677))  // token='if'
             &&
             (b = disjunction_rule(p))  // disjunction
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 678))  // token='else'
+            (_keyword_1 = _PyPegen_expect_token(p, 680))  // token='else'
             &&
             (c = expression_rule(p))  // expression
         )
@@ -20352,7 +20447,7 @@ expression_without_invalid_rule(Parser *p)
 static void *
 invalid_legacy_expression_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -20400,7 +20495,7 @@ invalid_legacy_expression_rule(Parser *p)
 static void *
 invalid_type_param_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -20491,7 +20586,7 @@ invalid_type_param_rule(Parser *p)
 static void *
 invalid_expression_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -20571,7 +20666,7 @@ invalid_expression_rule(Parser *p)
         if (
             (a = disjunction_rule(p))  // disjunction
             &&
-            (_keyword = _PyPegen_expect_token(p, 675))  // token='if'
+            (_keyword = _PyPegen_expect_token(p, 677))  // token='if'
             &&
             (b = disjunction_rule(p))  // disjunction
             &&
@@ -20604,11 +20699,11 @@ invalid_expression_rule(Parser *p)
         if (
             (a = disjunction_rule(p))  // disjunction
             &&
-            (_keyword = _PyPegen_expect_token(p, 675))  // token='if'
+            (_keyword = _PyPegen_expect_token(p, 677))  // token='if'
             &&
             (b = disjunction_rule(p))  // disjunction
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 678))  // token='else'
+            (_keyword_1 = _PyPegen_expect_token(p, 680))  // token='else'
             &&
             _PyPegen_lookahead(0, (void *(*)(Parser *)) expression_rule, p)
         )
@@ -20640,11 +20735,11 @@ invalid_expression_rule(Parser *p)
         if (
             (a = (stmt_ty)_tmp_114_rule(p))  // pass_stmt | break_stmt | continue_stmt
             &&
-            (_keyword = _PyPegen_expect_token(p, 675))  // token='if'
+            (_keyword = _PyPegen_expect_token(p, 677))  // token='if'
             &&
             (b = disjunction_rule(p))  // disjunction
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 678))  // token='else'
+            (_keyword_1 = _PyPegen_expect_token(p, 680))  // token='else'
             &&
             (c = simple_stmt_rule(p))  // simple_stmt
         )
@@ -20673,7 +20768,7 @@ invalid_expression_rule(Parser *p)
         Token * a;
         Token * b;
         if (
-            (a = _PyPegen_expect_token(p, 616))  // token='lambda'
+            (a = _PyPegen_expect_token(p, 618))  // token='lambda'
             &&
             (_opt_var = lambda_params_rule(p), !p->error_indicator)  // lambda_params?
             &&
@@ -20708,7 +20803,7 @@ invalid_expression_rule(Parser *p)
 static void *
 invalid_named_expression_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -20834,7 +20929,7 @@ invalid_named_expression_rule(Parser *p)
 static void *
 invalid_assignment_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -21039,7 +21134,7 @@ invalid_assignment_rule(Parser *p)
 static expr_ty
 invalid_ann_assign_target_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -21126,7 +21221,7 @@ invalid_ann_assign_target_rule(Parser *p)
 static void *
 invalid_del_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -21144,7 +21239,7 @@ invalid_del_stmt_rule(Parser *p)
         Token * _keyword;
         expr_ty a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 620))  // token='del'
+            (_keyword = _PyPegen_expect_token(p, 622))  // token='del'
             &&
             (a = star_expressions_rule(p))  // star_expressions
         )
@@ -21172,7 +21267,7 @@ invalid_del_stmt_rule(Parser *p)
 static void *
 invalid_block_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -21220,7 +21315,7 @@ invalid_block_rule(Parser *p)
 static void *
 invalid_comprehension_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -21338,7 +21433,7 @@ invalid_comprehension_rule(Parser *p)
 static void *
 invalid_dict_comprehension_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -21399,7 +21494,7 @@ invalid_dict_comprehension_rule(Parser *p)
 static void *
 invalid_parameters_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -21616,7 +21711,7 @@ invalid_parameters_rule(Parser *p)
 static void *
 invalid_default_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -21665,7 +21760,7 @@ invalid_default_rule(Parser *p)
 static void *
 invalid_star_etc_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -21807,7 +21902,7 @@ invalid_star_etc_rule(Parser *p)
 static void *
 invalid_kwds_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -21922,7 +22017,7 @@ invalid_kwds_rule(Parser *p)
 static void *
 invalid_parameters_helper_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -21990,7 +22085,7 @@ invalid_parameters_helper_rule(Parser *p)
 static void *
 invalid_lambda_parameters_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -22209,7 +22304,7 @@ invalid_lambda_parameters_rule(Parser *p)
 static void *
 invalid_lambda_parameters_helper_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -22274,7 +22369,7 @@ invalid_lambda_parameters_helper_rule(Parser *p)
 static void *
 invalid_lambda_star_etc_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -22389,7 +22484,7 @@ invalid_lambda_star_etc_rule(Parser *p)
 static void *
 invalid_lambda_kwds_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -22504,7 +22599,7 @@ invalid_lambda_kwds_rule(Parser *p)
 static void *
 invalid_double_type_comments_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -22559,7 +22654,7 @@ invalid_double_type_comments_rule(Parser *p)
 static void *
 invalid_with_item_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -22580,7 +22675,7 @@ invalid_with_item_rule(Parser *p)
         if (
             (expression_var = expression_rule(p))  // expression
             &&
-            (_keyword = _PyPegen_expect_token(p, 673))  // token='as'
+            (_keyword = _PyPegen_expect_token(p, 675))  // token='as'
             &&
             (a = expression_rule(p))  // expression
             &&
@@ -22610,7 +22705,7 @@ invalid_with_item_rule(Parser *p)
 static void *
 invalid_for_if_clause_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -22630,13 +22725,13 @@ invalid_for_if_clause_rule(Parser *p)
         UNUSED(_opt_var); // Silence compiler warnings
         void *_tmp_133_var;
         if (
-            (_opt_var = _PyPegen_expect_token(p, 689), !p->error_indicator)  // 'async'?
+            (_opt_var = _PyPegen_expect_token(p, 691), !p->error_indicator)  // 'async'?
             &&
-            (_keyword = _PyPegen_expect_token(p, 685))  // token='for'
+            (_keyword = _PyPegen_expect_token(p, 687))  // token='for'
             &&
             (_tmp_133_var = _tmp_133_rule(p))  // bitwise_or ((',' bitwise_or))* ','?
             &&
-            _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 686)  // token='in'
+            _PyPegen_lookahead_with_int(0, _PyPegen_expect_token, p, 688)  // token='in'
         )
         {
             D(fprintf(stderr, "%*c+ invalid_for_if_clause[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'async'? 'for' (bitwise_or ((',' bitwise_or))* ','?) !'in'"));
@@ -22662,7 +22757,7 @@ invalid_for_if_clause_rule(Parser *p)
 static void *
 invalid_for_target_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -22682,9 +22777,9 @@ invalid_for_target_rule(Parser *p)
         UNUSED(_opt_var); // Silence compiler warnings
         expr_ty a;
         if (
-            (_opt_var = _PyPegen_expect_token(p, 689), !p->error_indicator)  // 'async'?
+            (_opt_var = _PyPegen_expect_token(p, 691), !p->error_indicator)  // 'async'?
             &&
-            (_keyword = _PyPegen_expect_token(p, 685))  // token='for'
+            (_keyword = _PyPegen_expect_token(p, 687))  // token='for'
             &&
             (a = star_expressions_rule(p))  // star_expressions
         )
@@ -22712,7 +22807,7 @@ invalid_for_target_rule(Parser *p)
 static void *
 invalid_group_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -22794,7 +22889,7 @@ invalid_group_rule(Parser *p)
 static void *
 invalid_import_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -22814,11 +22909,11 @@ invalid_import_rule(Parser *p)
         Token * a;
         expr_ty dotted_name_var;
         if (
-            (a = _PyPegen_expect_token(p, 629))  // token='import'
+            (a = _PyPegen_expect_token(p, 631))  // token='import'
             &&
             (_gather_135_var = _gather_135_rule(p))  // ','.dotted_name+
             &&
-            (_keyword = _PyPegen_expect_token(p, 628))  // token='from'
+            (_keyword = _PyPegen_expect_token(p, 630))  // token='from'
             &&
             (dotted_name_var = dotted_name_rule(p))  // dotted_name
         )
@@ -22845,7 +22940,7 @@ invalid_import_rule(Parser *p)
         Token * _keyword;
         Token * token;
         if (
-            (_keyword = _PyPegen_expect_token(p, 629))  // token='import'
+            (_keyword = _PyPegen_expect_token(p, 631))  // token='import'
             &&
             (token = _PyPegen_expect_token(p, NEWLINE))  // token='NEWLINE'
         )
@@ -22873,7 +22968,7 @@ invalid_import_rule(Parser *p)
 static void *
 invalid_import_from_targets_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -22948,7 +23043,7 @@ invalid_import_from_targets_rule(Parser *p)
 static void *
 invalid_with_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -22969,9 +23064,9 @@ invalid_with_stmt_rule(Parser *p)
         UNUSED(_opt_var); // Silence compiler warnings
         Token * newline_var;
         if (
-            (_opt_var = _PyPegen_expect_token(p, 689), !p->error_indicator)  // 'async'?
+            (_opt_var = _PyPegen_expect_token(p, 691), !p->error_indicator)  // 'async'?
             &&
-            (_keyword = _PyPegen_expect_token(p, 640))  // token='with'
+            (_keyword = _PyPegen_expect_token(p, 642))  // token='with'
             &&
             (_gather_137_var = _gather_137_rule(p))  // ','.(expression ['as' star_target])+
             &&
@@ -23007,9 +23102,9 @@ invalid_with_stmt_rule(Parser *p)
         UNUSED(_opt_var_1); // Silence compiler warnings
         Token * newline_var;
         if (
-            (_opt_var = _PyPegen_expect_token(p, 689), !p->error_indicator)  // 'async'?
+            (_opt_var = _PyPegen_expect_token(p, 691), !p->error_indicator)  // 'async'?
             &&
-            (_keyword = _PyPegen_expect_token(p, 640))  // token='with'
+            (_keyword = _PyPegen_expect_token(p, 642))  // token='with'
             &&
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
@@ -23047,7 +23142,7 @@ invalid_with_stmt_rule(Parser *p)
 static void *
 invalid_with_stmt_indent_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -23069,9 +23164,9 @@ invalid_with_stmt_indent_rule(Parser *p)
         Token * a;
         Token * newline_var;
         if (
-            (_opt_var = _PyPegen_expect_token(p, 689), !p->error_indicator)  // 'async'?
+            (_opt_var = _PyPegen_expect_token(p, 691), !p->error_indicator)  // 'async'?
             &&
-            (a = _PyPegen_expect_token(p, 640))  // token='with'
+            (a = _PyPegen_expect_token(p, 642))  // token='with'
             &&
             (_gather_137_var = _gather_137_rule(p))  // ','.(expression ['as' star_target])+
             &&
@@ -23112,9 +23207,9 @@ invalid_with_stmt_indent_rule(Parser *p)
         Token * a;
         Token * newline_var;
         if (
-            (_opt_var = _PyPegen_expect_token(p, 689), !p->error_indicator)  // 'async'?
+            (_opt_var = _PyPegen_expect_token(p, 691), !p->error_indicator)  // 'async'?
             &&
-            (a = _PyPegen_expect_token(p, 640))  // token='with'
+            (a = _PyPegen_expect_token(p, 642))  // token='with'
             &&
             (_literal = _PyPegen_expect_token(p, 7))  // token='('
             &&
@@ -23158,7 +23253,7 @@ invalid_with_stmt_indent_rule(Parser *p)
 static void *
 invalid_try_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -23177,7 +23272,7 @@ invalid_try_stmt_rule(Parser *p)
         Token * a;
         Token * newline_var;
         if (
-            (a = _PyPegen_expect_token(p, 649))  // token='try'
+            (a = _PyPegen_expect_token(p, 651))  // token='try'
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -23209,7 +23304,7 @@ invalid_try_stmt_rule(Parser *p)
         Token * _literal;
         asdl_stmt_seq* block_var;
         if (
-            (_keyword = _PyPegen_expect_token(p, 649))  // token='try'
+            (_keyword = _PyPegen_expect_token(p, 651))  // token='try'
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -23248,7 +23343,7 @@ invalid_try_stmt_rule(Parser *p)
         Token * b;
         expr_ty expression_var;
         if (
-            (_keyword = _PyPegen_expect_token(p, 649))  // token='try'
+            (_keyword = _PyPegen_expect_token(p, 651))  // token='try'
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -23256,7 +23351,7 @@ invalid_try_stmt_rule(Parser *p)
             &&
             (_loop1_37_var = _loop1_37_rule(p))  // except_block+
             &&
-            (a = _PyPegen_expect_token(p, 670))  // token='except'
+            (a = _PyPegen_expect_token(p, 672))  // token='except'
             &&
             (b = _PyPegen_expect_token(p, 16))  // token='*'
             &&
@@ -23295,7 +23390,7 @@ invalid_try_stmt_rule(Parser *p)
         UNUSED(_opt_var); // Silence compiler warnings
         Token * a;
         if (
-            (_keyword = _PyPegen_expect_token(p, 649))  // token='try'
+            (_keyword = _PyPegen_expect_token(p, 651))  // token='try'
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -23303,7 +23398,7 @@ invalid_try_stmt_rule(Parser *p)
             &&
             (_loop1_38_var = _loop1_38_rule(p))  // except_star_block+
             &&
-            (a = _PyPegen_expect_token(p, 670))  // token='except'
+            (a = _PyPegen_expect_token(p, 672))  // token='except'
             &&
             (_opt_var = _tmp_142_rule(p), !p->error_indicator)  // [expression ['as' NAME]]
             &&
@@ -23330,14 +23425,14 @@ invalid_try_stmt_rule(Parser *p)
 }
 
 // invalid_except_stmt:
-//     | 'except' expression ',' expressions ['as' NAME] ':'
+//     | 'except' expression ',' expressions 'as' NAME ':'
 //     | 'except' expression ['as' NAME] NEWLINE
 //     | 'except' NEWLINE
 //     | 'except' expression 'as' expression
 static void *
 invalid_except_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -23346,21 +23441,21 @@ invalid_except_stmt_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // 'except' expression ',' expressions ['as' NAME] ':'
+    { // 'except' expression ',' expressions 'as' NAME ':'
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_except_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' expression ',' expressions ['as' NAME] ':'"));
+        D(fprintf(stderr, "%*c> invalid_except_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' expression ',' expressions 'as' NAME ':'"));
         Token * _keyword;
+        Token * _keyword_1;
         Token * _literal;
         Token * _literal_1;
-        void *_opt_var;
-        UNUSED(_opt_var); // Silence compiler warnings
         expr_ty a;
         expr_ty expressions_var;
+        expr_ty name_var;
         if (
-            (_keyword = _PyPegen_expect_token(p, 670))  // token='except'
+            (_keyword = _PyPegen_expect_token(p, 672))  // token='except'
             &&
             (a = expression_rule(p))  // expression
             &&
@@ -23368,13 +23463,15 @@ invalid_except_stmt_rule(Parser *p)
             &&
             (expressions_var = expressions_rule(p))  // expressions
             &&
-            (_opt_var = _tmp_22_rule(p), !p->error_indicator)  // ['as' NAME]
+            (_keyword_1 = _PyPegen_expect_token(p, 675))  // token='as'
+            &&
+            (name_var = _PyPegen_name_token(p))  // NAME
             &&
             (_literal_1 = _PyPegen_expect_token(p, 11))  // token=':'
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_except_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' expression ',' expressions ['as' NAME] ':'"));
-            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "multiple exception types must be parenthesized" );
+            D(fprintf(stderr, "%*c+ invalid_except_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' expression ',' expressions 'as' NAME ':'"));
+            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "multiple exception types must be parenthesized when using 'as'" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -23384,7 +23481,7 @@ invalid_except_stmt_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_except_stmt[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' expression ',' expressions ['as' NAME] ':'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' expression ',' expressions 'as' NAME ':'"));
     }
     { // 'except' expression ['as' NAME] NEWLINE
         if (p->error_indicator) {
@@ -23398,7 +23495,7 @@ invalid_except_stmt_rule(Parser *p)
         expr_ty expression_var;
         Token * newline_var;
         if (
-            (a = _PyPegen_expect_token(p, 670))  // token='except'
+            (a = _PyPegen_expect_token(p, 672))  // token='except'
             &&
             (expression_var = expression_rule(p))  // expression
             &&
@@ -23429,7 +23526,7 @@ invalid_except_stmt_rule(Parser *p)
         Token * a;
         Token * newline_var;
         if (
-            (a = _PyPegen_expect_token(p, 670))  // token='except'
+            (a = _PyPegen_expect_token(p, 672))  // token='except'
             &&
             (newline_var = _PyPegen_expect_token(p, NEWLINE))  // token='NEWLINE'
         )
@@ -23458,11 +23555,11 @@ invalid_except_stmt_rule(Parser *p)
         expr_ty a;
         expr_ty expression_var;
         if (
-            (_keyword = _PyPegen_expect_token(p, 670))  // token='except'
+            (_keyword = _PyPegen_expect_token(p, 672))  // token='except'
             &&
             (expression_var = expression_rule(p))  // expression
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 673))  // token='as'
+            (_keyword_1 = _PyPegen_expect_token(p, 675))  // token='as'
             &&
             (a = expression_rule(p))  // expression
         )
@@ -23487,14 +23584,14 @@ invalid_except_stmt_rule(Parser *p)
 }
 
 // invalid_except_star_stmt:
-//     | 'except' '*' expression ',' expressions ['as' NAME] ':'
+//     | 'except' '*' expression ',' expressions 'as' NAME ':'
 //     | 'except' '*' expression ['as' NAME] NEWLINE
 //     | 'except' '*' (NEWLINE | ':')
 //     | 'except' '*' expression 'as' expression
 static void *
 invalid_except_star_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -23503,22 +23600,22 @@ invalid_except_star_stmt_rule(Parser *p)
     }
     void * _res = NULL;
     int _mark = p->mark;
-    { // 'except' '*' expression ',' expressions ['as' NAME] ':'
+    { // 'except' '*' expression ',' expressions 'as' NAME ':'
         if (p->error_indicator) {
             p->level--;
             return NULL;
         }
-        D(fprintf(stderr, "%*c> invalid_except_star_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' '*' expression ',' expressions ['as' NAME] ':'"));
+        D(fprintf(stderr, "%*c> invalid_except_star_stmt[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except' '*' expression ',' expressions 'as' NAME ':'"));
         Token * _keyword;
+        Token * _keyword_1;
         Token * _literal;
         Token * _literal_1;
         Token * _literal_2;
-        void *_opt_var;
-        UNUSED(_opt_var); // Silence compiler warnings
         expr_ty a;
         expr_ty expressions_var;
+        expr_ty name_var;
         if (
-            (_keyword = _PyPegen_expect_token(p, 670))  // token='except'
+            (_keyword = _PyPegen_expect_token(p, 672))  // token='except'
             &&
             (_literal = _PyPegen_expect_token(p, 16))  // token='*'
             &&
@@ -23528,13 +23625,15 @@ invalid_except_star_stmt_rule(Parser *p)
             &&
             (expressions_var = expressions_rule(p))  // expressions
             &&
-            (_opt_var = _tmp_22_rule(p), !p->error_indicator)  // ['as' NAME]
+            (_keyword_1 = _PyPegen_expect_token(p, 675))  // token='as'
+            &&
+            (name_var = _PyPegen_name_token(p))  // NAME
             &&
             (_literal_2 = _PyPegen_expect_token(p, 11))  // token=':'
         )
         {
-            D(fprintf(stderr, "%*c+ invalid_except_star_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' '*' expression ',' expressions ['as' NAME] ':'"));
-            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "multiple exception types must be parenthesized" );
+            D(fprintf(stderr, "%*c+ invalid_except_star_stmt[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except' '*' expression ',' expressions 'as' NAME ':'"));
+            _res = RAISE_SYNTAX_ERROR_STARTING_FROM ( a , "multiple exception types must be parenthesized when using 'as'" );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -23544,7 +23643,7 @@ invalid_except_star_stmt_rule(Parser *p)
         }
         p->mark = _mark;
         D(fprintf(stderr, "%*c%s invalid_except_star_stmt[%d-%d]: %s failed!\n", p->level, ' ',
-                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' '*' expression ',' expressions ['as' NAME] ':'"));
+                  p->error_indicator ? "ERROR!" : "-", _mark, p->mark, "'except' '*' expression ',' expressions 'as' NAME ':'"));
     }
     { // 'except' '*' expression ['as' NAME] NEWLINE
         if (p->error_indicator) {
@@ -23559,7 +23658,7 @@ invalid_except_star_stmt_rule(Parser *p)
         expr_ty expression_var;
         Token * newline_var;
         if (
-            (a = _PyPegen_expect_token(p, 670))  // token='except'
+            (a = _PyPegen_expect_token(p, 672))  // token='except'
             &&
             (_literal = _PyPegen_expect_token(p, 16))  // token='*'
             &&
@@ -23593,7 +23692,7 @@ invalid_except_star_stmt_rule(Parser *p)
         void *_tmp_143_var;
         Token * a;
         if (
-            (a = _PyPegen_expect_token(p, 670))  // token='except'
+            (a = _PyPegen_expect_token(p, 672))  // token='except'
             &&
             (_literal = _PyPegen_expect_token(p, 16))  // token='*'
             &&
@@ -23625,13 +23724,13 @@ invalid_except_star_stmt_rule(Parser *p)
         expr_ty a;
         expr_ty expression_var;
         if (
-            (_keyword = _PyPegen_expect_token(p, 670))  // token='except'
+            (_keyword = _PyPegen_expect_token(p, 672))  // token='except'
             &&
             (_literal = _PyPegen_expect_token(p, 16))  // token='*'
             &&
             (expression_var = expression_rule(p))  // expression
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 673))  // token='as'
+            (_keyword_1 = _PyPegen_expect_token(p, 675))  // token='as'
             &&
             (a = expression_rule(p))  // expression
         )
@@ -23659,7 +23758,7 @@ invalid_except_star_stmt_rule(Parser *p)
 static void *
 invalid_finally_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -23678,7 +23777,7 @@ invalid_finally_stmt_rule(Parser *p)
         Token * a;
         Token * newline_var;
         if (
-            (a = _PyPegen_expect_token(p, 666))  // token='finally'
+            (a = _PyPegen_expect_token(p, 668))  // token='finally'
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -23712,7 +23811,7 @@ invalid_finally_stmt_rule(Parser *p)
 static void *
 invalid_except_stmt_indent_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -23734,7 +23833,7 @@ invalid_except_stmt_indent_rule(Parser *p)
         expr_ty expression_var;
         Token * newline_var;
         if (
-            (a = _PyPegen_expect_token(p, 670))  // token='except'
+            (a = _PyPegen_expect_token(p, 672))  // token='except'
             &&
             (expression_var = expression_rule(p))  // expression
             &&
@@ -23770,7 +23869,7 @@ invalid_except_stmt_indent_rule(Parser *p)
         Token * a;
         Token * newline_var;
         if (
-            (a = _PyPegen_expect_token(p, 670))  // token='except'
+            (a = _PyPegen_expect_token(p, 672))  // token='except'
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -23803,7 +23902,7 @@ invalid_except_stmt_indent_rule(Parser *p)
 static void *
 invalid_except_star_stmt_indent_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -23826,7 +23925,7 @@ invalid_except_star_stmt_indent_rule(Parser *p)
         expr_ty expression_var;
         Token * newline_var;
         if (
-            (a = _PyPegen_expect_token(p, 670))  // token='except'
+            (a = _PyPegen_expect_token(p, 672))  // token='except'
             &&
             (_literal = _PyPegen_expect_token(p, 16))  // token='*'
             &&
@@ -23866,7 +23965,7 @@ invalid_except_star_stmt_indent_rule(Parser *p)
 static void *
 invalid_match_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -23952,7 +24051,7 @@ invalid_match_stmt_rule(Parser *p)
 static void *
 invalid_case_block_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -24044,7 +24143,7 @@ invalid_case_block_rule(Parser *p)
 static void *
 invalid_as_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -24065,7 +24164,7 @@ invalid_as_pattern_rule(Parser *p)
         if (
             (or_pattern_var = or_pattern_rule(p))  // or_pattern
             &&
-            (_keyword = _PyPegen_expect_token(p, 673))  // token='as'
+            (_keyword = _PyPegen_expect_token(p, 675))  // token='as'
             &&
             (a = _PyPegen_expect_soft_keyword(p, "_"))  // soft_keyword='"_"'
         )
@@ -24095,7 +24194,7 @@ invalid_as_pattern_rule(Parser *p)
         if (
             (or_pattern_var = or_pattern_rule(p))  // or_pattern
             &&
-            (_keyword = _PyPegen_expect_token(p, 673))  // token='as'
+            (_keyword = _PyPegen_expect_token(p, 675))  // token='as'
             &&
             (a = expression_rule(p))  // expression
         )
@@ -24123,7 +24222,7 @@ invalid_as_pattern_rule(Parser *p)
 static void *
 invalid_class_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -24173,7 +24272,7 @@ invalid_class_pattern_rule(Parser *p)
 static asdl_pattern_seq*
 invalid_class_argument_pattern_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -24228,7 +24327,7 @@ invalid_class_argument_pattern_rule(Parser *p)
 static void *
 invalid_if_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -24247,7 +24346,7 @@ invalid_if_stmt_rule(Parser *p)
         expr_ty named_expression_var;
         Token * newline_var;
         if (
-            (_keyword = _PyPegen_expect_token(p, 675))  // token='if'
+            (_keyword = _PyPegen_expect_token(p, 677))  // token='if'
             &&
             (named_expression_var = named_expression_rule(p))  // named_expression
             &&
@@ -24278,7 +24377,7 @@ invalid_if_stmt_rule(Parser *p)
         expr_ty a_1;
         Token * newline_var;
         if (
-            (a = _PyPegen_expect_token(p, 675))  // token='if'
+            (a = _PyPegen_expect_token(p, 677))  // token='if'
             &&
             (a_1 = named_expression_rule(p))  // named_expression
             &&
@@ -24314,7 +24413,7 @@ invalid_if_stmt_rule(Parser *p)
 static void *
 invalid_elif_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -24333,7 +24432,7 @@ invalid_elif_stmt_rule(Parser *p)
         expr_ty named_expression_var;
         Token * newline_var;
         if (
-            (_keyword = _PyPegen_expect_token(p, 677))  // token='elif'
+            (_keyword = _PyPegen_expect_token(p, 679))  // token='elif'
             &&
             (named_expression_var = named_expression_rule(p))  // named_expression
             &&
@@ -24364,7 +24463,7 @@ invalid_elif_stmt_rule(Parser *p)
         expr_ty named_expression_var;
         Token * newline_var;
         if (
-            (a = _PyPegen_expect_token(p, 677))  // token='elif'
+            (a = _PyPegen_expect_token(p, 679))  // token='elif'
             &&
             (named_expression_var = named_expression_rule(p))  // named_expression
             &&
@@ -24398,7 +24497,7 @@ invalid_elif_stmt_rule(Parser *p)
 static void *
 invalid_else_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -24417,7 +24516,7 @@ invalid_else_stmt_rule(Parser *p)
         Token * a;
         Token * newline_var;
         if (
-            (a = _PyPegen_expect_token(p, 678))  // token='else'
+            (a = _PyPegen_expect_token(p, 680))  // token='else'
             &&
             (_literal = _PyPegen_expect_token(p, 11))  // token=':'
             &&
@@ -24451,7 +24550,7 @@ invalid_else_stmt_rule(Parser *p)
 static void *
 invalid_while_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -24470,7 +24569,7 @@ invalid_while_stmt_rule(Parser *p)
         expr_ty named_expression_var;
         Token * newline_var;
         if (
-            (_keyword = _PyPegen_expect_token(p, 680))  // token='while'
+            (_keyword = _PyPegen_expect_token(p, 682))  // token='while'
             &&
             (named_expression_var = named_expression_rule(p))  // named_expression
             &&
@@ -24501,7 +24600,7 @@ invalid_while_stmt_rule(Parser *p)
         expr_ty named_expression_var;
         Token * newline_var;
         if (
-            (a = _PyPegen_expect_token(p, 680))  // token='while'
+            (a = _PyPegen_expect_token(p, 682))  // token='while'
             &&
             (named_expression_var = named_expression_rule(p))  // named_expression
             &&
@@ -24537,7 +24636,7 @@ invalid_while_stmt_rule(Parser *p)
 static void *
 invalid_for_stmt_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -24560,13 +24659,13 @@ invalid_for_stmt_rule(Parser *p)
         expr_ty star_expressions_var;
         expr_ty star_targets_var;
         if (
-            (_opt_var = _PyPegen_expect_token(p, 689), !p->error_indicator)  // 'async'?
+            (_opt_var = _PyPegen_expect_token(p, 691), !p->error_indicator)  // 'async'?
             &&
-            (_keyword = _PyPegen_expect_token(p, 685))  // token='for'
+            (_keyword = _PyPegen_expect_token(p, 687))  // token='for'
             &&
             (star_targets_var = star_targets_rule(p))  // star_targets
             &&
-            (_keyword_1 = _PyPegen_expect_token(p, 686))  // token='in'
+            (_keyword_1 = _PyPegen_expect_token(p, 688))  // token='in'
             &&
             (star_expressions_var = star_expressions_rule(p))  // star_expressions
             &&
@@ -24601,13 +24700,13 @@ invalid_for_stmt_rule(Parser *p)
         expr_ty star_expressions_var;
         expr_ty star_targets_var;
         if (
-            (_opt_var = _PyPegen_expect_token(p, 689), !p->error_indicator)  // 'async'?
+            (_opt_var = _PyPegen_expect_token(p, 691), !p->error_indicator)  // 'async'?
             &&
-            (a = _PyPegen_expect_token(p, 685))  // token='for'
+            (a = _PyPegen_expect_token(p, 687))  // token='for'
             &&
             (star_targets_var = star_targets_rule(p))  // star_targets
             &&
-            (_keyword = _PyPegen_expect_token(p, 686))  // token='in'
+            (_keyword = _PyPegen_expect_token(p, 688))  // token='in'
             &&
             (star_expressions_var = star_expressions_rule(p))  // star_expressions
             &&
@@ -24643,7 +24742,7 @@ invalid_for_stmt_rule(Parser *p)
 static void *
 invalid_def_raw_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -24673,9 +24772,9 @@ invalid_def_raw_rule(Parser *p)
         expr_ty name_var;
         Token * newline_var;
         if (
-            (_opt_var = _PyPegen_expect_token(p, 689), !p->error_indicator)  // 'async'?
+            (_opt_var = _PyPegen_expect_token(p, 691), !p->error_indicator)  // 'async'?
             &&
-            (a = _PyPegen_expect_token(p, 690))  // token='def'
+            (a = _PyPegen_expect_token(p, 692))  // token='def'
             &&
             (name_var = _PyPegen_name_token(p))  // NAME
             &&
@@ -24732,9 +24831,9 @@ invalid_def_raw_rule(Parser *p)
         asdl_stmt_seq* block_var;
         expr_ty name_var;
         if (
-            (_opt_var = _PyPegen_expect_token(p, 689), !p->error_indicator)  // 'async'?
+            (_opt_var = _PyPegen_expect_token(p, 691), !p->error_indicator)  // 'async'?
             &&
-            (_keyword = _PyPegen_expect_token(p, 690))  // token='def'
+            (_keyword = _PyPegen_expect_token(p, 692))  // token='def'
             &&
             (name_var = _PyPegen_name_token(p))  // NAME
             &&
@@ -24775,7 +24874,7 @@ invalid_def_raw_rule(Parser *p)
 static void *
 invalid_class_def_raw_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -24798,7 +24897,7 @@ invalid_class_def_raw_rule(Parser *p)
         expr_ty name_var;
         Token * newline_var;
         if (
-            (_keyword = _PyPegen_expect_token(p, 692))  // token='class'
+            (_keyword = _PyPegen_expect_token(p, 694))  // token='class'
             &&
             (name_var = _PyPegen_name_token(p))  // NAME
             &&
@@ -24837,7 +24936,7 @@ invalid_class_def_raw_rule(Parser *p)
         expr_ty name_var;
         Token * newline_var;
         if (
-            (a = _PyPegen_expect_token(p, 692))  // token='class'
+            (a = _PyPegen_expect_token(p, 694))  // token='class'
             &&
             (name_var = _PyPegen_name_token(p))  // NAME
             &&
@@ -24878,7 +24977,7 @@ invalid_class_def_raw_rule(Parser *p)
 static void *
 invalid_double_starred_kvpairs_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -24987,7 +25086,7 @@ invalid_double_starred_kvpairs_rule(Parser *p)
 static void *
 invalid_kvpair_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -25094,7 +25193,7 @@ invalid_kvpair_rule(Parser *p)
 static void *
 invalid_starred_expression_unpacking_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -25146,7 +25245,7 @@ invalid_starred_expression_unpacking_rule(Parser *p)
 static void *
 invalid_starred_expression_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -25200,7 +25299,7 @@ invalid_starred_expression_rule(Parser *p)
 static void *
 invalid_replacement_field_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -25560,7 +25659,7 @@ invalid_replacement_field_rule(Parser *p)
 static void *
 invalid_conversion_character_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -25631,7 +25730,7 @@ invalid_conversion_character_rule(Parser *p)
 static void *
 invalid_arithmetic_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -25655,7 +25754,7 @@ invalid_arithmetic_rule(Parser *p)
             &&
             (_tmp_150_var = _tmp_150_rule(p))  // '+' | '-' | '*' | '/' | '%' | '//' | '@'
             &&
-            (a = _PyPegen_expect_token(p, 694))  // token='not'
+            (a = _PyPegen_expect_token(p, 696))  // token='not'
             &&
             (b = inversion_rule(p))  // inversion
         )
@@ -25683,7 +25782,7 @@ invalid_arithmetic_rule(Parser *p)
 static void *
 invalid_factor_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -25704,7 +25803,7 @@ invalid_factor_rule(Parser *p)
         if (
             (_tmp_151_var = _tmp_151_rule(p))  // '+' | '-' | '~'
             &&
-            (a = _PyPegen_expect_token(p, 694))  // token='not'
+            (a = _PyPegen_expect_token(p, 696))  // token='not'
             &&
             (b = factor_rule(p))  // factor
         )
@@ -25732,7 +25831,7 @@ invalid_factor_rule(Parser *p)
 static void *
 invalid_type_params_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -25778,7 +25877,7 @@ invalid_type_params_rule(Parser *p)
 static asdl_seq *
 _loop0_1_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -25845,7 +25944,7 @@ _loop0_1_rule(Parser *p)
 static asdl_seq *
 _loop1_2_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -25917,7 +26016,7 @@ _loop1_2_rule(Parser *p)
 static asdl_seq *
 _loop0_3_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -25993,7 +26092,7 @@ _loop0_3_rule(Parser *p)
 static asdl_seq *
 _gather_4_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26034,7 +26133,7 @@ _gather_4_rule(Parser *p)
 static void *
 _tmp_5_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26051,7 +26150,7 @@ _tmp_5_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_5[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'import'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 629))  // token='import'
+            (_keyword = _PyPegen_expect_token(p, 631))  // token='import'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_5[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'import'"));
@@ -26070,7 +26169,7 @@ _tmp_5_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_5[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'from'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 628))  // token='from'
+            (_keyword = _PyPegen_expect_token(p, 630))  // token='from'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_5[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'from'"));
@@ -26091,7 +26190,7 @@ _tmp_5_rule(Parser *p)
 static void *
 _tmp_6_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26108,7 +26207,7 @@ _tmp_6_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_6[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'def'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 690))  // token='def'
+            (_keyword = _PyPegen_expect_token(p, 692))  // token='def'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_6[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'def'"));
@@ -26146,7 +26245,7 @@ _tmp_6_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_6[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'async'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 689))  // token='async'
+            (_keyword = _PyPegen_expect_token(p, 691))  // token='async'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_6[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'async'"));
@@ -26167,7 +26266,7 @@ _tmp_6_rule(Parser *p)
 static void *
 _tmp_7_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26184,7 +26283,7 @@ _tmp_7_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_7[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'class'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 692))  // token='class'
+            (_keyword = _PyPegen_expect_token(p, 694))  // token='class'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_7[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'class'"));
@@ -26224,7 +26323,7 @@ _tmp_7_rule(Parser *p)
 static void *
 _tmp_8_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26241,7 +26340,7 @@ _tmp_8_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_8[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'with'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 640))  // token='with'
+            (_keyword = _PyPegen_expect_token(p, 642))  // token='with'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_8[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'with'"));
@@ -26260,7 +26359,7 @@ _tmp_8_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_8[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'async'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 689))  // token='async'
+            (_keyword = _PyPegen_expect_token(p, 691))  // token='async'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_8[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'async'"));
@@ -26281,7 +26380,7 @@ _tmp_8_rule(Parser *p)
 static void *
 _tmp_9_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26298,7 +26397,7 @@ _tmp_9_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_9[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'for'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 685))  // token='for'
+            (_keyword = _PyPegen_expect_token(p, 687))  // token='for'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_9[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'for'"));
@@ -26317,7 +26416,7 @@ _tmp_9_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_9[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'async'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 689))  // token='async'
+            (_keyword = _PyPegen_expect_token(p, 691))  // token='async'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_9[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'async'"));
@@ -26338,7 +26437,7 @@ _tmp_9_rule(Parser *p)
 static void *
 _tmp_10_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26384,7 +26483,7 @@ _tmp_10_rule(Parser *p)
 static void *
 _tmp_11_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26452,7 +26551,7 @@ _tmp_11_rule(Parser *p)
 static asdl_seq *
 _loop1_12_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26524,7 +26623,7 @@ _loop1_12_rule(Parser *p)
 static void *
 _tmp_13_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26542,7 +26641,7 @@ _tmp_13_rule(Parser *p)
         Token * _keyword;
         expr_ty z;
         if (
-            (_keyword = _PyPegen_expect_token(p, 628))  // token='from'
+            (_keyword = _PyPegen_expect_token(p, 630))  // token='from'
             &&
             (z = expression_rule(p))  // expression
         )
@@ -26570,7 +26669,7 @@ _tmp_13_rule(Parser *p)
 static asdl_seq *
 _loop0_14_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26646,7 +26745,7 @@ _loop0_14_rule(Parser *p)
 static asdl_seq *
 _gather_15_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26687,7 +26786,7 @@ _gather_15_rule(Parser *p)
 static void *
 _tmp_16_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26744,7 +26843,7 @@ _tmp_16_rule(Parser *p)
 static void *
 _tmp_17_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26790,7 +26889,7 @@ _tmp_17_rule(Parser *p)
 static asdl_seq *
 _loop0_18_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26857,7 +26956,7 @@ _loop0_18_rule(Parser *p)
 static asdl_seq *
 _loop1_19_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -26929,7 +27028,7 @@ _loop1_19_rule(Parser *p)
 static asdl_seq *
 _loop0_20_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27005,7 +27104,7 @@ _loop0_20_rule(Parser *p)
 static asdl_seq *
 _gather_21_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27046,7 +27145,7 @@ _gather_21_rule(Parser *p)
 static void *
 _tmp_22_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27064,7 +27163,7 @@ _tmp_22_rule(Parser *p)
         Token * _keyword;
         expr_ty z;
         if (
-            (_keyword = _PyPegen_expect_token(p, 673))  // token='as'
+            (_keyword = _PyPegen_expect_token(p, 675))  // token='as'
             &&
             (z = _PyPegen_name_token(p))  // NAME
         )
@@ -27092,7 +27191,7 @@ _tmp_22_rule(Parser *p)
 static asdl_seq *
 _loop0_23_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27168,7 +27267,7 @@ _loop0_23_rule(Parser *p)
 static asdl_seq *
 _gather_24_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27209,7 +27308,7 @@ _gather_24_rule(Parser *p)
 static asdl_seq *
 _loop1_25_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27281,7 +27380,7 @@ _loop1_25_rule(Parser *p)
 static void *
 _tmp_26_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27330,7 +27429,7 @@ _tmp_26_rule(Parser *p)
 static void *
 _tmp_27_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27376,7 +27475,7 @@ _tmp_27_rule(Parser *p)
 static asdl_seq *
 _loop0_28_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27443,7 +27542,7 @@ _loop0_28_rule(Parser *p)
 static asdl_seq *
 _loop0_29_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27510,7 +27609,7 @@ _loop0_29_rule(Parser *p)
 static asdl_seq *
 _loop1_30_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27582,7 +27681,7 @@ _loop1_30_rule(Parser *p)
 static asdl_seq *
 _loop1_31_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27654,7 +27753,7 @@ _loop1_31_rule(Parser *p)
 static asdl_seq *
 _loop0_32_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27721,7 +27820,7 @@ _loop0_32_rule(Parser *p)
 static asdl_seq *
 _loop1_33_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27793,7 +27892,7 @@ _loop1_33_rule(Parser *p)
 static asdl_seq *
 _loop0_34_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27869,7 +27968,7 @@ _loop0_34_rule(Parser *p)
 static asdl_seq *
 _gather_35_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27910,7 +28009,7 @@ _gather_35_rule(Parser *p)
 static void *
 _tmp_36_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -27986,7 +28085,7 @@ _tmp_36_rule(Parser *p)
 static asdl_seq *
 _loop1_37_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28058,7 +28157,7 @@ _loop1_37_rule(Parser *p)
 static asdl_seq *
 _loop1_38_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28130,7 +28229,7 @@ _loop1_38_rule(Parser *p)
 static asdl_seq *
 _loop1_39_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28202,7 +28301,7 @@ _loop1_39_rule(Parser *p)
 static asdl_seq *
 _loop0_40_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28278,7 +28377,7 @@ _loop0_40_rule(Parser *p)
 static asdl_seq *
 _gather_41_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28319,7 +28418,7 @@ _gather_41_rule(Parser *p)
 static void *
 _tmp_42_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28376,7 +28475,7 @@ _tmp_42_rule(Parser *p)
 static void *
 _tmp_43_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28452,7 +28551,7 @@ _tmp_43_rule(Parser *p)
 static asdl_seq *
 _loop0_44_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28528,7 +28627,7 @@ _loop0_44_rule(Parser *p)
 static asdl_seq *
 _gather_45_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28569,7 +28668,7 @@ _gather_45_rule(Parser *p)
 static asdl_seq *
 _loop0_46_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28645,7 +28744,7 @@ _loop0_46_rule(Parser *p)
 static asdl_seq *
 _gather_47_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28686,7 +28785,7 @@ _gather_47_rule(Parser *p)
 static void *
 _tmp_48_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28743,7 +28842,7 @@ _tmp_48_rule(Parser *p)
 static asdl_seq *
 _loop0_49_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28819,7 +28918,7 @@ _loop0_49_rule(Parser *p)
 static asdl_seq *
 _gather_50_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28860,7 +28959,7 @@ _gather_50_rule(Parser *p)
 static asdl_seq *
 _loop0_51_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28936,7 +29035,7 @@ _loop0_51_rule(Parser *p)
 static asdl_seq *
 _gather_52_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -28977,7 +29076,7 @@ _gather_52_rule(Parser *p)
 static asdl_seq *
 _loop0_53_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29053,7 +29152,7 @@ _loop0_53_rule(Parser *p)
 static asdl_seq *
 _gather_54_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29094,7 +29193,7 @@ _gather_54_rule(Parser *p)
 static asdl_seq *
 _loop1_55_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29166,7 +29265,7 @@ _loop1_55_rule(Parser *p)
 static asdl_seq *
 _loop1_56_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29238,7 +29337,7 @@ _loop1_56_rule(Parser *p)
 static asdl_seq *
 _loop0_57_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29314,7 +29413,7 @@ _loop0_57_rule(Parser *p)
 static asdl_seq *
 _gather_58_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29355,7 +29454,7 @@ _gather_58_rule(Parser *p)
 static asdl_seq *
 _loop1_59_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29427,7 +29526,7 @@ _loop1_59_rule(Parser *p)
 static asdl_seq *
 _loop1_60_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29499,7 +29598,7 @@ _loop1_60_rule(Parser *p)
 static asdl_seq *
 _loop1_61_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29571,7 +29670,7 @@ _loop1_61_rule(Parser *p)
 static void *
 _tmp_62_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29614,7 +29713,7 @@ _tmp_62_rule(Parser *p)
 static asdl_seq *
 _loop0_63_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29690,7 +29789,7 @@ _loop0_63_rule(Parser *p)
 static asdl_seq *
 _gather_64_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29731,7 +29830,7 @@ _gather_64_rule(Parser *p)
 static void *
 _tmp_65_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29777,7 +29876,7 @@ _tmp_65_rule(Parser *p)
 static void *
 _tmp_66_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29834,7 +29933,7 @@ _tmp_66_rule(Parser *p)
 static void *
 _tmp_67_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29910,7 +30009,7 @@ _tmp_67_rule(Parser *p)
 static void *
 _tmp_68_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -29967,7 +30066,7 @@ _tmp_68_rule(Parser *p)
 static void *
 _tmp_69_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -30062,7 +30161,7 @@ _tmp_69_rule(Parser *p)
 static void *
 _tmp_70_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -30119,7 +30218,7 @@ _tmp_70_rule(Parser *p)
 static asdl_seq *
 _loop0_71_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -30186,7 +30285,7 @@ _loop0_71_rule(Parser *p)
 static asdl_seq *
 _loop0_72_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -30253,7 +30352,7 @@ _loop0_72_rule(Parser *p)
 static asdl_seq *
 _loop1_73_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -30325,7 +30424,7 @@ _loop1_73_rule(Parser *p)
 static asdl_seq *
 _loop1_74_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -30397,7 +30496,7 @@ _loop1_74_rule(Parser *p)
 static asdl_seq *
 _loop0_75_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -30464,7 +30563,7 @@ _loop0_75_rule(Parser *p)
 static asdl_seq *
 _loop1_76_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -30536,7 +30635,7 @@ _loop1_76_rule(Parser *p)
 static asdl_seq *
 _loop0_77_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -30603,7 +30702,7 @@ _loop0_77_rule(Parser *p)
 static asdl_seq *
 _loop0_78_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -30670,7 +30769,7 @@ _loop0_78_rule(Parser *p)
 static asdl_seq *
 _loop1_79_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -30742,7 +30841,7 @@ _loop1_79_rule(Parser *p)
 static void *
 _tmp_80_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -30791,7 +30890,7 @@ _tmp_80_rule(Parser *p)
 static asdl_seq *
 _loop0_81_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -30867,7 +30966,7 @@ _loop0_81_rule(Parser *p)
 static asdl_seq *
 _gather_82_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -30908,7 +31007,7 @@ _gather_82_rule(Parser *p)
 static asdl_seq *
 _loop1_83_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -30980,7 +31079,7 @@ _loop1_83_rule(Parser *p)
 static asdl_seq *
 _loop0_84_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31047,7 +31146,7 @@ _loop0_84_rule(Parser *p)
 static void *
 _tmp_85_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31106,7 +31205,7 @@ _tmp_85_rule(Parser *p)
 static asdl_seq *
 _loop0_86_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31183,7 +31282,7 @@ _loop0_86_rule(Parser *p)
 static asdl_seq *
 _gather_87_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31224,7 +31323,7 @@ _gather_87_rule(Parser *p)
 static void *
 _tmp_88_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31270,7 +31369,7 @@ _tmp_88_rule(Parser *p)
 static asdl_seq *
 _loop0_89_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31346,7 +31445,7 @@ _loop0_89_rule(Parser *p)
 static asdl_seq *
 _gather_90_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31387,7 +31486,7 @@ _gather_90_rule(Parser *p)
 static asdl_seq *
 _loop0_91_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31463,7 +31562,7 @@ _loop0_91_rule(Parser *p)
 static asdl_seq *
 _gather_92_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31504,7 +31603,7 @@ _gather_92_rule(Parser *p)
 static asdl_seq *
 _loop0_93_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31571,7 +31670,7 @@ _loop0_93_rule(Parser *p)
 static asdl_seq *
 _loop0_94_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31647,7 +31746,7 @@ _loop0_94_rule(Parser *p)
 static asdl_seq *
 _gather_95_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31688,7 +31787,7 @@ _gather_95_rule(Parser *p)
 static asdl_seq *
 _loop1_96_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31760,7 +31859,7 @@ _loop1_96_rule(Parser *p)
 static void *
 _tmp_97_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31800,7 +31899,7 @@ _tmp_97_rule(Parser *p)
 static asdl_seq *
 _loop0_98_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31876,7 +31975,7 @@ _loop0_98_rule(Parser *p)
 static asdl_seq *
 _gather_99_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31917,7 +32016,7 @@ _gather_99_rule(Parser *p)
 static asdl_seq *
 _loop0_100_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -31993,7 +32092,7 @@ _loop0_100_rule(Parser *p)
 static asdl_seq *
 _gather_101_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32034,7 +32133,7 @@ _gather_101_rule(Parser *p)
 static void *
 _tmp_102_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32077,7 +32176,7 @@ _tmp_102_rule(Parser *p)
 static void *
 _tmp_103_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32134,7 +32233,7 @@ _tmp_103_rule(Parser *p)
 static asdl_seq *
 _loop0_104_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32210,7 +32309,7 @@ _loop0_104_rule(Parser *p)
 static asdl_seq *
 _gather_105_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32251,7 +32350,7 @@ _gather_105_rule(Parser *p)
 static void *
 _tmp_106_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32311,7 +32410,7 @@ _tmp_106_rule(Parser *p)
 static void *
 _tmp_107_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32352,7 +32451,7 @@ _tmp_107_rule(Parser *p)
 static void *
 _tmp_108_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32409,7 +32508,7 @@ _tmp_108_rule(Parser *p)
 static void *
 _tmp_109_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32426,7 +32525,7 @@ _tmp_109_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_109[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'True'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 617))  // token='True'
+            (_keyword = _PyPegen_expect_token(p, 619))  // token='True'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_109[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'True'"));
@@ -32445,7 +32544,7 @@ _tmp_109_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_109[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'False'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 619))  // token='False'
+            (_keyword = _PyPegen_expect_token(p, 621))  // token='False'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_109[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'False'"));
@@ -32464,7 +32563,7 @@ _tmp_109_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_109[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'None'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 618))  // token='None'
+            (_keyword = _PyPegen_expect_token(p, 620))  // token='None'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_109[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'None'"));
@@ -32485,7 +32584,7 @@ _tmp_109_rule(Parser *p)
 static void *
 _tmp_110_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32526,7 +32625,7 @@ _tmp_110_rule(Parser *p)
 static asdl_seq *
 _loop1_111_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32598,7 +32697,7 @@ _loop1_111_rule(Parser *p)
 static void *
 _tmp_112_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32658,7 +32757,7 @@ _tmp_112_rule(Parser *p)
 static void *
 _tmp_113_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32675,7 +32774,7 @@ _tmp_113_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_113[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'else'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 678))  // token='else'
+            (_keyword = _PyPegen_expect_token(p, 680))  // token='else'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_113[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'else'"));
@@ -32715,7 +32814,7 @@ _tmp_113_rule(Parser *p)
 static void *
 _tmp_114_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32791,7 +32890,7 @@ _tmp_114_rule(Parser *p)
 static void *
 _tmp_115_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32848,7 +32947,7 @@ _tmp_115_rule(Parser *p)
 static void *
 _tmp_116_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -32922,7 +33021,7 @@ _tmp_116_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_116[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'True'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 617))  // token='True'
+            (_keyword = _PyPegen_expect_token(p, 619))  // token='True'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_116[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'True'"));
@@ -32941,7 +33040,7 @@ _tmp_116_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_116[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'None'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 618))  // token='None'
+            (_keyword = _PyPegen_expect_token(p, 620))  // token='None'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_116[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'None'"));
@@ -32960,7 +33059,7 @@ _tmp_116_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_116[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'False'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 619))  // token='False'
+            (_keyword = _PyPegen_expect_token(p, 621))  // token='False'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_116[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'False'"));
@@ -32981,7 +33080,7 @@ _tmp_116_rule(Parser *p)
 static asdl_seq *
 _loop0_117_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33048,7 +33147,7 @@ _loop0_117_rule(Parser *p)
 static asdl_seq *
 _loop0_118_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33115,7 +33214,7 @@ _loop0_118_rule(Parser *p)
 static void *
 _tmp_119_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33191,7 +33290,7 @@ _tmp_119_rule(Parser *p)
 static void *
 _tmp_120_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33248,7 +33347,7 @@ _tmp_120_rule(Parser *p)
 static void *
 _tmp_121_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33305,7 +33404,7 @@ _tmp_121_rule(Parser *p)
 static void *
 _tmp_122_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33362,7 +33461,7 @@ _tmp_122_rule(Parser *p)
 static void *
 _tmp_123_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33419,7 +33518,7 @@ _tmp_123_rule(Parser *p)
 static void *
 _tmp_124_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33479,7 +33578,7 @@ _tmp_124_rule(Parser *p)
 static void *
 _tmp_125_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33536,7 +33635,7 @@ _tmp_125_rule(Parser *p)
 static void *
 _tmp_126_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33612,7 +33711,7 @@ _tmp_126_rule(Parser *p)
 static void *
 _tmp_127_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33669,7 +33768,7 @@ _tmp_127_rule(Parser *p)
 static asdl_seq *
 _loop0_128_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33745,7 +33844,7 @@ _loop0_128_rule(Parser *p)
 static asdl_seq *
 _gather_129_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33786,7 +33885,7 @@ _gather_129_rule(Parser *p)
 static void *
 _tmp_130_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33843,7 +33942,7 @@ _tmp_130_rule(Parser *p)
 static void *
 _tmp_131_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33903,7 +34002,7 @@ _tmp_131_rule(Parser *p)
 static void *
 _tmp_132_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -33960,7 +34059,7 @@ _tmp_132_rule(Parser *p)
 static void *
 _tmp_133_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34005,7 +34104,7 @@ _tmp_133_rule(Parser *p)
 static asdl_seq *
 _loop0_134_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34081,7 +34180,7 @@ _loop0_134_rule(Parser *p)
 static asdl_seq *
 _gather_135_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34122,7 +34221,7 @@ _gather_135_rule(Parser *p)
 static asdl_seq *
 _loop0_136_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34198,7 +34297,7 @@ _loop0_136_rule(Parser *p)
 static asdl_seq *
 _gather_137_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34239,7 +34338,7 @@ _gather_137_rule(Parser *p)
 static asdl_seq *
 _loop0_138_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34315,7 +34414,7 @@ _loop0_138_rule(Parser *p)
 static asdl_seq *
 _gather_139_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34356,7 +34455,7 @@ _gather_139_rule(Parser *p)
 static void *
 _tmp_140_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34373,7 +34472,7 @@ _tmp_140_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_140[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'except'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 670))  // token='except'
+            (_keyword = _PyPegen_expect_token(p, 672))  // token='except'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_140[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'except'"));
@@ -34392,7 +34491,7 @@ _tmp_140_rule(Parser *p)
         D(fprintf(stderr, "%*c> _tmp_140[%d-%d]: %s\n", p->level, ' ', _mark, p->mark, "'finally'"));
         Token * _keyword;
         if (
-            (_keyword = _PyPegen_expect_token(p, 666))  // token='finally'
+            (_keyword = _PyPegen_expect_token(p, 668))  // token='finally'
         )
         {
             D(fprintf(stderr, "%*c+ _tmp_140[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'finally'"));
@@ -34413,7 +34512,7 @@ _tmp_140_rule(Parser *p)
 static asdl_seq *
 _loop0_141_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34480,7 +34579,7 @@ _loop0_141_rule(Parser *p)
 static void *
 _tmp_142_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34522,7 +34621,7 @@ _tmp_142_rule(Parser *p)
 static void *
 _tmp_143_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34579,7 +34678,7 @@ _tmp_143_rule(Parser *p)
 static void *
 _tmp_144_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34620,7 +34719,7 @@ _tmp_144_rule(Parser *p)
 static void *
 _tmp_145_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34677,7 +34776,7 @@ _tmp_145_rule(Parser *p)
 static void *
 _tmp_146_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34772,7 +34871,7 @@ _tmp_146_rule(Parser *p)
 static void *
 _tmp_147_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34848,7 +34947,7 @@ _tmp_147_rule(Parser *p)
 static void *
 _tmp_148_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34889,7 +34988,7 @@ _tmp_148_rule(Parser *p)
 static void *
 _tmp_149_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -34946,7 +35045,7 @@ _tmp_149_rule(Parser *p)
 static void *
 _tmp_150_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35098,7 +35197,7 @@ _tmp_150_rule(Parser *p)
 static void *
 _tmp_151_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35174,7 +35273,7 @@ _tmp_151_rule(Parser *p)
 static void *
 _tmp_152_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35220,7 +35319,7 @@ _tmp_152_rule(Parser *p)
 static void *
 _tmp_153_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35277,7 +35376,7 @@ _tmp_153_rule(Parser *p)
 static void *
 _tmp_154_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35326,7 +35425,7 @@ _tmp_154_rule(Parser *p)
 static void *
 _tmp_155_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35372,7 +35471,7 @@ _tmp_155_rule(Parser *p)
 static void *
 _tmp_156_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35390,7 +35489,7 @@ _tmp_156_rule(Parser *p)
         Token * _keyword;
         expr_ty c;
         if (
-            (_keyword = _PyPegen_expect_token(p, 584))  // token='or'
+            (_keyword = _PyPegen_expect_token(p, 586))  // token='or'
             &&
             (c = conjunction_rule(p))  // conjunction
         )
@@ -35418,7 +35517,7 @@ _tmp_156_rule(Parser *p)
 static void *
 _tmp_157_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35436,7 +35535,7 @@ _tmp_157_rule(Parser *p)
         Token * _keyword;
         expr_ty c;
         if (
-            (_keyword = _PyPegen_expect_token(p, 585))  // token='and'
+            (_keyword = _PyPegen_expect_token(p, 587))  // token='and'
             &&
             (c = inversion_rule(p))  // inversion
         )
@@ -35464,7 +35563,7 @@ _tmp_157_rule(Parser *p)
 static void *
 _tmp_158_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35521,7 +35620,7 @@ _tmp_158_rule(Parser *p)
 static void *
 _tmp_159_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35578,7 +35677,7 @@ _tmp_159_rule(Parser *p)
 static void *
 _tmp_160_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35596,7 +35695,7 @@ _tmp_160_rule(Parser *p)
         Token * _keyword;
         expr_ty z;
         if (
-            (_keyword = _PyPegen_expect_token(p, 675))  // token='if'
+            (_keyword = _PyPegen_expect_token(p, 677))  // token='if'
             &&
             (z = disjunction_rule(p))  // disjunction
         )
@@ -35624,7 +35723,7 @@ _tmp_160_rule(Parser *p)
 static void *
 _tmp_161_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35683,7 +35782,7 @@ _tmp_161_rule(Parser *p)
 static void *
 _tmp_162_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35730,7 +35829,7 @@ _tmp_162_rule(Parser *p)
 static void *
 _tmp_163_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35774,7 +35873,7 @@ _tmp_163_rule(Parser *p)
 static void *
 _tmp_164_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35814,7 +35913,7 @@ _tmp_164_rule(Parser *p)
 static void *
 _tmp_165_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35854,7 +35953,7 @@ _tmp_165_rule(Parser *p)
 static void *
 _tmp_166_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35911,7 +36010,7 @@ _tmp_166_rule(Parser *p)
 static void *
 _tmp_167_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -35968,7 +36067,7 @@ _tmp_167_rule(Parser *p)
 static asdl_seq *
 _loop0_168_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -36035,7 +36134,7 @@ _loop0_168_rule(Parser *p)
 static void *
 _tmp_169_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -36077,7 +36176,7 @@ _tmp_169_rule(Parser *p)
 static void *
 _tmp_170_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -36119,7 +36218,7 @@ _tmp_170_rule(Parser *p)
 static void *
 _tmp_171_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -36160,7 +36259,7 @@ _tmp_171_rule(Parser *p)
 static void *
 _tmp_172_rule(Parser *p)
 {
-    if (p->level++ == MAXSTACK) {
+    if (p->level++ == MAXSTACK || _Py_ReachedRecursionLimitWithMargin(PyThreadState_Get(), 1)) {
         _Pypegen_stack_overflow(p);
     }
     if (p->error_indicator) {
@@ -36178,7 +36277,7 @@ _tmp_172_rule(Parser *p)
         Token * _keyword;
         expr_ty star_target_var;
         if (
-            (_keyword = _PyPegen_expect_token(p, 673))  // token='as'
+            (_keyword = _PyPegen_expect_token(p, 675))  // token='as'
             &&
             (star_target_var = star_target_rule(p))  // star_target
         )

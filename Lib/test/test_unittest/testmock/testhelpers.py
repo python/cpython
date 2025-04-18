@@ -1080,7 +1080,7 @@ class SpecSignatureTest(unittest.TestCase):
         class WithMethod:
             a: int
             def b(self) -> int:
-                return 1
+                return 1  # pragma: no cover
 
         for mock in [
             create_autospec(WithMethod, instance=True),

@@ -1403,6 +1403,7 @@ class ZipFile:
         self._lock = threading.RLock()
         self._seekable = True
         self._writing = False
+        self._data_offset = None
 
         try:
             if mode == 'r':
@@ -1413,6 +1414,7 @@ class ZipFile:
                 self._didModify = True
                 try:
                     self.start_dir = self.fp.tell()
+                    self._data_offset = self.start_dir
                 except (AttributeError, OSError):
                     self.fp = _Tellable(self.fp)
                     self.start_dir = 0
@@ -1437,6 +1439,7 @@ class ZipFile:
                     # even if no files are added to the archive
                     self._didModify = True
                     self.start_dir = self.fp.tell()
+                    self._data_offset = self.start_dir
             else:
                 raise ValueError("Mode must be 'r', 'w', 'x', or 'a'")
         except:
@@ -1485,6 +1488,10 @@ class ZipFile:
         if endrec[_ECD_SIGNATURE] == stringEndArchive64:
             # If Zip64 extension structures are present, account for them
             concat -= (sizeEndCentDir64 + sizeEndCentDir64Locator)
+
+        # store the offset to the beginning of data for the
+        # .data_offset property
+        self._data_offset = concat
 
         if self.debug > 2:
             inferred = concat + offset_cd
@@ -1545,11 +1552,16 @@ class ZipFile:
                 print("total", total)
 
         end_offset = self.start_dir
-        for zinfo in sorted(self.filelist,
-                            key=lambda zinfo: zinfo.header_offset,
-                            reverse=True):
+        for zinfo in reversed(sorted(self.filelist,
+                                     key=lambda zinfo: zinfo.header_offset)):
             zinfo._end_offset = end_offset
             end_offset = zinfo.header_offset
+
+    @property
+    def data_offset(self):
+        """The offset to the start of zip data in the file or None if
+        unavailable."""
+        return self._data_offset
 
     def namelist(self):
         """Return a list of file names in the archive."""
@@ -1709,7 +1721,16 @@ class ZipFile:
 
             if (zinfo._end_offset is not None and
                 zef_file.tell() + zinfo.compress_size > zinfo._end_offset):
-                raise BadZipFile(f"Overlapped entries: {zinfo.orig_filename!r} (possible zip bomb)")
+                if zinfo._end_offset == zinfo.header_offset:
+                    import warnings
+                    warnings.warn(
+                        f"Overlapped entries: {zinfo.orig_filename!r} "
+                        f"(possible zip bomb)",
+                        skip_file_prefixes=(os.path.dirname(__file__),))
+                else:
+                    raise BadZipFile(
+                        f"Overlapped entries: {zinfo.orig_filename!r} "
+                        f"(possible zip bomb)")
 
             # check for encrypted flag & handle password
             is_encrypted = zinfo.flag_bits & _MASK_ENCRYPTED

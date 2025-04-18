@@ -277,7 +277,7 @@ def generate_runtime_init(identifiers, strings):
     # First get some info from the declarations.
     nsmallposints = None
     nsmallnegints = None
-    with open(os.path.join(INTERNAL, 'pycore_global_objects.h')) as infile:
+    with open(os.path.join(INTERNAL, 'pycore_runtime_structs.h')) as infile:
         for line in infile:
             if line.startswith('#define _PY_NSMALLPOSINTS'):
                 nsmallposints = int(line.split()[-1])

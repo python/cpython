@@ -13,10 +13,11 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_object.h"
 #include "pycore_pyerrors.h"      // struct _PyErr_SetRaisedException
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include "osdefs.h"               // SEP
-
 #include "clinic/exceptions.c.h"
+
 
 /*[clinic input]
 class BaseException "PyBaseExceptionObject *" "&PyExc_BaseException"
@@ -2784,6 +2785,8 @@ SyntaxError_str(PyObject *op)
     if (!filename && !have_lineno)
         return PyObject_Str(self->msg ? self->msg : Py_None);
 
+    // Even if 'filename' can be an instance of a subclass of 'str',
+    // we only render its "true" content and do not use str(filename).
     if (filename && have_lineno)
         result = PyUnicode_FromFormat("%S (%U, line %ld)",
                    self->msg ? self->msg : Py_None,
@@ -2903,6 +2906,35 @@ SimpleExtendsException(PyExc_ValueError, UnicodeError,
 
 /*
  * Check the validity of 'attr' as a unicode or bytes object depending
+ * on 'as_bytes'.
+ *
+ * The 'name' is the attribute name and is only used for error reporting.
+ *
+ * On success, this returns 0.
+ * On failure, this sets a TypeError and returns -1.
+ */
+static int
+check_unicode_error_attribute(PyObject *attr, const char *name, int as_bytes)
+{
+    assert(as_bytes == 0 || as_bytes == 1);
+    if (attr == NULL) {
+        PyErr_Format(PyExc_TypeError,
+                     "UnicodeError '%s' attribute is not set",
+                     name);
+        return -1;
+    }
+    if (!(as_bytes ? PyBytes_Check(attr) : PyUnicode_Check(attr))) {
+        PyErr_Format(PyExc_TypeError,
+                     "UnicodeError '%s' attribute must be a %s",
+                     name, as_bytes ? "bytes" : "string");
+        return -1;
+    }
+    return 0;
+}
+
+
+/*
+ * Check the validity of 'attr' as a unicode or bytes object depending
  * on 'as_bytes' and return a new reference on it if it is the case.
  *
  * The 'name' is the attribute name and is only used for error reporting.
@@ -2913,19 +2945,8 @@ SimpleExtendsException(PyExc_ValueError, UnicodeError,
 static PyObject *
 as_unicode_error_attribute(PyObject *attr, const char *name, int as_bytes)
 {
-    assert(as_bytes == 0 || as_bytes == 1);
-    if (attr == NULL) {
-        PyErr_Format(PyExc_TypeError, "%s attribute not set", name);
-        return NULL;
-    }
-    if (!(as_bytes ? PyBytes_Check(attr) : PyUnicode_Check(attr))) {
-        PyErr_Format(PyExc_TypeError,
-                     "%s attribute must be %s",
-                     name,
-                     as_bytes ? "bytes" : "unicode");
-        return NULL;
-    }
-    return Py_NewRef(attr);
+    int rc = check_unicode_error_attribute(attr, name, as_bytes);
+    return rc < 0 ? NULL : Py_NewRef(attr);
 }
 
 
@@ -3591,7 +3612,10 @@ UnicodeEncodeError_str(PyObject *self)
     if (encoding_str == NULL) {
         goto done;
     }
-
+    // calls to PyObject_Str(...) above might mutate 'exc->object'
+    if (check_unicode_error_attribute(exc->object, "object", false) < 0) {
+        goto done;
+    }
     Py_ssize_t len = PyUnicode_GET_LENGTH(exc->object);
     Py_ssize_t start = exc->start, end = exc->end;
 
@@ -3711,7 +3735,10 @@ UnicodeDecodeError_str(PyObject *self)
     if (encoding_str == NULL) {
         goto done;
     }
-
+    // calls to PyObject_Str(...) above might mutate 'exc->object'
+    if (check_unicode_error_attribute(exc->object, "object", true) < 0) {
+        goto done;
+    }
     Py_ssize_t len = PyBytes_GET_SIZE(exc->object);
     Py_ssize_t start = exc->start, end = exc->end;
 
@@ -3807,7 +3834,10 @@ UnicodeTranslateError_str(PyObject *self)
     if (reason_str == NULL) {
         goto done;
     }
-
+    // call to PyObject_Str(...) above might mutate 'exc->object'
+    if (check_unicode_error_attribute(exc->object, "object", false) < 0) {
+        goto done;
+    }
     Py_ssize_t len = PyUnicode_GET_LENGTH(exc->object);
     Py_ssize_t start = exc->start, end = exc->end;
 

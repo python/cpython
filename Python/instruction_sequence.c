@@ -5,11 +5,10 @@
  */
 
 
-#include <stdbool.h>
-
 #include "Python.h"
 
-#include "pycore_compile.h" // _PyCompile_EnsureArrayLargeEnough
+#include "pycore_c_array.h" // _Py_CArray_EnsureCapacity
+#include "pycore_compile.h" // _PyInstruction
 #include "pycore_opcode_utils.h"
 #include "pycore_opcode_metadata.h" // OPCODE_HAS_ARG, etc
 
@@ -21,6 +20,8 @@ typedef _Py_SourceLocation location;
 #define INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE 10
 
 #include "clinic/instruction_sequence.c.h"
+
+#include <stdbool.h>
 
 #undef SUCCESS
 #undef ERROR
@@ -36,12 +37,18 @@ static int
 instr_sequence_next_inst(instr_sequence *seq) {
     assert(seq->s_instrs != NULL || seq->s_used == 0);
 
-    RETURN_IF_ERROR(
-        _PyCompile_EnsureArrayLargeEnough(seq->s_used + 1,
-                                          (void**)&seq->s_instrs,
-                                          &seq->s_allocated,
-                                          INITIAL_INSTR_SEQUENCE_SIZE,
-                                          sizeof(instruction)));
+
+    _Py_c_array_t array = {
+        .array = (void*)seq->s_instrs,
+        .allocated_entries = seq->s_allocated,
+        .item_size = sizeof(instruction),
+        .initial_num_entries = INITIAL_INSTR_SEQUENCE_SIZE,
+    };
+
+    RETURN_IF_ERROR(_Py_CArray_EnsureCapacity(&array, seq->s_used + 1));
+    seq->s_instrs = array.array;
+    seq->s_allocated = array.allocated_entries;
+
     assert(seq->s_allocated >= 0);
     assert(seq->s_used < seq->s_allocated);
     return seq->s_used++;
@@ -58,12 +65,16 @@ int
 _PyInstructionSequence_UseLabel(instr_sequence *seq, int lbl)
 {
     int old_size = seq->s_labelmap_size;
-    RETURN_IF_ERROR(
-        _PyCompile_EnsureArrayLargeEnough(lbl,
-                                          (void**)&seq->s_labelmap,
-                                           &seq->s_labelmap_size,
-                                           INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE,
-                                           sizeof(int)));
+    _Py_c_array_t array = {
+        .array = (void*)seq->s_labelmap,
+        .allocated_entries = seq->s_labelmap_size,
+        .item_size = sizeof(int),
+        .initial_num_entries = INITIAL_INSTR_SEQUENCE_LABELS_MAP_SIZE,
+    };
+
+    RETURN_IF_ERROR(_Py_CArray_EnsureCapacity(&array, lbl));
+    seq->s_labelmap = array.array;
+    seq->s_labelmap_size = array.allocated_entries;
 
     for(int i = old_size; i < seq->s_labelmap_size; i++) {
         seq->s_labelmap[i] = -111;  /* something weird, for debugging */
@@ -388,8 +399,9 @@ static PyGetSetDef inst_seq_getsetters[] = {
 };
 
 static void
-inst_seq_dealloc(_PyInstructionSequence *seq)
+inst_seq_dealloc(PyObject *op)
 {
+    _PyInstructionSequence *seq = (_PyInstructionSequence *)op;
     PyObject_GC_UnTrack(seq);
     Py_TRASHCAN_BEGIN(seq, inst_seq_dealloc)
     PyInstructionSequence_Fini(seq);
@@ -398,15 +410,17 @@ inst_seq_dealloc(_PyInstructionSequence *seq)
 }
 
 static int
-inst_seq_traverse(_PyInstructionSequence *seq, visitproc visit, void *arg)
+inst_seq_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    _PyInstructionSequence *seq = (_PyInstructionSequence *)op;
     Py_VISIT(seq->s_nested);
     return 0;
 }
 
 static int
-inst_seq_clear(_PyInstructionSequence *seq)
+inst_seq_clear(PyObject *op)
 {
+    _PyInstructionSequence *seq = (_PyInstructionSequence *)op;
     Py_CLEAR(seq->s_nested);
     return 0;
 }
@@ -416,7 +430,7 @@ PyTypeObject _PyInstructionSequence_Type = {
     "InstructionSequence",
     sizeof(_PyInstructionSequence),
     0,
-    (destructor)inst_seq_dealloc, /*tp_dealloc*/
+    inst_seq_dealloc,   /*tp_dealloc*/
     0,                  /*tp_vectorcall_offset*/
     0,                  /*tp_getattr*/
     0,                  /*tp_setattr*/
@@ -433,8 +447,8 @@ PyTypeObject _PyInstructionSequence_Type = {
     0,                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     inst_seq_new__doc__,                    /* tp_doc */
-    (traverseproc)inst_seq_traverse,        /* tp_traverse */
-    (inquiry)inst_seq_clear,                /* tp_clear */
+    inst_seq_traverse,                      /* tp_traverse */
+    inst_seq_clear,                         /* tp_clear */
     0,                                      /* tp_richcompare */
     0,                                      /* tp_weaklistoffset */
     0,                                      /* tp_iter */
