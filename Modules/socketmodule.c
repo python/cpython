@@ -1541,7 +1541,14 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
             struct sockaddr_hci *a = (struct sockaddr_hci *) addr;
 #if defined(HAVE_BLUETOOTH_BLUETOOTH_H)
             PyObject *ret = NULL;
-            ret = Py_BuildValue("i", _BT_HCI_MEMB(a, dev));
+            if (_BT_HCI_MEMB(a, channel) == HCI_CHANNEL_RAW) {
+                return Py_BuildValue("i", _BT_HCI_MEMB(a, dev));
+            }
+            else {
+                return Py_BuildValue("ii",
+                                     _BT_HCI_MEMB(a, dev),
+                                     _BT_HCI_MEMB(a, channel));
+            }
             return ret;
 #elif defined(__FreeBSD__)
             const char *node = _BT_HCI_MEMB(a, node);
@@ -2138,13 +2145,20 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             memset(addr, 0, sizeof(struct sockaddr_hci));
             _BT_HCI_MEMB(addr, family) = AF_BLUETOOTH;
 #if defined(HAVE_BLUETOOTH_BLUETOOTH_H)
-            unsigned short dev = _BT_HCI_MEMB(addr, dev);
-            if (!PyArg_ParseTuple(args, "H", &dev)) {
+            unsigned short dev;
+            unsigned short channel = HCI_CHANNEL_RAW;
+            if (PyLong_Check(args)) {
+                if (!PyArg_Parse(args, "H", &dev)) {
+                    return 0;
+                }
+            }
+            else if (!PyArg_ParseTuple(args, "H|H", &dev, &channel)) {
                 PyErr_Format(PyExc_OSError,
                              "%s(): wrong format", caller);
                 return 0;
             }
             _BT_HCI_MEMB(addr, dev) = dev;
+            _BT_HCI_MEMB(addr, channel) = channel;
 #else
             const char *straddr;
             if (!PyArg_Parse(args, "s", &straddr)) {
@@ -7874,6 +7888,13 @@ socket_exec(PyObject *m)
 #ifdef BTPROTO_HCI
     ADD_INT_MACRO(m, BTPROTO_HCI);
     ADD_INT_MACRO(m, SOL_HCI);
+#if defined(HCI_CHANNEL_RAW)
+    ADD_INT_MACRO(m, HCI_CHANNEL_RAW);
+    ADD_INT_MACRO(m, HCI_CHANNEL_USER);
+    ADD_INT_MACRO(m, HCI_CHANNEL_MONITOR);
+    ADD_INT_MACRO(m, HCI_CHANNEL_CONTROL);
+    ADD_INT_MACRO(m, HCI_CHANNEL_LOGGING);
+#endif
 #if defined(HCI_FILTER)
     ADD_INT_MACRO(m, HCI_FILTER);
 #endif

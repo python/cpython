@@ -909,7 +909,9 @@ _PyLong_NumBits(PyObject *vv)
     assert(ndigits == 0 || v->long_value.ob_digit[ndigits - 1] != 0);
     if (ndigits > 0) {
         digit msd = v->long_value.ob_digit[ndigits - 1];
+#if SIZEOF_SIZE_T == 8
         assert(ndigits <= INT64_MAX / PyLong_SHIFT);
+#endif
         result = (int64_t)(ndigits - 1) * PyLong_SHIFT;
         msd_bits = bit_length_digit(msd);
         result += msd_bits;
