@@ -4714,7 +4714,8 @@ class SignalsTest(unittest.TestCase):
             # handlers, which in this case will invoke alarm_interrupt().
             signal.alarm(1)
             try:
-                self.assertRaises(ZeroDivisionError, wio.write, large_data)
+                with self.assertRaises(ZeroDivisionError):
+                    wio.write(large_data)
             finally:
                 signal.alarm(0)
                 t.join()

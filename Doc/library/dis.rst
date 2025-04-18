@@ -78,6 +78,7 @@ the following command can be used to display the disassembly of
      3           LOAD_GLOBAL              1 (len + NULL)
                  LOAD_FAST_BORROW         0 (alist)
                  CALL                     1
+                 CHECK_PERIODIC
                  RETURN_VALUE
 
 (The "2" is a line number).
@@ -217,6 +218,7 @@ Example:
     LOAD_GLOBAL
     LOAD_FAST_BORROW
     CALL
+    CHECK_PERIODIC
     RETURN_VALUE
 
 
@@ -1721,6 +1723,13 @@ iterations of the loop.
       Previously, this instruction also pushed a boolean value indicating
       success (``True``) or failure (``False``).
 
+.. opcode:: CHECK_PERIODIC
+
+   Detects and handles certain conditions of interpreter state, such as
+   signals and async exceptions. This bytecode is emitted alongside calls
+   and backward jumps to ensure that it appears in any long execution path.
+
+   .. versionadded:: 3.14
 
 .. opcode:: RESUME (context)
 
