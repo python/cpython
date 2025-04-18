@@ -1,3 +1,2 @@
 The :class:`traceback.TracebackException` must include the  ``__context__``, ``__cause__`` attributes
 from falsey Exception, and the ``exceptions`` attribute from falsey ``ExceptionGroup`` in its render.
-For remind: ``x`` is falsey if ``len(x)`` returns 0 or ``bool(x)`` returns False.
