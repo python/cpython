@@ -219,7 +219,14 @@ set_current_module(PyInterpreterState *interp, PyObject *mod)
     if (ref == NULL) {
         return -1;
     }
-    /* Module spec remains in the interpreter's dict. */
+    if (PyDict_SetItem(dict, INTERP_KEY, ref) < 0) {
+        Py_DECREF(ref);
+        return -1;
+    }
+    Py_DECREF(ref);
+
+    /* Make the module spec remain in the interpreter's dict. Not required,
+     * but reserve the new one for memory efficiency. */
     PyObject *mod_dict = PyModule_GetDict(mod);
     if (mod_dict == NULL) {
         return -1;
@@ -233,10 +240,7 @@ set_current_module(PyInterpreterState *interp, PyObject *mod)
         return -1;
     }
     Py_DECREF(spec);
-
-    int rc = PyDict_SetItem(dict, INTERP_KEY, ref);
-    Py_DECREF(ref);
-    return rc;
+    return 0;
 }
 
 static void
