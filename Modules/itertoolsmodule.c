@@ -3628,10 +3628,14 @@ static PyObject *
 repeat_next(PyObject *op)
 {
     repeatobject *ro = repeatobject_CAST(op);
-    if (ro->cnt == 0)
+    Py_ssize_t cnt = FT_ATOMIC_LOAD_SSIZE_RELAXED(ro->cnt);
+    if (cnt == 0) {
         return NULL;
-    if (ro->cnt > 0)
-        ro->cnt--;
+    }
+    if (cnt > 0) {
+        cnt--;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(ro->cnt, cnt);
+    }
     return Py_NewRef(ro->element);
 }
 
