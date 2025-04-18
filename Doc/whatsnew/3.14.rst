@@ -458,12 +458,21 @@ Other language changes
   The testbed can also be used to run the test suite of projects other than
   CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
 
+* Three-argument :func:`pow` now try calling :meth:`~object.__rpow__` if necessary.
+  Previously it was only called in two-argument :func:`!pow` and the binary
+  power operator.
+  (Contributed by Serhiy Storchaka in :gh:`130104`.)
+
 * Add a built-in implementation for HMAC (:rfc:`2104`) using formally verified
   code from the `HACL* <https://github.com/hacl-star/hacl-star/>`__ project.
   This implementation is used as a fallback when the OpenSSL implementation
   of HMAC is not available.
   (Contributed by Bénédikt Tran in :gh:`99108`.)
 
+* When subclassing from a pure C type, the C slots for the new type are no
+  longer replaced with a wrapped version on class creation if they are not
+  explicitly overridden in the subclass.
+  (Contributed by Tomasz Pytel in :gh:`132329`.)
 
 .. _whatsnew314-pep765:
 
@@ -1218,16 +1227,20 @@ urllib
   supporting SHA-256 digest authentication as specified in :rfc:`7616`.
   (Contributed by Calvin Bui in :gh:`128193`.)
 
-* Improve standards compliance when parsing and emitting ``file:`` URLs.
+* Improve ergonomics and standards compliance when parsing and emitting
+  ``file:`` URLs.
 
   In :func:`urllib.request.url2pathname`:
 
+  - Accept a complete URL when the new *require_scheme* argument is set to
+    true.
   - Discard URL authorities that resolve to a local IP address.
   - Raise :exc:`~urllib.error.URLError` if a URL authority doesn't resolve
-    to ``localhost``, except on Windows where we return a UNC path.
+    to a local IP address, except on Windows where we return a UNC path.
 
   In :func:`urllib.request.pathname2url`:
 
+  - Return a complete URL when the new *add_scheme* argument is set to true.
   - Include an empty URL authority when a path begins with a slash. For
     example, the path ``/etc/hosts`` is converted to the URL ``///etc/hosts``.
 

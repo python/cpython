@@ -1440,6 +1440,8 @@ Allows customizing how exceptions are handled in the event loop.
    * 'protocol' (optional): :ref:`Protocol <asyncio-protocol>` instance;
    * 'transport' (optional): :ref:`Transport <asyncio-transport>` instance;
    * 'socket' (optional): :class:`socket.socket` instance;
+   * 'source_traceback' (optional): Traceback of the source;
+   * 'handle_traceback' (optional): Traceback of the handle;
    * 'asyncgen' (optional): Asynchronous generator that caused
                             the exception.
 
