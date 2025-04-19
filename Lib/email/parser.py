@@ -43,7 +43,7 @@ class Parser:
     def _parse_chunks(self, chunk_generator, headersonly=False):
         """Internal method / implementation detail
 
-        Parses chunks from a chunk generator into a FeedParser, returning the result
+        Parses chunks from a chunk generator into a FeedParser
         """
         feedparser = FeedParser(self._class, policy=self.policy)
         if headersonly:
@@ -135,7 +135,8 @@ class BytesParser:
         the file.
         """
         _chunk_generator = (
-            text[offset:offset + _FEED_CHUNK_SIZE].decode('ASCII', errors='surrogateescape')
+            text[offset:offset + _FEED_CHUNK_SIZE].decode(
+                'ASCII', errors='surrogateescape')
             for offset in range(0, len(text), _FEED_CHUNK_SIZE)
         )
 
