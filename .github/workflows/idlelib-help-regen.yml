@@ -28,7 +28,7 @@ jobs:
       - env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh auth login --with-token <<< "${GITHUB_TOKEN}"
+          gh auth setup-git
           gh pr checkout ${{ github.event.pull_request.number }}
 
       - run: |
