@@ -145,6 +145,9 @@ $sed -i -z 's!#include <string.h>!#include <string.h>\n#include "python_hacl_nam
   Hacl_HMAC.h \
   Hacl_Streaming_HMAC.h
 
+$sed -i -z 's!#include <inttypes.h>!#include <inttypes.h>\n#include "python_hacl_namespaces.h"!' \
+  lib_memzero0.h
+
 # Step 3: trim whitespace (for the linter)
 
 find . -name '*.c' -or -name '*.h' | xargs $sed -i 's![[:space:]]\+$!!'

@@ -7846,28 +7846,54 @@ PY_STDLIB_MOD_SIMPLE([_codecs_tw])
 PY_STDLIB_MOD_SIMPLE([_multibytecodec])
 PY_STDLIB_MOD_SIMPLE([unicodedata])
 
-dnl By default we always compile these even when OpenSSL is available
-dnl (issue #14693). The modules are small.
-PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
-PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
-PY_STDLIB_MOD([_sha2], [test "$with_builtin_sha2" = yes])
-PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
-PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
-
-LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
+###############################################################################
+# HACL* compilation and linking configuration (contact: @picnixz)
+#
+# Used by the HACL*-based implementations of cryptographic primitives.
+#
+# CPython provides a vendored copy of a subset of the HACL* project used
+# to build extension modules of cryptographic primitives. On WASI, HACL*
+# sources must be statically linked with the extension modules; on other
+# platforms, the extension modules may assume that HACL* has been compiled
+# as a shared library.
+#
+# Example for MD5:
+#
+#   * Compile Modules/_hacl/Hacl_Hash_MD5.c into Modules/_hacl/Hacl_Hash_MD5.o.
+#   * Decide whether the object files are to be passed to the linker (emulate
+#     a shared library without having to install it) or if we need to create
+#     a static library for WASI. The following summarizes the values taken by
+#     the MODULE_<NAME>_LDFLAGS variable depending on the linkage type:
+#     - shared: MODULE__MD5_LDFLAGS is set to LIBHACL_MD5_OBJS
+#     - static: MODULE__MD5_LDFLAGS is set to Modules/_hacl/libHacl_Hash_MD5.a
+#   * Compile Modules/md5module.c into Modules/md5module.o.
+#   * Link Modules/md5module.o using $(MODULE__MD5_LDFLAGS)
+#     and get Modules/_md5$(EXT_SUFFIX).
+#
+# LIBHACL_FLAG_I: '-I' flags passed to $(CC) for HACL* and HACL*-based modules
+# LIBHACL_FLAG_D: '-D' flags passed to $(CC) for HACL* and HACL*-based modules
+# LIBHACL_CFLAGS: compiler flags passed for HACL* and HACL*-based modules
+# LIBHACL_LDFLAGS: linker flags passed for HACL* and HACL*-based modules
+LIBHACL_FLAG_I='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include'
+LIBHACL_FLAG_D='-D_BSD_SOURCE -D_DEFAULT_SOURCE'
 case "$ac_sys_system" in
   Linux*)
     if test "$ac_cv_func_explicit_bzero" = "no"; then
-      LIBHACL_CFLAGS="$LIBHACL_CFLAGS -DLINUX_NO_EXPLICIT_BZERO"
+      LIBHACL_FLAG_D="${LIBHACL_FLAG_D} -DLINUX_NO_EXPLICIT_BZERO"
     fi
   ;;
 esac
+LIBHACL_CFLAGS="${LIBHACL_FLAG_I} ${LIBHACL_FLAG_D} \$(PY_STDMODULE_CFLAGS) \$(CCSHARED)"
 AC_SUBST([LIBHACL_CFLAGS])
+LIBHACL_LDFLAGS=  # for now, no specific linker flags are needed
+AC_SUBST([LIBHACL_LDFLAGS])
 
 # The SIMD files use aligned_alloc, which is not available on older versions of
 # Android.
 # The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
-if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
+   { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
+then
   dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
   AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
     [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
@@ -7879,17 +7905,17 @@ if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || tes
     # isn't great, so it's disabled on ARM64.
     AC_MSG_CHECKING([for HACL* SIMD128 implementation])
     if test "$UNIVERSAL_ARCHS" == "universal2"; then
-      [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"]
+      [LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"]
       AC_MSG_RESULT([universal2])
     else
-      [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
+      [LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
       AC_MSG_RESULT([standard])
     fi
 
   ], [], [-Werror])
 fi
 AC_SUBST([LIBHACL_SIMD128_FLAGS])
-AC_SUBST([LIBHACL_SIMD128_OBJS])
+AC_SUBST([LIBHACL_BLAKE2_SIMD128_OBJS])
 
 # The SIMD files use aligned_alloc, which is not available on older versions of
 # Android.
@@ -7898,7 +7924,9 @@ AC_SUBST([LIBHACL_SIMD128_OBJS])
 # Although AVX support is not guaranteed on Android
 # (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
 # runtime CPUID check.
-if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
+   { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
+then
   AX_CHECK_COMPILE_FLAG([-mavx2],[
     [LIBHACL_SIMD256_FLAGS="-mavx2"]
     AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
@@ -7909,23 +7937,57 @@ if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || tes
     # wrapped implementation if we're building for universal2.
     AC_MSG_CHECKING([for HACL* SIMD256 implementation])
     if test "$UNIVERSAL_ARCHS" == "universal2"; then
-      [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"]
+      [LIBHACL_BLAKE2_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"]
       AC_MSG_RESULT([universal2])
     else
-      [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
+      [LIBHACL_BLAKE2_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
       AC_MSG_RESULT([standard])
     fi
   ], [], [-Werror])
 fi
 AC_SUBST([LIBHACL_SIMD256_FLAGS])
-AC_SUBST([LIBHACL_SIMD256_OBJS])
+AC_SUBST([LIBHACL_BLAKE2_SIMD256_OBJS])
+### end(HACL* configuration)
+
+###############################################################################
+# HACL*-based cryptographic primitives
+
+AC_MSG_CHECKING([for HACL* library linking type])
+if test "$ac_sys_system" = "WASI"; then
+  LIBHACL_LDEPS_LIBTYPE=STATIC
+  AC_MSG_RESULT([static])
+else
+  LIBHACL_LDEPS_LIBTYPE=SHARED
+  AC_MSG_RESULT([shared])
+fi
+# Used to complete the "MODULE_<NAME>_LDEPS" Makefile variable.
+# The LDEPS variable is a Makefile rule prerequisite.
+AC_SUBST([LIBHACL_LDEPS_LIBTYPE])
+
+dnl PY_HACL_CREATE_MODULE([COMPONENT], [EXTNAME], [ENABLED-TEST])
+dnl The COMPONENT is the name of the HACL* component being built in uppercase.
+dnl Corresponding Makefile variables are named as LIBHACL_<COMPONENT>_*.
+dnl The EXTNAME is the name of the extension module being built.
+AC_DEFUN([PY_HACL_CREATE_MODULE], [
+  AS_VAR_PUSHDEF([v], [[LIBHACL_][$1][_LDFLAGS]])
+  AS_VAR_SET([v], [[LIBHACL_][$1][_LIB_${LIBHACL_LDEPS_LIBTYPE}]])
+  PY_STDLIB_MOD([$2], [$3], [], [$LIBHACL_CFLAGS], [\$($v)])
+  AS_VAR_POPDEF([v])
+])
+
+dnl By default we always compile these even when OpenSSL is available
+dnl (see bpo-14693). The modules are small.
+PY_HACL_CREATE_MODULE([MD5], [_md5], [test "$with_builtin_md5" = yes])
+PY_HACL_CREATE_MODULE([SHA1], [_sha1], [test "$with_builtin_sha1" = yes])
+PY_HACL_CREATE_MODULE([SHA2], [_sha2], [test "$with_builtin_sha2" = yes])
+PY_HACL_CREATE_MODULE([SHA3], [_sha3], [test "$with_builtin_sha3" = yes])
+PY_HACL_CREATE_MODULE([BLAKE2], [_blake2], [test "$with_builtin_blake2" = yes])
 
 dnl HMAC builtin library does not need OpenSSL for now. In the future
 dnl we might want to rely on OpenSSL EVP/NID interface or implement
 dnl our own for algorithm resolution.
-PY_STDLIB_MOD([_hmac], [], [],
-  [$LIBHACL_CFLAGS],
-  [$LIBHACL_CFLAGS Modules/_hacl/libHacl_HMAC.a])
+PY_HACL_CREATE_MODULE([HMAC], [_hmac], [])
+### end(cryptographic primitives)
 
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
