@@ -1,10 +1,11 @@
+import array
 import unittest
 import dbm
 import shelve
 import pickle
 import os
 
-from test.support import os_helper
+from test.support import import_helper, os_helper
 from collections.abc import MutableMapping
 from test.test_dbm import dbm_iterator
 
@@ -164,6 +165,277 @@ class TestCase(unittest.TestCase):
     def test_default_protocol(self):
         with shelve.Shelf({}) as s:
             self.assertEqual(s._protocol, pickle.DEFAULT_PROTOCOL)
+
+    def test_custom_serializer_and_deserializer(self):
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
+
+        def serializer(obj, protocol):
+            if isinstance(obj, (bytes, bytearray, str)):
+                if protocol == 5:
+                    return obj
+                else:
+                    return type(obj).__name__
+            elif isinstance(obj, array.array):
+                return obj.tobytes()
+            else:
+                raise TypeError(
+                    f"Unsupported type for serialization: {type(obj)}"
+                )
+
+        def deserializer(data):
+            if isinstance(data, (bytes, bytearray, str)):
+                return data.decode("utf-8")
+            elif isinstance(data, array.array):
+                return array.array("b", data)
+            else:
+                raise TypeError(
+                    f"Unsupported type for deserialization: {type(data)}"
+                )
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                with shelve.open(
+                    self.fn,
+                    protocol=proto,
+                    serializer=serializer,
+                    deserializer=deserializer,
+                ) as s:
+                    bar = "bar"
+                    bytes_data = b"Hello, world!"
+                    bytearray_data = bytearray(b"\x00\x01\x02\x03\x04")
+                    array_data = array.array("i", [1, 2, 3, 4, 5])
+
+                    s["foo"] = bar
+                    s["bytes_data"] = bytes_data
+                    s["bytearray_data"] = bytearray_data
+                    s["array_data"] = array_data
+
+                    if proto == 5:
+                        self.assertEqual(s["foo"], str(bar))
+                        self.assertEqual(s["bytes_data"], "Hello, world!")
+                        self.assertEqual(
+                            s["bytearray_data"], bytearray_data.decode()
+                        )
+                        self.assertEqual(
+                            s["array_data"], array_data.tobytes().decode()
+                        )
+                    else:
+                        self.assertEqual(s["foo"], "str")
+                        self.assertEqual(s["bytes_data"], "bytes")
+                        self.assertEqual(s["bytearray_data"], "bytearray")
+                        self.assertEqual(
+                            s["array_data"], array_data.tobytes().decode()
+                        )
+
+    def test_custom_incomplete_serializer_and_deserializer(self):
+        dbm_sqlite3 = import_helper.import_module("dbm.sqlite3")
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
+
+        with self.assertRaises(dbm_sqlite3.error):
+            def serializer(obj, protocol=None):
+                pass
+
+            def deserializer(data):
+                return data.decode("utf-8")
+
+            with shelve.open(self.fn, serializer=serializer,
+                             deserializer=deserializer) as s:
+                s["foo"] = "bar"
+
+        def serializer(obj, protocol=None):
+            return type(obj).__name__.encode("utf-8")
+
+        def deserializer(data):
+            pass
+
+        with shelve.open(self.fn, serializer=serializer,
+                         deserializer=deserializer) as s:
+            s["foo"] = "bar"
+            self.assertNotEqual(s["foo"], "bar")
+            self.assertIsNone(s["foo"])
+
+    def test_custom_serializer_and_deserializer_bsd_db_shelf(self):
+        berkeleydb = import_helper.import_module("berkeleydb")
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
+
+        def serializer(obj, protocol=None):
+            data = obj.__class__.__name__
+            if protocol == 5:
+                data = str(len(data))
+            return data.encode("utf-8")
+
+        def deserializer(data):
+            return data.decode("utf-8")
+
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=5):
+                with shelve.BsdDbShelf(
+                    berkeleydb.btopen(self.fn),
+                    protocol=proto,
+                    serializer=serializer,
+                    deserializer=deserializer,
+                ) as s:
+                    bar = "bar"
+                    bytes_data = b"Hello, world!"
+                    bytearray_data = bytearray(b"\x00\x01\x02\x03\x04")
+                    array_data = array.array("i", [1, 2, 3, 4, 5])
+
+                    s["foo"] = bar
+                    s["bytes_data"] = bytes_data
+                    s["bytearray_data"] = bytearray_data
+                    s["array_data"] = array_data
+
+                    if proto == 5:
+                        self.assertEqual(
+                            s["foo"], f"{len(type(bar).__name__)}"
+                        )
+                        self.assertEqual(
+                            s["bytes_data"],
+                            f"{len(type(bytes_data).__name__)}",
+                        )
+                        self.assertEqual(
+                            s["bytearray_data"],
+                            f"{len(type(bytearray_data).__name__)}",
+                        )
+                        self.assertEqual(
+                            s["array_data"],
+                            f"{len(type(array_data).__name__)}",
+                        )
+
+                        key, value = s.set_location(b"foo")
+                        self.assertEqual("foo", key)
+                        self.assertEqual(value, f"{len(type(bar).__name__)}")
+
+                        key, value = s.previous()
+                        self.assertEqual("bytes_data", key)
+                        self.assertEqual(
+                            value, f"{len(type(bytes_data).__name__)}"
+                        )
+
+                        key, value = s.previous()
+                        self.assertEqual("bytearray_data", key)
+                        self.assertEqual(
+                            value, f"{len(type(bytearray_data).__name__)}"
+                        )
+
+                        key, value = s.previous()
+                        self.assertEqual("array_data", key)
+                        self.assertEqual(
+                            value, f"{len(type(array_data).__name__)}"
+                        )
+
+                        key, value = s.next()
+                        self.assertEqual("bytearray_data", key)
+                        self.assertEqual(
+                            value, f"{len(type(bytearray_data).__name__)}"
+                        )
+
+                        key, value = s.next()
+                        self.assertEqual("bytes_data", key)
+                        self.assertEqual(
+                            value, f"{len(type(bytes_data).__name__)}"
+                        )
+
+                        key, value = s.first()
+                        self.assertEqual("array_data", key)
+                        self.assertEqual(
+                            value, f"{len(type(array_data).__name__)}"
+                        )
+                    else:
+                        key, value = s.set_location(b"foo")
+                        self.assertEqual("foo", key)
+                        self.assertEqual(value, "str")
+
+                        key, value = s.previous()
+                        self.assertEqual("bytes_data", key)
+                        self.assertEqual(value, "bytes")
+
+                        key, value = s.previous()
+                        self.assertEqual("bytearray_data", key)
+                        self.assertEqual(value, "bytearray")
+
+                        key, value = s.previous()
+                        self.assertEqual("array_data", key)
+                        self.assertEqual(value, "array")
+
+                        key, value = s.next()
+                        self.assertEqual("bytearray_data", key)
+                        self.assertEqual(value, "bytearray")
+
+                        key, value = s.next()
+                        self.assertEqual("bytes_data", key)
+                        self.assertEqual(value, "bytes")
+
+                        key, value = s.first()
+                        self.assertEqual("array_data", key)
+                        self.assertEqual(value, "array")
+
+                        self.assertEqual(s["foo"], "str")
+                        self.assertEqual(s["bytes_data"], "bytes")
+                        self.assertEqual(s["bytearray_data"], "bytearray")
+                        self.assertEqual(s["array_data"], "array")
+
+    def test_custom_incomplete_serializer_and_deserializer_bsd_db_shelf(self):
+        berkeleydb = import_helper.import_module("berkeleydb")
+        os.mkdir(self.dirname)
+        self.addCleanup(os_helper.rmtree, self.dirname)
+
+        def serializer(obj, protocol=None):
+            return type(obj).__name__.encode("utf-8")
+
+        def deserializer(data):
+            pass
+
+        with shelve.BsdDbShelf(berkeleydb.btopen(self.fn),
+                               serializer=serializer,
+                               deserializer=deserializer) as s:
+            s["foo"] = "bar"
+            self.assertIsNone(s["foo"])
+            self.assertNotEqual(s["foo"], "bar")
+
+        def serializer(obj, protocol=None):
+            pass
+
+        def deserializer(data):
+            return data.decode("utf-8")
+
+        with shelve.BsdDbShelf(berkeleydb.btopen(self.fn),
+                               serializer=serializer,
+                               deserializer=deserializer) as s:
+            s["foo"] = "bar"
+            self.assertEqual(s["foo"], "")
+            self.assertNotEqual(s["foo"], "bar")
+
+
+    def test_missing_custom_deserializer(self):
+        def serializer(obj, protocol=None):
+            pass
+
+        with self.assertRaises(shelve.ShelveError):
+            shelve.Shelf({},
+                         protocol=2, writeback=False, serializer=serializer)
+
+        with self.assertRaises(shelve.ShelveError):
+            shelve.BsdDbShelf({},
+                              protocol=2,
+                              writeback=False, serializer=serializer)
+
+    def test_missing_custom_serializer(self):
+        def deserializer(data):
+            pass
+
+        with self.assertRaises(shelve.ShelveError):
+            shelve.Shelf({},
+                         protocol=2,
+                         writeback=False, deserializer=deserializer)
+
+        with self.assertRaises(shelve.ShelveError):
+            shelve.BsdDbShelf({},
+                              protocol=2,
+                              writeback=False, deserializer=deserializer)
 
 
 class TestShelveBase:
