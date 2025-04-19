@@ -1,0 +1,4 @@
+Remove broadcast from IPv6Networks, as IPv6 does not have broadcasts in the
+same way IPv4 does. Internally last_address is now used instead of
+broadcast_address, and broadcast_address now aliases to last_address for
+IPv4Networks.
