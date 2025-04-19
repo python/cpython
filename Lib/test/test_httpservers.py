@@ -1537,31 +1537,31 @@ class ScriptTestCase(unittest.TestCase):
             self.assertEqual(mock_server.address_family, socket.AF_INET)
 
 class CommandLineTestCase(unittest.TestCase):
+    default_port = 8000
+    default_bind = None
+    default_protocol = 'HTTP/1.0'
+    default_handler = SimpleHTTPRequestHandler
+    default_server = unittest.mock.ANY
+    tls_cert = certdata_file('ssl_cert.pem')
+    tls_key = certdata_file('ssl_key.pem')
+    tls_password = 'somepass'
+    args = {
+        'HandlerClass': default_handler,
+        'ServerClass': default_server,
+        'protocol': default_protocol,
+        'port': default_port,
+        'bind': default_bind,
+        'tls_cert': None,
+        'tls_key': None,
+        'tls_password': None,
+    }
+
     def setUp(self):
         super().setUp()
-        self.default_port = 8000
-        self.default_bind = None
-        self.default_protocol = 'HTTP/1.0'
-        self.default_handler = SimpleHTTPRequestHandler
-        self.default_server = unittest.mock.ANY
-        self.tls_cert = certdata_file('ssl_cert.pem')
-        self.tls_key = certdata_file('ssl_key.pem')
-        self.tls_password = 'somepass'
-        tls_password_file_object = \
-            tempfile.NamedTemporaryFile(mode='w+', delete=False)
-        tls_password_file_object.write(self.tls_password)
-        self.tls_password_file = tls_password_file_object.name
-        tls_password_file_object.close()
-        self.args = {
-            'HandlerClass': self.default_handler,
-            'ServerClass': self.default_server,
-            'protocol': self.default_protocol,
-            'port': self.default_port,
-            'bind': self.default_bind,
-            'tls_cert': None,
-            'tls_key': None,
-            'tls_password': None,
-        }
+        self.tls_password_file = tempfile.mktemp()
+        with open(self.tls_password_file, 'wb') as f:
+            f.write(self.tls_password.encode())
+        self.addCleanup(os_helper.unlink, self.tls_password_file)
 
     def tearDown(self):
         if os.path.exists(self.tls_password_file):
