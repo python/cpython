@@ -4,9 +4,12 @@ Read and write ZIP files.
 XXX references to utf-8 need further investigation.
 """
 import binascii
+import contextlib
+import enum
 import importlib.util
 import io
 import os
+import pathlib
 import shutil
 import stat
 import struct
@@ -33,6 +36,7 @@ except ImportError:
 
 __all__ = ["BadZipFile", "BadZipfile", "error",
            "ZIP_STORED", "ZIP_DEFLATED", "ZIP_BZIP2", "ZIP_LZMA",
+           "PreserveMode",
            "is_zipfile", "ZipInfo", "ZipFile", "PyZipFile", "LargeZipFile",
            "Path"]
 
@@ -372,6 +376,12 @@ def _sanitize_filename(filename):
         filename = filename.replace(os.altsep, "/")
     return filename
 
+
+class PreserveMode(enum.Enum):
+    """Options for preserving file permissions upon extraction."""
+    NONE = enum.auto()
+    SAFE = enum.auto()
+    ALL = enum.auto()
 
 class ZipInfo:
     """Class with attributes describing each file in the ZIP archive."""
@@ -1792,26 +1802,30 @@ class ZipFile:
         self._writing = True
         return _ZipWriteFile(self, zinfo, zip64)
 
-    def extract(self, member, path=None, pwd=None):
+    def extract(self, member, path=None, pwd=None,
+                preserve_permissions=PreserveMode.NONE):
         """Extract a member from the archive to the current working directory,
            using its full name. Its file information is extracted as accurately
            as possible. 'member' may be a filename or a ZipInfo object. You can
            specify a different directory using 'path'. You can specify the
-           password to decrypt the file using 'pwd'.
+           password to decrypt the file using 'pwd'. `preserve_permissions'
+           controls whether permissions of zipped files are preserved.
         """
         if path is None:
             path = os.getcwd()
         else:
             path = os.fspath(path)
 
-        return self._extract_member(member, path, pwd)
+        return self._extract_member(member, path, pwd, preserve_permissions)
 
-    def extractall(self, path=None, members=None, pwd=None):
+    def extractall(self, path=None, members=None, pwd=None,
+                   preserve_permissions=PreserveMode.NONE):
         """Extract all members from the archive to the current working
            directory. 'path' specifies a different directory to extract to.
            'members' is optional and must be a subset of the list returned
            by namelist(). You can specify the password to decrypt all files
-           using 'pwd'.
+           using 'pwd'. `preserve_permissions' controls whether permissions
+           of zipped files are preserved.
         """
         if members is None:
             members = self.namelist()
@@ -1822,7 +1836,7 @@ class ZipFile:
             path = os.fspath(path)
 
         for zipinfo in members:
-            self._extract_member(zipinfo, path, pwd)
+            self._extract_member(zipinfo, path, pwd, preserve_permissions)
 
     @classmethod
     def _sanitize_windows_name(cls, arcname, pathsep):
@@ -1839,7 +1853,27 @@ class ZipFile:
         arcname = pathsep.join(x for x in arcname if x)
         return arcname
 
-    def _extract_member(self, member, targetpath, pwd):
+    def _apply_permissions(self, member, path, mode):
+        """
+        Apply ZipFile permissions to a file on the filesystem with
+        specified PreserveMode
+        """
+        if mode == PreserveMode.NONE:
+            return
+
+        # Ignore permissions if the archive was created on Windows
+        if member.create_system == 0:
+            return
+
+        mask = {
+            PreserveMode.SAFE: 0o777,
+            PreserveMode.ALL: 0xFFFF,
+        }
+        new_mode = (member.external_attr >> 16) & mask[mode]
+        os.chmod(path, new_mode)
+
+    def _extract_member(self, member, targetpath, pwd,
+                        preserve_permissions=PreserveMode.NONE):
         """Extract the ZipInfo object 'member' to a physical
            file on the path targetpath.
         """
@@ -1886,6 +1920,7 @@ class ZipFile:
              open(targetpath, "wb") as target:
             shutil.copyfileobj(source, target)
 
+        self._apply_permissions(member, targetpath, preserve_permissions)
         return targetpath
 
     def _writecheck(self, zinfo):
