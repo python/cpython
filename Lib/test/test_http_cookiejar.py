@@ -6,6 +6,7 @@ import sys
 import re
 from test.support import os_helper
 from test.support import warnings_helper
+from test.support.testcase import ExtraAssertions
 import time
 import unittest
 import urllib.request
@@ -1436,7 +1437,7 @@ class CookieTests(unittest.TestCase):
         self.assertIsNone(cookie.expires)
 
 
-class LWPCookieTests(unittest.TestCase):
+class LWPCookieTests(unittest.TestCase, ExtraAssertions):
     # Tests taken from libwww-perl, with a few modifications and additions.
 
     def test_netscape_example_1(self):
@@ -1528,7 +1529,7 @@ class LWPCookieTests(unittest.TestCase):
         h = req.get_header("Cookie")
         self.assertIn("PART_NUMBER=ROCKET_LAUNCHER_0001", h)
         self.assertIn("CUSTOMER=WILE_E_COYOTE", h)
-        self.assertTrue(h.startswith("SHIPPING=FEDEX;"))
+        self.assertStartsWith(h, "SHIPPING=FEDEX;")
 
     def test_netscape_example_2(self):
         # Second Example transaction sequence:
