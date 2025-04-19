@@ -15,11 +15,11 @@ else:
 
 
 class LexicalPath(_JoinablePath):
-    __slots__ = ('_segments',)
+    __slots__ = ('segments',)
     parser = os.path
 
     def __init__(self, *pathsegments):
-        self._segments = pathsegments
+        self.segments = pathsegments
 
     def __hash__(self):
         return hash(str(self))
@@ -28,11 +28,6 @@ class LexicalPath(_JoinablePath):
         if not isinstance(other, LexicalPath):
             return NotImplemented
         return str(self) == str(other)
-
-    def __str__(self):
-        if not self._segments:
-            return ''
-        return self.parser.join(*self._segments)
 
     def __repr__(self):
         return f'{type(self).__name__}({str(self)!r})'
