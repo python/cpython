@@ -1008,7 +1008,7 @@ dummy_func(void) {
         sym_set_null(null);
     }
 
-    op(_GUARD_CALLABLE_TYPE_1, (callable, unused, unused2 -- callable, unused, unused2)) {
+    op(_GUARD_CALLABLE_TYPE_1, (callable, unused, unused -- callable, unused, unused)) {
         if (sym_get_const(ctx, callable) == (PyObject *)&PyType_Type) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
