@@ -1009,6 +1009,12 @@ The following recipes have a more mathematical flavor:
 
 .. testcode::
 
+   def multinomial(*counts):
+       "Number of distinct arrangements of a multiset."
+       # Counter('abracadabra').values() → 5 2 2 1 1
+       # multinomial(5, 2, 2, 1, 1) → 83160
+       return prod(map(comb, accumulate(counts), counts))
+
    def powerset(iterable):
        "Subsequences of the iterable from shortest to longest."
        # powerset([1,2,3]) → () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
@@ -1126,12 +1132,6 @@ The following recipes have a more mathematical flavor:
        for prime in set(factor(n)):
            n -= n // prime
        return n
-
-   def multinomial(*counts):
-       "Number of distinct arrangements of a multiset."
-       # Counter('abracadabra').values() -> 5 2 1 1 2
-       # multinomial(5, 2, 1, 1, 2) → 83160
-       return prod(map(comb, accumulate(counts), counts))
 
 
 .. doctest::
@@ -1736,7 +1736,7 @@ The following recipes have a more mathematical flavor:
     >>> ''.join(it)
     'DEF1'
 
-    >>> multinomial(5, 2, 1, 1, 2)
+    >>> multinomial(5, 2, 2, 1, 1)
     83160
     >>> word = 'coffee'
     >>> multinomial(*Counter(word).values()) == len(set(permutations(word)))

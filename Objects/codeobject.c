@@ -2,6 +2,7 @@
 #include "opcode.h"
 
 #include "pycore_code.h"          // _PyCodeConstructor
+#include "pycore_function.h"      // _PyFunction_ClearCodeByVersion()
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "pycore_index_pool.h"    // _PyIndexPool_Fini()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -2995,8 +2996,9 @@ is_bytecode_unused(_PyCodeArray *tlbc, Py_ssize_t idx,
 }
 
 static int
-get_code_with_unused_tlbc(PyObject *obj, struct get_code_args *args)
+get_code_with_unused_tlbc(PyObject *obj, void *data)
 {
+    struct get_code_args *args = (struct get_code_args *) data;
     if (!PyCode_Check(obj)) {
         return 1;
     }
@@ -3045,7 +3047,7 @@ _Py_ClearUnusedTLBC(PyInterpreterState *interp)
     }
     // Collect code objects that have bytecode not in use by any thread
     _PyGC_VisitObjectsWorldStopped(
-        interp, (gcvisitobjects_t)get_code_with_unused_tlbc, &args);
+        interp, get_code_with_unused_tlbc, &args);
     if (args.err < 0) {
         goto err;
     }

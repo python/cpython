@@ -7,25 +7,36 @@ about local paths in tests.
 """
 
 import os
-import pathlib.types
 
-from test.support import os_helper
-from test.test_pathlib.support.lexical_path import LexicalPath
+from . import is_pypi
+from .lexical_path import LexicalPath
+
+if is_pypi:
+    from shutil import rmtree
+    from pathlib_abc import PathInfo, _ReadablePath, _WritablePath
+    can_symlink = True
+    testfn = "TESTFN"
+else:
+    from pathlib.types import PathInfo, _ReadablePath, _WritablePath
+    from test.support import os_helper
+    can_symlink = os_helper.can_symlink()
+    testfn = os_helper.TESTFN
+    rmtree = os_helper.rmtree
 
 
 class LocalPathGround:
-    can_symlink = os_helper.can_symlink()
+    can_symlink = can_symlink
 
     def __init__(self, path_cls):
         self.path_cls = path_cls
 
     def setup(self, local_suffix=""):
-        root = self.path_cls(os_helper.TESTFN + local_suffix)
+        root = self.path_cls(testfn + local_suffix)
         os.mkdir(root)
         return root
 
     def teardown(self, root):
-        os_helper.rmtree(root)
+        rmtree(root)
 
     def create_file(self, p, data=b''):
         with open(p, 'wb') as f:
@@ -79,7 +90,7 @@ class LocalPathGround:
             return f.read()
 
 
-class LocalPathInfo(pathlib.types.PathInfo):
+class LocalPathInfo(PathInfo):
     """
     Simple implementation of PathInfo for a local path
     """
@@ -123,7 +134,7 @@ class LocalPathInfo(pathlib.types.PathInfo):
         return self._is_symlink
 
 
-class ReadableLocalPath(pathlib.types._ReadablePath, LexicalPath):
+class ReadableLocalPath(_ReadablePath, LexicalPath):
     """
     Simple implementation of a ReadablePath class for local filesystem paths.
     """
@@ -146,7 +157,7 @@ class ReadableLocalPath(pathlib.types._ReadablePath, LexicalPath):
         return self.with_segments(os.readlink(self))
 
 
-class WritableLocalPath(pathlib.types._WritablePath, LexicalPath):
+class WritableLocalPath(_WritablePath, LexicalPath):
     """
     Simple implementation of a WritablePath class for local filesystem paths.
     """

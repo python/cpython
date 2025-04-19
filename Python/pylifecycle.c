@@ -1,8 +1,6 @@
 /* Python interpreter top-level routines, including init/exit */
 
 #include "Python.h"
-#include "pycore_genobject.h"     // included first to break dependency cycle
-
 #include "pycore_audit.h"         // _PySys_ClearAuditHooks()
 #include "pycore_call.h"          // _PyObject_CallMethod()
 #include "pycore_ceval.h"         // _PyEval_FiniGIL()
@@ -792,6 +790,26 @@ pycore_init_builtins(PyThreadState *tstate)
     }
     interp->callable_cache.len = len;
 
+    PyObject *all = PyDict_GetItemWithError(builtins_dict, &_Py_ID(all));
+    if (!all) {
+        goto error;
+    }
+
+    PyObject *any = PyDict_GetItemWithError(builtins_dict, &_Py_ID(any));
+    if (!any) {
+        goto error;
+    }
+
+    interp->common_consts[CONSTANT_ASSERTIONERROR] = PyExc_AssertionError;
+    interp->common_consts[CONSTANT_NOTIMPLEMENTEDERROR] = PyExc_NotImplementedError;
+    interp->common_consts[CONSTANT_BUILTIN_TUPLE] = (PyObject*)&PyTuple_Type;
+    interp->common_consts[CONSTANT_BUILTIN_ALL] = all;
+    interp->common_consts[CONSTANT_BUILTIN_ANY] = any;
+
+    for (int i=0; i < NUM_COMMON_CONSTANTS; i++) {
+        assert(interp->common_consts[i] != NULL);
+    }
+
     PyObject *list_append = _PyType_Lookup(&PyList_Type, &_Py_ID(append));
     if (list_append == NULL) {
         goto error;
@@ -949,7 +967,7 @@ _Py_PreInitializeFromPyArgv(const PyPreConfig *src_config, const _PyArgv *args)
         return _PyStatus_OK();
     }
 
-    /* Note: preinitialized remains 1 on error, it is only set to 0
+    /* Note: preinitializing remains 1 on error, it is only set to 0
        at exit on success. */
     runtime->preinitializing = 1;
 

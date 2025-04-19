@@ -5,7 +5,6 @@
 #include "pycore_format.h"        // F_LJUST
 #include "pycore_runtime.h"       // _Py_STR()
 #include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
-#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 
 /* See PEP 765 */
@@ -21,7 +20,7 @@ typedef struct {
     int ff_features;
     int syntax_check_only;
 
-    _Py_c_array_t cf_finally;       /* context for PEP 678 check */
+    _Py_c_array_t cf_finally;       /* context for PEP 765 check */
     int cf_finally_used;
 } _PyASTOptimizeState;
 
@@ -824,6 +823,9 @@ astfold_withitem(withitem_ty node_, PyArena *ctx_, _PyASTOptimizeState *state)
 static int
 fold_const_match_patterns(expr_ty node, PyArena *ctx_, _PyASTOptimizeState *state)
 {
+    if (state->syntax_check_only) {
+        return 1;
+    }
     switch (node->kind)
     {
         case UnaryOp_kind:

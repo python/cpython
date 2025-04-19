@@ -6,12 +6,16 @@ import collections.abc
 import io
 import unittest
 
-from pathlib import Path
-from pathlib.types import PathInfo, _ReadablePath
-from pathlib._os import magic_open
+from .support import is_pypi
+from .support.local_path import ReadableLocalPath, LocalPathGround
+from .support.zip_path import ReadableZipPath, ZipPathGround
 
-from test.test_pathlib.support.local_path import ReadableLocalPath, LocalPathGround
-from test.test_pathlib.support.zip_path import ReadableZipPath, ZipPathGround
+if is_pypi:
+    from pathlib_abc import PathInfo, _ReadablePath
+    from pathlib_abc._os import magic_open
+else:
+    from pathlib.types import PathInfo, _ReadablePath
+    from pathlib._os import magic_open
 
 
 class ReadTestBase:
@@ -35,6 +39,9 @@ class ReadTestBase:
         p = self.root / 'fileA'
         with magic_open(p, 'rb') as f:
             self.assertEqual(f.read(), b'this is file A\n')
+        self.assertRaises(ValueError, magic_open, p, 'rb', encoding='utf8')
+        self.assertRaises(ValueError, magic_open, p, 'rb', errors='strict')
+        self.assertRaises(ValueError, magic_open, p, 'rb', newline='')
 
     def test_read_bytes(self):
         p = self.root / 'fileA'
@@ -123,6 +130,8 @@ class ReadTestBase:
         check("**/file*",
               ["fileA", "dirA/linkC/fileB", "dirB/fileB", "dirC/fileC", "dirC/dirD/fileD",
                "linkB/fileB"])
+        with self.assertRaisesRegex(ValueError, 'Unacceptable pattern'):
+            list(p.glob(''))
 
     def test_walk_top_down(self):
         it = self.root.walk()
@@ -301,8 +310,11 @@ class LocalPathReadTest(ReadTestBase, unittest.TestCase):
     ground = LocalPathGround(ReadableLocalPath)
 
 
-class PathReadTest(ReadTestBase, unittest.TestCase):
-    ground = LocalPathGround(Path)
+if not is_pypi:
+    from pathlib import Path
+
+    class PathReadTest(ReadTestBase, unittest.TestCase):
+        ground = LocalPathGround(Path)
 
 
 if __name__ == "__main__":
