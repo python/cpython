@@ -383,6 +383,13 @@ write code that handles both IP versions correctly.  Address objects are
       the embedded ``(server, client)`` IP address pair.  For any other
       address, this property will be ``None``.
 
+   .. attribute:: ipv4_translation
+
+      For addresses that appear to be IPv6/IPv4 translation addresses
+      (starting with ``64:ff9b::/96``) as defined by :RFC:`6052` and :RFC:`8215`,
+      This property will report the embedded IPv4 address.  For any other
+      address, this property will be ``None``.
+
 .. method:: IPv6Address.__format__(fmt)
 
    Refer to the corresponding method documentation in
