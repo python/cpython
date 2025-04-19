@@ -1,0 +1,1 @@
+Expose the crc32 function from the lzma library as :func:`lzma.crc32`.
