@@ -1,0 +1,1 @@
+Support profiling modules that import __main___, such as modules that use to pickle. The github issue has an example repro that throws an exception without this change, and succeeds with it.
