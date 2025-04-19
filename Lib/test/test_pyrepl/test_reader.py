@@ -12,6 +12,23 @@ from _pyrepl.reader import Reader
 from _pyrepl.utils import DEFAULT_PS1, DEFAULT_PS2, DEFAULT_PS3, DEFAULT_PS4
 
 
+def prepare_reader_with_prompt(
+    console, ps1=DEFAULT_PS1, ps2=DEFAULT_PS2, ps3=DEFAULT_PS3, ps4=DEFAULT_PS4):
+    reader = prepare_reader(
+        console,
+        can_colorize=False,
+        paste_mode=False,
+        ps1=ps1,
+        ps2=ps2,
+        ps3=ps3,
+        ps4=ps4
+    )
+
+    # we should use original get_prompt from reader to get exceptions
+    del reader.get_prompt
+    return reader
+
+
 class TestReader(ScreenEqualMixin, TestCase):
     def test_calc_screen_wrap_simple(self):
         events = code_to_events(10 * "a")
@@ -304,21 +321,14 @@ class TestReader(ScreenEqualMixin, TestCase):
         class Prompt:
             def __str__(self): 1/0
 
-        def prepare_reader_keep_prompts(*args, **kwargs):
-            reader = prepare_reader(*args, **kwargs)
-            del reader.get_prompt
-            reader.ps1 = Prompt()
-            reader.ps2 = "... "
-            reader.ps3 = "... "
-            reader.ps4 = ""
-            reader.can_colorize = False
-            reader.paste_mode = False
-            return reader
+        _prepare_reader = functools.partial(
+            prepare_reader_with_prompt,
+            ps1=Prompt(),
+        )
 
-        events = code_to_events("a=1")
-        reader, _ = handle_events_narrow_console(
-            events,
-            prepare_reader=prepare_reader_keep_prompts,
+        reader, _ = handle_all_events(
+            events=code_to_events("a=1"),
+            prepare_reader=_prepare_reader
         )
 
         prompt = reader.get_prompt(0, False)
@@ -329,21 +339,17 @@ class TestReader(ScreenEqualMixin, TestCase):
         class Prompt:
             def __str__(self): 1/0
 
-        def prepare_reader_keep_prompts(*args, **kwargs):
-            reader = prepare_reader(*args, **kwargs)
-            del reader.get_prompt
-            reader.ps1 = Prompt()
-            reader.ps2 = Prompt()
-            reader.ps3 = Prompt()
-            reader.ps4 = Prompt()
-            reader.can_colorize = False
-            reader.paste_mode = False
-            return reader
+        _prepare_reader = functools.partial(
+            prepare_reader_with_prompt,
+            ps1=Prompt(),
+            ps2=Prompt(),
+            ps3=Prompt(),
+            ps4=Prompt(),
+        )
 
-        events = code_to_events("if some_condition:\nsome_function()\nsome_function()")
-        reader, _ = handle_events_narrow_console(
-            events,
-            prepare_reader=prepare_reader_keep_prompts,
+        reader, _ = handle_all_events(
+            events=code_to_events("if cond:\nfunc()\nfunc()"),
+            prepare_reader=_prepare_reader
         )
 
         prompt = reader.get_prompt(0, False)
@@ -359,20 +365,11 @@ class TestReader(ScreenEqualMixin, TestCase):
         # Handles exceptions from arg prompt
         class Prompt:
             def __str__(self): 1/0
-
             def __rmul__(self, b): return b
 
-        def prepare_reader_keep_prompts(*args, **kwargs):
-            reader = prepare_reader(*args, **kwargs)
-            del reader.get_prompt
-            reader.can_colorize = False
-            reader.paste_mode = False
-            return reader
-
-        events = code_to_events("if some_condition:\nsome_function()")
-        reader, _ = handle_events_narrow_console(
-            events,
-            prepare_reader=prepare_reader_keep_prompts,
+        reader, _ = handle_all_events(
+            events=code_to_events("if some_condition:\nsome_function()"),
+            prepare_reader=prepare_reader_with_prompt,
         )
 
         reader.arg = Prompt()
@@ -391,19 +388,15 @@ class TestReader(ScreenEqualMixin, TestCase):
                 class Prompt:
                     def __str__(self): raise cls(msg)
 
-                def prepare_reader_keep_prompts(*args, **kwargs):
-                    reader = prepare_reader(*args, **kwargs)
-                    del reader.get_prompt
-                    reader.ps1 = Prompt()
-                    reader.can_colorize = False
-                    reader.paste_mode = False
-                    return reader
+                _prepare_reader = functools.partial(
+                    prepare_reader_with_prompt,
+                    ps1=Prompt(),
+                )
 
                 with self.assertRaisesRegex(cls, msg):
-                    events = code_to_events("a=1")
                     handle_events_narrow_console(
-                        events,
-                        prepare_reader=prepare_reader_keep_prompts,
+                        events=code_to_events("a=1"),
+                        prepare_reader=_prepare_reader,
                     )
 
     def test_completions_updated_on_key_press(self):
