@@ -223,9 +223,10 @@ class ImportParser:
         raise ParseError('parse_import')
 
     def parse_from_import(self) -> Result:
-        if self.code.rstrip().endswith('import') and self.code.endswith(' '):
+        stripped = self.code.rstrip()
+        if stripped.endswith('import') and self.code.endswith(' '):
             return Result(from_name=self.parse_empty_from_import(), name='')
-        if self.code.rstrip().endswith('from') and self.code.endswith(' '):
+        if stripped.endswith('from') and self.code.endswith(' '):
             return Result(from_name='')
         if self.tokens.peek_string('(') or self.tokens.peek_string(','):
             return Result(from_name=self.parse_empty_from_import(), name='')
