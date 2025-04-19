@@ -819,6 +819,10 @@ class TestRetrievingSourceCode(GetSourceBase):
         with self.assertRaises(TypeError):
             inspect.getfile(er)
 
+    def test_getfile_implicit_namespace_package(self):
+        import test.test_importlib.namespace_pkgs.not_a_namespace_pkg as pkg
+        self.assertEqual(inspect.getfile(pkg), pkg.__path__[0])
+
     def test_getmodule_recursion(self):
         from types import ModuleType
         name = '__inspect_dummy'
