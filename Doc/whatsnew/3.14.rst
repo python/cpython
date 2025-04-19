@@ -1082,8 +1082,8 @@ socket
   * Accept an integer as the address for
     :const:`~socket.BTPROTO_HCI` on Linux
     (Contributed by Serhiy Storchaka in :gh:`132099`.)
-  * Return *cid* in :func:`~socket.getsockname` for
-    :const:`~socket.BTPROTO_L2CAP.
+  * Return *cid* in :meth:`~socket.socket.getsockname` for
+    :const:`~socket.BTPROTO_L2CAP`.
     (Contributed by Serhiy Storchaka in :gh:`132429`.)
   * Add many new constants.
     (Contributed by Serhiy Storchaka in :gh:`132734`.)

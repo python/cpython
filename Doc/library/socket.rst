@@ -687,8 +687,8 @@ Constants
           SOL_SCO
           SOL_BLUETOOTH
 
-   Values to specify level for Bluetooth socket options in
-   :func:`setsockopt` and :func:`getsockopt`.
+   Used in the level argument to the :meth:`~socket.setsockopt` and
+   :meth:`~socket.getsockopt` methods of Bluetooth socket objects.
 
    .. availability::
       :const:`SOL_BLUETOOTH` is only available on Linux, other constants
@@ -703,8 +703,8 @@ Constants
           SO_BTH_*
           BT_*
 
-   Option names and values for Bluetooth socket options in
-   :func:`setsockopt` and :func:`getsockopt`.
+   Used in the option name and value argument to the :meth:`~socket.setsockopt`
+   and :meth:`~socket.getsockopt` methods of Bluetooth socket objects.
 
    .. availability::
       :const:`!BT_*` :const:`L2CAP_LM` are only available on Linux.
