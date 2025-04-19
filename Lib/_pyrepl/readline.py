@@ -39,6 +39,7 @@ from rlcompleter import Completer as RLCompleter
 from . import commands, historical_reader
 from .completing_reader import CompletingReader
 from .console import Console as ConsoleType
+from ._module_completer import ModuleCompleter, make_default_module_completer
 
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -99,7 +100,7 @@ __all__ = [
 class ReadlineConfig:
     readline_completer: Completer | None = None
     completer_delims: frozenset[str] = frozenset(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?")
-
+    module_completer: ModuleCompleter = field(default_factory=make_default_module_completer)
 
 @dataclass(kw_only=True)
 class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
@@ -132,6 +133,8 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         return "".join(b[p + 1 : self.pos])
 
     def get_completions(self, stem: str) -> list[str]:
+        if module_completions := self.get_module_completions():
+            return module_completions
         if len(stem) == 0 and self.more_lines is not None:
             b = self.buffer
             p = self.pos
@@ -160,6 +163,10 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
             # the completions before displaying them.
             result.sort()
         return result
+
+    def get_module_completions(self) -> list[str]:
+        line = self.get_line()
+        return self.config.module_completer.get_completions(line)
 
     def get_trimmed_history(self, maxlength: int) -> list[str]:
         if maxlength >= 0:
