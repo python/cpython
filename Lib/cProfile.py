@@ -6,6 +6,7 @@ __all__ = ["run", "runctx", "Profile"]
 
 import _lsprof
 import importlib.machinery
+import importlib.util
 import io
 import profile as _pyprofile
 
@@ -169,17 +170,22 @@ def main():
         else:
             progname = args[0]
             sys.path.insert(0, os.path.dirname(progname))
-            with io.open_code(progname) as fp:
-                code = compile(fp.read(), progname, 'exec')
             spec = importlib.machinery.ModuleSpec(name='__main__', loader=None,
                                                   origin=progname)
+            loader = importlib.machinery.SourceFileLoader("__main__", progname)
+            spec.loader = loader
+            module = importlib.util.module_from_spec(spec)
             globs = {
                 '__spec__': spec,
                 '__file__': spec.origin,
                 '__name__': spec.name,
                 '__package__': None,
                 '__cached__': None,
+                'module': module
             }
+
+            sys.modules["__main__"] = module
+            code = "__spec__.loader.exec_module(module)"
         try:
             runctx(code, globs, None, options.outfile, options.sort)
         except BrokenPipeError as exc:
