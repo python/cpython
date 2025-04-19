@@ -73,6 +73,9 @@ source.
 
    .. audit-event:: cpython.run_command command cmdoption-c
 
+   .. versionchanged:: next
+      *command* is automatically dedented before execution.
+
 .. option:: -m <module-name>
 
    Search :data:`sys.path` for the named module and execute its contents as

@@ -1031,7 +1031,7 @@
 
         case _BUILD_LIST: {
             JitOptSymbol *list;
-            list = sym_new_not_null(ctx);
+            list = sym_new_type(ctx, &PyList_Type);
             stack_pointer[-oparg] = list;
             stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1061,7 +1061,7 @@
 
         case _BUILD_MAP: {
             JitOptSymbol *map;
-            map = sym_new_not_null(ctx);
+            map = sym_new_type(ctx, &PyDict_Type);
             stack_pointer[-oparg*2] = map;
             stack_pointer += 1 - oparg*2;
             assert(WITHIN_STACK_BOUNDS());
@@ -1742,12 +1742,14 @@
         }
 
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
-            JitOptSymbol **self_or_null;
-            JitOptSymbol **callable;
-            self_or_null = &stack_pointer[-1 - oparg];
-            callable = &stack_pointer[-2 - oparg];
-            callable[0] = sym_new_not_null(ctx);
-            self_or_null[0] = sym_new_not_null(ctx);
+            JitOptSymbol *self_or_null;
+            JitOptSymbol *callable;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            callable = sym_new_not_null(ctx);
+            self_or_null = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
+            stack_pointer[-1 - oparg] = self_or_null;
             break;
         }
 
@@ -2030,9 +2032,6 @@
         /* _MONITOR_CALL_KW is not a viable micro-op for tier 2 */
 
         case _MAYBE_EXPAND_METHOD_KW: {
-            JitOptSymbol *kwnames_out;
-            kwnames_out = sym_new_not_null(ctx);
-            stack_pointer[-1] = kwnames_out;
             break;
         }
 
@@ -2074,12 +2073,6 @@
         }
 
         case _MAKE_CALLARGS_A_TUPLE: {
-            JitOptSymbol *tuple;
-            JitOptSymbol *kwargs_out;
-            tuple = sym_new_not_null(ctx);
-            kwargs_out = sym_new_not_null(ctx);
-            stack_pointer[-2] = tuple;
-            stack_pointer[-1] = kwargs_out;
             break;
         }
 
@@ -2125,7 +2118,7 @@
 
         case _BUILD_SLICE: {
             JitOptSymbol *slice;
-            slice = sym_new_not_null(ctx);
+            slice = sym_new_type(ctx, &PySlice_Type);
             stack_pointer[-oparg] = slice;
             stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -2213,14 +2206,16 @@
         }
 
         case _SWAP: {
-            JitOptSymbol **top;
-            JitOptSymbol **bottom;
-            top = &stack_pointer[-1];
-            bottom = &stack_pointer[-2 - (oparg-2)];
-            JitOptSymbol *temp = bottom[0];
-            bottom[0] = top[0];
-            top[0] = temp;
+            JitOptSymbol *top;
+            JitOptSymbol *bottom;
+            top = stack_pointer[-1];
+            bottom = stack_pointer[-2 - (oparg-2)];
+            JitOptSymbol *temp = bottom;
+            bottom = top;
+            top = temp;
             assert(oparg >= 2);
+            stack_pointer[-2 - (oparg-2)] = bottom;
+            stack_pointer[-1] = top;
             break;
         }
 

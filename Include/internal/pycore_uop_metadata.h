@@ -1075,7 +1075,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CALL_METHOD_DESCRIPTOR_FAST:
             return 2 + oparg;
         case _MAYBE_EXPAND_METHOD_KW:
-            return 1;
+            return 0;
         case _PY_FRAME_KW:
             return 3 + oparg;
         case _CHECK_FUNCTION_VERSION_KW:
@@ -1089,7 +1089,7 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CALL_KW_NON_PY:
             return 3 + oparg;
         case _MAKE_CALLARGS_A_TUPLE:
-            return 2;
+            return 0;
         case _MAKE_FUNCTION:
             return 1;
         case _SET_FUNCTION_ATTRIBUTE:

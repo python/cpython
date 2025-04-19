@@ -84,7 +84,7 @@ def get_layout(cls, input_fields, is_struct, base):
         raise ValueError('_align_ must be a non-negative integer')
     elif align == 0:
         # Setting `_align_ = 0` amounts to using the default alignment
-        align == 1
+        align = 1
 
     if base:
         align = max(ctypes.alignment(base), align)
