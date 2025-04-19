@@ -209,7 +209,8 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_NOT_EXHAUSTED_RANGE] = HAS_EXIT_FLAG,
     [_ITER_NEXT_RANGE] = HAS_ERROR_FLAG,
     [_FOR_ITER_GEN_FRAME] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
-    [_LOAD_SPECIAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_INSERT_NULL] = 0,
+    [_LOAD_SPECIAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_WITH_EXCEPT_START] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_PUSH_EXC_INFO] = 0,
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = HAS_DEOPT_FLAG,
@@ -445,6 +446,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_INIT_CALL_PY_EXACT_ARGS_2] = "_INIT_CALL_PY_EXACT_ARGS_2",
     [_INIT_CALL_PY_EXACT_ARGS_3] = "_INIT_CALL_PY_EXACT_ARGS_3",
     [_INIT_CALL_PY_EXACT_ARGS_4] = "_INIT_CALL_PY_EXACT_ARGS_4",
+    [_INSERT_NULL] = "_INSERT_NULL",
     [_IS_NONE] = "_IS_NONE",
     [_IS_OP] = "_IS_OP",
     [_ITER_CHECK_LIST] = "_ITER_CHECK_LIST",
@@ -970,8 +972,10 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _FOR_ITER_GEN_FRAME:
             return 0;
-        case _LOAD_SPECIAL:
+        case _INSERT_NULL:
             return 1;
+        case _LOAD_SPECIAL:
+            return 0;
         case _WITH_EXCEPT_START:
             return 0;
         case _PUSH_EXC_INFO:

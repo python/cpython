@@ -2794,32 +2794,37 @@ _PyObject_LookupSpecial(PyObject *self, PyObject *attr)
     return res;
 }
 
-/* Steals a reference to self */
-PyObject *
-_PyObject_LookupSpecialMethod(PyObject *self, PyObject *attr, PyObject **self_or_null)
+// Lookup the method name `attr` on `self`. On entry, `method_and_self[0]`
+// is null and `method_and_self[1]` is `self`. On exit, `method_and_self[0]`
+// is the method object and `method_and_self[1]` is `self` if the method is
+// not bound.
+// Return 1 on success, -1 on error, and 0 if the method is missing.
+int
+_PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self)
 {
-    PyObject *res;
-
-    res = _PyType_LookupRef(Py_TYPE(self), attr);
-    if (res == NULL) {
-        Py_DECREF(self);
-        *self_or_null = NULL;
-        return NULL;
+    PyObject *self = PyStackRef_AsPyObjectBorrow(method_and_self[1]);
+    _PyType_LookupStackRefAndVersion(Py_TYPE(self), attr, &method_and_self[0]);
+    PyObject *method_o = PyStackRef_AsPyObjectBorrow(method_and_self[0]);
+    if (method_o == NULL) {
+        return 0;
     }
 
-    if (_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+    if (_PyType_HasFeature(Py_TYPE(method_o), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
         /* Avoid temporary PyMethodObject */
-        *self_or_null = self;
+        return 1;
     }
-    else {
-        descrgetfunc f = Py_TYPE(res)->tp_descr_get;
-        if (f != NULL) {
-            Py_SETREF(res, f(res, self, (PyObject *)(Py_TYPE(self))));
+
+    descrgetfunc f = Py_TYPE(method_o)->tp_descr_get;
+    if (f != NULL) {
+        PyObject *func = f(method_o, self, (PyObject *)(Py_TYPE(self)));
+        if (func == NULL) {
+            return -1;
         }
-        *self_or_null = NULL;
-        Py_DECREF(self);
+        PyStackRef_CLEAR(method_and_self[0]); // clear method
+        method_and_self[0] = PyStackRef_FromPyObjectSteal(func);
     }
-    return res;
+    PyStackRef_CLEAR(method_and_self[1]); // clear self
+    return 1;
 }
 
 static int
