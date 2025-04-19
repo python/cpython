@@ -1,2 +1,0 @@
-Certain :exc:`TypeError` messages about missing or extra arguments now include the function's
-:term:`qualified name`.  Patch by Dennis Sweeney.
