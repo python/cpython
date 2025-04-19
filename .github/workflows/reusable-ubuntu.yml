@@ -17,9 +17,13 @@ on:
         type: boolean
         default: false
       os:
-         description: OS to run the job
-         required: true
-         type: string
+        description: OS to run the job
+        required: true
+        type: string
+      traceback_timestamps:
+        description: Set to us|1|ns|iso to enable printing timestamps on exceptions in tracebacks (for feature coverage)
+        required: false
+        type: string
 
 env:
   FORCE_COLOR: 1
@@ -33,6 +37,7 @@ jobs:
       OPENSSL_VER: 3.0.15
       PYTHONSTRICTEXTENSIONBUILD: 1
       TERM: linux
+      PYTHON_TRACEBACK_TIMESTAMPS: ${{ inputs.traceback_timestamps }}
     steps:
     - uses: actions/checkout@v4
       with:

@@ -201,10 +201,11 @@ keyword arguments:
     >>> exc_msg = 'IndexError: pop from an empty list'
     >>> example = doctest.Example('[].pop()', '', exc_msg,
     ...                           lineno=5, indent=4,
-    ...                           options={doctest.ELLIPSIS: True})
+    ...                           options={
+    ...                             doctest.IGNORE_EXCEPTION_TIMESTAMPS: True})
     >>> (example.source, example.want, example.exc_msg,
     ...  example.lineno, example.indent, example.options)
-    ('[].pop()\n', '', 'IndexError: pop from an empty list\n', 5, 4, {8: True})
+    ('[].pop()\n', '', 'IndexError: pop from an empty list\n', 5, 4, {64: True})
 
 The constructor normalizes the `source` string to end in a newline:
 
@@ -2209,7 +2210,7 @@ if not hasattr(sys, 'gettrace') or not sys.gettrace():
         ...     runner.run(test)
         ... finally:
         ...     sys.stdin = real_stdin
-        ... # doctest: +REPORT_NDIFF
+        ... # doctest: +REPORT_NDIFF +IGNORE_EXCEPTION_TIMESTAMPS
         > <doctest test.test_doctest.test_doctest.test_pdb_set_trace_nested[0]>(4)calls_set_trace()
         -> import pdb; pdb.set_trace()
         (Pdb) step
@@ -2629,7 +2630,7 @@ def test_unittest_reportflags():
     Now, when we run the test:
 
       >>> result = suite.run(unittest.TestResult())
-      >>> print(result.failures[0][1]) # doctest: +ELLIPSIS
+      >>> print(result.failures[0][1]) # doctest: +ELLIPSIS +IGNORE_EXCEPTION_TIMESTAMPS
       Traceback ...
       Failed example:
           favorite_color
@@ -2654,7 +2655,7 @@ def test_unittest_reportflags():
     *NOTE*: These doctest are intentionally not placed in raw string to depict
     the trailing whitespace using `\x20` in the diff below.
 
-      >>> print(result.failures[0][1]) # doctest: +ELLIPSIS
+      >>> print(result.failures[0][1]) # doctest: +ELLIPSIS +IGNORE_EXCEPTION_TIMESTAMPS
       Traceback ...
       Failed example:
           favorite_color

@@ -16,6 +16,7 @@ from test.support import (
 )
 from test.support.script_helper import kill_python
 from test.support.import_helper import import_module
+import traceback
 
 try:
     import pty
@@ -153,10 +154,11 @@ class TestInteractiveInterpreter(unittest.TestCase):
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
 
+        output = traceback.strip_exc_timestamps(output)
         traceback_lines = output.splitlines()[-6:-1]
         expected_lines = [
             "Traceback (most recent call last):",
-            "  File \"<stdin>\", line 1, in <module>",
+            '  File "<stdin>", line 1, in <module>',
             "    1 / 0 / 3 / 4",
             "    ~~^~~",
             "ZeroDivisionError: division by zero",
@@ -176,6 +178,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         output = kill_python(p)
         self.assertEqual(p.returncode, 0)
 
+        output = traceback.strip_exc_timestamps(output)
         traceback_lines = output.splitlines()[-8:-1]
         expected_lines = [
             '  File "<stdin>", line 1, in <module>',

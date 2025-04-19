@@ -10,6 +10,7 @@ import os
 import os.path
 import py_compile
 import subprocess
+import traceback
 import io
 
 import textwrap
@@ -699,6 +700,7 @@ class CmdLineTest(unittest.TestCase):
             b'    1/0',
             b'    ~^~',
             b'ZeroDivisionError: division by zero']
+        stderr = traceback.strip_exc_timestamps(stderr)
         self.assertEqual(stderr.splitlines(), expected_lines)
 
     def test_syntaxerror_does_not_crash(self):
