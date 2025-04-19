@@ -333,6 +333,55 @@ class TestTString(unittest.TestCase):
         self.assertEqual(t.interpolations[0].format_spec, "")
         self.assertEqual(f(t), "Hello, Pythonand welcome!")
 
+        # Test concatenation with Unicode literal
+        name = "Python"
+        t = t"Hello, {name}" u"and welcome!"
+        self.assertEqual(t.strings, ("Hello, ", "and welcome!"))
+        self.assertEqual(t.interpolations[0].value, name)
+        self.assertEqual(t.interpolations[0].expression, "name")
+        self.assertEqual(t.interpolations[0].conversion, None)
+        self.assertEqual(t.interpolations[0].format_spec, "")
+        self.assertEqual(f(t), "Hello, Pythonand welcome!")
+
+        # Test concatenation with f-string literal
+        tab = '\t'
+        t = t"Tab: {tab}. " f"f-tab: {tab}."
+        self.assertEqual(t.strings, ("Tab: ", ". f-tab: \t."))
+        self.assertEqual(t.interpolations[0].value, tab)
+        self.assertEqual(t.interpolations[0].expression, "tab")
+        self.assertEqual(t.interpolations[0].conversion, None)
+        self.assertEqual(t.interpolations[0].format_spec, "")
+        self.assertEqual(f(t), "Tab: \t. f-tab: \t.")
+
+        # Test concatenation with raw string literal
+        tab = '\t'
+        t = t"Tab: {tab}. " r"Raw tab: \t."
+        self.assertEqual(t.strings, ("Tab: ", r". Raw tab: \t."))
+        self.assertEqual(t.interpolations[0].value, tab)
+        self.assertEqual(t.interpolations[0].expression, "tab")
+        self.assertEqual(t.interpolations[0].conversion, None)
+        self.assertEqual(t.interpolations[0].format_spec, "")
+        self.assertEqual(f(t), "Tab: \t. Raw tab: \\t.")
+
+        # Test concatenation with raw f-string literal
+        tab = '\t'
+        t = t"Tab: {tab}. " rf"f-tab: {tab}. Raw tab: \t."
+        self.assertEqual(t.strings, ("Tab: ", ". f-tab: \t. Raw tab: \\t."))
+        self.assertEqual(t.interpolations[0].value, tab)
+        self.assertEqual(t.interpolations[0].expression, "tab")
+        self.assertEqual(t.interpolations[0].conversion, None)
+        self.assertEqual(t.interpolations[0].format_spec, "")
+        self.assertEqual(f(t), "Tab: \t. f-tab: \t. Raw tab: \\t.")
+
+        what = 't'
+        expected_msg = 'cannot mix bytes and nonbytes literals'
+        for case in (
+            "t'{what}-string literal' b'bytes literal'",
+            "t'{what}-string literal' br'raw bytes literal'",
+        ):
+            with self.assertRaisesRegex(SyntaxError, expected_msg):
+                eval(case)
+
     def test_triple_quoted(self):
         # Test triple-quoted t-strings
         t = t"""
