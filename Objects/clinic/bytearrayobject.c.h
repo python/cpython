@@ -10,6 +10,22 @@ preserve
 #include "pycore_critical_section.h"// Py_BEGIN_CRITICAL_SECTION()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(bytearray___init____doc__,
+"bytearray()\n"
+"(source)\n"
+"(source, encoding)\n"
+"(source, encoding, errors)\n"
+"--\n"
+"\n"
+"Construct a mutable bytearray object.\n"
+"\n"
+"If there are no arguments, create an empty bytearray object.  If the first\n"
+"argument is an integer, create a zero-filled bytearray object of the\n"
+"specified size.  If it is an iterable of integers, fill the new bytearray\n"
+"object with them.  If it is an object implementing the buffer protocol,\n"
+"copy its content in the new bytearray object.  If it is a text string,\n"
+"encode it with the specified encoding and errors handler.");
+
 static int
 bytearray___init___impl(PyByteArrayObject *self, PyObject *arg,
                         const char *encoding, const char *errors);
@@ -1627,7 +1643,8 @@ bytearray_fromhex(PyObject *type, PyObject *string)
 }
 
 PyDoc_STRVAR(bytearray_hex__doc__,
-"hex($self, /, sep=<unrepresentable>, bytes_per_sep=1)\n"
+"hex($self, /, *, bytes_per_sep=1)\n"
+"($self, /, sep, bytes_per_sep=1)\n"
 "--\n"
 "\n"
 "Create a string of hexadecimal numbers from a bytearray object.\n"
@@ -1796,4 +1813,4 @@ bytearray_sizeof(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl((PyByteArrayObject *)self);
 }
-/*[clinic end generated code: output=be6d28193bc96a2c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=00551208af76a274 input=a9049054013a1b77]*/

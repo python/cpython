@@ -466,8 +466,11 @@ return next yielded value or raise StopIteration.");
 
 
 PyDoc_STRVAR(throw_doc,
-"throw(value)\n\
-throw(typ[,val[,tb]])\n\
+"throw(value, /)\n\
+(type, /)\n\
+(type, value, /)\n\
+(type, value, traceback, /)\n\
+--\n\
 \n\
 raise exception in the wrapped iterator, return next yielded value\n\
 or raise StopIteration.\n\
