@@ -1,0 +1,2 @@
+Add :exc:`doctest.SkipTest` to conditionally skip all or some doctest
+examples.
