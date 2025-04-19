@@ -31,9 +31,8 @@ _colors = {
 
 
 def _replace_match_callback(match):
-    for key in _colors:
+    for key, color in _colors.items():
         if m := match.group(key):
-            color = _colors[key]
             return f"{color}{m}{ANSIColors.RESET}"
     return match.group()
 
