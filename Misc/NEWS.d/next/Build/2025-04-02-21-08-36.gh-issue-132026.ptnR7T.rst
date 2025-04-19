@@ -1,0 +1,2 @@
+Use of undefined identifiers is removed for determining architecture
+specifics when building C code on MIPS architectures.
