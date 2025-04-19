@@ -41,7 +41,12 @@ class ModuleCompleter:
         result = ImportParser(line).parse()
         if not result:
             return []
-        return self.complete(*result)
+        try:
+            return self.complete(*result)
+        except Exception:
+            # Some unexpected error occurred, make it look like
+            # no completions are available
+            return []
 
     def complete(self, from_name: str | None, name: str | None) -> list[str]:
         if from_name is None:
