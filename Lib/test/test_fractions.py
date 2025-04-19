@@ -1707,6 +1707,12 @@ class FractionTest(unittest.TestCase):
         self.assertRaisesMessage(TypeError,
                                  message % ("Fraction", "int", "int"),
                                  pow, F(3), 4, 5)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("int", "Fraction", "int"),
+                                 pow, 3, F(4), 5)
+        self.assertRaisesMessage(TypeError,
+                                 message % ("int", "int", "Fraction"),
+                                 pow, 3, 4, F(5))
 
 
 if __name__ == '__main__':

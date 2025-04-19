@@ -2745,6 +2745,12 @@ class BasicBluetoothTest(unittest.TestCase):
                 addr = s.getsockname()
                 self.assertEqual(addr, dev)
 
+            with (self.subTest('integer'),
+                  socket.socket(socket.AF_BLUETOOTH, socket.SOCK_RAW, socket.BTPROTO_HCI) as s):
+                s.bind(dev)
+                addr = s.getsockname()
+                self.assertEqual(addr, dev)
+
             with (self.subTest('channel=HCI_CHANNEL_RAW'),
                   socket.socket(socket.AF_BLUETOOTH, socket.SOCK_RAW, socket.BTPROTO_HCI) as s):
                 channel = socket.HCI_CHANNEL_RAW
@@ -2789,8 +2795,6 @@ class BasicBluetoothTest(unittest.TestCase):
                     s.bind(())
                 with self.assertRaises(OSError):
                     s.bind((dev, socket.HCI_CHANNEL_RAW, 0, 0))
-                with self.assertRaises(OSError):
-                    s.bind(dev)
                 with self.assertRaises(OSError):
                     s.bind(socket.BDADDR_ANY)
                 with self.assertRaises(OSError):
