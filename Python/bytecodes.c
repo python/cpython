@@ -958,27 +958,28 @@ dummy_func(
             EXIT_IF(!PyDict_CheckExact(o));
         }
 
+        op(_GUARD_NOS_DICT_NOT_EXACT, (nos, unused -- nos, unused)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(nos);
+            DEOPT_IF(!Py_TYPE(o)->tp_as_mapping);
+            DEOPT_IF(Py_TYPE(o)->tp_as_mapping->mp_subscript != _PyDict_Subscript);
+        }
+
         op(_GUARD_TOS_DICT, (tos -- tos)) {
             PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
             EXIT_IF(!PyDict_CheckExact(o));
         }
 
         macro(BINARY_OP_SUBSCR_DICT) =
-            _GUARD_NOS_DICT + unused/5 + _BINARY_OP_SUBSCR_DICT;
+            _GUARD_NOS_DICT_NOT_EXACT + unused/5 + _BINARY_OP_SUBSCR_DICT;
 
         op(_BINARY_OP_SUBSCR_DICT, (dict_st, sub_st -- res)) {
             PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
             PyObject *dict = PyStackRef_AsPyObjectBorrow(dict_st);
 
-            assert(PyDict_CheckExact(dict));
             STAT_INC(BINARY_OP, hit);
-            PyObject *res_o;
-            int rc = PyDict_GetItemRef(dict, sub, &res_o);
-            if (rc == 0) {
-                _PyErr_SetKeyError(sub);
-            }
+            PyObject *res_o = _PyDict_Subscript(dict, sub);
             DECREF_INPUTS();
-            ERROR_IF(rc <= 0, error); // not found or error
+            ERROR_IF(res_o == NULL, error); // not found or error
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
