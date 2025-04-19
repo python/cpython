@@ -542,6 +542,7 @@ OBJECT_OBJS=	\
 		Objects/floatobject.o \
 		Objects/frameobject.o \
 		Objects/funcobject.o \
+		Objects/interpolationobject.o \
 		Objects/iterobject.o \
 		Objects/listobject.o \
 		Objects/longobject.o \
@@ -558,6 +559,7 @@ OBJECT_OBJS=	\
 		Objects/setobject.o \
 		Objects/sliceobject.o \
 		Objects/structseq.o \
+		Objects/templateobject.o \
 		Objects/tupleobject.o \
 		Objects/typeobject.o \
 		Objects/typevarobject.o \
@@ -565,8 +567,6 @@ OBJECT_OBJS=	\
 		Objects/unicodectype.o \
 		Objects/unionobject.o \
 		Objects/weakrefobject.o \
-		Objects/interpolationobject.o \
-		Objects/templateobject.o \
 		@PERF_TRAMPOLINE_OBJ@
 
 ##########################################################################

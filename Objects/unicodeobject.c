@@ -11618,7 +11618,7 @@ PyUnicode_Concat(PyObject *left, PyObject *right)
         return NULL;
 
     if (!PyUnicode_Check(right)) {
-        if (_PyTemplate_Check(right)) {
+        if (_PyTemplate_CheckExact(right)) {
             // str + tstring is implemented in the tstring type
             return _PyTemplate_Concat(left, right);
         }

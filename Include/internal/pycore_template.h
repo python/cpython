@@ -12,7 +12,6 @@ extern "C" {
 extern PyTypeObject _PyTemplate_Type;
 extern PyTypeObject _PyTemplateIter_Type;
 
-#define _PyTemplate_Check(op) PyObject_TypeCheck((op), &_PyTemplate_Type)
 #define _PyTemplate_CheckExact(op) Py_IS_TYPE((op), &_PyTemplate_Type)
 
 extern PyObject *_PyTemplate_Concat(PyObject *self, PyObject *other);

@@ -21,12 +21,12 @@ _io _io/_iomodule.c _io/iobase.c _io/fileio.c _io/bytesio.c _io/bufferedio.c _io
 itertools itertoolsmodule.c
 _sre _sre/sre.c
 _sysconfig _sysconfig.c
+_templatelib _templatelibmodule.c
 _thread _threadmodule.c
 time timemodule.c
 _types _typesmodule.c
 _typing _typingmodule.c
 _weakref _weakref.c
-_templatelib _templatelibmodule.c
 
 # commonly used core modules
 _abc _abc.c

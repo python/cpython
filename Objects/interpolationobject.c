@@ -13,9 +13,8 @@ _conversion_converter(PyObject *arg, PyObject **conversion)
 
     if (!PyUnicode_Check(arg)) {
         PyErr_Format(PyExc_TypeError,
-            "%.200s() %.200s must be %.50s, not %.50s",
-            "Interpolation", "argument 'conversion'", "str",
-            arg == Py_None ? "None" : Py_TYPE(arg)->tp_name);
+            "Interpolation() argument 'conversion' must be str, not %T",
+            arg);
         return 0;
     }
 
@@ -46,6 +45,9 @@ typedef struct {
     PyObject *format_spec;
 } interpolationobject;
 
+#define interpolationobject_CAST(op) \
+    (assert(_PyInterpolation_CheckExact(op)), _Py_CAST(interpolationobject*, (op)))
+
 /*[clinic input]
 @classmethod
 Interpolation.__new__ as interpolation_new
@@ -75,8 +77,9 @@ interpolation_new_impl(PyTypeObject *type, PyObject *value,
 }
 
 static void
-interpolation_dealloc(interpolationobject *self)
+interpolation_dealloc(PyObject *op)
 {
+    interpolationobject *self = interpolationobject_CAST(op);
     PyObject_GC_UnTrack(self);
     Py_CLEAR(self->value);
     Py_CLEAR(self->expression);
@@ -86,8 +89,9 @@ interpolation_dealloc(interpolationobject *self)
 }
 
 static int
-interpolation_traverse(interpolationobject *self, visitproc visit, void *arg)
+interpolation_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    interpolationobject *self = interpolationobject_CAST(op);
     Py_VISIT(self->value);
     Py_VISIT(self->expression);
     Py_VISIT(self->conversion);
@@ -96,11 +100,11 @@ interpolation_traverse(interpolationobject *self, visitproc visit, void *arg)
 }
 
 static PyObject *
-interpolation_repr(interpolationobject *self)
+interpolation_repr(PyObject *op)
 {
-    return PyUnicode_FromFormat("%s(%R, %R, %R, %R)",
-                                _PyType_Name(Py_TYPE(self)),
-                                self->value, self->expression,
+    interpolationobject *self = interpolationobject_CAST(op);
+    return PyUnicode_FromFormat("%T(%R, %R, %R, %R)",
+                                self, self->value, self->expression,
                                 self->conversion, self->format_spec);
 }
 
@@ -119,13 +123,13 @@ PyTypeObject _PyInterpolation_Type = {
     .tp_basicsize = sizeof(interpolationobject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
-    .tp_new = (newfunc) interpolation_new,
+    .tp_new = interpolation_new,
     .tp_alloc = PyType_GenericAlloc,
-    .tp_dealloc = (destructor) interpolation_dealloc,
+    .tp_dealloc = interpolation_dealloc,
     .tp_free = PyObject_GC_Del,
-    .tp_repr = (reprfunc) interpolation_repr,
+    .tp_repr = interpolation_repr,
     .tp_members = interpolation_members,
-    .tp_traverse = (traverseproc) interpolation_traverse,
+    .tp_traverse = interpolation_traverse,
 };
 
 static PyObject *
@@ -213,5 +217,5 @@ _PyInterpolation_FromStackRefStealOnSuccess(_PyStackRef *values)
 PyObject *
 _PyInterpolation_GetValue(PyObject *interpolation)
 {
-    return ((interpolationobject *) interpolation)->value;
+    return interpolationobject_CAST(interpolation)->value;
 }
