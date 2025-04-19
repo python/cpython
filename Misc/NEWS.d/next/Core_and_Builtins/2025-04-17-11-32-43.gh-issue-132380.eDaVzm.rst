@@ -1,0 +1,3 @@
+Add an optimized implementation of type lookup for names that are
+non-interned strings. This is only enabled for free-threaded builds since
+that kind of lookup can cause contention for the global type lock.

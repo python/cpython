@@ -5728,6 +5728,50 @@ _PyTypes_AfterFork(void)
 #endif
 }
 
+#ifdef Py_GIL_DISABLED
+// Non-caching version of type lookup, containing a non-locking
+// version of find_name_in_mro().
+static unsigned int
+type_lookup_non_interned(PyTypeObject *type, PyObject *name, _PyStackRef *out)
+{
+    PyObject *mro = NULL;
+    Py_hash_t hash = _PyObject_HashFast(name);
+    if (hash == -1) {
+        goto error;
+    }
+
+    /* Keep a strong reference to mro because type->tp_mro can be replaced
+       during dict lookup, e.g. when comparing to non-string keys. */
+    mro = _PyType_GetMRO(type);
+    if (mro == NULL) {
+        assert(PyType_Ready(type));
+        goto error;
+    }
+
+    /* Look in tp_dict of types in MRO */
+    PyObject *res = NULL;
+    Py_ssize_t n = PyTuple_GET_SIZE(mro);
+    for (Py_ssize_t i = 0; i < n; i++) {
+        PyObject *base = PyTuple_GET_ITEM(mro, i);
+        PyObject *dict = lookup_tp_dict(_PyType_CAST(base));
+        assert(dict && PyDict_Check(dict));
+        if (_PyDict_GetItemRef_KnownHash((PyDictObject *)dict, name, hash, &res) < 0) {
+            goto error;
+        }
+        if (res != NULL) {
+            break;
+        }
+    }
+    Py_DECREF(mro);
+    *out = res ? PyStackRef_FromPyObjectSteal(res) : PyStackRef_NULL;
+    return 0;
+error:
+    Py_XDECREF(mro);
+    *out = PyStackRef_NULL;
+    return 0;
+}
+#endif
+
 /* Internal API to look for a name through the MRO.
    This returns a strong reference, and doesn't set an exception!
    If nonzero, version is set to the value of type->tp_version at the time of
@@ -5750,6 +5794,18 @@ _PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *ve
 unsigned int
 _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out)
 {
+#ifdef Py_GIL_DISABLED
+    // Bypass the type cache in this case since it is very unlikely it will do
+    // anything useful with a non-interned name lookup.  This typically happens
+    // due to a getattr() call on a type with a name that has been constructed.
+    // We only have this path for the free-threaded build since cache misses are
+    // relatively more expensive for it and also to avoid contention on
+    // TYPE_LOCK.  For the default build this extra branch is assumed to not be
+    // worth it, since this kind of lookup is quite rare.
+    if (!PyUnicode_CHECK_INTERNED(name) && _PyType_IsReady(type)) {
+        return type_lookup_non_interned(type, name, out);
+    }
+#endif
     unsigned int h = MCACHE_HASH_METHOD(type, name);
     struct type_cache *cache = get_type_cache();
     struct type_cache_entry *entry = &cache->hashtable[h];
