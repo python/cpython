@@ -1974,9 +1974,9 @@ class AssortedBytesTest(unittest.TestCase):
     @test.support.requires_docstrings
     def test_doc(self):
         self.assertIsNotNone(bytearray.__doc__)
-        self.assertTrue(bytearray.__doc__.startswith("bytearray("), bytearray.__doc__)
+        self.assertStartsWith(bytearray.__doc__, "bytearray(")
         self.assertIsNotNone(bytes.__doc__)
-        self.assertTrue(bytes.__doc__.startswith("bytes("), bytes.__doc__)
+        self.assertStartsWith(bytes.__doc__, "bytes(")
 
     def test_from_bytearray(self):
         sample = bytes(b"Hello world\n\x80\x81\xfe\xff")
@@ -2107,7 +2107,7 @@ class BytesAsStringTest(FixedStringTest, unittest.TestCase):
 class SubclassTest:
 
     def test_basic(self):
-        self.assertTrue(issubclass(self.type2test, self.basetype))
+        self.assertIsSubclass(self.type2test, self.basetype)
         self.assertIsInstance(self.type2test(), self.basetype)
 
         a, b = b"abcd", b"efgh"
@@ -2155,7 +2155,7 @@ class SubclassTest:
             self.assertEqual(a.z, b.z)
             self.assertEqual(type(a), type(b))
             self.assertEqual(type(a.z), type(b.z))
-            self.assertFalse(hasattr(b, 'y'))
+            self.assertNotHasAttr(b, 'y')
 
     def test_copy(self):
         a = self.type2test(b"abcd")
@@ -2169,7 +2169,7 @@ class SubclassTest:
             self.assertEqual(a.z, b.z)
             self.assertEqual(type(a), type(b))
             self.assertEqual(type(a.z), type(b.z))
-            self.assertFalse(hasattr(b, 'y'))
+            self.assertNotHasAttr(b, 'y')
 
     def test_fromhex(self):
         b = self.type2test.fromhex('1a2B30')

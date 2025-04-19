@@ -66,7 +66,7 @@ class AnyDBMTestCase:
         return keys
 
     def test_error(self):
-        self.assertTrue(issubclass(self.module.error, OSError))
+        self.assertIsSubclass(self.module.error, OSError)
 
     def test_anydbm_not_existing(self):
         self.assertRaises(dbm.error, dbm.open, _fname)

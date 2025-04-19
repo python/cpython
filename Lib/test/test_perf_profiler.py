@@ -93,9 +93,7 @@ class TestPerfTrampoline(unittest.TestCase):
                 perf_line, f"Could not find {expected_symbol} in perf file"
             )
             perf_addr = perf_line.split(" ")[0]
-            self.assertFalse(
-                perf_addr.startswith("0x"), "Address should not be prefixed with 0x"
-            )
+            self.assertNotStartsWith(perf_addr, "0x")
             self.assertTrue(
                 set(perf_addr).issubset(string.hexdigits),
                 "Address should contain only hex characters",
