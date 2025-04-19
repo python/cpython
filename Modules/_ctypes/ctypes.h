@@ -537,6 +537,8 @@ extern int _ctypes_simple_instance(ctypes_state *st, PyObject *obj);
 
 PyObject *_ctypes_get_errobj(ctypes_state *st, int **pspace);
 
+extern void _ctypes_init_fielddesc(void);
+
 #ifdef USING_MALLOC_CLOSURE_DOT_C
 void Py_ffi_closure_free(void *p);
 void *Py_ffi_closure_alloc(size_t size, void** codeloc);
@@ -642,15 +644,4 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
 
     info->initialized = 1;
     return info;
-}
-
-/* Equivalent to *self->b_ptr with a lock. */
-static inline void *
-locked_deref(CDataObject *self)
-{
-    void *ptr;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    ptr = *(void **)self->b_ptr;
-    Py_END_CRITICAL_SECTION();
-    return ptr;
 }
