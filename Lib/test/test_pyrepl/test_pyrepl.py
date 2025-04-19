@@ -1360,7 +1360,7 @@ class TestMain(ReplTestCase):
             history = pathlib.Path(hfile.name).read_text()
             self.assertIn("spam", history)
             self.assertIn("time", history)
-            self.assertIn("sleep", history)
+            self.assertNotIn("sleep", history)
             self.assertNotIn("preved", history)
 
     def test_keyboard_interrupt_after_isearch(self):

@@ -142,13 +142,13 @@ def run_multiline_interactive_console(
             if maybe_run_command(statement):
                 continue
 
+            input_name = f"<python-input-{input_n}>"
+            more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
+            assert not more
             try:
                 append_history_file()
             except (FileNotFoundError, PermissionError, OSError) as e:
                 warnings.warn(f"failed to open the history file for writing: {e}")
-            input_name = f"<python-input-{input_n}>"
-            more = console.push(_strip_final_indent(statement), filename=input_name, _symbol="single")  # type: ignore[call-arg]
-            assert not more
             input_n += 1
         except KeyboardInterrupt:
             r = _get_reader()
