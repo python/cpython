@@ -18,6 +18,10 @@ repos:
         name: Run Ruff (lint) on Argument Clinic
         args: [--exit-non-zero-on-fix, --config=Tools/clinic/.ruff.toml]
         files: ^Tools/clinic/|Lib/test/test_clinic.py
+      - id: ruff
+        name: Run Ruff (lint) on Tools/refcounts/lint.py
+        args: [--exit-non-zero-on-fix, --config=Tools/refcounts/.ruff.toml]
+        files: ^Tools/refcounts/lint.py
       - id: ruff-format
         name: Run Ruff (format) on Doc/
         args: [--check]
