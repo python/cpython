@@ -1915,12 +1915,44 @@
             break;
         }
 
+        case _GUARD_CALL_BUILTIN_O: {
+            JitOptSymbol *self_or_null;
+            JitOptSymbol *callable;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            int total_args = oparg;
+            if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
+                total_args += sym_is_not_null(self_or_null);
+                if (total_args == 1 && sym_is_const(ctx, callable)) {
+                    PyObject *callable_o = sym_get_const(ctx, callable);
+                    if (PyCFunction_CheckExact(callable_o) &&
+                        PyCFunction_GET_FLAGS(callable_o) == METH_O) {
+                        REPLACE_OP(this_instr, _NOP, 0 ,0);
+                    }
+                }
+            }
+            break;
+        }
+
         case _CALL_BUILTIN_O: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _GUARD_CALL_BUILTIN_FAST: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-2 - oparg];
+            if (sym_is_const(ctx, callable)) {
+                PyObject *callable_o = sym_get_const(ctx, callable);
+                if (PyCFunction_CheckExact(callable_o) &&
+                    PyCFunction_GET_FLAGS(callable_o) == METH_FASTCALL) {
+                    REPLACE_OP(this_instr, _NOP, 0 ,0);
+                }
+            }
             break;
         }
 

@@ -4115,23 +4115,31 @@ dummy_func(
             _CALL_BUILTIN_CLASS +
             _CHECK_PERIODIC;
 
-        op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res)) {
-            /* Builtin METH_O functions */
+        op(_GUARD_CALL_BUILTIN_O, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-
-            int total_args = oparg;
-            if (!PyStackRef_IsNull(self_or_null)) {
-                args--;
-                total_args++;
-            }
+            int total_args = oparg + (!PyStackRef_IsNull(self_or_null));
             EXIT_IF(total_args != 1);
             EXIT_IF(!PyCFunction_CheckExact(callable_o));
             EXIT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_O);
+        }
+
+        replicate(2) op(_CALL_BUILTIN_O, (callable, self_or_null, args[oparg] -- res)) {
+            /* Builtin METH_O functions */
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+
+            _PyStackRef arg;
+            if (oparg == 0) {
+                assert(!PyStackRef_IsNull(self_or_null));
+                arg = self_or_null;
+            }
+            else {
+                arg = args[0];
+            }
+
             // CPython promises to check all non-vectorcall function calls.
             EXIT_IF(_Py_ReachedRecursionLimit(tstate));
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
-            _PyStackRef arg = args[0];
             PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable_o), PyStackRef_AsPyObjectBorrow(arg));
             _Py_LeaveRecursiveCallTstate(tstate);
             assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
@@ -4147,8 +4155,15 @@ dummy_func(
         macro(CALL_BUILTIN_O) =
             unused/1 +
             unused/2 +
+            _GUARD_CALL_BUILTIN_O +
             _CALL_BUILTIN_O +
             _CHECK_PERIODIC;
+
+        op(_GUARD_CALL_BUILTIN_FAST, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            DEOPT_IF(!PyCFunction_CheckExact(callable_o));
+            DEOPT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL);
+        }
 
         op(_CALL_BUILTIN_FAST, (callable, self_or_null, args[oparg] -- res)) {
             /* Builtin METH_FASTCALL functions, without keywords */
@@ -4160,8 +4175,7 @@ dummy_func(
                 arguments--;
                 total_args++;
             }
-            DEOPT_IF(!PyCFunction_CheckExact(callable_o));
-            DEOPT_IF(PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL);
+
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
             /* res = func(self, args, nargs) */
@@ -4184,6 +4198,7 @@ dummy_func(
         macro(CALL_BUILTIN_FAST) =
             unused/1 +
             unused/2 +
+            _GUARD_CALL_BUILTIN_FAST +
             _CALL_BUILTIN_FAST +
             _CHECK_PERIODIC;
 
