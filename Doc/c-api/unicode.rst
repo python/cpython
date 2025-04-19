@@ -677,8 +677,6 @@ APIs:
    returned on success. Otherwise, ``-1`` is returned and an exception is set,
    and ``*unicode`` is left untouched.
 
-   .. warning::
-
       The function doesn't check string content, the result may not be a
       string in canonical representation.
 
