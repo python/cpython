@@ -512,6 +512,22 @@ class BaseTest:
         self.checkraises(ValueError, 'hello', 'split', '')
         self.checkraises(ValueError, 'hello', 'split', '', 0)
 
+        # without args, any whitespace is a separator
+        self.checkequal(['a', 'b', 'c', 'd', 'e'], 'a b\tc\nd \n e ', 'split')
+
+        # with sep=None, any whitespace is a separator
+        self.checkequal(['a', 'b', 'c', 'd', 'e'], 'a b\tc\nd \n e ', 'split', sep=None)
+
+        # Without an explicit `sep`, or sep=None, empty strings are pruned from result
+        self.checkequal([], '', 'split')
+        self.checkequal([], '', 'split', sep=None)
+
+        # With an explicit, non-None `sep`, empty strings are not pruned from result
+        self.checkequal([''], '', 'split', sep=',')
+
+        # keepempty=False to remove empty strings from result
+        self.checkequal([], '', 'split', sep=',', keepempty=False)
+
     def test_rsplit(self):
         # without arg
         self.checkequal(['a', 'b', 'c', 'd'], 'a b c d', 'rsplit')
