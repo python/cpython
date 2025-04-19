@@ -6,7 +6,7 @@ import unittest
 import subprocess
 
 from test import support
-from test.support import os_helper
+from test.support import force_not_colorized, os_helper
 from test.support.script_helper import assert_python_ok
 
 
@@ -87,6 +87,7 @@ class TestMain(unittest.TestCase):
     }
     """)
 
+    @force_not_colorized
     def test_stdin_stdout(self):
         args = sys.executable, '-m', self.module
         process = subprocess.run(args, input=self.data, capture_output=True, text=True, check=True)
@@ -102,7 +103,8 @@ class TestMain(unittest.TestCase):
 
     def test_infile_stdout(self):
         infile = self._create_infile()
-        rc, out, err = assert_python_ok('-m', self.module, infile)
+        rc, out, err = assert_python_ok('-m', self.module, infile,
+                                        PYTHON_COLORS='0')
         self.assertEqual(rc, 0)
         self.assertEqual(out.splitlines(), self.expect.encode().splitlines())
         self.assertEqual(err, b'')
@@ -116,7 +118,8 @@ class TestMain(unittest.TestCase):
         ''').encode()
 
         infile = self._create_infile(data)
-        rc, out, err = assert_python_ok('-m', self.module, infile)
+        rc, out, err = assert_python_ok('-m', self.module, infile,
+                                        PYTHON_COLORS='0')
 
         self.assertEqual(rc, 0)
         self.assertEqual(out.splitlines(), expect.splitlines())
@@ -125,7 +128,8 @@ class TestMain(unittest.TestCase):
     def test_infile_outfile(self):
         infile = self._create_infile()
         outfile = os_helper.TESTFN + '.out'
-        rc, out, err = assert_python_ok('-m', self.module, infile, outfile)
+        rc, out, err = assert_python_ok('-m', self.module, infile, outfile,
+                                        PYTHON_COLORS='0')
         self.addCleanup(os.remove, outfile)
         with open(outfile, "r", encoding="utf-8") as fp:
             self.assertEqual(fp.read(), self.expect)
@@ -135,13 +139,15 @@ class TestMain(unittest.TestCase):
 
     def test_writing_in_place(self):
         infile = self._create_infile()
-        rc, out, err = assert_python_ok('-m', self.module, infile, infile)
+        rc, out, err = assert_python_ok('-m', self.module, infile, infile,
+                                        PYTHON_COLORS='0')
         with open(infile, "r", encoding="utf-8") as fp:
             self.assertEqual(fp.read(), self.expect)
         self.assertEqual(rc, 0)
         self.assertEqual(out, b'')
         self.assertEqual(err, b'')
 
+    @force_not_colorized
     def test_jsonlines(self):
         args = sys.executable, '-m', self.module, '--json-lines'
         process = subprocess.run(args, input=self.jsonlines_raw, capture_output=True, text=True, check=True)
@@ -149,19 +155,22 @@ class TestMain(unittest.TestCase):
         self.assertEqual(process.stderr, '')
 
     def test_help_flag(self):
-        rc, out, err = assert_python_ok('-m', self.module, '-h')
+        rc, out, err = assert_python_ok('-m', self.module, '-h',
+                                        PYTHON_COLORS='0')
         self.assertEqual(rc, 0)
         self.assertTrue(out.startswith(b'usage: '))
         self.assertEqual(err, b'')
 
     def test_sort_keys_flag(self):
         infile = self._create_infile()
-        rc, out, err = assert_python_ok('-m', self.module, '--sort-keys', infile)
+        rc, out, err = assert_python_ok('-m', self.module, '--sort-keys', infile,
+                                        PYTHON_COLORS='0')
         self.assertEqual(rc, 0)
         self.assertEqual(out.splitlines(),
                          self.expect_without_sort_keys.encode().splitlines())
         self.assertEqual(err, b'')
 
+    @force_not_colorized
     def test_indent(self):
         input_ = '[1, 2]'
         expect = textwrap.dedent('''\
@@ -175,6 +184,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(process.stdout, expect)
         self.assertEqual(process.stderr, '')
 
+    @force_not_colorized
     def test_no_indent(self):
         input_ = '[1,\n2]'
         expect = '[1, 2]\n'
@@ -183,6 +193,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(process.stdout, expect)
         self.assertEqual(process.stderr, '')
 
+    @force_not_colorized
     def test_tab(self):
         input_ = '[1, 2]'
         expect = '[\n\t1,\n\t2\n]\n'
@@ -191,6 +202,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(process.stdout, expect)
         self.assertEqual(process.stderr, '')
 
+    @force_not_colorized
     def test_compact(self):
         input_ = '[ 1 ,\n 2]'
         expect = '[1,2]\n'
@@ -203,7 +215,8 @@ class TestMain(unittest.TestCase):
         infile = self._create_infile('{"key":"💩"}')
         outfile = os_helper.TESTFN + '.out'
         self.addCleanup(os.remove, outfile)
-        assert_python_ok('-m', self.module, '--no-ensure-ascii', infile, outfile)
+        assert_python_ok('-m', self.module, '--no-ensure-ascii', infile,
+                         outfile, PYTHON_COLORS='0')
         with open(outfile, "rb") as f:
             lines = f.read().splitlines()
         # asserting utf-8 encoded output file
@@ -214,13 +227,14 @@ class TestMain(unittest.TestCase):
         infile = self._create_infile('{"key":"💩"}')
         outfile = os_helper.TESTFN + '.out'
         self.addCleanup(os.remove, outfile)
-        assert_python_ok('-m', self.module, infile, outfile)
+        assert_python_ok('-m', self.module, infile, outfile, PYTHON_COLORS='0')
         with open(outfile, "rb") as f:
             lines = f.read().splitlines()
         # asserting an ascii encoded output file
         expected = [b'{', rb'    "key": "\ud83d\udca9"', b"}"]
         self.assertEqual(lines, expected)
 
+    @force_not_colorized
     @unittest.skipIf(sys.platform =="win32", "The test is failed with ValueError on Windows")
     def test_broken_pipe_error(self):
         cmd = [sys.executable, '-m', self.module]
@@ -232,7 +246,73 @@ class TestMain(unittest.TestCase):
         proc.communicate(b'"{}"')
         self.assertEqual(proc.returncode, errno.EPIPE)
 
+    def test_colors(self):
+        infile = os_helper.TESTFN
+        self.addCleanup(os.remove, infile)
+
+        cases = (
+            ('{}', b'{}'),
+            ('[]', b'[]'),
+            ('null', b'\x1b[1;36mnull\x1b[0m'),
+            ('true', b'\x1b[1;36mtrue\x1b[0m'),
+            ('false', b'\x1b[1;36mfalse\x1b[0m'),
+            ('NaN', b'NaN'),
+            ('Infinity', b'Infinity'),
+            ('-Infinity', b'-Infinity'),
+            ('"foo"', b'\x1b[1;32m"foo"\x1b[0m'),
+            (r'" \"foo\" "', b'\x1b[1;32m" \\"foo\\" "\x1b[0m'),
+            ('"α"', b'\x1b[1;32m"\\u03b1"\x1b[0m'),
+            ('123', b'123'),
+            ('-1.2345e+23', b'-1.2345e+23'),
+            (r'{"\\": ""}',
+             b'''\
+{
+    \x1b[94m"\\\\"\x1b[0m: \x1b[1;32m""\x1b[0m
+}'''),
+            (r'{"\\\\": ""}',
+             b'''\
+{
+    \x1b[94m"\\\\\\\\"\x1b[0m: \x1b[1;32m""\x1b[0m
+}'''),
+            ('''\
+{
+    "foo": "bar",
+    "baz": 1234,
+    "qux": [true, false, null],
+    "xyz": [NaN, -Infinity, Infinity]
+}''',
+             b'''\
+{
+    \x1b[94m"foo"\x1b[0m: \x1b[1;32m"bar"\x1b[0m,
+    \x1b[94m"baz"\x1b[0m: 1234,
+    \x1b[94m"qux"\x1b[0m: [
+        \x1b[1;36mtrue\x1b[0m,
+        \x1b[1;36mfalse\x1b[0m,
+        \x1b[1;36mnull\x1b[0m
+    ],
+    \x1b[94m"xyz"\x1b[0m: [
+        NaN,
+        -Infinity,
+        Infinity
+    ]
+}'''),
+        )
+
+        for input_, expected in cases:
+            with self.subTest(input=input_):
+                with open(infile, "w", encoding="utf-8") as fp:
+                    fp.write(input_)
+                _, stdout, _ = assert_python_ok('-m', self.module, infile,
+                                                PYTHON_COLORS='1')
+                stdout = stdout.replace(b'\r\n', b'\n')  # normalize line endings
+                stdout = stdout.strip()
+                self.assertEqual(stdout, expected)
+
 
 @support.requires_subprocess()
 class TestTool(TestMain):
     module = 'json.tool'
+
+
+if __name__ == "__main__":
+    unittest.main()
