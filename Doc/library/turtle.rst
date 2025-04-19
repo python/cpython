@@ -17,6 +17,7 @@
 .. testcleanup::
 
    import os
+   Screen().bye()
    os.remove("my_drawing.ps")
 
 --------------
