@@ -18,3 +18,22 @@ select = [
     "W",       # pycodestyle
     "YTT",     # flake8-2020
 ]
+ignore = [
+    "E501",    # Line too long
+    "F541",    # f-string without any placeholders
+    "PYI024",  # Use `typing.NamedTuple` instead of `collections.namedtuple`
+    "PYI025",  # Use `from collections.abc import Set as AbstractSet`
+    "UP038",   # Use `X | Y` in `isinstance` call instead of `(X, Y)`
+]
+
+[per-file-target-version]
+"deepfreeze.py" = "py310"
+"stable_abi.py" = "py311"  # requires 'tomllib'
+
+[lint.per-file-ignores]
+"{check_extension_modules,freeze_modules}.py" = [
+    "UP031",  # Use format specifiers instead of percent format
+]
+"generate_{re_casefix,sre_constants,token}.py" = [
+    "UP031",  # Use format specifiers instead of percent format
+]
