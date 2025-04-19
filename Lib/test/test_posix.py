@@ -1521,6 +1521,27 @@ class PosixTester(unittest.TestCase):
         self.assertEqual(cm.exception.errno, errno.EINVAL)
         os.close(os.pidfd_open(os.getpid(), 0))
 
+    @unittest.skipUnless(
+        hasattr(os, "link") and os.link in os.supports_follow_symlinks,
+        "test needs follow_symlinks support in os.link()"
+    )
+    def test_link_follow_symlinks(self):
+        symlink_fn = os_helper.TESTFN + 'symlink'
+        link_following = os_helper.TESTFN + 'link_following'
+        link_nofollow = os_helper.TESTFN + 'link_nofollow'
+        posix.symlink(os_helper.TESTFN, symlink_fn)
+        self.addCleanup(os_helper.unlink, symlink_fn)
+
+        # follow_symlinks=False -> duplicate the symlink itself
+        posix.link(symlink_fn, link_nofollow, follow_symlinks=False)
+        self.addCleanup(os_helper.unlink, link_nofollow)
+        self.assertEqual(posix.lstat(link_nofollow), posix.lstat(symlink_fn))
+
+        # follow_symlinks=True -> duplicate the target file
+        posix.link(symlink_fn, link_following, follow_symlinks=True)
+        self.addCleanup(os_helper.unlink, link_following)
+        self.assertEqual(posix.lstat(link_following), posix.lstat(os_helper.TESTFN))
+
 
 # tests for the posix *at functions follow
 class TestPosixDirFd(unittest.TestCase):
