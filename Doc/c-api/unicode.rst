@@ -668,7 +668,7 @@ APIs:
 
 .. c:function:: int PyUnicode_Resize(PyObject **unicode, Py_ssize_t length);
 
-   Resize a Unicode object. The length is the number of codepoints.
+   Resize a Unicode object *\*unicode* to the new *length* in code points.
 
    Try to resize the string in place (which is usually faster than allocating
    a new string and copying characters), or create a new string.
