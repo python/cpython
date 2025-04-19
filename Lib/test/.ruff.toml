@@ -9,6 +9,7 @@ extend-exclude = [
     "encoded_modules/module_koi8_r.py",
     # SyntaxError because of t-strings
     "test_tstring.py",
+    "test_string/test_templatelib.py",
     # TODO Fix: F811 Redefinition of unused name
     "test_buffer.py",
     "test_dataclasses/__init__.py",
