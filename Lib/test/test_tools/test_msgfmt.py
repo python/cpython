@@ -1,6 +1,17 @@
-"""Tests for the Tools/i18n/msgfmt.py tool."""
+"""Tests for the Tools/i18n/msgfmt.py tool.
 
+These tests use data files (po and mo) in the msgfmt_data folder.
+The mo files can be generated (if the po file changes, or if msgfmt.py
+slightly changes its output format) by using the --snapshot-update flag
+with this script:
+
+    python test_msgfmt.py --snapshot-update
+"""
+
+import filecmp
 import json
+import os.path
+import shutil
 import struct
 import sys
 import unittest
@@ -11,7 +22,6 @@ from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure, assert_python_ok
 from test.test_tools import skip_if_missing, toolsdir
 
-
 skip_if_missing('i18n')
 
 data_dir = (Path(__file__).parent / 'msgfmt_data').resolve()
@@ -19,8 +29,8 @@ script_dir = Path(toolsdir) / 'i18n'
 msgfmt = script_dir / 'msgfmt.py'
 
 
-def compile_messages(po_file, mo_file):
-    assert_python_ok(msgfmt, '-o', mo_file, po_file)
+def compile_messages(mo_file, *po_files):
+    assert_python_ok(msgfmt, '-o', mo_file, *po_files)
 
 
 class CompilationTest(unittest.TestCase):
@@ -35,7 +45,7 @@ class CompilationTest(unittest.TestCase):
                         expected = GNUTranslations(f)
 
                     tmp_mo_file = mo_file.name
-                    compile_messages(po_file, tmp_mo_file)
+                    compile_messages(tmp_mo_file, po_file)
                     with open(tmp_mo_file, 'rb') as f:
                         actual = GNUTranslations(f)
 
@@ -44,7 +54,7 @@ class CompilationTest(unittest.TestCase):
     def test_binary_header(self):
         with temp_cwd():
             tmp_mo_file = 'messages.mo'
-            compile_messages(data_dir / "general.po", tmp_mo_file)
+            compile_messages(tmp_mo_file, data_dir / "general.po")
             with open(tmp_mo_file, 'rb') as f:
                 mo_data = f.read()
 
@@ -140,6 +150,7 @@ msgstr "bar"
             err = res.err.decode('utf-8')
             self.assertIn('Syntax error', err)
 
+
 class CLITest(unittest.TestCase):
 
     def test_help(self):
@@ -170,20 +181,83 @@ class CLITest(unittest.TestCase):
         assert_python_failure(msgfmt, 'nonexistent.po')
 
 
+class MultiInputTest(unittest.TestCase):
+    """Tests for multiple input files
+    """
+
+    def test_both_with_outputfile(self):
+        """Test script with -o option and 2 input files
+
+        The current behaviour is to merge entries having distinct ids
+        and keep last one if the same id occurs in multiple files.
+
+        Here the first file has Windows endings (cflr) while second has
+        Unix endings (lf)
+        """
+        with temp_cwd(None):
+            assert_python_ok(msgfmt, '-o', 'file12.mo',
+                             data_dir / 'file1_fr_crlf.po',
+                             data_dir / 'file2_fr_lf.po')
+            self.assertTrue(filecmp.cmp(data_dir / 'file12_fr.mo',
+                                        'file12.mo'))
+
+    def test_both_without_outputfile(self):
+        """Test script without -o option and 2 input files"""
+
+        with temp_cwd(None):
+            shutil.copy(data_dir / 'file1_fr_crlf.po', '.')
+            shutil.copy(data_dir / 'file2_fr_lf.po', '.')
+            assert_python_ok(msgfmt, 'file1_fr_crlf.po', 'file2_fr_lf.po')
+            self.assertTrue(filecmp.cmp(data_dir / 'file1_fr_crlf.mo',
+                                        'file1_fr_crlf.mo'))
+            self.assertTrue(filecmp.cmp(data_dir / 'file2_fr_lf.mo',
+                                        'file2_fr_lf.mo'))
+
+
+class PONamesTest(unittest.TestCase):
+    def test_no_extension(self):
+        with temp_cwd(None):
+            shutil.copy(data_dir / 'file1_fr_crlf.po', 'file1.fr.po')
+            assert_python_ok(msgfmt, 'file1.fr')
+            self.assertTrue(os.path.exists('file1.fr.mo'))
+
+    def test_wrong_extension(self):
+        with temp_cwd(None):
+            shutil.copy(data_dir / 'file1_fr_crlf.po', 'file1_fr.pox')
+            assert_python_failure(msgfmt, 'file1_fr.pox')
+            self.assertFalse(os.path.exists('file1_fr.mo'))
+            self.assertFalse(os.path.exists('file1_fr.pox.mo'))
+
+    @unittest.skipUnless(sys.platform.startswith("win"), "uppercase on Windows")
+    def test_MAJ_on_Windows(self):
+        with temp_cwd(None):
+            shutil.copy(data_dir / 'file1_fr_crlf.po', 'File1.PO')
+            assert_python_ok(msgfmt, 'FIle1.Po')
+            self.assertTrue(os.path.exists('file1.mo'))
+
+
+def make_message_files(mo_file, *po_files):
+    compile_messages(mo_file, *po_files)
+    # Create a human-readable JSON file which is
+    # easier to review than the binary .mo file.
+    with open(mo_file, 'rb') as f:
+        translations = GNUTranslations(f)
+    catalog_file = mo_file.with_suffix('.json')
+    with open(catalog_file, 'w') as f:
+        data = translations._catalog.items()
+        data = sorted(data, key=lambda x: (isinstance(x[0], tuple), x[0]))
+        json.dump(data, f, indent=4)
+        f.write('\n')
+
+
 def update_catalog_snapshots():
     for po_file in data_dir.glob('*.po'):
         mo_file = po_file.with_suffix('.mo')
-        compile_messages(po_file, mo_file)
-        # Create a human-readable JSON file which is
-        # easier to review than the binary .mo file.
-        with open(mo_file, 'rb') as f:
-            translations = GNUTranslations(f)
-        catalog_file = po_file.with_suffix('.json')
-        with open(catalog_file, 'w') as f:
-            data = translations._catalog.items()
-            data = sorted(data, key=lambda x: (isinstance(x[0], tuple), x[0]))
-            json.dump(data, f, indent=4)
-            f.write('\n')
+        make_message_files(mo_file, po_file)
+    # special processing for file12_fr.mo which results from 2 input files
+    make_message_files(data_dir / 'file12_fr.mo',
+                       data_dir / 'file1_fr_crlf.po',
+                       data_dir / 'file2_fr_lf.po')
 
 
 if __name__ == '__main__':
