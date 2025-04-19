@@ -35,14 +35,14 @@ class PyListTests(DebuggerTests):
         bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-list'])
 
-        self.assertListing('   6    \n'
-                           '   7    def bar(a, b, c):\n'
-                           '   8        baz(a, b, c)\n'
-                           '   9    \n'
-                           '  10    def baz(*args):\n'
-                           ' >11        _idfunc(42)\n'
-                           '  12    \n'
-                           '  13    foo(1, 2, 3)\n',
+        self.assertListing('   5    \n'
+                           '   6    def bar(a, b, c):\n'
+                           '   7        baz(a, b, c)\n'
+                           '   8    \n'
+                           '   9    def baz(*args):\n'
+                           ' >10        id(42)\n'
+                           '  11    \n'
+                           '  12    foo(1, 2, 3)\n',
                            bt)
 
     def test_one_abs_arg(self):
@@ -50,27 +50,25 @@ class PyListTests(DebuggerTests):
         bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
                                   cmds_after_breakpoint=['py-list 9'])
 
-        self.assertListing('  10    def baz(*args):\n'
-                           ' >11        _idfunc(42)\n'
-                           '  12    \n'
-                           '  13    foo(1, 2, 3)\n',
+        self.assertListing('   9    def baz(*args):\n'
+                           ' >10        id(42)\n'
+                           '  11    \n'
+                           '  12    foo(1, 2, 3)\n',
                            bt)
 
     def test_two_abs_args(self):
         'Verify the "py-list" command with two absolute arguments'
         bt = self.get_stack_trace(script=SAMPLE_SCRIPT,
-                                  cmds_after_breakpoint=['py-list 1,4'])
+                                  cmds_after_breakpoint=['py-list 1,3'])
 
         self.assertListing('   1    # Sample script for use by test_gdb\n'
-                           '   2    from _typing import _idfunc\n'
-                           '   3    \n'
-                           '   4    def foo(a, b, c):\n',
+                           '   2    \n'
+                           '   3    def foo(a, b, c):\n',
                            bt)
 
 SAMPLE_WITH_C_CALL = """
 
 from _testcapi import pyobject_vectorcall
-from _typing import _idfunc
 
 def foo(a, b, c):
     bar(a, b, c)
@@ -79,7 +77,7 @@ def bar(a, b, c):
     pyobject_vectorcall(baz, (a, b, c), None)
 
 def baz(*args):
-    _idfunc(42)
+    id(42)
 
 foo(1, 2, 3)
 
@@ -96,7 +94,7 @@ class StackNavigationTests(DebuggerTests):
                                   cmds_after_breakpoint=['py-up', 'py-up'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 13, in baz \(args=\(1, 2, 3\)\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
 #[0-9]+ <built-in method pyobject_vectorcall of module object at remote 0x[0-9a-f]+>
 $''')
 
@@ -125,9 +123,9 @@ $''')
                                   cmds_after_breakpoint=['py-up', 'py-up', 'py-down'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 13, in baz \(args=\(1, 2, 3\)\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
 #[0-9]+ <built-in method pyobject_vectorcall of module object at remote 0x[0-9a-f]+>
-#[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 13, in baz \(args=\(1, 2, 3\)\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file <string>, line 12, in baz \(args=\(1, 2, 3\)\)
 $''')
 
 class PyPrintTests(DebuggerTests):

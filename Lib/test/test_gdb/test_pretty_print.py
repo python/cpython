@@ -17,7 +17,7 @@ class PrettyPrintTests(DebuggerTests):
                      import_site=False):
         # Given an input python source representation of data,
         # run "python -c'id(DATA)'" under gdb with a breakpoint on
-        # _typing__idfunc and scrape out gdb's representation of the "op"
+        # builtin_id and scrape out gdb's representation of the "op"
         # parameter, and verify that the gdb displays the same string
         #
         # Verify that the gdb displays the expected string
@@ -29,7 +29,6 @@ class PrettyPrintTests(DebuggerTests):
         # undecodable characters may lurk there in optimized mode
         # (issue #19743).
         cmds_after_breakpoint = cmds_after_breakpoint or ["backtrace 1"]
-        source = "from _typing import _idfunc\n" + source
         gdb_output = self.get_stack_trace(source, breakpoint=BREAKPOINT_FN,
                                           cmds_after_breakpoint=cmds_after_breakpoint,
                                           import_site=import_site)
@@ -37,10 +36,10 @@ class PrettyPrintTests(DebuggerTests):
         # in its output, depending on the width of the terminal it's connected
         # to (using its "wrap_here" function)
         m = re.search(
-            # Match '#0 _typing_idfunc(module=..., x=...)'
-            r'#0\s+_typing__idfunc\s+\(module\=.*,\s+x=\s*(.*?)?\)'
+            # Match '#0 builtin_id(self=..., v=...)'
+            r'#0\s+builtin_id\s+\(self\=.*,\s+v=\s*(.*?)?\)'
             # Match ' at Python/bltinmodule.c'.
-            # bpo-38239: typing_idfunc() is defined in Module/_typingmldule.c,
+            # bpo-38239: builtin_id() is defined in Python/bltinmodule.c,
             # but accept any "Directory\file.c" to support Link Time
             # Optimization (LTO).
             r'\s+at\s+\S*[A-Za-z]+/[A-Za-z0-9_-]+\.c',
@@ -50,13 +49,13 @@ class PrettyPrintTests(DebuggerTests):
         return m.group(1), gdb_output
 
     def test_getting_backtrace(self):
-        gdb_output = self.get_stack_trace('from _typing import _idfunc;_idfunc(42)')
+        gdb_output = self.get_stack_trace('id(42)')
         self.assertTrue(BREAKPOINT_FN in gdb_output)
 
     def assertGdbRepr(self, val, exp_repr=None):
         # Ensure that gdb's rendering of the value in a debugged process
         # matches repr(value) in this process:
-        gdb_repr, gdb_output = self.get_gdb_repr('_idfunc(' + ascii(val) + ')')
+        gdb_repr, gdb_output = self.get_gdb_repr('id(' + ascii(val) + ')')
         if not exp_repr:
             exp_repr = repr(val)
         self.assertEqual(gdb_repr, exp_repr,
@@ -174,7 +173,7 @@ class PrettyPrintTests(DebuggerTests):
         # which happens on deletion:
         gdb_repr, gdb_output = self.get_gdb_repr('''s = set(['a','b'])
 s.remove('a')
-_idfunc(s)''')
+id(s)''')
         self.assertEqual(gdb_repr, "{'b'}")
 
     @support.requires_resource('cpu')
@@ -195,7 +194,7 @@ _idfunc(s)''')
 try:
     raise RuntimeError("I am an error")
 except RuntimeError as e:
-    _idfunc(e)
+    id(e)
 ''')
         self.assertEqual(gdb_repr,
                          "RuntimeError('I am an error',)")
@@ -206,7 +205,7 @@ except RuntimeError as e:
 try:
     a = 1 / 0
 except ZeroDivisionError as e:
-    _idfunc(e)
+    id(e)
 ''')
         self.assertEqual(gdb_repr,
                          "ZeroDivisionError('division by zero',)")
@@ -218,7 +217,7 @@ class Foo:
     pass
 foo = Foo()
 foo.an_int = 42
-_idfunc(foo)''')
+id(foo)''')
         m = re.match(r'<Foo\(an_int=42\) at remote 0x-?[0-9a-f]+>', gdb_repr)
         self.assertTrue(m,
                         msg='Unexpected new-style class rendering %r' % gdb_repr)
@@ -231,7 +230,7 @@ class Foo(list):
 foo = Foo()
 foo += [1, 2, 3]
 foo.an_int = 42
-_idfunc(foo)''')
+id(foo)''')
         m = re.match(r'<Foo\(an_int=42\) at remote 0x-?[0-9a-f]+>', gdb_repr)
 
         self.assertTrue(m,
@@ -246,7 +245,7 @@ class Foo(tuple):
     pass
 foo = Foo((1, 2, 3))
 foo.an_int = 42
-_idfunc(foo)''')
+id(foo)''')
         m = re.match(r'<Foo\(an_int=42\) at remote 0x-?[0-9a-f]+>', gdb_repr)
 
         self.assertTrue(m,
@@ -284,8 +283,8 @@ _idfunc(foo)''')
     def test_NULL_ptr(self):
         'Ensure that a NULL PyObject* is handled gracefully'
         gdb_repr, gdb_output = (
-            self.get_gdb_repr('_idfunc(42)',
-                              cmds_after_breakpoint=['set variable x=0',
+            self.get_gdb_repr('id(42)',
+                              cmds_after_breakpoint=['set variable v=0',
                                                      'backtrace'])
             )
 
@@ -293,25 +292,25 @@ _idfunc(foo)''')
 
     def test_NULL_ob_type(self):
         'Ensure that a PyObject* with NULL ob_type is handled gracefully'
-        self.assertSane('_idfunc(42)',
-                        'set x->ob_type=0')
+        self.assertSane('id(42)',
+                        'set v->ob_type=0')
 
     def test_corrupt_ob_type(self):
         'Ensure that a PyObject* with a corrupt ob_type is handled gracefully'
-        self.assertSane('_idfunc(42)',
-                        'set x->ob_type=0xDEADBEEF',
+        self.assertSane('id(42)',
+                        'set v->ob_type=0xDEADBEEF',
                         exprepr='42')
 
     def test_corrupt_tp_flags(self):
         'Ensure that a PyObject* with a type with corrupt tp_flags is handled'
-        self.assertSane('_idfunc(42)',
-                        'set x->ob_type->tp_flags=0x0',
+        self.assertSane('id(42)',
+                        'set v->ob_type->tp_flags=0x0',
                         exprepr='42')
 
     def test_corrupt_tp_name(self):
         'Ensure that a PyObject* with a type with corrupt tp_name is handled'
-        self.assertSane('_idfunc(42)',
-                        'set x->ob_type->tp_name=0xDEADBEEF',
+        self.assertSane('id(42)',
+                        'set v->ob_type->tp_name=0xDEADBEEF',
                         exprepr='42')
 
     def test_builtins_help(self):
@@ -322,7 +321,7 @@ _idfunc(foo)''')
 
         # (this was the issue causing tracebacks in
         #  http://bugs.python.org/issue8032#msg100537 )
-        gdb_repr, gdb_output = self.get_gdb_repr('_idfunc(__builtins__.help)', import_site=True)
+        gdb_repr, gdb_output = self.get_gdb_repr('id(__builtins__.help)', import_site=True)
 
         m = re.match(r'<_Helper\(\) at remote 0x-?[0-9a-f]+>', gdb_repr)
         self.assertTrue(m,
@@ -332,18 +331,18 @@ _idfunc(foo)''')
         '''Ensure that a reference loop involving a list doesn't lead proxyval
         into an infinite loop:'''
         gdb_repr, gdb_output = \
-            self.get_gdb_repr("a = [3, 4, 5] ; a.append(a) ; _idfunc(a)")
+            self.get_gdb_repr("a = [3, 4, 5] ; a.append(a) ; id(a)")
         self.assertEqual(gdb_repr, '[3, 4, 5, [...]]')
 
         gdb_repr, gdb_output = \
-            self.get_gdb_repr("a = [3, 4, 5] ; b = [a] ; a.append(b) ; _idfunc(a)")
+            self.get_gdb_repr("a = [3, 4, 5] ; b = [a] ; a.append(b) ; id(a)")
         self.assertEqual(gdb_repr, '[3, 4, 5, [[...]]]')
 
     def test_selfreferential_dict(self):
         '''Ensure that a reference loop involving a dict doesn't lead proxyval
         into an infinite loop:'''
         gdb_repr, gdb_output = \
-            self.get_gdb_repr("a = {} ; b = {'bar':a} ; a['foo'] = b ; _idfunc(a)")
+            self.get_gdb_repr("a = {} ; b = {'bar':a} ; a['foo'] = b ; id(a)")
 
         self.assertEqual(gdb_repr, "{'foo': {'bar': {...}}}")
 
@@ -354,7 +353,7 @@ class Foo:
     pass
 foo = Foo()
 foo.an_attr = foo
-_idfunc(foo)''')
+id(foo)''')
         self.assertTrue(re.match(r'<Foo\(an_attr=<\.\.\.>\) at remote 0x-?[0-9a-f]+>',
                                  gdb_repr),
                         'Unexpected gdb representation: %r\n%s' % \
@@ -367,7 +366,7 @@ class Foo(object):
     pass
 foo = Foo()
 foo.an_attr = foo
-_idfunc(foo)''')
+id(foo)''')
         self.assertTrue(re.match(r'<Foo\(an_attr=<\.\.\.>\) at remote 0x-?[0-9a-f]+>',
                                  gdb_repr),
                         'Unexpected gdb representation: %r\n%s' % \
@@ -381,7 +380,7 @@ a = Foo()
 b = Foo()
 a.an_attr = b
 b.an_attr = a
-_idfunc(a)''')
+id(a)''')
         self.assertTrue(re.match(r'<Foo\(an_attr=<Foo\(an_attr=<\.\.\.>\) at remote 0x-?[0-9a-f]+>\) at remote 0x-?[0-9a-f]+>',
                                  gdb_repr),
                         'Unexpected gdb representation: %r\n%s' % \
@@ -389,7 +388,7 @@ _idfunc(a)''')
 
     def test_truncation(self):
         'Verify that very long output is truncated'
-        gdb_repr, gdb_output = self.get_gdb_repr('_idfunc(list(range(1000)))')
+        gdb_repr, gdb_output = self.get_gdb_repr('id(list(range(1000)))')
         self.assertEqual(gdb_repr,
                          "[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, "
                          "14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, "
@@ -416,7 +415,7 @@ _idfunc(a)''')
                          1024 + len('...(truncated)'))
 
     def test_builtin_method(self):
-        gdb_repr, gdb_output = self.get_gdb_repr('import sys; _idfunc(sys.stdout.readlines)')
+        gdb_repr, gdb_output = self.get_gdb_repr('import sys; id(sys.stdout.readlines)')
         self.assertTrue(re.match(r'<built-in method readlines of _io.TextIOWrapper object at remote 0x-?[0-9a-f]+>',
                                  gdb_repr),
                         'Unexpected gdb representation: %r\n%s' % \
@@ -425,16 +424,15 @@ _idfunc(a)''')
     def test_frames(self):
         gdb_output = self.get_stack_trace('''
 import sys
-from _typing import _idfunc
 def foo(a, b, c):
     return sys._getframe(0)
 
 f = foo(3, 4, 5)
-_idfunc(f)''',
-                                          breakpoint='_typing__idfunc',
-                                          cmds_after_breakpoint=['print (PyFrameObject*)x']
+id(f)''',
+                                          breakpoint='builtin_id',
+                                          cmds_after_breakpoint=['print (PyFrameObject*)v']
                                           )
-        self.assertTrue(re.match(r'.*\s+\$1 =\s+Frame 0x-?[0-9a-f]+, for file <string>, line 5, in foo \(a=3.*',
+        self.assertTrue(re.match(r'.*\s+\$1 =\s+Frame 0x-?[0-9a-f]+, for file <string>, line 4, in foo \(a=3.*',
                                  gdb_output,
                                  re.DOTALL),
                         'Unexpected gdb representation: %r\n%s' % (gdb_output, gdb_output))

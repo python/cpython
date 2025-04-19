@@ -213,7 +213,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         p.stdin.write(user_input)
         user_input2 = dedent("""
         import linecache
-        print(linecache._interactive_cache[id(foo.__code__)])
+        print(linecache._interactive_cache[linecache._make_key(foo.__code__)])
         """)
         p.stdin.write(user_input2)
         output = kill_python(p)

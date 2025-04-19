@@ -6,6 +6,8 @@
 #include "pycore_frame.h"
 #include "pycore_long.h"
 #include "pycore_optimizer.h"
+#include "pycore_stats.h"
+#include "pycore_tuple.h"         // _PyTuple_FromArray()
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -113,7 +115,7 @@ _Py_uop_sym_is_const(JitOptContext *ctx, JitOptSymbol *sym)
         if (truthiness < 0) {
             return false;
         }
-        make_const(sym, (truthiness ^ sym->truthiness.not) ? Py_True : Py_False);
+        make_const(sym, (truthiness ^ sym->truthiness.invert) ? Py_True : Py_False);
         return true;
     }
     return false;
@@ -138,7 +140,7 @@ _Py_uop_sym_get_const(JitOptContext *ctx, JitOptSymbol *sym)
         if (truthiness < 0) {
             return NULL;
         }
-        PyObject *res = (truthiness ^ sym->truthiness.not) ? Py_True : Py_False;
+        PyObject *res = (truthiness ^ sym->truthiness.invert) ? Py_True : Py_False;
         make_const(sym, res);
         return res;
     }
@@ -289,7 +291,7 @@ _Py_uop_sym_set_const(JitOptContext *ctx, JitOptSymbol *sym, PyObject *const_val
             }
             JitOptSymbol *value = allocation_base(ctx) + sym->truthiness.value;
             PyTypeObject *type = _Py_uop_sym_get_type(value);
-            if (const_val == (sym->truthiness.not ? Py_False : Py_True)) {
+            if (const_val == (sym->truthiness.invert ? Py_False : Py_True)) {
                 // value is truthy. This is only useful for bool:
                 if (type == &PyBool_Type) {
                     _Py_uop_sym_set_const(ctx, value, Py_True);
@@ -496,7 +498,7 @@ _Py_uop_sym_truthiness(JitOptContext *ctx, JitOptSymbol *sym)
             if (truthiness < 0) {
                 return truthiness;
             }
-            truthiness ^= sym->truthiness.not;
+            truthiness ^= sym->truthiness.invert;
             make_const(sym, truthiness ? Py_True : Py_False);
             return truthiness;
     }
@@ -590,8 +592,8 @@ JitOptSymbol *
 _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptSymbol *value, bool truthy)
 {
     // It's clearer to invert this in the signature:
-    bool not = !truthy;
-    if (value->tag == JIT_SYM_TRUTHINESS_TAG && value->truthiness.not == not) {
+    bool invert = !truthy;
+    if (value->tag == JIT_SYM_TRUTHINESS_TAG && value->truthiness.invert == invert) {
         return value;
     }
     JitOptSymbol *res = sym_new(ctx);
@@ -601,11 +603,11 @@ _Py_uop_sym_new_truthiness(JitOptContext *ctx, JitOptSymbol *value, bool truthy)
     int truthiness = _Py_uop_sym_truthiness(ctx, value);
     if (truthiness < 0) {
         res->tag = JIT_SYM_TRUTHINESS_TAG;
-        res->truthiness.not = not;
+        res->truthiness.invert = invert;
         res->truthiness.value = (uint16_t)(value - allocation_base(ctx));
     }
     else {
-        make_const(res, (truthiness ^ not) ? Py_True : Py_False);
+        make_const(res, (truthiness ^ invert) ? Py_True : Py_False);
     }
     return res;
 }

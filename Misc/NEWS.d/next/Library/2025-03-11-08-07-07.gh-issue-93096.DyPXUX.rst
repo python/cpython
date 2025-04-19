@@ -1,2 +1,0 @@
-Removed undocumented ``-t`` and ``-v`` arguments of ``python -m pickle``.
-Use ``python -m doctest Lib/pickle.py -v`` instead. Patch by Semyon Moroz.

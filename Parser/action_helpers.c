@@ -1,9 +1,11 @@
 #include <Python.h>
+#include "pycore_pystate.h"         // _PyInterpreterState_GET()
+#include "pycore_runtime.h"         // _PyRuntime
+#include "pycore_unicodeobject.h"   // _PyUnicode_InternImmortal()
 
 #include "pegen.h"
-#include "string_parser.h"
-#include "pycore_runtime.h"         // _PyRuntime
-#include "pycore_pystate.h"         // _PyInterpreterState_GET()
+#include "string_parser.h"          // _PyPegen_decode_string()
+
 
 void *
 _PyPegen_dummy_name(Parser *p, ...)

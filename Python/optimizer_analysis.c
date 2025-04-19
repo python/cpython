@@ -21,6 +21,7 @@
 #include "pycore_uop_metadata.h"
 #include "pycore_dict.h"
 #include "pycore_long.h"
+#include "pycore_interpframe.h"  // _PyFrame_GetCode
 #include "pycore_optimizer.h"
 #include "pycore_object.h"
 #include "pycore_dict.h"
@@ -553,16 +554,6 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     buffer[pc].opcode = _NOP;
                 }
                 break;
-            case _CHECK_VALIDITY_AND_SET_IP:
-                if (may_have_escaped) {
-                    may_have_escaped = false;
-                    buffer[pc].opcode = _CHECK_VALIDITY;
-                }
-                else {
-                    buffer[pc].opcode = _NOP;
-                }
-                last_set_ip = pc;
-                break;
             case _POP_TOP:
             {
                 _PyUOpInstruction *last = &buffer[pc-1];
@@ -572,6 +563,7 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                 if (last->opcode == _LOAD_CONST_INLINE  ||
                     last->opcode == _LOAD_CONST_INLINE_BORROW ||
                     last->opcode == _LOAD_FAST ||
+                    last->opcode == _LOAD_FAST_BORROW ||
                     last->opcode == _COPY
                 ) {
                     last->opcode = _NOP;
@@ -595,13 +587,8 @@ remove_unneeded_uops(_PyUOpInstruction *buffer, int buffer_size)
                     may_have_escaped = true;
                 }
                 if (needs_ip && last_set_ip >= 0) {
-                    if (buffer[last_set_ip].opcode == _CHECK_VALIDITY) {
-                        buffer[last_set_ip].opcode = _CHECK_VALIDITY_AND_SET_IP;
-                    }
-                    else {
-                        assert(buffer[last_set_ip].opcode == _NOP);
-                        buffer[last_set_ip].opcode = _SET_IP;
-                    }
+                    assert(buffer[last_set_ip].opcode == _NOP);
+                    buffer[last_set_ip].opcode = _SET_IP;
                     last_set_ip = -1;
                 }
             }

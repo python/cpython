@@ -7,14 +7,15 @@
 */
 
 #include "Python.h"
-#include "pycore_call.h"              // _PyObject_CallMethod()
-#include "pycore_codecs.h"            // _PyCodecInfo_GetIncrementalDecoder()
-#include "pycore_fileutils.h"         // _Py_GetLocaleEncoding()
-#include "pycore_interp.h"            // PyInterpreterState.fs_codec
-#include "pycore_long.h"              // _PyLong_GetZero()
-#include "pycore_object.h"            // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"          // _PyErr_ChainExceptions1()
-#include "pycore_pystate.h"           // _PyInterpreterState_GET()
+#include "pycore_call.h"          // _PyObject_CallMethod()
+#include "pycore_codecs.h"        // _PyCodecInfo_GetIncrementalDecoder()
+#include "pycore_fileutils.h"     // _Py_GetLocaleEncoding()
+#include "pycore_interp.h"        // PyInterpreterState.fs_codec
+#include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
+#include "pycore_pystate.h"       // _PyInterpreterState_GET()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsASCIIString()
 
 #include "_iomodule.h"
 
@@ -3385,8 +3386,6 @@ static PyMemberDef textiowrapper_members[] = {
 static PyGetSetDef textiowrapper_getset[] = {
     _IO_TEXTIOWRAPPER_NAME_GETSETDEF
     _IO_TEXTIOWRAPPER_CLOSED_GETSETDEF
-/*    {"mode", (getter)TextIOWrapper_mode_get, NULL, NULL},
-*/
     _IO_TEXTIOWRAPPER_NEWLINES_GETSETDEF
     _IO_TEXTIOWRAPPER_ERRORS_GETSETDEF
     _IO_TEXTIOWRAPPER__CHUNK_SIZE_GETSETDEF

@@ -29,15 +29,6 @@ class MD5Type "MD5object *" "&PyType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=6e5261719957a912]*/
 
-/* Some useful types */
-
-#if SIZEOF_INT == 4
-typedef unsigned int MD5_INT32; /* 32-bit integer */
-typedef long long MD5_INT64; /* 64-bit integer */
-#else
-/* not defined. compilation will die. */
-#endif
-
 /* The MD5 block size and message digest sizes, in bytes */
 
 #define MD5_BLOCKSIZE    64
@@ -121,12 +112,17 @@ MD5Type_copy_impl(MD5object *self, PyTypeObject *cls)
     MD5State *st = PyType_GetModuleState(cls);
 
     MD5object *newobj;
-    if ((newobj = newMD5object(st))==NULL)
+    if ((newobj = newMD5object(st)) == NULL) {
         return NULL;
+    }
 
     ENTER_HASHLIB(self);
     newobj->hash_state = Hacl_Hash_MD5_copy(self->hash_state);
     LEAVE_HASHLIB(self);
+    if (newobj->hash_state == NULL) {
+        Py_DECREF(self);
+        return PyErr_NoMemory();
+    }
     return (PyObject *)newobj;
 }
 
@@ -173,15 +169,23 @@ MD5Type_hexdigest_impl(MD5object *self)
     return PyUnicode_FromStringAndSize(digest_hex, sizeof(digest_hex));
 }
 
-static void update(Hacl_Hash_MD5_state_t *state, uint8_t *buf, Py_ssize_t len) {
+static void
+update(Hacl_Hash_MD5_state_t *state, uint8_t *buf, Py_ssize_t len)
+{
+    /*
+    * Note: we explicitly ignore the error code on the basis that it would
+    * take more than 1 billion years to overflow the maximum admissible length
+    * for MD5 (2^61 - 1).
+    */
 #if PY_SSIZE_T_MAX > UINT32_MAX
-  while (len > UINT32_MAX) {
-    Hacl_Hash_MD5_update(state, buf, UINT32_MAX);
-    len -= UINT32_MAX;
-    buf += UINT32_MAX;
-  }
+    while (len > UINT32_MAX) {
+        (void)Hacl_Hash_MD5_update(state, buf, UINT32_MAX);
+        len -= UINT32_MAX;
+        buf += UINT32_MAX;
+    }
 #endif
-  Hacl_Hash_MD5_update(state, buf, (uint32_t) len);
+    /* cast to uint32_t is now safe */
+    (void)Hacl_Hash_MD5_update(state, buf, (uint32_t)len);
 }
 
 /*[clinic input]
@@ -286,24 +290,27 @@ _md5_md5_impl(PyObject *module, PyObject *string, int usedforsecurity)
     MD5object *new;
     Py_buffer buf;
 
-    if (string)
+    if (string) {
         GET_BUFFER_VIEW_OR_ERROUT(string, &buf);
+    }
 
     MD5State *st = md5_get_state(module);
     if ((new = newMD5object(st)) == NULL) {
-        if (string)
+        if (string) {
             PyBuffer_Release(&buf);
+        }
         return NULL;
     }
 
     new->hash_state = Hacl_Hash_MD5_malloc();
-
-    if (PyErr_Occurred()) {
+    if (new->hash_state == NULL) {
         Py_DECREF(new);
-        if (string)
+        if (string) {
             PyBuffer_Release(&buf);
-        return NULL;
+        }
+        return PyErr_NoMemory();
     }
+
     if (string) {
         if (buf.len >= HASHLIB_GIL_MINSIZE) {
             /* We do not initialize self->lock here as this is the constructor
@@ -311,7 +318,8 @@ _md5_md5_impl(PyObject *module, PyObject *string, int usedforsecurity)
             Py_BEGIN_ALLOW_THREADS
             update(new->hash_state, buf.buf, buf.len);
             Py_END_ALLOW_THREADS
-        } else {
+        }
+        else {
             update(new->hash_state, buf.buf, buf.len);
         }
         PyBuffer_Release(&buf);

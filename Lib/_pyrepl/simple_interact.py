@@ -33,11 +33,6 @@ import code
 
 from .readline import _get_reader, multiline_input
 
-TYPE_CHECKING = False
-
-if TYPE_CHECKING:
-    from typing import Any
-
 
 _error: tuple[type[Exception], ...] | type[Exception]
 try:

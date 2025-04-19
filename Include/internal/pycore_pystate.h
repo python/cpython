@@ -8,8 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_runtime.h"       // _PyRuntime
-#include "pycore_tstate.h"        // _PyThreadStateImpl
+#include "pycore_typedefs.h"      // _PyRuntimeState
+
 
 // Values for PyThreadState.state. A thread must be in the "attached" state
 // before calling most Python APIs. If the GIL is enabled, then "attached"
@@ -49,19 +49,10 @@ extern "C" {
 
 /* Check if the current thread is the main thread.
    Use _Py_IsMainInterpreter() to check if it's the main interpreter. */
-static inline int
-_Py_IsMainThread(void)
-{
-    unsigned long thread = PyThread_get_thread_ident();
-    return (thread == _PyRuntime.main_thread);
-}
+extern int _Py_IsMainThread(void);
 
-
-static inline PyInterpreterState *
-_PyInterpreterState_Main(void)
-{
-    return _PyRuntime.interpreters.main;
-}
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(PyInterpreterState*) _PyInterpreterState_Main(void);
 
 static inline int
 _Py_IsMainInterpreter(PyInterpreterState *interp)
@@ -69,16 +60,7 @@ _Py_IsMainInterpreter(PyInterpreterState *interp)
     return (interp == _PyInterpreterState_Main());
 }
 
-static inline int
-_Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
-{
-    /* bpo-39877: Access _PyRuntime directly rather than using
-       tstate->interp->runtime to support calls from Python daemon threads.
-       After Py_Finalize() has been called, tstate can be a dangling pointer:
-       point to PyThreadState freed memory. */
-    return (_PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL &&
-            interp == &_PyRuntime._main_interpreter);
-}
+extern int _Py_IsMainInterpreterFinalizing(PyInterpreterState *interp);
 
 // Export for _interpreters module.
 PyAPI_FUNC(PyObject *) _PyInterpreterState_GetIDObject(PyInterpreterState *);
@@ -91,17 +73,7 @@ PyAPI_FUNC(void) _PyErr_SetInterpreterAlreadyRunning(void);
 
 extern int _PyThreadState_IsRunningMain(PyThreadState *);
 extern void _PyInterpreterState_ReinitRunningMain(PyThreadState *);
-
-
-static inline const PyConfig *
-_Py_GetMainConfig(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_Main();
-    if (interp == NULL) {
-        return NULL;
-    }
-    return _PyInterpreterState_GetConfig(interp);
-}
+extern const PyConfig* _Py_GetMainConfig(void);
 
 
 /* Only handle signals on the main thread of the main interpreter. */

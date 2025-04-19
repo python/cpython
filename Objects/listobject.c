@@ -12,7 +12,9 @@
 #include "pycore_long.h"          // _PyLong_DigitCount
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
 #include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
+#include "pycore_stackref.h"      // _Py_TryIncrefCompareStackRef()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_typeobject.h"    // _Py_TYPE_VERSION_LIST
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include <stddef.h>
 
@@ -414,6 +416,32 @@ _PyList_GetItemRef(PyListObject *list, Py_ssize_t i)
 {
     return list_get_item_ref(list, i);
 }
+
+#ifdef Py_GIL_DISABLED
+int
+_PyList_GetItemRefNoLock(PyListObject *list, Py_ssize_t i, _PyStackRef *result)
+{
+    assert(_Py_IsOwnedByCurrentThread((PyObject *)list) ||
+           _PyObject_GC_IS_SHARED(list));
+    if (!valid_index(i, PyList_GET_SIZE(list))) {
+        return 0;
+    }
+    PyObject **ob_item = _Py_atomic_load_ptr(&list->ob_item);
+    if (ob_item == NULL) {
+        return 0;
+    }
+    Py_ssize_t cap = list_capacity(ob_item);
+    assert(cap != -1);
+    if (!valid_index(i, cap)) {
+        return 0;
+    }
+    PyObject *obj = _Py_atomic_load_ptr(&ob_item[i]);
+    if (obj == NULL || !_Py_TryIncrefCompareStackRef(&ob_item[i], obj, result)) {
+        return -1;
+    }
+    return 1;
+}
+#endif
 
 int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
@@ -3845,7 +3873,7 @@ PyTypeObject PyList_Type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    (initproc)list___init__,                    /* tp_init */
+    list___init__,                              /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */

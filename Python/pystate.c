@@ -4,25 +4,27 @@
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_audit.h"         // _Py_AuditHookEntry
-#include "pycore_ceval.h"
-#include "pycore_code.h"          // stats
-#include "pycore_critical_section.h"       // _PyCriticalSection_Resume()
+#include "pycore_ceval.h"         // _PyEval_AcquireLock()
+#include "pycore_codecs.h"        // _PyCodec_Fini()
+#include "pycore_critical_section.h" // _PyCriticalSection_Resume()
 #include "pycore_dtoa.h"          // _dtoa_state_INIT()
-#include "pycore_emscripten_trampoline.h"  // _Py_EmscriptenTrampoline_Init()
-#include "pycore_frame.h"
+#include "pycore_emscripten_trampoline.h" // _Py_EmscriptenTrampoline_Init()
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interpframe.h"   // _PyThreadState_HasStackSpace()
 #include "pycore_object.h"        // _PyType_InitCache()
+#include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
+#include "pycore_optimizer.h"     // JIT_CLEANUP_THRESHOLD
 #include "pycore_parking_lot.h"   // _PyParkingLot_AfterFork()
 #include "pycore_pyerrors.h"      // _PyErr_Clear()
 #include "pycore_pylifecycle.h"   // _PyAST_Fini()
 #include "pycore_pymem.h"         // _PyMem_DebugEnabled()
-#include "pycore_pystate.h"
+#include "pycore_runtime.h"       // _PyRuntime
 #include "pycore_runtime_init.h"  // _PyRuntimeState_INIT
 #include "pycore_stackref.h"      // Py_STACKREF_DEBUG
 #include "pycore_time.h"          // _PyTime_Init()
-#include "pycore_obmalloc.h"      // _PyMem_obmalloc_state_on_heap()
 #include "pycore_uniqueid.h"      // _PyObject_FinalizePerThreadRefcounts()
+
 
 /* --------------------------------------------------------------------------
 CAUTION
@@ -567,11 +569,19 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 
-
 static PyInterpreterState *
 alloc_interpreter(void)
 {
-    return PyMem_RawCalloc(1, sizeof(PyInterpreterState));
+    size_t alignment = _Alignof(PyInterpreterState);
+    size_t allocsize = sizeof(PyInterpreterState) + alignment - 1;
+    void *mem = PyMem_RawCalloc(1, allocsize);
+    if (mem == NULL) {
+        return NULL;
+    }
+    PyInterpreterState *interp = _Py_ALIGN_UP(mem, alignment);
+    assert(_Py_IS_ALIGNED(interp, alignment));
+    interp->_malloced = mem;
+    return interp;
 }
 
 static void
@@ -585,12 +595,15 @@ free_interpreter(PyInterpreterState *interp)
             PyMem_RawFree(interp->obmalloc);
             interp->obmalloc = NULL;
         }
-        PyMem_RawFree(interp);
+        assert(_Py_IS_ALIGNED(interp, _Alignof(PyInterpreterState)));
+        PyMem_RawFree(interp->_malloced);
     }
 }
+
 #ifndef NDEBUG
 static inline int check_interpreter_whence(long);
 #endif
+
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -3133,4 +3146,42 @@ _PyThreadState_ClearMimallocHeaps(PyThreadState *tstate)
         _mi_heap_collect_abandon(&tstate_impl->mimalloc.heaps[i]);
     }
 #endif
+}
+
+
+int
+_Py_IsMainThread(void)
+{
+    unsigned long thread = PyThread_get_thread_ident();
+    return (thread == _PyRuntime.main_thread);
+}
+
+
+PyInterpreterState *
+_PyInterpreterState_Main(void)
+{
+    return _PyRuntime.interpreters.main;
+}
+
+
+int
+_Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
+{
+    /* bpo-39877: Access _PyRuntime directly rather than using
+       tstate->interp->runtime to support calls from Python daemon threads.
+       After Py_Finalize() has been called, tstate can be a dangling pointer:
+       point to PyThreadState freed memory. */
+    return (_PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL &&
+            interp == &_PyRuntime._main_interpreter);
+}
+
+
+const PyConfig *
+_Py_GetMainConfig(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_Main();
+    if (interp == NULL) {
+        return NULL;
+    }
+    return _PyInterpreterState_GetConfig(interp);
 }

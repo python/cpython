@@ -596,6 +596,14 @@ APIs:
    Objects other than Unicode or its subtypes will cause a :exc:`TypeError`.
 
 
+.. c:function:: PyObject* PyUnicode_FromOrdinal(int ordinal)
+
+   Create a Unicode Object from the given Unicode code point *ordinal*.
+
+   The ordinal must be in ``range(0x110000)``. A :exc:`ValueError` is
+   raised in the case it is not.
+
+
 .. c:function:: PyObject* PyUnicode_FromEncodedObject(PyObject *obj, \
                                const char *encoding, const char *errors)
 
@@ -622,7 +630,7 @@ APIs:
 
    On error, set *\*p_left* to ``NULL`` and set an exception.
 
-   On sucess, set *\*p_left* to a new strong reference to the result.
+   On success, set *\*p_left* to a new strong reference to the result.
 
 
 .. c:function:: void PyUnicode_AppendAndDel(PyObject **p_left, PyObject *right)
@@ -1868,7 +1876,7 @@ The following API is deprecated.
 
    .. versionadded:: 3.3
 
-   .. deprecated:: next
+   .. deprecated:: 3.14
       This API does nothing since Python 3.12.
       Previously, this could be called to check if
       :c:func:`PyUnicode_READY` is necessary.

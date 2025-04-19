@@ -1907,22 +1907,23 @@ except ImportError:
     dump, dumps, load, loads = _dump, _dumps, _load, _loads
 
 
-if __name__ == "__main__":
+def _main(args=None):
     import argparse
+    import pprint
     parser = argparse.ArgumentParser(
         description='display contents of the pickle files')
     parser.add_argument(
         'pickle_file',
-        nargs='*', help='the pickle file')
-    args = parser.parse_args()
-    if not args.pickle_file:
-        parser.print_help()
-    else:
-        import pprint
-        for fn in args.pickle_file:
-            if fn == '-':
-                obj = load(sys.stdin.buffer)
-            else:
-                with open(fn, 'rb') as f:
-                    obj = load(f)
-            pprint.pprint(obj)
+        nargs='+', help='the pickle file')
+    args = parser.parse_args(args)
+    for fn in args.pickle_file:
+        if fn == '-':
+            obj = load(sys.stdin.buffer)
+        else:
+            with open(fn, 'rb') as f:
+                obj = load(f)
+        pprint.pprint(obj)
+
+
+if __name__ == "__main__":
+    _main()
