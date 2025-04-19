@@ -677,15 +677,66 @@ Constants
    These constants describe the Bluetooth address type when binding or
    connecting a :const:`BTPROTO_L2CAP` socket.
 
+   .. availability:: Linux, FreeBSD
+
    .. versionadded:: 3.14
+
+.. data:: SOL_RFCOMM
+          SOL_L2CAP
+          SOL_HCI
+          SOL_SCO
+          SOL_BLUETOOTH
+
+   Values to specify level for Bluetooth socket options in
+   :func:`setsockopt` and :func:`getsockopt`.
+
+   .. availability::
+      :const:`SOL_BLUETOOTH` is only available on Linux, other constants
+      are available if the corresponding protocol is supported.
+
+.. data:: SO_L2CAP_*
+          L2CAP_LM
+          L2CAP_LM_*
+          SO_RFCOMM_*
+          RFCOMM_LM_*
+          SO_SCO_*
+          SO_BTH_*
+          BT_*
+
+   Option names and values for Bluetooth socket options in
+   :func:`setsockopt` and :func:`getsockopt`.
+
+   .. availability::
+      :const:`!BT_*` :const:`L2CAP_LM` are only available on Linux.
+      :const:`!SO_BTH_*` are only available on Windows.
+      Other constants may be available on Linux and BSD.
+
+   .. versionadded:: next
 
 .. data:: HCI_FILTER
           HCI_TIME_STAMP
           HCI_DATA_DIR
+          SO_HCI_EVT_FILTER
+          SO_HCI_PKT_FILTER
 
-   For use with :const:`BTPROTO_HCI`. :const:`!HCI_FILTER` is only
-   available on Linux and FreeBSD. :const:`!HCI_TIME_STAMP` and
-   :const:`!HCI_DATA_DIR` are only available on Linux.
+   Options names for use with :const:`BTPROTO_HCI`.
+   Availability and format of the option value depend on platform.
+
+   .. availability:: Linux and BSD
+
+   .. versionchanged:: next
+      Added :const:`!SO_HCI_EVT_FILTER` and :const:`!SO_HCI_PKT_FILTER`
+      on NetBSD and DragonFly BSD.
+      Added :const:`!HCI_DATA_DIR` on FreeBSD, NetBSD and DragonFly BSD.
+
+.. data:: HCI_DEV_NONE
+
+   The ``device_id`` value used to create an HCI socket that isn't specific
+   to a single Bluetooth adapter.
+
+   .. availability:: Linux
+
+   .. versionadded:: next
 
 .. data:: HCI_CHANNEL_RAW
           HCI_CHANNEL_USER
