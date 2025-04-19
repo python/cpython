@@ -160,6 +160,9 @@ Modules/timemodule.c          @pganssle @abalkin
 Python/pytime.c               @pganssle @abalkin
 Include/internal/pycore_time.h  @pganssle @abalkin
 
+# Exclude .mailmap from being owned by @python/email-team
+/.mailmap    
+
 # Email and related
 **/*mail*                     @python/email-team
 **/*smtp*                     @python/email-team
