@@ -1,0 +1,2 @@
+Improve performance and error readability of
+:meth:`~unittest.TestCase.assertDictEqual`.
