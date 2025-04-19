@@ -158,7 +158,7 @@ class BufferedSubFile(object):
                 # We can't blindly dump entire chunks, if we're interested in
                 # more than just boundaries
                 return False
-        
+
         # We only care about boundaries; we can dump as long as there's no
         # potential boundaries.
         return '-' not in data
