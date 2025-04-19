@@ -74,16 +74,17 @@
 #endif
 
 
+typedef unsigned long py_ssl_errcode; /* packed error (lib, func, reason) */
 
-struct py_ssl_error_code {
+typedef struct py_ssl_error_code {
     const char *mnemonic;
     int library, reason;
-};
+} py_ssl_error_code;
 
-struct py_ssl_library_code {
+typedef struct py_ssl_library_code {
     const char *library;
     int code;
-};
+} py_ssl_library_code;
 
 #if defined(MS_WINDOWS) && defined(Py_DEBUG)
 /* Debug builds on Windows rely on getting errno directly from OpenSSL.
@@ -192,7 +193,7 @@ extern const SSL_METHOD *TLSv1_2_method(void);
 #endif
 
 
-enum py_ssl_error {
+typedef enum py_ssl_error {
     /* these mirror ssl.h */
     PY_SSL_ERROR_NONE,
     PY_SSL_ERROR_SSL,
@@ -206,7 +207,7 @@ enum py_ssl_error {
     PY_SSL_ERROR_EOF,         /* special case of SSL_ERROR_SYSCALL */
     PY_SSL_ERROR_NO_SOCKET,   /* socket has been GC'd */
     PY_SSL_ERROR_INVALID_ERROR_CODE
-};
+} py_ssl_error;
 
 enum py_ssl_server_or_client {
     PY_SSL_CLIENT,
@@ -311,10 +312,10 @@ typedef struct {
 #define PySSLContext_CAST(op)   ((PySSLContext *)(op))
 
 typedef struct {
-    int ssl; /* last seen error from SSL */
-    int c; /* last seen error from libc */
+    int ssl;    /* last seen error from TLS/SSL (see SSL_get_error(3)) */
+    int c;      /* last seen error from libc */
 #ifdef MS_WINDOWS
-    int ws; /* last seen error from winsock */
+    int ws;     /* last seen error from winsock */
 #endif
 } _PySSLError;
 
@@ -470,159 +471,420 @@ static PyType_Spec sslerror_type_spec = {
     .slots = sslerror_type_slots
 };
 
-static void
-fill_and_set_sslerror(_sslmodulestate *state,
-                      PySSLSocket *sslsock, PyObject *type, int ssl_errno,
-                      const char *errstr, int lineno, unsigned long errcode)
+/*
+ * Convert an error code in openssl/err.h to a hash table key.
+ *
+ * The 'code' may be a single field component (library, function
+ * or reason) given as an `int` or a packed error code given as
+ * an `unsigned long`.
+ *
+ * We always assume that 'code' is non-negative.
+ */
+#define ssl_errcode_to_ht_key(code) ((const void *)((uintptr_t)(code)))
+
+/*
+ * Determine whether the SSL formatted exception needs to be verbose.
+ *
+ * This is only used to avoid adding un-necessary attributes or building
+ * extremely verbose error messages which could slow the SSL handshake.
+ *
+ * See https://github.com/python/cpython/issues/123954 for details.
+ */
+static int
+ssl_use_verbose_error(_sslmodulestate *state, PyObject *exc_type,
+                      int Py_UNUSED(ssl_errno), py_ssl_errcode errcode)
 {
-    PyObject *err_value = NULL, *reason_obj = NULL, *lib_obj = NULL;
-    PyObject *verify_obj = NULL, *verify_code_obj = NULL;
-    PyObject *init_value, *msg, *key;
-    PyUnicodeWriter *writer = NULL;
-
-    if (errcode != 0) {
-        int lib, reason;
-
-        lib = ERR_GET_LIB(errcode);
-        reason = ERR_GET_REASON(errcode);
-        key = Py_BuildValue("ii", lib, reason);
-        if (key == NULL)
-            goto fail;
-        reason_obj = PyDict_GetItemWithError(state->err_codes_to_names, key);
-        Py_DECREF(key);
-        if (reason_obj == NULL && PyErr_Occurred()) {
-            goto fail;
-        }
-        key = PyLong_FromLong(lib);
-        if (key == NULL)
-            goto fail;
-        lib_obj = PyDict_GetItemWithError(state->lib_codes_to_names, key);
-        Py_DECREF(key);
-        if (lib_obj == NULL && PyErr_Occurred()) {
-            goto fail;
-        }
-        if (errstr == NULL) {
-            errstr = ERR_reason_error_string(errcode);
-        }
+    if (errcode == 0) {
+        return 0;
     }
 
-    /* verify code for cert validation error */
-    if ((sslsock != NULL) && (type == state->PySSLCertVerificationErrorObject)) {
-        const char *verify_str = NULL;
-        long verify_code;
+    if (
+        exc_type == state->PySSLWantReadErrorObject
+        || exc_type == state->PySSLWantWriteErrorObject
+    ) {
+        return 0;
+    }
+    return 1;
+}
 
-        verify_code = SSL_get_verify_result(sslsock->ssl);
-        verify_code_obj = PyLong_FromLong(verify_code);
-        if (verify_code_obj == NULL) {
-            goto fail;
-        }
+/*
+ * Get the library and reason strings from a packed error code.
+ *
+ * This stores NULL or new references to Unicode objects in 'lib' and 'reason',
+ * and thus the caller is responsible for calling Py_XDECREF() on them.
+ *
+ * This function always succeeds.
+ */
+static void
+ssl_error_fetch_lib_and_reason(_sslmodulestate *state, py_ssl_errcode errcode,
+                               PyObject **lib, PyObject **reason)
+{
+    const void *key, *val;
+    int libcode = ERR_GET_LIB(errcode);
+    int reacode = ERR_GET_REASON(errcode);
 
-        switch (verify_code) {
-        case X509_V_ERR_HOSTNAME_MISMATCH:
-            verify_obj = PyUnicode_FromFormat(
-                "Hostname mismatch, certificate is not valid for '%S'.",
-                sslsock->server_hostname
-            );
-            break;
-        case X509_V_ERR_IP_ADDRESS_MISMATCH:
-            verify_obj = PyUnicode_FromFormat(
-                "IP address mismatch, certificate is not valid for '%S'.",
-                sslsock->server_hostname
-            );
-            break;
-        default:
-            verify_str = X509_verify_cert_error_string(verify_code);
-            if (verify_str != NULL) {
-                verify_obj = PyUnicode_FromString(verify_str);
-            } else {
-                verify_obj = Py_NewRef(Py_None);
-            }
-            break;
-        }
-        if (verify_obj == NULL) {
-            goto fail;
+    key = ssl_errcode_to_ht_key(libcode);
+    val = (PyObject *)_Py_hashtable_get(state->lib_codes_to_names, key);
+    assert(val == NULL || PyUnicode_CheckExact(val));
+    *lib = Py_XNewRef(val);
+
+    key = ssl_errcode_to_ht_key(ERR_PACK(libcode, 0, reacode));
+    val = (PyObject *)_Py_hashtable_get(state->err_codes_to_names, key);
+    assert(val == NULL || PyUnicode_CheckExact(val));
+    *reason = Py_XNewRef(val);
+}
+
+static inline size_t
+ssl_error_filename_width(const char *Py_UNUSED(filename))
+{
+    /*
+     * Sometimes, __FILE__ is an absolute path, so we hardcode "_ssl.c".
+     * In the future, we might want to use the "filename" parameter but
+     * for now (and for backward compatibility), we ignore it.
+     */
+    return 6 /* strlen("_ssl.c") */;
+}
+
+static inline size_t
+ssl_error_lineno_width(int lineno)
+{
+    if (lineno < 0) {
+        return 1 + ssl_error_lineno_width(-lineno);
+    }
+#define FAST_PATH(E, N)                 \
+    do {                                \
+        assert((size_t)(1e ## E) == N); \
+        if (lineno < (N)) {             \
+            return (E);                 \
+        }                               \
+    } while (0)
+    FAST_PATH(1, 10);
+    FAST_PATH(2, 100);
+    FAST_PATH(3, 1000);
+    FAST_PATH(4, 10000);
+    FAST_PATH(5, 100000);
+    FAST_PATH(6, 1000000);
+    FAST_PATH(7, 10000000);
+    FAST_PATH(8, 100000000);
+#undef FAST_PATH
+    /*
+     * log10() is imprecise above 10^14, but it's not a realistic case.
+     * Even with those imprecisions, we will overestimate the actual
+     * number of characters needed to render 'lineno'.
+     */
+    return 1 + (size_t)log10(lineno);
+}
+
+/* Dataclass used for constructing SSL errors. */
+typedef struct ssl_error_info {
+    /* The SSL error number to pass to the exception constructor. */
+    int ssl_errno;
+    /*
+     * The SSL packed error code. If nonzero and no error message is
+     * given, this will be used to generate a default error message.
+     */
+    py_ssl_errcode errcode;
+
+    const char *filename;
+    int lineno;
+} ssl_error_info;
+
+/*
+ * Construct a Unicode object containing the formatted SSL error message.
+ *
+ * The caller is responsible to pass ASCII-encoded objects.
+ */
+static PyObject *
+format_ssl_error_message(PyObject *lib, PyObject *reason, PyObject *verify,
+                         const char *errstr, const ssl_error_info info)
+{
+#define CHECK_OBJECT(x)                                 \
+    do {                                                \
+        assert(x == NULL || PyUnicode_CheckExact(x));   \
+        assert(x == NULL || PyUnicode_IS_ASCII(x));     \
+    } while (0)
+    CHECK_OBJECT(lib);
+    CHECK_OBJECT(reason);
+    CHECK_OBJECT(verify);
+#undef CHECK_OBJECT
+
+    char tmp[32];
+    if (errstr == NULL && info.errcode != 0) {
+        /* at most 8 hexadecimal digits in info.errcode (unsigned long) */
+        if (snprintf(tmp, 32, "unknown error (0x%lx)", info.errcode) != -1) {
+            errstr = tmp;
         }
     }
+    if (errstr == NULL) {
+        errstr = "unknown error";
+    }
 
-    // Format message roughly as:
-    // [lib_obj: reason_obj] errstr: verify_obj (_ssl.c:lineno)
-    // with parts missing/replaced if unavailable
-    writer = PyUnicodeWriter_Create(64);
-    if (!writer) {
-        goto fail;
+    const char *filename = info.filename;
+    const size_t filename_len = ssl_error_filename_width(filename);
+    int lineno = info.lineno;
+    const size_t lineno_len = ssl_error_lineno_width(lineno);
+    /* exact length of "(_ssl.c:LINENO)" */
+    const size_t suffix_len = 1 + filename_len + 1 + lineno_len + 1;
+
+    int rc;
+    PyObject *res = NULL;
+#define CSTRBUF(x)  ((const char *)PyUnicode_DATA((x)))
+#define CHARBUF(x)  ((char *)PyUnicode_DATA((x)))
+
+    if (lib && reason && verify) {
+        /* [LIB: REASON] ERROR: VERIFY (_ssl.c:LINENO) */
+        const char *lib_cstr = CSTRBUF(lib);
+        const char *reason_cstr = CSTRBUF(reason);
+        const char *verify_cstr = CSTRBUF(verify);
+        const size_t ressize = /* excludes final null byte */ (
+            1 + strlen(lib_cstr) + 2 + strlen(reason_cstr) + 1
+            + 1 + strlen(errstr) + 2 + strlen(verify_cstr)
+            + 1 + suffix_len
+        );
+        res = PyUnicode_New(ressize, 127);
+        if (res == NULL) {
+            return NULL;
+        }
+        rc = snprintf(CHARBUF(res), ressize + 1, "[%s: %s] %s: %s (_ssl.c:%d)",
+                      lib_cstr, reason_cstr, errstr, verify_cstr, lineno);
     }
-    if (lib_obj) {
-        if (PyUnicodeWriter_Format(writer, "[%S", lib_obj) < 0) {
-            goto fail;
+    else if (lib && reason) {
+        /* [LIB: REASON] ERROR (_ssl.c:LINENO) */
+        const char *lib_cstr = CSTRBUF(lib);
+        const char *reason_cstr = CSTRBUF(reason);
+        const size_t ressize = /* excludes final null byte */ (
+            1 + strlen(lib_cstr) + 2 + strlen(reason_cstr) + 1
+            + 1 + strlen(errstr)
+            + 1 + suffix_len
+        );
+        res = PyUnicode_New(ressize, 127);
+        if (res == NULL) {
+            return NULL;
         }
-        if (reason_obj) {
-            if (PyUnicodeWriter_Format(writer, ": %S", reason_obj) < 0) {
-                goto fail;
-            }
-        }
-        if (PyUnicodeWriter_WriteUTF8(writer, "] ", 2) < 0) {
-            goto fail;
-        }
+        rc = snprintf(CHARBUF(res), ressize + 1, "[%s: %s] %s (_ssl.c:%d)",
+                      lib_cstr, reason_cstr, errstr, lineno);
     }
-    if (errstr) {
-        if (PyUnicodeWriter_Format(writer, "%s", errstr) < 0) {
-            goto fail;
+    else if (lib) {
+        /* [LIB] ERROR (_ssl.c:LINENO) */
+        const char *lib_cstr = CSTRBUF(lib);
+        const size_t ressize = /* excludes final null byte */ (
+            1 + strlen(lib_cstr) + 1
+            + 1 + strlen(errstr)
+            + 1 + suffix_len
+        );
+        res = PyUnicode_New(ressize, 127);
+        if (res == NULL) {
+            return NULL;
         }
+        rc = snprintf(CHARBUF(res), ressize + 1, "[%s] %s (_ssl.c:%d)",
+                      lib_cstr, errstr, lineno);
     }
     else {
-        if (PyUnicodeWriter_Format(
-                writer, "unknown error (0x%x)", errcode) < 0) {
-            goto fail;
+        /* ERROR (_ssl.c:LINENO) */
+        const size_t ressize = /* excludes final null byte */ (
+            strlen(errstr)
+            + 1 + suffix_len
+        );
+        res = PyUnicode_New(ressize, 127);
+        if (res == NULL) {
+            return NULL;
         }
+        rc = snprintf(CHARBUF(res), ressize + 1, "%s (_ssl.c:%d)",
+                      errstr, lineno);
     }
-    if (verify_obj) {
-        if (PyUnicodeWriter_Format(writer, ": %S", verify_obj) < 0) {
-            goto fail;
-        }
+#undef CHARBUF
+#undef CSTRBUF
+    if (rc < 0) {
+        assert(res != NULL);
+        Py_DECREF(res);
+        /* fallback to slow path if snprintf() failed */
+        return PyUnicode_FromFormat("%s (_ssl.c:%d)", errstr, lineno);
     }
-    if (PyUnicodeWriter_Format(writer, " (_ssl.c:%d)", lineno) < 0) {
+    return res;
+}
+
+/*
+ * Construct an SSL error object of given type.
+ *
+ * Parameters
+ *
+ *  exc_type    The SSL exception type.
+ *  lib         The ASCII-encoded library obtained from a packed error code.
+ *  reason      The ASCII-encoded reason obtained from a packed error code.
+ *
+ * A non-NULL library or reason is stored in the final exception object.
+ */
+static PyObject *
+build_ssl_simple_error(_sslmodulestate *state, PyObject *exc_type,
+                       PyObject *lib, PyObject *reason, const char *errstr,
+                       const ssl_error_info info)
+{
+    /* build message */
+    PyObject *message = format_ssl_error_message(lib, reason, NULL, errstr, info);
+    if (message == NULL) {
+        return NULL;
+    }
+    /*
+     * The SSL error codes that Python exposes consist of some libssl
+     * error codes as well as some custom ones. The reason is encoded
+     * in the lowest bits of the error code and thus is compatible with
+     * the ERR_GET_REASON() macro.
+     */
+    int ssl_errno = info.ssl_errno;
+    assert(ssl_errno == ERR_GET_REASON(ssl_errno));
+    PyObject *args = Py_BuildValue("iN", ssl_errno, message /* stolen */);
+    if (args == NULL) {
+        return NULL;
+    }
+    PyObject *exc = PyObject_CallObject(exc_type, args);
+    Py_DECREF(args);
+    if (exc == NULL) {
+        return NULL;
+    }
+    /* build attributes if desired */
+    if (lib == NULL && reason == NULL) {
+        return exc;
+    }
+    PyObject *exc_dict = PyObject_GenericGetDict(exc, NULL);
+    if (exc_dict == NULL) {
         goto fail;
     }
-    msg = PyUnicodeWriter_Finish(writer);
-    writer = NULL;
-    if (!msg) {
+    if (lib && PyDict_SetItem(exc_dict, state->str_library, lib) < 0) {
         goto fail;
     }
-
-    init_value = Py_BuildValue("iN", ERR_GET_REASON(ssl_errno), msg);
-    if (init_value == NULL)
+    if (reason && PyDict_SetItem(exc_dict, state->str_reason, reason) < 0) {
         goto fail;
-
-    err_value = PyObject_CallObject(type, init_value);
-    Py_DECREF(init_value);
-    if (err_value == NULL)
-        goto fail;
-
-    if (reason_obj == NULL)
-        reason_obj = Py_None;
-    if (PyObject_SetAttr(err_value, state->str_reason, reason_obj))
-        goto fail;
-
-    if (lib_obj == NULL)
-        lib_obj = Py_None;
-    if (PyObject_SetAttr(err_value, state->str_library, lib_obj))
-        goto fail;
-
-    if ((sslsock != NULL) && (type == state->PySSLCertVerificationErrorObject)) {
-        /* Only set verify code / message for SSLCertVerificationError */
-        if (PyObject_SetAttr(err_value, state->str_verify_code,
-                                verify_code_obj))
-            goto fail;
-        if (PyObject_SetAttr(err_value, state->str_verify_message, verify_obj))
-            goto fail;
     }
-
-    PyErr_SetObject(type, err_value);
+    Py_DECREF(exc_dict);
+    return exc;
 fail:
-    Py_XDECREF(err_value);
-    Py_XDECREF(verify_code_obj);
-    Py_XDECREF(verify_obj);
-    PyUnicodeWriter_Discard(writer);
+    Py_XDECREF(exc_dict);
+    Py_XDECREF(exc);
+    return NULL;
+}
+
+/*
+ * Same as build_ssl_simple_error() but for SSL verification errors.
+ */
+static PyObject *
+build_ssl_verify_error(_sslmodulestate *state, PySSLSocket *sslsock,
+                       PyObject *lib, PyObject *reason, const char *errstr,
+                       const ssl_error_info info)
+{
+    assert(sslsock != NULL);
+    PyObject *exc = NULL, *exc_dict = NULL, *verify = NULL, *verify_code = NULL;
+    /* verify code for cert validation error */
+    long verify_code_value = SSL_get_verify_result(sslsock->ssl);
+
+    switch (verify_code_value) {
+        case X509_V_ERR_IP_ADDRESS_MISMATCH: _Py_FALLTHROUGH;
+        case X509_V_ERR_HOSTNAME_MISMATCH: {
+            // The server's hostname is known to be an ASCII string.
+            assert(PyUnicode_IS_ASCII(sslsock->server_hostname));
+            const char *hostname = PyUnicode_AsUTF8(sslsock->server_hostname);
+            const char *fmt =
+                verify_code_value == X509_V_ERR_IP_ADDRESS_MISMATCH
+                    ? "IP address mismatch, certificate is not valid for '%s'."
+                    : "Hostname mismatch, certificate is not valid for '%s'.";
+            verify = PyUnicode_FromFormat(fmt, hostname);
+            break;
+        }
+        default: {
+            const char *s = X509_verify_cert_error_string(verify_code_value);
+            verify = s == NULL ? Py_None : PyUnicode_FromString(s);
+            break;
+        }
+    }
+
+    if (verify == NULL) {
+        goto fail;
+    }
+    verify_code = PyLong_FromLong(verify_code_value);
+    if (verify_code == NULL) {
+        goto fail;
+    }
+    /* build message */
+    PyObject *message = format_ssl_error_message(lib, reason, verify, errstr,
+                                                 info);
+    if (message == NULL) {
+        goto fail;
+    }
+    /* see build_ssl_simple_error() for the assertion's rationale */
+    int ssl_errno = info.ssl_errno;
+    assert(ssl_errno == ERR_GET_REASON(ssl_errno));
+    PyObject *args = Py_BuildValue("iN", ssl_errno, message /* stolen */);
+    if (args == NULL) {
+        goto fail;
+    }
+    exc = PyObject_CallObject(state->PySSLCertVerificationErrorObject, args);
+    Py_DECREF(args);
+    if (exc == NULL) {
+        goto fail;
+    }
+    /* build attributes */
+    exc_dict = PyObject_GenericGetDict(exc, NULL);
+    if (exc_dict == NULL) {
+        goto fail;
+    }
+#define SET_ATTR(a, x)                                              \
+        do {                                                        \
+            if ((x) && PyDict_SetItem(exc_dict, (a), (x)) < 0) {    \
+                goto fail;                                          \
+            }                                                       \
+        } while (0)
+    SET_ATTR(state->str_library, lib);
+    SET_ATTR(state->str_reason, reason);
+    SET_ATTR(state->str_verify_message, verify);
+    SET_ATTR(state->str_verify_code, verify_code);
+#undef SET_ATTR
+    Py_DECREF(exc_dict);
+    Py_DECREF(verify_code);
+    Py_DECREF(verify);
+    return exc;
+fail:
+    Py_XDECREF(exc_dict);
+    Py_XDECREF(verify_code);
+    Py_XDECREF(verify);
+    Py_XDECREF(exc);
+    return NULL;
+}
+
+static void
+fill_and_set_sslerror(_sslmodulestate *state,
+                      PySSLSocket *sslsock, /* may be NULL */
+                      PyObject *exc_type, /* socket exception type */
+                      int ssl_errno /* passed to exc_type.__init__() */,
+                      py_ssl_errcode errcode /* for a default message */,
+                      const char *errstr /* may be NULL */,
+                      const char *filename, int lineno)
+{
+    PyObject *lib = NULL, *reason = NULL;
+    if (ssl_use_verbose_error(state, exc_type, ssl_errno, errcode)) {
+        ssl_error_fetch_lib_and_reason(state, errcode, &lib, &reason);
+    }
+    if (errstr == NULL && errcode) {
+        // When ERR_reason_error_string() returns NULL, build_ssl_*_error()
+        // will use a default error message containing the hexadecimal value
+        // of the unknown error code.
+        errstr = ERR_reason_error_string(errcode);
+    }
+    const ssl_error_info info = {
+        .ssl_errno = ssl_errno,
+        .errcode = errcode,
+        .filename = filename,
+        .lineno = lineno
+    };
+    PyObject *exc;
+    if (sslsock != NULL && exc_type == state->PySSLCertVerificationErrorObject) {
+        exc = build_ssl_verify_error(state, sslsock, lib, reason, errstr, info);
+    }
+    else {
+        exc = build_ssl_simple_error(state, exc_type, lib, reason, errstr, info);
+    }
+    Py_XDECREF(reason);
+    Py_XDECREF(lib);
+    PyErr_SetObject(exc_type, exc);
+    Py_XDECREF(exc);
 }
 
 static int
@@ -641,8 +903,8 @@ PySSL_SetError(PySSLSocket *sslsock, const char *filename, int lineno)
     PyObject *type;
     char *errstr = NULL;
     _PySSLError err;
-    enum py_ssl_error p = PY_SSL_ERROR_NONE;
-    unsigned long e = 0;
+    py_ssl_error p = PY_SSL_ERROR_NONE;
+    py_ssl_errcode e = 0;
 
     assert(sslsock != NULL);
 
@@ -745,20 +1007,32 @@ PySSL_SetError(PySSLSocket *sslsock, const char *filename, int lineno)
             errstr = "Invalid error code";
         }
     }
-    fill_and_set_sslerror(state, sslsock, type, p, errstr, lineno, e);
+    fill_and_set_sslerror(state, sslsock, type, p, e, errstr, filename, lineno);
     ERR_clear_error();
     PySSL_ChainExceptions(sslsock);
     return NULL;
 }
 
 static PyObject *
-_setSSLError (_sslmodulestate *state, const char *errstr, int errcode, const char *filename, int lineno)
+_setSSLError(_sslmodulestate *state,
+             const char *errstr, int ssl_errno,
+             const char *filename, int lineno)
 {
-    if (errstr == NULL)
+    py_ssl_errcode errcode;
+    if (errstr == NULL) {
         errcode = ERR_peek_last_error();
-    else
-        errcode = 0;
-    fill_and_set_sslerror(state, NULL, state->PySSLErrorObject, errcode, errstr, lineno, errcode);
+        if (ssl_errno == 0) {   // Use the reason as the underlying errno.
+            ssl_errno = ERR_GET_REASON(errcode);
+        }
+    }
+    else {
+        errcode = 0;            // to avoid using LIB and REASON fields
+        if (ssl_errno == 0) {   // generic error happened with a message
+            ssl_errno = PY_SSL_ERROR_SSL;
+        }
+    }
+    fill_and_set_sslerror(state, NULL, state->PySSLErrorObject, ssl_errno,
+                          errcode, errstr, filename, lineno);
     ERR_clear_error();
     return NULL;
 }
@@ -5762,7 +6036,7 @@ PySSL_RAND(PyObject *module, int len, int pseudo)
 {
     int ok;
     PyObject *bytes;
-    unsigned long err;
+    py_ssl_errcode err;
     const char *errstr;
     PyObject *v;
 
@@ -6288,18 +6562,70 @@ PyDoc_STRVAR(module_doc,
 "Implementation module for SSL socket operations.  See the socket module\n\
 for documentation.");
 
+static PyObject *
+sslmodule_get_exception_dict(_sslmodulestate *state, bool verify_field)
+{
+    PyObject *dict = PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
+    if (PyDict_SetItem(dict, state->str_library, Py_None) < 0) {
+        goto fail;
+    }
+    if (PyDict_SetItem(dict, state->str_reason, Py_None) < 0) {
+        goto fail;
+    }
+    if (verify_field) {
+        if (PyDict_SetItem(dict, state->str_verify_message, Py_None) < 0) {
+            goto fail;
+        }
+    }
+    return dict;
+fail:
+    Py_DECREF(dict);
+    return NULL;
+}
+
+static int
+sslmodule_add_exception(PyObject *module,
+                        _sslmodulestate *state, PyObject **state_attribute,
+                        const char *module_attribute_name,
+                        const char *name, const char *doc, PyObject *bases,
+                        bool verify_field)
+{
+    PyObject *dict = sslmodule_get_exception_dict(state, verify_field);
+    if (dict == NULL) {
+        return -1;
+    }
+    *state_attribute = PyErr_NewExceptionWithDoc(name, doc, bases, dict);
+    Py_DECREF(dict);
+    if (*state_attribute == NULL) {
+        return -1;
+    }
+    if (PyModule_AddObjectRef(module, module_attribute_name, *state_attribute) < 0) {
+        // clean-up will be done when
+        return -1;
+    }
+    return 0;
+}
+
 static int
 sslmodule_init_exceptions(PyObject *module)
 {
     _sslmodulestate *state = get_ssl_state(module);
     PyObject *bases = NULL;
 
-#define add_exception(exc, name, doc, base)                                 \
-do {                                                                        \
-    (exc) = PyErr_NewExceptionWithDoc("ssl." name, (doc), (base), NULL);    \
-    if ((state) == NULL) goto error;                                        \
-    if (PyModule_AddObjectRef(module, name, exc) < 0) goto error;           \
-} while(0)
+#define add_exception_impl(ATTR, NAME, DOC, BASES, VERIFY_FIELD)    \
+    do {                                                            \
+        int rc = sslmodule_add_exception(                           \
+            module, state, &(ATTR), (NAME),                         \
+            "ssl." NAME, (DOC), (BASES),                            \
+            (VERIFY_FIELD)                                          \
+        );                                                          \
+        if (rc < 0) {                                               \
+            goto error;                                             \
+        }                                                           \
+    } while(0)
 
     state->PySSLErrorObject = PyType_FromSpecWithBases(
         &sslerror_type_spec, PyExc_OSError);
@@ -6315,14 +6641,16 @@ do {                                                                        \
     if (bases == NULL) {
         goto error;
     }
-    add_exception(
+    add_exception_impl(
         state->PySSLCertVerificationErrorObject,
         "SSLCertVerificationError",
         SSLCertVerificationError_doc,
-        bases
+        bases,
+        true
     );
     Py_CLEAR(bases);
 
+#define add_exception(e, n, d, b)   add_exception_impl(e, n, d, b, 0)
     add_exception(
         state->PySSLZeroReturnErrorObject,
         "SSLZeroReturnError",
@@ -6358,6 +6686,7 @@ do {                                                                        \
         state->PySSLErrorObject
     );
 #undef add_exception
+#undef add_exception_impl
 
     return 0;
   error:
@@ -6640,56 +6969,134 @@ sslmodule_init_constants(PyObject *m)
     return 0;
 }
 
+/* internal hashtable (errcode, libcode) => (reason [PyObject * (unicode)]) */
+
+static void
+py_ht_errcode_to_name_free(void *value) {
+    assert(PyUnicode_CheckExact((PyObject *)value));
+    Py_CLEAR(value);
+}
+
+static _Py_hashtable_t *
+py_ht_errcode_to_name_create(void) {
+    _Py_hashtable_t *table = _Py_hashtable_new_full(
+        _Py_hashtable_hash_ptr,
+        _Py_hashtable_compare_direct,
+        NULL,
+        py_ht_errcode_to_name_free,
+        NULL
+    );
+    if (table == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    for (const py_ssl_error_code *p = error_codes; p->mnemonic != NULL; p++) {
+        py_ssl_errcode code = ERR_PACK(p->library, 0, p->reason);
+        const void *key = ssl_errcode_to_ht_key(code);
+        PyObject *prev = _Py_hashtable_get(table, key); /* borrowed */
+        if (prev != NULL) {
+            assert(PyUnicode_CheckExact(prev));
+            if (PyUnicode_EqualToUTF8(prev, p->mnemonic)) {
+                /* sometimes data is duplicated, so we skip it */
+                continue;
+            }
+            int rc = PyErr_WarnFormat(PyExc_ImportWarning, 2,
+                                     "SSL data contains incompatible entries "
+                                     "for (%d, %d; %p, %ld). Old mnemonic is "
+                                     "%S but new mnemonic is %s.",
+                                      p->library, p->reason, key, code,
+                                      prev, p->mnemonic);
+            if (rc < 0) {
+                goto error;
+            }
+            PyErr_Clear();
+            continue;
+        }
+        PyObject *value = PyUnicode_FromString(p->mnemonic);
+        if (value == NULL) {
+            goto error;
+        }
+        if (_Py_hashtable_set(table, key, value) < 0) {
+            Py_DECREF(value);
+            goto error;
+        }
+    }
+    return table;
+error:
+    _Py_hashtable_destroy(table);
+    return NULL;
+}
+
+/* internal hashtable (libcode) => (libname [PyObject * (unicode)]) */
+
+static void
+py_ht_libcode_to_name_free(void *value) {
+    assert(PyUnicode_CheckExact((PyObject *)value));
+    Py_CLEAR(value);
+}
+
+static _Py_hashtable_t *
+py_ht_libcode_to_name_create(void) {
+    _Py_hashtable_t *table = _Py_hashtable_new_full(
+        _Py_hashtable_hash_ptr,
+        _Py_hashtable_compare_direct,
+        NULL,
+        py_ht_libcode_to_name_free,
+        NULL
+    );
+    if (table == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+
+    for (const py_ssl_library_code *p = library_codes; p->library != NULL; p++) {
+        const void *key = ssl_errcode_to_ht_key(p->code);
+        PyObject *prev = _Py_hashtable_get(table, key); /* borrowed */
+        if (prev != NULL) {
+            assert(PyUnicode_CheckExact(prev));
+            if (PyUnicode_EqualToUTF8(prev, p->library)) {
+                /* sometimes data is duplicated, so we skip it */
+                continue;
+            }
+            int rc = PyErr_WarnFormat(PyExc_ImportWarning, 2,
+                                     "SSL data contains incompatible entries "
+                                     "for (%p; %d). Old library is %S but new "
+                                     "library is %s.",
+                                     key, p->code, prev, p->library);
+            if (rc < 0) {
+                goto error;
+            }
+            PyErr_Clear();
+            continue;
+        }
+        PyObject *value = PyUnicode_FromString(p->library);
+        if (value == NULL) {
+            goto error;
+        }
+        if (_Py_hashtable_set(table, key, value) < 0) {
+            Py_DECREF(value);
+            goto error;
+        }
+    }
+    return table;
+error:
+    _Py_hashtable_destroy(table);
+    return NULL;
+}
+
 static int
 sslmodule_init_errorcodes(PyObject *module)
 {
     _sslmodulestate *state = get_ssl_state(module);
-
-    struct py_ssl_error_code *errcode;
-    struct py_ssl_library_code *libcode;
-
-    /* Mappings for error codes */
-    state->err_codes_to_names = PyDict_New();
-    if (state->err_codes_to_names == NULL)
+    state->err_codes_to_names = py_ht_errcode_to_name_create();
+    if (state->err_codes_to_names == NULL) {
         return -1;
-    state->lib_codes_to_names = PyDict_New();
-    if (state->lib_codes_to_names == NULL)
+    }
+    state->lib_codes_to_names = py_ht_libcode_to_name_create();
+    if (state->lib_codes_to_names == NULL) {
         return -1;
-
-    errcode = error_codes;
-    while (errcode->mnemonic != NULL) {
-        PyObject *mnemo = PyUnicode_FromString(errcode->mnemonic);
-        if (mnemo == NULL) {
-            return -1;
-        }
-        PyObject *key = Py_BuildValue("ii", errcode->library, errcode->reason);
-        if (key == NULL) {
-            Py_DECREF(mnemo);
-            return -1;
-        }
-        int rc = PyDict_SetItem(state->err_codes_to_names, key, mnemo);
-        Py_DECREF(key);
-        Py_DECREF(mnemo);
-        if (rc < 0) {
-            return -1;
-        }
-        errcode++;
     }
-
-    libcode = library_codes;
-    while (libcode->library != NULL) {
-        PyObject *mnemo, *key;
-        key = PyLong_FromLong(libcode->code);
-        mnemo = PyUnicode_FromString(libcode->library);
-        if (key == NULL || mnemo == NULL)
-            return -1;
-        if (PyDict_SetItem(state->lib_codes_to_names, key, mnemo))
-            return -1;
-        Py_DECREF(key);
-        Py_DECREF(mnemo);
-        libcode++;
-    }
-
     return 0;
 }
 
@@ -6829,12 +7236,12 @@ sslmodule_init_lock(PyObject *module)
 
 static PyModuleDef_Slot sslmodule_slots[] = {
     {Py_mod_exec, sslmodule_init_types},
+    {Py_mod_exec, sslmodule_init_strings},
     {Py_mod_exec, sslmodule_init_exceptions},
     {Py_mod_exec, sslmodule_init_socketapi},
     {Py_mod_exec, sslmodule_init_errorcodes},
     {Py_mod_exec, sslmodule_init_constants},
     {Py_mod_exec, sslmodule_init_versioninfo},
-    {Py_mod_exec, sslmodule_init_strings},
     {Py_mod_exec, sslmodule_init_lock},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
@@ -6858,8 +7265,6 @@ sslmodule_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(state->PySSLWantWriteErrorObject);
     Py_VISIT(state->PySSLSyscallErrorObject);
     Py_VISIT(state->PySSLEOFErrorObject);
-    Py_VISIT(state->err_codes_to_names);
-    Py_VISIT(state->lib_codes_to_names);
     Py_VISIT(state->Sock_Type);
 
     return 0;
@@ -6882,8 +7287,14 @@ sslmodule_clear(PyObject *m)
     Py_CLEAR(state->PySSLWantWriteErrorObject);
     Py_CLEAR(state->PySSLSyscallErrorObject);
     Py_CLEAR(state->PySSLEOFErrorObject);
-    Py_CLEAR(state->err_codes_to_names);
-    Py_CLEAR(state->lib_codes_to_names);
+    if (state->err_codes_to_names != NULL) {
+        _Py_hashtable_destroy(state->err_codes_to_names);
+        state->err_codes_to_names = NULL;
+    }
+    if (state->lib_codes_to_names != NULL) {
+        _Py_hashtable_destroy(state->lib_codes_to_names);
+        state->lib_codes_to_names = NULL;
+    }
     Py_CLEAR(state->Sock_Type);
     Py_CLEAR(state->str_library);
     Py_CLEAR(state->str_reason);
