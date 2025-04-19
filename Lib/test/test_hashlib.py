@@ -1199,6 +1199,15 @@ class KDFTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             hashlib.file_digest(None, "sha256")
 
+        class NonBlocking:
+            def readinto(self, buf):
+                return None
+            def readable(self):
+                return True
+
+        with self.assertRaises(BlockingIOError):
+            hashlib.file_digest(NonBlocking(), hashlib.sha256)
+
 
 if __name__ == "__main__":
     unittest.main()
