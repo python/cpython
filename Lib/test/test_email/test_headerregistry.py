@@ -1497,17 +1497,19 @@ class TestAddressAndGroup(TestEmailBase):
         self.assertEqual(str(a), '"Sara J." <"bad name"@example.com>')
 
     def test_il8n(self):
-        a = Address('Éric', 'wok', 'exàmple.com')
+        a = Address('Éric', 'wők', 'exàmple.com')
         self.assertEqual(a.display_name, 'Éric')
-        self.assertEqual(a.username, 'wok')
+        self.assertEqual(a.username, 'wők')
         self.assertEqual(a.domain, 'exàmple.com')
-        self.assertEqual(a.addr_spec, 'wok@exàmple.com')
-        self.assertEqual(str(a), 'Éric <wok@exàmple.com>')
+        self.assertEqual(a.addr_spec, 'wők@exàmple.com')
+        self.assertEqual(str(a), 'Éric <wők@exàmple.com>')
 
-    # XXX: there is an API design issue that needs to be solved here.
-    #def test_non_ascii_username_raises(self):
-    #    with self.assertRaises(ValueError):
-    #        Address('foo', 'wők', 'example.com')
+    def test_i18n_in_addr_spec(self):
+        a = Address(addr_spec='wők@exàmple.com')
+        self.assertEqual(a.username, 'wők')
+        self.assertEqual(a.domain, 'exàmple.com')
+        self.assertEqual(a.addr_spec, 'wők@exàmple.com')
+        self.assertEqual(str(a), 'wők@exàmple.com')
 
     def test_crlf_in_constructor_args_raises(self):
         cases = (
@@ -1527,10 +1529,6 @@ class TestAddressAndGroup(TestEmailBase):
         for kwargs in cases:
             with self.subTest(kwargs=kwargs), self.assertRaisesRegex(ValueError, "invalid arguments"):
                 Address(**kwargs)
-
-    def test_non_ascii_username_in_addr_spec_raises(self):
-        with self.assertRaises(ValueError):
-            Address('foo', addr_spec='wők@example.com')
 
     def test_address_addr_spec_and_username_raises(self):
         with self.assertRaises(TypeError):
