@@ -4,6 +4,8 @@
 #include "parts.h"
 #include "util.h"
 #include "clinic/file.c.h"
+#include <stdio.h>
+#include <Python.h>
 
 
 /*[clinic input]
@@ -57,9 +59,61 @@ _testcapi_py_fopen_impl(PyObject *module, PyObject *path, const char *mode,
 }
 
 
+/*[clinic input]
+_testcapi.py_universalnewlinefgets
+
+    file: object
+    size: int
+    /
+
+Read a line from a file using Py_UniversalNewlineFgets.
+[clinic start generated code]*/
+
+static PyObject *
+_testcapi_py_universalnewlinefgets_impl(PyObject *module, PyObject *file,
+                                        int size)
+/*[clinic end generated code: output=2ce1bc76c9dc871c input=02c236049d18569a]*/
+{
+    int fd = PyObject_AsFileDescriptor(file);
+    if (fd == -1) {
+        return NULL;
+    }
+
+    FILE *fp;
+#ifdef MS_WINDOWS
+    fp = _fdopen(fd, "rb");
+#else
+    fp = fdopen(fd, "rb");
+#endif
+
+    if (fp == NULL) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        return NULL;
+    }
+
+    char *buf = (char *)PyMem_Malloc(size);
+    if (buf == NULL) {
+        fclose(fp);
+        return PyErr_NoMemory();
+    }
+
+    char *result = Py_UniversalNewlineFgets(buf, size, fp, NULL);
+    if (result == NULL) {
+        PyMem_Free(buf);
+        fclose(fp);
+        Py_RETURN_NONE;
+    }
+
+    PyObject *line = PyBytes_FromString(result);
+    PyMem_Free(buf);
+
+    return line;
+}
+
 static PyMethodDef test_methods[] = {
     _TESTCAPI_PYFILE_NEWSTDPRINTER_METHODDEF
     _TESTCAPI_PY_FOPEN_METHODDEF
+    _TESTCAPI_PY_UNIVERSALNEWLINEFGETS_METHODDEF
     {NULL},
 };
 
