@@ -10,7 +10,7 @@ import sys
 from _colorize import ANSIColors, can_colorize
 
 
-# The string we are colorizing is a valid JSON,
+# The string we are colorizing is valid JSON,
 # so we can use a looser but simpler regex to match
 # the various parts, most notably strings and numbers,
 # where the regex given by the spec is much more complex.
