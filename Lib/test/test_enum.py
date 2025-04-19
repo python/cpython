@@ -1352,7 +1352,7 @@ class TestSpecial(unittest.TestCase):
                 red = 1
                 green = 2
                 blue = 3
-                def red(self):
+                def red(self):  # noqa: F811
                     return 'red'
         #
         with self.assertRaises(TypeError):
@@ -1360,7 +1360,7 @@ class TestSpecial(unittest.TestCase):
                 @enum.property
                 def red(self):
                     return 'redder'
-                red = 1
+                red = 1  # noqa: F811
                 green = 2
                 blue = 3
 

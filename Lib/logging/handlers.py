@@ -1561,6 +1561,9 @@ class QueueListener(object):
         This starts up a background thread to monitor the queue for
         LogRecords to process.
         """
+        if self._thread is not None:
+            raise RuntimeError("Listener already started")
+
         self._thread = t = threading.Thread(target=self._monitor)
         t.daemon = True
         t.start()
