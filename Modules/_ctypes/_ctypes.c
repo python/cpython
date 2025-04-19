@@ -3356,14 +3356,13 @@ _PyCData_set(ctypes_state *st,
            CDataObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
            Py_ssize_t size, char *ptr)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(dst);
     CDataObject *src;
     int err;
 
     if (setfunc) {
         PyObject *res;
-        Py_BEGIN_CRITICAL_SECTION(dst);
         res = setfunc(ptr, value, size);
-        Py_END_CRITICAL_SECTION();
         return res;
     }
     if (!CDataObject_Check(st, value)) {
@@ -3373,9 +3372,7 @@ _PyCData_set(ctypes_state *st,
         }
         if (info && info->setfunc) {
             PyObject *res;
-            Py_BEGIN_CRITICAL_SECTION(dst);
             res = info->setfunc(ptr, value, size);
-            Py_END_CRITICAL_SECTION();
             return res;
         }
         /*
@@ -3397,9 +3394,7 @@ _PyCData_set(ctypes_state *st,
             Py_DECREF(ob);
             return result;
         } else if (value == Py_None && PyCPointerTypeObject_Check(st, type)) {
-            Py_BEGIN_CRITICAL_SECTION(dst);
             *(void **)ptr = NULL;
-            Py_END_CRITICAL_SECTION();
             Py_RETURN_NONE;
         } else {
             PyErr_Format(PyExc_TypeError,
@@ -3417,11 +3412,6 @@ _PyCData_set(ctypes_state *st,
     if (err) {
         Py_BEGIN_CRITICAL_SECTION(src);
         memcpy(ptr, src->b_ptr, size);
-
-        if (PyCPointerTypeObject_Check(st, type)) {
-            /* XXX */
-        }
-
         value = GetKeepedObjects(src);
         Py_END_CRITICAL_SECTION();
         if (value == NULL)
@@ -3485,6 +3475,8 @@ PyCData_set(ctypes_state *st,
           PyObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
           Py_ssize_t index, Py_ssize_t size, char *ptr)
 {
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED(dst);
+
     CDataObject *mem = (CDataObject *)dst;
     PyObject *result;
 
