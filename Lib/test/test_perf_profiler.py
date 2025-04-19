@@ -238,6 +238,8 @@ def perf_command_works():
             cmd = (
                 "perf",
                 "record",
+                "--no-buildid",
+                "--no-buildid-cache",
                 "-g",
                 "--call-graph=fp",
                 "-o",
@@ -266,7 +268,16 @@ def run_perf(cwd, *args, **env_vars):
     else:
         env = None
     output_file = cwd + "/perf_output.perf"
-    base_cmd = ("perf", "record", "-g", "--call-graph=fp", "-o", output_file, "--")
+    base_cmd = (
+        "perf",
+        "record",
+        "--no-buildid",
+        "--no-buildid-cache",
+        "-g",
+        "--call-graph=fp",
+        "-o", output_file,
+        "--"
+    )
     proc = subprocess.run(
         base_cmd + args,
         stdout=subprocess.PIPE,
