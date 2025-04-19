@@ -1563,11 +1563,6 @@ class CommandLineTestCase(unittest.TestCase):
             f.write(self.tls_password.encode())
         self.addCleanup(os_helper.unlink, self.tls_password_file)
 
-    def tearDown(self):
-        if os.path.exists(self.tls_password_file):
-            os.remove(self.tls_password_file)
-        return super().tearDown()
-
     def invoke_httpd(self, *args):
         output = StringIO()
         with contextlib.redirect_stdout(output), \
