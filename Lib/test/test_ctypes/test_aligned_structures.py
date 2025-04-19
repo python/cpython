@@ -1,7 +1,7 @@
 from ctypes import (
     c_char, c_uint32, c_uint16, c_ubyte, c_byte, alignment, sizeof,
     BigEndianStructure, LittleEndianStructure,
-    BigEndianUnion, LittleEndianUnion,
+    BigEndianUnion, LittleEndianUnion, Structure
 )
 import struct
 import unittest
@@ -280,6 +280,41 @@ class TestAlignedStructures(unittest.TestCase):
             self.assertEqual(main.b.x, 2)
             self.assertEqual(main.b.y, 3)
             self.assertEqual(main.c, 4)
+
+    def test_negative_align(self):
+        for base in (Structure, LittleEndianStructure, BigEndianStructure):
+            with (
+                self.subTest(base=base),
+                self.assertRaisesRegex(
+                    ValueError,
+                    '_align_ must be a non-negative integer',
+                )
+            ):
+                class MyStructure(base):
+                    _align_ = -1
+                    _fields_ = []
+
+    def test_zero_align_no_fields(self):
+        for base in (Structure, LittleEndianStructure, BigEndianStructure):
+            with self.subTest(base=base):
+                class MyStructure(base):
+                    _align_ = 0
+                    _fields_ = []
+
+                self.assertEqual(alignment(MyStructure), 1)
+                self.assertEqual(alignment(MyStructure()), 1)
+
+    def test_zero_align_with_fields(self):
+        for base in (Structure, LittleEndianStructure, BigEndianStructure):
+            with self.subTest(base=base):
+                class MyStructure(base):
+                    _align_ = 0
+                    _fields_ = [
+                        ("x", c_ubyte),
+                    ]
+
+                self.assertEqual(alignment(MyStructure), 1)
+                self.assertEqual(alignment(MyStructure()), 1)
 
 
 if __name__ == '__main__':
