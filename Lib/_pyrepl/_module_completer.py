@@ -15,6 +15,11 @@ if TYPE_CHECKING:
     from typing import Any, Iterable, Iterator, Mapping
 
 
+def make_default_module_completer() -> ModuleCompleter:
+    # Inside pyrepl, __package__ is set to '_pyrepl'
+    return ModuleCompleter(namespace={'__package__': '_pyrepl'})
+
+
 class ModuleCompleter:
     """A completer for Python import statements.
 

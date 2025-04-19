@@ -39,7 +39,7 @@ from rlcompleter import Completer as RLCompleter
 from . import commands, historical_reader
 from .completing_reader import CompletingReader
 from .console import Console as ConsoleType
-from ._module_completer import ModuleCompleter
+from ._module_completer import ModuleCompleter, make_default_module_completer
 
 Console: type[ConsoleType]
 _error: tuple[type[Exception], ...] | type[Exception]
@@ -100,8 +100,7 @@ __all__ = [
 class ReadlineConfig:
     readline_completer: Completer | None = None
     completer_delims: frozenset[str] = frozenset(" \t\n`~!@#$%^&*()-=+[{]}\\|;:'\",<>/?")
-    # Inside pyrepl, __package__ is set to '_pyrepl'
-    module_completer: ModuleCompleter = ModuleCompleter(namespace={'__package__': '_pyrepl'})
+    module_completer: ModuleCompleter = field(default_factory=make_default_module_completer)
 
 @dataclass(kw_only=True)
 class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
