@@ -12,6 +12,7 @@ select = [
     "LOG",     # flake8-logging
     "PGH",     # pygrep-hooks
     "PT",      # flake8-pytest-style
+    "PYI",     # flake8-pyi
     "RUF100",  # Ban unused `# noqa` comments
     "UP",      # pyupgrade
     "W",       # pycodestyle
@@ -20,6 +21,8 @@ select = [
 ignore = [
     "E501",    # Line too long
     "F541",    # f-string without any placeholders
+    "PYI024",  # Use `typing.NamedTuple` instead of `collections.namedtuple`
+    "PYI025",  # Use `from collections.abc import Set as AbstractSet`
     "UP038",   # Use `X | Y` in `isinstance` call instead of `(X, Y)`
 ]
 

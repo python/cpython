@@ -11,7 +11,7 @@ repos:
         args: [--exit-non-zero-on-fix]
         files: ^Lib/test/
       - id: ruff
-        name: Run Ruff (lint) on Tools/build
+        name: Run Ruff (lint) on Tools/build/
         args: [--exit-non-zero-on-fix, --config=Tools/build/.ruff.toml]
         files: ^Tools/build/
       - id: ruff
