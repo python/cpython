@@ -288,6 +288,14 @@ class socket(_socket.socket):
         sock.settimeout(self.gettimeout())
         return sock
 
+    def connect(self, address):
+        """Connect to a remote socket at address."""
+        try:
+            super().connect(address)
+        except ConnectionRefusedError as exc:
+            exc.strerror = f'{exc.strerror}: {address}'
+            raise
+
     def accept(self):
         """accept() -> (socket object, address info)
 
