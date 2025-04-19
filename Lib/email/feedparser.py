@@ -22,6 +22,7 @@ object's .defects attribute.
 __all__ = ['FeedParser', 'BytesFeedParser']
 
 import re
+import sys
 
 from email import errors
 from email._policybase import compat32
@@ -52,31 +53,30 @@ class BufferedSubFile(object):
     simple abstraction -- it parses until EOF closes the current message.
     """
     def __init__(self):
-        # Text stream of the last partial line pushed into this object.
-        # See issue 22233 for why this is a text stream and not a list.
-        self._partial = StringIO(newline='')
+        self._partial: list[str] = []
+        self._dangling_partial: bool = False
         # A deque of full, pushed lines
-        self._lines = deque()
+        self._lines: deque[str] = deque()
         # The stack of false-EOF checking predicates.
         self._eofstack = []
         # A flag indicating whether the file has been closed or not.
-        self._closed = False
+        self._closed: bool = False
+        self._dump_destination: deque[str]|None = None
+        self._dump_result: str|None = None
 
-    def push_eof_matcher(self, pred):
+    def push_eof_matcher(self, pred) -> None:
         self._eofstack.append(pred)
 
     def pop_eof_matcher(self):
         return self._eofstack.pop()
 
-    def close(self):
+    def close(self) -> None:
         # Don't forget any trailing partial line.
-        self._partial.seek(0)
-        self.pushlines(self._partial.readlines())
-        self._partial.seek(0)
-        self._partial.truncate()
+        if self._partial:
+            self._flush_partial()
         self._closed = True
 
-    def readline(self):
+    def readline(self) -> str|object:
         if not self._lines:
             if self._closed:
                 return ''
@@ -87,50 +87,350 @@ class BufferedSubFile(object):
         # RFC 2046, section 5.1.2 requires us to recognize outer level
         # boundaries at any level of inner nesting.  Do this, but be sure it's
         # in the order of most to least nested.
-        for ateof in reversed(self._eofstack):
-            if ateof(line):
-                # We're at the false EOF.  But push the last line back first.
-                self._lines.appendleft(line)
-                return ''
+        if self._check_eofstack(line):
+            # We're at the false EOF.  But push the last line back first.
+            self._lines.appendleft(line)
+            return ''
+
         return line
 
-    def unreadline(self, line):
+    def _check_eofstack(self, data, start=0, end=sys.maxsize) -> bool:
+        for ateof in reversed(self._eofstack):
+            if ateof(data, start, end):
+                # We're at the false EOF.
+                return True
+
+        return False
+
+    def unreadline(self, line) -> None:
         # Let the consumer push a line back into the buffer.
         assert line is not NeedMoreData
         self._lines.appendleft(line)
 
-    def push(self, data):
+    def _flush_partial(self) -> None:
+        line = EMPTYSTRING.join(self._partial)
+        if not line:
+            pass
+        elif self._dump_destination is None:
+            # We're not dumping data. Just flush the partial to lines, as normal
+            self._lines.append(line)
+        elif self._check_eofstack(line):
+            # We were dumping, but we've now reached the end of the dump. Push our line and stop dumping.
+            self._dump_destination = None
+            self._lines.append(line)
+        else:
+            # We're still dumping; push to dump
+            self._dump_destination.append(line)
+
+        self._partial.clear()
+        self._dangling_partial = False
+
+    def push(self, data) -> None:
         """Push some new data into this object."""
-        self._partial.write(data)
-        if '\n' not in data and '\r' not in data:
-            # No new complete lines, wait for more.
+        if not data:
             return
 
-        # Crack into lines, preserving the linesep characters.
-        self._partial.seek(0)
-        parts = self._partial.readlines()
-        self._partial.seek(0)
-        self._partial.truncate()
+        # If we're dumping, and we don't have anything that will ever tell us to terminate, simply dump everything
+        if self._can_dump_data(data):
+            self._dump_destination.append(data)
+            return
 
-        # If the last element of the list does not end in a newline, then treat
-        # it as a partial line.  We only check for '\n' here because a line
-        # ending with '\r' might be a line that was split in the middle of a
-        # '\r\n' sequence (see bugs 1555570 and 1721862).
-        if not parts[-1].endswith('\n'):
-            self._partial.write(parts.pop())
-        self.pushlines(parts)
+        self._push_data(data)
 
-    def pushlines(self, lines):
+    def _can_dump_data(self, data) -> bool:
+        if self._dump_destination is None:
+            # We're not dumping data
+            return False
+
+        # We're dumping; check for easy optimizations
+        if not self._eofstack:
+            # There's nothing that will ever tell us to stop dumping. Go ahead and dump the entire `data` object.
+            # This does absolute wonders for large non-multipart emails.
+            assert not self._lines
+            assert not self._dangling_partial
+            assert not self._partial
+            return True
+
+        # We can't dump this blob if we have pending partial data
+        if self._partial:
+            return False
+
+        all_boundary_matches = True
+        for pred in self._eofstack:
+            if not hasattr(pred, 'is_boundary_match'):
+                all_boundary_matches = False
+                break
+
+        if all_boundary_matches and '-' not in data:
+            # We eventually need to stop, but we only care about boundary matches, and there's no boundaries
+            # here. Dump the entire `data` object. This does wonders for multipart emails with large parts.
+            assert not self._lines
+            return True
+
+        # We're still dumping, but there's a potential boundary marker or EOF or similar issue. Force a proper parse.
+        return False
+
+    def _can_dump_partial(self, line, start: int=0, end: int=sys.maxsize) -> bool:
+        # Very similar to _can_dump_data above, except we can make some additional assumptions for partials/lines.
+        # This should only ever be checked when we have a new partial line, in which case we have no partial,
+        # or when checking the partial itself, in which case it'll always be the first part
+        assert not self._partial or line is self._partial[0]
+
+        if self._dump_destination is None:
+            # We're not dumping data
+            return False
+
+        # We're dumping. There should be absolutely no other pending lines, because those should've been dumped.
+        assert not self._lines
+        if not self._eofstack:
+            # There's nothing that will ever tell us to stop dumping. Dump away.
+            return True
+
+        all_boundary_matches = True
+        for pred in self._eofstack:
+            if not hasattr(pred, 'is_boundary_match'):
+                all_boundary_matches = False
+                break
+
+        if all_boundary_matches and not line.startswith("-", start, end):
+            # We eventually need to stop, but we only care about boundary matches, and there's no boundaries
+            # here. Dump the entire `data` object. This does wonders for multipart emails with large parts.
+            return True
+
+        # We're still dumping, but there's a potential boundary marker or EOF or similar issue. Force a proper parse.
+        return False
+
+    def _is_dump_midline(self):
+        if not self._dump_destination:
+            return False
+
+        assert self._dump_destination[-1]  # Never push empty strings to _dump_destination
+        return self._dump_destination[-1][-1] not in ('\n', '\r')
+
+    def _push_data(self, data) -> None:
+        # Find first newline character in the data
+        unl_start_index = BufferedSubFile._find_unl(data)
+        if unl_start_index < 0:
+            # No new complete lines, wait for more.
+            # Check to see if we had a previous dangling partial newline
+            if self._dangling_partial:
+                # We previously pushed a dangling line expecting a \n to follow, however we received other data instead.
+                # Therefore, that \r does actually terminate a line. Go ahead and push it.
+                self._flush_partial()
+
+            # No lines in data to push; wait for more data
+            if self._is_dump_midline():
+                assert not self._partial
+                self._dump_destination.append(data)
+            else:
+                self._partial.append(data)
+            return
+
+        data_start_index = 0
+
+        # Complete our previous/partial line
+        if self._partial:
+            # Check to see if we had any dangling newlines in our partial, and handle if appropriate
+            if self._dangling_partial:
+                # We had a previously dangling line; this is either a \n (completion), or some other char (termination)
+                if data[0] != NL:
+                    # "\r<whatever>" -- push what we had, as it has been terminated; data_start_index = 0
+                    self._flush_partial()
+                else:
+                    # "\r\n" -- append \n and push it; data_start_index = 1
+                    self._partial.append(NL)
+                    self._flush_partial()
+                    data_start_index = 1
+
+                    # Find the next newline
+                    unl_start_index = BufferedSubFile._find_unl(data, data_start_index)
+                    # Fall through
+            else:
+                # Our partial has no dangling newline; complete our partial with the new line and push it
+                unl_end_index = BufferedSubFile._find_unl_end(data, unl_start_index)
+                if unl_end_index < 0:
+                    # The newline is incomplete; append data and return
+                    self._partial.append(data)
+                    self._dangling_partial = True
+                    return
+
+                # We have a complete line; append it and flush _partial
+                self._partial.append(data[data_start_index:unl_end_index])
+                self._flush_partial()
+                data_start_index = unl_end_index
+
+                # Find the next newline
+                unl_start_index = BufferedSubFile._find_unl(data, data_start_index)
+                # Fall through
+
+        # _partial is now guaranteed to point to be empty
+        # data_start_index is an index which points to the start of the next line
+        # unl_start_index is an index which points to the start of the next newline character, if there is one
+        self._push_data_no_partial(data, data_start_index, unl_start_index)
+
+    def _push_data_no_partial(self, data, data_start_index: int, unl_start_index: int) -> None:
+        # _partial is now guaranteed to point to be empty
+        # data_start_index is an index which points to the start of the next line
+        # unl_start_index is an index which points to the start of the next newline character, if there is one
+
+        # Process any remaining whole lines in data
+        if unl_start_index < 0:
+            # Push right to the partial if there's no lines
+            if data_start_index < len(data):
+                assert data_start_index >= 0
+                partial_line = data[data_start_index:]
+                if self._is_dump_midline() or self._can_dump_partial(partial_line):
+                    self._dump_destination.append(partial_line)
+                else:
+                    self._partial = [partial_line]
+                    if data[-1] == '\r':
+                        self._dangling_partial = True
+        elif self._dump_destination is None and unl_start_index < len(data) // 2:
+            # If it looks like we're going to be doing a lot of splits/joins, just go ahead and use StringIO, for speed
+            # If we had some sort of "StringViewIO" to avoid the copy, this would be significantly more efficient
+            # This code block, and the "else" code block below, functionally do the exact same thing, except this path
+            # makes no attempt to handle dumping data
+            sio = StringIO(data, '')
+            sio.seek(data_start_index)
+            lines = sio.readlines()
+            if lines:
+                if data[-1] != '\n':
+                    self._partial.append(lines.pop())
+                    if data[-1] == '\r':
+                        self._dangling_partial = True
+
+                self.pushlines(lines)
+        else:
+            # If we're not, let's keep it in Python
+            dump_data_start = None if self._dump_destination is None else data_start_index
+            while unl_start_index >= 0:
+                unl_end_index = BufferedSubFile._find_unl_end(data, unl_start_index)
+                if unl_end_index < 0:
+                    # Incomplete line ending; break to update our partial and return
+                    self._dangling_partial = True
+                    break
+
+                # We have an easy line; push it
+                if self._dump_destination is not None:
+                    # We have a window into a line. Make sure it's not EOF, and continue as long as it's not
+                    if self._check_eofstack(data, data_start_index, unl_end_index):
+                        # This line is "EOF". This is the end of our dump data! Push the dump data.
+                        self._dump_destination.append(data[dump_data_start:data_start_index])
+
+                        # Also push our line, since we already have it
+                        self._lines.append(data[data_start_index:unl_end_index])
+
+                        # Mark dump complete
+                        self._dump_destination = None
+                    #else: # This line didn't mark the end. Keep going.
+                else:
+                    # We're not dumping. Just go ahead and push the line
+                    self._lines.append(data[data_start_index:unl_end_index])
+
+                # Update our iterators
+                data_start_index = unl_end_index
+                unl_start_index = BufferedSubFile._find_unl(data, data_start_index)
+
+            # If we're still dumping, push everything that isn't going into the partial to the dump
+            if self._dump_destination is not None:
+                # If we're able to safely flush the partial, go ahead and do that too
+                # We don't care about self._is_dump_midline() here, because data_start_index always represents the
+                # start of a new line, always
+                if self._can_dump_partial(data, data_start_index):
+                    self._dump_destination.append(data[dump_data_start:])
+
+                    # We've consumed the partial; flush any partial-related state we may have set
+                    self._dangling_partial = False
+                    return  # skip the _partial.append below, because it's already been consumed
+                else:
+                    self._dump_destination.append(data[dump_data_start:data_start_index])
+
+            # If we have any partial data leftover, go ahead and set it
+            if data_start_index < len(data):
+                self._partial.append(data[data_start_index:])
+
+    def pushlines(self, lines) -> None:
+        # This method is not documented on docs.python.org
         self._lines.extend(lines)
 
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def __next__(self) -> str|object:
         line = self.readline()
         if line == '':
             raise StopIteration
         return line
+
+    def _get_dump(self, start_value:str|None = None):
+        _dump_destination = deque()
+        self._dump_destination = _dump_destination
+
+        if start_value:
+            _dump_destination.append(start_value)
+
+        # Flush our current _lines to _dump_destination
+        needs_more_data = False
+        for line in self:
+            if line is NeedMoreData:
+                needs_more_data = True
+                break
+            _dump_destination.append(line)
+
+        # Pull in more data, if we need more
+        if needs_more_data:
+            # Flush our partial, if we can
+            if self._partial and self._can_dump_partial(self._partial[0]):
+                assert self._partial[0]  # We shouldn't ever push empty strings to _partial
+                _dump_destination.extend(self._partial)
+                self._partial.clear()
+                self._dangling_partial = False
+
+            # Pull in more data until we're told to stop
+            while not self._closed and self._dump_destination is not None:
+                yield NeedMoreData
+
+        # Flush our final dump string to _dump_result
+        self._dump_destination = None
+        self._dump_result = EMPTYSTRING.join(_dump_destination)
+
+    def _pop_dump(self) -> str:
+        result = self._dump_result
+        self._dump_result = None
+        return result
+
+    @staticmethod
+    def _find_unl(data, start=0) -> int:
+        # Like str.find(), but for universal newlines
+        # Originally, this iterated over the string, however just calling find() twice is drastically faster
+        # This could be sped up by replacing with a similar function in C, so we don't pass over the string twice.
+        cr_index = data.find('\r', start)
+        if cr_index < 0:
+            return data.find(NL, start)
+
+        nl_index = data.find(NL, start, cr_index)
+        return nl_index if nl_index >= 0 else cr_index
+
+    @staticmethod
+    def _find_unl_end(data, start) -> int:
+        # A helper function which returns the 1-past-the-end index of a universal newline
+        # This could be sped up by replacing with a similar function in C.
+        #assert data[start] in '\r\n'
+
+        # \n is always end of line
+        if data.startswith(NL, start):
+            return start + 1
+
+        # \r\n is always end of line
+        if data.startswith(NL, start + 1):
+            return start + 2
+
+        # End of string; we can't know if a \n follows, so no universal line end
+        if start + 1 >= len(data):
+            return -1
+
+        # This is a \r followed by some other non-newline character
+        return start + 1
 
 
 class FeedParser:
@@ -161,23 +461,23 @@ class FeedParser:
                 self._old_style_factory = True
         self._input = BufferedSubFile()
         self._msgstack = []
-        self._parse = self._parsegen().__next__
+        self._parse = self._parsegen().__next__  # Interesting trick which replaces yield values with return values
         self._cur = None
         self._last = None
         self._headersonly = False
 
     # Non-public interface for supporting Parser's headersonly flag
-    def _set_headersonly(self):
+    def _set_headersonly(self) -> None:
         self._headersonly = True
 
-    def feed(self, data):
+    def feed(self, data) -> None:
         """Push more data into the parser."""
         self._input.push(data)
         self._call_parse()
 
-    def _call_parse(self):
+    def _call_parse(self) -> None:
         try:
-            self._parse()
+            self._parse()  # Return value is always NeedMoreData or None, but discarded here in either case
         except StopIteration:
             pass
 
@@ -194,7 +494,7 @@ class FeedParser:
             self.policy.handle_defect(root, defect)
         return root
 
-    def _new_message(self):
+    def _new_message(self) -> None:
         if self._old_style_factory:
             msg = self._factory()
         else:
@@ -215,7 +515,7 @@ class FeedParser:
             self._cur = None
         return retval
 
-    def _parsegen(self):
+    def _parsegen(self):  # yields: NeedMoreData
         # Create a new message and start by parsing headers.
         self._new_message()
         headers = []
@@ -242,16 +542,8 @@ class FeedParser:
         # necessary in the older parser, which could raise errors.  All
         # remaining lines in the input are thrown into the message body.
         if self._headersonly:
-            lines = []
-            while True:
-                line = self._input.readline()
-                if line is NeedMoreData:
-                    yield NeedMoreData
-                    continue
-                if line == '':
-                    break
-                lines.append(line)
-            self._cur.set_payload(EMPTYSTRING.join(lines))
+            yield from self._input._get_dump()
+            self._cur.set_payload(self._input._pop_dump())
             return
         if self._cur.get_content_type() == 'message/delivery-status':
             # message/delivery-status contains blocks of headers separated by
@@ -311,13 +603,8 @@ class FeedParser:
                 # defective.
                 defect = errors.NoBoundaryInMultipartDefect()
                 self.policy.handle_defect(self._cur, defect)
-                lines = []
-                for line in self._input:
-                    if line is NeedMoreData:
-                        yield NeedMoreData
-                        continue
-                    lines.append(line)
-                self._cur.set_payload(EMPTYSTRING.join(lines))
+                yield from self._input._get_dump()
+                self._cur.set_payload(self._input._pop_dump())
                 return
             # Make sure a valid content type was specified per RFC 2045:6.4.
             if (str(self._cur.get('content-transfer-encoding', '8bit')).lower()
@@ -329,10 +616,11 @@ class FeedParser:
             # this onto the input stream until we've scanned past the
             # preamble.
             separator = '--' + boundary
-            def boundarymatch(line):
-                if not line.startswith(separator):
+            def boundarymatch(line, pos: int = 0, endpos: int = sys.maxsize):
+                if not line.startswith(separator, pos, endpos):
                     return None
-                return boundaryendRE.match(line, len(separator))
+                return boundaryendRE.match(line, pos + len(separator), endpos)
+            boundarymatch.is_boundary_match = True
             capturing_preamble = True
             preamble = []
             linesep = False
@@ -424,12 +712,11 @@ class FeedParser:
                 defect = errors.StartBoundaryNotFoundDefect()
                 self.policy.handle_defect(self._cur, defect)
                 self._cur.set_payload(EMPTYSTRING.join(preamble))
-                epilogue = []
                 for line in self._input:
                     if line is NeedMoreData:
                         yield NeedMoreData
                         continue
-                self._cur.epilogue = EMPTYSTRING.join(epilogue)
+                self._cur.epilogue = ''
                 return
             # If we're not processing the preamble, then we might have seen
             # EOF without seeing that end boundary...that is also a defect.
@@ -440,36 +727,29 @@ class FeedParser:
             # Everything from here to the EOF is epilogue.  If the end boundary
             # ended in a newline, we'll need to make sure the epilogue isn't
             # None
-            if linesep:
-                epilogue = ['']
-            else:
-                epilogue = []
-            for line in self._input:
-                if line is NeedMoreData:
-                    yield NeedMoreData
-                    continue
-                epilogue.append(line)
-            # Any CRLF at the front of the epilogue is not technically part of
-            # the epilogue.  Also, watch out for an empty string epilogue,
-            # which means a single newline.
-            if epilogue:
-                firstline = epilogue[0]
-                bolmo = NLCRE_bol.match(firstline)
-                if bolmo:
-                    epilogue[0] = firstline[len(bolmo.group(0)):]
-            self._cur.epilogue = EMPTYSTRING.join(epilogue)
+            first_line = ''
+            if not linesep:
+                for line in self._input:
+                    if line is NeedMoreData:
+                        yield NeedMoreData
+                        continue
+
+                    first_line = line
+                    if first_line:
+                        bolmo = NLCRE_bol.match(first_line)
+                        if bolmo:
+                            first_line = first_line[len(bolmo.group(0)):]
+                    break
+
+            yield from self._input._get_dump(first_line)
+            self._cur.epilogue = self._input._pop_dump()
             return
         # Otherwise, it's some non-multipart type, so the entire rest of the
         # file contents becomes the payload.
-        lines = []
-        for line in self._input:
-            if line is NeedMoreData:
-                yield NeedMoreData
-                continue
-            lines.append(line)
-        self._cur.set_payload(EMPTYSTRING.join(lines))
+        yield from self._input._get_dump()
+        self._cur.set_payload(self._input._pop_dump())
 
-    def _parse_headers(self, lines):
+    def _parse_headers(self, lines) -> None:
         # Passed a list of lines that make up the headers for the current msg
         lastheader = ''
         lastvalue = []
@@ -533,5 +813,5 @@ class FeedParser:
 class BytesFeedParser(FeedParser):
     """Like FeedParser, but feed accepts bytes."""
 
-    def feed(self, data):
+    def feed(self, data) -> None:
         super().feed(data.decode('ascii', 'surrogateescape'))

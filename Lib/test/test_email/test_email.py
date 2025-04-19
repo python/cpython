@@ -4600,6 +4600,210 @@ class BaseTestBytesGeneratorIdempotent:
         g.flatten(msg, unixfrom=unixfrom, linesep=self.linesep)
         self.assertEqual(data, b.getvalue())
 
+class TestFeedParserTrickle(TestEmailBase):
+    @staticmethod
+    def _msgobj_trickle(filename, trickle_size=2, force_linetype="\r\n"):
+        # Trickle data into the feed parser, one character at a time
+        with openfile(filename, encoding="utf-8") as fp:
+            file_str = fp.read()
+            file_str = file_str.replace("\r\n", "\n").replace("\r", "\n").replace("\n", force_linetype)
+
+            feedparser = FeedParser()
+            for index in range(0, len(file_str), trickle_size):
+                feedparser.feed(file_str[index:index + trickle_size])
+            return feedparser.close()
+
+    def _validate_msg10_msgobj(self, msg, line_end):
+        if isinstance(line_end, str):
+            line_end = line_end.encode()
+        eq = self.assertEqual
+        # The outer message is a multipart
+        eq(msg.get_payload(decode=True), None)
+        # Subpart 1 is 7bit encoded
+        eq(msg.get_payload(0).get_payload(decode=True),
+           b'This is a 7bit encoded message.' + line_end)
+        # Subpart 2 is quopri
+        eq(msg.get_payload(1).get_payload(decode=True),
+           b'\xa1This is a Quoted Printable encoded message!' + line_end)
+        # Subpart 3 is base64
+        eq(msg.get_payload(2).get_payload(decode=True),
+           b'This is a Base64 encoded message.')
+        # Subpart 4 is base64 with a trailing newline, which
+        # used to be stripped (issue 7143).
+        eq(msg.get_payload(3).get_payload(decode=True),
+           b'This is a Base64 encoded message.\n')
+        # Subpart 5 has no Content-Transfer-Encoding: header.
+        eq(msg.get_payload(4).get_payload(decode=True),
+           b'This has no Content-Transfer-Encoding: header.' + line_end)
+
+    def test_trickle_1chr_crlf(self):
+        msg = self._msgobj_trickle('msg_10.txt', 1, '\r\n')
+        self._validate_msg10_msgobj(msg, '\r\n')
+
+    def test_trickle_1chr_cr(self):
+        msg = self._msgobj_trickle('msg_10.txt', 1, '\r')
+        self._validate_msg10_msgobj(msg, '\r')
+
+    def test_trickle_1chr_lf(self):
+        msg = self._msgobj_trickle('msg_10.txt', 1, '\n')
+        self._validate_msg10_msgobj(msg, '\n')
+
+    def test_trickle_2chr_crlf(self):
+        # During initial testing, it was realized that an edge case was missed around dangling newlines.
+        # This helps test that behavior, as it is not otherwise covered by tests.
+        msg = self._msgobj_trickle('msg_10.txt', 2, '\r\n')
+        self._validate_msg10_msgobj(msg, '\r\n')
+
+    def test_trickle_2chr_cr(self):
+        msg = self._msgobj_trickle('msg_10.txt', 2, '\r')
+        self._validate_msg10_msgobj(msg, '\r')
+
+    def test_trickle_2chr_lf(self):
+        msg = self._msgobj_trickle('msg_10.txt', 2, '\n')
+        self._validate_msg10_msgobj(msg, '\n')
+
+    def test_trickle_3chr_crlf(self):
+        msg = self._msgobj_trickle('msg_10.txt', 3, '\r\n')
+        self._validate_msg10_msgobj(msg, '\r\n')
+
+    def test_trickle_3chr_cr(self):
+        msg = self._msgobj_trickle('msg_10.txt', 3, '\r')
+        self._validate_msg10_msgobj(msg, '\r')
+
+    def test_trickle_3chr_lf(self):
+        msg = self._msgobj_trickle('msg_10.txt', 3, '\n')
+        self._validate_msg10_msgobj(msg, '\n')
+
+
+class TestPeakMemoryUsage(unittest.TestCase):
+
+    maxDiff = None
+    SMALLER_CHUNK_SIZE = 1024
+
+    def _msg_bytes(self, filename):
+        with openfile(filename, 'rb') as fp:
+            data = fp.read()
+        return data
+
+    def _make_plaintext_msg_bytes(self, min_size):
+        # Get msg_01 as our baseline
+        msg_bytes = self._msg_bytes('msg_01.txt')
+        if len(msg_bytes) < min_size:
+            # Make it bigger
+            msg_bytes = msg_bytes * ((min_size // len(msg_bytes)) + 1)
+            msg_bytes = msg_bytes[:min_size] # Truncate it to min_size
+        assert len(msg_bytes) >= min_size
+
+        match = re.search(rb'(\r|\n|\r\n){2}', msg_bytes)
+        self.assertIsNotNone(match)
+        expected_payload = msg_bytes[match.end():]
+
+        return msg_bytes, expected_payload
+
+    def _measure_message_from_bytes(self, msg_bytes):
+        import tracemalloc
+
+        # Call email.message_from_bytes, gathering some memory usage stats in the process
+        tracemalloc.start()
+        start_time = time.perf_counter()
+        msgobj = email.message_from_bytes(msg_bytes, policy=email.policy.default)
+        end_time = time.perf_counter()
+        after_bytes, after_peak_bytes = tracemalloc.get_traced_memory()
+        tracemalloc.stop()
+
+        # "How many bytes did we allocate, that were ultimately discarded?"
+        peak_overhead = after_peak_bytes - after_bytes
+
+        # "How large was that overhead, relative to the size of the message?"
+        overhead_ratio = peak_overhead / len(msg_bytes) if len(msg_bytes) > 0 else None
+
+        return msgobj, peak_overhead, overhead_ratio, end_time - start_time
+
+    def _base64_encode(self, bytes_to_encode, one_line=True):
+        base64_str = base64mime.body_encode(bytes_to_encode)
+        if one_line:
+            base64_str = "".join(base64_str.splitlines())
+        return base64_str
+
+    _multipart_msg_base = textwrap.dedent("""\
+        Date: Wed, 14 Nov 2007 12:56:23 GMT
+        From: foo@bar.invalid
+        To: foo@bar.invalid
+        Subject: Content-Transfer-Encoding: base64 and multipart
+        MIME-Version: 1.0
+        Content-Type: multipart/mixed; boundary="BOUNDARY"
+
+        --BOUNDARY
+        Content-Type: text/plain
+
+        Test message
+
+        --BOUNDARY
+        Content-Type: application/octet-stream
+        Content-Transfer-Encoding: base64
+
+        {}
+        --BOUNDARY--
+        """)
+
+    def _make_junk_bytes(self, bytes_length):
+        junk_data = bytearray(bytes_length)
+        for i in range(len(junk_data)):
+            junk_data[i] = i % 256
+        return bytes(junk_data)
+
+    def _make_junk_base64(self, bytes_length, one_line=True):
+        junk_bytes = self._make_junk_bytes(bytes_length)
+        return self._base64_encode(junk_bytes, one_line), junk_bytes
+
+    _LARGE_EMAIL_BYTE_SIZE = 1024*1024*10  # 10 MiB
+
+    def test_message_from_bytes_plaintext(self):
+        # Generate a 10MiB plaintext email
+        msg_bytes, expected_payload = self._make_plaintext_msg_bytes(self._LARGE_EMAIL_BYTE_SIZE)
+
+        # Parse it, collecting stats
+        msgobj, peak_overhead, overhead_ratio, time_taken = self._measure_message_from_bytes(msg_bytes)
+
+        # Verify the message payload/content is correct.
+        self.assertEqual(msgobj.get_payload(decode=True), expected_payload)
+        self.assertEqual(msgobj.get_content(), expected_payload.decode())
+
+        # overhead_ratio at time of writing: 1.0102445602416992
+        self.assertLess(overhead_ratio, 1.05)
+
+    def test_message_from_bytes_large_attachment_body_encoded(self):
+        # Generate a 10 MiB attachment
+        attachment_base64, attachment_bytes = self._make_junk_base64(self._LARGE_EMAIL_BYTE_SIZE, False)
+        multipart_msg_bytes = self._multipart_msg_base.format(attachment_base64).encode()
+
+        # Parse it, collecting stats
+        msgobj, peak_overhead, overhead_ratio, time_taken = self._measure_message_from_bytes(multipart_msg_bytes)
+
+        # Verify the message payload/content is correct.
+        attachment_msg = msgobj.get_payload(1)
+        self.assertEqual(attachment_msg.get_content(), attachment_bytes)
+        self.assertEqual(attachment_msg.get_payload(decode=False), attachment_base64)
+
+        # overhead_ratio at time of writing: 1.0088957315722829 - 85.0565% decrease
+        self.assertLess(overhead_ratio, 1.05)
+
+    def test_message_from_bytes_large_attachment_one_line(self):
+        # Generate a 10 MiB attachment
+        attachment_base64, attachment_bytes = self._make_junk_base64(self._LARGE_EMAIL_BYTE_SIZE, True)
+        multipart_msg_bytes = self._multipart_msg_base.format(attachment_base64).encode()
+
+        # Parse it, collecting stats
+        msgobj, peak_overhead, overhead_ratio, time_taken = self._measure_message_from_bytes(multipart_msg_bytes)
+
+        # Verify the message payload/content is correct.
+        attachment_msg = msgobj.get_payload(1)
+        self.assertEqual(attachment_msg.get_content(), attachment_bytes)
+        self.assertEqual(attachment_msg.get_payload(decode=False), attachment_base64)
+
+        # overhead_ratio at time of writing: 1.0077472351610626 - 89.2775% decrease
+        self.assertLess(overhead_ratio, 1.05)
+
 
 class TestBytesGeneratorIdempotentNL(BaseTestBytesGeneratorIdempotent,
                                     TestIdempotent):
