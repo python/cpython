@@ -260,7 +260,10 @@ class ParseArgsCodeGen:
         if self.func.critical_section:
             self.codegen.add_include('pycore_critical_section.h',
                                      'Py_BEGIN_CRITICAL_SECTION()')
-        self.fastcall = not self.is_new_or_init()
+        if self.func.disable_fastcall:
+            self.fastcall = False
+        else:
+            self.fastcall = not self.is_new_or_init()
 
         self.pos_only = 0
         self.min_pos = 0
