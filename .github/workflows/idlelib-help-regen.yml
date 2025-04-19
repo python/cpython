@@ -1,0 +1,46 @@
+name: Generate Lib/idlelib/help.html
+
+on:
+  pull_request:
+    paths:
+      - "Doc/library/idle.rst"
+
+jobs:
+  generate-help-html:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Set up Git user
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh auth login --with-token <<< "${GITHUB_TOKEN}"
+          gh pr checkout ${{ github.event.pull_request.number }}
+
+      - run: |
+          cd Doc
+          make venv
+          make html
+          python -c "from idlelib.help import copy_strip; copy_strip()"
+
+      - run: |
+          git add Lib/idlelib/help.html
+          git diff --staged --quiet || git commit -m "Auto-update help.html from idle.rst"
+
+      - env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git push
