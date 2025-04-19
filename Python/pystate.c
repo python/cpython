@@ -1485,6 +1485,22 @@ decref_threadstate(_PyThreadStateImpl *tstate)
     }
 }
 
+void
+_PyThreadState_Decref(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    _PyThreadStateImpl *impl = (_PyThreadStateImpl *)tstate;
+    decref_threadstate(impl);
+}
+
+void
+_PyThreadState_Incref(PyThreadState *tstate)
+{
+    assert(tstate != NULL);
+    _PyThreadStateImpl *impl = (_PyThreadStateImpl *)tstate;
+    _Py_atomic_add_ssize(&impl->refcount, 1);
+}
+
 /* Get the thread state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -1880,9 +1896,15 @@ void
 PyThreadState_Delete(PyThreadState *tstate)
 {
     _Py_EnsureTstateNotNULL(tstate);
-    tstate_verify_not_active(tstate);
-    tstate_delete_common(tstate, 0);
-    free_threadstate((_PyThreadStateImpl *)tstate);
+    _PyThreadStateImpl *impl = (_PyThreadStateImpl *)tstate;
+    if (_Py_atomic_add_ssize(&impl->refcount, -1) == 2) {
+        /* Treat the interpreter's reference (via the linked list) as weak,
+           even though it's technically strong. This is because we want
+           to free the thread state now, rather than wait for finalization. */
+        tstate_verify_not_active(tstate);
+        tstate_delete_common(tstate, 0);
+        free_threadstate((_PyThreadStateImpl *)tstate);
+    }
 }
 
 
@@ -1895,7 +1917,7 @@ _PyThreadState_DeleteCurrent(PyThreadState *tstate)
 #endif
     current_fast_clear(tstate->interp->runtime);
     tstate_delete_common(tstate, 1);  // release GIL as part of call
-    free_threadstate((_PyThreadStateImpl *)tstate);
+    decref_threadstate((_PyThreadStateImpl *)tstate);
 }
 
 void
