@@ -1466,7 +1466,7 @@ class FileHandler(BaseHandler):
     def open_local_file(self, req):
         import email.utils
         import mimetypes
-        localfile = url2pathname(req.full_url, require_scheme=True)
+        localfile = url2pathname(req.full_url, require_scheme=True, resolve_netloc=True)
         try:
             stats = os.stat(localfile)
             size = stats.st_size
@@ -1482,7 +1482,7 @@ class FileHandler(BaseHandler):
 
     file_open = open_local_file
 
-def _is_local_authority(authority):
+def _is_local_authority(authority, resolve):
     # Compare hostnames
     if not authority or authority == 'localhost':
         return True
@@ -1494,6 +1494,8 @@ def _is_local_authority(authority):
         if authority == hostname:
             return True
     # Compare IP addresses
+    if not resolve:
+        return False
     try:
         address = socket.gethostbyname(authority)
     except (socket.gaierror, AttributeError):
@@ -1643,11 +1645,14 @@ class DataHandler(BaseHandler):
 
 # Code move from the old urllib module
 
-def url2pathname(url, *, require_scheme=False):
+def url2pathname(url, *, require_scheme=False, resolve_netloc=False):
     """Convert the given file URL to a local file system path.
 
     The 'file:' scheme prefix must be omitted unless *require_scheme*
     is set to true.
+
+    The URL authority may be resolved with gethostbyname() if
+    *resolve_netloc* is set to true.
     """
     if require_scheme:
         scheme, url = _splittype(url)
@@ -1655,7 +1660,7 @@ def url2pathname(url, *, require_scheme=False):
             raise URLError("URL is missing a 'file:' scheme")
     authority, url = _splithost(url)
     if os.name == 'nt':
-        if not _is_local_authority(authority):
+        if not _is_local_authority(authority, resolve_netloc):
             # e.g. file://server/share/file.txt
             url = '//' + authority + url
         elif url[:3] == '///':
@@ -1669,7 +1674,7 @@ def url2pathname(url, *, require_scheme=False):
                 # Older URLs use a pipe after a drive letter
                 url = url[:1] + ':' + url[2:]
         url = url.replace('/', '\\')
-    elif not _is_local_authority(authority):
+    elif not _is_local_authority(authority, resolve_netloc):
         raise URLError("file:// scheme is supported only on localhost")
     encoding = sys.getfilesystemencoding()
     errors = sys.getfilesystemencodeerrors()
