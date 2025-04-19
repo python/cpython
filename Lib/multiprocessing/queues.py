@@ -18,7 +18,7 @@ import types
 import weakref
 import errno
 
-from queue import Empty, Full
+from queue import Empty, Full, ShutDown
 
 from . import connection
 from . import context
@@ -48,6 +48,7 @@ class Queue(object):
         # For use by concurrent.futures
         self._ignore_epipe = False
         self._reset()
+        self._is_shutdown = ctx.Value('B', False)
 
         if sys.platform != 'win32':
             register_after_fork(self, Queue._after_fork)
@@ -55,11 +56,13 @@ class Queue(object):
     def __getstate__(self):
         context.assert_spawning(self)
         return (self._ignore_epipe, self._maxsize, self._reader, self._writer,
-                self._rlock, self._wlock, self._sem, self._opid)
+                self._rlock, self._wlock, self._sem, self._opid,
+                self._is_shutdown)
 
     def __setstate__(self, state):
         (self._ignore_epipe, self._maxsize, self._reader, self._writer,
-         self._rlock, self._wlock, self._sem, self._opid) = state
+         self._rlock, self._wlock, self._sem, self._opid,
+         self._is_shutdown) = state
         self._reset()
 
     def _after_fork(self):
@@ -84,10 +87,16 @@ class Queue(object):
     def put(self, obj, block=True, timeout=None):
         if self._closed:
             raise ValueError(f"Queue {self!r} is closed")
+        if self._is_shutdown.value:
+            raise ShutDown
         if not self._sem.acquire(block, timeout):
+            if self._is_shutdown.value:
+                raise ShutDown
             raise Full
 
         with self._notempty:
+            if self._is_shutdown.value:
+                raise ShutDown
             if self._thread is None:
                 self._start_thread()
             self._buffer.append(obj)
@@ -98,24 +107,34 @@ class Queue(object):
             raise ValueError(f"Queue {self!r} is closed")
         if block and timeout is None:
             with self._rlock:
+                if self._is_shutdown.value and self.empty():
+                    raise ShutDown
                 res = self._recv_bytes()
             self._sem.release()
         else:
             if block:
                 deadline = time.monotonic() + timeout
             if not self._rlock.acquire(block, timeout):
+                if self._is_shutdown.value and self.empty():
+                    raise ShutDown
                 raise Empty
             try:
                 if block:
                     timeout = deadline - time.monotonic()
                     if not self._poll(timeout):
+                        if self._is_shutdown.value:
+                            raise ShutDown
                         raise Empty
                 elif not self._poll():
+                    if self._is_shutdown.value:
+                        raise ShutDown
                     raise Empty
+
                 res = self._recv_bytes()
                 self._sem.release()
             finally:
                 self._rlock.release()
+
         # unserialize the data after having released the lock
         return _ForkingPickler.loads(res)
 
@@ -134,6 +153,25 @@ class Queue(object):
 
     def put_nowait(self, obj):
         return self.put(obj, False)
+
+    def _clear(self):
+        with self._rlock:
+            while self._poll():
+                self._recv_bytes()
+
+    def shutdown(self, immediate=False):
+        if self._closed:
+            raise ValueError(f"Queue {self!r} is closed")
+        with self._is_shutdown.get_lock():
+            self._is_shutdown.value = True
+            if immediate:
+                self._clear()
+            # TODO: unblock all getters to check empty (then shutdown)
+            for _ in range(self._maxsize):
+                try:
+                    self._sem.release()
+                except ValueError:
+                    break
 
     def close(self):
         self._closed = True
@@ -328,10 +366,16 @@ class JoinableQueue(Queue):
     def put(self, obj, block=True, timeout=None):
         if self._closed:
             raise ValueError(f"Queue {self!r} is closed")
+        if self._is_shutdown.value:
+            raise ShutDown
         if not self._sem.acquire(block, timeout):
+            if self._is_shutdown.value:
+                raise ShutDown
             raise Full
 
         with self._notempty, self._cond:
+            if self._is_shutdown.value:
+                raise ShutDown
             if self._thread is None:
                 self._start_thread()
             self._buffer.append(obj)
@@ -349,6 +393,14 @@ class JoinableQueue(Queue):
         with self._cond:
             if not self._unfinished_tasks._semlock._is_zero():
                 self._cond.wait()
+
+    def _clear(self):
+        with self._rlock:
+            while self._poll():
+                self._recv_bytes()
+                self._unfinished_tasks.acquire(block=False)
+            with self._cond:
+                self._cond.notify_all()
 
 #
 # Simplified Queue type -- really just a locked pipe
