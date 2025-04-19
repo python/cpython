@@ -83,9 +83,13 @@ _TEST_PATH = os.path.normpath(os.path.join("_", "_"))[:-1]
 
 
 def _validate_tzfile_path(path, _base=_TEST_PATH):
-    if not path:
+    if isinstance(path, str) and path == "":
         raise ValueError(
             "ZoneInfo key must not be an empty string"
+        )
+    elif isinstance(path, bytes) and path == b"":
+        raise ValueError(
+            "ZoneInfo key must not be an empty bytes object"
         )
 
     if os.path.isabs(path):
