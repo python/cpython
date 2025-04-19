@@ -2338,6 +2338,7 @@ features:
    This function can support specifying *src_dir_fd* and/or *dst_dir_fd* to
    supply :ref:`paths relative to directory descriptors <dir_fd>`, and :ref:`not
    following symlinks <follow_symlinks>`.
+   The default value of *follow_symlinks* is ``False`` on Windows.
 
    .. audit-event:: os.link src,dst,src_dir_fd,dst_dir_fd os.link
 
