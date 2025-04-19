@@ -11,7 +11,7 @@ ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
 
 
 DEFAULT_PS1 = ">>> "
-DEFAULT_PS2 = "... "
+DEFAULT_PS2 = ">>> "
 DEFAULT_PS3 = "... "
 DEFAULT_PS4 = "... "
 
