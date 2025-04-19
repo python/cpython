@@ -11,6 +11,7 @@ import hashlib
 from test import support
 from test.support import hashlib_helper
 from test.support import threading_helper
+from test.support.testcase import ExtraAssertions
 
 try:
     import ssl
@@ -442,7 +443,7 @@ def GetRequestHandler(responses):
     return FakeHTTPRequestHandler
 
 
-class TestUrlopen(unittest.TestCase):
+class TestUrlopen(unittest.TestCase, ExtraAssertions):
     """Tests urllib.request.urlopen using the network.
 
     These tests are not exhaustive.  Assuming that testing using files does a
@@ -606,8 +607,7 @@ class TestUrlopen(unittest.TestCase):
         handler = self.start_server()
         with urllib.request.urlopen("http://localhost:%s" % handler.port) as open_url:
             for attr in ("read", "close", "info", "geturl"):
-                self.assertTrue(hasattr(open_url, attr), "object returned from "
-                             "urlopen lacks the %s attribute" % attr)
+                self.assertHasAttr(open_url, attr)
             self.assertTrue(open_url.read(), "calling 'read' failed")
 
     def test_info(self):

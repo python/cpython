@@ -2,6 +2,7 @@ import sys
 import unicodedata
 import unittest
 import urllib.parse
+from test.support.testcase import ExtraAssertions
 
 RFC1808_BASE = "http://a/b/c/d;p?q#f"
 RFC2396_BASE = "http://a/b/c/d;p?q"
@@ -101,7 +102,7 @@ parse_qs_test_cases = [
     (b"%81=%A9", {b'\x81': [b'\xa9']}),
 ]
 
-class UrlParseTestCase(unittest.TestCase):
+class UrlParseTestCase(unittest.TestCase, ExtraAssertions):
 
     def checkRoundtrips(self, url, parsed, split, url2=None):
         if url2 is None:
@@ -1033,14 +1034,13 @@ class UrlParseTestCase(unittest.TestCase):
                 with self.subTest(url=url, function=func):
                     result = func(url, allow_fragments=False)
                     self.assertEqual(result.fragment, "")
-                    self.assertTrue(
-                            getattr(result, attr).endswith("#" + expected_frag))
+                    self.assertEndsWith(getattr(result, attr),
+                                        "#" + expected_frag)
                     self.assertEqual(func(url, "", False).fragment, "")
 
                     result = func(url, allow_fragments=True)
                     self.assertEqual(result.fragment, expected_frag)
-                    self.assertFalse(
-                            getattr(result, attr).endswith(expected_frag))
+                    self.assertNotEndsWith(getattr(result, attr), expected_frag)
                     self.assertEqual(func(url, "", True).fragment,
                                      expected_frag)
                     self.assertEqual(func(url).fragment, expected_frag)
