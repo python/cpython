@@ -61,6 +61,14 @@ Pending removal in Python 3.16
   * Calling the Python implementation of :func:`functools.reduce` with *function*
     or *sequence* as keyword arguments has been deprecated since Python 3.14.
 
+* :mod:`mimetypes`:
+
+  * Valid extensions start with a '.' or are empty for
+    :meth:`mimetypes.MimeTypes.add_type`.
+    Undotted extensions are deprecated and will
+    raise a :exc:`ValueError` in Python 3.16.
+    (Contributed by Hugo van Kemenade in :gh:`75223`.)
+
 * :mod:`shutil`:
 
   * The :class:`!ExecError` exception
