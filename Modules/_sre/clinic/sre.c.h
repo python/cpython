@@ -260,105 +260,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_sre_SRE_Pattern_match__doc__,
-"match($self, /, string, pos=0, endpos=sys.maxsize)\n"
-"--\n"
-"\n"
-"Matches zero or more characters at the beginning of the string.\n"
-"\n"
-"This is the legacy method name. Modern Python also provides it under the name\n"
-"\'prefixmatch\' to allow code to be explicitly clear about the intended behavior.");
-
-#define _SRE_SRE_PATTERN_MATCH_METHODDEF    \
-    {"match", _PyCFunction_CAST(_sre_SRE_Pattern_match), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Pattern_match__doc__},
-
-static PyObject *
-_sre_SRE_Pattern_match_impl(PatternObject *self, PyTypeObject *cls,
-                            PyObject *string, Py_ssize_t pos,
-                            Py_ssize_t endpos);
-
-static PyObject *
-_sre_SRE_Pattern_match(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    PyObject *return_value = NULL;
-    #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
-
-    #define NUM_KEYWORDS 3
-    static struct {
-        PyGC_Head _this_is_not_used;
-        PyObject_VAR_HEAD
-        Py_hash_t ob_hash;
-        PyObject *ob_item[NUM_KEYWORDS];
-    } _kwtuple = {
-        .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
-        .ob_hash = -1,
-        .ob_item = { &_Py_ID(string), &_Py_ID(pos), &_Py_ID(endpos), },
-    };
-    #undef NUM_KEYWORDS
-    #define KWTUPLE (&_kwtuple.ob_base.ob_base)
-
-    #else  // !Py_BUILD_CORE
-    #  define KWTUPLE NULL
-    #endif  // !Py_BUILD_CORE
-
-    static const char * const _keywords[] = {"string", "pos", "endpos", NULL};
-    static _PyArg_Parser _parser = {
-        .keywords = _keywords,
-        .fname = "match",
-        .kwtuple = KWTUPLE,
-    };
-    #undef KWTUPLE
-    PyObject *argsbuf[3];
-    Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 1;
-    PyObject *string;
-    Py_ssize_t pos = 0;
-    Py_ssize_t endpos = PY_SSIZE_T_MAX;
-
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
-            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
-    if (!args) {
-        goto exit;
-    }
-    string = args[0];
-    if (!noptargs) {
-        goto skip_optional_pos;
-    }
-    if (args[1]) {
-        {
-            Py_ssize_t ival = -1;
-            PyObject *iobj = _PyNumber_Index(args[1]);
-            if (iobj != NULL) {
-                ival = PyLong_AsSsize_t(iobj);
-                Py_DECREF(iobj);
-            }
-            if (ival == -1 && PyErr_Occurred()) {
-                goto exit;
-            }
-            pos = ival;
-        }
-        if (!--noptargs) {
-            goto skip_optional_pos;
-        }
-    }
-    {
-        Py_ssize_t ival = -1;
-        PyObject *iobj = _PyNumber_Index(args[2]);
-        if (iobj != NULL) {
-            ival = PyLong_AsSsize_t(iobj);
-            Py_DECREF(iobj);
-        }
-        if (ival == -1 && PyErr_Occurred()) {
-            goto exit;
-        }
-        endpos = ival;
-    }
-skip_optional_pos:
-    return_value = _sre_SRE_Pattern_match_impl((PatternObject *)self, cls, string, pos, endpos);
-
-exit:
-    return return_value;
-}
-
 PyDoc_STRVAR(_sre_SRE_Pattern_fullmatch__doc__,
 "fullmatch($self, /, string, pos=0, endpos=sys.maxsize)\n"
 "--\n"
@@ -1643,27 +1544,6 @@ _sre_SRE_Scanner_prefixmatch(PyObject *self, PyTypeObject *cls, PyObject *const 
     return _sre_SRE_Scanner_prefixmatch_impl((ScannerObject *)self, cls);
 }
 
-PyDoc_STRVAR(_sre_SRE_Scanner_match__doc__,
-"match($self, /)\n"
-"--\n"
-"\n");
-
-#define _SRE_SRE_SCANNER_MATCH_METHODDEF    \
-    {"match", _PyCFunction_CAST(_sre_SRE_Scanner_match), METH_METHOD|METH_FASTCALL|METH_KEYWORDS, _sre_SRE_Scanner_match__doc__},
-
-static PyObject *
-_sre_SRE_Scanner_match_impl(ScannerObject *self, PyTypeObject *cls);
-
-static PyObject *
-_sre_SRE_Scanner_match(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
-{
-    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
-        PyErr_SetString(PyExc_TypeError, "match() takes no arguments");
-        return NULL;
-    }
-    return _sre_SRE_Scanner_match_impl((ScannerObject *)self, cls);
-}
-
 PyDoc_STRVAR(_sre_SRE_Scanner_search__doc__,
 "search($self, /)\n"
 "--\n"
@@ -1688,4 +1568,4 @@ _sre_SRE_Scanner_search(PyObject *self, PyTypeObject *cls, PyObject *const *args
 #ifndef _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
     #define _SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF
 #endif /* !defined(_SRE_SRE_PATTERN__FAIL_AFTER_METHODDEF) */
-/*[clinic end generated code: output=ce9568a4b57dece3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0c867efb64e020aa input=a9049054013a1b77]*/

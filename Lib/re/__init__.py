@@ -167,11 +167,8 @@ def prefixmatch(pattern, string, flags=0):
     a Match object, or None if no match was found."""
     return _compile(pattern, flags).prefixmatch(string)
 
-def match(pattern, string, flags=0):
-    """The original name for prefixmatch.  Equivalent behavior.
-    Try to apply the pattern at the start of the string, returning
-    a Match object, or None if no match was found."""
-    return _compile(pattern, flags).prefixmatch(string)
+# Our original less explicitly clear about the behavior name for prefixmatch.
+match = prefixmatch
 
 def fullmatch(pattern, string, flags=0):
     """Try to apply the pattern to all of the string, returning
