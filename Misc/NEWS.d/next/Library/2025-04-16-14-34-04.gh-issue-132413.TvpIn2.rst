@@ -1,0 +1,1 @@
+Fix crash in C version of :mod:`datetime` when used during interpreter shutdown.
