@@ -33,6 +33,10 @@ class HeaderWriteError(MessageError):
     """Error while writing headers."""
 
 
+class InvalidMailboxError(MessageError, ValueError):
+    """A mailbox was not compatible with the policy in use."""
+
+
 # These are parsing defects which the parser was able to work around.
 class MessageDefect(ValueError):
     """Base class for a message defect."""
