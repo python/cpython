@@ -196,9 +196,12 @@ class RotatingFileHandler(BaseRotatingHandler):
         if self.stream is None:                 # delay was set...
             self.stream = self._open()
         if self.maxBytes > 0:                   # are we rolling over?
+            pos = self.stream.tell()
+            if not pos:
+                # gh-116263: Never rollover an empty file
+                return False
             msg = "%s\n" % self.format(record)
-            self.stream.seek(0, 2)  #due to non-posix-compliant Windows feature
-            if self.stream.tell() + len(msg) >= self.maxBytes:
+            if pos + len(msg) >= self.maxBytes:
                 # See bpo-45401: Never rollover anything other than regular files
                 if os.path.exists(self.baseFilename) and not os.path.isfile(self.baseFilename):
                     return False
@@ -852,7 +855,7 @@ class SysLogHandler(logging.Handler):
     }
 
     def __init__(self, address=('localhost', SYSLOG_UDP_PORT),
-                 facility=LOG_USER, socktype=None):
+                 facility=LOG_USER, socktype=None, timeout=None):
         """
         Initialize a handler.
 
@@ -869,6 +872,7 @@ class SysLogHandler(logging.Handler):
         self.address = address
         self.facility = facility
         self.socktype = socktype
+        self.timeout = timeout
         self.socket = None
         self.createSocket()
 
@@ -930,6 +934,8 @@ class SysLogHandler(logging.Handler):
                 err = sock = None
                 try:
                     sock = socket.socket(af, socktype, proto)
+                    if self.timeout:
+                        sock.settimeout(self.timeout)
                     if socktype == socket.SOCK_STREAM:
                         sock.connect(sa)
                     break
@@ -1037,7 +1043,8 @@ class SMTPHandler(logging.Handler):
         only be used when authentication credentials are supplied. The tuple
         will be either an empty tuple, or a single-value tuple with the name
         of a keyfile, or a 2-value tuple with the names of the keyfile and
-        certificate file. (This tuple is passed to the `starttls` method).
+        certificate file. (This tuple is passed to the
+        `ssl.SSLContext.load_cert_chain` method).
         A timeout in seconds can be specified for the SMTP connection (the
         default is one second).
         """
@@ -1090,8 +1097,23 @@ class SMTPHandler(logging.Handler):
             msg.set_content(self.format(record))
             if self.username:
                 if self.secure is not None:
+                    import ssl
+
+                    try:
+                        keyfile = self.secure[0]
+                    except IndexError:
+                        keyfile = None
+
+                    try:
+                        certfile = self.secure[1]
+                    except IndexError:
+                        certfile = None
+
+                    context = ssl._create_stdlib_context(
+                        certfile=certfile, keyfile=keyfile
+                    )
                     smtp.ehlo()
-                    smtp.starttls(*self.secure)
+                    smtp.starttls(context=context)
                     smtp.ehlo()
                 smtp.login(self.username, self.password)
             smtp.send_message(msg)
@@ -1510,6 +1532,19 @@ class QueueListener(object):
         self._thread = None
         self.respect_handler_level = respect_handler_level
 
+    def __enter__(self):
+        """
+        For use as a context manager. Starts the listener.
+        """
+        self.start()
+        return self
+
+    def __exit__(self, *args):
+        """
+        For use as a context manager. Stops the listener.
+        """
+        self.stop()
+
     def dequeue(self, block):
         """
         Dequeue a record and return it, optionally blocking.
@@ -1526,6 +1561,9 @@ class QueueListener(object):
         This starts up a background thread to monitor the queue for
         LogRecords to process.
         """
+        if self._thread is not None:
+            raise RuntimeError("Listener already started")
+
         self._thread = t = threading.Thread(target=self._monitor)
         t.daemon = True
         t.start()

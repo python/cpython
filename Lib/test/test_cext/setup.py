@@ -21,6 +21,9 @@ if not support.MS_WINDOWS:
 
         # gh-120593: Check the 'const' qualifier
         '-Wcast-qual',
+
+        # Ask for strict(er) compliance with the standard
+        '-pedantic-errors',
     ]
     if not support.Py_GIL_DISABLED:
         CFLAGS.append(
@@ -31,6 +34,8 @@ if not support.MS_WINDOWS:
 else:
     # MSVC compiler flags
     CFLAGS = [
+        # Display warnings level 1 to 4
+        '/W4',
         # Treat all compiler warnings as compiler errors
         '/WX',
     ]

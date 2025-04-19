@@ -289,6 +289,15 @@ PyThread_exit_thread(void)
     if (!initialized)
         exit(0);
     _endthreadex(0);
+    Py_UNREACHABLE();
+}
+
+void _Py_NO_RETURN
+PyThread_hang_thread(void)
+{
+    while (1) {
+        SleepEx(INFINITE, TRUE);
+    }
 }
 
 /*

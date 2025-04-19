@@ -59,6 +59,18 @@ SyntaxError: cannot assign to __debug__
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
 
+>>> def __debug__(): pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> async def __debug__(): pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> class __debug__: pass
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
 >>> del __debug__
 Traceback (most recent call last):
 SyntaxError: cannot delete __debug__
@@ -155,6 +167,18 @@ SyntaxError: expected 'else' after 'if' expression
 >>> a = [1, 42 if True, 4]
 Traceback (most recent call last):
 SyntaxError: expected 'else' after 'if' expression
+
+>>> x = 1 if 1 else pass
+Traceback (most recent call last):
+SyntaxError: expected expression after 'else', but statement is given
+
+>>> x = pass if 1 else 1
+Traceback (most recent call last):
+SyntaxError: expected expression before 'if', but statement is given
+
+>>> x = pass if 1 else pass
+Traceback (most recent call last):
+SyntaxError: expected expression before 'if', but statement is given
 
 >>> if True:
 ...     print("Hello"
@@ -299,6 +323,12 @@ SyntaxError: did you forget parentheses around the comprehension target?
 >>> {x,y for x,y in range(100)}
 Traceback (most recent call last):
 SyntaxError: did you forget parentheses around the comprehension target?
+
+# Incorrectly closed strings
+
+>>> "The interesting object "The important object" is very important"
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Is this intended to be part of the string?
 
 # Missing commas in literals collections should not
 # produce special error messages regarding missing
@@ -786,6 +816,9 @@ SyntaxError: cannot assign to __debug__
 >>> __debug__: int
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
+>>> x.__debug__: int
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
 >>> f(a=)
 Traceback (most recent call last):
 SyntaxError: expected argument value expression
@@ -825,7 +858,7 @@ Traceback (most recent call last):
 SyntaxError: 'function call' is an illegal expression for augmented assignment
 
 
-Test continue in finally in weird combinations.
+Test control flow in finally
 
 continue in for loop under finally should be ok.
 
@@ -839,51 +872,63 @@ continue in for loop under finally should be ok.
     >>> test()
     9
 
-continue in a finally should be ok.
+break in for loop under finally should be ok.
 
     >>> def test():
-    ...    for abc in range(10):
-    ...        try:
-    ...            pass
-    ...        finally:
-    ...            continue
-    ...    print(abc)
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         for abc in range(10):
+    ...             break
+    ...     print(abc)
     >>> test()
-    9
+    0
+
+return in function under finally should be ok.
 
     >>> def test():
-    ...    for abc in range(10):
-    ...        try:
-    ...            pass
-    ...        finally:
-    ...            try:
-    ...                continue
-    ...            except:
-    ...                pass
-    ...    print(abc)
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         def f():
+    ...             return 42
+    ...     print(f())
     >>> test()
-    9
+    42
+
+combine for loop and function def
+
+return in function under finally should be ok.
 
     >>> def test():
-    ...    for abc in range(10):
-    ...        try:
-    ...            pass
-    ...        finally:
-    ...            try:
-    ...                pass
-    ...            except:
-    ...                continue
-    ...    print(abc)
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         for i in range(10):
+    ...             def f():
+    ...                 return 42
+    ...     print(f())
     >>> test()
-    9
+    42
+
+    >>> def test():
+    ...     try:
+    ...         pass
+    ...     finally:
+    ...         def f():
+    ...             for i in range(10):
+    ...                 return 42
+    ...     print(f())
+    >>> test()
+    42
 
 A continue outside loop should not be allowed.
 
     >>> def foo():
     ...     try:
-    ...         pass
-    ...     finally:
     ...         continue
+    ...     finally:
+    ...         pass
     Traceback (most recent call last):
       ...
     SyntaxError: 'continue' not properly in loop
@@ -1182,6 +1227,24 @@ Missing ':' before suites:
    Traceback (most recent call last):
    SyntaxError: expected ':'
 
+   >>> match x:
+   ...   case a, __debug__, b:
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
+   >>> match x:
+   ...   case a, b, *__debug__:
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
+   >>> match x:
+   ...   case Foo(a, __debug__=1, b=2):
+   ...       pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
    >>> if x = 3:
    ...    pass
    Traceback (most recent call last):
@@ -1275,6 +1338,15 @@ Custom error messages for try blocks that are not followed by except/finally
    Traceback (most recent call last):
    SyntaxError: expected 'except' or 'finally' block
 
+Custom error message for __debug__ as exception variable
+
+   >>> try:
+   ...    pass
+   ... except TypeError as __debug__:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
 Custom error message for try block mixing except and except*
 
    >>> try:
@@ -1316,6 +1388,36 @@ Custom error message for try block mixing except and except*
    ...    pass
    Traceback (most recent call last):
    SyntaxError: cannot have both 'except' and 'except*' on the same 'try'
+
+Better error message for using `except as` with not a name:
+
+   >>> try:
+   ...    pass
+   ... except TypeError as obj.attr:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except statement with attribute
+
+   >>> try:
+   ...    pass
+   ... except TypeError as obj[1]:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except statement with subscript
+
+   >>> try:
+   ...    pass
+   ... except* TypeError as (obj, name):
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except* statement with tuple
+
+   >>> try:
+   ...    pass
+   ... except* TypeError as 1:
+   ...    pass
+   Traceback (most recent call last):
+   SyntaxError: cannot use except* statement with literal
 
 Ensure that early = are not matched by the parser as invalid comparisons
    >>> f(2, 4, x=34); 1 $ 2
@@ -1522,6 +1624,19 @@ Specialized indentation errors:
    Traceback (most recent call last):
    IndentationError: expected an indented block after class definition on line 1
 
+   >>> class C(__debug__=42): ...
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
+   >>> class Meta(type):
+   ...     def __new__(*args, **kwargs):
+   ...         pass
+
+   >>> class C(metaclass=Meta, __debug__=42):
+   ...     pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
    >>> match something:
    ... pass
    Traceback (most recent call last):
@@ -1552,28 +1667,14 @@ Make sure that the old "raise X, Y[, Z]" form is gone:
    SyntaxError: invalid syntax
 
 Check that an multiple exception types with missing parentheses
-raise a custom exception
-
-   >>> try:
-   ...   pass
-   ... except A, B:
-   ...   pass
-   Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
-
-   >>> try:
-   ...   pass
-   ... except A, B, C:
-   ...   pass
-   Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
+raise a custom exception only when using 'as'
 
    >>> try:
    ...   pass
    ... except A, B, C as blech:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized when using 'as'
 
    >>> try:
    ...   pass
@@ -1582,29 +1683,15 @@ raise a custom exception
    ... finally:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized when using 'as'
 
-
-   >>> try:
-   ...   pass
-   ... except* A, B:
-   ...   pass
-   Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
-
-   >>> try:
-   ...   pass
-   ... except* A, B, C:
-   ...   pass
-   Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
 
    >>> try:
    ...   pass
    ... except* A, B, C as blech:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized when using 'as'
 
    >>> try:
    ...   pass
@@ -1613,7 +1700,7 @@ raise a custom exception
    ... finally:
    ...   pass
    Traceback (most recent call last):
-   SyntaxError: multiple exception types must be parenthesized
+   SyntaxError: multiple exception types must be parenthesized when using 'as'
 
 Custom exception for 'except*' without an exception type
 
@@ -1707,6 +1794,26 @@ SyntaxError: Did you mean to use 'from ... import ...' instead?
 >>> import a.y.z, b.y.z, c.y.z from b.y.z as bar
 Traceback (most recent call last):
 SyntaxError: Did you mean to use 'from ... import ...' instead?
+
+>>> import __debug__
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> import a as __debug__
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> import a.b.c as __debug__
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> from a import __debug__
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
+
+>>> from a import b as __debug__
+Traceback (most recent call last):
+SyntaxError: cannot assign to __debug__
 
 # Check that we dont raise the "trailing comma" error if there is more
 # input to the left of the valid part that we parsed.
@@ -1827,7 +1934,31 @@ Corner-cases that used to crash:
     ...   case 42 as 1+2+4:
     ...     ...
     Traceback (most recent call last):
-    SyntaxError: invalid pattern target
+    SyntaxError: cannot use expression as pattern target
+
+    >>> match ...:
+    ...   case 42 as a.b:
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use attribute as pattern target
+
+    >>> match ...:
+    ...   case 42 as (a, b):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use tuple as pattern target
+
+    >>> match ...:
+    ...   case 42 as (a + 1):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use expression as pattern target
+
+    >>> match ...:
+    ...   case (32 as x) | (42 as a()):
+    ...     ...
+    Traceback (most recent call last):
+    SyntaxError: cannot use function call as pattern target
 
     >>> match ...:
     ...   case Foo(z=1, y=2, x):
@@ -2186,6 +2317,14 @@ Invalid expressions in type scopes:
       ...
    SyntaxError: yield expression cannot be used within a type alias
 
+   >>> type __debug__ = int
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
+   >>> class A[__debug__]: pass
+   Traceback (most recent call last):
+   SyntaxError: cannot assign to __debug__
+
    >>> class A[T]((x := 3)): ...
    Traceback (most recent call last):
       ...
@@ -2238,7 +2377,88 @@ import unittest
 
 from test import support
 
-class SyntaxTestCase(unittest.TestCase):
+class SyntaxWarningTest(unittest.TestCase):
+    def check_warning(self, code, errtext, filename="<testcase>", mode="exec"):
+        """Check that compiling code raises SyntaxWarning with errtext.
+
+        errtest is a regular expression that must be present in the
+        text of the warning raised.
+        """
+        with self.assertWarnsRegex(SyntaxWarning, errtext):
+            compile(code, filename, mode)
+
+    def test_return_in_finally(self):
+        source = textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    return 42
+            """)
+        self.check_warning(source, "'return' in a 'finally' block")
+
+        source = textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    try:
+                        return 42
+                    except:
+                        pass
+            """)
+        self.check_warning(source, "'return' in a 'finally' block")
+
+        source = textwrap.dedent("""
+            def f():
+                try:
+                    pass
+                finally:
+                    try:
+                        pass
+                    except:
+                        return 42
+            """)
+        self.check_warning(source, "'return' in a 'finally' block")
+
+    def test_break_and_continue_in_finally(self):
+        for kw in ('break', 'continue'):
+
+            source = textwrap.dedent(f"""
+                for abc in range(10):
+                    try:
+                        pass
+                    finally:
+                        {kw}
+                """)
+            self.check_warning(source, f"'{kw}' in a 'finally' block")
+
+            source = textwrap.dedent(f"""
+                for abc in range(10):
+                    try:
+                        pass
+                    finally:
+                        try:
+                            {kw}
+                        except:
+                            pass
+                """)
+            self.check_warning(source, f"'{kw}' in a 'finally' block")
+
+            source = textwrap.dedent(f"""
+                for abc in range(10):
+                    try:
+                        pass
+                    finally:
+                        try:
+                            pass
+                        except:
+                            {kw}
+                """)
+            self.check_warning(source, f"'{kw}' in a 'finally' block")
+
+
+class SyntaxErrorTestCase(unittest.TestCase):
 
     def _check_error(self, code, errtext,
                      filename="<testcase>", mode="exec", subclass=None,
@@ -2246,7 +2466,7 @@ class SyntaxTestCase(unittest.TestCase):
         """Check that compiling code raises SyntaxError with errtext.
 
         errtest is a regular expression that must be present in the
-        test of the exception raised.  If subclass is specified it
+        text of the exception raised.  If subclass is specified it
         is the expected subclass of SyntaxError (e.g. IndentationError).
         """
         try:
@@ -2471,6 +2691,25 @@ if x:
         self.assertRaises(IndentationError, exec, code)
 
     @support.cpython_only
+    def test_disallowed_type_param_names(self):
+        # See gh-128632
+
+        self._check_error(f"class A[__classdict__]: pass",
+                        f"reserved name '__classdict__' cannot be used for type parameter")
+        self._check_error(f"def f[__classdict__](): pass",
+                        f"reserved name '__classdict__' cannot be used for type parameter")
+        self._check_error(f"type T[__classdict__] = tuple[__classdict__]",
+                        f"reserved name '__classdict__' cannot be used for type parameter")
+
+        # These compilations are here to make sure __class__, __classcell__ and __classdictcell__
+        # don't break in the future like __classdict__ did in this case.
+        for name in ('__class__', '__classcell__', '__classdictcell__'):
+            compile(f"""
+class A:
+    class B[{name}]: pass
+                """, "<testcase>", mode="exec")
+
+    @support.cpython_only
     def test_nested_named_except_blocks(self):
         code = ""
         for i in range(12):
@@ -2680,6 +2919,7 @@ while 1:
                     compile(source, "<string>", mode)
 
     @support.cpython_only
+    @support.skip_wasi_stack_overflow()
     def test_deep_invalid_rule(self):
         # Check that a very deep invalid rule in the PEG
         # parser doesn't have exponential backtracking.
@@ -2687,6 +2927,77 @@ while 1:
         with self.assertRaises(SyntaxError):
             compile(source, "<string>", "exec")
 
+    def test_except_stmt_invalid_as_expr(self):
+        self._check_error(
+            textwrap.dedent(
+                """
+                try:
+                    pass
+                except ValueError as obj.attr:
+                    pass
+                """
+            ),
+            errtext="cannot use except statement with attribute",
+            lineno=4,
+            end_lineno=4,
+            offset=22,
+            end_offset=22 + len("obj.attr"),
+        )
+
+    def test_match_stmt_invalid_as_expr(self):
+        self._check_error(
+            textwrap.dedent(
+                """
+                match 1:
+                    case x as obj.attr:
+                        ...
+                """
+            ),
+            errtext="cannot use attribute as pattern target",
+            lineno=3,
+            end_lineno=3,
+            offset=15,
+            end_offset=15 + len("obj.attr"),
+        )
+
+    def test_ifexp_else_stmt(self):
+        msg = "expected expression after 'else', but statement is given"
+
+        for stmt in [
+            "pass",
+            "return",
+            "return 2",
+            "raise Exception('a')",
+            "del a",
+            "yield 2",
+            "assert False",
+            "break",
+            "continue",
+            "import",
+            "import ast",
+            "from",
+            "from ast import *"
+        ]:
+            self._check_error(f"x = 1 if 1 else {stmt}", msg)
+
+    def test_ifexp_body_stmt_else_expression(self):
+        msg = "expected expression before 'if', but statement is given"
+
+        for stmt in [
+            "pass",
+            "break",
+            "continue"
+        ]:
+            self._check_error(f"x = {stmt} if 1 else 1", msg)
+
+    def test_ifexp_body_stmt_else_stmt(self):
+        msg = "expected expression before 'if', but statement is given"
+        for lhs_stmt, rhs_stmt in [
+            ("pass", "pass"),
+            ("break", "pass"),
+            ("continue", "import ast")
+        ]:
+            self._check_error(f"x = {lhs_stmt} if 1 else {rhs_stmt}", msg)
 
 def load_tests(loader, tests, pattern):
     tests.addTest(doctest.DocTestSuite())

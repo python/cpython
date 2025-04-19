@@ -22,7 +22,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 verbose = False
 
 # This must be kept in sync with Tools/cases_generator/analyzer.py
-RESUME = 149
+RESUME = 128
 
 def isprintable(b: bytes) -> bool:
     return all(0x20 <= c < 0x7f for c in b)
