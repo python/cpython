@@ -1,0 +1,2 @@
+Add :meth:`pathlib.types.PathInfo.is_junction` method, which returns true if
+the path is a Windows junction.
