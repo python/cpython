@@ -1003,6 +1003,17 @@ find and load modules.
       :exc:`ImportError` is raised.
 
 
+.. class:: NamespacePath(name, path, path_finder)
+
+   Represents a namespace package's path.
+
+   It uses the module *name* to find its parent module, and from there it looks
+   up the parent's :attr:`module.__path__`.  When this changes, the module's own
+   path is recomputed, using *path_finder*. The initial value is set to *path*.
+
+   For top-level modules, the parent module's path is :data:`sys.path`.
+
+
 .. class:: SourceFileLoader(fullname, path)
 
    A concrete implementation of :class:`importlib.abc.SourceLoader` by
