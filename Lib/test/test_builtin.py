@@ -1120,6 +1120,7 @@ class BuiltinTest(ComplexesAreIdenticalMixin, unittest.TestCase):
             self.check_iter_pickle(f1, list(f2), proto)
 
     @support.skip_wasi_stack_overflow()
+    @support.skip_emscripten_stack_overflow()
     @support.requires_resource('cpu')
     def test_filter_dealloc(self):
         # Tests recursive deallocation of nested filter objects using the
