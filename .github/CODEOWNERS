@@ -168,7 +168,7 @@ Include/internal/pycore_time.h  @pganssle @abalkin
 **/*poplib*                   @python/email-team
 
 # Exclude .mailmap from being owned by @python/email-team
-/.mailmap    
+/.mailmap
 
 # Garbage collector
 /Modules/gcmodule.c           @pablogsal
