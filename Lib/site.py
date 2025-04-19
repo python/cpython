@@ -578,10 +578,10 @@ def register_readline():
         def write_history():
             try:
                 readline_module.write_history_file(history)
-            except (FileNotFoundError, PermissionError):
+            except (FileNotFoundError, PermissionError, OSError) as e:
                 # home directory does not exist or is not writable
                 # https://bugs.python.org/issue19891
-                pass
+                _warn(f'failed to open the history file for writing: {e}', RuntimeWarning)
 
         atexit.register(write_history)
 
