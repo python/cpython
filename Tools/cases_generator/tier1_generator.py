@@ -204,7 +204,7 @@ def generate_tier1_labels(
     # Emit tail-callable labels as function defintions
     for name, label in analysis.labels.items():
         emitter.emit(f"LABEL({name})\n")
-        storage = Storage(Stack(), [], [], False)
+        storage = Storage(Stack(), [], [], 0, False)
         if label.spilled:
             storage.spilled = 1
         emitter.emit_tokens(label, storage, None)
