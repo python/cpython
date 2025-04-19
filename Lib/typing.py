@@ -2906,7 +2906,7 @@ class NamedTupleMeta(type):
             types = ns["__annotations__"]
             field_names = list(types)
             annotate = _make_eager_annotate(types)
-        elif (original_annotate := _lazy_annotationlib.get_annotate_function(ns)) is not None:
+        elif (original_annotate := _lazy_annotationlib.get_annotate_from_class_namespace(ns)) is not None:
             types = _lazy_annotationlib.call_annotate_function(
                 original_annotate, _lazy_annotationlib.Format.FORWARDREF)
             field_names = list(types)
@@ -3092,7 +3092,7 @@ class _TypedDictMeta(type):
         if "__annotations__" in ns:
             own_annotate = None
             own_annotations = ns["__annotations__"]
-        elif (own_annotate := _lazy_annotationlib.get_annotate_function(ns)) is not None:
+        elif (own_annotate := _lazy_annotationlib.get_annotate_from_class_namespace(ns)) is not None:
             own_annotations = _lazy_annotationlib.call_annotate_function(
                 own_annotate, _lazy_annotationlib.Format.FORWARDREF, owner=tp_dict
             )
