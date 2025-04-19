@@ -19,7 +19,8 @@ __all__ = [
 ]
 
 
-class Format(enum.IntEnum):
+@enum._simple_enum(enum.IntEnum)
+class Format:
     VALUE = 1
     VALUE_WITH_FAKE_GLOBALS = 2
     FORWARDREF = 3
