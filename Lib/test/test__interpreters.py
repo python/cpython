@@ -99,6 +99,7 @@ class IsShareableTests(unittest.TestCase):
         shareables = [
                 # singletons
                 None,
+                NotImplemented,
                 # builtin objects
                 b'spam',
                 'spam',
@@ -126,7 +127,6 @@ class IsShareableTests(unittest.TestCase):
 
         not_shareables = [
                 # singletons
-                NotImplemented,
                 ...,
                 # builtin types and objects
                 type,
@@ -156,13 +156,14 @@ class ShareableTypeTests(unittest.TestCase):
                 self.assertIs(type(got), type(obj))
 
     def test_singletons(self):
-        for obj in [None]:
+        for obj in [None, NotImplemented]:
             with self.subTest(obj):
                 xid = _testinternalcapi.get_crossinterp_data(obj)
                 got = _testinternalcapi.restore_crossinterp_data(xid)
 
                 # XXX What about between interpreters?
                 self.assertIs(got, obj)
+                self.assertIs(type(got), type(obj))
 
     def test_types(self):
         self._assert_values([
