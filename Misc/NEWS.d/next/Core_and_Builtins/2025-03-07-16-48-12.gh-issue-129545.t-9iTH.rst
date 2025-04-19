@@ -1,0 +1,3 @@
+Change the text of the ``SyntaxError: parameter without a default follows parameter with a default``
+to ``SyntaxError: positional parameter without a default follows parameter with a default`` to improve
+error message clarity in certain cases.
