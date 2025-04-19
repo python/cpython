@@ -1126,7 +1126,7 @@ class RawConfigParser(MutableMapping):
         st.sectname = sectname
         if st.sectname in self._sections:
             if self._strict and st.sectname in st.elements_added:
-                raise DuplicateSectionError(st.sectname, fpname,
+                self._handle_duplicate_section(st.sectname, fpname,
                                             st.lineno)
             st.cursect = self._sections[st.sectname]
             st.elements_added.add(st.sectname)
@@ -1139,6 +1139,10 @@ class RawConfigParser(MutableMapping):
             st.elements_added.add(st.sectname)
         # So sections can't start with a continuation line
         st.optname = None
+
+    def _handle_duplicate_section(self, sectname, fpname, lineno):
+        """Handle duplicate section definition. Override for custom behavior."""
+        raise DuplicateSectionError(sectname, fpname, lineno)
 
     def _handle_option(self, st, line, fpname):
         # an option line?
@@ -1159,7 +1163,7 @@ class RawConfigParser(MutableMapping):
         st.optname = self.optionxform(st.optname.rstrip())
         if (self._strict and
             (st.sectname, st.optname) in st.elements_added):
-            raise DuplicateOptionError(st.sectname, st.optname,
+            self._handle_duplicate_option(st.sectname, st.optname,
                                     fpname, st.lineno)
         st.elements_added.add((st.sectname, st.optname))
         # This check is fine because the OPTCRE cannot
@@ -1170,6 +1174,10 @@ class RawConfigParser(MutableMapping):
         else:
             # valueless option handling
             st.cursect[st.optname] = None
+
+    def _handle_duplicate_option(self, sectname, optname, fpname, lineno):
+        """Handle duplicate option definition. Override for custom behavior."""
+        raise DuplicateOptionError(sectname, optname, fpname, lineno)
 
     def _join_multiline_values(self):
         defaults = self.default_section, self._defaults
