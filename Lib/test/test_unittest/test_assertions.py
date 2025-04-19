@@ -6,6 +6,11 @@ from test.support import gc_collect
 from itertools import product
 
 
+NAN = float('nan')
+INF = float('inf')
+NINF = float('-inf')
+
+
 class Test_Assertions(unittest.TestCase):
     def test_AlmostEqual(self):
         self.assertAlmostEqual(1.00000001, 1.0)
@@ -26,11 +31,7 @@ class Test_Assertions(unittest.TestCase):
         self.assertRaises(self.failureException,
                           self.assertNotAlmostEqual, 0, .1+.1j, places=0)
 
-        self.assertAlmostEqual(float('inf'), float('inf'))
-        self.assertRaises(self.failureException, self.assertNotAlmostEqual,
-                          float('inf'), float('inf'))
-
-    def test_AmostEqualWithDelta(self):
+    def test_AlmostEqualWithDelta(self):
         self.assertAlmostEqual(1.1, 1.0, delta=0.5)
         self.assertAlmostEqual(1.0, 1.1, delta=0.5)
         self.assertNotAlmostEqual(1.1, 1.0, delta=0.05)
@@ -56,6 +57,55 @@ class Test_Assertions(unittest.TestCase):
                                delta=datetime.timedelta(seconds=20))
         self.assertNotAlmostEqual(first, second,
                                   delta=datetime.timedelta(seconds=5))
+
+    def test_AlmostEqualWithRelativeDelta(self):
+        self.assertAlmostEqual(1.0, 0.6, rel_delta=0.5)
+        self.assertAlmostEqual(0.6, 1.0, rel_delta=0.5)
+        with self.assertRaises(self.failureException):
+            self.assertAlmostEqual(1.0, 0.6, rel_delta=0.05)
+        with self.assertRaises(self.failureException):
+            self.assertAlmostEqual(0.6, 1.0, rel_delta=0.05)
+
+        self.assertNotAlmostEqual(1.0, 0.6, rel_delta=0.05)
+        self.assertNotAlmostEqual(0.6, 1.0, rel_delta=0.05)
+        with self.assertRaises(self.failureException):
+            self.assertNotAlmostEqual(1.0, 0.6, rel_delta=0.5)
+        with self.assertRaises(self.failureException):
+            self.assertNotAlmostEqual(0.6, 1.0, rel_delta=0.5)
+
+        with self.assertRaises(TypeError):
+            self.assertAlmostEqual(1.0, 1.1, places=0, rel_delta=0.5)
+        with self.assertRaises(TypeError):
+            self.assertAlmostEqual(1.0, 1.1, delta=1, rel_delta=0.5)
+        with self.assertRaises(TypeError):
+            self.assertNotAlmostEqual(1.0, 1.1, places=0, rel_delta=0.05)
+        with self.assertRaises(TypeError):
+            self.assertNotAlmostEqual(1.0, 1.1, delta=0.05, rel_delta=0.05)
+
+        first_dt = datetime.timedelta(seconds=20)
+        second_dt = datetime.timedelta(seconds=15)
+
+        self.assertAlmostEqual(first_dt, second_dt, rel_delta=0.5)
+        self.assertNotAlmostEqual(first_dt, second_dt, rel_delta=0.1)
+
+    def test_AlmostEqual_inf_nan(self):
+        for criterion in [{"places": 2}, {"delta": 0.5}, {"rel_delta": 0.2}]:
+            for n1, n2 in [(INF, INF), (NINF, NINF)]:
+                self.assertAlmostEqual(n1, n2, **criterion)
+                with self.assertRaises(self.failureException,
+                                       msg="%s %s should be equal with %s" % (n1, n2, criterion)):
+                    self.assertNotAlmostEqual(n1, n2, **criterion)
+
+            for n1, n2 in [(INF, NINF), (NINF, INF),
+                           (INF, 1), (1, INF),
+                           (NINF, 1), (1, NINF),
+                           (NAN, NAN),
+                           (NAN, 1), (1, NAN),
+                           (NAN, INF), (INF, NAN),
+                           (NAN, NINF), (NINF, NAN)]:
+                self.assertNotAlmostEqual(n1, n2, **criterion)
+                with self.assertRaises(self.failureException):
+                    self.assertAlmostEqual(n1, n2, **criterion)
 
     def test_assertRaises(self):
         def _raise(e):
