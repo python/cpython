@@ -168,9 +168,9 @@ _FLOAT_FORMAT_SPECIFICATION_MATCHER = re.compile(r"""
     # A '0' that's *not* followed by another digit is parsed as a minimum width
     # rather than a zeropad flag.
     (?P<zeropad>0(?=[0-9]))?
-    (?P<minimumwidth>0|[1-9][0-9]*)?
+    (?P<minimumwidth>[0-9]+)?
     (?P<thousands_sep>[,_])?
-    (?:\.(?P<precision>0|[1-9][0-9]*))?
+    (?:\.(?P<precision>[0-9]+))?
     (?P<presentation_type>[eEfFgG%])
 """, re.DOTALL | re.VERBOSE).fullmatch
 
