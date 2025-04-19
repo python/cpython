@@ -65,7 +65,7 @@ class _multiprocessing.SemLock "SemLockObject *" "&_PyMp_SemLockType"
 #define SEM_UNLINK(name) 0
 
 static int
-_GetSemaphoreValue(HANDLE handle, long *value)
+_GetSemaphoreValue(HANDLE handle, int *value)
 {
     long previous;
 

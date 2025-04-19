@@ -143,7 +143,7 @@ __all__ = [
 
 
 import abc
-from annotationlib import Format
+from annotationlib import Format, ForwardRef
 from annotationlib import get_annotations  # re-exported
 import ast
 import dis
@@ -447,7 +447,8 @@ def isroutine(object):
             or isfunction(object)
             or ismethod(object)
             or ismethoddescriptor(object)
-            or ismethodwrapper(object))
+            or ismethodwrapper(object)
+            or isinstance(object, functools._singledispatchmethod_get))
 
 def isabstract(object):
     """Return true if the object is an abstract base class (ABC)."""
@@ -968,6 +969,8 @@ def findsource(object):
     module = getmodule(object, file)
     if module:
         lines = linecache.getlines(file, module.__dict__)
+        if not lines and file.startswith('<') and hasattr(object, "__code__"):
+            lines = linecache._getlines_from_code(object.__code__)
     else:
         lines = linecache.getlines(file)
     if not lines:
@@ -1341,6 +1344,8 @@ def formatannotation(annotation, base_module=None, *, quote_annotation_strings=T
         if annotation.__module__ in ('builtins', base_module):
             return annotation.__qualname__
         return annotation.__module__+'.'+annotation.__qualname__
+    if isinstance(annotation, ForwardRef):
+        return annotation.__forward_arg__
     return repr(annotation)
 
 def formatannotationrelativeto(object):
@@ -3077,6 +3082,9 @@ class Signature:
                         break
                     elif param.name in kwargs:
                         if param.kind == _POSITIONAL_ONLY:
+                            if param.default is _empty:
+                                msg = f'missing a required positional-only argument: {param.name!r}'
+                                raise TypeError(msg)
                             # Raise a TypeError once we are sure there is no
                             # **kwargs param later.
                             pos_only_param_in_kwargs.append(param)

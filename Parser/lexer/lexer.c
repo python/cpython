@@ -211,8 +211,12 @@ _PyLexer_update_fstring_expr(struct tok_state *tok, char cur)
             break;
         case '}':
         case '!':
-        case ':':
             tok_mode->last_expr_end = strlen(tok->start);
+            break;
+        case ':':
+            if (tok_mode->last_expr_end == -1) {
+               tok_mode->last_expr_end = strlen(tok->start);
+            }
             break;
         default:
             Py_UNREACHABLE();
@@ -304,9 +308,7 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
     return 1;
 }
 
-/* Verify that the identifier follows PEP 3131.
-   All identifier strings are guaranteed to be "ready" unicode objects.
- */
+/* Verify that the identifier follows PEP 3131. */
 static int
 verify_identifier(struct tok_state *tok)
 {
@@ -1339,6 +1341,14 @@ f_string_middle:
             // it means that the format spec ends here and we should
             // return to the regular mode.
             if (in_format_spec && c == '\n') {
+                if (current_tok->f_string_quote_size == 1) {
+                    return MAKE_TOKEN(
+                        _PyTokenizer_syntaxerror(
+                            tok,
+                            "f-string: newlines are not allowed in format specifiers for single quoted f-strings"
+                        )
+                    );
+                }
                 tok_backup(tok, c);
                 TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
                 current_tok->in_format_spec = 0;

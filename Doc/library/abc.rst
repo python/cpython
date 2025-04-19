@@ -141,18 +141,18 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
       MyIterable.register(Foo)
 
    The ABC ``MyIterable`` defines the standard iterable method,
-   :meth:`~iterator.__iter__`, as an abstract method.  The implementation given
+   :meth:`~object.__iter__`, as an abstract method.  The implementation given
    here can still be called from subclasses.  The :meth:`!get_iterator` method
    is also part of the ``MyIterable`` abstract base class, but it does not have
    to be overridden in non-abstract derived classes.
 
    The :meth:`__subclasshook__` class method defined here says that any class
-   that has an :meth:`~iterator.__iter__` method in its
+   that has an :meth:`~object.__iter__` method in its
    :attr:`~object.__dict__` (or in that of one of its base classes, accessed
    via the :attr:`~type.__mro__` list) is considered a ``MyIterable`` too.
 
    Finally, the last line makes ``Foo`` a virtual subclass of ``MyIterable``,
-   even though it does not define an :meth:`~iterator.__iter__` method (it uses
+   even though it does not define an :meth:`~object.__iter__` method (it uses
    the old-style iterable protocol, defined in terms of :meth:`~object.__len__` and
    :meth:`~object.__getitem__`).  Note that this will not make ``get_iterator``
    available as a method of ``Foo``, so it is provided separately.

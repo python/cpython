@@ -57,7 +57,8 @@ Queue
       If the queue was initialized with ``maxsize=0`` (the default),
       then :meth:`full` never returns ``True``.
 
-   .. coroutinemethod:: get()
+   .. method:: get()
+      :async:
 
       Remove and return an item from the queue. If queue is empty,
       wait until an item is available.
@@ -70,7 +71,8 @@ Queue
       Return an item if one is immediately available, else raise
       :exc:`QueueEmpty`.
 
-   .. coroutinemethod:: join()
+   .. method:: join()
+      :async:
 
       Block until all items in the queue have been received and processed.
 
@@ -80,7 +82,8 @@ Queue
       work on it is complete.  When the count of unfinished tasks drops
       to zero, :meth:`join` unblocks.
 
-   .. coroutinemethod:: put(item)
+   .. method:: put(item)
+      :async:
 
       Put an item into the queue. If the queue is full, wait until a
       free slot is available before adding the item.

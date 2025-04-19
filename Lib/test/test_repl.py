@@ -213,7 +213,7 @@ class TestInteractiveInterpreter(unittest.TestCase):
         p.stdin.write(user_input)
         user_input2 = dedent("""
         import linecache
-        print(linecache.cache['<stdin>-1'])
+        print(linecache._interactive_cache[linecache._make_key(foo.__code__)])
         """)
         p.stdin.write(user_input2)
         output = kill_python(p)
@@ -294,7 +294,15 @@ class TestInteractiveModeSyntaxErrors(unittest.TestCase):
         self.assertEqual(traceback_lines, expected_lines)
 
 
-class TestAsyncioREPLContextVars(unittest.TestCase):
+class TestAsyncioREPL(unittest.TestCase):
+    def test_multiple_statements_fail_early(self):
+        user_input = "1 / 0; print(f'afterwards: {1+1}')"
+        p = spawn_repl("-m", "asyncio")
+        p.stdin.write(user_input)
+        output = kill_python(p)
+        self.assertIn("ZeroDivisionError", output)
+        self.assertNotIn("afterwards: 2", output)
+
     def test_toplevel_contextvars_sync(self):
         user_input = dedent("""\
         from contextvars import ContextVar
