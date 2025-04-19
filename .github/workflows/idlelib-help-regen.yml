@@ -35,7 +35,8 @@ jobs:
           cd Doc
           make venv
           make html
-          python -c "from idlelib.help import copy_strip; copy_strip()"
+          cd ..
+          python -c "from Lib.idlelib.help import copy_strip; copy_strip()"
 
       - run: |
           git add Lib/idlelib/help.html
