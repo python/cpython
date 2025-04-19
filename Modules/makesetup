@@ -274,7 +274,8 @@ sed -e 's/[ 	]*#.*//' -e '/^[ 	]*$/d' |
 				;;
 			esac
 			rule="$file: $objs"
-			rule="$rule; \$(BLDSHARED) $objs $libs \$(LIBPYTHON) -o $file"
+			ldd="\$(BLDSHARED) \$(PY_BUILTIN_MODULE_LDFLAGS)"
+			rule="$rule; $ldd $objs $libs \$(LIBPYTHON) -o $file"
 			echo "$rule" >>$rulesf
 		done
 	done
