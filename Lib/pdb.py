@@ -74,20 +74,29 @@ import bdb
 import dis
 import code
 import glob
+import json
 import token
 import types
 import codeop
 import pprint
 import signal
+import socket
+import typing
 import asyncio
 import inspect
+import weakref
+import builtins
+import tempfile
 import textwrap
 import tokenize
+import functools
 import itertools
 import traceback
 import linecache
 import _colorize
+import dataclasses
 
+from contextlib import closing
 from contextlib import contextmanager
 from rlcompleter import Completer
 from types import CodeType
@@ -1458,6 +1467,13 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     complete_ignore = _complete_bpnumber
 
+    def _prompt_for_confirmation(self, prompt, choices, default):
+        try:
+            reply = input(prompt)
+        except EOFError:
+            reply = default
+        return reply.strip().lower()
+
     def do_clear(self, arg):
         """cl(ear) [filename:lineno | bpnumber ...]
 
@@ -1467,11 +1483,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         clear all breaks at that line in that file.
         """
         if not arg:
-            try:
-                reply = input('Clear all breaks? ')
-            except EOFError:
-                reply = 'no'
-            reply = reply.strip().lower()
+            reply = self._prompt_for_confirmation(
+                'Clear all breaks? ',
+                choices=('y', 'yes', 'n', 'no'),
+                default='no',
+            )
             if reply in ('y', 'yes'):
                 bplist = [bp for bp in bdb.Breakpoint.bpbynumber if bp]
                 self.clear_all_breaks()
@@ -1775,6 +1791,9 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 self.error('Jump failed: %s' % e)
     do_j = do_jump
 
+    def _create_recursive_debugger(self):
+        return Pdb(self.completekey, self.stdin, self.stdout)
+
     def do_debug(self, arg):
         """debug code
 
@@ -1788,7 +1807,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         self.stop_trace()
         globals = self.curframe.f_globals
         locals = self.curframe.f_locals
-        p = Pdb(self.completekey, self.stdin, self.stdout)
+        p = self._create_recursive_debugger()
         p.prompt = "(%s) " % self.prompt.strip()
         self.message("ENTERING RECURSIVE DEBUGGER")
         try:
@@ -2491,6 +2510,567 @@ def set_trace(*, header=None, commands=None):
         pdb.message(header)
     pdb.set_trace(sys._getframe().f_back, commands=commands)
 
+# Remote PDB
+
+@dataclasses.dataclass(frozen=True)
+class _InteractState:
+    compiler: codeop.CommandCompiler
+    ns: dict[str, typing.Any]
+
+
+class _RemotePdb(Pdb):
+    def __init__(self, sockfile, owns_sockfile=True, **kwargs):
+        self._owns_sockfile = owns_sockfile
+        self._interact_state = None
+        self._sockfile = sockfile
+        self._command_name_cache = []
+        self._write_failed = False
+        super().__init__(**kwargs)
+
+    def _send(self, **kwargs) -> None:
+        json_payload = json.dumps(kwargs)
+        try:
+            self._sockfile.write(json_payload.encode() + b"\n")
+            self._sockfile.flush()
+        except OSError:
+            # This means that the client has abruptly disconnected, but we'll
+            # handle that the next time we try to read from the client instead
+            # of trying to handle it from everywhere _send() may be called.
+            # Track this with a flag rather than assuming readline() will ever
+            # return an empty string because the socket may be half-closed.
+            self._write_failed = True
+
+    @typing.override
+    def message(self, msg, end="\n"):
+        self._send(message=str(msg) + end)
+
+    @typing.override
+    def error(self, msg):
+        self._send(error=str(msg))
+
+    def _read_command(self) -> str:
+        # Loop until we get a command for PDB or an 'interact' REPL.
+        # Process out-of-band completion messages without returning.
+        while True:
+            if self._write_failed:
+                return "EOF"
+
+            payload = self._sockfile.readline()
+            if not payload:
+                return "EOF"
+
+            try:
+                match json.loads(payload):
+                    case {"command": str(line)}:
+                        # Interact mode has been cancelled client-side,
+                        # likely by a ^D EOF at the prompt.
+                        self._interact_state = None
+                        return line
+                    case {"interact": str(lines)}:
+                        if self._interact_state:
+                            return lines
+                        # Otherwise, fall through to report an error and loop.
+                    case {
+                        "completion": {
+                            "text": str(text),
+                            "line": str(line),
+                            "begidx": int(begidx),
+                            "endidx": int(endidx),
+                        }
+                    }:
+                        items = self._complete_any(text, line, begidx, endidx)
+                        self._send(completion=items)
+                        continue
+            except json.JSONDecodeError:
+                pass
+            # Invalid JSON, or doesn't meet the schema, or wrong PDB state.
+            self.error(f"Ignoring invalid remote command: {payload}")
+
+    def _complete_any(self, text, line, begidx, endidx):
+        if begidx == 0:
+            return self.completenames(text, line, begidx, endidx)
+
+        cmd = self.parseline(line)[0]
+        if cmd:
+            compfunc = getattr(self, "complete_" + cmd, self.completedefault)
+        else:
+            compfunc = self.completedefault
+        return compfunc(text, line, begidx, endidx)
+
+    def cmdloop(self, intro=None):
+        self.preloop()
+        if intro is not None:
+            self.intro = intro
+        if self.intro:
+            self.message(str(self.intro))
+        stop = None
+        while not stop:
+            if self.cmdqueue:
+                line = self.cmdqueue.pop(0)
+            else:
+                if not self._command_name_cache:
+                    self._command_name_cache = self.completenames("", "", 0, 0)
+                    self._send(command_list=self._command_name_cache)
+
+                mode = "interact" if self._interact_state else "pdb"
+                self._send(prompt=self.prompt, mode=mode)
+                line = self._read_command()
+                if self._interact_state is not None:
+                    self._run_in_python_repl(line)
+                    continue
+            line = self.precmd(line)
+            stop = self.onecmd(line)
+            stop = self.postcmd(stop, line)
+        self.postloop()
+
+    def postloop(self):
+        super().postloop()
+        if self.quitting:
+            self.detach()
+
+    def detach(self):
+        # Detach the debugger and close the socket without raising BdbQuit
+        self.quitting = False
+        if self._owns_sockfile:
+            # Don't try to reuse this instance, it's not valid anymore.
+            Pdb._last_pdb_instance = None
+            try:
+                self._sockfile.close()
+            except OSError:
+                # close() can fail if the connection was broken unexpectedly.
+                pass
+
+    def do_alias(self, arg):
+        # Clear our cached list of valid commands; one might be added.
+        self._command_name_cache = []
+        return super().do_alias(arg)
+
+    def do_unalias(self, arg):
+        # Clear our cached list of valid commands; one might be removed.
+        self._command_name_cache = []
+        return super().do_unalias(arg)
+
+    def do_help(self, arg):
+        # Tell the client to render the help, since it might need a pager.
+        self._send(help=arg)
+
+    do_h = do_help
+
+    def _interact_displayhook(self, obj):
+        # Like the default `sys.displayhook` except sending a socket message.
+        if obj is not None:
+            self.message(repr(obj))
+            builtins._ = obj
+
+    def _run_in_python_repl(self, lines):
+        # Run one 'interact' mode code block against an existing namespace.
+        assert self._interact_state
+        save_displayhook = sys.displayhook
+        try:
+            sys.displayhook = self._interact_displayhook
+            code_obj = self._interact_state.compiler(lines + "\n")
+            if code_obj is None:
+                raise SyntaxError("Incomplete command")
+            exec(code_obj, self._interact_state.ns)
+        except:
+            self._error_exc()
+        finally:
+            sys.displayhook = save_displayhook
+
+    def do_interact(self, arg):
+        # Prepare to run 'interact' mode code blocks, and trigger the client
+        # to start treating all input as Python commands, not PDB ones.
+        self._interact_state = _InteractState(
+            compiler=codeop.CommandCompiler(),
+            ns={**self.curframe.f_globals, **self.curframe.f_locals},
+        )
+
+    def do_commands(self, arg):
+        # Called with only one line in 'arg' to start collecting commands.
+        # Once the client has gathered up the full list of commands to apply,
+        # do_commands gets called again with multiple lines of input in args.
+        arg, *commands = arg.split("\n")
+        if not arg:
+            bnum = len(bdb.Breakpoint.bpbynumber) - 1
+        else:
+            try:
+                bnum = int(arg)
+            except ValueError:
+                self._print_invalid_arg(arg)
+                return
+
+        try:
+            self.get_bpbynumber(bnum)
+        except ValueError as err:
+            self.error("cannot set commands: %s" % err)
+            return
+
+        if not commands:
+            # We've only received the first line so far.
+            # Have the client enter command entry mode.
+
+            # fmt: off
+            end_cmds = [
+                "c", "cont", "continue",
+                "s", "step",
+                "n", "next",
+                "r", "return",
+                "q", "quit", "exit",
+                "j", "jump",
+            ]
+            # fmt: on
+
+            end_cmds += ["end"]  # pseudo-command
+            self._send(commands_entry={"bpnum": bnum, "terminators": end_cmds})
+            return
+
+        self.commands_bnum = bnum
+        self.commands[bnum] = []
+
+        for line in commands:
+            if self.handle_command_def(line):
+                break
+
+    @typing.override
+    def _create_recursive_debugger(self):
+        return _RemotePdb(self._sockfile, owns_sockfile=False)
+
+    @typing.override
+    def _prompt_for_confirmation(self, prompt, choices, default):
+        self._send(
+            confirm={"prompt": prompt, "choices": choices, "default": default}
+        )
+        payload = self._sockfile.readline()
+
+        if not payload:
+            return default
+
+        try:
+            match json.loads(payload):
+                case {"confirmation_reply": str(reply)}:
+                    return reply
+        except json.JSONDecodeError:
+            pass
+
+        self.error(f"Ignoring unexpected remote message: {payload}")
+        return default
+
+    def do_run(self, arg):
+        self.error("remote PDB cannot restart the program")
+
+    do_restart = do_run
+
+    def _error_exc(self):
+        exc = sys.exception()
+        if isinstance(exc, SystemExit):
+            # If we get a SystemExit in 'interact' mode, exit the REPL.
+            self._interact_state = None
+        super()._error_exc()
+
+    def default(self, line):
+        # Unlike Pdb, don't prompt for more lines of a multi-line command.
+        # The remote needs to send us the whole block in one go.
+        try:
+            candidate = line.removeprefix("!") + "\n"
+            if not codeop.compile_command(candidate, "<stdin>", "single"):
+                raise SyntaxError("Incomplete command")
+            return super().default(candidate)
+        except:
+            self._error_exc()
+
+
+class _PdbClient:
+    def __init__(self, pid, sockfile, interrupt_script):
+        self.pid = pid
+        self.sockfile = sockfile
+        self.interrupt_script = interrupt_script
+        self.pdb_instance = Pdb()
+        self.pdb_commands = set()
+        self.completion_matches = []
+        self.interact_mode = False
+        self.commands_mode = False
+        self.bpnum = 0
+        self.command_list_terminators = []
+
+    def read_command(self, prompt):
+        continue_prompt = "...".ljust(len(prompt))
+
+        if self.interact_mode:
+            # Python REPL mode
+            try:
+                line = input(">>> ")
+            except EOFError:
+                print("\n*exit from pdb interact command*")
+                self.interact_mode = False
+            else:
+                continue_prompt = "...".ljust(len(">>> "))
+
+        if not self.interact_mode:
+            # PDB command entry mode
+            line = input(prompt)
+            cmd = self.pdb_instance.parseline(line)[0]
+            if cmd in self.pdb_commands or line.strip() == "":
+                # Recognized PDB command, or repeating last command
+                return line
+
+            # Otherwise, explicit or implicit exec command
+            if line.startswith("!"):
+                line = line[1:].lstrip()
+
+        # Ensure the remote won't try to use this as a PDB command.
+        prefix = "!" if not self.interact_mode else ""
+
+        if (
+            codeop.compile_command(line + "\n", "<stdin>", "single")
+            is not None
+        ):
+            # Valid single-line statement
+            return prefix + line
+
+        # Otherwise, valid first line of a multi-line statement
+        continue_prompt = "...".ljust(len(prompt))
+        buffer = line
+
+        while codeop.compile_command(buffer, "<stdin>", "single") is None:
+            buffer += "\n" + input(continue_prompt)
+
+        return prefix + buffer
+
+    @contextmanager
+    def readline_completion(self, completer):
+        try:
+            import readline
+        except ImportError:
+            yield
+            return
+
+        old_completer = readline.get_completer()
+        try:
+            readline.set_completer(completer)
+            if readline.backend == "editline":
+                # libedit uses "^I" instead of "tab"
+                command_string = "bind ^I rl_complete"
+            else:
+                command_string = "tab: complete"
+            readline.parse_and_bind(command_string)
+            yield
+        finally:
+            readline.set_completer(old_completer)
+
+    def cmdloop(self):
+        with self.readline_completion(self.complete):
+            while True:
+                try:
+                    if not (payload_bytes := self.sockfile.readline()):
+                        break
+                except KeyboardInterrupt:
+                    self.send_interrupt()
+                    continue
+
+                try:
+                    payload = json.loads(payload_bytes)
+                except json.JSONDecodeError:
+                    print(
+                        f"*** Invalid JSON from remote: {payload_bytes}",
+                        flush=True,
+                    )
+                    continue
+
+                self.process_payload(payload)
+
+    def send_interrupt(self):
+        print(
+            "\n*** Program will stop at the next bytecode instruction."
+            " (Use 'cont' to resume)."
+        )
+        sys.remote_exec(self.pid, self.interrupt_script)
+
+    def process_payload(self, payload):
+        match payload:
+            case {"command_list": command_list}:
+                self.pdb_commands = set(command_list)
+            case {"message": str(msg)}:
+                print(msg, end="", flush=True)
+            case {"error": str(msg)}:
+                print("***", msg, flush=True)
+            case {"help": str(arg)}:
+                self.pdb_instance.do_help(arg)
+            case {"prompt": str(prompt), "mode": str(mode)}:
+                if mode == "interact":
+                    self.interact_mode = True
+                elif self.interact_mode and mode != "interact":
+                    print("*exit from pdb interact command*")
+                    self.interact_mode = False
+
+                if self.commands_mode:
+                    self.prompt_for_breakpoint_command_list("(com) ")
+                else:
+                    self.prompt_for_repl_command(prompt)
+            case {
+                "confirm": {
+                    "prompt": str(prompt),
+                    "choices": list(choices),
+                    "default": str(default),
+                }
+            } if all(isinstance(c, str) for c in choices):
+                self.prompt_for_confirmation(prompt, choices, default)
+            case {
+                "commands_entry": {
+                    "bpnum": int(bpnum),
+                    "terminators": list(command_list_terminators),
+                }
+            }:
+                self.bpnum = bpnum
+                self.command_list_terminators = command_list_terminators
+                self.commands_mode = True
+            case _:
+                raise RuntimeError(f"Unrecognized payload {payload}")
+
+    def prompt_for_breakpoint_command_list(self, prompt):
+        parts = [f"commands {self.bpnum}"]
+        while True:
+            try:
+                line = input(prompt).strip()
+                parts.append(line)
+                cmd = self.pdb_instance.parseline(line)[0]
+                if cmd in self.command_list_terminators:
+                    break
+            except (KeyboardInterrupt, EOFError):
+                print(flush=True)
+                print("command definition aborted, old commands restored")
+                break
+            finally:
+                self.commands_mode = False
+
+        command = "\n".join(parts)
+        self.sockfile.write((json.dumps({"command": command}) + "\n").encode())
+        self.sockfile.flush()
+
+    def prompt_for_repl_command(self, prompt):
+        while True:
+            try:
+                command = self.read_command(prompt)
+            except EOFError:
+                command = "EOF"
+            except KeyboardInterrupt:
+                print(flush=True)
+                continue
+            except Exception as exc:
+                msg = traceback.format_exception_only(exc)[-1].strip()
+                print("***", msg, flush=True)
+                continue
+
+            if self.interact_mode:
+                payload = {"interact": command}
+            else:
+                payload = {"command": command}
+            self.sockfile.write((json.dumps(payload) + "\n").encode())
+            self.sockfile.flush()
+            return
+
+    def prompt_for_confirmation(self, prompt, choices, default):
+        try:
+            with self.readline_completion(
+                functools.partial(self.complete_choices, choices=choices)
+            ):
+                reply = input(prompt).strip()
+        except (KeyboardInterrupt, EOFError):
+            print(flush=True)
+            reply = default
+
+        payload = {"confirmation_reply": reply}
+        self.sockfile.write((json.dumps(payload) + "\n").encode())
+        self.sockfile.flush()
+
+    def complete(self, text, state):
+        import readline
+
+        if state == 0:
+            origline = readline.get_line_buffer()
+            line = origline.lstrip()
+            stripped = len(origline) - len(line)
+            begidx = readline.get_begidx() - stripped
+            endidx = readline.get_endidx() - stripped
+
+            msg = {
+                "completion": {
+                    "text": text,
+                    "line": line,
+                    "begidx": begidx,
+                    "endidx": endidx,
+                }
+            }
+            self.sockfile.write((json.dumps(msg) + "\n").encode())
+            self.sockfile.flush()
+
+            payload = self.sockfile.readline()
+            payload = json.loads(payload)
+            if "completion" not in payload:
+                raise RuntimeError(
+                    f"Failed to get valid completions. Got: {payload}"
+                )
+
+            self.completion_matches = payload["completion"]
+        try:
+            return self.completion_matches[state]
+        except IndexError:
+            return None
+
+    def complete_choices(self, text, state, choices):
+        if state == 0:
+            self.completion_matches = [c for c in choices if c.startswith(text)]
+
+        try:
+            return choices[state]
+        except IndexError:
+            return None
+
+
+def _connect(host, port, frame):
+    with closing(socket.create_connection((host, port))) as conn:
+        sockfile = conn.makefile("rwb")
+
+    remote_pdb = _RemotePdb(sockfile)
+    weakref.finalize(remote_pdb, sockfile.close)
+
+    if Pdb._last_pdb_instance is not None:
+        remote_pdb.error("Another PDB instance is already attached.")
+    else:
+        remote_pdb.set_trace(frame=frame)
+
+
+def attach(pid):
+    """Attach to a running process with the given PID."""
+    with closing(socket.create_server(("localhost", 0))) as server:
+        port = server.getsockname()[1]
+
+        with tempfile.NamedTemporaryFile("w", delete_on_close=False) as connect_script:
+            connect_script.write(
+                f'import pdb, sys\n'
+                f'pdb._connect("localhost", {port}, sys._getframe().f_back)\n'
+            )
+            connect_script.close()
+            sys.remote_exec(pid, connect_script.name)
+
+            # TODO Add a timeout? Or don't bother since the user can ^C?
+            client_sock, _ = server.accept()
+
+            with closing(client_sock):
+                sockfile = client_sock.makefile("rwb")
+
+            with closing(sockfile):
+                with tempfile.NamedTemporaryFile("w", delete_on_close=False) as interrupt_script:
+                    interrupt_script.write(
+                        'import pdb, sys\n'
+                        'if inst := pdb.Pdb._last_pdb_instance:\n'
+                        '    inst.set_step()\n'
+                        '    inst.set_trace(sys._getframe(1))\n'
+                    )
+                    interrupt_script.close()
+
+                    _PdbClient(pid, sockfile, interrupt_script.name).cmdloop()
+
+
 # Post-Mortem interface
 
 def post_mortem(t=None):
@@ -2560,7 +3140,7 @@ To let the script run up to a given line X in the debugged file, use
 def main():
     import argparse
 
-    parser = argparse.ArgumentParser(usage="%(prog)s [-h] [-c command] (-m module | pyfile) [args ...]",
+    parser = argparse.ArgumentParser(usage="%(prog)s [-h] [-c command] (-m module | -p pid | pyfile) [args ...]",
                                      description=_usage,
                                      formatter_class=argparse.RawDescriptionHelpFormatter,
                                      allow_abbrev=False)
@@ -2571,6 +3151,7 @@ def main():
     parser.add_argument('-c', '--command', action='append', default=[], metavar='command', dest='commands',
                         help='pdb commands to execute as if given in a .pdbrc file')
     parser.add_argument('-m', metavar='module', dest='module')
+    parser.add_argument('-p', '--pid', type=int, help="attach to the specified PID", default=None)
 
     if len(sys.argv) == 1:
         # If no arguments were given (python -m pdb), print the whole help message.
@@ -2580,7 +3161,11 @@ def main():
 
     opts, args = parser.parse_known_args()
 
-    if opts.module:
+    if opts.pid:
+        # If attaching to a remote pid, unrecognized arguments are not allowed.
+        # This will raise an error if there are extra unrecognized arguments.
+        parser.parse_args()
+    elif opts.module:
         # If a module is being debugged, we consider the arguments after "-m module" to
         # be potential arguments to the module itself. We need to parse the arguments
         # before "-m" to check if there is any invalid argument.
@@ -2598,6 +3183,12 @@ def main():
         if invalid_args:
             parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
             sys.exit(2)
+
+    if opts.pid:
+        if opts.module:
+            parser.error("argument -m: not allowed with argument --pid")
+        attach(opts.pid)
+        return
 
     if opts.module:
         file = opts.module
