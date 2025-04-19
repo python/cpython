@@ -513,14 +513,19 @@ class _TestProcess(BaseTestCase):
         time.sleep(100)
 
     @classmethod
+    def _sleep_no_int_handler(cls):
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        cls._sleep_some()
+
+    @classmethod
     def _test_sleep(cls, delay):
         time.sleep(delay)
 
-    def _kill_process(self, meth):
+    def _kill_process(self, meth, target=None):
         if self.TYPE == 'threads':
             self.skipTest('test not appropriate for {}'.format(self.TYPE))
 
-        p = self.Process(target=self._sleep_some)
+        p = self.Process(target=target or self._sleep_some)
         p.daemon = True
         p.start()
 
@@ -566,6 +571,19 @@ class _TestProcess(BaseTestCase):
         p.join()
 
         return p.exitcode
+
+    @unittest.skipIf(os.name == 'nt', "POSIX only")
+    def test_interrupt(self):
+        exitcode = self._kill_process(multiprocessing.Process.interrupt)
+        self.assertEqual(exitcode, 1)
+        # exit code 1 is hard-coded for uncaught exceptions
+        # (KeyboardInterrupt in this case)
+        # in multiprocessing.BaseProcess._bootstrap
+
+    @unittest.skipIf(os.name == 'nt', "POSIX only")
+    def test_interrupt_no_handler(self):
+        exitcode = self._kill_process(multiprocessing.Process.interrupt, target=self._sleep_no_int_handler)
+        self.assertEqual(exitcode, -signal.SIGINT)
 
     def test_terminate(self):
         exitcode = self._kill_process(multiprocessing.Process.terminate)
