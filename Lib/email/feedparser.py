@@ -505,7 +505,7 @@ class FeedParser:
             self._cur = None
         return retval
 
-    def _parsegen(self):  # yields: NeedMoreData
+    def _parsegen(self):
         # Create a new message and start by parsing headers.
         self._new_message()
         headers = []
