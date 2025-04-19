@@ -6225,6 +6225,8 @@ int___round___impl(PyObject *self, PyObject *o_ndigits)
      * definition of the _PyLong_Frexp() we have
      * abs(self) < 10*10**(log10(2)*e) < 10**(e/3 + 1). */
     (void)_PyLong_Frexp((PyLongObject *)self, &e);
+    assert(e >= 0);
+    assert(!PyErr_Occurred());
 
     if (e/3 + 2 < n) {
         Py_DECREF(ndigits);
