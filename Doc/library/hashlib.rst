@@ -23,9 +23,8 @@
 This module implements a common interface to many different hash algorithms.
 Included are the FIPS secure hash algorithms SHA224, SHA256, SHA384, SHA512,
 (defined in `the FIPS 180-4 standard`_), the SHA-3 series (defined in `the FIPS
-202 standard`_) as well as the non-cryptographically-secure algorithms SHA1
-(`formerly part of FIPS`_) and RSA's MD5 algorithm (defined in internet
-:rfc:`1321`).
+202 standard`_) as well as the legacy algorithms SHA1 (`formerly part of FIPS`_)
+and the MD5 algorithm (defined in internet :rfc:`1321`).
 
 .. note::
 
