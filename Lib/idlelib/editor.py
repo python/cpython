@@ -20,6 +20,7 @@ from idlelib import configdialog
 from idlelib import grep
 from idlelib import help
 from idlelib import help_about
+from idlelib import hyperparser
 from idlelib import macosx
 from idlelib.multicall import MultiCallCreator
 from idlelib import pyparse
@@ -261,13 +262,6 @@ class EditorWindow:
             idleConf.blink_off_time = self.text['insertofftime']
         self.update_cursor_blink()
 
-        # When searching backwards for a reliable place to begin parsing,
-        # first start num_context_lines[0] lines back, then
-        # num_context_lines[1] lines back if that didn't work, and so on.
-        # The last value should be huge (larger than the # of lines in a
-        # conceivable file).
-        # Making the initial values larger slows things down more often.
-        self.num_context_lines = 50, 500, 5000000
         self.per = per = self.Percolator(text)
         self.undo = undo = self.UndoDelegator()
         per.insertfilter(undo)
@@ -1466,28 +1460,7 @@ class EditorWindow:
 
             # Adjust indentation for continuations and block open/close.
             # First need to find the last statement.
-            lno = index2line(text.index('insert'))
-            y = pyparse.Parser(self.indentwidth, self.tabwidth)
-            if not self.prompt_last_line:
-                for context in self.num_context_lines:
-                    startat = max(lno - context, 1)
-                    startatindex = repr(startat) + ".0"
-                    rawtext = text.get(startatindex, "insert")
-                    y.set_code(rawtext)
-                    bod = y.find_good_parse_start(
-                            self._build_char_in_string_func(startatindex))
-                    if bod is not None or startat == 1:
-                        break
-                y.set_lo(bod or 0)
-            else:
-                r = text.tag_prevrange("console", "insert")
-                if r:
-                    startatindex = r[1]
-                else:
-                    startatindex = "1.0"
-                rawtext = text.get(startatindex, "insert")
-                y.set_code(rawtext)
-                y.set_lo(0)
+            y = hyperparser.parser(self)
 
             c = y.get_continuation_type()
             if c != pyparse.C_NONE:
