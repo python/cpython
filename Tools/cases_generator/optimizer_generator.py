@@ -359,7 +359,7 @@ def generate_tier2_abstract_from_files(
 ) -> None:
     assert len(filenames) == 2, "Need a base file and an abstract cases file."
     base = analyze_files([filenames[0]])
-    abstract = analyze_files([filenames[1]], abstract=True)
+    abstract = analyze_files([filenames[1]])
     with open(outfilename, "w") as outfile:
         generate_abstract_interpreter(filenames, abstract, base, outfile, debug)
 

@@ -1972,12 +1972,12 @@ class TestGeneratedAbstractCases(unittest.TestCase):
 
     def test_overridden_abstract(self):
         input = """
-        pure op(OP, (--)) {
+        op(OP, (--)) {
             SPAM();
         }
         """
         input2 = """
-        pure op(OP, (--)) {
+        op(OP, (--)) {
             eggs();
         }
         """
@@ -1991,7 +1991,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
 
     def test_overridden_abstract_args(self):
         input = """
-        pure op(OP, (arg1 -- out)) {
+        op(OP, (arg1 -- out)) {
             out = SPAM(arg1);
         }
         op(OP2, (arg1 -- out)) {
@@ -2024,16 +2024,16 @@ class TestGeneratedAbstractCases(unittest.TestCase):
 
     def test_no_overridden_case(self):
         input = """
-        pure op(OP, (arg1 -- out)) {
+        op(OP, (arg1 -- out)) {
             out = SPAM(arg1);
         }
 
-        pure op(OP2, (arg1 -- out)) {
+        op(OP2, (arg1 -- out)) {
         }
 
         """
         input2 = """
-        pure op(OP2, (arg1 -- out)) {
+        op(OP2, (arg1 -- out)) {
             out = NULL;
         }
         """
