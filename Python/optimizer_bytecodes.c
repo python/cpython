@@ -847,6 +847,8 @@ dummy_func(void) {
     }
 
     op(_CALL_TYPE_1, (callable, null, arg -- res)) {
+        (void)callable;
+        (void)null;
         if (sym_has_type(arg)) {
             res = sym_new_const(ctx, (PyObject *)sym_get_type(arg));
         }
