@@ -476,7 +476,7 @@ class Reader:
         return self.arg
 
     @staticmethod
-    def __get_prompt_str(prompt: str | int, default_prompt: str) -> str:
+    def __get_prompt_str(prompt: object, default_prompt: str) -> str:
         """
         Convert prompt object to string.
 
