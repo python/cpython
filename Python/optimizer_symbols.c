@@ -382,6 +382,15 @@ _Py_uop_sym_new_const(JitOptContext *ctx, PyObject *const_val)
 }
 
 JitOptSymbol *
+_Py_uop_sym_new_const_steal(JitOptContext *ctx, PyObject *const_val)
+{
+    assert(const_val != NULL);
+    JitOptSymbol *res = _Py_uop_sym_new_const(ctx, const_val);
+    Py_DECREF(const_val);
+    return res;
+}
+
+JitOptSymbol *
 _Py_uop_sym_new_null(JitOptContext *ctx)
 {
     JitOptSymbol *null_sym = sym_new(ctx);

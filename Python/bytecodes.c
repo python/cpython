@@ -142,7 +142,7 @@ dummy_func(
     switch (opcode) {
 
 // BEGIN BYTECODES //
-        pure inst(NOP, (--)) {
+        inst(NOP, (--)) {
         }
 
         family(RESUME, 0) = {
@@ -265,12 +265,12 @@ dummy_func(
             value = PyStackRef_DUP(value_s);
         }
 
-        replicate(8) pure inst(LOAD_FAST, (-- value)) {
+        replicate(8) inst(LOAD_FAST, (-- value)) {
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_DUP(GETLOCAL(oparg));
         }
 
-        replicate(8) pure inst (LOAD_FAST_BORROW, (-- value)) {
+        replicate(8) inst (LOAD_FAST_BORROW, (-- value)) {
             assert(!PyStackRef_IsNull(GETLOCAL(oparg)));
             value = PyStackRef_Borrow(GETLOCAL(oparg));
         }
@@ -388,11 +388,11 @@ dummy_func(
             PyStackRef_XCLOSE(tmp);
         }
 
-        pure inst(POP_TOP, (value --)) {
+        inst(POP_TOP, (value --)) {
             PyStackRef_CLOSE(value);
         }
 
-        pure inst(PUSH_NULL, (-- res)) {
+        inst(PUSH_NULL, (-- res)) {
             res = PyStackRef_NULL;
         }
 
@@ -424,7 +424,7 @@ dummy_func(
             PyStackRef_CLOSE(iter);
         }
 
-        pure inst(END_SEND, (receiver, value -- val)) {
+        inst(END_SEND, (receiver, value -- val)) {
             val = value;
             DEAD(value);
             PyStackRef_CLOSE(receiver);
@@ -443,7 +443,7 @@ dummy_func(
             PyStackRef_CLOSE(receiver);
         }
 
-        inst(UNARY_NEGATIVE, (value -- res)) {
+        pure inst(UNARY_NEGATIVE, (value -- res)) {
             PyObject *res_o = PyNumber_Negative(PyStackRef_AsPyObjectBorrow(value));
             PyStackRef_CLOSE(value);
             ERROR_IF(res_o == NULL, error);
@@ -573,7 +573,7 @@ dummy_func(
             _GUARD_TYPE_VERSION +
             _REPLACE_WITH_TRUE;
 
-        inst(UNARY_INVERT, (value -- res)) {
+        pure inst(UNARY_INVERT, (value -- res)) {
             PyObject *res_o = PyNumber_Invert(PyStackRef_AsPyObjectBorrow(value));
             PyStackRef_CLOSE(value);
             ERROR_IF(res_o == NULL, error);
@@ -669,7 +669,7 @@ dummy_func(
             EXIT_IF(!PyFloat_CheckExact(value_o));
         }
 
-        pure op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
+        op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyFloat_CheckExact(left_o));
@@ -684,7 +684,7 @@ dummy_func(
             ERROR_IF(PyStackRef_IsNull(res), error);
         }
 
-        pure op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
+        op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyFloat_CheckExact(left_o));
@@ -699,7 +699,7 @@ dummy_func(
             ERROR_IF(PyStackRef_IsNull(res), error);
         }
 
-        pure op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
+        op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyFloat_CheckExact(left_o));
@@ -799,7 +799,7 @@ dummy_func(
             DEOPT_IF(!res);
         }
 
-        pure op(_BINARY_OP_EXTEND, (descr/4, left, right -- res)) {
+       op(_BINARY_OP_EXTEND, (descr/4, left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
@@ -3906,7 +3906,7 @@ dummy_func(
             DEOPT_IF(tstate->py_recursion_remaining <= 1);
         }
 
-        replicate(5) pure op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
+        replicate(5) op(_INIT_CALL_PY_EXACT_ARGS, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
             int has_self = !PyStackRef_IsNull(self_or_null);
             STAT_INC(CALL, hit);
             new_frame = _PyFrame_PushUnchecked(tstate, callable, oparg + has_self, frame);
@@ -4916,7 +4916,7 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        pure inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
+        inst(COPY, (bottom, unused[oparg-1] -- bottom, unused[oparg-1], top)) {
             assert(oparg > 0);
             top = PyStackRef_DUP(bottom);
         }
@@ -4950,7 +4950,7 @@ dummy_func(
 
         macro(BINARY_OP) = _SPECIALIZE_BINARY_OP + unused/4 + _BINARY_OP;
 
-        pure inst(SWAP, (bottom, unused[oparg-2], top --
+        inst(SWAP, (bottom, unused[oparg-2], top --
                     bottom, unused[oparg-2], top)) {
             _PyStackRef temp = bottom;
             bottom = top;
@@ -5187,25 +5187,25 @@ dummy_func(
             DEOPT_IF(!current_executor->vm_data.valid);
         }
 
-        tier2 pure op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
+        tier2 op(_LOAD_CONST_INLINE, (ptr/4 -- value)) {
             value = PyStackRef_FromPyObjectNew(ptr);
         }
 
-        tier2 pure op (_POP_TOP_LOAD_CONST_INLINE, (ptr/4, pop -- value)) {
+        tier2 op (_POP_TOP_LOAD_CONST_INLINE, (ptr/4, pop -- value)) {
             PyStackRef_CLOSE(pop);
             value = PyStackRef_FromPyObjectNew(ptr);
         }
 
-        tier2 pure op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
+        tier2 op(_LOAD_CONST_INLINE_BORROW, (ptr/4 -- value)) {
             value = PyStackRef_FromPyObjectImmortal(ptr);
         }
 
-        tier2 pure op (_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
+        tier2 op (_POP_TOP_LOAD_CONST_INLINE_BORROW, (ptr/4, pop -- value)) {
             PyStackRef_CLOSE(pop);
             value = PyStackRef_FromPyObjectImmortal(ptr);
         }
 
-        tier2 pure op(_POP_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, pop1, pop2 -- value)) {
+        tier2 op(_POP_TWO_LOAD_CONST_INLINE_BORROW, (ptr/4, pop1, pop2 -- value)) {
             PyStackRef_CLOSE(pop2);
             PyStackRef_CLOSE(pop1);
             value = PyStackRef_FromPyObjectImmortal(ptr);

@@ -12,6 +12,8 @@ from analyzer import (
     analyze_files,
     StackItem,
     analysis_error,
+    CodeSection,
+    Label,
 )
 from generators_common import (
     DEFAULT_INPUT,
@@ -19,6 +21,8 @@ from generators_common import (
     write_header,
     Emitter,
     TokenIterator,
+    emit_to,
+    skip_to,
 )
 from cwriter import CWriter
 from typing import TextIO
@@ -111,19 +115,151 @@ class OptimizerEmitter(Emitter):
         self.out.emit(goto)
         self.out.emit(label)
 
+class OptimizerConstantEmitter(OptimizerEmitter):
+    def __init__(self, out: CWriter, labels: dict[str, Label]):
+        super().__init__(out, labels)
+        overrides = {
+            "PyStackRef_AsPyObjectBorrow": self.emit_stackref_borrow,
+            "PyStackRef_CLOSE_SPECIALIZED": self.emit_nothing,
+            "PyStackRef_CLOSE": self.emit_nothing,
+            "PyStackRef_FromPyObjectSteal": self.emit_stackref_steal,
+            "PyStackRef_IsNull": self.emit_stackref_null,
+            "PyStackRef_IsFalse": self.emit_stackref_isfalse,
+            "PyStackRef_IsTrue": self.emit_stackref_istrue,
+            "PyStackRef_False": self.emit_stackref_false,
+            "PyStackRef_True": self.emit_stackref_true,
+            "assert": self.emit_nothing,
+        }
+        self._replacers = {**self._replacers, **overrides}
+
+    def emit_stackref_borrow(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ):
+        next(tkn_iter)
+        self.out.emit(" sym_get_const(ctx, ")
+        rparen = emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(rparen)
+        return True
+
+    def emit_stackref_steal(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ):
+        next(tkn_iter)
+        self.out.emit(" sym_new_const_steal(ctx, ")
+        rparen = emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(rparen)
+        return True
+
+    def emit_nothing(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ):
+        while (tkn := next(tkn_iter)).kind != "SEMI":
+            pass
+        return True
+
+    def emit_stackref_null(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ):
+        next(tkn_iter)
+        self.out.emit(" sym_is_null(")
+        rparen = emit_to(self.out, tkn_iter, "RPAREN")
+        self.emit(rparen)
+        return True
+
+    def emit_stackref_isfalse(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ):
+        next(tkn_iter)
+        name = next(tkn_iter)
+        assert name.kind == "IDENTIFIER", \
+            "PyStackRef_IsFalse(target), target must be a simple identifier"
+        self.out.emit(f"(sym_is_const(ctx, {name.text}) && "
+                      f"Py_IsFalse(sym_get_const(ctx, {name.text})))")
+        next(tkn_iter)
+        return True
+
+    def emit_stackref_istrue(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ):
+        next(tkn_iter)
+        name = next(tkn_iter)
+        assert name.kind == "IDENTIFIER", \
+            "PyStackRef_IsTrue(target), target must be a simple identifier"
+        self.out.emit(f"(sym_is_const(ctx, {name.text}_o) && "
+                      f"Py_IsTrue(sym_get_const(ctx, {name.text}_o)))")
+        next(tkn_iter)
+        return True
+
+    def emit_stackref_false(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ):
+        name = tkn
+        assert name.kind == "IDENTIFIER", \
+            "PyStackRef_False must be a simple identifier"
+        self.out.emit(f"sym_new_const(ctx, Py_False)")
+        return True
+
+    def emit_stackref_true(
+        self,
+        tkn: Token,
+        tkn_iter: TokenIterator,
+        uop: CodeSection,
+        storage: Storage,
+        inst: Instruction | None,
+    ):
+        name = tkn
+        assert name.kind == "IDENTIFIER", \
+            "PyStackRef_True must be a simple identifier"
+        self.out.emit(f"sym_new_const(ctx, Py_True)")
+        return True
+
 def write_uop(
     override: Uop | None,
     uop: Uop,
     out: CWriter,
     stack: Stack,
     debug: bool,
-    skip_inputs: bool,
 ) -> None:
     locals: dict[str, Local] = {}
     prototype = override if override else uop
     try:
         out.start_line()
-        if override:
+        if override or uop.properties.pure:
             storage = Storage.for_uop(stack, prototype, out, check_liveness=False)
         if debug:
             args = []
@@ -140,13 +276,29 @@ def write_uop(
                         type = f"uint{cache.size*16}_t "
                         cast = f"uint{cache.size*16}_t"
                     out.emit(f"{type}{cache.name} = ({cast})this_instr->operand0;\n")
-        if override:
-            emitter = OptimizerEmitter(out, {})
+        if override or uop.properties.pure:
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.in_local = False
-            _, storage = emitter.emit_tokens(override, storage, None, False)
+            if uop.properties.pure:
+                emitter = OptimizerConstantEmitter(out, {})
+                emitter.emit("if (\n")
+                for inp in uop.stack.inputs:
+                    emitter.emit(f"sym_is_const(ctx, {inp.name}) &&\n")
+                emitter.emit("1) {\n")
+                _, storage = emitter.emit_tokens(uop, storage, None, False, is_abstract=True)
+                out.start_line()
+                emitter.emit("}\n")
+                emitter.emit("else {\n")
             out.start_line()
+            if override:
+                emitter = OptimizerEmitter(out, {})
+                _, storage = emitter.emit_tokens(override, storage, None, False, is_abstract=True)
+            else:
+                emit_default(out, uop, stack)
+            out.start_line()
+            if uop.properties.pure:
+                emitter.emit("}\n")
             storage.flush(out)
         else:
             emit_default(out, uop, stack)
@@ -193,9 +345,9 @@ def generate_abstract_interpreter(
         if override:
             declare_variables(override, out, skip_inputs=False)
         else:
-            declare_variables(uop, out, skip_inputs=True)
+            declare_variables(uop, out, skip_inputs=not uop.properties.pure)
         stack = Stack(extract_bits=False, cast_type="JitOptSymbol *")
-        write_uop(override, uop, out, stack, debug, skip_inputs=(override is None))
+        write_uop(override, uop, out, stack, debug)
         out.start_line()
         out.emit("break;\n")
         out.emit("}")
@@ -207,7 +359,7 @@ def generate_tier2_abstract_from_files(
 ) -> None:
     assert len(filenames) == 2, "Need a base file and an abstract cases file."
     base = analyze_files([filenames[0]])
-    abstract = analyze_files([filenames[1]])
+    abstract = analyze_files([filenames[1]], abstract=True)
     with open(outfilename, "w") as outfile:
         generate_abstract_interpreter(filenames, abstract, base, outfile, debug)
 

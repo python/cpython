@@ -210,60 +210,27 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_INT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-            assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = _PyLong_Add((PyLongObject *)sym_get_const(ctx, left),
-                                         (PyLongObject *)sym_get_const(ctx, right));
-            if (temp == NULL) {
-                goto error;
-            }
-            res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
-            // TODO gh-115506:
-            // replace opcode with constant propagated one and add tests!
-        }
-        else {
-            res = sym_new_type(ctx, &PyLong_Type);
-        }
+        // We need to tell the cases generator that it's being used by the constant generator.
+        // We should fix this in the cases generator.
+        (void)(left);
+        (void)(right);
+        res = sym_new_type(ctx, &PyLong_Type);
     }
 
     op(_BINARY_OP_SUBTRACT_INT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-            assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = _PyLong_Subtract((PyLongObject *)sym_get_const(ctx, left),
-                                              (PyLongObject *)sym_get_const(ctx, right));
-            if (temp == NULL) {
-                goto error;
-            }
-            res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
-            // TODO gh-115506:
-            // replace opcode with constant propagated one and add tests!
-        }
-        else {
-            res = sym_new_type(ctx, &PyLong_Type);
-        }
+        // We need to tell the cases generator that it's being used by the constant generator.
+        // We should fix this in the cases generator.
+        (void)(left);
+        (void)(right);
+        res = sym_new_type(ctx, &PyLong_Type);
     }
 
     op(_BINARY_OP_MULTIPLY_INT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyLong_CheckExact(sym_get_const(ctx, left)));
-            assert(PyLong_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = _PyLong_Multiply((PyLongObject *)sym_get_const(ctx, left),
-                                              (PyLongObject *)sym_get_const(ctx, right));
-            if (temp == NULL) {
-                goto error;
-            }
-            res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
-            // TODO gh-115506:
-            // replace opcode with constant propagated one and add tests!
-        }
-        else {
-            res = sym_new_type(ctx, &PyLong_Type);
-        }
+        // We need to tell the cases generator that it's being used by the constant generator.
+        // We should fix this in the cases generator.
+        (void)(left);
+        (void)(right);
+        res = sym_new_type(ctx, &PyLong_Type);
     }
 
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
@@ -327,19 +294,11 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyUnicode_CheckExact(sym_get_const(ctx, left)));
-            assert(PyUnicode_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = PyUnicode_Concat(sym_get_const(ctx, left), sym_get_const(ctx, right));
-            if (temp == NULL) {
-                goto error;
-            }
-            res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
-        }
-        else {
-            res = sym_new_type(ctx, &PyUnicode_Type);
-        }
+        // We need to tell the cases generator that it's being used here.
+        // We should fix this in the cases generator.
+        (void)(left);
+        (void)(right);
+        res = sym_new_type(ctx, &PyUnicode_Type);
     }
 
     op(_BINARY_OP_INPLACE_ADD_UNICODE, (left, right -- )) {
