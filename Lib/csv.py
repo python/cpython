@@ -89,7 +89,7 @@ class Dialect:
 
     This must be subclassed (see csv.excel).  Valid attributes are:
     delimiter, quotechar, escapechar, doublequote, skipinitialspace,
-    lineterminator, quoting.
+    lineterminator, quoting, strict.
 
     """
     _name = ""
@@ -102,6 +102,7 @@ class Dialect:
     skipinitialspace = None
     lineterminator = None
     quoting = None
+    strict = None
 
     def __init__(self):
         if self.__class__ != Dialect:
