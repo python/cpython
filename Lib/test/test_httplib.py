@@ -1640,6 +1640,74 @@ class ExtendedReadTestContentLengthKnown(ExtendedReadTest):
     _header, _body = ExtendedReadTest.lines.split('\r\n\r\n', 1)
     lines = _header + f'\r\nContent-Length: {len(_body)}\r\n\r\n' + _body
 
+    def _test_incomplete_read(self, read_meth, expected_none):
+        resp = self.resp
+        # Reduce the size of content the response object will read to
+        # cause the incomplete read.
+        resp.fp.read(1)
+        with self.assertRaises(client.IncompleteRead) as cm:
+            while True:
+                data = read_meth()
+                if not data:
+                    break
+        exception = cm.exception
+        # Unlike `read1` and `readline`, `read` tries to read the whole
+        # content during one call, so it's partial is not empty in this
+        # case.
+        # `read1` and `readline` raise `IncompleteRead` only when they
+        # read 0 bytes before all expected content has been read, so the
+        # partial is empty.
+        if read_meth == self.resp.read:
+            expected_partial = self._body[1:].encode()
+        else:
+            expected_partial = b""
+        self.assertEqual(exception.partial, expected_partial)
+        if expected_none:
+            self.assertIsNone(exception.expected)
+        else:
+            self.assertEqual(exception.expected, 1)
+        self.assertTrue(resp.isclosed())
+
+    def test_read_incomplete_read(self):
+        self._test_incomplete_read(self.resp.read, expected_none=False)
+
+    def test_read1_incomplete_read(self):
+        self._test_incomplete_read(self.resp.read1, expected_none=True)
+
+    def test_readline_incomplete_read_with_complete_line(self):
+        """
+        Test that IncompleteRead is raised when readline finishes
+        reading a response but the needed content length is not reached.
+        """
+        resp = self.resp
+        content = resp.fp.read()
+        # For this test case, we must ensure that the last byte read
+        # will be a newline. There is a different handling of readline
+        # not reaching a newline.
+        content = content[:-1] + b"\n"
+        resp.fp = io.BytesIO(content)
+        self._test_incomplete_read(self.resp.readline, expected_none=True)
+
+    def test_readline_incomplete_read_with_incomplete_line(self):
+        """
+        Test that IncompleteRead is raised when readline is expected
+        to read a line fully but a newline is not reached.
+        """
+        resp = self.resp
+        content = resp.fp.read()
+        # Remove last newline and following bytes.
+        content = content.rsplit(b'\n', 1)[0]
+        resp.fp = io.BytesIO(content)
+        with self.assertRaises(client.IncompleteRead) as cm:
+            while True:
+                data = resp.readline()
+                if not data:
+                    break
+        exception = cm.exception
+        self.assertEqual(exception.partial, content.rsplit(b'\n', 1)[1])
+        self.assertIsNone(exception.expected)
+        self.assertTrue(resp.isclosed())
+
 
 class ExtendedReadTestChunked(ExtendedReadTest):
     """
