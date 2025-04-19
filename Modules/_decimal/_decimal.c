@@ -4841,7 +4841,7 @@ dec_ceil(PyObject *self, PyObject *Py_UNUSED(dummy))
 
 /* __complex__ */
 static PyObject *
-dec_complex(PyObject *self, PyObject *Py_UNUSED(dummy))
+dec_complex(PyObject *self)
 {
     PyObject *f;
     double x;
@@ -5161,7 +5161,6 @@ static PyMethodDef dec_methods [] =
   { "__ceil__", dec_ceil, METH_NOARGS, NULL },
   { "__floor__", dec_floor, METH_NOARGS, NULL },
   { "__trunc__", dec_trunc, METH_NOARGS, NULL },
-  { "__complex__", dec_complex, METH_NOARGS, NULL },
   { "__sizeof__", dec_sizeof, METH_NOARGS, NULL },
 
   { NULL, NULL, 1 }
@@ -5194,6 +5193,7 @@ static PyType_Slot dec_slots[] = {
     {Py_nb_bool, nm_nonzero},
     {Py_nb_int, nm_dec_as_long},
     {Py_nb_float, PyDec_AsFloat},
+    {Py_nb_complex, dec_complex},
     {Py_nb_floor_divide, nm_mpd_qdivint},
     {Py_nb_true_divide, nm_mpd_qdiv},
     {0, NULL},

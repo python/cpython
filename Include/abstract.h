@@ -564,6 +564,12 @@ PyAPI_FUNC(PyObject *) PyNumber_Long(PyObject *o);
   This is the equivalent of the Python expression: float(o). */
 PyAPI_FUNC(PyObject *) PyNumber_Float(PyObject *o);
 
+/* Returns the object 'o' converted to a complex object on success, or NULL
+   on failure.
+
+  This is the equivalent of the Python expression: complex(o). */
+PyAPI_FUNC(PyObject *) PyNumber_Complex(PyObject *o);
+
 
 /* --- In-place variants of (some of) the above number protocol functions -- */
 

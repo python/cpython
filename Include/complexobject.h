@@ -14,6 +14,7 @@ PyAPI_DATA(PyTypeObject) PyComplex_Type;
 #define PyComplex_CheckExact(op) Py_IS_TYPE((op), &PyComplex_Type)
 
 PyAPI_FUNC(PyObject *) PyComplex_FromDoubles(double real, double imag);
+PyAPI_FUNC(PyObject *) PyComplex_FromString(PyObject *op);
 
 PyAPI_FUNC(double) PyComplex_RealAsDouble(PyObject *op);
 PyAPI_FUNC(double) PyComplex_ImagAsDouble(PyObject *op);

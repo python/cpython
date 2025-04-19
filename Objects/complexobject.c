@@ -488,34 +488,44 @@ PyComplex_ImagAsDouble(PyObject *op)
 static PyObject *
 try_complex_special_method(PyObject *op)
 {
-    PyObject *f;
+    PyNumberMethods *m = Py_TYPE(op)->tp_as_number;
+    PyObject *res = NULL;
 
-    f = _PyObject_LookupSpecial(op, &_Py_ID(__complex__));
-    if (f) {
-        PyObject *res = _PyObject_CallNoArgs(f);
-        Py_DECREF(f);
-        if (!res || PyComplex_CheckExact(res)) {
-            return res;
+    if (m && m->nb_complex) {
+        res = m->nb_complex(op);
+    }
+    else {
+        PyObject *f = _PyObject_LookupSpecial(op, &_Py_ID(__complex__));
+        if (f) {
+            res = _PyObject_CallNoArgs(f);
+            Py_DECREF(f);
+            if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                             "Use nb_complex slot to implement __complex__", 1)) {
+                Py_XDECREF(res);
+                return NULL;
+            }
         }
-        if (!PyComplex_Check(res)) {
-            PyErr_Format(PyExc_TypeError,
-                "__complex__ returned non-complex (type %.200s)",
-                Py_TYPE(res)->tp_name);
-            Py_DECREF(res);
-            return NULL;
-        }
-        /* Issue #29894: warn if 'res' not of exact type complex. */
-        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "__complex__ returned non-complex (type %.200s).  "
-                "The ability to return an instance of a strict subclass of complex "
-                "is deprecated, and may be removed in a future version of Python.",
-                Py_TYPE(res)->tp_name)) {
-            Py_DECREF(res);
-            return NULL;
-        }
+    }
+    if (!res || PyComplex_CheckExact(res)) {
         return res;
     }
-    return NULL;
+    if (!PyComplex_Check(res)) {
+        PyErr_Format(PyExc_TypeError,
+            "__complex__ returned non-complex (type %.200s)",
+            Py_TYPE(res)->tp_name);
+        Py_DECREF(res);
+        return NULL;
+    }
+    /* Issue #29894: warn if 'res' not of exact type complex. */
+    if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+            "__complex__ returned non-complex (type %.200s).  "
+            "The ability to return an instance of a strict subclass of complex "
+            "is deprecated, and may be removed in a future version of Python.",
+            Py_TYPE(res)->tp_name)) {
+        Py_DECREF(res);
+        return NULL;
+    }
+    return res;
 }
 
 Py_complex
@@ -908,24 +918,16 @@ complex___format___impl(PyComplexObject *self, PyObject *format_spec)
     return _PyUnicodeWriter_Finish(&writer);
 }
 
-/*[clinic input]
-complex.__complex__
-
-Convert this value to exact type complex.
-[clinic start generated code]*/
-
 static PyObject *
-complex___complex___impl(PyComplexObject *self)
-/*[clinic end generated code: output=e6b35ba3d275dc9c input=3589ada9d27db854]*/
+complex_complex(PyObject *self)
 {
     if (PyComplex_CheckExact(self)) {
         return Py_NewRef(self);
     }
     else {
-        return PyComplex_FromCComplex(self->cval);
+        return PyComplex_FromCComplex(((PyComplexObject *)self)->cval);
     }
 }
-
 
 static PyObject *
 complex_from_string_inner(const char *s, Py_ssize_t len, void *type)
@@ -1080,6 +1082,12 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
     return result;
 }
 
+PyObject *
+PyComplex_FromString(PyObject *op)
+{
+    return complex_subtype_from_string(&PyComplex_Type, op);
+}
+
 /* The constructor should only accept a string as a positional argument,
  * not as by the 'real' keyword.  But Argument Clinic does not allow
  * to distinguish between argument passed positionally and by keyword.
@@ -1093,60 +1101,23 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
 static PyObject *
 actual_complex_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
 {
-    PyObject *res = NULL;
-    PyNumberMethods *nbr;
+    Py_ssize_t nargs = PyTuple_GET_SIZE(args);
 
-    if (PyTuple_GET_SIZE(args) > 1 || (kwargs != NULL && PyDict_GET_SIZE(kwargs))) {
+    if (nargs > 1 || (kwargs != NULL && PyDict_GET_SIZE(kwargs))) {
         return complex_new(type, args, kwargs);
     }
-    if (!PyTuple_GET_SIZE(args)) {
+    if (!nargs) {
         return complex_subtype_from_doubles(type, 0, 0);
     }
 
     PyObject *arg = PyTuple_GET_ITEM(args, 0);
-    /* Special-case for a single argument when type(arg) is complex. */
-    if (PyComplex_CheckExact(arg) && type == &PyComplex_Type) {
-        /* Note that we can't know whether it's safe to return
-           a complex *subclass* instance as-is, hence the restriction
-           to exact complexes here.  If either the input or the
-           output is a complex subclass, it will be handled below
-           as a non-orthogonal vector.  */
-        return Py_NewRef(arg);
-    }
-    if (PyUnicode_Check(arg)) {
-        return complex_subtype_from_string(type, arg);
-    }
-    PyObject *tmp = try_complex_special_method(arg);
-    if (tmp) {
-        Py_complex c = ((PyComplexObject*)tmp)->cval;
+    PyObject *res = PyNumber_Complex(arg);
+
+    if (res && type != &PyComplex_Type) {
+        Py_complex c = _PyComplexObject_CAST(res)->cval;
+
+        Py_DECREF(res);
         res = complex_subtype_from_doubles(type, c.real, c.imag);
-        Py_DECREF(tmp);
-    }
-    else if (PyErr_Occurred()) {
-        return NULL;
-    }
-    else if (PyComplex_Check(arg)) {
-        /* Note that if arg is of a complex subtype, we're only
-           retaining its real & imag parts here, and the return
-           value is (properly) of the builtin complex type. */
-        Py_complex c = ((PyComplexObject*)arg)->cval;
-        res = complex_subtype_from_doubles(type, c.real, c.imag);
-    }
-    else if ((nbr = Py_TYPE(arg)->tp_as_number) != NULL &&
-             (nbr->nb_float != NULL || nbr->nb_index != NULL))
-    {
-        /* The argument really is entirely real, and contributes
-           nothing in the imaginary direction.
-           Just treat it as a double. */
-        double r = PyFloat_AsDouble(arg);
-        if (r != -1.0 || !PyErr_Occurred()) {
-            res = complex_subtype_from_doubles(type, r, 0);
-        }
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "complex() argument must be a string or a number, not %T",
-                     arg);
     }
     return res;
 }
@@ -1328,7 +1299,6 @@ complex_from_number_impl(PyTypeObject *type, PyObject *number)
 static PyMethodDef complex_methods[] = {
     COMPLEX_FROM_NUMBER_METHODDEF
     COMPLEX_CONJUGATE_METHODDEF
-    COMPLEX___COMPLEX___METHODDEF
     COMPLEX___GETNEWARGS___METHODDEF
     COMPLEX___FORMAT___METHODDEF
     {NULL,              NULL}           /* sentinel */
@@ -1360,7 +1330,7 @@ static PyNumberMethods complex_as_number = {
     0,                                          /* nb_xor */
     0,                                          /* nb_or */
     0,                                          /* nb_int */
-    0,                                          /* nb_reserved */
+    complex_complex,                            /* nb_complex */
     0,                                          /* nb_float */
     0,                                          /* nb_inplace_add */
     0,                                          /* nb_inplace_subtract */
