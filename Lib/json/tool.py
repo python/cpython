@@ -17,7 +17,6 @@ from _colorize import ANSIColors, can_colorize
 _color_pattern = re.compile(r'''
     (?P<key>"(\\.|[^"\\])*")(?=:)           |
     (?P<string>"(\\.|[^"\\])*")             |
-    (?P<number>NaN|-?Infinity|[0-9\-+.Ee]+) |
     (?P<boolean>true|false)                 |
     (?P<null>null)
 ''', re.VERBOSE)
@@ -26,7 +25,6 @@ _color_pattern = re.compile(r'''
 _colors = {
     'key': ANSIColors.INTENSE_BLUE,
     'string': ANSIColors.BOLD_GREEN,
-    'number': ANSIColors.BOLD_YELLOW,
     'boolean': ANSIColors.BOLD_CYAN,
     'null': ANSIColors.BOLD_CYAN,
 }
