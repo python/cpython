@@ -2794,6 +2794,10 @@ PyUnicode_CopyCharacters:PyObject*:from:0:
 PyUnicode_CopyCharacters:Py_ssize_t:from_start::
 PyUnicode_CopyCharacters:Py_ssize_t:how_many::
 
+PyUnicode_Resize:int:::
+PyUnicode_Resize:PyObject**:unicode:0:
+PyUnicode_Resize:Py_ssize_t:length::
+
 PyUnicode_Fill:Py_ssize_t:::
 PyUnicode_Fill:PyObject*:unicode:0:
 PyUnicode_Fill:Py_ssize_t:start::
