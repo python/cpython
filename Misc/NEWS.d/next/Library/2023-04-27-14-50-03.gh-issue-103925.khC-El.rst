@@ -1,0 +1,1 @@
+support "\\r" in :func:`_guess_quote_and_delimiter`
