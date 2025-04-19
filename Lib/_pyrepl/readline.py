@@ -170,7 +170,8 @@ class ReadlineAlikeReader(historical_reader.HistoricalReader, CompletingReader):
         return result
 
     def get_module_completions(self) -> list[str]:
-        completer = ModuleCompleter(namespace={'__package__': '_pyrepl'})  # TODO: namespace?
+        # Inside pyrepl, __package__ is set to '_pyrepl'
+        completer = ModuleCompleter(namespace={'__package__': '_pyrepl'})
         line = self.get_line()
         return completer.get_completions(line)
 
