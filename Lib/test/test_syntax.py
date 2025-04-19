@@ -948,6 +948,18 @@ isn't, there should be a syntax error.
      ...
    SyntaxError: 'break' outside loop
 
+elif can't come after an else.
+
+    >>> if a % 2 == 0:
+    ...     pass
+    ... else:
+    ...     pass
+    ... elif a % 2 == 1:
+    ...     pass
+    Traceback (most recent call last):
+      ...
+    SyntaxError: 'elif' block follows an 'else' block
+
 Misuse of the nonlocal and global statement can lead to a few unique syntax errors.
 
    >>> def f():
