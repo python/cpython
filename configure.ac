@@ -7883,7 +7883,7 @@ case "$ac_sys_system" in
     fi
   ;;
 esac
-LIBHACL_CFLAGS="\$(CCSHARED) ${LIBHACL_FLAG_I} ${LIBHACL_FLAG_D}"
+LIBHACL_CFLAGS="${LIBHACL_FLAG_I} ${LIBHACL_FLAG_D} \$(PY_STDMODULE_CFLAGS) \$(CCSHARED)"
 AC_SUBST([LIBHACL_CFLAGS])
 LIBHACL_LDFLAGS=  # for now, no specific linker flags are needed
 AC_SUBST([LIBHACL_LDFLAGS])
@@ -7892,7 +7892,8 @@ AC_SUBST([LIBHACL_LDFLAGS])
 # Android.
 # The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
-   test -n "$ANDROID_API_LEVEL" -a "$ANDROID_API_LEVEL" -ge 28; then
+   { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
+then
   dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
   AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
     [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
@@ -7924,7 +7925,8 @@ AC_SUBST([LIBHACL_BLAKE2_SIMD128_OBJS])
 # (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
 # runtime CPUID check.
 if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
-   test -n "$ANDROID_API_LEVEL" -a "$ANDROID_API_LEVEL" -ge 28; then
+   { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
+then
   AX_CHECK_COMPILE_FLAG([-mavx2],[
     [LIBHACL_SIMD256_FLAGS="-mavx2"]
     AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
