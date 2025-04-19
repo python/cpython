@@ -1,0 +1,1 @@
+Fix race with ``poll``/``wait``/``join`` in :mod:`multiprocessing`.``Process``.
