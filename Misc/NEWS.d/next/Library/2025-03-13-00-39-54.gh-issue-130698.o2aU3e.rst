@@ -1,1 +1,1 @@
-Avoid exiting the new REPL when prompt object raises exception.
+Avoid exiting the new REPL when prompt object raises an exception.
