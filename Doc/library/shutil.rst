@@ -473,7 +473,7 @@ Directory and files operations
    This is also applied when *cmd* is a path that contains a directory
    component::
 
-      >> shutil.which("C:\\Python33\\python")
+      >>> shutil.which("C:\\Python33\\python")
       'C:\\Python33\\python.EXE'
 
    .. versionadded:: 3.3
