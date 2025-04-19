@@ -3381,7 +3381,7 @@ left undefined.
             object.__itruediv__(self, other)
             object.__ifloordiv__(self, other)
             object.__imod__(self, other)
-            object.__ipow__(self, other[, modulo])
+            object.__ipow__(self, other)
             object.__ilshift__(self, other)
             object.__irshift__(self, other)
             object.__iand__(self, other)
