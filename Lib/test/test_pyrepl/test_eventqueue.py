@@ -129,6 +129,77 @@ class EventQueueTestBase:
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "ч")
 
+    def test_push_unicode_character_as_bytes(self):
+        eq = self.make_eventqueue()
+        eq.keymap = {}
+
+        eq.push("ч".encode(eq.encoding, "replace"))
+        e = eq.get()
+        self.assertEqual(e.evt, "key")
+        self.assertEqual(e.data, "ч")
+
+    def test_push_long_unicode_character_as_bytes(self):
+        eq = self.make_eventqueue()
+        eq.keymap = {}
+
+        def _event(evt, data, raw=None):
+            r = raw if raw is not None else data.encode(eq.encoding)
+            e = Event(evt, data, r)
+            return e
+
+        def _push(keys):
+            for k in keys:
+                eq.push(k)
+
+        _push("\x1b[200")
+        eq.push("ñ".encode(eq.encoding, "replace"))
+        _push("\x1b[201")
+
+        self.assertEqual(eq.get(), _event("key", "\x1b"))
+        self.assertEqual(eq.get(), _event("key", "["))
+        self.assertEqual(eq.get(), _event("key", "2"))
+        self.assertEqual(eq.get(), _event("key", "0"))
+        self.assertEqual(eq.get(), _event("key", "0"))
+
+        self.assertEqual(eq.get(), _event("key", "ñ", bytearray(b'\xc3\xb1')))
+
+        self.assertEqual(eq.get(), _event("key", "\x1b"))
+        self.assertEqual(eq.get(), _event("key", "["))
+        self.assertEqual(eq.get(), _event("key", "2"))
+        self.assertEqual(eq.get(), _event("key", "0"))
+        self.assertEqual(eq.get(), _event("key", "1"))
+
+    def test_push_long_unicode_character(self):
+        eq = self.make_eventqueue()
+        eq.keymap = {}
+
+        def _event(evt, data, raw=None):
+            r = raw if raw is not None else data.encode(eq.encoding)
+            e = Event(evt, data, r)
+            return e
+
+        def _push(keys):
+            for k in keys:
+                eq.push(k)
+
+        _push("\x1b[200")
+        msg = "'utf-8' codec can't decode byte 0xf1 in position 0: unexpected end of data"
+        with self.assertRaisesRegex(UnicodeDecodeError, msg):
+            eq.push("ñ")
+        _push("\x1b[201")
+
+        self.assertEqual(eq.get(), _event("key", "\x1b"))
+        self.assertEqual(eq.get(), _event("key", "["))
+        self.assertEqual(eq.get(), _event("key", "2"))
+        self.assertEqual(eq.get(), _event("key", "0"))
+        self.assertEqual(eq.get(), _event("key", "0"))
+
+        self.assertEqual(eq.get(), _event("key", "\x1b"))
+        self.assertEqual(eq.get(), _event("key", "["))
+        self.assertEqual(eq.get(), _event("key", "2"))
+        self.assertEqual(eq.get(), _event("key", "0"))
+        self.assertEqual(eq.get(), _event("key", "1"))
+
 
 @unittest.skipIf(support.MS_WINDOWS, "No Unix event queue on Windows")
 class TestUnixEventQueue(EventQueueTestBase, unittest.TestCase):
