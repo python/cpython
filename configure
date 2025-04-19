@@ -31927,17 +31927,21 @@ fi
 #
 # Example for MD5:
 #
-#   1. Compile Modules/_hacl/Hacl_Hash_MD5.c into Modules/_hacl/Hacl_Hash_MD5.o.
-#   2. Create Modules/_hacl/libHacl_Hash_MD5$EXT where $EXT is the extension
-#      for a static (resp. shared) library depending on whether we are on WASI.
-#   3. Compile Modules/md5module.c into Modules/md5module.o.
-#   4. Link Modules/md5module.o with Modules/_hacl/libHacl_Hash_MD5$EXT
-#      and get Modules/_md5$(EXT_SUFFIX).
+#   * Compile Modules/_hacl/Hacl_Hash_MD5.c into Modules/_hacl/Hacl_Hash_MD5.o.
+#   * Decide whether the object files are to be passed to the linker (emulate
+#     a shared library without having to install it) or if we need to create
+#     a static library for WASI. The following summarizes the values taken by
+#     the MODULE_<NAME>_LDFLAGS variable depending on the linkage type:
+#     - shared: MODULE__MD5_LDFLAGS is set to LIBHACL_MD5_OBJS
+#     - static: MODULE__MD5_LDFLAGS is set to Modules/_hacl/libHacl_Hash_MD5.a
+#   * Compile Modules/md5module.c into Modules/md5module.o.
+#   * Link Modules/md5module.o using $(MODULE__MD5_LDFLAGS)
+#     and get Modules/_md5$(EXT_SUFFIX).
 #
 # LIBHACL_FLAG_I: '-I' flags passed to $(CC) for HACL* and HACL*-based modules
 # LIBHACL_FLAG_D: '-D' flags passed to $(CC) for HACL* and HACL*-based modules
-# LIBHACL_CFLAGS: flags passed $(CC) for HACL* and HACL*-based modules
-# LIBHACL_LDFLAGS: flags passed $(LDSHARED) for HACL* and HACL*-based modules
+# LIBHACL_CFLAGS: compiler flags passed for HACL* and HACL*-based modules
+# LIBHACL_LDFLAGS: linker flags passed for HACL* and HACL*-based modules
 LIBHACL_FLAG_I='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include'
 LIBHACL_FLAG_D='-D_BSD_SOURCE -D_DEFAULT_SOURCE'
 case "$ac_sys_system" in
@@ -31955,7 +31959,8 @@ LIBHACL_LDFLAGS=  # for now, no specific linker flags are needed
 # The SIMD files use aligned_alloc, which is not available on older versions of
 # Android.
 # The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
-if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
+   test -n "$ANDROID_API_LEVEL" -a "$ANDROID_API_LEVEL" -ge 28; then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2" >&5
 printf %s "checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2+y}
@@ -32030,7 +32035,8 @@ fi
 # Although AVX support is not guaranteed on Android
 # (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
 # runtime CPUID check.
-if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
+   test -n "$ANDROID_API_LEVEL" -a "$ANDROID_API_LEVEL" -ge 28; then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
 printf %s "checking whether C compiler accepts -mavx2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__mavx2+y}

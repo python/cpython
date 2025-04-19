@@ -7859,17 +7859,21 @@ PY_STDLIB_MOD_SIMPLE([unicodedata])
 #
 # Example for MD5:
 #
-#   1. Compile Modules/_hacl/Hacl_Hash_MD5.c into Modules/_hacl/Hacl_Hash_MD5.o.
-#   2. Create Modules/_hacl/libHacl_Hash_MD5$EXT where $EXT is the extension
-#      for a static (resp. shared) library depending on whether we are on WASI.
-#   3. Compile Modules/md5module.c into Modules/md5module.o.
-#   4. Link Modules/md5module.o with Modules/_hacl/libHacl_Hash_MD5$EXT
-#      and get Modules/_md5$(EXT_SUFFIX).
+#   * Compile Modules/_hacl/Hacl_Hash_MD5.c into Modules/_hacl/Hacl_Hash_MD5.o.
+#   * Decide whether the object files are to be passed to the linker (emulate
+#     a shared library without having to install it) or if we need to create
+#     a static library for WASI. The following summarizes the values taken by
+#     the MODULE_<NAME>_LDFLAGS variable depending on the linkage type:
+#     - shared: MODULE__MD5_LDFLAGS is set to LIBHACL_MD5_OBJS
+#     - static: MODULE__MD5_LDFLAGS is set to Modules/_hacl/libHacl_Hash_MD5.a
+#   * Compile Modules/md5module.c into Modules/md5module.o.
+#   * Link Modules/md5module.o using $(MODULE__MD5_LDFLAGS)
+#     and get Modules/_md5$(EXT_SUFFIX).
 #
 # LIBHACL_FLAG_I: '-I' flags passed to $(CC) for HACL* and HACL*-based modules
 # LIBHACL_FLAG_D: '-D' flags passed to $(CC) for HACL* and HACL*-based modules
-# LIBHACL_CFLAGS: flags passed $(CC) for HACL* and HACL*-based modules
-# LIBHACL_LDFLAGS: flags passed $(LDSHARED) for HACL* and HACL*-based modules
+# LIBHACL_CFLAGS: compiler flags passed for HACL* and HACL*-based modules
+# LIBHACL_LDFLAGS: linker flags passed for HACL* and HACL*-based modules
 LIBHACL_FLAG_I='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include'
 LIBHACL_FLAG_D='-D_BSD_SOURCE -D_DEFAULT_SOURCE'
 case "$ac_sys_system" in
@@ -7887,7 +7891,8 @@ AC_SUBST([LIBHACL_LDFLAGS])
 # The SIMD files use aligned_alloc, which is not available on older versions of
 # Android.
 # The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
-if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
+   test -n "$ANDROID_API_LEVEL" -a "$ANDROID_API_LEVEL" -ge 28; then
   dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
   AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
     [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
@@ -7918,7 +7923,8 @@ AC_SUBST([LIBHACL_BLAKE2_SIMD128_OBJS])
 # Although AVX support is not guaranteed on Android
 # (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
 # runtime CPUID check.
-if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
+   test -n "$ANDROID_API_LEVEL" -a "$ANDROID_API_LEVEL" -ge 28; then
   AX_CHECK_COMPILE_FLAG([-mavx2],[
     [LIBHACL_SIMD256_FLAGS="-mavx2"]
     AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
