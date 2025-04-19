@@ -1297,6 +1297,10 @@ class GeneralModuleTests(unittest.TestCase):
         self.assertRaises(OverflowError, socket.getservbyport, -1)
         self.assertRaises(OverflowError, socket.getservbyport, 65536)
 
+    def testGetProtoByName(self):
+        self.assertEqual(socket.getprotobyname('tcp'), 6)
+        self.assertRaises(OSError, socket.getprotobyname, 'non-existent proto')
+
     def testDefaultTimeout(self):
         # Testing default timeout
         # The default timeout should initially be None
