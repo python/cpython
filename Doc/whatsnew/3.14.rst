@@ -1933,6 +1933,17 @@ New features
   take a C integer and produce a Python :class:`bool` object. (Contributed by
   Pablo Galindo in :issue:`45325`.)
 
+* Add unstable API for ``PyUnicode`` objects, for advanced use cases that
+  require complex migration from deprecated structures:
+
+  * :c:type:`PyUnstable_ASCIIObject`
+  * :c:type:`PyUnstable_CompactUnicodeObject`
+  * :c:type:`PyUnstable_UnicodeObject`
+  * :c:type:`PyUnstable_Unicode_GET_CACHED_HASH`
+
+  See their documentation for caveats.
+  (Contributed by Petr Viktorin in :gh:`131510`)
+
 
 Limited C API changes
 ---------------------
@@ -2066,9 +2077,25 @@ Deprecated
 
   The `pythoncapi-compat project`_ can be used to get these new public
   functions on Python 3.13 and older.
+
   (Contributed by Victor Stinner in :gh:`128863`.)
 
+
+* C structures for :py:type:`str` instances, and a macro for querying a
+  string's memory layout, are deprecated and planned for
+  removal in Python 3.16:
+
+  * :c:type:`PyASCIIObject`
+  * :c:type:`PyCompactUnicodeObject`
+  * :c:type:`PyUnicodeObject`
+  * :c:type:`PyUnicode_IS_COMPACT`
+
+  See their documentation for possible replacements.
+
+
 .. include:: ../deprecations/c-api-pending-removal-in-3.15.rst
+
+.. include:: ../deprecations/c-api-pending-removal-in-3.16.rst
 
 .. include:: ../deprecations/c-api-pending-removal-in-3.18.rst
 
