@@ -1678,7 +1678,7 @@ class TestUopsOptimization(unittest.TestCase):
             x = 0
             for _ in range(n):
                 d = {}
-                d["Spam"] = 1  # Guarded...
+                d["Spam"] = 1  # unguarded!
                 x += d["Spam"]  # ...unguarded!
             return x
 
@@ -1686,7 +1686,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertEqual(uops.count("_GUARD_NOS_DICT"), 1)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT"), 0)
         self.assertEqual(uops.count("_STORE_SUBSCR_DICT"), 1)
         self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT"), 1)
 
@@ -1695,7 +1695,7 @@ class TestUopsOptimization(unittest.TestCase):
             x = 0
             for _ in range(n):
                 l = [0]
-                l[0] = 1  # Guarded...
+                l[0] = 1  # unguarded!
                 [a] = l  # ...unguarded!
                 b = l[0]  # ...unguarded!
                 if l:  # ...unguarded!
@@ -1706,7 +1706,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 2 * TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertEqual(uops.count("_GUARD_NOS_LIST"), 1)
+        self.assertEqual(uops.count("_GUARD_NOS_LIST"), 0)
         self.assertEqual(uops.count("_STORE_SUBSCR_LIST_INT"), 1)
         self.assertEqual(uops.count("_GUARD_TOS_LIST"), 0)
         self.assertEqual(uops.count("_UNPACK_SEQUENCE_LIST"), 1)
