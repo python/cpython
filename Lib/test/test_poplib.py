@@ -17,6 +17,7 @@ from test.support import socket_helper
 from test.support import threading_helper
 from test.support import asynchat
 from test.support import asyncore
+from test.support.testcase import ExtraAssertions
 
 
 test_support.requires_working_socket(module=True)
@@ -255,9 +256,9 @@ class DummyPOP3Server(asyncore.dispatcher, threading.Thread):
         raise
 
 
-class TestPOP3Class(TestCase):
+class TestPOP3Class(TestCase, ExtraAssertions):
     def assertOK(self, resp):
-        self.assertTrue(resp.startswith(b"+OK"))
+        self.assertStartsWith(resp, b"+OK")
 
     def setUp(self):
         self.server = DummyPOP3Server((HOST, PORT))
@@ -324,7 +325,7 @@ class TestPOP3Class(TestCase):
         self.assertEqual(self.client.list()[1:],
                          ([b'1 1', b'2 2', b'3 3', b'4 4', b'5 5'],
                           25))
-        self.assertTrue(self.client.list('1').endswith(b"OK 1 1"))
+        self.assertEndsWith(self.client.list('1'), b"OK 1 1")
 
     def test_retr(self):
         expected = (b'+OK 116 bytes',
@@ -459,7 +460,7 @@ class TestPOP3_SSLClass(TestPOP3Class):
                                         context=ctx)
         self.assertIsInstance(self.client.sock, ssl.SSLSocket)
         self.assertIs(self.client.sock.context, ctx)
-        self.assertTrue(self.client.noop().startswith(b'+OK'))
+        self.assertStartsWith(self.client.noop(), b'+OK')
 
     def test_stls(self):
         self.assertRaises(poplib.error_proto, self.client.stls)
