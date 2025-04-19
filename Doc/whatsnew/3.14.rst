@@ -479,6 +479,12 @@ Other language changes
   :func:`textwrap.dedent`.
   (Contributed by Jon Crall and Steven Sun in :gh:`103998`.)
 
+* Improve error message when an object supporting the synchronous (resp.
+  asynchronous) context manager protocol is entered using :keyword:`async
+  with` (resp. :keyword:`with`) instead of :keyword:`with` (resp.
+  :keyword:`async with`).
+  (Contributed by Bénédikt Tran in :gh:`128398`.)
+
 
 .. _whatsnew314-pep765:
 
