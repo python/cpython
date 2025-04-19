@@ -78,6 +78,13 @@ Two additional methods are supported:
    dictionary on disk, if feasible.  This is called automatically when the shelf
    is closed with :meth:`close`.
 
+   .. warning::
+
+      During the call to :meth:`!sync`, the *writeback* attribute is set to
+      :const:`False` and other threads will stop updating the cache. As such,
+      this method is **not** thread-safe.
+
+
 .. method:: Shelf.close()
 
    Synchronize and close the persistent *dict* object.  Operations on a closed
