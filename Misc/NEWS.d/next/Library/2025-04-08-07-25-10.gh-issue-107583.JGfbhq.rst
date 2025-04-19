@@ -1,0 +1,4 @@
+Fix :class:`!Flag` inversion when flag set has missing values
+(:class:`!IntFlag` still flips all bits); fix negative assigned values
+during flag creation (both :class:`!Flag` and :class:`!IntFlag` ignore
+missing values).
