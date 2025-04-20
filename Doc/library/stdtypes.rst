@@ -2491,7 +2491,7 @@ These expressions are evaluated at runtime, similarly to :meth:`str.format`,
 and are converted into regular :class:`str` objects.
 For example:
 
-.. code-block:: pycon
+.. doctest::
 
    >>> who = 'nobody'
    >>> nationality = 'Spanish'
@@ -2500,7 +2500,7 @@ For example:
 
 It is also possible to use a multi line f-string:
 
-.. code-block:: pycon
+.. doctest::
 
    >>> f'''This is a string
    ... on two lines'''
@@ -2509,7 +2509,7 @@ It is also possible to use a multi line f-string:
 A single opening curly bracket, ``'{'``, marks a *replacement field* that
 can contain any Python expression:
 
-.. code-block:: pycon
+.. doctest::
 
    >>> nationality = 'Spanish'
    >>> f'The {nationality} Inquisition!'
@@ -2517,7 +2517,7 @@ can contain any Python expression:
 
 To include a literal ``{`` or ``}``, use a double bracket:
 
-.. code-block:: pycon
+.. doctest::
 
    >>> x = 42
    >>> f'{{x}} is {x}'
@@ -2525,7 +2525,7 @@ To include a literal ``{`` or ``}``, use a double bracket:
 
 Functions can also be used, and :ref:`format specifier <formatstrings>`:
 
-.. code-block:: pycon
+.. doctest::
 
    >>> from math import sqrt
    >>> f'√2 \N{ALMOST EQUAL TO} {sqrt(2):.5f}'
@@ -2533,7 +2533,7 @@ Functions can also be used, and :ref:`format specifier <formatstrings>`:
 
 Any non-string expression is converted using :func:`str`, by default:
 
-.. code-block:: pycon
+.. doctest::
 
    >>> from fractions import Fraction
    >>> f'{Fraction(1, 3)}'
@@ -2552,7 +2552,7 @@ Conversion  Meaning
 
 For example:
 
-.. code-block:: pycon
+.. doctest::
 
    >>> from fractions import Fraction
    >>> f'{Fraction(1, 3)!s}'
@@ -2569,7 +2569,7 @@ This preserves spaces within the brackets, and can be used with a converter.
 By default, the debugging operator uses the :func:`repr` (``!r``) conversion.
 For example:
 
-.. code-block:: pycon
+.. doctest::
 
    >>> from fractions import Fraction
    >>> calculation = Fraction(1, 3)
@@ -2588,7 +2588,7 @@ or the empty string if no format specifier is given.
 The formatted result is then used as the final value for the replacement field.
 For example:
 
-.. code-block:: pycon
+.. doctest::
 
    >>> from fractions import Fraction
    >>> f'{Fraction(1, 7):.6f}'
