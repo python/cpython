@@ -1,1 +1,0 @@
-Remove ``Enum._convert`` method, deprecated in 3.8.

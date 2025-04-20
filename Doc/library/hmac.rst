@@ -1,5 +1,5 @@
-:mod:`hmac` --- Keyed-Hashing for Message Authentication
-========================================================
+:mod:`!hmac` --- Keyed-Hashing for Message Authentication
+=========================================================
 
 .. module:: hmac
    :synopsis: Keyed-Hashing for Message Authentication (HMAC) implementation
@@ -14,20 +14,22 @@
 This module implements the HMAC algorithm as described by :rfc:`2104`.
 
 
-.. function:: new(key, msg=None, digestmod=None)
+.. function:: new(key, msg=None, digestmod)
 
    Return a new hmac object.  *key* is a bytes or bytearray object giving the
    secret key.  If *msg* is present, the method call ``update(msg)`` is made.
    *digestmod* is the digest name, digest constructor or module for the HMAC
-   object to use. It supports any name suitable to :func:`hashlib.new`.
+   object to use.  It may be any name suitable to :func:`hashlib.new`.
+   Despite its argument position, it is required.
 
    .. versionchanged:: 3.4
       Parameter *key* can be a bytes or bytearray object.
       Parameter *msg* can be of any type supported by :mod:`hashlib`.
       Parameter *digestmod* can be the name of a hash algorithm.
 
-   .. deprecated-removed:: 3.4 3.8
-      MD5 as implicit default digest for *digestmod* is deprecated.
+   .. versionchanged:: 3.8
+      The *digestmod* argument is now required.  Pass it as a keyword
+      argument to avoid awkwardness when you do not have an initial *msg*.
 
 
 .. function:: digest(key, msg, digest)
@@ -66,7 +68,7 @@ An HMAC object has the following methods:
 
    .. warning::
 
-      When comparing the output of :meth:`digest` to an externally-supplied
+      When comparing the output of :meth:`digest` to an externally supplied
       digest during a verification routine, it is recommended to use the
       :func:`compare_digest` function instead of the ``==`` operator
       to reduce the vulnerability to timing attacks.
@@ -80,7 +82,7 @@ An HMAC object has the following methods:
 
    .. warning::
 
-      When comparing the output of :meth:`hexdigest` to an externally-supplied
+      When comparing the output of :meth:`hexdigest` to an externally supplied
       digest during a verification routine, it is recommended to use the
       :func:`compare_digest` function instead of the ``==`` operator
       to reduce the vulnerability to timing attacks.
@@ -111,6 +113,10 @@ A hash object has the following attributes:
    .. versionadded:: 3.4
 
 
+.. versionchanged:: 3.10
+   Removed the undocumented attributes ``HMAC.digest_cons``, ``HMAC.inner``,
+   and ``HMAC.outer``.
+
 This module also provides the following helper function:
 
 .. function:: compare_digest(a, b)
@@ -127,8 +133,12 @@ This module also provides the following helper function:
       a timing attack could theoretically reveal information about the
       types and lengths of *a* and *b*—but not their values.
 
-
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.10
+
+      The function uses OpenSSL's ``CRYPTO_memcmp()`` internally when
+      available.
 
 
 .. seealso::

@@ -45,39 +45,23 @@ def capwords(s, sep=None):
     sep is used to split and join the words.
 
     """
-    return (sep or ' ').join(x.capitalize() for x in s.split(sep))
+    return (sep or ' ').join(map(str.capitalize, s.split(sep)))
 
 
 ####################################################################
-import re as _re
-from collections import ChainMap as _ChainMap
-
 _sentinel_dict = {}
 
-class _TemplateMetaclass(type):
-    pattern = r"""
-    %(delim)s(?:
-      (?P<escaped>%(delim)s) |   # Escape sequence of two delimiters
-      (?P<named>%(id)s)      |   # delimiter and a Python identifier
-      {(?P<braced>%(bid)s)}  |   # delimiter and a braced identifier
-      (?P<invalid>)              # Other ill-formed delimiter exprs
-    )
-    """
 
-    def __init__(cls, name, bases, dct):
-        super(_TemplateMetaclass, cls).__init__(name, bases, dct)
-        if 'pattern' in dct:
-            pattern = cls.pattern
-        else:
-            pattern = _TemplateMetaclass.pattern % {
-                'delim' : _re.escape(cls.delimiter),
-                'id'    : cls.idpattern,
-                'bid'   : cls.braceidpattern or cls.idpattern,
-                }
-        cls.pattern = _re.compile(pattern, cls.flags | _re.VERBOSE)
+class _TemplatePattern:
+    # This descriptor is overwritten in ``Template._compile_pattern()``.
+    def __get__(self, instance, cls=None):
+        if cls is None:
+            return self
+        return cls._compile_pattern()
+_TemplatePattern = _TemplatePattern()
 
 
-class Template(metaclass=_TemplateMetaclass):
+class Template:
     """A string class for supporting $-substitutions."""
 
     delimiter = '$'
@@ -87,7 +71,35 @@ class Template(metaclass=_TemplateMetaclass):
     # See https://bugs.python.org/issue31672
     idpattern = r'(?a:[_a-z][_a-z0-9]*)'
     braceidpattern = None
-    flags = _re.IGNORECASE
+    flags = None  # default: re.IGNORECASE
+
+    pattern = _TemplatePattern  # use a descriptor to compile the pattern
+
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+        cls._compile_pattern()
+
+    @classmethod
+    def _compile_pattern(cls):
+        import re  # deferred import, for performance
+
+        pattern = cls.__dict__.get('pattern', _TemplatePattern)
+        if pattern is _TemplatePattern:
+            delim = re.escape(cls.delimiter)
+            id = cls.idpattern
+            bid = cls.braceidpattern or cls.idpattern
+            pattern = fr"""
+            {delim}(?:
+              (?P<escaped>{delim})  |   # Escape sequence of two delimiters
+              (?P<named>{id})       |   # delimiter and a Python identifier
+              {{(?P<braced>{bid})}} |   # delimiter and a braced identifier
+              (?P<invalid>)             # Other ill-formed delimiter exprs
+            )
+            """
+        if cls.flags is None:
+            cls.flags = re.IGNORECASE
+        pat = cls.pattern = re.compile(pattern, cls.flags | re.VERBOSE)
+        return pat
 
     def __init__(self, template):
         self.template = template
@@ -110,7 +122,8 @@ class Template(metaclass=_TemplateMetaclass):
         if mapping is _sentinel_dict:
             mapping = kws
         elif kws:
-            mapping = _ChainMap(kws, mapping)
+            from collections import ChainMap
+            mapping = ChainMap(kws, mapping)
         # Helper function for .sub()
         def convert(mo):
             # Check the most common path first.
@@ -129,7 +142,8 @@ class Template(metaclass=_TemplateMetaclass):
         if mapping is _sentinel_dict:
             mapping = kws
         elif kws:
-            mapping = _ChainMap(kws, mapping)
+            from collections import ChainMap
+            mapping = ChainMap(kws, mapping)
         # Helper function for .sub()
         def convert(mo):
             named = mo.group('named') or mo.group('braced')
@@ -146,6 +160,34 @@ class Template(metaclass=_TemplateMetaclass):
                              self.pattern)
         return self.pattern.sub(convert, self.template)
 
+    def is_valid(self):
+        for mo in self.pattern.finditer(self.template):
+            if mo.group('invalid') is not None:
+                return False
+            if (mo.group('named') is None
+                and mo.group('braced') is None
+                and mo.group('escaped') is None):
+                # If all the groups are None, there must be
+                # another group we're not expecting
+                raise ValueError('Unrecognized named group in pattern',
+                    self.pattern)
+        return True
+
+    def get_identifiers(self):
+        ids = []
+        for mo in self.pattern.finditer(self.template):
+            named = mo.group('named') or mo.group('braced')
+            if named is not None and named not in ids:
+                # add a named group only the first time it appears
+                ids.append(named)
+            elif (named is None
+                and mo.group('invalid') is None
+                and mo.group('escaped') is None):
+                # If all the groups are None, there must be
+                # another group we're not expecting
+                raise ValueError('Unrecognized named group in pattern',
+                    self.pattern)
+        return ids
 
 
 ########################################################################
@@ -185,19 +227,20 @@ class Formatter:
                 # this is some markup, find the object and do
                 #  the formatting
 
-                # handle arg indexing when empty field_names are given.
-                if field_name == '':
+                # handle arg indexing when empty field first parts are given.
+                field_first, _ = _string.formatter_field_name_split(field_name)
+                if field_first == '':
                     if auto_arg_index is False:
                         raise ValueError('cannot switch from manual field '
                                          'specification to automatic field '
                                          'numbering')
-                    field_name = str(auto_arg_index)
+                    field_name = str(auto_arg_index) + field_name
                     auto_arg_index += 1
-                elif field_name.isdigit():
+                elif isinstance(field_first, int):
                     if auto_arg_index:
-                        raise ValueError('cannot switch from manual field '
-                                         'specification to automatic field '
-                                         'numbering')
+                        raise ValueError('cannot switch from automatic field '
+                                         'numbering to manual field '
+                                         'specification')
                     # disable auto arg incrementing, if it gets
                     # used later on, then an exception will be raised
                     auto_arg_index = False

@@ -69,6 +69,10 @@ This documentation page contains the following sections:
 Transports
 ==========
 
+**Source code:** :source:`Lib/asyncio/transports.py`
+
+----------------------------------------------------
+
 Transports are classes provided by :mod:`asyncio` in order to abstract
 various kinds of communication channels.
 
@@ -152,7 +156,8 @@ Base Transport
    will be received.  After all buffered data is flushed, the
    protocol's :meth:`protocol.connection_lost()
    <BaseProtocol.connection_lost>` method will be called with
-   :const:`None` as its argument.
+   :const:`None` as its argument. The transport should not be
+   used once it is closed.
 
 .. method:: BaseTransport.is_closing()
 
@@ -357,6 +362,11 @@ Datagram Transports
    This method does not block; it buffers the data and arranges
    for it to be sent out asynchronously.
 
+   .. versionchanged:: 3.13
+      This method can be called with an empty bytes object to send a
+      zero-length datagram. The buffer size calculation used for flow
+      control is also updated to account for the datagram header.
+
 .. method:: DatagramTransport.abort()
 
    Close the transport immediately, without waiting for pending
@@ -412,8 +422,8 @@ Subprocess Transports
 
    Stop the subprocess.
 
-   On POSIX systems, this method sends SIGTERM to the subprocess.
-   On Windows, the Windows API function TerminateProcess() is called to
+   On POSIX systems, this method sends :py:const:`~signal.SIGTERM` to the subprocess.
+   On Windows, the Windows API function :c:func:`!TerminateProcess` is called to
    stop the subprocess.
 
    See also :meth:`subprocess.Popen.terminate`.
@@ -430,6 +440,10 @@ Subprocess Transports
 
 Protocols
 =========
+
+**Source code:** :source:`Lib/asyncio/protocols.py`
+
+---------------------------------------------------
 
 asyncio provides a set of abstract base classes that should be used
 to implement network protocols.  Those classes are meant to be used
@@ -545,7 +559,7 @@ accept factories that return streaming protocols.
    a connection is open.
 
    However, :meth:`protocol.eof_received() <Protocol.eof_received>`
-   is called at most once.  Once `eof_received()` is called,
+   is called at most once.  Once ``eof_received()`` is called,
    ``data_received()`` is not called anymore.
 
 .. method:: Protocol.eof_received()
@@ -580,9 +594,6 @@ Buffered Streaming Protocols
 ----------------------------
 
 .. versionadded:: 3.7
-   **Important:** this has been added to asyncio in Python 3.7
-   *on a provisional basis*!  This is as an experimental API that
-   might be changed or removed completely in Python 3.8.
 
 Buffered Protocols can be used with any event loop method
 that supports `Streaming Protocols`_.
@@ -678,7 +689,7 @@ factories passed to the :meth:`loop.create_datagram_endpoint` method.
 Subprocess Protocols
 --------------------
 
-Datagram Protocol instances should be constructed by protocol
+Subprocess Protocol instances should be constructed by protocol
 factories passed to the :meth:`loop.subprocess_exec` and
 :meth:`loop.subprocess_shell` methods.
 
@@ -701,6 +712,9 @@ factories passed to the :meth:`loop.subprocess_exec` and
 .. method:: SubprocessProtocol.process_exited()
 
    Called when the child process has exited.
+
+   It can be called before :meth:`~SubprocessProtocol.pipe_data_received` and
+   :meth:`~SubprocessProtocol.pipe_connection_lost` methods.
 
 
 Examples
@@ -740,7 +754,7 @@ received data, and close the connection::
         loop = asyncio.get_running_loop()
 
         server = await loop.create_server(
-            lambda: EchoServerProtocol(),
+            EchoServerProtocol,
             '127.0.0.1', 8888)
 
         async with server:
@@ -767,9 +781,8 @@ data, and waits until the connection is closed::
 
 
     class EchoClientProtocol(asyncio.Protocol):
-        def __init__(self, message, on_con_lost, loop):
+        def __init__(self, message, on_con_lost):
             self.message = message
-            self.loop = loop
             self.on_con_lost = on_con_lost
 
         def connection_made(self, transport):
@@ -793,7 +806,7 @@ data, and waits until the connection is closed::
         message = 'Hello World!'
 
         transport, protocol = await loop.create_connection(
-            lambda: EchoClientProtocol(message, on_con_lost, loop),
+            lambda: EchoClientProtocol(message, on_con_lost),
             '127.0.0.1', 8888)
 
         # Wait until the protocol signals that the connection
@@ -845,7 +858,7 @@ method, sends back received data::
         # One protocol instance will be created to serve all
         # client requests.
         transport, protocol = await loop.create_datagram_endpoint(
-            lambda: EchoServerProtocol(),
+            EchoServerProtocol,
             local_addr=('127.0.0.1', 9999))
 
         try:
@@ -869,11 +882,10 @@ method, sends data and closes the transport when it receives the answer::
 
 
     class EchoClientProtocol:
-        def __init__(self, message, loop):
+        def __init__(self, message, on_con_lost):
             self.message = message
-            self.loop = loop
+            self.on_con_lost = on_con_lost
             self.transport = None
-            self.on_con_lost = loop.create_future()
 
         def connection_made(self, transport):
             self.transport = transport
@@ -899,13 +911,15 @@ method, sends data and closes the transport when it receives the answer::
         # low-level APIs.
         loop = asyncio.get_running_loop()
 
+        on_con_lost = loop.create_future()
         message = "Hello World!"
+
         transport, protocol = await loop.create_datagram_endpoint(
-            lambda: EchoClientProtocol(message, loop),
+            lambda: EchoClientProtocol(message, on_con_lost),
             remote_addr=('127.0.0.1', 9999))
 
         try:
-            await protocol.on_con_lost
+            await on_con_lost
         finally:
             transport.close()
 
@@ -927,9 +941,9 @@ Wait until a socket receives data using the
 
     class MyProtocol(asyncio.Protocol):
 
-        def __init__(self, loop):
+        def __init__(self, on_con_lost):
             self.transport = None
-            self.on_con_lost = loop.create_future()
+            self.on_con_lost = on_con_lost
 
         def connection_made(self, transport):
             self.transport = transport
@@ -950,13 +964,14 @@ Wait until a socket receives data using the
         # Get a reference to the event loop as we plan to use
         # low-level APIs.
         loop = asyncio.get_running_loop()
+        on_con_lost = loop.create_future()
 
         # Create a pair of connected sockets
         rsock, wsock = socket.socketpair()
 
         # Register the socket to wait for data.
         transport, protocol = await loop.create_connection(
-            lambda: MyProtocol(loop), sock=rsock)
+            lambda: MyProtocol(on_con_lost), sock=rsock)
 
         # Simulate the reception of data from the network.
         loop.call_soon(wsock.send, 'abc'.encode())
@@ -987,7 +1002,7 @@ loop.subprocess_exec() and SubprocessProtocol
 An example of a subprocess protocol used to get the output of a
 subprocess and to wait for the subprocess exit.
 
-The subprocess is created by th :meth:`loop.subprocess_exec` method::
+The subprocess is created by the :meth:`loop.subprocess_exec` method::
 
     import asyncio
     import sys
@@ -996,12 +1011,26 @@ The subprocess is created by th :meth:`loop.subprocess_exec` method::
         def __init__(self, exit_future):
             self.exit_future = exit_future
             self.output = bytearray()
+            self.pipe_closed = False
+            self.exited = False
+
+        def pipe_connection_lost(self, fd, exc):
+            self.pipe_closed = True
+            self.check_for_exit()
 
         def pipe_data_received(self, fd, data):
             self.output.extend(data)
 
         def process_exited(self):
-            self.exit_future.set_result(True)
+            self.exited = True
+            # process_exited() method can be called before
+            # pipe_connection_lost() method: wait until both methods are
+            # called.
+            self.check_for_exit()
+
+        def check_for_exit(self):
+            if self.pipe_closed and self.exited:
+                self.exit_future.set_result(True)
 
     async def get_date():
         # Get a reference to the event loop as we plan to use

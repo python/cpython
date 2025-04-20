@@ -9,17 +9,21 @@ import unittest
 import hashlib
 
 from test import support
+from test.support import hashlib_helper
+from test.support import threading_helper
 
 try:
     import ssl
 except ImportError:
     ssl = None
 
+support.requires_working_socket(module=True)
+
 here = os.path.dirname(__file__)
 # Self-signed cert file for 'localhost'
-CERT_localhost = os.path.join(here, 'keycert.pem')
+CERT_localhost = os.path.join(here, 'certdata', 'keycert.pem')
 # Self-signed cert file for 'fakehostname'
-CERT_fakehostname = os.path.join(here, 'keycert2.pem')
+CERT_fakehostname = os.path.join(here, 'certdata', 'keycert2.pem')
 
 
 # Loopback http server infrastructure
@@ -312,9 +316,12 @@ class BasicAuthTests(unittest.TestCase):
         ah = urllib.request.HTTPBasicAuthHandler()
         ah.add_password(self.REALM, self.server_url, self.USER, self.INCORRECT_PASSWD)
         urllib.request.install_opener(urllib.request.build_opener(ah))
-        self.assertRaises(urllib.error.HTTPError, urllib.request.urlopen, self.server_url)
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            urllib.request.urlopen(self.server_url)
+        cm.exception.close()
 
 
+@hashlib_helper.requires_hashdigest("md5", openssl=True)
 class ProxyAuthTests(unittest.TestCase):
     URL = "http://localhost"
 
@@ -357,15 +364,15 @@ class ProxyAuthTests(unittest.TestCase):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,
                                                self.USER, self.PASSWD+"bad")
         self.digest_auth_handler.set_qop("auth")
-        self.assertRaises(urllib.error.HTTPError,
-                          self.opener.open,
-                          self.URL)
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            self.opener.open(self.URL)
+        cm.exception.close()
 
     def test_proxy_with_no_password_raises_httperror(self):
         self.digest_auth_handler.set_qop("auth")
-        self.assertRaises(urllib.error.HTTPError,
-                          self.opener.open,
-                          self.URL)
+        with self.assertRaises(urllib.error.HTTPError) as cm:
+            self.opener.open(self.URL)
+        cm.exception.close()
 
     def test_proxy_qop_auth_works(self):
         self.proxy_digest_handler.add_password(self.REALM, self.URL,
@@ -446,6 +453,9 @@ class TestUrlopen(unittest.TestCase):
 
     def setUp(self):
         super(TestUrlopen, self).setUp()
+
+        # clear _opener global variable
+        self.addCleanup(urllib.request.urlcleanup)
 
         # Ignore proxies for localhost tests.
         def restore_environ(old_environ):
@@ -559,31 +569,6 @@ class TestUrlopen(unittest.TestCase):
         data = self.urlopen("https://localhost:%s/bizarre" % handler.port, context=context)
         self.assertEqual(data, b"we care a bit")
 
-    def test_https_with_cafile(self):
-        handler = self.start_https_server(certfile=CERT_localhost)
-        with support.check_warnings(('', DeprecationWarning)):
-            # Good cert
-            data = self.urlopen("https://localhost:%s/bizarre" % handler.port,
-                                cafile=CERT_localhost)
-            self.assertEqual(data, b"we care a bit")
-            # Bad cert
-            with self.assertRaises(urllib.error.URLError) as cm:
-                self.urlopen("https://localhost:%s/bizarre" % handler.port,
-                             cafile=CERT_fakehostname)
-            # Good cert, but mismatching hostname
-            handler = self.start_https_server(certfile=CERT_fakehostname)
-            with self.assertRaises(urllib.error.URLError) as cm:
-                self.urlopen("https://localhost:%s/bizarre" % handler.port,
-                             cafile=CERT_fakehostname)
-
-    def test_https_with_cadefault(self):
-        handler = self.start_https_server(certfile=CERT_localhost)
-        # Self-signed cert should fail verification with system certificate store
-        with support.check_warnings(('', DeprecationWarning)):
-            with self.assertRaises(urllib.error.URLError) as cm:
-                self.urlopen("https://localhost:%s/bizarre" % handler.port,
-                             cadefault=True)
-
     def test_https_sni(self):
         if ssl is None:
             self.skipTest("ssl module required")
@@ -608,12 +593,20 @@ class TestUrlopen(unittest.TestCase):
             pass
         self.assertEqual(handler.headers_received["Range"], "bytes=20-39")
 
+    def test_sending_headers_camel(self):
+        handler = self.start_server()
+        req = urllib.request.Request("http://localhost:%s/" % handler.port,
+                                     headers={"X-SoMe-hEader": "foobar"})
+        with urllib.request.urlopen(req):
+            pass
+        self.assertIn("X-Some-Header", handler.headers_received.keys())
+        self.assertNotIn("X-SoMe-hEader", handler.headers_received.keys())
+
     def test_basic(self):
         handler = self.start_server()
         with urllib.request.urlopen("http://localhost:%s" % handler.port) as open_url:
             for attr in ("read", "close", "info", "geturl"):
-                self.assertTrue(hasattr(open_url, attr), "object returned from "
-                             "urlopen lacks the %s attribute" % attr)
+                self.assertHasAttr(open_url, attr)
             self.assertTrue(open_url.read(), "calling 'read' failed")
 
     def test_info(self):
@@ -654,18 +647,29 @@ class TestUrlopen(unittest.TestCase):
                              (index, len(lines[index]), len(line)))
         self.assertEqual(index + 1, len(lines))
 
+    def test_issue16464(self):
+        # See https://bugs.python.org/issue16464
+        # and https://bugs.python.org/issue46648
+        handler = self.start_server([
+            (200, [], b'any'),
+            (200, [], b'any'),
+        ])
+        opener = urllib.request.build_opener()
+        request = urllib.request.Request("http://localhost:%s" % handler.port)
+        self.assertEqual(None, request.data)
 
-threads_key = None
+        opener.open(request, "1".encode("us-ascii"))
+        self.assertEqual(b"1", request.data)
+        self.assertEqual("1", request.get_header("Content-length"))
+
+        opener.open(request, "1234567890".encode("us-ascii"))
+        self.assertEqual(b"1234567890", request.data)
+        self.assertEqual("10", request.get_header("Content-length"))
 
 def setUpModule():
-    # Store the threading_setup in a key and ensure that it is cleaned up
-    # in the tearDown
-    global threads_key
-    threads_key = support.threading_setup()
+    thread_info = threading_helper.threading_setup()
+    unittest.addModuleCleanup(threading_helper.threading_cleanup, *thread_info)
 
-def tearDownModule():
-    if threads_key:
-        support.threading_cleanup(*threads_key)
 
 if __name__ == "__main__":
     unittest.main()

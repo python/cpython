@@ -76,7 +76,7 @@ class SearchDialogBaseTest(unittest.TestCase):
     def test_make_entry(self):
         equal = self.assertEqual
         self.dialog.row = 0
-        self.dialog.top = self.root
+        self.dialog.frame = Frame(self.root)
         entry, label = self.dialog.make_entry("Test:", 'hello')
         equal(label['text'], 'Test:')
 
@@ -89,7 +89,7 @@ class SearchDialogBaseTest(unittest.TestCase):
         equal(self.dialog.row, 1)
 
     def test_create_entries(self):
-        self.dialog.top = self.root
+        self.dialog.frame = Frame(self.root)
         self.dialog.row = 0
         self.engine.setpat('hello')
         self.dialog.create_entries()
@@ -97,7 +97,7 @@ class SearchDialogBaseTest(unittest.TestCase):
 
     def test_make_frame(self):
         self.dialog.row = 0
-        self.dialog.top = self.root
+        self.dialog.frame = Frame(self.root)
         frame, label = self.dialog.make_frame()
         self.assertEqual(label, '')
         self.assertEqual(str(type(frame)), "<class 'tkinter.ttk.Frame'>")
@@ -108,7 +108,7 @@ class SearchDialogBaseTest(unittest.TestCase):
         self.assertEqual(label['text'], 'testlabel')
 
     def btn_test_setup(self, meth):
-        self.dialog.top = self.root
+        self.dialog.frame = Frame(self.root)
         self.dialog.row = 0
         return meth()
 
@@ -140,13 +140,13 @@ class SearchDialogBaseTest(unittest.TestCase):
                     self.assertEqual(var.get(), state)
 
     def test_make_button(self):
-        self.dialog.top = self.root
-        self.dialog.buttonframe = Frame(self.dialog.top)
+        self.dialog.frame = Frame(self.root)
+        self.dialog.buttonframe = Frame(self.dialog.frame)
         btn = self.dialog.make_button('Test', self.dialog.close)
         self.assertEqual(btn['text'], 'Test')
 
     def test_create_command_buttons(self):
-        self.dialog.top = self.root
+        self.dialog.frame = Frame(self.root)
         self.dialog.create_command_buttons()
         # Look for close button command in buttonframe
         closebuttoncommand = ''

@@ -5,7 +5,7 @@ from test.test_asyncio import functional as func_tests
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class ReceiveStuffProto(asyncio.BufferedProtocol):
@@ -58,10 +58,9 @@ class BaseTestBufferedProtocol(func_tests.FunctionalTestCaseMixin):
             writer.close()
             await writer.wait_closed()
 
-        with self.assertWarns(DeprecationWarning):
-            srv = self.loop.run_until_complete(
-                asyncio.start_server(
-                    on_server_client, '127.0.0.1', 0))
+        srv = self.loop.run_until_complete(
+            asyncio.start_server(
+                on_server_client, '127.0.0.1', 0))
 
         addr = srv.sockets[0].getsockname()
         self.loop.run_until_complete(

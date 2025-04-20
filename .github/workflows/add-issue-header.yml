@@ -1,0 +1,54 @@
+name: Add issue header
+# Automatically edits an issue's descriptions with a header,
+# one of:
+#
+# - Bug report
+# - Crash report
+# - Feature or enhancement
+
+on:
+  issues:
+    types:
+      # Only ever run once
+      - opened
+
+
+jobs:
+  add-header:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          # language=JavaScript
+          script: |
+            // https://devguide.python.org/triage/labels/#type-labels
+            const HEADERS = new Map([
+              ['type-bug', 'Bug report'],
+              ['type-crash', 'Crash report'],
+              ['type-feature', 'Feature or enhancement'],
+            ]);
+            let issue_data = await github.rest.issues.get({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            }).then(issue => issue.data);
+            let header = '';
+            for (const label_data of issue_data.labels) {
+                const label_name = (typeof label_data === 'string') ? label_data : label_data.name;
+                if (HEADERS.has(label_name)) {
+                    header = HEADERS.get(label_name);
+                    break;
+                }
+            }
+            if (header !== '') {
+              console.log(`Setting new header: ${header}`);
+              await github.rest.issues.update({
+                  issue_number: context.issue.number,
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  body: `# ${header}\n\n${issue_data.body.replaceAll('\r', '')}`
+              });
+            }

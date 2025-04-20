@@ -47,14 +47,6 @@
 #
 
 {
-   Suppress leaking the GIL.  Happens once per process, see comment in ceval.c.
-   Memcheck:Leak
-   fun:malloc
-   fun:PyThread_allocate_lock
-   fun:PyEval_InitThreads
-}
-
-{
    Suppress leaking the GIL after a fork.
    Memcheck:Leak
    fun:malloc
@@ -102,6 +94,49 @@
    fun:_PyObject_GC_NewVar
    fun:COMMENT_THIS_LINE_TO_DISABLE_LEAK_WARNING
 }
+
+#
+# Leaks: dlopen() called without dlclose()
+#
+
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:malloc
+   fun:malloc
+   fun:strdup
+   fun:_dl_load_cache_lookup
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:malloc
+   fun:malloc
+   fun:strdup
+   fun:_dl_map_object
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:malloc
+   fun:*
+   fun:_dl_new_object
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:calloc
+   fun:*
+   fun:_dl_new_object
+}
+{
+   dlopen() called without dlclose()
+   Memcheck:Leak
+   fun:calloc
+   fun:*
+   fun:_dl_check_map_versions
+}
+
 
 #
 # Non-python specific leaks
@@ -264,6 +299,14 @@
 }
 
 {
+   Uninitialised byte(s) false alarm, see bpo-35561
+   Memcheck:Param
+   epoll_ctl(event)
+   fun:epoll_ctl
+   fun:pyepoll_internal_ctl
+}
+
+{
    ZLIB problems, see test_gzip
    Memcheck:Cond
    obj:/lib/libz.so.1.2.3
@@ -282,6 +325,17 @@
    obj:/lib/libreadline.so.4.3
    fun:rl_initialize
 }
+
+# Valgrind emits "Conditional jump or move depends on uninitialised value(s)"
+# false alarms on GCC builtin strcmp() function. The GCC code is correct.
+#
+# Valgrind bug: https://bugs.kde.org/show_bug.cgi?id=264936
+{
+   bpo-38118: Valgrind emits false alarm on GCC builtin strcmp()
+   Memcheck:Cond
+   fun:PyUnicode_Decode
+}
+
 
 ###
 ### These occur from somewhere within the SSL, when running
