@@ -162,8 +162,10 @@ def main():
     if len(args) > 0:
         if options.module:
             code = "run_module(modname, run_name='__main__')"
-            globs = globals().copy()
-            globs.update({"run_module": runpy.run_module, "modname": args[0]})
+            globs = {
+                "run_module": runpy.run_module,
+                "modname": args[0]
+            }
         else:
             progname = args[0]
             sys.path.insert(0, os.path.dirname(progname))
