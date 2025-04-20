@@ -13,9 +13,6 @@ import sys
 
 __all__ = ["glob", "iglob", "escape", "translate"]
 
-from Lib import posixpath
-
-
 def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         include_hidden=False):
     """Return a list of paths matching a pathname pattern.
