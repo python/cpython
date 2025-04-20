@@ -89,7 +89,6 @@ import builtins
 import tempfile
 import textwrap
 import tokenize
-import functools
 import itertools
 import traceback
 import linecache
@@ -927,7 +926,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if cmd == 'end':
             return True  # end of cmd list
         elif cmd == 'EOF':
-            print('')
+            self.message('')
             return True  # end of cmd list
         cmdlist = self.commands[self.commands_bnum]
         if cmd == 'silent':
@@ -2542,49 +2541,64 @@ class _RemotePdb(Pdb):
 
     @typing.override
     def message(self, msg, end="\n"):
-        self._send(message=str(msg) + end)
+        self._send(message=str(msg) + end, type="info")
 
     @typing.override
     def error(self, msg):
-        self._send(error=str(msg))
+        self._send(message=str(msg), type="error")
 
-    def _read_command(self) -> str:
-        # Loop until we get a command for PDB or an 'interact' REPL.
-        # Process out-of-band completion messages without returning.
+    def _get_input(self, prompt, state) -> str:
+        # Before displaying a (Pdb) prompt, send the list of PDB commands
+        # unless we've already sent an up-to-date list.
+        if state == "pdb" and not self._command_name_cache:
+            self._command_name_cache = self.completenames("", "", 0, 0)
+            self._send(command_list=self._command_name_cache)
+        self._send(prompt=prompt, state=state)
+        return self._read_reply()
+
+    def _read_reply(self):
+        # Loop until we get a 'reply' or 'signal' from the client,
+        # processing out-of-band 'complete' requests as they arrive.
         while True:
             if self._write_failed:
-                return "EOF"
+                raise EOFError
 
-            payload = self._sockfile.readline()
-            if not payload:
-                return "EOF"
+            msg = self._sockfile.readline()
+            if not msg:
+                raise EOFError
 
             try:
-                match json.loads(payload):
-                    case {"command": str(line)}:
-                        # Interact mode has been cancelled client-side,
-                        # likely by a ^D EOF at the prompt.
-                        self._interact_state = None
-                        return line
-                    case {"interact": str(lines)}:
-                        if self._interact_state:
-                            return lines
-                        # Otherwise, fall through to report an error and loop.
-                    case {
-                        "completion": {
-                            "text": str(text),
-                            "line": str(line),
-                            "begidx": int(begidx),
-                            "endidx": int(endidx),
-                        }
-                    }:
-                        items = self._complete_any(text, line, begidx, endidx)
-                        self._send(completion=items)
-                        continue
+                payload = json.loads(msg)
             except json.JSONDecodeError:
-                pass
-            # Invalid JSON, or doesn't meet the schema, or wrong PDB state.
-            self.error(f"Ignoring invalid remote command: {payload}")
+                self.error(f"Disconnecting: client sent invalid JSON {msg}")
+                raise EOFError
+
+            match payload:
+                case {"reply": str(reply)}:
+                    return reply
+                case {"signal": str(signal)}:
+                    if signal == "INT":
+                        raise KeyboardInterrupt
+                    elif signal != "EOF":
+                        self.error(
+                            f"Received unrecognized signal: {signal}"
+                        )
+                        # Our best hope of recovering is to pretend we
+                        # got an EOF to exit whatever mode we're in.
+                    raise EOFError
+                case {
+                    "complete": {
+                        "text": str(text),
+                        "line": str(line),
+                        "begidx": int(begidx),
+                        "endidx": int(endidx),
+                    }
+                }:
+                    items = self._complete_any(text, line, begidx, endidx)
+                    self._send(completions=items)
+                    continue
+            # Valid JSON, but doesn't meet the schema.
+            self.error(f"Ignoring invalid message from client: {msg}")
 
     def _complete_any(self, text, line, begidx, endidx):
         if begidx == 0:
@@ -2605,19 +2619,28 @@ class _RemotePdb(Pdb):
             self.message(str(self.intro))
         stop = None
         while not stop:
-            if self.cmdqueue:
-                line = self.cmdqueue.pop(0)
-            else:
-                if not self._command_name_cache:
-                    self._command_name_cache = self.completenames("", "", 0, 0)
-                    self._send(command_list=self._command_name_cache)
+            if self._interact_state is not None:
+                try:
+                    reply = self._get_input(prompt=">>> ", state="interact")
+                except KeyboardInterrupt:
+                    # Match how KeyboardInterrupt is handled in a REPL
+                    self.message("\nKeyboardInterrupt")
+                except EOFError:
+                    self.message("\n*exit from pdb interact command*")
+                    self._interact_state = None
+                else:
+                    self._run_in_python_repl(reply)
+                continue
 
-                mode = "interact" if self._interact_state else "pdb"
-                self._send(prompt=self.prompt, mode=mode)
-                line = self._read_command()
-                if self._interact_state is not None:
-                    self._run_in_python_repl(line)
-                    continue
+            if not self.cmdqueue:
+                try:
+                    reply = self._get_input(prompt=self.prompt, state="pdb")
+                except EOFError:
+                    reply = "EOF"
+
+                self.cmdqueue.append(reply)
+
+            line = self.cmdqueue.pop(0)
             line = self.precmd(line)
             stop = self.onecmd(line)
             stop = self.postcmd(stop, line)
@@ -2639,6 +2662,12 @@ class _RemotePdb(Pdb):
             except OSError:
                 # close() can fail if the connection was broken unexpectedly.
                 pass
+
+    def do_debug(self, arg):
+        # Clear our cached list of valid commands; the recursive debugger might
+        # send its own differing list, and so ours needs to be re-sent.
+        self._command_name_cache = []
+        return super().do_debug(arg)
 
     def do_alias(self, arg):
         # Clear our cached list of valid commands; one might be added.
@@ -2680,56 +2709,11 @@ class _RemotePdb(Pdb):
     def do_interact(self, arg):
         # Prepare to run 'interact' mode code blocks, and trigger the client
         # to start treating all input as Python commands, not PDB ones.
+        self.message("*pdb interact start*")
         self._interact_state = _InteractState(
             compiler=codeop.CommandCompiler(),
             ns={**self.curframe.f_globals, **self.curframe.f_locals},
         )
-
-    def do_commands(self, arg):
-        # Called with only one line in 'arg' to start collecting commands.
-        # Once the client has gathered up the full list of commands to apply,
-        # do_commands gets called again with multiple lines of input in args.
-        arg, *commands = arg.split("\n")
-        if not arg:
-            bnum = len(bdb.Breakpoint.bpbynumber) - 1
-        else:
-            try:
-                bnum = int(arg)
-            except ValueError:
-                self._print_invalid_arg(arg)
-                return
-
-        try:
-            self.get_bpbynumber(bnum)
-        except ValueError as err:
-            self.error("cannot set commands: %s" % err)
-            return
-
-        if not commands:
-            # We've only received the first line so far.
-            # Have the client enter command entry mode.
-
-            # fmt: off
-            end_cmds = [
-                "c", "cont", "continue",
-                "s", "step",
-                "n", "next",
-                "r", "return",
-                "q", "quit", "exit",
-                "j", "jump",
-            ]
-            # fmt: on
-
-            end_cmds += ["end"]  # pseudo-command
-            self._send(commands_entry={"bpnum": bnum, "terminators": end_cmds})
-            return
-
-        self.commands_bnum = bnum
-        self.commands[bnum] = []
-
-        for line in commands:
-            if self.handle_command_def(line):
-                break
 
     @typing.override
     def _create_recursive_debugger(self):
@@ -2737,23 +2721,10 @@ class _RemotePdb(Pdb):
 
     @typing.override
     def _prompt_for_confirmation(self, prompt, choices, default):
-        self._send(
-            confirm={"prompt": prompt, "choices": choices, "default": default}
-        )
-        payload = self._sockfile.readline()
-
-        if not payload:
-            return default
-
         try:
-            match json.loads(payload):
-                case {"confirmation_reply": str(reply)}:
-                    return reply
-        except json.JSONDecodeError:
-            pass
-
-        self.error(f"Ignoring unexpected remote message: {payload}")
-        return default
+            return self._get_input(prompt=prompt, state="confirm")
+        except (EOFError, KeyboardInterrupt):
+            return default
 
     def do_run(self, arg):
         self.error("remote PDB cannot restart the program")
@@ -2766,6 +2737,8 @@ class _RemotePdb(Pdb):
             # If we get a SystemExit in 'interact' mode, exit the REPL.
             self._interact_state = None
         super()._error_exc()
+        if isinstance(exc, SystemExit):
+            self.message("*exit from pdb interact command*")
 
     def default(self, line):
         # Unlike Pdb, don't prompt for more lines of a multi-line command.
@@ -2787,54 +2760,38 @@ class _PdbClient:
         self.pdb_instance = Pdb()
         self.pdb_commands = set()
         self.completion_matches = []
-        self.interact_mode = False
-        self.commands_mode = False
-        self.bpnum = 0
-        self.command_list_terminators = []
+        self.state = "dumb"
 
     def read_command(self, prompt):
-        continue_prompt = "...".ljust(len(prompt))
+        reply = input(prompt)
 
-        if self.interact_mode:
-            # Python REPL mode
-            try:
-                line = input(">>> ")
-            except EOFError:
-                print("\n*exit from pdb interact command*")
-                self.interact_mode = False
-            else:
-                continue_prompt = "...".ljust(len(">>> "))
+        if self.state == "dumb":
+            # No logic applied whatsoever, just pass the raw reply back.
+            return reply
 
-        if not self.interact_mode:
+        prefix = ""
+        if self.state == "pdb":
             # PDB command entry mode
-            line = input(prompt)
-            cmd = self.pdb_instance.parseline(line)[0]
-            if cmd in self.pdb_commands or line.strip() == "":
-                # Recognized PDB command, or repeating last command
-                return line
+            cmd = self.pdb_instance.parseline(reply)[0]
+            if cmd in self.pdb_commands or reply.strip() == "":
+                # Recognized PDB command, or blank line repeating last command
+                return reply
 
             # Otherwise, explicit or implicit exec command
-            if line.startswith("!"):
-                line = line[1:].lstrip()
+            if reply.startswith("!"):
+                prefix = "!"
+                reply = reply.removeprefix(prefix).lstrip()
 
-        # Ensure the remote won't try to use this as a PDB command.
-        prefix = "!" if not self.interact_mode else ""
-
-        if (
-            codeop.compile_command(line + "\n", "<stdin>", "single")
-            is not None
-        ):
+        if codeop.compile_command(reply + "\n", "<stdin>", "single") is not None:
             # Valid single-line statement
-            return prefix + line
+            return prefix + reply
 
         # Otherwise, valid first line of a multi-line statement
         continue_prompt = "...".ljust(len(prompt))
-        buffer = line
+        while codeop.compile_command(reply, "<stdin>", "single") is None:
+            reply += "\n" + input(continue_prompt)
 
-        while codeop.compile_command(buffer, "<stdin>", "single") is None:
-            buffer += "\n" + input(continue_prompt)
-
-        return prefix + buffer
+        return prefix + reply
 
     @contextmanager
     def readline_completion(self, completer):
@@ -2887,105 +2844,50 @@ class _PdbClient:
 
     def process_payload(self, payload):
         match payload:
-            case {"command_list": command_list}:
+            case {
+                "command_list": command_list
+            } if all(isinstance(c, str) for c in command_list):
                 self.pdb_commands = set(command_list)
-            case {"message": str(msg)}:
-                print(msg, end="", flush=True)
-            case {"error": str(msg)}:
-                print("***", msg, flush=True)
+            case {"message": str(msg), "type": str(msg_type)}:
+                if msg_type == "error":
+                    print("***", msg, flush=True)
+                else:
+                    print(msg, end="", flush=True)
             case {"help": str(arg)}:
                 self.pdb_instance.do_help(arg)
-            case {"prompt": str(prompt), "mode": str(mode)}:
-                if mode == "interact":
-                    self.interact_mode = True
-                elif self.interact_mode and mode != "interact":
-                    print("*exit from pdb interact command*")
-                    self.interact_mode = False
-
-                if self.commands_mode:
-                    self.prompt_for_breakpoint_command_list("(com) ")
-                else:
-                    self.prompt_for_repl_command(prompt)
-            case {
-                "confirm": {
-                    "prompt": str(prompt),
-                    "choices": list(choices),
-                    "default": str(default),
-                }
-            } if all(isinstance(c, str) for c in choices):
-                self.prompt_for_confirmation(prompt, choices, default)
-            case {
-                "commands_entry": {
-                    "bpnum": int(bpnum),
-                    "terminators": list(command_list_terminators),
-                }
-            }:
-                self.bpnum = bpnum
-                self.command_list_terminators = command_list_terminators
-                self.commands_mode = True
+            case {"prompt": str(prompt), "state": str(state)}:
+                if state not in ("pdb", "interact"):
+                    state = "dumb"
+                self.state = state
+                self.prompt_for_reply(prompt)
             case _:
                 raise RuntimeError(f"Unrecognized payload {payload}")
 
-    def prompt_for_breakpoint_command_list(self, prompt):
-        parts = [f"commands {self.bpnum}"]
+    def prompt_for_reply(self, prompt):
         while True:
             try:
-                line = input(prompt).strip()
-                parts.append(line)
-                cmd = self.pdb_instance.parseline(line)[0]
-                if cmd in self.command_list_terminators:
-                    break
-            except (KeyboardInterrupt, EOFError):
-                print(flush=True)
-                print("command definition aborted, old commands restored")
-                break
-            finally:
-                self.commands_mode = False
-
-        command = "\n".join(parts)
-        self.sockfile.write((json.dumps({"command": command}) + "\n").encode())
-        self.sockfile.flush()
-
-    def prompt_for_repl_command(self, prompt):
-        while True:
-            try:
-                command = self.read_command(prompt)
+                payload = {"reply": self.read_command(prompt)}
             except EOFError:
-                command = "EOF"
+                payload = {"signal": "EOF"}
             except KeyboardInterrupt:
-                print(flush=True)
-                continue
+                payload = {"signal": "INT"}
             except Exception as exc:
                 msg = traceback.format_exception_only(exc)[-1].strip()
                 print("***", msg, flush=True)
                 continue
 
-            if self.interact_mode:
-                payload = {"interact": command}
-            else:
-                payload = {"command": command}
             self.sockfile.write((json.dumps(payload) + "\n").encode())
             self.sockfile.flush()
             return
-
-    def prompt_for_confirmation(self, prompt, choices, default):
-        try:
-            with self.readline_completion(
-                functools.partial(self.complete_choices, choices=choices)
-            ):
-                reply = input(prompt).strip()
-        except (KeyboardInterrupt, EOFError):
-            print(flush=True)
-            reply = default
-
-        payload = {"confirmation_reply": reply}
-        self.sockfile.write((json.dumps(payload) + "\n").encode())
-        self.sockfile.flush()
 
     def complete(self, text, state):
         import readline
 
         if state == 0:
+            self.completion_matches = []
+            if self.state not in ("pdb", "interact"):
+                return None
+
             origline = readline.get_line_buffer()
             line = origline.lstrip()
             stripped = len(origline) - len(line)
@@ -2993,35 +2895,33 @@ class _PdbClient:
             endidx = readline.get_endidx() - stripped
 
             msg = {
-                "completion": {
+                "complete": {
                     "text": text,
                     "line": line,
                     "begidx": begidx,
                     "endidx": endidx,
                 }
             }
-            self.sockfile.write((json.dumps(msg) + "\n").encode())
-            self.sockfile.flush()
+
+            try:
+                self.sockfile.write((json.dumps(msg) + "\n").encode())
+                self.sockfile.flush()
+            except OSError:
+                return None
 
             payload = self.sockfile.readline()
+            if not payload:
+                return None
+
             payload = json.loads(payload)
-            if "completion" not in payload:
+            if "completions" not in payload:
                 raise RuntimeError(
                     f"Failed to get valid completions. Got: {payload}"
                 )
 
-            self.completion_matches = payload["completion"]
+            self.completion_matches = payload["completions"]
         try:
             return self.completion_matches[state]
-        except IndexError:
-            return None
-
-    def complete_choices(self, text, state, choices):
-        if state == 0:
-            self.completion_matches = [c for c in choices if c.startswith(text)]
-
-        try:
-            return choices[state]
         except IndexError:
             return None
 
