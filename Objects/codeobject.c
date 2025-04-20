@@ -2,23 +2,25 @@
 #include "opcode.h"
 
 #include "pycore_code.h"          // _PyCodeConstructor
-#include "pycore_frame.h"         // FRAME_SPECIALS_SIZE
+#include "pycore_function.h"      // _PyFunction_ClearCodeByVersion()
 #include "pycore_hashtable.h"     // _Py_hashtable_t
-#include "pycore_index_pool.h"     // _PyIndexPool
+#include "pycore_index_pool.h"    // _PyIndexPool_Fini()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // PyInterpreterState.co_extra_freefuncs
-#include "pycore_object.h"        // _PyObject_SetDeferredRefcount
-#include "pycore_object_stack.h"
-#include "pycore_opcode_metadata.h" // _PyOpcode_Deopt, _PyOpcode_Caches
+#include "pycore_interpframe.h"   // FRAME_SPECIALS_SIZE
+#include "pycore_opcode_metadata.h" // _PyOpcode_Caches
 #include "pycore_opcode_utils.h"  // RESUME_AT_FUNC_START
-#include "pycore_pymem.h"         // _PyMem_FreeDelayed
+#include "pycore_optimizer.h"     // _Py_ExecutorDetach
+#include "pycore_pymem.h"         // _PyMem_FreeDelayed()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
+#include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 #include "pycore_uniqueid.h"      // _PyObject_AssignUniqueId()
-#include "clinic/codeobject.c.h"
 
+#include "clinic/codeobject.c.h"
 #include <stdbool.h>
+
 
 #define INITIAL_SPECIALIZED_CODE_SIZE 16
 
@@ -2994,8 +2996,9 @@ is_bytecode_unused(_PyCodeArray *tlbc, Py_ssize_t idx,
 }
 
 static int
-get_code_with_unused_tlbc(PyObject *obj, struct get_code_args *args)
+get_code_with_unused_tlbc(PyObject *obj, void *data)
 {
+    struct get_code_args *args = (struct get_code_args *) data;
     if (!PyCode_Check(obj)) {
         return 1;
     }
@@ -3044,7 +3047,7 @@ _Py_ClearUnusedTLBC(PyInterpreterState *interp)
     }
     // Collect code objects that have bytecode not in use by any thread
     _PyGC_VisitObjectsWorldStopped(
-        interp, (gcvisitobjects_t)get_code_with_unused_tlbc, &args);
+        interp, get_code_with_unused_tlbc, &args);
     if (args.err < 0) {
         goto err;
     }

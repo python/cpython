@@ -15,6 +15,7 @@
 #include "pycore_ceval.h"         // _Py_EnterRecursiveCall()
 #include "pycore_compile.h"       // _PyAST_Compile()
 #include "pycore_fileutils.h"     // _PyFile_Flush
+#include "pycore_import.h"        // _PyImport_GetImportlibExternalLoader()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_parser.h"        // _PyParser_ASTFromString()
@@ -24,6 +25,7 @@
 #include "pycore_pythonrun.h"     // export _PyRun_InteractiveLoopObject()
 #include "pycore_sysmodule.h"     // _PySys_SetAttr()
 #include "pycore_traceback.h"     // _PyTraceBack_Print()
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #include "errcode.h"              // E_EOF
 #include "marshal.h"              // PyMarshal_ReadLongFromFile()

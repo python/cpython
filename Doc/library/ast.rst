@@ -1190,7 +1190,7 @@ Control flow
 
    .. doctest::
 
-        >> print(ast.dump(ast.parse("""
+        >>> print(ast.dump(ast.parse("""
         ... while x:
         ...    ...
         ... else:

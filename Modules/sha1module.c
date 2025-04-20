@@ -30,15 +30,6 @@ class SHA1Type "SHA1object *" "&PyType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=3dc9a20d1becb759]*/
 
-/* Some useful types */
-
-#if SIZEOF_INT == 4
-typedef unsigned int SHA1_INT32;        /* 32-bit integer */
-typedef long long SHA1_INT64;        /* 64-bit integer */
-#else
-/* not defined. compilation will die. */
-#endif
-
 /* The SHA1 block size and message digest sizes, in bytes */
 
 #define SHA1_BLOCKSIZE    64

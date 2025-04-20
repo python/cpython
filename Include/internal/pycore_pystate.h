@@ -8,11 +8,8 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_runtime_structs.h" // _PyRuntime
-#include "pycore_runtime.h"         // _PyRuntimeState_GetFinalizing
-#include "pycore_tstate.h"          // _PyThreadStateImpl
+#include "pycore_typedefs.h"      // _PyRuntimeState
 
-extern const PyConfig* _PyInterpreterState_GetConfig(PyInterpreterState *interp);
 
 // Values for PyThreadState.state. A thread must be in the "attached" state
 // before calling most Python APIs. If the GIL is enabled, then "attached"

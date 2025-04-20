@@ -2031,7 +2031,7 @@ if test "$Py_LTO" = 'true' ; then
           LTOCFLAGS="-flto"
           ;;
         *)
-          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects -flto-partition=none"
+          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects"
           ;;
       esac
       ;;
@@ -5147,7 +5147,8 @@ AC_CHECK_FUNCS([ \
   posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 process_vm_readv \
   pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
-  pthread_kill pthread_getname_np pthread_setname_np pthread_getattr_np \
+  pthread_kill pthread_get_name_np pthread_getname_np pthread_set_name_np
+  pthread_setname_np pthread_getattr_np \
   ptsname ptsname_r pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
   rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
   sched_setparam sched_setscheduler sem_clockwait sem_getvalue sem_open \
@@ -7033,6 +7034,26 @@ fi
 ],
 [AC_MSG_RESULT([no value specified])])
 
+# Check for --with-remote-debug
+AC_MSG_CHECKING([for --with-remote-debug])
+AC_ARG_WITH(
+  [remote-debug],
+  [AS_HELP_STRING(
+    [--with-remote-debug],
+    [enable remote debugging support (default is yes)])],
+  [],
+  [with_remote_debug=yes])
+
+if test "$with_remote_debug" = yes; then
+  AC_DEFINE([Py_REMOTE_DEBUG], [1],
+    [Define if you want to enable remote debugging support.])
+  AC_MSG_RESULT([yes])
+else
+  AC_DEFINE([Py_REMOTE_DEBUG], [0],
+    [Define if you want to enable remote debugging support.])
+  AC_MSG_RESULT([no])
+fi
+
 
 case $ac_sys_system in
 AIX*)
@@ -7563,6 +7584,7 @@ case "$ac_sys_system" in
   Darwin) _PYTHREAD_NAME_MAXLEN=63;;
   iOS) _PYTHREAD_NAME_MAXLEN=63;;
   FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
+  OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
   *) _PYTHREAD_NAME_MAXLEN=;;
 esac
 if test -n "$_PYTHREAD_NAME_MAXLEN"; then
@@ -7754,7 +7776,6 @@ dnl always enabled extension modules
 PY_STDLIB_MOD_SIMPLE([array])
 PY_STDLIB_MOD_SIMPLE([_asyncio])
 PY_STDLIB_MOD_SIMPLE([_bisect])
-PY_STDLIB_MOD_SIMPLE([_contextvars])
 PY_STDLIB_MOD_SIMPLE([_csv])
 PY_STDLIB_MOD_SIMPLE([_heapq])
 PY_STDLIB_MOD_SIMPLE([_json])
@@ -7765,6 +7786,7 @@ PY_STDLIB_MOD_SIMPLE([_queue])
 PY_STDLIB_MOD_SIMPLE([_random])
 PY_STDLIB_MOD_SIMPLE([select])
 PY_STDLIB_MOD_SIMPLE([_struct])
+PY_STDLIB_MOD_SIMPLE([_types])
 PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_interpreters])
 PY_STDLIB_MOD_SIMPLE([_interpchannels])
@@ -7897,6 +7919,13 @@ if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || tes
 fi
 AC_SUBST([LIBHACL_SIMD256_FLAGS])
 AC_SUBST([LIBHACL_SIMD256_OBJS])
+
+dnl HMAC builtin library does not need OpenSSL for now. In the future
+dnl we might want to rely on OpenSSL EVP/NID interface or implement
+dnl our own for algorithm resolution.
+PY_STDLIB_MOD([_hmac], [], [],
+  [$LIBHACL_CFLAGS],
+  [$LIBHACL_CFLAGS Modules/_hacl/libHacl_HMAC.a])
 
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],
