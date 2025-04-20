@@ -4,6 +4,7 @@ import re
 import shutil
 import sys
 import unittest
+import unittest.mock
 import warnings
 
 from test.support import is_wasi, Py_DEBUG
@@ -209,6 +210,21 @@ class GlobTests(unittest.TestCase):
             eq(glob.glob(os.fsencode(self.norm('aa*') + sep*2)),
                [os.fsencode(self.norm('aaa') + os.sep),
                 os.fsencode(self.norm('aab') + os.sep)])
+
+    def test_glob_tilde_expansion(self):
+        with unittest.mock.patch('pathlib.Path.home', return_value=self.tempdir):
+            results = glob.glob('~')
+            self.assertEqual([self.tempdir], results)
+
+            results = glob.glob('~/*')
+            self.assertIn(self.tempdir + '/a', results)
+
+            # test it is not expanded when it is not a path
+            tilde_file = os.path.join(self.tempdir, '~file')
+            create_empty_file(tilde_file)
+            with change_cwd(self.tempdir):
+                results = glob.glob('~*')
+                self.assertIn('~file', results)
 
     @skip_unless_symlink
     def test_glob_symlinks(self):

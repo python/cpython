@@ -13,6 +13,9 @@ import sys
 
 __all__ = ["glob", "iglob", "escape", "translate"]
 
+from Lib import posixpath
+
+
 def glob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
         include_hidden=False):
     """Return a list of paths matching a pathname pattern.
@@ -46,9 +49,14 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     sys.audit("glob.glob", pathname, recursive)
     sys.audit("glob.glob/2", pathname, recursive, root_dir, dir_fd)
     # expand ~; see issue 84037
-    if pathname.startswith('~'):
-        from pathlib import Path
-        pathname = pathname.replace('~', str(Path.home()), 1)
+    if isinstance(pathname, str):
+        if pathname == '~' or pathname.startswith('~' + os.sep):
+            from pathlib import Path
+            pathname = pathname.replace('~', str(Path.home()), 1)
+    else:
+        if pathname == b'~' or pathname.startswith(b'~' + os.sep.encode('ascii')):
+            from pathlib import Path
+            pathname = pathname.replace(b'~', bytes(Path.home()), 1)
     if root_dir is not None:
         root_dir = os.fspath(root_dir)
     else:
