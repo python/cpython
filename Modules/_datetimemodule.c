@@ -159,7 +159,7 @@ error:
 static PyModuleDef datetimemodule;
 
 static inline datetime_state *
-get_current_state()
+get_current_state(void)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     void *state = interp->datetime_module_state;
