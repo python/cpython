@@ -1958,10 +1958,11 @@ class TestChoices(ParserTestCase):
 class TestTypedChoices(TestChoices):
     """Test a set of string choices that convert to weekdays"""
 
-    parser_signature = Sig(convert_choices=True)
     argument_signatures = [
         Sig('when',
-            type=TestChoices.to_dow, choices=["mo", "tu", "we" , "th", "fr", "sa", "su"],
+            type=TestChoices.to_dow,
+            choices=["mo", "tu", "we" , "th", "fr", "sa", "su"],
+            convert_choices=True,
         )
     ]
 
@@ -5519,11 +5520,12 @@ class TestHelpTypedChoices(HelpTestCase):
         else:
             return None
 
-    parser_signature = Sig(prog='PROG', convert_choices=True)
+    parser_signature = Sig(prog='PROG')
     argument_signatures = [
         Sig('when',
             type=to_date,
-            choices=["today", "tomorrow"]
+            choices=["today", "tomorrow"],
+            convert_choices=True
         ),
     ]
 
@@ -5933,7 +5935,8 @@ class TestStrings(TestCase):
         string = (
             "Action(option_strings=['--foo', '-a', '-b'], dest='b', "
             "nargs='+', const=None, default=42, type='int', "
-            "choices=[1, 2, 3], required=False, help='HELP', "
+            "choices=[1, 2, 3], convert_choices=False, "
+            "required=False, help='HELP', "
             "metavar='METAVAR', deprecated=False)")
         self.assertStringEqual(option, string)
 
@@ -5951,6 +5954,7 @@ class TestStrings(TestCase):
         string = (
             "Action(option_strings=[], dest='x', nargs='?', "
             "const=None, default=2.5, type=%r, choices=[0.5, 1.5, 2.5], "
+            "convert_choices=False, "
             "required=True, help='H HH H', metavar='MV MV MV', "
             "deprecated=False)" % float)
         self.assertStringEqual(argument, string)

@@ -875,6 +875,9 @@ class Action(_AttributeHolder):
             type, an exception will be raised if it is not a member of this
             collection.
 
+        - convert_choices - Runs the ``choices`` through the ``type`` callable
+            during checking. (default: ``False``)
+
         - required -- True if the action must always be specified at the
             command line. This is only meaningful for optional command-line
             arguments.
@@ -893,6 +896,7 @@ class Action(_AttributeHolder):
                  default=None,
                  type=None,
                  choices=None,
+                 convert_choices=False,
                  required=False,
                  help=None,
                  metavar=None,
@@ -904,6 +908,7 @@ class Action(_AttributeHolder):
         self.default = default
         self.type = type
         self.choices = choices
+        self.convert_choices = convert_choices
         self.required = required
         self.help = help
         self.metavar = metavar
@@ -918,6 +923,7 @@ class Action(_AttributeHolder):
             'default',
             'type',
             'choices',
+            'convert_choices',
             'required',
             'help',
             'metavar',
@@ -980,6 +986,7 @@ class _StoreAction(Action):
                  default=None,
                  type=None,
                  choices=None,
+                 convert_choices=False,
                  required=False,
                  help=None,
                  metavar=None,
@@ -998,6 +1005,7 @@ class _StoreAction(Action):
             default=default,
             type=type,
             choices=choices,
+            convert_choices=convert_choices,
             required=required,
             help=help,
             metavar=metavar,
@@ -2678,9 +2686,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             choices = iter(choices)
 
         typed_choices = []
-        if (self.convert_choices and
-            action.type and
-            all(isinstance(choice, str) for choice in choices)
+        if (action.convert_choices and
+            action.type
         ):
             typed_choices = [action.type(v) for v in choices]
 
