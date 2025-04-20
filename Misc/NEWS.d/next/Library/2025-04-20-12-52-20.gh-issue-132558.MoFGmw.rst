@@ -1,0 +1,2 @@
+:mod:`argparse` now allows `choices` to be entered as strings and calls
+convert on the available choices during checking.
