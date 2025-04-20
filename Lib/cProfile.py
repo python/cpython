@@ -98,24 +98,12 @@ class Profile(_lsprof.Profiler):
         return self.runctx(cmd, dict, dict)
 
     def runctx(self, cmd, globals, locals):
-        # cmd has to run in __main__ namespace (or imports from __main__ will
-        # break). Clear __main__ and replace with the globals provided.
-        import __main__
-        # Save a reference to the current __main__ namespace so that we can
-        # restore it after cmd completes.
-        original_main = __main__.__dict__.copy()
-        __main__.__dict__.clear()
-        __main__.__dict__.update(globals)
-
         self.enable()
         try:
-            exec(cmd, __main__.__dict__, locals)
+            exec(cmd, globals, locals)
         finally:
             self.disable()
-            __main__.__dict__.clear()
-            __main__.__dict__.update(original_main)
         return self
-
 
     # This method is more useful to profile a single function call.
     def runcall(self, func, /, *args, **kw):
@@ -192,10 +180,19 @@ def main():
                 '__cached__': None,
                 '__builtins__': __builtins__,
             }
+        # cmd has to run in __main__ namespace (or imports from __main__ will
+        # break). Clear __main__ and replace with the globals provided.
+        import __main__
+        # Save a reference to the current __main__ namespace so that we can
+        # restore it after cmd completes.
+        original_main = __main__.__dict__.copy()
+        __main__.__dict__.update(globs)
 
         try:
-            runctx(code, globs, None, options.outfile, options.sort)
+            runctx(code, __main__.__dict__, None, options.outfile, options.sort)
         except BrokenPipeError as exc:
+            __main__.__dict__.clear()
+            __main__.__dict__.update(original_main)
             # Prevent "Exception ignored" during interpreter shutdown.
             sys.stdout = None
             sys.exit(exc.errno)
