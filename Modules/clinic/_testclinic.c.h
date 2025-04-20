@@ -195,19 +195,19 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(bool_converter_default__doc__,
-"bool_converter_default($module, a=True, b=False, c=True, d=x, /)\n"
+PyDoc_STRVAR(bool_converter_c_default__doc__,
+"bool_converter_c_default($module, a=True, b=False, c=True, d=x, /)\n"
 "--\n"
 "\n");
 
-#define BOOL_CONVERTER_DEFAULT_METHODDEF    \
-    {"bool_converter_default", _PyCFunction_CAST(bool_converter_default), METH_FASTCALL, bool_converter_default__doc__},
+#define BOOL_CONVERTER_C_DEFAULT_METHODDEF    \
+    {"bool_converter_c_default", _PyCFunction_CAST(bool_converter_c_default), METH_FASTCALL, bool_converter_c_default__doc__},
 
 static PyObject *
-bool_converter_default_impl(PyObject *module, int a, int b, int c, int d);
+bool_converter_c_default_impl(PyObject *module, int a, int b, int c, int d);
 
 static PyObject *
-bool_converter_default(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+bool_converter_c_default(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     int a = 1;
@@ -215,7 +215,7 @@ bool_converter_default(PyObject *module, PyObject *const *args, Py_ssize_t nargs
     int c = -2;
     int d = -3;
 
-    if (!_PyArg_CheckPositional("bool_converter_default", nargs, 0, 4)) {
+    if (!_PyArg_CheckPositional("bool_converter_c_default", nargs, 0, 4)) {
         goto exit;
     }
     if (nargs < 1) {
@@ -247,7 +247,7 @@ bool_converter_default(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         goto exit;
     }
 skip_optional:
-    return_value = bool_converter_default_impl(module, a, b, c, d);
+    return_value = bool_converter_c_default_impl(module, a, b, c, d);
 
 exit:
     return return_value;
@@ -4481,4 +4481,4 @@ _testclinic_TestClass_posonly_poskw_varpos_array_no_fastcall(PyObject *type, PyO
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b41f0076aa0b9fb8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b57b94aeba0882b4 input=a9049054013a1b77]*/
