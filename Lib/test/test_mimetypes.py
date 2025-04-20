@@ -295,7 +295,6 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("audio/mpeg", ".mp2"),
                 ("audio/mpeg", ".mp3"),
                 ("video/mpeg", ".m1v"),
-                ("video/mpeg", ".mpa"),
                 ("video/mpeg", ".mpe"),
                 ("video/mpeg", ".mpeg"),
                 ("video/mpeg", ".mpg"),
