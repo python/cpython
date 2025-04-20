@@ -9,6 +9,8 @@
 #include "clinic/blob.c.h"
 #undef clinic_state
 
+#define _pysqlite_Blob_CAST(op) ((pysqlite_Blob *)(op))
+
 /*[clinic input]
 module _sqlite3
 class _sqlite3.Blob "pysqlite_Blob *" "clinic_state()->BlobType"
@@ -29,32 +31,35 @@ close_blob(pysqlite_Blob *self)
 }
 
 static int
-blob_traverse(pysqlite_Blob *self, visitproc visit, void *arg)
+blob_traverse(PyObject *op, visitproc visit, void *arg)
 {
+    pysqlite_Blob *self = _pysqlite_Blob_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->connection);
     return 0;
 }
 
 static int
-blob_clear(pysqlite_Blob *self)
+blob_clear(PyObject *op)
 {
+    pysqlite_Blob *self = _pysqlite_Blob_CAST(op);
     Py_CLEAR(self->connection);
     return 0;
 }
 
 static void
-blob_dealloc(pysqlite_Blob *self)
+blob_dealloc(PyObject *op)
 {
+    pysqlite_Blob *self = _pysqlite_Blob_CAST(op);
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_UnTrack(self);
 
     close_blob(self);
 
     if (self->in_weakreflist != NULL) {
-        PyObject_ClearWeakRefs((PyObject*)self);
+        PyObject_ClearWeakRefs(op);
     }
-    tp->tp_clear((PyObject *)self);
+    (void)tp->tp_clear(op);
     tp->tp_free(self);
     Py_DECREF(tp);
 }
@@ -114,7 +119,7 @@ static void
 blob_seterror(pysqlite_Blob *self, int rc)
 {
     assert(self->connection != NULL);
-    _pysqlite_seterror(self->connection->state, self->connection->db);
+    set_error_from_db(self->connection->state, self->connection->db);
 }
 
 static PyObject *
@@ -373,8 +378,9 @@ blob_exit_impl(pysqlite_Blob *self, PyObject *type, PyObject *val,
 }
 
 static Py_ssize_t
-blob_length(pysqlite_Blob *self)
+blob_length(PyObject *op)
 {
+    pysqlite_Blob *self = _pysqlite_Blob_CAST(op);
     if (!check_blob(self)) {
         return -1;
     }
@@ -449,8 +455,9 @@ subscript_slice(pysqlite_Blob *self, PyObject *item)
 }
 
 static PyObject *
-blob_subscript(pysqlite_Blob *self, PyObject *item)
+blob_subscript(PyObject *op, PyObject *item)
 {
+    pysqlite_Blob *self = _pysqlite_Blob_CAST(op);
     if (!check_blob(self)) {
         return NULL;
     }
@@ -546,8 +553,9 @@ ass_subscript_slice(pysqlite_Blob *self, PyObject *item, PyObject *value)
 }
 
 static int
-blob_ass_subscript(pysqlite_Blob *self, PyObject *item, PyObject *value)
+blob_ass_subscript(PyObject *op, PyObject *item, PyObject *value)
 {
+    pysqlite_Blob *self = _pysqlite_Blob_CAST(op);
     if (!check_blob(self)) {
         return -1;
     }

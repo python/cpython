@@ -116,6 +116,7 @@ class TimeTestCase(unittest.TestCase):
                          'need time.pthread_getcpuclockid()')
     @unittest.skipUnless(hasattr(time, 'clock_gettime'),
                          'need time.clock_gettime()')
+    @unittest.skipIf(support.is_emscripten, "Fails to find clock")
     def test_pthread_getcpuclockid(self):
         clk_id = time.pthread_getcpuclockid(threading.get_ident())
         self.assertTrue(type(clk_id) is int)
@@ -157,10 +158,24 @@ class TimeTestCase(unittest.TestCase):
         self.assertEqual(int(time.mktime(time.localtime(self.t))),
                          int(self.t))
 
-    def test_sleep(self):
+    def test_sleep_exceptions(self):
+        self.assertRaises(TypeError, time.sleep, [])
+        self.assertRaises(TypeError, time.sleep, "a")
+        self.assertRaises(TypeError, time.sleep, complex(0, 0))
+
         self.assertRaises(ValueError, time.sleep, -2)
         self.assertRaises(ValueError, time.sleep, -1)
-        time.sleep(1.2)
+        self.assertRaises(ValueError, time.sleep, -0.1)
+
+        # Improved exception #81267
+        with self.assertRaises(TypeError) as errmsg:
+            time.sleep([])
+        self.assertIn("integer or float", str(errmsg.exception))
+
+    def test_sleep(self):
+        for value in [-0.0, 0, 0.0, 1e-100, 1e-9, 1e-6, 1, 1.2]:
+            with self.subTest(value=value):
+                time.sleep(value)
 
     def test_epoch(self):
         # bpo-43869: Make sure that Python use the same Epoch on all platforms:
@@ -330,11 +345,11 @@ class TimeTestCase(unittest.TestCase):
         # check that this doesn't chain exceptions needlessly (see #17572)
         with self.assertRaises(ValueError) as e:
             time.strptime('', '%D')
-        self.assertIs(e.exception.__suppress_context__, True)
-        # additional check for IndexError branch (issue #19545)
+        self.assertTrue(e.exception.__suppress_context__)
+        # additional check for stray % branch
         with self.assertRaises(ValueError) as e:
-            time.strptime('19', '%Y %')
-        self.assertIsNone(e.exception.__context__)
+            time.strptime('%', '%')
+        self.assertTrue(e.exception.__suppress_context__)
 
     def test_strptime_leap_year(self):
         # GH-70647: warns if parsing a format with a day and no year.
@@ -360,9 +375,6 @@ class TimeTestCase(unittest.TestCase):
     def test_asctime_bounding_check(self):
         self._bounds_checking(time.asctime)
 
-    @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
-    )
     def test_ctime(self):
         t = time.mktime((1973, 9, 16, 1, 3, 52, 0, 0, -1))
         self.assertEqual(time.ctime(t), 'Sun Sep 16 01:03:52 1973')
@@ -538,6 +550,9 @@ class TimeTestCase(unittest.TestCase):
 
     @unittest.skipIf(
         support.is_wasi, "process_time not available on WASI"
+    )
+    @unittest.skipIf(
+        support.is_emscripten, "process_time present but doesn't exclude sleep"
     )
     def test_process_time(self):
         # process_time() should not include time spend during a sleep
@@ -742,9 +757,6 @@ class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear, unittest.TestCase):
 class TestPytime(unittest.TestCase):
     @skip_if_buggy_ucrt_strfptime
     @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
-    @unittest.skipIf(
-        support.is_emscripten, "musl libc issue on Emscripten, bpo-46390"
-    )
     def test_localtime_timezone(self):
 
         # Get the localtime and examine it for the offset and zone.

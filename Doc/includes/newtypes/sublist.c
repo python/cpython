@@ -7,22 +7,24 @@ typedef struct {
 } SubListObject;
 
 static PyObject *
-SubList_increment(SubListObject *self, PyObject *unused)
+SubList_increment(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
+    SubListObject *self = (SubListObject *) op;
     self->state++;
     return PyLong_FromLong(self->state);
 }
 
 static PyMethodDef SubList_methods[] = {
-    {"increment", (PyCFunction) SubList_increment, METH_NOARGS,
+    {"increment", SubList_increment, METH_NOARGS,
      PyDoc_STR("increment state counter")},
     {NULL},
 };
 
 static int
-SubList_init(SubListObject *self, PyObject *args, PyObject *kwds)
+SubList_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
-    if (PyList_Type.tp_init((PyObject *) self, args, kwds) < 0)
+    SubListObject *self = (SubListObject *) op;
+    if (PyList_Type.tp_init(op, args, kwds) < 0)
         return -1;
     self->state = 0;
     return 0;
@@ -35,7 +37,7 @@ static PyTypeObject SubListType = {
     .tp_basicsize = sizeof(SubListObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
-    .tp_init = (initproc) SubList_init,
+    .tp_init = SubList_init,
     .tp_methods = SubList_methods,
 };
 

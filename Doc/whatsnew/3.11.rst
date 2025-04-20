@@ -740,8 +740,8 @@ fractions
 functools
 ---------
 
-* :func:`functools.singledispatch` now supports :data:`types.UnionType`
-  and :data:`typing.Union` as annotations to the dispatch argument.::
+* :func:`functools.singledispatch` now supports :class:`types.UnionType`
+  and :class:`typing.Union` as annotations to the dispatch argument.::
 
     >>> from functools import singledispatch
     >>> @singledispatch
@@ -1670,7 +1670,7 @@ Replaced opcodes
 |                                    |                                    | for each direction                      |
 |                                    |                                    |                                         |
 +------------------------------------+------------------------------------+-----------------------------------------+
-| | :opcode:`!SETUP_WITH`            | :opcode:`BEFORE_WITH`              | :keyword:`with` block setup             |
+| | :opcode:`!SETUP_WITH`            | :opcode:`!BEFORE_WITH`             | :keyword:`with` block setup             |
 | | :opcode:`!SETUP_ASYNC_WITH`      |                                    |                                         |
 +------------------------------------+------------------------------------+-----------------------------------------+
 
