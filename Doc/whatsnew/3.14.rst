@@ -1782,6 +1782,13 @@ Build changes
   with :c:expr:`Py_NO_LINK_LIB`. (Contributed by Jean-Christophe
   Fillion-Robin in :gh:`82909`.)
 
+* Two new configure flags are added: :envvar:`CFLAGS_BUILTIN_MODULE` and
+  :envvar:`LDFLAGS_BUILTIN_MODULE`. These flags allows refistributors to
+  provide compile and linker flags that only apply to standard library extension
+  modules. This is particulary useful to provide options such as ``RUNPATH`` and
+  ``RPATH`` that need to be applied specifically to standard library modules due to
+  its different relative location. (Contributed by Pablo Galindo in :gh:`131842`.)
+
 .. _whatsnew314-pep761:
 
 PEP 761: Discontinuation of PGP signatures

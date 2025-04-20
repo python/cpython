@@ -1407,6 +1407,15 @@ Compiler flags
 
    .. versionadded:: 3.2
 
+.. envvar:: PY_EXTRA_STDMODULE_CFLAGS
+
+   Equivalent flag to :envvar:`CFLAGS_NODIST` but it only applies to **all** builtin extension
+   modules built as part of the standard library.
+
+   Default: (empty).
+
+   .. versionadded:: next
+
 .. envvar:: PY_BUILTIN_MODULE_CFLAGS
 
    Compiler flags to build a standard library extension module as a built-in
@@ -1505,6 +1514,15 @@ Linker flags
    Linker flags used for building the interpreter object files.
 
    .. versionadded:: 3.8
+
+.. envvar:: PY_EXTRA_STDMODULE_LDFLAGS
+
+   Equivalent flag to :envvar:`LDLAGS_NODIST` but it only applies to **all** builtin extension
+   modules built as part of the standard library.
+
+   Default: (empty).
+
+   .. versionadded:: next
 
 
 .. rubric:: Footnotes
