@@ -947,6 +947,8 @@ struct _is {
     _Py_hashtable_t *closed_stackrefs_table;
 #  endif
 #endif
+
+    void *datetime_module_state;
 };
 
 
