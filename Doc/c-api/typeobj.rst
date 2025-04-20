@@ -611,7 +611,7 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    Note that the :c:member:`~PyVarObject.ob_size` field may later be used for
    other purposes. For example, :py:type:`int` instances use the bits of
    :c:member:`~PyVarObject.ob_size` in an implementation-defined
-   way; the underlying storage and its size should be acessed using
+   way; the underlying storage and its size should be accessed using
    :c:func:`PyLong_Export`.
 
    .. note::
@@ -703,10 +703,13 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. code-block:: c
 
-     static void foo_dealloc(foo_object *self) {
+     static void
+     foo_dealloc(PyObject *op)
+     {
+         foo_object *self = (foo_object *) op;
          PyObject_GC_UnTrack(self);
          Py_CLEAR(self->ref);
-         Py_TYPE(self)->tp_free((PyObject *)self);
+         Py_TYPE(self)->tp_free(self);
      }
 
    Finally, if the type is heap allocated (:c:macro:`Py_TPFLAGS_HEAPTYPE`), the
@@ -717,10 +720,12 @@ and :c:data:`PyType_Type` effectively act as defaults.)
 
    .. code-block:: c
 
-     static void foo_dealloc(foo_object *self) {
-         PyTypeObject *tp = Py_TYPE(self);
+     static void
+     foo_dealloc(PyObject *op)
+     {
+         PyTypeObject *tp = Py_TYPE(op);
          // free references and buffers here
-         tp->tp_free(self);
+         tp->tp_free(op);
          Py_DECREF(tp);
      }
 
@@ -1416,8 +1421,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    :mod:`!_thread` extension module::
 
       static int
-      local_traverse(localobject *self, visitproc visit, void *arg)
+      local_traverse(PyObject *op, visitproc visit, void *arg)
       {
+          localobject *self = (localobject *) op;
           Py_VISIT(self->args);
           Py_VISIT(self->kw);
           Py_VISIT(self->dict);
@@ -1511,8 +1517,9 @@ and :c:data:`PyType_Type` effectively act as defaults.)
    members to ``NULL``, as in the following example::
 
       static int
-      local_clear(localobject *self)
+      local_clear(PyObject *op)
       {
+          localobject *self = (localobject *) op;
           Py_CLEAR(self->key);
           Py_CLEAR(self->args);
           Py_CLEAR(self->kw);

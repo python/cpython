@@ -4947,12 +4947,12 @@ PyDict_GetItemString(PyObject *v, const char *key)
     if (kv == NULL) {
         PyErr_FormatUnraisable(
             "Exception ignored in PyDict_GetItemString(); consider using "
-            "PyDict_GetItemRefString()");
+            "PyDict_GetItemStringRef()");
         return NULL;
     }
     rv = dict_getitem(v, kv,
             "Exception ignored in PyDict_GetItemString(); consider using "
-            "PyDict_GetItemRefString()");
+            "PyDict_GetItemStringRef()");
     Py_DECREF(kv);
     return rv;  // borrowed reference
 }
@@ -5495,7 +5495,7 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
     ensure_shared_on_read(d);
 
     i = _Py_atomic_load_ssize_relaxed(&di->di_pos);
-    k = _Py_atomic_load_ptr_relaxed(&d->ma_keys);
+    k = _Py_atomic_load_ptr_acquire(&d->ma_keys);
     assert(i >= 0);
     if (_PyDict_HasSplitTable(d)) {
         PyDictValues *values = _Py_atomic_load_ptr_relaxed(&d->ma_values);

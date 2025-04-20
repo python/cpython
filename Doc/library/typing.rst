@@ -2455,7 +2455,8 @@ types.
    See :pep:`544` for more details. Protocol classes decorated with
    :func:`runtime_checkable` (described later) act as simple-minded runtime
    protocols that check only the presence of given attributes, ignoring their
-   type signatures.
+   type signatures. Protocol classes without this decorator cannot be used
+   as the second argument to :func:`isinstance` or :func:`issubclass`.
 
    Protocol classes can be generic, for example::
 
@@ -2479,8 +2480,7 @@ types.
    Mark a protocol class as a runtime protocol.
 
    Such a protocol can be used with :func:`isinstance` and :func:`issubclass`.
-   This raises :exc:`TypeError` when applied to a non-protocol class.  This
-   allows a simple-minded structural check, very similar to "one trick ponies"
+   This allows a simple-minded structural check, very similar to "one trick ponies"
    in :mod:`collections.abc` such as :class:`~collections.abc.Iterable`.  For example::
 
       @runtime_checkable
@@ -2495,6 +2495,8 @@ types.
 
       import threading
       assert isinstance(threading.Thread(name='Bob'), Named)
+
+   This decorator raises :exc:`TypeError` when applied to a non-protocol class.
 
    .. note::
 
@@ -3449,7 +3451,9 @@ Introspection helpers
    .. versionadded:: 3.7.4
 
    .. versionchanged:: 3.14
-      This is now an alias for :class:`annotationlib.ForwardRef`.
+      This is now an alias for :class:`annotationlib.ForwardRef`. Several undocumented
+      behaviors of this class have been changed; for example, after a ``ForwardRef`` has
+      been evaluated, the evaluated value is no longer cached.
 
 .. function:: evaluate_forward_ref(forward_ref, *, owner=None, globals=None, locals=None, type_params=None, format=annotationlib.Format.VALUE)
 

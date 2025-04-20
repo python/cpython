@@ -66,9 +66,11 @@ Summary -- release highlights
 
 * :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
 * :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
+* :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
-* :ref:`A new type of interpreter  <whatsnew314-tail-call>`
 * :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
+* :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
+* :ref:`A new type of interpreter  <whatsnew314-tail-call>`
 
 
 Incompatible changes
@@ -90,7 +92,7 @@ If you encounter :exc:`NameError`\s or pickling errors coming out of
 New features
 ============
 
-.. _whatsnew314-pep678:
+.. _whatsnew314-pep768:
 
 PEP 768: Safe external debugger interface for CPython
 -----------------------------------------------------
@@ -209,7 +211,7 @@ This example shows how these formats behave:
      ...
    NameError: name 'Undefined' is not defined
    >>> get_annotations(func, format=Format.FORWARDREF)
-   {'arg': ForwardRef('Undefined')}
+   {'arg': ForwardRef('Undefined', owner=<function func at 0x...>)}
    >>> get_annotations(func, format=Format.STRING)
    {'arg': 'Undefined'}
 
@@ -388,8 +390,9 @@ For further information on how to build Python, see
     `compiler bug <https://github.com/llvm/llvm-project/issues/106846>`_ found in
     Clang/LLVM 19, which causes the normal interpreter to be slower. We were unaware of this bug,
     resulting in inaccurate results. We sincerely apologize for
-    communicating results that were only accurate for certain versions of LLVM 19
-    and 20. At the time of writing, this bug has not yet been fixed in LLVM 19-21. Thus
+    communicating results that were only accurate for LLVM v19.1.x and v20.1.0. In the meantime,
+    the bug has been fixed in LLVM v20.1.1 and for the upcoming v21.1, but it will remain
+    unfixed for LLVM v19.1.x and v20.1.0. Thus
     any benchmarks with those versions of LLVM may produce inaccurate numbers.
     (Thanks to Nelson Elhage for bringing this to light.)
 
@@ -437,7 +440,7 @@ Other language changes
 * Support underscore and comma as thousands separators in the fractional part
   for floating-point presentation types of the new-style string formatting
   (with :func:`format` or :ref:`f-strings`).
-  (Contrubuted by Sergey B Kirpichev in :gh:`87790`.)
+  (Contributed by Sergey B Kirpichev in :gh:`87790`.)
 
 * The :func:`bytes.fromhex` and :func:`bytearray.fromhex` methods now accept
   ASCII :class:`bytes` and :term:`bytes-like objects <bytes-like object>`.
@@ -455,6 +458,34 @@ Other language changes
   The testbed can also be used to run the test suite of projects other than
   CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
 
+* Three-argument :func:`pow` now try calling :meth:`~object.__rpow__` if necessary.
+  Previously it was only called in two-argument :func:`!pow` and the binary
+  power operator.
+  (Contributed by Serhiy Storchaka in :gh:`130104`.)
+
+* Add a built-in implementation for HMAC (:rfc:`2104`) using formally verified
+  code from the `HACL* <https://github.com/hacl-star/hacl-star/>`__ project.
+  This implementation is used as a fallback when the OpenSSL implementation
+  of HMAC is not available.
+  (Contributed by Bénédikt Tran in :gh:`99108`.)
+
+* When subclassing from a pure C type, the C slots for the new type are no
+  longer replaced with a wrapped version on class creation if they are not
+  explicitly overridden in the subclass.
+  (Contributed by Tomasz Pytel in :gh:`132329`.)
+
+* The command line option :option:`-c` now automatically dedents its code
+  argument before execution. The auto-dedentation behavior mirrors
+  :func:`textwrap.dedent`.
+  (Contributed by Jon Crall and Steven Sun in :gh:`103998`.)
+
+* Improve error message when an object supporting the synchronous (resp.
+  asynchronous) context manager protocol is entered using :keyword:`async
+  with` (resp. :keyword:`with`) instead of :keyword:`with` (resp.
+  :keyword:`async with`).
+  (Contributed by Bénédikt Tran in :gh:`128398`.)
+
+
 .. _whatsnew314-pep765:
 
 PEP 765: Disallow return/break/continue that exit a finally block
@@ -463,6 +494,7 @@ PEP 765: Disallow return/break/continue that exit a finally block
 The compiler emits a :exc:`SyntaxWarning` when a :keyword:`return`, :keyword:`break` or
 :keyword:`continue` statements appears where it exits a :keyword:`finally` block.
 This change is specified in :pep:`765`.
+
 
 New modules
 ===========
@@ -614,6 +646,11 @@ ctypes
   loaded by the current process.
   (Contributed by Brian Ward in :gh:`119349`.)
 
+* The :class:`ctypes.py_object` type now supports subscription,
+  making it a :term:`generic type`.
+  (Contributed by Brian Schubert in :gh:`132168`.)
+
+
 datetime
 --------
 
@@ -662,6 +699,13 @@ errno
   (Contributed by James Roy in :gh:`126585`.)
 
 
+fnmatch
+-------
+
+* Added :func:`fnmatch.filterfalse` for excluding names matching a pattern.
+  (Contributed by Bénédikt Tran in :gh:`74598`.)
+
+
 fractions
 ---------
 
@@ -705,12 +749,31 @@ graphlib
   (Contributed by Daniel Pope in :gh:`130914`)
 
 
+hmac
+----
+
+* Add a built-in implementation for HMAC (:rfc:`2104`) using formally verified
+  code from the `HACL* <https://github.com/hacl-star/hacl-star/>`__ project.
+  (Contributed by Bénédikt Tran in :gh:`99108`.)
+
+
 http
 ----
 
 * Directory lists and error pages generated by the :mod:`http.server`
   module allow the browser to apply its default dark mode.
   (Contributed by Yorik Hansen in :gh:`123430`.)
+
+* The :mod:`http.server` module now supports serving over HTTPS using the
+  :class:`http.server.HTTPSServer` class. This functionality is exposed by
+  the command-line interface (``python -m http.server``) through the following
+  options:
+
+  * ``--tls-cert <path>``: Path to the TLS certificate file.
+  * ``--tls-key <path>``: Optional path to the private key file.
+  * ``--tls-password-file <path>``: Optional path to the password file for the private key.
+
+  (Contributed by Semyon Moroz in :gh:`85162`.)
 
 
 imaplib
@@ -762,12 +825,30 @@ json
   See the :ref:`JSON command-line interface <json-commandline>` documentation.
   (Contributed by Trey Hunner in :gh:`122873`.)
 
+* By default, the output of the :ref:`JSON command-line interface <json-commandline>`
+  is highlighted in color. This can be controlled via the
+  :envvar:`PYTHON_COLORS` environment variable as well as the canonical
+  |NO_COLOR|_ and |FORCE_COLOR|_ environment variables. See also
+  :ref:`using-on-controlling-color`.
+  (Contributed by Tomas Roun in :gh:`131952`.)
 
 linecache
 ---------
 
 * :func:`linecache.getline` can retrieve source code for frozen modules.
   (Contributed by Tian Gao in :gh:`131638`.)
+
+
+logging.handlers
+----------------
+
+* :class:`logging.handlers.QueueListener` now implements the context
+  manager protocol, allowing it to be used in a :keyword:`with` statement.
+  (Contributed by Charles Machalow in :gh:`132106`.)
+
+* :meth:`QueueListener.start <logging.handlers.QueueListener.start>` now
+  raises a :exc:`RuntimeError` if the listener is already started.
+  (Contributed by Charles Machalow in :gh:`132106`.)
 
 
 mimetypes
@@ -1036,12 +1117,21 @@ sys.monitoring
 * Two new events are added: :monitoring-event:`BRANCH_LEFT` and
   :monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
 
+
+sysconfig
+---------
+
+* Add ``ABIFLAGS`` key to :func:`sysconfig.get_config_vars` on Windows.
+  (Contributed by Xuehai Pan in :gh:`131799`.)
+
+
 threading
 ---------
 
 * :meth:`threading.Thread.start` now sets the operating system thread name
   to :attr:`threading.Thread.name`.
   (Contributed by Victor Stinner in :gh:`59705`.)
+
 
 tkinter
 -------
@@ -1057,6 +1147,57 @@ turtle
 * Add context managers for :func:`turtle.fill`, :func:`turtle.poly`
   and :func:`turtle.no_animation`.
   (Contributed by Marie Roald and Yngve Mardal Moe in :gh:`126350`.)
+
+
+types
+-----
+
+* :class:`types.UnionType` is now an alias for :class:`typing.Union`.
+  See :ref:`below <whatsnew314-typing-union>` for more details.
+  (Contributed by Jelle Zijlstra in :gh:`105499`.)
+
+
+typing
+------
+
+.. _whatsnew314-typing-union:
+
+* :class:`types.UnionType` and :class:`typing.Union` are now aliases for each other,
+  meaning that both old-style unions (created with ``Union[int, str]``) and new-style
+  unions (``int | str``) now create instances of the same runtime type. This unifies
+  the behavior between the two syntaxes, but leads to some differences in behavior that
+  may affect users who introspect types at runtime:
+
+  - Both syntaxes for creating a union now produce the same string representation in
+    ``repr()``. For example, ``repr(Union[int, str])``
+    is now ``"int | str"`` instead of ``"typing.Union[int, str]"``.
+  - Unions created using the old syntax are no longer cached. Previously, running
+    ``Union[int, str]`` multiple times would return the same object
+    (``Union[int, str] is Union[int, str]`` would be ``True``), but now it will
+    return two different objects. Users should use ``==`` to compare unions for equality, not
+    ``is``. New-style unions have never been cached this way.
+    This change could increase memory usage for some programs that use a large number of
+    unions created by subscripting ``typing.Union``. However, several factors offset this cost:
+    unions used in annotations are no longer evaluated by default in Python 3.14
+    because of :pep:`649`; an instance of :class:`types.UnionType` is
+    itself much smaller than the object returned by ``Union[]`` was on prior Python
+    versions; and removing the cache also saves some space. It is therefore
+    unlikely that this change will cause a significant increase in memory usage for most
+    users.
+  - Previously, old-style unions were implemented using the private class
+    ``typing._UnionGenericAlias``. This class is no longer needed for the implementation,
+    but it has been retained for backward compatibility, with removal scheduled for Python
+    3.17. Users should use documented introspection helpers like :func:`typing.get_origin`
+    and :func:`typing.get_args` instead of relying on private implementation details.
+  - It is now possible to use :class:`typing.Union` itself in :func:`isinstance` checks.
+    For example, ``isinstance(int | str, typing.Union)`` will return ``True``; previously
+    this raised :exc:`TypeError`.
+  - The ``__args__`` attribute of :class:`typing.Union` objects is no longer writable.
+  - It is no longer possible to set any attributes on :class:`typing.Union` objects.
+    This only ever worked for dunder attributes on previous versions, was never
+    documented to work, and was subtly broken in many cases.
+
+  (Contributed by Jelle Zijlstra in :gh:`105499`.)
 
 
 unicodedata
@@ -1104,6 +1245,29 @@ urllib
   supporting SHA-256 digest authentication as specified in :rfc:`7616`.
   (Contributed by Calvin Bui in :gh:`128193`.)
 
+* Improve ergonomics and standards compliance when parsing and emitting
+  ``file:`` URLs.
+
+  In :func:`urllib.request.url2pathname`:
+
+  - Accept a complete URL when the new *require_scheme* argument is set to
+    true.
+  - Discard URL authorities that resolve to a local IP address.
+  - Raise :exc:`~urllib.error.URLError` if a URL authority doesn't resolve
+    to a local IP address, except on Windows where we return a UNC path.
+
+  In :func:`urllib.request.pathname2url`:
+
+  - Return a complete URL when the new *add_scheme* argument is set to true.
+  - Include an empty URL authority when a path begins with a slash. For
+    example, the path ``/etc/hosts`` is converted to the URL ``///etc/hosts``.
+
+  On Windows, drive letters are no longer converted to uppercase, and ``:``
+  characters not following a drive letter no longer cause an :exc:`OSError`
+  exception to be raised.
+
+  (Contributed by Barney Gale in :gh:`125866`.)
+
 
 uuid
 ----
@@ -1139,6 +1303,16 @@ zipinfo
 
 Optimizations
 =============
+
+* The import time for several standard library modules has been improved,
+  including :mod:`ast`, :mod:`asyncio`, :mod:`base64`, :mod:`cmd`, :mod:`csv`,
+  :mod:`gettext`, :mod:`importlib.util`, :mod:`locale`, :mod:`mimetypes`,
+  :mod:`optparse`, :mod:`pickle`, :mod:`pprint`, :mod:`pstats`, :mod:`socket`,
+  :mod:`subprocess`, :mod:`threading`, :mod:`tomllib`, and :mod:`zipfile`.
+
+  (Contributed by Adam Turner, Bénédikt Tran, Chris Markiewicz, Eli Schwartz,
+  Hugo van Kemenade, Jelle Zijlstra, and others in :gh:`118761`.)
+
 
 asyncio
 -------
@@ -1592,6 +1766,11 @@ Changes in the Python API
   This temporary change affects other threads.
   (Contributed by Serhiy Storchaka in :gh:`69998`.)
 
+* :class:`types.UnionType` is now an alias for :class:`typing.Union`,
+  causing changes in some behaviors.
+  See :ref:`above <whatsnew314-typing-union>` for more details.
+  (Contributed by Jelle Zijlstra in :gh:`105499`.)
+
 
 Build changes
 =============
@@ -1739,6 +1918,11 @@ New features
   file.
   (Contributed by Victor Stinner in :gh:`127350`.)
 
+* Add support of nullable arguments in :c:func:`PyArg_ParseTuple` and
+  similar functions.
+  Adding ``?`` after any format unit makes ``None`` be accepted as a value.
+  (Contributed by Serhiy Storchaka in :gh:`112068`.)
+
 * Add macros :c:func:`Py_PACK_VERSION` and :c:func:`Py_PACK_FULL_VERSION` for
   bit-packing Python version numbers.
   (Contributed by Petr Viktorin in :gh:`128629`.)
@@ -1830,6 +2014,13 @@ Deprecated
   use instead :c:macro:`!isnan`, :c:macro:`!isinf` and
   :c:macro:`!isfinite` available from :file:`math.h`
   since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
+
+* Non-tuple sequences are deprecated as argument for the ``(items)``
+  format unit in :c:func:`PyArg_ParseTuple` and other
+  :ref:`argument parsing <arg-parsing>` functions if *items* contains
+  format units which store a :ref:`borrowed buffer <c-arg-borrowed-buffer>`
+  or a :term:`borrowed reference`.
+  (Contributed by Serhiy Storchaka in :gh:`50333`.)
 
 * The previously undocumented function :c:func:`PySequence_In` is :term:`soft deprecated`.
   Use :c:func:`PySequence_Contains` instead.

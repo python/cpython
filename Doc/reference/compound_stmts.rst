@@ -232,7 +232,7 @@ Additional information on exceptions can be found in section :ref:`exceptions`,
 and information on using the :keyword:`raise` statement to generate exceptions
 may be found in section :ref:`raise`.
 
-.. versionchanged:: next
+.. versionchanged:: 3.14
    Support for optionally dropping grouping parentheses when using multiple exception types. See :pep:`758`.
 
 .. _except:
@@ -463,7 +463,7 @@ always be the last one executed. The following function returns 'finally'.
    Prior to Python 3.8, a :keyword:`continue` statement was illegal in the
    :keyword:`!finally` clause due to a problem with the implementation.
 
-.. versionchanged:: next
+.. versionchanged:: 3.14
    The compiler emits a :exc:`SyntaxWarning` when a :keyword:`return`,
    :keyword:`break` or :keyword:`continue` appears in a :keyword:`!finally`
    block (see :pep:`765`).

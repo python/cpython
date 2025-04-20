@@ -20,24 +20,17 @@
 #    include <sys/mman.h>
 #endif
 
-#if defined(__APPLE__)
-#  include <TargetConditionals.h>
-// Older macOS SDKs do not define TARGET_OS_OSX
-#  if !defined(TARGET_OS_OSX)
-#     define TARGET_OS_OSX 1
-#  endif
-#  if TARGET_OS_OSX
-#    include <libproc.h>
-#    include <mach-o/fat.h>
-#    include <mach-o/loader.h>
-#    include <mach-o/nlist.h>
-#    include <mach/mach.h>
-#    include <mach/mach_vm.h>
-#    include <mach/machine.h>
-#    include <sys/mman.h>
-#    include <sys/proc.h>
-#    include <sys/sysctl.h>
-#  endif
+#if defined(__APPLE__) && TARGET_OS_OSX
+#  include <libproc.h>
+#  include <mach-o/fat.h>
+#  include <mach-o/loader.h>
+#  include <mach-o/nlist.h>
+#  include <mach/mach.h>
+#  include <mach/mach_vm.h>
+#  include <mach/machine.h>
+#  include <sys/mman.h>
+#  include <sys/proc.h>
+#  include <sys/sysctl.h>
 #endif
 
 #ifdef MS_WINDOWS
@@ -64,6 +57,8 @@
 #ifndef HAVE_PROCESS_VM_READV
 #    define HAVE_PROCESS_VM_READV 0
 #endif
+
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
 
 // Define a platform-independent process handle structure
 typedef struct {
@@ -100,8 +95,6 @@ cleanup_proc_handle(proc_handle_t *handle) {
 #endif
     handle->pid = 0;
 }
-
-#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
 
 #if defined(__APPLE__) && TARGET_OS_OSX
 static uintptr_t
