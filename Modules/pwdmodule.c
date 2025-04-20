@@ -9,6 +9,7 @@
 
 #include "Python.h"
 #include "posixmodule.h"
+#include "listobject.h"           // PyList_Size/PyList_GetItem
 
 #include <errno.h>                // ERANGE
 #include <pwd.h>                  // getpwuid()
@@ -306,16 +307,18 @@ pwd_getpwall_impl(PyObject *module)
     static PyMutex getpwall_mutex = {0};
     PyMutex_Lock(&getpwall_mutex);
 #endif
+    int failure = 0;
+    PyObject *orphan = NULL;
     setpwent();
-
     while ((p = getpwent()) != NULL) {
+        /* NOTE: Ref counts are not decremented here, as we cannot allow
+         * re-entrancy while holding the mutex. */
         PyObject *v = mkpwent(module, p);
         if (v == NULL || PyList_Append(d, v) != 0) {
-            Py_XDECREF(v);
-            Py_CLEAR(d);
+            orphan = v;
+            failure = 1;
             goto done;
         }
-        Py_DECREF(v);
     }
 
 done:
@@ -323,6 +326,18 @@ done:
 #ifdef Py_GIL_DISABLED
     PyMutex_Unlock(&getpwall_mutex);
 #endif
+    /* Deferred decref on entries created above and added to the list */
+    Py_ssize_t n = PyList_Size(d);
+    for (Py_ssize_t i = 0; i < n; ++i) {
+        PyObject *entry = PyList_GetItem(d, i);
+        Py_DECREF(entry);
+    }
+    if (failure) {
+        /* If there was a failure we might have created an entry but not added
+         * it: dec-ref that, if it exists, before clearing the list. */
+        Py_XDECREF(orphan);
+        Py_CLEAR(d);
+    }
     return d;
 }
 #endif
