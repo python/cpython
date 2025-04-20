@@ -14,7 +14,6 @@ detailed explanation of the underlying protocol, which takes as input the
 executed. This information supports independent reimplementation of the
 protocol, regardless of programming language.
 
-
 .. warning::
 
     The execution of the injected script depends on the interpreter reaching a
@@ -149,10 +148,11 @@ To find the ``PyRuntime`` structure on Windows:
    <https://learn.microsoft.com/en-us/windows/win32/api/tlhelp32/nf-tlhelp32-module32next>`_.
 2. Identify the module corresponding to :file:`python.exe` or
    :file:`python{XY}.dll`, where ``X`` and ``Y`` are the major and minor
-   version numbers of the Python version (for example, ``python311.dll``), and
-   record its base address.
-3. Locate the ``PyRuntim`` section. Section names in the PE format are limited
-   to 8 characters.
+   version numbers of the Python version, and record its base address.
+3. Locate the ``PyRuntim`` section. Due to the PE format's 8-character limit
+   on section names (defined as ``IMAGE_SIZEOF_SHORT_NAME``), the original
+   name ``PyRuntime`` is truncated. This section contains the ``PyRuntime``
+   structure.
 4. Retrieve the section’s relative virtual address (RVA) and add it to the base
    address of the module.
 
@@ -171,7 +171,9 @@ The following is an example implementation::
                 pid, name_contains="python3"
             )
 
-        # Step 3: Parse PE section headers to get PyRuntim RVA
+        # Step 3: Parse PE section headers to get the RVA of the PyRuntime
+        # section. The section name appears as "PyRuntim" due to the
+        # 8-character limit defined by the PE format (IMAGE_SIZEOF_SHORT_NAME).
         section_rva = parse_pe_section_offset(binary_path, "PyRuntim")
 
         # Step 4: Compute PyRuntime address in memory
@@ -179,8 +181,8 @@ The following is an example implementation::
 
 
 
-RReading _Py_DebugOffsets
-=========================
+Reading _Py_DebugOffsets
+========================
 
 Once the address of the ``PyRuntime`` structure has been determined, the next
 step is to read the ``_Py_DebugOffsets`` structure located at the beginning of
