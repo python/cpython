@@ -829,8 +829,8 @@ mimetypes
 
   (Contributed by Hugo van Kemenade in :gh:`129965`.)
 
-* Add :rfc:`9512` ``application/yaml`` for YAML files (``.yaml`` and ``.yml``).
-  (Contributed by Kristinita in :gh:`132056`.)
+* Add :rfc:`9512` ``application/yaml`` MIME type for YAML files (``.yaml``
+  and ``.yml``). (Contributed by Kristinita in :gh:`132056`.)
 
 
 multiprocessing
