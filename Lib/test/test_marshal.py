@@ -409,7 +409,8 @@ class BugsTestCase(unittest.TestCase):
                     self.assertEqual(dump_0, dump_1)
 
     def test_unmarshallable(self):
-        # gh-106287
+        # Check no crash after encountering unmarshallable objects.
+        # See https://github.com/python/cpython/issues/106287
         fset = frozenset([int])
         code = compile("a = 1", "<string>", "exec")
         code = code.replace(co_consts=(1, fset, None))
@@ -426,6 +427,7 @@ class BugsTestCase(unittest.TestCase):
             with self.subTest(name, arg=arg):
                 with self.assertRaisesRegex(ValueError, "unmarshallable object"):
                     marshal.dumps((arg, memoryview(b'')))
+
 
 LARGE_SIZE = 2**31
 pointer_size = 8 if sys.maxsize > 0xFFFFFFFF else 4

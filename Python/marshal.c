@@ -431,8 +431,9 @@ w_object(PyObject *v, WFILE *p)
 {
     char flag = '\0';
 
-    if (p->error != WFERR_OK)
+    if (p->error != WFERR_OK) {
         return;
+    }
 
     p->depth++;
 
@@ -753,10 +754,6 @@ PyMarshal_WriteLongToFile(long x, FILE *fp, int version)
     w_flush(&wf);
 }
 
-/* TODO: Contrary to its documentation, this function does NOT set an error on
- * failure. It is not used internally except from test code, where this doesn't
- * matter, but this discrepancy might cause problems for any external code
- * using it. */
 void
 PyMarshal_WriteObjectToFile(PyObject *x, FILE *fp, int version)
 {
