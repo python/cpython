@@ -432,7 +432,7 @@ Socket Option            Linux        FreeBSD      Windows
 **SO_EXCLUSIVEADDRUSE**                            ✓
 **SO_KEEPALIVE**         ✓            ✓            ✓
 **SO_DONTROUTE**         ✓            ✓            ✓ [1]_
-**SO_BROADCAST**         ✓            ✓            ✓ >= Vista
+**SO_BROADCAST**         ✓            ✓            ✓
 **SO_USELOOPBACK**                    ✓            ✓ >= Vista [1]_
 **SO_LINGER**            ✓            ✓            ✓
 **SO_OOBINLINE**         ✓            ✓            ✓
