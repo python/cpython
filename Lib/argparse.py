@@ -1777,7 +1777,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             error info when an error occurs
         - suggest_on_error - Enables suggestions for mistyped argument choices
             and subparser names. (default: ``False``)
-        - convert_choices - Runs the ``choices`` through the ``type`` function
+        - convert_choices - Runs the ``choices`` through the ``type`` callable
             during checking. (default: ``False``)
     """
 
@@ -2593,11 +2593,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             action.type and
             all(isinstance(choice, str) for choice in choices)
         ):
-            try:
-                typed_choices = [action.type(v) for v in choices]
-            except Exception:
-                # We use a blanket catch here, because type is user provided.
-                pass
+            typed_choices = [action.type(v) for v in choices]
 
         if value not in choices and value not in typed_choices:
             args = {'value': arg_string,

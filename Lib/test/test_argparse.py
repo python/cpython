@@ -1935,7 +1935,7 @@ class TestFileTypeRB(TempDirMixin, ParserTestCase):
     ]
 
 class TestChoices(ParserTestCase):
-    """Test the original behavior"""
+    """Test integer choices without conversion."""
     def to_dow(arg):
         days = ["mo", "tu", "we", "th", "fr", "sa", "su"]
         if arg in days:
