@@ -183,16 +183,12 @@ def main():
         # cmd has to run in __main__ namespace (or imports from __main__ will
         # break). Clear __main__ and replace with the globals provided.
         import __main__
-        # Save a reference to the current __main__ namespace so that we can
-        # restore it after cmd completes.
-        original_main = __main__.__dict__.copy()
+        __main__.__dict__.clear()
         __main__.__dict__.update(globs)
 
         try:
             runctx(code, __main__.__dict__, None, options.outfile, options.sort)
         except BrokenPipeError as exc:
-            __main__.__dict__.clear()
-            __main__.__dict__.update(original_main)
             # Prevent "Exception ignored" during interpreter shutdown.
             sys.stdout = None
             sys.exit(exc.errno)
@@ -202,4 +198,8 @@ def main():
 
 # When invoked as main program, invoke the profiler on a script
 if __name__ == '__main__':
-    main()
+    # Since the code we run might need to modify __main__, we need to ensure
+    # that cProfile's main function is run under some other namespace, so we
+    # reimport and execute the main function separately
+    import cProfile
+    cProfile.main()
