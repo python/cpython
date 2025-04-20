@@ -45,6 +45,10 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     """
     sys.audit("glob.glob", pathname, recursive)
     sys.audit("glob.glob/2", pathname, recursive, root_dir, dir_fd)
+    # expand ~; see issue 84037
+    if pathname.startswith('~'):
+        from pathlib import Path
+        pathname = pathname.replace('~', str(Path.home()), 1)
     if root_dir is not None:
         root_dir = os.fspath(root_dir)
     else:
