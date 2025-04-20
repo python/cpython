@@ -6,7 +6,6 @@ __all__ = ["run", "runctx", "Profile"]
 
 import _lsprof
 import importlib.machinery
-import importlib.util
 import io
 import profile as _pyprofile
 
