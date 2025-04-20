@@ -98,12 +98,24 @@ class Profile(_lsprof.Profiler):
         return self.runctx(cmd, dict, dict)
 
     def runctx(self, cmd, globals, locals):
+        # cmd has to run in __main__ namespace (or imports from __main__ will
+        # break). Clear __main__ and replace with the globals provided.
+        import __main__
+        # Save a reference to the current __main__ namespace so that we can
+        # restore it after cmd completes.
+        original_main = __main__.__dict__.copy()
+        __main__.__dict__.clear()
+        __main__.__dict__.update(globals)
+
         self.enable()
         try:
-            exec(cmd, globals, locals)
+            exec(cmd, __main__.__dict__, locals)
         finally:
             self.disable()
+            __main__.__dict__.clear()
+            __main__.__dict__.update(original_main)
         return self
+
 
     # This method is more useful to profile a single function call.
     def runcall(self, func, /, *args, **kw):
@@ -170,22 +182,19 @@ def main():
         else:
             progname = args[0]
             sys.path.insert(0, os.path.dirname(progname))
+            with io.open_code(progname) as fp:
+                code = compile(fp.read(), progname, 'exec')
             spec = importlib.machinery.ModuleSpec(name='__main__', loader=None,
                                                   origin=progname)
-            loader = importlib.machinery.SourceFileLoader("__main__", progname)
-            spec.loader = loader
-            module = importlib.util.module_from_spec(spec)
             globs = {
                 '__spec__': spec,
                 '__file__': spec.origin,
                 '__name__': spec.name,
                 '__package__': None,
                 '__cached__': None,
-                'module': module
+                '__builtins__': __builtins__,
             }
 
-            sys.modules["__main__"] = module
-            code = "__spec__.loader.exec_module(module)"
         try:
             runctx(code, globs, None, options.outfile, options.sort)
         except BrokenPipeError as exc:
