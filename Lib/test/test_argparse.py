@@ -1935,6 +1935,46 @@ class TestFileTypeRB(TempDirMixin, ParserTestCase):
         ('-x - -', NS(x=eq_bstdin, spam=eq_bstdin)),
     ]
 
+class TestChoices(ParserTestCase):
+    """Test the original behavior"""
+    def to_dow(arg):
+        days = ["mo", "tu", "we", "th", "fr", "sa", "su"]
+        if arg in days:
+            return days.index(arg) + 1
+        else:
+            return None
+
+    argument_signatures = [
+        Sig('when',
+            type=to_dow, choices=[1, 2, 3, 4, 5, 6, 7],
+        )
+    ]
+    failures = ['now', '1']
+    successes = [
+        ('mo', NS(when=1)),
+        ('su', NS(when=7)),
+    ]
+
+class TestTypedChoices(TestChoices):
+    """Test a set of string choices that convert to weekdays"""
+
+    parser_signature = Sig(convert_choices=True)
+    argument_signatures = [
+        Sig('when',
+            type=TestChoices.to_dow, choices=["mo", "tu", "we" , "th", "fr", "sa", "su"],
+        )
+    ]
+
+class TestTypedChoicesNoFlag(TestChoices):
+    """Without the feature flag we fail"""
+    argument_signatures = [
+        Sig('when',
+            type=TestChoices.to_dow, choices=["mo", "tu", "we" , "th", "fr", "sa", "su"],
+        )
+    ]
+    failures = ['mo']
+    successes = []
+
 
 class WFile(object):
     seen = set()
@@ -5467,6 +5507,39 @@ class TestHelpMetavarTypeFormatter(HelpTestCase):
           -c SOME FLOAT
         '''
     version = ''
+
+
+class TestHelpTypedChoices(HelpTestCase):
+    from datetime import date, timedelta
+    def to_date(arg):
+        if arg == "today":
+            return date.today()
+        elif arg == "tomorrow":
+            return date.today() + timedelta(days=1).date()
+        else:
+            return None
+
+    parser_signature = Sig(prog='PROG', convert_choices=True)
+    argument_signatures = [
+        Sig('when',
+            type=to_date,
+            choices=["today", "tomorrow"]
+        ),
+    ]
+
+    usage = '''\
+usage: PROG [-h] {today,tomorrow}
+        '''
+    help = usage + '''\
+
+positional arguments:
+  {today,tomorrow}
+
+options:
+  -h, --help        show this help message and exit
+        '''
+    version = ''
+
 
 
 class TestHelpUsageLongSubparserCommand(TestCase):
