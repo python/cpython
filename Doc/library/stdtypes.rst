@@ -2512,7 +2512,7 @@ can contain any Python expression:
 .. code-block:: pycon
 
    >>> nationality = 'Spanish'
-   >>> f'The {name} Inquisition!'
+   >>> f'The {nationality} Inquisition!'
    'The Spanish Inquisition!'
 
 To include a literal ``{`` or ``}``, use a double bracket:
@@ -2583,10 +2583,12 @@ For example:
 Once the output has been evaluated, it can be formatted using a
 :ref:`format specifier <formatstrings>` following a colon (``':'``).
 After the expression has been evaluated, and possibly converted to a string,
-the :meth:`__format__` method of the result is called with the format specifier,
+the :meth:`!__format__` method of the result is called with the format specifier,
 or the empty string if no format specifier is given.
 The formatted result is then used as the final value for the replacement field.
 For example:
+
+.. code-block:: pycon
 
    >>> from fractions import Fraction
    >>> f'{Fraction(1, 7):.6f}'
