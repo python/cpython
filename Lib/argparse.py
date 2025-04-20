@@ -1777,6 +1777,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
             error info when an error occurs
         - suggest_on_error - Enables suggestions for mistyped argument choices
             and subparser names. (default: ``False``)
+        - convert_choices - Runs the ``choices`` through the ``type`` function
+            during checking. (default: ``False``)
     """
 
     def __init__(self,
@@ -1793,7 +1795,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  add_help=True,
                  allow_abbrev=True,
                  exit_on_error=True,
-                 suggest_on_error=False):
+                 suggest_on_error=False,
+                 convert_choices=False):
 
         superinit = super(ArgumentParser, self).__init__
         superinit(description=description,
@@ -1810,6 +1813,7 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         self.allow_abbrev = allow_abbrev
         self.exit_on_error = exit_on_error
         self.suggest_on_error = suggest_on_error
+        self.convert_choices = convert_choices
 
         add_group = self.add_argument_group
         self._positionals = add_group(_('positional arguments'))
@@ -2581,7 +2585,17 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
         if isinstance(choices, str):
             choices = iter(choices)
 
-        if value not in choices:
+        typed_choices = []
+        if (self.convert_choices and
+            self.type and
+            isinstance(self.choices[0], str)):
+            try:
+                typed_choices = [acton.type[v] for v in choices]
+            except Exception:
+                # We use a blanket catch here, because type is user provided.
+                pass
+
+        if value not in choices and value not in typed_choices:
             args = {'value': str(value),
                     'choices': ', '.join(map(str, action.choices))}
             msg = _('invalid choice: %(value)r (choose from %(choices)s)')
