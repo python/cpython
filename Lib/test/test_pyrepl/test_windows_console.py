@@ -341,8 +341,9 @@ class WindowsConsoleTests(TestCase):
                 Event(evt="key", data='\x1a', raw=bytearray(b'\x1a')),
             ],
         )
-        reader, _ = self.handle_events_narrow(events)
+        reader, con = self.handle_events_narrow(events)
         self.assertEqual(reader.cxy, (2, 3))
+        con.restore()
 
 
 if __name__ == "__main__":
