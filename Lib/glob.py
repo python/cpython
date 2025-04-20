@@ -45,15 +45,16 @@ def iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False,
     """
     sys.audit("glob.glob", pathname, recursive)
     sys.audit("glob.glob/2", pathname, recursive, root_dir, dir_fd)
-    # expand ~; see issue 84037
-    if isinstance(pathname, str):
-        if pathname == '~' or pathname.startswith('~' + os.sep):
-            from pathlib import Path
-            pathname = pathname.replace('~', str(Path.home()), 1)
-    else:
-        if pathname == b'~' or pathname.startswith(b'~' + os.sep.encode('ascii')):
-            from pathlib import Path
-            pathname = pathname.replace(b'~', bytes(Path.home()), 1)
+
+    # expand ~
+    from pathlib import Path
+    tilde = '~' if isinstance(pathname, str) else b'~'
+    sep = os.sep if isinstance(pathname, str) else os.sep.encode('ascii')
+    home = str(Path.home()) if isinstance(pathname, str) else bytes(
+        Path.home())
+    if pathname == tilde or pathname.startswith(tilde + sep):
+        pathname = pathname.replace(tilde, home, 1)
+
     if root_dir is not None:
         root_dir = os.fspath(root_dir)
     else:

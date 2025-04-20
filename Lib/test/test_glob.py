@@ -216,8 +216,8 @@ class GlobTests(unittest.TestCase):
             results = glob.glob('~')
             self.assertEqual([self.tempdir], results)
 
-            results = glob.glob('~/*')
-            self.assertIn(self.tempdir + '/a', results)
+            results = glob.glob(f'~{os.sep}*')
+            self.assertIn(self.tempdir + f'{os.sep}a', results)
 
             # test it is not expanded when it is not a path
             tilde_file = os.path.join(self.tempdir, '~file')

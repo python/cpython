@@ -89,7 +89,7 @@ The :mod:`glob` module defines the following functions:
       Added the *include_hidden* parameter.
 
    .. versionchanged:: next
-      Fixed ``~`` expansion to user's home directory.
+      Added ``~`` expansion to user's home directory.
 
 
 .. function:: iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False, \
