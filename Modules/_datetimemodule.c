@@ -50,7 +50,8 @@ typedef struct {
     /* The interned Unix epoch datetime instance */
     PyObject *epoch;
 
-    /* Interpreter's dict holds the module */
+    /* Reference to the interpreter's dict where the current module will be
+     * reserved even after the referent dict becomes NULL at shutdown. */
     PyObject *interp_dict;
 } datetime_state;
 
@@ -185,7 +186,8 @@ _get_current_state(PyObject **p_mod)
     Py_DECREF(MOD_VAR)
 
 static int
-set_current_module(datetime_state *st, PyObject *mod)
+set_current_module(datetime_state *st,
+                   PyInterpreterState *interp, PyObject *mod)
 {
     assert(mod != NULL);
     PyObject *dict = st->interp_dict;
@@ -199,12 +201,12 @@ set_current_module(datetime_state *st, PyObject *mod)
 static void
 clear_current_module(datetime_state *st, PyObject *expected)
 {
-    PyObject *exc = PyErr_GetRaisedException();
-
     PyObject *dict = st->interp_dict;
     if (dict == NULL) {
         return;  /* Already cleared */
     }
+
+    PyObject *exc = PyErr_GetRaisedException();
 
     if (expected != NULL) {
         PyObject *current;
@@ -7284,10 +7286,8 @@ init_state(datetime_state *st,
 static int
 traverse_state(datetime_state *st, visitproc visit, void *arg)
 {
-    /* heap types */
     Py_VISIT(st->isocalendar_date_type);
     Py_VISIT(st->interp_dict);
-
     return 0;
 }
 
@@ -7477,7 +7477,7 @@ _datetime_exec(PyObject *module)
     static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
     assert(DI100Y == days_before_year(100+1));
 
-    if (set_current_module(st, module) < 0) {
+    if (set_current_module(st, interp, module) < 0) {
         goto error;
     }
 
