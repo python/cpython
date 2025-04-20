@@ -74,7 +74,7 @@ ArgumentParser objects
                           prefix_chars='-', fromfile_prefix_chars=None, \
                           argument_default=None, conflict_handler='error', \
                           add_help=True, allow_abbrev=True, exit_on_error=True, \
-                          suggest_on_error=False)
+                          suggest_on_error=False, convert_choices=False)
 
    Create a new :class:`ArgumentParser` object. All parameters should be passed
    as keyword arguments. Each parameter has its own more detailed description
@@ -118,6 +118,9 @@ ArgumentParser objects
 
    * suggest_on_error_ - Enables suggestions for mistyped argument choices
      and subparser names (default: ``False``)
+
+   * convert_choices_ - Runs the ``choices`` through the ``type`` callable
+     during checking (default: ``False``)
 
 
    .. versionchanged:: 3.5
@@ -610,6 +613,38 @@ keyword argument::
    >>> parser.suggest_on_error = True
 
 .. versionadded:: 3.14
+
+
+convert_choices
+^^^^^^^^^^^^^^^
+
+By default, when a user passes both a ``type`` and a ``choices`` argument, the
+``choices`` need to be specified in the target type, after conversion.
+This can cause confusing ``usage`` and ``help`` strings. If the user would like
+to specify ``choices`` in the same vocabulary as the end-user would enter them,
+this feature can be enabled by setting ``convert_choices`` to ``True``::
+
+   >>> parser = argparse.ArgumentParser(convert_choices=True)
+   >>> parser.add_argument('when',
+   ...                     choices=['mo', 'tu', 'we', 'th', 'fr', 'sa', 'su'],
+   ...                     type=to_dow)
+   >>> parser.print_help()
+   usage: example_broken.py [-h] [--days {mo,tu,we,th,fr,sa,su}]
+
+   options:
+     -h, --help            show this help message and exit
+     --days {mo,tu,we,th,fr,sa,su}
+
+
+If you're writing code that needs to be compatible with older Python versions
+and want to opportunistically use ``convert_choices`` when it's available, you
+can set it as an attribute after initializing the parser instead of using the
+keyword argument::
+
+   >>> parser = argparse.ArgumentParser()
+   >>> parser.convert_choices = True
+
+.. versionadded:: next
 
 
 The add_argument() method
@@ -1124,9 +1159,12 @@ if the argument was not one of the acceptable values::
    game.py: error: argument move: invalid choice: 'fire' (choose from 'rock',
    'paper', 'scissors')
 
-Note that inclusion in the *choices* sequence is checked after any type_
-conversions have been performed, so the type of the objects in the *choices*
-sequence should match the type_ specified.
+Note that, by default, inclusion in the *choices* sequence is checked after
+any type_ conversions have been performed, so the type of the objects in the
+*choices* sequence should match the type_ specified. This can lead to
+confusing ``usage`` messages. If you want to convert *choices* using type_
+before checking, set the ``convert_choices`` flag on :class:`~ArgumentParser`.
+
 
 Any sequence can be passed as the *choices* value, so :class:`list` objects,
 :class:`tuple` objects, and custom sequences are all supported.

@@ -1,2 +1,3 @@
-:mod:`argparse` now allows `choices` to be entered as strings and calls
-convert on the available choices during checking.
+:mod:`argparse` Add option ``convert_choices`` to :class:`ArgumentParser`. Combined with ``type``, allows  ``choices``
+to be entered as strings and converted during argument checking.
+
