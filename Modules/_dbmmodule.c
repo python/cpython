@@ -68,8 +68,8 @@ typedef struct {
 
 #include "clinic/_dbmmodule.c.h"
 
-/* NOTE: Must be used within a critical section! */
 #define check_dbmobject_open(v, err)                                \
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED((v))                  \
     if ((v)->di_dbm == NULL) {                                      \
         PyErr_SetString(err, "DBM object has already been closed"); \
         return NULL;                                                \
@@ -117,17 +117,14 @@ dbm_dealloc(PyObject *self)
 }
 
 static Py_ssize_t
-dbm_length(PyObject *self)
+dbm_length_lock_held(PyObject *self)
 {
-    Py_ssize_t result = -1;
     dbmobject *dp = dbmobject_CAST(self);
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
-
-    Py_BEGIN_CRITICAL_SECTION(self);
     if (dp->di_dbm == NULL) {
              PyErr_SetString(state->dbm_error, "DBM object has already been closed");
-             goto done;
+             return -1;
     }
     if ( dp->di_size < 0 ) {
         datum key;
@@ -139,95 +136,103 @@ dbm_length(PyObject *self)
             size++;
         dp->di_size = size;
     }
-    result = dp->di_size;
-done:;
+    return dp->di_size;
+}
+
+static Py_ssize_t
+dbm_length(PyObject *self)
+{
+    Py_ssize_t result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = dbm_length_lock_held(self);
     Py_END_CRITICAL_SECTION();
     return result;
 }
 
 static int
-dbm_bool(PyObject *self)
+dbm_bool_lock_held(PyObject *self)
 {
-    int result;
     dbmobject *dp = dbmobject_CAST(self);
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
 
-    Py_BEGIN_CRITICAL_SECTION(self);
     if (dp->di_dbm == NULL) {
         PyErr_SetString(state->dbm_error, "DBM object has already been closed");
-        result = -1;
-        goto done;
+        return -1;
     }
 
     if (dp->di_size > 0) {
         /* Known non-zero size. */
-        result = 1;
-        goto done;
+        return 1;
     }
     if (dp->di_size == 0) {
         /* Known zero size. */
-        result = 0;
-        goto done;
+        return 0;
     }
 
     /* Unknown size.  Ensure DBM object has an entry. */
     datum key = dbm_firstkey(dp->di_dbm);
     if (key.dptr == NULL) {
         /* Empty. Cache this fact. */
-        result = dp->di_size = 0;
-        goto done;
+        dp->di_size = 0;
+        return 0;
     }
-
     /* Non-empty. Don't cache the length since we don't know. */
-    result = 1;
-done:;
+    return 1;
+}
+
+static int
+dbm_bool(PyObject *self)
+{
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = dbm_bool_lock_held(self);
     Py_END_CRITICAL_SECTION();
     return result;
 }
 
 static PyObject *
-dbm_subscript(PyObject *self, PyObject *key)
+dbm_subscript_lock_held(PyObject *self, PyObject *key)
 {
     datum drec, krec;
     Py_ssize_t tmp_size;
-    PyObject *result = NULL;
     dbmobject *dp = dbmobject_CAST(self);
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
     if (!PyArg_Parse(key, "s#", &krec.dptr, &tmp_size)) {
         return NULL;
     }
-    krec.dsize = tmp_size;
 
-    Py_BEGIN_CRITICAL_SECTION(self);
-    /* Can't use the macro here as it returns. */
-    if (dp->di_dbm == NULL) {
-        PyErr_SetString(state->dbm_error, "DBM object has already been closed");
-        goto done;
-    }
+    krec.dsize = tmp_size;
+    check_dbmobject_open(dp, state->dbm_error);
     drec = dbm_fetch(dp->di_dbm, krec);
     if ( drec.dptr == 0 ) {
         PyErr_SetObject(PyExc_KeyError, key);
-        goto done;
+        return NULL;
     }
     if ( dbm_error(dp->di_dbm) ) {
         dbm_clearerr(dp->di_dbm);
         PyErr_SetString(state->dbm_error, "");
-        goto done;
+        return NULL;
     }
-    result = PyBytes_FromStringAndSize(drec.dptr, drec.dsize);
-done:;
+    return PyBytes_FromStringAndSize(drec.dptr, drec.dsize);
+}
+
+static PyObject *
+dbm_subscript(PyObject *self, PyObject *key)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = dbm_subscript_lock_held(self, key);
     Py_END_CRITICAL_SECTION();
     return result;
 }
 
 static int
-dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
+dbm_ass_sub_lock_held(PyObject *self, PyObject *v, PyObject *w)
 {
     datum krec, drec;
     Py_ssize_t tmp_size;
-    int result = -1;
     dbmobject *dp = dbmobject_CAST(self);
 
     if ( !PyArg_Parse(v, "s#", &krec.dptr, &tmp_size) ) {
@@ -238,13 +243,10 @@ dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
     krec.dsize = tmp_size;
-
-    Py_BEGIN_CRITICAL_SECTION(self);
     if (dp->di_dbm == NULL) {
-        PyErr_SetString(state->dbm_error, "DBM object has already been closed");
-        goto done;
+             PyErr_SetString(state->dbm_error, "DBM object has already been closed");
+             return -1;
     }
-
     dp->di_size = -1;
     if (w == NULL) {
         if ( dbm_delete(dp->di_dbm, krec) < 0 ) {
@@ -257,30 +259,36 @@ dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
             else {
                 PyErr_SetString(state->dbm_error, "cannot delete item from database");
             }
-            goto done;
+            return -1;
         }
     } else {
         if ( !PyArg_Parse(w, "s#", &drec.dptr, &tmp_size) ) {
             PyErr_SetString(PyExc_TypeError,
                  "dbm mappings have bytes or string elements only");
-            goto done;
+            return -1;
         }
         drec.dsize = tmp_size;
         if ( dbm_store(dp->di_dbm, krec, drec, DBM_REPLACE) < 0 ) {
             dbm_clearerr(dp->di_dbm);
             PyErr_SetString(state->dbm_error,
                             "cannot add item to database");
-            goto done;
+            return -1;
         }
     }
     if ( dbm_error(dp->di_dbm) ) {
         dbm_clearerr(dp->di_dbm);
         PyErr_SetString(state->dbm_error, "");
-        goto done;
+        return -1;
     }
+    return 0;
+}
 
-    result = 0;
-done:;
+static int
+dbm_ass_sub(PyObject *self, PyObject *v, PyObject *w)
+{
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = dbm_ass_sub_lock_held(self, v, w);
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -345,41 +353,45 @@ _dbm_dbm_keys_impl(dbmobject *self, PyTypeObject *cls)
 }
 
 static int
-dbm_contains(PyObject *self, PyObject *arg)
+dbm_contains_lock_held(PyObject *self, PyObject *arg)
 {
     dbmobject *dp = dbmobject_CAST(self);
     datum key, val;
     Py_ssize_t size;
-    int result = -1;
 
     _dbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
     assert(state != NULL);
-
-    Py_BEGIN_CRITICAL_SECTION(self);
     if ((dp)->di_dbm == NULL) {
         PyErr_SetString(state->dbm_error,
                         "DBM object has already been closed");
-         goto done;
+         return -1;
     }
     if (PyUnicode_Check(arg)) {
         key.dptr = (char *)PyUnicode_AsUTF8AndSize(arg, &size);
         key.dsize = size;
         if (key.dptr == NULL)
-            goto done;
+            return -1;
     }
     else if (!PyBytes_Check(arg)) {
         PyErr_Format(PyExc_TypeError,
                      "dbm key must be bytes or string, not %.100s",
                      Py_TYPE(arg)->tp_name);
-        goto done;
+        return -1;
     }
     else {
         key.dptr = PyBytes_AS_STRING(arg);
         key.dsize = PyBytes_GET_SIZE(arg);
     }
     val = dbm_fetch(dp->di_dbm, key);
-    result = val.dptr != NULL;
-done:;
+    return val.dptr != NULL;
+}
+
+static int
+dbm_contains(PyObject *self, PyObject *arg)
+{
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = dbm_contains_lock_held(self, arg);
     Py_END_CRITICAL_SECTION();
     return result;
 }

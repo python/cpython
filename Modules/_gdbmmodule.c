@@ -80,8 +80,8 @@ typedef struct {
 
 #include "clinic/_gdbmmodule.c.h"
 
-/* NOTE: Must be used within a critical section! */
 #define check_gdbmobject_open(v, err)                                 \
+    _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED((v))                   \
     if ((v)->di_dbm == NULL) {                                       \
         PyErr_SetString(err, "GDBM object has already been closed"); \
         return NULL;                                                 \
@@ -143,12 +143,10 @@ gdbm_dealloc(PyObject *op)
 }
 
 static Py_ssize_t
-gdbm_length(PyObject *op)
+gdbm_length_lock_held(PyObject *op)
 {
-    Py_ssize_t result = -1;
     gdbmobject *dp = _gdbmobject_CAST(op);
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
-    Py_BEGIN_CRITICAL_SECTION(op);
     if (dp->di_dbm == NULL) {
         PyErr_SetString(state->gdbm_error, "GDBM object has already been closed");
         return -1;
@@ -164,11 +162,11 @@ gdbm_length(PyObject *op)
             else {
                 set_gdbm_error(state, "gdbm_count() error");
             }
-            goto done;
+            return -1;
         }
         if (count > PY_SSIZE_T_MAX) {
             PyErr_SetString(PyExc_OverflowError, "count exceeds PY_SSIZE_T_MAX");
-            goto done;
+            return -1;
         }
         dp->di_size = count;
 #else
@@ -188,48 +186,55 @@ gdbm_length(PyObject *op)
         dp->di_size = size;
 #endif
     }
-    result = dp->di_size;
-done:;
+    return dp->di_size;
+}
+
+static Py_ssize_t
+gdbm_length(PyObject *op)
+{
+    Py_ssize_t result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = gdbm_length_lock_held(op);
     Py_END_CRITICAL_SECTION();
     return result;
+}
+
+static int
+gdbm_bool_lock_held(PyObject *op)
+{
+    gdbmobject *dp = _gdbmobject_CAST(op);
+    _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
+    if (dp->di_dbm == NULL) {
+        PyErr_SetString(state->gdbm_error, "GDBM object has already been closed");
+        return -1;
+    }
+    if (dp->di_size > 0) {
+        /* Known non-zero size. */
+        return 1;
+    }
+    if (dp->di_size == 0) {
+        /* Known zero size. */
+        return 0;
+    }
+    /* Unknown size.  Ensure DBM object has an entry. */
+    datum key = gdbm_firstkey(dp->di_dbm);
+    if (key.dptr == NULL) {
+        /* Empty. Cache this fact. */
+        dp->di_size = 0;
+        return 0;
+    }
+
+    /* Non-empty. Don't cache the length since we don't know. */
+    free(key.dptr);
+    return 1;
 }
 
 static int
 gdbm_bool(PyObject *op)
 {
     int result;
-    gdbmobject *dp = _gdbmobject_CAST(op);
-    _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
-
     Py_BEGIN_CRITICAL_SECTION(op);
-    if (dp->di_dbm == NULL) {
-        PyErr_SetString(state->gdbm_error, "GDBM object has already been closed");
-        result = -1;
-        goto done;
-    }
-    if (dp->di_size > 0) {
-        /* Known non-zero size. */
-        result = 1;
-        goto done;
-    }
-    if (dp->di_size == 0) {
-        /* Known zero size. */
-        result = 0;
-        goto done;
-    }
-    /* Unknown size.  Ensure DBM object has an entry. */
-    datum key = gdbm_firstkey(dp->di_dbm);
-    if (key.dptr == NULL) {
-        /* Empty. Cache this fact. */
-        result = dp->di_size = 0;
-        goto done;
-    }
-
-    /* Non-empty. Don't cache the length since we don't know. */
-    free(key.dptr);
-    result = 1;
-
-done:;
+    result = gdbm_bool_lock_held(op);
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -256,9 +261,9 @@ parse_datum(PyObject *o, datum *d, const char *failmsg)
 }
 
 static PyObject *
-gdbm_subscript(PyObject *op, PyObject *key)
+gdbm_subscript_lock_held(PyObject *op, PyObject *key)
 {
-    PyObject *v = NULL;
+    PyObject *v;
     datum drec, krec;
     gdbmobject *dp = _gdbmobject_CAST(op);
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
@@ -266,23 +271,29 @@ gdbm_subscript(PyObject *op, PyObject *key)
     if (!parse_datum(key, &krec, NULL)) {
         return NULL;
     }
-
-    Py_BEGIN_CRITICAL_SECTION(op);
     if (dp->di_dbm == NULL) {
         PyErr_SetString(state->gdbm_error,
                         "GDBM object has already been closed");
-        goto done;
+        return NULL;
     }
     drec = gdbm_fetch(dp->di_dbm, krec);
     if (drec.dptr == 0) {
         PyErr_SetObject(PyExc_KeyError, key);
-        goto done;
+        return NULL;
     }
     v = PyBytes_FromStringAndSize(drec.dptr, drec.dsize);
     free(drec.dptr);
-done:;
-    Py_END_CRITICAL_SECTION();
     return v;
+}
+
+static PyObject *
+gdbm_subscript(PyObject *op, PyObject *key)
+{
+    PyObject *result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = gdbm_subscript_lock_held(op, key);
+    Py_END_CRITICAL_SECTION();
+    return result;
 }
 
 /*[clinic input]
@@ -310,23 +321,20 @@ _gdbm_gdbm_get_impl(gdbmobject *self, PyObject *key, PyObject *default_value)
 }
 
 static int
-gdbm_ass_sub(PyObject *op, PyObject *v, PyObject *w)
+gdbm_ass_sub_lock_held(PyObject *op, PyObject *v, PyObject *w)
 {
     datum krec, drec;
     const char *failmsg = "gdbm mappings have bytes or string indices only";
-    int result = -1;
     gdbmobject *dp = _gdbmobject_CAST(op);
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
 
     if (!parse_datum(v, &krec, failmsg)) {
         return -1;
     }
-
-    Py_BEGIN_CRITICAL_SECTION(op);
     if (dp->di_dbm == NULL) {
         PyErr_SetString(state->gdbm_error,
                         "GDBM object has already been closed");
-        goto done;
+        return -1;
     }
     dp->di_size = -1;
     if (w == NULL) {
@@ -337,12 +345,12 @@ gdbm_ass_sub(PyObject *op, PyObject *v, PyObject *w)
             else {
                 set_gdbm_error(state, "gdbm_delete() error");
             }
-            goto done;
+            return -1;
         }
     }
     else {
         if (!parse_datum(w, &drec, failmsg)) {
-            goto done;
+            return -1;
         }
         errno = 0;
         if (gdbm_store(dp->di_dbm, krec, drec, GDBM_REPLACE) < 0) {
@@ -352,12 +360,18 @@ gdbm_ass_sub(PyObject *op, PyObject *v, PyObject *w)
             else {
                 set_gdbm_error(state, "gdbm_store() error");
             }
-            goto done;
+            return -1;
         }
     }
-    result = 0;
+    return 0;
+}
 
-done:;
+static int
+gdbm_ass_sub(PyObject *op, PyObject *v, PyObject *w)
+{
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(op);
+    result = gdbm_ass_sub_lock_held(op, v, w);
     Py_END_CRITICAL_SECTION();
     return result;
 }
@@ -462,39 +476,43 @@ _gdbm_gdbm_keys_impl(gdbmobject *self, PyTypeObject *cls)
 }
 
 static int
-gdbm_contains(PyObject *self, PyObject *arg)
+gdbm_contains_lock_held(PyObject *self, PyObject *arg)
 {
     gdbmobject *dp = (gdbmobject *)self;
     datum key;
     Py_ssize_t size;
-    int result = -1;
     _gdbm_state *state = PyType_GetModuleState(Py_TYPE(dp));
 
-    Py_BEGIN_CRITICAL_SECTION(self);
     if ((dp)->di_dbm == NULL) {
         PyErr_SetString(state->gdbm_error,
                         "GDBM object has already been closed");
-        goto done;
+        return -1;
     }
     if (PyUnicode_Check(arg)) {
         key.dptr = (char *)PyUnicode_AsUTF8AndSize(arg, &size);
         key.dsize = size;
         if (key.dptr == NULL)
-            goto done;
+            return -1;
     }
     else if (!PyBytes_Check(arg)) {
         PyErr_Format(PyExc_TypeError,
                      "gdbm key must be bytes or string, not %.100s",
                      Py_TYPE(arg)->tp_name);
-        goto done;
+        return -1;
     }
     else {
         key.dptr = PyBytes_AS_STRING(arg);
         key.dsize = PyBytes_GET_SIZE(arg);
     }
-    result = gdbm_exists(dp->di_dbm, key);
+    return gdbm_exists(dp->di_dbm, key);
+}
 
-done:;
+static int
+gdbm_contains(PyObject *self, PyObject *arg)
+{
+    int result;
+    Py_BEGIN_CRITICAL_SECTION(self);
+    result = gdbm_contains_lock_held(self, arg);
     Py_END_CRITICAL_SECTION();
     return result;
 }
