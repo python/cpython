@@ -1857,6 +1857,11 @@
             // _PY_FRAME_GENERAL
             {
                 args = &stack_pointer[-oparg];
+                if (tstate->py_recursion_remaining <= 1) {
+                    UPDATE_MISS_STATS(CALL);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL));
+                    JUMP_TO_PREDICTED(CALL);
+                }
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 int total_args = oparg;
                 if (!PyStackRef_IsNull(self_or_null)) {
@@ -4090,6 +4095,11 @@
             {
                 args = &stack_pointer[-oparg];
                 self_or_null = stack_pointer[-1 - oparg];
+                if (tstate->py_recursion_remaining <= 1) {
+                    UPDATE_MISS_STATS(CALL);
+                    assert(_PyOpcode_Deopt[opcode] == (CALL));
+                    JUMP_TO_PREDICTED(CALL);
+                }
                 PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
                 int total_args = oparg;
                 if (!PyStackRef_IsNull(self_or_null)) {
