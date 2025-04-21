@@ -590,50 +590,6 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     }
     Py_DECREF(impl);
 
-    /* Recursively register the subclass in all ABC bases, to avoid recursive lookups.
-        >>> class Ancestor1(ABC): pass
-        >>> class Ancestor2(Ancestor1): pass
-        >>> class Other: pass
-        >>> Ancestor2.register(Other)  # same result for Ancestor1.register(Other)
-        >>> issubclass(Other, Ancestor2) is True
-        >>> issubclass(Other, Ancestor1) is True
-    */
-    PyObject *mro = PyObject_GetAttrString(self, "__mro__");
-    if (mro == NULL) {
-        return NULL;
-    }
-
-    if (!PyTuple_CheckExact(mro)) {
-        PyErr_SetString(PyExc_TypeError, "__mro__ must be an exact tuple");
-        goto error;
-    }
-
-    for (Py_ssize_t pos = 0; pos < PyTuple_GET_SIZE(mro); pos++) {
-        PyObject *base_class = PyTuple_GET_ITEM(mro, pos);  // borrowed
-        PyObject *base_class_data;
-
-        if (PyObject_GetOptionalAttr(base_class,
-                                     &_Py_ID(_abc_impl),
-                                     &base_class_data) < 0)
-        {
-            goto error;
-        }
-
-        if (base_class_data == NULL) {
-            // not ABC class
-            continue;
-        }
-
-        _abc_data *base_class_state = _abc_data_CAST(base_class_data);
-        int res = _add_to_weak_set(base_class_state,
-                                   &base_class_state->_abc_registry,
-                                   subclass);
-        Py_DECREF(base_class_data);
-        if (res < 0) {
-            goto error;
-        }
-    }
-
     /* Invalidate negative cache */
     increment_invalidation_counter(get_abc_state(module));
 
@@ -648,10 +604,6 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
         }
     }
     return Py_NewRef(subclass);
-
-error:
-    Py_XDECREF(mro);
-    return NULL;
 }
 
 
@@ -878,7 +830,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         }
     }
 
-    /* Recursive calls lead to uncontrolled negative cache growth, avoid this */
+    /* No dice; update negative cache. */
     if (_add_to_weak_set(impl, &impl->_abc_negative_cache, subclass) < 0) {
         goto end;
     }
