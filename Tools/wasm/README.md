@@ -53,7 +53,7 @@ export EM_COMPILER_WRAPPER=ccache
 
 #### Compile and build Python interpreter
 
-You can use `python Tools/wasm/emscripten` to compile and build targetting
+You can use `python Tools/wasm/emscripten` to compile and build targeting
 Emscripten. You can do everything at once with:
 ```shell
 python Tools/wasm/emscripten build
