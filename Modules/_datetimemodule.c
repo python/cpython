@@ -51,7 +51,7 @@ typedef struct {
     PyObject *epoch;
 
     /* Extra reference to the interpreter's dict that will be decref'ed last
-    /* at shutdown. Use the dict to reserve the current module. */
+     * at shutdown. Use the dict to reserve the current module. */
     PyObject *interp_dict;
 } datetime_state;
 
