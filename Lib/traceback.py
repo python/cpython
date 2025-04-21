@@ -1120,7 +1120,7 @@ class TracebackException:
             queue = [(self, exc_value)]
             while queue:
                 te, e = queue.pop()
-                if (e and e.__cause__ is not None
+                if (e is not None and e.__cause__ is not None
                     and id(e.__cause__) not in _seen):
                     cause = TracebackException(
                         type(e.__cause__),
@@ -1141,7 +1141,7 @@ class TracebackException:
                                     not e.__suppress_context__)
                 else:
                     need_context = True
-                if (e and e.__context__ is not None
+                if (e is not None and e.__context__ is not None
                     and need_context and id(e.__context__) not in _seen):
                     context = TracebackException(
                         type(e.__context__),
@@ -1156,7 +1156,7 @@ class TracebackException:
                 else:
                     context = None
 
-                if e and isinstance(e, BaseExceptionGroup):
+                if e is not None and isinstance(e, BaseExceptionGroup):
                     exceptions = []
                     for exc in e.exceptions:
                         texc = TracebackException(

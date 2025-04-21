@@ -243,7 +243,7 @@ _pack_legacy_size(CFieldObject *field)
 }
 
 static int
-PyCField_set(PyObject *op, PyObject *inst, PyObject *value)
+PyCField_set_lock_held(PyObject *op, PyObject *inst, PyObject *value)
 {
     CDataObject *dst;
     char *ptr;
@@ -265,6 +265,16 @@ PyCField_set(PyObject *op, PyObject *inst, PyObject *value)
                        self->index, _pack_legacy_size(self), ptr);
 }
 
+static int
+PyCField_set(PyObject *op, PyObject *inst, PyObject *value)
+{
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(inst);
+    res = PyCField_set_lock_held(op, inst, value);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
 static PyObject *
 PyCField_get(PyObject *op, PyObject *inst, PyObject *type)
 {
@@ -280,9 +290,13 @@ PyCField_get(PyObject *op, PyObject *inst, PyObject *type)
         return NULL;
     }
     src = _CDataObject_CAST(inst);
-    return PyCData_get(st, self->proto, self->getfunc, inst,
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(inst);
+    res = PyCData_get(st, self->proto, self->getfunc, inst,
                        self->index, _pack_legacy_size(self),
                        src->b_ptr + self->byte_offset);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject *
