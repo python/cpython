@@ -723,3 +723,66 @@ class ConditionalAnnotationTests(unittest.TestCase):
         """
         expected = {"before": "before", "after": "after"}
         self.check_scopes(code, expected, expected)
+
+
+class RegressionTests(unittest.TestCase):
+    # gh-132479
+    def test_complex_comprehension_inlining(self):
+        # Test that the various repro cases from the issue don't crash
+        cases = [
+            """
+            (unique_name_0): 0
+            unique_name_1: (
+                0
+                for (
+                    0
+                    for unique_name_2 in 0
+                    for () in (0 for unique_name_3 in unique_name_4 for unique_name_5 in name_1)
+                ).name_3 in {0: 0 for name_1 in unique_name_8}
+                if name_1
+            )
+            """,
+            """
+            unique_name_0: 0
+            unique_name_1: {
+                0: 0
+                for unique_name_2 in [0 for name_0 in unique_name_4]
+                if {
+                    0: 0
+                    for unique_name_5 in 0
+                    if name_0
+                    if ((name_0 for unique_name_8 in unique_name_9) for [] in 0)
+                }
+            }
+            """,
+            """
+            0[0]: {0 for name_0 in unique_name_1}
+            unique_name_2: {
+                0: (lambda: name_0 for unique_name_4 in unique_name_5)
+                for unique_name_6 in ()
+                if name_0
+            }
+            """,
+        ]
+        for case in cases:
+            case = textwrap.dedent(case)
+            compile(case, "<test>", "exec")
+
+    def test_complex_comprehension_inlining_exec(self):
+        code = """
+            unique_name_1 = unique_name_5 = [1]
+            name_0 = 42
+            unique_name_7: {name_0 for name_0 in unique_name_1}
+            unique_name_2: {
+                0: (lambda: name_0 for unique_name_4 in unique_name_5)
+                for unique_name_6 in [1]
+                if name_0
+            }
+        """
+        mod = build_module(code)
+        annos = mod.__annotations__
+        self.assertEqual(annos.keys(), {"unique_name_7", "unique_name_2"})
+        self.assertEqual(annos["unique_name_7"], {True})
+        genexp = annos["unique_name_2"][0]
+        lamb = list(genexp)[0]
+        self.assertEqual(lamb(), 42)
