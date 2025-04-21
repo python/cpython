@@ -42,7 +42,7 @@ def convert(value, conversion):
     return value
 
 
-def f(template):
+def fstring(template):
     parts = []
     for item in template:
         match item:

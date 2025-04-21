@@ -1,7 +1,7 @@
 import ast
 import unittest
 
-from test.test_string._support import TStringTestCase, f
+from test.test_string._support import TStringTestCase, fstring
 
 
 class TestTString(TStringTestCase):
@@ -28,7 +28,7 @@ class TestTString(TStringTestCase):
         name = "Python"
         t = t"Hello, {name}"
         self.assertTStringEqual(t, ("Hello, ", ""), [(name, "name")])
-        self.assertEqual(f(t), "Hello, Python")
+        self.assertEqual(fstring(t), "Hello, Python")
 
         # Multiple interpolations
         first = "Python"
@@ -37,14 +37,14 @@ class TestTString(TStringTestCase):
         self.assertTStringEqual(
             t, ("", " ", ""), [(first, 'first'), (last, 'last')]
         )
-        self.assertEqual(f(t), "Python Developer")
+        self.assertEqual(fstring(t), "Python Developer")
 
         # Interpolation with expressions
         a = 10
         b = 20
         t = t"Sum: {a + b}"
         self.assertTStringEqual(t, ("Sum: ", ""), [(a + b, "a + b")])
-        self.assertEqual(f(t), "Sum: 30")
+        self.assertEqual(fstring(t), "Sum: 30")
 
         # Interpolation with function
         def square(x):
@@ -53,7 +53,7 @@ class TestTString(TStringTestCase):
         self.assertTStringEqual(
             t, ("Square: ", ""), [(square(5), "square(5)")]
         )
-        self.assertEqual(f(t), "Square: 25")
+        self.assertEqual(fstring(t), "Square: 25")
 
         # Test attribute access in expressions
         class Person:
@@ -68,14 +68,14 @@ class TestTString(TStringTestCase):
         self.assertTStringEqual(
             t, ("Name: ", ""), [(person.name, "person.name")]
         )
-        self.assertEqual(f(t), "Name: Alice")
+        self.assertEqual(fstring(t), "Name: Alice")
 
         # Test method calls
         t = t"Name: {person.upper()}"
         self.assertTStringEqual(
             t, ("Name: ", ""), [(person.upper(), "person.upper()")]
         )
-        self.assertEqual(f(t), "Name: ALICE")
+        self.assertEqual(fstring(t), "Name: ALICE")
 
         # Test dictionary access
         data = {"name": "Bob", "age": 30}
@@ -84,7 +84,7 @@ class TestTString(TStringTestCase):
             t, ("Name: ", ", Age: ", ""),
             [(data["name"], "data['name']"), (data["age"], "data['age']")],
         )
-        self.assertEqual(f(t), "Name: Bob, Age: 30")
+        self.assertEqual(fstring(t), "Name: Bob, Age: 30")
 
     def test_format_specifiers(self):
         # Test basic format specifiers
@@ -93,25 +93,25 @@ class TestTString(TStringTestCase):
         self.assertTStringEqual(
             t, ("Pi: ", ""), [(value, "value", None, ".2f")]
         )
-        self.assertEqual(f(t), "Pi: 3.14")
+        self.assertEqual(fstring(t), "Pi: 3.14")
 
     def test_conversions(self):
         # Test !s conversion (str)
         obj = object()
         t = t"Object: {obj!s}"
         self.assertTStringEqual(t, ("Object: ", ""), [(obj, "obj", "s")])
-        self.assertEqual(f(t), f"Object: {str(obj)}")
+        self.assertEqual(fstring(t), f"Object: {str(obj)}")
 
         # Test !r conversion (repr)
         t = t"Data: {obj!r}"
         self.assertTStringEqual(t, ("Data: ", ""), [(obj, "obj", "r")])
-        self.assertEqual(f(t), f"Data: {repr(obj)}")
+        self.assertEqual(fstring(t), f"Data: {repr(obj)}")
 
         # Test !a conversion (ascii)
         text = "Café"
         t = t"ASCII: {text!a}"
         self.assertTStringEqual(t, ("ASCII: ", ""), [(text, "text", "a")])
-        self.assertEqual(f(t), f"ASCII: {ascii(text)}")
+        self.assertEqual(fstring(t), f"ASCII: {ascii(text)}")
 
         # Test !z conversion (error)
         num = 1
@@ -125,14 +125,14 @@ class TestTString(TStringTestCase):
         self.assertTStringEqual(
             t, ("Value: value=", ""), [(value, "value", "r")]
         )
-        self.assertEqual(f(t), "Value: value=42")
+        self.assertEqual(fstring(t), "Value: value=42")
 
         # Test debug specifier with format (conversion default to !r)
         t = t"Value: {value=:.2f}"
         self.assertTStringEqual(
             t, ("Value: value=", ""), [(value, "value", None, ".2f")]
         )
-        self.assertEqual(f(t), "Value: value=42.00")
+        self.assertEqual(fstring(t), "Value: value=42.00")
 
         # Test debug specifier with conversion
         t = t"Value: {value=!s}"
@@ -145,13 +145,13 @@ class TestTString(TStringTestCase):
         self.assertTStringEqual(
             t, ("Value: value = ", ""), [(value, "value", "r")]
         )
-        self.assertEqual(f(t), "Value: value = 42")
+        self.assertEqual(fstring(t), "Value: value = 42")
 
     def test_raw_tstrings(self):
         path = r"C:\Users"
         t = rt"{path}\Documents"
         self.assertTStringEqual(t, ("", r"\Documents"), [(path, "path")])
-        self.assertEqual(f(t), r"C:\Users\Documents")
+        self.assertEqual(fstring(t), r"C:\Users\Documents")
 
         # Test alternative prefix
         t = tr"{path}\Documents"
@@ -164,13 +164,13 @@ class TestTString(TStringTestCase):
         t2 = t"world"
         combined = t1 + t2
         self.assertTStringEqual(combined, ("Hello, world",), ())
-        self.assertEqual(f(combined), "Hello, world")
+        self.assertEqual(fstring(combined), "Hello, world")
 
         # Test template + string
         t1 = t"Hello"
         combined = t1 + ", world"
         self.assertTStringEqual(combined, ("Hello, world",), ())
-        self.assertEqual(f(combined), "Hello, world")
+        self.assertEqual(fstring(combined), "Hello, world")
 
         # Test template + template with interpolation
         name = "Python"
@@ -178,12 +178,12 @@ class TestTString(TStringTestCase):
         t2 = t"{name}"
         combined = t1 + t2
         self.assertTStringEqual(combined, ("Hello, ", ""), [(name, "name")])
-        self.assertEqual(f(combined), "Hello, Python")
+        self.assertEqual(fstring(combined), "Hello, Python")
 
         # Test string + template
         t = "Hello, " + t"{name}"
         self.assertTStringEqual(t, ("Hello, ", ""), [(name, "name")])
-        self.assertEqual(f(t), "Hello, Python")
+        self.assertEqual(fstring(t), "Hello, Python")
 
     def test_nested_templates(self):
         # Test a template inside another template expression
@@ -251,13 +251,13 @@ class TestTString(TStringTestCase):
         # Test concatenation of t-string literals
         t = t"Hello, " t"world"
         self.assertTStringEqual(t, ("Hello, world",), ())
-        self.assertEqual(f(t), "Hello, world")
+        self.assertEqual(fstring(t), "Hello, world")
 
         # Test concatenation with interpolation
         name = "Python"
         t = t"Hello, " t"{name}"
         self.assertTStringEqual(t, ("Hello, ", ""), [(name, "name")])
-        self.assertEqual(f(t), "Hello, Python")
+        self.assertEqual(fstring(t), "Hello, Python")
 
         # Test concatenation with string literal
         name = "Python"
@@ -265,7 +265,7 @@ class TestTString(TStringTestCase):
         self.assertTStringEqual(
             t, ("Hello, ", "and welcome!"), [(name, "name")]
         )
-        self.assertEqual(f(t), "Hello, Pythonand welcome!")
+        self.assertEqual(fstring(t), "Hello, Pythonand welcome!")
 
         # Test concatenation with Unicode literal
         name = "Python"
@@ -273,13 +273,13 @@ class TestTString(TStringTestCase):
         self.assertTStringEqual(
             t, ("Hello, ", "and welcome!"), [(name, "name")]
         )
-        self.assertEqual(f(t), "Hello, Pythonand welcome!")
+        self.assertEqual(fstring(t), "Hello, Pythonand welcome!")
 
         # Test concatenation with f-string literal
         tab = '\t'
         t = t"Tab: {tab}. " f"f-tab: {tab}."
         self.assertTStringEqual(t, ("Tab: ", ". f-tab: \t."), [(tab, "tab")])
-        self.assertEqual(f(t), "Tab: \t. f-tab: \t.")
+        self.assertEqual(fstring(t), "Tab: \t. f-tab: \t.")
 
         # Test concatenation with raw string literal
         tab = '\t'
@@ -287,7 +287,7 @@ class TestTString(TStringTestCase):
         self.assertTStringEqual(
             t, ("Tab: ", r". Raw tab: \t."), [(tab, "tab")]
         )
-        self.assertEqual(f(t), "Tab: \t. Raw tab: \\t.")
+        self.assertEqual(fstring(t), "Tab: \t. Raw tab: \\t.")
 
         # Test concatenation with raw f-string literal
         tab = '\t'
@@ -295,7 +295,7 @@ class TestTString(TStringTestCase):
         self.assertTStringEqual(
             t, ("Tab: ", ". f-tab: \t. Raw tab: \\t."), [(tab, "tab")]
         )
-        self.assertEqual(f(t), "Tab: \t. f-tab: \t. Raw tab: \\t.")
+        self.assertEqual(fstring(t), "Tab: \t. f-tab: \t. Raw tab: \\t.")
 
         what = 't'
         expected_msg = 'cannot mix bytes and nonbytes literals'
@@ -315,7 +315,7 @@ class TestTString(TStringTestCase):
         self.assertTStringEqual(
             t, ("\n        Hello,\n        world\n        ",), ()
         )
-        self.assertEqual(f(t), "\n        Hello,\n        world\n        ")
+        self.assertEqual(fstring(t), "\n        Hello,\n        world\n        ")
 
         # Test triple-quoted with interpolation
         name = "Python"
@@ -326,7 +326,7 @@ class TestTString(TStringTestCase):
         self.assertTStringEqual(
             t, ("\n        Hello,\n        ", "\n        "), [(name, "name")]
         )
-        self.assertEqual(f(t), "\n        Hello,\n        Python\n        ")
+        self.assertEqual(fstring(t), "\n        Hello,\n        Python\n        ")
 
 if __name__ == '__main__':
     unittest.main()
