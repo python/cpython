@@ -162,9 +162,11 @@ static inline datetime_state *
 get_current_state(void)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    void *state = interp->datetime_module_state;
-    assert(state != NULL);
-    return (datetime_state *)state;
+    datetime_state *st = interp->datetime_module_state;
+    assert(st != NULL);
+    assert(st->interp_dict != NULL);
+    assert(PyDict_Contains(st->interp_dict, INTERP_KEY) == 1);
+    return st;
 }
 
 static int
