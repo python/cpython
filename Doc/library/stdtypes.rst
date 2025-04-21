@@ -2523,7 +2523,7 @@ To include a literal ``{`` or ``}``, use a double bracket:
    >>> f'{{x}} is {x}'
    '{x} is 42'
 
-Functions can also be used, and :ref:`format specifier <formatstrings>`:
+Functions can also be used, and :ref:`format specifiers <formatstrings>`:
 
 .. doctest::
 
@@ -2564,7 +2564,7 @@ For example:
    '\xbfD\xf3nde est\xe1 el Presidente?'
 
 While debugging it may be helpful to see both the expression and its value,
-using the equals sign (``=``) after the expression.
+by using the equals sign (``=``) after the expression.
 This preserves spaces within the brackets, and can be used with a converter.
 By default, the debugging operator uses the :func:`repr` (``!r``) conversion.
 For example:
