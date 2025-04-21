@@ -1,4 +1,24 @@
 
+static void
+_ensure_current_cause(PyThreadState *tstate, PyObject *cause)
+{
+    if (cause == NULL) {
+        return;
+    }
+    PyObject *exc = _PyErr_GetRaisedException(tstate);
+    assert(exc != NULL);
+    PyObject *ctx = PyException_GetContext(exc);
+    if (ctx == NULL) {
+        PyException_SetContext(exc, cause);
+    }
+    else {
+        Py_DECREF(ctx);
+    }
+    assert(PyException_GetCause(exc) == NULL);
+    PyException_SetCause(exc, cause);
+}
+
+
 /* InterpreterError extends Exception */
 
 static PyTypeObject _PyExc_InterpreterError = {
@@ -60,7 +80,7 @@ get_notshareableerror_type(PyThreadState *tstate)
 }
 
 static void
-set_notshareableerror(PyThreadState *tstate, const char *msg)
+set_notshareableerror(PyThreadState *tstate, PyObject *cause, const char *msg)
 {
     PyObject *exctype = get_notshareableerror_type(tstate);
     if (exctype == NULL) {
@@ -70,13 +90,12 @@ set_notshareableerror(PyThreadState *tstate, const char *msg)
     PyObject *ctx = _PyErr_GetRaisedException(tstate);
     _PyErr_SetString(tstate, exctype, msg);
     _PyErr_ChainExceptions1Tstate(tstate, ctx);
-    // XXX Ideally we would also append the currently handling exception
-    // (_PyErr_GetTopmostException()->exc_value) to the end of ctx's
-    // context chain.  (See _PyErr_SetObject().)
+    _ensure_current_cause(tstate, cause);
 }
 
 static void
-format_notshareableerror_v(PyThreadState *tstate, const char *format, va_list vargs)
+format_notshareableerror_v(PyThreadState *tstate, PyObject *cause,
+                           const char *format, va_list vargs)
 {
     PyObject *exctype = get_notshareableerror_type(tstate);
     if (exctype == NULL) {
@@ -86,9 +105,17 @@ format_notshareableerror_v(PyThreadState *tstate, const char *format, va_list va
     PyObject *ctx = _PyErr_GetRaisedException(tstate);
     _PyErr_FormatV(tstate, exctype, format, vargs);
     _PyErr_ChainExceptions1Tstate(tstate, ctx);
-    // XXX Ideally we would also append the currently handling exception
-    // (_PyErr_GetTopmostException()->exc_value) to the end of ctx's
-    // context chain.  (See _PyErr_SetObject().)
+    _ensure_current_cause(tstate, cause);
+}
+
+static void
+format_notshareableerror(PyThreadState *tstate, PyObject *cause,
+                         const char *format, ...)
+{
+    va_list vargs;
+    va_start(vargs, format);
+    format_notshareableerror_v(tstate, cause, format, vargs);
+    va_end(vargs);
 }
 
 

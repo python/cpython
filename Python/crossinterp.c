@@ -199,19 +199,20 @@ _check_xidata(PyThreadState *tstate, _PyXIData_t *data)
 }
 
 static inline void
-_set_xid_lookup_failure(PyThreadState *tstate, PyObject *obj, const char *msg)
+_set_xid_lookup_failure(PyThreadState *tstate, PyObject *obj, const char *msg,
+                        PyObject *cause)
 {
     if (msg != NULL) {
         assert(obj == NULL);
-        set_notshareableerror(tstate, msg);
+        set_notshareableerror(tstate, cause, msg);
     }
     else if (obj == NULL) {
-        set_notshareableerror(
-                tstate, "object does not support cross-interpreter data");
+        msg = "object does not support cross-interpreter data";
+        set_notshareableerror(tstate, cause, msg);
     }
     else {
-        _PyXIData_FormatNotShareableError(
-                tstate, "%S does not support cross-interpreter data", obj);
+        format_notshareableerror(
+            tstate, cause, "%S does not support cross-interpreter data", obj);
     }
 }
 
@@ -225,7 +226,7 @@ _PyObject_CheckXIData(PyThreadState *tstate, PyObject *obj)
     xidatafunc getdata = lookup_getdata(&ctx, obj);
     if (getdata == NULL) {
         if (!PyErr_Occurred()) {
-            _set_xid_lookup_failure(tstate, obj, NULL);
+            _set_xid_lookup_failure(tstate, obj, NULL, NULL);
         }
         return -1;
     }
@@ -252,7 +253,7 @@ _PyObject_GetXIData(PyThreadState *tstate,
     if (getdata == NULL) {
         Py_DECREF(obj);
         if (!PyErr_Occurred()) {
-            _set_xid_lookup_failure(tstate, obj, NULL);
+            _set_xid_lookup_failure(tstate, obj, NULL, NULL);
         }
         return -1;
     }
@@ -1003,7 +1004,7 @@ _PyXI_ApplyErrorCode(_PyXI_errcode code, PyInterpreterState *interp)
                         "failed to apply namespace to __main__");
         break;
     case _PyXI_ERR_NOT_SHAREABLE:
-        _set_xid_lookup_failure(tstate, NULL, NULL);
+        _set_xid_lookup_failure(tstate, NULL, NULL, NULL);
         break;
     default:
 #ifdef Py_DEBUG
@@ -1066,7 +1067,7 @@ _PyXI_ApplyError(_PyXI_error *error)
     }
     else if (error->code == _PyXI_ERR_NOT_SHAREABLE) {
         // Propagate the exception directly.
-        _set_xid_lookup_failure(tstate, NULL, error->uncaught.msg);
+        _set_xid_lookup_failure(tstate, NULL, error->uncaught.msg, NULL);
     }
     else {
         // Raise an exception corresponding to the code.
