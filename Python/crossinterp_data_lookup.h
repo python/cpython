@@ -73,7 +73,7 @@ void
 _PyXIData_SetNotShareableError(PyThreadState *tstate, const char *msg)
 {
     PyObject *cause = NULL;
-    set_notshareableerror(tstate, cause, msg);
+    set_notshareableerror(tstate, cause, 1, msg);
 }
 
 void
@@ -83,7 +83,7 @@ _PyXIData_FormatNotShareableError(PyThreadState *tstate,
     PyObject *cause = NULL;
     va_list vargs;
     va_start(vargs, format);
-    format_notshareableerror_v(tstate, cause, format, vargs);
+    format_notshareableerror_v(tstate, cause, 1, format, vargs);
     va_end(vargs);
 }
 

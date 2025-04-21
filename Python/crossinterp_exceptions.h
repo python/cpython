@@ -16,6 +16,7 @@ _ensure_current_cause(PyThreadState *tstate, PyObject *cause)
     }
     assert(PyException_GetCause(exc) == NULL);
     PyException_SetCause(exc, cause);
+    _PyErr_SetRaisedException(tstate, exc);
 }
 
 
@@ -80,41 +81,59 @@ get_notshareableerror_type(PyThreadState *tstate)
 }
 
 static void
-set_notshareableerror(PyThreadState *tstate, PyObject *cause, const char *msg)
+_ensure_notshareableerror(PyThreadState *tstate,
+                          PyObject *cause, int force, PyObject *msgobj)
 {
+    PyObject *ctx = _PyErr_GetRaisedException(tstate);
     PyObject *exctype = get_notshareableerror_type(tstate);
-    if (exctype == NULL) {
+    if (exctype != NULL) {
+        if (!force && ctx != NULL && Py_TYPE(ctx) == (PyTypeObject *)exctype) {
+            // A NotShareableError instance is already set.
+            assert(cause == NULL);
+            _PyErr_SetRaisedException(tstate, ctx);
+        }
+    }
+    else {
         exctype = PyExc_ValueError;
     }
-    // We have to set the context manually since _PyErr_SetObject() won't.
-    PyObject *ctx = _PyErr_GetRaisedException(tstate);
-    _PyErr_SetString(tstate, exctype, msg);
+    _PyErr_SetObject(tstate, exctype, msgobj);
+    // We have to set the context manually since _PyErr_SetObject() doesn't.
     _PyErr_ChainExceptions1Tstate(tstate, ctx);
     _ensure_current_cause(tstate, cause);
 }
 
 static void
-format_notshareableerror_v(PyThreadState *tstate, PyObject *cause,
+set_notshareableerror(PyThreadState *tstate, PyObject *cause, int force, const char *msg)
+{
+    PyObject *msgobj = PyUnicode_FromString(msg);
+    if (msgobj == NULL) {
+        assert(_PyErr_Occurred(tstate));
+    }
+    else {
+        _ensure_notshareableerror(tstate, cause, force, msgobj);
+    }
+}
+
+static void
+format_notshareableerror_v(PyThreadState *tstate, PyObject *cause, int force,
                            const char *format, va_list vargs)
 {
-    PyObject *exctype = get_notshareableerror_type(tstate);
-    if (exctype == NULL) {
-        exctype = PyExc_ValueError;
+    PyObject *msgobj = PyUnicode_FromFormatV(format, vargs);
+    if (msgobj == NULL) {
+        assert(_PyErr_Occurred(tstate));
     }
-    // We have to set the context manually since _PyErr_SetObject() won't.
-    PyObject *ctx = _PyErr_GetRaisedException(tstate);
-    _PyErr_FormatV(tstate, exctype, format, vargs);
-    _PyErr_ChainExceptions1Tstate(tstate, ctx);
-    _ensure_current_cause(tstate, cause);
+    else {
+        _ensure_notshareableerror(tstate, cause, force, msgobj);
+    }
 }
 
 static void
-format_notshareableerror(PyThreadState *tstate, PyObject *cause,
+format_notshareableerror(PyThreadState *tstate, PyObject *cause, int force,
                          const char *format, ...)
 {
     va_list vargs;
     va_start(vargs, format);
-    format_notshareableerror_v(tstate, cause, format, vargs);
+    format_notshareableerror_v(tstate, cause, force, format, vargs);
     va_end(vargs);
 }
 

@@ -204,15 +204,15 @@ _set_xid_lookup_failure(PyThreadState *tstate, PyObject *obj, const char *msg,
 {
     if (msg != NULL) {
         assert(obj == NULL);
-        set_notshareableerror(tstate, cause, msg);
+        set_notshareableerror(tstate, cause, 0, msg);
     }
     else if (obj == NULL) {
         msg = "object does not support cross-interpreter data";
-        set_notshareableerror(tstate, cause, msg);
+        set_notshareableerror(tstate, cause, 0, msg);
     }
     else {
-        format_notshareableerror(
-            tstate, cause, "%S does not support cross-interpreter data", obj);
+        msg = "%S does not support cross-interpreter data";
+        format_notshareableerror(tstate, cause, 0, msg, obj);
     }
 }
 
@@ -225,7 +225,7 @@ _PyObject_CheckXIData(PyThreadState *tstate, PyObject *obj)
     }
     xidatafunc getdata = lookup_getdata(&ctx, obj);
     if (getdata == NULL) {
-        if (!PyErr_Occurred()) {
+        if (!_PyErr_Occurred(tstate)) {
             _set_xid_lookup_failure(tstate, obj, NULL, NULL);
         }
         return -1;
@@ -252,7 +252,7 @@ _PyObject_GetXIData(PyThreadState *tstate,
     xidatafunc getdata = lookup_getdata(&ctx, obj);
     if (getdata == NULL) {
         Py_DECREF(obj);
-        if (!PyErr_Occurred()) {
+        if (!_PyErr_Occurred(tstate)) {
             _set_xid_lookup_failure(tstate, obj, NULL, NULL);
         }
         return -1;
@@ -260,6 +260,10 @@ _PyObject_GetXIData(PyThreadState *tstate,
     int res = getdata(tstate, obj, data);
     Py_DECREF(obj);
     if (res != 0) {
+        PyObject *cause = _PyErr_GetRaisedException(tstate);
+        assert(cause != NULL);
+        _set_xid_lookup_failure(tstate, obj, NULL, cause);
+        Py_XDECREF(cause);
         return -1;
     }
 
@@ -1067,6 +1071,7 @@ _PyXI_ApplyError(_PyXI_error *error)
     }
     else if (error->code == _PyXI_ERR_NOT_SHAREABLE) {
         // Propagate the exception directly.
+        assert(!_PyErr_Occurred(tstate));
         _set_xid_lookup_failure(tstate, NULL, error->uncaught.msg, NULL);
     }
     else {
