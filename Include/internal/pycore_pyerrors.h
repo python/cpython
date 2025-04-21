@@ -114,6 +114,7 @@ extern void _PyErr_SetObject(
     PyObject *value);
 
 extern void _PyErr_ChainStackItem(void);
+extern void _PyErr_ChainExceptions1Tstate(PyThreadState *, PyObject *);
 
 PyAPI_FUNC(void) _PyErr_Clear(PyThreadState *tstate);
 
