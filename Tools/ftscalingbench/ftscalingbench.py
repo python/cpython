@@ -46,16 +46,14 @@ def register_benchmark(func):
 @register_benchmark
 def shallow_copy():
     x = [1, 2, 3]
-    shallow_copy = copy.copy
     for i in range(200 * WORK_SCALE):
-        shallow_copy(x)
+        copy.copy(x)
 
 @register_benchmark
 def deepcopy():
     x = {'list': [1, 2], 'tuple': (1, None)}
-    deepcopy = copy.deepcopy
     for i in range(40 * WORK_SCALE):
-        deepcopy(x)
+        copy.deepcopy(x)
 
 @register_benchmark
 def object_cfunction():
