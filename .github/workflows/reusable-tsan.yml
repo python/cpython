@@ -73,7 +73,7 @@ jobs:
     - name: Display build info
       run: make pythoninfo
     - name: Tests
-      run: ./python -m test --tsan -j4
+      run: ./python -m test --tsan -j4 -vv
     - name: Parallel tests
       if: fromJSON(inputs.free-threading)
       run: ./python -m test --tsan-parallel --parallel-threads=4 -j4
