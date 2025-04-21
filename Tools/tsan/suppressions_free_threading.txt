@@ -12,7 +12,6 @@
 
 # These warnings trigger directly in a CPython function.
 
-race_top:assign_version_tag
 race_top:dump_traceback
 race_top:fatal_error
 race_top:_PyFrame_GetCode
