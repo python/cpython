@@ -919,36 +919,44 @@ class _WarningsTests(BaseTest, unittest.TestCase):
         self.assertIn(text, result)
 
     def test_showwarning_not_callable(self):
-        with self.module.catch_warnings():
-            self.module.filterwarnings("always", category=UserWarning)
-            self.module.showwarning = print
-            with support.captured_output('stdout'):
-                self.module.warn('Warning!')
-            self.module.showwarning = 23
-            self.assertRaises(TypeError, self.module.warn, "Warning!")
+        orig = self.module.showwarning
+        try:
+            with self.module.catch_warnings():
+                self.module.filterwarnings("always", category=UserWarning)
+                self.module.showwarning = print
+                with support.captured_output('stdout'):
+                    self.module.warn('Warning!')
+                self.module.showwarning = 23
+                self.assertRaises(TypeError, self.module.warn, "Warning!")
+        finally:
+            self.module.showwarning = orig
 
     def test_show_warning_output(self):
         # With showwarning() missing, make sure that output is okay.
-        text = 'test show_warning'
-        with self.module.catch_warnings():
-            self.module.filterwarnings("always", category=UserWarning)
-            del self.module.showwarning
-            with support.captured_output('stderr') as stream:
-                warning_tests.inner(text)
-                result = stream.getvalue()
-        self.assertEqual(result.count('\n'), 2,
-                             "Too many newlines in %r" % result)
-        first_line, second_line = result.split('\n', 1)
-        expected_file = os.path.splitext(warning_tests.__file__)[0] + '.py'
-        first_line_parts = first_line.rsplit(':', 3)
-        path, line, warning_class, message = first_line_parts
-        line = int(line)
-        self.assertEqual(expected_file, path)
-        self.assertEqual(warning_class, ' ' + UserWarning.__name__)
-        self.assertEqual(message, ' ' + text)
-        expected_line = '  ' + linecache.getline(path, line).strip() + '\n'
-        assert expected_line
-        self.assertEqual(second_line, expected_line)
+        orig = self.module.showwarning
+        try:
+            text = 'test show_warning'
+            with self.module.catch_warnings():
+                self.module.filterwarnings("always", category=UserWarning)
+                del self.module.showwarning
+                with support.captured_output('stderr') as stream:
+                    warning_tests.inner(text)
+                    result = stream.getvalue()
+            self.assertEqual(result.count('\n'), 2,
+                                 "Too many newlines in %r" % result)
+            first_line, second_line = result.split('\n', 1)
+            expected_file = os.path.splitext(warning_tests.__file__)[0] + '.py'
+            first_line_parts = first_line.rsplit(':', 3)
+            path, line, warning_class, message = first_line_parts
+            line = int(line)
+            self.assertEqual(expected_file, path)
+            self.assertEqual(warning_class, ' ' + UserWarning.__name__)
+            self.assertEqual(message, ' ' + text)
+            expected_line = '  ' + linecache.getline(path, line).strip() + '\n'
+            assert expected_line
+            self.assertEqual(second_line, expected_line)
+        finally:
+            self.module.showwarning = orig
 
     def test_filename_none(self):
         # issue #12467: race condition if a warning is emitted at shutdown
@@ -1640,7 +1648,7 @@ class ThreadTests(BaseTest):
     def test_threaded_context(self):
         import threading
 
-        barrier = threading.Barrier(2)
+        barrier = threading.Barrier(2, timeout=2)
 
         def run_a():
             with self.module.catch_warnings(record=True) as w:

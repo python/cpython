@@ -8332,7 +8332,7 @@ socket_exec(PyObject *m)
 #endif
 #if defined(HAVE_LINUX_CAN_RAW_H) || defined(HAVE_NETCAN_CAN_H)
     ADD_INT_MACRO(m, CAN_RAW_FILTER);
-#ifdef CAN_RAW_ERR_FILTER
+#ifdef HAVE_LINUX_CAN_RAW_H
     ADD_INT_MACRO(m, CAN_RAW_ERR_FILTER);
 #endif
     ADD_INT_MACRO(m, CAN_RAW_LOOPBACK);
