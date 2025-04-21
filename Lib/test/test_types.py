@@ -660,16 +660,17 @@ class TypesTests(unittest.TestCase):
         import io
         import _queue
 
-        types = [
+        to_check = [
             # (method, instance)
             (_io._TextIOBase.read, io.StringIO()),
             (_queue.SimpleQueue.put, _queue.SimpleQueue()),
             (str.capitalize, "nobody expects the spanish inquisition")
         ]
 
-        for method, instance in types:
+        for method, instance in to_check:
             with self.subTest(method=method, instance=instance):
-                method.__get__(instance)
+                bound = method.__get__(instance)
+                self.assertIsInstance(bound, types.BuiltinMethodType)
 
     def test_ellipsis_type(self):
         self.assertIsInstance(Ellipsis, types.EllipsisType)
