@@ -88,9 +88,9 @@ The module defines the following functions:
    a :meth:`~io.IOBase.fileno` method are accepted as well).  The values used
    for *cmd* are operating system dependent, and are available as constants
    in the :mod:`fcntl` module, using the same names as used in the relevant C
-   header files. The argument *arg* can either be an integer value, or a
+   header files. The argument *arg* can either be an integer value, a
    :class:`bytes` object, or a string.
-   The type and the size of *arg* must match the type and the size of
+   The type and size of *arg* must match the type and size of
    the argument of the operation as specified in the relevant C documentation.
 
    With an integer value, the return value of this function is the integer
@@ -108,7 +108,7 @@ The module defines the following functions:
    If the :c:func:`fcntl` call fails, an :exc:`OSError` is raised.
 
    .. note::
-      If the type or the size of *arg* does not match the type or the size
+      If the type or the size of *arg* does not match the type or size
       of the argument of the operation (for example, if an integer is
       passed when a pointer is expected, or the information returned in
       the buffer by the operating system is larger than 1024 bytes),
@@ -124,18 +124,18 @@ The module defines the following functions:
    that the argument handling is even more complicated.
 
    The *request* parameter is limited to values that can fit in 32-bits
-   or 64-bits, depending on platform.
+   or 64-bits, depending on the platform.
    Additional constants of interest for use as the *request* argument can be
    found in the :mod:`termios` module, under the same names as used in
    the relevant C header files.
 
    The parameter *arg* can be one of an integer, a :term:`bytes-like object`,
    or a string.
-   The type and the size of *arg* must match the type and the size of
+   The type and size of *arg* must match the type and size of
    the argument of the operation as specified in the relevant C documentation.
 
    If *arg* does not support the read-write buffer interface or
-   a *mutate_flag* is false, behaviour is as for the :func:`~fcntl.fcntl`
+   the *mutate_flag* is false, behavior is as for the :func:`~fcntl.fcntl`
    function.
 
    If *arg* supports the read-write buffer interface (like :class:`bytearray`)
@@ -150,8 +150,8 @@ The module defines the following functions:
    If the :c:func:`ioctl` call fails, an :exc:`OSError` exception is raised.
 
    .. note::
-      If the type or the size of *arg* does not match the type or the size
-      of the argument of the operation (for example, if an integer is
+      If the type or size of *arg* does not match the type or size
+      operations argument (for example, if an integer is
       passed when a pointer is expected, or the information returned in
       the buffer by the operating system is larger than 1024 bytes,
       or the size of the mutable bytes-like object is too small),
