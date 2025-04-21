@@ -48,7 +48,7 @@ class object "PyObject *" "&PyBaseObject_Type"
          & ((1 << MCACHE_SIZE_EXP) - 1))
 
 #define MCACHE_HASH_METHOD(type, name)                                  \
-    MCACHE_HASH(FT_ATOMIC_LOAD_UINT32_RELAXED((type)->tp_version_tag),   \
+    MCACHE_HASH(FT_ATOMIC_LOAD_UINT_RELAXED((type)->tp_version_tag),   \
                 ((Py_ssize_t)(name)) >> 3)
 #define MCACHE_CACHEABLE_NAME(name)                             \
         PyUnicode_CheckExact(name) &&                           \
@@ -5838,7 +5838,7 @@ _PyTypes_AfterFork(void)
 static unsigned int
 type_assign_version(PyTypeObject *type)
 {
-    unsigned int version = FT_ATOMIC_LOAD_UINT32_RELAXED((type)->tp_version_tag);
+    unsigned int version = FT_ATOMIC_LOAD_UINT_RELAXED((type)->tp_version_tag);
     if (version == 0) {
         types_mutex_lock();
         PyInterpreterState *interp = _PyInterpreterState_GET();
