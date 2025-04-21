@@ -132,53 +132,22 @@ PyTypeObject _PyInterpolation_Type = {
     .tp_traverse = interpolation_traverse,
 };
 
-static PyObject *
-_get_match_args(void)
-{
-    PyObject *value = NULL, *expression = NULL, *conversion = NULL, *format_spec = NULL;
-    PyObject *tuple = NULL;
-
-    value = PyUnicode_FromString("value");
-    if (!value) {
-        goto error;
-    }
-    expression = PyUnicode_FromString("expression");
-    if (!expression) {
-        goto error;
-    }
-    conversion = PyUnicode_FromString("conversion");
-    if (!conversion) {
-        goto error;
-    }
-    format_spec = PyUnicode_FromString("format_spec");
-    if (!format_spec) {
-        goto error;
-    }
-
-    tuple = PyTuple_Pack(4, value, expression, conversion, format_spec);
-
-error:
-    Py_XDECREF(value);
-    Py_XDECREF(expression);
-    Py_XDECREF(conversion);
-    Py_XDECREF(format_spec);
-    return tuple;
-
-}
-
 PyStatus
 _PyInterpolation_InitTypes(PyInterpreterState *interp)
 {
-    PyObject *tuple = _get_match_args();
+    PyObject *tuple = Py_BuildValue("(ssss)", "value", "expression", "conversion", "format_spec");
     if (!tuple) {
         goto error;
     }
 
-    int status = PyDict_SetItemString(_PyType_GetDict(&_PyInterpolation_Type),
-        "__match_args__",
-        tuple);
-    Py_DECREF(tuple);
+    PyObject *dict = _PyType_GetDict(&_PyInterpolation_Type);
+    if (!dict) {
+        Py_DECREF(tuple);
+        goto error;
+    }
 
+    int status = PyDict_SetItemString(dict, "__match_args__", tuple);
+    Py_DECREF(tuple);
     if (status < 0) {
         goto error;
     }
