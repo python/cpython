@@ -1016,7 +1016,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                 Py_UNREACHABLE();
         }
 
-        the_current_tok->string_kind = TSTRING;
+        the_current_tok->string_kind = string_kind;
         the_current_tok->curly_bracket_depth = 0;
         the_current_tok->curly_bracket_expr_start_depth = -1;
         return string_kind == TSTRING ? MAKE_TOKEN(TSTRING_START) : MAKE_TOKEN(FSTRING_START);
