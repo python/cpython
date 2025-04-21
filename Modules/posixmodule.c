@@ -4386,14 +4386,6 @@ os_link_impl(PyObject *module, path_t *src, path_t *dst, int src_dir_fd,
 #endif
     }
 
-#ifdef MS_WINDOWS
-    if ((src->narrow && dst->wide) || (src->wide && dst->narrow)) {
-        PyErr_SetString(PyExc_NotImplementedError,
-                        "link: src and dst must be the same type");
-        return NULL;
-    }
-#endif
-
     if (PySys_Audit("os.link", "OOii", src->object, dst->object,
                     src_dir_fd == DEFAULT_DIR_FD ? -1 : src_dir_fd,
                     dst_dir_fd == DEFAULT_DIR_FD ? -1 : dst_dir_fd) < 0) {
@@ -5913,12 +5905,6 @@ internal_rename(path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd, int is
         return path_error2(src, dst);
 
 #else
-    if ((src->narrow && dst->wide) || (src->wide && dst->narrow)) {
-        PyErr_Format(PyExc_ValueError,
-                     "%s: src and dst must be the same type", function_name);
-        return NULL;
-    }
-
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_RENAMEAT
     if (dir_fd_specified) {
@@ -10590,12 +10576,6 @@ os_symlink_impl(PyObject *module, path_t *src, path_t *dst,
         return path_error2(src, dst);
 
 #else
-
-    if ((src->narrow && dst->wide) || (src->wide && dst->narrow)) {
-        PyErr_SetString(PyExc_ValueError,
-            "symlink: src and dst must be the same type");
-        return NULL;
-    }
 
     Py_BEGIN_ALLOW_THREADS
 #ifdef HAVE_SYMLINKAT
