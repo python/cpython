@@ -3425,9 +3425,12 @@ dummy_func(
             PyObject *attr_o = _PyObject_LookupSpecialMethod(owner_o, name, &self_or_null_o);
             if (attr_o == NULL) {
                 if (!_PyErr_Occurred(tstate)) {
-                    _PyErr_Format(tstate, PyExc_TypeError,
-                                  _Py_SpecialMethods[oparg].error,
-                                  Py_TYPE(owner_o)->tp_name);
+                    const char *errfmt = _PyEval_SpecialMethodCanSuggest(owner_o, oparg)
+                        ? _Py_SpecialMethods[oparg].error_suggestion
+                        : _Py_SpecialMethods[oparg].error;
+                    assert(!_PyErr_Occurred(tstate));
+                    assert(errfmt != NULL);
+                    _PyErr_Format(tstate, PyExc_TypeError, errfmt, owner_o);
                 }
                 ERROR_IF(true, error);
             }

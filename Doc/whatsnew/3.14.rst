@@ -479,6 +479,12 @@ Other language changes
   :func:`textwrap.dedent`.
   (Contributed by Jon Crall and Steven Sun in :gh:`103998`.)
 
+* Improve error message when an object supporting the synchronous (resp.
+  asynchronous) context manager protocol is entered using :keyword:`async
+  with` (resp. :keyword:`with`) instead of :keyword:`with` (resp.
+  :keyword:`async with`).
+  (Contributed by Bénédikt Tran in :gh:`128398`.)
+
 
 .. _whatsnew314-pep765:
 
@@ -819,6 +825,12 @@ json
   See the :ref:`JSON command-line interface <json-commandline>` documentation.
   (Contributed by Trey Hunner in :gh:`122873`.)
 
+* By default, the output of the :ref:`JSON command-line interface <json-commandline>`
+  is highlighted in color. This can be controlled via the
+  :envvar:`PYTHON_COLORS` environment variable as well as the canonical
+  |NO_COLOR|_ and |FORCE_COLOR|_ environment variables. See also
+  :ref:`using-on-controlling-color`.
+  (Contributed by Tomas Roun in :gh:`131952`.)
 
 linecache
 ---------
