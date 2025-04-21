@@ -264,7 +264,13 @@ def connect_to_debugger():
         x = 42
         # Call connect to establish connection with the test server
         frame = sys._getframe()  # Get the current frame
-        pdb._connect('127.0.0.1', {self.port}, frame)
+        pdb._connect(
+            host='127.0.0.1',
+            port={self.port},
+            frame=frame,
+            commands="",
+            version=pdb._RemotePdb.protocol_version(),
+        )
         return x  # This line should not be reached in debugging
 
     return dummy_function()
