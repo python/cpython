@@ -5,7 +5,7 @@ from ctypes import (Structure, CDLL, CFUNCTYPE,
                     c_short, c_int, c_long, c_longlong,
                     c_byte, c_wchar, c_float, c_double,
                     ArgumentError)
-from test.support import import_helper
+from test.support import import_helper, skip_if_sanitizer
 _ctypes_test = import_helper.import_module("_ctypes_test")
 
 
@@ -33,6 +33,7 @@ class BasicWrapTestCase(unittest.TestCase):
         self.assertEqual(result, 139)
         self.assertIs(type(result), int)
 
+    @skip_if_sanitizer('thread', thread=True)
     def test_pointers(self):
         f = dll._testfunc_p_p
         f.restype = POINTER(c_int)
