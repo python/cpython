@@ -1,4 +1,4 @@
-name: Generate Lib/idlelib/help.html
+name: Check Lib/idlelib/help.html is up to date
 
 on:
   push:
@@ -6,25 +6,16 @@ on:
       - "Doc/library/idle.rst"
 
 jobs:
-  generate-help-html:
+  check-help-html:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.x'
-
-      - name: Git setup
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
+          python-version: '3'
       - name: Build and copy
         run: |
           cd Doc
@@ -32,14 +23,6 @@ jobs:
           make html
           cd ..
           python -c "from Lib.idlelib.help import copy_strip; copy_strip()"
-
-      - name: Commit and push if changed
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
+      - run: |
           if ! git diff --quiet Lib/idlelib/help.html; then
-            git add Lib/idlelib/help.html
-            git commit -m "Auto-update help.html from idle.rst"
-            git push
-          else
-            echo "No changes to commit."
+            exit 1
