@@ -243,6 +243,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/x-texinfo", ".texi"),
                 ("application/x-troff", ".roff"),
                 ("application/xml", ".xsl"),
+                ("application/yaml", ".yaml"),
                 ("audio/flac", ".flac"),
                 ("audio/matroska", ".mka"),
                 ("audio/mp4", ".m4a"),
@@ -284,6 +285,26 @@ class MimeTypesTestCase(unittest.TestCase):
         check_extensions()
         mimetypes.init()
         check_extensions()
+
+    def test_guess_file_type(self):
+        def check_file_type():
+            for mime_type, ext in (
+                ("application/yaml", ".yaml"),
+                ("application/yaml", ".yml"),
+                ("audio/mpeg", ".mp2"),
+                ("audio/mpeg", ".mp3"),
+                ("video/mpeg", ".m1v"),
+                ("video/mpeg", ".mpe"),
+                ("video/mpeg", ".mpeg"),
+                ("video/mpeg", ".mpg"),
+            ):
+                with self.subTest(mime_type=mime_type, ext=ext):
+                    result, _ = mimetypes.guess_file_type(f"filename{ext}")
+                    self.assertEqual(result, mime_type)
+
+        check_file_type()
+        mimetypes.init()
+        check_file_type()
 
     def test_init_stability(self):
         mimetypes.init()
