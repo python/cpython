@@ -20,13 +20,11 @@
 
 --------------
 
-This module implements a common interface to many different secure hash and
-message digest algorithms.  Included are the FIPS secure hash algorithms SHA1,
-SHA224, SHA256, SHA384, SHA512, (defined in `the FIPS 180-4 standard`_),
-the SHA-3 series (defined in `the FIPS 202 standard`_) as well as RSA's MD5
-algorithm (defined in internet :rfc:`1321`).  The terms "secure hash" and
-"message digest" are interchangeable.  Older algorithms were called message
-digests.  The modern term is secure hash.
+This module implements a common interface to many different hash algorithms.
+Included are the FIPS secure hash algorithms SHA224, SHA256, SHA384, SHA512,
+(defined in `the FIPS 180-4 standard`_), the SHA-3 series (defined in `the FIPS
+202 standard`_) as well as the legacy algorithms SHA1 (`formerly part of FIPS`_)
+and the MD5 algorithm (defined in internet :rfc:`1321`).
 
 .. note::
 
@@ -812,6 +810,7 @@ Domain Dedication 1.0 Universal:
 .. _the FIPS 180-4 standard: https://csrc.nist.gov/pubs/fips/180-4/upd1/final
 .. _the FIPS 202 standard: https://csrc.nist.gov/pubs/fips/202/final
 .. _HACL\* project: https://github.com/hacl-star/hacl-star
+.. _formerly part of FIPS: https://csrc.nist.gov/news/2023/decision-to-revise-fips-180-4
 
 
 .. _hashlib-seealso:
