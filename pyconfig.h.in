@@ -1633,6 +1633,12 @@
 /* Define to 1 if the system has the type '__uint128_t'. */
 #undef HAVE___UINT128_T
 
+/* Define to 1 if you have the MAXLOGNAME constant. */
+#undef HAVE_MAXLOGNAME
+
+/* Define to 1 if you have the UT_NAMESIZE constant. */
+#undef HAVE_UT_NAMESIZE
+
 /* Define to 1 if 'major', 'minor', and 'makedev' are declared in <mkdev.h>.
    */
 #undef MAJOR_IN_MKDEV
