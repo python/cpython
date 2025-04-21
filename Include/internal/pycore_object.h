@@ -891,6 +891,12 @@ extern bool _PyObject_TryGetInstanceAttribute(PyObject *obj, PyObject *name,
 extern PyObject *_PyType_LookupRefAndVersion(PyTypeObject *, PyObject *,
                                              unsigned int *);
 
+// Internal API to look for a name through the MRO.
+// This stores a stack reference in out and returns the value of
+// type->tp_version or zero if name is missing. It doesn't set an exception!
+extern unsigned int
+_PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef *out);
+
 // Cache the provided init method in the specialization cache of type if the
 // provided type version matches the current version of the type.
 //
@@ -945,6 +951,14 @@ extern int _PyObject_IsInstanceDictEmpty(PyObject *);
 // Export for 'math' shared extension
 PyAPI_FUNC(PyObject*) _PyObject_LookupSpecial(PyObject *, PyObject *);
 PyAPI_FUNC(PyObject*) _PyObject_LookupSpecialMethod(PyObject *self, PyObject *attr, PyObject **self_or_null);
+
+// Calls the method named `attr` on `self`, but does not set an exception if
+// the attribute does not exist.
+PyAPI_FUNC(PyObject *)
+_PyObject_MaybeCallSpecialNoArgs(PyObject *self, PyObject *attr);
+
+PyAPI_FUNC(PyObject *)
+_PyObject_MaybeCallSpecialOneArg(PyObject *self, PyObject *attr, PyObject *arg);
 
 extern int _PyObject_IsAbstract(PyObject *);
 

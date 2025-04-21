@@ -444,7 +444,7 @@ class ImportTests(unittest.TestCase):
         # (SF bug 422177).
         from test.test_import.data import double_const
         unload('test.test_import.data.double_const')
-        from test.test_import.data import double_const
+        from test.test_import.data import double_const  # noqa: F811
 
     def test_import(self):
         def test_with_extension(ext):
@@ -573,7 +573,7 @@ class ImportTests(unittest.TestCase):
 
         # import in a 'for' loop resulted in segmentation fault
         for i in range(2):
-            import test.support.script_helper as x
+            import test.support.script_helper as x  # noqa: F811
 
     def test_failing_reload(self):
         # A failing reload should leave the module object in sys.modules.

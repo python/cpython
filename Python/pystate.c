@@ -569,11 +569,19 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 
-
 static PyInterpreterState *
 alloc_interpreter(void)
 {
-    return PyMem_RawCalloc(1, sizeof(PyInterpreterState));
+    size_t alignment = _Alignof(PyInterpreterState);
+    size_t allocsize = sizeof(PyInterpreterState) + alignment - 1;
+    void *mem = PyMem_RawCalloc(1, allocsize);
+    if (mem == NULL) {
+        return NULL;
+    }
+    PyInterpreterState *interp = _Py_ALIGN_UP(mem, alignment);
+    assert(_Py_IS_ALIGNED(interp, alignment));
+    interp->_malloced = mem;
+    return interp;
 }
 
 static void
@@ -587,12 +595,15 @@ free_interpreter(PyInterpreterState *interp)
             PyMem_RawFree(interp->obmalloc);
             interp->obmalloc = NULL;
         }
-        PyMem_RawFree(interp);
+        assert(_Py_IS_ALIGNED(interp, _Alignof(PyInterpreterState)));
+        PyMem_RawFree(interp->_malloced);
     }
 }
+
 #ifndef NDEBUG
 static inline int check_interpreter_whence(long);
 #endif
+
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
