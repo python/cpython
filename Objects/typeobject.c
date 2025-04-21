@@ -1228,7 +1228,7 @@ has_custom_mro(PyTypeObject *tp)
 }
 
 static void
-type_mro_modified(PyTypeObject *type, PyObject *bases)
+type_mro_modified(PyTypeObject *type, PyObject *bases, bool is_new_type)
 {
     ASSERT_NEW_OR_STOPPED(type);
     /*
@@ -1243,21 +1243,24 @@ type_mro_modified(PyTypeObject *type, PyObject *bases)
        Called from mro_internal, which will subsequently be called on
        each subclass when their mro is recursively updated.
      */
-#ifdef Py_GIL_DISABLED
-    unsigned int meta_version = FT_ATOMIC_LOAD_UINT32_RELAXED(Py_TYPE(type)->tp_version_tag);
-#endif
-    bool is_custom = !Py_IS_TYPE(type, &PyType_Type) && has_custom_mro(type);
-
-    if (is_custom) {
-        goto clear;
+    if (!Py_IS_TYPE(type, &PyType_Type)) {
+        unsigned int meta_version = Py_TYPE(type)->tp_version_tag;
+        if (!is_new_type) {
+            types_start_world();
+        }
+        // This can be re-entrant.
+        bool is_custom = has_custom_mro(type);
+        if (!is_new_type) {
+            types_stop_world();
+        }
+        if (meta_version != Py_TYPE(type)->tp_version_tag) {
+            // metaclass changed during call of has_custom_mro()
+            goto clear;
+        }
+        if (is_custom) {
+            goto clear;
+        }
     }
-#ifdef Py_GIL_DISABLED
-    if (meta_version != Py_TYPE(type)->tp_version_tag) {
-        // Raced with another thread mutating the metaclass, possible that mro()
-        // method was assigned.
-        goto clear;
-    }
-#endif
     Py_ssize_t n = PyTuple_GET_SIZE(bases);
     for (Py_ssize_t i = 0; i < n; i++) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
@@ -3598,10 +3601,10 @@ mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro, bool is_new_
 
     set_tp_mro(type, new_mro, initial);
 
-    type_mro_modified(type, new_mro);
+    type_mro_modified(type, new_mro, is_new_type);
     /* corner case: the super class might have been hidden
        from the custom MRO */
-    type_mro_modified(type, lookup_tp_bases(type));
+    type_mro_modified(type, lookup_tp_bases(type), is_new_type);
 
     // XXX Expand this to Py_TPFLAGS_IMMUTABLETYPE?
     if (!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN)) {
