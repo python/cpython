@@ -578,8 +578,6 @@ _abc__abc_register_impl(PyObject *module, PyObject *self, PyObject *subclass)
     if (result < 0) {
         return NULL;
     }
-
-    /* Actual registration */
     _abc_data *impl = _get_impl(module, self);
     if (impl == NULL) {
         return NULL;

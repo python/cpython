@@ -503,7 +503,7 @@ def test_factory(abc_ABCMeta, abc_get_cache_token):
 
             class Parent2(metaclass=abc_ABCMeta):
                 __subclasses__ = lambda: [A]
-        
+
             # trigger caching
             for _ in range(2):
                 self.assertIsInstance(A(), Parent1)

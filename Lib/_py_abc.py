@@ -144,7 +144,7 @@ class ABCMeta(type):
         # Check if it's a subclass of a subclass (recursive)
         for scls in cls.__subclasses__():
             # If inside recursive issubclass check, avoid adding classes to any cache because this
-            # may drastically increase memory usage. 
+            # may drastically increase memory usage.
             # Unfortunately, issubclass/__subclasscheck__ don't accept third argument with context,
             # so using global context within ABCMeta.
             # This is done only on first method call, others will use cached result.
