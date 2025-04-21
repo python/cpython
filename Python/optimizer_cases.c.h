@@ -635,6 +635,10 @@
             break;
         }
 
+        case _GUARD_NOS_DICT_NOT_EXACT: {
+            break;
+        }
+
         case _GUARD_TOS_DICT: {
             JitOptSymbol *tos;
             tos = stack_pointer[-1];

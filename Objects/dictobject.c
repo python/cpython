@@ -3388,8 +3388,8 @@ dict_length(PyObject *self)
     return FT_ATOMIC_LOAD_SSIZE_RELAXED(((PyDictObject *)self)->ma_used);
 }
 
-static PyObject *
-dict_subscript(PyObject *self, PyObject *key)
+PyObject *
+_PyDict_Subscript(PyObject *self, PyObject *key)
 {
     PyDictObject *mp = (PyDictObject *)self;
     Py_ssize_t ix;
@@ -3434,7 +3434,7 @@ dict_ass_sub(PyObject *mp, PyObject *v, PyObject *w)
 
 static PyMappingMethods dict_as_mapping = {
     dict_length, /*mp_length*/
-    dict_subscript, /*mp_subscript*/
+    _PyDict_Subscript, /*mp_subscript*/
     dict_ass_sub, /*mp_ass_subscript*/
 };
 
@@ -4712,7 +4712,7 @@ In either case, this is followed by: for k in F:  D[k] = F[k]");
 
 static PyMethodDef mapp_methods[] = {
     DICT___CONTAINS___METHODDEF
-    {"__getitem__",     dict_subscript,                 METH_O | METH_COEXIST,
+    {"__getitem__",     _PyDict_Subscript,                 METH_O | METH_COEXIST,
      getitem__doc__},
     DICT___SIZEOF___METHODDEF
     DICT_GET_METHODDEF

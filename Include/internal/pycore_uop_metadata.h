@@ -103,6 +103,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_TOS_TUPLE] = HAS_EXIT_FLAG,
     [_BINARY_OP_SUBSCR_TUPLE_INT] = HAS_DEOPT_FLAG,
     [_GUARD_NOS_DICT] = HAS_EXIT_FLAG,
+    [_GUARD_NOS_DICT_NOT_EXACT] = HAS_DEOPT_FLAG,
     [_GUARD_TOS_DICT] = HAS_EXIT_FLAG,
     [_BINARY_OP_SUBSCR_DICT] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_CHECK_FUNC] = HAS_DEOPT_FLAG,
@@ -419,6 +420,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_IS_TRUE_POP] = "_GUARD_IS_TRUE_POP",
     [_GUARD_KEYS_VERSION] = "_GUARD_KEYS_VERSION",
     [_GUARD_NOS_DICT] = "_GUARD_NOS_DICT",
+    [_GUARD_NOS_DICT_NOT_EXACT] = "_GUARD_NOS_DICT_NOT_EXACT",
     [_GUARD_NOS_FLOAT] = "_GUARD_NOS_FLOAT",
     [_GUARD_NOS_INT] = "_GUARD_NOS_INT",
     [_GUARD_NOS_LIST] = "_GUARD_NOS_LIST",
@@ -757,6 +759,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _BINARY_OP_SUBSCR_TUPLE_INT:
             return 2;
         case _GUARD_NOS_DICT:
+            return 0;
+        case _GUARD_NOS_DICT_NOT_EXACT:
             return 0;
         case _GUARD_TOS_DICT:
             return 0;

@@ -2649,9 +2649,13 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                     return;
                 }
             }
-            if (PyDict_CheckExact(lhs)) {
-                specialize(instr, BINARY_OP_SUBSCR_DICT);
-                return;
+            if (PyDict_Check(lhs)) {
+                if ((Py_TYPE(lhs)->tp_as_mapping != NULL) &&
+                    (Py_TYPE(lhs)->tp_as_mapping->mp_subscript == _PyDict_Subscript))
+                {
+                    specialize(instr, BINARY_OP_SUBSCR_DICT);
+                    return;
+                }
             }
             unsigned int tp_version;
             PyTypeObject *container_type = Py_TYPE(lhs);

@@ -44,6 +44,8 @@ extern int _PyDict_Next(
 
 extern int _PyDict_HasOnlyStringKeys(PyObject *mp);
 
+extern PyObject *_PyDict_Subscript(PyObject *self, PyObject *key);
+
 // Export for '_ctypes' shared extension
 PyAPI_FUNC(Py_ssize_t) _PyDict_SizeOf(PyDictObject *);
 
