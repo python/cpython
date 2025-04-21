@@ -82,7 +82,7 @@ descriptor.
 The module defines the following functions:
 
 
-.. function:: fcntl(fd, cmd, arg=0)
+.. function:: fcntl(fd, cmd, arg=0, /)
 
    Perform the operation *cmd* on file descriptor *fd* (file objects providing
    a :meth:`~io.IOBase.fileno` method are accepted as well).  The values used
@@ -118,7 +118,7 @@ The module defines the following functions:
    .. audit-event:: fcntl.fcntl fd,cmd,arg fcntl.fcntl
 
 
-.. function:: ioctl(fd, request, arg=0, mutate_flag=True)
+.. function:: ioctl(fd, request, arg=0, mutate_flag=True, /)
 
    This function is identical to the :func:`~fcntl.fcntl` function, except
    that the argument handling is even more complicated.
@@ -174,7 +174,7 @@ The module defines the following functions:
    .. audit-event:: fcntl.ioctl fd,request,arg fcntl.ioctl
 
 
-.. function:: flock(fd, operation)
+.. function:: flock(fd, operation, /)
 
    Perform the lock operation *operation* on file descriptor *fd* (file objects providing
    a :meth:`~io.IOBase.fileno` method are accepted as well). See the Unix manual
@@ -186,7 +186,7 @@ The module defines the following functions:
    .. audit-event:: fcntl.flock fd,operation fcntl.flock
 
 
-.. function:: lockf(fd, cmd, len=0, start=0, whence=0)
+.. function:: lockf(fd, cmd, len=0, start=0, whence=0, /)
 
    This is essentially a wrapper around the :func:`~fcntl.fcntl` locking calls.
    *fd* is the file descriptor (file objects providing a :meth:`~io.IOBase.fileno`
