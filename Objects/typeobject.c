@@ -1319,18 +1319,6 @@ _PyType_LookupByVersion(unsigned int version)
 #endif
 }
 
-unsigned int
-_PyType_GetVersionForCurrentState(PyTypeObject *tp)
-{
-#ifdef Py_GIL_DISABLED
-    return _Py_atomic_load_uint32_acquire(&tp->tp_version_tag);
-#else
-    return tp->tp_version_tag;
-#endif
-}
-
-
-
 #define MAX_VERSIONS_PER_CLASS 1000
 #if _Py_ATTR_CACHE_UNUSED < MAX_VERSIONS_PER_CLASS
 #error "_Py_ATTR_CACHE_UNUSED must be bigger than max"
