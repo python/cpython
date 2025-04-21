@@ -1363,6 +1363,11 @@ mark_stacks(PyCodeObject *code_obj, int len)
                 }
                 case SEND:
                     j = oparg + i + INLINE_CACHE_ENTRIES_SEND + 1;
+                    if (j < 0) {
+                        PyErr_SetString(PyExc_OverflowError,
+                                        "integer overflow");
+                        return NULL;
+                    }
                     assert(j < len);
                     assert(stacks[j] == UNINITIALIZED || stacks[j] == next_stack);
                     stacks[j] = next_stack;
