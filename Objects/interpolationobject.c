@@ -170,13 +170,15 @@ _PyInterpolation_FromStackRefStealOnSuccess(_PyStackRef *values)
 
     if (PyStackRef_IsNull(values[2])) {
         interpolation->conversion = Py_NewRef(Py_None);
-    } else {
+    }
+    else {
         interpolation->conversion = PyStackRef_AsPyObjectSteal(values[2]);
     }
 
     if (PyStackRef_IsNull(values[3])) {
         interpolation->format_spec = Py_NewRef(&_Py_STR(empty));
-    } else {
+    }
+    else {
         interpolation->format_spec = PyStackRef_AsPyObjectSteal(values[3]);
     }
 
