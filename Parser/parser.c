@@ -21236,7 +21236,7 @@ invalid_expression_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ invalid_expression[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "'lambda' lambda_params? ':' &FSTRING_MIDDLE"));
-            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "%c-string: lambda expressions are not allowed without parentheses" , TOK_GET_MODE ( p -> tok ) -> tstring ? 't' : 'f' );
+            _res = RAISE_SYNTAX_ERROR_KNOWN_RANGE ( a , b , "%c-string: lambda expressions are not allowed without parentheses" , TOK_GET_STRING_PREFIX ( p -> tok ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

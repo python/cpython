@@ -1225,7 +1225,7 @@ invalid_expression:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION (a, "expected expression before 'if', but statement is given") }
    | a='lambda' [lambda_params] b=':' &FSTRING_MIDDLE  {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "%c-string: lambda expressions are not allowed without parentheses",
-            TOK_GET_MODE(p->tok)->tstring ? 't' : 'f') }
+            TOK_GET_STRING_PREFIX(p->tok)) }
 
 invalid_named_expression(memo):
     | a=expression ':=' expression {

@@ -36,6 +36,11 @@ enum tokenizer_mode_kind_t {
     TOK_FSTRING_MODE,
 };
 
+enum string_kind_t {
+    FSTRING,
+    TSTRING,
+};
+
 #define MAX_EXPR_NESTING 3
 
 typedef struct _tokenizer_mode {
@@ -60,7 +65,7 @@ typedef struct _tokenizer_mode {
     int f_string_debug;
     int in_format_spec;
 
-    int tstring;
+    enum string_kind_t string_kind;
 } tokenizer_mode;
 
 /* Tokenizer state */

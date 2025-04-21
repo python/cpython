@@ -966,7 +966,7 @@ _PyPegen_check_fstring_conversion(Parser *p, Token* conv_token, expr_ty conv)
         return RAISE_SYNTAX_ERROR_KNOWN_RANGE(
             conv_token, conv,
             "%c-string: conversion type must come right after the exclamanation mark",
-            TOK_GET_MODE(p->tok)->tstring ? 't' : 'f'
+            TOK_GET_STRING_PREFIX(p->tok)
         );
     }
 
@@ -975,7 +975,7 @@ _PyPegen_check_fstring_conversion(Parser *p, Token* conv_token, expr_ty conv)
             !(first == 's' || first == 'r' || first == 'a')) {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION(conv,
                                             "%c-string: invalid conversion character %R: expected 's', 'r', or 'a'",
-                                            TOK_GET_MODE(p->tok)->tstring ? 't' : 'f',
+                                            TOK_GET_STRING_PREFIX(p->tok),
                                             conv->v.Name.id);
         return NULL;
     }
@@ -1295,7 +1295,7 @@ _PyPegen_decode_fstring_part(Parser* p, int is_raw, expr_ty constant, Token* tok
 }
 
 static asdl_expr_seq *
-_get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b, int tstring)
+_get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b, enum string_kind_t string_kind)
 {
     Py_ssize_t n_items = asdl_seq_LEN(raw_expressions);
     Py_ssize_t total_items = n_items;
@@ -1329,8 +1329,9 @@ _get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b
             asdl_expr_seq *values = item->v.JoinedStr.values;
             if (asdl_seq_LEN(values) != 2) {
                 PyErr_Format(PyExc_SystemError,
-                             tstring ? "unexpected TemplateStr node without debug data in t-string at line %d"
-                                     : "unexpected JoinedStr node without debug data in f-string at line %d",
+                             string_kind == TSTRING
+                             ? "unexpected TemplateStr node without debug data in t-string at line %d"
+                             : "unexpected JoinedStr node without debug data in f-string at line %d",
                              item->lineno);
                 return NULL;
             }
@@ -1340,7 +1341,7 @@ _get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b
             asdl_seq_SET(seq, index++, first);
 
             expr_ty second = asdl_seq_GET(values, 1);
-            assert((tstring && second->kind == Interpolation_kind) || second->kind == FormattedValue_kind);
+            assert((string_kind == TSTRING && second->kind == Interpolation_kind) || second->kind == FormattedValue_kind);
             asdl_seq_SET(seq, index++, second);
 
             continue;
@@ -1382,7 +1383,7 @@ _get_resized_exprs(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b
 expr_ty
 _PyPegen_template_str(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token *b) {
 
-    asdl_expr_seq *resized_exprs = _get_resized_exprs(p, a, raw_expressions, b, 1);
+    asdl_expr_seq *resized_exprs = _get_resized_exprs(p, a, raw_expressions, b, TSTRING);
     return _PyAST_TemplateStr(resized_exprs, a->lineno, a->col_offset,
                               b->end_lineno, b->end_col_offset,
                               p->arena);
@@ -1391,7 +1392,7 @@ _PyPegen_template_str(Parser *p, Token *a, asdl_expr_seq *raw_expressions, Token
 expr_ty
 _PyPegen_joined_str(Parser *p, Token* a, asdl_expr_seq* raw_expressions, Token*b) {
 
-    asdl_expr_seq *resized_exprs = _get_resized_exprs(p, a, raw_expressions, b, 0);
+    asdl_expr_seq *resized_exprs = _get_resized_exprs(p, a, raw_expressions, b, FSTRING);
     return _PyAST_JoinedStr(resized_exprs, a->lineno, a->col_offset,
                             b->end_lineno, b->end_col_offset,
                             p->arena);
