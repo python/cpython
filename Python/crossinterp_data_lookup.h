@@ -29,7 +29,7 @@ xid_lookup_fini(_PyXIData_lookup_t *state)
     _xidregistry_fini(&state->registry);
 }
 
-int
+static int
 get_lookup_context(PyThreadState *tstate, dlcontext_t *res)
 {
     _PyXI_global_state_t *global = _PyXI_GET_GLOBAL_STATE(tstate->interp);
