@@ -553,9 +553,3 @@ class _PathGlobber(_GlobberBase):
     @staticmethod
     def concat_path(path, text):
         return path.with_segments(str(path) + text)
-
-if __name__ == '__main__':
-    from pathlib import Path
-    print('os:', os.path.expanduser('~'))
-    print('pathlib:', Path.home())
-    assert str(os.path.expanduser('~')) == str(Path.home())

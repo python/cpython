@@ -744,7 +744,7 @@ getopt
 glob
 ----
 
-* Add ``~`` expansion to user's home directory.
+* Add *expand_tilde* option to :func:`~glob.glob`.
   (Contributed by Stan Ulbrych in :gh:`132757`.)
 
 
