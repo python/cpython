@@ -103,8 +103,8 @@ static PyObject *
 interpolation_repr(PyObject *op)
 {
     interpolationobject *self = interpolationobject_CAST(op);
-    return PyUnicode_FromFormat("%T(%R, %R, %R, %R)",
-                                self, self->value, self->expression,
+    return PyUnicode_FromFormat("%s(%R, %R, %R, %R)",
+                                _PyType_Name(Py_TYPE(self)), self->value, self->expression,
                                 self->conversion, self->format_spec);
 }
 
