@@ -143,12 +143,10 @@ check_invalid_reentrancy(void)
 {
 #if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
     // In the free-threaded build, the interpreter must not be re-entered if
-    // either the world-is-stopped or if the types mutex is held.  If so,
-    // that's a bug somewhere (likely in the painfully complex typeobject code).
+    // the world-is-stopped.  If so, that's a bug somewhere (quite likely in
+    // the painfully complex typeobject code).
     PyInterpreterState *interp = _PyInterpreterState_GET();
     assert(!interp->stoptheworld.world_stopped);
-    assert(_Py_atomic_load_ullong_relaxed(&interp->types.mutex_tid) !=
-           PyThread_get_thread_ident_ex());
 #endif
 }
 

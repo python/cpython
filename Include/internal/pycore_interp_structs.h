@@ -566,10 +566,6 @@ struct types_state {
         managed_static_type_state initialized[_Py_MAX_MANAGED_STATIC_EXT_TYPES];
     } for_extensions;
     PyMutex mutex;
-#ifdef Py_GIL_DISABLED
-    // used to check correct usage of the above mutex
-    unsigned long long mutex_tid;
-#endif
 
     // Borrowed references to type objects whose
     // tp_version_tag % TYPE_VERSION_CACHE_SIZE

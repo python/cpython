@@ -73,17 +73,14 @@ class object "PyObject *" "&PyBaseObject_Type"
 // while the stop-the-world mechanism is active.  The slots and flags are read
 // in many places without holding a lock and without atomics.
 #define TYPE_LOCK &PyInterpreterState_Get()->types.mutex
+#define BEGIN_TYPE_LOCK() Py_BEGIN_CRITICAL_SECTION_MUT(TYPE_LOCK)
+#define END_TYPE_LOCK() Py_END_CRITICAL_SECTION()
 
-// Since TYPE_LOCK is used as regular mutex, we must take special care about
-// potential re-entrant code paths.  We use TYPE_LOCK_TID in debug builds to
-// ensure that we are not trying to re-acquire the mutex when it is already
-// held by the current thread.  There are a couple cases when we release the
-// mutex, when we call functions that might re-enter.  If we already hold the
-// lock and try to acquire it again with the same thread, it is a bug in the
-// code.  We could just let it deadlock but having an assert failure gives
-// a more explicit error.
-#define TYPE_LOCK_TID &PyInterpreterState_Get()->types.mutex_tid
+#define BEGIN_TYPE_DICT_LOCK(d) \
+    Py_BEGIN_CRITICAL_SECTION2_MUT(TYPE_LOCK, &_PyObject_CAST(d)->ob_mutex)
+#define END_TYPE_DICT_LOCK() Py_END_CRITICAL_SECTION2()
 
+#ifdef Py_DEBUG
 // Return true if the world is currently stopped.
 static bool
 types_world_is_stopped(void)
@@ -91,6 +88,7 @@ types_world_is_stopped(void)
     PyInterpreterState *interp = _PyInterpreterState_GET();
     return interp->stoptheworld.world_stopped;
 }
+#endif
 
 // Checks that the type has not yet been revealed (exposed) to other
 // threads.  The _Py_TYPE_REVEALED_FLAG flag is set by type_new() and
@@ -101,6 +99,9 @@ types_world_is_stopped(void)
 #else
 #define TYPE_IS_REVEALED(tp) 0
 #endif
+
+#define ASSERT_TYPE_LOCK_HELD() \
+    _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(TYPE_LOCK)
 
 // Checks if we can safely update type slots or tp_flags.
 #define ASSERT_NEW_OR_STOPPED(tp) \
@@ -124,54 +125,18 @@ types_start_world(void)
     assert(!types_world_is_stopped());
 }
 
-#ifdef Py_DEBUG
-// Return true if the TYPE_LOCK mutex is held by the current thread.
-static bool
-types_mutex_is_owned(void)
-{
-    PyThread_ident_t tid = PyThread_get_thread_ident_ex();
-    return _Py_atomic_load_ullong_relaxed(TYPE_LOCK_TID) == tid;
-}
-
-// Set the TID of the thread currently holding TYPE_LOCK.
-static void
-types_mutex_set_owned(PyThread_ident_t tid)
-{
-    _Py_atomic_store_ullong_relaxed(TYPE_LOCK_TID, tid);
-}
-#endif
-
-static void
-types_mutex_lock(void)
-{
-    assert(!types_mutex_is_owned());
-    PyMutex_Lock(TYPE_LOCK);
-#ifdef Py_DEBUG
-    types_mutex_set_owned(_Py_ThreadId());
-#endif
-}
-
-static void
-types_mutex_unlock(void)
-{
-#ifdef Py_DEBUG
-    types_mutex_set_owned(0);
-#endif
-    PyMutex_Unlock(TYPE_LOCK);
-}
-
-#define ASSERT_TYPE_LOCK_HELD() assert(types_mutex_is_owned())
-
 #else
 
-#define types_mutex_lock()
-#define types_mutex_unlock()
+#define BEGIN_TYPE_LOCK()
+#define END_TYPE_LOCK()
+#define BEGIN_TYPE_DICT_LOCK(d)
+#define END_TYPE_DICT_LOCK()
+#define ASSERT_TYPE_LOCK_HELD()
+#define TYPE_IS_REVEALED(tp) 0
+#define ASSERT_NEW_OR_STOPPED(tp)
 #define types_world_is_stopped() 1
 #define types_stop_world()
 #define types_start_world()
-#define ASSERT_TYPE_LOCK_HELD()
-#define ASSERT_NEW_OR_STOPPED(tp)
-#define TYPE_IS_REVEALED(tp) 0
 
 #endif
 
@@ -1067,10 +1032,10 @@ PyType_Watch(int watcher_id, PyObject* obj)
         return -1;
     }
     // ensure we will get a callback on the next modification
-    types_mutex_lock();
+    BEGIN_TYPE_LOCK();
     assign_version_tag(interp, type);
     type->tp_watched |= (1 << watcher_id);
-    types_mutex_unlock();
+    END_TYPE_LOCK();
     return 0;
 }
 
@@ -1164,9 +1129,8 @@ type_modified_unlocked(PyTypeObject *type)
 
     // Notify registered type watchers, if any
     if (type->tp_watched) {
-        // We must unlock here because at least the PyErr_FormatUnraisable
-        // call is re-entrant and the watcher callback might be too.
-        types_mutex_unlock();
+        // Note that PyErr_FormatUnraisable is re-entrant and the watcher
+        // callback might be too.
         PyInterpreterState *interp = _PyInterpreterState_GET();
         int bits = type->tp_watched;
         int i = 0;
@@ -1183,7 +1147,6 @@ type_modified_unlocked(PyTypeObject *type)
             i++;
             bits >>= 1;
         }
-        types_mutex_lock();
     }
 
     set_version_unlocked(type, 0); /* 0 is not a valid version tag */
@@ -1203,9 +1166,9 @@ PyType_Modified(PyTypeObject *type)
         return;
     }
 
-    types_mutex_lock();
+    BEGIN_TYPE_LOCK();
     type_modified_unlocked(type);
-    types_mutex_unlock();
+    END_TYPE_LOCK();
 }
 
 static int
@@ -1304,9 +1267,9 @@ This is similar to func_version_cache.
 void
 _PyType_SetVersion(PyTypeObject *tp, unsigned int version)
 {
-    types_mutex_lock();
+    BEGIN_TYPE_LOCK();
     set_version_unlocked(tp, version);
-    types_mutex_unlock();
+    END_TYPE_LOCK();
 }
 
 PyTypeObject *
@@ -1384,9 +1347,9 @@ int PyUnstable_Type_AssignVersionTag(PyTypeObject *type)
 {
     PyInterpreterState *interp = _PyInterpreterState_GET();
     int assigned;
-    types_mutex_lock();
+    BEGIN_TYPE_LOCK();
     assigned = assign_version_tag(interp, type);
-    types_mutex_unlock();
+    END_TYPE_LOCK();
     return assigned;
 }
 
@@ -5844,7 +5807,7 @@ type_assign_version(PyTypeObject *type)
 {
     unsigned int version = FT_ATOMIC_LOAD_UINT_RELAXED((type)->tp_version_tag);
     if (version == 0) {
-        types_mutex_lock();
+        BEGIN_TYPE_LOCK();
         PyInterpreterState *interp = _PyInterpreterState_GET();
         if (assign_version_tag(interp, type)) {
             version = type->tp_version_tag;
@@ -5852,7 +5815,7 @@ type_assign_version(PyTypeObject *type)
         else {
             version = 0;
         }
-        types_mutex_unlock();
+        END_TYPE_LOCK();
     }
     return version;
 }
@@ -5985,7 +5948,7 @@ _PyType_CacheInitForSpecialization(PyHeapTypeObject *type, PyObject *init,
         return 0;
     }
     int can_cache;
-    types_mutex_lock();
+    BEGIN_TYPE_LOCK();
     can_cache = ((PyTypeObject*)type)->tp_version_tag == tp_version;
     #ifdef Py_GIL_DISABLED
     can_cache = can_cache && _PyObject_HasDeferredRefcount(init);
@@ -5993,7 +5956,7 @@ _PyType_CacheInitForSpecialization(PyHeapTypeObject *type, PyObject *init,
     if (can_cache) {
         FT_ATOMIC_STORE_PTR_RELEASE(type->_spec_cache.init, init);
     }
-    types_mutex_unlock();
+    END_TYPE_LOCK();
     return can_cache;
 }
 
@@ -6004,7 +5967,7 @@ _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor
         return 0;
     }
     int can_cache;
-    types_mutex_lock();
+    BEGIN_TYPE_LOCK();
     can_cache = ((PyTypeObject*)ht)->tp_version_tag == tp_version;
     // This pointer is invalidated by PyType_Modified (see the comment on
     // struct _specialization_cache):
@@ -6018,7 +5981,7 @@ _PyType_CacheGetItemForSpecialization(PyHeapTypeObject *ht, PyObject *descriptor
         FT_ATOMIC_STORE_PTR_RELEASE(ht->_spec_cache.getitem, descriptor);
         FT_ATOMIC_STORE_UINT32_RELAXED(ht->_spec_cache.getitem_version, version);
     }
-    types_mutex_unlock();
+    END_TYPE_LOCK();
     return can_cache;
 }
 
@@ -6038,7 +6001,7 @@ int
 _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_version)
 {
     int err;
-    types_mutex_lock();
+    BEGIN_TYPE_LOCK();
     err = validate(ty);
     if (!err) {
         if(assign_version_tag(_PyInterpreterState_GET(), ty)) {
@@ -6048,7 +6011,7 @@ _PyType_Validate(PyTypeObject *ty, _py_validate_type validate, unsigned int *tp_
             err = -1;
         }
     }
-    types_mutex_unlock();
+    END_TYPE_LOCK();
     return err;
 }
 
@@ -6298,6 +6261,10 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     if (is_dunder_name(name) && has_slotdef(name)) {
         // The name corresponds to a type slot.
         types_stop_world();
+        // Since the world is stopped, we actually don't need this critical
+        // section.  However, this internally calls dict methods that assert
+        // that the dict object mutex is held.  So, we acquire it here to
+        // avoid those assert failing.
         Py_BEGIN_CRITICAL_SECTION(dict);
         res = type_update_dict(type, (PyDictObject *)dict, name, value, &old_value);
         if (res == 0) {
@@ -6306,12 +6273,10 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
         Py_END_CRITICAL_SECTION();
         types_start_world();
     } else {
-        // The name is not a slot, hold TYPE_LOCK while updating version tags.
-        types_mutex_lock();
-        Py_BEGIN_CRITICAL_SECTION(dict);
+        // The name is not a slot.
+        BEGIN_TYPE_DICT_LOCK(dict);
         res = type_update_dict(type, (PyDictObject *)dict, name, value, &old_value);
-        Py_END_CRITICAL_SECTION();
-        types_mutex_unlock();
+        END_TYPE_DICT_LOCK();
     }
     if (res == -2) {
         // We handle the attribute error case here because reentrancy possible
@@ -6415,10 +6380,10 @@ fini_static_type(PyInterpreterState *interp, PyTypeObject *type,
     clear_static_type_objects(interp, type, isbuiltin, final);
 
     if (final) {
-        types_mutex_lock();
+        BEGIN_TYPE_LOCK();
         type_clear_flags(type, Py_TPFLAGS_READY);
         set_version_unlocked(type, 0);
-        types_mutex_unlock();
+        END_TYPE_LOCK();
     }
 
     _PyStaticType_ClearWeakRefs(interp, type);
