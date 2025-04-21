@@ -1127,6 +1127,14 @@ type_modified_unlocked(PyTypeObject *type)
         }
     }
 
+    set_version_unlocked(type, 0); /* 0 is not a valid version tag */
+    if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // This field *must* be invalidated if the type is modified (see the
+        // comment on struct _specialization_cache):
+        FT_ATOMIC_STORE_PTR_RELAXED(
+            ((PyHeapTypeObject *)type)->_spec_cache.getitem, NULL);
+    }
+
     // Notify registered type watchers, if any
     if (type->tp_watched) {
         // Note that PyErr_FormatUnraisable is re-entrant and the watcher
@@ -1147,14 +1155,6 @@ type_modified_unlocked(PyTypeObject *type)
             i++;
             bits >>= 1;
         }
-    }
-
-    set_version_unlocked(type, 0); /* 0 is not a valid version tag */
-    if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        // This field *must* be invalidated if the type is modified (see the
-        // comment on struct _specialization_cache):
-        FT_ATOMIC_STORE_PTR_RELAXED(
-            ((PyHeapTypeObject *)type)->_spec_cache.getitem, NULL);
     }
 }
 
