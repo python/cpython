@@ -140,6 +140,8 @@ The token constants are:
       The token string includes the prefix and the opening quote(s), but none
       of the contents of the literal.
 
+   .. versionadded:: next
+
 .. data:: ENDMARKER
 
    Token value that indicates the end of input.
