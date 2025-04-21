@@ -151,7 +151,7 @@ The module defines the following functions:
 
    .. note::
       If the type or size of *arg* does not match the type or size
-      operations argument (for example, if an integer is
+      of the operation's argument (for example, if an integer is
       passed when a pointer is expected, or the information returned in
       the buffer by the operating system is larger than 1024 bytes,
       or the size of the mutable bytes-like object is too small),
