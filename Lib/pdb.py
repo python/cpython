@@ -2539,7 +2539,48 @@ class _RemotePdb(Pdb):
         revision = 0
         return int(f"{v.major:02X}{v.minor:02X}{revision:02X}F0", 16)
 
-    def _send(self, **kwargs) -> None:
+    def _ensure_valid_message(self, msg):
+        # Ensure the message conforms to our protocol.
+        # If anything needs to be changed here for a patch release of Python,
+        # the 'revision' in protocol_version() should be updated.
+        match msg:
+            case {"message": str(), "type": str()}:
+                # Have the client show a message. The client chooses how to
+                # format the message based on its type. The currently defined
+                # types are "info" and "error". If a message has a type the
+                # client doesn't recognize, it must be treated as "info".
+                pass
+            case {"help": str()}:
+                # Have the client show the help for a given argument.
+                pass
+            case {"prompt": str(), "state": str()}:
+                # Have the client display the given prompt and wait for a reply
+                # from the user. If the client recognizes the state it may
+                # enable mode-specific features like multi-line editing.
+                # If it doesn't recognize the state it must prompt for a single
+                # line only and send it directly to the server. A server won't
+                # progress until it gets a "reply" or "signal" message, but can
+                # process "complete" requests while waiting for the reply.
+                pass
+            case {
+                "completions": list(completions)
+            } if all(isinstance(c, str) for c in completions):
+                # Return valid completions for a client's "complete" request.
+                pass
+            case {
+                "command_list": list(command_list)
+            } if all(isinstance(c, str) for c in command_list):
+                # Report the list of legal PDB commands to the client.
+                # Due to aliases this list is not static, but the client
+                # needs to know it for multi-line editing.
+                pass
+            case _:
+                raise AssertionError(
+                    f"PDB message doesn't follow the schema! {msg}"
+                )
+
+    def _send(self, **kwargs):
+        self._ensure_valid_message(kwargs)
         json_payload = json.dumps(kwargs)
         try:
             self._sockfile.write(json_payload.encode() + b"\n")
@@ -2774,6 +2815,51 @@ class _PdbClient:
         self.pdb_commands = set()
         self.completion_matches = []
         self.state = "dumb"
+        self.write_failed = False
+
+    def _ensure_valid_message(self, msg):
+        # Ensure the message conforms to our protocol.
+        # If anything needs to be changed here for a patch release of Python,
+        # the 'revision' in protocol_version() should be updated.
+        match msg:
+            case {"reply": str()}:
+                # Send input typed by a user at a prompt to the remote PDB.
+                pass
+            case {"signal": "EOF"}:
+                # Tell the remote PDB that the user pressed ^D at a prompt.
+                pass
+            case {"signal": "INT"}:
+                # Tell the remote PDB that the user pressed ^C at a prompt.
+                pass
+            case {
+                "complete": {
+                    "text": str(),
+                    "line": str(),
+                    "begidx": int(),
+                    "endidx": int(),
+                }
+            }:
+                # Ask the remote PDB what completions are valid for the given
+                # parameters, using readline's completion protocol.
+                pass
+            case _:
+                raise AssertionError(
+                    f"PDB message doesn't follow the schema! {msg}"
+                )
+
+    def _send(self, **kwargs):
+        self._ensure_valid_message(kwargs)
+        json_payload = json.dumps(kwargs)
+        try:
+            self.sockfile.write(json_payload.encode() + b"\n")
+            self.sockfile.flush()
+        except OSError:
+            # This means that the client has abruptly disconnected, but we'll
+            # handle that the next time we try to read from the client instead
+            # of trying to handle it from everywhere _send() may be called.
+            # Track this with a flag rather than assuming readline() will ever
+            # return an empty string because the socket may be half-closed.
+            self.write_failed = True
 
     def read_command(self, prompt):
         reply = input(prompt)
@@ -2829,7 +2915,7 @@ class _PdbClient:
 
     def cmdloop(self):
         with self.readline_completion(self.complete):
-            while True:
+            while not self.write_failed:
                 try:
                     if not (payload_bytes := self.sockfile.readline()):
                         break
@@ -2889,8 +2975,7 @@ class _PdbClient:
                 print("***", msg, flush=True)
                 continue
 
-            self.sockfile.write((json.dumps(payload) + "\n").encode())
-            self.sockfile.flush()
+            self._send(**payload)
             return
 
     def complete(self, text, state):
@@ -2916,10 +3001,8 @@ class _PdbClient:
                 }
             }
 
-            try:
-                self.sockfile.write((json.dumps(msg) + "\n").encode())
-                self.sockfile.flush()
-            except OSError:
+            self._send(**msg)
+            if self.write_failed:
                 return None
 
             payload = self.sockfile.readline()
