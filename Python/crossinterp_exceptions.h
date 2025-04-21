@@ -66,7 +66,13 @@ set_notshareableerror(PyThreadState *tstate, const char *msg)
     if (exctype == NULL) {
         exctype = PyExc_ValueError;
     }
+    // We have to set the context manually since _PyErr_SetObject() won't.
+    PyObject *ctx = _PyErr_GetRaisedException(tstate);
     _PyErr_SetString(tstate, exctype, msg);
+    _PyErr_ChainExceptions1Tstate(tstate, ctx);
+    // XXX Ideally we would also append the currently handling exception
+    // (_PyErr_GetTopmostException()->exc_value) to the end of ctx's
+    // context chain.  (See _PyErr_SetObject().)
 }
 
 static void
@@ -76,7 +82,13 @@ format_notshareableerror_v(PyThreadState *tstate, const char *format, va_list va
     if (exctype == NULL) {
         exctype = PyExc_ValueError;
     }
+    // We have to set the context manually since _PyErr_SetObject() won't.
+    PyObject *ctx = _PyErr_GetRaisedException(tstate);
     _PyErr_FormatV(tstate, exctype, format, vargs);
+    _PyErr_ChainExceptions1Tstate(tstate, ctx);
+    // XXX Ideally we would also append the currently handling exception
+    // (_PyErr_GetTopmostException()->exc_value) to the end of ctx's
+    // context chain.  (See _PyErr_SetObject().)
 }
 
 
