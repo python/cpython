@@ -325,16 +325,10 @@ sub-slots
    +---------------------------------------------------------+-----------------------------------+---------------+
    |                                                                                                             |
    +---------------------------------------------------------+-----------------------------------+---------------+
-   | :c:member:`~PyBufferProcs.bf_getbuffer`                 | :c:func:`getbufferproc`           | :meth:`\      |
-   |                                                         |                                   | ~object.\     |
-   |                                                         |                                   | __buffer__`   |
-   |                                                         |                                   |               |
-   |                                                         |                                   |               |
+   | :c:member:`~PyBufferProcs.bf_getbuffer`                 | :c:func:`getbufferproc`           | __buffer__    |
    +---------------------------------------------------------+-----------------------------------+---------------+
-   | :c:member:`~PyBufferProcs.bf_releasebuffer`             | :c:func:`releasebufferproc`       | :meth:`\      |
-   |                                                         |                                   | ~object.\     |
-   |                                                         |                                   | __release_\   |
-   |                                                         |                                   | buffer__`     |
+   | :c:member:`~PyBufferProcs.bf_releasebuffer`             | :c:func:`releasebufferproc`       | __release_\   |
+   |                                                         |                                   | buffer\__     |
    +---------------------------------------------------------+-----------------------------------+---------------+
 
 .. _slot-typedefs-table:
