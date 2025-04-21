@@ -132,7 +132,6 @@ types_mutex_is_owned(void)
     PyThread_ident_t tid = PyThread_get_thread_ident_ex();
     return _Py_atomic_load_ullong_relaxed(TYPE_LOCK_TID) == tid;
 }
-#endif
 
 // Set the TID of the thread currently holding TYPE_LOCK.
 static void
@@ -140,19 +139,24 @@ types_mutex_set_owned(PyThread_ident_t tid)
 {
     _Py_atomic_store_ullong_relaxed(TYPE_LOCK_TID, tid);
 }
+#endif
 
 static void
 types_mutex_lock(void)
 {
     assert(!types_mutex_is_owned());
     PyMutex_Lock(TYPE_LOCK);
-    types_mutex_set_owned(PyThread_get_thread_ident_ex());
+#ifdef Py_DEBUG
+    types_mutex_set_owned(_Py_ThreadId());
+#endif
 }
 
 static void
 types_mutex_unlock(void)
 {
+#ifdef Py_DEBUG
     types_mutex_set_owned(0);
+#endif
     PyMutex_Unlock(TYPE_LOCK);
 }
 
