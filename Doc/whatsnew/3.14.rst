@@ -910,6 +910,10 @@ mimetypes
 
   (Contributed by Hugo van Kemenade in :gh:`129965`.)
 
+* Add :rfc:`9512` ``application/yaml`` MIME type for YAML files (``.yaml``
+  and ``.yml``). (Contributed by Sasha "Nelie" Chernykh and Hugo van Kemenade
+  in :gh:`132056`.)
+
 
 multiprocessing
 ---------------
