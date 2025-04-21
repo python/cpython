@@ -1,2 +1,3 @@
-Raise an error if the ``__annotations__`` attribute is accessed on a module
-that has not finished executing.
+If the ``__annotations__`` of a module object are accessed while the
+module is executing, return the annotations that have been defined so far,
+without caching them.

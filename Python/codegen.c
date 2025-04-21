@@ -654,6 +654,9 @@ codegen_enter_scope(compiler *c, identifier name, int scope_type,
         loc.lineno = 0;
     }
     ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
+    if (scope_type == COMPILE_SCOPE_MODULE) {
+        ADDOP(c, loc, ANNOTATIONS_PLACEHOLDER);
+    }
     return SUCCESS;
 }
 
@@ -832,9 +835,8 @@ codegen_process_deferred_annotations(compiler *c, location loc)
 
     if (nested_instr_seq != NULL) {
         RETURN_IF_ERROR(
-            _PyInstructionSequence_InjectSequence(old_instr_seq, 1, nested_instr_seq));
+            _PyInstructionSequence_SetAnnotationsCode(old_instr_seq, nested_instr_seq));
         _PyCompile_SetInstrSequence(c, old_instr_seq);
-        PyInstructionSequence_Fini(nested_instr_seq);
     }
 
     return SUCCESS;

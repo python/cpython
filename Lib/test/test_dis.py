@@ -1007,7 +1007,8 @@ class DisTests(DisTestBase):
     def test_widths(self):
         long_opcodes = set(['JUMP_BACKWARD_NO_INTERRUPT',
                             'LOAD_FAST_BORROW_LOAD_FAST_BORROW',
-                            'INSTRUMENTED_CALL_FUNCTION_EX'])
+                            'INSTRUMENTED_CALL_FUNCTION_EX',
+                            'ANNOTATIONS_PLACEHOLDER'])
         for op, opname in enumerate(dis.opname):
             if opname in long_opcodes or opname.startswith("INSTRUMENTED"):
                 continue

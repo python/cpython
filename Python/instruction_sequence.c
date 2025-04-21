@@ -34,8 +34,9 @@ typedef _Py_SourceLocation location;
     }
 
 static int
-instr_sequence_grow(instr_sequence *seq, int size) {
+instr_sequence_next_inst(instr_sequence *seq) {
     assert(seq->s_instrs != NULL || seq->s_used == 0);
+
 
     _Py_c_array_t array = {
         .array = (void*)seq->s_instrs,
@@ -44,19 +45,13 @@ instr_sequence_grow(instr_sequence *seq, int size) {
         .initial_num_entries = INITIAL_INSTR_SEQUENCE_SIZE,
     };
 
-    RETURN_IF_ERROR(_Py_CArray_EnsureCapacity(&array, seq->s_used + size));
+    RETURN_IF_ERROR(_Py_CArray_EnsureCapacity(&array, seq->s_used + 1));
     seq->s_instrs = array.array;
     seq->s_allocated = array.allocated_entries;
 
     assert(seq->s_allocated >= 0);
     assert(seq->s_used < seq->s_allocated);
-    seq->s_used += size;
-    return seq->s_used - 1;
-}
-
-static int
-instr_sequence_next_inst(instr_sequence *seq) {
-    return instr_sequence_grow(seq, 1);
+    return seq->s_used++;
 }
 
 _PyJumpTargetLabel
@@ -160,28 +155,11 @@ _PyInstructionSequence_InsertInstruction(instr_sequence *seq, int pos,
 }
 
 int
-_PyInstructionSequence_InjectSequence(instr_sequence *seq, int pos,
-                                      instr_sequence *injected)
+_PyInstructionSequence_SetAnnotationsCode(instr_sequence *seq,
+                                          instr_sequence *annotations)
 {
-    assert(pos >= 0 && pos <= seq->s_used);
-    // Merging labelmaps is not supported
-    assert(injected->s_labelmap_size == 0 && injected->s_nested == NULL);
-    if (injected->s_used == 0) {
-        return SUCCESS;
-    }
-
-    int last_idx = instr_sequence_grow(seq, injected->s_used);
-
-    RETURN_IF_ERROR(last_idx);
-    for (int i = last_idx - injected->s_used; i >= pos; i--) {
-        seq->s_instrs[i + injected->s_used] = seq->s_instrs[i];
-    }
-    for (int i=0; i < injected->s_used; i++) {
-        seq->s_instrs[i + pos] = injected->s_instrs[i];
-    }
-    for(int lbl=0; lbl < seq->s_labelmap_size; lbl++) {
-        seq->s_labelmap[lbl] += injected->s_used;
-    }
+    assert(seq->s_annotations_code == NULL);
+    seq->s_annotations_code = annotations;
     return SUCCESS;
 }
 
@@ -209,6 +187,12 @@ PyInstructionSequence_Fini(instr_sequence *seq) {
 
     PyMem_Free(seq->s_instrs);
     seq->s_instrs = NULL;
+
+    if (seq->s_annotations_code != NULL) {
+        PyInstructionSequence_Fini(seq->s_annotations_code);
+        Py_CLEAR(seq->s_annotations_code);
+    }
+
 }
 
 /*[clinic input]
@@ -231,6 +215,7 @@ inst_seq_create(void)
     seq->s_labelmap = NULL;
     seq->s_labelmap_size = 0;
     seq->s_nested = NULL;
+    seq->s_annotations_code = NULL;
 
     PyObject_GC_Track(seq);
     return seq;
@@ -445,6 +430,7 @@ inst_seq_traverse(PyObject *op, visitproc visit, void *arg)
 {
     _PyInstructionSequence *seq = (_PyInstructionSequence *)op;
     Py_VISIT(seq->s_nested);
+    Py_VISIT((PyObject *)seq->s_annotations_code);
     return 0;
 }
 
@@ -453,6 +439,7 @@ inst_seq_clear(PyObject *op)
 {
     _PyInstructionSequence *seq = (_PyInstructionSequence *)op;
     Py_CLEAR(seq->s_nested);
+    Py_CLEAR(seq->s_annotations_code);
     return 0;
 }
 
