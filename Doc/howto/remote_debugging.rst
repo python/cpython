@@ -531,7 +531,7 @@ present and accessible to the target process during execution.
 Summary
 =======
 
-To inject and execute a Python script in a remote parocess:
+To inject and execute a Python script in a remote process:
 
 1. Locate the ``PyRuntime`` structure in the target process’s memory.
 2. Read and validate the ``_Py_DebugOffsets`` structure at the beginning of
