@@ -686,6 +686,32 @@ dummy_func(void) {
         }
     }
 
+    op(_GUARD_CALL_BUILTIN_O, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+        int total_args = oparg;
+        if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
+            total_args += sym_is_not_null(self_or_null);
+            // Constant propagate
+            if (total_args == 1 && sym_is_const(ctx, callable)) {
+                PyObject *callable_o = sym_get_const(ctx, callable);
+                if (PyCFunction_CheckExact(callable_o) &&
+                    PyCFunction_GET_FLAGS(callable_o) == METH_O) {
+                    REPLACE_OP(this_instr, _NOP, 0 ,0);
+                }
+            }
+        }
+    }
+
+    op(_GUARD_CALL_BUILTIN_FAST, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+        if (sym_is_const(ctx, callable)) {
+            PyObject *callable_o = sym_get_const(ctx, callable);
+            // Constant propagate
+            if (PyCFunction_CheckExact(callable_o) &&
+                PyCFunction_GET_FLAGS(callable_o) == METH_FASTCALL) {
+                REPLACE_OP(this_instr, _NOP, 0 ,0);
+            }
+        }
+    }
+
     op(_MAYBE_EXPAND_METHOD, (callable, self_or_null, args[oparg] -- func, maybe_self, args[oparg])) {
         (void)args;
         func = sym_new_not_null(ctx);

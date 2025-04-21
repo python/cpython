@@ -5419,21 +5419,14 @@
             break;
         }
 
-        case _CALL_BUILTIN_O: {
-            _PyStackRef *args;
+        case _GUARD_CALL_BUILTIN_O: {
             _PyStackRef self_or_null;
             _PyStackRef callable;
-            _PyStackRef res;
             oparg = CURRENT_OPARG();
-            args = &stack_pointer[-oparg];
             self_or_null = stack_pointer[-1 - oparg];
             callable = stack_pointer[-2 - oparg];
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-            int total_args = oparg;
-            if (!PyStackRef_IsNull(self_or_null)) {
-                args--;
-                total_args++;
-            }
+            int total_args = oparg + (!PyStackRef_IsNull(self_or_null));
             if (total_args != 1) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
@@ -5446,13 +5439,34 @@
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
+            break;
+        }
+
+        case _CALL_BUILTIN_O_0: {
+            _PyStackRef *args;
+            _PyStackRef self_or_null;
+            _PyStackRef callable;
+            _PyStackRef res;
+            oparg = 0;
+            assert(oparg == CURRENT_OPARG());
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            _PyStackRef arg;
+            if (oparg == 0) {
+                assert(!PyStackRef_IsNull(self_or_null));
+                arg = self_or_null;
+            }
+            else {
+                arg = args[0];
+            }
             if (_Py_ReachedRecursionLimit(tstate)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
-            _PyStackRef arg = args[0];
             _PyFrame_SetStackPointer(frame, stack_pointer);
             PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable_o), PyStackRef_AsPyObjectBorrow(arg));
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -5476,6 +5490,117 @@
             break;
         }
 
+        case _CALL_BUILTIN_O_1: {
+            _PyStackRef *args;
+            _PyStackRef self_or_null;
+            _PyStackRef callable;
+            _PyStackRef res;
+            oparg = 1;
+            assert(oparg == CURRENT_OPARG());
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            _PyStackRef arg;
+            if (oparg == 0) {
+                assert(!PyStackRef_IsNull(self_or_null));
+                arg = self_or_null;
+            }
+            else {
+                arg = args[0];
+            }
+            if (_Py_ReachedRecursionLimit(tstate)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(CALL, hit);
+            PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable_o), PyStackRef_AsPyObjectBorrow(arg));
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(arg);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -2 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(callable);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (res_o == NULL) {
+                JUMP_TO_ERROR();
+            }
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _CALL_BUILTIN_O: {
+            _PyStackRef *args;
+            _PyStackRef self_or_null;
+            _PyStackRef callable;
+            _PyStackRef res;
+            oparg = CURRENT_OPARG();
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            _PyStackRef arg;
+            if (oparg == 0) {
+                assert(!PyStackRef_IsNull(self_or_null));
+                arg = self_or_null;
+            }
+            else {
+                arg = args[0];
+            }
+            if (_Py_ReachedRecursionLimit(tstate)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(CALL, hit);
+            PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *res_o = _PyCFunction_TrampolineCall(cfunc, PyCFunction_GET_SELF(callable_o), PyStackRef_AsPyObjectBorrow(arg));
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            _Py_LeaveRecursiveCallTstate(tstate);
+            assert((res_o != NULL) ^ (_PyErr_Occurred(tstate) != NULL));
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(arg);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -2 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(callable);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (res_o == NULL) {
+                JUMP_TO_ERROR();
+            }
+            res = PyStackRef_FromPyObjectSteal(res_o);
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _GUARD_CALL_BUILTIN_FAST: {
+            _PyStackRef callable;
+            oparg = CURRENT_OPARG();
+            callable = stack_pointer[-2 - oparg];
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            if (!PyCFunction_CheckExact(callable_o)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            if (PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
         case _CALL_BUILTIN_FAST: {
             _PyStackRef *args;
             _PyStackRef self_or_null;
@@ -5491,14 +5616,6 @@
             if (!PyStackRef_IsNull(self_or_null)) {
                 arguments--;
                 total_args++;
-            }
-            if (!PyCFunction_CheckExact(callable_o)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            if (PyCFunction_GET_FLAGS(callable_o) != METH_FASTCALL) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
             }
             STAT_INC(CALL, hit);
             PyCFunction cfunc = PyCFunction_GET_FUNCTION(callable_o);
