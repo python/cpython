@@ -94,6 +94,30 @@ The following is an example implementation::
         return base_address + section_offset
 
 
+On Linux systems, there are two main approaches to read memory from another
+process. The first is through the ``/proc`` filesystem, specifically by reading from
+``/proc/[pid]/mem`` which provides direct access to the process's memory. This
+requires appropriate permissions - either being the same user as the target
+process or having root access. The second approach is using the
+``process_vm_readv()`` system call which provides a more efficient way to copy
+memory between processes. While ptrace's ``PTRACE_PEEKTEXT`` operation can also be
+used to read memory, it is significantly slower as it only reads one word at a
+time and requires multiple context switches between the tracer and tracee
+processes.
+
+For parsing ELF sections, the process involves reading and interpreting the ELF
+file format structures from the binary file on disk. The ELF header contains a
+pointer to the section header table. Each section header contains metadata about
+a section including its name (stored in a separate string table), offset, and
+size. To find a specific section like .PyRuntime, you need to walk through these
+headers and match the section name. The section header then provdes the offset
+where that section exists in the file, which can be used to calculate its
+runtime address when the binary is loaded into memory.
+
+You can read more about the ELF file format in the `ELF specification
+<https://en.wikipedia.org/wiki/Executable_and_Linkable_Format>`_.
+
+
 .. rubric:: macOS (Mach-O)
 
 To find the ``PyRuntime`` structure on macOS:
@@ -133,6 +157,29 @@ The following is an example implementation::
 
         # Step 5: Compute the PyRuntime address in memory
         return base_address + section_offset
+
+On macOS, accessing another process's memory requires using Mach-O specific APIs
+and file formats. The first step is obtaining a ``task_port`` handle via
+``task_for_pid()``, which provides access to the target process's memory space.
+This handle enables memory operations through APIs like
+``mach_vm_read_overwrite()``.
+
+The process memory can be examined using ``mach_vm_region()`` to scan through the
+virtual memory space, while ``proc_regionfilename()`` helps identify which binary
+files are loaded at each memory region. When the Python binary or library is
+found, its Mach-O headers need to be parsed to locate the ``PyRuntime`` structure.
+
+The Mach-O format organizes code and data into segments and sections. The
+``PyRuntime`` structure lives in a section named ``__PyRuntime`` within the
+``__DATA`` segment. The actual runtime address calculation involves finding the
+``__TEXT`` segment which serves as the binary's base address, then locating the
+``__DATA`` segment containing our target section. The final address is computed by
+combining the base address with the appropriate section offsets from the Mach-O
+headers.
+
+Note that accessing another process's memory on macOS typically requires
+elevated privileges - either root access or special security entitlements
+granted to the debugging process.
 
 
 .. rubric:: Windows (PE)
@@ -179,6 +226,27 @@ The following is an example implementation::
         # Step 4: Compute PyRuntime address in memory
         return base_address + section_rva
 
+
+On Windows, accessing another process's memory requires using the Windows API
+functions like ``CreateToolhelp32Snapshot()`` and ``Module32First()/Module32Next()``
+to enumerate loaded modules. The ``OpenProcess()`` function provides a handle to
+access the target process's memory space, enabling memory operations through
+``ReadProcessMemory()``.
+
+The process memory can be examined by enumerating loaded modules to find the
+Python binary or DLL. When found, its PE headers need to be parsed to locate the
+``PyRuntime`` structure.
+
+The PE format organizes code and data into sections. The ``PyRuntime`` structure
+lives in a section named "PyRuntim" (truncated from "PyRuntime" due to PE's
+8-character name limit). The actual runtime address calculation involves finding
+the module's base address from the module entry, then locating our target
+section in the PE headers. The final address is computed by combining the base
+address with the section's virtual address from the PE section headers.
+
+Note that accessing another process's memory on Windows typically requires
+appropriate privileges - either administrative access or the ``SeDebugPrivilege``
+privilege granted to the debugging process.
 
 
 Reading _Py_DebugOffsets
