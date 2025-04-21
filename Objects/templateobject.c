@@ -229,41 +229,6 @@ template_iter(PyObject *op)
 }
 
 static PyObject *
-template_interpolations_copy(PyObject *interpolations) {
-    Py_ssize_t interpolationslen = PyTuple_GET_SIZE(interpolations);
-    PyObject *newinterpolations = PyTuple_New(interpolationslen);
-    if (!newinterpolations) {
-        return NULL;
-    }
-
-    for (Py_ssize_t i = 0; i < interpolationslen; i++) {
-        PyTuple_SET_ITEM(newinterpolations, i, Py_NewRef(PyTuple_GET_ITEM(interpolations, i)));
-    }
-    return newinterpolations;
-}
-
-static PyObject *
-template_interpolations_concat(PyObject *left, PyObject *right) {
-    Py_ssize_t leftlen = PyTuple_GET_SIZE(left);
-    Py_ssize_t rightlen = PyTuple_GET_SIZE(right);
-    Py_ssize_t interpolationslen = leftlen + rightlen;
-
-    PyObject *newinterpolations = PyTuple_New(interpolationslen);
-    if (!newinterpolations) {
-        return NULL;
-    }
-
-    Py_ssize_t index = 0;
-    for (Py_ssize_t i = 0; i < leftlen; i++) {
-        PyTuple_SET_ITEM(newinterpolations, index++, Py_NewRef(PyTuple_GET_ITEM(left, i)));
-    }
-    for (Py_ssize_t i = 0; i < rightlen; i++) {
-        PyTuple_SET_ITEM(newinterpolations, index++, Py_NewRef(PyTuple_GET_ITEM(right, i)));
-    }
-    return newinterpolations;
-}
-
-static PyObject *
 template_strings_append_str(PyObject *strings, PyObject *str)
 {
     Py_ssize_t stringslen = PyTuple_GET_SIZE(strings);
@@ -350,7 +315,7 @@ template_concat_templates(templateobject *self, templateobject *other)
         return NULL;
     }
 
-    PyObject *newinterpolations = template_interpolations_concat(self->interpolations, other->interpolations);
+    PyObject *newinterpolations = PySequence_Concat(self->interpolations, other->interpolations);
     if (newinterpolations == NULL) {
         Py_DECREF(newstrings);
         return NULL;
@@ -370,15 +335,8 @@ template_concat_template_str(templateobject *self, PyObject *other)
         return NULL;
     }
 
-    PyObject *newinterpolations = template_interpolations_copy(self->interpolations);
-    if (newinterpolations == NULL) {
-        Py_DECREF(newstrings);
-        return NULL;
-    }
-
-    templateobject *newtemplate = template_from_strings_interpolations(Py_TYPE(self), newstrings, newinterpolations);
+    templateobject *newtemplate = template_from_strings_interpolations(Py_TYPE(self), newstrings, self->interpolations);
     Py_DECREF(newstrings);
-    Py_DECREF(newinterpolations);
     return (PyObject *) newtemplate;
 }
 
@@ -390,15 +348,8 @@ template_concat_str_template(templateobject *self, PyObject *other)
         return NULL;
     }
 
-    PyObject *newinterpolations = template_interpolations_copy(self->interpolations);
-    if (newinterpolations == NULL) {
-        Py_DECREF(newstrings);
-        return NULL;
-    }
-
-    templateobject *newtemplate = template_from_strings_interpolations(Py_TYPE(self), newstrings, newinterpolations);
+    templateobject *newtemplate = template_from_strings_interpolations(Py_TYPE(self), newstrings, self->interpolations);
     Py_DECREF(newstrings);
-    Py_DECREF(newinterpolations);
     return (PyObject *) newtemplate;
 }
 
