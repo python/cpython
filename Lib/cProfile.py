@@ -163,8 +163,8 @@ def main():
         if options.module:
             code = "run_module(modname, run_name='__main__')"
             globs = {
-                "run_module": runpy.run_module,
-                "modname": args[0]
+                'run_module': runpy.run_module,
+                'modname': args[0]
             }
         else:
             progname = args[0]
