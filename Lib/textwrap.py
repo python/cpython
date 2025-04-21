@@ -426,10 +426,11 @@ def dedent(text):
 
     Entirely blank lines are normalized to a newline character.
     """
-    if not text:
-        return text
-
-    lines = text.split('\n')
+    try:
+        lines = text.split('\n')
+    except (AttributeError, TypeError):
+        msg = f'expected str object, not {type(text).__qualname__!r}'
+        raise TypeError(msg) from None
 
     # Get length of leading whitespace, inspired by ``os.path.commonprefix()``.
     non_blank_lines = [l for l in lines if l and not l.isspace()]
