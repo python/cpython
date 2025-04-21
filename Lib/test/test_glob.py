@@ -212,18 +212,18 @@ class GlobTests(unittest.TestCase):
                 os.fsencode(self.norm('aab') + os.sep)])
 
     def test_glob_tilde_expansion(self):
-        with unittest.mock.patch('pathlib.Path.home', return_value=self.tempdir):
-            results = glob.glob('~')
+        with unittest.mock.patch('os.path.expanduser', return_value=self.tempdir):
+            results = glob.glob('~', expand_tilde=True)
             self.assertEqual([self.tempdir], results)
 
-            results = glob.glob(f'~{os.sep}*')
+            results = glob.glob(f'~{os.sep}*', expand_tilde=True)
             self.assertIn(self.tempdir + f'{os.sep}a', results)
 
             # test it is not expanded when it is not a path
             tilde_file = os.path.join(self.tempdir, '~file')
             create_empty_file(tilde_file)
             with change_cwd(self.tempdir):
-                results = glob.glob('~*')
+                results = glob.glob('~*', expand_tilde=True)
                 self.assertIn('~file', results)
 
     @skip_unless_symlink

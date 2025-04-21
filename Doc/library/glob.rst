@@ -38,7 +38,7 @@ The :mod:`glob` module defines the following functions:
 
 
 .. function:: glob(pathname, *, root_dir=None, dir_fd=None, recursive=False, \
-                   include_hidden=False)
+                   include_hidden=False, expand_tilde=False)
 
    Return a possibly empty list of path names that match *pathname*, which must be
    a string containing a path specification. *pathname* can be either absolute
@@ -68,6 +68,8 @@ The :mod:`glob` module defines the following functions:
 
    If *include_hidden* is true, "``**``" pattern will match hidden directories.
 
+   If *expand_tilde* is true, ``~`` will be expanded to the users home directory.
+
    .. audit-event:: glob.glob pathname,recursive glob.glob
    .. audit-event:: glob.glob/2 pathname,recursive,root_dir,dir_fd glob.glob
 
@@ -89,7 +91,7 @@ The :mod:`glob` module defines the following functions:
       Added the *include_hidden* parameter.
 
    .. versionchanged:: next
-      Added ``~`` expansion to user's home directory.
+      Added the *expand_tilde* parameter.
 
 
 .. function:: iglob(pathname, *, root_dir=None, dir_fd=None, recursive=False, \
