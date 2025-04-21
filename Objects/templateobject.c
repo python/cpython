@@ -437,7 +437,7 @@ template_values_get(PyObject *op, void *Py_UNUSED(data))
     PyObject *item;
     Py_ssize_t index = 0;
     while ((item = PyIter_Next(interpolationsiter))) {
-        PyTuple_SET_ITEM(values, index++, Py_NewRef(_PyInterpolation_GetValue(item)));
+        PyTuple_SET_ITEM(values, index++, _PyInterpolation_GetValueRef(item));
         Py_DECREF(item);
     }
 
