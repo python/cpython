@@ -897,9 +897,14 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_SPECIAL, (owner -- attr, self_or_null)) {
-        attr = sym_new_not_null(ctx);
-        self_or_null = sym_new_unknown(ctx);
+    op(_INSERT_NULL, (self -- method_and_self[2])) {
+        method_and_self[0] = sym_new_null(ctx);
+        method_and_self[1] = self;
+    }
+
+    op(_LOAD_SPECIAL, (method_and_self[2] -- method_and_self[2])) {
+        method_and_self[0] = sym_new_not_null(ctx);
+        method_and_self[1] = sym_new_unknown(ctx);
     }
 
     op(_JUMP_TO_TOP, (--)) {
