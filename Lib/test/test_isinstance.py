@@ -351,13 +351,13 @@ class TestIsInstanceIsSubclass(unittest.TestCase):
         with support.infinite_recursion(25):
             self.assertRaises(RecursionError, issubclass, X(), int)
 
-    def test_override_subclasses(self):
+    def test_custom_subclasses_are_ignored(self):
         class A: pass
         class B: pass
 
         class Parent1:
             @classmethod
-            def __subclasses__(self):
+            def __subclasses__(cls):
                 return [A, B]
 
         class Parent2:

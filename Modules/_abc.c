@@ -763,6 +763,7 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
 
     PyObject *ok, *subclasses = NULL, *result = NULL;
     _abcmodule_state *state = NULL;
+    Py_ssize_t pos;
     int incache;
     _abc_data *impl = _get_impl(module, self);
     if (impl == NULL) {
@@ -849,7 +850,35 @@ _abc__abc_subclasscheck_impl(PyObject *module, PyObject *self,
         goto end;
     }
 
-    /* No dice; update negative cache. */
+    /* 6. Check if it's a subclass of a subclass (recursive). */
+    subclasses = PyObject_CallMethod(self, "__subclasses__", NULL);
+    if (subclasses == NULL) {
+        goto end;
+    }
+    if (!PyList_Check(subclasses)) {
+        PyErr_SetString(PyExc_TypeError, "__subclasses__() must return a list");
+        goto end;
+    }
+    for (pos = 0; pos < PyList_GET_SIZE(subclasses); pos++) {
+        PyObject *scls = PyList_GetItemRef(subclasses, pos);
+        if (scls == NULL) {
+            goto end;
+        }
+        int r = PyObject_IsSubclass(subclass, scls);
+        Py_DECREF(scls);
+        if (r > 0) {
+            if (_add_to_weak_set(impl, &impl->_abc_cache, subclass) < 0) {
+                goto end;
+            }
+            result = Py_True;
+            goto end;
+        }
+        if (r < 0) {
+            goto end;
+        }
+    }
+
+    /* Recursive calls lead to uncontrolled negative cache growth, avoid this */
     if (_add_to_weak_set(impl, &impl->_abc_negative_cache, subclass) < 0) {
         goto end;
     }

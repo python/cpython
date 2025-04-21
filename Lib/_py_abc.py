@@ -1,4 +1,5 @@
 from _weakrefset import WeakSet
+from weakref import WeakKeyDictionary
 
 
 def get_cache_token():
@@ -31,6 +32,7 @@ class ABCMeta(type):
     # Note: this counter is private. Use `abc.get_cache_token()` for
     #       external code.
     _abc_invalidation_counter = 0
+    _abc_issubclass_context = WeakKeyDictionary()
 
     def __new__(mcls, name, bases, namespace, /, **kwargs):
         cls = super().__new__(mcls, name, bases, namespace, **kwargs)
@@ -65,21 +67,7 @@ class ABCMeta(type):
         if issubclass(cls, subclass):
             # This would create a cycle, which is bad for the algorithm below
             raise RuntimeError("Refusing to create an inheritance cycle")
-
-        # Actual registration
         cls._abc_registry.add(subclass)
-
-        # Recursively register the subclass in all ABC bases, to avoid recursive lookups.
-        # >>> class Ancestor1(ABC): pass
-        # >>> class Ancestor2(Ancestor1): pass
-        # >>> class Other: pass
-        # >>> Ancestor2.register(Other)  # same result for Ancestor1.register(Other)
-        # >>> issubclass(Other, Ancestor2) is True
-        # >>> issubclass(Other, Ancestor1) is True
-        for pcls in cls.__mro__:
-            if hasattr(pcls, "_abc_registry"):
-                pcls._abc_registry.add(subclass)
-
         # Invalidate negative cache
         ABCMeta._abc_invalidation_counter += 1
         return subclass
@@ -152,6 +140,26 @@ class ABCMeta(type):
             if issubclass(subclass, rcls):
                 cls._abc_cache.add(subclass)
                 return True
-        # No dice; update negative cache
-        cls._abc_negative_cache.add(subclass)
+
+        # Check if it's a subclass of a subclass (recursive)
+        for scls in cls.__subclasses__():
+            # If inside recursive issubclass check, avoid adding classes to any cache because this
+            # may drastically increase memory usage. 
+            # Unfortunately, issubclass/__subclasscheck__ don't accept third argument with context,
+            # so using global context within ABCMeta.
+            # This is done only on first method call, others will use cached result.
+            scls_context = ABCMeta._abc_issubclass_context.setdefault(scls, WeakSet())
+            try:
+                scls_context.add(cls)
+                result = issubclass(subclass, scls)
+            finally:
+                scls_context.remove(cls)
+
+            if result:
+                if not ABCMeta._abc_issubclass_context.get(cls, None):
+                    cls._abc_cache.add(subclass)
+                return True
+
+        if not ABCMeta._abc_issubclass_context.get(cls, None):
+            cls._abc_negative_cache.add(subclass)
         return False
