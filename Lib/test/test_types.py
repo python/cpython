@@ -662,7 +662,7 @@ class TypesTests(unittest.TestCase):
 
         types = [
             # (method, instance)
-            (_io.TextIOWrapper.write, io.StringIO()),
+            (_io._TextIOBase.read, io.StringIO()),
             (_queue.SimpleQueue.put, _queue.SimpleQueue()),
             (str.capitalize, "nobody expects the spanish inquisition")
         ]
