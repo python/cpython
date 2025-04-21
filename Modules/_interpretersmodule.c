@@ -76,7 +76,7 @@ is_running_main(PyInterpreterState *interp)
 // XXX Release when the original interpreter is destroyed.
 
 typedef struct {
-    PyObject_HEAD
+    PyObject base;
     Py_buffer *view;
     int64_t interpid;
 } XIBufferViewObject;
@@ -100,8 +100,9 @@ xibufferview_from_buffer(PyTypeObject *cls, Py_buffer *view, int64_t interpid)
         PyMem_RawFree(copied);
         return NULL;
     }
-    PyObject_Init((PyObject *)self, cls);
+    PyObject_Init(&self->base, cls);
     *self = (XIBufferViewObject){
+        .base = self->base,
         .view = copied,
         .interpid = interpid,
     };
