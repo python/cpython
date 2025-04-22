@@ -1,1 +1,1 @@
-Fix issue where system proxy bypass configuration doesn't work with URL with port part.
+Fix proxy bypass on URLs with a port in :mod:`urllib.request`.
