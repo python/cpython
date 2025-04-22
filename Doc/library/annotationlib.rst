@@ -172,8 +172,7 @@ Classes
       :class:`~ForwardRef`. The string may not be exactly equivalent
       to the original source.
 
-   .. method:: evaluate(*, owner=None, globals=None, locals=None, type_params=None,
-                        format=Format.VALUE)
+   .. method:: evaluate(*, owner=None, globals=None, locals=None, type_params=None, format=Format.VALUE)
 
       Evaluate the forward reference, returning its value.
 
