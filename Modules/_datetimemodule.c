@@ -187,16 +187,14 @@ _get_current_state(PyObject **p_mod)
     Py_DECREF(MOD_VAR)
 
 static int
-set_current_module(datetime_state *st,
-                   PyInterpreterState *interp, PyObject *mod)
+set_current_module(datetime_state *st, PyObject *mod)
 {
     assert(mod != NULL);
     PyObject *dict = st->interp_dict;
     if (dict == NULL) {
         return -1;
     }
-    int rc = PyDict_SetItem(dict, INTERP_KEY, mod);
-    return rc;
+    return PyDict_SetItem(dict, INTERP_KEY, mod);
 }
 
 static void
@@ -7200,9 +7198,9 @@ create_timezone_from_delta(int days, int sec, int ms, int normalize)
  */
 
 static int
-init_state(datetime_state *st,
-           PyInterpreterState *interp, PyObject *module, PyObject *old_module)
+init_state(datetime_state *st, PyObject *module, PyObject *old_module)
 {
+    PyInterpreterState *interp = PyInterpreterState_Get();
     PyObject *dict = PyInterpreterState_GetDict(interp);
     if (dict == NULL) {
         return -1;
@@ -7372,7 +7370,7 @@ _datetime_exec(PyObject *module)
         }
     }
 
-    if (init_state(st, interp, module, old_module) < 0) {
+    if (init_state(st, module, old_module) < 0) {
         goto error;
     }
 
@@ -7478,7 +7476,7 @@ _datetime_exec(PyObject *module)
     static_assert(DI100Y == 25 * DI4Y - 1, "DI100Y");
     assert(DI100Y == days_before_year(100+1));
 
-    if (set_current_module(st, interp, module) < 0) {
+    if (set_current_module(st, module) < 0) {
         goto error;
     }
 
