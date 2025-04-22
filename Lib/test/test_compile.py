@@ -2,7 +2,6 @@ import contextlib
 import dis
 import io
 import itertools
-import marshal
 import math
 import opcode
 import os
@@ -21,7 +20,7 @@ except ImportError:
 
 from test import support
 from test.support import (script_helper, requires_debug_ranges, run_code,
-                          requires_specialization, get_c_recursion_limit)
+                          requires_specialization)
 from test.support.bytecode_helper import instructions_with_positions
 from test.support.os_helper import FakePath
 
@@ -121,8 +120,9 @@ class TestSpecifics(unittest.TestCase):
         self.assertEqual(d['z'], 12)
 
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
+    @support.skip_emscripten_stack_overflow()
     def test_extended_arg(self):
-        repeat = int(get_c_recursion_limit() * 0.9)
+        repeat = 100
         longexpr = 'x = x or ' + '-x' * repeat
         g = {}
         code = textwrap.dedent('''
@@ -709,22 +709,20 @@ class TestSpecifics(unittest.TestCase):
 
     @support.cpython_only
     @unittest.skipIf(support.is_wasi, "exhausts limited stack on WASI")
+    @support.skip_emscripten_stack_overflow()
     def test_compiler_recursion_limit(self):
-        # Expected limit is Py_C_RECURSION_LIMIT
-        limit = get_c_recursion_limit()
-        fail_depth = limit + 1
-        crash_depth = limit * 100
-        success_depth = int(limit * 0.8)
+        # Compiler frames are small
+        limit = 100
+        crash_depth = limit * 5000
+        success_depth = limit
 
         def check_limit(prefix, repeated, mode="single"):
             expect_ok = prefix + repeated * success_depth
             compile(expect_ok, '<test>', mode)
-            for depth in (fail_depth, crash_depth):
-                broken = prefix + repeated * depth
-                details = "Compiling ({!r} + {!r} * {})".format(
-                            prefix, repeated, depth)
-                with self.assertRaises(RecursionError, msg=details):
-                    compile(broken, '<test>', mode)
+            broken = prefix + repeated * crash_depth
+            details = f"Compiling ({prefix!r} + {repeated!r} * {crash_depth})"
+            with self.assertRaises(RecursionError, msg=details):
+                compile(broken, '<test>', mode)
 
         check_limit("a", "()")
         check_limit("a", ".b")
@@ -795,9 +793,9 @@ class TestSpecifics(unittest.TestCase):
         f1, f2 = lambda: "not a name", lambda: ("not a name",)
         f3 = lambda x: x in {("not a name",)}
         self.assertIs(f1.__code__.co_consts[0],
-                      f2.__code__.co_consts[0][0])
-        self.assertIs(next(iter(f3.__code__.co_consts[0])),
-                      f2.__code__.co_consts[0])
+                      f2.__code__.co_consts[1][0])
+        self.assertIs(next(iter(f3.__code__.co_consts[1])),
+                      f2.__code__.co_consts[1])
 
         # {0} is converted to a constant frozenset({0}) by the peephole
         # optimizer
@@ -1131,6 +1129,31 @@ class TestSpecifics(unittest.TestCase):
                 self.assertIn('LOAD_ATTR', instructions)
                 self.assertIn('CALL', instructions)
 
+    def test_folding_type_param(self):
+        get_code_fn_cls = lambda x: x.co_consts[0].co_consts[2]
+        get_code_type_alias = lambda x: x.co_consts[0].co_consts[3]
+        snippets = [
+            ("def foo[T = 40 + 5](): pass", get_code_fn_cls),
+            ("def foo[**P = 40 + 5](): pass", get_code_fn_cls),
+            ("def foo[*Ts = 40 + 5](): pass", get_code_fn_cls),
+            ("class foo[T = 40 + 5]: pass", get_code_fn_cls),
+            ("class foo[**P = 40 + 5]: pass", get_code_fn_cls),
+            ("class foo[*Ts = 40 + 5]: pass", get_code_fn_cls),
+            ("type foo[T = 40 + 5] = 1", get_code_type_alias),
+            ("type foo[**P = 40 + 5] = 1", get_code_type_alias),
+            ("type foo[*Ts = 40 + 5] = 1", get_code_type_alias),
+        ]
+        for snippet, get_code in snippets:
+            c = compile(snippet, "<dummy>", "exec")
+            code = get_code(c)
+            opcodes = list(dis.get_instructions(code))
+            instructions = [opcode.opname for opcode in opcodes]
+            args = [opcode.oparg for opcode in opcodes]
+            self.assertNotIn(40, args)
+            self.assertNotIn(5, args)
+            self.assertIn('LOAD_SMALL_INT', instructions)
+            self.assertIn(45, args)
+
     def test_lineno_procedure_call(self):
         def call():
             (
@@ -1408,7 +1431,7 @@ class TestSpecifics(unittest.TestCase):
         check_op_count(load, "BINARY_SLICE", 3)
         check_op_count(load, "BUILD_SLICE", 0)
         check_consts(load, slice, [slice(None, None, None)])
-        check_op_count(load, "BINARY_SUBSCR", 1)
+        check_op_count(load, "BINARY_OP", 4)
 
         def store():
             x[a:b] = y
@@ -1427,7 +1450,7 @@ class TestSpecifics(unittest.TestCase):
         check_op_count(long_slice, "BUILD_SLICE", 1)
         check_op_count(long_slice, "BINARY_SLICE", 0)
         check_consts(long_slice, slice, [])
-        check_op_count(long_slice, "BINARY_SUBSCR", 1)
+        check_op_count(long_slice, "BINARY_OP", 1)
 
         def aug():
             x[a:b] += y
@@ -1435,7 +1458,7 @@ class TestSpecifics(unittest.TestCase):
         check_op_count(aug, "BINARY_SLICE", 1)
         check_op_count(aug, "STORE_SLICE", 1)
         check_op_count(aug, "BUILD_SLICE", 0)
-        check_op_count(aug, "BINARY_SUBSCR", 0)
+        check_op_count(aug, "BINARY_OP", 1)
         check_op_count(aug, "STORE_SUBSCR", 0)
         check_consts(aug, slice, [])
 
@@ -1444,7 +1467,7 @@ class TestSpecifics(unittest.TestCase):
 
         check_op_count(aug_const, "BINARY_SLICE", 0)
         check_op_count(aug_const, "STORE_SLICE", 0)
-        check_op_count(aug_const, "BINARY_SUBSCR", 1)
+        check_op_count(aug_const, "BINARY_OP", 2)
         check_op_count(aug_const, "STORE_SUBSCR", 1)
         check_consts(aug_const, slice, [slice(1, 2)])
 
@@ -1612,6 +1635,54 @@ class TestSpecifics(unittest.TestCase):
                 case []:
                     pass
             [[]]
+
+    def test_globals_dict_subclass(self):
+        # gh-132386
+        class WeirdDict(dict):
+            pass
+
+        ns = {}
+        exec('def foo(): return a', WeirdDict(), ns)
+
+        self.assertRaises(NameError, ns['foo'])
+
+    def test_compile_warnings(self):
+        # See gh-131927
+        # Compile warnings originating from the same file and
+        # line are now only emitted once.
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("default")
+            compile('1 is 1', '<stdin>', 'eval')
+            compile('1 is 1', '<stdin>', 'eval')
+
+        self.assertEqual(len(caught), 1)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            compile('1 is 1', '<stdin>', 'eval')
+            compile('1 is 1', '<stdin>', 'eval')
+
+        self.assertEqual(len(caught), 2)
+
+    def test_compile_warning_in_finally(self):
+        # Ensure that warnings inside finally blocks are
+        # only emitted once despite the block being
+        # compiled twice (for normal execution and for
+        # exception handling).
+        source = textwrap.dedent("""
+            try:
+                pass
+            finally:
+                1 is 1
+        """)
+
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("default")
+            compile(source, '<stdin>', 'exec')
+
+        self.assertEqual(len(caught), 1)
+        self.assertEqual(caught[0].category, SyntaxWarning)
+        self.assertIn("\"is\" with 'int' literal", str(caught[0].message))
 
 class TestBooleanExpression(unittest.TestCase):
     class Value:
@@ -2048,16 +2119,16 @@ class TestSourcePositions(unittest.TestCase):
         snippet = "a - b @ (c * x['key'] + 23)"
 
         compiled_code, _ = self.check_positions_against_ast(snippet)
-        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_SUBSCR',
+        self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
             line=1, end_line=1, column=13, end_column=21)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
-            line=1, end_line=1, column=9, end_column=21, occurrence=1)
+            line=1, end_line=1, column=9, end_column=21, occurrence=2)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
-            line=1, end_line=1, column=9, end_column=26, occurrence=2)
+            line=1, end_line=1, column=9, end_column=26, occurrence=3)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
-            line=1, end_line=1, column=4, end_column=27, occurrence=3)
+            line=1, end_line=1, column=4, end_column=27, occurrence=4)
         self.assertOpcodeSourcePositionIs(compiled_code, 'BINARY_OP',
-            line=1, end_line=1, column=0, end_column=27, occurrence=4)
+            line=1, end_line=1, column=0, end_column=27, occurrence=5)
 
     def test_multiline_assert_rewritten_as_method_call(self):
         # GH-94694: Don't crash if pytest rewrites a multiline assert as a
@@ -2417,7 +2488,9 @@ class TestStackSizeStability(unittest.TestCase):
             script = """def func():\n""" + i * snippet
             if async_:
                 script = "async " + script
-            code = compile(script, "<script>", "exec")
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', SyntaxWarning)
+                code = compile(script, "<script>", "exec")
             exec(code, ns, ns)
             return ns['func'].__code__
 

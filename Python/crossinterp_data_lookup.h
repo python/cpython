@@ -1,14 +1,15 @@
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 
-typedef struct _xidregistry dlregistry_t;
-typedef struct _xidregitem dlregitem_t;
+typedef _PyXIData_lookup_context_t dlcontext_t;
+typedef _PyXIData_registry_t dlregistry_t;
+typedef _PyXIData_regitem_t dlregitem_t;
 
 
 // forward
 static void _xidregistry_init(dlregistry_t *);
 static void _xidregistry_fini(dlregistry_t *);
-static xidatafunc _lookup_getdata_from_registry(PyInterpreterState *, PyObject *);
+static xidatafunc _lookup_getdata_from_registry(dlcontext_t *, PyObject *);
 
 
 /* used in crossinterp.c */
@@ -26,22 +27,43 @@ xid_lookup_fini(_PyXIData_lookup_t *state)
 }
 
 static xidatafunc
-lookup_getdata(PyInterpreterState *interp, PyObject *obj)
+lookup_getdata(dlcontext_t *ctx, PyObject *obj)
 {
    /* Cross-interpreter objects are looked up by exact match on the class.
       We can reassess this policy when we move from a global registry to a
       tp_* slot. */
-    return _lookup_getdata_from_registry(interp, obj);
+    return _lookup_getdata_from_registry(ctx, obj);
 }
 
 
 /* exported API */
 
-xidatafunc
-_PyXIData_Lookup(PyObject *obj)
+int
+_PyXIData_GetLookupContext(PyInterpreterState *interp,
+                           _PyXIData_lookup_context_t *res)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    return lookup_getdata(interp, obj);
+    _PyXI_global_state_t *global = _PyXI_GET_GLOBAL_STATE(interp);
+    if (global == NULL) {
+        assert(PyErr_Occurred());
+        return -1;
+    }
+    _PyXI_state_t *local = _PyXI_GET_STATE(interp);
+    if (local == NULL) {
+        assert(PyErr_Occurred());
+        return -1;
+    }
+    *res = (dlcontext_t){
+        .global = &global->data_lookup,
+        .local = &local->data_lookup,
+        .PyExc_NotShareableError = local->exceptions.PyExc_NotShareableError,
+    };
+    return 0;
+}
+
+xidatafunc
+_PyXIData_Lookup(_PyXIData_lookup_context_t *ctx, PyObject *obj)
+{
+    return lookup_getdata(ctx, obj);
 }
 
 
@@ -110,25 +132,12 @@ _xidregistry_unlock(dlregistry_t *registry)
 /* accessing the registry */
 
 static inline dlregistry_t *
-_get_global_xidregistry(_PyRuntimeState *runtime)
+_get_xidregistry_for_type(dlcontext_t *ctx, PyTypeObject *cls)
 {
-    return &runtime->xi.data_lookup.registry;
-}
-
-static inline dlregistry_t *
-_get_xidregistry(PyInterpreterState *interp)
-{
-    return &interp->xi.data_lookup.registry;
-}
-
-static inline dlregistry_t *
-_get_xidregistry_for_type(PyInterpreterState *interp, PyTypeObject *cls)
-{
-    dlregistry_t *registry = _get_global_xidregistry(interp->runtime);
     if (cls->tp_flags & Py_TPFLAGS_HEAPTYPE) {
-        registry = _get_xidregistry(interp);
+        return &ctx->local->registry;
     }
-    return registry;
+    return &ctx->global->registry;
 }
 
 static dlregitem_t* _xidregistry_remove_entry(dlregistry_t *, dlregitem_t *);
@@ -160,11 +169,11 @@ _xidregistry_find_type(dlregistry_t *xidregistry, PyTypeObject *cls)
 }
 
 static xidatafunc
-_lookup_getdata_from_registry(PyInterpreterState *interp, PyObject *obj)
+_lookup_getdata_from_registry(dlcontext_t *ctx, PyObject *obj)
 {
     PyTypeObject *cls = Py_TYPE(obj);
 
-    dlregistry_t *xidregistry = _get_xidregistry_for_type(interp, cls);
+    dlregistry_t *xidregistry = _get_xidregistry_for_type(ctx, cls);
     _xidregistry_lock(xidregistry);
 
     dlregitem_t *matched = _xidregistry_find_type(xidregistry, cls);
@@ -241,7 +250,8 @@ _xidregistry_clear(dlregistry_t *xidregistry)
 }
 
 int
-_PyXIData_RegisterClass(PyTypeObject *cls, xidatafunc getdata)
+_PyXIData_RegisterClass(_PyXIData_lookup_context_t *ctx,
+                        PyTypeObject *cls, xidatafunc getdata)
 {
     if (!PyType_Check(cls)) {
         PyErr_Format(PyExc_ValueError, "only classes may be registered");
@@ -253,8 +263,7 @@ _PyXIData_RegisterClass(PyTypeObject *cls, xidatafunc getdata)
     }
 
     int res = 0;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    dlregistry_t *xidregistry = _get_xidregistry_for_type(interp, cls);
+    dlregistry_t *xidregistry = _get_xidregistry_for_type(ctx, cls);
     _xidregistry_lock(xidregistry);
 
     dlregitem_t *matched = _xidregistry_find_type(xidregistry, cls);
@@ -272,11 +281,10 @@ finally:
 }
 
 int
-_PyXIData_UnregisterClass(PyTypeObject *cls)
+_PyXIData_UnregisterClass(_PyXIData_lookup_context_t *ctx, PyTypeObject *cls)
 {
     int res = 0;
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    dlregistry_t *xidregistry = _get_xidregistry_for_type(interp, cls);
+    dlregistry_t *xidregistry = _get_xidregistry_for_type(ctx, cls);
     _xidregistry_lock(xidregistry);
 
     dlregitem_t *matched = _xidregistry_find_type(xidregistry, cls);
@@ -500,6 +508,11 @@ _tuple_shared_free(void* data)
 static int
 _tuple_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
+    dlcontext_t ctx;
+    if (_PyXIData_GetLookupContext(tstate->interp, &ctx) < 0) {
+        return -1;
+    }
+
     Py_ssize_t len = PyTuple_GET_SIZE(obj);
     if (len < 0) {
         return -1;
@@ -526,7 +539,7 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 
         int res = -1;
         if (!_Py_EnterRecursiveCallTstate(tstate, " while sharing a tuple")) {
-            res = _PyObject_GetXIData(item, data);
+            res = _PyObject_GetXIData(&ctx, item, data);
             _Py_LeaveRecursiveCallTstate(tstate);
         }
         if (res < 0) {

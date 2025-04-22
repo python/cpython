@@ -75,29 +75,53 @@ class ResourceTracker(object):
         raise ReentrantCallError(
             "Reentrant call into the multiprocessing resource tracker")
 
-    def _stop(self):
-        with self._lock:
-            # This should not happen (_stop() isn't called by a finalizer)
-            # but we check for it anyway.
-            if self._lock._recursion_count() > 1:
-                return self._reentrant_call_error()
-            if self._fd is None:
-                # not running
-                return
+    def __del__(self):
+        # making sure child processess are cleaned before ResourceTracker
+        # gets destructed.
+        # see https://github.com/python/cpython/issues/88887
+        self._stop(use_blocking_lock=False)
 
-            # closing the "alive" file descriptor stops main()
-            os.close(self._fd)
-            self._fd = None
-
-            _, status = os.waitpid(self._pid, 0)
-
-            self._pid = None
-
+    def _stop(self, use_blocking_lock=True):
+        if use_blocking_lock:
+            with self._lock:
+                self._stop_locked()
+        else:
+            acquired = self._lock.acquire(blocking=False)
             try:
-                self._exitcode = os.waitstatus_to_exitcode(status)
-            except ValueError:
-                # os.waitstatus_to_exitcode may raise an exception for invalid values
-                self._exitcode = None
+                self._stop_locked()
+            finally:
+                if acquired:
+                    self._lock.release()
+
+    def _stop_locked(
+        self,
+        close=os.close,
+        waitpid=os.waitpid,
+        waitstatus_to_exitcode=os.waitstatus_to_exitcode,
+    ):
+        # This shouldn't happen (it might when called by a finalizer)
+        # so we check for it anyway.
+        if self._lock._recursion_count() > 1:
+            return self._reentrant_call_error()
+        if self._fd is None:
+            # not running
+            return
+        if self._pid is None:
+            return
+
+        # closing the "alive" file descriptor stops main()
+        close(self._fd)
+        self._fd = None
+
+        _, status = waitpid(self._pid, 0)
+
+        self._pid = None
+
+        try:
+            self._exitcode = waitstatus_to_exitcode(status)
+        except ValueError:
+            # os.waitstatus_to_exitcode may raise an exception for invalid values
+            self._exitcode = None
 
     def getfd(self):
         self.ensure_running()
@@ -155,13 +179,14 @@ class ResourceTracker(object):
                 # that can make the child die before it registers signal handlers
                 # for SIGINT and SIGTERM. The mask is unregistered after spawning
                 # the child.
+                prev_sigmask = None
                 try:
                     if _HAVE_SIGMASK:
-                        signal.pthread_sigmask(signal.SIG_BLOCK, _IGNORED_SIGNALS)
+                        prev_sigmask = signal.pthread_sigmask(signal.SIG_BLOCK, _IGNORED_SIGNALS)
                     pid = util.spawnv_passfds(exe, args, fds_to_pass)
                 finally:
-                    if _HAVE_SIGMASK:
-                        signal.pthread_sigmask(signal.SIG_UNBLOCK, _IGNORED_SIGNALS)
+                    if prev_sigmask is not None:
+                        signal.pthread_sigmask(signal.SIG_SETMASK, prev_sigmask)
             except:
                 os.close(w)
                 raise

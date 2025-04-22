@@ -45,7 +45,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.6, compared to 3.5.
-Python 3.6 was released on December 23, 2016.  See the
+Python 3.6 was released on December 23, 2016.  See the
 `changelog <https://docs.python.org/3.6/whatsnew/changelog.html>`_ for a full
 list of changes.
 
@@ -2366,27 +2366,27 @@ There have been several major changes to the :term:`bytecode` in Python 3.6.
   (Contributed by Demur Rumed with input and reviews from
   Serhiy Storchaka and Victor Stinner in :issue:`26647` and :issue:`28050`.)
 
-* The new :opcode:`FORMAT_VALUE` and :opcode:`BUILD_STRING` opcodes as part
+* The new :opcode:`!FORMAT_VALUE` and :opcode:`BUILD_STRING` opcodes as part
   of the  :ref:`formatted string literal <whatsnew36-pep498>` implementation.
   (Contributed by Eric Smith in :issue:`25483` and
   Serhiy Storchaka in :issue:`27078`.)
 
-* The new :opcode:`BUILD_CONST_KEY_MAP` opcode to optimize the creation
+* The new :opcode:`!BUILD_CONST_KEY_MAP` opcode to optimize the creation
   of dictionaries with constant keys.
   (Contributed by Serhiy Storchaka in :issue:`27140`.)
 
 * The function call opcodes have been heavily reworked for better performance
   and simpler implementation.
-  The :opcode:`MAKE_FUNCTION`, :opcode:`CALL_FUNCTION`,
-  :opcode:`CALL_FUNCTION_KW` and :opcode:`BUILD_MAP_UNPACK_WITH_CALL` opcodes
+  The :opcode:`MAKE_FUNCTION`, :opcode:`!CALL_FUNCTION`,
+  :opcode:`!CALL_FUNCTION_KW` and :opcode:`!BUILD_MAP_UNPACK_WITH_CALL` opcodes
   have been modified, the new :opcode:`CALL_FUNCTION_EX` and
-  :opcode:`BUILD_TUPLE_UNPACK_WITH_CALL` have been added, and
+  :opcode:`!BUILD_TUPLE_UNPACK_WITH_CALL` have been added, and
   ``CALL_FUNCTION_VAR``, ``CALL_FUNCTION_VAR_KW`` and ``MAKE_CLOSURE`` opcodes
   have been removed.
   (Contributed by Demur Rumed in :issue:`27095`, and Serhiy Storchaka in
   :issue:`27213`, :issue:`28257`.)
 
-* The new :opcode:`SETUP_ANNOTATIONS` and :opcode:`STORE_ANNOTATION` opcodes
+* The new :opcode:`SETUP_ANNOTATIONS` and :opcode:`!STORE_ANNOTATION` opcodes
   have been added to support the new :term:`variable annotation` syntax.
   (Contributed by Ivan Levkivskyi in :issue:`27985`.)
 

@@ -11,9 +11,8 @@ The following modules have a command-line interface.
 * :mod:`code`
 * :ref:`compileall <compileall-cli>`
 * :mod:`cProfile`: see :ref:`profile <profile-cli>`
-* :ref:`difflib <difflib-interface>`
 * :ref:`dis <dis-cli>`
-* :mod:`doctest`
+* :ref:`doctest <doctest-cli>`
 * :mod:`!encodings.rot_13`
 * :mod:`ensurepip`
 * :mod:`filecmp`
@@ -24,9 +23,9 @@ The following modules have a command-line interface.
 * :mod:`!idlelib`
 * :ref:`inspect <inspect-module-cli>`
 * :ref:`json <json-commandline>`
-* :mod:`mimetypes`
+* :ref:`mimetypes <mimetypes-cli>`
 * :mod:`pdb`
-* :mod:`pickle`
+* :ref:`pickle <pickle-cli>`
 * :ref:`pickletools <pickletools-cli>`
 * :mod:`platform`
 * :mod:`poplib`

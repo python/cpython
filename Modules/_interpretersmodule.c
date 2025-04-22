@@ -6,16 +6,14 @@
 #endif
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_code.h"          // _PyCode_HAS_EXECUTORS()
 #include "pycore_crossinterp.h"   // _PyXIData_t
 #include "pycore_interp.h"        // _PyInterpreterState_IDIncref()
-#include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
-#include "pycore_pyerrors.h"      // _Py_excinfo
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
-#include "pycore_pystate.h"       // _PyInterpreterState_SetRunningMain()
+#include "pycore_pystate.h"       // _PyInterpreterState_IsRunningMain()
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 
@@ -83,6 +81,8 @@ typedef struct {
     int64_t interpid;
 } XIBufferViewObject;
 
+#define XIBufferViewObject_CAST(op) ((XIBufferViewObject *)(op))
+
 static PyObject *
 xibufferview_from_xid(PyTypeObject *cls, _PyXIData_t *data)
 {
@@ -100,8 +100,9 @@ xibufferview_from_xid(PyTypeObject *cls, _PyXIData_t *data)
 }
 
 static void
-xibufferview_dealloc(XIBufferViewObject *self)
+xibufferview_dealloc(PyObject *op)
 {
+    XIBufferViewObject *self = XIBufferViewObject_CAST(op);
     PyInterpreterState *interp = _PyInterpreterState_LookUpID(self->interpid);
     /* If the interpreter is no longer alive then we have problems,
        since other objects may be using the buffer still. */
@@ -124,20 +125,21 @@ xibufferview_dealloc(XIBufferViewObject *self)
 }
 
 static int
-xibufferview_getbuf(XIBufferViewObject *self, Py_buffer *view, int flags)
+xibufferview_getbuf(PyObject *op, Py_buffer *view, int flags)
 {
     /* Only PyMemoryView_FromObject() should ever call this,
        via _memoryview_from_xid() below. */
+    XIBufferViewObject *self = XIBufferViewObject_CAST(op);
     *view = *self->view;
-    view->obj = (PyObject *)self;
+    view->obj = op;
     // XXX Should we leave it alone?
     view->internal = NULL;
     return 0;
 }
 
 static PyType_Slot XIBufferViewType_slots[] = {
-    {Py_tp_dealloc, (destructor)xibufferview_dealloc},
-    {Py_bf_getbuffer, (getbufferproc)xibufferview_getbuf},
+    {Py_tp_dealloc, xibufferview_dealloc},
+    {Py_bf_getbuffer, xibufferview_getbuf},
     // We don't bother with Py_bf_releasebuffer since we don't need it.
     {0, NULL},
 };
@@ -328,7 +330,7 @@ get_code_str(PyObject *arg, Py_ssize_t *len_p, PyObject **bytes_p, int *flags_p)
     int flags = 0;
 
     if (PyUnicode_Check(arg)) {
-        assert(PyUnicode_CheckExact(arg)
+        assert(PyUnicode_Check(arg)
                && (check_code_str((PyUnicodeObject *)arg) == NULL));
         codestr = PyUnicode_AsUTF8AndSize(arg, &len);
         if (codestr == NULL) {
@@ -459,7 +461,12 @@ _run_in_interpreter(PyInterpreterState *interp,
 
     // Prep and switch interpreters.
     if (_PyXI_Enter(&session, interp, shareables) < 0) {
-        assert(!PyErr_Occurred());
+        if (PyErr_Occurred()) {
+            // If an error occured at this step, it means that interp
+            // was not prepared and switched.
+            return -1;
+        }
+        // Now, apply the error from another interpreter:
         PyObject *excinfo = _PyXI_ApplyError(session.error);
         if (excinfo != NULL) {
             *p_excinfo = excinfo;
@@ -936,6 +943,11 @@ static int
 _interp_exec(PyObject *self, PyInterpreterState *interp,
              PyObject *code_arg, PyObject *shared_arg, PyObject **p_excinfo)
 {
+    if (shared_arg != NULL && !PyDict_CheckExact(shared_arg)) {
+        PyErr_SetString(PyExc_TypeError, "expected 'shared' to be a dict");
+        return -1;
+    }
+
     // Extract code.
     Py_ssize_t codestrlen = -1;
     PyObject *bytes_obj = NULL;
@@ -1100,7 +1112,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".exec",
+    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".run_string",
                                             "argument 2", "a string");
     if (script == NULL) {
         return NULL;
@@ -1181,7 +1193,13 @@ object_is_shareable(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    if (_PyObject_CheckXIData(obj) == 0) {
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    _PyXIData_lookup_context_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        return NULL;
+    }
+
+    if (_PyObject_CheckXIData(&ctx, obj) == 0) {
         Py_RETURN_TRUE;
     }
     PyErr_Clear();
@@ -1234,13 +1252,10 @@ interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *idobj = NULL;
     int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$p:get_config", kwlist,
+                                     "O?|$p:get_config", kwlist,
                                      &idobj, &restricted))
     {
         return NULL;
-    }
-    if (idobj == Py_None) {
-        idobj = NULL;
     }
 
     int reqready = 0;
@@ -1358,14 +1373,14 @@ capture_exception(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"exc", NULL};
     PyObject *exc_arg = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "|O:capture_exception", kwlist,
+                                     "|O?:capture_exception", kwlist,
                                      &exc_arg))
     {
         return NULL;
     }
 
     PyObject *exc = exc_arg;
-    if (exc == NULL || exc == Py_None) {
+    if (exc == NULL) {
         exc = PyErr_GetRaisedException();
         if (exc == NULL) {
             Py_RETURN_NONE;
@@ -1480,6 +1495,11 @@ module_exec(PyObject *mod)
     PyInterpreterState *interp = PyInterpreterState_Get();
     module_state *state = get_module_state(mod);
 
+    _PyXIData_lookup_context_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        return -1;
+    }
+
 #define ADD_WHENCE(NAME) \
     if (PyModule_AddIntConstant(mod, "WHENCE_" #NAME,                   \
                                 _PyInterpreterState_WHENCE_##NAME) < 0) \
@@ -1501,9 +1521,7 @@ module_exec(PyObject *mod)
     if (PyModule_AddType(mod, (PyTypeObject *)PyExc_InterpreterNotFoundError) < 0) {
         goto error;
     }
-    PyObject *PyExc_NotShareableError = \
-                _PyInterpreterState_GetXIState(interp)->PyExc_NotShareableError;
-    if (PyModule_AddType(mod, (PyTypeObject *)PyExc_NotShareableError) < 0) {
+    if (PyModule_AddType(mod, (PyTypeObject *)ctx.PyExc_NotShareableError) < 0) {
         goto error;
     }
 
@@ -1529,7 +1547,7 @@ module_traverse(PyObject *mod, visitproc visit, void *arg)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
-    traverse_module_state(state, visit, arg);
+    (void)traverse_module_state(state, visit, arg);
     return 0;
 }
 
@@ -1538,16 +1556,16 @@ module_clear(PyObject *mod)
 {
     module_state *state = get_module_state(mod);
     assert(state != NULL);
-    clear_module_state(state);
+    (void)clear_module_state(state);
     return 0;
 }
 
 static void
 module_free(void *mod)
 {
-    module_state *state = get_module_state(mod);
+    module_state *state = get_module_state((PyObject *)mod);
     assert(state != NULL);
-    clear_module_state(state);
+    (void)clear_module_state(state);
 }
 
 static struct PyModuleDef moduledef = {
@@ -1559,7 +1577,7 @@ static struct PyModuleDef moduledef = {
     .m_slots = module_slots,
     .m_traverse = module_traverse,
     .m_clear = module_clear,
-    .m_free = (freefunc)module_free,
+    .m_free = module_free,
 };
 
 PyMODINIT_FUNC
