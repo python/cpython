@@ -253,31 +253,36 @@ class PdbConnectTestCase(unittest.TestCase):
         # Create a file for subprocess script
         self.script_path = TESTFN + "_connect_test.py"
         with open(self.script_path, 'w') as f:
-            f.write(f"""
-import pdb
-import sys
-import time
+            f.write(
+                textwrap.dedent(
+                    f"""
+                    import pdb
+                    import sys
+                    import time
 
-def connect_to_debugger():
-    # Create a frame to debug
-    def dummy_function():
-        x = 42
-        # Call connect to establish connection with the test server
-        frame = sys._getframe()  # Get the current frame
-        pdb._connect(
-            host='127.0.0.1',
-            port={self.port},
-            frame=frame,
-            commands="",
-            version=pdb._PdbServer.protocol_version(),
-        )
-        return x  # This line should not be reached in debugging
+                    def connect_to_debugger():
+                        # Create a frame to debug
+                        def dummy_function():
+                            x = 42
+                            # Call connect to establish connection
+                            # with the test server
+                            frame = sys._getframe()  # Get the current frame
+                            pdb._connect(
+                                host='127.0.0.1',
+                                port={self.port},
+                                frame=frame,
+                                commands="",
+                                version=pdb._PdbServer.protocol_version(),
+                            )
+                            return x  # This line won't be reached in debugging
 
-    return dummy_function()
+                        return dummy_function()
 
-result = connect_to_debugger()
-print(f"Function returned: {{result}}")
-""")
+                    result = connect_to_debugger()
+                    print(f"Function returned: {{result}}")
+                    """
+                )
+            )
 
     def tearDown(self):
         self.server_sock.close()
