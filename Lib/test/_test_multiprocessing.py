@@ -1588,7 +1588,7 @@ class _TestLock(BaseTestCase):
 
         rlock = self.RLock()
         event = self.Event()
-        res = Value('b', 0)
+        res = self.Value('b', 0)
         # target is the same as for the test_lock_locked_2processes test.
         p = self.Process(target=self._test_lock_locked_2processes,
                          args=(rlock, event, res))
