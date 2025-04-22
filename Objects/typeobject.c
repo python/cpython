@@ -11002,6 +11002,10 @@ static pytype_slotdef slotdefs[] = {
     {NULL}
 };
 
+/* Stores the number of times where slotdefs has elements with same name.
+   This counter precalculated by _PyType_InitSlotDefs when main
+   interprepter starts. */
+static uint8_t slotdefs_name_counts[Py_ARRAY_LENGTH(slotdefs)];
 
 /* Given a type pointer and an offset gotten from a slotdef entry, return a
    pointer to the actual slot.  This is not quite the same as simply adding
@@ -11148,7 +11152,7 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p)
         if (Py_IS_TYPE(descr, &PyWrapperDescr_Type) &&
             ((PyWrapperDescrObject *)descr)->d_base->name_strobj == p->name_strobj) {
             void **tptr = NULL;
-            if (p->name_count == 1)
+            if (slotdefs_name_counts[(p - slotdefs) / sizeof(pytype_slotdef)] == 1)
                 tptr = slotptr(type, p->offset);
 
             if (tptr == NULL || tptr == ptr)
@@ -11357,6 +11361,8 @@ _PyType_InitSlotDefs(PyInterpreterState *interp)
         Py_CLEAR(bytearray);
     }
 
+    memset(slotdefs_name_counts, 0, sizeof(slotdefs_name_counts));
+
     Py_ssize_t pos=0;
     PyObject *key=NULL;
     PyObject *value=NULL;
@@ -11366,7 +11372,7 @@ _PyType_InitSlotDefs(PyInterpreterState *interp)
         uint8_t i = 0;
         for(; i < n; i++) {
             uint8_t idx = data[i + 1];
-            slotdefs[idx].name_count = n;
+            slotdefs_name_counts[idx] = n;
         }
     }
 
