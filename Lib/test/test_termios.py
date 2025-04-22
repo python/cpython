@@ -2,8 +2,10 @@ import errno
 import os
 import sys
 import tempfile
+import threading
 import unittest
 from test import support
+from test.support import threading_helper
 from test.support.import_helper import import_module
 
 termios = import_module('termios')
