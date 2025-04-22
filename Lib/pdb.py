@@ -843,12 +843,11 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         exec(source_async, ns)
         self.async_awaitable = ns["__pdb_await"]()
 
-    def default(self, line):
-        if line[:1] == '!': line = line[1:].strip()
-        locals = self.curframe.f_locals
-        globals = self.curframe.f_globals
+    def _read_code(self, line):
+        buffer = line
+        is_await_code = False
+        code = None
         try:
-            buffer = line
             if (code := codeop.compile_command(line + '\n', '<stdin>', 'single')) is None:
                 # Multi-line mode
                 with self._enable_multiline_completion():
@@ -861,7 +860,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                             except (EOFError, KeyboardInterrupt):
                                 self.lastcmd = ""
                                 print('\n')
-                                return
+                                return None, None, False
                         else:
                             self.stdout.write(continue_prompt)
                             self.stdout.flush()
@@ -870,11 +869,31 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                                 self.lastcmd = ""
                                 self.stdout.write('\n')
                                 self.stdout.flush()
-                                return
+                                return None, None, False
                             else:
                                 line = line.rstrip('\r\n')
                         buffer += '\n' + line
                     self.lastcmd = buffer
+        except SyntaxError as e:
+            # Maybe it's an await expression/statement
+            if (
+                self.async_shim_frame is not None
+                and e.msg == "'await' outside function"
+            ):
+                is_await_code = True
+            else:
+                raise
+
+        return code, buffer, is_await_code
+
+    def default(self, line):
+        if line[:1] == '!': line = line[1:].strip()
+        locals = self.curframe.f_locals
+        globals = self.curframe.f_globals
+        try:
+            code, buffer, is_await_code = self._read_code(line)
+            if buffer is None:
+                return
             save_stdout = sys.stdout
             save_stdin = sys.stdin
             save_displayhook = sys.displayhook
@@ -882,26 +901,18 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                 sys.stdin = self.stdin
                 sys.stdout = self.stdout
                 sys.displayhook = self.displayhook
-                if not self._exec_in_closure(buffer, globals, locals):
-                    exec(code, globals, locals)
+                if is_await_code:
+                    self._exec_await(buffer, globals, locals)
+                    return True
+                else:
+                    if not self._exec_in_closure(buffer, globals, locals):
+                        exec(code, globals, locals)
             finally:
                 sys.stdout = save_stdout
                 sys.stdin = save_stdin
                 sys.displayhook = save_displayhook
-        except Exception as e:
-            # Maybe it's an await expression/statement
-            if (
-                self.async_shim_frame is not None
-                and isinstance(e, SyntaxError)
-                and e.msg == "'await' outside function"
-            ):
-                try:
-                    self._exec_await(buffer, globals, locals)
-                    return True
-                except:
-                    self._error_exc()
-            else:
-                self._error_exc()
+        except:
+            self._error_exc()
 
     def _replace_convenience_variables(self, line):
         """Replace the convenience variables in 'line' with their values.
