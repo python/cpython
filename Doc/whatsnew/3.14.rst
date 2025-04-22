@@ -100,7 +100,7 @@ PEP 750: Template Strings
 
 Template string literals (t-strings) are a generalization of f-strings,
 using a ``t`` in place of the ``f`` prefix. Instead of evaluating
-to :class:`str`, t-strings evaluate to a new :class:`string.templatelib.Template` type:
+to :class:`str`, t-strings evaluate to a new :class:`!string.templatelib.Template` type:
 
 .. code-block:: python
 
@@ -155,7 +155,7 @@ Writing template handlers is straightforward:
 
 With this in place, developers can write template systems to sanitize SQL, make
 safe shell operations, improve logging, tackle modern ideas in web development
-(HTML, CSS, etc.), and implement lightweight, custom business DSLs.
+(HTML, CSS, and so on), and implement lightweight, custom business DSLs.
 
 See :pep:`750` for more details.
 
