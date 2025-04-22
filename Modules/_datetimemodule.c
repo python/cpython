@@ -202,6 +202,9 @@ clear_current_module(datetime_state *st,
         if (PyDict_GetItemRef(dict, INTERP_KEY, &current) < 0) {
             goto error;
         }
+        if (current == NULL) {
+            interp->datetime_module_state = NULL;
+        }
         /* We only need "current" for pointer comparison. */
         Py_XDECREF(current);
         if (current != expected) {
