@@ -5236,7 +5236,10 @@ class MiscTests(unittest.TestCase):
                 return hash('mykey')
 
             def __eq__(self, other):
-                X.__bases__ = (Base2,)
+                try:
+                    X.__bases__ = (Base2,)
+                except NameError:
+                    pass
 
         class Base(object):
             mykey = 'from Base'
