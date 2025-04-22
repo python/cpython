@@ -307,7 +307,7 @@ class TestForwardRefClass(unittest.TestCase):
         # Forward refs provide a different introspection API. __name__ and
         # __qualname__ make little sense for forward refs as they can store
         # complex typing expressions.
-        fr = annotationlib.ForwardRef("set[Any]")
+        fr = ForwardRef("set[Any]")
         self.assertFalse(hasattr(fr, "__name__"))
         self.assertFalse(hasattr(fr, "__qualname__"))
         self.assertEqual(fr.__module__, "annotationlib")
@@ -316,6 +316,38 @@ class TestForwardRefClass(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.assertRaises(TypeError):
                 pickle.dumps(fr, proto)
+
+    def test_evaluate_string_format(self):
+        fr = ForwardRef("set[Any]")
+        self.assertEqual(fr.evaluate(format=Format.STRING), "set[Any]")
+
+    def test_evaluate_forwardref_format(self):
+        fr = ForwardRef("undef")
+        evaluated = fr.evaluate(format=Format.FORWARDREF)
+        self.assertIs(fr, evaluated)
+
+        fr = ForwardRef("set[undefined]")
+        evaluated = fr.evaluate(format=Format.FORWARDREF)
+        self.assertEqual(
+            evaluated,
+            set[support.EqualToForwardRef("undefined")],
+        )
+
+        fr = ForwardRef("a + b")
+        self.assertEqual(
+            fr.evaluate(format=Format.FORWARDREF),
+            support.EqualToForwardRef("a + b"),
+        )
+        self.assertEqual(
+            fr.evaluate(format=Format.FORWARDREF, locals={"a": 1, "b": 2}),
+            3,
+        )
+
+        fr = ForwardRef('"a" + 1')
+        self.assertEqual(
+            fr.evaluate(format=Format.FORWARDREF),
+            support.EqualToForwardRef('"a" + 1'),
+        )
 
     def test_evaluate_with_type_params(self):
         class Gen[T]:
@@ -1052,6 +1084,44 @@ class TestGetAnnotations(unittest.TestCase):
         self.assertEqual(
             set(results.generic_func_annotations.values()),
             set(results.generic_func.__type_params__),
+        )
+
+    maxDiff  = None
+
+    def test_partial_evaluation(self):
+        def f(
+            x: builtins.undef,
+            y: list[int],
+            z: 1 + int,
+            a: builtins.int,
+            b: [builtins.undef, builtins.int],
+        ):
+            pass
+
+        self.assertEqual(
+            annotationlib.get_annotations(f, format=Format.FORWARDREF),
+            {
+                "x": support.EqualToForwardRef("builtins.undef", owner=f),
+                "y": list[int],
+                "z": support.EqualToForwardRef("1 + int", owner=f),
+                "a": int,
+                "b": [
+                    support.EqualToForwardRef("builtins.undef", owner=f),
+                    # We can't resolve this because we have to evaluate the whole annotation
+                    support.EqualToForwardRef("builtins.int", owner=f),
+                ],
+            },
+        )
+
+        self.assertEqual(
+            annotationlib.get_annotations(f, format=Format.STRING),
+            {
+                "x": "builtins.undef",
+                "y": "list[int]",
+                "z": "1 + int",
+                "a": "builtins.int",
+                "b": "[builtins.undef, builtins.int]",
+            },
         )
 
 

@@ -132,7 +132,7 @@ Classes
 
       Values are real annotation values (as per :attr:`Format.VALUE` format)
       for defined values, and :class:`ForwardRef` proxies for undefined
-      values. Real objects may contain references to, :class:`ForwardRef`
+      values. Real objects may contain references to :class:`ForwardRef`
       proxy objects.
 
    .. attribute:: STRING
@@ -172,14 +172,22 @@ Classes
       :class:`~ForwardRef`. The string may not be exactly equivalent
       to the original source.
 
-   .. method:: evaluate(*, owner=None, globals=None, locals=None, type_params=None)
+   .. method:: evaluate(*, owner=None, globals=None, locals=None, type_params=None,
+                        format=Format.VALUE)
 
       Evaluate the forward reference, returning its value.
 
-      This may throw an exception, such as :exc:`NameError`, if the forward
+      If the *format* argument is :attr:`~Format.VALUE` (the default),
+      this method may throw an exception, such as :exc:`NameError`, if the forward
       reference refers to a name that cannot be resolved. The arguments to this
       method can be used to provide bindings for names that would otherwise
-      be undefined.
+      be undefined. If the *format* argument is :attr:`~Format.FORWARDREF`,
+      the method will never throw an exception, but may return a :class:`~ForwardRef`
+      instance. For example, if the forward reference object contains the code
+      ``list[undefined]``, where ``undefined`` is a name that is not defined,
+      evaluating it with the :attr:`~Format.FORWARDREF` format will return
+      ``list[ForwardRef('undefined')]``. If the *format* argument is
+      :attr:`~Format.STRING`, the method will return :attr:`~ForwardRef.__forward_arg__`.
 
       The *owner* parameter provides the preferred mechanism for passing scope
       information to this method. The owner of a :class:`~ForwardRef` is the
