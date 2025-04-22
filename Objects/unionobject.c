@@ -322,24 +322,37 @@ static PyMemberDef union_members[] = {
         {0}
 };
 
+// Populate __parameters__ if needed.
+static int
+union_init_parameters(unionobject *alias)
+{
+    // Avoid the critical section if it's already initialized.
+    if (alias->parameters != NULL) {
+        return 0;
+    }
+
+    int result = 0;
+    Py_BEGIN_CRITICAL_SECTION(alias);
+    // Need to check again once we got the lock, another thread may have
+    // initialized it while we were waiting for the lock.
+    if (alias->parameters == NULL) {
+        alias->parameters = _Py_make_parameters(alias->args);
+        if (alias->parameters == NULL) {
+            result = -1;
+        }
+    }
+    Py_END_CRITICAL_SECTION();
+
+    return result;
+}
+
 static PyObject *
 union_getitem(PyObject *self, PyObject *item)
 {
     unionobject *alias = (unionobject *)self;
-    // Populate __parameters__ if needed.
-    // Avoid the critical section if it's already initialized.
-    if (alias->parameters == NULL) {
-        Py_BEGIN_CRITICAL_SECTION(alias);
-        // Need to check again once we got the lock, another thread may have
-        // initialized it while we were waiting for the lock.
-        if (alias->parameters == NULL) {
-            alias->parameters = _Py_make_parameters(alias->args);
-        }
-        Py_END_CRITICAL_SECTION();
 
-        if (alias->parameters == NULL) {
-            return NULL;
-        }
+    if (union_init_parameters(alias) < 0) {
+        return NULL;
     }
 
     PyObject *newargs = _Py_subs_parameters(self, alias->args, alias->parameters, item);
@@ -360,11 +373,8 @@ static PyObject *
 union_parameters(PyObject *self, void *Py_UNUSED(unused))
 {
     unionobject *alias = (unionobject *)self;
-    if (alias->parameters == NULL) {
-        alias->parameters = _Py_make_parameters(alias->args);
-        if (alias->parameters == NULL) {
-            return NULL;
-        }
+    if (union_init_parameters(alias) < 0) {
+        return NULL;
     }
     return Py_NewRef(alias->parameters);
 }
