@@ -3075,7 +3075,6 @@ def attach(pid, commands=()):
                     interrupt_script.write(
                         'import pdb, sys\n'
                         'if inst := pdb.Pdb._last_pdb_instance:\n'
-                        '    inst.set_step()\n'
                         '    inst.set_trace(sys._getframe(1))\n'
                     )
                     interrupt_script.close()
