@@ -519,13 +519,12 @@ class _Stringifier:
 
 
 class _StringifierDict(dict):
-    def __init__(self, namespace, globals=None, owner=None, is_class=False, create_unions=False):
+    def __init__(self, namespace, globals=None, owner=None, is_class=False):
         super().__init__(namespace)
         self.namespace = namespace
         self.globals = globals
         self.owner = owner
         self.is_class = is_class
-        self.create_unions = False
         self.stringifiers = []
         self.next_id = 1
 
@@ -641,7 +640,6 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
             annotate.__globals__,
             owner,
             is_class,
-            create_unions=True
         )
         if annotate.__closure__:
             freevars = annotate.__code__.co_freevars
