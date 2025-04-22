@@ -16,11 +16,11 @@ from test.support.os_helper import temp_dir, TESTFN, unlink
 from typing import Dict, List, Optional, Tuple, Union, Any
 
 import pdb
-from pdb import _RemotePdb, _PdbClient, _InteractState
+from pdb import _PdbServer, _PdbClient, _InteractState
 
 
 class MockSocketFile:
-    """Mock socket file for testing _RemotePdb without actual socket connections."""
+    """Mock socket file for testing _PdbServer without actual socket connections."""
 
     def __init__(self):
         self.input_queue = []
@@ -62,11 +62,11 @@ class MockSocketFile:
 
 
 class RemotePdbTestCase(unittest.TestCase):
-    """Tests for the _RemotePdb class."""
+    """Tests for the _PdbServer class."""
 
     def setUp(self):
         self.sockfile = MockSocketFile()
-        self.pdb = _RemotePdb(self.sockfile)
+        self.pdb = _PdbServer(self.sockfile)
 
         # Mock some Bdb attributes that are lazily created when tracing starts
         self.pdb.botframe = None
@@ -269,7 +269,7 @@ def connect_to_debugger():
             port={self.port},
             frame=frame,
             commands="",
-            version=pdb._RemotePdb.protocol_version(),
+            version=pdb._PdbServer.protocol_version(),
         )
         return x  # This line should not be reached in debugging
 

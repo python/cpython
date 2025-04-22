@@ -2516,7 +2516,7 @@ class _InteractState:
     ns: dict[str, typing.Any]
 
 
-class _RemotePdb(Pdb):
+class _PdbServer(Pdb):
     def __init__(self, sockfile, owns_sockfile=True, **kwargs):
         self._owns_sockfile = owns_sockfile
         self._interact_state = None
@@ -2771,7 +2771,7 @@ class _RemotePdb(Pdb):
 
     @typing.override
     def _create_recursive_debugger(self):
-        return _RemotePdb(self._sockfile, owns_sockfile=False)
+        return _PdbServer(self._sockfile, owns_sockfile=False)
 
     @typing.override
     def _prompt_for_confirmation(self, prompt, default):
@@ -3026,7 +3026,7 @@ def _connect(host, port, frame, commands, version):
     with closing(socket.create_connection((host, port))) as conn:
         sockfile = conn.makefile("rwb")
 
-    remote_pdb = _RemotePdb(sockfile)
+    remote_pdb = _PdbServer(sockfile)
     weakref.finalize(remote_pdb, sockfile.close)
 
     if Pdb._last_pdb_instance is not None:
@@ -3060,7 +3060,7 @@ def attach(pid, commands=()):
                         port={port},
                         frame=sys._getframe(1),
                         commands={json.dumps("\n".join(commands))},
-                        version={_RemotePdb.protocol_version()},
+                        version={_PdbServer.protocol_version()},
                     )
                     """
                 )
