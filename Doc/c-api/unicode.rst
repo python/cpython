@@ -195,10 +195,10 @@ the Python configuration.
 
 .. c:macro:: Py_UNICODE_REPLACEMENT_CHARACTER
 
-   The Unicode code point ``U+FFFD`` (REPLACEMENT CHARACTER).
+   The Unicode code point ``U+FFFD`` (replacement character).
 
    This Unicode character is used as the replacement character during
-   decoding if the errors argument is set to "replace".
+   decoding if the *errors* argument is set to "replace".
 
 
 .. c:function:: int Py_UNICODE_ISSPACE(Py_UCS4 ch)
