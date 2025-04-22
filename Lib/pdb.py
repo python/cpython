@@ -1466,7 +1466,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
 
     complete_ignore = _complete_bpnumber
 
-    def _prompt_for_confirmation(self, prompt, choices, default):
+    def _prompt_for_confirmation(self, prompt, default):
         try:
             reply = input(prompt)
         except EOFError:
@@ -1484,7 +1484,6 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if not arg:
             reply = self._prompt_for_confirmation(
                 'Clear all breaks? ',
-                choices=('y', 'yes', 'n', 'no'),
                 default='no',
             )
             if reply in ('y', 'yes'):
@@ -2775,7 +2774,7 @@ class _RemotePdb(Pdb):
         return _RemotePdb(self._sockfile, owns_sockfile=False)
 
     @typing.override
-    def _prompt_for_confirmation(self, prompt, choices, default):
+    def _prompt_for_confirmation(self, prompt, default):
         try:
             return self._get_input(prompt=prompt, state="confirm")
         except (EOFError, KeyboardInterrupt):
