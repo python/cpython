@@ -15,7 +15,7 @@ def test_concurrent_iteration(iterator, number_of_threads):
                 _ = next(it)
             except StopIteration:
                 return
-            
+
     worker_threads = []
     for ii in range(number_of_threads):
         worker_threads.append(
@@ -25,9 +25,9 @@ def test_concurrent_iteration(iterator, number_of_threads):
         pass
 
     barrier.reset()
-            
+
 class ItertoolsThreading(unittest.TestCase):
-    
+
     @threading_helper.reap_threads
     def test_combinations(self):
         number_of_threads = 10
@@ -45,8 +45,7 @@ class ItertoolsThreading(unittest.TestCase):
         for it in range(number_of_iterations):
             iterator = product((1, 2, 3, 4, 5), (10, 20, 30))
             test_concurrent_iteration(iterator, number_of_threads)
-            
+
 
 if __name__ == "__main__":
     unittest.main()
-    
