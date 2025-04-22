@@ -6453,12 +6453,14 @@ int_from_bytes_impl(PyTypeObject *type, PyObject *bytes_obj,
         return NULL;
     }
 
-    /* Use buffer protocol to avoid copies. */
+    /* Fast-path exact bytes. */
     if (PyBytes_CheckExact(bytes_obj)) {
         long_obj = _PyLong_FromByteArray(
             (unsigned char *)PyBytes_AS_STRING(bytes_obj), Py_SIZE(bytes_obj),
             little_endian, is_signed);
-    } else if (PyObject_CheckBuffer(bytes_obj)) {
+    }
+    /* Use buffer protocol to avoid copies. */
+    else if (PyObject_CheckBuffer(bytes_obj)) {
         if (PyObject_GetBuffer(bytes_obj, &view, PyBUF_SIMPLE) != 0) {
             return NULL;
         }
