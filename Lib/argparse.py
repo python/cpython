@@ -540,13 +540,8 @@ class HelpFormatter(object):
                             self._max_help_position)
         help_width = max(self._width - help_position, 11)
         action_width = help_position - self._current_indent - 2
-        # use uncolored header for calculating/adding padding
-        # and keep a copy of the colored/uncolored versions
-        # to swap in the colored version at the end
-        action_header_color = self._format_action_invocation(action)
-        action_header_no_color = self._decolor(action_header_color)
-        # we add padding to this variable
-        action_header = action_header_no_color
+        action_header = self._format_action_invocation(action)
+        action_header_no_color = self._decolor(action_header)
 
         # no help; start on same line and add a final newline
         if not action.help:
@@ -554,9 +549,15 @@ class HelpFormatter(object):
             action_header = '%*s%s\n' % tup
 
         # short action name; start on the same line and pad two spaces
-        elif len(action_header) <= action_width:
-            tup = self._current_indent, '', action_width, action_header
+        elif len(action_header_no_color) <= action_width:
+            # calculate widths without color codes
+            action_header_color = action_header
+            tup = self._current_indent, '', action_width, action_header_no_color
             action_header = '%*s%-*s  ' % tup
+            # swap in the colored header
+            action_header = action_header.replace(
+                action_header_no_color, action_header_color
+            )
             indent_first = 0
 
         # long action name; start on the next line
@@ -565,10 +566,8 @@ class HelpFormatter(object):
             action_header = '%*s%s\n' % tup
             indent_first = help_position
 
-        # collect the pieces of the action help and swap in the colored header
-        parts = [
-            action_header.replace(action_header_no_color, action_header_color)
-        ]
+        # collect the pieces of the action help
+        parts = [action_header]
 
         # if there was help for the action, add lines of help text
         if action.help and action.help.strip():
