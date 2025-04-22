@@ -1283,7 +1283,7 @@ class TestUopsOptimization(unittest.TestCase):
         load_attr_top = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", 0, call)
         load_attr_bottom = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", call)
         self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
-        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 1)
+        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
 
     def test_guard_type_version_removed_escaping(self):
 
@@ -1306,7 +1306,7 @@ class TestUopsOptimization(unittest.TestCase):
         load_attr_top = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", 0, call)
         load_attr_bottom = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", call)
         self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
-        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 1)
+        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
 
     def test_guard_type_version_executor_invalidated(self):
         """
@@ -1601,7 +1601,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP_INT", uops)
-        self.assertIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_to_bool_bool_contains_op_set(self):
         """
