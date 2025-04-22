@@ -4039,19 +4039,52 @@ static int
 codegen_template_str(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
+    expr_ty value;
+
     Py_ssize_t value_count = asdl_seq_LEN(e->v.TemplateStr.values);
-    if (value_count > _PY_STACK_USE_GUIDELINE) {
-        ADDOP_I(c, loc, BUILD_LIST, 0);
-        for (Py_ssize_t i = 0; i < asdl_seq_LEN(e->v.TemplateStr.values); i++) {
-            VISIT(c, expr, asdl_seq_GET(e->v.TemplateStr.values, i));
-            ADDOP_I(c, loc, LIST_APPEND, 1);
+    int last_was_interpolation = 1;
+    Py_ssize_t stringslen = 0;
+    for (Py_ssize_t i = 0; i < value_count; i++) {
+        value = asdl_seq_GET(e->v.TemplateStr.values, i);
+        if (value->kind == Interpolation_kind) {
+            if (last_was_interpolation) {
+                ADDOP_LOAD_CONST(c, loc, Py_NewRef(&_Py_STR(empty)));
+                stringslen++;
+            }
+            last_was_interpolation = 1;
         }
-        ADDOP(c, loc, BUILD_TEMPLATE_LIST);
+        else {
+            VISIT(c, expr, value);
+            Py_ssize_t j;
+            for (j = i + 1; j < value_count; j++) {
+                value = asdl_seq_GET(e->v.TemplateStr.values, j);
+                if (value->kind == Interpolation_kind) {
+                    break;
+                }
+                VISIT(c, expr, value);
+                ADDOP_INPLACE(c, loc, Add);
+            }
+            i = j - 1;
+            stringslen++;
+            last_was_interpolation = 0;
+        }
     }
-    else {
-        VISIT_SEQ(c, expr, e->v.TemplateStr.values);
-        ADDOP_I(c, loc, BUILD_TEMPLATE, value_count);
+    if (last_was_interpolation) {
+        ADDOP_LOAD_CONST(c, loc, Py_NewRef(&_Py_STR(empty)));
+        stringslen++;
     }
+    ADDOP_I(c, loc, BUILD_TUPLE, stringslen);
+
+    Py_ssize_t interpolationslen = 0;
+    for (Py_ssize_t i = 0; i < value_count; i++) {
+        value = asdl_seq_GET(e->v.TemplateStr.values, i);
+        if (value->kind == Interpolation_kind) {
+            VISIT(c, expr, value);
+            interpolationslen++;
+        }
+    }
+    ADDOP_I(c, loc, BUILD_TUPLE, interpolationslen);
+    ADDOP(c, loc, BUILD_TEMPLATE);
     return SUCCESS;
 }
 

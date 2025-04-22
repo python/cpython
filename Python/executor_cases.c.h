@@ -2657,58 +2657,25 @@
         }
 
         case _BUILD_TEMPLATE: {
-            _PyStackRef *pieces;
+            _PyStackRef interpolations;
+            _PyStackRef strings;
             _PyStackRef template;
-            oparg = CURRENT_OPARG();
-            pieces = &stack_pointer[-oparg];
-            STACKREFS_TO_PYOBJECTS(pieces, oparg, pieces_o);
-            if (CONVERSION_FAILED(pieces_o)) {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyStackRef tmp;
-                for (int _i = oparg; --_i >= 0;) {
-                    tmp = pieces[_i];
-                    pieces[_i] = PyStackRef_NULL;
-                    PyStackRef_CLOSE(tmp);
-                }
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                stack_pointer += -oparg;
-                assert(WITHIN_STACK_BOUNDS());
-                JUMP_TO_ERROR();
-            }
+            interpolations = stack_pointer[-1];
+            strings = stack_pointer[-2];
+            PyObject *strings_o = PyStackRef_AsPyObjectBorrow(strings);
+            PyObject *interpolations_o = PyStackRef_AsPyObjectBorrow(interpolations);
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *template_o = _PyTemplate_FromValues(pieces_o, oparg);
+            PyObject *template_o = _PyTemplate_Build(strings_o, interpolations_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o);
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _PyStackRef tmp;
-            for (int _i = oparg; --_i >= 0;) {
-                tmp = pieces[_i];
-                pieces[_i] = PyStackRef_NULL;
-                PyStackRef_CLOSE(tmp);
-            }
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            stack_pointer += -oparg;
-            assert(WITHIN_STACK_BOUNDS());
-            if (template_o == NULL) {
-                JUMP_TO_ERROR();
-            }
-            template = PyStackRef_FromPyObjectSteal(template_o);
-            stack_pointer[0] = template;
-            stack_pointer += 1;
-            assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _BUILD_TEMPLATE_LIST: {
-            _PyStackRef list;
-            _PyStackRef template;
-            list = stack_pointer[-1];
-            PyObject *list_o = PyStackRef_AsPyObjectBorrow(list);
-            PyObject *template_o = _PyTemplate_FromList(list_o);
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyStackRef_CLOSE(list);
+            PyStackRef_CLOSE(interpolations);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(strings);
             stack_pointer = _PyFrame_GetStackPointer(frame);
             if (template_o == NULL) {
                 JUMP_TO_ERROR();

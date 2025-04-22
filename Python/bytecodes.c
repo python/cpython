@@ -1938,23 +1938,12 @@ dummy_func(
             interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
         }
 
-        inst(BUILD_TEMPLATE, (pieces[oparg] -- template)) {
-            STACKREFS_TO_PYOBJECTS(pieces, oparg, pieces_o);
-            if (CONVERSION_FAILED(pieces_o)) {
-                DECREF_INPUTS();
-                ERROR_IF(true, error);
-            }
-            PyObject *template_o = _PyTemplate_FromValues(pieces_o, oparg);
-            STACKREFS_TO_PYOBJECTS_CLEANUP(pieces_o);
-            DECREF_INPUTS();
-            ERROR_IF(template_o == NULL, error);
-            template = PyStackRef_FromPyObjectSteal(template_o);
-        }
-
-        inst(BUILD_TEMPLATE_LIST, (list -- template)) {
-            PyObject *list_o = PyStackRef_AsPyObjectBorrow(list);
-            PyObject *template_o = _PyTemplate_FromList(list_o);
-            PyStackRef_CLOSE(list);
+        inst(BUILD_TEMPLATE, (strings, interpolations -- template)) {
+            PyObject *strings_o = PyStackRef_AsPyObjectBorrow(strings);
+            PyObject *interpolations_o = PyStackRef_AsPyObjectBorrow(interpolations);
+            PyObject *template_o = _PyTemplate_Build(strings_o, interpolations_o);
+            PyStackRef_CLOSE(interpolations);
+            PyStackRef_CLOSE(strings);
             ERROR_IF(template_o == NULL, error);
             template = PyStackRef_FromPyObjectSteal(template_o);
         }

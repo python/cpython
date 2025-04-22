@@ -64,7 +64,7 @@ interpolation_new_impl(PyTypeObject *type, PyObject *value,
                        PyObject *format_spec)
 /*[clinic end generated code: output=6488e288765bc1a9 input=d91711024068528c]*/
 {
-    interpolationobject *self = (interpolationobject *) type->tp_alloc(type, 0);
+    interpolationobject *self = PyObject_GC_New(interpolationobject, type);
     if (!self) {
         return NULL;
     }
@@ -73,6 +73,7 @@ interpolation_new_impl(PyTypeObject *type, PyObject *value,
     self->expression = Py_NewRef(expression);
     self->conversion = Py_NewRef(conversion);
     self->format_spec = Py_NewRef(format_spec);
+    PyObject_GC_Track(self);
     return (PyObject *) self;
 }
 
@@ -160,8 +161,7 @@ error:
 PyObject *
 _PyInterpolation_Build(PyObject *value, PyObject *str, int conversion, PyObject *format_spec)
 {
-    interpolationobject *interpolation =
-        (interpolationobject *) _PyInterpolation_Type.tp_alloc(&_PyInterpolation_Type, 0);
+    interpolationobject *interpolation = PyObject_GC_New(interpolationobject, &_PyInterpolation_Type);
     if (!interpolation) {
         return NULL;
     }
@@ -192,6 +192,7 @@ _PyInterpolation_Build(PyObject *value, PyObject *str, int conversion, PyObject 
         }
     }
 
+    PyObject_GC_Track(interpolation);
     return (PyObject *) interpolation;
 }
 

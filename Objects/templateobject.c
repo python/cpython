@@ -70,19 +70,6 @@ typedef struct {
 #define templateobject_CAST(op) \
     (assert(_PyTemplate_CheckExact(op)), _Py_CAST(templateobject*, (op)))
 
-static templateobject *
-template_from_strings_interpolations(PyTypeObject *type, PyObject *strings, PyObject *interpolations)
-{
-    templateobject *template = (templateobject *) type->tp_alloc(type, 0);
-    if (template == NULL) {
-        return NULL;
-    }
-
-    template->strings = Py_NewRef(strings);
-    template->interpolations = Py_NewRef(interpolations);
-    return template;
-}
-
 static PyObject *
 template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -164,10 +151,10 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyTuple_SET_ITEM(strings, stringsidx++, &_Py_STR(empty));
     }
 
-    templateobject *template = template_from_strings_interpolations(type, strings, interpolations);
+    PyObject *template = _PyTemplate_Build(strings, interpolations);
     Py_DECREF(strings);
     Py_DECREF(interpolations);
-    return (PyObject *)template;
+    return template;
 }
 
 static void
@@ -321,10 +308,10 @@ template_concat_templates(templateobject *self, templateobject *other)
         return NULL;
     }
 
-    templateobject *newtemplate = template_from_strings_interpolations(Py_TYPE(self), newstrings, newinterpolations);
+    PyObject *newtemplate = _PyTemplate_Build(newstrings, newinterpolations);
     Py_DECREF(newstrings);
     Py_DECREF(newinterpolations);
-    return (PyObject *) newtemplate;
+    return newtemplate;
 }
 
 static PyObject *
@@ -335,9 +322,9 @@ template_concat_template_str(templateobject *self, PyObject *other)
         return NULL;
     }
 
-    templateobject *newtemplate = template_from_strings_interpolations(Py_TYPE(self), newstrings, self->interpolations);
+    PyObject *newtemplate = _PyTemplate_Build(newstrings, self->interpolations);
     Py_DECREF(newstrings);
-    return (PyObject *) newtemplate;
+    return newtemplate;
 }
 
 static PyObject *
@@ -348,9 +335,9 @@ template_concat_str_template(templateobject *self, PyObject *other)
         return NULL;
     }
 
-    templateobject *newtemplate = template_from_strings_interpolations(Py_TYPE(self), newstrings, self->interpolations);
+    PyObject *newtemplate = _PyTemplate_Build(newstrings, self->interpolations);
     Py_DECREF(newstrings);
-    return (PyObject *) newtemplate;
+    return newtemplate;
 }
 
 PyObject *
@@ -435,31 +422,15 @@ PyTypeObject _PyTemplate_Type = {
 };
 
 PyObject *
-_PyTemplate_FromValues(PyObject **values, Py_ssize_t oparg)
+_PyTemplate_Build(PyObject *strings, PyObject *interpolations)
 {
-    PyObject *tuple = PyTuple_New(oparg);
-    if (!tuple) {
+    templateobject *template = PyObject_GC_New(templateobject, &_PyTemplate_Type);
+    if (template == NULL) {
         return NULL;
     }
 
-    for (Py_ssize_t i = 0; i < oparg; i++) {
-        PyTuple_SET_ITEM(tuple, i, Py_NewRef(values[i]));
-    }
-
-    PyObject *template = (PyObject *) template_new(&_PyTemplate_Type, tuple, NULL);
-    Py_DECREF(tuple);
-    return template;
-}
-
-PyObject *
-_PyTemplate_FromList(PyObject *list)
-{
-    PyObject *tuple = PyList_AsTuple(list);
-    if (!tuple) {
-        return NULL;
-    }
-
-    PyObject *template = (PyObject *) template_new(&_PyTemplate_Type, tuple, NULL);
-    Py_DECREF(tuple);
-    return template;
+    template->strings = Py_NewRef(strings);
+    template->interpolations = Py_NewRef(interpolations);
+    PyObject_GC_Track(template);
+    return (PyObject *) template;
 }

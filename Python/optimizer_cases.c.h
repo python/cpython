@@ -1031,16 +1031,9 @@
         case _BUILD_TEMPLATE: {
             JitOptSymbol *template;
             template = sym_new_not_null(ctx);
-            stack_pointer[-oparg] = template;
-            stack_pointer += 1 - oparg;
+            stack_pointer[-2] = template;
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _BUILD_TEMPLATE_LIST: {
-            JitOptSymbol *template;
-            template = sym_new_not_null(ctx);
-            stack_pointer[-1] = template;
             break;
         }
 
