@@ -6,6 +6,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import textwrap
 import threading
 import unittest
 import unittest.mock
@@ -16,7 +17,7 @@ from test.support.os_helper import temp_dir, TESTFN, unlink
 from typing import Dict, List, Optional, Tuple, Union, Any
 
 import pdb
-from pdb import _PdbServer, _PdbClient, _InteractState
+from pdb import _PdbServer, _PdbClient
 
 
 class MockSocketFile:
@@ -158,7 +159,7 @@ class RemotePdbTestCase(unittest.TestCase):
 
         # Verify _interact_state is properly initialized
         self.assertIsNotNone(self.pdb._interact_state)
-        self.assertIsInstance(self.pdb._interact_state, _InteractState)
+        self.assertIsInstance(self.pdb._interact_state, dict)
 
         # Test running code in interact mode
         with unittest.mock.patch.object(self.pdb, '_error_exc') as mock_error:
