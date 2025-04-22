@@ -653,6 +653,25 @@ class TypesTests(unittest.TestCase):
         self.assertIsInstance(int.from_bytes, types.BuiltinMethodType)
         self.assertIsInstance(int.__new__, types.BuiltinMethodType)
 
+    def test_method_descriptor_crash(self):
+        # gh-132747: The default __get__() implementation in C was unable
+        # to handle a second argument of None when called from Python
+        import _io
+        import io
+        import _queue
+
+        to_check = [
+            # (method, instance)
+            (_io._TextIOBase.read, io.StringIO()),
+            (_queue.SimpleQueue.put, _queue.SimpleQueue()),
+            (str.capitalize, "nobody expects the spanish inquisition")
+        ]
+
+        for method, instance in to_check:
+            with self.subTest(method=method, instance=instance):
+                bound = method.__get__(instance)
+                self.assertIsInstance(bound, types.BuiltinMethodType)
+
     def test_ellipsis_type(self):
         self.assertIsInstance(Ellipsis, types.EllipsisType)
 
