@@ -2155,7 +2155,7 @@ if not SKIP_CORO_TESTS:
             ...     return 42
 
             >>> async def main():
-            ...     import pdb;
+            ...     import pdb
             ...     task = asyncio.create_task(test())
             ...     await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
             ...     pass
@@ -2218,7 +2218,7 @@ if not SKIP_CORO_TESTS:
             ...     return 42
 
             >>> async def main():
-            ...     import pdb;
+            ...     import pdb
             ...     task = asyncio.create_task(test())
             ...     await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
 
@@ -2252,6 +2252,62 @@ if not SKIP_CORO_TESTS:
             -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
             (Pdb) p k
             42
+            (Pdb) continue
+            """
+
+        def test_pdb_await_contextvar():
+            """Testing await support context vars
+
+            >>> import asyncio
+            >>> import contextvars
+
+            >>> var = contextvars.ContextVar('var')
+
+            >>> async def get_var():
+            ...     return var.get()
+
+            >>> async def set_var(val):
+            ...     var.set(val)
+            ...     return var.get()
+
+            >>> async def main():
+            ...     var.set(42)
+            ...     import pdb
+            ...     await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+
+            >>> def test_function():
+            ...     asyncio.run(main(), loop_factory=asyncio.EventLoop)
+
+            >>> with PdbTestInput([
+            ...     'p var.get()',
+            ...     'print(await get_var())',
+            ...     'print(await asyncio.create_task(set_var(100)))',
+            ...     'p var.get()',
+            ...     'print(await set_var(99))',
+            ...     'p var.get()',
+            ...     'continue',
+            ... ]):
+            ...     test_function()
+            > <doctest test.test_pdb.test_pdb_await_contextvar[5]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p var.get()
+            42
+            (Pdb) print(await get_var())
+            42
+            > <doctest test.test_pdb.test_pdb_await_contextvar[5]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) print(await asyncio.create_task(set_var(100)))
+            100
+            > <doctest test.test_pdb.test_pdb_await_contextvar[5]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p var.get()
+            42
+            (Pdb) print(await set_var(99))
+            99
+            > <doctest test.test_pdb.test_pdb_await_contextvar[5]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p var.get()
+            99
             (Pdb) continue
             """
 
