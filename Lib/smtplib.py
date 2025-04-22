@@ -891,7 +891,7 @@ class SMTP:
         except SMTPDataError as ex:
             if ex.smtp_code == 421:
                 self.close()
-            else: 
+            else:
                 self._rset()
             raise
         if code != 250:

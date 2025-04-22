@@ -1260,7 +1260,7 @@ class SMTPSimTests(unittest.TestCase):
         self.assertIsNone(smtp.sock)
 
     # The following 421 response tests for sendmail ensure that sendmail handles
-    # 421 respones correctly by closing the connection. sendmail has to take 
+    # 421 respones correctly by closing the connection. sendmail has to take
     # care of this, as it wraps a mail transaction for users.
 
     # Issue 5713: make sure close, not rset, is called if we get a 421 error
