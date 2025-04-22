@@ -38,6 +38,7 @@ _SLOTS = (
     "__weakref__",
     "__arg__",
     "__globals__",
+    "__extra_names__",
     "__code__",
     "__ast_node__",
     "__cell__",
@@ -82,6 +83,7 @@ class ForwardRef:
         # is created through __class__ assignment on a _Stringifier object.
         self.__globals__ = None
         self.__cell__ = None
+        self.__extra_names__ = None
         # These are initially None but serve as a cache and may be set to a non-None
         # value later.
         self.__code__ = None
@@ -151,6 +153,8 @@ class ForwardRef:
                 if not self.__forward_is_class__ or param_name not in globals:
                     globals[param_name] = param
                     locals.pop(param_name, None)
+        if self.__extra_names__:
+            locals = {**locals, **self.__extra_names__}
 
         arg = self.__forward_arg__
         if arg.isidentifier() and not keyword.iskeyword(arg):
@@ -274,6 +278,7 @@ class _Stringifier:
         cell=None,
         *,
         stringifier_dict,
+        extra_names=None,
     ):
         # Either an AST node or a simple str (for the common case where a ForwardRef
         # represent a single name).
@@ -285,6 +290,7 @@ class _Stringifier:
         self.__code__ = None
         self.__ast_node__ = node
         self.__globals__ = globals
+        self.__extra_names__ = extra_names
         self.__cell__ = cell
         self.__owner__ = owner
         self.__stringifier_dict__ = stringifier_dict
@@ -292,28 +298,33 @@ class _Stringifier:
     def __convert_to_ast(self, other):
         if isinstance(other, _Stringifier):
             if isinstance(other.__ast_node__, str):
-                return ast.Name(id=other.__ast_node__)
-            return other.__ast_node__
-        elif isinstance(other, slice):
-            return ast.Slice(
-                lower=(
-                    self.__convert_to_ast(other.start)
-                    if other.start is not None
-                    else None
-                ),
-                upper=(
-                    self.__convert_to_ast(other.stop)
-                    if other.stop is not None
-                    else None
-                ),
-                step=(
-                    self.__convert_to_ast(other.step)
-                    if other.step is not None
-                    else None
-                ),
-            )
+                return ast.Name(id=other.__ast_node__), other.__extra_names__
+            return other.__ast_node__, other.__extra_names__
+        elif other is None or type(other) in (str, int, float, bool, complex):
+            return ast.Constant(value=other), None
         else:
-            return ast.Constant(value=other)
+            name = self.__stringifier_dict__.create_unique_name()
+            return ast.Name(id=name), {name: other}
+
+    def __convert_to_ast_getitem(self, other):
+        if isinstance(other, slice):
+            extra_names = {}
+
+            def conv(obj):
+                if obj is None:
+                    return None
+                new_obj, new_extra_names = self.__convert_to_ast(obj)
+                if new_extra_names is not None:
+                    extra_names.update(new_extra_names)
+                return new_obj
+
+            return ast.Slice(
+                lower=conv(other.start),
+                upper=conv(other.stop),
+                step=conv(other.step),
+            ), extra_names
+        else:
+            return self.__convert_to_ast(other)
 
     def __get_ast(self):
         node = self.__ast_node__
@@ -321,13 +332,19 @@ class _Stringifier:
             return ast.Name(id=node)
         return node
 
-    def __make_new(self, node):
+    def __make_new(self, node, extra_names=None):
+        new_extra_names = {}
+        if self.__extra_names__ is not None:
+            new_extra_names.update(self.__extra_names__)
+        if extra_names is not None:
+            new_extra_names.update(extra_names)
         stringifier = _Stringifier(
             node,
             self.__globals__,
             self.__owner__,
             self.__forward_is_class__,
             stringifier_dict=self.__stringifier_dict__,
+            extra_names=new_extra_names,
         )
         self.__stringifier_dict__.stringifiers.append(stringifier)
         return stringifier
@@ -343,27 +360,37 @@ class _Stringifier:
         if self.__ast_node__ == "__classdict__":
             raise KeyError
         if isinstance(other, tuple):
-            elts = [self.__convert_to_ast(elt) for elt in other]
+            extra_names = {}
+            elts = []
+            for elt in other:
+                new_elt, new_extra_names = self.__convert_to_ast_getitem(elt)
+                if new_extra_names is not None:
+                    extra_names.update(new_extra_names)
+                elts.append(new_elt)
             other = ast.Tuple(elts)
         else:
-            other = self.__convert_to_ast(other)
+            other, extra_names = self.__convert_to_ast_getitem(other)
         assert isinstance(other, ast.AST), repr(other)
-        return self.__make_new(ast.Subscript(self.__get_ast(), other))
+        return self.__make_new(ast.Subscript(self.__get_ast(), other), extra_names)
 
     def __getattr__(self, attr):
         return self.__make_new(ast.Attribute(self.__get_ast(), attr))
 
     def __call__(self, *args, **kwargs):
-        return self.__make_new(
-            ast.Call(
-                self.__get_ast(),
-                [self.__convert_to_ast(arg) for arg in args],
-                [
-                    ast.keyword(key, self.__convert_to_ast(value))
-                    for key, value in kwargs.items()
-                ],
-            )
-        )
+        extra_names = {}
+        ast_args = []
+        for arg in args:
+            new_arg, new_extra_names = self.__convert_to_ast(arg)
+            if new_extra_names is not None:
+                extra_names.update(new_extra_names)
+            ast_args.append(new_arg)
+        ast_kwargs = []
+        for key, value in kwargs.items():
+            new_value, new_extra_names = self.__convert_to_ast(value)
+            if new_extra_names is not None:
+                extra_names.update(new_extra_names)
+            ast_kwargs.append(ast.keyword(key, new_value))
+        return self.__make_new(ast.Call(self.__get_ast(), ast_args, ast_kwargs), extra_names)
 
     def __iter__(self):
         yield self.__make_new(ast.Starred(self.__get_ast()))
@@ -378,8 +405,9 @@ class _Stringifier:
 
     def _make_binop(op: ast.AST):
         def binop(self, other):
+            rhs, extra_names = self.__convert_to_ast(other)
             return self.__make_new(
-                ast.BinOp(self.__get_ast(), op, self.__convert_to_ast(other))
+                ast.BinOp(self.__get_ast(), op, rhs), extra_names
             )
 
         return binop
@@ -392,25 +420,19 @@ class _Stringifier:
     __mod__ = _make_binop(ast.Mod())
     __lshift__ = _make_binop(ast.LShift())
     __rshift__ = _make_binop(ast.RShift())
+    __or__ = _make_binop(ast.BitOr())
     __xor__ = _make_binop(ast.BitXor())
     __and__ = _make_binop(ast.BitAnd())
     __floordiv__ = _make_binop(ast.FloorDiv())
     __pow__ = _make_binop(ast.Pow())
 
-    def __or__(self, other):
-        if self.__stringifier_dict__.create_unions:
-            return types.UnionType[self, other]
-
-        return self.__make_new(
-            ast.BinOp(self.__get_ast(), ast.BitOr(), self.__convert_to_ast(other))
-        )
-
     del _make_binop
 
     def _make_rbinop(op: ast.AST):
         def rbinop(self, other):
+            new_other, extra_names = self.__convert_to_ast(other)
             return self.__make_new(
-                ast.BinOp(self.__convert_to_ast(other), op, self.__get_ast())
+                ast.BinOp(new_other, op, self.__get_ast()), extra_names
             )
 
         return rbinop
@@ -423,29 +445,24 @@ class _Stringifier:
     __rmod__ = _make_rbinop(ast.Mod())
     __rlshift__ = _make_rbinop(ast.LShift())
     __rrshift__ = _make_rbinop(ast.RShift())
+    __ror__ = _make_rbinop(ast.BitOr())
     __rxor__ = _make_rbinop(ast.BitXor())
     __rand__ = _make_rbinop(ast.BitAnd())
     __rfloordiv__ = _make_rbinop(ast.FloorDiv())
     __rpow__ = _make_rbinop(ast.Pow())
 
-    def __ror__(self, other):
-        if self.__stringifier_dict__.create_unions:
-            return types.UnionType[other, self]
-
-        return self.__make_new(
-            ast.BinOp(self.__convert_to_ast(other), ast.BitOr(), self.__get_ast())
-        )
-
     del _make_rbinop
 
     def _make_compare(op):
         def compare(self, other):
+            rhs, extra_names = self.__convert_to_ast(other)
             return self.__make_new(
                 ast.Compare(
                     left=self.__get_ast(),
                     ops=[op],
-                    comparators=[self.__convert_to_ast(other)],
-                )
+                    comparators=[rhs],
+                ),
+                extra_names,
             )
 
         return compare
@@ -479,8 +496,9 @@ class _StringifierDict(dict):
         self.globals = globals
         self.owner = owner
         self.is_class = is_class
-        self.create_unions = create_unions
+        self.create_unions = False
         self.stringifiers = []
+        self.next_id = 1
 
     def __missing__(self, key):
         fwdref = _Stringifier(
@@ -492,6 +510,11 @@ class _StringifierDict(dict):
         )
         self.stringifiers.append(fwdref)
         return fwdref
+
+    def create_unique_name(self):
+        name = f"__annotationlib_name_{self.next_id}__"
+        self.next_id += 1
+        return name
 
 
 def call_evaluate_function(evaluate, format, *, owner=None):
@@ -559,9 +582,9 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         )
         annos = func(Format.VALUE_WITH_FAKE_GLOBALS)
         if _is_evaluate:
-            return annos if isinstance(annos, str) else repr(annos)
+            return _stringify_single(annos)
         return {
-            key: val if isinstance(val, str) else repr(val)
+            key: _stringify_single(val)
             for key, val in annos.items()
         }
     elif format == Format.FORWARDREF:
@@ -638,6 +661,16 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         raise RuntimeError("annotate function does not support VALUE format")
     else:
         raise ValueError(f"Invalid format: {format!r}")
+
+
+def _stringify_single(anno):
+    if anno is ...:
+        return "..."
+    # We have to handle str specially to support PEP 563 stringified annotations.
+    elif isinstance(anno, str):
+        return anno
+    else:
+        return repr(anno)
 
 
 def get_annotate_function(obj):

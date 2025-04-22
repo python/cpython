@@ -115,11 +115,8 @@ class TestForwardRefFormat(unittest.TestCase):
         self.assertEqual(z_anno, support.EqualToForwardRef("some(module)", owner=f))
 
         alpha_anno = anno["alpha"]
-        self.assertIsInstance(alpha_anno, Union)
-        self.assertEqual(
-            typing.get_args(alpha_anno),
-            (support.EqualToForwardRef("some", owner=f), support.EqualToForwardRef("obj", owner=f))
-        )
+        self.assertIsInstance(alpha_anno, ForwardRef)
+        self.assertEqual(alpha_anno, support.EqualToForwardRef("some | obj", owner=f))
 
         beta_anno = anno["beta"]
         self.assertIsInstance(beta_anno, ForwardRef)
@@ -137,18 +134,19 @@ class TestForwardRefFormat(unittest.TestCase):
 
         annos = get_annotations(UnionForwardrefs, format=Format.FORWARDREF)
 
-        match = (
-            str,
-            support.EqualToForwardRef("undefined", is_class=True, owner=UnionForwardrefs)
-        )
-
+        pipe = annos["pipe"]
+        self.assertIsInstance(pipe, ForwardRef)
         self.assertEqual(
-            typing.get_args(annos["pipe"]),
-            typing.get_args(annos["union"])
+            pipe.evaluate(globals={"undefined": int}),
+            str | int,
         )
-
-        self.assertEqual(typing.get_args(annos["pipe"]), match)
-        self.assertEqual(typing.get_args(annos["union"]), match)
+        union = annos["union"]
+        self.assertIsInstance(union, Union)
+        arg1, arg2 = typing.get_args(union)
+        self.assertIs(arg1, str)
+        self.assertEqual(
+            arg2, support.EqualToForwardRef("undefined", is_class=True, owner=UnionForwardrefs)
+        )
 
 
 class TestSourceFormat(unittest.TestCase):
@@ -277,6 +275,64 @@ class TestSourceFormat(unittest.TestCase):
                 "rand": "1 & a",
                 "rfloordiv": "1 // a",
                 "rpow": "1 ** a",
+            },
+        )
+
+    def test_getitem(self):
+        def f(x: undef1[str, undef2]):
+            pass
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "undef1[str, undef2]"})
+
+        anno = annotationlib.get_annotations(f, format=Format.FORWARDREF)
+        fwdref = anno["x"]
+        self.assertIsInstance(fwdref, ForwardRef)
+        self.assertEqual(
+            fwdref.evaluate(globals={"undef1": dict, "undef2": float}), dict[str, float]
+        )
+
+    def test_slice(self):
+        def f(x: a[b:c]):
+            pass
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "a[b:c]"})
+
+        def f(x: a[b:c, d:e]):
+            pass
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "a[b:c, d:e]"})
+
+        obj = slice(1, 1, 1)
+        def f(x: obj):
+            pass
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "obj"})
+
+    def test_literals(self):
+        def f(
+            a: 1,
+            b: 1.0,
+            c: "hello",
+            d: b"hello",
+            e: True,
+            f: None,
+            g: ...,
+            h: 1j,
+        ):
+            pass
+
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(
+            anno,
+            {
+                "a": "1",
+                "b": "1.0",
+                "c": 'hello',
+                "d": "b'hello'",
+                "e": "True",
+                "f": "None",
+                "g": "...",
+                "h": "1j",
             },
         )
 

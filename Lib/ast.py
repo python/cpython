@@ -276,6 +276,7 @@ def iter_fields(node):
     Yield a tuple of ``(fieldname, value)`` for each field in ``node._fields``
     that is present on *node*.
     """
+    print(node)
     for field in node._fields:
         try:
             yield field, getattr(node, field)
