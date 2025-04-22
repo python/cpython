@@ -1798,6 +1798,40 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_TYPE_1", uops)
         self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
 
+    def test_call_str_1(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = str(42)
+                if y == '42':
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_STR_1", uops)
+        self.assertNotIn("_GUARD_NOS_NULL", uops)
+        self.assertNotIn("_GUARD_CALLABLE_STR_1", uops)
+
+    def test_call_str_1_result_is_str(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = str(42) + 'foo'
+                if y == '42foo':
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_STR_1", uops)
+        self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
+        self.assertNotIn("_GUARD_NOS_UNICODE", uops)
+
 
 def global_identity(x):
     return x

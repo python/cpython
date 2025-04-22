@@ -1892,9 +1892,19 @@
             break;
         }
 
+        case _GUARD_CALLABLE_STR_1: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-3];
+            if (sym_get_const(ctx, callable) == (PyObject *)&PyUnicode_Type) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_const(callable, (PyObject *)&PyUnicode_Type);
+            break;
+        }
+
         case _CALL_STR_1: {
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            res = sym_new_type(ctx, &PyUnicode_Type);
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());

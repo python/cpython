@@ -855,6 +855,10 @@ dummy_func(void) {
         }
     }
 
+    op(_CALL_STR_1, (unused, unused, unused -- res)) {
+        res = sym_new_type(ctx, &PyUnicode_Type);
+    }
+
     op(_GUARD_IS_TRUE_POP, (flag -- )) {
         if (sym_is_const(ctx, flag)) {
             PyObject *value = sym_get_const(ctx, flag);
@@ -1019,6 +1023,13 @@ dummy_func(void) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
         }
         sym_set_const(callable, (PyObject *)&PyType_Type);
+    }
+
+    op(_GUARD_CALLABLE_STR_1, (callable, unused, unused -- callable, unused, unused)) {
+        if (sym_get_const(ctx, callable) == (PyObject *)&PyUnicode_Type) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_const(callable, (PyObject *)&PyUnicode_Type);
     }
 
 // END BYTECODES //
