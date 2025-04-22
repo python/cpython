@@ -2688,7 +2688,8 @@ class _RemotePdb(Pdb):
 
             if not self.cmdqueue:
                 try:
-                    reply = self._get_input(prompt=self.prompt, state="pdb")
+                    state = "commands" if self.commands_defining else "pdb"
+                    reply = self._get_input(prompt=self.prompt, state=state)
                 except EOFError:
                     reply = "EOF"
 
