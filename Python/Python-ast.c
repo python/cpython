@@ -3212,13 +3212,8 @@ add_ast_annotations(struct ast_state *state)
         }
     }
     {
-        PyObject *type = (PyObject *)&PyBaseObject_Type;
-        type = _Py_union_type_or(type, Py_None);
-        cond = type != NULL;
-        if (!cond) {
-            Py_DECREF(Interpolation_annotations);
-            return 0;
-        }
+        PyObject *type = (PyObject *)&PyLong_Type;
+        Py_INCREF(type);
         cond = PyDict_SetItemString(Interpolation_annotations, "conversion",
                                     type) == 0;
         Py_DECREF(type);
@@ -6379,7 +6374,7 @@ init_types(void *arg)
         "     | Compare(expr left, cmpop* ops, expr* comparators)\n"
         "     | Call(expr func, expr* args, keyword* keywords)\n"
         "     | FormattedValue(expr value, int conversion, expr? format_spec)\n"
-        "     | Interpolation(expr value, constant str, constant? conversion, expr? format_spec)\n"
+        "     | Interpolation(expr value, constant str, int conversion, expr? format_spec)\n"
         "     | JoinedStr(expr* values)\n"
         "     | TemplateStr(expr* values)\n"
         "     | Constant(constant value, string? kind)\n"
@@ -6479,11 +6474,8 @@ init_types(void *arg)
     state->Interpolation_type = make_type(state, "Interpolation",
                                           state->expr_type,
                                           Interpolation_fields, 4,
-        "Interpolation(expr value, constant str, constant? conversion, expr? format_spec)");
+        "Interpolation(expr value, constant str, int conversion, expr? format_spec)");
     if (!state->Interpolation_type) return -1;
-    if (PyObject_SetAttr(state->Interpolation_type, state->conversion, Py_None)
-        == -1)
-        return -1;
     if (PyObject_SetAttr(state->Interpolation_type, state->format_spec,
         Py_None) == -1)
         return -1;
@@ -8169,7 +8161,7 @@ _PyAST_FormattedValue(expr_ty value, int conversion, expr_ty format_spec, int
 }
 
 expr_ty
-_PyAST_Interpolation(expr_ty value, constant str, constant conversion, expr_ty
+_PyAST_Interpolation(expr_ty value, constant str, int conversion, expr_ty
                      format_spec, int lineno, int col_offset, int end_lineno,
                      int end_col_offset, PyArena *arena)
 {
@@ -9866,7 +9858,7 @@ ast2obj_expr(struct ast_state *state, void* _o)
         if (PyObject_SetAttr(result, state->str, value) == -1)
             goto failed;
         Py_DECREF(value);
-        value = ast2obj_constant(state, o->v.Interpolation.conversion);
+        value = ast2obj_int(state, o->v.Interpolation.conversion);
         if (!value) goto failed;
         if (PyObject_SetAttr(result, state->conversion, value) == -1)
             goto failed;
@@ -15015,7 +15007,7 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
     if (isinstance) {
         expr_ty value;
         constant str;
-        constant conversion;
+        int conversion;
         expr_ty format_spec;
 
         if (PyObject_GetOptionalAttr(obj, state->value, &tmp) < 0) {
@@ -15055,16 +15047,16 @@ obj2ast_expr(struct ast_state *state, PyObject* obj, expr_ty* out, PyArena*
         if (PyObject_GetOptionalAttr(obj, state->conversion, &tmp) < 0) {
             return -1;
         }
-        if (tmp == NULL || tmp == Py_None) {
-            Py_CLEAR(tmp);
-            conversion = NULL;
+        if (tmp == NULL) {
+            PyErr_SetString(PyExc_TypeError, "required field \"conversion\" missing from Interpolation");
+            return -1;
         }
         else {
             int res;
             if (_Py_EnterRecursiveCall(" while traversing 'Interpolation' node")) {
                 goto failed;
             }
-            res = obj2ast_constant(state, tmp, &conversion, arena);
+            res = obj2ast_int(state, tmp, &conversion, arena);
             _Py_LeaveRecursiveCall();
             if (res != 0) goto failed;
             Py_CLEAR(tmp);

@@ -1914,12 +1914,27 @@ dummy_func(
             str = PyStackRef_FromPyObjectSteal(str_o);
         }
 
-        inst(BUILD_INTERPOLATION, (values[4] -- interpolation)) {
-            PyObject *interpolation_o = _PyInterpolation_FromStackRefStealOnSuccess(values);
-            if (interpolation_o == NULL) {
-                ERROR_NO_POP();
+        inst(BUILD_INTERPOLATION, (value, str, format[oparg & 1] -- interpolation)) {
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+            PyObject *str_o = PyStackRef_AsPyObjectBorrow(str);
+            int conversion = oparg >> 2;
+            PyObject *format_o;
+            if (oparg & 1) {
+                format_o = PyStackRef_AsPyObjectBorrow(format[0]);
             }
-            INPUTS_DEAD();
+            else {
+                format_o = &_Py_STR(empty);
+            }
+            PyObject *interpolation_o = _PyInterpolation_Build(value_o, str_o, conversion, format_o);
+            if (oparg & 1) {
+                PyStackRef_CLOSE(format[0]);
+            }
+            else {
+                DEAD(format);
+            }
+            PyStackRef_CLOSE(str);
+            PyStackRef_CLOSE(value);
+            ERROR_IF(interpolation_o == NULL, error);
             interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
         }
 

@@ -801,6 +801,33 @@ append_interpolation_value(PyUnicodeWriter *writer, expr_ty e)
 }
 
 static int
+append_interpolation_conversion(PyUnicodeWriter *writer, int conversion)
+{
+    if (conversion < 0) {
+        return 0;
+    }
+
+    const char *conversion_str;
+    switch (conversion) {
+    case 'a':
+        conversion_str = "!a";
+        break;
+    case 'r':
+        conversion_str = "!r";
+        break;
+    case 's':
+        conversion_str = "!s";
+        break;
+    default:
+        PyErr_SetString(PyExc_SystemError,
+                        "unknown f-value conversion kind");
+        return -1;
+    }
+    APPEND_STR(conversion_str);
+    return 0;
+}
+
+static int
 append_interpolation_format_spec(PyUnicodeWriter *writer, expr_ty e)
 {
     if (e) {
@@ -820,11 +847,8 @@ append_interpolation(PyUnicodeWriter *writer, expr_ty e)
         return -1;
     }
 
-    if (e->v.Interpolation.conversion) {
-        APPEND_STR("!");
-        if (-1 == PyUnicodeWriter_WriteStr(writer, e->v.Interpolation.conversion)) {
-            return -1;
-        }
+    if (-1 == append_interpolation_conversion(writer, e->v.Interpolation.conversion)) {
+        return -1;
     }
 
     if (-1 == append_interpolation_format_spec(writer, e->v.Interpolation.format_spec)) {
@@ -837,29 +861,12 @@ append_interpolation(PyUnicodeWriter *writer, expr_ty e)
 static int
 append_formattedvalue(PyUnicodeWriter *writer, expr_ty e)
 {
-    const char *conversion;
-
     if (-1 == append_interpolation_value(writer, e->v.FormattedValue.value)) {
         return -1;
     }
 
-    if (e->v.FormattedValue.conversion > 0) {
-        switch (e->v.FormattedValue.conversion) {
-        case 'a':
-            conversion = "!a";
-            break;
-        case 'r':
-            conversion = "!r";
-            break;
-        case 's':
-            conversion = "!s";
-            break;
-        default:
-            PyErr_SetString(PyExc_SystemError,
-                            "unknown f-value conversion kind");
-            return -1;
-        }
-        APPEND_STR(conversion);
+    if (-1 == append_interpolation_conversion(writer, e->v.FormattedValue.conversion)) {
+        return -1;
     }
 
     if (-1 == append_interpolation_format_spec(writer, e->v.FormattedValue.format_spec)) {

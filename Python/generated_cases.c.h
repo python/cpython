@@ -1096,16 +1096,52 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(BUILD_INTERPOLATION);
-            _PyStackRef *values;
+            _PyStackRef value;
+            _PyStackRef str;
+            _PyStackRef *format;
             _PyStackRef interpolation;
-            values = &stack_pointer[-4];
-            PyObject *interpolation_o = _PyInterpolation_FromStackRefStealOnSuccess(values);
+            format = &stack_pointer[-(oparg & 1)];
+            str = stack_pointer[-1 - (oparg & 1)];
+            value = stack_pointer[-2 - (oparg & 1)];
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+            PyObject *str_o = PyStackRef_AsPyObjectBorrow(str);
+            int conversion = oparg >> 2;
+            PyObject *format_o;
+            if (oparg & 1) {
+                format_o = PyStackRef_AsPyObjectBorrow(format[0]);
+            }
+            else {
+                format_o = &_Py_STR(empty);
+            }
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *interpolation_o = _PyInterpolation_Build(value_o, str_o, conversion, format_o);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (oparg & 1) {
+                stack_pointer += -(oparg & 1);
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                PyStackRef_CLOSE(format[0]);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+            }
+            else {
+                stack_pointer += -(oparg & 1);
+            }
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(str);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyStackRef_CLOSE(value);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
             if (interpolation_o == NULL) {
                 JUMP_TO_LABEL(error);
             }
             interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
-            stack_pointer[-4] = interpolation;
-            stack_pointer += -3;
+            stack_pointer[0] = interpolation;
+            stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }

@@ -1498,17 +1498,7 @@ expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, Resu
                                  ResultTokenWithMetadata *format, Token *closing_brace, int lineno, int col_offset,
                                  int end_lineno, int end_col_offset, PyArena *arena) {
 
-    constant convstr = NULL;
     int conversion_val = _get_interpolation_conversion(p, debug, conversion, format);
-    if (conversion_val >= 0) {
-        char buf[1];
-        buf[0] = conversion_val;
-        convstr = PyUnicode_FromStringAndSize(buf, 1);
-        if (convstr == NULL || _PyArena_AddPyObject(arena, convstr) < 0) {
-            Py_XDECREF(convstr);
-            return NULL;
-        }
-    }
 
     /* Find the non whitespace token after the "=" */
     int debug_end_line, debug_end_offset;
@@ -1539,7 +1529,7 @@ expr_ty _PyPegen_interpolation(Parser *p, expr_ty expression, Token *debug, Resu
     }
 
     expr_ty interpolation = _PyAST_Interpolation(
-        expression, final_exprstr, convstr, format ? (expr_ty) format->result : NULL,
+        expression, final_exprstr, conversion_val, format ? (expr_ty) format->result : NULL,
         lineno, col_offset, end_lineno,
         end_col_offset, arena
     );

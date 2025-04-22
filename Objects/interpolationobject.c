@@ -158,28 +158,38 @@ error:
 }
 
 PyObject *
-_PyInterpolation_FromStackRefStealOnSuccess(_PyStackRef *values)
+_PyInterpolation_Build(PyObject *value, PyObject *str, int conversion, PyObject *format_spec)
 {
-    interpolationobject *interpolation = (interpolationobject *) _PyInterpolation_Type.tp_alloc(&_PyInterpolation_Type, 0);
+    interpolationobject *interpolation =
+        (interpolationobject *) _PyInterpolation_Type.tp_alloc(&_PyInterpolation_Type, 0);
     if (!interpolation) {
         return NULL;
     }
 
-    interpolation->value = PyStackRef_AsPyObjectSteal(values[0]);
-    interpolation->expression = PyStackRef_AsPyObjectSteal(values[1]);
+    interpolation->value = Py_NewRef(value);
+    interpolation->expression = Py_NewRef(str);
+    interpolation->format_spec = Py_NewRef(format_spec);
 
-    if (PyStackRef_IsNull(values[2])) {
-        interpolation->conversion = Py_NewRef(Py_None);
+    if (conversion == 0) {
+        interpolation->conversion = Py_None;
     }
     else {
-        interpolation->conversion = PyStackRef_AsPyObjectSteal(values[2]);
-    }
-
-    if (PyStackRef_IsNull(values[3])) {
-        interpolation->format_spec = Py_NewRef(&_Py_STR(empty));
-    }
-    else {
-        interpolation->format_spec = PyStackRef_AsPyObjectSteal(values[3]);
+        switch (conversion) {
+            case FVC_ASCII:
+                interpolation->conversion = _Py_LATIN1_CHR('a');
+                break;
+            case FVC_REPR:
+                interpolation->conversion = _Py_LATIN1_CHR('r');
+                break;
+            case FVC_STR:
+                interpolation->conversion = _Py_LATIN1_CHR('s');
+                break;
+            default:
+                PyErr_SetString(PyExc_SystemError,
+                    "Interpolation() argument 'conversion' must be one of 's', 'a' or 'r'");
+                Py_DECREF(interpolation);
+                return NULL;
+        }
     }
 
     return (PyObject *) interpolation;

@@ -463,7 +463,7 @@ struct _expr {
         struct {
             expr_ty value;
             constant str;
-            constant conversion;
+            int conversion;
             expr_ty format_spec;
         } Interpolation;
 
@@ -832,7 +832,7 @@ expr_ty _PyAST_Call(expr_ty func, asdl_expr_seq * args, asdl_keyword_seq *
 expr_ty _PyAST_FormattedValue(expr_ty value, int conversion, expr_ty
                               format_spec, int lineno, int col_offset, int
                               end_lineno, int end_col_offset, PyArena *arena);
-expr_ty _PyAST_Interpolation(expr_ty value, constant str, constant conversion,
+expr_ty _PyAST_Interpolation(expr_ty value, constant str, int conversion,
                              expr_ty format_spec, int lineno, int col_offset,
                              int end_lineno, int end_col_offset, PyArena
                              *arena);

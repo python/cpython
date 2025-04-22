@@ -68,7 +68,7 @@ int _PyOpcode_num_popped(int opcode, int oparg)  {
         case BINARY_SLICE:
             return 3;
         case BUILD_INTERPOLATION:
-            return 4;
+            return 2 + (oparg & 1);
         case BUILD_LIST:
             return oparg;
         case BUILD_MAP:
@@ -1089,7 +1089,7 @@ const struct opcode_metadata _PyOpcode_opcode_metadata[266] = {
     [BINARY_OP_SUBTRACT_FLOAT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ERROR_FLAG },
     [BINARY_OP_SUBTRACT_INT] = { true, INSTR_FMT_IXC0000, HAS_EXIT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BINARY_SLICE] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
-    [BUILD_INTERPOLATION] = { true, INSTR_FMT_IX, HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG },
+    [BUILD_INTERPOLATION] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BUILD_LIST] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG },
     [BUILD_MAP] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },
     [BUILD_SET] = { true, INSTR_FMT_IB, HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG },

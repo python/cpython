@@ -4092,21 +4092,26 @@ codegen_interpolation(compiler *c, expr_ty e)
     VISIT(c, expr, e->v.Interpolation.value);
     ADDOP_LOAD_CONST(c, loc, e->v.Interpolation.str);
 
-    if (e->v.Interpolation.conversion) {
-        ADDOP_LOAD_CONST(c, loc, e->v.Interpolation.conversion);
-    }
-    else {
-        ADDOP(c, loc, PUSH_NULL);
-    }
-
+    int oparg = 2;
     if (e->v.Interpolation.format_spec) {
+        oparg++;
         VISIT(c, expr, e->v.Interpolation.format_spec);
     }
-    else {
-        ADDOP(c, loc, PUSH_NULL);
+
+    int conversion = e->v.Interpolation.conversion;
+    if (conversion != -1) {
+        switch (conversion) {
+        case 's': oparg |= FVC_STR << 2;   break;
+        case 'r': oparg |= FVC_REPR << 2;  break;
+        case 'a': oparg |= FVC_ASCII << 2; break;
+        default:
+            PyErr_Format(PyExc_SystemError,
+                     "Unrecognized conversion character %d", conversion);
+            return ERROR;
+        }
     }
 
-    ADDOP(c, loc, BUILD_INTERPOLATION);
+    ADDOP_I(c, loc, BUILD_INTERPOLATION, oparg);
     return SUCCESS;
 }
 
