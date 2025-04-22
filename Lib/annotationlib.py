@@ -373,7 +373,7 @@ class _Stringifier:
             self.__owner__,
             self.__forward_is_class__,
             stringifier_dict=self.__stringifier_dict__,
-            extra_names=new_extra_names,
+            extra_names=new_extra_names or None,
         )
         self.__stringifier_dict__.stringifiers.append(stringifier)
         return stringifier
