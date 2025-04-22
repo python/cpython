@@ -880,6 +880,25 @@ class AST_Tests(unittest.TestCase):
         for src in srcs:
             ast.parse(src)
 
+    def test_tstring(self):
+        # Test AST structure for simple t-string
+        tree = ast.parse('t"Hello"')
+        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
+        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
+
+        # Test AST for t-string with interpolation
+        tree = ast.parse('t"Hello {name}"')
+        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
+        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
+        self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
+
+        # Test AST for implicit concat of t-string with f-string
+        tree = ast.parse('t"Hello {name}" f"{name}"')
+        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
+        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
+        self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
+        self.assertIsInstance(tree.body[0].value.values[2], ast.FormattedValue)
+
 
 class CopyTests(unittest.TestCase):
     """Test copying and pickling AST nodes."""

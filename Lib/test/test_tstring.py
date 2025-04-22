@@ -202,18 +202,6 @@ class TestTString(TStringTestCase):
         self.assertEqual(t_interp.conversion, None)
         self.assertEqual(t_interp.format_spec, "")
 
-    def test_ast_structure(self):
-        # Test AST structure for simple t-string
-        tree = ast.parse('t"Hello"')
-        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
-        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
-
-        # Test AST for t-string with interpolation
-        tree = ast.parse('t"Hello {name}"')
-        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
-        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
-        self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
-
     def test_syntax_errors(self):
         for case, err in (
             ("t'", "unterminated t-string literal"),
