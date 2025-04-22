@@ -390,7 +390,7 @@ class Future(object):
             return self._state in [CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED]
 
     def __get_result(self):
-        if self._exception:
+        if self._exception is not None:
             try:
                 raise self._exception
             finally:

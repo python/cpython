@@ -158,11 +158,15 @@ class FinderTests:
     def test_permission_error_cwd(self):
         # gh-115911: Test that an unreadable CWD does not break imports, in
         # particular during early stages of interpreter startup.
+
+        def noop_hook(*args):
+            raise ImportError
+
         with (
             os_helper.temp_dir() as new_dir,
             os_helper.save_mode(new_dir),
             os_helper.change_cwd(new_dir),
-            util.import_state(path=['']),
+            util.import_state(path=[''], path_hooks=[noop_hook]),
         ):
             # chmod() is done here (inside the 'with' block) because the order
             # of teardown operations cannot be the reverse of setup order. See

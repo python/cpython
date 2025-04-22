@@ -28,9 +28,11 @@ py_sha3_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(usedforsecurity), },
     };
     #undef NUM_KEYWORDS
@@ -208,4 +210,4 @@ _sha3_shake_128_hexdigest(PyObject *self, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=437023d9eac08551 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5b3ac1c06c6899ea input=a9049054013a1b77]*/

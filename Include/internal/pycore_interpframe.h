@@ -163,15 +163,17 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
     return frame->localsplus;
 }
 
-/* Fetches the stack pointer, and sets stackpointer to NULL.
-   Having stackpointer == NULL ensures that invalid
-   values are not visible to the cycle GC. */
+// Fetches the stack pointer, and (on debug builds) sets stackpointer to NULL.
+// Having stackpointer == NULL makes it easier to catch missing stack pointer
+// spills/restores (which could expose invalid values to the GC) using asserts.
 static inline _PyStackRef*
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
     assert(frame->stackpointer != NULL);
     _PyStackRef *sp = frame->stackpointer;
+#ifndef NDEBUG
     frame->stackpointer = NULL;
+#endif
     return sp;
 }
 
@@ -189,8 +191,11 @@ _PyFrame_SetStackPointer(_PyInterpreterFrame *frame, _PyStackRef *stack_pointer)
  * Frames on the frame stack are incomplete until the
  * first RESUME instruction.
  * Frames owned by a generator are always complete.
+ *
+ * NOTE: We allow racy accesses to the instruction pointer
+ * from other threads for sys._current_frames() and similar APIs.
  */
-static inline bool
+static inline bool _Py_NO_SANITIZE_THREAD
 _PyFrame_IsIncomplete(_PyInterpreterFrame *frame)
 {
     if (frame->owner >= FRAME_OWNED_BY_INTERPRETER) {

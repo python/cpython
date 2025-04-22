@@ -9,6 +9,7 @@ extern "C" {
 
 #include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_llist.h"         // struct llist_node
+#include "pycore_opcode_utils.h"  // NUM_COMMON_CONSTANTS
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_structs.h"       // PyHamtObject
 #include "pycore_tstate.h"        // _PyThreadStateImpl
@@ -581,6 +582,7 @@ struct _warnings_runtime_state {
     PyObject *default_action; /* String */
     _PyRecursiveMutex lock;
     long filters_version;
+    PyObject *context;
 };
 
 struct _Py_mem_interp_free_queue {
@@ -752,6 +754,12 @@ struct _is {
      * and should be placed at the beginning. */
     struct _ceval_state ceval;
 
+    /* This structure is carefully allocated so that it's correctly aligned
+     * to avoid undefined behaviors during LOAD and STORE. The '_malloced'
+     * field stores the allocated pointer address that will later be freed.
+     */
+    void *_malloced;
+
     PyInterpreterState *next;
 
     int64_t id;
@@ -912,6 +920,7 @@ struct _is {
     struct ast_state ast;
     struct types_state types;
     struct callable_cache callable_cache;
+    PyObject *common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
     struct _PyExecutorObject *executor_list_head;
     size_t trace_run_counter;
@@ -932,11 +941,6 @@ struct _is {
 
     Py_ssize_t _interactive_src_count;
 
-    /* the initial PyInterpreterState.threads.head */
-    _PyThreadStateImpl _initial_thread;
-    // _initial_thread should be the last field of PyInterpreterState.
-    // See https://github.com/python/cpython/issues/127117.
-
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
     uint64_t next_stackref;
     _Py_hashtable_t *open_stackrefs_table;
@@ -944,6 +948,11 @@ struct _is {
     _Py_hashtable_t *closed_stackrefs_table;
 #  endif
 #endif
+
+    /* the initial PyInterpreterState.threads.head */
+    _PyThreadStateImpl _initial_thread;
+    // _initial_thread should be the last field of PyInterpreterState.
+    // See https://github.com/python/cpython/issues/127117.
 };
 
 
