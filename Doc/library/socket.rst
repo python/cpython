@@ -690,7 +690,7 @@ Constants
    Used in the level argument to the :meth:`~socket.setsockopt` and
    :meth:`~socket.getsockopt` methods of Bluetooth socket objects.
 
-   :const:`SOL_BLUETOOTH` is only available on Linux, other constants
+   :const:`SOL_BLUETOOTH` is only available on Linux. Other constants
    are available if the corresponding protocol is supported.
 
 .. data:: SO_L2CAP_*
@@ -707,7 +707,7 @@ Constants
 
    :const:`!BT_*` and :const:`L2CAP_LM` are only available on Linux.
    :const:`!SO_BTH_*` are only available on Windows.
-   Other constants may be available on Linux and varios BSD platforms.
+   Other constants may be available on Linux and various BSD platforms.
 
    .. versionadded:: next
 
@@ -717,8 +717,8 @@ Constants
           SO_HCI_EVT_FILTER
           SO_HCI_PKT_FILTER
 
-   Options names for use with :const:`BTPROTO_HCI`.
-   Availability and format of the option value depend on platform.
+   Option names for use with :const:`BTPROTO_HCI`.
+   Availability and format of the option values depend on platform.
 
    .. versionchanged:: next
       Added :const:`!SO_HCI_EVT_FILTER` and :const:`!SO_HCI_PKT_FILTER`
