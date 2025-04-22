@@ -2788,13 +2788,14 @@ class _PdbServer(Pdb):
     do_restart = do_run
 
     def _error_exc(self):
-        exc = sys.exception()
-        if isinstance(exc, SystemExit):
+        if self._interact_state and isinstance(sys.exception(), SystemExit):
             # If we get a SystemExit in 'interact' mode, exit the REPL.
             self._interact_state = None
-        super()._error_exc()
-        if isinstance(exc, SystemExit):
+            ret = super()._error_exc()
             self.message("*exit from pdb interact command*")
+            return ret
+        else:
+            return super()._error_exc()
 
     def default(self, line):
         # Unlike Pdb, don't prompt for more lines of a multi-line command.
