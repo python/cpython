@@ -2802,7 +2802,7 @@ class _PdbServer(Pdb):
         # The remote needs to send us the whole block in one go.
         try:
             candidate = line.removeprefix("!") + "\n"
-            if not codeop.compile_command(candidate, "<stdin>", "single"):
+            if codeop.compile_command(candidate, "<stdin>", "single") is None:
                 raise SyntaxError("Incomplete command")
             return super().default(candidate)
         except:
