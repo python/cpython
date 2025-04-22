@@ -327,6 +327,7 @@ union_getitem(PyObject *self, PyObject *item)
 {
     unionobject *alias = (unionobject *)self;
     // Populate __parameters__ if needed.
+    // Avoid the critical section if it's already initialized.
     if (alias->parameters == NULL) {
         Py_BEGIN_CRITICAL_SECTION(alias);
         // Need to check again once we got the lock, another thread may have
