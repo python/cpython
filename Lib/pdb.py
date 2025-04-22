@@ -3176,7 +3176,11 @@ def main():
     if opts.pid:
         # If attaching to a remote pid, unrecognized arguments are not allowed.
         # This will raise an error if there are extra unrecognized arguments.
-        parser.parse_args()
+        opts = parser.parse_args()
+        if opts.module:
+            parser.error("argument -m: not allowed with argument --pid")
+        attach(opts.pid, opts.commands)
+        return
     elif opts.module:
         # If a module is being debugged, we consider the arguments after "-m module" to
         # be potential arguments to the module itself. We need to parse the arguments
@@ -3195,12 +3199,6 @@ def main():
         if invalid_args:
             parser.error(f"unrecognized arguments: {' '.join(invalid_args)}")
             sys.exit(2)
-
-    if opts.pid:
-        if opts.module:
-            parser.error("argument -m: not allowed with argument --pid")
-        attach(opts.pid, opts.commands)
-        return
 
     if opts.module:
         file = opts.module
