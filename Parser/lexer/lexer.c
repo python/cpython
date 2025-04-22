@@ -140,7 +140,7 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
         for (i = 0, j = 0; i < input_length; i++) {
             if (tok_mode->last_expr_buffer[i] == '#') {
                 // Skip characters until newline or end of string
-                while (tok_mode->last_expr_buffer[i] != '\0' && i < input_length) {
+                while (i < input_length && tok_mode->last_expr_buffer[i] != '\0') {
                     if (tok_mode->last_expr_buffer[i] == '\n') {
                         result[j++] = tok_mode->last_expr_buffer[i];
                         break;
