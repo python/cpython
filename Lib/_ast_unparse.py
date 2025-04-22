@@ -679,31 +679,24 @@ class Unparser(NodeVisitor):
         unparser.set_precedence(_Precedence.TEST.next(), inner)
         return unparser.visit(inner)
 
-    def _write_fstring_conversion(self, node):
-        if node.conversion != -1:
-            self.write(f"!{chr(node.conversion)}")
-
-    def _write_tstring_conversion(self, node):
-        if node.conversion is not None:
-            self.write(f"!{node.conversion}")
-
-    def _write_interpolation(self, node, write_conversion):
+    def _write_interpolation(self, node):
         with self.delimit("{", "}"):
             expr = self._unparse_interpolation_value(node.value)
             if expr.startswith("{"):
                 # Separate pair of opening brackets as "{ {"
                 self.write(" ")
             self.write(expr)
-            write_conversion(node)
+            if node.conversion != -1:
+                self.write(f"!{chr(node.conversion)}")
             if node.format_spec:
                 self.write(":")
                 self._write_ftstring_inner(node.format_spec, is_format_spec=True)
 
     def visit_FormattedValue(self, node):
-        self._write_interpolation(node, self._write_fstring_conversion)
+        self._write_interpolation(node)
 
     def visit_Interpolation(self, node):
-        self._write_interpolation(node, self._write_tstring_conversion)
+        self._write_interpolation(node)
 
     def visit_Name(self, node):
         self.write(node.id)
