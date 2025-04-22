@@ -2794,32 +2794,37 @@ _PyObject_LookupSpecial(PyObject *self, PyObject *attr)
     return res;
 }
 
-/* Steals a reference to self */
-PyObject *
-_PyObject_LookupSpecialMethod(PyObject *self, PyObject *attr, PyObject **self_or_null)
+// Lookup the method name `attr` on `self`. On entry, `method_and_self[0]`
+// is null and `method_and_self[1]` is `self`. On exit, `method_and_self[0]`
+// is the method object and `method_and_self[1]` is `self` if the method is
+// not bound.
+// Return 1 on success, -1 on error, and 0 if the method is missing.
+int
+_PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self)
 {
-    PyObject *res;
-
-    res = _PyType_LookupRef(Py_TYPE(self), attr);
-    if (res == NULL) {
-        Py_DECREF(self);
-        *self_or_null = NULL;
-        return NULL;
+    PyObject *self = PyStackRef_AsPyObjectBorrow(method_and_self[1]);
+    _PyType_LookupStackRefAndVersion(Py_TYPE(self), attr, &method_and_self[0]);
+    PyObject *method_o = PyStackRef_AsPyObjectBorrow(method_and_self[0]);
+    if (method_o == NULL) {
+        return 0;
     }
 
-    if (_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+    if (_PyType_HasFeature(Py_TYPE(method_o), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
         /* Avoid temporary PyMethodObject */
-        *self_or_null = self;
+        return 1;
     }
-    else {
-        descrgetfunc f = Py_TYPE(res)->tp_descr_get;
-        if (f != NULL) {
-            Py_SETREF(res, f(res, self, (PyObject *)(Py_TYPE(self))));
+
+    descrgetfunc f = Py_TYPE(method_o)->tp_descr_get;
+    if (f != NULL) {
+        PyObject *func = f(method_o, self, (PyObject *)(Py_TYPE(self)));
+        if (func == NULL) {
+            return -1;
         }
-        *self_or_null = NULL;
-        Py_DECREF(self);
+        PyStackRef_CLEAR(method_and_self[0]); // clear method
+        method_and_self[0] = PyStackRef_FromPyObjectSteal(func);
     }
-    return res;
+    PyStackRef_CLEAR(method_and_self[1]); // clear self
+    return 1;
 }
 
 static int
@@ -10807,7 +10812,8 @@ static pytype_slotdef slotdefs[] = {
            "__repr__($self, /)\n--\n\nReturn repr(self)."),
     TPSLOT(__hash__, tp_hash, slot_tp_hash, wrap_hashfunc,
            "__hash__($self, /)\n--\n\nReturn hash(self)."),
-    FLSLOT(__call__, tp_call, slot_tp_call, (wrapperfunc)(void(*)(void))wrap_call,
+    FLSLOT(__call__, tp_call, slot_tp_call,
+           _Py_FUNC_CAST(wrapperfunc, wrap_call),
            "__call__($self, /, *args, **kwargs)\n--\n\nCall self as a function.",
            PyWrapperFlag_KEYWORDS),
     TPSLOT(__str__, tp_str, slot_tp_str, wrap_unaryfunc,
@@ -10844,7 +10850,8 @@ static pytype_slotdef slotdefs[] = {
     TPSLOT(__delete__, tp_descr_set, slot_tp_descr_set,
            wrap_descr_delete,
            "__delete__($self, instance, /)\n--\n\nDelete an attribute of instance."),
-    FLSLOT(__init__, tp_init, slot_tp_init, (wrapperfunc)(void(*)(void))wrap_init,
+    FLSLOT(__init__, tp_init, slot_tp_init,
+           _Py_FUNC_CAST(wrapperfunc, wrap_init),
            "__init__($self, /, *args, **kwargs)\n--\n\n"
            "Initialize self.  See help(type(self)) for accurate signature.",
            PyWrapperFlag_KEYWORDS),
@@ -11233,7 +11240,14 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p)
         }
         else {
             use_generic = 1;
-            generic = p->function;
+            if (generic == NULL && Py_IS_TYPE(descr, &PyMethodDescr_Type) &&
+                *ptr == ((PyMethodDescrObject *)descr)->d_method->ml_meth)
+            {
+                generic = *ptr;
+            }
+            else {
+                generic = p->function;
+            }
             if (p->function == slot_tp_call) {
                 /* A generic __call__ is incompatible with vectorcall */
                 type_clear_flags(type, Py_TPFLAGS_HAVE_VECTORCALL);

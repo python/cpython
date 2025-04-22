@@ -3149,6 +3149,21 @@ class ProtocolTests(BaseTestCase):
         with self.assertRaisesRegex(TypeError, only_classes_allowed):
             issubclass(1, BadPG)
 
+    def test_isinstance_against_superproto_doesnt_affect_subproto_instance(self):
+        @runtime_checkable
+        class Base(Protocol):
+            x: int
+
+        @runtime_checkable
+        class Child(Base, Protocol):
+            y: str
+
+        class Capybara:
+            x = 43
+
+        self.assertIsInstance(Capybara(), Base)
+        self.assertNotIsInstance(Capybara(), Child)
+
     def test_implicit_issubclass_between_two_protocols(self):
         @runtime_checkable
         class CallableMembersProto(Protocol):
@@ -6323,7 +6338,7 @@ class InternalsTests(BaseTestCase):
             "inspect",
             "re",
             "contextlib",
-            # "annotationlib",  # TODO
+            "annotationlib",
         })
 
 
