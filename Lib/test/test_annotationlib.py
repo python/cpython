@@ -115,8 +115,11 @@ class TestForwardRefFormat(unittest.TestCase):
         self.assertEqual(z_anno, support.EqualToForwardRef("some(module)", owner=f))
 
         alpha_anno = anno["alpha"]
-        self.assertIsInstance(alpha_anno, ForwardRef)
-        self.assertEqual(alpha_anno, support.EqualToForwardRef("some | obj", owner=f))
+        self.assertIsInstance(alpha_anno, Union)
+        self.assertEqual(
+            typing.get_args(alpha_anno), 
+            (support.EqualToForwardRef("some", owner=f), support.EqualToForwardRef("obj", owner=f))
+        )
 
         beta_anno = anno["beta"]
         self.assertIsInstance(beta_anno, ForwardRef)
@@ -125,6 +128,27 @@ class TestForwardRefFormat(unittest.TestCase):
         gamma_anno = anno["gamma"]
         self.assertIsInstance(gamma_anno, ForwardRef)
         self.assertEqual(gamma_anno, support.EqualToForwardRef("some < obj", owner=f))
+
+    def test_partially_nonexistent_union(self):
+        # Test unions with '|' syntax equal unions with typing.Union[] with some forwardrefs
+        class UnionForwardrefs:
+            pipe: str | undefined
+            union: Union[str, undefined]
+
+        annos = get_annotations(UnionForwardrefs, format=Format.FORWARDREF)
+
+        match = (
+            str,
+            support.EqualToForwardRef("undefined", is_class=True, owner=UnionForwardrefs)
+        )
+
+        self.assertEqual(
+            typing.get_args(annos["pipe"]),
+            typing.get_args(annos["union"])
+        )
+
+        self.assertEqual(typing.get_args(annos["pipe"]), match)
+        self.assertEqual(typing.get_args(annos["union"]), match)
 
 
 class TestSourceFormat(unittest.TestCase):
@@ -935,28 +959,6 @@ class TestGetAnnotations(unittest.TestCase):
                     self.assertEqual(
                         annotationlib.get_annotations(obj, format=format), {}
                     )
-
-    def test_union_forwardref(self):
-        # Test unions with '|' syntax equal unions with typing.Union[] with forwardrefs
-        class UnionForwardrefs:
-            pipe: str | undefined
-            union: Union[str, undefined]
-
-        annos = get_annotations(UnionForwardrefs, format=Format.FORWARDREF)
-
-        match = (
-            str,
-            support.EqualToForwardRef("undefined", is_class=True, owner=UnionForwardrefs)
-        )
-
-        self.assertEqual(
-            typing.get_args(annos["pipe"]),
-            typing.get_args(annos["union"])
-        )
-
-        self.assertEqual(typing.get_args(annos["pipe"]), match)
-        self.assertEqual(typing.get_args(annos["union"]), match)
-
 
     def test_pep695_generic_class_with_future_annotations(self):
         ann_module695 = inspect_stringized_annotations_pep695
