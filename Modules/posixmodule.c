@@ -678,6 +678,14 @@ PyOS_AfterFork_Parent(void)
 }
 
 void
+PyRemoteDebugCall_Reset(PyThreadState *tstate)
+{
+    tstate->remote_debugger_support.debugger_pending_call = 0;
+    memset(tstate->remote_debugger_support.debugger_script_path, 0, MAX_SCRIPT_PATH_SIZE);
+}
+
+
+void
 PyOS_AfterFork_Child(void)
 {
     PyStatus status;
@@ -709,6 +717,8 @@ PyOS_AfterFork_Child(void)
     if (_PyStatus_EXCEPTION(status)) {
         goto fatal_error;
     }
+
+    PyRemoteDebugCall_Reset(tstate);
 
     // Remove the dead thread states. We "start the world" once we are the only
     // thread state left to undo the stop the world call in `PyOS_BeforeFork`.
