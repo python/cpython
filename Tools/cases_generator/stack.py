@@ -572,22 +572,20 @@ class Storage:
             self.check_liveness, self.spilled
         )
 
-    def sanity_check(self) -> None:
+    @staticmethod
+    def check_names(locals: list[Local]) -> None:
         names: set[str] = set()
-        for var in self.inputs:
+        for var in locals:
+            if var.name == "unused":
+                continue
             if var.name in names:
                 raise StackError(f"Duplicate name {var.name}")
             names.add(var.name)
-        names = set()
-        for var in self.outputs:
-            if var.name in names:
-                raise StackError(f"Duplicate name {var.name}")
-            names.add(var.name)
-        names = set()
-        for var in self.stack.variables:
-            if var.name in names:
-                raise StackError(f"Duplicate name {var.name}")
-            names.add(var.name)
+
+    def sanity_check(self) -> None:
+        self.check_names(self.inputs)
+        self.check_names(self.outputs)
+        self.check_names(self.stack.variables)
 
     def is_flushed(self) -> bool:
         for var in self.outputs:

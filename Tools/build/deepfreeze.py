@@ -13,7 +13,7 @@ import os
 import re
 import time
 import types
-from typing import Dict, FrozenSet, TextIO, Tuple
+from typing import TextIO
 
 import umarshal
 
@@ -57,8 +57,8 @@ def get_localsplus(code: types.CodeType):
 
 
 def get_localsplus_counts(code: types.CodeType,
-                          names: Tuple[str, ...],
-                          kinds: bytes) -> Tuple[int, int, int, int]:
+                          names: tuple[str, ...],
+                          kinds: bytes) -> tuple[int, int, int]:
     nlocals = 0
     ncellvars = 0
     nfreevars = 0
@@ -84,7 +84,7 @@ PyUnicode_2BYTE_KIND = 2
 PyUnicode_4BYTE_KIND = 4
 
 
-def analyze_character_width(s: str) -> Tuple[int, bool]:
+def analyze_character_width(s: str) -> tuple[int, bool]:
     maxchar = ' '
     for c in s:
         maxchar = max(maxchar, c)
@@ -109,7 +109,7 @@ class Printer:
     def __init__(self, file: TextIO) -> None:
         self.level = 0
         self.file = file
-        self.cache: Dict[tuple[type, object, str], str] = {}
+        self.cache: dict[tuple[type, object, str], str] = {}
         self.hits, self.misses = 0, 0
         self.finis: list[str] = []
         self.inits: list[str] = []
@@ -305,7 +305,7 @@ class Printer:
         self.inits.append(f"_PyStaticCode_Init({name_as_code})")
         return f"& {name}.ob_base.ob_base"
 
-    def generate_tuple(self, name: str, t: Tuple[object, ...]) -> str:
+    def generate_tuple(self, name: str, t: tuple[object, ...]) -> str:
         if len(t) == 0:
             return f"(PyObject *)& _Py_SINGLETON(tuple_empty)"
         items = [self.generate(f"{name}_{i}", it) for i, it in enumerate(t)]
@@ -379,7 +379,7 @@ class Printer:
             self.write(f".cval = {{ {z.real}, {z.imag} }},")
         return f"&{name}.ob_base"
 
-    def generate_frozenset(self, name: str, fs: FrozenSet[object]) -> str:
+    def generate_frozenset(self, name: str, fs: frozenset[object]) -> str:
         try:
             fs = sorted(fs)
         except TypeError:
@@ -465,7 +465,7 @@ def generate(args: list[str], output: TextIO) -> None:
     printer = Printer(output)
     for arg in args:
         file, modname = arg.rsplit(':', 1)
-        with open(file, "r", encoding="utf8") as fd:
+        with open(file, encoding="utf8") as fd:
             source = fd.read()
             if is_frozen_header(source):
                 code = decode_frozen_data(source)
@@ -513,7 +513,7 @@ def main() -> None:
     if args.file:
         if verbose:
             print(f"Reading targets from {args.file}")
-        with open(args.file, "rt", encoding="utf-8-sig") as fin:
+        with open(args.file, encoding="utf-8-sig") as fin:
             rules = [x.strip() for x in fin]
     else:
         rules = args.args
