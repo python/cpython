@@ -235,6 +235,10 @@ class ForwardRef:
             and self.__forward_is_class__ == other.__forward_is_class__
             and self.__cell__ == other.__cell__
             and self.__owner__ == other.__owner__
+            and (
+                (tuple(sorted(self.__extra_names__.items())) if self.__extra_names__ else None) ==
+                (tuple(sorted(other.__extra_names__.items())) if other.__extra_names__ else None)
+            )
         )
 
     def __hash__(self):
@@ -245,6 +249,7 @@ class ForwardRef:
             self.__forward_is_class__,
             self.__cell__,
             self.__owner__,
+            tuple(sorted(self.__extra_names__.items())) if self.__extra_names__ else None,
         ))
 
     def __or__(self, other):
