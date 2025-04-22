@@ -50,8 +50,9 @@ typedef struct {
     /* The interned Unix epoch datetime instance */
     PyObject *epoch;
 
-    /* Extra reference to the interpreter's dict that will be decref'ed last
-     * at shutdown. Keep the current module in the dict. */
+    /* Extra reference to the interpreter's dict that will be decref'ed
+     * last at shutdown. We keep the current module in it, but don't rely
+     * on PyInterpreterState_GetDict() at the module's final phase. */
     PyObject *interp_dict;
 } datetime_state;
 
