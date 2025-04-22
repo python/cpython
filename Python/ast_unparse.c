@@ -668,7 +668,7 @@ append_templatestr(PyUnicodeWriter *writer, expr_ty e)
     int result = -1;
     PyObject *body = build_ftstring_body(e->v.TemplateStr.values, 0);
     if (!body) {
-        return -1;
+        return result;
     }
 
     if (-1 != append_charp(writer, "t") &&
