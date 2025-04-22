@@ -9342,41 +9342,41 @@
             frame->instr_ptr = next_instr;
             next_instr += 1;
             INSTRUCTION_STATS(LOAD_SPECIAL);
-            _PyStackRef owner;
-            _PyStackRef attr;
-            _PyStackRef self_or_null;
-            owner = stack_pointer[-1];
-            assert(oparg <= SPECIAL_MAX);
-            PyObject *owner_o = PyStackRef_AsPyObjectSteal(owner);
-            PyObject *name = _Py_SpecialMethods[oparg].name;
-            PyObject *self_or_null_o;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            PyObject *attr_o = _PyObject_LookupSpecialMethod(owner_o, name, &self_or_null_o);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (attr_o == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    const char *errfmt = _PyEval_SpecialMethodCanSuggest(owner_o, oparg)
-                    ? _Py_SpecialMethods[oparg].error_suggestion
-                : _Py_SpecialMethods[oparg].error;
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                    assert(!_PyErr_Occurred(tstate));
-                    assert(errfmt != NULL);
-                    _PyFrame_SetStackPointer(frame, stack_pointer);
-                    _PyErr_Format(tstate, PyExc_TypeError, errfmt, owner_o);
-                    stack_pointer = _PyFrame_GetStackPointer(frame);
-                }
-                JUMP_TO_LABEL(error);
+            _PyStackRef self;
+            _PyStackRef *method_and_self;
+            // _INSERT_NULL
+            {
+                self = stack_pointer[-1];
+                method_and_self = &stack_pointer[-1];
+                method_and_self[1] = self;
+                method_and_self[0] = PyStackRef_NULL;
             }
-            attr = PyStackRef_FromPyObjectSteal(attr_o);
-            self_or_null = self_or_null_o == NULL ?
-            PyStackRef_NULL : PyStackRef_FromPyObjectSteal(self_or_null_o);
-            stack_pointer[0] = attr;
-            stack_pointer[1] = self_or_null;
-            stack_pointer += 2;
-            assert(WITHIN_STACK_BOUNDS());
+            // _LOAD_SPECIAL
+            {
+                method_and_self = &stack_pointer[-1];
+                PyObject *name = _Py_SpecialMethods[oparg].name;
+                stack_pointer += 1;
+                assert(WITHIN_STACK_BOUNDS());
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                int err = _PyObject_LookupSpecialMethod(name, method_and_self);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                if (err <= 0) {
+                    if (err == 0) {
+                        PyObject *owner = PyStackRef_AsPyObjectBorrow(method_and_self[1]);
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        const char *errfmt = _PyEval_SpecialMethodCanSuggest(owner, oparg)
+                        ? _Py_SpecialMethods[oparg].error_suggestion
+                    : _Py_SpecialMethods[oparg].error;
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                        assert(!_PyErr_Occurred(tstate));
+                        assert(errfmt != NULL);
+                        _PyFrame_SetStackPointer(frame, stack_pointer);
+                        _PyErr_Format(tstate, PyExc_TypeError, errfmt, owner);
+                        stack_pointer = _PyFrame_GetStackPointer(frame);
+                    }
+                    JUMP_TO_LABEL(error);
+                }
+            }
             DISPATCH();
         }
 
