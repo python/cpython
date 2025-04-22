@@ -1088,7 +1088,7 @@ set_version_unlocked(PyTypeObject *tp, unsigned int version)
 }
 
 static void
-type_modified_unlocked(PyTypeObject *type)
+type_modified_unlocked(PyTypeObject *type, bool world_stopped)
 {
     /* Invalidate any cached data for the specified type and all
        subclasses.  This function is called after the base
@@ -1105,6 +1105,15 @@ type_modified_unlocked(PyTypeObject *type)
        We don't assign new version tags eagerly, but only as
        needed.
      */
+#ifdef Py_DEBUG
+    if (world_stopped) {
+        assert(types_world_is_stopped());
+    } else {
+        if (TYPE_IS_REVEALED(type)) {
+            ASSERT_TYPE_LOCK_HELD();
+        }
+    }
+#endif
     if (type->tp_version_tag == 0) {
         return;
     }
@@ -1122,7 +1131,7 @@ type_modified_unlocked(PyTypeObject *type)
             if (subclass == NULL) {
                 continue;
             }
-            type_modified_unlocked(subclass);
+            type_modified_unlocked(subclass, world_stopped);
             Py_DECREF(subclass);
         }
     }
@@ -1139,6 +1148,9 @@ type_modified_unlocked(PyTypeObject *type)
     if (type->tp_watched) {
         // Note that PyErr_FormatUnraisable is re-entrant and the watcher
         // callback might be too.
+        if (world_stopped) {
+            types_start_world();
+        }
         PyInterpreterState *interp = _PyInterpreterState_GET();
         int bits = type->tp_watched;
         int i = 0;
@@ -1155,6 +1167,9 @@ type_modified_unlocked(PyTypeObject *type)
             i++;
             bits >>= 1;
         }
+        if (world_stopped) {
+            types_stop_world();
+        }
     }
 }
 
@@ -1167,7 +1182,7 @@ PyType_Modified(PyTypeObject *type)
     }
 
     BEGIN_TYPE_LOCK();
-    type_modified_unlocked(type);
+    type_modified_unlocked(type, false);
     END_TYPE_LOCK();
 }
 
@@ -1195,7 +1210,7 @@ has_custom_mro(PyTypeObject *tp)
 }
 
 static void
-type_mro_modified(PyTypeObject *type, PyObject *bases, bool is_new_type)
+type_mro_modified(PyTypeObject *type, PyObject *bases, bool world_stopped)
 {
     ASSERT_NEW_OR_STOPPED(type);
     /*
@@ -1212,12 +1227,12 @@ type_mro_modified(PyTypeObject *type, PyObject *bases, bool is_new_type)
      */
     if (!Py_IS_TYPE(type, &PyType_Type)) {
         unsigned int meta_version = Py_TYPE(type)->tp_version_tag;
-        if (!is_new_type) {
+        if (world_stopped) {
             types_start_world();
         }
         // This can be re-entrant.
         bool is_custom = has_custom_mro(type);
-        if (!is_new_type) {
+        if (world_stopped) {
             types_stop_world();
         }
         if (meta_version != Py_TYPE(type)->tp_version_tag) {
@@ -1621,7 +1636,7 @@ type_set_abstractmethods(PyObject *tp, PyObject *value, void *Py_UNUSED(closure)
     }
 
     types_stop_world();
-    type_modified_unlocked(type);
+    type_modified_unlocked(type, true);
     if (abstract)
         type_set_flags_with_mask(type, 0, Py_TPFLAGS_IS_ABSTRACT);
     else
@@ -1675,17 +1690,17 @@ static int recurse_down_subclasses(PyTypeObject *type, PyObject *name,
                                    update_callback callback, void *data);
 
 static int
-mro_hierarchy(PyTypeObject *type, PyObject *temp, bool is_new_type)
+mro_hierarchy(PyTypeObject *type, PyObject *temp, bool world_stopped)
 {
 #ifdef Py_DEBUG
-    if (is_new_type) {
+    if (!world_stopped) {
         assert(!TYPE_IS_REVEALED(type));
     } else {
         assert(types_world_is_stopped());
     }
 #endif
     PyObject *old_mro;
-    int res = mro_internal(type, 0, &old_mro, is_new_type);
+    int res = mro_internal(type, 0, &old_mro, world_stopped);
     if (res <= 0) {
         /* error / reentrance */
         return res;
@@ -1735,7 +1750,7 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp, bool is_new_type)
         Py_ssize_t n = PyList_GET_SIZE(subclasses);
         for (Py_ssize_t i = 0; i < n; i++) {
             PyTypeObject *subclass = _PyType_CAST(PyList_GET_ITEM(subclasses, i));
-            res = mro_hierarchy(subclass, temp, is_new_type);
+            res = mro_hierarchy(subclass, temp, world_stopped);
             if (res < 0) {
                 break;
             }
@@ -1826,7 +1841,7 @@ type_set_bases_world_stopped(PyTypeObject *type, PyObject *new_bases, PyTypeObje
     if (temp == NULL) {
         goto bail;
     }
-    if (mro_hierarchy(type, temp, false) < 0) {
+    if (mro_hierarchy(type, temp, true) < 0) {
         goto undo;
     }
     Py_DECREF(temp);
@@ -3464,7 +3479,7 @@ mro_check(PyTypeObject *type, PyObject *mro)
       - through a finalizer of the return value of mro().
 */
 static PyObject *
-mro_invoke(PyTypeObject *type, bool is_new_type)
+mro_invoke(PyTypeObject *type, bool world_stopped)
 {
     PyObject *mro_result;
     PyObject *new_mro;
@@ -3474,7 +3489,7 @@ mro_invoke(PyTypeObject *type, bool is_new_type)
     if (custom) {
         // Custom mro() method on metaclass.  This is potentially re-entrant.
         // We are called either from type_ready() or from type_set_bases().
-        if (!is_new_type) {
+        if (world_stopped) {
             // Called for type_set_bases(), re-assigment of __bases__
             types_start_world();
         }
@@ -3486,7 +3501,7 @@ mro_invoke(PyTypeObject *type, bool is_new_type)
         else {
             new_mro = NULL;
         }
-        if (!is_new_type) {
+        if (world_stopped) {
             types_stop_world();
         }
     }
@@ -3542,10 +3557,10 @@ mro_invoke(PyTypeObject *type, bool is_new_type)
      - Returns -1 in case of an error.
 */
 static int
-mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro, bool is_new_type)
+mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro, bool world_stopped)
 {
 #ifdef Py_DEBUG
-    if (is_new_type) {
+    if (!world_stopped) {
         assert(!TYPE_IS_REVEALED(type));
     } else {
         assert(types_world_is_stopped());
@@ -3559,7 +3574,7 @@ mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro, bool is_new_
        Don't let old_mro be GC'ed and its address be reused for
        another object, like (suddenly!) a new tp_mro.  */
     old_mro = Py_XNewRef(lookup_tp_mro(type));
-    new_mro = mro_invoke(type, is_new_type);  /* might cause reentrance */
+    new_mro = mro_invoke(type, world_stopped);  /* might cause reentrance */
     reent = (lookup_tp_mro(type) != old_mro);
     Py_XDECREF(old_mro);
     if (new_mro == NULL) {
@@ -3573,14 +3588,14 @@ mro_internal(PyTypeObject *type, int initial, PyObject **p_old_mro, bool is_new_
 
     set_tp_mro(type, new_mro, initial);
 
-    type_mro_modified(type, new_mro, is_new_type);
+    type_mro_modified(type, new_mro, world_stopped);
     /* corner case: the super class might have been hidden
        from the custom MRO */
-    type_mro_modified(type, lookup_tp_bases(type), is_new_type);
+    type_mro_modified(type, lookup_tp_bases(type), world_stopped);
 
     // XXX Expand this to Py_TPFLAGS_IMMUTABLETYPE?
     if (!(type->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN)) {
-        type_modified_unlocked(type);
+        type_modified_unlocked(type, world_stopped);
     }
     else {
         /* For static builtin types, this is only called during init
@@ -6162,7 +6177,7 @@ _Py_type_getattro(PyObject *tp, PyObject *name)
 // the type versions.
 static int
 type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
-                 PyObject *value, PyObject **old_value)
+                 PyObject *value, PyObject **old_value, bool world_stopped)
 {
     // We don't want any re-entrancy between when we update the dict
     // and call type_modified_unlocked, including running the destructor
@@ -6174,19 +6189,19 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
         return -1;
     }
 
-    /* Clear the VALID_VERSION flag of 'type' and all its
-        subclasses.  This could possibly be unified with the
-        update_subclasses() recursion in update_slot(), but carefully:
-        they each have their own conditions on which to stop
-        recursing into subclasses. */
-    type_modified_unlocked(type);
-
     if (_PyDict_SetItem_LockHeld(dict, name, value) < 0) {
         PyErr_Format(PyExc_AttributeError,
                      "type object '%.50s' has no attribute '%U'",
                      ((PyTypeObject*)type)->tp_name, name);
         return -2;
     }
+
+    /* Clear the VALID_VERSION flag of 'type' and all its
+        subclasses.  This could possibly be unified with the
+        update_subclasses() recursion in update_slot(), but carefully:
+        they each have their own conditions on which to stop
+        recursing into subclasses. */
+    type_modified_unlocked(type, world_stopped);
 
     return 0;
 }
@@ -6267,7 +6282,8 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
         // that the dict object mutex is held.  So, we acquire it here to
         // avoid those assert failing.
         Py_BEGIN_CRITICAL_SECTION(dict);
-        res = type_update_dict(type, (PyDictObject *)dict, name, value, &old_value);
+        res = type_update_dict(type, (PyDictObject *)dict, name, value,
+                               &old_value, true);
         if (res == 0) {
             res = update_slot(type, name);
         }
@@ -6276,7 +6292,8 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     } else {
         // The name is not a slot.
         BEGIN_TYPE_DICT_LOCK(dict);
-        res = type_update_dict(type, (PyDictObject *)dict, name, value, &old_value);
+        res = type_update_dict(type, (PyDictObject *)dict, name, value,
+                               &old_value, false);
         END_TYPE_DICT_LOCK();
     }
     if (res == -2) {
@@ -8625,7 +8642,7 @@ type_ready_mro(PyTypeObject *type, int initial)
     }
 
     /* Calculate method resolution order */
-    if (mro_internal(type, initial, NULL, true) < 0) {
+    if (mro_internal(type, initial, NULL, false) < 0) {
         return -1;
     }
     PyObject *mro = lookup_tp_mro(type);
@@ -11434,15 +11451,15 @@ update_all_slots(PyTypeObject* type)
 {
     pytype_slotdef *p;
 
-    ASSERT_NEW_OR_STOPPED(type);
-
-    /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
-    type_modified_unlocked(type);
+    assert(types_world_is_stopped());
 
     for (p = slotdefs; p->name; p++) {
         /* update_slot returns int but can't actually fail */
         update_slot(type, p->name_strobj);
     }
+
+    /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
+    type_modified_unlocked(type, true);
 }
 
 
@@ -11715,7 +11732,7 @@ PyType_Freeze(PyTypeObject *type)
 
     types_stop_world();
     type_add_flags(type, Py_TPFLAGS_IMMUTABLETYPE);
-    type_modified_unlocked(type);
+    type_modified_unlocked(type, true);
     types_start_world();
 
     return 0;
