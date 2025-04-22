@@ -93,11 +93,11 @@ The module defines the following functions:
    The type and size of *arg* must match the type and size of
    the argument of the operation as specified in the relevant C documentation.
 
-   With an integer value, the return value of this function is the integer
+   When *arg* is an integer, the function returns the integer
    return value of the C :c:func:`fcntl` call.
 
    When the argument is bytes, it represents a binary structure,
-   e.g. created by :func:`struct.pack`.
+   for example, created by :func:`struct.pack`.
    A string value is encoded to binary using the UTF-8 encoding.
    The binary data is copied to a buffer whose address is
    passed to the C :c:func:`fcntl` call.  The return value after a successful
@@ -129,7 +129,7 @@ The module defines the following functions:
    found in the :mod:`termios` module, under the same names as used in
    the relevant C header files.
 
-   The parameter *arg* can be one of an integer, a :term:`bytes-like object`,
+   The parameter *arg* can be an integer, a :term:`bytes-like object`,
    or a string.
    The type and size of *arg* must match the type and size of
    the argument of the operation as specified in the relevant C documentation.
