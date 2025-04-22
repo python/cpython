@@ -2632,13 +2632,15 @@ class _PdbServer(Pdb):
                 case {"signal": str(signal)}:
                     if signal == "INT":
                         raise KeyboardInterrupt
-                    elif signal != "EOF":
+                    elif signal == "EOF":
+                        raise EOFError
+                    else:
                         self.error(
                             f"Received unrecognized signal: {signal}"
                         )
                         # Our best hope of recovering is to pretend we
                         # got an EOF to exit whatever mode we're in.
-                    raise EOFError
+                        raise EOFError
                 case {
                     "complete": {
                         "text": str(text),
