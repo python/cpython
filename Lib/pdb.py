@@ -93,7 +93,6 @@ import itertools
 import traceback
 import linecache
 import _colorize
-import dataclasses
 
 from contextlib import closing
 from contextlib import contextmanager
@@ -2510,12 +2509,6 @@ def set_trace(*, header=None, commands=None):
 
 # Remote PDB
 
-@dataclasses.dataclass(frozen=True)
-class _InteractState:
-    compiler: codeop.CommandCompiler
-    ns: dict[str, typing.Any]
-
-
 class _PdbServer(Pdb):
     def __init__(self, sockfile, owns_sockfile=True, **kwargs):
         self._owns_sockfile = owns_sockfile
@@ -2753,10 +2746,10 @@ class _PdbServer(Pdb):
         save_displayhook = sys.displayhook
         try:
             sys.displayhook = self._interact_displayhook
-            code_obj = self._interact_state.compiler(lines + "\n")
+            code_obj = self._interact_state["compiler"](lines + "\n")
             if code_obj is None:
                 raise SyntaxError("Incomplete command")
-            exec(code_obj, self._interact_state.ns)
+            exec(code_obj, self._interact_state["ns"])
         except:
             self._error_exc()
         finally:
@@ -2766,7 +2759,7 @@ class _PdbServer(Pdb):
         # Prepare to run 'interact' mode code blocks, and trigger the client
         # to start treating all input as Python commands, not PDB ones.
         self.message("*pdb interact start*")
-        self._interact_state = _InteractState(
+        self._interact_state = dict(
             compiler=codeop.CommandCompiler(),
             ns={**self.curframe.f_globals, **self.curframe.f_locals},
         )
