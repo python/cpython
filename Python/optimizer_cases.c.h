@@ -1869,14 +1869,8 @@
 
         case _CALL_TYPE_1: {
             JitOptSymbol *arg;
-            JitOptSymbol *null;
-            JitOptSymbol *callable;
             JitOptSymbol *res;
             arg = stack_pointer[-1];
-            null = stack_pointer[-2];
-            callable = stack_pointer[-3];
-            (void)callable;
-            (void)null;
             if (sym_has_type(arg)) {
                 res = sym_new_const(ctx, (PyObject *)sym_get_type(arg));
             }
