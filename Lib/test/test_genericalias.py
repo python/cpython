@@ -139,7 +139,7 @@ class BaseTest(unittest.TestCase):
                      DictReader, DictWriter,
                      array]
     if ctypes is not None:
-        generic_types.extend((ctypes.Array, ctypes.LibraryLoader))
+        generic_types.extend((ctypes.Array, ctypes.LibraryLoader, ctypes.py_object))
     if ValueProxy is not None:
         generic_types.extend((ValueProxy, DictProxy, ListProxy, ApplyResult,
                               MPSimpleQueue, MPQueue, MPJoinableQueue))

@@ -18,10 +18,28 @@
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // lseek()
 #endif
+#if defined(HAVE_EXECINFO_H) && defined(HAVE_DLFCN_H) && defined(HAVE_LINK_H)
+#  include <execinfo.h>           // backtrace(), backtrace_symbols()
+#  include <dlfcn.h>              // dladdr1()
+#  include <link.h>               // struct DL_info
+#  if defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) && defined(HAVE_DLADDR1)
+#    define CAN_C_BACKTRACE
+#  endif
+#endif
 
+#if defined(__STDC_NO_VLA__) && (__STDC_NO_VLA__ == 1)
+/* Use alloca() for VLAs. */
+#  define VLA(type, name, size) type *name = alloca(size)
+#elif !defined(__STDC_NO_VLA__) || (__STDC_NO_VLA__ == 0)
+/* Use actual C VLAs.*/
+#  define VLA(type, name, size) type name[size]
+#elif defined(CAN_C_BACKTRACE)
+/* VLAs are not possible. Disable C stack trace functions. */
+#  undef CAN_C_BACKTRACE
+#endif
 
 #define OFF(x) offsetof(PyTracebackObject, x)
-#define PUTS(fd, str) (void)_Py_write_noraise(fd, str, (int)strlen(str))
+#define PUTS(fd, str) (void)_Py_write_noraise(fd, str, strlen(str))
 
 #define MAX_STRING_LENGTH 500
 #define MAX_FRAME_DEPTH 100
@@ -1039,6 +1057,17 @@ _Py_DumpTraceback(int fd, PyThreadState *tstate)
     dump_traceback(fd, tstate, 1);
 }
 
+#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)
+# if defined(__OpenBSD__)
+    /* pthread_*_np functions, especially pthread_{get,set}_name_np().
+       pthread_np.h exists on both OpenBSD and FreeBSD but the latter declares
+       pthread_getname_np() and pthread_setname_np() in pthread.h as long as
+       __BSD_VISIBLE remains set.
+     */
+#   include <pthread_np.h>
+# endif
+#endif
+
 /* Write the thread identifier into the file 'fd': "Current thread 0xHHHH:\" if
    is_current is true, "Thread 0xHHHH:\n" otherwise.
 
@@ -1054,6 +1083,27 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
     _Py_DumpHexadecimal(fd,
                         tstate->thread_id,
                         sizeof(unsigned long) * 2);
+
+    // Write the thread name
+#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP)
+    char name[100];
+    pthread_t thread = (pthread_t)tstate->thread_id;
+#ifdef HAVE_PTHREAD_GETNAME_NP
+    int rc = pthread_getname_np(thread, name, Py_ARRAY_LENGTH(name));
+#else /* defined(HAVE_PTHREAD_GET_NAME_NP) */
+    int rc = 0; /* pthread_get_name_np() returns void */
+    pthread_get_name_np(thread, name, Py_ARRAY_LENGTH(name));
+#endif
+    if (!rc) {
+        size_t len = strlen(name);
+        if (len) {
+            PUTS(fd, " [");
+            (void)_Py_write_noraise(fd, name, len);
+            PUTS(fd, "]");
+        }
+    }
+#endif
+
     PUTS(fd, " (most recent call first):\n");
 }
 
@@ -1134,3 +1184,93 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     return NULL;
 }
 
+#ifdef CAN_C_BACKTRACE
+/* Based on glibc's implementation of backtrace_symbols(), but only uses stack memory. */
+void
+_Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
+{
+    VLA(Dl_info, info, size);
+    VLA(int, status, size);
+    /* Fill in the information we can get from dladdr() */
+    for (Py_ssize_t i = 0; i < size; ++i) {
+        struct link_map *map;
+        status[i] = dladdr1(array[i], &info[i], (void **)&map, RTLD_DL_LINKMAP);
+        if (status[i] != 0
+            && info[i].dli_fname != NULL
+            && info[i].dli_fname[0] != '\0') {
+            /* The load bias is more useful to the user than the load
+               address. The use of these addresses is to calculate an
+               address in the ELF file, so its prelinked bias is not
+               something we want to subtract out */
+            info[i].dli_fbase = (void *) map->l_addr;
+        }
+    }
+    for (Py_ssize_t i = 0; i < size; ++i) {
+        if (status[i] == 0
+            || info[i].dli_fname == NULL
+            || info[i].dli_fname[0] == '\0'
+        ) {
+            dprintf(fd, "  Binary file '<unknown>' [%p]\n", array[i]);
+            continue;
+        }
+
+        if (info[i].dli_sname == NULL) {
+            /* We found no symbol name to use, so describe it as
+               relative to the file. */
+            info[i].dli_saddr = info[i].dli_fbase;
+        }
+
+        if (info[i].dli_sname == NULL
+            && info[i].dli_saddr == 0) {
+            dprintf(fd, "  Binary file \"%s\" [%p]\n",
+                    info[i].dli_fname,
+                    array[i]);
+        }
+        else {
+            char sign;
+            ptrdiff_t offset;
+            if (array[i] >= (void *) info[i].dli_saddr) {
+                sign = '+';
+                offset = array[i] - info[i].dli_saddr;
+            }
+            else {
+                sign = '-';
+                offset = info[i].dli_saddr - array[i];
+            }
+            const char *symbol_name = info[i].dli_sname != NULL ? info[i].dli_sname : "";
+            dprintf(fd, "  Binary file \"%s\", at %s%c%#tx [%p]\n",
+                    info[i].dli_fname,
+                    symbol_name,
+                    sign, offset, array[i]);
+        }
+    }
+}
+
+void
+_Py_DumpStack(int fd)
+{
+#define BACKTRACE_SIZE 32
+    PUTS(fd, "Current thread's C stack trace (most recent call first):\n");
+    VLA(void *, callstack, BACKTRACE_SIZE);
+    int frames = backtrace(callstack, BACKTRACE_SIZE);
+    if (frames == 0) {
+        // Some systems won't return anything for the stack trace
+        PUTS(fd, "  <system returned no stack trace>\n");
+        return;
+    }
+
+    _Py_backtrace_symbols_fd(fd, callstack, frames);
+    if (frames == BACKTRACE_SIZE) {
+        PUTS(fd, "  <truncated rest of calls>\n");
+    }
+
+#undef BACKTRACE_SIZE
+}
+#else
+void
+_Py_DumpStack(int fd)
+{
+    PUTS(fd, "Current thread's C stack trace (most recent call first):\n");
+    PUTS(fd, "  <cannot get C stack on this system>\n");
+}
+#endif

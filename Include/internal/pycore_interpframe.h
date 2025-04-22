@@ -163,15 +163,17 @@ _PyFrame_GetLocalsArray(_PyInterpreterFrame *frame)
     return frame->localsplus;
 }
 
-/* Fetches the stack pointer, and sets stackpointer to NULL.
-   Having stackpointer == NULL ensures that invalid
-   values are not visible to the cycle GC. */
+// Fetches the stack pointer, and (on debug builds) sets stackpointer to NULL.
+// Having stackpointer == NULL makes it easier to catch missing stack pointer
+// spills/restores (which could expose invalid values to the GC) using asserts.
 static inline _PyStackRef*
 _PyFrame_GetStackPointer(_PyInterpreterFrame *frame)
 {
     assert(frame->stackpointer != NULL);
     _PyStackRef *sp = frame->stackpointer;
+#ifndef NDEBUG
     frame->stackpointer = NULL;
+#endif
     return sp;
 }
 

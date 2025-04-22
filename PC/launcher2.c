@@ -2760,7 +2760,7 @@ process(int argc, wchar_t ** argv)
     // We searched earlier, so if we didn't find anything, now we react
     exitCode = searchExitCode;
     // If none found, and if permitted, install it
-    if (exitCode == RC_NO_PYTHON && isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL") ||
+    if (((exitCode == RC_NO_PYTHON) && isEnvVarSet(L"PYLAUNCHER_ALLOW_INSTALL")) ||
         isEnvVarSet(L"PYLAUNCHER_ALWAYS_INSTALL")) {
         exitCode = installEnvironment(&search);
         if (!exitCode) {

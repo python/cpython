@@ -1113,11 +1113,11 @@ class TestFunctional(unittest.TestCase):
 
     def setUp(self):
         self.loop = asyncio.new_event_loop()
-        asyncio._set_event_loop(self.loop)
+        asyncio.set_event_loop(self.loop)
 
     def tearDown(self):
         self.loop.close()
-        asyncio._set_event_loop(None)
+        asyncio.set_event_loop(None)
 
     def test_add_reader_invalid_argument(self):
         def assert_raises():
