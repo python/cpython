@@ -328,7 +328,12 @@ union_getitem(PyObject *self, PyObject *item)
     unionobject *alias = (unionobject *)self;
     // Populate __parameters__ if needed.
     if (alias->parameters == NULL) {
-        alias->parameters = _Py_make_parameters(alias->args);
+        Py_BEGIN_CRITICAL_SECTION(alias);
+        if (alias->parameters == NULL) {
+            alias->parameters = _Py_make_parameters(alias->args);
+        }
+        Py_END_CRITICAL_SECTION();
+
         if (alias->parameters == NULL) {
             return NULL;
         }
