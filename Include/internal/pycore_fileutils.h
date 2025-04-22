@@ -132,6 +132,8 @@ PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(
     const void *buf,
     size_t count);
 
+extern int _Py_fdprintf(int fd, const char *fmt, ...);
+
 #ifdef HAVE_READLINK
 extern int _Py_wreadlink(
     const wchar_t *path,

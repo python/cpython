@@ -14,6 +14,7 @@
 #  include <windows.h>
 #  include <winioctl.h>             // FILE_DEVICE_* constants
 #  include "pycore_fileutils_windows.h" // FILE_STAT_BASIC_INFORMATION
+#  define fdopen _fdopen
 #  if defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP)
 #    define PATHCCH_ALLOW_LONG_PATHS 0x01
 #  else
@@ -2057,6 +2058,21 @@ Py_ssize_t
 _Py_write_noraise(int fd, const void *buf, size_t count)
 {
     return _Py_write_impl(fd, buf, count, 0);
+}
+
+int
+_Py_fdprintf(int fd, const char *fmt, ...)
+{
+    FILE *handle = fdopen(fd, "a");
+    va_list vargs;
+    va_start(vargs, fmt);
+    int res = vfprintf(handle, fmt, vargs);
+    va_end(vargs);
+    if (res != 0) {
+        return -1;
+    }
+
+    return 0;
 }
 
 #ifdef HAVE_READLINK

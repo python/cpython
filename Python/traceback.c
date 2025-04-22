@@ -1210,7 +1210,7 @@ _Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
             || info[i].dli_fname == NULL
             || info[i].dli_fname[0] == '\0'
         ) {
-            dprintf(fd, "  Binary file '<unknown>' [%p]\n", array[i]);
+            _Py_fdprintf(fd, "  Binary file '<unknown>' [%p]\n", array[i]);
             continue;
         }
 
@@ -1222,9 +1222,9 @@ _Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
 
         if (info[i].dli_sname == NULL
             && info[i].dli_saddr == 0) {
-            dprintf(fd, "  Binary file \"%s\" [%p]\n",
-                    info[i].dli_fname,
-                    array[i]);
+            _Py_fdprintf(fd, "  Binary file \"%s\" [%p]\n",
+                         info[i].dli_fname,
+                         array[i]);
         }
         else {
             char sign;
@@ -1238,10 +1238,10 @@ _Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
                 offset = info[i].dli_saddr - array[i];
             }
             const char *symbol_name = info[i].dli_sname != NULL ? info[i].dli_sname : "";
-            dprintf(fd, "  Binary file \"%s\", at %s%c%#tx [%p]\n",
-                    info[i].dli_fname,
-                    symbol_name,
-                    sign, offset, array[i]);
+            _Py_fdprintf(fd, "  Binary file \"%s\", at %s%c%#tx [%p]\n",
+                         info[i].dli_fname,
+                         symbol_name,
+                         sign, offset, array[i]);
         }
     }
 }
