@@ -1065,7 +1065,7 @@ pydoc
 socket
 ------
 
-* Fix and improve support for Bluetooth sockets.
+* Improve and fix support for Bluetooth sockets.
 
   * Fix support of Bluetooth sockets on NetBSD and DragonFly BSD.
     (Contributed by Serhiy Storchaka in :gh:`132429`.)
