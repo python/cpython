@@ -307,6 +307,30 @@ class _Stringifier:
             return other.__ast_node__, other.__extra_names__
         elif other is None or type(other) in (str, int, float, bool, complex):
             return ast.Constant(value=other), None
+        elif type(other) is dict:
+            extra_names = {}
+            keys = []
+            values = []
+            for key, value in other.items():
+                new_key, new_extra_names = self.__convert_to_ast(key)
+                if new_extra_names is not None:
+                    extra_names.update(new_extra_names)
+                keys.append(new_key)
+                new_value, new_extra_names = self.__convert_to_ast(value)
+                if new_extra_names is not None:
+                    extra_names.update(new_extra_names)
+                values.append(new_value)
+            return ast.Dict(keys, values), extra_names
+        elif type(other) in (list, tuple, set):
+            extra_names = {}
+            elts = []
+            for elt in other:
+                new_elt, new_extra_names = self.__convert_to_ast(elt)
+                if new_extra_names is not None:
+                    extra_names.update(new_extra_names)
+                elts.append(new_elt)
+            ast_class = {list: ast.List, tuple: ast.Tuple, set: ast.Set}[type(other)]
+            return ast_class(elts), extra_names
         else:
             name = self.__stringifier_dict__.create_unique_name()
             return ast.Name(id=name), {name: other}

@@ -336,6 +336,31 @@ class TestSourceFormat(unittest.TestCase):
             },
         )
 
+    def test_displays(self):
+        # Simple case first
+        def f(x: a[[int, str], float]):
+            pass
+        anno = annotationlib.get_annotations(f, format=Format.STRING)
+        self.assertEqual(anno, {"x": "a[[int, str], float]"})
+
+        def g(
+            w: a[[int, str], float],
+            x: a[{int, str}, 3],
+            y: a[{int: str}, 4],
+            z: a[(int, str), 5],
+        ):
+            pass
+        anno = annotationlib.get_annotations(g, format=Format.STRING)
+        self.assertEqual(
+            anno,
+            {
+                "w": "a[[int, str], float]",
+                "x": "a[{int, str}, 3]",
+                "y": "a[{int: str}, 4]",
+                "z": "a[(int, str), 5]",
+            },
+        )
+
     def test_nested_expressions(self):
         def f(
             nested: list[Annotated[set[int], "set of ints", 4j]],
