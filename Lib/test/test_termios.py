@@ -150,13 +150,16 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(TypeError, termios.tcflush, self.fd)
 
     def test_tcflush_clear_input(self):
-        os.write(self.fd, b'abcdef')
-        self.assertEqual(os.read(self.master_fd, 2), b'ab')
-        termios.tcflush(self.master_fd, termios.TCOFLUSH)  # don't flush input
-        self.assertEqual(os.read(self.master_fd, 2), b'cd')
-        termios.tcflush(self.master_fd, termios.TCIFLUSH)  # flush input
-        os.write(self.fd, b'ABCDEF')
-        self.assertEqual(os.read(self.master_fd, 1024), b'ABCDEF')
+        wfd = self.fd
+        rfd = self.master_fd
+
+        os.write(wfd, b'abcdef')
+        self.assertEqual(os.read(rfd, 2), b'ab')
+        termios.tcflush(rfd, termios.TCOFLUSH)  # don't flush input
+        self.assertEqual(os.read(rfd, 2), b'cd')
+        termios.tcflush(rfd, termios.TCIFLUSH)  # flush input
+        os.write(wfd, b'ABCDEF')
+        self.assertEqual(os.read(rfd, 1024), b'ABCDEF')
 
     @support.skip_android_selinux('tcflow')
     def test_tcflow(self):
@@ -177,23 +180,25 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(TypeError, termios.tcflow, self.fd)
 
     def test_tcflow_suspend_and_resume_output(self):
+        wfd = self.fd
+        rfd = self.master_fd
         write_suspended = threading.Event()
         write_finished = threading.Event()
 
         def writer():
-            os.write(self.fd, b'abc')
+            os.write(wfd, b'abc')
             write_suspended.wait()
-            os.write(self.fd, b'def')
+            os.write(wfd, b'def')
             write_finished.set()
 
         with threading_helper.start_threads([threading.Thread(target=writer)]):
-            self.assertEqual(os.read(self.master_fd, 1024), b'abc')
-            termios.tcflow(self.fd, termios.TCOOFF)
+            self.assertEqual(os.read(rfd, 1024), b'abc')
+            termios.tcflow(wfd, termios.TCOOFF)
             write_suspended.set()
             self.assertFalse(write_finished.wait(0.5))
-            termios.tcflow(self.fd, termios.TCOON)
+            termios.tcflow(wfd, termios.TCOON)
             self.assertTrue(write_finished.wait(0.5))
-            self.assertEqual(os.read(self.master_fd, 1024), b'def')
+            self.assertEqual(os.read(rfd, 1024), b'def')
 
     def test_tcgetwinsize(self):
         size = termios.tcgetwinsize(self.fd)

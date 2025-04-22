@@ -143,33 +143,40 @@ class IoctlTestsPty(unittest.TestCase):
         self.addCleanup(os.close, self.slave_fd)
         self.addCleanup(os.close, self.master_fd)
 
+    @unittest.skipUnless(hasattr(termios, 'TCFLSH'), 'requires termios.TCFLSH')
     def test_ioctl_clear_input(self):
-        os.write(self.slave_fd, b'abcdef')
-        self.assertEqual(os.read(self.master_fd, 2), b'ab')
-        fcntl.ioctl(self.master_fd, termios.TCFLSH, termios.TCOFLUSH)  # don't flush input
-        self.assertEqual(os.read(self.master_fd, 2), b'cd')
-        fcntl.ioctl(self.master_fd, termios.TCFLSH, termios.TCIFLUSH)  # flush input
-        os.write(self.slave_fd, b'ABCDEF')
-        self.assertEqual(os.read(self.master_fd, 1024), b'ABCDEF')
+        wfd = self.slave_fd
+        rfd = self.master_fd
 
-    def test_tcflow_suspend_and_resume_output(self):
+        os.write(wfd, b'abcdef')
+        self.assertEqual(os.read(rfd, 2), b'ab')
+        fcntl.ioctl(rfd, termios.TCFLSH, termios.TCOFLUSH)  # don't flush input
+        self.assertEqual(os.read(rfd, 2), b'cd')
+        fcntl.ioctl(rfd, termios.TCFLSH, termios.TCIFLUSH)  # flush input
+        os.write(wfd, b'ABCDEF')
+        self.assertEqual(os.read(rfd, 1024), b'ABCDEF')
+
+    @unittest.skipUnless(hasattr(termios, 'TCXONC'), 'requires termios.TCXONC')
+    def test_ioctl_suspend_and_resume_output(self):
+        wfd = self.slave_fd
+        rfd = self.master_fd
         write_suspended = threading.Event()
         write_finished = threading.Event()
 
         def writer():
-            os.write(self.slave_fd, b'abc')
+            os.write(wfd, b'abc')
             write_suspended.wait()
-            os.write(self.slave_fd, b'def')
+            os.write(wfd, b'def')
             write_finished.set()
 
         with threading_helper.start_threads([threading.Thread(target=writer)]):
-            self.assertEqual(os.read(self.master_fd, 1024), b'abc')
-            termios.tcflow(self.slave_fd, termios.TCOOFF)
+            self.assertEqual(os.read(rfd, 1024), b'abc')
+            fcntl.ioctl(wfd, termios.TCXONC, termios.TCOOFF)
             write_suspended.set()
             self.assertFalse(write_finished.wait(0.5))
-            termios.tcflow(self.slave_fd, termios.TCOON)
+            fcntl.ioctl(wfd, termios.TCXONC, termios.TCOON)
             self.assertTrue(write_finished.wait(0.5))
-            self.assertEqual(os.read(self.master_fd, 1024), b'def')
+            self.assertEqual(os.read(rfd, 1024), b'def')
 
     def test_ioctl_set_window_size(self):
         # (rows, columns, xpixel, ypixel)
