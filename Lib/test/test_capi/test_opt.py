@@ -1767,6 +1767,37 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_GUARD_TOS_UNICODE", uops)
         self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
 
+    def test_call_type_1(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                x += type(42) is int
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_TYPE_1", uops)
+        self.assertNotIn("_GUARD_NOS_NULL", uops)
+        self.assertNotIn("_GUARD_CALLABLE_TYPE_1", uops)
+
+    def test_call_type_1_result_is_const(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                t = type(42)
+                if t is not None:  # guard is removed
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_TYPE_1", uops)
+        self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
+
 
 def global_identity(x):
     return x

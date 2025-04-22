@@ -3966,19 +3966,34 @@ dummy_func(
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
-        inst(CALL_TYPE_1, (unused/1, unused/2, callable, null, arg -- res)) {
+        op(_GUARD_NOS_NULL, (null, unused -- null, unused)) {
+            DEOPT_IF(!PyStackRef_IsNull(null));
+        }
+
+        op(_GUARD_CALLABLE_TYPE_1, (callable, unused, unused -- callable, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            DEOPT_IF(callable_o != (PyObject *)&PyType_Type);
+        }
+
+        op(_CALL_TYPE_1, (callable, null, arg -- res)) {
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
-            DEOPT_IF(!PyStackRef_IsNull(null));
             DEAD(null);
-            DEOPT_IF(callable_o != (PyObject *)&PyType_Type);
             DEAD(callable);
+            (void)callable; // Silence compiler warnings about unused variables
+            (void)null;
             STAT_INC(CALL, hit);
             res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
             PyStackRef_CLOSE(arg);
         }
+
+        macro(CALL_TYPE_1) =
+            unused/1 +
+            unused/2 +
+            _GUARD_NOS_NULL +
+            _GUARD_CALLABLE_TYPE_1 +
+            _CALL_TYPE_1;
 
         op(_CALL_STR_1, (callable, null, arg -- res)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);

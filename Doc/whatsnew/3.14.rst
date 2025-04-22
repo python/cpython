@@ -1088,6 +1088,32 @@ pydoc
   (Contributed by Jelle Zijlstra in :gh:`101552`.)
 
 
+socket
+------
+
+* Improve and fix support for Bluetooth sockets.
+
+  * Fix support of Bluetooth sockets on NetBSD and DragonFly BSD.
+    (Contributed by Serhiy Storchaka in :gh:`132429`.)
+  * Fix support for :const:`~socket.BTPROTO_HCI` on FreeBSD.
+    (Contributed by Victor Stinner in :gh:`111178`.)
+  * Add support for :const:`~socket.BTPROTO_SCO` on FreeBSD.
+    (Contributed by Serhiy Storchaka in :gh:`85302`.)
+  * Add support for *cid* and *bdaddr_type* in the address for
+    :const:`~socket.BTPROTO_L2CAP` on FreeBSD.
+    (Contributed by Serhiy Storchaka in :gh:`132429`.)
+  * Add support for *channel* in the address for
+    :const:`~socket.BTPROTO_HCI` on Linux.
+    (Contributed by Serhiy Storchaka in :gh:`70145`.)
+  * Accept an integer as the address for
+    :const:`~socket.BTPROTO_HCI` on Linux
+    (Contributed by Serhiy Storchaka in :gh:`132099`.)
+  * Return *cid* in :meth:`~socket.socket.getsockname` for
+    :const:`~socket.BTPROTO_L2CAP`.
+    (Contributed by Serhiy Storchaka in :gh:`132429`.)
+  * Add many new constants.
+    (Contributed by Serhiy Storchaka in :gh:`132734`.)
+
 ssl
 ---
 
