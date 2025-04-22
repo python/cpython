@@ -321,11 +321,7 @@ Lib/test/test__colorize.py    @hugovk
 Modules/_xxtestfuzz/          @ammaraskar
 
 # t-strings
-Include/internal/pycore_interpolation.h  @lysnikolaou
-Include/internal/pycore_template.h  @lysnikolaou
-Objects/interpolationobject.c  @lysnikolaou
-Objects/clinic/interpolationobject.c.h  @lysnikolaou
-Objects/templateobject.c      @lysnikolaou
-Modules/_templatelibmodule.c  @lysnikolaou
-Lib/string/templatelib.py     @lysnikolaou
-Lib/test/test_tstring.py      @lysnikolaou
+**/*interpolationobject*      @lysnikolaou
+**/*templateobject*           @lysnikolaou
+**/*templatelib*              @lysnikolaou
+**/*tstring*                  @lysnikolaou
