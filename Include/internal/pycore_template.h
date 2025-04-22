@@ -13,6 +13,7 @@ extern PyTypeObject _PyTemplate_Type;
 extern PyTypeObject _PyTemplateIter_Type;
 
 #define _PyTemplate_CheckExact(op) Py_IS_TYPE((op), &_PyTemplate_Type)
+#define _PyTemplateIter_CheckExact(op) Py_IS_TYPE((op), &_PyTemplateIter_Type)
 
 extern PyObject *_PyTemplate_Concat(PyObject *self, PyObject *other);
 

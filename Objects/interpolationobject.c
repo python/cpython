@@ -80,13 +80,20 @@ interpolation_new_impl(PyTypeObject *type, PyObject *value,
 static void
 interpolation_dealloc(PyObject *op)
 {
+    PyObject_GC_UnTrack(op);
+    Py_TYPE(op)->tp_clear(op);
+    Py_TYPE(op)->tp_free(op);
+}
+
+static int
+interpolation_clear(PyObject *op)
+{
     interpolationobject *self = interpolationobject_CAST(op);
-    PyObject_GC_UnTrack(self);
     Py_CLEAR(self->value);
     Py_CLEAR(self->expression);
     Py_CLEAR(self->conversion);
     Py_CLEAR(self->format_spec);
-    Py_TYPE(self)->tp_free(self);
+    return 0;
 }
 
 static int
@@ -127,6 +134,7 @@ PyTypeObject _PyInterpolation_Type = {
     .tp_new = interpolation_new,
     .tp_alloc = PyType_GenericAlloc,
     .tp_dealloc = interpolation_dealloc,
+    .tp_clear = interpolation_clear,
     .tp_free = PyObject_GC_Del,
     .tp_repr = interpolation_repr,
     .tp_members = interpolation_members,

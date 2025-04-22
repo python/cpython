@@ -11,9 +11,13 @@ typedef struct {
     int from_strings;
 } templateiterobject;
 
+#define templateiterobject_CAST(op) \
+    (assert(_PyTemplateIter_CheckExact(op)), _Py_CAST(templateiterobject*, (op)))
+
 static PyObject *
-templateiter_next(templateiterobject *self)
+templateiter_next(PyObject *op)
 {
+    templateiterobject *self = templateiterobject_CAST(op);
     PyObject *item;
     if (self->from_strings) {
         item = PyIter_Next(self->stringsiter);
@@ -30,17 +34,26 @@ templateiter_next(templateiterobject *self)
 }
 
 static void
-templateiter_dealloc(templateiterobject *self)
+templateiter_dealloc(PyObject *op)
 {
-    PyObject_GC_UnTrack(self);
-    Py_CLEAR(self->stringsiter);
-    Py_CLEAR(self->interpolationsiter);
-    Py_TYPE(self)->tp_free(self);
+    PyObject_GC_UnTrack(op);
+    Py_TYPE(op)->tp_clear(op);
+    Py_TYPE(op)->tp_free(op);
 }
 
 static int
-templateiter_traverse(templateiterobject *self, visitproc visit, void *arg)
+templateiter_clear(PyObject *op)
 {
+    templateiterobject *self = templateiterobject_CAST(op);
+    Py_CLEAR(self->stringsiter);
+    Py_CLEAR(self->interpolationsiter);
+    return 0;
+}
+
+static int
+templateiter_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    templateiterobject *self = templateiterobject_CAST(op);
     Py_VISIT(self->stringsiter);
     Py_VISIT(self->interpolationsiter);
     return 0;
@@ -54,11 +67,12 @@ PyTypeObject _PyTemplateIter_Type = {
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,
     .tp_alloc = PyType_GenericAlloc,
-    .tp_dealloc = (destructor) templateiter_dealloc,
+    .tp_dealloc = templateiter_dealloc,
+    .tp_clear = templateiter_clear,
     .tp_free = PyObject_GC_Del,
-    .tp_traverse = (traverseproc) templateiter_traverse,
+    .tp_traverse = templateiter_traverse,
     .tp_iter = PyObject_SelfIter,
-    .tp_iternext = (iternextfunc) templateiter_next,
+    .tp_iternext = templateiter_next,
 };
 
 typedef struct {
@@ -160,11 +174,18 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static void
 template_dealloc(PyObject *op)
 {
+    PyObject_GC_UnTrack(op);
+    Py_TYPE(op)->tp_clear(op);
+    Py_TYPE(op)->tp_free(op);
+}
+
+static int
+template_clear(PyObject *op)
+{
     templateobject *self = templateobject_CAST(op);
-    PyObject_GC_UnTrack(self);
     Py_CLEAR(self->strings);
     Py_CLEAR(self->interpolations);
-    Py_TYPE(self)->tp_free(self);
+    return 0;
 }
 
 static int
@@ -413,6 +434,7 @@ PyTypeObject _PyTemplate_Type = {
     .tp_new = template_new,
     .tp_alloc = PyType_GenericAlloc,
     .tp_dealloc = template_dealloc,
+    .tp_clear = template_clear,
     .tp_free = PyObject_GC_Del,
     .tp_repr = template_repr,
     .tp_members = template_members,
