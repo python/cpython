@@ -400,7 +400,7 @@ class _Stringifier:
     def __or__(self, other):
         if self.__stringifier_dict__.create_unions:
             return types.UnionType[self, other]
-        
+
         return self.__make_new(
             ast.BinOp(self.__get_ast(), ast.BitOr(), self.__convert_to_ast(other))
         )
@@ -431,11 +431,11 @@ class _Stringifier:
     def __ror__(self, other):
         if self.__stringifier_dict__.create_unions:
             return types.UnionType[other, self]
-        
+
         return self.__make_new(
             ast.BinOp(self.__convert_to_ast(other), ast.BitOr(), self.__get_ast())
         )
-        
+
     del _make_rbinop
 
     def _make_compare(op):
@@ -585,10 +585,10 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         namespace = {**annotate.__builtins__, **annotate.__globals__}
         is_class = isinstance(owner, type)
         globals = _StringifierDict(
-            namespace, 
-            annotate.__globals__, 
-            owner, 
-            is_class, 
+            namespace,
+            annotate.__globals__,
+            owner,
+            is_class,
             create_unions=True
         )
         if annotate.__closure__:

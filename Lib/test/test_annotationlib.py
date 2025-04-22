@@ -117,7 +117,7 @@ class TestForwardRefFormat(unittest.TestCase):
         alpha_anno = anno["alpha"]
         self.assertIsInstance(alpha_anno, Union)
         self.assertEqual(
-            typing.get_args(alpha_anno), 
+            typing.get_args(alpha_anno),
             (support.EqualToForwardRef("some", owner=f), support.EqualToForwardRef("obj", owner=f))
         )
 
