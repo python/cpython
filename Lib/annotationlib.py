@@ -392,11 +392,18 @@ class _Stringifier:
     __mod__ = _make_binop(ast.Mod())
     __lshift__ = _make_binop(ast.LShift())
     __rshift__ = _make_binop(ast.RShift())
-    __or__ = _make_binop(ast.BitOr())
     __xor__ = _make_binop(ast.BitXor())
     __and__ = _make_binop(ast.BitAnd())
     __floordiv__ = _make_binop(ast.FloorDiv())
     __pow__ = _make_binop(ast.Pow())
+
+    def __or__(self, other):
+        if self.__stringifier_dict__.create_unions:
+            return types.UnionType[self, other]
+        
+        return self.__make_new(
+            ast.BinOp(self.__get_ast(), ast.BitOr(), self.__convert_to_ast(other))
+        )
 
     del _make_binop
 
@@ -416,12 +423,19 @@ class _Stringifier:
     __rmod__ = _make_rbinop(ast.Mod())
     __rlshift__ = _make_rbinop(ast.LShift())
     __rrshift__ = _make_rbinop(ast.RShift())
-    __ror__ = _make_rbinop(ast.BitOr())
     __rxor__ = _make_rbinop(ast.BitXor())
     __rand__ = _make_rbinop(ast.BitAnd())
     __rfloordiv__ = _make_rbinop(ast.FloorDiv())
     __rpow__ = _make_rbinop(ast.Pow())
 
+    def __ror__(self, other):
+        if self.__stringifier_dict__.create_unions:
+            return types.UnionType[other, self]
+        
+        return self.__make_new(
+            ast.BinOp(self.__convert_to_ast(other), ast.BitOr(), self.__get_ast())
+        )
+        
     del _make_rbinop
 
     def _make_compare(op):
@@ -459,12 +473,13 @@ class _Stringifier:
 
 
 class _StringifierDict(dict):
-    def __init__(self, namespace, globals=None, owner=None, is_class=False):
+    def __init__(self, namespace, globals=None, owner=None, is_class=False, create_unions=False):
         super().__init__(namespace)
         self.namespace = namespace
         self.globals = globals
         self.owner = owner
         self.is_class = is_class
+        self.create_unions = create_unions
         self.stringifiers = []
 
     def __missing__(self, key):
@@ -569,7 +584,13 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # that returns a bool and an defined set of attributes.
         namespace = {**annotate.__builtins__, **annotate.__globals__}
         is_class = isinstance(owner, type)
-        globals = _StringifierDict(namespace, annotate.__globals__, owner, is_class)
+        globals = _StringifierDict(
+            namespace, 
+            annotate.__globals__, 
+            owner, 
+            is_class, 
+            create_unions=True
+        )
         if annotate.__closure__:
             freevars = annotate.__code__.co_freevars
             new_closure = []
