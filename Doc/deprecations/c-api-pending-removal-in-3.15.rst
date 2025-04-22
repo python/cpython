@@ -10,6 +10,14 @@ Pending removal in Python 3.15
   :c:func:`PyWeakref_GetRef` on Python 3.12 and older.
 * :c:type:`Py_UNICODE` type and the :c:macro:`!Py_UNICODE_WIDE` macro:
   Use :c:type:`wchar_t` instead.
+* :c:func:`!PyUnicode_AsDecodedObject`:
+  Use :c:func:`PyCodec_Decode` instead.
+* :c:func:`!PyUnicode_AsDecodedUnicode`:
+  Use :c:func:`PyCodec_Decode` instead.
+* :c:func:`!PyUnicode_AsEncodedObject`:
+  Use :c:func:`PyCodec_Encode` instead.
+* :c:func:`!PyUnicode_AsEncodedUnicode`:
+  Use :c:func:`PyCodec_Encode` instead.
 * Python initialization functions, deprecated in Python 3.13:
 
   * :c:func:`Py_GetPath`:
