@@ -329,6 +329,8 @@ union_getitem(PyObject *self, PyObject *item)
     // Populate __parameters__ if needed.
     if (alias->parameters == NULL) {
         Py_BEGIN_CRITICAL_SECTION(alias);
+        // Need to check again once we got the lock, another thread may have
+        // initialized it while we were waiting for the lock.
         if (alias->parameters == NULL) {
             alias->parameters = _Py_make_parameters(alias->args);
         }
