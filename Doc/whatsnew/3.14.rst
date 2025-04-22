@@ -860,6 +860,13 @@ logging.handlers
   (Contributed by Charles Machalow in :gh:`132106`.)
 
 
+math
+----
+
+* Added more detailed error messages for domain errors in the module.
+  (Contributed by by Charlie Zhao and Sergey B Kirpichev in :gh:`101410`.)
+
+
 mimetypes
 ---------
 
