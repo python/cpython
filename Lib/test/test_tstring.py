@@ -1,16 +1,9 @@
-import ast
 import unittest
 
 from test.test_string._support import TStringTestCase, fstring
 
 
 class TestTString(TStringTestCase):
-    def assertAllRaise(self, exception_type, regex, error_strings):
-        for s in error_strings:
-            with self.subTest(s=s):
-                with self.assertRaisesRegex(exception_type, regex):
-                    eval(s)
-
     def test_string_representation(self):
         # Test __repr__
         t = t"Hello"
