@@ -4322,6 +4322,8 @@
                 arg = stack_pointer[-1];
                 PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
                 assert(oparg == 1);
+                (void)callable;
+                (void)null;
                 STAT_INC(CALL, hit);
                 res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
                 stack_pointer[-3] = res;

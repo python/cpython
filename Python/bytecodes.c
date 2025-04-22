@@ -3981,6 +3981,8 @@ dummy_func(
             assert(oparg == 1);
             DEAD(null);
             DEAD(callable);
+            (void)callable; // Silence compiler warnings about unused variables
+            (void)null;
             STAT_INC(CALL, hit);
             res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
             PyStackRef_CLOSE(arg);
