@@ -935,7 +935,7 @@ class Thread:
         self._ident = None
         if _HAVE_THREAD_NATIVE_ID:
             self._native_id = None
-        self._handle = _ThreadHandle()
+        self._os_thread_handle = _ThreadHandle()
         self._started = Event()
         self._initialized = True
         # Copy of sys.stderr used by self._invoke_excepthook()
@@ -950,7 +950,7 @@ class Thread:
         if new_ident is not None:
             # This thread is alive.
             self._ident = new_ident
-            assert self._handle.ident == new_ident
+            assert self._os_thread_handle.ident == new_ident
         else:
             # Otherwise, the thread is dead, Jim.  _PyThread_AfterFork()
             # already marked our handle done.
@@ -961,7 +961,7 @@ class Thread:
         status = "initial"
         if self._started.is_set():
             status = "started"
-        if self._handle.is_done():
+        if self._os_thread_handle.is_done():
             status = "stopped"
         if self._daemonic:
             status += " daemon"
@@ -999,7 +999,7 @@ class Thread:
 
         try:
             # Start joinable thread
-            _start_joinable_thread(self._bootstrap, handle=self._handle,
+            _start_joinable_thread(self._bootstrap, handle=self._os_thread_handle,
                                    daemon=self.daemon)
         except Exception:
             with _active_limbo_lock:
@@ -1127,7 +1127,7 @@ class Thread:
         if timeout is not None:
             timeout = max(timeout, 0)
 
-        self._handle.join(timeout)
+        self._os_thread_handle.join(timeout)
 
     @property
     def name(self):
@@ -1180,7 +1180,7 @@ class Thread:
 
         """
         assert self._initialized, "Thread.__init__() not called"
-        return self._started.is_set() and not self._handle.is_done()
+        return self._started.is_set() and not self._os_thread_handle.is_done()
 
     @property
     def daemon(self):
@@ -1391,7 +1391,7 @@ class _MainThread(Thread):
         Thread.__init__(self, name="MainThread", daemon=False)
         self._started.set()
         self._ident = _get_main_thread_ident()
-        self._handle = _make_thread_handle(self._ident)
+        self._os_thread_handle = _make_thread_handle(self._ident)
         if _HAVE_THREAD_NATIVE_ID:
             self._set_native_id()
         with _active_limbo_lock:
@@ -1439,7 +1439,7 @@ class _DummyThread(Thread):
                         daemon=_daemon_threads_allowed())
         self._started.set()
         self._set_ident()
-        self._handle = _make_thread_handle(self._ident)
+        self._os_thread_handle = _make_thread_handle(self._ident)
         if _HAVE_THREAD_NATIVE_ID:
             self._set_native_id()
         with _active_limbo_lock:
@@ -1447,7 +1447,7 @@ class _DummyThread(Thread):
         _DeleteDummyThreadOnDel(self)
 
     def is_alive(self):
-        if not self._handle.is_done() and self._started.is_set():
+        if not self._os_thread_handle.is_done() and self._started.is_set():
             return True
         raise RuntimeError("thread is not alive")
 
@@ -1561,7 +1561,7 @@ def _shutdown():
     # dubious, but some code does it. We can't wait for it to be marked as done
     # normally - that won't happen until the interpreter is nearly dead. So
     # mark it done here.
-    if _main_thread._handle.is_done() and _is_main_interpreter():
+    if _main_thread._os_thread_handle.is_done() and _is_main_interpreter():
         # _shutdown() was already called
         return
 
@@ -1574,7 +1574,7 @@ def _shutdown():
         atexit_call()
 
     if _is_main_interpreter():
-        _main_thread._handle._set_done()
+        _main_thread._os_thread_handle._set_done()
 
     # Wait for all non-daemon threads to exit.
     _thread_shutdown()
