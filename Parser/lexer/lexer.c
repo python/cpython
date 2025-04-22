@@ -38,6 +38,8 @@ static inline tokenizer_mode* TOK_NEXT_MODE(struct tok_state* tok) {
 #define TOK_NEXT_MODE(tok) (&(tok->tok_mode_stack[++tok->tok_mode_stack_index]))
 #endif
 
+#define FTSTRING_MIDDLE(tok_mode) (tok_mode->string_kind == TSTRING ? TSTRING_MIDDLE : FSTRING_MIDDLE)
+#define FTSTRING_END(tok_mode) (tok_mode->string_kind == TSTRING ? TSTRING_END : FSTRING_END)
 #define TOK_GET_STRING_PREFIX(tok) (TOK_GET_MODE(tok)->string_kind == TSTRING ? 't' : 'f')
 #define MAKE_TOKEN(token_type) _PyLexer_token_setup(tok, token, token_type, p_start, p_end)
 #define MAKE_TYPE_COMMENT_TOKEN(token_type, col_offset, end_col_offset) (\
@@ -1335,7 +1337,7 @@ tok_get_fstring_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct 
     p_start = tok->start;
     p_end = tok->cur;
     tok->tok_mode_stack_index--;
-    return MAKE_TOKEN(FSTRING_END);
+    return MAKE_TOKEN(FTSTRING_END(current_tok));
 
 f_string_middle:
 
@@ -1375,7 +1377,7 @@ f_string_middle:
                 current_tok->in_format_spec = 0;
                 p_start = tok->start;
                 p_end = tok->cur;
-                return MAKE_TOKEN(FSTRING_MIDDLE);
+                return MAKE_TOKEN(FTSTRING_MIDDLE(current_tok));
             }
 
             assert(tok->multi_line_start != NULL);
@@ -1435,12 +1437,12 @@ f_string_middle:
                 p_start = tok->start;
                 p_end = tok->cur - 1;
             }
-            return MAKE_TOKEN(FSTRING_MIDDLE);
+            return MAKE_TOKEN(FTSTRING_MIDDLE(current_tok));
         } else if (c == '}') {
             if (unicode_escape) {
                 p_start = tok->start;
                 p_end = tok->cur;
-                return MAKE_TOKEN(FSTRING_MIDDLE);
+                return MAKE_TOKEN(FTSTRING_MIDDLE(current_tok));
             }
             int peek = tok_nextc(tok);
 
@@ -1460,7 +1462,7 @@ f_string_middle:
                 p_start = tok->start;
                 p_end = tok->cur;
             }
-            return MAKE_TOKEN(FSTRING_MIDDLE);
+            return MAKE_TOKEN(FTSTRING_MIDDLE(current_tok));
         } else if (c == '\\') {
             int peek = tok_nextc(tok);
             if (peek == '\r') {
@@ -1502,7 +1504,7 @@ f_string_middle:
     }
     p_start = tok->start;
     p_end = tok->cur;
-    return MAKE_TOKEN(FSTRING_MIDDLE);
+    return MAKE_TOKEN(FTSTRING_MIDDLE(current_tok));
 }
 
 static int

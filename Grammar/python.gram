@@ -945,7 +945,7 @@ tstring_format_spec_replacement_field[expr_ty]:
         _PyPegen_formatted_value(p, a, debug_expr, conversion, format, rbrace, EXTRA) }
     | invalid_tstring_replacement_field
 tstring_format_spec[expr_ty]:
-    | t=FSTRING_MIDDLE { _PyPegen_decoded_constant_from_token(p, t) }
+    | t=TSTRING_MIDDLE { _PyPegen_decoded_constant_from_token(p, t) }
     | tstring_format_spec_replacement_field
 tstring_full_format_spec[ResultTokenWithMetadata*]:
     | colon=':' spec=tstring_format_spec* { _PyPegen_setup_full_format_spec(p, colon, (asdl_expr_seq *) spec, EXTRA) }
@@ -955,9 +955,9 @@ tstring_replacement_field[expr_ty]:
     | invalid_tstring_replacement_field
 tstring_middle[expr_ty]:
     | tstring_replacement_field
-    | t=FSTRING_MIDDLE { _PyPegen_constant_from_token(p, t) }
+    | t=TSTRING_MIDDLE { _PyPegen_constant_from_token(p, t) }
 tstring[expr_ty] (memo):
-    | a=TSTRING_START b=tstring_middle* c=FSTRING_END { _PyPegen_template_str(p, a, (asdl_expr_seq*)b, c) }
+    | a=TSTRING_START b=tstring_middle* c=TSTRING_END { _PyPegen_template_str(p, a, (asdl_expr_seq*)b, c) }
 
 string[expr_ty]: s[Token*]=STRING { _PyPegen_constant_from_string(p, s) }
 strings[expr_ty] (memo): a[asdl_expr_seq*]=(fstring|string|tstring)+ { _PyPegen_concatenate_strings(p, a, EXTRA) }
@@ -1224,8 +1224,9 @@ invalid_expression:
    | a[stmt_ty]=(pass_stmt|break_stmt|continue_stmt) 'if' b=disjunction 'else' c=simple_stmt {
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION (a, "expected expression before 'if', but statement is given") }
    | a='lambda' [lambda_params] b=':' &FSTRING_MIDDLE  {
-        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "%c-string: lambda expressions are not allowed without parentheses",
-            TOK_GET_STRING_PREFIX(p->tok)) }
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "f-string: lambda expressions are not allowed without parentheses") }
+   | a='lambda' [lambda_params] b=':' &TSTRING_MIDDLE  {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "t-string: lambda expressions are not allowed without parentheses") }
 
 invalid_named_expression(memo):
     | a=expression ':=' expression {

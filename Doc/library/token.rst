@@ -142,6 +142,30 @@ The token constants are:
 
    .. versionadded:: next
 
+.. data:: TSTRING_MIDDLE
+
+   Token value used for literal text inside a t-string literal
+   including format specifications.
+
+   .. impl-detail::
+
+      Replacement fields (that is, the non-literal parts of f-strings) use
+      the same tokens as other expressions, and are delimited by
+      :data:`LBRACE`, :data:`RBRACE`, :data:`EXCLAMATION` and :data:`COLON`
+      tokens.
+
+   .. versionadded:: next
+
+.. data:: TSTRING_END
+
+   Token value used to indicate the end of a t-string.
+
+   .. impl-detail::
+
+      The token string contains the closing quote(s).
+
+   .. versionadded:: next
+
 .. data:: ENDMARKER
 
    Token value that indicates the end of input.
