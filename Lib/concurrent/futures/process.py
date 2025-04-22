@@ -440,7 +440,7 @@ class _ExecutorManagerThread(threading.Thread):
         work_item = self.pending_work_items.pop(result_item.work_id, None)
         # work_item can be None if another process terminated (see above)
         if work_item is not None:
-            if result_item.exception:
+            if result_item.exception is not None:
                 work_item.future.set_exception(result_item.exception)
             else:
                 work_item.future.set_result(result_item.result)

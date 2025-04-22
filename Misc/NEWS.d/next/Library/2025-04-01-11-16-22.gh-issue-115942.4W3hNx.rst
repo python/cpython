@@ -1,5 +1,0 @@
-Add :meth:`threading.RLock.locked`,
-:meth:`multiprocessing.Lock.locked`,
-:meth:`multiprocessing.RLock.locked`,
-and allow :meth:`multiprocessing.managers.SyncManager.Lock` and
-:meth:`multiprocessing.managers.SyncManager.RLock` to proxy ``locked()`` call.

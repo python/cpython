@@ -385,7 +385,7 @@ The following options are accepted:
 
    Generate *num* fresh UUIDs.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. _uuid-example:

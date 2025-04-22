@@ -390,8 +390,9 @@ For further information on how to build Python, see
     `compiler bug <https://github.com/llvm/llvm-project/issues/106846>`_ found in
     Clang/LLVM 19, which causes the normal interpreter to be slower. We were unaware of this bug,
     resulting in inaccurate results. We sincerely apologize for
-    communicating results that were only accurate for certain versions of LLVM 19
-    and 20. At the time of writing, this bug has not yet been fixed in LLVM 19-21. Thus
+    communicating results that were only accurate for LLVM v19.1.x and v20.1.0. In the meantime,
+    the bug has been fixed in LLVM v20.1.1 and for the upcoming v21.1, but it will remain
+    unfixed for LLVM v19.1.x and v20.1.0. Thus
     any benchmarks with those versions of LLVM may produce inaccurate numbers.
     (Thanks to Nelson Elhage for bringing this to light.)
 
@@ -457,11 +458,32 @@ Other language changes
   The testbed can also be used to run the test suite of projects other than
   CPython itself. (Contributed by Russell Keith-Magee in :gh:`127592`.)
 
+* Three-argument :func:`pow` now try calling :meth:`~object.__rpow__` if necessary.
+  Previously it was only called in two-argument :func:`!pow` and the binary
+  power operator.
+  (Contributed by Serhiy Storchaka in :gh:`130104`.)
+
 * Add a built-in implementation for HMAC (:rfc:`2104`) using formally verified
   code from the `HACL* <https://github.com/hacl-star/hacl-star/>`__ project.
   This implementation is used as a fallback when the OpenSSL implementation
   of HMAC is not available.
   (Contributed by Bénédikt Tran in :gh:`99108`.)
+
+* When subclassing from a pure C type, the C slots for the new type are no
+  longer replaced with a wrapped version on class creation if they are not
+  explicitly overridden in the subclass.
+  (Contributed by Tomasz Pytel in :gh:`132329`.)
+
+* The command line option :option:`-c` now automatically dedents its code
+  argument before execution. The auto-dedentation behavior mirrors
+  :func:`textwrap.dedent`.
+  (Contributed by Jon Crall and Steven Sun in :gh:`103998`.)
+
+* Improve error message when an object supporting the synchronous (resp.
+  asynchronous) context manager protocol is entered using :keyword:`async
+  with` (resp. :keyword:`with`) instead of :keyword:`with` (resp.
+  :keyword:`async with`).
+  (Contributed by Bénédikt Tran in :gh:`128398`.)
 
 
 .. _whatsnew314-pep765:
@@ -677,6 +699,13 @@ errno
   (Contributed by James Roy in :gh:`126585`.)
 
 
+fnmatch
+-------
+
+* Added :func:`fnmatch.filterfalse` for excluding names matching a pattern.
+  (Contributed by Bénédikt Tran in :gh:`74598`.)
+
+
 fractions
 ---------
 
@@ -796,12 +825,30 @@ json
   See the :ref:`JSON command-line interface <json-commandline>` documentation.
   (Contributed by Trey Hunner in :gh:`122873`.)
 
+* By default, the output of the :ref:`JSON command-line interface <json-commandline>`
+  is highlighted in color. This can be controlled via the
+  :envvar:`PYTHON_COLORS` environment variable as well as the canonical
+  |NO_COLOR|_ and |FORCE_COLOR|_ environment variables. See also
+  :ref:`using-on-controlling-color`.
+  (Contributed by Tomas Roun in :gh:`131952`.)
 
 linecache
 ---------
 
 * :func:`linecache.getline` can retrieve source code for frozen modules.
   (Contributed by Tian Gao in :gh:`131638`.)
+
+
+logging.handlers
+----------------
+
+* :class:`logging.handlers.QueueListener` now implements the context
+  manager protocol, allowing it to be used in a :keyword:`with` statement.
+  (Contributed by Charles Machalow in :gh:`132106`.)
+
+* :meth:`QueueListener.start <logging.handlers.QueueListener.start>` now
+  raises a :exc:`RuntimeError` if the listener is already started.
+  (Contributed by Charles Machalow in :gh:`132106`.)
 
 
 mimetypes
@@ -1070,12 +1117,21 @@ sys.monitoring
 * Two new events are added: :monitoring-event:`BRANCH_LEFT` and
   :monitoring-event:`BRANCH_RIGHT`. The ``BRANCH`` event is deprecated.
 
+
+sysconfig
+---------
+
+* Add ``ABIFLAGS`` key to :func:`sysconfig.get_config_vars` on Windows.
+  (Contributed by Xuehai Pan in :gh:`131799`.)
+
+
 threading
 ---------
 
 * :meth:`threading.Thread.start` now sets the operating system thread name
   to :attr:`threading.Thread.name`.
   (Contributed by Victor Stinner in :gh:`59705`.)
+
 
 tkinter
 -------
@@ -1188,6 +1244,29 @@ urllib
 * Upgrade HTTP digest authentication algorithm for :mod:`urllib.request` by
   supporting SHA-256 digest authentication as specified in :rfc:`7616`.
   (Contributed by Calvin Bui in :gh:`128193`.)
+
+* Improve ergonomics and standards compliance when parsing and emitting
+  ``file:`` URLs.
+
+  In :func:`urllib.request.url2pathname`:
+
+  - Accept a complete URL when the new *require_scheme* argument is set to
+    true.
+  - Discard URL authorities that resolve to a local IP address.
+  - Raise :exc:`~urllib.error.URLError` if a URL authority doesn't resolve
+    to a local IP address, except on Windows where we return a UNC path.
+
+  In :func:`urllib.request.pathname2url`:
+
+  - Return a complete URL when the new *add_scheme* argument is set to true.
+  - Include an empty URL authority when a path begins with a slash. For
+    example, the path ``/etc/hosts`` is converted to the URL ``///etc/hosts``.
+
+  On Windows, drive letters are no longer converted to uppercase, and ``:``
+  characters not following a drive letter no longer cause an :exc:`OSError`
+  exception to be raised.
+
+  (Contributed by Barney Gale in :gh:`125866`.)
 
 
 uuid
@@ -1839,6 +1918,11 @@ New features
   file.
   (Contributed by Victor Stinner in :gh:`127350`.)
 
+* Add support of nullable arguments in :c:func:`PyArg_ParseTuple` and
+  similar functions.
+  Adding ``?`` after any format unit makes ``None`` be accepted as a value.
+  (Contributed by Serhiy Storchaka in :gh:`112068`.)
+
 * Add macros :c:func:`Py_PACK_VERSION` and :c:func:`Py_PACK_FULL_VERSION` for
   bit-packing Python version numbers.
   (Contributed by Petr Viktorin in :gh:`128629`.)
@@ -1930,6 +2014,13 @@ Deprecated
   use instead :c:macro:`!isnan`, :c:macro:`!isinf` and
   :c:macro:`!isfinite` available from :file:`math.h`
   since C99.  (Contributed by Sergey B Kirpichev in :gh:`119613`.)
+
+* Non-tuple sequences are deprecated as argument for the ``(items)``
+  format unit in :c:func:`PyArg_ParseTuple` and other
+  :ref:`argument parsing <arg-parsing>` functions if *items* contains
+  format units which store a :ref:`borrowed buffer <c-arg-borrowed-buffer>`
+  or a :term:`borrowed reference`.
+  (Contributed by Serhiy Storchaka in :gh:`50333`.)
 
 * The previously undocumented function :c:func:`PySequence_In` is :term:`soft deprecated`.
   Use :c:func:`PySequence_Contains` instead.

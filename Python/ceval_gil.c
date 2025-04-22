@@ -1211,41 +1211,9 @@ static inline void run_remote_debugger_script(const char *path)
         return;
     }
 
-    int fd = PyObject_AsFileDescriptor(fileobj);
-    if (fd == -1) {
-        PyErr_FormatUnraisable("Can't find fd for debugger script %s", path);
-    }
-    else {
-        int dup_fd = -1;
-        FILE *f = NULL;
-
-#ifdef MS_WINDOWS
-        dup_fd = _dup(fd);
-        if (dup_fd != -1) {
-            f = _fdopen(dup_fd, "r");
-        }
-        if (!f) {
-            _close(dup_fd);
-        }
-#else
-        dup_fd = dup(fd);
-        if (dup_fd != -1) {
-            f = fdopen(dup_fd, "r");
-        }
-        if (!f) {
-            close(dup_fd);
-        }
-#endif
-        if (!f) {
-            PyErr_SetFromErrno(PyExc_OSError);
-        }
-        else {
-            PyRun_AnyFileEx(f, path, 1);
-        }
-
-        if (PyErr_Occurred()) {
-            PyErr_FormatUnraisable("Error executing debugger script %s", path);
-        }
+    PyObject* source = PyObject_CallMethodNoArgs(fileobj, &_Py_ID(read));
+    if (!source) {
+        PyErr_FormatUnraisable("Error reading debugger script %s", path);
     }
 
     PyObject* res = PyObject_CallMethodNoArgs(fileobj, &_Py_ID(close));
@@ -1255,6 +1223,24 @@ static inline void run_remote_debugger_script(const char *path)
         Py_DECREF(res);
     }
     Py_DECREF(fileobj);
+
+    if (source) {
+        const char *str = PyBytes_AsString(source);
+        if (str) {
+            // PyRun_SimpleString() automatically raises an unraisable
+            // exception if it fails so we don't need to check the return value.
+            PyRun_SimpleString(str);
+        } else {
+            PyErr_FormatUnraisable("Error reading debugger script %s", path);
+        }
+        Py_DECREF(source);
+    }
+
+    // Just in case something went wrong, don't leave this function
+    // with an unhandled exception.
+    if (PyErr_Occurred()) {
+        PyErr_FormatUnraisable("Error executing debugger script %s", path);
+    }
 }
 #endif
 

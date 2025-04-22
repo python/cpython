@@ -417,7 +417,6 @@ class CommandLineTest(unittest.TestCase):
         self.assertFalse(args.lenient)
         self.assertEqual(args.type, ["foo.pic"])
 
-
     def test_invocation(self):
         for command, expected in [
             ("-l -e image/jpg", ".jpg"),
@@ -426,14 +425,14 @@ class CommandLineTest(unittest.TestCase):
         ]:
             self.assertEqual(mimetypes._main(shlex.split(command)), expected)
 
-
     def test_invocation_error(self):
         for command, expected in [
             ("-e image/jpg", "error: unknown type image/jpg"),
-            ("foo.pic", "error: media type unknown for foo.pic"),
+            ("foo.bar_ext", "error: media type unknown for foo.bar_ext"),
         ]:
-            with self.assertRaisesRegex(SystemExit, expected):
-                mimetypes._main(shlex.split(command))
+            with self.subTest(command=command):
+                with self.assertRaisesRegex(SystemExit, expected):
+                    mimetypes._main(shlex.split(command))
 
 
 if __name__ == "__main__":

@@ -1,2 +1,0 @@
-:program:`msgfmt` no longer adds the ``POT-Creation-Date`` to generated ``.mo`` files
-for consistency with GNU ``msgfmt``.

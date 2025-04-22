@@ -669,7 +669,7 @@ also be used to improve performance.
    and the functionality to receive code to be executed.
 
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. _debug-build:

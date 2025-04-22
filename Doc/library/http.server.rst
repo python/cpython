@@ -78,7 +78,7 @@ handler.  Code to create and run the server looks like this::
 
    By default, it is set to ``["http/1.1"]``, meaning the server supports HTTP/1.1.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. class:: ThreadingHTTPSServer(server_address, RequestHandlerClass,\
                                 bind_and_activate=True, *, certfile, keyfile=None,\
@@ -88,7 +88,7 @@ handler.  Code to create and run the server looks like this::
    requests by inheriting from :class:`~socketserver.ThreadingMixIn`. This is
    analogous to :class:`ThreadingHTTPServer` only using :class:`HTTPSServer`.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 The :class:`HTTPServer`, :class:`ThreadingHTTPServer`, :class:`HTTPSServer` and
@@ -588,7 +588,7 @@ The following options are accepted:
 
       python -m http.server --tls-cert fullchain.pem
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. option:: --tls-key
 
@@ -596,7 +596,7 @@ The following options are accepted:
 
    This option requires ``--tls-cert`` to be specified.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. option:: --tls-password-file
 
@@ -609,7 +609,7 @@ The following options are accepted:
 
    This option requires `--tls-cert`` to be specified.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 
 .. _http.server-security:
