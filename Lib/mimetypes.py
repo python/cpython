@@ -519,6 +519,7 @@ def _default_mime_types():
         '.cdf'    : 'application/x-netcdf',
         '.nc'     : 'application/x-netcdf',
         '.p12'    : 'application/x-pkcs12',
+        '.php'    : 'application/x-httpd-php',
         '.pfx'    : 'application/x-pkcs12',
         '.ram'    : 'application/x-pn-realaudio',
         '.pyc'    : 'application/x-python-code',
