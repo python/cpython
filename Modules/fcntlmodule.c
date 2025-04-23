@@ -111,7 +111,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "fcntl(): argument 3 must be an integer, "
+                     "fcntl() argument 3 must be an integer, "
                      "a bytes-like object, or a string, not %T",
                      arg);
         return NULL;
@@ -264,7 +264,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "ioctl(): argument 3 must be an integer, "
+                     "ioctl() argument 3 must be an integer, "
                      "a bytes-like object, or a string, not %T",
                      arg);
         return NULL;

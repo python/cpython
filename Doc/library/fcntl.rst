@@ -179,7 +179,7 @@ The module defines the following functions:
 
    .. versionchanged:: next
       The GIL is always released during a system call.
-      System calls failing with EINTR are automatically retries.
+      System calls failing with EINTR are automatically retried.
 
 .. function:: flock(fd, operation, /)
 
