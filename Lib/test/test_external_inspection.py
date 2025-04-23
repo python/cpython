@@ -514,6 +514,11 @@ class TestGetStackTrace(unittest.TestCase):
                 self.assertIn(('Task-1', []), entries)
                 self.assertIn(('server task', [[['main'], 'Task-1', []]]), entries)
                 self.assertIn(('echo client spam', [[['main'], 'Task-1', []]]), entries)
+
+                expected_stack = [[['echo_client_spam'], 'echo client spam', [[['main'], 'Task-1', []]]]]
+                tasks_with_stack = [task for task in entries if task[1] == expected_stack]
+                self.assertGreaterEqual(len(tasks_with_stack), 1000)
+
                 # the final task will have some random number, but it should for
                 # sure be one of the echo client spam horde (In windows this is not true
                 # for some reason)
