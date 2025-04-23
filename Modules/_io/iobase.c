@@ -10,6 +10,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallMethod()
+#include "pycore_fileutils.h"           // _PyFile_Flush
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyType_HasFeature()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()

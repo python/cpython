@@ -5,10 +5,9 @@ Tests for copying from pathlib.types._ReadablePath to _WritablePath.
 import contextlib
 import unittest
 
-from pathlib import Path
-
-from test.test_pathlib.support.local_path import LocalPathGround, WritableLocalPath
-from test.test_pathlib.support.zip_path import ZipPathGround, ReadableZipPath, WritableZipPath
+from .support import is_pypi
+from .support.local_path import LocalPathGround
+from .support.zip_path import ZipPathGround, ReadableZipPath, WritableZipPath
 
 
 class CopyTestBase:
@@ -53,7 +52,7 @@ class CopyTestBase:
                          self.target_ground.readbytes(result))
 
     def test_copy_file_to_directory(self):
-        if not isinstance(self.target_root, WritableLocalPath):
+        if isinstance(self.target_root, WritableZipPath):
             self.skipTest('needs local target')
         source = self.source_root / 'fileA'
         target = self.target_root / 'copyA'
@@ -113,7 +112,7 @@ class CopyTestBase:
         self.assertEqual(self.target_ground.readlink(target / 'linkD'), 'dirD')
 
     def test_copy_dir_to_existing_directory(self):
-        if not isinstance(self.target_root, WritableLocalPath):
+        if isinstance(self.target_root, WritableZipPath):
             self.skipTest('needs local target')
         source = self.source_root / 'dirC'
         target = self.target_root / 'copyC'
@@ -153,19 +152,22 @@ class ZipToZipPathCopyTest(CopyTestBase, unittest.TestCase):
     target_ground = ZipPathGround(WritableZipPath)
 
 
-class ZipToLocalPathCopyTest(CopyTestBase, unittest.TestCase):
-    source_ground = ZipPathGround(ReadableZipPath)
-    target_ground = LocalPathGround(Path)
+if not is_pypi:
+    from pathlib import Path
+
+    class ZipToLocalPathCopyTest(CopyTestBase, unittest.TestCase):
+        source_ground = ZipPathGround(ReadableZipPath)
+        target_ground = LocalPathGround(Path)
 
 
-class LocalToZipPathCopyTest(CopyTestBase, unittest.TestCase):
-    source_ground = LocalPathGround(Path)
-    target_ground = ZipPathGround(WritableZipPath)
+    class LocalToZipPathCopyTest(CopyTestBase, unittest.TestCase):
+        source_ground = LocalPathGround(Path)
+        target_ground = ZipPathGround(WritableZipPath)
 
 
-class LocalToLocalPathCopyTest(CopyTestBase, unittest.TestCase):
-    source_ground = LocalPathGround(Path)
-    target_ground = LocalPathGround(Path)
+    class LocalToLocalPathCopyTest(CopyTestBase, unittest.TestCase):
+        source_ground = LocalPathGround(Path)
+        target_ground = LocalPathGround(Path)
 
 
 if __name__ == "__main__":

@@ -624,6 +624,7 @@ class TestHashMappingProtocol(TestMappingProtocol):
 
     @support.skip_wasi_stack_overflow()
     @support.skip_emscripten_stack_overflow()
+    @support.skip_if_sanitizer("requires deep stack", ub=True)
     def test_repr_deep(self):
         d = self._empty_mapping()
         for i in range(support.exceeds_recursion_limit()):

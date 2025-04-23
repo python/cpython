@@ -12,19 +12,17 @@ Protocols for supporting classes in pathlib.
 
 from abc import ABC, abstractmethod
 from glob import _PathGlobber
+from pathlib._os import magic_open, ensure_distinct_paths, ensure_different_files, copyfileobj
 from pathlib import PurePath, Path
-from pathlib._os import magic_open, ensure_distinct_paths, copy_file
 from typing import Optional, Protocol, runtime_checkable
 
 
-def _explode_path(path):
+def _explode_path(path, split):
     """
     Split the path into a 2-tuple (anchor, parts), where *anchor* is the
     uppermost parent of the path (equivalent to path.parents[-1]), and
     *parts* is a reversed list of parts following the anchor.
     """
-    split = path.parser.split
-    path = str(path)
     parent, name = split(path)
     names = []
     while path != parent:
@@ -95,7 +93,7 @@ class _JoinablePath(ABC):
     @property
     def anchor(self):
         """The concatenation of the drive and root, or ''."""
-        return _explode_path(self)[0]
+        return _explode_path(str(self), self.parser.split)[0]
 
     @property
     def name(self):
@@ -169,7 +167,7 @@ class _JoinablePath(ABC):
     def parts(self):
         """An object providing sequence-like access to the
         components in the filesystem path."""
-        anchor, parts = _explode_path(self)
+        anchor, parts = _explode_path(str(self), self.parser.split)
         if anchor:
             parts.append(anchor)
         return tuple(reversed(parts))
@@ -221,11 +219,9 @@ class _JoinablePath(ABC):
         Return True if this path matches the given glob-style pattern. The
         pattern is matched against the entire path.
         """
-        if not hasattr(pattern, 'with_segments'):
-            pattern = self.with_segments(pattern)
         case_sensitive = self.parser.normcase('Aa') == 'Aa'
-        globber = _PathGlobber(pattern.parser.sep, case_sensitive, recursive=True)
-        match = globber.compile(str(pattern), altsep=pattern.parser.altsep)
+        globber = _PathGlobber(self.parser.sep, case_sensitive, recursive=True)
+        match = globber.compile(pattern, altsep=self.parser.altsep)
         return match(str(self)) is not None
 
 
@@ -282,11 +278,11 @@ class _ReadablePath(_JoinablePath):
         """Iterate over this subtree and yield all existing files (of any
         kind, including directories) matching the given relative pattern.
         """
-        if not hasattr(pattern, 'with_segments'):
-            pattern = self.with_segments(pattern)
-        anchor, parts = _explode_path(pattern)
+        anchor, parts = _explode_path(pattern, self.parser.split)
         if anchor:
             raise NotImplementedError("Non-relative patterns are unsupported")
+        elif not parts:
+            raise ValueError(f"Unacceptable pattern: {pattern!r}")
         elif not recurse_symlinks:
             raise NotImplementedError("recurse_symlinks=False is unsupported")
         case_sensitive = self.parser.normcase('Aa') == 'Aa'
@@ -332,30 +328,22 @@ class _ReadablePath(_JoinablePath):
         """
         raise NotImplementedError
 
-    def copy(self, target, follow_symlinks=True, preserve_metadata=False):
+    def copy(self, target, **kwargs):
         """
         Recursively copy this file or directory tree to the given destination.
         """
-        if not hasattr(target, 'with_segments'):
-            target = self.with_segments(target)
         ensure_distinct_paths(self, target)
-        copy_file(self, target, follow_symlinks, preserve_metadata)
+        target._copy_from(self, **kwargs)
         return target.joinpath()  # Empty join to ensure fresh metadata.
 
-    def copy_into(self, target_dir, *, follow_symlinks=True,
-                  preserve_metadata=False):
+    def copy_into(self, target_dir, **kwargs):
         """
         Copy this file or directory tree into the given existing directory.
         """
         name = self.name
         if not name:
             raise ValueError(f"{self!r} has an empty name")
-        elif hasattr(target_dir, 'with_segments'):
-            target = target_dir / name
-        else:
-            target = self.with_segments(target_dir, name)
-        return self.copy(target, follow_symlinks=follow_symlinks,
-                         preserve_metadata=preserve_metadata)
+        return self.copy(target_dir / name, **kwargs)
 
 
 class _WritablePath(_JoinablePath):
@@ -409,11 +397,25 @@ class _WritablePath(_JoinablePath):
         with magic_open(self, mode='w', encoding=encoding, errors=errors, newline=newline) as f:
             return f.write(data)
 
-    def _write_info(self, info, follow_symlinks=True):
+    def _copy_from(self, source, follow_symlinks=True):
         """
-        Write the given PathInfo to this path.
+        Recursively copy the given path to this path.
         """
-        pass
+        stack = [(source, self)]
+        while stack:
+            src, dst = stack.pop()
+            if not follow_symlinks and src.info.is_symlink():
+                dst.symlink_to(str(src.readlink()), src.info.is_dir())
+            elif src.info.is_dir():
+                children = src.iterdir()
+                dst.mkdir()
+                for child in children:
+                    stack.append((child, dst.joinpath(child.name)))
+            else:
+                ensure_different_files(src, dst)
+                with magic_open(src, 'rb') as source_f:
+                    with magic_open(dst, 'wb') as target_f:
+                        copyfileobj(source_f, target_f)
 
 
 _JoinablePath.register(PurePath)

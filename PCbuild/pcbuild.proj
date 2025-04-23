@@ -47,6 +47,8 @@
     </Projects2>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <!-- Static libraries for use later in the build -->
+    <Projects Include="zlib-ng.vcxproj" Condition="$(zlibNgDir) != '' and Exists('$(zlibNgDir)\zlib-ng.h.in')" />
     <!-- pythonXY.dll -->
     <!--
     Parallel build is explicitly disabled for this project because it

@@ -12,6 +12,7 @@ from _ctypes import __version__ as _ctypes_version
 from _ctypes import RTLD_LOCAL, RTLD_GLOBAL
 from _ctypes import ArgumentError
 from _ctypes import SIZEOF_TIME_T
+from _ctypes import CField
 
 from struct import calcsize as _calcsize
 
@@ -161,6 +162,7 @@ class py_object(_SimpleCData):
             return super().__repr__()
         except ValueError:
             return "%s(<NULL>)" % type(self).__name__
+    __class_getitem__ = classmethod(_types.GenericAlias)
 _check_size(py_object, "P")
 
 class c_short(_SimpleCData):

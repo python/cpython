@@ -9,6 +9,7 @@
 
 #include "Python.h"
 #include "pycore_call.h"                // _PyObject_CallNoArgs()
+#include "pycore_fileutils.h"           // _PyFile_Flush
 #include "pycore_object.h"              // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"            // _Py_FatalErrorFormat()
 #include "pycore_pylifecycle.h"         // _Py_IsInterpreterFinalizing()
@@ -1523,8 +1524,9 @@ buffered_iternext(PyObject *op)
 }
 
 static PyObject *
-buffered_repr(buffered *self)
+buffered_repr(PyObject *op)
 {
+    buffered *self = buffered_CAST(op);
     PyObject *nameobj, *res;
 
     if (PyObject_GetOptionalAttr((PyObject *) self, &_Py_ID(name), &nameobj) < 0) {

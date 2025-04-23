@@ -321,7 +321,13 @@ class MockPopenPipe:
 @unittest.skipUnless(sys.platform == "darwin", "macOS specific test")
 @requires_subprocess()
 class MacOSXOSAScriptTest(unittest.TestCase):
+
     def setUp(self):
+        # Ensure that 'BROWSER' is not set to 'open' or something else.
+        # See: https://github.com/python/cpython/issues/131254.
+        env = self.enterContext(os_helper.EnvironmentVarGuard())
+        env.unset("BROWSER")
+
         support.patch(self, os, "popen", self.mock_popen)
         self.browser = webbrowser.MacOSXOSAScript("default")
 

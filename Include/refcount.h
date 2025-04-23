@@ -41,6 +41,10 @@ having all the lower 32 bits set, which will avoid the reference count to go
 beyond the refcount limit. Immortality checks for reference count decreases will
 be done by checking the bit sign flag in the lower 32 bits.
 
+To ensure that once an object becomes immortal, it remains immortal, the threshold
+for omitting increfs is much higher than for omitting decrefs. Consequently, once
+the refcount for an object exceeds _Py_IMMORTAL_MINIMUM_REFCNT it will gradually
+increase over time until it reaches _Py_IMMORTAL_INITIAL_REFCNT.
 */
 #define _Py_IMMORTAL_INITIAL_REFCNT (3ULL << 30)
 #define _Py_IMMORTAL_MINIMUM_REFCNT (1ULL << 31)
@@ -288,7 +292,7 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
     }
 #elif SIZEOF_VOID_P > 4
     PY_UINT32_T cur_refcnt = op->ob_refcnt;
-    if (((int32_t)cur_refcnt) < 0) {
+    if (cur_refcnt >= _Py_IMMORTAL_INITIAL_REFCNT) {
         // the object is immortal
         _Py_INCREF_IMMORTAL_STAT_INC();
         return;
@@ -303,7 +307,10 @@ static inline Py_ALWAYS_INLINE void Py_INCREF(PyObject *op)
 #endif
     _Py_INCREF_STAT_INC();
 #ifdef Py_REF_DEBUG
-    _Py_INCREF_IncRefTotal();
+    // Don't count the incref if the object is immortal.
+    if (!_Py_IsImmortal(op)) {
+        _Py_INCREF_IncRefTotal();
+    }
 #endif
 #endif
 }
@@ -387,42 +394,6 @@ static inline void Py_DECREF(PyObject *op)
 #define Py_DECREF(op) Py_DECREF(_PyObject_CAST(op))
 
 #elif defined(Py_REF_DEBUG)
-static inline void Py_DECREF_MORTAL(const char *filename, int lineno, PyObject *op)
-{
-    if (op->ob_refcnt <= 0) {
-        _Py_NegativeRefcount(filename, lineno, op);
-    }
-    _Py_DECREF_STAT_INC();
-    assert(!_Py_IsStaticImmortal(op));
-    if (!_Py_IsImmortal(op)) {
-        _Py_DECREF_DecRefTotal();
-    }
-    if (--op->ob_refcnt == 0) {
-        _Py_Dealloc(op);
-    }
-}
-#define Py_DECREF_MORTAL(op) Py_DECREF_MORTAL(__FILE__, __LINE__, _PyObject_CAST(op))
-
-
-
-static inline void _Py_DECREF_MORTAL_SPECIALIZED(const char *filename, int lineno, PyObject *op, destructor destruct)
-{
-    if (op->ob_refcnt <= 0) {
-        _Py_NegativeRefcount(filename, lineno, op);
-    }
-    _Py_DECREF_STAT_INC();
-    assert(!_Py_IsStaticImmortal(op));
-    if (!_Py_IsImmortal(op)) {
-        _Py_DECREF_DecRefTotal();
-    }
-    if (--op->ob_refcnt == 0) {
-#ifdef Py_TRACE_REFS
-        _Py_ForgetReference(op);
-#endif
-        destruct(op);
-    }
-}
-#define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) _Py_DECREF_MORTAL_SPECIALIZED(__FILE__, __LINE__, op, destruct)
 
 static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 {
@@ -448,28 +419,6 @@ static inline void Py_DECREF(const char *filename, int lineno, PyObject *op)
 #define Py_DECREF(op) Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
 
 #else
-static inline void Py_DECREF_MORTAL(PyObject *op)
-{
-    assert(!_Py_IsStaticImmortal(op));
-    _Py_DECREF_STAT_INC();
-    if (--op->ob_refcnt == 0) {
-        _Py_Dealloc(op);
-    }
-}
-#define Py_DECREF_MORTAL(op) Py_DECREF_MORTAL(_PyObject_CAST(op))
-
-static inline void Py_DECREF_MORTAL_SPECIALIZED(PyObject *op, destructor destruct)
-{
-    assert(!_Py_IsStaticImmortal(op));
-    _Py_DECREF_STAT_INC();
-    if (--op->ob_refcnt == 0) {
-#ifdef Py_TRACE_REFS
-        _Py_ForgetReference(op);
-#endif
-        destruct(op);
-    }
-}
-#define Py_DECREF_MORTAL_SPECIALIZED(op, destruct) Py_DECREF_MORTAL_SPECIALIZED(_PyObject_CAST(op), destruct)
 
 static inline Py_ALWAYS_INLINE void Py_DECREF(PyObject *op)
 {

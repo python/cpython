@@ -368,8 +368,7 @@ class PlatformTest(unittest.TestCase):
         with support.swap_attr(platform, '_wmi_query', raises_oserror):
             with os_helper.EnvironmentVarGuard() as environ:
                 try:
-                    if 'PROCESSOR_ARCHITEW6432' in environ:
-                        del environ['PROCESSOR_ARCHITEW6432']
+                    del environ['PROCESSOR_ARCHITEW6432']
                     environ['PROCESSOR_ARCHITECTURE'] = 'foo'
                     platform._uname_cache = None
                     system, node, release, version, machine, processor = platform.uname()
@@ -552,6 +551,10 @@ class PlatformTest(unittest.TestCase):
                 (b'GLIBC_2.9', ('glibc', '2.9')),
                 (b'libc.so.1.2.5', ('libc', '1.2.5')),
                 (b'libc_pthread.so.1.2.5', ('libc', '1.2.5_pthread')),
+                (b'/aports/main/musl/src/musl-1.2.5', ('musl', '1.2.5')),
+                # musl uses semver, but we accept some variations anyway:
+                (b'/aports/main/musl/src/musl-12.5', ('musl', '12.5')),
+                (b'/aports/main/musl/src/musl-1.2.5.7', ('musl', '1.2.5.7')),
                 (b'', ('', '')),
             ):
                 with open(filename, 'wb') as fp:
@@ -563,14 +566,29 @@ class PlatformTest(unittest.TestCase):
                                  expected)
 
         # binary containing multiple versions: get the most recent,
-        # make sure that 1.9 is seen as older than 1.23.4
-        chunksize = 16384
-        with open(filename, 'wb') as f:
-            # test match at chunk boundary
-            f.write(b'x'*(chunksize - 10))
-            f.write(b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0')
-        self.assertEqual(platform.libc_ver(filename, chunksize=chunksize),
-                         ('glibc', '1.23.4'))
+        # make sure that eg 1.9 is seen as older than 1.23.4, and that
+        # the arguments don't count even if they are set.
+        chunksize = 200
+        for data, expected in (
+                (b'GLIBC_1.23.4\0GLIBC_1.9\0GLIBC_1.21\0', ('glibc', '1.23.4')),
+                (b'libc.so.2.4\0libc.so.9\0libc.so.23.1\0', ('libc', '23.1')),
+                (b'musl-1.4.1\0musl-2.1.1\0musl-2.0.1\0', ('musl', '2.1.1')),
+                (b'no match here, so defaults are used', ('test', '100.1.0')),
+            ):
+            with open(filename, 'wb') as f:
+                # test match at chunk boundary
+                f.write(b'x'*(chunksize - 10))
+                f.write(data)
+            self.assertEqual(
+                expected,
+                platform.libc_ver(
+                    filename,
+                    lib='test',
+                    version='100.1.0',
+                    chunksize=chunksize,
+                    ),
+                )
+
 
     def test_android_ver(self):
         res = platform.android_ver()

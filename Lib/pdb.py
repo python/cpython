@@ -99,7 +99,7 @@ class Restart(Exception):
     pass
 
 __all__ = ["run", "pm", "Pdb", "runeval", "runctx", "runcall", "set_trace",
-           "post_mortem", "help"]
+           "post_mortem", "set_default_backend", "get_default_backend", "help"]
 
 
 def find_first_executable_line(code):
@@ -302,6 +302,23 @@ class _PdbInteractiveConsole(code.InteractiveConsole):
 line_prefix = '\n-> '   # Probably a better default
 
 
+# The default backend to use for Pdb instances if not specified
+# Should be either 'settrace' or 'monitoring'
+_default_backend = 'settrace'
+
+
+def set_default_backend(backend):
+    """Set the default backend to use for Pdb instances."""
+    global _default_backend
+    if backend not in ('settrace', 'monitoring'):
+        raise ValueError("Invalid backend: %s" % backend)
+    _default_backend = backend
+
+
+def get_default_backend():
+    """Get the default backend to use for Pdb instances."""
+    return _default_backend
+
 
 class Pdb(bdb.Bdb, cmd.Cmd):
     _previous_sigint_handler = None
@@ -315,8 +332,8 @@ class Pdb(bdb.Bdb, cmd.Cmd):
     _last_pdb_instance = None
 
     def __init__(self, completekey='tab', stdin=None, stdout=None, skip=None,
-                 nosigint=False, readrc=True, mode=None):
-        bdb.Bdb.__init__(self, skip=skip)
+                 nosigint=False, readrc=True, mode=None, backend=None):
+        bdb.Bdb.__init__(self, skip=skip, backend=backend if backend else get_default_backend())
         cmd.Cmd.__init__(self, completekey, stdin, stdout)
         sys.audit("pdb.Pdb")
         if stdout:
@@ -1768,7 +1785,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         if not arg:
             self._print_invalid_arg(arg)
             return
-        sys.settrace(None)
+        self.stop_trace()
         globals = self.curframe.f_globals
         locals = self.curframe.f_locals
         p = Pdb(self.completekey, self.stdin, self.stdout)
@@ -1779,7 +1796,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         except Exception:
             self._error_exc()
         self.message("LEAVING RECURSIVE DEBUGGER")
-        sys.settrace(self.trace_dispatch)
+        self.start_trace()
         self.lastcmd = p.lastcmd
 
     complete_debug = _complete_expression
@@ -2469,7 +2486,7 @@ def set_trace(*, header=None, commands=None):
     if Pdb._last_pdb_instance is not None:
         pdb = Pdb._last_pdb_instance
     else:
-        pdb = Pdb(mode='inline')
+        pdb = Pdb(mode='inline', backend='monitoring')
     if header is not None:
         pdb.message(header)
     pdb.set_trace(sys._getframe().f_back, commands=commands)
@@ -2600,7 +2617,7 @@ def main():
     # modified by the script being debugged. It's a bad idea when it was
     # changed by the user from the command line. There is a "restart" command
     # which allows explicit specification of command line arguments.
-    pdb = Pdb(mode='cli')
+    pdb = Pdb(mode='cli', backend='monitoring')
     pdb.rcLines.extend(opts.commands)
     while True:
         try:
