@@ -283,7 +283,7 @@ class Stack:
         self.base_offset = self.logical_sp
 
     def push(self, var: Local) -> None:
-        assert(var not in self.variables)
+        assert(var not in self.variables), var
         self.variables.append(var)
         self.logical_sp = self.logical_sp.push(var.item)
 
@@ -325,6 +325,7 @@ class Stack:
             var_offset = var_offset.push(var.item)
 
     def flush(self, out: CWriter) -> None:
+        self._print(out)
         self.save_variables(out)
         self._save_physical_sp(out)
         out.start_line()
@@ -432,12 +433,14 @@ class Storage:
     stack: Stack
     inputs: list[Local]
     outputs: list[Local]
+    peeks: int
     check_liveness: bool
     spilled: int = 0
 
     @staticmethod
     def needs_defining(var: Local) -> bool:
         return (
+            not var.item.peek and
             not var.in_local and
             not var.is_array() and
             var.name != "unused"
@@ -454,7 +457,7 @@ class Storage:
         )
 
     def clear_inputs(self, reason:str) -> None:
-        while self.inputs:
+        while len(self.inputs) > self.peeks:
             tos = self.inputs.pop()
             if self.is_live(tos) and self.check_liveness:
                 raise StackError(
@@ -464,14 +467,14 @@ class Storage:
 
     def clear_dead_inputs(self) -> None:
         live = ""
-        while self.inputs:
+        while len(self.inputs) > self.peeks:
             tos = self.inputs[-1]
             if self.is_live(tos):
                 live = tos.name
                 break
             self.inputs.pop()
             self.stack.drop(tos.item, self.check_liveness)
-        for var in self.inputs:
+        for var in self.inputs[self.peeks:]:
             if not self.is_live(var):
                 raise StackError(
                     f"Input '{var.name}' is not live, but '{live}' is"
@@ -493,8 +496,8 @@ class Storage:
                     f"Expected '{undefined}' to be defined before '{out.name}'"
             else:
                 undefined = out.name
-        while self.outputs and not self.needs_defining(self.outputs[0]):
-            out = self.outputs.pop(0)
+        while len(self.outputs) > self.peeks and not self.needs_defining(self.outputs[0]):
+            out = self.outputs.pop(self.peeks)
             self.stack.push(out)
 
     def locals_cached(self) -> bool:
@@ -541,12 +544,9 @@ class Storage:
             local = stack.pop(input, out)
             if input.peek:
                 peeks.append(local)
-            else:
-                inputs.append(local)
+            inputs.append(local)
         inputs.reverse()
         peeks.reverse()
-        for peek in peeks:
-            stack.push(peek)
         offset = stack.logical_sp - stack.physical_sp
         for ouput in uop.stack.outputs:
             if ouput.is_array() and ouput.used and not ouput.peek:
@@ -555,8 +555,8 @@ class Storage:
             offset = offset.push(ouput)
         for var in inputs:
             stack.push(var)
-        outputs = [ Local.undefined(var) for var in uop.stack.outputs if not var.peek ]
-        return Storage(stack, inputs, outputs, check_liveness)
+        outputs = peeks + [ Local.undefined(var) for var in uop.stack.outputs if not var.peek ]
+        return Storage(stack, inputs, outputs, len(peeks), check_liveness)
 
     @staticmethod
     def copy_list(arg: list[Local]) -> list[Local]:
@@ -568,26 +568,24 @@ class Storage:
         inputs = [ variables[var.name] for var in self.inputs]
         assert [v.name for v in inputs] == [v.name for v in self.inputs], (inputs, self.inputs)
         return Storage(
-            new_stack, inputs, self.copy_list(self.outputs),
+            new_stack, inputs, self.copy_list(self.outputs), self.peeks,
             self.check_liveness, self.spilled
         )
 
-    def sanity_check(self) -> None:
+    @staticmethod
+    def check_names(locals: list[Local]) -> None:
         names: set[str] = set()
-        for var in self.inputs:
+        for var in locals:
+            if var.name == "unused":
+                continue
             if var.name in names:
                 raise StackError(f"Duplicate name {var.name}")
             names.add(var.name)
-        names = set()
-        for var in self.outputs:
-            if var.name in names:
-                raise StackError(f"Duplicate name {var.name}")
-            names.add(var.name)
-        names = set()
-        for var in self.stack.variables:
-            if var.name in names:
-                raise StackError(f"Duplicate name {var.name}")
-            names.add(var.name)
+
+    def sanity_check(self) -> None:
+        self.check_names(self.inputs)
+        self.check_names(self.outputs)
+        self.check_names(self.stack.variables)
 
     def is_flushed(self) -> bool:
         for var in self.outputs:
@@ -602,6 +600,8 @@ class Storage:
             other.clear_dead_inputs()
         if len(self.inputs) != len(other.inputs) and self.check_liveness:
             diff = self.inputs[-1] if len(self.inputs) > len(other.inputs) else other.inputs[-1]
+            self._print(out)
+            other._print(out)
             raise StackError(f"Unmergeable inputs. Differing state of '{diff.name}'")
         for var, other_var in zip(self.inputs, other.inputs):
             if var.in_local != other_var.in_local:
@@ -624,11 +624,11 @@ class Storage:
         if self.spilled:
             raise StackError(f"Unbalanced stack spills")
         self.clear_inputs("at the end of the micro-op")
-        if self.inputs and self.check_liveness:
+        if len(self.inputs) > self.peeks and self.check_liveness:
             raise StackError(f"Input variable '{self.inputs[-1].name}' is still live")
         self._push_defined_outputs()
         if self.outputs:
-            for out in self.outputs:
+            for out in self.outputs[self.peeks:]:
                 if self.needs_defining(out):
                     raise StackError(f"Output variable '{self.outputs[0].name}' is not defined")
                 self.stack.push(out)
@@ -640,6 +640,10 @@ class Storage:
         inputs = ", ".join([var.compact_str() for var in self.inputs])
         outputs = ", ".join([var.compact_str() for var in self.outputs])
         return f"{stack_comment[:-2]}{next_line}inputs: {inputs} outputs: {outputs}*/"
+
+    def _print(self, out: CWriter) -> None:
+        if PRINT_STACKS:
+            out.emit(self.as_comment() + "\n")
 
     def close_inputs(self, out: CWriter) -> None:
 
