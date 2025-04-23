@@ -2287,7 +2287,7 @@ dict_unhashtable_type(PyObject *key)
     }
 
     PyErr_Format(PyExc_TypeError,
-                 "Cannot use '%T' as a dict key (%S)",
+                 "cannot use '%T' as a dict key (%S)",
                  key, exc);
     Py_DECREF(exc);
 }

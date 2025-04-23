@@ -1493,7 +1493,7 @@ class DictTest(unittest.TestCase):
         key = [1, 2, 3]
 
         def check_unhashable_key():
-            msg = "Cannot use 'list' as a dict key (unhashable type: 'list')"
+            msg = "cannot use 'list' as a dict key (unhashable type: 'list')"
             return self.assertRaisesRegex(TypeError, re.escape(msg))
 
         with check_unhashable_key():

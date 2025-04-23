@@ -222,7 +222,7 @@ set_unhashtable_type(PyObject *key)
     }
 
     PyErr_Format(PyExc_TypeError,
-                 "Cannot use '%T' as a set element (%S)",
+                 "cannot use '%T' as a set element (%S)",
                  key, exc);
     Py_DECREF(exc);
 }

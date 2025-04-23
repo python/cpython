@@ -651,7 +651,7 @@ class TestSet(TestJointOps, unittest.TestCase):
         elem = [1, 2, 3]
 
         def check_unhashable_element():
-            msg = "Cannot use 'list' as a set element (unhashable type: 'list')"
+            msg = "cannot use 'list' as a set element (unhashable type: 'list')"
             return self.assertRaisesRegex(TypeError, re.escape(msg))
 
         with check_unhashable_element():
