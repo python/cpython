@@ -45,6 +45,29 @@ struct _Py_AsyncioModuleDebugOffsets {
     } asyncio_thread_state;
 };
 
+// Get the PyAsyncioDebug section address for any platform
+static uintptr_t
+_Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
+{
+    uintptr_t address = 0;
+
+#ifdef MS_WINDOWS
+    // On Windows, search for asyncio debug in executable or DLL
+    address = search_windows_map_for_section(handle, "AsyncioDebug", L"_asyncio.cpython");
+#elif defined(__linux__)
+    // On Linux, search for asyncio debug in executable or DLL
+    address = search_linux_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython");
+#else
+    // On macOS, try libpython first, then fall back to python
+    address = search_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython");
+    if (address == 0) {
+        PyErr_Clear();
+        address = search_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython");
+    }
+#endif
+
+    return address;
+}
 
 static int
 read_string(

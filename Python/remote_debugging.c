@@ -6,59 +6,6 @@
 #include "internal/pycore_ceval.h"
 #include "internal/pycore_remote_debug.h"
 
-#ifdef __linux__
-#    include <elf.h>
-#    include <sys/uio.h>
-#    if INTPTR_MAX == INT64_MAX
-#        define Elf_Ehdr Elf64_Ehdr
-#        define Elf_Shdr Elf64_Shdr
-#        define Elf_Phdr Elf64_Phdr
-#    else
-#        define Elf_Ehdr Elf32_Ehdr
-#        define Elf_Shdr Elf32_Shdr
-#        define Elf_Phdr Elf32_Phdr
-#    endif
-#    include <sys/mman.h>
-#endif
-
-#if defined(__APPLE__) && TARGET_OS_OSX
-#  include <libproc.h>
-#  include <mach-o/fat.h>
-#  include <mach-o/loader.h>
-#  include <mach-o/nlist.h>
-#  include <mach/mach.h>
-#  include <mach/mach_vm.h>
-#  include <mach/machine.h>
-#  include <sys/mman.h>
-#  include <sys/proc.h>
-#  include <sys/sysctl.h>
-#endif
-
-#ifdef MS_WINDOWS
-    // Windows includes and definitions
-#include <windows.h>
-#include <psapi.h>
-#include <tlhelp32.h>
-#endif
-
-#include <errno.h>
-#include <fcntl.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#ifndef MS_WINDOWS
-#include <sys/param.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#endif
-
-#ifndef HAVE_PROCESS_VM_READV
-#    define HAVE_PROCESS_VM_READV 0
-#endif
-
 #if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
 
 static int
@@ -922,22 +869,13 @@ ensure_debug_offset_compatibility(const _Py_DebugOffsets* debug_offsets)
     return 0;
 }
 
-int
-_Py_RemoteDebug_ReadDebugOffsets(
+static int
+read_offsets(
     proc_handle_t *handle,
     uintptr_t *runtime_start_address,
     _Py_DebugOffsets* debug_offsets
 ) {
-    *runtime_start_address = _Py_RemoteDebug_GetPyRuntimeAddress(handle);
-    if (!*runtime_start_address) {
-        if (!PyErr_Occurred()) {
-            PyErr_SetString(
-                PyExc_RuntimeError, "Failed to get PyRuntime address");
-        }
-        return -1;
-    }
-    size_t size = sizeof(struct _Py_DebugOffsets);
-    if (0 != _Py_RemoteDebug_ReadRemoteMemory(handle, *runtime_start_address, size, debug_offsets)) {
+    if (_Py_RemoteDebug_ReadDebugOffsets(handle, runtime_start_address, debug_offsets)) {
         return -1;
     }
     if (ensure_debug_offset_compatibility(debug_offsets)) {
