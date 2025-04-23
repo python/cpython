@@ -585,6 +585,7 @@ list_repr_impl(PyListObject *v)
 {
     PyObject *s;
     _PyUnicodeWriter writer;
+    PyObject *item = NULL;
     Py_ssize_t i = Py_ReprEnter((PyObject*)v);
     if (i != 0) {
         return i > 0 ? PyUnicode_FromString("[...]") : NULL;
@@ -601,12 +602,15 @@ list_repr_impl(PyListObject *v)
     /* Do repr() on each element.  Note that this may mutate the list,
        so must refetch the list size on each iteration. */
     for (i = 0; i < Py_SIZE(v); ++i) {
+        /* Hold a strong reference since repr(item) can mutate the list */
+        item = Py_NewRef(v->ob_item[i]);
+
         if (i > 0) {
             if (_PyUnicodeWriter_WriteASCIIString(&writer, ", ", 2) < 0)
                 goto error;
         }
 
-        s = PyObject_Repr(v->ob_item[i]);
+        s = PyObject_Repr(item);
         if (s == NULL)
             goto error;
 
@@ -615,6 +619,7 @@ list_repr_impl(PyListObject *v)
             goto error;
         }
         Py_DECREF(s);
+        Py_CLEAR(item);
     }
 
     writer.overallocate = 0;
@@ -625,6 +630,7 @@ list_repr_impl(PyListObject *v)
     return _PyUnicodeWriter_Finish(&writer);
 
 error:
+    Py_XDECREF(item);
     _PyUnicodeWriter_Dealloc(&writer);
     Py_ReprLeave((PyObject *)v);
     return NULL;
