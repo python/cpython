@@ -526,6 +526,7 @@ def _default_mime_types():
         '.ram'    : 'application/x-pn-realaudio',
         '.pyc'    : 'application/x-python-code',
         '.pyo'    : 'application/x-python-code',
+        '.rpm'    : 'application/x-rpm',
         '.sh'     : 'application/x-sh',
         '.shar'   : 'application/x-shar',
         '.swf'    : 'application/x-shockwave-flash',

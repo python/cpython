@@ -973,6 +973,7 @@ mimetypes
   * Add M4V ``video/x-m4v`` (``.m4v``)
   * Add PHP ``application/x-httpd-php`` (``.php``)
   * Add RAR ``application/vnd.rar`` (``.rar``)
+  * Add RPM ``application/x-rpm`` (``.rpm``)
 
   (Contributed by Hugo van Kemenade in :gh:`129965`.)
 

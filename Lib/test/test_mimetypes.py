@@ -243,6 +243,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/vnd.rar", ".rar"),
                 ("application/x-7z-compressed", ".7z"),
                 ("application/x-httpd-php", ".php"),
+                ("application/x-rpm", ".rpm"),
                 ("application/x-texinfo", ".texi"),
                 ("application/x-troff", ".roff"),
                 ("application/xml", ".xsl"),
