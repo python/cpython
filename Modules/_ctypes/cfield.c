@@ -99,7 +99,12 @@ PyCField_new_impl(PyTypeObject *type, PyObject *name, PyObject *proto,
                      "type of field %R must be a C type", name);
         goto error;
     }
-    assert(byte_size == info->size);
+    if (byte_size != info->size) {
+        PyErr_Format(PyExc_ValueError,
+                     "byte size of field %R (%zd) does not match type size (%zd)",
+                     name, byte_size, info->size);
+        goto error;
+    }
 
     Py_ssize_t bitfield_size = 0;
     Py_ssize_t bit_offset = 0;
@@ -243,7 +248,7 @@ _pack_legacy_size(CFieldObject *field)
 }
 
 static int
-PyCField_set(PyObject *op, PyObject *inst, PyObject *value)
+PyCField_set_lock_held(PyObject *op, PyObject *inst, PyObject *value)
 {
     CDataObject *dst;
     char *ptr;
@@ -265,6 +270,16 @@ PyCField_set(PyObject *op, PyObject *inst, PyObject *value)
                        self->index, _pack_legacy_size(self), ptr);
 }
 
+static int
+PyCField_set(PyObject *op, PyObject *inst, PyObject *value)
+{
+    int res;
+    Py_BEGIN_CRITICAL_SECTION(inst);
+    res = PyCField_set_lock_held(op, inst, value);
+    Py_END_CRITICAL_SECTION();
+    return res;
+}
+
 static PyObject *
 PyCField_get(PyObject *op, PyObject *inst, PyObject *type)
 {
@@ -280,9 +295,13 @@ PyCField_get(PyObject *op, PyObject *inst, PyObject *type)
         return NULL;
     }
     src = _CDataObject_CAST(inst);
-    return PyCData_get(st, self->proto, self->getfunc, inst,
+    PyObject *res;
+    Py_BEGIN_CRITICAL_SECTION(inst);
+    res = PyCData_get(st, self->proto, self->getfunc, inst,
                        self->index, _pack_legacy_size(self),
                        src->b_ptr + self->byte_offset);
+    Py_END_CRITICAL_SECTION();
+    return res;
 }
 
 static PyObject *
@@ -1461,8 +1480,8 @@ _Py_COMP_DIAG_PUSH
 
 /* Delayed initialization. Windows cannot statically reference dynamically
    loaded addresses from DLLs. */
-static void
-_ctypes_init_fielddesc_locked(void)
+void
+_ctypes_init_fielddesc(void)
 {
     /* Fixed-width integers */
 
@@ -1659,30 +1678,14 @@ print(f"    formattable.simple_type_chars[i] = 0;")
 #undef FIXINT_FIELDDESC_FOR
 _Py_COMP_DIAG_POP
 
-static void
-_ctypes_init_fielddesc(void)
-{
-    static bool initialized = false;
-    static PyMutex mutex = {0};
-    PyMutex_Lock(&mutex);
-    if (!initialized) {
-        _ctypes_init_fielddesc_locked();
-        initialized = true;
-    }
-    PyMutex_Unlock(&mutex);
-}
-
 char *
 _ctypes_get_simple_type_chars(void) {
-    _ctypes_init_fielddesc();
     return formattable.simple_type_chars;
 }
 
 struct fielddesc *
 _ctypes_get_fielddesc(const char *fmt)
 {
-    _ctypes_init_fielddesc();
-
     struct fielddesc *result = NULL;
     switch(fmt[0]) {
 /*[python input]

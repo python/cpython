@@ -156,8 +156,11 @@ created.  Socket addresses are represented as follows:
 
   - :const:`BTPROTO_HCI` accepts a format that depends on your OS.
 
-    - On Linux it accepts a tuple ``(device_id,)`` where ``device_id``
-      is an integer specifying the number of the Bluetooth device.
+    - On Linux it accepts an integer ``device_id`` or a tuple
+      ``(device_id, [channel])`` where ``device_id``
+      specifies the number of the Bluetooth device,
+      and ``channel`` is an optional integer specifying the HCI channel
+      (:const:`HCI_CHANNEL_RAW` by default).
     - On FreeBSD, NetBSD and DragonFly BSD it accepts ``bdaddr``
       where ``bdaddr`` is the Bluetooth address as a string.
 
@@ -166,6 +169,10 @@ created.  Socket addresses are represented as follows:
 
     .. versionchanged:: 3.13.3
        FreeBSD support added.
+
+    .. versionchanged:: next
+       Added ``channel`` field.
+       ``device_id`` not packed in a tuple is now accepted.
 
   - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is
     the Bluetooth address as a string or a :class:`bytes` object.
@@ -491,6 +498,9 @@ Constants
    .. versionchanged:: 3.11
       NetBSD support was added.
 
+   .. versionchanged:: next
+      Restored missing ``CAN_RAW_ERR_FILTER`` on Linux.
+
 .. data:: CAN_BCM
           CAN_BCM_*
 
@@ -667,15 +677,74 @@ Constants
    These constants describe the Bluetooth address type when binding or
    connecting a :const:`BTPROTO_L2CAP` socket.
 
+   .. availability:: Linux, FreeBSD
+
    .. versionadded:: 3.14
+
+.. data:: SOL_RFCOMM
+          SOL_L2CAP
+          SOL_HCI
+          SOL_SCO
+          SOL_BLUETOOTH
+
+   Used in the level argument to the :meth:`~socket.setsockopt` and
+   :meth:`~socket.getsockopt` methods of Bluetooth socket objects.
+
+   :const:`SOL_BLUETOOTH` is only available on Linux. Other constants
+   are available if the corresponding protocol is supported.
+
+.. data:: SO_L2CAP_*
+          L2CAP_LM
+          L2CAP_LM_*
+          SO_RFCOMM_*
+          RFCOMM_LM_*
+          SO_SCO_*
+          SO_BTH_*
+          BT_*
+
+   Used in the option name and value argument to the :meth:`~socket.setsockopt`
+   and :meth:`~socket.getsockopt` methods of Bluetooth socket objects.
+
+   :const:`!BT_*` and :const:`L2CAP_LM` are only available on Linux.
+   :const:`!SO_BTH_*` are only available on Windows.
+   Other constants may be available on Linux and various BSD platforms.
+
+   .. versionadded:: next
 
 .. data:: HCI_FILTER
           HCI_TIME_STAMP
           HCI_DATA_DIR
+          SO_HCI_EVT_FILTER
+          SO_HCI_PKT_FILTER
 
-   For use with :const:`BTPROTO_HCI`. :const:`!HCI_FILTER` is only
-   available on Linux and FreeBSD. :const:`!HCI_TIME_STAMP` and
-   :const:`!HCI_DATA_DIR` are only available on Linux.
+   Option names for use with :const:`BTPROTO_HCI`.
+   Availability and format of the option values depend on platform.
+
+   .. versionchanged:: next
+      Added :const:`!SO_HCI_EVT_FILTER` and :const:`!SO_HCI_PKT_FILTER`
+      on NetBSD and DragonFly BSD.
+      Added :const:`!HCI_DATA_DIR` on FreeBSD, NetBSD and DragonFly BSD.
+
+.. data:: HCI_DEV_NONE
+
+   The ``device_id`` value used to create an HCI socket that isn't specific
+   to a single Bluetooth adapter.
+
+   .. availability:: Linux
+
+   .. versionadded:: next
+
+.. data:: HCI_CHANNEL_RAW
+          HCI_CHANNEL_USER
+          HCI_CHANNEL_MONITOR
+          HCI_CHANNEL_CONTROL
+          HCI_CHANNEL_LOGGING
+
+   Possible values for ``channel`` field in the :const:`BTPROTO_HCI` address.
+
+   .. availability:: Linux
+
+   .. versionadded:: next
 
 .. data:: AF_QIPCRTR
 

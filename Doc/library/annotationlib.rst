@@ -214,7 +214,7 @@ Functions
 
    Convert an annotations dict containing runtime values to a
    dict containing only strings. If the values are not already strings,
-   they are converted using :func:`value_to_string`.
+   they are converted using :func:`type_repr`.
    This is meant as a helper for user-provided
    annotate functions that support the :attr:`~Format.STRING` format but
    do not have access to the code creating the annotations.
@@ -393,7 +393,7 @@ Functions
 
    .. versionadded:: 3.14
 
-.. function:: value_to_string(value)
+.. function:: type_repr(value)
 
    Convert an arbitrary Python value to a format suitable for use by the
    :attr:`~Format.STRING` format. This calls :func:`repr` for most
