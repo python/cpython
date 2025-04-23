@@ -273,6 +273,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("image/webp", ".webp"),
                 ("image/wmf", ".wmf"),
                 ("message/rfc822", ".eml"),
+                ("model/gltf+json", ".gltf"),
                 ("model/gltf-binary", ".glb"),
                 ("text/html", ".html"),
                 ("text/plain", ".txt"),

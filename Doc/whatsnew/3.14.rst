@@ -972,6 +972,7 @@ mimetypes
     when not strict
   * Add deb ``application/x-debian-package`` (``.deb``)
   * Add glTF binary ``model/gltf-binary`` (``.glb``)
+  * Add glTF JSON/ASCII ``model/gltf+json`` (``.gltf``)
   * Add M4V ``video/x-m4v`` (``.m4v``)
   * Add PHP ``application/x-httpd-php`` (``.php``)
   * Add RAR ``application/vnd.rar`` (``.rar``)
