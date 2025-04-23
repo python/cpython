@@ -619,6 +619,7 @@ def _default_mime_types():
         '.nws'    : 'message/rfc822',
         '.gltf'   : 'model/gltf+json',
         '.glb'    : 'model/gltf-binary',
+        '.stl'    : 'model/stl',
         '.css'    : 'text/css',
         '.csv'    : 'text/csv',
         '.html'   : 'text/html',

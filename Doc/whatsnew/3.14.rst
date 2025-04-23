@@ -977,6 +977,7 @@ mimetypes
   * Add PHP ``application/x-httpd-php`` (``.php``)
   * Add RAR ``application/vnd.rar`` (``.rar``)
   * Add RPM ``application/x-rpm`` (``.rpm``)
+  * Add STL ``model/stl`` (``.stl``)
   * Add Windows Media Video ``video/x-ms-wmv`` (``.wmv``)
 
   (Contributed by Hugo van Kemenade in :gh:`129965`.)

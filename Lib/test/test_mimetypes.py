@@ -275,6 +275,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("message/rfc822", ".eml"),
                 ("model/gltf+json", ".gltf"),
                 ("model/gltf-binary", ".glb"),
+                ("model/stl", ".stl"),
                 ("text/html", ".html"),
                 ("text/plain", ".txt"),
                 ("text/rtf", ".rtf"),
