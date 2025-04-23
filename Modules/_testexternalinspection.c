@@ -1490,7 +1490,13 @@ append_awaited_by_for_thread(
         return -1;
     }
 
-    while ((uintptr_t)task_node.next != head_addr) {
+size_t iteration_count = 0;
+const size_t MAX_ITERATIONS = 100000;  // Reasonable upper bound
+while ((uintptr_t)task_node.next != head_addr) {
+    if (++iteration_count > MAX_ITERATIONS) {
+        PyErr_SetString(PyExc_RuntimeError, "Task list appears corrupted");
+        return -1;
+    }
         uintptr_t task_addr = (uintptr_t)task_node.next
             - async_offsets->asyncio_task_object.task_node;
 
