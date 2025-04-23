@@ -80,7 +80,62 @@ read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* ds
 static int
 write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
 {
-    return _Py_RemoteDebug_WriteRemoteMemory(handle, remote_address, len, src);
+#ifdef MS_WINDOWS
+    SIZE_T written = 0;
+    SIZE_T result = 0;
+    do {
+        if (!WriteProcessMemory(handle->hProcess, (LPVOID)(remote_address + result), (const char*)src + result, len - result, &written)) {
+            PyErr_SetFromWindowsErr(0);
+            return -1;
+        }
+        result += written;
+    } while (result < len);
+    return 0;
+#elif defined(__linux__) && HAVE_PROCESS_VM_READV
+    struct iovec local[1];
+    struct iovec remote[1];
+    Py_ssize_t result = 0;
+    Py_ssize_t written = 0;
+
+    do {
+        local[0].iov_base = (void*)((char*)src + result);
+        local[0].iov_len = len - result;
+        remote[0].iov_base = (void*)((char*)remote_address + result);
+        remote[0].iov_len = len - result;
+
+        written = process_vm_writev(handle->pid, local, 1, remote, 1, 0);
+        if (written < 0) {
+            PyErr_SetFromErrno(PyExc_OSError);
+            return -1;
+        }
+
+        result += written;
+    } while ((size_t)written != local[0].iov_len);
+    return 0;
+#elif defined(__APPLE__) && TARGET_OS_OSX
+    kern_return_t kr = mach_vm_write(
+        pid_to_task(handle->pid),
+        (mach_vm_address_t)remote_address,
+        (vm_offset_t)src,
+        (mach_msg_type_number_t)len);
+
+    if (kr != KERN_SUCCESS) {
+        switch (kr) {
+        case KERN_PROTECTION_FAILURE:
+            PyErr_SetString(PyExc_PermissionError, "Not enough permissions to write memory");
+            break;
+        case KERN_INVALID_ARGUMENT:
+            PyErr_SetString(PyExc_PermissionError, "Invalid argument to mach_vm_write");
+            break;
+        default:
+            PyErr_Format(PyExc_RuntimeError, "Unknown error writing memory: %d", (int)kr);
+        }
+        return -1;
+    }
+    return 0;
+#else
+    Py_UNREACHABLE();
+#endif
 }
 
 static int
@@ -792,68 +847,6 @@ _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address
             break;
         default:
             PyErr_SetString(PyExc_RuntimeError, "Unknown error reading memory");
-        }
-        return -1;
-    }
-    return 0;
-#else
-    Py_UNREACHABLE();
-#endif
-}
-
-// Platform-independent memory write function
-int
-_Py_RemoteDebug_WriteRemoteMemory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
-{
-#ifdef MS_WINDOWS
-    SIZE_T written = 0;
-    SIZE_T result = 0;
-    do {
-        if (!WriteProcessMemory(handle->hProcess, (LPVOID)(remote_address + result), (const char*)src + result, len - result, &written)) {
-            PyErr_SetFromWindowsErr(0);
-            return -1;
-        }
-        result += written;
-    } while (result < len);
-    return 0;
-#elif defined(__linux__) && HAVE_PROCESS_VM_READV
-    struct iovec local[1];
-    struct iovec remote[1];
-    Py_ssize_t result = 0;
-    Py_ssize_t written = 0;
-
-    do {
-        local[0].iov_base = (void*)((char*)src + result);
-        local[0].iov_len = len - result;
-        remote[0].iov_base = (void*)((char*)remote_address + result);
-        remote[0].iov_len = len - result;
-
-        written = process_vm_writev(handle->pid, local, 1, remote, 1, 0);
-        if (written < 0) {
-            PyErr_SetFromErrno(PyExc_OSError);
-            return -1;
-        }
-
-        result += written;
-    } while ((size_t)written != local[0].iov_len);
-    return 0;
-#elif defined(__APPLE__) && TARGET_OS_OSX
-    kern_return_t kr = mach_vm_write(
-        pid_to_task(handle->pid),
-        (mach_vm_address_t)remote_address,
-        (vm_offset_t)src,
-        (mach_msg_type_number_t)len);
-
-    if (kr != KERN_SUCCESS) {
-        switch (kr) {
-        case KERN_PROTECTION_FAILURE:
-            PyErr_SetString(PyExc_PermissionError, "Not enough permissions to write memory");
-            break;
-        case KERN_INVALID_ARGUMENT:
-            PyErr_SetString(PyExc_PermissionError, "Invalid argument to mach_vm_write");
-            break;
-        default:
-            PyErr_Format(PyExc_RuntimeError, "Unknown error writing memory: %d", (int)kr);
         }
         return -1;
     }

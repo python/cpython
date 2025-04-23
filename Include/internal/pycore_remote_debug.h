@@ -37,9 +37,6 @@ PyAPI_FUNC(uintptr_t) _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t *hand
 // Read memory from a remote process
 PyAPI_FUNC(int) _Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* dst);
 
-// Write memory to a remote process
-PyAPI_FUNC(int) _Py_RemoteDebug_WriteRemoteMemory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src);
-
 // Read debug offsets from a remote process
 PyAPI_FUNC(int) _Py_RemoteDebug_ReadDebugOffsets(proc_handle_t *handle, uintptr_t *runtime_start_address, _Py_DebugOffsets* debug_offsets);
 
