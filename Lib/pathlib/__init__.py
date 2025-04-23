@@ -53,7 +53,7 @@ class UnsupportedOperation(NotImplementedError):
     pass
 
 
-class _PathParents(Sequence):
+class _PathParents(Sequence["PurePath"]):
     """This object provides sequence-like access to the logical ancestors
     of a path.  Don't try to construct it yourself."""
     __slots__ = ('_path', '_drv', '_root', '_tail')
