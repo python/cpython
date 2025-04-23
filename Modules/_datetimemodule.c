@@ -163,6 +163,13 @@ static datetime_state *
 _get_current_state(PyObject **p_mod)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
+    datetime_state *st = interp->datetime_module_state;
+    if (st != NULL) {
+        PyObject *mod = PyType_GetModule(st->isocalendar_date_type);
+        assert(mod != NULL);
+        *p_mod = Py_NewRef(mod);
+        return st;
+    }
     PyObject *mod = get_current_module(interp, NULL);
     if (mod == NULL) {
         assert(!PyErr_Occurred());
@@ -176,7 +183,7 @@ _get_current_state(PyObject **p_mod)
             return NULL;
         }
     }
-    datetime_state *st = get_module_state(mod);
+    st = get_module_state(mod);
     *p_mod = mod;
     return st;
 }
@@ -200,6 +207,9 @@ set_current_module(PyInterpreterState *interp, PyObject *mod)
     }
     int rc = PyDict_SetItem(dict, INTERP_KEY, ref);
     Py_DECREF(ref);
+    if (rc == 0) {
+        interp->datetime_module_state = get_module_state(mod);
+    }
     return rc;
 }
 
@@ -244,6 +254,9 @@ error:
     PyErr_FormatUnraisable("Exception ignored while clearing _datetime module");
 
 finally:
+    if (!expected || get_module_state(expected) == interp->datetime_module_state) {
+        interp->datetime_module_state = NULL;
+    }
     PyErr_SetRaisedException(exc);
 }
 
