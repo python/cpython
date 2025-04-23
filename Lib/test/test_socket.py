@@ -2647,14 +2647,13 @@ class BasicBluetoothTest(unittest.TestCase):
             socket.BT_POWER
             socket.BT_CHANNEL_POLICY
             socket.BT_CHANNEL_POLICY_BREDR_ONLY
-            socket.BT_PHY
-            socket.BT_PHY_BR_1M_1SLOT
-            socket.BT_MODE
-            socket.BT_MODE_BASIC
-            socket.BT_VOICE
-            socket.BT_VOICE_TRANSPARENT
-            socket.BT_VOICE_CVSD_16BIT
-            socket.BT_CODEC
+            if hasattr(socket, 'BT_PHY'):
+                socket.BT_PHY_BR_1M_1SLOT
+            if hasattr(socket, 'BT_MODE'):
+                socket.BT_MODE_BASIC
+            if hasattr(socket, 'BT_VOICE'):
+                socket.BT_VOICE_TRANSPARENT
+                socket.BT_VOICE_CVSD_16BIT
             socket.L2CAP_LM
             socket.L2CAP_LM_MASTER
             socket.L2CAP_LM_AUTH

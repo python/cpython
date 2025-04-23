@@ -595,12 +595,8 @@ list_repr_impl(PyListObject *v)
     /* Do repr() on each element.  Note that this may mutate the list,
        so must refetch the list size on each iteration. */
     for (Py_ssize_t i = 0; i < Py_SIZE(v); ++i) {
-        item = list_get_item_ref(v, i);
-        if (item == NULL) {
-            // List truncated while iterating on it
-            PyErr_Clear();
-            break;
-        }
+        /* Hold a strong reference since repr(item) can mutate the list */
+        item = Py_NewRef(v->ob_item[i]);
 
         if (i > 0) {
             if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {

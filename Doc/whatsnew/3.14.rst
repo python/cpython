@@ -972,6 +972,10 @@ multiprocessing
   The :func:`set` in :func:`multiprocessing.Manager` method is now available.
   (Contributed by Mingyu Park in :gh:`129949`.)
 
+* Add :func:`multiprocessing.Process.interrupt` which terminates the child
+  process by sending :py:const:`~signal.SIGINT`. This enables "finally" clauses
+  and printing stack trace for the terminated process.
+  (Contributed by Artem Pulkin in :gh:`131913`.)
 
 operator
 --------
