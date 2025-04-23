@@ -162,6 +162,39 @@ class MiscTestCase(unittest.TestCase):
                 with self.assertWarns(DeprecationWarning):
                     self.assertIsNone(writer.getmarkers())
 
+    def test_setters(self):
+        with io.BytesIO(b'') as tmpfile:
+            with wave.open(tmpfile, 'wb') as writer:
+                writer.setnchannels(1)
+                writer.setsampwidth(1)
+                writer.setframerate(1)
+                writer.setcomptype('NONE', 'not compressed')
+
+                # no errors, when chaning and nothing was written
+                writer.setnchannels(2)
+                writer.setsampwidth(2)
+                writer.setframerate(2)
+                writer.setcomptype('NONE', 'uncompressed')
+
+                # write some frames
+                writer.writeframes(b'\0' * 16)
+
+                # changeing now should result in an error
+                with self.assertRaises(wave.Error):
+                    writer.setnchannels(1)
+                with self.assertRaises(wave.Error):
+                    writer.setsampwidth(1)
+                with self.assertRaises(wave.Error):
+                    writer.setframerate(1)
+                with self.assertRaises(wave.Error):
+                    writer.setcomptype('NONE', 'other')
+
+                # same value, so it should not raise Error
+                writer.setnchannels(2)
+                writer.setsampwidth(2)
+                writer.setframerate(2)
+                writer.setcomptype('NONE', 'uncompressed')
+
 
 class WaveLowLevelTest(unittest.TestCase):
 

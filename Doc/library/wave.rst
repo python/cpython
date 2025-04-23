@@ -198,10 +198,19 @@ Wave_write Objects
 
       Set the number of channels.
 
+      Raises an :exc:`wave.Error`, if the value is set after data was written.
+
+      .. versionchanged:: 3.14
+         :exc:`wave.Error` is not raised, if the value is the same.
 
    .. method:: setsampwidth(n)
 
       Set the sample width to *n* bytes.
+
+      Raises an :exc:`wave.Error`, if the value is set after data was written.
+
+      .. versionchanged:: 3.14
+         :exc:`wave.Error` is not raised, if the value is the same.
 
 
    .. method:: setframerate(n)
@@ -212,6 +221,11 @@ Wave_write Objects
          A non-integral input to this method is rounded to the nearest
          integer.
 
+      Raises an :exc:`wave.Error`, if the value is set after data was written.
+
+      .. versionchanged:: 3.14
+         :exc:`wave.Error` is not raised, if the value is the same.
+
 
    .. method:: setnframes(n)
 
@@ -219,12 +233,20 @@ Wave_write Objects
       of frames actually written is different (this update attempt will
       raise an error if the output stream is not seekable).
 
+      Raises an :exc:`wave.Error`, if the value is set after data was written.
+
+      .. versionchanged:: 3.14
+         :exc:`wave.Error` is not raised, if the value is the same.
 
    .. method:: setcomptype(type, name)
 
       Set the compression type and description. At the moment, only compression type
       ``NONE`` is supported, meaning no compression.
 
+      Raises an Error, if the value is set after data was written.
+
+      .. versionchanged:: 3.14
+         :exc:`wave.Error` is not raised, if the value is the same.
 
    .. method:: setparams(tuple)
 
@@ -232,6 +254,10 @@ Wave_write Objects
       compname)``, with values valid for the ``set*()`` methods.  Sets all
       parameters.
 
+      Raises an :exc:`wave.Error`, if the value is set after data was written.
+
+      .. versionchanged:: 3.14
+         :exc:`wave.Error` is not raised, if the value is the same.
 
    .. method:: tell()
 
@@ -257,6 +283,6 @@ Wave_write Objects
       .. versionchanged:: 3.4
          Any :term:`bytes-like object` is now accepted.
 
-      Note that it is invalid to set any parameters after calling :meth:`writeframes`
+      Note that it is invalid to change any parameters after calling :meth:`writeframes`
       or :meth:`writeframesraw`, and any attempt to do so will raise
-      :exc:`wave.Error`.
+      :exc:`wave.Error`, if the value is different from the current value.
