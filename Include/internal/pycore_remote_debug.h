@@ -17,6 +17,7 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE or Py_BUILD_CORE_MODULE define"
 #endif
 
+#include "pyconfig.h"
 #include "internal/pycore_ceval.h"
 
 #ifdef __linux__
@@ -71,6 +72,7 @@ extern "C" {
 #ifndef HAVE_PROCESS_VM_READV
 #    define HAVE_PROCESS_VM_READV 0
 #endif
+
 
 #if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
 
