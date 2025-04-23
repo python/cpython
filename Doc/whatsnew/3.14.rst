@@ -966,6 +966,7 @@ mimetypes
     Add OpenDocument ``.odg``, ``.odp``, ``.ods`` and ``.odt`` types
   * `W3C <https://www.w3.org/TR/epub-33/#app-media-type>`__:
     Add EPUB ``application/epub+zip`` (``.epub``)
+  * Add RAR ``application/vnd.rar`` (``.rar``)
 
   (Contributed by Hugo van Kemenade in :gh:`129965`.)
 

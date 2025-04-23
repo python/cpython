@@ -505,6 +505,7 @@ def _default_mime_types():
         '.pptx'   : 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         '.xlsx'   : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         '.docx'   : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        '.rar'    : 'application/vnd.rar',
         '.wasm'   : 'application/wasm',
         '.bcpio'  : 'application/x-bcpio',
         '.cpio'   : 'application/x-cpio',
