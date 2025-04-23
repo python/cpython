@@ -35,6 +35,9 @@ static PyTypeObject PyDateTime_TimeZoneType;
 
 
 typedef struct {
+    /* Corresponding  module */
+    PyObject *module;
+
     /* Module heap types. */
     PyTypeObject *isocalendar_date_type;
 
@@ -164,12 +167,12 @@ _get_current_state(PyObject **p_mod)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     datetime_state *st = interp->datetime_module_state;
-    if (st != NULL && st->isocalendar_date_type != NULL) {
-        PyObject *mod = PyType_GetModule(st->isocalendar_date_type);
-        assert(mod != NULL);
-        *p_mod = Py_NewRef(mod);
+    if (st != NULL && st->module != NULL) {
+        assert(PyModule_CheckExact(st->module));
+        *p_mod = Py_NewRef(st->module);
         return st;
     }
+
     PyObject *mod = get_current_module(interp, NULL);
     if (mod == NULL) {
         assert(!PyErr_Occurred());
@@ -7227,6 +7230,8 @@ create_timezone_from_delta(int days, int sec, int ms, int normalize)
 static int
 init_state(datetime_state *st, PyObject *module, PyObject *old_module)
 {
+    st->module = Py_NewRef(module);
+
     /* Each module gets its own heap types. */
 #define ADD_TYPE(FIELD, SPEC, BASE)                 \
     do {                                            \
@@ -7245,6 +7250,7 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
         assert(old_module != module);
         datetime_state *st_old = get_module_state(old_module);
         *st = (datetime_state){
+            .module = st->module,
             .isocalendar_date_type = st->isocalendar_date_type,
             .us_per_ms = Py_NewRef(st_old->us_per_ms),
             .us_per_second = Py_NewRef(st_old->us_per_second),
@@ -7304,7 +7310,7 @@ init_state(datetime_state *st, PyObject *module, PyObject *old_module)
 static int
 traverse_state(datetime_state *st, visitproc visit, void *arg)
 {
-    /* heap types */
+    Py_VISIT(st->module);
     Py_VISIT(st->isocalendar_date_type);
 
     return 0;
@@ -7313,6 +7319,7 @@ traverse_state(datetime_state *st, visitproc visit, void *arg)
 static int
 clear_state(datetime_state *st)
 {
+    Py_CLEAR(st->module);  /* Invalidate first */
     Py_CLEAR(st->isocalendar_date_type);
     Py_CLEAR(st->us_per_ms);
     Py_CLEAR(st->us_per_second);
