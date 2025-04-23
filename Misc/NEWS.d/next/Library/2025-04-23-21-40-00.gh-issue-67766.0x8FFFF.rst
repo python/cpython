@@ -1,0 +1,1 @@
+:func:`struct.pack` raises more informative errors when an argument is out of range.

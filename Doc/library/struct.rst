@@ -55,6 +55,10 @@ The module defines the following exception and functions:
    Exception raised on various occasions; argument is a string describing what
    is wrong.
 
+   .. versionchanged::
+      Out of range errors are more descriptive specifying which argument resulted
+      in the exception.
+
 
 .. function:: pack(format, v1, v2, ...)
 
