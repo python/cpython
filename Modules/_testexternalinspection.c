@@ -53,7 +53,7 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
 
 #ifdef MS_WINDOWS
     // On Windows, search for asyncio debug in executable or DLL
-    address = search_windows_map_for_section(handle, "AsyncioDebug", L"_asyncio.cpython");
+    address = search_windows_map_for_section(handle, "AsyncioD", L"_asyncio");
 #elif defined(__linux__)
     // On Linux, search for asyncio debug in executable or DLL
     address = search_linux_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython");
@@ -111,7 +111,7 @@ read_ptr(proc_handle_t *handle, uintptr_t address, uintptr_t *ptr_addr)
 }
 
 static inline int
-read_ssize_t(proc_handle_t *handle, uintptr_t address, Py_ssize_t *size)
+read_Py_ssize_t(proc_handle_t *handle, uintptr_t address, Py_ssize_t *size)
 {
     int result = _Py_RemoteDebug_ReadRemoteMemory(handle, address, sizeof(Py_ssize_t), size);
     if (result < 0) {
@@ -175,7 +175,7 @@ read_py_str(
     proc_handle_t *handle,
     _Py_DebugOffsets* debug_offsets,
     uintptr_t address,
-    ssize_t max_len
+    Py_ssize_t max_len
 ) {
     assert(max_len > 0);
 
@@ -209,7 +209,7 @@ read_py_long(proc_handle_t *handle, _Py_DebugOffsets* offsets, uintptr_t address
 {
     unsigned int shift = PYLONG_BITS_IN_DIGIT;
 
-    ssize_t size;
+    Py_ssize_t size;
     uintptr_t lv_tag;
 
     int bytes_read = _Py_RemoteDebug_ReadRemoteMemory(
@@ -243,21 +243,21 @@ read_py_long(proc_handle_t *handle, _Py_DebugOffsets* offsets, uintptr_t address
         goto error;
     }
 
-    long value = 0;
+    long long value = 0;
 
     // In theory this can overflow, but because of llvm/llvm-project#16778
     // we can't use __builtin_mul_overflow because it fails to link with
     // __muloti4 on aarch64. In practice this is fine because all we're
     // testing here are task numbers that would fit in a single byte.
-    for (ssize_t i = 0; i < size; ++i) {
-        long long factor = digits[i] * (1UL << (ssize_t)(shift * i));
+    for (Py_ssize_t i = 0; i < size; ++i) {
+        long long factor = digits[i] * (1UL << (Py_ssize_t)(shift * i));
         value += factor;
     }
     PyMem_RawFree(digits);
     if (negative) {
         value *= -1;
     }
-    return value;
+    return (long)value;
 error:
     PyMem_RawFree(digits);
     return -1;
@@ -585,7 +585,7 @@ parse_tasks_in_set(
     }
 
     Py_ssize_t num_els;
-    if (read_ssize_t(
+    if (read_Py_ssize_t(
             handle,
             set_obj + offsets->set_object.used,
             &num_els)
@@ -594,7 +594,7 @@ parse_tasks_in_set(
     }
 
     Py_ssize_t set_len;
-    if (read_ssize_t(
+    if (read_Py_ssize_t(
             handle,
             set_obj + offsets->set_object.mask,
             &set_len)
@@ -622,7 +622,7 @@ parse_tasks_in_set(
 
         if ((void*)key_addr != NULL) {
             Py_ssize_t ref_cnt;
-            if (read_ssize_t(handle, table_ptr, &ref_cnt)) {
+            if (read_Py_ssize_t(handle, table_ptr, &ref_cnt)) {
                 return -1;
             }
 
@@ -765,7 +765,7 @@ parse_frame_object(
 ) {
     int err;
 
-    ssize_t bytes_read = _Py_RemoteDebug_ReadRemoteMemory(
+    Py_ssize_t bytes_read = _Py_RemoteDebug_ReadRemoteMemory(
         handle,
         address + offsets->interpreter_frame.previous,
         sizeof(void*),
@@ -813,7 +813,7 @@ parse_async_frame_object(
 ) {
     int err;
 
-    ssize_t bytes_read = _Py_RemoteDebug_ReadRemoteMemory(
+    Py_ssize_t bytes_read = _Py_RemoteDebug_ReadRemoteMemory(
         handle,
         address + offsets->interpreter_frame.previous,
         sizeof(void*),
@@ -884,7 +884,7 @@ find_running_frame(
     _Py_DebugOffsets* local_debug_offsets,
     uintptr_t *frame
 ) {
-    off_t interpreter_state_list_head =
+    uint64_t interpreter_state_list_head =
         local_debug_offsets->runtime_state.interpreters_head;
 
     uintptr_t address_of_interpreter_state;
@@ -906,7 +906,7 @@ find_running_frame(
     bytes_read = _Py_RemoteDebug_ReadRemoteMemory(
             handle,
             address_of_interpreter_state +
-                local_debug_offsets->interpreter_state.threads_head,
+                local_debug_offsets->interpreter_state.threads_main,
             sizeof(void*),
             &address_of_thread);
     if (bytes_read < 0) {
@@ -939,7 +939,7 @@ find_running_task(
 ) {
     *running_task_addr = (uintptr_t)NULL;
 
-    off_t interpreter_state_list_head =
+    uint64_t interpreter_state_list_head =
         local_debug_offsets->runtime_state.interpreters_head;
 
     uintptr_t address_of_interpreter_state;
@@ -1138,7 +1138,7 @@ append_awaited_by(
 static PyObject*
 get_all_awaited_by(PyObject* self, PyObject* args)
 {
-#if (!defined(__linux__) && !defined(__APPLE__)) || \
+#if (!defined(__linux__) && !defined(__APPLE__))  && !defined(MS_WINDOWS) || \
     (defined(__linux__) && !HAVE_PROCESS_VM_READV)
     PyErr_SetString(
         PyExc_RuntimeError,
@@ -1183,7 +1183,7 @@ get_all_awaited_by(PyObject* self, PyObject* args)
         return NULL;
     }
 
-    off_t interpreter_state_list_head =
+    uint64_t interpreter_state_list_head =
         local_debug_offsets.runtime_state.interpreters_head;
 
     uintptr_t interpreter_state_addr;
@@ -1265,7 +1265,7 @@ result_err:
 static PyObject*
 get_stack_trace(PyObject* self, PyObject* args)
 {
-#if (!defined(__linux__) && !defined(__APPLE__)) || \
+#if (!defined(__linux__) && !defined(__APPLE__))  && !defined(MS_WINDOWS) || \
     (defined(__linux__) && !HAVE_PROCESS_VM_READV)
     PyErr_SetString(
         PyExc_RuntimeError,
@@ -1336,7 +1336,7 @@ result_err:
 static PyObject*
 get_async_stack_trace(PyObject* self, PyObject* args)
 {
-#if (!defined(__linux__) && !defined(__APPLE__)) || \
+#if (!defined(__linux__) && !defined(__APPLE__))  && !defined(MS_WINDOWS) || \
     (defined(__linux__) && !HAVE_PROCESS_VM_READV)
     PyErr_SetString(
         PyExc_RuntimeError,

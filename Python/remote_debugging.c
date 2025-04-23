@@ -4,9 +4,9 @@
 #include "Python.h"
 #include "internal/pycore_runtime.h"
 #include "internal/pycore_ceval.h"
-#include "internal/pycore_remote_debug.h"
 
 #if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+#include "internal/pycore_remote_debug.h"
 
 static int
 init_proc_handle(proc_handle_t *handle, pid_t pid) {

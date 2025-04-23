@@ -73,9 +73,6 @@ extern "C" {
 #    define HAVE_PROCESS_VM_READV 0
 #endif
 
-
-#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
-
 // Define a platform-independent process handle structure
 typedef struct {
     pid_t pid;
@@ -790,8 +787,6 @@ _Py_RemoteDebug_ReadDebugOffsets(
     }
     return 0;
 }
-
-#endif // defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
 
 #ifdef __cplusplus
 }
