@@ -238,7 +238,7 @@ class Stencil:
                 addend=-4,
             ) as hole:
                 # jmp qword ptr [rip]
-                jump = b"\x48\xFF\x25\x00\x00\x00\x00"
+                jump = b"\x48\xff\x25\x00\x00\x00\x00"
                 offset -= 3
             case Hole(
                 offset=offset,
@@ -246,9 +246,11 @@ class Stencil:
                 value=HoleValue.CONTINUE,
                 symbol=None,
                 addend=addend,
-            ) as hole if _signed(addend) == -4:
+            ) as hole if (
+                _signed(addend) == -4
+            ):
                 # jmp 5
-                jump = b"\xE9\x00\x00\x00\x00"
+                jump = b"\xe9\x00\x00\x00\x00"
                 offset -= 1
             case Hole(
                 offset=offset,
