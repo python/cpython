@@ -2985,6 +2985,10 @@ AC_CHECK_HEADERS([ \
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
+# for faulthandler
+AC_CHECK_HEADERS([execinfo.h link.h dlfcn.h],
+                 [AC_CHECK_FUNCS(backtrace backtrace_symbols dladdr1)])
+
 # bluetooth/bluetooth.h has been known to not compile with -std=c99.
 # http://permalink.gmane.org/gmane.linux.bluez.kernel/22294
 SAVE_CFLAGS=$CFLAGS
