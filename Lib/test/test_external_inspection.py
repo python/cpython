@@ -434,7 +434,11 @@ class TestGetStackTrace(unittest.TestCase):
                         # no synchronization. That occasionally leads to invalid
                         # reads. Here we avoid making the test flaky.
                         msg = str(re)
-                        if msg.startswith("Unknown error reading memory"):
+                        if msg.startswith("Task list appears corrupted"):
+                            continue
+                        elif msg.startswith("Invalid linked list structure reading remote memory"):
+                            continue
+                        elif msg.startswith("Unknown error reading memory"):
                             continue
                         elif msg.startswith("Unhandled frame owner"):
                             continue
@@ -445,6 +449,8 @@ class TestGetStackTrace(unittest.TestCase):
                 self.assertEqual(len(all_awaited_by), 2)
                 # expected: a tuple with the thread ID and the awaited_by list
                 self.assertEqual(len(all_awaited_by[0]), 2)
+                # expected: no tasks in the fallback per-interp task list
+                self.assertEqual(all_awaited_by[1], (0, []))
                 entries = all_awaited_by[0][1]
                 # expected: at least 1000 pending tasks
                 self.assertGreaterEqual(len(entries), 1000)

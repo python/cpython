@@ -1490,13 +1490,21 @@ append_awaited_by_for_thread(
         return -1;
     }
 
-size_t iteration_count = 0;
-const size_t MAX_ITERATIONS = 100000;  // Reasonable upper bound
-while ((uintptr_t)task_node.next != head_addr) {
-    if (++iteration_count > MAX_ITERATIONS) {
-        PyErr_SetString(PyExc_RuntimeError, "Task list appears corrupted");
-        return -1;
-    }
+    size_t iteration_count = 0;
+    const size_t MAX_ITERATIONS = 2 << 15;  // A reasonable upper bound
+    while ((uintptr_t)task_node.next != head_addr) {
+        if (++iteration_count > MAX_ITERATIONS) {
+            PyErr_SetString(PyExc_RuntimeError, "Task list appears corrupted");
+            return -1;
+        }
+
+        if (task_node.next == NULL) {
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                "Invalid linked list structure reading remote memory");
+            return -1;
+        }
+
         uintptr_t task_addr = (uintptr_t)task_node.next
             - async_offsets->asyncio_task_object.task_node;
 
@@ -1698,6 +1706,11 @@ get_all_awaited_by(PyObject* self, PyObject* args)
     head_addr = interpreter_state_addr
         + local_async_debug.asyncio_interpreter_state.asyncio_tasks_head;
 
+    // On top of a per-thread task lists used by default by asyncio to avoid
+    // contention, there is also a fallback per-interpreter list of tasks;
+    // any tasks still pending when a thread is destroyed will be moved to the
+    // per-interpreter task list.  It's unlikely we'll find anything here, but
+    // interesting for debugging.
     if (append_awaited_by(pid, 0, head_addr, &local_debug_offsets,
                         &local_async_debug, result))
     {
