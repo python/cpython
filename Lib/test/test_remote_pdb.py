@@ -501,5 +501,173 @@ if __name__ == "__main__":
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
 
+    def test_handle_eof(self):
+        """Test that EOF signal properly exits the debugger."""
+        self._create_script()
+        process, client_file = self._connect_and_get_client_file()
+
+        with process:
+            # Skip initial messages until we get to the prompt
+            self._read_until_prompt(client_file)
+
+            # Send EOF signal to exit the debugger
+            client_file.write(json.dumps({"signal": "EOF"}).encode() + b"\n")
+            client_file.flush()
+
+            # The process should complete normally after receiving EOF
+            stdout, stderr = process.communicate(timeout=5)
+
+            # Verify process completed correctly
+            self.assertIn("Function returned: 42", stdout)
+            self.assertEqual(process.returncode, 0)
+            self.assertEqual(stderr, "")
+
+    def test_protocol_version(self):
+        """Test that incompatible protocol versions are properly detected."""
+        # Create a script using an incompatible protocol version
+        script = f"""
+import sys
+import pdb
+
+def run_test():
+    frame = sys._getframe()
+
+    # Use a fake version number that's definitely incompatible
+    fake_version = 0x01010101 # A fake version that doesn't match any real Python version
+
+    # Connect with the wrong version
+    pdb._connect(
+        host='127.0.0.1',
+        port={self.port},
+        frame=frame,
+        commands="",
+        version=fake_version,
+    )
+
+    # This should print if the debugger detaches correctly
+    print("Debugger properly detected version mismatch")
+    return True
+
+if __name__ == "__main__":
+    print("Test result:", run_test())
+"""
+        self._create_script(script=script)
+        process, client_file = self._connect_and_get_client_file()
+
+        with process:
+            # First message should be an error about protocol version mismatch
+            data = client_file.readline()
+            message = json.loads(data.decode())
+
+            self.assertIn('message', message)
+            self.assertEqual(message['type'], 'error')
+            self.assertIn('incompatible', message['message'])
+            self.assertIn('protocol version', message['message'])
+
+            # The process should complete normally
+            stdout, stderr = process.communicate(timeout=5)
+
+            # Verify the process completed successfully
+            self.assertIn("Test result: True", stdout)
+            self.assertIn("Debugger properly detected version mismatch", stdout)
+            self.assertEqual(process.returncode, 0)
+
+    def test_help_system(self):
+        """Test that the help system properly sends help text to the client."""
+        self._create_script()
+        process, client_file = self._connect_and_get_client_file()
+
+        with process:
+            # Skip initial messages until we get to the prompt
+            self._read_until_prompt(client_file)
+
+            # Request help for different commands
+            help_commands = ["help", "help break", "help continue", "help pdb"]
+
+            for cmd in help_commands:
+                self._send_command(client_file, cmd)
+
+                # Look for help message
+                data = client_file.readline()
+                message = json.loads(data.decode())
+
+                self.assertIn('help', message)
+
+                if cmd == "help":
+                    # Should just contain the command itself
+                    self.assertEqual(message['help'], "")
+                else:
+                    # Should contain the specific command we asked for help with
+                    command = cmd.split()[1]
+                    self.assertEqual(message['help'], command)
+
+                # Skip to the next prompt
+                self._read_until_prompt(client_file)
+
+            # Continue execution to finish the program
+            self._send_command(client_file, "c")
+
+            stdout, stderr = process.communicate(timeout=5)
+            self.assertIn("Function returned: 42", stdout)
+            self.assertEqual(process.returncode, 0)
+
+    def test_multi_line_commands(self):
+        """Test that multi-line commands work properly over remote connection."""
+        self._create_script()
+        process, client_file = self._connect_and_get_client_file()
+
+        with process:
+            # Skip initial messages until we get to the prompt
+            self._read_until_prompt(client_file)
+
+            # Send a multi-line command
+            multi_line_commands = [
+                # Define a function
+                "def test_func():\n    return 42",
+
+                # For loop
+                "for i in range(3):\n    print(i)",
+
+                # If statement
+                "if True:\n    x = 42\nelse:\n    x = 0",
+
+                # Try/except
+                "try:\n    result = 10/2\n    print(result)\nexcept ZeroDivisionError:\n    print('Error')",
+
+                # Class definition
+                "class TestClass:\n    def __init__(self):\n        self.value = 100\n    def get_value(self):\n        return self.value"
+            ]
+
+            for cmd in multi_line_commands:
+                self._send_command(client_file, cmd)
+                self._read_until_prompt(client_file)
+
+            # Test executing the defined function
+            self._send_command(client_file, "test_func()")
+            messages = self._read_until_prompt(client_file)
+
+            # Find the result message
+            result_msg = next(msg['message'] for msg in messages if 'message' in msg)
+            self.assertIn("42", result_msg)
+
+            # Test creating an instance of the defined class
+            self._send_command(client_file, "obj = TestClass()")
+            self._read_until_prompt(client_file)
+
+            # Test calling a method on the instance
+            self._send_command(client_file, "obj.get_value()")
+            messages = self._read_until_prompt(client_file)
+
+            # Find the result message
+            result_msg = next(msg['message'] for msg in messages if 'message' in msg)
+            self.assertIn("100", result_msg)
+
+            # Continue execution to finish
+            self._send_command(client_file, "c")
+
+            stdout, stderr = process.communicate(timeout=5)
+            self.assertIn("Function returned: 42", stdout)
+            self.assertEqual(process.returncode, 0)
+
 if __name__ == "__main__":
     unittest.main()
