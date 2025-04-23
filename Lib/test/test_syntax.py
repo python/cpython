@@ -1838,6 +1838,12 @@ SyntaxError: invalid syntax. Did you mean 'if'?
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Did you mean 'for'?
 
+
+>>> for x im n:
+...     pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'in'?
+
 >>> f(a=23, a=234)
 Traceback (most recent call last):
    ...

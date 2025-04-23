@@ -18,11 +18,24 @@
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // lseek()
 #endif
-#if defined(HAVE_EXECINFO_H) && defined(HAVE_DLFCN_H) && defined(HAVE_LINK_H)
+
+#if (defined(HAVE_EXECINFO_H) && defined(HAVE_DLFCN_H) && defined(HAVE_LINK_H))
+#  define _PY_HAS_BACKTRACE_HEADERS 1
+#endif
+
+#if (defined(__APPLE__) && defined(HAVE_EXECINFO_H) && defined(HAVE_DLFCN_H))
+#  define _PY_HAS_BACKTRACE_HEADERS 1
+#endif
+
+#ifdef _PY_HAS_BACKTRACE_HEADERS
 #  include <execinfo.h>           // backtrace(), backtrace_symbols()
 #  include <dlfcn.h>              // dladdr1()
-#  include <link.h>               // struct DL_info
-#  if defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) && defined(HAVE_DLADDR1)
+#ifdef HAVE_LINK_H
+#    include <link.h>               // struct DL_info
+#endif
+#  if defined(__APPLE__) && defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) && defined(HAVE_DLADDR)
+#    define CAN_C_BACKTRACE
+#  elif defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) && defined(HAVE_DLADDR1)
 #    define CAN_C_BACKTRACE
 #  endif
 #endif
@@ -1193,6 +1206,9 @@ _Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
     VLA(int, status, size);
     /* Fill in the information we can get from dladdr() */
     for (Py_ssize_t i = 0; i < size; ++i) {
+#ifdef __APPLE__
+        status[i] = dladdr(array[i], &info[i]);
+#else
         struct link_map *map;
         status[i] = dladdr1(array[i], &info[i], (void **)&map, RTLD_DL_LINKMAP);
         if (status[i] != 0
@@ -1204,6 +1220,7 @@ _Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
                something we want to subtract out */
             info[i].dli_fbase = (void *) map->l_addr;
         }
+#endif
     }
     for (Py_ssize_t i = 0; i < size; ++i) {
         if (status[i] == 0

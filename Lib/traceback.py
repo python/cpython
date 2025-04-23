@@ -1339,10 +1339,14 @@ class TracebackException:
             if tokens_left_to_process < 0:
                 break
             # Limit the number of possible matches to try
-            matches = difflib.get_close_matches(wrong_name, keyword.kwlist, n=3)
-            if not matches and _suggestions is not None:
+            max_matches = 3
+            matches = []
+            if _suggestions is not None:
                 suggestion = _suggestions._generate_suggestions(keyword.kwlist, wrong_name)
-                matches = [suggestion] if suggestion is not None else matches
+                if suggestion:
+                    matches.append(suggestion)
+            matches.extend(difflib.get_close_matches(wrong_name, keyword.kwlist, n=max_matches, cutoff=0.5))
+            matches = matches[:max_matches]
             for suggestion in matches:
                 if not suggestion or suggestion == wrong_name:
                     continue
