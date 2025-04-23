@@ -1086,8 +1086,6 @@ class TestGetAnnotations(unittest.TestCase):
             set(results.generic_func.__type_params__),
         )
 
-    maxDiff = None
-
     def test_partial_evaluation(self):
         def f(
             x: builtins.undef,

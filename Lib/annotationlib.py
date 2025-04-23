@@ -90,8 +90,15 @@ class ForwardRef:
     def __init_subclass__(cls, /, *args, **kwds):
         raise TypeError("Cannot subclass ForwardRef")
 
-    def evaluate(self, *, globals=None, locals=None, type_params=None, owner=None,
-                 format=Format.VALUE):
+    def evaluate(
+        self,
+        *,
+        globals=None,
+        locals=None,
+        type_params=None,
+        owner=None,
+        format=Format.VALUE,
+    ):
         """Evaluate the forward reference and return the value.
 
         If the forward reference cannot be evaluated, raise an exception.
@@ -182,8 +189,10 @@ class ForwardRef:
                 if not is_forwardref_format:
                     raise
             new_locals = _StringifierDict(
-                {**builtins.__dict__, **locals}, globals=globals, owner=owner,
-                is_class=self.__forward_is_class__
+                {**builtins.__dict__, **locals},
+                globals=globals,
+                owner=owner,
+                is_class=self.__forward_is_class__,
             )
             try:
                 result = eval(code, globals=globals, locals=new_locals)
@@ -650,8 +659,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         raise ValueError(f"Invalid format: {format!r}")
 
 
-def _build_closure(annotate, owner, is_class, stringifier_dict, *,
-                   allow_evaluation):
+def _build_closure(annotate, owner, is_class, stringifier_dict, *, allow_evaluation):
     if not annotate.__closure__:
         return None
     freevars = annotate.__code__.co_freevars
@@ -789,7 +797,7 @@ def get_annotations(
             # But if we didn't get it, we use __annotations__ instead.
             ann = _get_dunder_annotations(obj)
             if ann is not None:
-                 return annotations_to_string(ann)
+                return annotations_to_string(ann)
         case Format.VALUE_WITH_FAKE_GLOBALS:
             raise ValueError("The VALUE_WITH_FAKE_GLOBALS format is for internal use only")
         case _:
