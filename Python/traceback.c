@@ -20,11 +20,11 @@
 #endif
 
 #if (defined(HAVE_EXECINFO_H) && defined(HAVE_DLFCN_H) && defined(HAVE_LINK_H))
-    #define _PY_HAS_BACKTRACE_HEADERS 1
+#  define _PY_HAS_BACKTRACE_HEADERS 1
 #endif
 
 #if (defined(__APPLE__) && defined(HAVE_EXECINFO_H) && defined(HAVE_DLFCN_H))
-    #define _PY_HAS_BACKTRACE_HEADERS 1
+#  define _PY_HAS_BACKTRACE_HEADERS 1
 #endif
 
 #ifdef _PY_HAS_BACKTRACE_HEADERS
