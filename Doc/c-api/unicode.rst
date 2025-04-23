@@ -1026,6 +1026,17 @@ generic ones are documented for simplicity.
 Generic Codecs
 """"""""""""""
 
+The following macro is provided:
+
+
+.. c:macro:: Py_UNICODE_REPLACEMENT_CHARACTER
+
+   The Unicode code point ``U+FFFD`` (replacement character).
+
+   This Unicode character is used as the replacement character during
+   decoding if the *errors* argument is set to "replace".
+
+
 These are the generic codec APIs:
 
 
