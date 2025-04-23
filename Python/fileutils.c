@@ -16,7 +16,6 @@
 #  include "pycore_fileutils_windows.h" // FILE_STAT_BASIC_INFORMATION
 #  define fdopen _fdopen
 #  define dup _dup
-#  define close _close
 #  if defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP)
 #    define PATHCCH_ALLOW_LONG_PATHS 0x01
 #  else
@@ -2079,7 +2078,6 @@ _Py_fdprintf(int fd, const char *fmt, ...)
     int res = vfprintf(handle, fmt, vargs);
     va_end(vargs);
     fclose(handle);
-    close(newfd);
     if (res != 0) {
         return -1;
     }
