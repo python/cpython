@@ -349,11 +349,11 @@ class PdbConnectTestCase(unittest.TestCase):
                 'if inst := pdb.Pdb._last_pdb_instance:\n'
                 '    inst.set_trace(sys._getframe(1))\n'
             )
+        self.addCleanup(unlink, interrupt_script)
         try:
             sys.remote_exec(pid, interrupt_script)
         except PermissionError:
             self.skipTest("Insufficient permissions to execute code in remote process")
-        self.addCleanup(unlink, interrupt_script)
 
     def test_connect_and_basic_commands(self):
         """Test connecting to a remote debugger and sending basic commands."""
@@ -453,30 +453,30 @@ class PdbConnectTestCase(unittest.TestCase):
 
     def test_keyboard_interrupt(self):
         """Test that sending keyboard interrupt breaks into pdb."""
-        script = f"""
-import time
-import sys
-import pdb
-def bar():
-    frame = sys._getframe()  # Get the current frame
-    pdb._connect(
-        host='127.0.0.1',
-        port={self.port},
-        frame=frame,
-        commands="",
-        version=pdb._PdbServer.protocol_version(),
-    )
-    print("Connected to debugger")
-    iterations = 10
-    while iterations > 0:
-        print("Iteration", iterations)
-        time.sleep(1)
-        iterations -= 1
-    return 42
+        script = textwrap.dedent(f"""
+            import time
+            import sys
+            import pdb
+            def bar():
+                frame = sys._getframe()  # Get the current frame
+                pdb._connect(
+                    host='127.0.0.1',
+                    port={self.port},
+                    frame=frame,
+                    commands="",
+                    version=pdb._PdbServer.protocol_version(),
+                )
+                print("Connected to debugger")
+                iterations = 10
+                while iterations > 0:
+                    print("Iteration", iterations)
+                    time.sleep(1)
+                    iterations -= 1
+                return 42
 
-if __name__ == "__main__":
-    print("Function returned:", bar())
-"""
+            if __name__ == "__main__":
+                print("Function returned:", bar())
+            """)
         self._create_script(script=script)
         process, client_file = self._connect_and_get_client_file()
 
@@ -528,32 +528,32 @@ if __name__ == "__main__":
     def test_protocol_version(self):
         """Test that incompatible protocol versions are properly detected."""
         # Create a script using an incompatible protocol version
-        script = f"""
-import sys
-import pdb
+        script = textwrap.dedent(f'''
+            import sys
+            import pdb
 
-def run_test():
-    frame = sys._getframe()
+            def run_test():
+                frame = sys._getframe()
 
-    # Use a fake version number that's definitely incompatible
-    fake_version = 0x01010101 # A fake version that doesn't match any real Python version
+                # Use a fake version number that's definitely incompatible
+                fake_version = 0x01010101 # A fake version that doesn't match any real Python version
 
-    # Connect with the wrong version
-    pdb._connect(
-        host='127.0.0.1',
-        port={self.port},
-        frame=frame,
-        commands="",
-        version=fake_version,
-    )
+                # Connect with the wrong version
+                pdb._connect(
+                    host='127.0.0.1',
+                    port={self.port},
+                    frame=frame,
+                    commands="",
+                    version=fake_version,
+                )
 
-    # This should print if the debugger detaches correctly
-    print("Debugger properly detected version mismatch")
-    return True
+                # This should print if the debugger detaches correctly
+                print("Debugger properly detected version mismatch")
+                return True
 
-if __name__ == "__main__":
-    print("Test result:", run_test())
-"""
+            if __name__ == "__main__":
+                print("Test result:", run_test())
+            ''')
         self._create_script(script=script)
         process, client_file = self._connect_and_get_client_file()
 
