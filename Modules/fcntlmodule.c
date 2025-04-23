@@ -79,7 +79,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
         }
         return PyLong_FromLong(ret);
     }
-    else if (PyUnicode_Check(arg) || PyObject_CheckBuffer(arg)) {
+    if (PyUnicode_Check(arg) || PyObject_CheckBuffer(arg)) {
 #define FCNTL_BUFSZ 1024
         Py_buffer view;
         char buf[FCNTL_BUFSZ+1];  /* argument plus NUL byte */
@@ -109,13 +109,11 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
         return PyBytes_FromStringAndSize(buf, len);
 #undef FCNTL_BUFSZ
     }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "fcntl() argument 3 must be an integer, "
-                     "a bytes-like object, or a string, not %T",
-                     arg);
-        return NULL;
-    }
+    PyErr_Format(PyExc_TypeError,
+                 "fcntl() argument 3 must be an integer, "
+                 "a bytes-like object, or a string, not %T",
+                 arg);
+    return NULL;
 }
 
 
@@ -198,7 +196,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
         }
         return PyLong_FromLong(ret);
     }
-    else if (PyUnicode_Check(arg) || PyObject_CheckBuffer(arg)) {
+    if (PyUnicode_Check(arg) || PyObject_CheckBuffer(arg)) {
         Py_buffer view;
 #define IOCTL_BUFSZ 1024
         char buf[IOCTL_BUFSZ+1];  /* argument plus NUL byte */
@@ -262,13 +260,11 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
         return PyBytes_FromStringAndSize(buf, len);
 #undef IOCTL_BUFSZ
     }
-    else {
-        PyErr_Format(PyExc_TypeError,
-                     "ioctl() argument 3 must be an integer, "
-                     "a bytes-like object, or a string, not %T",
-                     arg);
-        return NULL;
-    }
+    PyErr_Format(PyExc_TypeError,
+                 "ioctl() argument 3 must be an integer, "
+                 "a bytes-like object, or a string, not %T",
+                 arg);
+    return NULL;
 }
 
 /*[clinic input]
