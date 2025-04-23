@@ -1283,7 +1283,7 @@ class TestUopsOptimization(unittest.TestCase):
         load_attr_top = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", 0, call)
         load_attr_bottom = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", call)
         self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
-        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 1)
+        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
 
     def test_guard_type_version_removed_escaping(self):
 
@@ -1306,7 +1306,7 @@ class TestUopsOptimization(unittest.TestCase):
         load_attr_top = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", 0, call)
         load_attr_bottom = opnames.index("_LOAD_ATTR_NONDESCRIPTOR_WITH_VALUES", call)
         self.assertEqual(opnames[:load_attr_top].count("_GUARD_TYPE_VERSION"), 1)
-        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 1)
+        self.assertEqual(opnames[call:load_attr_bottom].count("_CHECK_VALIDITY"), 2)
 
     def test_guard_type_version_executor_invalidated(self):
         """
@@ -1601,7 +1601,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
         self.assertNotIn("_COMPARE_OP_INT", uops)
-        self.assertIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
+        self.assertNotIn("_POP_TWO_LOAD_CONST_INLINE_BORROW", uops)
 
     def test_to_bool_bool_contains_op_set(self):
         """
@@ -1678,7 +1678,7 @@ class TestUopsOptimization(unittest.TestCase):
             x = 0
             for _ in range(n):
                 d = {}
-                d["Spam"] = 1  # Guarded...
+                d["Spam"] = 1  # unguarded!
                 x += d["Spam"]  # ...unguarded!
             return x
 
@@ -1686,7 +1686,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertEqual(uops.count("_GUARD_NOS_DICT"), 1)
+        self.assertEqual(uops.count("_GUARD_NOS_DICT"), 0)
         self.assertEqual(uops.count("_STORE_SUBSCR_DICT"), 1)
         self.assertEqual(uops.count("_BINARY_OP_SUBSCR_DICT"), 1)
 
@@ -1695,7 +1695,7 @@ class TestUopsOptimization(unittest.TestCase):
             x = 0
             for _ in range(n):
                 l = [0]
-                l[0] = 1  # Guarded...
+                l[0] = 1  # unguarded!
                 [a] = l  # ...unguarded!
                 b = l[0]  # ...unguarded!
                 if l:  # ...unguarded!
@@ -1706,7 +1706,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertEqual(res, 2 * TIER2_THRESHOLD)
         self.assertIsNotNone(ex)
         uops = get_opnames(ex)
-        self.assertEqual(uops.count("_GUARD_NOS_LIST"), 1)
+        self.assertEqual(uops.count("_GUARD_NOS_LIST"), 0)
         self.assertEqual(uops.count("_STORE_SUBSCR_LIST_INT"), 1)
         self.assertEqual(uops.count("_GUARD_TOS_LIST"), 0)
         self.assertEqual(uops.count("_UNPACK_SEQUENCE_LIST"), 1)
@@ -1766,6 +1766,37 @@ class TestUopsOptimization(unittest.TestCase):
         # the unicode guard before _BINARY_OP_ADD_UNICODE is removed.
         self.assertNotIn("_GUARD_TOS_UNICODE", uops)
         self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
+
+    def test_call_type_1(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                x += type(42) is int
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_TYPE_1", uops)
+        self.assertNotIn("_GUARD_NOS_NULL", uops)
+        self.assertNotIn("_GUARD_CALLABLE_TYPE_1", uops)
+
+    def test_call_type_1_result_is_const(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                t = type(42)
+                if t is not None:  # guard is removed
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_TYPE_1", uops)
+        self.assertNotIn("_GUARD_IS_NOT_NONE_POP", uops)
 
 
 def global_identity(x):

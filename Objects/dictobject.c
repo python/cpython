@@ -5495,7 +5495,7 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
     ensure_shared_on_read(d);
 
     i = _Py_atomic_load_ssize_relaxed(&di->di_pos);
-    k = _Py_atomic_load_ptr_relaxed(&d->ma_keys);
+    k = _Py_atomic_load_ptr_acquire(&d->ma_keys);
     assert(i >= 0);
     if (_PyDict_HasSplitTable(d)) {
         PyDictValues *values = _Py_atomic_load_ptr_relaxed(&d->ma_values);
