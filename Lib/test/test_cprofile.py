@@ -156,20 +156,17 @@ class TestCommandLine(unittest.TestCase):
         self.assertGreater(rc, 0)
         self.assertIn(b"option -s: invalid choice: 'demo'", err)
 
-
-class TestProfilingScript(unittest.TestCase):
     def test_profile_script_importing_main(self):
         """Check that scripts that reference __main__ see their own namespace
         when being profiled."""
-        with tempfile.NamedTemporaryFile("w+") as f:
+        with tempfile.NamedTemporaryFile("w+", delete_on_close=False) as f:
             f.write(textwrap.dedent("""\
                 class Foo:
                     pass
-
                 import __main__
                 assert Foo == __main__.Foo
                 """))
-            f.flush()
+            f.close()
             assert_python_ok('-m', "cProfile", f.name)
 
 
