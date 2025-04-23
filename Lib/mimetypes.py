@@ -512,6 +512,7 @@ def _default_mime_types():
         '.bcpio'  : 'application/x-bcpio',
         '.cpio'   : 'application/x-cpio',
         '.csh'    : 'application/x-csh',
+        '.deb'    : 'application/x-debian-package',
         '.dvi'    : 'application/x-dvi',
         '.gtar'   : 'application/x-gtar',
         '.hdf'    : 'application/x-hdf',

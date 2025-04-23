@@ -970,6 +970,7 @@ mimetypes
   * Add 7z ``application/x-7z-compressed`` (``.7z``)
   * Add Android Package ``application/vnd.android.package-archive`` (``.apk``)
     when not strict
+  * Add deb ``application/x-debian-package`` (``.deb``)
   * Add M4V ``video/x-m4v`` (``.m4v``)
   * Add PHP ``application/x-httpd-php`` (``.php``)
   * Add RAR ``application/vnd.rar`` (``.rar``)
