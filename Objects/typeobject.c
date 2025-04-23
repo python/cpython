@@ -6269,7 +6269,8 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
         // we need to initialize tp_dict.  We don't just do PyType_Ready
         // because we could already be readying.
         BEGIN_TYPE_LOCK();
-        if (type->tp_dict == NULL) {
+        dict = type->tp_dict;
+        if (dict == NULL) {
             dict = type->tp_dict = PyDict_New();
         }
         END_TYPE_LOCK();
@@ -6280,8 +6281,8 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     }
 
     BEGIN_TYPE_DICT_LOCK(dict);
-    res = type_update_dict(type, (PyDictObject *)dict, name, value,
-                           &old_value);
+    res = type_update_dict(type, (PyDictObject *)dict, name, value, &old_value);
+    assert(_PyType_CheckConsistency(type));
     if (res == 0) {
         if (is_dunder_name(name) && has_slotdef(name)) {
             // The name corresponds to a type slot.
@@ -6292,7 +6293,6 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
         }
     }
     END_TYPE_DICT_LOCK();
-    assert(res < 0 || _PyType_CheckConsistency(type));
 
 done:
     Py_DECREF(name);
