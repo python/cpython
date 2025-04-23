@@ -655,6 +655,7 @@ def _default_mime_types():
         '.webm'   : 'video/webm',
         '.avi'    : 'video/vnd.avi',
         '.m4v'    : 'video/x-m4v',
+        '.wmv'    : 'video/x-ms-wmv',
         '.movie'  : 'video/x-sgi-movie',
         }
 
