@@ -1086,7 +1086,7 @@ class TestGetAnnotations(unittest.TestCase):
             set(results.generic_func.__type_params__),
         )
 
-    maxDiff  = None
+    maxDiff = None
 
     def test_partial_evaluation(self):
         def f(
@@ -1126,10 +1126,19 @@ class TestGetAnnotations(unittest.TestCase):
 
     def test_partial_evaluation_cell(self):
         obj = object()
+
         class RaisesAttributeError:
             attriberr: obj.missing
+
         anno = get_annotations(RaisesAttributeError, format=Format.FORWARDREF)
-        self.assertEqual(anno, None)
+        self.assertEqual(
+            anno,
+            {
+                "attriberr": support.EqualToForwardRef(
+                    "obj.missing", is_class=True, owner=RaisesAttributeError
+                )
+            },
+        )
 
 
 class TestCallEvaluateFunction(unittest.TestCase):
