@@ -264,7 +264,7 @@ class PdbConnectTestCase(unittest.TestCase):
                 def foo():
                     x = 42
                     return bar()
-                
+
                 def bar():
                     return 42
 
@@ -311,13 +311,13 @@ class PdbConnectTestCase(unittest.TestCase):
             stderr=subprocess.PIPE,
             text=True
         )
-        
+
         # Accept the connection from the subprocess
         client_sock, _ = self.server_sock.accept()
         client_file = client_sock.makefile('rwb')
         self.addCleanup(client_file.close)
         self.addCleanup(client_sock.close)
-        
+
         return process, client_file
 
     def _read_until_prompt(self, client_file):
@@ -337,7 +337,7 @@ class PdbConnectTestCase(unittest.TestCase):
         """Helper to send a command to the debugger."""
         client_file.write(json.dumps({"reply": command}).encode() + b"\n")
         client_file.flush()
-    
+
     def _send_interrupt(self, pid):
         """Helper to send an interrupt signal to the debugger."""
         # with tempfile.NamedTemporaryFile("w", delete_on_close=False) as interrupt_script:
@@ -349,7 +349,10 @@ class PdbConnectTestCase(unittest.TestCase):
                 'if inst := pdb.Pdb._last_pdb_instance:\n'
                 '    inst.set_trace(sys._getframe(1))\n'
             )
-        sys.remote_exec(pid, interrupt_script)
+        try:
+            sys.remote_exec(pid, interrupt_script)
+        except PermissionError:
+            self.skipTest("Insufficient permissions to execute code in remote process")
         self.addCleanup(unlink, interrupt_script)
 
     def test_connect_and_basic_commands(self):
@@ -380,9 +383,9 @@ class PdbConnectTestCase(unittest.TestCase):
 
             # Check for response - we should get some stack frames
             messages = self._read_until_prompt(client_file)
-            
+
             # Extract text messages containing stack info
-            text_msg = [msg['message'] for msg in messages 
+            text_msg = [msg['message'] for msg in messages
                     if 'message' in msg and 'connect_to_debugger' in msg['message']]
             got_stack_info = bool(text_msg)
 
@@ -423,7 +426,7 @@ class PdbConnectTestCase(unittest.TestCase):
             # Continue execution until breakpoint
             self._send_command(client_file, "c")
             messages = self._read_until_prompt(client_file)
-            
+
             # Verify we hit the breakpoint
             hit_msg = next(msg['message'] for msg in messages if 'message' in msg)
             self.assertIn("bar()", hit_msg)
