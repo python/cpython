@@ -17,6 +17,13 @@ from itertools import chain
 from stat import S_ISDIR, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from _collections_abc import Sequence
 
+# types
+if False:
+    from types import ModuleType
+
+    pwd: ModuleType | None
+    grp: ModuleType | None
+
 try:
     import pwd
 except ImportError:
@@ -26,7 +33,7 @@ try:
 except ImportError:
     grp = None
 
-from pathlib._os import (
+from ._os import (
     PathInfo, DirEntryInfo,
     ensure_different_files, ensure_distinct_paths,
     copyfile2, copyfileobj, magic_open, copy_info,

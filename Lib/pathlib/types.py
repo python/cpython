@@ -13,9 +13,10 @@ Protocols for supporting classes in pathlib.
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterator, Sequence
 from glob import _PathGlobber
-from pathlib._os import magic_open, ensure_distinct_paths, ensure_different_files, copyfileobj
-from pathlib import PurePath, Path
 from typing import Protocol, runtime_checkable
+
+from . import PurePath, Path
+from ._os import magic_open, ensure_distinct_paths, ensure_different_files, copyfileobj
 
 # typing
 if False:
@@ -308,7 +309,9 @@ class _ReadablePath(_JoinablePath):
         follow_symlinks: bool = False,
     ) -> Iterator[tuple[Self, list[str], list[str]]]:
         """Walk the directory tree from this directory, similar to os.walk()."""
-        paths = [self]
+        dirnames: list[str]
+        filenames: list[str]
+        paths: list[Self | tuple[Self, list[str], list[str]]] = [self]
         while paths:
             path = paths.pop()
             if isinstance(path, tuple):
