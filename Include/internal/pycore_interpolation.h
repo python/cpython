@@ -9,8 +9,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_stackref.h"    // _PyStackRef
-
 extern PyTypeObject _PyInterpolation_Type;
 
 #define _PyInterpolation_CheckExact(op) Py_IS_TYPE((op), &_PyInterpolation_Type)

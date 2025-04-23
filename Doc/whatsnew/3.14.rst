@@ -160,7 +160,8 @@ safe shell operations, improve logging, tackle modern ideas in web development
 See :pep:`750` for more details.
 
 (Contributed by Jim Baker, Guido van Rossum, Paul Everitt, Koudai Aono,
-Lysandros Nikolaou, and Dave Peck in :gh:`132661`.)
+Lysandros Nikolaou, Dave Peck, Adam Turner, Jelle Zijlstra, Bénédikt Tran,
+and Pablo Galindo Salgado in :gh:`132661`.)
 
 .. _whatsnew314-pep768:
 

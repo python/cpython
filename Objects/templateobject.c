@@ -2,6 +2,7 @@
 
 #include "Python.h"
 #include "pycore_interpolation.h" // _PyInterpolation_CheckExact()
+#include "pycore_runtime.h"       // _Py_STR()
 #include "pycore_template.h"
 
 typedef struct {
@@ -155,6 +156,7 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
         else if (_PyInterpolation_CheckExact(item)) {
             if (!last_was_str) {
+                _Py_DECLARE_STR(empty, "");
                 PyTuple_SET_ITEM(strings, stringsidx++, &_Py_STR(empty));
             }
             PyTuple_SET_ITEM(interpolations, interpolationsidx++, Py_NewRef(item));
@@ -162,6 +164,7 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
     }
     if (!last_was_str) {
+        _Py_DECLARE_STR(empty, "");
         PyTuple_SET_ITEM(strings, stringsidx++, &_Py_STR(empty));
     }
 

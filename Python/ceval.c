@@ -19,7 +19,7 @@
 #include "pycore_import.h"        // _PyImport_IsDefaultImportFunc()
 #include "pycore_instruments.h"
 #include "pycore_interpframe.h"   // _PyFrame_SetStackPointer()
-#include "pycore_interpolation.h" // _PyInterpolation_FromStackRefStealOnSuccess()
+#include "pycore_interpolation.h" // _PyInterpolation_Build()
 #include "pycore_intrinsics.h"
 #include "pycore_jit.h"
 #include "pycore_list.h"          // _PyList_GetItemRef()
@@ -37,7 +37,7 @@
 #include "pycore_setobject.h"     // _PySet_Update()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
-#include "pycore_template.h"      // _PyTemplate_From{List,Values}()
+#include "pycore_template.h"      // _PyTemplate_Build()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_uop_ids.h"       // Uops

@@ -1,8 +1,9 @@
 /* t-string Interpolation object implementation */
 
 #include "Python.h"
-#include "pycore_initconfig.h"      // _PyStatus_OK
+#include "pycore_initconfig.h"    // _PyStatus_OK
 #include "pycore_interpolation.h"
+#include "pycore_typeobject.h"    // _PyType_GetDict
 
 static int
 _conversion_converter(PyObject *arg, PyObject **conversion)

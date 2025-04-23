@@ -133,7 +133,7 @@ The token constants are:
 
 .. data:: TSTRING_START
 
-   Token value used to indicate the beginning of a t-string literal.
+   Token value used to indicate the beginning of a template string literal.
 
    .. impl-detail::
 
@@ -144,7 +144,7 @@ The token constants are:
 
 .. data:: TSTRING_MIDDLE
 
-   Token value used for literal text inside a t-string literal
+   Token value used for literal text inside a template string literal
    including format specifications.
 
    .. impl-detail::
@@ -158,7 +158,7 @@ The token constants are:
 
 .. data:: TSTRING_END
 
-   Token value used to indicate the end of a t-string.
+   Token value used to indicate the end of a template string literal.
 
    .. impl-detail::
 
