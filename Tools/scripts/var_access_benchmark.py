@@ -292,6 +292,8 @@ if __name__=='__main__':
         if isinstance(f, str):
             print(f)
             continue
-        timing = min(Timer(f).repeat(7, 1000))
-        timing *= 1000000 / (len(trials) * steps_per_trial)
+
+        timing = min(Timer(f, number=1000).repeat(7, 1))
+        timing = (timing * 1e6) / 1000  # ns per single call
+    
         print('{:6.1f} ns\t{}'.format(timing, f.__name__))
