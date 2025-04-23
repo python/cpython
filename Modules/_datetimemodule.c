@@ -35,7 +35,8 @@ static PyTypeObject PyDateTime_TimeZoneType;
 
 
 typedef struct {
-    /* Corresponding  module */
+    /* Corresponding module that can be referred even after
+     * its weak reference stops working at shutdown. */
     PyObject *module;
 
     /* Module heap types. */
