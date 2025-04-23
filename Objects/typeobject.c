@@ -102,6 +102,7 @@ types_world_is_stopped(void)
 #define TYPE_IS_REVEALED(tp) 0
 #endif
 
+#ifdef Py_DEBUG
 #define ASSERT_TYPE_LOCK_HELD() \
     if (!types_world_is_stopped()) { _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(TYPE_LOCK); }
 
@@ -111,6 +112,11 @@ types_world_is_stopped(void)
 
 #define ASSERT_NEW_OR_LOCKED(tp) \
     if (TYPE_IS_REVEALED(tp)) { ASSERT_TYPE_LOCK_HELD(); }
+#else
+#define ASSERT_TYPE_LOCK_HELD()
+#define ASSERT_NEW_OR_STOPPED(tp)
+#define ASSERT_NEW_OR_LOCKED(tp)
+#endif
 
 static void
 types_stop_world(void)
