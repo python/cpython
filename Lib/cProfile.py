@@ -188,7 +188,6 @@ def main():
                 '__name__': spec.name,
                 '__package__': None,
                 '__cached__': None,
-                '__builtins__': __builtins__,
             })
 
         try:
