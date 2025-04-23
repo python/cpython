@@ -167,11 +167,12 @@ Examining Symbol Tables
 
    .. method:: get_nonlocals()
 
-      Return a tuple containing names of nonlocals in this function.
+      Return a tuple containing names of explicitly declared nonlocals in this function.
 
    .. method:: get_frees()
 
-      Return a tuple containing names of free variables in this function.
+      Return a tuple containing names of :term:`free (closure) variables <closure variable>`
+      in this function.
 
 
 .. class:: Class
@@ -190,6 +191,19 @@ Examining Symbol Tables
       picked up by :meth:`get_methods`.
 
       For example:
+
+      .. testsetup:: symtable.Class.get_methods
+
+         import warnings
+         context = warnings.catch_warnings()
+         context.__enter__()
+         warnings.simplefilter("ignore", category=DeprecationWarning)
+
+      .. testcleanup:: symtable.Class.get_methods
+
+         context.__exit__()
+
+      .. doctest:: symtable.Class.get_methods
 
          >>> import symtable
          >>> st = symtable.symtable('''
@@ -213,6 +227,9 @@ Examining Symbol Tables
 
       Although ``A().f()`` raises :exc:`TypeError` at runtime, ``A.f`` is still
       considered as a method-like function.
+
+      .. deprecated-removed:: 3.14 3.16
+
 
 .. class:: Symbol
 

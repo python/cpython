@@ -31,11 +31,13 @@ from .support.props import *
 from .support.nuspec import *
 
 TEST_PYDS_ONLY = FileStemSet("xxlimited", "xxlimited_35", "_ctypes_test", "_test*")
+TEST_DLLS_ONLY = set()
 TEST_DIRS_ONLY = FileNameSet("test", "tests")
 
 IDLE_DIRS_ONLY = FileNameSet("idlelib")
 
-TCLTK_PYDS_ONLY = FileStemSet("tcl*", "tk*", "_tkinter", "zlib1")
+TCLTK_PYDS_ONLY = FileStemSet("_tkinter")
+TCLTK_DLLS_ONLY = FileStemSet("tcl*", "tk*", "zlib1")
 TCLTK_DIRS_ONLY = FileNameSet("tkinter", "turtledemo")
 TCLTK_FILES_ONLY = FileNameSet("turtle.py")
 
@@ -225,6 +227,10 @@ def get_layout(ns):
         if src.stem.endswith("_d") != bool(ns.debug) and src not in REQUIRED_DLLS:
             continue
         if src in EXCLUDE_FROM_DLLS:
+            continue
+        if src in TEST_DLLS_ONLY and not ns.include_tests:
+            continue
+        if src in TCLTK_DLLS_ONLY and not ns.include_tcltk:
             continue
         yield from in_build(src.name, dest=dest, no_lib=True)
 
@@ -651,7 +657,7 @@ Catalog: {ns.catalog}""",
     if ns.arch not in ("win32", "amd64", "arm32", "arm64"):
         log_error("--arch is not a valid value (win32, amd64, arm32, arm64)")
         return 4
-    if ns.arch in ("arm32", "arm64"):
+    if ns.arch == "arm32":
         for n in ("include_idle", "include_tcltk"):
             if getattr(ns, n):
                 log_warning(f"Disabling --{n.replace('_', '-')} on unsupported platform")

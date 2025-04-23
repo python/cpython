@@ -1,17 +1,23 @@
 import io
 import itertools
 import os
+import pathlib
+import re
 import rlcompleter
 import select
 import subprocess
 import sys
-from unittest import TestCase, skipUnless
+import tempfile
+from unittest import TestCase, skipUnless, skipIf
 from unittest.mock import patch
-from test.support import force_not_colorized
-from test.support import SHORT_TIMEOUT
+from test.support import force_not_colorized, make_clean_env
+from test.support import SHORT_TIMEOUT, STDLIB_DIR
+from test.support.import_helper import import_module
+from test.support.os_helper import EnvironmentVarGuard, unlink
 
 from .support import (
     FakeConsole,
+    ScreenEqualMixin,
     handle_all_events,
     handle_events_narrow_console,
     more_lines,
@@ -19,13 +25,102 @@ from .support import (
     code_to_events,
 )
 from _pyrepl.console import Event
-from _pyrepl.readline import ReadlineAlikeReader, ReadlineConfig
+from _pyrepl.readline import (ReadlineAlikeReader, ReadlineConfig,
+                              _ReadlineWrapper)
 from _pyrepl.readline import multiline_input as readline_multiline_input
 
 try:
     import pty
 except ImportError:
     pty = None
+
+
+class ReplTestCase(TestCase):
+    def run_repl(
+        self,
+        repl_input: str | list[str],
+        env: dict | None = None,
+        *,
+        cmdline_args: list[str] | None = None,
+        cwd: str | None = None,
+    ) -> tuple[str, int]:
+        temp_dir = None
+        if cwd is None:
+            temp_dir = tempfile.TemporaryDirectory(ignore_cleanup_errors=True)
+            cwd = temp_dir.name
+        try:
+            return self._run_repl(
+                repl_input, env=env, cmdline_args=cmdline_args, cwd=cwd
+            )
+        finally:
+            if temp_dir is not None:
+                temp_dir.cleanup()
+
+    def _run_repl(
+        self,
+        repl_input: str | list[str],
+        *,
+        env: dict | None,
+        cmdline_args: list[str] | None,
+        cwd: str,
+    ) -> tuple[str, int]:
+        assert pty
+        master_fd, slave_fd = pty.openpty()
+        cmd = [sys.executable, "-i", "-u"]
+        if env is None:
+            cmd.append("-I")
+        elif "PYTHON_HISTORY" not in env:
+            env["PYTHON_HISTORY"] = os.path.join(cwd, ".regrtest_history")
+        if cmdline_args is not None:
+            cmd.extend(cmdline_args)
+
+        try:
+            import termios
+        except ModuleNotFoundError:
+            pass
+        else:
+            term_attr = termios.tcgetattr(slave_fd)
+            term_attr[6][termios.VREPRINT] = 0  # pass through CTRL-R
+            term_attr[6][termios.VINTR] = 0  # pass through CTRL-C
+            termios.tcsetattr(slave_fd, termios.TCSANOW, term_attr)
+
+        process = subprocess.Popen(
+            cmd,
+            stdin=slave_fd,
+            stdout=slave_fd,
+            stderr=slave_fd,
+            cwd=cwd,
+            text=True,
+            close_fds=True,
+            env=env if env else os.environ,
+        )
+        os.close(slave_fd)
+        if isinstance(repl_input, list):
+            repl_input = "\n".join(repl_input) + "\n"
+        os.write(master_fd, repl_input.encode("utf-8"))
+
+        output = []
+        while select.select([master_fd], [], [], SHORT_TIMEOUT)[0]:
+            try:
+                data = os.read(master_fd, 1024).decode("utf-8")
+                if not data:
+                    break
+            except OSError:
+                break
+            output.append(data)
+        else:
+            os.close(master_fd)
+            process.kill()
+            self.fail(f"Timeout while waiting for output, got: {''.join(output)}")
+
+        os.close(master_fd)
+        try:
+            exit_code = process.wait(timeout=SHORT_TIMEOUT)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            exit_code = process.wait()
+        return "".join(output), exit_code
+
 
 class TestCursorPosition(TestCase):
     def prepare_reader(self, events):
@@ -458,6 +553,24 @@ class TestPyReplAutoindent(TestCase):
         output = multiline_input(reader)
         self.assertEqual(output, output_code)
 
+    def test_auto_indent_with_multicomment(self):
+        # fmt: off
+        events = code_to_events(
+            "def f():  ## foo\n"
+                "pass\n\n"
+        )
+
+        output_code = (
+            "def f():  ## foo\n"
+            "    pass\n"
+            "    "
+        )
+        # fmt: on
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        self.assertEqual(output, output_code)
+
     def test_auto_indent_ignore_comments(self):
         # fmt: off
         events = code_to_events(
@@ -474,18 +587,45 @@ class TestPyReplAutoindent(TestCase):
         self.assertEqual(output, output_code)
 
 
-class TestPyReplOutput(TestCase):
+class TestPyReplOutput(ScreenEqualMixin, TestCase):
     def prepare_reader(self, events):
         console = FakeConsole(events)
         config = ReadlineConfig(readline_completer=None)
         reader = ReadlineAlikeReader(console=console, config=config)
+        reader.can_colorize = False
         return reader
+
+    def test_stdin_is_tty(self):
+        # Used during test log analysis to figure out if a TTY was available.
+        try:
+            if os.isatty(sys.stdin.fileno()):
+                return
+        except OSError as ose:
+            self.skipTest(f"stdin tty check failed: {ose}")
+        else:
+            self.skipTest("stdin is not a tty")
+
+    def test_stdout_is_tty(self):
+        # Used during test log analysis to figure out if a TTY was available.
+        try:
+            if os.isatty(sys.stdout.fileno()):
+                return
+        except OSError as ose:
+            self.skipTest(f"stdout tty check failed: {ose}")
+        else:
+            self.skipTest("stdout is not a tty")
 
     def test_basic(self):
         reader = self.prepare_reader(code_to_events("1+1\n"))
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assert_screen_equal(reader, "1+1", clean=True)
+
+    def test_get_line_buffer_returns_str(self):
+        reader = self.prepare_reader(code_to_events("\n"))
+        wrapper = _ReadlineWrapper(f_in=None, f_out=None, reader=reader)
+        self.assertIs(type(wrapper.get_line_buffer()), str)
 
     def test_multiline_edit(self):
         events = itertools.chain(
@@ -514,9 +654,13 @@ class TestPyReplOutput(TestCase):
         reader = self.prepare_reader(events)
 
         output = multiline_input(reader)
-        self.assertEqual(output, "def f():\n    ...\n    ")
+        expected = "def f():\n    ...\n    "
+        self.assertEqual(output, expected)
+        self.assert_screen_equal(reader, expected, clean=True)
         output = multiline_input(reader)
-        self.assertEqual(output, "def g():\n    pass\n    ")
+        expected = "def g():\n    pass\n    "
+        self.assertEqual(output, expected)
+        self.assert_screen_equal(reader, expected, clean=True)
 
     def test_history_navigation_with_up_arrow(self):
         events = itertools.chain(
@@ -535,12 +679,38 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assert_screen_equal(reader, "1+1", clean=True)
         output = multiline_input(reader)
         self.assertEqual(output, "2+2")
+        self.assert_screen_equal(reader, "2+2", clean=True)
         output = multiline_input(reader)
         self.assertEqual(output, "2+2")
+        self.assert_screen_equal(reader, "2+2", clean=True)
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assert_screen_equal(reader, "1+1", clean=True)
+
+    def test_history_with_multiline_entries(self):
+        code = "def foo():\nx = 1\ny = 2\nz = 3\n\ndef bar():\nreturn 42\n\n"
+        events = list(itertools.chain(
+            code_to_events(code),
+            [
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ]
+        ))
+
+        reader = self.prepare_reader(events)
+        output = multiline_input(reader)
+        output = multiline_input(reader)
+        output = multiline_input(reader)
+        expected = "def foo():\n    x = 1\n    y = 2\n    z = 3\n    "
+        self.assert_screen_equal(reader, expected, clean=True)
+        self.assertEqual(output, expected)
+
 
     def test_history_navigation_with_down_arrow(self):
         events = itertools.chain(
@@ -558,6 +728,7 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assert_screen_equal(reader, "1+1", clean=True)
 
     def test_history_search(self):
         events = itertools.chain(
@@ -574,18 +745,62 @@ class TestPyReplOutput(TestCase):
 
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assert_screen_equal(reader, "1+1", clean=True)
         output = multiline_input(reader)
         self.assertEqual(output, "2+2")
+        self.assert_screen_equal(reader, "2+2", clean=True)
         output = multiline_input(reader)
         self.assertEqual(output, "3+3")
+        self.assert_screen_equal(reader, "3+3", clean=True)
         output = multiline_input(reader)
         self.assertEqual(output, "1+1")
+        self.assert_screen_equal(reader, "1+1", clean=True)
 
     def test_control_character(self):
         events = code_to_events("c\x1d\n")
         reader = self.prepare_reader(events)
         output = multiline_input(reader)
         self.assertEqual(output, "c\x1d")
+        self.assert_screen_equal(reader, "c\x1d", clean=True)
+
+    def test_history_search_backward(self):
+        # Test <page up> history search backward with "imp" input
+        events = itertools.chain(
+            code_to_events("import os\n"),
+            code_to_events("imp"),
+            [
+                Event(evt='key', data='page up', raw=bytearray(b'\x1b[5~')),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        # fill the history
+        reader = self.prepare_reader(events)
+        multiline_input(reader)
+
+        # search for "imp" in history
+        output = multiline_input(reader)
+        self.assertEqual(output, "import os")
+        self.assert_screen_equal(reader, "import os", clean=True)
+
+    def test_history_search_backward_empty(self):
+        # Test <page up> history search backward with an empty input
+        events = itertools.chain(
+            code_to_events("import os\n"),
+            [
+                Event(evt='key', data='page up', raw=bytearray(b'\x1b[5~')),
+                Event(evt="key", data="\n", raw=bytearray(b"\n")),
+            ],
+        )
+
+        # fill the history
+        reader = self.prepare_reader(events)
+        multiline_input(reader)
+
+        # search backward in history
+        output = multiline_input(reader)
+        self.assertEqual(output, "import os")
+        self.assert_screen_equal(reader, "import os", clean=True)
 
 
 class TestPyReplCompleter(TestCase):
@@ -635,7 +850,7 @@ class TestPyReplCompleter(TestCase):
         output = multiline_input(reader, namespace)
         self.assertEqual(output, "python")
 
-    def test_updown_arrow_with_completion_menu(self):
+    def test_up_down_arrow_with_completion_menu(self):
         """Up arrow in the middle of unfinished tab completion when the menu is displayed
         should work and trigger going back in history. Down arrow should subsequently
         get us back to the incomplete command."""
@@ -645,6 +860,7 @@ class TestPyReplCompleter(TestCase):
         events = itertools.chain(
             code_to_events(code),
             [
+                Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
                 Event(evt="key", data="up", raw=bytearray(b"\x1bOA")),
                 Event(evt="key", data="down", raw=bytearray(b"\x1bOB")),
             ],
@@ -840,12 +1056,34 @@ class TestPasteEvent(TestCase):
 
 
 @skipUnless(pty, "requires pty")
-class TestMain(TestCase):
+class TestDumbTerminal(ReplTestCase):
+    def test_dumb_terminal_exits_cleanly(self):
+        env = os.environ.copy()
+        env.pop('PYTHON_BASIC_REPL', None)
+        env.update({"TERM": "dumb"})
+        output, exit_code = self.run_repl("exit()\n", env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("warning: can't use pyrepl", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
+
+
+@skipUnless(pty, "requires pty")
+@skipIf((os.environ.get("TERM") or "dumb") == "dumb", "can't use pyrepl in dumb terminal")
+class TestMain(ReplTestCase):
+    def setUp(self):
+        # Cleanup from PYTHON* variables to isolate from local
+        # user settings, see #121359.  Such variables should be
+        # added later in test methods to patched os.environ.
+        patcher = patch('os.environ', new=make_clean_env())
+        self.addCleanup(patcher.stop)
+        patcher.start()
+
     @force_not_colorized
     def test_exposed_globals_in_repl(self):
-        pre = "['__annotations__', '__builtins__'"
+        pre = "['__builtins__'"
         post = "'__loader__', '__name__', '__package__', '__spec__']"
-        output, exit_code = self.run_repl(["sorted(dir())", "exit"])
+        output, exit_code = self.run_repl(["sorted(dir())", "exit()"])
         if "can't use pyrepl" in output:
             self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
@@ -864,14 +1102,83 @@ class TestMain(TestCase):
 
         self.assertTrue(case1 or case2 or case3 or case4, output)
 
-    def test_dumb_terminal_exits_cleanly(self):
-        env = os.environ.copy()
-        env.update({"TERM": "dumb"})
-        output, exit_code = self.run_repl("exit()\n", env=env)
+    def _assertMatchOK(
+            self, var: str, expected: str | re.Pattern, actual: str
+    ) -> None:
+        if isinstance(expected, re.Pattern):
+            self.assertTrue(
+                expected.match(actual),
+                f"{var}={actual} does not match {expected.pattern}",
+            )
+        else:
+            self.assertEqual(
+                actual,
+                expected,
+                f"expected {var}={expected}, got {var}={actual}",
+            )
+
+    @force_not_colorized
+    def _run_repl_globals_test(self, expectations, *, as_file=False, as_module=False):
+        clean_env = make_clean_env()
+        clean_env["NO_COLOR"] = "1"  # force_not_colorized doesn't touch subprocesses
+
+        with tempfile.TemporaryDirectory() as td:
+            blue = pathlib.Path(td) / "blue"
+            blue.mkdir()
+            mod = blue / "calx.py"
+            mod.write_text("FOO = 42", encoding="utf-8")
+            commands = [
+                "print(f'^{" + var + "=}')" for var in expectations
+            ] + ["exit()"]
+            if as_file and as_module:
+                self.fail("as_file and as_module are mutually exclusive")
+            elif as_file:
+                output, exit_code = self.run_repl(
+                    commands,
+                    cmdline_args=[str(mod)],
+                    env=clean_env,
+                )
+            elif as_module:
+                output, exit_code = self.run_repl(
+                    commands,
+                    cmdline_args=["-m", "blue.calx"],
+                    env=clean_env,
+                    cwd=td,
+                )
+            else:
+                self.fail("Choose one of as_file or as_module")
+
+        if "can't use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+
         self.assertEqual(exit_code, 0)
-        self.assertIn("warning: can\'t use pyrepl", output)
+        for var, expected in expectations.items():
+            with self.subTest(var=var, expected=expected):
+                if m := re.search(rf"\^{var}=(.+?)[\r\n]", output):
+                    self._assertMatchOK(var, expected, actual=m.group(1))
+                else:
+                    self.fail(f"{var}= not found in output: {output!r}\n\n{output}")
+
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
+
+    def test_inspect_keeps_globals_from_inspected_file(self):
+        expectations = {
+            "FOO": "42",
+            "__name__": "'__main__'",
+            "__package__": "None",
+            # "__file__" is missing in -i, like in the basic REPL
+        }
+        self._run_repl_globals_test(expectations, as_file=True)
+
+    def test_inspect_keeps_globals_from_inspected_module(self):
+        expectations = {
+            "FOO": "42",
+            "__name__": "'__main__'",
+            "__package__": "'blue'",
+            "__file__": re.compile(r"^'.*calx.py'$"),
+        }
+        self._run_repl_globals_test(expectations, as_module=True)
 
     @force_not_colorized
     def test_python_basic_repl(self):
@@ -898,33 +1205,180 @@ class TestMain(TestCase):
         self.assertNotIn("Exception", output)
         self.assertNotIn("Traceback", output)
 
-    def run_repl(self, repl_input: str | list[str], env: dict | None = None) -> tuple[str, int]:
-        master_fd, slave_fd = pty.openpty()
-        process = subprocess.Popen(
-            [sys.executable, "-i", "-u"],
-            stdin=slave_fd,
-            stdout=slave_fd,
-            stderr=slave_fd,
-            text=True,
-            close_fds=True,
-            env=env if env else os.environ,
-       )
-        if isinstance(repl_input, list):
-            repl_input = "\n".join(repl_input) + "\n"
-        os.write(master_fd, repl_input.encode("utf-8"))
+        # The site module must not load _pyrepl if PYTHON_BASIC_REPL is set
+        commands = ("import sys\n"
+                    "print('_pyrepl' in sys.modules)\n"
+                    "exit()\n")
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("False", output)
+        self.assertNotIn("True", output)
+        self.assertNotIn("Exception", output)
+        self.assertNotIn("Traceback", output)
 
-        output = []
-        while select.select([master_fd], [], [], 0.5)[0]:
-            data = os.read(master_fd, 1024).decode("utf-8")
-            if not data:
-                break
-            output.append(data)
+    @force_not_colorized
+    def test_no_pyrepl_source_in_exc(self):
+        # Avoid using _pyrepl/__main__.py in traceback reports
+        # See https://github.com/python/cpython/issues/129098.
+        pyrepl_main_file = os.path.join(STDLIB_DIR, "_pyrepl", "__main__.py")
+        self.assertTrue(os.path.exists(pyrepl_main_file), pyrepl_main_file)
+        with open(pyrepl_main_file) as fp:
+            excluded_lines = fp.readlines()
+        excluded_lines = list(filter(None, map(str.strip, excluded_lines)))
 
-        os.close(master_fd)
-        os.close(slave_fd)
-        try:
-            exit_code = process.wait(timeout=SHORT_TIMEOUT)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            exit_code = process.wait()
-        return "\n".join(output), exit_code
+        for filename in ['?', 'unknown-filename', '<foo>', '<...>']:
+            self._test_no_pyrepl_source_in_exc(filename, excluded_lines)
+
+    def _test_no_pyrepl_source_in_exc(self, filename, excluded_lines):
+        with EnvironmentVarGuard() as env, self.subTest(filename=filename):
+            env.unset("PYTHON_BASIC_REPL")
+            commands = (f"eval(compile('spam', {filename!r}, 'eval'))\n"
+                        f"exit()\n")
+            output, _ = self.run_repl(commands, env=env)
+            self.assertIn("Traceback (most recent call last)", output)
+            self.assertIn("NameError: name 'spam' is not defined", output)
+            for line in excluded_lines:
+                with self.subTest(line=line):
+                    self.assertNotIn(line, output)
+
+    @force_not_colorized
+    def test_bad_sys_excepthook_doesnt_crash_pyrepl(self):
+        env = os.environ.copy()
+        commands = ("import sys\n"
+                    "sys.excepthook = 1\n"
+                    "1/0\n"
+                    "exit()\n")
+
+        def check(output, exitcode):
+            self.assertIn("Error in sys.excepthook:", output)
+            self.assertEqual(output.count("'int' object is not callable"), 1)
+            self.assertIn("Original exception was:", output)
+            self.assertIn("division by zero", output)
+            self.assertEqual(exitcode, 0)
+        env.pop("PYTHON_BASIC_REPL", None)
+        output, exit_code = self.run_repl(commands, env=env)
+        if "can\'t use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        check(output, exit_code)
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, exit_code = self.run_repl(commands, env=env)
+        check(output, exit_code)
+
+    def test_not_wiping_history_file(self):
+        # skip, if readline module is not available
+        import_module('readline')
+
+        hfile = tempfile.NamedTemporaryFile(delete=False)
+        self.addCleanup(unlink, hfile.name)
+        env = os.environ.copy()
+        env["PYTHON_HISTORY"] = hfile.name
+        commands = "123\nspam\nexit()\n"
+
+        env.pop("PYTHON_BASIC_REPL", None)
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("123", output)
+        self.assertIn("spam", output)
+        self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
+
+        hfile.file.truncate()
+        hfile.close()
+
+        env["PYTHON_BASIC_REPL"] = "1"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertEqual(exit_code, 0)
+        self.assertIn("123", output)
+        self.assertIn("spam", output)
+        self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
+
+    @force_not_colorized
+    def test_correct_filename_in_syntaxerrors(self):
+        env = os.environ.copy()
+        commands = "a b c\nexit()\n"
+        output, exit_code = self.run_repl(commands, env=env)
+        if "can't use pyrepl" in output:
+            self.skipTest("pyrepl not available")
+        self.assertIn("SyntaxError: invalid syntax", output)
+        self.assertIn("<python-input-0>", output)
+        commands = " b\nexit()\n"
+        output, exit_code = self.run_repl(commands, env=env)
+        self.assertIn("IndentationError: unexpected indent", output)
+        self.assertIn("<python-input-0>", output)
+
+    @force_not_colorized
+    def test_proper_tracebacklimit(self):
+        env = os.environ.copy()
+        for set_tracebacklimit in [True, False]:
+            commands = ("import sys\n" +
+                        ("sys.tracebacklimit = 1\n" if set_tracebacklimit else "") +
+                        "def x1(): 1/0\n\n"
+                        "def x2(): x1()\n\n"
+                        "def x3(): x2()\n\n"
+                        "x3()\n"
+                        "exit()\n")
+
+            for basic_repl in [True, False]:
+                if basic_repl:
+                    env["PYTHON_BASIC_REPL"] = "1"
+                else:
+                    env.pop("PYTHON_BASIC_REPL", None)
+                with self.subTest(set_tracebacklimit=set_tracebacklimit,
+                                  basic_repl=basic_repl):
+                    output, exit_code = self.run_repl(commands, env=env)
+                    if "can't use pyrepl" in output:
+                        self.skipTest("pyrepl not available")
+                    self.assertIn("in x1", output)
+                    if set_tracebacklimit:
+                        self.assertNotIn("in x2", output)
+                        self.assertNotIn("in x3", output)
+                        self.assertNotIn("in <module>", output)
+                    else:
+                        self.assertIn("in x2", output)
+                        self.assertIn("in x3", output)
+                        self.assertIn("in <module>", output)
+
+    def test_null_byte(self):
+        output, exit_code = self.run_repl("\x00\nexit()\n")
+        self.assertEqual(exit_code, 0)
+        self.assertNotIn("TypeError", output)
+
+    def test_readline_history_file(self):
+        # skip, if readline module is not available
+        readline = import_module('readline')
+        if readline.backend != "editline":
+            self.skipTest("GNU readline is not affected by this issue")
+
+        with tempfile.NamedTemporaryFile() as hfile:
+            env = os.environ.copy()
+            env["PYTHON_HISTORY"] = hfile.name
+
+            env["PYTHON_BASIC_REPL"] = "1"
+            output, exit_code = self.run_repl("spam \nexit()\n", env=env)
+            self.assertEqual(exit_code, 0)
+            self.assertIn("spam ", output)
+            self.assertNotEqual(pathlib.Path(hfile.name).stat().st_size, 0)
+            self.assertIn("spam\\040", pathlib.Path(hfile.name).read_text())
+
+            env.pop("PYTHON_BASIC_REPL", None)
+            output, exit_code = self.run_repl("exit\n", env=env)
+            self.assertEqual(exit_code, 0)
+            self.assertNotIn("\\040", pathlib.Path(hfile.name).read_text())
+
+    def test_keyboard_interrupt_after_isearch(self):
+        output, exit_code = self.run_repl(["\x12", "\x03", "exit"])
+        self.assertEqual(exit_code, 0)
+
+    def test_prompt_after_help(self):
+        output, exit_code = self.run_repl(["help", "q", "exit"])
+
+        # Regex pattern to remove ANSI escape sequences
+        ansi_escape = re.compile(r"(\x1B(=|>|(\[)[0-?]*[ -\/]*[@-~]))")
+        cleaned_output = ansi_escape.sub("", output)
+        self.assertEqual(exit_code, 0)
+
+        # Ensure that we don't see multiple prompts after exiting `help`
+        # Extra stuff (newline and `exit` rewrites) are necessary
+        # because of how run_repl works.
+        self.assertNotIn(">>> \n>>> >>>", cleaned_output)

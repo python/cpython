@@ -136,6 +136,10 @@ examples of doctests in the standard Python test suite and libraries.
 Especially useful examples can be found in the standard test file
 :file:`Lib/test/test_doctest/test_doctest.py`.
 
+.. versionadded:: 3.13
+   Output is colorized by default and can be
+   :ref:`controlled using environment variables <using-on-controlling-color>`.
+
 
 .. _doctest-simple-testmod:
 
@@ -173,15 +177,8 @@ prohibit it by passing ``verbose=False``.  In either of those cases,
 ``sys.argv`` is not examined by :func:`testmod` (so passing ``-v`` or not
 has no effect).
 
-There is also a command line shortcut for running :func:`testmod`.  You can
-instruct the Python interpreter to run the doctest module directly from the
-standard library and pass the module name(s) on the command line::
-
-   python -m doctest -v example.py
-
-This will import :file:`example.py` as a standalone module and run
-:func:`testmod` on it.  Note that this may not work correctly if the file is
-part of a package and imports other submodules from that package.
+There is also a command line shortcut for running :func:`testmod`, see section
+:ref:`doctest-cli`.
 
 For more information on :func:`testmod`, see section :ref:`doctest-basic-api`.
 
@@ -244,16 +241,53 @@ Like :func:`testmod`, :func:`testfile`'s verbosity can be set with the
 ``-v`` command-line switch or with the optional keyword argument
 *verbose*.
 
-There is also a command line shortcut for running :func:`testfile`.  You can
-instruct the Python interpreter to run the doctest module directly from the
-standard library and pass the file name(s) on the command line::
-
-   python -m doctest -v example.txt
-
-Because the file name does not end with :file:`.py`, :mod:`doctest` infers that
-it must be run with :func:`testfile`, not :func:`testmod`.
+There is also a command line shortcut for running :func:`testfile`, see section
+:ref:`doctest-cli`.
 
 For more information on :func:`testfile`, see section :ref:`doctest-basic-api`.
+
+
+.. _doctest-cli:
+
+Command-line Usage
+------------------
+
+The :mod:`doctest` module can be invoked as a script from the command line:
+
+.. code-block:: bash
+
+   python -m doctest [-v] [-o OPTION] [-f] file [file ...]
+
+.. program:: doctest
+
+.. option:: -v, --verbose
+
+   Detailed report of all examples tried is printed to standard output,
+   along with assorted summaries at the end::
+
+      python -m doctest -v example.py
+
+   This will import :file:`example.py` as a standalone module and run
+   :func:`testmod` on it. Note that this may not work correctly if the
+   file is part of a package and imports other submodules from that package.
+
+   If the file name does not end with :file:`.py`, :mod:`!doctest` infers
+   that it must be run with :func:`testfile` instead::
+
+      python -m doctest -v example.txt
+
+.. option:: -o, --option <option>
+
+   Option flags control various aspects of doctest's behavior, see section
+   :ref:`doctest-options`.
+
+   .. versionadded:: 3.4
+
+.. option:: -f, --fail-fast
+
+   This is shorthand for ``-o FAIL_FAST``.
+
+   .. versionadded:: 3.4
 
 
 .. _doctest-how-it-works:
@@ -536,9 +570,6 @@ Symbolic names for the flags are supplied as module constants, which can be
 The names can also be used in :ref:`doctest directives <doctest-directives>`,
 and may be passed to the doctest command line interface via the ``-o`` option.
 
-.. versionadded:: 3.4
-   The ``-o`` command line option.
-
 The first group of options define test semantics, controlling aspects of how
 doctest decides whether actual output matches an example's expected output:
 
@@ -677,11 +708,6 @@ The second group of options controls how test failures are reported:
    the remaining examples. Thus, the number of failures reported will be at most
    1.  This flag may be useful during debugging, since examples after the first
    failure won't even produce debugging output.
-
-   The doctest command line accepts the option ``-f`` as a shorthand for ``-o
-   FAIL_FAST``.
-
-   .. versionadded:: 3.4
 
 
 .. data:: REPORTING_FLAGS
