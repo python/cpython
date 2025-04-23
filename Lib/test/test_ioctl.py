@@ -1,32 +1,35 @@
 import array
+import os
+import struct
+import threading
 import unittest
 from test.support import get_attribute
+from test.support import threading_helper
 from test.support.import_helper import import_module
-import os, struct
 fcntl = import_module('fcntl')
 termios = import_module('termios')
-get_attribute(termios, 'TIOCGPGRP') #Can't run tests without this feature
-
-try:
-    tty = open("/dev/tty", "rb")
-except OSError:
-    raise unittest.SkipTest("Unable to open /dev/tty")
-else:
-    with tty:
-        # Skip if another process is in foreground
-        r = fcntl.ioctl(tty, termios.TIOCGPGRP, struct.pack("i", 0))
-    rpgrp = struct.unpack("i", r)[0]
-    if rpgrp not in (os.getpgrp(), os.getsid(0)):
-        raise unittest.SkipTest("Neither the process group nor the session "
-                                "are attached to /dev/tty")
-    del tty, r, rpgrp
 
 try:
     import pty
 except ImportError:
     pty = None
 
-class IoctlTests(unittest.TestCase):
+class IoctlTestsTty(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        TIOCGPGRP = get_attribute(termios, 'TIOCGPGRP')
+        try:
+            tty = open("/dev/tty", "rb")
+        except OSError:
+            raise unittest.SkipTest("Unable to open /dev/tty")
+        with tty:
+            # Skip if another process is in foreground
+            r = fcntl.ioctl(tty, TIOCGPGRP, struct.pack("i", 0))
+        rpgrp = struct.unpack("i", r)[0]
+        if rpgrp not in (os.getpgrp(), os.getsid(0)):
+            raise unittest.SkipTest("Neither the process group nor the session "
+                                    "are attached to /dev/tty")
+
     def test_ioctl_immutable_buf(self):
         # If this process has been put into the background, TIOCGPGRP returns
         # the session ID instead of the process group id.
@@ -132,23 +135,27 @@ class IoctlTests(unittest.TestCase):
         self._check_ioctl_mutate_len(2048)
         self.assertRaises(ValueError, self._check_ioctl_not_mutate_len, 2048)
 
-    def test_ioctl_tcflush(self):
-        with open("/dev/tty", "rb") as tty:
-            r = fcntl.ioctl(tty, termios.TCFLSH, termios.TCIFLUSH)
-            self.assertEqual(r, 0)
 
-    @unittest.skipIf(pty is None, 'pty module required')
+@unittest.skipIf(pty is None, 'pty module required')
+class IoctlTestsPty(unittest.TestCase):
+    def setUp(self):
+        self.master_fd, self.slave_fd = pty.openpty()
+        self.addCleanup(os.close, self.slave_fd)
+        self.addCleanup(os.close, self.master_fd)
+
+    @unittest.skipUnless(hasattr(termios, 'TCFLSH'), 'requires termios.TCFLSH')
+    def test_ioctl_tcflush(self):
+        r = fcntl.ioctl(self.slave_fd, termios.TCFLSH, termios.TCIFLUSH)
+        self.assertEqual(r, 0)
+        r = fcntl.ioctl(self.slave_fd, termios.TCFLSH, termios.TCOFLUSH)
+        self.assertEqual(r, 0)
+
     def test_ioctl_set_window_size(self):
-        mfd, sfd = pty.openpty()
-        try:
-            # (rows, columns, xpixel, ypixel)
-            our_winsz = struct.pack("HHHH", 20, 40, 0, 0)
-            result = fcntl.ioctl(mfd, termios.TIOCSWINSZ, our_winsz)
-            new_winsz = struct.unpack("HHHH", result)
-            self.assertEqual(new_winsz[:2], (20, 40))
-        finally:
-            os.close(mfd)
-            os.close(sfd)
+        # (rows, columns, xpixel, ypixel)
+        our_winsz = struct.pack("HHHH", 20, 40, 0, 0)
+        result = fcntl.ioctl(self.master_fd, termios.TIOCSWINSZ, our_winsz)
+        new_winsz = struct.unpack("HHHH", result)
+        self.assertEqual(new_winsz[:2], (20, 40))
 
 
 if __name__ == "__main__":
