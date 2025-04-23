@@ -122,7 +122,7 @@ void _PyMem_DebugFree(void *ctx, void *p);
 #  elif defined(HAVE_MMAP)
 #    include <sys/mman.h>
 #    ifdef MAP_ANONYMOUS
-#      define ARENAS_USE_MMAP
+// #      define ARENAS_USE_MMAP
 #    endif
 #  endif
 #endif
