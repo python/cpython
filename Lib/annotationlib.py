@@ -676,7 +676,7 @@ def _build_closure(annotate, owner, is_class, stringifier_dict, *,
                 owner=owner,
                 globals=annotate.__globals__,
                 is_class=is_class,
-                stringifier_dict=globals,
+                stringifier_dict=stringifier_dict,
             )
             stringifier_dict.stringifiers.append(fwdref)
             new_cell = types.CellType(fwdref)
