@@ -1801,9 +1801,13 @@ def _get_protocol_attrs(cls):
     for base in cls.__mro__[:-1]:  # without object
         if base.__name__ in {'Protocol', 'Generic'}:
             continue
-        annotations = _lazy_annotationlib.get_annotations(
-            base, format=_lazy_annotationlib.Format.FORWARDREF
-        )
+        try:
+            annotations = base.__annotations__
+        except Exception:
+            # Only go through annotationlib to handle deferred annotations if we need to
+            annotations = _lazy_annotationlib.get_annotations(
+                base, format=_lazy_annotationlib.Format.FORWARDREF
+            )
         for attr in (*base.__dict__, *annotations):
             if not attr.startswith('_abc_') and attr not in EXCLUDED_ATTRIBUTES:
                 attrs.add(attr)
@@ -2020,14 +2024,17 @@ def _proto_hook(cls, other):
                 break
 
             # ...or in annotations, if it is a sub-protocol.
-            if (
-                issubclass(other, Generic)
-                and getattr(other, "_is_protocol", False)
-                and attr in _lazy_annotationlib.get_annotations(
-                    base, format=_lazy_annotationlib.Format.FORWARDREF
-                )
-            ):
-                break
+            if issubclass(other, Generic) and getattr(other, "_is_protocol", False):
+                # We avoid the slower path through annotationlib here because in most
+                # cases it should be unnecessary.
+                try:
+                    annos = base.__annotations__
+                except Exception:
+                    annos = _lazy_annotationlib.get_annotations(
+                        base, format=_lazy_annotationlib.Format.FORWARDREF
+                    )
+                if attr in annos:
+                    break
         else:
             return NotImplemented
     return True
