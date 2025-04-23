@@ -16,7 +16,7 @@ from glob import _PathGlobber
 from pathlib._os import magic_open, ensure_distinct_paths, ensure_different_files, copyfileobj
 from pathlib import PurePath, Path
 from typing import (
-    Any, BinaryIO, Literal, Optional, Protocol, Self, TypeVar,
+    Any, BinaryIO, Literal, Protocol, Self, TypeVar,
     runtime_checkable,
 )
 
@@ -33,7 +33,7 @@ class _PathParser(Protocol):
     """
 
     sep: str
-    altsep: Optional[str]
+    altsep: str | None
     def split(self, path: str) -> tuple[str, str]: ...
     def splitext(self, path: str) -> tuple[str, str]: ...
     def normcase(self, path: str) -> str: ...
@@ -267,9 +267,9 @@ class _ReadablePath(_JoinablePath):
 
     def read_text(
         self,
-        encoding: Optional[str] = None,
-        errors: Optional[str] = None,
-        newline: Optional[str] = None,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
     ) -> str:
         """
         Open the file in text mode, read it, and close the file.
@@ -305,7 +305,7 @@ class _ReadablePath(_JoinablePath):
     def walk(
         self,
         top_down: bool = True,
-        on_error: Optional[Callable[[Exception], None]] = None,
+        on_error: Callable[[Exception], None] | None = None,
         follow_symlinks: bool = False,
     ) -> Iterator[tuple[Self, list[str], list[str]]]:
         """Walk the directory tree from this directory, similar to os.walk()."""
@@ -407,9 +407,9 @@ class _WritablePath(_JoinablePath):
     def write_text(
         self,
         data: str,
-        encoding: Optional[str] = None,
-        errors: Optional[str] = None,
-        newline: Optional[str] = None,
+        encoding: str | None = None,
+        errors: str | None = None,
+        newline: str | None = None,
     ) -> int:
         """
         Open the file in text mode, write to it, and close the file.
