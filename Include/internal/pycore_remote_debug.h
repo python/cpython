@@ -1,7 +1,7 @@
 /*
- IMPORTANT: This header file is full of static functions that are not exported.
+IMPORTANT: This header file is full of static functions that are not exported.
 
-The reason is that we don't want to export these functions to the Python API 
+The reason is that we don't want to export these functions to the Python API
 and they can be used both for the interpreter and some shared libraries. The
 reason we don't want to export them is to avoid having them participating in
 return-oriented programming attacks.
