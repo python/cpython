@@ -2068,6 +2068,7 @@ _Py_fdprintf(int fd, const char *fmt, ...)
     va_start(vargs, fmt);
     int res = vfprintf(handle, fmt, vargs);
     va_end(vargs);
+    fclose(handle);
     if (res != 0) {
         return -1;
     }
