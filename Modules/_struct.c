@@ -2201,8 +2201,8 @@ s_pack_internal(PyStructObject *soself, PyObject *const *args, int offset,
         char *res = buf + code->offset;
         Py_ssize_t j = code->repeat;
         while (j--) {
-            state->current_arg = i + 1;
             PyObject *v = args[i++];
+            state->current_arg = i;
             if (e->format == 's') {
                 Py_ssize_t n;
                 int isstring;

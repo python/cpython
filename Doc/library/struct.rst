@@ -55,7 +55,7 @@ The module defines the following exception and functions:
    Exception raised on various occasions; argument is a string describing what
    is wrong.
 
-   .. versionchanged::
+   .. versionchanged:: next
       Out of range errors are more descriptive specifying which argument resulted
       in the exception.
 
