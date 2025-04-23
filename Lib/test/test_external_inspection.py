@@ -64,6 +64,7 @@ class TestGetStackTrace(unittest.TestCase):
 
             # Create a socket server to communicate with the target process
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             server_socket.bind(('localhost', port))
             server_socket.settimeout(SHORT_TIMEOUT)
             server_socket.listen(1)
@@ -150,8 +151,8 @@ class TestGetStackTrace(unittest.TestCase):
             ):
                 script_dir = os.path.join(work_dir, "script_pkg")
                 os.mkdir(script_dir)
-                # Create a socket server to communicate with the target process
                 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 server_socket.bind(('localhost', port))
                 server_socket.settimeout(SHORT_TIMEOUT)
                 server_socket.listen(1)
@@ -230,6 +231,7 @@ class TestGetStackTrace(unittest.TestCase):
             os.mkdir(script_dir)
             # Create a socket server to communicate with the target process
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             server_socket.bind(('localhost', port))
             server_socket.settimeout(SHORT_TIMEOUT)
             server_socket.listen(1)
@@ -297,6 +299,7 @@ class TestGetStackTrace(unittest.TestCase):
             os.mkdir(script_dir)
             # Create a socket server to communicate with the target process
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             server_socket.bind(('localhost', port))
             server_socket.settimeout(SHORT_TIMEOUT)
             server_socket.listen(1)
@@ -368,6 +371,7 @@ class TestGetStackTrace(unittest.TestCase):
             os.mkdir(script_dir)
             # Create a socket server to communicate with the target process
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             server_socket.bind(('localhost', port))
             server_socket.settimeout(SHORT_TIMEOUT)
             server_socket.listen(1)
@@ -471,6 +475,7 @@ class TestGetStackTrace(unittest.TestCase):
             os.mkdir(script_dir)
             # Create a socket server to communicate with the target process
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             server_socket.bind(('localhost', port))
             server_socket.settimeout(SHORT_TIMEOUT)
             server_socket.listen(1)
