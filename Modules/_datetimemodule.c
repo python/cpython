@@ -159,14 +159,31 @@ error:
 
 static PyModuleDef datetimemodule;
 
-static inline datetime_state *
+static datetime_state *
 get_current_state(void)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     datetime_state *st = interp->datetime_module_state;
-    assert(st != NULL);
-    assert(st->interp_dict != NULL);
-    assert(PyDict_Contains(st->interp_dict, INTERP_KEY) == 1);
+    if (st != NULL) {
+        assert(st->interp_dict != NULL);
+        assert(PyDict_Contains(st->interp_dict, INTERP_KEY) == 1);
+        return st;
+    }
+    PyObject *mod = get_current_module(interp, NULL);
+    if (mod == NULL) {
+        assert(!PyErr_Occurred());
+        if (PyErr_Occurred()) {
+            return NULL;
+        }
+        /* The static types can outlive the module,
+         * so we must re-import the module. */
+        mod = PyImport_ImportModule("_datetime");
+        if (mod == NULL) {
+            return NULL;
+        }
+    }
+    st = get_module_state(mod);
+    Py_DECREF(mod);
     return st;
 }
 
@@ -202,9 +219,6 @@ clear_current_module(datetime_state *st,
         if (PyDict_GetItemRef(dict, INTERP_KEY, &current) < 0) {
             goto error;
         }
-        if (current == NULL) {
-            interp->datetime_module_state = NULL;
-        }
         /* We only need "current" for pointer comparison. */
         Py_XDECREF(current);
         if (current != expected) {
@@ -216,7 +230,6 @@ clear_current_module(datetime_state *st,
     if (PyDict_SetItem(dict, INTERP_KEY, Py_None) < 0) {
         goto error;
     }
-    interp->datetime_module_state = NULL;
 
     goto finally;
 
@@ -224,6 +237,9 @@ error:
     PyErr_FormatUnraisable("Exception ignored while clearing _datetime module");
 
 finally:
+    if (!expected || st == interp->datetime_module_state) {
+        interp->datetime_module_state = NULL;
+    }
     PyErr_SetRaisedException(exc);
 }
 
