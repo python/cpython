@@ -2118,6 +2118,9 @@ module_exec(PyObject *module)
     if (_PyTestInternalCapi_Init_Set(module) < 0) {
         return 1;
     }
+    if (_PyTestInternalCapi_Init_Complex(module) < 0) {
+        return 1;
+    }
     if (_PyTestInternalCapi_Init_CriticalSection(module) < 0) {
         return 1;
     }
@@ -2212,7 +2215,7 @@ static struct PyModuleDef _testcapimodule = {
     .m_slots = module_slots,
     .m_traverse = module_traverse,
     .m_clear = module_clear,
-    .m_free = (freefunc)module_free,
+    .m_free = module_free,
 };
 
 

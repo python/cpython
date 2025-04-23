@@ -76,7 +76,7 @@ is_running_main(PyInterpreterState *interp)
 // XXX Release when the original interpreter is destroyed.
 
 typedef struct {
-    PyObject_HEAD
+    PyObject base;
     Py_buffer *view;
     int64_t interpid;
 } XIBufferViewObject;
@@ -84,18 +84,28 @@ typedef struct {
 #define XIBufferViewObject_CAST(op) ((XIBufferViewObject *)(op))
 
 static PyObject *
-xibufferview_from_xid(PyTypeObject *cls, _PyXIData_t *data)
+xibufferview_from_buffer(PyTypeObject *cls, Py_buffer *view, int64_t interpid)
 {
-    assert(_PyXIData_DATA(data) != NULL);
-    assert(_PyXIData_OBJ(data) == NULL);
-    assert(_PyXIData_INTERPID(data) >= 0);
-    XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
-    if (self == NULL) {
+    assert(interpid >= 0);
+
+    Py_buffer *copied = PyMem_RawMalloc(sizeof(Py_buffer));
+    if (copied == NULL) {
         return NULL;
     }
-    PyObject_Init((PyObject *)self, cls);
-    self->view = (Py_buffer *)_PyXIData_DATA(data);
-    self->interpid = _PyXIData_INTERPID(data);
+    /* This steals the view->obj reference  */
+    *copied = *view;
+
+    XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
+    if (self == NULL) {
+        PyMem_RawFree(copied);
+        return NULL;
+    }
+    PyObject_Init(&self->base, cls);
+    *self = (XIBufferViewObject){
+        .base = self->base,
+        .view = copied,
+        .interpid = interpid,
+    };
     return (PyObject *)self;
 }
 
@@ -103,14 +113,23 @@ static void
 xibufferview_dealloc(PyObject *op)
 {
     XIBufferViewObject *self = XIBufferViewObject_CAST(op);
-    PyInterpreterState *interp = _PyInterpreterState_LookUpID(self->interpid);
-    /* If the interpreter is no longer alive then we have problems,
-       since other objects may be using the buffer still. */
-    assert(interp != NULL);
 
-    if (_PyBuffer_ReleaseInInterpreterAndRawFree(interp, self->view) < 0) {
-        // XXX Emit a warning?
-        PyErr_Clear();
+    if (self->view != NULL) {
+        PyInterpreterState *interp =
+                        _PyInterpreterState_LookUpID(self->interpid);
+        if (interp == NULL) {
+            /* The interpreter is no longer alive. */
+            PyErr_Clear();
+            PyMem_RawFree(self->view);
+        }
+        else {
+            if (_PyBuffer_ReleaseInInterpreterAndRawFree(interp,
+                                                         self->view) < 0)
+            {
+                // XXX Emit a warning?
+                PyErr_Clear();
+            }
+        }
     }
 
     PyTypeObject *tp = Py_TYPE(self);
@@ -155,32 +174,64 @@ static PyType_Spec XIBufferViewType_spec = {
 
 static PyTypeObject * _get_current_xibufferview_type(void);
 
+
+struct xibuffer {
+    Py_buffer view;
+    int used;
+};
+
 static PyObject *
 _memoryview_from_xid(_PyXIData_t *data)
 {
+    assert(_PyXIData_DATA(data) != NULL);
+    assert(_PyXIData_OBJ(data) == NULL);
+    assert(_PyXIData_INTERPID(data) >= 0);
+    struct xibuffer *view = (struct xibuffer *)_PyXIData_DATA(data);
+    assert(!view->used);
+
     PyTypeObject *cls = _get_current_xibufferview_type();
     if (cls == NULL) {
         return NULL;
     }
-    PyObject *obj = xibufferview_from_xid(cls, data);
+
+    PyObject *obj = xibufferview_from_buffer(
+                        cls, &view->view, _PyXIData_INTERPID(data));
     if (obj == NULL) {
         return NULL;
     }
-    return PyMemoryView_FromObject(obj);
+    PyObject *res = PyMemoryView_FromObject(obj);
+    if (res == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+    view->used = 1;
+    return res;
+}
+
+static void
+_pybuffer_shared_free(void* data)
+{
+    struct xibuffer *view = (struct xibuffer *)data;
+    if (!view->used) {
+        PyBuffer_Release(&view->view);
+    }
+    PyMem_RawFree(data);
 }
 
 static int
-_memoryview_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
+_pybuffer_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
-    Py_buffer *view = PyMem_RawMalloc(sizeof(Py_buffer));
+    struct xibuffer *view = PyMem_RawMalloc(sizeof(struct xibuffer));
     if (view == NULL) {
         return -1;
     }
-    if (PyObject_GetBuffer(obj, view, PyBUF_FULL_RO) < 0) {
+    view->used = 0;
+    if (PyObject_GetBuffer(obj, &view->view, PyBUF_FULL_RO) < 0) {
         PyMem_RawFree(view);
         return -1;
     }
     _PyXIData_Init(data, tstate->interp, view, NULL, _memoryview_from_xid);
+    data->free = _pybuffer_shared_free;
     return 0;
 }
 
@@ -201,7 +252,7 @@ register_memoryview_xid(PyObject *mod, PyTypeObject **p_state)
     *p_state = cls;
 
     // Register XID for the builtin memoryview type.
-    if (ensure_xid_class(&PyMemoryView_Type, _memoryview_shared) < 0) {
+    if (ensure_xid_class(&PyMemoryView_Type, _pybuffer_shared) < 0) {
         return -1;
     }
     // We don't ever bother un-registering memoryview.
@@ -330,7 +381,7 @@ get_code_str(PyObject *arg, Py_ssize_t *len_p, PyObject **bytes_p, int *flags_p)
     int flags = 0;
 
     if (PyUnicode_Check(arg)) {
-        assert(PyUnicode_CheckExact(arg)
+        assert(PyUnicode_Check(arg)
                && (check_code_str((PyUnicodeObject *)arg) == NULL));
         codestr = PyUnicode_AsUTF8AndSize(arg, &len);
         if (codestr == NULL) {
@@ -1112,7 +1163,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".exec",
+    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".run_string",
                                             "argument 2", "a string");
     if (script == NULL) {
         return NULL;
@@ -1252,13 +1303,10 @@ interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *idobj = NULL;
     int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$p:get_config", kwlist,
+                                     "O?|$p:get_config", kwlist,
                                      &idobj, &restricted))
     {
         return NULL;
-    }
-    if (idobj == Py_None) {
-        idobj = NULL;
     }
 
     int reqready = 0;
@@ -1376,14 +1424,14 @@ capture_exception(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"exc", NULL};
     PyObject *exc_arg = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "|O:capture_exception", kwlist,
+                                     "|O?:capture_exception", kwlist,
                                      &exc_arg))
     {
         return NULL;
     }
 
     PyObject *exc = exc_arg;
-    if (exc == NULL || exc == Py_None) {
+    if (exc == NULL) {
         exc = PyErr_GetRaisedException();
         if (exc == NULL) {
             Py_RETURN_NONE;

@@ -1215,7 +1215,9 @@ void
 _PyMem_FreeDelayed(void *ptr)
 {
     assert(!((uintptr_t)ptr & 0x01));
-    free_delayed((uintptr_t)ptr);
+    if (ptr != NULL) {
+        free_delayed((uintptr_t)ptr);
+    }
 }
 
 #ifdef Py_GIL_DISABLED

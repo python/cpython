@@ -196,7 +196,7 @@ extern void _PyEval_DeactivateOpCache(void);
 
 /* --- _Py_EnterRecursiveCall() ----------------------------------------- */
 
-#if !_Py__has_builtin(__builtin_frame_address)
+#if !_Py__has_builtin(__builtin_frame_address) && !defined(_MSC_VER)
 static uintptr_t return_pointer_as_int(char* p) {
     return (uintptr_t)p;
 }
@@ -206,6 +206,8 @@ static inline uintptr_t
 _Py_get_machine_stack_pointer(void) {
 #if _Py__has_builtin(__builtin_frame_address)
     return (uintptr_t)__builtin_frame_address(0);
+#elif defined(_MSC_VER)
+    return (uintptr_t)_AddressOfReturnAddress();
 #else
     char here;
     /* Avoid compiler warning about returning stack address */
@@ -277,6 +279,7 @@ PyAPI_DATA(const conversion_func) _PyEval_ConversionFuncs[];
 typedef struct _special_method {
     PyObject *name;
     const char *error;
+    const char *error_suggestion;  // improved optional suggestion
 } _Py_SpecialMethod;
 
 PyAPI_DATA(const _Py_SpecialMethod) _Py_SpecialMethods[];
@@ -306,6 +309,16 @@ PyAPI_FUNC(PyObject *) _PyEval_GetAwaitable(PyObject *iterable, int oparg);
 PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *name);
 PyAPI_FUNC(int)
 _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args);
+
+/*
+ * Indicate whether a special method of given 'oparg' can use the (improved)
+ * alternative error message instead. Only methods loaded by LOAD_SPECIAL
+ * support alternative error messages.
+ *
+ * Symbol is exported for the JIT (see discussion on GH-132218).
+ */
+PyAPI_FUNC(int)
+_PyEval_SpecialMethodCanSuggest(PyObject *self, int oparg);
 
 /* Bits that can be set in PyThreadState.eval_breaker */
 #define _PY_GIL_DROP_REQUEST_BIT (1U << 0)
@@ -346,6 +359,19 @@ void _Py_set_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 void _Py_unset_eval_breaker_bit_all(PyInterpreterState *interp, uintptr_t bit);
 
 PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyStackRef right, double value);
+
+#ifndef Py_SUPPORTS_REMOTE_DEBUG
+    #if defined(__APPLE__)
+    #include <TargetConditionals.h>
+    #  if !defined(TARGET_OS_OSX)
+// Older macOS SDKs do not define TARGET_OS_OSX
+    #     define TARGET_OS_OSX 1
+    #  endif
+    #endif
+    #if ((defined(__APPLE__) && TARGET_OS_OSX) || defined(MS_WINDOWS) || (defined(__linux__) && HAVE_PROCESS_VM_READV))
+    #    define Py_SUPPORTS_REMOTE_DEBUG 1
+    #endif
+#endif
 
 #ifdef __cplusplus
 }
