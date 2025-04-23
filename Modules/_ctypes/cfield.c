@@ -764,9 +764,9 @@ d_get(void *ptr, Py_ssize_t size)
 }
 
 #if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-/* C: double complex */
+/* D: double complex */
 static PyObject *
-C_set(void *ptr, PyObject *value, Py_ssize_t size)
+D_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     assert(NUM_BITS(size) || (size == sizeof(double complex)));
     Py_complex c = PyComplex_AsCComplex(value);
@@ -780,7 +780,7 @@ C_set(void *ptr, PyObject *value, Py_ssize_t size)
 }
 
 static PyObject *
-C_get(void *ptr, Py_ssize_t size)
+D_get(void *ptr, Py_ssize_t size)
 {
     assert(NUM_BITS(size) || (size == sizeof(double complex)));
     double complex x;
@@ -789,9 +789,9 @@ C_get(void *ptr, Py_ssize_t size)
     return PyComplex_FromDoubles(creal(x), cimag(x));
 }
 
-/* E: float complex */
+/* F: float complex */
 static PyObject *
-E_set(void *ptr, PyObject *value, Py_ssize_t size)
+F_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     assert(NUM_BITS(size) || (size == sizeof(float complex)));
     Py_complex c = PyComplex_AsCComplex(value);
@@ -805,7 +805,7 @@ E_set(void *ptr, PyObject *value, Py_ssize_t size)
 }
 
 static PyObject *
-E_get(void *ptr, Py_ssize_t size)
+F_get(void *ptr, Py_ssize_t size)
 {
     assert(NUM_BITS(size) || (size == sizeof(float complex)));
     float complex x;
@@ -814,9 +814,9 @@ E_get(void *ptr, Py_ssize_t size)
     return PyComplex_FromDoubles(crealf(x), cimagf(x));
 }
 
-/* F: long double complex */
+/* G: long double complex */
 static PyObject *
-F_set(void *ptr, PyObject *value, Py_ssize_t size)
+G_set(void *ptr, PyObject *value, Py_ssize_t size)
 {
     assert(NUM_BITS(size) || (size == sizeof(long double complex)));
     Py_complex c = PyComplex_AsCComplex(value);
@@ -830,7 +830,7 @@ F_set(void *ptr, PyObject *value, Py_ssize_t size)
 }
 
 static PyObject *
-F_get(void *ptr, Py_ssize_t size)
+G_get(void *ptr, Py_ssize_t size)
 {
     assert(NUM_BITS(size) || (size == sizeof(long double complex)));
     long double complex x;
@@ -1372,7 +1372,7 @@ struct formattable {
 for nbytes in 8, 16, 32, 64:
     for sgn in 'i', 'u':
         print(f'    struct fielddesc fmt_{sgn}{nbytes};')
-for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
+for code in 'sbBcdFDGgfhHiIlLqQPzuUZXvO':
     print(f'    struct fielddesc fmt_{code};')
 [python start generated code]*/
     struct fielddesc fmt_i8;
@@ -1388,9 +1388,9 @@ for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
     struct fielddesc fmt_B;
     struct fielddesc fmt_c;
     struct fielddesc fmt_d;
-    struct fielddesc fmt_C;
-    struct fielddesc fmt_E;
     struct fielddesc fmt_F;
+    struct fielddesc fmt_D;
+    struct fielddesc fmt_G;
     struct fielddesc fmt_g;
     struct fielddesc fmt_f;
     struct fielddesc fmt_h;
@@ -1409,7 +1409,7 @@ for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
     struct fielddesc fmt_X;
     struct fielddesc fmt_v;
     struct fielddesc fmt_O;
-/*[python end generated code: output=fa648744ec7f919d input=087d58357d4bf2c5]*/
+/*[python end generated code: output=f5a07c066fedaca6 input=ffa5d46c29dfb07a]*/
 
     // bool has code '?':
     struct fielddesc fmt_bool;
@@ -1598,9 +1598,9 @@ for base_code, base_c_type in [
     TABLE_ENTRY_SW(d, &ffi_type_double);
 #if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
     if (Py_FFI_COMPLEX_AVAILABLE) {
-        TABLE_ENTRY(C, &ffi_type_complex_double);
-        TABLE_ENTRY(E, &ffi_type_complex_float);
-        TABLE_ENTRY(F, &ffi_type_complex_longdouble);
+        TABLE_ENTRY(D, &ffi_type_complex_double);
+        TABLE_ENTRY(F, &ffi_type_complex_float);
+        TABLE_ENTRY(G, &ffi_type_complex_longdouble);
     }
 #endif
     TABLE_ENTRY(g, &ffi_type_longdouble);
@@ -1635,7 +1635,7 @@ for base_code, base_c_type in [
     formattable.fmt_bool.getfunc = bool_get;
 
 /*[python input]
-all_chars = "cbBhHiIlLdCEFfuzZqQPXOv?g"
+all_chars = "cbBhHiIlLdDFGfuzZqQPXOv?g"
 print(f'    assert(sizeof(formattable.simple_type_chars) == {len(all_chars)+1});')
 print(f'    int i = 0;')
 for char in all_chars:
@@ -1656,9 +1656,9 @@ print(f"    formattable.simple_type_chars[i] = 0;")
     if (formattable.fmt_l.code) formattable.simple_type_chars[i++] = 'l';
     if (formattable.fmt_L.code) formattable.simple_type_chars[i++] = 'L';
     if (formattable.fmt_d.code) formattable.simple_type_chars[i++] = 'd';
-    if (formattable.fmt_C.code) formattable.simple_type_chars[i++] = 'C';
-    if (formattable.fmt_E.code) formattable.simple_type_chars[i++] = 'E';
+    if (formattable.fmt_D.code) formattable.simple_type_chars[i++] = 'D';
     if (formattable.fmt_F.code) formattable.simple_type_chars[i++] = 'F';
+    if (formattable.fmt_G.code) formattable.simple_type_chars[i++] = 'G';
     if (formattable.fmt_f.code) formattable.simple_type_chars[i++] = 'f';
     if (formattable.fmt_u.code) formattable.simple_type_chars[i++] = 'u';
     if (formattable.fmt_z.code) formattable.simple_type_chars[i++] = 'z';
@@ -1672,7 +1672,7 @@ print(f"    formattable.simple_type_chars[i] = 0;")
     if (formattable.fmt_bool.code) formattable.simple_type_chars[i++] = '?';
     if (formattable.fmt_g.code) formattable.simple_type_chars[i++] = 'g';
     formattable.simple_type_chars[i] = 0;
-/*[python end generated code: output=e6e5098a02f4b606 input=72031a625eac00c1]*/
+/*[python end generated code: output=2aa52670d1570f18 input=cff3e7cb95adac61]*/
 
 }
 #undef FIXINT_FIELDDESC_FOR
@@ -1689,7 +1689,7 @@ _ctypes_get_fielddesc(const char *fmt)
     struct fielddesc *result = NULL;
     switch(fmt[0]) {
 /*[python input]
-for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
+for code in 'sbBcdDFGgfhHiIlLqQPzuUZXvO':
     print(f"        case '{code}': result = &formattable.fmt_{code}; break;")
 [python start generated code]*/
         case 's': result = &formattable.fmt_s; break;
@@ -1697,9 +1697,9 @@ for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
         case 'B': result = &formattable.fmt_B; break;
         case 'c': result = &formattable.fmt_c; break;
         case 'd': result = &formattable.fmt_d; break;
-        case 'C': result = &formattable.fmt_C; break;
-        case 'E': result = &formattable.fmt_E; break;
+        case 'D': result = &formattable.fmt_D; break;
         case 'F': result = &formattable.fmt_F; break;
+        case 'G': result = &formattable.fmt_G; break;
         case 'g': result = &formattable.fmt_g; break;
         case 'f': result = &formattable.fmt_f; break;
         case 'h': result = &formattable.fmt_h; break;
@@ -1718,7 +1718,7 @@ for code in 'sbBcdCEFgfhHiIlLqQPzuUZXvO':
         case 'X': result = &formattable.fmt_X; break;
         case 'v': result = &formattable.fmt_v; break;
         case 'O': result = &formattable.fmt_O; break;
-/*[python end generated code: output=81a8223dda9f81f7 input=2f59666d3c024edf]*/
+/*[python end generated code: output=6e5c91940732fde9 input=902223feffc2fe38]*/
         case '?': result = &formattable.fmt_bool; break;
     }
     if (!result || !result->code) {

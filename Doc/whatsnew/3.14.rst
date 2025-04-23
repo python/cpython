@@ -1130,7 +1130,7 @@ struct
 ------
 
 * Support the :c:expr:`float complex` and :c:expr:`double complex` C types in
-  the :mod:`struct` module (formatting characters ``'E'`` and ``'C'``,
+  the :mod:`struct` module (formatting characters ``'F'`` and ``'D'``,
   respectively) if the compiler has C11 complex arithmetic.
   (Contributed by Sergey B Kirpichev in :gh:`121249`.)
 
