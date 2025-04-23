@@ -252,39 +252,48 @@ class PdbConnectTestCase(unittest.TestCase):
         self.server_sock.listen(1)
         self.port = self.server_sock.getsockname()[1]
 
+    def _create_script(self, script=None):
         # Create a file for subprocess script
+        if script is None:
+            script = textwrap.dedent(
+                f"""
+                import pdb
+                import sys
+                import time
+
+                def foo():
+                    x = 42
+                    return bar()
+                
+                def bar():
+                    return 42
+
+                def connect_to_debugger():
+                    # Create a frame to debug
+                    def dummy_function():
+                        x = 42
+                        # Call connect to establish connection
+                        # with the test server
+                        frame = sys._getframe()  # Get the current frame
+                        pdb._connect(
+                            host='127.0.0.1',
+                            port={self.port},
+                            frame=frame,
+                            commands="",
+                            version=pdb._PdbServer.protocol_version(),
+                        )
+                        return x  # This line won't be reached in debugging
+
+                    return dummy_function()
+
+                result = connect_to_debugger()
+                foo()
+                print(f"Function returned: {{result}}")
+                """)
+
         self.script_path = TESTFN + "_connect_test.py"
         with open(self.script_path, 'w') as f:
-            f.write(
-                textwrap.dedent(
-                    f"""
-                    import pdb
-                    import sys
-                    import time
-
-                    def connect_to_debugger():
-                        # Create a frame to debug
-                        def dummy_function():
-                            x = 42
-                            # Call connect to establish connection
-                            # with the test server
-                            frame = sys._getframe()  # Get the current frame
-                            pdb._connect(
-                                host='127.0.0.1',
-                                port={self.port},
-                                frame=frame,
-                                commands="",
-                                version=pdb._PdbServer.protocol_version(),
-                            )
-                            return x  # This line won't be reached in debugging
-
-                        return dummy_function()
-
-                    result = connect_to_debugger()
-                    print(f"Function returned: {{result}}")
-                    """
-                )
-            )
+            f.write(script)
 
     def tearDown(self):
         self.server_sock.close()
@@ -293,21 +302,62 @@ class PdbConnectTestCase(unittest.TestCase):
         except OSError:
             pass
 
-    def test_connect_and_basic_commands(self):
-        """Test connecting to a remote debugger and sending basic commands."""
+    def _connect_and_get_client_file(self):
+        """Helper to start subprocess and get connected client file."""
         # Start the subprocess that will connect to our socket
-        with subprocess.Popen(
+        process = subprocess.Popen(
             [sys.executable, self.script_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
-        ) as process:
-            # Accept the connection from the subprocess
-            client_sock, _ = self.server_sock.accept()
-            client_file = client_sock.makefile('rwb')
-            self.addCleanup(client_file.close)
-            self.addCleanup(client_sock.close)
+        )
+        
+        # Accept the connection from the subprocess
+        client_sock, _ = self.server_sock.accept()
+        client_file = client_sock.makefile('rwb')
+        self.addCleanup(client_file.close)
+        self.addCleanup(client_sock.close)
+        
+        return process, client_file
 
+    def _read_until_prompt(self, client_file):
+        """Helper to read messages until a prompt is received."""
+        messages = []
+        while True:
+            data = client_file.readline()
+            if not data:
+                break
+            msg = json.loads(data.decode())
+            messages.append(msg)
+            if 'prompt' in msg:
+                break
+        return messages
+
+    def _send_command(self, client_file, command):
+        """Helper to send a command to the debugger."""
+        client_file.write(json.dumps({"reply": command}).encode() + b"\n")
+        client_file.flush()
+    
+    def _send_interrupt(self, pid):
+        """Helper to send an interrupt signal to the debugger."""
+        # with tempfile.NamedTemporaryFile("w", delete_on_close=False) as interrupt_script:
+        interrupt_script = TESTFN + "_interrupt_script.py"
+        with open(interrupt_script, 'w') as f:
+            f.write(
+                'import pdb, sys\n'
+                'print("Hello, world!")\n'
+                'if inst := pdb.Pdb._last_pdb_instance:\n'
+                '    inst.set_trace(sys._getframe(1))\n'
+            )
+        sys.remote_exec(pid, interrupt_script)
+        self.addCleanup(unlink, interrupt_script)
+
+    def test_connect_and_basic_commands(self):
+        """Test connecting to a remote debugger and sending basic commands."""
+        self._create_script()
+        process, client_file = self._connect_and_get_client_file()
+
+        with process:
             # We should receive initial data from the debugger
             data = client_file.readline()
             initial_data = json.loads(data.decode())
@@ -326,25 +376,15 @@ class PdbConnectTestCase(unittest.TestCase):
             self.assertEqual(prompt_data['state'], 'pdb')
 
             # Send 'bt' (backtrace) command
-            client_file.write(json.dumps({"reply": "bt"}).encode() + b"\n")
-            client_file.flush()
+            self._send_command(client_file, "bt")
 
             # Check for response - we should get some stack frames
-            # We may get multiple messages so we need to read until we get a new prompt
-            got_stack_info = False
-            text_msg = []
-            while True:
-                data = client_file.readline()
-                if not data:
-                    break
-
-                msg = json.loads(data.decode())
-                if 'message' in msg and 'connect_to_debugger' in msg['message']:
-                    got_stack_info = True
-                    text_msg.append(msg['message'])
-
-                if 'prompt' in msg:
-                    break
+            messages = self._read_until_prompt(client_file)
+            
+            # Extract text messages containing stack info
+            text_msg = [msg['message'] for msg in messages 
+                    if 'message' in msg and 'connect_to_debugger' in msg['message']]
+            got_stack_info = bool(text_msg)
 
             expected_stacks = [
                 "<module>",
@@ -357,8 +397,7 @@ class PdbConnectTestCase(unittest.TestCase):
             self.assertTrue(got_stack_info, "Should have received stack trace information")
 
             # Send 'c' (continue) command to let the program finish
-            client_file.write(json.dumps({"reply": "c"}).encode() + b"\n")
-            client_file.flush()
+            self._send_command(client_file, "c")
 
             # Wait for process to finish
             stdout, _ = process.communicate(timeout=5)
@@ -367,6 +406,100 @@ class PdbConnectTestCase(unittest.TestCase):
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
 
+    def test_breakpoints(self):
+        """Test setting and hitting breakpoints."""
+        self._create_script()
+        process, client_file = self._connect_and_get_client_file()
+        with process:
+            # Skip initial messages until we get to the prompt
+            self._read_until_prompt(client_file)
+
+            # Set a breakpoint at the return statement
+            self._send_command(client_file, "break bar")
+            messages = self._read_until_prompt(client_file)
+            bp_msg = next(msg['message'] for msg in messages if 'message' in msg)
+            self.assertIn("Breakpoint", bp_msg)
+
+            # Continue execution until breakpoint
+            self._send_command(client_file, "c")
+            messages = self._read_until_prompt(client_file)
+            
+            # Verify we hit the breakpoint
+            hit_msg = next(msg['message'] for msg in messages if 'message' in msg)
+            self.assertIn("bar()", hit_msg)
+
+            # Check breakpoint list
+            self._send_command(client_file, "b")
+            messages = self._read_until_prompt(client_file)
+            list_msg = next(msg['message'] for msg in reversed(messages) if 'message' in msg)
+            self.assertIn("1   breakpoint", list_msg)
+            self.assertIn("breakpoint already hit 1 time", list_msg)
+
+            # Clear breakpoint
+            self._send_command(client_file, "clear 1")
+            messages = self._read_until_prompt(client_file)
+            clear_msg = next(msg['message'] for msg in reversed(messages) if 'message' in msg)
+            self.assertIn("Deleted breakpoint", clear_msg)
+
+            # Continue to end
+            self._send_command(client_file, "c")
+            stdout, _ = process.communicate(timeout=5)
+
+            self.assertIn("Function returned: 42", stdout)
+            self.assertEqual(process.returncode, 0)
+
+    def test_keyboard_interrupt(self):
+        """Test that sending keyboard interrupt breaks into pdb."""
+        script = f"""
+import time
+import sys
+import pdb
+def bar():
+    frame = sys._getframe()  # Get the current frame
+    pdb._connect(
+        host='127.0.0.1',
+        port={self.port},
+        frame=frame,
+        commands="",
+        version=pdb._PdbServer.protocol_version(),
+    )
+    print("Connected to debugger")
+    iterations = 10
+    while iterations > 0:
+        print("Iteration", iterations)
+        time.sleep(1)
+        iterations -= 1
+    return 42
+
+if __name__ == "__main__":
+    print("Function returned:", bar())
+"""
+        self._create_script(script=script)
+        process, client_file = self._connect_and_get_client_file()
+
+        with process:
+
+            # Skip initial messages until we get to the prompt
+            self._read_until_prompt(client_file)
+
+            # Continue execution
+            self._send_command(client_file, "c")
+
+            # Send keyboard interrupt signal
+            self._send_command(client_file, json.dumps({"signal": "INT"}))
+            self._send_interrupt(process.pid)
+            messages = self._read_until_prompt(client_file)
+
+            # Verify we got the keyboard interrupt message
+            interrupt_msg = next(msg['message'] for msg in messages if 'message' in msg)
+            self.assertIn("bar()", interrupt_msg)
+
+            # Continue to end
+            self._send_command(client_file, "iterations = 0")
+            self._send_command(client_file, "c")
+            stdout, _ = process.communicate(timeout=5)
+            self.assertIn("Function returned: 42", stdout)
+            self.assertEqual(process.returncode, 0)
 
 if __name__ == "__main__":
     unittest.main()
