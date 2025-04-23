@@ -886,6 +886,13 @@ dump_pointer(int fd, void *ptr)
     dump_hexadecimal(fd, (uintptr_t)ptr, sizeof(void*), 1);
 }
 
+static void
+dump_char(int fd, char ch)
+{
+    char buf[1] = {ch};
+    (void)_Py_write_noraise(fd, buf, 1);
+}
+
 void
 _Py_DumpASCII(int fd, PyObject *text)
 {
@@ -945,8 +952,7 @@ _Py_DumpASCII(int fd, PyObject *text)
         ch = PyUnicode_READ(kind, data, i);
         if (' ' <= ch && ch <= 126) {
             /* printable ASCII character */
-            char c = (char)ch;
-            (void)_Py_write_noraise(fd, &c, 1);
+            dump_char(fd, (char)ch);
         }
         else if (ch <= 0xff) {
             PUTS(fd, "\\x");
@@ -1283,7 +1289,7 @@ _Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
             PUTS(fd, info[i].dli_fname);
             PUTS(fd, "\", at ");
             PUTS(fd, symbol_name);
-            (void)_Py_write_noraise(fd, &sign, 1);
+            dump_char(fd, sign);
             PUTS(fd, "0x");
             dump_hexadecimal(fd, offset, sizeof(offset), 1);
             PUTS(fd, " [");
