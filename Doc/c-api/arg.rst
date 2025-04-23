@@ -77,7 +77,7 @@ There are three ways strings and buffers can be converted to C:
    whether the input object is immutable (e.g. whether it would honor a request
    for a writable buffer, or whether another thread can mutate the data).
 
-``"s"`` (:ctype:`PyUnicodeObject\*`) [:ctype:`const char\*`]
+``"s"`` (:c:type:`PyUnicodeObject\*`) [:c:type:`const char\*`]
    Convert a Unicode object to a C pointer to a character string.
    A pointer to an existing string is stored in the character pointer
    variable whose address you pass.  The C string is NUL-terminated.
@@ -97,44 +97,36 @@ There are three ways strings and buffers can be converted to C:
       Previously, :exc:`TypeError` was raised when embedded null code points
       were encountered in the Python string.
 
-``"s*"`` (:ctype:`PyUnicodeObject\*`, :ctype:`PyBytesObject\*`,
-          :ctype:`PyByteArrayObject\*` or :term:`bytes-like object`) [:ctype:`Py_buffer`]
+``"s*"`` (:c:type:`PyUnicodeObject\*`, :c:type:`PyBytesObject\*`, :c:type:`PyByteArrayObject\*` or :term:`bytes-like object`) [:c:type:`Py_buffer`]
    This format accepts Unicode objects as well as bytes-like objects.
    It fills a :c:type:`Py_buffer` structure provided by the caller.
    In this case the resulting C string may contain embedded NUL bytes.
    Unicode objects are converted to C strings using ``'utf-8'`` encoding.
 
-``"s#"`` (:ctype:`PyUnicodeObject\*`, :ctype:`PyBytesObject\*` or read-only
-          :term:`bytes-like object`) [:ctype:`const char\*`, :ctype:`int` or
-          :ctype:`Py_ssize_t`]
+``"s#"`` (:c:type:`PyUnicodeObject\*`, :c:type:`PyBytesObject\*` or read-only :term:`bytes-like object`) [:c:type:`const char\*`, :c:type:`int` or :c:type:`Py_ssize_t`]
    Like ``"s*"``, except that it provides a :ref:`borrowed buffer <c-arg-borrowed-buffer>`.
    The result is stored into two C variables,
    the first one a pointer to a C string, the second one its length.
    The string may contain embedded null bytes. Unicode objects are converted
    to C strings using ``'utf-8'`` encoding.
 
-``"z"`` (:ctype:`PyUnicodeObject\*` or :ctype:`Py_None`) [:ctype:`const char\*`]
-   Like ``"s"``, but the Python object may also be :ctype:`Py_None`,
+``"z"`` (:c:type:`PyUnicodeObject\*` or :c:type:`Py_None`) [:c:type:`const char\*`]
+   Like ``"s"``, but the Python object may also be :c:type:`Py_None`,
    in which case the C pointer is set to ``NULL``.
    It is the same as ``"s?"`` with the C pointer was initialized to ``NULL``.
 
-``"z*"`` (:ctype:`PyUnicodeObject\*`, :ctype:`PyBytesObject\*`,
-          :ctype:`PyByteArrayObject\*`, :term:`bytes-like object`, or :ctype:`Py_None`)
-          [:ctype:`Py_buffer`]
-   Like ``"s*"``, but the Python object may also be :ctype:`Py_None`, in which case the
+``"z*"`` (:c:type:`PyUnicodeObject\*`, :c:type:`PyBytesObject\*`, :c:type:`PyByteArrayObject\*`, :term:`bytes-like object`, or :c:type:`Py_None`) [:c:type:`Py_buffer`]
+   Like ``"s*"``, but the Python object may also be :c:type:`Py_None`, in which case the
    ``buf`` member of the :c:type:`Py_buffer` structure is set to ``NULL``.
    It is the same as ``"s*?"`` with the ``buf`` member of the :c:type:`Py_buffer`
    structure was initialized to ``NULL``.
 
-``"z#"`` (:ctype:`PyUnicodeObject\*`, :ctype:`PyBytesObject\*`,
-          read-only :term:`bytes-like object` or :ctype:`Py_None`)
-          [:ctype:`const char\*`, :ctype:`int`]
-   Like ``"s#"``, but the Python object may also be :ctype:`Py_None`, in which
+``"z#"`` (:c:type:`PyUnicodeObject\*`, :c:type:`PyBytesObject\*`, read-only :term:`bytes-like object` or :c:type:`Py_None`) [:c:type:`const char\*`, :c:type:`int`]
+   Like ``"s#"``, but the Python object may also be :c:type:`Py_None`, in which
    case the C pointer is set to ``NULL``.
    It is the same as ``"s#?"`` with the C pointer was initialized to ``NULL``.
 
-``"y"`` (:ctype:`PyBytesObject\*` or read-only :term:`bytes-like object`)
-         [:ctype:`const char\*`]
+``"y"`` (:c:type:`PyBytesObject\*` or read-only :term:`bytes-like object`) [:c:type:`const char\*`]
    This format converts a bytes-like object to a C pointer to a
    :ref:`borrowed <c-arg-borrowed-buffer>` character string;
    it does not accept Unicode objects.  The bytes buffer must not
@@ -145,8 +137,7 @@ There are three ways strings and buffers can be converted to C:
       Previously, :exc:`TypeError` was raised when embedded null bytes were
       encountered in the bytes buffer.
 
-``"y*"`` (:ctype:`PyBytesObject\*`, :ctype:`PyByteArrayObject\*`, or
-          :term:`bytes-like object`) [:ctype:`Py_buffer\*`]
+``"y*"`` (:c:type:`PyBytesObject\*`, :c:type:`PyByteArrayObject\*`, or :term:`bytes-like object`) [:c:type:`Py_buffer\*`]
    This variant on ``"s*"`` doesn't accept Unicode objects, only
    bytes-like objects.  **This is the recommended way to accept
    binary data.**
