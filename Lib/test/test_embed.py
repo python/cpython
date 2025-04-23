@@ -48,7 +48,7 @@ API_ISOLATED = 3
 INIT_LOOPS = 4
 MAX_HASH_SEED = 4294967295
 
-ABI_THREAD = 't' if sysconfig.get_config_var('Py_GIL_DISABLED') else ''
+ABI_THREAD = 't' if support.Py_GIL_DISABLED else ''
 # PLATSTDLIB_LANDMARK copied from Modules/getpath.py
 if os.name == 'nt':
     PLATSTDLIB_LANDMARK = f'{sys.platlibdir}'
@@ -58,6 +58,8 @@ else:
     PLATSTDLIB_LANDMARK = (f'{sys.platlibdir}/python{VERSION_MAJOR}.'
                            f'{VERSION_MINOR}{ABI_THREAD}/lib-dynload')
 
+DEFAULT_THREAD_INHERIT_CONTEXT = 1 if support.Py_GIL_DISABLED else 0
+DEFAULT_CONTEXT_AWARE_WARNINGS = 1 if support.Py_GIL_DISABLED else 0
 
 # If we are running from a build dir, but the stdlib has been installed,
 # some tests need to expect different results.
@@ -584,6 +586,8 @@ class InitConfigTests(EmbeddingTestsMixin, unittest.TestCase):
         'tracemalloc': 0,
         'perf_profiling': 0,
         'import_time': False,
+        'thread_inherit_context': DEFAULT_THREAD_INHERIT_CONTEXT,
+        'context_aware_warnings': DEFAULT_CONTEXT_AWARE_WARNINGS,
         'code_debug_ranges': True,
         'show_ref_count': False,
         'dump_refs': False,

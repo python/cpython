@@ -142,6 +142,7 @@ class Regrtest:
             self.random_seed = random.getrandbits(32)
         else:
             self.random_seed = ns.random_seed
+        self.prioritize_tests: tuple[str, ...] = tuple(ns.prioritize)
 
         self.parallel_threads = ns.parallel_threads
 
@@ -236,6 +237,16 @@ class Regrtest:
         random.seed(self.random_seed)
         if self.randomize:
             random.shuffle(selected)
+
+        for priority_test in reversed(self.prioritize_tests):
+            try:
+                selected.remove(priority_test)
+            except ValueError:
+                print(f"warning: --prioritize={priority_test} used"
+                        f" but test not actually selected")
+                continue
+            else:
+                selected.insert(0, priority_test)
 
         return (tuple(selected), tests)
 

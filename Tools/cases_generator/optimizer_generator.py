@@ -145,7 +145,7 @@ def write_uop(
             # No reference management of inputs needed.
             for var in storage.inputs:  # type: ignore[possibly-undefined]
                 var.in_local = False
-            storage = emitter.emit_tokens(override, storage, None, False)
+            _, storage = emitter.emit_tokens(override, storage, None, False)
             out.start_line()
             storage.flush(out)
         else:
