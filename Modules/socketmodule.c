@@ -208,7 +208,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #  include <sys/ioctl.h>
 #endif
 
-#ifdef HAVE_BLUETOOTH_H
+#if defined(HAVE_BLUETOOTH_H) && !defined(__FreeBSD__)
 #  include <netbt/l2cap.h>
 #  include <netbt/rfcomm.h>
 #  include <netbt/hci.h>
@@ -8014,6 +8014,7 @@ socket_exec(PyObject *m)
 #endif
     ADD_INT_MACRO(m, BT_SNDMTU);
     ADD_INT_MACRO(m, BT_RCVMTU);
+#ifdef BT_PHY
     ADD_INT_MACRO(m, BT_PHY);
     ADD_INT_MACRO(m, BT_PHY_BR_1M_1SLOT);
     ADD_INT_MACRO(m, BT_PHY_BR_1M_3SLOT);
@@ -8030,15 +8031,24 @@ socket_exec(PyObject *m)
     ADD_INT_MACRO(m, BT_PHY_LE_2M_RX);
     ADD_INT_MACRO(m, BT_PHY_LE_CODED_TX);
     ADD_INT_MACRO(m, BT_PHY_LE_CODED_RX);
+#endif
+#ifdef BT_MODE
     ADD_INT_MACRO(m, BT_MODE);
     ADD_INT_MACRO(m, BT_MODE_BASIC);
     ADD_INT_MACRO(m, BT_MODE_ERTM);
     ADD_INT_MACRO(m, BT_MODE_STREAMING);
     ADD_INT_MACRO(m, BT_MODE_LE_FLOWCTL);
     ADD_INT_MACRO(m, BT_MODE_EXT_FLOWCTL);
+#endif
+#ifdef BT_PKT_STATUS
     ADD_INT_MACRO(m, BT_PKT_STATUS);
+#endif
+#ifdef BT_ISO_QOS
     ADD_INT_MACRO(m, BT_ISO_QOS);
+#endif
+#ifdef BT_CODEC
     ADD_INT_MACRO(m, BT_CODEC);
+#endif
 #endif /* HAVE_BLUETOOTH_BLUETOOTH_H */
 #endif /* USE_BLUETOOTH */
 
