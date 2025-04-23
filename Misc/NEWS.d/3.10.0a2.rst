@@ -88,10 +88,10 @@ Goldschmidt.
 .. nonce: d4a-8o
 .. section: Core and Builtins
 
-Fix a bug in the parser, where a curly brace following a `primary` didn't
-fail immediately. This led to invalid expressions like `a {b}` to throw a
+Fix a bug in the parser, where a curly brace following a ``primary`` didn't
+fail immediately. This led to invalid expressions like ``a {b}`` to throw a
 :exc:`SyntaxError` with a wrong offset, or invalid expressions ending with a
-curly brace like `a {` to not fail immediately in the REPL.
+curly brace like ``a {`` to not fail immediately in the REPL.
 
 ..
 
@@ -185,7 +185,7 @@ Removed special methods ``__int__``, ``__float__``, ``__floordiv__``,
 
 Micro optimization when compute :c:member:`~PySequenceMethods.sq_item` and
 :c:member:`~PyMappingMethods.mp_subscript` of :class:`range`. Patch by
-Dong-hee Na.
+Donghee Na.
 
 ..
 
@@ -205,7 +205,7 @@ error message using the current locale's encoding.
 .. nonce: iLoMVF
 .. section: Core and Builtins
 
-Micro optimization for range.index if step is 1. Patch by Dong-hee Na.
+Micro optimization for range.index if step is 1. Patch by Donghee Na.
 
 ..
 
@@ -214,7 +214,7 @@ Micro optimization for range.index if step is 1. Patch by Dong-hee Na.
 .. nonce: qPWjJA
 .. section: Core and Builtins
 
-Add `sys._current_exceptions()` function to retrieve a dictionary mapping
+Add ``sys._current_exceptions()`` function to retrieve a dictionary mapping
 each thread's identifier to the topmost exception currently active in that
 thread at the time the function is called.
 
@@ -226,8 +226,8 @@ thread at the time the function is called.
 .. section: Core and Builtins
 
 Enable ``from __future__ import annotations`` (:pep:`563`) by default. The
-values found in :attr:`__annotations__` dicts are now strings, e.g. ``{"x":
-"int"}`` instead of ``{"x": int}``.
+values found in :attr:`~object.__annotations__` dicts are now strings, for
+example ``{"x": "int"}`` instead of ``{"x": int}``.
 
 ..
 
@@ -302,7 +302,7 @@ type to a heap type. Patch by Mohamed Koubaa and Victor Stinner.
 .. section: Library
 
 Fix memory leak in :func:`subprocess.Popen` in case an uid (gid) specified
-in `user` (`group`, `extra_groups`) overflows `uid_t` (`gid_t`).
+in ``user`` (``group``, ``extra_groups``) overflows ``uid_t`` (``gid_t``).
 
 ..
 
@@ -362,7 +362,7 @@ plistlib: fix parsing XML plists with hexadecimal integer values
 .. nonce: 85BsRA
 .. section: Library
 
-Fix an incorrectly formatted error from :meth:`_codecs.charmap_decode` when
+Fix an incorrectly formatted error from :meth:`!_codecs.charmap_decode` when
 called with a mapped value outside the range of valid Unicode code points.
 PR by Max Bernstein.
 
@@ -383,7 +383,7 @@ Inwood.
 .. nonce: jd_gkA
 .. section: Library
 
-:meth:`sched.scheduler.cancel()` will now cancel the correct event, if two
+:meth:`sched.scheduler.cancel` will now cancel the correct event, if two
 events with same priority are scheduled for the same time. Patch by Bar
 Harel.
 
@@ -604,7 +604,7 @@ changes the working directory.  PR by Anthony Sottile.
 .. nonce: 9wXTtY
 .. section: Library
 
-The :mod:`shelve` module now uses :data:`pickle.DEFAULT_PROTOCOL` by default
+The :mod:`shelve` module now uses :const:`pickle.DEFAULT_PROTOCOL` by default
 instead of :mod:`pickle` protocol ``3``.
 
 ..
@@ -649,7 +649,7 @@ Document __format__ functionality for IP addresses.
 .. nonce: CzBMit
 .. section: Documentation
 
-Document the default implementation of `object.__eq__`.
+Document the default implementation of ``object.__eq__``.
 
 ..
 
@@ -847,8 +847,8 @@ Victor Stinner.
 .. section: C API
 
 Fix potential crash in deallocating method objects when dynamically
-allocated `PyMethodDef`'s lifetime is managed through the ``self`` argument
-of a `PyCFunction`.
+allocated :c:type:`PyMethodDef`'s lifetime is managed through the ``self`` argument
+of a :c:type:`PyCFunction`.
 
 ..
 
@@ -878,7 +878,7 @@ targeting 3.10 or later.
 .. nonce: sh8IDY
 .. section: C API
 
-Add `_Py_closerange` function to provide performant closing of a range of
+Add ``_Py_closerange`` function to provide performant closing of a range of
 file descriptors.
 
 ..
@@ -888,7 +888,7 @@ file descriptors.
 .. nonce: JUPE59
 .. section: C API
 
-:c:data:`Py_FileSystemDefaultEncodeErrors` and :c:data:`Py_UTF8Mode` are
+:c:data:`!Py_FileSystemDefaultEncodeErrors` and :c:data:`!Py_UTF8Mode` are
 available again in limited API.
 
 ..
@@ -898,7 +898,7 @@ available again in limited API.
 .. nonce: ZZ5wJG
 .. section: C API
 
-Add `PyIter_Send` function to allow sending value into
+Add ``PyIter_Send`` function to allow sending value into
 generator/coroutine/iterator without raising StopIteration exception to
 signal return.
 

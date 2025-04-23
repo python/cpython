@@ -1,5 +1,5 @@
-:mod:`abc` --- Abstract Base Classes
-====================================
+:mod:`!abc` --- Abstract Base Classes
+=====================================
 
 .. module:: abc
    :synopsis: Abstract base classes according to :pep:`3119`.
@@ -21,7 +21,7 @@ The :mod:`collections` module has some concrete classes that derive from
 ABCs; these can, of course, be further derived. In addition, the
 :mod:`collections.abc` submodule has some ABCs that can be used to test whether
 a class or instance provides a particular interface, for example, if it is
-hashable or if it is a mapping.
+:term:`hashable` or if it is a :term:`mapping`.
 
 
 This module provides the metaclass :class:`ABCMeta` for defining ABCs and
@@ -30,7 +30,7 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
 .. class:: ABC
 
    A helper class that has :class:`ABCMeta` as its metaclass.  With this class,
-   an abstract base class can be created by simply deriving from :class:`ABC`
+   an abstract base class can be created by simply deriving from :class:`!ABC`
    avoiding sometimes confusing metaclass usage, for example::
 
      from abc import ABC
@@ -38,11 +38,11 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
      class MyABC(ABC):
          pass
 
-   Note that the type of :class:`ABC` is still :class:`ABCMeta`, therefore
-   inheriting from :class:`ABC` requires the usual precautions regarding
+   Note that the type of :class:`!ABC` is still :class:`ABCMeta`, therefore
+   inheriting from :class:`!ABC` requires the usual precautions regarding
    metaclass usage, as multiple inheritance may lead to metaclass conflicts.
    One may also define an abstract base class by passing the metaclass
-   keyword and using :class:`ABCMeta` directly, for example::
+   keyword and using :class:`!ABCMeta` directly, for example::
 
      from abc import ABCMeta
 
@@ -65,7 +65,7 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
    implementations defined by the registering ABC be callable (not even via
    :func:`super`). [#]_
 
-   Classes created with a metaclass of :class:`ABCMeta` have the following method:
+   Classes created with a metaclass of :class:`!ABCMeta` have the following method:
 
    .. method:: register(subclass)
 
@@ -86,7 +86,7 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
          Returns the registered subclass, to allow usage as a class decorator.
 
       .. versionchanged:: 3.4
-         To detect calls to :meth:`register`, you can use the
+         To detect calls to :meth:`!register`, you can use the
          :func:`get_cache_token` function.
 
    You can also override this method in an abstract base class:
@@ -96,16 +96,16 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
       (Must be defined as a class method.)
 
       Check whether *subclass* is considered a subclass of this ABC.  This means
-      that you can customize the behavior of ``issubclass`` further without the
+      that you can customize the behavior of :func:`issubclass` further without the
       need to call :meth:`register` on every class you want to consider a
       subclass of the ABC.  (This class method is called from the
-      :meth:`__subclasscheck__` method of the ABC.)
+      :meth:`~type.__subclasscheck__` method of the ABC.)
 
-      This method should return ``True``, ``False`` or ``NotImplemented``.  If
+      This method should return ``True``, ``False`` or :data:`NotImplemented`.  If
       it returns ``True``, the *subclass* is considered a subclass of this ABC.
       If it returns ``False``, the *subclass* is not considered a subclass of
       this ABC, even if it would normally be one.  If it returns
-      ``NotImplemented``, the subclass check is continued with the usual
+      :data:`!NotImplemented`, the subclass check is continued with the usual
       mechanism.
 
       .. XXX explain the "usual mechanism"
@@ -141,26 +141,26 @@ a helper class :class:`ABC` to alternatively define ABCs through inheritance:
       MyIterable.register(Foo)
 
    The ABC ``MyIterable`` defines the standard iterable method,
-   :meth:`~iterator.__iter__`, as an abstract method.  The implementation given
-   here can still be called from subclasses.  The :meth:`get_iterator` method
+   :meth:`~object.__iter__`, as an abstract method.  The implementation given
+   here can still be called from subclasses.  The :meth:`!get_iterator` method
    is also part of the ``MyIterable`` abstract base class, but it does not have
    to be overridden in non-abstract derived classes.
 
    The :meth:`__subclasshook__` class method defined here says that any class
-   that has an :meth:`~iterator.__iter__` method in its
+   that has an :meth:`~object.__iter__` method in its
    :attr:`~object.__dict__` (or in that of one of its base classes, accessed
-   via the :attr:`~class.__mro__` list) is considered a ``MyIterable`` too.
+   via the :attr:`~type.__mro__` list) is considered a ``MyIterable`` too.
 
    Finally, the last line makes ``Foo`` a virtual subclass of ``MyIterable``,
-   even though it does not define an :meth:`~iterator.__iter__` method (it uses
-   the old-style iterable protocol, defined in terms of :meth:`__len__` and
-   :meth:`__getitem__`).  Note that this will not make ``get_iterator``
+   even though it does not define an :meth:`~object.__iter__` method (it uses
+   the old-style iterable protocol, defined in terms of :meth:`~object.__len__` and
+   :meth:`~object.__getitem__`).  Note that this will not make ``get_iterator``
    available as a method of ``Foo``, so it is provided separately.
 
 
 
 
-The :mod:`abc` module also provides the following decorator:
+The :mod:`!abc` module also provides the following decorator:
 
 .. decorator:: abstractmethod
 
@@ -168,19 +168,19 @@ The :mod:`abc` module also provides the following decorator:
 
    Using this decorator requires that the class's metaclass is :class:`ABCMeta`
    or is derived from it.  A class that has a metaclass derived from
-   :class:`ABCMeta` cannot be instantiated unless all of its abstract methods
+   :class:`!ABCMeta` cannot be instantiated unless all of its abstract methods
    and properties are overridden.  The abstract methods can be called using any
-   of the normal 'super' call mechanisms.  :func:`abstractmethod` may be used
+   of the normal 'super' call mechanisms.  :func:`!abstractmethod` may be used
    to declare abstract methods for properties and descriptors.
 
    Dynamically adding abstract methods to a class, or attempting to modify the
    abstraction status of a method or class once it is created, are only
    supported using the :func:`update_abstractmethods` function.  The
-   :func:`abstractmethod` only affects subclasses derived using regular
-   inheritance; "virtual subclasses" registered with the ABC's :meth:`register`
-   method are not affected.
+   :func:`!abstractmethod` only affects subclasses derived using regular
+   inheritance; "virtual subclasses" registered with the ABC's
+   :meth:`~ABCMeta.register` method are not affected.
 
-   When :func:`abstractmethod` is applied in combination with other method
+   When :func:`!abstractmethod` is applied in combination with other method
    descriptors, it should be applied as the innermost decorator, as shown in
    the following usage examples::
 
@@ -216,7 +216,7 @@ The :mod:`abc` module also provides the following decorator:
 
    In order to correctly interoperate with the abstract base class machinery,
    the descriptor must identify itself as abstract using
-   :attr:`__isabstractmethod__`. In general, this attribute should be ``True``
+   :attr:`!__isabstractmethod__`. In general, this attribute should be ``True``
    if any of the methods used to compose the descriptor are abstract. For
    example, Python's built-in :class:`property` does the equivalent of::
 
@@ -236,7 +236,7 @@ The :mod:`abc` module also provides the following decorator:
       super-call in a framework that uses cooperative
       multiple-inheritance.
 
-The :mod:`abc` module also supports the following legacy decorators:
+The :mod:`!abc` module also supports the following legacy decorators:
 
 .. decorator:: abstractclassmethod
 
@@ -323,7 +323,7 @@ The :mod:`abc` module also supports the following legacy decorators:
               ...
 
 
-The :mod:`abc` module also provides the following functions:
+The :mod:`!abc` module also provides the following functions:
 
 .. function:: get_cache_token()
 

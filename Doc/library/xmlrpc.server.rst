@@ -1,5 +1,5 @@
-:mod:`xmlrpc.server` --- Basic XML-RPC servers
-==============================================
+:mod:`!xmlrpc.server` --- Basic XML-RPC servers
+===============================================
 
 .. module:: xmlrpc.server
    :synopsis: Basic XML-RPC server implementations.
@@ -84,12 +84,12 @@ alone XML-RPC servers.
 
    Register a function that can respond to XML-RPC requests.  If *name* is given,
    it will be the method name associated with *function*, otherwise
-   ``function.__name__`` will be used.  *name* is a string, and may contain
+   :attr:`function.__name__` will be used.  *name* is a string, and may contain
    characters not legal in Python identifiers, including the period character.
 
    This method can also be used as a decorator.  When used as a decorator,
    *name* can only be given as a keyword argument to register *function* under
-   *name*.  If no *name* is given, ``function.__name__`` will be used.
+   *name*.  If no *name* is given, :attr:`function.__name__` will be used.
 
    .. versionchanged:: 3.7
       :meth:`register_function` can be used as a decorator.
@@ -263,7 +263,7 @@ This ExampleService demo can be invoked from the command line::
 
 
 The client that interacts with the above server is included in
-`Lib/xmlrpc/client.py`::
+``Lib/xmlrpc/client.py``::
 
     server = ServerProxy("http://localhost:8000")
 
@@ -298,12 +298,12 @@ requests sent to Python CGI scripts.
 
    Register a function that can respond to XML-RPC requests.  If *name* is given,
    it will be the method name associated with *function*, otherwise
-   ``function.__name__`` will be used.  *name* is a string, and may contain
+   :attr:`function.__name__` will be used.  *name* is a string, and may contain
    characters not legal in Python identifiers, including the period character.
 
    This method can also be used as a decorator.  When used as a decorator,
    *name* can only be given as a keyword argument to register *function* under
-   *name*.  If no *name* is given, ``function.__name__`` will be used.
+   *name*.  If no *name* is given, :attr:`function.__name__` will be used.
 
    .. versionchanged:: 3.7
       :meth:`register_function` can be used as a decorator.

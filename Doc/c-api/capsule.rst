@@ -5,7 +5,7 @@
 Capsules
 --------
 
-.. index:: object: Capsule
+.. index:: pair: object; Capsule
 
 Refer to :ref:`using-capsules` for more information on using these objects.
 
@@ -15,7 +15,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
 .. c:type:: PyCapsule
 
    This subtype of :c:type:`PyObject` represents an opaque value, useful for C
-   extension modules who need to pass an opaque value (as a :c:type:`void*`
+   extension modules who need to pass an opaque value (as a :c:expr:`void*`
    pointer) through Python code to other C code.  It is often used to make a C
    function pointer defined in one module available to other modules, so the
    regular import mechanism can be used to access C APIs defined in dynamically
@@ -64,7 +64,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
 
    The *name* parameter must compare exactly to the name stored in the capsule.
    If the name stored in the capsule is ``NULL``, the *name* passed in must also
-   be ``NULL``.  Python uses the C function :c:func:`strcmp` to compare capsule
+   be ``NULL``.  Python uses the C function :c:func:`!strcmp` to compare capsule
    names.
 
 
@@ -121,7 +121,7 @@ Refer to :ref:`using-capsules` for more information on using these objects.
    compared.)
 
    In other words, if :c:func:`PyCapsule_IsValid` returns a true value, calls to
-   any of the accessors (any function starting with :c:func:`PyCapsule_Get`) are
+   any of the accessors (any function starting with ``PyCapsule_Get``) are
    guaranteed to succeed.
 
    Return a nonzero value if the object is valid and matches the name passed in.

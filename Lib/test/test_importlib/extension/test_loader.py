@@ -1,4 +1,4 @@
-from warnings import catch_warnings
+from test.support import is_apple_mobile
 from test.test_importlib import abc, util
 
 machinery = util.import_importlib('importlib.machinery')
@@ -10,27 +10,43 @@ import unittest
 import warnings
 import importlib.util
 import importlib
-from test.support.script_helper import assert_python_failure
+from test import support
+from test.support import MISSING_C_DOCSTRINGS, script_helper
 
 
-class LoaderTests(abc.LoaderTests):
+class LoaderTests:
 
-    """Test load_module() for extension modules."""
+    """Test ExtensionFileLoader."""
 
     def setUp(self):
-        if not self.machinery.EXTENSION_SUFFIXES:
+        if not self.machinery.EXTENSION_SUFFIXES or not util.EXTENSIONS:
             raise unittest.SkipTest("Requires dynamic loading support.")
         if util.EXTENSIONS.name in sys.builtin_module_names:
             raise unittest.SkipTest(
                 f"{util.EXTENSIONS.name} is a builtin module"
             )
-        self.loader = self.machinery.ExtensionFileLoader(util.EXTENSIONS.name,
-                                                         util.EXTENSIONS.file_path)
+
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if is_apple_mobile:
+            self.LoaderClass = self.machinery.AppleFrameworkLoader
+        else:
+            self.LoaderClass = self.machinery.ExtensionFileLoader
+
+        self.loader = self.LoaderClass(util.EXTENSIONS.name, util.EXTENSIONS.file_path)
 
     def load_module(self, fullname):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", DeprecationWarning)
             return self.loader.load_module(fullname)
+
+    def test_equality(self):
+        other = self.LoaderClass(util.EXTENSIONS.name, util.EXTENSIONS.file_path)
+        self.assertEqual(self.loader, other)
+
+    def test_inequality(self):
+        other = self.LoaderClass('_' + util.EXTENSIONS.name, util.EXTENSIONS.file_path)
+        self.assertNotEqual(self.loader, other)
 
     def test_load_module_API(self):
         # Test the default argument for load_module().
@@ -41,16 +57,6 @@ class LoaderTests(abc.LoaderTests):
             with self.assertRaises(ImportError):
                 self.load_module('XXX')
 
-    def test_equality(self):
-        other = self.machinery.ExtensionFileLoader(util.EXTENSIONS.name,
-                                                   util.EXTENSIONS.file_path)
-        self.assertEqual(self.loader, other)
-
-    def test_inequality(self):
-        other = self.machinery.ExtensionFileLoader('_' + util.EXTENSIONS.name,
-                                                   util.EXTENSIONS.file_path)
-        self.assertNotEqual(self.loader, other)
-
     def test_module(self):
         with util.uncache(util.EXTENSIONS.name):
             module = self.load_module(util.EXTENSIONS.name)
@@ -59,20 +65,13 @@ class LoaderTests(abc.LoaderTests):
                                 ('__package__', '')]:
                 self.assertEqual(getattr(module, attr), value)
             self.assertIn(util.EXTENSIONS.name, sys.modules)
-            self.assertIsInstance(module.__loader__,
-                                  self.machinery.ExtensionFileLoader)
+            self.assertIsInstance(module.__loader__, self.LoaderClass)
 
     # No extension module as __init__ available for testing.
     test_package = None
 
     # No extension module in a package available for testing.
     test_lacking_parent = None
-
-    def test_module_reuse(self):
-        with util.uncache(util.EXTENSIONS.name):
-            module1 = self.load_module(util.EXTENSIONS.name)
-            module2 = self.load_module(util.EXTENSIONS.name)
-            self.assertIs(module1, module2)
 
     # No easy way to trigger a failure after a successful import.
     test_state_after_failure = None
@@ -83,23 +82,127 @@ class LoaderTests(abc.LoaderTests):
             self.load_module(name)
         self.assertEqual(cm.exception.name, name)
 
+    def test_module_reuse(self):
+        with util.uncache(util.EXTENSIONS.name):
+            module1 = self.load_module(util.EXTENSIONS.name)
+            module2 = self.load_module(util.EXTENSIONS.name)
+            self.assertIs(module1, module2)
+
     def test_is_package(self):
         self.assertFalse(self.loader.is_package(util.EXTENSIONS.name))
         for suffix in self.machinery.EXTENSION_SUFFIXES:
             path = os.path.join('some', 'path', 'pkg', '__init__' + suffix)
-            loader = self.machinery.ExtensionFileLoader('pkg', path)
+            loader = self.LoaderClass('pkg', path)
             self.assertTrue(loader.is_package('pkg'))
+
 
 (Frozen_LoaderTests,
  Source_LoaderTests
  ) = util.test_both(LoaderTests, machinery=machinery)
 
+
+class SinglePhaseExtensionModuleTests(abc.LoaderTests):
+    # Test loading extension modules without multi-phase initialization.
+
+    def setUp(self):
+        if not self.machinery.EXTENSION_SUFFIXES or not util.EXTENSIONS:
+            raise unittest.SkipTest("Requires dynamic loading support.")
+
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if is_apple_mobile:
+            self.LoaderClass = self.machinery.AppleFrameworkLoader
+        else:
+            self.LoaderClass = self.machinery.ExtensionFileLoader
+
+        self.name = '_testsinglephase'
+        if self.name in sys.builtin_module_names:
+            raise unittest.SkipTest(
+                f"{self.name} is a builtin module"
+            )
+        finder = self.machinery.FileFinder(None)
+        self.spec = importlib.util.find_spec(self.name)
+        assert self.spec
+
+        self.loader = self.LoaderClass(self.name, self.spec.origin)
+
+    def load_module(self):
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            return self.loader.load_module(self.name)
+
+    def load_module_by_name(self, fullname):
+        # Load a module from the test extension by name.
+        origin = self.spec.origin
+        loader = self.LoaderClass(fullname, origin)
+        spec = importlib.util.spec_from_loader(fullname, loader)
+        module = importlib.util.module_from_spec(spec)
+        loader.exec_module(module)
+        return module
+
+    def test_module(self):
+        # Test loading an extension module.
+        with util.uncache(self.name):
+            module = self.load_module()
+            for attr, value in [('__name__', self.name),
+                                ('__file__', self.spec.origin),
+                                ('__package__', '')]:
+                self.assertEqual(getattr(module, attr), value)
+            with self.assertRaises(AttributeError):
+                module.__path__
+            self.assertIs(module, sys.modules[self.name])
+            self.assertIsInstance(module.__loader__, self.LoaderClass)
+
+    # No extension module as __init__ available for testing.
+    test_package = None
+
+    # No extension module in a package available for testing.
+    test_lacking_parent = None
+
+    # No easy way to trigger a failure after a successful import.
+    test_state_after_failure = None
+
+    def test_unloadable(self):
+        name = 'asdfjkl;'
+        with self.assertRaises(ImportError) as cm:
+            self.load_module_by_name(name)
+        self.assertEqual(cm.exception.name, name)
+
+    def test_unloadable_nonascii(self):
+        # Test behavior with nonexistent module with non-ASCII name.
+        name = 'fo\xf3'
+        with self.assertRaises(ImportError) as cm:
+            self.load_module_by_name(name)
+        self.assertEqual(cm.exception.name, name)
+
+    # It may make sense to add the equivalent to
+    # the following MultiPhaseExtensionModuleTests tests:
+    #
+    #  * test_nonmodule
+    #  * test_nonmodule_with_methods
+    #  * test_bad_modules
+    #  * test_nonascii
+
+
+(Frozen_SinglePhaseExtensionModuleTests,
+ Source_SinglePhaseExtensionModuleTests
+ ) = util.test_both(SinglePhaseExtensionModuleTests, machinery=machinery)
+
+
 class MultiPhaseExtensionModuleTests(abc.LoaderTests):
     # Test loading extension modules with multi-phase initialization (PEP 489).
 
     def setUp(self):
-        if not self.machinery.EXTENSION_SUFFIXES:
+        if not self.machinery.EXTENSION_SUFFIXES or not util.EXTENSIONS:
             raise unittest.SkipTest("Requires dynamic loading support.")
+
+        # Apple extensions must be distributed as frameworks. This requires
+        # a specialist loader.
+        if is_apple_mobile:
+            self.LoaderClass = self.machinery.AppleFrameworkLoader
+        else:
+            self.LoaderClass = self.machinery.ExtensionFileLoader
+
         self.name = '_testmultiphase'
         if self.name in sys.builtin_module_names:
             raise unittest.SkipTest(
@@ -108,8 +211,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
         finder = self.machinery.FileFinder(None)
         self.spec = importlib.util.find_spec(self.name)
         assert self.spec
-        self.loader = self.machinery.ExtensionFileLoader(
-            self.name, self.spec.origin)
+        self.loader = self.LoaderClass(self.name, self.spec.origin)
 
     def load_module(self):
         # Load the module from the test extension.
@@ -120,7 +222,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
     def load_module_by_name(self, fullname):
         # Load a module from the test extension by name.
         origin = self.spec.origin
-        loader = self.machinery.ExtensionFileLoader(fullname, origin)
+        loader = self.LoaderClass(fullname, origin)
         spec = importlib.util.spec_from_loader(fullname, loader)
         module = importlib.util.module_from_spec(spec)
         loader.exec_module(module)
@@ -146,8 +248,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
             with self.assertRaises(AttributeError):
                 module.__path__
             self.assertIs(module, sys.modules[self.name])
-            self.assertIsInstance(module.__loader__,
-                                  self.machinery.ExtensionFileLoader)
+            self.assertIsInstance(module.__loader__, self.LoaderClass)
 
     def test_functionality(self):
         # Test basic functionality of stuff defined in an extension module.
@@ -179,15 +280,16 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
 
     def test_try_registration(self):
         # Assert that the PyState_{Find,Add,Remove}Module C API doesn't work.
-        module = self.load_module()
-        with self.subTest('PyState_FindModule'):
-            self.assertEqual(module.call_state_registration_func(0), None)
-        with self.subTest('PyState_AddModule'):
-            with self.assertRaises(SystemError):
-                module.call_state_registration_func(1)
-        with self.subTest('PyState_RemoveModule'):
-            with self.assertRaises(SystemError):
-                module.call_state_registration_func(2)
+        with util.uncache(self.name):
+            module = self.load_module()
+            with self.subTest('PyState_FindModule'):
+                self.assertEqual(module.call_state_registration_func(0), None)
+            with self.subTest('PyState_AddModule'):
+                with self.assertRaises(SystemError):
+                    module.call_state_registration_func(1)
+            with self.subTest('PyState_RemoveModule'):
+                with self.assertRaises(SystemError):
+                    module.call_state_registration_func(2)
 
     def test_load_submodule(self):
         # Test loading a simulated submodule.
@@ -224,29 +326,6 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
             self.load_module_by_name(name)
         self.assertEqual(cm.exception.name, name)
 
-    def test_nonmodule(self):
-        # Test returning a non-module object from create works.
-        name = self.name + '_nonmodule'
-        mod = self.load_module_by_name(name)
-        self.assertNotEqual(type(mod), type(unittest))
-        self.assertEqual(mod.three, 3)
-
-    # issue 27782
-    def test_nonmodule_with_methods(self):
-        # Test creating a non-module object with methods defined.
-        name = self.name + '_nonmodule_with_methods'
-        mod = self.load_module_by_name(name)
-        self.assertNotEqual(type(mod), type(unittest))
-        self.assertEqual(mod.three, 3)
-        self.assertEqual(mod.bar(10, 1), 9)
-
-    def test_null_slots(self):
-        # Test that NULL slots aren't a problem.
-        name = self.name + '_null_slots'
-        module = self.load_module_by_name(name)
-        self.assertIsInstance(module, types.ModuleType)
-        self.assertEqual(module.__name__, name)
-
     def test_bad_modules(self):
         # Test SystemError is raised for misbehaving extensions.
         for name_base in [
@@ -265,11 +344,18 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
                 'exec_err',
                 'exec_raise',
                 'exec_unreported_exception',
+                'multiple_create_slots',
+                'multiple_multiple_interpreters_slots',
                 ]:
             with self.subTest(name_base):
                 name = self.name + '_' + name_base
-                with self.assertRaises(SystemError):
+                with self.assertRaises(SystemError) as cm:
                     self.load_module_by_name(name)
+
+                # If there is an unreported exception, it should be chained
+                # with the `SystemError`.
+                if "unreported_exception" in name_base:
+                    self.assertIsNotNone(cm.exception.__cause__)
 
     def test_nonascii(self):
         # Test that modules with non-ASCII names can be loaded.
@@ -284,12 +370,22 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
             with self.subTest(name):
                 module = self.load_module_by_name(name)
                 self.assertEqual(module.__name__, name)
-                self.assertEqual(module.__doc__, "Module named in %s" % lang)
+                if not MISSING_C_DOCSTRINGS:
+                    self.assertEqual(module.__doc__, "Module named in %s" % lang)
 
 
 (Frozen_MultiPhaseExtensionModuleTests,
  Source_MultiPhaseExtensionModuleTests
  ) = util.test_both(MultiPhaseExtensionModuleTests, machinery=machinery)
+
+
+class NonModuleExtensionTests(unittest.TestCase):
+    def test_nonmodule_cases(self):
+        # The test cases in this file cause the GIL to be enabled permanently
+        # in free-threaded builds, so they are run in a subprocess to isolate
+        # this effect.
+        script = support.findfile("test_importlib/extension/_test_nonmodule_cases.py")
+        script_helper.run_test_script(script)
 
 
 if __name__ == '__main__':

@@ -13,18 +13,31 @@ PyAPI_FUNC(void) PyErr_Print(void);
 PyAPI_FUNC(void) PyErr_PrintEx(int);
 PyAPI_FUNC(void) PyErr_Display(PyObject *, PyObject *, PyObject *);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030C0000
+PyAPI_FUNC(void) PyErr_DisplayException(PyObject *);
+#endif
+
 
 /* Stuff with no proper home (yet) */
 PyAPI_DATA(int) (*PyOS_InputHook)(void);
 
-/* Stack size, in "pointers" (so we get extra safety margins
-   on 64-bit platforms).  On a 32-bit platform, this translates
-   to an 8k margin. */
-#define PYOS_STACK_MARGIN 2048
+/* Stack size, in "pointers". This must be large enough, so
+ * no two calls to check recursion depth are more than this far
+ * apart. In practice, that means it must be larger than the C
+ * stack consumption of PyEval_EvalDefault */
+#if defined(_Py_ADDRESS_SANITIZER) || defined(_Py_THREAD_SANITIZER)
+#  define PYOS_STACK_MARGIN 4096
+#elif defined(Py_DEBUG) && defined(WIN32)
+#  define PYOS_STACK_MARGIN 4096
+#elif defined(__wasi__)
+   /* Web assembly has two stacks, so this isn't really a size */
+#  define PYOS_STACK_MARGIN 500
+#else
+#  define PYOS_STACK_MARGIN 2048
+#endif
+#define PYOS_STACK_MARGIN_BYTES (PYOS_STACK_MARGIN * sizeof(void *))
 
-#if defined(WIN32) && !defined(MS_WIN64) && !defined(_M_ARM) && defined(_MSC_VER) && _MSC_VER >= 1300
-/* Enable stack checking under Microsoft C */
-// When changing the platforms, ensure PyOS_CheckStack() docs are still correct
+#if defined(WIN32)
 #define USE_STACKCHECK
 #endif
 

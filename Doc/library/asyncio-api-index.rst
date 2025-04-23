@@ -57,7 +57,7 @@ await on multiple things with timeouts.
       - Monitor for completion.
 
     * - :func:`timeout`
-      - Run with a timeout. Useful in cases when `wait_for` is not suitable.
+      - Run with a timeout. Useful in cases when ``wait_for`` is not suitable.
 
     * - :func:`to_thread`
       - Asynchronously run a function in a separate OS thread.
