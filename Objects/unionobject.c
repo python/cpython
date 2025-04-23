@@ -326,24 +326,15 @@ static PyMemberDef union_members[] = {
 static int
 union_init_parameters(unionobject *alias)
 {
-    // Avoid the critical section if it's already initialized.
-    if (FT_ATOMIC_LOAD_PTR_RELAXED(alias->parameters) != NULL) {
-        return 0;
-    }
-
     int result = 0;
     Py_BEGIN_CRITICAL_SECTION(alias);
-    // Need to check again once we got the lock, another thread may have
-    // initialized it while we were waiting for the lock.
     if (alias->parameters == NULL) {
-        FT_ATOMIC_STORE_PTR(alias->parameters,
-                            _Py_make_parameters(alias->args));
+        alias->parameters = _Py_make_parameters(alias->args);
         if (alias->parameters == NULL) {
             result = -1;
         }
     }
     Py_END_CRITICAL_SECTION();
-
     return result;
 }
 
