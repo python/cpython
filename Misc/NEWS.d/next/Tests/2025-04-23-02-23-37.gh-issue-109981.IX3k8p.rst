@@ -1,5 +1,3 @@
-Use ``/dev/fd`` on other Apple platforms, in addition to macOS, to determine
-the number of open files in ``test.support.os_helper.fd_count`` to avoid a crash
-with "guarded" file descriptors when probing for open files.
-
-The text for this entry is adapted from the previous one fixing the issue for macOS.
+The test helper that counts the list of open file descriptors now uses the
+optimised ``/dev/fd`` approach on all Apple platforms, not just macOS.
+This avoids crashes caused by guarded file descriptors.
