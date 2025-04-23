@@ -342,7 +342,6 @@ static PyObject *
 union_getitem(PyObject *self, PyObject *item)
 {
     unionobject *alias = (unionobject *)self;
-
     if (union_init_parameters(alias) < 0) {
         return NULL;
     }
