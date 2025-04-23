@@ -1124,6 +1124,13 @@ class TestGetAnnotations(unittest.TestCase):
             },
         )
 
+    def test_partial_evaluation_cell(self):
+        obj = object()
+        class RaisesAttributeError:
+            attriberr: obj.missing
+        anno = get_annotations(RaisesAttributeError, format=Format.FORWARDREF)
+        self.assertEqual(anno, None)
+
 
 class TestCallEvaluateFunction(unittest.TestCase):
     def test_evaluation(self):
