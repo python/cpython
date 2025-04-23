@@ -2041,8 +2041,9 @@ Utility functions
 
    If a bytes object is specified as first argument, the buffer is made one item
    larger than its length so that the last element in the array is a NUL
-   termination character. An integer can be passed as second argument which allows
-   specifying the size of the array if the length of the bytes should not be used.
+   termination character. An integer *size* can be passed which allows
+   specifying the size of the array if the length of the bytes should not be used;
+   Note that if *size* is too small the NUL termination character will be omitted.
 
    .. audit-event:: ctypes.create_string_buffer init,size ctypes.create_string_buffer
 
@@ -2057,9 +2058,9 @@ Utility functions
 
    If a string is specified as first argument, the buffer is made one item
    larger than the length of the string so that the last element in the array is a
-   NUL termination character. An integer can be passed as second argument which
-   allows specifying the size of the array if the length of the string should not
-   be used.
+   NUL termination character.  An integer *size* can be passed which allows
+   specifying the size of the array if the length of the bytes should not be used;
+   Note that if *size* is too small the NUL termination character will be omitted.
 
    .. audit-event:: ctypes.create_unicode_buffer init,size ctypes.create_unicode_buffer
 
