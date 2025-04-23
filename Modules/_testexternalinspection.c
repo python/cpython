@@ -1493,7 +1493,7 @@ append_awaited_by_for_thread(
     while ((uintptr_t)task_node.next != head_addr) {
         uintptr_t task_addr = (uintptr_t)task_node.next
             - async_offsets->asyncio_task_object.task_node;
-    
+
         PyObject *tn = parse_task_name(
             pid,
             debug_offsets,
@@ -1513,13 +1513,13 @@ append_awaited_by_for_thread(
         if (result_item == NULL) {
             Py_DECREF(tn);
             Py_DECREF(current_awaited_by);
-            return -1;            
+            return -1;
         }
 
         PyTuple_SET_ITEM(result_item, 0, tn);  // steals ref
         PyTuple_SET_ITEM(result_item, 1, current_awaited_by);  // steals ref
         if (PyList_Append(result, result_item)) {
-            Py_DECREF(result_item);        
+            Py_DECREF(result_item);
             return -1;
         }
         Py_DECREF(result_item);
@@ -1696,7 +1696,7 @@ get_all_awaited_by(PyObject* self, PyObject* args)
                         &local_async_debug, result))
     {
         goto result_err;
-    }    
+    }
 
     return result;
 
