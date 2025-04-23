@@ -966,6 +966,7 @@ mimetypes
     Add OpenDocument ``.odg``, ``.odp``, ``.ods`` and ``.odt`` types
   * `W3C <https://www.w3.org/TR/epub-33/#app-media-type>`__:
     Add EPUB ``application/epub+zip`` (``.epub``)
+  * Add 7z ``application/x-7z-compressed`` (``.7z``)
   * Add Android Package ``application/vnd.android.package-archive`` (``.apk``)
     when not strict
   * Add M4V ``video/x-m4v`` (``.m4v``)

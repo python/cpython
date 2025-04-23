@@ -240,6 +240,7 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
                 ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"),
                 ("application/vnd.rar", ".rar"),
+                ("application/x-7z-compressed", ".7z"),
                 ("application/x-httpd-php", ".php"),
                 ("application/x-texinfo", ".texi"),
                 ("application/x-troff", ".roff"),

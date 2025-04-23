@@ -507,6 +507,7 @@ def _default_mime_types():
         '.docx'   : 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         '.rar'    : 'application/vnd.rar',
         '.wasm'   : 'application/wasm',
+        '.7z'     : 'application/x-7z-compressed',
         '.bcpio'  : 'application/x-bcpio',
         '.cpio'   : 'application/x-cpio',
         '.csh'    : 'application/x-csh',
