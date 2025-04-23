@@ -145,9 +145,9 @@ class IoctlTestsPty(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(termios, 'TCFLSH'), 'requires termios.TCFLSH')
     def test_ioctl_tcflush(self):
-        r = fcntl.ioctl(self.master_fd, termios.TCFLSH, termios.TCIFLUSH)
+        r = fcntl.ioctl(self.slave_fd, termios.TCFLSH, termios.TCIFLUSH)
         self.assertEqual(r, 0)
-        r = fcntl.ioctl(self.master_fd, termios.TCFLSH, termios.TCOFLUSH)
+        r = fcntl.ioctl(self.slave_fd, termios.TCFLSH, termios.TCOFLUSH)
         self.assertEqual(r, 0)
 
     def test_ioctl_set_window_size(self):
