@@ -80,15 +80,15 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
         return PyLong_FromLong(ret);
     }
     else if (PyUnicode_Check(arg) || PyObject_CheckBuffer(arg)) {
-#define FNCTL_BUFSZ 1024
+#define FCNTL_BUFSZ 1024
         Py_buffer view;
-        char buf[FNCTL_BUFSZ+1];  /* argument plus NUL byte */
+        char buf[FCNTL_BUFSZ+1];  /* argument plus NUL byte */
 
         if (!PyArg_Parse(arg, "s*", &view)) {
             return NULL;
         }
         Py_ssize_t len = view.len;
-        if (len > FNCTL_BUFSZ) {
+        if (len > FCNTL_BUFSZ) {
             PyErr_SetString(PyExc_ValueError,
                             "fcntl argument 3 is too long");
             PyBuffer_Release(&view);
@@ -107,7 +107,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
             return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
         }
         return PyBytes_FromStringAndSize(buf, len);
-#undef FNCTL_BUFSZ
+#undef FCNTL_BUFSZ
     }
     else {
         PyErr_Format(PyExc_TypeError,
