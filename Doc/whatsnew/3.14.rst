@@ -971,6 +971,7 @@ mimetypes
   * Add Android Package ``application/vnd.android.package-archive`` (``.apk``)
     when not strict
   * Add deb ``application/x-debian-package`` (``.deb``)
+  * Add glTF binary ``model/gltf-binary`` (``.glb``)
   * Add M4V ``video/x-m4v`` (``.m4v``)
   * Add PHP ``application/x-httpd-php`` (``.php``)
   * Add RAR ``application/vnd.rar`` (``.rar``)
