@@ -6,6 +6,7 @@ __all__ = ["run", "runctx", "Profile"]
 
 import _lsprof
 import importlib.machinery
+import importlib.util
 import io
 import profile as _pyprofile
 
@@ -173,22 +174,25 @@ def main():
                 code = compile(fp.read(), progname, 'exec')
             spec = importlib.machinery.ModuleSpec(name='__main__', loader=None,
                                                   origin=progname)
-            globs = {
+            module = importlib.util.module_from_spec(spec)
+            # Set __main__ so that importing __main__ in the profiled code will
+            # return the same namespace that the code is executing under.
+            sys.modules['__main__'] = module
+            # Ensure that we're using the same __dict__ instance as the module
+            # for the global variables so that updates to globals are reflected
+            # in the module's namespace.
+            globs = module.__dict__
+            globs.update({
                 '__spec__': spec,
                 '__file__': spec.origin,
                 '__name__': spec.name,
                 '__package__': None,
                 '__cached__': None,
                 '__builtins__': __builtins__,
-            }
-        # cmd has to run in __main__ namespace (or imports from __main__ will
-        # break). Clear __main__ and replace with the globals provided.
-        import __main__
-        __main__.__dict__.clear()
-        __main__.__dict__.update(globs)
+            })
 
         try:
-            runctx(code, __main__.__dict__, None, options.outfile, options.sort)
+            runctx(code, globs, None, options.outfile, options.sort)
         except BrokenPipeError as exc:
             # Prevent "Exception ignored" during interpreter shutdown.
             sys.stdout = None
@@ -199,8 +203,4 @@ def main():
 
 # When invoked as main program, invoke the profiler on a script
 if __name__ == '__main__':
-    # Since the code we run might need to modify __main__, we need to ensure
-    # that cProfile's main function is run under some other namespace, so we
-    # reimport and execute the main function separately
-    import cProfile
-    cProfile.main()
+    main()
