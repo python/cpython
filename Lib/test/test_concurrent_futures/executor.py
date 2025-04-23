@@ -5,7 +5,7 @@ import time
 import traceback
 import weakref
 from concurrent import futures
-from operator import add, itemgetter
+from operator import add
 from test import support
 from test.support import Py_GIL_DISABLED
 
@@ -60,15 +60,15 @@ class ExecutorTest:
 
         exception = None
         try:
-            next(i)
+            i.__next__()
         except Exception as e:
             exception = e
         self.assertTrue(
             isinstance(exception, ZeroDivisionError),
-            msg="next should raise a ZeroDivisionError",
+            msg="should raise a ZeroDivisionError",
         )
 
-        # free-threading builds need this pause on Ubuntu (ARM) and Windows
+        # pause needed for free-threading builds on Ubuntu (ARM) and Windows
         time.sleep(1)
 
         self.assertFalse(
@@ -76,20 +76,21 @@ class ExecutorTest:
             msg="the exception should not have any referrers",
         )
 
-        frames = map(itemgetter(0), traceback.walk_tb(exception.__traceback__))
-
-        # skip current frame
-        next(frames)
-
         self.assertFalse(
             [
                 (var, val)
-                for frame in frames
+                # go through the frames of the exception's traceback
+                for frame, _ in traceback.walk_tb(exception.__traceback__)
+                # skipping the current frame
+                if frame is not exception.__traceback__.tb_frame
+                # go through the locals captured in that frame
                 for var, val in frame.f_locals.items()
+                # check if one of them is an exception
                 if isinstance(val, Exception)
-                and frame in map(itemgetter(0), traceback.walk_tb(val.__traceback__))
+                # check if it is captured in its own traceback
+                and frame is val.__traceback__.tb_frame
             ],
-            msg=f"the exception's traceback should not contain an exception that captures itself in its own traceback",
+            msg=f"the exception's traceback should not contain an exception captured in its own traceback",
         )
 
     @support.requires_resource('walltime')
