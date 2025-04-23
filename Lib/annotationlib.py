@@ -305,7 +305,13 @@ class _Stringifier:
             if isinstance(other.__ast_node__, str):
                 return ast.Name(id=other.__ast_node__), other.__extra_names__
             return other.__ast_node__, other.__extra_names__
-        elif other is None or type(other) in (str, int, float, bool, complex):
+        elif (
+            # In STRING format we don't bother with the create_unique_name() dance;
+            # it's better to emit the repr() of the object instead of an opaque name.
+            self.__stringifier_dict__.format == Format.STRING
+            or other is None
+            or type(other) in (str, int, float, bool, complex)
+        ):
             return ast.Constant(value=other), None
         elif type(other) is dict:
             extra_names = {}
@@ -519,7 +525,7 @@ class _Stringifier:
 
 
 class _StringifierDict(dict):
-    def __init__(self, namespace, globals=None, owner=None, is_class=False):
+    def __init__(self, namespace, *, globals=None, owner=None, is_class=False, format):
         super().__init__(namespace)
         self.namespace = namespace
         self.globals = globals
@@ -527,6 +533,7 @@ class _StringifierDict(dict):
         self.is_class = is_class
         self.stringifiers = []
         self.next_id = 1
+        self.format = format
 
     def __missing__(self, key):
         fwdref = _Stringifier(
@@ -587,7 +594,7 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         # possibly constants if the annotate function uses them directly). We then
         # convert each of those into a string to get an approximation of the
         # original source.
-        globals = _StringifierDict({})
+        globals = _StringifierDict({}, format=format)
         if annotate.__closure__:
             freevars = annotate.__code__.co_freevars
             new_closure = []
@@ -637,9 +644,10 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
         is_class = isinstance(owner, type)
         globals = _StringifierDict(
             namespace,
-            annotate.__globals__,
-            owner,
-            is_class,
+            globals=annotate.__globals__,
+            owner=owner,
+            is_class=is_class,
+            format=format,
         )
         if annotate.__closure__:
             freevars = annotate.__code__.co_freevars

@@ -406,6 +406,17 @@ class TestSourceFormat(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, format_msg):
             annotationlib.get_annotations(f, format=Format.STRING)
 
+    def test_shenanigans(self):
+        # In cases like this we can't reconstruct the source; test that we do something
+        # halfway reasonable.
+        def f(x: x | (1).__class__, y: (1).__class__):
+            pass
+
+        self.assertEqual(
+            annotationlib.get_annotations(f, format=Format.STRING),
+            {"x": "x | <class 'int'>", "y": "<class 'int'>"},
+        )
+
 
 class TestForwardRefClass(unittest.TestCase):
     def test_special_attrs(self):
