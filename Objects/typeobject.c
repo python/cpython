@@ -1652,6 +1652,9 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
         return res;
     }
     PyObject *new_mro = lookup_tp_mro(type);
+    if (new_mro == NULL) {
+        return -1;
+    }
 
     PyObject *tuple;
     if (old_mro != NULL) {
