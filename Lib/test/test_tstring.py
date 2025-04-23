@@ -1,9 +1,9 @@
 import unittest
 
-from test.test_string._support import TStringTestCase, fstring
+from test.test_string._support import TStringBaseCase, fstring
 
 
-class TestTString(TStringTestCase):
+class TestTString(unittest.TestCase, TStringBaseCase):
     def test_string_representation(self):
         # Test __repr__
         t = t"Hello"

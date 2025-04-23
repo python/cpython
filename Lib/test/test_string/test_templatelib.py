@@ -1,9 +1,22 @@
+import pickle
+import unittest
 from string.templatelib import Template, Interpolation
 
-from test.test_string._support import TStringTestCase, fstring
+from test.test_string._support import TStringBaseCase, fstring
 
 
-class TestTemplate(TStringTestCase):
+class TestTemplate(unittest.TestCase, TStringBaseCase):
+
+    def test_common(self):
+        self.assertEqual(type(t'').__name__, 'Template')
+        self.assertEqual(type(t'').__qualname__, 'Template')
+        self.assertEqual(type(t'').__module__, 'string.templatelib')
+
+        a = 'a'
+        i = t'{a}'.interpolations[0]
+        self.assertEqual(type(i).__name__, 'Interpolation')
+        self.assertEqual(type(i).__qualname__, 'Interpolation')
+        self.assertEqual(type(i).__module__, 'string.templatelib')
 
     def test_basic_creation(self):
         # Simple t-string creation
@@ -53,3 +66,44 @@ world"""
             t, ('', '', ''), [('Maria', 'name'), ('Python', 'language')]
         )
         self.assertEqual(fstring(t), 'MariaPython')
+
+    def test_pickle_template(self):
+        user = 'test'
+        for template in (
+            t'',
+            t"No values",
+            t'With inter {user}',
+            t'With ! {user!r}',
+            t'With format {1 / 0.3:.2f}',
+            Template(),
+            Template('a'),
+            Template(Interpolation('Nikita', 'name', None, '')),
+            Template('a', Interpolation('Nikita', 'name', 'r', '')),
+        ):
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(proto=proto, template=template):
+                    pickled = pickle.dumps(template, protocol=proto)
+                    unpickled = pickle.loads(pickled)
+
+                    self.assertEqual(unpickled.values, template.values)
+                    self.assertEqual(fstring(unpickled), fstring(template))
+
+    def test_pickle_interpolation(self):
+        for interpolation in (
+            Interpolation('Nikita', 'name', None, ''),
+            Interpolation('Nikita', 'name', 'r', ''),
+            Interpolation(1/3, 'x', None, '.2f'),
+        ):
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(proto=proto, interpolation=interpolation):
+                    pickled = pickle.dumps(interpolation, protocol=proto)
+                    unpickled = pickle.loads(pickled)
+
+                    self.assertEqual(unpickled.value, interpolation.value)
+                    self.assertEqual(unpickled.expression, interpolation.expression)
+                    self.assertEqual(unpickled.conversion, interpolation.conversion)
+                    self.assertEqual(unpickled.format_spec, interpolation.format_spec)
+
+
+if __name__ == '__main__':
+    unittest.main()

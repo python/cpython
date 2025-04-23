@@ -125,6 +125,22 @@ static PyMemberDef interpolation_members[] = {
     {NULL}
 };
 
+static PyObject*
+interpolation_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
+{
+    interpolationobject *self = interpolationobject_CAST(op);
+    return Py_BuildValue("(O(OOOO))", (PyObject *)Py_TYPE(op),
+                         self->value, self->expression,
+                         self->conversion, self->format_spec);
+}
+
+static PyMethodDef interpolation_methods[] = {
+    {"__reduce__", interpolation_reduce, METH_VARARGS,
+     PyDoc_STR("__reduce__() -> (cls, state)")},
+
+    {NULL,      NULL},
+};
+
 PyTypeObject _PyInterpolation_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "string.templatelib.Interpolation",
@@ -139,6 +155,7 @@ PyTypeObject _PyInterpolation_Type = {
     .tp_free = PyObject_GC_Del,
     .tp_repr = interpolation_repr,
     .tp_members = interpolation_members,
+    .tp_methods = interpolation_methods,
     .tp_traverse = interpolation_traverse,
 };
 

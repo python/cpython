@@ -114,7 +114,10 @@ template_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             last_was_str = 0;
         }
         else {
-            PyErr_SetString(PyExc_TypeError, "Template.__new__ *args need to be of type 'str' or 'Interpolation'");
+            PyErr_Format(
+                PyExc_TypeError,
+                "Template.__new__ *args need to be of type 'str' or 'Interpolation', got %T",
+                item);
             return NULL;
         }
     }
@@ -418,12 +421,41 @@ static PyMemberDef template_members[] = {
 };
 
 static PyGetSetDef template_getset[] = {
-    {"values", template_values_get, NULL, "Values of interpolations", NULL},
+    {"values", template_values_get, NULL,
+     PyDoc_STR("Values of interpolations"), NULL},
     {NULL},
 };
 
 static PySequenceMethods template_as_sequence = {
     .sq_concat = _PyTemplate_Concat,
+};
+
+static PyObject*
+template_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
+{
+    PyObject *mod = PyImport_ImportModule("string.templatelib");
+    if (mod == NULL) {
+        return NULL;
+    }
+    PyObject *func = PyObject_GetAttrString(mod, "_template_unpickle");
+    Py_DECREF(mod);
+    if (func == NULL) {
+        return NULL;
+    }
+
+    templateobject *self = templateobject_CAST(op);
+    PyObject *result = Py_BuildValue("O(OO)",
+                                     func,
+                                     self->strings,
+                                     self->interpolations);
+
+    Py_DECREF(func);
+    return result;
+}
+
+static PyMethodDef template_methods[] = {
+    {"__reduce__", template_reduce, METH_NOARGS, NULL},
+    {NULL,      NULL},
 };
 
 PyTypeObject _PyTemplate_Type = {
@@ -441,6 +473,7 @@ PyTypeObject _PyTemplate_Type = {
     .tp_free = PyObject_GC_Del,
     .tp_repr = template_repr,
     .tp_members = template_members,
+    .tp_methods = template_methods,
     .tp_getset = template_getset,
     .tp_iter = template_iter,
     .tp_traverse = template_traverse,

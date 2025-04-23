@@ -2,7 +2,7 @@ import unittest
 from string.templatelib import Interpolation
 
 
-class TStringTestCase(unittest.TestCase):
+class TStringBaseCase:
     def assertTStringEqual(self, t, strings, interpolations):
         """Test template string literal equality.
 
@@ -23,7 +23,7 @@ class TStringTestCase(unittest.TestCase):
                 continue
 
             if len(exp) == 3:
-                self.assertEqual((i.value, i.expression, i.conversion),  exp)
+                self.assertEqual((i.value, i.expression, i.conversion), exp)
                 self.assertEqual(i.format_spec, '')
                 continue
 
