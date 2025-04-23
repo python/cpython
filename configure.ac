@@ -7317,7 +7317,6 @@ AS_CASE([$ac_sys_system],
       [_testmultiphase],
       [_testsinglephase],
       [_testclinic],
-      [_sqlite3],
     )
   ],
   [Emscripten|WASI], [
