@@ -195,6 +195,7 @@ _PyInterpolation_Build(PyObject *value, PyObject *str, int conversion, PyObject 
     interpolation->value = Py_NewRef(value);
     interpolation->expression = Py_NewRef(str);
     interpolation->format_spec = Py_NewRef(format_spec);
+    interpolation->conversion = NULL;
 
     if (conversion == 0) {
         interpolation->conversion = Py_None;

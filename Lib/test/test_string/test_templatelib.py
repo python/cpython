@@ -67,6 +67,19 @@ world"""
         )
         self.assertEqual(fstring(t), 'MariaPython')
 
+    def test_template_values(self):
+        t = t'Hello, world'
+        self.assertEqual(t.values, ())
+
+        name = "Lys"
+        t = t'Hello, {name}'
+        self.assertEqual(t.values, ("Lys",))
+
+        country = "GR"
+        age = 0
+        t = t'Hello, {name}, {age} from {country}'
+        self.assertEqual(t.values, ("Lys", 0, "GR"))
+
     def test_pickle_template(self):
         user = 'test'
         for template in (

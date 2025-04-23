@@ -388,29 +388,18 @@ static PyObject *
 template_values_get(PyObject *op, void *Py_UNUSED(data))
 {
     templateobject *self = templateobject_CAST(op);
+
+    Py_ssize_t len = PyTuple_GET_SIZE(self->interpolations);
     PyObject *values = PyTuple_New(PyTuple_GET_SIZE(self->interpolations));
     if (values == NULL) {
         return NULL;
     }
 
-    PyObject *interpolationsiter = PyObject_GetIter(self->interpolations);
-    if (interpolationsiter == NULL) {
-        Py_DECREF(values);
-        return NULL;
+    for (Py_ssize_t i = 0; i < len; i++) {
+        PyObject *item = PyTuple_GET_ITEM(self->interpolations, i);
+        PyTuple_SET_ITEM(values, i, _PyInterpolation_GetValueRef(item));
     }
 
-    PyObject *item;
-    Py_ssize_t index = 0;
-    while ((item = PyIter_Next(interpolationsiter))) {
-        PyTuple_SET_ITEM(values, index++, _PyInterpolation_GetValueRef(item));
-        Py_DECREF(item);
-    }
-
-    Py_DECREF(interpolationsiter);
-    if (PyErr_Occurred()) {
-        Py_DECREF(values);
-        return NULL;
-    }
     return values;
 }
 
