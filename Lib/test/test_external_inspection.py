@@ -3,7 +3,7 @@ import os
 import textwrap
 import importlib
 import sys
-from test.support import os_helper, SHORT_TIMEOUT
+from test.support import os_helper, SHORT_TIMEOUT, busy_retry
 from test.support.script_helper import make_script
 
 import subprocess
@@ -361,7 +361,7 @@ class TestGetStackTrace(unittest.TestCase):
             import random
             import sys
             from string import ascii_lowercase, digits
-            from test.support import socket_helper
+            from test.support import socket_helper, SHORT_TIMEOUT
 
             HOST = '127.0.0.1'
             PORT = socket_helper.find_unused_port()
@@ -386,7 +386,7 @@ class TestGetStackTrace(unittest.TestCase):
                 assert message == data.decode()
                 writer.close()
                 await writer.wait_closed()
-                await asyncio.sleep(10)
+                await asyncio.sleep(SHORT_TIMEOUT)
 
             async def echo_client_spam(server):
                 async with asyncio.TaskGroup() as tg:
@@ -426,16 +426,34 @@ class TestGetStackTrace(unittest.TestCase):
                 with open(fifo, "r") as fifo_file:
                     response = fifo_file.read()
                 self.assertEqual(response, "ready")
-                all_awaited_by = get_all_awaited_by(p.pid)
+                for _ in busy_retry(SHORT_TIMEOUT):
+                    try:
+                        all_awaited_by = get_all_awaited_by(p.pid)
+                    except RuntimeError as re:
+                        # This call reads a linked list in another process with
+                        # no synchronization. That occasionally leads to invalid
+                        # reads. Here we avoid making the test flaky.
+                        msg = str(re)
+                        if msg.startswith("Unknown error reading memory"):
+                            continue
+                        elif msg.startswith("Unhandled frame owner"):
+                            continue
+                        raise  # Unrecognized exception, safest not to ignore it
+                    else:
+                        break
                 # expected: a list of two elements: 1 thread, 1 interp
                 self.assertEqual(len(all_awaited_by), 2)
                 # expected: a tuple with the thread ID and the awaited_by list
                 self.assertEqual(len(all_awaited_by[0]), 2)
                 entries = all_awaited_by[0][1]
+                # expected: at least 1000 pending tasks
                 self.assertGreaterEqual(len(entries), 1000)
+                # the first three tasks stem from the code structure
                 self.assertIn(('Task-1', []), entries)
                 self.assertIn(('server task', [[['main'], 'Task-1', []]]), entries)
                 self.assertIn(('echo client spam', [[['main'], 'Task-1', []]]), entries)
+                # the final task will have some random number, but it should for
+                # sure be one of the echo client spam horde
                 self.assertEqual([[['echo_client_spam'], 'echo client spam', [[['main'], 'Task-1', []]]]], entries[-1][1])
             except PermissionError:
                 self.skipTest(
