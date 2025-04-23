@@ -164,7 +164,7 @@ _get_current_state(PyObject **p_mod)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     datetime_state *st = interp->datetime_module_state;
-    if (st != NULL) {
+    if (st != NULL && st->isocalendar_date_type != NULL) {
         PyObject *mod = PyType_GetModule(st->isocalendar_date_type);
         assert(mod != NULL);
         *p_mod = Py_NewRef(mod);
