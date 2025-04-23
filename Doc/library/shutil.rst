@@ -473,7 +473,7 @@ Directory and files operations
    This is also applied when *cmd* is a path that contains a directory
    component::
 
-      >> shutil.which("C:\\Python33\\python")
+      >>> shutil.which("C:\\Python33\\python")
       'C:\\Python33\\python.EXE'
 
    .. versionadded:: 3.3
@@ -490,12 +490,6 @@ Directory and files operations
       ``PATHEXT`` is used now even when *cmd* includes a directory component
       or ends with an extension that is in ``PATHEXT``; and filenames that
       have no extension can now be found.
-
-   .. versionchanged:: 3.12.1
-      On Windows, if *mode* includes ``os.X_OK``, executables with an
-      extension in ``PATHEXT`` will be preferred over executables without a
-      matching extension.
-      This brings behavior closer to that of Python 3.11.
 
 .. exception:: Error
 
@@ -518,7 +512,9 @@ the use of userspace buffers in Python as in "``outfd.write(infd.read())``".
 
 On macOS `fcopyfile`_ is used to copy the file content (not metadata).
 
-On Linux and Solaris :func:`os.sendfile` is used.
+On Linux :func:`os.copy_file_range` or :func:`os.sendfile` is used.
+
+On Solaris :func:`os.sendfile` is used.
 
 On Windows :func:`shutil.copyfile` uses a bigger default buffer size (1 MiB
 instead of 64 KiB) and a :func:`memoryview`-based variant of
@@ -532,6 +528,10 @@ file then shutil will silently fallback on using less efficient
 
 .. versionchanged:: 3.14
     Solaris now uses :func:`os.sendfile`.
+
+.. versionchanged:: 3.14
+   Copy-on-write or server-side copy may be used internally via
+   :func:`os.copy_file_range` on supported Linux filesystems.
 
 .. _shutil-copytree-example:
 

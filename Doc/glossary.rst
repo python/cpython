@@ -115,7 +115,7 @@ Glossary
       :keyword:`yield` expression.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
-      location execution state (including local variables and pending
+      execution state (including local variables and pending
       try-statements).  When the *asynchronous generator iterator* effectively
       resumes with another awaitable returned by :meth:`~object.__anext__`, it
       picks up where it left off.  See :pep:`492` and :pep:`525`.
@@ -131,6 +131,28 @@ Glossary
       :keyword:`async for` resolves the awaitables returned by an asynchronous
       iterator's :meth:`~object.__anext__` method until it raises a
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
+
+   attached thread state
+
+      A :term:`thread state` that is active for the current OS thread.
+
+      When a :term:`thread state` is attached, the OS thread has
+      access to the full Python C API and can safely invoke the
+      bytecode interpreter.
+
+      Unless a function explicitly notes otherwise, attempting to call
+      the C API without an attached thread state will result in a fatal
+      error or undefined behavior.  A thread state can be attached and detached
+      explicitly by the user through the C API, or implicitly by the runtime,
+      including during blocking C calls and by the bytecode interpreter in between
+      calls.
+
+      On most builds of Python, having an attached thread state implies that the
+      caller holds the :term:`GIL` for the current interpreter, so only
+      one OS thread can have an attached thread state at a given moment. In
+      :term:`free-threaded <free threading>` builds of Python, threads can concurrently
+      hold an attached thread state, allowing for true parallelism of the bytecode
+      interpreter.
 
    attribute
       A value associated with an object which is usually referenced by name
@@ -265,19 +287,33 @@ Glossary
       advanced mathematical feature.  If you're not aware of a need for them,
       it's almost certain you can safely ignore them.
 
+   context
+      This term has different meanings depending on where and how it is used.
+      Some common meanings:
+
+      * The temporary state or environment established by a :term:`context
+        manager` via a :keyword:`with` statement.
+      * The collection of key­value bindings associated with a particular
+        :class:`contextvars.Context` object and accessed via
+        :class:`~contextvars.ContextVar` objects.  Also see :term:`context
+        variable`.
+      * A :class:`contextvars.Context` object.  Also see :term:`current
+        context`.
+
+   context management protocol
+      The :meth:`~object.__enter__` and :meth:`~object.__exit__` methods called
+      by the :keyword:`with` statement.  See :pep:`343`.
+
    context manager
-      An object which controls the environment seen in a :keyword:`with`
-      statement by defining :meth:`~object.__enter__` and :meth:`~object.__exit__` methods.
-      See :pep:`343`.
+      An object which implements the :term:`context management protocol` and
+      controls the environment seen in a :keyword:`with` statement.  See
+      :pep:`343`.
 
    context variable
-      A variable which can have different values depending on its context.
-      This is similar to Thread-Local Storage in which each execution
-      thread may have a different value for a variable. However, with context
-      variables, there may be several contexts in one execution thread and the
-      main usage for context variables is to keep track of variables in
+      A variable whose value depends on which context is the :term:`current
+      context`.  Values are accessed via :class:`contextvars.ContextVar`
+      objects.  Context variables are primarily used to isolate state between
       concurrent asynchronous tasks.
-      See :mod:`contextvars`.
 
    contiguous
       .. index:: C-contiguous, Fortran contiguous
@@ -310,6 +346,14 @@ Glossary
       distributed on `python.org <https://www.python.org>`_.  The term "CPython"
       is used when necessary to distinguish this implementation from others
       such as Jython or IronPython.
+
+   current context
+      The :term:`context` (:class:`contextvars.Context` object) that is
+      currently used by :class:`~contextvars.ContextVar` objects to access (get
+      or set) the values of :term:`context variables <context variable>`.  Each
+      thread has its own current context.  Frameworks for executing asynchronous
+      tasks (see :mod:`asyncio`) associate each task with a context which
+      becomes the current context whenever the task starts or resumes execution.
 
    decorator
       A function returning another function, usually applied as a function
@@ -542,7 +586,7 @@ Glossary
       An object created by a :term:`generator` function.
 
       Each :keyword:`yield` temporarily suspends processing, remembering the
-      location execution state (including local variables and pending
+      execution state (including local variables and pending
       try-statements).  When the *generator iterator* resumes, it picks up where
       it left off (in contrast to functions which start fresh on every
       invocation).
@@ -595,10 +639,14 @@ Glossary
 
       As of Python 3.13, the GIL can be disabled using the :option:`--disable-gil`
       build configuration. After building Python with this option, code must be
-      run with :option:`-X gil 0 <-X>` or after setting the :envvar:`PYTHON_GIL=0 <PYTHON_GIL>`
+      run with :option:`-X gil=0 <-X>` or after setting the :envvar:`PYTHON_GIL=0 <PYTHON_GIL>`
       environment variable. This feature enables improved performance for
       multi-threaded applications and makes it easier to use multi-core CPUs
       efficiently. For more details, see :pep:`703`.
+
+      In prior versions of Python's C API, a function might declare that it
+      requires the GIL to be held in order to use it. This refers to having an
+      :term:`attached thread state`.
 
    hash-based pyc
       A bytecode cache file that uses the hash rather than the last-modified
@@ -635,6 +683,9 @@ Glossary
       If an object is immortal, its :term:`reference count` is never modified,
       and therefore it is never deallocated while the interpreter is running.
       For example, :const:`True` and :const:`None` are immortal in CPython.
+
+      Immortal objects can be identified via :func:`sys._is_immortal`, or
+      via :c:func:`PyUnstable_IsImmortal` in the C API.
 
    immutable
       An object with a fixed value.  Immutable objects include numbers, strings and
@@ -694,7 +745,7 @@ Glossary
       iterables include all sequence types (such as :class:`list`, :class:`str`,
       and :class:`tuple`) and some non-sequence types like :class:`dict`,
       :term:`file objects <file object>`, and objects of any classes you define
-      with an :meth:`~iterator.__iter__` method or with a
+      with an :meth:`~object.__iter__` method or with a
       :meth:`~object.__getitem__` method
       that implements :term:`sequence` semantics.
 
@@ -775,6 +826,10 @@ Glossary
       thread removes *key* from *mapping* after the test, but before the lookup.
       This issue can be solved with locks or by using the EAFP approach.
 
+   lexical analyzer
+
+      Formal name for the *tokenizer*; see :term:`token`.
+
    list
       A built-in Python :term:`sequence`.  Despite its name it is more akin
       to an array in other languages than to a linked list since access to
@@ -789,9 +844,11 @@ Glossary
       processed.
 
    loader
-      An object that loads a module. It must define a method named
-      :meth:`load_module`. A loader is typically returned by a
-      :term:`finder`. See also:
+      An object that loads a module.
+      It must define the :meth:`!exec_module` and :meth:`!create_module` methods
+      to implement the :class:`~importlib.abc.Loader` interface.
+      A loader is typically returned by a :term:`finder`.
+      See also:
 
       * :ref:`finders-and-loaders`
       * :class:`importlib.abc.Loader`
@@ -912,10 +969,15 @@ Glossary
       modules, respectively.
 
    namespace package
-      A :pep:`420` :term:`package` which serves only as a container for
-      subpackages.  Namespace packages may have no physical representation,
+      A :term:`package` which serves only as a container for subpackages.
+      Namespace packages may have no physical representation,
       and specifically are not like a :term:`regular package` because they
       have no ``__init__.py`` file.
+
+      Namespace packages allow several individually installable packages to have a common parent package.
+      Otherwise, it is recommended to use a :term:`regular package`.
+
+      For more information, see :pep:`420` and :ref:`reference-namespace-package`.
 
       See also :term:`module`.
 
@@ -1258,6 +1320,40 @@ Glossary
 
       See also :term:`binary file` for a file object able to read and write
       :term:`bytes-like objects <bytes-like object>`.
+
+   thread state
+
+      The information used by the :term:`CPython` runtime to run in an OS thread.
+      For example, this includes the current exception, if any, and the
+      state of the bytecode interpreter.
+
+      Each thread state is bound to a single OS thread, but threads may have
+      many thread states available.  At most, one of them may be
+      :term:`attached <attached thread state>` at once.
+
+      An :term:`attached thread state` is required to call most
+      of Python's C API, unless a function explicitly documents otherwise.
+      The bytecode interpreter only runs under an attached thread state.
+
+      Each thread state belongs to a single interpreter, but each interpreter
+      may have many thread states, including multiple for the same OS thread.
+      Thread states from multiple interpreters may be bound to the same
+      thread, but only one can be :term:`attached <attached thread state>` in
+      that thread at any given moment.
+
+      See :ref:`Thread State and the Global Interpreter Lock <threads>` for more
+      information.
+
+   token
+
+      A small unit of source code, generated by the
+      :ref:`lexical analyzer <lexical>` (also called the *tokenizer*).
+      Names, numbers, strings, operators,
+      newlines and similar are represented by tokens.
+
+      The :mod:`tokenize` module exposes Python's lexical analyzer.
+      The :mod:`token` module contains information on the various types
+      of tokens.
 
    triple-quoted string
       A string which is bound by three instances of either a quotation mark

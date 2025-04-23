@@ -557,6 +557,7 @@ extern "C" {
     INIT_STR(json_decoder, "json.decoder"), \
     INIT_STR(kwdefaults, ".kwdefaults"), \
     INIT_STR(list_err, "list index out of range"), \
+    INIT_STR(str_replace_inf, "1e309"), \
     INIT_STR(type_params, ".type_params"), \
     INIT_STR(utf_8, "utf-8"), \
 }
@@ -584,7 +585,9 @@ extern "C" {
     INIT_ID(__and__), \
     INIT_ID(__anext__), \
     INIT_ID(__annotate__), \
+    INIT_ID(__annotate_func__), \
     INIT_ID(__annotations__), \
+    INIT_ID(__annotations_cache__), \
     INIT_ID(__args__), \
     INIT_ID(__await__), \
     INIT_ID(__bases__), \
@@ -595,12 +598,14 @@ extern "C" {
     INIT_ID(__bytes__), \
     INIT_ID(__call__), \
     INIT_ID(__cantrace__), \
+    INIT_ID(__ceil__), \
     INIT_ID(__class__), \
     INIT_ID(__class_getitem__), \
     INIT_ID(__classcell__), \
     INIT_ID(__classdict__), \
     INIT_ID(__classdictcell__), \
     INIT_ID(__complex__), \
+    INIT_ID(__conditional_annotations__), \
     INIT_ID(__contains__), \
     INIT_ID(__ctypes_from_outparam__), \
     INIT_ID(__del__), \
@@ -618,6 +623,7 @@ extern "C" {
     INIT_ID(__file__), \
     INIT_ID(__firstlineno__), \
     INIT_ID(__float__), \
+    INIT_ID(__floor__), \
     INIT_ID(__floordiv__), \
     INIT_ID(__format__), \
     INIT_ID(__fspath__), \
@@ -723,6 +729,7 @@ extern "C" {
     INIT_ID(__subclasscheck__), \
     INIT_ID(__subclasshook__), \
     INIT_ID(__truediv__), \
+    INIT_ID(__trunc__), \
     INIT_ID(__type_params__), \
     INIT_ID(__typing_is_unpacked_typevartuple__), \
     INIT_ID(__typing_prepare_subst__), \
@@ -746,6 +753,7 @@ extern "C" {
     INIT_ID(_feature_version), \
     INIT_ID(_field_types), \
     INIT_ID(_fields_), \
+    INIT_ID(_filters), \
     INIT_ID(_finalizing), \
     INIT_ID(_find_and_load), \
     INIT_ID(_fix_up_module), \
@@ -753,6 +761,7 @@ extern "C" {
     INIT_ID(_get_sourcefile), \
     INIT_ID(_handle_fromlist), \
     INIT_ID(_initializing), \
+    INIT_ID(_internal_use), \
     INIT_ID(_io), \
     INIT_ID(_is_text_encoding), \
     INIT_ID(_isatty_open_only), \
@@ -784,7 +793,9 @@ extern "C" {
     INIT_ID(aggregate_class), \
     INIT_ID(alias), \
     INIT_ID(align), \
+    INIT_ID(all), \
     INIT_ID(allow_code), \
+    INIT_ID(any), \
     INIT_ID(append), \
     INIT_ID(arg), \
     INIT_ID(argdefs), \
@@ -803,6 +814,7 @@ extern "C" {
     INIT_ID(before), \
     INIT_ID(big), \
     INIT_ID(binary_form), \
+    INIT_ID(bit_offset), \
     INIT_ID(bit_size), \
     INIT_ID(block), \
     INIT_ID(bound), \
@@ -813,6 +825,8 @@ extern "C" {
     INIT_ID(buffers), \
     INIT_ID(bufsize), \
     INIT_ID(builtins), \
+    INIT_ID(byte_offset), \
+    INIT_ID(byte_size), \
     INIT_ID(byteorder), \
     INIT_ID(bytes), \
     INIT_ID(bytes_per_sep), \
@@ -979,6 +993,7 @@ extern "C" {
     INIT_ID(hi), \
     INIT_ID(hook), \
     INIT_ID(hour), \
+    INIT_ID(id), \
     INIT_ID(ident), \
     INIT_ID(identity_hint), \
     INIT_ID(ignore), \
@@ -1125,6 +1140,7 @@ extern "C" {
     INIT_ID(origin), \
     INIT_ID(out_fd), \
     INIT_ID(outgoing), \
+    INIT_ID(outpath), \
     INIT_ID(overlapped), \
     INIT_ID(owner), \
     INIT_ID(pages), \
@@ -1180,6 +1196,7 @@ extern "C" {
     INIT_ID(salt), \
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \
+    INIT_ID(script), \
     INIT_ID(second), \
     INIT_ID(security_attributes), \
     INIT_ID(seek), \
@@ -1228,6 +1245,7 @@ extern "C" {
     INIT_ID(strict_mode), \
     INIT_ID(string), \
     INIT_ID(sub_key), \
+    INIT_ID(subcalls), \
     INIT_ID(symmetric_difference_update), \
     INIT_ID(tabsize), \
     INIT_ID(tag), \
@@ -1245,8 +1263,10 @@ extern "C" {
     INIT_ID(threading), \
     INIT_ID(throw), \
     INIT_ID(timeout), \
+    INIT_ID(timer), \
     INIT_ID(times), \
     INIT_ID(timetuple), \
+    INIT_ID(timeunit), \
     INIT_ID(top), \
     INIT_ID(trace_callback), \
     INIT_ID(traceback), \

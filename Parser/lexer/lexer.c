@@ -140,7 +140,7 @@ set_fstring_expr(struct tok_state* tok, struct token *token, char c) {
         for (i = 0, j = 0; i < input_length; i++) {
             if (tok_mode->last_expr_buffer[i] == '#') {
                 // Skip characters until newline or end of string
-                while (tok_mode->last_expr_buffer[i] != '\0' && i < input_length) {
+                while (i < input_length && tok_mode->last_expr_buffer[i] != '\0') {
                     if (tok_mode->last_expr_buffer[i] == '\n') {
                         result[j++] = tok_mode->last_expr_buffer[i];
                         break;
@@ -211,9 +211,11 @@ _PyLexer_update_fstring_expr(struct tok_state *tok, char cur)
             break;
         case '}':
         case '!':
+            tok_mode->last_expr_end = strlen(tok->start);
+            break;
         case ':':
             if (tok_mode->last_expr_end == -1) {
-                tok_mode->last_expr_end = strlen(tok->start);
+               tok_mode->last_expr_end = strlen(tok->start);
             }
             break;
         default:
@@ -306,9 +308,7 @@ verify_end_of_number(struct tok_state *tok, int c, const char *kind) {
     return 1;
 }
 
-/* Verify that the identifier follows PEP 3131.
-   All identifier strings are guaranteed to be "ready" unicode objects.
- */
+/* Verify that the identifier follows PEP 3131. */
 static int
 verify_identifier(struct tok_state *tok)
 {
@@ -329,11 +329,7 @@ verify_identifier(struct tok_state *tok)
         return 0;
     }
     Py_ssize_t invalid = _PyUnicode_ScanIdentifier(s);
-    if (invalid < 0) {
-        Py_DECREF(s);
-        tok->done = E_ERROR;
-        return 0;
-    }
+    assert(invalid >= 0);
     assert(PyUnicode_GET_LENGTH(s) > 0);
     if (invalid < PyUnicode_GET_LENGTH(s)) {
         Py_UCS4 ch = PyUnicode_READ_CHAR(s, invalid);
@@ -1345,6 +1341,14 @@ f_string_middle:
             // it means that the format spec ends here and we should
             // return to the regular mode.
             if (in_format_spec && c == '\n') {
+                if (current_tok->f_string_quote_size == 1) {
+                    return MAKE_TOKEN(
+                        _PyTokenizer_syntaxerror(
+                            tok,
+                            "f-string: newlines are not allowed in format specifiers for single quoted f-strings"
+                        )
+                    );
+                }
                 tok_backup(tok, c);
                 TOK_GET_MODE(tok)->kind = TOK_REGULAR_MODE;
                 current_tok->in_format_spec = 0;

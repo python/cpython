@@ -54,6 +54,7 @@ can be customized by end users easily.
 
    import os
    os.remove("example.ini")
+   os.remove("override.ini")
 
 
 Quick Start
@@ -941,7 +942,13 @@ interpolation if an option used is not defined elsewhere. ::
 ConfigParser Objects
 --------------------
 
-.. class:: ConfigParser(defaults=None, dict_type=dict, allow_no_value=False, delimiters=('=', ':'), comment_prefixes=('#', ';'), inline_comment_prefixes=None, strict=True, empty_lines_in_values=True, default_section=configparser.DEFAULTSECT, interpolation=BasicInterpolation(), converters={})
+.. class:: ConfigParser(defaults=None, dict_type=dict, allow_no_value=False, *, \
+                        delimiters=('=', ':'), comment_prefixes=('#', ';'), \
+                        inline_comment_prefixes=None, strict=True, \
+                        empty_lines_in_values=True, \
+                        default_section=configparser.DEFAULTSECT, \
+                        interpolation=BasicInterpolation(), converters={}, \
+                        allow_unnamed_section=False)
 
    The main configuration parser.  When *defaults* is given, it is initialized
    into the dictionary of intrinsic defaults.  When *dict_type* is given, it
@@ -988,6 +995,10 @@ ConfigParser Objects
    implementing the conversion from string to the desired datatype.  Every
    converter gets its own corresponding :meth:`!get*` method on the parser
    object and section proxies.
+
+   When *allow_unnamed_section* is ``True`` (default: ``False``),
+   the first section name can be omitted. See the
+   `"Unnamed Sections" section <#unnamed-sections>`_.
 
    It is possible to read several configurations into a single
    :class:`ConfigParser`, where the most recently added configuration has the
@@ -1037,6 +1048,9 @@ ConfigParser Objects
    .. versionchanged:: 3.13
       Raise a :exc:`MultilineContinuationError` when *allow_no_value* is
       ``True``, and a key without a value is continued with an indented line.
+
+   .. versionchanged:: 3.13
+      The *allow_unnamed_section* argument was added.
 
    .. method:: defaults()
 
@@ -1230,6 +1244,10 @@ ConfigParser Objects
       *space_around_delimiters* is true, delimiters between
       keys and values are surrounded by spaces.
 
+      .. versionchanged:: 3.14
+         Raises InvalidWriteError if this would write a representation which cannot
+         be accurately parsed by a future :meth:`read` call from this parser.
+
    .. note::
 
       Comments in the original configuration file are not preserved when
@@ -1294,17 +1312,29 @@ RawConfigParser Objects
                            comment_prefixes=('#', ';'), \
                            inline_comment_prefixes=None, strict=True, \
                            empty_lines_in_values=True, \
-                           default_section=configparser.DEFAULTSECT[, \
-                           interpolation])
+                           default_section=configparser.DEFAULTSECT, \
+                           interpolation=BasicInterpolation(), converters={}, \
+                           allow_unnamed_section=False)
 
    Legacy variant of the :class:`ConfigParser`.  It has interpolation
    disabled by default and allows for non-string section names, option
    names, and values via its unsafe ``add_section`` and ``set`` methods,
    as well as the legacy ``defaults=`` keyword argument handling.
 
+   .. versionchanged:: 3.2
+      *allow_no_value*, *delimiters*, *comment_prefixes*, *strict*,
+      *empty_lines_in_values*, *default_section* and *interpolation* were
+      added.
+
+   .. versionchanged:: 3.5
+      The *converters* argument was added.
+
    .. versionchanged:: 3.8
       The default *dict_type* is :class:`dict`, since it now preserves
       insertion order.
+
+   .. versionchanged:: 3.13
+      The *allow_unnamed_section* argument was added.
 
    .. note::
       Consider using :class:`ConfigParser` instead which checks types of
@@ -1432,6 +1462,17 @@ Exceptions
    :const:`UNNAMED_SECTION` without enabling it.
 
     .. versionadded:: 3.14
+
+.. exception:: InvalidWriteError
+
+   Exception raised when an attempted :meth:`ConfigParser.write` would not be parsed
+   accurately with a future :meth:`ConfigParser.read` call.
+
+   Ex: Writing a key beginning with the :attr:`ConfigParser.SECTCRE` pattern
+   would parse as a section header when read. Attempting to write this will raise
+   this exception.
+
+   .. versionadded:: 3.14
 
 .. rubric:: Footnotes
 

@@ -1,3 +1,0 @@
-Fix integer conversion in :func:`os.major`, :func:`os.minor`, and
-:func:`os.makedev`. Support device numbers larger than ``2**63-1``. Support
-non-existent device number (``NODEV``).

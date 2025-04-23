@@ -71,7 +71,7 @@ whose size is determined when the object is allocated.
 #define PyObject_HEAD_INIT(type)    \
     {                               \
         0,                          \
-        0,                          \
+        _Py_STATICALLY_ALLOCATED_FLAG, \
         { 0 },                      \
         0,                          \
         _Py_IMMORTAL_REFCNT_LOCAL,  \
@@ -81,7 +81,7 @@ whose size is determined when the object is allocated.
 #else
 #define PyObject_HEAD_INIT(type)    \
     {                               \
-        { _Py_IMMORTAL_REFCNT },    \
+        { _Py_STATIC_IMMORTAL_INITIAL_REFCNT },    \
         (type)                      \
     },
 #endif
@@ -120,9 +120,21 @@ struct _object {
     __pragma(warning(disable: 4201))
 #endif
     union {
-       Py_ssize_t ob_refcnt;
 #if SIZEOF_VOID_P > 4
-       PY_UINT32_T ob_refcnt_split[2];
+        PY_INT64_T ob_refcnt_full; /* This field is needed for efficient initialization with Clang on ARM */
+        struct {
+#  if PY_BIG_ENDIAN
+            uint16_t ob_flags;
+            uint16_t ob_overflow;
+            uint32_t ob_refcnt;
+#  else
+            uint32_t ob_refcnt;
+            uint16_t ob_overflow;
+            uint16_t ob_flags;
+#  endif
+        };
+#else
+        Py_ssize_t ob_refcnt;
 #endif
     };
 #ifdef _MSC_VER
@@ -142,7 +154,7 @@ struct _object {
     // trashcan mechanism as a linked list pointer and by the GC to store the
     // computed "gc_refs" refcount.
     uintptr_t ob_tid;
-    uint16_t _padding;
+    uint16_t ob_flags;
     PyMutex ob_mutex;           // per-object lock
     uint8_t ob_gc_bits;         // gc-related state
     uint32_t ob_ref_local;      // local reference count
@@ -192,7 +204,7 @@ _Py_ThreadId(void)
     __asm__("movq %%gs:0, %0" : "=r" (tid));  // x86_64 macOSX uses GS
 #elif defined(__x86_64__)
    __asm__("movq %%fs:0, %0" : "=r" (tid));  // x86_64 Linux, BSD uses FS
-#elif defined(__arm__)
+#elif defined(__arm__) && __ARM_ARCH >= 7
     __asm__ ("mrc p15, 0, %0, c13, c0, 3\nbic %0, %0, #3" : "=r" (tid));
 #elif defined(__aarch64__) && defined(__APPLE__)
     __asm__ ("mrs %0, tpidrro_el0" : "=r" (tid));
@@ -673,7 +685,7 @@ PyAPI_DATA(PyObject) _Py_NotImplementedStruct; /* Don't use this directly */
 typedef enum {
     PYGEN_RETURN = 0,
     PYGEN_ERROR = -1,
-    PYGEN_NEXT = 1,
+    PYGEN_NEXT = 1
 } PySendResult;
 #endif
 
@@ -794,6 +806,10 @@ static inline int PyType_CheckExact(PyObject *op) {
 
 #if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030d0000
 PyAPI_FUNC(PyObject *) PyType_GetModuleByDef(PyTypeObject *, PyModuleDef *);
+#endif
+
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x030e0000
+PyAPI_FUNC(int) PyType_Freeze(PyTypeObject *type);
 #endif
 
 #ifdef __cplusplus
