@@ -15,6 +15,7 @@
 #  include <winioctl.h>             // FILE_DEVICE_* constants
 #  include "pycore_fileutils_windows.h" // FILE_STAT_BASIC_INFORMATION
 #  define fdopen _fdopen
+#  define dup _dup
 #  if defined(MS_WINDOWS_GAMES) && !defined(MS_WINDOWS_DESKTOP)
 #    define PATHCCH_ALLOW_LONG_PATHS 0x01
 #  else
@@ -2063,7 +2064,8 @@ _Py_write_noraise(int fd, const void *buf, size_t count)
 int
 _Py_fdprintf(int fd, const char *fmt, ...)
 {
-    FILE *handle = fdopen(fd, "a");
+    int newfd = dup(fd);
+    FILE *handle = fdopen(newfd, "a");
     va_list vargs;
     va_start(vargs, fmt);
     int res = vfprintf(handle, fmt, vargs);
