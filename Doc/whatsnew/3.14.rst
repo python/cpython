@@ -954,7 +954,7 @@ mimetypes
 
   * :rfc:`2361`: Change type for ``.avi`` to ``video/vnd.avi``
     and for ``.wav`` to ``audio/vnd.wave``
-  * :rfc:`4337`: Add MPEG-4 ``audio/mp4`` (``.m4a``))
+  * :rfc:`4337`: Add MPEG-4 ``audio/mp4`` (``.m4a``)
   * :rfc:`5334`: Add Ogg media (``.oga``, ``.ogg`` and ``.ogx``)
   * :rfc:`9639`: Add FLAC ``audio/flac`` (``.flac``)
   * De facto: Add WebM ``audio/webm`` (``.weba``)
@@ -968,6 +968,7 @@ mimetypes
     Add EPUB ``application/epub+zip`` (``.epub``)
   * Add Android Package ``application/vnd.android.package-archive`` (``.apk``)
     when not strict
+  * Add M4V ``video/x-m4v`` (``.m4v``)
   * Add PHP ``application/x-httpd-php`` (``.php``)
   * Add RAR ``application/vnd.rar`` (``.rar``)
 

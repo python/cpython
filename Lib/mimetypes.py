@@ -651,6 +651,7 @@ def _default_mime_types():
         '.qt'     : 'video/quicktime',
         '.webm'   : 'video/webm',
         '.avi'    : 'video/vnd.avi',
+        '.m4v'    : 'video/x-m4v',
         '.movie'  : 'video/x-sgi-movie',
         }
 
