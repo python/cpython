@@ -226,6 +226,7 @@ class MimeTypesTestCase(unittest.TestCase):
             for mime_type, ext in (
                 ("application/epub+zip", ".epub"),
                 ("application/octet-stream", ".bin"),
+                ("application/gzip", ".gz"),
                 ("application/ogg", ".ogx"),
                 ("application/postscript", ".ps"),
                 ("application/vnd.apple.mpegurl", ".m3u"),

@@ -466,6 +466,7 @@ def _default_mime_types():
         '.js'     : 'text/javascript',
         '.mjs'    : 'text/javascript',
         '.epub'   : 'application/epub+zip',
+        '.gz'     : 'application/gzip',
         '.json'   : 'application/json',
         '.webmanifest': 'application/manifest+json',
         '.doc'    : 'application/msword',
