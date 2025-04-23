@@ -1195,6 +1195,29 @@ _PyEval_DisableGIL(PyThreadState *tstate)
 #if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
 // Note that this function is inline to avoid creating a PLT entry
 // that would be an easy target for a ROP gadget.
+static inline int run_remote_debugger_source(PyObject *source)
+{
+    const char *str = PyBytes_AsString(source);
+    if (!str) {
+        return -1;
+    }
+
+    PyObject *ns = PyDict_New();
+    if (!ns) {
+        return -1;
+    }
+
+    PyObject *res = PyRun_String(str, Py_file_input, ns, ns);
+    Py_DECREF(ns);
+    if (!res) {
+        return -1;
+    }
+    Py_DECREF(res);
+    return 0;
+}
+
+// Note that this function is inline to avoid creating a PLT entry
+// that would be an easy target for a ROP gadget.
 static inline void run_remote_debugger_script(const char *path)
 {
     if (0 != PySys_Audit("remote_debugger_script", "s", path)) {
@@ -1225,21 +1248,10 @@ static inline void run_remote_debugger_script(const char *path)
     Py_DECREF(fileobj);
 
     if (source) {
-        const char *str = PyBytes_AsString(source);
-        if (str) {
-            // PyRun_SimpleString() automatically raises an unraisable
-            // exception if it fails so we don't need to check the return value.
-            PyRun_SimpleString(str);
-        } else {
-            PyErr_FormatUnraisable("Error reading debugger script %s", path);
+        if (0 != run_remote_debugger_source(source)) {
+            PyErr_FormatUnraisable("Error executing debugger script %s", path);
         }
         Py_DECREF(source);
-    }
-
-    // Just in case something went wrong, don't leave this function
-    // with an unhandled exception.
-    if (PyErr_Occurred()) {
-        PyErr_FormatUnraisable("Error executing debugger script %s", path);
     }
 }
 
