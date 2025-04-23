@@ -4,6 +4,7 @@
 #include "Python.h"
 #include "internal/pycore_runtime.h"
 #include "internal/pycore_ceval.h"
+#include "internal/pycore_remote_debug.h"
 
 #ifdef __linux__
 #    include <elf.h>
@@ -60,17 +61,41 @@
 
 #if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
 
-// Define a platform-independent process handle structure
-typedef struct {
-    pid_t pid;
-#ifdef MS_WINDOWS
-    HANDLE hProcess;
-#endif
-} proc_handle_t;
-
-// Initialize the process handle
 static int
 init_proc_handle(proc_handle_t *handle, pid_t pid) {
+    return _Py_RemoteDebug_InitProcHandle(handle, pid);
+}
+
+static void
+cleanup_proc_handle(proc_handle_t *handle) {
+    _Py_RemoteDebug_CleanupProcHandle(handle);
+}
+
+static int
+read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* dst)
+{
+    return _Py_RemoteDebug_ReadRemoteMemory(handle, remote_address, len, dst);
+}
+
+static int
+write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
+{
+    return _Py_RemoteDebug_WriteRemoteMemory(handle, remote_address, len, src);
+}
+
+static int
+read_offsets(
+    proc_handle_t *handle,
+    uintptr_t *runtime_start_address,
+    _Py_DebugOffsets* debug_offsets
+) {
+    return _Py_RemoteDebug_ReadDebugOffsets(handle, runtime_start_address, debug_offsets);
+}
+
+
+// Initialize the process handle
+int
+_Py_RemoteDebug_InitProcHandle(proc_handle_t *handle, pid_t pid) {
     handle->pid = pid;
 #ifdef MS_WINDOWS
     handle->hProcess = OpenProcess(
@@ -85,8 +110,8 @@ init_proc_handle(proc_handle_t *handle, pid_t pid) {
 }
 
 // Clean up the process handle
-static void
-cleanup_proc_handle(proc_handle_t *handle) {
+void
+_Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
 #ifdef MS_WINDOWS
     if (handle->hProcess != NULL) {
         CloseHandle(handle->hProcess);
@@ -656,8 +681,8 @@ search_windows_map_for_section(proc_handle_t* handle, const char* secname, const
 #endif // MS_WINDOWS
 
 // Get the PyRuntime section address for any platform
-static uintptr_t
-get_py_runtime(proc_handle_t* handle)
+PyAPI_FUNC(uintptr_t)
+_Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
 {
     uintptr_t address = 0;
 
@@ -688,9 +713,33 @@ get_py_runtime(proc_handle_t* handle)
     return address;
 }
 
+// Get the PyAsyncioDebug section address for any platform
+uintptr_t
+_Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
+{
+    uintptr_t address = 0;
+
+#ifdef MS_WINDOWS
+    // On Windows, search for asyncio debug in executable or DLL
+    address = search_windows_map_for_section(handle, "AsyncioDebug", L"_asyncio.cpython");
+#elif defined(__linux__)
+    // On Linux, search for asyncio debug in executable or DLL
+    address = search_linux_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython");
+#else
+    // On macOS, try libpython first, then fall back to python
+    address = search_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython");
+    if (address == 0) {
+        PyErr_Clear();
+        address = search_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython");
+    }
+#endif
+
+    return address;
+}
+
 // Platform-independent memory read function
-static int
-read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* dst)
+int
+_Py_RemoteDebug_ReadRemoteMemory(proc_handle_t *handle, uintptr_t remote_address, size_t len, void* dst)
 {
 #ifdef MS_WINDOWS
     SIZE_T read_bytes = 0;
@@ -753,8 +802,8 @@ read_memory(proc_handle_t *handle, uint64_t remote_address, size_t len, void* ds
 }
 
 // Platform-independent memory write function
-static int
-write_memory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
+int
+_Py_RemoteDebug_WriteRemoteMemory(proc_handle_t *handle, uintptr_t remote_address, size_t len, const void* src)
 {
 #ifdef MS_WINDOWS
     SIZE_T written = 0;
@@ -880,13 +929,13 @@ ensure_debug_offset_compatibility(const _Py_DebugOffsets* debug_offsets)
     return 0;
 }
 
-static int
-read_offsets(
+int
+_Py_RemoteDebug_ReadDebugOffsets(
     proc_handle_t *handle,
     uintptr_t *runtime_start_address,
     _Py_DebugOffsets* debug_offsets
 ) {
-    *runtime_start_address = get_py_runtime(handle);
+    *runtime_start_address = _Py_RemoteDebug_GetPyRuntimeAddress(handle);
     if (!*runtime_start_address) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(
@@ -895,7 +944,7 @@ read_offsets(
         return -1;
     }
     size_t size = sizeof(struct _Py_DebugOffsets);
-    if (0 != read_memory(handle, *runtime_start_address, size, debug_offsets)) {
+    if (0 != _Py_RemoteDebug_ReadRemoteMemory(handle, *runtime_start_address, size, debug_offsets)) {
         return -1;
     }
     if (ensure_debug_offset_compatibility(debug_offsets)) {
@@ -1097,3 +1146,4 @@ _PySysRemoteDebug_SendExec(int pid, int tid, const char *debugger_script_path)
     return rc;
 #endif
 }
+

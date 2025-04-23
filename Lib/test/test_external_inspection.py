@@ -24,10 +24,13 @@ def _make_test_script(script_dir, script_basename, source):
     importlib.invalidate_caches()
     return to_return
 
+skip_if_not_supported = unittest.skipIf((sys.platform != "darwin"
+                                         and sys.platform != "linux"
+                                         and sys.platform != "win32"),
+                                        "Test only runs on Linux, Windows and MacOS")
 class TestGetStackTrace(unittest.TestCase):
 
-    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux",
-                     "Test only runs on Linux and MacOS")
+    @skip_if_not_supported
     @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
                      "Test only runs on Linux with process_vm_readv support")
     def test_remote_stack_trace(self):
@@ -79,8 +82,7 @@ class TestGetStackTrace(unittest.TestCase):
             ]
             self.assertEqual(stack_trace, expected_stack_trace)
 
-    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux",
-                     "Test only runs on Linux and MacOS")
+    @skip_if_not_supported
     @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
                      "Test only runs on Linux with process_vm_readv support")
     def test_async_remote_stack_trace(self):
@@ -169,8 +171,7 @@ class TestGetStackTrace(unittest.TestCase):
                 ]
                 self.assertEqual(stack_trace, expected_stack_trace)
 
-    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux",
-                     "Test only runs on Linux and MacOS")
+    @skip_if_not_supported
     @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
                      "Test only runs on Linux with process_vm_readv support")
     def test_asyncgen_remote_stack_trace(self):
@@ -227,8 +228,7 @@ class TestGetStackTrace(unittest.TestCase):
             ]
             self.assertEqual(stack_trace, expected_stack_trace)
 
-    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux",
-                     "Test only runs on Linux and MacOS")
+    @skip_if_not_supported
     @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
                      "Test only runs on Linux with process_vm_readv support")
     def test_async_gather_remote_stack_trace(self):
@@ -287,8 +287,7 @@ class TestGetStackTrace(unittest.TestCase):
             ]
             self.assertEqual(stack_trace, expected_stack_trace)
 
-    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux",
-                     "Test only runs on Linux and MacOS")
+    @skip_if_not_supported
     @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
                      "Test only runs on Linux with process_vm_readv support")
     def test_async_staggered_race_remote_stack_trace(self):
@@ -350,8 +349,7 @@ class TestGetStackTrace(unittest.TestCase):
             ]
             self.assertEqual(stack_trace, expected_stack_trace)
 
-    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux",
-                     "Test only runs on Linux and MacOS")
+    @skip_if_not_supported
     @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
                      "Test only runs on Linux with process_vm_readv support")
     def test_async_global_awaited_by(self):
@@ -470,8 +468,7 @@ class TestGetStackTrace(unittest.TestCase):
                 p.terminate()
                 p.wait(timeout=SHORT_TIMEOUT)
 
-    @unittest.skipIf(sys.platform != "darwin" and sys.platform != "linux",
-                     "Test only runs on Linux and MacOS")
+    @skip_if_not_supported
     @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
                      "Test only runs on Linux with process_vm_readv support")
     def test_self_trace(self):
