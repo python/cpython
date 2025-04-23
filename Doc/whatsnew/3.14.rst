@@ -304,8 +304,8 @@ Improved error messages
      SyntaxError: invalid syntax. Did you mean 'raise'?
 
   While the feature focuses on the most common cases, some variations of
-  misspellings may still result in regular syntax errors. (Contributed by Pablo
-  Galindo in :gh:`132449`.)
+  misspellings may still result in regular syntax errors.
+  (Contributed by Pablo Galindo in :gh:`132449`.)
 
 * When unpacking assignment fails due to incorrect number of variables, the
   error message prints the received number of values in more cases than before.
