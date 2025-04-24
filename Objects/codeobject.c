@@ -1926,6 +1926,69 @@ finally:
 
 
 const char *
+_PyCode_CheckStatelessValues(PyCodeObject *co, _PyCode_var_counts_t *counts)
+{
+    if (counts->locals.cells.total > 0) {
+        return "nesting not supported";
+    }
+    if (counts->numfree > 0) {  // There's a closure.
+        return "closures not supported";
+    }
+    assert(counts->locals.hidden.total == 0);
+
+    if (counts->unbound.globals.numglobal > 0) {
+        return "globals not supported";
+    }
+    else if (counts->unbound.globals.numbuiltin > 0
+             && counts->unbound.globals.numunknown > 0) {
+        return "globals not supported";
+    }
+    // Otherwise we don't check counts.unbound.globals.numunknown since we can't
+    // distinguish beween globals and builtins here.
+
+    // Check other factors.
+    // We may consider relaxing these if it becomes a problem.
+    if (_PyCode_HAS_EXECUTORS(co) || _PyCode_HAS_INSTRUMENTATION(co)) {
+        return "only basic code objects are supported";
+    }
+    if (co->_co_monitoring != NULL) {
+        return "only basic code objects are supported";
+    }
+    if (co->co_extra != NULL) {
+        return "only basic code objects are supported";
+    }
+
+    return NULL;
+}
+
+int
+_PyCode_VerifyStateless(PyThreadState *tstate,
+                        PyCodeObject *co, PyObject *globalnames,
+                        PyObject *globalsns, PyObject *builtinsns)
+{
+    const char *errmsg = _PyCode_CheckPureFunction(co);
+    if (errmsg != NULL) {
+        _PyErr_SetString(tstate, PyExc_TypeError, errmsg);
+        return -1;
+    }
+   _PyCode_var_counts_t counts = {0};
+    _PyCode_GetVarCounts(co, &counts);
+    if (_PyCode_SetUnboundVarCounts(
+                            tstate, co, &counts, globalnames, NULL,
+                            globalsns, builtinsns) < 0)
+    {
+        return -1;
+    }
+    errmsg = _PyCode_CheckStatelessValues(co, &counts);
+    if (errmsg != NULL) {
+        _PyErr_SetString(tstate, PyExc_ValueError, errmsg);
+        return -1;
+    }
+    return 0;
+}
+
+
+const char *
 _PyCode_CheckPureFunction(PyCodeObject *co)
 {
     if (co->co_flags & CO_GENERATOR) {
@@ -1942,7 +2005,6 @@ _PyCode_CheckPureFunction(PyCodeObject *co)
     }
     return NULL;
 }
-
 
 /* Here "value" means a non-None value, since a bare return is identical
  * to returning None explicitly.  Likewise a missing return statement

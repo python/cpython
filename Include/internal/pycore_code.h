@@ -616,6 +616,17 @@ PyAPI_FUNC(int) _PyCode_SetUnboundVarCounts(
         PyObject *globalsns,
         PyObject *builtinsns);
 
+PyAPI_FUNC(const char *) _PyCode_CheckStatelessTypes(PyCodeObject *);
+PyAPI_FUNC(const char *) _PyCode_CheckStatelessValues(
+        PyCodeObject *,
+        _PyCode_var_counts_t *);
+PyAPI_FUNC(int) _PyCode_VerifyStateless(
+        PyThreadState *,
+        PyCodeObject *,
+        PyObject *globalnames,
+        PyObject *globalsns,
+        PyObject *builtinsns);
+
 PyAPI_FUNC(const char *) _PyCode_CheckPureFunction(PyCodeObject *);
 PyAPI_FUNC(int) _PyCode_ReturnsOnlyNone(PyCodeObject *);
 
