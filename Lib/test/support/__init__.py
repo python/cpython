@@ -2261,7 +2261,7 @@ def _findwheel(pkgname):
     filenames = os.listdir(wheel_dir)
     filenames = sorted(filenames, reverse=True)  # approximate "newest" first
     for filename in filenames:
-        # filename is like 'setuptools-67.6.1-py3-none-any.whl'
+        # filename is like 'setuptools-{version}-py3-none-any.whl'
         if not filename.endswith(".whl"):
             continue
         prefix = pkgname + '-'
@@ -2270,8 +2270,8 @@ def _findwheel(pkgname):
     raise FileNotFoundError(f"No wheel for {pkgname} found in {wheel_dir}")
 
 
-# Context manager that creates a virtual environment, install setuptools and wheel in it
-# and returns the path to the venv directory and the path to the python executable
+# Context manager that creates a virtual environment, install setuptools in it,
+# and returns the paths to the venv directory and the python executable
 @contextlib.contextmanager
 def setup_venv_with_pip_setuptools_wheel(venv_dir):
     import subprocess
@@ -2294,10 +2294,10 @@ def setup_venv_with_pip_setuptools_wheel(venv_dir):
         else:
             python = os.path.join(venv, 'bin', python_exe)
 
-        cmd = [python, '-X', 'dev',
+        cmd = (python, '-X', 'dev',
                '-m', 'pip', 'install',
                _findwheel('setuptools'),
-               _findwheel('wheel')]
+               _findwheel('wheel'))
         if verbose:
             print()
             print('Run:', ' '.join(cmd))
