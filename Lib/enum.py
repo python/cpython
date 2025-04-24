@@ -734,9 +734,7 @@ class EnumType(type):
         if issubclass(cls, Flag):
             try:
                 result = cls._missing_(value)
-                if isinstance(result, cls):
-                    return True
-                return False
+                return isinstance(result, cls)
             except ValueError:
                 pass
         return (
