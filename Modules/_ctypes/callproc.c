@@ -648,14 +648,14 @@ union result {
     int i;
     long l;
     long long q;
-    long double D;
+    long double g;
     double d;
     float f;
     void *p;
 #if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-    double complex C;
-    float complex E;
-    long double complex F;
+    double complex D;
+    float complex F;
+    long double complex G;
 #endif
 };
 

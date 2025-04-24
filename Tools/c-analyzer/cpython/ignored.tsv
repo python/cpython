@@ -166,6 +166,7 @@ Python/sysmodule.c	-	_preinit_xoptions	-
 # thread-safety
 # XXX need race protection?
 Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
+Modules/faulthandler.c	faulthandler_dump_c_stack	reentrant	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	fatal_error	reentrant	-
 
