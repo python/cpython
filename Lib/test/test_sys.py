@@ -2125,6 +2125,19 @@ raise Exception("Remote script exception")
         self.assertIn(b"Remote script exception", stderr)
         self.assertEqual(stdout.strip(), b"Target process running...")
 
+    def test_new_namespace_for_each_remote_exec(self):
+        """Test that each remote_exec call gets its own namespace."""
+        script = textwrap.dedent(
+            """
+            assert globals() is not __import__("__main__").__dict__
+            print("Remote script executed successfully!")
+            """
+        )
+        returncode, stdout, stderr = self._run_remote_exec_test(script)
+        self.assertEqual(returncode, 0)
+        self.assertEqual(stderr, b"")
+        self.assertIn(b"Remote script executed successfully", stdout)
+
     def test_remote_exec_disabled_by_env(self):
         """Test remote exec is disabled when PYTHON_DISABLE_REMOTE_DEBUG is set"""
         env = os.environ.copy()
