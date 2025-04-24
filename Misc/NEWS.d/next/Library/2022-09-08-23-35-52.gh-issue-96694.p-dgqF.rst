@@ -1,0 +1,2 @@
+The ``fcntl`` module has a new ``getlk`` wrapper to retrieve information on
+conflicting locks through the fcntl(F_GETLK) call.
