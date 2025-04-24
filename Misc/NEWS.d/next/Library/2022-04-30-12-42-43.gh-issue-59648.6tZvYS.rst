@@ -1,1 +1,2 @@
-Nanosecond support for datetime
+Add nanosecond precision support for :class:`datetime.datetime` and
+  :class:`datetime.time` objects.
