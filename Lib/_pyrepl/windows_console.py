@@ -109,6 +109,9 @@ CTRL_ACTIVE = 0x04 | 0x08
 WAIT_TIMEOUT = 0x102
 WAIT_FAILED = 0xFFFFFFFF
 
+# from winbase.h
+INFINITE = 0xFFFFFFFF
+
 
 class _error(Exception):
     pass
@@ -523,7 +526,11 @@ class WindowsConsole(Console):
 
     def wait(self, timeout: float | None) -> bool:
         """Wait for an event."""
-        ret = WaitForSingleObject(InHandle, int(timeout))
+        if timeout is None:
+            timeout = INFINITE
+        else:
+            timeout = int(timeout)
+        ret = WaitForSingleObject(InHandle, timeout)
         if ret == WAIT_FAILED:
             raise WinError(ctypes.get_last_error())
 
