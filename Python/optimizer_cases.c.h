@@ -1918,9 +1918,26 @@
             break;
         }
 
+        case _GUARD_CALLABLE_TUPLE_1: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-3];
+            if (sym_get_const(ctx, callable) == (PyObject *)&PyTuple_Type) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_const(callable, (PyObject *)&PyTuple_Type);
+            break;
+        }
+
         case _CALL_TUPLE_1: {
+            JitOptSymbol *arg;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            arg = stack_pointer[-1];
+            if (sym_matches_type(arg, &PyTuple_Type)) {
+                res = arg;
+            }
+            else {
+                res = sym_new_type(ctx, &PyTuple_Type);
+            }
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
