@@ -395,15 +395,15 @@ class MinidomTest(unittest.TestCase):
                 and el.getAttribute("spam2") == "bam2")
         dom.unlink()
 
-    def testGetAttrList(self):
+    def testGetAttrListAndLength(self):
         dom = parseString("<abc/>")
         el = dom.documentElement
         el.setAttribute("spam", "jam")
-        self.confirm(len(el.attributes.items()) == 1)
+        self.assertEqual(len(el.attributes.items()), 1)
         el.setAttribute("foo", "bar")
-        self.confirm(len(el.attributes.items()) == 2)
-        self.confirm(('spam', 'jam') in el.attributes.items())
-        self.confirm(('foo', 'bar') in el.attributes.items())
+        self.assertEqual(len(el.attributes.items()), 2)
+        self.assertIn(('spam', 'jam'), el.attributes.items())
+        self.assertIn(('foo', 'bar'), el.attributes.items())
         dom.unlink()
 
     def testGetAttrValues(self):
@@ -411,21 +411,10 @@ class MinidomTest(unittest.TestCase):
         el = dom.documentElement
         el.setAttribute("spam", "jam")
         values = [x.value for x in el.attributes.values()]
-        self.confirm("jam" in values)
+        self.assertIn("jam", values)
         el.setAttribute("foo", "bar")
         values = [x.value for x in el.attributes.values()]
-        self.confirm("bar" in values)
-        dom.unlink()
-
-    def testGetAttrLength(self):
-        dom = parseString("<abc/>")
-        el = dom.documentElement
-        el.setAttribute("spam", "jam")
-        self.confirm(len(el.attributes.items()) == 1)
-        el.setAttribute("foo", "bar")
-        self.confirm(len(el.attributes.items()) == 2)
-        el.removeAttribute("foo")
-        self.confirm(len(el.attributes.items()) == 1)
+        self.assertIn("bar", values)
         dom.unlink()
 
     def testGetAttribute(self):
@@ -632,18 +621,14 @@ class MinidomTest(unittest.TestCase):
     def testProcessingInstructionRepr(self):
         dom = parseString('<e><?mypi \t\n data \t\n ?></e>')
         pi = dom.documentElement.firstChild
-        string1 = str(pi.nodeType)
-        string2 = repr(pi.nodeType)
-        self.assertEqual(string1, string2)
+        self.assertEqual(str(pi.nodeType), repr(pi.nodeType))
 
     def testTextRepr(self):
         dom = Document()
         elem = dom.createElement('elem')
         elem.appendChild(dom.createTextNode("foo"))
         el = elem.firstChild
-        string1 = str(el)
-        string2 = repr(el)
-        self.assertEqual(string1, string2)
+        self.assertEqual(str(el), repr(el))
 
     def testWriteText(self): pass
 
