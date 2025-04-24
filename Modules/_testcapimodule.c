@@ -2546,6 +2546,30 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_interp_refcount(PyObject *self, PyObject *unused)
+{
+    PyThreadState *save = PyThreadState_Get();
+    PyThreadState *tstate = Py_NewInterpreter();
+    assert(tstate == PyThreadState_Get());
+    PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
+    assert(interp != NULL);
+
+    assert(_PyInterpreterState_Refcount(interp) == 1);
+    PyInterpreterState *held = PyInterpreterState_Hold();
+    assert(_PyInterpreterState_Refcount(interp) == 2);
+    PyInterpreterState_Release(held);
+    assert(_PyInterpreterState_Refcount(interp) == 1);
+
+    held = PyInterpreterState_Hold();
+    Py_EndInterpreter(tstate);
+    PyThreadState_Swap(save);
+    assert(_PyInterpreterState_Refcount(interp) == 1);
+    PyInterpreterState_Release(held);
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2640,6 +2664,7 @@ static PyMethodDef TestMethods[] = {
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
+    {"test_interp_refcount", test_interp_refcount, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

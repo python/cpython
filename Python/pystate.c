@@ -3196,6 +3196,15 @@ _Py_GetMainConfig(void)
     return _PyInterpreterState_GetConfig(interp);
 }
 
+Py_ssize_t
+_PyInterpreterState_Refcount(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    Py_ssize_t refcount = _Py_atomic_load_ssize_relaxed(&interp->refcount);
+    assert(refcount > 0);
+    return refcount;
+}
+
 PyInterpreterState *
 PyInterpreterState_Hold(void)
 {
@@ -3208,9 +3217,6 @@ PyInterpreterState_Hold(void)
 void
 PyInterpreterState_Release(PyInterpreterState *interp)
 {
-    PyThreadState *tstate = PyThreadState_Get();
-    if (tstate->interp != interp) {
-        Py_FatalError("thread state has the wrong interpreter");
-    }
+    assert(interp != NULL);
     decref_interpreter(interp);
 }

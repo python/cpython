@@ -270,7 +270,10 @@ PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
  * incremented reference count. PyInterpreterState_Delete() won't delete the
  * full interpreter structure until the reference is released by
  * PyThreadState_Ensure() or PyInterpreterState_Release(). */
-PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Hold();
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Hold(void);
 
 /* Release a reference to an interpreter incremented by PyInterpreterState_Hold() */
 PyAPI_FUNC(void) PyInterpreterState_Release(PyInterpreterState *interp);
+
+// Export for '_testcapi' shared extension
+PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_Refcount(PyInterpreterState *interp);
