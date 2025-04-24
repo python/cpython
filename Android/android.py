@@ -22,9 +22,13 @@ from tempfile import TemporaryDirectory
 
 SCRIPT_NAME = Path(__file__).name
 ANDROID_DIR = Path(__file__).resolve().parent
-CHECKOUT = ANDROID_DIR.parent
+PYTHON_DIR = ANDROID_DIR.parent
+in_source_tree = (
+    ANDROID_DIR.name == "Android" and (PYTHON_DIR / "pyconfig.h.in").exists()
+)
+
 TESTBED_DIR = ANDROID_DIR / "testbed"
-CROSS_BUILD_DIR = CHECKOUT / "cross-build"
+CROSS_BUILD_DIR = PYTHON_DIR / "cross-build"
 
 HOSTS = ["aarch64-linux-android", "x86_64-linux-android"]
 APP_ID = "org.python.testbed"
@@ -74,39 +78,60 @@ def subdir(*parts, create=False):
 
 def run(command, *, host=None, env=None, log=True, **kwargs):
     kwargs.setdefault("check", True)
+
     if env is None:
         env = os.environ.copy()
-    original_env = env.copy()
-
     if host:
-        env_script = ANDROID_DIR / "android-env.sh"
-        env_output = subprocess.run(
-            f"set -eu; "
-            f"HOST={host}; "
-            f"PREFIX={subdir(host)}/prefix; "
-            f". {env_script}; "
-            f"export",
-            check=True, shell=True, text=True, stdout=subprocess.PIPE
-        ).stdout
-
-        for line in env_output.splitlines():
-            # We don't require every line to match, as there may be some other
-            # output from installing the NDK.
-            if match := re.search(
-                "^(declare -x |export )?(\\w+)=['\"]?(.*?)['\"]?$", line
-            ):
-                key, value = match[2], match[3]
-                if env.get(key) != value:
-                    print(line)
-                    env[key] = value
-
-        if env == original_env:
-            raise ValueError(f"Found no variables in {env_script.name} output:\n"
-                             + env_output)
+        env.update(android_env(host))
 
     if log:
         print(">", " ".join(map(str, command)))
     return subprocess.run(command, env=env, **kwargs)
+
+
+def print_env(context):
+    android_env(getattr(context, "host", None))
+
+
+def android_env(host):
+    if host:
+        prefix = subdir(host) / "prefix"
+    else:
+        prefix = ANDROID_DIR / "prefix"
+        sysconfigdata_files = prefix.glob("lib/python*/_sysconfigdata__android_*.py")
+        host = re.fullmatch(
+            r"_sysconfigdata__android_(.+).py", next(sysconfigdata_files).name
+        )[1]
+
+    env_script = ANDROID_DIR / "android-env.sh"
+    env_output = subprocess.run(
+        f"set -eu; "
+        f"export HOST={host}; "
+        f"PREFIX={prefix}; "
+        f". {env_script}; "
+        f"export",
+        check=True, shell=True, capture_output=True, text=True,
+    ).stdout
+
+    env = {}
+    for line in env_output.splitlines():
+        # We don't require every line to match, as there may be some other
+        # output from installing the NDK.
+        if match := re.search(
+            "^(declare -x |export )?(\\w+)=['\"]?(.*?)['\"]?$", line
+        ):
+            key, value = match[2], match[3]
+            if os.environ.get(key) != value:
+                env[key] = value
+
+    if not env:
+        raise ValueError(f"Found no variables in {env_script.name} output:\n"
+                         + env_output)
+
+    # Format the environment so it can be pasted into a shell.
+    for key, value in sorted(env.items()):
+        print(f"export {key}={shlex.quote(value)}")
+    return env
 
 
 def build_python_path():
@@ -127,7 +152,7 @@ def configure_build_python(context):
         clean("build")
     os.chdir(subdir("build", create=True))
 
-    command = [relpath(CHECKOUT / "configure")]
+    command = [relpath(PYTHON_DIR / "configure")]
     if context.args:
         command.extend(context.args)
     run(command)
@@ -168,7 +193,7 @@ def configure_host_python(context):
     os.chdir(host_dir)
     command = [
         # Basic cross-compiling configuration
-        relpath(CHECKOUT / "configure"),
+        relpath(PYTHON_DIR / "configure"),
         f"--host={context.host}",
         f"--build={sysconfig.get_config_var('BUILD_GNU_TYPE')}",
         f"--with-build-python={build_python_path()}",
@@ -624,8 +649,7 @@ def parse_args():
     configure_build = subcommands.add_parser("configure-build",
                                              help="Run `configure` for the "
                                              "build Python")
-    make_build = subcommands.add_parser("make-build",
-                                        help="Run `make` for the build Python")
+    subcommands.add_parser("make-build", help="Run `make` for the build Python")
     configure_host = subcommands.add_parser("configure-host",
                                             help="Run `configure` for Android")
     make_host = subcommands.add_parser("make-host",
@@ -637,16 +661,22 @@ def parse_args():
     test = subcommands.add_parser(
         "test", help="Run the test suite")
     package = subcommands.add_parser("package", help="Make a release package")
+    env = subcommands.add_parser("env", help="Print environment variables")
 
     # Common arguments
     for subcommand in build, configure_build, configure_host:
         subcommand.add_argument(
             "--clean", action="store_true", default=False, dest="clean",
             help="Delete the relevant build and prefix directories first")
-    for subcommand in [build, configure_host, make_host, package]:
+
+    host_commands = [build, configure_host, make_host, package]
+    if in_source_tree:
+        host_commands.append(env)
+    for subcommand in host_commands:
         subcommand.add_argument(
             "host", metavar="HOST", choices=HOSTS,
             help="Host triplet: choices=[%(choices)s]")
+
     for subcommand in build, configure_build, configure_host:
         subcommand.add_argument("args", nargs="*",
                                 help="Extra arguments to pass to `configure`")
@@ -690,6 +720,7 @@ def main():
         "build-testbed": build_testbed,
         "test": run_testbed,
         "package": package,
+        "env": print_env,
     }
 
     try:
