@@ -213,9 +213,7 @@ set_current_module(PyInterpreterState *interp, PyObject *mod)
     }
     int rc = PyDict_SetItem(dict, INTERP_KEY, ref);
     Py_DECREF(ref);
-    if (rc == 0) {
-        interp->datetime_module_state = get_module_state(mod);
-    }
+    interp->datetime_module_state = rc == 0 ? get_module_state(mod) : NULL;
     return rc;
 }
 
