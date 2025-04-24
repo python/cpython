@@ -264,6 +264,49 @@ is unchanged.
 Improved error messages
 -----------------------
 
+* The interpreter now provides helpful suggestions when it detects typos in Python
+  keywords. When a word that closely resembles a Python keyword is encountered,
+  the interpreter will suggest the correct keyword in the error message. This
+  feature helps programmers quickly identify and fix common typing mistakes. For
+  example:
+
+  .. code-block:: python
+
+     >>> whille True:
+     ...     pass
+     Traceback (most recent call last):
+       File "<stdin>", line 1
+         whille True:
+         ^^^^^^
+     SyntaxError: invalid syntax. Did you mean 'while'?
+
+     >>> asynch def fetch_data():
+     ...     pass
+     Traceback (most recent call last):
+       File "<stdin>", line 1
+         asynch def fetch_data():
+         ^^^^^^
+     SyntaxError: invalid syntax. Did you mean 'async'?
+
+     >>> async def foo():
+     ...     awaid fetch_data()
+     Traceback (most recent call last):
+       File "<stdin>", line 2
+         awaid fetch_data()
+         ^^^^^
+     SyntaxError: invalid syntax. Did you mean 'await'?
+
+     >>> raisee ValueError("Error")
+     Traceback (most recent call last):
+       File "<stdin>", line 1
+         raisee ValueError("Error")
+         ^^^^^^
+     SyntaxError: invalid syntax. Did you mean 'raise'?
+
+  While the feature focuses on the most common cases, some variations of
+  misspellings may still result in regular syntax errors.
+  (Contributed by Pablo Galindo in :gh:`132449`.)
+
 * When unpacking assignment fails due to incorrect number of variables, the
   error message prints the received number of values in more cases than before.
   (Contributed by Tushar Sadhwani in :gh:`122239`.)
@@ -972,6 +1015,10 @@ multiprocessing
   The :func:`set` in :func:`multiprocessing.Manager` method is now available.
   (Contributed by Mingyu Park in :gh:`129949`.)
 
+* Add :func:`multiprocessing.Process.interrupt` which terminates the child
+  process by sending :py:const:`~signal.SIGINT`. This enables "finally" clauses
+  and printing stack trace for the terminated process.
+  (Contributed by Artem Pulkin in :gh:`131913`.)
 
 operator
 --------
@@ -1126,7 +1173,7 @@ struct
 ------
 
 * Support the :c:expr:`float complex` and :c:expr:`double complex` C types in
-  the :mod:`struct` module (formatting characters ``'E'`` and ``'C'``,
+  the :mod:`struct` module (formatting characters ``'F'`` and ``'D'``,
   respectively) if the compiler has C11 complex arithmetic.
   (Contributed by Sergey B Kirpichev in :gh:`121249`.)
 

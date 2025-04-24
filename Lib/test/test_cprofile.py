@@ -5,8 +5,10 @@ import unittest
 
 # rip off all interesting stuff from test_profile
 import cProfile
+import tempfile
+import textwrap
 from test.test_profile import ProfileTest, regenerate_expected_output
-from test.support.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure, assert_python_ok
 from test import support
 
 
@@ -153,6 +155,19 @@ class TestCommandLine(unittest.TestCase):
         rc, out, err = assert_python_failure('-m', 'cProfile', '-s', 'demo')
         self.assertGreater(rc, 0)
         self.assertIn(b"option -s: invalid choice: 'demo'", err)
+
+    def test_profile_script_importing_main(self):
+        """Check that scripts that reference __main__ see their own namespace
+        when being profiled."""
+        with tempfile.NamedTemporaryFile("w+", delete_on_close=False) as f:
+            f.write(textwrap.dedent("""\
+                class Foo:
+                    pass
+                import __main__
+                assert Foo == __main__.Foo
+                """))
+            f.close()
+            assert_python_ok('-m', "cProfile", f.name)
 
 
 def main():
