@@ -182,12 +182,16 @@ class IoctlTestsPty(unittest.TestCase):
             write_finished.set()
 
         with threading_helper.start_threads([threading.Thread(target=writer)]):
-            self.assertEqual(os.read(rfd, 1024), b'abc')
-            fcntl.ioctl(wfd, termios.TCXONC, termios.TCOOFF)
-            write_suspended.set()
-            self.assertFalse(write_finished.wait(0.5))
-            fcntl.ioctl(wfd, termios.TCXONC, termios.TCOON)
-            self.assertTrue(write_finished.wait(0.5))
+            self.assertEqual(os.read(rfd, 3), b'abc')
+            try:
+                fcntl.ioctl(wfd, termios.TCXONC, termios.TCOOFF)
+                write_suspended.set()
+                self.assertFalse(write_finished.wait(0.5),
+                                 'output was not suspended')
+            finally:
+                fcntl.ioctl(wfd, termios.TCXONC, termios.TCOON)
+            self.assertTrue(write_finished.wait(0.5),
+                            'output was not resumed')
             self.assertEqual(os.read(rfd, 1024), b'def')
 
     def test_ioctl_set_window_size(self):

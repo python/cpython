@@ -190,6 +190,7 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(TypeError, termios.tcflow, object(), termios.TCOON)
         self.assertRaises(TypeError, termios.tcflow, self.fd)
 
+    @unittest.skipUnless(sys.platform == 'linux', 'only works on Linux')
     def test_tcflow_suspend_and_resume_output(self):
         wfd = self.fd
         rfd = self.master_fd
@@ -203,12 +204,16 @@ class TestFunctions(unittest.TestCase):
             write_finished.set()
 
         with threading_helper.start_threads([threading.Thread(target=writer)]):
-            self.assertEqual(os.read(rfd, 1024), b'abc')
-            termios.tcflow(wfd, termios.TCOOFF)
-            write_suspended.set()
-            self.assertFalse(write_finished.wait(0.5))
-            termios.tcflow(wfd, termios.TCOON)
-            self.assertTrue(write_finished.wait(0.5))
+            self.assertEqual(os.read(rfd, 3), b'abc')
+            try:
+                termios.tcflow(wfd, termios.TCOOFF)
+                write_suspended.set()
+                self.assertFalse(write_finished.wait(0.5),
+                                 'output was not suspended')
+            finally:
+                termios.tcflow(wfd, termios.TCOON)
+            self.assertTrue(write_finished.wait(0.5),
+                            'output was not resumed')
             self.assertEqual(os.read(rfd, 1024), b'def')
 
     def test_tcgetwinsize(self):
