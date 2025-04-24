@@ -1898,7 +1898,7 @@ class TestUopsOptimization(unittest.TestCase):
             for _ in range(n):
                 y = tuple((1, 2))  # tuple argument
                 a, _ = y           # _UNPACK_SEQUENCE_TWO_TUPLE
-            if a == 1:         # _COMPARE_OP_INT + _GUARD_IS_TRUE_POP are removed
+                if a == 1:         # _COMPARE_OP_INT + _GUARD_IS_TRUE_POP are removed
                     x += 1
             return x
 
