@@ -110,7 +110,7 @@ def android_env(host):
         f"PREFIX={prefix}; "
         f". {env_script}; "
         f"export",
-        check=True, shell=True, capture_output=True, text=True,
+        check=True, shell=True, capture_output=True, encoding='utf-8',
     ).stdout
 
     env = {}
