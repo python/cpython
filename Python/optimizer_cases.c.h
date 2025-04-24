@@ -1906,7 +1906,7 @@
             JitOptSymbol *arg;
             JitOptSymbol *res;
             arg = stack_pointer[-1];
-            if (sym_matches_type(arg, &PyUnicode_Type)) {
+            if (sym_matches_type(arg, &PyUnicode_Type) && sym_is_const(ctx, arg)) {
                 PyObject *value = sym_get_const(ctx, arg);
                 res = sym_new_const(ctx, value);
             }

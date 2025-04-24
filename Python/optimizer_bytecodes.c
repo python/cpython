@@ -856,8 +856,8 @@ dummy_func(void) {
     }
 
     op(_CALL_STR_1, (unused, unused, arg -- res)) {
-        if (sym_matches_type(arg, &PyUnicode_Type)) {
-            // e.g. str('foo') or str(foo) where foo is known to be a string
+        if (sym_matches_type(arg, &PyUnicode_Type) && sym_is_const(ctx, arg)) {
+            // e.g. str('foo') or str(foo) where foo is known to be a string const
             PyObject *value = sym_get_const(ctx, arg);
             res = sym_new_const(ctx, value);
         }
