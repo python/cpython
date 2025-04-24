@@ -1,14 +1,13 @@
-import os
-import copy
 import contextlib
+import copy
 import io
 import itertools
+import os
 import pickle
 import platform
 import subprocess
 import sys
 import unittest
-from textwrap import dedent
 from unittest import mock
 
 from test import support
@@ -750,20 +749,11 @@ class CommandLineTest(unittest.TestCase):
         platform.invalidate_caches()
         self.addCleanup(platform.invalidate_caches)
 
-    @staticmethod
-    def text_normalize(string):
-        """Dedent *string* and strip it from its surrounding whitespaces.
-
-        This method is used by the other utility functions so that any
-        string to write or to match against can be freely indented.
-        """
-        return dedent(string).strip()
-
     def invoke_platform(self, *flags):
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             platform._main(args=flags)
-        return self.text_normalize(output.getvalue())
+        return output.getvalue()
 
     def test_unknown_flag(self):
         with self.assertRaises(SystemExit):
