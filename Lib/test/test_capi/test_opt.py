@@ -1831,6 +1831,7 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_CALL_STR_1", uops)
         self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
         self.assertNotIn("_GUARD_NOS_UNICODE", uops)
+        self.assertNotIn("_GUARD_TOS_UNICODE", uops)
 
     def test_call_str_1_result_is_const_for_str_input(self):
         # Test a special case where the argument of str(arg)
