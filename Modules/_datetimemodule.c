@@ -679,7 +679,7 @@ check_date_args(int year, int month, int day)
  * aren't, raise ValueError and return -1.
  */
 static int
-check_time_args(int h, int m, int s, int us, int fold)
+check_time_args(int h, int m, int s, int us, int ns, int fold)
 {
     if (h < 0 || h > 23) {
         PyErr_Format(PyExc_ValueError, "hour must be in 0..23, not %i", h);
@@ -696,6 +696,11 @@ check_time_args(int h, int m, int s, int us, int fold)
     if (us < 0 || us > 999999) {
         PyErr_Format(PyExc_ValueError,
                      "microsecond must be in 0..999999, not %i", us);
+        return -1;
+    }
+    if (ns < 0 || ns > 999) {
+        PyErr_Format(PyExc_ValueError,
+                     "nanosecond must be in 0..999, not %i", ns);
         return -1;
     }
     if (fold != 0 && fold != 1) {

@@ -594,8 +594,8 @@ def _check_time_fields(hour, minute, second, microsecond, nanosecond, fold):
         raise ValueError(f"second must be in 0..59, not {second}")
     if not 0 <= microsecond <= 999999:
         raise ValueError(f"microsecond must be in 0..999999, not {microsecond}")
-    if not 0 <= nanosecond <= 999999999:
-        raise ValueError(f"nanosecond must be in 0..999999999, not {nanosecond}")
+    if not 0 <= nanosecond <= 999:
+        raise ValueError(f"nanosecond must be in 0..999, not {nanosecond}")
     if fold not in (0, 1):
         raise ValueError(f"fold must be either 0 or 1, not {fold}")
     return hour, minute, second, microsecond, nanosecond, fold
