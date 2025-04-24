@@ -677,7 +677,7 @@ PyOS_AfterFork_Parent(void)
     run_at_forkers(interp->after_forkers_parent, 0);
 }
 
-void
+static void
 PyRemoteDebugCall_Reset(PyThreadState *tstate)
 {
     tstate->remote_debugger_support.debugger_pending_call = 0;
