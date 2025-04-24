@@ -805,10 +805,38 @@ class chdir(AbstractContextManager):
     def __init__(self, path):
         self.path = path
         self._old_cwd = []
+        if self._supports_fd():
+            self._getcwd = self._getcwd_fd
+            self._close = os.close
+
+    @staticmethod
+    def _supports_fd():
+        return os.chdir in os.supports_fd
+
+    @staticmethod
+    def _getcwd():
+        return os.getcwd()
+
+    @staticmethod
+    def _close(dir):
+        pass
+
+    @staticmethod
+    def _getcwd_fd():
+        return os.open('.', os.O_RDONLY)
 
     def __enter__(self):
-        self._old_cwd.append(os.getcwd())
-        os.chdir(self.path)
+        dir = self._getcwd()
+        try:
+            os.chdir(self.path)
+        except:
+            self._close(dir)
+            raise
+        self._old_cwd.append(dir)
 
     def __exit__(self, *excinfo):
-        os.chdir(self._old_cwd.pop())
+        dir = self._old_cwd.pop()
+        try:
+            os.chdir(dir)
+        finally:
+            self._close(dir)

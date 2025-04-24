@@ -1361,6 +1361,63 @@ class TestChdir(unittest.TestCase):
             self.assertEqual(str(re), "boom")
         self.assertEqual(os.getcwd(), old_cwd)
 
+    def test_failed_chdir(self):
+        old_cwd = os.getcwd()
+        target = self.make_relative_path('non_existent_directory')
+        self.assertNotEqual(old_cwd, target)
+        ctx = chdir(target)
+        with self.assertRaises(OSError):
+            with ctx:
+                self.fail("chdir should have raised an exception")
+        self.assertFalse(ctx._old_cwd)
+        self.assertEqual(os.getcwd(), old_cwd)
+
+    @unittest.skipUnless(chdir._supports_fd(), "chdir requires fd support")
+    def test_chdir_to_fd(self):
+        old_cwd = os.getcwd()
+        target = self.make_relative_path('data')
+        fd = os.open(target, os.O_RDONLY)
+        try:
+            with chdir(fd):
+                self.assertEqual(os.getcwd(), target)
+        finally:
+            os.close(fd)
+        self.assertEqual(os.getcwd(), old_cwd)
+
+    @unittest.skipUnless(chdir._supports_fd(),
+                         "chdir requires fd support for long path")
+    @unittest.skipUnless(os_helper.can_symlink(), "need symlink support")
+    def test_original_path_too_long(self):
+        with tempfile.TemporaryDirectory() as dir:
+            with chdir(dir):
+                count = 0
+                big_name = 'a' * os.pathconf('.', 'PC_NAME_MAX')
+                path_max = os.pathconf('.', 'PC_PATH_MAX')
+                while len(dir) < path_max + 1:
+                    dir = os.path.join(dir, big_name)
+                    os.mkdir(big_name)
+                    os.symlink(big_name, 'a', target_is_directory=True)
+                    os.chdir('a')
+                    count += 1
+
+                self.assertTrue(count > 0)
+                os.mkdir('a')
+                with chdir('a'):
+                    self.assertTrue(len(os.getcwd()) > path_max)
+
+    @unittest.skipUnless(chdir._supports_fd(),
+                         "chdir requires fd support for deleted dir")
+    def test_original_path_deleted(self):
+        original = os.getcwd()
+        dir = tempfile.TemporaryDirectory()
+        try:
+            os.chdir(dir.name)
+            with chdir(original):
+                dir.cleanup()
+        finally:
+            os.chdir(original)
+            dir.cleanup()
+
 
 if __name__ == "__main__":
     unittest.main()
