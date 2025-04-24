@@ -9,11 +9,6 @@ from test.support.import_helper import import_module
 fcntl = import_module('fcntl')
 termios = import_module('termios')
 
-try:
-    import pty
-except ImportError:
-    pty = None
-
 class IoctlTestsTty(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -136,10 +131,10 @@ class IoctlTestsTty(unittest.TestCase):
         self.assertRaises(ValueError, self._check_ioctl_not_mutate_len, 2048)
 
 
-@unittest.skipIf(pty is None, 'pty module required')
+@unittest.skipUnless(hasattr(os, 'openpty'), "need os.openpty()")
 class IoctlTestsPty(unittest.TestCase):
     def setUp(self):
-        self.master_fd, self.slave_fd = pty.openpty()
+        self.master_fd, self.slave_fd = os.openpty()
         self.addCleanup(os.close, self.slave_fd)
         self.addCleanup(os.close, self.master_fd)
 
