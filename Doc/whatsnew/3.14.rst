@@ -702,7 +702,7 @@ datetime
 
 * Add nanosecond precision support for :class:`datetime.datetime` and
   :class:`datetime.time` objects.
-  (Contributed by மனோஜ்குமார் பழனிச்சாமி in :gh:`59648`.)
+  (Contributed by Manojkumar Palanisamy in :gh:`59648`.)
 
 decimal
 -------
