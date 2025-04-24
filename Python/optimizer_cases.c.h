@@ -1903,8 +1903,16 @@
         }
 
         case _CALL_STR_1: {
+            JitOptSymbol *arg;
             JitOptSymbol *res;
-            res = sym_new_type(ctx, &PyUnicode_Type);
+            arg = stack_pointer[-1];
+            if (sym_matches_type(arg, &PyUnicode_Type)) {
+                PyObject *value = sym_get_const(ctx, arg);
+                res = sym_new_const(ctx, value);
+            }
+            else {
+                res = sym_new_type(ctx, &PyUnicode_Type);
+            }
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());

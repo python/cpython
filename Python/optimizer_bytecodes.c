@@ -855,8 +855,15 @@ dummy_func(void) {
         }
     }
 
-    op(_CALL_STR_1, (unused, unused, unused -- res)) {
-        res = sym_new_type(ctx, &PyUnicode_Type);
+    op(_CALL_STR_1, (unused, unused, arg -- res)) {
+        if (sym_matches_type(arg, &PyUnicode_Type)) {
+            // e.g. str('foo') or str(foo) where foo is known to be a string
+            PyObject *value = sym_get_const(ctx, arg);
+            res = sym_new_const(ctx, value);
+        }
+        else {
+            res = sym_new_type(ctx, &PyUnicode_Type);
+        }
     }
 
     op(_GUARD_IS_TRUE_POP, (flag -- )) {

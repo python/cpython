@@ -1832,6 +1832,27 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertIn("_BINARY_OP_ADD_UNICODE", uops)
         self.assertNotIn("_GUARD_NOS_UNICODE", uops)
 
+    def test_call_str_1_result_is_const_for_str_input(self):
+        # Test a special case where the argument of str(arg)
+        # is known to be a string. The information about the
+        # argument being a string should be propagated to the
+        # result of str(arg).
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = str('foo')  # string argument
+                if y:           # _TO_BOOL_STR + _GUARD_IS_TRUE_POP are removed
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_STR_1", uops)
+        self.assertNotIn("_TO_BOOL_STR", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+
 
 def global_identity(x):
     return x
