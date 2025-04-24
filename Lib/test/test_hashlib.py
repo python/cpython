@@ -10,6 +10,7 @@ import hashlib
 import importlib
 import io
 import itertools
+import logging
 import os
 import sys
 import sysconfig
@@ -113,7 +114,11 @@ class HashLibTestCase(unittest.TestCase):
             return importlib.import_module(module_name)
         except ModuleNotFoundError as error:
             if self._warn_on_extension_import and module_name in builtin_hashes:
-                warnings.warn(f'Did a C extension fail to compile? {error}')
+                logging.getLogger(__name__).warning(
+                    'Did a C extension fail to compile? %s',
+                    error,
+                    exc_info=error,
+                )
         return None
 
     def __init__(self, *args, **kwargs):
@@ -1193,6 +1198,15 @@ class KDFTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             hashlib.file_digest(None, "sha256")
+
+        class NonBlocking:
+            def readinto(self, buf):
+                return None
+            def readable(self):
+                return True
+
+        with self.assertRaises(BlockingIOError):
+            hashlib.file_digest(NonBlocking(), hashlib.sha256)
 
 
 if __name__ == "__main__":

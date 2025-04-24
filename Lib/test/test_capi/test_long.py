@@ -168,9 +168,9 @@ class LongTests(unittest.TestCase):
                          mask=False,
                          negative_value_error=OverflowError):
         # round trip (object -> C integer -> object)
-        values = (0, 1, 1234, max_val)
+        values = (0, 1, 512, 1234, max_val)
         if min_val < 0:
-            values += (-1, min_val)
+            values += (-1, -512, -1234, min_val)
         for value in values:
             with self.subTest(value=value):
                 self.assertEqual(func(value), value)

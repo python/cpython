@@ -1160,7 +1160,7 @@ with :deco:`typing.runtime_checkable`.
    usually be :class:`str` or :class:`bytes`, but can be any type that is
    read from the stream.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
    .. method:: read()
                read(size, /)
@@ -1181,7 +1181,7 @@ with :deco:`typing.runtime_checkable`.
    usually be :class:`str` or :class:`bytes`, but can be any type that can be
    written to the stream.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
    .. method:: write(data, /)
 

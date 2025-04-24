@@ -1,2 +1,0 @@
-Only apply locale to :ref:`calendar CLI <calendar-cli>` when set via
-``--locale`` and not via ``LANG`` environment variable.

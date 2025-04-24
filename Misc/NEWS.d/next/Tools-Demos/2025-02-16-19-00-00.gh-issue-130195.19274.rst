@@ -1,1 +1,1 @@
-Add warning messages when ``pygettext`` unimplemented ``-a/--extract-all`` option is called.
+Add warning messages when :program:`pygettext` unimplemented ``-a/--extract-all`` option is called.

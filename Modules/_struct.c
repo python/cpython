@@ -913,11 +913,11 @@ static const formatdef native_table[] = {
     {'f',       sizeof(float),  FLOAT_ALIGN,    nu_float,       np_float},
     {'d',       sizeof(double), DOUBLE_ALIGN,   nu_double,      np_double},
 #ifdef Py_HAVE_C_COMPLEX
-    {'E',       sizeof(float complex), FLOAT_COMPLEX_ALIGN, nu_float_complex, np_float_complex},
-    {'C',       sizeof(double complex), DOUBLE_COMPLEX_ALIGN, nu_double_complex, np_double_complex},
+    {'F',       sizeof(float complex), FLOAT_COMPLEX_ALIGN, nu_float_complex, np_float_complex},
+    {'D',       sizeof(double complex), DOUBLE_COMPLEX_ALIGN, nu_double_complex, np_double_complex},
 #else
-    {'E',       1, 0, nu_complex_stub, np_complex_stub},
-    {'C',       1, 0, nu_complex_stub, np_complex_stub},
+    {'F',       1, 0, nu_complex_stub, np_complex_stub},
+    {'D',       1, 0, nu_complex_stub, np_complex_stub},
 #endif
     {'P',       sizeof(void *), VOID_P_ALIGN,   nu_void_p,      np_void_p},
     {0}
@@ -1253,11 +1253,11 @@ static formatdef bigendian_table[] = {
     {'f',       4,              0,              bu_float,       bp_float},
     {'d',       8,              0,              bu_double,      bp_double},
 #ifdef Py_HAVE_C_COMPLEX
-    {'E',       8,              0,              bu_float_complex, bp_float_complex},
-    {'C',       16,             0,              bu_double_complex, bp_double_complex},
+    {'F',       8,              0,              bu_float_complex, bp_float_complex},
+    {'D',       16,             0,              bu_double_complex, bp_double_complex},
 #else
-    {'E',       1,              0,              nu_complex_stub, np_complex_stub},
-    {'C',       1,              0,              nu_complex_stub, np_complex_stub},
+    {'F',       1,              0,              nu_complex_stub, np_complex_stub},
+    {'D',       1,              0,              nu_complex_stub, np_complex_stub},
 #endif
     {0}
 };
@@ -1577,11 +1577,11 @@ static formatdef lilendian_table[] = {
     {'f',       4,              0,              lu_float,       lp_float},
     {'d',       8,              0,              lu_double,      lp_double},
 #ifdef Py_HAVE_C_COMPLEX
-    {'E',       8,              0,              lu_float_complex, lp_float_complex},
-    {'C',       16,             0,              lu_double_complex, lp_double_complex},
+    {'F',       8,              0,              lu_float_complex, lp_float_complex},
+    {'D',       16,             0,              lu_double_complex, lp_double_complex},
 #else
-    {'E',       1,              0,              nu_complex_stub, np_complex_stub},
-    {'C',       1,              0,              nu_complex_stub, np_complex_stub},
+    {'F',       1,              0,              nu_complex_stub, np_complex_stub},
+    {'D',       1,              0,              nu_complex_stub, np_complex_stub},
 #endif
     {0}
 };
@@ -2131,8 +2131,8 @@ Requires that the bytes length be a multiple of the struct size.
 [clinic start generated code]*/
 
 static PyObject *
-Struct_iter_unpack(PyStructObject *self, PyObject *buffer)
-/*[clinic end generated code: output=172d83d0cd15dbab input=6d65b3f3107dbc99]*/
+Struct_iter_unpack_impl(PyStructObject *self, PyObject *buffer)
+/*[clinic end generated code: output=818f89ad4afa8d64 input=6d65b3f3107dbc99]*/
 {
     _structmodulestate *state = get_struct_state_structinst(self);
     unpackiterobject *iter;
@@ -2691,7 +2691,7 @@ iter_unpack_impl(PyObject *module, PyStructObject *s_object,
                  PyObject *buffer)
 /*[clinic end generated code: output=0ae50e250d20e74d input=b214a58869a3c98d]*/
 {
-    return Struct_iter_unpack(s_object, buffer);
+    return Struct_iter_unpack((PyObject*)s_object, buffer);
 }
 
 static struct PyMethodDef module_functions[] = {

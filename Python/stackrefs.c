@@ -1,6 +1,7 @@
 
 #include "Python.h"
 
+#include "pycore_object.h"
 #include "pycore_stackref.h"
 
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
@@ -54,6 +55,12 @@ _Py_stackref_get_object(_PyStackRef ref)
     return entry->obj;
 }
 
+int
+PyStackRef_Is(_PyStackRef a, _PyStackRef b)
+{
+    return _Py_stackref_get_object(a) == _Py_stackref_get_object(b);
+}
+
 PyObject *
 _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber)
 {
@@ -64,6 +71,9 @@ _Py_stackref_close(_PyStackRef ref, const char *filename, int linenumber)
     }
     PyObject *obj;
     if (ref.index <= LAST_PREDEFINED_STACKREF_INDEX) {
+        if (ref.index == 0) {
+            _Py_FatalErrorFormat(__func__, "Passing NULL to PyStackRef_CLOSE at %s:%d\n", filename, linenumber);
+        }
         // Pre-allocated reference to None, False or True -- Do not clear
         TableEntry *entry = _Py_hashtable_get(interp->open_stackrefs_table, (void *)ref.index);
         obj = entry->obj;
@@ -175,8 +185,16 @@ _Py_stackref_report_leaks(PyInterpreterState *interp)
     int leak = 0;
     _Py_hashtable_foreach(interp->open_stackrefs_table, report_leak, &leak);
     if (leak) {
+        fflush(stdout);
         Py_FatalError("Stackrefs leaked.");
     }
+}
+
+void
+_PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct, const char *filename, int linenumber)
+{
+    PyObject *obj = _Py_stackref_close(ref, filename, linenumber);
+    _Py_DECREF_SPECIALIZED(obj, destruct);
 }
 
 #endif
