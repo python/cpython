@@ -1912,8 +1912,15 @@
         }
 
         case _CALL_TUPLE_1: {
+            JitOptSymbol *arg;
             JitOptSymbol *res;
-            res = sym_new_type(ctx, &PyTuple_Type);
+            arg = stack_pointer[-1];
+            if (sym_matches_type(arg, &PyTuple_Type)) {
+                res = arg;
+            }
+            else {
+                res = sym_new_type(ctx, &PyTuple_Type);
+            }
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
