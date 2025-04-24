@@ -758,6 +758,97 @@ class CodeTests(_GetXIDataTests):
         ])
 
 
+class ShareableScriptTests(_GetXIDataTests):
+
+    MODE = 'script'
+
+    VALID_SCRIPTS = [
+        '',
+        'spam',
+        '# a comment',
+        'print("spam")',
+        'raise Exception("spam")',
+        """if True:
+            do_something()
+            """,
+        """if True:
+            def spam(x):
+                return x
+            class Spam:
+                def eggs(self):
+                    return 42
+            x = Spam().eggs()
+            raise ValueError(spam(x))
+            """,
+    ]
+    INVALID_SCRIPTS = [
+        '    pass',
+        '----',
+        """if True:
+            # do something
+            """,
+    ]
+
+    def test_valid_str(self):
+        self.assert_roundtrip_not_equal([
+            *self.VALID_SCRIPTS,
+        ], expecttype=types.CodeType)
+
+    def test_invalid_str(self):
+        self.assert_not_shareable([
+            *self.INVALID_SCRIPTS,
+        ])
+
+    def test_valid_bytes(self):
+        self.assert_roundtrip_not_equal([
+            *(s.encode('utf8') for s in self.VALID_SCRIPTS),
+        ], expecttype=types.CodeType)
+
+    def test_invalid_bytes(self):
+        self.assert_not_shareable([
+            *(s.encode('utf8') for s in self.INVALID_SCRIPTS),
+        ])
+
+    def test_script_code(self):
+        self.assert_roundtrip_equal_not_identical([
+            *(f.__code__ for f in defs.SCRIPT_FUNCTIONS),
+            defs.script_with_globals.__code__,
+        ])
+
+    def test_other_code(self):
+        self.assert_not_shareable([
+            *(f.__code__ for f in defs.FUNCTIONS
+              if f not in defs.SCRIPT_FUNCTIONS and
+                f is not defs.script_with_globals),
+            *(f.__code__ for f in defs.FUNCTION_LIKE),
+        ])
+
+    def test_script_function(self):
+        self.assert_roundtrip_not_equal([
+            *defs.SCRIPT_FUNCTIONS,
+        ], expecttype=types.CodeType)
+
+    def test_other_function(self):
+        self.assert_not_shareable([
+            *(f for f in defs.FUNCTIONS
+              if f not in defs.SCRIPT_FUNCTIONS),
+            *defs.FUNCTION_LIKE,
+        ])
+
+    def test_other_objects(self):
+        self.assert_not_shareable([
+            None,
+            True,
+            False,
+            Ellipsis,
+            NotImplemented,
+            (),
+            [],
+            {},
+            object(),
+        ])
+
+
 class ShareableTypeTests(_GetXIDataTests):
 
     MODE = 'xidata'
