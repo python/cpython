@@ -4287,15 +4287,11 @@ def bœr():
 
         # verify that pdb found the source of the "frozen" function and it
         # shows the breakpoint at the correct line for both list and longlist
-        stdout, _ = self._run_pdb(["gh93696_host.py"], commands_list)
-        self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
-        self.assertIn('4 B', stdout, "breakpoint not found")
-        self.assertIn('-> def func():', stdout, "stack entry not found")
-
-        stdout, _ = self._run_pdb(["gh93696_host.py"], commands_longlist)
-        self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
-        self.assertIn('4 B', stdout, "breakpoint not found")
-        self.assertIn('-> def func():', stdout, "stack entry not found")
+        for commands in (commands_list, commands_longlist):
+            stdout, _ = self._run_pdb(["gh93696_host.py"], commands)
+            self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
+            self.assertIn('4 B', stdout, "breakpoint not found")
+            self.assertIn('-> def func():', stdout, "stack entry not found")
 
     def test_empty_file(self):
         script = ''
