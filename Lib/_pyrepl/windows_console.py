@@ -416,12 +416,8 @@ class WindowsConsole(Console):
         return info.srWindow.Bottom  # type: ignore[no-any-return]
 
     def _read_input(self, block: bool = True) -> INPUT_RECORD | None:
-        if not block:
-            ret = WaitForSingleObject(InHandle, 0)
-            if ret == WAIT_FAILED:
-                raise WinError(get_last_error())
-            elif ret == WAIT_TIMEOUT:
-                return None
+        if not block and not self.wait(timeout=0):
+            return None
 
         rec = INPUT_RECORD()
         read = DWORD()
@@ -536,6 +532,9 @@ class WindowsConsole(Console):
         ret = WaitForSingleObject(InHandle, timeout)
         if ret == WAIT_FAILED:
             raise WinError(get_last_error())
+        elif ret == WAIT_TIMEOUT:
+            return False
+        return True
 
     def repaint(self) -> None:
         raise NotImplementedError("No repaint support")
