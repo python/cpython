@@ -2956,7 +2956,7 @@ class BrokenIter:
 
 def in_systemd_nspawn_sync_suppressed() -> bool:
     """
-    Test whether the test suite is runing in systemd-nspawn
+    Test whether the test suite is running in systemd-nspawn
     with ``--suppress-sync=true``.
 
     This can be used to skip tests that rely on ``fsync()`` calls

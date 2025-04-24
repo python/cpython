@@ -11,7 +11,7 @@ from test.support import is_android, is_apple_mobile, is_emscripten, is_wasi
 class FormatTestsBase:
     @property
     def contents(self):
-        """Install details file contents. Should be overriden by subclasses."""
+        """Install details file contents. Should be overridden by subclasses."""
         raise NotImplementedError
 
     @property
