@@ -94,12 +94,18 @@ func_type[mod_ty]: '(' a=[type_expressions] ')' '->' b=expression NEWLINE* ENDMA
 # GENERAL STATEMENTS
 # ==================
 
-statements[asdl_stmt_seq*]: a=statement+ { (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a) }
+statements[asdl_stmt_seq*]: a=statement+ { _PyPegen_register_stmts(p, (asdl_stmt_seq*)_PyPegen_seq_flatten(p, a)) }
 
-statement[asdl_stmt_seq*]: a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } | a[asdl_stmt_seq*]=simple_stmts { a }
+statement[asdl_stmt_seq*]: 
+    | a=compound_stmt { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) } 
+    | a[asdl_stmt_seq*]=simple_stmts { a }
+
+single_compound_stmt[asdl_stmt_seq*]:
+    | a=compound_stmt { 
+        _PyPegen_register_stmts(p, (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a)) }
 
 statement_newline[asdl_stmt_seq*]:
-    | a=compound_stmt NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, a) }
+    | a=single_compound_stmt NEWLINE { a }
     | simple_stmts
     | NEWLINE { (asdl_stmt_seq*)_PyPegen_singleton_seq(p, CHECK(stmt_ty, _PyAST_Pass(EXTRA))) }
     | ENDMARKER { _PyPegen_interactive_exit(p) }

@@ -534,10 +534,10 @@ dummy_func(void) {
         top = bottom;
     }
 
-    op(_SWAP, (bottom[1], unused[oparg-2], top[1] -- bottom[1], unused[oparg-2], top[1])) {
-        JitOptSymbol *temp = bottom[0];
-        bottom[0] = top[0];
-        top[0] = temp;
+    op(_SWAP, (bottom, unused[oparg-2], top -- bottom, unused[oparg-2], top)) {
+        JitOptSymbol *temp = bottom;
+        bottom = top;
+        top = temp;
         assert(oparg >= 2);
     }
 
@@ -546,7 +546,7 @@ dummy_func(void) {
         (void)offset;
     }
 
-    op(_LOAD_ATTR_MODULE, (dict_version/2, owner, index/1 -- attr)) {
+    op(_LOAD_ATTR_MODULE, (dict_version/2, index/1, owner -- attr)) {
         (void)dict_version;
         (void)index;
         attr = NULL;
@@ -626,9 +626,9 @@ dummy_func(void) {
         ctx->done = true;
     }
 
-    op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable[1], self_or_null[1], unused[oparg] -- callable[1], self_or_null[1], unused[oparg])) {
-        callable[0] = sym_new_not_null(ctx);
-        self_or_null[0] = sym_new_not_null(ctx);
+    op(_INIT_CALL_BOUND_METHOD_EXACT_ARGS, (callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
+        callable = sym_new_not_null(ctx);
+        self_or_null = sym_new_not_null(ctx);
     }
 
     op(_CHECK_FUNCTION_VERSION, (func_version/2, callable, self_or_null, unused[oparg] -- callable, self_or_null, unused[oparg])) {
@@ -846,6 +846,15 @@ dummy_func(void) {
        next = sym_new_type(ctx, &PyLong_Type);
     }
 
+    op(_CALL_TYPE_1, (unused, unused, arg -- res)) {
+        if (sym_has_type(arg)) {
+            res = sym_new_const(ctx, (PyObject *)sym_get_type(arg));
+        }
+        else {
+            res = sym_new_not_null(ctx);
+        }
+    }
+
     op(_GUARD_IS_TRUE_POP, (flag -- )) {
         if (sym_is_const(ctx, flag)) {
             PyObject *value = sym_get_const(ctx, flag);
@@ -897,9 +906,14 @@ dummy_func(void) {
         }
     }
 
-    op(_LOAD_SPECIAL, (owner -- attr, self_or_null)) {
-        attr = sym_new_not_null(ctx);
-        self_or_null = sym_new_unknown(ctx);
+    op(_INSERT_NULL, (self -- method_and_self[2])) {
+        method_and_self[0] = sym_new_null(ctx);
+        method_and_self[1] = self;
+    }
+
+    op(_LOAD_SPECIAL, (method_and_self[2] -- method_and_self[2])) {
+        method_and_self[0] = sym_new_not_null(ctx);
+        method_and_self[1] = sym_new_unknown(ctx);
     }
 
     op(_JUMP_TO_TOP, (--)) {
@@ -912,6 +926,7 @@ dummy_func(void) {
     }
 
     op(_REPLACE_WITH_TRUE, (value -- res)) {
+        REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
         res = sym_new_const(ctx, Py_True);
     }
 
@@ -992,6 +1007,19 @@ dummy_func(void) {
         }
     }
 
+    op(_GUARD_NOS_NULL, (null, unused -- null, unused)) {
+        if (sym_is_null(null)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_null(null);
+    }
+
+    op(_GUARD_CALLABLE_TYPE_1, (callable, unused, unused -- callable, unused, unused)) {
+        if (sym_get_const(ctx, callable) == (PyObject *)&PyType_Type) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_const(callable, (PyObject *)&PyType_Type);
+    }
 
 // END BYTECODES //
 
