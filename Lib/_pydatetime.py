@@ -2761,10 +2761,3 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 # small dst() may get within its bounds; and it doesn't even matter if some
 # perverse time zone returns a negative dst()).  So a breaking case must be
 # pretty bizarre, and a tzinfo subclass can override fromutc() if it is.
-
-
-if __name__ == "datetime":
-    dt=(datetime.now().isoformat(timespec="nanoseconds"))
-    print(dt)
-    dt=(datetime.now())
-    print(repr(dt))
