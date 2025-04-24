@@ -1,6 +1,7 @@
 import array
 import os
 import struct
+import sys
 import threading
 import unittest
 from test.support import get_attribute
@@ -144,15 +145,26 @@ class IoctlTestsPty(unittest.TestCase):
         self.addCleanup(os.close, self.master_fd)
 
     @unittest.skipUnless(hasattr(termios, 'TCFLSH'), 'requires termios.TCFLSH')
-    def test_ioctl_clear_input(self):
+    def test_ioctl_clear_input_or_output(self):
         wfd = self.slave_fd
         rfd = self.master_fd
+        inbuf = sys.platform == 'linux'
 
         os.write(wfd, b'abcdef')
         self.assertEqual(os.read(rfd, 2), b'ab')
-        fcntl.ioctl(rfd, termios.TCFLSH, termios.TCOFLUSH)  # don't flush input
+        if inbuf:
+            # don't flush input
+            fcntl.ioctl(rfd, termios.TCFLSH, termios.TCOFLUSH)
+        else:
+            # don't flush output
+            fcntl.ioctl(wfd, termios.TCFLSH, termios.TCIFLUSH)
         self.assertEqual(os.read(rfd, 2), b'cd')
-        fcntl.ioctl(rfd, termios.TCFLSH, termios.TCIFLUSH)  # flush input
+        if inbuf:
+            # flush input
+            fcntl.ioctl(rfd, termios.TCFLSH, termios.TCIFLUSH)
+        else:
+            # flush output
+            fcntl.ioctl(wfd, termios.TCFLSH, termios.TCOFLUSH)
         os.write(wfd, b'ABCDEF')
         self.assertEqual(os.read(rfd, 1024), b'ABCDEF')
 

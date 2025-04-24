@@ -149,15 +149,26 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(TypeError, termios.tcflush, object(), termios.TCIFLUSH)
         self.assertRaises(TypeError, termios.tcflush, self.fd)
 
-    def test_tcflush_clear_input(self):
+    def test_tcflush_clear_input_or_output(self):
         wfd = self.fd
         rfd = self.master_fd
+        inbuf = sys.platform == 'linux'
 
         os.write(wfd, b'abcdef')
         self.assertEqual(os.read(rfd, 2), b'ab')
-        termios.tcflush(rfd, termios.TCOFLUSH)  # don't flush input
+        if inbuf:
+            # don't flush input
+            termios.tcflush(rfd, termios.TCOFLUSH)
+        else:
+            # don't flush output
+            termios.tcflush(wfd, termios.TCIFLUSH)
         self.assertEqual(os.read(rfd, 2), b'cd')
-        termios.tcflush(rfd, termios.TCIFLUSH)  # flush input
+        if inbuf:
+            # flush input
+            termios.tcflush(rfd, termios.TCIFLUSH)
+        else:
+            # flush output
+            termios.tcflush(wfd, termios.TCOFLUSH)
         os.write(wfd, b'ABCDEF')
         self.assertEqual(os.read(rfd, 1024), b'ABCDEF')
 
