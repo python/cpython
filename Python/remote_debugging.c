@@ -98,7 +98,7 @@ cleanup_proc_handle(proc_handle_t *handle) {
 
 #if defined(__APPLE__) && TARGET_OS_OSX
 static uintptr_t
-return_section_address(
+return_section_address64(
     const char* section,
     mach_port_t proc_ref,
     uintptr_t base,
@@ -162,6 +162,126 @@ return_section_address(
 }
 
 static uintptr_t
+return_section_address32(
+    const char* section,
+    mach_port_t proc_ref,
+    uintptr_t base,
+    void* map
+) {
+    struct mach_header* hdr = (struct mach_header*)map;
+    int ncmds = hdr->ncmds;
+
+    int cmd_cnt = 0;
+    struct segment_command* cmd = map + sizeof(struct mach_header);
+
+    mach_vm_size_t size = 0;
+    mach_msg_type_number_t count = sizeof(vm_region_basic_info_data_t);
+    mach_vm_address_t address = (mach_vm_address_t)base;
+    vm_region_basic_info_data_t r_info;
+    mach_port_t object_name;
+    uintptr_t vmaddr = 0;
+
+    for (int i = 0; cmd_cnt < 2 && i < ncmds; i++) {
+        if (cmd->cmd == LC_SEGMENT && strcmp(cmd->segname, "__TEXT") == 0) {
+            vmaddr = cmd->vmaddr;
+        }
+        if (cmd->cmd == LC_SEGMENT && strcmp(cmd->segname, "__DATA") == 0) {
+            while (cmd->filesize != size) {
+                address += size;
+                kern_return_t ret = mach_vm_region(
+                    proc_ref,
+                    &address,
+                    &size,
+                    VM_REGION_BASIC_INFO,
+                    (vm_region_info_t)&r_info,  // cppcheck-suppress [uninitvar]
+                    &count,
+                    &object_name
+                );
+                if (ret != KERN_SUCCESS) {
+                    PyErr_SetString(
+                        PyExc_RuntimeError, "Cannot get any more VM maps.\n");
+                    return 0;
+                }
+            }
+
+            int nsects = cmd->nsects;
+            struct section* sec = (struct section*)(
+                (void*)cmd + sizeof(struct segment_command)
+                );
+            for (int j = 0; j < nsects; j++) {
+                if (strcmp(sec[j].sectname, section) == 0) {
+                    return base + sec[j].addr - vmaddr;
+                }
+            }
+            cmd_cnt++;
+        }
+
+        cmd = (struct segment_command*)((void*)cmd + cmd->cmdsize);
+    }
+
+    // We should not be here, but if we are there, we should say about this
+    PyErr_SetString(
+        PyExc_RuntimeError, "Cannot find section address.\n");
+    return 0;
+}
+
+static uintptr_t
+return_section_address_fat(
+    const char* section,
+    mach_port_t proc_ref,
+    uintptr_t base,
+    void* map
+) {
+    struct fat_header* fat_hdr = (struct fat_header*)map;
+
+    // Determine host CPU type for architecture selection
+    cpu_type_t cpu;
+    int is_abi64;
+    size_t cpu_size = sizeof(cpu), abi64_size = sizeof(is_abi64);
+
+    sysctlbyname("hw.cputype", &cpu, &cpu_size, NULL, 0);
+    sysctlbyname("hw.cpu64bit_capable", &is_abi64, &abi64_size, NULL, 0);
+
+    cpu |= is_abi64 * CPU_ARCH_ABI64;
+
+    // Check endianness
+    int swap = fat_hdr->magic == FAT_CIGAM;
+    struct fat_arch* arch = (struct fat_arch*)(map + sizeof(struct fat_header));
+
+    // Get number of architectures in fat binary
+    uint32_t nfat_arch = swap ? __builtin_bswap32(fat_hdr->nfat_arch) : fat_hdr->nfat_arch;
+
+    // Search for matching architecture
+    for (uint32_t i = 0; i < nfat_arch; i++) {
+        cpu_type_t arch_cpu = swap ? __builtin_bswap32(arch[i].cputype) : arch[i].cputype;
+
+        if (arch_cpu == cpu) {
+            // Found matching architecture, now process it
+            uint32_t offset = swap ? __builtin_bswap32(arch[i].offset) : arch[i].offset;
+            struct mach_header_64* hdr = (struct mach_header_64*)(map + offset);
+
+            // Determine which type of Mach-O it is and process accordingly
+            switch (hdr->magic) {
+                case MH_MAGIC:
+                case MH_CIGAM:
+                    return return_section_address32(section, proc_ref, base, (void*)hdr);
+
+                case MH_MAGIC_64:
+                case MH_CIGAM_64:
+                    return return_section_address64(section, proc_ref, base, (void*)hdr);
+
+                default:
+                    PyErr_SetString(PyExc_RuntimeError, "Unknown Mach-O magic in fat binary.\n");
+                    return 0;
+            }
+        }
+    }
+
+    PyErr_SetString(PyExc_RuntimeError, "No matching architecture found in fat binary.\n");
+    return 0;
+}
+
+static uintptr_t
 search_section_in_file(const char* secname, char* path, uintptr_t base, mach_vm_size_t size, mach_port_t proc_ref)
 {
     int fd = open(path, O_RDONLY);
@@ -185,18 +305,20 @@ search_section_in_file(const char* secname, char* path, uintptr_t base, mach_vm_
     }
 
     uintptr_t result = 0;
+    uint32_t magic = *(uint32_t*)map;
 
-    struct mach_header_64* hdr = (struct mach_header_64*)map;
-    switch (hdr->magic) {
+    switch (magic) {
     case MH_MAGIC:
     case MH_CIGAM:
-    case FAT_MAGIC:
-    case FAT_CIGAM:
-        PyErr_SetString(PyExc_RuntimeError, "32-bit Mach-O binaries are not supported");
+        result = return_section_address32(secname, proc_ref, base, map);
         break;
     case MH_MAGIC_64:
     case MH_CIGAM_64:
-        result = return_section_address(secname, proc_ref, base, map);
+        result = return_section_address64(secname, proc_ref, base, map);
+        break;
+    case FAT_MAGIC:
+    case FAT_CIGAM:
+        result = return_section_address_fat(secname, proc_ref, base, map);
         break;
     default:
         PyErr_SetString(PyExc_RuntimeError, "Unknown Mach-O magic");
