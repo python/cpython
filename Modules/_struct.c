@@ -1493,10 +1493,9 @@ lp_ulonglong(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
     Py_DECREF(v);
     if (res < 0) {
         PyErr_Format(state->StructError,
-                     "'%c' format requires 0 <= number <= %llu (at item %zd)",
+                     "'%c' format requires 0 <= number <= %llu",
                      f->format,
-                     ULLONG_MAX,
-                     state->current_arg);
+                     ULLONG_MAX);
         return -1;
     }
     return res;
