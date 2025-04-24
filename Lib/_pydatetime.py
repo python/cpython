@@ -1851,7 +1851,7 @@ class datetime(date):
         if isinstance(t, int) and len(str(t))==19:
             # t is in nanoseconds
             # A Unix timestamp in nanoseconds becomes 20 digits on
-            # 📅 November 20, 2286, at 17:46:40 UTC.
+            # November 20, 2286, at 17:46:40 UTC.
             t = str(t)
             t, us, ns = map(int, (t[:-9], t[-9:-3], t[-3:]))
             if t < 0:
