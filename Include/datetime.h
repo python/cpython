@@ -18,17 +18,18 @@ extern "C" {
  *  5           minute   1 byte, 0-59
  *  6           second   1 byte, 0-59
  *  7           usecond  3 bytes, 0-999999
- * 10
+ * 10           nsecond  2 bytes, 0-999
+ * 12
  */
 
 /* # of bytes for year, month, and day. */
 #define _PyDateTime_DATE_DATASIZE 4
 
 /* # of bytes for hour, minute, second, and usecond. */
-#define _PyDateTime_TIME_DATASIZE 6
+#define _PyDateTime_TIME_DATASIZE 8
 
 /* # of bytes for year, month, day, hour, minute, second, and usecond. */
-#define _PyDateTime_DATETIME_DATASIZE 10
+#define _PyDateTime_DATETIME_DATASIZE 12
 
 
 typedef struct
@@ -38,6 +39,7 @@ typedef struct
     int days;                   /* -MAX_DELTA_DAYS <= days <= MAX_DELTA_DAYS */
     int seconds;                /* 0 <= seconds < 24*3600 is invariant */
     int microseconds;           /* 0 <= microseconds < 1000000 is invariant */
+    int nanoseconds;            /* 0 <= nanoseconds < 1000 is invariant */
 } PyDateTime_Delta;
 
 typedef struct
@@ -174,10 +176,10 @@ typedef struct {
 
     /* constructors */
     PyObject *(*Date_FromDate)(int, int, int, PyTypeObject*);
-    PyObject *(*DateTime_FromDateAndTime)(int, int, int, int, int, int, int,
+    PyObject *(*DateTime_FromDateAndTime)(int, int, int, int, int, int, int, int,
         PyObject*, PyTypeObject*);
-    PyObject *(*Time_FromTime)(int, int, int, int, PyObject*, PyTypeObject*);
-    PyObject *(*Delta_FromDelta)(int, int, int, int, PyTypeObject*);
+    PyObject *(*Time_FromTime)(int, int, int, int, int, PyObject*, PyTypeObject*);
+    PyObject *(*Delta_FromDelta)(int, int, int, int, int, PyTypeObject*);
     PyObject *(*TimeZone_FromTimeZone)(PyObject *offset, PyObject *name);
 
     /* constructors for the DB API */
@@ -185,9 +187,9 @@ typedef struct {
     PyObject *(*Date_FromTimestamp)(PyObject*, PyObject*);
 
     /* PEP 495 constructors */
-    PyObject *(*DateTime_FromDateAndTimeAndFold)(int, int, int, int, int, int, int,
+    PyObject *(*DateTime_FromDateAndTimeAndFold)(int, int, int, int, int, int, int, int,
         PyObject*, int, PyTypeObject*);
-    PyObject *(*Time_FromTimeAndFold)(int, int, int, int, PyObject*, int, PyTypeObject*);
+    PyObject *(*Time_FromTimeAndFold)(int, int, int, int, int, PyObject*, int, PyTypeObject*);
 
 } PyDateTime_CAPI;
 
@@ -229,24 +231,24 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 #define PyDate_FromDate(year, month, day) \
     PyDateTimeAPI->Date_FromDate((year), (month), (day), PyDateTimeAPI->DateType)
 
-#define PyDateTime_FromDateAndTime(year, month, day, hour, min, sec, usec) \
+#define PyDateTime_FromDateAndTime(year, month, day, hour, min, sec, usec, nanosec) \
     PyDateTimeAPI->DateTime_FromDateAndTime((year), (month), (day), (hour), \
-        (min), (sec), (usec), Py_None, PyDateTimeAPI->DateTimeType)
+        (min), (sec), (usec), Py_None, Py_None, (nanosec), PyDateTimeAPI->DateTimeType)
 
-#define PyDateTime_FromDateAndTimeAndFold(year, month, day, hour, min, sec, usec, fold) \
+#define PyDateTime_FromDateAndTimeAndFold(year, month, day, hour, min, sec, usec, nanosec, fold) \
     PyDateTimeAPI->DateTime_FromDateAndTimeAndFold((year), (month), (day), (hour), \
-        (min), (sec), (usec), Py_None, (fold), PyDateTimeAPI->DateTimeType)
+        (min), (sec), (usec), Py_None, (fold), (nanosec), PyDateTimeAPI->DateTimeType)
 
-#define PyTime_FromTime(hour, minute, second, usecond) \
+#define PyTime_FromTime(hour, minute, second, usecond, nanosec) \
     PyDateTimeAPI->Time_FromTime((hour), (minute), (second), (usecond), \
-        Py_None, PyDateTimeAPI->TimeType)
+        Py_None, Py_None, (nanosec), PyDateTimeAPI->TimeType)
 
-#define PyTime_FromTimeAndFold(hour, minute, second, usecond, fold) \
+#define PyTime_FromTimeAndFold(hour, minute, second, usecond, nanosec, fold) \
     PyDateTimeAPI->Time_FromTimeAndFold((hour), (minute), (second), (usecond), \
-        Py_None, (fold), PyDateTimeAPI->TimeType)
+        Py_None, (fold), (nanosec), PyDateTimeAPI->TimeType)
 
-#define PyDelta_FromDSU(days, seconds, useconds) \
-    PyDateTimeAPI->Delta_FromDelta((days), (seconds), (useconds), 1, \
+#define PyDelta_FromDSU(days, seconds, useconds, nanoseconds) \
+    PyDateTimeAPI->Delta_FromDelta((days), (seconds), (useconds), (nanoseconds), 1, \
         PyDateTimeAPI->DeltaType)
 
 #define PyTimeZone_FromOffset(offset) \
