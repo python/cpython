@@ -396,13 +396,37 @@ class MinidomTest(unittest.TestCase):
         dom.unlink()
 
     def testGetAttrList(self):
-        pass
+        dom = parseString("<abc/>")
+        el = dom.documentElement
+        el.setAttribute("spam", "jam")
+        self.confirm(len(el.attributes.items()) == 1)
+        el.setAttribute("foo", "bar")
+        self.confirm(len(el.attributes.items()) == 2)
+        self.confirm(('spam', 'jam') in el.attributes.items())
+        self.confirm(('foo', 'bar') in el.attributes.items())
+        dom.unlink()
 
     def testGetAttrValues(self):
-        pass
+        dom = parseString("<abc/>")
+        el = dom.documentElement
+        el.setAttribute("spam", "jam")
+        values = [x.value for x in el.attributes.values()]
+        self.confirm("jam" in values)
+        el.setAttribute("foo", "bar")
+        values = [x.value for x in el.attributes.values()]
+        self.confirm("bar" in values)
+        dom.unlink()
 
     def testGetAttrLength(self):
-        pass
+        dom = parseString("<abc/>")
+        el = dom.documentElement
+        el.setAttribute("spam", "jam")
+        self.confirm(len(el.attributes.items()) == 1)
+        el.setAttribute("foo", "bar")
+        self.confirm(len(el.attributes.items()) == 2)
+        el.removeAttribute("foo")
+        self.confirm(len(el.attributes.items()) == 1)
+        dom.unlink()
 
     def testGetAttribute(self):
         dom = Document()
@@ -496,7 +520,11 @@ class MinidomTest(unittest.TestCase):
         self.confirm(str(node) == repr(node))
         dom.unlink()
 
-    def testTextNodeRepr(self): pass
+    def testTextNodeRepr(self):
+        dom = Document()
+        el = dom.appendChild(dom.createElement("foo"))
+        self.confirm(str(el) == repr(el))
+        dom.unlink()
 
     def testWriteXML(self):
         str = '<?xml version="1.0" ?><a b="c"/>'
@@ -601,9 +629,21 @@ class MinidomTest(unittest.TestCase):
                 and pi.localName is None
                 and pi.namespaceURI == xml.dom.EMPTY_NAMESPACE)
 
-    def testProcessingInstructionRepr(self): pass
+    def testProcessingInstructionRepr(self):
+        dom = parseString('<e><?mypi \t\n data \t\n ?></e>')
+        pi = dom.documentElement.firstChild
+        string1 = str(pi.nodeType)
+        string2 = repr(pi.nodeType)
+        self.assertEqual(string1, string2)
 
-    def testTextRepr(self): pass
+    def testTextRepr(self):
+        dom = Document()
+        elem = dom.createElement('elem')
+        elem.appendChild(dom.createTextNode("foo"))
+        el = elem.firstChild
+        string1 = str(el)
+        string2 = repr(el)
+        self.assertEqual(string1, string2)
 
     def testWriteText(self): pass
 
