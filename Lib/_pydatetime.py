@@ -1600,6 +1600,9 @@ class time:
         s = "%s%s(%d, %d%s)" % (_get_class_module(self),
                                 self.__class__.__qualname__,
                                 self._hour, self._minute, s)
+        if self._nanosecond:
+            assert s[-1:] == ")"
+            s = s[:-1] + ", nanosecond=%d" % self._nanosecond + ")"
         if self._tzinfo is not None:
             assert s[-1:] == ")"
             s = s[:-1] + ", tzinfo=%r" % self._tzinfo + ")"
@@ -1824,6 +1827,11 @@ class datetime(date):
     def microsecond(self):
         """microsecond (0-999999)"""
         return self._microsecond
+
+    @property
+    def nanosecond(self):
+        """nanosecond (0-999)"""
+        return self._nanosecond
 
     @property
     def tzinfo(self):
@@ -2062,7 +2070,7 @@ class datetime(date):
 
     def time(self):
         "Return the time part, with tzinfo None."
-        return time(self.hour, self.minute, self.second, self.microsecond, fold=self.fold)
+        return time(self.hour, self.minute, self.second, self.microsecond, fold=self.fold, nanosecond=self.nanosecond)
 
     def timetz(self):
         "Return the time part, with same tzinfo."
