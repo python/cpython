@@ -1,0 +1,1 @@
+Add new constants for Bluetooth :mod:`sockets <socket>`.

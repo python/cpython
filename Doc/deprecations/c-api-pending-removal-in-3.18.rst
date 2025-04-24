@@ -11,6 +11,32 @@ Pending removal in Python 3.18
     use :c:func:`PyLongWriter_Create`.
   * :c:func:`!_PyThreadState_UncheckedGet`: use :c:func:`PyThreadState_GetUnchecked`.
   * :c:func:`!_PyUnicode_AsString`: use :c:func:`PyUnicode_AsUTF8`.
+  * :c:func:`!_PyUnicodeWriter_Init`:
+    replace ``_PyUnicodeWriter_Init(&writer)`` with
+    :c:func:`writer = PyUnicodeWriter_Create(0) <PyUnicodeWriter_Create>`.
+  * :c:func:`!_PyUnicodeWriter_Finish`:
+    replace ``_PyUnicodeWriter_Finish(&writer)`` with
+    :c:func:`PyUnicodeWriter_Finish(writer) <PyUnicodeWriter_Finish>`.
+  * :c:func:`!_PyUnicodeWriter_Dealloc`:
+    replace ``_PyUnicodeWriter_Dealloc(&writer)`` with
+    :c:func:`PyUnicodeWriter_Discard(writer) <PyUnicodeWriter_Discard>`.
+  * :c:func:`!_PyUnicodeWriter_WriteChar`:
+    replace ``_PyUnicodeWriter_WriteChar(&writer, ch)`` with
+    :c:func:`PyUnicodeWriter_WriteChar(writer, ch) <PyUnicodeWriter_WriteChar>`.
+  * :c:func:`!_PyUnicodeWriter_WriteStr`:
+    replace ``_PyUnicodeWriter_WriteStr(&writer, str)`` with
+    :c:func:`PyUnicodeWriter_WriteStr(writer, str) <PyUnicodeWriter_WriteStr>`.
+  * :c:func:`!_PyUnicodeWriter_WriteSubstring`:
+    replace ``_PyUnicodeWriter_WriteSubstring(&writer, str, start, end)`` with
+    :c:func:`PyUnicodeWriter_WriteSubstring(writer, str, start, end) <PyUnicodeWriter_WriteSubstring>`.
+  * :c:func:`!_PyUnicodeWriter_WriteASCIIString`:
+    replace ``_PyUnicodeWriter_WriteASCIIString(&writer, str)`` with
+    :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
+  * :c:func:`!_PyUnicodeWriter_WriteLatin1String`:
+    replace ``_PyUnicodeWriter_WriteLatin1String(&writer, str)`` with
+    :c:func:`PyUnicodeWriter_WriteUTF8(writer, str) <PyUnicodeWriter_WriteUTF8>`.
+  * :c:func:`!_PyUnicodeWriter_Prepare`: (no replacement).
+  * :c:func:`!_PyUnicodeWriter_PrepareKind`: (no replacement).
   * :c:func:`!_Py_HashPointer`: use :c:func:`Py_HashPointer`.
   * :c:func:`!_Py_fopen_obj`: use :c:func:`Py_fopen`.
 

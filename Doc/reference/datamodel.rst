@@ -1526,18 +1526,17 @@ positional arguments; bit ``0x08`` is set if the function uses the
 if the function is a generator. See :ref:`inspect-module-co-flags` for details
 on the semantics of each flags that might be present.
 
-Future feature declarations (``from __future__ import division``) also use bits
+Future feature declarations (for example, ``from __future__ import division``) also use bits
 in :attr:`~codeobject.co_flags` to indicate whether a code object was compiled with a
-particular feature enabled: bit ``0x2000`` is set if the function was compiled
-with future division enabled; bits ``0x10`` and ``0x1000`` were used in earlier
-versions of Python.
+particular feature enabled. See :attr:`~__future__._Feature.compiler_flag`.
 
 Other bits in :attr:`~codeobject.co_flags` are reserved for internal use.
 
 .. index:: single: documentation string
 
 If a code object represents a function and has a docstring,
-the first item in :attr:`~codeobject.co_consts` is
+the :data:`~inspect.CO_HAS_DOCSTRING` bit is set in :attr:`~codeobject.co_flags`
+and the first item in :attr:`~codeobject.co_consts` is
 the docstring of the function.
 
 Methods on code objects
@@ -3319,7 +3318,7 @@ left undefined.
    :meth:`__divmod__` method should be the equivalent to using
    :meth:`__floordiv__` and :meth:`__mod__`; it should not be related to
    :meth:`__truediv__`.  Note that :meth:`__pow__` should be defined to accept
-   an optional third argument if the ternary version of the built-in :func:`pow`
+   an optional third argument if the three-argument version of the built-in :func:`pow`
    function is to be supported.
 
    If one of those methods does not support the operation with the supplied
@@ -3356,10 +3355,15 @@ left undefined.
    is called if ``type(x).__sub__(x, y)`` returns :data:`NotImplemented` or ``type(y)``
    is a subclass of ``type(x)``. [#]_
 
-   .. index:: pair: built-in function; pow
+   Note that :meth:`__rpow__` should be defined to accept an optional third
+   argument if the three-argument version of the built-in :func:`pow` function
+   is to be supported.
 
-   Note that ternary :func:`pow` will not try calling :meth:`__rpow__` (the
-   coercion rules would become too complicated).
+   .. versionchanged:: next
+
+      Three-argument :func:`pow` now try calling :meth:`~object.__rpow__` if necessary.
+      Previously it was only called in two-argument :func:`!pow` and the binary
+      power operator.
 
    .. note::
 

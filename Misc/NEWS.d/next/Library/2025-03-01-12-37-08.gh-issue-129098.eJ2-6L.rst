@@ -1,0 +1,2 @@
+Fix REPL traceback reporting when using :func:`compile` with an inexisting
+file. Patch by Bénédikt Tran.

@@ -1,12 +1,13 @@
-
 /* Function object implementation */
 
 #include "Python.h"
-#include "pycore_dict.h"                // _Py_INCREF_DICT()
-#include "pycore_long.h"                // _PyLong_GetOne()
-#include "pycore_modsupport.h"          // _PyArg_NoKeywords()
-#include "pycore_object.h"              // _PyObject_GC_UNTRACK()
-#include "pycore_pyerrors.h"            // _PyErr_Occurred()
+#include "pycore_dict.h"          // _Py_INCREF_DICT()
+#include "pycore_function.h"      // _PyFunction_Vectorcall
+#include "pycore_long.h"          // _PyLong_GetOne()
+#include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+#include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pyerrors.h"      // _PyErr_Occurred()
+#include "pycore_stats.h"
 
 
 static const char *
