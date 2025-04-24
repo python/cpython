@@ -42,12 +42,15 @@ from .utils import wlen
 from .windows_eventqueue import EventQueue
 
 try:
-    from ctypes import GetLastError, WinDLL, windll, WinError  # type: ignore[attr-defined]
+    from ctypes import get_last_error, GetLastError, WinDLL, windll, WinError  # type: ignore[attr-defined]
 except:
     # Keep MyPy happy off Windows
     from ctypes import CDLL as WinDLL, cdll as windll
 
     def GetLastError() -> int:
+        return 42
+
+    def get_last_error() -> int:
         return 42
 
     class WinError(OSError):  # type: ignore[no-redef]
@@ -416,7 +419,7 @@ class WindowsConsole(Console):
         if not block:
             ret = WaitForSingleObject(InHandle, 0)
             if ret == WAIT_FAILED:
-                raise WinError(ctypes.get_last_error())
+                raise WinError(get_last_error())
             elif ret == WAIT_TIMEOUT:
                 return None
 
@@ -532,7 +535,7 @@ class WindowsConsole(Console):
             timeout = int(timeout)
         ret = WaitForSingleObject(InHandle, timeout)
         if ret == WAIT_FAILED:
-            raise WinError(ctypes.get_last_error())
+            raise WinError(get_last_error())
 
     def repaint(self) -> None:
         raise NotImplementedError("No repaint support")
