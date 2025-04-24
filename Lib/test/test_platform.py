@@ -757,9 +757,11 @@ class CommandLineTest(unittest.TestCase):
 
     def test_unknown_flag(self):
         with self.assertRaises(SystemExit):
+            output = io.StringIO()
             # suppress argparse error message
-            with contextlib.redirect_stderr(io.StringIO()):
+            with contextlib.redirect_stderr(output):
                 _ = self.invoke_platform('--unknown')
+            self.assertStartsWith(output, "usage: ")
 
     def test_invocation(self):
         flags = (
@@ -800,7 +802,7 @@ class CommandLineTest(unittest.TestCase):
             with contextlib.redirect_stdout(output):
                 platform._main(args=["--help"])
 
-        self.assertIn("usage:", output.getvalue())
+        self.assertStartsWith(output.getvalue(), "usage:")
 
 
 if __name__ == '__main__':
