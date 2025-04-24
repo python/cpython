@@ -131,6 +131,9 @@ typedef struct
     ((((PyDateTime_DateTime*)(o))->data[7] << 16) |       \
      (((PyDateTime_DateTime*)(o))->data[8] << 8)  |       \
       ((PyDateTime_DateTime*)(o))->data[9])
+#define PyDateTime_DATE_GET_NANOSECOND(o)              \
+     (((PyDateTime_DateTime*)(o))->data[10] << 8) |       \
+      ((PyDateTime_DateTime*)(o))->data[11])
 #define PyDateTime_DATE_GET_FOLD(o)        (((PyDateTime_DateTime*)(o))->fold)
 #define PyDateTime_DATE_GET_TZINFO(o)      (_PyDateTime_HAS_TZINFO((o)) ? \
     ((PyDateTime_DateTime *)(o))->tzinfo : Py_None)
@@ -143,6 +146,9 @@ typedef struct
     ((((PyDateTime_Time*)(o))->data[3] << 16) |           \
      (((PyDateTime_Time*)(o))->data[4] << 8)  |           \
       ((PyDateTime_Time*)(o))->data[5])
+#define PyDateTime_TIME_GET_NANOSECOND(o)              \
+     (((PyDateTime_Time*)(o))->data[6] << 8) |       \
+      ((PyDateTime_Time*)(o))->data[7])
 #define PyDateTime_TIME_GET_FOLD(o)        (((PyDateTime_Time*)(o))->fold)
 #define PyDateTime_TIME_GET_TZINFO(o)      (_PyDateTime_HAS_TZINFO(o) ? \
     ((PyDateTime_Time *)(o))->tzinfo : Py_None)

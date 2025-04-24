@@ -299,6 +299,7 @@ finally:
 #define TIME_GET_MINUTE         PyDateTime_TIME_GET_MINUTE
 #define TIME_GET_SECOND         PyDateTime_TIME_GET_SECOND
 #define TIME_GET_MICROSECOND    PyDateTime_TIME_GET_MICROSECOND
+#define TIME_GET_NANOSECOND     PyDateTime_TIME_GET_NANOSECOND
 #define TIME_GET_FOLD           PyDateTime_TIME_GET_FOLD
 #define TIME_SET_HOUR(o, v)     (PyDateTime_TIME_GET_HOUR(o) = (v))
 #define TIME_SET_MINUTE(o, v)   (PyDateTime_TIME_GET_MINUTE(o) = (v))
@@ -307,6 +308,9 @@ finally:
     (((o)->data[3] = ((v) & 0xff0000) >> 16), \
      ((o)->data[4] = ((v) & 0x00ff00) >> 8), \
      ((o)->data[5] = ((v) & 0x0000ff)))
+#define TIME_SET_NANOSECOND(o, v)      \
+    (((o)->data[6] = ((v) & 0xff00) >> 8), \
+     ((o)->data[7] = ((v) & 0x00ff)))
 #define TIME_SET_FOLD(o, v)   (PyDateTime_TIME_GET_FOLD(o) = (v))
 
 /* Delta accessors for timedelta. */
@@ -4764,12 +4768,14 @@ time_isoformat(PyObject *op, PyObject *args, PyObject *kw)
 
     PyObject *result;
     int us = TIME_GET_MICROSECOND(self);
+    int ns = TIME_GET_NANOSECOND(self);
     static const char *specs[][2] = {
         {"hours", "%02d"},
         {"minutes", "%02d:%02d"},
         {"seconds", "%02d:%02d:%02d"},
         {"milliseconds", "%02d:%02d:%02d.%03d"},
         {"microseconds", "%02d:%02d:%02d.%06d"},
+        {"nanoseconds", "%02d:%02d:%02d.%06d%03d"},
     };
     size_t given_spec;
 
@@ -4805,7 +4811,7 @@ time_isoformat(PyObject *op, PyObject *args, PyObject *kw)
     else {
         result = PyUnicode_FromFormat(specs[given_spec][1],
                                       TIME_GET_HOUR(self), TIME_GET_MINUTE(self),
-                                      TIME_GET_SECOND(self), us);
+                                      TIME_GET_SECOND(self), us, ns);
     }
 
     if (result == NULL || !HASTZINFO(self) || self->tzinfo == Py_None)
