@@ -50,17 +50,18 @@ _CONSTANTS = {
 }
 
 
+HEXDIGITS = re.compile(r'[0-9A-Fa-f]{4}', FLAGS)
 STRINGCHUNK = re.compile(r'(.*?)(["\\\x00-\x1f])', FLAGS)
 BACKSLASH = {
     '"': '"', '\\': '\\', '/': '/',
     'b': '\b', 'f': '\f', 'n': '\n', 'r': '\r', 't': '\t',
 }
 
-def _decode_uXXXX(s, pos):
-    esc = s[pos + 1:pos + 5]
-    if len(esc) == 4 and esc[1] not in 'xX':
+def _decode_uXXXX(s, pos, _m=HEXDIGITS.match):
+    esc = _m(s, pos + 1)
+    if esc is not None:
         try:
-            return int(esc, 16)
+            return int(esc.group(), 16)
         except ValueError:
             pass
     msg = "Invalid \\uXXXX escape"

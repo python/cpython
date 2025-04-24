@@ -6,8 +6,7 @@ import signal
 import socket
 import sys
 from test import support
-from test.support import os_helper
-from test.support import socket_helper
+from test.support import is_apple, os_helper, socket_helper
 from time import sleep
 import unittest
 import unittest.mock
@@ -526,7 +525,7 @@ class ScalableSelectorMixIn:
         try:
             fds = s.select()
         except OSError as e:
-            if e.errno == errno.EINVAL and sys.platform == 'darwin':
+            if e.errno == errno.EINVAL and is_apple:
                 # unexplainable errors on macOS don't need to fail the test
                 self.skipTest("Invalid argument error calling poll()")
             raise
