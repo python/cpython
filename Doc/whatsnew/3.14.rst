@@ -1786,6 +1786,11 @@ pty
   Use :func:`pty.openpty` instead.
   (Contributed by Nikita Sobolev in :gh:`118824`.)
 
+shlex
+-----
+
+* :func:`shlex.quote` now always quotes its input instead of testing a regex
+
 sqlite3
 -------
 
