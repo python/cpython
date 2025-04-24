@@ -2043,7 +2043,7 @@ Utility functions
    larger than its length so that the last element in the array is a NUL
    termination character. An integer *size* can be passed which allows
    specifying the size of the array if the length of the bytes should not be used;
-   Note that if *size* is too small the NUL termination character will be omitted.
+   note that if *size* is too small, the buffer will not be null terminated.
 
    .. audit-event:: ctypes.create_string_buffer init,size ctypes.create_string_buffer
 
@@ -2060,7 +2060,7 @@ Utility functions
    larger than the length of the string so that the last element in the array is a
    NUL termination character. An integer *size* can be passed which allows
    specifying the size of the array if the length of the bytes should not be used;
-   Note that if *size* is too small the NUL termination character will be omitted.
+   note that if *size* is too small, the buffer will not be null terminated.
 
    .. audit-event:: ctypes.create_unicode_buffer init,size ctypes.create_unicode_buffer
 
