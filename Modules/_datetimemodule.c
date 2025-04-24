@@ -12,6 +12,7 @@
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
+#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_time.h"          // _PyTime_ObjectToTime_t()
 #include "pycore_unicodeobject.h" // _PyUnicode_Copy()
 
@@ -35,6 +36,11 @@ static PyTypeObject PyDateTime_TimeZoneType;
 
 
 typedef struct {
+    /* Extra reference to the interpreter's dict that will be decref'ed
+     * last at shutdown. We keep the current module in it, but don't rely
+     * on PyInterpreterState_GetDict() at the module's final phase. */
+    PyObject *interp_dict;
+
     /* Module heap types. */
     PyTypeObject *isocalendar_date_type;
 
@@ -49,11 +55,6 @@ typedef struct {
 
     /* The interned Unix epoch datetime instance */
     PyObject *epoch;
-
-    /* Extra reference to the interpreter's dict that will be decref'ed
-     * last at shutdown. We keep the current module in it, but don't rely
-     * on PyInterpreterState_GetDict() at the module's final phase. */
-    PyObject *interp_dict;
 } datetime_state;
 
 /* The module has a fixed number of static objects, due to being exposed
@@ -169,6 +170,7 @@ _get_current_state(PyObject **p_mod)
         if (PyErr_Occurred()) {
             return NULL;
         }
+        assert(!_Py_IsInterpreterFinalizing(interp));
         /* The static types can outlive the module,
          * so we must re-import the module. */
         mod = PyImport_ImportModule("_datetime");
