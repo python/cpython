@@ -98,10 +98,9 @@ def android_env(host):
         prefix = subdir(host) / "prefix"
     else:
         prefix = ANDROID_DIR / "prefix"
-        sysconfigdata_files = prefix.glob("lib/python*/_sysconfigdata__android_*.py")
-        host = re.fullmatch(
-            r"_sysconfigdata__android_(.+).py", next(sysconfigdata_files).name
-        )[1]
+        sysconfig_files = prefix.glob("lib/python*/_sysconfigdata__android_*.py")
+        sysconfig_filename = next(sysconfig_files).name
+        host = re.fullmatch(r"_sysconfigdata__android_(.+).py", sysconfig_filename)[1]
 
     env_script = ANDROID_DIR / "android-env.sh"
     env_output = subprocess.run(
