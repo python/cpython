@@ -491,6 +491,8 @@ typedef struct {
     binaryopactionfunc action;
 } _PyBinaryOpSpecializationDescr;
 
+PyAPI_DATA(int) _Py_Specialize_AddBinaryOpExtention(_PyBinaryOpSpecializationDescr* descr);
+
 /* Comparison bit masks. */
 
 /* Note this evaluates its arguments twice each */

@@ -348,6 +348,8 @@ typedef int (*objobjproc)(PyObject *, PyObject *);
 typedef int (*visitproc)(PyObject *, void *);
 typedef int (*traverseproc)(PyObject *, visitproc, void *);
 
+struct _PyBinaryOpSpecializationDescr;
+typedef int (*binopspecfunc)(PyObject *lhs, PyObject *rhs, int oparg, struct _PyBinaryOpSpecializationDescr* descr);
 
 typedef void (*freefunc)(void *);
 typedef void (*destructor)(PyObject *);

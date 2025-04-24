@@ -14,6 +14,8 @@
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
 
+#include "opcode.h"               // binary op opargs (NB_*)
+
 #include <stddef.h>               // offsetof()
 #include <stdbool.h>
 
@@ -3201,6 +3203,33 @@ do {                                                     \
     state->str_ ## string = tmp;                         \
 } while (0)
 
+static inline int
+array_guard(PyObject *lhs, PyObject *rhs)
+{
+     fprintf(stderr, "array_guard\n");
+    return 0;
+}
+
+static PyObject *
+array_action(PyObject *lhs, PyObject *rhs)
+{
+    return NULL;
+}
+
+static int
+array_register_specializations(void)
+{
+    _PyBinaryOpSpecializationDescr descr = {
+        .oparg = NB_MULTIPLY,
+        .guard = array_guard,
+        .action = array_action,
+    };
+    if (_Py_Specialize_AddBinaryOpExtention(&descr) < 0) {
+        return -1;
+    }
+    return 0;
+}
+
 static int
 array_modexec(PyObject *m)
 {
@@ -3240,6 +3269,10 @@ array_modexec(PyObject *m)
     }
     Py_DECREF(res);
 
+    if (array_register_specializations() < 0) {
+        return -1;
+    }
+
     if (PyModule_AddType(m, state->ArrayType) < 0) {
         return -1;
     }
@@ -3252,7 +3285,6 @@ array_modexec(PyObject *m)
     if (PyModule_Add(m, "typecodes", typecodes) < 0) {
         return -1;
     }
-
     return 0;
 }
 
