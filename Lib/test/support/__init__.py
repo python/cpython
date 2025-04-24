@@ -2581,13 +2581,13 @@ def sleeping_retry(timeout, err_msg=None, /,
 class Stopwatch:
     """Context manager to roughly time a CPU-bound operation.
 
-    Disables GC. Uses perf_counter, i.e. a clock with the highest
+    Disables GC. Uses perf_counter, which is a clock with the highest
     available resolution. It is chosen even though it does include
     time elapsed during sleep and is system-wide, because the
     resolution of process_time is too coarse on Windows and
-    process_time does not exist everywhere (e.g. WASM).
+    process_time does not exist everywhere (for example, WASM).
 
-    N.B.:
+    Note:
     - This *includes* time spent in other threads/processes.
     - Some systems only have a coarse resolution; check
       stopwatch.clock_info.resolution when using the results.
