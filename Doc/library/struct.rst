@@ -266,13 +266,6 @@ platform-dependent.
 +--------+--------------------------+--------------------+----------------+------------+
 | ``P``  | :c:expr:`void \*`        | integer            |                | \(5)       |
 +--------+--------------------------+--------------------+----------------+------------+
-
-Additionally, if IEC 60559 compatible complex arithmetic (Annex G of the
-C11 standard) is supported, the following format characters are available:
-
-+--------+--------------------------+--------------------+----------------+------------+
-| Format | C Type                   | Python type        | Standard size  | Notes      |
-+========+==========================+====================+================+============+
 | ``F``  | :c:expr:`float complex`  | complex            | 8              | \(10)      |
 +--------+--------------------------+--------------------+----------------+------------+
 | ``D``  | :c:expr:`double complex` | complex            | 16             | \(10)      |
@@ -367,6 +360,12 @@ Notes:
    For the ``'E'`` and ``'C'`` format characters, the packed representation uses
    the IEEE 754 binary32 and binary64 format for components of the complex
    number, regardless of the floating-point format used by the platform.
+   Note, that support for complex types is available unconditionally,
+   regardless on support IEC 60559 compatible complex arithmetic (Annex G of
+   the C11 standard) by the compiler.  Each complex type interpreted as an
+   array type containing exactly two elements of the corresponding real type
+   (real and imaginary parts, respectively).
+
 
 A format character may be preceded by an integral repeat count.  For example,
 the format string ``'4h'`` means exactly the same as ``'hhhh'``.
