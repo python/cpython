@@ -545,6 +545,8 @@ class WindowsConsole(Console):
             e.data += e2.data
             e.raw += e.raw
 
+        return e
+
     def wait_for_event(self, timeout: float | None) -> bool:
         """Wait for an event."""
         if timeout is None:
