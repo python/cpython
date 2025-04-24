@@ -265,3 +265,12 @@ PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
 PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
+
+/* Similar to PyInterpreterState_Get(), but returns the interpreter with an
+ * incremented reference count. PyInterpreterState_Delete() won't delete the
+ * full interpreter structure until the reference is released by
+ * PyThreadState_Ensure() or PyInterpreterState_Release(). */
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Hold();
+
+/* Release a reference to an interpreter incremented by PyInterpreterState_Hold() */
+PyAPI_FUNC(void) PyInterpreterState_Release(PyInterpreterState *interp);

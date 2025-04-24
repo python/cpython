@@ -600,6 +600,15 @@ free_interpreter(PyInterpreterState *interp)
     }
 }
 
+static void
+decref_interpreter(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    if (_Py_atomic_add_ssize(&interp->refcount, -1) == 1) {
+        free_interpreter(interp);
+    }
+}
+
 #ifndef NDEBUG
 static inline int check_interpreter_whence(long);
 #endif
@@ -793,6 +802,7 @@ error:
     HEAD_UNLOCK(runtime);
 
     if (interp != NULL) {
+        assert(interp->refcount == 1);
         free_interpreter(interp);
     }
     return status;
@@ -1043,7 +1053,7 @@ PyInterpreterState_Delete(PyInterpreterState *interp)
 
     _PyObject_FiniState(interp);
 
-    free_interpreter(interp);
+    decref_interpreter(interp);
 }
 
 
@@ -1079,7 +1089,7 @@ _PyInterpreterState_DeleteExceptMain(_PyRuntimeState *runtime)
         zapthreads(interp);
         PyInterpreterState *prev_interp = interp;
         interp = interp->next;
-        free_interpreter(prev_interp);
+        decref_interpreter(prev_interp);
     }
     HEAD_UNLOCK(runtime);
 
@@ -3184,4 +3194,23 @@ _Py_GetMainConfig(void)
         return NULL;
     }
     return _PyInterpreterState_GetConfig(interp);
+}
+
+PyInterpreterState *
+PyInterpreterState_Hold(void)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    assert(_Py_atomic_load_ssize_relaxed(&interp->refcount) > 0);
+    _Py_atomic_add_ssize(&interp->refcount, 1);
+    return interp;
+}
+
+void
+PyInterpreterState_Release(PyInterpreterState *interp)
+{
+    PyThreadState *tstate = PyThreadState_Get();
+    if (tstate->interp != interp) {
+        Py_FatalError("thread state has the wrong interpreter");
+    }
+    decref_interpreter(interp);
 }

@@ -949,6 +949,10 @@ struct _is {
 #  endif
 #endif
 
+    /* This prevents the interpreter from deleting.
+       See PEP 788 for the full specification. */
+    Py_ssize_t refcount;
+
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;
     // _initial_thread should be the last field of PyInterpreterState.
