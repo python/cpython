@@ -18,11 +18,24 @@
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // lseek()
 #endif
-#if defined(HAVE_EXECINFO_H) && defined(HAVE_DLFCN_H) && defined(HAVE_LINK_H)
+
+#if (defined(HAVE_EXECINFO_H) && defined(HAVE_DLFCN_H) && defined(HAVE_LINK_H))
+#  define _PY_HAS_BACKTRACE_HEADERS 1
+#endif
+
+#if (defined(__APPLE__) && defined(HAVE_EXECINFO_H) && defined(HAVE_DLFCN_H))
+#  define _PY_HAS_BACKTRACE_HEADERS 1
+#endif
+
+#ifdef _PY_HAS_BACKTRACE_HEADERS
 #  include <execinfo.h>           // backtrace(), backtrace_symbols()
 #  include <dlfcn.h>              // dladdr1()
-#  include <link.h>               // struct DL_info
-#  if defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) && defined(HAVE_DLADDR1)
+#ifdef HAVE_LINK_H
+#    include <link.h>               // struct DL_info
+#endif
+#  if defined(__APPLE__) && defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) && defined(HAVE_DLADDR)
+#    define CAN_C_BACKTRACE
+#  elif defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) && defined(HAVE_DLADDR1)
 #    define CAN_C_BACKTRACE
 #  endif
 #endif
@@ -829,11 +842,11 @@ _Py_DumpDecimal(int fd, size_t value)
 
 /* Format an integer as hexadecimal with width digits into fd file descriptor.
    The function is signal safe. */
-void
-_Py_DumpHexadecimal(int fd, uintptr_t value, Py_ssize_t width)
+static void
+dump_hexadecimal(int fd, uintptr_t value, Py_ssize_t width, int strip_zeros)
 {
     char buffer[sizeof(uintptr_t) * 2 + 1], *ptr, *end;
-    const Py_ssize_t size = Py_ARRAY_LENGTH(buffer) - 1;
+    Py_ssize_t size = Py_ARRAY_LENGTH(buffer) - 1;
 
     if (width > size)
         width = size;
@@ -849,7 +862,35 @@ _Py_DumpHexadecimal(int fd, uintptr_t value, Py_ssize_t width)
         value >>= 4;
     } while ((end - ptr) < width || value);
 
-    (void)_Py_write_noraise(fd, ptr, end - ptr);
+    size = end - ptr;
+    if (strip_zeros) {
+        while (*ptr == '0' && size >= 2) {
+            ptr++;
+            size--;
+        }
+    }
+
+    (void)_Py_write_noraise(fd, ptr, size);
+}
+
+void
+_Py_DumpHexadecimal(int fd, uintptr_t value, Py_ssize_t width)
+{
+    dump_hexadecimal(fd, value, width, 0);
+}
+
+static void
+dump_pointer(int fd, void *ptr)
+{
+    PUTS(fd, "0x");
+    dump_hexadecimal(fd, (uintptr_t)ptr, sizeof(void*), 1);
+}
+
+static void
+dump_char(int fd, char ch)
+{
+    char buf[1] = {ch};
+    (void)_Py_write_noraise(fd, buf, 1);
 }
 
 void
@@ -911,8 +952,7 @@ _Py_DumpASCII(int fd, PyObject *text)
         ch = PyUnicode_READ(kind, data, i);
         if (' ' <= ch && ch <= 126) {
             /* printable ASCII character */
-            char c = (char)ch;
-            (void)_Py_write_noraise(fd, &c, 1);
+            dump_char(fd, (char)ch);
         }
         else if (ch <= 0xff) {
             PUTS(fd, "\\x");
@@ -1193,6 +1233,9 @@ _Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
     VLA(int, status, size);
     /* Fill in the information we can get from dladdr() */
     for (Py_ssize_t i = 0; i < size; ++i) {
+#ifdef __APPLE__
+        status[i] = dladdr(array[i], &info[i]);
+#else
         struct link_map *map;
         status[i] = dladdr1(array[i], &info[i], (void **)&map, RTLD_DL_LINKMAP);
         if (status[i] != 0
@@ -1204,13 +1247,16 @@ _Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
                something we want to subtract out */
             info[i].dli_fbase = (void *) map->l_addr;
         }
+#endif
     }
     for (Py_ssize_t i = 0; i < size; ++i) {
         if (status[i] == 0
             || info[i].dli_fname == NULL
             || info[i].dli_fname[0] == '\0'
         ) {
-            dprintf(fd, "  Binary file '<unknown>' [%p]\n", array[i]);
+            PUTS(fd, "  Binary file '<unknown>' [");
+            dump_pointer(fd, array[i]);
+            PUTS(fd, "]\n");
             continue;
         }
 
@@ -1220,11 +1266,12 @@ _Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
             info[i].dli_saddr = info[i].dli_fbase;
         }
 
-        if (info[i].dli_sname == NULL
-            && info[i].dli_saddr == 0) {
-            dprintf(fd, "  Binary file \"%s\" [%p]\n",
-                    info[i].dli_fname,
-                    array[i]);
+        if (info[i].dli_sname == NULL && info[i].dli_saddr == 0) {
+            PUTS(fd, "  Binary file \"");
+            PUTS(fd, info[i].dli_fname);
+            PUTS(fd, "\" [");
+            dump_pointer(fd, array[i]);
+            PUTS(fd, "]\n");
         }
         else {
             char sign;
@@ -1238,10 +1285,16 @@ _Py_backtrace_symbols_fd(int fd, void *const *array, Py_ssize_t size)
                 offset = info[i].dli_saddr - array[i];
             }
             const char *symbol_name = info[i].dli_sname != NULL ? info[i].dli_sname : "";
-            dprintf(fd, "  Binary file \"%s\", at %s%c%#tx [%p]\n",
-                    info[i].dli_fname,
-                    symbol_name,
-                    sign, offset, array[i]);
+            PUTS(fd, "  Binary file \"");
+            PUTS(fd, info[i].dli_fname);
+            PUTS(fd, "\", at ");
+            PUTS(fd, symbol_name);
+            dump_char(fd, sign);
+            PUTS(fd, "0x");
+            dump_hexadecimal(fd, offset, sizeof(offset), 1);
+            PUTS(fd, " [");
+            dump_pointer(fd, array[i]);
+            PUTS(fd, "]\n");
         }
     }
 }

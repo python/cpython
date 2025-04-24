@@ -1048,6 +1048,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _CALL_TYPE_1:
             return 3;
+        case _GUARD_CALLABLE_STR_1:
+            return 0;
         case _CALL_STR_1:
             return 3;
         case _GUARD_CALLABLE_TUPLE_1:

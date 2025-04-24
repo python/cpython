@@ -298,6 +298,7 @@ faulthandler_dump_c_stack_py(PyObject *self,
     }
 
     _Py_DumpStack(fd);
+    Py_XDECREF(file);
 
     if (PyErr_CheckSignals()) {
         return NULL;
