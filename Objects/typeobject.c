@@ -1156,14 +1156,6 @@ type_modified_unlocked(PyTypeObject *type)
         }
     }
 
-    set_version_unlocked(type, 0); /* 0 is not a valid version tag */
-    if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
-        // This field *must* be invalidated if the type is modified (see the
-        // comment on struct _specialization_cache):
-        FT_ATOMIC_STORE_PTR_RELAXED(
-            ((PyHeapTypeObject *)type)->_spec_cache.getitem, NULL);
-    }
-
     // Notify registered type watchers, if any
     if (type->tp_watched) {
         PyInterpreterState *interp = _PyInterpreterState_GET();
@@ -1184,6 +1176,14 @@ type_modified_unlocked(PyTypeObject *type)
             i++;
             bits >>= 1;
         }
+    }
+
+    set_version_unlocked(type, 0); /* 0 is not a valid version tag */
+    if (PyType_HasFeature(type, Py_TPFLAGS_HEAPTYPE)) {
+        // This field *must* be invalidated if the type is modified (see the
+        // comment on struct _specialization_cache):
+        FT_ATOMIC_STORE_PTR_RELAXED(
+            ((PyHeapTypeObject *)type)->_spec_cache.getitem, NULL);
     }
 }
 
@@ -1238,21 +1238,14 @@ type_mro_modified(PyTypeObject *type, PyObject *bases)
        Called from mro_internal, which will subsequently be called on
        each subclass when their mro is recursively updated.
      */
+    Py_ssize_t i, n;
+
     ASSERT_TYPE_LOCK_HELD();
-    if (!Py_IS_TYPE(type, &PyType_Type)) {
-        unsigned int meta_version = Py_TYPE(type)->tp_version_tag;
-        // This can be re-entrant.
-        bool is_custom = has_custom_mro(type);
-        if (meta_version != Py_TYPE(type)->tp_version_tag) {
-            // metaclass changed during call of has_custom_mro()
-            goto clear;
-        }
-        if (is_custom) {
-            goto clear;
-        }
+    if (!Py_IS_TYPE(type, &PyType_Type) && has_custom_mro(type)) {
+        goto clear;
     }
-    Py_ssize_t n = PyTuple_GET_SIZE(bases);
-    for (Py_ssize_t i = 0; i < n; i++) {
+    n = PyTuple_GET_SIZE(bases);
+    for (i = 0; i < n; i++) {
         PyObject *b = PyTuple_GET_ITEM(bases, i);
         PyTypeObject *cls = _PyType_CAST(b);
 
@@ -5771,22 +5764,12 @@ update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int versio
     return old_name;
 }
 
+#if Py_GIL_DISABLED
+
 static void
-maybe_update_cache(PyTypeObject *type, struct type_cache_entry *entry,
-                   PyObject *name, unsigned int version_tag, PyObject *value)
+update_cache_gil_disabled(struct type_cache_entry *entry, PyObject *name,
+                          unsigned int version_tag, PyObject *value)
 {
-    if (version_tag == 0) {
-        return; // 0 is not a valid version
-    }
-    // Calling find_name_in_mro() might cause the type version to change.
-    // For example, if a __hash__ or __eq__ method mutates the types.
-    // This case is expected to be rare but we check for it here and avoid
-    // replacing a valid cache entry with a known to be stale one.
-    if (FT_ATOMIC_LOAD_UINT_RELAXED(type->tp_version_tag) != version_tag) {
-        return; // version changed during lookup
-    }
-    PyObject *old_value;
-#ifdef Py_GIL_DISABLED
     _PySeqLock_LockWrite(&entry->sequence);
 
     // update the entry
@@ -5798,15 +5781,15 @@ maybe_update_cache(PyTypeObject *type, struct type_cache_entry *entry,
         return;
     }
 
-    old_value = update_cache(entry, name, version_tag, value);
+    PyObject *old_value = update_cache(entry, name, version_tag, value);
 
     // Then update sequence to the next valid value
     _PySeqLock_UnlockWrite(&entry->sequence);
-#else
-    old_value = update_cache(entry, name, version_tag, value);
-#endif
+
     Py_DECREF(old_value);
 }
+
+#endif
 
 void
 _PyTypes_AfterFork(void)
@@ -5825,22 +5808,23 @@ _PyTypes_AfterFork(void)
 #endif
 }
 
-// Try to assign a new type version tag, return it if successful.  Return 0
-// if no version was assigned.
-static unsigned int
-type_assign_version(PyTypeObject *type)
+/* Internal API to look for a name through the MRO.
+   This returns a strong reference, and doesn't set an exception!
+   If nonzero, version is set to the value of type->tp_version at the time of
+   the lookup.
+*/
+PyObject *
+_PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *version)
 {
-    unsigned int version = type->tp_version_tag;
-    if (version == 0) {
-        PyInterpreterState *interp = _PyInterpreterState_GET();
-        if (assign_version_tag(interp, type)) {
-            version = type->tp_version_tag;
-        }
-        else {
-            version = 0;
-        }
+    _PyStackRef out;
+    unsigned int ver = _PyType_LookupStackRefAndVersion(type, name, &out);
+    if (version) {
+        *version = ver;
     }
-    return version;
+    if (PyStackRef_IsNull(out)) {
+        return NULL;
+    }
+    return PyStackRef_AsPyObjectSteal(out);
 }
 
 unsigned int
@@ -5896,12 +5880,15 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
 
     PyObject *res;
     int error;
-    unsigned int assigned_version = 0; // 0 is not a valid version
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    int has_version = 0;
+    unsigned int assigned_version = 0;
     BEGIN_TYPE_LOCK();
-    if (MCACHE_CACHEABLE_NAME(name)) {
-        assigned_version = type_assign_version(type);
-    }
     res = find_name_in_mro(type, name, &error);
+    if (MCACHE_CACHEABLE_NAME(name)) {
+        has_version = assign_version_tag(interp, type);
+        assigned_version = type->tp_version_tag;
+    }
     END_TYPE_LOCK();
 
     /* Only put NULL results into cache if there was no error. */
@@ -5920,28 +5907,17 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
         *out = PyStackRef_NULL;
         return 0;
     }
-    maybe_update_cache(type, entry, name, assigned_version, res);
-    *out = res ? PyStackRef_FromPyObjectSteal(res) : PyStackRef_NULL;
-    return assigned_version;
-}
 
-/* Internal API to look for a name through the MRO.
-   This returns a strong reference, and doesn't set an exception!
-   If nonzero, version is set to the value of type->tp_version at the time of
-   the lookup.
-*/
-PyObject *
-_PyType_LookupRefAndVersion(PyTypeObject *type, PyObject *name, unsigned int *version)
-{
-    _PyStackRef out;
-    unsigned int ver = _PyType_LookupStackRefAndVersion(type, name, &out);
-    if (version) {
-        *version = ver;
+    if (has_version) {
+#if Py_GIL_DISABLED
+        update_cache_gil_disabled(entry, name, assigned_version, res);
+#else
+        PyObject *old_value = update_cache(entry, name, assigned_version, res);
+        Py_DECREF(old_value);
+#endif
     }
-    if (PyStackRef_IsNull(out)) {
-        return NULL;
-    }
-    return PyStackRef_AsPyObjectSteal(out);
+    *out = res ? PyStackRef_FromPyObjectSteal(res) : PyStackRef_NULL;
+    return has_version ? assigned_version : 0;
 }
 
 /* Internal API to look for a name through the MRO.
