@@ -4066,7 +4066,7 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <ffi.h>
 int z_is_expected(double complex z)
 {
-    const double complex expected = CMPLX(1.25, -0.5);
+    const double complex expected = 1.25 - 0.5 * I;
     return z == expected;
 }
 int main(void)
