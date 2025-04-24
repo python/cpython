@@ -500,8 +500,7 @@ class PdbConnectTestCase(unittest.TestCase):
             # Wait until execution has continued
             synchronizer_sock.accept()[0].close()
 
-            # Send keyboard interrupt signal
-            self._send_command(client_file, json.dumps({"signal": "INT"}))
+            # Inject a script to interrupt the running process
             self._send_interrupt(process.pid)
             messages = self._read_until_prompt(client_file)
 
