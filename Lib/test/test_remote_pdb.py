@@ -13,7 +13,7 @@ import unittest
 import unittest.mock
 from contextlib import contextmanager
 from pathlib import Path
-from test.support import is_wasi, os_helper
+from test.support import is_wasi, os_helper, SHORT_TIMEOUT
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from typing import Dict, List, Optional, Tuple, Union, Any
 
@@ -415,7 +415,7 @@ class PdbConnectTestCase(unittest.TestCase):
             self._send_command(client_file, "c")
 
             # Wait for process to finish
-            stdout, _ = process.communicate(timeout=5)
+            stdout, _ = process.communicate(timeout=SHORT_TIMEOUT)
 
             # Check if we got the expected output
             self.assertIn("Function returned: 42", stdout)
@@ -458,7 +458,7 @@ class PdbConnectTestCase(unittest.TestCase):
 
             # Continue to end
             self._send_command(client_file, "c")
-            stdout, _ = process.communicate(timeout=5)
+            stdout, _ = process.communicate(timeout=SHORT_TIMEOUT)
 
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
@@ -467,7 +467,7 @@ class PdbConnectTestCase(unittest.TestCase):
         """Test that sending keyboard interrupt breaks into pdb."""
         synchronizer_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         synchronizer_sock.bind(('127.0.0.1', 0))  # Let OS assign port
-        synchronizer_sock.settimeout(5)
+        synchronizer_sock.settimeout(SHORT_TIMEOUT)
         synchronizer_sock.listen(1)
         self.addCleanup(synchronizer_sock.close)
         sync_port = synchronizer_sock.getsockname()[1]
@@ -529,7 +529,7 @@ class PdbConnectTestCase(unittest.TestCase):
             # Continue to end as fast as we can
             self._send_command(client_file, "iterations = 0")
             self._send_command(client_file, "c")
-            stdout, _ = process.communicate(timeout=5)
+            stdout, _ = process.communicate(timeout=SHORT_TIMEOUT)
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
 
@@ -547,7 +547,7 @@ class PdbConnectTestCase(unittest.TestCase):
             client_file.flush()
 
             # The process should complete normally after receiving EOF
-            stdout, stderr = process.communicate(timeout=5)
+            stdout, stderr = process.communicate(timeout=SHORT_TIMEOUT)
 
             # Verify process completed correctly
             self.assertIn("Function returned: 42", stdout)
@@ -597,7 +597,7 @@ class PdbConnectTestCase(unittest.TestCase):
             self.assertIn('protocol version', message['message'])
 
             # The process should complete normally
-            stdout, stderr = process.communicate(timeout=5)
+            stdout, stderr = process.communicate(timeout=SHORT_TIMEOUT)
 
             # Verify the process completed successfully
             self.assertIn("Test result: True", stdout)
@@ -639,7 +639,7 @@ class PdbConnectTestCase(unittest.TestCase):
             # Continue execution to finish the program
             self._send_command(client_file, "c")
 
-            stdout, stderr = process.communicate(timeout=5)
+            stdout, stderr = process.communicate(timeout=SHORT_TIMEOUT)
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
 
@@ -697,7 +697,7 @@ class PdbConnectTestCase(unittest.TestCase):
             # Continue execution to finish
             self._send_command(client_file, "c")
 
-            stdout, stderr = process.communicate(timeout=5)
+            stdout, stderr = process.communicate(timeout=SHORT_TIMEOUT)
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
 
