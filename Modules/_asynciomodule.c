@@ -186,7 +186,7 @@ typedef struct {
     uint64_t task_name_counter;
 
     /* Pointer to the asyncio debug offset to avoid it to be optimized away
-       by the compiler in Windows (other platforms don't need this) */
+       by the compiler */
     void *debug_offsets;
 
 } asyncio_state;
