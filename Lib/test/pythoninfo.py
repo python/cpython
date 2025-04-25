@@ -530,6 +530,7 @@ def collect_sysconfig(info_add):
         'Py_DEBUG',
         'Py_ENABLE_SHARED',
         'Py_GIL_DISABLED',
+        'Py_REMOTE_DEBUG',
         'SHELL',
         'SOABI',
         'TEST_MODULES',
