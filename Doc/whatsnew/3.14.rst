@@ -952,7 +952,7 @@ math
 * Added more detailed error messages for domain errors in the module.
   (Contributed by Charlie Zhao and Sergey B Kirpichev in :gh:`101410`.)
 
-* Add :func:`math.isnormal` and :func:`math.issubnormal` function.
+* Add :func:`math.isnormal` and :func:`math.issubnormal` functions.
   (Contributed by Sergey B Kirpichev in :gh:`132908`.)
 
 
