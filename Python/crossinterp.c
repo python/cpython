@@ -1844,6 +1844,7 @@ _sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
         return -1;
     }
     PyThreadState *tstate = PyThreadState_Get();
+    // XXX Use _PyObject_GetXIDataWithFallback()?
     if (_PyObject_GetXIData(tstate, value, item->xidata) != 0) {
         PyMem_RawFree(item->xidata);
         item->xidata = NULL;
