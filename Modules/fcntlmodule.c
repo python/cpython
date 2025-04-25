@@ -109,7 +109,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
                 PyBuffer_Release(&view);
                 return NULL;
             }
-            void *ptr = PyBytes_AsString(result);
+            char *ptr = PyBytes_AsString(result);
             memcpy(ptr, view.buf, len);
             PyBuffer_Release(&view);
 
@@ -284,7 +284,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                 PyBuffer_Release(&view);
                 return NULL;
             }
-            void *ptr = PyBytes_AsString(result);
+            char *ptr = PyBytes_AsString(result);
             memcpy(ptr, view.buf, len);
             PyBuffer_Release(&view);
 
