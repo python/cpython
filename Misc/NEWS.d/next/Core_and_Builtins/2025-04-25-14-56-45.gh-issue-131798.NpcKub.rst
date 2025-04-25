@@ -1,0 +1,1 @@
+Allow the JIT to remove int guards after ``_CALL_LEN`` by setting the return type to string. Patch by Diego Russo
