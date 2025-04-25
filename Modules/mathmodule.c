@@ -3098,6 +3098,7 @@ math_isfinite_impl(PyObject *module, double x)
     return PyBool_FromLong((long)isfinite(x));
 }
 
+
 /*[clinic input]
 math.isnormal
 
@@ -3113,6 +3114,7 @@ math_isnormal_impl(PyObject *module, double x)
 {
     return PyBool_FromLong((long)isnormal(x));
 }
+
 
 /*[clinic input]
 math.issubnormal
@@ -3133,6 +3135,7 @@ math_issubnormal_impl(PyObject *module, double x)
     return PyBool_FromLong((long)(isfinite(x) && x && !isnormal(x)));
 #endif
 }
+
 
 /*[clinic input]
 math.isnan
