@@ -160,6 +160,8 @@ typedef struct
 #define PyDateTime_DELTA_GET_SECONDS(o)      (((PyDateTime_Delta*)(o))->seconds)
 #define PyDateTime_DELTA_GET_MICROSECONDS(o)            \
     (((PyDateTime_Delta*)(o))->microseconds)
+#define PyDateTime_DELTA_GET_NANOSECONDS(o)            \
+    (((PyDateTime_Delta*)(o))->nanoseconds)
 
 
 /* Define structure for C API. */
