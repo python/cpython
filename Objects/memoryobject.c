@@ -3732,13 +3732,12 @@ _memoryview_from_xid(_PyXIData_t *data)
 
     PyObject *obj = xibufferview_from_buffer(
                         cls, &view->view, _PyXIData_INTERPID(data));
-    Py_DECREF(cls);
     if (obj == NULL) {
         return NULL;
     }
     PyObject *res = PyMemoryView_FromObject(obj);
-    Py_DECREF(obj);
     if (res == NULL) {
+        Py_DECREF(obj);
         return NULL;
     }
     view->used = 1;
