@@ -512,7 +512,7 @@ class MinidomTest(unittest.TestCase):
     def testTextNodeRepr(self):
         dom = Document()
         el = dom.appendChild(dom.createElement("foo"))
-        self.confirm(str(el) == repr(el))
+        self.assertEqual(str(el), repr(el))
         dom.unlink()
 
     def testWriteXML(self):
