@@ -243,9 +243,6 @@ _PyCursesSetError(cursesmodule_state *state,
     else if (curses_funcname == NULL) {
         PyErr_Format(state->error, CURSES_ERROR_FORMAT, simple_funcname);
     }
-    else if (strcmp(simple_funcname, curses_funcname) == 0) {
-        PyErr_Format(state->error, CURSES_ERROR_FORMAT, simple_funcname);
-    }
     else {
         PyErr_Format(state->error, CURSES_ERROR_VERBOSE_FORMAT,
                      curses_funcname, simple_funcname);
@@ -262,7 +259,7 @@ PyCursesSetError_From(PyObject *, const char *, const char *);
 static inline void
 PyCursesSetError(PyObject *module, const char *funcname)
 {
-    PyCursesSetError_From(module, funcname, funcname);
+    PyCursesSetError_From(module, funcname, NULL);
 }
 
 static void
@@ -281,7 +278,7 @@ PyCursesSetError_ForWin_From(PyCursesWindowObject *,
 static inline void
 PyCursesSetError_ForWin(PyCursesWindowObject *win, const char *funcname)
 {
-    PyCursesSetError_ForWin_From(win, funcname, funcname);
+    PyCursesSetError_ForWin_From(win, funcname, NULL);
 }
 
 static void
@@ -374,13 +371,13 @@ _PyCursesStatefulCheckFunction(PyObject *module, int called, const char *funcnam
  * on success and setting an exception on error.
  */
 
-static PyObject *PyCursesCheckERR_From(PyObject *, int,
-                                       const char *, const char *);
+static PyObject *
+PyCursesCheckERR_From(PyObject *, int, const char *, const char *);
 
 static inline PyObject *
 PyCursesCheckERR(PyObject *module, int code, const char *funcname)
 {
-    return PyCursesCheckERR_From(module, code, funcname, funcname);
+    return PyCursesCheckERR_From(module, code, funcname, NULL);
 }
 
 static PyObject *
@@ -402,7 +399,7 @@ static inline PyObject *
 PyCursesCheckERR_ForWin(PyCursesWindowObject *win, int code,
                         const char *funcname)
 {
-    return PyCursesCheckERR_ForWin_From(win, code, funcname, funcname);
+    return PyCursesCheckERR_ForWin_From(win, code, funcname, NULL);
 }
 
 static PyObject *
