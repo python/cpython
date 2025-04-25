@@ -86,7 +86,7 @@ in order for the commands to work.
 When you first install a runtime, you will likely be prompted to add a directory
 to your :envvar:`PATH`. This is optional, if you prefer to use the ``py``
 command, but is offered for those who prefer the full range of aliases (such
-as ``python3.13.exe``) to be available. The directory will be
+as ``python3.14.exe``) to be available. The directory will be
 :file:`%LocalAppData%\Python\bin` by default, but may be customized by an
 administrator. Click Start and search for "Edit environment variables for your
 account" for the system settings page to add the path.
@@ -152,7 +152,7 @@ omitted in cases where the tag refers to an official release and starts with
 
 .. code::
 
-   $> py -V:3.13 ...
+   $> py -V:3.14 ...
    $> py -V:3-arm64 ...
 
 Runtimes from other distributors may require the *company* to be included as
@@ -245,7 +245,7 @@ runtimes that can be installed. The result shown by ``py list --online --one
 
 .. code::
 
-   $> py list --online 3.13
+   $> py list --online 3.14
 
 For compatibility with the old launcher, the ``--list``, ``--list-paths``,
 ``-0`` and ``-0p`` commands (e.g. ``py -0p``) are retained. They do not allow
@@ -385,6 +385,12 @@ customization.
    ``default_tag``,``PYTHON_MANAGER_DEFAULT``,"The preferred default
    version to launch or install. By default, this is interpreted as the most
    recent non-prerelease version from the CPython team.
+   "
+   ``default_platform``,``PYTHON_MANAGER_DEFAULT_PLATFORM``,"The preferred
+   default platform to launch or install. This is treated as a suffix to the
+   specified tag, such that ``py -V:3.14`` would prefer an install for
+   ``3.14-64`` if it exists (and ``default_platform`` is ``-64``), but will use
+   ``3.14`` if no tagged install exists.
    "
    ``logs_dir``,``PYTHON_MANAGER_LOGS``,"The location where log files are
    written. By default, :file:`%TEMP%`.
@@ -610,14 +616,14 @@ by installing tags with the ``t`` suffix.
 
 .. code::
 
-   $> py install 3.13t
-   $> py install 3.13t-arm64
-   $> py install 3.13t-32
+   $> py install 3.14t
+   $> py install 3.14t-arm64
+   $> py install 3.14t-32
 
 This will install and register as normal. If you have no other runtimes
 installed, then ``python`` will launch this one. Otherwise, you will need to use
-``py -V:3.13t ...`` or, if you have added the global aliases directory to your
-:envvar:`PATH` environment variable, the ``python3.13t.exe`` commands.
+``py -V:3.14t ...`` or, if you have added the global aliases directory to your
+:envvar:`PATH` environment variable, the ``python3.14t.exe`` commands.
 
 .. _pymanager-troubleshoot:
 
@@ -634,19 +640,24 @@ default).
    :header: "Symptom", "Things to try"
    :widths: 1, 1
 
-   "``python`` gives me a ""command not found"" error when I type it in my
-   terminal.", "Did you :ref:`install the Python install manager <pymanager>`?
+   "``python`` gives me a ""command not found"" error or opens the Store app
+   when I type it in my terminal.", "Did you :ref:`install the Python install
+   manager <pymanager>`?
    "
-   "", "Click Start, open ""Manage app execution aliases"", and check that your
-   ``python.exe`` alias is set to ""Python (default)"".
+   "", "Click Start, open ""Manage app execution aliases"", and check that the
+   aliases for ""Python (default)"" are enabled. If they already are, try
+   disabling and re-enabling to refresh the command. The ""Python (default
+   windowed)"" and ""Python install manager"" commands may also need refreshing.
    "
    "", "Check that the ``py`` and ``pymanager`` commands work.
    "
    "``py`` gives me a ""command not found"" error when I type it in my
    terminal.","Did you :ref:`install the Python install manager <pymanager>`?
    "
-   "", "Click Start, open ""Manage app execution aliases"", and check that your
-   ``py.exe`` alias is set to ""Python install manager"".
+   "", "Click Start, open ""Manage app execution aliases"", and check that the
+   aliases for ""Python install manager"" are enabled. If they already are, try
+   disabling and re-enabling to refresh the command. The ""Python (default
+   windowed)"" and ""Python install manager"" commands may also need refreshing.
    "
    "``py`` gives me a ""can't open file"" error when I type commands in my
    terminal.", "This usually means you have the legacy launcher installed and it
@@ -662,7 +673,8 @@ default).
    "
    "``python`` and ``py`` don't launch the runtime I expect", "Check your
    ``PYTHON_MANAGER_DEFAULT`` environment variable or ``default_tag``
-   configuration.
+   configuration. The ``py list`` command will show your default based on these
+   settings.
    "
    "", "Installs that are managed by the Python install manager will be chosen
    ahead of unmanaged installs. Use ``py install`` to install the runtime you
@@ -696,7 +708,7 @@ To install an embedded distribution, we recommend using ``py install`` with the
 
 .. code::
 
-   $> py install 3.13-embed --target=runtime
+   $> py install 3.14-embed --target=runtime
 
 When extracted, the embedded distribution is (almost) fully isolated from the
 user's system, including environment variables, system registry settings, and
