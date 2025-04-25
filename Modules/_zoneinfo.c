@@ -857,7 +857,7 @@ load_timedelta(zoneinfo_state *state, long seconds)
     }
     if (PyDict_GetItemRef(state->TIMEDELTA_CACHE, pyoffset, &rv) == 0) {
         PyObject *tmp = PyDateTimeAPI->Delta_FromDelta(
-            0, seconds, 0, 1, PyDateTimeAPI->DeltaType);
+            0, seconds, 0, 0, 1, PyDateTimeAPI->DeltaType);
 
         if (tmp != NULL) {
             PyDict_SetDefaultRef(state->TIMEDELTA_CACHE, pyoffset, tmp, &rv);

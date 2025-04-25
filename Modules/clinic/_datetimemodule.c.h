@@ -187,7 +187,7 @@ exit:
 
 PyDoc_STRVAR(datetime_time_replace__doc__,
 "replace($self, /, hour=unchanged, minute=unchanged, second=unchanged,\n"
-"        microsecond=unchanged, tzinfo=unchanged, *, fold=unchanged)\n"
+"        microsecond=unchanged, tzinfo=unchanged, *, fold=unchanged, nanosecond=unchanged)\n"
 "--\n"
 "\n"
 "Return time with new specified fields.");
@@ -198,7 +198,7 @@ PyDoc_STRVAR(datetime_time_replace__doc__,
 static PyObject *
 datetime_time_replace_impl(PyDateTime_Time *self, int hour, int minute,
                            int second, int microsecond, PyObject *tzinfo,
-                           int fold);
+                           int fold, int nanosecond);
 
 static PyObject *
 datetime_time_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -215,7 +215,7 @@ datetime_time_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(hour), &_Py_ID(minute), &_Py_ID(second), &_Py_ID(microsecond), &_Py_ID(tzinfo), &_Py_ID(fold), },
+        .ob_item = { &_Py_ID(hour), &_Py_ID(minute), &_Py_ID(second), &_Py_ID(microsecond), &_Py_ID(tzinfo), &_Py_ID(fold), &_Py_ID(nanosecond), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -224,7 +224,7 @@ datetime_time_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"hour", "minute", "second", "microsecond", "tzinfo", "fold", NULL};
+    static const char * const _keywords[] = {"hour", "minute", "second", "microsecond", "tzinfo", "fold", "nanosecond", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "replace",
@@ -237,6 +237,7 @@ datetime_time_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, P
     int minute = TIME_GET_MINUTE(self);
     int second = TIME_GET_SECOND(self);
     int microsecond = TIME_GET_MICROSECOND(self);
+    int nanosecond = TIME_GET_NANOSECOND(self);
     PyObject *tzinfo = HASTZINFO(self) ? ((PyDateTime_Time *)self)->tzinfo : Py_None;
     int fold = TIME_GET_FOLD(self);
 
@@ -299,7 +300,7 @@ skip_optional_pos:
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = datetime_time_replace_impl((PyDateTime_Time *)self, hour, minute, second, microsecond, tzinfo, fold);
+    return_value = datetime_time_replace_impl((PyDateTime_Time *)self, hour, minute, second, microsecond, tzinfo, fold, nanosecond);
 
 exit:
     return return_value;
@@ -376,7 +377,7 @@ exit:
 PyDoc_STRVAR(datetime_datetime_replace__doc__,
 "replace($self, /, year=unchanged, month=unchanged, day=unchanged,\n"
 "        hour=unchanged, minute=unchanged, second=unchanged,\n"
-"        microsecond=unchanged, tzinfo=unchanged, *, fold=unchanged)\n"
+"        microsecond=unchanged, tzinfo=unchanged, *, fold=unchanged, nanosecond=unchanged)\n"
 "--\n"
 "\n"
 "Return datetime with new specified fields.");
@@ -388,7 +389,7 @@ static PyObject *
 datetime_datetime_replace_impl(PyDateTime_DateTime *self, int year,
                                int month, int day, int hour, int minute,
                                int second, int microsecond, PyObject *tzinfo,
-                               int fold);
+                               int fold, int nanosecond);
 
 static PyObject *
 datetime_datetime_replace(PyObject *self, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
@@ -405,7 +406,7 @@ datetime_datetime_replace(PyObject *self, PyObject *const *args, Py_ssize_t narg
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
         .ob_hash = -1,
-        .ob_item = { &_Py_ID(year), &_Py_ID(month), &_Py_ID(day), &_Py_ID(hour), &_Py_ID(minute), &_Py_ID(second), &_Py_ID(microsecond), &_Py_ID(tzinfo), &_Py_ID(fold), },
+        .ob_item = { &_Py_ID(year), &_Py_ID(month), &_Py_ID(day), &_Py_ID(hour), &_Py_ID(minute), &_Py_ID(second), &_Py_ID(microsecond), &_Py_ID(tzinfo), &_Py_ID(fold), &_Py_ID(nanosecond), },
     };
     #undef NUM_KEYWORDS
     #define KWTUPLE (&_kwtuple.ob_base.ob_base)
@@ -414,7 +415,7 @@ datetime_datetime_replace(PyObject *self, PyObject *const *args, Py_ssize_t narg
     #  define KWTUPLE NULL
     #endif  // !Py_BUILD_CORE
 
-    static const char * const _keywords[] = {"year", "month", "day", "hour", "minute", "second", "microsecond", "tzinfo", "fold", NULL};
+    static const char * const _keywords[] = {"year", "month", "day", "hour", "minute", "second", "microsecond", "tzinfo", "fold", "nanosecond", NULL};
     static _PyArg_Parser _parser = {
         .keywords = _keywords,
         .fname = "replace",
@@ -430,6 +431,7 @@ datetime_datetime_replace(PyObject *self, PyObject *const *args, Py_ssize_t narg
     int minute = DATE_GET_MINUTE(self);
     int second = DATE_GET_SECOND(self);
     int microsecond = DATE_GET_MICROSECOND(self);
+    int nanosecond = DATE_GET_NANOSECOND(self);
     PyObject *tzinfo = HASTZINFO(self) ? ((PyDateTime_DateTime *)self)->tzinfo : Py_None;
     int fold = DATE_GET_FOLD(self);
 
@@ -519,7 +521,7 @@ skip_optional_pos:
         goto exit;
     }
 skip_optional_kwonly:
-    return_value = datetime_datetime_replace_impl((PyDateTime_DateTime *)self, year, month, day, hour, minute, second, microsecond, tzinfo, fold);
+    return_value = datetime_datetime_replace_impl((PyDateTime_DateTime *)self, year, month, day, hour, minute, second, microsecond, tzinfo, fold, nanosecond);
 
 exit:
     return return_value;
