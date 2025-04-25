@@ -6,7 +6,6 @@ import sys
 import unicodedata
 
 import unittest
-from test.support import run_unittest
 from test.support.os_helper import (rmtree, change_cwd, TESTFN_UNICODE,
     TESTFN_UNENCODABLE, create_empty_file)
 
@@ -111,7 +110,7 @@ class TestUnicodeFiles(unittest.TestCase):
             os.unlink(filename)
         self.assertTrue(not os.path.exists(filename))
         # and again with os.open.
-        f = os.open(filename, os.O_CREAT)
+        f = os.open(filename, os.O_CREAT | os.O_WRONLY)
         os.close(f)
         try:
             self._do_single(filename)
@@ -136,8 +135,6 @@ class TestUnicodeFiles(unittest.TestCase):
             self._do_directory(TESTFN_UNENCODABLE+ext,
                                TESTFN_UNENCODABLE+ext)
 
-def test_main():
-    run_unittest(__name__)
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

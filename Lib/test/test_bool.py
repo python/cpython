@@ -1,7 +1,6 @@
 # Test properties of bool promised by PEP 285
 
 import unittest
-from test import support
 from test.support import os_helper
 
 import os
@@ -41,6 +40,12 @@ class BoolTest(unittest.TestCase):
         self.assertEqual(float(True), 1.0)
         self.assertIsNot(float(True), True)
 
+    def test_complex(self):
+        self.assertEqual(complex(False), 0j)
+        self.assertEqual(complex(False), False)
+        self.assertEqual(complex(True), 1+0j)
+        self.assertEqual(complex(True), True)
+
     def test_math(self):
         self.assertEqual(+False, 0)
         self.assertIsNot(+False, False)
@@ -53,8 +58,22 @@ class BoolTest(unittest.TestCase):
         self.assertEqual(-True, -1)
         self.assertEqual(abs(True), 1)
         self.assertIsNot(abs(True), True)
-        self.assertEqual(~False, -1)
-        self.assertEqual(~True, -2)
+        with self.assertWarns(DeprecationWarning):
+            # We need to put the bool in a variable, because the constant
+            # ~False is evaluated at compile time due to constant folding;
+            # consequently the DeprecationWarning would be issued during
+            # module loading and not during test execution.
+            false = False
+            self.assertEqual(~false, -1)
+        with self.assertWarns(DeprecationWarning):
+            # also check that the warning is issued in case of constant
+            # folding at compile time
+            self.assertEqual(eval("~False"), -1)
+        with self.assertWarns(DeprecationWarning):
+            true = True
+            self.assertEqual(~true, -2)
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(eval("~True"), -2)
 
         self.assertEqual(False+2, 2)
         self.assertEqual(True+2, 3)
@@ -235,7 +254,7 @@ class BoolTest(unittest.TestCase):
 
     def test_fileclosed(self):
         try:
-            with open(os_helper.TESTFN, "w") as f:
+            with open(os_helper.TESTFN, "w", encoding="utf-8") as f:
                 self.assertIs(f.closed, False)
             self.assertIs(f.closed, True)
         finally:
@@ -314,6 +333,26 @@ class BoolTest(unittest.TestCase):
                 return -1
         self.assertRaises(ValueError, bool, Eggs())
 
+    def test_interpreter_convert_to_bool_raises(self):
+        class SymbolicBool:
+            def __bool__(self):
+                raise TypeError
+
+        class Symbol:
+            def __gt__(self, other):
+                return SymbolicBool()
+
+        x = Symbol()
+
+        with self.assertRaises(TypeError):
+            if x > 0:
+                msg = "x > 0 was true"
+            else:
+                msg = "x > 0 was false"
+
+        # This used to create negative refcounts, see gh-102250
+        del x
+
     def test_from_bytes(self):
         self.assertIs(bool.from_bytes(b'\x00'*8, 'big'), False)
         self.assertIs(bool.from_bytes(b'abcd', 'little'), True)
@@ -344,6 +383,10 @@ class BoolTest(unittest.TestCase):
             __bool__ = None
         self.assertRaises(TypeError, bool, B())
 
+        class C:
+            __len__ = None
+        self.assertRaises(TypeError, bool, C())
+
     def test_real_and_imag(self):
         self.assertEqual(True.real, 1)
         self.assertEqual(True.imag, 0)
@@ -354,8 +397,29 @@ class BoolTest(unittest.TestCase):
         self.assertIs(type(False.real), int)
         self.assertIs(type(False.imag), int)
 
-def test_main():
-    support.run_unittest(BoolTest)
+    def test_bool_called_at_least_once(self):
+        class X:
+            def __init__(self):
+                self.count = 0
+            def __bool__(self):
+                self.count += 1
+                return True
+
+        def f(x):
+            if x or True:
+                pass
+
+        x = X()
+        f(x)
+        self.assertGreaterEqual(x.count, 1)
+
+    def test_bool_new(self):
+        self.assertIs(bool.__new__(bool), False)
+        self.assertIs(bool.__new__(bool, 1), True)
+        self.assertIs(bool.__new__(bool, 0), False)
+        self.assertIs(bool.__new__(bool, False), False)
+        self.assertIs(bool.__new__(bool, True), True)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

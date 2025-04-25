@@ -1,3 +1,0 @@
-Improved the accuracy of math.hypot().  Internally, each step is computed
-with extra precision so that the result is now almost always correctly
-rounded.

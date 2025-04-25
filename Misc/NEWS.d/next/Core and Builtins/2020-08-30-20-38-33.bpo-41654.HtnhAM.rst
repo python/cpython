@@ -1,2 +1,0 @@
-Fix a crash that occurred when destroying subclasses of
-:class:`MemoryError`. Patch by Pablo Galindo.

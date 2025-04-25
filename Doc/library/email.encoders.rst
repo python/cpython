@@ -1,5 +1,5 @@
-:mod:`email.encoders`: Encoders
--------------------------------
+:mod:`!email.encoders`: Encoders
+--------------------------------
 
 .. module:: email.encoders
    :synopsis: Encoders for email message payloads.
@@ -25,7 +25,7 @@ is especially true for :mimetype:`image/\*` and :mimetype:`text/\*` type message
 containing binary data.
 
 The :mod:`email` package provides some convenient encoders in its
-:mod:`encoders` module.  These encoders are actually used by the
+:mod:`~email.encoders` module.  These encoders are actually used by the
 :class:`~email.mime.audio.MIMEAudio` and :class:`~email.mime.image.MIMEImage`
 class constructors to provide default encodings.  All encoder functions take
 exactly one argument, the message object to encode.  They usually extract the
