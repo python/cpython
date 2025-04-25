@@ -138,7 +138,7 @@ from fractions import Fraction
 from decimal import Decimal
 from itertools import count, groupby, repeat
 from bisect import bisect_left, bisect_right
-from math import hypot, sqrt, fabs, exp, erf, erfc, tau, log, fsum, sumprod
+from math import hypot, sqrt, fabs, exp, erfc, tau, log, fsum, sumprod
 from math import isfinite, isinf, pi, cos, sin, tan, cosh, asin, atan, acos
 from functools import reduce
 from operator import itemgetter
@@ -1312,7 +1312,7 @@ class NormalDist:
         dv = Y_var - X_var
         dm = fabs(Y._mu - X._mu)
         if not dv:
-            return 1.0 - erf(dm / (2.0 * X._sigma * _SQRT2))
+            return erfc(dm / (2.0 * X._sigma * _SQRT2))
         a = X._mu * Y_var - Y._mu * X_var
         b = X._sigma * Y._sigma * sqrt(dm * dm + dv * log(Y_var / X_var))
         x1 = (a + b) / dv
