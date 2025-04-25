@@ -403,16 +403,16 @@ def _parse_isoformat_date(dtstr):
         return [year, month, day]
 
 
-_FRACTION_CORRECTION = [100000, 10000, 1000, 100, 10]
-
+_MICROSECOND_CORRECTION = [100000, 10000, 1000, 100, 10]
+_NANOSECOND_CORRECTION = [100, 10]
 
 def _parse_hh_mm_ss_ff(tstr):
     # Parses things of the form HH[:?MM[:?SS[{.,}fff[fff]]]]
     len_str = len(tstr)
 
-    time_comps = [0, 0, 0, 0]
+    time_comps = [0, 0, 0, 0, 0]
     pos = 0
-    for comp in range(0, 3):
+    for comp in range(0, 4):
         if (len_str - pos) < 2:
             raise ValueError("Incomplete time component")
 
@@ -449,7 +449,19 @@ def _parse_hh_mm_ss_ff(tstr):
 
             time_comps[3] = int(tstr[pos:(pos+to_parse)])
             if to_parse < 6:
-                time_comps[3] *= _FRACTION_CORRECTION[to_parse-1]
+                time_comps[3] *= _MICROSECOND_CORRECTION[to_parse-1]
+
+            pos += to_parse
+            len_remains = len_str - pos
+
+            if len_remains >= 3:
+                to_parse = 3
+            else:
+                to_parse = len_remains
+
+            time_comps[4] = int(tstr[pos:(pos+to_parse)])
+            if to_parse < 3:
+                time_comps[4] *= _NANOSECOND_CORRECTION[to_parse-1]
 
     return time_comps
 
@@ -465,7 +477,7 @@ def _parse_isoformat_time(tstr):
 
     time_comps = _parse_hh_mm_ss_ff(timestr)
 
-    hour, minute, second, microsecond = time_comps
+    hour, minute, second, microsecond, nanosecond = time_comps
     became_next_day = False
     error_from_components = False
     if (hour == 24):
@@ -641,15 +653,15 @@ class timedelta:
     returning a timedelta, and addition or subtraction of a datetime
     and a timedelta giving a datetime.
 
-    Representation: (days, seconds, microseconds).
+    Representation: (days, seconds, microseconds, nanoseconds).
     """
-    # The representation of (days, seconds, microseconds) was chosen
+    # The representation of (days, seconds, microseconds, nanoseconds) was chosen
     # arbitrarily; the exact rationale originally specified in the docstring
     # was "Because I felt like it."
 
-    __slots__ = '_days', '_seconds', '_microseconds', '_hashcode'
+    __slots__ = '_days', '_seconds', '_microseconds', '_nanoseconds', '_hashcode'
 
-    def __new__(cls, days=0, seconds=0, microseconds=0,
+    def __new__(cls, days=0, seconds=0, microseconds=0, nanoseconds=0,
                 milliseconds=0, minutes=0, hours=0, weeks=0):
         # Doing this efficiently and accurately in C is going to be difficult
         # and error-prone, due to ubiquitous overflow possibilities, and that
@@ -663,6 +675,7 @@ class timedelta:
             ("days", days),
             ("seconds", seconds),
             ("microseconds", microseconds),
+            ("nanoseconds", nanoseconds),
             ("milliseconds", milliseconds),
             ("minutes", minutes),
             ("hours", hours),
@@ -675,9 +688,9 @@ class timedelta:
 
         # Final values, all integer.
         # s and us fit in 32-bit signed ints; d isn't bounded.
-        d = s = us = 0
+        d = s = us = ns = 0
 
-        # Normalize everything to days, seconds, microseconds.
+        # Normalize everything to days, seconds, microseconds, nanoseconds.
         days += weeks*7
         seconds += minutes*60 + hours*3600
         microseconds += milliseconds*1000
@@ -742,6 +755,10 @@ class timedelta:
         assert abs(s) <= 3 * 24 * 3600
         assert abs(microseconds) < 3.1e6
 
+        # Normalize nanoseconds to microseconds.
+        microseconds1, ns = divmod(nanoseconds, 1000)
+        microseconds += microseconds1
+
         # Just a little bit of carrying possible for microseconds and seconds.
         seconds, us = divmod(microseconds, 1000000)
         s += seconds
@@ -751,6 +768,7 @@ class timedelta:
         assert isinstance(d, int)
         assert isinstance(s, int) and 0 <= s < 24*3600
         assert isinstance(us, int) and 0 <= us < 1000000
+        assert isinstance(ns, int) and 0 <= ns < 1000
 
         if abs(d) > 999999999:
             raise OverflowError("timedelta # of days is too large: %d" % d)
@@ -759,6 +777,7 @@ class timedelta:
         self._days = d
         self._seconds = s
         self._microseconds = us
+        self._nanoseconds = ns
         self._hashcode = -1
         return self
 
@@ -770,6 +789,8 @@ class timedelta:
             args.append("seconds=%d" % self._seconds)
         if self._microseconds:
             args.append("microseconds=%d" % self._microseconds)
+        if self._nanoseconds:
+            args.append("nanoseconds=%d" % self._nanoseconds)
         if not args:
             args.append('0')
         return "%s%s(%s)" % (_get_class_module(self),
@@ -786,12 +807,14 @@ class timedelta:
             s = ("%d day%s, " % plural(self._days)) + s
         if self._microseconds:
             s = s + ".%06d" % self._microseconds
+        if self._nanoseconds:
+            s = s + "%03d" % self._nanoseconds
         return s
 
     def total_seconds(self):
         """Total seconds in the duration."""
         return ((self.days * 86400 + self.seconds) * 10**6 +
-                self.microseconds) / 10**6
+                self.microseconds) / 10**6 + self.nanoseconds / 10**9
 
     # Read-only field accessors
     @property
@@ -809,13 +832,19 @@ class timedelta:
         """microseconds"""
         return self._microseconds
 
+    @property
+    def nanoseconds(self):
+        """nanoseconds"""
+        return self._nanoseconds
+
     def __add__(self, other):
         if isinstance(other, timedelta):
             # for CPython compatibility, we cannot use
             # our __class__ here, but need a real timedelta
             return timedelta(self._days + other._days,
                              self._seconds + other._seconds,
-                             self._microseconds + other._microseconds)
+                             self._microseconds + other._microseconds,
+                             self._nanoseconds + other._nanoseconds)
         return NotImplemented
 
     __radd__ = __add__
@@ -826,7 +855,8 @@ class timedelta:
             # our __class__ here, but need a real timedelta
             return timedelta(self._days - other._days,
                              self._seconds - other._seconds,
-                             self._microseconds - other._microseconds)
+                             self._microseconds - other._microseconds,
+                             self._nanoseconds - other._nanoseconds)
         return NotImplemented
 
     def __rsub__(self, other):
@@ -839,7 +869,8 @@ class timedelta:
         # our __class__ here, but need a real timedelta
         return timedelta(-self._days,
                          -self._seconds,
-                         -self._microseconds)
+                         -self._microseconds,
+                         -self._nanoseconds)
 
     def __pos__(self):
         return self
@@ -856,7 +887,8 @@ class timedelta:
             # our __class__ here, but need a real timedelta
             return timedelta(self._days * other,
                              self._seconds * other,
-                             self._microseconds * other)
+                             self._microseconds * other,
+                             self._nanoseconds * other)
         if isinstance(other, float):
             usec = self._to_microseconds()
             a, b = other.as_integer_ratio()
@@ -867,7 +899,7 @@ class timedelta:
 
     def _to_microseconds(self):
         return ((self._days * (24*3600) + self._seconds) * 1000000 +
-                self._microseconds)
+                self._microseconds) + self._nanoseconds / 1000
 
     def __floordiv__(self, other):
         if not isinstance(other, (int, timedelta)):
@@ -952,14 +984,14 @@ class timedelta:
     # Pickle support.
 
     def _getstate(self):
-        return (self._days, self._seconds, self._microseconds)
+        return (self._days, self._seconds, self._microseconds, self._nanoseconds)
 
     def __reduce__(self):
         return (self.__class__, self._getstate())
 
 timedelta.min = timedelta(-999999999)
 timedelta.max = timedelta(days=999999999, hours=23, minutes=59, seconds=59,
-                          microseconds=999999)
+                          microseconds=999999, nanoseconds=999)
 timedelta.resolution = timedelta(microseconds=1)
 
 class date:
@@ -1418,7 +1450,7 @@ class time:
     dst()
 
     Properties (readonly):
-    hour, minute, second, microsecond, tzinfo, fold
+    hour, minute, second, microsecond, nanosecond, tzinfo, fold
     """
     __slots__ = '_hour', '_minute', '_second', '_microsecond', '_nanosecond', '_tzinfo', '_hashcode', '_fold'
 
@@ -1708,7 +1740,7 @@ class time:
         return offset
 
     def replace(self, hour=None, minute=None, second=None, microsecond=None,
-                tzinfo=True, *, fold=None):
+                tzinfo=True, *, fold=None, nanosecond=None):
         """Return a new time with new values for the specified fields."""
         if hour is None:
             hour = self.hour
@@ -1718,11 +1750,13 @@ class time:
             second = self.second
         if microsecond is None:
             microsecond = self.microsecond
+        if nanosecond is None:
+            nanosecond = self.nanosecond
         if tzinfo is True:
             tzinfo = self.tzinfo
         if fold is None:
             fold = self._fold
-        return type(self)(hour, minute, second, microsecond, tzinfo, fold=fold)
+        return type(self)(hour, minute, second, microsecond, tzinfo, fold=fold, nanosecond=nanosecond)
 
     __replace__ = replace
 
@@ -1744,7 +1778,7 @@ class time:
     def __setstate(self, string, tzinfo):
         if tzinfo is not None and not isinstance(tzinfo, _tzinfo_class):
             raise TypeError("bad tzinfo state arg")
-        h, self._minute, self._second, us1, us2, us3 = string
+        h, self._minute, self._second, us1, us2, us3, ns1, ns2 = string
         if h > 127:
             self._fold = 1
             self._hour = h - 128
@@ -1752,6 +1786,7 @@ class time:
             self._fold = 0
             self._hour = h
         self._microsecond = (((us1 << 8) | us2) << 8) | us3
+        self._nanosecond = ((ns1 << 8) | ns2)
         self._tzinfo = tzinfo
 
     def __reduce_ex__(self, protocol):
@@ -1763,7 +1798,7 @@ class time:
 _time_class = time  # so functions w/ args named "time" can get at the class
 
 time.min = time(0, 0, 0)
-time.max = time(23, 59, 59, 999999)
+time.max = time(23, 59, 59, 999999, nanosecond=999)
 time.resolution = timedelta(microseconds=1)
 
 
