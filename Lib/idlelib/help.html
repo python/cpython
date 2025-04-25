@@ -1,231 +1,7 @@
-<!DOCTYPE html>
-
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-
-    <title>IDLE &#8212; Python 3.14.0a0 documentation</title><meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <link rel="stylesheet" type="text/css" href="../_static/pygments.css" />
-    <link rel="stylesheet" type="text/css" href="../_static/pydoctheme.css?digest=b37c26da2f7529d09fe70b41c4b2133fe4931a90" />
-    <link id="pygments_dark_css" media="(prefers-color-scheme: dark)" rel="stylesheet" type="text/css" href="../_static/pygments_dark.css" />
-
-    <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
-    <script src="../_static/doctools.js"></script>
-    <script src="../_static/sphinx_highlight.js"></script>
-
-    <script src="../_static/sidebar.js"></script>
-
-    <link rel="search" type="application/opensearchdescription+xml"
-          title="Search within Python 3.14.0a0 documentation"
-          href="../_static/opensearch.xml"/>
-    <link rel="author" title="About these documents" href="../about.html" />
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="copyright" title="Copyright" href="../copyright.html" />
-    <link rel="next" title="Development Tools" href="development.html" />
-    <link rel="prev" title="tkinter.ttk — Tk themed widgets" href="tkinter.ttk.html" />
-
-    <link rel="canonical" href="https://docs.python.org/3/library/idle.html" />
-
-
-
-
-
-    <style>
-      @media only screen {
-        table.full-width-table {
-            width: 100%;
-        }
-      }
-    </style>
-<link rel="stylesheet" href="../_static/pydoctheme_dark.css" media="(prefers-color-scheme: dark)" id="pydoctheme_dark_css">
-    <link rel="shortcut icon" type="image/png" href="../_static/py.svg" />
-            <script type="text/javascript" src="../_static/copybutton.js"></script>
-            <script type="text/javascript" src="../_static/menu.js"></script>
-            <script type="text/javascript" src="../_static/search-focus.js"></script>
-            <script type="text/javascript" src="../_static/themetoggle.js"></script>
-            <script type="text/javascript" src="../_static/rtd_switcher.js"></script>
-            <meta name="readthedocs-addons-api-version" content="1">
-
-  </head>
-<body>
-<div class="mobile-nav">
-    <input type="checkbox" id="menuToggler" class="toggler__input" aria-controls="navigation"
-           aria-pressed="false" aria-expanded="false" role="button" aria-label="Menu" />
-    <nav class="nav-content" role="navigation">
-        <label for="menuToggler" class="toggler__label">
-            <span></span>
-        </label>
-        <span class="nav-items-wrapper">
-            <a href="https://www.python.org/" class="nav-logo">
-                <img src="../_static/py.svg" alt="Logo"/>
-            </a>
-            <span class="version_switcher_placeholder"></span>
-            <form role="search" class="search" action="../search.html" method="get">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" class="search-icon">
-                    <path fill-rule="nonzero" fill="currentColor" d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 001.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 00-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 005.34-1.48l.27.28v.79l4.25 4.25c.41.41 1.08.41 1.49 0 .41-.41.41-1.08 0-1.49L15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"></path>
-                </svg>
-                <input placeholder="Quick search" aria-label="Quick search" type="search" name="q" />
-                <input type="submit" value="Go"/>
-            </form>
-        </span>
-    </nav>
-    <div class="menu-wrapper">
-        <nav class="menu" role="navigation" aria-label="main navigation">
-            <div class="language_switcher_placeholder"></div>
-
-<label class="theme-selector-label">
-    Theme
-    <select class="theme-selector" oninput="activateTheme(this.value)">
-        <option value="auto" selected>Auto</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-    </select>
-</label>
-  <div>
-    <h3><a href="../contents.html">Table of Contents</a></h3>
-    <ul>
-<li><a class="reference internal" href="#">IDLE</a><ul>
-<li><a class="reference internal" href="#menus">Menus</a><ul>
-<li><a class="reference internal" href="#file-menu-shell-and-editor">File menu (Shell and Editor)</a></li>
-<li><a class="reference internal" href="#edit-menu-shell-and-editor">Edit menu (Shell and Editor)</a></li>
-<li><a class="reference internal" href="#format-menu-editor-window-only">Format menu (Editor window only)</a></li>
-<li><a class="reference internal" href="#run-menu-editor-window-only">Run menu (Editor window only)</a></li>
-<li><a class="reference internal" href="#shell-menu-shell-window-only">Shell menu (Shell window only)</a></li>
-<li><a class="reference internal" href="#debug-menu-shell-window-only">Debug menu (Shell window only)</a></li>
-<li><a class="reference internal" href="#options-menu-shell-and-editor">Options menu (Shell and Editor)</a></li>
-<li><a class="reference internal" href="#window-menu-shell-and-editor">Window menu (Shell and Editor)</a></li>
-<li><a class="reference internal" href="#help-menu-shell-and-editor">Help menu (Shell and Editor)</a></li>
-<li><a class="reference internal" href="#context-menus">Context menus</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#editing-and-navigation">Editing and Navigation</a><ul>
-<li><a class="reference internal" href="#editor-windows">Editor windows</a></li>
-<li><a class="reference internal" href="#key-bindings">Key bindings</a></li>
-<li><a class="reference internal" href="#automatic-indentation">Automatic indentation</a></li>
-<li><a class="reference internal" href="#search-and-replace">Search and Replace</a></li>
-<li><a class="reference internal" href="#completions">Completions</a></li>
-<li><a class="reference internal" href="#calltips">Calltips</a></li>
-<li><a class="reference internal" href="#code-context">Code Context</a></li>
-<li><a class="reference internal" href="#shell-window">Shell window</a></li>
-<li><a class="reference internal" href="#text-colors">Text colors</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#startup-and-code-execution">Startup and Code Execution</a><ul>
-<li><a class="reference internal" href="#command-line-usage">Command line usage</a></li>
-<li><a class="reference internal" href="#startup-failure">Startup failure</a></li>
-<li><a class="reference internal" href="#running-user-code">Running user code</a></li>
-<li><a class="reference internal" href="#user-output-in-shell">User output in Shell</a></li>
-<li><a class="reference internal" href="#developing-tkinter-applications">Developing tkinter applications</a></li>
-<li><a class="reference internal" href="#running-without-a-subprocess">Running without a subprocess</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#help-and-preferences">Help and Preferences</a><ul>
-<li><a class="reference internal" href="#help-sources">Help sources</a></li>
-<li><a class="reference internal" href="#setting-preferences">Setting preferences</a></li>
-<li><a class="reference internal" href="#idle-on-macos">IDLE on macOS</a></li>
-<li><a class="reference internal" href="#extensions">Extensions</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-idlelib">idlelib</a></li>
-</ul>
-</li>
-</ul>
-
-  </div>
-  <div>
-    <h4>Previous topic</h4>
-    <p class="topless"><a href="tkinter.ttk.html"
-                          title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tkinter.ttk</span></code> — Tk themed widgets</a></p>
-  </div>
-  <div>
-    <h4>Next topic</h4>
-    <p class="topless"><a href="development.html"
-                          title="next chapter">Development Tools</a></p>
-  </div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../bugs.html">Report a Bug</a></li>
-      <li>
-        <a href="https://github.com/python/cpython/blob/main/Doc/library/idle.rst"
-            rel="nofollow">Show Source
-        </a>
-      </li>
-    </ul>
-  </div>
-        </nav>
-    </div>
-</div>
-
-
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="development.html" title="Development Tools"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="tkinter.ttk.html" title="tkinter.ttk — Tk themed widgets"
-             accesskey="P">previous</a> |</li>
-
-          <li><img src="../_static/py.svg" alt="python logo" style="vertical-align: middle; margin-top: -1px"/></li>
-          <li><a href="https://www.python.org/">Python</a> &#187;</li>
-          <li class="switchers">
-            <div class="language_switcher_placeholder"></div>
-            <div class="version_switcher_placeholder"></div>
-          </li>
-          <li>
-
-          </li>
-    <li id="cpython-language-and-version">
-      <a href="../index.html">3.14.0a0 Documentation</a> &#187;
-    </li>
-
-          <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
-          <li class="nav-item nav-item-2"><a href="tk.html" accesskey="U">Graphical User Interfaces with Tk</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">IDLE</a></li>
-                <li class="right">
-
-
-    <div class="inline-search" role="search">
-        <form class="inline-search" action="../search.html" method="get">
-          <input placeholder="Quick search" aria-label="Quick search" type="search" name="q" id="search-box" />
-          <input type="submit" value="Go" />
-        </form>
-    </div>
-                     |
-                </li>
-            <li class="right">
-<label class="theme-selector-label">
-    Theme
-    <select class="theme-selector" oninput="activateTheme(this.value)">
-        <option value="auto" selected>Auto</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-    </select>
-</label> |</li>
-
-      </ul>
-    </div>
-
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
-
-  <section id="idle">
-<span id="id1"></span><h1>IDLE<a class="headerlink" href="#idle" title="Permalink to this heading">¶</a></h1>
-<p><strong>Source code:</strong> <a class="reference external" href="https://github.com/python/cpython/tree/main/Lib/idlelib/">Lib/idlelib/</a></p>
-<hr class="docutils" id="index-0" />
+<section id="idle">
+<span id="idle-python-editor-and-shell"></span><h1>IDLE — Python editor and shell<a class="headerlink" href="#idle" title="Link to this heading">¶</a></h1>
+<p><strong>Source code:</strong> <a class="extlink-source reference external" href="https://github.com/python/cpython/tree/main/Lib/idlelib/">Lib/idlelib/</a></p>
+<span class="target" id="index-0"></span><hr class="docutils" />
 <p>IDLE is Python’s Integrated Development and Learning Environment.</p>
 <p>IDLE has the following features:</p>
 <ul class="simple">
@@ -241,7 +17,7 @@ of global and local namespaces</p></li>
 <li><p>configuration, browsers, and other dialogs</p></li>
 </ul>
 <section id="menus">
-<h2>Menus<a class="headerlink" href="#menus" title="Permalink to this heading">¶</a></h2>
+<h2>Menus<a class="headerlink" href="#menus" title="Link to this heading">¶</a></h2>
 <p>IDLE has two main window types, the Shell window and the Editor window.  It is
 possible to have multiple editor windows simultaneously.  On Windows and
 Linux, each has its own top menu.  Each menu documented below indicates
@@ -253,7 +29,7 @@ default title and context menu.</p>
 to the window currently selected.  It has an IDLE menu, and some entries
 described below are moved around to conform to Apple guidelines.</p>
 <section id="file-menu-shell-and-editor">
-<h3>File menu (Shell and Editor)<a class="headerlink" href="#file-menu-shell-and-editor" title="Permalink to this heading">¶</a></h3>
+<h3>File menu (Shell and Editor)<a class="headerlink" href="#file-menu-shell-and-editor" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>New File</dt><dd><p>Create a new file editing window.</p>
 </dd>
@@ -296,7 +72,7 @@ window also closes Shell.  If this is the only window, also exit IDLE.</p>
 </dl>
 </section>
 <section id="edit-menu-shell-and-editor">
-<h3>Edit menu (Shell and Editor)<a class="headerlink" href="#edit-menu-shell-and-editor" title="Permalink to this heading">¶</a></h3>
+<h3>Edit menu (Shell and Editor)<a class="headerlink" href="#edit-menu-shell-and-editor" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>Undo</dt><dd><p>Undo the last change to the current window.  A maximum of 1000 changes may
 be undone.</p>
@@ -343,7 +119,7 @@ Editing and navigation section below.</p>
 </dl>
 </section>
 <section id="format-menu-editor-window-only">
-<span id="format-menu"></span><h3>Format menu (Editor window only)<a class="headerlink" href="#format-menu-editor-window-only" title="Permalink to this heading">¶</a></h3>
+<span id="format-menu"></span><h3>Format menu (Editor window only)<a class="headerlink" href="#format-menu-editor-window-only" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>Format Paragraph</dt><dd><p>Reformat the current blank-line-delimited paragraph in comment block or
 multiline string or selected line in a string.  All lines in the
@@ -375,7 +151,7 @@ remove extra newlines at the end of the file.</p>
 </dl>
 </section>
 <section id="run-menu-editor-window-only">
-<span id="index-2"></span><h3>Run menu (Editor window only)<a class="headerlink" href="#run-menu-editor-window-only" title="Permalink to this heading">¶</a></h3>
+<span id="index-2"></span><h3>Run menu (Editor window only)<a class="headerlink" href="#run-menu-editor-window-only" title="Link to this heading">¶</a></h3>
 <dl class="simple" id="run-module">
 <dt>Run Module</dt><dd><p>Do <a class="reference internal" href="#check-module"><span class="std std-ref">Check Module</span></a>.  If no error, restart the shell to clean the
 environment, then execute the module.  Output is displayed in the Shell
@@ -406,7 +182,7 @@ Editor window.</p>
 </dl>
 </section>
 <section id="shell-menu-shell-window-only">
-<h3>Shell menu (Shell window only)<a class="headerlink" href="#shell-menu-shell-window-only" title="Permalink to this heading">¶</a></h3>
+<h3>Shell menu (Shell window only)<a class="headerlink" href="#shell-menu-shell-window-only" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>View Last Restart</dt><dd><p>Scroll the shell window to the last Shell restart.</p>
 </dd>
@@ -421,7 +197,7 @@ Editor window.</p>
 </dl>
 </section>
 <section id="debug-menu-shell-window-only">
-<h3>Debug menu (Shell window only)<a class="headerlink" href="#debug-menu-shell-window-only" title="Permalink to this heading">¶</a></h3>
+<h3>Debug menu (Shell window only)<a class="headerlink" href="#debug-menu-shell-window-only" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>Go to File/Line</dt><dd><p>Look on the current line. with the cursor, and the line above for a filename
 and line number.  If found, open the file if not already open, and show the
@@ -443,7 +219,7 @@ access to locals and globals.</p>
 </dl>
 </section>
 <section id="options-menu-shell-and-editor">
-<h3>Options menu (Shell and Editor)<a class="headerlink" href="#options-menu-shell-and-editor" title="Permalink to this heading">¶</a></h3>
+<h3>Options menu (Shell and Editor)<a class="headerlink" href="#options-menu-shell-and-editor" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>Configure IDLE</dt><dd><p>Open a configuration dialog and change preferences for the following:
 fonts, indentation, keybindings, text color themes, startup windows and
@@ -475,12 +251,12 @@ no effect when a window is maximized.</p>
 </dl>
 </section>
 <section id="window-menu-shell-and-editor">
-<h3>Window menu (Shell and Editor)<a class="headerlink" href="#window-menu-shell-and-editor" title="Permalink to this heading">¶</a></h3>
+<h3>Window menu (Shell and Editor)<a class="headerlink" href="#window-menu-shell-and-editor" title="Link to this heading">¶</a></h3>
 <p>Lists the names of all open windows; select one to bring it to the foreground
 (deiconifying it if necessary).</p>
 </section>
 <section id="help-menu-shell-and-editor">
-<h3>Help menu (Shell and Editor)<a class="headerlink" href="#help-menu-shell-and-editor" title="Permalink to this heading">¶</a></h3>
+<h3>Help menu (Shell and Editor)<a class="headerlink" href="#help-menu-shell-and-editor" title="Link to this heading">¶</a></h3>
 <dl class="simple">
 <dt>About IDLE</dt><dd><p>Display version, copyright, license, credits, and more.</p>
 </dd>
@@ -498,7 +274,7 @@ the General tab. See the <a class="reference internal" href="#help-sources"><spa
 for more on Help menu choices.</p>
 </section>
 <section id="context-menus">
-<span id="index-4"></span><h3>Context menus<a class="headerlink" href="#context-menus" title="Permalink to this heading">¶</a></h3>
+<span id="index-4"></span><h3>Context menus<a class="headerlink" href="#context-menus" title="Link to this heading">¶</a></h3>
 <p>Open a context menu by right-clicking in a window (Control-click on macOS).
 Context menus have the standard clipboard functions also on the Edit menu.</p>
 <dl class="simple">
@@ -534,9 +310,9 @@ the code above and the prompt below down to a ‘Squeezed text’ label.</p>
 </section>
 </section>
 <section id="editing-and-navigation">
-<span id="id2"></span><h2>Editing and Navigation<a class="headerlink" href="#editing-and-navigation" title="Permalink to this heading">¶</a></h2>
+<span id="id1"></span><h2>Editing and Navigation<a class="headerlink" href="#editing-and-navigation" title="Link to this heading">¶</a></h2>
 <section id="editor-windows">
-<h3>Editor windows<a class="headerlink" href="#editor-windows" title="Permalink to this heading">¶</a></h3>
+<h3>Editor windows<a class="headerlink" href="#editor-windows" title="Link to this heading">¶</a></h3>
 <p>IDLE may open editor windows when it starts, depending on settings
 and how you start IDLE.  Thereafter, use the File menu.  There can be only
 one open editor window for a given file.</p>
@@ -548,7 +324,7 @@ column numbers with 0.</p>
 and that other files do not.  Run Python code with the Run menu.</p>
 </section>
 <section id="key-bindings">
-<h3>Key bindings<a class="headerlink" href="#key-bindings" title="Permalink to this heading">¶</a></h3>
+<h3>Key bindings<a class="headerlink" href="#key-bindings" title="Link to this heading">¶</a></h3>
 <p>The IDLE insertion cursor is a thin vertical bar between character
 positions.  When characters are entered, the insertion cursor and
 everything to its right moves right one character and
@@ -574,7 +350,7 @@ or next character.</p></li>
 may work.  Keybindings are selected in the Configure IDLE dialog.</p>
 </section>
 <section id="automatic-indentation">
-<h3>Automatic indentation<a class="headerlink" href="#automatic-indentation" title="Permalink to this heading">¶</a></h3>
+<h3>Automatic indentation<a class="headerlink" href="#automatic-indentation" title="Link to this heading">¶</a></h3>
 <p>After a block-opening statement, the next line is indented by 4 spaces (in the
 Python Shell window by one tab).  After certain keywords (break, return etc.)
 the next line is dedented.  In leading indentation, <kbd class="kbd docutils literal notranslate">Backspace</kbd> deletes up
@@ -585,14 +361,14 @@ are restricted to four spaces due to Tcl/Tk limitations.</p>
 <a class="reference internal" href="#format-menu"><span class="std std-ref">Format menu</span></a>.</p>
 </section>
 <section id="search-and-replace">
-<h3>Search and Replace<a class="headerlink" href="#search-and-replace" title="Permalink to this heading">¶</a></h3>
+<h3>Search and Replace<a class="headerlink" href="#search-and-replace" title="Link to this heading">¶</a></h3>
 <p>Any selection becomes a search target.  However, only selections within
 a line work because searches are only performed within lines with the
 terminal newline removed.  If <code class="docutils literal notranslate"><span class="pre">[x]</span> <span class="pre">Regular</span> <span class="pre">expression</span></code> is checked, the
 target is interpreted according to the Python re module.</p>
 </section>
 <section id="completions">
-<span id="id3"></span><h3>Completions<a class="headerlink" href="#completions" title="Permalink to this heading">¶</a></h3>
+<span id="id2"></span><h3>Completions<a class="headerlink" href="#completions" title="Link to this heading">¶</a></h3>
 <p>Completions are supplied, when requested and available, for module
 names, attributes of classes or functions, or filenames.  Each request
 method displays a completion box with existing names.  (See tab
@@ -636,7 +412,7 @@ modules, not included in ‘__all__’.  The hidden names can be accessed
 by typing ‘_’ after ‘.’, either before or after the box is opened.</p>
 </section>
 <section id="calltips">
-<span id="id4"></span><h3>Calltips<a class="headerlink" href="#calltips" title="Permalink to this heading">¶</a></h3>
+<span id="id3"></span><h3>Calltips<a class="headerlink" href="#calltips" title="Link to this heading">¶</a></h3>
 <p>A calltip is shown automatically when one types <kbd class="kbd docutils literal notranslate">(</kbd> after the name
 of an <em>accessible</em> function.  A function name expression may include
 dots and subscripts.  A calltip remains until it is clicked, the cursor
@@ -662,7 +438,7 @@ One might want to run a file after writing import statements, after
 adding function definitions, or after opening an existing file.</p>
 </section>
 <section id="code-context">
-<span id="id5"></span><h3>Code Context<a class="headerlink" href="#code-context" title="Permalink to this heading">¶</a></h3>
+<span id="id4"></span><h3>Code Context<a class="headerlink" href="#code-context" title="Link to this heading">¶</a></h3>
 <p>Within an editor window containing Python code, code context can be toggled
 in order to show or hide a pane at the top of the window.  When shown, this
 pane freezes the opening lines for block code, such as those beginning with
@@ -677,7 +453,7 @@ line to the top of the editor.</p>
 the Highlights tab in the Configure IDLE dialog.</p>
 </section>
 <section id="shell-window">
-<h3>Shell window<a class="headerlink" href="#shell-window" title="Permalink to this heading">¶</a></h3>
+<h3>Shell window<a class="headerlink" href="#shell-window" title="Link to this heading">¶</a></h3>
 <p>In IDLE’s Shell, enter, edit, and recall complete statements. (Most
 consoles and terminals only work with a single physical line at a time).</p>
 <p>Submit a single-line statement for execution by hitting <kbd class="kbd docutils literal notranslate">Return</kbd>
@@ -707,7 +483,7 @@ appends the latter to anything already typed at the prompt.</p></li>
 </ul>
 </section>
 <section id="text-colors">
-<h3>Text colors<a class="headerlink" href="#text-colors" title="Permalink to this heading">¶</a></h3>
+<h3>Text colors<a class="headerlink" href="#text-colors" title="Link to this heading">¶</a></h3>
 <p>Idle defaults to black on white text, but colors text with special meanings.
 For the shell, these are shell output, shell error, user output, and
 user error.  For Python code, at the shell prompt or in an editor, these are
@@ -726,7 +502,7 @@ text in popups and dialogs is not user-configurable.</p>
 </section>
 </section>
 <section id="startup-and-code-execution">
-<h2>Startup and Code Execution<a class="headerlink" href="#startup-and-code-execution" title="Permalink to this heading">¶</a></h2>
+<h2>Startup and Code Execution<a class="headerlink" href="#startup-and-code-execution" title="Link to this heading">¶</a></h2>
 <p>Upon startup with the <code class="docutils literal notranslate"><span class="pre">-s</span></code> option, IDLE will execute the file referenced by
 the environment variables <span class="target" id="index-5"></span><code class="xref std std-envvar docutils literal notranslate"><span class="pre">IDLESTARTUP</span></code> or <span class="target" id="index-6"></span><a class="reference internal" href="../using/cmdline.html#envvar-PYTHONSTARTUP"><code class="xref std std-envvar docutils literal notranslate"><span class="pre">PYTHONSTARTUP</span></code></a>.
 IDLE first checks for <code class="docutils literal notranslate"><span class="pre">IDLESTARTUP</span></code>; if <code class="docutils literal notranslate"><span class="pre">IDLESTARTUP</span></code> is present the file
@@ -740,7 +516,7 @@ looked for in the user’s home directory.  Statements in this file will be
 executed in the Tk namespace, so this file is not useful for importing
 functions to be used from IDLE’s Python shell.</p>
 <section id="command-line-usage">
-<h3>Command line usage<a class="headerlink" href="#command-line-usage" title="Permalink to this heading">¶</a></h3>
+<h3>Command line usage<a class="headerlink" href="#command-line-usage" title="Link to this heading">¶</a></h3>
 <div class="highlight-none notranslate"><div class="highlight"><pre><span></span>idle.py [-c command] [-d] [-e] [-h] [-i] [-r file] [-s] [-t title] [-] [arg] ...
 
 -c command  run command in the shell window
@@ -765,7 +541,7 @@ set in the Options dialog.</p></li>
 </ul>
 </section>
 <section id="startup-failure">
-<h3>Startup failure<a class="headerlink" href="#startup-failure" title="Permalink to this heading">¶</a></h3>
+<h3>Startup failure<a class="headerlink" href="#startup-failure" title="Link to this heading">¶</a></h3>
 <p>IDLE uses a socket to communicate between the IDLE GUI process and the user
 code execution process.  A connection must be established whenever the Shell
 starts or restarts.  (The latter is indicated by a divider line that says
@@ -817,7 +593,7 @@ when entering such a character.  If one cannot upgrade tcl/tk,
 then re-configure IDLE to use a font that works better.</p>
 </section>
 <section id="running-user-code">
-<h3>Running user code<a class="headerlink" href="#running-user-code" title="Permalink to this heading">¶</a></h3>
+<h3>Running user code<a class="headerlink" href="#running-user-code" title="Link to this heading">¶</a></h3>
 <p>With rare exceptions, the result of executing Python code with IDLE is
 intended to be the same as executing the same code by the default method,
 directly with Python in a text-mode system console or terminal window.
@@ -861,7 +637,7 @@ frames.</p>
 IDLE returns to a Shell prompt instead of exiting.</p>
 </section>
 <section id="user-output-in-shell">
-<h3>User output in Shell<a class="headerlink" href="#user-output-in-shell" title="Permalink to this heading">¶</a></h3>
+<h3>User output in Shell<a class="headerlink" href="#user-output-in-shell" title="Link to this heading">¶</a></h3>
 <p>When a program outputs text, the result is determined by the
 corresponding output device.  When IDLE executes user code, <code class="docutils literal notranslate"><span class="pre">sys.stdout</span></code>
 and <code class="docutils literal notranslate"><span class="pre">sys.stderr</span></code> are connected to the display area of IDLE’s Shell.  Some of
@@ -915,7 +691,7 @@ It can also be sent to the clipboard or a separate view window by
 right-clicking the label.</p>
 </section>
 <section id="developing-tkinter-applications">
-<h3>Developing tkinter applications<a class="headerlink" href="#developing-tkinter-applications" title="Permalink to this heading">¶</a></h3>
+<h3>Developing tkinter applications<a class="headerlink" href="#developing-tkinter-applications" title="Link to this heading">¶</a></h3>
 <p>IDLE is intentionally different from standard Python in order to
 facilitate development of tkinter programs.  Enter <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">tkinter</span> <span class="pre">as</span> <span class="pre">tk;</span>
 <span class="pre">root</span> <span class="pre">=</span> <span class="pre">tk.Tk()</span></code> in standard Python and nothing appears.  Enter the same
@@ -935,7 +711,7 @@ interact with the live application.  One just has to remember to
 re-enable the mainloop call when running in standard Python.</p>
 </section>
 <section id="running-without-a-subprocess">
-<h3>Running without a subprocess<a class="headerlink" href="#running-without-a-subprocess" title="Permalink to this heading">¶</a></h3>
+<h3>Running without a subprocess<a class="headerlink" href="#running-without-a-subprocess" title="Link to this heading">¶</a></h3>
 <p>By default, IDLE executes user code in a separate subprocess via a socket,
 which uses the internal loopback interface.  This connection is not
 externally visible and no data is sent to or received from the internet.
@@ -961,9 +737,9 @@ with the default subprocess if at all possible.</p>
 </section>
 </section>
 <section id="help-and-preferences">
-<h2>Help and Preferences<a class="headerlink" href="#help-and-preferences" title="Permalink to this heading">¶</a></h2>
+<h2>Help and Preferences<a class="headerlink" href="#help-and-preferences" title="Link to this heading">¶</a></h2>
 <section id="help-sources">
-<span id="id6"></span><h3>Help sources<a class="headerlink" href="#help-sources" title="Permalink to this heading">¶</a></h3>
+<span id="id5"></span><h3>Help sources<a class="headerlink" href="#help-sources" title="Link to this heading">¶</a></h3>
 <p>Help menu entry “IDLE Help” displays a formatted html version of the
 IDLE chapter of the Library Reference.  The result, in a read-only
 tkinter text window, is close to what one sees in a web browser.
@@ -980,7 +756,7 @@ that will be opened instead.</p>
 General tab of the Configure IDLE dialog.</p>
 </section>
 <section id="setting-preferences">
-<span id="preferences"></span><h3>Setting preferences<a class="headerlink" href="#setting-preferences" title="Permalink to this heading">¶</a></h3>
+<span id="preferences"></span><h3>Setting preferences<a class="headerlink" href="#setting-preferences" title="Link to this heading">¶</a></h3>
 <p>The font preferences, highlighting, keys, and general preferences can be
 changed via Configure IDLE on the Option menu.
 Non-default user settings are saved in a <code class="docutils literal notranslate"><span class="pre">.idlerc</span></code> directory in the user’s
@@ -998,13 +774,13 @@ IDLEs, save it as a new custom theme or key set and it well be accessible
 to older IDLEs.</p>
 </section>
 <section id="idle-on-macos">
-<h3>IDLE on macOS<a class="headerlink" href="#idle-on-macos" title="Permalink to this heading">¶</a></h3>
+<h3>IDLE on macOS<a class="headerlink" href="#idle-on-macos" title="Link to this heading">¶</a></h3>
 <p>Under System Preferences: Dock, one can set “Prefer tabs when opening
 documents” to “Always”.  This setting is not compatible with the tk/tkinter
 GUI framework used by IDLE, and it breaks a few IDLE features.</p>
 </section>
 <section id="extensions">
-<h3>Extensions<a class="headerlink" href="#extensions" title="Permalink to this heading">¶</a></h3>
+<h3>Extensions<a class="headerlink" href="#extensions" title="Link to this heading">¶</a></h3>
 <p>IDLE contains an extension facility.  Preferences for extensions can be
 changed with the Extensions tab of the preferences dialog. See the
 beginning of config-extensions.def in the idlelib directory for further
@@ -1013,8 +789,8 @@ also used for testing.</p>
 </section>
 </section>
 <section id="module-idlelib">
-<span id="idlelib"></span><h2>idlelib<a class="headerlink" href="#module-idlelib" title="Permalink to this heading">¶</a></h2>
-<p><strong>Source code:</strong> <a class="reference external" href="https://github.com/python/cpython/tree/main/Lib/idlelib">Lib/idlelib</a></p>
+<span id="idlelib-implementation-of-idle-application"></span><h2>idlelib — implementation of IDLE application<a class="headerlink" href="#module-idlelib" title="Link to this heading">¶</a></h2>
+<p><strong>Source code:</strong> <a class="extlink-source reference external" href="https://github.com/python/cpython/tree/main/Lib/idlelib">Lib/idlelib</a></p>
 <hr class="docutils" />
 <p>The Lib/idlelib package implements the IDLE application.  See the rest
 of this page for how to use IDLE.</p>
@@ -1027,168 +803,3 @@ sense that feature changes can be backported (see <span class="target" id="index
 </section>
 
 
-            <div class="clearer"></div>
-          </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <div>
-    <h3><a href="../contents.html">Table of Contents</a></h3>
-    <ul>
-<li><a class="reference internal" href="#">IDLE</a><ul>
-<li><a class="reference internal" href="#menus">Menus</a><ul>
-<li><a class="reference internal" href="#file-menu-shell-and-editor">File menu (Shell and Editor)</a></li>
-<li><a class="reference internal" href="#edit-menu-shell-and-editor">Edit menu (Shell and Editor)</a></li>
-<li><a class="reference internal" href="#format-menu-editor-window-only">Format menu (Editor window only)</a></li>
-<li><a class="reference internal" href="#run-menu-editor-window-only">Run menu (Editor window only)</a></li>
-<li><a class="reference internal" href="#shell-menu-shell-window-only">Shell menu (Shell window only)</a></li>
-<li><a class="reference internal" href="#debug-menu-shell-window-only">Debug menu (Shell window only)</a></li>
-<li><a class="reference internal" href="#options-menu-shell-and-editor">Options menu (Shell and Editor)</a></li>
-<li><a class="reference internal" href="#window-menu-shell-and-editor">Window menu (Shell and Editor)</a></li>
-<li><a class="reference internal" href="#help-menu-shell-and-editor">Help menu (Shell and Editor)</a></li>
-<li><a class="reference internal" href="#context-menus">Context menus</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#editing-and-navigation">Editing and Navigation</a><ul>
-<li><a class="reference internal" href="#editor-windows">Editor windows</a></li>
-<li><a class="reference internal" href="#key-bindings">Key bindings</a></li>
-<li><a class="reference internal" href="#automatic-indentation">Automatic indentation</a></li>
-<li><a class="reference internal" href="#search-and-replace">Search and Replace</a></li>
-<li><a class="reference internal" href="#completions">Completions</a></li>
-<li><a class="reference internal" href="#calltips">Calltips</a></li>
-<li><a class="reference internal" href="#code-context">Code Context</a></li>
-<li><a class="reference internal" href="#shell-window">Shell window</a></li>
-<li><a class="reference internal" href="#text-colors">Text colors</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#startup-and-code-execution">Startup and Code Execution</a><ul>
-<li><a class="reference internal" href="#command-line-usage">Command line usage</a></li>
-<li><a class="reference internal" href="#startup-failure">Startup failure</a></li>
-<li><a class="reference internal" href="#running-user-code">Running user code</a></li>
-<li><a class="reference internal" href="#user-output-in-shell">User output in Shell</a></li>
-<li><a class="reference internal" href="#developing-tkinter-applications">Developing tkinter applications</a></li>
-<li><a class="reference internal" href="#running-without-a-subprocess">Running without a subprocess</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#help-and-preferences">Help and Preferences</a><ul>
-<li><a class="reference internal" href="#help-sources">Help sources</a></li>
-<li><a class="reference internal" href="#setting-preferences">Setting preferences</a></li>
-<li><a class="reference internal" href="#idle-on-macos">IDLE on macOS</a></li>
-<li><a class="reference internal" href="#extensions">Extensions</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#module-idlelib">idlelib</a></li>
-</ul>
-</li>
-</ul>
-
-  </div>
-  <div>
-    <h4>Previous topic</h4>
-    <p class="topless"><a href="tkinter.ttk.html"
-                          title="previous chapter"><code class="xref py py-mod docutils literal notranslate"><span class="pre">tkinter.ttk</span></code> — Tk themed widgets</a></p>
-  </div>
-  <div>
-    <h4>Next topic</h4>
-    <p class="topless"><a href="development.html"
-                          title="next chapter">Development Tools</a></p>
-  </div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../bugs.html">Report a Bug</a></li>
-      <li>
-        <a href="https://github.com/python/cpython/blob/main/Doc/library/idle.rst"
-            rel="nofollow">Show Source
-        </a>
-      </li>
-    </ul>
-  </div>
-        </div>
-<div id="sidebarbutton" title="Collapse sidebar">
-<span>«</span>
-</div>
-
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="development.html" title="Development Tools"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="tkinter.ttk.html" title="tkinter.ttk — Tk themed widgets"
-             >previous</a> |</li>
-
-          <li><img src="../_static/py.svg" alt="python logo" style="vertical-align: middle; margin-top: -1px"/></li>
-          <li><a href="https://www.python.org/">Python</a> &#187;</li>
-          <li class="switchers">
-            <div class="language_switcher_placeholder"></div>
-            <div class="version_switcher_placeholder"></div>
-          </li>
-          <li>
-
-          </li>
-    <li id="cpython-language-and-version">
-      <a href="../index.html">3.14.0a0 Documentation</a> &#187;
-    </li>
-
-          <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &#187;</li>
-          <li class="nav-item nav-item-2"><a href="tk.html" >Graphical User Interfaces with Tk</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">IDLE</a></li>
-                <li class="right">
-
-
-    <div class="inline-search" role="search">
-        <form class="inline-search" action="../search.html" method="get">
-          <input placeholder="Quick search" aria-label="Quick search" type="search" name="q" id="search-box" />
-          <input type="submit" value="Go" />
-        </form>
-    </div>
-                     |
-                </li>
-            <li class="right">
-<label class="theme-selector-label">
-    Theme
-    <select class="theme-selector" oninput="activateTheme(this.value)">
-        <option value="auto" selected>Auto</option>
-        <option value="light">Light</option>
-        <option value="dark">Dark</option>
-    </select>
-</label> |</li>
-
-      </ul>
-    </div>
-    <div class="footer">
-    &copy; <a href="../copyright.html">Copyright</a> 2001-2024, Python Software Foundation.
-    <br />
-    This page is licensed under the Python Software Foundation License Version 2.
-    <br />
-    Examples, recipes, and other code in the documentation are additionally licensed under the Zero Clause BSD License.
-    <br />
-    See <a href="/license.html">History and License</a> for more information.<br />
-    <br />
-
-    The Python Software Foundation is a non-profit corporation.
-<a href="https://www.python.org/psf/donations/">Please donate.</a>
-<br />
-    <br />
-
-    Last updated on Oct 14, 2024 (20:27 UTC).
-    <a href="/bugs.html">Found a bug</a>?
-    <br />
-
-    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.0.1.
-    </div>
-
-  </body>
-</html>

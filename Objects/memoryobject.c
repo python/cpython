@@ -12,8 +12,11 @@
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interp.h"        // _PyInterpreterState_LookUpID()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
 #include "pycore_object.h"        // _PyObject_GC_UNTRACK()
+#include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
 #include "pycore_strhex.h"        // _Py_strhex_with_sep()
 #include <stddef.h>               // offsetof()
 
@@ -1086,6 +1089,16 @@ PyBuffer_ToContiguous(void *buf, const Py_buffer *src, Py_ssize_t len, char orde
     return ret;
 }
 
+static inline Py_ssize_t
+get_exports(PyMemoryViewObject *buf)
+{
+#ifdef Py_GIL_DISABLED
+    return _Py_atomic_load_ssize_relaxed(&buf->exports);
+#else
+    return buf->exports;
+#endif
+}
+
 
 /****************************************************************************/
 /*                           Release/GC management                          */
@@ -1098,7 +1111,7 @@ PyBuffer_ToContiguous(void *buf, const Py_buffer *src, Py_ssize_t len, char orde
 static void
 _memory_release(PyMemoryViewObject *self)
 {
-    assert(self->exports == 0);
+    assert(get_exports(self) == 0);
     if (self->flags & _Py_MEMORYVIEW_RELEASED)
         return;
 
@@ -1119,15 +1132,16 @@ static PyObject *
 memoryview_release_impl(PyMemoryViewObject *self)
 /*[clinic end generated code: output=d0b7e3ba95b7fcb9 input=bc71d1d51f4a52f0]*/
 {
-    if (self->exports == 0) {
+    Py_ssize_t exports = get_exports(self);
+    if (exports == 0) {
         _memory_release(self);
         Py_RETURN_NONE;
     }
 
-    if (self->exports > 0) {
+    if (exports > 0) {
         PyErr_Format(PyExc_BufferError,
-            "memoryview has %zd exported buffer%s", self->exports,
-            self->exports==1 ? "" : "s");
+            "memoryview has %zd exported buffer%s", exports,
+            exports==1 ? "" : "s");
         return NULL;
     }
 
@@ -1140,7 +1154,7 @@ static void
 memory_dealloc(PyObject *_self)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-    assert(self->exports == 0);
+    assert(get_exports(self) == 0);
     _PyObject_GC_UNTRACK(self);
     _memory_release(self);
     Py_CLEAR(self->mbuf);
@@ -1161,7 +1175,7 @@ static int
 memory_clear(PyObject *_self)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
-    if (self->exports == 0) {
+    if (get_exports(self) == 0) {
         _memory_release(self);
         Py_CLEAR(self->mbuf);
     }
@@ -1589,7 +1603,11 @@ memory_getbuf(PyObject *_self, Py_buffer *view, int flags)
 
 
     view->obj = Py_NewRef(self);
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_add_ssize(&self->exports, 1);
+#else
     self->exports++;
+#endif
 
     return 0;
 }
@@ -1598,7 +1616,11 @@ static void
 memory_releasebuf(PyObject *_self, Py_buffer *view)
 {
     PyMemoryViewObject *self = (PyMemoryViewObject *)_self;
+#ifdef Py_GIL_DISABLED
+    _Py_atomic_add_ssize(&self->exports, -1);
+#else
     self->exports--;
+#endif
     return;
     /* PyBuffer_Release() decrements view->obj after this function returns. */
 }
@@ -2064,7 +2086,7 @@ struct_get_unpacker(const char *fmt, Py_ssize_t itemsize)
     PyObject *format = NULL;
     struct unpacker *x = NULL;
 
-    Struct = _PyImport_GetModuleAttrString("struct", "Struct");
+    Struct = PyImport_ImportModuleAttrString("struct", "Struct");
     if (Struct == NULL)
         return NULL;
 
@@ -2748,6 +2770,141 @@ static PySequenceMethods memory_as_sequence = {
 };
 
 
+/****************************************************************************/
+/*                              Counting                                    */
+/****************************************************************************/
+
+/*[clinic input]
+memoryview.count
+
+    value: object
+    /
+
+Count the number of occurrences of a value.
+[clinic start generated code]*/
+
+static PyObject *
+memoryview_count_impl(PyMemoryViewObject *self, PyObject *value)
+/*[clinic end generated code: output=a15cb19311985063 input=e3036ce1ed7d1823]*/
+{
+    PyObject *iter = PyObject_GetIter(_PyObject_CAST(self));
+    if (iter == NULL) {
+        return NULL;
+    }
+
+    Py_ssize_t count = 0;
+    PyObject *item = NULL;
+    while (PyIter_NextItem(iter, &item)) {
+        if (item == NULL) {
+            Py_DECREF(iter);
+            return NULL;
+        }
+        if (item == value) {
+            Py_DECREF(item);
+            count++;  // no overflow since count <= len(mv) <= PY_SSIZE_T_MAX
+            continue;
+        }
+        int contained = PyObject_RichCompareBool(item, value, Py_EQ);
+        Py_DECREF(item);
+        if (contained > 0) { // more likely than 'contained < 0'
+            count++;  // no overflow since count <= len(mv) <= PY_SSIZE_T_MAX
+        }
+        else if (contained < 0) {
+            Py_DECREF(iter);
+            return NULL;
+        }
+    }
+    Py_DECREF(iter);
+    return PyLong_FromSsize_t(count);
+}
+
+
+/**************************************************************************/
+/*                             Lookup                                     */
+/**************************************************************************/
+
+/*[clinic input]
+memoryview.index
+
+    value: object
+    start: slice_index(accept={int}) = 0
+    stop: slice_index(accept={int}, c_default="PY_SSIZE_T_MAX") = sys.maxsize
+    /
+
+Return the index of the first occurrence of a value.
+
+Raises ValueError if the value is not present.
+[clinic start generated code]*/
+
+static PyObject *
+memoryview_index_impl(PyMemoryViewObject *self, PyObject *value,
+                      Py_ssize_t start, Py_ssize_t stop)
+/*[clinic end generated code: output=e0185e3819e549df input=0697a0165bf90b5a]*/
+{
+    const Py_buffer *view = &self->view;
+    CHECK_RELEASED(self);
+
+    if (view->ndim == 0) {
+        PyErr_SetString(PyExc_TypeError, "invalid lookup on 0-dim memory");
+        return NULL;
+    }
+
+    if (view->ndim == 1) {
+        Py_ssize_t n = view->shape[0];
+
+        if (start < 0) {
+            start = Py_MAX(start + n, 0);
+        }
+
+        if (stop < 0) {
+            stop = Py_MAX(stop + n, 0);
+        }
+
+        stop = Py_MIN(stop, n);
+        assert(stop >= 0);
+        assert(stop <= n);
+
+        start = Py_MIN(start, stop);
+        assert(0 <= start);
+        assert(start <= stop);
+
+        PyObject *obj = _PyObject_CAST(self);
+        for (Py_ssize_t index = start; index < stop; index++) {
+            // Note: while memoryviews can be mutated during iterations
+            // when calling the == operator, their shape cannot. As such,
+            // it is safe to assume that the index remains valid for the
+            // entire loop.
+            assert(index < n);
+
+            PyObject *item = memory_item(obj, index);
+            if (item == NULL) {
+                return NULL;
+            }
+            if (item == value) {
+                Py_DECREF(item);
+                return PyLong_FromSsize_t(index);
+            }
+            int contained = PyObject_RichCompareBool(item, value, Py_EQ);
+            Py_DECREF(item);
+            if (contained > 0) {  // more likely than 'contained < 0'
+                return PyLong_FromSsize_t(index);
+            }
+            else if (contained < 0) {
+                return NULL;
+            }
+        }
+
+        PyErr_SetString(PyExc_ValueError, "memoryview.index(x): x not found");
+        return NULL;
+    }
+
+    PyErr_SetString(PyExc_NotImplementedError,
+                    "multi-dimensional lookup is not implemented");
+    return NULL;
+
+}
+
+
 /**************************************************************************/
 /*                             Comparisons                                */
 /**************************************************************************/
@@ -3284,8 +3441,11 @@ static PyMethodDef memory_methods[] = {
     MEMORYVIEW_CAST_METHODDEF
     MEMORYVIEW_TOREADONLY_METHODDEF
     MEMORYVIEW__FROM_FLAGS_METHODDEF
+    MEMORYVIEW_COUNT_METHODDEF
+    MEMORYVIEW_INDEX_METHODDEF
     {"__enter__",   memory_enter, METH_NOARGS, NULL},
     {"__exit__",    memory_exit, METH_VARARGS, memory_exit_doc},
+    {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
     {NULL,          NULL}
 };
 
@@ -3355,6 +3515,7 @@ memory_iter(PyObject *seq)
         PyErr_BadInternalCall();
         return NULL;
     }
+    CHECK_RELEASED(seq);
     PyMemoryViewObject *obj = (PyMemoryViewObject *)seq;
     int ndims = obj->view.ndim;
     if (ndims == 0) {
@@ -3398,6 +3559,252 @@ PyTypeObject _PyMemoryIter_Type = {
     .tp_iternext = memoryiter_next,
 };
 
+
+/**************************************************************************/
+/*                   Memoryview Cross-interpreter Data                    */
+/**************************************************************************/
+
+/* When a memoryview object is "shared" between interpreters,
+ * its underlying "buffer" memory is actually shared, rather than just
+ * copied.  This facilitates efficient use of that data where otherwise
+ * interpreters are strictly isolated.  However, this also means that
+ * the underlying data is subject to the complexities of thread-safety,
+ * which the user must manage carefully.
+ *
+ * When the memoryview is "shared", it is essentially copied in the same
+ * way as PyMemory_FromObject() does, but in another interpreter.
+ * The Py_buffer value is copied like normal, including the "buf" pointer,
+ * with one key exception.
+ *
+ * When a Py_buffer is released and it holds a reference to an object,
+ * that object gets a chance to call its bf_releasebuffer() (if any)
+ * before the object is decref'ed.  The same is true with the memoryview
+ * tp_dealloc, which essentially calls PyBuffer_Release().
+ *
+ * The problem for a Py_buffer shared between two interpreters is that
+ * the naive approach breaks interpreter isolation.  Operations on an
+ * object must only happen while that object's interpreter is active.
+ * If the copied mv->view.obj pointed to the original memoryview then
+ * the PyBuffer_Release() would happen under the wrong interpreter.
+ *
+ * To work around this, we set mv->view.obj on the copied memoryview
+ * to a wrapper object with the only job of releasing the original
+ * buffer in a cross-interpreter-safe way.
+ */
+
+// XXX Note that there is still an issue to sort out, where the original
+// interpreter is destroyed but code in another interpreter is still
+// using dependent buffers.  Using such buffers segfaults.  This will
+// require a careful fix.  In the meantime, users will have to be
+// diligent about avoiding the problematic situation.
+
+typedef struct {
+    PyObject base;
+    Py_buffer *view;
+    int64_t interpid;
+} xibufferview;
+
+static PyObject *
+xibufferview_from_buffer(PyTypeObject *cls, Py_buffer *view, int64_t interpid)
+{
+    assert(interpid >= 0);
+
+    Py_buffer *copied = PyMem_RawMalloc(sizeof(Py_buffer));
+    if (copied == NULL) {
+        return NULL;
+    }
+    /* This steals the view->obj reference  */
+    *copied = *view;
+
+    xibufferview *self = PyObject_Malloc(sizeof(xibufferview));
+    if (self == NULL) {
+        PyMem_RawFree(copied);
+        return NULL;
+    }
+    *self = (xibufferview){
+        .view = copied,
+        .interpid = interpid,
+    };
+    PyObject_Init(&self->base, cls);
+    return (PyObject *)self;
+}
+
+static void
+xibufferview_dealloc(PyObject *op)
+{
+    xibufferview *self = (xibufferview *)op;
+
+    if (self->view != NULL) {
+        PyInterpreterState *interp =
+                        _PyInterpreterState_LookUpID(self->interpid);
+        if (interp == NULL) {
+            /* The interpreter is no longer alive. */
+            PyErr_Clear();
+            PyMem_RawFree(self->view);
+        }
+        else {
+            if (_PyBuffer_ReleaseInInterpreterAndRawFree(interp,
+                                                         self->view) < 0)
+            {
+                // XXX Emit a warning?
+                PyErr_Clear();
+            }
+        }
+    }
+
+    PyTypeObject *tp = Py_TYPE(self);
+    tp->tp_free(self);
+    /* "Instances of heap-allocated types hold a reference to their type."
+     * See: https://docs.python.org/3.11/howto/isolating-extensions.html#garbage-collection-protocol
+     * See: https://docs.python.org/3.11/c-api/typeobj.html#c.PyTypeObject.tp_traverse
+    */
+    // XXX Why don't we implement Py_TPFLAGS_HAVE_GC, e.g. Py_tp_traverse,
+    // like we do for _abc._abc_data?
+    Py_DECREF(tp);
+}
+
+static int
+xibufferview_getbuf(PyObject *op, Py_buffer *view, int flags)
+{
+    /* Only PyMemoryView_FromObject() should ever call this,
+       via _memoryview_from_xid() below. */
+    xibufferview *self = (xibufferview *)op;
+    *view = *self->view;
+    /* This is the workaround mentioned earlier. */
+    view->obj = op;
+    // XXX Should we leave it alone?
+    view->internal = NULL;
+    return 0;
+}
+
+static PyType_Slot XIBufferViewType_slots[] = {
+    {Py_tp_dealloc, xibufferview_dealloc},
+    {Py_bf_getbuffer, xibufferview_getbuf},
+    // We don't bother with Py_bf_releasebuffer since we don't need it.
+    {0, NULL},
+};
+
+static PyType_Spec XIBufferViewType_spec = {
+    .name = "_interpreters.CrossInterpreterBufferView",
+    .basicsize = sizeof(xibufferview),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = XIBufferViewType_slots,
+};
+
+PyTypeObject *
+_PyMemoryView_GetXIBuffewViewType(void)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyTypeObject *cls = interp->memobj_state.XIBufferViewType;
+    if (cls == NULL) {
+        cls = (PyTypeObject *)PyType_FromSpec(&XIBufferViewType_spec);
+        if (cls == NULL) {
+            return NULL;
+        }
+        /* It gets cleaned up during interpreter finalization
+         * in clear_xidata_state(). */
+        interp->memobj_state.XIBufferViewType = cls;
+    }
+    Py_INCREF(cls);
+    return cls;
+}
+
+
+struct xibuffer {
+    Py_buffer view;
+    int used;
+};
+
+static PyObject *
+_memoryview_from_xid(_PyXIData_t *data)
+{
+    assert(_PyXIData_DATA(data) != NULL);
+    assert(_PyXIData_OBJ(data) == NULL);
+    assert(_PyXIData_INTERPID(data) >= 0);
+    struct xibuffer *view = (struct xibuffer *)_PyXIData_DATA(data);
+    assert(!view->used);
+
+    PyTypeObject *cls = _PyMemoryView_GetXIBuffewViewType();
+    if (cls == NULL) {
+        return NULL;
+    }
+
+    PyObject *obj = xibufferview_from_buffer(
+                        cls, &view->view, _PyXIData_INTERPID(data));
+    if (obj == NULL) {
+        return NULL;
+    }
+    PyObject *res = PyMemoryView_FromObject(obj);
+    if (res == NULL) {
+        Py_DECREF(obj);
+        return NULL;
+    }
+    view->used = 1;
+    return res;
+}
+
+static void
+_pybuffer_shared_free(void* data)
+{
+    struct xibuffer *view = (struct xibuffer *)data;
+    if (!view->used) {
+        PyBuffer_Release(&view->view);
+    }
+    PyMem_RawFree(data);
+}
+
+static int
+_pybuffer_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
+{
+    struct xibuffer *view = PyMem_RawMalloc(sizeof(struct xibuffer));
+    if (view == NULL) {
+        return -1;
+    }
+    view->used = 0;
+    /* This will increment the memoryview's export count, which won't get
+     * decremented until the view sent to other interpreters is released. */
+    if (PyObject_GetBuffer(obj, &view->view, PyBUF_FULL_RO) < 0) {
+        PyMem_RawFree(view);
+        return -1;
+    }
+    /* The view holds a reference to the object, so we don't worry
+     * about also tracking it on the cross-interpreter data. */
+    _PyXIData_Init(data, tstate->interp, view, NULL, _memoryview_from_xid);
+    data->free = _pybuffer_shared_free;
+    return 0;
+}
+
+
+static int
+init_xidata_types(PyInterpreterState *interp)
+{
+    /* Register an XI data handler for memoryview. */
+    // This is necessary only as long as we don't have a tp_ slot for it.
+    _PyXIData_lookup_context_t ctx;
+    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
+        return -1;
+    }
+    if (_PyXIData_RegisterClass(&ctx, &PyMemoryView_Type, _pybuffer_shared) < 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static void
+clear_xidata_types(PyInterpreterState *interp)
+{
+    if (interp->memobj_state.XIBufferViewType != NULL) {
+        Py_CLEAR(interp->memobj_state.XIBufferViewType);
+    }
+}
+
+
+/**************************************************************************/
+/*                            Memoryview Type                             */
+/**************************************************************************/
+
 PyTypeObject PyMemoryView_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "memoryview",                             /* tp_name */
@@ -3439,3 +3846,27 @@ PyTypeObject PyMemoryView_Type = {
     0,                                        /* tp_alloc */
     memoryview,                               /* tp_new */
 };
+
+
+/**************************************************************************/
+/*                           Runtime Lifecycle                            */
+/**************************************************************************/
+
+PyStatus
+_PyMemoryView_InitTypes(PyInterpreterState *interp)
+{
+    /* interp->memobj_state.XIBufferViewType is initialized lazily
+     * in _PyMemoryView_GetXIBuffewViewType(). */
+
+    if (init_xidata_types(interp) < 0) {
+        return _PyStatus_ERR("failed to initialize cross-interpreter data types");
+    }
+
+    return _PyStatus_OK();
+}
+
+void
+_PyMemoryView_FiniTypes(PyInterpreterState *interp)
+{
+    clear_xidata_types(interp);
+}

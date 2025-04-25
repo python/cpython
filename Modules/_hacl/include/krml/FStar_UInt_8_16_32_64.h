@@ -9,10 +9,30 @@
 
 #include <inttypes.h>
 #include <stdbool.h>
-
+#include "krml/internal/compat.h"
 #include "krml/lowstar_endianness.h"
-#include "krml/types.h"
+#include "krml/internal/types.h"
 #include "krml/internal/target.h"
+
+extern krml_checked_int_t FStar_UInt64_n;
+
+extern bool FStar_UInt64_uu___is_Mk(uint64_t projectee);
+
+extern krml_checked_int_t FStar_UInt64___proj__Mk__item__v(uint64_t projectee);
+
+extern krml_checked_int_t FStar_UInt64_v(uint64_t x);
+
+typedef void *FStar_UInt64_fits;
+
+extern uint64_t FStar_UInt64_uint_to_t(krml_checked_int_t x);
+
+extern uint64_t FStar_UInt64_zero;
+
+extern uint64_t FStar_UInt64_one;
+
+extern uint64_t FStar_UInt64_minus(uint64_t a);
+
+extern uint32_t FStar_UInt64_n_minus_one;
 
 static KRML_NOINLINE uint64_t FStar_UInt64_eq_mask(uint64_t a, uint64_t b)
 {
@@ -36,6 +56,34 @@ static KRML_NOINLINE uint64_t FStar_UInt64_gte_mask(uint64_t a, uint64_t b)
   return x_xor_q_ - 1ULL;
 }
 
+extern Prims_string FStar_UInt64_to_string(uint64_t uu___);
+
+extern Prims_string FStar_UInt64_to_string_hex(uint64_t uu___);
+
+extern Prims_string FStar_UInt64_to_string_hex_pad(uint64_t uu___);
+
+extern uint64_t FStar_UInt64_of_string(Prims_string uu___);
+
+extern krml_checked_int_t FStar_UInt32_n;
+
+extern bool FStar_UInt32_uu___is_Mk(uint32_t projectee);
+
+extern krml_checked_int_t FStar_UInt32___proj__Mk__item__v(uint32_t projectee);
+
+extern krml_checked_int_t FStar_UInt32_v(uint32_t x);
+
+typedef void *FStar_UInt32_fits;
+
+extern uint32_t FStar_UInt32_uint_to_t(krml_checked_int_t x);
+
+extern uint32_t FStar_UInt32_zero;
+
+extern uint32_t FStar_UInt32_one;
+
+extern uint32_t FStar_UInt32_minus(uint32_t a);
+
+extern uint32_t FStar_UInt32_n_minus_one;
+
 static KRML_NOINLINE uint32_t FStar_UInt32_eq_mask(uint32_t a, uint32_t b)
 {
   uint32_t x = a ^ b;
@@ -57,6 +105,34 @@ static KRML_NOINLINE uint32_t FStar_UInt32_gte_mask(uint32_t a, uint32_t b)
   uint32_t x_xor_q_ = x_xor_q >> 31U;
   return x_xor_q_ - 1U;
 }
+
+extern Prims_string FStar_UInt32_to_string(uint32_t uu___);
+
+extern Prims_string FStar_UInt32_to_string_hex(uint32_t uu___);
+
+extern Prims_string FStar_UInt32_to_string_hex_pad(uint32_t uu___);
+
+extern uint32_t FStar_UInt32_of_string(Prims_string uu___);
+
+extern krml_checked_int_t FStar_UInt16_n;
+
+extern bool FStar_UInt16_uu___is_Mk(uint16_t projectee);
+
+extern krml_checked_int_t FStar_UInt16___proj__Mk__item__v(uint16_t projectee);
+
+extern krml_checked_int_t FStar_UInt16_v(uint16_t x);
+
+typedef void *FStar_UInt16_fits;
+
+extern uint16_t FStar_UInt16_uint_to_t(krml_checked_int_t x);
+
+extern uint16_t FStar_UInt16_zero;
+
+extern uint16_t FStar_UInt16_one;
+
+extern uint16_t FStar_UInt16_minus(uint16_t a);
+
+extern uint32_t FStar_UInt16_n_minus_one;
 
 static KRML_NOINLINE uint16_t FStar_UInt16_eq_mask(uint16_t a, uint16_t b)
 {
@@ -80,6 +156,34 @@ static KRML_NOINLINE uint16_t FStar_UInt16_gte_mask(uint16_t a, uint16_t b)
   return (uint32_t)x_xor_q_ - 1U;
 }
 
+extern Prims_string FStar_UInt16_to_string(uint16_t uu___);
+
+extern Prims_string FStar_UInt16_to_string_hex(uint16_t uu___);
+
+extern Prims_string FStar_UInt16_to_string_hex_pad(uint16_t uu___);
+
+extern uint16_t FStar_UInt16_of_string(Prims_string uu___);
+
+extern krml_checked_int_t FStar_UInt8_n;
+
+extern bool FStar_UInt8_uu___is_Mk(uint8_t projectee);
+
+extern krml_checked_int_t FStar_UInt8___proj__Mk__item__v(uint8_t projectee);
+
+extern krml_checked_int_t FStar_UInt8_v(uint8_t x);
+
+typedef void *FStar_UInt8_fits;
+
+extern uint8_t FStar_UInt8_uint_to_t(krml_checked_int_t x);
+
+extern uint8_t FStar_UInt8_zero;
+
+extern uint8_t FStar_UInt8_one;
+
+extern uint8_t FStar_UInt8_minus(uint8_t a);
+
+extern uint32_t FStar_UInt8_n_minus_one;
+
 static KRML_NOINLINE uint8_t FStar_UInt8_eq_mask(uint8_t a, uint8_t b)
 {
   uint8_t x = (uint32_t)a ^ (uint32_t)b;
@@ -101,6 +205,16 @@ static KRML_NOINLINE uint8_t FStar_UInt8_gte_mask(uint8_t a, uint8_t b)
   uint8_t x_xor_q_ = (uint32_t)x_xor_q >> 7U;
   return (uint32_t)x_xor_q_ - 1U;
 }
+
+extern Prims_string FStar_UInt8_to_string(uint8_t uu___);
+
+extern Prims_string FStar_UInt8_to_string_hex(uint8_t uu___);
+
+extern Prims_string FStar_UInt8_to_string_hex_pad(uint8_t uu___);
+
+extern uint8_t FStar_UInt8_of_string(Prims_string uu___);
+
+typedef uint8_t FStar_UInt8_byte;
 
 
 #define __FStar_UInt_8_16_32_64_H_DEFINED

@@ -8,7 +8,7 @@ support.requires_working_socket(module=True)
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class StaggeredTests(unittest.IsolatedAsyncioTestCase):
@@ -122,3 +122,30 @@ class StaggeredTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(excs[0], None)
         self.assertIsInstance(excs[1], asyncio.CancelledError)
         self.assertIsInstance(excs[2], asyncio.CancelledError)
+
+
+    async def test_cancelled(self):
+        log = []
+        with self.assertRaises(TimeoutError):
+            async with asyncio.timeout(None) as cs_outer, asyncio.timeout(None) as cs_inner:
+                async def coro_fn():
+                    cs_inner.reschedule(-1)
+                    await asyncio.sleep(0)
+                    try:
+                        await asyncio.sleep(0)
+                    except asyncio.CancelledError:
+                        log.append("cancelled 1")
+
+                    cs_outer.reschedule(-1)
+                    await asyncio.sleep(0)
+                    try:
+                        await asyncio.sleep(0)
+                    except asyncio.CancelledError:
+                        log.append("cancelled 2")
+                try:
+                    await staggered_race([coro_fn], delay=None)
+                except asyncio.CancelledError:
+                    log.append("cancelled 3")
+                    raise
+
+        self.assertListEqual(log, ["cancelled 1", "cancelled 2", "cancelled 3"])
