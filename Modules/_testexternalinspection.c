@@ -17,7 +17,7 @@
 #include <internal/pycore_interpframe.h>    // FRAME_OWNED_BY_CSTACK
 #include <internal/pycore_llist.h>          // struct llist_node
 #include <internal/pycore_stackref.h>       // Py_TAG_BITS
-#include <internal/pycore_remote_debug.h>   // proc_handle_t
+#include "../Python/remote_debug.h"
 
 #ifndef HAVE_PROCESS_VM_READV
 #    define HAVE_PROCESS_VM_READV 0
