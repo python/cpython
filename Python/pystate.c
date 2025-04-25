@@ -1612,6 +1612,7 @@ new_threadstate(PyInterpreterState *interp, int whence)
         return NULL;
     }
 #endif
+    ((PyThreadState *)tstate)->daemon = 1;
 
     /* We serialize concurrent creation to protect global state. */
     HEAD_LOCK(interp->runtime);
@@ -2129,7 +2130,7 @@ tstate_wait_attach(PyThreadState *tstate)
             _PyParkingLot_Park(&tstate->state, &state, sizeof(tstate->state),
                                /*timeout=*/-1, NULL, /*detach=*/0);
         }
-        else if (state == _Py_THREAD_SHUTTING_DOWN) {
+        else if (state == _Py_THREAD_SHUTTING_DOWN && tstate->daemon) {
             // We're shutting down, so we can't attach.
             _PyThreadState_HangThread(tstate);
         }
@@ -3069,6 +3070,9 @@ _PyThreadState_CheckConsistency(PyThreadState *tstate)
 int
 _PyThreadState_MustExit(PyThreadState *tstate)
 {
+    if (!tstate->daemon) {
+        return 0;
+    }
     int state = _Py_atomic_load_int_relaxed(&tstate->state);
     return state == _Py_THREAD_SHUTTING_DOWN;
 }
@@ -3219,4 +3223,18 @@ PyInterpreterState_Release(PyInterpreterState *interp)
 {
     assert(interp != NULL);
     decref_interpreter(interp);
+}
+
+int
+PyThreadState_SetDaemon(int daemon)
+{
+    PyThreadState *tstate = PyThreadState_Get();
+    if (daemon != 0 && daemon != 1) {
+        Py_FatalError("daemon must be 0 or 1");
+    }
+    if (tstate->daemon == daemon) {
+        return 0;
+    }
+    tstate->daemon = daemon;
+    return 1;
 }
