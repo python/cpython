@@ -146,6 +146,8 @@ def collect_sys(info_add):
         text = 'No (sys.getobjects() missing)'
     info_add('build.Py_TRACE_REFS', text)
 
+    info_add('sys.is_remote_debug_enabled', sys.is_remote_debug_enabled())
+
 
 def collect_platform(info_add):
     import platform
