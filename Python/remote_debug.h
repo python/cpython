@@ -688,14 +688,18 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
     address = search_windows_map_for_section(handle, "PyRuntime", L"python");
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
+        PyObject *exc = PyErr_GetRaisedException();
         PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
+        _PyErr_ChainExceptions1(exc);
     }
 #elif defined(__linux__)
     // On Linux, search for 'python' in executable or DLL
     address = search_linux_map_for_section(handle, "PyRuntime", "python");
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
+        PyObject *exc = PyErr_GetRaisedException();
         PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
+        _PyErr_ChainExceptions1(exc);
     }
 #elif defined(__APPLE__) && TARGET_OS_OSX
     // On macOS, try libpython first, then fall back to python
@@ -704,6 +708,11 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
         // TODO: Differentiate between not found and error
         PyErr_Clear();
         address = search_map_for_section(handle, "PyRuntime", "python");
+        if (address == 0) {
+            PyObject *exc = PyErr_GetRaisedException();
+            PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
+            _PyErr_ChainExceptions1(exc);
+        }
     }
 #else
     Py_UNREACHABLE();
