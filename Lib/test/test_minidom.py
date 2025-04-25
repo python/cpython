@@ -417,6 +417,7 @@ class MinidomTest(unittest.TestCase):
         el.setAttribute("foo", "bar")
         values = [x.value for x in el.attributes.values()]
         self.assertIn("bar", values)
+        self.assertIn("jam", values)
 
     def testGetAttribute(self):
         dom = Document()
@@ -512,9 +513,9 @@ class MinidomTest(unittest.TestCase):
 
     def testTextNodeRepr(self):
         dom = Document()
-        el = dom.appendChild(dom.createElement("foo"))
-        self.assertEqual(str(el), repr(el))
-        dom.unlink()
+        self.addCleanup(dom.unlink)
+        text = dom.createTextNode("monty")
+        self.assertEqual(str(text), repr(text))
 
     def testWriteXML(self):
         str = '<?xml version="1.0" ?><a b="c"/>'
@@ -626,10 +627,12 @@ class MinidomTest(unittest.TestCase):
 
     def testTextRepr(self):
         dom = Document()
-        elem = dom.createElement('elem')
+        self.addCleanup(dom.unlink)
+        elem = dom.createElement("elem")
         elem.appendChild(dom.createTextNode("foo"))
         el = elem.firstChild
         self.assertEqual(str(el), repr(el))
+        self.assertEqual('<DOM Text node "\'foo\'">', str(el))
 
     def testWriteText(self): pass
 
