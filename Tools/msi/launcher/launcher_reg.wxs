@@ -45,6 +45,30 @@
                 </ProgId>
                 <RegistryValue Root="HKCR" Key="Python.NoConArchiveFile\shellex\DropHandler" Value="{BEA218D2-6950-497B-9434-61683EC065FE}" Type="string" />
             </Component>
+
+            <Component Id="NewPythonFileContext"
+                 Directory="LauncherInstallDirectory"
+                 Guid="{A6E928C2-5534-41B1-B5FA-2D661FDFCA9B}">
+                <!-- Associate .py with our ProgId if not already done -->
+                <RegistryValue Root="HKCR"
+                           Key=".py"
+                           Name=""
+                           Type="string"
+                           Value="Python.File"
+                           KeyPath="yes" />
+                <!-- The ShellNew hook for “New > Python File” -->
+                <RegistryValue Root="HKCR"
+                           Key=".py\ShellNew"
+                           Name="NullFile"
+                           Type="string"
+                           Value="" />
+                <!-- Ensure the Python.File description is set -->
+                <RegistryValue Root="HKCR"
+                           Key="Python.File"
+                           Name=""
+                           Type="string"
+                           Value="Python Script" />
+          </Component>
         </ComponentGroup>
     </Fragment>
 </Wix>
