@@ -1076,7 +1076,6 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
     if (strtype == 0) {
         return NULL;
     }
-
     if (use_attr) {
         attr_old = getattrs(self->win);
         (void)wattrset(self->win,attr);
@@ -1406,7 +1405,7 @@ _curses_window_box_impl(PyCursesWindowObject *self, int group_right_1,
             return NULL;
         }
     }
-    (void)box(self->win, ch1, ch2);
+    (void)box(self->win,ch1,ch2);
     Py_RETURN_NONE;
 }
 
@@ -1504,15 +1503,14 @@ PyCursesWindow_ChgAt(PyObject *op, PyObject *args)
     attr = attr & A_ATTRIBUTES;
 
     if (use_xy) {
-        rtn = mvwchgat(self->win, y, x, num, attr, color, NULL);
+        rtn = mvwchgat(self->win,y,x,num,attr,color,NULL);
         curses_funcname = "mvwchgat";
-        (void)touchline(self->win, y, 1);
-    }
-    else {
-        getyx(self->win, y, x);
-        rtn = wchgat(self->win, num, attr, color, NULL);
+        (void)touchline(self->win,y,1);
+    } else {
+        getyx(self->win,y,x);
+        rtn = wchgat(self->win,num,attr,color,NULL);
         curses_funcname = "wchgat";
-        (void)touchline(self->win, y, 1);
+        (void)touchline(self->win,y,1);
     }
     return PyCursesCheckERR_ForWin_From(self, rtn, "chgat", curses_funcname);
 }
@@ -1788,7 +1786,7 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
 
     Py_BEGIN_ALLOW_THREADS
     if (!group_right_1) {
-        ct = wget_wch(self->win, &rtn);
+        ct = wget_wch(self->win ,&rtn);
     }
     else {
         ct = mvwget_wch(self->win, y, x, &rtn);
@@ -3761,16 +3759,12 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     }
 
     if (!curses_setupterm_called && setupterm((char *)term, fd, &err) == ERR) {
-        const char *s;
+        const char *s = "setupterm: unknown error";
 
         if (err == 0) {
             s = "setupterm: could not find terminal";
-        }
-        else if (err == -1) {
+        } else if (err == -1) {
             s = "setupterm: could not find terminfo database";
-        }
-        else {
-            s = "setupterm: unknown error";
         }
 
         cursesmodule_state *state = get_cursesmodule_state(module);
