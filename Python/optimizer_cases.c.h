@@ -2014,7 +2014,7 @@
 
         case _CALL_LEN: {
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            res = sym_new_type(ctx, &PyLong_Type);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
