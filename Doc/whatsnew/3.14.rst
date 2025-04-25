@@ -950,7 +950,10 @@ math
 ----
 
 * Added more detailed error messages for domain errors in the module.
-  (Contributed by by Charlie Zhao and Sergey B Kirpichev in :gh:`101410`.)
+  (Contributed by Charlie Zhao and Sergey B Kirpichev in :gh:`101410`.)
+
+* Add :func:`math.isnormal` and :func:`math.issubnormal` function.
+  (Contributed by Sergey B Kirpichev in :gh:`132908`.)
 
 
 mimetypes
