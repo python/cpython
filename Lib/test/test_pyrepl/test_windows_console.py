@@ -391,7 +391,6 @@ class WindowsConsoleGetEventTests(TestCase):
                     )))
 
     def test_EmptyBuffer(self):
-        # GetNumberOfConsoleInputEvents populates lpcNumberOfEvents with 0
         self.assertEqual(self.get_event([None]), None)
         self.assertEqual(self.mock.call_count, 1)
 
