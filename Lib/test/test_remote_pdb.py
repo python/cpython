@@ -21,6 +21,10 @@ import pdb
 from pdb import _PdbServer, _PdbClient
 
 
+if not sys.is_remote_debug_enabled():
+    raise unittest.SkipTest('remote debugging is disabled')
+
+
 @contextmanager
 def kill_on_error(proc):
     """Context manager killing the subprocess if a Python exception is raised."""
