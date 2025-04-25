@@ -1425,6 +1425,17 @@ uuid
   (Contributed by Simon Legner in :gh:`131236`.)
 
 
+webbrowser
+----------
+
+* Names in the :envvar:`BROWSER` environment variable can now refer to already
+  registered browsers for the :mod:`webbrowser` module, instead of always
+  generating a new browser command.
+
+  This makes it possible to set :envvar:`BROWSER` to the value of one of the
+  supported browsers on macOS.
+
+
 zipinfo
 -------
 
