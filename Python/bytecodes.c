@@ -443,7 +443,7 @@ dummy_func(
             PyStackRef_CLOSE(receiver);
         }
 
-        pure inst(UNARY_NEGATIVE, (value -- res)) {
+        inst(UNARY_NEGATIVE, (value -- res)) {
             PyObject *res_o = PyNumber_Negative(PyStackRef_AsPyObjectBorrow(value));
             PyStackRef_CLOSE(value);
             ERROR_IF(res_o == NULL, error);
@@ -573,7 +573,7 @@ dummy_func(
             _GUARD_TYPE_VERSION +
             _REPLACE_WITH_TRUE;
 
-        pure inst(UNARY_INVERT, (value -- res)) {
+        inst(UNARY_INVERT, (value -- res)) {
             PyObject *res_o = PyNumber_Invert(PyStackRef_AsPyObjectBorrow(value));
             PyStackRef_CLOSE(value);
             ERROR_IF(res_o == NULL, error);
@@ -669,7 +669,7 @@ dummy_func(
             EXIT_IF(!PyFloat_CheckExact(value_o));
         }
 
-        op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
+        pure op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyFloat_CheckExact(left_o));
@@ -684,7 +684,7 @@ dummy_func(
             ERROR_IF(PyStackRef_IsNull(res), error);
         }
 
-        op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
+        pure op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyFloat_CheckExact(left_o));
@@ -699,7 +699,7 @@ dummy_func(
             ERROR_IF(PyStackRef_IsNull(res), error);
         }
 
-        op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
+        pure op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
             PyObject *left_o = PyStackRef_AsPyObjectBorrow(left);
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             assert(PyFloat_CheckExact(left_o));

@@ -557,7 +557,6 @@ class Storage:
             stack.push(var)
         outputs = peeks + [ Local.undefined(var) for var in uop.stack.outputs if not var.peek ]
         return Storage(stack, inputs, outputs, len(peeks), check_liveness)
-
     @staticmethod
     def copy_list(arg: list[Local]) -> list[Local]:
         return [ l.copy() for l in arg ]

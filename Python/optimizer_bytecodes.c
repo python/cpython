@@ -234,63 +234,27 @@ dummy_func(void) {
     }
 
     op(_BINARY_OP_ADD_FLOAT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-            assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = PyFloat_FromDouble(
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) +
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
-            if (temp == NULL) {
-                goto error;
-            }
-            res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
-            // TODO gh-115506:
-            // replace opcode with constant propagated one and update tests!
-        }
-        else {
-            res = sym_new_type(ctx, &PyFloat_Type);
-        }
+        // We need to tell the cases generator that it's being used by the constant generator.
+        // We should fix this in the cases generator.
+        (void)(left);
+        (void)(right);
+        res = sym_new_type(ctx, &PyFloat_Type);
     }
 
     op(_BINARY_OP_SUBTRACT_FLOAT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-            assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = PyFloat_FromDouble(
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) -
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
-            if (temp == NULL) {
-                goto error;
-            }
-            res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
-            // TODO gh-115506:
-            // replace opcode with constant propagated one and update tests!
-        }
-        else {
-            res = sym_new_type(ctx, &PyFloat_Type);
-        }
+        // We need to tell the cases generator that it's being used by the constant generator.
+        // We should fix this in the cases generator.
+        (void)(left);
+        (void)(right);
+        res = sym_new_type(ctx, &PyFloat_Type);
     }
 
     op(_BINARY_OP_MULTIPLY_FLOAT, (left, right -- res)) {
-        if (sym_is_const(ctx, left) && sym_is_const(ctx, right)) {
-            assert(PyFloat_CheckExact(sym_get_const(ctx, left)));
-            assert(PyFloat_CheckExact(sym_get_const(ctx, right)));
-            PyObject *temp = PyFloat_FromDouble(
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, left)) *
-                PyFloat_AS_DOUBLE(sym_get_const(ctx, right)));
-            if (temp == NULL) {
-                goto error;
-            }
-            res = sym_new_const(ctx, temp);
-            Py_DECREF(temp);
-            // TODO gh-115506:
-            // replace opcode with constant propagated one and update tests!
-        }
-        else {
-            res = sym_new_type(ctx, &PyFloat_Type);
-        }
+        // We need to tell the cases generator that it's being used by the constant generator.
+        // We should fix this in the cases generator.
+        (void)(left);
+        (void)(right);
+        res = sym_new_type(ctx, &PyFloat_Type);
     }
 
     op(_BINARY_OP_ADD_UNICODE, (left, right -- res)) {
