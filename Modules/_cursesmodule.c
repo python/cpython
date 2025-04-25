@@ -1199,7 +1199,7 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
         Py_DECREF(bytesobj);
     }
     if (use_attr)
-        (void)wattrset(self->win, attr_old);
+        (void)wattrset(self->win,attr_old);
     return PyCursesCheckERR_ForWin_From(self, rtn,
                                         simple_funcname,
                                         curses_funcname);
@@ -1875,20 +1875,21 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
 /*[clinic end generated code: output=9f4f86e91fe50ef3 input=dd7e5367fb49dc48]*/
 {
     int ct;
-    wint_t wch;
+    wint_t rtn;
 
     Py_BEGIN_ALLOW_THREADS
     if (!group_right_1) {
-        ct = wget_wch(self->win, &wch);
+        ct = wget_wch(self->win, &rtn);
     }
     else {
-        ct = mvwget_wch(self->win, y, x, &wch);
+        ct = mvwget_wch(self->win, y, x, &rtn);
     }
     Py_END_ALLOW_THREADS
 
     if (ct == ERR) {
         if (PyErr_CheckSignals())
             return NULL;
+
         /* get_wch() returns ERR in nodelay mode */
         cursesmodule_state *state = get_cursesmodule_state_by_win(self);
         PyErr_SetString(state->error, "no input");
@@ -1897,9 +1898,9 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
         return NULL;
     }
     if (ct == KEY_CODE_YES)
-        return PyLong_FromLong(wch);
+        return PyLong_FromLong(rtn);
     else
-        return PyUnicode_FromOrdinal(wch);
+        return PyUnicode_FromOrdinal(rtn);
 }
 #endif
 
@@ -2017,7 +2018,6 @@ _curses_window_hline_impl(PyCursesWindowObject *self, int group_left_1,
 
     if (!PyCurses_ConvertToChtype(self, ch, &ch_))
         return NULL;
-
     if (group_left_1) {
         if (wmove(self->win, y, x) == ERR) {
             PyCursesSetError_ForWin(self, "wmove");
@@ -2261,7 +2261,7 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
         Py_DECREF(bytesobj);
     }
     if (use_attr)
-        (void)wattrset(self->win, attr_old);
+        (void)wattrset(self->win,attr_old);
     return PyCursesCheckERR_ForWin_From(self, rtn,
                                         simple_funcname,
                                         curses_funcname);
@@ -2356,7 +2356,7 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
         Py_DECREF(bytesobj);
     }
     if (use_attr)
-        (void)wattrset(self->win, attr_old);
+        (void)wattrset(self->win,attr_old);
     return PyCursesCheckERR_ForWin_From(self, rtn,
                                         simple_funcname,
                                         curses_funcname);
@@ -3450,7 +3450,7 @@ _curses_getmouse_impl(PyObject *module)
 
     PyCursesStatefulInitialised(module);
 
-    rtn = getmouse(&event);
+    rtn = getmouse( &event );
     if (rtn == ERR) {
         PyCursesSetError(module, "getmouse");
         return NULL;
@@ -3877,20 +3877,20 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     }
 
     if (!curses_setupterm_called && setupterm((char *)term, fd, &err) == ERR) {
-        const char *error_message;
+        const char *s;
 
         if (err == 0) {
-            error_message = "setupterm: could not find terminal";
+            s = "setupterm: could not find terminal";
         }
         else if (err == -1) {
-            error_message = "setupterm: could not find terminfo database";
+            s = "setupterm: could not find terminfo database";
         }
         else {
-            error_message = "setupterm: unknown error";
+            s = "setupterm: unknown error";
         }
 
         cursesmodule_state *state = get_cursesmodule_state(module);
-        PyErr_SetString(state->error, error_message);
+        PyErr_SetString(state->error, s);
         PyCursesError_SetImplementation(state, "setupterm");
         return NULL;
     }
@@ -4251,7 +4251,7 @@ _curses_newwin_impl(PyObject *module, int nlines, int ncols,
 
     PyCursesStatefulInitialised(module);
 
-    win = newwin(nlines, ncols, begin_y, begin_x);
+    win = newwin(nlines,ncols,begin_y,begin_x);
     if (win == NULL) {
         cursesmodule_state *state = get_cursesmodule_state(module);
         PyErr_SetString(state->error, catchall_NULL);
@@ -4849,10 +4849,12 @@ _curses_tparm_impl(PyObject *module, const char *str, int i1, int i2, int i3,
                    int i4, int i5, int i6, int i7, int i8, int i9)
 /*[clinic end generated code: output=599f62b615c667ff input=5e30b15786f032aa]*/
 {
+    char* result = NULL;
+
     PyCursesStatefulSetupTermCalled(module);
 
-    const char *result = tparm((char *)str, i1, i2, i3, i4, i5, i6, i7, i8, i9);
-    if (result == NULL) {
+    result = tparm((char *)str,i1,i2,i3,i4,i5,i6,i7,i8,i9);
+    if (!result) {
         cursesmodule_state *state = get_cursesmodule_state(module);
         PyErr_Format(state->error, CURSES_ERROR_NULL_FORMAT, "tparm");
         PyCursesError_SetImplementation(state, "tparm");
