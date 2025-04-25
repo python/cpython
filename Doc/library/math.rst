@@ -379,7 +379,8 @@ Floating point manipulation functions
 .. function:: isnormal(x)
 
    Return ``True`` if *x* is a normal floating-point number, that is a finite
-   nonzero number, that is not a subnormal.  Return ``False`` otherwise.
+   nonzero number that is not a subnormal (see :func:`issubnormal`).
+   Return ``False`` otherwise.
 
    .. versionadded:: next
 
