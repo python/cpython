@@ -482,28 +482,62 @@ extern void _Py_set_localsplus_info(int, PyObject *, unsigned char,
 
 static int
 compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
-                        PyObject *names, PyObject *kinds)
+                        int flags, PyObject *names, PyObject *kinds)
 {
+    // Compute the arg flags.
+    // Currently arg vars fill the first portion of the list.
+    char *argkinds = PyMem_Calloc(nlocalsplus, sizeof(char));
+    if (argkinds == NULL) {
+        PyErr_NoMemory();
+        return ERROR;
+    }
+    int numargvars = 0;
+    int max = (int)umd->u_posonlyargcount;
+    for (; numargvars < max; numargvars++) {
+        argkinds[numargvars] = CO_FAST_ARG_POS;
+    }
+    max += (int)umd->u_argcount;
+    for (; numargvars < max; numargvars++) {
+        argkinds[numargvars] = CO_FAST_ARG_POS | CO_FAST_ARG_KW;
+    }
+    max += (int)umd->u_kwonlyargcount;
+    for (; numargvars < max; numargvars++) {
+        argkinds[numargvars] = CO_FAST_ARG_KW;
+    }
+    if (flags & CO_VARARGS) {
+        argkinds[numargvars] = CO_FAST_ARG_VAR | CO_FAST_ARG_POS;
+        numargvars += 1;
+    }
+    if (flags & CO_VARKEYWORDS) {
+        argkinds[numargvars] = CO_FAST_ARG_VAR | CO_FAST_ARG_KW;
+        numargvars += 1;
+    }
+
+    // Set the locals kinds.
     PyObject *k, *v;
     Py_ssize_t pos = 0;
     while (PyDict_Next(umd->u_varnames, &pos, &k, &v)) {
         int offset = PyLong_AsInt(v);
         if (offset == -1 && PyErr_Occurred()) {
-            return ERROR;
+            goto error;
         }
         assert(offset >= 0);
         assert(offset < nlocalsplus);
 
-        // For now we do not distinguish arg kinds.
-        _PyLocals_Kind kind = CO_FAST_LOCAL;
+        _PyLocals_Kind kind = CO_FAST_LOCAL | argkinds[offset];
+
         int has_key = PyDict_Contains(umd->u_fasthidden, k);
-        RETURN_IF_ERROR(has_key);
+        if (has_key < 0) {
+            goto error;
+        }
         if (has_key) {
             kind |= CO_FAST_HIDDEN;
         }
 
         has_key = PyDict_Contains(umd->u_cellvars, k);
-        RETURN_IF_ERROR(has_key);
+        if (has_key < 0) {
+            goto error;
+        }
         if (has_key) {
             kind |= CO_FAST_CELL;
         }
@@ -517,7 +551,9 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
     pos = 0;
     while (PyDict_Next(umd->u_cellvars, &pos, &k, &v)) {
         int has_name = PyDict_Contains(umd->u_varnames, k);
-        RETURN_IF_ERROR(has_name);
+        if (has_name < 0) {
+            goto error;
+        }
         if (has_name) {
             // Skip cells that are already covered by locals.
             numdropped += 1;
@@ -526,7 +562,7 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
 
         cellvar_offset = PyLong_AsInt(v);
         if (cellvar_offset == -1 && PyErr_Occurred()) {
-            return ERROR;
+            goto error;
         }
         assert(cellvar_offset >= 0);
         cellvar_offset += nlocals - numdropped;
@@ -538,7 +574,7 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
     while (PyDict_Next(umd->u_freevars, &pos, &k, &v)) {
         int offset = PyLong_AsInt(v);
         if (offset == -1 && PyErr_Occurred()) {
-            return ERROR;
+            goto error;
         }
         assert(offset >= 0);
         offset += nlocals - numdropped;
@@ -549,7 +585,12 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
         assert(offset > cellvar_offset);
         _Py_set_localsplus_info(offset, k, CO_FAST_FREE, names, kinds);
     }
+    PyMem_Free(argkinds);
     return SUCCESS;
+
+error:
+    PyMem_Free(argkinds);
+    return ERROR;
 }
 
 static PyCodeObject *
@@ -594,8 +635,10 @@ makecode(_PyCompile_CodeUnitMetadata *umd, struct assembler *a, PyObject *const_
     if (localspluskinds == NULL) {
         goto error;
     }
-    if (compute_localsplus_info(umd, nlocalsplus,
-                                localsplusnames, localspluskinds) == ERROR) {
+    if (compute_localsplus_info(
+            umd, nlocalsplus, code_flags,
+            localsplusnames, localspluskinds) == ERROR)
+    {
         goto error;
     }
 
