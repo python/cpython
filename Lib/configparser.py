@@ -670,6 +670,7 @@ class RawConfigParser(MutableMapping):
                 self._optcre = re.compile(self._OPT_TMPL.format(delim=d),
                                           re.VERBOSE)
         self._comments = _CommentSpec(comment_prefixes or (), inline_comment_prefixes or ())
+        self._loaded_sources = []
         self._strict = strict
         self._allow_no_value = allow_no_value
         self._empty_lines_in_values = empty_lines_in_values
