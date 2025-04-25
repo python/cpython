@@ -600,13 +600,16 @@ free_interpreter(PyInterpreterState *interp)
     }
 }
 
-static void
+static Py_ssize_t
 decref_interpreter(PyInterpreterState *interp)
 {
     assert(interp != NULL);
-    if (_Py_atomic_add_ssize(&interp->refcount, -1) == 1) {
+    Py_ssize_t old_refcnt = _Py_atomic_add_ssize(&interp->refcount, -1);
+    if (old_refcnt == 1) {
         free_interpreter(interp);
     }
+
+    return old_refcnt;
 }
 
 #ifndef NDEBUG
@@ -1817,6 +1820,16 @@ PyThreadState_Clear(PyThreadState *tstate)
 static void
 decrement_stoptheworld_countdown(struct _stoptheworld_state *stw);
 
+static void
+decrement_daemon_count(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
+    if (--finalizing->countdown == 0) {
+        _PyEvent_Notify(&finalizing->finished);
+    }
+}
+
 /* Common code for PyThreadState_Delete() and PyThreadState_DeleteCurrent() */
 static void
 tstate_delete_common(PyThreadState *tstate, int release_gil)
@@ -1853,10 +1866,7 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
     }
     if (tstate->daemon == 0
         && tstate != (PyThreadState *)&interp->_initial_thread) {
-        struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
-        if (--finalizing->countdown == 0) {
-            _PyEvent_Notify(&finalizing->finished);
-        }
+        decrement_daemon_count(interp);
     }
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
@@ -3232,19 +3242,13 @@ PyInterpreterState_Release(PyInterpreterState *interp)
     decref_interpreter(interp);
 }
 
-int
-PyThreadState_SetDaemon(int daemon)
+static int
+tstate_set_daemon(PyThreadState *tstate, PyInterpreterState *interp, int daemon)
 {
-    PyThreadState *tstate = PyThreadState_Get();
-    if (daemon != 0 && daemon != 1) {
-        Py_FatalError("daemon must be 0 or 1");
-    }
-    PyInterpreterState *interp = tstate->interp;
+    assert(tstate != NULL);
     assert(interp != NULL);
-    if (tstate->daemon == daemon) {
-        return 0;
-    }
-
+    assert(tstate->interp == interp);
+    assert(daemon == 1 || daemon == 0);
     struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
     PyMutex_Lock(&finalizing->mutex);
     if (_PyEvent_IsSet(&finalizing->finished)) {
@@ -3256,4 +3260,89 @@ PyThreadState_SetDaemon(int daemon)
     PyMutex_Unlock(&finalizing->mutex);
     tstate->daemon = daemon;
     return 1;
+}
+
+int
+PyThreadState_SetDaemon(int daemon)
+{
+    PyThreadState *tstate = PyThreadState_Get();
+    if (daemon != 0 && daemon != 1) {
+        Py_FatalError("daemon must be 0 or 1");
+    }
+    PyInterpreterState *interp = tstate->interp;
+    assert(interp != NULL);
+    if (tstate == &interp->_initial_thread) {
+        Py_FatalError("thread cannot be the main thread");
+    }
+    if (tstate->daemon == daemon) {
+        return 0;
+    }
+
+    return tstate_set_daemon(tstate, interp, daemon);
+}
+
+int
+PyThreadState_Ensure(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    _Py_ensured_tstate *entry = PyMem_RawMalloc(sizeof(_Py_ensured_tstate));
+    if (entry == NULL) {
+        decref_interpreter(interp);
+        return -1;
+    }
+    PyThreadState *save = _PyThreadState_GET();
+    if (save != NULL && save->interp == interp) {
+        Py_ssize_t refcnt = decref_interpreter(interp);
+        assert(refcnt > 1);
+        entry->was_daemon = save->daemon;
+        entry->next = save->ensured;
+        entry->prior_tstate = NULL;
+        if (tstate_set_daemon(save, interp, 0) < 0) {
+            PyMem_RawFree(entry);
+            return -1;
+        }
+        save->ensured = entry;
+        return 0;
+    }
+
+    PyThreadState *tstate = PyThreadState_New(interp);
+    decref_interpreter(interp);
+    if (tstate == NULL) {
+        PyMem_RawFree(entry);
+        return -1;
+    }
+    if (tstate_set_daemon(tstate, interp, 0) < 0) {
+        PyMem_RawFree(entry);
+        return -1;
+    }
+    entry->was_daemon = 0;
+    entry->prior_tstate = save;
+    entry->next = NULL;
+    tstate->ensured = entry;
+
+    return 0;
+}
+
+void
+PyThreadState_Release(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    _Py_EnsureTstateNotNULL(tstate);
+    _Py_ensured_tstate *ensured = tstate->ensured;
+    if (ensured == NULL) {
+        Py_FatalError("PyThreadState_Release() called without PyThreadState_Ensure()");
+    }
+    if (ensured->prior_tstate != NULL) {
+        assert(ensured->was_daemon == 0);
+        PyThreadState_Clear(tstate);
+        PyThreadState_Swap(ensured->prior_tstate);
+        PyMem_RawFree(ensured);
+        PyThreadState_Delete(tstate);
+        return;
+    }
+
+    decrement_daemon_count(tstate->interp);
+    tstate->ensured = ensured->next;
+    tstate->daemon = ensured->was_daemon;
+    PyMem_RawFree(ensured);
 }

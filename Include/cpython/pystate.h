@@ -63,6 +63,12 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
+typedef struct _ensured_tstate {
+    struct _ensured_tstate *next;
+    PyThreadState *prior_tstate;
+    uint8_t was_daemon;
+} _Py_ensured_tstate;
+
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -213,6 +219,8 @@ struct _ts {
 
     /* Whether this thread hangs when the interpreter is finalizing. */
     uint8_t daemon;
+
+    _Py_ensured_tstate *ensured;
 };
 
 # define Py_C_RECURSION_LIMIT 5000
@@ -282,3 +290,7 @@ PyAPI_FUNC(void) PyInterpreterState_Release(PyInterpreterState *interp);
 PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_Refcount(PyInterpreterState *interp);
 
 PyAPI_FUNC(int) PyThreadState_SetDaemon(int daemon);
+
+PyAPI_FUNC(int) PyThreadState_Ensure(PyInterpreterState *interp);
+
+PyAPI_FUNC(void) PyThreadState_Release(void);
