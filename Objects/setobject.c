@@ -212,7 +212,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 }
 
 static void
-set_unhashtable_type(PyObject *key)
+set_unhashable_type(PyObject *key)
 {
     PyObject *exc = PyErr_GetRaisedException();
     assert(exc != NULL);
@@ -232,7 +232,7 @@ _PySet_AddTakeRef(PySetObject *so, PyObject *key)
 {
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        set_unhashtable_type(key);
+        set_unhashable_type(key);
         Py_DECREF(key);
         return -1;
     }
@@ -401,7 +401,7 @@ set_add_key(PySetObject *so, PyObject *key)
 {
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        set_unhashtable_type(key);
+        set_unhashable_type(key);
         return -1;
     }
     return set_add_entry(so, key, hash);
@@ -412,7 +412,7 @@ set_contains_key(PySetObject *so, PyObject *key)
 {
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        set_unhashtable_type(key);
+        set_unhashable_type(key);
         return -1;
     }
     return set_contains_entry(so, key, hash);
@@ -423,7 +423,7 @@ set_discard_key(PySetObject *so, PyObject *key)
 {
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
-        set_unhashtable_type(key);
+        set_unhashable_type(key);
         return -1;
     }
     return set_discard_entry(so, key, hash);

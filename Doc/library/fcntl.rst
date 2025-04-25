@@ -79,6 +79,10 @@ descriptor.
    On macOS and NetBSD, the :mod:`!fcntl` module exposes the ``F_GETNOSIGPIPE``
    and ``F_SETNOSIGPIPE`` constant.
 
+.. versionchanged:: next
+   On Linux >= 6.1, the :mod:`!fcntl` module exposes the ``F_DUPFD_QUERY``
+   to query a file descriptor pointing to the same file.
+
 The module defines the following functions:
 
 
@@ -89,14 +93,14 @@ The module defines the following functions:
    for *cmd* are operating system dependent, and are available as constants
    in the :mod:`fcntl` module, using the same names as used in the relevant C
    header files. The argument *arg* can either be an integer value, a
-   :class:`bytes` object, or a string.
+   :term:`bytes-like object`, or a string.
    The type and size of *arg* must match the type and size of
    the argument of the operation as specified in the relevant C documentation.
 
    When *arg* is an integer, the function returns the integer
    return value of the C :c:func:`fcntl` call.
 
-   When the argument is bytes, it represents a binary structure,
+   When the argument is bytes-like object, it represents a binary structure,
    for example, created by :func:`struct.pack`.
    A string value is encoded to binary using the UTF-8 encoding.
    The binary data is copied to a buffer whose address is
@@ -116,6 +120,10 @@ The module defines the following functions:
       a more subtle data corruption.
 
    .. audit-event:: fcntl.fcntl fd,cmd,arg fcntl.fcntl
+
+   .. versionchanged:: next
+      Add support of arbitrary :term:`bytes-like objects <bytes-like object>`,
+      not only :class:`bytes`.
 
 
 .. function:: ioctl(fd, request, arg=0, mutate_flag=True, /)
@@ -173,6 +181,9 @@ The module defines the following functions:
 
    .. audit-event:: fcntl.ioctl fd,request,arg fcntl.ioctl
 
+   .. versionchanged:: next
+      The GIL is always released during a system call.
+      System calls failing with EINTR are automatically retried.
 
 .. function:: flock(fd, operation, /)
 
