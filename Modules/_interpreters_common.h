@@ -5,8 +5,10 @@
     _RESOLVE_MODINIT_FUNC_NAME(NAME)
 
 
+#define GETDATA(FUNC) ((_PyXIData_getdata_t){.basic=FUNC})
+
 static int
-ensure_xid_class(PyTypeObject *cls, xidatafunc getdata)
+ensure_xid_class(PyTypeObject *cls, _PyXIData_getdata_t getdata)
 {
     PyThreadState *tstate = PyThreadState_Get();
     return _PyXIData_RegisterClass(tstate, cls, getdata);

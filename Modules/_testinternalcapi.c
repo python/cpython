@@ -1974,6 +1974,14 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
             goto error;
         }
     }
+    else if (strcmp(mode, "fallback") == 0) {
+        xidata_fallback_t fallback = _PyXIDATA_FULL_FALLBACK;
+        if (_PyObject_GetXIDataWithFallback(
+                                 tstate, obj, fallback, xidata) != 0)
+        {
+            goto error;
+        }
+    }
     else if (strcmp(mode, "pickle") == 0) {
         if (_PyPickle_GetXIData(tstate, obj, xidata) != 0) {
             goto error;
