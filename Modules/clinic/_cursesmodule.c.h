@@ -8,48 +8,6 @@ preserve
 #endif
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
-#if !defined(_curses_error_funcname_DOCSTR)
-#  define _curses_error_funcname_DOCSTR NULL
-#endif
-#if defined(_CURSES_ERROR_FUNCNAME_GETSETDEF)
-#  undef _CURSES_ERROR_FUNCNAME_GETSETDEF
-#  define _CURSES_ERROR_FUNCNAME_GETSETDEF {"funcname", (getter)_curses_error_funcname_get, (setter)_curses_error_funcname_set, _curses_error_funcname_DOCSTR},
-#else
-#  define _CURSES_ERROR_FUNCNAME_GETSETDEF {"funcname", (getter)_curses_error_funcname_get, NULL, _curses_error_funcname_DOCSTR},
-#endif
-
-static PyObject *
-_curses_error_funcname_get_impl(PyCursesErrorObject *self);
-
-static PyObject *
-_curses_error_funcname_get(PyObject *self, void *Py_UNUSED(context))
-{
-    return _curses_error_funcname_get_impl((PyCursesErrorObject *)self);
-}
-
-#if !defined(_curses_error_funcname_DOCSTR)
-#  define _curses_error_funcname_DOCSTR NULL
-#endif
-#if defined(_CURSES_ERROR_FUNCNAME_GETSETDEF)
-#  undef _CURSES_ERROR_FUNCNAME_GETSETDEF
-#  define _CURSES_ERROR_FUNCNAME_GETSETDEF {"funcname", (getter)_curses_error_funcname_get, (setter)_curses_error_funcname_set, _curses_error_funcname_DOCSTR},
-#else
-#  define _CURSES_ERROR_FUNCNAME_GETSETDEF {"funcname", NULL, (setter)_curses_error_funcname_set, NULL},
-#endif
-
-static int
-_curses_error_funcname_set_impl(PyCursesErrorObject *self, PyObject *value);
-
-static int
-_curses_error_funcname_set(PyObject *self, PyObject *value, void *Py_UNUSED(context))
-{
-    int return_value;
-
-    return_value = _curses_error_funcname_set_impl((PyCursesErrorObject *)self, value);
-
-    return return_value;
-}
-
 PyDoc_STRVAR(_curses_window_addch__doc__,
 "addch([y, x,] ch, [attr=_curses.A_NORMAL])\n"
 "Paint the character.\n"
@@ -4436,4 +4394,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=98ab9ae9474d55e9 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=acae2eb9cf75e76d input=a9049054013a1b77]*/

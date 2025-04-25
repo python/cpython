@@ -194,9 +194,8 @@ get_cursesmodule_state_by_win(PyCursesWindowObject *win)
 /*[clinic input]
 module _curses
 class _curses.window "PyCursesWindowObject *" "clinic_state()->window_type"
-class _curses.error "PyCursesErrorObject *" "clinic_state()->error"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a6b4ac3824e7c5c3]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ae6cb623018f2cbc]*/
 
 /* Indicate whether the module has already been loaded or not. */
 static int curses_module_loaded = 0;
@@ -214,109 +213,13 @@ static const char *curses_screen_encoding = NULL;
 
 /* Error type */
 
-#define CURSES_ERROR_FORMAT             "%s() returned ERR"
-#define CURSES_ERROR_NULL_FORMAT        "%s() returned NULL"
-#define CURSES_ERROR_MUST_CALL_FORMAT   "must call %s() first"
-
-typedef struct {
-    PyException_HEAD
-    /* The name of the curses function that triggered the error. */
-    PyObject *funcname;
-} PyCursesErrorObject;
-
-#define _PyCursesErrorObject_CAST(PTR)  ((PyCursesErrorObject *)(PTR))
-
-static int
-PyCursesError_clear(PyObject *self)
-{
-    PyCursesErrorObject *exc = _PyCursesErrorObject_CAST(self);
-    Py_CLEAR(exc->funcname);
-    return _PyType_CAST(PyExc_Exception)->tp_clear(self);
-}
-
-static void
-PyCursesError_dealloc(PyObject *self)
-{
-    PyTypeObject *tp = Py_TYPE(self);
-    PyObject_GC_UnTrack(self);
-    (void)PyCursesError_clear(self);
-    tp->tp_free(self);
-    Py_DECREF(tp);
-}
-
-static int
-PyCursesError_traverse(PyObject *self, visitproc visit, void *arg)
-{
-    Py_VISIT(Py_TYPE(self));
-    PyCursesErrorObject *exc = _PyCursesErrorObject_CAST(self);
-    Py_VISIT(exc->funcname);
-    return _PyType_CAST(PyExc_Exception)->tp_traverse(self, visit, arg);
-}
-
-/*[clinic input]
-@getter
-_curses.error.funcname
-[clinic start generated code]*/
-
-static PyObject *
-_curses_error_funcname_get_impl(PyCursesErrorObject *self)
-/*[clinic end generated code: output=bddac78d045d9e92 input=a0ed7b814bba25e9]*/
-{
-    PyObject *res = self->funcname;
-    return res == NULL ? Py_None : Py_NewRef(res);
-}
-
-/*[clinic input]
-@setter
-_curses.error.funcname
-[clinic start generated code]*/
-
-static int
-_curses_error_funcname_set_impl(PyCursesErrorObject *self, PyObject *value)
-/*[clinic end generated code: output=1320e03bf8c27ca8 input=e7ad8f11456a402e]*/
-{
-    if (PyUnicode_Check(value) || Py_IsNone(value)) {
-        Py_XSETREF(self->funcname, Py_NewRef(value));
-        return 0;
-    }
-    PyErr_Format(PyExc_TypeError, "expecting a str or None, got %T", value);
-    return -1;
-}
+#define CURSES_ERROR_FORMAT                 "%s() returned ERR"
+#define CURSES_ERROR_VERBOSE_FORMAT         "%s() (called by %s()) returned ERR"
+#define CURSES_ERROR_NULL_FORMAT            "%s() returned NULL"
+#define CURSES_ERROR_NULL_VERBOSE_FORMAT    "%s() (called by %s()) returned NULL"
+#define CURSES_ERROR_MUST_CALL_FORMAT       "must call %s() first"
 
 /* Utility Error Procedures */
-
-static inline void
-PyCursesError_SetImplementation(
-#ifndef NDEBUG
-    cursesmodule_state *state,
-#else
-    cursesmodule_state *Py_UNUSED(state),
-#endif
-    const char *funcname)
-{
-    assert(funcname != NULL);
-    PyObject *exc = PyErr_GetRaisedException();
-    assert(PyErr_GivenExceptionMatches(exc, state->error));
-    PyObject *p_funcname = PyUnicode_FromString(funcname);
-    if (p_funcname == NULL) {
-        goto error;
-    }
-    int rc = PyObject_SetAttrString(exc, "funcname", p_funcname);
-    Py_DECREF(p_funcname);
-    if (rc < 0) {
-        goto error;
-    }
-
-restore:
-    PyErr_SetRaisedException(exc);
-    return;
-
-error:
-    // The curses exception is likely more important than the
-    // exceptions that we get if we fail to set the attribute.
-    PyErr_Clear();
-    goto restore;
-}
 
 /*
  * Format a curses error.
@@ -335,10 +238,18 @@ _PyCursesSetError(cursesmodule_state *state,
         return;
     }
     if (simple_funcname == NULL) {
-        simple_funcname = curses_funcname;
+        PyErr_Format(state->error, CURSES_ERROR_FORMAT, curses_funcname);
     }
-    PyErr_Format(state->error, CURSES_ERROR_FORMAT, simple_funcname);
-    PyCursesError_SetImplementation(state, curses_funcname);
+    else if (curses_funcname == NULL) {
+        PyErr_Format(state->error, CURSES_ERROR_FORMAT, simple_funcname);
+    }
+    else if (strcmp(simple_funcname, curses_funcname) == 0) {
+        PyErr_Format(state->error, CURSES_ERROR_FORMAT, simple_funcname);
+    }
+    else {
+        PyErr_Format(state->error, CURSES_ERROR_VERBOSE_FORMAT,
+                     curses_funcname, simple_funcname);
+    }
 }
 
 static void
@@ -1673,7 +1584,6 @@ _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
     if (win == NULL) {
         cursesmodule_state *state = get_cursesmodule_state_by_win(self);
         PyErr_Format(state->error, CURSES_ERROR_NULL_FORMAT, "derwin");
-        PyCursesError_SetImplementation(state, "derwin");
         return NULL;
     }
 
@@ -1830,9 +1740,8 @@ _curses_window_getkey_impl(PyCursesWindowObject *self, int group_right_1,
         PyErr_CheckSignals();
         if (!PyErr_Occurred()) {
             cursesmodule_state *state = get_cursesmodule_state_by_win(self);
-            PyErr_SetString(state->error, "no input");
             const char *funcname = group_right_1 ? "mvwgetch" : "wgetch";
-            PyCursesError_SetImplementation(state, funcname);
+            PyErr_Format(state->error, "getkey(): %s(): no input", funcname);
         }
         return NULL;
     } else if (rtn <= 255) {
@@ -1894,7 +1803,7 @@ _curses_window_get_wch_impl(PyCursesWindowObject *self, int group_right_1,
         cursesmodule_state *state = get_cursesmodule_state_by_win(self);
         PyErr_SetString(state->error, "no input");
         const char *funcname = group_right_1 ? "mvwget_wch" : "wget_wch";
-        PyCursesError_SetImplementation(state, funcname);
+        PyErr_Format(state->error, "get_wch(): %s(): no input", funcname);
         return NULL;
     }
     if (ct == KEY_CODE_YES)
@@ -2752,8 +2661,8 @@ _curses_window_subwin_impl(PyCursesWindowObject *self, int group_left_1,
 
     if (win == NULL) {
         cursesmodule_state *state = get_cursesmodule_state_by_win(self);
-        PyErr_SetString(state->error, catchall_NULL);
-        PyCursesError_SetImplementation(state, curses_funcname);
+        PyErr_Format(state->error, CURSES_ERROR_NULL_VERBOSE_FORMAT,
+                     curses_funcname, "subwin");
         return NULL;
     }
 
@@ -2915,29 +2824,6 @@ PyCursesWindow_set_encoding(PyObject *op, PyObject *value, void *Py_UNUSED(ignor
 #define clinic_state()  (get_cursesmodule_state_by_cls(Py_TYPE(self)))
 #include "clinic/_cursesmodule.c.h"
 #undef clinic_state
-
-static PyGetSetDef PyCursesError_Type_getsets[] = {
-    _CURSES_ERROR_FUNCNAME_GETSETDEF
-    {NULL}
-};
-
-static PyType_Slot PyCursesError_Type_slots[] = {
-    {Py_tp_getset, PyCursesError_Type_getsets},
-    {Py_tp_dealloc, PyCursesError_dealloc},
-    {Py_tp_traverse, PyCursesError_traverse},
-    {Py_tp_clear, PyCursesError_clear},
-    {0, NULL},
-};
-
-static PyType_Spec PyCursesError_Type_spec = {
-    .name = "_curses.error",
-    .basicsize = sizeof(PyCursesErrorObject),
-    .flags = Py_TPFLAGS_DEFAULT
-        | Py_TPFLAGS_BASETYPE
-        | Py_TPFLAGS_IMMUTABLETYPE
-        | Py_TPFLAGS_HAVE_GC,
-    .slots = PyCursesError_Type_slots,
-};
 
 static PyMethodDef PyCursesWindow_methods[] = {
     _CURSES_WINDOW_ADDCH_METHODDEF
@@ -3547,8 +3433,7 @@ _curses_getwin(PyObject *module, PyObject *file)
     win = getwin(fp);
     if (win == NULL) {
         cursesmodule_state *state = get_cursesmodule_state(module);
-        PyErr_SetString(state->error, catchall_NULL);
-        PyCursesError_SetImplementation(state, "getwin");
+        PyErr_Format(state->error, CURSES_ERROR_NULL_FORMAT, "getwin");
         goto error;
     }
     cursesmodule_state *state = get_cursesmodule_state(module);
@@ -3730,8 +3615,7 @@ _curses_initscr_impl(PyObject *module)
 
     if (win == NULL) {
         cursesmodule_state *state = get_cursesmodule_state(module);
-        PyErr_SetString(state->error, catchall_NULL);
-        PyCursesError_SetImplementation(state, "initscr");
+        PyErr_Format(state->error, CURSES_ERROR_NULL_FORMAT, "initscr");
         return NULL;
     }
 
@@ -3891,7 +3775,6 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
 
         cursesmodule_state *state = get_cursesmodule_state(module);
         PyErr_SetString(state->error, s);
-        PyCursesError_SetImplementation(state, "setupterm");
         return NULL;
     }
 
@@ -4212,8 +4095,7 @@ _curses_newpad_impl(PyObject *module, int nlines, int ncols)
 
     if (win == NULL) {
         cursesmodule_state *state = get_cursesmodule_state(module);
-        PyErr_SetString(state->error, catchall_NULL);
-        PyCursesError_SetImplementation(state, "newpad");
+        PyErr_Format(state->error, CURSES_ERROR_NULL_FORMAT, "newpad");
         return NULL;
     }
 
@@ -4254,8 +4136,7 @@ _curses_newwin_impl(PyObject *module, int nlines, int ncols,
     win = newwin(nlines,ncols,begin_y,begin_x);
     if (win == NULL) {
         cursesmodule_state *state = get_cursesmodule_state(module);
-        PyErr_SetString(state->error, catchall_NULL);
-        PyCursesError_SetImplementation(state, "newwin");
+        PyErr_Format(state->error, CURSES_ERROR_NULL_FORMAT, "newwin");
         return NULL;
     }
 
@@ -4857,7 +4738,6 @@ _curses_tparm_impl(PyObject *module, const char *str, int i1, int i2, int i3,
     if (!result) {
         cursesmodule_state *state = get_cursesmodule_state(module);
         PyErr_Format(state->error, CURSES_ERROR_NULL_FORMAT, "tparm");
-        PyCursesError_SetImplementation(state, "tparm");
         return NULL;
     }
 
@@ -5348,22 +5228,7 @@ cursesmodule_exec(PyObject *module)
     curses_module_loaded = 1;
 
     cursesmodule_state *state = get_cursesmodule_state(module);
-    /* Initialize error type */
-    PyObject *bases = PyTuple_Pack(1, PyExc_Exception);
-    if (bases == NULL) {
-        return -1;
-    }
-    state->error = PyType_FromModuleAndSpec(module, &PyCursesError_Type_spec,
-                                            bases);
-    Py_DECREF(bases);
-    if (state->error == NULL) {
-        return -1;
-    }
-    if (PyModule_AddType(module, _PyType_CAST(state->error)) < 0) {
-        return -1;
-    }
-
-    /* Initialize window type */
+    /* Initialize object type */
     state->window_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         module, &PyCursesWindow_Type_spec, NULL);
     if (state->window_type == NULL) {
@@ -5392,6 +5257,16 @@ cursesmodule_exec(PyObject *module)
     }
     int rc = PyDict_SetItemString(module_dict, "_C_API", capi_capsule);
     Py_DECREF(capi_capsule);
+    if (rc < 0) {
+        return -1;
+    }
+
+    /* For exception curses.error */
+    state->error = PyErr_NewException("_curses.error", NULL, NULL);
+    if (state->error == NULL) {
+        return -1;
+    }
+    rc = PyDict_SetItemString(module_dict, "error", state->error);
     if (rc < 0) {
         return -1;
     }
