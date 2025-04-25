@@ -456,7 +456,7 @@ class invalid_command(Command):
 class show_history(Command):
     def do(self) -> None:
         from .pager import get_pager
-        from site import gethistoryfile  # type: ignore[attr-defined]
+        from site import gethistoryfile
 
         history = os.linesep.join(self.reader.history[:])
         self.reader.console.restore()

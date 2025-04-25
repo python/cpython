@@ -18,6 +18,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_fileutils.h"     // _Py_closerange()
+#include "pycore_import.h"        // _PyImport_AcquireLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
@@ -676,6 +677,14 @@ PyOS_AfterFork_Parent(void)
     run_at_forkers(interp->after_forkers_parent, 0);
 }
 
+static void
+reset_remotedebug_data(PyThreadState *tstate)
+{
+    tstate->remote_debugger_support.debugger_pending_call = 0;
+    memset(tstate->remote_debugger_support.debugger_script_path, 0, MAX_SCRIPT_PATH_SIZE);
+}
+
+
 void
 PyOS_AfterFork_Child(void)
 {
@@ -709,13 +718,15 @@ PyOS_AfterFork_Child(void)
         goto fatal_error;
     }
 
+    reset_remotedebug_data(tstate);
+
     // Remove the dead thread states. We "start the world" once we are the only
     // thread state left to undo the stop the world call in `PyOS_BeforeFork`.
     // That needs to happen before `_PyThreadState_DeleteList`, because that
     // may call destructors.
     PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
     _PyEval_StartTheWorldAll(&_PyRuntime);
-    _PyThreadState_DeleteList(list);
+    _PyThreadState_DeleteList(list, /*is_after_fork=*/1);
 
     _PyImport_ReInitLock(tstate->interp);
     _PyImport_ReleaseLock(tstate->interp);
@@ -5371,7 +5382,7 @@ _testFileExistsByName(LPCWSTR path, BOOL followLinks)
                                      sizeof(info)))
     {
         if (!(info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ||
-            !followLinks && IsReparseTagNameSurrogate(info.ReparseTag))
+            (!followLinks && IsReparseTagNameSurrogate(info.ReparseTag)))
         {
             return TRUE;
         }
@@ -5695,7 +5706,6 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
     int result;
 #ifdef MS_WINDOWS
     int error = 0;
-    int pathError = 0;
     SECURITY_ATTRIBUTES secAttr = { sizeof(secAttr) };
     SECURITY_ATTRIBUTES *pSecAttr = NULL;
 #endif

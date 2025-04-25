@@ -26,7 +26,7 @@ from generators_common import (
     always_true,
 )
 from cwriter import CWriter
-from typing import TextIO, Iterator
+from typing import TextIO
 from lexer import Token
 from stack import Local, Stack, StackError, Storage
 
@@ -34,35 +34,28 @@ DEFAULT_OUTPUT = ROOT / "Python/executor_cases.c.h"
 
 
 def declare_variable(
-    var: StackItem, uop: Uop, required: set[str], out: CWriter
+    var: StackItem, uop: Uop, seen: set[str], out: CWriter
 ) -> None:
-    if not var.used or var.name not in required:
+    if not var.used or var.name in seen:
         return
-    required.remove(var.name)
+    seen.add(var.name)
     type, null = type_and_null(var)
     space = " " if type[-1].isalnum() else ""
-    if var.condition:
-        out.emit(f"{type}{space}{var.name} = {null};\n")
-        if uop.replicates:
-            # Replicas may not use all their conditional variables
-            # So avoid a compiler warning with a fake use
-            out.emit(f"(void){var.name};\n")
-    else:
-        out.emit(f"{type}{space}{var.name};\n")
+    out.emit(f"{type}{space}{var.name};\n")
 
 
 def declare_variables(uop: Uop, out: CWriter) -> None:
     stack = Stack()
+    null = CWriter.null()
     for var in reversed(uop.stack.inputs):
-        stack.pop(var)
+        stack.pop(var, null)
     for var in uop.stack.outputs:
         stack.push(Local.undefined(var))
-    required = set(stack.defined)
-    required.discard("unused")
+    seen = {"unused"}
     for var in reversed(uop.stack.inputs):
-        declare_variable(var, uop, required, out)
+        declare_variable(var, uop, seen, out)
     for var in uop.stack.outputs:
-        declare_variable(var, uop, required, out)
+        declare_variable(var, uop, seen, out)
 
 
 class Tier2Emitter(Emitter):
@@ -150,9 +143,7 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
         elif uop.properties.const_oparg >= 0:
             emitter.emit(f"oparg = {uop.properties.const_oparg};\n")
             emitter.emit(f"assert(oparg == CURRENT_OPARG());\n")
-        code_list, storage = Storage.for_uop(stack, uop)
-        for code in code_list:
-            emitter.emit(code)
+        storage = Storage.for_uop(stack, uop, emitter.out)
         idx = 0
         for cache in uop.caches:
             if cache.name != "unused":
@@ -163,9 +154,10 @@ def write_uop(uop: Uop, emitter: Emitter, stack: Stack) -> Stack:
                     cast = f"uint{cache.size*16}_t"
                 emitter.emit(f"{type}{cache.name} = ({cast})CURRENT_OPERAND{idx}();\n")
                 idx += 1
-        storage = emitter.emit_tokens(uop, storage, None)
+        _, storage = emitter.emit_tokens(uop, storage, None, False)
+        storage.flush(emitter.out)
     except StackError as ex:
-        raise analysis_error(ex.args[0], uop.body[0]) from None
+        raise analysis_error(ex.args[0], uop.body.open) from None
     return storage.stack
 
 SKIPS = ("_EXTENDED_ARG",)
@@ -189,9 +181,6 @@ def generate_tier2(
     for name, uop in analysis.uops.items():
         if uop.properties.tier == 1:
             continue
-        if uop.properties.oparg_and_1:
-            out.emit(f"/* {uop.name} is split on (oparg & 1) */\n\n")
-            continue
         if uop.is_super():
             continue
         why_not_viable = uop.why_not_viable()
@@ -206,7 +195,6 @@ def generate_tier2(
         stack = write_uop(uop, emitter, stack)
         out.start_line()
         if not uop.properties.always_exits:
-            stack.flush(out)
             out.emit("break;\n")
         out.start_line()
         out.emit("}")

@@ -651,7 +651,7 @@ def collect_zlib(info_add):
     except ImportError:
         return
 
-    attributes = ('ZLIB_VERSION', 'ZLIB_RUNTIME_VERSION')
+    attributes = ('ZLIB_VERSION', 'ZLIB_RUNTIME_VERSION', 'ZLIBNG_VERSION')
     copy_attributes(info_add, zlib, 'zlib.%s', attributes)
 
 

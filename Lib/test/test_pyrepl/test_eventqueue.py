@@ -1,6 +1,5 @@
 import tempfile
 import unittest
-import sys
 from unittest.mock import patch
 from test import support
 
@@ -122,6 +121,13 @@ class EventQueueTestBase:
         self.assertEqual(eq.events[1].data, "[")
         self.assertEqual(eq.events[2].evt, "key")
         self.assertEqual(eq.events[2].data, "Z")
+
+    def test_push_unicode_character(self):
+        eq = self.make_eventqueue()
+        eq.keymap = {}
+        eq.push("ч")
+        self.assertEqual(eq.events[0].evt, "key")
+        self.assertEqual(eq.events[0].data, "ч")
 
 
 @unittest.skipIf(support.MS_WINDOWS, "No Unix event queue on Windows")

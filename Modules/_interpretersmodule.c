@@ -6,16 +6,15 @@
 #endif
 
 #include "Python.h"
-#include "pycore_abstract.h"      // _PyIndex_Check()
+#include "pycore_code.h"          // _PyCode_HAS_EXECUTORS()
 #include "pycore_crossinterp.h"   // _PyXIData_t
 #include "pycore_interp.h"        // _PyInterpreterState_IDIncref()
-#include "pycore_initconfig.h"    // _PyErr_SetFromPyStatus()
+#include "pycore_memoryobject.h"  // _PyMemoryView_GetXIBuffewViewType()
 #include "pycore_modsupport.h"    // _PyArg_BadArgument()
 #include "pycore_namespace.h"     // _PyNamespace_New()
 #include "pycore_pybuffer.h"      // _PyBuffer_ReleaseInInterpreterAndRawFree()
-#include "pycore_pyerrors.h"      // _Py_excinfo
 #include "pycore_pylifecycle.h"   // _PyInterpreterConfig_AsDict()
-#include "pycore_pystate.h"       // _PyInterpreterState_SetRunningMain()
+#include "pycore_pystate.h"       // _PyInterpreterState_IsRunningMain()
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
 
@@ -38,23 +37,6 @@ _get_current_interp(void)
 #define look_up_interp _PyInterpreterState_LookUpIDObject
 
 
-static PyObject *
-_get_current_module(void)
-{
-    PyObject *name = PyUnicode_FromString(MODULE_NAME_STR);
-    if (name == NULL) {
-        return NULL;
-    }
-    PyObject *mod = PyImport_GetModule(name);
-    Py_DECREF(name);
-    if (mod == NULL) {
-        return NULL;
-    }
-    assert(mod != Py_None);
-    return mod;
-}
-
-
 static int
 is_running_main(PyInterpreterState *interp)
 {
@@ -73,153 +55,10 @@ is_running_main(PyInterpreterState *interp)
 }
 
 
-/* Cross-interpreter Buffer Views *******************************************/
-
-// XXX Release when the original interpreter is destroyed.
-
-typedef struct {
-    PyObject_HEAD
-    Py_buffer *view;
-    int64_t interpid;
-} XIBufferViewObject;
-
-#define XIBufferViewObject_CAST(op) ((XIBufferViewObject *)(op))
-
-static PyObject *
-xibufferview_from_xid(PyTypeObject *cls, _PyXIData_t *data)
-{
-    assert(_PyXIData_DATA(data) != NULL);
-    assert(_PyXIData_OBJ(data) == NULL);
-    assert(_PyXIData_INTERPID(data) >= 0);
-    XIBufferViewObject *self = PyObject_Malloc(sizeof(XIBufferViewObject));
-    if (self == NULL) {
-        return NULL;
-    }
-    PyObject_Init((PyObject *)self, cls);
-    self->view = (Py_buffer *)_PyXIData_DATA(data);
-    self->interpid = _PyXIData_INTERPID(data);
-    return (PyObject *)self;
-}
-
-static void
-xibufferview_dealloc(PyObject *op)
-{
-    XIBufferViewObject *self = XIBufferViewObject_CAST(op);
-    PyInterpreterState *interp = _PyInterpreterState_LookUpID(self->interpid);
-    /* If the interpreter is no longer alive then we have problems,
-       since other objects may be using the buffer still. */
-    assert(interp != NULL);
-
-    if (_PyBuffer_ReleaseInInterpreterAndRawFree(interp, self->view) < 0) {
-        // XXX Emit a warning?
-        PyErr_Clear();
-    }
-
-    PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free(self);
-    /* "Instances of heap-allocated types hold a reference to their type."
-     * See: https://docs.python.org/3.11/howto/isolating-extensions.html#garbage-collection-protocol
-     * See: https://docs.python.org/3.11/c-api/typeobj.html#c.PyTypeObject.tp_traverse
-    */
-    // XXX Why don't we implement Py_TPFLAGS_HAVE_GC, e.g. Py_tp_traverse,
-    // like we do for _abc._abc_data?
-    Py_DECREF(tp);
-}
-
-static int
-xibufferview_getbuf(PyObject *op, Py_buffer *view, int flags)
-{
-    /* Only PyMemoryView_FromObject() should ever call this,
-       via _memoryview_from_xid() below. */
-    XIBufferViewObject *self = XIBufferViewObject_CAST(op);
-    *view = *self->view;
-    view->obj = op;
-    // XXX Should we leave it alone?
-    view->internal = NULL;
-    return 0;
-}
-
-static PyType_Slot XIBufferViewType_slots[] = {
-    {Py_tp_dealloc, xibufferview_dealloc},
-    {Py_bf_getbuffer, xibufferview_getbuf},
-    // We don't bother with Py_bf_releasebuffer since we don't need it.
-    {0, NULL},
-};
-
-static PyType_Spec XIBufferViewType_spec = {
-    .name = MODULE_NAME_STR ".CrossInterpreterBufferView",
-    .basicsize = sizeof(XIBufferViewObject),
-    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE |
-              Py_TPFLAGS_DISALLOW_INSTANTIATION | Py_TPFLAGS_IMMUTABLETYPE),
-    .slots = XIBufferViewType_slots,
-};
-
-
-static PyTypeObject * _get_current_xibufferview_type(void);
-
-static PyObject *
-_memoryview_from_xid(_PyXIData_t *data)
-{
-    PyTypeObject *cls = _get_current_xibufferview_type();
-    if (cls == NULL) {
-        return NULL;
-    }
-    PyObject *obj = xibufferview_from_xid(cls, data);
-    if (obj == NULL) {
-        return NULL;
-    }
-    return PyMemoryView_FromObject(obj);
-}
-
-static int
-_memoryview_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
-{
-    Py_buffer *view = PyMem_RawMalloc(sizeof(Py_buffer));
-    if (view == NULL) {
-        return -1;
-    }
-    if (PyObject_GetBuffer(obj, view, PyBUF_FULL_RO) < 0) {
-        PyMem_RawFree(view);
-        return -1;
-    }
-    _PyXIData_Init(data, tstate->interp, view, NULL, _memoryview_from_xid);
-    return 0;
-}
-
-static int
-register_memoryview_xid(PyObject *mod, PyTypeObject **p_state)
-{
-    // XIBufferView
-    assert(*p_state == NULL);
-    PyTypeObject *cls = (PyTypeObject *)PyType_FromModuleAndSpec(
-                mod, &XIBufferViewType_spec, NULL);
-    if (cls == NULL) {
-        return -1;
-    }
-    if (PyModule_AddType(mod, cls) < 0) {
-        Py_DECREF(cls);
-        return -1;
-    }
-    *p_state = cls;
-
-    // Register XID for the builtin memoryview type.
-    if (ensure_xid_class(&PyMemoryView_Type, _memoryview_shared) < 0) {
-        return -1;
-    }
-    // We don't ever bother un-registering memoryview.
-
-    return 0;
-}
-
-
-
 /* module state *************************************************************/
 
 typedef struct {
     int _notused;
-
-    /* heap types */
-    PyTypeObject *XIBufferViewType;
 } module_state;
 
 static inline module_state *
@@ -231,48 +70,16 @@ get_module_state(PyObject *mod)
     return state;
 }
 
-static module_state *
-_get_current_module_state(void)
-{
-    PyObject *mod = _get_current_module();
-    if (mod == NULL) {
-        // XXX import it?
-        PyErr_SetString(PyExc_RuntimeError,
-                        MODULE_NAME_STR " module not imported yet");
-        return NULL;
-    }
-    module_state *state = get_module_state(mod);
-    Py_DECREF(mod);
-    return state;
-}
-
 static int
 traverse_module_state(module_state *state, visitproc visit, void *arg)
 {
-    /* heap types */
-    Py_VISIT(state->XIBufferViewType);
-
     return 0;
 }
 
 static int
 clear_module_state(module_state *state)
 {
-    /* heap types */
-    Py_CLEAR(state->XIBufferViewType);
-
     return 0;
-}
-
-
-static PyTypeObject *
-_get_current_xibufferview_type(void)
-{
-    module_state *state = _get_current_module_state();
-    if (state == NULL) {
-        return NULL;
-    }
-    return state->XIBufferViewType;
 }
 
 
@@ -332,7 +139,7 @@ get_code_str(PyObject *arg, Py_ssize_t *len_p, PyObject **bytes_p, int *flags_p)
     int flags = 0;
 
     if (PyUnicode_Check(arg)) {
-        assert(PyUnicode_CheckExact(arg)
+        assert(PyUnicode_Check(arg)
                && (check_code_str((PyUnicodeObject *)arg) == NULL));
         codestr = PyUnicode_AsUTF8AndSize(arg, &len);
         if (codestr == NULL) {
@@ -1114,7 +921,7 @@ interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".exec",
+    script = (PyObject *)convert_script_arg(script, MODULE_NAME_STR ".run_string",
                                             "argument 2", "a string");
     if (script == NULL) {
         return NULL;
@@ -1254,13 +1061,10 @@ interp_get_config(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *idobj = NULL;
     int restricted = 0;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "O|$p:get_config", kwlist,
+                                     "O?|$p:get_config", kwlist,
                                      &idobj, &restricted))
     {
         return NULL;
-    }
-    if (idobj == Py_None) {
-        idobj = NULL;
     }
 
     int reqready = 0;
@@ -1378,14 +1182,14 @@ capture_exception(PyObject *self, PyObject *args, PyObject *kwds)
     static char *kwlist[] = {"exc", NULL};
     PyObject *exc_arg = NULL;
     if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "|O:capture_exception", kwlist,
+                                     "|O?:capture_exception", kwlist,
                                      &exc_arg))
     {
         return NULL;
     }
 
     PyObject *exc = exc_arg;
-    if (exc == NULL || exc == Py_None) {
+    if (exc == NULL) {
         exc = PyErr_GetRaisedException();
         if (exc == NULL) {
             Py_RETURN_NONE;
@@ -1499,6 +1303,7 @@ module_exec(PyObject *mod)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     module_state *state = get_module_state(mod);
+    (void)state;
 
     _PyXIData_lookup_context_t ctx;
     if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
@@ -1530,8 +1335,13 @@ module_exec(PyObject *mod)
         goto error;
     }
 
-    if (register_memoryview_xid(mod, &state->XIBufferViewType) < 0) {
+    PyTypeObject *XIBufferViewType = _PyMemoryView_GetXIBuffewViewType();
+    if (XIBufferViewType == NULL) {
         goto error;
+    }
+    if (PyModule_AddType(mod, XIBufferViewType) < 0) {
+        Py_DECREF(XIBufferViewType);
+        return -1;
     }
 
     return 0;

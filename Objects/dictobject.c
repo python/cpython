@@ -116,22 +116,25 @@ As a consequence of this, split keys have a maximum size of 16.
 #define PyDict_MINSIZE 8
 
 #include "Python.h"
-#include "pycore_bitutils.h"             // _Py_bit_length
-#include "pycore_call.h"                 // _PyObject_CallNoArgs()
-#include "pycore_ceval.h"                // _PyEval_GetBuiltin()
-#include "pycore_code.h"                 // stats
-#include "pycore_critical_section.h"     // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
-#include "pycore_dict.h"                 // export _PyDict_SizeOf()
-#include "pycore_freelist.h"             // _PyFreeListState_GET()
-#include "pycore_gc.h"                   // _PyObject_GC_IS_TRACKED()
-#include "pycore_object.h"               // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
+#include "pycore_bitutils.h"      // _Py_bit_length
+#include "pycore_call.h"          // _PyObject_CallNoArgs()
+#include "pycore_ceval.h"         // _PyEval_GetBuiltin()
+#include "pycore_code.h"          // stats
+#include "pycore_critical_section.h" // Py_BEGIN_CRITICAL_SECTION, Py_END_CRITICAL_SECTION
+#include "pycore_dict.h"          // export _PyDict_SizeOf()
+#include "pycore_freelist.h"      // _PyFreeListState_GET()
+#include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
+#include "pycore_object.h"        // _PyObject_GC_TRACK(), _PyDebugAllocatorStats()
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_LOAD_SSIZE_RELAXED
-#include "pycore_pyerrors.h"             // _PyErr_GetRaisedException()
-#include "pycore_pystate.h"              // _PyThreadState_GET()
-#include "pycore_setobject.h"            // _PySet_NextEntry()
-#include "stringlib/eq.h"                // unicode_eq()
+#include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
+#include "pycore_pystate.h"       // _PyThreadState_GET()
+#include "pycore_setobject.h"     // _PySet_NextEntry()
+#include "pycore_tuple.h"         // _PyTuple_Recycle()
+#include "pycore_unicodeobject.h" // _PyUnicode_InternImmortal()
 
+#include "stringlib/eq.h"                // unicode_eq()
 #include <stdbool.h>
+
 
 /*[clinic input]
 class dict "PyDictObject *" "&PyDict_Type"
@@ -275,10 +278,10 @@ load_keys_nentries(PyDictObject *mp)
 
 #endif
 
-#define STORE_KEY(ep, key) FT_ATOMIC_STORE_PTR_RELEASE(ep->me_key, key)
-#define STORE_VALUE(ep, value) FT_ATOMIC_STORE_PTR_RELEASE(ep->me_value, value)
+#define STORE_KEY(ep, key) FT_ATOMIC_STORE_PTR_RELEASE((ep)->me_key, key)
+#define STORE_VALUE(ep, value) FT_ATOMIC_STORE_PTR_RELEASE((ep)->me_value, value)
 #define STORE_SPLIT_VALUE(mp, idx, value) FT_ATOMIC_STORE_PTR_RELEASE(mp->ma_values->values[idx], value)
-#define STORE_HASH(ep, hash) FT_ATOMIC_STORE_SSIZE_RELAXED(ep->me_hash, hash)
+#define STORE_HASH(ep, hash) FT_ATOMIC_STORE_SSIZE_RELAXED((ep)->me_hash, hash)
 #define STORE_KEYS_USABLE(keys, usable) FT_ATOMIC_STORE_SSIZE_RELAXED(keys->dk_usable, usable)
 #define STORE_KEYS_NENTRIES(keys, nentries) FT_ATOMIC_STORE_SSIZE_RELAXED(keys->dk_nentries, nentries)
 #define STORE_USED(mp, used) FT_ATOMIC_STORE_SSIZE_RELAXED(mp->ma_used, used)
@@ -1323,6 +1326,12 @@ ensure_shared_on_read(PyDictObject *mp)
         Py_END_CRITICAL_SECTION();
     }
 }
+
+void
+_PyDict_EnsureSharedOnRead(PyDictObject *mp)
+{
+    ensure_shared_on_read(mp);
+}
 #endif
 
 static inline void
@@ -1410,18 +1419,20 @@ compare_unicode_unicode_threadsafe(PyDictObject *mp, PyDictKeysObject *dk,
 {
     PyDictUnicodeEntry *ep = &((PyDictUnicodeEntry *)ep0)[ix];
     PyObject *startkey = _Py_atomic_load_ptr_relaxed(&ep->me_key);
-    assert(startkey == NULL || PyUnicode_CheckExact(startkey));
     if (startkey == key) {
+        assert(PyUnicode_CheckExact(startkey));
         return 1;
     }
     if (startkey != NULL) {
         if (_Py_IsImmortal(startkey)) {
+            assert(PyUnicode_CheckExact(startkey));
             return unicode_get_hash(startkey) == hash && unicode_eq(startkey, key);
         }
         else {
             if (!_Py_TryIncrefCompare(&ep->me_key, startkey)) {
                 return DKIX_KEY_CHANGED;
             }
+            assert(PyUnicode_CheckExact(startkey));
             if (unicode_get_hash(startkey) == hash && unicode_eq(startkey, key)) {
                 Py_DECREF(startkey);
                 return 1;
@@ -2265,6 +2276,22 @@ PyDict_GetItem(PyObject *op, PyObject *key)
             "PyDict_GetItemRef() or PyDict_GetItemWithError()");
 }
 
+static void
+dict_unhashable_type(PyObject *key)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    assert(exc != NULL);
+    if (!Py_IS_TYPE(exc, (PyTypeObject*)PyExc_TypeError)) {
+        PyErr_SetRaisedException(exc);
+        return;
+    }
+
+    PyErr_Format(PyExc_TypeError,
+                 "cannot use '%T' as a dict key (%S)",
+                 key, exc);
+    Py_DECREF(exc);
+}
+
 Py_ssize_t
 _PyDict_LookupIndex(PyDictObject *mp, PyObject *key)
 {
@@ -2275,6 +2302,7 @@ _PyDict_LookupIndex(PyDictObject *mp, PyObject *key)
 
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        dict_unhashable_type(key);
         return -1;
     }
 
@@ -2371,6 +2399,7 @@ PyDict_GetItemRef(PyObject *op, PyObject *key, PyObject **result)
 
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        dict_unhashable_type(key);
         *result = NULL;
         return -1;
     }
@@ -2386,6 +2415,7 @@ _PyDict_GetItemRef_Unicode_LockHeld(PyDictObject *op, PyObject *key, PyObject **
 
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        dict_unhashable_type(key);
         *result = NULL;
         return -1;
     }
@@ -2423,6 +2453,7 @@ PyDict_GetItemWithError(PyObject *op, PyObject *key)
     }
     hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        dict_unhashable_type(key);
         return NULL;
     }
 
@@ -2580,6 +2611,7 @@ setitem_take2_lock_held(PyDictObject *mp, PyObject *key, PyObject *value)
     assert(PyDict_Check(mp));
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        dict_unhashable_type(key);
         Py_DECREF(key);
         Py_DECREF(value);
         return -1;
@@ -2731,6 +2763,7 @@ PyDict_DelItem(PyObject *op, PyObject *key)
     assert(key);
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        dict_unhashable_type(key);
         return -1;
     }
 
@@ -3053,6 +3086,7 @@ pop_lock_held(PyObject *op, PyObject *key, PyObject **result)
 
     Py_hash_t hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        dict_unhashable_type(key);
         if (result) {
             *result = NULL;
         }
@@ -3254,7 +3288,7 @@ dict_dealloc(PyObject *self)
     Py_TRASHCAN_BEGIN(mp, dict_dealloc)
     if (values != NULL) {
         if (values->embedded == 0) {
-            for (i = 0, n = mp->ma_keys->dk_nentries; i < n; i++) {
+            for (i = 0, n = values->capacity; i < n; i++) {
                 Py_XDECREF(values->values[i]);
             }
             free_values(values, false);
@@ -3387,6 +3421,7 @@ dict_subscript(PyObject *self, PyObject *key)
 
     hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        dict_unhashable_type(key);
         return NULL;
     }
     ix = _Py_dict_lookup_threadsafe(mp, key, hash, &value);
@@ -4234,8 +4269,8 @@ True if the dictionary has the specified key, else False.
 [clinic start generated code]*/
 
 static PyObject *
-dict___contains__(PyDictObject *self, PyObject *key)
-/*[clinic end generated code: output=a3d03db709ed6e6b input=fe1cb42ad831e820]*/
+dict___contains___impl(PyDictObject *self, PyObject *key)
+/*[clinic end generated code: output=1b314e6da7687dae input=fe1cb42ad831e820]*/
 {
     int contains = PyDict_Contains((PyObject *)self, key);
     if (contains < 0) {
@@ -4267,6 +4302,7 @@ dict_get_impl(PyDictObject *self, PyObject *key, PyObject *default_value)
 
     hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        dict_unhashable_type(key);
         return NULL;
     }
     ix = _Py_dict_lookup_threadsafe(self, key, hash, &val);
@@ -4299,6 +4335,7 @@ dict_setdefault_ref_lock_held(PyObject *d, PyObject *key, PyObject *default_valu
 
     hash = _PyObject_HashFast(key);
     if (hash == -1) {
+        dict_unhashable_type(key);
         if (result) {
             *result = NULL;
         }
@@ -4534,8 +4571,8 @@ dict_popitem_impl(PyDictObject *self)
         _PyDict_NotifyEvent(interp, PyDict_EVENT_DELETED, self, key, NULL);
         hash = unicode_get_hash(key);
         value = ep0[i].me_value;
-        ep0[i].me_key = NULL;
-        ep0[i].me_value = NULL;
+        STORE_KEY(&ep0[i], NULL);
+        STORE_VALUE(&ep0[i], NULL);
     }
     else {
         PyDictKeyEntry *ep0 = DK_ENTRIES(self->ma_keys);
@@ -4549,9 +4586,9 @@ dict_popitem_impl(PyDictObject *self)
         _PyDict_NotifyEvent(interp, PyDict_EVENT_DELETED, self, key, NULL);
         hash = ep0[i].me_hash;
         value = ep0[i].me_value;
-        ep0[i].me_key = NULL;
-        ep0[i].me_hash = -1;
-        ep0[i].me_value = NULL;
+        STORE_KEY(&ep0[i], NULL);
+        STORE_HASH(&ep0[i], -1);
+        STORE_VALUE(&ep0[i], NULL);
     }
 
     j = lookdict_index(self->ma_keys, hash, i);
@@ -4726,8 +4763,8 @@ int
 PyDict_Contains(PyObject *op, PyObject *key)
 {
     Py_hash_t hash = _PyObject_HashFast(key);
-
     if (hash == -1) {
+        dict_unhashable_type(key);
         return -1;
     }
 
@@ -4936,12 +4973,12 @@ PyDict_GetItemString(PyObject *v, const char *key)
     if (kv == NULL) {
         PyErr_FormatUnraisable(
             "Exception ignored in PyDict_GetItemString(); consider using "
-            "PyDict_GetItemRefString()");
+            "PyDict_GetItemStringRef()");
         return NULL;
     }
     rv = dict_getitem(v, kv,
             "Exception ignored in PyDict_GetItemString(); consider using "
-            "PyDict_GetItemRefString()");
+            "PyDict_GetItemStringRef()");
     Py_DECREF(kv);
     return rv;  // borrowed reference
 }
@@ -5484,7 +5521,7 @@ dictiter_iternext_threadsafe(PyDictObject *d, PyObject *self,
     ensure_shared_on_read(d);
 
     i = _Py_atomic_load_ssize_relaxed(&di->di_pos);
-    k = _Py_atomic_load_ptr_relaxed(&d->ma_keys);
+    k = _Py_atomic_load_ptr_acquire(&d->ma_keys);
     assert(i >= 0);
     if (_PyDict_HasSplitTable(d)) {
         PyDictValues *values = _Py_atomic_load_ptr_relaxed(&d->ma_values);
@@ -5620,9 +5657,7 @@ dictiter_iternextitem(PyObject *self)
             Py_DECREF(oldvalue);
             // bpo-42536: The GC may have untracked this result tuple. Since we're
             // recycling it, make sure it's tracked again:
-            if (!_PyObject_GC_IS_TRACKED(result)) {
-                _PyObject_GC_TRACK(result);
-            }
+            _PyTuple_Recycle(result);
         }
         else {
             result = PyTuple_New(2);
@@ -5745,9 +5780,7 @@ dictreviter_iter_lock_held(PyDictObject *d, PyObject *self)
             Py_DECREF(oldvalue);
             // bpo-42536: The GC may have untracked this result tuple. Since
             // we're recycling it, make sure it's tracked again:
-            if (!_PyObject_GC_IS_TRACKED(result)) {
-                _PyObject_GC_TRACK(result);
-            }
+            _PyTuple_Recycle(result);
         }
         else {
             result = PyTuple_New(2);
@@ -5920,7 +5953,7 @@ dictview_mapping(PyObject *view, void *Py_UNUSED(ignored)) {
 }
 
 static PyGetSetDef dictview_getset[] = {
-    {"mapping", dictview_mapping, (setter)NULL,
+    {"mapping", dictview_mapping, NULL,
      PyDoc_STR("dictionary that this view refers to"), NULL},
     {0}
 };
@@ -6337,7 +6370,7 @@ dictviews_xor(PyObject* self, PyObject *other)
 
 static PyNumberMethods dictviews_as_number = {
     0,                                  /*nb_add*/
-    (binaryfunc)dictviews_sub,          /*nb_subtract*/
+    dictviews_sub,                      /*nb_subtract*/
     0,                                  /*nb_multiply*/
     0,                                  /*nb_remainder*/
     0,                                  /*nb_divmod*/
@@ -6349,9 +6382,9 @@ static PyNumberMethods dictviews_as_number = {
     0,                                  /*nb_invert*/
     0,                                  /*nb_lshift*/
     0,                                  /*nb_rshift*/
-    (binaryfunc)_PyDictView_Intersect,  /*nb_and*/
-    (binaryfunc)dictviews_xor,          /*nb_xor*/
-    (binaryfunc)dictviews_or,           /*nb_or*/
+    _PyDictView_Intersect,              /*nb_and*/
+    dictviews_xor,                      /*nb_xor*/
+    dictviews_or,                       /*nb_or*/
 };
 
 static PyObject*
@@ -6609,7 +6642,7 @@ static PySequenceMethods dictvalues_as_sequence = {
     0,                                  /* sq_slice */
     0,                                  /* sq_ass_item */
     0,                                  /* sq_ass_slice */
-    (objobjproc)0,                      /* sq_contains */
+    0,                                  /* sq_contains */
 };
 
 static PyObject* dictvalues_reversed(PyObject *dv, PyObject *Py_UNUSED(ignored));
@@ -6822,6 +6855,7 @@ _PyDict_SetItem_LockHeld(PyDictObject *dict, PyObject *name, PyObject *value)
     if (value == NULL) {
         Py_hash_t hash = _PyObject_HashFast(name);
         if (hash == -1) {
+            dict_unhashable_type(name);
             return -1;
         }
         return delitem_knownhash_lock_held((PyObject *)dict, name, hash);

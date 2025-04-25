@@ -2713,7 +2713,7 @@ class ClinicExternalTest(TestCase):
             # Verify by checking the checksum.
             checksum = (
                 "/*[clinic end generated code: "
-                "output=00512eb783a9b748 input=9543a8d2da235301]*/\n"
+                "output=a2957bc4d43a3c2f input=9543a8d2da235301]*/\n"
             )
             with open(fn, encoding='utf-8') as f:
                 generated = f.read()
@@ -3031,6 +3031,11 @@ class ClinicFunctionalTest(unittest.TestCase):
         self.assertEqual(ac_tester.bool_converter(), (True, True, True))
         self.assertEqual(ac_tester.bool_converter('', [], 5), (False, False, True))
         self.assertEqual(ac_tester.bool_converter(('not empty',), {1: 2}, 0), (True, True, False))
+
+    def test_bool_converter_c_default(self):
+        self.assertEqual(ac_tester.bool_converter_c_default(), (1, 0, -2, -3))
+        self.assertEqual(ac_tester.bool_converter_c_default(False, True, False, True),
+                         (0, 1, 0, 1))
 
     def test_char_converter(self):
         with self.assertRaises(TypeError):

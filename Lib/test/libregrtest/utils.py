@@ -7,7 +7,6 @@ import platform
 import random
 import re
 import shlex
-import signal
 import subprocess
 import sys
 import sysconfig

@@ -8,6 +8,7 @@
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_interp.h"        // struct _import_runtime_state
 #include "pycore_magic_number.h"  // PYC_MAGIC_NUMBER_TOKEN
+#include "pycore_moduleobject.h"  // _PyModule_GetDef()
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // _Py_SetImmortal()
 #include "pycore_pyerrors.h"      // _PyErr_SetString()
@@ -17,6 +18,7 @@
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_ClearAttrString()
 #include "pycore_time.h"          // _PyTime_AsMicroseconds()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8NoNUL()
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 #include "marshal.h"              // PyMarshal_ReadObjectFromString()
@@ -1146,8 +1148,9 @@ get_cached_m_dict(struct extensions_cache_value *value,
 }
 
 static void
-del_extensions_cache_value(struct extensions_cache_value *value)
+del_extensions_cache_value(void *raw)
 {
+    struct extensions_cache_value *value = raw;
     if (value != NULL) {
         del_cached_m_dict(value);
         del_cached_def(value);
@@ -1248,7 +1251,7 @@ _extensions_cache_init(void)
         hashtable_hash_str,
         hashtable_compare_str,
         hashtable_destroy_str,  // key
-        (_Py_hashtable_destroy_func)del_extensions_cache_value,  // value
+        del_extensions_cache_value,  // value
         &alloc
     );
     if (EXTENSIONS.hashtable == NULL) {
