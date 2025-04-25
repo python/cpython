@@ -1246,6 +1246,9 @@ sys
 * On FreeBSD, :data:`sys.platform` doesn't contain the major version anymore.
   It is always ``'freebsd'``, instead of ``'freebsd13'`` or ``'freebsd14'``.
 
+* Raise :exc:`DeprecationWarning` for :func:`sys._clear_type_cache`. This
+  function was deprecated in Python 3.13 but it didn't raise a runtime warning.
+
 
 sys.monitoring
 --------------
@@ -1419,6 +1422,17 @@ uuid
 
 * Allow to generate multiple UUIDs at once via :option:`python -m uuid --count <uuid --count>`.
   (Contributed by Simon Legner in :gh:`131236`.)
+
+
+webbrowser
+----------
+
+* Names in the :envvar:`BROWSER` environment variable can now refer to already
+  registered browsers for the :mod:`webbrowser` module, instead of always
+  generating a new browser command.
+
+  This makes it possible to set :envvar:`BROWSER` to the value of one of the
+  supported browsers on macOS.
 
 
 zipinfo

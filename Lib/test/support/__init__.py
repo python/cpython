@@ -1940,8 +1940,9 @@ def missing_compiler_executable(cmd_names=[]):
     missing.
 
     """
-    from setuptools._distutils import ccompiler, sysconfig, spawn
+    from setuptools._distutils import ccompiler, sysconfig
     from setuptools import errors
+    import shutil
 
     compiler = ccompiler.new_compiler()
     sysconfig.customize_compiler(compiler)
@@ -1960,7 +1961,7 @@ def missing_compiler_executable(cmd_names=[]):
                     "the '%s' executable is not configured" % name
         elif not cmd:
             continue
-        if spawn.find_executable(cmd[0]) is None:
+        if shutil.which(cmd[0]) is None:
             return cmd[0]
 
 

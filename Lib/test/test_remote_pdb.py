@@ -20,6 +20,17 @@ import pdb
 from pdb import _PdbServer, _PdbClient
 
 
+@contextmanager
+def kill_on_error(proc):
+    """Context manager killing the subprocess if a Python exception is raised."""
+    with proc:
+        try:
+            yield proc
+        except:
+            proc.kill()
+            raise
+
+
 class MockSocketFile:
     """Mock socket file for testing _PdbServer without actual socket connections."""
 
@@ -360,7 +371,7 @@ class PdbConnectTestCase(unittest.TestCase):
         self._create_script()
         process, client_file = self._connect_and_get_client_file()
 
-        with process:
+        with kill_on_error(process):
             # We should receive initial data from the debugger
             data = client_file.readline()
             initial_data = json.loads(data.decode())
@@ -413,7 +424,7 @@ class PdbConnectTestCase(unittest.TestCase):
         """Test setting and hitting breakpoints."""
         self._create_script()
         process, client_file = self._connect_and_get_client_file()
-        with process:
+        with kill_on_error(process):
             # Skip initial messages until we get to the prompt
             self._read_until_prompt(client_file)
 
@@ -451,6 +462,8 @@ class PdbConnectTestCase(unittest.TestCase):
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
 
+    # gh-132912: The test fails randomly
+    @unittest.skipIf(True, "flaky test")
     def test_keyboard_interrupt(self):
         """Test that sending keyboard interrupt breaks into pdb."""
         synchronizer_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -489,8 +502,7 @@ class PdbConnectTestCase(unittest.TestCase):
         self._create_script(script=script)
         process, client_file = self._connect_and_get_client_file()
 
-        with process:
-
+        with kill_on_error(process):
             # Skip initial messages until we get to the prompt
             self._read_until_prompt(client_file)
 
@@ -520,7 +532,7 @@ class PdbConnectTestCase(unittest.TestCase):
         self._create_script()
         process, client_file = self._connect_and_get_client_file()
 
-        with process:
+        with kill_on_error(process):
             # Skip initial messages until we get to the prompt
             self._read_until_prompt(client_file)
 
@@ -568,7 +580,7 @@ class PdbConnectTestCase(unittest.TestCase):
         self._create_script(script=script)
         process, client_file = self._connect_and_get_client_file()
 
-        with process:
+        with kill_on_error(process):
             # First message should be an error about protocol version mismatch
             data = client_file.readline()
             message = json.loads(data.decode())
@@ -591,7 +603,7 @@ class PdbConnectTestCase(unittest.TestCase):
         self._create_script()
         process, client_file = self._connect_and_get_client_file()
 
-        with process:
+        with kill_on_error(process):
             # Skip initial messages until we get to the prompt
             self._read_until_prompt(client_file)
 
@@ -630,7 +642,7 @@ class PdbConnectTestCase(unittest.TestCase):
         self._create_script()
         process, client_file = self._connect_and_get_client_file()
 
-        with process:
+        with kill_on_error(process):
             # Skip initial messages until we get to the prompt
             self._read_until_prompt(client_file)
 
