@@ -85,7 +85,7 @@ android {
 
         minSdk = androidEnvFile.useLines {
             for (line in it) {
-                """api_level:=(\d+)""".toRegex().find(line)?.let {
+                """ANDROID_API_LEVEL:=(\d+)""".toRegex().find(line)?.let {
                     return@useLines it.groupValues[1].toInt()
                 }
             }
