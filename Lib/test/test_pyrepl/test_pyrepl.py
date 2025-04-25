@@ -25,6 +25,7 @@ from .support import (
     code_to_events,
 )
 from _pyrepl.console import Event
+from _pyrepl._module_completer import ImportParser, ModuleCompleter
 from _pyrepl.readline import (ReadlineAlikeReader, ReadlineConfig,
                               _ReadlineWrapper)
 from _pyrepl.readline import multiline_input as readline_multiline_input
@@ -895,6 +896,203 @@ class TestPyReplCompleter(TestCase):
         self.assertEqual(output, "dummy.test_func.__")
         self.assertEqual(mock_stderr.getvalue(), "")
 
+
+class TestPyReplModuleCompleter(TestCase):
+    def setUp(self):
+        self._saved_sys_path = sys.path
+
+    def tearDown(self):
+        sys.path = self._saved_sys_path
+
+    def prepare_reader(self, events, namespace):
+        console = FakeConsole(events)
+        config = ReadlineConfig()
+        config.readline_completer = rlcompleter.Completer(namespace).complete
+        reader = ReadlineAlikeReader(console=console, config=config)
+        return reader
+
+    def test_import_completions(self):
+        import importlib
+        # Make iter_modules() search only the standard library.
+        # This makes the test more reliable in case there are
+        # other user packages/scripts on PYTHONPATH which can
+        # intefere with the completions.
+        lib_path = os.path.dirname(importlib.__path__[0])
+        sys.path = [lib_path]
+
+        cases = (
+            ("import path\t\n", "import pathlib"),
+            ("import importlib.\t\tres\t\n", "import importlib.resources"),
+            ("import importlib.resources.\t\ta\t\n", "import importlib.resources.abc"),
+            ("import foo, impo\t\n", "import foo, importlib"),
+            ("import foo as bar, impo\t\n", "import foo as bar, importlib"),
+            ("from impo\t\n", "from importlib"),
+            ("from importlib.res\t\n", "from importlib.resources"),
+            ("from importlib.\t\tres\t\n", "from importlib.resources"),
+            ("from importlib.resources.ab\t\n", "from importlib.resources.abc"),
+            ("from importlib import mac\t\n", "from importlib import machinery"),
+            ("from importlib import res\t\n", "from importlib import resources"),
+            ("from importlib.res\t import a\t\n", "from importlib.resources import abc"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_relative_import_completions(self):
+        cases = (
+            ("from .readl\t\n", "from .readline"),
+            ("from . import readl\t\n", "from . import readline"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    @patch("pkgutil.iter_modules", lambda: [(None, 'valid_name', None),
+                                            (None, 'invalid-name', None)])
+    def test_invalid_identifiers(self):
+        # Make sure modules which are not valid identifiers
+        # are not suggested as those cannot be imported via 'import'.
+        cases = (
+            ("import valid\t\n", "import valid_name"),
+            # 'invalid-name' contains a dash and should not be completed
+            ("import invalid\t\n", "import invalid"),
+        )
+        for code, expected in cases:
+            with self.subTest(code=code):
+                events = code_to_events(code)
+                reader = self.prepare_reader(events, namespace={})
+                output = reader.readline()
+                self.assertEqual(output, expected)
+
+    def test_get_path_and_prefix(self):
+        cases = (
+            ('', ('', '')),
+            ('.', ('.', '')),
+            ('..', ('..', '')),
+            ('.foo', ('.', 'foo')),
+            ('..foo', ('..', 'foo')),
+            ('..foo.', ('..foo', '')),
+            ('..foo.bar', ('..foo', 'bar')),
+            ('.foo.bar.', ('.foo.bar', '')),
+            ('..foo.bar.', ('..foo.bar', '')),
+            ('foo', ('', 'foo')),
+            ('foo.', ('foo', '')),
+            ('foo.bar', ('foo', 'bar')),
+            ('foo.bar.', ('foo.bar', '')),
+            ('foo.bar.baz', ('foo.bar', 'baz')),
+        )
+        completer = ModuleCompleter()
+        for name, expected in cases:
+            with self.subTest(name=name):
+                self.assertEqual(completer.get_path_and_prefix(name), expected)
+
+    def test_parse(self):
+        cases = (
+            ('import ', (None, '')),
+            ('import foo', (None, 'foo')),
+            ('import foo,', (None, '')),
+            ('import foo, ', (None, '')),
+            ('import foo, bar', (None, 'bar')),
+            ('import foo, bar, baz', (None, 'baz')),
+            ('import foo as bar,', (None, '')),
+            ('import foo as bar, ', (None, '')),
+            ('import foo as bar, baz', (None, 'baz')),
+            ('import a.', (None, 'a.')),
+            ('import a.b', (None, 'a.b')),
+            ('import a.b.', (None, 'a.b.')),
+            ('import a.b.c', (None, 'a.b.c')),
+            ('import a.b.c, foo', (None, 'foo')),
+            ('import a.b.c, foo.bar', (None, 'foo.bar')),
+            ('import a.b.c, foo.bar,', (None, '')),
+            ('import a.b.c, foo.bar, ', (None, '')),
+            ('from foo', ('foo', None)),
+            ('from a.', ('a.', None)),
+            ('from a.b', ('a.b', None)),
+            ('from a.b.', ('a.b.', None)),
+            ('from a.b.c', ('a.b.c', None)),
+            ('from foo import ', ('foo', '')),
+            ('from foo import a', ('foo', 'a')),
+            ('from ', ('', None)),
+            ('from . import a', ('.', 'a')),
+            ('from .foo import a', ('.foo', 'a')),
+            ('from ..foo import a', ('..foo', 'a')),
+            ('from foo import (', ('foo', '')),
+            ('from foo import ( ', ('foo', '')),
+            ('from foo import (a', ('foo', 'a')),
+            ('from foo import (a,', ('foo', '')),
+            ('from foo import (a, ', ('foo', '')),
+            ('from foo import (a, c', ('foo', 'c')),
+            ('from foo import (a as b, c', ('foo', 'c')),
+        )
+        for code, parsed in cases:
+            parser = ImportParser(code)
+            actual = parser.parse()
+            with self.subTest(code=code):
+                self.assertEqual(actual, parsed)
+            # The parser should not get tripped up by any
+            # other preceding statements
+            code = f'import xyz\n{code}'
+            with self.subTest(code=code):
+                self.assertEqual(actual, parsed)
+            code = f'import xyz;{code}'
+            with self.subTest(code=code):
+                self.assertEqual(actual, parsed)
+
+    def test_parse_error(self):
+        cases = (
+            '',
+            'import foo ',
+            'from foo ',
+            'import foo. ',
+            'import foo.bar ',
+            'from foo ',
+            'from foo. ',
+            'from foo.bar ',
+            'from foo import bar ',
+            'from foo import (bar ',
+            'from foo import bar, baz ',
+            'import foo as',
+            'import a. as',
+            'import a.b as',
+            'import a.b. as',
+            'import a.b.c as',
+            'import (foo',
+            'import (',
+            'import .foo',
+            'import ..foo',
+            'import .foo.bar',
+            'import foo; x = 1',
+            'import a.; x = 1',
+            'import a.b; x = 1',
+            'import a.b.; x = 1',
+            'import a.b.c; x = 1',
+            'from foo import a as',
+            'from foo import a. as',
+            'from foo import a.b as',
+            'from foo import a.b. as',
+            'from foo import a.b.c as',
+            'from foo impo',
+            'import import',
+            'import from',
+            'import as',
+            'from import',
+            'from from',
+            'from as',
+            'from foo import import',
+            'from foo import from',
+            'from foo import as',
+        )
+        for code in cases:
+            parser = ImportParser(code)
+            actual = parser.parse()
+            with self.subTest(code=code):
+                self.assertEqual(actual, None)
 
 class TestPasteEvent(TestCase):
     def prepare_reader(self, events):
