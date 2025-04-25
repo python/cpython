@@ -992,7 +992,7 @@ _curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1,
         wstr[1] = L'\0';
         setcchar(&wcval, wstr, attr, PAIR_NUMBER(attr), NULL);
         if (coordinates_group) {
-            rtn = mvwadd_wch(self->win, y, x, &wcval);
+            rtn = mvwadd_wch(self->win,y,x, &wcval);
             curses_funcname = "mvwadd_wch";
         }
         else {
@@ -1007,7 +1007,7 @@ _curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1,
     if (type == 1) {
         simple_funcname = "addch";
         if (coordinates_group) {
-            rtn = mvwaddch(self->win, y, x, cch | (attr_t) attr);
+            rtn = mvwaddch(self->win,y,x, cch | (attr_t) attr);
             curses_funcname = "mvwaddch";
         }
         else {
@@ -1082,11 +1082,11 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
     if (strtype == 2) {
         simple_funcname = "addwstr";
         if (use_xy) {
-            rtn = mvwaddwstr(self->win, y, x, wstr);
+            rtn = mvwaddwstr(self->win,y,x,wstr);
             curses_funcname = "mvwaddwstr";
         }
         else {
-            rtn = waddwstr(self->win, wstr);
+            rtn = waddwstr(self->win,wstr);
             curses_funcname = "waddwstr";
         }
         PyMem_Free(wstr);
@@ -1094,14 +1094,14 @@ _curses_window_addstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
-        const char *text = PyBytes_AS_STRING(bytesobj);
+        const char *str = PyBytes_AS_STRING(bytesobj);
         simple_funcname = "addstr";
         if (use_xy) {
-            rtn = mvwaddstr(self->win, y, x, text);
+            rtn = mvwaddstr(self->win,y,x,str);
             curses_funcname = "mvwaddstr";
         }
         else {
-            rtn = waddstr(self->win, text);
+            rtn = waddstr(self->win,str);
             curses_funcname = "waddstr";
         }
         Py_DECREF(bytesobj);
@@ -1175,11 +1175,11 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
     if (strtype == 2) {
         simple_funcname = "addnwstr";
         if (use_xy) {
-            rtn = mvwaddnwstr(self->win, y, x, wstr, n);
+            rtn = mvwaddnwstr(self->win,y,x,wstr,n);
             curses_funcname = "mvwaddnwstr";
         }
         else {
-            rtn = waddnwstr(self->win, wstr, n);
+            rtn = waddnwstr(self->win,wstr,n);
             curses_funcname = "waddnwstr";
         }
         PyMem_Free(wstr);
@@ -3757,7 +3757,7 @@ _curses_setupterm_impl(PyObject *module, const char *term, int fd)
     }
 
     if (!curses_setupterm_called && setupterm((char *)term, fd, &err) == ERR) {
-        const char *s = "setupterm: unknown error";
+        const char* s = "setupterm: unknown error";
 
         if (err == 0) {
             s = "setupterm: could not find terminal";
