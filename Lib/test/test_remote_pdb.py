@@ -463,7 +463,6 @@ class PdbConnectTestCase(unittest.TestCase):
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
 
-    # gh-132912: The test fails randomly
     def test_keyboard_interrupt(self):
         """Test that sending keyboard interrupt breaks into pdb."""
         synchronizer_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
