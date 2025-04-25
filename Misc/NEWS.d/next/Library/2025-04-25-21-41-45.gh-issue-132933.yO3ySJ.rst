@@ -1,0 +1,1 @@
+The zipapp module now applies the provided filter to the list of files to be added before determining whether the target file overwrites a source file. This allows the target file to be written inside the source directory provided it is excluded by the filter.
