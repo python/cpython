@@ -9,10 +9,10 @@
 #include "pycore_sysmodule.h"     // _PySys_GetRequiredAttr()
 #include "pycore_time.h"          // _PyTime_FromSecondsObject()
 #include "pycore_traceback.h"     // _Py_DumpTracebackThreads
-
 #ifdef HAVE_UNISTD_H
 #  include <unistd.h>             // _exit()
 #endif
+
 #include <signal.h>               // sigaction()
 #include <stdlib.h>               // abort()
 #if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK) && defined(HAVE_PTHREAD_H)
@@ -210,6 +210,25 @@ faulthandler_dump_traceback(int fd, int all_threads,
     reentrant = 0;
 }
 
+static void
+faulthandler_dump_c_stack(int fd)
+{
+    static volatile int reentrant = 0;
+
+    if (reentrant) {
+        return;
+    }
+
+    reentrant = 1;
+
+    if (fatal_error.c_stack) {
+        PUTS(fd, "\n");
+        _Py_DumpStack(fd);
+    }
+
+    reentrant = 0;
+}
+
 static PyObject*
 faulthandler_dump_traceback_py(PyObject *self,
                                PyObject *args, PyObject *kwargs)
@@ -256,6 +275,34 @@ faulthandler_dump_traceback_py(PyObject *self,
 
     if (PyErr_CheckSignals())
         return NULL;
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+faulthandler_dump_c_stack_py(PyObject *self,
+                             PyObject *args, PyObject *kwargs)
+{
+    static char *kwlist[] = {"file", NULL};
+    PyObject *file = NULL;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+        "|O:dump_c_stack", kwlist,
+        &file)) {
+        return NULL;
+    }
+
+    int fd = faulthandler_get_fileno(&file);
+    if (fd < 0) {
+        return NULL;
+    }
+
+    _Py_DumpStack(fd);
+    Py_XDECREF(file);
+
+    if (PyErr_CheckSignals()) {
+        return NULL;
+    }
 
     Py_RETURN_NONE;
 }
@@ -350,6 +397,7 @@ faulthandler_fatal_error(int signum)
 
     faulthandler_dump_traceback(fd, deduce_all_threads(),
                                 fatal_error.interp);
+    faulthandler_dump_c_stack(fd);
 
     _Py_DumpExtensionModules(fd, fatal_error.interp);
 
@@ -425,6 +473,7 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
 
     faulthandler_dump_traceback(fd, deduce_all_threads(),
                                 fatal_error.interp);
+    faulthandler_dump_c_stack(fd);
 
     /* call the next exception handler */
     return EXCEPTION_CONTINUE_SEARCH;
@@ -519,14 +568,15 @@ faulthandler_enable(void)
 static PyObject*
 faulthandler_py_enable(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    static char *kwlist[] = {"file", "all_threads", NULL};
+    static char *kwlist[] = {"file", "all_threads", "c_stack", NULL};
     PyObject *file = NULL;
     int all_threads = 1;
     int fd;
+    int c_stack = 1;
     PyThreadState *tstate;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|Op:enable", kwlist, &file, &all_threads))
+        "|Opp:enable", kwlist, &file, &all_threads, &c_stack))
         return NULL;
 
     fd = faulthandler_get_fileno(&file);
@@ -543,6 +593,7 @@ faulthandler_py_enable(PyObject *self, PyObject *args, PyObject *kwargs)
     fatal_error.fd = fd;
     fatal_error.all_threads = all_threads;
     fatal_error.interp = PyThreadState_GetInterpreter(tstate);
+    fatal_error.c_stack = c_stack;
 
     if (faulthandler_enable() < 0) {
         return NULL;
@@ -1238,6 +1289,10 @@ static PyMethodDef module_methods[] = {
      PyDoc_STR("dump_traceback($module, /, file=sys.stderr, all_threads=True)\n--\n\n"
                "Dump the traceback of the current thread, or of all threads "
                "if all_threads is True, into file.")},
+     {"dump_c_stack",
+      _PyCFunction_CAST(faulthandler_dump_c_stack_py), METH_VARARGS|METH_KEYWORDS,
+      PyDoc_STR("dump_c_stack($module, /, file=sys.stderr)\n--\n\n"
+              "Dump the C stack of the current thread.")},
     {"dump_traceback_later",
      _PyCFunction_CAST(faulthandler_dump_traceback_later), METH_VARARGS|METH_KEYWORDS,
      PyDoc_STR("dump_traceback_later($module, /, timeout, repeat=False, file=sys.stderr, exit=False)\n--\n\n"

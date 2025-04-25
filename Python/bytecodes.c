@@ -3417,27 +3417,32 @@ dummy_func(
             _FOR_ITER_GEN_FRAME +
             _PUSH_FRAME;
 
-        inst(LOAD_SPECIAL, (owner -- attr, self_or_null)) {
-            assert(oparg <= SPECIAL_MAX);
-            PyObject *owner_o = PyStackRef_AsPyObjectSteal(owner);
+        op(_INSERT_NULL, (self -- method_and_self[2])) {
+            method_and_self[1] = self;
+            method_and_self[0] = PyStackRef_NULL;
+            DEAD(self);
+        }
+
+        op(_LOAD_SPECIAL, (method_and_self[2] -- method_and_self[2])) {
             PyObject *name = _Py_SpecialMethods[oparg].name;
-            PyObject *self_or_null_o;
-            PyObject *attr_o = _PyObject_LookupSpecialMethod(owner_o, name, &self_or_null_o);
-            if (attr_o == NULL) {
-                if (!_PyErr_Occurred(tstate)) {
-                    const char *errfmt = _PyEval_SpecialMethodCanSuggest(owner_o, oparg)
+            int err = _PyObject_LookupSpecialMethod(name, method_and_self);
+            if (err <= 0) {
+                if (err == 0) {
+                    PyObject *owner = PyStackRef_AsPyObjectBorrow(method_and_self[1]);
+                    const char *errfmt = _PyEval_SpecialMethodCanSuggest(owner, oparg)
                         ? _Py_SpecialMethods[oparg].error_suggestion
                         : _Py_SpecialMethods[oparg].error;
                     assert(!_PyErr_Occurred(tstate));
                     assert(errfmt != NULL);
-                    _PyErr_Format(tstate, PyExc_TypeError, errfmt, owner_o);
+                    _PyErr_Format(tstate, PyExc_TypeError, errfmt, owner);
                 }
-                ERROR_IF(true, error);
+                ERROR_NO_POP();
             }
-            attr = PyStackRef_FromPyObjectSteal(attr_o);
-            self_or_null = self_or_null_o == NULL ?
-                PyStackRef_NULL : PyStackRef_FromPyObjectSteal(self_or_null_o);
         }
+
+        macro(LOAD_SPECIAL) =
+            _INSERT_NULL +
+            _LOAD_SPECIAL;
 
         inst(WITH_EXCEPT_START, (exit_func, exit_self, lasti, unused, val -- exit_func, exit_self, lasti, unused, val, res)) {
             /* At the top of the stack are 4 values:
@@ -3961,31 +3966,50 @@ dummy_func(
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
 
-        inst(CALL_TYPE_1, (unused/1, unused/2, callable, null, arg -- res)) {
+        op(_GUARD_NOS_NULL, (null, unused -- null, unused)) {
+            DEOPT_IF(!PyStackRef_IsNull(null));
+        }
+
+        op(_GUARD_CALLABLE_TYPE_1, (callable, unused, unused -- callable, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            DEOPT_IF(callable_o != (PyObject *)&PyType_Type);
+        }
+
+        op(_CALL_TYPE_1, (callable, null, arg -- res)) {
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
-            DEOPT_IF(!PyStackRef_IsNull(null));
             DEAD(null);
-            DEOPT_IF(callable_o != (PyObject *)&PyType_Type);
             DEAD(callable);
+            (void)callable; // Silence compiler warnings about unused variables
+            (void)null;
             STAT_INC(CALL, hit);
             res = PyStackRef_FromPyObjectNew(Py_TYPE(arg_o));
             PyStackRef_CLOSE(arg);
         }
 
-        op(_CALL_STR_1, (callable, null, arg -- res)) {
+        macro(CALL_TYPE_1) =
+            unused/1 +
+            unused/2 +
+            _GUARD_NOS_NULL +
+            _GUARD_CALLABLE_TYPE_1 +
+            _CALL_TYPE_1;
+
+        op(_GUARD_CALLABLE_STR_1, (callable, unused, unused -- callable, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            DEOPT_IF(callable_o != (PyObject *)&PyUnicode_Type);
+        }
+
+        op(_CALL_STR_1, (callable, null, arg -- res)) {
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
-            DEOPT_IF(!PyStackRef_IsNull(null));
-            DEOPT_IF(callable_o != (PyObject *)&PyUnicode_Type);
             STAT_INC(CALL, hit);
             PyObject *res_o = PyObject_Str(arg_o);
             DEAD(null);
             DEAD(callable);
+            (void)callable; // Silence compiler warnings about unused variables
+            (void)null;
             PyStackRef_CLOSE(arg);
             ERROR_IF(res_o == NULL, error);
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -3994,20 +4018,26 @@ dummy_func(
         macro(CALL_STR_1) =
             unused/1 +
             unused/2 +
+            _GUARD_NOS_NULL +
+            _GUARD_CALLABLE_STR_1 +
             _CALL_STR_1 +
             _CHECK_PERIODIC;
 
-        op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
+        op(_GUARD_CALLABLE_TUPLE_1, (callable, unused, unused -- callable, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            DEOPT_IF(callable_o != (PyObject *)&PyTuple_Type);
+        }
+
+        op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
-            DEOPT_IF(!PyStackRef_IsNull(null));
-            DEOPT_IF(callable_o != (PyObject *)&PyTuple_Type);
             STAT_INC(CALL, hit);
             PyObject *res_o = PySequence_Tuple(arg_o);
             DEAD(null);
             DEAD(callable);
+            (void)callable; // Silence compiler warnings about unused variables
+            (void)null;
             PyStackRef_CLOSE(arg);
             ERROR_IF(res_o == NULL, error);
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -4016,6 +4046,8 @@ dummy_func(
         macro(CALL_TUPLE_1) =
             unused/1 +
             unused/2 +
+            _GUARD_NOS_NULL +
+            _GUARD_CALLABLE_TUPLE_1 +
             _CALL_TUPLE_1 +
             _CHECK_PERIODIC;
 
