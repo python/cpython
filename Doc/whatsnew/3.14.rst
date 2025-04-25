@@ -348,6 +348,21 @@ Improved error messages
          ^^^^^^^
      ValueError: too many values to unpack (expected 3, got 4)
 
+* :keyword:`elif` statements that follow an :keyword:`else` block now have a specific error message.
+  (Contributed by Steele Farnsworth in :gh:`129902`.)
+
+  .. code-block:: pycon
+
+      >>> if who == "me":
+      ...     print("It's me!")
+      ... else:
+      ...     print("It's not me!")
+      ... elif who is None:
+      ...     print("Who is it?")
+      File "<stdin>", line 5
+        elif who is None:
+        ^^^^
+      SyntaxError: 'elif' block follows an 'else' block
 
 * If a statement (:keyword:`pass`, :keyword:`del`, :keyword:`return`,
   :keyword:`yield`, :keyword:`raise`, :keyword:`break`, :keyword:`continue`,
