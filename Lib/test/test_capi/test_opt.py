@@ -1911,6 +1911,18 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_COMPARE_OP_INT", uops)
         self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
 
+    def test_call_len(self):
+        def testfunc(n):
+            a = [1, 2, 3, 4]
+            for _ in range(n):
+                _ = len(a) - 1
+
+        _, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        uops = get_opnames(ex)
+        self.assertNotIn("_GUARD_NOS_INT", uops)
+        self.assertNotIn("_GUARD_TOS_INT", uops)
+        self.assertIn("_CALL_LEN", uops)
+
 
 def global_identity(x):
     return x
