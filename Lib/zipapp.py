@@ -151,8 +151,12 @@ def create_archive(source, target=None, interpreter=None, main=None,
     # equal to any of the entries in files_to_add, so there's no need
     # to add a special check for that.
     if target in files_to_add:
-        raise ZipAppError(
-            f"The target archive {target} overwrites one of the source files.")
+        if filter:
+            arcname = target.relative_to(source)
+            not_filtered = filter(arcname)
+        if not filter or not_filtered:
+            raise ZipAppError(f"The target archive {target} overwrites "
+                              "one of the source files.")
 
     with _maybe_open(target, 'wb') as fd:
         _write_file_prefix(fd, interpreter)
