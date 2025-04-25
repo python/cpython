@@ -465,7 +465,7 @@ directory (which you may have added to your :envvar:`PATH` environment variable)
 can be used in a shebang, even if it is not on your :envvar:`PATH`. This allows
 the use of shebangs like ``/usr/bin/python3.12`` to select a particular runtime.
 
-The ``/usr/bin/env`` form of shebang line will also search the :envvar:`PATH` 
+The ``/usr/bin/env`` form of shebang line will also search the :envvar:`PATH`
 environment variable for unrecognized commands. This corresponds to the
 behaviour of the Unix ``env`` program, which performs the same search, but
 prefers launching known Python commands. A warning may be displayed when
