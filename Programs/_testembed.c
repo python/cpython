@@ -2341,6 +2341,15 @@ test_get_incomplete_frame(void)
     return result;
 }
 
+const char *THREAD_CODE = "import time\n"
+                   "time.sleep(0.2)\n"
+                   "def fib(n):\n"
+                   "  if n <= 1:\n"
+                   "    return n\n"
+                   "  else:\n"
+                   "    return fib(n - 1) + fib(n - 2)\n"
+                   "fib(10)";
+
 static void
 non_daemon_native(void *arg)
 {
@@ -2350,15 +2359,7 @@ non_daemon_native(void *arg)
     int res = PyThreadState_SetDaemon(0);
     assert(res == 1);
     _PyEvent_Notify(event);
-    const char *code = "import time\n"
-                       "time.sleep(0.2)\n"
-                       "def fib(n):\n"
-                       "  if n <= 1:\n"
-                       "    return n\n"
-                       "  else:\n"
-                       "    return fib(n - 1) + fib(n - 2)\n"
-                       "fib(10)";
-    res = PyRun_SimpleString(code);
+    res = PyRun_SimpleString(THREAD_CODE);
     assert(res == 0);
     PyThreadState_Clear(tstate);
     PyThreadState_Swap(NULL);
@@ -2371,8 +2372,43 @@ test_non_daemon_native_thread(void)
     _testembed_Py_InitializeFromConfig();
     PyThread_handle_t handle;
     PyThread_ident_t ident;
-    PyEvent event;
+    PyEvent event = {0};
     if (PyThread_start_joinable_thread(non_daemon_native, &event,
+                                       &ident, &handle) < 0) {
+        return -1;
+    }
+    PyEvent_Wait(&event);
+    Py_Finalize();
+    return 0;
+}
+
+typedef struct {
+    PyInterpreterState *interp;
+    PyEvent *event;
+} ThreadData;
+
+static void
+do_tstate_ensure(void *arg)
+{
+    ThreadData *data = (ThreadData *)arg;
+    PyEvent *event = data->event;
+    int res = PyThreadState_Ensure(data->interp);
+    assert(res == 0);
+    _PyEvent_Notify(event);
+    res = PyRun_SimpleString(THREAD_CODE);
+    assert(res == 0);
+    PyThreadState_Release();
+}
+
+static int
+test_thread_state_ensure(void)
+{
+    _testembed_Py_InitializeFromConfig();
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    PyEvent event = {0};
+    ThreadData data = { PyInterpreterState_Hold(), &event };
+    if (PyThread_start_joinable_thread(non_daemon_native, &data,
                                        &ident, &handle) < 0) {
         return -1;
     }
@@ -2471,6 +2507,7 @@ static struct TestCase TestCases[] = {
 #endif
     {"test_get_incomplete_frame", test_get_incomplete_frame},
     {"test_non_daemon_native_thread", test_non_daemon_native_thread},
+    {"test_thread_state_ensure", test_thread_state_ensure},
 
     {NULL, NULL}
 };
