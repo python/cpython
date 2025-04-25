@@ -805,7 +805,9 @@ translate_bytecode_to_trace(
                             if (opcode == CALL_ALLOC_AND_ENTER_INIT) {
                                 // In CALL_ALLOC_AND_ENTER_INIT, func_version is actually the type version.
                                 PyTypeObject *typ = _PyType_LookupByVersion(func_version);
-                                if (typ == NULL || !PyType_HasFeature(typ, Py_TPFLAGS_HEAPTYPE)) {
+                                if (typ == NULL ||
+                                    !PyType_HasFeature(typ, Py_TPFLAGS_HEAPTYPE) ||
+                                    !PyType_HasFeature(typ, Py_TPFLAGS_INLINE_VALUES)) {
                                     DPRINTF(2, "Bailing due to dynamic target\n");
                                     ADD_TO_TRACE(uop, oparg, 0, target);
                                     ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
