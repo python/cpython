@@ -464,13 +464,16 @@ class LibraryLoader(object):
 cdll = LibraryLoader(CDLL)
 pydll = LibraryLoader(PyDLL)
 
-if _os.name == "nt":
-    pythonapi = PyDLL("python dll", None, _sys.dllhandle)
-elif _sys.platform == "cygwin":
-    pythonapi = PyDLL("libpython%d.%d.dll" % _sys.version_info[:2])
-else:
-    pythonapi = PyDLL(None)
-
+# dlopen is not supported in statically linked programs.
+try:
+    if _os.name == "nt":
+        pythonapi = PyDLL("python dll", None, _sys.dllhandle)
+    elif _sys.platform == "cygwin":
+        pythonapi = PyDLL("libpython%d.%d.dll" % _sys.version_info[:2])
+    else:
+        pythonapi = PyDLL(None)
+except OSError:
+    pythonapi = None
 
 if _os.name == "nt":
     windll = LibraryLoader(WinDLL)
