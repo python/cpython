@@ -372,7 +372,9 @@ search_map_for_section(proc_handle_t *handle, const char* secname, const char* s
 
     mach_port_t proc_ref = pid_to_task(handle->pid);
     if (proc_ref == 0) {
-        PyErr_SetString(PyExc_PermissionError, "Cannot get task for PID");
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(PyExc_PermissionError, "Cannot get task for PID");
+        }
         return 0;
     }
 
