@@ -116,7 +116,7 @@ Available Types
    An idealized time, independent of any particular day, assuming that every day
    has exactly 24\*60\*60 seconds.  (There is no notion of "leap seconds" here.)
    Attributes: :attr:`hour`, :attr:`minute`, :attr:`second`, :attr:`microsecond`,
-   and :attr:`.tzinfo`.
+   :attr:`.tzinfo` , :attr:`fold` and :attr:`nanosecond`.
 
 
 .. class:: datetime
@@ -124,14 +124,14 @@ Available Types
 
    A combination of a date and a time. Attributes: :attr:`year`, :attr:`month`,
    :attr:`day`, :attr:`hour`, :attr:`minute`, :attr:`second`, :attr:`microsecond`,
-   and :attr:`.tzinfo`.
+   :attr:`.tzinfo`, :attr:`fold` and :attr:`nanosecond`.
 
 
 .. class:: timedelta
    :noindex:
 
    A duration expressing the difference between two :class:`.datetime`
-   or :class:`date` instances to microsecond resolution.
+   or :class:`date` instances to nanosecond resolution.
 
 
 .. class:: tzinfo
@@ -205,12 +205,12 @@ objects.
 A :class:`timedelta` object represents a duration, the difference between two
 :class:`.datetime` or :class:`date` instances.
 
-.. class:: timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0)
+.. class:: timedelta(days=0, seconds=0, microseconds=0, nanoseconds=0, milliseconds=0, minutes=0, hours=0, weeks=0)
 
    All arguments are optional and default to 0. Arguments may be integers
    or floats, and may be positive or negative.
 
-   Only *days*, *seconds* and *microseconds* are stored internally.
+   Only *days*, *seconds*, *microseconds* and *nanoseconds* are stored internally.
    Arguments are converted to those units:
 
    * A millisecond is converted to 1000 microseconds.
@@ -218,22 +218,24 @@ A :class:`timedelta` object represents a duration, the difference between two
    * An hour is converted to 3600 seconds.
    * A week is converted to 7 days.
 
-   and days, seconds and microseconds are then normalized so that the
+   and days, seconds, microseconds and nanoseconds are then normalized so that the
    representation is unique, with
 
    * ``0 <= microseconds < 1000000``
+   * ``0 <= nanoseconds < 1000``
    * ``0 <= seconds < 3600*24`` (the number of seconds in one day)
    * ``-999999999 <= days <= 999999999``
 
    The following example illustrates how any arguments besides
    *days*, *seconds* and *microseconds* are "merged" and normalized into those
-   three resulting attributes::
+   four resulting attributes::
 
        >>> from datetime import timedelta
        >>> delta = timedelta(
        ...     days=50,
        ...     seconds=27,
        ...     microseconds=10,
+       ...     nanoseconds=290,
        ...     milliseconds=29000,
        ...     minutes=5,
        ...     hours=8,
@@ -241,7 +243,7 @@ A :class:`timedelta` object represents a duration, the difference between two
        ... )
        >>> # Only days, seconds, and microseconds remain
        >>> delta
-       datetime.timedelta(days=64, seconds=29156, microseconds=10)
+       datetime.timedelta(days=64, seconds=29156, microseconds=10, nanoseconds=290)
 
    If any argument is a float and there are fractional microseconds,
    the fractional microseconds left over from all arguments are
@@ -272,13 +274,13 @@ Class attributes:
 .. attribute:: timedelta.max
 
    The most positive :class:`timedelta` object, ``timedelta(days=999999999,
-   hours=23, minutes=59, seconds=59, microseconds=999999)``.
+   hours=23, minutes=59, seconds=59, microseconds=999999, nanoseconds=999)``.
 
 
 .. attribute:: timedelta.resolution
 
    The smallest possible difference between non-equal :class:`timedelta` objects,
-   ``timedelta(microseconds=1)``.
+   ``timedelta(nanoseconds=1)``.
 
 Note that, because of normalization, ``timedelta.max`` is greater than ``-timedelta.min``.
 ``-timedelta.max`` is not representable as a :class:`timedelta` object.
@@ -314,6 +316,12 @@ Instance attributes (read-only):
 
    Between 0 and 999,999 inclusive.
 
+
+.. attribute:: timedelta.nanoseconds
+
+   Between 0 and 999 inclusive.
+
+   .. versionadded:: 3.14
 
 Supported operations:
 
@@ -898,7 +906,7 @@ calendar extended in both directions; like a :class:`.time` object,
 
 Constructor:
 
-.. class:: datetime(year, month, day, hour=0, minute=0, second=0, microsecond=0, tzinfo=None, *, fold=0)
+.. class:: datetime(year, month, day, hour=0, minute=0, second=0, microsecond=0, tzinfo=None, *, fold=0, nanosecond=0)
 
    The *year*, *month* and *day* arguments are required. *tzinfo* may be ``None``, or an
    instance of a :class:`tzinfo` subclass. The remaining arguments must be integers
@@ -911,12 +919,16 @@ Constructor:
    * ``0 <= minute < 60``,
    * ``0 <= second < 60``,
    * ``0 <= microsecond < 1000000``,
-   * ``fold in [0, 1]``.
+   * ``fold in [0, 1]``,
+   * ``0 <= nanosecond < 1000``.
 
    If an argument outside those ranges is given, :exc:`ValueError` is raised.
 
    .. versionchanged:: 3.6
       Added the *fold* parameter.
+
+   .. versionadded:: 3.14
+      Added the *nanosecond* parameter.
 
 Other constructors, all class methods:
 
@@ -1083,6 +1095,7 @@ Other constructors, all class methods:
    5. Extended date representations are not currently supported
       (``±YYYYYY-MM-DD``).
    6. Ordinal dates are not currently supported (``YYYY-OOO``).
+   7. Fractional seconds can have up to 9 digits for nanosecond precision.
 
    Examples::
 
@@ -1101,6 +1114,8 @@ Other constructors, all class methods:
        datetime.datetime(2011, 1, 4, 0, 5, 23, 283000)
        >>> datetime.fromisoformat('2011-11-04 00:05:23.283')
        datetime.datetime(2011, 11, 4, 0, 5, 23, 283000)
+       >>> datetime.fromisoformat('2011-11-04 00:05:23.283123456')
+       datetime.datetime(2011, 11, 4, 0, 5, 23, 283123, nanosecond=456)
        >>> datetime.fromisoformat('2011-11-04 00:05:23.283+00:00')
        datetime.datetime(2011, 11, 4, 0, 5, 23, 283000, tzinfo=datetime.timezone.utc)
        >>> datetime.fromisoformat('2011-11-04T00:05:23+04:00')   # doctest: +NORMALIZE_WHITESPACE
@@ -1111,6 +1126,8 @@ Other constructors, all class methods:
    .. versionchanged:: 3.11
       Previously, this method only supported formats that could be emitted by
       :meth:`date.isoformat` or :meth:`datetime.isoformat`.
+   .. versionchanged:: 3.14
+      Added support for nanosecond precision in fractional seconds.
 
 
 .. classmethod:: datetime.fromisocalendar(year, week, day)
@@ -1229,6 +1246,15 @@ Instance attributes (read-only):
 
    .. versionadded:: 3.6
 
+
+.. attribute:: datetime.nanosecond
+
+   In ``range(1000)``. Represents sub-microsecond precision, where each unit is 1 nanosecond
+   (one billionth of a second). This provides additional precision beyond microseconds
+   for high-precision time measurements.
+
+   .. versionadded:: 3.14
+
 Supported operations:
 
 +---------------------------------------+--------------------------------+
@@ -1328,7 +1354,7 @@ Instance methods:
 
 .. method:: datetime.time()
 
-   Return :class:`.time` object with same hour, minute, second, microsecond and fold.
+   Return :class:`.time` object with same hour, minute, second, microsecond, nanosecond and fold.
    :attr:`.tzinfo` is ``None``. See also method :meth:`timetz`.
 
    .. versionchanged:: 3.6
@@ -1337,8 +1363,8 @@ Instance methods:
 
 .. method:: datetime.timetz()
 
-   Return :class:`.time` object with same hour, minute, second, microsecond, fold, and
-   tzinfo attributes. See also method :meth:`time`.
+   Return :class:`.time` object with same hour, minute, second, microsecond, nanosecond and fold.
+   tzinfo is ``None``. See also method :meth:`time`.
 
    .. versionchanged:: 3.6
       The fold value is copied to the returned :class:`.time` object.
@@ -1346,7 +1372,7 @@ Instance methods:
 
 .. method:: datetime.replace(year=self.year, month=self.month, day=self.day, \
    hour=self.hour, minute=self.minute, second=self.second, microsecond=self.microsecond, \
-   tzinfo=self.tzinfo, *, fold=0)
+   tzinfo=self.tzinfo, *, fold=0, nanosecond=self.nanosecond)
 
    Return a new :class:`datetime` object with the same attributes, but with
    specified parameters updated. Note that ``tzinfo=None`` can be specified to
@@ -1541,20 +1567,25 @@ Instance methods:
    Return a string representing the date and time in ISO 8601 format:
 
    - ``YYYY-MM-DDTHH:MM:SS.ffffff``, if :attr:`microsecond` is not 0
-   - ``YYYY-MM-DDTHH:MM:SS``, if :attr:`microsecond` is 0
+   - ``YYYY-MM-DDTHH:MM:SS.nnnnnnnnn``, if :attr:`nanosecond` is not 0
+   - ``YYYY-MM-DDTHH:MM:SS``, if both :attr:`microsecond` and :attr:`nanosecond` are 0
 
    If :meth:`utcoffset` does not return ``None``, a string is
    appended, giving the UTC offset:
 
    - ``YYYY-MM-DDTHH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]``, if :attr:`microsecond`
      is not 0
-   - ``YYYY-MM-DDTHH:MM:SS+HH:MM[:SS[.ffffff]]``,  if :attr:`microsecond` is 0
+   - ``YYYY-MM-DDTHH:MM:SS.nnnnnnnnn+HH:MM[:SS[.nnnnnnnnn]]``, if :attr:`nanosecond`
+     is not 0
+   - ``YYYY-MM-DDTHH:MM:SS+HH:MM[:SS[.ffffff]]``, if both :attr:`microsecond` and :attr:`nanosecond` are 0
 
    Examples::
 
        >>> from datetime import datetime, timezone
        >>> datetime(2019, 5, 18, 15, 17, 8, 132263).isoformat()
        '2019-05-18T15:17:08.132263'
+       >>> datetime(2019, 5, 18, 15, 17, 8, 0, nanosecond=132263789).isoformat()
+       '2019-05-18T15:17:08.132263789'
        >>> datetime(2019, 5, 18, 15, 17, tzinfo=timezone.utc).isoformat()
        '2019-05-18T15:17:00+00:00'
 
@@ -1569,14 +1600,15 @@ Instance methods:
       ...
       >>> datetime(2002, 12, 25, tzinfo=TZ()).isoformat(' ')
       '2002-12-25 00:00:00-06:39'
-      >>> datetime(2009, 11, 27, microsecond=100, tzinfo=TZ()).isoformat()
-      '2009-11-27T00:00:00.000100-06:39'
+      >>> datetime(2009, 11, 27, microsecond=100, nanosecond=200, tzinfo=TZ()).isoformat()
+      '2009-11-27T00:00:00.000100200-06:39'
 
    The optional argument *timespec* specifies the number of additional
    components of the time to include (the default is ``'auto'``).
    It can be one of the following:
 
-   - ``'auto'``: Same as ``'seconds'`` if :attr:`microsecond` is 0,
+   - ``'auto'``: Same as ``'seconds'`` if both :attr:`microsecond` and :attr:`nanosecond` are 0,
+     same as ``'nanoseconds'`` if :attr:`nanosecond` is not 0,
      same as ``'microseconds'`` otherwise.
    - ``'hours'``: Include the :attr:`hour` in the two-digit ``HH`` format.
    - ``'minutes'``: Include :attr:`hour` and :attr:`minute` in ``HH:MM`` format.
@@ -1585,6 +1617,7 @@ Instance methods:
    - ``'milliseconds'``: Include full time, but truncate fractional second
      part to milliseconds. ``HH:MM:SS.sss`` format.
    - ``'microseconds'``: Include full time in ``HH:MM:SS.ffffff`` format.
+   - ``'nanoseconds'``: Include full time in ``HH:MM:SS.nnnnnnnnn`` format.
 
    .. note::
 
@@ -1596,12 +1629,17 @@ Instance methods:
       >>> from datetime import datetime
       >>> datetime.now().isoformat(timespec='minutes')   # doctest: +SKIP
       '2002-12-25T00:00'
-      >>> dt = datetime(2015, 1, 1, 12, 30, 59, 0)
+      >>> dt = datetime(2015, 1, 1, 12, 30, 59, 0, nanosecond=200)
       >>> dt.isoformat(timespec='microseconds')
       '2015-01-01T12:30:59.000000'
+      >>> dt.isoformat(timespec='nanoseconds')
+      '2015-01-01T12:30:59.000000200'
 
    .. versionchanged:: 3.6
       Added the *timespec* parameter.
+
+   .. versionchanged:: 3.14
+      Added support for nanoseconds in output.
 
 
 .. method:: datetime.__str__()
@@ -1779,7 +1817,7 @@ Usage of ``KabulTz`` from above::
 A :class:`.time` object represents a (local) time of day, independent of any particular
 day, and subject to adjustment via a :class:`tzinfo` object.
 
-.. class:: time(hour=0, minute=0, second=0, microsecond=0, tzinfo=None, *, fold=0)
+.. class:: time(hour=0, minute=0, second=0, microsecond=0, tzinfo=None, *, fold=0, nanosecond=0)
 
    All arguments are optional. *tzinfo* may be ``None``, or an instance of a
    :class:`tzinfo` subclass. The remaining arguments must be integers in the
@@ -1789,7 +1827,8 @@ day, and subject to adjustment via a :class:`tzinfo` object.
    * ``0 <= minute < 60``,
    * ``0 <= second < 60``,
    * ``0 <= microsecond < 1000000``,
-   * ``fold in [0, 1]``.
+   * ``fold in [0, 1]``,
+   * ``0 <= nanosecond < 1000``.
 
    If an argument outside those ranges is given, :exc:`ValueError` is raised. All
    default to 0 except *tzinfo*, which defaults to ``None``.
@@ -1810,7 +1849,7 @@ Class attributes:
 .. attribute:: time.resolution
 
    The smallest possible difference between non-equal :class:`.time` objects,
-   ``timedelta(microseconds=1)``, although note that arithmetic on
+   ``timedelta(nanoseconds=1)``, although note that arithmetic on
    :class:`.time` objects is not supported.
 
 
@@ -1852,6 +1891,15 @@ Instance attributes (read-only):
 
    .. versionadded:: 3.6
 
+
+.. attribute:: time.nanosecond
+
+   In ``range(1000)``. Represents sub-microsecond precision, where each unit is 1 nanosecond
+   (one billionth of a second). This provides additional precision beyond microseconds
+   for high-precision time measurements.
+
+   .. versionadded:: 3.14
+
 :class:`.time` objects support equality and order comparisons,
 where ``a`` is considered less than ``b`` when ``a`` precedes ``b`` in time.
 
@@ -1888,7 +1936,7 @@ Other constructors:
    1. Time zone offsets may have fractional seconds.
    2. The leading ``T``, normally required in cases where there may be ambiguity between
       a date and a time, is not required.
-   3. Fractional seconds may have any number of digits (anything beyond 6 will
+   3. Fractional seconds may have any number of digits (anything beyond 9 will
       be truncated).
    4. Fractional hours and minutes are not supported.
 
@@ -1905,6 +1953,8 @@ Other constructors:
        datetime.time(4, 23, 1)
        >>> time.fromisoformat('04:23:01.000384')
        datetime.time(4, 23, 1, 384)
+       >>> time.fromisoformat('04:23:01.000384789')
+       datetime.time(4, 23, 1, 384, nanosecond=789)
        >>> time.fromisoformat('04:23:01,000384')
        datetime.time(4, 23, 1, 384)
        >>> time.fromisoformat('04:23:01+04:00')
@@ -1919,6 +1969,8 @@ Other constructors:
    .. versionchanged:: 3.11
       Previously, this method only supported formats that could be emitted by
       :meth:`time.isoformat`.
+   .. versionchanged:: 3.14
+      Added support for nanosecond precision in fractional seconds.
 
 .. classmethod:: time.strptime(date_string, format)
 
@@ -1940,7 +1992,7 @@ Other constructors:
 Instance methods:
 
 .. method:: time.replace(hour=self.hour, minute=self.minute, second=self.second, \
-   microsecond=self.microsecond, tzinfo=self.tzinfo, *, fold=0)
+   microsecond=self.microsecond, tzinfo=self.tzinfo, *, fold=0, nanosecond=self.nanosecond)
 
    Return a new :class:`.time` with the same values, but with specified
    parameters updated. Note that ``tzinfo=None`` can be specified to create a
@@ -1952,22 +2004,31 @@ Instance methods:
 
    .. versionchanged:: 3.6
       Added the *fold* parameter.
+   .. versionchanged:: 3.14
+      Added the *nanosecond* parameter.
 
 
 .. method:: time.isoformat(timespec='auto')
 
-   Return a string representing the time in ISO 8601 format, one of:
+   Return a string representing the time in ISO 8601 format:
 
+   - ``HH:MM:SS.nnnnnnnnn``, if :attr:`nanosecond` is not 0
    - ``HH:MM:SS.ffffff``, if :attr:`microsecond` is not 0
-   - ``HH:MM:SS``, if :attr:`microsecond` is 0
-   - ``HH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]``, if :meth:`utcoffset` does not return ``None``
-   - ``HH:MM:SS+HH:MM[:SS[.ffffff]]``, if :attr:`microsecond` is 0 and :meth:`utcoffset` does not return ``None``
+   - ``HH:MM:SS``, if both :attr:`microsecond` and :attr:`nanosecond` are 0
+
+   If :meth:`utcoffset` does not return ``None``, a string is
+   appended, giving the UTC offset:
+
+   - ``HH:MM:SS.nnnnnnnnn+HH:MM[:SS[.nnnnnnnnn]]``, if :attr:`nanosecond` is not 0
+   - ``HH:MM:SS.ffffff+HH:MM[:SS[.ffffff]]``, if :attr:`microsecond` is not 0
+   - ``HH:MM:SS+HH:MM[:SS[.ffffff]]``, if both :attr:`microsecond` and :attr:`nanosecond` are 0
 
    The optional argument *timespec* specifies the number of additional
    components of the time to include (the default is ``'auto'``).
    It can be one of the following:
 
-   - ``'auto'``: Same as ``'seconds'`` if :attr:`microsecond` is 0,
+   - ``'auto'``: Same as ``'seconds'`` if both :attr:`microsecond` and :attr:`nanosecond` are 0,
+     same as ``'nanoseconds'`` if :attr:`nanosecond` is not 0,
      same as ``'microseconds'`` otherwise.
    - ``'hours'``: Include the :attr:`hour` in the two-digit ``HH`` format.
    - ``'minutes'``: Include :attr:`hour` and :attr:`minute` in ``HH:MM`` format.
@@ -1976,6 +2037,7 @@ Instance methods:
    - ``'milliseconds'``: Include full time, but truncate fractional second
      part to milliseconds. ``HH:MM:SS.sss`` format.
    - ``'microseconds'``: Include full time in ``HH:MM:SS.ffffff`` format.
+   - ``'nanoseconds'``: Include full time in ``HH:MM:SS.nnnnnnnnn`` format.
 
    .. note::
 
@@ -1988,14 +2050,17 @@ Instance methods:
       >>> from datetime import time
       >>> time(hour=12, minute=34, second=56, microsecond=123456).isoformat(timespec='minutes')
       '12:34'
-      >>> dt = time(hour=12, minute=34, second=56, microsecond=0)
+      >>> dt = time(hour=12, minute=34, second=56, microsecond=0, nanosecond=123456789)
       >>> dt.isoformat(timespec='microseconds')
       '12:34:56.000000'
-      >>> dt.isoformat(timespec='auto')
-      '12:34:56'
+      >>> dt.isoformat(timespec='nanoseconds')
+      '12:34:56.123456789'
 
    .. versionchanged:: 3.6
       Added the *timespec* parameter.
+
+   .. versionchanged:: 3.14
+      Added support for nanoseconds in output.
 
 
 .. method:: time.__str__()
