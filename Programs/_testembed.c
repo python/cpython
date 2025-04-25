@@ -2341,6 +2341,45 @@ test_get_incomplete_frame(void)
     return result;
 }
 
+static void
+non_daemon_native(void *arg)
+{
+    PyEvent *event = (PyEvent *)arg;
+    PyThreadState *tstate = PyThreadState_New(PyInterpreterState_Main());
+    PyThreadState_Swap(tstate);
+    int res = PyThreadState_SetDaemon(0);
+    assert(res == 1);
+    _PyEvent_Notify(event);
+    const char *code = "import time\n"
+                       "time.sleep(0.2)\n"
+                       "def fib(n):\n"
+                       "  if n <= 1:\n"
+                       "    return n\n"
+                       "  else:\n"
+                       "    return fib(n - 1) + fib(n - 2)\n"
+                       "fib(10)";
+    res = PyRun_SimpleString(code);
+    assert(res == 0);
+    PyThreadState_Clear(tstate);
+    PyThreadState_Swap(NULL);
+    PyThreadState_Delete(tstate);
+}
+
+static int
+test_non_daemon_native_thread(void)
+{
+    _testembed_Py_InitializeFromConfig();
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    PyEvent event;
+    if (PyThread_start_joinable_thread(non_daemon_native, &event,
+                                       &ident, &handle) < 0) {
+        return -1;
+    }
+    PyEvent_Wait(&event);
+    Py_Finalize();
+    return 0;
+}
 
 /* *********************************************************
  * List of test cases and the function that implements it.
@@ -2431,6 +2470,7 @@ static struct TestCase TestCases[] = {
     {"test_frozenmain", test_frozenmain},
 #endif
     {"test_get_incomplete_frame", test_get_incomplete_frame},
+    {"test_non_daemon_native_thread", test_non_daemon_native_thread},
 
     {NULL, NULL}
 };

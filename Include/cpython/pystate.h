@@ -280,3 +280,5 @@ PyAPI_FUNC(void) PyInterpreterState_Release(PyInterpreterState *interp);
 
 // Export for '_testcapi' shared extension
 PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_Refcount(PyInterpreterState *interp);
+
+PyAPI_FUNC(int) PyThreadState_SetDaemon(int daemon);
