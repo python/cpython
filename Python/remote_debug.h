@@ -708,11 +708,6 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
         // TODO: Differentiate between not found and error
         PyErr_Clear();
         address = search_map_for_section(handle, "PyRuntime", "python");
-        if (address == 0) {
-            PyObject *exc = PyErr_GetRaisedException();
-            PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
-            _PyErr_ChainExceptions1(exc);
-        }
     }
 #else
     Py_UNREACHABLE();
