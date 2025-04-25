@@ -135,6 +135,11 @@ def create_archive(source, target=None, interpreter=None, main=None,
     # the target is being created in the source directory - we
     # don't want the target being added to itself
     files_to_add = sorted(source.rglob('*'))
+    if filter:
+        files_to_add = {f: f2 for f in files_to_add
+                        if filter(f2 := f.relative_to(source))}
+    else:
+        files_to_add = {f: f.relative_to(source) for f in files_to_add}
 
     # The target cannot be in the list of files to add. If it were, we'd
     # end up overwriting the source file and writing the archive into
@@ -151,22 +156,17 @@ def create_archive(source, target=None, interpreter=None, main=None,
     # equal to any of the entries in files_to_add, so there's no need
     # to add a special check for that.
     if target in files_to_add:
-        if filter:
-            arcname = target.relative_to(source)
-            not_filtered = filter(arcname)
-        if not filter or not_filtered:
-            raise ZipAppError(f"The target archive {target} overwrites "
-                              "one of the source files.")
+        raise ZipAppError(
+            f"The target archive {target} overwrites one of the source files.")
+
 
     with _maybe_open(target, 'wb') as fd:
         _write_file_prefix(fd, interpreter)
         compression = (zipfile.ZIP_DEFLATED if compressed else
                        zipfile.ZIP_STORED)
         with zipfile.ZipFile(fd, 'w', compression=compression) as z:
-            for child in files_to_add:
-                arcname = child.relative_to(source)
-                if filter is None or filter(arcname):
-                    z.write(child, arcname.as_posix())
+            for child, arcname in files_to_add.items():
+                z.write(child, arcname.as_posix())
             if main_py:
                 z.writestr('__main__.py', main_py.encode('utf-8'))
 
