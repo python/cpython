@@ -669,6 +669,8 @@ Building values
    ``L`` (:class:`int`) [long long]
       Convert a C :c:expr:`long long` to a Python integer object.
 
+   .. _capi-py-buildvalue-format-K:
+
    ``K`` (:class:`int`) [unsigned long long]
       Convert a C :c:expr:`unsigned long long` to a Python integer object.
 

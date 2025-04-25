@@ -174,6 +174,7 @@ _lookup_getdata_from_registry(dlcontext_t *ctx, PyObject *obj)
     PyTypeObject *cls = Py_TYPE(obj);
 
     dlregistry_t *xidregistry = _get_xidregistry_for_type(ctx, cls);
+    assert(xidregistry->initialized);
     _xidregistry_lock(xidregistry);
 
     dlregitem_t *matched = _xidregistry_find_type(xidregistry, cls);
@@ -190,6 +191,7 @@ static int
 _xidregistry_add_type(dlregistry_t *xidregistry,
                       PyTypeObject *cls, xidatafunc getdata)
 {
+    assert(xidregistry->initialized);
     dlregitem_t *newhead = PyMem_RawMalloc(sizeof(dlregitem_t));
     if (newhead == NULL) {
         return -1;

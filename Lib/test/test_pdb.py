@@ -4260,11 +4260,20 @@ def bœr():
         mod = _create_fake_frozen_module()
         mod.func()
         """
-        commands = """
+        commands_list = """
             break 20
             continue
             step
+            break 4
             list
+            quit
+        """
+        commands_longlist = """
+            break 20
+            continue
+            step
+            break 4
+            longlist
             quit
         """
         with open('gh93696.py', 'w') as f:
@@ -4275,9 +4284,14 @@ def bœr():
 
         self.addCleanup(os_helper.unlink, 'gh93696.py')
         self.addCleanup(os_helper.unlink, 'gh93696_host.py')
-        stdout, stderr = self._run_pdb(["gh93696_host.py"], commands)
-        # verify that pdb found the source of the "frozen" function
-        self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
+
+        # verify that pdb found the source of the "frozen" function and it
+        # shows the breakpoint at the correct line for both list and longlist
+        for commands in (commands_list, commands_longlist):
+            stdout, _ = self._run_pdb(["gh93696_host.py"], commands)
+            self.assertIn('x = "Sentinel string for gh-93696"', stdout, "Sentinel statement not found")
+            self.assertIn('4 B', stdout, "breakpoint not found")
+            self.assertIn('-> def func():', stdout, "stack entry not found")
 
     def test_empty_file(self):
         script = ''
