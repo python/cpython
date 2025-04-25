@@ -1,5 +1,9 @@
 .. highlight:: none
 
+.. _python.org/downloads: https://www.python.org/downloads/
+
+.. _Microsoft Store app: https://apps.microsoft.com/detail/9NQ7512CXL7T
+
 .. _using-on-windows:
 
 *************************
@@ -22,9 +26,8 @@ see if they can provide Python directly.
 To obtain Python from the CPython team, use the Python Install Manager. This
 is a standalone tool that makes Python available as global commands on your
 Windows machine, integrates with the system, and supports updates over time. You
-can download the Python Install Manager from `python.org
-<https://www.python.org/downloads/>`_ or through the `Microsoft Store
-app <TODO LINK>`_.
+can download the Python Install Manager from `python.org/downloads`_ or through
+the `Microsoft Store app`_.
 
 Once you have installed the Python Install Manager, the global ``python``
 command can be used from any terminal to launch your current latest version of
@@ -63,9 +66,9 @@ Python Install Manager
 Installation
 ------------
 
-The Python install manager can be installed from `the Microsoft Store <TODO
-LINK>`_ or downloaded and installed from `python.org
-<https://www.python.org/downloads>`_. Both versions are identical.
+The Python install manager can be installed from the `Microsoft Store app`_
+or downloaded and installed from `python.org/downloads`_. The two versions are
+identical.
 
 To install through the Store, simply click "Install". After it has completed,
 open a terminal and type ``python`` to get started.
@@ -81,7 +84,8 @@ install manager".
 
 If you have existing installations of Python, or you have modified your
 :envvar:`PATH` variable, you may need to remove them or undo the modifications
-in order for the commands to work.
+in order for the commands to work. Old versions of Python can be reinstalled
+using the Python install manager.
 
 When you first install a runtime, you will likely be prompted to add a directory
 to your :envvar:`PATH`. This is optional, if you prefer to use the ``py``
