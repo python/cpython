@@ -1,4 +1,5 @@
 import io
+import time
 import json
 import os
 import signal
@@ -462,8 +463,6 @@ class PdbConnectTestCase(unittest.TestCase):
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
 
-    # gh-132912: The test fails randomly
-    @unittest.skipIf(True, "flaky test")
     def test_keyboard_interrupt(self):
         """Test that sending keyboard interrupt breaks into pdb."""
         synchronizer_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -512,15 +511,22 @@ class PdbConnectTestCase(unittest.TestCase):
             # Wait until execution has continued
             synchronizer_sock.accept()[0].close()
 
+            # Wait a bit so the remote leaves create_connection(). This is not
+            # required but makes the rest of the test faster as we will exit the main
+            # loop immediately by setting iterations to 0.
+            time.sleep(0.1)
+
             # Inject a script to interrupt the running process
             self._send_interrupt(process.pid)
             messages = self._read_until_prompt(client_file)
 
-            # Verify we got the keyboard interrupt message
-            interrupt_msg = next(msg['message'] for msg in messages if 'message' in msg)
-            self.assertIn("bar()", interrupt_msg)
+            # Verify we got the keyboard interrupt message. Is possible that we get interrupted somewhere
+            # in bar() or when leving create_connection()
+            interrupt_msgs = [msg['message'] for msg in messages if 'message' in msg]
+            expected_msg = [msg for msg in interrupt_msgs if "bar()" in msg or "create_connection()" in msg]
+            self.assertGreater(len(expected_msg), 0)
 
-            # Continue to end
+            # Continue to end as fast as we can
             self._send_command(client_file, "iterations = 0")
             self._send_command(client_file, "c")
             stdout, _ = process.communicate(timeout=5)
