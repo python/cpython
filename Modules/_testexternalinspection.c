@@ -45,6 +45,15 @@ struct _Py_AsyncioModuleDebugOffsets {
     } asyncio_thread_state;
 };
 
+// Helper to chain exceptions and avoid repetitions
+static void
+chain_exceptions(PyObject *exception, const char *string)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    PyErr_SetString(exception, string);
+    _PyErr_ChainExceptions1(exc);
+}
+
 // Get the PyAsyncioDebug section address for any platform
 static uintptr_t
 _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)

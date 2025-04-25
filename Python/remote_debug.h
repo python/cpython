@@ -109,15 +109,6 @@ _Py_RemoteDebug_CleanupProcHandle(proc_handle_t *handle) {
     handle->pid = 0;
 }
 
-// Helper to chain exceptions and avoid repetitions
-static void
-chain_exceptions(PyObject *exception, const char *string)
-{
-    PyObject *exc = PyErr_GetRaisedException();
-    PyErr_SetString(exception, string);
-    _PyErr_ChainExceptions1(exc);
-}
-
 #if defined(__APPLE__) && TARGET_OS_OSX
 
 static uintptr_t
@@ -697,14 +688,18 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
     address = search_windows_map_for_section(handle, "PyRuntime", L"python");
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
-        chain_exceptions(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
+        PyObject *exc = PyErr_GetRaisedException();
+        PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
+        _PyErr_ChainExceptions1(exc);
     }
 #elif defined(__linux__)
     // On Linux, search for 'python' in executable or DLL
     address = search_linux_map_for_section(handle, "PyRuntime", "python");
     if (address == 0) {
         // Error out: 'python' substring covers both executable and DLL
-        chain_exceptions(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
+        PyObject *exc = PyErr_GetRaisedException();
+        PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
+        _PyErr_ChainExceptions1(exc);
     }
 #elif defined(__APPLE__) && TARGET_OS_OSX
     // On macOS, try libpython first, then fall back to python
