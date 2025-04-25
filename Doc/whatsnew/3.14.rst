@@ -99,7 +99,9 @@ PEP 768: Safe external debugger interface for CPython
 
 :pep:`768` introduces a zero-overhead debugging interface that allows debuggers and profilers
 to safely attach to running Python processes. This is a significant enhancement to Python's
-debugging capabilities allowing debuggers to forego unsafe alternatives.
+debugging capabilities allowing debuggers to forego unsafe alternatives. See
+:ref:`below <whatsnew314-remote-pdb>` for how this feature is leveraged to
+implement the new :mod:`pdb` module's remote attaching capabilities.
 
 The new interface provides safe execution points for attaching debugger code without modifying
 the interpreter's normal execution path or adding runtime overhead. This enables tools to
@@ -148,6 +150,32 @@ for external processes to coordinate debugging operations.
 See :pep:`768` for more details.
 
 (Contributed by Pablo Galindo Salgado, Matt Wozniski, and Ivona Stojanovic in :gh:`131591`.)
+
+
+.. _whatsnew314-remote-pdb:
+
+Remote attaching to a running Python process with PDB
+-----------------------------------------------------
+
+The :mod:`pdb` module now supports remote attaching to a running Python process
+using a new ``-p PID`` command-line option:
+
+.. code-block:: sh
+
+   python -m pdb -p 1234
+
+This will connect to the Python process with the given PID and allow you to
+debug it interactively. Notice that due to how the Python interpreter works
+attaching to a remote process that is blocked in a system call or waiting for
+I/O will only work once the next bytecode instruction is executed or when the
+process receives a signal.
+
+This feature leverages :pep:`768` and the :func:`sys.remote_exec` function
+to attach to the remote process and send the PDB commands to it.
+
+
+(Contributed by Matt Wozniski and Pablo Galindo in :gh:`131591`.)
+
 
 .. _whatsnew314-pep758:
 
@@ -320,6 +348,21 @@ Improved error messages
          ^^^^^^^
      ValueError: too many values to unpack (expected 3, got 4)
 
+* :keyword:`elif` statements that follow an :keyword:`else` block now have a specific error message.
+  (Contributed by Steele Farnsworth in :gh:`129902`.)
+
+  .. code-block:: pycon
+
+      >>> if who == "me":
+      ...     print("It's me!")
+      ... else:
+      ...     print("It's not me!")
+      ... elif who is None:
+      ...     print("Who is it?")
+      File "<stdin>", line 5
+        elif who is None:
+        ^^^^
+      SyntaxError: 'elif' block follows an 'else' block
 
 * If a statement (:keyword:`pass`, :keyword:`del`, :keyword:`return`,
   :keyword:`yield`, :keyword:`raise`, :keyword:`break`, :keyword:`continue`,
