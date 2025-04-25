@@ -7294,6 +7294,43 @@ class ExtensionModuleTests(unittest.TestCase):
         res = script_helper.assert_python_ok('-c', script)
         self.assertFalse(res.err)
 
+    def test_module_state_at_shutdown2(self):
+        script = textwrap.dedent("""
+            import sys
+            import _datetime
+            timedelta = _datetime.timedelta
+            del _datetime
+            del sys.modules["_datetime"]
+
+            def gen():
+                try:
+                    yield
+                finally:
+                    td = timedelta(days=1)  # crash
+                    assert td.days == 1
+                    assert not sys.modules
+
+            it = gen()
+            next(it)
+            """)
+        res = script_helper.assert_python_ok('-c', script)
+        self.assertFalse(res.err)
+
+    def test_module_state_after_gc(self):
+        script = textwrap.dedent("""
+            import sys
+            import gc
+            import _datetime
+            timedelta = _datetime.timedelta
+            del sys.modules['_datetime']
+            del _datetime
+            gc.collect()
+            timedelta(days=1)
+            assert '_datetime' in sys.modules
+            """)
+        res = script_helper.assert_python_ok('-c', script)
+        self.assertFalse(res.err)
+
     def test_module_free(self):
         script = textwrap.dedent("""
             import sys
