@@ -5259,12 +5259,12 @@
         }
 
         case _CHECK_INIT_MATCHES_VERSIONS: {
-            _PyStackRef *callable;
+            _PyStackRef callable;
             oparg = CURRENT_OPARG();
-            callable = &stack_pointer[-2 - oparg];
+            callable = stack_pointer[-2 - oparg];
             uint32_t type_version = (uint32_t)CURRENT_OPERAND0();
             uint32_t init_func_version = (uint32_t)CURRENT_OPERAND1();
-            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             if (!PyType_Check(callable_o)) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();

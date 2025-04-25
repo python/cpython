@@ -4051,8 +4051,8 @@ dummy_func(
             _CALL_TUPLE_1 +
             _CHECK_PERIODIC;
 
-        tier2 op(_CHECK_INIT_MATCHES_VERSIONS, (type_version/2, init_func_version/2, callable, null, args[oparg] -- callable, null, args[oparg])) {
-            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable[0]);
+        tier2 op(_CHECK_INIT_MATCHES_VERSIONS, (type_version/2, init_func_version/2, callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             DEOPT_IF(!PyType_Check(callable_o));
             PyTypeObject *tp = (PyTypeObject *)callable_o;
             DEOPT_IF(tp->tp_version_tag != type_version);

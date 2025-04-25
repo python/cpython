@@ -808,7 +808,7 @@ translate_bytecode_to_trace(
                                 if (typ == NULL || !PyType_HasFeature(typ, Py_TPFLAGS_HEAPTYPE)) {
                                     DPRINTF(2, "Bailing due to dynamic target\n");
                                     ADD_TO_TRACE(uop, oparg, 0, target);
-                                    ADD_TO_TRACE(_DYNAMIC_EXIT, 0, 0, 0);
+                                    ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                                     goto done;
                                 }
                                 assert(PyType_HasFeature(typ, Py_TPFLAGS_HEAPTYPE));
@@ -819,7 +819,7 @@ translate_bytecode_to_trace(
                                     != ((PyCodeObject *)((PyFunctionObject *)init)->func_code)->co_version) {
                                     DPRINTF(2, "Bailing due to non-matching __init__\n");
                                     ADD_TO_TRACE(uop, oparg, 0, target);
-                                    ADD_TO_TRACE(_DYNAMIC_EXIT, 0, 0, 0);
+                                    ADD_TO_TRACE(_EXIT_TRACE, 0, 0, 0);
                                     goto done;
                                 }
                                 PyFunctionObject *init_func = (PyFunctionObject *)init;
