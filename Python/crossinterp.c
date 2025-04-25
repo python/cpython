@@ -1902,25 +1902,7 @@ _PyXI_Fini(PyInterpreterState *interp)
 PyStatus
 _PyXI_InitTypes(PyInterpreterState *interp)
 {
-    if (_Py_IsMainInterpreter(interp)) {
-        _PyXI_global_state_t *global_state = _PyXI_GET_GLOBAL_STATE(interp);
-        if (global_state == NULL) {
-            PyErr_PrintEx(0);
-            return _PyStatus_ERR(
-                    "failed to get global cross-interpreter state");
-        }
-        xid_lookup_init(&global_state->data_lookup);
-    }
-
-    _PyXI_state_t *state = _PyXI_GET_STATE(interp);
-    if (state == NULL) {
-        PyErr_PrintEx(0);
-        return _PyStatus_ERR(
-                "failed to get interpreter's cross-interpreter state");
-    }
-    xid_lookup_init(&state->data_lookup);
-
-    if (init_static_exctypes(&state->exceptions, interp) < 0) {
+    if (init_static_exctypes(&_PyXI_GET_STATE(interp)->exceptions, interp) < 0) {
         PyErr_PrintEx(0);
         return _PyStatus_ERR(
                 "failed to initialize the cross-interpreter exception types");
@@ -1933,21 +1915,9 @@ _PyXI_InitTypes(PyInterpreterState *interp)
 void
 _PyXI_FiniTypes(PyInterpreterState *interp)
 {
-    _PyXI_state_t *state = _PyXI_GET_STATE(interp);
-    if (state != NULL) {
-        // We would finalize heap types here too but that leads to ref leaks.
-        // Instead, we finalize them in _PyXI_Fini().
-        fini_static_exctypes(&state->exceptions, interp);
-
-        xid_lookup_fini(&state->data_lookup);
-    }
-
-    if (_Py_IsMainInterpreter(interp)) {
-        _PyXI_global_state_t *global_state = _PyXI_GET_GLOBAL_STATE(interp);
-        if (global_state != NULL) {
-            xid_lookup_fini(&global_state->data_lookup);
-        }
-    }
+    // We would finalize heap types here too but that leads to ref leaks.
+    // Instead, we finalize them in _PyXI_Fini().
+    fini_static_exctypes(&_PyXI_GET_STATE(interp)->exceptions, interp);
 }
 
 
