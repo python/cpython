@@ -2114,16 +2114,6 @@ imported.  Patch by Sergey B Kirpichev.
 
 ..
 
-.. date: 2024-07-10-08-13-34
-.. gh-issue: 121249
-.. nonce: W9Gd09
-.. section: Library
-
-Support the :c:expr:`float complex` and :c:expr:`double complex` C types in the
-:mod:`struct` module.  Patch by Sergey B Kirpichev.
-
-..
-
 .. date: 2024-07-09-12-23-32
 .. gh-issue: 121486
 .. nonce: Iultjh
