@@ -1488,7 +1488,12 @@ static PyObject*
 cm_repr(PyObject *self)
 {
     classmethod *cm = _PyClassMethod_CAST(self);
-    return PyUnicode_FromFormat("<classmethod(%R)>", cm->cm_callable);
+    // gh-132713: Hold a strong reference since cm_init() can be called
+    // in parallel
+    PyObject *callable = Py_NewRef(cm->cm_callable);
+    PyObject *repr = PyUnicode_FromFormat("<classmethod(%R)>", callable);
+    Py_DECREF(callable);
+    return repr;
 }
 
 PyDoc_STRVAR(classmethod_doc,

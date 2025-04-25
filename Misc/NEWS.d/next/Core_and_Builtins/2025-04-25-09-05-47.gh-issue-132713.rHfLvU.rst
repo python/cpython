@@ -1,0 +1,2 @@
+Fix ``repr(classmethod)`` race condition: hold a strong reference to the
+callable while calling ``repr(classmethod)``. Patch by Victor Stinner.
