@@ -1302,6 +1302,7 @@ static int
 module_exec(PyObject *mod)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
+    // XXX We should just remove the module state stuff since it's empty.
     module_state *state = get_module_state(mod);
     (void)state;
 
