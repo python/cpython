@@ -395,19 +395,21 @@ class MinidomTest(unittest.TestCase):
                 and el.getAttribute("spam2") == "bam2")
         dom.unlink()
 
-    def testGetAttrListAndLength(self):
+    def testGetAttrList(self):
         dom = parseString("<abc/>")
+        self.addCleanup(dom.unlink)
         el = dom.documentElement
         el.setAttribute("spam", "jam")
         self.assertEqual(len(el.attributes.items()), 1)
         el.setAttribute("foo", "bar")
-        self.assertEqual(len(el.attributes.items()), 2)
-        self.assertIn(('spam', 'jam'), el.attributes.items())
-        self.assertIn(('foo', 'bar'), el.attributes.items())
-        dom.unlink()
+        items = el.attributes.items()
+        self.assertEqual(len(items), 2)
+        self.assertIn(('spam', 'jam'), items)
+        self.assertIn(('foo', 'bar'), items)
 
     def testGetAttrValues(self):
         dom = parseString("<abc/>")
+        self.addCleanup(dom.unlink)
         el = dom.documentElement
         el.setAttribute("spam", "jam")
         values = [x.value for x in el.attributes.values()]
@@ -415,7 +417,6 @@ class MinidomTest(unittest.TestCase):
         el.setAttribute("foo", "bar")
         values = [x.value for x in el.attributes.values()]
         self.assertIn("bar", values)
-        dom.unlink()
 
     def testGetAttribute(self):
         dom = Document()
