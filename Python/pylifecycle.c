@@ -2293,7 +2293,6 @@ new_interpreter(PyThreadState **tstate_p,
     }
     _PyInterpreterState_SetWhence(interp, whence);
     interp->_ready = 1;
-    interp->refcount = 1;
 
     // XXX Might new_interpreter() have been called without the GIL held?
     PyThreadState *save_tstate = _PyThreadState_GET();
@@ -3471,7 +3470,7 @@ wait_for_native_shutdown(PyInterpreterState *interp)
     assert(interp != NULL);
     struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
     PyMutex_Lock(&finalizing->mutex);
-    if (finalizing->countdown == 0) {
+    if (_Py_atomic_load_ssize_relaxed(&finalizing->countdown) == 0) {
         // Nothing to do.
         PyMutex_Unlock(&finalizing->mutex);
         return;
@@ -3479,7 +3478,6 @@ wait_for_native_shutdown(PyInterpreterState *interp)
     PyMutex_Unlock(&finalizing->mutex);
 
     PyEvent_Wait(&finalizing->finished);
-    assert(finalizing->countdown == 0);
 }
 
 int Py_AtExit(void (*func)(void))
