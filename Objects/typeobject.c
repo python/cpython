@@ -2794,32 +2794,37 @@ _PyObject_LookupSpecial(PyObject *self, PyObject *attr)
     return res;
 }
 
-/* Steals a reference to self */
-PyObject *
-_PyObject_LookupSpecialMethod(PyObject *self, PyObject *attr, PyObject **self_or_null)
+// Lookup the method name `attr` on `self`. On entry, `method_and_self[0]`
+// is null and `method_and_self[1]` is `self`. On exit, `method_and_self[0]`
+// is the method object and `method_and_self[1]` is `self` if the method is
+// not bound.
+// Return 1 on success, -1 on error, and 0 if the method is missing.
+int
+_PyObject_LookupSpecialMethod(PyObject *attr, _PyStackRef *method_and_self)
 {
-    PyObject *res;
-
-    res = _PyType_LookupRef(Py_TYPE(self), attr);
-    if (res == NULL) {
-        Py_DECREF(self);
-        *self_or_null = NULL;
-        return NULL;
+    PyObject *self = PyStackRef_AsPyObjectBorrow(method_and_self[1]);
+    _PyType_LookupStackRefAndVersion(Py_TYPE(self), attr, &method_and_self[0]);
+    PyObject *method_o = PyStackRef_AsPyObjectBorrow(method_and_self[0]);
+    if (method_o == NULL) {
+        return 0;
     }
 
-    if (_PyType_HasFeature(Py_TYPE(res), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
+    if (_PyType_HasFeature(Py_TYPE(method_o), Py_TPFLAGS_METHOD_DESCRIPTOR)) {
         /* Avoid temporary PyMethodObject */
-        *self_or_null = self;
+        return 1;
     }
-    else {
-        descrgetfunc f = Py_TYPE(res)->tp_descr_get;
-        if (f != NULL) {
-            Py_SETREF(res, f(res, self, (PyObject *)(Py_TYPE(self))));
+
+    descrgetfunc f = Py_TYPE(method_o)->tp_descr_get;
+    if (f != NULL) {
+        PyObject *func = f(method_o, self, (PyObject *)(Py_TYPE(self)));
+        if (func == NULL) {
+            return -1;
         }
-        *self_or_null = NULL;
-        Py_DECREF(self);
+        PyStackRef_CLEAR(method_and_self[0]); // clear method
+        method_and_self[0] = PyStackRef_FromPyObjectSteal(func);
     }
-    return res;
+    PyStackRef_CLEAR(method_and_self[1]); // clear self
+    return 1;
 }
 
 static int
@@ -4164,9 +4169,8 @@ type_new_set_name(const type_new_ctx *ctx, PyTypeObject *type)
 
 /* Set __module__ in the dict */
 static int
-type_new_set_module(PyTypeObject *type)
+type_new_set_module(PyObject *dict)
 {
-    PyObject *dict = lookup_tp_dict(type);
     int r = PyDict_Contains(dict, &_Py_ID(__module__));
     if (r < 0) {
         return -1;
@@ -4193,10 +4197,9 @@ type_new_set_module(PyTypeObject *type)
 /* Set ht_qualname to dict['__qualname__'] if available, else to
    __name__.  The __qualname__ accessor will look for ht_qualname. */
 static int
-type_new_set_ht_name(PyTypeObject *type)
+type_new_set_ht_name(PyTypeObject *type, PyObject *dict)
 {
     PyHeapTypeObject *et = (PyHeapTypeObject *)type;
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *qualname;
     if (PyDict_GetItemRef(dict, &_Py_ID(__qualname__), &qualname) < 0) {
         return -1;
@@ -4225,9 +4228,8 @@ type_new_set_ht_name(PyTypeObject *type)
    and is a string.  The __doc__ accessor will first look for tp_doc;
    if that fails, it will still look into __dict__. */
 static int
-type_new_set_doc(PyTypeObject *type)
+type_new_set_doc(PyTypeObject *type, PyObject* dict)
 {
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *doc = PyDict_GetItemWithError(dict, &_Py_ID(__doc__));
     if (doc == NULL) {
         if (PyErr_Occurred()) {
@@ -4261,9 +4263,8 @@ type_new_set_doc(PyTypeObject *type)
 
 
 static int
-type_new_staticmethod(PyTypeObject *type, PyObject *attr)
+type_new_staticmethod(PyObject *dict, PyObject *attr)
 {
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *func = PyDict_GetItemWithError(dict, attr);
     if (func == NULL) {
         if (PyErr_Occurred()) {
@@ -4289,9 +4290,8 @@ type_new_staticmethod(PyTypeObject *type, PyObject *attr)
 
 
 static int
-type_new_classmethod(PyTypeObject *type, PyObject *attr)
+type_new_classmethod(PyObject *dict, PyObject *attr)
 {
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *func = PyDict_GetItemWithError(dict, attr);
     if (func == NULL) {
         if (PyErr_Occurred()) {
@@ -4392,9 +4392,8 @@ type_new_set_slots(const type_new_ctx *ctx, PyTypeObject *type)
 
 /* store type in class' cell if one is supplied */
 static int
-type_new_set_classcell(PyTypeObject *type)
+type_new_set_classcell(PyTypeObject *type, PyObject *dict)
 {
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *cell = PyDict_GetItemWithError(dict, &_Py_ID(__classcell__));
     if (cell == NULL) {
         if (PyErr_Occurred()) {
@@ -4419,9 +4418,8 @@ type_new_set_classcell(PyTypeObject *type)
 }
 
 static int
-type_new_set_classdictcell(PyTypeObject *type)
+type_new_set_classdictcell(PyObject *dict)
 {
-    PyObject *dict = lookup_tp_dict(type);
     PyObject *cell = PyDict_GetItemWithError(dict, &_Py_ID(__classdictcell__));
     if (cell == NULL) {
         if (PyErr_Occurred()) {
@@ -4452,30 +4450,33 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
         return -1;
     }
 
-    if (type_new_set_module(type) < 0) {
+    PyObject *dict = lookup_tp_dict(type);
+    assert(dict);
+
+    if (type_new_set_module(dict) < 0) {
         return -1;
     }
 
-    if (type_new_set_ht_name(type) < 0) {
+    if (type_new_set_ht_name(type, dict) < 0) {
         return -1;
     }
 
-    if (type_new_set_doc(type) < 0) {
+    if (type_new_set_doc(type, dict) < 0) {
         return -1;
     }
 
     /* Special-case __new__: if it's a plain function,
        make it a static function */
-    if (type_new_staticmethod(type, &_Py_ID(__new__)) < 0) {
+    if (type_new_staticmethod(dict, &_Py_ID(__new__)) < 0) {
         return -1;
     }
 
     /* Special-case __init_subclass__ and __class_getitem__:
        if they are plain functions, make them classmethods */
-    if (type_new_classmethod(type, &_Py_ID(__init_subclass__)) < 0) {
+    if (type_new_classmethod(dict, &_Py_ID(__init_subclass__)) < 0) {
         return -1;
     }
-    if (type_new_classmethod(type, &_Py_ID(__class_getitem__)) < 0) {
+    if (type_new_classmethod(dict, &_Py_ID(__class_getitem__)) < 0) {
         return -1;
     }
 
@@ -4485,10 +4486,10 @@ type_new_set_attrs(const type_new_ctx *ctx, PyTypeObject *type)
 
     type_new_set_slots(ctx, type);
 
-    if (type_new_set_classcell(type) < 0) {
+    if (type_new_set_classcell(type, dict) < 0) {
         return -1;
     }
-    if (type_new_set_classdictcell(type) < 0) {
+    if (type_new_set_classdictcell(dict) < 0) {
         return -1;
     }
     return 0;
@@ -10811,7 +10812,8 @@ static pytype_slotdef slotdefs[] = {
            "__repr__($self, /)\n--\n\nReturn repr(self)."),
     TPSLOT(__hash__, tp_hash, slot_tp_hash, wrap_hashfunc,
            "__hash__($self, /)\n--\n\nReturn hash(self)."),
-    FLSLOT(__call__, tp_call, slot_tp_call, (wrapperfunc)(void(*)(void))wrap_call,
+    FLSLOT(__call__, tp_call, slot_tp_call,
+           _Py_FUNC_CAST(wrapperfunc, wrap_call),
            "__call__($self, /, *args, **kwargs)\n--\n\nCall self as a function.",
            PyWrapperFlag_KEYWORDS),
     TPSLOT(__str__, tp_str, slot_tp_str, wrap_unaryfunc,
@@ -10848,7 +10850,8 @@ static pytype_slotdef slotdefs[] = {
     TPSLOT(__delete__, tp_descr_set, slot_tp_descr_set,
            wrap_descr_delete,
            "__delete__($self, instance, /)\n--\n\nDelete an attribute of instance."),
-    FLSLOT(__init__, tp_init, slot_tp_init, (wrapperfunc)(void(*)(void))wrap_init,
+    FLSLOT(__init__, tp_init, slot_tp_init,
+           _Py_FUNC_CAST(wrapperfunc, wrap_init),
            "__init__($self, /, *args, **kwargs)\n--\n\n"
            "Initialize self.  See help(type(self)) for accurate signature.",
            PyWrapperFlag_KEYWORDS),
@@ -11237,7 +11240,14 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p)
         }
         else {
             use_generic = 1;
-            generic = p->function;
+            if (generic == NULL && Py_IS_TYPE(descr, &PyMethodDescr_Type) &&
+                *ptr == ((PyMethodDescrObject *)descr)->d_method->ml_meth)
+            {
+                generic = *ptr;
+            }
+            else {
+                generic = p->function;
+            }
             if (p->function == slot_tp_call) {
                 /* A generic __call__ is incompatible with vectorcall */
                 type_clear_flags(type, Py_TPFLAGS_HAVE_VECTORCALL);

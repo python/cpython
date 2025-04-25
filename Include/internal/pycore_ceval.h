@@ -279,6 +279,7 @@ PyAPI_DATA(const conversion_func) _PyEval_ConversionFuncs[];
 typedef struct _special_method {
     PyObject *name;
     const char *error;
+    const char *error_suggestion;  // improved optional suggestion
 } _Py_SpecialMethod;
 
 PyAPI_DATA(const _Py_SpecialMethod) _Py_SpecialMethods[];
@@ -308,6 +309,16 @@ PyAPI_FUNC(PyObject *) _PyEval_GetAwaitable(PyObject *iterable, int oparg);
 PyAPI_FUNC(PyObject *) _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *name);
 PyAPI_FUNC(int)
 _Py_Check_ArgsIterable(PyThreadState *tstate, PyObject *func, PyObject *args);
+
+/*
+ * Indicate whether a special method of given 'oparg' can use the (improved)
+ * alternative error message instead. Only methods loaded by LOAD_SPECIAL
+ * support alternative error messages.
+ *
+ * Symbol is exported for the JIT (see discussion on GH-132218).
+ */
+PyAPI_FUNC(int)
+_PyEval_SpecialMethodCanSuggest(PyObject *self, int oparg);
 
 /* Bits that can be set in PyThreadState.eval_breaker */
 #define _PY_GIL_DROP_REQUEST_BIT (1U << 0)
@@ -360,6 +371,10 @@ PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyS
     #if ((defined(__APPLE__) && TARGET_OS_OSX) || defined(MS_WINDOWS) || (defined(__linux__) && HAVE_PROCESS_VM_READV))
     #    define Py_SUPPORTS_REMOTE_DEBUG 1
     #endif
+#endif
+
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+extern int _PyRunRemoteDebugger(PyThreadState *tstate);
 #endif
 
 #ifdef __cplusplus

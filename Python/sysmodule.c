@@ -2208,6 +2208,14 @@ static PyObject *
 sys__clear_type_cache_impl(PyObject *module)
 /*[clinic end generated code: output=20e48ca54a6f6971 input=127f3e04a8d9b555]*/
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "sys._clear_type_cache() is deprecated and"
+                     " scheduled for removal in a future version."
+                     " Use sys._clear_internal_caches() instead.",
+                     1) < 0)
+    {
+        return NULL;
+    }
     PyType_ClearCache();
     Py_RETURN_NONE;
 }
@@ -2432,7 +2440,7 @@ static PyObject *
 sys_is_remote_debug_enabled_impl(PyObject *module)
 /*[clinic end generated code: output=7ca3d38bdd5935eb input=7335c4a2fe8cf4f3]*/
 {
-#ifndef Py_REMOTE_DEBUG
+#if !defined(Py_REMOTE_DEBUG) || !defined(Py_SUPPORTS_REMOTE_DEBUG)
     Py_RETURN_FALSE;
 #else
     const PyConfig *config = _Py_GetConfig();
