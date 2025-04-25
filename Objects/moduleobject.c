@@ -684,7 +684,7 @@ _PyModule_GetFilenameUTF8(PyObject *mod, char *buffer, size_t maxlen)
     }
     else {
         const char *filename = PyUnicode_AsUTF8AndSize(filenameobj, &size);
-        if (size > maxlen) {
+        if (size > PY_SIZE_MAX || (size_t)size > maxlen) {
             size = -1;
             PyErr_SetString(PyExc_ValueError, "__file__ too long");
         }
