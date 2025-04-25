@@ -320,7 +320,7 @@ Configuration Options
    * - ``"cpu_count"``
      - :c:member:`cpu_count <PyConfig.cpu_count>`
      - ``int``
-     - Read-only
+     - Public
    * - ``"dev_mode"``
      - :c:member:`dev_mode <PyConfig.dev_mode>`
      - ``bool``
