@@ -392,8 +392,9 @@ PyCursesCheckERR_From(PyObject *module, int code,
     return NULL;
 }
 
-static PyObject *PyCursesCheckERR_ForWin_From(PyCursesWindowObject *, int,
-                                              const char *, const char *);
+static PyObject *
+PyCursesCheckERR_ForWin_From(PyCursesWindowObject *, int,
+                             const char *, const char *);
 
 static inline PyObject *
 PyCursesCheckERR_ForWin(PyCursesWindowObject *win, int code,
@@ -1189,11 +1190,11 @@ _curses_window_addnstr_impl(PyCursesWindowObject *self, int group_left_1,
         const char *str = PyBytes_AS_STRING(bytesobj);
         simple_funcname = "addnstr";
         if (use_xy) {
-            rtn = mvwaddnstr(self->win, y, x, str, n);
+            rtn = mvwaddnstr(self->win,y,x,str,n);
             curses_funcname = "mvwaddnstr";
         }
         else {
-            rtn = waddnstr(self->win, str, n);
+            rtn = waddnstr(self->win,str,n);
             curses_funcname = "waddnstr";
         }
         Py_DECREF(bytesobj);
@@ -1501,13 +1502,13 @@ PyCursesWindow_ChgAt(PyObject *op, PyObject *args)
 
     if (use_xy) {
         rtn = mvwchgat(self->win,y,x,num,attr,color,NULL);
-        curses_funcname = "mvwchgat";
         (void)touchline(self->win,y,1);
+        curses_funcname = "mvwchgat";
     } else {
         getyx(self->win,y,x);
         rtn = wchgat(self->win,num,attr,color,NULL);
-        curses_funcname = "wchgat";
         (void)touchline(self->win,y,1);
+        curses_funcname = "wchgat";
     }
     return PyCursesCheckERR_ForWin_From(self, rtn, "chgat", curses_funcname);
 }
@@ -2140,11 +2141,11 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
     if (strtype == 2) {
         simple_funcname = "inswstr";
         if (use_xy) {
-            rtn = mvwins_wstr(self->win, y, x, wstr);
+            rtn = mvwins_wstr(self->win,y,x,wstr);
             curses_funcname = "mvwins_wstr";
         }
         else {
-            rtn = wins_wstr(self->win, wstr);
+            rtn = wins_wstr(self->win,wstr);
             curses_funcname = "wins_wstr";
         }
         PyMem_Free(wstr);
@@ -2152,14 +2153,14 @@ _curses_window_insstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
-        const char *text = PyBytes_AS_STRING(bytesobj);
+        const char *str = PyBytes_AS_STRING(bytesobj);
         simple_funcname = "insstr";
         if (use_xy) {
-            rtn = mvwinsstr(self->win, y, x, text);
+            rtn = mvwinsstr(self->win,y,x,str);
             curses_funcname = "mvwinsstr";
         }
         else {
-            rtn = winsstr(self->win, text);
+            rtn = winsstr(self->win,str);
             curses_funcname = "winsstr";
         }
         Py_DECREF(bytesobj);
@@ -2235,11 +2236,11 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
     if (strtype == 2) {
         simple_funcname = "insn_wstr";
         if (use_xy) {
-            rtn = mvwins_nwstr(self->win, y, x, wstr, n);
+            rtn = mvwins_nwstr(self->win,y,x,wstr,n);
             curses_funcname = "mvwins_nwstr";
         }
         else {
-            rtn = wins_nwstr(self->win, wstr, n);
+            rtn = wins_nwstr(self->win,wstr,n);
             curses_funcname = "wins_nwstr";
         }
         PyMem_Free(wstr);
@@ -2247,14 +2248,14 @@ _curses_window_insnstr_impl(PyCursesWindowObject *self, int group_left_1,
     else
 #endif
     {
-        const char *text = PyBytes_AS_STRING(bytesobj);
+        const char *str = PyBytes_AS_STRING(bytesobj);
         simple_funcname = "insnstr";
         if (use_xy) {
-            rtn = mvwinsnstr(self->win, y, x, text, n);
+            rtn = mvwinsnstr(self->win,y,x,str,n);
             curses_funcname = "mvwinsnstr";
         }
         else {
-            rtn = winsnstr(self->win, text, n);
+            rtn = winsnstr(self->win,str,n);
             curses_funcname = "winsnstr";
         }
         Py_DECREF(bytesobj);
