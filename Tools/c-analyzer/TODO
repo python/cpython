@@ -69,7 +69,6 @@ Objects/tupleobject.c:_Py_tuple_zero_allocs                      Py_ssize_t _Py_
 Objects/typeobject.c:next_version_tag                            static unsigned int next_version_tag
 Python/Python-ast.c:init_types():initialized                     static int initialized
 Python/bootstrap_hash.c:urandom_cache                            static struct { int fd; dev_t st_dev; ino_t st_ino; } urandom_cache
-Python/ceval.c:lltrace                                           static int lltrace
 Python/ceval.c:make_pending_calls():busy                         static int busy
 Python/dynload_shlib.c:handles                                   static struct { dev_t dev; ino_t ino; void *handle; } handles[128]
 Python/dynload_shlib.c:nhandles                                  static int nhandles
@@ -428,8 +427,8 @@ Objects/typeobject.c:type_new():PyId___slots__                   _Py_IDENTIFIER(
 Objects/unicodeobject.c:unicodeiter_reduce():PyId_iter           _Py_IDENTIFIER(iter)
 Objects/weakrefobject.c:proxy_bytes():PyId___bytes__             _Py_IDENTIFIER(__bytes__)
 Objects/weakrefobject.c:weakref_repr():PyId___name__             _Py_IDENTIFIER(__name__)
-Parser/tokenizer.c:fp_setreadl():PyId_open                       _Py_IDENTIFIER(open)
-Parser/tokenizer.c:fp_setreadl():PyId_readline                   _Py_IDENTIFIER(readline)
+Parser/tokenizer/file_tokenizer.c:fp_setreadl():PyId_open        _Py_IDENTIFIER(open)
+Parser/tokenizer/file_tokenizer.c:fp_setreadl():PyId_readline    _Py_IDENTIFIER(readline)
 Python/Python-ast.c:ast_type_reduce():PyId___dict__              _Py_IDENTIFIER(__dict__)
 Python/Python-ast.c:make_type():PyId___module__                  _Py_IDENTIFIER(__module__)
 Python/_warnings.c:PyId_stderr                                   _Py_IDENTIFIER(stderr)
@@ -495,7 +494,6 @@ Python/import.c:PyImport_ImportModuleLevelObject():PyId___path__ _Py_IDENTIFIER(
 Python/import.c:PyImport_ImportModuleLevelObject():PyId___spec__ _Py_IDENTIFIER(__spec__)
 Python/import.c:PyImport_ImportModuleLevelObject():PyId__handle_fromlist _Py_IDENTIFIER(_handle_fromlist)
 Python/import.c:PyImport_ImportModuleLevelObject():PyId__lock_unlock_module _Py_IDENTIFIER(_lock_unlock_module)
-Python/import.c:PyImport_ReloadModule():PyId_imp                 _Py_IDENTIFIER(imp)
 Python/import.c:PyImport_ReloadModule():PyId_reload              _Py_IDENTIFIER(reload)
 Python/import.c:_PyImportZip_Init():PyId_zipimporter             _Py_IDENTIFIER(zipimporter)
 Python/import.c:import_find_and_load():PyId__find_and_load       _Py_IDENTIFIER(_find_and_load)
@@ -534,7 +532,7 @@ Python/pythonrun.c:PyId_stdin                                    _Py_IDENTIFIER(
 Python/pythonrun.c:PyId_stdout                                   _Py_IDENTIFIER(stdout)
 Python/pythonrun.c:PyRun_InteractiveOneObjectEx():PyId___main__  _Py_IDENTIFIER(__main__)
 Python/pythonrun.c:PyRun_InteractiveOneObjectEx():PyId_encoding  _Py_IDENTIFIER(encoding)
-Python/pythonrun.c:_Py_HandleSystemExit():PyId_code              _Py_IDENTIFIER(code)
+Python/pythonrun.c:_Py_HandleSystemExitAndKeyboardInterrupt():PyId_code _Py_IDENTIFIER(code)
 Python/pythonrun.c:parse_syntax_error():PyId_filename            _Py_IDENTIFIER(filename)
 Python/pythonrun.c:parse_syntax_error():PyId_lineno              _Py_IDENTIFIER(lineno)
 Python/pythonrun.c:parse_syntax_error():PyId_msg                 _Py_IDENTIFIER(msg)
@@ -563,8 +561,6 @@ Objects/unicodeobject.c:static_strings                           static _Py_Iden
 
 # PyTypeObject (311)
 Modules/_abc.c:_abc_data_type                                    static PyTypeObject _abc_data_type
-Modules/_blake2/blake2b_impl.c:PyBlake2_BLAKE2bType              PyTypeObject PyBlake2_BLAKE2bType
-Modules/_blake2/blake2s_impl.c:PyBlake2_BLAKE2sType              PyTypeObject PyBlake2_BLAKE2sType
 Modules/_collectionsmodule.c:defdict_type                        static PyTypeObject defdict_type
 Modules/_collectionsmodule.c:deque_type                          static PyTypeObject deque_type
 Modules/_collectionsmodule.c:dequeiter_type                      static PyTypeObject dequeiter_type

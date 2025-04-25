@@ -302,7 +302,7 @@ class ZoneInfo(tzinfo):
         # difference between utcoffset() and the "standard" offset, but
         # the "base offset" and "DST offset" are not encoded in the file;
         # we can infer what they are from the isdst flag, but it is not
-        # sufficient to to just look at the last standard offset, because
+        # sufficient to just look at the last standard offset, because
         # occasionally countries will shift both DST offset and base offset.
 
         typecnt = len(isdsts)
@@ -517,8 +517,8 @@ class _DayOffset:
     __slots__ = ["d", "julian", "hour", "minute", "second"]
 
     def __init__(self, d, julian, hour=2, minute=0, second=0):
-        if not (0 + julian) <= d <= 365:
-            min_day = 0 + julian
+        min_day = 0 + julian  # convert bool to int
+        if not min_day <= d <= 365:
             raise ValueError(f"d must be in [{min_day}, 365], not: {d}")
 
         self.d = d
@@ -560,11 +560,11 @@ class _CalendarOffset:
     )
 
     def __init__(self, m, w, d, hour=2, minute=0, second=0):
-        if not 0 < m <= 12:
-            raise ValueError("m must be in (0, 12]")
+        if not 1 <= m <= 12:
+            raise ValueError("m must be in [1, 12]")
 
-        if not 0 < w <= 5:
-            raise ValueError("w must be in (0, 5]")
+        if not 1 <= w <= 5:
+            raise ValueError("w must be in [1, 5]")
 
         if not 0 <= d <= 6:
             raise ValueError("d must be in [0, 6]")
@@ -634,18 +634,21 @@ def _parse_tz_str(tz_str):
 
     offset_str, *start_end_str = tz_str.split(",", 1)
 
-    # fmt: off
     parser_re = re.compile(
-        r"(?P<std>[^<0-9:.+-]+|<[a-zA-Z0-9+\-]+>)" +
-        r"((?P<stdoff>[+-]?\d{1,2}(:\d{2}(:\d{2})?)?)" +
-            r"((?P<dst>[^0-9:.+-]+|<[a-zA-Z0-9+\-]+>)" +
-                r"((?P<dstoff>[+-]?\d{1,2}(:\d{2}(:\d{2})?)?))?" +
-            r")?" + # dst
-        r")?$" # stdoff
+        r"""
+        (?P<std>[^<0-9:.+-]+|<[a-zA-Z0-9+-]+>)
+        (?:
+            (?P<stdoff>[+-]?\d{1,3}(?::\d{2}(?::\d{2})?)?)
+            (?:
+                (?P<dst>[^0-9:.+-]+|<[a-zA-Z0-9+-]+>)
+                (?P<dstoff>[+-]?\d{1,3}(?::\d{2}(?::\d{2})?)?)?
+            )? # dst
+        )? # stdoff
+        """,
+        re.ASCII|re.VERBOSE
     )
-    # fmt: on
 
-    m = parser_re.match(offset_str)
+    m = parser_re.fullmatch(offset_str)
 
     if m is None:
         raise ValueError(f"{tz_str} is not a valid TZ string")
@@ -696,16 +699,17 @@ def _parse_tz_str(tz_str):
 
 
 def _parse_dst_start_end(dststr):
-    date, *time = dststr.split("/")
-    if date[0] == "M":
+    date, *time = dststr.split("/", 1)
+    type = date[:1]
+    if type == "M":
         n_is_julian = False
-        m = re.match(r"M(\d{1,2})\.(\d).(\d)$", date)
+        m = re.fullmatch(r"M(\d{1,2})\.(\d).(\d)", date, re.ASCII)
         if m is None:
             raise ValueError(f"Invalid dst start/end date: {dststr}")
         date_offset = tuple(map(int, m.groups()))
         offset = _CalendarOffset(*date_offset)
     else:
-        if date[0] == "J":
+        if type == "J":
             n_is_julian = True
             date = date[1:]
         else:
@@ -715,38 +719,54 @@ def _parse_dst_start_end(dststr):
         offset = _DayOffset(doy, n_is_julian)
 
     if time:
-        time_components = list(map(int, time[0].split(":")))
-        n_components = len(time_components)
-        if n_components < 3:
-            time_components.extend([0] * (3 - n_components))
-        offset.hour, offset.minute, offset.second = time_components
+        offset.hour, offset.minute, offset.second = _parse_transition_time(time[0])
 
     return offset
 
 
+def _parse_transition_time(time_str):
+    match = re.fullmatch(
+        r"(?P<sign>[+-])?(?P<h>\d{1,3})(:(?P<m>\d{2})(:(?P<s>\d{2}))?)?",
+        time_str,
+        re.ASCII
+    )
+    if match is None:
+        raise ValueError(f"Invalid time: {time_str}")
+
+    h, m, s = (int(v or 0) for v in match.group("h", "m", "s"))
+
+    if h > 167:
+        raise ValueError(
+            f"Hour must be in [0, 167]: {time_str}"
+        )
+
+    if match.group("sign") == "-":
+        h, m, s = -h, -m, -s
+
+    return h, m, s
+
+
 def _parse_tz_delta(tz_delta):
-    match = re.match(
-        r"(?P<sign>[+-])?(?P<h>\d{1,2})(:(?P<m>\d{2})(:(?P<s>\d{2}))?)?",
+    match = re.fullmatch(
+        r"(?P<sign>[+-])?(?P<h>\d{1,3})(:(?P<m>\d{2})(:(?P<s>\d{2}))?)?",
         tz_delta,
+        re.ASCII
     )
     # Anything passed to this function should already have hit an equivalent
     # regular expression to find the section to parse.
     assert match is not None, tz_delta
 
-    h, m, s = (
-        int(v) if v is not None else 0
-        for v in map(match.group, ("h", "m", "s"))
-    )
+    h, m, s = (int(v or 0) for v in match.group("h", "m", "s"))
 
     total = h * 3600 + m * 60 + s
 
-    if not -86400 < total < 86400:
+    if h > 24:
         raise ValueError(
-            f"Offset must be strictly between -24h and +24h: {tz_delta}"
+            f"Offset hours must be in [0, 24]: {tz_delta}"
         )
 
     # Yes, +5 maps to an offset of -5h
     if match.group("sign") != "-":
-        total *= -1
+        total = -total
 
     return total

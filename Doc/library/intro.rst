@@ -58,7 +58,7 @@ Notes on availability
   operating system.
 
 * If not separately noted, all functions that claim "Availability: Unix" are
-  supported on macOS, which builds on a Unix core.
+  supported on macOS, iOS and Android, all of which build on a Unix core.
 
 * If an availability note contains both a minimum Kernel version and a minimum
   libc version, then both conditions must hold. For example a feature with note
@@ -114,8 +114,63 @@ DOM APIs as well as limited networking capabilities with JavaScript's
 
 .. _WebAssembly: https://webassembly.org/
 .. _Emscripten: https://emscripten.org/
-.. _Emscripten Networking: https://emscripten.org/docs/porting/networking.html>
+.. _Emscripten Networking: https://emscripten.org/docs/porting/networking.html
 .. _WASI: https://wasi.dev/
 .. _wasmtime: https://wasmtime.dev/
 .. _Pyodide: https://pyodide.org/
 .. _PyScript: https://pyscript.net/
+
+.. _mobile-availability:
+.. _iOS-availability:
+
+Mobile platforms
+----------------
+
+Android and iOS are, in most respects, POSIX operating systems. File I/O, socket handling,
+and threading all behave as they would on any POSIX operating system. However,
+there are several major differences:
+
+* Mobile platforms can only use Python in "embedded" mode. There is no Python
+  REPL, and no ability to use separate executables such as :program:`python` or
+  :program:`pip`. To add Python code to your mobile app, you must use
+  the :ref:`Python embedding API <embedding>`. For more details, see
+  :ref:`using-android` and :ref:`using-ios`.
+
+* Subprocesses:
+
+  * On Android, creating subprocesses is possible but `officially unsupported
+    <https://issuetracker.google.com/issues/128554619#comment4>`__.
+    In particular, Android does not support any part of the System V IPC API,
+    so :mod:`multiprocessing` is not available.
+
+  * An iOS app cannot use any form of subprocessing, multiprocessing, or
+    inter-process communication. If an iOS app attempts to create a subprocess,
+    the process creating the subprocess will either lock up, or crash. An iOS app
+    has no visibility of other applications that are running, nor any ability to
+    communicate with other running applications, outside of the iOS-specific APIs
+    that exist for this purpose.
+
+* Mobile apps have limited access to modify system resources (such as the system
+  clock). These resources will often be *readable*, but attempts to modify
+  those resources will usually fail.
+
+* Console input and output:
+
+  * On Android, the native ``stdout`` and ``stderr`` are not connected to
+    anything, so Python installs its own streams which redirect messages to the
+    system log. These can be seen under the tags ``python.stdout`` and
+    ``python.stderr`` respectively.
+
+  * iOS apps have a limited concept of console output. ``stdout`` and
+    ``stderr`` *exist*, and content written to ``stdout`` and ``stderr`` will be
+    visible in logs when running in Xcode, but this content *won't* be recorded
+    in the system log. If a user who has installed your app provides their app
+    logs as a diagnostic aid, they will not include any detail written to
+    ``stdout`` or ``stderr``.
+
+  * Mobile apps have no usable ``stdin`` at all. While apps can display an on-screen
+    keyboard, this is a software feature, not something that is attached to
+    ``stdin``.
+
+    As a result, Python modules that involve console manipulation (such as
+    :mod:`curses` and :mod:`readline`) are not available on mobile platforms.
