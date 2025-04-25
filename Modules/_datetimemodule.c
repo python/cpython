@@ -102,6 +102,7 @@ typedef struct {
 
 #define PyIsoCalendarDate_CAST(op) ((PyDateTime_IsoCalendarDate *)(op))
 
+#define CONST_US_PER_NANOSECOND(st) st->us_per_nanosecond
 #define CONST_US_PER_MS(st) st->us_per_ms
 #define CONST_US_PER_SECOND(st) st->us_per_second
 #define CONST_US_PER_MINUTE(st) st->us_per_minute
@@ -276,6 +277,7 @@ finally:
 #define DATE_GET_MINUTE         PyDateTime_DATE_GET_MINUTE
 #define DATE_GET_SECOND         PyDateTime_DATE_GET_SECOND
 #define DATE_GET_MICROSECOND    PyDateTime_DATE_GET_MICROSECOND
+#define DATE_GET_NANOSECOND     PyDateTime_DATE_GET_NANOSECOND
 #define DATE_GET_FOLD           PyDateTime_DATE_GET_FOLD
 
 /* Date accessors for date and datetime. */
@@ -292,6 +294,9 @@ finally:
     (((o)->data[7] = ((v) & 0xff0000) >> 16), \
      ((o)->data[8] = ((v) & 0x00ff00) >> 8), \
      ((o)->data[9] = ((v) & 0x0000ff)))
+#define DATE_SET_NANOSECOND(o, v)      \
+    (((o)->data[10] = ((v) & 0xff00) >> 8), \
+     ((o)->data[11] = ((v) & 0x00ff)))
 #define DATE_SET_FOLD(o, v)   (PyDateTime_DATE_GET_FOLD(o) = (v))
 
 /* Time accessors for time. */
@@ -317,10 +322,12 @@ finally:
 #define GET_TD_DAYS(o)          (PyDelta_CAST(o)->days)
 #define GET_TD_SECONDS(o)       (PyDelta_CAST(o)->seconds)
 #define GET_TD_MICROSECONDS(o)  (PyDelta_CAST(o)->microseconds)
+#define GET_TD_NANOSECONDS(o)   (PyDelta_CAST(o)->nanoseconds)
 
 #define SET_TD_DAYS(o, v)       ((o)->days = (v))
 #define SET_TD_SECONDS(o, v)    ((o)->seconds = (v))
 #define SET_TD_MICROSECONDS(o, v) ((o)->microseconds = (v))
+#define SET_TD_NANOSECONDS(o, v) ((o)->nanoseconds = (v))
 
 #define HASTZINFO               _PyDateTime_HAS_TZINFO
 #define GET_TIME_TZINFO         PyDateTime_TIME_GET_TZINFO
@@ -735,15 +742,22 @@ normalize_pair(int *hi, int *lo, int factor)
     assert(0 <= *lo && *lo < factor);
 }
 
-/* Fiddle days (d), seconds (s), and microseconds (us) so that
+/* Fiddle days (d), seconds (s), microseconds (us) and nanoseconds (ns) so that
  *      0 <= *s < 24*3600
  *      0 <= *us < 1000000
+ *      0 <= *ns < 1000
  * The input values must be such that the internals don't overflow.
  * The way this routine is used, we don't get close.
  */
 static void
-normalize_d_s_us(int *d, int *s, int *us)
+normalize_d_s_us_ns(int *d, int *s, int *us, int *ns)
 {
+    if (*ns < 0 || *ns >= 1000) {
+        normalize_pair(us, ns, 1000);
+        /* |us| can't be bigger than about
+         * |original us| + |original ns|/1000 now.
+         */
+    }
     if (*us < 0 || *us >= 1000000) {
         normalize_pair(s, us, 1000000);
         /* |s| can't be bigger than about
@@ -847,8 +861,9 @@ normalize_date(int *year, int *month, int *day)
 static int
 normalize_datetime(int *year, int *month, int *day,
                    int *hour, int *minute, int *second,
-                   int *microsecond)
+                   int *microsecond, int *nanosecond)
 {
+    normalize_pair(microsecond, nanosecond, 1000);
     normalize_pair(second, microsecond, 1000000);
     normalize_pair(minute, second, 60);
     normalize_pair(hour, minute, 60);
@@ -1014,9 +1029,9 @@ parse_isoformat_date(const char *dtstr, const size_t len, int *year, int *month,
 
 static int
 parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
-                  int *minute, int *second, int *microsecond)
+                  int *minute, int *second, int *microsecond, int *nanosecond)
 {
-    *hour = *minute = *second = *microsecond = 0;
+    *hour = *minute = *second = *microsecond = *nanosecond = 0;
     const char *p = tstr;
     const char *p_end = tstr_end;
     int *vals[3] = {hour, minute, second};
@@ -1059,7 +1074,7 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
     // Parse fractional components
     size_t len_remains = p_end - p;
     size_t to_parse = len_remains;
-    if (len_remains >= 6) {
+    if (len_remains >= 9) {
         to_parse = 6;
     }
 
@@ -1068,12 +1083,34 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         return -3;
     }
 
-    static int correction[] = {
+    static int microsecond_correction[] = {
         100000, 10000, 1000, 100, 10
     };
 
     if (to_parse < 6) {
-        *microsecond *= correction[to_parse-1];
+        *microsecond *= microsecond_correction[to_parse-1];
+    }
+
+    p += to_parse;
+    len_remains = p_end - p;
+
+    if (len_remains >= 3) {
+        to_parse = 3;
+    } else {
+        to_parse = len_remains;
+    }
+
+    p = parse_digits(p, nanosecond, to_parse);
+    if (NULL == p) {
+        return -3;
+    }
+
+    static int nanosecond_correction[] = {
+        100, 10
+    };
+
+    if (to_parse < 3) {
+        *nanosecond *= nanosecond_correction[to_parse-1];
     }
 
     while (is_digit(*p)){
@@ -1086,8 +1123,8 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
 
 static int
 parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
-                     int *second, int *microsecond, int *tzoffset,
-                     int *tzmicrosecond)
+                     int *second, int *microsecond, int *nanosecond, int *tzoffset,
+                     int *tzmicrosecond, int *tznanosecond)
 {
     // Parse the time portion of a datetime.isoformat() string
     //
@@ -1109,7 +1146,7 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     } while (++tzinfo_pos < p_end);
 
     int rv = parse_hh_mm_ss_ff(dtstr, tzinfo_pos, hour, minute, second,
-                               microsecond);
+                               microsecond, nanosecond);
 
     if (rv < 0) {
         return rv;
@@ -1129,7 +1166,7 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     if (*tzinfo_pos == 'Z') {
         *tzoffset = 0;
         *tzmicrosecond = 0;
-
+        *tznanosecond = 0;
         if (*(tzinfo_pos + 1) != '\0') {
             return -5;
         } else {
@@ -1141,11 +1178,11 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     tzinfo_pos++;
     int tzhour = 0, tzminute = 0, tzsecond = 0;
     rv = parse_hh_mm_ss_ff(tzinfo_pos, p_end, &tzhour, &tzminute, &tzsecond,
-                           tzmicrosecond);
+                           &tzmicrosecond, &tznanosecond);
 
     *tzoffset = tzsign * ((tzhour * 3600) + (tzminute * 60) + tzsecond);
     *tzmicrosecond *= tzsign;
-
+    *tznanosecond *= tzsign;
     return rv ? -5 : 1;
 }
 
@@ -1199,7 +1236,7 @@ new_date_subclass_ex(int year, int month, int day, PyObject *cls)
 /* Create a datetime instance with no range checking. */
 static PyObject *
 new_datetime_ex2(int year, int month, int day, int hour, int minute,
-                 int second, int usecond, PyObject *tzinfo, int fold, PyTypeObject *type)
+                 int second, int usecond, int nanosecond, PyObject *tzinfo, int fold, PyTypeObject *type)
 {
     PyDateTime_DateTime *self;
     char aware = tzinfo != Py_None;
@@ -1207,7 +1244,7 @@ new_datetime_ex2(int year, int month, int day, int hour, int minute,
     if (check_date_args(year, month, day) < 0) {
         return NULL;
     }
-    if (check_time_args(hour, minute, second, usecond, fold) < 0) {
+    if (check_time_args(hour, minute, second, usecond, nanosecond, fold) < 0) {
         return NULL;
     }
     if (check_tzinfo_subclass(tzinfo) < 0) {
@@ -1222,6 +1259,7 @@ new_datetime_ex2(int year, int month, int day, int hour, int minute,
         DATE_SET_MINUTE(self, minute);
         DATE_SET_SECOND(self, second);
         DATE_SET_MICROSECOND(self, usecond);
+        DATE_SET_NANOSECOND(self, nanosecond);
         if (aware) {
             self->tzinfo = Py_NewRef(tzinfo);
         }
@@ -1278,18 +1316,18 @@ Done:
 static PyObject *
 new_datetime_subclass_fold_ex(int year, int month, int day, int hour, int minute,
                               int second, int usecond, PyObject *tzinfo,
-                              int fold, PyObject *cls)
+                              int fold, int nsecond, PyObject *cls)
 {
     PyObject* dt;
     if ((PyTypeObject*)cls == DATETIME_TYPE(NO_STATE)) {
         // Use the fast path constructor
         dt = new_datetime(year, month, day, hour, minute, second, usecond,
-                          tzinfo, fold);
+                          tzinfo, fold, nsecond);
     }
     else {
         // Subclass
         dt = call_subclass_fold(cls, fold, "iiiiiiiO", year, month, day,
-                                hour, minute, second, usecond, tzinfo);
+                                hour, minute, second, usecond, tzinfo, nsecond);
     }
 
     return dt;
@@ -1298,21 +1336,21 @@ new_datetime_subclass_fold_ex(int year, int month, int day, int hour, int minute
 static PyObject *
 new_datetime_subclass_ex(int year, int month, int day, int hour, int minute,
                               int second, int usecond, PyObject *tzinfo,
-                              PyObject *cls) {
+                              int nsecond, PyObject *cls) {
     return new_datetime_subclass_fold_ex(year, month, day, hour, minute,
-                                         second, usecond, tzinfo, 0,
+                                         second, usecond, tzinfo, 0, nsecond,
                                          cls);
 }
 
 /* Create a time instance with no range checking. */
 static PyObject *
-new_time_ex2(int hour, int minute, int second, int usecond,
+new_time_ex2(int hour, int minute, int second, int usecond, int nsecond,
              PyObject *tzinfo, int fold, PyTypeObject *type)
 {
     PyDateTime_Time *self;
     char aware = tzinfo != Py_None;
 
-    if (check_time_args(hour, minute, second, usecond, fold) < 0) {
+    if (check_time_args(hour, minute, second, usecond, nsecond, fold) < 0) {
         return NULL;
     }
     if (check_tzinfo_subclass(tzinfo) < 0) {
@@ -1327,6 +1365,7 @@ new_time_ex2(int hour, int minute, int second, int usecond,
         TIME_SET_MINUTE(self, minute);
         TIME_SET_SECOND(self, second);
         TIME_SET_MICROSECOND(self, usecond);
+        TIME_SET_NANOSECOND(self, nsecond);
         if (aware) {
             self->tzinfo = Py_NewRef(tzinfo);
         }
@@ -1336,13 +1375,13 @@ new_time_ex2(int hour, int minute, int second, int usecond,
 }
 
 static PyObject *
-new_time_ex(int hour, int minute, int second, int usecond,
+new_time_ex(int hour, int minute, int second, int usecond, int nsecond,
             PyObject *tzinfo, PyTypeObject *type)
 {
-    return new_time_ex2(hour, minute, second, usecond, tzinfo, 0, type);
+    return new_time_ex2(hour, minute, second, usecond, nsecond, tzinfo, 0, type);
 }
 
-#define new_time(hh, mm, ss, us, tzinfo, fold)  \
+#define new_time(hh, mm, ss, us, tzinfo, fold, nsecond)  \
     new_time_ex2(hh, mm, ss, us, tzinfo, fold, TIME_TYPE(NO_STATE))
 
 static PyObject *
@@ -1352,7 +1391,7 @@ new_time_subclass_fold_ex(int hour, int minute, int second, int usecond,
     PyObject *t;
     if ((PyTypeObject*)cls == TIME_TYPE(NO_STATE)) {
         // Use the fast path constructor
-        t = new_time(hour, minute, second, usecond, tzinfo, fold);
+        t = new_time(hour, minute, second, usecond, tzinfo, fold, nanosecond);
     }
     else {
         // Subclass
@@ -1372,20 +1411,21 @@ static PyDateTime_Delta * look_up_delta(int, int, int, PyTypeObject *);
  * of range.
  */
 static PyObject *
-new_delta_ex(int days, int seconds, int microseconds, int normalize,
+new_delta_ex(int days, int seconds, int microseconds, int nanoseconds, int normalize,
              PyTypeObject *type)
 {
     PyDateTime_Delta *self;
 
     if (normalize)
-        normalize_d_s_us(&days, &seconds, &microseconds);
+        normalize_d_s_us_ns(&days, &seconds, &microseconds, &nanoseconds);
     assert(0 <= seconds && seconds < 24*3600);
     assert(0 <= microseconds && microseconds < 1000000);
+    assert(0 <= nanoseconds && nanoseconds < 1000);
 
     if (check_delta_day_range(days) < 0)
         return NULL;
 
-    self = look_up_delta(days, seconds, microseconds, type);
+    self = look_up_delta(days, seconds, microseconds, nanoseconds, type);
     if (self != NULL) {
         return (PyObject *)self;
     }
@@ -1397,12 +1437,13 @@ new_delta_ex(int days, int seconds, int microseconds, int normalize,
         SET_TD_DAYS(self, days);
         SET_TD_SECONDS(self, seconds);
         SET_TD_MICROSECONDS(self, microseconds);
+        SET_TD_NANOSECONDS(self, nanoseconds);
     }
     return (PyObject *) self;
 }
 
-#define new_delta(d, s, us, normalize)  \
-    new_delta_ex(d, s, us, normalize, DELTA_TYPE(NO_STATE))
+#define new_delta(d, s, us, ns, normalize)  \
+    new_delta_ex(d, s, us, ns, normalize, DELTA_TYPE(NO_STATE))
 
 
 typedef struct
@@ -1458,7 +1499,8 @@ new_timezone(PyObject *offset, PyObject *name)
     }
     if ((GET_TD_DAYS(offset) == -1 &&
             GET_TD_SECONDS(offset) == 0 &&
-            GET_TD_MICROSECONDS(offset) < 1) ||
+            GET_TD_MICROSECONDS(offset) < 1 &&
+            GET_TD_NANOSECONDS(offset) < 1) ||
         GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
         PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
                      " strictly between -timedelta(hours=24) and"
@@ -1529,7 +1571,8 @@ call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
     if (PyDelta_Check(offset)) {
         if ((GET_TD_DAYS(offset) == -1 &&
                 GET_TD_SECONDS(offset) == 0 &&
-                GET_TD_MICROSECONDS(offset) < 1) ||
+                GET_TD_MICROSECONDS(offset) < 1 &&
+                GET_TD_NANOSECONDS(offset) < 1) ||
             GET_TD_DAYS(offset) < -1 || GET_TD_DAYS(offset) >= 1) {
             PyErr_Format(PyExc_ValueError, "offset must be a timedelta"
                          " strictly between -timedelta(hours=24) and"
@@ -1723,7 +1766,7 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
                 PyObject *tzinfo, PyObject *tzinfoarg)
 {
     PyObject *offset;
-    int hours, minutes, seconds, microseconds;
+    int hours, minutes, seconds, microseconds, nanoseconds;
     char sign;
 
     assert(buflen >= 1);
@@ -1748,10 +1791,16 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
     }
     /* Offset is not negative here. */
     microseconds = GET_TD_MICROSECONDS(offset);
+    nanoseconds = GET_TD_NANOSECONDS(offset);
     seconds = GET_TD_SECONDS(offset);
     Py_DECREF(offset);
     minutes = divmod(seconds, 60, &seconds);
     hours = divmod(minutes, 60, &minutes);
+    if (nanoseconds) {
+        PyOS_snprintf(buf, buflen, "%c%02d%s%02d%s%02d.%06d%03d", sign,
+                      hours, sep, minutes, sep, seconds, microseconds, nanoseconds);
+        return 0;
+    }
     if (microseconds) {
         PyOS_snprintf(buf, buflen, "%c%02d%s%02d%s%02d.%06d", sign,
                       hours, sep, minutes, sep, seconds, microseconds);
@@ -2103,8 +2152,7 @@ diff_to_bool(int diff, int op)
  */
 
 /* Convert a timedelta to a number of us,
- *      (24*3600*self.days + self.seconds)*1000000 + self.microseconds
- * as a Python int.
+ *      (24*3600*self.days + self.seconds)*1000000 + self.microseconds + self.nanoseconds/1000
  * Doing mixed-radix arithmetic by hand instead is excruciating in C,
  * due to ubiquitous overflow possibilities.
  */
@@ -2432,7 +2480,9 @@ delta_add(PyObject *left, PyObject *right)
         int seconds = GET_TD_SECONDS(left) + GET_TD_SECONDS(right);
         int microseconds = GET_TD_MICROSECONDS(left) +
                            GET_TD_MICROSECONDS(right);
-        result = new_delta(days, seconds, microseconds, 1);
+        int nanoseconds = GET_TD_NANOSECONDS(left) +
+                         GET_TD_NANOSECONDS(right);
+        result = new_delta(days, seconds, microseconds, nanoseconds, 1);
     }
 
     if (result == Py_NotImplemented)
@@ -2446,6 +2496,7 @@ delta_negative(PyObject *self)
     return new_delta(-GET_TD_DAYS(self),
                      -GET_TD_SECONDS(self),
                      -GET_TD_MICROSECONDS(self),
+                     -GET_TD_NANOSECONDS(self),
                      1);
 }
 
@@ -2458,6 +2509,7 @@ delta_positive(PyObject *self)
     return new_delta(GET_TD_DAYS(self),
                      GET_TD_SECONDS(self),
                      GET_TD_MICROSECONDS(self),
+                     GET_TD_NANOSECONDS(self),
                      0);
 }
 
@@ -2467,6 +2519,7 @@ delta_abs(PyObject *self)
     PyObject *result;
 
     assert(GET_TD_MICROSECONDS(self) >= 0);
+    assert(GET_TD_NANOSECONDS(self) >= 0);
     assert(GET_TD_SECONDS(self) >= 0);
 
     if (GET_TD_DAYS(self) < 0)
@@ -2491,7 +2544,9 @@ delta_subtract(PyObject *left, PyObject *right)
         int seconds = GET_TD_SECONDS(left) - GET_TD_SECONDS(right);
         int microseconds = GET_TD_MICROSECONDS(left) -
                            GET_TD_MICROSECONDS(right);
-        result = new_delta(days, seconds, microseconds, 1);
+        int nanoseconds = GET_TD_NANOSECONDS(left) -
+                         GET_TD_NANOSECONDS(right);
+        result = new_delta(days, seconds, microseconds, nanoseconds, 1);
     }
 
     if (result == Py_NotImplemented)
@@ -2508,6 +2563,9 @@ delta_cmp(PyObject *self, PyObject *other)
         if (diff == 0)
             diff = GET_TD_MICROSECONDS(self) -
                 GET_TD_MICROSECONDS(other);
+        if (diff == 0)
+            diff = GET_TD_NANOSECONDS(self) -
+                  GET_TD_NANOSECONDS(other);
     }
     return diff;
 }
@@ -2787,6 +2845,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     PyObject *day = NULL;
     PyObject *second = NULL;
     PyObject *us = NULL;
+    PyObject *ns = NULL;
     PyObject *ms = NULL;
     PyObject *minute = NULL;
     PyObject *hour = NULL;
@@ -2797,13 +2856,13 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     double leftover_us = 0.0;
 
     static char *keywords[] = {
-        "days", "seconds", "microseconds", "milliseconds",
+        "days", "seconds", "microseconds", "nanoseconds", "milliseconds",
         "minutes", "hours", "weeks", NULL
     };
 
     if (PyArg_ParseTupleAndKeywords(args, kw, "|OOOOOOO:__new__",
                                     keywords,
-                                    &day, &second, &us,
+                                    &day, &second, &us, &ns,
                                     &ms, &minute, &hour, &week) == 0)
         goto Done;
 
@@ -2819,6 +2878,10 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 
     if (us) {
         y = accum("microseconds", x, us, _PyLong_GetOne(), &leftover_us);
+        CLEANUP;
+    }
+    if (ns) {
+        y = accum("nanoseconds", x, ns, _PyLong_GetOne(), &leftover_us);
         CLEANUP;
     }
     if (ms) {
@@ -2897,7 +2960,8 @@ delta_bool(PyObject *self)
 {
     return (GET_TD_DAYS(self) != 0
         || GET_TD_SECONDS(self) != 0
-        || GET_TD_MICROSECONDS(self) != 0);
+        || GET_TD_MICROSECONDS(self) != 0
+        || GET_TD_NANOSECONDS(self) != 0);
 }
 
 static PyObject *
@@ -2934,7 +2998,14 @@ delta_repr(PyObject *self)
         if (args == NULL) {
             return NULL;
         }
+        sep = ", ";
     }
+    if (GET_TD_NANOSECONDS(self) != 0) {
+        Py_SETREF(args, PyUnicode_FromFormat("%U%snanoseconds=%d", args, sep,
+                                             GET_TD_NANOSECONDS(self)));
+        if (args == NULL) {
+            return NULL;
+        }
 
     if (PyUnicode_GET_LENGTH(args) == 0) {
         Py_SETREF(args, PyUnicode_FromString("0"));
@@ -2953,6 +3024,7 @@ static PyObject *
 delta_str(PyObject *self)
 {
     int us = GET_TD_MICROSECONDS(self);
+    int ns = GET_TD_NANOSECONDS(self);
     int seconds = GET_TD_SECONDS(self);
     int minutes = divmod(seconds, 60, &seconds);
     int hours = divmod(minutes, 60, &minutes);
@@ -2986,7 +3058,8 @@ delta_getstate(PyDateTime_Delta *self)
 {
     return Py_BuildValue("iii", GET_TD_DAYS(self),
                                 GET_TD_SECONDS(self),
-                                GET_TD_MICROSECONDS(self));
+                                GET_TD_MICROSECONDS(self),
+                                GET_TD_NANOSECONDS(self));
 }
 
 static PyObject *
@@ -2994,7 +3067,6 @@ delta_total_seconds(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
     PyObject *total_seconds;
     PyObject *total_microseconds;
-
     total_microseconds = delta_to_microseconds(PyDelta_CAST(op));
     if (total_microseconds == NULL)
         return NULL;
@@ -3043,7 +3115,7 @@ static PyMethodDef delta_methods[] = {
 
 static const char delta_doc[] =
 PyDoc_STR("Difference between two datetime values.\n\n"
-          "timedelta(days=0, seconds=0, microseconds=0, milliseconds=0, "
+          "timedelta(days=0, seconds=0, microseconds=0, nanoseconds=0, milliseconds=0, "
           "minutes=0, hours=0, weeks=0)\n\n"
           "All arguments are optional and default to 0.\n"
           "Arguments may be integers or floats, and may be positive or negative.");
@@ -4332,7 +4404,7 @@ static PyObject *
 timezone_str(PyObject *op)
 {
     PyDateTime_TimeZone *self = PyTimeZone_CAST(op);
-    int hours, minutes, seconds, microseconds;
+    int hours, minutes, seconds, microseconds, nanoseconds;
     PyObject *offset;
     char sign;
 
@@ -4342,7 +4414,8 @@ timezone_str(PyObject *op)
     if ((PyObject *)self == CONST_UTC(NO_STATE) ||
            (GET_TD_DAYS(self->offset) == 0 &&
             GET_TD_SECONDS(self->offset) == 0 &&
-            GET_TD_MICROSECONDS(self->offset) == 0))
+            GET_TD_MICROSECONDS(self->offset) == 0 &&
+            GET_TD_NANOSECONDS(self->offset) == 0))
     {
         return PyUnicode_FromString("UTC");
     }
@@ -4358,11 +4431,17 @@ timezone_str(PyObject *op)
         offset = Py_NewRef(self->offset);
     }
     /* Offset is not negative here. */
+    nanoseconds = GET_TD_NANOSECONDS(offset);
     microseconds = GET_TD_MICROSECONDS(offset);
     seconds = GET_TD_SECONDS(offset);
     Py_DECREF(offset);
     minutes = divmod(seconds, 60, &seconds);
     hours = divmod(minutes, 60, &minutes);
+    if (nanoseconds != 0) {
+        return PyUnicode_FromFormat("UTC%c%02d:%02d:%02d.%06d%03d",
+                                    sign, hours, minutes,
+                                    seconds, microseconds, nanoseconds);
+    }
     if (microseconds != 0) {
         return PyUnicode_FromFormat("UTC%c%02d:%02d:%02d.%06d",
                                     sign, hours, minutes,
@@ -4970,13 +5049,14 @@ time_hash(PyObject *op)
                 (unsigned char *)self->data, _PyDateTime_TIME_DATASIZE);
         else {
             PyObject *temp1, *temp2;
-            int seconds, microseconds;
+            int seconds, microseconds, nanoseconds;
             assert(HASTZINFO(self));
             seconds = TIME_GET_HOUR(self) * 3600 +
                       TIME_GET_MINUTE(self) * 60 +
                       TIME_GET_SECOND(self);
             microseconds = TIME_GET_MICROSECOND(self);
-            temp1 = new_delta(0, seconds, microseconds, 1);
+            nanoseconds = TIME_GET_NANOSECOND(self);
+            temp1 = new_delta(0, seconds, microseconds, nanoseconds, 1);
             if (temp1 == NULL) {
                 Py_DECREF(offset);
                 return -1;
@@ -5152,7 +5232,7 @@ static PyMethodDef time_methods[] = {
                "The optional argument timespec specifies the number "
                "of additional terms\nof the time to include. Valid "
                "options are 'auto', 'hours', 'minutes',\n'seconds', "
-               "'milliseconds' and 'microseconds'.\n")},
+               "'milliseconds', 'microseconds' and 'nanoseconds'.\n")},
 
     {"strftime", _PyCFunction_CAST(time_strftime), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("format -> strftime() style string.")},
@@ -5271,6 +5351,13 @@ datetime_microsecond(PyObject *op, void *Py_UNUSED(closure))
 }
 
 static PyObject *
+datetime_nanosecond(PyObject *op, void *Py_UNUSED(closure))
+{
+    PyDateTime_DateTime *self = PyDateTime_CAST(op);
+    return PyLong_FromLong(DATE_GET_NANOSECOND(self));
+}
+
+static PyObject *
 datetime_tzinfo(PyObject *op, void *Py_UNUSED(closure))
 {
     PyDateTime_DateTime *self = PyDateTime_CAST(op);
@@ -5292,6 +5379,7 @@ static PyGetSetDef datetime_getset[] = {
     {"microsecond", datetime_microsecond},
     {"tzinfo", datetime_tzinfo},
     {"fold", datetime_fold},
+    {"nanosecond", datetime_nanosecond},
     {NULL}
 };
 
@@ -5301,7 +5389,7 @@ static PyGetSetDef datetime_getset[] = {
 
 static char *datetime_kws[] = {
     "year", "month", "day", "hour", "minute", "second",
-    "microsecond", "tzinfo", "fold", NULL
+    "microsecond", "tzinfo", "fold", "nanosecond", NULL
 };
 
 static PyObject *
@@ -6232,12 +6320,14 @@ datetime_isoformat(PyObject *op, PyObject *args, PyObject *kw)
 
     PyObject *result = NULL;
     int us = DATE_GET_MICROSECOND(self);
+    int ns = DATE_GET_NANOSECOND(self);
     static const char *specs[][2] = {
         {"hours", "%04d-%02d-%02d%c%02d"},
         {"minutes", "%04d-%02d-%02d%c%02d:%02d"},
         {"seconds", "%04d-%02d-%02d%c%02d:%02d:%02d"},
         {"milliseconds", "%04d-%02d-%02d%c%02d:%02d:%02d.%03d"},
         {"microseconds", "%04d-%02d-%02d%c%02d:%02d:%02d.%06d"},
+        {"nanoseconds", "%04d-%02d-%02d%c%02d:%02d:%02d.%06d%03d"},
     };
     size_t given_spec;
 
@@ -6274,7 +6364,7 @@ datetime_isoformat(PyObject *op, PyObject *args, PyObject *kw)
                                       GET_YEAR(self), GET_MONTH(self),
                                       GET_DAY(self), (int)sep,
                                       DATE_GET_HOUR(self), DATE_GET_MINUTE(self),
-                                      DATE_GET_SECOND(self), us);
+                                      DATE_GET_SECOND(self), us, ns);
     }
 
     if (!result || !HASTZINFO(self))
@@ -6314,6 +6404,7 @@ flip_fold(PyObject *dt)
                             HASTZINFO(dt) ?
                              ((PyDateTime_DateTime *)dt)->tzinfo : Py_None,
                             !DATE_GET_FOLD(dt),
+                            DATE_GET_NANOSECOND(dt),
                             Py_TYPE(dt));
 }
 
@@ -6418,7 +6509,8 @@ datetime_richcompare(PyObject *self, PyObject *other, int op)
         diff = GET_TD_DAYS(delta);
         if (diff == 0)
             diff = GET_TD_SECONDS(delta) |
-                   GET_TD_MICROSECONDS(delta);
+                   GET_TD_MICROSECONDS(delta) |
+                   GET_TD_NANOSECONDS(delta);
         Py_DECREF(delta);
         if ((op == Py_EQ || op == Py_NE) && diff == 0) {
             int ex = pep495_eq_exception(self, other, offset1, offset2);
@@ -6461,7 +6553,9 @@ datetime_hash(PyObject *op)
                                      DATE_GET_SECOND(self),
                                      DATE_GET_MICROSECOND(self),
                                      HASTZINFO(self) ? self->tzinfo : Py_None,
-                                     0, Py_TYPE(self));
+                                     0,
+                                     DATE_GET_NANOSECOND(self),
+                                     Py_TYPE(self));
             if (self0 == NULL)
                 return -1;
         }
@@ -6491,6 +6585,7 @@ datetime_hash(PyObject *op)
                       DATE_GET_SECOND(self);
             temp1 = new_delta(days, seconds,
                               DATE_GET_MICROSECOND(self),
+                              DATE_GET_NANOSECOND(self),
                               1);
             if (temp1 == NULL) {
                 Py_DECREF(offset);
@@ -6520,6 +6615,7 @@ datetime.datetime.replace
     minute: int(c_default="DATE_GET_MINUTE(self)") = unchanged
     second: int(c_default="DATE_GET_SECOND(self)") = unchanged
     microsecond: int(c_default="DATE_GET_MICROSECOND(self)") = unchanged
+    nanosecond: int(c_default="DATE_GET_NANOSECOND(self)") = unchanged
     tzinfo: object(c_default="HASTZINFO(self) ? ((PyDateTime_DateTime *)self)->tzinfo : Py_None") = unchanged
     *
     fold: int(c_default="DATE_GET_FOLD(self)") = unchanged
@@ -6531,12 +6627,12 @@ static PyObject *
 datetime_datetime_replace_impl(PyDateTime_DateTime *self, int year,
                                int month, int day, int hour, int minute,
                                int second, int microsecond, PyObject *tzinfo,
-                               int fold)
+                               int fold, int nanosecond)
 /*[clinic end generated code: output=00bc96536833fddb input=fd972762d604d3e7]*/
 {
     return new_datetime_subclass_fold_ex(year, month, day, hour, minute,
                                          second, microsecond, tzinfo, fold,
-                                         (PyObject *)Py_TYPE(self));
+                                         nanosecond, (PyObject *)Py_TYPE(self));
 }
 
 static PyObject *
@@ -6740,6 +6836,7 @@ datetime_astimezone(PyObject *op, PyObject *args, PyObject *kw)
                                     DATE_GET_MICROSECOND(result),
                                     CONST_UTC(NO_STATE),
                                     DATE_GET_FOLD(result),
+                                    DATE_GET_NANOSECOND(result),
                                     Py_TYPE(result));
         Py_DECREF(temp);
         if (result == NULL)
@@ -6876,7 +6973,8 @@ datetime_timestamp(PyObject *op, PyObject *Py_UNUSED(dummy))
         if (seconds == -1)
             return NULL;
         result = PyFloat_FromDouble(seconds - EPOCH_SECONDS +
-                                    DATE_GET_MICROSECOND(self) / 1e6);
+                                    DATE_GET_MICROSECOND(self) / 1e6 +
+                                    DATE_GET_NANOSECOND(self) / 1e9);
     }
     return result;
 }
@@ -6899,7 +6997,8 @@ datetime_gettime(PyObject *op, PyObject *Py_UNUSED(dummy))
                     DATE_GET_SECOND(self),
                     DATE_GET_MICROSECOND(self),
                     Py_None,
-                    DATE_GET_FOLD(self));
+                    DATE_GET_FOLD(self),
+                    DATE_GET_NANOSECOND(self));
 }
 
 static PyObject *
@@ -6911,7 +7010,8 @@ datetime_gettimetz(PyObject *op, PyObject *Py_UNUSED(dummy))
                     DATE_GET_SECOND(self),
                     DATE_GET_MICROSECOND(self),
                     GET_DT_TZINFO(self),
-                    DATE_GET_FOLD(self));
+                    DATE_GET_FOLD(self),
+                    DATE_GET_NANOSECOND(self));
 }
 
 static PyObject *
@@ -7064,7 +7164,7 @@ static PyMethodDef datetime_methods[] = {
                "The optional argument timespec specifies the number "
                "of additional terms\nof the time to include. Valid "
                "options are 'auto', 'hours', 'minutes',\n'seconds', "
-               "'milliseconds' and 'microseconds'.\n")},
+               "'milliseconds', 'microseconds' and 'nanoseconds'.\n")},
 
     {"utcoffset", datetime_utcoffset, METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.utcoffset(self).")},
@@ -7093,7 +7193,7 @@ static PyMethodDef datetime_methods[] = {
 };
 
 static const char datetime_doc[] =
-PyDoc_STR("datetime(year, month, day[, hour[, minute[, second[, microsecond[,tzinfo]]]]])\n\
+PyDoc_STR("datetime(year, month, day[, hour[, minute[, second[, microsecond[, nanosecond[, tzinfo]]]]]])\n\
 \n\
 The year, month and day arguments are required. tzinfo may be None, or an\n\
 instance of a tzinfo subclass. The remaining arguments may be ints.\n");
