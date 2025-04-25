@@ -3117,7 +3117,7 @@ static PyMemberDef delta_members[] = {
 
     {"microseconds", Py_T_INT, OFFSET(microseconds), Py_READONLY,
      PyDoc_STR("Number of microseconds (>= 0 and less than 1 second).")},
-     
+
     {"nanoseconds",  Py_T_INT, OFFSET(nanoseconds),  Py_READONLY,
      PyDoc_STR("Number of nanoseconds (>= 0 and less than 1 microsecond).")},
     {NULL}
