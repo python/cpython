@@ -1851,6 +1851,13 @@ tstate_delete_common(PyThreadState *tstate, int release_gil)
             decrement_stoptheworld_countdown(&runtime->stoptheworld);
         }
     }
+    if (tstate->daemon == 0
+        && tstate != (PyThreadState *)&interp->_initial_thread) {
+        struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
+        if (--finalizing->countdown == 0) {
+            _PyEvent_Notify(&finalizing->finished);
+        }
+    }
 
 #if defined(Py_REF_DEBUG) && defined(Py_GIL_DISABLED)
     // Add our portion of the total refcount to the interpreter's total.
@@ -3232,9 +3239,21 @@ PyThreadState_SetDaemon(int daemon)
     if (daemon != 0 && daemon != 1) {
         Py_FatalError("daemon must be 0 or 1");
     }
+    PyInterpreterState *interp = tstate->interp;
+    assert(interp != NULL);
     if (tstate->daemon == daemon) {
         return 0;
     }
+
+    struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
+    PyMutex_Lock(&finalizing->mutex);
+    if (_PyEvent_IsSet(&finalizing->finished)) {
+        /* Native threads have already finalized */
+        PyMutex_Unlock(&finalizing->mutex);
+        return -1;
+    }
+    ++finalizing->countdown;
+    PyMutex_Unlock(&finalizing->mutex);
     tstate->daemon = daemon;
     return 1;
 }

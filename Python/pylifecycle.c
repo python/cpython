@@ -13,6 +13,7 @@
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
 #include "pycore_global_objects_fini_generated.h"  // _PyStaticObjects_CheckRefcnt()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_interp_structs.h"
 #include "pycore_long.h"          // _PyLong_InitTypes()
 #include "pycore_object.h"        // _PyDebug_PrintTotalRefs()
 #include "pycore_obmalloc.h"      // _PyMem_init_obmalloc()
@@ -96,6 +97,7 @@ static PyStatus init_android_streams(PyThreadState *tstate);
 static PyStatus init_apple_streams(PyThreadState *tstate);
 #endif
 static void wait_for_thread_shutdown(PyThreadState *tstate);
+static void wait_for_native_shutdown(PyInterpreterState *interp);
 static void finalize_subinterpreters(void);
 static void call_ll_exitfuncs(_PyRuntimeState *runtime);
 
@@ -2012,6 +2014,9 @@ _Py_Finalize(_PyRuntimeState *runtime)
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
 
+    // Wrap up non-daemon native threads
+    wait_for_native_shutdown(tstate->interp);
+
     // Make any remaining pending calls.
     _Py_FinishPendingCalls(tstate);
 
@@ -2428,6 +2433,9 @@ Py_EndInterpreter(PyThreadState *tstate)
 
     // Wrap up existing "threading"-module-created, non-daemon threads.
     wait_for_thread_shutdown(tstate);
+
+    // Wrap up non-daemon native threads
+    wait_for_native_shutdown(tstate->interp);
 
     // Make any remaining pending calls.
     _Py_FinishPendingCalls(tstate);
@@ -3453,6 +3461,24 @@ wait_for_thread_shutdown(PyThreadState *tstate)
         Py_DECREF(result);
     }
     Py_DECREF(threading);
+}
+
+/* Wait for all non-daemon native threads to finish.
+   See PEP 788. */
+static void
+wait_for_native_shutdown(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
+    PyMutex_Lock(&finalizing->mutex);
+    if (finalizing->countdown == 0) {
+        PyMutex_Unlock(&finalizing->mutex);
+        return;
+    }
+    PyMutex_Unlock(&finalizing->mutex);
+
+    PyEvent_Wait(&finalizing->finished);
+    assert(finalizing->countdown == 0);
 }
 
 int Py_AtExit(void (*func)(void))
