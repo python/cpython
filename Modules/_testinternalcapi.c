@@ -1962,6 +1962,18 @@ gh_119213_getargs_impl(PyObject *module, PyObject *spam)
     return Py_NewRef(spam);
 }
 
+/*[clinic input]
+get_next_dict_keys_version
+[clinic start generated code]*/
+
+static PyObject *
+get_next_dict_keys_version_impl(PyObject *module)
+/*[clinic end generated code: output=e5405a509cf9d423 input=bd1cee7c6b9d3a3c]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    uint32_t keys_version = interp->dict_state.next_keys_version;
+    return PyLong_FromLong(keys_version);
+}
 
 static PyObject *
 get_static_builtin_types(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -2100,6 +2112,7 @@ static PyMethodDef module_functions[] = {
     {"get_tracked_heap_size", get_tracked_heap_size, METH_NOARGS},
     {"is_static_immortal", is_static_immortal, METH_O},
     {"incref_decref_delayed", incref_decref_delayed, METH_O},
+    GET_NEXT_DICT_KEYS_VERSION_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 
