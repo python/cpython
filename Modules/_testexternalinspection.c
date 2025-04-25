@@ -65,7 +65,7 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
         address = search_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython");
     }
 #else
-    address = 0;
+    Py_UNREACHABLE();
 #endif
 
     return address;

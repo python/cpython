@@ -699,7 +699,7 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
         address = search_map_for_section(handle, "PyRuntime", "python");
     }
 #else
-    address = 0;
+    Py_UNREACHABLE();
 #endif
 
     return address;
