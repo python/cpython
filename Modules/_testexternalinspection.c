@@ -482,9 +482,6 @@ parse_task(
         return -1;
     }
 
-    uintptr_t refcnt;
-    read_ptr(handle, task_address + sizeof(Py_ssize_t), &refcnt);
-
     PyObject* result = PyList_New(0);
     if (result == NULL) {
         return -1;
