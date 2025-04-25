@@ -1340,9 +1340,8 @@ module_exec(PyObject *mod)
     if (XIBufferViewType == NULL) {
         goto error;
     }
-    int res = PyModule_AddType(mod, XIBufferViewType);
-    Py_DECREF(XIBufferViewType);
-    if (res < 0) {
+    if (PyModule_AddType(mod, XIBufferViewType) < 0) {
+        Py_DECREF(XIBufferViewType);
         return -1;
     }
 
