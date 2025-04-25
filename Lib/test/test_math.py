@@ -1978,7 +1978,7 @@ class MathTests(unittest.TestCase):
         self.assertFalse(math.isnormal(FLOAT_MIN/2))
         self.assertFalse(math.isnormal(-FLOAT_MIN/2))
 
-    def testIsnormal(self):
+    def testIssubnormal(self):
         self.assertFalse(math.issubnormal(1.25))
         self.assertFalse(math.issubnormal(-1.0))
         self.assertFalse(math.issubnormal(0.0))
