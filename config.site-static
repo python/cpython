@@ -9,7 +9,7 @@ ac_cv_header_zlib_h=no
 pkg_check_module_ZLIB=no
 
 py_cv_module__decimal=n/a
-py_cv_module__ctypes=n/a
+py_cv_module__ctypes=yes
 py_cv_module__curses=n/a
 py_cv_module__curses_panel=n/a
 py_cv_module_zlib=n/a
