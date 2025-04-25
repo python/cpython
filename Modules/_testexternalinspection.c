@@ -54,6 +54,7 @@
 #include <internal/pycore_debug_offsets.h>  // _Py_DebugOffsets
 #include <internal/pycore_frame.h>          // FRAME_SUSPENDED_YIELD_FROM
 #include <internal/pycore_interpframe.h>    // FRAME_OWNED_BY_CSTACK
+#include <internal/pycore_llist.h>          // struct llist_node
 #include <internal/pycore_stackref.h>       // Py_TAG_BITS
 
 #ifndef HAVE_PROCESS_VM_READV
@@ -68,11 +69,17 @@ struct _Py_AsyncioModuleDebugOffsets {
         uint64_t task_is_task;
         uint64_t task_awaited_by_is_set;
         uint64_t task_coro;
+        uint64_t task_node;
     } asyncio_task_object;
+    struct _asyncio_interpreter_state {
+        uint64_t size;
+        uint64_t asyncio_tasks_head;
+    } asyncio_interpreter_state;
     struct _asyncio_thread_state {
         uint64_t size;
         uint64_t asyncio_running_loop;
         uint64_t asyncio_running_task;
+        uint64_t asyncio_tasks_head;
     } asyncio_thread_state;
 };
 
@@ -1464,6 +1471,259 @@ find_running_task(
     return 0;
 }
 
+static int
+append_awaited_by_for_thread(
+    int pid,
+    uintptr_t head_addr,
+    struct _Py_DebugOffsets *debug_offsets,
+    struct _Py_AsyncioModuleDebugOffsets *async_offsets,
+    PyObject *result
+) {
+    struct llist_node task_node;
+
+    if (0 > read_memory(
+                pid,
+                head_addr,
+                sizeof(task_node),
+                &task_node))
+    {
+        return -1;
+    }
+
+    size_t iteration_count = 0;
+    const size_t MAX_ITERATIONS = 2 << 15;  // A reasonable upper bound
+    while ((uintptr_t)task_node.next != head_addr) {
+        if (++iteration_count > MAX_ITERATIONS) {
+            PyErr_SetString(PyExc_RuntimeError, "Task list appears corrupted");
+            return -1;
+        }
+
+        if (task_node.next == NULL) {
+            PyErr_SetString(
+                PyExc_RuntimeError,
+                "Invalid linked list structure reading remote memory");
+            return -1;
+        }
+
+        uintptr_t task_addr = (uintptr_t)task_node.next
+            - async_offsets->asyncio_task_object.task_node;
+
+        PyObject *tn = parse_task_name(
+            pid,
+            debug_offsets,
+            async_offsets,
+            task_addr);
+        if (tn == NULL) {
+            return -1;
+        }
+
+        PyObject *current_awaited_by = PyList_New(0);
+        if (current_awaited_by == NULL) {
+            Py_DECREF(tn);
+            return -1;
+        }
+
+        PyObject *result_item = PyTuple_New(2);
+        if (result_item == NULL) {
+            Py_DECREF(tn);
+            Py_DECREF(current_awaited_by);
+            return -1;
+        }
+
+        PyTuple_SET_ITEM(result_item, 0, tn);  // steals ref
+        PyTuple_SET_ITEM(result_item, 1, current_awaited_by);  // steals ref
+        if (PyList_Append(result, result_item)) {
+            Py_DECREF(result_item);
+            return -1;
+        }
+        Py_DECREF(result_item);
+
+        if (parse_task_awaited_by(pid, debug_offsets, async_offsets,
+                                  task_addr, current_awaited_by))
+        {
+            return -1;
+        }
+
+        // onto the next one...
+        if (0 > read_memory(
+                    pid,
+                    (uintptr_t)task_node.next,
+                    sizeof(task_node),
+                    &task_node))
+        {
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+static int
+append_awaited_by(
+    int pid,
+    unsigned long tid,
+    uintptr_t head_addr,
+    struct _Py_DebugOffsets *debug_offsets,
+    struct _Py_AsyncioModuleDebugOffsets *async_offsets,
+    PyObject *result)
+{
+    PyObject *tid_py = PyLong_FromUnsignedLong(tid);
+    if (tid_py == NULL) {
+        return -1;
+    }
+
+    PyObject *result_item = PyTuple_New(2);
+    if (result_item == NULL) {
+        Py_DECREF(tid_py);
+        return -1;
+    }
+
+    PyObject* awaited_by_for_thread = PyList_New(0);
+    if (awaited_by_for_thread == NULL) {
+        Py_DECREF(tid_py);
+        Py_DECREF(result_item);
+        return -1;
+    }
+
+    PyTuple_SET_ITEM(result_item, 0, tid_py);  // steals ref
+    PyTuple_SET_ITEM(result_item, 1, awaited_by_for_thread);  // steals ref
+    if (PyList_Append(result, result_item)) {
+        Py_DECREF(result_item);
+        return -1;
+    }
+    Py_DECREF(result_item);
+
+    if (append_awaited_by_for_thread(
+            pid,
+            head_addr,
+            debug_offsets,
+            async_offsets,
+            awaited_by_for_thread))
+    {
+        return -1;
+    }
+
+    return 0;
+}
+
+static PyObject*
+get_all_awaited_by(PyObject* self, PyObject* args)
+{
+#if (!defined(__linux__) && !defined(__APPLE__)) || \
+    (defined(__linux__) && !HAVE_PROCESS_VM_READV)
+    PyErr_SetString(
+        PyExc_RuntimeError,
+        "get_all_awaited_by is not implemented on this platform");
+    return NULL;
+#endif
+
+    int pid;
+
+    if (!PyArg_ParseTuple(args, "i", &pid)) {
+        return NULL;
+    }
+
+    uintptr_t runtime_start_addr = get_py_runtime(pid);
+    if (runtime_start_addr == 0) {
+        if (!PyErr_Occurred()) {
+            PyErr_SetString(
+                PyExc_RuntimeError, "Failed to get .PyRuntime address");
+        }
+        return NULL;
+    }
+    struct _Py_DebugOffsets local_debug_offsets;
+
+    if (read_offsets(pid, &runtime_start_addr, &local_debug_offsets)) {
+        return NULL;
+    }
+
+    struct _Py_AsyncioModuleDebugOffsets local_async_debug;
+    if (read_async_debug(pid, &local_async_debug)) {
+        return NULL;
+    }
+
+    PyObject *result = PyList_New(0);
+    if (result == NULL) {
+        return NULL;
+    }
+
+    off_t interpreter_state_list_head =
+        local_debug_offsets.runtime_state.interpreters_head;
+
+    uintptr_t interpreter_state_addr;
+    if (0 > read_memory(
+                pid,
+                runtime_start_addr + interpreter_state_list_head,
+                sizeof(void*),
+                &interpreter_state_addr))
+    {
+        goto result_err;
+    }
+
+    uintptr_t thread_state_addr;
+    unsigned long tid = 0;
+    if (0 > read_memory(
+                pid,
+                interpreter_state_addr
+                + local_debug_offsets.interpreter_state.threads_head,
+                sizeof(void*),
+                &thread_state_addr))
+    {
+        goto result_err;
+    }
+
+    uintptr_t head_addr;
+    while (thread_state_addr != 0) {
+        if (0 > read_memory(
+                    pid,
+                    thread_state_addr
+                    + local_debug_offsets.thread_state.native_thread_id,
+                    sizeof(tid),
+                    &tid))
+        {
+            goto result_err;
+        }
+
+        head_addr = thread_state_addr
+            + local_async_debug.asyncio_thread_state.asyncio_tasks_head;
+
+        if (append_awaited_by(pid, tid, head_addr, &local_debug_offsets,
+                              &local_async_debug, result))
+        {
+            goto result_err;
+        }
+
+        if (0 > read_memory(
+                    pid,
+                    thread_state_addr + local_debug_offsets.thread_state.next,
+                    sizeof(void*),
+                    &thread_state_addr))
+        {
+            goto result_err;
+        }
+    }
+
+    head_addr = interpreter_state_addr
+        + local_async_debug.asyncio_interpreter_state.asyncio_tasks_head;
+
+    // On top of a per-thread task lists used by default by asyncio to avoid
+    // contention, there is also a fallback per-interpreter list of tasks;
+    // any tasks still pending when a thread is destroyed will be moved to the
+    // per-interpreter task list.  It's unlikely we'll find anything here, but
+    // interesting for debugging.
+    if (append_awaited_by(pid, 0, head_addr, &local_debug_offsets,
+                        &local_async_debug, result))
+    {
+        goto result_err;
+    }
+
+    return result;
+
+result_err:
+    Py_DECREF(result);
+    return NULL;
+}
+
 static PyObject*
 get_stack_trace(PyObject* self, PyObject* args)
 {
@@ -1686,6 +1946,8 @@ static PyMethodDef methods[] = {
         "Get the Python stack from a given PID"},
     {"get_async_stack_trace", get_async_stack_trace, METH_VARARGS,
         "Get the asyncio stack from a given PID"},
+    {"get_all_awaited_by", get_all_awaited_by, METH_VARARGS,
+        "Get all tasks and their awaited_by from a given PID"},
     {NULL, NULL, 0, NULL},
 };
 
