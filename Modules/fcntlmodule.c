@@ -88,25 +88,49 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
             return NULL;
         }
         Py_ssize_t len = view.len;
-        if (len > FCNTL_BUFSZ) {
-            PyErr_SetString(PyExc_ValueError,
-                            "fcntl argument 3 is too long");
+        if (len <= FCNTL_BUFSZ) {
+            memcpy(buf, view.buf, len);
+            buf[len] = '\0';
             PyBuffer_Release(&view);
-            return NULL;
-        }
-        memcpy(buf, view.buf, len);
-        buf[len] = '\0';
-        PyBuffer_Release(&view);
 
-        do {
-            Py_BEGIN_ALLOW_THREADS
-            ret = fcntl(fd, code, buf);
-            Py_END_ALLOW_THREADS
-        } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-        if (ret < 0) {
-            return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
+            do {
+                Py_BEGIN_ALLOW_THREADS
+                ret = fcntl(fd, code, buf);
+                Py_END_ALLOW_THREADS
+            } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+            if (ret < 0) {
+                return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
+            }
+            return PyBytes_FromStringAndSize(buf, len);
         }
-        return PyBytes_FromStringAndSize(buf, len);
+        else {
+            PyObject *result = PyBytes_FromStringAndSize(NULL, len);
+            if (result == NULL) {
+                PyBuffer_Release(&view);
+                return NULL;
+            }
+            void *ptr = PyBytes_AsString(result);
+            memcpy(ptr, view.buf, len);
+            PyBuffer_Release(&view);
+
+            do {
+                Py_BEGIN_ALLOW_THREADS
+                ret = fcntl(fd, code, ptr);
+                Py_END_ALLOW_THREADS
+            } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+            if (ret < 0) {
+                if (async_err) {
+                    PyErr_SetFromErrno(PyExc_OSError);
+                }
+                Py_DECREF(result);
+                return NULL;
+            }
+            if (ptr[len] != '\0') {
+                PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                return NULL;
+            }
+            return result;
+        }
 #undef FCNTL_BUFSZ
     }
     PyErr_Format(PyExc_TypeError,
@@ -239,25 +263,49 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
             return NULL;
         }
         Py_ssize_t len = view.len;
-        if (len > IOCTL_BUFSZ) {
-            PyErr_SetString(PyExc_ValueError,
-                            "ioctl argument 3 is too long");
+        if (len <= IOCTL_BUFSZ) {
+            memcpy(buf, view.buf, len);
+            buf[len] = '\0';
             PyBuffer_Release(&view);
-            return NULL;
-        }
-        memcpy(buf, view.buf, len);
-        buf[len] = '\0';
-        PyBuffer_Release(&view);
 
-        do {
-            Py_BEGIN_ALLOW_THREADS
-            ret = ioctl(fd, code, buf);
-            Py_END_ALLOW_THREADS
-        } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-        if (ret < 0) {
-            return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
+            do {
+                Py_BEGIN_ALLOW_THREADS
+                ret = ioctl(fd, code, buf);
+                Py_END_ALLOW_THREADS
+            } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+            if (ret < 0) {
+                return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
+            }
+            return PyBytes_FromStringAndSize(buf, len);
         }
-        return PyBytes_FromStringAndSize(buf, len);
+        else {
+            PyObject *result = PyBytes_FromStringAndSize(NULL, len);
+            if (result == NULL) {
+                PyBuffer_Release(&view);
+                return NULL;
+            }
+            void *ptr = PyBytes_AsString(result);
+            memcpy(ptr, view.buf, len);
+            PyBuffer_Release(&view);
+
+            do {
+                Py_BEGIN_ALLOW_THREADS
+                ret = ioctl(fd, code, ptr);
+                Py_END_ALLOW_THREADS
+            } while (ret == -1 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
+            if (ret < 0) {
+                if (async_err) {
+                    PyErr_SetFromErrno(PyExc_OSError);
+                }
+                Py_DECREF(result);
+                return NULL;
+            }
+            if (ptr[len] != '\0') {
+                PyErr_SetString(PyExc_SystemError, "buffer overflow");
+                return NULL;
+            }
+            return result;
+        }
 #undef IOCTL_BUFSZ
     }
     PyErr_Format(PyExc_TypeError,
