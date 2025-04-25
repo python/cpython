@@ -2119,9 +2119,8 @@ imported.  Patch by Sergey B Kirpichev.
 .. nonce: W9Gd09
 .. section: Library
 
-Support the :c:expr:`float complex` and :c:expr:`double complex` C types in
-the :mod:`struct` module if the compiler has C11 complex arithmetic.  Patch
-by Sergey B Kirpichev.
+Support the :c:expr:`float complex` and :c:expr:`double complex` C types in the
+:mod:`struct` module.  Patch by Sergey B Kirpichev.
 
 ..
 
