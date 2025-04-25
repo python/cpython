@@ -7293,6 +7293,32 @@ class ExtensionModuleTests(unittest.TestCase):
         res = script_helper.assert_python_ok('-c', script)
         self.assertFalse(res.err)
 
+    def test_remain_only_one_module(self):
+        script = textwrap.dedent("""
+            import sys
+            import gc
+            import weakref
+            ws = weakref.WeakSet()
+            for _ in range(3):
+                import _datetime
+                ws.add(_datetime)
+                del sys.modules["_datetime"]
+                del _datetime
+                gc.collect()
+                assert len(ws) == 1
+            """)
+        res = script_helper.assert_python_ok('-c', script)
+        self.assertFalse(res.err)
+
+    @unittest.skipIf(not support.Py_DEBUG, "Debug builds only")
+    def test_no_leak(self):
+        script = textwrap.dedent("""
+            import datetime
+            datetime.datetime.strptime('20000101', '%Y%m%d').strftime('%Y%m%d')
+            """)
+        res = script_helper.assert_python_ok('-X', 'showrefcount', '-c', script)
+        self.assertIn(b'[0 refs, 0 blocks]', res.err)
+
 
 def load_tests(loader, standard_tests, pattern):
     standard_tests.addTest(ZoneInfoCompleteTest())
