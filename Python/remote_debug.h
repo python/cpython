@@ -342,6 +342,7 @@ search_section_in_file(const char* secname, char* path, uintptr_t base, mach_vm_
     munmap(map, fs.st_size);
     if (close(fd) != 0) {
         PyErr_SetFromErrno(PyExc_OSError);
+        result = 0;
     }
     return result;
 }
@@ -495,6 +496,7 @@ exit:
     }
     if (fd >= 0 && close(fd) != 0) {
         PyErr_SetFromErrno(PyExc_OSError);
+        result = 0;
     }
     return result;
 }
@@ -570,7 +572,10 @@ search_linux_map_for_section(proc_handle_t *handle, const char* secname, const c
     }
 
     PyMem_Free(line);
-    fclose(maps_file);
+    if (fclose(maps_file) != 0) {
+        PyErr_SetFromErrno(PyExc_OSError);
+        retval = 0;
+    }
 
     return retval;
 }
