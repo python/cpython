@@ -2285,6 +2285,7 @@ if not SKIP_CORO_TESTS:
             ...     'p var.get()',
             ...     'print(await set_var(99))',
             ...     'p var.get()',
+            ...     'print(await get_var())',
             ...     'continue',
             ... ]):
             ...     test_function()
@@ -2308,6 +2309,10 @@ if not SKIP_CORO_TESTS:
             -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
             (Pdb) p var.get()
             99
+            (Pdb) print(await get_var())
+            99
+            > <doctest test.test_pdb.test_pdb_await_contextvar[5]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
             (Pdb) continue
             """
 
