@@ -4539,6 +4539,10 @@ config_set_int_attr(const PyConfigSpec *spec, int value)
 int
 PyConfig_Set(const char *name, PyObject *value)
 {
+    if (PySys_Audit("cpython.PyConfig_Set", "sO", name, value) < 0) {
+        return -1;
+    }
+
     const PyConfigSpec *spec = config_find_spec(name);
     if (spec == NULL) {
         spec = preconfig_find_spec(name);
