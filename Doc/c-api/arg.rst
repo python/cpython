@@ -626,8 +626,6 @@ Building values
    ``z#`` (:class:`str` or ``None``) [const char \*, :c:type:`Py_ssize_t`]
       Same as ``s#``.
 
-   .. _capi-py-buildvalue-format-u:
-
    ``u`` (:class:`str`) [const wchar_t \*]
       Convert a null-terminated :c:type:`wchar_t` buffer of Unicode (UTF-16 or UCS-4)
       data to a Python Unicode object.  If the Unicode buffer pointer is ``NULL``,

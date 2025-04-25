@@ -1,3 +1,2 @@
-Fix overflows when handling :ref:`K <capi-py-buildvalue-format-K>` and
-:ref:`u <capi-py-buildvalue-format-u>` formats in :c:func:`Py_BuildValue`.
-Patch by Bénédikt Tran.
+Fix an overflow when handling the :ref:`K <capi-py-buildvalue-format-K>` format
+in :c:func:`Py_BuildValue`. Patch by Bénédikt Tran.
