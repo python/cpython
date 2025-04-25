@@ -2432,7 +2432,7 @@ static PyObject *
 sys_is_remote_debug_enabled_impl(PyObject *module)
 /*[clinic end generated code: output=7ca3d38bdd5935eb input=7335c4a2fe8cf4f3]*/
 {
-#ifndef Py_REMOTE_DEBUG
+#if !definedPy_REMOTE_DEBUG) || !Py_SUPPORTS_REMOTE_DEBUG
     Py_RETURN_FALSE;
 #else
     const PyConfig *config = _Py_GetConfig();
