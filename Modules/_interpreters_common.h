@@ -5,7 +5,6 @@
     _RESOLVE_MODINIT_FUNC_NAME(NAME)
 
 
-#ifdef REGISTERS_HEAP_TYPES
 static int
 ensure_xid_class(PyTypeObject *cls, xidatafunc getdata)
 {
@@ -17,6 +16,7 @@ ensure_xid_class(PyTypeObject *cls, xidatafunc getdata)
     return _PyXIData_RegisterClass(&ctx, cls, getdata);
 }
 
+#ifdef REGISTERS_HEAP_TYPES
 static int
 clear_xid_class(PyTypeObject *cls)
 {
