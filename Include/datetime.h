@@ -178,9 +178,9 @@ typedef struct {
 
     /* constructors */
     PyObject *(*Date_FromDate)(int, int, int, PyTypeObject*);
-    PyObject *(*DateTime_FromDateAndTime)(int, int, int, int, int, int, int, int,
-        PyObject*, PyTypeObject*);
-    PyObject *(*Time_FromTime)(int, int, int, int, int, PyObject*, PyTypeObject*);
+    PyObject *(*DateTime_FromDateAndTime)(int, int, int, int, int, int, int,
+        PyObject*, int, int, PyTypeObject*);
+    PyObject *(*Time_FromTime)(int, int, int, int, PyObject*, int, int, PyTypeObject*);
     PyObject *(*Delta_FromDelta)(int, int, int, int, int, PyTypeObject*);
     PyObject *(*TimeZone_FromTimeZone)(PyObject *offset, PyObject *name);
 
@@ -189,9 +189,9 @@ typedef struct {
     PyObject *(*Date_FromTimestamp)(PyObject*, PyObject*);
 
     /* PEP 495 constructors */
-    PyObject *(*DateTime_FromDateAndTimeAndFold)(int, int, int, int, int, int, int, int,
-        PyObject*, int, PyTypeObject*);
-    PyObject *(*Time_FromTimeAndFold)(int, int, int, int, int, PyObject*, int, PyTypeObject*);
+    PyObject *(*DateTime_FromDateAndTimeAndFold)(int, int, int, int, int, int, int,
+        PyObject*, int, int, PyTypeObject*);
+    PyObject *(*Time_FromTimeAndFold)(int, int, int, int, PyObject*, int, int, PyTypeObject*);
 
 } PyDateTime_CAPI;
 
@@ -235,7 +235,7 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 
 #define PyDateTime_FromDateAndTime(year, month, day, hour, min, sec, usec, nanosec) \
     PyDateTimeAPI->DateTime_FromDateAndTime((year), (month), (day), (hour), \
-        (min), (sec), (usec), Py_None, (nanosec), PyDateTimeAPI->DateTimeType)
+        (min), (sec), (usec), Py_None, 0, (nanosec), PyDateTimeAPI->DateTimeType)
 
 #define PyDateTime_FromDateAndTimeAndFold(year, month, day, hour, min, sec, usec, fold, nanosec) \
     PyDateTimeAPI->DateTime_FromDateAndTimeAndFold((year), (month), (day), (hour), \
@@ -243,7 +243,7 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 
 #define PyTime_FromTime(hour, minute, second, usecond, nanosec) \
     PyDateTimeAPI->Time_FromTime((hour), (minute), (second), (usecond), \
-        Py_None, (nanosec), PyDateTimeAPI->TimeType)
+        Py_None, 0, (nanosec), PyDateTimeAPI->TimeType)
 
 #define PyTime_FromTimeAndFold(hour, minute, second, usecond, nanosec, fold) \
     PyDateTimeAPI->Time_FromTimeAndFold((hour), (minute), (second), (usecond), \

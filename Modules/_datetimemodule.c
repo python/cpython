@@ -1178,7 +1178,7 @@ parse_isoformat_time(const char *dtstr, size_t dtlen, int *hour, int *minute,
     tzinfo_pos++;
     int tzhour = 0, tzminute = 0, tzsecond = 0;
     rv = parse_hh_mm_ss_ff(tzinfo_pos, p_end, &tzhour, &tzminute, &tzsecond,
-                           &tzmicrosecond, &tznanosecond);
+                           tzmicrosecond, tznanosecond);
 
     *tzoffset = tzsign * ((tzhour * 3600) + (tzminute * 60) + tzsecond);
     *tzmicrosecond *= tzsign;
@@ -1270,10 +1270,10 @@ new_datetime_ex2(int year, int month, int day, int hour, int minute,
 
 static PyObject *
 new_datetime_ex(int year, int month, int day, int hour, int minute,
-                int second, int microsecond, PyObject *tzinfo, int nanosecond, PyTypeObject *type)
+                int second, int microsecond, PyObject *tzinfo, PyTypeObject *type)
 {
     return new_datetime_ex2(year, month, day, hour, minute, second, microsecond,
-                            tzinfo, 0, nanosecond, type);
+                            tzinfo, type);
 }
 
 #define new_datetime(y, m, d, hh, mm, ss, us, tzinfo, fold, ns) \
@@ -1376,9 +1376,9 @@ new_time_ex2(int hour, int minute, int second, int microsecond,
 
 static PyObject *
 new_time_ex(int hour, int minute, int second, int microsecond,
-            PyObject *tzinfo, int nanosecond, PyTypeObject *type)
+            PyObject *tzinfo, PyTypeObject *type)
 {
-    return new_time_ex2(hour, minute, second, microsecond, tzinfo, 0, nanosecond, type);
+    return new_time_ex2(hour, minute, second, microsecond, tzinfo, type);
 }
 
 #define new_time(hh, mm, ss, us, tzinfo, fold, ns)  \

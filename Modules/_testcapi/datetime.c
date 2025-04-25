@@ -225,7 +225,7 @@ get_datetime_fromdateandtime(PyObject *self, PyObject *args)
         rv = PyDateTimeAPI->DateTime_FromDateAndTime(
                 year, month, day,
                 hour, minute, second, microsecond,
-                Py_None, nanosecond,
+                Py_None, 0, nanosecond,
                 PyDateTimeAPI->DateTimeType);
     }
     return rv;
@@ -284,7 +284,7 @@ get_time_fromtime(PyObject *self, PyObject *args)
     else {
         rv = PyDateTimeAPI->Time_FromTime(
                 hour, minute, second, microsecond,
-                Py_None, nanosecond,
+                Py_None, 0, nanosecond,
                 PyDateTimeAPI->TimeType);
     }
     return rv;
