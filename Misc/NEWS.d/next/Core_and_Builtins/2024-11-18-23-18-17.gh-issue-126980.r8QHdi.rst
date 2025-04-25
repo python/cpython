@@ -1,3 +1,0 @@
-Fix :meth:`~object.__buffer__` of :class:`bytearray` crashing when
-:attr:`~inspect.BufferFlags.READ` or :attr:`~inspect.BufferFlags.WRITE` are
-passed as flags.

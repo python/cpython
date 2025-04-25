@@ -1,3 +1,0 @@
-Fix value of :attr:`urllib.response.addinfourl.url` for ``file:`` URLs that
-express relative paths and absolute Windows paths. The canonical URL generated
-by :func:`urllib.request.pathname2url` is now used.

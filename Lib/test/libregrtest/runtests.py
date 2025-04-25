@@ -100,6 +100,7 @@ class RunTests:
     python_cmd: tuple[str, ...] | None
     randomize: bool
     random_seed: int | str
+    parallel_threads: int | None
 
     def copy(self, **override) -> 'RunTests':
         state = dataclasses.asdict(self)
@@ -184,6 +185,8 @@ class RunTests:
             args.extend(("--python", cmd))
         if self.randomize:
             args.append(f"--randomize")
+        if self.parallel_threads:
+            args.append(f"--parallel-threads={self.parallel_threads}")
         args.append(f"--randseed={self.random_seed}")
         return args
 

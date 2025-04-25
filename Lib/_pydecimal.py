@@ -97,7 +97,7 @@ class DecimalException(ArithmeticError):
 
     Used exceptions derive from this.
     If an exception derives from another exception besides this (such as
-    Underflow (Inexact, Rounded, Subnormal) that indicates that it is only
+    Underflow (Inexact, Rounded, Subnormal)) that indicates that it is only
     called if the others are present.  This isn't actually used for
     anything, though.
 
@@ -145,7 +145,7 @@ class InvalidOperation(DecimalException):
     x ** (+-)INF
     An operand is invalid
 
-    The result of the operation after these is a quiet positive NaN,
+    The result of the operation after this is a quiet positive NaN,
     except when the cause is a signaling NaN, in which case the result is
     also a quiet NaN, but with the original sign, and an optional
     diagnostic information.
@@ -2440,12 +2440,12 @@ class Decimal(object):
 
         return ans
 
-    def __rpow__(self, other, context=None):
+    def __rpow__(self, other, modulo=None, context=None):
         """Swaps self/other and returns __pow__."""
         other = _convert_other(other)
         if other is NotImplemented:
             return other
-        return other.__pow__(self, context=context)
+        return other.__pow__(self, modulo, context=context)
 
     def normalize(self, context=None):
         """Normalize- strip trailing 0s, change anything equal to 0 to 0e0"""
@@ -6098,7 +6098,7 @@ _parse_format_specifier_regex = re.compile(r"""\A
 (?P<alt>\#)?
 (?P<zeropad>0)?
 (?P<minimumwidth>(?!0)\d+)?
-(?P<thousands_sep>,)?
+(?P<thousands_sep>[,_])?
 (?:\.(?P<precision>0|(?!0)\d+))?
 (?P<type>[eEfFgGn%])?
 \Z

@@ -367,6 +367,8 @@ Decimal objects
    appears above.  These include decimal digits from various other
    alphabets (for example, Arabic-Indic and Devanāgarī digits) along
    with the fullwidth digits ``'\uff10'`` through ``'\uff19'``.
+   Case is not significant, so, for example, ``inf``, ``Inf``, ``INFINITY``,
+   and ``iNfINity`` are all acceptable spellings for positive infinity.
 
    If *value* is a :class:`tuple`, it should have three components, a sign
    (``0`` for positive or ``1`` for negative), a :class:`tuple` of
@@ -1033,7 +1035,7 @@ New contexts can also be created using the :class:`Context` constructor
 described below. In addition, the module provides three pre-made contexts:
 
 
-.. class:: BasicContext
+.. data:: BasicContext
 
    This is a standard context defined by the General Decimal Arithmetic
    Specification.  Precision is set to nine.  Rounding is set to
@@ -1044,7 +1046,7 @@ described below. In addition, the module provides three pre-made contexts:
    Because many of the traps are enabled, this context is useful for debugging.
 
 
-.. class:: ExtendedContext
+.. data:: ExtendedContext
 
    This is a standard context defined by the General Decimal Arithmetic
    Specification.  Precision is set to nine.  Rounding is set to
@@ -1057,7 +1059,7 @@ described below. In addition, the module provides three pre-made contexts:
    presence of conditions that would otherwise halt the program.
 
 
-.. class:: DefaultContext
+.. data:: DefaultContext
 
    This context is used by the :class:`Context` constructor as a prototype for new
    contexts.  Changing a field (such a precision) has the effect of changing the
@@ -1884,13 +1886,20 @@ the current thread.
 
 If :func:`setcontext` has not been called before :func:`getcontext`, then
 :func:`getcontext` will automatically create a new context for use in the
-current thread.
+current thread.  New context objects have default values set from the
+:data:`decimal.DefaultContext` object.
 
-The new context is copied from a prototype context called *DefaultContext*. To
-control the defaults so that each thread will use the same values throughout the
-application, directly modify the *DefaultContext* object. This should be done
-*before* any threads are started so that there won't be a race condition between
-threads calling :func:`getcontext`. For example::
+The :data:`sys.flags.thread_inherit_context` flag affects the context for
+new threads.  If the flag is false, new threads will start with an empty
+context.  In this case, :func:`getcontext` will create a new context object
+when called and use the default values from *DefaultContext*.  If the flag
+is true, new threads will start with a copy of context from the caller of
+:meth:`threading.Thread.start`.
+
+To control the defaults so that each thread will use the same values throughout
+the application, directly modify the *DefaultContext* object. This should be
+done *before* any threads are started so that there won't be a race condition
+between threads calling :func:`getcontext`. For example::
 
    # Set applicationwide defaults for all threads about to be launched
    DefaultContext.prec = 12
@@ -2262,7 +2271,7 @@ value for :attr:`~Context.prec` as well [#]_::
     Decimal('904625697166532776746648320380374280103671755200316906558262375061821325312')
 
 
-For inexact results, :attr:`MAX_PREC` is far too large on 64-bit platforms and
+For inexact results, :const:`MAX_PREC` is far too large on 64-bit platforms and
 the available memory will be insufficient::
 
    >>> Decimal(1) / 3

@@ -31,6 +31,7 @@ class WindowsConsoleTests(TestCase):
     def console(self, events, **kwargs) -> Console:
         console = WindowsConsole()
         console.get_event = MagicMock(side_effect=events)
+        console.wait = MagicMock()
         console._scroll = MagicMock()
         console._hide_cursor = MagicMock()
         console._show_cursor = MagicMock()
@@ -328,6 +329,20 @@ class WindowsConsoleTests(TestCase):
 
     def erase_in_line(self):
         return ERASE_IN_LINE.encode("utf8")
+
+    def test_multiline_ctrl_z(self):
+        # see gh-126332
+        code = "abcdefghi"
+
+        events = itertools.chain(
+            code_to_events(code),
+            [
+                Event(evt="key", data='\x1a', raw=bytearray(b'\x1a')),
+                Event(evt="key", data='\x1a', raw=bytearray(b'\x1a')),
+            ],
+        )
+        reader, _ = self.handle_events_narrow(events)
+        self.assertEqual(reader.cxy, (2, 3))
 
 
 if __name__ == "__main__":

@@ -401,7 +401,7 @@ Emission of bytecode is handled by the following macros:
   add the `LOAD_CONST` opcode with the proper argument based on the
   position of the specified PyObject in the consts table.
 * `ADDOP_LOAD_CONST_NEW(struct compiler *, location, PyObject *)`:
-  just like `ADDOP_LOAD_CONST_NEW`, but steals a reference to PyObject
+  just like `ADDOP_LOAD_CONST`, but steals a reference to PyObject
 * `ADDOP_JUMP(struct compiler *, location, int, basicblock *)`:
   create a jump to a basic block
 

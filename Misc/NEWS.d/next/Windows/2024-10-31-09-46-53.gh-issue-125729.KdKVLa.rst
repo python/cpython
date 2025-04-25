@@ -1,1 +1,0 @@
-Makes the presence of the :mod:`turtle` module dependent on the Tcl/Tk installer option. Previously, the module was always installed but would be unusable without Tcl/Tk.

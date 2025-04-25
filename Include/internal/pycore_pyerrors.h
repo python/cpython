@@ -60,6 +60,7 @@ extern PyObject* _PyErr_SetImportErrorWithNameFrom(
         PyObject *,
         PyObject *,
         PyObject *);
+extern int _PyErr_SetModuleNotFoundError(PyObject *name);
 
 
 /* runtime lifecycle */
@@ -113,6 +114,7 @@ extern void _PyErr_SetObject(
     PyObject *value);
 
 extern void _PyErr_ChainStackItem(void);
+extern void _PyErr_ChainExceptions1Tstate(PyThreadState *, PyObject *);
 
 PyAPI_FUNC(void) _PyErr_Clear(PyThreadState *tstate);
 
@@ -130,11 +132,29 @@ PyAPI_FUNC(void) _PyErr_SetString(
     PyObject *exception,
     const char *string);
 
+/*
+ * Set an exception with the error message decoded from the current locale
+ * encoding (LC_CTYPE).
+ *
+ * Exceptions occurring in decoding take priority over the desired exception.
+ *
+ * Exported for '_ctypes' shared extensions.
+ */
+PyAPI_FUNC(void) _PyErr_SetLocaleString(
+    PyObject *exception,
+    const char *string);
+
 PyAPI_FUNC(PyObject*) _PyErr_Format(
     PyThreadState *tstate,
     PyObject *exception,
     const char *format,
     ...);
+
+PyAPI_FUNC(PyObject*) _PyErr_FormatV(
+    PyThreadState *tstate,
+    PyObject *exception,
+    const char *format,
+    va_list vargs);
 
 extern void _PyErr_NormalizeException(
     PyThreadState *tstate,
@@ -177,6 +197,15 @@ Py_DEPRECATED(3.12) extern void _PyErr_ChainExceptions(PyObject *, PyObject *, P
 // Exported for test.test_peg_generator.test_c_parser
 PyAPI_DATA(PyTypeObject) _PyExc_IncompleteInputError;
 #define PyExc_IncompleteInputError ((PyObject *)(&_PyExc_IncompleteInputError))
+
+extern int _PyUnicodeError_GetParams(
+    PyObject *self,
+    PyObject **obj,
+    Py_ssize_t *objlen,
+    Py_ssize_t *start,
+    Py_ssize_t *end,
+    Py_ssize_t *slen,
+    int as_bytes);
 
 #ifdef __cplusplus
 }

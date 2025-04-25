@@ -1,3 +1,0 @@
-The :mod:`http.cookies` module now supports parsing obsolete :rfc:`850`
-date formats, in accordance with :rfc:`9110` requirements.
-Patch by Nano Zheng.
