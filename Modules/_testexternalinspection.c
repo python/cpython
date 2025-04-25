@@ -23,18 +23,6 @@
 #    define HAVE_PROCESS_VM_READV 0
 #endif
 
-#ifdef CHAIN_EXCEPTIONS
-#error "CHAIN_EXCEPTIONS should not be defined"
-#endif
-
-#define CHAIN_EXCEPTIONS(Type, Msg)                 \
-    do {                                            \
-        PyObject *exc = PyErr_GetRaisedException(); \
-        PyErr_SetString((Type), (Msg));             \
-        _PyErr_ChainExceptions1(exc);               \
-    } while(0)
-
-
 struct _Py_AsyncioModuleDebugOffsets {
     struct _asyncio_task_object {
         uint64_t size;
@@ -316,7 +304,7 @@ parse_task_name(
     if ((flags & Py_TPFLAGS_LONG_SUBCLASS)) {
         long res = read_py_long(handle, offsets, task_name_addr);
         if (res == -1) {
-            CHAIN_EXCEPTIONS(PyExc_RuntimeError, "Failed to get task name");
+            chain_exceptions(PyExc_RuntimeError, "Failed to get task name");
             return NULL;
         }
         return PyUnicode_FromFormat("Task-%d", res);
@@ -1181,13 +1169,13 @@ get_all_awaited_by(PyObject* self, PyObject* args)
     struct _Py_DebugOffsets local_debug_offsets;
 
     if (_Py_RemoteDebug_ReadDebugOffsets(handle, &runtime_start_addr, &local_debug_offsets)) {
-        CHAIN_EXCEPTIONS(PyExc_RuntimeError, "Failed to read debug offsets");
+        chain_exceptions(PyExc_RuntimeError, "Failed to read debug offsets");
         goto result_err;
     }
 
     struct _Py_AsyncioModuleDebugOffsets local_async_debug;
     if (read_async_debug(handle, &local_async_debug)) {
-        CHAIN_EXCEPTIONS(PyExc_RuntimeError, "Failed to read asyncio debug offsets");
+        chain_exceptions(PyExc_RuntimeError, "Failed to read asyncio debug offsets");
         goto result_err;
     }
 
@@ -1310,7 +1298,7 @@ get_stack_trace(PyObject* self, PyObject* args)
     struct _Py_DebugOffsets local_debug_offsets;
 
     if (_Py_RemoteDebug_ReadDebugOffsets(handle, &runtime_start_address, &local_debug_offsets)) {
-        CHAIN_EXCEPTIONS(PyExc_RuntimeError, "Failed to read debug offsets");
+        chain_exceptions(PyExc_RuntimeError, "Failed to read debug offsets");
         goto result_err;
     }
 
@@ -1381,13 +1369,13 @@ get_async_stack_trace(PyObject* self, PyObject* args)
     struct _Py_DebugOffsets local_debug_offsets;
 
     if (_Py_RemoteDebug_ReadDebugOffsets(handle, &runtime_start_address, &local_debug_offsets)) {
-        CHAIN_EXCEPTIONS(PyExc_RuntimeError, "Failed to read debug offsets");
+        chain_exceptions(PyExc_RuntimeError, "Failed to read debug offsets");
         goto result_err;
     }
 
     struct _Py_AsyncioModuleDebugOffsets local_async_debug;
     if (read_async_debug(handle, &local_async_debug)) {
-        CHAIN_EXCEPTIONS(PyExc_RuntimeError, "Failed to read asyncio debug offsets");
+        chain_exceptions(PyExc_RuntimeError, "Failed to read asyncio debug offsets");
         goto result_err;
     }
 
@@ -1409,7 +1397,7 @@ get_async_stack_trace(PyObject* self, PyObject* args)
         handle, runtime_start_address, &local_debug_offsets, &local_async_debug,
         &running_task_addr)
     ) {
-        CHAIN_EXCEPTIONS(PyExc_RuntimeError, "Failed to find running task");
+        chain_exceptions(PyExc_RuntimeError, "Failed to find running task");
         goto result_err;
     }
 
@@ -1424,7 +1412,7 @@ get_async_stack_trace(PyObject* self, PyObject* args)
         running_task_addr + local_async_debug.asyncio_task_object.task_coro,
         &running_coro_addr
     )) {
-        CHAIN_EXCEPTIONS(PyExc_RuntimeError, "Failed to read running task coro");
+        chain_exceptions(PyExc_RuntimeError, "Failed to read running task coro");
         goto result_err;
     }
 
@@ -1454,7 +1442,7 @@ get_async_stack_trace(PyObject* self, PyObject* args)
         handle, runtime_start_address, &local_debug_offsets,
         &address_of_current_frame)
     ) {
-        CHAIN_EXCEPTIONS(PyExc_RuntimeError, "Failed to find running frame");
+        chain_exceptions(PyExc_RuntimeError, "Failed to find running frame");
         goto result_err;
     }
 
@@ -1470,7 +1458,7 @@ get_async_stack_trace(PyObject* self, PyObject* args)
         );
 
         if (res < 0) {
-            CHAIN_EXCEPTIONS(PyExc_RuntimeError, "Failed to parse async frame object");
+            chain_exceptions(PyExc_RuntimeError, "Failed to parse async frame object");
             goto result_err;
         }
 
