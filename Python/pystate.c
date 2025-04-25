@@ -3292,8 +3292,9 @@ PyThreadState_Ensure(PyInterpreterState *interp)
     }
     PyThreadState *save = _PyThreadState_GET();
     if (save != NULL && save->interp == interp) {
+        /* We already have a thread state that matches the
+           interpreter. */
         Py_ssize_t refcnt = decref_interpreter(interp);
-        assert(refcnt > 1);
         entry->was_daemon = save->daemon;
         entry->next = save->ensured;
         entry->prior_tstate = NULL;

@@ -3472,6 +3472,7 @@ wait_for_native_shutdown(PyInterpreterState *interp)
     struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
     PyMutex_Lock(&finalizing->mutex);
     if (finalizing->countdown == 0) {
+        // Nothing to do.
         PyMutex_Unlock(&finalizing->mutex);
         return;
     }
