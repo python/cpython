@@ -302,7 +302,7 @@ class TimeRE(dict):
             # W is set below by using 'U'
             'y': r"(?P<y>\d\d)",
             'Y': r"(?P<Y>\d\d\d\d)",
-            'z': r"(?P<z>[+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?|(?-i:Z))",
+            'z': r"(?P<z>([+-]\d\d:?[0-5]\d(:?[0-5]\d(\.\d{1,6})?)?)|(?-i:Z))?",
             'A': self.__seqToRE(self.locale_time.f_weekday, 'A'),
             'a': self.__seqToRE(self.locale_time.a_weekday, 'a'),
             'B': self.__seqToRE(self.locale_time.f_month[1:], 'B'),
@@ -548,27 +548,28 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             iso_week = int(found_dict['V'])
         elif group_key == 'z':
             z = found_dict['z']
-            if z == 'Z':
-                gmtoff = 0
-            else:
-                if z[3] == ':':
-                    z = z[:3] + z[4:]
-                    if len(z) > 5:
-                        if z[5] != ':':
-                            msg = f"Inconsistent use of : in {found_dict['z']}"
-                            raise ValueError(msg)
-                        z = z[:5] + z[6:]
-                hours = int(z[1:3])
-                minutes = int(z[3:5])
-                seconds = int(z[5:7] or 0)
-                gmtoff = (hours * 60 * 60) + (minutes * 60) + seconds
-                gmtoff_remainder = z[8:]
-                # Pad to always return microseconds.
-                gmtoff_remainder_padding = "0" * (6 - len(gmtoff_remainder))
-                gmtoff_fraction = int(gmtoff_remainder + gmtoff_remainder_padding)
-                if z.startswith("-"):
-                    gmtoff = -gmtoff
-                    gmtoff_fraction = -gmtoff_fraction
+            if z:
+                if z == 'Z':
+                    gmtoff = 0
+                else:
+                    if z[3] == ':':
+                        z = z[:3] + z[4:]
+                        if len(z) > 5:
+                            if z[5] != ':':
+                                msg = f"Inconsistent use of : in {found_dict['z']}"
+                                raise ValueError(msg)
+                            z = z[:5] + z[6:]
+                    hours = int(z[1:3])
+                    minutes = int(z[3:5])
+                    seconds = int(z[5:7] or 0)
+                    gmtoff = (hours * 60 * 60) + (minutes * 60) + seconds
+                    gmtoff_remainder = z[8:]
+                    # Pad to always return microseconds.
+                    gmtoff_remainder_padding = "0" * (6 - len(gmtoff_remainder))
+                    gmtoff_fraction = int(gmtoff_remainder + gmtoff_remainder_padding)
+                    if z.startswith("-"):
+                        gmtoff = -gmtoff
+                        gmtoff_fraction = -gmtoff_fraction
         elif group_key == 'Z':
             # Since -1 is default value only need to worry about setting tz if
             # it can be something other than -1.

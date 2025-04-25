@@ -2921,6 +2921,12 @@ class TestDateTime(TestDate):
         with self.assertRaises(ValueError): strptime("-000", "%z")
         with self.assertRaises(ValueError): strptime("z", "%z")
 
+        # gh-issue: 122781; empty %z should pass
+        string = '2025-04-25 11:42:47'
+        format = '%Y-%m-%d %H:%M:%S%z'
+        result = self.theclass.strptime(string, format)
+        self.assertEqual(result, self.theclass(2025, 4, 25, 11, 42, 47))
+
     def test_strptime_single_digit(self):
         # bpo-34903: Check that single digit dates and times are allowed.
 
