@@ -6187,6 +6187,7 @@ add_datetime_timedelta(PyDateTime_DateTime *date, PyDateTime_Delta *delta,
     int microsecond = DATE_GET_MICROSECOND(date) +
                       GET_TD_MICROSECONDS(delta) * factor;
     int nanosecond = DATE_GET_NANOSECOND(date) +
+                     GET_TD_NANOSECONDS(delta) * factor;
     assert(factor == 1 || factor == -1);
     if (normalize_datetime(&year, &month, &day,
                            &hour, &minute, &second, &microsecond, &nanosecond) < 0) {
@@ -6231,7 +6232,7 @@ datetime_subtract(PyObject *left, PyObject *right)
         if (PyDateTime_Check(right)) {
             /* datetime - datetime */
             PyObject *offset1, *offset2, *offdiff = NULL;
-            int delta_d, delta_s, delta_us;
+            int delta_d, delta_s, delta_us, delta_ns;
 
             if (GET_DT_TZINFO(left) == GET_DT_TZINFO(right)) {
                 offset1 = Py_NewRef(Py_None);
