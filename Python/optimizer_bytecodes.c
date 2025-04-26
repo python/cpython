@@ -940,12 +940,14 @@ dummy_func(void) {
         res = sym_new_const(ctx, Py_True);
     }
 
-    op(_BUILD_STRING, (values[oparg] -- str)) {
-        str = sym_new_type(ctx, &PyUnicode_Type);
+
+
+    op(_BUILD_LIST, (values[oparg] -- list)) {
+        list = sym_new_type(ctx, &PyList_Type);
     }
 
-    op(_BUILD_SET, (values[oparg] -- set)) {
-        set = sym_new_type(ctx, &PySet_Type);
+    op(_BUILD_MAP, (values[oparg*2] -- map)) {
+        map = sym_new_type(ctx, &PyDict_Type);
     }
 
     op(_BUILD_SLICE, (values[oparg] -- slice)) {
@@ -956,12 +958,12 @@ dummy_func(void) {
         tup = sym_new_tuple(ctx, oparg, values);
     }
 
-    op(_BUILD_LIST, (values[oparg] -- list)) {
-        list = sym_new_type(ctx, &PyList_Type);
+    op(_BUILD_STRING, (values[oparg] -- str)) {
+        str = sym_new_type(ctx, &PyUnicode_Type);
     }
 
-    op(_BUILD_MAP, (values[oparg*2] -- map)) {
-        map = sym_new_type(ctx, &PyDict_Type);
+    op(_BUILD_SET, (values[oparg] -- set)) {
+        set = sym_new_type(ctx, &PySet_Type);
     }
 
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
