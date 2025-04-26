@@ -948,12 +948,13 @@ dummy_func(void) {
         list = sym_new_type(ctx, &PyList_Type);
     }
 
-    op(_BUILD_MAP, (values[oparg*2] -- map)) {
-        map = sym_new_type(ctx, &PyDict_Type);
-    }
 
     op(_BUILD_SLICE, (values[oparg] -- slice)) {
         slice = sym_new_type(ctx, &PySlice_Type);
+    }
+
+    op(_BUILD_MAP, (values[oparg*2] -- map)) {
+        map = sym_new_type(ctx, &PyDict_Type);
     }
 
     op(_BUILD_STRING, (values[oparg] -- str)) {
