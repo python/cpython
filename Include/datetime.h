@@ -241,9 +241,9 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
     PyDateTimeAPI->DateTime_FromDateAndTimeAndFold((year), (month), (day), (hour), \
         (min), (sec), (usec), Py_None, (fold), (nanosec), PyDateTimeAPI->DateTimeType)
 
-#define PyTime_FromTime(hour, minute, second, usecond, nanosec) \
+#define PyTime_FromTime(hour, minute, second, usecond) \
     PyDateTimeAPI->Time_FromTime((hour), (minute), (second), (usecond), \
-        Py_None, 0, (nanosec), PyDateTimeAPI->TimeType)
+        Py_None, PyDateTimeAPI->TimeType)
 
 #define PyTime_FromTimeAndFold(hour, minute, second, usecond, nanosec, fold) \
     PyDateTimeAPI->Time_FromTimeAndFold((hour), (minute), (second), (usecond), \

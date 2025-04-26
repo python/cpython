@@ -269,22 +269,22 @@ get_time_fromtime(PyObject *self, PyObject *args)
 {
     PyObject *rv = NULL;
     int macro;
-    int hour, minute, second, microsecond, nanosecond;
+    int hour, minute, second, microsecond;
 
     if (!PyArg_ParseTuple(args, "piiiii",
                           &macro,
-                          &hour, &minute, &second, &microsecond, &nanosecond))
+                          &hour, &minute, &second, &microsecond))
     {
         return NULL;
     }
 
     if (macro) {
-        rv = PyTime_FromTime(hour, minute, second, microsecond, nanosecond);
+        rv = PyTime_FromTime(hour, minute, second, microsecond);
     }
     else {
         rv = PyDateTimeAPI->Time_FromTime(
                 hour, minute, second, microsecond,
-                Py_None, 0, nanosecond,
+                Py_None,
                 PyDateTimeAPI->TimeType);
     }
     return rv;
