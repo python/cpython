@@ -1077,6 +1077,29 @@ class TestCopyTree(BaseTest, unittest.TestCase):
         self.assertTrue(os.path.islink(os.path.join(dst_dir, 'link_to_dir')))
         self.assertIn('test.txt', os.listdir(os.path.join(dst_dir, 'link_to_dir')))
 
+    @os_helper.skip_unless_symlink
+    def test_copytree_relative_symlink(self):
+        # Ensure valid relative symlinks are copied regardless of the value of
+        # the ignore_dangling_symlinks flag (see gh-91205)
+        src_dir = self.mkdtemp()
+        a_dir = os.path.join(src_dir, 'a')
+        a_file = os.path.join(a_dir, 'a.txt')
+        b_dir = os.path.join(a_dir, 'b')
+        os.mkdir(a_dir)
+        os.mkdir(b_dir)
+        create_file(os.path.join(a_dir, 'a.txt'))
+        os.symlink(os.path.join("..", 'a.txt'), os.path.join(b_dir, 'a.txt'))
+
+        for ignore_dangling_symlinks in (True, False):
+            with self.subTest(ignore_dangling_symlinks=ignore_dangling_symlinks):
+                dst_dir = os.path.join(self.mkdtemp(), 'x')
+                shutil.copytree(
+                    b_dir, dst_dir, symlinks=False,
+                    ignore_dangling_symlinks=ignore_dangling_symlinks)
+                self.assertIn('a.txt', os.listdir(dst_dir))
+                self.assertFalse(
+                    os.path.islink(os.path.join(dst_dir, 'a.txt')))
+
     def test_copytree_return_value(self):
         # copytree returns its destination path.
         src_dir = self.mkdtemp()
