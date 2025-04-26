@@ -327,9 +327,9 @@ done:
     PyMutex_Unlock(&getpwall_mutex);
 #endif
     /* Deferred decref on entries created above and added to the list. */
-    Py_ssize_t n = PyList_GET_SIZE(d);
+    Py_ssize_t n = PyList_Size(d);
     while (--n >= 0) {
-        Py_DECREF(PyList_GET_ITEM(d, n));
+        Py_DECREF(PyList_GetItem(d, n));
     }
     if (failure) {
         Py_XDECREF(orphan);
