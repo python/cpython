@@ -1400,23 +1400,23 @@ class TestChdir(unittest.TestCase):
                     os.chdir('a')
                     count += 1
 
-                self.assertTrue(count > 0)
+                self.assertGreater(count, 0)
                 os.mkdir('a')
                 with chdir('a'):
-                    self.assertTrue(len(os.getcwd()) > path_max)
+                    self.assertGreater(len(os.getcwd()), path_max)
 
     @unittest.skipUnless(chdir._supports_fd(),
                          "chdir requires fd support for deleted dir")
     def test_original_path_deleted(self):
         original = os.getcwd()
         dir = tempfile.TemporaryDirectory()
+        self.addCleanup(dir.cleanup)
         try:
             os.chdir(dir.name)
             with chdir(original):
                 dir.cleanup()
         finally:
             os.chdir(original)
-            dir.cleanup()
 
 
 if __name__ == "__main__":
