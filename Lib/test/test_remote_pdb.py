@@ -21,6 +21,10 @@ import pdb
 from pdb import _PdbServer, _PdbClient
 
 
+if not sys.is_remote_debug_enabled():
+    raise unittest.SkipTest('remote debugging is disabled')
+
+
 @contextmanager
 def kill_on_error(proc):
     """Context manager killing the subprocess if a Python exception is raised."""
@@ -465,12 +469,6 @@ class PdbConnectTestCase(unittest.TestCase):
 
     def test_keyboard_interrupt(self):
         """Test that sending keyboard interrupt breaks into pdb."""
-        synchronizer_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        synchronizer_sock.bind(('127.0.0.1', 0))  # Let OS assign port
-        synchronizer_sock.settimeout(SHORT_TIMEOUT)
-        synchronizer_sock.listen(1)
-        self.addCleanup(synchronizer_sock.close)
-        sync_port = synchronizer_sock.getsockname()[1]
 
         script = textwrap.dedent(f"""
             import time
@@ -487,11 +485,10 @@ class PdbConnectTestCase(unittest.TestCase):
                     version=pdb._PdbServer.protocol_version(),
                 )
                 print("Connected to debugger")
-                iterations = 10
-                socket.create_connection(('127.0.0.1', {sync_port})).close()
+                iterations = 50
                 while iterations > 0:
-                    print("Iteration", iterations)
-                    time.sleep(1)
+                    print("Iteration", iterations, flush=True)
+                    time.sleep(0.2)
                     iterations -= 1
                 return 42
 
@@ -508,22 +505,20 @@ class PdbConnectTestCase(unittest.TestCase):
             # Continue execution
             self._send_command(client_file, "c")
 
-            # Wait until execution has continued
-            synchronizer_sock.accept()[0].close()
-
-            # Wait a bit so the remote leaves create_connection(). This is not
-            # required but makes the rest of the test faster as we will exit the main
-            # loop immediately by setting iterations to 0.
-            time.sleep(0.1)
+            # Confirm that the remote is already in the while loop. We know
+            # it's in bar() and we can exit the loop immediately by setting
+            # iterations to 0.
+            while line := process.stdout.readline():
+                if line.startswith("Iteration"):
+                    break
 
             # Inject a script to interrupt the running process
             self._send_interrupt(process.pid)
             messages = self._read_until_prompt(client_file)
 
-            # Verify we got the keyboard interrupt message. Is possible that we get interrupted somewhere
-            # in bar() or when leving create_connection()
+            # Verify we got the keyboard interrupt message.
             interrupt_msgs = [msg['message'] for msg in messages if 'message' in msg]
-            expected_msg = [msg for msg in interrupt_msgs if "bar()" in msg or "create_connection()" in msg]
+            expected_msg = [msg for msg in interrupt_msgs if "bar()" in msg]
             self.assertGreater(len(expected_msg), 0)
 
             # Continue to end as fast as we can
