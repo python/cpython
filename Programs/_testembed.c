@@ -2361,7 +2361,13 @@ do_tstate_ensure(void *arg)
     ThreadData *data = (ThreadData *)arg;
     int res = PyThreadState_Ensure(data->interp);
     assert(res == 0);
+    PyThreadState_Ensure(PyInterpreterState_Hold());
+    PyThreadState_Ensure(PyInterpreterState_Hold());
+    PyThreadState_Ensure(PyInterpreterState_Hold());
     res = PyRun_SimpleString(THREAD_CODE);
+    PyThreadState_Release();
+    PyThreadState_Release();
+    PyThreadState_Release();
     assert(res == 0);
     PyThreadState_Release();
     data->done = 1;

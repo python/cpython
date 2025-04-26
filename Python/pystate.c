@@ -1812,7 +1812,7 @@ decrement_daemon_count(PyInterpreterState *interp)
 {
     assert(interp != NULL);
     struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
-    if (_Py_atomic_load_ssize_relaxed(&finalizing->countdown) == 1) {
+    if (_Py_atomic_add_ssize(&finalizing->countdown, -1) == 1) {
         _PyEvent_Notify(&finalizing->finished);
     }
 }
@@ -3324,11 +3324,15 @@ PyThreadState_Release(void)
         return;
     }
 
+    PyInterpreterState *interp = tstate->interp;
     tstate->ensured = ensured->next;
     tstate->daemon = ensured->was_daemon;
     PyMem_RawFree(ensured);
-    PyThreadState_Clear(tstate);
-    PyThreadState_Swap(NULL);
-    PyInterpreterState *interp = tstate->interp;
-    PyThreadState_Delete(tstate);
+    if (tstate->ensured == NULL) {
+        PyThreadState_Clear(tstate);
+        PyThreadState_Swap(NULL);
+        PyThreadState_Delete(tstate);
+    } else {
+        decrement_daemon_count(tstate->interp);
+    }
 }
