@@ -4447,14 +4447,6 @@ class _TestSharedMemory(BaseTestCase):
         with self.assertRaises(ValueError):
             sms_invalid = shared_memory.SharedMemory(create=True, size=-1)
 
-        # Test creating a shared memory segment with size 0
-        with self.assertRaises(ValueError):
-            sms_invalid = shared_memory.SharedMemory(create=True, size=0)
-
-        # Test creating a shared memory segment without size argument
-        with self.assertRaises(ValueError):
-            sms_invalid = shared_memory.SharedMemory(create=True)
-
     def test_shared_memory_pickle_unpickle(self):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             with self.subTest(proto=proto):
@@ -4871,21 +4863,12 @@ class _TestSharedMemory(BaseTestCase):
             with self.assertRaises(OSError):
                 shared_memory.SharedMemory(name, create=False)
 
-    @unittest.skipIf(os.name != "posix", "posix-only test w/ empty file")
-    def test_cleanup_zero_length_shared_memory(self):
-        import _posixshmem
-
-        name = self._new_shm_name("test_init_cleanup")
-        mem = _posixshmem.shm_open(name, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0o600)
-        os.close(mem)
-
-        # First time the mmap.mmap fails with a ValueError, as the shared
-        # memory is zero-length and hence the mmap fails...
-        with self.assertRaises(ValueError):
-            shared_memory.SharedMemory(name, create=False)
-
-        # ...but it should NOT delete the shared memory as part of its cleanup
-        _posixshmem.shm_unlink(name)
+    def test_zero_length_shared_memory(self):
+        name = self._new_shm_name("test_zero_length_shared_memory")
+        mem = shared_memory.SharedMemory(name, create=True, size=0)
+        self.addCleanup(mem.unlink)
+        self.assertEqual(mem.size, 0)
+        self.assertEqual(len(mem.buf), 0)
 
 #
 # Test to verify that `Finalize` works.
