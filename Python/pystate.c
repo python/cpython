@@ -3074,9 +3074,6 @@ _PyThreadState_CheckConsistency(PyThreadState *tstate)
 int
 _PyThreadState_MustExit(PyThreadState *tstate)
 {
-    if (!tstate->daemon) {
-        return 0;
-    }
     int state = _Py_atomic_load_int_relaxed(&tstate->state);
     return state == _Py_THREAD_SHUTTING_DOWN;
 }
@@ -3218,6 +3215,29 @@ PyInterpreterState_Hold(void)
     PyInterpreterState *interp = PyInterpreterState_Get();
     assert(_Py_atomic_load_ssize_relaxed(&interp->threads.finalizing.countdown) >= 0);
     _Py_atomic_add_ssize(&interp->threads.finalizing.countdown, 1);
+    return interp;
+}
+
+PyInterpreterState *
+PyInterpreterState_Lookup(int64_t interp_id)
+{
+    PyInterpreterState *interp = _PyInterpreterState_LookUpID(interp_id);
+    if (interp == NULL) {
+        return NULL;
+    }
+    HEAD_LOCK(&_PyRuntime); // Prevent deletion
+    struct _Py_finalizing_threads finalizing = interp->threads.finalizing;
+    PyMutex *mutex = &finalizing.mutex;
+    PyMutex_Lock(mutex); // Synchronize TOCTOU with the event flag
+    if (_PyEvent_IsSet(&finalizing.finished)) {
+        /* Interpreter has already finished threads */
+        interp = NULL;
+    } else {
+        _Py_atomic_add_ssize(&finalizing.countdown, 1);
+    }
+    PyMutex_Unlock(mutex);
+    HEAD_UNLOCK(&_PyRuntime);
+
     return interp;
 }
 
