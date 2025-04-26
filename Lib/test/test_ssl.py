@@ -155,7 +155,8 @@ if is_ubuntu():
         for ctx in ctxs:
             if (
                 hasattr(ctx, "minimum_version") and
-                ctx.minimum_version <= ssl.TLSVersion.TLSv1_1
+                ctx.minimum_version <= ssl.TLSVersion.TLSv1_1 and
+                ctx.security_level > 1
             ):
                 ctx.set_ciphers("@SECLEVEL=1:ALL")
 else:

@@ -1779,7 +1779,8 @@ in :mod:`!ctypes`) which inherits from the private :class:`_CFuncPtr` class:
 
 .. audit-event:: ctypes.call_function func_pointer,arguments foreign-functions
 
-   Some ways to invoke foreign function calls may raise an auditing event
+   Some ways to invoke foreign function calls as well as some of the
+   functions in this module may raise an auditing event
    ``ctypes.call_function`` with arguments ``function pointer`` and ``arguments``.
 
 .. _ctypes-function-prototypes:
@@ -2632,6 +2633,9 @@ These are the fundamental ctypes data types:
    Represents the C :c:expr:`PyObject *` datatype.  Calling this without an
    argument creates a ``NULL`` :c:expr:`PyObject *` pointer.
 
+   .. versionchanged:: 3.14
+      :class:`!py_object` is now a :term:`generic type`.
+
 The :mod:`!ctypes.wintypes` module provides quite some other Windows specific
 data types, for example :c:type:`!HWND`, :c:type:`!WPARAM`, or :c:type:`!DWORD`.
 Some useful structures like :c:type:`!MSG` or :c:type:`!RECT` are also defined.
@@ -2843,7 +2847,7 @@ fields, or any other data types containing pointer type fields.
    :class:`!CField` objects are created via :attr:`~Structure._fields_`;
    do not instantiate the class directly.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
       Previously, descriptors only had ``offset`` and ``size`` attributes
       and a readable string representation; the :class:`!CField` class was not

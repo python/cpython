@@ -68,13 +68,15 @@ class TestEffects(unittest.TestCase):
             StackItem("b", None, "oparg*4"),
             StackItem("c", None, "1"),
         ]
-        stack.pop(z)
-        stack.pop(y)
-        stack.pop(x)
+        null = CWriter.null()
+        stack.pop(z, null)
+        stack.pop(y, null)
+        stack.pop(x, null)
         for out in outputs:
             stack.push(Local.undefined(out))
         self.assertEqual(stack.base_offset.to_c(), "-1 - oparg - oparg*2")
-        self.assertEqual(stack.top_offset.to_c(), "1 - oparg - oparg*2 + oparg*4")
+        self.assertEqual(stack.physical_sp.to_c(), "0")
+        self.assertEqual(stack.logical_sp.to_c(), "1 - oparg - oparg*2 + oparg*4")
 
 
 class TestGeneratedCases(unittest.TestCase):
@@ -455,7 +457,6 @@ class TestGeneratedCases(unittest.TestCase):
             if (cond) {
                 JUMP_TO_LABEL(label);
             }
-            // Comment is ok
             DISPATCH();
         }
     """
@@ -584,7 +585,6 @@ class TestGeneratedCases(unittest.TestCase):
 
         LABEL(somewhere)
         {
-
         }
     """
         self.run_cases_test(input, output)
@@ -1349,7 +1349,6 @@ class TestGeneratedCases(unittest.TestCase):
             }
             // THIRD
             {
-                // Mark j and k as used
                 if (cond) {
                     JUMP_TO_LABEL(pop_2_error);
                 }
@@ -1755,17 +1754,14 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         LABEL(other_label)
         {
-
         }
 
         LABEL(other_label2)
         {
-
         }
 
         LABEL(my_label)
         {
-            // Comment
             _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing();
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -1793,7 +1789,6 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         LABEL(one)
         {
-            /* STACK SPILLED */
             stack_pointer = _PyFrame_GetStackPointer(frame);
             JUMP_TO_LABEL(two);
         }
@@ -1849,7 +1844,6 @@ class TestGeneratedCases(unittest.TestCase):
         output = """
         LABEL(my_label_1)
         {
-            // Comment
             _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing1();
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -1858,7 +1852,6 @@ class TestGeneratedCases(unittest.TestCase):
 
         LABEL(my_label_2)
         {
-            // Comment
             _PyFrame_SetStackPointer(frame, stack_pointer);
             do_thing2();
             stack_pointer = _PyFrame_GetStackPointer(frame);
@@ -1869,13 +1862,28 @@ class TestGeneratedCases(unittest.TestCase):
 
     def test_reassigning_live_inputs(self):
         input = """
-        inst(OP, (in -- )) {
+        inst(OP, (in -- in)) {
             in = 0;
-            DEAD(in);
         }
         """
-        with self.assertRaises(SyntaxError):
-            self.run_cases_test(input, "")
+
+        output = """
+        TARGET(OP) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = OP;
+            (void)(opcode);
+            #endif
+            frame->instr_ptr = next_instr;
+            next_instr += 1;
+            INSTRUCTION_STATS(OP);
+            _PyStackRef in;
+            in = stack_pointer[-1];
+            in = 0;
+            stack_pointer[-1] = in;
+            DISPATCH();
+        }
+        """
+        self.run_cases_test(input, output)
 
     def test_reassigning_dead_inputs(self):
         input = """

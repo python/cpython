@@ -583,6 +583,7 @@ list_repr_impl(PyListObject *v)
     /* "[" + "1" + ", 2" * (len - 1) + "]" */
     Py_ssize_t prealloc = 1 + 1 + (2 + 1) * (Py_SIZE(v) - 1) + 1;
     PyUnicodeWriter *writer = PyUnicodeWriter_Create(prealloc);
+    PyObject *item = NULL;
     if (writer == NULL) {
         goto error;
     }
@@ -594,6 +595,9 @@ list_repr_impl(PyListObject *v)
     /* Do repr() on each element.  Note that this may mutate the list,
        so must refetch the list size on each iteration. */
     for (Py_ssize_t i = 0; i < Py_SIZE(v); ++i) {
+        /* Hold a strong reference since repr(item) can mutate the list */
+        item = Py_NewRef(v->ob_item[i]);
+
         if (i > 0) {
             if (PyUnicodeWriter_WriteChar(writer, ',') < 0) {
                 goto error;
@@ -603,9 +607,10 @@ list_repr_impl(PyListObject *v)
             }
         }
 
-        if (PyUnicodeWriter_WriteRepr(writer, v->ob_item[i]) < 0) {
+        if (PyUnicodeWriter_WriteRepr(writer, item) < 0) {
             goto error;
         }
+        Py_CLEAR(item);
     }
 
     if (PyUnicodeWriter_WriteChar(writer, ']') < 0) {
@@ -616,6 +621,7 @@ list_repr_impl(PyListObject *v)
     return PyUnicodeWriter_Finish(writer);
 
 error:
+    Py_XDECREF(item);
     PyUnicodeWriter_Discard(writer);
     Py_ReprLeave((PyObject *)v);
     return NULL;
@@ -3873,7 +3879,7 @@ PyTypeObject PyList_Type = {
     0,                                          /* tp_descr_get */
     0,                                          /* tp_descr_set */
     0,                                          /* tp_dictoffset */
-    (initproc)list___init__,                    /* tp_init */
+    list___init__,                              /* tp_init */
     PyType_GenericAlloc,                        /* tp_alloc */
     PyType_GenericNew,                          /* tp_new */
     PyObject_GC_Del,                            /* tp_free */

@@ -1375,6 +1375,8 @@ class GrammarTests(unittest.TestCase):
         try: 1/0
         except (EOFError, TypeError, ZeroDivisionError): pass
         try: 1/0
+        except EOFError, TypeError, ZeroDivisionError: pass
+        try: 1/0
         except (EOFError, TypeError, ZeroDivisionError) as msg: pass
         try: pass
         finally: pass
@@ -1397,6 +1399,8 @@ class GrammarTests(unittest.TestCase):
         else: pass
         try: 1/0
         except* (EOFError, TypeError, ZeroDivisionError): pass
+        try: 1/0
+        except* EOFError, TypeError, ZeroDivisionError: pass
         try: 1/0
         except* (EOFError, TypeError, ZeroDivisionError) as msg: pass
         try: pass

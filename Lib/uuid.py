@@ -134,9 +134,16 @@ class UUID:
 
         fields      a tuple of the six integer fields of the UUID,
                     which are also available as six individual attributes
-                    and two derived attributes. The time_* attributes are
-                    only relevant to version 1, while the others are only
-                    relevant to versions 1 and 6:
+                    and two derived attributes. Those attributes are not
+                    always relevant to all UUID versions:
+
+                        The 'time_*' attributes are only relevant to version 1.
+
+                        The 'clock_seq*' and 'node' attributes are only relevant
+                        to versions 1 and 6.
+
+                        The 'time' attribute is only relevant to versions 1, 6
+                        and 7.
 
             time_low                the first 32 bits of the UUID
             time_mid                the next 16 bits of the UUID
@@ -145,7 +152,8 @@ class UUID:
             clock_seq_low           the next 8 bits of the UUID
             node                    the last 48 bits of the UUID
 
-            time                    the 60-bit timestamp
+            time                    the 60-bit timestamp for UUIDv1/v6,
+                                    or the 48-bit timestamp for UUIDv7
             clock_seq               the 14-bit sequence number
 
         hex         the UUID as a 32-character hexadecimal string
@@ -366,6 +374,9 @@ class UUID:
             time_hi = self.int >> 96
             time_lo = (self.int >> 64) & 0x0fff
             return time_hi << 28 | (self.time_mid << 12) | time_lo
+        elif self.version == 7:
+            # unix_ts_ms (48) | ... (80)
+            return self.int >> 80
         else:
             # time_lo (32) | time_mid (16) | ver (4) | time_hi (12) | ... (64)
             #
