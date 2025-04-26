@@ -944,6 +944,10 @@ dummy_func(void) {
         str = sym_new_type(ctx, &PyUnicode_Type);
     }
 
+    op(_BUILD_SET, (values[oparg] -- set)) {
+        set = sym_new_type(ctx, &PySet_Type);
+    }
+
     op(_BUILD_SLICE, (values[oparg] -- slice)) {
         slice = sym_new_type(ctx, &PySlice_Type);
     }
@@ -954,10 +958,6 @@ dummy_func(void) {
 
     op(_BUILD_LIST, (values[oparg] -- list)) {
         list = sym_new_type(ctx, &PyList_Type);
-    }
-
-    op(_BUILD_SLICE, (values[oparg] -- slice)) {
-        slice = sym_new_type(ctx, &PySlice_Type);
     }
 
     op(_BUILD_MAP, (values[oparg*2] -- map)) {
