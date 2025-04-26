@@ -339,7 +339,7 @@ class _Stream:
     """
 
     def __init__(self, name, mode, comptype, fileobj, bufsize,
-                 compresslevel):
+                 compresslevel, preset):
         """Construct a _Stream object.
         """
         self._extfileobj = True
@@ -398,7 +398,7 @@ class _Stream:
                     self.cmp = lzma.LZMADecompressor()
                     self.exception = lzma.LZMAError
                 else:
-                    self.cmp = lzma.LZMACompressor()
+                    self.cmp = lzma.LZMACompressor(preset=preset)
 
             elif comptype != "tar":
                 raise CompressionError("unknown compression type %r" % comptype)
@@ -1887,8 +1887,9 @@ class TarFile(object):
                 raise ValueError("mode must be 'r' or 'w'")
 
             compresslevel = kwargs.pop("compresslevel", 9)
+            preset = kwargs.pop("preset", None)
             stream = _Stream(name, filemode, comptype, fileobj, bufsize,
-                             compresslevel)
+                             compresslevel, preset)
             try:
                 t = cls(name, filemode, stream, **kwargs)
             except:
