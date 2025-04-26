@@ -915,26 +915,16 @@ dummy_func(void) {
         res = sym_new_const(ctx, Py_True);
     }
 
-    op(_BUILD_TUPLE, (values[oparg] -- tup)) {
-        tup = sym_new_tuple(ctx, oparg, values);
+    op(_BUILD_STRING, (values[oparg] -- str)) {
+        str = sym_new_type(ctx, &PyUnicode_Type);
     }
 
-    op(_BUILD_STRING, (values[oparg] -- str)) {
-        bool is_const = true;
-        for (int i = 0; i < oparg; i++) {
-            if (!sym_is_const(ctx, values[i])) {
-                is_const = false;
-                break;
-            }
-        }
-        if (is_const) {
-            PyObject *val = sym_get_const(ctx, values[0]);
-            str = sym_new_const(ctx, val);
-            Py_DecRef(val);
-        }
-        else {
-            str = sym_new_type(ctx, &PyUnicode_Type);
-        }
+    op(_BUILD_SLICE, (values[oparg] -- slice)) {
+        slice = sym_new_type(ctx, &PySlice_Type);
+    }
+
+    op(_BUILD_TUPLE, (values[oparg] -- tup)) {
+        tup = sym_new_tuple(ctx, oparg, values);
     }
 
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
