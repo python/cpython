@@ -161,7 +161,7 @@ class EventQueueTestBase:
         self.assertEqual(eq.get(), _event("key", "0"))
         self.assertEqual(eq.get(), _event("key", "0"))
 
-        self.assertEqual(eq.get(), _event("key", "ñ", bytearray(b'\xc3\xb1')))
+        self.assertEqual(eq.get(), _event("key", "ñ", b'\xc3\xb1'))
 
         self.assertEqual(eq.get(), _event("key", "\x1b"))
         self.assertEqual(eq.get(), _event("key", "["))

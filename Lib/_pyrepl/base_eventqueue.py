@@ -84,7 +84,7 @@ class BaseEventQueue:
                 char = bytes(char.encode(self.encoding, "replace"))
                 self.buf.extend(char)
             else:
-                char = bytes(bytearray((ord_char,)))
+                char = bytes([ord_char])
                 self.buf.append(ord_char)
 
         if char in self.keymap:
