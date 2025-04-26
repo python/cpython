@@ -208,6 +208,12 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #  include <sys/ioctl.h>
 #endif
 
+#if defined(HAVE_BLUETOOTH_H) && !defined(__FreeBSD__)
+#  include <netbt/l2cap.h>
+#  include <netbt/rfcomm.h>
+#  include <netbt/hci.h>
+#  include <netbt/sco.h>
+#endif
 
 #if defined(__sgi) && _COMPILER_VERSION>700 && !_SGIAPI
 /* make sure that the reentrant (gethostbyaddr_r etc)
@@ -460,37 +466,48 @@ remove_unusable_flags(PyObject *m)
 #  define SOCKETCLOSE close
 #endif
 
-#if (defined(HAVE_BLUETOOTH_H) || defined(HAVE_BLUETOOTH_BLUETOOTH_H)) && !defined(__NetBSD__) && !defined(__DragonFly__)
-#define USE_BLUETOOTH 1
-#if defined(__FreeBSD__)
-#define BTPROTO_L2CAP BLUETOOTH_PROTO_L2CAP
-#define BTPROTO_RFCOMM BLUETOOTH_PROTO_RFCOMM
-#define BTPROTO_HCI BLUETOOTH_PROTO_HCI
-#define SOL_HCI SOL_HCI_RAW
-#define HCI_FILTER SO_HCI_RAW_FILTER
-#define sockaddr_l2 sockaddr_l2cap
-#define sockaddr_rc sockaddr_rfcomm
-#define hci_dev hci_node
-#define _BT_L2_MEMB(sa, memb) ((sa)->l2cap_##memb)
-#define _BT_RC_MEMB(sa, memb) ((sa)->rfcomm_##memb)
-#define _BT_HCI_MEMB(sa, memb) ((sa)->hci_##memb)
-#elif defined(__NetBSD__) || defined(__DragonFly__)
-#define sockaddr_l2 sockaddr_bt
-#define sockaddr_rc sockaddr_bt
-#define sockaddr_hci sockaddr_bt
-#define sockaddr_sco sockaddr_bt
-#define SOL_HCI BTPROTO_HCI
-#define HCI_DATA_DIR SO_HCI_DIRECTION
-#define _BT_L2_MEMB(sa, memb) ((sa)->bt_##memb)
-#define _BT_RC_MEMB(sa, memb) ((sa)->bt_##memb)
-#define _BT_HCI_MEMB(sa, memb) ((sa)->bt_##memb)
-#define _BT_SCO_MEMB(sa, memb) ((sa)->bt_##memb)
-#else
-#define _BT_L2_MEMB(sa, memb) ((sa)->l2_##memb)
-#define _BT_RC_MEMB(sa, memb) ((sa)->rc_##memb)
-#define _BT_HCI_MEMB(sa, memb) ((sa)->hci_##memb)
-#define _BT_SCO_MEMB(sa, memb) ((sa)->sco_##memb)
-#endif
+#if defined(HAVE_BLUETOOTH_H) || defined(HAVE_BLUETOOTH_BLUETOOTH_H)
+# define USE_BLUETOOTH 1
+# if defined(HAVE_BLUETOOTH_BLUETOOTH_H) // Linux
+#   define _BT_L2_MEMB(sa, memb) ((sa)->l2_##memb)
+#   define _BT_RC_MEMB(sa, memb) ((sa)->rc_##memb)
+#   define _BT_HCI_MEMB(sa, memb) ((sa)->hci_##memb)
+#   define _BT_SCO_MEMB(sa, memb) ((sa)->sco_##memb)
+# elif defined(__FreeBSD__)
+#   define BTPROTO_L2CAP BLUETOOTH_PROTO_L2CAP
+#   define BTPROTO_RFCOMM BLUETOOTH_PROTO_RFCOMM
+#   define BTPROTO_HCI BLUETOOTH_PROTO_HCI
+#   define BTPROTO_SCO BLUETOOTH_PROTO_SCO
+#   define SOL_HCI SOL_HCI_RAW
+#   define HCI_FILTER SO_HCI_RAW_FILTER
+#   define HCI_DATA_DIR SO_HCI_RAW_DIRECTION
+#   define sockaddr_l2 sockaddr_l2cap
+#   define sockaddr_rc sockaddr_rfcomm
+#   define hci_dev hci_node
+#   define _BT_L2_MEMB(sa, memb) ((sa)->l2cap_##memb)
+#   define _BT_RC_MEMB(sa, memb) ((sa)->rfcomm_##memb)
+#   define _BT_HCI_MEMB(sa, memb) ((sa)->hci_##memb)
+#   define _BT_SCO_MEMB(sa, memb) ((sa)->sco_##memb)
+# else // NetBSD, DragonFly BSD
+#   define sockaddr_l2 sockaddr_bt
+#   define sockaddr_rc sockaddr_bt
+#   define sockaddr_hci sockaddr_bt
+#   define sockaddr_sco sockaddr_bt
+#   define bt_l2 bt
+#   define bt_rc bt
+#   define bt_sco bt
+#   define bt_hci bt
+#   define bt_cid bt_channel
+#   define SOL_L2CAP BTPROTO_L2CAP
+#   define SOL_RFCOMM BTPROTO_RFCOMM
+#   define SOL_HCI BTPROTO_HCI
+#   define SOL_SCO BTPROTO_SCO
+#   define HCI_DATA_DIR SO_HCI_DIRECTION
+#   define _BT_L2_MEMB(sa, memb) ((sa)->bt_##memb)
+#   define _BT_RC_MEMB(sa, memb) ((sa)->bt_##memb)
+#   define _BT_HCI_MEMB(sa, memb) ((sa)->bt_##memb)
+#   define _BT_SCO_MEMB(sa, memb) ((sa)->bt_##memb)
+# endif
 #endif
 
 #ifdef MS_WINDOWS_DESKTOP
@@ -1485,19 +1502,27 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
             PyObject *addrobj = makebdaddr(&_BT_L2_MEMB(a, bdaddr));
             PyObject *ret = NULL;
             if (addrobj) {
-                /* Retain old format for non-LE address.
-                   (cid may be set for BR/EDR, but we're discarding it for now)
-                 */
-                if (_BT_L2_MEMB(a, bdaddr_type) == BDADDR_BREDR) {
-                    ret = Py_BuildValue("Oi",
-                                        addrobj,
-                                        _BT_L2_MEMB(a, psm));
-                } else {
+#if defined(BDADDR_BREDR)  // Linux, FreeBSD
+                if (_BT_L2_MEMB(a, bdaddr_type) != BDADDR_BREDR) {
                     ret = Py_BuildValue("OiiB",
                                         addrobj,
                                         _BT_L2_MEMB(a, psm),
                                         _BT_L2_MEMB(a, cid),
                                         _BT_L2_MEMB(a, bdaddr_type));
+                }
+                else
+#endif
+                if (_BT_L2_MEMB(a, cid) != 0) {
+                    ret = Py_BuildValue("Oii",
+                                        addrobj,
+                                        _BT_L2_MEMB(a, psm),
+                                        _BT_L2_MEMB(a, cid));
+                }
+                else {
+                    /* Retain old format for non-LE address. */
+                    ret = Py_BuildValue("Oi",
+                                        addrobj,
+                                        _BT_L2_MEMB(a, psm));
                 }
                 Py_DECREF(addrobj);
             }
@@ -1524,27 +1549,34 @@ makesockaddr(SOCKET_T sockfd, struct sockaddr *addr, size_t addrlen, int proto)
         case BTPROTO_HCI:
         {
             struct sockaddr_hci *a = (struct sockaddr_hci *) addr;
-#if defined(__NetBSD__) || defined(__DragonFly__)
-            return makebdaddr(&_BT_HCI_MEMB(a, bdaddr));
-#elif defined(__FreeBSD__)
-            char *node = _BT_HCI_MEMB(a, node);
-            size_t len = strnlen(node, sizeof(_BT_HCI_MEMB(a, node)));
-            return PyBytes_FromStringAndSize(node, (Py_ssize_t)len);
-#else
+#if defined(HAVE_BLUETOOTH_BLUETOOTH_H)
             PyObject *ret = NULL;
-            ret = Py_BuildValue("i", _BT_HCI_MEMB(a, dev));
+            if (_BT_HCI_MEMB(a, channel) == HCI_CHANNEL_RAW) {
+                return Py_BuildValue("i", _BT_HCI_MEMB(a, dev));
+            }
+            else {
+                return Py_BuildValue("ii",
+                                     _BT_HCI_MEMB(a, dev),
+                                     _BT_HCI_MEMB(a, channel));
+            }
             return ret;
+#elif defined(__FreeBSD__)
+            const char *node = _BT_HCI_MEMB(a, node);
+            size_t len = strnlen(node, sizeof(_BT_HCI_MEMB(a, node)));
+            return PyUnicode_FromStringAndSize(node, (Py_ssize_t)len);
+#else
+            return makebdaddr(&_BT_HCI_MEMB(a, bdaddr));
 #endif
         }
+#endif /* BTPROTO_HCI */
 
-#if !defined(__FreeBSD__)
+#ifdef BTPROTO_SCO
         case BTPROTO_SCO:
         {
             struct sockaddr_sco *a = (struct sockaddr_sco *) addr;
             return makebdaddr(&_BT_SCO_MEMB(a, bdaddr));
         }
-#endif /* !__FreeBSD__ */
-#endif /* BTPROTO_HCI */
+#endif /* BTPROTO_SCO */
 
         default:
             PyErr_SetString(PyExc_ValueError,
@@ -1820,6 +1852,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         assert(path.len >= 0);
 
         struct sockaddr_un* addr = &addrbuf->un;
+        memset(addr, 0, sizeof(struct sockaddr_un));
 #ifdef __linux__
         if (path.len == 0 || *(const char *)path.buf == 0) {
             /* Linux abstract namespace extension:
@@ -1863,6 +1896,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     {
         int pid, groups;
         struct sockaddr_nl* addr = &addrbuf->nl;
+        memset(addr, 0, sizeof(struct sockaddr_nl));
         if (!PyTuple_Check(args)) {
             PyErr_Format(
                 PyExc_TypeError,
@@ -1890,6 +1924,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
     {
         unsigned int node, port;
         struct sockaddr_qrtr* addr = &addrbuf->sq;
+        memset(addr, 0, sizeof(struct sockaddr_qrtr));
         if (!PyTuple_Check(args)) {
             PyErr_Format(
                 PyExc_TypeError,
@@ -1969,6 +2004,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             return 0;
         }
         struct sockaddr_in* addr = &addrbuf->in;
+        memset(addr, 0, sizeof(struct sockaddr_in));
         result = setipaddr(s->state, host.buf, (struct sockaddr *)addr,
                            sizeof(*addr),  AF_INET);
         idna_cleanup(&host);
@@ -2014,6 +2050,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             return 0;
         }
         struct sockaddr_in6* addr = &addrbuf->in6;
+        memset(addr, 0, sizeof(struct sockaddr_in6));
         result = setipaddr(s->state, host.buf, (struct sockaddr *)addr,
                            sizeof(*addr), AF_INET6);
         idna_cleanup(&host);
@@ -2053,6 +2090,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             memset(addr, 0, sizeof(struct sockaddr_l2));
             _BT_L2_MEMB(addr, family) = AF_BLUETOOTH;
             unsigned short psm;
+#if defined(BDADDR_BREDR)  // Linux, FreeBSD
             unsigned short cid = 0;
             unsigned char bdaddr_type = BDADDR_BREDR;
             if (!PyArg_ParseTuple(args, "sH|HB", &straddr,
@@ -2063,9 +2101,18 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
                              "%s(): wrong format", caller);
                 return 0;
             }
+            _BT_L2_MEMB(addr, bdaddr_type) = bdaddr_type;
+#else
+            unsigned char cid = 0;
+            if (!PyArg_ParseTuple(args, "sH|B", &straddr,
+                                  &psm, &cid)) {
+                PyErr_Format(PyExc_OSError,
+                             "%s(): wrong format", caller);
+                return 0;
+            }
+#endif
             _BT_L2_MEMB(addr, psm) = psm;
             _BT_L2_MEMB(addr, cid) = cid;
-            _BT_L2_MEMB(addr, bdaddr_type) = bdaddr_type;
 
             if (setbdaddr(straddr, &_BT_L2_MEMB(addr, bdaddr)) < 0)
                 return 0;
@@ -2078,6 +2125,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         {
             const char *straddr;
             struct sockaddr_rc *addr = &addrbuf->bt_rc;
+            memset(addr, 0, sizeof(struct sockaddr_rc));
             _BT_RC_MEMB(addr, family) = AF_BLUETOOTH;
 #ifdef MS_WINDOWS
             unsigned long channel;
@@ -2104,72 +2152,78 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         case BTPROTO_HCI:
         {
             struct sockaddr_hci *addr = &addrbuf->bt_hci;
-#if defined(__NetBSD__) || defined(__DragonFly__)
-            const char *straddr;
+            memset(addr, 0, sizeof(struct sockaddr_hci));
             _BT_HCI_MEMB(addr, family) = AF_BLUETOOTH;
-            if (!PyBytes_Check(args)) {
+#if defined(HAVE_BLUETOOTH_BLUETOOTH_H)
+            unsigned short dev;
+            unsigned short channel = HCI_CHANNEL_RAW;
+            if (PyLong_Check(args)) {
+                if (!PyArg_Parse(args, "H", &dev)) {
+                    return 0;
+                }
+            }
+            else if (!PyArg_ParseTuple(args, "H|H", &dev, &channel)) {
+                PyErr_Format(PyExc_OSError,
+                             "%s(): wrong format", caller);
+                return 0;
+            }
+            _BT_HCI_MEMB(addr, dev) = dev;
+            _BT_HCI_MEMB(addr, channel) = channel;
+#else
+            const char *straddr;
+            if (!PyArg_Parse(args, "s", &straddr)) {
                 PyErr_Format(PyExc_OSError, "%s: "
                              "wrong format", caller);
                 return 0;
             }
-            straddr = PyBytes_AS_STRING(args);
-            if (setbdaddr(straddr, &_BT_HCI_MEMB(addr, bdaddr)) < 0)
-                return 0;
-#elif defined(__FreeBSD__)
-            _BT_HCI_MEMB(addr, family) = AF_BLUETOOTH;
-            if (!PyBytes_Check(args)) {
-                PyErr_Format(PyExc_OSError, "%s: "
-                             "wrong node format", caller);
-                return 0;
-            }
-            const char *straddr = PyBytes_AS_STRING(args);
-            size_t len = PyBytes_GET_SIZE(args);
-            if (strlen(straddr) != len) {
-                PyErr_Format(PyExc_ValueError, "%s: "
-                             "node contains embedded null character", caller);
-                return 0;
-            }
-            if (len > sizeof(_BT_HCI_MEMB(addr, node))) {
+# if defined(__FreeBSD__)
+            if (strlen(straddr) > sizeof(_BT_HCI_MEMB(addr, node))) {
                 PyErr_Format(PyExc_ValueError, "%s: "
                              "node too long", caller);
                 return 0;
             }
             strncpy(_BT_HCI_MEMB(addr, node), straddr,
                     sizeof(_BT_HCI_MEMB(addr, node)));
-#else
-            _BT_HCI_MEMB(addr, family) = AF_BLUETOOTH;
-            unsigned short dev = _BT_HCI_MEMB(addr, dev);
-            if (!PyArg_ParseTuple(args, "H", &dev)) {
-                PyErr_Format(PyExc_OSError,
-                             "%s(): wrong format", caller);
+# else
+            if (setbdaddr(straddr, &_BT_HCI_MEMB(addr, bdaddr)) < 0)
                 return 0;
-            }
-            _BT_HCI_MEMB(addr, dev) = dev;
+# endif
 #endif
             *len_ret = sizeof *addr;
             return 1;
         }
-#if !defined(__FreeBSD__)
+#endif /* BTPROTO_HCI */
+#ifdef BTPROTO_SCO
         case BTPROTO_SCO:
         {
             const char *straddr;
 
             struct sockaddr_sco *addr = &addrbuf->bt_sco;
+            memset(addr, 0, sizeof(struct sockaddr_sco));
             _BT_SCO_MEMB(addr, family) = AF_BLUETOOTH;
-            if (!PyBytes_Check(args)) {
+
+            if (PyBytes_Check(args)) {
+                if (!PyArg_Parse(args, "y", &straddr)) {
+                    return 0;
+                }
+            }
+            else if (PyUnicode_Check(args)) {
+                if (!PyArg_Parse(args, "s", &straddr)) {
+                    return 0;
+                }
+            }
+            else {
                 PyErr_Format(PyExc_OSError,
                              "%s(): wrong format", caller);
                 return 0;
             }
-            straddr = PyBytes_AS_STRING(args);
             if (setbdaddr(straddr, &_BT_SCO_MEMB(addr, bdaddr)) < 0)
                 return 0;
 
             *len_ret = sizeof *addr;
             return 1;
         }
-#endif /* !__FreeBSD__ */
-#endif /* BTPROTO_HCI */
+#endif /* BTPROTO_SCO */
         default:
             PyErr_Format(PyExc_OSError,
                          "%s(): unknown Bluetooth protocol", caller);
@@ -2232,6 +2286,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             return 0;
         }
         struct sockaddr_ll* addr = &addrbuf->ll;
+        memset(addr, 0, sizeof(struct sockaddr_ll));
         addr->sll_family = AF_PACKET;
         addr->sll_protocol = htons((short)protoNumber);
         addr->sll_ifindex = ifr.ifr_ifindex;
@@ -2318,6 +2373,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             struct ifreq ifr;
             Py_ssize_t len;
             struct sockaddr_can *addr = &addrbuf->can;
+            memset(addr, 0, sizeof(struct sockaddr_can));
 
             if (!PyTuple_Check(args)) {
                 PyErr_Format(PyExc_TypeError,
@@ -2370,6 +2426,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             unsigned long int rx_id, tx_id;
 
             struct sockaddr_can *addr = &addrbuf->can;
+            memset(addr, 0, sizeof(struct sockaddr_can));
 
             if (!PyArg_ParseTuple(args, "O&kk", PyUnicode_FSConverter,
                                               &interfaceName,
@@ -2417,6 +2474,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
             uint8_t j1939_addr;
 
             struct sockaddr_can *addr = &addrbuf->can;
+            memset(addr, 0, sizeof(struct sockaddr_can));
 
             if (!PyArg_ParseTuple(args, "O&KIB", PyUnicode_FSConverter,
                                               &interfaceName,
@@ -2469,6 +2527,7 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
         case SYSPROTO_CONTROL:
         {
             struct sockaddr_ctl *addr = &addrbuf->ctl;
+            memset(addr, 0, sizeof(struct sockaddr_ctl));
             addr->sc_family = AF_SYSTEM;
             addr->ss_sysaddr = AF_SYS_CONTROL;
 
@@ -2719,12 +2778,12 @@ getsockaddrlen(PySocketSockObject *s, socklen_t *len_ret)
         case BTPROTO_HCI:
             *len_ret = sizeof (struct sockaddr_hci);
             return 1;
-#if !defined(__FreeBSD__)
+#endif /* BTPROTO_HCI */
+#ifdef BTPROTO_SCO
         case BTPROTO_SCO:
             *len_ret = sizeof (struct sockaddr_sco);
             return 1;
-#endif /* !__FreeBSD__ */
-#endif /* BTPROTO_HCI */
+#endif /* BTPROTO_SCO */
         default:
             PyErr_SetString(PyExc_OSError, "getsockaddrlen: "
                             "unknown BT protocol");
@@ -7830,29 +7889,167 @@ socket_exec(PyObject *m)
     ADD_INT_MACRO(m, AF_BLUETOOTH);
 #ifdef BTPROTO_L2CAP
     ADD_INT_MACRO(m, BTPROTO_L2CAP);
+    ADD_INT_MACRO(m, SOL_L2CAP);
+#if defined(BDADDR_BREDR)
     ADD_INT_MACRO(m, BDADDR_BREDR);
     ADD_INT_MACRO(m, BDADDR_LE_PUBLIC);
     ADD_INT_MACRO(m, BDADDR_LE_RANDOM);
+#endif
+#ifdef SO_L2CAP_IMTU
+    ADD_INT_MACRO(m, SO_L2CAP_IMTU);
+    ADD_INT_MACRO(m, SO_L2CAP_OMTU);
+    ADD_INT_MACRO(m, SO_L2CAP_FLUSH);
+#endif
+#ifdef SO_L2CAP_IQOS
+    ADD_INT_MACRO(m, SO_L2CAP_IQOS);
+    ADD_INT_MACRO(m, SO_L2CAP_OQOS);
+#endif
+#ifdef SO_L2CAP_ENCRYPTED
+    ADD_INT_MACRO(m, SO_L2CAP_ENCRYPTED);
+#endif
+#ifdef L2CAP_LM
+    ADD_INT_MACRO(m, L2CAP_LM);
+    ADD_INT_MACRO(m, L2CAP_LM_MASTER);
+    ADD_INT_MACRO(m, L2CAP_LM_AUTH);
+    ADD_INT_MACRO(m, L2CAP_LM_ENCRYPT);
+    ADD_INT_MACRO(m, L2CAP_LM_TRUSTED);
+    ADD_INT_MACRO(m, L2CAP_LM_RELIABLE);
+    ADD_INT_MACRO(m, L2CAP_LM_SECURE);
+#endif
+#ifdef SO_L2CAP_LM
+    ADD_INT_MACRO(m, SO_L2CAP_LM);
+    ADD_INT_MACRO(m, L2CAP_LM_AUTH);
+    ADD_INT_MACRO(m, L2CAP_LM_ENCRYPT);
+    ADD_INT_MACRO(m, L2CAP_LM_SECURE);
+#endif
 #endif /* BTPROTO_L2CAP */
 #ifdef BTPROTO_HCI
     ADD_INT_MACRO(m, BTPROTO_HCI);
     ADD_INT_MACRO(m, SOL_HCI);
-#if !defined(__NetBSD__) && !defined(__DragonFly__)
+#ifdef HAVE_BLUETOOTH_BLUETOOTH_H
+    ADD_INT_MACRO(m, HCI_DEV_NONE);
+    ADD_INT_MACRO(m, HCI_CHANNEL_RAW);
+    ADD_INT_MACRO(m, HCI_CHANNEL_USER);
+    ADD_INT_MACRO(m, HCI_CHANNEL_MONITOR);
+    ADD_INT_MACRO(m, HCI_CHANNEL_CONTROL);
+    ADD_INT_MACRO(m, HCI_CHANNEL_LOGGING);
+#endif
+#ifdef HCI_FILTER
     ADD_INT_MACRO(m, HCI_FILTER);
-#if !defined(__FreeBSD__)
-    ADD_INT_MACRO(m, HCI_TIME_STAMP);
+#endif
+#ifdef HCI_DATA_DIR
     ADD_INT_MACRO(m, HCI_DATA_DIR);
-#endif /* !__FreeBSD__ */
-#endif /* !__NetBSD__ && !__DragonFly__ */
+#endif
+#ifdef HCI_TIME_STAMP
+    ADD_INT_MACRO(m, HCI_TIME_STAMP);
+#endif
+#ifdef SO_HCI_EVT_FILTER
+    ADD_INT_MACRO(m, SO_HCI_EVT_FILTER);
+    ADD_INT_MACRO(m, SO_HCI_PKT_FILTER);
+#endif
 #endif /* BTPROTO_HCI */
 #ifdef BTPROTO_RFCOMM
     ADD_INT_MACRO(m, BTPROTO_RFCOMM);
+    ADD_INT_MACRO(m, SOL_RFCOMM);
+#ifdef SO_RFCOMM_MTU
+    ADD_INT_MACRO(m, SO_RFCOMM_MTU);
+    ADD_INT_MACRO(m, SO_RFCOMM_FC_INFO);
+#endif
+#ifdef SO_RFCOMM_LM
+    ADD_INT_MACRO(m, SO_RFCOMM_LM);
+    ADD_INT_MACRO(m, RFCOMM_LM_AUTH);
+    ADD_INT_MACRO(m, RFCOMM_LM_ENCRYPT);
+    ADD_INT_MACRO(m, RFCOMM_LM_SECURE);
+#endif
+#ifdef MS_WINDOWS_DESKTOP
+    ADD_INT_MACRO(m, SO_BTH_ENCRYPT);
+    ADD_INT_MACRO(m, SO_BTH_MTU);
+    ADD_INT_MACRO(m, SO_BTH_MTU_MAX);
+    ADD_INT_MACRO(m, SO_BTH_MTU_MIN);
+#endif
 #endif /* BTPROTO_RFCOMM */
     ADD_STR_CONST(m, "BDADDR_ANY", "00:00:00:00:00:00");
     ADD_STR_CONST(m, "BDADDR_LOCAL", "00:00:00:FF:FF:FF");
 #ifdef BTPROTO_SCO
     ADD_INT_MACRO(m, BTPROTO_SCO);
+    ADD_INT_MACRO(m, SOL_SCO);
+#ifdef SO_SCO_MTU
+    ADD_INT_MACRO(m, SO_SCO_MTU);
+#endif
+#ifdef SO_SCO_CONNINFO
+    ADD_INT_MACRO(m, SO_SCO_CONNINFO);
+#endif
+#ifdef SO_SCO_HANDLE
+    ADD_INT_MACRO(m, SO_SCO_HANDLE);
+#endif
 #endif /* BTPROTO_SCO */
+#ifdef HAVE_BLUETOOTH_BLUETOOTH_H
+    ADD_INT_MACRO(m, SOL_BLUETOOTH);
+    ADD_INT_MACRO(m, BT_SECURITY);
+    ADD_INT_MACRO(m, BT_SECURITY_SDP);
+    ADD_INT_MACRO(m, BT_SECURITY_LOW);
+    ADD_INT_MACRO(m, BT_SECURITY_MEDIUM);
+    ADD_INT_MACRO(m, BT_SECURITY_HIGH);
+#ifdef BT_SECURITY_FIPS
+    ADD_INT_MACRO(m, BT_SECURITY_FIPS);
+#endif
+#ifdef BT_DEFER_SETUP
+    ADD_INT_MACRO(m, BT_DEFER_SETUP);
+#endif
+    ADD_INT_MACRO(m, BT_FLUSHABLE);
+    ADD_INT_MACRO(m, BT_FLUSHABLE_OFF);
+    ADD_INT_MACRO(m, BT_FLUSHABLE_ON);
+    ADD_INT_MACRO(m, BT_POWER);
+    ADD_INT_MACRO(m, BT_POWER_FORCE_ACTIVE_OFF);
+    ADD_INT_MACRO(m, BT_POWER_FORCE_ACTIVE_ON);
+    ADD_INT_MACRO(m, BT_CHANNEL_POLICY);
+    ADD_INT_MACRO(m, BT_CHANNEL_POLICY_BREDR_ONLY);
+    ADD_INT_MACRO(m, BT_CHANNEL_POLICY_BREDR_PREFERRED);
+    ADD_INT_MACRO(m, BT_CHANNEL_POLICY_BREDR_PREFERRED);
+    ADD_INT_MACRO(m, BT_VOICE);
+    ADD_INT_MACRO(m, BT_VOICE_TRANSPARENT);
+    ADD_INT_MACRO(m, BT_VOICE_CVSD_16BIT);
+#ifdef BT_VOICE_TRANSPARENT_16BIT
+    ADD_INT_MACRO(m, BT_VOICE_TRANSPARENT_16BIT);
+#endif
+    ADD_INT_MACRO(m, BT_SNDMTU);
+    ADD_INT_MACRO(m, BT_RCVMTU);
+#ifdef BT_PHY
+    ADD_INT_MACRO(m, BT_PHY);
+    ADD_INT_MACRO(m, BT_PHY_BR_1M_1SLOT);
+    ADD_INT_MACRO(m, BT_PHY_BR_1M_3SLOT);
+    ADD_INT_MACRO(m, BT_PHY_BR_1M_5SLOT);
+    ADD_INT_MACRO(m, BT_PHY_EDR_2M_1SLOT);
+    ADD_INT_MACRO(m, BT_PHY_EDR_2M_3SLOT);
+    ADD_INT_MACRO(m, BT_PHY_EDR_2M_5SLOT);
+    ADD_INT_MACRO(m, BT_PHY_EDR_3M_1SLOT);
+    ADD_INT_MACRO(m, BT_PHY_EDR_3M_3SLOT);
+    ADD_INT_MACRO(m, BT_PHY_EDR_3M_5SLOT);
+    ADD_INT_MACRO(m, BT_PHY_LE_1M_TX);
+    ADD_INT_MACRO(m, BT_PHY_LE_1M_RX);
+    ADD_INT_MACRO(m, BT_PHY_LE_2M_TX);
+    ADD_INT_MACRO(m, BT_PHY_LE_2M_RX);
+    ADD_INT_MACRO(m, BT_PHY_LE_CODED_TX);
+    ADD_INT_MACRO(m, BT_PHY_LE_CODED_RX);
+#endif
+#ifdef BT_MODE
+    ADD_INT_MACRO(m, BT_MODE);
+    ADD_INT_MACRO(m, BT_MODE_BASIC);
+    ADD_INT_MACRO(m, BT_MODE_ERTM);
+    ADD_INT_MACRO(m, BT_MODE_STREAMING);
+    ADD_INT_MACRO(m, BT_MODE_LE_FLOWCTL);
+    ADD_INT_MACRO(m, BT_MODE_EXT_FLOWCTL);
+#endif
+#ifdef BT_PKT_STATUS
+    ADD_INT_MACRO(m, BT_PKT_STATUS);
+#endif
+#ifdef BT_ISO_QOS
+    ADD_INT_MACRO(m, BT_ISO_QOS);
+#endif
+#ifdef BT_CODEC
+    ADD_INT_MACRO(m, BT_CODEC);
+#endif
+#endif /* HAVE_BLUETOOTH_BLUETOOTH_H */
 #endif /* USE_BLUETOOTH */
 
 #ifdef AF_CAN
@@ -8274,7 +8471,7 @@ socket_exec(PyObject *m)
 #endif
 #if defined(HAVE_LINUX_CAN_RAW_H) || defined(HAVE_NETCAN_CAN_H)
     ADD_INT_MACRO(m, CAN_RAW_FILTER);
-#ifdef CAN_RAW_ERR_FILTER
+#ifdef HAVE_LINUX_CAN_RAW_H
     ADD_INT_MACRO(m, CAN_RAW_ERR_FILTER);
 #endif
     ADD_INT_MACRO(m, CAN_RAW_LOOPBACK);
@@ -8631,6 +8828,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef  IP_MAX_MEMBERSHIPS
     ADD_INT_MACRO(m, IP_MAX_MEMBERSHIPS);
+#endif
+#ifdef  IP_FREEBIND
+    ADD_INT_MACRO(m, IP_FREEBIND);
 #endif
 #ifdef  IP_TRANSPARENT
     ADD_INT_MACRO(m, IP_TRANSPARENT);

@@ -284,7 +284,9 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
         func(s)
         self.assertEqual(s.first, 0xdeadbeef)
         self.assertEqual(s.second, 0xcafebabe)
-        got = X.in_dll(dll, "last_tfrsuv_arg")
+        dll.get_last_tfrsuv_arg.argtypes = ()
+        dll.get_last_tfrsuv_arg.restype = X
+        got = dll.get_last_tfrsuv_arg()
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
 

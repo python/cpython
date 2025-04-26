@@ -489,14 +489,14 @@ struct tagPyCArgObject {
         int i;
         long l;
         long long q;
-        long double D;
+        long double g;
         double d;
         float f;
         void *p;
 #if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-        double complex C;
-        float complex E;
-        long double complex F;
+        double complex D;
+        float complex F;
+        long double complex G;
 #endif
     } value;
     PyObject *obj;
@@ -536,6 +536,8 @@ extern PyObject *PyCData_FromBaseObj(ctypes_state *st, PyObject *type,
 extern int _ctypes_simple_instance(ctypes_state *st, PyObject *obj);
 
 PyObject *_ctypes_get_errobj(ctypes_state *st, int **pspace);
+
+extern void _ctypes_init_fielddesc(void);
 
 #ifdef USING_MALLOC_CLOSURE_DOT_C
 void Py_ffi_closure_free(void *p);
@@ -643,52 +645,4 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
 
     info->initialized = 1;
     return info;
-}
-
-/* See discussion in gh-128490. The plan here is to eventually use a per-object
- * lock rather than a critical section, but that work is for later. */
-#ifdef Py_GIL_DISABLED
-#  define LOCK_PTR(self) Py_BEGIN_CRITICAL_SECTION(self)
-#  define UNLOCK_PTR(self) Py_END_CRITICAL_SECTION()
-#else
-/*
- * Dummy functions instead of macros so that 'self' can be
- * unused in the caller without triggering a compiler warning.
- */
-static inline void LOCK_PTR(CDataObject *Py_UNUSED(self)) {}
-static inline void UNLOCK_PTR(CDataObject *Py_UNUSED(self)) {}
-#endif
-
-static inline void
-locked_memcpy_to(CDataObject *self, void *buf, Py_ssize_t size)
-{
-    LOCK_PTR(self);
-    (void)memcpy(self->b_ptr, buf, size);
-    UNLOCK_PTR(self);
-}
-
-static inline void
-locked_memcpy_from(void *buf, CDataObject *self, Py_ssize_t size)
-{
-    LOCK_PTR(self);
-    (void)memcpy(buf, self->b_ptr, size);
-    UNLOCK_PTR(self);
-}
-
-static inline void *
-locked_deref(CDataObject *self)
-{
-    void *ptr;
-    LOCK_PTR(self);
-    ptr = *(void **)self->b_ptr;
-    UNLOCK_PTR(self);
-    return ptr;
-}
-
-static inline void
-locked_deref_assign(CDataObject *self, void *new_ptr)
-{
-    LOCK_PTR(self);
-    *(void **)self->b_ptr = new_ptr;
-    UNLOCK_PTR(self);
 }

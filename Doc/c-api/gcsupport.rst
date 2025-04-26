@@ -277,7 +277,7 @@ the garbage collector.
 
    Type of the visitor function to be passed to :c:func:`PyUnstable_GC_VisitObjects`.
    *arg* is the same as the *arg* passed to ``PyUnstable_GC_VisitObjects``.
-   Return ``0`` to continue iteration, return ``1`` to stop iteration. Other return
+   Return ``1`` to continue iteration, return ``0`` to stop iteration. Other return
    values are reserved for now so behavior on returning anything else is undefined.
 
    .. versionadded:: 3.12
