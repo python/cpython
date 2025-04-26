@@ -813,7 +813,7 @@ class MinidomTest(unittest.TestCase):
     def testCloneDocumentTypeDeepNotOk(self):
         doc = create_doc_with_doctype()
         clone = doc.doctype.cloneNode(1)
-        self.assertIsNone(clone, "testCloneDocumentTypeDeepNotOk")
+        self.assertIsNone(clone)
 
     def testCloneDocumentTypeShallowOk(self):
         doctype = create_nonempty_doctype()
