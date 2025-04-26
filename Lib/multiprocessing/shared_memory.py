@@ -115,7 +115,7 @@ class SharedMemory:
                 stats = os.fstat(self._fd)
                 size = stats.st_size
                 self._mmap = mmap.mmap(self._fd, size)
-            except OSError:
+            except:
                 self.unlink()
                 raise
             if self._track:

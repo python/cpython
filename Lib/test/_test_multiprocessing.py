@@ -4851,6 +4851,23 @@ class _TestSharedMemory(BaseTestCase):
             resource_tracker.unregister(mem._name, "shared_memory")
             mem.close()
 
+    @unittest.skipIf(os.name != "posix", "posix-only test w/ empty file")
+    def test_cleanup_zero_length_shared_memory(self):
+        import _posixshmem
+
+        name = self._new_shm_name("test_init_cleanup")
+        mem = _posixshmem.shm_open(name, os.O_RDWR | os.O_CREAT | os.O_EXCL, 0o600)
+        os.close(mem)
+
+        # First time the mmap.mmap fails with a ValueError, as the shared
+        # memory is zero-length and hence the mmap fails...
+        with self.assertRaises(ValueError):
+            shared_memory.SharedMemory(name, create=False)
+
+        # ...however it should delete the shared memory as part of its cleanup
+        with self.assertRaises(FileNotFoundError):
+            _posixshmem.shm_open(name, os.O_RDWR)
+
 #
 # Test to verify that `Finalize` works.
 #
