@@ -3733,7 +3733,8 @@ PyUnicode_AsDecodedObject(PyObject *unicode,
     }
 
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "PyUnicode_AsDecodedObject() is deprecated; "
+                     "PyUnicode_AsDecodedObject() is deprecated "
+                     "and will be removed in 3.15; "
                      "use PyCodec_Decode() to decode from str", 1) < 0)
         return NULL;
 
@@ -3757,7 +3758,8 @@ PyUnicode_AsDecodedUnicode(PyObject *unicode,
     }
 
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "PyUnicode_AsDecodedUnicode() is deprecated; "
+                     "PyUnicode_AsDecodedUnicode() is deprecated "
+                     "and will be removed in 3.15; "
                      "use PyCodec_Decode() to decode from str to str", 1) < 0)
         return NULL;
 
@@ -3796,7 +3798,8 @@ PyUnicode_AsEncodedObject(PyObject *unicode,
     }
 
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "PyUnicode_AsEncodedObject() is deprecated; "
+                     "PyUnicode_AsEncodedObject() is deprecated "
+                     "and will be removed in 3.15; "
                      "use PyUnicode_AsEncodedString() to encode from str to bytes "
                      "or PyCodec_Encode() for generic encoding", 1) < 0)
         return NULL;
@@ -4019,7 +4022,8 @@ PyUnicode_AsEncodedUnicode(PyObject *unicode,
     }
 
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                     "PyUnicode_AsEncodedUnicode() is deprecated; "
+                     "PyUnicode_AsEncodedUnicode() is deprecated "
+                     "and will be removed in 3.15; "
                      "use PyCodec_Encode() to encode from str to str", 1) < 0)
         return NULL;
 
