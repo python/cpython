@@ -2042,8 +2042,33 @@
         }
 
         case _CALL_ISINSTANCE: {
+            JitOptSymbol **args;
+            JitOptSymbol *self_or_null;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            args = &stack_pointer[-oparg];
+            self_or_null = stack_pointer[-1 - oparg];
+            if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
+                if (sym_is_not_null(self_or_null)) {
+                    args--;
+                }
+                JitOptSymbol *cls_sym = args[1];
+                JitOptSymbol *inst_sym = args[0];
+                if(sym_is_const(ctx, cls_sym) && sym_matches_type(cls_sym, &PyType_Type)) {
+                    PyTypeObject *cls = (PyTypeObject *)sym_get_const(ctx, cls_sym);
+                    if (sym_matches_type(inst_sym, cls)) {
+                        res = sym_new_const(ctx, Py_True);
+                    }
+                    else {
+                        res = sym_new_type(ctx, &PyBool_Type);
+                    }
+                }
+                else {
+                    res = sym_new_type(ctx, &PyBool_Type);
+                }
+            }
+            else {
+                res = sym_new_type(ctx, &PyBool_Type);
+            }
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());

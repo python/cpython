@@ -886,6 +886,31 @@ dummy_func(void) {
         }
     }
 
+    op(_CALL_ISINSTANCE, (callable, self_or_null, args[oparg] -- res)) {
+        if (sym_is_null(self_or_null) || sym_is_not_null(self_or_null)) {
+            if (sym_is_not_null(self_or_null)) {
+                args--;
+            }
+            JitOptSymbol *cls_sym = args[1];
+            JitOptSymbol *inst_sym = args[0];
+            if(sym_is_const(ctx, cls_sym) && sym_matches_type(cls_sym, &PyType_Type)) {
+                PyTypeObject *cls = (PyTypeObject *)sym_get_const(ctx, cls_sym);
+                if (sym_matches_type(inst_sym, cls)) {
+                    res = sym_new_const(ctx, Py_True);
+                }
+                else {
+                    res = sym_new_type(ctx, &PyBool_Type);
+                }
+            }
+            else {
+                res = sym_new_type(ctx, &PyBool_Type);
+            }
+        }
+        else {
+            res = sym_new_type(ctx, &PyBool_Type);
+        }
+    }
+
     op(_GUARD_IS_TRUE_POP, (flag -- )) {
         if (sym_is_const(ctx, flag)) {
             PyObject *value = sym_get_const(ctx, flag);

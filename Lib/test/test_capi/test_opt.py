@@ -1940,6 +1940,100 @@ class TestUopsOptimization(unittest.TestCase):
         self.assertNotIn("_COMPARE_OP_INT", uops)
         self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
 
+    def test_call_isinstance_is_true(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = isinstance(42, int)
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_call_isinstance_is_false(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = isinstance(42, str)
+                if not y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_FALSE_POP", uops)
+
+    def test_call_isinstance_subclass(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                y = isinstance(True, int)
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertNotIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_call_isinstance_unknown_object(self):
+        def testfunc(n):
+            class Foo:
+                bar = 42
+
+            x = 0
+            for _ in range(n):
+                # we only know bar (LOAD_ATTR) is not null (set via sym_new_not_null)
+                bar = Foo.bar
+                # This will only narrow to bool and not to True due to 'bar' having
+                # unknown (non-null) type
+                y = isinstance(bar, int)
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+
+    def test_call_isinstance_tuple_of_classes(self):
+        def testfunc(n):
+            x = 0
+            for _ in range(n):
+                # The optimization currently only narrows to bool
+                # the seconds argument is a tuple of classes.
+                y = isinstance(42, (int, str))
+                if y:
+                    x += 1
+            return x
+
+        res, ex = self._run_with_optimizer(testfunc, TIER2_THRESHOLD)
+        self.assertEqual(res, TIER2_THRESHOLD)
+        self.assertIsNotNone(ex)
+        uops = get_opnames(ex)
+        self.assertIn("_CALL_ISINSTANCE", uops)
+        self.assertNotIn("_TO_BOOL_BOOL", uops)
+        self.assertIn("_GUARD_IS_TRUE_POP", uops)
+
 
 def global_identity(x):
     return x

@@ -4284,7 +4284,7 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        inst(CALL_ISINSTANCE, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
+        op(_CALL_ISINSTANCE, (callable, self_or_null, args[oparg] -- res)) {
             /* isinstance(o, o2) */
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
 
@@ -4308,6 +4308,11 @@ dummy_func(
             assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
             DECREF_INPUTS();
         }
+
+        macro(CALL_ISINSTANCE) =
+            unused/1 +
+            unused/2 +
+            _CALL_ISINSTANCE;
 
         // This is secretly a super-instruction
         inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, arg -- )) {
