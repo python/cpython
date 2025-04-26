@@ -179,8 +179,8 @@ typedef struct {
     /* constructors */
     PyObject *(*Date_FromDate)(int, int, int, PyTypeObject*);
     PyObject *(*DateTime_FromDateAndTime)(int, int, int, int, int, int, int,
-        PyObject*, int, int, PyTypeObject*);
-    PyObject *(*Time_FromTime)(int, int, int, int, PyObject*, int, int, PyTypeObject*);
+        PyObject*, PyTypeObject*);
+    PyObject *(*Time_FromTime)(int, int, int, int, PyObject*, PyTypeObject*);
     PyObject *(*Delta_FromDelta)(int, int, int, int, int, PyTypeObject*);
     PyObject *(*TimeZone_FromTimeZone)(PyObject *offset, PyObject *name);
 

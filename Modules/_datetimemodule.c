@@ -1211,7 +1211,7 @@ new_date_ex(int year, int month, int day, PyTypeObject *type)
 
 // Forward declaration
 static PyObject *
-new_datetime_ex(int, int, int, int, int, int, int, PyObject *, int, PyTypeObject *);
+new_datetime_ex(int, int, int, int, int, int, int, PyObject *, PyTypeObject *);
 
 /* Create date instance with no range checking, or call subclass constructor */
 static PyObject *
@@ -1223,7 +1223,7 @@ new_date_subclass_ex(int year, int month, int day, PyObject *cls)
         result = new_date_ex(year, month, day, (PyTypeObject *)cls);
     }
     else if ((PyTypeObject *)cls == DATETIME_TYPE(NO_STATE)) {
-        result = new_datetime_ex(year, month, day, 0, 0, 0, 0, Py_None, 0,
+        result = new_datetime_ex(year, month, day, 0, 0, 0, 0, Py_None,
                                  (PyTypeObject *)cls);
     }
     else {
@@ -1273,7 +1273,7 @@ new_datetime_ex(int year, int month, int day, int hour, int minute,
                 int second, int microsecond, PyObject *tzinfo, PyTypeObject *type)
 {
     return new_datetime_ex2(year, month, day, hour, minute, second, microsecond,
-                            tzinfo, type);
+                            tzinfo, 0, 0, type);
 }
 
 #define new_datetime(y, m, d, hh, mm, ss, us, tzinfo, fold, ns) \
@@ -1378,7 +1378,7 @@ static PyObject *
 new_time_ex(int hour, int minute, int second, int microsecond,
             PyObject *tzinfo, PyTypeObject *type)
 {
-    return new_time_ex2(hour, minute, second, microsecond, tzinfo, type);
+    return new_time_ex2(hour, minute, second, microsecond, tzinfo, 0, 0, type);
 }
 
 #define new_time(hh, mm, ss, us, tzinfo, fold, ns)  \
