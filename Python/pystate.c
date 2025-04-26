@@ -3324,7 +3324,6 @@ PyThreadState_Release(void)
         return;
     }
 
-    PyInterpreterState *interp = tstate->interp;
     tstate->ensured = ensured->next;
     tstate->daemon = ensured->was_daemon;
     PyMem_RawFree(ensured);
