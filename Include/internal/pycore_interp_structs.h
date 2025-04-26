@@ -797,6 +797,7 @@ struct _is {
             Py_ssize_t countdown;
             PyEvent finished;
             PyMutex mutex;
+            int shutting_down;
         } finalizing;
     } threads;
 

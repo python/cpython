@@ -1373,12 +1373,8 @@ interp_look_up_id(_PyRuntimeState *runtime, int64_t requested_id)
     return NULL;
 }
 
-/* Return the interpreter state with the given ID.
-
-   Fail with RuntimeError if the interpreter is not found. */
-
 PyInterpreterState *
-_PyInterpreterState_LookUpID(int64_t requested_id)
+_PyInterpreterState_LookUpIDNoErr(int64_t requested_id)
 {
     PyInterpreterState *interp = NULL;
     if (requested_id >= 0) {
@@ -1387,6 +1383,18 @@ _PyInterpreterState_LookUpID(int64_t requested_id)
         interp = interp_look_up_id(runtime, requested_id);
         HEAD_UNLOCK(runtime);
     }
+    return interp;
+}
+
+/* Return the interpreter state with the given ID.
+
+   Fail with RuntimeError if the interpreter is not found. */
+
+PyInterpreterState *
+_PyInterpreterState_LookUpID(int64_t requested_id)
+{
+    assert(_PyThreadState_GET() != NULL);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDNoErr(requested_id);
     if (interp == NULL && !PyErr_Occurred()) {
         PyErr_Format(PyExc_InterpreterNotFoundError,
                      "unrecognized interpreter ID %lld", requested_id);
@@ -1807,13 +1815,23 @@ PyThreadState_Clear(PyThreadState *tstate)
 static void
 decrement_stoptheworld_countdown(struct _stoptheworld_state *stw);
 
+static int
+shutting_down_natives(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    return _Py_atomic_load_int_relaxed(&interp->threads.finalizing.shutting_down);
+}
+
 static void
 decrement_daemon_count(PyInterpreterState *interp)
 {
     assert(interp != NULL);
     struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
-    if (_Py_atomic_add_ssize(&finalizing->countdown, -1) == 1) {
+    Py_ssize_t old = _Py_atomic_add_ssize(&finalizing->countdown, -1);
+    if (old == 1 && shutting_down_natives(interp)) {
         _PyEvent_Notify(&finalizing->finished);
+    } else if (old <= 0) {
+        Py_FatalError("interpreter has negative reference count");
     }
 }
 
@@ -3074,6 +3092,9 @@ _PyThreadState_CheckConsistency(PyThreadState *tstate)
 int
 _PyThreadState_MustExit(PyThreadState *tstate)
 {
+    if (!tstate->daemon) {
+        return 0;
+    }
     int state = _Py_atomic_load_int_relaxed(&tstate->state);
     return state == _Py_THREAD_SHUTTING_DOWN;
 }
@@ -3221,19 +3242,19 @@ PyInterpreterState_Hold(void)
 PyInterpreterState *
 PyInterpreterState_Lookup(int64_t interp_id)
 {
-    PyInterpreterState *interp = _PyInterpreterState_LookUpID(interp_id);
+    PyInterpreterState *interp = _PyInterpreterState_LookUpIDNoErr(interp_id);
     if (interp == NULL) {
         return NULL;
     }
     HEAD_LOCK(&_PyRuntime); // Prevent deletion
-    struct _Py_finalizing_threads finalizing = interp->threads.finalizing;
-    PyMutex *mutex = &finalizing.mutex;
+    struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
+    PyMutex *mutex = &finalizing->mutex;
     PyMutex_Lock(mutex); // Synchronize TOCTOU with the event flag
-    if (_PyEvent_IsSet(&finalizing.finished)) {
+    if (_PyEvent_IsSet(&finalizing->finished)) {
         /* Interpreter has already finished threads */
         interp = NULL;
     } else {
-        _Py_atomic_add_ssize(&finalizing.countdown, 1);
+        _Py_atomic_add_ssize(&finalizing->countdown, 1);
     }
     PyMutex_Unlock(mutex);
     HEAD_UNLOCK(&_PyRuntime);

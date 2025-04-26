@@ -2571,6 +2571,26 @@ test_interp_refcount(PyObject *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_interp_lookup(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+    int64_t interp_id = PyInterpreterState_GetID(interp);
+    PyInterpreterState *ref = PyInterpreterState_Lookup(interp_id);
+    assert(ref == interp);
+    assert(_PyInterpreterState_Refcount(interp) == 1);
+    PyInterpreterState_Release(ref);
+    assert(PyInterpreterState_Lookup(10000) == NULL);
+    Py_BEGIN_ALLOW_THREADS;
+    ref = PyInterpreterState_Lookup(interp_id);
+    assert(ref == interp);
+    PyInterpreterState_Release(ref);
+    Py_END_ALLOW_THREADS;
+
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2666,6 +2686,7 @@ static PyMethodDef TestMethods[] = {
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
     {"test_interp_refcount", test_interp_refcount, METH_NOARGS},
+    {"test_interp_lookup", test_interp_lookup, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

@@ -3469,6 +3469,7 @@ wait_for_native_shutdown(PyInterpreterState *interp)
 {
     assert(interp != NULL);
     struct _Py_finalizing_threads *finalizing = &interp->threads.finalizing;
+    _Py_atomic_store_int_release(&finalizing->shutting_down, 1);
     PyMutex_Lock(&finalizing->mutex);
     if (_Py_atomic_load_ssize_relaxed(&finalizing->countdown) == 0) {
         // Nothing to do.
