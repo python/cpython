@@ -102,32 +102,32 @@ class MinidomTest(unittest.TestCase):
         elem = root.childNodes[0]
         nelem = dom.createElement("element")
         root.insertBefore(nelem, elem)
-        self.confirm(len(root.childNodes), 2
-                and root.childNodes.length, 2
+        self.confirm(len(root.childNodes) == 2
+                and root.childNodes.length == 2
                 and root.childNodes[0] is nelem
                 and root.childNodes.item(0) is nelem
                 and root.childNodes[1] is elem
                 and root.childNodes.item(1) is elem
                 and root.firstChild is nelem
                 and root.lastChild is elem
-                and root.toxml(), "<doc><element/><foo/></doc>"
+                and root.toxml() == "<doc><element/><foo/></doc>"
                 , "testInsertBefore -- node properly placed in tree")
         nelem = dom.createElement("element")
         root.insertBefore(nelem, None)
-        self.confirm(len(root.childNodes), 3
-                and root.childNodes.length, 3
+        self.confirm(len(root.childNodes) == 3
+                and root.childNodes.length == 3
                 and root.childNodes[1] is elem
                 and root.childNodes.item(1) is elem
                 and root.childNodes[2] is nelem
                 and root.childNodes.item(2) is nelem
                 and root.lastChild is nelem
                 and nelem.previousSibling is elem
-                and root.toxml(), "<doc><element/><foo/><element/></doc>"
+                and root.toxml() == "<doc><element/><foo/><element/></doc>"
                 , "testInsertBefore -- node properly placed in tree")
         nelem2 = dom.createElement("bar")
         root.insertBefore(nelem2, nelem)
-        self.confirm(len(root.childNodes), 4
-                and root.childNodes.length, 4
+        self.confirm(len(root.childNodes) == 4
+                and root.childNodes.length == 4
                 and root.childNodes[2] is nelem2
                 and root.childNodes.item(2) is nelem2
                 and root.childNodes[3] is nelem
@@ -643,7 +643,7 @@ class MinidomTest(unittest.TestCase):
         attrs = e.attributes
         a1 = e.getAttributeNode("a")
         a2 = attrs.removeNamedItem("a")
-        self.assertEqual(a1.isSameNode(a2))
+        self.assertTrue(a1.isSameNode(a2))
         self.assertRaises(xml.dom.NotFoundErr, attrs.removeNamedItem, "a")
 
     def testRemoveNamedItemNS(self):
@@ -764,7 +764,7 @@ class MinidomTest(unittest.TestCase):
                 "testCloneDocumentDeep: wrong number of Document children")
         self.assertEqual(doc2.documentElement.nodeType, Node.ELEMENT_NODE,
                 "testCloneDocumentDeep: documentElement not an ELEMENT_NODE")
-        self.assertEqual(doc2.documentElement.ownerDocument.isSameNode(doc2),
+        self.assertTrue(doc2.documentElement.ownerDocument.isSameNode(doc2),
             "testCloneDocumentDeep: documentElement owner is not new document")
         self.assertTrue(not doc.documentElement.isSameNode(doc2.documentElement),
                 "testCloneDocumentDeep: documentElement should not be shared")
@@ -867,10 +867,10 @@ class MinidomTest(unittest.TestCase):
         self.assertTrue(not attr.isSameNode(clone))
         self.assertIs(clone.ownerElement, None,
                 testName + ": ownerElement should be None")
-        self.assertEqual(clone.ownerDocument.isSameNode(attr.ownerDocument),
+        self.confirm(clone.ownerDocument.isSameNode(attr.ownerDocument),
                 testName + ": ownerDocument does not match")
-        self.assertEqual(clone.specified,
-                testName + ": cloned attribute must have specified, True")
+        self.confirm(clone.specified,
+                testName + ": cloned attribute must have specified == True")
 
     def testCloneAttributeShallow(self):
         self.check_clone_attribute(0, "testCloneAttributeShallow")
@@ -1142,7 +1142,7 @@ class MinidomTest(unittest.TestCase):
         node = doc.documentElement
         node.childNodes[1].nodeValue = ""
         node.normalize()
-        self.assertIS(node.childNodes[-1].nextSibling, None,
+        self.assertIs(node.childNodes[-1].nextSibling, None,
                      "Final child's .nextSibling should be None")
 
     def testSiblings(self):
