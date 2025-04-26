@@ -233,9 +233,9 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
 #define PyDate_FromDate(year, month, day) \
     PyDateTimeAPI->Date_FromDate((year), (month), (day), PyDateTimeAPI->DateType)
 
-#define PyDateTime_FromDateAndTime(year, month, day, hour, min, sec, usec, nanosec) \
+#define PyDateTime_FromDateAndTime(year, month, day, hour, min, sec, usec) \
     PyDateTimeAPI->DateTime_FromDateAndTime((year), (month), (day), (hour), \
-        (min), (sec), (usec), Py_None, 0, (nanosec), PyDateTimeAPI->DateTimeType)
+        (min), (sec), (usec), Py_None, PyDateTimeAPI->DateTimeType)
 
 #define PyDateTime_FromDateAndTimeAndFold(year, month, day, hour, min, sec, usec, fold, nanosec) \
     PyDateTimeAPI->DateTime_FromDateAndTimeAndFold((year), (month), (day), (hour), \
