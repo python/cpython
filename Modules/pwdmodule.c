@@ -326,15 +326,12 @@ done:
 #ifdef Py_GIL_DISABLED
     PyMutex_Unlock(&getpwall_mutex);
 #endif
-    /* Deferred decref on entries created above and added to the list */
-    Py_ssize_t n = PyList_Size(d);
-    for (Py_ssize_t i = 0; i < n; ++i) {
-        PyObject *entry = PyList_GetItem(d, i);
-        Py_DECREF(entry);
+    /* Deferred decref on entries created above and added to the list. */
+    Py_ssize_t n = PyList_GET_SIZE(d);
+    while (--n >= 0) {
+        Py_DECREF(PyList_GET_ITEM(d, n));
     }
     if (failure) {
-        /* If there was a failure we might have created an entry but not added
-         * it: dec-ref that, if it exists, before clearing the list. */
         Py_XDECREF(orphan);
         Py_CLEAR(d);
     }
