@@ -35,9 +35,6 @@ _zstd_ZstdDict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_U
         goto error;
     }
 
-    /* Keep this first. Set module state to self. */
-    SET_STATE_TO_OBJ(type, self);
-
     assert(self->dict_content == NULL);
     assert(self->dict_id == 0);
     assert(self->d_dict == NULL);

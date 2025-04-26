@@ -39,30 +39,6 @@ get_zstd_state(PyTypeObject *type) {
 #define ACQUIRE_LOCK(obj) PyMutex_Lock(&obj->lock)
 #define RELEASE_LOCK(obj) PyMutex_Unlock(&obj->lock)
 
-/* Get module state from a class type, and set it to supported object.
-    Used in Py_tp_new or Py_tp_init. */
-#define SET_STATE_TO_OBJ(type, obj)                    \
-    do {                                               \
-        (obj)->module_state = get_zstd_state(type);    \
-        if ((obj)->module_state == NULL) {             \
-            goto error;                                \
-        }                                              \
-    } while (0)
-/* Get module state from module object */
-#define STATE_FROM_MODULE(module) \
-    _zstd_state* const _module_state = (_zstd_state*)PyModule_GetState(module); \
-    assert(_module_state != NULL);
-/* Get module state from supported object */
-#define STATE_FROM_OBJ(obj) \
-    _zstd_state* const _module_state = (obj)->module_state; \
-    assert(_module_state != NULL);
-/* Place as module state. Only as r-value. */
-#define MODULE_STATE (1 ? _module_state : NULL)
-/* Access a member of module state. Can be l-value or r-value. */
-#define MS_MEMBER(member) (_module_state->member)
-/* Get state for clinic generated wrappers */
-
-
 extern PyType_Spec zstddict_type_spec;
 extern PyType_Spec zstdcompressor_type_spec;
 extern PyType_Spec ZstdDecompressor_type_spec;
@@ -104,8 +80,6 @@ typedef struct {
 
     /* __init__ has been called, 0 or 1. */
     int inited;
-
-    _zstd_state *module_state;
 } ZstdDict;
 
 typedef struct {
@@ -131,8 +105,6 @@ typedef struct {
 
     /* __init__ has been called, 0 or 1. */
     int inited;
-
-    _zstd_state *module_state;
 } ZstdCompressor;
 
 typedef struct {
@@ -173,9 +145,6 @@ typedef struct {
 
     /* __init__ has been called, 0 or 1. */
     int inited;
-
-    _zstd_state *module_state;
-
 } ZstdDecompressor;
 
 typedef enum {
