@@ -96,7 +96,7 @@ class BaseEventQueue:
             self.keymap = self.compiled_keymap
             self.insert(Event('key', '\033', bytearray(b'\033')))
             for _c in self.flush_buf()[1:]:
-                self.push(_c)
+                self.push(_c.to_bytes())
 
         else:
             try:
