@@ -53,7 +53,7 @@ class EventQueueTestBase:
         mock_keymap.compile_keymap.return_value = {"a": "b"}
         eq = self.make_eventqueue()
         eq.keymap = {b"a": "b"}
-        eq.push("a")
+        eq.push(b"a")
         mock_keymap.compile_keymap.assert_called()
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "b")
@@ -63,7 +63,7 @@ class EventQueueTestBase:
         mock_keymap.compile_keymap.return_value = {"a": "b"}
         eq = self.make_eventqueue()
         eq.keymap = {b"c": "d"}
-        eq.push("a")
+        eq.push(b"a")
         mock_keymap.compile_keymap.assert_called()
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "a")
@@ -73,13 +73,13 @@ class EventQueueTestBase:
         mock_keymap.compile_keymap.return_value = {"a": "b"}
         eq = self.make_eventqueue()
         eq.keymap = {b"a": {b"b": "c"}}
-        eq.push("a")
+        eq.push(b"a")
         mock_keymap.compile_keymap.assert_called()
         self.assertTrue(eq.empty())
-        eq.push("b")
+        eq.push(b"b")
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "c")
-        eq.push("d")
+        eq.push(b"d")
         self.assertEqual(eq.events[1].evt, "key")
         self.assertEqual(eq.events[1].data, "d")
 
@@ -88,32 +88,32 @@ class EventQueueTestBase:
         mock_keymap.compile_keymap.return_value = {"a": "b"}
         eq = self.make_eventqueue()
         eq.keymap = {b"a": {b"b": "c"}}
-        eq.push("a")
+        eq.push(b"a")
         mock_keymap.compile_keymap.assert_called()
         self.assertTrue(eq.empty())
         eq.flush_buf()
-        eq.push("\033")
+        eq.push(b"\033")
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "\033")
-        eq.push("b")
+        eq.push(b"b")
         self.assertEqual(eq.events[1].evt, "key")
         self.assertEqual(eq.events[1].data, "b")
 
     def test_push_special_key(self):
         eq = self.make_eventqueue()
         eq.keymap = {}
-        eq.push("\x1b")
-        eq.push("[")
-        eq.push("A")
+        eq.push(b"\x1b")
+        eq.push(b"[")
+        eq.push(b"A")
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "\x1b")
 
     def test_push_unrecognized_escape_sequence(self):
         eq = self.make_eventqueue()
         eq.keymap = {}
-        eq.push("\x1b")
-        eq.push("[")
-        eq.push("Z")
+        eq.push(b"\x1b")
+        eq.push(b"[")
+        eq.push(b"Z")
         self.assertEqual(len(eq.events), 3)
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "\x1b")
