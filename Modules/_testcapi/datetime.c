@@ -207,25 +207,25 @@ get_datetime_fromdateandtime(PyObject *self, PyObject *args)
     PyObject *rv = NULL;
     int macro;
     int year, month, day;
-    int hour, minute, second, microsecond, nanosecond;
+    int hour, minute, second, microsecond;
 
-    if (!PyArg_ParseTuple(args, "piiiiiii",
+    if (!PyArg_ParseTuple(args, "piiiiii",
                           &macro,
                           &year, &month, &day,
-                          &hour, &minute, &second, &microsecond, &nanosecond)) {
+                          &hour, &minute, &second, &microsecond)) {
         return NULL;
     }
 
     if (macro) {
         rv = PyDateTime_FromDateAndTime(
                 year, month, day,
-                hour, minute, second, microsecond, nanosecond);
+                hour, minute, second, microsecond);
     }
     else {
         rv = PyDateTimeAPI->DateTime_FromDateAndTime(
                 year, month, day,
                 hour, minute, second, microsecond,
-                Py_None, 0, nanosecond,
+                Py_None,
                 PyDateTimeAPI->DateTimeType);
     }
     return rv;
