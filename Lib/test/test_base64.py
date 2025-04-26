@@ -1,10 +1,37 @@
 import unittest
-import base64
 import binascii
 import os
 from array import array
+from functools import update_wrapper
 from test.support import os_helper
 from test.support import script_helper
+from test.support.import_helper import import_fresh_module
+
+base64 = import_fresh_module("base64", blocked=["_base64"])
+c_base64 = import_fresh_module("base64", fresh=["_base64"])
+
+
+def with_c_implementation(test_func):
+    if c_base64 is None:
+        return test_func
+
+    def _test_func(self):
+        global base64
+
+        # Test Python implementation
+        test_func(self)
+
+        # Test C implementation
+        base64_ = base64
+        try:
+            base64 = c_base64
+            test_func(self)
+        finally:
+            base64 = base64_
+
+    update_wrapper(_test_func, test_func)
+
+    return _test_func
 
 
 class LegacyBase64TestCase(unittest.TestCase):
@@ -461,6 +488,7 @@ class BaseXYTestCase(unittest.TestCase):
         # Incorrect "padding"
         self.assertRaises(binascii.Error, base64.b16decode, '010')
 
+    @with_c_implementation
     def test_a85encode(self):
         eq = self.assertEqual
 
@@ -511,6 +539,7 @@ class BaseXYTestCase(unittest.TestCase):
         eq(base64.a85encode(b' '*6, foldspaces=True, adobe=False), b'y+<U')
         eq(base64.a85encode(b' '*5, foldspaces=True, adobe=False), b'y+9')
 
+    @with_c_implementation
     def test_b85encode(self):
         eq = self.assertEqual
 
@@ -545,6 +574,7 @@ class BaseXYTestCase(unittest.TestCase):
         self.check_other_types(base64.b85encode, b"www.python.org",
                                b'cXxL#aCvlSZ*DGca%T')
 
+    @with_c_implementation
     def test_z85encode(self):
         eq = self.assertEqual
 
@@ -579,6 +609,7 @@ class BaseXYTestCase(unittest.TestCase):
         self.check_other_types(base64.z85encode, b"www.python.org",
                                b'CxXl-AcVLsz/dgCA+t')
 
+    @with_c_implementation
     def test_a85decode(self):
         eq = self.assertEqual
 
@@ -625,6 +656,7 @@ class BaseXYTestCase(unittest.TestCase):
         self.check_other_types(base64.a85decode, b'GB\\6`E-ZP=Df.1GEb>',
                                b"www.python.org")
 
+    @with_c_implementation
     def test_b85decode(self):
         eq = self.assertEqual
 
@@ -660,6 +692,7 @@ class BaseXYTestCase(unittest.TestCase):
         self.check_other_types(base64.b85decode, b'cXxL#aCvlSZ*DGca%T',
                                b"www.python.org")
 
+    @with_c_implementation
     def test_z85decode(self):
         eq = self.assertEqual
 
@@ -695,6 +728,7 @@ class BaseXYTestCase(unittest.TestCase):
         self.check_other_types(base64.z85decode, b'CxXl-AcVLsz/dgCA+t',
                                b'www.python.org')
 
+    @with_c_implementation
     def test_a85_padding(self):
         eq = self.assertEqual
 
@@ -710,6 +744,7 @@ class BaseXYTestCase(unittest.TestCase):
         eq(base64.a85decode(b'G^+IX'), b"xxxx")
         eq(base64.a85decode(b'G^+IXGQ7^D'), b"xxxxx\x00\x00\x00")
 
+    @with_c_implementation
     def test_b85_padding(self):
         eq = self.assertEqual
 
@@ -725,6 +760,7 @@ class BaseXYTestCase(unittest.TestCase):
         eq(base64.b85decode(b'czAet'), b"xxxx")
         eq(base64.b85decode(b'czAetcmMzZ'), b"xxxxx\x00\x00\x00")
 
+    @with_c_implementation
     def test_a85decode_errors(self):
         illegal = (set(range(32)) | set(range(118, 256))) - set(b' \t\n\r\v')
         for c in illegal:
@@ -762,6 +798,7 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertRaises(ValueError, base64.a85decode, b'aaaay',
                           foldspaces=True)
 
+    @with_c_implementation
     def test_b85decode_errors(self):
         illegal = list(range(33)) + \
                   list(b'"\',./:[\\]') + \
@@ -776,6 +813,7 @@ class BaseXYTestCase(unittest.TestCase):
         self.assertRaises(ValueError, base64.b85decode, b'|NsC')
         self.assertRaises(ValueError, base64.b85decode, b'|NsC1')
 
+    @with_c_implementation
     def test_z85decode_errors(self):
         illegal = list(range(33)) + \
                   list(b'"\',;_`|\\~') + \
