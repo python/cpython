@@ -1,2 +1,2 @@
-Fix bug in :mod:`shutil`.``copytree`` where symbolic links to relative paths
-were skipped when the ``ignore_dangling_symlinks`` flag is given.
+Avoid skipping symbolic links to relative paths in :func:`shutil.copytree` when
+``ignore_dangling_symlinks=True`` and ``symlinks=False``.
