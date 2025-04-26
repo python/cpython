@@ -674,7 +674,7 @@ search_windows_map_for_section(proc_handle_t* handle, const char* secname, const
 static uintptr_t
 _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
 {
-    uintptr_t address = 0;
+    uintptr_t address;
 
 #ifdef MS_WINDOWS
     // On Windows, search for 'python' in executable or DLL
@@ -690,7 +690,7 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
         // Error out: 'python' substring covers both executable and DLL
         PyErr_SetString(PyExc_RuntimeError, "Failed to find the PyRuntime section in the process.");
     }
-#else
+#elif defined(__APPLE__) && TARGET_OS_OSX
     // On macOS, try libpython first, then fall back to python
     address = search_map_for_section(handle, "PyRuntime", "libpython");
     if (address == 0) {
@@ -698,6 +698,8 @@ _Py_RemoteDebug_GetPyRuntimeAddress(proc_handle_t* handle)
         PyErr_Clear();
         address = search_map_for_section(handle, "PyRuntime", "python");
     }
+#else
+    address = 0;
 #endif
 
     return address;

@@ -8,17 +8,6 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-struct _memoryobject_state {
-    PyTypeObject *XIBufferViewType;
-};
-
-extern PyStatus _PyMemoryView_InitTypes(PyInterpreterState *);
-extern void _PyMemoryView_FiniTypes(PyInterpreterState *);
-
-// exported for _interpreters module
-PyAPI_FUNC(PyTypeObject *) _PyMemoryView_GetXIBuffewViewType(void);
-
-
 extern PyTypeObject _PyManagedBuffer_Type;
 
 PyObject *
