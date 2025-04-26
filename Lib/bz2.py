@@ -10,7 +10,7 @@ __all__ = ["BZ2File", "BZ2Compressor", "BZ2Decompressor",
 __author__ = "Nadeem Vawda <nadeem.vawda@gmail.com>"
 
 from builtins import open as _builtin_open
-from compression._common import streams
+from compression._common import _streams
 import io
 import os
 
@@ -23,7 +23,7 @@ _MODE_READ     = 1
 _MODE_WRITE    = 3
 
 
-class BZ2File(streams.BaseStream):
+class BZ2File(_streams.BaseStream):
 
     """A file object providing transparent bzip2 (de)compression.
 
@@ -88,7 +88,7 @@ class BZ2File(streams.BaseStream):
             raise TypeError("filename must be a str, bytes, file or PathLike object")
 
         if self._mode == _MODE_READ:
-            raw = streams.DecompressReader(self._fp,
+            raw = _streams.DecompressReader(self._fp,
                 BZ2Decompressor, trailing_error=OSError)
             self._buffer = io.BufferedReader(raw)
         else:
@@ -248,7 +248,7 @@ class BZ2File(streams.BaseStream):
 
         Line separators are not added between the written byte strings.
         """
-        return streams.BaseStream.writelines(self, seq)
+        return _streams.BaseStream.writelines(self, seq)
 
     def seek(self, offset, whence=io.SEEK_SET):
         """Change the file position.

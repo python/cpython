@@ -6,7 +6,7 @@ import random
 import sys
 from test import support
 import unittest
-from compression._common import streams
+from compression._common import _streams
 
 from test.support import _4G, bigmemtest
 from test.support.import_helper import import_module
@@ -861,13 +861,13 @@ class FileTestCase(unittest.TestCase):
     def test_read_multistream_buffer_size_aligned(self):
         # Test the case where a stream boundary coincides with the end
         # of the raw read buffer.
-        saved_buffer_size = streams.BUFFER_SIZE
-        streams.BUFFER_SIZE = len(COMPRESSED_XZ)
+        saved_buffer_size = _streams.BUFFER_SIZE
+        _streams.BUFFER_SIZE = len(COMPRESSED_XZ)
         try:
             with LZMAFile(BytesIO(COMPRESSED_XZ *  5)) as f:
                 self.assertEqual(f.read(), INPUT * 5)
         finally:
-            streams.BUFFER_SIZE = saved_buffer_size
+            _streams.BUFFER_SIZE = saved_buffer_size
 
     def test_read_trailing_junk(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ + COMPRESSED_BOGUS)) as f:
@@ -1066,7 +1066,7 @@ class FileTestCase(unittest.TestCase):
     def test_decompress_limited(self):
         """Decompressed data buffering should be limited"""
         bomb = lzma.compress(b'\0' * int(2e6), preset=6)
-        self.assertLess(len(bomb), streams.BUFFER_SIZE)
+        self.assertLess(len(bomb), _streams.BUFFER_SIZE)
 
         decomp = LZMAFile(BytesIO(bomb))
         self.assertEqual(decomp.read(1), b'\0')
