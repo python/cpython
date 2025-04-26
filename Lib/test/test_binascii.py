@@ -242,6 +242,21 @@ class BinASCIITest(unittest.TestCase):
                 res += b
             self.assertEqual(res, rawdata)
 
+        # Test decoding inputs with length 1 mod 5
+        params = [
+            (b"a", False, False, b"", b""),
+            (b"xbw", False, False, b"wx", b""),
+            (b"<~c~>", False, True, b"", b""),
+            (b"{d ~>", False, True, b" {", b""),
+            (b"ye", True, False, b"", b"    "),
+            (b"z\x01y\x00f", True, False, b"\x00\x01", b"\x00\x00\x00\x00    "),
+            (b"<~FCfN8yg~>", True, True, b"", b"test    "),
+            (b"FE;\x03#8zFCf\x02N8yh~>", True, True, b"\x02\x03", b"tset\x00\x00\x00\x00test    "),
+        ]
+        for a, fold_spaces, wrap, ignore, b in params:
+            kwargs = {"fold_spaces": fold_spaces, "wrap": wrap, "ignore": ignore}
+            self.assertEqual(binascii.a2b_ascii85(self.type2test(a), **kwargs), b)
+
     def test_ascii85_invalid(self):
         # Test Ascii85 with invalid characters interleaved
         lines, i = [], 0
@@ -284,19 +299,16 @@ class BinASCIITest(unittest.TestCase):
                 binascii.a2b_ascii85(self.type2test(data), **kwargs)
 
         def assertMissingDelimiter(data):
-            _assertRegexTemplate(r"(?i)end with '~>'", data, wrap=True)
+            _assertRegexTemplate(r"(?i)end with b'~>'", data, wrap=True)
 
         def assertOverflow(data):
-            _assertRegexTemplate(r"(?i)85 overflow", data)
+            _assertRegexTemplate(r"(?i)Ascii85 overflow", data)
 
         def assertInvalidSpecial(data):
             _assertRegexTemplate(r"(?i)'[yz]'.+5-tuple", data, fold_spaces=True)
 
         def assertInvalidChar(data, **kwargs):
-            _assertRegexTemplate(r"(?i)invalid in Ascii85", data, **kwargs)
-
-        def assertInvalidLength(data):
-            _assertRegexTemplate(r"(?i)invalid length", data)
+            _assertRegexTemplate(r"(?i)Non-Ascii85 digit", data, **kwargs)
 
         # Test Ascii85 with missing delimiters
         assertMissingDelimiter(b"")
@@ -330,15 +342,6 @@ class BinASCIITest(unittest.TestCase):
         assertInvalidChar(b" valid\x02until\x03", ignore=b"\x00\x01\x02\x04")
         assertInvalidChar(b"\tFCb", ignore=b"\n")
         assertInvalidChar(b"xxxB\nP\thU'D v/F+", ignore=b" \n\tv")
-
-        # Test Ascii85 with invalid length of final group (1 mod 5)
-        assertInvalidLength(b"a")
-        assertInvalidLength(b"b")
-        assertInvalidLength(b"zc")
-        assertInvalidLength(b"zza")
-        assertInvalidLength(b"!!!!!a")
-        assertInvalidLength(b"+<VdL+<VdLZ")
-        assertInvalidLength(b"Z" * (5 * 43 + 21))
 
     def test_ascii85_width(self):
         # Test Ascii85 splitting lines by width
@@ -411,7 +414,7 @@ class BinASCIITest(unittest.TestCase):
         def assertIgnore(data, expected, ignore=b"", **kwargs):
             data = self.type2test(data)
             ignore = self.type2test(ignore)
-            with self.assertRaisesRegex(binascii.Error, r"(?i)invalid in Ascii85"):
+            with self.assertRaisesRegex(binascii.Error, r"(?i)Non-Ascii85 digit"):
                 binascii.a2b_ascii85(data, **kwargs)
             res = binascii.a2b_ascii85(data, ignore=ignore, **kwargs)
             self.assertEqual(res, expected)
@@ -440,6 +443,11 @@ class BinASCIITest(unittest.TestCase):
             b = binascii.a2b_base85(a)
             res += b
         self.assertEqual(res, self.rawdata)
+
+        # Test decoding inputs with length 1 mod 5
+        self.assertEqual(binascii.a2b_base85(self.type2test(b"a")), b"")
+        self.assertEqual(binascii.a2b_base85(self.type2test(b" b ")), b"")
+        self.assertEqual(binascii.a2b_base85(self.type2test(b"b/Y\"*,j'Nc")), b"test")
 
     def test_base85_invalid(self):
         # Test base85 with invalid characters interleaved
@@ -480,9 +488,6 @@ class BinASCIITest(unittest.TestCase):
         def assertOverflow(data):
             _assertRegexTemplate(r"(?i)base85 overflow", data)
 
-        def assertInvalidLength(data):
-            _assertRegexTemplate(r"(?i)invalid length", data)
-
         # Test base85 with out-of-range encoded value
         assertOverflow(b"}")
         assertOverflow(b"|O")
@@ -491,13 +496,6 @@ class BinASCIITest(unittest.TestCase):
         assertOverflow(b"|NsC1")
         assertOverflow(b"|NsC0~")
         assertOverflow(b"|NsC0|NsC0|NsD0")
-
-        # Test base85 with invalid length of final group (1 mod 5)
-        assertInvalidLength(b"0")
-        assertInvalidLength(b"1")
-        assertInvalidLength(b"^^^^^^")
-        assertInvalidLength(b"|NsC0|NsC0a")
-        assertInvalidLength(b"_" * (5 * 43 + 21))
 
     def test_base85_pad(self):
         # Test base85 with encode padding
@@ -514,7 +512,7 @@ class BinASCIITest(unittest.TestCase):
         # Test base85 with strict mode on
         def assertNonBase85Data(data, expected):
             data = self.type2test(data)
-            with self.assertRaisesRegex(binascii.Error, r"(?i)invalid in base85"):
+            with self.assertRaisesRegex(binascii.Error, r"(?i)bad base85 character"):
                 binascii.a2b_base85(data, strict_mode=True)
             default_res = binascii.a2b_base85(data)
             non_strict_res = binascii.a2b_base85(data, strict_mode=False)

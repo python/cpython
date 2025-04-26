@@ -578,7 +578,21 @@ def decodebytes(s):
 
 # Use accelerated implementations of originally pure-Python parts if possible.
 try:
-    from _base64 import *
+    from _base64 import (_a85encode, _a85decode, _b85encode,
+                         _b85decode, _z85encode, _z85decode)
+    from functools import update_wrapper
+    update_wrapper(_a85encode, a85encode)
+    update_wrapper(_a85decode, a85decode)
+    update_wrapper(_b85encode, b85encode)
+    update_wrapper(_b85decode, b85decode)
+    update_wrapper(_z85encode, z85encode)
+    update_wrapper(_z85decode, z85decode)
+    a85encode = _a85encode
+    a85decode = _a85decode
+    b85encode = _b85encode
+    b85decode = _b85decode
+    z85encode = _z85encode
+    z85decode = _z85decode
 except ImportError:
     pass
 

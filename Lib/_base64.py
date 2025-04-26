@@ -1,33 +1,57 @@
 """C accelerator wrappers for originally pure-Python parts of base64."""
 
-from binascii import a2b_ascii85, a2b_base85, b2a_ascii85, b2a_base85
-
-__all__ = ['a85encode', 'a85decode',
-           'b85encode', 'b85decode',
-           'z85encode', 'z85decode']
+from binascii import Error, a2b_ascii85, a2b_base85, b2a_ascii85, b2a_base85
+from base64 import _bytes_from_decode_data, bytes_types
 
 
-def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
+# Base 85 encoder functions in base64 silently convert input to bytes.
+def _bytes_from_encode_data(b):
+    return b if isinstance(b, bytes_types) else memoryview(b).tobytes()
+
+
+# Functions in binascii raise binascii.Error instead of ValueError.
+def raise_valueerror(func):
+    def _func(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Error as e:
+            raise ValueError(e) from None
+    return _func
+
+
+@raise_valueerror
+def _a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
+    b = _bytes_from_encode_data(b)
     return b2a_ascii85(b, fold_spaces=foldspaces,
                        wrap=adobe, width=wrapcol, pad=pad)
 
 
-def a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
+@raise_valueerror
+def _a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
+    b = _bytes_from_decode_data(b)
     return a2b_ascii85(b, fold_spaces=foldspaces,
                        wrap=adobe, ignore=ignorechars)
 
 
-def b85encode(b, pad=False):
+@raise_valueerror
+def _b85encode(b, pad=False):
+    b = _bytes_from_encode_data(b)
     return b2a_base85(b, pad=pad, newline=False)
 
 
-def b85decode(b):
+@raise_valueerror
+def _b85decode(b):
+    b = _bytes_from_decode_data(b)
     return a2b_base85(b, strict_mode=True)
 
 
-def z85encode(s):
+@raise_valueerror
+def _z85encode(s):
+    s = _bytes_from_encode_data(s)
     return b2a_base85(s, newline=False, z85=True)
 
 
-def z85decode(s):
+@raise_valueerror
+def _z85decode(s):
+    s = _bytes_from_decode_data(s)
     return a2b_base85(s, strict_mode=True, z85=True)
