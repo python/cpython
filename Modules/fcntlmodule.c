@@ -24,8 +24,7 @@
 
 #define GUARDSZ 16
 // NUL followed by random bytes.
-static const char guard[GUARDSZ] = "\x00\xfa\x69\xc4\x67\xa3\x6c\x58"
-                                   "\x06\x41\x8c\x77\x54\xd6\x51\x6b";
+static const char guard[GUARDSZ] = "\x00\xfa\x69\xc4\x67\xa3\x6c\x58";
 
 /*[clinic input]
 module fcntl
