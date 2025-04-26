@@ -122,6 +122,20 @@ class EventQueueTestBase:
         self.assertEqual(eq.events[2].evt, "key")
         self.assertEqual(eq.events[2].data, "Z")
 
+    def test_push_unicode_character_two_bytes(self):
+        eq = self.make_eventqueue()
+        eq.keymap = {}
+
+        encoded_bytes = "ч".encode(eq.encoding, "replace")
+        self.assertEqual(len(encoded_bytes), 2)
+        eq.push(encoded_bytes[0].to_bytes())
+        self.assertEqual(eq.get(), None)
+
+        eq.push(encoded_bytes[1].to_bytes())
+        e = eq.get()
+        self.assertEqual(e.evt, "key")
+        self.assertEqual(e.data, "ч")
+
 
 @unittest.skipIf(support.MS_WINDOWS, "No Unix event queue on Windows")
 class TestUnixEventQueue(EventQueueTestBase, unittest.TestCase):
