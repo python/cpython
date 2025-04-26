@@ -576,6 +576,13 @@ def decodebytes(s):
     return binascii.a2b_base64(s)
 
 
+# Use accelerated implementations of originally pure-Python parts if possible.
+try:
+    from _base64 import *
+except ImportError:
+    pass
+
+
 # Usable as a script...
 def main():
     """Small main program"""
