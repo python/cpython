@@ -70,16 +70,8 @@ def list_packages(names):
         package_path = os.path.join(STDLIB_PATH, name)
         if not os.path.isdir(package_path):
             continue
-        # Walk the package directory to check if the package is a namespace
-        has_py_files = False
-        for root, _dirs, files in os.walk(package_path):
-            for file in files:
-                if file.endswith(".py"):
-                    has_py_files = True
-                    break
-            if has_py_files:
-                break
-        if has_py_files:
+        if any(package_file.endswith(".py")
+               for package_file in os.listdir(package_path)):
             names.add(name)
 
 
