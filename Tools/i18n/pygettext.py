@@ -483,7 +483,7 @@ class GettextVisitor(ast.NodeVisitor):
 
     def _extract_docstring(self, node):
         if (not self.options.docstrings or
-            self.options.nodocstrings.get(self.filename)):
+            os.path.basename(self.filename) in self.options.nodocstrings):
             return
 
         docstring = ast.get_docstring(node)
@@ -692,7 +692,7 @@ def main():
              'help', 'keyword=', 'no-default-keywords',
              'add-location', 'no-location', 'output=', 'output-dir=',
              'style=', 'verbose', 'version', 'width=', 'exclude-file=',
-             'docstrings', 'no-docstrings',
+             'docstrings', 'no-docstrings=',
              ])
     except getopt.error as msg:
         usage(1, msg)
@@ -714,7 +714,7 @@ def main():
         width = 78
         excludefilename = ''
         docstrings = 0
-        nodocstrings = {}
+        nodocstrings = []
         comment_tags = set()
 
     options = Options()
@@ -767,15 +767,11 @@ def main():
         elif opt in ('-x', '--exclude-file'):
             options.excludefilename = arg
         elif opt in ('-X', '--no-docstrings'):
-            fp = open(arg)
-            try:
-                while 1:
-                    line = fp.readline()
-                    if not line:
-                        break
-                    options.nodocstrings[line[:-1]] = 1
-            finally:
-                fp.close()
+            with open(arg, 'r') as nodocstrings_file:
+                for line in nodocstrings_file:
+                    filename = os.path.basename(line.strip())
+                    if filename not in options.nodocstrings:
+                        options.nodocstrings.append(filename)
 
     options.comment_tags = tuple(options.comment_tags)
 
