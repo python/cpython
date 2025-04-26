@@ -627,8 +627,14 @@
                 assert(PyLong_CheckExact(sym_get_const(ctx, right)));
                 long index = PyLong_AsLong(sym_get_const(ctx, right));
                 assert(index >= 0);
-                assert(index < sym_tuple_length(left));
-                res = sym_tuple_getitem(ctx, left, index);
+                int tuple_length = sym_tuple_length(left);
+                if (tuple_length == -1) {
+                    res = sym_new_not_null(ctx);
+                }
+                else {
+                    assert(index < tuple_length);
+                    res = sym_tuple_getitem(ctx, left, index);
+                }
             }
             else {
                 res = sym_new_not_null(ctx);
