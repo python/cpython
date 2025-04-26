@@ -1,6 +1,5 @@
-"""Module re-exporting contents of the gzip module.
-
-Please refer to the gzip documentation for this module's contents.
-"""
+import gzip
+__doc__ = gzip.__doc__
+del gzip
 
 from gzip import *

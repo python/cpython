@@ -1,6 +1,5 @@
-"""Module re-exporting contents of the lzma module.
-
-Please refer to the lzma documentation for this module's contents.
-"""
+import lzma
+__doc__ = lzma.__doc__
+del lzma
 
 from lzma import *

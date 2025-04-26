@@ -1,6 +1,5 @@
-"""Module re-exporting contents of the bz2 module.
-
-Please refer to the bz2 documentation for this module's contents.
-"""
+import bz2
+__doc__ = bz2.__doc__
+del bz2
 
 from bz2 import *

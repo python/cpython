@@ -1,6 +1,5 @@
-"""Module re-exporting contents of the zlib module.
-
-Please refer to the bz2 documentation for this module's contents.
-"""
+import zlib
+__doc__ = zlib.__doc__
+del zlib
 
 from zlib import *
