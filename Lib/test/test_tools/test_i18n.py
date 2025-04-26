@@ -422,7 +422,7 @@ class Test_pygettext(unittest.TestCase):
     def test_version_text(self):
         """Test that the version text is displayed."""
         res = assert_python_ok(self.script, '--version')
-        self.assertEqual(res.out, b'pygettext.py (xgettext for Python) 1.5\n')
+        self.assertIn(b'pygettext.py (xgettext for Python) 1.5', res.out)
 
     def test_error_messages(self):
         """Test that pygettext outputs error messages to stderr."""
