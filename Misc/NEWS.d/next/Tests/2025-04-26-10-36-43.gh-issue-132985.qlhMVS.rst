@@ -1,0 +1,3 @@
+Do not check the output of :func:`curses.pair_content(0)
+<curses.pair_content>` since it depends on the terminal capabilities that
+are not statically known. Patch by Bénédikt Tran.

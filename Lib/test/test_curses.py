@@ -751,7 +751,6 @@ class TestCurses(unittest.TestCase):
         curses.nl(False)
         curses.nl()
 
-
     def test_input_options(self):
         stdscr = self.stdscr
 
@@ -943,9 +942,6 @@ class TestCurses(unittest.TestCase):
 
     @requires_colors
     def test_pair_content(self):
-        if not hasattr(curses, 'use_default_colors'):
-            self.assertEqual(curses.pair_content(0),
-                             (curses.COLOR_WHITE, curses.COLOR_BLACK))
         curses.pair_content(0)
         maxpair = self.get_pair_limit() - 1
         if maxpair > 0:
@@ -990,13 +986,15 @@ class TestCurses(unittest.TestCase):
     @requires_curses_func('use_default_colors')
     @requires_colors
     def test_use_default_colors(self):
-        old = curses.pair_content(0)
+        # The current terminal fg/bg colors given by pair_content(0),
+        # which is backed by extended_pair_content(3), depends on the
+        # terminal emulator and its supported colors.
+        curses.pair_content(0)
         try:
             curses.use_default_colors()
         except curses.error:
             self.skipTest('cannot change color (use_default_colors() failed)')
         self.assertEqual(curses.pair_content(0), (-1, -1))
-        self.assertIn(old, [(curses.COLOR_WHITE, curses.COLOR_BLACK), (-1, -1), (0, 0)])
 
     def test_keyname(self):
         # TODO: key_name()
