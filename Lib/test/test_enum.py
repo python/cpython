@@ -1352,7 +1352,7 @@ class TestSpecial(unittest.TestCase):
                 red = 1
                 green = 2
                 blue = 3
-                def red(self):
+                def red(self):  # noqa: F811
                     return 'red'
         #
         with self.assertRaises(TypeError):
@@ -1360,7 +1360,7 @@ class TestSpecial(unittest.TestCase):
                 @enum.property
                 def red(self):
                     return 'redder'
-                red = 1
+                red = 1  # noqa: F811
                 green = 2
                 blue = 3
 
@@ -1568,6 +1568,17 @@ class TestSpecial(unittest.TestCase):
             X = 1
         self.assertIn(IntEnum1.X, IntFlag1)
         self.assertIn(IntFlag1.X, IntEnum1)
+
+    def test_contains_does_not_call_missing(self):
+        class AnEnum(Enum):
+            UNKNOWN = None
+            LUCKY = 3
+            @classmethod
+            def _missing_(cls, *values):
+                return cls.UNKNOWN
+        self.assertTrue(None in AnEnum)
+        self.assertTrue(3 in AnEnum)
+        self.assertFalse(7 in AnEnum)
 
     def test_inherited_data_type(self):
         class HexInt(int):

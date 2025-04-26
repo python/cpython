@@ -23,6 +23,7 @@ def unix_console(events, **kwargs):
     height = kwargs.get("height", 25)
     width = kwargs.get("width", 80)
     console.getheightwidth = MagicMock(side_effect=lambda: (height, width))
+    console.wait = MagicMock()
 
     console.prepare()
     for key, val in kwargs.items():
