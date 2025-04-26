@@ -2363,9 +2363,11 @@ do_tstate_ensure(void *arg)
     assert(res == 0);
     PyThreadState_Ensure(PyInterpreterState_Hold());
     PyThreadState_Ensure(PyInterpreterState_Hold());
+    PyGILState_STATE gstate = PyGILState_Ensure();
     PyThreadState_Ensure(PyInterpreterState_Hold());
     res = PyRun_SimpleString(THREAD_CODE);
     PyThreadState_Release();
+    PyGILState_Release(gstate);
     PyThreadState_Release();
     PyThreadState_Release();
     assert(res == 0);
