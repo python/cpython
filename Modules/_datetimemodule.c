@@ -2886,7 +2886,7 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         "minutes", "hours", "weeks", NULL
     };
 
-    if (PyArg_ParseTupleAndKeywords(args, kw, "|OOOOOOO:__new__",
+    if (PyArg_ParseTupleAndKeywords(args, kw, "|OOOOOOOO:__new__",
                                     keywords,
                                     &day, &second, &us, &ns,
                                     &ms, &minute, &hour, &week) == 0)
@@ -4785,7 +4785,7 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         tzinfo = Py_None;
     }
 
-    if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO$i", time_kws,
+    if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO$ii", time_kws,
                                     &hour, &minute, &second, &microsecond,
                                     &tzinfo, &fold, &nanosecond)) {
         self = new_time_ex2(hour, minute, second, microsecond, tzinfo, fold,
@@ -5540,7 +5540,7 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         tzinfo = Py_None;
     }
 
-    if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiiiO$i", datetime_kws,
+    if (PyArg_ParseTupleAndKeywords(args, kw, "iii|iiiiO$ii", datetime_kws,
                                     &year, &month, &day, &hour, &minute,
                                     &second, &microsecond, &tzinfo, &fold, &nanosecond)) {
         self = new_datetime_ex2(year, month, day,
@@ -7588,7 +7588,7 @@ _datetime_exec(PyObject *module)
         DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 0, 1, 0));
         DATETIME_ADD_MACRO(d, "min", new_delta(-MAX_DELTA_DAYS, 0, 0, 0, 0));
         DATETIME_ADD_MACRO(d, "max",
-                           new_delta(MAX_DELTA_DAYS, 24*3600-1, 1000000-1, 1000-1, 0));
+                           new_delta(MAX_DELTA_DAYS, 24*3600-1, 1000000-1, 999, 0));
 
         /* date values */
         d = _PyType_GetDict(&PyDateTime_DateType);
