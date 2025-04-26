@@ -163,7 +163,7 @@ class MinidomTest(unittest.TestCase):
 
         dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
         dom.documentElement.insertBefore(frag, orig)
-        self.assertEqual(tuple(dom.documentElement.childNodes),
+        self.assertTupleEqual(tuple(dom.documentElement.childNodes),
                      (c1, c2, c3, orig),
                      "insertBefore(<fragment>, orig)")
         frag.unlink()
@@ -179,7 +179,7 @@ class MinidomTest(unittest.TestCase):
     def testAppendChildFragment(self):
         dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
         dom.documentElement.appendChild(frag)
-        self.assertEqual(tuple(dom.documentElement.childNodes),
+        self.assertTupleEqual(tuple(dom.documentElement.childNodes),
                      (orig, c1, c2, c3),
                      "appendChild(<fragment>)")
         frag.unlink()
@@ -189,7 +189,7 @@ class MinidomTest(unittest.TestCase):
         dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
         dom.documentElement.replaceChild(frag, orig)
         orig.unlink()
-        self.assertEqual(tuple(dom.documentElement.childNodes), (c1, c2, c3),
+        self.assertTupleEqual(tuple(dom.documentElement.childNodes), (c1, c2, c3),
                 "replaceChild(<fragment>)")
         frag.unlink()
         dom.unlink()
@@ -262,9 +262,9 @@ class MinidomTest(unittest.TestCase):
         el.setAttribute("spam", "jam2")
         self.assertEqual(el.toxml(), '<abc spam="jam2"/>', "testAAA")
         a = el.getAttributeNode("spam")
-        self.assertTrue(a.ownerDocument is dom,
+        self.assertIs(a.ownerDocument, dom,
                 "setAttribute() sets ownerDocument")
-        self.assertTrue(a.ownerElement is dom.documentElement,
+        self.assertIs(a.ownerElement, dom.documentElement,
                 "setAttribute() sets ownerElement")
         dom.unlink()
 
