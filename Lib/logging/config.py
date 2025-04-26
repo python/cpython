@@ -882,7 +882,7 @@ class DictConfigurator(BaseConfigurator):
             import warnings
             warnings.warn(
                 "Support for custom logging handlers with the 'strm' argument "
-                "is deprecated and scheduled for removal in Python 3.15. "
+                "is deprecated and scheduled for removal in Python 3.16. "
                 "Define handlers with the 'stream' argument instead.",
                 DeprecationWarning,
                 stacklevel=2,
