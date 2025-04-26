@@ -813,11 +813,16 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 
     PyTypeObject *tp = Py_TYPE(self);
     elementtreestate *st = get_elementtree_state_by_type(tp);
+    // Since the 'tag' attribute is undeletable, deepcopy() should be safe.
     tag = deepcopy(st, self->tag, memo);
+    assert(self->tag != NULL);
     if (!tag)
         return NULL;
 
     if (self->extra && self->extra->attrib) {
+        // While deepcopy(self->extra->attrib) may cause 'self->extra' to be
+        // NULL, we do not use it afterawrds without checking this, so no need
+        // to temporarily incref 'self->extra->attrib'.
         attrib = deepcopy(st, self->extra->attrib, memo);
         if (!attrib) {
             Py_DECREF(tag);
@@ -835,12 +840,16 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     if (!element)
         return NULL;
 
+    // Since the 'text' attribute is undeletable, deepcopy() should be safe.
     text = deepcopy(st, JOIN_OBJ(self->text), memo);
+    assert(JOIN_OBJ(self->text) != NULL);
     if (!text)
         goto error;
     _set_joined_ptr(&element->text, JOIN_SET(text, JOIN_GET(self->text)));
 
+    // Since the 'tail' attribute is undeletable, deepcopy() should be safe.
     tail = deepcopy(st, JOIN_OBJ(self->tail), memo);
+    assert(JOIN_OBJ(self->tail) != NULL);
     if (!tail)
         goto error;
     _set_joined_ptr(&element->tail, JOIN_SET(tail, JOIN_GET(self->tail)));
@@ -850,9 +859,11 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
         if (element_resize(element, self->extra->length) < 0)
             goto error;
 
-        // TODO(picnixz): check for an evil child's __deepcopy__ on 'self'
-        for (i = 0; i < self->extra->length; i++) {
-            PyObject* child = deepcopy(st, self->extra->children[i], memo);
+        // TODO(picnixz): should we protect against mutations from 'memo'?
+        for (i = 0; self->extra && i < self->extra->length; i++) {
+            PyObject* itemi = Py_NewRef(self->extra->children[i]);
+            PyObject* child = deepcopy(st, itemi, memo);
+            Py_DECREF(itemi);
             if (!child || !Element_Check(st, child)) {
                 if (child) {
                     raise_type_error(child);
@@ -865,7 +876,12 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
         }
 
         assert(!element->extra->length);
-        element->extra->length = self->extra->length;
+        /*
+         * The original 'self->extra' may be gone at this point if deepcopy()
+         * had side-effects. However, 'i' is the number of copied items that
+         * we were able to successfully copy.
+         */
+        element->extra->length = i;
     }
 
     /* add object to memo dictionary (so deepcopy won't visit it again) */

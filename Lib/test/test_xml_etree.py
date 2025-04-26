@@ -2960,6 +2960,24 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         del b
         gc_collect()
 
+    def test_deepcopy(self):
+        # Prevent crashes when __deepcopy__() mutates the element being copied.
+        # See https://github.com/python/cpython/issues/133009.
+        class X(ET.Element):
+            def __deepcopy__(self, memo):
+                root.clear()
+                return self
+
+        root = ET.Element('a')
+        evil = X('x')
+        root.extend([evil, ET.Element('y')])
+        if is_python_implementation():
+            self.assertRaises(RuntimeError, copy.deepcopy, root)
+        else:
+            c = copy.deepcopy(root)
+            # In the C implementation, we can still copy the evil element.
+            self.assertListEqual(list(c), [evil])
+
 
 class MutationDeleteElementPath(str):
     def __new__(cls, elem, *args):
