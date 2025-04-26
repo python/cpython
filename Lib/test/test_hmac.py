@@ -1102,6 +1102,11 @@ class UpdateTestCaseMixin:
         """Create a HMAC object."""
         raise NotImplementedError
 
+    @property
+    def gil_minsize(self):
+        """Get the maximal input length for the GIL to be held."""
+        raise NotImplementedError
+
     def check_update(self, key, chunks):
         chunks = list(chunks)
         msg = b''.join(chunks)
@@ -1120,11 +1125,10 @@ class UpdateTestCaseMixin:
             self.check_update(key, [msg])
 
     def test_update_large(self):
-        HASHLIB_GIL_MINSIZE = 2048
-
+        gil_minsize = self.gil_minsize
         key = random.randbytes(16)
-        top = random.randbytes(HASHLIB_GIL_MINSIZE + 1)
-        bot = random.randbytes(HASHLIB_GIL_MINSIZE + 1)
+        top = random.randbytes(gil_minsize + 1)
+        bot = random.randbytes(gil_minsize + 1)
         self.check_update(key, [top, bot])
 
     def test_update_exceptions(self):
@@ -1140,12 +1144,20 @@ class PyUpdateTestCase(PyModuleMixin, UpdateTestCaseMixin, unittest.TestCase):
     def HMAC(self, key, msg=None):
         return self.hmac.HMAC(key, msg, digestmod='sha256')
 
+    @property
+    def gil_minsize(self):
+        self.skipTest("GIL is always held")
+
 
 @hashlib_helper.requires_openssl_hashdigest('sha256')
 class OpenSSLUpdateTestCase(UpdateTestCaseMixin, unittest.TestCase):
 
     def HMAC(self, key, msg=None):
         return _hashlib.hmac_new(key, msg, digestmod='sha256')
+
+    @property
+    def gil_minsize(self):
+        return _hashlib.GIL_MINSIZE
 
 
 class BuiltinUpdateTestCase(BuiltinModuleMixin,
@@ -1155,6 +1167,10 @@ class BuiltinUpdateTestCase(BuiltinModuleMixin,
         # Even if Python does not build '_sha2', the HACL* sources
         # are still built, making it possible to use SHA-2 hashes.
         return self.hmac.new(key, msg, digestmod='sha256')
+
+    @property
+    def gil_minsize(self):
+        return self.hmac.GIL_MINSIZE
 
 
 class CopyBaseTestCase:
