@@ -2349,6 +2349,16 @@ Data types
       library. *name* is the name of the symbol that exports the data, *library*
       is the loaded shared library.
 
+   Common class variables of ctypes data types:
+
+   .. attribute:: __pointer_type__
+
+      This attributes is a pointer type that was created by calling
+      :func:`POINTER` for corresponding ctypes data type. If ``POINTER`` was
+      not called for this type then attribute contains ``None``.
+
+      .. versionadded:: next
+
    Common instance variables of ctypes data types:
 
    .. attribute:: _b_base_
@@ -2369,14 +2379,6 @@ Data types
       that need to be kept alive so that the memory block contents is kept
       valid.  This object is only exposed for debugging; never modify the
       contents of this dictionary.
-
-   .. attribute:: __pointer_type__
-
-      This attributes is a pointer type that was created by calling
-      :func:`POINTER` for corresponding ctypes data type. If ``POINTER`` was
-      not called then this attribute contains ``None``.
-
-      .. versionadded:: 3.14
 
 
 .. _ctypes-fundamental-data-types-2:
