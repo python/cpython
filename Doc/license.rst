@@ -1137,9 +1137,9 @@ The file is distributed under the 2-Clause BSD License::
 Zstandard bindings
 ------------------
 
-Zstandard bindings in :file:`Modules/_zstd` and :file:`Lib/zstd` are based on
-code from the pyzstd library, copyright Ma Lin and contributors. The code is
-distributed under the 3-Clause BSD License::
+Zstandard bindings in :file:`Modules/_zstd` and :file:`Lib/compression/zstd`
+are based on code from the pyzstd library, copyright Ma Lin and contributors.
+The code is distributed under the 3-Clause BSD License::
 
   Copyright (c) 2020-present, Ma Lin and contributors.
   All rights reserved.
