@@ -54,8 +54,8 @@ SHORT_MAX = 0x7fff
 DEFAULT_PAIR_CONTENTS = [
     (curses.COLOR_WHITE, curses.COLOR_BLACK),
     (0, 0),
-    (-1, -1),   # error
-    (15, 0),    # for xterm-256color (15 is for BRIGHT WHITE)
+    (-1, -1),
+    (15, 0),  # for xterm-256color (15 is for BRIGHT WHITE)
 ]
 
 # If newterm was supported we could use it instead of initscr and not exit
