@@ -2555,17 +2555,18 @@ test_interp_refcount(PyObject *self, PyObject *unused)
     PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
     assert(interp != NULL);
 
-    assert(_PyInterpreterState_Refcount(interp) == 1);
+    assert(_PyInterpreterState_Refcount(interp) == 0);
     PyInterpreterState *held = PyInterpreterState_Hold();
-    assert(_PyInterpreterState_Refcount(interp) == 2);
-    PyInterpreterState_Release(held);
     assert(_PyInterpreterState_Refcount(interp) == 1);
+    PyInterpreterState_Release(held);
+    assert(_PyInterpreterState_Refcount(interp) == 0);
 
     held = PyInterpreterState_Hold();
     Py_EndInterpreter(tstate);
     PyThreadState_Swap(save);
     assert(_PyInterpreterState_Refcount(interp) == 1);
     PyInterpreterState_Release(held);
+    assert(_PyInterpreterState_Refcount(interp) == 0);
 
     Py_RETURN_NONE;
 }
