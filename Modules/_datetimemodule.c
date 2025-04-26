@@ -165,19 +165,7 @@ _get_current_state(PyObject **p_mod)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
     PyObject *mod = get_current_module(interp, NULL);
-    if (mod == NULL) {
-        assert(!PyErr_Occurred());
-        if (PyErr_Occurred()) {
-            return NULL;
-        }
-        assert(!_Py_IsInterpreterFinalizing(interp));
-        /* The static types can outlive the module,
-         * so we must re-import the module. */
-        mod = PyImport_ImportModule("_datetime");
-        if (mod == NULL) {
-            return NULL;
-        }
-    }
+    assert (mod != NULL);
     datetime_state *st = get_module_state(mod);
     *p_mod = mod;
     return st;

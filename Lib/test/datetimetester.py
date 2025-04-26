@@ -7272,7 +7272,7 @@ class ExtensionModuleTests(unittest.TestCase):
         res = script_helper.assert_python_ok('-c', script)
         self.assertFalse(res.err)
 
-    def test_module_state_at_shutdown(self):
+    def test_static_type_at_shutdown1(self):
         # gh-132413
         script = textwrap.dedent("""
             import sys
@@ -7283,7 +7283,27 @@ class ExtensionModuleTests(unittest.TestCase):
                     yield
                 finally:
                     assert not sys.modules
-                    td = _datetime.timedelta(days=1)  # crash
+                    td = _datetime.timedelta(days=1)
+                    assert td.days == 1
+                    assert not sys.modules
+
+            it = gen()
+            next(it)
+            """)
+        res = script_helper.assert_python_ok('-c', script)
+        self.assertFalse(res.err)
+
+    def test_static_type_at_shutdown2(self):
+        script = textwrap.dedent("""
+            import sys
+            from _datetime import timedelta
+
+            def gen():
+                try:
+                    yield
+                finally:
+                    assert not sys.modules
+                    td = timedelta(days=1)
                     assert td.days == 1
                     assert not sys.modules
 
@@ -7301,8 +7321,9 @@ class ExtensionModuleTests(unittest.TestCase):
             ws = weakref.WeakSet()
             for _ in range(3):
                 import _datetime
+                td = _datetime.timedelta
                 ws.add(_datetime)
-                del sys.modules["_datetime"]
+                del sys.modules['_datetime']
                 del _datetime
                 gc.collect()
                 assert len(ws) == 1
