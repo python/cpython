@@ -940,7 +940,9 @@ dummy_func(void) {
         res = sym_new_const(ctx, Py_True);
     }
 
-
+    op(_BUILD_TUPLE, (values[oparg] -- tup)) {
+        tup = sym_new_tuple(ctx, oparg, values);
+    }
 
     op(_BUILD_LIST, (values[oparg] -- list)) {
         list = sym_new_type(ctx, &PyList_Type);
@@ -952,10 +954,6 @@ dummy_func(void) {
 
     op(_BUILD_SLICE, (values[oparg] -- slice)) {
         slice = sym_new_type(ctx, &PySlice_Type);
-    }
-
-    op(_BUILD_TUPLE, (values[oparg] -- tup)) {
-        tup = sym_new_tuple(ctx, oparg, values);
     }
 
     op(_BUILD_STRING, (values[oparg] -- str)) {
