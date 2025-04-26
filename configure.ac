@@ -5394,6 +5394,20 @@ PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   ])
 ])
 
+PKG_CHECK_MODULES([LIBZSTD], [libzstd], [have_libzstd=yes], [
+  WITH_SAVE_ENV([
+    CPPFLAGS="$CPPFLAGS $LIBZSTD_CFLAGS"
+    LIBS="$LIBS $LIBZSTD_LIBS"
+    AC_CHECK_HEADERS([zstd.h zdict.h], [
+      AC_CHECK_LIB([zstd], [ZSTD_compress], [have_libzstd=yes], [have_libzstd=no])
+    ], [have_libzstd=no])
+    AS_VAR_IF([have_libzstd], [yes], [
+      LIBZSTD_CFLAGS=${LIBZSTD_CFLAGS-""}
+      LIBZSTD_LIBS=${LIBZSTD_LIBS-"-lzstd"}
+    ])
+  ])
+])
+
 dnl PY_CHECK_NETDB_FUNC(FUNCTION)
 AC_DEFUN([PY_CHECK_NETDB_FUNC], [PY_CHECK_FUNC([$1], [@%:@include <netdb.h>])])
 
@@ -7095,6 +7109,7 @@ SRCDIRS="\
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
+  Modules/_zstd \
   Objects \
   Objects/mimalloc \
   Objects/mimalloc/prim \
@@ -8041,6 +8056,8 @@ PY_STDLIB_MOD([_bz2], [], [test "$have_bzip2" = yes],
   [$BZIP2_CFLAGS], [$BZIP2_LIBS])
 PY_STDLIB_MOD([_lzma], [], [test "$have_liblzma" = yes],
   [$LIBLZMA_CFLAGS], [$LIBLZMA_LIBS])
+PY_STDLIB_MOD([_zstd], [], [test "$have_libzstd" = yes],
+  [$LIBZSTD_CFLAGS], [$LIBZSTD_LIBS])
 
 dnl OpenSSL bindings
 PY_STDLIB_MOD([_ssl], [], [test "$ac_cv_working_openssl_ssl" = yes],
