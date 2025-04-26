@@ -69,19 +69,13 @@ class BaseEventQueue:
         trace('added event {event}', event=event)
         self.events.append(event)
 
-    def push(self, char: int | bytes | str) -> None:
+    def push(self, char: int | bytes) -> None:
         """
         Processes a character by updating the buffer and handling special key mappings.
         """
         ord_char = char if isinstance(char, int) else ord(char)
-        if ord_char > 255:
-            assert isinstance(char, str)
-            char = bytes(char.encode(self.encoding, "replace"))
-            self.buf.extend(char)
-        else:
-            char = bytes(bytearray((ord_char,)))
-            self.buf.append(ord_char)
-
+        char = bytes(bytearray((ord_char,)))
+        self.buf.append(ord_char)
         if char in self.keymap:
             if self.keymap is self.compiled_keymap:
                 # sanity check, buffer is empty when a special key comes
