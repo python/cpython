@@ -1,0 +1,3 @@
+Use fds in contextlib.chdir where supported. This fixes bugs if the original
+working directory is greater than PATH_MAX and/or is deleted before the
+context manager exits.
