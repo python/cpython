@@ -110,6 +110,7 @@ set_notshareableerror(PyThreadState *tstate, PyObject *cause, int force, const c
     }
     else {
         _ensure_notshareableerror(tstate, cause, force, msgobj);
+        Py_DECREF(msgobj);
     }
 }
 
@@ -123,6 +124,7 @@ format_notshareableerror_v(PyThreadState *tstate, PyObject *cause, int force,
     }
     else {
         _ensure_notshareableerror(tstate, cause, force, msgobj);
+        Py_DECREF(msgobj);
     }
 }
 
