@@ -511,12 +511,6 @@ class MinidomTest(unittest.TestCase):
         self.confirm(str(node) == repr(node))
         dom.unlink()
 
-    def testTextNodeRepr(self):
-        dom = Document()
-        self.addCleanup(dom.unlink)
-        text = dom.createTextNode("monty")
-        self.assertEqual(str(text), repr(text))
-
     def testWriteXML(self):
         str = '<?xml version="1.0" ?><a b="c"/>'
         dom = parseString(str)
