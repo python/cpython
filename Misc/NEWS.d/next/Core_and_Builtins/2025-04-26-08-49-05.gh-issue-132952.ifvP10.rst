@@ -1,0 +1,2 @@
+Speed up startup with the ``-S`` argument by about 19% by importing the
+private ``_io`` module instead of :mod:`io`.
