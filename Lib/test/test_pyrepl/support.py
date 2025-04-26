@@ -149,9 +149,6 @@ class FakeConsole(Console):
     def set_cursor_vis(self, visible: bool) -> None:
         pass
 
-    def push_char(self, char: int | bytes) -> None:
-        pass
-
     def beep(self) -> None:
         pass
 

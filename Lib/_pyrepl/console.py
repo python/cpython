@@ -99,13 +99,6 @@ class Console(ABC):
         ...
 
     @abstractmethod
-    def push_char(self, char: int | bytes) -> None:
-        """
-        Push a character to the console event queue.
-        """
-        ...
-
-    @abstractmethod
     def beep(self) -> None: ...
 
     @abstractmethod

@@ -380,7 +380,7 @@ class UnixConsole(Console):
             signal.signal(signal.SIGWINCH, self.old_sigwinch)
             del self.old_sigwinch
 
-    def push_char(self, char: int | bytes) -> None:
+    def push_char(self, char: bytes) -> None:
         """
         Push a character to the console event queue.
         """

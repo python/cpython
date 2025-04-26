@@ -481,12 +481,6 @@ class WindowsConsole(Console):
             return Event(evt="key", data=key, raw=raw_key)
         return self.event_queue.get()
 
-    def push_char(self, char: int | bytes) -> None:
-        """
-        Push a character to the console event queue.
-        """
-        raise NotImplementedError("push_char not supported on Windows")
-
     def beep(self) -> None:
         self.__write("\x07")
 
