@@ -235,9 +235,8 @@ _PyCursesSetError(cursesmodule_state *state,
     assert(!PyErr_Occurred());
     if (python_funcname == NULL && curses_funcname == NULL) {
         PyErr_SetString(state->error, catchall_ERR);
-        return;
     }
-    if (python_funcname == NULL) {
+    else if (python_funcname == NULL) {
         PyErr_Format(state->error, CURSES_ERROR_FORMAT, curses_funcname);
     }
     else if (curses_funcname == NULL) {
@@ -301,7 +300,7 @@ PyCursesSetError_ForWin_From(PyCursesWindowObject *win,
  * have a direct access to the module's state, '_curses.error'
  * is imported on demand.
  */
-static inline int
+static int
 _PyCursesCheckFunction(int called, const char *funcname)
 {
     if (called == TRUE) {
@@ -323,8 +322,9 @@ _PyCursesCheckFunction(int called, const char *funcname)
  *
  * The exception type is obtained from the 'module' state.
  */
-static inline int
-_PyCursesStatefulCheckFunction(PyObject *module, int called, const char *funcname)
+static int
+_PyCursesStatefulCheckFunction(PyObject *module,
+                               int called, const char *funcname)
 {
     if (called == TRUE) {
         return 1;
