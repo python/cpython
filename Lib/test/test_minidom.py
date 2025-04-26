@@ -155,7 +155,7 @@ class MinidomTest(unittest.TestCase):
     def testInsertBeforeFragment(self):
         dom, orig, c1, c2, c3, frag = self._create_fragment_test_nodes()
         dom.documentElement.insertBefore(frag, None)
-        self.assertEqual(tuple(dom.documentElement.childNodes),
+        self.assertTupleEqual(tuple(dom.documentElement.childNodes),
                      (orig, c1, c2, c3),
                      "insertBefore(<fragment>, None)")
         frag.unlink()
@@ -221,9 +221,9 @@ class MinidomTest(unittest.TestCase):
         attrs = elem.attributes
         attrs["foo"] = "bar"
         a = attrs.item(0)
-        self.assertTrue(a.ownerDocument is dom,
+        self.assertIs(a.ownerDocument, dom,
                 "NamedNodeMap.__setitem__() sets ownerDocument")
-        self.assertTrue(a.ownerElement is elem,
+        self.assertIs(a.ownerElement, elem,
                 "NamedNodeMap.__setitem__() sets ownerElement")
         self.assertEqual(a.value, "bar",
                 "NamedNodeMap.__setitem__() sets value")
@@ -234,9 +234,9 @@ class MinidomTest(unittest.TestCase):
 
     def testNonZero(self):
         dom = parse(tstfile)
-        self.assertTrue(dom)# should not be zero
+        self.assertTrue(dom)  # should not be zero
         dom.appendChild(dom.createComment("foo"))
-        self.assertTrue(not dom.childNodes[-1].childNodes)
+        self.assertFalse(dom.childNodes[-1].childNodes)
         dom.unlink()
 
     def testUnlink(self):
@@ -758,7 +758,7 @@ class MinidomTest(unittest.TestCase):
                     "]>\n"
                     "<doc attr='value'/>")
         doc2 = doc.cloneNode(1)
-        self.assertTrue(not (doc.isSameNode(doc2) or doc2.isSameNode(doc)),
+        self.assertFalse((doc.isSameNode(doc2) or doc2.isSameNode(doc)),
                 "testCloneDocumentDeep: document objects not distinct")
         self.assertEqual(len(doc.childNodes), len(doc2.childNodes),
                 "testCloneDocumentDeep: wrong number of Document children")
@@ -766,14 +766,14 @@ class MinidomTest(unittest.TestCase):
                 "testCloneDocumentDeep: documentElement not an ELEMENT_NODE")
         self.assertTrue(doc2.documentElement.ownerDocument.isSameNode(doc2),
             "testCloneDocumentDeep: documentElement owner is not new document")
-        self.assertTrue(not doc.documentElement.isSameNode(doc2.documentElement),
+        self.assertFalse(doc.documentElement.isSameNode(doc2.documentElement),
                 "testCloneDocumentDeep: documentElement should not be shared")
         if doc.doctype is not None:
             # check the doctype iff the original DOM maintained it
             self.assertEqual(doc2.doctype.nodeType, Node.DOCUMENT_TYPE_NODE,
                     "testCloneDocumentDeep: doctype not a DOCUMENT_TYPE_NODE")
             self.assertTrue(doc2.doctype.ownerDocument.isSameNode(doc2))
-            self.assertTrue(not doc.doctype.isSameNode(doc2.doctype))
+            self.assertFalse(doc.doctype.isSameNode(doc2.doctype))
 
     def testCloneDocumentTypeDeepOk(self):
         doctype = create_nonempty_doctype()
@@ -863,8 +863,8 @@ class MinidomTest(unittest.TestCase):
         attr = doc.documentElement.getAttributeNode("attr")
         self.assertNotEqual(attr, None)
         clone = attr.cloneNode(deep)
-        self.assertTrue(not clone.isSameNode(attr))
-        self.assertTrue(not attr.isSameNode(clone))
+        self.assertFalse(clone.isSameNode(attr))
+        self.assertFalse(attr.isSameNode(clone))
         self.assertIs(clone.ownerElement, None,
                 testName + ": ownerElement should be None")
         self.confirm(clone.ownerDocument.isSameNode(attr.ownerDocument),
@@ -1559,9 +1559,9 @@ class MinidomTest(unittest.TestCase):
         a3.value = "v"
         e.setAttributeNode(a3)
         self.assertTrue(e.isSameNode(doc.getElementById("w")))
-        self.assertTrue(not a1.isId)
+        self.assertFalse(a1.isId)
         self.assertTrue(a2.isId)
-        self.assertTrue(not a3.isId)
+        self.assertFalse(a3.isId)
         self.assertIs(doc.getElementById("v"), None)
         # renaming an attribute should not affect its ID-ness:
         doc.renameNode(a2, xml.dom.EMPTY_NAMESPACE, "an")
@@ -1595,9 +1595,9 @@ class MinidomTest(unittest.TestCase):
         a3.value = "v"
         e.setAttributeNode(a3)
         self.assertTrue(e.isSameNode(doc.getElementById("w")))
-        self.assertTrue(not a1.isId)
+        self.assertFalse(a1.isId)
         self.assertTrue(a2.isId)
-        self.assertTrue(not a3.isId)
+        self.assertFalse(a3.isId)
         self.assertIs(doc.getElementById("v"), None)
         # renaming an attribute should not affect its ID-ness:
         doc.renameNode(a2, xml.dom.EMPTY_NAMESPACE, "an")
