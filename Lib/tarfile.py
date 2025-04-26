@@ -1885,6 +1885,12 @@ class TarFile(object):
 
             if filemode not in ("r", "w"):
                 raise ValueError("mode must be 'r' or 'w'")
+            if "compresslevel" in kwargs and comptype not in ("gz", "bz2"):
+                raise ValueError(
+                    "compresslevel is only valid for w|gz and w|bz2 modes"
+                )
+            if "preset" in kwargs and comptype not in ("xz",):
+                raise ValueError("preset is only valid for w|xz mode")
 
             compresslevel = kwargs.pop("compresslevel", 9)
             preset = kwargs.pop("preset", None)
