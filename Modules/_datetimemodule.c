@@ -6682,7 +6682,6 @@ datetime.datetime.replace
     minute: int(c_default="DATE_GET_MINUTE(self)") = unchanged
     second: int(c_default="DATE_GET_SECOND(self)") = unchanged
     microsecond: int(c_default="DATE_GET_MICROSECOND(self)") = unchanged
-    nanosecond: int(c_default="DATE_GET_NANOSECOND(self)") = unchanged
     tzinfo: object(c_default="HASTZINFO(self) ? ((PyDateTime_DateTime *)self)->tzinfo : Py_None") = unchanged
     *
     fold: int(c_default="DATE_GET_FOLD(self)") = unchanged
