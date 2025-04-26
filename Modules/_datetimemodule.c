@@ -5140,7 +5140,7 @@ static PyObject *
 datetime_time_replace_impl(PyDateTime_Time *self, int hour, int minute,
                            int second, int microsecond, PyObject *tzinfo,
                            int fold, int nanosecond)
-/*[clinic end generated code: output=0b89a44c299e4f80 input=abf23656e8df4e97]*/
+/*[clinic end generated code: output=5e556104f098f7bc input=93eabd0f268e8348]*/
 {
     return new_time_subclass_fold_ex(hour, minute, second, microsecond, tzinfo,
                                      fold, nanosecond, (PyObject *)Py_TYPE(self));
@@ -6695,7 +6695,7 @@ datetime_datetime_replace_impl(PyDateTime_DateTime *self, int year,
                                int month, int day, int hour, int minute,
                                int second, int microsecond, PyObject *tzinfo,
                                int fold, int nanosecond)
-/*[clinic end generated code: output=00bc96536833fddb input=fd972762d604d3e7]*/
+/*[clinic end generated code: output=307b7b3d0e8cc7ca input=9810d6be79041e46]*/
 {
     return new_datetime_subclass_fold_ex(year, month, day, hour, minute,
                                          second, microsecond, tzinfo, fold,
