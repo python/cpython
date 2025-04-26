@@ -274,6 +274,7 @@
 
         case _REPLACE_WITH_TRUE: {
             JitOptSymbol *res;
+            REPLACE_OP(this_instr, _POP_TOP_LOAD_CONST_INLINE_BORROW, 0, (uintptr_t)Py_True);
             res = sym_new_const(ctx, Py_True);
             stack_pointer[-1] = res;
             break;
@@ -1031,7 +1032,7 @@
 
         case _BUILD_LIST: {
             JitOptSymbol *list;
-            list = sym_new_not_null(ctx);
+            list = sym_new_type(ctx, &PyList_Type);
             stack_pointer[-oparg] = list;
             stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1061,7 +1062,7 @@
 
         case _BUILD_MAP: {
             JitOptSymbol *map;
-            map = sym_new_not_null(ctx);
+            map = sym_new_type(ctx, &PyDict_Type);
             stack_pointer[-oparg*2] = map;
             stack_pointer += 1 - oparg*2;
             assert(WITHIN_STACK_BOUNDS());
@@ -1552,15 +1553,23 @@
             break;
         }
 
-        case _LOAD_SPECIAL: {
-            JitOptSymbol *attr;
-            JitOptSymbol *self_or_null;
-            attr = sym_new_not_null(ctx);
-            self_or_null = sym_new_unknown(ctx);
-            stack_pointer[-1] = attr;
-            stack_pointer[0] = self_or_null;
+        case _INSERT_NULL: {
+            JitOptSymbol *self;
+            JitOptSymbol **method_and_self;
+            self = stack_pointer[-1];
+            method_and_self = &stack_pointer[-1];
+            method_and_self[0] = sym_new_null(ctx);
+            method_and_self[1] = self;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _LOAD_SPECIAL: {
+            JitOptSymbol **method_and_self;
+            method_and_self = &stack_pointer[-2];
+            method_and_self[0] = sym_new_not_null(ctx);
+            method_and_self[1] = sym_new_unknown(ctx);
             break;
         }
 
@@ -1742,12 +1751,14 @@
         }
 
         case _INIT_CALL_BOUND_METHOD_EXACT_ARGS: {
-            JitOptSymbol **self_or_null;
-            JitOptSymbol **callable;
-            self_or_null = &stack_pointer[-1 - oparg];
-            callable = &stack_pointer[-2 - oparg];
-            callable[0] = sym_new_not_null(ctx);
-            self_or_null[0] = sym_new_not_null(ctx);
+            JitOptSymbol *self_or_null;
+            JitOptSymbol *callable;
+            self_or_null = stack_pointer[-1 - oparg];
+            callable = stack_pointer[-2 - oparg];
+            callable = sym_new_not_null(ctx);
+            self_or_null = sym_new_not_null(ctx);
+            stack_pointer[-2 - oparg] = callable;
+            stack_pointer[-1 - oparg] = self_or_null;
             break;
         }
 
@@ -1845,27 +1856,88 @@
             break;
         }
 
+        case _GUARD_NOS_NULL: {
+            JitOptSymbol *null;
+            null = stack_pointer[-2];
+            if (sym_is_null(null)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_null(null);
+            break;
+        }
+
+        case _GUARD_CALLABLE_TYPE_1: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-3];
+            if (sym_get_const(ctx, callable) == (PyObject *)&PyType_Type) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_const(callable, (PyObject *)&PyType_Type);
+            break;
+        }
+
         case _CALL_TYPE_1: {
+            JitOptSymbol *arg;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            arg = stack_pointer[-1];
+            if (sym_has_type(arg)) {
+                res = sym_new_const(ctx, (PyObject *)sym_get_type(arg));
+            }
+            else {
+                res = sym_new_not_null(ctx);
+            }
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _GUARD_CALLABLE_STR_1: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-3];
+            if (sym_get_const(ctx, callable) == (PyObject *)&PyUnicode_Type) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_const(callable, (PyObject *)&PyUnicode_Type);
             break;
         }
 
         case _CALL_STR_1: {
+            JitOptSymbol *arg;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            arg = stack_pointer[-1];
+            if (sym_matches_type(arg, &PyUnicode_Type)) {
+                res = arg;
+            }
+            else {
+                res = sym_new_type(ctx, &PyUnicode_Type);
+            }
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
+        case _GUARD_CALLABLE_TUPLE_1: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-3];
+            if (sym_get_const(ctx, callable) == (PyObject *)&PyTuple_Type) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_const(callable, (PyObject *)&PyTuple_Type);
+            break;
+        }
+
         case _CALL_TUPLE_1: {
+            JitOptSymbol *arg;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            arg = stack_pointer[-1];
+            if (sym_matches_type(arg, &PyTuple_Type)) {
+                res = arg;
+            }
+            else {
+                res = sym_new_type(ctx, &PyTuple_Type);
+            }
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
@@ -1942,7 +2014,7 @@
 
         case _CALL_LEN: {
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            res = sym_new_type(ctx, &PyLong_Type);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -2003,9 +2075,6 @@
         /* _MONITOR_CALL_KW is not a viable micro-op for tier 2 */
 
         case _MAYBE_EXPAND_METHOD_KW: {
-            JitOptSymbol *kwnames_out;
-            kwnames_out = sym_new_not_null(ctx);
-            stack_pointer[-1] = kwnames_out;
             break;
         }
 
@@ -2092,7 +2161,7 @@
 
         case _BUILD_SLICE: {
             JitOptSymbol *slice;
-            slice = sym_new_not_null(ctx);
+            slice = sym_new_type(ctx, &PySlice_Type);
             stack_pointer[-oparg] = slice;
             stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -2180,14 +2249,16 @@
         }
 
         case _SWAP: {
-            JitOptSymbol **top;
-            JitOptSymbol **bottom;
-            top = &stack_pointer[-1];
-            bottom = &stack_pointer[-2 - (oparg-2)];
-            JitOptSymbol *temp = bottom[0];
-            bottom[0] = top[0];
-            top[0] = temp;
+            JitOptSymbol *top;
+            JitOptSymbol *bottom;
+            top = stack_pointer[-1];
+            bottom = stack_pointer[-2 - (oparg-2)];
+            JitOptSymbol *temp = bottom;
+            bottom = top;
+            top = temp;
             assert(oparg >= 2);
+            stack_pointer[-2 - (oparg-2)] = bottom;
+            stack_pointer[-1] = top;
             break;
         }
 
