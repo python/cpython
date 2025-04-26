@@ -4851,6 +4851,26 @@ class _TestSharedMemory(BaseTestCase):
             resource_tracker.unregister(mem._name, "shared_memory")
             mem.close()
 
+    @unittest.skipIf(os.name != "posix", "windows automatically unlinks")
+    def test_creating_shm_unlinks_on_error(self):
+        name = self._new_shm_name("test_creating_shm_unlinks_on_error")
+        with unittest.mock.patch('mmap.mmap') as mock_mmap:
+            mock_mmap.side_effect = OSError("filesystems are evil")
+            with self.assertRaises(OSError):
+                shared_memory.SharedMemory(name, create=True, size=1)
+        with self.assertRaises(FileNotFoundError):
+            import _posixshmem
+            _posixshmem.shm_unlink(name)
+
+    def test_existing_shm_not_unlinked_on_error(self):
+        name = self._new_shm_name("test_existing_shm_not_unlinked_on_error")
+        mem = shared_memory.SharedMemory(name, create=True, size=1)
+        self.addCleanup(mem.unlink)
+        with unittest.mock.patch('mmap.mmap') as mock_mmap:
+            mock_mmap.side_effect = OSError("filesystems are evil")
+            with self.assertRaises(OSError):
+                shared_memory.SharedMemory(name, create=False)
+
     @unittest.skipIf(os.name != "posix", "posix-only test w/ empty file")
     def test_cleanup_zero_length_shared_memory(self):
         import _posixshmem
@@ -4864,9 +4884,8 @@ class _TestSharedMemory(BaseTestCase):
         with self.assertRaises(ValueError):
             shared_memory.SharedMemory(name, create=False)
 
-        # ...however it should delete the shared memory as part of its cleanup
-        with self.assertRaises(FileNotFoundError):
-            _posixshmem.shm_open(name, os.O_RDWR)
+        # ...but it should NOT delete the shared memory as part of its cleanup
+        _posixshmem.shm_unlink(name)
 
 #
 # Test to verify that `Finalize` works.
