@@ -1366,9 +1366,7 @@ class TestChdir(unittest.TestCase):
         target = self.make_relative_path('non_existent_directory')
         self.assertNotEqual(old_cwd, target)
         ctx = chdir(target)
-        with self.assertRaises(OSError):
-            with ctx:
-                self.fail("chdir should have raised an exception")
+        self.assertRaises(OSError, ctx.__enter__)
         self.assertFalse(ctx._old_cwd)
         self.assertEqual(os.getcwd(), old_cwd)
 
