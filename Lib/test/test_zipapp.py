@@ -114,7 +114,8 @@ class ZipAppTest(unittest.TestCase):
             zipapp.create_archive(source, target)
 
     def test_target_overwrites_filtered_source_file(self):
-        # The target cannot be one of the files to add.
+        # If there's a filter that excludes the target,
+        # the overwrite check shouldn't trigger.
         source = self.tmpdir
         (source / '__main__.py').touch()
         target = source / 'target.pyz'
