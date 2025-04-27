@@ -11889,7 +11889,7 @@ then :
 _ACEOF
 
 
-  for ac_func in backtrace backtrace_symbols dladdr1
+  for ac_func in backtrace dladdr1
 do :
   as_ac_var=`printf "%s\n" "ac_cv_func_$ac_func" | sed "$as_sed_sh"`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
