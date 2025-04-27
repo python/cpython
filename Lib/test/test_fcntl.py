@@ -1,5 +1,6 @@
 """Test program for the fcntl C module.
 """
+import errno
 import multiprocessing
 import platform
 import os
@@ -139,12 +140,17 @@ class TestFcntl(unittest.TestCase):
         # C 'long' but not in a C 'int'.
         try:
             cmd = fcntl.F_NOTIFY
-            # This flag is larger than 2**31 in 64-bit builds
+            # DN_MULTISHOT is >= 2**31 in 64-bit builds
             flags = fcntl.DN_MULTISHOT
         except AttributeError:
             self.skipTest("F_NOTIFY or DN_MULTISHOT unavailable")
         fd = os.open(os.path.dirname(os.path.abspath(TESTFN)), os.O_RDONLY)
         try:
+            try:
+                fcntl.fcntl(fd, cmd, fcntl.DN_DELETE)
+            except OSError as exc:
+                if exc.errno == errno.EINVAL:
+                    self.skipTest("F_NOTIFY not available by this environment")
             fcntl.fcntl(fd, cmd, flags)
         finally:
             os.close(fd)
