@@ -172,12 +172,16 @@ def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
     Open the file pointed to by this path and return a file object, as
     the built-in open() function does.
     """
+    text = 'b' not in mode
+    if text:
+        # Call io.text_encoding() here to ensure any warning is raised at an
+        # appropriate stack level.
+        encoding = io.text_encoding(encoding)
     try:
         return io.open(path, mode, buffering, encoding, errors, newline)
     except TypeError:
         pass
     cls = type(path)
-    text = 'b' not in mode
     mode = ''.join(sorted(c for c in mode if c not in 'bt'))
     if text:
         try:
