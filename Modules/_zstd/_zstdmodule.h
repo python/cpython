@@ -1,6 +1,6 @@
 #pragma once
 /*
-Low level interface to Meta's zstd library for use in the `zstd` Python library.
+Low level interface to Meta's zstd library for use in the zstd Python library.
 
 Original implementation by Ma Lin with patches by Rogdham.
 
