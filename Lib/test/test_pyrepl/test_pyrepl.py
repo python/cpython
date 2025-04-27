@@ -44,6 +44,7 @@ class ReplTestCase(TestCase):
         *,
         cmdline_args: list[str] | None = None,
         cwd: str | None = None,
+        skip: bool = True,
     ) -> tuple[str, int]:
         temp_dir = None
         if cwd is None:
@@ -51,7 +52,7 @@ class ReplTestCase(TestCase):
             cwd = temp_dir.name
         try:
             return self._run_repl(
-                repl_input, env=env, cmdline_args=cmdline_args, cwd=cwd
+                repl_input, env=env, cmdline_args=cmdline_args, cwd=cwd, skip=skip,
             )
         finally:
             if temp_dir is not None:
@@ -64,6 +65,7 @@ class ReplTestCase(TestCase):
         env: dict | None,
         cmdline_args: list[str] | None,
         cwd: str,
+        skip: bool,
     ) -> tuple[str, int]:
         assert pty
         master_fd, slave_fd = pty.openpty()
@@ -121,7 +123,11 @@ class ReplTestCase(TestCase):
         except subprocess.TimeoutExpired:
             process.kill()
             exit_code = process.wait()
-        return "".join(output), exit_code
+        output = "".join(output)
+        if skip:
+            if "can't use pyrepl" in output:
+                self.skipTest("pyrepl not available")
+        return output, exit_code
 
 
 class TestCursorPosition(TestCase):
@@ -1283,8 +1289,6 @@ class TestMain(ReplTestCase):
         pre = "['__builtins__'"
         post = "'__loader__', '__name__', '__package__', '__spec__']"
         output, exit_code = self.run_repl(["sorted(dir())", "exit()"])
-        if "can't use pyrepl" in output:
-            self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
 
         # if `__main__` is not a file (impossible with pyrepl)
@@ -1346,9 +1350,6 @@ class TestMain(ReplTestCase):
                 )
             else:
                 self.fail("Choose one of as_file or as_module")
-
-        if "can't use pyrepl" in output:
-            self.skipTest("pyrepl not available")
 
         self.assertEqual(exit_code, 0)
         for var, expected in expectations.items():
@@ -1497,8 +1498,6 @@ class TestMain(ReplTestCase):
         env = os.environ.copy()
         commands = "a b c\nexit()\n"
         output, exit_code = self.run_repl(commands, env=env)
-        if "can't use pyrepl" in output:
-            self.skipTest("pyrepl not available")
         self.assertIn("SyntaxError: invalid syntax", output)
         self.assertIn("<python-input-0>", output)
         commands = " b\nexit()\n"
@@ -1526,8 +1525,6 @@ class TestMain(ReplTestCase):
                 with self.subTest(set_tracebacklimit=set_tracebacklimit,
                                   basic_repl=basic_repl):
                     output, exit_code = self.run_repl(commands, env=env)
-                    if "can't use pyrepl" in output:
-                        self.skipTest("pyrepl not available")
                     self.assertIn("in x1", output)
                     if set_tracebacklimit:
                         self.assertNotIn("in x2", output)
@@ -1569,8 +1566,6 @@ class TestMain(ReplTestCase):
         env = os.environ.copy()
         commands = "1\nexit()\n"
         output, exit_code = self.run_repl(commands, env=env)
-        if "can't use pyrepl" in output:
-            self.skipTest("pyrepl not available")
 
         with tempfile.NamedTemporaryFile() as hfile:
             env["PYTHON_HISTORY"] = hfile.name
