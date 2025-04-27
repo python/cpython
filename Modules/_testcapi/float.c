@@ -174,18 +174,16 @@ _testcapi_float_set_snan(PyObject *module, PyObject *obj)
         PyErr_SetString(PyExc_ValueError, "float-point number expected");
         return NULL;
     }
-    PyObject *ret = PyNumber_Positive(obj);
-    if (!ret) {
-        return NULL;
-    }
-    double *d = &((PyFloatObject *)ret)->ob_fval;
-    if (!isnan(*d)) {
+    double d = ((PyFloatObject *)obj)->ob_fval;
+    if (!isnan(d)) {
         PyErr_SetString(PyExc_ValueError, "nan expected");
         return NULL;
     }
-    uint64_t *v = (uint64_t *)d;
-    *v &= ~(1ULL<<51); /* make sNaN */
-    return ret;
+    uint64_t v;
+    memcpy(&v, &d, 8);
+    v &= ~(1ULL<<51); /* make sNaN */
+    memcpy(&d, &v, 8);
+    return PyFloat_FromDouble(d);
 }
 
 static PyMethodDef test_methods[] = {
