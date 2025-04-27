@@ -240,6 +240,362 @@ class POParserTest(unittest.TestCase):
                     with self.assertRaises(Exception):
                         msgfmt.make('messages.po', 'messages.mo')
 
+    def test_general_syntax_errors(self):
+        invalid_po_files = (
+            '',
+            '"',
+            '""',
+            '"foo"',
+            # 'msgid',  # invalid but currently accepted
+            'msgstr',
+            'msgid_plural',
+            # 'msgctxt',  # invalid but currently accepted
+            'msgstr',
+            'msgstr[0]',
+            '[0]',
+
+            # unclosed string
+            '''
+msgid "
+msgstr "bar"
+''',
+
+            # unclosed string
+            '''
+msgid "foo
+msgstr "bar"
+''',
+
+            # unclosed string
+            '''
+msgid "foo" "
+msgstr "bar"
+''',
+
+            # unclosed string
+            '''
+msgid "foo"
+"
+msgstr "bar"
+''',
+
+            # illegal backslash
+            '''
+msgid "foo\\"
+"
+msgstr "bar"
+''',
+
+            # msgid with an index
+            '''
+msgid[0] "foo"
+msgstr "bar"
+''',
+
+            # invalid plural index
+            # invalid but currently accepted
+#             '''
+# msgid "foo"
+# msgid_plural "foos"
+# msgstr[foo] "baz"
+# ''',
+
+            # invalid plural index
+            '''
+msgid "foo"
+msgid_plural "foos"
+msgstr[0 "baz"
+''',
+
+            # invalid plural index
+            # invalid but currently accepted
+#             '''
+# msgid "foo"
+# msgid_plural "foos"
+# msgstr[] "baz"
+# ''',
+
+            # invalid plural index
+            '''
+msgid "foo"
+msgid_plural "foos"
+msgstr1] "baz"
+''',
+
+            # invalid plural index
+            '''
+msgid "foo"
+msgid_plural "foos"
+msgstr[[0]] "baz"
+''',
+        )
+        with temp_cwd():
+            for invalid_po in invalid_po_files:
+                with self.subTest(invalid_po=invalid_po):
+                    Path('messages.po').write_text(invalid_po)
+                    # Reset the global MESSAGES dictionary
+                    msgfmt.MESSAGES.clear()
+                    with self.assertRaises((SystemExit, UnboundLocalError,
+                                            IndexError, SyntaxError)):
+                        msgfmt.make('messages.po', 'messages.mo')
+
+    def test_semantic_errors(self):
+        invalid_po_files = (
+            # missing msgid after msgctxt
+            # invalid but currently accepted
+            # 'msgctxt "foo"',
+
+            # missing msgstr after msgid
+            # invalid but currently accepted
+            # 'msgid "foo"',
+
+            # comment line not allowed after msgctxt
+            # invalid but currently accepted
+#             '''
+# msgctxt "foo"
+# # comment
+# msgid "bar"
+# msgstr "bar"
+# ''',
+
+            # comment line not allowed after msgid
+            # invalid but currently accepted
+#             '''
+# msgid "foo"
+# # comment
+# msgstr "bar"
+# ''',
+
+            # comment line not allowed after msgid_plural
+            # invalid but currently accepted
+#             '''
+# msgid "foo"
+# msgid_plural "foos"
+# # comment
+# msgstr[0] "bar"
+# ''',
+
+            # msgctxt not allowed after msgctxt
+            # invalid but currently accepted
+#             '''
+# msgctxt "foo"
+
+# msgctxt "bar"
+# msgid "foo"
+# msgstr "bar"
+# ''',
+
+            # msgctxt not allowed after msgid
+            # invalid but currently accepted
+#             '''
+# msgid "foo"
+# msgctxt "bar"
+
+# msgid "bar"
+# msgstr "baz"
+# ''',
+
+            # msgctxt not allowed after msgid_plural
+            # invalid but currently accepted
+#             '''
+# msgid "foo"
+# msgid_plural "foos"
+# msgctxt "bar"
+
+# msgid "bar"
+# msgstr "baz"
+# ''',
+
+            # msgid not allowed after msgid
+            # invalid but currently accepted
+#             '''
+# msgid "foo"
+
+# msgid "bar"
+# msgstr "baz"
+# ''',
+
+            # msgid not allowed after msgid_plural
+            # invalid but currently accepted
+#             '''
+# msgid "foo"
+# msgid_plural "foos"
+
+# msgid "bar"
+# msgstr "baz"
+# ''',
+
+            # msgid_plural must be preceded by msgid
+            '''
+msgid_plural "foos"
+
+msgid "bar"
+msgstr "baz"
+''',
+
+            # msgid_plural not allowed after comment
+            '''
+# comment
+msgid_plural "foos"
+
+msgid "bar"
+msgstr "baz"
+''',
+
+            # msgid_plural not allowed after msgid_plural
+            # invalid but currently accepted
+#             '''
+# msgid "foo"
+# msgid_plural "foos"
+# msgid_plural "bars"
+
+# msgid "bar"
+# msgstr "baz"
+# ''',
+
+            # msgid_plural not allowed after msgctxt
+            '''
+msgctxt "foo"
+msgid_plural "foos"
+
+msgid "bar"
+msgstr "baz"
+''',
+
+            # msgid_plural not allowed after msgstr
+            '''
+msgid "foo"
+msgstr "bar"
+msgid_plural "foos"
+
+msgid "bar"
+msgstr "baz"
+''',
+
+            # msgstr must be preceded by msgid
+            '''
+msgstr "foo"
+
+msgid "bar"
+msgstr "baz"
+''',
+
+            # msgstr not allowed after comment
+            # invalid but currently accepted
+#             '''
+# # comment
+# # msgstr "foo"
+
+# msgid "bar"
+# msgstr "baz"
+# ''',
+
+            # msgstr not allowed after msgctxt
+            '''
+msgctxt "foo"
+msgstr "bar"
+
+msgid "foo"
+msgstr "bar"
+''',
+
+            # msgstr not allowed after msgstr
+            # invalid but currently accepted
+#             '''
+# msgid "foo"
+# msgstr "bar"
+# msgstr "baz"
+
+# msgid "bar"
+# msgstr "baz"
+# ''',
+
+            # missing msgid_plural section
+            '''
+msgid "foo"
+msgstr[0] "bar"
+
+msgid "bar"
+msgstr "baz"
+'''
+        )
+        with temp_cwd():
+            for invalid_po in invalid_po_files:
+                with self.subTest(invalid_po=invalid_po):
+                    Path('messages.po').write_text(invalid_po)
+                    # Reset the global MESSAGES dictionary
+                    msgfmt.MESSAGES.clear()
+                    with self.assertRaises((SystemExit, UnboundLocalError)):
+                        msgfmt.make('messages.po', 'messages.mo')
+
+    def test_msgstr_invalid_indices(self):
+        invalid_po_files = (
+            # wrong plural form index
+            # invalid but currently accepted
+#             '''
+# msgid "foo"
+# msgid_plural "foos"
+# msgstr[42] "bar"
+# ''',
+
+            # wrong plural form index
+            # invalid but currently accepted
+#             '''
+# msgid "foo"
+# msgid_plural "foos"
+# msgstr[0] "bar"
+# msgstr[42] "bars"
+# ''',
+
+            # msgstr not pluralized
+            '''
+msgid "foo"
+msgid_plural "foos"
+msgstr "bar"
+''',
+        )
+        with temp_cwd():
+            for invalid_po in invalid_po_files:
+                with self.subTest(invalid_po=invalid_po):
+                    Path('messages.po').write_text(invalid_po)
+                    # Reset the global MESSAGES dictionary
+                    msgfmt.MESSAGES.clear()
+                    with self.assertRaises(SystemExit):
+                        msgfmt.make('messages.po', 'messages.mo')
+
+    def test_duplicate_entries(self):
+        invalid_po_files = (
+            # duplicate msgid
+            # invalid but currently accepted
+#             '''
+# msgid "foo"
+# msgstr "bar"
+
+# msgid "foo"
+# msgstr "baz"
+# ''',
+
+            # duplicate msgctxt+msgid
+            # invalid but currently accepted
+#             '''
+# msgctxt "context"
+# msgid "foo"
+# msgstr "bar"
+
+# msgctxt "context"
+# msgid "foo"
+# msgstr "baz"
+# '''
+        )
+        with temp_cwd():
+            for invalid_po in invalid_po_files:
+                with self.subTest(invalid_po=invalid_po):
+                    Path('messages.po').write_text(invalid_po)
+                    # Reset the global MESSAGES dictionary
+                    msgfmt.MESSAGES.clear()
+                    with self.assertRaises(SystemExit):
+                        msgfmt.make('messages.po', 'messages.mo')
+
 
 class CLITest(unittest.TestCase):
 
