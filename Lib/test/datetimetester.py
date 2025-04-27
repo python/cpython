@@ -7157,7 +7157,6 @@ class CapiTest(unittest.TestCase):
 
     def assert_python_ok_in_subinterp(self, script,
                                       setup='_testcapi.test_datetime_capi()',
-                                      mainsetup='_testcapi.test_datetime_capi()',
                                       config='isolated'):
         # iOS requires the use of the custom framework loader,
         # not the ExtensionFileLoader.
@@ -7166,7 +7165,7 @@ class CapiTest(unittest.TestCase):
         else:
             extension_loader = "ExtensionFileLoader"
 
-        maincode = textwrap.dedent(f'''
+        code = textwrap.dedent(f'''
             import textwrap
             from test import support
 
@@ -7183,12 +7182,11 @@ class CapiTest(unittest.TestCase):
                     _testcapi = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(_testcapi)
 
-            $SETUP$
             $SCRIPT$
             """)
 
             import _testcapi
-            $MAINSETUP$
+            $SETUP$
 
             if {_interpreters is None}:
                 ret = support.run_in_subinterp(subcode)
@@ -7199,11 +7197,11 @@ class CapiTest(unittest.TestCase):
 
             assert ret == 0
 
-        ''').replace('$MAINSETUP$', mainsetup)
-        maincode = maincode.replace('$SETUP$', textwrap.indent(setup, '\x20'*4))
-        maincode = maincode.replace('$SCRIPT$', textwrap.indent(script, '\x20'*4))
+        ''').rstrip()
+        code = code.replace('$SETUP$', setup)
+        code = code.replace('$SCRIPT$', textwrap.indent(script, '\x20'*4))
 
-        res = script_helper.assert_python_ok('-c', maincode)
+        res = script_helper.assert_python_ok('-c', code)
         return res
 
     def test_type_check_in_subinterp(self):
@@ -7212,6 +7210,7 @@ class CapiTest(unittest.TestCase):
                 if not type_checker(obj, True):
                     raise TypeError(f'{{type(obj)}} is not C API type')
 
+            _testcapi.test_datetime_capi()
             import _datetime
             run(_testcapi.datetime_check_date,     _datetime.date.today())
             run(_testcapi.datetime_check_datetime, _datetime.datetime.now())
@@ -7219,11 +7218,10 @@ class CapiTest(unittest.TestCase):
             run(_testcapi.datetime_check_delta,    _datetime.timedelta(1))
             run(_testcapi.datetime_check_tzinfo,   _datetime.tzinfo())
         """)
-        self.assert_python_ok_in_subinterp(script, mainsetup='')
+        self.assert_python_ok_in_subinterp(script, '')
         if _interpreters is not None:
-            with self.subTest('legacy'):
-                self.assert_python_ok_in_subinterp(script, mainsetup='',
-                                                   config='legacy')
+            with self.subTest(name := 'legacy'):
+                self.assert_python_ok_in_subinterp(script, '', name)
 
 
 class ExtensionModuleTests(unittest.TestCase):
@@ -7355,8 +7353,20 @@ class ExtensionModuleTests(unittest.TestCase):
             it = gen()
             next(it)
         """)
-        res = CapiTest.assert_python_ok_in_subinterp(self, script, setup='')
-        self.assertIn(b'ImportError: sys.meta_path is None', res.err)
+
+        with self.subTest('PyDateTime_IMPORT by MainInterpreter'):
+            res = CapiTest.assert_python_ok_in_subinterp(self, script)
+            self.assertIn(b'ImportError: sys.meta_path is None', res.err)
+
+        script2 = f'_testcapi.test_datetime_capi()\n{script}'
+
+        with self.subTest('PyDateTime_IMPORT by Subinterpreter'):
+            res = CapiTest.assert_python_ok_in_subinterp(self, script2, '')
+            self.assertFalse(res.err)
+
+        with self.subTest('PyDateTime_IMPORT by Main/Sub'):
+            res = CapiTest.assert_python_ok_in_subinterp(self, script2)
+            self.assertFalse(res.err)
 
     def test_static_type_before_shutdown(self):
         script = textwrap.dedent(f"""
@@ -7366,7 +7376,7 @@ class ExtensionModuleTests(unittest.TestCase):
             timedelta(days=1)
             assert '_datetime' in sys.modules
         """)
-        CapiTest.assert_python_ok_in_subinterp(self, script, setup='')
+        CapiTest.assert_python_ok_in_subinterp(self, script)
 
     def test_module_free(self):
         script = textwrap.dedent("""

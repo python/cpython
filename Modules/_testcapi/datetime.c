@@ -11,7 +11,7 @@ test_datetime_capi(PyObject *self, PyObject *args)
     if (PyDateTimeAPI) {
         if (test_run_counter) {
             /* Probably regrtest.py -R */
-            Py_RETURN_NONE;
+            // Interpreters need their module, so call PyDateTime_IMPORT
         }
         else {
             PyErr_SetString(PyExc_AssertionError,
