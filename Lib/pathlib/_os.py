@@ -3,8 +3,8 @@ Low-level OS functionality wrappers used by pathlib.
 """
 
 from errno import *
+from io import TextIOWrapper, text_encoding
 from stat import S_ISDIR, S_ISREG, S_ISLNK, S_IMODE
-import io
 import os
 import sys
 try:
@@ -176,9 +176,9 @@ def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
     if text:
         # Call io.text_encoding() here to ensure any warning is raised at an
         # appropriate stack level.
-        encoding = io.text_encoding(encoding)
+        encoding = text_encoding(encoding)
     try:
-        return io.open(path, mode, buffering, encoding, errors, newline)
+        return open(path, mode, buffering, encoding, errors, newline)
     except TypeError:
         pass
     cls = type(path)
@@ -204,7 +204,7 @@ def magic_open(path, mode='r', buffering=-1, encoding=None, errors=None,
     else:
         stream = attr(path, buffering)
         if text:
-            stream = io.TextIOWrapper(stream, encoding, errors, newline)
+            stream = TextIOWrapper(stream, encoding, errors, newline)
         return stream
 
     raise TypeError(f"{cls.__name__} can't be opened with mode {mode!r}")
