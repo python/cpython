@@ -463,19 +463,19 @@ get_capi_types(PyObject *self, PyObject *args)
     if (dict == NULL) {
         return NULL;
     }
-    if (PyDict_SetItemString(dict, "date", PyDateTimeAPI->DateType) < 0) {
+    if (PyDict_SetItemString(dict, "date", (PyObject *)PyDateTimeAPI->DateType) < 0) {
         goto error;
     }
-    if (PyDict_SetItemString(dict, "time", PyDateTimeAPI->TimeType) < 0) {
+    if (PyDict_SetItemString(dict, "time", (PyObject *)PyDateTimeAPI->TimeType) < 0) {
         goto error;
     }
-    if (PyDict_SetItemString(dict, "datetime", PyDateTimeAPI->DateTimeType) < 0) {
+    if (PyDict_SetItemString(dict, "datetime", (PyObject *)PyDateTimeAPI->DateTimeType) < 0) {
         goto error;
     }
-    if (PyDict_SetItemString(dict, "timedelta", PyDateTimeAPI->DeltaType) < 0) {
+    if (PyDict_SetItemString(dict, "timedelta", (PyObject *)PyDateTimeAPI->DeltaType) < 0) {
         goto error;
     }
-    if (PyDict_SetItemString(dict, "tzinfo", PyDateTimeAPI->TZInfoType) < 0) {
+    if (PyDict_SetItemString(dict, "tzinfo", (PyObject *)PyDateTimeAPI->TZInfoType) < 0) {
         goto error;
     }
     return dict;
