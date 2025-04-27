@@ -107,5 +107,4 @@ class BaseEventQueue:
                 return
             else:
                 self.insert(Event('key', decoded, self.flush_buf()))
-            finally:
-                self.keymap = self.compiled_keymap
+            self.keymap = self.compiled_keymap
