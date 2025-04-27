@@ -30,7 +30,12 @@ extern PyModuleDef _zstdmodule;
 static inline _zstd_state *
 get_zstd_state_from_type(PyTypeObject *type) {
     PyObject *module = PyType_GetModuleByDef(type, &_zstdmodule);
-    return PyModule_GetState(module);
+    if (module == NULL) {
+        return NULL;
+    }
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_zstd_state *)state;
 }
 
 extern PyType_Spec zstddict_type_spec;
