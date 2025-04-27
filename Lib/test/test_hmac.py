@@ -980,8 +980,6 @@ class OpenSSLConstructorTestCase(ThroughOpenSSLAPIMixin,
         return _hashlib.UnsupportedDigestmodError
 
     def test_hmac_digest_digestmod_parameter(self):
-        # TODO(picnixz): remove default arguments in _hashlib.hmac_digest()
-        # since the return value is not a HMAC object but a bytes object.
         for value in [object, 'unknown', 1234, None]:
             with (
                 self.subTest(value=value),

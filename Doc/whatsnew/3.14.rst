@@ -99,7 +99,9 @@ PEP 768: Safe external debugger interface for CPython
 
 :pep:`768` introduces a zero-overhead debugging interface that allows debuggers and profilers
 to safely attach to running Python processes. This is a significant enhancement to Python's
-debugging capabilities allowing debuggers to forego unsafe alternatives.
+debugging capabilities allowing debuggers to forego unsafe alternatives. See
+:ref:`below <whatsnew314-remote-pdb>` for how this feature is leveraged to
+implement the new :mod:`pdb` module's remote attaching capabilities.
 
 The new interface provides safe execution points for attaching debugger code without modifying
 the interpreter's normal execution path or adding runtime overhead. This enables tools to
@@ -148,6 +150,32 @@ for external processes to coordinate debugging operations.
 See :pep:`768` for more details.
 
 (Contributed by Pablo Galindo Salgado, Matt Wozniski, and Ivona Stojanovic in :gh:`131591`.)
+
+
+.. _whatsnew314-remote-pdb:
+
+Remote attaching to a running Python process with PDB
+-----------------------------------------------------
+
+The :mod:`pdb` module now supports remote attaching to a running Python process
+using a new ``-p PID`` command-line option:
+
+.. code-block:: sh
+
+   python -m pdb -p 1234
+
+This will connect to the Python process with the given PID and allow you to
+debug it interactively. Notice that due to how the Python interpreter works
+attaching to a remote process that is blocked in a system call or waiting for
+I/O will only work once the next bytecode instruction is executed or when the
+process receives a signal.
+
+This feature leverages :pep:`768` and the :func:`sys.remote_exec` function
+to attach to the remote process and send the PDB commands to it.
+
+
+(Contributed by Matt Wozniski and Pablo Galindo in :gh:`131591`.)
+
 
 .. _whatsnew314-pep758:
 
@@ -264,6 +292,49 @@ is unchanged.
 Improved error messages
 -----------------------
 
+* The interpreter now provides helpful suggestions when it detects typos in Python
+  keywords. When a word that closely resembles a Python keyword is encountered,
+  the interpreter will suggest the correct keyword in the error message. This
+  feature helps programmers quickly identify and fix common typing mistakes. For
+  example:
+
+  .. code-block:: python
+
+     >>> whille True:
+     ...     pass
+     Traceback (most recent call last):
+       File "<stdin>", line 1
+         whille True:
+         ^^^^^^
+     SyntaxError: invalid syntax. Did you mean 'while'?
+
+     >>> asynch def fetch_data():
+     ...     pass
+     Traceback (most recent call last):
+       File "<stdin>", line 1
+         asynch def fetch_data():
+         ^^^^^^
+     SyntaxError: invalid syntax. Did you mean 'async'?
+
+     >>> async def foo():
+     ...     awaid fetch_data()
+     Traceback (most recent call last):
+       File "<stdin>", line 2
+         awaid fetch_data()
+         ^^^^^
+     SyntaxError: invalid syntax. Did you mean 'await'?
+
+     >>> raisee ValueError("Error")
+     Traceback (most recent call last):
+       File "<stdin>", line 1
+         raisee ValueError("Error")
+         ^^^^^^
+     SyntaxError: invalid syntax. Did you mean 'raise'?
+
+  While the feature focuses on the most common cases, some variations of
+  misspellings may still result in regular syntax errors.
+  (Contributed by Pablo Galindo in :gh:`132449`.)
+
 * When unpacking assignment fails due to incorrect number of variables, the
   error message prints the received number of values in more cases than before.
   (Contributed by Tushar Sadhwani in :gh:`122239`.)
@@ -277,6 +348,21 @@ Improved error messages
          ^^^^^^^
      ValueError: too many values to unpack (expected 3, got 4)
 
+* :keyword:`elif` statements that follow an :keyword:`else` block now have a specific error message.
+  (Contributed by Steele Farnsworth in :gh:`129902`.)
+
+  .. code-block:: pycon
+
+      >>> if who == "me":
+      ...     print("It's me!")
+      ... else:
+      ...     print("It's not me!")
+      ... elif who is None:
+      ...     print("Who is it?")
+      File "<stdin>", line 5
+        elif who is None:
+        ^^^^
+      SyntaxError: 'elif' block follows an 'else' block
 
 * If a statement (:keyword:`pass`, :keyword:`del`, :keyword:`return`,
   :keyword:`yield`, :keyword:`raise`, :keyword:`break`, :keyword:`continue`,
@@ -972,6 +1058,10 @@ multiprocessing
   The :func:`set` in :func:`multiprocessing.Manager` method is now available.
   (Contributed by Mingyu Park in :gh:`129949`.)
 
+* Add :func:`multiprocessing.Process.interrupt` which terminates the child
+  process by sending :py:const:`~signal.SIGINT`. This enables "finally" clauses
+  and printing stack trace for the terminated process.
+  (Contributed by Artem Pulkin in :gh:`131913`.)
 
 operator
 --------
@@ -1126,7 +1216,7 @@ struct
 ------
 
 * Support the :c:expr:`float complex` and :c:expr:`double complex` C types in
-  the :mod:`struct` module (formatting characters ``'E'`` and ``'C'``,
+  the :mod:`struct` module (formatting characters ``'F'`` and ``'D'``,
   respectively) if the compiler has C11 complex arithmetic.
   (Contributed by Sergey B Kirpichev in :gh:`121249`.)
 
@@ -1155,6 +1245,9 @@ sys
 
 * On FreeBSD, :data:`sys.platform` doesn't contain the major version anymore.
   It is always ``'freebsd'``, instead of ``'freebsd13'`` or ``'freebsd14'``.
+
+* Raise :exc:`DeprecationWarning` for :func:`sys._clear_type_cache`. This
+  function was deprecated in Python 3.13 but it didn't raise a runtime warning.
 
 
 sys.monitoring
@@ -1329,6 +1422,17 @@ uuid
 
 * Allow to generate multiple UUIDs at once via :option:`python -m uuid --count <uuid --count>`.
   (Contributed by Simon Legner in :gh:`131236`.)
+
+
+webbrowser
+----------
+
+* Names in the :envvar:`BROWSER` environment variable can now refer to already
+  registered browsers for the :mod:`webbrowser` module, instead of always
+  generating a new browser command.
+
+  This makes it possible to set :envvar:`BROWSER` to the value of one of the
+  supported browsers on macOS.
 
 
 zipinfo
@@ -1967,6 +2071,11 @@ New features
 * Add support of nullable arguments in :c:func:`PyArg_ParseTuple` and
   similar functions.
   Adding ``?`` after any format unit makes ``None`` be accepted as a value.
+  (Contributed by Serhiy Storchaka in :gh:`112068`.)
+
+* The ``k`` and ``K`` formats in :c:func:`PyArg_ParseTuple` and
+  similar functions now use :meth:`~object.__index__` if available,
+  like all other integer formats.
   (Contributed by Serhiy Storchaka in :gh:`112068`.)
 
 * Add macros :c:func:`Py_PACK_VERSION` and :c:func:`Py_PACK_FULL_VERSION` for

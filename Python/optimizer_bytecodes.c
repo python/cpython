@@ -370,6 +370,27 @@ dummy_func(void) {
         res = sym_new_type(ctx, &PyUnicode_Type);
     }
 
+    op(_BINARY_OP_SUBSCR_TUPLE_INT, (tuple_st, sub_st -- res)) {
+        assert(sym_matches_type(tuple_st, &PyTuple_Type));
+        if (sym_is_const(ctx, sub_st)) {
+            assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
+            long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
+            assert(index >= 0);
+            int tuple_length = sym_tuple_length(tuple_st);
+            if (tuple_length == -1) {
+                // Unknown length
+                res = sym_new_not_null(ctx);
+            }
+            else {
+                assert(index < tuple_length);
+                res = sym_tuple_getitem(ctx, tuple_st, index);
+            }
+        }
+        else {
+            res = sym_new_not_null(ctx);
+        }
+    }
+
     op(_TO_BOOL, (value -- res)) {
         int already_bool = optimize_to_bool(this_instr, ctx, value, &res);
         if (!already_bool) {
@@ -846,6 +867,25 @@ dummy_func(void) {
        next = sym_new_type(ctx, &PyLong_Type);
     }
 
+    op(_CALL_TYPE_1, (unused, unused, arg -- res)) {
+        if (sym_has_type(arg)) {
+            res = sym_new_const(ctx, (PyObject *)sym_get_type(arg));
+        }
+        else {
+            res = sym_new_not_null(ctx);
+        }
+    }
+
+    op(_CALL_STR_1, (unused, unused, arg -- res)) {
+        if (sym_matches_type(arg, &PyUnicode_Type)) {
+            // e.g. str('foo') or str(foo) where foo is known to be a string
+            res = arg;
+        }
+        else {
+            res = sym_new_type(ctx, &PyUnicode_Type);
+        }
+    }
+
     op(_GUARD_IS_TRUE_POP, (flag -- )) {
         if (sym_is_const(ctx, flag)) {
             PyObject *value = sym_get_const(ctx, flag);
@@ -948,6 +988,16 @@ dummy_func(void) {
         }
     }
 
+    op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
+        if (sym_matches_type(arg, &PyTuple_Type)) {
+            // e.g. tuple((1, 2)) or tuple(foo) where foo is known to be a tuple
+            res = arg;
+        }
+        else {
+            res = sym_new_type(ctx, &PyTuple_Type);
+        }
+    }
+
     op(_GUARD_TOS_LIST, (tos -- tos)) {
         if (sym_matches_type(tos, &PyList_Type)) {
             REPLACE_OP(this_instr, _NOP, 0, 0);
@@ -998,6 +1048,37 @@ dummy_func(void) {
         }
     }
 
+    op(_GUARD_NOS_NULL, (null, unused -- null, unused)) {
+        if (sym_is_null(null)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_null(null);
+    }
+
+    op(_GUARD_CALLABLE_TYPE_1, (callable, unused, unused -- callable, unused, unused)) {
+        if (sym_get_const(ctx, callable) == (PyObject *)&PyType_Type) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_const(callable, (PyObject *)&PyType_Type);
+    }
+
+    op(_GUARD_CALLABLE_TUPLE_1, (callable, unused, unused -- callable, unused, unused)) {
+        if (sym_get_const(ctx, callable) == (PyObject *)&PyTuple_Type) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_const(callable, (PyObject *)&PyTuple_Type);
+    }
+
+    op(_GUARD_CALLABLE_STR_1, (callable, unused, unused -- callable, unused, unused)) {
+        if (sym_get_const(ctx, callable) == (PyObject *)&PyUnicode_Type) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_const(callable, (PyObject *)&PyUnicode_Type);
+    }
+
+    op(_CALL_LEN, (callable[1], self_or_null[1], args[oparg] -- res)) {
+        res = sym_new_type(ctx, &PyLong_Type);
+    }
 
 // END BYTECODES //
 
