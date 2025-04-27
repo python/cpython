@@ -180,7 +180,7 @@ class CAPIFloatTest(unittest.TestCase):
                             self.assertEqual(value2, value)
 
     @unittest.skipUnless(HAVE_IEEE_754, "requires IEEE 754")
-    def test_pack_unpack_roundtrip_nans(self):
+    def test_pack_unpack_roundtrip_for_nans(self):
         pack = _testcapi.float_pack
         unpack = _testcapi.float_unpack
 
