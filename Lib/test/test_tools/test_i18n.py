@@ -163,11 +163,14 @@ class Test_pygettext(unittest.TestCase):
             datetime.strptime(creationDate, '%Y-%m-%d %H:%M%z')
 
     def test_output_option(self):
-        with temp_cwd(None) as cwd:
-            assert_python_ok('-Xutf8', self.script, '--output=test')
-            assert_python_ok('-Xutf8', self.script, '--output=file.pot')
-            self.assertTrue(os.path.exists('test'))
-            self.assertTrue(os.path.exists('file.pot'))
+        for opt in ('-o', '--output='):
+            with temp_cwd():
+                assert_python_ok(self.script, f'{opt}test')
+                self.assertTrue(os.path.exists('test'))
+                assert_python_ok(self.script, f'{opt}file.pot')
+                self.assertTrue(os.path.exists('file.pot'))
+                res = assert_python_ok(self.script, f'{opt}-')
+                self.assertIn(b'Project-Id-Version: PACKAGE VERSION', res.out)
 
     def test_funcdocstring(self):
         for doc in ('"""doc"""', "r'''doc'''", "R'doc'", 'u"doc"'):
