@@ -20,6 +20,7 @@ import unittest
 import warnings
 from test import support
 from test.support import _4G, bigmemtest
+from test.support import hashlib_helper
 from test.support.import_helper import import_fresh_module, import_module
 from test.support import requires_resource
 from test.support import threading_helper
@@ -96,7 +97,7 @@ def read_vectors(hash_name):
 
 
 def find_gil_minsize(*modules_names, default=2048):
-    gil_minsize = default
+    sizes = []
     for module_name in modules_names:
         if SKIP_SHA3 and module_name == '_sha3':
             continue
@@ -104,8 +105,8 @@ def find_gil_minsize(*modules_names, default=2048):
             module = importlib.import_module(module_name)
         except ImportError:
             continue
-        gil_minsize = max(gil_minsize, module._GIL_MINSIZE)
-    return gil_minsize
+        sizes.append(module._GIL_MINSIZE)
+    return max(sizes, default=default)
 
 
 class HashLibTestCase(unittest.TestCase):
