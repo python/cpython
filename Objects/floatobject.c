@@ -2028,7 +2028,7 @@ PyFloat_Pack2(double x, char *data, int le)
 
         memcpy(&v, &x, sizeof(v));
         v &= 0xffc0000000000ULL;
-        bits = (unsigned short)(v >> 42); /* NaN's payload */
+        bits = (unsigned short)(v >> 42); /* NaN's type & payload */
     }
     else {
         sign = (x < 0.0);
@@ -2192,7 +2192,7 @@ PyFloat_Pack4(double x, char *data, int le)
         if (isinf(y) && !isinf(x))
             goto Overflow;
 
-        /* correct y if x was a sNaN, transformed to qNaN by assignment */
+        /* correct y if x was a sNaN, transformed to qNaN by conversion */
         if (isnan(x)) {
             uint64_t v;
 
@@ -2200,7 +2200,7 @@ PyFloat_Pack4(double x, char *data, int le)
             if ((v & (1ULL << 51)) == 0) {
                 uint32_t *py = (uint32_t *)&y;
 
-                *py -= 1 << 22; /* make sNaN */
+                *py &= ~(1 << 22); /* make sNaN */
             }
         }
 
@@ -2388,7 +2388,7 @@ PyFloat_Unpack2(const char *data, int le)
             /* NaN */
             uint64_t v = sign ? 0xfff0000000000000ULL : 0x7ff0000000000000ULL;
 
-            v += (uint64_t)f << 42; /* add NaN's payload */
+            v += (uint64_t)f << 42; /* add NaN's type & payload */
             memcpy(&x, &v, sizeof(v));
             return x;
         }
@@ -2491,11 +2491,11 @@ PyFloat_Unpack4(const char *data, int le)
             uint32_t v;
 
             memcpy(&v, &x, 4);
-            if ((v & (1<<22)) == 0) {
+            if ((v & (1 << 22)) == 0) {
                 double y = x; /* will make qNaN double */
                 uint64_t *py = (uint64_t *)&y;
 
-                *py -= (1ULL<<51); /* make sNaN */
+                *py &= ~(1ULL << 51); /* make sNaN */
                 return y;
             }
         }

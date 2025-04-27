@@ -196,7 +196,6 @@ static PyMethodDef test_methods[] = {
     {NULL},
 };
 
-
 int
 _PyTestCapi_Init_Float(PyObject *mod)
 {
