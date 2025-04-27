@@ -162,6 +162,13 @@ class Test_pygettext(unittest.TestCase):
             # This will raise if the date format does not exactly match.
             datetime.strptime(creationDate, '%Y-%m-%d %H:%M%z')
 
+    def test_output_option(self):
+        with temp_cwd(None) as cwd:
+            assert_python_ok('-Xutf8', self.script, '--output=test')
+            assert_python_ok('-Xutf8', self.script, '--output=file.pot')
+            self.assertTrue(os.path.exists('test'))
+            self.assertTrue(os.path.exists('file.pot'))
+
     def test_funcdocstring(self):
         for doc in ('"""doc"""', "r'''doc'''", "R'doc'", 'u"doc"'):
             with self.subTest(doc):
