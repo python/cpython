@@ -977,6 +977,14 @@ dummy_func(void) {
         map = sym_new_type(ctx, &PyDict_Type);
     }
 
+    op(_BUILD_STRING, (values[oparg] -- str)) {
+        str = sym_new_type(ctx, &PyUnicode_Type);
+    }
+
+    op(_BUILD_SET, (values[oparg] -- set)) {
+        set = sym_new_type(ctx, &PySet_Type);
+    }
+
     op(_UNPACK_SEQUENCE_TWO_TUPLE, (seq -- val1, val0)) {
         val0 = sym_tuple_getitem(ctx, seq, 0);
         val1 = sym_tuple_getitem(ctx, seq, 1);
