@@ -589,7 +589,7 @@ def extract_from_snapshots():
         'messages.py': (),
         'fileloc.py': ('--docstrings',),
         'docstrings.py': ('--docstrings',),
-        ('docstrings.py', 'skipdocstrings.py', 'docstrings.pot'): ('--docstrings',
+        ('docstrings.py', 'skipdocstrings.py', 'testfile.py', 'docstrings.pot'): ('--docstrings',
              f'--exclude-docstrings={DATA_DIR}{os.path.sep}skipdocstrings.txt'),
         'comments.py': ('--add-comments=i18n:',),
         'custom_keywords.py': ('--keyword=foo', '--keyword=nfoo:1,2',

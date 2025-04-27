@@ -131,10 +131,12 @@ Options:
         appear on a line by itself in the file.
 
     -X filename
-    --exclude-docstrings=filename
+    --exclude-docstrings=
+        This is only useful in conjunction with the -D option above.
         Specify a file that contains a list of files (one per line) that
-        should not have their docstrings extracted.  This is only useful in
-        conjunction with the -D option above.
+        should not have their docstrings extracted. fnmatch-style patterns are
+        supported.
+
 
 If 'inputfile' is -, standard input is read.
 """
@@ -716,7 +718,7 @@ def main():
         width = 78
         excludefilename = ''
         docstrings = 0
-        nodocstrings = []
+        nodocstrings = set()
         comment_tags = set()
 
     options = Options()
@@ -769,11 +771,10 @@ def main():
         elif opt in ('-x', '--exclude-file'):
             options.excludefilename = arg
         elif opt in ('-X', '--exclude-docstrings'):
-            with open(arg, 'r') as nodocstrings_file:
+            with open(arg) as nodocstrings_file:
                 for line in nodocstrings_file:
                     line = line.strip()
-                    if line and line not in options.nodocstrings:
-                        options.nodocstrings.append(line)
+                    options.nodocstrings.add(line)
 
     options.comment_tags = tuple(options.comment_tags)
 
