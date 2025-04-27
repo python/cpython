@@ -155,7 +155,6 @@ _get_current_state(PyObject **p_mod)
     PyObject *mod = PyImport_ImportModule("_datetime");
     if (mod == NULL) {
         assert(_Py_IsInterpreterFinalizing(interp));
-        /* We do not take care of the unlikely case. */
         return NULL;
     }
     st = get_module_state(mod);
