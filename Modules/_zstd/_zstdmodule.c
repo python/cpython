@@ -340,7 +340,7 @@ _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
     }
 
     /* Prepare chunk_sizes */
-    chunk_sizes = PyMem_Malloc(chunks_number * sizeof(size_t));
+    chunk_sizes = PyMem_New(size_t, chunks_number);
     if (chunk_sizes == NULL) {
         PyErr_NoMemory();
         goto error;
