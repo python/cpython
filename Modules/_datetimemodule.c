@@ -175,8 +175,7 @@ _get_current_state(PyObject **p_mod)
         mod = PyImport_ImportModule("_datetime");
         if (mod == NULL) {
             assert(_Py_IsInterpreterFinalizing(interp));
-            /* Ask users to take care about the unlikely case
-             * that happened after restarting the interpreter. */
+            /* We do not take care of the unlikely case. */
             return NULL;
         }
     }

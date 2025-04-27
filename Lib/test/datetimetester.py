@@ -7313,6 +7313,60 @@ class ExtensionModuleTests(unittest.TestCase):
         res = script_helper.assert_python_ok('-c', script)
         self.assertFalse(res.err)
 
+    def test_static_type_at_shutdown3(self):
+        script = textwrap.dedent(f'''
+            import textwrap
+            from test import support
+
+            subinterp_script = textwrap.dedent(f"""
+                from _testcapi import get_delta_type
+                # Test without calling test_datetime_capi() in subinterp
+                timedelta = get_delta_type()
+
+                def gen():
+                     try:
+                         yield
+                     finally:
+                         timedelta(days=1)
+
+                it = gen()
+                next(it)
+            """)
+
+            import _testcapi
+            _testcapi.test_datetime_capi()
+            ret = support.run_in_subinterp(subinterp_script)
+            assert ret == 0
+        ''')
+
+        res = script_helper.assert_python_ok('-c', script)
+        self.assertIn(b'ImportError: sys.meta_path is None', res.err)
+
+    def test_static_type_before_shutdown(self):
+        script = textwrap.dedent(f'''
+            import textwrap
+            from test import support
+
+            subinterp_script = textwrap.dedent(f"""
+                from _testcapi import get_delta_type
+                # Test without calling test_datetime_capi() in subinterp
+
+                import sys
+                assert '_datetime' not in sys.modules
+                timedelta = get_delta_type()
+                timedelta(days=1)
+                assert '_datetime' in sys.modules
+            """)
+
+            import _testcapi
+            _testcapi.test_datetime_capi()
+            ret = support.run_in_subinterp(subinterp_script)
+            assert ret == 0
+        ''')
+
+        res = script_helper.assert_python_ok('-c', script)
+        self.assertFalse(res.err)
+
     def test_remain_only_one_module(self):
         script = textwrap.dedent("""
             import sys

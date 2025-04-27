@@ -453,6 +453,12 @@ test_PyDateTime_DELTA_GET(PyObject *self, PyObject *obj)
     return Py_BuildValue("(iii)", days, seconds, microseconds);
 }
 
+static PyObject *
+get_delta_type(PyObject *self, PyObject *args)
+{
+    return PyDateTimeAPI ? Py_NewRef(PyDateTimeAPI->DeltaType) : Py_None;
+}
+
 static PyMethodDef test_methods[] = {
     {"PyDateTime_DATE_GET",         test_PyDateTime_DATE_GET,       METH_O},
     {"PyDateTime_DELTA_GET",        test_PyDateTime_DELTA_GET,      METH_O},
@@ -469,6 +475,7 @@ static PyMethodDef test_methods[] = {
     {"get_datetime_fromdateandtimeandfold", get_datetime_fromdateandtimeandfold, METH_VARARGS},
     {"get_datetime_fromtimestamp",  get_datetime_fromtimestamp,     METH_VARARGS},
     {"get_delta_fromdsu",           get_delta_fromdsu,              METH_VARARGS},
+    {"get_delta_type",               get_delta_type,                METH_NOARGS},
     {"get_time_fromtime",           get_time_fromtime,              METH_VARARGS},
     {"get_time_fromtimeandfold",    get_time_fromtimeandfold,       METH_VARARGS},
     {"get_timezone_utc_capi",       get_timezone_utc_capi,          METH_VARARGS},
