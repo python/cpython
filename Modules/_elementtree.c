@@ -822,7 +822,7 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 
     if (self->extra && self->extra->attrib) {
         tmp = Py_NewRef(self->extra->attrib);
-        attrib = deepcopy(st, self->extra->attrib, memo);
+        attrib = deepcopy(st, tmp, memo);
         Py_DECREF(tmp);
         if (!attrib) {
             Py_DECREF(tag);
