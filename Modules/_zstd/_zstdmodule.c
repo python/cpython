@@ -465,7 +465,6 @@ _zstd_get_frame_size_impl(PyObject *module, Py_buffer *frame_buffer)
 /*[clinic end generated code: output=a7384c2f8780f442 input=7d3ad24311893bf3]*/
 {
     size_t frame_size;
-    PyObject *ret;
 
     frame_size = ZSTD_findFrameCompressedSize(frame_buffer->buf, frame_buffer->len);
     if (ZSTD_isError(frame_size)) {
@@ -476,19 +475,10 @@ _zstd_get_frame_size_impl(PyObject *module, Py_buffer *frame_buffer)
             "beginning of a frame, and its length not less than this "
             "complete frame. Zstd error message: %s.",
             ZSTD_getErrorName(frame_size));
-        goto error;
+        return NULL;
     }
 
-    ret = PyLong_FromSize_t(frame_size);
-    if (ret == NULL) {
-        goto error;
-    }
-    goto success;
-
-error:
-    ret = NULL;
-success:
-    return ret;
+    return PyLong_FromSize_t(frame_size);
 }
 
 /*[clinic input]
