@@ -288,8 +288,9 @@ PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Lookup(int64_t interp_id);
 /* Release a reference to an interpreter incremented by PyInterpreterState_Hold() */
 PyAPI_FUNC(void) PyInterpreterState_Release(PyInterpreterState *interp);
 
-// Export for '_testcapi' shared extension
+// Exports for '_testcapi' shared extension
 PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_Refcount(PyInterpreterState *interp);
+PyAPI_FUNC(void) _PyInterpreterState_Incref(PyInterpreterState *interp);
 
 PyAPI_FUNC(int) PyThreadState_SetDaemon(int daemon);
 

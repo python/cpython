@@ -3230,12 +3230,19 @@ _PyInterpreterState_Refcount(PyInterpreterState *interp)
     return refcount;
 }
 
+void
+_PyInterpreterState_Incref(PyInterpreterState *interp)
+{
+    assert(interp != NULL);
+    assert(_Py_atomic_load_ssize_relaxed(&interp->threads.finalizing.countdown) >= 0);
+    _Py_atomic_add_ssize(&interp->threads.finalizing.countdown, 1);
+}
+
 PyInterpreterState *
 PyInterpreterState_Hold(void)
 {
     PyInterpreterState *interp = PyInterpreterState_Get();
-    assert(_Py_atomic_load_ssize_relaxed(&interp->threads.finalizing.countdown) >= 0);
-    _Py_atomic_add_ssize(&interp->threads.finalizing.countdown, 1);
+    _PyInterpreterState_Incref(interp);
     return interp;
 }
 
