@@ -1,2 +1,1 @@
-Improve speed of :func:`difflib.IS_LINE_JUNK` by replacing :mod:`re` with
-built-in string methods.
+Improve speed of :func:`difflib.IS_LINE_JUNK`. Patch by Semyon Moroz.
