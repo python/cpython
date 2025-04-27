@@ -21,7 +21,7 @@ import warnings
 from test import support
 from test.support import _4G, bigmemtest
 from test.support import hashlib_helper
-from test.support.import_helper import import_fresh_module, import_module
+from test.support.import_helper import import_fresh_module
 from test.support import requires_resource
 from test.support import threading_helper
 from http.client import HTTPException
@@ -94,19 +94,6 @@ def read_vectors(hash_name):
             parts = line.split(',')
             parts[0] = bytes.fromhex(parts[0])
             yield parts
-
-
-def find_gil_minsize(*modules_names, default=2048):
-    sizes = []
-    for module_name in modules_names:
-        if SKIP_SHA3 and module_name == '_sha3':
-            continue
-        try:
-            module = importlib.import_module(module_name)
-        except ImportError:
-            continue
-        sizes.append(module._GIL_MINSIZE)
-    return max(sizes, default=default)
 
 
 class HashLibTestCase(unittest.TestCase):
@@ -930,10 +917,10 @@ class HashLibTestCase(unittest.TestCase):
         # for multithreaded operation. Currently, all cryptographic modules
         # have the same constant value (2048) but in the future it might not
         # be the case.
-        gil_minsize = find_gil_minsize(
-            '_md5', '_sha1', '_sha2', '_sha3', '_blake2', '_hashlib',
-        )
+        mods = ['_md5', '_sha1', '_sha2', '_sha3', '_blake2', '_hashlib']
+        gil_minsize = hashlib_helper.find_gil_minsize(mods)
         for cons in self.hash_constructors:
+            # constructors belong to one of the above modules
             m = cons(usedforsecurity=False)
             m.update(b'1')
             m.update(b'#' * gil_minsize)
@@ -943,7 +930,7 @@ class HashLibTestCase(unittest.TestCase):
             m.update(b'1')
 
     def test_sha256_gil(self):
-        gil_minsize = find_gil_minsize('_sha2', '_hashlib')
+        gil_minsize = hashlib_helper.find_gil_minsize(['_sha2', '_hashlib'])
         m = hashlib.sha256()
         m.update(b'1')
         m.update(b'#' * gil_minsize)
