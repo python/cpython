@@ -220,8 +220,8 @@ class POParserTest(unittest.TestCase):
             r'"\N{ROMAN NUMERAL NINE}"'
         )
         with temp_cwd():
-            for i, invalid_string in enumerate(invalid_strings):
-                with self.subTest(string=invalid_string, i=i):
+            for invalid_string in invalid_strings:
+                with self.subTest(string=invalid_string):
                     po = f'msgid {invalid_string}\nmsgstr "translation"'
                     Path('messages.po').write_text(po)
                     assert_python_failure(msgfmt, 'messages.po')
