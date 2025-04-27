@@ -402,9 +402,6 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
     PyObject *ret = NULL;
     int use_input_buffer;
 
-    /* Thread-safe code */
-    Py_BEGIN_CRITICAL_SECTION(self);
-
     if (type == TYPE_DECOMPRESSOR) {
         /* Check .eof flag */
         if (self->eof) {
@@ -590,7 +587,6 @@ error:
 
     Py_CLEAR(ret);
 success:
-    Py_END_CRITICAL_SECTION();
 
     return ret;
 }
@@ -787,7 +783,13 @@ _zstd_ZstdDecompressor_decompress_impl(ZstdDecompressor *self,
                                        Py_ssize_t max_length)
 /*[clinic end generated code: output=a4302b3c940dbec6 input=16423de8f1c25985]*/
 {
-    return stream_decompress(self, data, max_length, TYPE_DECOMPRESSOR);
+    PyObject *ret;
+    /* Thread-safe code */
+    Py_BEGIN_CRITICAL_SECTION(self);
+
+    ret = stream_decompress(self, data, max_length, TYPE_DECOMPRESSOR);
+    Py_END_CRITICAL_SECTION();
+    return ret;
 }
 
 #define clinic_state() (get_zstd_state(type))
