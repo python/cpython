@@ -74,8 +74,8 @@ set_zstd_error(const _zstd_state* const state,
 }
 
 typedef struct {
-    const int parameter;
-    const char parameter_name[32];
+    int parameter;
+    char parameter_name[32];
 } ParameterInfo;
 
 static const ParameterInfo cp_list[] =
