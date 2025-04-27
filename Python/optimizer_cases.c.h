@@ -617,8 +617,28 @@
         }
 
         case _BINARY_OP_SUBSCR_TUPLE_INT: {
+            JitOptSymbol *sub_st;
+            JitOptSymbol *tuple_st;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            sub_st = stack_pointer[-1];
+            tuple_st = stack_pointer[-2];
+            assert(sym_matches_type(tuple_st, &PyTuple_Type));
+            if (sym_is_const(ctx, sub_st)) {
+                assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
+                long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
+                assert(index >= 0);
+                int tuple_length = sym_tuple_length(tuple_st);
+                if (tuple_length == -1) {
+                    res = sym_new_not_null(ctx);
+                }
+                else {
+                    assert(index < tuple_length);
+                    res = sym_tuple_getitem(ctx, tuple_st, index);
+                }
+            }
+            else {
+                res = sym_new_not_null(ctx);
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());

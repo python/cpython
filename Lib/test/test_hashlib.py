@@ -62,10 +62,12 @@ except ImportError:
 
 requires_blake2 = unittest.skipUnless(_blake2, 'requires _blake2')
 
-# bpo-46913: Don't test the _sha3 extension on a Python UBSAN build
-# TODO(gh-99108): Revisit this after _sha3 uses HACL*.
-SKIP_SHA3 = support.check_sanitizer(ub=True)
-requires_sha3 = unittest.skipUnless(not SKIP_SHA3, 'requires _sha3')
+try:
+    import _sha3
+except ImportError:
+    _sha3 = None
+
+requires_sha3 = unittest.skipUnless(_sha3, 'requires _sha3')
 
 
 def hexstr(s):
@@ -132,8 +134,6 @@ class HashLibTestCase(unittest.TestCase):
 
         self.constructors_to_test = {}
         for algorithm in algorithms:
-            if SKIP_SHA3 and algorithm.startswith('sha3_'):
-                continue
             self.constructors_to_test[algorithm] = set()
 
         # For each algorithm, test the direct constructor and the use
@@ -180,19 +180,17 @@ class HashLibTestCase(unittest.TestCase):
             add_builtin_constructor('sha256')
             add_builtin_constructor('sha384')
             add_builtin_constructor('sha512')
+        _sha3 = self._conditional_import_module('_sha3')
+        if _sha3:
+            add_builtin_constructor('sha3_224')
+            add_builtin_constructor('sha3_256')
+            add_builtin_constructor('sha3_384')
+            add_builtin_constructor('sha3_512')
+            add_builtin_constructor('shake_128')
+            add_builtin_constructor('shake_256')
         if _blake2:
             add_builtin_constructor('blake2s')
             add_builtin_constructor('blake2b')
-
-        if not SKIP_SHA3:
-            _sha3 = self._conditional_import_module('_sha3')
-            if _sha3:
-                add_builtin_constructor('sha3_224')
-                add_builtin_constructor('sha3_256')
-                add_builtin_constructor('sha3_384')
-                add_builtin_constructor('sha3_512')
-                add_builtin_constructor('shake_128')
-                add_builtin_constructor('shake_256')
 
         super(HashLibTestCase, self).__init__(*args, **kwargs)
 
