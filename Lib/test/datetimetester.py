@@ -7290,7 +7290,7 @@ class ExtensionModuleTests(unittest.TestCase):
 
             it = gen()
             next(it)
-            """)
+        """)
         res = script_helper.assert_python_ok('-c', script)
         self.assertFalse(res.err)
 
@@ -7310,7 +7310,7 @@ class ExtensionModuleTests(unittest.TestCase):
 
             it = gen()
             next(it)
-            """)
+        """)
         res = script_helper.assert_python_ok('-c', script)
         self.assertFalse(res.err)
 
@@ -7365,10 +7365,10 @@ class ExtensionModuleTests(unittest.TestCase):
             timedelta = module.get_delta_type()
 
             def gen():
-                 try:
-                     yield
-                 finally:
-                     timedelta(days=1)
+                try:
+                    yield
+                finally:
+                    timedelta(days=1)
 
             it = gen()
             next(it)
@@ -7401,7 +7401,7 @@ class ExtensionModuleTests(unittest.TestCase):
                 del _datetime
                 gc.collect()
                 assert len(ws) == 1
-            """)
+        """)
         res = script_helper.assert_python_ok('-c', script)
         self.assertFalse(res.err)
 
@@ -7410,7 +7410,7 @@ class ExtensionModuleTests(unittest.TestCase):
         script = textwrap.dedent("""
             import datetime
             datetime.datetime.strptime('20000101', '%Y%m%d').strftime('%Y%m%d')
-            """)
+        """)
         res = script_helper.assert_python_ok('-X', 'showrefcount', '-c', script)
         self.assertIn(b'[0 refs, 0 blocks]', res.err)
 
