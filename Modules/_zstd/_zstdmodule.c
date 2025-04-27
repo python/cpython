@@ -230,8 +230,9 @@ _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
 
     sizes_sum = 0;
     for (i = 0; i < chunks_number; i++) {
-        PyObject *size = PyList_GET_ITEM(samples_size_list, i);
+        PyObject *size = PyList_GetItemRef(samples_size_list, i);
         chunk_sizes[i] = PyLong_AsSize_t(size);
+        Py_DECREF(size);
         if (chunk_sizes[i] == (size_t)-1 && PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
                             "Items in samples_size_list should be an int "
