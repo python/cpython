@@ -129,6 +129,9 @@ class PurePathTest(unittest.TestCase):
         for part in p.parts:
             self.assertIs(type(part), str)
 
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports("pathlib", {"shutil"})
+
     def test_str_subclass_common(self):
         self._check_str_subclass('')
         self._check_str_subclass('.')
