@@ -805,6 +805,7 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 {
     Py_ssize_t i;
     ElementObject* element;
+    PyObject* tmp;
     PyObject* tag;
     PyObject* attrib;
     PyObject* text;
@@ -813,17 +814,17 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 
     PyTypeObject *tp = Py_TYPE(self);
     elementtreestate *st = get_elementtree_state_by_type(tp);
-    // Since the 'tag' attribute is undeletable, deepcopy() should be safe.
-    tag = deepcopy(st, self->tag, memo);
+    tmp = Py_NewRef(self->tag);
+    tag = deepcopy(st, tmp, memo);
+    Py_DECREF(tmp);
     assert(self->tag != NULL);
     if (!tag)
         return NULL;
 
     if (self->extra && self->extra->attrib) {
-        // While deepcopy(self->extra->attrib) may cause 'self->extra' to be
-        // NULL, we do not use it afterawrds without checking this, so no need
-        // to temporarily incref 'self->extra->attrib'.
+        tmp = Py_NewRef(self->extra->attrib);
         attrib = deepcopy(st, self->extra->attrib, memo);
+        Py_DECREF(tmp);
         if (!attrib) {
             Py_DECREF(tag);
             return NULL;
@@ -840,16 +841,16 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     if (!element)
         return NULL;
 
-    // Since the 'text' attribute is undeletable, deepcopy() should be safe.
-    text = deepcopy(st, JOIN_OBJ(self->text), memo);
-    assert(JOIN_OBJ(self->text) != NULL);
+    tmp = Py_NewRef(JOIN_OBJ(self->text));
+    text = deepcopy(st, tmp, memo);
+    Py_DECREF(tmp);
     if (!text)
         goto error;
     _set_joined_ptr(&element->text, JOIN_SET(text, JOIN_GET(self->text)));
 
-    // Since the 'tail' attribute is undeletable, deepcopy() should be safe.
-    tail = deepcopy(st, JOIN_OBJ(self->tail), memo);
-    assert(JOIN_OBJ(self->tail) != NULL);
+    tmp = Py_NewRef(JOIN_OBJ(self->tail));
+    tail = deepcopy(st, tmp, memo);
+    Py_DECREF(tmp);
     if (!tail)
         goto error;
     _set_joined_ptr(&element->tail, JOIN_SET(tail, JOIN_GET(self->tail)));
@@ -859,11 +860,10 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
         if (element_resize(element, self->extra->length) < 0)
             goto error;
 
-        // TODO(picnixz): should we protect against mutations from 'memo'?
         for (i = 0; self->extra && i < self->extra->length; i++) {
-            PyObject* itemi = Py_NewRef(self->extra->children[i]);
-            PyObject* child = deepcopy(st, itemi, memo);
-            Py_DECREF(itemi);
+            tmp = Py_NewRef(self->extra->children[i]);
+            PyObject* child = deepcopy(st, tmp, memo);
+            Py_DECREF(tmp);
             if (!child || !Element_Check(st, child)) {
                 if (child) {
                     raise_type_error(child);
