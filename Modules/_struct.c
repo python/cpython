@@ -265,8 +265,7 @@ static PyObject *
 unpack_halffloat(const char *p,  /* start of 2-byte string */
                  int le)         /* true for little-endian, false for big-endian */
 {
-    volatile double x = PyFloat_Unpack2(p, le);
-
+    double x = PyFloat_Unpack2(p, le);
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
@@ -279,8 +278,7 @@ pack_halffloat(_structmodulestate *state,
                PyObject *v,  /* value to pack */
                int le)       /* true for little-endian, false for big-endian */
 {
-    volatile double x = PyFloat_AsDouble(v);
-
+    double x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred()) {
         PyErr_SetString(state->StructError,
                         "required argument is not a float");
@@ -293,8 +291,9 @@ static PyObject *
 unpack_float(const char *p,  /* start of 4-byte string */
          int le)             /* true for little-endian, false for big-endian */
 {
-    volatile double x = PyFloat_Unpack4(p, le);
+    double x;
 
+    x = PyFloat_Unpack4(p, le);
     if (x == -1.0 && PyErr_Occurred())
         return NULL;
     return PyFloat_FromDouble(x);
@@ -304,8 +303,9 @@ static PyObject *
 unpack_double(const char *p,  /* start of 8-byte string */
           int le)         /* true for little-endian, false for big-endian */
 {
-    volatile double x = PyFloat_Unpack8(p, le);
+    double x;
 
+    x = PyFloat_Unpack8(p, le);
     if (x == -1.0 && PyErr_Occurred())
         return NULL;
     return PyFloat_FromDouble(x);
@@ -765,28 +765,26 @@ np_halffloat(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
 static int
 np_float(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
-    volatile float x = (float)PyFloat_AsDouble(v);
-
+    float x = (float)PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
         PyErr_SetString(state->StructError,
                         "required argument is not a float");
         return -1;
     }
-    memcpy(p, (void *)&x, sizeof x);
+    memcpy(p, &x, sizeof x);
     return 0;
 }
 
 static int
 np_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
-    volatile double x = PyFloat_AsDouble(v);
-
+    double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
         PyErr_SetString(state->StructError,
                         "required argument is not a float");
         return -1;
     }
-    memcpy(p, (void *)&x, sizeof(double));
+    memcpy(p, &x, sizeof(double));
     return 0;
 }
 
@@ -991,14 +989,11 @@ bu_double(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 bu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    volatile double x = PyFloat_Unpack4(p, 0);
-
+    double x = PyFloat_Unpack4(p, 0);
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
-
-    volatile double y = PyFloat_Unpack4(p + 4, 0);
-
+    double y = PyFloat_Unpack4(p + 4, 0);
     if (y == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
@@ -1008,14 +1003,13 @@ bu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 bu_double_complex(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    volatile double x = PyFloat_Unpack8(p, 0);
+    double x, y;
 
+    x = PyFloat_Unpack8(p, 0);
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
-
-    volatile double y = PyFloat_Unpack8(p + 8, 0);
-
+    y = PyFloat_Unpack8(p + 8, 0);
     if (y == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
@@ -1141,8 +1135,7 @@ bp_halffloat(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
 static int
 bp_float(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
-    volatile double x = PyFloat_AsDouble(v);
-
+    double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
         PyErr_SetString(state->StructError,
                         "required argument is not a float");
@@ -1154,8 +1147,7 @@ bp_float(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 static int
 bp_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
-    volatile double x = PyFloat_AsDouble(v);
-
+    double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
         PyErr_SetString(state->StructError,
                         "required argument is not a float");
@@ -1336,14 +1328,11 @@ lu_double(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 lu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    volatile double x = PyFloat_Unpack4(p, 1);
-
+    double x = PyFloat_Unpack4(p, 1);
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
-
-    volatile double y = PyFloat_Unpack4(p + 4, 1);
-
+    double y = PyFloat_Unpack4(p + 4, 1);
     if (y == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
@@ -1353,14 +1342,13 @@ lu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 lu_double_complex(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    volatile double x = PyFloat_Unpack8(p, 1);
+    double x, y;
 
+    x = PyFloat_Unpack8(p, 1);
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
-
-    volatile double y = PyFloat_Unpack8(p + 8, 1);
-
+    y = PyFloat_Unpack8(p + 8, 1);
     if (y == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
@@ -1480,8 +1468,7 @@ lp_halffloat(_structmodulestate *state, char *p, PyObject *v, const formatdef *f
 static int
 lp_float(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
-    volatile double x = PyFloat_AsDouble(v);
-
+    double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
         PyErr_SetString(state->StructError,
                         "required argument is not a float");
@@ -1493,8 +1480,7 @@ lp_float(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 static int
 lp_double(_structmodulestate *state, char *p, PyObject *v, const formatdef *f)
 {
-    volatile double x = PyFloat_AsDouble(v);
-
+    double x = PyFloat_AsDouble(v);
     if (x == -1 && PyErr_Occurred()) {
         PyErr_SetString(state->StructError,
                         "required argument is not a float");
