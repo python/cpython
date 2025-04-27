@@ -430,8 +430,8 @@ Other functions
 
 .. _sysconfig-cli:
 
-Using :mod:`sysconfig` as a script
-----------------------------------
+Command-line usage
+------------------
 
 You can use :mod:`sysconfig` as a script with Python's *-m* option:
 
