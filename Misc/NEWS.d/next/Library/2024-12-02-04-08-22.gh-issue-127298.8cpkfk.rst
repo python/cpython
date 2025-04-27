@@ -1,0 +1,8 @@
+:mod:`hashlib` now avoids emitting a message to stderr when used in custom
+build or system environment excluding any of our otherwise guaranteed
+available hash functions.  The ``algorithms_available`` attribute is now
+updated to exclude algorithms that are not actually available at import time,
+even if they are considered guaranteed in normal Python builds.  Use of
+OpenSSL FIPS mode runtime configs and some combination of the build time
+``--with(out)-builtin-hashlib-hashes`` configure option are examples of when
+this could happen.
