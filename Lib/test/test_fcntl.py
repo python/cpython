@@ -136,7 +136,7 @@ class TestFcntl(unittest.TestCase):
         or platform.system() == "Android",
         "this platform returns EINVAL for F_NOTIFY DN_MULTISHOT")
     def test_fcntl_64_bit(self):
-        # Issue #1309352: fcntl shouldn't fail when the third arg fits in a
+        # Issue GH-42434: fcntl shouldn't fail when the third arg fits in a
         # C 'long' but not in a C 'int'.
         try:
             cmd = fcntl.F_NOTIFY
