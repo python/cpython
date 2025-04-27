@@ -11899,8 +11899,8 @@ then :
 #define `printf "%s\n" "HAVE_$ac_func" | sed "$as_sed_cpp"` 1
 _ACEOF
 
-        # dladdr1 requires -ldl
-        as_fn_append LDFLAGS " -ldl"
+    # dladdr1 requires -ldl
+    as_fn_append LDFLAGS " -ldl"
 
 fi
 
