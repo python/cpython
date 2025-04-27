@@ -65,11 +65,6 @@ ZstdDict_dealloc(ZstdDict *self)
     /* Release dict_content after Free ZSTD_CDict/ZSTD_DDict instances */
     Py_XDECREF(self->dict_content);
 
-    /* Thread lock */
-    if (PyMutex_IsLocked(&self->lock)) {
-        PyMutex_Unlock(&self->lock);
-    }
-
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free((PyObject*)self);
     Py_DECREF(tp);

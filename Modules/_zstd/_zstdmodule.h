@@ -33,12 +33,6 @@ get_zstd_state(PyTypeObject *type) {
     return PyModule_GetState(module);
 }
 
-/* ------------------
-     Global macro
-   ------------------ */
-#define ACQUIRE_LOCK(obj) PyMutex_Lock(&obj->lock)
-#define RELEASE_LOCK(obj) PyMutex_Unlock(&obj->lock)
-
 extern PyType_Spec zstddict_type_spec;
 extern PyType_Spec zstdcompressor_type_spec;
 extern PyType_Spec ZstdDecompressor_type_spec;
@@ -63,9 +57,6 @@ struct _zstd_state {
 typedef struct {
     PyObject_HEAD
 
-    /* Thread lock for generating ZSTD_CDict/ZSTD_DDict */
-    PyMutex lock;
-
     /* Reusable compress/decompress dictionary, they are created once and
        can be shared by multiple threads concurrently, since its usage is
        read-only.
@@ -84,9 +75,6 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-
-    /* Thread lock for compressing */
-    PyMutex lock;
 
     /* Compression context */
     ZSTD_CCtx *cctx;
@@ -109,9 +97,6 @@ typedef struct {
 
 typedef struct {
     PyObject_HEAD
-
-    /* Thread lock for compressing */
-    PyMutex lock;
 
     /* Decompression context */
     ZSTD_DCtx *dctx;

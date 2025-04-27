@@ -38,7 +38,7 @@ _get_DDict(ZstdDict *self)
         return self->d_dict;
     }
 
-    ACQUIRE_LOCK(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
     if (self->d_dict == NULL) {
         /* Create ZSTD_DDict instance from dictionary content */
         Py_BEGIN_ALLOW_THREADS
@@ -58,7 +58,7 @@ _get_DDict(ZstdDict *self)
 
     /* Don't lose any exception */
     ret = self->d_dict;
-    RELEASE_LOCK(self);
+    Py_END_CRITICAL_SECTION();
 
     return ret;
 }
@@ -175,19 +175,25 @@ load:
             return -1;
         }
         /* Reference a prepared dictionary */
+        Py_BEGIN_CRITICAL_SECTION(self);
         zstd_ret = ZSTD_DCtx_refDDict(self->dctx, d_dict);
+        Py_END_CRITICAL_SECTION();
     } else if (type == DICT_TYPE_UNDIGESTED) {
         /* Load a dictionary */
+        Py_BEGIN_CRITICAL_SECTION2(self, zd);
         zstd_ret = ZSTD_DCtx_loadDictionary(
                             self->dctx,
                             PyBytes_AS_STRING(zd->dict_content),
                             Py_SIZE(zd->dict_content));
+        Py_END_CRITICAL_SECTION2();
     } else if (type == DICT_TYPE_PREFIX) {
         /* Load a prefix */
+        Py_BEGIN_CRITICAL_SECTION2(self, zd);
         zstd_ret = ZSTD_DCtx_refPrefix(
                             self->dctx,
                             PyBytes_AS_STRING(zd->dict_content),
                             Py_SIZE(zd->dict_content));
+        Py_END_CRITICAL_SECTION2();
     } else {
         /* Impossible code path */
         PyErr_SetString(PyExc_SystemError,
@@ -397,7 +403,7 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
     int use_input_buffer;
 
     /* Thread-safe code */
-    ACQUIRE_LOCK(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
 
     if (type == TYPE_DECOMPRESSOR) {
         /* Check .eof flag */
@@ -584,7 +590,7 @@ error:
 
     Py_CLEAR(ret);
 success:
-    RELEASE_LOCK(self);
+    Py_END_CRITICAL_SECTION();
 
     return ret;
 }
@@ -650,11 +656,6 @@ ZstdDecompressor_dealloc(ZstdDecompressor *self)
 
     /* Free unused data */
     Py_XDECREF(self->unused_data);
-
-    /* Thread lock */
-    if (PyMutex_IsLocked(&self->lock)) {
-        PyMutex_Unlock(&self->lock);
-    }
 
     PyTypeObject *tp = Py_TYPE(self);
     tp->tp_free((PyObject*)self);
@@ -726,7 +727,7 @@ _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self)
     PyObject *ret;
 
     /* Thread-safe code */
-    ACQUIRE_LOCK(self);
+    Py_BEGIN_CRITICAL_SECTION(self);
 
     if (!self->eof) {
         _zstd_state* const _module_state = PyType_GetModuleState(Py_TYPE(self));
@@ -748,7 +749,7 @@ _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self)
         }
     }
 
-    RELEASE_LOCK(self);
+    Py_END_CRITICAL_SECTION();
 
     return ret;
 }
