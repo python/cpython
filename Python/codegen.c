@@ -795,15 +795,12 @@ codegen_process_deferred_annotations(compiler *c, location loc)
         return SUCCESS;
     }
 
-    instr_sequence *old_instr_seq = INSTR_SEQUENCE(c);
-    instr_sequence *nested_instr_seq = NULL;
     int scope_type = SCOPE_TYPE(c);
-    if (scope_type == COMPILE_SCOPE_MODULE) {
-        nested_instr_seq = (instr_sequence *)_PyInstructionSequence_New();
-        if (nested_instr_seq == NULL) {
+    bool need_separate_block = scope_type == COMPILE_SCOPE_MODULE;
+    if (need_separate_block) {
+        if (_PyCompile_StartAnnotationSetup(c) == ERROR) {
             goto error;
         }
-        _PyCompile_SetInstrSequence(c, nested_instr_seq);
     }
 
     // It's possible that ste_annotations_block is set but
@@ -833,18 +830,12 @@ codegen_process_deferred_annotations(compiler *c, location loc)
         ste->ste_type == ClassBlock ? &_Py_ID(__annotate_func__) : &_Py_ID(__annotate__),
         Store));
 
-    if (nested_instr_seq != NULL) {
-        RETURN_IF_ERROR(
-            _PyInstructionSequence_SetAnnotationsCode(old_instr_seq, nested_instr_seq));
-        _PyCompile_SetInstrSequence(c, old_instr_seq);
+    if (need_separate_block) {
+        RETURN_IF_ERROR(_PyCompile_EndAnnotationSetup(c));
     }
 
     return SUCCESS;
 error:
-    if (nested_instr_seq != NULL) {
-        PyInstructionSequence_Fini(nested_instr_seq);
-        _PyCompile_SetInstrSequence(c, old_instr_seq);
-    }
     Py_XDECREF(deferred_anno);
     Py_XDECREF(conditional_annotation_indices);
     return ERROR;
