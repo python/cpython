@@ -249,16 +249,12 @@ _PyCursesSetError(cursesmodule_state *state,
 }
 
 static void
-PyCursesSetError_From(PyObject *, const char *, const char *);
-
-/*
- * Format a curses error using 'funcname' as the displayed
- * function name and underlying curses function name.
- */
-static inline void
-PyCursesSetError(PyObject *module, const char *funcname)
+PyCursesSetError_ForWin_From(PyCursesWindowObject *win,
+                             const char *python_funcname,
+                             const char *curses_funcname)
 {
-    PyCursesSetError_From(module, funcname, NULL);
+    cursesmodule_state *state = get_cursesmodule_state_by_win(win);
+    _PyCursesSetError(state, python_funcname, curses_funcname);
 }
 
 static void
@@ -270,13 +266,14 @@ PyCursesSetError_From(PyObject *module,
     _PyCursesSetError(state, python_funcname, curses_funcname);
 }
 
-static void
-PyCursesSetError_ForWin_From(PyCursesWindowObject *win,
-                             const char *python_funcname,
-                             const char *curses_funcname)
+/*
+ * Format a curses error using 'funcname' as the displayed
+ * function name and underlying curses function name.
+ */
+static inline void
+PyCursesSetError(PyObject *module, const char *funcname)
 {
-    cursesmodule_state *state = get_cursesmodule_state_by_win(win);
-    _PyCursesSetError(state, python_funcname, curses_funcname);
+    PyCursesSetError_From(module, funcname, NULL);
 }
 
 /* Utility Checking Procedures */
@@ -362,15 +359,6 @@ _PyCursesStatefulCheckFunction(PyObject *module,
  */
 
 static PyObject *
-PyCursesCheckERR_From(PyObject *, int, const char *, const char *);
-
-static inline PyObject *
-PyCursesCheckERR(PyObject *module, int code, const char *funcname)
-{
-    return PyCursesCheckERR_From(module, code, funcname, NULL);
-}
-
-static PyObject *
 PyCursesCheckERR_From(PyObject *module, int code,
                       const char *python_funcname,
                       const char *curses_funcname)
@@ -382,15 +370,10 @@ PyCursesCheckERR_From(PyObject *module, int code,
     return NULL;
 }
 
-static PyObject *
-PyCursesCheckERR_ForWin_From(PyCursesWindowObject *, int,
-                             const char *, const char *);
-
 static inline PyObject *
-PyCursesCheckERR_ForWin(PyCursesWindowObject *win, int code,
-                        const char *funcname)
+PyCursesCheckERR(PyObject *module, int code, const char *funcname)
 {
-    return PyCursesCheckERR_ForWin_From(win, code, funcname, NULL);
+    return PyCursesCheckERR_From(module, code, funcname, NULL);
 }
 
 static PyObject *
@@ -403,6 +386,13 @@ PyCursesCheckERR_ForWin_From(PyCursesWindowObject *win, int code,
     }
     PyCursesSetError_ForWin_From(win, python_funcname, curses_funcname);
     return NULL;
+}
+
+static inline PyObject *
+PyCursesCheckERR_ForWin(PyCursesWindowObject *win, int code,
+                        const char *funcname)
+{
+    return PyCursesCheckERR_ForWin_From(win, code, funcname, NULL);
 }
 
 /* Convert an object to a byte (an integer of type chtype):
