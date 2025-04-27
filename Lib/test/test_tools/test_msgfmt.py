@@ -140,6 +140,93 @@ msgstr "bar"
             err = res.err.decode('utf-8')
             self.assertIn('Syntax error', err)
 
+
+class POParserTest(unittest.TestCase):
+    def test_strings(self):
+        # Test that the PO parser correctly handles and unescape
+        # strings in the PO file.
+        # The PO file format allows for a variety of escape sequences,
+        # octal and hex escapes.
+        valid_strings = (
+            # empty strings
+            ('""', ''),
+            ('"" "" ""', ''),
+            # allowed escape sequences
+            (r'"\\"', '\\'),
+            (r'"\""', '"'),
+            (r'"\t"', '\t'),
+            (r'"\n"', '\n'),
+            (r'"\r"', '\r'),
+            (r'"\f"', '\f'),
+            (r'"\a"', '\a'),
+            (r'"\b"', '\b'),
+            (r'"\v"', '\v'),
+            # non-empty strings
+            ('"foo"', 'foo'),
+            ('"foo" "bar"', 'foobar'),
+            ('"foo""bar"', 'foobar'),
+            ('"" "foo" ""', 'foo'),
+            # newlines and tabs
+            (r'"foo\nbar"', 'foo\nbar'),
+            (r'"foo\n" "bar"', 'foo\nbar'),
+            (r'"foo\tbar"', 'foo\tbar'),
+            (r'"foo\t" "bar"', 'foo\tbar'),
+            # escaped quotes
+            (r'"foo\"bar"', 'foo"bar'),
+            (r'"foo\"" "bar"', 'foo"bar'),
+            (r'"foo\\" "bar"', 'foo\\bar'),
+            # octal escapes
+            (r'"\120\171\164\150\157\156"', 'Python'),
+            (r'"\120\171\164" "\150\157\156"', 'Python'),
+            (r'"\"\120\171\164" "\150\157\156\""', '"Python"'),
+            # hex escapes
+            (r'"\x50\x79\x74\x68\x6f\x6e"', 'Python'),
+            (r'"\x50\x79\x74" "\x68\x6f\x6e"', 'Python'),
+            (r'"\"\x50\x79\x74" "\x68\x6f\x6e\""', '"Python"'),
+        )
+
+        with temp_cwd():
+            for po_string, expected in valid_strings:
+                with self.subTest(po_string=po_string):
+                    # Construct a PO file with a single entry,
+                    # compile it, read it into a catalog and
+                    # check the result.
+                    po = f'msgid {po_string}\nmsgstr "translation"'
+                    Path('messages.po').write_text(po)
+
+                    compile_messages('messages.po', 'messages.mo')
+                    with open('messages.mo', 'rb') as f:
+                        actual = GNUTranslations(f)
+
+                    self.assertDictEqual(actual._catalog, {expected: 'translation'})
+
+        invalid_strings = (
+            # "''",  # invalid but currently accepted
+            '"',
+            '"""',
+            '"" "',
+            'foo',
+            '"" "foo',
+            '"foo" foo',
+            '42',
+            '"" 42 ""',
+            # disallowed escape sequences
+            # r'"\'"',  # invalid but currently accepted
+            # r'"\e"',  # invalid but currently accepted
+            # r'"\8"',  # invalid but currently accepted
+            # r'"\9"',  # invalid but currently accepted
+            r'"\x"',
+            r'"\u1234"',
+            r'"\N{ROMAN NUMERAL NINE}"'
+        )
+        with temp_cwd():
+            for i, invalid_string in enumerate(invalid_strings):
+                with self.subTest(string=invalid_string, i=i):
+                    po = f'msgid {invalid_string}\nmsgstr "translation"'
+                    Path('messages.po').write_text(po)
+                    assert_python_failure(msgfmt, 'messages.po')
+
+
 class CLITest(unittest.TestCase):
 
     def test_help(self):
