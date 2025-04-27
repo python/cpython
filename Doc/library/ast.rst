@@ -1761,10 +1761,34 @@ Pattern matching
 
    .. versionadded:: 3.10
 
+Type annotations
+^^^^^^^^^^^^^^^^
+
+.. class:: TypeIgnore(lineno, tag)
+
+   A type ignore comment. ``lineno`` is the location of the ``#type ignore`` comment.
+   ``tag`` is the optional tag specified by the form ``#type ignore <tag>``.
+
+   see :func:`ast.parse` for more details.
+
+   .. doctest::
+
+      >>> print(ast.dump(ast.parse('x = 1 # type: ignore', type_comments=True), indent=4))
+      Module(
+         body=[
+             Assign(
+                 targets=[
+                     Name(id='x', ctx=Store())],
+                 value=Constant(value=1))],
+         type_ignores=[
+             TypeIgnore(lineno=1, tag='')])
+
+   .. versionadded:: 3.8
+
 .. _ast-type-params:
 
 Type parameters
-^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~
 
 :ref:`Type parameters <type-params>` can exist on classes, functions, and type
 aliases.
