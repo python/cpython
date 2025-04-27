@@ -5678,8 +5678,13 @@ is_dunder_name(PyObject *name)
 static PyObject *
 update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int version_tag, PyObject *value)
 {
-    _Py_atomic_store_uint32_relaxed(&entry->version, version_tag);
+    // We must write the value first to avoid _Py_TryXGetStackRef()
+    // operating on an invalid (already deallocated) value inside
+    // _PyType_LookupRefAndVersion().  If we write the version first then a
+    // reader could pass the "entry_version == type_version" check but could
+    // be using the old entry value.
     _Py_atomic_store_ptr_relaxed(&entry->value, value); /* borrowed */
+    _Py_atomic_store_uint32_relaxed(&entry->version, version_tag);
     assert(_PyASCIIObject_CAST(name)->hash != -1);
     OBJECT_STAT_INC_COND(type_cache_collisions, entry->name != Py_None && entry->name != name);
     // We're releasing this under the lock for simplicity sake because it's always a
@@ -5809,11 +5814,14 @@ _PyType_LookupStackRefAndVersion(PyTypeObject *type, PyObject *name, _PyStackRef
     int has_version = 0;
     unsigned int assigned_version = 0;
     BEGIN_TYPE_LOCK();
-    res = find_name_in_mro(type, name, &error);
+    // We must assign the version before doing the lookup.  If
+    // find_name_in_mro() blocks and releases the critical section
+    // then the type version can change.
     if (MCACHE_CACHEABLE_NAME(name)) {
         has_version = assign_version_tag(interp, type);
         assigned_version = type->tp_version_tag;
     }
+    res = find_name_in_mro(type, name, &error);
     END_TYPE_LOCK();
 
     /* Only put NULL results into cache if there was no error. */
