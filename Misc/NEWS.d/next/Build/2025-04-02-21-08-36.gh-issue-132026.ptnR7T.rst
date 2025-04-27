@@ -1,2 +1,1 @@
-Use of undefined identifiers is removed for determining architecture
-specifics when building C code on MIPS architectures.
+Fix use of undefined identifiers in platform triplet detection on MIPS Linux platforms.
