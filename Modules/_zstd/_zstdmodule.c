@@ -308,7 +308,7 @@ _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
                           int compression_level)
 /*[clinic end generated code: output=9c2a7d8c845cee93 input=ef6f4f2b0b7e178d]*/
 {
-    if (ZSTD_versionNumber() < 10405) {
+    if (ZSTD_versionNumber() < PYTHON_MINIMUM_SUPPORTED_ZSTD_VERSION) {
         /* Must be dynamically linked */
         PyErr_Format(PyExc_NotImplementedError,
                 "The _finalize_dict function is only available when the underlying "

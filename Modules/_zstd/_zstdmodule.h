@@ -16,7 +16,9 @@ Refactored for the CPython standard library by Emma Harper Smith.
 
 #include "pycore_lock.h" // PyMutex APIs
 
-#if ZSTD_VERSION_NUMBER < 10405
+#define PYTHON_MINIMUM_SUPPORTED_ZSTD_VERSION 10405
+
+#if ZSTD_VERSION_NUMBER < PYTHON_MINIMUM_SUPPORTED_ZSTD_VERSION
     #error "_zstd module requires zstd v1.4.5+"
 #endif
 
