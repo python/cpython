@@ -130,7 +130,7 @@ class EventQueueTestBase:
         with self.assertRaises(AssertionError):
             eq.push("ñ")
 
-    def test_push_unicode_character_as_bytes(self):
+    def test_push_unicode_character_two_bytes(self):
         eq = self.make_eventqueue()
         eq.keymap = {}
 
@@ -146,7 +146,7 @@ class EventQueueTestBase:
         self.assertEqual(e.evt, "key")
         self.assertEqual(e.data, "ч")
 
-    def test_push_unicode_character_as_bytes_in_paste_mode(self):
+    def test_push_unicode_character_two_bytes_in_paste_mode(self):
         eq = self.make_eventqueue()
         eq.keymap = {}
 
