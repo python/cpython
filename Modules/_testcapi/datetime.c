@@ -502,9 +502,7 @@ _PyTestCapi_Init_DateTime(PyObject *mod)
 static int
 _testcapi_datetime_exec(PyObject *mod)
 {
-    if (test_datetime_capi(NULL, NULL) == NULL)  {
-        return -1;
-    }
+    // Call test_datetime_capi() in each test.
     return 0;
 }
 

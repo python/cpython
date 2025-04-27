@@ -7175,6 +7175,7 @@ class CapiTest(unittest.TestCase):
                 spec = importlib.util.spec_from_loader(fullname, loader)
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
+                module.test_datetime_capi()
 
             def run(type_checker, obj):
                 if not type_checker(obj, True):
@@ -7313,58 +7314,77 @@ class ExtensionModuleTests(unittest.TestCase):
         res = script_helper.assert_python_ok('-c', script)
         self.assertFalse(res.err)
 
-    def test_static_type_at_shutdown3(self):
-        script = textwrap.dedent(f'''
+    def run_script_132413(self, script):
+        # iOS requires the use of the custom framework loader,
+        # not the ExtensionFileLoader.
+        if sys.platform == "ios":
+            extension_loader = "AppleFrameworkLoader"
+        else:
+            extension_loader = "ExtensionFileLoader"
+
+        main_interp_script = textwrap.dedent(f'''
             import textwrap
             from test import support
 
-            subinterp_script = textwrap.dedent(f"""
-                from _testcapi import get_delta_type
-                # Test without calling test_datetime_capi() in subinterp
-                timedelta = get_delta_type()
+            sub_script = textwrap.dedent("""
+                if {_interpreters is None}:
+                    import _testcapi as module
+                else:
+                    import importlib.machinery
+                    import importlib.util
+                    fullname = '_testcapi_datetime'
+                    origin = importlib.util.find_spec('_testcapi').origin
+                    loader = importlib.machinery.{extension_loader}(fullname, origin)
+                    spec = importlib.util.spec_from_loader(fullname, loader)
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
 
-                def gen():
-                     try:
-                         yield
-                     finally:
-                         timedelta(days=1)
-
-                it = gen()
-                next(it)
+                # Skip calling test_datetime_capi()
+                $REPLACE_ME$
             """)
 
             import _testcapi
             _testcapi.test_datetime_capi()
-            ret = support.run_in_subinterp(subinterp_script)
-            assert ret == 0
-        ''')
 
-        res = script_helper.assert_python_ok('-c', script)
+            if {_interpreters is None}:
+                ret = support.run_in_subinterp(sub_script)
+            else:
+                import _interpreters
+                config = _interpreters.new_config('isolated').__dict__
+                ret = support.run_in_subinterp_with_config(sub_script, **config)
+
+            assert ret == 0
+
+        ''').replace('$REPLACE_ME$', textwrap.indent(script, '\x20'*4))
+
+        res = script_helper.assert_python_ok('-c', main_interp_script)
+        return res
+
+    def test_static_type_at_shutdown3(self):
+        script = textwrap.dedent("""
+            timedelta = module.get_delta_type()
+
+            def gen():
+                 try:
+                     yield
+                 finally:
+                     timedelta(days=1)
+
+            it = gen()
+            next(it)
+        """)
+        res = self.run_script_132413(script)
         self.assertIn(b'ImportError: sys.meta_path is None', res.err)
 
     def test_static_type_before_shutdown(self):
-        script = textwrap.dedent(f'''
-            import textwrap
-            from test import support
-
-            subinterp_script = textwrap.dedent(f"""
-                from _testcapi import get_delta_type
-                # Test without calling test_datetime_capi() in subinterp
-
-                import sys
-                assert '_datetime' not in sys.modules
-                timedelta = get_delta_type()
-                timedelta(days=1)
-                assert '_datetime' in sys.modules
-            """)
-
-            import _testcapi
-            _testcapi.test_datetime_capi()
-            ret = support.run_in_subinterp(subinterp_script)
-            assert ret == 0
-        ''')
-
-        res = script_helper.assert_python_ok('-c', script)
+        script = textwrap.dedent(f"""
+            import sys
+            assert '_datetime' not in sys.modules
+            timedelta = module.get_delta_type()
+            timedelta(days=1)
+            assert '_datetime' in sys.modules
+        """)
+        res = self.run_script_132413(script)
         self.assertFalse(res.err)
 
     def test_remain_only_one_module(self):
@@ -7375,7 +7395,7 @@ class ExtensionModuleTests(unittest.TestCase):
             ws = weakref.WeakSet()
             for _ in range(3):
                 import _datetime
-                td = _datetime.timedelta
+                timedelta = _datetime.timedelta
                 ws.add(_datetime)
                 del sys.modules['_datetime']
                 del _datetime
