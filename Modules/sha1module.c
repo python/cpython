@@ -368,7 +368,7 @@ _sha1_exec(PyObject *module)
         return -1;
     }
     if (PyModule_AddIntConstant(module,
-                                "GIL_MINSIZE",
+                                "_GIL_MINSIZE",
                                 HASHLIB_GIL_MINSIZE) < 0)
     {
         return -1;

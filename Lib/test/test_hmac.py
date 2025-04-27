@@ -1157,7 +1157,7 @@ class OpenSSLUpdateTestCase(UpdateTestCaseMixin, unittest.TestCase):
 
     @property
     def gil_minsize(self):
-        return _hashlib.GIL_MINSIZE
+        return _hashlib._GIL_MINSIZE
 
 
 class BuiltinUpdateTestCase(BuiltinModuleMixin,
@@ -1170,7 +1170,7 @@ class BuiltinUpdateTestCase(BuiltinModuleMixin,
 
     @property
     def gil_minsize(self):
-        return self.hmac.GIL_MINSIZE
+        return self.hmac._GIL_MINSIZE
 
 
 class CopyBaseTestCase:

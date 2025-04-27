@@ -104,7 +104,7 @@ def find_gil_minsize(*modules_names, default=2048):
             module = importlib.import_module(module_name)
         except ImportError:
             continue
-        gil_minsize = max(gil_minsize, module.GIL_MINSIZE)
+        gil_minsize = max(gil_minsize, module._GIL_MINSIZE)
     return gil_minsize
 
 

@@ -1688,7 +1688,7 @@ hmacmodule_init_globals(PyObject *module, hmacmodule_state *state)
             return -1;                                              \
         }                                                           \
     } while (0)
-    ADD_INT_CONST("GIL_MINSIZE", HASHLIB_GIL_MINSIZE);
+    ADD_INT_CONST("_GIL_MINSIZE", HASHLIB_GIL_MINSIZE);
 #undef ADD_INT_CONST
     return 0;
 }

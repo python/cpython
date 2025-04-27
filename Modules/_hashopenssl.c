@@ -2361,7 +2361,7 @@ hashlib_exception(PyObject *module)
 static int
 hashlib_constants(PyObject *module)
 {
-    if (PyModule_AddIntConstant(module, "GIL_MINSIZE",
+    if (PyModule_AddIntConstant(module, "_GIL_MINSIZE",
                                 HASHLIB_GIL_MINSIZE) < 0)
     {
         return -1;
