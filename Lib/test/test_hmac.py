@@ -1136,7 +1136,7 @@ class UpdateTestCaseMixin:
                 self.assertRaises(TypeError, h.update, msg)
 
 
-@hashlib_helper.requires_hashdigest('sha256')
+@requires_builtin_sha2()
 class PyUpdateTestCase(PyModuleMixin, UpdateTestCaseMixin, unittest.TestCase):
 
     def HMAC(self, key, msg=None):
@@ -1144,7 +1144,7 @@ class PyUpdateTestCase(PyModuleMixin, UpdateTestCaseMixin, unittest.TestCase):
 
     @property
     def gil_minsize(self):
-        self.skipTest("GIL is always held")
+        return sha2._GIL_MINSIZE
 
 
 @hashlib_helper.requires_openssl_hashdigest('sha256')
