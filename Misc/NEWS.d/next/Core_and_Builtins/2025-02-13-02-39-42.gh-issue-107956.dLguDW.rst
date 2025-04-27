@@ -1,2 +1,0 @@
-A ``build-details.json`` file is now install in the platform-independent
-standard library directory (:pep:`739` implementation).

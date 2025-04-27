@@ -1,7 +1,5 @@
-import os
 import pathlib
 import py_compile
-import shutil
 import textwrap
 import unittest
 import warnings

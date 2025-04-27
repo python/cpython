@@ -273,9 +273,9 @@ C11 standard) is supported, the following format characters are available:
 +--------+--------------------------+--------------------+----------------+------------+
 | Format | C Type                   | Python type        | Standard size  | Notes      |
 +========+==========================+====================+================+============+
-| ``E``  | :c:expr:`float complex`  | complex            | 8              | \(10)      |
+| ``F``  | :c:expr:`float complex`  | complex            | 8              | \(10)      |
 +--------+--------------------------+--------------------+----------------+------------+
-| ``C``  | :c:expr:`double complex` | complex            | 16             | \(10)      |
+| ``D``  | :c:expr:`double complex` | complex            | 16             | \(10)      |
 +--------+--------------------------+--------------------+----------------+------------+
 
 .. versionchanged:: 3.3
@@ -285,7 +285,7 @@ C11 standard) is supported, the following format characters are available:
    Added support for the ``'e'`` format.
 
 .. versionchanged:: 3.14
-   Added support for the ``'E'`` and ``'C'`` formats.
+   Added support for the ``'F'`` and ``'D'`` formats.
 
 
 Notes:

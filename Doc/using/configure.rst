@@ -22,7 +22,7 @@ Features and minimum versions required to build CPython:
 
 * Support for threads.
 
-* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.9 is the recommended
+* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.16 is the recommended
   minimum version for the :mod:`ssl` and :mod:`hashlib` extension modules.
 
 * SQLite 3.15.2 for the :mod:`sqlite3` extension module.
@@ -659,6 +659,17 @@ also be used to improve performance.
 
    Add ``-fstrict-overflow`` to the C compiler flags (by default we add
    ``-fno-strict-overflow`` instead).
+
+.. option:: --without-remote-debug
+
+   Deactivate remote debugging support described in :pep:`768` (enabled by default).
+   When this flag is provided the code that allows the interpreter to schedule the
+   execution of a Python file in a separate process as described in :pep:`768` is
+   not compiled. This includes both the functionality to schedule code to be executed
+   and the functionality to receive code to be executed.
+
+
+   .. versionadded:: 3.14
 
 
 .. _debug-build:

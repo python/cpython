@@ -1,10 +1,10 @@
-
 /* Module object implementation */
 
 #include "Python.h"
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_dict.h"          // _PyDict_EnablePerThreadRefcounting()
 #include "pycore_fileutils.h"     // _Py_wgetcwd
+#include "pycore_import.h"        // _PyImport_GetNextModuleIndex()
 #include "pycore_interp.h"        // PyInterpreterState.importlib
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_modsupport.h"    // _PyModule_CreateInitialized()
@@ -13,6 +13,7 @@
 #include "pycore_pyerrors.h"      // _PyErr_FormatFromCause()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 
 #include "osdefs.h"               // MAXPATHLEN
 
@@ -921,7 +922,9 @@ _PyModule_IsPossiblyShadowing(PyObject *origin)
     if (sys_path_0[0] == L'\0') {
         // if sys.path[0] == "", treat it as if it were the current directory
         if (!_Py_wgetcwd(sys_path_0_buf, MAXPATHLEN)) {
-            return -1;
+            // If we failed to getcwd, don't raise an exception and instead
+            // let the caller proceed assuming no shadowing
+            return 0;
         }
         sys_path_0 = sys_path_0_buf;
     }

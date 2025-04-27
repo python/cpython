@@ -1,2 +1,0 @@
-Update the deprecation warning of
-:meth:`importlib.abc.Loader.load_module`.

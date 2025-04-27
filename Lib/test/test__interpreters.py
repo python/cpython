@@ -15,7 +15,7 @@ from test.support import script_helper
 
 _interpreters = import_helper.import_module('_interpreters')
 _testinternalcapi = import_helper.import_module('_testinternalcapi')
-from _interpreters import InterpreterNotFoundError
+from _interpreters import InterpreterNotFoundError, NotShareableError
 
 
 ##################################
@@ -189,8 +189,9 @@ class ShareableTypeTests(unittest.TestCase):
         ]
         for i in ints:
             with self.subTest(i):
-                with self.assertRaises(OverflowError):
+                with self.assertRaises(NotShareableError) as cm:
                     _testinternalcapi.get_crossinterp_data(i)
+                self.assertIsInstance(cm.exception.__cause__, OverflowError)
 
     def test_bool(self):
         self._assert_values([True, False])
@@ -215,14 +216,12 @@ class ShareableTypeTests(unittest.TestCase):
         for s in non_shareables:
             value = tuple([0, 1.0, s])
             with self.subTest(repr(value)):
-                # XXX Assert the NotShareableError when it is exported
-                with self.assertRaises(ValueError):
+                with self.assertRaises(NotShareableError):
                     _testinternalcapi.get_crossinterp_data(value)
             # Check nested as well
             value = tuple([0, 1., (s,)])
             with self.subTest("nested " + repr(value)):
-                # XXX Assert the NotShareableError when it is exported
-                with self.assertRaises(ValueError):
+                with self.assertRaises(NotShareableError):
                     _testinternalcapi.get_crossinterp_data(value)
 
 
@@ -365,6 +364,7 @@ class CreateTests(TestBase):
 
         self.assertEqual(len(seen), 100)
 
+    @support.skip_if_sanitizer('gh-129824: race on tp_flags', thread=True)
     def test_in_thread(self):
         lock = threading.Lock()
         id = None
@@ -744,6 +744,12 @@ class RunStringTests(TestBase):
     def test_bytes_for_script(self):
         with self.assertRaises(TypeError):
             _interpreters.run_string(self.id, b'print("spam")')
+
+    def test_str_subclass_string(self):
+        class StrSubclass(str): pass
+
+        output = _run_output(self.id, StrSubclass('print(1 + 2)'))
+        self.assertEqual(output, '3\n')
 
     def test_with_shared(self):
         r, w = os.pipe()

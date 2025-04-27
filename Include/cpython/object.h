@@ -256,7 +256,7 @@ struct _specialization_cache {
     // - If getitem is NULL, then getitem_version is meaningless.
     // - If getitem->func_version == getitem_version, then getitem can be called
     //   with two positional arguments and no keyword arguments, and has neither
-    //   *args nor **kwargs (as required by BINARY_SUBSCR_GETITEM):
+    //   *args nor **kwargs (as required by BINARY_OP_SUBSCR_GETITEM):
     PyObject *getitem;
     uint32_t getitem_version;
     PyObject *init;
@@ -494,13 +494,13 @@ PyAPI_FUNC(int) _Py_ReachedRecursionLimitWithMargin(PyThreadState *tstate, int m
 #define Py_TRASHCAN_BEGIN(op, dealloc) \
 do { \
     PyThreadState *tstate = PyThreadState_Get(); \
-    if (_Py_ReachedRecursionLimitWithMargin(tstate, 1) && Py_TYPE(op)->tp_dealloc == (destructor)dealloc) { \
+    if (_Py_ReachedRecursionLimitWithMargin(tstate, 2) && Py_TYPE(op)->tp_dealloc == (destructor)dealloc) { \
         _PyTrash_thread_deposit_object(tstate, (PyObject *)op); \
         break; \
     }
     /* The body of the deallocator is here. */
 #define Py_TRASHCAN_END \
-    if (tstate->delete_later && !_Py_ReachedRecursionLimitWithMargin(tstate, 2)) { \
+    if (tstate->delete_later && !_Py_ReachedRecursionLimitWithMargin(tstate, 4)) { \
         _PyTrash_thread_destroy_chain(tstate); \
     } \
 } while (0);
@@ -512,7 +512,6 @@ PyAPI_FUNC(int) PyObject_VisitManagedDict(PyObject *obj, visitproc visit, void *
 PyAPI_FUNC(int) _PyObject_SetManagedDict(PyObject *obj, PyObject *new_dict);
 PyAPI_FUNC(void) PyObject_ClearManagedDict(PyObject *obj);
 
-#define TYPE_MAX_WATCHERS 8
 
 typedef int(*PyType_WatchCallback)(PyTypeObject *);
 PyAPI_FUNC(int) PyType_AddWatcher(PyType_WatchCallback callback);
