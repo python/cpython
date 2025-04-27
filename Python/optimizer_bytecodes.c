@@ -948,7 +948,6 @@ dummy_func(void) {
         list = sym_new_type(ctx, &PyList_Type);
     }
 
-
     op(_BUILD_SLICE, (values[oparg] -- slice)) {
         slice = sym_new_type(ctx, &PySlice_Type);
     }
