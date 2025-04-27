@@ -1775,13 +1775,13 @@ Type annotations
 
       >>> print(ast.dump(ast.parse('x = 1 # type: ignore', type_comments=True), indent=4))
       Module(
-         body=[
-             Assign(
-                 targets=[
-                     Name(id='x', ctx=Store())],
-                 value=Constant(value=1))],
-         type_ignores=[
-             TypeIgnore(lineno=1, tag='')])
+          body=[
+              Assign(
+                  targets=[
+                      Name(id='x', ctx=Store())],
+                  value=Constant(value=1))],
+          type_ignores=[
+              TypeIgnore(lineno=1, tag='')])
 
    .. versionadded:: 3.8
 
