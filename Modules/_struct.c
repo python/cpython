@@ -265,7 +265,8 @@ static PyObject *
 unpack_halffloat(const char *p,  /* start of 2-byte string */
                  int le)         /* true for little-endian, false for big-endian */
 {
-    double x = PyFloat_Unpack2(p, le);
+    volatile double x = PyFloat_Unpack2(p, le);
+
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
@@ -291,9 +292,8 @@ static PyObject *
 unpack_float(const char *p,  /* start of 4-byte string */
          int le)             /* true for little-endian, false for big-endian */
 {
-    double x;
+    volatile double x = PyFloat_Unpack4(p, le);
 
-    x = PyFloat_Unpack4(p, le);
     if (x == -1.0 && PyErr_Occurred())
         return NULL;
     return PyFloat_FromDouble(x);
@@ -303,9 +303,8 @@ static PyObject *
 unpack_double(const char *p,  /* start of 8-byte string */
           int le)         /* true for little-endian, false for big-endian */
 {
-    double x;
+    volatile double x = PyFloat_Unpack8(p, le);
 
-    x = PyFloat_Unpack8(p, le);
     if (x == -1.0 && PyErr_Occurred())
         return NULL;
     return PyFloat_FromDouble(x);
@@ -989,11 +988,14 @@ bu_double(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 bu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    double x = PyFloat_Unpack4(p, 0);
+    volatile double x = PyFloat_Unpack4(p, 0);
+
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
-    double y = PyFloat_Unpack4(p + 4, 0);
+
+    volatile double y = PyFloat_Unpack4(p + 4, 0);
+
     if (y == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
@@ -1003,13 +1005,14 @@ bu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 bu_double_complex(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    double x, y;
+    volatile double x = PyFloat_Unpack8(p, 0);
 
-    x = PyFloat_Unpack8(p, 0);
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
-    y = PyFloat_Unpack8(p + 8, 0);
+
+    volatile double y = PyFloat_Unpack8(p + 8, 0);
+
     if (y == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
@@ -1328,11 +1331,14 @@ lu_double(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 lu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    double x = PyFloat_Unpack4(p, 1);
+    volatile double x = PyFloat_Unpack4(p, 1);
+
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
-    double y = PyFloat_Unpack4(p + 4, 1);
+
+    volatile double y = PyFloat_Unpack4(p + 4, 1);
+
     if (y == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
@@ -1342,13 +1348,14 @@ lu_float_complex(_structmodulestate *state, const char *p, const formatdef *f)
 static PyObject *
 lu_double_complex(_structmodulestate *state, const char *p, const formatdef *f)
 {
-    double x, y;
+    volatile double x = PyFloat_Unpack8(p, 1);
 
-    x = PyFloat_Unpack8(p, 1);
     if (x == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
-    y = PyFloat_Unpack8(p + 8, 1);
+
+    volatile double y = PyFloat_Unpack8(p + 8, 1);
+
     if (y == -1.0 && PyErr_Occurred()) {
         return NULL;
     }
