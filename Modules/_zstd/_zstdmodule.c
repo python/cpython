@@ -496,7 +496,6 @@ _zstd__get_frame_info_impl(PyObject *module, Py_buffer *frame_buffer)
 {
     uint64_t decompressed_size;
     uint32_t dict_id;
-    PyObject *ret = NULL;
 
     /* ZSTD_getFrameContentSize */
     decompressed_size = ZSTD_getFrameContentSize(frame_buffer->buf,
@@ -511,7 +510,7 @@ _zstd__get_frame_info_impl(PyObject *module, Py_buffer *frame_buffer)
             "a zstd frame. Make sure the frame_buffer argument "
             "starts from the beginning of a frame, and its length "
             "not less than the frame header (6~18 bytes).");
-        goto error;
+        return NULL;
     }
 
     /* ZSTD_getDictID_fromFrame */
@@ -519,19 +518,9 @@ _zstd__get_frame_info_impl(PyObject *module, Py_buffer *frame_buffer)
 
     /* Build tuple */
     if (decompressed_size == ZSTD_CONTENTSIZE_UNKNOWN) {
-        ret = Py_BuildValue("OI", Py_None, dict_id);
-    } else {
-        ret = Py_BuildValue("KI", decompressed_size, dict_id);
+        return Py_BuildValue("OI", Py_None, dict_id);
     }
-
-    if (ret == NULL) {
-        goto error;
-    }
-    goto success;
-error:
-    Py_CLEAR(ret);
-success:
-    return ret;
+    return Py_BuildValue("KI", decompressed_size, dict_id);
 }
 
 /*[clinic input]
