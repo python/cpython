@@ -1569,6 +1569,17 @@ class TestSpecial(unittest.TestCase):
         self.assertIn(IntEnum1.X, IntFlag1)
         self.assertIn(IntFlag1.X, IntEnum1)
 
+    def test_contains_does_not_call_missing(self):
+        class AnEnum(Enum):
+            UNKNOWN = None
+            LUCKY = 3
+            @classmethod
+            def _missing_(cls, *values):
+                return cls.UNKNOWN
+        self.assertTrue(None in AnEnum)
+        self.assertTrue(3 in AnEnum)
+        self.assertFalse(7 in AnEnum)
+
     def test_inherited_data_type(self):
         class HexInt(int):
             __qualname__ = 'HexInt'
