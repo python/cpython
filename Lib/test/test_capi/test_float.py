@@ -187,10 +187,7 @@ class CAPIFloatTest(unittest.TestCase):
         for _ in range(100):
             for size in (2, 4, 8):
                 sign = random.randint(0, 1)
-                if sys.platform != 'win32':
-                    quiet = random.randint(0, 1)
-                else:
-                    quiet = 1  # doesn't work for sNaN's here
+                quiet = random.randint(0, 1)
                 if size == 8:
                     payload = random.randint(0 if quiet else 1, 1<<50)
                     i = (sign<<63) + (0x7ff<<52) + (quiet<<51) + payload
