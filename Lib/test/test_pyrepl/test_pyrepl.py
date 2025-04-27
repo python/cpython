@@ -124,9 +124,8 @@ class ReplTestCase(TestCase):
             process.kill()
             exit_code = process.wait()
         output = "".join(output)
-        if skip:
-            if "can't use pyrepl" in output:
-                self.skipTest("pyrepl not available")
+        if skip and "can't use pyrepl" in output:
+            self.skipTest("pyrepl not available")
         return output, exit_code
 
 
