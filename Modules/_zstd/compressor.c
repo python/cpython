@@ -34,8 +34,8 @@ _PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
                          const char *arg_name, const char* arg_type)
 {
     size_t zstd_ret;
-    _zstd_state* const _module_state = PyType_GetModuleState(Py_TYPE(self));
-    if (_module_state == NULL) {
+    _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
+    if (mod_state == NULL) {
         return -1;
     }
 
@@ -58,7 +58,7 @@ _PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
 
         /* Check error */
         if (ZSTD_isError(zstd_ret)) {
-            set_zstd_error(_module_state, ERR_SET_C_LEVEL, zstd_ret);
+            set_zstd_error(mod_state, ERR_SET_C_LEVEL, zstd_ret);
             return -1;
         }
         return 0;
@@ -71,7 +71,7 @@ _PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
 
         while (PyDict_Next(level_or_options, &pos, &key, &value)) {
             /* Check key type */
-            if (Py_TYPE(key) == _module_state->DParameter_type) {
+            if (Py_TYPE(key) == mod_state->DParameter_type) {
                 PyErr_SetString(PyExc_TypeError,
                                 "Key of compression option dict should "
                                 "NOT be DParameter.");
@@ -111,7 +111,7 @@ _PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
             /* Set parameter to compression context */
             zstd_ret = ZSTD_CCtx_setParameter(self->cctx, key_v, value_v);
             if (ZSTD_isError(zstd_ret)) {
-                set_parameter_error(_module_state, 1, key_v, value_v);
+                set_parameter_error(mod_state, 1, key_v, value_v);
                 return -1;
             }
         }
@@ -157,9 +157,9 @@ _get_CDict(ZstdDict *self, int compressionLevel)
         Py_END_ALLOW_THREADS
 
         if (cdict == NULL) {
-            _zstd_state* const _module_state = PyType_GetModuleState(Py_TYPE(self));
-            if (_module_state != NULL) {
-                PyErr_SetString(_module_state->ZstdError,
+            _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
+            if (mod_state != NULL) {
+                PyErr_SetString(mod_state->ZstdError,
                     "Failed to create ZSTD_CDict instance from zstd "
                     "dictionary content. Maybe the content is corrupted.");
             }
@@ -197,15 +197,15 @@ int
 _PyZstd_load_c_dict(ZstdCompressor *self, PyObject *dict) {
 
     size_t zstd_ret;
-    _zstd_state* const _module_state = PyType_GetModuleState(Py_TYPE(self));
-    if (_module_state == NULL) {
+    _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
+    if (mod_state == NULL) {
         return -1;
     }
     ZstdDict *zd;
     int type, ret;
 
     /* Check ZstdDict */
-    ret = PyObject_IsInstance(dict, (PyObject*)_module_state->ZstdDict_type);
+    ret = PyObject_IsInstance(dict, (PyObject*)mod_state->ZstdDict_type);
     if (ret < 0) {
         return -1;
     } else if (ret > 0) {
@@ -219,7 +219,7 @@ _PyZstd_load_c_dict(ZstdCompressor *self, PyObject *dict) {
     if (PyTuple_CheckExact(dict) && PyTuple_GET_SIZE(dict) == 2) {
         /* Check ZstdDict */
         ret = PyObject_IsInstance(PyTuple_GET_ITEM(dict, 0),
-                                  (PyObject*)_module_state->ZstdDict_type);
+                                  (PyObject*)mod_state->ZstdDict_type);
         if (ret < 0) {
             return -1;
         } else if (ret > 0) {
@@ -279,7 +279,7 @@ load:
 
     /* Check error */
     if (ZSTD_isError(zstd_ret)) {
-        set_zstd_error(_module_state, ERR_LOAD_C_DICT, zstd_ret);
+        set_zstd_error(mod_state, ERR_LOAD_C_DICT, zstd_ret);
         return -1;
     }
     return 0;
@@ -306,9 +306,9 @@ _zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject
     /* Compression context */
     self->cctx = ZSTD_createCCtx();
     if (self->cctx == NULL) {
-        _zstd_state* const _module_state = PyType_GetModuleState(Py_TYPE(self));
-        if (_module_state != NULL) {
-            PyErr_SetString(_module_state->ZstdError,
+        _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
+        if (mod_state != NULL) {
+            PyErr_SetString(mod_state->ZstdError,
                             "Unable to create ZSTD_CCtx instance.");
         }
         goto error;
@@ -440,9 +440,9 @@ compress_impl(ZstdCompressor *self, Py_buffer *data,
 
         /* Check error */
         if (ZSTD_isError(zstd_ret)) {
-            _zstd_state* const _module_state = PyType_GetModuleState(Py_TYPE(self));
-            if (_module_state != NULL) {
-                set_zstd_error(_module_state, ERR_COMPRESS, zstd_ret);
+            _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
+            if (mod_state != NULL) {
+                set_zstd_error(mod_state, ERR_COMPRESS, zstd_ret);
             }
             goto error;
         }
@@ -500,9 +500,9 @@ compress_mt_continue_impl(ZstdCompressor *self, Py_buffer *data)
 
         /* Check error */
         if (ZSTD_isError(zstd_ret)) {
-            _zstd_state* const _module_state = PyType_GetModuleState(Py_TYPE(self));
-            if (_module_state != NULL) {
-                set_zstd_error(_module_state, ERR_COMPRESS, zstd_ret);
+            _zstd_state* const mod_state = PyType_GetModuleState(Py_TYPE(self));
+            if (mod_state != NULL) {
+                set_zstd_error(mod_state, ERR_COMPRESS, zstd_ret);
             }
             goto error;
         }
