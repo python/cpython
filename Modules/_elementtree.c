@@ -817,7 +817,6 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     tmp = Py_NewRef(self->tag);
     tag = deepcopy(st, tmp, memo);
     Py_DECREF(tmp);
-    assert(self->tag != NULL);
     if (!tag)
         return NULL;
 
