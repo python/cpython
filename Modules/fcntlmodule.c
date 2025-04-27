@@ -22,7 +22,7 @@
 #  include <stropts.h>            // I_FLUSHBAND
 #endif
 
-#define GUARDSZ 16
+#define GUARDSZ 8
 // NUL followed by random bytes.
 static const char guard[GUARDSZ] = "\x00\xfa\x69\xc4\x67\xa3\x6c\x58";
 
