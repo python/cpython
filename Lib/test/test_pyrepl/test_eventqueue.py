@@ -53,7 +53,7 @@ class EventQueueTestBase:
         mock_keymap.compile_keymap.return_value = {"a": "b"}
         eq = self.make_eventqueue()
         eq.keymap = {b"a": "b"}
-        eq.push("a")
+        eq.push(b"a")
         mock_keymap.compile_keymap.assert_called()
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "b")
@@ -63,7 +63,7 @@ class EventQueueTestBase:
         mock_keymap.compile_keymap.return_value = {"a": "b"}
         eq = self.make_eventqueue()
         eq.keymap = {b"c": "d"}
-        eq.push("a")
+        eq.push(b"a")
         mock_keymap.compile_keymap.assert_called()
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "a")
@@ -73,13 +73,13 @@ class EventQueueTestBase:
         mock_keymap.compile_keymap.return_value = {"a": "b"}
         eq = self.make_eventqueue()
         eq.keymap = {b"a": {b"b": "c"}}
-        eq.push("a")
+        eq.push(b"a")
         mock_keymap.compile_keymap.assert_called()
         self.assertTrue(eq.empty())
-        eq.push("b")
+        eq.push(b"b")
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "c")
-        eq.push("d")
+        eq.push(b"d")
         self.assertEqual(eq.events[1].evt, "key")
         self.assertEqual(eq.events[1].data, "d")
 
@@ -88,32 +88,32 @@ class EventQueueTestBase:
         mock_keymap.compile_keymap.return_value = {"a": "b"}
         eq = self.make_eventqueue()
         eq.keymap = {b"a": {b"b": "c"}}
-        eq.push("a")
+        eq.push(b"a")
         mock_keymap.compile_keymap.assert_called()
         self.assertTrue(eq.empty())
         eq.flush_buf()
-        eq.push("\033")
+        eq.push(b"\033")
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "\033")
-        eq.push("b")
+        eq.push(b"b")
         self.assertEqual(eq.events[1].evt, "key")
         self.assertEqual(eq.events[1].data, "b")
 
     def test_push_special_key(self):
         eq = self.make_eventqueue()
         eq.keymap = {}
-        eq.push("\x1b")
-        eq.push("[")
-        eq.push("A")
+        eq.push(b"\x1b")
+        eq.push(b"[")
+        eq.push(b"A")
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "\x1b")
 
     def test_push_unrecognized_escape_sequence(self):
         eq = self.make_eventqueue()
         eq.keymap = {}
-        eq.push("\x1b")
-        eq.push("[")
-        eq.push("Z")
+        eq.push(b"\x1b")
+        eq.push(b"[")
+        eq.push(b"Z")
         self.assertEqual(len(eq.events), 3)
         self.assertEqual(eq.events[0].evt, "key")
         self.assertEqual(eq.events[0].data, "\x1b")
@@ -122,23 +122,31 @@ class EventQueueTestBase:
         self.assertEqual(eq.events[2].evt, "key")
         self.assertEqual(eq.events[2].data, "Z")
 
-    def test_push_unicode_character(self):
+    def test_push_unicode_character_as_str(self):
         eq = self.make_eventqueue()
         eq.keymap = {}
-        eq.push("ч")
-        self.assertEqual(eq.events[0].evt, "key")
-        self.assertEqual(eq.events[0].data, "ч")
+        with self.assertRaises(AssertionError):
+            eq.push("ч")
+        with self.assertRaises(AssertionError):
+            eq.push("ñ")
 
     def test_push_unicode_character_as_bytes(self):
         eq = self.make_eventqueue()
         eq.keymap = {}
 
-        eq.push("ч".encode(eq.encoding, "replace"))
+        encoded = "ч".encode(eq.encoding, "replace")
+        self.assertEqual(len(encoded), 2)
+
+        eq.push(encoded[0])
+        e = eq.get()
+        self.assertIsNone(e)
+
+        eq.push(encoded[1])
         e = eq.get()
         self.assertEqual(e.evt, "key")
         self.assertEqual(e.data, "ч")
 
-    def test_push_long_unicode_character_as_bytes(self):
+    def test_push_unicode_character_as_bytes_in_paste_mode(self):
         eq = self.make_eventqueue()
         eq.keymap = {}
 
@@ -151,9 +159,9 @@ class EventQueueTestBase:
             for k in keys:
                 eq.push(k)
 
-        _push("\x1b[200")
-        eq.push("ñ".encode(eq.encoding, "replace"))
-        _push("\x1b[201")
+        _push(b"\x1b[200")
+        _push("ñ".encode(eq.encoding, "replace"))
+        _push(b"\x1b[201")
 
         self.assertEqual(eq.get(), _event("key", "\x1b"))
         self.assertEqual(eq.get(), _event("key", "["))
@@ -169,7 +177,7 @@ class EventQueueTestBase:
         self.assertEqual(eq.get(), _event("key", "0"))
         self.assertEqual(eq.get(), _event("key", "1"))
 
-    def test_push_long_unicode_character(self):
+    def test_push_unicode_character_as_str_in_paste_mode(self):
         eq = self.make_eventqueue()
         eq.keymap = {}
 
@@ -182,11 +190,12 @@ class EventQueueTestBase:
             for k in keys:
                 eq.push(k)
 
-        _push("\x1b[200")
-        msg = "'utf-8' codec can't decode byte 0xf1 in position 0: unexpected end of data"
-        with self.assertRaisesRegex(UnicodeDecodeError, msg):
-            eq.push("ñ")
-        _push("\x1b[201")
+        self.assertIsInstance("ñ", str)
+
+        _push(b"\x1b[200")
+        with self.assertRaises(AssertionError):
+            _push("ñ")
+        _push(b"\x1b[201")
 
         self.assertEqual(eq.get(), _event("key", "\x1b"))
         self.assertEqual(eq.get(), _event("key", "["))
