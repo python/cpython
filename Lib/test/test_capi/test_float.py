@@ -183,25 +183,27 @@ class CAPIFloatTest(unittest.TestCase):
     def test_pack_unpack_roundtrip_for_nans(self):
         pack = _testcapi.float_pack
         unpack = _testcapi.float_unpack
-
-        for _ in range(100):
+        for _ in range(1000):
             for size in (2, 4, 8):
                 sign = random.randint(0, 1)
-                quiet = random.randint(0, 1)
+                signaling = random.randint(0, 1)
+                quiet = int(not signaling)
                 if size == 8:
-                    payload = random.randint(0 if quiet else 1, 1<<50)
+                    payload = random.randint(signaling, 1<<50)
                     i = (sign<<63) + (0x7ff<<52) + (quiet<<51) + payload
                 elif size == 4:
-                    payload = random.randint(0 if quiet else 1, 1<<21)
+                    payload = random.randint(signaling, 1<<21)
                     i = (sign<<31) + (0xff<<23) + (quiet<<22) + payload
                 elif size == 2:
-                    payload = random.randint(0 if quiet else 1, 1<<8)
+                    payload = random.randint(signaling, 1<<8)
                     i = (sign<<15) + (0x1f<<10) + (quiet<<9) + payload
                 data = bytes.fromhex(f'{i:x}')
                 for endian in (BIG_ENDIAN, LITTLE_ENDIAN):
                     with self.subTest(data=data, size=size, endian=endian):
                         data1 = data if endian == BIG_ENDIAN else data[::-1]
                         value = unpack(data1, endian)
+                        if signaling and sys.platform == 'win32':
+                            value = _testcapi.float_set_snan(value)
                         data2 = pack(size, value, endian)
                         self.assertTrue(math.isnan(value))
                         self.assertEqual(data1, data2)
