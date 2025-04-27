@@ -96,7 +96,7 @@ Options:
     -o filename
     --output=filename
         Rename the default output file from messages.pot to filename.  If
-        filename is `-' then the output is sent to standard out.
+        filename is '-' then the output is sent to standard out.
 
     -p dir
     --output-dir=dir
@@ -110,7 +110,7 @@ Options:
         Solaris  # File: filename, line: line-number
         GNU      #: filename:line
 
-        The style name is case insensitive.  GNU style is the default.
+        The style name is case-insensitive.  GNU style is the default.
 
     -v
     --verbose
@@ -136,10 +136,11 @@ Options:
         should not have their docstrings extracted.  This is only useful in
         conjunction with the -D option above.
 
-If `inputfile' is -, standard input is read.
+If 'inputfile' is -, standard input is read.
 """
 
 import ast
+import fnmatch
 import getopt
 import glob
 import importlib.machinery
@@ -188,7 +189,7 @@ def make_escapes(pass_nonascii):
     global escapes, escape
     if pass_nonascii:
         # Allow non-ascii characters to pass through so that e.g. 'msgid
-        # "Höhe"' would not result in 'msgid "H\366he"'.  Otherwise we
+        # "Höhe"' would not result in 'msgid "H\366he"'.  Otherwise, we
         # escape any character outside the 32..126 range.
         escape = escape_ascii
     else:
@@ -483,7 +484,8 @@ class GettextVisitor(ast.NodeVisitor):
 
     def _extract_docstring(self, node):
         if (not self.options.docstrings or
-            os.path.basename(self.filename) in self.options.nodocstrings):
+            any(fnmatch.fnmatch(self.filename, pattern)
+                for pattern in self.options.nodocstrings)):
             return
 
         docstring = ast.get_docstring(node)
@@ -769,9 +771,9 @@ def main():
         elif opt in ('-X', '--exclude-docstrings'):
             with open(arg, 'r') as nodocstrings_file:
                 for line in nodocstrings_file:
-                    filename = os.path.basename(line.strip())
-                    if filename not in options.nodocstrings:
-                        options.nodocstrings.append(filename)
+                    line = line.strip()
+                    if line and line not in options.nodocstrings:
+                        options.nodocstrings.append(line)
 
     options.comment_tags = tuple(options.comment_tags)
 
