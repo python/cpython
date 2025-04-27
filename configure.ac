@@ -2985,6 +2985,14 @@ AC_CHECK_HEADERS([ \
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
+# for faulthandler
+AC_CHECK_HEADERS([execinfo.h link.h dlfcn.h], [
+  AC_CHECK_FUNCS([backtrace dladdr1], [
+    # dladdr1 requires -ldl
+    AS_VAR_APPEND([LDFLAGS], [" -ldl"])
+  ])
+])
+
 # bluetooth/bluetooth.h has been known to not compile with -std=c99.
 # http://permalink.gmane.org/gmane.linux.bluez.kernel/22294
 SAVE_CFLAGS=$CFLAGS
@@ -4062,7 +4070,7 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <ffi.h>
 int z_is_expected(double complex z)
 {
-    const double complex expected = CMPLX(1.25, -0.5);
+    const double complex expected = 1.25 - 0.5 * I;
     return z == expected;
 }
 int main(void)

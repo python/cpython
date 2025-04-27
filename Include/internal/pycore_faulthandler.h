@@ -56,6 +56,7 @@ struct _faulthandler_runtime_state {
 #ifdef MS_WINDOWS
         void *exc_handler;
 #endif
+        int c_stack;
     } fatal_error;
 
     struct {
