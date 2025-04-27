@@ -85,7 +85,7 @@ C Stack Compatibility
 *********************
 
 If the system does not support the C-level :manpage:`backtrace(3)`
-or :manpage:`dladdr(3)`, then C stack dumps will not work.
+or :manpage:`dladdr1(3)`, then C stack dumps will not work.
 An error will be printed instead of the stack.
 
 Additionally, some compilers do not support :term:`CPython's <CPython>`
