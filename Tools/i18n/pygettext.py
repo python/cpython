@@ -131,7 +131,7 @@ Options:
         appear on a line by itself in the file.
 
     -X filename
-    --no-docstrings=filename
+    --exclude-docstrings=filename
         Specify a file that contains a list of files (one per line) that
         should not have their docstrings extracted.  This is only useful in
         conjunction with the -D option above.
@@ -692,7 +692,7 @@ def main():
              'help', 'keyword=', 'no-default-keywords',
              'add-location', 'no-location', 'output=', 'output-dir=',
              'style=', 'verbose', 'version', 'width=', 'exclude-file=',
-             'docstrings', 'no-docstrings=',
+             'docstrings', 'exclude-docstrings=',
              ])
     except getopt.error as msg:
         usage(1, msg)
@@ -766,7 +766,7 @@ def main():
                 usage(1, f'--width argument must be an integer: {arg}')
         elif opt in ('-x', '--exclude-file'):
             options.excludefilename = arg
-        elif opt in ('-X', '--no-docstrings'):
+        elif opt in ('-X', '--exclude-docstrings'):
             with open(arg, 'r') as nodocstrings_file:
                 for line in nodocstrings_file:
                     filename = os.path.basename(line.strip())
