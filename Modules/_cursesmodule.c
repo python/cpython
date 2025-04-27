@@ -271,16 +271,6 @@ PyCursesSetError_From(PyObject *module,
 }
 
 static void
-PyCursesSetError_ForWin_From(PyCursesWindowObject *,
-                             const char *, const char *);
-
-static inline void
-PyCursesSetError_ForWin(PyCursesWindowObject *win, const char *funcname)
-{
-    PyCursesSetError_ForWin_From(win, funcname, NULL);
-}
-
-static void
 PyCursesSetError_ForWin_From(PyCursesWindowObject *win,
                              const char *python_funcname,
                              const char *curses_funcname)
@@ -1531,7 +1521,7 @@ _curses_window_delch_impl(PyCursesWindowObject *self, int group_right_1,
         rtn = py_mvwdelch(self->win, y, x);
         funcname = "mvwdelch";
     }
-    return PyCursesCheckERR_ForWin_From(self, rtn, "wdelch", funcname);
+    return PyCursesCheckERR_ForWin_From(self, rtn, "delch", funcname);
 }
 
 /*[clinic input]
@@ -1913,7 +1903,7 @@ _curses_window_hline_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     if (group_left_1) {
         if (wmove(self->win, y, x) == ERR) {
-            PyCursesSetError_ForWin(self, "wmove");
+            PyCursesSetError_ForWin_From(self, "hline", "wmove");
             return NULL;
         }
     }
@@ -2331,7 +2321,8 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self)
         rtn = pnoutrefresh(self->win, pminrow, pmincol,
                            sminrow, smincol, smaxrow, smaxcol);
         Py_END_ALLOW_THREADS
-        return PyCursesCheckERR_ForWin(self, rtn, "pnoutrefresh");
+        return PyCursesCheckERR_ForWin_From(self, rtn,
+                                            "noutrefresh", "pnoutrefresh");
     }
     if (group_right_1) {
         PyErr_SetString(PyExc_TypeError,
@@ -2342,7 +2333,8 @@ _curses_window_noutrefresh_impl(PyCursesWindowObject *self)
     Py_BEGIN_ALLOW_THREADS
     rtn = wnoutrefresh(self->win);
     Py_END_ALLOW_THREADS
-    return PyCursesCheckERR_ForWin(self, rtn, "wnoutrefresh");
+    return PyCursesCheckERR_ForWin_From(self, rtn,
+                                        "noutrefresh", "wnoutrefresh");
 }
 
 /*[clinic input]
@@ -2384,7 +2376,7 @@ _curses_window_overlay_impl(PyCursesWindowObject *self,
     if (group_right_1) {
         rtn = copywin(self->win, destwin->win, sminrow, smincol,
                       dminrow, dmincol, dmaxrow, dmaxcol, TRUE);
-        return PyCursesCheckERR_ForWin(self, rtn, "copywin");
+        return PyCursesCheckERR_ForWin_From(self, rtn, "overlay", "copywin");
     }
     else {
         rtn = overlay(self->win, destwin->win);
@@ -2432,7 +2424,7 @@ _curses_window_overwrite_impl(PyCursesWindowObject *self,
     if (group_right_1) {
         rtn = copywin(self->win, destwin->win, sminrow, smincol,
                       dminrow, dmincol, dmaxrow, dmaxcol, FALSE);
-        return PyCursesCheckERR_ForWin(self, rtn, "copywin");
+        return PyCursesCheckERR_ForWin_From(self, rtn, "overwrite", "copywin");
     }
     else {
         rtn = overwrite(self->win, destwin->win);
@@ -2556,7 +2548,7 @@ _curses_window_refresh_impl(PyCursesWindowObject *self, int group_right_1,
         rtn = prefresh(self->win, pminrow, pmincol,
                        sminrow, smincol, smaxrow, smaxcol);
         Py_END_ALLOW_THREADS
-        return PyCursesCheckERR_ForWin(self, rtn, "prefresh");
+        return PyCursesCheckERR_ForWin_From(self, rtn, "refresh", "prefresh");
     }
 #endif
     if (group_right_1) {
@@ -2567,7 +2559,7 @@ _curses_window_refresh_impl(PyCursesWindowObject *self, int group_right_1,
     Py_BEGIN_ALLOW_THREADS
     rtn = wrefresh(self->win);
     Py_END_ALLOW_THREADS
-    return PyCursesCheckERR_ForWin_From(self, rtn, "prefresh", "wrefresh");
+    return PyCursesCheckERR_ForWin_From(self, rtn, "refresh", "wrefresh");
 }
 
 /*[clinic input]
@@ -2590,7 +2582,7 @@ _curses_window_setscrreg_impl(PyCursesWindowObject *self, int top,
 /*[clinic end generated code: output=486ab5db218d2b1a input=1b517b986838bf0e]*/
 {
     int rtn = wsetscrreg(self->win, top, bottom);
-    return PyCursesCheckERR_ForWin(self, rtn, "wsetscrreg");
+    return PyCursesCheckERR_ForWin_From(self, rtn, "setscrreg", "wsetscrreg");
 }
 
 /*[clinic input]
@@ -2748,7 +2740,7 @@ _curses_window_vline_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     if (group_left_1) {
         if (wmove(self->win, y, x) == ERR) {
-            PyCursesSetError_ForWin(self, "wmove");
+            PyCursesSetError_ForWin_From(self, "vline", "wmove");
             return NULL;
         }
     }
