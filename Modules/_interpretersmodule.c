@@ -1278,13 +1278,8 @@ object_is_shareable(PyObject *self, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyInterpreterState *interp = PyInterpreterState_Get();
-    _PyXIData_lookup_context_t ctx;
-    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
-        return NULL;
-    }
-
-    if (_PyObject_CheckXIData(&ctx, obj) == 0) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    if (_PyObject_CheckXIData(tstate, obj) == 0) {
         Py_RETURN_TRUE;
     }
     PyErr_Clear();
@@ -1577,13 +1572,8 @@ The 'interpreters' module provides a more convenient interface.");
 static int
 module_exec(PyObject *mod)
 {
-    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyThreadState *tstate = _PyThreadState_GET();
     module_state *state = get_module_state(mod);
-
-    _PyXIData_lookup_context_t ctx;
-    if (_PyXIData_GetLookupContext(interp, &ctx) < 0) {
-        return -1;
-    }
 
 #define ADD_WHENCE(NAME) \
     if (PyModule_AddIntConstant(mod, "WHENCE_" #NAME,                   \
@@ -1606,7 +1596,8 @@ module_exec(PyObject *mod)
     if (PyModule_AddType(mod, (PyTypeObject *)PyExc_InterpreterNotFoundError) < 0) {
         goto error;
     }
-    if (PyModule_AddType(mod, (PyTypeObject *)ctx.PyExc_NotShareableError) < 0) {
+    PyObject *exctype = _PyXIData_GetNotShareableErrorType(tstate);
+    if (PyModule_AddType(mod, (PyTypeObject *)exctype) < 0) {
         goto error;
     }
 

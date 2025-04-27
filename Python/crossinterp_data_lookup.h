@@ -1,7 +1,10 @@
 #include "pycore_weakref.h"       // _PyWeakref_GET_REF()
 
 
-typedef _PyXIData_lookup_context_t dlcontext_t;
+typedef struct _dlcontext {
+    _PyXIData_lookup_t *global;
+    _PyXIData_lookup_t *local;
+} dlcontext_t;
 typedef _PyXIData_registry_t dlregistry_t;
 typedef _PyXIData_regitem_t dlregitem_t;
 
@@ -26,6 +29,26 @@ xid_lookup_fini(_PyXIData_lookup_t *state)
     _xidregistry_fini(&state->registry);
 }
 
+static int
+get_lookup_context(PyThreadState *tstate, dlcontext_t *res)
+{
+    _PyXI_global_state_t *global = _PyXI_GET_GLOBAL_STATE(tstate->interp);
+    if (global == NULL) {
+        assert(PyErr_Occurred());
+        return -1;
+    }
+    _PyXI_state_t *local = _PyXI_GET_STATE(tstate->interp);
+    if (local == NULL) {
+        assert(PyErr_Occurred());
+        return -1;
+    }
+    *res = (dlcontext_t){
+        .global = &global->data_lookup,
+        .local = &local->data_lookup,
+    };
+    return 0;
+}
+
 static xidatafunc
 lookup_getdata(dlcontext_t *ctx, PyObject *obj)
 {
@@ -38,32 +61,41 @@ lookup_getdata(dlcontext_t *ctx, PyObject *obj)
 
 /* exported API */
 
-int
-_PyXIData_GetLookupContext(PyInterpreterState *interp,
-                           _PyXIData_lookup_context_t *res)
+PyObject *
+_PyXIData_GetNotShareableErrorType(PyThreadState *tstate)
 {
-    _PyXI_global_state_t *global = _PyXI_GET_GLOBAL_STATE(interp);
-    if (global == NULL) {
-        assert(PyErr_Occurred());
-        return -1;
-    }
-    _PyXI_state_t *local = _PyXI_GET_STATE(interp);
-    if (local == NULL) {
-        assert(PyErr_Occurred());
-        return -1;
-    }
-    *res = (dlcontext_t){
-        .global = &global->data_lookup,
-        .local = &local->data_lookup,
-        .PyExc_NotShareableError = local->exceptions.PyExc_NotShareableError,
-    };
-    return 0;
+    PyObject *exctype = get_notshareableerror_type(tstate);
+    assert(exctype != NULL);
+    return exctype;
 }
 
-xidatafunc
-_PyXIData_Lookup(_PyXIData_lookup_context_t *ctx, PyObject *obj)
+void
+_PyXIData_SetNotShareableError(PyThreadState *tstate, const char *msg)
 {
-    return lookup_getdata(ctx, obj);
+    PyObject *cause = NULL;
+    set_notshareableerror(tstate, cause, 1, msg);
+}
+
+void
+_PyXIData_FormatNotShareableError(PyThreadState *tstate,
+                                  const char *format, ...)
+{
+    PyObject *cause = NULL;
+    va_list vargs;
+    va_start(vargs, format);
+    format_notshareableerror_v(tstate, cause, 1, format, vargs);
+    va_end(vargs);
+}
+
+
+xidatafunc
+_PyXIData_Lookup(PyThreadState *tstate, PyObject *obj)
+{
+    dlcontext_t ctx;
+    if (get_lookup_context(tstate, &ctx) < 0) {
+        return NULL;
+    }
+    return lookup_getdata(&ctx, obj);
 }
 
 
@@ -250,7 +282,7 @@ _xidregistry_clear(dlregistry_t *xidregistry)
 }
 
 int
-_PyXIData_RegisterClass(_PyXIData_lookup_context_t *ctx,
+_PyXIData_RegisterClass(PyThreadState *tstate,
                         PyTypeObject *cls, xidatafunc getdata)
 {
     if (!PyType_Check(cls)) {
@@ -263,7 +295,11 @@ _PyXIData_RegisterClass(_PyXIData_lookup_context_t *ctx,
     }
 
     int res = 0;
-    dlregistry_t *xidregistry = _get_xidregistry_for_type(ctx, cls);
+    dlcontext_t ctx;
+    if (get_lookup_context(tstate, &ctx) < 0) {
+        return -1;
+    }
+    dlregistry_t *xidregistry = _get_xidregistry_for_type(&ctx, cls);
     _xidregistry_lock(xidregistry);
 
     dlregitem_t *matched = _xidregistry_find_type(xidregistry, cls);
@@ -281,10 +317,14 @@ finally:
 }
 
 int
-_PyXIData_UnregisterClass(_PyXIData_lookup_context_t *ctx, PyTypeObject *cls)
+_PyXIData_UnregisterClass(PyThreadState *tstate, PyTypeObject *cls)
 {
     int res = 0;
-    dlregistry_t *xidregistry = _get_xidregistry_for_type(ctx, cls);
+    dlcontext_t ctx;
+    if (get_lookup_context(tstate, &ctx) < 0) {
+        return -1;
+    }
+    dlregistry_t *xidregistry = _get_xidregistry_for_type(&ctx, cls);
     _xidregistry_lock(xidregistry);
 
     dlregitem_t *matched = _xidregistry_find_type(xidregistry, cls);
@@ -508,11 +548,6 @@ _tuple_shared_free(void* data)
 static int
 _tuple_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 {
-    dlcontext_t ctx;
-    if (_PyXIData_GetLookupContext(tstate->interp, &ctx) < 0) {
-        return -1;
-    }
-
     Py_ssize_t len = PyTuple_GET_SIZE(obj);
     if (len < 0) {
         return -1;
@@ -539,7 +574,7 @@ _tuple_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *data)
 
         int res = -1;
         if (!_Py_EnterRecursiveCallTstate(tstate, " while sharing a tuple")) {
-            res = _PyObject_GetXIData(&ctx, item, data);
+            res = _PyObject_GetXIData(tstate, item, data);
             _Py_LeaveRecursiveCallTstate(tstate);
         }
         if (res < 0) {

@@ -386,7 +386,7 @@ class unsigned_long_converter(CConverter):
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'k':
             return self.format_code("""
-                if (!PyLong_Check({argname})) {{{{
+                if (!PyIndex_Check({argname})) {{{{
                     {bad_argument}
                     goto exit;
                 }}}}
@@ -444,7 +444,7 @@ class unsigned_long_long_converter(CConverter):
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'K':
             return self.format_code("""
-                if (!PyLong_Check({argname})) {{{{
+                if (!PyIndex_Check({argname})) {{{{
                     {bad_argument}
                     goto exit;
                 }}}}
