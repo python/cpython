@@ -10,6 +10,7 @@ static const char* _Py_stdlib_module_names[] = {
 "_ast",
 "_ast_unparse",
 "_asyncio",
+"_base64",
 "_bisect",
 "_blake2",
 "_bz2",
