@@ -28,7 +28,6 @@ void
 set_zstd_error(const _zstd_state* const state,
                const error_type type, const size_t zstd_ret)
 {
-    char buf[128];
     char *msg;
     assert(ZSTD_isError(zstd_ret));
 
@@ -71,8 +70,7 @@ set_zstd_error(const _zstd_state* const state,
     default:
         Py_UNREACHABLE();
     }
-    PyOS_snprintf(buf, sizeof(buf), msg, ZSTD_getErrorName(zstd_ret));
-    PyErr_SetString(state->ZstdError, buf);
+    PyErr_Format(state->ZstdError, msg, ZSTD_getErrorName(zstd_ret));
 }
 
 typedef struct {
@@ -172,6 +170,14 @@ set_parameter_error(const _zstd_state* const state, int is_compress,
                  ZSTD_versionString(), 8*(int)sizeof(Py_ssize_t));
 }
 
+static inline _zstd_state*
+get_zstd_state(PyObject *module)
+{
+    void *state = PyModule_GetState(module);
+    assert(state != NULL);
+    return (_zstd_state *)state;
+}
+
 /* -------------------------
      Train dictionary code
    ------------------------- */
@@ -216,7 +222,7 @@ _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
     }
 
     /* Prepare chunk_sizes */
-    chunk_sizes = PyMem_Malloc(chunks_number * sizeof(size_t));
+    chunk_sizes = PyMem_New(size_t, chunks_number);
     if (chunk_sizes == NULL) {
         PyErr_NoMemory();
         goto error;
@@ -256,10 +262,8 @@ _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
 
     /* Check zstd dict error */
     if (ZDICT_isError(zstd_ret)) {
-        _zstd_state* const _module_state = PyModule_GetState(module);
-        if (_module_state != NULL) {
-            set_zstd_error(_module_state, ERR_TRAIN_DICT, zstd_ret);
-        }
+        _zstd_state* const _module_state = get_zstd_state(module);
+        set_zstd_error(_module_state, ERR_TRAIN_DICT, zstd_ret);
         goto error;
     }
 
@@ -386,10 +390,8 @@ _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
 
     /* Check zstd dict error */
     if (ZDICT_isError(zstd_ret)) {
-        _zstd_state* const _module_state = PyModule_GetState(module);
-        if (_module_state != NULL) {
-            set_zstd_error(_module_state, ERR_FINALIZE_DICT, zstd_ret);
-        }
+        _zstd_state* const _module_state = get_zstd_state(module);
+        set_zstd_error(_module_state, ERR_FINALIZE_DICT, zstd_ret);
         goto error;
     }
 
@@ -429,19 +431,15 @@ _zstd__get_param_bounds_impl(PyObject *module, int is_compress,
     if (is_compress) {
         bound = ZSTD_cParam_getBounds(parameter);
         if (ZSTD_isError(bound.error)) {
-            _zstd_state* const _module_state = PyModule_GetState(module);
-            if (_module_state != NULL) {
-                set_zstd_error(_module_state, ERR_GET_C_BOUNDS, bound.error);
-            }
+            _zstd_state* const _module_state = get_zstd_state(module);
+            set_zstd_error(_module_state, ERR_GET_C_BOUNDS, bound.error);
             return NULL;
         }
     } else {
         bound = ZSTD_dParam_getBounds(parameter);
         if (ZSTD_isError(bound.error)) {
-            _zstd_state* const _module_state = PyModule_GetState(module);
-            if (_module_state != NULL) {
-                set_zstd_error(_module_state, ERR_GET_D_BOUNDS, bound.error);
-            }
+            _zstd_state* const _module_state = get_zstd_state(module);
+            set_zstd_error(_module_state, ERR_GET_D_BOUNDS, bound.error);
             return NULL;
         }
     }
@@ -470,15 +468,13 @@ _zstd_get_frame_size_impl(PyObject *module, Py_buffer *frame_buffer)
 
     frame_size = ZSTD_findFrameCompressedSize(frame_buffer->buf, frame_buffer->len);
     if (ZSTD_isError(frame_size)) {
-        _zstd_state* const _module_state = PyModule_GetState(module);
-        if (_module_state != NULL) {
-            PyErr_Format(_module_state->ZstdError,
-                "Error when finding the compressed size of a zstd frame. "
-                "Make sure the frame_buffer argument starts from the "
-                "beginning of a frame, and its length not less than this "
-                "complete frame. Zstd error message: %s.",
-                ZSTD_getErrorName(frame_size));
-        }
+        _zstd_state* const _module_state = get_zstd_state(module);
+        PyErr_Format(_module_state->ZstdError,
+            "Error when finding the compressed size of a zstd frame. "
+            "Make sure the frame_buffer argument starts from the "
+            "beginning of a frame, and its length not less than this "
+            "complete frame. Zstd error message: %s.",
+            ZSTD_getErrorName(frame_size));
         goto error;
     }
 
@@ -518,14 +514,12 @@ _zstd__get_frame_info_impl(PyObject *module, Py_buffer *frame_buffer)
     /* #define ZSTD_CONTENTSIZE_UNKNOWN (0ULL - 1)
        #define ZSTD_CONTENTSIZE_ERROR   (0ULL - 2) */
     if (decompressed_size == ZSTD_CONTENTSIZE_ERROR) {
-        _zstd_state* const _module_state = PyModule_GetState(module);
-        if (_module_state != NULL) {
-            PyErr_SetString(_module_state->ZstdError,
-                "Error when getting information from the header of "
-                "a zstd frame. Make sure the frame_buffer argument "
-                "starts from the beginning of a frame, and its length "
-                "not less than the frame header (6~18 bytes).");
-        }
+        _zstd_state* const _module_state = get_zstd_state(module);
+        PyErr_SetString(_module_state->ZstdError,
+            "Error when getting information from the header of "
+            "a zstd frame. Make sure the frame_buffer argument "
+            "starts from the beginning of a frame, and its length "
+            "not less than the frame header (6~18 bytes).");
         goto error;
     }
 
@@ -565,10 +559,7 @@ _zstd__set_parameter_types_impl(PyObject *module, PyObject *c_parameter_type,
                                 PyObject *d_parameter_type)
 /*[clinic end generated code: output=a13d4890ccbd2873 input=3e7d0d37c3a1045a]*/
 {
-    _zstd_state* const _module_state = PyModule_GetState(module);
-    if (_module_state == NULL) {
-        return NULL;
-    }
+    _zstd_state* const _module_state = get_zstd_state(module);
 
     if (!PyType_Check(c_parameter_type) || !PyType_Check(d_parameter_type)) {
         PyErr_SetString(PyExc_ValueError,
@@ -791,10 +782,7 @@ add_constant_to_type(PyTypeObject *type, const char *name, const long value)
 }
 
 static int _zstd_exec(PyObject *module) {
-    _zstd_state* const _module_state = PyModule_GetState(module);
-    if (_module_state == NULL) {
-        return -1;
-    }
+    _zstd_state* const _module_state = get_zstd_state(module);
 
     /* Reusable objects & variables */
     _module_state->empty_bytes = PyBytes_FromStringAndSize(NULL, 0);
@@ -886,10 +874,7 @@ static int _zstd_exec(PyObject *module) {
 static int
 _zstd_traverse(PyObject *module, visitproc visit, void *arg)
 {
-    _zstd_state* const _module_state = PyModule_GetState(module);
-    if (_module_state == NULL) {
-        return -1;
-    }
+    _zstd_state* const _module_state = get_zstd_state(module);
 
     Py_VISIT(_module_state->empty_bytes);
     Py_VISIT(_module_state->empty_readonly_memoryview);
@@ -913,10 +898,7 @@ _zstd_traverse(PyObject *module, visitproc visit, void *arg)
 static int
 _zstd_clear(PyObject *module)
 {
-    _zstd_state* const _module_state = PyModule_GetState(module);
-    if (_module_state == NULL) {
-        return -1;
-    }
+    _zstd_state* const _module_state = get_zstd_state(module);
 
     Py_CLEAR(_module_state->empty_bytes);
     Py_CLEAR(_module_state->empty_readonly_memoryview);

@@ -792,7 +792,7 @@ _zstd_ZstdDecompressor_decompress_impl(ZstdDecompressor *self,
     return ret;
 }
 
-#define clinic_state() (get_zstd_state(type))
+#define clinic_state() (get_zstd_state_from_type(type))
 #include "clinic/decompressor.c.h"
 #undef clinic_state
 

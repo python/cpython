@@ -285,7 +285,7 @@ load:
     return 0;
 }
 
-#define clinic_state() (get_zstd_state(type))
+#define clinic_state() (get_zstd_state_from_type(type))
 #include "clinic/compressor.c.h"
 #undef clinic_state
 

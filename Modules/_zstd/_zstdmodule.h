@@ -28,7 +28,7 @@ extern PyModuleDef _zstdmodule;
 
 /* For clinic type calculations */
 static inline _zstd_state *
-get_zstd_state(PyTypeObject *type) {
+get_zstd_state_from_type(PyTypeObject *type) {
     PyObject *module = PyType_GetModuleByDef(type, &_zstdmodule);
     return PyModule_GetState(module);
 }
