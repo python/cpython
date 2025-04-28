@@ -320,6 +320,7 @@ class StencilGroup:
                 elif (
                     hole.kind in {"IMAGE_REL_AMD64_REL32"}
                     and hole.value is HoleValue.ZERO
+                    and hole.symbol not in self.symbols
                 ):
                     raise ValueError(
                         f"Add PyAPI_FUNC(...) or PyAPI_DATA(...) to declaration of {hole.symbol}!"
