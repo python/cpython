@@ -633,7 +633,7 @@ class Reader:
 
     def refresh(self) -> None:
         """Recalculate and refresh the screen."""
-        if self.in_bracketed_paste and self.buffer and not self.buffer[-1] == "\n":
+        if self.paste_mode and self.buffer and not self.buffer[-1] == "\n":
             return
 
         # this call sets up self.cxy, so call it first.
