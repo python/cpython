@@ -53,7 +53,10 @@ from test.support import (
     captured_stderr, cpython_only, infinite_recursion, requires_docstrings, import_helper, run_code,
     EqualToForwardRef,
 )
-from test.typinganndata import ann_module695, mod_generics_cache, _typed_dict_helper
+from test.typinganndata import (
+    ann_module695, mod_generics_cache, _typed_dict_helper,
+    ann_module, ann_module2, ann_module3, ann_module5, ann_module6, ann_module8
+)
 
 
 CANNOT_SUBCLASS_TYPE = 'Cannot subclass special typing classes'
@@ -377,6 +380,7 @@ class LiteralStringTests(BaseTestCase):
         self.assertEqual(get_args(alias_2), (LiteralString,))
         self.assertEqual(get_args(alias_3), (LiteralString,))
 
+
 class TypeVarTests(BaseTestCase):
     def test_basic_plain(self):
         T = TypeVar('T')
@@ -629,7 +633,7 @@ class TypeParameterDefaultsTests(BaseTestCase):
     def test_typevar(self):
         T = TypeVar('T', default=int)
         self.assertEqual(T.__default__, int)
-        self.assertTrue(T.has_default())
+        self.assertIs(T.has_default(), True)
         self.assertIsInstance(T, TypeVar)
 
         class A(Generic[T]): ...
@@ -639,19 +643,19 @@ class TypeParameterDefaultsTests(BaseTestCase):
         U = TypeVar('U')
         U_None = TypeVar('U_None', default=None)
         self.assertIs(U.__default__, NoDefault)
-        self.assertFalse(U.has_default())
+        self.assertIs(U.has_default(), False)
         self.assertIs(U_None.__default__, None)
-        self.assertTrue(U_None.has_default())
+        self.assertIs(U_None.has_default(), True)
 
         class X[T]: ...
         T, = X.__type_params__
         self.assertIs(T.__default__, NoDefault)
-        self.assertFalse(T.has_default())
+        self.assertIs(T.has_default(), False)
 
     def test_paramspec(self):
         P = ParamSpec('P', default=(str, int))
         self.assertEqual(P.__default__, (str, int))
-        self.assertTrue(P.has_default())
+        self.assertIs(P.has_default(), True)
         self.assertIsInstance(P, ParamSpec)
 
         class A(Generic[P]): ...
@@ -664,19 +668,19 @@ class TypeParameterDefaultsTests(BaseTestCase):
         U = ParamSpec('U')
         U_None = ParamSpec('U_None', default=None)
         self.assertIs(U.__default__, NoDefault)
-        self.assertFalse(U.has_default())
+        self.assertIs(U.has_default(), False)
         self.assertIs(U_None.__default__, None)
-        self.assertTrue(U_None.has_default())
+        self.assertIs(U_None.has_default(), True)
 
         class X[**P]: ...
         P, = X.__type_params__
         self.assertIs(P.__default__, NoDefault)
-        self.assertFalse(P.has_default())
+        self.assertIs(P.has_default(), False)
 
     def test_typevartuple(self):
         Ts = TypeVarTuple('Ts', default=Unpack[Tuple[str, int]])
         self.assertEqual(Ts.__default__, Unpack[Tuple[str, int]])
-        self.assertTrue(Ts.has_default())
+        self.assertIs(Ts.has_default(), True)
         self.assertIsInstance(Ts, TypeVarTuple)
 
         class A(Generic[Unpack[Ts]]): ...
@@ -762,14 +766,14 @@ class TypeParameterDefaultsTests(BaseTestCase):
         U = TypeVarTuple('U')
         U_None = TypeVarTuple('U_None', default=None)
         self.assertIs(U.__default__, NoDefault)
-        self.assertFalse(U.has_default())
+        self.assertIs(U.has_default(), False)
         self.assertIs(U_None.__default__, None)
-        self.assertTrue(U_None.has_default())
+        self.assertIs(U_None.has_default(), True)
 
         class X[**Ts]: ...
         Ts, = X.__type_params__
         self.assertIs(Ts.__default__, NoDefault)
-        self.assertFalse(Ts.has_default())
+        self.assertIs(Ts.has_default(), False)
 
     def test_no_default_after_non_default(self):
         DefaultStrT = TypeVar('DefaultStrT', default=str)
@@ -1168,7 +1172,6 @@ class GenericAliasSubstitutionTests(BaseTestCase):
                             eval(alias_str + args_str),
                             eval(expected_str)
                         )
-
 
 
 class UnpackTests(BaseTestCase):
@@ -2186,8 +2189,8 @@ class UnionTests(BaseTestCase):
             type(u)()
 
     def test_union_generalization(self):
-        self.assertFalse(Union[str, typing.Iterable[int]] == str)
-        self.assertFalse(Union[str, typing.Iterable[int]] == typing.Iterable[int])
+        self.assertNotEqual(Union[str, typing.Iterable[int]], str)
+        self.assertNotEqual(Union[str, typing.Iterable[int]], typing.Iterable[int])
         self.assertIn(str, Union[str, typing.Iterable[int]].__args__)
         self.assertIn(typing.Iterable[int], Union[str, typing.Iterable[int]].__args__)
 
@@ -2603,6 +2606,7 @@ class BaseCallableTests:
         with self.assertRaisesRegex(TypeError, "few arguments for"):
             C1[int]
 
+
 class TypingCallableTests(BaseCallableTests, BaseTestCase):
     Callable = typing.Callable
 
@@ -2779,6 +2783,7 @@ class MySimpleMapping(SimpleMapping[XK, XV]):
 class Coordinate(Protocol):
     x: int
     y: int
+
 
 @runtime_checkable
 class Point(Coordinate, Protocol):
@@ -4120,12 +4125,12 @@ class ProtocolTests(BaseTestCase):
             def meth(self):
                 pass
 
-        self.assertTrue(P._is_protocol)
-        self.assertTrue(PR._is_protocol)
-        self.assertTrue(PG._is_protocol)
-        self.assertFalse(P._is_runtime_protocol)
-        self.assertTrue(PR._is_runtime_protocol)
-        self.assertTrue(PG[int]._is_protocol)
+        self.assertIs(P._is_protocol, True)
+        self.assertIs(PR._is_protocol, True)
+        self.assertIs(PG._is_protocol, True)
+        self.assertIs(P._is_runtime_protocol, False)
+        self.assertIs(PR._is_runtime_protocol, True)
+        self.assertIs(PG[int]._is_protocol, True)
         self.assertEqual(typing._get_protocol_attrs(P), {'meth'})
         self.assertEqual(typing._get_protocol_attrs(PR), {'x'})
         self.assertEqual(frozenset(typing._get_protocol_attrs(PG)),
@@ -5838,6 +5843,7 @@ class ClassVarTests(BaseTestCase):
         with self.assertRaises(TypeError):
             issubclass(int, ClassVar)
 
+
 class FinalTests(BaseTestCase):
 
     def test_basics(self):
@@ -6043,7 +6049,7 @@ class OverrideDecoratorTests(BaseTestCase):
 
         instance = Child()
         self.assertEqual(instance.correct, 2)
-        self.assertTrue(Child.correct.fget.__override__)
+        self.assertIs(Child.correct.fget.__override__, True)
         self.assertEqual(instance.wrong, 2)
         self.assertNotHasAttr(Child.wrong, "__override__")
         self.assertNotHasAttr(Child.wrong.fset, "__override__")
@@ -6084,9 +6090,9 @@ class OverrideDecoratorTests(BaseTestCase):
 
         instance = WithOverride()
         self.assertEqual(instance.on_top(1), 2)
-        self.assertTrue(instance.on_top.__override__)
+        self.assertIs(instance.on_top.__override__, True)
         self.assertEqual(instance.on_bottom(1), 3)
-        self.assertTrue(instance.on_bottom.__override__)
+        self.assertIs(instance.on_bottom.__override__, True)
 
 
 class CastTests(BaseTestCase):
@@ -6124,8 +6130,6 @@ class AssertTypeTests(BaseTestCase):
 
 
 # We need this to make sure that `@no_type_check` respects `__module__` attr:
-from test.typinganndata import ann_module8
-
 @no_type_check
 class NoTypeCheck_Outer:
     Inner = ann_module8.NoTypeCheck_Outer.Inner
@@ -6193,7 +6197,7 @@ class NoTypeCheckTests(BaseTestCase):
 
         for klass in [A, A.B, A.B.C, A.D]:
             with self.subTest(klass=klass):
-                self.assertTrue(klass.__no_type_check__)
+                self.assertIs(klass.__no_type_check__, True)
                 self.assertEqual(get_type_hints(klass), {})
 
         for not_modified in [Other, B]:
@@ -6210,19 +6214,19 @@ class NoTypeCheckTests(BaseTestCase):
             @classmethod
             def cl(cls, y: int) -> int: ...
 
-        self.assertTrue(Some.st.__no_type_check__)
+        self.assertIs(Some.st.__no_type_check__, True)
         self.assertEqual(get_type_hints(Some.st), {})
-        self.assertTrue(Some.cl.__no_type_check__)
+        self.assertIs(Some.cl.__no_type_check__, True)
         self.assertEqual(get_type_hints(Some.cl), {})
 
     def test_no_type_check_other_module(self):
-        self.assertTrue(NoTypeCheck_Outer.__no_type_check__)
+        self.assertIs(NoTypeCheck_Outer.__no_type_check__, True)
         with self.assertRaises(AttributeError):
             ann_module8.NoTypeCheck_Outer.__no_type_check__
         with self.assertRaises(AttributeError):
             ann_module8.NoTypeCheck_Outer.Inner.__no_type_check__
 
-        self.assertTrue(NoTypeCheck_WithFunction.__no_type_check__)
+        self.assertIs(NoTypeCheck_WithFunction.__no_type_check__, True)
         with self.assertRaises(AttributeError):
             ann_module8.NoTypeCheck_function.__no_type_check__
 
@@ -6247,7 +6251,7 @@ class NoTypeCheckTests(BaseTestCase):
             # Corner case: `lambda` is both an assignment and a function:
             bar: Callable[[int], int] = lambda arg: arg
 
-        self.assertTrue(A.bar.__no_type_check__)
+        self.assertIs(A.bar.__no_type_check__, True)
         self.assertEqual(get_type_hints(A.bar), {})
 
     def test_no_type_check_TypeError(self):
@@ -6334,6 +6338,7 @@ class InternalsTests(BaseTestCase):
             typing._collect_parameters
         self.assertEqual(cm.filename, __file__)
 
+    @cpython_only
     def test_lazy_import(self):
         import_helper.ensure_lazy_imports("typing", {
             "warnings",
@@ -6448,10 +6453,6 @@ class OverloadTests(BaseTestCase):
 
             self.assertEqual(list(get_overloads(impl)), overloads)
 
-
-from test.typinganndata import (
-    ann_module, ann_module2, ann_module3, ann_module5, ann_module6,
-)
 
 T_a = TypeVar('T_a')
 
@@ -6665,8 +6666,8 @@ class GetTypeHintsTests(BaseTestCase):
         class NoTpCheck:
             class Inn:
                 def __init__(self, x: 'not a type'): ...
-        self.assertTrue(NoTpCheck.__no_type_check__)
-        self.assertTrue(NoTpCheck.Inn.__init__.__no_type_check__)
+        self.assertIs(NoTpCheck.__no_type_check__, True)
+        self.assertIs(NoTpCheck.Inn.__init__.__no_type_check__, True)
         self.assertEqual(gth(ann_module2.NTC.meth), {})
         class ABase(Generic[T]):
             def meth(x: int): ...
@@ -10195,6 +10196,7 @@ class ConcatenateTests(BaseTestCase):
         self.assertEqual(C[[]], (int,))
         self.assertEqual(C[Concatenate[str, P2]], Concatenate[int, str, P2])
         self.assertEqual(C[...], Concatenate[int, ...])
+
 
 class TypeGuardTests(BaseTestCase):
     def test_basics(self):
