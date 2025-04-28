@@ -69,6 +69,9 @@ _OutputBuffer_Grow(_BlocksOutputBuffer *buffer, ZSTD_outBuffer *ob)
 {
     assert(ob->pos == ob->size);
     Py_ssize_t res = _BlocksOutputBuffer_Grow(buffer, &ob->dst, 0);
+    if (res < 0) {
+        return -1;
+    }
     ob->size = (size_t) res;
     ob->pos = 0;
     return 0;
