@@ -7304,7 +7304,7 @@ class ExtensionModuleTests(unittest.TestCase):
     def assert_python_in_subinterp(self, *args, **kwargs):
         return CapiTest.assert_python_in_subinterp(self, *args, **kwargs)
 
-    def test_static_type_attr_on_subinterp(self):
+    def test_static_type_on_subinterp(self):
         script = textwrap.dedent(f"""
             date = _testcapi.get_capi_types()['date']
             date.today
@@ -7325,6 +7325,18 @@ class ExtensionModuleTests(unittest.TestCase):
         script3 = f'import _datetime\n{script}'
         with self.subTest('Regular import'):
             self.assert_python_in_subinterp(True, script3)
+
+        script4 = textwrap.dedent(f"""
+            import sys
+            assert '_datetime' not in sys.modules
+            timedelta = _testcapi.get_capi_types()['timedelta']
+            timedelta(days=1)
+            assert '_datetime' in sys.modules
+            date = _testcapi.get_capi_types()['date']
+            date.today
+            """)
+        with self.subTest('Implicit import'):
+            self.assert_python_in_subinterp(True, script4)
 
     def test_static_type_at_shutdown1(self):
         # gh-132413
@@ -7394,16 +7406,6 @@ class ExtensionModuleTests(unittest.TestCase):
             # Check if each test_datetime_capi() calls PyDateTime_IMPORT
             res = self.assert_python_in_subinterp(True, script2)
             self.assertFalse(res.err)
-
-    def test_static_type_before_shutdown(self):
-        script = textwrap.dedent(f"""
-            import sys
-            assert '_datetime' not in sys.modules
-            timedelta = _testcapi.get_capi_types()['timedelta']
-            timedelta(days=1)
-            assert '_datetime' in sys.modules
-            """)
-        self.assert_python_in_subinterp(True, script)
 
     def test_module_free(self):
         script = textwrap.dedent("""
