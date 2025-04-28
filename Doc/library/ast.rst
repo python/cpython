@@ -1788,7 +1788,7 @@ Type annotations
 .. _ast-type-params:
 
 Type parameters
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 :ref:`Type parameters <type-params>` can exist on classes, functions, and type
 aliases.
