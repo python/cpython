@@ -181,7 +181,7 @@ _testcapi_float_set_snan(PyObject *module, PyObject *obj)
     }
     uint64_t v;
     memcpy(&v, &d, 8);
-    v &= ~(1ULL<<51); /* make sNaN */
+    v &= ~(1ULL << 51); /* make sNaN */
     memcpy(&d, &v, 8);
     return PyFloat_FromDouble(d);
 }

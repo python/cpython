@@ -2025,7 +2025,6 @@ PyFloat_Pack2(double x, char *data, int le)
         e = 0x1f;
 
         uint64_t v;
-
         memcpy(&v, &x, sizeof(v));
         v &= 0xffc0000000000ULL;
         bits = (unsigned short)(v >> 42); /* NaN's type & payload */
@@ -2489,8 +2488,8 @@ PyFloat_Unpack4(const char *data, int le)
         /* return sNaN double if x was sNaN float */
         if (isnan(x)) {
             uint32_t v;
-
             memcpy(&v, &x, 4);
+
             if ((v & (1 << 22)) == 0) {
                 double y = x; /* will make qNaN double */
                 uint64_t *py = (uint64_t *)&y;
