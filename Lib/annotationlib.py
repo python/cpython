@@ -77,11 +77,15 @@ class ForwardRef:
         self.__forward_is_argument__ = is_argument
         self.__forward_is_class__ = is_class
         self.__forward_module__ = module
+        self.__owner__ = owner
+        # These are always set to None here but may be non-None if a ForwardRef
+        # is created through __class__ assignment on a _Stringifier object.
         self.__globals__ = None
+        self.__cell__ = None
+        # These are initially None but serve as a cache and may be set to a non-None
+        # value later.
         self.__code__ = None
         self.__ast_node__ = None
-        self.__cell__ = None
-        self.__owner__ = owner
 
     def __init_subclass__(cls, /, *args, **kwds):
         raise TypeError("Cannot subclass ForwardRef")
@@ -716,11 +720,11 @@ def get_annotations(
             # For STRING, we try to call __annotate__
             ann = _get_and_call_annotate(obj, format)
             if ann is not None:
-                return ann
+                return dict(ann)
             # But if we didn't get it, we use __annotations__ instead.
             ann = _get_dunder_annotations(obj)
             if ann is not None:
-                 ann = annotations_to_string(ann)
+                 return annotations_to_string(ann)
         case Format.VALUE_WITH_FAKE_GLOBALS:
             raise ValueError("The VALUE_WITH_FAKE_GLOBALS format is for internal use only")
         case _:
@@ -813,7 +817,10 @@ def type_repr(value):
 
 
 def annotations_to_string(annotations):
-    """Convert an annotation dict containing values to approximately the STRING format."""
+    """Convert an annotation dict containing values to approximately the STRING format.
+
+    Always returns a fresh a dictionary.
+    """
     return {
         n: t if isinstance(t, str) else type_repr(t)
         for n, t in annotations.items()
@@ -821,27 +828,28 @@ def annotations_to_string(annotations):
 
 
 def _get_and_call_annotate(obj, format):
+    """Get the __annotate__ function and call it.
+
+    May not return a fresh dictionary.
+    """
     annotate = get_annotate_function(obj)
     if annotate is not None:
         ann = call_annotate_function(annotate, format, owner=obj)
         if not isinstance(ann, dict):
             raise ValueError(f"{obj!r}.__annotate__ returned a non-dict")
-        return dict(ann)
+        return ann
     return None
 
 
 def _get_dunder_annotations(obj):
-    if isinstance(obj, type):
-        try:
-            ann = obj.__annotations__
-        except AttributeError:
-            # For static types, the descriptor raises AttributeError.
-            return None
-    else:
-        ann = getattr(obj, "__annotations__", None)
-        if ann is None:
-            return None
+    """Return the annotations for an object, checking that it is a dictionary.
+
+    Does not return a fresh dictionary.
+    """
+    ann = getattr(obj, "__annotations__", None)
+    if ann is None:
+        return None
 
     if not isinstance(ann, dict):
         raise ValueError(f"{obj!r}.__annotations__ is neither a dict nor None")
-    return dict(ann)
+    return ann

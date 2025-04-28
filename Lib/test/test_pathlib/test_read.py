@@ -4,6 +4,7 @@ Tests for pathlib.types._ReadablePath
 
 import collections.abc
 import io
+import sys
 import unittest
 
 from .support import is_pypi
@@ -35,6 +36,17 @@ class ReadTestBase:
             self.assertIsInstance(f, io.TextIOBase)
             self.assertEqual(f.read(), 'this is file A\n')
 
+    @unittest.skipIf(
+        not getattr(sys.flags, 'warn_default_encoding', 0),
+        "Requires warn_default_encoding",
+    )
+    def test_open_r_encoding_warning(self):
+        p = self.root / 'fileA'
+        with self.assertWarns(EncodingWarning) as wc:
+            with magic_open(p, 'r'):
+                pass
+        self.assertEqual(wc.filename, __file__)
+
     def test_open_rb(self):
         p = self.root / 'fileA'
         with magic_open(p, 'rb') as f:
@@ -54,6 +66,16 @@ class ReadTestBase:
         self.ground.create_file(q, b'\xe4bcdefg')
         self.assertEqual(q.read_text(encoding='latin-1'), 'äbcdefg')
         self.assertEqual(q.read_text(encoding='utf-8', errors='ignore'), 'bcdefg')
+
+    @unittest.skipIf(
+        not getattr(sys.flags, 'warn_default_encoding', 0),
+        "Requires warn_default_encoding",
+    )
+    def test_read_text_encoding_warning(self):
+        p = self.root / 'fileA'
+        with self.assertWarns(EncodingWarning) as wc:
+            p.read_text()
+        self.assertEqual(wc.filename, __file__)
 
     def test_read_text_with_newlines(self):
         p = self.root / 'abc'
