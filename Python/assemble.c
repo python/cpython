@@ -484,65 +484,50 @@ static int
 compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
                         int flags, PyObject *names, PyObject *kinds)
 {
-    // Compute the arg flags.
-    // Currently arg vars fill the first portion of the list.
-    char *argkinds = PyMem_Calloc(nlocalsplus, sizeof(char));
-    if (argkinds == NULL) {
-        PyErr_NoMemory();
-        return ERROR;
-    }
-    int numargvars = 0;
-    int max = (int)umd->u_posonlyargcount;
-    for (; numargvars < max; numargvars++) {
-        argkinds[numargvars] = CO_FAST_ARG_POS;
-    }
-    max += (int)umd->u_argcount;
-    for (; numargvars < max; numargvars++) {
-        argkinds[numargvars] = CO_FAST_ARG_POS | CO_FAST_ARG_KW;
-    }
-    max += (int)umd->u_kwonlyargcount;
-    for (; numargvars < max; numargvars++) {
-        argkinds[numargvars] = CO_FAST_ARG_KW;
-    }
-    if (flags & CO_VARARGS) {
-        argkinds[numargvars] = CO_FAST_ARG_VAR | CO_FAST_ARG_POS;
-        numargvars += 1;
-    }
-    if (flags & CO_VARKEYWORDS) {
-        argkinds[numargvars] = CO_FAST_ARG_VAR | CO_FAST_ARG_KW;
-        numargvars += 1;
-    }
-
-    // Set the locals kinds.
     PyObject *k, *v;
     Py_ssize_t pos = 0;
-    while (PyDict_Next(umd->u_varnames, &pos, &k, &v)) {
-        int offset = PyLong_AsInt(v);
-        if (offset == -1 && PyErr_Occurred()) {
-            goto error;
-        }
-        assert(offset >= 0);
-        assert(offset < nlocalsplus);
 
-        _PyLocals_Kind kind = CO_FAST_LOCAL | argkinds[offset];
+    // Set the locals kinds.  Arg vars fill the first portion of the list.
+    struct {
+        int count;
+        _PyLocals_Kind kind;
+    }  argvarkinds[6] = {
+        {(int)umd->u_posonlyargcount, CO_FAST_ARG_POS},
+        {(int)umd->u_argcount, CO_FAST_ARG_POS | CO_FAST_ARG_KW},
+        {(int)umd->u_kwonlyargcount, CO_FAST_ARG_KW},
+        {!!(flags & CO_VARARGS), CO_FAST_ARG_VAR | CO_FAST_ARG_POS},
+        {!!(flags & CO_VARKEYWORDS), CO_FAST_ARG_VAR | CO_FAST_ARG_KW},
+        {-1, 0},  // the remaining local vars
+    };
+    int max = 0;
+    for (int i = 0; i < 6; i++) {
+        max = argvarkinds[i].count < 0
+            ? INT_MAX
+            : max + argvarkinds[i].count;
+        while (pos < max && PyDict_Next(umd->u_varnames, &pos, &k, &v)) {
+            int offset = PyLong_AsInt(v);
+            if (offset == -1 && PyErr_Occurred()) {
+                return ERROR;
+            }
+            assert(offset >= 0);
+            assert(offset < nlocalsplus);
 
-        int has_key = PyDict_Contains(umd->u_fasthidden, k);
-        if (has_key < 0) {
-            goto error;
-        }
-        if (has_key) {
-            kind |= CO_FAST_HIDDEN;
-        }
+            _PyLocals_Kind kind = CO_FAST_LOCAL | argvarkinds[i].kind;
 
-        has_key = PyDict_Contains(umd->u_cellvars, k);
-        if (has_key < 0) {
-            goto error;
-        }
-        if (has_key) {
-            kind |= CO_FAST_CELL;
-        }
+            int has_key = PyDict_Contains(umd->u_fasthidden, k);
+            RETURN_IF_ERROR(has_key);
+            if (has_key) {
+                kind |= CO_FAST_HIDDEN;
+            }
 
-        _Py_set_localsplus_info(offset, k, kind, names, kinds);
+            has_key = PyDict_Contains(umd->u_cellvars, k);
+            RETURN_IF_ERROR(has_key);
+            if (has_key) {
+                kind |= CO_FAST_CELL;
+            }
+
+            _Py_set_localsplus_info(offset, k, kind, names, kinds);
+        }
     }
     int nlocals = (int)PyDict_GET_SIZE(umd->u_varnames);
 
@@ -551,9 +536,7 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
     pos = 0;
     while (PyDict_Next(umd->u_cellvars, &pos, &k, &v)) {
         int has_name = PyDict_Contains(umd->u_varnames, k);
-        if (has_name < 0) {
-            goto error;
-        }
+        RETURN_IF_ERROR(has_name);
         if (has_name) {
             // Skip cells that are already covered by locals.
             numdropped += 1;
@@ -562,7 +545,7 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
 
         cellvar_offset = PyLong_AsInt(v);
         if (cellvar_offset == -1 && PyErr_Occurred()) {
-            goto error;
+            return ERROR;
         }
         assert(cellvar_offset >= 0);
         cellvar_offset += nlocals - numdropped;
@@ -574,7 +557,7 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
     while (PyDict_Next(umd->u_freevars, &pos, &k, &v)) {
         int offset = PyLong_AsInt(v);
         if (offset == -1 && PyErr_Occurred()) {
-            goto error;
+            return ERROR;
         }
         assert(offset >= 0);
         offset += nlocals - numdropped;
@@ -585,12 +568,7 @@ compute_localsplus_info(_PyCompile_CodeUnitMetadata *umd, int nlocalsplus,
         assert(offset > cellvar_offset);
         _Py_set_localsplus_info(offset, k, CO_FAST_FREE, names, kinds);
     }
-    PyMem_Free(argkinds);
     return SUCCESS;
-
-error:
-    PyMem_Free(argkinds);
-    return ERROR;
 }
 
 static PyCodeObject *
