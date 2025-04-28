@@ -2679,6 +2679,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/translationdata/getopt \
 		test/translationdata/optparse \
 		test/typinganndata \
+		test/typinganndata/partialexecution \
 		test/wheeldata \
 		test/xmltestdata \
 		test/xmltestdata/c14n-20 \
