@@ -669,6 +669,7 @@ _PyCode_Quicken(_Py_CODEUNIT *instructions, Py_ssize_t size, int enable_counters
 #define SPEC_FAIL_ITER_CALLABLE 28
 #define SPEC_FAIL_ITER_ASCII_STRING 29
 #define SPEC_FAIL_ITER_ASYNC_GENERATOR_SEND 30
+#define SPEC_FAIL_ITER_SELF 31
 
 // UNPACK_SEQUENCE
 
@@ -3153,6 +3154,9 @@ _Py_GatherStats_GetIter(_PyStackRef iterable)
     }
     else if (tp == &_PyAsyncGenASend_Type) {
         kind = SPEC_FAIL_ITER_ASYNC_GENERATOR_SEND;
+    }
+    else if (tp->tp_iter == PyObject_SelfIter) {
+        kind = SPEC_FAIL_ITER_SELF;
     }
     SPECIALIZATION_FAIL(GET_ITER, kind);
 }
