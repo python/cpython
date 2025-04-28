@@ -816,14 +816,14 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
     elementtreestate *st = get_elementtree_state_by_type(tp);
     tmp = Py_NewRef(self->tag);
     tag = deepcopy(st, tmp, memo);
-    Py_DECREF(tmp);
+    Py_CLEAR(tmp);
     if (!tag)
         return NULL;
 
     if (self->extra && self->extra->attrib) {
         tmp = Py_NewRef(self->extra->attrib);
         attrib = deepcopy(st, tmp, memo);
-        Py_DECREF(tmp);
+        Py_CLEAR(tmp);
         if (!attrib) {
             Py_DECREF(tag);
             return NULL;
@@ -842,14 +842,14 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
 
     tmp = Py_NewRef(JOIN_OBJ(self->text));
     text = deepcopy(st, tmp, memo);
-    Py_DECREF(tmp);
+    Py_CLEAR(tmp);
     if (!text)
         goto error;
     _set_joined_ptr(&element->text, JOIN_SET(text, JOIN_GET(self->text)));
 
     tmp = Py_NewRef(JOIN_OBJ(self->tail));
     tail = deepcopy(st, tmp, memo);
-    Py_DECREF(tmp);
+    Py_CLEAR(tmp);
     if (!tail)
         goto error;
     _set_joined_ptr(&element->tail, JOIN_SET(tail, JOIN_GET(self->tail)));
@@ -862,7 +862,7 @@ _elementtree_Element___deepcopy___impl(ElementObject *self, PyObject *memo)
         for (i = 0; self->extra && i < self->extra->length; i++) {
             tmp = Py_NewRef(self->extra->children[i]);
             PyObject* child = deepcopy(st, tmp, memo);
-            Py_DECREF(tmp);
+            Py_CLEAR(tmp);
             if (!child || !Element_Check(st, child)) {
                 if (child) {
                     raise_type_error(child);
