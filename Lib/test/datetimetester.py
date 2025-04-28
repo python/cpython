@@ -7338,11 +7338,12 @@ class ExtensionModuleTests(unittest.TestCase):
         with self.subTest('Implicit import'):
             self.assert_python_in_subinterp(True, script4)
 
-    def test_static_type_at_shutdown1(self):
+    def test_static_type_at_shutdown(self):
         # gh-132413
         script = textwrap.dedent("""
             import sys
             import _datetime
+            timedelta = _datetime.timedelta
 
             def gen():
                 try:
@@ -7352,24 +7353,6 @@ class ExtensionModuleTests(unittest.TestCase):
                     assert not sys.modules
                     td = _datetime.timedelta(days=1)
                     assert td.days == 1
-                    assert not sys.modules
-
-            it = gen()
-            next(it)
-            """)
-        res = script_helper.assert_python_ok('-c', script)
-        self.assertFalse(res.err)
-
-    def test_static_type_at_shutdown2(self):
-        script = textwrap.dedent("""
-            import sys
-            from _datetime import timedelta
-
-            def gen():
-                try:
-                    yield
-                finally:
-                    assert not sys.modules
                     td = timedelta(days=1)
                     assert td.days == 1
                     assert not sys.modules
@@ -7377,8 +7360,12 @@ class ExtensionModuleTests(unittest.TestCase):
             it = gen()
             next(it)
             """)
-        res = script_helper.assert_python_ok('-c', script)
-        self.assertFalse(res.err)
+        with self.subTest('MainInterpreter'):
+            res = script_helper.assert_python_ok('-c', script)
+            self.assertFalse(res.err)
+        with self.subTest('Subinterpreter'):
+            res = self.assert_python_in_subinterp(True, script, setup='')
+            self.assertFalse(res.err)
 
     def test_static_type_at_shutdown3(self):
         script = textwrap.dedent("""
