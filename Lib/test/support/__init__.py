@@ -2586,30 +2586,30 @@ def sleeping_retry(timeout, err_msg=None, /,
         delay = min(delay * 2, max_delay)
 
 
-class CPUStopwatch:
+class Stopwatch:
     """Context manager to roughly time a CPU-bound operation.
 
-    Disables GC. Uses CPU time if it can (i.e. excludes sleeps & time of
-    other processes).
+    Disables GC. Uses perf_counter, which is a clock with the highest
+    available resolution. It is chosen even though it does include
+    time elapsed during sleep and is system-wide, because the
+    resolution of process_time is too coarse on Windows and
+    process_time does not exist everywhere (for example, WASM).
 
-    N.B.:
-    - This *includes* time spent in other threads.
+    Note:
+    - This *includes* time spent in other threads/processes.
     - Some systems only have a coarse resolution; check
-      stopwatch.clock_info.rseolution if.
+      stopwatch.clock_info.resolution when using the results.
 
     Usage:
 
-    with ProcessStopwatch() as stopwatch:
+    with Stopwatch() as stopwatch:
         ...
     elapsed = stopwatch.seconds
     resolution = stopwatch.clock_info.resolution
     """
     def __enter__(self):
-        get_time = time.process_time
-        clock_info = time.get_clock_info('process_time')
-        if get_time() <= 0:  # some platforms like WASM lack process_time()
-            get_time = time.monotonic
-            clock_info = time.get_clock_info('monotonic')
+        get_time = time.perf_counter
+        clock_info = time.get_clock_info('perf_counter')
         self.context = disable_gc()
         self.context.__enter__()
         self.get_time = get_time

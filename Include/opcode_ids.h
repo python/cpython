@@ -234,16 +234,17 @@ extern "C" {
 #define INSTRUMENTED_JUMP_BACKWARD             253
 #define INSTRUMENTED_LINE                      254
 #define ENTER_EXECUTOR                         255
-#define JUMP                                   256
-#define JUMP_IF_FALSE                          257
-#define JUMP_IF_TRUE                           258
-#define JUMP_NO_INTERRUPT                      259
-#define LOAD_CLOSURE                           260
-#define POP_BLOCK                              261
-#define SETUP_CLEANUP                          262
-#define SETUP_FINALLY                          263
-#define SETUP_WITH                             264
-#define STORE_FAST_MAYBE_NULL                  265
+#define ANNOTATIONS_PLACEHOLDER                256
+#define JUMP                                   257
+#define JUMP_IF_FALSE                          258
+#define JUMP_IF_TRUE                           259
+#define JUMP_NO_INTERRUPT                      260
+#define LOAD_CLOSURE                           261
+#define POP_BLOCK                              262
+#define SETUP_CLEANUP                          263
+#define SETUP_FINALLY                          264
+#define SETUP_WITH                             265
+#define STORE_FAST_MAYBE_NULL                  266
 
 #define HAVE_ARGUMENT                           42
 #define MIN_SPECIALIZED_OPCODE                 129

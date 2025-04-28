@@ -445,6 +445,25 @@ class IOTest(unittest.TestCase):
             self.assertRaises(exc, fp.seek, 1, self.SEEK_CUR)
             self.assertRaises(exc, fp.seek, -1, self.SEEK_END)
 
+    @support.cpython_only
+    def test_startup_optimization(self):
+        # gh-132952: Test that `io` is not imported at startup and that the
+        # __module__ of UnsupportedOperation is set to "io".
+        assert_python_ok("-S", "-c", textwrap.dedent(
+            """
+            import sys
+            assert "io" not in sys.modules
+            try:
+                sys.stdin.truncate()
+            except Exception as e:
+                typ = type(e)
+                assert typ.__module__ == "io", (typ, typ.__module__)
+                assert typ.__name__ == "UnsupportedOperation", (typ, typ.__name__)
+            else:
+                raise AssertionError("Expected UnsupportedOperation")
+            """
+        ))
+
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_optional_abilities(self):
         # Test for OSError when optional APIs are not supported
