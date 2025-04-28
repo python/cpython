@@ -9,6 +9,7 @@ on:
     paths:
       - ".github/workflows/mypy.yml"
       - "Lib/_pyrepl/**"
+      - "Lib/_colorize.py"
       - "Lib/test/libregrtest/**"
       - "Tools/build/generate_sbom.py"
       - "Tools/cases_generator/**"
@@ -17,6 +18,7 @@ on:
       - "Tools/peg_generator/**"
       - "Tools/requirements-dev.txt"
       - "Tools/wasm/**"
+      - "Misc/mypy/**"
   workflow_dispatch:
 
 permissions:
