@@ -445,8 +445,6 @@ Directory and files operations
 
    Return the path to an executable which would be run if the given *cmd* was
    called.  If no *cmd* would be called, return ``None``.
-   If *cmd* contains a directory component, *which* will only check the specified path directly
-   and will not search the directories listed in *path* or in the system's ``PATH`` environment variable.
 
    *mode* is a permission mask passed to :func:`os.access`, by default
    determining if the file exists and is executable.
@@ -455,6 +453,12 @@ Directory and files operations
    delimited by :data:`os.pathsep`. When no *path* is specified, the
    :envvar:`PATH` environment variable is read from :data:`os.environ`,
    falling back to :data:`os.defpath` if it is not set.
+
+   .. note::
+
+      If *cmd* contains a directory component, :func:`!which` only checks the
+      specified path directly and does not search the directories listed in *path*
+      or in the system's ``PATH`` environment variable.
 
    On Windows, the current directory is prepended to the *path* if *mode* does
    not include ``os.X_OK``. When the *mode* does include ``os.X_OK``, the
