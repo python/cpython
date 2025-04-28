@@ -477,11 +477,10 @@ passed as second argument to Py_TRASHCAN_BEGIN().
 */
 
 
+/* Invoked by the Py_TRASHCAN_BEGIN(). */
 PyAPI_FUNC(void) _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op);
 PyAPI_FUNC(void) _PyTrash_thread_destroy_chain(PyThreadState *tstate);
 
-
-/* Python 3.10 private API, invoked by the Py_TRASHCAN_BEGIN(). */
 
 /* To avoid raising recursion errors during dealloc trigger trashcan before we reach
  * recursion limit. To avoid trashing, we don't attempt to empty the trashcan until
