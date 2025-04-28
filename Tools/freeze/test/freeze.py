@@ -132,8 +132,6 @@ def prepare(script=None, outdir=None):
     ensure_opt(cmd, 'cache-file', os.path.join(outdir, 'python-config.cache'))
     prefix = os.path.join(outdir, 'python-installation')
     ensure_opt(cmd, 'prefix', prefix)
-    ensure_opt(cmd, 'exec-prefix', prefix)
-    ensure_opt(cmd, 'libdir', os.path.join(prefix, 'lib'))
     _run_quiet(cmd, cwd=builddir)
 
     if not MAKE:
