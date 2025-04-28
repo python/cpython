@@ -2699,7 +2699,7 @@ class TestDateTime(TestDate):
         with self.subTest("maximum UTC"):
             # Zero out microseconds to avoid rounding issues
             max_dt = self.theclass.max.replace(tzinfo=timezone.utc,
-                                               microsecond=0)
+                                               microsecond=0, nanosecond=0)
             max_ts = max_dt.timestamp()
 
             # This test assumes that datetime.max == 9999-12-31T23:59:59.999999
@@ -2717,9 +2717,9 @@ class TestDateTime(TestDate):
         min_dt = self.theclass.min + timedelta(days=1)
         min_ts = min_dt.timestamp()
 
-        max_dt = self.theclass.max.replace(microsecond=0)
-        max_ts = ((self.theclass.max - timedelta(hours=23)).timestamp() +
-                  timedelta(hours=22, minutes=59, seconds=59).total_seconds())
+        max_dt = self.theclass.max.replace(microsecond=0, nanosecond=0)
+        max_ts = ((max_dt - timedelta(hours=23)).timestamp() +
+                  timedelta(hours=23).total_seconds())
 
         for (test_name, ts, expected) in [
                 ("minimum", min_ts, min_dt),
@@ -2755,7 +2755,7 @@ class TestDateTime(TestDate):
         min_dt = self.theclass.min.replace(tzinfo=timezone.utc)
         min_ts = min_dt.timestamp()
 
-        max_dt = self.theclass.max.replace(microsecond=0, tzinfo=timezone.utc)
+        max_dt = self.theclass.max.replace(microsecond=0, nanosecond=0, tzinfo=timezone.utc)
         max_ts = max_dt.timestamp()
 
         for (test_name, ts, expected) in [
