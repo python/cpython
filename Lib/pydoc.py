@@ -68,6 +68,7 @@ import platform
 import re
 import sys
 import sysconfig
+import textwrap
 import time
 import tokenize
 import urllib.parse
@@ -1816,7 +1817,7 @@ def _introdoc():
     if os.environ.get('PYTHON_BASIC_REPL'):
         pyrepl_keys = ''
     else:
-        # Additional help for keyboard shortcuts if enhanced (non-basic) REPL is used.
+        # Additional help for keyboard shortcuts if enhanced REPL is used.
         pyrepl_keys = '''
         You can use the following keyboard shortcuts at the main interpreter prompt.
         F1: enter interactive help, F2: enter history browsing mode, F3: enter paste
@@ -1838,33 +1839,7 @@ def _introdoc():
 
         To quit this help utility and return to the interpreter,
         enter "q", "quit" or "exit".
-        ''')
-
-
-def _intro_pyrepl():
-    ver = '%d.%d' % sys.version_info[:2]
-    return f'''
-Welcome to Python {ver}'s help utility! If this is your first time using
-Python, you should definitely check out the tutorial at
-https://docs.python.org/{ver}/tutorial/.
-
-You can use the following keyboard shortcuts at the main interpreter prompt.
-F1: enter interactive help, F2: enter history browsing mode, F3: enter paste
-mode (press again to exit).
-
-Enter the name of any module, keyword, or topic to get help on writing
-Python programs and using Python modules.  To get a list of available
-modules, keywords, symbols, or topics, enter "modules", "keywords",
-"symbols", or "topics".
-
-Each module also comes with a one-line summary of what it does; to list
-the modules whose name or summary contain a given string such as "spam",
-enter "modules spam".
-
-To quit this help utility and return to the interpreter,
-enter "q", "quit" or "exit".
-'''
-
+    ''')
 
 class Helper:
 
