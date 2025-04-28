@@ -5283,10 +5283,12 @@ class GenericTests(BaseTestCase):
                   Tuple[Any, Any], Node[T], Node[int], Node[Any], typing.Iterable[T],
                   typing.Iterable[Any], typing.Iterable[int], typing.Dict[int, str],
                   typing.Dict[T, Any], ClassVar[int], ClassVar[List[T]], Tuple['T', 'T'],
-                  Union['T', int], List['T'], typing.Mapping['T', int]]
-        for t in things + [Any]:
-            self.assertEqual(t, copy(t))
-            self.assertEqual(t, deepcopy(t))
+                  Union['T', int], List['T'], typing.Mapping['T', int],
+                  Union[b"x", b"y"], Any]
+        for t in things:
+            with self.subTest(thing=t):
+                self.assertEqual(t, copy(t))
+                self.assertEqual(t, deepcopy(t))
 
     def test_immutability_by_copy_and_pickle(self):
         # Special forms like Union, Any, etc., generic aliases to containers like List,

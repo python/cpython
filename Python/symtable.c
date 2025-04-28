@@ -1394,7 +1394,7 @@ symtable_exit_block(struct symtable *st)
 }
 
 static int
-symtable_enter_existing_block(struct symtable *st, PySTEntryObject* ste)
+symtable_enter_existing_block(struct symtable *st, PySTEntryObject* ste, bool add_to_children)
 {
     if (PyList_Append(st->st_stack, (PyObject *)ste) < 0) {
         return 0;
@@ -1425,7 +1425,7 @@ symtable_enter_existing_block(struct symtable *st, PySTEntryObject* ste)
     if (ste->ste_type == ModuleBlock)
         st->st_global = st->st_cur->ste_symbols;
 
-    if (prev) {
+    if (add_to_children && prev) {
         if (PyList_Append(prev->ste_children, (PyObject *)ste) < 0) {
             return 0;
         }
@@ -1440,7 +1440,7 @@ symtable_enter_block(struct symtable *st, identifier name, _Py_block_ty block,
     PySTEntryObject *ste = ste_new(st, name, block, ast, loc);
     if (ste == NULL)
         return 0;
-    int result = symtable_enter_existing_block(st, ste);
+    int result = symtable_enter_existing_block(st, ste, /* add_to_children */true);
     Py_DECREF(ste);
     if (block == AnnotationBlock || block == TypeVariableBlock || block == TypeAliasBlock) {
         _Py_DECLARE_STR(format, ".format");
@@ -1866,7 +1866,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             Py_DECREF(new_ste);
             return 0;
         }
-        if (!symtable_enter_existing_block(st, new_ste)) {
+        if (!symtable_enter_existing_block(st, new_ste, /* add_to_children */true)) {
             Py_DECREF(new_ste);
             return 0;
         }
@@ -2223,7 +2223,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             Py_DECREF(new_ste);
             return 0;
         }
-        if (!symtable_enter_existing_block(st, new_ste)) {
+        if (!symtable_enter_existing_block(st, new_ste, /* add_to_children */true)) {
             Py_DECREF(new_ste);
             return 0;
         }
@@ -2749,8 +2749,10 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
     // Annotations in local scopes are not executed and should not affect the symtable
     bool is_unevaluated = st->st_cur->ste_type == FunctionBlock;
 
-    if ((st->st_cur->ste_type == ClassBlock || st->st_cur->ste_type == ModuleBlock)
-            && st->st_cur->ste_in_conditional_block
+    // Module-level annotations are always considered conditional because the module
+    // may be partially executed.
+    if ((((st->st_cur->ste_type == ClassBlock && st->st_cur->ste_in_conditional_block)
+            || st->st_cur->ste_type == ModuleBlock))
             && !st->st_cur->ste_has_conditional_annotations)
     {
         st->st_cur->ste_has_conditional_annotations = 1;
@@ -2776,7 +2778,8 @@ symtable_visit_annotation(struct symtable *st, expr_ty annotation, void *key)
         }
     }
     else {
-        if (!symtable_enter_existing_block(st, parent_ste->ste_annotation_block)) {
+        if (!symtable_enter_existing_block(st, parent_ste->ste_annotation_block,
+                                           /* add_to_children */false)) {
             return 0;
         }
     }

@@ -1641,7 +1641,8 @@ specialize_attr_loadclassattr(PyObject *owner, _Py_CODEUNIT *instr,
             specialize(instr, is_method ? LOAD_ATTR_METHOD_NO_DICT : LOAD_ATTR_NONDESCRIPTOR_NO_DICT);
         }
         else if (is_method) {
-            PyObject *dict = *(PyObject **) ((char *)owner + dictoffset);
+            PyObject **addr = (PyObject **)((char *)owner + dictoffset);
+            PyObject *dict = FT_ATOMIC_LOAD_PTR_ACQUIRE(*addr);
             if (dict) {
                 SPECIALIZATION_FAIL(LOAD_ATTR, SPEC_FAIL_ATTR_NOT_MANAGED_DICT);
                 return 0;

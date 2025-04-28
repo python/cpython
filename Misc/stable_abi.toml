@@ -2528,6 +2528,26 @@
     added = '3.14'
 [function.PyLong_AsUInt64]
     added = '3.14'
+[function.PyLong_AsNativeBytes]
+    added = '3.14'
+[function.PyLong_FromNativeBytes]
+    added = '3.14'
+[function.PyLong_FromUnsignedNativeBytes]
+    added = '3.14'
+[const.Py_ASNATIVEBYTES_DEFAULTS]
+    added = '3.14'
+[const.Py_ASNATIVEBYTES_BIG_ENDIAN]
+    added = '3.14'
+[const.Py_ASNATIVEBYTES_LITTLE_ENDIAN]
+    added = '3.14'
+[const.Py_ASNATIVEBYTES_NATIVE_ENDIAN]
+    added = '3.14'
+[const.Py_ASNATIVEBYTES_UNSIGNED_BUFFER]
+    added = '3.14'
+[const.Py_ASNATIVEBYTES_REJECT_NEGATIVE]
+    added = '3.14'
+[const.Py_ASNATIVEBYTES_ALLOW_INDEX]
+    added = '3.14'
 [const.Py_tp_vectorcall]
     added = '3.14'
 [function.PyType_GetBaseByToken]

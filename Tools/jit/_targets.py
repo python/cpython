@@ -46,7 +46,7 @@ class _Target(typing.Generic[_S, _R]):
 
     def _get_nop(self) -> bytes:
         if re.fullmatch(r"aarch64-.*", self.triple):
-            nop = b"\x1f\x20\x03\xD5"
+            nop = b"\x1f\x20\x03\xd5"
         elif re.fullmatch(r"x86_64-.*|i686.*", self.triple):
             nop = b"\x90"
         else:

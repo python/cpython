@@ -567,7 +567,7 @@ cfunction_call(PyObject *func, PyObject *args, PyObject *kwargs)
     PyObject *result;
     if (flags & METH_KEYWORDS) {
         result = _PyCFunctionWithKeywords_TrampolineCall(
-            (*(PyCFunctionWithKeywords)(void(*)(void))meth),
+            *_PyCFunctionWithKeywords_CAST(meth),
             self, args, kwargs);
     }
     else {
