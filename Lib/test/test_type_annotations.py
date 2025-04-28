@@ -301,7 +301,7 @@ class AnnotateTests(unittest.TestCase):
             print(f.__annotations__)
 
         f.__annotate__ = lambda x: 42
-        with self.assertRaisesRegex(TypeError, r"__annotate__() must return type dict of type 'int'"):
+        with self.assertRaisesRegex(TypeError, r"__annotate__\(\) must return type dict of type 'int'"):
             print(f.__annotations__)
 
         f.__annotate__ = lambda x: {"x": x}
