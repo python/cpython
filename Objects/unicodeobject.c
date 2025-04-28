@@ -3705,10 +3705,9 @@ PyUnicode_Decode(const char *s,
         goto onError;
     if (!PyUnicode_Check(unicode)) {
         PyErr_Format(PyExc_TypeError,
-                     "'%.400s' decoder returned '%.400s' instead of 'str'; "
+                     "%s decoder must return type str (not %T); "
                      "use codecs.decode() to decode to arbitrary types",
-                     encoding,
-                     Py_TYPE(unicode)->tp_name);
+                     encoding, unicode);
         Py_DECREF(unicode);
         goto onError;
     }
@@ -3768,10 +3767,9 @@ PyUnicode_AsDecodedUnicode(PyObject *unicode,
         goto onError;
     if (!PyUnicode_Check(v)) {
         PyErr_Format(PyExc_TypeError,
-                     "'%.400s' decoder returned '%.400s' instead of 'str'; "
+                     "%s decoder must return type str (not %T); "
                      "use codecs.decode() to decode to arbitrary types",
-                     encoding,
-                     Py_TYPE(unicode)->tp_name);
+                     encoding, unicode);
         Py_DECREF(v);
         goto onError;
     }
@@ -3981,7 +3979,7 @@ PyUnicode_AsEncodedString(PyObject *unicode,
         PyObject *b;
 
         error = PyErr_WarnFormat(PyExc_RuntimeWarning, 1,
-            "encoder %s returned bytearray instead of bytes; "
+            "%s encoder must return type bytes (not bytearray); "
             "use codecs.encode() to encode to arbitrary types",
             encoding);
         if (error) {
@@ -3996,10 +3994,9 @@ PyUnicode_AsEncodedString(PyObject *unicode,
     }
 
     PyErr_Format(PyExc_TypeError,
-                 "'%.400s' encoder returned '%.400s' instead of 'bytes'; "
+                 "%s encoder must return type bytes (not %T); "
                  "use codecs.encode() to encode to arbitrary types",
-                 encoding,
-                 Py_TYPE(v)->tp_name);
+                 encoding, v);
     Py_DECREF(v);
     return NULL;
 }
@@ -4030,10 +4027,9 @@ PyUnicode_AsEncodedUnicode(PyObject *unicode,
         goto onError;
     if (!PyUnicode_Check(v)) {
         PyErr_Format(PyExc_TypeError,
-                     "'%.400s' encoder returned '%.400s' instead of 'str'; "
+                     "%s encoder must return type str (not %T); "
                      "use codecs.encode() to encode to arbitrary types",
-                     encoding,
-                     Py_TYPE(v)->tp_name);
+                     encoding, v);
         Py_DECREF(v);
         goto onError;
     }
