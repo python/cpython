@@ -1037,10 +1037,10 @@ class TestTypeRepr(unittest.TestCase):
         self.assertEqual(type_repr(int), "int")
         self.assertEqual(type_repr(MyClass), f"{__name__}.MyClass")
         self.assertEqual(
-            type_repr(Nested), f"{__name__}.TestToSource.test_type_repr.<locals>.Nested"
+            type_repr(Nested), f"{__name__}.TestTypeRepr.test_type_repr.<locals>.Nested"
         )
         self.assertEqual(
-            type_repr(nested), f"{__name__}.TestToSource.test_type_repr.<locals>.nested"
+            type_repr(nested), f"{__name__}.TestTypeRepr.test_type_repr.<locals>.nested"
         )
         self.assertEqual(type_repr(len), "len")
         self.assertEqual(type_repr(type_repr), "annotationlib.type_repr")
