@@ -89,7 +89,19 @@ class MimeTypes:
         If strict is true, information will be added to
         list of standard types, else to the list of non-standard
         types.
+
+        Valid extensions are empty or start with a '.'.
         """
+        if ext and not ext.startswith('.'):
+            from warnings import _deprecated
+
+            _deprecated(
+                "Undotted extensions",
+                "Using undotted extensions is deprecated and "
+                "will raise a ValueError in Python {remove}",
+                remove=(3, 16),
+            )
+
         if not type:
             return
         self.types_map[strict][ext] = type
