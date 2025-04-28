@@ -2197,9 +2197,12 @@ PyFloat_Pack4(double x, char *data, int le)
 
             memcpy(&v, &x, 8);
             if ((v & (1ULL << 51)) == 0) {
-                uint32_t *py = (uint32_t *)&y;
+                union float_val {
+                    float f;
+                    uint32_t u32;
+                } *py = (union float_val *)&y;
 
-                *py &= ~(1 << 22); /* make sNaN */
+                py->u32 &= ~(1 << 22); /* make sNaN */
             }
         }
 
@@ -2492,9 +2495,12 @@ PyFloat_Unpack4(const char *data, int le)
 
             if ((v & (1 << 22)) == 0) {
                 double y = x; /* will make qNaN double */
-                uint64_t *py = (uint64_t *)&y;
+                union double_val {
+                    double d;
+                    uint64_t u64;
+                } *py = (union double_val *)&y;
 
-                *py &= ~(1ULL << 51); /* make sNaN */
+                py->u64 &= ~(1ULL << 51); /* make sNaN */
                 return y;
             }
         }
