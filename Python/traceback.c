@@ -33,9 +33,9 @@
 #ifdef HAVE_LINK_H
 #    include <link.h>               // struct DL_info
 #endif
-#  if defined(__APPLE__) && defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) && defined(HAVE_DLADDR)
+#  if defined(__APPLE__) && defined(HAVE_BACKTRACE) && defined(HAVE_DLADDR)
 #    define CAN_C_BACKTRACE
-#  elif defined(HAVE_BACKTRACE) && defined(HAVE_BACKTRACE_SYMBOLS) && defined(HAVE_DLADDR1)
+#  elif defined(HAVE_BACKTRACE) && defined(HAVE_DLADDR1)
 #    define CAN_C_BACKTRACE
 #  endif
 #endif
@@ -879,12 +879,14 @@ _Py_DumpHexadecimal(int fd, uintptr_t value, Py_ssize_t width)
     dump_hexadecimal(fd, value, width, 0);
 }
 
+#ifdef CAN_C_BACKTRACE
 static void
 dump_pointer(int fd, void *ptr)
 {
     PUTS(fd, "0x");
     dump_hexadecimal(fd, (uintptr_t)ptr, sizeof(void*), 1);
 }
+#endif
 
 static void
 dump_char(int fd, char ch)
