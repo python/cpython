@@ -225,8 +225,7 @@ class ElementTreeTest(unittest.TestCase):
             self.assertTrue(ET.iselement(element), msg="not an element")
             direlem = dir(element)
             for attr in 'tag', 'attrib', 'text', 'tail':
-                self.assertTrue(hasattr(element, attr),
-                        msg='no %s member' % attr)
+                self.assertHasAttr(element, attr)
                 self.assertIn(attr, direlem,
                         msg='no %s visible by dir' % attr)
 
@@ -251,7 +250,7 @@ class ElementTreeTest(unittest.TestCase):
         # Make sure all standard element methods exist.
 
         def check_method(method):
-            self.assertTrue(hasattr(method, '__call__'),
+            self.assertHasAttr(method, '__call__',
                     msg="%s not callable" % method)
 
         check_method(element.append)

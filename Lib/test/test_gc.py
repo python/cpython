@@ -914,7 +914,7 @@ class GCTests(unittest.TestCase):
         gc.collect()
         self.assertEqual(len(Lazarus.resurrected_instances), 1)
         instance = Lazarus.resurrected_instances.pop()
-        self.assertTrue(hasattr(instance, "cargo"))
+        self.assertHasAttr(instance, "cargo")
         self.assertEqual(id(instance.cargo), cargo_id)
 
         gc.collect()
