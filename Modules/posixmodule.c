@@ -1035,7 +1035,7 @@ _PyLong_FromDev(dev_t dev)
 static int
 _Py_Dev_Converter(PyObject *obj, void *p)
 {
-    if (PyLong_Check(obj)) {
+    if (!PyLong_Check(obj)) {
         obj = _PyNumber_Index(obj);
         if (obj == NULL) {
             return 0;
