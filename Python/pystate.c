@@ -2152,7 +2152,7 @@ tstate_wait_attach(PyThreadState *tstate)
             _PyParkingLot_Park(&tstate->state, &state, sizeof(tstate->state),
                                /*timeout=*/-1, NULL, /*detach=*/0);
         }
-        else if (state == _Py_THREAD_SHUTTING_DOWN && tstate->daemon) {
+        else if (state == _Py_THREAD_SHUTTING_DOWN) {
             // We're shutting down, so we can't attach.
             _PyThreadState_HangThread(tstate);
         }
@@ -3092,9 +3092,6 @@ _PyThreadState_CheckConsistency(PyThreadState *tstate)
 int
 _PyThreadState_MustExit(PyThreadState *tstate)
 {
-    if (!tstate->daemon) {
-        return 0;
-    }
     int state = _Py_atomic_load_int_relaxed(&tstate->state);
     return state == _Py_THREAD_SHUTTING_DOWN;
 }
