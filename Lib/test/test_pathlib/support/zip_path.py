@@ -63,7 +63,7 @@ class ZipPathGround:
 
     def readtext(self, p):
         with p.zip_file.open(str(p), 'r') as f:
-            f = io.TextIOWrapper(f)
+            f = io.TextIOWrapper(f, encoding='utf-8')
             return f.read()
 
     def readbytes(self, p):
