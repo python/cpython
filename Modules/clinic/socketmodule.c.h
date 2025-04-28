@@ -9,6 +9,26 @@ preserve
 #include "pycore_long.h"          // _PyLong_UnsignedShort_Converter()
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
+PyDoc_STRVAR(_socket_socket_close__doc__,
+"close($self, /)\n"
+"--\n"
+"\n"
+"close()\n"
+"\n"
+"Close the socket.  It cannot be used after this call.");
+
+#define _SOCKET_SOCKET_CLOSE_METHODDEF    \
+    {"close", (PyCFunction)_socket_socket_close, METH_NOARGS, _socket_socket_close__doc__},
+
+static PyObject *
+_socket_socket_close_impl(PySocketSockObject *s);
+
+static PyObject *
+_socket_socket_close(PyObject *s, PyObject *Py_UNUSED(ignored))
+{
+    return _socket_socket_close_impl((PySocketSockObject *)s);
+}
+
 static int
 sock_initobj_impl(PySocketSockObject *self, int family, int type, int proto,
                   PyObject *fdobj);
@@ -23,9 +43,11 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwargs)
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(family), &_Py_ID(type), &_Py_ID(proto), &_Py_ID(fileno), },
     };
     #undef NUM_KEYWORDS
@@ -51,7 +73,8 @@ sock_initobj(PyObject *self, PyObject *args, PyObject *kwargs)
     int proto = -1;
     PyObject *fdobj = NULL;
 
-    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser, 0, 4, 0, argsbuf);
+    fastargs = _PyArg_UnpackKeywords(_PyTuple_CAST(args)->ob_item, nargs, kwargs, NULL, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!fastargs) {
         goto exit;
     }
@@ -106,7 +129,7 @@ static PyObject *
 _socket_socket_ntohs_impl(PySocketSockObject *self, unsigned short x);
 
 static PyObject *
-_socket_socket_ntohs(PySocketSockObject *self, PyObject *arg)
+_socket_socket_ntohs(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     unsigned short x;
@@ -114,7 +137,7 @@ _socket_socket_ntohs(PySocketSockObject *self, PyObject *arg)
     if (!_PyLong_UnsignedShort_Converter(arg, &x)) {
         goto exit;
     }
-    return_value = _socket_socket_ntohs_impl(self, x);
+    return_value = _socket_socket_ntohs_impl((PySocketSockObject *)self, x);
 
 exit:
     return return_value;
@@ -133,7 +156,7 @@ static PyObject *
 _socket_socket_htons_impl(PySocketSockObject *self, unsigned short x);
 
 static PyObject *
-_socket_socket_htons(PySocketSockObject *self, PyObject *arg)
+_socket_socket_htons(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     unsigned short x;
@@ -141,7 +164,7 @@ _socket_socket_htons(PySocketSockObject *self, PyObject *arg)
     if (!_PyLong_UnsignedShort_Converter(arg, &x)) {
         goto exit;
     }
-    return_value = _socket_socket_htons_impl(self, x);
+    return_value = _socket_socket_htons_impl((PySocketSockObject *)self, x);
 
 exit:
     return return_value;
@@ -160,7 +183,7 @@ static PyObject *
 _socket_socket_inet_aton_impl(PySocketSockObject *self, const char *ip_addr);
 
 static PyObject *
-_socket_socket_inet_aton(PySocketSockObject *self, PyObject *arg)
+_socket_socket_inet_aton(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     const char *ip_addr;
@@ -178,7 +201,7 @@ _socket_socket_inet_aton(PySocketSockObject *self, PyObject *arg)
         PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
-    return_value = _socket_socket_inet_aton_impl(self, ip_addr);
+    return_value = _socket_socket_inet_aton_impl((PySocketSockObject *)self, ip_addr);
 
 exit:
     return return_value;
@@ -199,7 +222,7 @@ static PyObject *
 _socket_socket_inet_ntoa_impl(PySocketSockObject *self, Py_buffer *packed_ip);
 
 static PyObject *
-_socket_socket_inet_ntoa(PySocketSockObject *self, PyObject *arg)
+_socket_socket_inet_ntoa(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer packed_ip = {NULL, NULL};
@@ -207,7 +230,7 @@ _socket_socket_inet_ntoa(PySocketSockObject *self, PyObject *arg)
     if (PyObject_GetBuffer(arg, &packed_ip, PyBUF_SIMPLE) != 0) {
         goto exit;
     }
-    return_value = _socket_socket_inet_ntoa_impl(self, &packed_ip);
+    return_value = _socket_socket_inet_ntoa_impl((PySocketSockObject *)self, &packed_ip);
 
 exit:
     /* Cleanup for packed_ip */
@@ -235,7 +258,7 @@ static PyObject *
 _socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname);
 
 static PyObject *
-_socket_socket_if_nametoindex(PySocketSockObject *self, PyObject *arg)
+_socket_socket_if_nametoindex(PyObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *oname;
@@ -243,7 +266,7 @@ _socket_socket_if_nametoindex(PySocketSockObject *self, PyObject *arg)
     if (!PyUnicode_FSConverter(arg, &oname)) {
         goto exit;
     }
-    return_value = _socket_socket_if_nametoindex_impl(self, oname);
+    return_value = _socket_socket_if_nametoindex_impl((PySocketSockObject *)self, oname);
 
 exit:
     return return_value;
@@ -258,4 +281,4 @@ exit:
 #ifndef _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
     #define _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
 #endif /* !defined(_SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF) */
-/*[clinic end generated code: output=23dc8d4d0982eada input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ed1e9a007486935e input=a9049054013a1b77]*/

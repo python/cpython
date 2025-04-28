@@ -50,16 +50,14 @@ Registering and using tools
    *tool_id* must be in the range 0 to 5 inclusive.
    Raises a :exc:`ValueError` if *tool_id* is in use.
 
+.. function:: clear_tool_id(tool_id: int, /) -> None
+
+   Unregister all events and callback functions associated with *tool_id*.
+
 .. function:: free_tool_id(tool_id: int, /) -> None
 
    Should be called once a tool no longer requires *tool_id*.
-
-.. note::
-
-   :func:`free_tool_id` will not disable global or local events associated
-   with *tool_id*, nor will it unregister any callback functions. This
-   function is only intended to be used to notify the VM that the
-   particular *tool_id* is no longer in use.
+   Will call :func:`clear_tool_id` before releasing *tool_id*.
 
 .. function:: get_tool(tool_id: int, /) -> str | None
 
@@ -81,9 +79,17 @@ Events
 
 The following events are supported:
 
-.. monitoring-event:: BRANCH
+.. monitoring-event:: BRANCH_LEFT
 
-   A conditional branch is taken (or not).
+   A conditional branch goes left.
+
+   It is up to the tool to determine how to present "left" and "right" branches.
+   There is no guarantee which branch is "left" and which is "right", except
+   that it will be consistent for the duration of the program.
+
+.. monitoring-event:: BRANCH_RIGHT
+
+   A conditional branch goes right.
 
 .. monitoring-event:: CALL
 
@@ -154,7 +160,7 @@ More events may be added in the future.
 
 These events are attributes of the :mod:`!sys.monitoring.events` namespace.
 Each event is represented as a power-of-2 integer constant.
-To define a set of events, simply bitwise or the individual events together.
+To define a set of events, simply bitwise OR the individual events together.
 For example, to specify both :monitoring-event:`PY_RETURN` and :monitoring-event:`PY_START`
 events, use the expression ``PY_RETURN | PY_START``.
 
@@ -166,6 +172,8 @@ events, use the expression ``PY_RETURN | PY_START``.
           ...
 
 Events are divided into three groups:
+
+.. _monitoring-event-local:
 
 Local events
 ''''''''''''
@@ -182,8 +190,19 @@ The local events are:
 * :monitoring-event:`LINE`
 * :monitoring-event:`INSTRUCTION`
 * :monitoring-event:`JUMP`
-* :monitoring-event:`BRANCH`
+* :monitoring-event:`BRANCH_LEFT`
+* :monitoring-event:`BRANCH_RIGHT`
 * :monitoring-event:`STOP_ITERATION`
+
+Deprecated event
+''''''''''''''''
+
+* ``BRANCH``
+
+The ``BRANCH`` event is deprecated in 3.14.
+Using :monitoring-event:`BRANCH_LEFT` and :monitoring-event:`BRANCH_RIGHT`
+events will give much better performance as they can be disabled
+independently.
 
 Ancillary events
 ''''''''''''''''
@@ -226,6 +245,10 @@ To allow tools to monitor for real exceptions without slowing down generators
 and coroutines, the :monitoring-event:`STOP_ITERATION` event is provided.
 :monitoring-event:`STOP_ITERATION` can be locally disabled, unlike :monitoring-event:`RAISE`.
 
+Note that the :monitoring-event:`STOP_ITERATION` event and the :monitoring-event:`RAISE`
+event for a :exc:`StopIteration` exception are equivalent, and are treated as interchangeable
+when generating events. Implementations will favor :monitoring-event:`STOP_ITERATION` for
+performance reasons, but may generate a :monitoring-event:`RAISE` event with a :exc:`StopIteration`.
 
 Turning events on and off
 -------------------------
@@ -258,7 +281,7 @@ Per code object events
 Events can also be controlled on a per code object basis. The functions
 defined below which accept a :class:`types.CodeType` should be prepared
 to accept a look-alike object from functions which are not defined
-in Python (see :ref:`monitoring`).
+in Python (see :ref:`c-api-monitoring`).
 
 .. function:: get_local_events(tool_id: int, code: CodeType, /) -> int
 
@@ -355,13 +378,11 @@ Different events will provide the callback function with different arguments, as
 
     func(code: CodeType, line_number: int) -> DISABLE | Any
 
-* :monitoring-event:`BRANCH` and :monitoring-event:`JUMP`::
+* :monitoring-event:`BRANCH_LEFT`, :monitoring-event:`BRANCH_RIGHT` and :monitoring-event:`JUMP`::
 
     func(code: CodeType, instruction_offset: int, destination_offset: int) -> DISABLE | Any
 
   Note that the *destination_offset* is where the code will next execute.
-  For an untaken branch this will be the offset of the instruction following
-  the branch.
 
 * :monitoring-event:`INSTRUCTION`::
 

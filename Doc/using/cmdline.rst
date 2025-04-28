@@ -24,7 +24,7 @@ Command line
 
 When invoking Python, you may specify any of these options::
 
-    python [-bBdEhiIOqsSuvVWx?] [-c command | -m module-name | script | - ] [args]
+    python [-bBdEhiIOPqRsSuvVWx?] [-c command | -m module-name | script | - ] [args]
 
 The most common use case is, of course, a simple invocation of a script::
 
@@ -72,6 +72,9 @@ source.
    level modules).
 
    .. audit-event:: cpython.run_command command cmdoption-c
+
+   .. versionchanged:: next
+      *command* is automatically dedented before execution.
 
 .. option:: -m <module-name>
 
@@ -447,6 +450,7 @@ Miscellaneous options
        -Wdefault  # Warn once per call location
        -Werror    # Convert to exceptions
        -Walways   # Warn every time
+       -Wall      # Same as -Walways
        -Wmodule   # Warn once per calling module
        -Wonce     # Warn once per Python process
        -Wignore   # Never warn
@@ -602,6 +606,17 @@ Miscellaneous options
 
      .. versionadded:: 3.13
 
+   * ``-X disable_remote_debug`` disables the remote debugging support as described
+     in :pep:`768`.  This includes both the functionality to schedule code for
+     execution in another process and the functionality to receive code for
+     execution in the current process.
+
+     This option is only available on some platforms and will do nothing
+     if is not supported on the current system. See also
+     :envvar:`PYTHON_DISABLE_REMOTE_DEBUG` and :pep:`768`.
+
+     .. versionadded:: 3.14
+
    * :samp:`-X cpu_count={n}` overrides :func:`os.cpu_count`,
      :func:`os.process_cpu_count`, and :func:`multiprocessing.cpu_count`.
      *n* must be greater than or equal to 1.
@@ -621,11 +636,28 @@ Miscellaneous options
      .. versionadded:: 3.13
 
    * :samp:`-X gil={0,1}` forces the GIL to be disabled or enabled,
-     respectively. Only available in builds configured with
+     respectively. Setting to ``0`` is only available in builds configured with
      :option:`--disable-gil`. See also :envvar:`PYTHON_GIL` and
-     :ref:`free-threaded-cpython`.
+     :ref:`whatsnew313-free-threaded-cpython`.
 
      .. versionadded:: 3.13
+
+   * :samp:`-X thread_inherit_context={0,1}` causes :class:`~threading.Thread`
+     to, by default, use a copy of context of of the caller of
+     ``Thread.start()`` when starting.  Otherwise, threads will start
+     with an empty context.  If unset, the value of this option defaults
+     to ``1`` on free-threaded builds and to ``0`` otherwise.  See also
+     :envvar:`PYTHON_THREAD_INHERIT_CONTEXT`.
+
+     .. versionadded:: 3.14
+
+   * :samp:`-X context_aware_warnings={0,1}` causes the
+     :class:`warnings.catch_warnings` context manager to use a
+     :class:`~contextvars.ContextVar` to store warnings filter state.  If
+     unset, the value of this option defaults to ``1`` on free-threaded builds
+     and to ``0`` otherwise.  See also :envvar:`PYTHON_CONTEXT_AWARE_WARNINGS`.
+
+     .. versionadded:: 3.14
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -661,14 +693,6 @@ output. To control the color output only in the Python interpreter, the
 :envvar:`PYTHON_COLORS` environment variable can be used. This variable takes
 precedence over ``NO_COLOR``, which in turn takes precedence over
 ``FORCE_COLOR``.
-
-.. Apparently this how you hack together a formatted link:
-
-.. |FORCE_COLOR| replace:: ``FORCE_COLOR``
-.. _FORCE_COLOR: https://force-color.org/
-
-.. |NO_COLOR| replace:: ``NO_COLOR``
-.. _NO_COLOR: https://no-color.org/
 
 Options you shouldn't use
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -791,6 +815,15 @@ conflict.
 
    This variable can also be modified by Python code using :data:`os.environ`
    to force inspect mode on program termination.
+
+   .. audit-event:: cpython.run_stdin "" ""
+
+   .. versionchanged:: 3.12.5 (also 3.11.10, 3.10.15, 3.9.20, and 3.8.20)
+      Emits audit events.
+
+   .. versionchanged:: 3.13
+      Uses PyREPL if possible, in which case :envvar:`PYTHONSTARTUP` is
+      also executed. Emits audit events.
 
 
 .. envvar:: PYTHONUNBUFFERED
@@ -915,6 +948,7 @@ conflict.
        PYTHONWARNINGS=default  # Warn once per call location
        PYTHONWARNINGS=error    # Convert to exceptions
        PYTHONWARNINGS=always   # Warn every time
+       PYTHONWARNINGS=all      # Same as PYTHONWARNINGS=always
        PYTHONWARNINGS=module   # Warn once per calling module
        PYTHONWARNINGS=once     # Warn once per Python process
        PYTHONWARNINGS=ignore   # Never warn
@@ -1020,7 +1054,7 @@ conflict.
    'surrogatepass' are used.
 
    This may also be enabled at runtime with
-   :func:`sys._enablelegacywindowsfsencoding()`.
+   :func:`sys._enablelegacywindowsfsencoding`.
 
    .. availability:: Windows.
 
@@ -1157,7 +1191,16 @@ conflict.
 
    .. versionadded:: 3.13
 
+.. envvar:: PYTHON_DISABLE_REMOTE_DEBUG
 
+   If this variable is set to a non-empty string, it disables the remote
+   debugging feature described in :pep:`768`. This includes both the functionality
+   to schedule code for execution in another process and the functionality to
+   receive code for execution in the current process.
+
+   See also the :option:`-X disable_remote_debug` command-line option.
+
+   .. versionadded:: 3.14
 
 .. envvar:: PYTHON_CPU_COUNT
 
@@ -1192,7 +1235,7 @@ conflict.
 
 .. envvar:: PYTHON_BASIC_REPL
 
-   If this variable is set to ``1``, the interpreter will not attempt to
+   If this variable is set to any value, the interpreter will not attempt to
    load the Python-based :term:`REPL` that requires :mod:`curses` and
    :mod:`readline`, and will instead use the traditional parser-based
    :term:`REPL`.
@@ -1210,14 +1253,33 @@ conflict.
 .. envvar:: PYTHON_GIL
 
    If this variable is set to ``1``, the global interpreter lock (GIL) will be
-   forced on. Setting it to ``0`` forces the GIL off.
+   forced on. Setting it to ``0`` forces the GIL off (needs Python configured with
+   the :option:`--disable-gil` build option).
 
    See also the :option:`-X gil <-X>` command-line option, which takes
-   precedence over this variable, and :ref:`free-threaded-cpython`.
-
-   Needs Python configured with the :option:`--disable-gil` build option.
+   precedence over this variable, and :ref:`whatsnew313-free-threaded-cpython`.
 
    .. versionadded:: 3.13
+
+.. envvar:: PYTHON_THREAD_INHERIT_CONTEXT
+
+   If this variable is set to ``1`` then :class:`~threading.Thread` will,
+   by default, use a copy of context of of the caller of ``Thread.start()``
+   when starting.  Otherwise, new threads will start with an empty context.
+   If unset, this variable defaults to ``1`` on free-threaded builds and to
+   ``0`` otherwise.  See also :option:`-X thread_inherit_context<-X>`.
+
+   .. versionadded:: 3.14
+
+.. envvar:: PYTHON_CONTEXT_AWARE_WARNINGS
+
+   If set to ``1`` then the :class:`warnings.catch_warnings` context
+   manager will use a :class:`~contextvars.ContextVar` to store warnings
+   filter state.  If unset, this variable defaults to ``1`` on
+   free-threaded builds and to ``0`` otherwise.  See :option:`-X
+   context_aware_warnings<-X>`.
+
+   .. versionadded:: 3.14
 
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~

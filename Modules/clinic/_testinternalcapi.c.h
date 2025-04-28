@@ -30,9 +30,11 @@ _testinternalcapi_compiler_cleandoc(PyObject *module, PyObject *const *args, Py_
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(doc), },
     };
     #undef NUM_KEYWORDS
@@ -52,7 +54,8 @@ _testinternalcapi_compiler_cleandoc(PyObject *module, PyObject *const *args, Py_
     PyObject *argsbuf[1];
     PyObject *doc;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -109,9 +112,11 @@ _testinternalcapi_compiler_codegen(PyObject *module, PyObject *const *args, Py_s
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(ast), &_Py_ID(filename), &_Py_ID(optimize), &_Py_ID(compile_mode), },
     };
     #undef NUM_KEYWORDS
@@ -135,7 +140,8 @@ _testinternalcapi_compiler_codegen(PyObject *module, PyObject *const *args, Py_s
     int optimize;
     int compile_mode = 0;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 3, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -182,9 +188,11 @@ _testinternalcapi_optimize_cfg(PyObject *module, PyObject *const *args, Py_ssize
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(instructions), &_Py_ID(consts), &_Py_ID(nlocals), },
     };
     #undef NUM_KEYWORDS
@@ -206,7 +214,8 @@ _testinternalcapi_optimize_cfg(PyObject *module, PyObject *const *args, Py_ssize
     PyObject *consts;
     int nlocals;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -247,9 +256,11 @@ _testinternalcapi_assemble_code_object(PyObject *module, PyObject *const *args, 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(filename), &_Py_ID(instructions), &_Py_ID(metadata), },
     };
     #undef NUM_KEYWORDS
@@ -271,7 +282,8 @@ _testinternalcapi_assemble_code_object(PyObject *module, PyObject *const *args, 
     PyObject *instructions;
     PyObject *metadata;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 3, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 3, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -323,9 +335,11 @@ gh_119213_getargs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(spam), },
     };
     #undef NUM_KEYWORDS
@@ -346,7 +360,8 @@ gh_119213_getargs(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     Py_ssize_t noptargs = nargs + (kwnames ? PyTuple_GET_SIZE(kwnames) : 0) - 0;
     PyObject *spam = Py_None;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 0, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 0, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -360,4 +375,21 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4d0770a1c20fbf40 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(get_next_dict_keys_version__doc__,
+"get_next_dict_keys_version($module, /)\n"
+"--\n"
+"\n");
+
+#define GET_NEXT_DICT_KEYS_VERSION_METHODDEF    \
+    {"get_next_dict_keys_version", (PyCFunction)get_next_dict_keys_version, METH_NOARGS, get_next_dict_keys_version__doc__},
+
+static PyObject *
+get_next_dict_keys_version_impl(PyObject *module);
+
+static PyObject *
+get_next_dict_keys_version(PyObject *module, PyObject *Py_UNUSED(ignored))
+{
+    return get_next_dict_keys_version_impl(module);
+}
+/*[clinic end generated code: output=fbd8b7e0cae8bac7 input=a9049054013a1b77]*/

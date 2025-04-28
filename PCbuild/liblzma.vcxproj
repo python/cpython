@@ -93,7 +93,8 @@
     <ClCompile>
       <PreprocessorDefinitions>WIN32;HAVE_CONFIG_H;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(lzmaDir)windows/vs2019;$(lzmaDir)src/liblzma/common;$(lzmaDir)src/common;$(lzmaDir)src/liblzma/api;$(lzmaDir)src/liblzma/check;$(lzmaDir)src/liblzma/delta;$(lzmaDir)src/liblzma/lz;$(lzmaDir)src/liblzma/lzma;$(lzmaDir)src/liblzma/rangecoder;$(lzmaDir)src/liblzma/simple;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>4028;4113;4133;4244;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4244;4267;4996;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <AdditionalOptions Condition="$(PlatformToolset) == 'ClangCL'">%(AdditionalOptions) -Wno-deprecated-declarations</AdditionalOptions>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

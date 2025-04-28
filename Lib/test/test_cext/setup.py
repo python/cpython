@@ -11,6 +11,7 @@ from setuptools import setup, Extension
 
 
 SOURCE = 'extension.c'
+
 if not support.MS_WINDOWS:
     # C compiler flags for GCC and clang
     CFLAGS = [
@@ -20,6 +21,9 @@ if not support.MS_WINDOWS:
 
         # gh-120593: Check the 'const' qualifier
         '-Wcast-qual',
+
+        # Ask for strict(er) compliance with the standard
+        '-pedantic-errors',
     ]
     if not support.Py_GIL_DISABLED:
         CFLAGS.append(
@@ -28,8 +32,13 @@ if not support.MS_WINDOWS:
             '-Werror=declaration-after-statement',
         )
 else:
-    # Don't pass any compiler flag to MSVC
-    CFLAGS = []
+    # MSVC compiler flags
+    CFLAGS = [
+        # Display warnings level 1 to 4
+        '/W4',
+        # Treat all compiler warnings as compiler errors
+        '/WX',
+    ]
 
 
 def main():

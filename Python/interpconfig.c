@@ -1,6 +1,7 @@
 /* PyInterpreterConfig API */
 
 #include "Python.h"
+#include "pycore_interp.h" // Py_RTFLAGS
 #include "pycore_pylifecycle.h"
 
 #include <stdbool.h>
