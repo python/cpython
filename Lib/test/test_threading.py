@@ -120,6 +120,7 @@ class BaseTestCase(unittest.TestCase):
 class ThreadTests(BaseTestCase):
     maxDiff = 9999
 
+    @cpython_only
     def test_lazy_import(self):
         ensure_lazy_imports("threading", {"functools", "warnings"})
 

@@ -19,7 +19,8 @@ from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
 from test import support
 from test.support import ALWAYS_EQ, REPO_ROOT
-from test.support import threading_helper
+from test.support import threading_helper, cpython_only
+from test.support.import_helper import ensure_lazy_imports
 from datetime import timedelta
 
 python_version = sys.version_info[:2]
@@ -1273,6 +1274,10 @@ class TestSpecial(unittest.TestCase):
             NEW_YEAR = 2013, 1, 1
             IDES_OF_MARCH = 2013, 3, 15
         self.Holiday = Holiday
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("enum", {"functools", "warnings", "inspect", "re"})
 
     def test_bool(self):
         # plain Enum members are always True

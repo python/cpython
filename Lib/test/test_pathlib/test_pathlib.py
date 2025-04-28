@@ -16,6 +16,7 @@ from unittest import mock
 from urllib.request import pathname2url
 
 from test.support import import_helper
+from test.support import cpython_only
 from test.support import is_emscripten, is_wasi
 from test.support import infinite_recursion
 from test.support import os_helper
@@ -129,6 +130,7 @@ class PurePathTest(unittest.TestCase):
         for part in p.parts:
             self.assertIs(type(part), str)
 
+    @cpython_only
     def test_lazy_import(self):
         import_helper.ensure_lazy_imports("pathlib", {"shutil"})
 
