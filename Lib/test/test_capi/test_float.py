@@ -189,14 +189,14 @@ class CAPIFloatTest(unittest.TestCase):
                 signaling = random.randint(0, 1)
                 quiet = int(not signaling)
                 if size == 8:
-                    payload = random.randint(signaling, 1<<50)
-                    i = (sign<<63) + (0x7ff<<52) + (quiet<<51) + payload
+                    payload = random.randint(signaling, 1 << 50)
+                    i = (sign << 63) + (0x7ff << 52) + (quiet << 51) + payload
                 elif size == 4:
-                    payload = random.randint(signaling, 1<<21)
-                    i = (sign<<31) + (0xff<<23) + (quiet<<22) + payload
+                    payload = random.randint(signaling, 1 << 21)
+                    i = (sign << 31) + (0xff << 23) + (quiet << 22) + payload
                 elif size == 2:
-                    payload = random.randint(signaling, 1<<8)
-                    i = (sign<<15) + (0x1f<<10) + (quiet<<9) + payload
+                    payload = random.randint(signaling, 1 << 8)
+                    i = (sign << 15) + (0x1f << 10) + (quiet << 9) + payload
                 data = bytes.fromhex(f'{i:x}')
                 for endian in (BIG_ENDIAN, LITTLE_ENDIAN):
                     with self.subTest(data=data, size=size, endian=endian):
@@ -206,6 +206,7 @@ class CAPIFloatTest(unittest.TestCase):
                             # On this platform sNaN becomes qNaN when returned
                             # from function.  That's a known bug, e.g.
                             # https://developercommunity.visualstudio.com/t/155064
+                            # (see also gh-130317).
                             value = _testcapi.float_set_snan(value)
                         data2 = pack(size, value, endian)
                         self.assertTrue(math.isnan(value))
