@@ -203,6 +203,9 @@ class CAPIFloatTest(unittest.TestCase):
                         data1 = data if endian == BIG_ENDIAN else data[::-1]
                         value = unpack(data1, endian)
                         if signaling and sys.platform == 'win32':
+                            # On this platform sNaN becomes qNaN when returned
+                            # from function.  That's a known bug, e.g.
+                            # https://developercommunity.visualstudio.com/t/155064
                             value = _testcapi.float_set_snan(value)
                         data2 = pack(size, value, endian)
                         self.assertTrue(math.isnan(value))
