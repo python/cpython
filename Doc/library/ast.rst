@@ -1761,6 +1761,7 @@ Pattern matching
 
    .. versionadded:: 3.10
 
+
 Type annotations
 ^^^^^^^^^^^^^^^^
 
