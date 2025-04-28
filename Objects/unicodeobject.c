@@ -1168,7 +1168,6 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     if (!unicode_modifiable(unicode)) {
         PyObject *copy = resize_copy(unicode, length);
         if (copy == NULL) {
-            PyErr_NoMemory();
             return NULL;
         }
         Py_DECREF(unicode);
