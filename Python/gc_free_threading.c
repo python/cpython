@@ -1592,6 +1592,7 @@ debug_cycle(const char *msg, PyObject *op)
 /* Run first-time finalizers (if any) on all the objects in collectable.
  * Note that this may remove some (or even all) of the objects from the
  * list, due to refcounts falling to 0.
+ * Return 1 if any finalizers were run.
  */
 static int
 finalize_garbage(struct collection_state *state)
