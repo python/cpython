@@ -1924,7 +1924,7 @@ kqueue_event_init(PyObject *op, PyObject *args, PyObject *kwds)
 
     if (PyIndex_Check(pfd)) {
         Py_ssize_t bytes = PyLong_AsNativeBytes(pfd,
-                self->e.ident, sizeof(self->e.ident),
+                &self->e.ident, sizeof(self->e.ident),
                 Py_ASNATIVEBYTES_NATIVE_ENDIAN |
                 Py_ASNATIVEBYTES_ALLOW_INDEX |
                 Py_ASNATIVEBYTES_REJECT_NEGATIVE |
