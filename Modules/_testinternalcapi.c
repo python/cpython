@@ -957,6 +957,37 @@ get_co_framesize(PyObject *self, PyObject *arg)
 }
 
 static PyObject *
+get_co_localskinds(PyObject *self, PyObject *arg)
+{
+    if (!PyCode_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
+        return NULL;
+    }
+    PyCodeObject *co = (PyCodeObject *)arg;
+
+    PyObject *kinds = PyDict_New();
+    if (kinds == NULL) {
+        return NULL;
+    }
+    for (int offset = 0; offset < co->co_nlocalsplus; offset++) {
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, offset);
+        _PyLocals_Kind k = _PyLocals_GetKind(co->co_localspluskinds, offset);
+        PyObject *kind = PyLong_FromLong(k);
+        if (kind == NULL) {
+            Py_DECREF(kinds);
+            return NULL;
+        }
+        int res = PyDict_SetItem(kinds, name, kind);
+        Py_DECREF(kind);
+        if (res < 0) {
+            Py_DECREF(kinds);
+            return NULL;
+        }
+    }
+    return kinds;
+}
+
+static PyObject *
 jit_enabled(PyObject *self, PyObject *arg)
 {
     return PyBool_FromLong(_PyInterpreterState_GET()->jit);
@@ -2075,6 +2106,7 @@ static PyMethodDef module_functions[] = {
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
+    {"get_co_localskinds", get_co_localskinds, METH_O, NULL},
     {"jit_enabled", jit_enabled,  METH_NOARGS, NULL},
 #ifdef _Py_TIER2
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
