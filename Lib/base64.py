@@ -580,19 +580,19 @@ def decodebytes(s):
 try:
     from _base64 import (_a85encode, _a85decode, _b85encode,
                          _b85decode, _z85encode, _z85decode)
-    from functools import update_wrapper
-    update_wrapper(_a85encode, a85encode)
-    update_wrapper(_a85decode, a85decode)
-    update_wrapper(_b85encode, b85encode)
-    update_wrapper(_b85decode, b85decode)
-    update_wrapper(_z85encode, z85encode)
-    update_wrapper(_z85decode, z85decode)
-    a85encode = _a85encode
-    a85decode = _a85decode
-    b85encode = _b85encode
-    b85decode = _b85decode
-    z85encode = _z85encode
-    z85decode = _z85decode
+    # Avoid expensive import of update_wrapper() from functools.
+    def _copy_attributes(func, src_func):
+        func.__module__ = src_func.__module__
+        func.__name__ = src_func.__name__
+        func.__qualname__ = src_func.__qualname__
+        func.__doc__ = src_func.__doc__
+        return func
+    a85encode = _copy_attributes(_a85encode, a85encode)
+    a85decode = _copy_attributes(_a85decode, a85decode)
+    b85encode = _copy_attributes(_b85encode, b85encode)
+    b85decode = _copy_attributes(_b85decode, b85decode)
+    z85encode = _copy_attributes(_z85encode, z85encode)
+    z85decode = _copy_attributes(_z85decode, z85decode)
 except ImportError:
     pass
 
