@@ -7155,9 +7155,9 @@ class CapiTest(unittest.TestCase):
 
                     self.assertEqual(dt_orig, dt_rt)
 
-    def assert_python_ok_in_subinterp(self, script,
-                                      setup='_testcapi.test_datetime_capi()',
-                                      config='isolated'):
+    def assert_python_in_subinterp(self, check_if_ok: bool, script,
+                                   setup='_testcapi.test_datetime_capi()',
+                                   config='isolated'):
         # iOS requires the use of the custom framework loader,
         # not the ExtensionFileLoader.
         if sys.platform == "ios":
@@ -7201,7 +7201,10 @@ class CapiTest(unittest.TestCase):
         code = code.replace('$SETUP$', setup)
         code = code.replace('$SCRIPT$', textwrap.indent(script, '\x20'*4))
 
-        res = script_helper.assert_python_ok('-c', code)
+        if check_if_ok:
+            res = script_helper.assert_python_ok('-c', code)
+        else:
+            res = script_helper.assert_python_failure('-c', code)
         return res
 
     def test_type_check_in_subinterp(self):
@@ -7217,11 +7220,11 @@ class CapiTest(unittest.TestCase):
             run(_testcapi.datetime_check_time,     _datetime.time(12, 30))
             run(_testcapi.datetime_check_delta,    _datetime.timedelta(1))
             run(_testcapi.datetime_check_tzinfo,   _datetime.tzinfo())
-        """)
-        self.assert_python_ok_in_subinterp(script, '')
+            """)
+        self.assert_python_in_subinterp(True, script, '')
         if _interpreters is not None:
             with self.subTest(name := 'legacy'):
-                self.assert_python_ok_in_subinterp(script, '', name)
+                self.assert_python_in_subinterp(True, script, '', name)
 
 
 class ExtensionModuleTests(unittest.TestCase):
@@ -7316,7 +7319,7 @@ class ExtensionModuleTests(unittest.TestCase):
 
             it = gen()
             next(it)
-        """)
+            """)
         res = script_helper.assert_python_ok('-c', script)
         self.assertFalse(res.err)
 
@@ -7336,7 +7339,7 @@ class ExtensionModuleTests(unittest.TestCase):
 
             it = gen()
             next(it)
-        """)
+            """)
         res = script_helper.assert_python_ok('-c', script)
         self.assertFalse(res.err)
 
@@ -7352,20 +7355,18 @@ class ExtensionModuleTests(unittest.TestCase):
 
             it = gen()
             next(it)
-        """)
-
+            """)
         with self.subTest('PyDateTime_IMPORT by MainInterpreter'):
-            res = CapiTest.assert_python_ok_in_subinterp(self, script)
+            res = CapiTest.assert_python_in_subinterp(self, True, script)
             self.assertIn(b'ImportError: sys.meta_path is None', res.err)
 
         script2 = f'_testcapi.test_datetime_capi()\n{script}'
-
         with self.subTest('PyDateTime_IMPORT by Subinterpreter'):
-            res = CapiTest.assert_python_ok_in_subinterp(self, script2, '')
+            res = CapiTest.assert_python_in_subinterp(self, True, script2, '')
             self.assertFalse(res.err)
 
         with self.subTest('PyDateTime_IMPORT by Main/Sub'):
-            res = CapiTest.assert_python_ok_in_subinterp(self, script2)
+            res = CapiTest.assert_python_in_subinterp(self, True, script2, '')
             self.assertFalse(res.err)
 
     def test_static_type_before_shutdown(self):
@@ -7375,8 +7376,8 @@ class ExtensionModuleTests(unittest.TestCase):
             timedelta = _testcapi.get_capi_types()['timedelta']
             timedelta(days=1)
             assert '_datetime' in sys.modules
-        """)
-        CapiTest.assert_python_ok_in_subinterp(self, script)
+            """)
+        CapiTest.assert_python_in_subinterp(self, True, script)
 
     def test_module_free(self):
         script = textwrap.dedent("""
@@ -7392,7 +7393,7 @@ class ExtensionModuleTests(unittest.TestCase):
                 del _datetime
                 gc.collect()
                 assert len(ws) == 0
-        """)
+            """)
         script_helper.assert_python_ok('-c', script)
 
     @unittest.skipIf(not support.Py_DEBUG, "Debug builds only")
@@ -7400,7 +7401,7 @@ class ExtensionModuleTests(unittest.TestCase):
         script = textwrap.dedent("""
             import datetime
             datetime.datetime.strptime('20000101', '%Y%m%d').strftime('%Y%m%d')
-        """)
+            """)
         res = script_helper.assert_python_ok('-X', 'showrefcount', '-c', script)
         self.assertIn(b'[0 refs, 0 blocks]', res.err)
 
