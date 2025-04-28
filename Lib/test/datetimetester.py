@@ -826,7 +826,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertTrue(timedelta.max > timedelta.min)
         self.assertEqual(timedelta.min, timedelta(-999999999))
         self.assertEqual(timedelta.max, timedelta(999999999, 24*3600-1, 1e6-1, 999))
-        self.assertEqual(timedelta.resolution, timedelta(0, 0, 1))
+        self.assertEqual(timedelta.resolution, timedelta(0, 0, 0, 1))
 
     def test_overflow(self):
         tiny = timedelta.resolution
@@ -1679,10 +1679,10 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
     def test_extreme_timedelta(self):
         big = self.theclass.max - self.theclass.min
-        # 3652058 days, 23 hours, 59 minutes, 59 seconds, 999999 microseconds
+        # 3652058 days, 23 hours, 59 minutes, 59 seconds, 999999 microseconds, 999 nanoseconds
         n = (big.days*24*3600 + big.seconds)*1000000 + big.microseconds
         # n == 315537897599999999 ~= 2**58.13
-        justasbig = timedelta(0, 0, n)
+        justasbig = timedelta(0, 0, n, big.nanoseconds)
         self.assertEqual(big, justasbig)
         self.assertEqual(self.theclass.min + big, self.theclass.max)
         self.assertEqual(self.theclass.max - big, self.theclass.min)

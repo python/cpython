@@ -24,7 +24,8 @@ def _get_class_module(self):
 MINYEAR = 1
 MAXYEAR = 9999
 _MAXORDINAL = 3652059  # date.max.toordinal()
-
+# NS = 999
+NS = 0
 # Utility functions, adapted from Python's Demo/classes/Dates.py, which
 # also assumes the current Gregorian calendar indefinitely extended in
 # both directions.  Difference:  Dates.py calls January 1 of year 0 day
@@ -814,7 +815,7 @@ class timedelta:
             s = s + ".%06d" % self._microseconds
 
             if self._nanoseconds:
-                s = s + ".%03d" % self._nanoseconds
+                s = s + "%03d" % self._nanoseconds
         return s
 
     def total_seconds(self):
@@ -998,7 +999,7 @@ class timedelta:
 
 timedelta.min = timedelta(-999999999)
 timedelta.max = timedelta(days=999999999, hours=23, minutes=59, seconds=59,
-                          microseconds=999999, nanoseconds=999)
+                          microseconds=999999, nanoseconds=NS)
 timedelta.resolution = timedelta(nanoseconds=1)
 
 class date:
@@ -1807,7 +1808,7 @@ class time:
 _time_class = time  # so functions w/ args named "time" can get at the class
 
 time.min = time(0, 0, 0)
-time.max = time(23, 59, 59, 999999, nanosecond=999)
+time.max = time(23, 59, 59, 999999, nanosecond=NS)
 time.resolution = timedelta(nanoseconds=1)
 
 
@@ -2479,7 +2480,7 @@ class datetime(date):
 
 
 datetime.min = datetime(1, 1, 1)
-datetime.max = datetime(9999, 12, 31, 23, 59, 59, 999999, nanosecond=999)
+datetime.max = datetime(9999, 12, 31, 23, 59, 59, 999999, nanosecond=NS)
 datetime.resolution = timedelta(nanoseconds=1)
 
 
