@@ -1769,7 +1769,7 @@ Type annotations
    A type ignore comment. *lineno* is the location of the ``#type ignore`` comment.
    ``tag`` is the optional tag specified by the form ``#type ignore <tag>``.
 
-   see :func:`ast.parse` for more details.
+   See :func:`ast.parse` for more details.
 
    .. doctest::
 
