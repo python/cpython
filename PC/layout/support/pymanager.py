@@ -82,7 +82,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
     # Tag shown in 'py list' output
     DISPLAY_TAG = f"{XY_TAG}-dev{TAG_ARCH}" if VER_SUFFIX else XY_ARCH_TAG
 
-    DISPLAY_SUFFIX = ", ".join(filter(None, DISPLAY_TAGS))
+    DISPLAY_SUFFIX = ", ".join(i for i in DISPLAY_TAGS if i)
     if DISPLAY_SUFFIX:
         DISPLAY_SUFFIX = f" ({DISPLAY_SUFFIX})"
     DISPLAY_VERSION = f"{XYZ_VERSION}{VER_SUFFIX}{DISPLAY_SUFFIX}"
