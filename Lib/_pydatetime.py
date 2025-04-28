@@ -1472,7 +1472,7 @@ class time:
         fold (keyword only, default to zero)
         nanosecond (keyword only, default to zero)
         """
-        if (isinstance(hour, (bytes, str)) and len(hour) == 6 and
+        if (isinstance(hour, (bytes, str)) and len(hour) == 8 and
             ord(hour[0:1])&0x7F < 24):
             # Pickle support
             if isinstance(hour, str):
@@ -1821,7 +1821,7 @@ class datetime(date):
 
     def __new__(cls, year, month=None, day=None, hour=0, minute=0, second=0,
                 microsecond=0, tzinfo=None, *, fold=0, nanosecond=0):
-        if (isinstance(year, (bytes, str)) and len(year) == 10 and
+        if (isinstance(year, (bytes, str)) and len(year) == 12 and
             1 <= ord(year[2:3])&0x7F <= 12):
             # Pickle support
             if isinstance(year, str):
@@ -1834,6 +1834,7 @@ class datetime(date):
                         "a datetime object. "
                         "pickle.load(data, encoding='latin1') is assumed.")
             self = object.__new__(cls)
+            # year is string and month is tzinfo
             self.__setstate(year, month)
             self._hashcode = -1
             return self
