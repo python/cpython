@@ -652,7 +652,7 @@ add_vars_to_module(PyObject *module)
 
     /* zstd_version_info, a tuple. */
     obj = get_zstd_version_info();
-    if (PyModule_AddObject(module, "zstd_version_info", obj) < 0) {
+    if (PyModule_AddObjectRef(module, "zstd_version_info", obj) < 0) {
         Py_XDECREF(obj);
         return -1;
     }
@@ -672,7 +672,7 @@ add_vars_to_module(PyObject *module)
 #endif
                         ZSTD_minCLevel(),
                         ZSTD_maxCLevel());
-    if (PyModule_AddObject(module,
+    if (PyModule_AddObjectRef(module,
                            "_compressionLevel_values",
                            obj) < 0) {
         Py_XDECREF(obj);
@@ -683,7 +683,7 @@ add_vars_to_module(PyObject *module)
     obj = Py_BuildValue("II",
                         (uint32_t)ZSTD_CStreamInSize(),
                         (uint32_t)ZSTD_CStreamOutSize());
-    if (PyModule_AddObject(module, "_ZSTD_CStreamSizes", obj) < 0) {
+    if (PyModule_AddObjectRef(module, "_ZSTD_CStreamSizes", obj) < 0) {
         Py_XDECREF(obj);
         return -1;
     }
@@ -692,7 +692,7 @@ add_vars_to_module(PyObject *module)
     obj = Py_BuildValue("II",
                         (uint32_t)ZSTD_DStreamInSize(),
                         (uint32_t)ZSTD_DStreamOutSize());
-    if (PyModule_AddObject(module, "_ZSTD_DStreamSizes", obj) < 0) {
+    if (PyModule_AddObjectRef(module, "_ZSTD_DStreamSizes", obj) < 0) {
         Py_XDECREF(obj);
         return -1;
     }
@@ -708,7 +708,7 @@ add_vars_to_module(PyObject *module)
                         Py_False
 #endif
                         );
-    if (PyModule_AddObject(module, "_ZSTD_CONFIG", obj) < 0) {
+    if (PyModule_AddObjectRef(module, "_ZSTD_CONFIG", obj) < 0) {
         Py_XDECREF(obj);
         return -1;
     }
@@ -730,7 +730,7 @@ add_type_to_module(PyObject *module, const char *name,
 {
     PyObject *temp = PyType_FromModuleAndSpec(module, type_spec, NULL);
 
-    if (PyModule_AddObject(module, name, temp) < 0) {
+    if (PyModule_AddObjectRef(module, name, temp) < 0) {
         Py_XDECREF(temp);
         return -1;
     }
@@ -799,7 +799,7 @@ static int _zstd_exec(PyObject *module) {
     }
 
     Py_INCREF(mod_state->ZstdError);
-    if (PyModule_AddObject(module, "ZstdError", mod_state->ZstdError) < 0) {
+    if (PyModule_AddObjectRef(module, "ZstdError", mod_state->ZstdError) < 0) {
         Py_DECREF(mod_state->ZstdError);
         return -1;
     }
