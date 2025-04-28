@@ -107,15 +107,15 @@ types_world_is_stopped(void)
     if (!types_world_is_stopped()) { _Py_CRITICAL_SECTION_ASSERT_MUTEX_LOCKED(TYPE_LOCK); }
 
 // Checks if we can safely update type slots or tp_flags.
-#define ASSERT_NEW_OR_STOPPED(tp) \
+#define ASSERT_WORLD_STOPPED_OR_NEW_TYPE(tp) \
     assert(!TYPE_IS_REVEALED(tp) || types_world_is_stopped())
 
-#define ASSERT_NEW_OR_LOCKED(tp) \
+#define ASSERT_NEW_TYPE_OR_LOCKED(tp) \
     if (TYPE_IS_REVEALED(tp)) { ASSERT_TYPE_LOCK_HELD(); }
 #else
 #define ASSERT_TYPE_LOCK_HELD()
-#define ASSERT_NEW_OR_STOPPED(tp)
-#define ASSERT_NEW_OR_LOCKED(tp)
+#define ASSERT_WORLD_STOPPED_OR_NEW_TYPE(tp)
+#define ASSERT_NEW_TYPE_OR_LOCKED(tp)
 #endif
 
 static void
@@ -144,8 +144,8 @@ types_start_world(void)
 #define END_TYPE_DICT_LOCK()
 #define ASSERT_TYPE_LOCK_HELD()
 #define TYPE_IS_REVEALED(tp) 0
-#define ASSERT_NEW_OR_STOPPED(tp)
-#define ASSERT_NEW_OR_LOCKED(tp)
+#define ASSERT_WORLD_STOPPED_OR_NEW_TYPE(tp)
+#define ASSERT_NEW_TYPE_OR_LOCKED(tp)
 #define types_world_is_stopped() 1
 #define types_stop_world()
 #define types_start_world()
@@ -411,14 +411,14 @@ _PyStaticType_GetBuiltins(void)
 static void
 type_set_flags(PyTypeObject *tp, unsigned long flags)
 {
-    ASSERT_NEW_OR_STOPPED(tp);
+    ASSERT_WORLD_STOPPED_OR_NEW_TYPE(tp);
     tp->tp_flags = flags;
 }
 
 static void
 type_set_flags_with_mask(PyTypeObject *tp, unsigned long mask, unsigned long flags)
 {
-    ASSERT_NEW_OR_STOPPED(tp);
+    ASSERT_WORLD_STOPPED_OR_NEW_TYPE(tp);
     unsigned long new_flags = (tp->tp_flags & ~mask) | flags;
     type_set_flags(tp, new_flags);
 }
@@ -556,7 +556,7 @@ static inline void
 set_tp_bases(PyTypeObject *self, PyObject *bases, int initial)
 {
     assert(PyTuple_Check(bases));
-    ASSERT_NEW_OR_LOCKED(self);
+    ASSERT_NEW_TYPE_OR_LOCKED(self);
     if (self->tp_flags & _Py_TPFLAGS_STATIC_BUILTIN) {
         // XXX tp_bases can probably be statically allocated for each
         // static builtin type.
@@ -601,7 +601,7 @@ clear_tp_bases(PyTypeObject *self, int final)
 static inline PyObject *
 lookup_tp_mro(PyTypeObject *self)
 {
-    ASSERT_NEW_OR_LOCKED(self);
+    ASSERT_NEW_TYPE_OR_LOCKED(self);
     return self->tp_mro;
 }
 
@@ -1133,7 +1133,7 @@ type_modified_unlocked(PyTypeObject *type)
        We don't assign new version tags eagerly, but only as
        needed.
      */
-    ASSERT_NEW_OR_LOCKED(type);
+    ASSERT_NEW_TYPE_OR_LOCKED(type);
     if (type->tp_version_tag == 0) {
         return;
     }
@@ -1640,9 +1640,9 @@ type_set_abstractmethods(PyObject *tp, PyObject *value, void *Py_UNUSED(closure)
     type_modified_unlocked(type);
     types_stop_world();
     if (abstract)
-        type_set_flags_with_mask(type, 0, Py_TPFLAGS_IS_ABSTRACT);
+        type_add_flags(type, Py_TPFLAGS_IS_ABSTRACT);
     else
-        type_set_flags_with_mask(type, Py_TPFLAGS_IS_ABSTRACT, 0);
+        type_clear_flags(type, Py_TPFLAGS_IS_ABSTRACT);
     types_start_world();
     ASSERT_TYPE_LOCK_HELD();
     END_TYPE_LOCK();
@@ -1767,7 +1767,7 @@ mro_hierarchy(PyTypeObject *type, PyObject *temp)
 static int
 type_check_new_bases(PyTypeObject *type, PyObject *new_bases, PyTypeObject **best_base)
 {
-    // Check arguments, this re-entrant due to the PySys_Audit() call
+    // Check arguments, this is re-entrant due to the PySys_Audit() call
     if (!check_set_special_type_attr(type, new_bases, "__bases__")) {
         return -1;
     }
@@ -11252,7 +11252,7 @@ has_slotdef(PyObject *name)
 static pytype_slotdef *
 update_one_slot(PyTypeObject *type, pytype_slotdef *p)
 {
-    ASSERT_NEW_OR_STOPPED(type);
+    ASSERT_WORLD_STOPPED_OR_NEW_TYPE(type);
 
     PyObject *descr;
     PyWrapperDescrObject *d;
@@ -11375,7 +11375,7 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p)
 static int
 update_slots_callback(PyTypeObject *type, void *data)
 {
-    ASSERT_NEW_OR_STOPPED(type);
+    ASSERT_WORLD_STOPPED_OR_NEW_TYPE(type);
 
     pytype_slotdef **pp = (pytype_slotdef **)data;
     for (; *pp; pp++) {
