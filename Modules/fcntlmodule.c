@@ -112,7 +112,7 @@ fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
             return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
         }
         if (memcmp(buf + len, guard, GUARDSZ) != 0) {
-            PyErr_SetString(PyExc_SystemError, "buffer overflow1");
+            PyErr_SetString(PyExc_SystemError, "buffer overflow");
             return NULL;
         }
         return PyBytes_FromStringAndSize(buf, len);
@@ -236,7 +236,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
                 }
                 PyBuffer_Release(&view);
                 if (ptr == buf && memcmp(buf + len, guard, GUARDSZ) != 0) {
-                    PyErr_SetString(PyExc_SystemError, "buffer overflow2");
+                    PyErr_SetString(PyExc_SystemError, "buffer overflow");
                     return NULL;
                 }
                 return PyLong_FromLong(ret);
@@ -270,7 +270,7 @@ fcntl_ioctl_impl(PyObject *module, int fd, unsigned long code, PyObject *arg,
             return !async_err ? PyErr_SetFromErrno(PyExc_OSError) : NULL;
         }
         if (memcmp(buf + len, guard, GUARDSZ) != 0) {
-            PyErr_SetString(PyExc_SystemError, "buffer overflow3");
+            PyErr_SetString(PyExc_SystemError, "buffer overflow");
             return NULL;
         }
         return PyBytes_FromStringAndSize(buf, len);
