@@ -1,9 +1,6 @@
 /*
-Low level interface to Meta's zstd library for use in the `zstd` Python library.
-
-Original implementation by Ma Lin with patches by Rogdham.
-
-Refactored for the CPython standard library by Emma Harper Smith.
+Low level interface to Meta's zstd library for use in the compression.zstd
+Python module.
 */
 
 /* ZstdDecompressor class definition */
