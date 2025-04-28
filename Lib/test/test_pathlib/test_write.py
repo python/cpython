@@ -4,6 +4,7 @@ Tests for pathlib.types._WritablePath
 
 import io
 import os
+import sys
 import unittest
 
 from .support import is_pypi
@@ -35,6 +36,17 @@ class WriteTestBase:
             f.write('this is file A\n')
         self.assertEqual(self.ground.readtext(p), 'this is file A\n')
 
+    @unittest.skipIf(
+        not getattr(sys.flags, 'warn_default_encoding', 0),
+        "Requires warn_default_encoding",
+    )
+    def test_open_w_encoding_warning(self):
+        p = self.root / 'fileA'
+        with self.assertWarns(EncodingWarning) as wc:
+            with magic_open(p, 'w'):
+                pass
+        self.assertEqual(wc.filename, __file__)
+
     def test_open_wb(self):
         p = self.root / 'fileA'
         with magic_open(p, 'wb') as f:
@@ -60,6 +72,16 @@ class WriteTestBase:
         # Check that trying to write bytes does not truncate the file.
         self.assertRaises(TypeError, p.write_text, b'somebytes')
         self.assertEqual(self.ground.readbytes(p), b'\xe4bcdefg')
+
+    @unittest.skipIf(
+        not getattr(sys.flags, 'warn_default_encoding', 0),
+        "Requires warn_default_encoding",
+    )
+    def test_write_text_encoding_warning(self):
+        p = self.root / 'fileA'
+        with self.assertWarns(EncodingWarning) as wc:
+            p.write_text('abcdefg')
+        self.assertEqual(wc.filename, __file__)
 
     def test_write_text_with_newlines(self):
         # Check that `\n` character change nothing

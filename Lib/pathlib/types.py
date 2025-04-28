@@ -12,6 +12,7 @@ Protocols for supporting classes in pathlib.
 
 from abc import ABC, abstractmethod
 from glob import _PathGlobber
+from io import text_encoding
 from pathlib._os import magic_open, ensure_distinct_paths, ensure_different_files, copyfileobj
 from pathlib import PurePath, Path
 from typing import Optional, Protocol, runtime_checkable
@@ -262,6 +263,9 @@ class _ReadablePath(_JoinablePath):
         """
         Open the file in text mode, read it, and close the file.
         """
+        # Call io.text_encoding() here to ensure any warning is raised at an
+        # appropriate stack level.
+        encoding = text_encoding(encoding)
         with magic_open(self, mode='r', encoding=encoding, errors=errors, newline=newline) as f:
             return f.read()
 
@@ -391,6 +395,9 @@ class _WritablePath(_JoinablePath):
         """
         Open the file in text mode, write to it, and close the file.
         """
+        # Call io.text_encoding() here to ensure any warning is raised at an
+        # appropriate stack level.
+        encoding = text_encoding(encoding)
         if not isinstance(data, str):
             raise TypeError('data must be str, not %s' %
                             data.__class__.__name__)

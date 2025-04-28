@@ -320,7 +320,7 @@ Configuration Options
    * - ``"cpu_count"``
      - :c:member:`cpu_count <PyConfig.cpu_count>`
      - ``int``
-     - Read-only
+     - Public
    * - ``"dev_mode"``
      - :c:member:`dev_mode <PyConfig.dev_mode>`
      - ``bool``
@@ -618,6 +618,8 @@ Some options are read from the :mod:`sys` attributes. For example, the option
 
    The caller must have an :term:`attached thread state`. The function cannot
    be called before Python initialization nor after Python finalization.
+
+   .. audit-event:: cpython.PyConfig_Set name,value c.PyConfig_Set
 
    .. versionadded:: 3.14
 

@@ -639,8 +639,10 @@ _sha3_exec(PyObject *m)
     init_sha3type(shake_256_type, SHAKE256_spec);
 #undef init_sha3type
 
-    if (PyModule_AddStringConstant(m, "implementation",
-                                   "HACL") < 0) {
+    if (PyModule_AddStringConstant(m, "implementation", "HACL") < 0) {
+        return -1;
+    }
+    if (PyModule_AddIntConstant(m, "_GIL_MINSIZE", HASHLIB_GIL_MINSIZE) < 0) {
         return -1;
     }
 
