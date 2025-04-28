@@ -152,7 +152,9 @@ class TestFunctions(unittest.TestCase):
     def test_tcflush_clear_input_or_output(self):
         wfd = self.fd
         rfd = self.master_fd
-        inbuf = sys.platform == 'linux'
+        # The data is buffered in input buffer on Linux, and in
+        # output buffer on other platforms.
+        inbuf = sys.platform in ('linux', 'android')
 
         os.write(wfd, b'abcdef')
         self.assertEqual(os.read(rfd, 2), b'ab')
@@ -190,7 +192,8 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(TypeError, termios.tcflow, object(), termios.TCOON)
         self.assertRaises(TypeError, termios.tcflow, self.fd)
 
-    @unittest.skipUnless(sys.platform == 'linux', 'only works on Linux')
+    @support.skip_android_selinux('tcflow')
+    @unittest.skipUnless(sys.platform in ('linux', 'android'), 'only works on Linux')
     def test_tcflow_suspend_and_resume_output(self):
         wfd = self.fd
         rfd = self.master_fd
