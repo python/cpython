@@ -1580,6 +1580,11 @@ Deprecated
   or *sequence* as keyword arguments is now deprecated.
   (Contributed by Kirill Podoprigora in :gh:`121676`.)
 
+* :mod:`logging`:
+  Support for custom logging handlers with the *strm* argument is deprecated
+  and scheduled for removal in Python 3.16. Define handlers with the *stream*
+  argument instead. (Contributed by Mariusz Felisiak in :gh:`115032`.)
+
 * :mod:`!nturl2path`: This module is now deprecated. Call
   :func:`urllib.request.url2pathname` and :func:`~urllib.request.pathname2url`
   instead.
