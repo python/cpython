@@ -417,7 +417,7 @@ superset of any unreachable cycle including that object, we are guaranteed that 
 transitive closure cannot contain any partial cycles.
 We can exclude scanned objects, as they must have been reachable when scanned.
 If a scanned object becomes part of an unreachable cycle after being scanned, it will
-not be collected this at this time, but it will be collected in the next full scavenge.
+not be collected at this time, but it will be collected in the next full scavenge.
 
 > [!NOTE]
 > The GC implementation for the free-threaded build does not use incremental collection.

@@ -81,4 +81,13 @@ _testcapi_float_unpack(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b43dfd3a77fe04ba input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(_testcapi_float_set_snan__doc__,
+"float_set_snan($module, obj, /)\n"
+"--\n"
+"\n"
+"Make a signaling NaN.");
+
+#define _TESTCAPI_FLOAT_SET_SNAN_METHODDEF    \
+    {"float_set_snan", (PyCFunction)_testcapi_float_set_snan, METH_O, _testcapi_float_set_snan__doc__},
+/*[clinic end generated code: output=1b0e9b05e1f50712 input=a9049054013a1b77]*/

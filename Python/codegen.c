@@ -654,6 +654,9 @@ codegen_enter_scope(compiler *c, identifier name, int scope_type,
         loc.lineno = 0;
     }
     ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
+    if (scope_type == COMPILE_SCOPE_MODULE) {
+        ADDOP(c, loc, ANNOTATIONS_PLACEHOLDER);
+    }
     return SUCCESS;
 }
 
@@ -792,6 +795,14 @@ codegen_process_deferred_annotations(compiler *c, location loc)
         return SUCCESS;
     }
 
+    int scope_type = SCOPE_TYPE(c);
+    bool need_separate_block = scope_type == COMPILE_SCOPE_MODULE;
+    if (need_separate_block) {
+        if (_PyCompile_StartAnnotationSetup(c) == ERROR) {
+            goto error;
+        }
+    }
+
     // It's possible that ste_annotations_block is set but
     // u_deferred_annotations is not, because the former is still
     // set if there are only non-simple annotations (i.e., annotations
@@ -800,7 +811,6 @@ codegen_process_deferred_annotations(compiler *c, location loc)
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     assert(ste->ste_annotation_block != NULL);
     void *key = (void *)((uintptr_t)ste->ste_id + 1);
-    int scope_type = SCOPE_TYPE(c);
     if (codegen_setup_annotations_scope(c, loc, key,
                                         ste->ste_annotation_block->ste_name) < 0) {
         goto error;
@@ -815,7 +825,14 @@ codegen_process_deferred_annotations(compiler *c, location loc)
     Py_DECREF(conditional_annotation_indices);
 
     RETURN_IF_ERROR(codegen_leave_annotations_scope(c, loc));
-    RETURN_IF_ERROR(codegen_nameop(c, loc, &_Py_ID(__annotate__), Store));
+    RETURN_IF_ERROR(codegen_nameop(
+        c, loc,
+        ste->ste_type == ClassBlock ? &_Py_ID(__annotate_func__) : &_Py_ID(__annotate__),
+        Store));
+
+    if (need_separate_block) {
+        RETURN_IF_ERROR(_PyCompile_EndAnnotationSetup(c));
+    }
 
     return SUCCESS;
 error:
@@ -4772,10 +4789,7 @@ codegen_comprehension(compiler *c, expr_ty e, int type,
     }
     Py_CLEAR(co);
 
-    if (codegen_comprehension_iter(c, outermost)) {
-        goto error;
-    }
-
+    VISIT(c, expr, outermost->iter);
     ADDOP_I(c, loc, CALL, 0);
 
     if (is_async_comprehension && type != COMP_GENEXP) {

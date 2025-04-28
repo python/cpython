@@ -648,14 +648,14 @@ union result {
     int i;
     long l;
     long long q;
-    long double D;
+    long double g;
     double d;
     float f;
     void *p;
 #if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-    double complex C;
-    float complex E;
-    long double complex F;
+    double complex D;
+    float complex F;
+    long double complex G;
 #endif
 };
 
@@ -683,7 +683,9 @@ static int ConvParam(ctypes_state *st,
         PyCArgObject *carg;
         assert(info->paramfunc);
         /* If it has an stginfo, it is a CDataObject */
+        Py_BEGIN_CRITICAL_SECTION(obj);
         carg = info->paramfunc(st, (CDataObject *)obj);
+        Py_END_CRITICAL_SECTION();
         if (carg == NULL)
             return -1;
         pa->ffi_type = carg->pffi_type;
@@ -1022,11 +1024,12 @@ static PyObject *GetResult(ctypes_state *st,
     if (info->getfunc && !_ctypes_simple_instance(st, restype)) {
         retval = info->getfunc(result, info->size);
         /* If restype is py_object (detected by comparing getfunc with
-           O_get), we have to call Py_DECREF because O_get has already
-           called Py_INCREF.
+           O_get), we have to call Py_XDECREF because O_get has already
+           called Py_INCREF, unless the result was NULL, in which case
+           an error is set (by the called function, or by O_get).
         */
         if (info->getfunc == _ctypes_get_fielddesc("O")->getfunc) {
-            Py_DECREF(retval);
+            Py_XDECREF(retval);
         }
     }
     else {
@@ -1196,6 +1199,21 @@ PyObject *_ctypes_callproc(ctypes_state *st,
     ffi_type *rtype;
     void **avalues;
     PyObject *retval = NULL;
+
+    // Both call_function and call_cdeclfunction call us:
+#if SIZEOF_VOID_P == SIZEOF_LONG
+    if (PySys_Audit("ctypes.call_function", "kO",
+                    (unsigned long)pProc, argtuple) < 0) {
+#elif SIZEOF_VOID_P == SIZEOF_LONG_LONG
+    if (PySys_Audit("ctypes.call_function", "KO",
+                    (unsigned long long)pProc, argtuple) < 0) {
+#else
+# warning "unexpected pointer size, you may see odd values in audit hooks"
+    if (PySys_Audit("ctypes.call_function", "nO",
+                    (Py_ssize_t)pProc, argtuple) < 0) {
+#endif
+        return NULL;
+    }
 
     n = argcount = PyTuple_GET_SIZE(argtuple);
 #ifdef MS_WIN32
@@ -1672,10 +1690,6 @@ call_function(PyObject *self, PyObject *args)
                           &_parse_voidp, &func,
                           &PyTuple_Type, &arguments))
         return NULL;
-    if (PySys_Audit("ctypes.call_function", "nO",
-                    (Py_ssize_t)func, arguments) < 0) {
-        return NULL;
-    }
 
     ctypes_state *st = get_module_state(self);
     result = _ctypes_callproc(st,
@@ -1709,10 +1723,6 @@ call_cdeclfunction(PyObject *self, PyObject *args)
                           &_parse_voidp, &func,
                           &PyTuple_Type, &arguments))
         return NULL;
-    if (PySys_Audit("ctypes.call_function", "nO",
-                    (Py_ssize_t)func, arguments) < 0) {
-        return NULL;
-    }
 
     ctypes_state *st = get_module_state(self);
     result = _ctypes_callproc(st,

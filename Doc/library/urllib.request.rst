@@ -146,45 +146,66 @@ The :mod:`urllib.request` module defines the following functions:
    attribute to modify its position in the handlers list.
 
 
-.. function:: pathname2url(path)
+.. function:: pathname2url(path, *, add_scheme=False)
 
    Convert the given local path to a ``file:`` URL. This function uses
-   :func:`~urllib.parse.quote` function to encode the path. For historical
-   reasons, the return value omits the ``file:`` scheme prefix. This example
-   shows the function being used on Windows::
+   :func:`~urllib.parse.quote` function to encode the path.
+
+   If *add_scheme* is false (the default), the return value omits the
+   ``file:`` scheme prefix. Set *add_scheme* to true to return a complete URL.
+
+   This example shows the function being used on Windows::
 
       >>> from urllib.request import pathname2url
       >>> path = 'C:\\Program Files'
-      >>> 'file:' + pathname2url(path)
+      >>> pathname2url(path, add_scheme=True)
       'file:///C:/Program%20Files'
+
+   .. versionchanged:: 3.14
+      Windows drive letters are no longer converted to uppercase, and ``:``
+      characters not following a drive letter no longer cause an
+      :exc:`OSError` exception to be raised on Windows.
 
    .. versionchanged:: 3.14
       Paths beginning with a slash are converted to URLs with authority
       sections. For example, the path ``/etc/hosts`` is converted to
       the URL ``///etc/hosts``.
 
-   .. versionchanged:: 3.14
-      Windows drive letters are no longer converted to uppercase, and ``:``
-      characters not following a drive letter no longer cause an
-      :exc:`OSError` exception to be raised on Windows.
+   .. versionchanged:: next
+      The *add_scheme* argument was added.
 
 
-.. function:: url2pathname(url)
+.. function:: url2pathname(url, *, require_scheme=False)
 
    Convert the given ``file:`` URL to a local path. This function uses
-   :func:`~urllib.parse.unquote` to decode the URL. For historical reasons,
-   the given value *must* omit the ``file:`` scheme prefix. This example shows
-   the function being used on Windows::
+   :func:`~urllib.parse.unquote` to decode the URL.
+
+   If *require_scheme* is false (the default), the given value should omit a
+   ``file:`` scheme prefix. If *require_scheme* is set to true, the given
+   value should include the prefix; a :exc:`~urllib.error.URLError` is raised
+   if it doesn't.
+
+   This example shows the function being used on Windows::
 
       >>> from urllib.request import url2pathname
       >>> url = 'file:///C:/Program%20Files'
-      >>> url2pathname(url.removeprefix('file:'))
+      >>> url2pathname(url, require_scheme=True)
       'C:\\Program Files'
 
    .. versionchanged:: 3.14
       Windows drive letters are no longer converted to uppercase, and ``:``
       characters not following a drive letter no longer cause an
       :exc:`OSError` exception to be raised on Windows.
+
+   .. versionchanged:: next
+      This function calls :func:`socket.gethostbyname` if the URL authority
+      isn't empty, ``localhost``, or the machine hostname. If the authority
+      resolves to a local IP address then it is discarded; otherwise, on
+      Windows a UNC path is returned (as before), and on other platforms a
+      :exc:`~urllib.error.URLError` is raised.
+
+   .. versionchanged:: next
+      The *require_scheme* argument was added.
 
 
 .. function:: getproxies()

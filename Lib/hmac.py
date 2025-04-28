@@ -81,13 +81,13 @@ class HMAC:
             try:
                 self._init_openssl_hmac(key, msg, digestmod)
                 return
-            except _hashopenssl.UnsupportedDigestmodError:
+            except _hashopenssl.UnsupportedDigestmodError:  # pragma: no cover
                 pass
         if _hmac and isinstance(digestmod, str):
             try:
                 self._init_builtin_hmac(key, msg, digestmod)
                 return
-            except _hmac.UnknownHashError:
+            except _hmac.UnknownHashError:  # pragma: no cover
                 pass
         self._init_old(key, msg, digestmod)
 
@@ -121,12 +121,12 @@ class HMAC:
                 warnings.warn(f"block_size of {blocksize} seems too small; "
                               f"using our default of {self.blocksize}.",
                               RuntimeWarning, 2)
-                blocksize = self.blocksize
+                blocksize = self.blocksize  # pragma: no cover
         else:
             warnings.warn("No block_size attribute on given digest object; "
                           f"Assuming {self.blocksize}.",
                           RuntimeWarning, 2)
-            blocksize = self.blocksize
+            blocksize = self.blocksize  # pragma: no cover
 
         if len(key) > blocksize:
             key = digest_cons(key).digest()
