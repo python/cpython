@@ -1686,37 +1686,64 @@ interpreter_refcount_linked(PyObject *self, PyObject *idobj)
 static void
 _xid_capsule_destructor(PyObject *capsule)
 {
-    _PyXIData_t *data = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
-    if (data != NULL) {
-        assert(_PyXIData_Release(data) == 0);
-        _PyXIData_Free(data);
+    _PyXIData_t *xidata = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
+    if (xidata != NULL) {
+        assert(_PyXIData_Release(xidata) == 0);
+        _PyXIData_Free(xidata);
     }
 }
 
 static PyObject *
-get_crossinterp_data(PyObject *self, PyObject *args)
+get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    PyThreadState *tstate = _PyThreadState_GET();
-
     PyObject *obj = NULL;
-    if (!PyArg_ParseTuple(args, "O:get_crossinterp_data", &obj)) {
+    PyObject *modeobj = NULL;
+    static char *kwlist[] = {"obj", "mode", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
+                    "O|O:get_crossinterp_data", kwlist,
+                    &obj, &modeobj))
+    {
         return NULL;
+    }
+    const char *mode = NULL;
+    if (modeobj == NULL || modeobj == Py_None) {
+        mode = "xidata";
+    }
+    else if (!PyUnicode_Check(modeobj)) {
+        PyErr_Format(PyExc_TypeError, "expected mode str, got %R", modeobj);
+        return NULL;
+    }
+    else {
+        mode = PyUnicode_AsUTF8(modeobj);
+        if (strlen(mode) == 0) {
+            mode = "xidata";
+        }
     }
 
-    _PyXIData_t *data = _PyXIData_New();
-    if (data == NULL) {
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyXIData_t *xidata = _PyXIData_New();
+    if (xidata == NULL) {
         return NULL;
     }
-    if (_PyObject_GetXIData(tstate, obj, data) != 0) {
-        _PyXIData_Free(data);
-        return NULL;
+    if (strcmp(mode, "xidata") == 0) {
+        if (_PyObject_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
     }
-    PyObject *capsule = PyCapsule_New(data, NULL, _xid_capsule_destructor);
+    else {
+        PyErr_Format(PyExc_ValueError, "unsupported mode %R", modeobj);
+        goto error;
+    }
+    PyObject *capsule = PyCapsule_New(xidata, NULL, _xid_capsule_destructor);
     if (capsule == NULL) {
-        assert(_PyXIData_Release(data) == 0);
-        _PyXIData_Free(data);
+        assert(_PyXIData_Release(xidata) == 0);
+        goto error;
     }
     return capsule;
+
+error:
+    _PyXIData_Free(xidata);
+    return NULL;
 }
 
 static PyObject *
@@ -1727,11 +1754,11 @@ restore_crossinterp_data(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    _PyXIData_t *data = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
-    if (data == NULL) {
+    _PyXIData_t *xidata = (_PyXIData_t *)PyCapsule_GetPointer(capsule, NULL);
+    if (xidata == NULL) {
         return NULL;
     }
-    return _PyXIData_NewObject(data);
+    return _PyXIData_NewObject(xidata);
 }
 
 
@@ -2083,7 +2110,8 @@ static PyMethodDef module_functions[] = {
     {"interpreter_refcount_linked", interpreter_refcount_linked, METH_O},
     {"compile_perf_trampoline_entry", compile_perf_trampoline_entry, METH_VARARGS},
     {"perf_trampoline_set_persist_after_fork", perf_trampoline_set_persist_after_fork, METH_VARARGS},
-    {"get_crossinterp_data",    get_crossinterp_data,            METH_VARARGS},
+    {"get_crossinterp_data",    _PyCFunction_CAST(get_crossinterp_data),
+     METH_VARARGS | METH_KEYWORDS},
     {"restore_crossinterp_data", restore_crossinterp_data,       METH_VARARGS},
     _TESTINTERNALCAPI_TEST_LONG_NUMBITS_METHODDEF
     {"get_rare_event_counters", get_rare_event_counters, METH_NOARGS},
