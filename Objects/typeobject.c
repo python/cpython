@@ -2010,8 +2010,9 @@ type_get_annotations(PyObject *tp, void *Py_UNUSED(closure))
                 return NULL;
             }
             if (!PyDict_Check(annotations)) {
-                PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
-                             Py_TYPE(annotations)->tp_name);
+                PyErr_Format(PyExc_TypeError,
+                             "__annotate__ must return type dict of type '%T'",
+                             annotations);
                 Py_DECREF(annotations);
                 Py_DECREF(annotate);
                 Py_DECREF(dict);
@@ -9920,7 +9921,8 @@ slot_nb_bool(PyObject *self)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "%T.__bool__ returned non-bool (type %T)", self, value);
+                     "%T.__bool__ must return type bool (not %T)",
+                     self, value);
         result = -1;
     }
 
