@@ -2628,8 +2628,8 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
         else if (sockstate == SOCKET_IS_NONBLOCKING) {
             break;
         }
-    } while (err.ssl == SSL_ERROR_WANT_READ ||
-             err.ssl == SSL_ERROR_WANT_WRITE);
+    } while (err.ssl == SSL_ERROR_WANT_READ
+             || err.ssl == SSL_ERROR_WANT_WRITE);
 
     if (err.ssl == SSL_ERROR_SSL
         && ERR_GET_REASON(ERR_peek_error()) == SSL_R_UNINITIALIZED)
