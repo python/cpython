@@ -1770,8 +1770,6 @@ Type annotations
    A ``# type: ignore`` comment located at *lineno*.
    *tag* is the optional tag specified by the form ``# type: ignore <tag>``.
 
-   See :func:`ast.parse` for more details.
-
    .. doctest::
 
       >>> print(ast.dump(ast.parse('x = 1 # type: ignore', type_comments=True), indent=4))
@@ -1793,6 +1791,10 @@ Type annotations
                   simple=1)],
           type_ignores=[
               TypeIgnore(lineno=1, tag='[assignment]')])
+
+   .. note::
+      :class:`!TypeIgnore` nodes are not generated when the *type_comments* parameter
+      is set to ``False`` (default).  See :func:`ast.parse` for more details.
 
    .. versionadded:: 3.8
 
