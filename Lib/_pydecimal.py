@@ -425,8 +425,6 @@ def IEEEContext(bits, /):
     IEEE interchange formats.  The argument must be a multiple of 32 and less
     than IEEE_CONTEXT_MAX_BITS.
     """
-    import sys
-
     if bits <= 0 or bits > IEEE_CONTEXT_MAX_BITS or bits % 32:
         raise ValueError("argument must be a multiple of 32, "
                          f"with a maximum of {IEEE_CONTEXT_MAX_BITS}")
