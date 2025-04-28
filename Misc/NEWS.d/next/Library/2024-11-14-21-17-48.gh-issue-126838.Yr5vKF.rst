@@ -1,9 +1,3 @@
-Fix issue where :func:`urllib.request.url2pathname` mishandled file URLs with
-authorities. The process now works as follows:
-
-1. Discard authority if it is empty or ``localhost``; otherwise
-2. (New) Discard authority if it matches the local hostname; otherwise
-3. (New) If the new *resolve_netloc* keyword-only argument is set to true,
-   discard authority if it resolves to a local IP address; otherwise
-4. On Windows, return a UNC path; otherwise
-5. (New) Raise :exc:`urllib.error.URLError`.
+Add *resolve_host* keyword-only argument to
+:func:`urllib.request.url2pathname`, and fix handling of file URLs with
+authorities.

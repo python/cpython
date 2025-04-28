@@ -1232,7 +1232,7 @@ urllib
     true.
   - Discard URL authority if it matches the local hostname.
   - Discard URL authority if it resolves to a local IP address when the new
-    *resolve_netloc* argument is set to true.
+    *resolve_host* argument is set to true.
   - Raise :exc:`~urllib.error.URLError` if a URL authority isn't local,
     except on Windows where we return a UNC path as before.
 

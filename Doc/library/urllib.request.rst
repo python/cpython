@@ -175,7 +175,7 @@ The :mod:`urllib.request` module defines the following functions:
       The *add_scheme* argument was added.
 
 
-.. function:: url2pathname(url, *, require_scheme=False, resolve_netloc=False)
+.. function:: url2pathname(url, *, require_scheme=False, resolve_host=False)
 
    Convert the given ``file:`` URL to a local path. This function uses
    :func:`~urllib.parse.unquote` to decode the URL.
@@ -186,11 +186,11 @@ The :mod:`urllib.request` module defines the following functions:
    if it doesn't.
 
    The URL authority is discarded if it is empty, ``localhost``, or the local
-   hostname. Otherwise, if *resolve_netloc* is set to true, the authority is
+   hostname. Otherwise, if *resolve_host* is set to true, the authority is
    resolved using :func:`socket.gethostbyname` and discarded if it matches a
-   local IP address. If the authority is still unhandled, then on Windows a
-   UNC path is returned, and on other platforms a
-   :exc:`~urllib.error.URLError` is raised.
+   local IP address (as per :rfc:`RFC 8089 §3 <8089#section-3>`). If the
+   authority is still unhandled, then on Windows a UNC path is returned, and
+   on other platforms a :exc:`~urllib.error.URLError` is raised.
 
    This example shows the function being used on Windows::
 
@@ -211,10 +211,7 @@ The :mod:`urllib.request` module defines the following functions:
       :exc:`~urllib.error.URLError` is raised.
 
    .. versionchanged:: next
-      The *require_scheme* argument was added.
-
-   .. versionchanged:: next
-      The *resolve_netloc* argument was added.
+      The *require_scheme* and *resolve_host* arguments were added.
 
 
 .. function:: getproxies()

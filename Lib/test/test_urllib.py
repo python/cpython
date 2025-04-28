@@ -1569,12 +1569,12 @@ class Pathname_Tests(unittest.TestCase):
                     urllib.request.url2pathname,
                     url, require_scheme=True)
 
-    def test_url2pathname_resolve_netloc(self):
+    def test_url2pathname_resolve_host(self):
         fn = urllib.request.url2pathname
         sep = os.path.sep
-        self.assertEqual(fn('//127.0.0.1/foo/bar', resolve_netloc=True), f'{sep}foo{sep}bar')
+        self.assertEqual(fn('//127.0.0.1/foo/bar', resolve_host=True), f'{sep}foo{sep}bar')
         self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar'), f'{sep}foo{sep}bar')
-        self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar', resolve_netloc=True), f'{sep}foo{sep}bar')
+        self.assertEqual(fn(f'//{socket.gethostname()}/foo/bar', resolve_host=True), f'{sep}foo{sep}bar')
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows pathnames.')
