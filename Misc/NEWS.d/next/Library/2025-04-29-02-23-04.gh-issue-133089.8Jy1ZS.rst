@@ -1,0 +1,2 @@
+Make :func:``subprocess.run``'s behavior is same with 'timeout=None' when
+the timeout is zero
