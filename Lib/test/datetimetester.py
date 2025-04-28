@@ -7367,15 +7367,19 @@ class ExtensionModuleTests(unittest.TestCase):
             res = self.assert_python_in_subinterp(True, script, setup='')
             self.assertFalse(res.err)
 
-    def test_static_type_at_shutdown3(self):
         script = textwrap.dedent("""
+            import sys
             timedelta = _testcapi.get_capi_types()['timedelta']
 
             def gen():
                 try:
                     yield
                 finally:
-                    timedelta(days=1)
+                    # Exceptions are ignored here
+                    assert not sys.modules
+                    td = timedelta(days=1)
+                    assert td.days == 1
+                    assert not sys.modules
 
             it = gen()
             next(it)
