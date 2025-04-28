@@ -11887,24 +11887,24 @@ then :
   cat >>confdefs.h <<_ACEOF
 #define `printf "%s\n" "HAVE_$ac_header" | sed "$as_sed_cpp"` 1
 _ACEOF
- ac_fn_c_check_func "$LINENO" "backtrace" "ac_cv_func_backtrace"
-if test "x$ac_cv_func_backtrace" = xyes
+
+
+  for ac_func in backtrace dladdr1
+do :
+  as_ac_var=`printf "%s\n" "ac_cv_func_$ac_func" | sed "$as_sed_sh"`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"
 then :
-  printf "%s\n" "#define HAVE_BACKTRACE 1" >>confdefs.h
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_func" | sed "$as_sed_cpp"` 1
+_ACEOF
+
+    # dladdr1 requires -ldl
+    as_fn_append LDFLAGS " -ldl"
 
 fi
-ac_fn_c_check_func "$LINENO" "backtrace_symbols" "ac_cv_func_backtrace_symbols"
-if test "x$ac_cv_func_backtrace_symbols" = xyes
-then :
-  printf "%s\n" "#define HAVE_BACKTRACE_SYMBOLS 1" >>confdefs.h
 
-fi
-ac_fn_c_check_func "$LINENO" "dladdr1" "ac_cv_func_dladdr1"
-if test "x$ac_cv_func_dladdr1" = xyes
-then :
-  printf "%s\n" "#define HAVE_DLADDR1 1" >>confdefs.h
-
-fi
+done
 
 fi
 
