@@ -1100,6 +1100,7 @@ class TestIsShareable(TestBase):
         shareables = [
                 # singletons
                 None,
+                NotImplemented,
                 # builtin objects
                 b'spam',
                 'spam',
@@ -1128,7 +1129,6 @@ class TestIsShareable(TestBase):
 
         not_shareables = [
                 # singletons
-                NotImplemented,
                 ...,
                 # builtin types and objects
                 type,
