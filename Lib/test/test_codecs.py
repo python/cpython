@@ -35,13 +35,13 @@ def coding_checker(self, coder):
 
 # On small versions of Windows like Windows IoT or Windows Nano Server not all codepages are present
 def is_code_page_present(cp):
-    from ctypes import POINTER, WINFUNCTYPE, WinDLL
+    from ctypes import POINTER, WINFUNCTYPE, WinDLL, Structure
     from ctypes.wintypes import BOOL, BYTE, WCHAR, UINT, DWORD
 
     MAX_LEADBYTES = 12  # 5 ranges, 2 bytes ea., 0 term.
     MAX_DEFAULTCHAR = 2 # single or double byte
     MAX_PATH = 260
-    class CPINFOEXW(ctypes.Structure):
+    class CPINFOEXW(Structure):
         _fields_ = [("MaxCharSize", UINT),
                     ("DefaultChar", BYTE*MAX_DEFAULTCHAR),
                     ("LeadByte", BYTE*MAX_LEADBYTES),
