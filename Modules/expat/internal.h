@@ -28,7 +28,7 @@
    Copyright (c) 2002-2003 Fred L. Drake, Jr. <fdrake@users.sourceforge.net>
    Copyright (c) 2002-2006 Karl Waclawek <karl@waclawek.net>
    Copyright (c) 2003      Greg Stein <gstein@users.sourceforge.net>
-   Copyright (c) 2016-2024 Sebastian Pipping <sebastian@pipping.org>
+   Copyright (c) 2016-2025 Sebastian Pipping <sebastian@pipping.org>
    Copyright (c) 2018      Yury Gribov <tetra2005@gmail.com>
    Copyright (c) 2019      David Loffredo <loffredo@steptools.com>
    Copyright (c) 2023-2024 Sony Corporation / Snild Dolkow <snild@sony.com>
@@ -127,6 +127,9 @@
 #  elif ULONG_MAX == 18446744073709551615u // 2^64-1
 #    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "ld"
 #    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "lu"
+#  elif defined(EMSCRIPTEN) // 32bit mode Emscripten
+#    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "ld"
+#    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "zu"
 #  else
 #    define EXPAT_FMT_PTRDIFF_T(midpart) "%" midpart "d"
 #    define EXPAT_FMT_SIZE_T(midpart) "%" midpart "u"

@@ -330,6 +330,9 @@ then
 	*-apple-ios*)
 		ac_sys_system=iOS
 		;;
+	*-*-darwin*)
+		ac_sys_system=Darwin
+		;;
 	*-*-vxworks*)
 	    ac_sys_system=VxWorks
 	    ;;
@@ -362,6 +365,7 @@ then
 
     case $MACHDEP in
 	aix*) MACHDEP="aix";;
+	freebsd*) MACHDEP="freebsd";;
 	linux-android*) MACHDEP="android";;
 	linux*) MACHDEP="linux";;
 	cygwin*) MACHDEP="cygwin";;
@@ -788,6 +792,15 @@ if test "$cross_compiling" = yes; then
 			*)
 				_host_ident=${IPHONEOS_DEPLOYMENT_TARGET}-$host_cpu-iphone${_host_device}
 				;;
+		esac
+		;;
+	*-*-darwin*)
+		case "$host_cpu" in
+		arm*)
+			_host_ident=arm
+			;;
+		*)
+			_host_ident=$host_cpu
 		esac
 		;;
 	*-*-vxworks*)
@@ -2018,7 +2031,7 @@ if test "$Py_LTO" = 'true' ; then
           LTOCFLAGS="-flto"
           ;;
         *)
-          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects -flto-partition=none"
+          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects"
           ;;
       esac
       ;;
@@ -2357,7 +2370,7 @@ AS_CASE([$ac_sys_system],
     dnl Include file system support
     AS_VAR_APPEND([LINKFORSHARED], [" -sFORCE_FILESYSTEM -lidbfs.js -lnodefs.js -lproxyfs.js -lworkerfs.js"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_RUNTIME_METHODS=FS,callMain,ENV"])
-    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version"])
+    AS_VAR_APPEND([LINKFORSHARED], [" -sEXPORTED_FUNCTIONS=_main,_Py_Version,__PyRuntime,__PyEM_EMSCRIPTEN_COUNT_ARGS_OFFSET,_PyGILState_GetThisThreadState,__Py_DumpTraceback"])
     AS_VAR_APPEND([LINKFORSHARED], [" -sSTACK_SIZE=5MB"])
 
     AS_VAR_IF([enable_wasm_dynamic_linking], [yes], [
@@ -2971,6 +2984,15 @@ AC_CHECK_HEADERS([ \
 ])
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
+
+# for faulthandler
+AC_CHECK_HEADERS([execinfo.h link.h dlfcn.h], [
+  AC_CHECK_FUNCS([backtrace dladdr1], [
+    # dladdr1 requires -ldl
+    ac_cv_require_ldl=yes
+  ])
+])
+AS_VAR_IF([ac_cv_require_ldl], [yes], [AS_VAR_APPEND([LDFLAGS], [" -ldl"])])
 
 # bluetooth/bluetooth.h has been known to not compile with -std=c99.
 # http://permalink.gmane.org/gmane.linux.bluez.kernel/22294
@@ -4049,7 +4071,7 @@ AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <ffi.h>
 int z_is_expected(double complex z)
 {
-    const double complex expected = CMPLX(1.25, -0.5);
+    const double complex expected = 1.25 - 0.5 * I;
     return z == expected;
 }
 int main(void)
@@ -4417,29 +4439,21 @@ AS_CASE([$ac_cv_search_dbm_open],
 AC_MSG_RESULT([$have_ndbm ($dbm_ndbm)])
 
 dnl "gdbm-ndbm.h" and "gdbm/ndbm.h" are both normalized to "gdbm_ndbm_h"
-dnl unset ac_cv_header_gdbm_ndbm_h to prevent false positive cache hits.
-AS_UNSET([ac_cv_header_gdbm_ndbm_h])
-AC_CACHE_VAL([ac_cv_header_gdbm_slash_ndbm_h], [
-  AC_CHECK_HEADER(
-    [gdbm/ndbm.h],
-    [ac_cv_header_gdbm_slash_ndbm_h=yes], [ac_cv_header_gdbm_slash_ndbm_h=no]
-  )
-])
+AC_CACHE_CHECK([for gdbm/ndbm.h], [ac_cv_header_gdbm_slash_ndbm_h],
+               [AC_PREPROC_IFELSE([AC_LANG_SOURCE([@%:@include <gdbm/ndbm.h>])],
+                                  [ac_cv_header_gdbm_slash_ndbm_h=yes],
+                                  [ac_cv_header_gdbm_slash_ndbm_h=no])])
 AS_VAR_IF([ac_cv_header_gdbm_slash_ndbm_h], [yes], [
   AC_DEFINE([HAVE_GDBM_NDBM_H], [1], [Define to 1 if you have the <gdbm/ndbm.h> header file.])
 ])
 
-AS_UNSET([ac_cv_header_gdbm_ndbm_h])
-AC_CACHE_VAL([ac_cv_header_gdbm_dash_ndbm_h], [
-  AC_CHECK_HEADER(
-    [gdbm-ndbm.h],
-    [ac_cv_header_gdbm_dash_ndbm_h=yes], [ac_cv_header_gdbm_dash_ndbm_h=no]
-  )
-])
+AC_CACHE_CHECK([for gdbm-ndbm.h], [ac_cv_header_gdbm_dash_ndbm_h],
+               [AC_PREPROC_IFELSE([AC_LANG_SOURCE([@%:@include <gdbm-ndbm.h>])],
+                                  [ac_cv_header_gdbm_dash_ndbm_h=yes],
+                                  [ac_cv_header_gdbm_dash_ndbm_h=no])])
 AS_VAR_IF([ac_cv_header_gdbm_dash_ndbm_h], [yes], [
   AC_DEFINE([HAVE_GDBM_DASH_NDBM_H], [1], [Define to 1 if you have the <gdbm-ndbm.h> header file.])
 ])
-AS_UNSET([ac_cv_header_gdbm_ndbm_h])
 
 if test "$ac_cv_header_gdbm_slash_ndbm_h" = yes -o "$ac_cv_header_gdbm_dash_ndbm_h" = yes; then
   AS_UNSET([ac_cv_search_dbm_open])
@@ -5128,7 +5142,7 @@ fi
 # checks for library functions
 AC_CHECK_FUNCS([ \
   accept4 alarm bind_textdomain_codeset chmod chown clock closefrom close_range confstr \
-  copy_file_range ctermid dup dup3 execv explicit_bzero explicit_memset \
+  copy_file_range ctermid dladdr dup dup3 execv explicit_bzero explicit_memset \
   faccessat fchmod fchmodat fchown fchownat fdopendir fdwalk fexecve \
   fork fork1 fpathconf fstatat ftime ftruncate futimens futimes futimesat \
   gai_strerror getegid geteuid getgid getgrent getgrgid getgrgid_r \
@@ -5142,7 +5156,8 @@ AC_CHECK_FUNCS([ \
   posix_spawn_file_actions_addclosefrom_np \
   pread preadv preadv2 process_vm_readv \
   pthread_cond_timedwait_relative_np pthread_condattr_setclock pthread_init \
-  pthread_kill pthread_getname_np pthread_setname_np \
+  pthread_kill pthread_get_name_np pthread_getname_np pthread_set_name_np
+  pthread_setname_np pthread_getattr_np \
   ptsname ptsname_r pwrite pwritev pwritev2 readlink readlinkat readv realpath renameat \
   rtpSpawn sched_get_priority_max sched_rr_get_interval sched_setaffinity \
   sched_setparam sched_setscheduler sem_clockwait sem_getvalue sem_open \
@@ -5152,7 +5167,7 @@ AC_CHECK_FUNCS([ \
   sigfillset siginterrupt sigpending sigrelse sigtimedwait sigwait \
   sigwaitinfo snprintf splice strftime strlcpy strsignal symlinkat sync \
   sysconf tcgetpgrp tcsetpgrp tempnam timegm times tmpfile \
-  tmpnam tmpnam_r truncate ttyname umask uname unlinkat unlockpt utimensat utimes vfork \
+  tmpnam tmpnam_r truncate ttyname_r umask uname unlinkat unlockpt utimensat utimes vfork \
   wait wait3 wait4 waitid waitpid wcscoll wcsftime wcsxfrm wmemcmp writev \
 ])
 
@@ -7004,6 +7019,51 @@ case "$ac_cv_computed_gotos" in yes*)
   [Define if the C compiler supports computed gotos.])
 esac
 
+# Check for --with-tail-call-interp
+AC_MSG_CHECKING([for --with-tail-call-interp])
+AC_ARG_WITH(
+  [tail-call-interp],
+  [AS_HELP_STRING(
+    [--with-tail-call-interp],
+    [enable tail-calling interpreter in evaluation loop and rest of CPython]
+  )],
+[
+if test "$withval" = yes
+then
+  AC_DEFINE([Py_TAIL_CALL_INTERP], [1],
+  [Define if you want to use tail-calling interpreters in CPython.])
+  AC_MSG_RESULT([yes])
+fi
+if test "$withval" = no
+then
+  AC_DEFINE([Py_TAIL_CALL_INTERP], [0],
+  [Define if you want to use tail-calling interpreters in CPython.])
+  AC_MSG_RESULT([no])
+fi
+],
+[AC_MSG_RESULT([no value specified])])
+
+# Check for --with-remote-debug
+AC_MSG_CHECKING([for --with-remote-debug])
+AC_ARG_WITH(
+  [remote-debug],
+  [AS_HELP_STRING(
+    [--with-remote-debug],
+    [enable remote debugging support (default is yes)])],
+  [],
+  [with_remote_debug=yes])
+
+if test "$with_remote_debug" = yes; then
+  AC_DEFINE([Py_REMOTE_DEBUG], [1],
+    [Define if you want to enable remote debugging support.])
+  AC_MSG_RESULT([yes])
+else
+  AC_DEFINE([Py_REMOTE_DEBUG], [0],
+    [Define if you want to enable remote debugging support.])
+  AC_MSG_RESULT([no])
+fi
+
+
 case $ac_sys_system in
 AIX*)
   AC_DEFINE([HAVE_BROKEN_PIPE_BUF], [1],
@@ -7527,19 +7587,20 @@ _RESTORE_VAR([CPPFLAGS])
 
 # gh-59705: Maximum length in bytes of a thread name
 case "$ac_sys_system" in
-  Linux*) PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
-  SunOS*) PYTHREAD_NAME_MAXLEN=31;;
-  NetBSD*) PYTHREAD_NAME_MAXLEN=31;;
-  Darwin) PYTHREAD_NAME_MAXLEN=63;;
-  iOS) PYTHREAD_NAME_MAXLEN=63;;
-  FreeBSD*) PYTHREAD_NAME_MAXLEN=98;;
-  *) PYTHREAD_NAME_MAXLEN=;;
+  Linux*) _PYTHREAD_NAME_MAXLEN=15;;  # Linux and Android
+  SunOS*) _PYTHREAD_NAME_MAXLEN=31;;
+  NetBSD*) _PYTHREAD_NAME_MAXLEN=15;; # gh-131268
+  Darwin) _PYTHREAD_NAME_MAXLEN=63;;
+  iOS) _PYTHREAD_NAME_MAXLEN=63;;
+  FreeBSD*) _PYTHREAD_NAME_MAXLEN=19;; # gh-131268
+  OpenBSD*) _PYTHREAD_NAME_MAXLEN=23;; # gh-131268
+  *) _PYTHREAD_NAME_MAXLEN=;;
 esac
-if test -n "$PYTHREAD_NAME_MAXLEN"; then
-    AC_DEFINE_UNQUOTED([PYTHREAD_NAME_MAXLEN], [$PYTHREAD_NAME_MAXLEN],
+if test -n "$_PYTHREAD_NAME_MAXLEN"; then
+    AC_DEFINE_UNQUOTED([_PYTHREAD_NAME_MAXLEN], [$_PYTHREAD_NAME_MAXLEN],
                        [Maximum length in bytes of a thread name])
 fi
-AC_SUBST([PYTHREAD_NAME_MAXLEN])
+AC_SUBST([_PYTHREAD_NAME_MAXLEN])
 
 
 # stdlib
@@ -7724,7 +7785,6 @@ dnl always enabled extension modules
 PY_STDLIB_MOD_SIMPLE([array])
 PY_STDLIB_MOD_SIMPLE([_asyncio])
 PY_STDLIB_MOD_SIMPLE([_bisect])
-PY_STDLIB_MOD_SIMPLE([_contextvars])
 PY_STDLIB_MOD_SIMPLE([_csv])
 PY_STDLIB_MOD_SIMPLE([_heapq])
 PY_STDLIB_MOD_SIMPLE([_json])
@@ -7735,6 +7795,7 @@ PY_STDLIB_MOD_SIMPLE([_queue])
 PY_STDLIB_MOD_SIMPLE([_random])
 PY_STDLIB_MOD_SIMPLE([select])
 PY_STDLIB_MOD_SIMPLE([_struct])
+PY_STDLIB_MOD_SIMPLE([_types])
 PY_STDLIB_MOD_SIMPLE([_typing])
 PY_STDLIB_MOD_SIMPLE([_interpreters])
 PY_STDLIB_MOD_SIMPLE([_interpchannels])
@@ -7794,28 +7855,54 @@ PY_STDLIB_MOD_SIMPLE([_codecs_tw])
 PY_STDLIB_MOD_SIMPLE([_multibytecodec])
 PY_STDLIB_MOD_SIMPLE([unicodedata])
 
-dnl By default we always compile these even when OpenSSL is available
-dnl (issue #14693). The modules are small.
-PY_STDLIB_MOD([_md5], [test "$with_builtin_md5" = yes])
-PY_STDLIB_MOD([_sha1], [test "$with_builtin_sha1" = yes])
-PY_STDLIB_MOD([_sha2], [test "$with_builtin_sha2" = yes])
-PY_STDLIB_MOD([_sha3], [test "$with_builtin_sha3" = yes])
-PY_STDLIB_MOD([_blake2], [test "$with_builtin_blake2" = yes])
-
-LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
+###############################################################################
+# HACL* compilation and linking configuration (contact: @picnixz)
+#
+# Used by the HACL*-based implementations of cryptographic primitives.
+#
+# CPython provides a vendored copy of a subset of the HACL* project used
+# to build extension modules of cryptographic primitives. On WASI, HACL*
+# sources must be statically linked with the extension modules; on other
+# platforms, the extension modules may assume that HACL* has been compiled
+# as a shared library.
+#
+# Example for MD5:
+#
+#   * Compile Modules/_hacl/Hacl_Hash_MD5.c into Modules/_hacl/Hacl_Hash_MD5.o.
+#   * Decide whether the object files are to be passed to the linker (emulate
+#     a shared library without having to install it) or if we need to create
+#     a static library for WASI. The following summarizes the values taken by
+#     the MODULE_<NAME>_LDFLAGS variable depending on the linkage type:
+#     - shared: MODULE__MD5_LDFLAGS is set to LIBHACL_MD5_OBJS
+#     - static: MODULE__MD5_LDFLAGS is set to Modules/_hacl/libHacl_Hash_MD5.a
+#   * Compile Modules/md5module.c into Modules/md5module.o.
+#   * Link Modules/md5module.o using $(MODULE__MD5_LDFLAGS)
+#     and get Modules/_md5$(EXT_SUFFIX).
+#
+# LIBHACL_FLAG_I: '-I' flags passed to $(CC) for HACL* and HACL*-based modules
+# LIBHACL_FLAG_D: '-D' flags passed to $(CC) for HACL* and HACL*-based modules
+# LIBHACL_CFLAGS: compiler flags passed for HACL* and HACL*-based modules
+# LIBHACL_LDFLAGS: linker flags passed for HACL* and HACL*-based modules
+LIBHACL_FLAG_I='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include'
+LIBHACL_FLAG_D='-D_BSD_SOURCE -D_DEFAULT_SOURCE'
 case "$ac_sys_system" in
   Linux*)
     if test "$ac_cv_func_explicit_bzero" = "no"; then
-      LIBHACL_CFLAGS="$LIBHACL_CFLAGS -DLINUX_NO_EXPLICIT_BZERO"
+      LIBHACL_FLAG_D="${LIBHACL_FLAG_D} -DLINUX_NO_EXPLICIT_BZERO"
     fi
   ;;
 esac
+LIBHACL_CFLAGS="${LIBHACL_FLAG_I} ${LIBHACL_FLAG_D} \$(PY_STDMODULE_CFLAGS) \$(CCSHARED)"
 AC_SUBST([LIBHACL_CFLAGS])
+LIBHACL_LDFLAGS=  # for now, no specific linker flags are needed
+AC_SUBST([LIBHACL_LDFLAGS])
 
 # The SIMD files use aligned_alloc, which is not available on older versions of
 # Android.
 # The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
-if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
+   { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
+then
   dnl This can be extended here to detect e.g. Power8, which HACL* should also support.
   AX_CHECK_COMPILE_FLAG([-msse -msse2 -msse3 -msse4.1 -msse4.2],[
     [LIBHACL_SIMD128_FLAGS="-msse -msse2 -msse3 -msse4.1 -msse4.2"]
@@ -7827,17 +7914,17 @@ if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || tes
     # isn't great, so it's disabled on ARM64.
     AC_MSG_CHECKING([for HACL* SIMD128 implementation])
     if test "$UNIVERSAL_ARCHS" == "universal2"; then
-      [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"]
+      [LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"]
       AC_MSG_RESULT([universal2])
     else
-      [LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
+      [LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"]
       AC_MSG_RESULT([standard])
     fi
 
   ], [], [-Werror])
 fi
 AC_SUBST([LIBHACL_SIMD128_FLAGS])
-AC_SUBST([LIBHACL_SIMD128_OBJS])
+AC_SUBST([LIBHACL_BLAKE2_SIMD128_OBJS])
 
 # The SIMD files use aligned_alloc, which is not available on older versions of
 # Android.
@@ -7846,7 +7933,9 @@ AC_SUBST([LIBHACL_SIMD128_OBJS])
 # Although AVX support is not guaranteed on Android
 # (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
 # runtime CPUID check.
-if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
+   { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
+then
   AX_CHECK_COMPILE_FLAG([-mavx2],[
     [LIBHACL_SIMD256_FLAGS="-mavx2"]
     AC_DEFINE([HACL_CAN_COMPILE_SIMD256], [1], [HACL* library can compile SIMD256 implementations])
@@ -7857,16 +7946,57 @@ if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || tes
     # wrapped implementation if we're building for universal2.
     AC_MSG_CHECKING([for HACL* SIMD256 implementation])
     if test "$UNIVERSAL_ARCHS" == "universal2"; then
-      [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"]
+      [LIBHACL_BLAKE2_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"]
       AC_MSG_RESULT([universal2])
     else
-      [LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
+      [LIBHACL_BLAKE2_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"]
       AC_MSG_RESULT([standard])
     fi
   ], [], [-Werror])
 fi
 AC_SUBST([LIBHACL_SIMD256_FLAGS])
-AC_SUBST([LIBHACL_SIMD256_OBJS])
+AC_SUBST([LIBHACL_BLAKE2_SIMD256_OBJS])
+### end(HACL* configuration)
+
+###############################################################################
+# HACL*-based cryptographic primitives
+
+AC_MSG_CHECKING([for HACL* library linking type])
+if test "$ac_sys_system" = "WASI"; then
+  LIBHACL_LDEPS_LIBTYPE=STATIC
+  AC_MSG_RESULT([static])
+else
+  LIBHACL_LDEPS_LIBTYPE=SHARED
+  AC_MSG_RESULT([shared])
+fi
+# Used to complete the "MODULE_<NAME>_LDEPS" Makefile variable.
+# The LDEPS variable is a Makefile rule prerequisite.
+AC_SUBST([LIBHACL_LDEPS_LIBTYPE])
+
+dnl PY_HACL_CREATE_MODULE([COMPONENT], [EXTNAME], [ENABLED-TEST])
+dnl The COMPONENT is the name of the HACL* component being built in uppercase.
+dnl Corresponding Makefile variables are named as LIBHACL_<COMPONENT>_*.
+dnl The EXTNAME is the name of the extension module being built.
+AC_DEFUN([PY_HACL_CREATE_MODULE], [
+  AS_VAR_PUSHDEF([v], [[LIBHACL_][$1][_LDFLAGS]])
+  AS_VAR_SET([v], [[LIBHACL_][$1][_LIB_${LIBHACL_LDEPS_LIBTYPE}]])
+  PY_STDLIB_MOD([$2], [$3], [], [$LIBHACL_CFLAGS], [\$($v)])
+  AS_VAR_POPDEF([v])
+])
+
+dnl By default we always compile these even when OpenSSL is available
+dnl (see bpo-14693). The modules are small.
+PY_HACL_CREATE_MODULE([MD5], [_md5], [test "$with_builtin_md5" = yes])
+PY_HACL_CREATE_MODULE([SHA1], [_sha1], [test "$with_builtin_sha1" = yes])
+PY_HACL_CREATE_MODULE([SHA2], [_sha2], [test "$with_builtin_sha2" = yes])
+PY_HACL_CREATE_MODULE([SHA3], [_sha3], [test "$with_builtin_sha3" = yes])
+PY_HACL_CREATE_MODULE([BLAKE2], [_blake2], [test "$with_builtin_blake2" = yes])
+
+dnl HMAC builtin library does not need OpenSSL for now. In the future
+dnl we might want to rely on OpenSSL EVP/NID interface or implement
+dnl our own for algorithm resolution.
+PY_HACL_CREATE_MODULE([HMAC], [_hmac], [])
+### end(cryptographic primitives)
 
 PY_STDLIB_MOD([_ctypes],
   [], [test "$have_libffi" = yes],

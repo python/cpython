@@ -1171,6 +1171,77 @@ class ThreadTests(BaseTestCase):
         self.assertEqual(out.strip(), b"OK")
         self.assertIn(b"can't create new thread at interpreter shutdown", err)
 
+    def test_join_daemon_thread_in_finalization(self):
+        # gh-123940: Py_Finalize() prevents other threads from running Python
+        # code, so join() can not succeed unless the thread is already done.
+        # (Non-Python threads, that is `threading._DummyThread`, can't be
+        # joined at all.)
+        # We raise an exception rather than hang.
+        for timeout in (None, 10):
+            with self.subTest(timeout=timeout):
+                code = textwrap.dedent(f"""
+                    import threading
+
+
+                    def loop():
+                        while True:
+                            pass
+
+
+                    class Cycle:
+                        def __init__(self):
+                            self.self_ref = self
+                            self.thr = threading.Thread(
+                                target=loop, daemon=True)
+                            self.thr.start()
+
+                        def __del__(self):
+                            assert self.thr.is_alive()
+                            try:
+                                self.thr.join(timeout={timeout})
+                            except PythonFinalizationError:
+                                assert self.thr.is_alive()
+                                print('got the correct exception!')
+
+                    # Cycle holds a reference to itself, which ensures it is
+                    # cleaned up during the GC that runs after daemon threads
+                    # have been forced to exit during finalization.
+                    Cycle()
+                """)
+                rc, out, err = assert_python_ok("-c", code)
+                self.assertEqual(err, b"")
+                self.assertIn(b"got the correct exception", out)
+
+    def test_join_finished_daemon_thread_in_finalization(self):
+        # (see previous test)
+        # If the thread is already finished, join() succeeds.
+        code = textwrap.dedent("""
+            import threading
+            done = threading.Event()
+
+            def loop():
+                done.set()
+
+
+            class Cycle:
+                def __init__(self):
+                    self.self_ref = self
+                    self.thr = threading.Thread(target=loop, daemon=True)
+                    self.thr.start()
+                    done.wait()
+
+                def __del__(self):
+                    assert not self.thr.is_alive()
+                    self.thr.join()
+                    assert not self.thr.is_alive()
+                    print('all clear!')
+
+            Cycle()
+        """)
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertEqual(err, b"")
+        self.assertIn(b"all clear", out)
+
     def test_start_new_thread_failed(self):
         # gh-109746: if Python fails to start newly created thread
         # due to failure of underlying PyThread_start_new_thread() call,
@@ -2130,13 +2201,22 @@ class MiscTestCase(unittest.TestCase):
 
             # Test long non-ASCII name (truncated)
             "x" * (limit - 1) + "é€",
+
+            # Test long non-BMP names (truncated) creating surrogate pairs
+            # on Windows
+            "x" * (limit - 1) + "\U0010FFFF",
+            "x" * (limit - 2) + "\U0010FFFF" * 2,
+            "x" + "\U0001f40d" * limit,
+            "xx" + "\U0001f40d" * limit,
+            "xxx" + "\U0001f40d" * limit,
+            "xxxx" + "\U0001f40d" * limit,
         ]
         if os_helper.FS_NONASCII:
             tests.append(f"nonascii:{os_helper.FS_NONASCII}")
         if os_helper.TESTFN_UNENCODABLE:
             tests.append(os_helper.TESTFN_UNENCODABLE)
 
-        if sys.platform.startswith("solaris"):
+        if sys.platform.startswith("sunos"):
             encoding = "utf-8"
         else:
             encoding = sys.getfilesystemencoding()
@@ -2146,15 +2226,31 @@ class MiscTestCase(unittest.TestCase):
             work_name = _thread._get_name()
 
         for name in tests:
-            encoded = name.encode(encoding, "replace")
-            if b'\0' in encoded:
-                encoded = encoded.split(b'\0', 1)[0]
-            if truncate is not None:
-                encoded = encoded[:truncate]
-            if sys.platform.startswith("solaris"):
-                expected = encoded.decode("utf-8", "surrogateescape")
+            if not support.MS_WINDOWS:
+                encoded = name.encode(encoding, "replace")
+                if b'\0' in encoded:
+                    encoded = encoded.split(b'\0', 1)[0]
+                if truncate is not None:
+                    encoded = encoded[:truncate]
+                if sys.platform.startswith("sunos"):
+                    expected = encoded.decode("utf-8", "surrogateescape")
+                else:
+                    expected = os.fsdecode(encoded)
             else:
-                expected = os.fsdecode(encoded)
+                size = 0
+                chars = []
+                for ch in name:
+                    if ord(ch) > 0xFFFF:
+                        size += 2
+                    else:
+                        size += 1
+                    if size > truncate:
+                        break
+                    chars.append(ch)
+                expected = ''.join(chars)
+
+                if '\0' in expected:
+                    expected = expected.split('\0', 1)[0]
 
             with self.subTest(name=name, expected=expected):
                 work_name = None

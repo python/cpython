@@ -824,6 +824,6 @@ The :c:type:`PyLongWriter` API can be used to import an integer.
 
    Discard a :c:type:`PyLongWriter` created by :c:func:`PyLongWriter_Create`.
 
-   *writer* must not be ``NULL``.
+   If *writer* is ``NULL``, no operation is performed.
 
    The writer instance and the *digits* array are invalid after the call.

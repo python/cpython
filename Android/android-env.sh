@@ -1,10 +1,10 @@
 # This script must be sourced with the following variables already set:
-: ${ANDROID_HOME:?}  # Path to Android SDK
-: ${HOST:?}  # GNU target triplet
+: "${ANDROID_HOME:?}"  # Path to Android SDK
+: "${HOST:?}"  # GNU target triplet
 
 # You may also override the following:
-: ${api_level:=24}  # Minimum Android API level the build will run on
-: ${PREFIX:-}  # Path in which to find required libraries
+: "${api_level:=24}"  # Minimum Android API level the build will run on
+: "${PREFIX:-}"  # Path in which to find required libraries
 
 
 # Print all messages on stderr so they're visible when running within build-wheel.
@@ -27,20 +27,20 @@ fail() {
 ndk_version=27.1.12297006
 
 ndk=$ANDROID_HOME/ndk/$ndk_version
-if ! [ -e $ndk ]; then
+if ! [ -e "$ndk" ]; then
     log "Installing NDK - this may take several minutes"
-    yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;$ndk_version"
+    yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "ndk;$ndk_version"
 fi
 
-if [ $HOST = "arm-linux-androideabi" ]; then
+if [ "$HOST" = "arm-linux-androideabi" ]; then
     clang_triplet=armv7a-linux-androideabi
 else
-    clang_triplet=$HOST
+    clang_triplet="$HOST"
 fi
 
 # These variables are based on BuildSystemMaintainers.md above, and
 # $ndk/build/cmake/android.toolchain.cmake.
-toolchain=$(echo $ndk/toolchains/llvm/prebuilt/*)
+toolchain=$(echo "$ndk"/toolchains/llvm/prebuilt/*)
 export AR="$toolchain/bin/llvm-ar"
 export AS="$toolchain/bin/llvm-as"
 export CC="$toolchain/bin/${clang_triplet}${api_level}-clang"
@@ -72,12 +72,12 @@ LDFLAGS="$LDFLAGS -lm"
 
 # -mstackrealign is included where necessary in the clang launcher scripts which are
 # pointed to by $CC, so we don't need to include it here.
-if [ $HOST = "arm-linux-androideabi" ]; then
+if [ "$HOST" = "arm-linux-androideabi" ]; then
     CFLAGS="$CFLAGS -march=armv7-a -mthumb"
 fi
 
 if [ -n "${PREFIX:-}" ]; then
-    abs_prefix=$(realpath $PREFIX)
+    abs_prefix="$(realpath "$PREFIX")"
     CFLAGS="$CFLAGS -I$abs_prefix/include"
     LDFLAGS="$LDFLAGS -L$abs_prefix/lib"
 
@@ -87,11 +87,13 @@ fi
 
 # When compiling C++, some build systems will combine CFLAGS and CXXFLAGS, and some will
 # use CXXFLAGS alone.
-export CXXFLAGS=$CFLAGS
+export CXXFLAGS="$CFLAGS"
 
 # Use the same variable name as conda-build
-if [ $(uname) = "Darwin" ]; then
-    export CPU_COUNT=$(sysctl -n hw.ncpu)
+if [ "$(uname)" = "Darwin" ]; then
+    CPU_COUNT="$(sysctl -n hw.ncpu)"
+    export CPU_COUNT
 else
-    export CPU_COUNT=$(nproc)
+    CPU_COUNT="$(nproc)"
+    export CPU_COUNT
 fi

@@ -344,7 +344,8 @@ PyAPI_FUNC(PyObject*) PyUnicode_Decode(
 /* Decode a Unicode object unicode and return the result as Python
    object.
 
-   This API is DEPRECATED. The only supported standard encoding is rot13.
+   This API is DEPRECATED and will be removed in 3.15.
+   The only supported standard encoding is rot13.
    Use PyCodec_Decode() to decode with rot13 and non-standard codecs
    that decode from str. */
 
@@ -357,7 +358,8 @@ Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedObject(
 /* Decode a Unicode object unicode and return the result as Unicode
    object.
 
-   This API is DEPRECATED. The only supported standard encoding is rot13.
+   This API is DEPRECATED and will be removed in 3.15.
+   The only supported standard encoding is rot13.
    Use PyCodec_Decode() to decode with rot13 and non-standard codecs
    that decode from str to str. */
 
@@ -370,7 +372,8 @@ Py_DEPRECATED(3.6) PyAPI_FUNC(PyObject*) PyUnicode_AsDecodedUnicode(
 /* Encodes a Unicode object and returns the result as Python
    object.
 
-   This API is DEPRECATED.  It is superseded by PyUnicode_AsEncodedString()
+   This API is DEPRECATED and will be removed in 3.15.
+   It is superseded by PyUnicode_AsEncodedString()
    since all standard encodings (except rot13) encode str to bytes.
    Use PyCodec_Encode() for encoding with rot13 and non-standard codecs
    that encode form str to non-bytes. */
@@ -393,7 +396,8 @@ PyAPI_FUNC(PyObject*) PyUnicode_AsEncodedString(
 /* Encodes a Unicode object and returns the result as Unicode
    object.
 
-   This API is DEPRECATED.  The only supported standard encodings is rot13.
+   This API is DEPRECATED and will be removed in 3.15.
+   The only supported standard encodings is rot13.
    Use PyCodec_Encode() to encode with rot13 and non-standard codecs
    that encode from str to str. */
 
