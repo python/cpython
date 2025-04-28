@@ -44,7 +44,7 @@ class ReplTestCase(TestCase):
         *,
         cmdline_args: list[str] | None = None,
         cwd: str | None = None,
-        skip: bool = True,
+        skip: bool = False,
     ) -> tuple[str, int]:
         temp_dir = None
         if cwd is None:
@@ -1265,7 +1265,7 @@ class TestDumbTerminal(ReplTestCase):
         env = os.environ.copy()
         env.pop('PYTHON_BASIC_REPL', None)
         env.update({"TERM": "dumb"})
-        output, exit_code = self.run_repl("exit()\n", env=env, skip=False)
+        output, exit_code = self.run_repl("exit()\n", env=env)
         self.assertEqual(exit_code, 0)
         self.assertIn("warning: can't use pyrepl", output)
         self.assertNotIn("Exception", output)
@@ -1287,7 +1287,7 @@ class TestMain(ReplTestCase):
     def test_exposed_globals_in_repl(self):
         pre = "['__builtins__'"
         post = "'__loader__', '__name__', '__package__', '__spec__']"
-        output, exit_code = self.run_repl(["sorted(dir())", "exit()"])
+        output, exit_code = self.run_repl(["sorted(dir())", "exit()"], skip=True)
         self.assertEqual(exit_code, 0)
 
         # if `__main__` is not a file (impossible with pyrepl)
@@ -1339,6 +1339,7 @@ class TestMain(ReplTestCase):
                     commands,
                     cmdline_args=[str(mod)],
                     env=clean_env,
+                    skip=True,
                 )
             elif as_module:
                 output, exit_code = self.run_repl(
@@ -1346,6 +1347,7 @@ class TestMain(ReplTestCase):
                     cmdline_args=["-m", "blue.calx"],
                     env=clean_env,
                     cwd=td,
+                    skip=True,
                 )
             else:
                 self.fail("Choose one of as_file or as_module")
@@ -1387,7 +1389,7 @@ class TestMain(ReplTestCase):
                     "exit()\n")
 
         env.pop("PYTHON_BASIC_REPL", None)
-        output, exit_code = self.run_repl(commands, env=env)
+        output, exit_code = self.run_repl(commands, env=env, skip=True)
         self.assertEqual(exit_code, 0)
         self.assertIn("True", output)
         self.assertNotIn("False", output)
@@ -1454,7 +1456,7 @@ class TestMain(ReplTestCase):
             self.assertIn("division by zero", output)
             self.assertEqual(exitcode, 0)
         env.pop("PYTHON_BASIC_REPL", None)
-        output, exit_code = self.run_repl(commands, env=env)
+        output, exit_code = self.run_repl(commands, env=env, skip=True)
         check(output, exit_code)
 
         env["PYTHON_BASIC_REPL"] = "1"
@@ -1492,7 +1494,7 @@ class TestMain(ReplTestCase):
     def test_correct_filename_in_syntaxerrors(self):
         env = os.environ.copy()
         commands = "a b c\nexit()\n"
-        output, exit_code = self.run_repl(commands, env=env)
+        output, exit_code = self.run_repl(commands, env=env, skip=True)
         self.assertIn("SyntaxError: invalid syntax", output)
         self.assertIn("<python-input-0>", output)
         commands = " b\nexit()\n"
@@ -1519,7 +1521,7 @@ class TestMain(ReplTestCase):
                     env.pop("PYTHON_BASIC_REPL", None)
                 with self.subTest(set_tracebacklimit=set_tracebacklimit,
                                   basic_repl=basic_repl):
-                    output, exit_code = self.run_repl(commands, env=env)
+                    output, exit_code = self.run_repl(commands, env=env, skip=True)
                     self.assertIn("in x1", output)
                     if set_tracebacklimit:
                         self.assertNotIn("in x2", output)
@@ -1560,7 +1562,7 @@ class TestMain(ReplTestCase):
     def test_history_survive_crash(self):
         env = os.environ.copy()
         commands = "1\nexit()\n"
-        output, exit_code = self.run_repl(commands, env=env)
+        output, exit_code = self.run_repl(commands, env=env, skip=True)
 
         with tempfile.NamedTemporaryFile() as hfile:
             env["PYTHON_HISTORY"] = hfile.name
