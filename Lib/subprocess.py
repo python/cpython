@@ -1191,6 +1191,8 @@ class Popen:
         universal_newlines.
         """
 
+        timeout = None if timeout == 0 else timeout
+
         if self._communication_started and input:
             raise ValueError("Cannot send input after starting communication")
 
@@ -1268,6 +1270,7 @@ class Popen:
 
 
     def wait(self, timeout=None):
+        timeout = None if timeout == 0 else timeout
         """Wait for child process to terminate; returns self.returncode."""
         if timeout is not None:
             endtime = _time() + timeout
