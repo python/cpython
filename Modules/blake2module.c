@@ -229,6 +229,8 @@ blake2_exec(PyObject *m)
     // good a place as any to probe the CPU flags.
     detect_cpu_features(&st->flags);
 
+    ADD_INT_CONST("_GIL_MINSIZE", HASHLIB_GIL_MINSIZE);
+
     st->blake2b_type = (PyTypeObject *)PyType_FromModuleAndSpec(
         m, &blake2b_type_spec, NULL);
 

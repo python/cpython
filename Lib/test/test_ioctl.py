@@ -1,6 +1,7 @@
 import array
 import os
 import struct
+import sys
 import threading
 import unittest
 from test.support import get_attribute
@@ -139,11 +140,55 @@ class IoctlTestsPty(unittest.TestCase):
         self.addCleanup(os.close, self.master_fd)
 
     @unittest.skipUnless(hasattr(termios, 'TCFLSH'), 'requires termios.TCFLSH')
-    def test_ioctl_tcflush(self):
-        r = fcntl.ioctl(self.slave_fd, termios.TCFLSH, termios.TCIFLUSH)
-        self.assertEqual(r, 0)
-        r = fcntl.ioctl(self.slave_fd, termios.TCFLSH, termios.TCOFLUSH)
-        self.assertEqual(r, 0)
+    def test_ioctl_clear_input_or_output(self):
+        wfd = self.slave_fd
+        rfd = self.master_fd
+        inbuf = sys.platform == 'linux'
+
+        os.write(wfd, b'abcdef')
+        self.assertEqual(os.read(rfd, 2), b'ab')
+        if inbuf:
+            # don't flush input
+            fcntl.ioctl(rfd, termios.TCFLSH, termios.TCOFLUSH)
+        else:
+            # don't flush output
+            fcntl.ioctl(wfd, termios.TCFLSH, termios.TCIFLUSH)
+        self.assertEqual(os.read(rfd, 2), b'cd')
+        if inbuf:
+            # flush input
+            fcntl.ioctl(rfd, termios.TCFLSH, termios.TCIFLUSH)
+        else:
+            # flush output
+            fcntl.ioctl(wfd, termios.TCFLSH, termios.TCOFLUSH)
+        os.write(wfd, b'ABCDEF')
+        self.assertEqual(os.read(rfd, 1024), b'ABCDEF')
+
+    @unittest.skipUnless(sys.platform == 'linux', 'only works on Linux')
+    @unittest.skipUnless(hasattr(termios, 'TCXONC'), 'requires termios.TCXONC')
+    def test_ioctl_suspend_and_resume_output(self):
+        wfd = self.slave_fd
+        rfd = self.master_fd
+        write_suspended = threading.Event()
+        write_finished = threading.Event()
+
+        def writer():
+            os.write(wfd, b'abc')
+            write_suspended.wait()
+            os.write(wfd, b'def')
+            write_finished.set()
+
+        with threading_helper.start_threads([threading.Thread(target=writer)]):
+            self.assertEqual(os.read(rfd, 3), b'abc')
+            try:
+                fcntl.ioctl(wfd, termios.TCXONC, termios.TCOOFF)
+                write_suspended.set()
+                self.assertFalse(write_finished.wait(0.5),
+                                 'output was not suspended')
+            finally:
+                fcntl.ioctl(wfd, termios.TCXONC, termios.TCOON)
+            self.assertTrue(write_finished.wait(0.5),
+                            'output was not resumed')
+            self.assertEqual(os.read(rfd, 1024), b'def')
 
     def test_ioctl_set_window_size(self):
         # (rows, columns, xpixel, ypixel)

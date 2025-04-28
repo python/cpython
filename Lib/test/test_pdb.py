@@ -4453,7 +4453,7 @@ class PdbTestInline(unittest.TestCase):
             y
         """
 
-        stdout, stderr = self._run_script(script, commands)
+        stdout, stderr = self._run_script(script, commands, expected_returncode=1)
         self.assertIn("2", stdout)
         self.assertIn("Quit anyway", stdout)
         # Closing stdin will quit the debugger anyway so we need to confirm
@@ -4483,7 +4483,7 @@ class PdbTestInline(unittest.TestCase):
             y
         """
 
-        stdout, stderr = self._run_script(script, commands)
+        stdout, stderr = self._run_script(script, commands, expected_returncode=1)
         # Normal exit should not print anything to stderr
         self.assertEqual(stderr, "")
         # The quit prompt should be printed exactly once
