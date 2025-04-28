@@ -112,6 +112,8 @@ PyAPI_FUNC(void) _PyXIData_Clear(PyInterpreterState *, _PyXIData_t *);
     do { \
         (DATA)->free = (FUNC); \
     } while (0)
+#define _PyXIData_CHECK_FREE(DATA, FUNC) \
+    ((DATA)->free == (FUNC))
 // Additionally, some shareable types are essentially light wrappers
 // around other shareable types.  The xidatafunc of the wrapper
 // can often be implemented by calling the wrapped object's
@@ -123,6 +125,8 @@ PyAPI_FUNC(void) _PyXIData_Clear(PyInterpreterState *, _PyXIData_t *);
     do { \
         (DATA)->new_object = (FUNC); \
     } while (0)
+#define _PyXIData_CHECK_NEW_OBJECT(DATA, FUNC) \
+    ((DATA)->new_object == (FUNC))
 
 
 /* getting cross-interpreter data */
@@ -146,6 +150,25 @@ PyAPI_FUNC(int) _PyObject_CheckXIData(
 PyAPI_FUNC(int) _PyObject_GetXIData(
         PyThreadState *,
         PyObject *,
+        _PyXIData_t *);
+
+// _PyObject_GetXIData() for bytes
+typedef struct {
+    const char *bytes;
+    Py_ssize_t len;
+} _PyBytes_data_t;
+PyAPI_FUNC(int) _PyBytes_GetData(PyObject *, _PyBytes_data_t *);
+PyAPI_FUNC(PyObject *) _PyBytes_FromData(_PyBytes_data_t *);
+PyAPI_FUNC(PyObject *) _PyBytes_FromXIData(_PyXIData_t *);
+PyAPI_FUNC(int) _PyBytes_GetXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+PyAPI_FUNC(_PyBytes_data_t *) _PyBytes_GetXIDataWrapped(
+        PyThreadState *,
+        PyObject *,
+        size_t,
+        xid_newobjfunc,
         _PyXIData_t *);
 
 
