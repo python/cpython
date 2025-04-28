@@ -152,8 +152,8 @@ class TestFunctions(unittest.TestCase):
     def test_tcflush_clear_input_or_output(self):
         wfd = self.fd
         rfd = self.master_fd
-        # The data is buffered in input buffer on Linux, and in
-        # output buffer on other platforms.
+        # The data is buffered in the input buffer on Linux, and in
+        # the output buffer on other platforms.
         inbuf = sys.platform in ('linux', 'android')
 
         os.write(wfd, b'abcdef')
@@ -202,20 +202,22 @@ class TestFunctions(unittest.TestCase):
 
         def writer():
             os.write(wfd, b'abc')
-            write_suspended.wait()
+            self.assertTrue(write_suspended.wait(5))
             os.write(wfd, b'def')
             write_finished.set()
 
         with threading_helper.start_threads([threading.Thread(target=writer)]):
             self.assertEqual(os.read(rfd, 3), b'abc')
             try:
-                termios.tcflow(wfd, termios.TCOOFF)
-                write_suspended.set()
+                try:
+                    termios.tcflow(wfd, termios.TCOOFF)
+                finally:
+                    write_suspended.set()
                 self.assertFalse(write_finished.wait(0.5),
                                  'output was not suspended')
             finally:
                 termios.tcflow(wfd, termios.TCOON)
-            self.assertTrue(write_finished.wait(0.5),
+            self.assertTrue(write_finished.wait(5),
                             'output was not resumed')
             self.assertEqual(os.read(rfd, 1024), b'def')
 
