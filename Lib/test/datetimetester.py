@@ -7182,6 +7182,8 @@ class CapiTest(unittest.TestCase):
                     _testcapi = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(_testcapi)
 
+                # Delegates the setup to the given script
+
             $SCRIPT$
             """)
 
