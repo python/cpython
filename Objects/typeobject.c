@@ -3384,10 +3384,9 @@ mro_check(PyTypeObject *type, PyObject *mro)
     for (i = 0; i < n; i++) {
         PyObject *obj = PyTuple_GET_ITEM(mro, i);
         if (!PyType_Check(obj)) {
-            PyErr_Format(
-                PyExc_TypeError,
-                "mro() returned a non-class ('%.500s')",
-                Py_TYPE(obj)->tp_name);
+            PyErr_Format(PyExc_TypeError,
+                         "%s.mro() must return class (not %T)",
+                         type->tp_name, obj);
             return -1;
         }
         PyTypeObject *base = (PyTypeObject*)obj;
@@ -3395,8 +3394,8 @@ mro_check(PyTypeObject *type, PyObject *mro)
         if (!is_subtype_with_mro(lookup_tp_mro(solid), solid, solid_base(base))) {
             PyErr_Format(
                 PyExc_TypeError,
-                "mro() returned base with unsuitable layout ('%.500s')",
-                base->tp_name);
+                "%s.mro() returned base with unsuitable layout ('%.500s')",
+                type->tp_name, base->tp_name);
             return -1;
         }
     }
@@ -10553,7 +10552,8 @@ slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
     }
     if (!PyMemoryView_Check(ret)) {
         PyErr_Format(PyExc_TypeError,
-                     "__buffer__ returned non-memoryview object");
+                     "%T.__buffer__() must return type memoryview (not %T)",
+                     self, ret);
         goto fail;
     }
 

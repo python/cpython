@@ -132,8 +132,9 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
         return defaultvalue;
     }
     if (!PyLong_Check(result)) {
-        PyErr_Format(PyExc_TypeError, "__length_hint__ must be an integer, not %.100s",
-            Py_TYPE(result)->tp_name);
+        PyErr_Format(PyExc_TypeError,
+                     "%T.__length_hint__() must return type int (not %T)",
+                     o, result);
         Py_DECREF(result);
         return -1;
     }
@@ -143,7 +144,8 @@ PyObject_LengthHint(PyObject *o, Py_ssize_t defaultvalue)
         return -1;
     }
     if (res < 0) {
-        PyErr_Format(PyExc_ValueError, "__length_hint__() should return >= 0");
+        PyErr_Format(PyExc_ValueError,
+                     "%T.__length_hint__() must return positive int", o);
         return -1;
     }
     return res;
@@ -2434,10 +2436,8 @@ method_output_as_list(PyObject *o, PyObject *meth)
         PyThreadState *tstate = _PyThreadState_GET();
         if (_PyErr_ExceptionMatches(tstate, PyExc_TypeError)) {
             _PyErr_Format(tstate, PyExc_TypeError,
-                          "%.200s.%U() returned a non-iterable (type %.200s)",
-                          Py_TYPE(o)->tp_name,
-                          meth,
-                          Py_TYPE(meth_output)->tp_name);
+                          "%T.%U() must return type iterable (not %T)",
+                          o, meth, meth_output);
         }
         Py_DECREF(meth_output);
         return NULL;
@@ -2837,8 +2837,8 @@ PyObject_GetAIter(PyObject *o) {
     PyObject *it = (*f)(o);
     if (it != NULL && !PyAIter_Check(it)) {
         PyErr_Format(PyExc_TypeError,
-                     "aiter() returned not an async iterator of type '%.100s'",
-                     Py_TYPE(it)->tp_name);
+                     "%T.aiter() must return type async iterator of type '%T'",
+                     o, it);
         Py_SETREF(it, NULL);
     }
     return it;
