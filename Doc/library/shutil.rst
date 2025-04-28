@@ -458,7 +458,7 @@ Directory and files operations
 
       If *cmd* contains a directory component, :func:`!which` only checks the
       specified path directly and does not search the directories listed in *path*
-      or in the system's ``PATH`` environment variable.
+      or in the system's :envvar:`PATH` environment variable.
 
    On Windows, the current directory is prepended to the *path* if *mode* does
    not include ``os.X_OK``. When the *mode* does include ``os.X_OK``, the
