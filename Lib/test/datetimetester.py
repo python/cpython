@@ -7307,19 +7307,20 @@ class ExtensionModuleTests(unittest.TestCase):
             date.today
             """)
         # Fail before loaded
-        with self.subTest('[PyDateTime_IMPORT] main: yes sub: no'):
-            res = CapiTest.assert_python_in_subinterp(self, False, script)
-            self.assertIn(b'_PyType_CheckConsistency: Assertion failed', res.err)
-            self.assertIn(b'lookup_tp_dict(type) != ((void *)0)', res.err)
+        with self.subTest('[PyDateTime_IMPORT] main: yes, sub: no'):
+            CapiTest.assert_python_in_subinterp(self, False, script)
 
         # OK after loaded
-        with self.subTest('[PyDateTime_IMPORT] main: no sub: yes'):
-            script2 = f'_testcapi.test_datetime_capi()\n{script}'
+        script2 = f'_testcapi.test_datetime_capi()\n{script}'
+        with self.subTest('[PyDateTime_IMPORT] main: no, sub: yes'):
+            CapiTest.assert_python_in_subinterp(self, True, script2, '')
+
+        with self.subTest('[PyDateTime_IMPORT] main: yes, sub: yes'):
             CapiTest.assert_python_in_subinterp(self, True, script2)
 
-        with self.subTest('Regular'):
-            script2 = f'import _datetime\n{script}'
-            CapiTest.assert_python_in_subinterp(self, True, script2)
+        script3 = f'import _datetime\n{script}'
+        with self.subTest('Regular import'):
+            CapiTest.assert_python_in_subinterp(self, True, script3)
 
     def test_static_type_at_shutdown1(self):
         # gh-132413
