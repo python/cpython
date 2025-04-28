@@ -2256,3 +2256,10 @@ Removed
 * Remove the private ``_Py_InitializeMain()`` function. It was a
   :term:`provisional API` added to Python 3.8 by :pep:`587`.
   (Contributed by Victor Stinner in :gh:`129033`.)
+
+* The undocumented APIs :c:macro:`!Py_C_RECURSION_LIMIT` and
+  :c:member:`!PyThreadState.c_recursion_remaining`, added in 3.13, are removed
+  without a deprecation period.
+  Please use :c:func:`Py_EnterRecursiveCall` to guard against runaway recursion
+  in C code.
+  (Removed in :gh:`133079`, see also :gh:`130396`.)
