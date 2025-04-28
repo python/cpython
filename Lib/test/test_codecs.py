@@ -21,20 +21,12 @@ try:
 except ImportError:
     _testinternalcapi = None
 
-try:
-    import ctypes
-except ImportError:
-    ctypes = None
-    SIZEOF_WCHAR_T = -1
-else:
-    SIZEOF_WCHAR_T = ctypes.sizeof(ctypes.c_wchar)
 
-def codecs_open_nowarn(filename, mode='r', encoding=None, errors='strict', buffering=-1):
+def codecs_open_no_warn(*args, **kwargs):
+    """call codecs.open(*args, **kwargs) ignoring DeprecationWarning"""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        return codecs.open(
-            filename, mode, encoding=encoding, errors=errors,
-            buffering=buffering)
+        return codecs.open(*args, **kwargs)
 
 def coding_checker(self, coder):
     def check(input, expect):
@@ -727,19 +719,19 @@ class UTF16Test(ReadTest, unittest.TestCase):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         with open(os_helper.TESTFN, 'wb') as fp:
             fp.write(s)
-        with codecs_open_nowarn(os_helper.TESTFN, 'r',
+        with codecs_open_no_warn(os_helper.TESTFN, 'r',
                          encoding=self.encoding) as reader:
             self.assertEqual(reader.read(), s1)
 
     def test_invalid_modes(self):
         for mode in ('U', 'rU', 'r+U'):
             with self.assertRaises(ValueError) as cm:
-                codecs_open_nowarn(os_helper.TESTFN, mode, encoding=self.encoding)
+                codecs_open_no_warn(os_helper.TESTFN, mode, encoding=self.encoding)
             self.assertIn('invalid mode', str(cm.exception))
 
         for mode in ('rt', 'wt', 'at', 'r+t'):
             with self.assertRaises(ValueError) as cm:
-                codecs_open_nowarn(os_helper.TESTFN, mode, encoding=self.encoding)
+                codecs_open_no_warn(os_helper.TESTFN, mode, encoding=self.encoding)
             self.assertIn("can't have text and binary mode at once",
                           str(cm.exception))
 
@@ -1871,7 +1863,7 @@ class CodecsModuleTest(unittest.TestCase):
         mock_open = mock.mock_open()
         with mock.patch('builtins.open', mock_open) as file:
             with self.assertRaises(LookupError):
-                codecs_open_nowarn(os_helper.TESTFN, 'wt', 'invalid-encoding')
+                codecs_open_no_warn(os_helper.TESTFN, 'wt', 'invalid-encoding')
 
             file().close.assert_called()
 
@@ -2891,7 +2883,7 @@ class BomTest(unittest.TestCase):
         self.addCleanup(os_helper.unlink, os_helper.TESTFN)
         for encoding in tests:
             # Check if the BOM is written only once
-            with codecs_open_nowarn(os_helper.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs_open_no_warn(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data)
                 f.write(data)
                 f.seek(0)
@@ -2900,7 +2892,7 @@ class BomTest(unittest.TestCase):
                 self.assertEqual(f.read(), data * 2)
 
             # Check that the BOM is written after a seek(0)
-            with codecs_open_nowarn(os_helper.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs_open_no_warn(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data[0])
                 self.assertNotEqual(f.tell(), 0)
                 f.seek(0)
@@ -2909,7 +2901,7 @@ class BomTest(unittest.TestCase):
                 self.assertEqual(f.read(), data)
 
             # (StreamWriter) Check that the BOM is written after a seek(0)
-            with codecs_open_nowarn(os_helper.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs_open_no_warn(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.writer.write(data[0])
                 self.assertNotEqual(f.writer.tell(), 0)
                 f.writer.seek(0)
@@ -2919,7 +2911,7 @@ class BomTest(unittest.TestCase):
 
             # Check that the BOM is not written after a seek() at a position
             # different than the start
-            with codecs_open_nowarn(os_helper.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs_open_no_warn(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.write(data)
                 f.seek(f.tell())
                 f.write(data)
@@ -2928,7 +2920,7 @@ class BomTest(unittest.TestCase):
 
             # (StreamWriter) Check that the BOM is not written after a seek()
             # at a position different than the start
-            with codecs_open_nowarn(os_helper.TESTFN, 'w+', encoding=encoding) as f:
+            with codecs_open_no_warn(os_helper.TESTFN, 'w+', encoding=encoding) as f:
                 f.writer.write(data)
                 f.writer.seek(f.writer.tell())
                 f.writer.write(data)
