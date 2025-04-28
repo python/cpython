@@ -176,7 +176,7 @@ class IoctlTestsPty(unittest.TestCase):
 
         def writer():
             os.write(wfd, b'abc')
-            self.assertTrue(write_suspended.wait(5))
+            self.assertTrue(write_suspended.wait(support.SHORT_TIMEOUT))
             os.write(wfd, b'def')
             write_finished.set()
 
@@ -191,7 +191,7 @@ class IoctlTestsPty(unittest.TestCase):
                                  'output was not suspended')
             finally:
                 fcntl.ioctl(wfd, termios.TCXONC, termios.TCOON)
-            self.assertTrue(write_finished.wait(5),
+            self.assertTrue(write_finished.wait(support.SHORT_TIMEOUT),
                             'output was not resumed')
             self.assertEqual(os.read(rfd, 1024), b'def')
 
