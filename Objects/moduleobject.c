@@ -1262,7 +1262,7 @@ module_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
             }
             if (!PyDict_Check(annotations)) {
                 PyErr_Format(PyExc_TypeError,
-                             "__annotate__() must return type dict of type '%T'",
+                             "__annotate__() must return a dict, not %T",
                              annotations);
                 Py_DECREF(annotate);
                 Py_DECREF(annotations);

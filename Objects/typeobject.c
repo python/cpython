@@ -2029,7 +2029,7 @@ type_get_annotations(PyObject *tp, void *Py_UNUSED(closure))
             }
             if (!PyDict_Check(annotations)) {
                 PyErr_Format(PyExc_TypeError,
-                             "__annotate__() must return type dict of type '%T'",
+                             "__annotate__() must return a dict, not %T",
                              annotations);
                 Py_DECREF(annotations);
                 Py_DECREF(annotate);
@@ -3385,7 +3385,7 @@ mro_check(PyTypeObject *type, PyObject *mro)
         PyObject *obj = PyTuple_GET_ITEM(mro, i);
         if (!PyType_Check(obj)) {
             PyErr_Format(PyExc_TypeError,
-                         "%s.mro() must return class (not %T)",
+                         "%s.mro() returned a non-class ('%T')",
                          type->tp_name, obj);
             return -1;
         }
@@ -10076,7 +10076,7 @@ slot_nb_bool(PyObject *self)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "%T.__bool__() must return type bool (not %T)",
+                     "%T.__bool__() must return a bool, not %T",
                      self, value);
         result = -1;
     }
@@ -10552,7 +10552,7 @@ slot_bf_getbuffer(PyObject *self, Py_buffer *buffer, int flags)
     }
     if (!PyMemoryView_Check(ret)) {
         PyErr_Format(PyExc_TypeError,
-                     "%T.__buffer__() must return type memoryview (not %T)",
+                     "%T.__buffer__() must return a memoryview, not %T",
                      self, ret);
         goto fail;
     }

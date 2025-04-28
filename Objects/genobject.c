@@ -1083,12 +1083,13 @@ _PyCoro_GetAwaitableIter(PyObject *o)
                 /* __await__ must return an *iterator*, not
                    a coroutine or another awaitable (see PEP 492) */
                 PyErr_Format(PyExc_TypeError,
-                             "%T.__await__() must return type iterator (not coroutine)", o);
+                             "%T.__await__() must return an iterator, "
+                             "not coroutine", o);
                 Py_CLEAR(res);
             } else if (!PyIter_Check(res)) {
                 PyErr_Format(PyExc_TypeError,
-                             "%T.__await__() must return type iterator "
-                             "of type '%T'", o, res);
+                             "%T.__await__() must return an iterator, "
+                             "not %T", o, res);
                 Py_CLEAR(res);
             }
         }

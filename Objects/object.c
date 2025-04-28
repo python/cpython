@@ -781,7 +781,7 @@ PyObject_Repr(PyObject *v)
     }
     if (!PyUnicode_Check(res)) {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "%T.__repr__() must return type str (not %T)", v, res);
+                      "%T.__repr__() must return a str, not %T", v, res);
         Py_DECREF(res);
         return NULL;
     }
@@ -823,7 +823,7 @@ PyObject_Str(PyObject *v)
     }
     if (!PyUnicode_Check(res)) {
         _PyErr_Format(tstate, PyExc_TypeError,
-                      "%T.__str__() must return type str (not %T)", v, res);
+                      "%T.__str__() must return a str, not %T", v, res);
         Py_DECREF(res);
         return NULL;
     }
@@ -878,7 +878,7 @@ PyObject_Bytes(PyObject *v)
             return NULL;
         if (!PyBytes_Check(result)) {
             PyErr_Format(PyExc_TypeError,
-                         "%T.__bytes__() must return type bytes (not %T)",
+                         "%T.__bytes__() must return a bytes, not %T",
                          v, result);
             Py_DECREF(result);
             return NULL;

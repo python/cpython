@@ -558,7 +558,7 @@ func_get_annotation_dict(PyFunctionObject *op)
         }
         if (!PyDict_Check(ann_dict)) {
             PyErr_Format(PyExc_TypeError,
-                         "__annotate__() must return type dict of type '%T'",
+                         "__annotate__() must return a dict, not %T",
                          ann_dict);
             Py_DECREF(ann_dict);
             return NULL;
