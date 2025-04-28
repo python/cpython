@@ -5,6 +5,8 @@ Deprecations
 
 .. include:: pending-removal-in-3.16.rst
 
+.. include:: pending-removal-in-3.19.rst
+
 .. include:: pending-removal-in-future.rst
 
 C API deprecations
