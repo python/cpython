@@ -1,1 +1,1 @@
-Improved ``statistics.NormalDist.cdf`` accuracy for inputs smaller than the mean.
+Improved :meth:`statistics.NormalDist.cdf` accuracy for inputs smaller than the mean.
