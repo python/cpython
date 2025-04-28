@@ -2358,6 +2358,16 @@ hashlib_exception(PyObject *module)
     return 0;
 }
 
+static int
+hashlib_constants(PyObject *module)
+{
+    if (PyModule_AddIntConstant(module, "_GIL_MINSIZE",
+                                HASHLIB_GIL_MINSIZE) < 0)
+    {
+        return -1;
+    }
+    return 0;
+}
 
 static PyModuleDef_Slot hashlib_slots[] = {
     {Py_mod_exec, hashlib_init_hashtable},
@@ -2367,6 +2377,7 @@ static PyModuleDef_Slot hashlib_slots[] = {
     {Py_mod_exec, hashlib_md_meth_names},
     {Py_mod_exec, hashlib_init_constructors},
     {Py_mod_exec, hashlib_exception},
+    {Py_mod_exec, hashlib_constants},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
