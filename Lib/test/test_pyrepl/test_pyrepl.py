@@ -1265,7 +1265,7 @@ class TestDumbTerminal(ReplTestCase):
         env = os.environ.copy()
         env.pop('PYTHON_BASIC_REPL', None)
         env.update({"TERM": "dumb"})
-        output, exit_code = self.run_repl("exit()\n", env=env)
+        output, exit_code = self.run_repl("exit()\n", env=env, skip=False)
         self.assertEqual(exit_code, 0)
         self.assertIn("warning: can't use pyrepl", output)
         self.assertNotIn("Exception", output)
@@ -1388,8 +1388,6 @@ class TestMain(ReplTestCase):
 
         env.pop("PYTHON_BASIC_REPL", None)
         output, exit_code = self.run_repl(commands, env=env)
-        if "can\'t use pyrepl" in output:
-            self.skipTest("pyrepl not available")
         self.assertEqual(exit_code, 0)
         self.assertIn("True", output)
         self.assertNotIn("False", output)
@@ -1457,8 +1455,6 @@ class TestMain(ReplTestCase):
             self.assertEqual(exitcode, 0)
         env.pop("PYTHON_BASIC_REPL", None)
         output, exit_code = self.run_repl(commands, env=env)
-        if "can\'t use pyrepl" in output:
-            self.skipTest("pyrepl not available")
         check(output, exit_code)
 
         env["PYTHON_BASIC_REPL"] = "1"
