@@ -7301,6 +7301,26 @@ class ExtensionModuleTests(unittest.TestCase):
         res = script_helper.assert_python_ok('-c', script)
         self.assertFalse(res.err)
 
+    def test_static_type_attr_on_subinterp(self):
+        script = textwrap.dedent(f"""
+            date = _testcapi.get_capi_types()['date']
+            date.today
+            """)
+        # Fail before loaded
+        with self.subTest('[PyDateTime_IMPORT] main: yes sub: no'):
+            res = CapiTest.assert_python_in_subinterp(self, False, script)
+            self.assertIn(b'_PyType_CheckConsistency: Assertion failed', res.err)
+            self.assertIn(b'lookup_tp_dict(type) != ((void *)0)', res.err)
+
+        # OK after loaded
+        with self.subTest('[PyDateTime_IMPORT] main: no sub: yes'):
+            script2 = f'_testcapi.test_datetime_capi()\n{script}'
+            CapiTest.assert_python_in_subinterp(self, True, script2)
+
+        with self.subTest('Regular'):
+            script2 = f'import _datetime\n{script}'
+            CapiTest.assert_python_in_subinterp(self, True, script2)
+
     def test_static_type_at_shutdown1(self):
         # gh-132413
         script = textwrap.dedent("""
