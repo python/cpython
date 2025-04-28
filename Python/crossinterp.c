@@ -1738,6 +1738,7 @@ _PyXI_Enter(_PyXI_session *session,
 
     // Switch to the requested interpreter (if necessary).
     _enter_session(session, interp);
+    PyThreadState *session_tstate = session->init_tstate;
     _PyXI_errcode errcode = _PyXI_ERR_UNCAUGHT_EXCEPTION;
 
     // Ensure this thread owns __main__.
@@ -1751,8 +1752,8 @@ _PyXI_Enter(_PyXI_session *session,
     session->running = 1;
 
     // Cache __main__.__dict__.
-    PyObject *main_mod = PyUnstable_InterpreterState_GetMainModule(interp);
-    if (main_mod == NULL) {
+    PyObject *main_mod = _Py_GetMainModule(session_tstate);
+    if (_Py_CheckMainModule(main_mod) < 0) {
         errcode = _PyXI_ERR_MAIN_NS_FAILURE;
         goto error;
     }
