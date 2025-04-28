@@ -567,6 +567,23 @@ class TestGetTempPrefix(BaseTestCase):
             os.rmdir(d)
 
 
+class TestSanitizeParamsInner(BaseTestCase):
+    """Test the internal function _sanitize_params."""
+
+    def test_throw_exception_on_path_separator_detection(self):
+        with self.assertRaises(ValueError):
+            tempfile.mkstemp(prefix=f"{os.sep}home")
+
+    def test_throw_exception_on_encoded_path_separator_detection(self):
+        with self.assertRaises(ValueError):
+            tempfile.mkstemp(prefix=f"{os.fsencode(os.sep)}home")
+
+    @unittest.skipIf(os.altsep is None, "os.altsep is not present on this platform")
+    def test_throw_exception_on_alternative_path_separator_detection(self):
+        with self.assertRaises(ValueError):
+            tempfile.mkstemp(prefix=f"{os.altsep}home")
+
+
 class TestGetTempDir(BaseTestCase):
     """Test gettempdir()."""
 
