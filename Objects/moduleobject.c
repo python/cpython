@@ -1258,10 +1258,8 @@ module_get_annotations(PyObject *self, void *Py_UNUSED(ignored))
                 return NULL;
             }
             if (!PyDict_Check(annotations)) {
-                PyErr_Format(PyExc_TypeError,
-                             "%T.__annotate__ must return type dict "
-                             "of type '%T'",
-                             self, annotations);
+                PyErr_Format(PyExc_TypeError, "__annotate__ returned non-dict of type '%.100s'",
+                             Py_TYPE(annotations)->tp_name);
                 Py_DECREF(annotate);
                 Py_DECREF(annotations);
                 Py_DECREF(dict);
