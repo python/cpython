@@ -1643,7 +1643,7 @@ class DataHandler(BaseHandler):
         return addinfourl(io.BytesIO(data), headers, url)
 
 
-# Code move from the old urllib module
+# Code moved from the old urllib module
 
 def url2pathname(url, *, require_scheme=False, resolve_netloc=False):
     """Convert the given file URL to a local file system path.
