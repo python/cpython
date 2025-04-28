@@ -11406,7 +11406,7 @@ static Py_off_t
 os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
 /*[clinic end generated code: output=971e1efb6b30bd2f input=f096e754c5367504]*/
 {
-    Py_off_t result;
+    Py_off_t result = 0;
 
 #ifdef SEEK_SET
     /* Turn 0, 1, 2 into SEEK_{SET,CUR,END} */
@@ -11420,7 +11420,36 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
     Py_BEGIN_ALLOW_THREADS
     _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
-    result = _lseeki64(fd, position, how);
+    switch (how) {
+    case SEEK_SET:
+        how = FILE_BEGIN;
+        break;
+    case SEEK_CUR:
+        how = FILE_CURRENT;
+        break;
+    case SEEK_END:
+        how = FILE_END;
+        break;
+    }
+    HANDLE h = (HANDLE)_get_osfhandle(fd);
+    if (h == INVALID_HANDLE_VALUE) {
+        result = -1;
+    }
+    if (result >= 0) {
+        if (GetFileType(h) != FILE_TYPE_DISK) {
+            // Only file is seekable
+            result = -1;
+        }
+    }
+    if (result >= 0) {
+        LARGE_INTEGER distance, newdistance;
+        distance.QuadPart = position;
+        if (SetFilePointerEx(h, distance, &newdistance, how)) {
+            result = newdistance.QuadPart;
+        } else {
+            result = -1;
+        }
+    }
 #else
     result = lseek(fd, position, how);
 #endif
