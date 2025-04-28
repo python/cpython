@@ -39,7 +39,6 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
     DISPLAY_NAME = "Python"
     TAG_SUFFIX = ""
     ALIAS_PREFIX = "python"
-    ALIAS_WPREFIX = "pythonw"
     FILE_PREFIX = "python-"
     FILE_SUFFIX = f"-{ns.arch}"
     DISPLAY_TAGS = [{
@@ -67,7 +66,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
         TAG_SUFFIX = "t"
         TARGET = f"python{VER_MAJOR}.{VER_MINOR}t.exe"
         TARGETW = f"pythonw{VER_MAJOR}.{VER_MINOR}t.exe"
-        DISPLAY_TAGS.append("freethreaded")
+        DISPLAY_TAGS.append("free-threaded")
         FILE_SUFFIX = f"t-{ns.arch}"
 
     FULL_TAG = f"{VER_MAJOR}.{VER_MINOR}.{VER_MICRO}{VER_SUFFIX}{TAG_SUFFIX}"
@@ -82,7 +81,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
     # Tag shown in 'py list' output
     DISPLAY_TAG = f"{XY_TAG}-dev{TAG_ARCH}" if VER_SUFFIX else XY_ARCH_TAG
 
-    DISPLAY_SUFFIX = ", ".join(i for i in DISPLAY_TAGS if i)
+    DISPLAY_SUFFIX = ", ".join(filter(None, DISPLAY_TAGS))
     if DISPLAY_SUFFIX:
         DISPLAY_SUFFIX = f" ({DISPLAY_SUFFIX})"
     DISPLAY_VERSION = f"{XYZ_VERSION}{VER_SUFFIX}{DISPLAY_SUFFIX}"
