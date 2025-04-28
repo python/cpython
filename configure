@@ -11900,7 +11900,7 @@ then :
 _ACEOF
 
     # dladdr1 requires -ldl
-    as_fn_append LDFLAGS " -ldl"
+    ac_cv_require_ldl=yes
 
 fi
 
@@ -11909,6 +11909,10 @@ done
 fi
 
 done
+if test "x$ac_cv_require_ldl" = xyes
+then :
+  as_fn_append LDFLAGS " -ldl"
+fi
 
 # bluetooth/bluetooth.h has been known to not compile with -std=c99.
 # http://permalink.gmane.org/gmane.linux.bluez.kernel/22294
