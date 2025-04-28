@@ -188,14 +188,14 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
 
     if ns.include_idle:
         STD_START[0]["Items"].append({
-            "Name": f"IDLE {VER_DOT}{DISPLAY_SUFFIX}",
+            "Name": f"IDLE (Python {VER_DOT}{DISPLAY_SUFFIX})",
             "Target": f"%PREFIX%{TARGETW or TARGET}",
             "Arguments": r'"%PREFIX%Lib\idlelib\idle.pyw"',
             "Icon": r"%PREFIX%Lib\idlelib\Icons\idle.ico",
             "IconIndex": 0,
         })
         STD_START[0]["Items"].append({
-            "Name": f"PyDoc {VER_DOT}{DISPLAY_SUFFIX}",
+            "Name": f"PyDoc (Python {VER_DOT}{DISPLAY_SUFFIX})",
             "Target": f"%PREFIX%{TARGET}",
             "Arguments": "-m pydoc -b",
             "Icon": r"%PREFIX%Lib\idlelib\Icons\idle.ico",
