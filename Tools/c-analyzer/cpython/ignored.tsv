@@ -56,7 +56,7 @@ Python/pyhash.c	-	_Py_HashSecret	-
 Python/parking_lot.c	-	buckets	-
 
 ## data needed for introspecting asyncio state from debuggers and profilers
-Modules/_asynciomodule.c	-	AsyncioDebug	-
+Modules/_asynciomodule.c	-	_AsyncioDebug	-
 
 
 ##################################
@@ -166,6 +166,7 @@ Python/sysmodule.c	-	_preinit_xoptions	-
 # thread-safety
 # XXX need race protection?
 Modules/faulthandler.c	faulthandler_dump_traceback	reentrant	-
+Modules/faulthandler.c	faulthandler_dump_c_stack	reentrant	-
 Python/pylifecycle.c	_Py_FatalErrorFormat	reentrant	-
 Python/pylifecycle.c	fatal_error	reentrant	-
 
@@ -308,6 +309,7 @@ Modules/cmathmodule.c	-	tanh_special_values	-
 Modules/config.c	-	_PyImport_Inittab	-
 Modules/faulthandler.c	-	faulthandler_handlers	-
 Modules/getnameinfo.c	-	gni_afdl	-
+Modules/hmacmodule.c	-	py_hmac_static_hinfo	-
 Modules/posixmodule.c	os_getxattr_impl	buffer_sizes	-
 Modules/posixmodule.c	os_listxattr_impl	buffer_sizes	-
 Modules/posixmodule.c	-	posix_constants_confstr	-

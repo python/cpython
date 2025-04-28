@@ -37,7 +37,7 @@ except ImportError:
 
 from test.support import cpython_only, import_helper
 from test.support import MISSING_C_DOCSTRINGS, ALWAYS_EQ
-from test.support import run_no_yield_async_fn
+from test.support import run_no_yield_async_fn, EqualToForwardRef
 from test.support.import_helper import DirsOnSysPath, ready_to_import
 from test.support.os_helper import TESTFN, temp_cwd
 from test.support.script_helper import assert_python_ok, assert_python_failure, kill_python
@@ -1750,8 +1750,12 @@ class TestClassesAndFunctions(unittest.TestCase):
 class TestFormatAnnotation(unittest.TestCase):
     def test_typing_replacement(self):
         from test.typinganndata.ann_module9 import ann, ann1
-        self.assertEqual(inspect.formatannotation(ann), 'Union[List[str], int]')
-        self.assertEqual(inspect.formatannotation(ann1), 'Union[List[testModule.typing.A], int]')
+        self.assertEqual(inspect.formatannotation(ann), 'List[str] | int')
+        self.assertEqual(inspect.formatannotation(ann1), 'List[testModule.typing.A] | int')
+
+    def test_forwardref(self):
+        fwdref = ForwardRef('fwdref')
+        self.assertEqual(inspect.formatannotation(fwdref), 'fwdref')
 
 
 class TestIsMethodDescriptor(unittest.TestCase):
@@ -4587,6 +4591,11 @@ class TestSignatureObject(unittest.TestCase):
         self.assertEqual(str(inspect.signature(foo)),
                          inspect.signature(foo).format())
 
+        def foo(x: undef):
+            pass
+        sig = inspect.signature(foo, annotation_format=Format.FORWARDREF)
+        self.assertEqual(str(sig), '(x: undef)')
+
     def test_signature_str_positional_only(self):
         P = inspect.Parameter
         S = inspect.Signature
@@ -4931,9 +4940,12 @@ class TestSignatureObject(unittest.TestCase):
                     signature_func(ida.f, annotation_format=Format.STRING),
                     sig([par("x", PORK, annotation="undefined")])
                 )
+                s1 = signature_func(ida.f, annotation_format=Format.FORWARDREF)
+                s2 = sig([par("x", PORK, annotation=EqualToForwardRef("undefined", owner=ida.f))])
+                #breakpoint()
                 self.assertEqual(
                     signature_func(ida.f, annotation_format=Format.FORWARDREF),
-                    sig([par("x", PORK, annotation=ForwardRef("undefined"))])
+                    sig([par("x", PORK, annotation=EqualToForwardRef("undefined", owner=ida.f))])
                 )
                 with self.assertRaisesRegex(NameError, "undefined"):
                     signature_func(ida.f, annotation_format=Format.VALUE)
@@ -5748,7 +5760,7 @@ class TestSignatureDefinitions(unittest.TestCase):
 
     def test_faulthandler_module_has_signatures(self):
         import faulthandler
-        unsupported_signature = {'dump_traceback', 'dump_traceback_later', 'enable'}
+        unsupported_signature = {'dump_traceback', 'dump_traceback_later', 'enable', 'dump_c_stack'}
         unsupported_signature |= {name for name in ['register']
                                   if hasattr(faulthandler, name)}
         self._test_module_has_signatures(faulthandler, unsupported_signature=unsupported_signature)

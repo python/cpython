@@ -657,7 +657,7 @@ Catalog: {ns.catalog}""",
     if ns.arch not in ("win32", "amd64", "arm32", "arm64"):
         log_error("--arch is not a valid value (win32, amd64, arm32, arm64)")
         return 4
-    if ns.arch in ("arm32", "arm64"):
+    if ns.arch == "arm32":
         for n in ("include_idle", "include_tcltk"):
             if getattr(ns, n):
                 log_warning(f"Disabling --{n.replace('_', '-')} on unsupported platform")

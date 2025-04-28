@@ -1,0 +1,1 @@
+Add support for :data:`~socket.BTPROTO_SCO` in sockets on FreeBSD.

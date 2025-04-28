@@ -544,6 +544,8 @@ def _default_mime_types():
         '.rdf'    : 'application/xml',
         '.wsdl'   : 'application/xml',
         '.xpdl'   : 'application/xml',
+        '.yaml'   : 'application/yaml',
+        '.yml'    : 'application/yaml',
         '.zip'    : 'application/zip',
         '.3gp'    : 'audio/3gpp',
         '.3gpp'   : 'audio/3gpp',
@@ -669,52 +671,45 @@ def _default_mime_types():
 _default_mime_types()
 
 
-def _main():
-    import getopt
+def _parse_args(args):
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser(description='map filename extensions to MIME types')
+    parser.add_argument(
+        '-e', '--extension',
+        action='store_true',
+        help='guess extension instead of type'
+    )
+    parser.add_argument(
+        '-l', '--lenient',
+        action='store_true',
+        help='additionally search for common but non-standard types'
+    )
+    parser.add_argument('type', nargs='+', help='a type to search')
+    args = parser.parse_args(args)
+    return args, parser.format_help()
+
+
+def _main(args=None):
+    """Run the mimetypes command-line interface and return a text to print."""
     import sys
 
-    USAGE = """\
-Usage: mimetypes.py [options] type
+    args, help_text = _parse_args(args)
 
-Options:
-    --help / -h       -- print this message and exit
-    --lenient / -l    -- additionally search of some common, but non-standard
-                         types.
-    --extension / -e  -- guess extension instead of type
-
-More than one type argument may be given.
-"""
-
-    def usage(code, msg=''):
-        print(USAGE)
-        if msg: print(msg)
-        sys.exit(code)
-
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hle',
-                                   ['help', 'lenient', 'extension'])
-    except getopt.error as msg:
-        usage(1, msg)
-
-    strict = 1
-    extension = 0
-    for opt, arg in opts:
-        if opt in ('-h', '--help'):
-            usage(0)
-        elif opt in ('-l', '--lenient'):
-            strict = 0
-        elif opt in ('-e', '--extension'):
-            extension = 1
-    for gtype in args:
-        if extension:
-            guess = guess_extension(gtype, strict)
-            if not guess: print("I don't know anything about type", gtype)
-            else: print(guess)
-        else:
-            guess, encoding = guess_type(gtype, strict)
-            if not guess: print("I don't know anything about type", gtype)
-            else: print('type:', guess, 'encoding:', encoding)
+    if args.extension:
+        for gtype in args.type:
+            guess = guess_extension(gtype, not args.lenient)
+            if guess:
+                return str(guess)
+            sys.exit(f"error: unknown type {gtype}")
+    else:
+        for gtype in args.type:
+            guess, encoding = guess_type(gtype, not args.lenient)
+            if guess:
+                return f"type: {guess} encoding: {encoding}"
+            sys.exit(f"error: media type unknown for {gtype}")
+    return help_text
 
 
 if __name__ == '__main__':
-    _main()
+    print(_main())

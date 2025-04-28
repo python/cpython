@@ -13,6 +13,7 @@
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_structseq.h"     // PyStructSequence_InitType()
 #include "pycore_tuple.h"         // _PyTuple_FromArray()
+#include "pycore_typeobject.h"    // _PyStaticType_FiniBuiltin()
 
 static const char visible_length_key[] = "n_sequence_fields";
 static const char real_length_key[] = "n_fields";
@@ -72,6 +73,7 @@ PyStructSequence_New(PyTypeObject *type)
     obj = PyObject_GC_NewVar(PyStructSequence, type, size);
     if (obj == NULL)
         return NULL;
+    _PyTuple_RESET_HASH_CACHE(obj);
     /* Hack the size of the variable object, so invisible fields don't appear
      to Python code. */
     Py_SET_SIZE(obj, vsize);
@@ -334,8 +336,9 @@ error:
 
 
 static PyObject *
-structseq_reduce(PyStructSequence* self, PyObject *Py_UNUSED(ignored))
+structseq_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
+    PyStructSequence *self = (PyStructSequence*)op;
     PyObject* tup = NULL;
     PyObject* dict = NULL;
     PyObject* result;
@@ -379,8 +382,9 @@ error:
 
 
 static PyObject *
-structseq_replace(PyStructSequence *self, PyObject *args, PyObject *kwargs)
+structseq_replace(PyObject *op, PyObject *args, PyObject *kwargs)
 {
+    PyStructSequence *self = (PyStructSequence*)op;
     PyStructSequence *result = NULL;
     Py_ssize_t n_fields, n_unnamed_fields, i;
 
@@ -449,7 +453,7 @@ error:
 }
 
 static PyMethodDef structseq_methods[] = {
-    {"__reduce__", (PyCFunction)structseq_reduce, METH_NOARGS, NULL},
+    {"__reduce__", structseq_reduce, METH_NOARGS, NULL},
     {"__replace__", _PyCFunction_CAST(structseq_replace), METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("__replace__($self, /, **changes)\n--\n\n"
         "Return a copy of the structure with new values for the specified fields.")},

@@ -1,2 +1,0 @@
-Improve import time of :mod:`cmd` by lazy importing :mod:`inspect` and
-removing :mod:`string`. Patch by Semyon Moroz.
