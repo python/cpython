@@ -1,0 +1,48 @@
+[16592:26060:0416/162238.591:VERBOSE1:components\enterprise\browser\controller\chrome_browser_cloud_management_controller.cc:103] DM token = empty
+[16592:26060:0416/162238.591:VERBOSE1:components\enterprise\browser\controller\chrome_browser_cloud_management_controller.cc:109] Enrollment token = 
+[16592:26060:0416/162238.591:VERBOSE1:components\enterprise\browser\controller\chrome_browser_cloud_management_controller.cc:110] Client ID = 5d510017-e987-469b-a8a3-91cf175ffc73
+[16592:26060:0416/162238.607:VERBOSE1:components\variations\service\variations_field_trial_creator_base.cc:85] VariationsSeedUsage:0
+[16592:26060:0416/162238.607:VERBOSE1:components\variations\service\variations_field_trial_creator_base.cc:742] CreateTrialsFromSeed complete with seed.version='20250415-230057.131000'
+[16592:26060:0416/162238.607:VERBOSE1:components\variations\service\variations_field_trial_creator_base.cc:359] VariationsSetupComplete
+[16592:26060:0416/162238.747:VERBOSE1:chrome\browser\media\webrtc\webrtc_event_log_manager.cc:96] WebRTC remote-bound event logging enabled.
+[16592:26060:0416/162238.747:VERBOSE1:components\proxy_config\pref_proxy_config_tracker_impl.cc:199] 000061FC0006C2C0: set chrome proxy config service to 000061FC00144D00
+[16592:26060:0416/162238.763:VERBOSE1:components\device_event_log\device_event_log_impl.cc:204] [16:22:38.761] Display: EVENT: screen_win.cc:958 Displays updated, count: 2
+[16592:26060:0416/162238.763:VERBOSE1:components\device_event_log\device_event_log_impl.cc:204] [16:22:38.764] Display: EVENT: screen_win.cc:960 Display[4281195563] bounds=[0,0 1536x864], workarea=[0,0 1536x864], scale=1.25, rotation=0, panel_rotation=0 external detected
+[16592:26060:0416/162238.763:VERBOSE1:components\device_event_log\device_event_log_impl.cc:204] [16:22:38.764] Display: EVENT: screen_win.cc:960 Display[2792407388] bounds=[1536,0 1440x900], workarea=[1536,0 1440x900], scale=1, rotation=0, panel_rotation=0 external detected
+[16592:3348:0416/162238.763:VERBOSE1:content\browser\renderer_host\media\media_stream_manager.cc:1504] MSM::InitializeMaybeAsync([this=0x61fc000e8800])
+[16592:3348:0416/162238.763:VERBOSE1:content\browser\renderer_host\media\media_stream_manager.cc:1504] MDM::MediaDevicesManager()
+[16592:3348:0416/162238.763:VERBOSE1:content\browser\renderer_host\media\media_stream_manager.cc:1504] MSM::MediaStreamManager([this=0x61fc000e8800]))
+[16592:26060:0416/162238.779:VERBOSE1:components\enterprise\browser\controller\chrome_browser_cloud_management_controller.cc:174] Starting CBCM Controller Initialization
+[16592:26060:0416/162238.779:INFO:components\enterprise\browser\controller\chrome_browser_cloud_management_controller.cc:202] No machine level policy manager exists.
+[16592:26060:0416/162238.779:VERBOSE1:chrome\installer\util\install_util.cc:218] Existing Chrome version found: 136.0.7103.25
+[16592:26060:0416/162238.779:VERBOSE1:chrome\browser\enterprise\platform_auth\platform_auth_policy_observer.cc:75] PlatformAuthProviderManager enabled: 0
+[16592:26060:0416/162238.810:VERBOSE1:components\proxy_config\pref_proxy_config_tracker_impl.cc:199] 000061FC0006CB00: set chrome proxy config service to 000061FC0014CBC0
+[16592:26060:0416/162238.810:VERBOSE1:components\signin\internal\identity_manager\mutable_profile_oauth2_token_service_delegate.cc:310] MutablePO2TS::MutablePO2TS
+[16592:26060:0416/162238.810:VERBOSE1:components\proxy_config\pref_proxy_config_tracker_impl.cc:199] 000061FC0006E100: set chrome proxy config service to 000061FC0014D8C0
+[16592:26060:0416/162238.810:VERBOSE1:components\device_event_log\device_event_log_impl.cc:204] [16:22:38.820] Bluetooth: EVENT: bluetooth_api.cc:82 BluetoothAPI: 000061FC00621C00
+[16592:26060:0416/162238.810:VERBOSE1:google_apis\gaia\gaia_auth_util.cc:55] Canonicalized @gmail.com to @gmail.com
+[16592:26060:0416/162238.810:VERBOSE1:google_apis\gaia\gaia_auth_util.cc:55] Canonicalized @gmail.com to @gmail.com
+[16592:26060:0416/162238.810:VERBOSE1:extensions\browser\api\bluetooth_low_energy\bluetooth_low_energy_event_router.cc:291] Initializing BluetoothLowEnergyEventRouter.
+[16592:26060:0416/162238.810:VERBOSE1:google_apis\gaia\gaia_auth_util.cc:55] Canonicalized @gmail.com to @gmail.com
+[16592:26060:0416/162238.810:VERBOSE1:google_apis\gaia\gaia_auth_util.cc:55] Canonicalized @gmail.com to @gmail.com
+[16592:26060:0416/162238.810:VERBOSE1:components\signin\core\browser\account_reconcilor.cc:165] AccountReconcilor::AccountReconcilor
+[16592:26060:0416/162238.810:VERBOSE1:components\signin\core\browser\account_reconcilor.cc:203] AccountReconcilor::Initialize
+[16592:26060:0416/162238.810:VERBOSE1:components\signin\core\browser\account_reconcilor.cc:257] AccountReconcilor::RegisterWithContentSettings
+[16592:26060:0416/162238.810:VERBOSE1:components\signin\core\browser\account_reconcilor.cc:280] AccountReconcilor::RegisterWithIdentityManager
+[16592:26060:0416/162238.810:VERBOSE1:components\segmentation_platform\internal\database\cached_result_provider.cc:54] CachedResultProvider loaded prefs with results from previous session: PredictionResult: timestamp: 13389066435013547 result 0: 0 for segmentation key chrome_low_user_engagement
+[16592:26060:0416/162238.810:VERBOSE1:components\segmentation_platform\internal\database\cached_result_provider.cc:54] CachedResultProvider loaded prefs with results from previous session: PredictionResult: timestamp: 13389066435029782 result 0: 62 for segmentation key search_user
+[16592:26060:0416/162238.810:VERBOSE1:components\segmentation_platform\internal\database\cached_result_provider.cc:54] CachedResultProvider loaded prefs with results from previous session: PredictionResult: timestamp: 13389165206650149 result 0: 0 for segmentation key shopping_user
+[16592:26060:0416/162238.810:VERBOSE1:components\segmentation_platform\internal\database\cached_result_provider.cc:54] CachedResultProvider loaded prefs with results from previous session: PredictionResult: timestamp: 13389066435017241 result 0: 1 for segmentation key cross_device_user
+[16592:26060:0416/162238.810:VERBOSE1:components\segmentation_platform\internal\database\cached_result_provider.cc:54] CachedResultProvider loaded prefs with results from previous session: PredictionResult: timestamp: 13388458584213898 result 0: 0 for segmentation key resume_heavy_user
+[16592:26060:0416/162238.810:VERBOSE1:components\segmentation_platform\internal\database\cached_result_provider.cc:54] CachedResultProvider loaded prefs with results from previous session: PredictionResult: timestamp: 13343214262361365 result 0: 0 result 1: 0 result 2: 0 result 3: 0 result 4: 0 result 5: 0 result 6: 0 result 7: 1 for segmentation key device_switcher
+[16592:26060:0416/162238.810:VERBOSE1:components\segmentation_platform\internal\database\cached_result_provider.cc:54] CachedResultProvider loaded prefs with results from previous session: PredictionResult: timestamp: 13389066435019024 result 0: 0 for segmentation key password_manager_user
+[1320:25416:0416/162238.951:VERBOSE1:components\viz\service\main\viz_main_impl.cc:85] VizNullHypothesis is disabled (not a warning)
+[16592:26060:0416/162238.958:VERBOSE1:chrome\browser\extensions\extension_service.cc:823] AddComponentExtension 線上應用程式商店
+[16592:26060:0416/162238.958:VERBOSE1:chrome\browser\extensions\extension_service.cc:823] AddComponentExtension Chrome PDF Viewer
+[16592:3348:0416/162238.958:VERBOSE1:extensions\browser\content_verifier\content_verifier.cc:853] OnFetchComplete ahfgeienlihckogmohjhadlkjgocpleb success:0
+[16592:26060:0416/162238.958:VERBOSE1:chrome\browser\extensions\extension_service.cc:823] AddComponentExtension Google Hangouts
+[16592:3348:0416/162238.958:VERBOSE1:extensions\browser\content_verifier\content_verifier.cc:853] OnFetchComplete mhjfbmdgcfjbbpaeojofohoefgiehjai success:0
+[1320:25416:0416/162238.958:ERROR:ui\gl\direct_composition_support.cc:1189] QueryInterface to IDCompositionDevice4 failed: 不支援此種介面 (0x80004002)
+[16592:3348:0416/162238.958:VERBOSE1:extensions\browser\content_verifier\content_verifier.cc:853] OnFetchComplete nkeimhogjdpnpccoofpliimaahmaaome success:0
+[16592:26060:0416/162238.958:VERBOSE1:chrome\browser\extensions\extension_service.cc:823] AddComponentExtension Google Network Speech
+[16592:3348:0416/162238.958:VERBOSE1:extensions\browser\content_verifier\content_verifier.cc:853] OnFetchComplete neajdppkdcdipfabeoofebfddakdcjhd success:0

@@ -1,0 +1,58 @@
+mjd 	 52054 	 #2001/05/25 00:41:35.0
+observers 	 snedden
+version 	 NOCVS:v3_45_8:/p/iop/v3_45_8 	# version of IOP
+mcpVersion 	 v5_0_0 	# version of MCP
+cameraVersion 	 EXEC v4_6 	# Camera code version
+parameters 
+parametersDir 
+
+# CCD configuration files
+configDir 	 .
+ccdConfig 	 opConfig-52054.par
+ccdECalib 	 opECalib-51627.par
+ccdBC     	 opBC-51791.par
+ccdCamera 	 opCamera-51960.par
+ccdVoltages 	 idCCDLog-%d-52054.par
+
+typedef enum {
+	 START,
+	 END
+} RUNMARK;
+
+typedef struct {
+	 char 	 program[20];
+	 int       stripe;
+	 char      strip[20];
+	 int       run;
+	 char      flavor[20];
+	 char      sys_scn[20];
+	 double    eqnx_scn;
+	 double    node;
+	 double    incl;
+	 double    muStart;
+	 double    muEnd;
+	 int       lastFrame;
+	 double    xBore;
+	 double    yBore;
+	 char      system[20];
+	 double    equinox;
+	 double    c_obs;
+	 double    tracking;
+	 char      quality[20];
+	 double    mjd;
+	 RUNMARK   mark;
+} IMAGINGRUN; 
+
+typedef struct { int run; char quality[20]; } QUALITY
+typedef struct { int run; int frame; char comment[240]; } IDCOMMENT
+
+imagingrun drifting 100 O 2337 bias \ 
+	 mean 2000 85.42083401  0.00578476 147.24 -9999 -9999 \ 
+	 0.0000 0.0000 -9999 -9999 \ 
+	 26322  15.041060 unknown 52054.02889 START
+idcomment 2337 9 "{}"
+idcomment 2337 50 "{}"
+imagingrun drifting 100 O 2337 bias \ 
+	 mean 2000 85.42083401  0.00578476 147.24 152.56 49 \ 
+	 0.0000 0.0000 -9999 -9999 \ 
+	 26322  15.041060 good 52054.04362 END

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>1</key>
+	<integer>0</integer>
+	<key>APPLICATIONS</key>
+	<integer>5</integer>
+	<key>DIRECTORIES</key>
+	<integer>3</integer>
+	<key>DOCUMENTS</key>
+	<integer>12</integer>
+	<key>IMAGES</key>
+	<integer>1</integer>
+	<key>MENU_DEFINITION</key>
+	<integer>2</integer>
+	<key>MENU_SPOTLIGHT_SUGGESTIONS</key>
+	<integer>1</integer>
+	<key>OTHER</key>
+	<integer>1</integer>
+	<key>SOURCE</key>
+	<integer>1</integer>
+</dict>
+</plist>
