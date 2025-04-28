@@ -887,7 +887,8 @@ PyObject_Format(PyObject *obj, PyObject *format_spec)
 
     if (result && !PyUnicode_Check(result)) {
         PyErr_Format(PyExc_TypeError,
-                     "__format__ must return type str (not %T)", result);
+                     "%T.__format__() must return type str (not %T)",
+                     obj, result);
         Py_SETREF(result, NULL);
         goto done;
     }
@@ -1420,14 +1421,14 @@ _PyNumber_Index(PyObject *item)
 
     if (!PyLong_Check(result)) {
         PyErr_Format(PyExc_TypeError,
-                     "%T.__index__ must return type int (not %T)",
+                     "%T.__index__() must return type int (not %T)",
                      item, result);
         Py_DECREF(result);
         return NULL;
     }
     /* Issue #17576: warn if 'result' not of exact type int. */
     if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-            "%T.__index__ must return type int (not %T).  "
+            "%T.__index__() must return type int (not %T).  "
             "The ability to return an instance of a strict subclass of int "
             "is deprecated, and may be removed in a future version of Python.",
             item, result)) {
@@ -1530,14 +1531,14 @@ PyNumber_Long(PyObject *o)
 
         if (!PyLong_Check(result)) {
             PyErr_Format(PyExc_TypeError,
-                         "%T.__int__ must return type int (not %T)",
+                         "%T.__int__() must return type int (not %T)",
                          o, result);
             Py_DECREF(result);
             return NULL;
         }
         /* Issue #17576: warn if 'result' not of exact type int. */
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "%T.__int__ must return type int (not %T).  "
+                "%T.__int__() must return type int (not %T).  "
                 "The ability to return an instance of a strict subclass of int "
                 "is deprecated, and may be removed in a future version of Python.",
                 o, result)) {
@@ -1608,13 +1609,13 @@ PyNumber_Float(PyObject *o)
 
         if (!PyFloat_Check(res)) {
             PyErr_Format(PyExc_TypeError,
-                         "%T.__float__ must return type float (not %T)", o, res);
+                         "%T.__float__() must return type float (not %T)", o, res);
             Py_DECREF(res);
             return NULL;
         }
         /* Issue #26983: warn if 'res' not of exact type float. */
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
-                "%T.__float__ must return type float (not %T).  "
+                "%T.__float__() must return type float (not %T).  "
                 "The ability to return an instance of a strict subclass of float "
                 "is deprecated, and may be removed in a future version of Python.",
                 o, res)) {

@@ -566,7 +566,7 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
             return NULL;
         if (!PyBytes_Check(result)) {
             PyErr_Format(PyExc_TypeError,
-                         "%T.__bytes__ must return type bytes (not %T)",
+                         "%T.__bytes__() must return type bytes (not %T)",
                          v, result);
             Py_DECREF(result);
             return NULL;
@@ -2788,7 +2788,7 @@ bytes_new_impl(PyTypeObject *type, PyObject *x, const char *encoding,
             return NULL;
         if (!PyBytes_Check(bytes)) {
             PyErr_Format(PyExc_TypeError,
-                         "%T.__bytes__ must return type bytes (not %T)",
+                         "%T.__bytes__() must return type bytes (not %T)",
                          x, bytes);
             Py_DECREF(bytes);
             return NULL;

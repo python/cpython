@@ -2029,7 +2029,7 @@ type_get_annotations(PyObject *tp, void *Py_UNUSED(closure))
             }
             if (!PyDict_Check(annotations)) {
                 PyErr_Format(PyExc_TypeError,
-                             "__annotate__ must return type dict of type '%T'",
+                             "__annotate__() must return type dict of type '%T'",
                              annotations);
                 Py_DECREF(annotations);
                 Py_DECREF(annotate);
@@ -10077,7 +10077,7 @@ slot_nb_bool(PyObject *self)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "%T.__bool__ must return type bool (not %T)",
+                     "%T.__bool__() must return type bool (not %T)",
                      self, value);
         result = -1;
     }
