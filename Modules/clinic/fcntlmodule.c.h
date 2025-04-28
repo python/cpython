@@ -120,7 +120,7 @@ fcntl_ioctl(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (fd < 0) {
         goto exit;
     }
-    if (!PyLong_Check(args[1])) {
+    if (!PyIndex_Check(args[1])) {
         PyErr_Format(PyExc_TypeError, "ioctl() argument 2 must be int, not %T", args[1]);
         goto exit;
     }
@@ -264,4 +264,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=30c01b46bfa840c1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=65a16bc64c7b4de4 input=a9049054013a1b77]*/

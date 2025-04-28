@@ -13,7 +13,7 @@ import unittest
 import unittest.mock
 from contextlib import contextmanager
 from pathlib import Path
-from test.support import is_wasi, os_helper, SHORT_TIMEOUT
+from test.support import is_wasi, os_helper, requires_subprocess, SHORT_TIMEOUT
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from typing import Dict, List, Optional, Tuple, Union, Any
 
@@ -257,6 +257,7 @@ class RemotePdbTestCase(unittest.TestCase):
             self.assertEqual(len(prompts), 2)  # Should have sent 2 prompts
 
 
+@requires_subprocess()
 @unittest.skipIf(is_wasi, "WASI does not support TCP sockets")
 class PdbConnectTestCase(unittest.TestCase):
     """Tests for the _connect mechanism using direct socket communication."""

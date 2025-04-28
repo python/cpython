@@ -821,6 +821,10 @@ decimal
   :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
   (Contributed by Serhiy Storchaka in :gh:`121798`.)
 
+* Expose :func:`decimal.IEEEContext` to support creation of contexts
+  corresponding to the IEEE 754 (2008) decimal interchange formats.
+  (Contributed by Sergey B Kirpichev in :gh:`53032`.)
+
 difflib
 -------
 
@@ -1651,6 +1655,18 @@ Deprecated
   or *sequence* as keyword arguments is now deprecated.
   (Contributed by Kirill Podoprigora in :gh:`121676`.)
 
+* :mod:`logging`:
+  Support for custom logging handlers with the *strm* argument is deprecated
+  and scheduled for removal in Python 3.16. Define handlers with the *stream*
+  argument instead. (Contributed by Mariusz Felisiak in :gh:`115032`.)
+
+* :mod:`mimetypes`:
+  Valid extensions start with a '.' or are empty for
+  :meth:`mimetypes.MimeTypes.add_type`.
+  Undotted extensions are deprecated and will
+  raise a :exc:`ValueError` in Python 3.16.
+  (Contributed by Hugo van Kemenade in :gh:`75223`.)
+
 * :mod:`!nturl2path`: This module is now deprecated. Call
   :func:`urllib.request.url2pathname` and :func:`~urllib.request.pathname2url`
   instead.
@@ -2142,6 +2158,11 @@ New features
 * Add support of nullable arguments in :c:func:`PyArg_ParseTuple` and
   similar functions.
   Adding ``?`` after any format unit makes ``None`` be accepted as a value.
+  (Contributed by Serhiy Storchaka in :gh:`112068`.)
+
+* The ``k`` and ``K`` formats in :c:func:`PyArg_ParseTuple` and
+  similar functions now use :meth:`~object.__index__` if available,
+  like all other integer formats.
   (Contributed by Serhiy Storchaka in :gh:`112068`.)
 
 * Add macros :c:func:`Py_PACK_VERSION` and :c:func:`Py_PACK_FULL_VERSION` for

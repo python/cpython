@@ -363,6 +363,22 @@ class MimeTypesTestCase(unittest.TestCase):
         self.assertEqual(self.db.guess_extension(
             type='image/jpg', strict=False), '.jpg')
 
+    def test_added_types_are_used(self):
+        mimetypes.add_type('testing/default-type', '')
+        mime_type, _ = mimetypes.guess_type('')
+        self.assertEqual(mime_type, 'testing/default-type')
+
+        mime_type, _ = mimetypes.guess_type('test.myext')
+        self.assertEqual(mime_type, None)
+
+        mimetypes.add_type('testing/type', '.myext')
+        mime_type, _ = mimetypes.guess_type('test.myext')
+        self.assertEqual(mime_type, 'testing/type')
+
+    def test_add_type_with_undotted_extension_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            mimetypes.add_type("testing/type", "undotted")
+
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")
 class Win32MimeTypesTestCase(unittest.TestCase):
