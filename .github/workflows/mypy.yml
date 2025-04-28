@@ -41,6 +41,7 @@ jobs:
       matrix:
         target: [
           "Lib/_pyrepl",
+          "Lib/pathlib",
           "Lib/test/libregrtest",
           "Tools/build",
           "Tools/cases_generator",

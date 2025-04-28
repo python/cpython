@@ -7,6 +7,23 @@ from stat import S_ISDIR, S_ISREG, S_ISLNK, S_IMODE
 import io
 import os
 import sys
+
+# typing
+if False:
+    from collections.abc import Callable
+    from types import ModuleType
+
+    type CopyFunc = Callable[[int, int], None]
+
+    fcntl: ModuleType | None
+    posix: ModuleType | None
+    _winapi: ModuleType | None
+    _ficlone: CopyFunc | None
+    _fcopyfile: CopyFunc | None
+    _copy_file_range: CopyFunc | None
+    _sendfile: CopyFunc | None
+    copyfile2: CopyFunc | None
+
 try:
     import fcntl
 except ImportError:

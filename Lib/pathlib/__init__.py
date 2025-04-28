@@ -12,10 +12,17 @@ import os
 import posixpath
 import sys
 from errno import *
-from glob import _StringGlobber, _no_recurse_symlinks
+from glob import _StringGlobber, _no_recurse_symlinks  # type: ignore[attr-defined]
 from itertools import chain
 from stat import S_ISDIR, S_ISREG, S_ISSOCK, S_ISBLK, S_ISCHR, S_ISFIFO
 from _collections_abc import Sequence
+
+# types
+if False:
+    from types import ModuleType
+
+    pwd: ModuleType | None
+    grp: ModuleType | None
 
 try:
     import pwd
@@ -26,7 +33,7 @@ try:
 except ImportError:
     grp = None
 
-from pathlib._os import (
+from ._os import (
     PathInfo, DirEntryInfo,
     ensure_different_files, ensure_distinct_paths,
     copyfile2, copyfileobj, magic_open, copy_info,
@@ -46,7 +53,7 @@ class UnsupportedOperation(NotImplementedError):
     pass
 
 
-class _PathParents(Sequence):
+class _PathParents(Sequence["PurePath"]):
     """This object provides sequence-like access to the logical ancestors
     of a path.  Don't try to construct it yourself."""
     __slots__ = ('_path', '_drv', '_root', '_tail')
