@@ -1073,6 +1073,7 @@ handle_legacy_finalizers(PyThreadState *tstate,
 /* Run first-time finalizers (if any) on all the objects in collectable.
  * Note that this may remove some (or even all) of the objects from the
  * list, due to refcounts falling to 0.
+ * Return 1 if any finalizers were run.
  */
 static int
 finalize_garbage(PyThreadState *tstate, PyGC_Head *collectable)
