@@ -1,0 +1,1 @@
+Treat backslashes in .netrc files as escaping characters only for quotes in quotes
