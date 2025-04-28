@@ -958,15 +958,6 @@ mimetypes
   * :rfc:`5334`: Add Ogg media (``.oga``, ``.ogg`` and ``.ogx``)
   * :rfc:`6713`: Add gzip ``application/gzip`` (``.gz``)
   * :rfc:`9639`: Add FLAC ``audio/flac`` (``.flac``)
-  * De facto: Add WebM ``audio/webm`` (``.weba``)
-  * `ECMA-376
-    <https://ecma-international.org/publications-and-standards/standards/ecma-376/>`__:
-    Add ``.docx``, ``.pptx`` and ``.xlsx`` types
-  * `OASIS
-    <https://docs.oasis-open.org/office/v1.2/cs01/OpenDocument-v1.2-cs01-part1.html#Appendix_C>`__:
-    Add OpenDocument ``.odg``, ``.odp``, ``.ods`` and ``.odt`` types
-  * `W3C <https://www.w3.org/TR/epub-33/#app-media-type>`__:
-    Add EPUB ``application/epub+zip`` (``.epub``)
   * Add 7z ``application/x-7z-compressed`` (``.7z``)
   * Add Android Package ``application/vnd.android.package-archive`` (``.apk``)
     when not strict
@@ -979,6 +970,15 @@ mimetypes
   * Add RPM ``application/x-rpm`` (``.rpm``)
   * Add STL ``model/stl`` (``.stl``)
   * Add Windows Media Video ``video/x-ms-wmv`` (``.wmv``)
+  * De facto: Add WebM ``audio/webm`` (``.weba``)
+  * `ECMA-376
+    <https://ecma-international.org/publications-and-standards/standards/ecma-376/>`__:
+    Add ``.docx``, ``.pptx`` and ``.xlsx`` types
+  * `OASIS
+    <https://docs.oasis-open.org/office/v1.2/cs01/OpenDocument-v1.2-cs01-part1.html#Appendix_C>`__:
+    Add OpenDocument ``.odg``, ``.odp``, ``.ods`` and ``.odt`` types
+  * `W3C <https://www.w3.org/TR/epub-33/#app-media-type>`__:
+    Add EPUB ``application/epub+zip`` (``.epub``)
 
   (Contributed by Hugo van Kemenade in :gh:`129965`.)
 
