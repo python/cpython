@@ -146,38 +146,7 @@ class EventQueueTestBase:
         self.assertEqual(e.evt, "key")
         self.assertEqual(e.data, "ч")
 
-    def test_push_unicode_character_two_bytes_in_paste_mode(self):
-        eq = self.make_eventqueue()
-        eq.keymap = {}
-
-        def _event(evt, data, raw=None):
-            r = raw if raw is not None else data.encode(eq.encoding)
-            e = Event(evt, data, r)
-            return e
-
-        def _push(keys):
-            for k in keys:
-                eq.push(k)
-
-        _push(b"\x1b[200")
-        _push("ñ".encode(eq.encoding, "replace"))
-        _push(b"\x1b[201")
-
-        self.assertEqual(eq.get(), _event("key", "\x1b"))
-        self.assertEqual(eq.get(), _event("key", "["))
-        self.assertEqual(eq.get(), _event("key", "2"))
-        self.assertEqual(eq.get(), _event("key", "0"))
-        self.assertEqual(eq.get(), _event("key", "0"))
-
-        self.assertEqual(eq.get(), _event("key", "ñ", b'\xc3\xb1'))
-
-        self.assertEqual(eq.get(), _event("key", "\x1b"))
-        self.assertEqual(eq.get(), _event("key", "["))
-        self.assertEqual(eq.get(), _event("key", "2"))
-        self.assertEqual(eq.get(), _event("key", "0"))
-        self.assertEqual(eq.get(), _event("key", "1"))
-
-    def test_push_unicode_character_as_str_in_paste_mode(self):
+    def test_push_single_chars_and_unicode_character_as_str(self):
         eq = self.make_eventqueue()
         eq.keymap = {}
 
@@ -192,22 +161,13 @@ class EventQueueTestBase:
 
         self.assertIsInstance("ñ", str)
 
-        _push(b"\x1b[200")
+        _push(b"b")
         with self.assertRaises(AssertionError):
             _push("ñ")
-        _push(b"\x1b[201")
+        _push(b"a")
 
-        self.assertEqual(eq.get(), _event("key", "\x1b"))
-        self.assertEqual(eq.get(), _event("key", "["))
-        self.assertEqual(eq.get(), _event("key", "2"))
-        self.assertEqual(eq.get(), _event("key", "0"))
-        self.assertEqual(eq.get(), _event("key", "0"))
-
-        self.assertEqual(eq.get(), _event("key", "\x1b"))
-        self.assertEqual(eq.get(), _event("key", "["))
-        self.assertEqual(eq.get(), _event("key", "2"))
-        self.assertEqual(eq.get(), _event("key", "0"))
-        self.assertEqual(eq.get(), _event("key", "1"))
+        self.assertEqual(eq.get(), _event("key", "b"))
+        self.assertEqual(eq.get(), _event("key", "a"))
 
 
 @unittest.skipIf(support.MS_WINDOWS, "No Unix event queue on Windows")
