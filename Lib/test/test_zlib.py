@@ -414,7 +414,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         dco = zlib.decompressobj()
         bufs = []
         cb = combuf
-        while cb:
+        while not dco.eof:
             #max_length = 1 + len(cb)//10
             chunk = dco.decompress(cb, dcx)
             self.assertFalse(len(chunk) > dcx,
@@ -439,7 +439,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         dco = zlib.decompressobj()
         bufs = []
         cb = combuf
-        while cb:
+        while not dco.eof:
             max_length = 1 + len(cb)//10
             chunk = dco.decompress(cb, max_length)
             self.assertFalse(len(chunk) > max_length,
@@ -449,7 +449,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         if flush:
             bufs.append(dco.flush())
         else:
-            while chunk:
+            while not dco.eof:
                 chunk = dco.decompress(b'', max_length)
                 self.assertFalse(len(chunk) > max_length,
                             'chunk too big (%d>%d)' % (len(chunk),max_length))
