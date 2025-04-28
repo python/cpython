@@ -750,6 +750,10 @@ decimal
   :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
   (Contributed by Serhiy Storchaka in :gh:`121798`.)
 
+* Expose :func:`decimal.IEEEContext` to support creation of contexts
+  corresponding to the IEEE 754 (2008) decimal interchange formats.
+  (Contributed by Sergey B Kirpichev in :gh:`53032`.)
+
 difflib
 -------
 
@@ -997,9 +1001,22 @@ mimetypes
 
   * :rfc:`2361`: Change type for ``.avi`` to ``video/vnd.avi``
     and for ``.wav`` to ``audio/vnd.wave``
-  * :rfc:`4337`: Add MPEG-4 ``audio/mp4`` (``.m4a``))
+  * :rfc:`4337`: Add MPEG-4 ``audio/mp4`` (``.m4a``)
   * :rfc:`5334`: Add Ogg media (``.oga``, ``.ogg`` and ``.ogx``)
+  * :rfc:`6713`: Add gzip ``application/gzip`` (``.gz``)
   * :rfc:`9639`: Add FLAC ``audio/flac`` (``.flac``)
+  * Add 7z ``application/x-7z-compressed`` (``.7z``)
+  * Add Android Package ``application/vnd.android.package-archive`` (``.apk``)
+    when not strict
+  * Add deb ``application/x-debian-package`` (``.deb``)
+  * Add glTF binary ``model/gltf-binary`` (``.glb``)
+  * Add glTF JSON/ASCII ``model/gltf+json`` (``.gltf``)
+  * Add M4V ``video/x-m4v`` (``.m4v``)
+  * Add PHP ``application/x-httpd-php`` (``.php``)
+  * Add RAR ``application/vnd.rar`` (``.rar``)
+  * Add RPM ``application/x-rpm`` (``.rpm``)
+  * Add STL ``model/stl`` (``.stl``)
+  * Add Windows Media Video ``video/x-ms-wmv`` (``.wmv``)
   * De facto: Add WebM ``audio/webm`` (``.weba``)
   * `ECMA-376
     <https://ecma-international.org/publications-and-standards/standards/ecma-376/>`__:
@@ -1584,6 +1601,13 @@ Deprecated
   Support for custom logging handlers with the *strm* argument is deprecated
   and scheduled for removal in Python 3.16. Define handlers with the *stream*
   argument instead. (Contributed by Mariusz Felisiak in :gh:`115032`.)
+
+* :mod:`mimetypes`:
+  Valid extensions start with a '.' or are empty for
+  :meth:`mimetypes.MimeTypes.add_type`.
+  Undotted extensions are deprecated and will
+  raise a :exc:`ValueError` in Python 3.16.
+  (Contributed by Hugo van Kemenade in :gh:`75223`.)
 
 * :mod:`!nturl2path`: This module is now deprecated. Call
   :func:`urllib.request.url2pathname` and :func:`~urllib.request.pathname2url`
