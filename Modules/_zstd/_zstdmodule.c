@@ -198,6 +198,8 @@ _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
                        PyObject *samples_size_list, Py_ssize_t dict_size)
 /*[clinic end generated code: output=ee53c34c8f77886b input=fdb00ebe474d1df9]*/
 {
+    // TODO(emmatyping): The preamble and suffix to this function and _finalize_dict
+    // are pretty similar. We should see if we can refactor them to share that code.
     Py_ssize_t chunks_number;
     size_t *chunk_sizes = NULL;
     PyObject *dst_dict_bytes = NULL;
