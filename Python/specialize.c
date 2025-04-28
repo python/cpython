@@ -2534,7 +2534,7 @@ LONG_FLOAT_ACTION(compactlong_float_multiply, *)
 LONG_FLOAT_ACTION(compactlong_float_true_div, /)
 #undef LONG_FLOAT_ACTION
 
-static _PyBinaryOpSpecializationDescr binaryop_extend_descrs[] = {
+static _PyBinaryOpSpecializationDescr binaryop_extend_builtins[] = {
     /* long-long arithmetic */
     {NB_OR, compactlongs_guard, compactlongs_or},
     {NB_AND, compactlongs_guard, compactlongs_and},
@@ -2582,6 +2582,8 @@ binary_op_extended_specialization_from_list(
 {
     for (size_t i = 0; i < size; i++) {
         _PyBinaryOpSpecializationDescr *d = &descrs[i];
+        assert(d != NULL);
+        assert(d->guard != NULL);
         if (d->oparg == oparg && d->guard(lhs, rhs)) {
             *descr = d;
             return 1;
@@ -2594,9 +2596,10 @@ static int
 binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
                                   _PyBinaryOpSpecializationDescr **descr)
 {
+    typedef _PyBinaryOpSpecializationDescr descr_type;
     if (binary_op_extended_specialization_from_list(
-            binaryop_extend_descrs,
-            sizeof(binaryop_extend_descrs)/sizeof(_PyBinaryOpSpecializationDescr),
+            binaryop_extend_builtins,
+            sizeof(binaryop_extend_builtins)/sizeof(descr_type),
             lhs, rhs, oparg, descr))
     {
         return 1;
@@ -2605,7 +2608,7 @@ binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
     PyThreadState *tstate = PyThreadState_Get();
     _Py_c_array_t *extensions = &tstate->interp->binop_specializer_extentions;
     if (binary_op_extended_specialization_from_list(
-            (_PyBinaryOpSpecializationDescr *)extensions->array,
+            (descr_type*)extensions->array,
             tstate->interp->num_binop_specializer_extentions,
             lhs, rhs, oparg, descr))
     {

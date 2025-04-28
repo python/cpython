@@ -3204,25 +3204,38 @@ do {                                                     \
 } while (0)
 
 static inline int
-array_guard(PyObject *lhs, PyObject *rhs)
+array_subscr_guard(PyObject *lhs, PyObject *rhs)
 {
-     fprintf(stderr, "array_guard\n");
-    return 0;
+    PyObject *exc = PyErr_GetRaisedException();
+    PyObject *module = PyType_GetModuleByDef(Py_TYPE(lhs), &arraymodule);
+    if (module == NULL) {
+        if (!PyErr_Occurred() || PyErr_ExceptionMatches(PyExc_TypeError)) {
+            /* lhs is not an array instance - ignore the TypeError (if any) */
+            PyErr_SetRaisedException(exc);
+            return 0;
+        }
+        else {
+            _PyErr_ChainExceptions1(exc);
+            return -1;
+        }
+    }
+    PyErr_SetRaisedException(exc);
+    return array_Check(lhs, get_array_state(module));
 }
 
 static PyObject *
-array_action(PyObject *lhs, PyObject *rhs)
+array_subscr_action(PyObject *lhs, PyObject *rhs)
 {
-    return NULL;
+    return array_subscr(lhs, rhs);
 }
 
 static int
 array_register_specializations(void)
 {
     _PyBinaryOpSpecializationDescr descr = {
-        .oparg = NB_MULTIPLY,
-        .guard = array_guard,
-        .action = array_action,
+        .oparg = NB_SUBSCR,
+        .guard = array_subscr_guard,
+        .action = array_subscr_action,
     };
     if (_Py_Specialize_AddBinaryOpExtention(&descr) < 0) {
         return -1;

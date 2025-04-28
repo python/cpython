@@ -1161,7 +1161,10 @@
             _PyFrame_SetStackPointer(frame, stack_pointer);
             int res = d->guard(left_o, right_o);
             stack_pointer = _PyFrame_GetStackPointer(frame);
-            if (!res) {
+            if (res < 0) {
+                JUMP_TO_ERROR();
+            }
+            if (res == 0) {
                 UOP_STAT_INC(uopcode, miss);
                 JUMP_TO_JUMP_TARGET();
             }
@@ -1193,6 +1196,9 @@
             stack_pointer = _PyFrame_GetStackPointer(frame);
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
+            if (res_o == NULL) {
+                JUMP_TO_ERROR();
+            }
             res = PyStackRef_FromPyObjectSteal(res_o);
             stack_pointer[0] = res;
             stack_pointer += 1;
