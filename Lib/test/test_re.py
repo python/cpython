@@ -1,7 +1,7 @@
 from test.support import (gc_collect, bigmemtest, _2G,
                           cpython_only, captured_stdout,
                           check_disallow_instantiation, linked_to_musl,
-                          warnings_helper, SHORT_TIMEOUT, CPUStopwatch, requires_resource)
+                          warnings_helper, SHORT_TIMEOUT, Stopwatch, requires_resource)
 import locale
 import re
 import string
@@ -2467,7 +2467,7 @@ class ReTests(unittest.TestCase):
     @requires_resource('cpu')
     def test_search_anchor_at_beginning(self):
         s = 'x'*10**7
-        with CPUStopwatch() as stopwatch:
+        with Stopwatch() as stopwatch:
             for p in r'\Ay', r'^y':
                 self.assertIsNone(re.search(p, s))
                 self.assertEqual(re.split(p, s), [s])

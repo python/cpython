@@ -383,9 +383,10 @@ class GrammarTests(unittest.TestCase):
         gns = {}; lns = {}
         exec("'docstring'\n"
              "x: int = 5\n", gns, lns)
+        self.assertNotIn('__annotate__', gns)
+
+        gns.update(lns)  # __annotate__ looks at globals
         self.assertEqual(lns["__annotate__"](annotationlib.Format.VALUE), {'x': int})
-        with self.assertRaises(KeyError):
-            gns['__annotate__']
 
     def test_var_annot_rhs(self):
         ns = {}

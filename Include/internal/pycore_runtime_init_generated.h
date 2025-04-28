@@ -1021,6 +1021,7 @@ extern "C" {
     INIT_ID(intern), \
     INIT_ID(intersection), \
     INIT_ID(interval), \
+    INIT_ID(io), \
     INIT_ID(is_running), \
     INIT_ID(is_struct), \
     INIT_ID(isatty), \

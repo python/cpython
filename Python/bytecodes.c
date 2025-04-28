@@ -2026,6 +2026,10 @@ dummy_func(
             }
         }
 
+        pseudo(ANNOTATIONS_PLACEHOLDER, (--)) = {
+            NOP,
+        };
+
         inst(DICT_UPDATE, (dict, unused[oparg - 1], update -- dict, unused[oparg - 1])) {
             PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
             PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);

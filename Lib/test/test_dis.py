@@ -381,24 +381,36 @@ lst[fun(0)]: int = 1
 # leading newline is for a reason (tests lineno)
 
 dis_annot_stmt_str = """\
-  0           RESUME                   0
+  --           MAKE_CELL                0 (__conditional_annotations__)
 
-  2           LOAD_SMALL_INT           1
-              STORE_NAME               0 (x)
+   0           RESUME                   0
 
-  4           LOAD_SMALL_INT           1
-              LOAD_NAME                1 (lst)
-              LOAD_NAME                2 (fun)
-              PUSH_NULL
-              LOAD_SMALL_INT           0
-              CALL                     1
-              STORE_SUBSCR
+   2           LOAD_CONST               1 (<code object __annotate__ at 0x..., file "<dis>", line 2>)
+               MAKE_FUNCTION
+               STORE_NAME               4 (__annotate__)
+               BUILD_SET                0
+               STORE_NAME               0 (__conditional_annotations__)
+               LOAD_SMALL_INT           1
+               STORE_NAME               1 (x)
+               LOAD_NAME                0 (__conditional_annotations__)
+               LOAD_SMALL_INT           0
+               SET_ADD                  1
+               POP_TOP
 
-  2           LOAD_CONST               1 (<code object __annotate__ at 0x..., file "<dis>", line 2>)
-              MAKE_FUNCTION
-              STORE_NAME               3 (__annotate__)
-              LOAD_CONST               2 (None)
-              RETURN_VALUE
+   3           LOAD_NAME                0 (__conditional_annotations__)
+               LOAD_SMALL_INT           1
+               SET_ADD                  1
+               POP_TOP
+
+   4           LOAD_SMALL_INT           1
+               LOAD_NAME                2 (lst)
+               LOAD_NAME                3 (fun)
+               PUSH_NULL
+               LOAD_SMALL_INT           0
+               CALL                     1
+               STORE_SUBSCR
+               LOAD_CONST               2 (None)
+               RETURN_VALUE
 """
 
 fn_with_annotate_str = """
@@ -995,7 +1007,8 @@ class DisTests(DisTestBase):
     def test_widths(self):
         long_opcodes = set(['JUMP_BACKWARD_NO_INTERRUPT',
                             'LOAD_FAST_BORROW_LOAD_FAST_BORROW',
-                            'INSTRUMENTED_CALL_FUNCTION_EX'])
+                            'INSTRUMENTED_CALL_FUNCTION_EX',
+                            'ANNOTATIONS_PLACEHOLDER'])
         for op, opname in enumerate(dis.opname):
             if opname in long_opcodes or opname.startswith("INSTRUMENTED"):
                 continue
