@@ -29,48 +29,51 @@ def _bytes_from_encode_data(b):
 
 
 # Functions in binascii raise binascii.Error instead of ValueError.
-def raise_valueerror(func):
-    def _func(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Error as e:
-            raise ValueError(e) from None
-    return _func
 
-
-@raise_valueerror
 def _a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     b = _bytes_from_encode_data(b)
-    return b2a_ascii85(b, fold_spaces=foldspaces,
-                       wrap=adobe, width=wrapcol, pad=pad)
+    try:
+        return b2a_ascii85(b, fold_spaces=foldspaces,
+                           wrap=adobe, width=wrapcol, pad=pad)
+    except Error as e:
+        raise ValueError(e) from None
 
 
-@raise_valueerror
 def _a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
     b = _bytes_from_decode_data(b)
-    return a2b_ascii85(b, fold_spaces=foldspaces,
-                       wrap=adobe, ignore=ignorechars)
+    try:
+        return a2b_ascii85(b, fold_spaces=foldspaces,
+                           wrap=adobe, ignore=ignorechars)
+    except Error as e:
+        raise ValueError(e) from None
 
-
-@raise_valueerror
 def _b85encode(b, pad=False):
     b = _bytes_from_encode_data(b)
-    return b2a_base85(b, pad=pad, newline=False)
+    try:
+        return b2a_base85(b, pad=pad, newline=False)
+    except Error as e:
+        raise ValueError(e) from None
 
 
-@raise_valueerror
 def _b85decode(b):
     b = _bytes_from_decode_data(b)
-    return a2b_base85(b, strict_mode=True)
+    try:
+        return a2b_base85(b, strict_mode=True)
+    except Error as e:
+        raise ValueError(e) from None
 
 
-@raise_valueerror
 def _z85encode(s):
     s = _bytes_from_encode_data(s)
-    return b2a_base85(s, newline=False, z85=True)
+    try:
+        return b2a_base85(s, newline=False, z85=True)
+    except Error as e:
+        raise ValueError(e) from None
 
 
-@raise_valueerror
 def _z85decode(s):
     s = _bytes_from_decode_data(s)
-    return a2b_base85(s, strict_mode=True, z85=True)
+    try:
+        return a2b_base85(s, strict_mode=True, z85=True)
+    except Error as e:
+        raise ValueError(e) from None
