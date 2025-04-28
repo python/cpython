@@ -1766,8 +1766,8 @@ Type annotations
 
 .. class:: TypeIgnore(lineno, tag)
 
-   A type ignore comment. *lineno* is the location of the ``#type ignore`` comment.
-   *tag* is the optional tag specified by the form ``#type ignore <tag>``.
+   A type ignore comment. *lineno* is the location of the ``# type ignore`` comment.
+   *tag* is the optional tag specified by the form ``# type ignore <tag>``.
 
    See :func:`ast.parse` for more details.
 
