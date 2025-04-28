@@ -133,9 +133,6 @@ FUNCTIONS = [
 ]
 
 
-# XXX set dishonest __file__, __module__, __name__
-
-
 #######################################
 # function-like
 
