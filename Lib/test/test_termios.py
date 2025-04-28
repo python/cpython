@@ -180,8 +180,7 @@ class TestFunctions(unittest.TestCase):
         self.assertRaises(TypeError, termios.tcflow, object(), termios.TCOON)
         self.assertRaises(TypeError, termios.tcflow, self.fd)
 
-    @support.skip_android_selinux('tcflow')
-    @unittest.skipUnless(sys.platform in ('linux', 'android'), 'only works on Linux')
+    @unittest.skipUnless(sys.platform == 'linux', 'only works on Linux')
     def test_tcflow_suspend_and_resume_output(self):
         wfd = self.fd
         rfd = self.master_fd

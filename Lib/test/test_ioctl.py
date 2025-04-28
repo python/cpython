@@ -165,8 +165,7 @@ class IoctlTestsPty(unittest.TestCase):
         os.write(wfd, b'ABCDEF')
         self.assertEqual(os.read(rfd, 1024), b'ABCDEF')
 
-    @support.skip_android_selinux('tcflow')
-    @unittest.skipUnless(sys.platform in ('linux', 'android'), 'only works on Linux')
+    @unittest.skipUnless(sys.platform == 'linux', 'only works on Linux')
     @unittest.skipUnless(hasattr(termios, 'TCXONC'), 'requires termios.TCXONC')
     def test_ioctl_suspend_and_resume_output(self):
         wfd = self.slave_fd
