@@ -292,7 +292,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Returns ``(unsigned long)-1`` on error.
    Use :c:func:`PyErr_Occurred` to disambiguate.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       A negative *pylong* now raises :exc:`ValueError`, not :exc:`OverflowError`.
 
 
@@ -311,7 +311,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    Returns ``(size_t)-1`` on error.
    Use :c:func:`PyErr_Occurred` to disambiguate.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       A negative *pylong* now raises :exc:`ValueError`, not :exc:`OverflowError`.
 
 
@@ -332,7 +332,7 @@ distinguished from a number.  Use :c:func:`PyErr_Occurred` to disambiguate.
    .. versionchanged:: 3.1
       A negative *pylong* now raises :exc:`OverflowError`, not :exc:`TypeError`.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       A negative *pylong* now raises :exc:`ValueError`, not :exc:`OverflowError`.
 
 

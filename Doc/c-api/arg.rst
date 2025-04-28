@@ -249,7 +249,7 @@ small to receive the value.
    Convert a nonnegative Python integer to an unsigned tiny integer, stored in a C
    :c:expr:`unsigned char`.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       A negative Python integer now raises :exc:`ValueError`,
       not :exc:`OverflowError`.
 
