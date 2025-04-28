@@ -12,7 +12,7 @@ import textwrap
 import threading
 import unittest
 import unittest.mock
-from contextlib import contextmanager, redirect_stdout
+from contextlib import contextmanager, redirect_stdout, ExitStack
 from pathlib import Path
 from test.support import is_wasi, os_helper, SHORT_TIMEOUT
 from test.support.os_helper import temp_dir, TESTFN, unlink
@@ -23,7 +23,7 @@ from pdb import _PdbServer, _PdbClient
 
 
 if not sys.is_remote_debug_enabled():
-    raise unittest.SkipTest('remote debugging is disabled')
+    raise unittest.SkipTest("remote debugging is disabled")
 
 
 @contextmanager
@@ -105,7 +105,10 @@ class MockDebuggerSocket:
         # since the read will be dependent upon the last write.
         assert not self.buffered
         try:
-            return json.dumps(next(self.incoming)).encode() + b"\n"
+            item = next(self.incoming)
+            if not isinstance(item, bytes):
+                item = json.dumps(item).encode()
+            return item + b"\n"
         except StopIteration:
             return b""
 
@@ -117,754 +120,654 @@ class MockDebuggerSocket:
 class PdbClientTestCase(unittest.TestCase):
     """Tests for the _PdbClient class."""
 
-    def setUp(self):
-        self.stdout = io.StringIO()
+    def do_test(
+        self,
+        *,
+        incoming,
+        simulate_write_failure=False,
+        simulate_flush_failure=False,
+        expected_outgoing=[],
+        expected_completions=[],
+        expected_exception=None,
+        expected_stdout="",
+        expected_stdout_substring="",
+        expected_state=None,
+    ):
+        if expected_state is None:
+            expected_state = {}
+        expected_state.setdefault("write_failed", False)
+        messages = [m for source, m in incoming if source == "server"]
+        prompts = [m["prompt"] for source, m in incoming if source == "user"]
+        sockfile = MockDebuggerSocket(messages)
+        stdout = io.StringIO()
 
-    def create_pdb_client(self, sockfile):
-        with redirect_stdout(self.stdout):
-            return _PdbClient(
+        if simulate_write_failure or simulate_flush_failure:
+            sockfile.write = unittest.mock.Mock()
+            sockfile.flush = unittest.mock.Mock()
+            if simulate_write_failure:
+                sockfile.write.side_effect = OSError("write failed")
+            else:
+                sockfile.flush.side_effect = OSError("flush failed")
+
+        input_iter = (m for source, m in incoming if source == "user")
+        completions = []
+
+        def mock_input(prompt):
+            message = next(input_iter, None)
+            if message is None:
+                raise EOFError
+
+            if req := message.get("completion_request"):
+                readline_mock = unittest.mock.Mock()
+                readline_mock.get_line_buffer.return_value = req["line"]
+                readline_mock.get_begidx.return_value = req["begidx"]
+                readline_mock.get_endidx.return_value = req["endidx"]
+                unittest.mock.seal(readline_mock)
+                with unittest.mock.patch.dict(sys.modules, {"readline": readline_mock}):
+                    for param in itertools.count():
+                        prefix = req["line"][req["begidx"] : req["endidx"]]
+                        completion = client.complete(prefix, param)
+                        if completion is None:
+                            break
+                        completions.append(completion)
+
+            reply = message["input"]
+            if isinstance(reply, BaseException):
+                raise reply
+            return reply
+
+        with ExitStack() as stack:
+            input_mock = stack.enter_context(
+                unittest.mock.patch("pdb.input", side_effect=mock_input)
+            )
+            stack.enter_context(redirect_stdout(stdout))
+
+            client = _PdbClient(
                 pid=0,
                 sockfile=sockfile,
                 interrupt_script="/a/b.py",
             )
 
+            if expected_exception is not None:
+                exception = expected_exception["exception"]
+                msg = expected_exception["msg"]
+                stack.enter_context(self.assertRaises(exception, msg=msg))
+
+            client.cmdloop()
+
+        actual_outgoing = sockfile.outgoing
+        if simulate_write_failure or simulate_flush_failure:
+            actual_outgoing += [
+                json.loads(msg.args[0]) for msg in sockfile.write.mock_calls
+            ]
+
+        self.assertEqual(sockfile.outgoing, expected_outgoing)
+        self.assertEqual(completions, expected_completions)
+        if expected_stdout_substring and not expected_stdout:
+            self.assertIn(expected_stdout_substring, stdout.getvalue())
+        else:
+            self.assertEqual(stdout.getvalue(), expected_stdout)
+        input_mock.assert_has_calls([unittest.mock.call(p) for p in prompts])
+        actual_state = {k: getattr(client, k) for k in expected_state}
+        self.assertEqual(actual_state, expected_state)
+
     def test_remote_immediately_closing_the_connection(self):
         """Test the behavior when the remote closes the connection immediately."""
-        # GIVEN
-        messages = []
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        client.cmdloop()
-        # THEN
-        self.assertEqual(sockfile.outgoing, [])
-        self.assertFalse(client.write_failed)
+        incoming = []
+        expected_outgoing = []
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=expected_outgoing,
+        )
 
     def test_handling_command_list(self):
         """Test handling the command_list message."""
-        # GIVEN
-        messages = [
-            {"command_list": ["help", "list", "continue"]},
+        incoming = [
+            ("server", {"command_list": ["help", "list", "continue"]}),
         ]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        client.cmdloop()
-        # THEN
-        self.assertEqual(sockfile.outgoing, [])
-        self.assertFalse(client.write_failed)
-        self.assertEqual(client.pdb_commands, {"help", "list", "continue"})
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[],
+            expected_state={
+                "pdb_commands": {"help", "list", "continue"},
+            },
+        )
 
     def test_handling_info_message(self):
         """Test handling a message payload with type='info'."""
-        # GIVEN
-        messages = [
-            {"message": "Some message or other.\n", "type": "info"},
+        incoming = [
+            ("server", {"message": "Some message or other\n", "type": "info"}),
         ]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with redirect_stdout(self.stdout):
-            client.cmdloop()
-        # THEN
-        self.assertEqual(sockfile.outgoing, [])
-        self.assertFalse(client.write_failed)
-        self.assertEqual(self.stdout.getvalue(), "Some message or other.\n")
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[],
+            expected_stdout="Some message or other\n",
+        )
 
     def test_handling_error_message(self):
         """Test handling a message payload with type='error'."""
-        # GIVEN
-        messages = [
-            {"message": "Some message or other.", "type": "error"},
+        incoming = [
+            ("server", {"message": "Some message or other.", "type": "error"}),
         ]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with redirect_stdout(self.stdout):
-            client.cmdloop()
-        # THEN
-        self.assertEqual(sockfile.outgoing, [])
-        self.assertFalse(client.write_failed)
-        self.assertEqual(self.stdout.getvalue(), "*** Some message or other.\n")
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[],
+            expected_stdout="*** Some message or other.\n",
+        )
 
     def test_handling_other_message(self):
         """Test handling a message payload with an unrecognized type."""
-        # GIVEN
-        messages = [
-            {"message": "Some message or other.\n", "type": "unknown"},
+        incoming = [
+            ("server", {"message": "Some message.\n", "type": "unknown"}),
         ]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with redirect_stdout(self.stdout):
-            client.cmdloop()
-        # THEN
-        self.assertEqual(sockfile.outgoing, [])
-        self.assertFalse(client.write_failed)
-        self.assertEqual(self.stdout.getvalue(), "Some message or other.\n")
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[],
+            expected_stdout="Some message.\n",
+        )
 
     def test_handling_help_for_command(self):
         """Test handling a request to display help for a command."""
-        # GIVEN
-        messages = [
-            {"help": "ll"},
+        incoming = [
+            ("server", {"help": "ll"}),
         ]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with redirect_stdout(self.stdout):
-            client.cmdloop()
-        # THEN
-        self.assertEqual(sockfile.outgoing, [])
-        self.assertFalse(client.write_failed)
-        self.assertIn("Usage: ll | longlist", self.stdout.getvalue())
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[],
+            expected_stdout_substring="Usage: ll | longlist",
+        )
 
     def test_handling_help_without_a_specific_topic(self):
         """Test handling a request to display a help overview."""
-        # GIVEN
-        messages = [
-            {"help": ""},
+        incoming = [
+            ("server", {"help": ""}),
         ]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with redirect_stdout(self.stdout):
-            client.cmdloop()
-        # THEN
-        self.assertEqual(sockfile.outgoing, [])
-        self.assertFalse(client.write_failed)
-        self.assertIn("type help <topic>", self.stdout.getvalue())
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[],
+            expected_stdout_substring="type help <topic>",
+        )
 
     def test_handling_help_pdb(self):
         """Test handling a request to display the full PDB manual."""
-        # GIVEN
-        messages = [
-            {"help": "pdb"},
+        incoming = [
+            ("server", {"help": "pdb"}),
         ]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with redirect_stdout(self.stdout):
-            client.cmdloop()
-        # THEN
-        self.assertEqual(sockfile.outgoing, [])
-        self.assertFalse(client.write_failed)
-        self.assertIn(">>> import pdb", self.stdout.getvalue())
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[],
+            expected_stdout_substring=">>> import pdb",
+        )
 
     def test_handling_pdb_prompts(self):
         """Test responding to pdb's normal prompts."""
-        # GIVEN
-        prompts_and_inputs = [
-            ("(Pdb) ", "blah ["),
-            ("...   ", "blah ]"),
-            ("(Pdb) ", ""),
-            ("(Pdb) ", "b ["),
-            ("(Pdb) ", "! b ["),
-            ("...   ", "b ]"),
+        incoming = [
+            ("server", {"command_list": ["b"]}),
+            ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
+            ("user", {"prompt": "(Pdb) ", "input": "blah ["}),
+            ("user", {"prompt": "...   ", "input": "blah ]"}),
+            ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
+            ("user", {"prompt": "(Pdb) ", "input": ""}),
+            ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
+            ("user", {"prompt": "(Pdb) ", "input": "b ["}),
+            ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
+            ("user", {"prompt": "(Pdb) ", "input": "! b ["}),
+            ("user", {"prompt": "...   ", "input": "b ]"}),
         ]
-        prompts = [pi[0] for pi in prompts_and_inputs]
-        inputs = [pi[1] for pi in prompts_and_inputs]
-        num_prompt_msgs = sum(pi[0] == "(Pdb) " for pi in prompts_and_inputs)
-        messages = [
-            {"command_list": ["b"]},
-        ] + [{"prompt": "(Pdb) ", "state": "pdb"}] * num_prompt_msgs
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with (
-            unittest.mock.patch("pdb.input", side_effect=inputs) as input_mock,
-        ):
-            client.cmdloop()
-        # THEN
-        expected_outgoing = [
-            {"reply": "blah [\nblah ]"},
-            {"reply": ""},
-            {"reply": "b ["},
-            {"reply": "!b [\nb ]"},
-        ]
-        self.assertEqual(sockfile.outgoing, expected_outgoing)
-        self.assertFalse(client.write_failed)
-        self.assertEqual(client.state, "pdb")
-        input_mock.assert_has_calls([unittest.mock.call(p) for p in prompts])
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {"reply": "blah [\nblah ]"},
+                {"reply": ""},
+                {"reply": "b ["},
+                {"reply": "!b [\nb ]"},
+            ],
+            expected_state={"state": "pdb"},
+        )
 
     def test_handling_interact_prompts(self):
         """Test responding to pdb's interact mode prompts."""
-        # GIVEN
-        prompts_and_inputs = [
-            (">>> ", "blah ["),
-            ("... ", "blah ]"),
-            (">>> ", ""),
-            (">>> ", "b ["),
-            ("... ", "b ]"),
+        incoming = [
+            ("server", {"command_list": ["b"]}),
+            ("server", {"prompt": ">>> ", "state": "interact"}),
+            ("user", {"prompt": ">>> ", "input": "blah ["}),
+            ("user", {"prompt": "... ", "input": "blah ]"}),
+            ("server", {"prompt": ">>> ", "state": "interact"}),
+            ("user", {"prompt": ">>> ", "input": ""}),
+            ("server", {"prompt": ">>> ", "state": "interact"}),
+            ("user", {"prompt": ">>> ", "input": "b ["}),
+            ("user", {"prompt": "... ", "input": "b ]"}),
         ]
-        prompts = [pi[0] for pi in prompts_and_inputs]
-        inputs = [pi[1] for pi in prompts_and_inputs]
-        num_prompt_msgs = sum(pi[0] == ">>> " for pi in prompts_and_inputs)
-        messages = [
-            {"command_list": ["b"]},
-        ] + [{"prompt": ">>> ", "state": "interact"}] * num_prompt_msgs
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with (
-            unittest.mock.patch("pdb.input", side_effect=inputs) as input_mock,
-        ):
-            client.cmdloop()
-        # THEN
-        expected_outgoing = [
-            {"reply": "blah [\nblah ]"},
-            {"reply": ""},
-            {"reply": "b [\nb ]"},
-        ]
-        self.assertEqual(sockfile.outgoing, expected_outgoing)
-        self.assertFalse(client.write_failed)
-        self.assertEqual(client.state, "interact")
-        input_mock.assert_has_calls([unittest.mock.call(p) for p in prompts])
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {"reply": "blah [\nblah ]"},
+                {"reply": ""},
+                {"reply": "b [\nb ]"},
+            ],
+            expected_state={"state": "interact"},
+        )
 
     def test_retry_pdb_prompt_on_syntax_error(self):
         """Test re-prompting after a SyntaxError in a Python expression."""
-        # GIVEN
-        messages = [
-            {"prompt": "(Pdb) ", "state": "pdb"},
+        incoming = [
+            ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
+            ("user", {"prompt": "(Pdb) ", "input": " blah ["}),
+            ("user", {"prompt": "(Pdb) ", "input": "blah ["}),
+            ("user", {"prompt": "...   ", "input": " blah ]"}),
         ]
-        prompts_and_inputs = [
-            ("(Pdb) ", " blah ["),
-            ("(Pdb) ", "blah ["),
-            ("...   ", " blah ]"),
-        ]
-        prompts = [pi[0] for pi in prompts_and_inputs]
-        inputs = [pi[1] for pi in prompts_and_inputs]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with (
-            unittest.mock.patch("pdb.input", side_effect=inputs) as input_mock,
-            redirect_stdout(self.stdout),
-        ):
-            client.cmdloop()
-        # THEN
-        expected_outgoing = [
-            {"reply": "blah [\n blah ]"},
-        ]
-        self.assertEqual(sockfile.outgoing, expected_outgoing)
-        self.assertFalse(client.write_failed)
-        self.assertEqual(client.state, "pdb")
-        input_mock.assert_has_calls([unittest.mock.call(p) for p in prompts])
-        self.assertIn("*** IndentationError", self.stdout.getvalue())
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {"reply": "blah [\n blah ]"},
+            ],
+            expected_stdout_substring="*** IndentationError",
+            expected_state={"state": "pdb"},
+        )
 
     def test_retry_interact_prompt_on_syntax_error(self):
         """Test re-prompting after a SyntaxError in a Python expression."""
-        # GIVEN
-        messages = [
-            {"prompt": ">>> ", "state": "interact"},
+        incoming = [
+            ("server", {"prompt": ">>> ", "state": "interact"}),
+            ("user", {"prompt": ">>> ", "input": "!blah ["}),
+            ("user", {"prompt": ">>> ", "input": "blah ["}),
+            ("user", {"prompt": "... ", "input": " blah ]"}),
         ]
-        prompts_and_inputs = [
-            (">>> ", "!blah ["),
-            (">>> ", "blah ["),
-            ("... ", " blah ]"),
-        ]
-        prompts = [pi[0] for pi in prompts_and_inputs]
-        inputs = [pi[1] for pi in prompts_and_inputs]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with (
-            unittest.mock.patch("pdb.input", side_effect=inputs) as input_mock,
-            redirect_stdout(self.stdout),
-        ):
-            client.cmdloop()
-        # THEN
-        expected_outgoing = [
-            {"reply": "blah [\n blah ]"},
-        ]
-        self.assertEqual(sockfile.outgoing, expected_outgoing)
-        self.assertFalse(client.write_failed)
-        self.assertEqual(client.state, "interact")
-        input_mock.assert_has_calls([unittest.mock.call(p) for p in prompts])
-        self.assertIn("*** SyntaxError", self.stdout.getvalue())
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {"reply": "blah [\n blah ]"},
+            ],
+            expected_stdout_substring="*** SyntaxError",
+            expected_state={"state": "interact"},
+        )
 
     def test_handling_unrecognized_prompt_type(self):
         """Test fallback to "dumb" single-line mode for unknown states."""
-        # GIVEN
-        messages = [
-            {"prompt": "$ ", "state": "shell"},
-            {"prompt": "$ ", "state": "shell"},
-            {"prompt": "$ ", "state": "shell"},
-            {"prompt": "$ ", "state": "shell"},
+        incoming = [
+            ("server", {"prompt": "$ ", "state": "shell"}),
+            ("user", {"prompt": "$ ", "input": "! ["}),
+            ("server", {"prompt": "$ ", "state": "shell"}),
+            ("user", {"prompt": "$ ", "input": "echo hello"}),
+            ("server", {"prompt": "$ ", "state": "shell"}),
+            ("user", {"prompt": "$ ", "input": ""}),
+            ("server", {"prompt": "$ ", "state": "shell"}),
+            ("user", {"prompt": "$ ", "input": "echo goodbye"}),
         ]
-        inputs = [
-            "! [",
-            "echo hello",
-            "",
-            "echo goodbye",
-        ]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with (
-            unittest.mock.patch("pdb.input", side_effect=inputs) as input_mock,
-        ):
-            client.cmdloop()
-        # THEN
-        expected_outgoing = [
-            {"reply": "! ["},
-            {"reply": "echo hello"},
-            {"reply": ""},
-            {"reply": "echo goodbye"},
-        ]
-        self.assertEqual(sockfile.outgoing, expected_outgoing)
-        self.assertFalse(client.write_failed)
-        self.assertEqual(client.state, "dumb")
-        input_mock.assert_has_calls(3 * [unittest.mock.call("$ ")])
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {"reply": "! ["},
+                {"reply": "echo hello"},
+                {"reply": ""},
+                {"reply": "echo goodbye"},
+            ],
+            expected_state={"state": "dumb"},
+        )
 
     def test_keyboard_interrupt_at_prompt(self):
         """Test signaling when a prompt gets a KeyboardInterrupt."""
-        # GIVEN
-        messages = [
-            {"prompt": "(Pdb) ", "state": "pdb"},
+        incoming = [
+            ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
+            ("user", {"prompt": "(Pdb) ", "input": KeyboardInterrupt()}),
         ]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with unittest.mock.patch("pdb.input", side_effect=KeyboardInterrupt):
-            client.cmdloop()
-        # THEN
-        self.assertEqual(sockfile.outgoing, [{"signal": "INT"}])
-        self.assertFalse(client.write_failed)
-        self.assertEqual(client.state, "pdb")
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {"signal": "INT"},
+            ],
+            expected_state={"state": "pdb"},
+        )
 
     def test_eof_at_prompt(self):
         """Test signaling when a prompt gets an EOFError."""
-        # GIVEN
-        messages = [
-            {"prompt": "(Pdb) ", "state": "pdb"},
+        incoming = [
+            ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
+            ("user", {"prompt": "(Pdb) ", "input": EOFError()}),
         ]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with unittest.mock.patch("pdb.input", side_effect=EOFError):
-            client.cmdloop()
-        # THEN
-        self.assertEqual(sockfile.outgoing, [{"signal": "EOF"}])
-        self.assertFalse(client.write_failed)
-        self.assertEqual(client.state, "pdb")
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {"signal": "EOF"},
+            ],
+            expected_state={"state": "pdb"},
+        )
 
     def test_unrecognized_json_message(self):
         """Test failing after getting an unrecognized payload."""
-        # GIVEN
-        messages = [
-            {"monty": "python"},
-            {"message": "Some message or other.\n", "type": "info"},
+        incoming = [
+            ("server", {"monty": "python"}),
+            ("server", {"message": "Some message or other\n", "type": "info"}),
         ]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with (
-            self.assertRaises(
-                RuntimeError,
-                msg='Unrecognized payload b\'{"monty": "python"}\'',
-            ),
-            redirect_stdout(self.stdout),
-        ):
-            client.cmdloop()
-        # THEN
-        self.assertEqual(sockfile.outgoing, [])
-        self.assertFalse(client.write_failed)
-        self.assertEqual(self.stdout.getvalue(), "")
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[],
+            expected_exception={
+                "exception": RuntimeError,
+                "msg": 'Unrecognized payload b\'{"monty": "python"}\'',
+            },
+        )
 
     def test_continuing_after_getting_a_non_json_payload(self):
         """Test continuing after getting a non JSON payload."""
-        # GIVEN
-        sockfile = io.StringIO("spam\n" '{"message": "Something", "type": "info"}\n')
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with redirect_stdout(self.stdout):
-            client.cmdloop()
-        # THEN
-        self.assertFalse(client.write_failed)
-        self.assertEqual(
-            self.stdout.getvalue(),
-            ("*** Invalid JSON from remote: spam\n" "\n" "Something"),
+        incoming = [
+            ("server", b"spam"),
+            ("server", {"message": "Something", "type": "info"}),
+        ]
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[],
+            expected_stdout="\n".join(
+                [
+                    "*** Invalid JSON from remote: b'spam\\n'",
+                    "Something",
+                ]
+            ),
         )
-
-    def test_connection_being_closed_without_any_messages(self):
-        """Test gracefully exiting if the remote closes the socket."""
-        # GIVEN
-        sockfile = io.StringIO()
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with redirect_stdout(self.stdout):
-            client.cmdloop()
-        # THEN
-        self.assertFalse(client.write_failed)
-        self.assertEqual(self.stdout.getvalue(), "")
 
     def test_write_failing(self):
         """Test terminating if write fails due to a half closed socket."""
-        # GIVEN
-        sockfile = unittest.mock.Mock()
-        sockfile.readline.side_effect = [
-            '{"prompt": "(Pdb) ", "state": "pdb"}\n',
+        incoming = [
+            ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
+            ("user", {"prompt": "(Pdb) ", "input": KeyboardInterrupt()}),
         ]
-        sockfile.write.side_effect = OSError("write failed")
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with (
-            unittest.mock.patch("pdb.input", side_effect=KeyboardInterrupt),
-            redirect_stdout(self.stdout),
-        ):
-            client.cmdloop()
-        # THEN
-        self.assertTrue(client.write_failed)
-        self.assertEqual(self.stdout.getvalue(), "")
-        sockfile.write.assert_called_once_with(b'{"signal": "INT"}\n')
-        sockfile.flush.assert_not_called()
-        sockfile.readline.assert_called_once()
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[{"signal": "INT"}],
+            simulate_write_failure=True,
+            expected_state={"write_failed": True},
+        )
 
     def test_flush_failing(self):
         """Test terminating if flush fails due to a half closed socket."""
-        # GIVEN
-        sockfile = unittest.mock.Mock()
-        sockfile.readline.side_effect = [
-            '{"prompt": "(Pdb) ", "state": "pdb"}\n',
+        incoming = [
+            ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
+            ("user", {"prompt": "(Pdb) ", "input": KeyboardInterrupt()}),
         ]
-        sockfile.flush.side_effect = OSError("flush failed")
-        client = self.create_pdb_client(sockfile)
-        # WHEN
-        with (
-            unittest.mock.patch("pdb.input", side_effect=KeyboardInterrupt),
-            redirect_stdout(self.stdout),
-        ):
-            client.cmdloop()
-        # THEN
-        self.assertTrue(client.write_failed)
-        self.assertEqual(self.stdout.getvalue(), "")
-        sockfile.write.assert_called_once_with(b'{"signal": "INT"}\n')
-        sockfile.flush.assert_called_once()
-        sockfile.readline.assert_called_once()
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[{"signal": "INT"}],
+            simulate_flush_failure=True,
+            expected_state={"write_failed": True},
+        )
 
     def test_completion_in_pdb_state(self):
         """Test requesting tab completions at a (Pdb) prompt."""
         # GIVEN
-        messages = [
-            {"prompt": "(Pdb) ", "state": "pdb"},
-            {"completions": ["__name__", "__file__"]},
+        incoming = [
+            ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
+            (
+                "user",
+                {
+                    "prompt": "(Pdb) ",
+                    "completion_request": {
+                        "line": "    mod._",
+                        "begidx": 8,
+                        "endidx": 9,
+                    },
+                    "input": "print(\n    mod.__name__)",
+                },
+            ),
+            ("server", {"completions": ["__name__", "__file__"]}),
         ]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        completions = []
-
-        def mock_input(_):
-            readline_mock = unittest.mock.Mock()
-            readline_mock.get_line_buffer.return_value = "    mod._"
-            readline_mock.get_begidx.return_value = 4
-            readline_mock.get_endidx.return_value = 5
-            unittest.mock.seal(readline_mock)
-            with unittest.mock.patch.dict(sys.modules, {"readline": readline_mock}):
-                for param in itertools.count():
-                    completion = client.complete("_", param)
-                    if completion is None:
-                        break
-                    completions.append(completion)
-            return "print(\n    mod.__name__)"
-
-        # WHEN
-        with unittest.mock.patch("pdb.input", side_effect=mock_input):
-            client.cmdloop()
-        # THEN
-        self.assertEqual(
-            sockfile.outgoing,
-            [
-                {"complete": {"text": "_", "line": "mod._", "begidx": 0, "endidx": 1}},
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {
+                    "complete": {
+                        "text": "_",
+                        "line": "mod._",
+                        "begidx": 4,
+                        "endidx": 5,
+                    }
+                },
                 {"reply": "print(\n    mod.__name__)"},
             ],
+            expected_completions=["__name__", "__file__"],
+            expected_state={"state": "pdb"},
         )
-        self.assertEqual(completions, ["__name__", "__file__"])
-        self.assertFalse(client.write_failed)
-        self.assertEqual(client.state, "pdb")
 
     def test_completion_in_interact_state(self):
         """Test requesting tab completions at a >>> prompt."""
-        # GIVEN
-        messages = [
-            {"prompt": ">>> ", "state": "interact"},
-            {"completions": ["__name__", "__file__"]},
+        incoming = [
+            ("server", {"prompt": ">>> ", "state": "interact"}),
+            (
+                "user",
+                {
+                    "prompt": ">>> ",
+                    "completion_request": {
+                        "line": "    mod.__",
+                        "begidx": 8,
+                        "endidx": 10,
+                    },
+                    "input": "print(\n    mod.__name__)",
+                },
+            ),
+            ("server", {"completions": ["__name__", "__file__"]}),
         ]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        completions = []
-
-        def mock_input(_):
-            readline_mock = unittest.mock.Mock()
-            readline_mock.get_line_buffer.return_value = "    mod._"
-            readline_mock.get_begidx.return_value = 4
-            readline_mock.get_endidx.return_value = 5
-            unittest.mock.seal(readline_mock)
-            with unittest.mock.patch.dict(sys.modules, {"readline": readline_mock}):
-                for param in itertools.count():
-                    completion = client.complete("_", param)
-                    if completion is None:
-                        break
-                    completions.append(completion)
-            return "print(\n    mod.__name__)"
-
-        # WHEN
-        with unittest.mock.patch("pdb.input", side_effect=mock_input):
-            client.cmdloop()
-        # THEN
-        self.assertEqual(
-            sockfile.outgoing,
-            [
-                {"complete": {"text": "_", "line": "mod._", "begidx": 0, "endidx": 1}},
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {
+                    "complete": {
+                        "text": "__",
+                        "line": "mod.__",
+                        "begidx": 4,
+                        "endidx": 6,
+                    }
+                },
                 {"reply": "print(\n    mod.__name__)"},
             ],
+            expected_completions=["__name__", "__file__"],
+            expected_state={"state": "interact"},
         )
-        self.assertEqual(completions, ["__name__", "__file__"])
-        self.assertFalse(client.write_failed)
-        self.assertEqual(client.state, "interact")
 
     def test_completion_in_unknown_state(self):
         """Test requesting tab completions at an unrecognized prompt."""
-        # GIVEN
-        messages = [
-            {"command_list": ["p"]},
-            {"prompt": "$ ", "state": "shell"},
+        incoming = [
+            ("server", {"command_list": ["p"]}),
+            ("server", {"prompt": "$ ", "state": "shell"}),
+            (
+                "user",
+                {
+                    "prompt": "$ ",
+                    "completion_request": {
+                        "line": "_",
+                        "begidx": 0,
+                        "endidx": 1,
+                    },
+                    "input": "__name__",
+                },
+            ),
         ]
-        sockfile = MockDebuggerSocket(messages)
-        client = self.create_pdb_client(sockfile)
-        completions = []
-
-        def mock_input(_):
-            readline_mock = unittest.mock.Mock()
-            readline_mock.get_line_buffer.return_value = "_"
-            readline_mock.get_begidx.return_value = 0
-            readline_mock.get_endidx.return_value = 1
-            unittest.mock.seal(readline_mock)
-            with unittest.mock.patch.dict(sys.modules, {"readline": readline_mock}):
-                for param in itertools.count():
-                    completion = client.complete("_", param)
-                    if completion is None:
-                        break
-                    completions.append(completion)
-            return "__name__"
-
-        # WHEN
-        with unittest.mock.patch("pdb.input", side_effect=mock_input):
-            client.cmdloop()
-        # THEN
-        self.assertEqual(sockfile.outgoing, [{"reply": "__name__"}])
-        self.assertEqual(completions, [])
-        self.assertFalse(client.write_failed)
-        self.assertEqual(client.state, "dumb")
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {"reply": "__name__"},
+            ],
+            expected_state={"state": "dumb"},
+        )
 
     def test_write_failure_during_completion(self):
         """Test failing to write to the socket to request tab completions."""
-        # GIVEN
-        sockfile = unittest.mock.Mock()
-        sockfile.readline.side_effect = [
-            '{"prompt": ">>> ", "state": "interact"}\n',
+        incoming = [
+            ("server", {"prompt": ">>> ", "state": "interact"}),
+            (
+                "user",
+                {
+                    "prompt": ">>> ",
+                    "completion_request": {
+                        "line": "xy",
+                        "begidx": 0,
+                        "endidx": 2,
+                    },
+                    "input": "xyz",
+                },
+            ),
         ]
-        sockfile.write.side_effect = OSError("write failed")
-        client = self.create_pdb_client(sockfile)
-
-        def mock_input(_):
-            readline_mock = unittest.mock.Mock()
-            readline_mock.get_line_buffer.return_value = "xy"
-            readline_mock.get_begidx.return_value = 0
-            readline_mock.get_endidx.return_value = 2
-            unittest.mock.seal(readline_mock)
-            with unittest.mock.patch.dict(sys.modules, {"readline": readline_mock}):
-                assert client.complete("xy", 0) is None
-            return "xyz"
-
-        # WHEN
-        with unittest.mock.patch("pdb.input", side_effect=mock_input):
-            client.cmdloop()
-        # THEN
-        self.assertTrue(client.write_failed)
-        self.assertEqual(self.stdout.getvalue(), "")
-        sockfile.write.assert_has_calls(
-            [
-                unittest.mock.call(
-                    json.dumps(
-                        {
-                            "complete": {
-                                "text": "xy",
-                                "line": "xy",
-                                "begidx": 0,
-                                "endidx": 2,
-                            }
-                        }
-                    ).encode() + b"\n"
-                ),
-                unittest.mock.call(
-                    json.dumps({"reply": "xyz"}).encode() + b"\n",
-                ),
-            ]
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {
+                    "complete": {
+                        "text": "xy",
+                        "line": "xy",
+                        "begidx": 0,
+                        "endidx": 2,
+                    }
+                },
+                {"reply": "xyz"},
+            ],
+            simulate_write_failure=True,
+            expected_completions=[],
+            expected_state={"state": "interact", "write_failed": True},
         )
-        self.assertEqual(client.state, "interact")
+
+    def test_flush_failure_during_completion(self):
+        """Test failing to flush to the socket to request tab completions."""
+        incoming = [
+            ("server", {"prompt": ">>> ", "state": "interact"}),
+            (
+                "user",
+                {
+                    "prompt": ">>> ",
+                    "completion_request": {
+                        "line": "xy",
+                        "begidx": 0,
+                        "endidx": 2,
+                    },
+                    "input": "xyz",
+                },
+            ),
+        ]
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {
+                    "complete": {
+                        "text": "xy",
+                        "line": "xy",
+                        "begidx": 0,
+                        "endidx": 2,
+                    }
+                },
+                {"reply": "xyz"},
+            ],
+            simulate_flush_failure=True,
+            expected_completions=[],
+            expected_state={"state": "interact", "write_failed": True},
+        )
 
     def test_read_failure_during_completion(self):
         """Test failing to read tab completions from the socket."""
-        # GIVEN
-        sockfile = unittest.mock.Mock()
-        sockfile.readline.side_effect = [
-            '{"prompt": ">>> ", "state": "interact"}\n',
-            '',
-            '',
+        incoming = [
+            ("server", {"prompt": ">>> ", "state": "interact"}),
+            (
+                "user",
+                {
+                    "prompt": ">>> ",
+                    "completion_request": {
+                        "line": "xy",
+                        "begidx": 0,
+                        "endidx": 2,
+                    },
+                    "input": "xyz",
+                },
+            ),
         ]
-        client = self.create_pdb_client(sockfile)
-
-        def mock_input(_):
-            readline_mock = unittest.mock.Mock()
-            readline_mock.get_line_buffer.return_value = "xy"
-            readline_mock.get_begidx.return_value = 0
-            readline_mock.get_endidx.return_value = 2
-            unittest.mock.seal(readline_mock)
-            with unittest.mock.patch.dict(sys.modules, {"readline": readline_mock}):
-                assert client.complete("xy", 0) is None
-            return "xyz"
-
-        # WHEN
-        with unittest.mock.patch("pdb.input", side_effect=mock_input):
-            client.cmdloop()
-        # THEN
-        self.assertFalse(client.write_failed)
-        self.assertEqual(self.stdout.getvalue(), "")
-        sockfile.write.assert_has_calls(
-            [
-                unittest.mock.call(
-                    json.dumps(
-                        {
-                            "complete": {
-                                "text": "xy",
-                                "line": "xy",
-                                "begidx": 0,
-                                "endidx": 2,
-                            }
-                        }
-                    ).encode() + b"\n"
-                ),
-                unittest.mock.call(
-                    json.dumps({"reply": "xyz"}).encode() + b"\n",
-                ),
-            ]
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {
+                    "complete": {
+                        "text": "xy",
+                        "line": "xy",
+                        "begidx": 0,
+                        "endidx": 2,
+                    }
+                },
+                {"reply": "xyz"},
+            ],
+            expected_completions=[],
+            expected_state={"state": "interact"},
         )
-        self.assertEqual(client.state, "interact")
 
     def test_reading_invalid_json_during_completion(self):
         """Test receiving invalid JSON when getting tab completions."""
-        # GIVEN
-        sockfile = unittest.mock.Mock()
-        sockfile.readline.side_effect = [
-            '{"prompt": ">>> ", "state": "interact"}\n',
-            '{"completions": ',
-            '',
+        incoming = [
+            ("server", {"prompt": ">>> ", "state": "interact"}),
+            (
+                "user",
+                {
+                    "prompt": ">>> ",
+                    "completion_request": {
+                        "line": "xy",
+                        "begidx": 0,
+                        "endidx": 2,
+                    },
+                    "input": "xyz",
+                },
+            ),
+            ("server", b'{"completions": '),
+            ("user", {"prompt": ">>> ", "input": "xyz"}),
         ]
-        client = self.create_pdb_client(sockfile)
-        queued_replies = []
-
-        def mock_input(_):
-            if queued_replies:
-                return queued_replies.pop(0)
-            queued_replies.append("xyz")
-
-            readline_mock = unittest.mock.Mock()
-            readline_mock.get_line_buffer.return_value = "xy"
-            readline_mock.get_begidx.return_value = 0
-            readline_mock.get_endidx.return_value = 2
-            unittest.mock.seal(readline_mock)
-            with unittest.mock.patch.dict(sys.modules, {"readline": readline_mock}):
-                client.complete("xy", 0)
-
-        # WHEN
-        with unittest.mock.patch("pdb.input", side_effect=mock_input):
-            with redirect_stdout(self.stdout):
-                client.cmdloop()
-        # THEN
-        self.assertFalse(client.write_failed)
-        self.assertIn(
-            "*** json.decoder.JSONDecodeError",
-            self.stdout.getvalue(),
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {
+                    "complete": {
+                        "text": "xy",
+                        "line": "xy",
+                        "begidx": 0,
+                        "endidx": 2,
+                    }
+                },
+                {"reply": "xyz"},
+            ],
+            expected_stdout_substring="*** json.decoder.JSONDecodeError",
+            expected_completions=[],
+            expected_state={"state": "interact"},
         )
-        sockfile.write.assert_has_calls(
-            [
-                unittest.mock.call(
-                    json.dumps(
-                        {
-                            "complete": {
-                                "text": "xy",
-                                "line": "xy",
-                                "begidx": 0,
-                                "endidx": 2,
-                            }
-                        }
-                    ).encode() + b"\n"
-                ),
-                unittest.mock.call(
-                    json.dumps({"reply": "xyz"}).encode() + b"\n",
-                ),
-            ]
-        )
-        self.assertEqual(client.state, "interact")
 
     def test_reading_empty_json_during_completion(self):
         """Test receiving an empty JSON object when getting tab completions."""
-        # GIVEN
-        sockfile = unittest.mock.Mock()
-        sockfile.readline.side_effect = [
-            '{"prompt": ">>> ", "state": "interact"}\n',
-            '{}',
-            '',
+        incoming = [
+            ("server", {"prompt": ">>> ", "state": "interact"}),
+            (
+                "user",
+                {
+                    "prompt": ">>> ",
+                    "completion_request": {
+                        "line": "xy",
+                        "begidx": 0,
+                        "endidx": 2,
+                    },
+                    "input": "xyz",
+                },
+            ),
+            ("server", {}),
+            ("user", {"prompt": ">>> ", "input": "xyz"}),
         ]
-        client = self.create_pdb_client(sockfile)
-        queued_replies = []
-
-        def mock_input(_):
-            if queued_replies:
-                return queued_replies.pop(0)
-            queued_replies.append("xyz")
-
-            readline_mock = unittest.mock.Mock()
-            readline_mock.get_line_buffer.return_value = "xy"
-            readline_mock.get_begidx.return_value = 0
-            readline_mock.get_endidx.return_value = 2
-            unittest.mock.seal(readline_mock)
-            with unittest.mock.patch.dict(sys.modules, {"readline": readline_mock}):
-                client.complete("xy", 0)
-
-        # WHEN
-        with unittest.mock.patch("pdb.input", side_effect=mock_input):
-            with redirect_stdout(self.stdout):
-                client.cmdloop()
-        # THEN
-        self.assertFalse(client.write_failed)
-        self.assertEqual(
-            self.stdout.getvalue(),
-            "*** RuntimeError: Failed to get valid completions. Got: {}\n",
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {
+                    "complete": {
+                        "text": "xy",
+                        "line": "xy",
+                        "begidx": 0,
+                        "endidx": 2,
+                    }
+                },
+                {"reply": "xyz"},
+            ],
+            expected_stdout=(
+                "*** RuntimeError: Failed to get valid completions."
+                " Got: {}\n"
+            ),
+            expected_completions=[],
+            expected_state={"state": "interact"},
         )
-        sockfile.write.assert_has_calls(
-            [
-                unittest.mock.call(
-                    json.dumps(
-                        {
-                            "complete": {
-                                "text": "xy",
-                                "line": "xy",
-                                "begidx": 0,
-                                "endidx": 2,
-                            }
-                        }
-                    ).encode() + b"\n"
-                ),
-                unittest.mock.call(
-                    json.dumps({"reply": "xyz"}).encode() + b"\n",
-                ),
-            ]
-        )
-        self.assertEqual(client.state, "interact")
-
-    # test interrupt waiting for remote
 
 
 class RemotePdbTestCase(unittest.TestCase):
@@ -879,8 +782,8 @@ class RemotePdbTestCase(unittest.TestCase):
         self.pdb.quitting = False
 
         # Create a frame for testing
-        self.test_globals = {'a': 1, 'b': 2, '__pdb_convenience_variables': {'x': 100}}
-        self.test_locals = {'c': 3, 'd': 4}
+        self.test_globals = {"a": 1, "b": 2, "__pdb_convenience_variables": {"x": 100}}
+        self.test_locals = {"c": 3, "d": 4}
 
         # Create a simple test frame
         frame_info = unittest.mock.Mock()
@@ -922,18 +825,13 @@ class RemotePdbTestCase(unittest.TestCase):
     def test_completion(self):
         """Test handling completion requests."""
         # Mock completenames to return specific values
-        with unittest.mock.patch.object(self.pdb, 'completenames',
-                                       return_value=["continue", "clear"]):
-
+        with unittest.mock.patch.object(
+            self.pdb, "completenames", return_value=["continue", "clear"]
+        ):
             # Add a completion request
-            self.sockfile.add_input({
-                "complete": {
-                    "text": "c",
-                    "line": "c",
-                    "begidx": 0,
-                    "endidx": 1
-                }
-            })
+            self.sockfile.add_input(
+                {"complete": {"text": "c", "line": "c", "begidx": 0, "endidx": 1}}
+            )
 
             # Add a regular command to break the loop
             self.sockfile.add_input({"reply": "help"})
@@ -967,7 +865,7 @@ class RemotePdbTestCase(unittest.TestCase):
         self.assertIsInstance(self.pdb._interact_state, dict)
 
         # Test running code in interact mode
-        with unittest.mock.patch.object(self.pdb, '_error_exc') as mock_error:
+        with unittest.mock.patch.object(self.pdb, "_error_exc") as mock_error:
             self.pdb._run_in_python_repl("print('test')")
             mock_error.assert_not_called()
 
@@ -978,7 +876,7 @@ class RemotePdbTestCase(unittest.TestCase):
     def test_registering_commands(self):
         """Test registering breakpoint commands."""
         # Mock get_bpbynumber
-        with unittest.mock.patch.object(self.pdb, 'get_bpbynumber'):
+        with unittest.mock.patch.object(self.pdb, "get_bpbynumber"):
             # Queue up some input to send
             self.sockfile.add_input({"reply": "commands 1"})
             self.sockfile.add_input({"reply": "silent"})
@@ -990,7 +888,7 @@ class RemotePdbTestCase(unittest.TestCase):
             self.pdb.cmdloop()
 
             outputs = self.sockfile.get_output()
-            self.assertIn('command_list', outputs[0])
+            self.assertIn("command_list", outputs[0])
             self.assertEqual(outputs[1], {"prompt": "(Pdb) ", "state": "pdb"})
             self.assertEqual(outputs[2], {"prompt": "(com) ", "state": "commands"})
             self.assertEqual(outputs[3], {"prompt": "(com) ", "state": "commands"})
@@ -1006,7 +904,7 @@ class RemotePdbTestCase(unittest.TestCase):
 
     def test_detach(self):
         """Test the detach method."""
-        with unittest.mock.patch.object(self.sockfile, 'close') as mock_close:
+        with unittest.mock.patch.object(self.sockfile, "close") as mock_close:
             self.pdb.detach()
             mock_close.assert_called_once()
             self.assertFalse(self.pdb.quitting)
@@ -1014,9 +912,11 @@ class RemotePdbTestCase(unittest.TestCase):
     def test_cmdloop(self):
         """Test the command loop with various commands."""
         # Mock onecmd to track command execution
-        with unittest.mock.patch.object(self.pdb, 'onecmd', return_value=False) as mock_onecmd:
+        with unittest.mock.patch.object(
+            self.pdb, "onecmd", return_value=False
+        ) as mock_onecmd:
             # Add commands to the queue
-            self.pdb.cmdqueue = ['help', 'list']
+            self.pdb.cmdqueue = ["help", "list"]
 
             # Add a command from the socket for when cmdqueue is empty
             self.sockfile.add_input({"reply": "next"})
@@ -1026,23 +926,24 @@ class RemotePdbTestCase(unittest.TestCase):
 
             # Configure onecmd to exit the loop on "quit"
             def side_effect(line):
-                return line == 'quit'
+                return line == "quit"
+
             mock_onecmd.side_effect = side_effect
 
             # Run the command loop
-            self.pdb.quitting = False # Set this by hand because we don't want to really call set_trace()
+            self.pdb.quitting = False  # Set this by hand because we don't want to really call set_trace()
             self.pdb.cmdloop()
 
             # Should have processed 4 commands: 2 from cmdqueue, 2 from socket
             self.assertEqual(mock_onecmd.call_count, 4)
-            mock_onecmd.assert_any_call('help')
-            mock_onecmd.assert_any_call('list')
-            mock_onecmd.assert_any_call('next')
-            mock_onecmd.assert_any_call('quit')
+            mock_onecmd.assert_any_call("help")
+            mock_onecmd.assert_any_call("list")
+            mock_onecmd.assert_any_call("next")
+            mock_onecmd.assert_any_call("quit")
 
             # Check if prompt was sent to client
             outputs = self.sockfile.get_output()
-            prompts = [o for o in outputs if 'prompt' in o]
+            prompts = [o for o in outputs if "prompt" in o]
             self.assertEqual(len(prompts), 2)  # Should have sent 2 prompts
 
 
@@ -1053,7 +954,7 @@ class PdbConnectTestCase(unittest.TestCase):
     def setUp(self):
         # Create a server socket that will wait for the debugger to connect
         self.server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_sock.bind(('127.0.0.1', 0))  # Let OS assign port
+        self.server_sock.bind(("127.0.0.1", 0))  # Let OS assign port
         self.server_sock.listen(1)
         self.port = self.server_sock.getsockname()[1]
 
@@ -1094,10 +995,11 @@ class PdbConnectTestCase(unittest.TestCase):
                 result = connect_to_debugger()
                 foo()
                 print(f"Function returned: {{result}}")
-                """)
+                """
+            )
 
         self.script_path = TESTFN + "_connect_test.py"
-        with open(self.script_path, 'w') as f:
+        with open(self.script_path, "w") as f:
             f.write(script)
 
     def tearDown(self):
@@ -1114,12 +1016,12 @@ class PdbConnectTestCase(unittest.TestCase):
             [sys.executable, self.script_path],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            text=True
+            text=True,
         )
 
         # Accept the connection from the subprocess
         client_sock, _ = self.server_sock.accept()
-        client_file = client_sock.makefile('rwb')
+        client_file = client_sock.makefile("rwb")
         self.addCleanup(client_file.close)
         self.addCleanup(client_sock.close)
 
@@ -1134,7 +1036,7 @@ class PdbConnectTestCase(unittest.TestCase):
                 break
             msg = json.loads(data.decode())
             messages.append(msg)
-            if 'prompt' in msg:
+            if "prompt" in msg:
                 break
         return messages
 
@@ -1147,12 +1049,12 @@ class PdbConnectTestCase(unittest.TestCase):
         """Helper to send an interrupt signal to the debugger."""
         # with tempfile.NamedTemporaryFile("w", delete_on_close=False) as interrupt_script:
         interrupt_script = TESTFN + "_interrupt_script.py"
-        with open(interrupt_script, 'w') as f:
+        with open(interrupt_script, "w") as f:
             f.write(
-                'import pdb, sys\n'
+                "import pdb, sys\n"
                 'print("Hello, world!")\n'
-                'if inst := pdb.Pdb._last_pdb_instance:\n'
-                '    inst.set_trace(sys._getframe(1))\n'
+                "if inst := pdb.Pdb._last_pdb_instance:\n"
+                "    inst.set_trace(sys._getframe(1))\n"
             )
         self.addCleanup(unlink, interrupt_script)
         try:
@@ -1169,19 +1071,19 @@ class PdbConnectTestCase(unittest.TestCase):
             # We should receive initial data from the debugger
             data = client_file.readline()
             initial_data = json.loads(data.decode())
-            self.assertIn('message', initial_data)
-            self.assertIn('pdb._connect', initial_data['message'])
+            self.assertIn("message", initial_data)
+            self.assertIn("pdb._connect", initial_data["message"])
 
             # First, look for command_list message
             data = client_file.readline()
             command_list = json.loads(data.decode())
-            self.assertIn('command_list', command_list)
+            self.assertIn("command_list", command_list)
 
             # Then, look for the first prompt
             data = client_file.readline()
             prompt_data = json.loads(data.decode())
-            self.assertIn('prompt', prompt_data)
-            self.assertEqual(prompt_data['state'], 'pdb')
+            self.assertIn("prompt", prompt_data)
+            self.assertEqual(prompt_data["state"], "pdb")
 
             # Send 'bt' (backtrace) command
             self._send_command(client_file, "bt")
@@ -1190,8 +1092,11 @@ class PdbConnectTestCase(unittest.TestCase):
             messages = self._read_until_prompt(client_file)
 
             # Extract text messages containing stack info
-            text_msg = [msg['message'] for msg in messages
-                    if 'message' in msg and 'connect_to_debugger' in msg['message']]
+            text_msg = [
+                msg["message"]
+                for msg in messages
+                if "message" in msg and "connect_to_debugger" in msg["message"]
+            ]
             got_stack_info = bool(text_msg)
 
             expected_stacks = [
@@ -1202,7 +1107,9 @@ class PdbConnectTestCase(unittest.TestCase):
             for stack, msg in zip(expected_stacks, text_msg, strict=True):
                 self.assertIn(stack, msg)
 
-            self.assertTrue(got_stack_info, "Should have received stack trace information")
+            self.assertTrue(
+                got_stack_info, "Should have received stack trace information"
+            )
 
             # Send 'c' (continue) command to let the program finish
             self._send_command(client_file, "c")
@@ -1225,7 +1132,7 @@ class PdbConnectTestCase(unittest.TestCase):
             # Set a breakpoint at the return statement
             self._send_command(client_file, "break bar")
             messages = self._read_until_prompt(client_file)
-            bp_msg = next(msg['message'] for msg in messages if 'message' in msg)
+            bp_msg = next(msg["message"] for msg in messages if "message" in msg)
             self.assertIn("Breakpoint", bp_msg)
 
             # Continue execution until breakpoint
@@ -1233,20 +1140,24 @@ class PdbConnectTestCase(unittest.TestCase):
             messages = self._read_until_prompt(client_file)
 
             # Verify we hit the breakpoint
-            hit_msg = next(msg['message'] for msg in messages if 'message' in msg)
+            hit_msg = next(msg["message"] for msg in messages if "message" in msg)
             self.assertIn("bar()", hit_msg)
 
             # Check breakpoint list
             self._send_command(client_file, "b")
             messages = self._read_until_prompt(client_file)
-            list_msg = next(msg['message'] for msg in reversed(messages) if 'message' in msg)
+            list_msg = next(
+                msg["message"] for msg in reversed(messages) if "message" in msg
+            )
             self.assertIn("1   breakpoint", list_msg)
             self.assertIn("breakpoint already hit 1 time", list_msg)
 
             # Clear breakpoint
             self._send_command(client_file, "clear 1")
             messages = self._read_until_prompt(client_file)
-            clear_msg = next(msg['message'] for msg in reversed(messages) if 'message' in msg)
+            clear_msg = next(
+                msg["message"] for msg in reversed(messages) if "message" in msg
+            )
             self.assertIn("Deleted breakpoint", clear_msg)
 
             # Continue to end
@@ -1306,7 +1217,7 @@ class PdbConnectTestCase(unittest.TestCase):
             messages = self._read_until_prompt(client_file)
 
             # Verify we got the keyboard interrupt message.
-            interrupt_msgs = [msg['message'] for msg in messages if 'message' in msg]
+            interrupt_msgs = [msg["message"] for msg in messages if "message" in msg]
             expected_msg = [msg for msg in interrupt_msgs if "bar()" in msg]
             self.assertGreater(len(expected_msg), 0)
 
@@ -1341,7 +1252,7 @@ class PdbConnectTestCase(unittest.TestCase):
     def test_protocol_version(self):
         """Test that incompatible protocol versions are properly detected."""
         # Create a script using an incompatible protocol version
-        script = textwrap.dedent(f'''
+        script = textwrap.dedent(f"""
             import sys
             import pdb
 
@@ -1366,7 +1277,7 @@ class PdbConnectTestCase(unittest.TestCase):
 
             if __name__ == "__main__":
                 print("Test result:", run_test())
-            ''')
+            """)
         self._create_script(script=script)
         process, client_file = self._connect_and_get_client_file()
 
@@ -1375,10 +1286,10 @@ class PdbConnectTestCase(unittest.TestCase):
             data = client_file.readline()
             message = json.loads(data.decode())
 
-            self.assertIn('message', message)
-            self.assertEqual(message['type'], 'error')
-            self.assertIn('incompatible', message['message'])
-            self.assertIn('protocol version', message['message'])
+            self.assertIn("message", message)
+            self.assertEqual(message["type"], "error")
+            self.assertIn("incompatible", message["message"])
+            self.assertIn("protocol version", message["message"])
 
             # The process should complete normally
             stdout, stderr = process.communicate(timeout=SHORT_TIMEOUT)
@@ -1407,15 +1318,15 @@ class PdbConnectTestCase(unittest.TestCase):
                 data = client_file.readline()
                 message = json.loads(data.decode())
 
-                self.assertIn('help', message)
+                self.assertIn("help", message)
 
                 if cmd == "help":
                     # Should just contain the command itself
-                    self.assertEqual(message['help'], "")
+                    self.assertEqual(message["help"], "")
                 else:
                     # Should contain the specific command we asked for help with
                     command = cmd.split()[1]
-                    self.assertEqual(message['help'], command)
+                    self.assertEqual(message["help"], command)
 
                 # Skip to the next prompt
                 self._read_until_prompt(client_file)
@@ -1440,18 +1351,14 @@ class PdbConnectTestCase(unittest.TestCase):
             multi_line_commands = [
                 # Define a function
                 "def test_func():\n    return 42",
-
                 # For loop
                 "for i in range(3):\n    print(i)",
-
                 # If statement
                 "if True:\n    x = 42\nelse:\n    x = 0",
-
                 # Try/except
                 "try:\n    result = 10/2\n    print(result)\nexcept ZeroDivisionError:\n    print('Error')",
-
                 # Class definition
-                "class TestClass:\n    def __init__(self):\n        self.value = 100\n    def get_value(self):\n        return self.value"
+                "class TestClass:\n    def __init__(self):\n        self.value = 100\n    def get_value(self):\n        return self.value",
             ]
 
             for cmd in multi_line_commands:
@@ -1463,7 +1370,7 @@ class PdbConnectTestCase(unittest.TestCase):
             messages = self._read_until_prompt(client_file)
 
             # Find the result message
-            result_msg = next(msg['message'] for msg in messages if 'message' in msg)
+            result_msg = next(msg["message"] for msg in messages if "message" in msg)
             self.assertIn("42", result_msg)
 
             # Test creating an instance of the defined class
@@ -1475,7 +1382,7 @@ class PdbConnectTestCase(unittest.TestCase):
             messages = self._read_until_prompt(client_file)
 
             # Find the result message
-            result_msg = next(msg['message'] for msg in messages if 'message' in msg)
+            result_msg = next(msg["message"] for msg in messages if "message" in msg)
             self.assertIn("100", result_msg)
 
             # Continue execution to finish
@@ -1484,6 +1391,7 @@ class PdbConnectTestCase(unittest.TestCase):
             stdout, stderr = process.communicate(timeout=SHORT_TIMEOUT)
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
