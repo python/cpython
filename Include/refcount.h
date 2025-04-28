@@ -19,9 +19,6 @@ immortal. The latter should be the only instances that require
 cleanup during runtime finalization.
 */
 
-#define _Py_STATICALLY_ALLOCATED_FLAG 4
-#define _Py_IMMORTAL_FLAGS 1
-
 #if SIZEOF_VOID_P > 4
 /*
 In 64+ bit systems, any object whose 32 bit reference count is >= 2**31

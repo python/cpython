@@ -667,8 +667,11 @@ struct _Py_interp_cached_objects {
 
     /* object.__reduce__ */
     PyObject *objreduce;
+#ifndef Py_GIL_DISABLED
+    /* resolve_slotdups() */
     PyObject *type_slots_pname;
     pytype_slotdef *type_slots_ptrs[MAX_EQUIV];
+#endif
 
     /* TypeVar and related types */
     PyTypeObject *generic_type;
@@ -753,6 +756,12 @@ struct _is {
      * which is by far the hottest field in this struct
      * and should be placed at the beginning. */
     struct _ceval_state ceval;
+
+    /* This structure is carefully allocated so that it's correctly aligned
+     * to avoid undefined behaviors during LOAD and STORE. The '_malloced'
+     * field stores the allocated pointer address that will later be freed.
+     */
+    void *_malloced;
 
     PyInterpreterState *next;
 
@@ -935,11 +944,6 @@ struct _is {
 
     Py_ssize_t _interactive_src_count;
 
-    /* the initial PyInterpreterState.threads.head */
-    _PyThreadStateImpl _initial_thread;
-    // _initial_thread should be the last field of PyInterpreterState.
-    // See https://github.com/python/cpython/issues/127117.
-
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
     uint64_t next_stackref;
     _Py_hashtable_t *open_stackrefs_table;
@@ -947,6 +951,11 @@ struct _is {
     _Py_hashtable_t *closed_stackrefs_table;
 #  endif
 #endif
+
+    /* the initial PyInterpreterState.threads.head */
+    _PyThreadStateImpl _initial_thread;
+    // _initial_thread should be the last field of PyInterpreterState.
+    // See https://github.com/python/cpython/issues/127117.
 };
 
 

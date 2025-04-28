@@ -1,0 +1,4 @@
+Speed up startup with the ``-S`` argument by importing the
+private ``_io`` module instead of :mod:`io`. This fixes a performance
+regression introduced earlier in Python 3.14 development and restores performance
+to the level of Python 3.13.

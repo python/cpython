@@ -138,6 +138,19 @@
 #endif
 
 
+static void
+check_invalid_reentrancy(void)
+{
+#if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
+    // In the free-threaded build, the interpreter must not be re-entered if
+    // the world-is-stopped.  If so, that's a bug somewhere (quite likely in
+    // the painfully complex typeobject code).
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(!interp->stoptheworld.world_stopped);
+#endif
+}
+
+
 #ifdef Py_DEBUG
 static void
 dump_item(_PyStackRef item)
@@ -545,23 +558,51 @@ const conversion_func _PyEval_ConversionFuncs[4] = {
 const _Py_SpecialMethod _Py_SpecialMethods[] = {
     [SPECIAL___ENTER__] = {
         .name = &_Py_ID(__enter__),
-        .error = "'%.200s' object does not support the "
-                 "context manager protocol (missed __enter__ method)",
+        .error = (
+            "'%T' object does not support the context manager protocol "
+            "(missed __enter__ method)"
+        ),
+        .error_suggestion = (
+            "'%T' object does not support the context manager protocol "
+            "(missed __enter__ method) but it supports the asynchronous "
+            "context manager protocol. Did you mean to use 'async with'?"
+        )
     },
     [SPECIAL___EXIT__] = {
         .name = &_Py_ID(__exit__),
-        .error = "'%.200s' object does not support the "
-                 "context manager protocol (missed __exit__ method)",
+        .error = (
+            "'%T' object does not support the context manager protocol "
+            "(missed __exit__ method)"
+        ),
+        .error_suggestion = (
+            "'%T' object does not support the context manager protocol "
+            "(missed __exit__ method) but it supports the asynchronous "
+            "context manager protocol. Did you mean to use 'async with'?"
+        )
     },
     [SPECIAL___AENTER__] = {
         .name = &_Py_ID(__aenter__),
-        .error = "'%.200s' object does not support the asynchronous "
-                 "context manager protocol (missed __aenter__ method)",
+        .error = (
+            "'%T' object does not support the asynchronous "
+            "context manager protocol (missed __aenter__ method)"
+        ),
+        .error_suggestion = (
+            "'%T' object does not support the asynchronous context manager "
+            "protocol (missed __aenter__ method) but it supports the context "
+            "manager protocol. Did you mean to use 'with'?"
+        )
     },
     [SPECIAL___AEXIT__] = {
         .name = &_Py_ID(__aexit__),
-        .error = "'%.200s' object does not support the asynchronous "
-                 "context manager protocol (missed __aexit__ method)",
+        .error = (
+            "'%T' object does not support the asynchronous "
+            "context manager protocol (missed __aexit__ method)"
+        ),
+        .error_suggestion = (
+            "'%T' object does not support the asynchronous context manager "
+            "protocol (missed __aexit__ method) but it supports the context "
+            "manager protocol. Did you mean to use 'with'?"
+        )
     }
 };
 
@@ -967,6 +1008,7 @@ PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
+    check_invalid_reentrancy();
     CALL_STAT_INC(pyeval_calls);
 
 #if USE_COMPUTED_GOTOS && !Py_TAIL_CALL_INTERP
@@ -1043,7 +1085,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         monitor_throw(tstate, frame, next_instr);
         stack_pointer = _PyFrame_GetStackPointer(frame);
 #if Py_TAIL_CALL_INTERP
-        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
+#   if Py_STATS
+            return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0, lastopcode);
+#   else
+            return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
+#   endif
 #else
         goto error;
 #endif
@@ -1055,7 +1101,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     const _PyUOpInstruction *next_uop = NULL;
 #endif
 #if Py_TAIL_CALL_INTERP
-    return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0);
+#   if Py_STATS
+        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0, lastopcode);
+#   else
+        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0);
+#   endif
 #else
     goto start_frame;
 #   include "generated_cases.c.h"
@@ -3379,4 +3429,34 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
                     NAME_ERROR_MSG, name);
     }
     return value;
+}
+
+/* Check if a 'cls' provides the given special method. */
+static inline int
+type_has_special_method(PyTypeObject *cls, PyObject *name)
+{
+    // _PyType_Lookup() does not set an exception and returns a borrowed ref
+    assert(!PyErr_Occurred());
+    PyObject *r = _PyType_Lookup(cls, name);
+    return r != NULL && Py_TYPE(r)->tp_descr_get != NULL;
+}
+
+int
+_PyEval_SpecialMethodCanSuggest(PyObject *self, int oparg)
+{
+    PyTypeObject *type = Py_TYPE(self);
+    switch (oparg) {
+        case SPECIAL___ENTER__:
+        case SPECIAL___EXIT__: {
+            return type_has_special_method(type, &_Py_ID(__aenter__))
+                   && type_has_special_method(type, &_Py_ID(__aexit__));
+        }
+        case SPECIAL___AENTER__:
+        case SPECIAL___AEXIT__: {
+            return type_has_special_method(type, &_Py_ID(__enter__))
+                   && type_has_special_method(type, &_Py_ID(__exit__));
+        }
+        default:
+            Py_FatalError("unsupported special method");
+    }
 }

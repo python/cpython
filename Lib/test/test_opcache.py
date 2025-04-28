@@ -16,6 +16,16 @@ if check_impl_detail(cpython=False):
 _testinternalcapi = import_module("_testinternalcapi")
 
 
+def have_dict_key_versions():
+    # max version value that can be stored in the load global cache. This is
+    # determined by the type of module_keys_version and builtin_keys_version
+    # in _PyLoadGlobalCache, uint16_t.
+    max_version = 1<<16
+    # use a wide safety margin (use only half of what's available)
+    limit = max_version // 2
+    return _testinternalcapi.get_next_dict_keys_version() < limit
+
+
 class TestBase(unittest.TestCase):
     def assert_specialized(self, f, opname):
         instructions = dis.get_instructions(f, adaptive=True)
@@ -566,6 +576,7 @@ class TestRacesDoNotCrash(TestBase):
     # Careful with these. Bigger numbers have a higher chance of catching bugs,
     # but you can also burn through a *ton* of type/dict/function versions:
     ITEMS = 1000
+    SMALL_ITEMS = 100
     LOOPS = 4
     WRITERS = 2
 
@@ -609,7 +620,7 @@ class TestRacesDoNotCrash(TestBase):
                 __getitem__ = lambda self, item: None
 
             items = []
-            for _ in range(self.ITEMS):
+            for _ in range(self.SMALL_ITEMS):
                 item = C()
                 items.append(item)
             return items
@@ -780,7 +791,7 @@ class TestRacesDoNotCrash(TestBase):
                 __getattribute__ = lambda self, name: None
 
             items = []
-            for _ in range(self.ITEMS):
+            for _ in range(self.SMALL_ITEMS):
                 item = C()
                 items.append(item)
             return items
@@ -1029,6 +1040,8 @@ class TestRacesDoNotCrash(TestBase):
 
     @requires_specialization_ft
     def test_load_global_module(self):
+        if not have_dict_key_versions():
+            raise unittest.SkipTest("Low on dict key versions")
         def get_items():
             items = []
             for _ in range(self.ITEMS):

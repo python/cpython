@@ -31,6 +31,7 @@ class WindowsConsoleTests(TestCase):
     def console(self, events, **kwargs) -> Console:
         console = WindowsConsole()
         console.get_event = MagicMock(side_effect=events)
+        console.wait = MagicMock()
         console._scroll = MagicMock()
         console._hide_cursor = MagicMock()
         console._show_cursor = MagicMock()
