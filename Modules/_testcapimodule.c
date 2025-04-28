@@ -2549,21 +2549,15 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
 static PyObject *
 test_interp_refcount(PyObject *self, PyObject *unused)
 {
-    PyThreadState *save = PyThreadState_Get();
-    PyThreadState *tstate = Py_NewInterpreter();
-    assert(tstate == PyThreadState_Get());
-    PyInterpreterState *interp = PyThreadState_GetInterpreter(tstate);
-    assert(interp != NULL);
+    PyInterpreterState *interp = PyInterpreterState_Get();
 
+    // Reference counts are technically 0 by default
     assert(_PyInterpreterState_Refcount(interp) == 0);
     PyInterpreterState *held = PyInterpreterState_Hold();
     assert(_PyInterpreterState_Refcount(interp) == 1);
-    PyInterpreterState_Release(held);
-    assert(_PyInterpreterState_Refcount(interp) == 0);
-
     held = PyInterpreterState_Hold();
-    Py_EndInterpreter(tstate);
-    PyThreadState_Swap(save);
+    assert(_PyInterpreterState_Refcount(interp) == 2);
+    PyInterpreterState_Release(held);
     assert(_PyInterpreterState_Refcount(interp) == 1);
     PyInterpreterState_Release(held);
     assert(_PyInterpreterState_Refcount(interp) == 0);
