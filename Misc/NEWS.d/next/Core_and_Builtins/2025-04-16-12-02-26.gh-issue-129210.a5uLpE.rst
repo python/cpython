@@ -1,2 +1,2 @@
-Optimise garbage collection in case where objects to collect have
+Optimise garbage collection in case where no objects to collect have
 finalizers, and hence cannot be resurrected.
