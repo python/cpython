@@ -4045,7 +4045,11 @@ AS_VAR_IF([have_libffi], [yes], [
   AC_SUBST([MODULE__CTYPES_MALLOC_CLOSURE])
 
   dnl HAVE_LIBDL: for dlopen, see gh-76828
-  AS_VAR_IF([ac_cv_lib_dl_dlopen], [yes], [AS_VAR_APPEND([LIBFFI_LIBS], [" -ldl"])])
+  AS_VAR_IF([ac_cv_lib_dl_dlopen], [yes], [
+    AS_VAR_IF([ac_cv_require_ldl], [yes], [], [
+      AS_VAR_APPEND([LIBFFI_LIBS], [" -ldl"])
+    ])
+  ])
 
   WITH_SAVE_ENV([
     CFLAGS="$CFLAGS $LIBFFI_CFLAGS"
