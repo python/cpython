@@ -1,5 +1,5 @@
-:mod:`xmlrpc.client` --- XML-RPC client access
-==============================================
+:mod:`!xmlrpc.client` --- XML-RPC client access
+===============================================
 
 .. module:: xmlrpc.client
    :synopsis: XML-RPC client access.
@@ -61,23 +61,23 @@ between conformable Python objects and XML on the wire.
    The *headers* parameter is an optional sequence of HTTP headers to send with
    each request, expressed as a sequence of 2-tuples representing the header
    name and value. (e.g. ``[('Header-Name', 'value')]``).
+   If an HTTPS URL is provided, *context* may be :class:`ssl.SSLContext`
+   and configures the SSL settings of the underlying HTTPS connection.
    The obsolete *use_datetime* flag is similar to *use_builtin_types* but it
    applies only to date/time values.
 
-.. versionchanged:: 3.3
-    The *use_builtin_types* flag was added.
+   .. versionchanged:: 3.3
+      The *use_builtin_types* flag was added.
 
-.. versionchanged:: 3.8
-    The *headers* parameter was added.
+   .. versionchanged:: 3.8
+      The *headers* parameter was added.
 
    Both the HTTP and HTTPS transports support the URL syntax extension for HTTP
    Basic Authentication: ``http://user:pass@host:port/path``.  The  ``user:pass``
    portion will be base64-encoded as an HTTP 'Authorization' header, and sent to
    the remote server as part of the connection process when invoking an XML-RPC
    method.  You only need to use this if the remote server requires a Basic
-   Authentication user and password. If an HTTPS URL is provided, *context* may
-   be :class:`ssl.SSLContext` and configures the SSL settings of the underlying
-   HTTPS connection.
+   Authentication user and password.
 
    The returned instance is a proxy object with methods that can be used to invoke
    corresponding RPC calls on the remote server.  If the remote server supports the
@@ -161,11 +161,11 @@ between conformable Python objects and XML on the wire.
 
 .. seealso::
 
-   `XML-RPC HOWTO <https://www.tldp.org/HOWTO/XML-RPC-HOWTO/index.html>`_
+   `XML-RPC HOWTO <https://tldp.org/HOWTO/XML-RPC-HOWTO/index.html>`_
       A good description of XML-RPC operation and client software in several languages.
       Contains pretty much everything an XML-RPC client developer needs to know.
 
-   `XML-RPC Introspection <https://xmlrpc-c.sourceforge.net/introspection.html>`_
+   `XML-RPC Introspection <https://xmlrpc-c.sourceforge.io/introspection.html>`_
       Describes the XML-RPC protocol extension for introspection.
 
    `XML-RPC Specification <http://xmlrpc.scripting.com/spec.html>`_
@@ -269,8 +269,9 @@ DateTime Objects
       Write the XML-RPC encoding of this :class:`DateTime` item to the *out* stream
       object.
 
-   It also supports certain of Python's built-in operators through rich comparison
-   and :meth:`__repr__` methods.
+   It also supports certain of Python's built-in operators through
+   :meth:`rich comparison <object.__lt__>` and :meth:`~object.__repr__`
+   methods.
 
 A working example follows. The server code::
 
@@ -334,8 +335,8 @@ Binary Objects
       which was the de facto standard base64 specification when the
       XML-RPC spec was written.
 
-   It also supports certain of Python's built-in operators through :meth:`__eq__`
-   and :meth:`__ne__` methods.
+   It also supports certain of Python's built-in operators through
+   :meth:`~object.__eq__` and :meth:`~object.__ne__` methods.
 
 Example usage of the binary objects.  We're going to transfer an image over
 XMLRPC::

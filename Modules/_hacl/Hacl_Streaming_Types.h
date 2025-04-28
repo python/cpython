@@ -31,25 +31,38 @@ extern "C" {
 #endif
 
 #include <string.h>
-#include "krml/types.h"
+#include "krml/internal/types.h"
 #include "krml/lowstar_endianness.h"
 #include "krml/internal/target.h"
 
-typedef struct Hacl_Streaming_MD_state_32_s
-{
-  uint32_t *block_state;
-  uint8_t *buf;
-  uint64_t total_len;
-}
-Hacl_Streaming_MD_state_32;
+#define Spec_Hash_Definitions_SHA2_224 0
+#define Spec_Hash_Definitions_SHA2_256 1
+#define Spec_Hash_Definitions_SHA2_384 2
+#define Spec_Hash_Definitions_SHA2_512 3
+#define Spec_Hash_Definitions_SHA1 4
+#define Spec_Hash_Definitions_MD5 5
+#define Spec_Hash_Definitions_Blake2S 6
+#define Spec_Hash_Definitions_Blake2B 7
+#define Spec_Hash_Definitions_SHA3_256 8
+#define Spec_Hash_Definitions_SHA3_224 9
+#define Spec_Hash_Definitions_SHA3_384 10
+#define Spec_Hash_Definitions_SHA3_512 11
+#define Spec_Hash_Definitions_Shake128 12
+#define Spec_Hash_Definitions_Shake256 13
 
-typedef struct Hacl_Streaming_MD_state_64_s
-{
-  uint64_t *block_state;
-  uint8_t *buf;
-  uint64_t total_len;
-}
-Hacl_Streaming_MD_state_64;
+typedef uint8_t Spec_Hash_Definitions_hash_alg;
+
+#define Hacl_Streaming_Types_Success 0
+#define Hacl_Streaming_Types_InvalidAlgorithm 1
+#define Hacl_Streaming_Types_InvalidLength 2
+#define Hacl_Streaming_Types_MaximumLengthExceeded 3
+#define Hacl_Streaming_Types_OutOfMemory 4
+
+typedef uint8_t Hacl_Streaming_Types_error_code;
+
+typedef struct Hacl_Streaming_MD_state_32_s Hacl_Streaming_MD_state_32;
+
+typedef struct Hacl_Streaming_MD_state_64_s Hacl_Streaming_MD_state_64;
 
 #if defined(__cplusplus)
 }

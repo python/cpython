@@ -1,5 +1,5 @@
-:mod:`email.charset`: Representing character sets
--------------------------------------------------
+:mod:`!email.charset`: Representing character sets
+--------------------------------------------------
 
 .. module:: email.charset
    :synopsis: Character Sets
@@ -150,7 +150,7 @@ Import this class from the :mod:`email.charset` module.
    .. method:: __str__()
 
       Returns *input_charset* as a string coerced to lower
-      case. :meth:`__repr__` is an alias for :meth:`__str__`.
+      case. :meth:`!__repr__` is an alias for :meth:`!__str__`.
 
 
    .. method:: __eq__(other)

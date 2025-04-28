@@ -153,7 +153,7 @@ Allow an unparenthesized walrus in subscript indexes.
 .. section: Core and Builtins
 
 Make sure that the compiler front-end produces a well-formed control flow
-graph. Be be more aggressive in the compiler back-end, as it is now safe to
+graph. Be more aggressive in the compiler back-end, as it is now safe to
 do so.
 
 ..
@@ -247,8 +247,8 @@ fixes union type expressions not de-duplicating ``GenericAlias`` objects.
 .. nonce: B-Veg7
 .. section: Core and Builtins
 
-The import system triggers a `ImportWarning` when it falls back to using
-`load_module()`.
+The import system triggers a ``ImportWarning`` when it falls back to using
+``load_module()``.
 
 ..
 
@@ -394,7 +394,7 @@ Removed the ``formatter`` module, which was deprecated in Python 3.4. It is
 somewhat obsolete, little used, and not tested. It was originally scheduled
 to be removed in Python 3.6, but such removals were delayed until after
 Python 2.7 EOL. Existing users should copy whatever classes they use into
-their code. Patch by Dong-hee Na and and Terry J. Reedy.
+their code. Patch by Donghee Na and and Terry J. Reedy.
 
 ..
 
@@ -464,8 +464,8 @@ Support signal module on VxWorks.
 .. nonce: r9rNCj
 .. section: Library
 
-We fixed an issue in `pickle.whichmodule` in which importing
-`multiprocessing` could change the how pickle identifies which module an
+We fixed an issue in ``pickle.whichmodule`` in which importing
+``multiprocessing`` could change the how pickle identifies which module an
 object belongs to, potentially breaking the unpickling of those objects.
 
 ..
@@ -477,7 +477,7 @@ object belongs to, potentially breaking the unpickling of those objects.
 
 Simplify the :mod:`importlib` external bootstrap code:
 ``importlib._bootstrap_external`` now uses regular imports to import builtin
-modules. When it is imported, the builtin :func:`__import__()` function is
+modules. When it is imported, the builtin :func:`__import__` function is
 already fully working and so can be used to import builtin modules like
 :mod:`sys`. Patch by Victor Stinner.
 
@@ -517,8 +517,8 @@ Port the ``_signal`` extension module to the multi-phase initialization API
 .. nonce: Wh5svI
 .. section: Library
 
-:func:`time.time()`, :func:`time.perf_counter()` and
-:func:`time.monotonic()` functions can no longer fail with a Python fatal
+:func:`time.time`, :func:`time.perf_counter` and
+:func:`time.monotonic` functions can no longer fail with a Python fatal
 error, instead raise a regular Python exception on failure.
 
 ..
@@ -550,10 +550,10 @@ deduplicate, use type to cache key). Patch provided by Yurii Karabas.
 .. nonce: iDbHrw
 .. section: Library
 
-:func:`time.perf_counter()` on Windows and :func:`time.monotonic()` on macOS
+:func:`time.perf_counter` on Windows and :func:`time.monotonic` on macOS
 are now system-wide. Previously, they used an offset computed at startup to
 reduce the precision loss caused by the float type. Use
-:func:`time.perf_counter_ns()` and :func:`time.monotonic_ns()` added in
+:func:`time.perf_counter_ns` and :func:`time.monotonic_ns` added in
 Python 3.7 to avoid this precision loss.
 
 ..
@@ -602,7 +602,7 @@ function when ``os.open`` fails.
 .. nonce: F363jO
 .. section: Library
 
-Fix `os.sendfile()` on illumos.
+Fix ``os.sendfile()`` on illumos.
 
 ..
 
@@ -718,8 +718,8 @@ Improve asyncio.wait function to create the futures set just one time.
 .. nonce: BzizYV
 .. section: Library
 
-Update various modules in the stdlib to fall back on `__spec__.loader` when
-`__loader__` isn't defined on a module.
+Update various modules in the stdlib to fall back on ``__spec__.loader`` when
+``__loader__`` isn't defined on a module.
 
 ..
 
@@ -728,8 +728,8 @@ Update various modules in the stdlib to fall back on `__spec__.loader` when
 .. nonce: CAsI3O
 .. section: Library
 
-The `load_module()` methods found in importlib now trigger a
-DeprecationWarning.
+The ``load_module()`` methods found in ``importlib`` now trigger a
+``DeprecationWarning``.
 
 ..
 
@@ -872,7 +872,7 @@ extension during TLS handshake when no custom context is supplied.
 .. nonce: 5mi7b0
 .. section: Library
 
-Add func:`os.eventfd` to provide a low level interface for Linux's event
+Add :func:`os.eventfd` to provide a low level interface for Linux's event
 notification file descriptor.
 
 ..
@@ -1296,7 +1296,7 @@ Port _struct extension module to multiphase initialization (:pep:`489`)
 .. nonce: 6F9o6L
 .. section: C API
 
-Port :mod:`spwd` extension module to multiphase initialization (:pep:`489`)
+Port :mod:`!spwd` extension module to multiphase initialization (:pep:`489`)
 
 ..
 
@@ -1386,7 +1386,7 @@ Python already implicitly installs signal handlers: see
 
 The ``Py_TRASHCAN_BEGIN`` macro no longer accesses PyTypeObject attributes,
 but now can get the condition by calling the new private
-:c:func:`_PyTrash_cond()` function which hides implementation details.
+:c:func:`!_PyTrash_cond()` function which hides implementation details.
 
 ..
 
@@ -1466,7 +1466,7 @@ success. Patch by Victor Stinner.
 .. nonce: S3FWTP
 .. section: C API
 
-The :c:data:`METH_FASTCALL` calling convention is added to the limited API.
+The :c:macro:`METH_FASTCALL` calling convention is added to the limited API.
 The functions  :c:func:`PyModule_AddType`,
 :c:func:`PyType_FromModuleAndSpec`, :c:func:`PyType_GetModule` and
 :c:func:`PyType_GetModuleState` are added to the limited API on Windows.

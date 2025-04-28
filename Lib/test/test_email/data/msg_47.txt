@@ -1,0 +1,14 @@
+Date: 01 Jan 2001 00:01+0000
+From: arthur@example.example
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary=foo
+
+--foo
+Content-Type: text/plain
+bar
+
+--foo
+Content-Type: text/html
+<html><body><p>baz</p></body></html>
+
+--foo--

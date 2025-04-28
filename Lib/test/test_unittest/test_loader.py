@@ -76,11 +76,27 @@ class Test_TestLoader(unittest.TestCase):
 
         loader = unittest.TestLoader()
         # This has to be false for the test to succeed
-        self.assertFalse('runTest'.startswith(loader.testMethodPrefix))
+        self.assertNotStartsWith('runTest', loader.testMethodPrefix)
 
         suite = loader.loadTestsFromTestCase(Foo)
         self.assertIsInstance(suite, loader.suiteClass)
         self.assertEqual(list(suite), [Foo('runTest')])
+
+    # "Do not load any tests from `TestCase` class itself."
+    def test_loadTestsFromTestCase__from_TestCase(self):
+        loader = unittest.TestLoader()
+
+        suite = loader.loadTestsFromTestCase(unittest.TestCase)
+        self.assertIsInstance(suite, loader.suiteClass)
+        self.assertEqual(list(suite), [])
+
+    # "Do not load any tests from `FunctionTestCase` class."
+    def test_loadTestsFromTestCase__from_FunctionTestCase(self):
+        loader = unittest.TestLoader()
+
+        suite = loader.loadTestsFromTestCase(unittest.FunctionTestCase)
+        self.assertIsInstance(suite, loader.suiteClass)
+        self.assertEqual(list(suite), [])
 
     ################################################################
     ### /Tests for TestLoader.loadTestsFromTestCase
@@ -102,6 +118,19 @@ class Test_TestLoader(unittest.TestCase):
 
         expected = [loader.suiteClass([MyTestCase('test')])]
         self.assertEqual(list(suite), expected)
+
+    # "This test ensures that internal `TestCase` subclasses are not loaded"
+    def test_loadTestsFromModule__TestCase_subclass_internals(self):
+        # See https://github.com/python/cpython/issues/84867
+        m = types.ModuleType('m')
+        # Simulate imported names:
+        m.TestCase = unittest.TestCase
+        m.FunctionTestCase = unittest.FunctionTestCase
+
+        loader = unittest.TestLoader()
+        suite = loader.loadTestsFromModule(m)
+        self.assertIsInstance(suite, loader.suiteClass)
+        self.assertEqual(list(suite), [])
 
     # "This method searches `module` for classes derived from TestCase"
     #
@@ -1469,39 +1498,6 @@ class TestObsoleteFunctions(unittest.TestCase):
     @staticmethod
     def reverse_three_way_cmp(a, b):
         return unittest.util.three_way_cmp(b, a)
-
-    def test_getTestCaseNames(self):
-        with self.assertWarns(DeprecationWarning) as w:
-            tests = unittest.getTestCaseNames(self.MyTestCase,
-                prefix='check', sortUsing=self.reverse_three_way_cmp,
-                testNamePatterns=None)
-        self.assertEqual(w.filename, __file__)
-        self.assertEqual(tests, ['check_2', 'check_1'])
-
-    def test_makeSuite(self):
-        with self.assertWarns(DeprecationWarning) as w:
-            suite = unittest.makeSuite(self.MyTestCase,
-                    prefix='check', sortUsing=self.reverse_three_way_cmp,
-                    suiteClass=self.MyTestSuite)
-        self.assertEqual(w.filename, __file__)
-        self.assertIsInstance(suite, self.MyTestSuite)
-        expected = self.MyTestSuite([self.MyTestCase('check_2'),
-                                     self.MyTestCase('check_1')])
-        self.assertEqual(suite, expected)
-
-    def test_findTestCases(self):
-        m = types.ModuleType('m')
-        m.testcase_1 = self.MyTestCase
-
-        with self.assertWarns(DeprecationWarning) as w:
-            suite = unittest.findTestCases(m,
-                prefix='check', sortUsing=self.reverse_three_way_cmp,
-                suiteClass=self.MyTestSuite)
-        self.assertEqual(w.filename, __file__)
-        self.assertIsInstance(suite, self.MyTestSuite)
-        expected = [self.MyTestSuite([self.MyTestCase('check_2'),
-                                      self.MyTestCase('check_1')])]
-        self.assertEqual(list(suite), expected)
 
 
 if __name__ == "__main__":
