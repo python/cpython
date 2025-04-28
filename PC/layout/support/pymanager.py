@@ -39,6 +39,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
     DISPLAY_NAME = "Python"
     TAG_SUFFIX = ""
     ALIAS_PREFIX = "python"
+    ALIAS_WPREFIX = "pythonw"
     FILE_PREFIX = "python-"
     FILE_SUFFIX = f"-{ns.arch}"
     DISPLAY_TAGS = [{
