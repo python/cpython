@@ -1,10 +1,29 @@
 """C accelerator wrappers for originally pure-Python parts of base64."""
 
 from binascii import Error, a2b_ascii85, a2b_base85, b2a_ascii85, b2a_base85
-from base64 import _bytes_from_decode_data, bytes_types
 
 
-# Base 85 encoder functions in base64 silently convert input to bytes.
+# Base 85 functions in base64 silently convert input to bytes.
+# Copy the conversion logic from base64 to avoid circular imports.
+
+bytes_types = (bytes, bytearray)  # Types acceptable as binary data
+
+
+def _bytes_from_decode_data(s):
+    if isinstance(s, str):
+        try:
+            return s.encode('ascii')
+        except UnicodeEncodeError:
+            raise ValueError('string argument should contain only ASCII characters')
+    if isinstance(s, bytes_types):
+        return s
+    try:
+        return memoryview(s).tobytes()
+    except TypeError:
+        raise TypeError("argument should be a bytes-like object or ASCII "
+                        "string, not %r" % s.__class__.__name__) from None
+
+
 def _bytes_from_encode_data(b):
     return b if isinstance(b, bytes_types) else memoryview(b).tobytes()
 
