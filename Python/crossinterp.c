@@ -2,6 +2,7 @@
 /* API for managing interactions between isolated interpreters */
 
 #include "Python.h"
+#include "marshal.h"              // PyMarshal_WriteObjectToString()
 #include "pycore_ceval.h"         // _Py_simple_func
 #include "pycore_crossinterp.h"   // _PyXIData_t
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -74,7 +75,7 @@ static xidatafunc lookup_getdata(struct _dlcontext *, PyObject *);
 _PyXIData_t *
 _PyXIData_New(void)
 {
-    _PyXIData_t *xid = PyMem_RawMalloc(sizeof(_PyXIData_t));
+    _PyXIData_t *xid = PyMem_RawCalloc(1, sizeof(_PyXIData_t));
     if (xid == NULL) {
         PyErr_NoMemory();
     }
@@ -93,58 +94,58 @@ _PyXIData_Free(_PyXIData_t *xid)
 /* defining cross-interpreter data */
 
 static inline void
-_xidata_init(_PyXIData_t *data)
+_xidata_init(_PyXIData_t *xidata)
 {
     // If the value is being reused
     // then _xidata_clear() should have been called already.
-    assert(data->data == NULL);
-    assert(data->obj == NULL);
-    *data = (_PyXIData_t){0};
-    _PyXIData_INTERPID(data) = -1;
+    assert(xidata->data == NULL);
+    assert(xidata->obj == NULL);
+    *xidata = (_PyXIData_t){0};
+    _PyXIData_INTERPID(xidata) = -1;
 }
 
 static inline void
-_xidata_clear(_PyXIData_t *data)
+_xidata_clear(_PyXIData_t *xidata)
 {
     // _PyXIData_t only has two members that need to be
-    // cleaned up, if set: "data" must be freed and "obj" must be decref'ed.
+    // cleaned up, if set: "xidata" must be freed and "obj" must be decref'ed.
     // In both cases the original (owning) interpreter must be used,
     // which is the caller's responsibility to ensure.
-    if (data->data != NULL) {
-        if (data->free != NULL) {
-            data->free(data->data);
+    if (xidata->data != NULL) {
+        if (xidata->free != NULL) {
+            xidata->free(xidata->data);
         }
-        data->data = NULL;
+        xidata->data = NULL;
     }
-    Py_CLEAR(data->obj);
+    Py_CLEAR(xidata->obj);
 }
 
 void
-_PyXIData_Init(_PyXIData_t *data,
+_PyXIData_Init(_PyXIData_t *xidata,
                PyInterpreterState *interp,
                void *shared, PyObject *obj,
                xid_newobjfunc new_object)
 {
-    assert(data != NULL);
+    assert(xidata != NULL);
     assert(new_object != NULL);
-    _xidata_init(data);
-    data->data = shared;
+    _xidata_init(xidata);
+    xidata->data = shared;
     if (obj != NULL) {
         assert(interp != NULL);
         // released in _PyXIData_Clear()
-        data->obj = Py_NewRef(obj);
+        xidata->obj = Py_NewRef(obj);
     }
     // Ideally every object would know its owning interpreter.
     // Until then, we have to rely on the caller to identify it
     // (but we don't need it in all cases).
-    _PyXIData_INTERPID(data) = (interp != NULL)
+    _PyXIData_INTERPID(xidata) = (interp != NULL)
         ? PyInterpreterState_GetID(interp)
         : -1;
-    data->new_object = new_object;
+    xidata->new_object = new_object;
 }
 
 int
-_PyXIData_InitWithSize(_PyXIData_t *data,
+_PyXIData_InitWithSize(_PyXIData_t *xidata,
                        PyInterpreterState *interp,
                        const size_t size, PyObject *obj,
                        xid_newobjfunc new_object)
@@ -153,50 +154,28 @@ _PyXIData_InitWithSize(_PyXIData_t *data,
     // For now we always free the shared data in the same interpreter
     // where it was allocated, so the interpreter is required.
     assert(interp != NULL);
-    _PyXIData_Init(data, interp, NULL, obj, new_object);
-    data->data = PyMem_RawMalloc(size);
-    if (data->data == NULL) {
+    _PyXIData_Init(xidata, interp, NULL, obj, new_object);
+    xidata->data = PyMem_RawCalloc(1, size);
+    if (xidata->data == NULL) {
         return -1;
     }
-    data->free = PyMem_RawFree;
+    xidata->free = PyMem_RawFree;
     return 0;
 }
 
 void
-_PyXIData_Clear(PyInterpreterState *interp, _PyXIData_t *data)
+_PyXIData_Clear(PyInterpreterState *interp, _PyXIData_t *xidata)
 {
-    assert(data != NULL);
+    assert(xidata != NULL);
     // This must be called in the owning interpreter.
     assert(interp == NULL
-           || _PyXIData_INTERPID(data) == -1
-           || _PyXIData_INTERPID(data) == PyInterpreterState_GetID(interp));
-    _xidata_clear(data);
+           || _PyXIData_INTERPID(xidata) == -1
+           || _PyXIData_INTERPID(xidata) == PyInterpreterState_GetID(interp));
+    _xidata_clear(xidata);
 }
 
 
-/* using cross-interpreter data */
-
-static int
-_check_xidata(PyThreadState *tstate, _PyXIData_t *data)
-{
-    // data->data can be anything, including NULL, so we don't check it.
-
-    // data->obj may be NULL, so we don't check it.
-
-    if (_PyXIData_INTERPID(data) < 0) {
-        PyErr_SetString(PyExc_SystemError, "missing interp");
-        return -1;
-    }
-
-    if (data->new_object == NULL) {
-        PyErr_SetString(PyExc_SystemError, "missing new_object func");
-        return -1;
-    }
-
-    // data->free may be NULL, so we don't check it.
-
-    return 0;
-}
+/* getting cross-interpreter data */
 
 static inline void
 _set_xid_lookup_failure(PyThreadState *tstate, PyObject *obj, const char *msg,
@@ -216,6 +195,7 @@ _set_xid_lookup_failure(PyThreadState *tstate, PyObject *obj, const char *msg,
     }
 }
 
+
 int
 _PyObject_CheckXIData(PyThreadState *tstate, PyObject *obj)
 {
@@ -233,15 +213,39 @@ _PyObject_CheckXIData(PyThreadState *tstate, PyObject *obj)
     return 0;
 }
 
+static int
+_check_xidata(PyThreadState *tstate, _PyXIData_t *xidata)
+{
+    // xidata->data can be anything, including NULL, so we don't check it.
+
+    // xidata->obj may be NULL, so we don't check it.
+
+    if (_PyXIData_INTERPID(xidata) < 0) {
+        PyErr_SetString(PyExc_SystemError, "missing interp");
+        return -1;
+    }
+
+    if (xidata->new_object == NULL) {
+        PyErr_SetString(PyExc_SystemError, "missing new_object func");
+        return -1;
+    }
+
+    // xidata->free may be NULL, so we don't check it.
+
+    return 0;
+}
+
 int
 _PyObject_GetXIData(PyThreadState *tstate,
-                    PyObject *obj, _PyXIData_t *data)
+                    PyObject *obj, _PyXIData_t *xidata)
 {
     PyInterpreterState *interp = tstate->interp;
 
-    // Reset data before re-populating.
-    *data = (_PyXIData_t){0};
-    _PyXIData_INTERPID(data) = -1;
+    assert(xidata->data == NULL);
+    assert(xidata->obj == NULL);
+    if (xidata->data != NULL || xidata->obj != NULL) {
+        _PyErr_SetString(tstate, PyExc_ValueError, "xidata not cleared");
+    }
 
     // Call the "getdata" func for the object.
     dlcontext_t ctx;
@@ -251,13 +255,18 @@ _PyObject_GetXIData(PyThreadState *tstate,
     Py_INCREF(obj);
     xidatafunc getdata = lookup_getdata(&ctx, obj);
     if (getdata == NULL) {
+        if (PyErr_Occurred()) {
+            Py_DECREF(obj);
+            return -1;
+        }
+        // Fall back to obj
         Py_DECREF(obj);
         if (!_PyErr_Occurred(tstate)) {
             _set_xid_lookup_failure(tstate, obj, NULL, NULL);
         }
         return -1;
     }
-    int res = getdata(tstate, obj, data);
+    int res = getdata(tstate, obj, xidata);
     Py_DECREF(obj);
     if (res != 0) {
         PyObject *cause = _PyErr_GetRaisedException(tstate);
@@ -268,19 +277,64 @@ _PyObject_GetXIData(PyThreadState *tstate,
     }
 
     // Fill in the blanks and validate the result.
-    _PyXIData_INTERPID(data) = PyInterpreterState_GetID(interp);
-    if (_check_xidata(tstate, data) != 0) {
-        (void)_PyXIData_Release(data);
+    _PyXIData_INTERPID(xidata) = PyInterpreterState_GetID(interp);
+    if (_check_xidata(tstate, xidata) != 0) {
+        (void)_PyXIData_Release(xidata);
         return -1;
     }
 
     return 0;
 }
 
+
+/* marshal wrapper */
+
 PyObject *
-_PyXIData_NewObject(_PyXIData_t *data)
+_PyMarshal_ReadObjectFromXIData(_PyXIData_t *xidata)
 {
-    return data->new_object(data);
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyBytes_data_t *shared = (_PyBytes_data_t *)xidata->data;
+    PyObject *obj = PyMarshal_ReadObjectFromString(shared->bytes, shared->len);
+    if (obj == NULL) {
+        PyObject *cause = _PyErr_GetRaisedException(tstate);
+        assert(cause != NULL);
+        _set_xid_lookup_failure(
+                    tstate, NULL, "object could not be unmarshalled", cause);
+        Py_DECREF(cause);
+        return NULL;
+    }
+    return obj;
+}
+
+int
+_PyMarshal_GetXIData(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
+{
+    PyObject *bytes = PyMarshal_WriteObjectToString(obj, Py_MARSHAL_VERSION);
+    if (bytes == NULL) {
+        PyObject *cause = _PyErr_GetRaisedException(tstate);
+        assert(cause != NULL);
+        _set_xid_lookup_failure(
+                    tstate, NULL, "object could not be marshalled", cause);
+        Py_DECREF(cause);
+        return -1;
+    }
+    size_t size = sizeof(_PyBytes_data_t);
+    _PyBytes_data_t *shared = _PyBytes_GetXIDataWrapped(
+            tstate, bytes, size, _PyMarshal_ReadObjectFromXIData, xidata);
+    Py_DECREF(bytes);
+    if (shared == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
+
+/* using cross-interpreter data */
+
+PyObject *
+_PyXIData_NewObject(_PyXIData_t *xidata)
+{
+    return xidata->new_object(xidata);
 }
 
 static int
@@ -291,52 +345,52 @@ _call_clear_xidata(void *data)
 }
 
 static int
-_xidata_release(_PyXIData_t *data, int rawfree)
+_xidata_release(_PyXIData_t *xidata, int rawfree)
 {
-    if ((data->data == NULL || data->free == NULL) && data->obj == NULL) {
+    if ((xidata->data == NULL || xidata->free == NULL) && xidata->obj == NULL) {
         // Nothing to release!
         if (rawfree) {
-            PyMem_RawFree(data);
+            PyMem_RawFree(xidata);
         }
         else {
-            data->data = NULL;
+            xidata->data = NULL;
         }
         return 0;
     }
 
     // Switch to the original interpreter.
     PyInterpreterState *interp = _PyInterpreterState_LookUpID(
-                                        _PyXIData_INTERPID(data));
+                                        _PyXIData_INTERPID(xidata));
     if (interp == NULL) {
         // The interpreter was already destroyed.
         // This function shouldn't have been called.
         // XXX Someone leaked some memory...
         assert(PyErr_Occurred());
         if (rawfree) {
-            PyMem_RawFree(data);
+            PyMem_RawFree(xidata);
         }
         return -1;
     }
 
     // "Release" the data and/or the object.
     if (rawfree) {
-        return _Py_CallInInterpreterAndRawFree(interp, _call_clear_xidata, data);
+        return _Py_CallInInterpreterAndRawFree(interp, _call_clear_xidata, xidata);
     }
     else {
-        return _Py_CallInInterpreter(interp, _call_clear_xidata, data);
+        return _Py_CallInInterpreter(interp, _call_clear_xidata, xidata);
     }
 }
 
 int
-_PyXIData_Release(_PyXIData_t *data)
+_PyXIData_Release(_PyXIData_t *xidata)
 {
-    return _xidata_release(data, 0);
+    return _xidata_release(xidata, 0);
 }
 
 int
-_PyXIData_ReleaseAndRawFree(_PyXIData_t *data)
+_PyXIData_ReleaseAndRawFree(_PyXIData_t *xidata)
 {
-    return _xidata_release(data, 1);
+    return _xidata_release(xidata, 1);
 }
 
 
@@ -455,15 +509,15 @@ _format_TracebackException(PyObject *tbexc)
 
 
 static int
-_release_xid_data(_PyXIData_t *data, int rawfree)
+_release_xid_data(_PyXIData_t *xidata, int rawfree)
 {
     PyObject *exc = PyErr_GetRaisedException();
     int res = rawfree
-        ? _PyXIData_Release(data)
-        : _PyXIData_ReleaseAndRawFree(data);
+        ? _PyXIData_Release(xidata)
+        : _PyXIData_ReleaseAndRawFree(xidata);
     if (res < 0) {
         /* The owning interpreter is already destroyed. */
-        _PyXIData_Clear(NULL, data);
+        _PyXIData_Clear(NULL, xidata);
         // XXX Emit a warning?
         PyErr_Clear();
     }
@@ -1107,7 +1161,7 @@ _PyXI_ApplyError(_PyXI_error *error)
 
 typedef struct _sharednsitem {
     const char *name;
-    _PyXIData_t *data;
+    _PyXIData_t *xidata;
     // We could have a "PyXIData _data" field, so it would
     // be allocated as part of the item and avoid an extra allocation.
     // However, doing so adds a bunch of complexity because we must
@@ -1132,7 +1186,7 @@ _sharednsitem_init(_PyXI_namespace_item *item, PyObject *key)
         assert(!_sharednsitem_is_initialized(item));
         return -1;
     }
-    item->data = NULL;
+    item->xidata = NULL;
     assert(_sharednsitem_is_initialized(item));
     return 0;
 }
@@ -1140,11 +1194,11 @@ _sharednsitem_init(_PyXI_namespace_item *item, PyObject *key)
 static int
 _sharednsitem_has_value(_PyXI_namespace_item *item, int64_t *p_interpid)
 {
-    if (item->data == NULL) {
+    if (item->xidata == NULL) {
         return 0;
     }
     if (p_interpid != NULL) {
-        *p_interpid = _PyXIData_INTERPID(item->data);
+        *p_interpid = _PyXIData_INTERPID(item->xidata);
     }
     return 1;
 }
@@ -1153,16 +1207,15 @@ static int
 _sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
 {
     assert(_sharednsitem_is_initialized(item));
-    assert(item->data == NULL);
-    item->data = PyMem_RawMalloc(sizeof(_PyXIData_t));
-    if (item->data == NULL) {
-        PyErr_NoMemory();
+    assert(item->xidata == NULL);
+    item->xidata = _PyXIData_New();
+    if (item->xidata == NULL) {
         return -1;
     }
     PyThreadState *tstate = PyThreadState_Get();
-    if (_PyObject_GetXIData(tstate, value, item->data) != 0) {
-        PyMem_RawFree(item->data);
-        item->data = NULL;
+    if (_PyObject_GetXIData(tstate, value, item->xidata) != 0) {
+        PyMem_RawFree(item->xidata);
+        item->xidata = NULL;
         // The caller may want to propagate PyExc_NotShareableError
         // if currently switched between interpreters.
         return -1;
@@ -1173,11 +1226,11 @@ _sharednsitem_set_value(_PyXI_namespace_item *item, PyObject *value)
 static void
 _sharednsitem_clear_value(_PyXI_namespace_item *item)
 {
-    _PyXIData_t *data = item->data;
-    if (data != NULL) {
-        item->data = NULL;
+    _PyXIData_t *xidata = item->xidata;
+    if (xidata != NULL) {
+        item->xidata = NULL;
         int rawfree = 1;
-        (void)_release_xid_data(data, rawfree);
+        (void)_release_xid_data(xidata, rawfree);
     }
 }
 
@@ -1195,7 +1248,7 @@ static int
 _sharednsitem_copy_from_ns(struct _sharednsitem *item, PyObject *ns)
 {
     assert(item->name != NULL);
-    assert(item->data == NULL);
+    assert(item->xidata == NULL);
     PyObject *value = PyDict_GetItemString(ns, item->name);  // borrowed
     if (value == NULL) {
         if (PyErr_Occurred()) {
@@ -1218,8 +1271,8 @@ _sharednsitem_apply(_PyXI_namespace_item *item, PyObject *ns, PyObject *dflt)
         return -1;
     }
     PyObject *value;
-    if (item->data != NULL) {
-        value = _PyXIData_NewObject(item->data);
+    if (item->xidata != NULL) {
+        value = _PyXIData_NewObject(item->xidata);
         if (value == NULL) {
             Py_DECREF(name);
             return -1;
@@ -1728,6 +1781,7 @@ _PyXI_Enter(_PyXI_session *session,
 
     // Switch to the requested interpreter (if necessary).
     _enter_session(session, interp);
+    PyThreadState *session_tstate = session->init_tstate;
     _PyXI_errcode errcode = _PyXI_ERR_UNCAUGHT_EXCEPTION;
 
     // Ensure this thread owns __main__.
@@ -1741,8 +1795,8 @@ _PyXI_Enter(_PyXI_session *session,
     session->running = 1;
 
     // Cache __main__.__dict__.
-    PyObject *main_mod = PyUnstable_InterpreterState_GetMainModule(interp);
-    if (main_mod == NULL) {
+    PyObject *main_mod = _Py_GetMainModule(session_tstate);
+    if (_Py_CheckMainModule(main_mod) < 0) {
         errcode = _PyXI_ERR_MAIN_NS_FAILURE;
         goto error;
     }

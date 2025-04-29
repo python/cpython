@@ -128,4 +128,6 @@ Feel free to post at &lt;a href="https://discuss.python.org/c/users/7"&gt;discus
 Visit &lt;a href="https://www.python.org/downloads/"&gt;python.org&lt;/a&gt; to download an earlier version of Python.</String>
   <String Id="SuccessMaxPathButton">Disable path length limit</String>
   <String Id="SuccessMaxPathButtonNote">Changes your machine configuration to allow programs, including Python, to bypass the 260 character "MAX_PATH" limitation.</String>
+
+  <String Id="DeprecationMessage">NOTE: This installer is being retired and will no longer be available after Python 3.15. &lt;a href="https://docs.python.org/using/windows"&gt;More info&lt;/a&gt;</String>
 </WixLocalization>

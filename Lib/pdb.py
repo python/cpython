@@ -1834,7 +1834,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
                     reply = 'y'
                     self.message('')
                 if reply == 'y' or reply == '':
-                    sys.exit(0)
+                    sys.exit(1)
                 elif reply.lower() == 'n':
                     return
 

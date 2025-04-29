@@ -1,4 +1,4 @@
-"""Internal classes used by the gzip, lzma and bz2 modules"""
+"""Internal classes used by compression modules"""
 
 import io
 import sys
