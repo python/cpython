@@ -1189,14 +1189,6 @@ symtable
 
   (Contributed by Bénédikt Tran in :gh:`120029`.)
 
-tempfile
---------
-
-* :func:`tempfile.NamedTemporaryFile` and :func:`~tempfile.TemporaryDirectory`
-  now return a :term:`path-like object`.
-  (Contributed by Barney Gale in :gh:`87646`.)
-
-
 sys
 ---
 
@@ -1223,6 +1215,14 @@ sysconfig
 
 * Add ``ABIFLAGS`` key to :func:`sysconfig.get_config_vars` on Windows.
   (Contributed by Xuehai Pan in :gh:`131799`.)
+
+
+tempfile
+--------
+
+* :func:`tempfile.NamedTemporaryFile` and :func:`~tempfile.TemporaryDirectory`
+  now return a :term:`path-like object`.
+  (Contributed by Barney Gale in :gh:`87646`.)
 
 
 threading
