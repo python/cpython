@@ -7,7 +7,8 @@ from unittest.mock import MagicMock
 
 from .support import handle_all_events, handle_events_narrow_console
 from .support import ScreenEqualMixin, code_to_events
-from .support import prepare_reader, prepare_console, reader_force_colors
+from .support import prepare_console, reader_force_colors
+from .support import reader_no_colors as prepare_reader
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
 from _pyrepl.utils import TAG_TO_ANSI
@@ -131,7 +132,7 @@ class TestReader(ScreenEqualMixin, TestCase):
         events = code_to_events(code)
         reader, _ = handle_all_events(events, prepare_reader=reader_force_colors)
         self.assert_screen_equal(reader, 'flag = "🏳️\\u200d🌈"', clean=True)
-        self.assert_screen_equal(reader, 'flag = {s}"🏳️\\u200d🌈"{z}'.format(**colors))
+        self.assert_screen_equal(reader, 'flag {o}={z} {s}"🏳️\\u200d🌈"{z}'.format(**colors))
 
     def test_setpos_from_xy_multiple_lines(self):
         # fmt: off
