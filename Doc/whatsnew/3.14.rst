@@ -2124,7 +2124,7 @@ New features
   Pablo Galindo in :issue:`45325`.)
 
 * Add :c:func:`PyUnstable_Object_IsUniquelyReferenced` as a replacement for
-  :c:expr:`Py_REFCNT(op) == 1` on :term:`free threaded <free threading>` builds.
+  ``Py_REFCNT(op) == 1`` on :term:`free threaded <free threading>` builds.
   (Contributed by Peter Bierma in :gh:`133140`.)
 
 Limited C API changes
