@@ -173,6 +173,17 @@ class EnableDeferredRefcountingTest(unittest.TestCase):
             self.assertTrue(_testinternalcapi.has_deferred_refcount(silly_list))
 
 
+class IsUniquelyReferencedTest(unittest.TestCase):
+    """Test PyUnstable_Object_IsUniquelyReferenced"""
+    def test_is_uniquely_referenced(self):
+        self.assertTrue(_testcapi.is_uniquely_referenced(object()))
+        self.assertTrue(_testcapi.is_uniquely_referenced([]))
+        # Immortals
+        self.assertFalse(_testcapi.is_uniquely_referenced("spanish inquisition"))
+        self.assertFalse(_testcapi.is_uniquely_referenced(42))
+
+        assert_python_failure("-c", "import _testcapi; _testcapi.is_uniquely_referenced(None)")
+
 class CAPITest(unittest.TestCase):
     def check_negative_refcount(self, code):
         # bpo-35059: Check that Py_DECREF() reports the correct filename

@@ -14,6 +14,7 @@
 
 #include "frameobject.h"          // PyFrame_New()
 #include "marshal.h"              // PyMarshal_WriteLongToFile()
+#include "object.h"
 
 #include <float.h>                // FLT_MAX
 #include <signal.h>
@@ -2546,6 +2547,13 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+is_uniquely_referenced(PyObject *self, PyObject *op)
+{
+    NULLABLE(op); // crashes when op == NULL
+    return PyBool_FromLong(PyUnstable_Object_IsUniquelyReferenced(op));
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2640,6 +2648,7 @@ static PyMethodDef TestMethods[] = {
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
+    {"is_uniquely_referenced", is_uniquely_referenced, METH_O},
     {NULL, NULL} /* sentinel */
 };
 
