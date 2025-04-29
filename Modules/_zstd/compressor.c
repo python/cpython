@@ -37,8 +37,9 @@ _PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
     if (PyLong_Check(level_or_options)) {
         const int level = PyLong_AsInt(level_or_options);
         if (level == -1 && PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ValueError,
-                            "Compression level should be 32-bit signed int value.");
+            PyErr_Format(PyExc_ValueError,
+                            "Compression level should be an int value between %d and %d.",
+                            ZSTD_minCLevel(), ZSTD_maxCLevel());
             return -1;
         }
 
@@ -72,18 +73,19 @@ _PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
                 return -1;
             }
 
-            /* Both key & value should be 32-bit signed int */
             const int key_v = PyLong_AsInt(key);
             if (key_v == -1 && PyErr_Occurred()) {
                 PyErr_SetString(PyExc_ValueError,
-                                "Key of option dict should be 32-bit signed int value.");
+                                "Key of options dict should be a CParameter attribute.");
                 return -1;
             }
 
+            // TODO(emmatyping): check bounds when there is a value error here for better
+            // error message?
             const int value_v = PyLong_AsInt(value);
             if (value_v == -1 && PyErr_Occurred()) {
                 PyErr_SetString(PyExc_ValueError,
-                                "Value of option dict should be 32-bit signed int value.");
+                                "Value of option dict should be an int.");
                 return -1;
             }
 

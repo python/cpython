@@ -88,14 +88,16 @@ _PyZstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
         const int key_v = PyLong_AsInt(key);
         if (key_v == -1 && PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
-                            "Key of options dict should be 32-bit signed integer value.");
+                            "Key of options dict should be a DParameter attribute.");
             return -1;
         }
 
+        // TODO(emmatyping): check bounds when there is a value error here for better
+        // error message?
         const int value_v = PyLong_AsInt(value);
         if (value_v == -1 && PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
-                            "Value of options dict should be 32-bit signed integer value.");
+                            "Value of options dict should be an int.");
             return -1;
         }
 
