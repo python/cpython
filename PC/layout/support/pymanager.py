@@ -58,6 +58,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
         COMPANY = "PythonEmbed"
         TARGETW = None
         ALIAS_PREFIX = None
+        ALIAS_WPREFIX = None
         DISPLAY_TAGS.append("embeddable")
         # Deliberately name the file differently from the existing distro
         # so we can republish old versions without replacing files.
@@ -126,23 +127,24 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
     # Generate alias entries for each target. We need both arch and non-arch
     # versions as well as windowed/non-windowed versions to make sure that all
     # necessary aliases are created.
-    if ALIAS_PREFIX:
-        for prefix, base in [
-            (ALIAS_PREFIX, {"target": TARGET}),
-            (f"{ALIAS_PREFIX}w", {"target": TARGETW, "windowed": 1}),
-        ]:
-            if not base["target"]:
-                continue
-            if XY_TAG:
-                STD_ALIAS.extend([
-                    {**base, "name": f"{prefix}{XY_TAG}.exe"},
-                    {**base, "name": f"{prefix}{XY_ARCH_TAG}.exe"},
-                ])
-            if X_TAG:
-                STD_ALIAS.extend([
-                    {**base, "name": f"{prefix}{X_TAG}.exe"},
-                    {**base, "name": f"{prefix}{X_ARCH_TAG}.exe"},
-                ])
+    for prefix, base in (
+        (ALIAS_PREFIX, {"target": TARGET}),
+        (ALIAS_WPREFIX, {"target": TARGETW, "windowed": 1}),
+    ):
+        if not prefix:
+            continue
+        if not base["target"]:
+            continue
+        if XY_TAG:
+            STD_ALIAS.extend([
+                {**base, "name": f"{prefix}{XY_TAG}.exe"},
+                {**base, "name": f"{prefix}{XY_ARCH_TAG}.exe"},
+            ])
+        if X_TAG:
+            STD_ALIAS.extend([
+                {**base, "name": f"{prefix}{X_TAG}.exe"},
+                {**base, "name": f"{prefix}{X_ARCH_TAG}.exe"},
+            ])
 
     STD_PEP514.append({
         "kind": "pep514",
