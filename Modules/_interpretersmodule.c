@@ -1116,67 +1116,6 @@ If a function is provided, its code object is used and all its state\n\
 is ignored, including its __globals__ dict.");
 
 static PyObject *
-interp_call(PyObject *self, PyObject *args, PyObject *kwds)
-{
-    static char *kwlist[] = {"id", "callable", "args", "kwargs",
-                             "restrict", NULL};
-    PyObject *id, *callable;
-    PyObject *args_obj = NULL;
-    PyObject *kwargs_obj = NULL;
-    int restricted = 0;
-    if (!PyArg_ParseTupleAndKeywords(args, kwds,
-                                     "OO|OO$p:" MODULE_NAME_STR ".call", kwlist,
-                                     &id, &callable, &args_obj, &kwargs_obj,
-                                     &restricted))
-    {
-        return NULL;
-    }
-
-    int reqready = 1;
-    PyInterpreterState *interp = \
-            resolve_interp(id, restricted, reqready, "make a call in");
-    if (interp == NULL) {
-        return NULL;
-    }
-
-    if (args_obj != NULL) {
-        PyErr_SetString(PyExc_ValueError, "got unexpected args");
-        return NULL;
-    }
-    if (kwargs_obj != NULL) {
-        PyErr_SetString(PyExc_ValueError, "got unexpected kwargs");
-        return NULL;
-    }
-
-    PyObject *code = (PyObject *)convert_code_arg(callable, MODULE_NAME_STR ".call",
-                                                  "argument 2", "a function");
-    if (code == NULL) {
-        return NULL;
-    }
-
-    PyObject *excinfo = NULL;
-    int res = _interp_exec(self, interp, code, NULL, &excinfo);
-    Py_DECREF(code);
-    if (res < 0) {
-        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
-        return excinfo;
-    }
-    Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(call_doc,
-"call(id, callable, args=None, kwargs=None, *, restrict=False)\n\
-\n\
-Call the provided object in the identified interpreter.\n\
-Pass the given args and kwargs, if possible.\n\
-\n\
-\"callable\" may be a plain function with no free vars that takes\n\
-no arguments.\n\
-\n\
-The function's code object is used and all its state\n\
-is ignored, including its __globals__ dict.");
-
-static PyObject *
 interp_run_string(PyObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"id", "script", "shared", "restrict", NULL};
@@ -1266,6 +1205,67 @@ Code objects are also supported.  In both cases, closures and args\n\
 are not supported.  Methods and other callables are not supported either.\n\
 \n\
 (See " MODULE_NAME_STR ".exec().");
+
+static PyObject *
+interp_call(PyObject *self, PyObject *args, PyObject *kwds)
+{
+    static char *kwlist[] = {"id", "callable", "args", "kwargs",
+                             "restrict", NULL};
+    PyObject *id, *callable;
+    PyObject *args_obj = NULL;
+    PyObject *kwargs_obj = NULL;
+    int restricted = 0;
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "OO|OO$p:" MODULE_NAME_STR ".call", kwlist,
+                                     &id, &callable, &args_obj, &kwargs_obj,
+                                     &restricted))
+    {
+        return NULL;
+    }
+
+    int reqready = 1;
+    PyInterpreterState *interp = \
+            resolve_interp(id, restricted, reqready, "make a call in");
+    if (interp == NULL) {
+        return NULL;
+    }
+
+    if (args_obj != NULL) {
+        PyErr_SetString(PyExc_ValueError, "got unexpected args");
+        return NULL;
+    }
+    if (kwargs_obj != NULL) {
+        PyErr_SetString(PyExc_ValueError, "got unexpected kwargs");
+        return NULL;
+    }
+
+    PyObject *code = (PyObject *)convert_code_arg(callable, MODULE_NAME_STR ".call",
+                                                  "argument 2", "a function");
+    if (code == NULL) {
+        return NULL;
+    }
+
+    PyObject *excinfo = NULL;
+    int res = _interp_exec(self, interp, code, NULL, &excinfo);
+    Py_DECREF(code);
+    if (res < 0) {
+        assert((excinfo == NULL) != (PyErr_Occurred() == NULL));
+        return excinfo;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(call_doc,
+"call(id, callable, args=None, kwargs=None, *, restrict=False)\n\
+\n\
+Call the provided object in the identified interpreter.\n\
+Pass the given args and kwargs, if possible.\n\
+\n\
+\"callable\" may be a plain function with no free vars that takes\n\
+no arguments.\n\
+\n\
+The function's code object is used and all its state\n\
+is ignored, including its __globals__ dict.");
 
 
 static PyObject *
