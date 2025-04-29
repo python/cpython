@@ -592,7 +592,12 @@ typedef struct {
     int numfree;  // nonlocal
     struct co_unbound_counts {
         int total;
-        int numglobal;
+        struct {
+            int total;
+            int numglobal;
+            int numbuiltin;
+            int numunknown;
+        } globals;
         int numattrs;
         int numunknown;
     } unbound;
@@ -604,8 +609,10 @@ PyAPI_FUNC(void) _PyCode_GetVarCounts(
 PyAPI_FUNC(int) _PyCode_SetUnboundVarCounts(
         PyCodeObject *,
         _PyCode_var_counts_t *,
-        PyObject *global,
-        PyObject *attrs);
+        PyObject *globalnames,
+        PyObject *attrnames,
+        PyObject *globalsns,
+        PyObject *builtinsns);
 
 PyAPI_FUNC(int) _PyCode_ReturnsOnlyNone(PyCodeObject *);
 

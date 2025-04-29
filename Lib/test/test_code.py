@@ -796,7 +796,36 @@ class CodeTest(unittest.TestCase):
                            ):
             nargvars = posonly + posorkw + kwonly + varargs + varkwargs
             nlocals = nargvars + purelocals + othercells
-            unbound = globalvars + attrs + unknown
+            if isinstance(globalvars, int):
+                globalvars = {
+                    'total': globalvars,
+                    'numglobal': 0,
+                    'numbuiltin': 0,
+                    'numunknown': globalvars,
+                }
+            else:
+                g_numunknown = 0
+                if isinstance(globalvars, dict):
+                    numglobal = globalvars['numglobal']
+                    numbuiltin = globalvars['numbuiltin']
+                    size = 2
+                    if 'numunknown' in globalvars:
+                        g_numunknown = globalvars['numunknown']
+                        size += 1
+                    assert len(globalvars) == size, globalvars
+                else:
+                    assert not isinstance(globalvars, str), repr(globalvars)
+                    try:
+                        numglobal, numbuiltin = globalvars
+                    except ValueError:
+                        numglobal, numbuiltin, g_numunknown = globalvars
+                globalvars = {
+                    'total': numglobal + numbuiltin + g_numunknown,
+                    'numglobal': numglobal,
+                    'numbuiltin': numbuiltin,
+                    'numunknown': g_numunknown,
+                }
+            unbound = globalvars['total'] + attrs + unknown
             return {
                 'total': nlocals + freevars + unbound,
                 'locals': {
@@ -824,7 +853,7 @@ class CodeTest(unittest.TestCase):
                 'numfree': freevars,
                 'unbound': {
                     'total': unbound,
-                    'numglobal': globalvars,
+                    'globals': globalvars,
                     'numattrs': attrs,
                     'numunknown': unknown,
                 },
@@ -928,6 +957,55 @@ class CodeTest(unittest.TestCase):
                 expected = funcs[func]
                 counts = _testinternalcapi.get_code_var_counts(func.__code__)
                 self.assertEqual(counts, expected)
+
+        def func_with_globals_and_builtins():
+            mod1 = _testinternalcapi
+            mod2 = dis
+            mods = (mod1, mod2)
+            checks = tuple(callable(m) for m in mods)
+            return callable(mod2), tuple(mods), list(mods), checks
+
+        func = func_with_globals_and_builtins
+        with self.subTest(f'{func} code'):
+            expected = new_var_counts(
+                purelocals=4,
+                globalvars=5,
+            )
+            counts = _testinternalcapi.get_code_var_counts(func.__code__)
+            self.assertEqual(counts, expected)
+
+        with self.subTest(f'{func} with own globals and builtins'):
+            expected = new_var_counts(
+                purelocals=4,
+                globalvars=(2, 3),
+            )
+            counts = _testinternalcapi.get_code_var_counts(func)
+            self.assertEqual(counts, expected)
+
+        with self.subTest(f'{func} without globals'):
+            expected = new_var_counts(
+                purelocals=4,
+                globalvars=(0, 3, 2),
+            )
+            counts = _testinternalcapi.get_code_var_counts(func, globalsns={})
+            self.assertEqual(counts, expected)
+
+        with self.subTest(f'{func} without both'):
+            expected = new_var_counts(
+                purelocals=4,
+                globalvars=5,
+            )
+            counts = _testinternalcapi.get_code_var_counts(func, globalsns={},
+                  builtinsns={})
+            self.assertEqual(counts, expected)
+
+        with self.subTest(f'{func} without builtins'):
+            expected = new_var_counts(
+                purelocals=4,
+                globalvars=(2, 0, 3),
+            )
+            counts = _testinternalcapi.get_code_var_counts(func, builtinsns={})
+            self.assertEqual(counts, expected)
 
 
 def isinterned(s):

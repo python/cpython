@@ -1002,19 +1002,41 @@ get_co_localskinds(PyObject *self, PyObject *arg)
 static PyObject *
 get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
 {
-    const char *codearg;
-    static char *kwlist[] = {"code", NULL};
+    PyObject *codearg;
+    PyObject *globalnames = NULL;
+    PyObject *attrnames = NULL;
+    PyObject *globalsns = NULL;
+    PyObject *builtinsns = NULL;
+    static char *kwlist[] = {"code", "globalnames", "attrnames", "globalsns",
+                             "builtinsns", NULL};
     if (!PyArg_ParseTupleAndKeywords(_args, _kwargs,
-                    "O!:get_code_var_counts", kwlist,
-                    &PyCode_Type, &codearg))
+                    "O|OOO!O!:get_code_var_counts", kwlist,
+                    &codearg, &globalnames, &attrnames,
+                    &PyDict_Type, &globalsns, &PyDict_Type, &builtinsns))
     {
+        return NULL;
+    }
+    if (PyFunction_Check(codearg)) {
+        if (globalsns == NULL) {
+            globalsns = PyFunction_GET_GLOBALS(codearg);
+        }
+        if (builtinsns == NULL) {
+            builtinsns = PyFunction_GET_BUILTINS(codearg);
+        }
+        codearg = PyFunction_GET_CODE(codearg);
+    }
+    else if (!PyCode_Check(codearg)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "argument must be a code object or a function");
         return NULL;
     }
     PyCodeObject *code = (PyCodeObject *)codearg;
 
     _PyCode_var_counts_t counts = {0};
     _PyCode_GetVarCounts(code, &counts);
-    if (_PyCode_SetUnboundVarCounts(code, &counts, NULL, NULL) < 0) {
+    if (_PyCode_SetUnboundVarCounts(
+            code, &counts, globalnames, attrnames, globalsns, builtinsns) < 0)
+    {
         return NULL;
     }
 
@@ -1033,6 +1055,7 @@ get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
     PyObject *cells = NULL;
     PyObject *hidden = NULL;
     PyObject *unbound = NULL;
+    PyObject *globals = NULL;
     PyObject *countsobj = PyDict_New();
     if (countsobj == NULL) {
         return NULL;
@@ -1103,9 +1126,21 @@ get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
         goto error;
     }
     SET_COUNT(unbound, counts.unbound, total);
-    SET_COUNT(unbound, counts.unbound, numglobal);
     SET_COUNT(unbound, counts.unbound, numattrs);
     SET_COUNT(unbound, counts.unbound, numunknown);
+
+    // unbound.globals
+    globals = PyDict_New();
+    if (globals == NULL) {
+        goto error;
+    }
+    if (PyDict_SetItemString(unbound, "globals", globals) < 0) {
+        goto error;
+    }
+    SET_COUNT(globals, counts.unbound.globals, total);
+    SET_COUNT(globals, counts.unbound.globals, numglobal);
+    SET_COUNT(globals, counts.unbound.globals, numbuiltin);
+    SET_COUNT(globals, counts.unbound.globals, numunknown);
 
 #undef SET_COUNT
 
@@ -1114,6 +1149,7 @@ get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
     Py_DECREF(cells);
     Py_DECREF(hidden);
     Py_DECREF(unbound);
+    Py_DECREF(globals);
     return countsobj;
 
 error:
@@ -1123,6 +1159,7 @@ error:
     Py_XDECREF(cells);
     Py_XDECREF(hidden);
     Py_XDECREF(unbound);
+    Py_XDECREF(globals);
     return NULL;
 }
 

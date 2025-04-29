@@ -1692,18 +1692,21 @@ PyCode_GetFreevars(PyCodeObject *code)
 
 static int
 identify_unbound_names(PyCodeObject *co,
-                       PyObject *global, PyObject *attrs,
+                       PyObject *globalnames, PyObject *attrnames,
+                       PyObject *globalsns, PyObject *builtinsns,
                        struct co_unbound_counts *counts)
 {
     // This function is inspired by inspect.getclosurevars().
     // It would be nicer if we had something similar to co_localspluskinds,
     // but for co_names.
-    assert(global != NULL);
-    assert(PySet_Check(global));
-    assert(PySet_GET_SIZE(global) == 0 || counts != NULL);
-    assert(attrs != NULL);
-    assert(PySet_Check(attrs));
-    assert(PySet_GET_SIZE(attrs) == 0 || counts != NULL);
+    assert(globalnames != NULL);
+    assert(PySet_Check(globalnames));
+    assert(PySet_GET_SIZE(globalnames) == 0 || counts != NULL);
+    assert(attrnames != NULL);
+    assert(PySet_Check(attrnames));
+    assert(PySet_GET_SIZE(attrnames) == 0 || counts != NULL);
+    assert(globalsns == NULL || PyDict_Check(globalsns));
+    assert(builtinsns == NULL || PyDict_Check(builtinsns));
     assert(counts == NULL || counts->total == 0);
     Py_ssize_t len = Py_SIZE(co);
     for (int i = 0; i < len; i++) {
@@ -1711,7 +1714,7 @@ identify_unbound_names(PyCodeObject *co,
         if (inst.op.code == LOAD_ATTR) {
             PyObject *name = PyTuple_GET_ITEM(co->co_names, inst.op.arg>>1);
             if (counts != NULL) {
-                if (PySet_Contains(attrs, name)) {
+                if (PySet_Contains(attrnames, name)) {
                     if (PyErr_Occurred()) {
                         return -1;
                     }
@@ -1720,23 +1723,38 @@ identify_unbound_names(PyCodeObject *co,
                 counts->total += 1;
                 counts->numattrs += 1;
             }
-            if (PySet_Add(attrs, name) < 0) {
+            if (PySet_Add(attrnames, name) < 0) {
                 return -1;
             }
         }
         else if (inst.op.code == LOAD_GLOBAL) {
             PyObject *name = PyTuple_GET_ITEM(co->co_names, inst.op.arg>>1);
             if (counts != NULL) {
-                if (PySet_Contains(global, name)) {
+                if (PySet_Contains(globalnames, name)) {
                     if (PyErr_Occurred()) {
                         return -1;
                     }
                     continue;
                 }
                 counts->total += 1;
-                counts->numglobal += 1;
+                counts->globals.total += 1;
+                counts->globals.numunknown += 1;
+                if (globalsns != NULL && PyDict_Contains(globalsns, name)) {
+                    if (PyErr_Occurred()) {
+                        return -1;
+                    }
+                    counts->globals.numglobal += 1;
+                    counts->globals.numunknown -= 1;
+                }
+                if (builtinsns != NULL && PyDict_Contains(builtinsns, name)) {
+                    if (PyErr_Occurred()) {
+                        return -1;
+                    }
+                    counts->globals.numbuiltin += 1;
+                    counts->globals.numunknown -= 1;
+                }
             }
-            if (PySet_Add(global, name) < 0) {
+            if (PySet_Add(globalnames, name) < 0) {
                 return -1;
             }
         }
@@ -1849,46 +1867,41 @@ _PyCode_GetVarCounts(PyCodeObject *co, _PyCode_var_counts_t *counts)
 
 int
 _PyCode_SetUnboundVarCounts(PyCodeObject *co, _PyCode_var_counts_t *counts,
-                            PyObject *globalarg, PyObject *attrsarg)
+                            PyObject *globalnames, PyObject *attrnames,
+                            PyObject *globalsns, PyObject *builtinsns)
 {
     int res = -1;
-    PyObject *global = NULL;
-    PyObject *attrs = NULL;
-    PyObject *global_owned = NULL;
-    PyObject *attrs_owned = NULL;
-    if (globalarg != NULL) {
-        if (!PySet_Check(globalarg)) {
-            PyErr_Format(PyExc_TypeError,
-                         "expected a set for \"global\", got %R", global);
+    PyObject *globalnames_owned = NULL;
+    PyObject *attrnames_owned = NULL;
+    if (globalnames == NULL) {
+        globalnames_owned = PySet_New(NULL);
+        if (globalnames_owned == NULL) {
             goto finally;
         }
-        global = globalarg;
+        globalnames = globalnames_owned;
     }
-    else {
-        global_owned = PySet_New(NULL);
-        if (global_owned == NULL) {
-            goto finally;
-        }
-        global = global_owned;
+    else if (!PySet_Check(globalnames)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a set for \"globalnames\", got %R", globalnames);
+        goto finally;
     }
-    if (attrsarg != NULL) {
-        if (!PySet_Check(attrsarg)) {
-            PyErr_Format(PyExc_TypeError,
-                         "expected a set for \"attrs\", got %R", attrs);
+    if (attrnames == NULL) {
+        attrnames_owned = PySet_New(NULL);
+        if (attrnames_owned == NULL) {
             goto finally;
         }
-        attrs = attrsarg;
+        attrnames = attrnames_owned;
     }
-    else {
-        attrs_owned = PySet_New(NULL);
-        if (attrs_owned == NULL) {
-            goto finally;
-        }
-        attrs = attrs_owned;
+    else if (!PySet_Check(attrnames)) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected a set for \"attrnames\", got %R", attrnames);
+        goto finally;
     }
 
     struct co_unbound_counts unbound = {0};
-    if (identify_unbound_names(co, global, attrs, &unbound) < 0) {
+    if (identify_unbound_names(
+            co, globalnames, attrnames, globalsns, builtinsns, &unbound) < 0)
+    {
         goto finally;
     }
     assert(unbound.numunknown == 0);
@@ -1900,8 +1913,8 @@ _PyCode_SetUnboundVarCounts(PyCodeObject *co, _PyCode_var_counts_t *counts,
     res = 0;
 
 finally:
-    Py_XDECREF(global_owned);
-    Py_XDECREF(attrs_owned);
+    Py_XDECREF(globalnames_owned);
+    Py_XDECREF(attrnames_owned);
     return res;
 }
 
