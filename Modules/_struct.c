@@ -76,40 +76,6 @@ typedef struct {
 #define PyStructObject_CAST(op)     ((PyStructObject *)(op))
 #define PyStruct_Check(op, state)   PyObject_TypeCheck(op, (PyTypeObject *)(state)->PyStructType)
 
-/* Define various structs to figure out the alignments of types */
-
-
-typedef struct { char c; short x; } st_short;
-typedef struct { char c; int x; } st_int;
-typedef struct { char c; long x; } st_long;
-typedef struct { char c; float x; } st_float;
-typedef struct { char c; double x; } st_double;
-#ifdef Py_HAVE_C_COMPLEX
-typedef struct { char c; float complex x; } st_float_complex;
-typedef struct { char c; double complex x; } st_double_complex;
-#endif
-typedef struct { char c; void *x; } st_void_p;
-typedef struct { char c; size_t x; } st_size_t;
-typedef struct { char c; _Bool x; } st_bool;
-
-#define SHORT_ALIGN (sizeof(st_short) - sizeof(short))
-#define INT_ALIGN (sizeof(st_int) - sizeof(int))
-#define LONG_ALIGN (sizeof(st_long) - sizeof(long))
-#define FLOAT_ALIGN (sizeof(st_float) - sizeof(float))
-#define DOUBLE_ALIGN (sizeof(st_double) - sizeof(double))
-#ifdef Py_HAVE_C_COMPLEX
-#  define FLOAT_COMPLEX_ALIGN (sizeof(st_float_complex) - sizeof(float complex))
-#  define DOUBLE_COMPLEX_ALIGN (sizeof(st_double_complex) - sizeof(double complex))
-#endif
-#define VOID_P_ALIGN (sizeof(st_void_p) - sizeof(void *))
-#define SIZE_T_ALIGN (sizeof(st_size_t) - sizeof(size_t))
-#define BOOL_ALIGN (sizeof(st_bool) - sizeof(_Bool))
-
-/* We can't support q and Q in native mode unless the compiler does;
-   in std mode, they're 8 bytes on all platforms. */
-typedef struct { char c; long long x; } s_long_long;
-#define LONG_LONG_ALIGN (sizeof(s_long_long) - sizeof(long long))
-
 #ifdef __powerc
 #pragma options align=reset
 #endif
@@ -898,28 +864,28 @@ static const formatdef native_table[] = {
     {'c',       sizeof(char),   0,              nu_char,        np_char},
     {'s',       sizeof(char),   0,              NULL},
     {'p',       sizeof(char),   0,              NULL},
-    {'h',       sizeof(short),  SHORT_ALIGN,    nu_short,       np_short},
-    {'H',       sizeof(short),  SHORT_ALIGN,    nu_ushort,      np_ushort},
-    {'i',       sizeof(int),    INT_ALIGN,      nu_int,         np_int},
-    {'I',       sizeof(int),    INT_ALIGN,      nu_uint,        np_uint},
-    {'l',       sizeof(long),   LONG_ALIGN,     nu_long,        np_long},
-    {'L',       sizeof(long),   LONG_ALIGN,     nu_ulong,       np_ulong},
-    {'n',       sizeof(size_t), SIZE_T_ALIGN,   nu_ssize_t,     np_ssize_t},
-    {'N',       sizeof(size_t), SIZE_T_ALIGN,   nu_size_t,      np_size_t},
-    {'q',       sizeof(long long), LONG_LONG_ALIGN, nu_longlong, np_longlong},
-    {'Q',       sizeof(long long), LONG_LONG_ALIGN, nu_ulonglong,np_ulonglong},
-    {'?',       sizeof(_Bool),      BOOL_ALIGN,     nu_bool,        np_bool},
-    {'e',       sizeof(short),  SHORT_ALIGN,    nu_halffloat,   np_halffloat},
-    {'f',       sizeof(float),  FLOAT_ALIGN,    nu_float,       np_float},
-    {'d',       sizeof(double), DOUBLE_ALIGN,   nu_double,      np_double},
+    {'h',       sizeof(short),  _Alignof(short),    nu_short,       np_short},
+    {'H',       sizeof(short),  _Alignof(short),    nu_ushort,      np_ushort},
+    {'i',       sizeof(int),    _Alignof(int),      nu_int,         np_int},
+    {'I',       sizeof(int),    _Alignof(int),      nu_uint,        np_uint},
+    {'l',       sizeof(long),   _Alignof(long),     nu_long,        np_long},
+    {'L',       sizeof(long),   _Alignof(long),     nu_ulong,       np_ulong},
+    {'n',       sizeof(size_t), _Alignof(size_t),   nu_ssize_t,     np_ssize_t},
+    {'N',       sizeof(size_t), _Alignof(size_t),   nu_size_t,      np_size_t},
+    {'q',       sizeof(long long), _Alignof(long long), nu_longlong, np_longlong},
+    {'Q',       sizeof(long long), _Alignof(long long), nu_ulonglong,np_ulonglong},
+    {'?',       sizeof(_Bool),      _Alignof(_Bool),     nu_bool,        np_bool},
+    {'e',       sizeof(short),  _Alignof(short),    nu_halffloat,   np_halffloat},
+    {'f',       sizeof(float),  _Alignof(float),    nu_float,       np_float},
+    {'d',       sizeof(double), _Alignof(double),   nu_double,      np_double},
 #ifdef Py_HAVE_C_COMPLEX
-    {'F',       sizeof(float complex), FLOAT_COMPLEX_ALIGN, nu_float_complex, np_float_complex},
-    {'D',       sizeof(double complex), DOUBLE_COMPLEX_ALIGN, nu_double_complex, np_double_complex},
+    {'F',       sizeof(float complex), _Alignof(float complex), nu_float_complex, np_float_complex},
+    {'D',       sizeof(double complex), _Alignof(double complex), nu_double_complex, np_double_complex},
 #else
     {'F',       1, 0, nu_complex_stub, np_complex_stub},
     {'D',       1, 0, nu_complex_stub, np_complex_stub},
 #endif
-    {'P',       sizeof(void *), VOID_P_ALIGN,   nu_void_p,      np_void_p},
+    {'P',       sizeof(void *), _Alignof(void *),   nu_void_p,      np_void_p},
     {0}
 };
 

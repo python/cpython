@@ -218,6 +218,28 @@ class short_converter(CConverter):
         return super().parse_arg(argname, displayname, limited_capi=limited_capi)
 
 
+def format_inline_unsigned_int_converter(self: CConverter, argname: str) -> str:
+    return self.format_code("""
+        {{{{
+            Py_ssize_t _bytes = PyLong_AsNativeBytes({argname}, &{paramname}, sizeof({type}),
+                    Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                    Py_ASNATIVEBYTES_ALLOW_INDEX |
+                    Py_ASNATIVEBYTES_REJECT_NEGATIVE |
+                    Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+            if (_bytes < 0) {{{{
+                goto exit;
+            }}}}
+            if ((size_t)_bytes > sizeof({type})) {{{{
+                PyErr_SetString(PyExc_OverflowError,
+                                "Python int too large for C {type}");
+                goto exit;
+            }}}}
+        }}}}
+        """,
+        argname=argname,
+        type=self.type)
+
+
 class unsigned_short_converter(CConverter):
     type = 'unsigned short'
     default_type = int
@@ -257,22 +279,7 @@ class unsigned_short_converter(CConverter):
                 argname=argname)
         if not limited_capi:
             return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        # NOTE: Raises OverflowError for negative integer.
-        return self.format_code("""
-            {{{{
-                unsigned long uval = PyLong_AsUnsignedLong({argname});
-                if (uval == (unsigned long)-1 && PyErr_Occurred()) {{{{
-                    goto exit;
-                }}}}
-                if (uval > USHRT_MAX) {{{{
-                    PyErr_SetString(PyExc_OverflowError,
-                                    "Python int too large for C unsigned short");
-                    goto exit;
-                }}}}
-                {paramname} = (unsigned short) uval;
-            }}}}
-            """,
-            argname=argname)
+        return format_inline_unsigned_int_converter(self, argname)
 
 
 @add_legacy_c_converter('C', accept={str})
@@ -362,22 +369,7 @@ class unsigned_int_converter(CConverter):
                 argname=argname)
         if not limited_capi:
             return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        # NOTE: Raises OverflowError for negative integer.
-        return self.format_code("""
-            {{{{
-                unsigned long uval = PyLong_AsUnsignedLong({argname});
-                if (uval == (unsigned long)-1 && PyErr_Occurred()) {{{{
-                    goto exit;
-                }}}}
-                if (uval > UINT_MAX) {{{{
-                    PyErr_SetString(PyExc_OverflowError,
-                                    "Python int too large for C unsigned int");
-                    goto exit;
-                }}}}
-                {paramname} = (unsigned int) uval;
-            }}}}
-            """,
-            argname=argname)
+        return format_inline_unsigned_int_converter(self, argname)
 
 
 class long_converter(CConverter):
@@ -417,13 +409,14 @@ class unsigned_long_converter(CConverter):
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'k':
             return self.format_code("""
-                if (!PyLong_Check({argname})) {{{{
+                if (!PyIndex_Check({argname})) {{{{
                     {bad_argument}
                     goto exit;
                 }}}}
                 {{{{
                     Py_ssize_t _bytes = PyLong_AsNativeBytes({argname}, &{paramname}, sizeof(unsigned long),
                             Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                            Py_ASNATIVEBYTES_ALLOW_INDEX |
                             Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
                     if (_bytes < 0) {{{{
                         goto exit;
@@ -442,14 +435,7 @@ class unsigned_long_converter(CConverter):
             )
         if not limited_capi:
             return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        # NOTE: Raises OverflowError for negative integer.
-        return self.format_code("""
--            {paramname} = PyLong_AsUnsignedLong({argname});
--            if ({paramname} == (unsigned long)-1 && PyErr_Occurred()) {{{{
--                goto exit;
--            }}}}
-            """,
-            argname=argname)
+        return format_inline_unsigned_int_converter(self, argname)
 
 
 class long_long_converter(CConverter):
@@ -489,13 +475,14 @@ class unsigned_long_long_converter(CConverter):
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'K':
             return self.format_code("""
-                if (!PyLong_Check({argname})) {{{{
+                if (!PyIndex_Check({argname})) {{{{
                     {bad_argument}
                     goto exit;
                 }}}}
                 {{{{
                     Py_ssize_t _bytes = PyLong_AsNativeBytes({argname}, &{paramname}, sizeof(unsigned long long),
                             Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                            Py_ASNATIVEBYTES_ALLOW_INDEX |
                             Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
                     if (_bytes < 0) {{{{
                         goto exit;
@@ -514,14 +501,7 @@ class unsigned_long_long_converter(CConverter):
             )
         if not limited_capi:
             return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        # NOTE: Raises OverflowError for negative integer.
-        return self.format_code("""
-            {paramname} = PyLong_AsUnsignedLongLong({argname});
-            if ({paramname} == (unsigned long long)-1 && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """,
-            argname=argname)
+        return format_inline_unsigned_int_converter(self, argname)
 
 
 class Py_ssize_t_converter(CConverter):
@@ -658,14 +638,7 @@ class size_t_converter(CConverter):
                 argname=argname)
         if not limited_capi:
             return super().parse_arg(argname, displayname, limited_capi=limited_capi)
-        # NOTE: Raises OverflowError for negative integer.
-        return self.format_code("""
-            {paramname} = PyLong_AsSize_t({argname});
-            if ({paramname} == (size_t)-1 && PyErr_Occurred()) {{{{
-                goto exit;
-            }}}}
-            """,
-            argname=argname)
+        return format_inline_unsigned_int_converter(self, argname)
 
 
 class fildes_converter(CConverter):

@@ -1384,16 +1384,7 @@ dummy_func(
 
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
-                PyObject *lasti = PyStackRef_AsPyObjectBorrow(values[0]);
-                if (PyLong_Check(lasti)) {
-                    frame->instr_ptr = _PyFrame_GetBytecode(frame) + PyLong_AsLong(lasti);
-                    assert(!_PyErr_Occurred(tstate));
-                }
-                else {
-                    _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
-                    Py_DECREF(exc);
-                    ERROR_NO_POP();
-                }
+                frame->instr_ptr = _PyFrame_GetBytecode(frame) + PyStackRef_UntagInt(values[0]);
             }
             assert(exc && PyExceptionInstance_Check(exc));
             _PyErr_SetRaisedException(tstate, exc);
@@ -2025,6 +2016,10 @@ dummy_func(
                 Py_DECREF(ann_dict);
             }
         }
+
+        pseudo(ANNOTATIONS_PLACEHOLDER, (--)) = {
+            NOP,
+        };
 
         inst(DICT_UPDATE, (dict, unused[oparg - 1], update -- dict, unused[oparg - 1])) {
             PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
@@ -3025,6 +3020,9 @@ dummy_func(
         }
 
         inst(GET_ITER, (iterable -- iter)) {
+            #ifdef Py_STATS
+            _Py_GatherStats_GetIter(iterable);
+            #endif
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
             PyStackRef_CLOSE(iterable);
@@ -3465,7 +3463,7 @@ dummy_func(
             if (tb == NULL) {
                 tb = Py_None;
             }
-            assert(PyStackRef_LongCheck(lasti));
+            assert(PyStackRef_IsTaggedInt(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
             PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);
@@ -3995,17 +3993,21 @@ dummy_func(
             _GUARD_CALLABLE_TYPE_1 +
             _CALL_TYPE_1;
 
-        op(_CALL_STR_1, (callable, null, arg -- res)) {
+        op(_GUARD_CALLABLE_STR_1, (callable, unused, unused -- callable, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            DEOPT_IF(callable_o != (PyObject *)&PyUnicode_Type);
+        }
+
+        op(_CALL_STR_1, (callable, null, arg -- res)) {
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
-            DEOPT_IF(!PyStackRef_IsNull(null));
-            DEOPT_IF(callable_o != (PyObject *)&PyUnicode_Type);
             STAT_INC(CALL, hit);
             PyObject *res_o = PyObject_Str(arg_o);
             DEAD(null);
             DEAD(callable);
+            (void)callable; // Silence compiler warnings about unused variables
+            (void)null;
             PyStackRef_CLOSE(arg);
             ERROR_IF(res_o == NULL, error);
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -4014,20 +4016,26 @@ dummy_func(
         macro(CALL_STR_1) =
             unused/1 +
             unused/2 +
+            _GUARD_NOS_NULL +
+            _GUARD_CALLABLE_STR_1 +
             _CALL_STR_1 +
             _CHECK_PERIODIC;
 
-        op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
+        op(_GUARD_CALLABLE_TUPLE_1, (callable, unused, unused -- callable, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            DEOPT_IF(callable_o != (PyObject *)&PyTuple_Type);
+        }
+
+        op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
-            DEOPT_IF(!PyStackRef_IsNull(null));
-            DEOPT_IF(callable_o != (PyObject *)&PyTuple_Type);
             STAT_INC(CALL, hit);
             PyObject *res_o = PySequence_Tuple(arg_o);
             DEAD(null);
             DEAD(callable);
+            (void)callable; // Silence compiler warnings about unused variables
+            (void)null;
             PyStackRef_CLOSE(arg);
             ERROR_IF(res_o == NULL, error);
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -4036,6 +4044,8 @@ dummy_func(
         macro(CALL_TUPLE_1) =
             unused/1 +
             unused/2 +
+            _GUARD_NOS_NULL +
+            _GUARD_CALLABLE_TUPLE_1 +
             _CALL_TUPLE_1 +
             _CHECK_PERIODIC;
 
@@ -5359,11 +5369,8 @@ dummy_func(
             }
             if (lasti) {
                 int frame_lasti = _PyInterpreterFrame_LASTI(frame);
-                PyObject *lasti = PyLong_FromLong(frame_lasti);
-                if (lasti == NULL) {
-                    goto exception_unwind;
-                }
-                _PyFrame_StackPush(frame, PyStackRef_FromPyObjectSteal(lasti));
+                _PyStackRef lasti = PyStackRef_TagInt(frame_lasti);
+                _PyFrame_StackPush(frame, lasti);
             }
 
             /* Make the raw exception data

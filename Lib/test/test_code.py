@@ -216,6 +216,10 @@ from test.support import threading_helper, import_helper
 from test.support.bytecode_helper import instructions_with_positions
 from opcode import opmap, opname
 from _testcapi import code_offset_to_line
+try:
+    import _testinternalcapi
+except ModuleNotFoundError:
+    _testinternalcapi = None
 
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
@@ -241,6 +245,7 @@ def dump(co):
 # Defined at global scope to avoid implicitly closing over __class__
 def external_getitem(self, i):
     return f"Foreign getitem: {super().__getitem__(i)}"
+
 
 class CodeTest(unittest.TestCase):
 
@@ -425,6 +430,61 @@ class CodeTest(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             func.__code__.co_lnotab
 
+    @unittest.skipIf(_testinternalcapi is None, '_testinternalcapi is missing')
+    def test_returns_only_none(self):
+        value = True
+
+        def spam1():
+            pass
+        def spam2():
+            return
+        def spam3():
+            return None
+        def spam4():
+            if not value:
+                return
+            ...
+        def spam5():
+            if not value:
+                return None
+            ...
+        lambda1 = (lambda: None)
+        for func in [
+            spam1,
+            spam2,
+            spam3,
+            spam4,
+            spam5,
+            lambda1,
+        ]:
+            with self.subTest(func):
+                res = _testinternalcapi.code_returns_only_none(func.__code__)
+                self.assertTrue(res)
+
+        def spam6():
+            return True
+        def spam7():
+            return value
+        def spam8():
+            if value:
+                return None
+            return True
+        def spam9():
+            if value:
+                return True
+            return None
+        lambda2 = (lambda: True)
+        for func in [
+            spam6,
+            spam7,
+            spam8,
+            spam9,
+            lambda2,
+        ]:
+            with self.subTest(func):
+                res = _testinternalcapi.code_returns_only_none(func.__code__)
+                self.assertFalse(res)
+
     def test_invalid_bytecode(self):
         def foo():
             pass
@@ -594,6 +654,128 @@ class CodeTest(unittest.TestCase):
         exec(code2, {'x': []})
         self.assertNotEqual(code1, code2)
         sys.settrace(None)
+
+    @unittest.skipIf(_testinternalcapi is None, "missing _testinternalcapi")
+    def test_local_kinds(self):
+        CO_FAST_ARG_POS = 0x02
+        CO_FAST_ARG_KW = 0x04
+        CO_FAST_ARG_VAR = 0x08
+        CO_FAST_HIDDEN = 0x10
+        CO_FAST_LOCAL = 0x20
+        CO_FAST_CELL = 0x40
+        CO_FAST_FREE = 0x80
+
+        POSONLY = CO_FAST_LOCAL | CO_FAST_ARG_POS
+        POSORKW = CO_FAST_LOCAL | CO_FAST_ARG_POS | CO_FAST_ARG_KW
+        KWONLY = CO_FAST_LOCAL | CO_FAST_ARG_KW
+        VARARGS = CO_FAST_LOCAL | CO_FAST_ARG_VAR | CO_FAST_ARG_POS
+        VARKWARGS = CO_FAST_LOCAL | CO_FAST_ARG_VAR | CO_FAST_ARG_KW
+
+        import test._code_definitions as defs
+        funcs = {
+            defs.spam_minimal: {},
+            defs.spam_full: {
+                'a': POSONLY,
+                'b': POSONLY,
+                'c': POSORKW,
+                'd': POSORKW,
+                'e': KWONLY,
+                'f': KWONLY,
+                'args': VARARGS,
+                'kwargs': VARKWARGS,
+                'x': CO_FAST_LOCAL,
+                'y': CO_FAST_LOCAL,
+                'z': CO_FAST_LOCAL,
+                'extras': CO_FAST_LOCAL,
+            },
+            defs.spam: {
+                'x': POSORKW,
+            },
+            defs.spam_N: {
+                'x': POSORKW,
+                'eggs_nested': CO_FAST_LOCAL,
+            },
+            defs.spam_C: {
+                'x': POSORKW | CO_FAST_CELL,
+                'a': CO_FAST_CELL,
+                'eggs_closure': CO_FAST_LOCAL,
+            },
+            defs.spam_NN: {
+                'x': POSORKW,
+                'eggs_nested_N': CO_FAST_LOCAL,
+            },
+            defs.spam_NC: {
+                'x': POSORKW | CO_FAST_CELL,
+                'a': CO_FAST_CELL,
+                'eggs_nested_C': CO_FAST_LOCAL,
+            },
+            defs.spam_CN: {
+                'x': POSORKW | CO_FAST_CELL,
+                'a': CO_FAST_CELL,
+                'eggs_closure_N': CO_FAST_LOCAL,
+            },
+            defs.spam_CC: {
+                'x': POSORKW | CO_FAST_CELL,
+                'a': CO_FAST_CELL,
+                'eggs_closure_C': CO_FAST_LOCAL,
+            },
+            defs.eggs_nested: {
+                'y': POSORKW,
+            },
+            defs.eggs_closure: {
+                'y': POSORKW,
+                'x': CO_FAST_FREE,
+                'a': CO_FAST_FREE,
+            },
+            defs.eggs_nested_N: {
+                'y': POSORKW,
+                'ham_nested': CO_FAST_LOCAL,
+            },
+            defs.eggs_nested_C: {
+                'y': POSORKW | CO_FAST_CELL,
+                'x': CO_FAST_FREE,
+                'a': CO_FAST_FREE,
+                'ham_closure': CO_FAST_LOCAL,
+            },
+            defs.eggs_closure_N: {
+                'y': POSORKW,
+                'x': CO_FAST_FREE,
+                'a': CO_FAST_FREE,
+                'ham_C_nested': CO_FAST_LOCAL,
+            },
+            defs.eggs_closure_C: {
+                'y': POSORKW | CO_FAST_CELL,
+                'b': CO_FAST_CELL,
+                'x': CO_FAST_FREE,
+                'a': CO_FAST_FREE,
+                'ham_C_closure': CO_FAST_LOCAL,
+            },
+            defs.ham_nested: {
+                'z': POSORKW,
+            },
+            defs.ham_closure: {
+                'z': POSORKW,
+                'y': CO_FAST_FREE,
+                'x': CO_FAST_FREE,
+                'a': CO_FAST_FREE,
+            },
+            defs.ham_C_nested: {
+                'z': POSORKW,
+            },
+            defs.ham_C_closure: {
+                'z': POSORKW,
+                'y': CO_FAST_FREE,
+                'b': CO_FAST_FREE,
+                'x': CO_FAST_FREE,
+                'a': CO_FAST_FREE,
+            },
+        }
+        assert len(funcs) == len(defs.FUNCTIONS)
+        for func in defs.FUNCTIONS:
+            with self.subTest(func):
+                expected = funcs[func]
+                kinds = _testinternalcapi.get_co_localskinds(func.__code__)
+                self.assertEqual(kinds, expected)
 
 
 def isinterned(s):

@@ -274,11 +274,17 @@ minimal value for the corresponding signed integer type.
 ``k`` (:class:`int`) [unsigned long]
    Convert a Python integer to a C :c:expr:`unsigned long`.
 
+   .. versionchanged:: next
+      Use :meth:`~object.__index__` if available.
+
 ``L`` (:class:`int`) [long long]
    Convert a Python integer to a C :c:expr:`long long`.
 
 ``K`` (:class:`int`) [unsigned long long]
    Convert a Python integer to a C :c:expr:`unsigned long long`.
+
+   .. versionchanged:: next
+      Use :meth:`~object.__index__` if available.
 
 ``n`` (:class:`int`) [:c:type:`Py_ssize_t`]
    Convert a Python integer to a C :c:type:`Py_ssize_t`.
@@ -675,6 +681,8 @@ Building values
 
    ``L`` (:class:`int`) [long long]
       Convert a C :c:expr:`long long` to a Python integer object.
+
+   .. _capi-py-buildvalue-format-K:
 
    ``K`` (:class:`int`) [unsigned long long]
       Convert a C :c:expr:`unsigned long long` to a Python integer object.

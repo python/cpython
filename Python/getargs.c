@@ -870,6 +870,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         }
         Py_ssize_t bytes = PyLong_AsNativeBytes(arg, p, sizeof(unsigned long),
                 Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
                 Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
         if (bytes < 0) {
             RETURN_ERR_OCCURRED;
@@ -903,6 +904,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         }
         Py_ssize_t bytes = PyLong_AsNativeBytes(arg, p, sizeof(unsigned long long),
                 Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
                 Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
         if (bytes < 0) {
             RETURN_ERR_OCCURRED;

@@ -656,13 +656,14 @@ signal_pthread_kill(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (!_PyArg_CheckPositional("pthread_kill", nargs, 2, 2)) {
         goto exit;
     }
-    if (!PyLong_Check(args[0])) {
+    if (!PyIndex_Check(args[0])) {
         _PyArg_BadArgument("pthread_kill", "argument 1", "int", args[0]);
         goto exit;
     }
     {
         Py_ssize_t _bytes = PyLong_AsNativeBytes(args[0], &thread_id, sizeof(unsigned long),
                 Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
                 Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
         if (_bytes < 0) {
             goto exit;
@@ -793,4 +794,4 @@ exit:
 #ifndef SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
     #define SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF
 #endif /* !defined(SIGNAL_PIDFD_SEND_SIGNAL_METHODDEF) */
-/*[clinic end generated code: output=28652b77931b1f7f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=37ae8ebeae4178fa input=a9049054013a1b77]*/

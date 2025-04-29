@@ -283,6 +283,9 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 // See also PyInterpreterState_Get() and _PyInterpreterState_GET().
 extern PyInterpreterState* _PyGILState_GetInterpreterStateUnsafe(void);
 
+extern PyObject * _Py_GetMainModule(PyThreadState *);
+extern int _Py_CheckMainModule(PyObject *module);
+
 #ifndef NDEBUG
 /* Modern equivalent of assert(PyGILState_Check()) */
 static inline void

@@ -293,12 +293,12 @@ class Unsigned_TestCase(unittest.TestCase):
     def test_k(self):
         from _testcapi import getargs_k
         # k returns 'unsigned long', no range checking
-        # it does not accept float, or instances with __int__
         self.assertRaises(TypeError, getargs_k, 3.14)
-        self.assertRaises(TypeError, getargs_k, Index())
+        self.assertEqual(99, getargs_k(Index()))
         self.assertEqual(0, getargs_k(IndexIntSubclass()))
         self.assertRaises(TypeError, getargs_k, BadIndex())
-        self.assertRaises(TypeError, getargs_k, BadIndex2())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_k(BadIndex2()))
         self.assertEqual(0, getargs_k(BadIndex3()))
         self.assertRaises(TypeError, getargs_k, Int())
         self.assertEqual(0, getargs_k(IntSubclass()))
@@ -452,10 +452,11 @@ class LongLong_TestCase(unittest.TestCase):
         from _testcapi import getargs_K
         # K return 'unsigned long long', no range checking
         self.assertRaises(TypeError, getargs_K, 3.14)
-        self.assertRaises(TypeError, getargs_K, Index())
+        self.assertEqual(99, getargs_K(Index()))
         self.assertEqual(0, getargs_K(IndexIntSubclass()))
         self.assertRaises(TypeError, getargs_K, BadIndex())
-        self.assertRaises(TypeError, getargs_K, BadIndex2())
+        with self.assertWarns(DeprecationWarning):
+            self.assertEqual(1, getargs_K(BadIndex2()))
         self.assertEqual(0, getargs_K(BadIndex3()))
         self.assertRaises(TypeError, getargs_K, Int())
         self.assertEqual(0, getargs_K(IntSubclass()))
@@ -465,6 +466,7 @@ class LongLong_TestCase(unittest.TestCase):
 
         self.assertEqual(ULLONG_MAX, getargs_K(ULLONG_MAX))
         self.assertEqual(0, getargs_K(0))
+        self.assertEqual(ULLONG_MAX, getargs_K(ULLONG_MAX))
         with self.assertWarns(DeprecationWarning):
             self.assertEqual(0, getargs_K(ULLONG_MAX+1))
         self.assertEqual(LLONG_MAX+1, getargs_K(LLONG_MIN))

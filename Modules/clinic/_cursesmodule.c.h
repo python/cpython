@@ -2388,13 +2388,14 @@ _curses_ungetmouse(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (z == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!PyLong_Check(args[4])) {
+    if (!PyIndex_Check(args[4])) {
         _PyArg_BadArgument("ungetmouse", "argument 5", "int", args[4]);
         goto exit;
     }
     {
         Py_ssize_t _bytes = PyLong_AsNativeBytes(args[4], &bstate, sizeof(unsigned long),
                 Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
                 Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
         if (_bytes < 0) {
             goto exit;
@@ -3168,13 +3169,14 @@ _curses_mousemask(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     unsigned long newmask;
 
-    if (!PyLong_Check(arg)) {
+    if (!PyIndex_Check(arg)) {
         _PyArg_BadArgument("mousemask", "argument", "int", arg);
         goto exit;
     }
     {
         Py_ssize_t _bytes = PyLong_AsNativeBytes(arg, &newmask, sizeof(unsigned long),
                 Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
                 Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
         if (_bytes < 0) {
             goto exit;
@@ -4422,4 +4424,4 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=d773308c84e58a64 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4be7cad95183469c input=a9049054013a1b77]*/
