@@ -4470,7 +4470,7 @@
             if (tb == NULL) {
                 tb = Py_None;
             }
-            assert(PyStackRef_LongCheck(lasti));
+            assert(PyStackRef_IsTaggedInt(lasti));
             (void)lasti;
             PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);

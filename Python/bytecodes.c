@@ -1384,16 +1384,7 @@ dummy_func(
 
             assert(oparg >= 0 && oparg <= 2);
             if (oparg) {
-                PyObject *lasti = PyStackRef_AsPyObjectBorrow(values[0]);
-                if (PyLong_Check(lasti)) {
-                    frame->instr_ptr = _PyFrame_GetBytecode(frame) + PyLong_AsLong(lasti);
-                    assert(!_PyErr_Occurred(tstate));
-                }
-                else {
-                    _PyErr_SetString(tstate, PyExc_SystemError, "lasti is not an int");
-                    Py_DECREF(exc);
-                    ERROR_NO_POP();
-                }
+                frame->instr_ptr = _PyFrame_GetBytecode(frame) + PyStackRef_UntagInt(values[0]);
             }
             assert(exc && PyExceptionInstance_Check(exc));
             _PyErr_SetRaisedException(tstate, exc);
@@ -3472,7 +3463,7 @@ dummy_func(
             if (tb == NULL) {
                 tb = Py_None;
             }
-            assert(PyStackRef_LongCheck(lasti));
+            assert(PyStackRef_IsTaggedInt(lasti));
             (void)lasti; // Shut up compiler warning if asserts are off
             PyObject *stack[5] = {NULL, PyStackRef_AsPyObjectBorrow(exit_self), exc, val_o, tb};
             int has_self = !PyStackRef_IsNull(exit_self);
@@ -5378,11 +5369,8 @@ dummy_func(
             }
             if (lasti) {
                 int frame_lasti = _PyInterpreterFrame_LASTI(frame);
-                PyObject *lasti = PyLong_FromLong(frame_lasti);
-                if (lasti == NULL) {
-                    goto exception_unwind;
-                }
-                _PyFrame_StackPush(frame, PyStackRef_FromPyObjectSteal(lasti));
+                _PyStackRef lasti = PyStackRef_TagInt(frame_lasti);
+                _PyFrame_StackPush(frame, lasti);
             }
 
             /* Make the raw exception data
