@@ -224,9 +224,7 @@ class _Target(typing.Generic[_S, _R]):
             jit_stencils_new.unlink(missing_ok=True)
 
 
-class _COFF(
-    _Target[_schema.COFFSection, _schema.COFFRelocation]
-):  # pylint: disable = too-few-public-methods
+class _COFF(_Target[_schema.COFFSection, _schema.COFFRelocation]):
     def _handle_section(
         self, section: _schema.COFFSection, group: _stencils.StencilGroup
     ) -> None:
@@ -312,9 +310,7 @@ class _COFF(
         return _stencils.Hole(offset, kind, value, symbol, addend)
 
 
-class _ELF(
-    _Target[_schema.ELFSection, _schema.ELFRelocation]
-):  # pylint: disable = too-few-public-methods
+class _ELF(_Target[_schema.ELFSection, _schema.ELFRelocation]):
     def _handle_section(
         self, section: _schema.ELFSection, group: _stencils.StencilGroup
     ) -> None:
@@ -402,9 +398,7 @@ class _ELF(
         return _stencils.Hole(offset, kind, value, symbol, addend)
 
 
-class _MachO(
-    _Target[_schema.MachOSection, _schema.MachORelocation]
-):  # pylint: disable = too-few-public-methods
+class _MachO(_Target[_schema.MachOSection, _schema.MachORelocation]):
     def _handle_section(
         self, section: _schema.MachOSection, group: _stencils.StencilGroup
     ) -> None:

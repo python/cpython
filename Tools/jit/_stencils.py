@@ -230,35 +230,41 @@ class Stencil:
         """Remove a zero-length continuation jump, if it exists."""
         hole = max(self.holes, key=lambda hole: hole.offset)
         match hole:
-            case Hole(
-                offset=offset,
-                kind="IMAGE_REL_AMD64_REL32",
-                value=HoleValue.GOT,
-                symbol="_JIT_CONTINUE",
-                addend=-4,
-            ) as hole:
+            case (
+                Hole(
+                    offset=offset,
+                    kind="IMAGE_REL_AMD64_REL32",
+                    value=HoleValue.GOT,
+                    symbol="_JIT_CONTINUE",
+                    addend=-4,
+                ) as hole
+            ):
                 # jmp qword ptr [rip]
                 jump = b"\x48\xff\x25\x00\x00\x00\x00"
                 offset -= 3
-            case Hole(
-                offset=offset,
-                kind="IMAGE_REL_I386_REL32" | "R_X86_64_PLT32" | "X86_64_RELOC_BRANCH",
-                value=HoleValue.CONTINUE,
-                symbol=None,
-                addend=addend,
-            ) as hole if (
-                _signed(addend) == -4
-            ):
+            case (
+                Hole(
+                    offset=offset,
+                    kind="IMAGE_REL_I386_REL32"
+                    | "R_X86_64_PLT32"
+                    | "X86_64_RELOC_BRANCH",
+                    value=HoleValue.CONTINUE,
+                    symbol=None,
+                    addend=addend,
+                ) as hole
+            ) if _signed(addend) == -4:
                 # jmp 5
                 jump = b"\xe9\x00\x00\x00\x00"
                 offset -= 1
-            case Hole(
-                offset=offset,
-                kind="R_AARCH64_JUMP26",
-                value=HoleValue.CONTINUE,
-                symbol=None,
-                addend=0,
-            ) as hole:
+            case (
+                Hole(
+                    offset=offset,
+                    kind="R_AARCH64_JUMP26",
+                    value=HoleValue.CONTINUE,
+                    symbol=None,
+                    addend=0,
+                ) as hole
+            ):
                 # b #4
                 jump = b"\x00\x00\x00\x14"
             case _:

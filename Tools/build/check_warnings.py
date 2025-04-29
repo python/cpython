@@ -151,7 +151,6 @@ def get_unexpected_warnings(
     """
     unexpected_warnings = {}
     for file in files_with_warnings.keys():
-
         rule = is_file_ignored(file, ignore_rules)
 
         if rule:
