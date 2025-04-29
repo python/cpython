@@ -561,6 +561,10 @@ extern void _Py_ClearTLBCIndex(_PyThreadStateImpl *tstate);
 extern int _Py_ClearUnusedTLBC(PyInterpreterState *interp);
 #endif
 
+
+PyAPI_FUNC(int) _PyCode_ReturnsOnlyNone(PyCodeObject *);
+
+
 #ifdef __cplusplus
 }
 #endif
