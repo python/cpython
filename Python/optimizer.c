@@ -1200,15 +1200,26 @@ int effective_trace_length(_PyUOpInstruction *buffer, int length)
 }
 #endif
 
+static bool uops_optimize_initialized = false;
+static bool uops_optimize_flag = false;
+
 static void
-initialize_uops_optimize_flag() {
-    PyInterpreterState *interp = _PyInterpreterState_GET();
+initialize_uops_optimize_flag(void) {
     if (!uops_optimize_initialized) {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
         char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
-        interp->uops_optimize_flag = (env_var == NULL || *env_var == '\0' || *env_var > '0');
+        bool uops_optimize_flag = (env_var == NULL || *env_var == '\0' || *env_var > '0');
+        if (interp != NULL) {
+            interp->uops_optimize_flag = uops_optimize_flag;
+        }
         uops_optimize_initialized = true;
     }
-    uops_optimize_flag = interp->uops_optimize_flag;
+    else {
+        PyInterpreterState *interp = _PyInterpreterState_GET();
+        if (interp != NULL) {
+             uops_optimize_flag = interp->uops_optimize_flag;
+        }
+    }
 }
 
 static int
