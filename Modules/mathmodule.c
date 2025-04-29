@@ -2172,8 +2172,9 @@ math_ldexp_impl(PyObject *module, double x, PyObject *i)
             frexp(x, &original_exp);
             if (original_exp > DBL_MIN_EXP) {
                 /* Shift down to the smallest normal binade.  No bits lost. */
-                x = ldexp(x, DBL_MIN_EXP - original_exp);
-                exp += original_exp - DBL_MIN_EXP;
+                int shift = DBL_MIN_EXP - original_exp
+                x = ldexp(x, shift);
+                exp -= shift;
             }
             /* Multiplying by 2**exp finishes the job, and the HW will round as
                appropriate.  Note: if exp < -DBL_MANT_DIG, all of x is shifted
