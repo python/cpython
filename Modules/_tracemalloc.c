@@ -1,4 +1,5 @@
 #include "Python.h"
+#include "pycore_tracemalloc.h"  // _PyTraceMalloc_IsTracing
 
 #include "clinic/_tracemalloc.c.h"
 
@@ -214,15 +215,14 @@ static struct PyModuleDef module_def = {
 PyMODINIT_FUNC
 PyInit__tracemalloc(void)
 {
-    PyObject *m;
-    m = PyModule_Create(&module_def);
-    if (m == NULL)
-        return NULL;
-
-    if (_PyTraceMalloc_Init() < 0) {
-        Py_DECREF(m);
+    PyObject *mod = PyModule_Create(&module_def);
+    if (mod == NULL) {
         return NULL;
     }
 
-    return m;
+#ifdef Py_GIL_DISABLED
+    PyUnstable_Module_SetGIL(mod, Py_MOD_GIL_NOT_USED);
+#endif
+
+    return mod;
 }

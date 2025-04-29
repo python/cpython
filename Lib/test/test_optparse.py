@@ -15,7 +15,7 @@ import unittest
 from io import StringIO
 from test import support
 from test.support import os_helper
-
+from test.support.i18n_helper import TestTranslationsBase, update_translation_snapshots
 
 import optparse
 from optparse import make_option, Option, \
@@ -1656,5 +1656,14 @@ class MiscTestCase(unittest.TestCase):
         support.check__all__(self, optparse, not_exported=not_exported)
 
 
+class TestTranslations(TestTranslationsBase):
+    def test_translations(self):
+        self.assertMsgidsEqual(optparse)
+
+
 if __name__ == '__main__':
+    # To regenerate translation snapshots
+    if len(sys.argv) > 1 and sys.argv[1] == '--snapshot-update':
+        update_translation_snapshots(optparse)
+        sys.exit(0)
     unittest.main()

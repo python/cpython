@@ -1,0 +1,2 @@
+Many builtin and extension functions which accept an unsigned integer
+argument, now use :meth:`~object.__index__` if available.

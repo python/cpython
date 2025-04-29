@@ -8,6 +8,24 @@ class TestDefault:
             self.dumps(type, default=repr),
             self.dumps(repr(type)))
 
+    def test_bad_default(self):
+        def default(obj):
+            if obj is NotImplemented:
+                raise ValueError
+            if obj is ...:
+                return NotImplemented
+            if obj is type:
+                return collections
+            return [...]
+
+        with self.assertRaises(ValueError) as cm:
+            self.dumps(type, default=default)
+        self.assertEqual(cm.exception.__notes__,
+                         ['when serializing ellipsis object',
+                          'when serializing list item 0',
+                          'when serializing module object',
+                          'when serializing type object'])
+
     def test_ordereddict(self):
         od = collections.OrderedDict(a=1, b=2, c=3, d=4)
         od.move_to_end('b')

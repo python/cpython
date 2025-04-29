@@ -57,7 +57,7 @@ class TestDefectsBase:
             msg = self._str_msg(source)
         if self.raise_expected: return
         inner = msg.get_payload(0)
-        self.assertTrue(hasattr(inner, 'defects'))
+        self.assertHasAttr(inner, 'defects')
         self.assertEqual(len(self.get_defects(inner)), 1)
         self.assertIsInstance(self.get_defects(inner)[0],
                               errors.StartBoundaryNotFoundDefect)
@@ -151,7 +151,7 @@ class TestDefectsBase:
         with self._raise_point(errors.NoBoundaryInMultipartDefect):
             msg = self._str_msg(source)
         if self.raise_expected: return
-        self.assertTrue(hasattr(msg, 'defects'))
+        self.assertHasAttr(msg, 'defects')
         self.assertEqual(len(self.get_defects(msg)), 2)
         self.assertIsInstance(self.get_defects(msg)[0],
                               errors.NoBoundaryInMultipartDefect)

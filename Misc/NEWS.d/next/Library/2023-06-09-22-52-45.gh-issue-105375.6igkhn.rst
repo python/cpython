@@ -1,1 +1,0 @@
-Fix bug in :mod:`decimal` where an exception could end up being overwritten.

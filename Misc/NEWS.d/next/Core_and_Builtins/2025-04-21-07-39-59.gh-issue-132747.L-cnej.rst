@@ -1,0 +1,2 @@
+Fix a crash when calling :meth:`~object.__get__` of a :term:`method` with a
+:const:`None` second argument.

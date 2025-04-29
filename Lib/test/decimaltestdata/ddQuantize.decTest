@@ -462,7 +462,7 @@ ddqua520 quantize   1.234    1e359 -> 0E+359 Inexact Rounded
 ddqua521 quantize 123.456    1e359 -> 0E+359 Inexact Rounded
 ddqua522 quantize   1.234    1e359 -> 0E+359 Inexact Rounded
 ddqua523 quantize 123.456    1e359 -> 0E+359 Inexact Rounded
--- next four are "won't fit" overfl
+-- next four are "won't fit" overflow
 ddqua526 quantize   1.234   1e-299 -> NaN Invalid_operation
 ddqua527 quantize 123.456   1e-299 -> NaN Invalid_operation
 ddqua528 quantize   1.234   1e-299 -> NaN Invalid_operation

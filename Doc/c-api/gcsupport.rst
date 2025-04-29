@@ -83,10 +83,15 @@ rules:
    .. versionadded:: 3.12
 
 
-.. c:function:: TYPE* PyObject_GC_Resize(TYPE, PyVarObject *op, Py_ssize_t newsize)
+.. c:macro:: PyObject_GC_Resize(TYPE, op, newsize)
 
-   Resize an object allocated by :c:macro:`PyObject_NewVar`.  Returns the
-   resized object or ``NULL`` on failure.  *op* must not be tracked by the collector yet.
+   Resize an object allocated by :c:macro:`PyObject_NewVar`.
+   Returns the resized object of type ``TYPE*`` (refers to any C type)
+   or ``NULL`` on failure.
+
+   *op* must be of type :c:expr:`PyVarObject *`
+   and must not be tracked by the collector yet.
+   *newsize* must be of type :c:type:`Py_ssize_t`.
 
 
 .. c:function:: void PyObject_GC_Track(PyObject *op)
@@ -272,7 +277,7 @@ the garbage collector.
 
    Type of the visitor function to be passed to :c:func:`PyUnstable_GC_VisitObjects`.
    *arg* is the same as the *arg* passed to ``PyUnstable_GC_VisitObjects``.
-   Return ``0`` to continue iteration, return ``1`` to stop iteration. Other return
+   Return ``1`` to continue iteration, return ``0`` to stop iteration. Other return
    values are reserved for now so behavior on returning anything else is undefined.
 
    .. versionadded:: 3.12

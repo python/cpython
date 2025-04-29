@@ -1,5 +1,5 @@
-:mod:`lzma` --- Compression using the LZMA algorithm
-====================================================
+:mod:`!lzma` --- Compression using the LZMA algorithm
+=====================================================
 
 .. module:: lzma
    :synopsis: A Python wrapper for the liblzma compression library.
@@ -104,7 +104,7 @@ Reading and writing compressed files
    and :meth:`~io.IOBase.truncate`.
    Iteration and the :keyword:`with` statement are supported.
 
-   The following method is also provided:
+   The following method and attributes are also provided:
 
    .. method:: peek(size=-1)
 
@@ -116,6 +116,20 @@ Reading and writing compressed files
          the :class:`LZMAFile`, it may change the position of the underlying
          file object (e.g. if the :class:`LZMAFile` was constructed by passing a
          file object for *filename*).
+
+   .. attribute:: mode
+
+      ``'rb'`` for reading and ``'wb'`` for writing.
+
+      .. versionadded:: 3.13
+
+   .. attribute:: name
+
+      The lzma file name.  Equivalent to the :attr:`~io.FileIO.name`
+      attribute of the underlying :term:`file object`.
+
+      .. versionadded:: 3.13
+
 
    .. versionchanged:: 3.4
       Added support for the ``"x"`` and ``"xb"`` modes.
@@ -333,19 +347,22 @@ the key ``"id"``, and may contain additional keys to specify filter-dependent
 options. Valid filter IDs are as follows:
 
 * Compression filters:
-   * :const:`FILTER_LZMA1` (for use with :const:`FORMAT_ALONE`)
-   * :const:`FILTER_LZMA2` (for use with :const:`FORMAT_XZ` and :const:`FORMAT_RAW`)
+
+  * :const:`FILTER_LZMA1` (for use with :const:`FORMAT_ALONE`)
+  * :const:`FILTER_LZMA2` (for use with :const:`FORMAT_XZ` and :const:`FORMAT_RAW`)
 
 * Delta filter:
-   * :const:`FILTER_DELTA`
+
+  * :const:`FILTER_DELTA`
 
 * Branch-Call-Jump (BCJ) filters:
-   * :const:`FILTER_X86`
-   * :const:`FILTER_IA64`
-   * :const:`FILTER_ARM`
-   * :const:`FILTER_ARMTHUMB`
-   * :const:`FILTER_POWERPC`
-   * :const:`FILTER_SPARC`
+
+  * :const:`FILTER_X86`
+  * :const:`FILTER_IA64`
+  * :const:`FILTER_ARM`
+  * :const:`FILTER_ARMTHUMB`
+  * :const:`FILTER_POWERPC`
+  * :const:`FILTER_SPARC`
 
 A filter chain can consist of up to 4 filters, and cannot be empty. The last
 filter in the chain must be a compression filter, and any other filters must be
@@ -354,21 +371,21 @@ delta or BCJ filters.
 Compression filters support the following options (specified as additional
 entries in the dictionary representing the filter):
 
-   * ``preset``: A compression preset to use as a source of default values for
-     options that are not specified explicitly.
-   * ``dict_size``: Dictionary size in bytes. This should be between 4 KiB and
-     1.5 GiB (inclusive).
-   * ``lc``: Number of literal context bits.
-   * ``lp``: Number of literal position bits. The sum ``lc + lp`` must be at
-     most 4.
-   * ``pb``: Number of position bits; must be at most 4.
-   * ``mode``: :const:`MODE_FAST` or :const:`MODE_NORMAL`.
-   * ``nice_len``: What should be considered a "nice length" for a match.
-     This should be 273 or less.
-   * ``mf``: What match finder to use -- :const:`MF_HC3`, :const:`MF_HC4`,
-     :const:`MF_BT2`, :const:`MF_BT3`, or :const:`MF_BT4`.
-   * ``depth``: Maximum search depth used by match finder. 0 (default) means to
-     select automatically based on other filter options.
+* ``preset``: A compression preset to use as a source of default values for
+  options that are not specified explicitly.
+* ``dict_size``: Dictionary size in bytes. This should be between 4 KiB and
+  1.5 GiB (inclusive).
+* ``lc``: Number of literal context bits.
+* ``lp``: Number of literal position bits. The sum ``lc + lp`` must be at
+  most 4.
+* ``pb``: Number of position bits; must be at most 4.
+* ``mode``: :const:`MODE_FAST` or :const:`MODE_NORMAL`.
+* ``nice_len``: What should be considered a "nice length" for a match.
+  This should be 273 or less.
+* ``mf``: What match finder to use -- :const:`MF_HC3`, :const:`MF_HC4`,
+  :const:`MF_BT2`, :const:`MF_BT3`, or :const:`MF_BT4`.
+* ``depth``: Maximum search depth used by match finder. 0 (default) means to
+  select automatically based on other filter options.
 
 The delta filter stores the differences between bytes, producing more repetitive
 input for the compressor in certain circumstances. It supports one option,

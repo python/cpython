@@ -1,0 +1,1 @@
+Fixed the breakpoint display error for frozen modules in :mod:`pdb`.

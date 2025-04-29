@@ -1,0 +1,1 @@
+Support profiling code that requires ``__main__``, such as :mod:`pickle`.

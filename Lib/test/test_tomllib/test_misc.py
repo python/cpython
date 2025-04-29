@@ -5,10 +5,12 @@
 import copy
 import datetime
 from decimal import Decimal as D
+import importlib
 from pathlib import Path
 import sys
 import tempfile
 import unittest
+from test import support
 
 from . import tomllib
 
@@ -92,13 +94,31 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertEqual(obj_copy, expected_obj)
 
     def test_inline_array_recursion_limit(self):
-        # 465 with default recursion limit
-        nest_count = int(sys.getrecursionlimit() * 0.465)
-        recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
-        tomllib.loads(recursive_array_toml)
+        with support.infinite_recursion(max_depth=100):
+            available = support.get_recursion_available()
+            nest_count = (available // 2) - 2
+            # Add details if the test fails
+            with self.subTest(limit=sys.getrecursionlimit(),
+                              available=available,
+                              nest_count=nest_count):
+                recursive_array_toml = "arr = " + nest_count * "[" + nest_count * "]"
+                tomllib.loads(recursive_array_toml)
 
     def test_inline_table_recursion_limit(self):
-        # 310 with default recursion limit
-        nest_count = int(sys.getrecursionlimit() * 0.31)
-        recursive_table_toml = nest_count * "key = {" + nest_count * "}"
-        tomllib.loads(recursive_table_toml)
+        with support.infinite_recursion(max_depth=100):
+            available = support.get_recursion_available()
+            nest_count = (available // 3) - 1
+            # Add details if the test fails
+            with self.subTest(limit=sys.getrecursionlimit(),
+                              available=available,
+                              nest_count=nest_count):
+                recursive_table_toml = nest_count * "key = {" + nest_count * "}"
+                tomllib.loads(recursive_table_toml)
+
+    def test_types_import(self):
+        """Test that `_types` module runs.
+
+        The module is for type annotations only, so it is otherwise
+        never imported by tests.
+        """
+        importlib.import_module(f"{tomllib.__name__}._types")

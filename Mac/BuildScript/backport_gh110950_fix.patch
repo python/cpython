@@ -1,0 +1,25 @@
+From https://core.tcl-lang.org/tk/info/ed7cfbac8db11aa0
+
+Note: the diff here is hand-tweaked so that it applies cleanly to both Tk 8.6.8 and 8.6.13.
+
+diff --git a/macosx/tkMacOSXInit.c b/macosx/tkMacOSXInit.c
+index 71d7c3385..e6a68356c 100644
+--- a/macosx/tkMacOSXInit.c
++++ b/macosx/tkMacOSXInit.c
+@@ -128,6 +128,16 @@ static int		TkMacOSXGetAppPathCmd(ClientData cd, Tcl_Interp *ip,
+     observe(NSApplicationDidChangeScreenParametersNotification, displayChanged:);
+     observe(NSTextInputContextKeyboardSelectionDidChangeNotification, keyboardChanged:);
+ #undef observe
++}
++
++
++/*
++ * Fix for 10b38a7a7c.
++ */
++
++- (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)app
++{
++    return YES;
+ }
+ 
+ -(void)applicationWillFinishLaunching:(NSNotification *)aNotification

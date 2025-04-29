@@ -1,0 +1,1 @@
+Set return code to ``1`` when aborting process from :mod:`pdb`.

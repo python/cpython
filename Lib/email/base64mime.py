@@ -1,4 +1,4 @@
-# Copyright (C) 2002-2007 Python Software Foundation
+# Copyright (C) 2002 Python Software Foundation
 # Author: Ben Gertzfield
 # Contact: email-sig@python.org
 
@@ -15,7 +15,7 @@ This module provides an interface to encode and decode both headers and bodies
 with Base64 encoding.
 
 RFC 2045 defines a method for including character set information in an
-`encoded-word' in a header.  This method is commonly used for 8-bit real names
+'encoded-word' in a header.  This method is commonly used for 8-bit real names
 in To:, From:, Cc:, etc. fields, as well as Subject: lines.
 
 This module does not do the line wrapping or end-of-line character conversion

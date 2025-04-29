@@ -88,12 +88,15 @@ def _do_cmp(f1, f2):
 class dircmp:
     """A class that manages the comparison of 2 directories.
 
-    dircmp(a, b, ignore=None, hide=None)
+    dircmp(a, b, ignore=None, hide=None, *, shallow=True)
       A and B are directories.
       IGNORE is a list of names to ignore,
         defaults to DEFAULT_IGNORES.
       HIDE is a list of names to hide,
         defaults to [os.curdir, os.pardir].
+      SHALLOW specifies whether to just check the stat signature (do not read
+        the files).
+        defaults to True.
 
     High level usage:
       x = dircmp(dir1, dir2)
@@ -121,7 +124,7 @@ class dircmp:
        in common_dirs.
      """
 
-    def __init__(self, a, b, ignore=None, hide=None): # Initialize
+    def __init__(self, a, b, ignore=None, hide=None, *, shallow=True): # Initialize
         self.left = a
         self.right = b
         if hide is None:
@@ -132,6 +135,7 @@ class dircmp:
             self.ignore = DEFAULT_IGNORES
         else:
             self.ignore = ignore
+        self.shallow = shallow
 
     def phase0(self): # Compare everything except common subdirectories
         self.left_list = _filter(os.listdir(self.left),
@@ -160,12 +164,14 @@ class dircmp:
             ok = True
             try:
                 a_stat = os.stat(a_path)
-            except OSError:
+            except (OSError, ValueError):
+                # See https://github.com/python/cpython/issues/122400
+                # for the rationale for protecting against ValueError.
                 # print('Can\'t stat', a_path, ':', why.args[1])
                 ok = False
             try:
                 b_stat = os.stat(b_path)
-            except OSError:
+            except (OSError, ValueError):
                 # print('Can\'t stat', b_path, ':', why.args[1])
                 ok = False
 
@@ -184,7 +190,7 @@ class dircmp:
                 self.common_funny.append(x)
 
     def phase3(self): # Find out differences between common files
-        xx = cmpfiles(self.left, self.right, self.common_files)
+        xx = cmpfiles(self.left, self.right, self.common_files, self.shallow)
         self.same_files, self.diff_files, self.funny_files = xx
 
     def phase4(self): # Find out differences between common subdirectories
@@ -196,7 +202,8 @@ class dircmp:
         for x in self.common_dirs:
             a_x = os.path.join(self.left, x)
             b_x = os.path.join(self.right, x)
-            self.subdirs[x]  = self.__class__(a_x, b_x, self.ignore, self.hide)
+            self.subdirs[x]  = self.__class__(a_x, b_x, self.ignore, self.hide,
+                                              shallow=self.shallow)
 
     def phase4_closure(self): # Recursively call phase4() on subdirectories
         self.phase4()
@@ -280,12 +287,12 @@ def cmpfiles(a, b, common, shallow=True):
 # Return:
 #       0 for equal
 #       1 for different
-#       2 for funny cases (can't stat, etc.)
+#       2 for funny cases (can't stat, NUL bytes, etc.)
 #
 def _cmp(a, b, sh, abs=abs, cmp=cmp):
     try:
         return not abs(cmp(a, b, sh))
-    except OSError:
+    except (OSError, ValueError):
         return 2
 
 

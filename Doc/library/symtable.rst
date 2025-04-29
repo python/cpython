@@ -1,5 +1,5 @@
-:mod:`symtable` --- Access to the compiler's symbol tables
-==========================================================
+:mod:`!symtable` --- Access to the compiler's symbol tables
+===========================================================
 
 .. module:: symtable
    :synopsis: Interface to the compiler's internal symbol tables.
@@ -31,14 +31,73 @@ Generating Symbol Tables
 Examining Symbol Tables
 -----------------------
 
+.. class:: SymbolTableType
+
+   An enumeration indicating the type of a :class:`SymbolTable` object.
+
+   .. attribute:: MODULE
+      :value: "module"
+
+      Used for the symbol table of a module.
+
+   .. attribute:: FUNCTION
+      :value: "function"
+
+      Used for the symbol table of a function.
+
+   .. attribute:: CLASS
+      :value: "class"
+
+      Used for the symbol table of a class.
+
+   The following members refer to different flavors of
+   :ref:`annotation scopes <annotation-scopes>`.
+
+   .. attribute:: ANNOTATION
+      :value: "annotation"
+
+      Used for annotations if ``from __future__ import annotations`` is active.
+
+   .. attribute:: TYPE_ALIAS
+      :value: "type alias"
+
+      Used for the symbol table of :keyword:`type` constructions.
+
+   .. attribute:: TYPE_PARAMETERS
+      :value: "type parameters"
+
+      Used for the symbol table of :ref:`generic functions <generic-functions>`
+      or :ref:`generic classes <generic-classes>`.
+
+   .. attribute:: TYPE_VARIABLE
+      :value: "type variable"
+
+      Used for the symbol table of the bound, the constraint tuple or the
+      default value of a single type variable in the formal sense, i.e.,
+      a TypeVar, a TypeVarTuple or a ParamSpec object (the latter two do
+      not support a bound or a constraint tuple).
+
+   .. versionadded:: 3.13
+
 .. class:: SymbolTable
 
    A namespace table for a block.  The constructor is not public.
 
    .. method:: get_type()
 
-      Return the type of the symbol table.  Possible values are ``'class'``,
-      ``'module'``, and ``'function'``.
+      Return the type of the symbol table.  Possible values are members
+      of the :class:`SymbolTableType` enumeration.
+
+      .. versionchanged:: 3.12
+         Added ``'annotation'``,  ``'TypeVar bound'``, ``'type alias'``,
+         and ``'type parameter'`` as possible return values.
+
+      .. versionchanged:: 3.13
+         Return values are members of the :class:`SymbolTableType` enumeration.
+
+         The exact values of the returned string may change in the future,
+         and thus, it is recommended to use :class:`SymbolTableType` members
+         instead of hard-coded strings.
 
    .. method:: get_id()
 
@@ -49,6 +108,10 @@ Examining Symbol Tables
       Return the table's name.  This is the name of the class if the table is
       for a class, the name of the function if the table is for a function, or
       ``'top'`` if the table is global (:meth:`get_type` returns ``'module'``).
+      For type parameter scopes (which are used for generic classes, functions,
+      and type aliases), it is the name of the underlying class, function, or
+      type alias. For type alias scopes, it is the name of the type alias.
+      For :class:`~typing.TypeVar` bound scopes, it is the name of the ``TypeVar``.
 
    .. method:: get_lineno()
 
@@ -87,7 +150,7 @@ Examining Symbol Tables
 
 .. class:: Function
 
-   A namespace for a function or method.  This class inherits
+   A namespace for a function or method.  This class inherits from
    :class:`SymbolTable`.
 
    .. method:: get_parameters()
@@ -104,20 +167,68 @@ Examining Symbol Tables
 
    .. method:: get_nonlocals()
 
-      Return a tuple containing names of nonlocals in this function.
+      Return a tuple containing names of explicitly declared nonlocals in this function.
 
    .. method:: get_frees()
 
-      Return a tuple containing names of free variables in this function.
+      Return a tuple containing names of :term:`free (closure) variables <closure variable>`
+      in this function.
 
 
 .. class:: Class
 
-   A namespace of a class.  This class inherits :class:`SymbolTable`.
+   A namespace of a class.  This class inherits from :class:`SymbolTable`.
 
    .. method:: get_methods()
 
-      Return a tuple containing the names of methods declared in the class.
+      Return a tuple containing the names of method-like functions declared
+      in the class.
+
+      Here, the term 'method' designates *any* function defined in the class
+      body via :keyword:`def` or :keyword:`async def`.
+
+      Functions defined in a deeper scope (e.g., in an inner class) are not
+      picked up by :meth:`get_methods`.
+
+      For example:
+
+      .. testsetup:: symtable.Class.get_methods
+
+         import warnings
+         context = warnings.catch_warnings()
+         context.__enter__()
+         warnings.simplefilter("ignore", category=DeprecationWarning)
+
+      .. testcleanup:: symtable.Class.get_methods
+
+         context.__exit__()
+
+      .. doctest:: symtable.Class.get_methods
+
+         >>> import symtable
+         >>> st = symtable.symtable('''
+         ... def outer(): pass
+         ...
+         ... class A:
+         ...    def f():
+         ...        def w(): pass
+         ...
+         ...    def g(self): pass
+         ...
+         ...    @classmethod
+         ...    async def h(cls): pass
+         ...
+         ...    global outer
+         ...    def outer(self): pass
+         ... ''', 'test', 'exec')
+         >>> class_A = st.get_children()[2]
+         >>> class_A.get_methods()
+         ('f', 'g', 'h')
+
+      Although ``A().f()`` raises :exc:`TypeError` at runtime, ``A.f`` is still
+      considered as a method-like function.
+
+      .. deprecated-removed:: 3.14 3.16
 
 
 .. class:: Symbol
@@ -140,6 +251,12 @@ Examining Symbol Tables
    .. method:: is_parameter()
 
       Return ``True`` if the symbol is a parameter.
+
+   .. method:: is_type_parameter()
+
+      Return ``True`` if the symbol is a type parameter.
+
+      .. versionadded:: 3.14
 
    .. method:: is_global()
 
@@ -168,9 +285,41 @@ Examining Symbol Tables
       Return ``True`` if the symbol is referenced in its block, but not assigned
       to.
 
+   .. method:: is_free_class()
+
+      Return *True* if a class-scoped symbol is free from
+      the perspective of a method.
+
+      Consider the following example::
+
+         def f():
+             x = 1  # function-scoped
+             class C:
+                 x = 2  # class-scoped
+                 def method(self):
+                     return x
+
+      In this example, the class-scoped symbol ``x`` is considered to
+      be free from the perspective of ``C.method``, thereby allowing
+      the latter to return *1* at runtime and not *2*.
+
+      .. versionadded:: 3.14
+
    .. method:: is_assigned()
 
       Return ``True`` if the symbol is assigned to in its block.
+
+   .. method:: is_comp_iter()
+
+      Return ``True`` if the symbol is a comprehension iteration variable.
+
+      .. versionadded:: 3.14
+
+   .. method:: is_comp_cell()
+
+      Return ``True`` if the symbol is a cell in an inlined comprehension.
+
+      .. versionadded:: 3.14
 
    .. method:: is_namespace()
 
@@ -197,3 +346,21 @@ Examining Symbol Tables
 
       Return the namespace bound to this name. If more than one or no namespace
       is bound to this name, a :exc:`ValueError` is raised.
+
+
+.. _symtable-cli:
+
+Command-Line Usage
+------------------
+
+.. versionadded:: 3.13
+
+The :mod:`symtable` module can be executed as a script from the command line.
+
+.. code-block:: sh
+
+   python -m symtable [infile...]
+
+Symbol tables are generated for the specified Python source files and
+dumped to stdout.
+If no input file is specified, the content is read from stdin.

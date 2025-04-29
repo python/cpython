@@ -25,12 +25,16 @@ pointers.  This is consistent throughout the API.
 
    The C structure which corresponds to the value portion of a Python complex
    number object.  Most of the functions for dealing with complex number objects
-   use structures of this type as input or output values, as appropriate.  It is
-   defined as::
+   use structures of this type as input or output values, as appropriate.
+
+   .. c:member:: double real
+                 double imag
+
+   The structure is defined as::
 
       typedef struct {
-         double real;
-         double imag;
+          double real;
+          double imag;
       } Py_complex;
 
 
@@ -75,6 +79,8 @@ pointers.  This is consistent throughout the API.
    If *num* is null and *exp* is not a positive real number,
    this method returns zero and sets :c:data:`errno` to :c:macro:`!EDOM`.
 
+   Set :c:data:`errno` to :c:macro:`!ERANGE` on overflows.
+
 
 Complex Numbers as Python Objects
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -106,22 +112,46 @@ Complex Numbers as Python Objects
 .. c:function:: PyObject* PyComplex_FromCComplex(Py_complex v)
 
    Create a new Python complex number object from a C :c:type:`Py_complex` value.
+   Return ``NULL`` with an exception set on error.
 
 
 .. c:function:: PyObject* PyComplex_FromDoubles(double real, double imag)
 
    Return a new :c:type:`PyComplexObject` object from *real* and *imag*.
+   Return ``NULL`` with an exception set on error.
 
 
 .. c:function:: double PyComplex_RealAsDouble(PyObject *op)
 
    Return the real part of *op* as a C :c:expr:`double`.
 
+   If *op* is not a Python complex number object but has a
+   :meth:`~object.__complex__` method, this method will first be called to
+   convert *op* to a Python complex number object.  If :meth:`!__complex__` is
+   not defined then it falls back to call :c:func:`PyFloat_AsDouble` and
+   returns its result.
+
+   Upon failure, this method returns ``-1.0`` with an exception set, so one
+   should call :c:func:`PyErr_Occurred` to check for errors.
+
+   .. versionchanged:: 3.13
+      Use :meth:`~object.__complex__` if available.
 
 .. c:function:: double PyComplex_ImagAsDouble(PyObject *op)
 
    Return the imaginary part of *op* as a C :c:expr:`double`.
 
+   If *op* is not a Python complex number object but has a
+   :meth:`~object.__complex__` method, this method will first be called to
+   convert *op* to a Python complex number object.  If :meth:`!__complex__` is
+   not defined then it falls back to call :c:func:`PyFloat_AsDouble` and
+   returns ``0.0`` on success.
+
+   Upon failure, this method returns ``-1.0`` with an exception set, so one
+   should call :c:func:`PyErr_Occurred` to check for errors.
+
+   .. versionchanged:: 3.13
+      Use :meth:`~object.__complex__` if available.
 
 .. c:function:: Py_complex PyComplex_AsCComplex(PyObject *op)
 
@@ -131,8 +161,11 @@ Complex Numbers as Python Objects
    method, this method will first be called to convert *op* to a Python complex
    number object.  If :meth:`!__complex__` is not defined then it falls back to
    :meth:`~object.__float__`.  If :meth:`!__float__` is not defined then it falls back
-   to :meth:`~object.__index__`.  Upon failure, this method returns ``-1.0`` as a real
-   value.
+   to :meth:`~object.__index__`.
+
+   Upon failure, this method returns :c:type:`Py_complex`
+   with :c:member:`~Py_complex.real` set to ``-1.0`` and with an exception set, so one
+   should call :c:func:`PyErr_Occurred` to check for errors.
 
    .. versionchanged:: 3.8
       Use :meth:`~object.__index__` if available.

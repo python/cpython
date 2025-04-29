@@ -12,8 +12,6 @@ import itertools
 from typing import Union, Optional, cast
 from .abc import ResourceReader, Traversable
 
-from ._adapters import wrap_spec
-
 Package = Union[types.ModuleType, str]
 Anchor = Package
 
@@ -27,6 +25,8 @@ def package_to_anchor(func):
     >>> files('a', 'b')
     Traceback (most recent call last):
     TypeError: files() takes from 0 to 1 positional arguments but 2 were given
+
+    Remove this compatibility in Python 3.14.
     """
     undefined = object()
 
@@ -66,10 +66,10 @@ def get_resource_reader(package: types.ModuleType) -> Optional[ResourceReader]:
     # zipimport.zipimporter does not support weak references, resulting in a
     # TypeError.  That seems terrible.
     spec = package.__spec__
-    reader = getattr(spec.loader, 'get_resource_reader', None)  # type: ignore
+    reader = getattr(spec.loader, 'get_resource_reader', None)  # type: ignore[union-attr]
     if reader is None:
         return None
-    return reader(spec.name)  # type: ignore
+    return reader(spec.name)  # type: ignore[union-attr]
 
 
 @functools.singledispatch
@@ -93,12 +93,13 @@ def _infer_caller():
     """
 
     def is_this_file(frame_info):
-        return frame_info.filename == __file__
+        return frame_info.filename == stack[0].filename
 
     def is_wrapper(frame_info):
         return frame_info.function == 'wrapper'
 
-    not_this_file = itertools.filterfalse(is_this_file, inspect.stack())
+    stack = inspect.stack()
+    not_this_file = itertools.filterfalse(is_this_file, stack)
     # also exclude 'wrapper' due to singledispatch in the call stack
     callers = itertools.filterfalse(is_wrapper, not_this_file)
     return next(callers).frame
@@ -109,6 +110,9 @@ def from_package(package: types.ModuleType):
     Return a Traversable object for the given package.
 
     """
+    # deferred for performance (python/cpython#109829)
+    from ._adapters import wrap_spec
+
     spec = wrap_spec(package)
     reader = spec.loader.get_resource_reader(spec.name)
     return reader.files()
@@ -179,7 +183,7 @@ def _(path):
 @contextlib.contextmanager
 def _temp_path(dir: tempfile.TemporaryDirectory):
     """
-    Wrap tempfile.TemporyDirectory to return a pathlib object.
+    Wrap tempfile.TemporaryDirectory to return a pathlib object.
     """
     with dir as result:
         yield pathlib.Path(result)

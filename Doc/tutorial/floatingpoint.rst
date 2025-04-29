@@ -6,7 +6,7 @@
 .. _tut-fp-issues:
 
 **************************************************
-Floating Point Arithmetic:  Issues and Limitations
+Floating-Point Arithmetic:  Issues and Limitations
 **************************************************
 
 .. sectionauthor:: Tim Peters <tim_one@users.sourceforge.net>
@@ -88,7 +88,7 @@ the one with 17 significant digits, ``0.10000000000000001``.   Starting with
 Python 3.1, Python (on most systems) is now able to choose the shortest of
 these and simply display ``0.1``.
 
-Note that this is in the very nature of binary floating-point: this is not a bug
+Note that this is in the very nature of binary floating point: this is not a bug
 in Python, and it is not a bug in your code either.  You'll see the same kind of
 thing in all languages that support your hardware's floating-point arithmetic
 (although some languages may not *display* the difference by default, or in all
@@ -137,7 +137,7 @@ the :func:`math.isclose` function can be useful for comparing inexact values:
    True
 
 Alternatively, the :func:`round` function can be used to compare rough
-approximations::
+approximations:
 
 .. doctest::
 
@@ -148,13 +148,13 @@ Binary floating-point arithmetic holds many surprises like this.  The problem
 with "0.1" is explained in precise detail below, in the "Representation Error"
 section.  See `Examples of Floating Point Problems
 <https://jvns.ca/blog/2023/01/13/examples-of-floating-point-problems/>`_ for
-a pleasant summary of how binary floating-point works and the kinds of
+a pleasant summary of how binary floating point works and the kinds of
 problems commonly encountered in practice.  Also see
-`The Perils of Floating Point <https://www.lahey.com/float.htm>`_
+`The Perils of Floating Point <http://www.indowsway.com/floatingpoint.htm>`_
 for a more complete account of other common surprises.
 
 As that says near the end, "there are no easy answers."  Still, don't be unduly
-wary of floating-point!  The errors in Python float operations are inherited
+wary of floating point!  The errors in Python float operations are inherited
 from the floating-point hardware, and on most machines are on the order of no
 more than 1 part in 2\*\*53 per operation.  That's more than adequate for most
 tasks, but you do need to keep in mind that it's not decimal arithmetic and
@@ -230,7 +230,7 @@ accumulate to the point where they affect the final total:
    >>> sum([0.1] * 10) == 1.0
    True
 
-The :func:`math.fsum()` goes further and tracks all of the "lost digits"
+The :func:`math.fsum` goes further and tracks all of the "lost digits"
 as values are added onto a running total so that the result has only a
 single rounding.  This is slower than :func:`sum` but will be more
 accurate in uncommon cases where large magnitude inputs mostly cancel

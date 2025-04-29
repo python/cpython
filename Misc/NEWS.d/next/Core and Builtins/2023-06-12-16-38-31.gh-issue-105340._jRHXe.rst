@@ -1,2 +1,0 @@
-Include the comprehension iteration variable in ``locals()`` inside a
-module- or class-scope comprehension.

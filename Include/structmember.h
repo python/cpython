@@ -11,7 +11,7 @@ extern "C" {
  * New definitions are in descrobject.h.
  *
  * However, there's nothing wrong with old code continuing to use it,
- * and there's not much mainenance overhead in maintaining a few aliases.
+ * and there's not much maintenance overhead in maintaining a few aliases.
  * So, don't be too eager to convert old code.
  *
  * It uses names not prefixed with Py_.

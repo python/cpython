@@ -1,3 +1,0 @@
-Fix invalid result from :meth:`PurePath.relative_to` method when attempting to walk
-a "``..``" segment in *other* with *walk_up* enabled. A :exc:`ValueError` exception
-is now raised in this case.

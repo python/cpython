@@ -1,2 +1,0 @@
-Ensure annotations are set up correctly if the only annotation in a block is
-within a :keyword:`match` block. Patch by Jelle Zijlstra.

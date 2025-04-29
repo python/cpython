@@ -1,5 +1,5 @@
-:mod:`wave` --- Read and write WAV files
-========================================
+:mod:`!wave` --- Read and write WAV files
+=========================================
 
 .. module:: wave
    :synopsis: Provide an interface to the WAV sound format.
@@ -46,8 +46,8 @@ The :mod:`wave` module defines the following function and exception:
    the file object.
 
    The :func:`.open` function may be used in a :keyword:`with` statement.  When
-   the :keyword:`!with` block completes, the :meth:`Wave_read.close()` or
-   :meth:`Wave_write.close()` method is called.
+   the :keyword:`!with` block completes, the :meth:`Wave_read.close` or
+   :meth:`Wave_write.close` method is called.
 
    .. versionchanged:: 3.4
       Added support for unseekable files.

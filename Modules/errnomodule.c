@@ -1,41 +1,48 @@
-
 /* Errno module */
 
+// Need limited C API version 3.13 for Py_mod_gil
+#include "pyconfig.h"   // Py_GIL_DISABLED
+#ifndef Py_GIL_DISABLED
+#  define Py_LIMITED_API 0x030d0000
+#endif
+
 #include "Python.h"
+#include <errno.h>                // EPIPE
 
 /* Windows socket errors (WSA*)  */
 #ifdef MS_WINDOWS
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-/* The following constants were added to errno.h in VS2010 but have
-   preferred WSA equivalents. */
-#undef EADDRINUSE
-#undef EADDRNOTAVAIL
-#undef EAFNOSUPPORT
-#undef EALREADY
-#undef ECONNABORTED
-#undef ECONNREFUSED
-#undef ECONNRESET
-#undef EDESTADDRREQ
-#undef EHOSTUNREACH
-#undef EINPROGRESS
-#undef EISCONN
-#undef ELOOP
-#undef EMSGSIZE
-#undef ENETDOWN
-#undef ENETRESET
-#undef ENETUNREACH
-#undef ENOBUFS
-#undef ENOPROTOOPT
-#undef ENOTCONN
-#undef ENOTSOCK
-#undef EOPNOTSUPP
-#undef EPROTONOSUPPORT
-#undef EPROTOTYPE
-#undef ETIMEDOUT
-#undef EWOULDBLOCK
+#  ifndef WIN32_LEAN_AND_MEAN
+#    define WIN32_LEAN_AND_MEAN
+#  endif
+#  include <windows.h>
+
+   // The following constants were added to errno.h in VS2010 but have
+   // preferred WSA equivalents.
+#  undef EADDRINUSE
+#  undef EADDRNOTAVAIL
+#  undef EAFNOSUPPORT
+#  undef EALREADY
+#  undef ECONNABORTED
+#  undef ECONNREFUSED
+#  undef ECONNRESET
+#  undef EDESTADDRREQ
+#  undef EHOSTUNREACH
+#  undef EINPROGRESS
+#  undef EISCONN
+#  undef ELOOP
+#  undef EMSGSIZE
+#  undef ENETDOWN
+#  undef ENETRESET
+#  undef ENETUNREACH
+#  undef ENOBUFS
+#  undef ENOPROTOOPT
+#  undef ENOTCONN
+#  undef ENOTSOCK
+#  undef EOPNOTSUPP
+#  undef EPROTONOSUPPORT
+#  undef EPROTOTYPE
+#  undef ETIMEDOUT
+#  undef EWOULDBLOCK
 #endif
 
 /*
@@ -838,6 +845,9 @@ errno_exec(PyObject *module)
 #ifdef ENOKEY
     add_errcode("ENOKEY", ENOKEY, "Required key not available");
 #endif
+#ifdef EHWPOISON
+    add_errcode("EHWPOISON", EHWPOISON, "Memory page has hardware error");
+#endif
 #ifdef EKEYEXPIRED
     add_errcode("EKEYEXPIRED", EKEYEXPIRED, "Key has expired");
 #endif
@@ -944,6 +954,7 @@ errno_exec(PyObject *module)
 static PyModuleDef_Slot errno_slots[] = {
     {Py_mod_exec, errno_exec},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
+    {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}
 };
 

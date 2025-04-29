@@ -103,7 +103,7 @@
     <ClCompile Include="..\PC\launcher2.c" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\PC\launcher.ico" />
+    <None Include="..\PC\icons\launcher.ico" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\PC\pylauncher.rc" />

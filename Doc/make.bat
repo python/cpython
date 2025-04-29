@@ -127,16 +127,14 @@ goto end
 :build
 if not exist "%BUILDDIR%" mkdir "%BUILDDIR%"
 
-rem PY_MISC_NEWS_DIR is also used by our Sphinx extension in tools/extensions/pyspecific.py
-if not defined PY_MISC_NEWS_DIR set PY_MISC_NEWS_DIR=%BUILDDIR%\%1
-if not exist "%PY_MISC_NEWS_DIR%" mkdir "%PY_MISC_NEWS_DIR%"
+if not exist build mkdir build
 if exist ..\Misc\NEWS (
-    echo.Copying Misc\NEWS to %PY_MISC_NEWS_DIR%\NEWS
-    copy ..\Misc\NEWS "%PY_MISC_NEWS_DIR%\NEWS" > nul
+    echo.Copying existing Misc\NEWS file to Doc\build\NEWS
+    copy ..\Misc\NEWS build\NEWS > nul
 ) else if exist ..\Misc\NEWS.D (
     if defined BLURB (
         echo.Merging Misc/NEWS with %BLURB%
-        %BLURB% merge -f "%PY_MISC_NEWS_DIR%\NEWS"
+        %BLURB% merge -f build\NEWS
     ) else (
         echo.No Misc/NEWS file and Blurb is not available.
         exit /B 1
@@ -144,12 +142,12 @@ if exist ..\Misc\NEWS (
 )
 
 if defined PAPER (
-    set SPHINXOPTS=-D latex_elements.papersize=%PAPER% %SPHINXOPTS%
+    set SPHINXOPTS=--define latex_elements.papersize=%PAPER% %SPHINXOPTS%
 )
 if "%1" EQU "htmlhelp" (
-    set SPHINXOPTS=-D html_theme_options.body_max_width=none %SPHINXOPTS%
+    set SPHINXOPTS=--define html_theme_options.body_max_width=none %SPHINXOPTS%
 )
-cmd /S /C "%SPHINXBUILD% %SPHINXOPTS% -b%1 -dbuild\doctrees . "%BUILDDIR%\%1" %2 %3 %4 %5 %6 %7 %8 %9"
+cmd /S /C "%SPHINXBUILD% %SPHINXOPTS% --builder %1 --doctree-dir build\doctrees . "%BUILDDIR%\%1" %2 %3 %4 %5 %6 %7 %8 %9"
 
 if "%1" EQU "htmlhelp" (
     "%HTMLHELP%" "%BUILDDIR%\htmlhelp\python%DISTVERSION:.=%.hhp"

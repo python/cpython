@@ -51,14 +51,6 @@ FILES = [
     "test_pdb.msi",
     "tools.msi",
     "ucrt.msi",
-    "Windows6.0-KB2999226-x64.msu",
-    "Windows6.0-KB2999226-x86.msu",
-    "Windows6.1-KB2999226-x64.msu",
-    "Windows6.1-KB2999226-x86.msu",
-    "Windows8.1-KB2999226-x64.msu",
-    "Windows8.1-KB2999226-x86.msu",
-    "Windows8-RT-KB2999226-x64.msu",
-    "Windows8-RT-KB2999226-x86.msu",
 ]
 PATHS = [
     "python-{}.exe".format(m.group(0)),

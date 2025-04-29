@@ -30,6 +30,7 @@ typedef struct {
     PyObject *end_offset;
     PyObject *text;
     PyObject *print_file_and_line;
+    PyObject *metadata;
 } PySyntaxErrorObject;
 
 typedef struct {
@@ -88,13 +89,8 @@ typedef PyOSErrorObject PyEnvironmentErrorObject;
 typedef PyOSErrorObject PyWindowsErrorObject;
 #endif
 
-/* Error handling definitions */
-
-PyAPI_FUNC(void) _PyErr_SetKeyError(PyObject *);
-
 /* Context manipulation (PEP 3134) */
 
-Py_DEPRECATED(3.12) PyAPI_FUNC(void) _PyErr_ChainExceptions(PyObject *, PyObject *, PyObject *);
 PyAPI_FUNC(void) _PyErr_ChainExceptions1(PyObject *);
 
 /* In exceptions.c */
@@ -105,7 +101,7 @@ PyAPI_FUNC(PyObject*) PyUnstable_Exc_PrepReraiseStar(
 
 /* In signalmodule.c */
 
-int PySignal_SetWakeupFd(int fd);
+PyAPI_FUNC(int) PySignal_SetWakeupFd(int fd);
 
 /* Support for adding program text to SyntaxErrors */
 
@@ -125,12 +121,12 @@ PyAPI_FUNC(PyObject *) PyErr_ProgramTextObject(
     PyObject *filename,
     int lineno);
 
-PyAPI_FUNC(void) _PyErr_WriteUnraisableMsg(
-    const char *err_msg,
-    PyObject *obj);
-
 PyAPI_FUNC(void) _Py_NO_RETURN _Py_FatalErrorFunc(
     const char *func,
     const char *message);
+
+PyAPI_FUNC(void) PyErr_FormatUnraisable(const char *, ...);
+
+PyAPI_DATA(PyObject *) PyExc_PythonFinalizationError;
 
 #define Py_FatalError(message) _Py_FatalErrorFunc(__func__, (message))

@@ -1,1 +1,0 @@
-Make :func:`inspect.getsource` smarter for class for same name definitions

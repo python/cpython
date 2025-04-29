@@ -1,0 +1,2 @@
+Propagate the return type of ``_BINARY_OP_SUBSCR_TUPLE_INT`` in JIT. Patch
+by Tomas Roun

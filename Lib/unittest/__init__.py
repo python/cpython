@@ -27,7 +27,7 @@ Further information is available in the bundled documentation, and from
   http://docs.python.org/library/unittest.html
 
 Copyright (c) 1999-2003 Steve Purcell
-Copyright (c) 2003-2010 Python Software Foundation
+Copyright (c) 2003 Python Software Foundation
 This module is free software, and you may redistribute it and/or modify
 it under the same terms as Python itself, so long as this copyright message
 and disclaimer are retained in their original form.
@@ -57,9 +57,9 @@ from .result import TestResult
 from .case import (addModuleCleanup, TestCase, FunctionTestCase, SkipTest, skip,
                    skipIf, skipUnless, expectedFailure, doModuleCleanups,
                    enterModuleContext)
-from .suite import BaseTestSuite, TestSuite
+from .suite import BaseTestSuite, TestSuite  # noqa: F401
 from .loader import TestLoader, defaultTestLoader
-from .main import TestProgram, main
+from .main import TestProgram, main  # noqa: F401
 from .runner import TextTestRunner, TextTestResult
 from .signals import installHandler, registerResult, removeResult, removeHandler
 # IsolatedAsyncioTestCase will be imported lazily.

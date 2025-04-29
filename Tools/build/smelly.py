@@ -6,10 +6,19 @@ import subprocess
 import sys
 import sysconfig
 
-
 ALLOWED_PREFIXES = ('Py', '_Py')
 if sys.platform == 'darwin':
     ALLOWED_PREFIXES += ('__Py',)
+
+# mimalloc doesn't use static, but it's symbols are not exported
+# from the shared library.  They do show up in the static library
+# before its linked into an executable.
+ALLOWED_STATIC_PREFIXES = ('mi_', '_mi_')
+
+# "Legacy": some old symbols are prefixed by "PY_".
+EXCEPTIONS = frozenset({
+    'PY_TIMEOUT_MAX',
+})
 
 IGNORED_EXTENSION = "_ctypes_test"
 # Ignore constructor and destructor functions
@@ -42,8 +51,8 @@ def get_exported_symbols(library, dynamic=False):
     if dynamic:
         args.append('--dynamic')
     args.append(library)
-    print("+ %s" % ' '.join(args))
-    proc = subprocess.run(args, stdout=subprocess.PIPE, universal_newlines=True)
+    print(f"+ {' '.join(args)}")
+    proc = subprocess.run(args, stdout=subprocess.PIPE, encoding='utf-8')
     if proc.returncode:
         sys.stdout.write(proc.stdout)
         sys.exit(proc.returncode)
@@ -54,7 +63,7 @@ def get_exported_symbols(library, dynamic=False):
     return stdout
 
 
-def get_smelly_symbols(stdout):
+def get_smelly_symbols(stdout, dynamic=False):
     smelly_symbols = []
     python_symbols = []
     local_symbols = []
@@ -70,9 +79,11 @@ def get_smelly_symbols(stdout):
 
         symtype = parts[1].strip()
         symbol = parts[-1]
-        result = '%s (type: %s)' % (symbol, symtype)
+        result = f'{symbol} (type: {symtype})'
 
-        if symbol.startswith(ALLOWED_PREFIXES):
+        if (symbol.startswith(ALLOWED_PREFIXES) or
+            symbol in EXCEPTIONS or
+            (not dynamic and symbol.startswith(ALLOWED_STATIC_PREFIXES))):
             python_symbols.append(result)
             continue
 
@@ -90,7 +101,7 @@ def get_smelly_symbols(stdout):
 
 def check_library(library, dynamic=False):
     nm_output = get_exported_symbols(library, dynamic)
-    smelly_symbols, python_symbols = get_smelly_symbols(nm_output)
+    smelly_symbols, python_symbols = get_smelly_symbols(nm_output, dynamic)
 
     if not smelly_symbols:
         print(f"OK: no smelly symbol found ({len(python_symbols)} Python symbols)")
@@ -99,10 +110,10 @@ def check_library(library, dynamic=False):
     print()
     smelly_symbols.sort()
     for symbol in smelly_symbols:
-        print("Smelly symbol: %s" % symbol)
+        print(f"Smelly symbol: {symbol}")
 
     print()
-    print("ERROR: Found %s smelly symbols!" % len(smelly_symbols))
+    print(f"ERROR: Found {len(smelly_symbols)} smelly symbols!")
     return len(smelly_symbols)
 
 

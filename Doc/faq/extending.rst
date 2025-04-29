@@ -50,7 +50,7 @@ to learn Python's C API.
 If you need to interface to some C or C++ library for which no Python extension
 currently exists, you can try wrapping the library's data types and functions
 with a tool such as `SWIG <https://www.swig.org>`_.  `SIP
-<https://riverbankcomputing.com/software/sip/intro>`__, `CXX
+<https://github.com/Python-SIP/sip>`__, `CXX
 <https://cxx.sourceforge.net/>`_ `Boost
 <https://www.boost.org/libs/python/doc/index.html>`_, or `Weave
 <https://github.com/scipy/weave>`_ are also
@@ -246,13 +246,12 @@ Then, when you run GDB:
 I want to compile a Python module on my Linux system, but some files are missing. Why?
 --------------------------------------------------------------------------------------
 
-Most packaged versions of Python don't include the
-:file:`/usr/lib/python2.{x}/config/` directory, which contains various files
+Most packaged versions of Python omit some files
 required for compiling Python extensions.
 
-For Red Hat, install the python-devel RPM to get the necessary files.
+For Red Hat, install the python3-devel RPM to get the necessary files.
 
-For Debian, run ``apt-get install python-dev``.
+For Debian, run ``apt-get install python3-dev``.
 
 How do I tell "incomplete input" from "invalid input"?
 ------------------------------------------------------

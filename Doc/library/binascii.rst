@@ -1,5 +1,5 @@
-:mod:`binascii` --- Convert between binary and ASCII
-====================================================
+:mod:`!binascii` --- Convert between binary and ASCII
+=====================================================
 
 .. module:: binascii
    :synopsis: Tools for converting between binary and various ASCII-encoded binary
@@ -57,10 +57,11 @@ The :mod:`binascii` module defines the following functions:
    data will raise :exc:`binascii.Error`.
 
    Valid base64:
-      * Conforms to :rfc:`3548`.
-      * Contains only characters from the base64 alphabet.
-      * Contains no excess data after padding (including excess padding, newlines, etc.).
-      * Does not start with a padding.
+
+   * Conforms to :rfc:`3548`.
+   * Contains only characters from the base64 alphabet.
+   * Contains no excess data after padding (including excess padding, newlines, etc.).
+   * Does not start with a padding.
 
    .. versionchanged:: 3.11
       Added the *strict_mode* parameter.

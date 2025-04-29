@@ -19,6 +19,7 @@
         <InstallFiles Include="$(PySourcePath)Lib\**\*"
                       Exclude="$(PySourcePath)Lib\**\*.pyc;
                                $(PySourcePath)Lib\**\*.pyo;
+                               $(PySourcePath)Lib\turtle.py;
                                $(PySourcePath)Lib\site-packages\README;
                                @(ExcludeFolders->'$(PySourcePath)%(Identity)\*');
                                @(ExcludeFolders->'$(PySourcePath)%(Identity)\**\*')">

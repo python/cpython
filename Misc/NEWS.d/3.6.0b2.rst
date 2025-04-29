@@ -215,7 +215,7 @@ memcpy().
 .. nonce: e5xc1i
 .. section: Core and Builtins
 
-Fix dict.pop() for splitted dictionary when trying to remove a "pending key"
+Fix dict.pop() for split dictionary when trying to remove a "pending key"
 (Not yet inserted in split-table). Patch by Xiang Zhang.
 
 ..

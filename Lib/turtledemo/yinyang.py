@@ -1,7 +1,4 @@
-#!/usr/bin/env python3
-"""       turtle-example-suite:
-
-            tdemo_yinyang.py
+"""turtledemo/yinyang.py
 
 Another drawing suitable as a beginner's
 programming example.

@@ -1,10 +1,9 @@
 .. _sortinghowto:
 
-Sorting HOW TO
-**************
+Sorting Techniques
+******************
 
 :Author: Andrew Dalke and Raymond Hettinger
-:Release: 0.1
 
 
 Python lists have a built-in :meth:`list.sort` method that modifies the list
@@ -48,15 +47,18 @@ lists. In contrast, the :func:`sorted` function accepts any iterable.
 Key Functions
 =============
 
-Both :meth:`list.sort` and :func:`sorted` have a *key* parameter to specify a
-function (or other callable) to be called on each list element prior to making
+The :meth:`list.sort` method and the functions :func:`sorted`,
+:func:`min`, :func:`max`, :func:`heapq.nsmallest`, and
+:func:`heapq.nlargest` have a *key* parameter to specify a function (or
+other callable) to be called on each list element prior to making
 comparisons.
 
-For example, here's a case-insensitive string comparison:
+For example, here's a case-insensitive string comparison using
+:meth:`str.casefold`:
 
 .. doctest::
 
-    >>> sorted("This is a test string from Andrew".split(), key=str.lower)
+    >>> sorted("This is a test string from Andrew".split(), key=str.casefold)
     ['a', 'Andrew', 'from', 'is', 'string', 'test', 'This']
 
 The value of the *key* parameter should be a function (or other callable) that
@@ -97,10 +99,14 @@ The same technique works for objects with named attributes. For example:
     >>> sorted(student_objects, key=lambda student: student.age)   # sort by age
     [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
 
-Operator Module Functions
-=========================
+Objects with named attributes can be made by a regular class as shown
+above, or they can be instances of :class:`~dataclasses.dataclass` or
+a :term:`named tuple`.
 
-The key-function patterns shown above are very common, so Python provides
+Operator Module Functions and Partial Function Evaluation
+=========================================================
+
+The :term:`key function` patterns shown above are very common, so Python provides
 convenience functions to make accessor functions easier and faster. The
 :mod:`operator` module has :func:`~operator.itemgetter`,
 :func:`~operator.attrgetter`, and a :func:`~operator.methodcaller` function.
@@ -127,6 +133,24 @@ sort by *grade* then by *age*:
 
     >>> sorted(student_objects, key=attrgetter('grade', 'age'))
     [('john', 'A', 15), ('dave', 'B', 10), ('jane', 'B', 12)]
+
+The :mod:`functools` module provides another helpful tool for making
+key-functions.  The :func:`~functools.partial` function can reduce the
+`arity <https://en.wikipedia.org/wiki/Arity>`_ of a multi-argument
+function making it suitable for use as a key-function.
+
+.. doctest::
+
+    >>> from functools import partial
+    >>> from unicodedata import normalize
+
+    >>> names = 'Zoë Åbjørn Núñez Élana Zeke Abe Nubia Eloise'.split()
+
+    >>> sorted(names, key=partial(normalize, 'NFD'))
+    ['Abe', 'Åbjørn', 'Eloise', 'Élana', 'Nubia', 'Núñez', 'Zeke', 'Zoë']
+
+    >>> sorted(names, key=partial(normalize, 'NFC'))
+    ['Abe', 'Eloise', 'Nubia', 'Núñez', 'Zeke', 'Zoë', 'Åbjørn', 'Élana']
 
 Ascending and Descending
 ========================
@@ -200,6 +224,8 @@ This idiom is called Decorate-Sort-Undecorate after its three steps:
 
 For example, to sort the student data by *grade* using the DSU approach:
 
+.. doctest::
+
     >>> decorated = [(student.grade, i, student) for i, student in enumerate(student_objects)]
     >>> decorated.sort()
     >>> [student for grade, i, student in decorated]               # undecorate
@@ -249,6 +275,70 @@ to make it usable as a key function::
 
     sorted(words, key=cmp_to_key(strcoll))  # locale-aware sort order
 
+Strategies For Unorderable Types and Values
+===========================================
+
+A number of type and value issues can arise when sorting.
+Here are some strategies that can help:
+
+* Convert non-comparable input types to strings prior to sorting:
+
+.. doctest::
+
+   >>> data = ['twelve', '11', 10]
+   >>> sorted(map(str, data))
+   ['10', '11', 'twelve']
+
+This is needed because most cross-type comparisons raise a
+:exc:`TypeError`.
+
+* Remove special values prior to sorting:
+
+.. doctest::
+
+   >>> from math import isnan
+   >>> from itertools import filterfalse
+   >>> data = [3.3, float('nan'), 1.1, 2.2]
+   >>> sorted(filterfalse(isnan, data))
+   [1.1, 2.2, 3.3]
+
+This is needed because the `IEEE-754 standard
+<https://en.wikipedia.org/wiki/IEEE_754>`_ specifies that, "Every NaN
+shall compare unordered with everything, including itself."
+
+Likewise, ``None`` can be stripped from datasets as well:
+
+.. doctest::
+
+   >>> data = [3.3, None, 1.1, 2.2]
+   >>> sorted(x for x in data if x is not None)
+   [1.1, 2.2, 3.3]
+
+This is needed because ``None`` is not comparable to other types.
+
+* Convert mapping types into sorted item lists before sorting:
+
+.. doctest::
+
+   >>> data = [{'a': 1}, {'b': 2}]
+   >>> sorted(data, key=lambda d: sorted(d.items()))
+   [{'a': 1}, {'b': 2}]
+
+This is needed because dict-to-dict comparisons raise a
+:exc:`TypeError`.
+
+* Convert set types into sorted lists before sorting:
+
+.. doctest::
+
+    >>> data = [{'a', 'b', 'c'}, {'b', 'c', 'd'}]
+    >>> sorted(map(sorted, data))
+    [['a', 'b', 'c'], ['b', 'c', 'd']]
+
+This is needed because the elements contained in set types do not have a
+deterministic order.  For example, ``list({'a', 'b'})`` may produce
+either ``['a', 'b']`` or ``['b', 'a']``.
+
 Odds and Ends
 =============
 
@@ -282,7 +372,11 @@ Odds and Ends
     [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
 
   However, note that ``<`` can fall back to using :meth:`~object.__gt__` if
-  :meth:`~object.__lt__` is not implemented (see :func:`object.__lt__`).
+  :meth:`~object.__lt__` is not implemented (see :func:`object.__lt__`
+  for details on the mechanics).  To avoid surprises, :pep:`8`
+  recommends that all six comparison methods be implemented.
+  The :func:`~functools.total_ordering` decorator is provided to make that
+  task easier.
 
 * Key functions need not depend directly on the objects being sorted. A key
   function can also access external resources. For instance, if the student grades
@@ -295,3 +389,24 @@ Odds and Ends
     >>> newgrades = {'john': 'F', 'jane':'A', 'dave': 'C'}
     >>> sorted(students, key=newgrades.__getitem__)
     ['jane', 'dave', 'john']
+
+Partial Sorts
+=============
+
+Some applications require only some of the data to be ordered.  The standard
+library provides several tools that do less work than a full sort:
+
+* :func:`min` and :func:`max` return the smallest and largest values,
+  respectively.  These functions make a single pass over the input data and
+  require almost no auxiliary memory.
+
+* :func:`heapq.nsmallest` and :func:`heapq.nlargest` return
+  the *n* smallest and largest values, respectively.  These functions
+  make a single pass over the data keeping only *n* elements in memory
+  at a time.  For values of *n* that are small relative to the number of
+  inputs, these functions make far fewer comparisons than a full sort.
+
+* :func:`heapq.heappush` and :func:`heapq.heappop` create and maintain a
+  partially sorted arrangement of data that keeps the smallest element
+  at position ``0``.  These functions are suitable for implementing
+  priority queues which are commonly used for task scheduling.

@@ -315,7 +315,7 @@ class TestCommandLine(TestCase):
     def test_with_errored_file(self):
         """Should displays error when errored python file is given."""
         with TemporaryPyFile(SOURCE_CODES["wrong_indented"]) as file_path:
-            stderr  = f"{file_path!r}: Token Error: "
+            stderr  = f"{file_path!r}: Indentation Error: "
             stderr += ('unindent does not match any outer indentation level'
                        ' (<string>, line 3)')
             self.validate_cmd(file_path, stderr=stderr, expect_failure=True)
