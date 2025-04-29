@@ -2021,14 +2021,13 @@ PyFloat_Pack2(double x, char *data, int le)
         bits = 0;
     }
     else if (isnan(x)) {
-        /* There are 2046 distinct half-precision NaNs (1022 signaling and
-           1024 quiet), but there are only two quiet NaNs that don't arise by
-           quieting a signaling NaN; we get those by setting the topmost bit
-           of the fraction field and clearing all other fraction bits. We
-           choose the one with the appropriate sign. */
         sign = (copysign(1.0, x) == -1.0);
         e = 0x1f;
-        bits = 512;
+
+        uint64_t v;
+        memcpy(&v, &x, sizeof(v));
+        v &= 0xffc0000000000ULL;
+        bits = (unsigned short)(v >> 42); /* NaN's type & payload */
     }
     else {
         sign = (x < 0.0);
@@ -2191,6 +2190,21 @@ PyFloat_Pack4(double x, char *data, int le)
 
         if (isinf(y) && !isinf(x))
             goto Overflow;
+
+        /* correct y if x was a sNaN, transformed to qNaN by conversion */
+        if (isnan(x)) {
+            uint64_t v;
+
+            memcpy(&v, &x, 8);
+            if ((v & (1ULL << 51)) == 0) {
+                union float_val {
+                    float f;
+                    uint32_t u32;
+                } *py = (union float_val *)&y;
+
+                py->u32 &= ~(1 << 22); /* make sNaN */
+            }
+        }
 
         unsigned char s[sizeof(float)];
         memcpy(s, &y, sizeof(float));
@@ -2374,7 +2388,11 @@ PyFloat_Unpack2(const char *data, int le)
         }
         else {
             /* NaN */
-            return sign ? -fabs(Py_NAN) : fabs(Py_NAN);
+            uint64_t v = sign ? 0xfff0000000000000ULL : 0x7ff0000000000000ULL;
+
+            v += (uint64_t)f << 42; /* add NaN's type & payload */
+            memcpy(&x, &v, sizeof(v));
+            return x;
         }
     }
 
@@ -2468,6 +2486,23 @@ PyFloat_Unpack4(const char *data, int le)
         }
         else {
             memcpy(&x, p, 4);
+        }
+
+        /* return sNaN double if x was sNaN float */
+        if (isnan(x)) {
+            uint32_t v;
+            memcpy(&v, &x, 4);
+
+            if ((v & (1 << 22)) == 0) {
+                double y = x; /* will make qNaN double */
+                union double_val {
+                    double d;
+                    uint64_t u64;
+                } *py = (union double_val *)&y;
+
+                py->u64 &= ~(1ULL << 51); /* make sNaN */
+                return y;
+            }
         }
 
         return x;

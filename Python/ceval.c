@@ -138,6 +138,19 @@
 #endif
 
 
+static void
+check_invalid_reentrancy(void)
+{
+#if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
+    // In the free-threaded build, the interpreter must not be re-entered if
+    // the world-is-stopped.  If so, that's a bug somewhere (quite likely in
+    // the painfully complex typeobject code).
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    assert(!interp->stoptheworld.world_stopped);
+#endif
+}
+
+
 #ifdef Py_DEBUG
 static void
 dump_item(_PyStackRef item)
@@ -995,6 +1008,7 @@ PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
+    check_invalid_reentrancy();
     CALL_STAT_INC(pyeval_calls);
 
 #if USE_COMPUTED_GOTOS && !Py_TAIL_CALL_INTERP
@@ -1071,7 +1085,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         monitor_throw(tstate, frame, next_instr);
         stack_pointer = _PyFrame_GetStackPointer(frame);
 #if Py_TAIL_CALL_INTERP
-        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
+#   if Py_STATS
+            return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0, lastopcode);
+#   else
+            return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
+#   endif
 #else
         goto error;
 #endif
@@ -1083,7 +1101,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     const _PyUOpInstruction *next_uop = NULL;
 #endif
 #if Py_TAIL_CALL_INTERP
-    return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0);
+#   if Py_STATS
+        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0, lastopcode);
+#   else
+        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0);
+#   endif
 #else
     goto start_frame;
 #   include "generated_cases.c.h"

@@ -373,6 +373,10 @@ PyAPI_FUNC(_PyStackRef) _PyFloat_FromDouble_ConsumeInputs(_PyStackRef left, _PyS
     #endif
 #endif
 
+#if defined(Py_REMOTE_DEBUG) && defined(Py_SUPPORTS_REMOTE_DEBUG)
+extern int _PyRunRemoteDebugger(PyThreadState *tstate);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

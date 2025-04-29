@@ -617,8 +617,28 @@
         }
 
         case _BINARY_OP_SUBSCR_TUPLE_INT: {
+            JitOptSymbol *sub_st;
+            JitOptSymbol *tuple_st;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            sub_st = stack_pointer[-1];
+            tuple_st = stack_pointer[-2];
+            assert(sym_matches_type(tuple_st, &PyTuple_Type));
+            if (sym_is_const(ctx, sub_st)) {
+                assert(PyLong_CheckExact(sym_get_const(ctx, sub_st)));
+                long index = PyLong_AsLong(sym_get_const(ctx, sub_st));
+                assert(index >= 0);
+                int tuple_length = sym_tuple_length(tuple_st);
+                if (tuple_length == -1) {
+                    res = sym_new_not_null(ctx);
+                }
+                else {
+                    assert(index < tuple_length);
+                    res = sym_tuple_getitem(ctx, tuple_st, index);
+                }
+            }
+            else {
+                res = sym_new_not_null(ctx);
+            }
             stack_pointer[-2] = res;
             stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
@@ -1012,7 +1032,7 @@
 
         case _BUILD_STRING: {
             JitOptSymbol *str;
-            str = sym_new_not_null(ctx);
+            str = sym_new_type(ctx, &PyUnicode_Type);
             stack_pointer[-oparg] = str;
             stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1053,7 +1073,7 @@
 
         case _BUILD_SET: {
             JitOptSymbol *set;
-            set = sym_new_not_null(ctx);
+            set = sym_new_type(ctx, &PySet_Type);
             stack_pointer[-oparg] = set;
             stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
@@ -1892,18 +1912,52 @@
             break;
         }
 
+        case _GUARD_CALLABLE_STR_1: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-3];
+            if (sym_get_const(ctx, callable) == (PyObject *)&PyUnicode_Type) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_const(callable, (PyObject *)&PyUnicode_Type);
+            break;
+        }
+
         case _CALL_STR_1: {
+            JitOptSymbol *arg;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            arg = stack_pointer[-1];
+            if (sym_matches_type(arg, &PyUnicode_Type)) {
+                res = arg;
+            }
+            else {
+                res = sym_new_type(ctx, &PyUnicode_Type);
+            }
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
 
+        case _GUARD_CALLABLE_TUPLE_1: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-3];
+            if (sym_get_const(ctx, callable) == (PyObject *)&PyTuple_Type) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_const(callable, (PyObject *)&PyTuple_Type);
+            break;
+        }
+
         case _CALL_TUPLE_1: {
+            JitOptSymbol *arg;
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            arg = stack_pointer[-1];
+            if (sym_matches_type(arg, &PyTuple_Type)) {
+                res = arg;
+            }
+            else {
+                res = sym_new_type(ctx, &PyTuple_Type);
+            }
             stack_pointer[-3] = res;
             stack_pointer += -2;
             assert(WITHIN_STACK_BOUNDS());
@@ -1980,7 +2034,7 @@
 
         case _CALL_LEN: {
             JitOptSymbol *res;
-            res = sym_new_not_null(ctx);
+            res = sym_new_type(ctx, &PyLong_Type);
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());

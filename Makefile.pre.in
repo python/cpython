@@ -2503,6 +2503,8 @@ maninstall:	altmaninstall
 XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
 LIBSUBDIRS=	asyncio \
 		collections \
+		compression compression/bz2 compression/gzip \
+		compression/lzma compression/zlib compression/_common \
 		concurrent concurrent/futures \
 		csv \
 		ctypes ctypes/macholib \
@@ -2677,6 +2679,7 @@ TESTSUBDIRS=	idlelib/idle_test \
 		test/translationdata/getopt \
 		test/translationdata/optparse \
 		test/typinganndata \
+		test/typinganndata/partialexecution \
 		test/wheeldata \
 		test/xmltestdata \
 		test/xmltestdata/c14n-20 \

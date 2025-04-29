@@ -2026,6 +2026,10 @@ dummy_func(
             }
         }
 
+        pseudo(ANNOTATIONS_PLACEHOLDER, (--)) = {
+            NOP,
+        };
+
         inst(DICT_UPDATE, (dict, unused[oparg - 1], update -- dict, unused[oparg - 1])) {
             PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
             PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
@@ -3995,17 +3999,21 @@ dummy_func(
             _GUARD_CALLABLE_TYPE_1 +
             _CALL_TYPE_1;
 
-        op(_CALL_STR_1, (callable, null, arg -- res)) {
+        op(_GUARD_CALLABLE_STR_1, (callable, unused, unused -- callable, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            DEOPT_IF(callable_o != (PyObject *)&PyUnicode_Type);
+        }
+
+        op(_CALL_STR_1, (callable, null, arg -- res)) {
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
-            DEOPT_IF(!PyStackRef_IsNull(null));
-            DEOPT_IF(callable_o != (PyObject *)&PyUnicode_Type);
             STAT_INC(CALL, hit);
             PyObject *res_o = PyObject_Str(arg_o);
             DEAD(null);
             DEAD(callable);
+            (void)callable; // Silence compiler warnings about unused variables
+            (void)null;
             PyStackRef_CLOSE(arg);
             ERROR_IF(res_o == NULL, error);
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -4014,20 +4022,26 @@ dummy_func(
         macro(CALL_STR_1) =
             unused/1 +
             unused/2 +
+            _GUARD_NOS_NULL +
+            _GUARD_CALLABLE_STR_1 +
             _CALL_STR_1 +
             _CHECK_PERIODIC;
 
-        op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
+        op(_GUARD_CALLABLE_TUPLE_1, (callable, unused, unused -- callable, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+            DEOPT_IF(callable_o != (PyObject *)&PyTuple_Type);
+        }
+
+        op(_CALL_TUPLE_1, (callable, null, arg -- res)) {
             PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
 
             assert(oparg == 1);
-            DEOPT_IF(!PyStackRef_IsNull(null));
-            DEOPT_IF(callable_o != (PyObject *)&PyTuple_Type);
             STAT_INC(CALL, hit);
             PyObject *res_o = PySequence_Tuple(arg_o);
             DEAD(null);
             DEAD(callable);
+            (void)callable; // Silence compiler warnings about unused variables
+            (void)null;
             PyStackRef_CLOSE(arg);
             ERROR_IF(res_o == NULL, error);
             res = PyStackRef_FromPyObjectSteal(res_o);
@@ -4036,6 +4050,8 @@ dummy_func(
         macro(CALL_TUPLE_1) =
             unused/1 +
             unused/2 +
+            _GUARD_NOS_NULL +
+            _GUARD_CALLABLE_TUPLE_1 +
             _CALL_TUPLE_1 +
             _CHECK_PERIODIC;
 

@@ -948,6 +948,18 @@ isn't, there should be a syntax error.
      ...
    SyntaxError: 'break' outside loop
 
+elif can't come after an else.
+
+    >>> if a % 2 == 0:
+    ...     pass
+    ... else:
+    ...     pass
+    ... elif a % 2 == 1:
+    ...     pass
+    Traceback (most recent call last):
+      ...
+    SyntaxError: 'elif' block follows an 'else' block
+
 Misuse of the nonlocal and global statement can lead to a few unique syntax errors.
 
    >>> def f():
@@ -1837,6 +1849,12 @@ SyntaxError: invalid syntax. Did you mean 'if'?
 ... ]
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Did you mean 'for'?
+
+
+>>> for x im n:
+...     pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'in'?
 
 >>> f(a=23, a=234)
 Traceback (most recent call last):

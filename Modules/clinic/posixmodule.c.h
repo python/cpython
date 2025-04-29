@@ -840,7 +840,7 @@ os_chflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject *
     if (!path_converter(args[0], &path)) {
         goto exit;
     }
-    if (!PyLong_Check(args[1])) {
+    if (!PyIndex_Check(args[1])) {
         _PyArg_BadArgument("chflags", "argument 'flags'", "int", args[1]);
         goto exit;
     }
@@ -924,7 +924,7 @@ os_lchflags(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject 
     if (!path_converter(args[0], &path)) {
         goto exit;
     }
-    if (!PyLong_Check(args[1])) {
+    if (!PyIndex_Check(args[1])) {
         _PyArg_BadArgument("lchflags", "argument 'flags'", "int", args[1]);
         goto exit;
     }
@@ -13398,4 +13398,4 @@ os__emscripten_debugger(PyObject *module, PyObject *Py_UNUSED(ignored))
 #ifndef OS__EMSCRIPTEN_DEBUGGER_METHODDEF
     #define OS__EMSCRIPTEN_DEBUGGER_METHODDEF
 #endif /* !defined(OS__EMSCRIPTEN_DEBUGGER_METHODDEF) */
-/*[clinic end generated code: output=35dd8edb53b50537 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a5ca2541f2af5462 input=a9049054013a1b77]*/
