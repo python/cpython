@@ -1035,21 +1035,34 @@ _PyLong_FromDev(dev_t dev)
 static int
 _Py_Dev_Converter(PyObject *obj, void *p)
 {
+    if (!PyLong_Check(obj)) {
+        obj = _PyNumber_Index(obj);
+        if (obj == NULL) {
+            return 0;
+        }
+    }
+    else {
+        Py_INCREF(obj);
+    }
+    assert(PyLong_Check(obj));
 #ifdef NODEV
-    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
+    if (_PyLong_IsNegative((PyLongObject *)obj)) {
         int overflow;
         long long result = PyLong_AsLongLongAndOverflow(obj, &overflow);
         if (result == -1 && PyErr_Occurred()) {
+            Py_DECREF(obj);
             return 0;
         }
         if (!overflow && result == (long long)NODEV) {
             *((dev_t *)p) = NODEV;
+            Py_DECREF(obj);
             return 1;
         }
     }
 #endif
 
     unsigned long long result = PyLong_AsUnsignedLongLong(obj);
+    Py_DECREF(obj);
     if (result == (unsigned long long)-1 && PyErr_Occurred()) {
         return 0;
     }
@@ -8499,7 +8512,7 @@ os_sched_setaffinity_impl(PyObject *module, pid_t pid, PyObject *mask)
 
     while ((item = PyIter_Next(iterator))) {
         long cpu;
-        if (!PyLong_Check(item)) {
+        if (!PyIndex_Check(item)) {
             PyErr_Format(PyExc_TypeError,
                         "expected an iterator of ints, "
                         "but iterator yielded %R",
@@ -9874,7 +9887,7 @@ os_setgroups(PyObject *module, PyObject *groups)
             PyMem_Free(grouplist);
             return NULL;
         }
-        if (!PyLong_Check(elem)) {
+        if (!PyIndex_Check(elem)) {
             PyErr_SetString(PyExc_TypeError,
                             "groups must be integers");
             Py_DECREF(elem);
@@ -13643,7 +13656,7 @@ conv_confname(PyObject *module, PyObject *arg, int *valuep, const char *tablenam
     }
 
     int success = 0;
-    if (!PyLong_Check(arg)) {
+    if (!PyIndex_Check(arg)) {
         PyErr_SetString(PyExc_TypeError,
             "configuration names must be strings or integers");
     } else {
