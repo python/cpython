@@ -617,8 +617,9 @@ Object Protocol
 
    Check if *obj* is a unique temporary object on the top most frame of the
    interpreter stack. Returns ``1`` if *obj* is a unique temporary object,
-   and ``0`` otherwise.  This check is conservative, and may return ``0``
-   in some cases even if *obj* is a unique temporary object.
+   and ``0`` otherwise.  This function cannot fail, but the check is
+   conservative, and may return ``0`` in some cases even if *obj* is a unique
+   temporary object.
 
    If an object is a unique temporary, it is guaranteed that the reference
    count is ``1`` and it may be safe to modify the object in-place becuase
