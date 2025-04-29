@@ -4855,6 +4855,28 @@ class PdbTestReadline(unittest.TestCase):
         self.assertIn(b'4', output)
         self.assertNotIn(b'Error', output)
 
+    def test_interact_completion(self):
+        script = textwrap.dedent("""
+            value = "speci"
+            import pdb; pdb.Pdb().set_trace()
+        """)
+
+        # Enter interact mode
+        input = b"interact\n"
+        # Should fail to complete 'display' because that's a pdb command
+        input += b"disp\t\n"
+        # 'value' should still work
+        input += b"val\t + 'al'\n"
+        # Exit interact mode
+        input += b"exit()\n"
+        # continue
+        input += b"c\n"
+
+        output = run_pty(script, input)
+
+        self.assertIn(b"'disp' is not defined", output)
+        self.assertIn(b'special', output)
+
 
 def load_tests(loader, tests, pattern):
     from test import test_pdb
