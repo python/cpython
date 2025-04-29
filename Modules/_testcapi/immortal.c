@@ -28,7 +28,7 @@ test_immortal_builtins(PyObject *self, PyObject *Py_UNUSED(ignored))
 static PyObject *
 test_immortal_small_ints(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    for (int i = -5; i <= 1025; i++) {
+    for (int i = -5; i <= 1024; i++) {
         PyObject *obj = PyLong_FromLong(i);
         assert(verify_immortality(obj));
         int has_int_immortal_bit = ((PyLongObject *)obj)->long_value.lv_tag & IMMORTALITY_BIT_MASK;
