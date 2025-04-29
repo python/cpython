@@ -125,15 +125,20 @@ class PdbClientTestCase(unittest.TestCase):
         *,
         incoming,
         simulate_failure=None,
-        expected_outgoing=(),
-        expected_completions=(),
+        expected_outgoing=None,
+        expected_completions=None,
         expected_exception=None,
         expected_stdout="",
         expected_stdout_substring="",
         expected_state=None,
     ):
+        if expected_outgoing is None:
+            expected_outgoing = []
+        if expected_completions is None:
+            expected_completions = []
         if expected_state is None:
             expected_state = {}
+
         expected_state.setdefault("write_failed", False)
         messages = [m for source, m in incoming if source == "server"]
         prompts = [m["prompt"] for source, m in incoming if source == "user"]
