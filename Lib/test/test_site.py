@@ -8,6 +8,7 @@ import unittest
 import test.support
 from test import support
 from test.support.script_helper import assert_python_ok
+from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import captured_stderr
@@ -573,6 +574,17 @@ class ImportSideEffectTests(unittest.TestCase):
         except urllib.error.HTTPError as e:
             code = e.code
         self.assertEqual(code, 200, msg="Can't find " + url)
+
+    @support.cpython_only
+    def test_lazy_imports(self):
+        import_helper.ensure_lazy_imports("site", [
+            "io",
+            "locale",
+            "traceback",
+            "atexit",
+            "warnings",
+            "textwrap",
+        ])
 
 
 class StartupImportTests(unittest.TestCase):

@@ -260,6 +260,8 @@ def perf_command_works():
             cmd = (
                 "perf",
                 "record",
+                "--no-buildid",
+                "--no-buildid-cache",
                 "-g",
                 "--call-graph=fp",
                 "-o",
@@ -289,11 +291,22 @@ def run_perf(cwd, *args, use_jit=False, **env_vars):
     env["PYTHON_JIT"] = "0"
     output_file = cwd + "/perf_output.perf"
     if not use_jit:
-        base_cmd = ("perf", "record", "-g", "--call-graph=fp", "-o", output_file, "--")
+        base_cmd = (
+            "perf",
+            "record",
+            "--no-buildid",
+            "--no-buildid-cache",
+            "-g",
+            "--call-graph=fp",
+            "-o", output_file,
+            "--"
+        )
     else:
         base_cmd = (
             "perf",
             "record",
+            "--no-buildid",
+            "--no-buildid-cache",
             "-g",
             "--call-graph=dwarf,65528",
             "-F99",

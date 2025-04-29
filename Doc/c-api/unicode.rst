@@ -33,8 +33,14 @@ Python:
 
 .. c:var:: PyTypeObject PyUnicode_Type
 
-   This instance of :c:type:`PyTypeObject` represents the Python Unicode type.  It
-   is exposed to Python code as :py:class:`str`.
+   This instance of :c:type:`PyTypeObject` represents the Python Unicode type.
+   It is exposed to Python code as :py:class:`str`.
+
+
+.. c:var:: PyTypeObject PyUnicodeIter_Type
+
+   This instance of :c:type:`PyTypeObject` represents the Python Unicode
+   iterator type. It is used to iterate over Unicode string objects.
 
 
 .. c:type:: Py_UCS4
@@ -674,6 +680,21 @@ APIs:
    .. versionadded:: 3.3
 
 
+.. c:function:: int PyUnicode_Resize(PyObject **unicode, Py_ssize_t length);
+
+   Resize a Unicode object *\*unicode* to the new *length* in code points.
+
+   Try to resize the string in place (which is usually faster than allocating
+   a new string and copying characters), or create a new string.
+
+   *\*unicode* is modified to point to the new (resized) object and ``0`` is
+   returned on success. Otherwise, ``-1`` is returned and an exception is set,
+   and *\*unicode* is left untouched.
+
+   The function doesn't check string content, the result may not be a
+   string in canonical representation.
+
+
 .. c:function:: Py_ssize_t PyUnicode_Fill(PyObject *unicode, Py_ssize_t start, \
                         Py_ssize_t length, Py_UCS4 fill_char)
 
@@ -1010,6 +1031,17 @@ generic ones are documented for simplicity.
 
 Generic Codecs
 """"""""""""""
+
+The following macro is provided:
+
+
+.. c:macro:: Py_UNICODE_REPLACEMENT_CHARACTER
+
+   The Unicode code point ``U+FFFD`` (replacement character).
+
+   This Unicode character is used as the replacement character during
+   decoding if the *errors* argument is set to "replace".
+
 
 These are the generic codec APIs:
 
