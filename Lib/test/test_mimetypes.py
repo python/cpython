@@ -7,7 +7,6 @@ import unittest.mock
 from platform import win32_edition
 from test import support
 from test.support import os_helper
-from test.support.script_helper import run_python_until_end
 
 try:
     import _winapi
@@ -227,6 +226,7 @@ class MimeTypesTestCase(unittest.TestCase):
             for mime_type, ext in (
                 ("application/epub+zip", ".epub"),
                 ("application/octet-stream", ".bin"),
+                ("application/gzip", ".gz"),
                 ("application/ogg", ".ogx"),
                 ("application/postscript", ".ps"),
                 ("application/vnd.apple.mpegurl", ".m3u"),
@@ -240,6 +240,11 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("application/vnd.openxmlformats-officedocument.presentationml.presentation", ".pptx"),
                 ("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", ".xlsx"),
                 ("application/vnd.openxmlformats-officedocument.wordprocessingml.document", ".docx"),
+                ("application/vnd.rar", ".rar"),
+                ("application/x-7z-compressed", ".7z"),
+                ("application/x-debian-package", ".deb"),
+                ("application/x-httpd-php", ".php"),
+                ("application/x-rpm", ".rpm"),
                 ("application/x-texinfo", ".texi"),
                 ("application/x-troff", ".roff"),
                 ("application/xml", ".xsl"),
@@ -268,6 +273,9 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("image/webp", ".webp"),
                 ("image/wmf", ".wmf"),
                 ("message/rfc822", ".eml"),
+                ("model/gltf+json", ".gltf"),
+                ("model/gltf-binary", ".glb"),
+                ("model/stl", ".stl"),
                 ("text/html", ".html"),
                 ("text/plain", ".txt"),
                 ("text/rtf", ".rtf"),
@@ -278,6 +286,8 @@ class MimeTypesTestCase(unittest.TestCase):
                 ("video/ogg", ".ogv"),
                 ("video/quicktime", ".mov"),
                 ("video/vnd.avi", ".avi"),
+                ("video/x-m4v", ".m4v"),
+                ("video/x-ms-wmv", ".wmv"),
             ):
                 with self.subTest(mime_type=mime_type, ext=ext):
                     self.assertEqual(mimetypes.guess_extension(mime_type), ext)
@@ -362,6 +372,22 @@ class MimeTypesTestCase(unittest.TestCase):
             type='image/jpg', strict=True), [])
         self.assertEqual(self.db.guess_extension(
             type='image/jpg', strict=False), '.jpg')
+
+    def test_added_types_are_used(self):
+        mimetypes.add_type('testing/default-type', '')
+        mime_type, _ = mimetypes.guess_type('')
+        self.assertEqual(mime_type, 'testing/default-type')
+
+        mime_type, _ = mimetypes.guess_type('test.myext')
+        self.assertEqual(mime_type, None)
+
+        mimetypes.add_type('testing/type', '.myext')
+        mime_type, _ = mimetypes.guess_type('test.myext')
+        self.assertEqual(mime_type, 'testing/type')
+
+    def test_add_type_with_undotted_extension_deprecated(self):
+        with self.assertWarns(DeprecationWarning):
+            mimetypes.add_type("testing/type", "undotted")
 
 
 @unittest.skipUnless(sys.platform.startswith("win"), "Windows only")

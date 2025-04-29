@@ -110,6 +110,7 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(base_executable, WSTR_OPT, PUBLIC, SYS_ATTR("_base_executable")),
     SPEC(base_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("base_prefix")),
     SPEC(bytes_warning, UINT, PUBLIC, SYS_FLAG(9)),
+    SPEC(cpu_count, INT, PUBLIC, NO_SYS),
     SPEC(exec_prefix, WSTR_OPT, PUBLIC, SYS_ATTR("exec_prefix")),
     SPEC(executable, WSTR_OPT, PUBLIC, SYS_ATTR("executable")),
     SPEC(inspect, BOOL, PUBLIC, SYS_FLAG(1)),
@@ -138,7 +139,6 @@ static const PyConfigSpec PYCONFIG_SPEC[] = {
     SPEC(check_hash_pycs_mode, WSTR, READ_ONLY, NO_SYS),
     SPEC(code_debug_ranges, BOOL, READ_ONLY, NO_SYS),
     SPEC(configure_c_stdio, BOOL, READ_ONLY, NO_SYS),
-    SPEC(cpu_count, INT, READ_ONLY, NO_SYS),
     SPEC(dev_mode, BOOL, READ_ONLY, NO_SYS),  // sys.flags.dev_mode
     SPEC(dump_refs, BOOL, READ_ONLY, NO_SYS),
     SPEC(dump_refs_file, WSTR_OPT, READ_ONLY, NO_SYS),
@@ -4524,9 +4524,25 @@ error:
 }
 
 
+// Set PyConfig.ATTR integer member
+static int
+config_set_int_attr(const PyConfigSpec *spec, int value)
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    PyConfig *config = &interp->config;
+    int *member = config_get_spec_member(config, spec);
+    *member = value;
+    return 0;
+}
+
+
 int
 PyConfig_Set(const char *name, PyObject *value)
 {
+    if (PySys_Audit("cpython.PyConfig_Set", "sO", name, value) < 0) {
+        return -1;
+    }
+
     const PyConfigSpec *spec = config_find_spec(name);
     if (spec == NULL) {
         spec = preconfig_find_spec(name);
@@ -4632,17 +4648,21 @@ PyConfig_Set(const char *name, PyObject *value)
         Py_UNREACHABLE();
     }
 
-
     if (spec->sys.attr != NULL) {
         // Set the sys attribute, but don't set PyInterpreterState.config
         // to keep the code simple.
         return PySys_SetObject(spec->sys.attr, value);
     }
-    else if (spec->sys.flag_index >= 0 && has_int_value) {
-        return config_set_sys_flag(spec, int_value);
-    }
-    else if (strcmp(spec->name, "int_max_str_digits") == 0 && has_int_value) {
-        return _PySys_SetIntMaxStrDigits(int_value);
+    else if (has_int_value) {
+        if (spec->sys.flag_index >= 0) {
+            return config_set_sys_flag(spec, int_value);
+        }
+        else if (strcmp(spec->name, "int_max_str_digits") == 0) {
+            return _PySys_SetIntMaxStrDigits(int_value);
+        }
+        else {
+            return config_set_int_attr(spec, int_value);
+        }
     }
 
 cannot_set:
