@@ -1934,7 +1934,7 @@ kqueue_event_init(PyObject *op, PyObject *args, PyObject *kwds)
         }
         if ((size_t)bytes > sizeof(self->e.ident)) {
             PyErr_SetString(PyExc_OverflowError,
-                            "Python int too large for C uintptr_t");
+                            "Python int too large for C kqueue event identifier");
             return -1;
         }
     }
