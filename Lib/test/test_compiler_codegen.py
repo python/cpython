@@ -26,6 +26,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
         false_lbl = self.Label()
         expected = [
             ('RESUME', 0, 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
             ('LOAD_CONST', 0, 1),
             ('TO_BOOL', 0, 1),
             ('POP_JUMP_IF_FALSE', false_lbl := self.Label(), 1),
@@ -45,6 +46,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
         false_lbl = self.Label()
         expected = [
             ('RESUME', 0, 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
             ('LOAD_NAME', 0, 1),
             ('GET_ITER', None, 1),
             loop_lbl := self.Label(),
@@ -73,6 +75,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
         expected = [
             # Function definition
             ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
             ('LOAD_CONST', 0),
             ('MAKE_FUNCTION', None),
             ('STORE_NAME', 0),
@@ -106,6 +109,7 @@ class IsolatedCodeGenTests(CodegenTestCase):
         expected = [
             # Function definition
             ('RESUME', 0),
+            ('ANNOTATIONS_PLACEHOLDER', None),
             ('LOAD_CONST', 0),
             ('MAKE_FUNCTION', None),
             ('STORE_NAME', 0),

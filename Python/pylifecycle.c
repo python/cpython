@@ -2755,7 +2755,7 @@ init_set_builtins_open(void)
         goto error;
     }
 
-    if (!(wrapper = PyImport_ImportModuleAttrString("io", "open"))) {
+    if (!(wrapper = PyImport_ImportModuleAttrString("_io", "open"))) {
         goto error;
     }
 
@@ -2800,7 +2800,7 @@ init_sys_streams(PyThreadState *tstate)
     }
 #endif
 
-    if (!(iomod = PyImport_ImportModule("io"))) {
+    if (!(iomod = PyImport_ImportModule("_io"))) {
         goto error;
     }
 

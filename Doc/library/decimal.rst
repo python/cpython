@@ -367,6 +367,8 @@ Decimal objects
    appears above.  These include decimal digits from various other
    alphabets (for example, Arabic-Indic and Devanāgarī digits) along
    with the fullwidth digits ``'\uff10'`` through ``'\uff19'``.
+   Case is not significant, so, for example, ``inf``, ``Inf``, ``INFINITY``,
+   and ``iNfINity`` are all acceptable spellings for positive infinity.
 
    If *value* is a :class:`tuple`, it should have three components, a sign
    (``0`` for positive or ``1`` for negative), a :class:`tuple` of
@@ -1029,6 +1031,14 @@ function to temporarily change the active context.
    .. versionchanged:: 3.11
       :meth:`localcontext` now supports setting context attributes through the use of keyword arguments.
 
+.. function:: IEEEContext(bits)
+
+   Return a context object initialized to the proper values for one of the
+   IEEE interchange formats.  The argument must be a multiple of 32 and less
+   than :const:`IEEE_CONTEXT_MAX_BITS`.
+
+   .. versionadded:: next
+
 New contexts can also be created using the :class:`Context` constructor
 described below. In addition, the module provides three pre-made contexts:
 
@@ -1550,18 +1560,19 @@ Constants
 The constants in this section are only relevant for the C module. They
 are also included in the pure Python version for compatibility.
 
-+---------------------+---------------------+-------------------------------+
-|                     |       32-bit        |            64-bit             |
-+=====================+=====================+===============================+
-| .. data:: MAX_PREC  |    ``425000000``    |    ``999999999999999999``     |
-+---------------------+---------------------+-------------------------------+
-| .. data:: MAX_EMAX  |    ``425000000``    |    ``999999999999999999``     |
-+---------------------+---------------------+-------------------------------+
-| .. data:: MIN_EMIN  |    ``-425000000``   |    ``-999999999999999999``    |
-+---------------------+---------------------+-------------------------------+
-| .. data:: MIN_ETINY |    ``-849999999``   |    ``-1999999999999999997``   |
-+---------------------+---------------------+-------------------------------+
-
++---------------------------------+---------------------+-------------------------------+
+|                                 |       32-bit        |            64-bit             |
++=================================+=====================+===============================+
+| .. data:: MAX_PREC              |    ``425000000``    |    ``999999999999999999``     |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: MAX_EMAX              |    ``425000000``    |    ``999999999999999999``     |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: MIN_EMIN              |    ``-425000000``   |    ``-999999999999999999``    |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: MIN_ETINY             |    ``-849999999``   |    ``-1999999999999999997``   |
++---------------------------------+---------------------+-------------------------------+
+| .. data:: IEEE_CONTEXT_MAX_BITS |    ``256``          |    ``512``                    |
++---------------------------------+---------------------+-------------------------------+
 
 .. data:: HAVE_THREADS
 

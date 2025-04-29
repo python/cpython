@@ -1,0 +1,3 @@
+Support for custom logging handlers with the *strm* argument is deprecated
+and scheduled for removal in Python 3.16. Define handlers with the *stream*
+argument instead. Patch by Mariusz Felisiak.

@@ -1,0 +1,2 @@
+Deprecate undotted extensions in :meth:`mimetypes.MimeTypes.add_type`.
+Patch by Hugo van Kemenade.

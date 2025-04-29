@@ -295,7 +295,7 @@ dump_instr(cfg_instr *i)
 static inline int
 basicblock_returns(const basicblock *b) {
     cfg_instr *last = basicblock_last_instr(b);
-    return last && last->i_opcode == RETURN_VALUE;
+    return last && IS_RETURN_OPCODE(last->i_opcode);
 }
 
 static void
@@ -3847,16 +3847,38 @@ _PyCfg_FromInstructionSequence(_PyInstructionSequence *seq)
             seq->s_instrs[instr->i_oparg].i_target = 1;
         }
     }
+    int offset = 0;
     for (int i = 0; i < seq->s_used; i++) {
         _PyInstruction *instr = &seq->s_instrs[i];
+        if (instr->i_opcode == ANNOTATIONS_PLACEHOLDER) {
+            if (seq->s_annotations_code != NULL) {
+                assert(seq->s_annotations_code->s_labelmap_size == 0
+                    && seq->s_annotations_code->s_nested == NULL);
+                for (int j = 0; j < seq->s_annotations_code->s_used; j++) {
+                    _PyInstruction *ann_instr = &seq->s_annotations_code->s_instrs[j];
+                    assert(!HAS_TARGET(ann_instr->i_opcode));
+                    if (_PyCfgBuilder_Addop(g, ann_instr->i_opcode, ann_instr->i_oparg, ann_instr->i_loc) < 0) {
+                        goto error;
+                    }
+                }
+                offset += seq->s_annotations_code->s_used - 1;
+            }
+            else {
+                offset -= 1;
+            }
+            continue;
+        }
         if (instr->i_target) {
-            jump_target_label lbl_ = {i};
+            jump_target_label lbl_ = {i + offset};
             if (_PyCfgBuilder_UseLabel(g, lbl_) < 0) {
                 goto error;
             }
         }
         int opcode = instr->i_opcode;
         int oparg = instr->i_oparg;
+        if (HAS_TARGET(opcode)) {
+            oparg += offset;
+        }
         if (_PyCfgBuilder_Addop(g, opcode, oparg, instr->i_loc) < 0) {
             goto error;
         }
