@@ -619,7 +619,7 @@ find_module_state_by_def(PyTypeObject *type)
 }
 
 #define UNSIGNED_INT_CONVERTER(NAME, TYPE)                          \
-int                                                                 \
+static int                                                          \
 _PyLong_##NAME##_Converter(PyObject *obj, void *ptr)                \
 {                                                                   \
     Py_ssize_t bytes = PyLong_AsNativeBytes(obj, ptr, sizeof(TYPE), \
@@ -632,7 +632,7 @@ _PyLong_##NAME##_Converter(PyObject *obj, void *ptr)                \
     }                                                               \
     if ((size_t)bytes > sizeof(TYPE)) {                             \
         PyErr_SetString(PyExc_OverflowError,                        \
-                        "Python int too large for C "#TYPE);        \
+                        "Python int too large for C " #TYPE);       \
         return 0;                                                   \
     }                                                               \
     return 1;                                                       \
