@@ -5697,7 +5697,6 @@ is_dunder_name(PyObject *name)
 static PyObject *
 update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int version_tag, PyObject *value)
 {
-    _Py_atomic_store_uint32_relaxed(&entry->version, version_tag);
     _Py_atomic_store_ptr_relaxed(&entry->value, value); /* borrowed */
     assert(_PyASCIIObject_CAST(name)->hash != -1);
     OBJECT_STAT_INC_COND(type_cache_collisions, entry->name != Py_None && entry->name != name);
@@ -5705,6 +5704,12 @@ update_cache(struct type_cache_entry *entry, PyObject *name, unsigned int versio
     // exact unicode object or Py_None so it's safe to do so.
     PyObject *old_name = entry->name;
     _Py_atomic_store_ptr_relaxed(&entry->name, Py_NewRef(name));
+    // We must write the version last to avoid _Py_TryXGetStackRef()
+    // operating on an invalid (already deallocated) value inside
+    // _PyType_LookupRefAndVersion().  If we write the version first then a
+    // reader could pass the "entry_version == type_version" check but could
+    // be using the old entry value.
+    _Py_atomic_store_uint32_release(&entry->version, version_tag);
     return old_name;
 }
 
