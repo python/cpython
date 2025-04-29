@@ -54,8 +54,13 @@ _codecs_lookup(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("lookup", "argument", "str", arg);
         goto exit;
     }
-    encoding = PyUnicode_AsUTF8(arg);
+    Py_ssize_t encoding_length;
+    encoding = PyUnicode_AsUTF8AndSize(arg, &encoding_length);
     if (encoding == NULL) {
+        goto exit;
+    }
+    if (strlen(encoding) != (size_t)encoding_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _codecs_lookup_impl(module, encoding);
@@ -93,9 +98,11 @@ _codecs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(obj), &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -118,7 +125,8 @@ _codecs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -131,8 +139,13 @@ _codecs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
             _PyArg_BadArgument("encode", "argument 'encoding'", "str", args[1]);
             goto exit;
         }
-        encoding = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t encoding_length;
+        encoding = PyUnicode_AsUTF8AndSize(args[1], &encoding_length);
         if (encoding == NULL) {
+            goto exit;
+        }
+        if (strlen(encoding) != (size_t)encoding_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -143,8 +156,13 @@ _codecs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         _PyArg_BadArgument("encode", "argument 'errors'", "str", args[2]);
         goto exit;
     }
-    errors = PyUnicode_AsUTF8(args[2]);
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(args[2], &errors_length);
     if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -183,9 +201,11 @@ _codecs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(obj), &_Py_ID(encoding), &_Py_ID(errors), },
     };
     #undef NUM_KEYWORDS
@@ -208,7 +228,8 @@ _codecs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 3, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 3, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -221,8 +242,13 @@ _codecs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
             _PyArg_BadArgument("decode", "argument 'encoding'", "str", args[1]);
             goto exit;
         }
-        encoding = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t encoding_length;
+        encoding = PyUnicode_AsUTF8AndSize(args[1], &encoding_length);
         if (encoding == NULL) {
+            goto exit;
+        }
+        if (strlen(encoding) != (size_t)encoding_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -233,8 +259,13 @@ _codecs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObje
         _PyArg_BadArgument("decode", "argument 'errors'", "str", args[2]);
         goto exit;
     }
-    errors = PyUnicode_AsUTF8(args[2]);
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(args[2], &errors_length);
     if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
 skip_optional_pos:
@@ -272,7 +303,9 @@ _codecs_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -286,8 +319,13 @@ _codecs_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -341,8 +379,13 @@ _codecs_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -390,8 +433,13 @@ _codecs_utf_7_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -451,8 +499,13 @@ _codecs_utf_8_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -512,8 +565,13 @@ _codecs_utf_16_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -573,8 +631,13 @@ _codecs_utf_16_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -634,8 +697,13 @@ _codecs_utf_16_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -697,8 +765,13 @@ _codecs_utf_16_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -765,8 +838,13 @@ _codecs_utf_32_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -826,8 +904,13 @@ _codecs_utf_32_le_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -887,8 +970,13 @@ _codecs_utf_32_be_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -950,8 +1038,13 @@ _codecs_utf_32_ex_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1014,7 +1107,9 @@ _codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -1028,8 +1123,13 @@ _codecs_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ssize_
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1085,7 +1185,9 @@ _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ss
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -1099,8 +1201,13 @@ _codecs_raw_unicode_escape_decode(PyObject *module, PyObject *const *args, Py_ss
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1159,8 +1266,13 @@ _codecs_latin_1_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1212,8 +1324,13 @@ _codecs_ascii_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1266,8 +1383,13 @@ _codecs_charmap_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1326,8 +1448,13 @@ _codecs_mbcs_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1391,8 +1518,13 @@ _codecs_oem_decode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1461,8 +1593,13 @@ _codecs_code_page_decode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         errors = NULL;
     }
     else if (PyUnicode_Check(args[2])) {
-        errors = PyUnicode_AsUTF8(args[2]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[2], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1519,7 +1656,9 @@ _codecs_readbuffer_encode(PyObject *module, PyObject *const *args, Py_ssize_t na
         if (ptr == NULL) {
             goto exit;
         }
-        PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, 0);
+        if (PyBuffer_FillInfo(&data, args[0], (void *)ptr, len, 1, PyBUF_SIMPLE) < 0) {
+            goto exit;
+        }
     }
     else { /* any bytes-like object */
         if (PyObject_GetBuffer(args[0], &data, PyBUF_SIMPLE) != 0) {
@@ -1533,8 +1672,13 @@ _codecs_readbuffer_encode(PyObject *module, PyObject *const *args, Py_ssize_t na
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1588,8 +1732,13 @@ _codecs_utf_7_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1638,8 +1787,13 @@ _codecs_utf_8_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1689,8 +1843,13 @@ _codecs_utf_16_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1746,8 +1905,13 @@ _codecs_utf_16_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1796,8 +1960,13 @@ _codecs_utf_16_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1847,8 +2016,13 @@ _codecs_utf_32_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1904,8 +2078,13 @@ _codecs_utf_32_le_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -1954,8 +2133,13 @@ _codecs_utf_32_be_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -2004,8 +2188,13 @@ _codecs_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ssize_
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -2054,8 +2243,13 @@ _codecs_raw_unicode_escape_encode(PyObject *module, PyObject *const *args, Py_ss
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -2104,8 +2298,13 @@ _codecs_latin_1_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -2154,8 +2353,13 @@ _codecs_ascii_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -2205,8 +2409,13 @@ _codecs_charmap_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -2288,8 +2497,13 @@ _codecs_mbcs_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -2341,8 +2555,13 @@ _codecs_oem_encode(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         errors = NULL;
     }
     else if (PyUnicode_Check(args[1])) {
-        errors = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[1], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -2400,8 +2619,13 @@ _codecs_code_page_encode(PyObject *module, PyObject *const *args, Py_ssize_t nar
         errors = NULL;
     }
     else if (PyUnicode_Check(args[2])) {
-        errors = PyUnicode_AsUTF8(args[2]);
+        Py_ssize_t errors_length;
+        errors = PyUnicode_AsUTF8AndSize(args[2], &errors_length);
         if (errors == NULL) {
+            goto exit;
+        }
+        if (strlen(errors) != (size_t)errors_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
     }
@@ -2449,12 +2673,67 @@ _codecs_register_error(PyObject *module, PyObject *const *args, Py_ssize_t nargs
         _PyArg_BadArgument("register_error", "argument 1", "str", args[0]);
         goto exit;
     }
-    errors = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(args[0], &errors_length);
     if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     handler = args[1];
     return_value = _codecs_register_error_impl(module, errors, handler);
+
+exit:
+    return return_value;
+}
+
+PyDoc_STRVAR(_codecs__unregister_error__doc__,
+"_unregister_error($module, errors, /)\n"
+"--\n"
+"\n"
+"Un-register the specified error handler for the error handling `errors\'.\n"
+"\n"
+"Only custom error handlers can be un-registered. An exception is raised\n"
+"if the error handling is a built-in one (e.g., \'strict\'), or if an error\n"
+"occurs.\n"
+"\n"
+"Otherwise, this returns True if a custom handler has been successfully\n"
+"un-registered, and False if no custom handler for the specified error\n"
+"handling exists.");
+
+#define _CODECS__UNREGISTER_ERROR_METHODDEF    \
+    {"_unregister_error", (PyCFunction)_codecs__unregister_error, METH_O, _codecs__unregister_error__doc__},
+
+static int
+_codecs__unregister_error_impl(PyObject *module, const char *errors);
+
+static PyObject *
+_codecs__unregister_error(PyObject *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    const char *errors;
+    int _return_value;
+
+    if (!PyUnicode_Check(arg)) {
+        _PyArg_BadArgument("_unregister_error", "argument", "str", arg);
+        goto exit;
+    }
+    Py_ssize_t errors_length;
+    errors = PyUnicode_AsUTF8AndSize(arg, &errors_length);
+    if (errors == NULL) {
+        goto exit;
+    }
+    if (strlen(errors) != (size_t)errors_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
+        goto exit;
+    }
+    _return_value = _codecs__unregister_error_impl(module, errors);
+    if ((_return_value == -1) && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
@@ -2485,8 +2764,13 @@ _codecs_lookup_error(PyObject *module, PyObject *arg)
         _PyArg_BadArgument("lookup_error", "argument", "str", arg);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(arg);
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(arg, &name_length);
     if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = _codecs_lookup_error_impl(module, name);
@@ -2518,4 +2802,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=5c95a170d813a46f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ed13f20dfb09e306 input=a9049054013a1b77]*/

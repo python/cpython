@@ -1,4 +1,4 @@
-# Copyright (C) 2001-2007 Python Software Foundation
+# Copyright (C) 2001 Python Software Foundation
 # Author: Ben Gertzfield, Barry Warsaw
 # Contact: email-sig@python.org
 
@@ -175,7 +175,7 @@ class Charset:
     module expose the following information about a character set:
 
     input_charset: The initial character set specified.  Common aliases
-                   are converted to their `official' email names (e.g. latin_1
+                   are converted to their 'official' email names (e.g. latin_1
                    is converted to iso-8859-1).  Defaults to 7-bit us-ascii.
 
     header_encoding: If the character set must be encoded before it can be
@@ -245,7 +245,7 @@ class Charset:
     def get_body_encoding(self):
         """Return the content-transfer-encoding used for body encoding.
 
-        This is either the string `quoted-printable' or `base64' depending on
+        This is either the string 'quoted-printable' or 'base64' depending on
         the encoding used, or it is a function in which case you should call
         the function with a single argument, the Message object being
         encoded.  The function should then set the Content-Transfer-Encoding

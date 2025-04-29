@@ -1,3 +1,0 @@
-:mod:`time`: Make :func:`time.clock_gettime()` and
-:func:`time.clock_gettime_ns()` functions up to 2x faster by faster calling
-convention. Patch by Victor Stinner.

@@ -78,9 +78,11 @@ _testcapi_make_exception_with_doc(PyObject *module, PyObject *const *args, Py_ss
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(name), &_Py_ID(doc), &_Py_ID(base), &_Py_ID(dict), },
     };
     #undef NUM_KEYWORDS
@@ -104,7 +106,8 @@ _testcapi_make_exception_with_doc(PyObject *module, PyObject *const *args, Py_ss
     PyObject *base = NULL;
     PyObject *dict = NULL;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 4, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 4, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -112,8 +115,13 @@ _testcapi_make_exception_with_doc(PyObject *module, PyObject *const *args, Py_ss
         _PyArg_BadArgument("make_exception_with_doc", "argument 'name'", "str", args[0]);
         goto exit;
     }
-    name = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t name_length;
+    name = PyUnicode_AsUTF8AndSize(args[0], &name_length);
     if (name == NULL) {
+        goto exit;
+    }
+    if (strlen(name) != (size_t)name_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     if (!noptargs) {
@@ -124,8 +132,13 @@ _testcapi_make_exception_with_doc(PyObject *module, PyObject *const *args, Py_ss
             _PyArg_BadArgument("make_exception_with_doc", "argument 'doc'", "str", args[1]);
             goto exit;
         }
-        doc = PyUnicode_AsUTF8(args[1]);
+        Py_ssize_t doc_length;
+        doc = PyUnicode_AsUTF8AndSize(args[1], &doc_length);
         if (doc == NULL) {
+            goto exit;
+        }
+        if (strlen(doc) != (size_t)doc_length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
             goto exit;
         }
         if (!--noptargs) {
@@ -446,4 +459,4 @@ _testcapi_unstable_exc_prep_reraise_star(PyObject *module, PyObject *const *args
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=6f2b4f773e0ae755 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=357caea020348789 input=a9049054013a1b77]*/

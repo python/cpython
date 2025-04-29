@@ -5,6 +5,7 @@ import importlib.util
 import os
 import shutil
 import sys
+import textwrap
 import unittest
 import warnings
 
@@ -58,8 +59,8 @@ def make_legacy_pyc(source):
     :return: The file system path to the legacy pyc file.
     """
     pyc_file = importlib.util.cache_from_source(source)
-    up_one = os.path.dirname(os.path.abspath(source))
-    legacy_pyc = os.path.join(up_one, source + 'c')
+    assert source.endswith('.py')
+    legacy_pyc = source + 'c'
     shutil.move(pyc_file, legacy_pyc)
     return legacy_pyc
 
@@ -114,7 +115,7 @@ def multi_interp_extensions_check(enabled=True):
     This only applies to modules that haven't been imported yet.
     It overrides the PyInterpreterConfig.check_multi_interp_extensions
     setting (see support.run_in_subinterp_with_config() and
-    _xxsubinterpreters.create()).
+    _interpreters.create()).
 
     Also see importlib.utils.allowing_all_extensions().
     """
@@ -268,6 +269,18 @@ def modules_cleanup(oldmodules):
     sys.modules.update(oldmodules)
 
 
+@contextlib.contextmanager
+def isolated_modules():
+    """
+    Save modules on entry and cleanup on exit.
+    """
+    (saved,) = modules_setup()
+    try:
+        yield
+    finally:
+        modules_cleanup(saved)
+
+
 def mock_register_at_fork(func):
     # bpo-30599: Mock os.register_at_fork() when importing the random module,
     # since this function doesn't allow to unregister callbacks and would leak
@@ -297,3 +310,25 @@ def ready_to_import(name=None, source=""):
                 sys.modules[name] = old_module
             else:
                 sys.modules.pop(name, None)
+
+
+def ensure_lazy_imports(imported_module, modules_to_block):
+    """Test that when imported_module is imported, none of the modules in
+    modules_to_block are imported as a side effect."""
+    modules_to_block = frozenset(modules_to_block)
+    script = textwrap.dedent(
+        f"""
+        import sys
+        modules_to_block = {modules_to_block}
+        if unexpected := modules_to_block & sys.modules.keys():
+            startup = ", ".join(unexpected)
+            raise AssertionError(f'unexpectedly imported at startup: {{startup}}')
+
+        import {imported_module}
+        if unexpected := modules_to_block & sys.modules.keys():
+            after = ", ".join(unexpected)
+            raise AssertionError(f'unexpectedly imported after importing {imported_module}: {{after}}')
+        """
+    )
+    from .script_helper import assert_python_ok
+    assert_python_ok("-S", "-c", script)

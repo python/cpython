@@ -30,9 +30,11 @@ pysqlite_complete_statement(PyObject *module, PyObject *const *args, Py_ssize_t 
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(statement), },
     };
     #undef NUM_KEYWORDS
@@ -52,7 +54,8 @@ pysqlite_complete_statement(PyObject *module, PyObject *const *args, Py_ssize_t 
     PyObject *argsbuf[1];
     const char *statement;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -60,8 +63,13 @@ pysqlite_complete_statement(PyObject *module, PyObject *const *args, Py_ssize_t 
         _PyArg_BadArgument("complete_statement", "argument 'statement'", "str", args[0]);
         goto exit;
     }
-    statement = PyUnicode_AsUTF8(args[0]);
+    Py_ssize_t statement_length;
+    statement = PyUnicode_AsUTF8AndSize(args[0], &statement_length);
     if (statement == NULL) {
+        goto exit;
+    }
+    if (strlen(statement) != (size_t)statement_length) {
+        PyErr_SetString(PyExc_ValueError, "embedded null character");
         goto exit;
     }
     return_value = pysqlite_complete_statement_impl(module, statement);
@@ -203,4 +211,4 @@ skip_optional:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=19016e67830c19eb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=17c4e031680a5168 input=a9049054013a1b77]*/
