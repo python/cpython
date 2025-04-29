@@ -2164,7 +2164,7 @@ math_ldexp_impl(PyObject *module, double x, PyObject *i)
         errno = 0;
         r = ldexp(x, (int)exp);
 #if _MSC_VER
-        if (r && r > -DBL_MIN && r < DBL_MIN) {
+        if (-DBL_MIN < r && r < DBL_MIN) {
             /* Denormal result can be incorrectly rounded here (rather,
                truncated).  Fixed in newer versions of the C runtime, included
                with Windows 11. */
@@ -2172,7 +2172,7 @@ math_ldexp_impl(PyObject *module, double x, PyObject *i)
             frexp(x, &original_exp);
             if (original_exp > DBL_MIN_EXP) {
                 /* Shift down to the smallest normal binade.  No bits lost. */
-                int shift = DBL_MIN_EXP - original_exp
+                int shift = DBL_MIN_EXP - original_exp;
                 x = ldexp(x, shift);
                 exp -= shift;
             }
