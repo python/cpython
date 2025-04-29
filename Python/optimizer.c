@@ -1228,7 +1228,7 @@ int effective_trace_length(_PyUOpInstruction *buffer, int length)
 static void
 initialize_uops_optimize_flag() {
     PyInterpreterState *interp = _PyInterpreterState_GET();
-    if (!python_uops_optimize_initialized) {
+    if (!uops_optimize_initialized) {
         char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
         interp->uops_optimize_flag = (env_var == NULL || *env_var == '\0' || *env_var > '0');
         uops_optimize_initialized = true;
