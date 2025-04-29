@@ -7183,8 +7183,7 @@ class CapiTest(unittest.TestCase):
                     spec.loader.exec_module(_testcapi)
 
                 # Delegates the setup to the given script
-
-            $SCRIPT$
+            ____$SCRIPT$
             """)
 
             import _testcapi
@@ -7201,7 +7200,7 @@ class CapiTest(unittest.TestCase):
 
         ''').rstrip()
         code = code.replace('$SETUP$', setup)
-        code = code.replace('$SCRIPT$', textwrap.indent(script, '\x20'*4))
+        code = code.replace('____$SCRIPT$', textwrap.indent(script, '\x20'*4))
 
         if check_if_ok:
             res = script_helper.assert_python_ok('-c', code)
