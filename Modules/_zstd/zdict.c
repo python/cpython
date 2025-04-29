@@ -147,12 +147,8 @@ PyDoc_STRVAR(ZstdDict_dictcontent_doc,
 static PyObject *
 ZstdDict_str(ZstdDict *dict)
 {
-    char buf[64];
-    PyOS_snprintf(buf, sizeof(buf),
-                  "<ZstdDict dict_id=%u dict_size=%zd>",
-                  dict->dict_id, Py_SIZE(dict->dict_content));
-
-    return PyUnicode_FromString(buf);
+    return PyUnicode_FromFormat("<ZstdDict dict_id=%u dict_size=%zd>",
+                                dict->dict_id, Py_SIZE(dict->dict_content));
 }
 
 static PyMemberDef ZstdDict_members[] = {
