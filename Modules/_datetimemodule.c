@@ -1076,7 +1076,7 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
     // Parse fractional components
     size_t len_remains = p_end - p;
     size_t to_parse = len_remains;
-    if (len_remains >= 9) {
+    if (len_remains >= 6) {
         to_parse = 6;
     }
 
@@ -1093,15 +1093,11 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         *microsecond *= microsecond_correction[to_parse-1];
     }
 
-    p += to_parse;
-    len_remains = p_end - p;
+    len_remains = p_end - p + 1;
+    to_parse = len_remains;
 
     if (len_remains >= 3) {
         to_parse = 3;
-    } else {
-        to_parse = len_remains;
-    }
-
     p = parse_digits(p, nanosecond, to_parse);
     if (NULL == p) {
         return -3;
@@ -5220,8 +5216,8 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
     if ( (PyTypeObject *)cls == TIME_TYPE(NO_STATE)) {
         t = new_time(hour, minute, second, microsecond, tzinfo, 0, nanosecond);
     } else {
-        t = PyObject_CallFunction(cls, "iiiiO",
-                                  hour, minute, second, microsecond, tzinfo, nanosecond);
+        t = PyObject_CallFunction(cls, "iiiiOii",
+                                  hour, minute, second, microsecond, tzinfo, 0, nanosecond);
     }
 
     Py_DECREF(tzinfo);

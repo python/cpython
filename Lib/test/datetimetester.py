@@ -2197,7 +2197,7 @@ class TestDateTime(TestDate):
             # Verify identity via reconstructing from pieces.
             dt2 = self.theclass(dt.year, dt.month, dt.day,
                                 dt.hour, dt.minute, dt.second,
-                                dt.microsecond)
+                                dt.microsecond, nanosecond=dt.nanosecond)
             self.assertEqual(dt, dt2)
 
     def test_isoformat(self):
@@ -4666,7 +4666,10 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         ]
 
         for time_str, time_comps in strs:
-            expected = self.theclass(*time_comps)
+            if len(time_comps) == 4:
+                expected = self.theclass(*time_comps)
+            else:
+                expected = self.theclass(*time_comps[0], nanosecond=time_comps[1])
             actual = self.theclass.fromisoformat(time_str)
 
             self.assertEqual(actual, expected)

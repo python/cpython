@@ -411,7 +411,7 @@ _MICROSECOND_CORRECTION = [100000, 10000, 1000, 100, 10]
 _NANOSECOND_CORRECTION = [100, 10]
 
 def _parse_hh_mm_ss_ff(tstr):
-    # Parses things of the form HH[:?MM[:?SS[{.,}fff[fff]]]]
+    # Parses things of the form HH[:?MM[:?SS[{.,}fff[fff[fff]]]]]
     len_str = len(tstr)
 
     time_comps = [0, 0, 0, 0, 0]
@@ -463,9 +463,10 @@ def _parse_hh_mm_ss_ff(tstr):
             else:
                 to_parse = len_remains
 
-            time_comps[4] = int(tstr[pos:(pos+to_parse)])
-            if to_parse < 3:
-                time_comps[4] *= _NANOSECOND_CORRECTION[to_parse-1]
+            if to_parse > 0:
+                time_comps[4] = int(tstr[pos:(pos+to_parse)])
+                if to_parse < 3:
+                    time_comps[4] *= _NANOSECOND_CORRECTION[to_parse-1]
 
     return time_comps
 
@@ -482,6 +483,7 @@ def _parse_isoformat_time(tstr):
     time_comps = _parse_hh_mm_ss_ff(timestr)
 
     hour, minute, second, microsecond, nanosecond = time_comps
+    time_comps.pop()
     became_next_day = False
     error_from_components = False
     if (hour == 24):
@@ -525,7 +527,7 @@ def _parse_isoformat_time(tstr):
 
     time_comps.append(tzi)
 
-    return time_comps, became_next_day, error_from_components
+    return (time_comps, nanosecond), became_next_day, error_from_components
 
 # tuple[int, int, int] -> tuple[int, int, int] version of date.fromisocalendar
 def _isoweek_to_gregorian(year, week, day):
@@ -763,7 +765,7 @@ class timedelta:
         # Normalize nanoseconds to microseconds.
         microseconds1, ns = divmod(nanoseconds, 1000)
         microseconds += microseconds1
-        assert isinstance(ns, int) and 0 <= ns < 1000
+        assert isinstance(ns, int) and 0 <= ns < 1000, f"{ns =}"
 
         # Just a little bit of carrying possible for microseconds and seconds.
         seconds, us = divmod(microseconds, 1000000)
@@ -897,16 +899,17 @@ class timedelta:
                              self._microseconds * other,
                              self._nanoseconds * other)
         if isinstance(other, float):
+            nanosecond = round(self._nanoseconds * other)
             usec = self._to_microseconds()
             a, b = other.as_integer_ratio()
-            return timedelta(0, 0, _divide_and_round(usec * a, b))
+            return timedelta(0, 0, _divide_and_round(usec * a, b), nanosecond)
         return NotImplemented
 
     __rmul__ = __mul__
 
     def _to_microseconds(self):
         return ((self._days * (24*3600) + self._seconds) * 1000000 +
-                self._microseconds) + self._nanoseconds / 1000
+                self._microseconds)
 
     def __floordiv__(self, other):
         if not isinstance(other, (int, timedelta)):
@@ -1687,7 +1690,8 @@ class time:
         time_string = time_string.removeprefix('T')
 
         try:
-            return cls(*_parse_isoformat_time(time_string)[0])
+            args, nanosecond = _parse_isoformat_time(time_string)[0]
+            return cls(*args, nanosecond=nanosecond)
         except Exception:
             raise ValueError(f'Invalid isoformat string: {time_string!r}')
 
@@ -2023,7 +2027,7 @@ class datetime(date):
 
         if tstr:
             try:
-                time_components, became_next_day, error_from_components = _parse_isoformat_time(tstr)
+                (time_components, nanosecond), became_next_day, error_from_components = _parse_isoformat_time(tstr)
             except ValueError:
                 raise ValueError(
                     f'Invalid isoformat string: {date_string!r}') from None
@@ -2046,8 +2050,9 @@ class datetime(date):
                         date_components = [year, month, day]
         else:
             time_components = [0, 0, 0, 0, None]
+            nanosecond = 0
 
-        return cls(*(date_components + time_components))
+        return cls(*(date_components + time_components), nanosecond=nanosecond)
 
     def timetuple(self):
         "Return local time tuple compatible with time.localtime()."
@@ -2393,7 +2398,7 @@ class datetime(date):
                                       time(hour, minute, second,
                                            delta.microseconds,
                                            tzinfo=self._tzinfo,
-                                           nanosecond=delta.nanosecond))
+                                           nanosecond=delta.nanoseconds))
         raise OverflowError("result out of range")
 
     __radd__ = __add__
