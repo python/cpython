@@ -304,5 +304,5 @@ def disp_str(
         # the next call to `disp_str()` will revive it.
         chars[-1] += TAG_TO_ANSI["SYNC"]
 
-    trace("disp_str({buffer}) = {s}, {b}", buffer=repr(buffer), s=chars, b=char_widths)
+    # trace("disp_str({buffer}) = {s}, {b}", buffer=repr(buffer), s=chars, b=char_widths)
     return chars, char_widths

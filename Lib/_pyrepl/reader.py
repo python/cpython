@@ -103,8 +103,7 @@ default_keymap: tuple[tuple[KeySpec, CommandName], ...] = tuple(
         (r"\M-9", "digit-arg"),
         (r"\M-\n", "accept"),
         ("\\\\", "self-insert"),
-        (r"\x1b[200~", "enable_bracketed_paste"),
-        (r"\x1b[201~", "disable_bracketed_paste"),
+        (r"\x1b[200~", "perform-bracketed-paste"),
         (r"\x03", "ctrl-c"),
     ]
     + [(c, "self-insert") for c in map(chr, range(32, 127)) if c != "\\"]
@@ -202,7 +201,6 @@ class Reader:
     dirty: bool = False
     finished: bool = False
     paste_mode: bool = False
-    in_bracketed_paste: bool = False
     commands: dict[str, type[Command]] = field(default_factory=make_default_commands)
     last_command: type[Command] | None = None
     syntax_table: dict[str, int] = field(default_factory=make_default_syntax_table)
@@ -220,7 +218,6 @@ class Reader:
     ## cached metadata to speed up screen refreshes
     @dataclass
     class RefreshCache:
-        in_bracketed_paste: bool = False
         screen: list[str] = field(default_factory=list)
         screeninfo: list[tuple[int, list[int]]] = field(init=False)
         line_end_offsets: list[int] = field(default_factory=list)
@@ -234,7 +231,6 @@ class Reader:
                          screen: list[str],
                          screeninfo: list[tuple[int, list[int]]],
             ) -> None:
-            self.in_bracketed_paste = reader.in_bracketed_paste
             self.screen = screen.copy()
             self.screeninfo = screeninfo.copy()
             self.pos = reader.pos
@@ -247,8 +243,7 @@ class Reader:
                 return False
             dimensions = reader.console.width, reader.console.height
             dimensions_changed = dimensions != self.dimensions
-            paste_changed = reader.in_bracketed_paste != self.in_bracketed_paste
-            return not (dimensions_changed or paste_changed)
+            return not dimensions_changed
 
         def get_cached_location(self, reader: Reader) -> tuple[int, int]:
             if self.invalidated:
@@ -350,7 +345,7 @@ class Reader:
             prompt, prompt_len = self.process_prompt(prompt)
             chars, char_widths = disp_str(line, colors, offset)
             wrapcount = (sum(char_widths) + prompt_len) // self.console.width
-            trace("wrapcount = {wrapcount}", wrapcount=wrapcount)
+            # trace("wrapcount = {wrapcount}", wrapcount=wrapcount)
             if wrapcount == 0 or not char_widths:
                 offset += line_len + 1  # Takes all of the line plus the newline
                 last_refresh_line_end_offsets.append(offset)
@@ -484,7 +479,7 @@ class Reader:
         'lineno'."""
         if self.arg is not None and cursor_on_line:
             prompt = f"(arg: {self.arg}) "
-        elif self.paste_mode and not self.in_bracketed_paste:
+        elif self.paste_mode:
             prompt = "(paste) "
         elif "\n" in self.buffer:
             if lineno == 0:
@@ -639,9 +634,6 @@ class Reader:
 
     def refresh(self) -> None:
         """Recalculate and refresh the screen."""
-        if self.in_bracketed_paste and self.buffer and not self.buffer[-1] == "\n":
-            return
-
         # this call sets up self.cxy, so call it first.
         self.screen = self.calc_screen()
         self.console.refresh(self.screen, self.cxy)
