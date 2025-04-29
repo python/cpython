@@ -1690,8 +1690,11 @@ PyCode_GetFreevars(PyCodeObject *code)
 }
 
 
+/* Here "value" means a non-None value, since a bare return is identical
+ * to returning None explicitly.  Likewise a missing return statement
+ * at the end of the function is turned into "return None". */
 int
-_PyCode_Returns(PyCodeObject *co)
+_PyCode_ReturnsValue(PyCodeObject *co)
 {
     // Look up None in co_consts.
     Py_ssize_t nconsts = PyTuple_Size(co->co_consts);

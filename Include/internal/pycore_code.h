@@ -562,7 +562,7 @@ extern int _Py_ClearUnusedTLBC(PyInterpreterState *interp);
 #endif
 
 
-PyAPI_FUNC(int) _PyCode_Returns(PyCodeObject *);
+PyAPI_FUNC(int) _PyCode_ReturnsValue(PyCodeObject *);
 
 
 #ifdef __cplusplus
