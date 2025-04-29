@@ -54,8 +54,7 @@
 #           define _Py_ALIGN_AS(V) alignas(V)
 #       elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #           define _Py_ALIGN_AS(V) _Alignas(V)
-#       elif (defined(__GNUC__) || defined(__clang__)) \
-              && defined(__STDC_VERSION__) && __STDC_VERSION__ < 201112L
+#       elif (defined(__GNUC__) || defined(__clang__))
 #           define _Py_ALIGN_AS(V) __attribute__((aligned(V)))
 #       elif defined(_MSC_VER)
 #           define _Py_ALIGN_AS(V) __declspec(align(V))
