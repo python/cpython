@@ -30,7 +30,7 @@ def _bytes_from_encode_data(b):
 
 # Functions in binascii raise binascii.Error instead of ValueError.
 
-def _a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
+def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     b = _bytes_from_encode_data(b)
     try:
         return b2a_ascii85(b, fold_spaces=foldspaces,
@@ -39,7 +39,7 @@ def _a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
         raise ValueError(e) from None
 
 
-def _a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
+def a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
     b = _bytes_from_decode_data(b)
     try:
         return a2b_ascii85(b, fold_spaces=foldspaces,
@@ -47,7 +47,7 @@ def _a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
     except Error as e:
         raise ValueError(e) from None
 
-def _b85encode(b, pad=False):
+def b85encode(b, pad=False):
     b = _bytes_from_encode_data(b)
     try:
         return b2a_base85(b, pad=pad, newline=False)
@@ -55,7 +55,7 @@ def _b85encode(b, pad=False):
         raise ValueError(e) from None
 
 
-def _b85decode(b):
+def b85decode(b):
     b = _bytes_from_decode_data(b)
     try:
         return a2b_base85(b, strict_mode=True)
@@ -63,7 +63,7 @@ def _b85decode(b):
         raise ValueError(e) from None
 
 
-def _z85encode(s):
+def z85encode(s):
     s = _bytes_from_encode_data(s)
     try:
         return b2a_base85(s, newline=False, z85=True)
@@ -71,7 +71,7 @@ def _z85encode(s):
         raise ValueError(e) from None
 
 
-def _z85decode(s):
+def z85decode(s):
     s = _bytes_from_decode_data(s)
     try:
         return a2b_base85(s, strict_mode=True, z85=True)

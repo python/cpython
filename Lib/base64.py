@@ -578,14 +578,13 @@ def decodebytes(s):
 
 # Use accelerated implementations of originally pure-Python parts if possible.
 try:
-    from _base64 import (_a85encode, _a85decode, _b85encode,
-                         _b85decode, _z85encode, _z85decode)
+    from _base64 import (a85encode as _a85encode, a85decode as _a85decode,
+                         b85encode as _b85encode, b85decode as _b85decode,
+                         z85encode as _z85encode, z85decode as _z85decode)
     # Avoid expensive import of update_wrapper() from functools.
     def _copy_attributes(func, src_func):
-        func.__module__ = src_func.__module__
-        func.__name__ = src_func.__name__
-        func.__qualname__ = src_func.__qualname__
         func.__doc__ = src_func.__doc__
+        func.__module__ = "base64"
         return func
     a85encode = _copy_attributes(_a85encode, a85encode)
     a85decode = _copy_attributes(_a85decode, a85decode)
