@@ -2550,7 +2550,6 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
 static PyObject *
 is_uniquely_referenced(PyObject *self, PyObject *op)
 {
-    NULLABLE(op); // crashes when op == NULL
     return PyBool_FromLong(PyUnstable_Object_IsUniquelyReferenced(op));
 }
 
