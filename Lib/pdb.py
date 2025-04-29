@@ -2610,7 +2610,7 @@ class _PdbServer(Pdb):
             try:
                 payload = json.loads(msg)
             except json.JSONDecodeError:
-                self.error(f"Disconnecting: client sent invalid JSON {msg}")
+                self.error(f"Disconnecting: client sent invalid JSON {msg!r}")
                 raise EOFError
 
             match payload:
@@ -2917,7 +2917,7 @@ class _PdbClient:
                     payload = json.loads(payload_bytes)
                 except json.JSONDecodeError:
                     print(
-                        f"*** Invalid JSON from remote: {payload_bytes}",
+                        f"*** Invalid JSON from remote: {payload_bytes!r}",
                         flush=True,
                     )
                     continue
