@@ -3756,7 +3756,6 @@ dummy_func(
         macro(INSTRUMENTED_CALL) = unused/3 + _MAYBE_EXPAND_METHOD + _MONITOR_CALL + _DO_CALL + _CHECK_PERIODIC;
 
         op(_PY_FRAME_GENERAL, (callable, self_or_null, args[oparg] -- new_frame: _PyInterpreterFrame*)) {
-            DEOPT_IF(tstate->py_recursion_remaining <= 1);
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
 
             // oparg counts all of the args, but *not* self:
@@ -3798,6 +3797,7 @@ dummy_func(
             unused/1 + // Skip over the counter
             _CHECK_PEP_523 +
             _CHECK_FUNCTION_VERSION +
+            _CHECK_STACK_SPACE +
             _PY_FRAME_GENERAL +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
@@ -3829,6 +3829,7 @@ dummy_func(
             _CHECK_METHOD_VERSION +
             _EXPAND_METHOD +
             flush + // so that self is in the argument array
+            _CHECK_STACK_SPACE +
             _PY_FRAME_GENERAL +
             _SAVE_RETURN_OFFSET +
             _PUSH_FRAME;
