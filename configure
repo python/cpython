@@ -787,8 +787,6 @@ MODULE__TYPING_FALSE
 MODULE__TYPING_TRUE
 MODULE__TYPES_FALSE
 MODULE__TYPES_TRUE
-MODULE__TEMPLATELIB_FALSE
-MODULE__TEMPLATELIB_TRUE
 MODULE__STRUCT_FALSE
 MODULE__STRUCT_TRUE
 MODULE_SELECT_FALSE
@@ -31030,28 +31028,6 @@ then :
 fi
 
 
-        if test "$py_cv_module__templatelib" != "n/a"
-then :
-  py_cv_module__templatelib=yes
-fi
-   if test "$py_cv_module__templatelib" = yes; then
-  MODULE__TEMPLATELIB_TRUE=
-  MODULE__TEMPLATELIB_FALSE='#'
-else
-  MODULE__TEMPLATELIB_TRUE='#'
-  MODULE__TEMPLATELIB_FALSE=
-fi
-
-  as_fn_append MODULE_BLOCK "MODULE__TEMPLATELIB_STATE=$py_cv_module__templatelib$as_nl"
-  if test "x$py_cv_module__templatelib" = xyes
-then :
-
-
-
-
-fi
-
-
         if test "$py_cv_module__types" != "n/a"
 then :
   py_cv_module__types=yes
@@ -33868,10 +33844,6 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__STRUCT_TRUE}" && test -z "${MODULE__STRUCT_FALSE}"; then
   as_fn_error $? "conditional \"MODULE__STRUCT\" was never defined.
-Usually this means the macro was only invoked conditionally." "$LINENO" 5
-fi
-if test -z "${MODULE__TEMPLATELIB_TRUE}" && test -z "${MODULE__TEMPLATELIB_FALSE}"; then
-  as_fn_error $? "conditional \"MODULE__TEMPLATELIB\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${MODULE__TYPES_TRUE}" && test -z "${MODULE__TYPES_FALSE}"; then

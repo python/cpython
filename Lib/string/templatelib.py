@@ -1,11 +1,14 @@
 """Support for template string literals (t-strings)."""
 
-from _templatelib import Interpolation, Template
-
 __all__ = [
     "Interpolation",
     "Template",
 ]
+
+t = t"{0}"
+Template = type(t)
+Interpolation = type(t.interpolations[0])
+del t
 
 def _template_unpickle(*args):
     import itertools

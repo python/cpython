@@ -89,7 +89,6 @@ static const char* _Py_stdlib_module_names[] = {
 "_suggestions",
 "_symtable",
 "_sysconfig",
-"_templatelib",
 "_thread",
 "_threading_local",
 "_tkinter",
