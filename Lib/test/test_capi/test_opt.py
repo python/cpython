@@ -2020,7 +2020,7 @@ class TestUopsOptimization(unittest.TestCase):
             x = 0
             for _ in range(n):
                 # The optimization currently only narrows to bool
-                # the seconds argument is a tuple of classes.
+                # when the second argument is a tuple of classes.
                 y = isinstance(42, (int, str))
                 if y:
                     x += 1

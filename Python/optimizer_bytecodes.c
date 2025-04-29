@@ -893,16 +893,29 @@ dummy_func(void) {
             }
             JitOptSymbol *cls_sym = args[1];
             JitOptSymbol *inst_sym = args[0];
+
             if(sym_is_const(ctx, cls_sym) && sym_matches_type(cls_sym, &PyType_Type)) {
+                // isinstance(obj, cls) where cls is a known class
                 PyTypeObject *cls = (PyTypeObject *)sym_get_const(ctx, cls_sym);
-                if (sym_matches_type(inst_sym, cls)) {
-                    res = sym_new_const(ctx, Py_True);
+
+                if (sym_has_type(inst_sym)) {
+                    // isinstance(obj, cls) where both obj and cls have known types
+                    // We can deduce either True or False
+                    PyTypeObject *inst_type = sym_get_type(inst_sym);
+                    if (sym_matches_type(inst_sym, cls) || PyType_IsSubtype(inst_type, cls)) {
+                        res = sym_new_const(ctx, Py_True);
+                    }
+                    else {
+                        res = sym_new_const(ctx, Py_False);
+                    }
                 }
                 else {
+                    // isinstance(obj, cls) where obj has unknown type
                     res = sym_new_type(ctx, &PyBool_Type);
                 }
             }
             else {
+                // isinstance(obj, cls) where cls has unknown type
                 res = sym_new_type(ctx, &PyBool_Type);
             }
         }
