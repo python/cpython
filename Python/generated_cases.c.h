@@ -7459,9 +7459,6 @@
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
             LLTRACE_RESUME_FRAME();
             return result;
-            stack_pointer += -1;
-            assert(WITHIN_STACK_BOUNDS());
-            DISPATCH();
         }
 
         TARGET(IS_OP) {
