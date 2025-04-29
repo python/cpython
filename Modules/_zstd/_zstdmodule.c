@@ -209,8 +209,8 @@ _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
 
     chunks_number = Py_SIZE(samples_size_list);
     if ((size_t) chunks_number > UINT32_MAX) {
-        PyErr_SetString(PyExc_ValueError,
-                        "The number of samples should <= UINT32_MAX.");
+        PyErr_Format(PyExc_ValueError,
+                        "The number of samples should be <= %u.", UINT32_MAX);
         return NULL;
     }
 
@@ -227,9 +227,9 @@ _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
         chunk_sizes[i] = PyLong_AsSize_t(size);
         Py_DECREF(size);
         if (chunk_sizes[i] == (size_t)-1 && PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ValueError,
+            PyErr_Format(PyExc_ValueError,
                             "Items in samples_size_list should be an int "
-                            "object, with a size_t value.");
+                            "object, with a value between 0 and %u.", SIZE_MAX);
             goto error;
         }
         sizes_sum += chunk_sizes[i];
@@ -327,8 +327,8 @@ _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
 
     chunks_number = Py_SIZE(samples_size_list);
     if ((size_t) chunks_number > UINT32_MAX) {
-        PyErr_SetString(PyExc_ValueError,
-                        "The number of samples should <= UINT32_MAX.");
+        PyErr_Format(PyExc_ValueError,
+                        "The number of samples should be <= %u.", UINT32_MAX);
         return NULL;
     }
 
@@ -344,9 +344,9 @@ _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
         PyObject *size = PyList_GET_ITEM(samples_size_list, i);
         chunk_sizes[i] = PyLong_AsSize_t(size);
         if (chunk_sizes[i] == (size_t)-1 && PyErr_Occurred()) {
-            PyErr_SetString(PyExc_ValueError,
+            PyErr_Format(PyExc_ValueError,
                             "Items in samples_size_list should be an int "
-                            "object, with a size_t value.");
+                            "object, with a value between 0 and %u.", SIZE_MAX);
             goto error;
         }
         sizes_sum += chunk_sizes[i];
