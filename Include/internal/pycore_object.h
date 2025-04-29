@@ -165,6 +165,23 @@ static inline void _Py_RefcntAdd(PyObject* op, Py_ssize_t n)
 extern void _Py_SetImmortal(PyObject *op);
 extern void _Py_SetImmortalUntracked(PyObject *op);
 
+// Checks if an object has a single, unique reference. If the caller holds a
+// unique reference, it may be able to safely modify the object in-place.
+static inline int
+_PyObject_IsUniquelyReferenced(PyObject *ob)
+{
+#if !defined(Py_GIL_DISABLED)
+    return Py_REFCNT(ob) == 1;
+#else
+    // NOTE: the entire ob_ref_shared field must be zero, including flags, to
+    // ensure that other threads cannot concurrently create new references to
+    // this object.
+    return (_Py_IsOwnedByCurrentThread(ob) &&
+            _Py_atomic_load_uint32_relaxed(&ob->ob_ref_local) == 1 &&
+            _Py_atomic_load_ssize_relaxed(&ob->ob_ref_shared) == 0);
+#endif
+}
+
 // Makes an immortal object mortal again with the specified refcnt. Should only
 // be used during runtime finalization.
 static inline void _Py_SetMortal(PyObject *op, Py_ssize_t refcnt)
