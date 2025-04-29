@@ -11464,7 +11464,7 @@ fixup_slot_dispatchers(PyTypeObject *type)
 
     PyObject *mro = Py_NewRef(lookup_tp_mro(type));
 
-    // Try to prebuild MRO dict. We build it in bottom-top manner,
+    // Build MRO dict. We build it in bottom-top manner,
     // from bottom base to the top one, because the bottommost base
     // has more items then other and copying it is preferable than
     // merging.
