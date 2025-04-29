@@ -124,8 +124,7 @@ class PdbClientTestCase(unittest.TestCase):
         self,
         *,
         incoming,
-        simulate_write_failure=False,
-        simulate_flush_failure=False,
+        simulate_failure=None,
         expected_outgoing=[],
         expected_completions=[],
         expected_exception=None,
@@ -141,12 +140,12 @@ class PdbClientTestCase(unittest.TestCase):
         sockfile = MockDebuggerSocket(messages)
         stdout = io.StringIO()
 
-        if simulate_write_failure or simulate_flush_failure:
+        if simulate_failure:
             sockfile.write = unittest.mock.Mock()
             sockfile.flush = unittest.mock.Mock()
-            if simulate_write_failure:
+            if simulate_failure == "write":
                 sockfile.write.side_effect = OSError("write failed")
-            else:
+            elif simulate_failure == "flush":
                 sockfile.flush.side_effect = OSError("flush failed")
 
         input_iter = (m for source, m in incoming if source == "user")
@@ -196,7 +195,7 @@ class PdbClientTestCase(unittest.TestCase):
             client.cmdloop()
 
         actual_outgoing = sockfile.outgoing
-        if simulate_write_failure or simulate_flush_failure:
+        if simulate_failure:
             actual_outgoing += [
                 json.loads(msg.args[0]) for msg in sockfile.write.mock_calls
             ]
@@ -304,8 +303,8 @@ class PdbClientTestCase(unittest.TestCase):
         incoming = [
             ("server", {"command_list": ["b"]}),
             ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
-            ("user", {"prompt": "(Pdb) ", "input": "blah ["}),
-            ("user", {"prompt": "...   ", "input": "blah ]"}),
+            ("user", {"prompt": "(Pdb) ", "input": "lst ["}),
+            ("user", {"prompt": "...   ", "input": "0 ]"}),
             ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
             ("user", {"prompt": "(Pdb) ", "input": ""}),
             ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
@@ -317,7 +316,7 @@ class PdbClientTestCase(unittest.TestCase):
         self.do_test(
             incoming=incoming,
             expected_outgoing=[
-                {"reply": "blah [\nblah ]"},
+                {"reply": "lst [\n0 ]"},
                 {"reply": ""},
                 {"reply": "b ["},
                 {"reply": "!b [\nb ]"},
@@ -330,8 +329,8 @@ class PdbClientTestCase(unittest.TestCase):
         incoming = [
             ("server", {"command_list": ["b"]}),
             ("server", {"prompt": ">>> ", "state": "interact"}),
-            ("user", {"prompt": ">>> ", "input": "blah ["}),
-            ("user", {"prompt": "... ", "input": "blah ]"}),
+            ("user", {"prompt": ">>> ", "input": "lst ["}),
+            ("user", {"prompt": "... ", "input": "0 ]"}),
             ("server", {"prompt": ">>> ", "state": "interact"}),
             ("user", {"prompt": ">>> ", "input": ""}),
             ("server", {"prompt": ">>> ", "state": "interact"}),
@@ -341,7 +340,7 @@ class PdbClientTestCase(unittest.TestCase):
         self.do_test(
             incoming=incoming,
             expected_outgoing=[
-                {"reply": "blah [\nblah ]"},
+                {"reply": "lst [\n0 ]"},
                 {"reply": ""},
                 {"reply": "b [\nb ]"},
             ],
@@ -352,14 +351,14 @@ class PdbClientTestCase(unittest.TestCase):
         """Test re-prompting after a SyntaxError in a Python expression."""
         incoming = [
             ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
-            ("user", {"prompt": "(Pdb) ", "input": " blah ["}),
-            ("user", {"prompt": "(Pdb) ", "input": "blah ["}),
-            ("user", {"prompt": "...   ", "input": " blah ]"}),
+            ("user", {"prompt": "(Pdb) ", "input": " lst ["}),
+            ("user", {"prompt": "(Pdb) ", "input": "lst ["}),
+            ("user", {"prompt": "...   ", "input": " 0 ]"}),
         ]
         self.do_test(
             incoming=incoming,
             expected_outgoing=[
-                {"reply": "blah [\n blah ]"},
+                {"reply": "lst [\n 0 ]"},
             ],
             expected_stdout_substring="*** IndentationError",
             expected_state={"state": "pdb"},
@@ -369,14 +368,14 @@ class PdbClientTestCase(unittest.TestCase):
         """Test re-prompting after a SyntaxError in a Python expression."""
         incoming = [
             ("server", {"prompt": ">>> ", "state": "interact"}),
-            ("user", {"prompt": ">>> ", "input": "!blah ["}),
-            ("user", {"prompt": ">>> ", "input": "blah ["}),
-            ("user", {"prompt": "... ", "input": " blah ]"}),
+            ("user", {"prompt": ">>> ", "input": "!lst ["}),
+            ("user", {"prompt": ">>> ", "input": "lst ["}),
+            ("user", {"prompt": "... ", "input": " 0 ]"}),
         ]
         self.do_test(
             incoming=incoming,
             expected_outgoing=[
-                {"reply": "blah [\n blah ]"},
+                {"reply": "lst [\n 0 ]"},
             ],
             expected_stdout_substring="*** SyntaxError",
             expected_state={"state": "interact"},
@@ -385,14 +384,14 @@ class PdbClientTestCase(unittest.TestCase):
     def test_handling_unrecognized_prompt_type(self):
         """Test fallback to "dumb" single-line mode for unknown states."""
         incoming = [
-            ("server", {"prompt": "$ ", "state": "shell"}),
-            ("user", {"prompt": "$ ", "input": "! ["}),
-            ("server", {"prompt": "$ ", "state": "shell"}),
-            ("user", {"prompt": "$ ", "input": "echo hello"}),
-            ("server", {"prompt": "$ ", "state": "shell"}),
-            ("user", {"prompt": "$ ", "input": ""}),
-            ("server", {"prompt": "$ ", "state": "shell"}),
-            ("user", {"prompt": "$ ", "input": "echo goodbye"}),
+            ("server", {"prompt": "Do it? ", "state": "confirm"}),
+            ("user", {"prompt": "Do it? ", "input": "! ["}),
+            ("server", {"prompt": "Do it? ", "state": "confirm"}),
+            ("user", {"prompt": "Do it? ", "input": "echo hello"}),
+            ("server", {"prompt": "Do it? ", "state": "confirm"}),
+            ("user", {"prompt": "Do it? ", "input": ""}),
+            ("server", {"prompt": "Do it? ", "state": "confirm"}),
+            ("user", {"prompt": "Do it? ", "input": "echo goodbye"}),
         ]
         self.do_test(
             incoming=incoming,
@@ -474,7 +473,7 @@ class PdbClientTestCase(unittest.TestCase):
         self.do_test(
             incoming=incoming,
             expected_outgoing=[{"signal": "INT"}],
-            simulate_write_failure=True,
+            simulate_failure="write",
             expected_state={"write_failed": True},
         )
 
@@ -487,7 +486,7 @@ class PdbClientTestCase(unittest.TestCase):
         self.do_test(
             incoming=incoming,
             expected_outgoing=[{"signal": "INT"}],
-            simulate_flush_failure=True,
+            simulate_failure="flush",
             expected_state={"write_failed": True},
         )
 
@@ -566,11 +565,11 @@ class PdbClientTestCase(unittest.TestCase):
         """Test requesting tab completions at an unrecognized prompt."""
         incoming = [
             ("server", {"command_list": ["p"]}),
-            ("server", {"prompt": "$ ", "state": "shell"}),
+            ("server", {"prompt": "Do it? ", "state": "confirm"}),
             (
                 "user",
                 {
-                    "prompt": "$ ",
+                    "prompt": "Do it? ",
                     "completion_request": {
                         "line": "_",
                         "begidx": 0,
@@ -618,7 +617,7 @@ class PdbClientTestCase(unittest.TestCase):
                 },
                 {"reply": "xyz"},
             ],
-            simulate_write_failure=True,
+            simulate_failure="write",
             expected_completions=[],
             expected_state={"state": "interact", "write_failed": True},
         )
@@ -653,7 +652,7 @@ class PdbClientTestCase(unittest.TestCase):
                 },
                 {"reply": "xyz"},
             ],
-            simulate_flush_failure=True,
+            simulate_failure="flush",
             expected_completions=[],
             expected_state={"state": "interact", "write_failed": True},
         )
