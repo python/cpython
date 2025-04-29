@@ -54,6 +54,9 @@ extern "C" {
          (opcode) == RAISE_VARARGS || \
          (opcode) == RERAISE)
 
+#define IS_RETURN_OPCODE(opcode) \
+        (opcode == RETURN_VALUE)
+
 
 /* Flags used in the oparg for MAKE_FUNCTION */
 #define MAKE_FUNCTION_DEFAULTS    0x01

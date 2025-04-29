@@ -171,6 +171,13 @@ PyAPI_FUNC(_PyBytes_data_t *) _PyBytes_GetXIDataWrapped(
         xid_newobjfunc,
         _PyXIData_t *);
 
+// _PyObject_GetXIData() for marshal
+PyAPI_FUNC(PyObject *) _PyMarshal_ReadObjectFromXIData(_PyXIData_t *);
+PyAPI_FUNC(int) _PyMarshal_GetXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+
 
 /* using cross-interpreter data */
 
