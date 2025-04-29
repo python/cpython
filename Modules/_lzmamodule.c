@@ -363,6 +363,7 @@ lzma_filter_converter(_lzma_state *state, PyObject *spec, void *ptr)
         Py_DECREF(id_obj);
         return 0;
     }
+    Py_DECREF(id_obj);
     f->id = id;
 
     switch (f->id) {
