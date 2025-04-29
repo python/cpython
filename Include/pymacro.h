@@ -41,9 +41,12 @@
 #ifdef Py_GIL_DISABLED
 #   ifndef _Py_ALIGN_AS
 #       ifdef __cplusplus
-#           if (__cplusplus < 201103L) \
-                  && (defined(__GNUC__) || defined(__clang__))
+#           if __cplusplus >= 201103L
+#               define _Py_ALIGN_AS(V) alignas(V)
+#           elif defined(__GNUC__) || defined(__clang__)
 #               define _Py_ALIGN_AS(V) __attribute__((aligned(V)))
+#           elif defined(_MSC_VER)
+#               define _Py_ALIGN_AS(V) __declspec(align(V))
 #           else
 #               define _Py_ALIGN_AS(V) alignas(V)
 #           endif
