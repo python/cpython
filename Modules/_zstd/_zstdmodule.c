@@ -16,9 +16,6 @@ module _zstd
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=4b5f5587aac15c14]*/
 #include "clinic/_zstdmodule.c.h"
 
-/* --------------------------
-     Module level error handling
-   -------------------------- */
 
 /* Format error message and set ZstdError. */
 void
@@ -175,9 +172,6 @@ get_zstd_state(PyObject *module)
     return (_zstd_state *)state;
 }
 
-/* -------------------------
-     Train dictionary code
-   ------------------------- */
 
 /*[clinic input]
 _zstd._train_dict
@@ -570,9 +564,6 @@ static PyMethodDef _zstd_methods[] = {
 };
 
 
-/* --------------------
-     Initialize code
-   -------------------- */
 #define ADD_INT_PREFIX_MACRO(module, macro)                           \
     do {                                                              \
         if (PyModule_AddIntConstant(module, "_" #macro, macro) < 0) { \

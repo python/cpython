@@ -6,9 +6,7 @@ Python module.
 #include "_zstdmodule.h"
 #include "pycore_blocks_output_buffer.h"
 
-/* -----------------------------------
-     Blocks output buffer wrapper code
-   ----------------------------------- */
+/* Blocks output buffer wrapper code */
 
 /* Initialize the buffer, and grow the buffer.
    Return 0 on success

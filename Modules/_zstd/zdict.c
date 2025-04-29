@@ -19,9 +19,6 @@ class _zstd.ZstdDict "ZstdDict *" "clinic_state()->ZstdDict_type"
 
 #include <stddef.h>               // offsetof()
 
-/* -----------------
-     ZstdDict code
-   ----------------- */
 
 static PyObject *
 _zstd_ZstdDict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwargs))

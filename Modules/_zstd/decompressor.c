@@ -21,10 +21,6 @@ class _zstd.ZstdDecompressor "ZstdDecompressor *" "clinic_state()->ZstdDecompres
 
 #include <stddef.h>               // offsetof()
 
-/* -----------------------------
-     Decompress implementation
-   ----------------------------- */
-
 static inline ZSTD_DDict *
 _get_DDict(ZstdDict *self)
 {
@@ -588,10 +584,6 @@ success:
     return ret;
 }
 
-
-/* -------------------------
-     ZstdDecompressor code
-   ------------------------- */
 
 static PyObject *
 _zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwds)

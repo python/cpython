@@ -22,9 +22,6 @@ class _zstd.ZstdCompressor "ZstdCompressor *" "clinic_state()->ZstdCompressor_ty
 
 #include <stddef.h>               // offsetof()
 
-/* -----------------------
-    ZstdCompressor code
------------------------ */
 
 int
 _PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
