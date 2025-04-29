@@ -209,7 +209,8 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_GUARD_NOT_EXHAUSTED_RANGE] = HAS_EXIT_FLAG,
     [_ITER_NEXT_RANGE] = HAS_ERROR_FLAG,
     [_FOR_ITER_GEN_FRAME] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
-    [_LOAD_SPECIAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_INSERT_NULL] = 0,
+    [_LOAD_SPECIAL] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_WITH_EXCEPT_START] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_PUSH_EXC_INFO] = 0,
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = HAS_DEOPT_FLAG,
@@ -241,9 +242,13 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_INIT_CALL_PY_EXACT_ARGS_4] = HAS_PURE_FLAG,
     [_INIT_CALL_PY_EXACT_ARGS] = HAS_ARG_FLAG | HAS_PURE_FLAG,
     [_PUSH_FRAME] = 0,
-    [_CALL_TYPE_1] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
-    [_CALL_STR_1] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
-    [_CALL_TUPLE_1] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_GUARD_NOS_NULL] = HAS_DEOPT_FLAG,
+    [_GUARD_CALLABLE_TYPE_1] = HAS_DEOPT_FLAG,
+    [_CALL_TYPE_1] = HAS_ARG_FLAG | HAS_ESCAPES_FLAG,
+    [_GUARD_CALLABLE_STR_1] = HAS_DEOPT_FLAG,
+    [_CALL_STR_1] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_GUARD_CALLABLE_TUPLE_1] = HAS_DEOPT_FLAG,
+    [_CALL_TUPLE_1] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_CHECK_AND_ALLOCATE_OBJECT] = HAS_ARG_FLAG | HAS_DEOPT_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_CREATE_INIT_FRAME] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_EXIT_INIT_CHECK] = HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
@@ -412,6 +417,9 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GET_LEN] = "_GET_LEN",
     [_GET_YIELD_FROM_ITER] = "_GET_YIELD_FROM_ITER",
     [_GUARD_BINARY_OP_EXTEND] = "_GUARD_BINARY_OP_EXTEND",
+    [_GUARD_CALLABLE_STR_1] = "_GUARD_CALLABLE_STR_1",
+    [_GUARD_CALLABLE_TUPLE_1] = "_GUARD_CALLABLE_TUPLE_1",
+    [_GUARD_CALLABLE_TYPE_1] = "_GUARD_CALLABLE_TYPE_1",
     [_GUARD_DORV_NO_DICT] = "_GUARD_DORV_NO_DICT",
     [_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT] = "_GUARD_DORV_VALUES_INST_ATTR_FROM_DICT",
     [_GUARD_GLOBALS_VERSION] = "_GUARD_GLOBALS_VERSION",
@@ -424,6 +432,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_NOS_FLOAT] = "_GUARD_NOS_FLOAT",
     [_GUARD_NOS_INT] = "_GUARD_NOS_INT",
     [_GUARD_NOS_LIST] = "_GUARD_NOS_LIST",
+    [_GUARD_NOS_NULL] = "_GUARD_NOS_NULL",
     [_GUARD_NOS_TUPLE] = "_GUARD_NOS_TUPLE",
     [_GUARD_NOS_UNICODE] = "_GUARD_NOS_UNICODE",
     [_GUARD_NOT_EXHAUSTED_LIST] = "_GUARD_NOT_EXHAUSTED_LIST",
@@ -447,6 +456,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_INIT_CALL_PY_EXACT_ARGS_2] = "_INIT_CALL_PY_EXACT_ARGS_2",
     [_INIT_CALL_PY_EXACT_ARGS_3] = "_INIT_CALL_PY_EXACT_ARGS_3",
     [_INIT_CALL_PY_EXACT_ARGS_4] = "_INIT_CALL_PY_EXACT_ARGS_4",
+    [_INSERT_NULL] = "_INSERT_NULL",
     [_IS_NONE] = "_IS_NONE",
     [_IS_OP] = "_IS_OP",
     [_ITER_CHECK_LIST] = "_ITER_CHECK_LIST",
@@ -972,8 +982,10 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _FOR_ITER_GEN_FRAME:
             return 0;
-        case _LOAD_SPECIAL:
+        case _INSERT_NULL:
             return 1;
+        case _LOAD_SPECIAL:
+            return 0;
         case _WITH_EXCEPT_START:
             return 0;
         case _PUSH_EXC_INFO:
@@ -1036,10 +1048,18 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 2 + oparg;
         case _PUSH_FRAME:
             return 1;
+        case _GUARD_NOS_NULL:
+            return 0;
+        case _GUARD_CALLABLE_TYPE_1:
+            return 0;
         case _CALL_TYPE_1:
             return 3;
+        case _GUARD_CALLABLE_STR_1:
+            return 0;
         case _CALL_STR_1:
             return 3;
+        case _GUARD_CALLABLE_TUPLE_1:
+            return 0;
         case _CALL_TUPLE_1:
             return 3;
         case _CHECK_AND_ALLOCATE_OBJECT:

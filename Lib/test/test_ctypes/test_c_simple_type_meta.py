@@ -160,11 +160,11 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
             class F(metaclass=PyCSimpleType):
                 _type_ = "\0"
         message = str(cm.exception)
-        expected_type_chars = list('cbBhHiIlLdCEFfuzZqQPXOv?g')
+        expected_type_chars = list('cbBhHiIlLdDFGfuzZqQPXOv?g')
         if not hasattr(ctypes, 'c_float_complex'):
-            expected_type_chars.remove('C')
-            expected_type_chars.remove('E')
             expected_type_chars.remove('F')
+            expected_type_chars.remove('D')
+            expected_type_chars.remove('G')
         if not MS_WINDOWS:
             expected_type_chars.remove('X')
         self.assertIn("'" + ''.join(expected_type_chars) + "'", message)
