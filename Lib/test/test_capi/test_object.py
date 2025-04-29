@@ -1,4 +1,5 @@
 import enum
+import sys
 import textwrap
 import unittest
 from test import support
@@ -222,6 +223,17 @@ class CAPITest(unittest.TestCase):
         for _ in range(1000):
             obj = MyObj()
             _testinternalcapi.incref_decref_delayed(obj)
+
+    def test_is_unique_temporary(self):
+        self.assertEqual(1, _testcapi.pyobject_is_unique_temporary(object()))
+        obj = object()
+        self.assertEqual(0, _testcapi.pyobject_is_unique_temporary(obj))
+
+        def func(x):
+            self.assertEqual(sys.getrefcount(x), 1)
+            self.assertFalse(_testcapi.pyobject_is_unique_temporary(x))
+
+        func(object())
 
 if __name__ == "__main__":
     unittest.main()

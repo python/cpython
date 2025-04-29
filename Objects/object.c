@@ -15,6 +15,7 @@
 #include "pycore_hamt.h"          // _PyHamtItems_Type
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
+#include "pycore_interpframe.h"   // _PyFrame_Stackbase()
 #include "pycore_list.h"          // _PyList_DebugMallocStats()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
@@ -2614,6 +2615,35 @@ PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
 #else
     return 0;
 #endif
+}
+
+int
+PyUnstable_Object_IsUniqueTemporary(PyObject *op)
+{
+    if (!_PyObject_IsUniquelyReferenced(op)) {
+        return 0;
+    }
+
+    _PyInterpreterFrame *frame = _PyEval_GetFrame();
+    if (frame == NULL) {
+        return 0;
+    }
+
+    _PyStackRef *base = _PyFrame_Stackbase(frame);
+    _PyStackRef *stackpointer = frame->stackpointer;
+    int found = 0;
+    while (stackpointer > base) {
+        stackpointer--;
+        if (op == PyStackRef_AsPyObjectBorrow(*stackpointer)) {
+            if (!PyStackRef_IsHeapSafe(*stackpointer)) {
+                return 0;
+            }
+            found++;
+        }
+    }
+
+    // Check that we found exactly one reference to `op`
+    return found == 1;
 }
 
 int

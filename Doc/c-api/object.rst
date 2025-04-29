@@ -613,6 +613,30 @@ Object Protocol
 
    .. versionadded:: 3.14
 
+.. c:function:: int PyUnstable_Object_IsUniqueTemporary(PyObject *obj)
+
+   Check if *obj* is a unique temporary object on the top most frame of the
+   interpreter stack. Returns ``1`` if *obj* is a unique temporary object,
+   and ``0`` otherwise.  This check is conservative, and may return ``0``
+   in some cases even if *obj* is a unique temporary object.
+
+   If an object is a unique temporary, it is guaranteed that the reference
+   count is ``1`` and it may be safe to modify the object in-place becuase
+   it is not visible to any other code.
+
+   In the example below, ``my_func`` is called with a unique temporary object
+   as its argument::
+
+      my_func([1, 2, 3])
+
+   In the example below, ``my_func`` is **not** called with a unique temporary
+   object as its argument::
+
+      my_list = [1, 2, 3]
+      my_func(my_list)
+
+   .. versionadded:: 3.14
+
 .. c:function:: int PyUnstable_IsImmortal(PyObject *obj)
 
    This function returns non-zero if *obj* is :term:`immortal`, and zero
