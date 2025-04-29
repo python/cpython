@@ -2912,7 +2912,7 @@ _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
 #ifdef Py_GIL_DISABLED
     op->ob_tid = (uintptr_t)tstate->delete_later;
 #else
-    /* Store the pointer in the refcnt field.
+    /* Store the delete_later pointer in the refcnt field.
      * As this object may still be tracked by the GC,
      * it is important that we never store 0 (NULL). */
     uintptr_t refcnt = (uintptr_t)tstate->delete_later;
@@ -2935,6 +2935,8 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
         op->ob_tid = 0;
         _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, _Py_REF_MERGED);
 #else
+        /* Get the delete_later pointer from the refcnt field.
+         * See _PyTrash_thread_deposit_object(). */
         uintptr_t refcnt = *((uintptr_t*)op);
         tstate->delete_later = (PyObject *)(refcnt - 1);
         op->ob_refcnt = 0;

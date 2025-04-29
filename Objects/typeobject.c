@@ -2654,7 +2654,6 @@ subtype_dealloc(PyObject *self)
     if (type_needs_decref) {
         _Py_DECREF_TYPE(type);
     }
-
 }
 
 static PyTypeObject *solid_base(PyTypeObject *type);
