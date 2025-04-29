@@ -18,32 +18,6 @@ freevars: ()
 nlocals: 2
 flags: 3
 consts: ('<code object g>',)
-variable counts:
-  total:           2
-  locals:
-    total:         2
-    args:
-      total:       1
-      posonly:     0
-      posorkw:     1
-      kwonly:      0
-      varargs:     False
-      varkwargs:   False
-    pure:          1
-    cells:
-      total:       1
-      args:        1
-      others:      0
-    hidden:
-      total:       0
-      pure:        0
-      cells:       0
-  free (nonlocal): 0
-  unbound:
-    total:         0
-    global:        0
-    attrs:         0
-    unknown:       0
 
 >>> dump(f(4).__code__)
 name: g
@@ -57,32 +31,6 @@ freevars: ('x',)
 nlocals: 1
 flags: 19
 consts: ('None',)
-variable counts:
-  total:           2
-  locals:
-    total:         1
-    args:
-      total:       1
-      posonly:     0
-      posorkw:     1
-      kwonly:      0
-      varargs:     False
-      varkwargs:   False
-    pure:          0
-    cells:
-      total:       0
-      args:        0
-      others:      0
-    hidden:
-      total:       0
-      pure:        0
-      cells:       0
-  free (nonlocal): 1
-  unbound:
-    total:         0
-    global:        0
-    attrs:         0
-    unknown:       0
 
 >>> def h(x, y):
 ...     a = x + y
@@ -103,32 +51,6 @@ freevars: ()
 nlocals: 5
 flags: 3
 consts: ('None',)
-variable counts:
-  total:           5
-  locals:
-    total:         5
-    args:
-      total:       2
-      posonly:     0
-      posorkw:     2
-      kwonly:      0
-      varargs:     False
-      varkwargs:   False
-    pure:          3
-    cells:
-      total:       0
-      args:        0
-      others:      0
-    hidden:
-      total:       0
-      pure:        0
-      cells:       0
-  free (nonlocal): 0
-  unbound:
-    total:         0
-    global:        0
-    attrs:         0
-    unknown:       0
 
 >>> def attrs(obj):
 ...     print(obj.attr1)
@@ -147,32 +69,6 @@ freevars: ()
 nlocals: 1
 flags: 3
 consts: ('None',)
-variable counts:
-  total:           5
-  locals:
-    total:         1
-    args:
-      total:       1
-      posonly:     0
-      posorkw:     1
-      kwonly:      0
-      varargs:     False
-      varkwargs:   False
-    pure:          0
-    cells:
-      total:       0
-      args:        0
-      others:      0
-    hidden:
-      total:       0
-      pure:        0
-      cells:       0
-  free (nonlocal): 0
-  unbound:
-    total:         4
-    global:        1
-    attrs:         3
-    unknown:       0
 
 >>> def optimize_away():
 ...     'doc string'
@@ -209,32 +105,6 @@ freevars: ()
 nlocals: 3
 flags: 3
 consts: ('None',)
-variable counts:
-  total:           3
-  locals:
-    total:         3
-    args:
-      total:       3
-      posonly:     0
-      posorkw:     2
-      kwonly:      1
-      varargs:     False
-      varkwargs:   False
-    pure:          0
-    cells:
-      total:       0
-      args:        0
-      others:      0
-    hidden:
-      total:       0
-      pure:        0
-      cells:       0
-  free (nonlocal): 0
-  unbound:
-    total:         0
-    global:        0
-    attrs:         0
-    unknown:       0
 
 >>> def posonly_args(a,b,/,c):
 ...     return a,b,c
@@ -252,32 +122,6 @@ freevars: ()
 nlocals: 3
 flags: 3
 consts: ('None',)
-variable counts:
-  total:           3
-  locals:
-    total:         3
-    args:
-      total:       3
-      posonly:     2
-      posorkw:     1
-      kwonly:      0
-      varargs:     False
-      varkwargs:   False
-    pure:          0
-    cells:
-      total:       0
-      args:        0
-      others:      0
-    hidden:
-      total:       0
-      pure:        0
-      cells:       0
-  free (nonlocal): 0
-  unbound:
-    total:         0
-    global:        0
-    attrs:         0
-    unknown:       0
 
 >>> def has_docstring(x: str):
 ...     'This is a one-line doc string'
