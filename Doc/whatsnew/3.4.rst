@@ -994,7 +994,7 @@ The :func:`~importlib.reload` function has been moved from :mod:`!imp` to
 :mod:`importlib` as part of the :mod:`!imp` module deprecation.  (Contributed by
 Berker Peksag in :issue:`18193`.)
 
-:mod:`importlib.util` now has a :data:`~importlib.util.MAGIC_NUMBER` attribute
+:mod:`importlib.util` now has a :const:`~importlib.util.MAGIC_NUMBER` attribute
 providing access to the bytecode version number.  This replaces the
 :func:`!get_magic` function in the deprecated :mod:`!imp` module.
 (Contributed by Brett Cannon in :issue:`18192`.)
@@ -1979,7 +1979,7 @@ Other Improvements
   now works correctly (previously it silently returned the first python
   module in the file).  (Contributed by Václav Šmilauer in :issue:`16421`.)
 
-* A new opcode, :opcode:`LOAD_CLASSDEREF`, has been added to fix a bug in the
+* A new opcode, :opcode:`!LOAD_CLASSDEREF`, has been added to fix a bug in the
   loading of free variables in class bodies that could be triggered by certain
   uses of :ref:`__prepare__ <prepare>`.  (Contributed by Benjamin Peterson in
   :issue:`17853`.)

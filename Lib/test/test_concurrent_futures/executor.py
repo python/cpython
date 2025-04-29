@@ -1,7 +1,9 @@
+import itertools
 import threading
 import time
 import weakref
 from concurrent import futures
+from operator import add
 from test import support
 from test.support import Py_GIL_DISABLED
 
@@ -20,6 +22,21 @@ class MyObject(object):
 
 def make_dummy_object(_):
     return MyObject()
+
+
+# Used in test_swallows_falsey_exceptions
+def raiser(exception, msg='std'):
+    raise exception(msg)
+
+
+class FalseyBoolException(Exception):
+    def __bool__(self):
+        return False
+
+
+class FalseyLenException(Exception):
+    def __len__(self):
+        return 0
 
 
 class ExecutorTest:
@@ -69,7 +86,77 @@ class ExecutorTest:
         else:
             self.fail('expected TimeoutError')
 
-        self.assertEqual([None, None], results)
+        # gh-110097: On heavily loaded systems, the launch of the worker may
+        # take longer than the specified timeout.
+        self.assertIn(results, ([None, None], [None], []))
+
+    def test_map_buffersize_type_validation(self):
+        for buffersize in ("foo", 2.0):
+            with self.subTest(buffersize=buffersize):
+                with self.assertRaisesRegex(
+                    TypeError,
+                    "buffersize must be an integer or None",
+                ):
+                    self.executor.map(str, range(4), buffersize=buffersize)
+
+    def test_map_buffersize_value_validation(self):
+        for buffersize in (0, -1):
+            with self.subTest(buffersize=buffersize):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "buffersize must be None or > 0",
+                ):
+                    self.executor.map(str, range(4), buffersize=buffersize)
+
+    def test_map_buffersize(self):
+        ints = range(4)
+        for buffersize in (1, 2, len(ints), len(ints) * 2):
+            with self.subTest(buffersize=buffersize):
+                res = self.executor.map(str, ints, buffersize=buffersize)
+                self.assertListEqual(list(res), ["0", "1", "2", "3"])
+
+    def test_map_buffersize_on_multiple_iterables(self):
+        ints = range(4)
+        for buffersize in (1, 2, len(ints), len(ints) * 2):
+            with self.subTest(buffersize=buffersize):
+                res = self.executor.map(add, ints, ints, buffersize=buffersize)
+                self.assertListEqual(list(res), [0, 2, 4, 6])
+
+    def test_map_buffersize_on_infinite_iterable(self):
+        res = self.executor.map(str, itertools.count(), buffersize=2)
+        self.assertEqual(next(res, None), "0")
+        self.assertEqual(next(res, None), "1")
+        self.assertEqual(next(res, None), "2")
+
+    def test_map_buffersize_on_multiple_infinite_iterables(self):
+        res = self.executor.map(
+            add,
+            itertools.count(),
+            itertools.count(),
+            buffersize=2
+        )
+        self.assertEqual(next(res, None), 0)
+        self.assertEqual(next(res, None), 2)
+        self.assertEqual(next(res, None), 4)
+
+    def test_map_buffersize_on_empty_iterable(self):
+        res = self.executor.map(str, [], buffersize=2)
+        self.assertIsNone(next(res, None))
+
+    def test_map_buffersize_without_iterable(self):
+        res = self.executor.map(str, buffersize=2)
+        self.assertIsNone(next(res, None))
+
+    def test_map_buffersize_when_buffer_is_full(self):
+        ints = iter(range(4))
+        buffersize = 2
+        self.executor.map(str, ints, buffersize=buffersize)
+        self.executor.shutdown(wait=True)  # wait for tasks to complete
+        self.assertEqual(
+            next(ints),
+            buffersize,
+            msg="should have fetched only `buffersize` elements from `ints`.",
+        )
 
     def test_shutdown_race_issue12456(self):
         # Issue #12456: race condition at shutdown where trying to post a
@@ -129,4 +216,20 @@ class ExecutorTest:
             wr = weakref.ref(obj)
             del obj
             support.gc_collect()  # For PyPy or other GCs.
-            self.assertIsNone(wr())
+
+            for _ in support.sleeping_retry(support.SHORT_TIMEOUT):
+                if wr() is None:
+                    break
+
+    def test_swallows_falsey_exceptions(self):
+        # see gh-132063: Prevent exceptions that evaluate as falsey
+        # from being ignored.
+        # Recall: `x` is falsey if `len(x)` returns 0 or `bool(x)` returns False.
+
+        msg = 'boolbool'
+        with self.assertRaisesRegex(FalseyBoolException, msg):
+            self.executor.submit(raiser, FalseyBoolException, msg).result()
+
+        msg = 'lenlen'
+        with self.assertRaisesRegex(FalseyLenException, msg):
+            self.executor.submit(raiser, FalseyLenException, msg).result()

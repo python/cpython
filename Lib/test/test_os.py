@@ -105,7 +105,7 @@ requires_splice_pipe = unittest.skipIf(sys.platform.startswith("aix"),
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class MiscTests(unittest.TestCase):
@@ -189,9 +189,6 @@ class FileTests(unittest.TestCase):
         self.assertTrue(os.access(os_helper.TESTFN, os.W_OK))
 
     @unittest.skipIf(
-        support.is_emscripten, "Test is unstable under Emscripten."
-    )
-    @unittest.skipIf(
         support.is_wasi, "WASI does not support dup."
     )
     def test_closerange(self):
@@ -233,6 +230,94 @@ class FileTests(unittest.TestCase):
             self.assertEqual(type(s), bytes)
             self.assertEqual(s, b"spam")
 
+    def test_readinto(self):
+        with open(os_helper.TESTFN, "w+b") as fobj:
+            fobj.write(b"spam")
+            fobj.flush()
+            fd = fobj.fileno()
+            os.lseek(fd, 0, 0)
+            # Oversized so readinto without hitting end.
+            buffer = bytearray(7)
+            s = os.readinto(fd, buffer)
+            self.assertEqual(type(s), int)
+            self.assertEqual(s, 4)
+            # Should overwrite the first 4 bytes of the buffer.
+            self.assertEqual(buffer[:4], b"spam")
+
+            # Readinto at EOF should return 0 and not touch buffer.
+            buffer[:] = b"notspam"
+            s = os.readinto(fd, buffer)
+            self.assertEqual(type(s), int)
+            self.assertEqual(s, 0)
+            self.assertEqual(bytes(buffer), b"notspam")
+            s = os.readinto(fd, buffer)
+            self.assertEqual(s, 0)
+            self.assertEqual(bytes(buffer), b"notspam")
+
+            # Readinto a 0 length bytearray when at EOF should return 0
+            self.assertEqual(os.readinto(fd, bytearray()), 0)
+
+            # Readinto a 0 length bytearray with data available should return 0.
+            os.lseek(fd, 0, 0)
+            self.assertEqual(os.readinto(fd, bytearray()), 0)
+
+    @unittest.skipUnless(hasattr(os, 'get_blocking'),
+                     'needs os.get_blocking() and os.set_blocking()')
+    @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
+    @unittest.skipIf(support.is_emscripten, "set_blocking does not work correctly")
+    def test_readinto_non_blocking(self):
+        # Verify behavior of a readinto which would block on a non-blocking fd.
+        r, w = os.pipe()
+        try:
+            os.set_blocking(r, False)
+            with self.assertRaises(BlockingIOError):
+                os.readinto(r, bytearray(5))
+
+            # Pass some data through
+            os.write(w, b"spam")
+            self.assertEqual(os.readinto(r, bytearray(4)), 4)
+
+            # Still don't block or return 0.
+            with self.assertRaises(BlockingIOError):
+                os.readinto(r, bytearray(5))
+
+            # At EOF should return size 0
+            os.close(w)
+            w = None
+            self.assertEqual(os.readinto(r, bytearray(5)), 0)
+            self.assertEqual(os.readinto(r, bytearray(5)), 0)  # Still EOF
+
+        finally:
+            os.close(r)
+            if w is not None:
+                os.close(w)
+
+    def test_readinto_badarg(self):
+        with open(os_helper.TESTFN, "w+b") as fobj:
+            fobj.write(b"spam")
+            fobj.flush()
+            fd = fobj.fileno()
+            os.lseek(fd, 0, 0)
+
+            for bad_arg in ("test", bytes(), 14):
+                with self.subTest(f"bad buffer {type(bad_arg)}"):
+                    with self.assertRaises(TypeError):
+                        os.readinto(fd, bad_arg)
+
+            with self.subTest("doesn't work on file objects"):
+                with self.assertRaises(TypeError):
+                    os.readinto(fobj, bytearray(5))
+
+            # takes two args
+            with self.assertRaises(TypeError):
+                os.readinto(fd)
+
+            # No data should have been read with the bad arguments.
+            buffer = bytearray(4)
+            s = os.readinto(fd, buffer)
+            self.assertEqual(s, 4)
+            self.assertEqual(buffer, b"spam")
+
     @support.cpython_only
     # Skip the test on 32-bit platforms: the number of bytes must fit in a
     # Py_ssize_t type
@@ -251,6 +336,29 @@ class FileTests(unittest.TestCase):
         # The test does not try to read more than 2 GiB at once because the
         # operating system is free to return less bytes than requested.
         self.assertEqual(data, b'test')
+
+
+    @support.cpython_only
+    # Skip the test on 32-bit platforms: the number of bytes must fit in a
+    # Py_ssize_t type
+    @unittest.skipUnless(INT_MAX < PY_SSIZE_T_MAX,
+                         "needs INT_MAX < PY_SSIZE_T_MAX")
+    @support.bigmemtest(size=INT_MAX + 10, memuse=1, dry_run=False)
+    def test_large_readinto(self, size):
+        self.addCleanup(os_helper.unlink, os_helper.TESTFN)
+        create_file(os_helper.TESTFN, b'test')
+
+        # Issue #21932: For readinto the buffer contains the length rather than
+        # a length being passed explicitly to read, should still get capped to a
+        # valid size / not raise an OverflowError for sizes larger than INT_MAX.
+        buffer = bytearray(INT_MAX + 10)
+        with open(os_helper.TESTFN, "rb") as fp:
+            length = os.readinto(fp.fileno(), buffer)
+
+        # The test does not try to read more than 2 GiB at once because the
+        # operating system is free to return less bytes than requested.
+        self.assertEqual(length, 4)
+        self.assertEqual(buffer[:4], b'test')
 
     def test_write(self):
         # os.write() accepts bytes- and buffer-like objects but not strings
@@ -805,14 +913,28 @@ class UtimeTests(unittest.TestCase):
         set_time(filename, (atime_ns, mtime_ns))
         st = os.stat(filename)
 
-        if support_subsecond:
-            self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-6)
-            self.assertAlmostEqual(st.st_mtime, mtime_ns * 1e-9, delta=1e-6)
+        if support.is_emscripten:
+            # Emscripten timestamps are roundtripped through a 53 bit integer of
+            # nanoseconds. If we want to represent ~50 years which is an 11
+            # digits number of seconds:
+            # 2*log10(60) + log10(24) + log10(365) + log10(60) + log10(50)
+            # is about 11. Because 53 * log10(2) is about 16, we only have 5
+            # digits worth of sub-second precision.
+            # Some day it would be good to fix this upstream.
+            delta=1e-5
+            self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-5)
+            self.assertAlmostEqual(st.st_mtime, mtime_ns * 1e-9, delta=1e-5)
+            self.assertAlmostEqual(st.st_atime_ns, atime_ns, delta=1e9 * 1e-5)
+            self.assertAlmostEqual(st.st_mtime_ns, mtime_ns, delta=1e9 * 1e-5)
         else:
-            self.assertEqual(st.st_atime, atime_ns * 1e-9)
-            self.assertEqual(st.st_mtime, mtime_ns * 1e-9)
-        self.assertEqual(st.st_atime_ns, atime_ns)
-        self.assertEqual(st.st_mtime_ns, mtime_ns)
+            if support_subsecond:
+                self.assertAlmostEqual(st.st_atime, atime_ns * 1e-9, delta=1e-6)
+                self.assertAlmostEqual(st.st_mtime, mtime_ns * 1e-9, delta=1e-6)
+            else:
+                self.assertEqual(st.st_atime, atime_ns * 1e-9)
+                self.assertEqual(st.st_mtime, mtime_ns * 1e-9)
+            self.assertEqual(st.st_atime_ns, atime_ns)
+            self.assertEqual(st.st_mtime_ns, mtime_ns)
 
     def test_utime(self):
         def set_time(filename, ns):
@@ -1414,9 +1536,7 @@ class WalkTests(unittest.TestCase):
         else:
             self.sub2_tree = (sub2_path, ["SUB21"], ["tmp3"])
 
-        if not support.is_emscripten:
-            # Emscripten fails with inaccessible directory
-            os.chmod(sub21_path, 0)
+        os.chmod(sub21_path, 0)
         try:
             os.listdir(sub21_path)
         except PermissionError:
@@ -1713,9 +1833,6 @@ class FwalkTests(WalkTests):
                 self.assertEqual(set(os.listdir(rootfd)), set(dirs) | set(files))
 
     @unittest.skipIf(
-        support.is_emscripten, "Cannot dup stdout on Emscripten"
-    )
-    @unittest.skipIf(
         support.is_android, "dup return value is unpredictable on Android"
     )
     def test_fd_leak(self):
@@ -1731,9 +1848,6 @@ class FwalkTests(WalkTests):
         self.addCleanup(os.close, newfd)
         self.assertEqual(newfd, minfd)
 
-    @unittest.skipIf(
-        support.is_emscripten, "Cannot dup stdout on Emscripten"
-    )
     @unittest.skipIf(
         support.is_android, "dup return value is unpredictable on Android"
     )
@@ -1802,8 +1916,8 @@ class MakedirTests(unittest.TestCase):
         os.makedirs(path)
 
     @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "Emscripten's/WASI's umask is a stub."
+        support.is_wasi,
+        "WASI's umask is a stub."
     )
     def test_mode(self):
         with os_helper.temp_umask(0o002):
@@ -1818,8 +1932,8 @@ class MakedirTests(unittest.TestCase):
                 self.assertEqual(os.stat(parent).st_mode & 0o777, 0o775)
 
     @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "Emscripten's/WASI's umask is a stub."
+        support.is_wasi,
+        "WASI's umask is a stub."
     )
     def test_exist_ok_existing_directory(self):
         path = os.path.join(os_helper.TESTFN, 'dir1')
@@ -1836,8 +1950,8 @@ class MakedirTests(unittest.TestCase):
         os.makedirs(os.path.abspath('/'), exist_ok=True)
 
     @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "Emscripten's/WASI's umask is a stub."
+        support.is_wasi,
+        "WASI's umask is a stub."
     )
     def test_exist_ok_s_isgid_directory(self):
         path = os.path.join(os_helper.TESTFN, 'dir1')
@@ -2415,10 +2529,6 @@ class TestInvalidFD(unittest.TestCase):
         self.check(os.dup2, 20)
 
     @unittest.skipUnless(hasattr(os, 'dup2'), 'test needs os.dup2()')
-    @unittest.skipIf(
-        support.is_emscripten,
-        "dup2() with negative fds is broken on Emscripten (see gh-102179)"
-    )
     def test_dup2_negative_fd(self):
         valid_fd = os.open(__file__, os.O_RDONLY)
         self.addCleanup(os.close, valid_fd)
@@ -2443,16 +2553,19 @@ class TestInvalidFD(unittest.TestCase):
         self.check(os.fchown, -1, -1)
 
     @unittest.skipUnless(hasattr(os, 'fpathconf'), 'test needs os.fpathconf()')
-    @unittest.skipIf(
-        support.is_emscripten or support.is_wasi,
-        "musl libc issue on Emscripten/WASI, bpo-46390"
-    )
-    @unittest.skipIf(support.is_apple_mobile, "gh-118201: Test is flaky on iOS")
     def test_fpathconf(self):
-        self.check(os.pathconf, "PC_NAME_MAX")
-        self.check(os.fpathconf, "PC_NAME_MAX")
+        self.assertIn("PC_NAME_MAX", os.pathconf_names)
         self.check_bool(os.pathconf, "PC_NAME_MAX")
         self.check_bool(os.fpathconf, "PC_NAME_MAX")
+
+    @unittest.skipUnless(hasattr(os, 'fpathconf'), 'test needs os.fpathconf()')
+    @unittest.skipIf(
+        support.linked_to_musl(),
+        'musl pathconf ignores the file descriptor and returns a constant',
+        )
+    def test_fpathconf_bad_fd(self):
+        self.check(os.pathconf, "PC_NAME_MAX")
+        self.check(os.fpathconf, "PC_NAME_MAX")
 
     @unittest.skipUnless(hasattr(os, 'ftruncate'), 'test needs os.ftruncate()')
     def test_ftruncate(self):
@@ -2467,6 +2580,10 @@ class TestInvalidFD(unittest.TestCase):
     @unittest.skipUnless(hasattr(os, 'read'), 'test needs os.read()')
     def test_read(self):
         self.check(os.read, 1)
+
+    @unittest.skipUnless(hasattr(os, 'readinto'), 'test needs os.readinto()')
+    def test_readinto(self):
+        self.check(os.readinto, bytearray(5))
 
     @unittest.skipUnless(hasattr(os, 'readv'), 'test needs os.readv()')
     def test_readv(self):
@@ -3381,9 +3498,6 @@ class DeviceEncodingTests(unittest.TestCase):
     @unittest.skipUnless(os.isatty(0) and not win32_is_iot() and (sys.platform.startswith('win') or
             (hasattr(locale, 'nl_langinfo') and hasattr(locale, 'CODESET'))),
             'test requires a tty and either Windows or nl_langinfo(CODESET)')
-    @unittest.skipIf(
-        support.is_emscripten, "Cannot get encoding of stdin on Emscripten"
-    )
     def test_device_encoding(self):
         encoding = os.device_encoding(0)
         self.assertIsNotNone(encoding)
@@ -3967,10 +4081,10 @@ class ExtendedAttributeTests(unittest.TestCase):
         xattr.remove("user.test")
         self.assertEqual(set(listxattr(fn)), xattr)
         self.assertEqual(getxattr(fn, s("user.test2"), **kwargs), b"foo")
-        setxattr(fn, s("user.test"), b"a"*1024, **kwargs)
-        self.assertEqual(getxattr(fn, s("user.test"), **kwargs), b"a"*1024)
+        setxattr(fn, s("user.test"), b"a"*256, **kwargs)
+        self.assertEqual(getxattr(fn, s("user.test"), **kwargs), b"a"*256)
         removexattr(fn, s("user.test"), **kwargs)
-        many = sorted("user.test{}".format(i) for i in range(100))
+        many = sorted("user.test{}".format(i) for i in range(32))
         for thing in many:
             setxattr(fn, thing, b"x", **kwargs)
         self.assertEqual(set(listxattr(fn)), set(init_xattr) | set(many))
@@ -4174,6 +4288,7 @@ class EventfdTests(unittest.TestCase):
         os.eventfd_read(fd)
 
 @unittest.skipUnless(hasattr(os, 'timerfd_create'), 'requires os.timerfd_create')
+@unittest.skipIf(sys.platform == "android", "gh-124873: Test is flaky on Android")
 @support.requires_linux_version(2, 6, 30)
 class TimerfdTests(unittest.TestCase):
     # 1 ms accuracy is reliably achievable on every platform except Android
@@ -4237,6 +4352,9 @@ class TimerfdTests(unittest.TestCase):
         # confirm if timerfd is readable and read() returns 1 as bytes.
         self.assertEqual(self.read_count_signaled(fd), 1)
 
+    @unittest.skipIf(sys.platform.startswith('netbsd'),
+                     "gh-131263: Skip on NetBSD due to system freeze "
+                     "with negative timer values")
     def test_timerfd_negative(self):
         one_sec_in_nsec = 10**9
         fd = self.timerfd_create(time.CLOCK_REALTIME)

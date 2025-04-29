@@ -13,7 +13,6 @@ apt-get -yq install \
     libgdbm-dev \
     libgdbm-compat-dev \
     liblzma-dev \
-    libmpdec-dev \
     libncurses5-dev \
     libreadline6-dev \
     libsqlite3-dev \

@@ -748,8 +748,8 @@ stack manipulations such as ``dup``, ``drop``, ``swap``, ``over``, ``pick``,
         returns or raises is then returned or raised by :meth:`~object.__getitem__`.
 
         Note that :meth:`__missing__` is *not* called for any operations besides
-        :meth:`~object.__getitem__`. This means that :meth:`get` will, like normal
-        dictionaries, return ``None`` as a default rather than using
+        :meth:`~object.__getitem__`. This means that :meth:`~dict.get` will, like
+        normal dictionaries, return ``None`` as a default rather than using
         :attr:`default_factory`.
 
 
@@ -783,10 +783,10 @@ sequence of key-value pairs into a dictionary of lists:
 
 When each key is encountered for the first time, it is not already in the
 mapping; so an entry is automatically created using the :attr:`~defaultdict.default_factory`
-function which returns an empty :class:`list`.  The :meth:`list.append`
+function which returns an empty :class:`list`.  The :meth:`!list.append`
 operation then attaches the value to the new list.  When keys are encountered
 again, the look-up proceeds normally (returning the list for that key) and the
-:meth:`list.append` operation adds another value to the list. This technique is
+:meth:`!list.append` operation adds another value to the list. This technique is
 simpler and faster than an equivalent technique using :meth:`dict.setdefault`:
 
     >>> d = {}
@@ -849,8 +849,9 @@ they add the ability to access fields by name instead of position index.
     Returns a new tuple subclass named *typename*.  The new subclass is used to
     create tuple-like objects that have fields accessible by attribute lookup as
     well as being indexable and iterable.  Instances of the subclass also have a
-    helpful docstring (with typename and field_names) and a helpful :meth:`__repr__`
-    method which lists the tuple contents in a ``name=value`` format.
+    helpful docstring (with *typename* and *field_names*) and a helpful
+    :meth:`~object.__repr__` method which lists the tuple contents in a ``name=value``
+    format.
 
     The *field_names* are a sequence of strings such as ``['x', 'y']``.
     Alternatively, *field_names* can be a single string with each fieldname
@@ -894,10 +895,10 @@ they add the ability to access fields by name instead of position index.
        Added the *module* parameter.
 
     .. versionchanged:: 3.7
-       Removed the *verbose* parameter and the :attr:`_source` attribute.
+       Removed the *verbose* parameter and the :attr:`!_source` attribute.
 
     .. versionchanged:: 3.7
-       Added the *defaults* parameter and the :attr:`_field_defaults`
+       Added the *defaults* parameter and the :attr:`~somenamedtuple._field_defaults`
        attribute.
 
 .. doctest::
@@ -1109,7 +1110,7 @@ Some differences from :class:`dict` still remain:
   A regular :class:`dict` can emulate the order sensitive equality test with
   ``p == q and all(k1 == k2 for k1, k2 in zip(p, q))``.
 
-* The :meth:`popitem` method of :class:`OrderedDict` has a different
+* The :meth:`~OrderedDict.popitem` method of :class:`OrderedDict` has a different
   signature.  It accepts an optional argument to specify which item is popped.
 
   A regular :class:`dict` can emulate OrderedDict's ``od.popitem(last=True)``
@@ -1119,7 +1120,7 @@ Some differences from :class:`dict` still remain:
   with ``(k := next(iter(d)), d.pop(k))`` which will return and remove the
   leftmost (first) item if it exists.
 
-* :class:`OrderedDict` has a :meth:`move_to_end` method to efficiently
+* :class:`OrderedDict` has a :meth:`~OrderedDict.move_to_end` method to efficiently
   reposition an element to an endpoint.
 
   A regular :class:`dict` can emulate OrderedDict's ``od.move_to_end(k,
@@ -1130,7 +1131,7 @@ Some differences from :class:`dict` still remain:
   OrderedDict's ``od.move_to_end(k, last=False)`` which moves the key
   and its associated value to the leftmost (first) position.
 
-* Until Python 3.8, :class:`dict` lacked a :meth:`__reversed__` method.
+* Until Python 3.8, :class:`dict` lacked a :meth:`~object.__reversed__` method.
 
 
 .. class:: OrderedDict([items])
@@ -1185,7 +1186,7 @@ anywhere a regular dictionary is used.
 
 .. versionchanged:: 3.6
    With the acceptance of :pep:`468`, order is retained for keyword arguments
-   passed to the :class:`OrderedDict` constructor and its :meth:`update`
+   passed to the :class:`OrderedDict` constructor and its :meth:`~dict.update`
    method.
 
 .. versionchanged:: 3.9
