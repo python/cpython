@@ -2965,6 +2965,7 @@ static PyType_Slot array_slots[] = {
     {Py_tp_alloc, PyType_GenericAlloc},
     {Py_tp_new, array_new},
     {Py_tp_traverse, array_tp_traverse},
+    {Py_tp_token, Py_TP_USE_SPEC},
 
     /* as sequence */
     {Py_sq_length, array_length},
@@ -3207,20 +3208,15 @@ static inline int
 array_subscr_guard(PyObject *lhs, PyObject *rhs)
 {
     PyObject *exc = PyErr_GetRaisedException();
-    PyObject *module = PyType_GetModuleByDef(Py_TYPE(lhs), &arraymodule);
-    if (module == NULL) {
-        if (!PyErr_Occurred() || PyErr_ExceptionMatches(PyExc_TypeError)) {
-            /* lhs is not an array instance - ignore the TypeError (if any) */
-            PyErr_SetRaisedException(exc);
-            return 0;
-        }
-        else {
-            _PyErr_ChainExceptions1(exc);
-            return -1;
+    int ret = PyType_GetBaseByToken(Py_TYPE(lhs), &array_spec, NULL);
+    if (ret < 0) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Clear();
+            ret = 0;
         }
     }
-    PyErr_SetRaisedException(exc);
-    return array_Check(lhs, get_array_state(module));
+    _PyErr_ChainExceptions1(exc);
+    return ret;
 }
 
 static PyObject *
