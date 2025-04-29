@@ -1225,8 +1225,16 @@ int effective_trace_length(_PyUOpInstruction *buffer, int length)
 }
 #endif
 
-static int uop_optimize_initialized = 0;
-static int uop_optimize_flag = 0;
+static void
+initialize_uops_optimize_flag() {
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    if (!python_uops_optimize_initialized) {
+        char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
+        interp->uops_optimize_flag = (env_var == NULL || *env_var == '\0' || *env_var > '0');
+        uops_optimize_initialized = true;
+    }
+    uops_optimize_flag = interp->uops_optimize_flag;
+}
 
 static int
 uop_optimize(
@@ -1237,6 +1245,8 @@ uop_optimize(
     int curr_stackentries,
     bool progress_needed)
 {
+    initialize_uops_optimize_flag();
+
     _PyBloomFilter dependencies;
     _Py_BloomFilter_Init(&dependencies);
     _PyUOpInstruction buffer[UOP_MAX_TRACE_LENGTH];
@@ -1248,18 +1258,7 @@ uop_optimize(
     }
     assert(length < UOP_MAX_TRACE_LENGTH);
     OPT_STAT_INC(traces_created);
-
-    if (!uop_optimize_initialized) {
-        char *env_var = Py_GETENV("PYTHON_UOPS_OPTIMIZE");
-        if (env_var == NULL || *env_var == '\0' || *env_var > '0') {
-            uop_optimize_flag = 1;
-        } else {
-            uop_optimize_flag = 0;
-        }
-        uop_optimize_initialized = 1;
-    }
-
-    if (uop_optimize_flag) {
+    if (uops_optimize_flag) {
         length = _Py_uop_analyze_and_optimize(frame, buffer,
                                            length,
                                            curr_stackentries, &dependencies);
