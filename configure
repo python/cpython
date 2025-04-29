@@ -837,9 +837,9 @@ LIBREADLINE_CFLAGS
 WHEEL_PKG_DIR
 LIBPL
 PY_ENABLE_SHARED
-PLATLIBDIR
 BINLIBDEST
 LIBDEST
+PLATLIBDIR
 LIBPYTHON
 MODULE_DEPS_SHARED
 EXT_SUFFIX
@@ -26213,13 +26213,6 @@ if test "$ac_sys_system" = "iOS"; then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 
-
-
-
-LIBDEST='$(LIBDIR)/python$(VERSION)$(ABI_THREAD)'
-BINLIBDEST='$(LIBDIR)/python$(VERSION)$(ABI_THREAD)'
-
-
 # Check for --with-platlibdir
 # /usr/$PLATLIBDIR/python$(VERSION)$(ABI_THREAD)
 
@@ -26240,8 +26233,6 @@ then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
   PLATLIBDIR="$withval"
-  LIBDEST='${prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
-  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 else
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: no" >&5
 printf "%s\n" "no" >&6; }
@@ -26253,6 +26244,10 @@ esac
 fi
 
 
+
+
+LIBDEST='${prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
+BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 
 
 if test x$PLATFORM_TRIPLET = x; then

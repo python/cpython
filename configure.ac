@@ -6248,13 +6248,6 @@ if test "$ac_sys_system" = "iOS"; then
   MODULE_DEPS_SHARED="$MODULE_DEPS_SHARED \$(PYTHONFRAMEWORKDIR)/\$(PYTHONFRAMEWORK)"
 fi
 
-
-AC_SUBST([LIBDEST])
-AC_SUBST([BINLIBDEST])
-LIBDEST='$(LIBDIR)/python$(VERSION)$(ABI_THREAD)'
-BINLIBDEST='$(LIBDIR)/python$(VERSION)$(ABI_THREAD)'
-
-
 # Check for --with-platlibdir
 # /usr/$PLATLIBDIR/python$(VERSION)$(ABI_THREAD)
 AC_SUBST([PLATLIBDIR])
@@ -6275,13 +6268,15 @@ if test -n "$withval" -a "$withval" != yes -a "$withval" != no
 then
   AC_MSG_RESULT([yes])
   PLATLIBDIR="$withval"
-  LIBDEST='${prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
-  BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 else
   AC_MSG_RESULT([no])
 fi],
 [AC_MSG_RESULT([no])])
 
+AC_SUBST([LIBDEST])
+AC_SUBST([BINLIBDEST])
+LIBDEST='${prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
+BINLIBDEST='${exec_prefix}/${PLATLIBDIR}/python$(VERSION)$(ABI_THREAD)'
 
 dnl define LIBPL after ABIFLAGS and LDVERSION is defined.
 AC_SUBST([PY_ENABLE_SHARED])
