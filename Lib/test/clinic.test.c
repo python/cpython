@@ -1448,6 +1448,7 @@ test_unsigned_long_converter(PyObject *module, PyObject *const *args, Py_ssize_t
     {
         Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned long),
                 Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
                 Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
         if (_bytes < 0) {
             goto exit;
@@ -1470,10 +1471,7 @@ exit:
 static PyObject *
 test_unsigned_long_converter_impl(PyObject *module, unsigned long a,
                                   unsigned long b, unsigned long c)
-/*[clinic end generated code: output=f2c4399c71720c4d input=f450d94cae1ef73b]*/
-=======
-/*[clinic end generated code: output=d74eed227d77a31b input=f450d94cae1ef73b]*/
->>>>>>> main
+/*[clinic end generated code: output=1bbf5620093cc914 input=f450d94cae1ef73b]*/
 
 
 /*[clinic input]
@@ -1580,6 +1578,7 @@ test_unsigned_long_long_converter(PyObject *module, PyObject *const *args, Py_ss
     {
         Py_ssize_t _bytes = PyLong_AsNativeBytes(args[2], &c, sizeof(unsigned long long),
                 Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                Py_ASNATIVEBYTES_ALLOW_INDEX |
                 Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
         if (_bytes < 0) {
             goto exit;
@@ -1604,10 +1603,7 @@ test_unsigned_long_long_converter_impl(PyObject *module,
                                        unsigned long long a,
                                        unsigned long long b,
                                        unsigned long long c)
-/*[clinic end generated code: output=ad412e0d5dd94ac4 input=a15115dc41866ff4]*/
-=======
-/*[clinic end generated code: output=5ca4e4dfb3db644b input=a15115dc41866ff4]*/
->>>>>>> main
+/*[clinic end generated code: output=582a6623dc845824 input=a15115dc41866ff4]*/
 
 
 /*[clinic input]
