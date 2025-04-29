@@ -131,7 +131,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
         (ALIAS_PREFIX, {"target": TARGET}),
         (ALIAS_WPREFIX, {"target": TARGETW, "windowed": 1}),
     ):
-        if prefix is None:
+        if not prefix:
             continue
         if not base["target"]:
             continue
