@@ -1,0 +1,1 @@
+Workaround broken ``ldexp()`` implementation on Windows 10.
