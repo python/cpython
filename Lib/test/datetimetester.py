@@ -7337,11 +7337,10 @@ class ExtensionModuleTests(unittest.TestCase):
             date = _testcapi.get_capi_types()['date']
             date.today
             """)
-        # Test the script fails
+        # FIXME: Segfault
         with self.subTest('[PyDateTime_IMPORT] main: yes, sub: no'):
             self.assert_python_in_subinterp(False, script)
 
-        # Test the script succeeds
         script2 = '_testcapi.test_datetime_capi()' + script
         with self.subTest('[PyDateTime_IMPORT] main: no, sub: yes'):
             self.assert_python_in_subinterp(True, script2, setup='')
