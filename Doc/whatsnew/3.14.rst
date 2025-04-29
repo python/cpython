@@ -1168,6 +1168,11 @@ pdb
   backend by default, which is configurable.
   (Contributed by Tian Gao in :gh:`124533`.)
 
+* :func:`pdb.set_trace_async` is added to support debugging asyncio
+  coroutines. :keyword:`await` statements are supported with this
+  function.
+  (Contributed by Tian Gao in :gh:`132576`.)
+
 
 pickle
 ------
