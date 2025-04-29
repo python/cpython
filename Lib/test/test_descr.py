@@ -5177,10 +5177,15 @@ class MiscTests(unittest.TestCase):
 
         with self.assertWarnsRegex(RuntimeWarning, 'X'):
             X = type('X', (Base,), {MyKey(): 5})
+
+        # Note that the access below uses getattr() rather than normally
+        # accessing the attribute.  That is done to avoid the bytecode
+        # specializer activating on repeated runs of the test.
+
         # mykey is read from Base
-        self.assertEqual(X.mykey, 'from Base')
+        self.assertEqual(getattr(X, 'mykey'), 'from Base')
         # mykey2 is read from Base2 because MyKey.__eq__ has set __bases__
-        self.assertEqual(X.mykey2, 'from Base2')
+        self.assertEqual(getattr(X, 'mykey2'), 'from Base2')
 
 
 class PicklingTests(unittest.TestCase):
