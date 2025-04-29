@@ -7155,8 +7155,8 @@ class CapiTest(unittest.TestCase):
 
                     self.assertEqual(dt_orig, dt_rt)
 
-    def assert_python_in_subinterp(self, check_if_ok, script,
-                                   init='', fini='', config='isolated'):
+    def assert_python_in_subinterp(self, check_if_ok, script, init='',
+                                   fini='', repeat=1, config='isolated'):
         # iOS requires the use of the custom framework loader,
         # not the ExtensionFileLoader.
         if sys.platform == "ios":
@@ -7168,7 +7168,7 @@ class CapiTest(unittest.TestCase):
             import textwrap
             from test import support
 
-            subcode = textwrap.dedent("""
+            subinterp_code = textwrap.dedent("""
                 if {_interpreters is None}:
                     import _testcapi
                 else:
@@ -7180,23 +7180,26 @@ class CapiTest(unittest.TestCase):
                     spec = importlib.util.spec_from_loader(fullname, loader)
                     _testcapi = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(_testcapi)
+                INDEX = $INDEX$
 
-                setup = _testcapi.test_datetime_capi
+                setup = _testcapi.test_datetime_capi  # call it if needed
             ____$SCRIPT$
             """)
 
             import _testcapi
-            setup = _testcapi.test_datetime_capi  # run on the given texts
+            setup = _testcapi.test_datetime_capi
             $INIT$
 
-            if {_interpreters is None}:
-                ret = support.run_in_subinterp(subcode)
-            else:
-                import _interpreters
-                config = _interpreters.new_config('{config}').__dict__
-                ret = support.run_in_subinterp_with_config(subcode, **config)
+            for idx in range({repeat}):
+                subcode = subinterp_code.replace('$INDEX$', str(idx))
+                if {_interpreters is None}:
+                    ret = support.run_in_subinterp(subcode)
+                else:
+                    import _interpreters
+                    config = _interpreters.new_config('{config}').__dict__
+                    ret = support.run_in_subinterp_with_config(subcode, **config)
+                assert ret == 0
 
-            assert ret == 0
             $FINI$
         ''')
         code = code.replace('$INIT$', init).replace('$FINI$', fini)
@@ -7348,6 +7351,7 @@ class ExtensionModuleTests(unittest.TestCase):
             # Check if PyDateTime_IMPORT is invoked not only once
             self.assert_python_in_subinterp(True, with_setup, 'setup()')
             self.assert_python_in_subinterp(True, 'setup()', fini=with_setup)
+            self.assert_python_in_subinterp(True, with_setup, repeat=2)
 
         with_import = 'import _datetime' + script
         with self.subTest('Explicit import'):
