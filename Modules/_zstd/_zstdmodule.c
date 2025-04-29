@@ -897,7 +897,7 @@ _zstd_clear(PyObject *module)
 static void
 _zstd_free(void *module)
 {
-    _zstd_clear((PyObject *)module);
+    (void)_zstd_clear((PyObject *)module);
 }
 
 static struct PyModuleDef_Slot _zstd_slots[] = {
