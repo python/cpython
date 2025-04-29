@@ -135,10 +135,9 @@ interpolation_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 }
 
 static PyMethodDef interpolation_methods[] = {
-    {"__reduce__", interpolation_reduce, METH_VARARGS,
-     PyDoc_STR("__reduce__() -> (cls, state)")},
-
-    {NULL,      NULL},
+    {"__reduce__", interpolation_reduce, METH_NOARGS,
+        PyDoc_STR("__reduce__() -> (cls, state)")},
+    {NULL, NULL},
 };
 
 PyTypeObject _PyInterpolation_Type = {

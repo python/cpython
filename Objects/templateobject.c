@@ -444,7 +444,7 @@ template_reduce(PyObject *op, PyObject *Py_UNUSED(dummy))
 
 static PyMethodDef template_methods[] = {
     {"__reduce__", template_reduce, METH_NOARGS, NULL},
-    {NULL,      NULL},
+    {NULL, NULL},
 };
 
 PyTypeObject _PyTemplate_Type = {
