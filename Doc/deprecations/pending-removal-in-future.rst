@@ -7,8 +7,6 @@ although there is currently no date scheduled for their removal.
 * :mod:`argparse`: Nesting argument groups and nesting mutually exclusive
   groups are deprecated.
 
-* :mod:`array`'s ``'u'`` format code (:gh:`57281`)
-
 * :mod:`builtins`:
 
   * ``bool(NotImplemented)``.
