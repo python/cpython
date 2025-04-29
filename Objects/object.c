@@ -3199,3 +3199,11 @@ PyUnstable_IsImmortal(PyObject *op)
     assert(op != NULL);
     return _Py_IsImmortal(op);
 }
+
+int
+PyUnstable_Object_IsUniquelyReferenced(PyObject *op)
+{
+    _Py_AssertHoldsTstate();
+    assert(op != NULL);
+    return _PyObject_IsUniquelyReferenced(op);
+}
