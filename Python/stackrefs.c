@@ -205,14 +205,9 @@ _PyStackRef PyStackRef_TagInt(intptr_t i)
 intptr_t
 PyStackRef_UntagInt(_PyStackRef i)
 {
-    assert(is_tagged_int(i));
+    assert(PyStackRef_IsTaggedInt(i));
     intptr_t val = (intptr_t)i.index;
     return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, val, 1);
-}
-
-bool PyStackRef_IsTaggedInt(_PyStackRef ref)
-{
-    return is_tagged_int(ref);
 }
 
 bool

@@ -136,7 +136,7 @@ _PyStackRef_FromPyObjectImmortal(PyObject *obj, const char *filename, int linenu
 #define PyStackRef_FromPyObjectImmortal(obj) _PyStackRef_FromPyObjectImmortal(_PyObject_CAST(obj), __FILE__, __LINE__)
 
 static inline bool
-is_tagged_int(_PyStackRef ref)
+PyStackRef_IsTaggedInt(_PyStackRef ref)
 {
     return (ref.index & 1) == 1;
 }
@@ -144,7 +144,7 @@ is_tagged_int(_PyStackRef ref)
 static inline void
 _PyStackRef_CLOSE(_PyStackRef ref, const char *filename, int linenumber)
 {
-    if (is_tagged_int(ref)) {
+    if (PyStackRef_IsTaggedInt(ref)) {
         return;
     }
     PyObject *obj = _Py_stackref_close(ref, filename, linenumber);
@@ -166,7 +166,7 @@ _PyStackRef_XCLOSE(_PyStackRef ref, const char *filename, int linenumber)
 static inline _PyStackRef
 _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
 {
-    if (ref.index & 1) {
+    if (PyStackRef_IsTaggedInt(ref)) {
         return ref;
     }
     else {
