@@ -616,6 +616,7 @@ PyAPI_FUNC(int) _PyCode_SetUnboundVarCounts(
         PyObject *globalsns,
         PyObject *builtinsns);
 
+PyAPI_FUNC(const char *) _PyCode_CheckPureFunction(PyCodeObject *);
 PyAPI_FUNC(int) _PyCode_ReturnsOnlyNone(PyCodeObject *);
 
 

@@ -1925,12 +1925,35 @@ finally:
 }
 
 
+const char *
+_PyCode_CheckPureFunction(PyCodeObject *co)
+{
+    if (co->co_flags & CO_GENERATOR) {
+        return "generators not supported";
+    }
+    if (co->co_flags & CO_COROUTINE) {
+        return "coroutines not supported";
+    }
+    if (co->co_flags & CO_ITERABLE_COROUTINE) {
+        return "coroutines not supported";
+    }
+    if (co->co_flags & CO_ASYNC_GENERATOR) {
+        return "generators not supported";
+    }
+    return NULL;
+}
+
+
 /* Here "value" means a non-None value, since a bare return is identical
  * to returning None explicitly.  Likewise a missing return statement
  * at the end of the function is turned into "return None". */
 int
 _PyCode_ReturnsOnlyNone(PyCodeObject *co)
 {
+    if (_PyCode_CheckPureFunction(co) != NULL) {
+        return 0;
+    }
+
     // Look up None in co_consts.
     Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
     int none_index = 0;
