@@ -67,7 +67,7 @@ def calculate_install_json(ns, *, for_embed=False, for_test=False):
         TAG_SUFFIX = "t"
         TARGET = f"python{VER_MAJOR}.{VER_MINOR}t.exe"
         TARGETW = f"pythonw{VER_MAJOR}.{VER_MINOR}t.exe"
-        DISPLAY_TAGS.append("freethreaded")
+        DISPLAY_TAGS.append("free-threaded")
         FILE_SUFFIX = f"t-{ns.arch}"
 
     FULL_TAG = f"{VER_MAJOR}.{VER_MINOR}.{VER_MICRO}{VER_SUFFIX}{TAG_SUFFIX}"
