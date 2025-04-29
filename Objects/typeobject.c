@@ -11502,8 +11502,6 @@ fixup_slot_dispatchers(PyTypeObject *type)
 finish:
     Py_XDECREF(mro_dict);
     Py_DECREF(mro);
-
-    // END_TYPE_LOCK();
     return res;
 }
 
