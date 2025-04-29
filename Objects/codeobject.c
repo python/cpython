@@ -1715,7 +1715,7 @@ _PyCode_ReturnsValue(PyCodeObject *co)
     Py_ssize_t len = Py_SIZE(co);
     for (int i = 0; i < len; i++) {
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
-        if (inst.op.code == RETURN_VALUE) {
+        if (IS_RETURN_OPCODE(inst.op.code)) {
             assert(i != 0);
             // Ignore it if it returns None.
             _Py_CODEUNIT prev = _Py_GetBaseCodeUnit(co, i-1);
