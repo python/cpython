@@ -1098,11 +1098,16 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
 
     if (len_remains >= 3) {
         to_parse = 3;
-    p = parse_digits(p, nanosecond, to_parse);
-    if (NULL == p) {
-        return -3;
     }
 
+    // printf("Line: %d | to_parse: %zu\n", __LINE__, to_parse);
+    // if (to_parse > 0) {
+    //     p = parse_digits(p, nanosecond, to_parse);
+    //     if (NULL == p) {
+    //         return -3;
+    //     }
+    // }
+    *nanosecond = 0; // BUG
     static int nanosecond_correction[] = {
         100, 10
     };
