@@ -23,7 +23,7 @@ except ImportError:
 
 
 def codecs_open_no_warn(*args, **kwargs):
-    """call codecs.open(*args, **kwargs) ignoring DeprecationWarning"""
+    """Call codecs.open(*args, **kwargs) ignoring DeprecationWarning."""
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         return codecs.open(*args, **kwargs)
