@@ -216,6 +216,10 @@ from test.support import threading_helper, import_helper
 from test.support.bytecode_helper import instructions_with_positions
 from opcode import opmap, opname
 from _testcapi import code_offset_to_line
+try:
+    import _testinternalcapi
+except ModuleNotFoundError:
+    _testinternalcapi = None
 
 COPY_FREE_VARS = opmap['COPY_FREE_VARS']
 
@@ -424,6 +428,61 @@ class CodeTest(unittest.TestCase):
 
         with self.assertWarns(DeprecationWarning):
             func.__code__.co_lnotab
+
+    @unittest.skipIf(_testinternalcapi is None, '_testinternalcapi is missing')
+    def test_returns_value(self):
+        value = True
+
+        def spam1():
+            pass
+        def spam2():
+            return
+        def spam3():
+            return None
+        def spam4():
+            if not value:
+                return
+            ...
+        def spam5():
+            if not value:
+                return None
+            ...
+        lambda1 = (lambda: None)
+        for func in [
+            spam1,
+            spam2,
+            spam3,
+            spam4,
+            spam5,
+            lambda1,
+        ]:
+            with self.subTest(func):
+                res = _testinternalcapi.code_returns_value(func.__code__)
+                self.assertFalse(res)
+
+        def spam6():
+            return True
+        def spam7():
+            return value
+        def spam8():
+            if value:
+                return None
+            return True
+        def spam9():
+            if value:
+                return True
+            return None
+        lambda2 = (lambda: True)
+        for func in [
+            spam6,
+            spam7,
+            spam8,
+            spam9,
+            lambda2,
+        ]:
+            with self.subTest(func):
+                res = _testinternalcapi.code_returns_value(func.__code__)
+                self.assertTrue(res)
 
     def test_invalid_bytecode(self):
         def foo():
