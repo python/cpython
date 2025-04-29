@@ -1837,6 +1837,12 @@ AC_SUBST([REGEN_JIT_COMMAND])
 AC_SUBST([JIT_STENCILS_H])
 AC_MSG_RESULT([$tier2_flags $jit_flags])
 
+if test "$disable_gil" = "yes" -a "$enable_experimental_jit" != "no"; then
+  # GH-133171: This configuration builds the JIT but never actually uses it,
+  # which is surprising (and strictly worse than not building it at all):
+  AC_MSG_ERROR([--enable-experimental-jit cannot be used with --disable-gil.])
+fi
+
 # Enable optimization flags
 AC_SUBST([DEF_MAKE_ALL_RULE])
 AC_SUBST([DEF_MAKE_RULE])
