@@ -6576,7 +6576,7 @@ AF_UNIX if defined on the platform; otherwise, the default is AF_INET.");
 
 /*[clinic input]
 _socket.socket.ntohs
-    x: unsigned_short(bitwise=False)
+    x: unsigned_short
     /
 
 Convert a 16-bit unsigned integer from network to host byte order.
@@ -6584,7 +6584,7 @@ Convert a 16-bit unsigned integer from network to host byte order.
 
 static PyObject *
 _socket_socket_ntohs_impl(PySocketSockObject *self, unsigned short x)
-/*[clinic end generated code: output=fea6a7f0ed6b5319 input=a64696ca0e7e61ab]*/
+/*[clinic end generated code: output=fea6a7f0ed6b5319 input=6a7ac232db21dd62]*/
 {
 #if SIZEOF_SHORT > 2
     if (x > 0xffff) {
@@ -6634,7 +6634,7 @@ Convert a 32-bit integer from network to host byte order.");
 
 /*[clinic input]
 _socket.socket.htons
-    x: unsigned_short(bitwise=False)
+    x: unsigned_short
     /
 
 Convert a 16-bit unsigned integer from host to network byte order.
@@ -6642,7 +6642,7 @@ Convert a 16-bit unsigned integer from host to network byte order.
 
 static PyObject *
 _socket_socket_htons_impl(PySocketSockObject *self, unsigned short x)
-/*[clinic end generated code: output=051e2c88a1e143fe input=45f8ada592cbbc8c]*/
+/*[clinic end generated code: output=051e2c88a1e143fe input=2da6f8e015ed3d93]*/
 {
 #if SIZEOF_SHORT > 2
     if (x > 0xffff) {
