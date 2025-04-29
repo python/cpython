@@ -1559,7 +1559,6 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     tstate->py_recursion_limit = interp->ceval.recursion_limit;
     tstate->py_recursion_remaining = interp->ceval.recursion_limit;
-    tstate->c_recursion_remaining = 2;
     tstate->exc_info = &tstate->exc_state;
 
     // PyGILState_Release must not try to delete this thread state.
