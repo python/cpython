@@ -161,8 +161,8 @@ class EventQueueTestBase:
 
         self.assertIsInstance("ñ", str)
 
-        # we expect that no part of the multibyte string will remain in the
-        # internal buffer after an encode/decode error
+        # If an exception happens during push, the existing events must be
+        # preserved and we can continue to push.
         _push(b"b")
         with self.assertRaises(AssertionError):
             _push("ñ")
