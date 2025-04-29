@@ -115,8 +115,7 @@ The module defines the following functions:
       If the type or size of *arg* does not match the type or size
       of the operation's argument (for example, if an integer is
       passed when a pointer is expected, or the information returned in
-      the buffer by the operating system is larger than the size of *arg*
-      and 1024 bytes),
+      the buffer by the operating system is larger than the size of *arg*),
       this is most likely to result in a segmentation violation or
       a more subtle data corruption.
 
@@ -163,8 +162,7 @@ The module defines the following functions:
       If the type or size of *arg* does not match the type or size
       of the operation's argument (for example, if an integer is
       passed when a pointer is expected, or the information returned in
-      the buffer by the operating system is larger than the size of *arg*
-      and 1024 bytes),
+      the buffer by the operating system is larger than the size of *arg*),
       this is most likely to result in a segmentation violation or
       a more subtle data corruption.
 
