@@ -225,9 +225,9 @@ class CAPITest(unittest.TestCase):
             _testinternalcapi.incref_decref_delayed(obj)
 
     def test_is_unique_temporary(self):
-        self.assertEqual(1, _testcapi.pyobject_is_unique_temporary(object()))
+        self.assertTrue(_testcapi.pyobject_is_unique_temporary(object()))
         obj = object()
-        self.assertEqual(0, _testcapi.pyobject_is_unique_temporary(obj))
+        self.assertFalse(_testcapi.pyobject_is_unique_temporary(obj))
 
         def func(x):
             self.assertEqual(sys.getrefcount(x), 1)
