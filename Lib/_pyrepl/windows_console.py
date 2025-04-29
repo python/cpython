@@ -521,7 +521,17 @@ class WindowsConsole(Console):
     def getpending(self) -> Event:
         """Return the characters that have been typed but not yet
         processed."""
-        return Event("key", "", b"")
+        e = Event("key", "", b"")
+
+        while not self.event_queue.empty():
+            e2 = self.event_queue.get()
+            e.data += e2.data
+
+        rec = self._read_input(False)
+        if rec and rec.EventType == KEY_EVENT:
+            key_event = rec.Event.KeyEvent
+            e.data += key_event.uChar.UnicodeChar
+        return e
 
     def wait(self, timeout: float | None) -> bool:
         """Wait for an event."""
