@@ -1,0 +1,13 @@
+# Default settings for Ruff in CPython
+
+# PYTHON_FOR_REGEN
+target-version = "py310"
+
+# PEP 8
+line-length = 79
+
+# Nicer diagnostic output
+output-format = "full"
+
+# Enable automatic fixes (use ``fix = false`` or ``--no-fix`` to override)
+fix = true

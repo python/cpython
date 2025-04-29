@@ -1,4 +1,5 @@
-fix = true
+extend = "../../.ruff.toml"  # Inherit the project-wide settings
+
 extend-exclude = [
     # Excluded (run with the other AC files in its own separate ruff job in pre-commit)
     "test_clinic.py",
