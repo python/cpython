@@ -8,6 +8,7 @@ import unittest
 import test.support
 from test import support
 from test.support.script_helper import assert_python_ok
+from test.support import import_helper
 from test.support import os_helper
 from test.support import socket_helper
 from test.support import captured_stderr
@@ -328,13 +329,13 @@ class HelperFunctionsTests(unittest.TestCase):
             if sys.platlibdir != "lib":
                 self.assertEqual(len(dirs), 2)
                 wanted = os.path.join('xoxo', sys.platlibdir,
-                                      'python%d.%d' % sys.version_info[:2],
+                                      f'python{sysconfig._get_python_version_abi()}',
                                       'site-packages')
                 self.assertEqual(dirs[0], wanted)
             else:
                 self.assertEqual(len(dirs), 1)
             wanted = os.path.join('xoxo', 'lib',
-                                  'python%d.%d' % sys.version_info[:2],
+                                  f'python{sysconfig._get_python_version_abi()}',
                                   'site-packages')
             self.assertEqual(dirs[-1], wanted)
         else:
@@ -355,9 +356,7 @@ class HelperFunctionsTests(unittest.TestCase):
 
         with EnvironmentVarGuard() as environ, \
              mock.patch('os.path.expanduser', lambda path: path):
-
-            del environ['PYTHONUSERBASE']
-            del environ['APPDATA']
+            environ.unset('PYTHONUSERBASE', 'APPDATA')
 
             user_base = site.getuserbase()
             self.assertTrue(user_base.startswith('~' + os.sep),
@@ -513,7 +512,7 @@ class ImportSideEffectTests(unittest.TestCase):
         # If sitecustomize is available, it should have been imported.
         if "sitecustomize" not in sys.modules:
             try:
-                import sitecustomize
+                import sitecustomize  # noqa: F401
             except ImportError:
                 pass
             else:
@@ -575,6 +574,17 @@ class ImportSideEffectTests(unittest.TestCase):
         except urllib.error.HTTPError as e:
             code = e.code
         self.assertEqual(code, 200, msg="Can't find " + url)
+
+    @support.cpython_only
+    def test_lazy_imports(self):
+        import_helper.ensure_lazy_imports("site", [
+            "io",
+            "locale",
+            "traceback",
+            "atexit",
+            "warnings",
+            "textwrap",
+        ])
 
 
 class StartupImportTests(unittest.TestCase):

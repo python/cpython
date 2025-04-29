@@ -1,3 +1,5 @@
+.. _logging-howto:
+
 =============
 Logging HOWTO
 =============
@@ -125,7 +127,7 @@ that; formatting options will also be explained later.
 
 Notice that in this example, we use functions directly on the ``logging``
 module, like ``logging.debug``, rather than creating a logger and calling
-functions on it. These functions operation on the root logger, but can be useful
+functions on it. These functions operate on the root logger, but can be useful
 as they will call :func:`~logging.basicConfig` for you if it has not been called yet, like in
 this example.  In larger programs you'll usually want to control the logging
 configuration explicitly however - so for that reason as well as others, it's
@@ -380,8 +382,52 @@ Logging Flow
 The flow of log event information in loggers and handlers is illustrated in the
 following diagram.
 
-.. image:: logging_flow.png
-   :class: invert-in-dark-mode
+.. only:: not html
+
+   .. image:: logging_flow.*
+
+.. raw:: html
+   :file: logging_flow.svg
+
+.. raw:: html
+
+   <script>
+   /*
+    * This snippet is needed to handle the case where a light or dark theme is
+    * chosen via the theme is selected in the page. We call the existing handler
+    * and then add a dark-theme class to the body when the dark theme is selected.
+    * The SVG styling (above) then does the rest.
+    *
+    * If the pydoc theme is updated to set the dark-theme class, this snippet
+    * won't be needed any more.
+    */
+   (function() {
+     var oldActivateTheme = activateTheme;
+
+     function updateBody(theme) {
+        let elem = document.body;
+
+        elem.classList.remove('dark-theme');
+        elem.classList.remove('light-theme');
+        if (theme === 'dark') {
+            elem.classList.add('dark-theme');
+        }
+        else if (theme === 'light') {
+            elem.classList.add('light-theme');
+        }
+     }
+
+     activateTheme = function(theme) {
+        oldActivateTheme(theme);
+        updateBody(theme);
+     };
+     /*
+      * If the page is refreshed, make sure we update the body - the overriding
+      * of activateTheme won't have taken effect yet.
+      */
+      updateBody(localStorage.getItem('currentTheme') || 'auto');
+   })();
+   </script>
 
 Loggers
 ^^^^^^^

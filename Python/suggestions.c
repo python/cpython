@@ -3,6 +3,7 @@
 #include "pycore_frame.h"
 #include "pycore_pyerrors.h"      // export _Py_UTF8_Edit_Cost()
 #include "pycore_runtime.h"       // _Py_ID()
+#include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
 #define MAX_CANDIDATE_ITEMS 750
 #define MAX_STRING_SIZE 40
@@ -146,7 +147,7 @@ _Py_CalculateSuggestions(PyObject *dir,
     if (buffer == NULL) {
         return PyErr_NoMemory();
     }
-    for (int i = 0; i < dir_size; ++i) {
+    for (Py_ssize_t i = 0; i < dir_size; ++i) {
         PyObject *item = PyList_GET_ITEM(dir, i);
         if (_PyUnicode_Equal(name, item)) {
             continue;

@@ -38,7 +38,8 @@ The numeric tower
 
       Abstract. Retrieves the imaginary component of this number.
 
-   .. abstractmethod:: conjugate()
+   .. method:: conjugate()
+      :abstractmethod:
 
       Abstract. Returns the complex conjugate. For example, ``(1+3j).conjugate()
       == (1-3j)``.

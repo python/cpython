@@ -104,7 +104,12 @@ def _iter_ignored(infile, relroot):
                               for v in varidinfo)
         if reason in bogus:
             reason = None
-        varid = _info.DeclID.from_row(varidinfo)
+        try:
+            varid = _info.DeclID.from_row(varidinfo)
+        except BaseException as e:
+            e.add_note(f"Error occurred when processing row {varidinfo} in {infile}.")
+            e.add_note(f"Could it be that you added a row which is not tab-delimited?")
+            raise e
         varid = varid.fix_filename(relroot, formatted=False, fixroot=False)
         yield varid, reason
 

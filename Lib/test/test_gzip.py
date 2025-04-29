@@ -3,12 +3,15 @@
 
 import array
 import functools
+import gc
 import io
 import os
 import struct
 import sys
 import unittest
+import warnings
 from subprocess import PIPE, Popen
+from test.support import catch_unraisable_exception
 from test.support import import_helper
 from test.support import os_helper
 from test.support import _4G, bigmemtest, requires_subprocess
@@ -140,6 +143,38 @@ class TestGzip(BaseTest):
                 # Check that position was updated correctly (see issue10791).
                 self.assertEqual(f.tell(), nread)
         self.assertEqual(b''.join(blocks), data1 * 50)
+
+    def test_readinto(self):
+        # 10MB of uncompressible data to ensure multiple reads
+        large_data = os.urandom(10 * 2**20)
+        with gzip.GzipFile(self.filename, 'wb') as f:
+            f.write(large_data)
+
+        buf = bytearray(len(large_data))
+        with gzip.GzipFile(self.filename, 'r') as f:
+            nbytes = f.readinto(buf)
+        self.assertEqual(nbytes, len(large_data))
+        self.assertEqual(buf, large_data)
+
+    def test_readinto1(self):
+        # 10MB of uncompressible data to ensure multiple reads
+        large_data = os.urandom(10 * 2**20)
+        with gzip.GzipFile(self.filename, 'wb') as f:
+            f.write(large_data)
+
+        nread = 0
+        buf = bytearray(len(large_data))
+        memview = memoryview(buf)  # Simplifies slicing
+        with gzip.GzipFile(self.filename, 'r') as f:
+            for count in range(200):
+                nbytes = f.readinto1(memview[nread:])
+                if not nbytes:
+                    break
+                nread += nbytes
+                self.assertEqual(f.tell(), nread)
+        self.assertEqual(buf, large_data)
+        # readinto1() should require multiple loops
+        self.assertGreater(count, 1)
 
     @bigmemtest(size=_4G, memuse=1)
     def test_read_large(self, size):
@@ -713,14 +748,35 @@ class TestGzip(BaseTest):
                         f.read(1) # to set mtime attribute
                         self.assertEqual(f.mtime, mtime)
 
+    def test_compress_mtime_default(self):
+        # test for gh-125260
+        datac = gzip.compress(data1, mtime=0)
+        datac2 = gzip.compress(data1)
+        self.assertEqual(datac, datac2)
+        datac3 = gzip.compress(data1, mtime=None)
+        self.assertNotEqual(datac, datac3)
+        with gzip.GzipFile(fileobj=io.BytesIO(datac3), mode="rb") as f:
+            f.read(1) # to set mtime attribute
+            self.assertGreater(f.mtime, 1)
+
     def test_compress_correct_level(self):
-        # gzip.compress calls with mtime == 0 take a different code path.
         for mtime in (0, 42):
             with self.subTest(mtime=mtime):
                 nocompress = gzip.compress(data1, compresslevel=0, mtime=mtime)
                 yescompress = gzip.compress(data1, compresslevel=1, mtime=mtime)
                 self.assertIn(data1, nocompress)
                 self.assertNotIn(data1, yescompress)
+
+    def test_issue112346(self):
+        # The OS byte should be 255, this should not change between Python versions.
+        for mtime in (0, 42):
+            with self.subTest(mtime=mtime):
+                compress = gzip.compress(data1, compresslevel=1, mtime=mtime)
+                self.assertEqual(
+                    struct.unpack("<IxB", compress[4:10]),
+                    (mtime, 255),
+                    "Gzip header does not properly set either mtime or OS byte."
+                )
 
     def test_decompress(self):
         for data in (data1, data2):
@@ -836,6 +892,18 @@ class TestGzip(BaseTest):
             f.write(message)
         data = b.getvalue()
         self.assertEqual(gzip.decompress(data), message * 2)
+
+
+    def test_refloop_unraisable(self):
+        # Ensure a GzipFile referring to a temporary fileobj deletes cleanly.
+        # Previously an unraisable exception would occur on close because the
+        # fileobj would be closed before the GzipFile as the result of a
+        # reference loop. See issue gh-129726
+        with catch_unraisable_exception() as cm:
+            with self.assertWarns(ResourceWarning):
+                gzip.GzipFile(fileobj=io.BytesIO(), mode="w")
+                gc.collect()
+                self.assertIsNone(cm.unraisable)
 
 
 class TestOpen(BaseTest):

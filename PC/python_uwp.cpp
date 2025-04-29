@@ -10,6 +10,10 @@
 
 #include <string>
 
+#if defined(__clang__)
+#define _SILENCE_CLANG_COROUTINE_MESSAGE
+#endif
+
 #include <appmodel.h>
 #include <winrt\Windows.ApplicationModel.h>
 #include <winrt\Windows.Storage.h>
