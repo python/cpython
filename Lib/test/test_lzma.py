@@ -661,6 +661,8 @@ class FileTestCase(unittest.TestCase):
             LZMAFile(BytesIO(), "w", preset=-1)
         with self.assertRaises(ValueError):
             LZMAFile(BytesIO(), "w", preset=-7)
+        with self.assertRaises(OverflowError):
+            LZMAFile(BytesIO(), "w", preset=2**1000)
         with self.assertRaises(TypeError):
             LZMAFile(BytesIO(), "w", preset="foo")
         # Cannot specify a preset with mode="r".
