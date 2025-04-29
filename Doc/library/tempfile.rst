@@ -142,7 +142,7 @@ The module defines the following user-callable items:
    .. versionchanged:: 3.12
       Added *delete_on_close* parameter.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       Added support for the :term:`path-like object` protocol.
 
 
@@ -220,7 +220,7 @@ The module defines the following user-callable items:
    .. versionchanged:: 3.12
       Added the *delete* parameter.
 
-   .. versionchanged:: 3.14
+   .. versionchanged:: next
       Added support for the :term:`path-like object` protocol.
 
 
