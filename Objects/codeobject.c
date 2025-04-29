@@ -1691,7 +1691,7 @@ PyCode_GetFreevars(PyCodeObject *code)
 
 
 static int
-identify_unbound_names(PyCodeObject *co,
+identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
                        PyObject *globalnames, PyObject *attrnames,
                        PyObject *globalsns, PyObject *builtinsns,
                        struct co_unbound_counts *counts)
@@ -1715,7 +1715,7 @@ identify_unbound_names(PyCodeObject *co,
             PyObject *name = PyTuple_GET_ITEM(co->co_names, inst.op.arg>>1);
             if (counts != NULL) {
                 if (PySet_Contains(attrnames, name)) {
-                    if (PyErr_Occurred()) {
+                    if (_PyErr_Occurred(tstate)) {
                         return -1;
                     }
                     continue;
@@ -1731,7 +1731,7 @@ identify_unbound_names(PyCodeObject *co,
             PyObject *name = PyTuple_GET_ITEM(co->co_names, inst.op.arg>>1);
             if (counts != NULL) {
                 if (PySet_Contains(globalnames, name)) {
-                    if (PyErr_Occurred()) {
+                    if (_PyErr_Occurred(tstate)) {
                         return -1;
                     }
                     continue;
@@ -1740,14 +1740,14 @@ identify_unbound_names(PyCodeObject *co,
                 counts->globals.total += 1;
                 counts->globals.numunknown += 1;
                 if (globalsns != NULL && PyDict_Contains(globalsns, name)) {
-                    if (PyErr_Occurred()) {
+                    if (_PyErr_Occurred(tstate)) {
                         return -1;
                     }
                     counts->globals.numglobal += 1;
                     counts->globals.numunknown -= 1;
                 }
                 if (builtinsns != NULL && PyDict_Contains(builtinsns, name)) {
-                    if (PyErr_Occurred()) {
+                    if (_PyErr_Occurred(tstate)) {
                         return -1;
                     }
                     counts->globals.numbuiltin += 1;
@@ -1866,7 +1866,8 @@ _PyCode_GetVarCounts(PyCodeObject *co, _PyCode_var_counts_t *counts)
 }
 
 int
-_PyCode_SetUnboundVarCounts(PyCodeObject *co, _PyCode_var_counts_t *counts,
+_PyCode_SetUnboundVarCounts(PyThreadState *tstate,
+                            PyCodeObject *co, _PyCode_var_counts_t *counts,
                             PyObject *globalnames, PyObject *attrnames,
                             PyObject *globalsns, PyObject *builtinsns)
 {
@@ -1881,7 +1882,7 @@ _PyCode_SetUnboundVarCounts(PyCodeObject *co, _PyCode_var_counts_t *counts,
         globalnames = globalnames_owned;
     }
     else if (!PySet_Check(globalnames)) {
-        PyErr_Format(PyExc_TypeError,
+        _PyErr_Format(tstate, PyExc_TypeError,
                      "expected a set for \"globalnames\", got %R", globalnames);
         goto finally;
     }
@@ -1893,14 +1894,15 @@ _PyCode_SetUnboundVarCounts(PyCodeObject *co, _PyCode_var_counts_t *counts,
         attrnames = attrnames_owned;
     }
     else if (!PySet_Check(attrnames)) {
-        PyErr_Format(PyExc_TypeError,
+        _PyErr_Format(tstate, PyExc_TypeError,
                      "expected a set for \"attrnames\", got %R", attrnames);
         goto finally;
     }
 
     struct co_unbound_counts unbound = {0};
     if (identify_unbound_names(
-            co, globalnames, attrnames, globalsns, builtinsns, &unbound) < 0)
+            tstate, co, globalnames, attrnames, globalsns, builtinsns,
+            &unbound) < 0)
     {
         goto finally;
     }

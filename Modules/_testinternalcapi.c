@@ -1002,6 +1002,7 @@ get_co_localskinds(PyObject *self, PyObject *arg)
 static PyObject *
 get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
 {
+    PyThreadState *tstate = _PyThreadState_GET();
     PyObject *codearg;
     PyObject *globalnames = NULL;
     PyObject *attrnames = NULL;
@@ -1035,7 +1036,8 @@ get_code_var_counts(PyObject *self, PyObject *_args, PyObject *_kwargs)
     _PyCode_var_counts_t counts = {0};
     _PyCode_GetVarCounts(code, &counts);
     if (_PyCode_SetUnboundVarCounts(
-            code, &counts, globalnames, attrnames, globalsns, builtinsns) < 0)
+            tstate, code, &counts, globalnames, attrnames,
+            globalsns, builtinsns) < 0)
     {
         return NULL;
     }

@@ -607,6 +607,7 @@ PyAPI_FUNC(void) _PyCode_GetVarCounts(
         PyCodeObject *,
         _PyCode_var_counts_t *);
 PyAPI_FUNC(int) _PyCode_SetUnboundVarCounts(
+        PyThreadState *,
         PyCodeObject *,
         _PyCode_var_counts_t *,
         PyObject *globalnames,
