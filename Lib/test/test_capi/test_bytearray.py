@@ -20,6 +20,7 @@ class CAPITest(unittest.TestCase):
     def test_check(self):
         # Test PyByteArray_Check()
         check = _testlimitedcapi.bytearray_check
+        self.assertTrue(check(bytearray(b'')))
         self.assertTrue(check(bytearray(b'abc')))
         self.assertFalse(check(b'abc'))
         self.assertTrue(check(ByteArraySubclass(b'abc')))
@@ -33,6 +34,7 @@ class CAPITest(unittest.TestCase):
     def test_checkexact(self):
         # Test PyByteArray_CheckExact()
         check = _testlimitedcapi.bytearray_checkexact
+        self.assertTrue(check(bytearray(b'')))
         self.assertTrue(check(bytearray(b'abc')))
         self.assertFalse(check(b'abc'))
         self.assertFalse(check(ByteArraySubclass(b'abc')))
@@ -78,7 +80,7 @@ class CAPITest(unittest.TestCase):
     def test_size(self):
         # Test PyByteArray_Size()
         size = _testlimitedcapi.bytearray_size
-
+        self.assertEqual(size(bytearray(b'')), 0)
         self.assertEqual(size(bytearray(b'abc')), 3)
         self.assertEqual(size(ByteArraySubclass(b'abc')), 3)
 
@@ -89,7 +91,7 @@ class CAPITest(unittest.TestCase):
     def test_asstring(self):
         """Test PyByteArray_AsString()"""
         asstring = _testlimitedcapi.bytearray_asstring
-
+        self.assertEqual(asstring(bytearray(b''), 1), b'\0')
         self.assertEqual(asstring(bytearray(b'abc'), 4), b'abc\0')
         self.assertEqual(asstring(ByteArraySubclass(b'abc'), 4), b'abc\0')
         self.assertEqual(asstring(bytearray(b'abc\0def'), 8), b'abc\0def\0')
@@ -105,6 +107,7 @@ class CAPITest(unittest.TestCase):
         ba = bytearray(b'abc')
         self.assertEqual(concat(ba, b'def'), bytearray(b'abcdef'))
         self.assertEqual(ba, b'abc')
+        self.assertEqual(concat(ba, ba), bytearray(b'abcabc'))
 
         self.assertEqual(concat(b'abc', b'def'), bytearray(b'abcdef'))
         self.assertEqual(concat(b'a\0b', b'c\0d'), bytearray(b'a\0bc\0d'))
@@ -151,10 +154,11 @@ class CAPITest(unittest.TestCase):
         self.assertEqual(resize(ba, 3), 0)
         self.assertEqual(ba, bytearray(b'abc'))
 
+        self.assertRaises(ValueError, resize, bytearray(), -1)
+        self.assertRaises(ValueError, resize, bytearray(), -200)
         self.assertRaises(MemoryError, resize, bytearray(), PY_SSIZE_T_MAX)
         self.assertRaises(MemoryError, resize, bytearray(1000), PY_SSIZE_T_MAX)
 
-        # CRASHES resize(bytearray(b'abc'), -1)
         # CRASHES resize(b'abc', 0)
         # CRASHES resize(object(), 0)
         # CRASHES resize(NULL, 0)

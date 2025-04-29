@@ -1,1 +1,0 @@
-Adjusts ``cmath.acosh(complex('0+nanj'))`` for recent C standards.

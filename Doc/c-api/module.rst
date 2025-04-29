@@ -37,18 +37,19 @@ Module Objects
       single: __package__ (module attribute)
       single: __loader__ (module attribute)
 
-   Return a new module object with the :attr:`__name__` attribute set to *name*.
-   The module's :attr:`__name__`, :attr:`__doc__`, :attr:`__package__`, and
-   :attr:`__loader__` attributes are filled in (all but :attr:`__name__` are set
-   to ``None``); the caller is responsible for providing a :attr:`__file__`
-   attribute.
+   Return a new module object with :attr:`module.__name__` set to *name*.
+   The module's :attr:`!__name__`, :attr:`~module.__doc__`,
+   :attr:`~module.__package__` and :attr:`~module.__loader__` attributes are
+   filled in (all but :attr:`!__name__` are set to ``None``). The caller is
+   responsible for setting a :attr:`~module.__file__` attribute.
 
    Return ``NULL`` with an exception set on error.
 
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.4
-      :attr:`__package__` and :attr:`__loader__` are set to ``None``.
+      :attr:`~module.__package__` and :attr:`~module.__loader__` are now set to
+      ``None``.
 
 
 .. c:function:: PyObject* PyModule_New(const char *name)
@@ -77,8 +78,9 @@ Module Objects
       single: __name__ (module attribute)
       single: SystemError (built-in exception)
 
-   Return *module*'s :attr:`__name__` value.  If the module does not provide one,
-   or if it is not a string, :exc:`SystemError` is raised and ``NULL`` is returned.
+   Return *module*'s :attr:`~module.__name__` value.  If the module does not
+   provide one, or if it is not a string, :exc:`SystemError` is raised and
+   ``NULL`` is returned.
 
    .. versionadded:: 3.3
 
@@ -108,8 +110,8 @@ Module Objects
       single: SystemError (built-in exception)
 
    Return the name of the file from which *module* was loaded using *module*'s
-   :attr:`__file__` attribute.  If this is not defined, or if it is not a
-   unicode string, raise :exc:`SystemError` and return ``NULL``; otherwise return
+   :attr:`~module.__file__` attribute.  If this is not defined, or if it is not a
+   string, raise :exc:`SystemError` and return ``NULL``; otherwise return
    a reference to a Unicode object.
 
    .. versionadded:: 3.2
@@ -413,13 +415,15 @@ The available slot types are:
    in one module definition.
 
    If ``Py_mod_multiple_interpreters`` is not specified, the import
-   machinery defaults to ``Py_MOD_MULTIPLE_INTERPRETERS_NOT_SUPPORTED``.
+   machinery defaults to ``Py_MOD_MULTIPLE_INTERPRETERS_SUPPORTED``.
 
    .. versionadded:: 3.12
 
 .. c:macro:: Py_mod_gil
 
    Specifies one of the following values:
+
+   .. c:namespace:: NULL
 
    .. c:macro:: Py_MOD_GIL_USED
 
@@ -519,9 +523,6 @@ state:
 
    On success, return ``0``. On error, raise an exception and return ``-1``.
 
-   Return ``-1`` if *value* is ``NULL``. It must be called with an exception
-   raised in this case.
-
    Example usage::
 
        static int
@@ -535,6 +536,10 @@ state:
            Py_DECREF(obj);
            return res;
         }
+
+   To be convenient, the function accepts ``NULL`` *value* with an exception
+   set. In this case, return ``-1`` and just leave the raised exception
+   unchanged.
 
    The example can also be written without checking explicitly if *obj* is
    ``NULL``::
@@ -704,7 +709,7 @@ since multiple such modules can be created from a single definition.
    mechanisms (either by calling it directly, or by referring to its
    implementation for details of the required state updates).
 
-   The caller must hold the GIL.
+   The caller must have an :term:`attached thread state`.
 
    Return ``-1`` with an exception set on error, ``0`` on success.
 
@@ -715,6 +720,6 @@ since multiple such modules can be created from a single definition.
    Removes the module object created from *def* from the interpreter state.
    Return ``-1`` with an exception set on error, ``0`` on success.
 
-   The caller must hold the GIL.
+   The caller must have an :term:`attached thread state`.
 
    .. versionadded:: 3.3

@@ -116,7 +116,7 @@ except ImportError:
 
 from _ssl import (
     HAS_SNI, HAS_ECDH, HAS_NPN, HAS_ALPN, HAS_SSLv2, HAS_SSLv3, HAS_TLSv1,
-    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK
+    HAS_TLSv1_1, HAS_TLSv1_2, HAS_TLSv1_3, HAS_PSK, HAS_PHA
 )
 from _ssl import _DEFAULT_CIPHERS, _OPENSSL_API_VERSION
 
@@ -1164,11 +1164,21 @@ class SSLSocket(socket):
 
     @_sslcopydoc
     def get_verified_chain(self):
-        return self._sslobj.get_verified_chain()
+        chain = self._sslobj.get_verified_chain()
+
+        if chain is None:
+            return []
+
+        return [cert.public_bytes(_ssl.ENCODING_DER) for cert in chain]
 
     @_sslcopydoc
     def get_unverified_chain(self):
-        return self._sslobj.get_unverified_chain()
+        chain = self._sslobj.get_unverified_chain()
+
+        if chain is None:
+            return []
+
+        return [cert.public_bytes(_ssl.ENCODING_DER) for cert in chain]
 
     @_sslcopydoc
     def selected_npn_protocol(self):

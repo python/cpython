@@ -63,7 +63,6 @@ SETTINGS:
         written as two quotes
 """
 
-import re
 import types
 from _csv import Error, writer, reader, register_dialect, \
                  unregister_dialect, get_dialect, list_dialects, \
@@ -281,6 +280,7 @@ class Sniffer:
         If there is no quotechar the delimiter can't be determined
         this way.
         """
+        import re
 
         matches = []
         for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)', # ,".*?",

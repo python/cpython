@@ -4,6 +4,7 @@ Allows fine grained feature control of how the package parses and emits data.
 """
 
 import abc
+import re
 from email import header
 from email import charset as _charset
 from email.utils import _has_surrogates
@@ -14,6 +15,14 @@ __all__ = [
     'compat32',
     ]
 
+# validation regex from RFC 5322, equivalent to pattern re.compile("[!-9;-~]+$")
+valid_header_name_re = re.compile("[\041-\071\073-\176]+$")
+
+def validate_header_name(name):
+    # Validate header name according to RFC 5322
+    if not valid_header_name_re.match(name):
+        raise ValueError(
+            f"Header field name contains invalid characters: {name!r}")
 
 class _PolicyBase:
 
@@ -302,18 +311,19 @@ class Compat32(Policy):
         """+
         The name is parsed as everything up to the ':' and returned unmodified.
         The value is determined by stripping leading whitespace off the
-        remainder of the first line, joining all subsequent lines together, and
+        remainder of the first line joined with all subsequent lines, and
         stripping any trailing carriage return or linefeed characters.
 
         """
         name, value = sourcelines[0].split(':', 1)
-        value = value.lstrip(' \t') + ''.join(sourcelines[1:])
+        value = ''.join((value, *sourcelines[1:])).lstrip(' \t\r\n')
         return (name, value.rstrip('\r\n'))
 
     def header_store_parse(self, name, value):
         """+
         The name and value are returned unmodified.
         """
+        validate_header_name(name)
         return (name, value)
 
     def header_fetch_parse(self, name, value):
