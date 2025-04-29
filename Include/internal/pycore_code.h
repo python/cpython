@@ -177,12 +177,14 @@ typedef struct {
  */
 
 // Note that these all fit within a byte, as do combinations.
-// Later, we will use the smaller numbers to differentiate the different
-// kinds of locals (e.g. pos-only arg, varkwargs, local-only).
-#define CO_FAST_HIDDEN  0x10
-#define CO_FAST_LOCAL   0x20
-#define CO_FAST_CELL    0x40
-#define CO_FAST_FREE    0x80
+#define CO_FAST_ARG_POS (0x02)  // pos-only, pos-or-kw, varargs
+#define CO_FAST_ARG_KW  (0x04)  // kw-only, pos-or-kw, varkwargs
+#define CO_FAST_ARG_VAR (0x08)  // varargs, varkwargs
+#define CO_FAST_ARG     (CO_FAST_ARG_POS | CO_FAST_ARG_KW | CO_FAST_ARG_VAR)
+#define CO_FAST_HIDDEN  (0x10)
+#define CO_FAST_LOCAL   (0x20)
+#define CO_FAST_CELL    (0x40)
+#define CO_FAST_FREE    (0x80)
 
 typedef unsigned char _PyLocals_Kind;
 
