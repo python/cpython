@@ -751,13 +751,9 @@ add_constant_to_type(PyTypeObject *type, const char *name, const long value)
         return -1;
     }
 
-    if (PyObject_SetAttrString((PyObject*) type, name, temp) < 0) {
-        Py_DECREF(temp);
-        return -1;
-    }
+    int rc = PyObject_SetAttrString((PyObject*) type, name, temp);
     Py_DECREF(temp);
-
-    return 0;
+    return rc;
 }
 
 static int _zstd_exec(PyObject *module) {
