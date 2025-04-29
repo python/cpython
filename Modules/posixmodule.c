@@ -219,6 +219,7 @@
 #  if defined(MS_WINDOWS_DESKTOP) || defined(MS_WINDOWS_SYSTEM)
 #    define HAVE_SYMLINK
 #  endif /* MS_WINDOWS_DESKTOP | MS_WINDOWS_SYSTEM */
+extern int winerror_to_errno(int);
 #endif
 
 
@@ -11438,6 +11439,7 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
     if (result >= 0) {
         if (GetFileType(h) != FILE_TYPE_DISK) {
             // Only file is seekable
+            errno = ESPIPE;
             result = -1;
         }
     }
@@ -11455,8 +11457,14 @@ os_lseek_impl(PyObject *module, int fd, Py_off_t position, int how)
 #endif
     _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
-    if (result < 0)
+    if (result < 0) {
+#ifdef MS_WINDOWS
+        if (errno == 0) {
+            errno = winerror_to_errno(GetLastError());
+        }
+#endif
         posix_error();
+    }
 
     return result;
 }
