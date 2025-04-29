@@ -2026,6 +2026,10 @@ dummy_func(
             }
         }
 
+        pseudo(ANNOTATIONS_PLACEHOLDER, (--)) = {
+            NOP,
+        };
+
         inst(DICT_UPDATE, (dict, unused[oparg - 1], update -- dict, unused[oparg - 1])) {
             PyObject *dict_o = PyStackRef_AsPyObjectBorrow(dict);
             PyObject *update_o = PyStackRef_AsPyObjectBorrow(update);
@@ -3025,6 +3029,9 @@ dummy_func(
         }
 
         inst(GET_ITER, (iterable -- iter)) {
+            #ifdef Py_STATS
+            _Py_GatherStats_GetIter(iterable);
+            #endif
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
             PyStackRef_CLOSE(iterable);

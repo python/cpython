@@ -1,4 +1,5 @@
 import io
+import time
 import json
 import os
 import signal
@@ -12,12 +13,16 @@ import unittest
 import unittest.mock
 from contextlib import contextmanager
 from pathlib import Path
-from test.support import is_wasi, os_helper
+from test.support import is_wasi, os_helper, requires_subprocess, SHORT_TIMEOUT
 from test.support.os_helper import temp_dir, TESTFN, unlink
 from typing import Dict, List, Optional, Tuple, Union, Any
 
 import pdb
 from pdb import _PdbServer, _PdbClient
+
+
+if not sys.is_remote_debug_enabled():
+    raise unittest.SkipTest('remote debugging is disabled')
 
 
 @contextmanager
@@ -252,6 +257,7 @@ class RemotePdbTestCase(unittest.TestCase):
             self.assertEqual(len(prompts), 2)  # Should have sent 2 prompts
 
 
+@requires_subprocess()
 @unittest.skipIf(is_wasi, "WASI does not support TCP sockets")
 class PdbConnectTestCase(unittest.TestCase):
     """Tests for the _connect mechanism using direct socket communication."""
@@ -414,7 +420,7 @@ class PdbConnectTestCase(unittest.TestCase):
             self._send_command(client_file, "c")
 
             # Wait for process to finish
-            stdout, _ = process.communicate(timeout=5)
+            stdout, _ = process.communicate(timeout=SHORT_TIMEOUT)
 
             # Check if we got the expected output
             self.assertIn("Function returned: 42", stdout)
@@ -457,19 +463,13 @@ class PdbConnectTestCase(unittest.TestCase):
 
             # Continue to end
             self._send_command(client_file, "c")
-            stdout, _ = process.communicate(timeout=5)
+            stdout, _ = process.communicate(timeout=SHORT_TIMEOUT)
 
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
 
     def test_keyboard_interrupt(self):
         """Test that sending keyboard interrupt breaks into pdb."""
-        synchronizer_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        synchronizer_sock.bind(('127.0.0.1', 0))  # Let OS assign port
-        synchronizer_sock.settimeout(5)
-        synchronizer_sock.listen(1)
-        self.addCleanup(synchronizer_sock.close)
-        sync_port = synchronizer_sock.getsockname()[1]
 
         script = textwrap.dedent(f"""
             import time
@@ -486,11 +486,10 @@ class PdbConnectTestCase(unittest.TestCase):
                     version=pdb._PdbServer.protocol_version(),
                 )
                 print("Connected to debugger")
-                iterations = 10
-                socket.create_connection(('127.0.0.1', {sync_port})).close()
+                iterations = 50
                 while iterations > 0:
-                    print("Iteration", iterations)
-                    time.sleep(1)
+                    print("Iteration", iterations, flush=True)
+                    time.sleep(0.2)
                     iterations -= 1
                 return 42
 
@@ -507,21 +506,26 @@ class PdbConnectTestCase(unittest.TestCase):
             # Continue execution
             self._send_command(client_file, "c")
 
-            # Wait until execution has continued
-            synchronizer_sock.accept()[0].close()
+            # Confirm that the remote is already in the while loop. We know
+            # it's in bar() and we can exit the loop immediately by setting
+            # iterations to 0.
+            while line := process.stdout.readline():
+                if line.startswith("Iteration"):
+                    break
 
             # Inject a script to interrupt the running process
             self._send_interrupt(process.pid)
             messages = self._read_until_prompt(client_file)
 
-            # Verify we got the keyboard interrupt message
-            interrupt_msg = next(msg['message'] for msg in messages if 'message' in msg)
-            self.assertIn("bar()", interrupt_msg)
+            # Verify we got the keyboard interrupt message.
+            interrupt_msgs = [msg['message'] for msg in messages if 'message' in msg]
+            expected_msg = [msg for msg in interrupt_msgs if "bar()" in msg]
+            self.assertGreater(len(expected_msg), 0)
 
-            # Continue to end
+            # Continue to end as fast as we can
             self._send_command(client_file, "iterations = 0")
             self._send_command(client_file, "c")
-            stdout, _ = process.communicate(timeout=5)
+            stdout, _ = process.communicate(timeout=SHORT_TIMEOUT)
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
 
@@ -539,7 +543,7 @@ class PdbConnectTestCase(unittest.TestCase):
             client_file.flush()
 
             # The process should complete normally after receiving EOF
-            stdout, stderr = process.communicate(timeout=5)
+            stdout, stderr = process.communicate(timeout=SHORT_TIMEOUT)
 
             # Verify process completed correctly
             self.assertIn("Function returned: 42", stdout)
@@ -589,7 +593,7 @@ class PdbConnectTestCase(unittest.TestCase):
             self.assertIn('protocol version', message['message'])
 
             # The process should complete normally
-            stdout, stderr = process.communicate(timeout=5)
+            stdout, stderr = process.communicate(timeout=SHORT_TIMEOUT)
 
             # Verify the process completed successfully
             self.assertIn("Test result: True", stdout)
@@ -631,7 +635,7 @@ class PdbConnectTestCase(unittest.TestCase):
             # Continue execution to finish the program
             self._send_command(client_file, "c")
 
-            stdout, stderr = process.communicate(timeout=5)
+            stdout, stderr = process.communicate(timeout=SHORT_TIMEOUT)
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
 
@@ -689,7 +693,7 @@ class PdbConnectTestCase(unittest.TestCase):
             # Continue execution to finish
             self._send_command(client_file, "c")
 
-            stdout, stderr = process.communicate(timeout=5)
+            stdout, stderr = process.communicate(timeout=SHORT_TIMEOUT)
             self.assertIn("Function returned: 42", stdout)
             self.assertEqual(process.returncode, 0)
 

@@ -514,6 +514,7 @@ struct _Py_global_strings {
         STRUCT_FOR_ID(intern)
         STRUCT_FOR_ID(intersection)
         STRUCT_FOR_ID(interval)
+        STRUCT_FOR_ID(io)
         STRUCT_FOR_ID(is_running)
         STRUCT_FOR_ID(is_struct)
         STRUCT_FOR_ID(isatty)

@@ -1210,14 +1210,40 @@ _PyInterpreterState_SetWhence(PyInterpreterState *interp, long whence)
 
 
 PyObject *
-PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
+_Py_GetMainModule(PyThreadState *tstate)
 {
-    PyObject *modules = _PyImport_GetModules(interp);
-    if (modules == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
-        return NULL;
+    // We return None to indicate "not found" or "bogus".
+    PyObject *modules = _PyImport_GetModulesRef(tstate->interp);
+    if (modules == Py_None) {
+        return modules;
     }
-    return PyMapping_GetItemString(modules, "__main__");
+    PyObject *module = NULL;
+    (void)PyMapping_GetOptionalItem(modules, &_Py_ID(__main__), &module);
+    Py_DECREF(modules);
+    if (module == NULL && !PyErr_Occurred()) {
+        Py_RETURN_NONE;
+    }
+    return module;
+}
+
+int
+_Py_CheckMainModule(PyObject *module)
+{
+    if (module == NULL || module == Py_None) {
+        if (!PyErr_Occurred()) {
+            (void)_PyErr_SetModuleNotFoundError(&_Py_ID(__main__));
+        }
+        return -1;
+    }
+    if (!Py_IS_TYPE(module, &PyModule_Type)) {
+        /* The __main__ module has been tampered with. */
+        PyObject *msg = PyUnicode_FromString("invalid __main__ module");
+        if (msg != NULL) {
+            (void)PyErr_SetImportError(msg, &_Py_ID(__main__), NULL);
+        }
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -1533,7 +1559,6 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     tstate->py_recursion_limit = interp->ceval.recursion_limit;
     tstate->py_recursion_remaining = interp->ceval.recursion_limit;
-    tstate->c_recursion_remaining = 2;
     tstate->exc_info = &tstate->exc_state;
 
     // PyGILState_Release must not try to delete this thread state.
