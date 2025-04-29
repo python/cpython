@@ -184,6 +184,7 @@ class IsUniquelyReferencedTest(unittest.TestCase):
 
         assert_python_failure("-c", "import _testcapi; _testcapi.is_uniquely_referenced(None)")
 
+
 class CAPITest(unittest.TestCase):
     def check_negative_refcount(self, code):
         # bpo-35059: Check that Py_DECREF() reports the correct filename
