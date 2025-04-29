@@ -3795,8 +3795,8 @@ apply_slot_updates(slot_update_t *updates)
 
 #else
 
-// not used, slot updates are applied immediately
-typedef struct {} slot_update_t;
+// dummy definition, this parameter is only NULL in the default build
+typedef void slot_update_t;
 
 #endif
 
