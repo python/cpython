@@ -676,6 +676,9 @@ NON_ESCAPING_FUNCTIONS = (
     "JUMP_TO_LABEL",
     "restart_backoff_counter",
     "_Py_ReachedRecursionLimit",
+    "PyStackRef_IsTaggedInt",
+    "PyStackRef_TagInt",
+    "PyStackRef_UntagInt",
 )
 
 def check_escaping_calls(instr: parser.CodeDef, escapes: dict[SimpleStmt, EscapingCall]) -> None:

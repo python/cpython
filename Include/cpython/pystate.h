@@ -118,8 +118,6 @@ struct _ts {
 
     int py_recursion_remaining;
     int py_recursion_limit;
-
-    int c_recursion_remaining; /* Retained for backwards compatibility. Do not use */
     int recursion_headroom; /* Allow 50 more calls to handle any errors. */
 
     /* 'tracing' keeps track of the execution depth when tracing/profiling.
@@ -209,8 +207,6 @@ struct _ts {
     PyObject *threading_local_sentinel;
     _PyRemoteDebuggerSupport remote_debugger_support;
 };
-
-# define Py_C_RECURSION_LIMIT 5000
 
 /* other API */
 
