@@ -317,6 +317,7 @@ extern void _Py_Specialize_ForIter(_PyStackRef iter, _Py_CODEUNIT *instr, int op
 extern void _Py_Specialize_Send(_PyStackRef receiver, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ToBool(_PyStackRef value, _Py_CODEUNIT *instr);
 extern void _Py_Specialize_ContainsOp(_PyStackRef value, _Py_CODEUNIT *instr);
+extern void _Py_GatherStats_GetIter(_PyStackRef iterable);
 
 // Utility functions for reading/writing 32/64-bit values in the inline caches.
 // Great care should be taken to ensure that these functions remain correct and
