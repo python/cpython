@@ -183,8 +183,7 @@ _testcapi_float_set_snan(PyObject *module, PyObject *obj)
     memcpy(&v, &d, 8);
     v &= ~(1ULL << 51); /* make sNaN */
 
-    // gh-130317: Work around 32-bit compilers which clear sNaN flag
-    // when calling PyFloat_FromDouble(). Set ob_fval using memcpy().
+    // gh-130317: memcpy() is needed to preserve the sNaN flag on x86 (32-bit)
     PyObject *res = PyFloat_FromDouble(0.0);
     memcpy(&((PyFloatObject *)res)->ob_fval, &v, 8);
     return res;
