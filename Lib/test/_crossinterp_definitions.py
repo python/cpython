@@ -163,8 +163,10 @@ FUNCTION_LIKE = [
     gen_spam_1,
     gen_spam_2,
     async_spam,
-    coro_spam,  # actually FunctionType?
     asyncgen_spam,
+]
+FUNCTION_LIKE_APPLIED = [
+    coro_spam,  # actually FunctionType?
     asynccoro_spam,  # actually FunctionType?
 ]
 

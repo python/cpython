@@ -178,6 +178,13 @@ PyAPI_FUNC(int) _PyPickle_GetXIData(
         PyObject *,
         _PyXIData_t *);
 
+// _PyObject_GetXIData() for marshal
+PyAPI_FUNC(PyObject *) _PyMarshal_ReadObjectFromXIData(_PyXIData_t *);
+PyAPI_FUNC(int) _PyMarshal_GetXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+
 
 /* using cross-interpreter data */
 
