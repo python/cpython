@@ -711,11 +711,11 @@ Object Protocol
    Determine if *op* only has one reference.
 
    On GIL-enabled builds, this function is equivalent to
-   ``Py_REFCNT(op) == 1``.
+   :c:expr:`Py_REFCNT(op) == 1`.
 
    On a :term:`free threaded <free threading>` build, this checks if *op*'s
    :term:`reference count` is equal to one and additionally checks if *op*
-   is only used by this thread. ``Py_REFCNT(op) == 1`` is **not**
+   is only used by this thread. :c:expr:`Py_REFCNT(op) == 1` is **not**
    thread-safe on free threaded builds; prefer this function.
 
    The caller must hold an :term:`attached thread state`, despite the fact
