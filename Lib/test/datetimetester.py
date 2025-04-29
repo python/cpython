@@ -7165,28 +7165,25 @@ class CapiTest(unittest.TestCase):
             extension_loader = "ExtensionFileLoader"
 
         code = textwrap.dedent(f'''
-            import textwrap
-            from test import support
-
-            subinterp_code = textwrap.dedent("""
-                if {_interpreters is None}:
-                    import _testcapi
-                else:
-                    import importlib.machinery
-                    import importlib.util
-                    fullname = '_testcapi_datetime'
-                    origin = importlib.util.find_spec('_testcapi').origin
-                    loader = importlib.machinery.{extension_loader}(fullname, origin)
-                    spec = importlib.util.spec_from_loader(fullname, loader)
-                    _testcapi = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(_testcapi)
-                INDEX = $INDEX$
-
-                setup = _testcapi.test_datetime_capi  # call it if needed
-            ____$SCRIPT$
-            """)
+            subinterp_code = """
+            if {_interpreters is None}:
+                import _testcapi
+            else:
+                import importlib.machinery
+                import importlib.util
+                fullname = '_testcapi_datetime'
+                origin = importlib.util.find_spec('_testcapi').origin
+                loader = importlib.machinery.{extension_loader}(fullname, origin)
+                spec = importlib.util.spec_from_loader(fullname, loader)
+                _testcapi = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(_testcapi)
+            INDEX = $INDEX$
+            setup = _testcapi.test_datetime_capi  # call it if needed
+            $SCRIPT$
+            """
 
             import _testcapi
+            from test import support
             setup = _testcapi.test_datetime_capi
             $INIT$
 
@@ -7199,11 +7196,10 @@ class CapiTest(unittest.TestCase):
                     config = _interpreters.new_config('{config}').__dict__
                     ret = support.run_in_subinterp_with_config(subcode, **config)
                 assert ret == 0
-
             $FINI$
         ''')
         code = code.replace('$INIT$', init).replace('$FINI$', fini)
-        code = code.replace('____$SCRIPT$', textwrap.indent(script, '\x20'*4))
+        code = code.replace('$SCRIPT$', script)
 
         if check_if_ok:
             res = script_helper.assert_python_ok('-c', code)
