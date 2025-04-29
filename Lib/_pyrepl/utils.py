@@ -1,9 +1,13 @@
-import re
-import unicodedata
+import builtins
 import functools
+import keyword
+import re
+import token as T
+import tokenize
+import unicodedata
 
-from idlelib import colorizer
-from typing import cast, Iterator, Literal, Match, NamedTuple, Pattern, Self
+from io import StringIO
+from typing import cast, Iterator, Literal, Match, NamedTuple, Self
 from _colorize import ANSIColors
 
 from .types import CharBuffer, CharWidths
@@ -12,17 +16,19 @@ from .trace import trace
 ANSI_ESCAPE_SEQUENCE = re.compile(r"\x1b\[[ -@]*[A-~]")
 ZERO_WIDTH_BRACKET = re.compile(r"\x01.*?\x02")
 ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
-COLORIZE_RE: Pattern[str] = colorizer.prog
-IDENTIFIER_RE: Pattern[str] = colorizer.idprog
 IDENTIFIERS_AFTER = {"def", "class"}
-COLORIZE_GROUP_NAME_MAP: dict[str, str] = colorizer.prog_group_name_to_tag
+BUILTINS = {str(name) for name in dir(builtins) if not name.startswith('_')}
+
 
 type ColorTag = (
     Literal["KEYWORD"]
     | Literal["BUILTIN"]
     | Literal["COMMENT"]
     | Literal["STRING"]
+    | Literal["NUMBER"]
+    | Literal["OP"]
     | Literal["DEFINITION"]
+    | Literal["SOFT_KEYWORD"]
     | Literal["SYNC"]
 )
 
@@ -38,6 +44,13 @@ class Span(NamedTuple):
         re_span = m.span(group)
         return cls(re_span[0], re_span[1] - 1)
 
+    @classmethod
+    def from_token(cls, token: tokenize.TokenInfo, line_len: list[int]) -> Self:
+        return cls(
+            line_len[token.start[0] - 1] + token.start[1],
+            line_len[token.end[0] - 1] + token.end[1] - 1,
+        )
+
 
 class ColorSpan(NamedTuple):
     span: Span
@@ -49,7 +62,10 @@ TAG_TO_ANSI: dict[ColorTag, str] = {
     "BUILTIN": ANSIColors.CYAN,
     "COMMENT": ANSIColors.RED,
     "STRING": ANSIColors.GREEN,
+    "NUMBER": ANSIColors.YELLOW,
+    "OP": ANSIColors.RESET,
     "DEFINITION": ANSIColors.BOLD_WHITE,
+    "SOFT_KEYWORD": ANSIColors.BOLD_GREEN,  # FIXME: change to RESET
     "SYNC": ANSIColors.RESET,
 }
 
@@ -86,17 +102,19 @@ def unbracket(s: str, including_content: bool = False) -> str:
 
 
 def gen_colors(buffer: str) -> Iterator[ColorSpan]:
-    """Returns a list of index spans to color using the given color tag.
-
-    The input `buffer` should be a valid start of a Python code block, i.e.
-    it cannot be a block starting in the middle of a multiline string.
-    """
+    # FIXME: delete this previous version, now only kept for debugging.
+    from idlelib import colorizer
+    COLORIZE_RE = colorizer.prog
     for match in COLORIZE_RE.finditer(buffer):
         yield from gen_color_spans(match)
 
 
 def gen_color_spans(re_match: Match[str]) -> Iterator[ColorSpan]:
-    """Generate non-empty color spans."""
+    # FIXME: delete this previous version, now only kept for debugging.
+    from idlelib import colorizer
+    COLORIZE_GROUP_NAME_MAP = colorizer.prog_group_name_to_tag
+    IDENTIFIER_RE = colorizer.idprog
+
     for tag, data in re_match.groupdict().items():
         if not data:
             continue
@@ -107,6 +125,104 @@ def gen_color_spans(re_match: Match[str]) -> Iterator[ColorSpan]:
             if name_match := IDENTIFIER_RE.match(re_match.string, span.end + 1):
                 span = Span.from_re(name_match, 1)
                 yield ColorSpan(span, "DEFINITION")
+
+
+def gen_colors(buffer: str) -> Iterator[ColorSpan]:
+    """Returns a list of index spans to color using the given color tag.
+
+    The input `buffer` should be a valid start of a Python code block, i.e.
+    it cannot be a block starting in the middle of a multiline string.
+    """
+    sio = StringIO(buffer)
+    line_lengths = [0] + [len(line) for line in sio.readlines()]
+    # make line_lengths cumulative
+    for i in range(1, len(line_lengths)):
+        line_lengths[i] += line_lengths[i-1]
+
+    sio.seek(0)
+    gen = tokenize.generate_tokens(sio.readline)
+    last_emitted = None
+    try:
+        for color in gen_colors_from_token_stream(gen, line_lengths):
+            yield color
+            last_emitted = color
+    except tokenize.TokenError as te:
+        yield from recover_unterminated_string(
+            te, line_lengths, last_emitted, buffer
+        )
+
+
+def recover_unterminated_string(
+    exc: tokenize.TokenError,
+    line_lengths: list[int],
+    last_emitted: ColorTag | None,
+    buffer: str,
+) -> Iterator[ColorSpan]:
+    msg, loc = exc.args
+    if (
+        msg.startswith("unterminated string literal")
+        or msg.startswith("unterminated f-string literal")
+        or msg.startswith("EOF in multi-line string")
+        or msg.startswith("unterminated triple-quoted f-string literal")
+    ):
+        start = line_lengths[loc[0] - 1] + loc[1] - 1
+        end = line_lengths[-1] - 1
+
+        # in case FSTRING_START was already emitted
+        if last_emitted and start <= last_emitted.span.start:
+            trace("before last emitted = {s}", s=start)
+            start = last_emitted.span.end + 1
+
+        span = Span(start, end)
+        trace("yielding span {a} -> {b}", a=span.start, b=span.end)
+        yield ColorSpan(span, "STRING")
+    else:
+        trace(
+            "unhandled token error({buffer}) = {te}",
+            buffer=repr(buffer),
+            te=str(exc),
+        )
+
+
+def gen_colors_from_token_stream(
+    token_generator: Iterator[tokenize.TokenInfo],
+    line_lengths: list[int],
+) -> Iterator[ColorSpan]:
+    is_def_name = False
+    for token in token_generator:
+        if token.start == token.end:
+            continue
+
+        match token.type:
+            case T.STRING | T.FSTRING_START | T.FSTRING_MIDDLE | T.FSTRING_END:
+                span = Span.from_token(token, line_lengths)
+                yield ColorSpan(span, "STRING")
+            case T.COMMENT:
+                span = Span.from_token(token, line_lengths)
+                yield ColorSpan(span, "COMMENT")
+            case T.NUMBER:
+                span = Span.from_token(token, line_lengths)
+                yield ColorSpan(span, "NUMBER")
+            case T.OP:
+                span = Span.from_token(token, line_lengths)
+                yield ColorSpan(span, "OP")
+            case T.NAME:
+                if is_def_name:
+                    is_def_name = False
+                    span = Span.from_token(token, line_lengths)
+                    yield ColorSpan(span, "DEFINITION")
+                elif keyword.iskeyword(token.string):
+                    span = Span.from_token(token, line_lengths)
+                    yield ColorSpan(span, "KEYWORD")
+                    if token.string in IDENTIFIERS_AFTER:
+                        is_def_name = True
+                elif keyword.issoftkeyword(token.string):
+                    span = Span.from_token(token, line_lengths)
+                    yield ColorSpan(span, "SOFT_KEYWORD")
+                elif token.string in BUILTINS:
+                    span = Span.from_token(token, line_lengths)
+                    yield ColorSpan(span, "BUILTIN")
+                # TODO: soft keywords
 
 
 def disp_str(

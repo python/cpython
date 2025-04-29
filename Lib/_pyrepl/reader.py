@@ -320,6 +320,7 @@ class Reader:
             colors = list(gen_colors(self.get_unicode()))
         else:
             colors = None
+        trace("colors = {colors}", colors=colors)
         lines = "".join(self.buffer[offset:]).split("\n")
         cursor_found = False
         lines_beyond_cursor = 0
