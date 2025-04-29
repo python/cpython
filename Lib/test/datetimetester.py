@@ -7198,8 +7198,7 @@ class CapiTest(unittest.TestCase):
 
             assert ret == 0
             $FINI$
-
-        ''').rstrip()
+        ''')
         code = code.replace('$INIT$', init).replace('$FINI$', fini)
         code = code.replace('____$SCRIPT$', textwrap.indent(script, '\x20'*4))
 
@@ -7348,6 +7347,7 @@ class ExtensionModuleTests(unittest.TestCase):
         with self.subTest('[PyDateTime_IMPORT] main: yes, sub: yes'):
             # Check if PyDateTime_IMPORT is invoked not only once
             self.assert_python_in_subinterp(True, with_setup, 'setup()')
+            self.assert_python_in_subinterp(True, 'setup()', fini=with_setup)
 
         with_import = 'import _datetime' + script
         with self.subTest('Explicit import'):
