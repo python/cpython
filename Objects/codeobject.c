@@ -1694,7 +1694,7 @@ PyCode_GetFreevars(PyCodeObject *code)
  * to returning None explicitly.  Likewise a missing return statement
  * at the end of the function is turned into "return None". */
 int
-_PyCode_ReturnsValue(PyCodeObject *co)
+_PyCode_ReturnsOnlyNone(PyCodeObject *co)
 {
     // Look up None in co_consts.
     Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
@@ -1708,7 +1708,7 @@ _PyCode_ReturnsValue(PyCodeObject *co)
         // None wasn't there, which means there was no implicit return,
         // "return", or "return None".  That means there must be
         // an explicit return (non-None).
-        return 1;
+        return 0;
     }
 
     // Walk the bytecode, looking for RETURN_VALUE.
@@ -1725,10 +1725,10 @@ _PyCode_ReturnsValue(PyCodeObject *co)
                     continue;
                 }
             }
-            return 1;
+            return 0;
         }
     }
-    return 0;
+    return 1;
 }
 
 

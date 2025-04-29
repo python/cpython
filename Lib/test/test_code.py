@@ -430,7 +430,7 @@ class CodeTest(unittest.TestCase):
             func.__code__.co_lnotab
 
     @unittest.skipIf(_testinternalcapi is None, '_testinternalcapi is missing')
-    def test_returns_value(self):
+    def test_returns_only_none(self):
         value = True
 
         def spam1():
@@ -457,8 +457,8 @@ class CodeTest(unittest.TestCase):
             lambda1,
         ]:
             with self.subTest(func):
-                res = _testinternalcapi.code_returns_value(func.__code__)
-                self.assertFalse(res)
+                res = _testinternalcapi.code_returns_only_none(func.__code__)
+                self.assertTrue(res)
 
         def spam6():
             return True
@@ -481,8 +481,8 @@ class CodeTest(unittest.TestCase):
             lambda2,
         ]:
             with self.subTest(func):
-                res = _testinternalcapi.code_returns_value(func.__code__)
-                self.assertTrue(res)
+                res = _testinternalcapi.code_returns_only_none(func.__code__)
+                self.assertFalse(res)
 
     def test_invalid_bytecode(self):
         def foo():

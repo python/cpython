@@ -946,14 +946,14 @@ iframe_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
-code_returns_value(PyObject *self, PyObject *arg)
+code_returns_only_none(PyObject *self, PyObject *arg)
 {
     if (!PyCode_Check(arg)) {
         PyErr_SetString(PyExc_TypeError, "argument must be a code object");
         return NULL;
     }
     PyCodeObject *code = (PyCodeObject *)arg;
-    int res = _PyCode_ReturnsValue(code);
+    int res = _PyCode_ReturnsOnlyNone(code);
     return PyBool_FromLong(res);
 }
 
@@ -2042,7 +2042,7 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
-    {"code_returns_value", code_returns_value, METH_O, NULL},
+    {"code_returns_only_none", code_returns_only_none, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
     {"jit_enabled", jit_enabled,  METH_NOARGS, NULL},
 #ifdef _Py_TIER2
