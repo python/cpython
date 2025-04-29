@@ -89,24 +89,6 @@ exit:
     return return_value;
 }
 
-PyDoc_STRVAR(_zstd_ZstdDict___reduce____doc__,
-"__reduce__($self, /)\n"
-"--\n"
-"\n"
-"Intentionally not supporting pickle.");
-
-#define _ZSTD_ZSTDDICT___REDUCE___METHODDEF    \
-    {"__reduce__", (PyCFunction)_zstd_ZstdDict___reduce__, METH_NOARGS, _zstd_ZstdDict___reduce____doc__},
-
-static PyObject *
-_zstd_ZstdDict___reduce___impl(ZstdDict *self);
-
-static PyObject *
-_zstd_ZstdDict___reduce__(PyObject *self, PyObject *Py_UNUSED(ignored))
-{
-    return _zstd_ZstdDict___reduce___impl((ZstdDict *)self);
-}
-
 PyDoc_STRVAR(_zstd_ZstdDict_as_digested_dict__doc__,
 "Load as a digested dictionary to compressor.\n"
 "\n"
@@ -222,4 +204,4 @@ _zstd_ZstdDict_as_prefix_get(PyObject *self, void *Py_UNUSED(context))
 
     return return_value;
 }
-/*[clinic end generated code: output=7f2d4ea47307f8fd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=59257c053f74eda7 input=a9049054013a1b77]*/

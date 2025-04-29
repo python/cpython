@@ -129,35 +129,9 @@ _zstd_ZstdDict___init___impl(ZstdDict *self, PyObject *dict_content,
     return 0;
 }
 
-
-/*[clinic input]
-_zstd.ZstdDict.__reduce__
-
-
-Intentionally not supporting pickle.
-[clinic start generated code]*/
-
-static PyObject *
-_zstd_ZstdDict___reduce___impl(ZstdDict *self)
-/*[clinic end generated code: output=5c9b8a3550429417 input=2d69a2b4775ff76d]*/
-{
-    PyErr_SetString(PyExc_TypeError,
-                    "ZstdDict object intentionally doesn't support pickle. If you need "
-                    "to save zstd dictionary to disk, please save .dict_content "
-                    "attribute, it's a bytes object. So that the zstd dictionary "
-                    "can be used with other programs.");
-    return NULL;
-}
-
 #define clinic_state() (get_zstd_state(type))
 #include "clinic/zdict.c.h"
 #undef clinic_state
-
-static PyMethodDef ZstdDict_methods[] = {
-    _ZSTD_ZSTDDICT___REDUCE___METHODDEF
-
-    {0}
-};
 
 PyDoc_STRVAR(ZstdDict_dictid_doc,
 "ID of zstd dictionary, a 32-bit unsigned int value.\n\n"
@@ -270,7 +244,6 @@ ZstdDict_length(ZstdDict *self)
 }
 
 static PyType_Slot zstddict_slots[] = {
-    {Py_tp_methods, ZstdDict_methods},
     {Py_tp_members, ZstdDict_members},
     {Py_tp_getset, ZstdDict_getset},
     {Py_tp_new, _zstd_ZstdDict_new},
