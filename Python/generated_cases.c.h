@@ -1739,6 +1739,9 @@
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
                 }
+            }
+            // _CHECK_RECURSION_REMAINING
+            {
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
@@ -1854,16 +1857,8 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
             // flush
-            // _CHECK_STACK_SPACE
+            // _CHECK_RECURSION_REMAINING
             {
-                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-                PyFunctionObject *func = (PyFunctionObject *)callable_o;
-                PyCodeObject *code = (PyCodeObject *)func->func_code;
-                if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
-                    UPDATE_MISS_STATS(CALL);
-                    assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
-                }
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
@@ -4016,6 +4011,9 @@
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
                     JUMP_TO_PREDICTED(CALL);
                 }
+            }
+            // _CHECK_RECURSION_REMAINING
+            {
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
@@ -4102,16 +4100,8 @@
                     JUMP_TO_PREDICTED(CALL);
                 }
             }
-            // _CHECK_STACK_SPACE
+            // _CHECK_RECURSION_REMAINING
             {
-                PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
-                PyFunctionObject *func = (PyFunctionObject *)callable_o;
-                PyCodeObject *code = (PyCodeObject *)func->func_code;
-                if (!_PyThreadState_HasStackSpace(tstate, code->co_framesize)) {
-                    UPDATE_MISS_STATS(CALL);
-                    assert(_PyOpcode_Deopt[opcode] == (CALL));
-                    JUMP_TO_PREDICTED(CALL);
-                }
                 if (tstate->py_recursion_remaining <= 1) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));

@@ -1784,6 +1784,10 @@
             break;
         }
 
+        case _CHECK_RECURSION_REMAINING: {
+            break;
+        }
+
         case _INIT_CALL_PY_EXACT_ARGS: {
             JitOptSymbol **args;
             JitOptSymbol *self_or_null;
