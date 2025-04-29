@@ -3029,6 +3029,9 @@ dummy_func(
         }
 
         inst(GET_ITER, (iterable -- iter)) {
+            #ifdef Py_STATS
+            _Py_GatherStats_GetIter(iterable);
+            #endif
             /* before: [obj]; after [getiter(obj)] */
             PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
             PyStackRef_CLOSE(iterable);
