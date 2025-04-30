@@ -233,7 +233,8 @@ extern intptr_t PyStackRef_UntagInt(_PyStackRef ref);
 
 extern _PyStackRef PyStackRef_TagInt(intptr_t i);
 
-extern _PyStackRef PyStackRef_IncrementTaggedInt(_PyStackRef ref);
+/* Increments a tagged int, but does not check for overflow */
+extern _PyStackRef PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref);
 
 extern bool
 PyStackRef_IsNullOrInt(_PyStackRef ref);
@@ -265,9 +266,9 @@ PyStackRef_UntagInt(_PyStackRef i)
 
 
 static inline _PyStackRef
-PyStackRef_IncrementTaggedInt(_PyStackRef ref)
+PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref)
 {
-    assert(ref.bits != (uintptr_t)-1); // Overflow
+    assert(ref.bits != (uintptr_t)-1); // Deosn't overflow
     return (_PyStackRef){ .bits = ref.bits + 4 };
 }
 

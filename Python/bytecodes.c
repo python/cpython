@@ -3112,7 +3112,7 @@ dummy_func(
                     JUMPBY(oparg + 1);
                     DISPATCH();
                 }
-                null_or_index = PyStackRef_IncrementTaggedInt(null_or_index);
+                null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
             }
             else {
                 PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
@@ -3254,7 +3254,7 @@ dummy_func(
 #else
             next = PyStackRef_FromPyObjectNew(PyList_GET_ITEM(list_o, PyStackRef_UntagInt(null_or_index)));
 #endif
-            null_or_index = PyStackRef_IncrementTaggedInt(null_or_index);
+            null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
         }
 
         // Only used by Tier 2
@@ -3273,7 +3273,7 @@ dummy_func(
             assert(PyStackRef_UntagInt(null_or_index) < PyList_GET_SIZE(list_o));
             next = PyStackRef_FromPyObjectNew(PyList_GET_ITEM(list_o, PyStackRef_UntagInt(null_or_index)));
 #endif
-            null_or_index = PyStackRef_IncrementTaggedInt(null_or_index);
+            null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
         }
 
         macro(FOR_ITER_LIST) =
@@ -3317,7 +3317,7 @@ dummy_func(
             uintptr_t i = PyStackRef_UntagInt(null_or_index);
             assert((size_t)i < (size_t)PyTuple_GET_SIZE(tuple_o));
             next = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(tuple_o, i));
-            null_or_index = PyStackRef_IncrementTaggedInt(null_or_index);
+            null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
         }
 
         macro(FOR_ITER_TUPLE) =

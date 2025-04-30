@@ -4268,7 +4268,7 @@
             assert(PyStackRef_UntagInt(null_or_index) < PyList_GET_SIZE(list_o));
             next = PyStackRef_FromPyObjectNew(PyList_GET_ITEM(list_o, PyStackRef_UntagInt(null_or_index)));
             #endif
-            null_or_index = PyStackRef_IncrementTaggedInt(null_or_index);
+            null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
             stack_pointer[-1] = null_or_index;
             stack_pointer[0] = next;
             stack_pointer += 1;
@@ -4323,7 +4323,7 @@
             uintptr_t i = PyStackRef_UntagInt(null_or_index);
             assert((size_t)i < (size_t)PyTuple_GET_SIZE(tuple_o));
             next = PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(tuple_o, i));
-            null_or_index = PyStackRef_IncrementTaggedInt(null_or_index);
+            null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
             stack_pointer[-1] = null_or_index;
             stack_pointer[0] = next;
             stack_pointer += 1;
