@@ -3607,7 +3607,9 @@ infer_type(expr_ty e)
     case Lambda_kind:
         return &PyFunction_Type;
     case JoinedStr_kind:
+    case TemplateStr_kind:
     case FormattedValue_kind:
+    case Interpolation_kind:
         return &PyUnicode_Type;
     case Constant_kind:
         return Py_TYPE(e->v.Constant.value);
@@ -3630,7 +3632,9 @@ check_caller(compiler *c, expr_ty e)
     case SetComp_kind:
     case GeneratorExp_kind:
     case JoinedStr_kind:
-    case FormattedValue_kind: {
+    case TemplateStr_kind:
+    case FormattedValue_kind:
+    case Interpolation_kind: {
         location loc = LOC(e);
         return _PyCompile_Warn(c, loc, "'%.200s' object is not callable; "
                                        "perhaps you missed a comma?",
@@ -3693,7 +3697,9 @@ check_index(compiler *c, expr_ty e, expr_ty s)
     case List_kind:
     case ListComp_kind:
     case JoinedStr_kind:
-    case FormattedValue_kind: {
+    case TemplateStr_kind:
+    case FormattedValue_kind:
+    case Interpolation_kind: {
         location loc = LOC(e);
         return _PyCompile_Warn(c, loc, "%.200s indices must be integers "
                                        "or slices, not %.200s; "
@@ -4044,6 +4050,59 @@ codegen_call(compiler *c, expr_ty e)
 }
 
 static int
+codegen_template_str(compiler *c, expr_ty e)
+{
+    location loc = LOC(e);
+    expr_ty value;
+
+    Py_ssize_t value_count = asdl_seq_LEN(e->v.TemplateStr.values);
+    int last_was_interpolation = 1;
+    Py_ssize_t stringslen = 0;
+    for (Py_ssize_t i = 0; i < value_count; i++) {
+        value = asdl_seq_GET(e->v.TemplateStr.values, i);
+        if (value->kind == Interpolation_kind) {
+            if (last_was_interpolation) {
+                ADDOP_LOAD_CONST(c, loc, Py_NewRef(&_Py_STR(empty)));
+                stringslen++;
+            }
+            last_was_interpolation = 1;
+        }
+        else {
+            VISIT(c, expr, value);
+            Py_ssize_t j;
+            for (j = i + 1; j < value_count; j++) {
+                value = asdl_seq_GET(e->v.TemplateStr.values, j);
+                if (value->kind == Interpolation_kind) {
+                    break;
+                }
+                VISIT(c, expr, value);
+                ADDOP_INPLACE(c, loc, Add);
+            }
+            i = j - 1;
+            stringslen++;
+            last_was_interpolation = 0;
+        }
+    }
+    if (last_was_interpolation) {
+        ADDOP_LOAD_CONST(c, loc, Py_NewRef(&_Py_STR(empty)));
+        stringslen++;
+    }
+    ADDOP_I(c, loc, BUILD_TUPLE, stringslen);
+
+    Py_ssize_t interpolationslen = 0;
+    for (Py_ssize_t i = 0; i < value_count; i++) {
+        value = asdl_seq_GET(e->v.TemplateStr.values, i);
+        if (value->kind == Interpolation_kind) {
+            VISIT(c, expr, value);
+            interpolationslen++;
+        }
+    }
+    ADDOP_I(c, loc, BUILD_TUPLE, interpolationslen);
+    ADDOP(c, loc, BUILD_TEMPLATE);
+    return SUCCESS;
+}
+
+static int
 codegen_joined_str(compiler *c, expr_ty e)
 {
     location loc = LOC(e);
@@ -4072,24 +4131,41 @@ codegen_joined_str(compiler *c, expr_ty e)
     return SUCCESS;
 }
 
+static int
+codegen_interpolation(compiler *c, expr_ty e)
+{
+    location loc = LOC(e);
+
+    VISIT(c, expr, e->v.Interpolation.value);
+    ADDOP_LOAD_CONST(c, loc, e->v.Interpolation.str);
+
+    int oparg = 2;
+    if (e->v.Interpolation.format_spec) {
+        oparg++;
+        VISIT(c, expr, e->v.Interpolation.format_spec);
+    }
+
+    int conversion = e->v.Interpolation.conversion;
+    if (conversion != -1) {
+        switch (conversion) {
+        case 's': oparg |= FVC_STR << 2;   break;
+        case 'r': oparg |= FVC_REPR << 2;  break;
+        case 'a': oparg |= FVC_ASCII << 2; break;
+        default:
+            PyErr_Format(PyExc_SystemError,
+                     "Unrecognized conversion character %d", conversion);
+            return ERROR;
+        }
+    }
+
+    ADDOP_I(c, loc, BUILD_INTERPOLATION, oparg);
+    return SUCCESS;
+}
+
 /* Used to implement f-strings. Format a single value. */
 static int
 codegen_formatted_value(compiler *c, expr_ty e)
 {
-    /* Our oparg encodes 2 pieces of information: the conversion
-       character, and whether or not a format_spec was provided.
-
-       Convert the conversion char to 3 bits:
-           : 000  0x0  FVC_NONE   The default if nothing specified.
-       !s  : 001  0x1  FVC_STR
-       !r  : 010  0x2  FVC_REPR
-       !a  : 011  0x3  FVC_ASCII
-
-       next bit is whether or not we have a format spec:
-       yes : 100  0x4
-       no  : 000  0x0
-    */
-
     int conversion = e->v.FormattedValue.conversion;
     int oparg;
 
@@ -5182,8 +5258,12 @@ codegen_visit_expr(compiler *c, expr_ty e)
         break;
     case JoinedStr_kind:
         return codegen_joined_str(c, e);
+    case TemplateStr_kind:
+        return codegen_template_str(c, e);
     case FormattedValue_kind:
         return codegen_formatted_value(c, e);
+    case Interpolation_kind:
+        return codegen_interpolation(c, e);
     /* The following exprs can be assignment targets. */
     case Attribute_kind:
         if (e->v.Attribute.ctx == Load) {

@@ -442,7 +442,11 @@ try_stmt[stmt_ty]:
 except_block[excepthandler_ty]:
     | invalid_except_stmt_indent
     | 'except' e=expressions ':' b=block {
-        _PyAST_ExceptHandler(e,  NULL, b, EXTRA) }
+        CHECK_VERSION(
+            excepthandler_ty, 
+            14, 
+            "except expressions without parentheses", 
+            _PyAST_ExceptHandler(e,  NULL, b, EXTRA)) }
     | 'except' e=expression 'as' t=NAME  ':' b=block {
         _PyAST_ExceptHandler(e, ((expr_ty) t)->v.Name.id, b, EXTRA) }
     | 'except' ':' b=block { _PyAST_ExceptHandler(NULL, NULL, b, EXTRA) }
@@ -450,7 +454,11 @@ except_block[excepthandler_ty]:
 except_star_block[excepthandler_ty]:
     | invalid_except_star_stmt_indent
     | 'except' '*' e=expressions ':' b=block {
-        _PyAST_ExceptHandler(e, NULL, b, EXTRA) }
+        CHECK_VERSION(
+            excepthandler_ty, 
+            14, 
+            "except expressions without parentheses", 
+            _PyAST_ExceptHandler(e,  NULL, b, EXTRA)) }
     | 'except' '*' e=expression 'as' t=NAME ':' b=block {
         _PyAST_ExceptHandler(e, ((expr_ty) t)->v.Name.id, b, EXTRA) }
     | invalid_except_star_stmt
@@ -519,7 +527,7 @@ literal_pattern[pattern_ty]:
 literal_expr[expr_ty]:
     | signed_number !('+' | '-')
     | complex_number
-    | strings
+    | &(STRING|FSTRING_START|TSTRING_START) strings
     | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
     | 'True' { _PyAST_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
@@ -859,7 +867,7 @@ atom[expr_ty]:
     | 'True' { _PyAST_Constant(Py_True, NULL, EXTRA) }
     | 'False' { _PyAST_Constant(Py_False, NULL, EXTRA) }
     | 'None' { _PyAST_Constant(Py_None, NULL, EXTRA) }
-    | &(STRING|FSTRING_START) strings
+    | &(STRING|FSTRING_START|TSTRING_START) strings
     | NUMBER
     | &'(' (tuple | group | genexp)
     | &'[' (list | listcomp)
@@ -935,7 +943,7 @@ fstring_middle[expr_ty]:
 fstring_replacement_field[expr_ty]:
     | '{' a=annotated_rhs debug_expr='='? conversion=[fstring_conversion] format=[fstring_full_format_spec] rbrace='}' {
         _PyPegen_formatted_value(p, a, debug_expr, conversion, format, rbrace, EXTRA) }
-    | invalid_replacement_field
+    | invalid_fstring_replacement_field
 fstring_conversion[ResultTokenWithMetadata*]:
     | conv_token="!" conv=NAME { _PyPegen_check_fstring_conversion(p, conv_token, conv) }
 fstring_full_format_spec[ResultTokenWithMetadata*]:
@@ -946,8 +954,27 @@ fstring_format_spec[expr_ty]:
 fstring[expr_ty]:
     | a=FSTRING_START b=fstring_middle* c=FSTRING_END { _PyPegen_joined_str(p, a, (asdl_expr_seq*)b, c) }
 
+tstring_format_spec_replacement_field[expr_ty]:
+    | '{' a=annotated_rhs debug_expr='='? conversion=[fstring_conversion] format=[tstring_full_format_spec] rbrace='}' {
+        _PyPegen_formatted_value(p, a, debug_expr, conversion, format, rbrace, EXTRA) }
+    | invalid_tstring_replacement_field
+tstring_format_spec[expr_ty]:
+    | t=TSTRING_MIDDLE { _PyPegen_decoded_constant_from_token(p, t) }
+    | tstring_format_spec_replacement_field
+tstring_full_format_spec[ResultTokenWithMetadata*]:
+    | colon=':' spec=tstring_format_spec* { _PyPegen_setup_full_format_spec(p, colon, (asdl_expr_seq *) spec, EXTRA) }
+tstring_replacement_field[expr_ty]:
+    | '{' a=annotated_rhs debug_expr='='? conversion=[fstring_conversion] format=[tstring_full_format_spec] rbrace='}' {
+        _PyPegen_interpolation(p, a, debug_expr, conversion, format, rbrace, EXTRA) }
+    | invalid_tstring_replacement_field
+tstring_middle[expr_ty]:
+    | tstring_replacement_field
+    | t=TSTRING_MIDDLE { _PyPegen_constant_from_token(p, t) }
+tstring[expr_ty] (memo):
+    | a=TSTRING_START b=tstring_middle* c=TSTRING_END { _PyPegen_template_str(p, a, (asdl_expr_seq*)b, c) }
+
 string[expr_ty]: s[Token*]=STRING { _PyPegen_constant_from_string(p, s) }
-strings[expr_ty] (memo): a[asdl_expr_seq*]=(fstring|string)+ { _PyPegen_concatenate_strings(p, a, EXTRA) }
+strings[expr_ty] (memo): a[asdl_expr_seq*]=(fstring|string|tstring)+ { _PyPegen_concatenate_strings(p, a, EXTRA) }
 
 list[expr_ty]:
     | '[' a=[star_named_expressions] ']' { _PyAST_List(a, Load, EXTRA) }
@@ -1212,6 +1239,8 @@ invalid_expression:
         RAISE_SYNTAX_ERROR_KNOWN_LOCATION (a, "expected expression before 'if', but statement is given") }
    | a='lambda' [lambda_params] b=':' &FSTRING_MIDDLE  {
         RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "f-string: lambda expressions are not allowed without parentheses") }
+   | a='lambda' [lambda_params] b=':' &TSTRING_MIDDLE  {
+        RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "t-string: lambda expressions are not allowed without parentheses") }
 
 invalid_named_expression(memo):
     | a=expression ':=' expression {
@@ -1454,17 +1483,17 @@ invalid_starred_expression_unpacking:
 invalid_starred_expression:
     | '*' { RAISE_SYNTAX_ERROR("Invalid star expression") }
 
-invalid_replacement_field:
+invalid_fstring_replacement_field:
     | '{' a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '='") }
     | '{' a='!' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '!'") }
     | '{' a=':' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before ':'") }
     | '{' a='}' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "f-string: valid expression required before '}'") }
-    | '{' !annotated_rhs { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting a valid expression after '{'")}
+    | '{' !annotated_rhs { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting a valid expression after '{'") }
     | '{' annotated_rhs !('=' | '!' | ':' | '}') {
         PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '=', or '!', or ':', or '}'") }
     | '{' annotated_rhs '=' !('!' | ':' | '}') {
         PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '!', or ':', or '}'") }
-    | '{' annotated_rhs '='? invalid_conversion_character
+    | '{' annotated_rhs '='? invalid_fstring_conversion_character
     | '{' annotated_rhs '='? ['!' NAME] !(':' | '}') {
         PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting ':' or '}'") }
     | '{' annotated_rhs '='? ['!' NAME] ':' fstring_format_spec* !'}' {
@@ -1472,9 +1501,31 @@ invalid_replacement_field:
     | '{' annotated_rhs '='? ['!' NAME] !'}' {
         PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: expecting '}'") }
 
-invalid_conversion_character:
+invalid_fstring_conversion_character:
     | '!' &(':' | '}') { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: missing conversion character") }
     | '!' !NAME { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("f-string: invalid conversion character") }
+
+invalid_tstring_replacement_field:
+    | '{' a='=' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "t-string: valid expression required before '='") }
+    | '{' a='!' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "t-string: valid expression required before '!'") }
+    | '{' a=':' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "t-string: valid expression required before ':'") }
+    | '{' a='}' { RAISE_SYNTAX_ERROR_KNOWN_LOCATION(a, "t-string: valid expression required before '}'") }
+    | '{' !annotated_rhs { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: expecting a valid expression after '{'") }
+    | '{' annotated_rhs !('=' | '!' | ':' | '}') {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: expecting '=', or '!', or ':', or '}'") }
+    | '{' annotated_rhs '=' !('!' | ':' | '}') {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: expecting '!', or ':', or '}'") }
+    | '{' annotated_rhs '='? invalid_tstring_conversion_character
+    | '{' annotated_rhs '='? ['!' NAME] !(':' | '}') {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: expecting ':' or '}'") }
+    | '{' annotated_rhs '='? ['!' NAME] ':' fstring_format_spec* !'}' {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: expecting '}', or format specs") }
+    | '{' annotated_rhs '='? ['!' NAME] !'}' {
+        PyErr_Occurred() ? NULL : RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: expecting '}'") }
+
+invalid_tstring_conversion_character:
+    | '!' &(':' | '}') { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: missing conversion character") }
+    | '!' !NAME { RAISE_SYNTAX_ERROR_ON_NEXT_TOKEN("t-string: invalid conversion character") }
 
 invalid_arithmetic:
     | sum ('+'|'-'|'*'|'/'|'%'|'//'|'@') a='not' b=inversion { RAISE_SYNTAX_ERROR_KNOWN_RANGE(a, b, "'not' after an operator must be parenthesized") }

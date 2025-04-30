@@ -150,6 +150,8 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_STORE_DEREF] = HAS_ARG_FLAG | HAS_FREE_FLAG | HAS_ESCAPES_FLAG,
     [_COPY_FREE_VARS] = HAS_ARG_FLAG,
     [_BUILD_STRING] = HAS_ARG_FLAG | HAS_ERROR_FLAG,
+    [_BUILD_INTERPOLATION] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
+    [_BUILD_TEMPLATE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BUILD_TUPLE] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG,
     [_BUILD_LIST] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ERROR_NO_POP_FLAG | HAS_ESCAPES_FLAG,
     [_LIST_EXTEND] = HAS_ARG_FLAG | HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
@@ -330,11 +332,13 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_BINARY_OP_SUBTRACT_FLOAT] = "_BINARY_OP_SUBTRACT_FLOAT",
     [_BINARY_OP_SUBTRACT_INT] = "_BINARY_OP_SUBTRACT_INT",
     [_BINARY_SLICE] = "_BINARY_SLICE",
+    [_BUILD_INTERPOLATION] = "_BUILD_INTERPOLATION",
     [_BUILD_LIST] = "_BUILD_LIST",
     [_BUILD_MAP] = "_BUILD_MAP",
     [_BUILD_SET] = "_BUILD_SET",
     [_BUILD_SLICE] = "_BUILD_SLICE",
     [_BUILD_STRING] = "_BUILD_STRING",
+    [_BUILD_TEMPLATE] = "_BUILD_TEMPLATE",
     [_BUILD_TUPLE] = "_BUILD_TUPLE",
     [_CALL_BUILTIN_CLASS] = "_CALL_BUILTIN_CLASS",
     [_CALL_BUILTIN_FAST] = "_CALL_BUILTIN_FAST",
@@ -862,6 +866,10 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _BUILD_STRING:
             return oparg;
+        case _BUILD_INTERPOLATION:
+            return 2 + (oparg & 1);
+        case _BUILD_TEMPLATE:
+            return 2;
         case _BUILD_TUPLE:
             return oparg;
         case _BUILD_LIST:

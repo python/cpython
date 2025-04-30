@@ -202,6 +202,15 @@ class UnparseTestCase(ASTTestCase):
         self.check_ast_roundtrip('f" something { my_dict["key"] } something else "')
         self.check_ast_roundtrip('f"{f"{f"{f"{f"{f"{1+1}"}"}"}"}"}"')
 
+    def test_tstrings(self):
+        self.check_ast_roundtrip("t'foo'")
+        self.check_ast_roundtrip("t'foo {bar}'")
+        self.check_ast_roundtrip("t'foo {bar!s:.2f}'")
+        self.check_ast_roundtrip("t'foo {bar}' f'{bar}'")
+        self.check_ast_roundtrip("f'{bar}' t'foo {bar}'")
+        self.check_ast_roundtrip("t'foo {bar}' fr'\\hello {bar}'")
+        self.check_ast_roundtrip("t'foo {bar}' u'bar'")
+
     def test_strings(self):
         self.check_ast_roundtrip("u'foo'")
         self.check_ast_roundtrip("r'foo'")
@@ -918,7 +927,7 @@ class DirectoryTestCase(ASTTestCase):
     run_always_files = {"test_grammar.py", "test_syntax.py", "test_compile.py",
                         "test_ast.py", "test_asdl_parser.py", "test_fstring.py",
                         "test_patma.py", "test_type_alias.py", "test_type_params.py",
-                        "test_tokenize.py"}
+                        "test_tokenize.py", "test_tstring.py"}
 
     _files_to_test = None
 
