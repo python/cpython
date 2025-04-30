@@ -1,0 +1,1 @@
+Specialize :opcode:`GET_ITER` for lists, tuples and any iterator.
