@@ -603,6 +603,7 @@ class OperatorTestCase:
             if dunder:
                 self.assertIs(dunder, orig)
 
+    @support.requires_docstrings
     def test_attrgetter_signature(self):
         operator = self.module
         sig = inspect.signature(operator.attrgetter)
@@ -610,6 +611,7 @@ class OperatorTestCase:
         sig = inspect.signature(operator.attrgetter('x', 'z', 'y'))
         self.assertEqual(str(sig), '(obj, /)')
 
+    @support.requires_docstrings
     def test_itemgetter_signature(self):
         operator = self.module
         sig = inspect.signature(operator.itemgetter)
@@ -617,6 +619,7 @@ class OperatorTestCase:
         sig = inspect.signature(operator.itemgetter(2, 3, 5))
         self.assertEqual(str(sig), '(obj, /)')
 
+    @support.requires_docstrings
     def test_methodcaller_signature(self):
         operator = self.module
         sig = inspect.signature(operator.methodcaller)
