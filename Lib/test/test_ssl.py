@@ -3159,18 +3159,22 @@ class ThreadedTests(unittest.TestCase):
                     s.connect((HOST, server.port))
         with (
             ThreadedEchoServer(context=server_context, chatty=True) as server,
-            warnings_helper.check_no_resource_warning(self)
-            if warnings_filters
-            else nullcontext(),
+            (
+                warnings_helper.check_no_resource_warning(self)
+                if warnings_filters
+                else nullcontext()
+            ),
             self.assertRaises(UnicodeError),
         ):
             context.wrap_socket(socket.socket(), server_hostname='.pythontest.net')
 
         with (
             ThreadedEchoServer(context=server_context, chatty=True) as server,
-            warnings_helper.check_no_resource_warning(self)
-            if warnings_filters
-            else nullcontext(),
+            (
+                warnings_helper.check_no_resource_warning(self)
+                if warnings_filters
+                else nullcontext()
+            ),
             self.assertRaises(UnicodeDecodeError),
         ):
             context.wrap_socket(
