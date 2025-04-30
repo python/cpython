@@ -1477,7 +1477,7 @@ class ZstdDictTestCase(unittest.TestCase):
         # V2
         mid = len(V1) // 2
         V2 = V1[:mid] + \
-             (b'a' if V1[mid] != b'a' else b'b') + \
+             (b'a' if V1[mid] != int.from_bytes(b'a') else b'b') + \
              V1[mid+1:]
 
         # compress
