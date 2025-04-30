@@ -440,6 +440,37 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '20000101\n' * INIT_LOOPS)
 
+    def test_datetime_capi_at_shutdown(self):
+        # gh-120782: Test the case where PyDateTime_IMPORT is called only once
+        code = textwrap.dedent("""
+            import sys
+            import _testcapi
+            if not _testcapi.get_capi_types():
+                _testcapi.test_datetime_capi()
+                assert '_datetime' in sys.modules
+            else:
+                assert '_datetime' not in sys.modules
+            timedelta = _testcapi.get_capi_types()['timedelta']
+
+            def gen():
+                try:
+                    yield
+                finally:
+                    assert not sys.modules
+                    res = 1
+                    try:
+                        timedelta(days=1)
+                    except ImportError as e:
+                        res =  2 if 'sys.meta_path is None' in e.msg else 3
+                    assert not sys.modules
+                    print(res)
+
+            it = gen()
+            next(it)
+        """)
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, '1\n' + '2\n' * (INIT_LOOPS - 1))
+
     def test_static_types_inherited_slots(self):
         script = textwrap.dedent("""
             import test.support

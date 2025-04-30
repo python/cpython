@@ -7390,40 +7390,6 @@ class ExtensionModuleTests(unittest.TestCase):
             self.assertFalse(res.err)
 
         script = textwrap.dedent("""
-            import gc
-            import sys
-            import _testcapi
-
-            def emulate_interp_restart():
-                del sys.modules['_datetime']
-                try:
-                    del sys.modules['datetime']
-                except KeyError:
-                    pass
-                gc.collect()  # unload
-
-            _testcapi.test_datetime_capi()  # only once
-            timedelta = _testcapi.get_capi_types()['timedelta']
-            emulate_interp_restart()
-            timedelta(days=1)
-            emulate_interp_restart()
-
-            def gen():
-                try:
-                    yield
-                finally:
-                    # Exceptions are ignored here
-                    assert not sys.modules
-                    timedelta(days=1)
-
-            it = gen()
-            next(it)
-            """)
-        with self.subTest('MainInterpreter Restart'):
-            res = script_helper.assert_python_ok('-c', script)
-            self.assertIn(b'ImportError: sys.meta_path is None', res.err)
-
-        script = textwrap.dedent("""
             import sys
             timedelta = _testcapi.get_capi_types()['timedelta']
 
