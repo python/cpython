@@ -6336,7 +6336,7 @@ update_slot_after_setattr(PyTypeObject *type, PyObject *name)
     if (update_slot(type, name, &queued_updates) < 0) {
         return -1;
     }
-    if (queued_updates.head != NULL) {
+    if (queued_updates.head->n > 0) {
         types_stop_world();
         apply_slot_updates(&queued_updates);
         types_start_world();
