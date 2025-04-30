@@ -1874,6 +1874,8 @@ _PyCode_SetUnboundVarCounts(PyThreadState *tstate,
     int res = -1;
     PyObject *globalnames_owned = NULL;
     PyObject *attrnames_owned = NULL;
+
+    // Prep the name sets.
     if (globalnames == NULL) {
         globalnames_owned = PySet_New(NULL);
         if (globalnames_owned == NULL) {
@@ -1899,6 +1901,7 @@ _PyCode_SetUnboundVarCounts(PyThreadState *tstate,
         goto finally;
     }
 
+    // Fill in unbound.globals and unbound.numattrs.
     struct co_unbound_counts unbound = {0};
     if (identify_unbound_names(
             tstate, co, globalnames, attrnames, globalsns, builtinsns,
