@@ -2495,12 +2495,10 @@ PyFloat_Unpack4(const char *data, int le)
 
             if ((v & (1 << 22)) == 0) {
                 double y = x; /* will make qNaN double */
-                union double_val {
-                    double d;
-                    uint64_t u64;
-                } *py = (union double_val *)&y;
-
-                py->u64 &= ~(1ULL << 51); /* make sNaN */
+                uint64_t u64;
+                memcpy(&u64, &y, 8);
+                u64 &= ~(1ULL << 51); /* make sNaN */
+                memcpy(&y, &u64, 8);
                 return y;
             }
         }
