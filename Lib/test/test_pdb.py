@@ -4867,6 +4867,11 @@ class PdbTestReadline(unittest.TestCase):
         input += b"disp\t\n"
         # 'value' should still work
         input += b"val\t + 'al'\n"
+        # Let's define a function to test <tab>
+        input += b"def f():\n"
+        input += b"\treturn 42\n"
+        input += b"\n"
+        input += b"f() * 2\n"
         # Exit interact mode
         input += b"exit()\n"
         # continue
@@ -4876,6 +4881,7 @@ class PdbTestReadline(unittest.TestCase):
 
         self.assertIn(b"'disp' is not defined", output)
         self.assertIn(b'special', output)
+        self.assertIn(b'84', output)
 
 
 def load_tests(loader, tests, pattern):
