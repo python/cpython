@@ -133,6 +133,8 @@ int _PyCompile_EnterScope(struct _PyCompiler *c, identifier name, int scope_type
 void _PyCompile_ExitScope(struct _PyCompiler *c);
 Py_ssize_t _PyCompile_AddConst(struct _PyCompiler *c, PyObject *o);
 _PyInstructionSequence *_PyCompile_InstrSequence(struct _PyCompiler *c);
+int _PyCompile_StartAnnotationSetup(struct _PyCompiler *c);
+int _PyCompile_EndAnnotationSetup(struct _PyCompiler *c);
 int _PyCompile_FutureFeatures(struct _PyCompiler *c);
 void _PyCompile_DeferredAnnotations(
     struct _PyCompiler *c, PyObject **deferred_annotations,
