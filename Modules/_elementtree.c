@@ -689,7 +689,6 @@ element_dealloc(PyObject *op)
 
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, element_dealloc)
 
     if (self->weakreflist != NULL)
         PyObject_ClearWeakRefs(op);
@@ -700,7 +699,6 @@ element_dealloc(PyObject *op)
 
     tp->tp_free(self);
     Py_DECREF(tp);
-    Py_TRASHCAN_END
 }
 
 /* -------------------------------------------------------------------- */
@@ -3082,8 +3080,7 @@ typedef struct {
     PyObject *elementtree_module;
 } XMLParserObject;
 
-
-#define _XMLParser_CAST(op) ((XMLParserObject *)(op))
+#define XMLParserObject_CAST(op)    ((XMLParserObject *)(op))
 
 /* helpers */
 
@@ -3207,12 +3204,12 @@ expat_set_error(elementtreestate *st, enum XML_Error error_code,
 /* handlers */
 
 static void
-expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
-                      int data_len)
+expat_default_handler(void *op, const XML_Char *data_in, int data_len)
 {
-    PyObject* key;
-    PyObject* value;
-    PyObject* res;
+    XMLParserObject *self = XMLParserObject_CAST(op);
+    PyObject *key;
+    PyObject *value;
+    PyObject *res;
 
     if (data_len < 2 || data_in[0] != '&')
         return;
@@ -3254,12 +3251,13 @@ expat_default_handler(XMLParserObject* self, const XML_Char* data_in,
 }
 
 static void
-expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
+expat_start_handler(void *op, const XML_Char *tag_in,
                     const XML_Char **attrib_in)
 {
-    PyObject* res;
-    PyObject* tag;
-    PyObject* attrib;
+    XMLParserObject *self = XMLParserObject_CAST(op);
+    PyObject *res;
+    PyObject *tag;
+    PyObject *attrib;
     int ok;
 
     if (PyErr_Occurred())
@@ -3278,13 +3276,13 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
             return;
         }
         while (attrib_in[0] && attrib_in[1]) {
-            PyObject* key = makeuniversal(self, attrib_in[0]);
+            PyObject *key = makeuniversal(self, attrib_in[0]);
             if (key == NULL) {
                 Py_DECREF(attrib);
                 Py_DECREF(tag);
                 return;
             }
-            PyObject* value = PyUnicode_DecodeUTF8(attrib_in[1], strlen(attrib_in[1]), "strict");
+            PyObject *value = PyUnicode_DecodeUTF8(attrib_in[1], strlen(attrib_in[1]), "strict");
             if (value == NULL) {
                 Py_DECREF(key);
                 Py_DECREF(attrib);
@@ -3331,11 +3329,12 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
 }
 
 static void
-expat_data_handler(XMLParserObject* self, const XML_Char* data_in,
+expat_data_handler(void *op, const XML_Char *data_in,
                    int data_len)
 {
-    PyObject* data;
-    PyObject* res;
+    XMLParserObject *self = XMLParserObject_CAST(op);
+    PyObject *data;
+    PyObject *res;
 
     if (PyErr_Occurred())
         return;
@@ -3359,10 +3358,11 @@ expat_data_handler(XMLParserObject* self, const XML_Char* data_in,
 }
 
 static void
-expat_end_handler(XMLParserObject* self, const XML_Char* tag_in)
+expat_end_handler(void *op, const XML_Char *tag_in)
 {
-    PyObject* tag;
-    PyObject* res = NULL;
+    XMLParserObject *self = XMLParserObject_CAST(op);
+    PyObject *tag;
+    PyObject *res = NULL;
 
     if (PyErr_Occurred())
         return;
@@ -3386,12 +3386,13 @@ expat_end_handler(XMLParserObject* self, const XML_Char* tag_in)
 }
 
 static void
-expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
+expat_start_ns_handler(void *op, const XML_Char *prefix_in,
                        const XML_Char *uri_in)
 {
-    PyObject* res = NULL;
-    PyObject* uri;
-    PyObject* prefix;
+    XMLParserObject *self = XMLParserObject_CAST(op);
+    PyObject *res = NULL;
+    PyObject *uri;
+    PyObject *prefix;
 
     if (PyErr_Occurred())
         return;
@@ -3430,7 +3431,7 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
             return;
         }
 
-        PyObject* args[2] = {prefix, uri};
+        PyObject *args[2] = {prefix, uri};
         res = PyObject_Vectorcall(self->handle_start_ns, args, 2, NULL);
         Py_DECREF(uri);
         Py_DECREF(prefix);
@@ -3440,10 +3441,11 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix_in,
 }
 
 static void
-expat_end_ns_handler(XMLParserObject* self, const XML_Char* prefix_in)
+expat_end_ns_handler(void *op, const XML_Char *prefix_in)
 {
+    XMLParserObject *self = XMLParserObject_CAST(op);
     PyObject *res = NULL;
-    PyObject* prefix;
+    PyObject *prefix;
 
     if (PyErr_Occurred())
         return;
@@ -3472,10 +3474,11 @@ expat_end_ns_handler(XMLParserObject* self, const XML_Char* prefix_in)
 }
 
 static void
-expat_comment_handler(XMLParserObject* self, const XML_Char* comment_in)
+expat_comment_handler(void *op, const XML_Char *comment_in)
 {
-    PyObject* comment;
-    PyObject* res;
+    XMLParserObject *self = XMLParserObject_CAST(op);
+    PyObject *comment;
+    PyObject *res;
 
     if (PyErr_Occurred())
         return;
@@ -3504,12 +3507,13 @@ expat_comment_handler(XMLParserObject* self, const XML_Char* comment_in)
 }
 
 static void
-expat_start_doctype_handler(XMLParserObject *self,
+expat_start_doctype_handler(void *op,
                             const XML_Char *doctype_name,
                             const XML_Char *sysid,
                             const XML_Char *pubid,
                             int has_internal_subset)
 {
+    XMLParserObject *self = XMLParserObject_CAST(op);
     PyObject *doctype_name_obj, *sysid_obj, *pubid_obj;
     PyObject *res;
 
@@ -3562,12 +3566,13 @@ expat_start_doctype_handler(XMLParserObject *self,
 }
 
 static void
-expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
-                 const XML_Char* data_in)
+expat_pi_handler(void *op, const XML_Char *target_in,
+                 const XML_Char *data_in)
 {
-    PyObject* pi_target;
-    PyObject* data;
-    PyObject* res;
+    XMLParserObject *self = XMLParserObject_CAST(op);
+    PyObject *pi_target;
+    PyObject *data;
+    PyObject *res;
 
     if (PyErr_Occurred())
         return;
@@ -3597,7 +3602,7 @@ expat_pi_handler(XMLParserObject* self, const XML_Char* target_in,
         if (!data)
             goto error;
 
-        PyObject* args[2] = {pi_target, data};
+        PyObject *args[2] = {pi_target, data};
         res = PyObject_Vectorcall(self->handle_pi, args, 2, NULL);
         Py_XDECREF(res);
         Py_DECREF(data);
@@ -3777,7 +3782,7 @@ _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *target,
 static int
 xmlparser_gc_traverse(PyObject *op, visitproc visit, void *arg)
 {
-    XMLParserObject *self = _XMLParser_CAST(op);
+    XMLParserObject *self = XMLParserObject_CAST(op);
     Py_VISIT(Py_TYPE(self));
     Py_VISIT(self->handle_close);
     Py_VISIT(self->handle_pi);
@@ -3799,7 +3804,7 @@ xmlparser_gc_traverse(PyObject *op, visitproc visit, void *arg)
 static int
 xmlparser_gc_clear(PyObject *op)
 {
-    XMLParserObject *self = _XMLParser_CAST(op);
+    XMLParserObject *self = XMLParserObject_CAST(op);
     elementtreestate *st = self->state;
     if (self->parser != NULL) {
         XML_Parser parser = self->parser;

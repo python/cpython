@@ -19,6 +19,7 @@
 #include "pycore_import.h"        // _PyImport_IsDefaultImportFunc()
 #include "pycore_instruments.h"
 #include "pycore_interpframe.h"   // _PyFrame_SetStackPointer()
+#include "pycore_interpolation.h" // _PyInterpolation_Build()
 #include "pycore_intrinsics.h"
 #include "pycore_jit.h"
 #include "pycore_list.h"          // _PyList_GetItemRef()
@@ -36,6 +37,7 @@
 #include "pycore_setobject.h"     // _PySet_Update()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
+#include "pycore_template.h"      // _PyTemplate_Build()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_uop_ids.h"       // Uops
@@ -144,6 +146,10 @@ dump_item(_PyStackRef item)
 {
     if (PyStackRef_IsNull(item)) {
         printf("<NULL>");
+        return;
+    }
+    if (PyStackRef_IsTaggedInt(item)) {
+        printf("%" PRId64, (int64_t)PyStackRef_UntagInt(item));
         return;
     }
     PyObject *obj = PyStackRef_AsPyObjectBorrow(item);
@@ -437,7 +443,7 @@ _Py_InitializeRecursionLimits(PyThreadState *tstate)
     _tstate->c_stack_soft_limit = _tstate->c_stack_hard_limit + PYOS_STACK_MARGIN_BYTES;
 #else
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
-#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX)
+#  if defined(HAVE_PTHREAD_GETATTR_NP) && !defined(_AIX) && !defined(__NetBSD__)
     size_t stack_size, guard_size;
     void *stack_addr;
     pthread_attr_t attr;
@@ -476,12 +482,6 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     assert(_tstate->c_stack_soft_limit != 0);
-    if (_tstate->c_stack_hard_limit == 0) {
-        _Py_InitializeRecursionLimits(tstate);
-    }
-    if (here_addr >= _tstate->c_stack_soft_limit) {
-        return 0;
-    }
     assert(_tstate->c_stack_hard_limit != 0);
     if (here_addr < _tstate->c_stack_hard_limit) {
         /* Overflowing while handling an overflow. Give up. */
@@ -545,23 +545,51 @@ const conversion_func _PyEval_ConversionFuncs[4] = {
 const _Py_SpecialMethod _Py_SpecialMethods[] = {
     [SPECIAL___ENTER__] = {
         .name = &_Py_ID(__enter__),
-        .error = "'%.200s' object does not support the "
-                 "context manager protocol (missed __enter__ method)",
+        .error = (
+            "'%T' object does not support the context manager protocol "
+            "(missed __enter__ method)"
+        ),
+        .error_suggestion = (
+            "'%T' object does not support the context manager protocol "
+            "(missed __enter__ method) but it supports the asynchronous "
+            "context manager protocol. Did you mean to use 'async with'?"
+        )
     },
     [SPECIAL___EXIT__] = {
         .name = &_Py_ID(__exit__),
-        .error = "'%.200s' object does not support the "
-                 "context manager protocol (missed __exit__ method)",
+        .error = (
+            "'%T' object does not support the context manager protocol "
+            "(missed __exit__ method)"
+        ),
+        .error_suggestion = (
+            "'%T' object does not support the context manager protocol "
+            "(missed __exit__ method) but it supports the asynchronous "
+            "context manager protocol. Did you mean to use 'async with'?"
+        )
     },
     [SPECIAL___AENTER__] = {
         .name = &_Py_ID(__aenter__),
-        .error = "'%.200s' object does not support the asynchronous "
-                 "context manager protocol (missed __aenter__ method)",
+        .error = (
+            "'%T' object does not support the asynchronous "
+            "context manager protocol (missed __aenter__ method)"
+        ),
+        .error_suggestion = (
+            "'%T' object does not support the asynchronous context manager "
+            "protocol (missed __aenter__ method) but it supports the context "
+            "manager protocol. Did you mean to use 'with'?"
+        )
     },
     [SPECIAL___AEXIT__] = {
         .name = &_Py_ID(__aexit__),
-        .error = "'%.200s' object does not support the asynchronous "
-                 "context manager protocol (missed __aexit__ method)",
+        .error = (
+            "'%T' object does not support the asynchronous "
+            "context manager protocol (missed __aexit__ method)"
+        ),
+        .error_suggestion = (
+            "'%T' object does not support the asynchronous context manager "
+            "protocol (missed __aexit__ method) but it supports the context "
+            "manager protocol. Did you mean to use 'with'?"
+        )
     }
 };
 
@@ -891,7 +919,7 @@ extern void _PyUOpPrint(const _PyUOpInstruction *uop);
    if computed gotos aren't used. */
 
 /* TBD - what about other compilers? */
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 #  pragma GCC diagnostic push
 #  pragma GCC diagnostic ignored "-Wunused-label"
 #elif defined(_MSC_VER) /* MS_WINDOWS */
@@ -948,7 +976,22 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #include "generated_cases.c.h"
 #endif
 
-PyObject* _Py_HOT_FUNCTION
+#if (defined(__GNUC__) && __GNUC__ >= 10 && !defined(__clang__)) && defined(__x86_64__)
+/*
+ * gh-129987: The SLP autovectorizer can cause poor code generation for
+ * opcode dispatch in some GCC versions (observed in GCCs 12 through 15,
+ * probably caused by https://gcc.gnu.org/bugzilla/show_bug.cgi?id=115777),
+ * negating any benefit we get from vectorization elsewhere in the
+ * interpreter loop. Disabling it significantly affected older GCC versions
+ * (prior to GCC 9, 40% performance drop), so we have to selectively disable
+ * it.
+ */
+#define DONT_SLP_VECTORIZE __attribute__((optimize ("no-tree-slp-vectorize")))
+#else
+#define DONT_SLP_VECTORIZE
+#endif
+
+PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
@@ -1028,7 +1071,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         monitor_throw(tstate, frame, next_instr);
         stack_pointer = _PyFrame_GetStackPointer(frame);
 #if Py_TAIL_CALL_INTERP
-        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
+#   if Py_STATS
+            return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0, lastopcode);
+#   else
+            return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
+#   endif
 #else
         goto error;
 #endif
@@ -1040,7 +1087,11 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     const _PyUOpInstruction *next_uop = NULL;
 #endif
 #if Py_TAIL_CALL_INTERP
-    return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0);
+#   if Py_STATS
+        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0, lastopcode);
+#   else
+        return _TAIL_CALL_start_frame(frame, NULL, tstate, NULL, 0);
+#   endif
 #else
     goto start_frame;
 #   include "generated_cases.c.h"
@@ -1168,7 +1219,7 @@ early_exit:
 #  pragma optimize("", on)
 #endif
 
-#if defined(__GNUC__)
+#if defined(__GNUC__) || defined(__clang__)
 #  pragma GCC diagnostic pop
 #elif defined(_MSC_VER) /* MS_WINDOWS */
 #  pragma warning(pop)
@@ -1416,7 +1467,7 @@ skip_to_next_entry(unsigned char *p, unsigned char *end) {
 
 #define MAX_LINEAR_SEARCH 40
 
-static int
+static Py_NO_INLINE int
 get_exception_handler(PyCodeObject *code, int index, int *level, int *handler, int *lasti)
 {
     unsigned char *start = (unsigned char *)PyBytes_AS_STRING(code->co_exceptiontable);
@@ -3301,6 +3352,8 @@ _PyEval_LoadGlobalStackRef(PyObject *globals, PyObject *builtins, PyObject *name
                 _PyEval_FormatExcCheckArg(
                             PyThreadState_GET(), PyExc_NameError,
                             NAME_ERROR_MSG, name);
+                *writeto = PyStackRef_NULL;
+                return;
             }
         }
         *writeto = PyStackRef_FromPyObjectSteal(res);
@@ -3362,4 +3415,34 @@ _PyEval_LoadName(PyThreadState *tstate, _PyInterpreterFrame *frame, PyObject *na
                     NAME_ERROR_MSG, name);
     }
     return value;
+}
+
+/* Check if a 'cls' provides the given special method. */
+static inline int
+type_has_special_method(PyTypeObject *cls, PyObject *name)
+{
+    // _PyType_Lookup() does not set an exception and returns a borrowed ref
+    assert(!PyErr_Occurred());
+    PyObject *r = _PyType_Lookup(cls, name);
+    return r != NULL && Py_TYPE(r)->tp_descr_get != NULL;
+}
+
+int
+_PyEval_SpecialMethodCanSuggest(PyObject *self, int oparg)
+{
+    PyTypeObject *type = Py_TYPE(self);
+    switch (oparg) {
+        case SPECIAL___ENTER__:
+        case SPECIAL___EXIT__: {
+            return type_has_special_method(type, &_Py_ID(__aenter__))
+                   && type_has_special_method(type, &_Py_ID(__aexit__));
+        }
+        case SPECIAL___AENTER__:
+        case SPECIAL___AEXIT__: {
+            return type_has_special_method(type, &_Py_ID(__enter__))
+                   && type_has_special_method(type, &_Py_ID(__exit__));
+        }
+        default:
+            Py_FatalError("unsupported special method");
+    }
 }

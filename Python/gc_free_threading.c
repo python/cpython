@@ -265,7 +265,7 @@ frame_disable_deferred_refcounting(_PyInterpreterFrame *frame)
 
     frame->f_funcobj = PyStackRef_AsStrongReference(frame->f_funcobj);
     for (_PyStackRef *ref = frame->localsplus; ref < frame->stackpointer; ref++) {
-        if (!PyStackRef_IsNull(*ref) && PyStackRef_IsDeferred(*ref)) {
+        if (!PyStackRef_IsNullOrInt(*ref) && PyStackRef_IsDeferred(*ref)) {
             *ref = PyStackRef_AsStrongReference(*ref);
         }
     }
@@ -420,7 +420,7 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
 static inline void
 gc_visit_stackref(_PyStackRef stackref)
 {
-    if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNull(stackref)) {
+    if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNullOrInt(stackref)) {
         PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
         if (_PyObject_GC_IS_TRACKED(obj) && !gc_is_frozen(obj)) {
             gc_add_refs(obj, 1);
@@ -688,6 +688,12 @@ gc_mark_enqueue_no_buffer(PyObject *op, gc_mark_args_t *args)
     return 0;
 }
 
+static inline int
+gc_mark_enqueue_no_buffer_visitproc(PyObject *op, void *args)
+{
+    return gc_mark_enqueue_no_buffer(op, (gc_mark_args_t *)args);
+}
+
 static int
 gc_mark_enqueue_buffer(PyObject *op, gc_mark_args_t *args)
 {
@@ -699,6 +705,12 @@ gc_mark_enqueue_buffer(PyObject *op, gc_mark_args_t *args)
     else {
         return gc_mark_stack_push(&args->stack, op);
     }
+}
+
+static inline int
+gc_mark_enqueue_buffer_visitproc(PyObject *op, void *args)
+{
+    return gc_mark_enqueue_buffer(op, (gc_mark_args_t *)args);
 }
 
 // Called when we find an object that needs to be marked alive (either from a
@@ -805,7 +817,7 @@ gc_abort_mark_alive(PyInterpreterState *interp,
 static int
 gc_visit_stackref_mark_alive(gc_mark_args_t *args, _PyStackRef stackref)
 {
-    if (!PyStackRef_IsNull(stackref)) {
+    if (!PyStackRef_IsNullOrInt(stackref)) {
         PyObject *op = PyStackRef_AsPyObjectBorrow(stackref);
         if (gc_mark_enqueue(op, args) < 0) {
             return -1;
@@ -986,12 +998,12 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
 }
 
 static int
-visit_clear_unreachable(PyObject *op, _PyObjectStack *stack)
+visit_clear_unreachable(PyObject *op, void *stack)
 {
     if (gc_is_unreachable(op)) {
         _PyObject_ASSERT(op, _PyObject_GC_IS_TRACKED(op));
         gc_clear_unreachable(op);
-        return _PyObjectStack_Push(stack, op);
+        return _PyObjectStack_Push((_PyObjectStack *)stack, op);
     }
     return 0;
 }
@@ -1003,7 +1015,7 @@ mark_reachable(PyObject *op)
     _PyObjectStack stack = { NULL };
     do {
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
-        if (traverse(op, (visitproc)&visit_clear_unreachable, &stack) < 0) {
+        if (traverse(op, visit_clear_unreachable, &stack) < 0) {
             _PyObjectStack_Clear(&stack);
             return -1;
         }
@@ -1273,7 +1285,7 @@ gc_propagate_alive_prefetch(gc_mark_args_t *args)
                 return -1;
             }
         }
-        else if (traverse(op, (visitproc)&gc_mark_enqueue_buffer, args) < 0) {
+        else if (traverse(op, gc_mark_enqueue_buffer_visitproc, args) < 0) {
             return -1;
         }
     }
@@ -1294,7 +1306,7 @@ gc_propagate_alive(gc_mark_args_t *args)
             assert(_PyObject_GC_IS_TRACKED(op));
             assert(gc_is_alive(op));
             traverseproc traverse = Py_TYPE(op)->tp_traverse;
-            if (traverse(op, (visitproc)&gc_mark_enqueue_no_buffer, args) < 0) {
+            if (traverse(op, gc_mark_enqueue_no_buffer_visitproc, args) < 0) {
                 return -1;
             }
         }
@@ -1694,6 +1706,7 @@ _PyGC_VisitStackRef(_PyStackRef *ref, visitproc visit, void *arg)
     // This is a bit tricky! We want to ignore deferred references when
     // computing the incoming references, but otherwise treat them like
     // regular references.
+    assert(!PyStackRef_IsTaggedInt(*ref));
     if (!PyStackRef_IsDeferred(*ref) ||
         (visit != visit_decref && visit != visit_decref_unreachable))
     {
@@ -1751,9 +1764,7 @@ handle_resurrected_objects(struct collection_state *state)
         op->ob_ref_local -= 1;
 
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
-        (void) traverse(op,
-            (visitproc)visit_decref_unreachable,
-            NULL);
+        (void)traverse(op, visit_decref_unreachable, NULL);
     }
 
     // Find resurrected objects
@@ -2500,9 +2511,8 @@ void
 PyObject_GC_UnTrack(void *op_raw)
 {
     PyObject *op = _PyObject_CAST(op_raw);
-    /* Obscure:  the Py_TRASHCAN mechanism requires that we be able to
-     * call PyObject_GC_UnTrack twice on an object.
-     */
+    /* The code for some objects, such as tuples, is a bit
+     * sloppy about when the object is tracked and untracked. */
     if (_PyObject_GC_IS_TRACKED(op)) {
         _PyObject_GC_UNTRACK(op);
     }

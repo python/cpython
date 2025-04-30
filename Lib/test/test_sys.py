@@ -724,6 +724,8 @@ class SysModuleTest(unittest.TestCase):
         self.assertIn(sys.float_repr_style, ('short', 'legacy'))
         if not sys.platform.startswith('win'):
             self.assertIsInstance(sys.abiflags, str)
+        else:
+            self.assertFalse(hasattr(sys, 'abiflags'))
 
     def test_thread_info(self):
         info = sys.thread_info
@@ -889,7 +891,9 @@ class SysModuleTest(unittest.TestCase):
 
     @test.support.cpython_only
     def test_clear_type_cache(self):
-        sys._clear_type_cache()
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"sys\._clear_type_cache\(\) is deprecated.*"):
+            sys._clear_type_cache()
 
     @force_not_colorized
     @support.requires_subprocess()
@@ -1890,8 +1894,10 @@ class SizeofTest(unittest.TestCase):
         # symtable entry
         # XXX
         # sys.flags
-        # FIXME: The +1 will not be necessary once gh-122575 is fixed
-        check(sys.flags, vsize('') + self.P + self.P * (1 + len(sys.flags)))
+        # FIXME: The +3 is for the 'gil', 'thread_inherit_context' and
+        # 'context_aware_warnings' flags and will not be necessary once
+        # gh-122575 is fixed
+        check(sys.flags, vsize('') + self.P + self.P * (3 + len(sys.flags)))
 
     def test_asyncgen_hooks(self):
         old = sys.get_asyncgen_hooks()
@@ -2120,6 +2126,19 @@ raise Exception("Remote script exception")
         self.assertEqual(returncode, 0)
         self.assertIn(b"Remote script exception", stderr)
         self.assertEqual(stdout.strip(), b"Target process running...")
+
+    def test_new_namespace_for_each_remote_exec(self):
+        """Test that each remote_exec call gets its own namespace."""
+        script = textwrap.dedent(
+            """
+            assert globals() is not __import__("__main__").__dict__
+            print("Remote script executed successfully!")
+            """
+        )
+        returncode, stdout, stderr = self._run_remote_exec_test(script)
+        self.assertEqual(returncode, 0)
+        self.assertEqual(stderr, b"")
+        self.assertIn(b"Remote script executed successfully", stdout)
 
     def test_remote_exec_disabled_by_env(self):
         """Test remote exec is disabled when PYTHON_DISABLE_REMOTE_DEBUG is set"""

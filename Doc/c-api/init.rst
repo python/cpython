@@ -1131,7 +1131,7 @@ Cautions regarding runtime finalization
 In the late stage of :term:`interpreter shutdown`, after attempting to wait for
 non-daemon threads to exit (though this can be interrupted by
 :class:`KeyboardInterrupt`) and running the :mod:`atexit` functions, the runtime
-is marked as *finalizing*: :c:func:`_Py_IsFinalizing` and
+is marked as *finalizing*: :c:func:`Py_IsFinalizing` and
 :func:`sys.is_finalizing` return true.  At this point, only the *finalization
 thread* that initiated finalization (typically the main thread) is allowed to
 acquire the :term:`GIL`.
@@ -1515,16 +1515,6 @@ All of the following functions must be called after :c:func:`Py_Initialize`.
    extensions should use to store interpreter-specific state information.
 
    .. versionadded:: 3.8
-
-
-.. c:function:: PyObject* PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
-
-   Return a :term:`strong reference` to the ``__main__`` :ref:`module object <moduleobjects>`
-   for the given interpreter.
-
-   The caller must have an :term:`attached thread state`.
-
-   .. versionadded:: 3.13
 
 
 .. c:type:: PyObject* (*_PyFrameEvalFunction)(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)

@@ -569,11 +569,19 @@ _PyInterpreterState_Enable(_PyRuntimeState *runtime)
     return _PyStatus_OK();
 }
 
-
 static PyInterpreterState *
 alloc_interpreter(void)
 {
-    return PyMem_RawCalloc(1, sizeof(PyInterpreterState));
+    size_t alignment = _Alignof(PyInterpreterState);
+    size_t allocsize = sizeof(PyInterpreterState) + alignment - 1;
+    void *mem = PyMem_RawCalloc(1, allocsize);
+    if (mem == NULL) {
+        return NULL;
+    }
+    PyInterpreterState *interp = _Py_ALIGN_UP(mem, alignment);
+    assert(_Py_IS_ALIGNED(interp, alignment));
+    interp->_malloced = mem;
+    return interp;
 }
 
 static void
@@ -587,12 +595,15 @@ free_interpreter(PyInterpreterState *interp)
             PyMem_RawFree(interp->obmalloc);
             interp->obmalloc = NULL;
         }
-        PyMem_RawFree(interp);
+        assert(_Py_IS_ALIGNED(interp, _Alignof(PyInterpreterState)));
+        PyMem_RawFree(interp->_malloced);
     }
 }
+
 #ifndef NDEBUG
 static inline int check_interpreter_whence(long);
 #endif
+
 /* Get the interpreter state to a minimal consistent state.
    Further init happens in pylifecycle.c before it can be used.
    All fields not initialized here are expected to be zeroed out,
@@ -673,7 +684,7 @@ init_interpreter(PyInterpreterState *interp,
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
     }
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
-    interp->next_stackref = 1;
+    interp->next_stackref = INITIAL_STACKREF_INDEX;
     _Py_hashtable_allocator_t alloc = {
         .malloc = malloc,
         .free = free,
@@ -1199,14 +1210,40 @@ _PyInterpreterState_SetWhence(PyInterpreterState *interp, long whence)
 
 
 PyObject *
-PyUnstable_InterpreterState_GetMainModule(PyInterpreterState *interp)
+_Py_GetMainModule(PyThreadState *tstate)
 {
-    PyObject *modules = _PyImport_GetModules(interp);
-    if (modules == NULL) {
-        PyErr_SetString(PyExc_RuntimeError, "interpreter not initialized");
-        return NULL;
+    // We return None to indicate "not found" or "bogus".
+    PyObject *modules = _PyImport_GetModulesRef(tstate->interp);
+    if (modules == Py_None) {
+        return modules;
     }
-    return PyMapping_GetItemString(modules, "__main__");
+    PyObject *module = NULL;
+    (void)PyMapping_GetOptionalItem(modules, &_Py_ID(__main__), &module);
+    Py_DECREF(modules);
+    if (module == NULL && !PyErr_Occurred()) {
+        Py_RETURN_NONE;
+    }
+    return module;
+}
+
+int
+_Py_CheckMainModule(PyObject *module)
+{
+    if (module == NULL || module == Py_None) {
+        if (!PyErr_Occurred()) {
+            (void)_PyErr_SetModuleNotFoundError(&_Py_ID(__main__));
+        }
+        return -1;
+    }
+    if (!Py_IS_TYPE(module, &PyModule_Type)) {
+        /* The __main__ module has been tampered with. */
+        PyObject *msg = PyUnicode_FromString("invalid __main__ module");
+        if (msg != NULL) {
+            (void)PyErr_SetImportError(msg, &_Py_ID(__main__), NULL);
+        }
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -1522,7 +1559,6 @@ init_threadstate(_PyThreadStateImpl *_tstate,
 
     tstate->py_recursion_limit = interp->ceval.recursion_limit;
     tstate->py_recursion_remaining = interp->ceval.recursion_limit;
-    tstate->c_recursion_remaining = 2;
     tstate->exc_info = &tstate->exc_state;
 
     // PyGILState_Release must not try to delete this thread state.
@@ -2132,7 +2168,10 @@ _PyThreadState_Attach(PyThreadState *tstate)
     if (current_fast_get() != NULL) {
         Py_FatalError("non-NULL old thread state");
     }
-
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    if (_tstate->c_stack_hard_limit == 0) {
+        _Py_InitializeRecursionLimits(tstate);
+    }
 
     while (1) {
         _PyEval_AcquireLock(tstate);

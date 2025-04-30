@@ -344,6 +344,15 @@ Module contents
    Other attributes may exist, but they are private and must not be
    inspected or relied on.
 
+.. class:: InitVar
+
+   ``InitVar[T]`` type annotations describe variables that are :ref:`init-only
+   <dataclasses-init-only-variables>`. Fields annotated with :class:`!InitVar`
+   are considered pseudo-fields, and thus are neither returned by the
+   :func:`fields` function nor used in any way except adding them as
+   parameters to :meth:`~object.__init__` and an optional
+   :meth:`__post_init__`.
+
 .. function:: fields(class_or_instance)
 
    Returns a tuple of :class:`Field` objects that define the fields for this
@@ -600,8 +609,8 @@ Init-only variables
 
 Another place where :func:`@dataclass <dataclass>` inspects a type annotation is to
 determine if a field is an init-only variable.  It does this by seeing
-if the type of a field is of type ``dataclasses.InitVar``.  If a field
-is an ``InitVar``, it is considered a pseudo-field called an init-only
+if the type of a field is of type :class:`InitVar`.  If a field
+is an :class:`InitVar`, it is considered a pseudo-field called an init-only
 field.  As it is not a true field, it is not returned by the
 module-level :func:`fields` function.  Init-only fields are added as
 parameters to the generated :meth:`~object.__init__` method, and are passed to
