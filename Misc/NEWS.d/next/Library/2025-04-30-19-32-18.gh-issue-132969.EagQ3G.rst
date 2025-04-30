@@ -1,0 +1,1 @@
+Fixes error+hang when ProcessPoolExecutor shutdown called with wait=False and a task ended abnormally.
