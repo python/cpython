@@ -260,8 +260,6 @@ static void *opcode_targets[256] = {
 #else /* Py_TAIL_CALL_INTERP */
 static py_tail_call_funcptr INSTRUCTION_TABLE[256];
 
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_pop_4_error(TAIL_CALL_PARAMS);
-Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_pop_3_error(TAIL_CALL_PARAMS);
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_pop_2_error(TAIL_CALL_PARAMS);
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_pop_1_error(TAIL_CALL_PARAMS);
 Py_PRESERVE_NONE_CC static PyObject *_TAIL_CALL_error(TAIL_CALL_PARAMS);
