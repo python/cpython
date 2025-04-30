@@ -341,6 +341,9 @@ class ProcessPoolShutdownTest(ExecutorShutdownTest):
         assert all([r == abs(v) for r, v in zip(res, range(-5, 5))])
 
     def _run_test_issue_132969(self, max_workers: int) -> int:
+        if sys.platform == "win32":
+            raise unittest.SkipTest("skip test since forkserver is not available on Windows")
+
         # max_workers=2 will repro exception
         # max_workers=4 will repro exception and then hang
 
