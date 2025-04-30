@@ -675,13 +675,13 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     return MAKE_TOKEN(_PyTokenizer_syntaxerror_known_range(
                         tok, (int)(tok->start + 1 - tok->line_start),
                         (int)(tok->cur - tok->line_start),
-                        "can't use 'b' and 't' string prefixes at the same time"));
+                        "can't use 'b' and 't' string prefixes together"));
                 }
                 if (saw_f && saw_t) {
                     return MAKE_TOKEN(_PyTokenizer_syntaxerror_known_range(
                         tok, (int)(tok->start + 1 - tok->line_start),
                         (int)(tok->cur - tok->line_start),
-                        "can't use 'f' and 't' string prefixes at the same time"));
+                        "can't use 'f' and 't' string prefixes together"));
                 }
 
                 // Handle valid f or t string creation:
