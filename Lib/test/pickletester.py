@@ -2289,10 +2289,10 @@ class AbstractPicklingErrorTests:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
-                self.assertEqual(str(cm.exception),
-                    f"Can't pickle {obj!r}: it's not found as __main__.AbstractPickleTests.spam")
-                self.assertEqual(str(cm.exception.__context__),
-                    "module '__main__' has no attribute 'AbstractPickleTests'")
+                    self.assertEqual(str(cm.exception),
+                        f"Can't pickle {obj!r}: it's not found as __main__.AbstractPickleTests.spam")
+                    self.assertEqual(str(cm.exception.__context__),
+                        "module '__main__' has no attribute 'AbstractPickleTests'")
 
     def test_wrong_object_lookup_error(self):
         # Name is bound to different object
@@ -2312,10 +2312,10 @@ class AbstractPicklingErrorTests:
             with self.subTest(proto=proto):
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
-                self.assertEqual(str(cm.exception),
-                    f"Can't pickle {obj!r}: it's not found as __main__.AbstractPickleTests")
-                self.assertEqual(str(cm.exception.__context__),
-                    "module '__main__' has no attribute 'AbstractPickleTests'")
+                    self.assertEqual(str(cm.exception),
+                        f"Can't pickle {obj!r}: it's not found as __main__.AbstractPickleTests")
+                    self.assertEqual(str(cm.exception.__context__),
+                        "module '__main__' has no attribute 'AbstractPickleTests'")
 
     def test_local_lookup_error(self):
         # Test that whichmodule() errors out cleanly when looking up
