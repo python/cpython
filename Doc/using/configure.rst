@@ -22,7 +22,7 @@ Features and minimum versions required to build CPython:
 
 * Support for threads.
 
-* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.9 is the recommended
+* OpenSSL 1.1.1 is the minimum version and OpenSSL 3.0.16 is the recommended
   minimum version for the :mod:`ssl` and :mod:`hashlib` extension modules.
 
 * SQLite 3.15.2 for the :mod:`sqlite3` extension module.
@@ -626,7 +626,7 @@ also be used to improve performance.
    `preserve_none <https://clang.llvm.org/docs/AttributeReference.html#preserve-none>`_
    calling convention. For example, Clang 19 and newer supports this feature.
 
-   .. versionadded:: next
+   .. versionadded:: 3.14
 
 .. option:: --without-mimalloc
 
@@ -659,6 +659,17 @@ also be used to improve performance.
 
    Add ``-fstrict-overflow`` to the C compiler flags (by default we add
    ``-fno-strict-overflow`` instead).
+
+.. option:: --without-remote-debug
+
+   Deactivate remote debugging support described in :pep:`768` (enabled by default).
+   When this flag is provided the code that allows the interpreter to schedule the
+   execution of a Python file in a separate process as described in :pep:`768` is
+   not compiled. This includes both the functionality to schedule code to be executed
+   and the functionality to receive code to be executed.
+
+
+   .. versionadded:: 3.14
 
 
 .. _debug-build:
@@ -978,14 +989,20 @@ See :source:`Mac/README.rst`.
 
    Options:
 
-   * ``universal2``;
-   * ``32-bit``;
-   * ``64-bit``;
-   * ``3-way``;
-   * ``intel``;
-   * ``intel-32``;
-   * ``intel-64``;
-   * ``all``.
+   * ``universal2`` (x86-64 and arm64);
+   * ``32-bit`` (PPC and i386);
+   * ``64-bit``  (PPC64 and x86-64);
+   * ``3-way`` (i386, PPC and x86-64);
+   * ``intel`` (i386 and x86-64);
+   * ``intel-32`` (i386);
+   * ``intel-64`` (x86-64);
+   * ``all``  (PPC, i386, PPC64 and x86-64).
+
+   Note that values for this configuration item are *not* the same as the
+   identifiers used for universal binary wheels on macOS. See the Python
+   Packaging User Guide for details on the `packaging platform compatibility
+   tags used on macOS
+   <https://packaging.python.org/en/latest/specifications/platform-compatibility-tags/#macos>`_
 
 .. option:: --with-framework-name=FRAMEWORK
 

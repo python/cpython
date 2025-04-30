@@ -1,0 +1,3 @@
+:func:`hashlib.file_digest` now raises :exc:`BlockingIOError` when no data
+is available during non-blocking I/O. Before, it added spurious null bytes
+to the digest.

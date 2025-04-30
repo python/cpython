@@ -1,2 +1,0 @@
-Fix race condition when raising :exc:`MemoryError` in the free threaded
-build.

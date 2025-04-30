@@ -18,6 +18,7 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_ceval.h"         // _PyEval_ReInitThreads()
 #include "pycore_fileutils.h"     // _Py_closerange()
+#include "pycore_import.h"        // _PyImport_AcquireLock()
 #include "pycore_initconfig.h"    // _PyStatus_EXCEPTION()
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_moduleobject.h"  // _PyModule_GetState()
@@ -676,6 +677,14 @@ PyOS_AfterFork_Parent(void)
     run_at_forkers(interp->after_forkers_parent, 0);
 }
 
+static void
+reset_remotedebug_data(PyThreadState *tstate)
+{
+    tstate->remote_debugger_support.debugger_pending_call = 0;
+    memset(tstate->remote_debugger_support.debugger_script_path, 0, MAX_SCRIPT_PATH_SIZE);
+}
+
+
 void
 PyOS_AfterFork_Child(void)
 {
@@ -709,13 +718,15 @@ PyOS_AfterFork_Child(void)
         goto fatal_error;
     }
 
+    reset_remotedebug_data(tstate);
+
     // Remove the dead thread states. We "start the world" once we are the only
     // thread state left to undo the stop the world call in `PyOS_BeforeFork`.
     // That needs to happen before `_PyThreadState_DeleteList`, because that
     // may call destructors.
     PyThreadState *list = _PyThreadState_RemoveExcept(tstate);
     _PyEval_StartTheWorldAll(&_PyRuntime);
-    _PyThreadState_DeleteList(list);
+    _PyThreadState_DeleteList(list, /*is_after_fork=*/1);
 
     _PyImport_ReInitLock(tstate->interp);
     _PyImport_ReleaseLock(tstate->interp);
@@ -1024,21 +1035,34 @@ _PyLong_FromDev(dev_t dev)
 static int
 _Py_Dev_Converter(PyObject *obj, void *p)
 {
+    if (!PyLong_Check(obj)) {
+        obj = _PyNumber_Index(obj);
+        if (obj == NULL) {
+            return 0;
+        }
+    }
+    else {
+        Py_INCREF(obj);
+    }
+    assert(PyLong_Check(obj));
 #ifdef NODEV
-    if (PyLong_Check(obj) && _PyLong_IsNegative((PyLongObject *)obj)) {
+    if (_PyLong_IsNegative((PyLongObject *)obj)) {
         int overflow;
         long long result = PyLong_AsLongLongAndOverflow(obj, &overflow);
         if (result == -1 && PyErr_Occurred()) {
+            Py_DECREF(obj);
             return 0;
         }
         if (!overflow && result == (long long)NODEV) {
             *((dev_t *)p) = NODEV;
+            Py_DECREF(obj);
             return 1;
         }
     }
 #endif
 
     unsigned long long result = PyLong_AsUnsignedLongLong(obj);
+    Py_DECREF(obj);
     if (result == (unsigned long long)-1 && PyErr_Occurred()) {
         return 0;
     }
@@ -5371,7 +5395,7 @@ _testFileExistsByName(LPCWSTR path, BOOL followLinks)
                                      sizeof(info)))
     {
         if (!(info.FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) ||
-            !followLinks && IsReparseTagNameSurrogate(info.ReparseTag))
+            (!followLinks && IsReparseTagNameSurrogate(info.ReparseTag)))
         {
             return TRUE;
         }
@@ -5695,7 +5719,6 @@ os_mkdir_impl(PyObject *module, path_t *path, int mode, int dir_fd)
     int result;
 #ifdef MS_WINDOWS
     int error = 0;
-    int pathError = 0;
     SECURITY_ATTRIBUTES secAttr = { sizeof(secAttr) };
     SECURITY_ATTRIBUTES *pSecAttr = NULL;
 #endif
@@ -8256,13 +8279,13 @@ os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority)
 }
 
 static PyObject *
-os_sched_param_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
+os_sched_param_reduce(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     return Py_BuildValue("(O(N))", Py_TYPE(self), PyStructSequence_GetItem(self, 0));
 }
 
 static PyMethodDef os_sched_param_reduce_method = {
-    "__reduce__", (PyCFunction)os_sched_param_reduce, METH_NOARGS|METH_COEXIST, NULL,
+    "__reduce__", os_sched_param_reduce, METH_NOARGS | METH_COEXIST, NULL,
 };
 
 PyDoc_VAR(os_sched_param__doc__);
@@ -8489,7 +8512,7 @@ os_sched_setaffinity_impl(PyObject *module, pid_t pid, PyObject *mask)
 
     while ((item = PyIter_Next(iterator))) {
         long cpu;
-        if (!PyLong_Check(item)) {
+        if (!PyIndex_Check(item)) {
             PyErr_Format(PyExc_TypeError,
                         "expected an iterator of ints, "
                         "but iterator yielded %R",
@@ -9864,7 +9887,7 @@ os_setgroups(PyObject *module, PyObject *groups)
             PyMem_Free(grouplist);
             return NULL;
         }
-        if (!PyLong_Check(elem)) {
+        if (!PyIndex_Check(elem)) {
             PyErr_SetString(PyExc_TypeError,
                             "groups must be integers");
             Py_DECREF(elem);
@@ -13633,7 +13656,7 @@ conv_confname(PyObject *module, PyObject *arg, int *valuep, const char *tablenam
     }
 
     int success = 0;
-    if (!PyLong_Check(arg)) {
+    if (!PyIndex_Check(arg)) {
         PyErr_SetString(PyExc_TypeError,
             "configuration names must be strings or integers");
     } else {
@@ -15584,9 +15607,12 @@ typedef struct {
 #endif
 } DirEntry;
 
+#define DirEntry_CAST(op)   ((DirEntry *)(op))
+
 static void
-DirEntry_dealloc(DirEntry *entry)
+DirEntry_dealloc(PyObject *op)
 {
+    DirEntry *entry = DirEntry_CAST(op);
     PyTypeObject *tp = Py_TYPE(entry);
     Py_XDECREF(entry->name);
     Py_XDECREF(entry->path);
@@ -15915,8 +15941,9 @@ os_DirEntry_inode_impl(DirEntry *self)
 }
 
 static PyObject *
-DirEntry_repr(DirEntry *self)
+DirEntry_repr(PyObject *op)
 {
+    DirEntry *self = DirEntry_CAST(op);
     return PyUnicode_FromFormat("<DirEntry %R>", self->name);
 }
 
@@ -16179,6 +16206,8 @@ typedef struct {
 #endif
 } ScandirIterator;
 
+#define ScandirIterator_CAST(op)    ((ScandirIterator *)(op))
+
 #ifdef MS_WINDOWS
 
 static int
@@ -16202,8 +16231,9 @@ ScandirIterator_closedir(ScandirIterator *iterator)
 }
 
 static PyObject *
-ScandirIterator_iternext(ScandirIterator *iterator)
+ScandirIterator_iternext(PyObject *op)
 {
+    ScandirIterator *iterator = ScandirIterator_CAST(op);
     WIN32_FIND_DATAW *file_data = &iterator->file_data;
     BOOL success;
     PyObject *entry;
@@ -16273,8 +16303,9 @@ ScandirIterator_closedir(ScandirIterator *iterator)
 }
 
 static PyObject *
-ScandirIterator_iternext(ScandirIterator *iterator)
+ScandirIterator_iternext(PyObject *op)
 {
+    ScandirIterator *iterator = ScandirIterator_CAST(op);
     struct dirent *direntp;
     Py_ssize_t name_len;
     int is_dot;
@@ -16326,37 +16357,40 @@ ScandirIterator_iternext(ScandirIterator *iterator)
 #endif
 
 static PyObject *
-ScandirIterator_close(ScandirIterator *self, PyObject *args)
+ScandirIterator_close(PyObject *op, PyObject *Py_UNUSED(dummy))
 {
+    ScandirIterator *self = ScandirIterator_CAST(op);
     ScandirIterator_closedir(self);
     Py_RETURN_NONE;
 }
 
 static PyObject *
-ScandirIterator_enter(PyObject *self, PyObject *args)
+ScandirIterator_enter(PyObject *self, PyObject *Py_UNUSED(dummy))
 {
     return Py_NewRef(self);
 }
 
 static PyObject *
-ScandirIterator_exit(ScandirIterator *self, PyObject *args)
+ScandirIterator_exit(PyObject *op, PyObject *Py_UNUSED(args))
 {
+    ScandirIterator *self = ScandirIterator_CAST(op);
     ScandirIterator_closedir(self);
     Py_RETURN_NONE;
 }
 
 static void
-ScandirIterator_finalize(ScandirIterator *iterator)
+ScandirIterator_finalize(PyObject *op)
 {
-
+    ScandirIterator *iterator = ScandirIterator_CAST(op);
     /* Save the current exception, if any. */
     PyObject *exc = PyErr_GetRaisedException();
 
     if (!ScandirIterator_is_closed(iterator)) {
         ScandirIterator_closedir(iterator);
 
-        if (PyErr_ResourceWarning((PyObject *)iterator, 1,
-                                  "unclosed scandir iterator %R", iterator)) {
+        if (PyErr_ResourceWarning(op, 1,
+                                  "unclosed scandir iterator %R", iterator))
+        {
             /* Spurious errors can appear at shutdown */
             if (PyErr_ExceptionMatches(PyExc_Warning)) {
                 PyErr_FormatUnraisable("Exception ignored while finalizing "
@@ -16372,21 +16406,21 @@ ScandirIterator_finalize(ScandirIterator *iterator)
 }
 
 static void
-ScandirIterator_dealloc(ScandirIterator *iterator)
+ScandirIterator_dealloc(PyObject *op)
 {
-    PyTypeObject *tp = Py_TYPE(iterator);
-    if (PyObject_CallFinalizerFromDealloc((PyObject *)iterator) < 0)
+    PyTypeObject *tp = Py_TYPE(op);
+    if (PyObject_CallFinalizerFromDealloc(op) < 0)
         return;
 
     freefunc free_func = PyType_GetSlot(tp, Py_tp_free);
-    free_func(iterator);
+    free_func(op);
     Py_DECREF(tp);
 }
 
 static PyMethodDef ScandirIterator_methods[] = {
-    {"__enter__", (PyCFunction)ScandirIterator_enter, METH_NOARGS},
-    {"__exit__", (PyCFunction)ScandirIterator_exit, METH_VARARGS},
-    {"close", (PyCFunction)ScandirIterator_close, METH_NOARGS},
+    {"__enter__", ScandirIterator_enter, METH_NOARGS},
+    {"__exit__", ScandirIterator_exit, METH_VARARGS},
+    {"close", ScandirIterator_close, METH_NOARGS},
     {NULL}
 };
 

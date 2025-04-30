@@ -1,4 +1,0 @@
-Add an option ``--parallel-threads=N`` to the regression test runner that
-runs individual tests in multiple threads in parallel in order to find
-concurrency bugs.  Note that most of the test suite is not yet reviewed for
-thread-safety or annotated with ``@thread_unsafe`` when necessary.

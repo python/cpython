@@ -44,7 +44,13 @@ Options:
 
     -a
     --extract-all
-        Extract all strings.
+        Deprecated: Not implemented and will be removed in a future version.
+
+    -cTAG
+    --add-comments=TAG
+        Extract translator comments.  Comments must start with TAG and
+        must precede the gettext call.  Multiple -cTAG options are allowed.
+        In that case, any comment matching any of the TAGs will be extracted.
 
     -d name
     --default-domain=name
@@ -67,7 +73,8 @@ Options:
     -k word
     --keyword=word
         Keywords to look for in addition to the default set, which are:
-        %(DEFAULTKEYWORDS)s
+        _, gettext, ngettext, pgettext, npgettext, dgettext, dngettext,
+        dpgettext, and dnpgettext.
 
         You can have multiple -k flags on the command line.
 
@@ -141,8 +148,8 @@ import os
 import sys
 import time
 import tokenize
-from collections import defaultdict
 from dataclasses import dataclass, field
+from io import BytesIO
 from operator import itemgetter
 
 __version__ = '1.5'
@@ -171,7 +178,7 @@ msgstr ""
 
 
 def usage(code, msg=''):
-    print(__doc__ % globals(), file=sys.stderr)
+    print(__doc__, file=sys.stderr)
     if msg:
         print(msg, file=sys.stderr)
     sys.exit(code)
@@ -181,14 +188,12 @@ def make_escapes(pass_nonascii):
     global escapes, escape
     if pass_nonascii:
         # Allow non-ascii characters to pass through so that e.g. 'msgid
-        # "Höhe"' would result not result in 'msgid "H\366he"'.  Otherwise we
+        # "Höhe"' would not result in 'msgid "H\366he"'.  Otherwise we
         # escape any character outside the 32..126 range.
-        mod = 128
         escape = escape_ascii
     else:
-        mod = 256
         escape = escape_nonascii
-    escapes = [r"\%03o" % i for i in range(mod)]
+    escapes = [r"\%03o" % i for i in range(256)]
     for i in range(32, 127):
         escapes[i] = chr(i)
     escapes[ord('\\')] = r'\\'
@@ -199,20 +204,13 @@ def make_escapes(pass_nonascii):
 
 
 def escape_ascii(s, encoding):
-    return ''.join(escapes[ord(c)] if ord(c) < 128 else c for c in s)
+    return ''.join(escapes[ord(c)] if ord(c) < 128 else c
+                   if c.isprintable() else escape_nonascii(c, encoding)
+                   for c in s)
 
 
 def escape_nonascii(s, encoding):
     return ''.join(escapes[b] for b in s.encode(encoding))
-
-
-def is_literal_string(s):
-    return s[0] in '\'"' or (s[0] in 'rRuU' and s[1] in '\'"')
-
-
-def safe_eval(s):
-    # unwrap quotes, safely
-    return eval(s, {'__builtins__':{}}, {})
 
 
 def normalize(s, encoding):
@@ -284,21 +282,132 @@ def getFilesForName(name):
 # Key is the function name, value is a dictionary mapping argument positions to the
 # type of the argument. The type is one of 'msgid', 'msgid_plural', or 'msgctxt'.
 DEFAULTKEYWORDS = {
-    '_': {0: 'msgid'},
-    'gettext': {0: 'msgid'},
-    'ngettext': {0: 'msgid', 1: 'msgid_plural'},
-    'pgettext': {0: 'msgctxt', 1: 'msgid'},
-    'npgettext': {0: 'msgctxt', 1: 'msgid', 2: 'msgid_plural'},
-    'dgettext': {1: 'msgid'},
-    'dngettext': {1: 'msgid', 2: 'msgid_plural'},
-    'dpgettext': {1: 'msgctxt', 2: 'msgid'},
-    'dnpgettext': {1: 'msgctxt', 2: 'msgid', 3: 'msgid_plural'},
+    '_': {'msgid': 0},
+    'gettext': {'msgid': 0},
+    'ngettext': {'msgid': 0, 'msgid_plural': 1},
+    'pgettext': {'msgctxt': 0, 'msgid': 1},
+    'npgettext': {'msgctxt': 0, 'msgid': 1, 'msgid_plural': 2},
+    'dgettext': {'msgid': 1},
+    'dngettext': {'msgid': 1, 'msgid_plural': 2},
+    'dpgettext': {'msgctxt': 1, 'msgid': 2},
+    'dnpgettext': {'msgctxt': 1, 'msgid': 2, 'msgid_plural': 3},
 }
 
 
-def matches_spec(message, spec):
-    """Check if a message has all the keys defined by the keyword spec."""
-    return all(key in message for key in spec.values())
+def parse_spec(spec):
+    """Parse a keyword spec string into a dictionary.
+
+    The keyword spec format defines the name of the gettext function and the
+    positions of the arguments that correspond to msgid, msgid_plural, and
+    msgctxt. The format is as follows:
+
+        name - the name of the gettext function, assumed to
+               have a single argument that is the msgid.
+        name:pos1 - the name of the gettext function and the position
+                    of the msgid argument.
+        name:pos1,pos2 - the name of the gettext function and the positions
+                         of the msgid and msgid_plural arguments.
+        name:pos1,pos2c - the name of the gettext function and the positions
+                          of the msgid and msgctxt arguments.
+        name:pos1,pos2,pos3c - the name of the gettext function and the
+                               positions of the msgid, msgid_plural, and
+                               msgctxt arguments.
+
+    As an example, the spec 'foo:1,2,3c' means that the function foo has three
+    arguments, the first one is the msgid, the second one is the msgid_plural,
+    and the third one is the msgctxt. The positions are 1-based.
+
+    The msgctxt argument can appear in any position, but it can only appear
+    once. For example, the keyword specs 'foo:3c,1,2' and 'foo:1,2,3c' are
+    equivalent.
+
+    See https://www.gnu.org/software/gettext/manual/gettext.html
+    for more information.
+    """
+    parts = spec.strip().split(':', 1)
+    if len(parts) == 1:
+        name = parts[0]
+        return name, {'msgid': 0}
+
+    name, args = parts
+    if not args:
+        raise ValueError(f'Invalid keyword spec {spec!r}: '
+                         'missing argument positions')
+
+    result = {}
+    for arg in args.split(','):
+        arg = arg.strip()
+        is_context = False
+        if arg.endswith('c'):
+            is_context = True
+            arg = arg[:-1]
+
+        try:
+            pos = int(arg) - 1
+        except ValueError as e:
+            raise ValueError(f'Invalid keyword spec {spec!r}: '
+                             'position is not an integer') from e
+
+        if pos < 0:
+            raise ValueError(f'Invalid keyword spec {spec!r}: '
+                             'argument positions must be strictly positive')
+
+        if pos in result.values():
+            raise ValueError(f'Invalid keyword spec {spec!r}: '
+                             'duplicate positions')
+
+        if is_context:
+            if 'msgctxt' in result:
+                raise ValueError(f'Invalid keyword spec {spec!r}: '
+                                 'msgctxt can only appear once')
+            result['msgctxt'] = pos
+        elif 'msgid' not in result:
+            result['msgid'] = pos
+        elif 'msgid_plural' not in result:
+            result['msgid_plural'] = pos
+        else:
+            raise ValueError(f'Invalid keyword spec {spec!r}: '
+                             'too many positions')
+
+    if 'msgid' not in result and 'msgctxt' in result:
+        raise ValueError(f'Invalid keyword spec {spec!r}: '
+                         'msgctxt cannot appear without msgid')
+
+    return name, result
+
+
+def unparse_spec(name, spec):
+    """Unparse a keyword spec dictionary into a string."""
+    if spec == {'msgid': 0}:
+        return name
+
+    parts = []
+    for arg, pos in sorted(spec.items(), key=lambda x: x[1]):
+        if arg == 'msgctxt':
+            parts.append(f'{pos + 1}c')
+        else:
+            parts.append(str(pos + 1))
+    return f'{name}:{','.join(parts)}'
+
+
+def process_keywords(keywords, *, no_default_keywords):
+    custom_keywords = {}
+    for spec in dict.fromkeys(keywords):
+        name, spec = parse_spec(spec)
+        if name not in custom_keywords:
+            custom_keywords[name] = []
+        custom_keywords[name].append(spec)
+
+    if no_default_keywords:
+        return custom_keywords
+
+    # custom keywords override default keywords
+    for name, spec in DEFAULTKEYWORDS.items():
+        if name not in custom_keywords:
+            custom_keywords[name] = []
+        if spec not in custom_keywords[name]:
+            custom_keywords[name].append(spec)
+    return custom_keywords
 
 
 @dataclass(frozen=True)
@@ -317,212 +426,186 @@ class Message:
     msgctxt: str | None
     locations: set[Location] = field(default_factory=set)
     is_docstring: bool = False
+    comments: list[str] = field(default_factory=list)
 
-    def add_location(self, filename, lineno, msgid_plural=None, *, is_docstring=False):
+    def add_location(self, filename, lineno, msgid_plural=None, *,
+                     is_docstring=False, comments=None):
         if self.msgid_plural is None:
             self.msgid_plural = msgid_plural
         self.locations.add(Location(filename, lineno))
         self.is_docstring |= is_docstring
+        if comments:
+            self.comments.extend(comments)
 
 
-class TokenEater:
+def get_source_comments(source):
+    """
+    Return a dictionary mapping line numbers to
+    comments in the source code.
+    """
+    comments = {}
+    for token in tokenize.tokenize(BytesIO(source).readline):
+        if token.type == tokenize.COMMENT:
+            # Remove any leading combination of '#' and whitespace
+            comment = token.string.lstrip('# \t')
+            comments[token.start[0]] = comment
+    return comments
+
+
+class GettextVisitor(ast.NodeVisitor):
     def __init__(self, options):
-        self.__options = options
-        self.__messages = {}
-        self.__state = self.__waiting
-        self.__data = defaultdict(str)
-        self.__curr_arg = 0
-        self.__curr_keyword = None
-        self.__lineno = -1
-        self.__freshmodule = 1
-        self.__curfile = None
-        self.__enclosurecount = 0
+        super().__init__()
+        self.options = options
+        self.filename = None
+        self.messages = {}
+        self.comments = {}
 
-    def __call__(self, ttype, tstring, stup, etup, line):
-        # dispatch
-##        import token
-##        print('ttype:', token.tok_name[ttype], 'tstring:', tstring,
-##              file=sys.stderr)
-        self.__state(ttype, tstring, stup[0])
-
-    @property
-    def messages(self):
-        return self.__messages
-
-    def __waiting(self, ttype, tstring, lineno):
-        opts = self.__options
-        # Do docstring extractions, if enabled
-        if opts.docstrings and not opts.nodocstrings.get(self.__curfile):
-            # module docstring?
-            if self.__freshmodule:
-                if ttype == tokenize.STRING and is_literal_string(tstring):
-                    self.__addentry({'msgid': safe_eval(tstring)}, lineno, is_docstring=True)
-                    self.__freshmodule = 0
-                    return
-                if ttype in (tokenize.COMMENT, tokenize.NL, tokenize.ENCODING):
-                    return
-                self.__freshmodule = 0
-            # class or func/method docstring?
-            if ttype == tokenize.NAME and tstring in ('class', 'def'):
-                self.__state = self.__suiteseen
-                return
-        if ttype == tokenize.NAME and tstring in ('class', 'def'):
-            self.__state = self.__ignorenext
+    def visit_file(self, source, filename):
+        try:
+            module_tree = ast.parse(source)
+        except SyntaxError:
             return
-        if ttype == tokenize.NAME and tstring in opts.keywords:
-            self.__state = self.__keywordseen
-            self.__curr_keyword = tstring
+
+        self.filename = filename
+        if self.options.comment_tags:
+            self.comments = get_source_comments(source)
+        self.visit(module_tree)
+
+    def visit_Module(self, node):
+        self._extract_docstring(node)
+        self.generic_visit(node)
+
+    visit_ClassDef = visit_FunctionDef = visit_AsyncFunctionDef = visit_Module
+
+    def visit_Call(self, node):
+        self._extract_message(node)
+        self.generic_visit(node)
+
+    def _extract_docstring(self, node):
+        if (not self.options.docstrings or
+            self.options.nodocstrings.get(self.filename)):
             return
-        if ttype == tokenize.STRING:
-            maybe_fstring = ast.parse(tstring, mode='eval').body
-            if not isinstance(maybe_fstring, ast.JoinedStr):
+
+        docstring = ast.get_docstring(node)
+        if docstring is not None:
+            lineno = node.body[0].lineno  # The first statement is the docstring
+            self._add_message(lineno, docstring, is_docstring=True)
+
+    def _extract_message(self, node):
+        func_name = self._get_func_name(node)
+        errors = []
+        specs = self.options.keywords.get(func_name, [])
+        for spec in specs:
+            err = self._extract_message_with_spec(node, spec)
+            if err is None:
                 return
-            for value in filter(lambda node: isinstance(node, ast.FormattedValue),
-                                maybe_fstring.values):
-                for call in filter(lambda node: isinstance(node, ast.Call),
-                                   ast.walk(value)):
-                    func = call.func
-                    if isinstance(func, ast.Name):
-                        func_name = func.id
-                    elif isinstance(func, ast.Attribute):
-                        func_name = func.attr
-                    else:
-                        continue
+            errors.append(err)
 
-                    if func_name not in opts.keywords:
-                        continue
-                    if len(call.args) != 1:
-                        print((
-                            '*** %(file)s:%(lineno)s: Seen unexpected amount of'
-                            ' positional arguments in gettext call: %(source_segment)s'
-                            ) % {
-                            'source_segment': ast.get_source_segment(tstring, call) or tstring,
-                            'file': self.__curfile,
-                            'lineno': lineno
-                            }, file=sys.stderr)
-                        continue
-                    if call.keywords:
-                        print((
-                            '*** %(file)s:%(lineno)s: Seen unexpected keyword arguments'
-                            ' in gettext call: %(source_segment)s'
-                            ) % {
-                            'source_segment': ast.get_source_segment(tstring, call) or tstring,
-                            'file': self.__curfile,
-                            'lineno': lineno
-                            }, file=sys.stderr)
-                        continue
-                    arg = call.args[0]
-                    if not isinstance(arg, ast.Constant):
-                        print((
-                            '*** %(file)s:%(lineno)s: Seen unexpected argument type'
-                            ' in gettext call: %(source_segment)s'
-                            ) % {
-                            'source_segment': ast.get_source_segment(tstring, call) or tstring,
-                            'file': self.__curfile,
-                            'lineno': lineno
-                            }, file=sys.stderr)
-                        continue
-                    if isinstance(arg.value, str):
-                        self.__curr_keyword = func_name
-                        self.__addentry({'msgid': arg.value}, lineno)
-
-    def __suiteseen(self, ttype, tstring, lineno):
-        # skip over any enclosure pairs until we see the colon
-        if ttype == tokenize.OP:
-            if tstring == ':' and self.__enclosurecount == 0:
-                # we see a colon and we're not in an enclosure: end of def
-                self.__state = self.__suitedocstring
-            elif tstring in '([{':
-                self.__enclosurecount += 1
-            elif tstring in ')]}':
-                self.__enclosurecount -= 1
-
-    def __suitedocstring(self, ttype, tstring, lineno):
-        # ignore any intervening noise
-        if ttype == tokenize.STRING and is_literal_string(tstring):
-            self.__addentry({'msgid': safe_eval(tstring)}, lineno, is_docstring=True)
-            self.__state = self.__waiting
-        elif ttype not in (tokenize.NEWLINE, tokenize.INDENT,
-                           tokenize.COMMENT):
-            # there was no class docstring
-            self.__state = self.__waiting
-
-    def __keywordseen(self, ttype, tstring, lineno):
-        if ttype == tokenize.OP and tstring == '(':
-            self.__data.clear()
-            self.__curr_arg = 0
-            self.__enclosurecount = 0
-            self.__lineno = lineno
-            self.__state = self.__openseen
+        if not errors:
+            return
+        if len(errors) == 1:
+            print(f'*** {self.filename}:{node.lineno}: {errors[0]}',
+                  file=sys.stderr)
         else:
-            self.__state = self.__waiting
+            # There are multiple keyword specs for the function name and
+            # none of them could be extracted. Print a general error
+            # message and list the errors for each keyword spec.
+            print(f'*** {self.filename}:{node.lineno}: '
+                  f'No keywords matched gettext call "{func_name}":',
+                  file=sys.stderr)
+            for spec, err in zip(specs, errors, strict=True):
+                unparsed = unparse_spec(func_name, spec)
+                print(f'\tkeyword="{unparsed}": {err}', file=sys.stderr)
 
-    def __openseen(self, ttype, tstring, lineno):
-        spec = self.__options.keywords[self.__curr_keyword]
-        arg_type = spec.get(self.__curr_arg)
-        expect_string_literal = arg_type is not None
+    def _extract_message_with_spec(self, node, spec):
+        """Extract a gettext call with the given spec.
 
-        if ttype == tokenize.OP and self.__enclosurecount == 0:
-            if tstring == ')':
-                # We've seen the last of the translatable strings.  Record the
-                # line number of the first line of the strings and update the list
-                # of messages seen.  Reset state for the next batch.  If there
-                # were no strings inside _(), then just ignore this entry.
-                if self.__data:
-                    self.__addentry(self.__data)
-                self.__state = self.__waiting
-                return
-            elif tstring == ',':
-                # Advance to the next argument
-                self.__curr_arg += 1
-                return
+        Return None if the gettext call was successfully extracted,
+        otherwise return an error message.
+        """
+        max_index = max(spec.values())
+        has_var_positional = any(isinstance(arg, ast.Starred) for
+                                 arg in node.args[:max_index+1])
+        if has_var_positional:
+            return ('Variable positional arguments are not '
+                    'allowed in gettext calls')
 
-        if expect_string_literal:
-            if ttype == tokenize.STRING and is_literal_string(tstring):
-                self.__data[arg_type] += safe_eval(tstring)
-            elif ttype not in (tokenize.COMMENT, tokenize.INDENT, tokenize.DEDENT,
-                               tokenize.NEWLINE, tokenize.NL):
-                # We are inside an argument which is a translatable string and
-                # we encountered a token that is not a string.  This is an error.
-                self.warn_unexpected_token(tstring)
-                self.__enclosurecount = 0
-                self.__state = self.__waiting
-        elif ttype == tokenize.OP:
-            if tstring in '([{':
-                self.__enclosurecount += 1
-            elif tstring in ')]}':
-                self.__enclosurecount -= 1
+        if max_index >= len(node.args):
+            return (f'Expected at least {max_index + 1} positional '
+                    f'argument(s) in gettext call, got {len(node.args)}')
 
-    def __ignorenext(self, ttype, tstring, lineno):
-        self.__state = self.__waiting
+        msg_data = {}
+        for arg_type, position in spec.items():
+            arg = node.args[position]
+            if not self._is_string_const(arg):
+                return (f'Expected a string constant for argument '
+                        f'{position + 1}, got {ast.unparse(arg)}')
+            msg_data[arg_type] = arg.value
 
-    def __addentry(self, msg, lineno=None, *, is_docstring=False):
-        msgid = msg.get('msgid')
-        if msgid in self.__options.toexclude:
+        lineno = node.lineno
+        comments = self._extract_comments(node)
+        self._add_message(lineno, **msg_data, comments=comments)
+
+    def _extract_comments(self, node):
+        """Extract translator comments.
+
+        Translator comments must precede the gettext call and
+        start with one of the comment prefixes defined by
+        --add-comments=TAG. See the tests for examples.
+        """
+        if not self.options.comment_tags:
+            return []
+
+        comments = []
+        lineno = node.lineno - 1
+        # Collect an unbroken sequence of comments starting from
+        # the line above the gettext call.
+        while lineno >= 1:
+            comment = self.comments.get(lineno)
+            if comment is None:
+                break
+            comments.append(comment)
+            lineno -= 1
+
+        # Find the first translator comment in the sequence and
+        # return all comments starting from that comment.
+        comments = comments[::-1]
+        first_index = next((i for i, comment in enumerate(comments)
+                            if self._is_translator_comment(comment)), None)
+        if first_index is None:
+            return []
+        return comments[first_index:]
+
+    def _is_translator_comment(self, comment):
+        return comment.startswith(self.options.comment_tags)
+
+    def _add_message(
+            self, lineno, msgid, msgid_plural=None, msgctxt=None, *,
+            is_docstring=False, comments=None):
+        if msgid in self.options.toexclude:
             return
-        if not is_docstring:
-            spec = self.__options.keywords[self.__curr_keyword]
-            if not matches_spec(msg, spec):
-                return
-        if lineno is None:
-            lineno = self.__lineno
-        msgctxt = msg.get('msgctxt')
-        msgid_plural = msg.get('msgid_plural')
+
+        if not comments:
+            comments = []
+
         key = self._key_for(msgid, msgctxt)
-        if key in self.__messages:
-            self.__messages[key].add_location(
-                self.__curfile,
+        message = self.messages.get(key)
+        if message:
+            message.add_location(
+                self.filename,
                 lineno,
                 msgid_plural,
                 is_docstring=is_docstring,
+                comments=comments,
             )
         else:
-            self.__messages[key] = Message(
+            self.messages[key] = Message(
                 msgid=msgid,
                 msgid_plural=msgid_plural,
                 msgctxt=msgctxt,
-                locations={Location(self.__curfile, lineno)},
+                locations={Location(self.filename, lineno)},
                 is_docstring=is_docstring,
+                comments=comments,
             )
 
     @staticmethod
@@ -531,19 +614,17 @@ class TokenEater:
             return (msgctxt, msgid)
         return msgid
 
-    def warn_unexpected_token(self, token):
-        print((
-            '*** %(file)s:%(lineno)s: Seen unexpected token "%(token)s"'
-            ) % {
-            'token': token,
-            'file': self.__curfile,
-            'lineno': self.__lineno
-            }, file=sys.stderr)
+    def _get_func_name(self, node):
+        match node.func:
+            case ast.Name(id=id):
+                return id
+            case ast.Attribute(attr=attr):
+                return attr
+            case _:
+                return None
 
-    def set_filename(self, filename):
-        self.__curfile = filename
-        self.__freshmodule = 1
-
+    def _is_string_const(self, node):
+        return isinstance(node, ast.Constant) and isinstance(node.value, str)
 
 def write_pot_file(messages, options, fp):
     timestamp = time.strftime('%Y-%m-%d %H:%M%z')
@@ -564,6 +645,10 @@ def write_pot_file(messages, options, fp):
 
     for key, locations in sorted_keys:
         msg = messages[key]
+
+        for comment in msg.comments:
+            print(f'#. {comment}', file=fp)
+
         if options.writelocations:
             # location comments are different b/w Solaris and GNU:
             if options.locationstyle == options.SOLARIS:
@@ -602,9 +687,9 @@ def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            'ad:DEhk:Kno:p:S:Vvw:x:X:',
-            ['extract-all', 'default-domain=', 'escape', 'help',
-             'keyword=', 'no-default-keywords',
+            'ac::d:DEhk:Kno:p:S:Vvw:x:X:',
+            ['extract-all', 'add-comments=?', 'default-domain=', 'escape',
+             'help', 'keyword=', 'no-default-keywords',
              'add-location', 'no-location', 'output=', 'output-dir=',
              'style=', 'verbose', 'version', 'width=', 'exclude-file=',
              'docstrings', 'no-docstrings',
@@ -630,6 +715,7 @@ def main():
         excludefilename = ''
         docstrings = 0
         nodocstrings = {}
+        comment_tags = set()
 
     options = Options()
     locations = {'gnu' : options.GNU,
@@ -641,7 +727,11 @@ def main():
         if opt in ('-h', '--help'):
             usage(0)
         elif opt in ('-a', '--extract-all'):
+            print("DeprecationWarning: -a/--extract-all is not implemented and will be removed in a future version",
+                  file=sys.stderr)
             options.extractall = 1
+        elif opt in ('-c', '--add-comments'):
+            options.comment_tags.add(arg)
         elif opt in ('-d', '--default-domain'):
             options.outfile = arg + '.pot'
         elif opt in ('-E', '--escape'):
@@ -687,13 +777,19 @@ def main():
             finally:
                 fp.close()
 
+    options.comment_tags = tuple(options.comment_tags)
+
     # calculate escapes
     make_escapes(not options.escape)
 
     # calculate all keywords
-    options.keywords = {kw: {0: 'msgid'} for kw in options.keywords}
-    if not no_default_keywords:
-        options.keywords |= DEFAULTKEYWORDS
+    try:
+        options.keywords = process_keywords(
+            options.keywords,
+            no_default_keywords=no_default_keywords)
+    except ValueError as e:
+        print(e, file=sys.stderr)
+        sys.exit(1)
 
     # initialize list of strings to exclude
     if options.excludefilename:
@@ -717,31 +813,19 @@ def main():
     args = expanded
 
     # slurp through all the files
-    eater = TokenEater(options)
+    visitor = GettextVisitor(options)
     for filename in args:
         if filename == '-':
             if options.verbose:
                 print('Reading standard input')
-            fp = sys.stdin.buffer
-            closep = 0
+            source = sys.stdin.buffer.read()
         else:
             if options.verbose:
                 print(f'Working on {filename}')
-            fp = open(filename, 'rb')
-            closep = 1
-        try:
-            eater.set_filename(filename)
-            try:
-                tokens = tokenize.tokenize(fp.readline)
-                for _token in tokens:
-                    eater(*_token)
-            except tokenize.TokenError as e:
-                print('%s: %s, line %d, column %d' % (
-                    e.args[0], filename, e.args[1][0], e.args[1][1]),
-                    file=sys.stderr)
-        finally:
-            if closep:
-                fp.close()
+            with open(filename, 'rb') as fp:
+                source = fp.read()
+
+        visitor.visit_file(source, filename)
 
     # write the output
     if options.outfile == '-':
@@ -753,7 +837,7 @@ def main():
         fp = open(options.outfile, 'w')
         closep = 1
     try:
-        write_pot_file(eater.messages, options, fp)
+        write_pot_file(visitor.messages, options, fp)
     finally:
         if closep:
             fp.close()

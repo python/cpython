@@ -1,1 +1,0 @@
-Add attribute and item access support to :class:`string.Formatter` in auto-numbering mode, which allows format strings like '{.name}' and '{[1]}'.

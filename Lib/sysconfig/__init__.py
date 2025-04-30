@@ -401,8 +401,19 @@ def _init_non_posix(vars):
     vars['BINLIBDEST'] = get_path('platstdlib')
     vars['INCLUDEPY'] = get_path('include')
 
-    # Add EXT_SUFFIX, SOABI, and Py_GIL_DISABLED
+    # Add EXT_SUFFIX, SOABI, Py_DEBUG, and Py_GIL_DISABLED
     vars.update(_sysconfig.config_vars())
+
+    # NOTE: ABIFLAGS is only an emulated value. It is not present during build
+    #       on Windows. sys.abiflags is absent on Windows and vars['abiflags']
+    #       is already widely used to calculate paths, so it should remain an
+    #       empty string.
+    vars['ABIFLAGS'] = ''.join(
+        (
+            't' if vars['Py_GIL_DISABLED'] else '',
+            '_d' if vars['Py_DEBUG'] else '',
+        ),
+    )
 
     vars['LIBDIR'] = _safe_realpath(os.path.join(get_config_var('installed_base'), 'libs'))
     if hasattr(sys, 'dllhandle'):
@@ -666,34 +677,34 @@ def get_platform():
 
     # Set for cross builds explicitly
     if "_PYTHON_HOST_PLATFORM" in os.environ:
-        return os.environ["_PYTHON_HOST_PLATFORM"]
+        osname, _, machine = os.environ["_PYTHON_HOST_PLATFORM"].partition('-')
+        release = None
+    else:
+        # Try to distinguish various flavours of Unix
+        osname, host, release, version, machine = os.uname()
 
-    # Try to distinguish various flavours of Unix
-    osname, host, release, version, machine = os.uname()
+        # Convert the OS name to lowercase, remove '/' characters, and translate
+        # spaces (for "Power Macintosh")
+        osname = osname.lower().replace('/', '')
+        machine = machine.replace(' ', '_')
+        machine = machine.replace('/', '-')
 
-    # Convert the OS name to lowercase, remove '/' characters, and translate
-    # spaces (for "Power Macintosh")
-    osname = osname.lower().replace('/', '')
-    machine = machine.replace(' ', '_')
-    machine = machine.replace('/', '-')
+    if osname == "android" or sys.platform == "android":
+        osname = "android"
+        release = get_config_var("ANDROID_API_LEVEL")
 
-    if osname[:5] == "linux":
-        if sys.platform == "android":
-            osname = "android"
-            release = get_config_var("ANDROID_API_LEVEL")
-
-            # Wheel tags use the ABI names from Android's own tools.
-            machine = {
-                "x86_64": "x86_64",
-                "i686": "x86",
-                "aarch64": "arm64_v8a",
-                "armv7l": "armeabi_v7a",
-            }[machine]
-        else:
-            # At least on Linux/Intel, 'machine' is the processor --
-            # i386, etc.
-            # XXX what about Alpha, SPARC, etc?
-            return  f"{osname}-{machine}"
+        # Wheel tags use the ABI names from Android's own tools.
+        machine = {
+            "x86_64": "x86_64",
+            "i686": "x86",
+            "aarch64": "arm64_v8a",
+            "armv7l": "armeabi_v7a",
+        }[machine]
+    elif osname == "linux":
+        # At least on Linux/Intel, 'machine' is the processor --
+        # i386, etc.
+        # XXX what about Alpha, SPARC, etc?
+        return  f"{osname}-{machine}"
     elif osname[:5] == "sunos":
         if release[0] >= "5":           # SunOS 5 == Solaris 2
             osname = "solaris"
@@ -725,7 +736,7 @@ def get_platform():
                                                 get_config_vars(),
                                                 osname, release, machine)
 
-    return f"{osname}-{release}-{machine}"
+    return '-'.join(map(str, filter(None, (osname, release, machine))))
 
 
 def get_python_version():

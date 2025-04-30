@@ -22,10 +22,7 @@ from __future__ import annotations
 import io
 import os
 import sys
-import time
-import msvcrt
 
-from collections import deque
 import ctypes
 from ctypes.wintypes import (
     _COORD,
@@ -42,14 +39,18 @@ from ctypes import Structure, POINTER, Union
 from .console import Event, Console
 from .trace import trace
 from .utils import wlen
+from .windows_eventqueue import EventQueue
 
 try:
-    from ctypes import GetLastError, WinDLL, windll, WinError  # type: ignore[attr-defined]
+    from ctypes import get_last_error, GetLastError, WinDLL, windll, WinError  # type: ignore[attr-defined]
 except:
     # Keep MyPy happy off Windows
     from ctypes import CDLL as WinDLL, cdll as windll
 
     def GetLastError() -> int:
+        return 42
+
+    def get_last_error() -> int:
         return 42
 
     class WinError(OSError):  # type: ignore[no-redef]
@@ -94,7 +95,9 @@ VK_MAP: dict[int, str] = {
     0x83: "f20",  # VK_F20
 }
 
-# Console escape codes: https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
+# Virtual terminal output sequences
+# Reference: https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences#output-sequences
+# Check `windows_eventqueue.py` for input sequences
 ERASE_IN_LINE = "\x1b[K"
 MOVE_LEFT = "\x1b[{}D"
 MOVE_RIGHT = "\x1b[{}C"
@@ -106,10 +109,22 @@ CLEAR = "\x1b[H\x1b[J"
 ALT_ACTIVE = 0x01 | 0x02
 CTRL_ACTIVE = 0x04 | 0x08
 
+WAIT_TIMEOUT = 0x102
+WAIT_FAILED = 0xFFFFFFFF
+
+# from winbase.h
+INFINITE = 0xFFFFFFFF
+
 
 class _error(Exception):
     pass
 
+def _supports_vt():
+    try:
+        import nt
+        return nt._supports_virtual_terminal()
+    except (ImportError, AttributeError):
+        return False
 
 class WindowsConsole(Console):
     def __init__(
@@ -121,17 +136,29 @@ class WindowsConsole(Console):
     ):
         super().__init__(f_in, f_out, term, encoding)
 
+        self.__vt_support = _supports_vt()
+
+        if self.__vt_support:
+            trace('console supports virtual terminal')
+
+        # Save original console modes so we can recover on cleanup.
+        original_input_mode = DWORD()
+        GetConsoleMode(InHandle, original_input_mode)
+        trace(f'saved original input mode 0x{original_input_mode.value:x}')
+        self.__original_input_mode = original_input_mode.value
+
         SetConsoleMode(
             OutHandle,
             ENABLE_WRAP_AT_EOL_OUTPUT
             | ENABLE_PROCESSED_OUTPUT
             | ENABLE_VIRTUAL_TERMINAL_PROCESSING,
         )
+
         self.screen: list[str] = []
         self.width = 80
         self.height = 25
         self.__offset = 0
-        self.event_queue: deque[Event] = deque()
+        self.event_queue = EventQueue(encoding)
         try:
             self.out = io._WindowsConsoleIO(self.output_fd, "w")  # type: ignore[attr-defined]
         except ValueError:
@@ -295,6 +322,12 @@ class WindowsConsole(Console):
     def _disable_blinking(self):
         self.__write("\x1b[?12l")
 
+    def _enable_bracketed_paste(self) -> None:
+        self.__write("\x1b[?2004h")
+
+    def _disable_bracketed_paste(self) -> None:
+        self.__write("\x1b[?2004l")
+
     def __write(self, text: str) -> None:
         if "\x1a" in text:
             text = ''.join(["^Z" if x == '\x1a' else x for x in text])
@@ -324,8 +357,15 @@ class WindowsConsole(Console):
         self.__gone_tall = 0
         self.__offset = 0
 
+        if self.__vt_support:
+            SetConsoleMode(InHandle, self.__original_input_mode | ENABLE_VIRTUAL_TERMINAL_INPUT)
+            self._enable_bracketed_paste()
+
     def restore(self) -> None:
-        pass
+        if self.__vt_support:
+            # Recover to original mode before running REPL
+            self._disable_bracketed_paste()
+            SetConsoleMode(InHandle, self.__original_input_mode)
 
     def _move_relative(self, x: int, y: int) -> None:
         """Moves relative to the current posxy"""
@@ -346,7 +386,7 @@ class WindowsConsole(Console):
             raise ValueError(f"Bad cursor position {x}, {y}")
 
         if y < self.__offset or y >= self.__offset + self.height:
-            self.event_queue.insert(0, Event("scroll", ""))
+            self.event_queue.insert(Event("scroll", ""))
         else:
             self._move_relative(x, y)
             self.posxy = x, y
@@ -376,12 +416,8 @@ class WindowsConsole(Console):
         return info.srWindow.Bottom  # type: ignore[no-any-return]
 
     def _read_input(self, block: bool = True) -> INPUT_RECORD | None:
-        if not block:
-            events = DWORD()
-            if not GetNumberOfConsoleInputEvents(InHandle, events):
-                raise WinError(GetLastError())
-            if not events.value:
-                return None
+        if not block and not self.wait(timeout=0):
+            return None
 
         rec = INPUT_RECORD()
         read = DWORD()
@@ -394,10 +430,8 @@ class WindowsConsole(Console):
         """Return an Event instance.  Returns None if |block| is false
         and there is no event pending, otherwise waits for the
         completion of an event."""
-        if self.event_queue:
-            return self.event_queue.pop()
 
-        while True:
+        while self.event_queue.empty():
             rec = self._read_input(block)
             if rec is None:
                 return None
@@ -428,20 +462,25 @@ class WindowsConsole(Console):
                         key = f"ctrl {key}"
                     elif key_event.dwControlKeyState & ALT_ACTIVE:
                         # queue the key, return the meta command
-                        self.event_queue.insert(0, Event(evt="key", data=key, raw=key))
+                        self.event_queue.insert(Event(evt="key", data=key, raw=key))
                         return Event(evt="key", data="\033")  # keymap.py uses this for meta
                     return Event(evt="key", data=key, raw=key)
                 if block:
                     continue
 
                 return None
+            elif self.__vt_support:
+                # If virtual terminal is enabled, scanning VT sequences
+                self.event_queue.push(rec.Event.KeyEvent.uChar.UnicodeChar)
+                continue
 
             if key_event.dwControlKeyState & ALT_ACTIVE:
                 # queue the key, return the meta command
-                self.event_queue.insert(0, Event(evt="key", data=key, raw=raw_key))
+                self.event_queue.insert(Event(evt="key", data=key, raw=raw_key))
                 return Event(evt="key", data="\033")  # keymap.py uses this for meta
 
             return Event(evt="key", data=key, raw=raw_key)
+        return self.event_queue.get()
 
     def push_char(self, char: int | bytes) -> None:
         """
@@ -486,14 +525,16 @@ class WindowsConsole(Console):
 
     def wait(self, timeout: float | None) -> bool:
         """Wait for an event."""
-        # Poor man's Windows select loop
-        start_time = time.time()
-        while True:
-            if msvcrt.kbhit(): # type: ignore[attr-defined]
-                return True
-            if timeout and time.time() - start_time > timeout / 1000:
-                return False
-            time.sleep(0.01)
+        if timeout is None:
+            timeout = INFINITE
+        else:
+            timeout = int(timeout)
+        ret = WaitForSingleObject(InHandle, timeout)
+        if ret == WAIT_FAILED:
+            raise WinError(get_last_error())
+        elif ret == WAIT_TIMEOUT:
+            return False
+        return True
 
     def repaint(self) -> None:
         raise NotImplementedError("No repaint support")
@@ -563,6 +604,13 @@ MENU_EVENT = 0x08
 MOUSE_EVENT = 0x02
 WINDOW_BUFFER_SIZE_EVENT = 0x04
 
+ENABLE_PROCESSED_INPUT = 0x0001
+ENABLE_LINE_INPUT = 0x0002
+ENABLE_ECHO_INPUT = 0x0004
+ENABLE_MOUSE_INPUT = 0x0010
+ENABLE_INSERT_MODE = 0x0020
+ENABLE_VIRTUAL_TERMINAL_INPUT = 0x0200
+
 ENABLE_PROCESSED_OUTPUT = 0x01
 ENABLE_WRAP_AT_EOL_OUTPUT = 0x02
 ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x04
@@ -594,6 +642,10 @@ if sys.platform == "win32":
     ]
     ScrollConsoleScreenBuffer.restype = BOOL
 
+    GetConsoleMode = _KERNEL32.GetConsoleMode
+    GetConsoleMode.argtypes = [HANDLE, POINTER(DWORD)]
+    GetConsoleMode.restype = BOOL
+
     SetConsoleMode = _KERNEL32.SetConsoleMode
     SetConsoleMode.argtypes = [HANDLE, DWORD]
     SetConsoleMode.restype = BOOL
@@ -602,13 +654,14 @@ if sys.platform == "win32":
     ReadConsoleInput.argtypes = [HANDLE, POINTER(INPUT_RECORD), DWORD, POINTER(DWORD)]
     ReadConsoleInput.restype = BOOL
 
-    GetNumberOfConsoleInputEvents = _KERNEL32.GetNumberOfConsoleInputEvents
-    GetNumberOfConsoleInputEvents.argtypes = [HANDLE, POINTER(DWORD)]
-    GetNumberOfConsoleInputEvents.restype = BOOL
 
     FlushConsoleInputBuffer = _KERNEL32.FlushConsoleInputBuffer
     FlushConsoleInputBuffer.argtypes = [HANDLE]
     FlushConsoleInputBuffer.restype = BOOL
+
+    WaitForSingleObject = _KERNEL32.WaitForSingleObject
+    WaitForSingleObject.argtypes = [HANDLE, DWORD]
+    WaitForSingleObject.restype = DWORD
 
     OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
     InHandle = GetStdHandle(STD_INPUT_HANDLE)
@@ -620,9 +673,10 @@ else:
     GetStdHandle = _win_only
     GetConsoleScreenBufferInfo = _win_only
     ScrollConsoleScreenBuffer = _win_only
+    GetConsoleMode = _win_only
     SetConsoleMode = _win_only
     ReadConsoleInput = _win_only
-    GetNumberOfConsoleInputEvents = _win_only
     FlushConsoleInputBuffer = _win_only
+    WaitForSingleObject = _win_only
     OutHandle = 0
     InHandle = 0

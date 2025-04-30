@@ -1,6 +1,0 @@
-Fix bug in the folding of quoted strings when flattening an email message using
-a modern email policy. Previously when a quoted string was folded so that
-it spanned more than one line, the surrounding quotes and internal escapes
-would be omitted. This could theoretically be used to spoof header lines
-using a carefully constructed quoted string if the resulting rendered email
-was transmitted or re-parsed.

@@ -1,2 +1,0 @@
-Show tab completions menu below the current line, which results in less
-janky behaviour, and fixes a cursor movement bug. Patch by Daniel Hollas

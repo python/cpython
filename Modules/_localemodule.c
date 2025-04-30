@@ -605,7 +605,7 @@ change_locale(int category, char **oldloc)
     /* Keep a copy of the LC_CTYPE locale */
     *oldloc = setlocale(LC_CTYPE, NULL);
     if (!*oldloc) {
-        PyErr_SetString(PyExc_RuntimeError, "faild to get LC_CTYPE locale");
+        PyErr_SetString(PyExc_RuntimeError, "failed to get LC_CTYPE locale");
         return -1;
     }
     *oldloc = _PyMem_Strdup(*oldloc);

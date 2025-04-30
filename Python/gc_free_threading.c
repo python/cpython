@@ -2,20 +2,20 @@
 #include "Python.h"
 #include "pycore_brc.h"           // struct _brc_thread_state
 #include "pycore_ceval.h"         // _Py_set_eval_breaker_bit()
-#include "pycore_context.h"
 #include "pycore_dict.h"          // _PyInlineValuesSize()
+#include "pycore_frame.h"         // FRAME_CLEARED
 #include "pycore_freelist.h"      // _PyObject_ClearFreeLists()
-#include "pycore_initconfig.h"
+#include "pycore_genobject.h"     // _PyGen_GetGeneratorFromFrame()
+#include "pycore_initconfig.h"    // _PyStatus_NO_MEMORY()
 #include "pycore_interp.h"        // PyInterpreterState.gc
-#include "pycore_object.h"
+#include "pycore_interpframe.h"   // _PyFrame_GetLocalsArray()
 #include "pycore_object_alloc.h"  // _PyObject_MallocWithType()
-#include "pycore_object_stack.h"
-#include "pycore_pyerrors.h"
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_tstate.h"        // _PyThreadStateImpl
+#include "pycore_tuple.h"         // _PyTuple_MaybeUntrack()
 #include "pycore_weakref.h"       // _PyWeakref_ClearRef()
+
 #include "pydtrace.h"
-#include "pycore_uniqueid.h"      // _PyObject_MergeThreadLocalRefcounts()
 
 
 // enable the "mark alive" pass of GC
@@ -265,7 +265,7 @@ frame_disable_deferred_refcounting(_PyInterpreterFrame *frame)
 
     frame->f_funcobj = PyStackRef_AsStrongReference(frame->f_funcobj);
     for (_PyStackRef *ref = frame->localsplus; ref < frame->stackpointer; ref++) {
-        if (!PyStackRef_IsNull(*ref) && PyStackRef_IsDeferred(*ref)) {
+        if (!PyStackRef_IsNullOrInt(*ref) && PyStackRef_IsDeferred(*ref)) {
             *ref = PyStackRef_AsStrongReference(*ref);
         }
     }
@@ -420,7 +420,7 @@ gc_visit_heaps(PyInterpreterState *interp, mi_block_visit_fun *visitor,
 static inline void
 gc_visit_stackref(_PyStackRef stackref)
 {
-    if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNull(stackref)) {
+    if (PyStackRef_IsDeferred(stackref) && !PyStackRef_IsNullOrInt(stackref)) {
         PyObject *obj = PyStackRef_AsPyObjectBorrow(stackref);
         if (_PyObject_GC_IS_TRACKED(obj) && !gc_is_frozen(obj)) {
             gc_add_refs(obj, 1);
@@ -433,6 +433,12 @@ static void
 gc_visit_thread_stacks(PyInterpreterState *interp, struct collection_state *state)
 {
     _Py_FOR_EACH_TSTATE_BEGIN(interp, p) {
+        _PyCStackRef *c_ref = ((_PyThreadStateImpl *)p)->c_stack_refs;
+        while (c_ref != NULL) {
+            gc_visit_stackref(c_ref->ref);
+            c_ref = c_ref->next;
+        }
+
         for (_PyInterpreterFrame *f = p->current_frame; f != NULL; f = f->previous) {
             if (f->owner >= FRAME_OWNED_BY_INTERPRETER) {
                 continue;
@@ -581,11 +587,13 @@ gc_mark_buffer_len(gc_mark_args_t *args)
 }
 
 // Returns number of free entry slots in buffer
+#ifndef NDEBUG
 static inline unsigned int
 gc_mark_buffer_avail(gc_mark_args_t *args)
 {
     return BUFFER_SIZE - gc_mark_buffer_len(args);
 }
+#endif
 
 static inline bool
 gc_mark_buffer_is_empty(gc_mark_args_t *args)
@@ -680,6 +688,12 @@ gc_mark_enqueue_no_buffer(PyObject *op, gc_mark_args_t *args)
     return 0;
 }
 
+static inline int
+gc_mark_enqueue_no_buffer_visitproc(PyObject *op, void *args)
+{
+    return gc_mark_enqueue_no_buffer(op, (gc_mark_args_t *)args);
+}
+
 static int
 gc_mark_enqueue_buffer(PyObject *op, gc_mark_args_t *args)
 {
@@ -691,6 +705,12 @@ gc_mark_enqueue_buffer(PyObject *op, gc_mark_args_t *args)
     else {
         return gc_mark_stack_push(&args->stack, op);
     }
+}
+
+static inline int
+gc_mark_enqueue_buffer_visitproc(PyObject *op, void *args)
+{
+    return gc_mark_enqueue_buffer(op, (gc_mark_args_t *)args);
 }
 
 // Called when we find an object that needs to be marked alive (either from a
@@ -797,7 +817,7 @@ gc_abort_mark_alive(PyInterpreterState *interp,
 static int
 gc_visit_stackref_mark_alive(gc_mark_args_t *args, _PyStackRef stackref)
 {
-    if (!PyStackRef_IsNull(stackref)) {
+    if (!PyStackRef_IsNullOrInt(stackref)) {
         PyObject *op = PyStackRef_AsPyObjectBorrow(stackref);
         if (gc_mark_enqueue(op, args) < 0) {
             return -1;
@@ -978,12 +998,12 @@ update_refs(const mi_heap_t *heap, const mi_heap_area_t *area,
 }
 
 static int
-visit_clear_unreachable(PyObject *op, _PyObjectStack *stack)
+visit_clear_unreachable(PyObject *op, void *stack)
 {
     if (gc_is_unreachable(op)) {
         _PyObject_ASSERT(op, _PyObject_GC_IS_TRACKED(op));
         gc_clear_unreachable(op);
-        return _PyObjectStack_Push(stack, op);
+        return _PyObjectStack_Push((_PyObjectStack *)stack, op);
     }
     return 0;
 }
@@ -995,7 +1015,7 @@ mark_reachable(PyObject *op)
     _PyObjectStack stack = { NULL };
     do {
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
-        if (traverse(op, (visitproc)&visit_clear_unreachable, &stack) < 0) {
+        if (traverse(op, visit_clear_unreachable, &stack) < 0) {
             _PyObjectStack_Clear(&stack);
             return -1;
         }
@@ -1074,13 +1094,13 @@ mark_heap_visitor(const mi_heap_t *heap, const mi_heap_area_t *area,
         return true;
     }
 
-    _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(op) >= 0,
-                                  "refcount is too small");
-
     if (gc_is_alive(op) || !gc_is_unreachable(op)) {
         // Object was already marked as reachable.
         return true;
     }
+
+    _PyObject_ASSERT_WITH_MSG(op, gc_get_refs(op) >= 0,
+                                  "refcount is too small");
 
     // GH-129236: If we've seen an active frame without a valid stack pointer,
     // then we can't collect objects with deferred references because we may
@@ -1178,10 +1198,10 @@ move_legacy_finalizer_reachable(struct collection_state *state);
 static void
 gc_prime_from_spans(gc_mark_args_t *args)
 {
-    Py_ssize_t space = BUFFER_HI - gc_mark_buffer_len(args);
+    unsigned int space = BUFFER_HI - gc_mark_buffer_len(args);
     // there should always be at least this amount of space
     assert(space <= gc_mark_buffer_avail(args));
-    assert(space > 0);
+    assert(space <= BUFFER_HI);
     gc_span_t entry = args->spans.stack[--args->spans.size];
     // spans on the stack should always have one or more elements
     assert(entry.start < entry.end);
@@ -1265,7 +1285,7 @@ gc_propagate_alive_prefetch(gc_mark_args_t *args)
                 return -1;
             }
         }
-        else if (traverse(op, (visitproc)&gc_mark_enqueue_buffer, args) < 0) {
+        else if (traverse(op, gc_mark_enqueue_buffer_visitproc, args) < 0) {
             return -1;
         }
     }
@@ -1286,7 +1306,7 @@ gc_propagate_alive(gc_mark_args_t *args)
             assert(_PyObject_GC_IS_TRACKED(op));
             assert(gc_is_alive(op));
             traverseproc traverse = Py_TYPE(op)->tp_traverse;
-            if (traverse(op, (visitproc)&gc_mark_enqueue_no_buffer, args) < 0) {
+            if (traverse(op, gc_mark_enqueue_no_buffer_visitproc, args) < 0) {
                 return -1;
             }
         }
@@ -1686,6 +1706,7 @@ _PyGC_VisitStackRef(_PyStackRef *ref, visitproc visit, void *arg)
     // This is a bit tricky! We want to ignore deferred references when
     // computing the incoming references, but otherwise treat them like
     // regular references.
+    assert(!PyStackRef_IsTaggedInt(*ref));
     if (!PyStackRef_IsDeferred(*ref) ||
         (visit != visit_decref && visit != visit_decref_unreachable))
     {
@@ -1743,9 +1764,7 @@ handle_resurrected_objects(struct collection_state *state)
         op->ob_ref_local -= 1;
 
         traverseproc traverse = Py_TYPE(op)->tp_traverse;
-        (void) traverse(op,
-            (visitproc)visit_decref_unreachable,
-            NULL);
+        (void)traverse(op, visit_decref_unreachable, NULL);
     }
 
     // Find resurrected objects
@@ -2593,11 +2612,12 @@ PyObject *
 PyUnstable_Object_GC_NewWithExtraData(PyTypeObject *tp, size_t extra_size)
 {
     size_t presize = _PyType_PreHeaderSize(tp);
-    PyObject *op = gc_alloc(tp, _PyObject_SIZE(tp) + extra_size, presize);
+    size_t size = _PyObject_SIZE(tp) + extra_size;
+    PyObject *op = gc_alloc(tp, size, presize);
     if (op == NULL) {
         return NULL;
     }
-    memset(op, 0, _PyObject_SIZE(tp) + extra_size);
+    memset((char *)op + sizeof(PyObject), 0, size - sizeof(PyObject));
     _PyObject_Init(op, tp);
     return op;
 }

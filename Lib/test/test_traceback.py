@@ -510,6 +510,12 @@ class TracebackCases(unittest.TestCase):
         traceback.print_exception(Exception("projector"), file=output)
         self.assertEqual(output.getvalue(), "Exception: projector\n")
 
+    def test_print_last(self):
+        with support.swap_attr(sys, 'last_exc', ValueError(42)):
+            output = StringIO()
+            traceback.print_last(file=output)
+            self.assertEqual(output.getvalue(), "ValueError: 42\n")
+
     def test_format_exception_exc(self):
         e = Exception("projector")
         output = traceback.format_exception(e)
@@ -3229,10 +3235,16 @@ class TestStack(unittest.TestCase):
     def test_walk_stack(self):
         def deeper():
             return list(traceback.walk_stack(None))
-        s1 = list(traceback.walk_stack(None))
-        s2 = deeper()
+        s1, s2 = list(traceback.walk_stack(None)), deeper()
         self.assertEqual(len(s2) - len(s1), 1)
         self.assertEqual(s2[1:], s1)
+
+    def test_walk_innermost_frame(self):
+        def inner():
+            return list(traceback.walk_stack(None))
+        frames = inner()
+        innermost_frame, _ = frames[0]
+        self.assertEqual(innermost_frame.f_code.co_name, "inner")
 
     def test_walk_tb(self):
         try:
@@ -3400,6 +3412,19 @@ class TestStack(unittest.TestCase):
 class Unrepresentable:
     def __repr__(self) -> str:
         raise Exception("Unrepresentable")
+
+
+# Used in test_dont_swallow_cause_or_context_of_falsey_exception and
+# test_dont_swallow_subexceptions_of_falsey_exceptiongroup.
+class FalseyException(Exception):
+    def __bool__(self):
+        return False
+
+
+class FalseyExceptionGroup(ExceptionGroup):
+    def __bool__(self):
+        return False
+
 
 class TestTracebackException(unittest.TestCase):
     def do_test_smoke(self, exc, expected_type_str):
@@ -3586,6 +3611,7 @@ class TestTracebackException(unittest.TestCase):
             self.assertIsNone(te.exc_type)
 
     def test_no_refs_to_exception_and_traceback_objects(self):
+        exc_obj = None
         try:
             1/0
         except Exception as e:
@@ -3745,6 +3771,24 @@ class TestTracebackException(unittest.TestCase):
              '    x = 12',
              'ZeroDivisionError: division by zero',
              ''])
+
+    def test_dont_swallow_cause_or_context_of_falsey_exception(self):
+        # see gh-132308: Ensure that __cause__ or __context__ attributes of exceptions
+        # that evaluate as falsey are included in the output. For falsey term,
+        # see https://docs.python.org/3/library/stdtypes.html#truth-value-testing.
+
+        try:
+            raise FalseyException from KeyError
+        except FalseyException as e:
+            self.assertIn(cause_message, traceback.format_exception(e))
+
+        try:
+            try:
+                1/0
+            except ZeroDivisionError:
+                raise FalseyException
+        except FalseyException as e:
+            self.assertIn(context_message, traceback.format_exception(e))
 
 
 class TestTracebackException_ExceptionGroups(unittest.TestCase):
@@ -3946,6 +3990,26 @@ class TestTracebackException_ExceptionGroups(unittest.TestCase):
         self.assertNotEqual(exc, ne)
         self.assertNotEqual(exc, object())
         self.assertEqual(exc, ALWAYS_EQ)
+
+    def test_dont_swallow_subexceptions_of_falsey_exceptiongroup(self):
+        # see gh-132308: Ensure that subexceptions of exception groups
+        # that evaluate as falsey are displayed in the output. For falsey term,
+        # see https://docs.python.org/3/library/stdtypes.html#truth-value-testing.
+
+        try:
+            raise FalseyExceptionGroup("Gih", (KeyError(), NameError()))
+        except Exception as ee:
+            str_exc = ''.join(traceback.format_exception(ee))
+            self.assertIn('+---------------- 1 ----------------', str_exc)
+            self.assertIn('+---------------- 2 ----------------', str_exc)
+
+        # Test with a falsey exception, in last position, as sub-exceptions.
+        msg = 'bool'
+        try:
+            raise FalseyExceptionGroup("Gah", (KeyError(), FalseyException(msg)))
+        except Exception as ee:
+            str_exc = traceback.format_exception(ee)
+            self.assertIn(f'{FalseyException.__name__}: {msg}', str_exc[-2])
 
 
 global_for_suggestions = None
@@ -4603,6 +4667,36 @@ class MiscTest(unittest.TestCase):
                 # we receive is "strings not close enough".
                 res3 = traceback._levenshtein_distance(a, b, threshold)
                 self.assertGreater(res3, threshold, msg=(a, b, threshold))
+
+    @cpython_only
+    def test_suggestions_extension(self):
+        # Check that the C extension is available
+        import _suggestions
+
+        self.assertEqual(
+            _suggestions._generate_suggestions(
+                ["hello", "world"],
+                "hell"
+            ),
+            "hello"
+        )
+        self.assertEqual(
+            _suggestions._generate_suggestions(
+                ["hovercraft"],
+                "eels"
+            ),
+            None
+        )
+
+        # gh-131936: _generate_suggestions() doesn't accept list subclasses
+        class MyList(list):
+            pass
+
+        with self.assertRaises(TypeError):
+            _suggestions._generate_suggestions(MyList(), "")
+
+
+
 
 class TestColorizedTraceback(unittest.TestCase):
     def test_colorized_traceback(self):

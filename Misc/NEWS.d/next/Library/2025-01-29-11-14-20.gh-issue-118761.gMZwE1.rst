@@ -1,2 +1,0 @@
-Always lazy import ``warnings`` in :mod:`threading`. Patch by Taneli
-Hukkinen.
