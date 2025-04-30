@@ -4853,7 +4853,7 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     d->ma_used = 0;
     d->_ma_watcher_tag = 0;
-    dictkeys_incref(Py_EMPTY_KEYS);
+    // We don't inc ref empty keys because they're immortal
     d->ma_keys = Py_EMPTY_KEYS;
     d->ma_values = NULL;
     ASSERT_CONSISTENT(d);
