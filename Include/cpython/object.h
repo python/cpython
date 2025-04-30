@@ -544,7 +544,7 @@ PyAPI_FUNC(PyRefTracer) PyRefTracer_GetTracer(void**);
 PyAPI_FUNC(int) PyUnstable_Object_EnableDeferredRefcount(PyObject *);
 
 /* Determine if the object exists as a unique temporary variable on the
- * top most frame of the interpreter.
+ * topmost frame of the interpreter.
  */
 PyAPI_FUNC(int) PyUnstable_Object_IsUniqueTemporary(PyObject *);
 
