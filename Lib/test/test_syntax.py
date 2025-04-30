@@ -1881,18 +1881,17 @@ SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' ins
 Traceback (most recent call last):
 SyntaxError: can't use 'f' and 't' string prefixes at the same time
 
->>> x = 1
 >>> tf"{x=}"
 Traceback (most recent call last):
 SyntaxError: can't use 'f' and 't' string prefixes at the same time
 
 >>> tb''
 Traceback (most recent call last):
-SyntaxError: can't use 't' prefix on bytes
+SyntaxError: can't use 'b' and 't' string prefixes at the same time
 
 >>> bt"text"
 Traceback (most recent call last):
-SyntaxError: can't use 't' prefix on bytes
+SyntaxError: can't use 'b' and 't' string prefixes at the same time
 
 >>> t'{x}' = 42
 Traceback (most recent call last):

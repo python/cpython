@@ -672,13 +672,15 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             c = tok_nextc(tok);
             if (c == '"' || c == '\'') {
                 if (saw_b && saw_t) {
-                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(
-                        tok,
-                        "can't use 't' prefix on bytes"));
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror_known_range(
+                        tok, (int)(tok->start + 1 - tok->line_start),
+                        (int)(tok->cur - tok->line_start),
+                        "can't use 'b' and 't' string prefixes at the same time"));
                 }
                 if (saw_f && saw_t) {
-                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(
-                        tok,
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror_known_range(
+                        tok, (int)(tok->start + 1 - tok->line_start),
+                        (int)(tok->cur - tok->line_start),
                         "can't use 'f' and 't' string prefixes at the same time"));
                 }
 
