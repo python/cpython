@@ -2927,8 +2927,9 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
                 instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == INSTRUMENTED_END_FOR
             );
             /* Don't specialize if PEP 523 is active */
-            if (_PyInterpreterState_GET()->eval_frame)
+            if (_PyInterpreterState_GET()->eval_frame) {
                 goto failure;
+            }
             specialize(instr, FOR_ITER_GEN);
             return;
         }
