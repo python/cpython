@@ -273,7 +273,7 @@ basicblock_insert_instruction(basicblock *block, int pos, cfg_instr *instr) {
 }
 
 /* For debugging purposes only */
-#if 1
+#if 0
 static void
 dump_instr(cfg_instr *i)
 {
@@ -329,12 +329,6 @@ _PyCfgBuilder_DumpGraph(const basicblock *entryblock, const basicblock *mark)
         dump_basicblock(b, b == mark);
     }
 }
-
-#define DUMP(B, M) _PyCfgBuilder_DumpGraph((B), (M))
-
-#else
-
-#define DUMP(B, M) ((void)0)
 
 #endif
 
@@ -835,7 +829,6 @@ calculate_stackdepth(cfg_builder *g)
     int maxdepth = 0;
     basicblock **sp = stack;
     if (stackdepth_push(&sp, entryblock, 0) < 0) {
-        DUMP(entryblock, entryblock);
         goto error;
     }
     while (sp != stack) {
@@ -856,7 +849,6 @@ calculate_stackdepth(cfg_builder *g)
             if (new_depth < 0) {
                 PyErr_Format(PyExc_ValueError,
                              "Invalid CFG, stack underflow");
-                DUMP(entryblock, b);
                 goto error;
             }
             maxdepth = Py_MAX(maxdepth, depth);
@@ -871,7 +863,6 @@ calculate_stackdepth(cfg_builder *g)
                 assert(target_depth >= 0); /* invalid code or bug in stackdepth() */
                 maxdepth = Py_MAX(maxdepth, depth);
                 if (stackdepth_push(&sp, instr->i_target, target_depth) < 0) {
-                    DUMP(entryblock, instr->i_target);
                     goto error;
                 }
             }
@@ -888,7 +879,6 @@ calculate_stackdepth(cfg_builder *g)
         if (next != NULL) {
             assert(BB_HAS_FALLTHROUGH(b));
             if (stackdepth_push(&sp, next, depth) < 0) {
-                DUMP(entryblock, next);
                 goto error;
             }
         }

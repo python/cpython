@@ -155,9 +155,6 @@ dump_item(_PyStackRef item)
         printf("<nil>");
         return;
     }
-    if (PyList_CheckExact(obj)) {
-        printf("len=%ld ", Py_SIZE(obj));
-    }
     // Don't call __repr__(), it might recurse into the interpreter.
     printf("<%s at %p>", Py_TYPE(obj)->tp_name, (void *)obj);
 }
@@ -274,7 +271,6 @@ maybe_lltrace_resume_frame(_PyInterpreterFrame *frame, PyObject *globals)
             lltrace = *python_lltrace - '0';  // TODO: Parse an int and all that
         }
     }
-    // lltrace = 5;
     if (lltrace >= 5) {
         lltrace_resume_frame(frame);
     }
