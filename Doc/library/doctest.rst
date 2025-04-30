@@ -1102,8 +1102,8 @@ from text files and modules with doctests:
    Optional argument *encoding* specifies an encoding that should be used to
    convert the file to unicode.
 
-   Optional argument *test_case* specifies the :class:`DocFileCase` class (or a
-   subclass) that should be used to create test cases. By default, :class:`DocFileCase`
+   Optional argument *test_case* specifies the :class:`!DocFileCase` class (or a
+   subclass) that should be used to create test cases. By default, :class:`!DocFileCase`
    is used. This allows for custom test case classes that can add additional behavior
    or attributes to the test cases.
 
@@ -1147,8 +1147,8 @@ from text files and modules with doctests:
    Optional arguments *setUp*, *tearDown*, and *optionflags* are the same as for
    function :func:`DocFileSuite` above.
 
-   Optional argument *test_case* specifies the :class:`DocTestCase` class (or a
-   subclass) that should be used to create test cases. By default, :class:`DocTestCase`
+   Optional argument *test_case* specifies the :class:`!DocTestCase` class (or a
+   subclass) that should be used to create test cases. By default, :class:`!DocTestCase`
    is used. This allows for custom test case classes that can add additional behavior
    or attributes to the test cases.
 
