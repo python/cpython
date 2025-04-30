@@ -1,0 +1,1 @@
+Allow custom test case and runner for  DocTestSuite and DocFileSuite
