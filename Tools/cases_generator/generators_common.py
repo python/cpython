@@ -492,6 +492,11 @@ class Emitter:
                     label_tkn = next(tkn_iter)
                     self.goto_label(tkn, label_tkn, storage)
                     reachable = False
+                elif tkn.kind == "RETURN":
+                    self.emit(tkn)
+                    semicolon = emit_to(self.out, tkn_iter, "SEMI")
+                    self.emit(semicolon)
+                    reachable = False
                 elif tkn.kind == "IDENTIFIER":
                     if tkn.text in self._replacers:
                         if not self._replacers[tkn.text](tkn, tkn_iter, uop, storage, inst):
