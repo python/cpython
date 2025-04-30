@@ -3285,7 +3285,6 @@ dict_dealloc(PyObject *self)
 
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(mp);
-    Py_TRASHCAN_BEGIN(mp, dict_dealloc)
     if (values != NULL) {
         if (values->embedded == 0) {
             for (i = 0, n = values->capacity; i < n; i++) {
@@ -3305,7 +3304,6 @@ dict_dealloc(PyObject *self)
     else {
         Py_TYPE(mp)->tp_free((PyObject *)mp);
     }
-    Py_TRASHCAN_END
 }
 
 
@@ -3730,13 +3728,14 @@ merge_from_seq2_lock_held(PyObject *d, PyObject *seq2, int override)
         }
 
         /* Convert item to sequence, and verify length 2. */
-        fast = PySequence_Fast(item, "");
+        fast = PySequence_Fast(item, "object is not iterable");
         if (fast == NULL) {
-            if (PyErr_ExceptionMatches(PyExc_TypeError))
-                PyErr_Format(PyExc_TypeError,
-                    "cannot convert dictionary update "
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                _PyErr_FormatNote(
+                    "Cannot convert dictionary update "
                     "sequence element #%zd to a sequence",
                     i);
+            }
             goto Fail;
         }
         n = PySequence_Fast_GET_SIZE(fast);
