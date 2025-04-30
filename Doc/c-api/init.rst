@@ -1045,6 +1045,11 @@ to be released to attach their thread state, allowing true multi-core parallelis
    For example, the standard :mod:`zlib` and :mod:`hashlib` modules detach the
    :term:`thread state <attached thread state>` when compressing or hashing data.
 
+.. note::
+   Any code that executes for a long time without returning to the
+   Python interpreter should call :c:func:`PyErr_CheckSignals()`
+   at reasonable intervals (at least once a millisecond) so that
+   it can be interrupted by the user.
 
 .. _gilstate:
 
