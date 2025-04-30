@@ -1813,15 +1813,16 @@ frame_lineno_set_impl(PyFrameObject *self, PyObject *value)
         start_stack = pop_value(start_stack);
     }
     while (start_stack > best_stack) {
+        _PyStackRef popped = _PyFrame_StackPop(self->f_frame);
         if (top_of_stack(start_stack) == Except) {
             /* Pop exception stack as well as the evaluation stack */
-            PyObject *exc = PyStackRef_AsPyObjectBorrow(_PyFrame_StackPop(self->f_frame));
+            PyObject *exc = PyStackRef_AsPyObjectBorrow(popped);
             assert(PyExceptionInstance_Check(exc) || exc == Py_None);
             PyThreadState *tstate = _PyThreadState_GET();
             Py_XSETREF(tstate->exc_info->exc_value, exc == Py_None ? NULL : exc);
         }
         else {
-            PyStackRef_XCLOSE(_PyFrame_StackPop(self->f_frame));
+            PyStackRef_XCLOSE(popped);
         }
         start_stack = pop_value(start_stack);
     }
