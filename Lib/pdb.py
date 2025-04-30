@@ -3122,11 +3122,20 @@ class _PdbClient:
                 self.process_payload(payload)
 
     def send_interrupt(self):
-        print(
-            "\n*** Program will stop at the next bytecode instruction."
-            " (Use 'cont' to resume)."
-        )
-        sys.remote_exec(self.pid, self.interrupt_script)
+        if hasattr(signal, "pthread_kill"):
+            # On Unix, send a SIGINT to the remote process, which interrupts IO
+            # and makes it raise a KeyboardInterrupt on the main thread when
+            # PyErr_CheckSignals is called or the eval loop regains control.
+            os.kill(self.pid, signal.SIGINT)
+        else:
+            # On Windows, inject a remote script that calls Pdb.set_trace()
+            # when the eval loop regains control. This cannot interrupt IO, and
+            # also cannot interrupt statements executed at a PDB prompt.
+            print(
+                "\n*** Program will stop at the next bytecode instruction."
+                " (Use 'cont' to resume)."
+            )
+            sys.remote_exec(self.pid, self.interrupt_script)
 
     def process_payload(self, payload):
         match payload:
