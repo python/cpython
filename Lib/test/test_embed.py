@@ -440,6 +440,34 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
         self.assertEqual(out, '20000101\n' * INIT_LOOPS)
 
+    def test_datetime_capi_at_shutdown(self):
+        # gh-132413: datetime module is currently tested in an interp's life.
+        # PyDateTime_IMPORT needs to be called at least once after the restart.
+        code = textwrap.dedent("""
+            import sys
+            import _testcapi
+            _testcapi.test_datetime_capi_newinterp()
+            timedelta = _testcapi.get_capi_types()['timedelta']
+
+            def gen():
+                try:
+                    yield
+                finally:
+                    assert not sys.modules
+                    res = 0
+                    try:
+                        timedelta(days=1)
+                        res = 1
+                    except ImportError:
+                        res = 2
+                    print(res)
+
+            it = gen()
+            next(it)
+        """)
+        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
+        self.assertEqual(out, '1\n' * INIT_LOOPS)
+
     def test_static_types_inherited_slots(self):
         script = textwrap.dedent("""
             import test.support

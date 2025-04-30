@@ -35,6 +35,29 @@ test_datetime_capi(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_datetime_capi_newinterp(PyObject *self, PyObject *args)
+{
+    // Call PyDateTime_IMPORT at least once in each interpreter's life
+    if (PyDateTimeAPI != NULL && test_run_counter == 0) {
+        PyErr_SetString(PyExc_AssertionError,
+                        "PyDateTime_CAPI somehow initialized");
+        return NULL;
+    }
+    test_run_counter++;
+    PyDateTime_IMPORT;
+
+    if (PyDateTimeAPI == NULL) {
+        return NULL;
+    }
+    assert(!PyType_HasFeature(PyDateTimeAPI->DateType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->TimeType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->DateTimeType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->DeltaType, Py_TPFLAGS_HEAPTYPE));
+    assert(!PyType_HasFeature(PyDateTimeAPI->TZInfoType, Py_TPFLAGS_HEAPTYPE));
+    Py_RETURN_NONE;
+}
+
 /* Functions exposing the C API type checking for testing */
 #define MAKE_DATETIME_CHECK_FUNC(check_method, exact_method)    \
 do {                                                            \
@@ -507,6 +530,7 @@ static PyMethodDef test_methods[] = {
     {"get_capi_types",              get_capi_types,                 METH_NOARGS},
     {"make_timezones_capi",         make_timezones_capi,            METH_NOARGS},
     {"test_datetime_capi",          test_datetime_capi,             METH_NOARGS},
+    {"test_datetime_capi_newinterp",test_datetime_capi_newinterp,   METH_NOARGS},
     {NULL},
 };
 
@@ -527,7 +551,7 @@ _PyTestCapi_Init_DateTime(PyObject *mod)
 static int
 _testcapi_datetime_exec(PyObject *mod)
 {
-    // Call test_datetime_capi() in each test.
+    // The execution does not invoke PyDateTime_IMPORT
     return 0;
 }
 

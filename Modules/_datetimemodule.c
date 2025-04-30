@@ -12,7 +12,6 @@
 #include "Python.h"
 #include "pycore_long.h"          // _PyLong_GetOne()
 #include "pycore_object.h"        // _PyObject_Init()
-#include "pycore_pylifecycle.h"   // _Py_IsInterpreterFinalizing()
 #include "pycore_time.h"          // _PyTime_ObjectToTime_t()
 #include "pycore_unicodeobject.h" // _PyUnicode_Copy()
 
@@ -174,7 +173,6 @@ _get_current_state(PyObject **p_mod)
          * so we must re-import the module. */
         mod = PyImport_ImportModule("_datetime");
         if (mod == NULL) {
-            assert(_Py_IsInterpreterFinalizing(interp));
             return NULL;
         }
     }
