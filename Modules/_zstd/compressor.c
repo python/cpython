@@ -23,6 +23,8 @@ class _zstd.ZstdCompressor "ZstdCompressor *" "clinic_state()->ZstdCompressor_ty
 #include <stddef.h>               // offsetof()
 
 
+#define ZstdCompressor_CAST(op) ((ZstdCompressor *)op)
+
 int
 _PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
                          const char *arg_name, const char* arg_type)
@@ -321,8 +323,9 @@ error:
 }
 
 static void
-ZstdCompressor_dealloc(ZstdCompressor *self)
+ZstdCompressor_dealloc(PyObject *ob)
 {
+    ZstdCompressor *self = ZstdCompressor_CAST(ob);
     /* Free compression context */
     ZSTD_freeCCtx(self->cctx);
 

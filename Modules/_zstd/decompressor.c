@@ -21,6 +21,8 @@ class _zstd.ZstdDecompressor "ZstdDecompressor *" "clinic_state()->ZstdDecompres
 
 #include <stddef.h>               // offsetof()
 
+#define ZstdDecompressor_CAST(op) ((ZstdDecompressor *)op)
+
 static inline ZSTD_DDict *
 _get_DDict(ZstdDict *self)
 {
@@ -630,8 +632,9 @@ error:
 }
 
 static void
-ZstdDecompressor_dealloc(ZstdDecompressor *self)
+ZstdDecompressor_dealloc(PyObject *ob)
 {
+    ZstdDecompressor *self = ZstdDecompressor_CAST(ob);
     /* Free decompression context */
     ZSTD_freeDCtx(self->dctx);
 

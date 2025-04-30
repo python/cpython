@@ -19,6 +19,7 @@ class _zstd.ZstdDict "ZstdDict *" "clinic_state()->ZstdDict_type"
 
 #include <stddef.h>               // offsetof()
 
+#define ZstdDict_CAST(op) ((ZstdDict *)op)
 
 static PyObject *
 _zstd_ZstdDict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwargs))
@@ -48,8 +49,9 @@ error:
 }
 
 static void
-ZstdDict_dealloc(ZstdDict *self)
+ZstdDict_dealloc(PyObject *ob)
 {
+    ZstdDict *self = ZstdDict_CAST(ob);
     /* Free ZSTD_CDict instances */
     Py_XDECREF(self->c_dicts);
 
@@ -145,8 +147,9 @@ PyDoc_STRVAR(ZstdDict_dictcontent_doc,
 "argument in ZstdDict.__init__() method. It can be used with other programs.");
 
 static PyObject *
-ZstdDict_str(ZstdDict *dict)
+ZstdDict_str(PyObject *ob)
 {
+    ZstdDict *dict = ZstdDict_CAST(ob);
     return PyUnicode_FromFormat("<ZstdDict dict_id=%u dict_size=%zd>",
                                 dict->dict_id, Py_SIZE(dict->dict_content));
 }
@@ -233,8 +236,9 @@ static PyGetSetDef ZstdDict_getset[] = {
 };
 
 static Py_ssize_t
-ZstdDict_length(ZstdDict *self)
+ZstdDict_length(PyObject *ob)
 {
+    ZstdDict *self = ZstdDict_CAST(ob);
     assert(PyBytes_Check(self->dict_content));
     return Py_SIZE(self->dict_content);
 }
