@@ -1055,7 +1055,7 @@ except TypeError as e:
 """)
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
-            self.assertEqual(stdout.rstrip(), b"unhashable type: 'substr'")
+            self.assertIn(b"unhashable type: 'substr'", stdout.rstrip())
 
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
                 f.write("""
@@ -1072,7 +1072,7 @@ except TypeError as e:
 
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
-            self.assertEqual(stdout.rstrip(), b"unhashable type: 'substr'")
+            self.assertIn(b"unhashable type: 'substr'", stdout.rstrip())
 
             # Various issues with sys module
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:

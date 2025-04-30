@@ -654,6 +654,9 @@ codegen_enter_scope(compiler *c, identifier name, int scope_type,
         loc.lineno = 0;
     }
     ADDOP_I(c, loc, RESUME, RESUME_AT_FUNC_START);
+    if (scope_type == COMPILE_SCOPE_MODULE) {
+        ADDOP(c, loc, ANNOTATIONS_PLACEHOLDER);
+    }
     return SUCCESS;
 }
 
@@ -792,6 +795,14 @@ codegen_process_deferred_annotations(compiler *c, location loc)
         return SUCCESS;
     }
 
+    int scope_type = SCOPE_TYPE(c);
+    bool need_separate_block = scope_type == COMPILE_SCOPE_MODULE;
+    if (need_separate_block) {
+        if (_PyCompile_StartAnnotationSetup(c) == ERROR) {
+            goto error;
+        }
+    }
+
     // It's possible that ste_annotations_block is set but
     // u_deferred_annotations is not, because the former is still
     // set if there are only non-simple annotations (i.e., annotations
@@ -800,7 +811,6 @@ codegen_process_deferred_annotations(compiler *c, location loc)
     PySTEntryObject *ste = SYMTABLE_ENTRY(c);
     assert(ste->ste_annotation_block != NULL);
     void *key = (void *)((uintptr_t)ste->ste_id + 1);
-    int scope_type = SCOPE_TYPE(c);
     if (codegen_setup_annotations_scope(c, loc, key,
                                         ste->ste_annotation_block->ste_name) < 0) {
         goto error;
@@ -819,6 +829,10 @@ codegen_process_deferred_annotations(compiler *c, location loc)
         c, loc,
         ste->ste_type == ClassBlock ? &_Py_ID(__annotate_func__) : &_Py_ID(__annotate__),
         Store));
+
+    if (need_separate_block) {
+        RETURN_IF_ERROR(_PyCompile_EndAnnotationSetup(c));
+    }
 
     return SUCCESS;
 error:

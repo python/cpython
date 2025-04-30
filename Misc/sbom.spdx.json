@@ -888,11 +888,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "3d65f95f6f4bbfe980a89b82c55d02d7694a5a79"
+          "checksumValue": "66108dcbb7fc9e8aa7adcc440fede22c62164d92"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "0f8d744620cf5f6b8450da187484b418d24dec7d8cf72b757b7080e84cb3ae5e"
+          "checksumValue": "284079d2af21a570c58c82e54536b8b9bae0f0a321f229b242c92dc350d10bdf"
         }
       ],
       "fileName": "Modules/_hacl/lib_memzero0.h"
@@ -930,11 +930,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "dbed915328619b1159012649a427c6928033dd90"
+          "checksumValue": "4a0bdb9496d49bbfa3ad50bb7854d8f099e84891"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "0297ea0a5d1117e001d5dbb90f99d47ee9e0f9d3dd45da02ba5dc477e551cb5a"
+          "checksumValue": "b1a45149239ee7af7de769a3e9339950d47c199bb9eaa10edce8a00fde603b12"
         }
       ],
       "fileName": "Modules/_hacl/python_hacl_namespaces.h"
