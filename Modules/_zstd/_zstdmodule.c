@@ -301,16 +301,6 @@ _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
                           int compression_level)
 /*[clinic end generated code: output=9c2a7d8c845cee93 input=ef6f4f2b0b7e178d]*/
 {
-    if (ZSTD_versionNumber() < PYTHON_MINIMUM_SUPPORTED_ZSTD_VERSION) {
-        /* Must be dynamically linked */
-        PyErr_Format(PyExc_NotImplementedError,
-                "The _finalize_dict function is only available when the underlying "
-                "zstd library's version is greater than or equal to v1.4.5. "
-                "The current zstd version is v%s.",
-                ZSTD_versionString());
-        return NULL;
-    }
-
     Py_ssize_t chunks_number;
     size_t *chunk_sizes = NULL;
     PyObject *dst_dict_bytes = NULL;

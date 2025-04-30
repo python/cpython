@@ -13,10 +13,10 @@ Python module.
 
 #include "pycore_lock.h" // PyMutex APIs
 
-#define PYTHON_MINIMUM_SUPPORTED_ZSTD_VERSION 10405
+#define PYTHON_MINIMUM_SUPPORTED_ZSTD_VERSION 10400
 
 #if ZSTD_VERSION_NUMBER < PYTHON_MINIMUM_SUPPORTED_ZSTD_VERSION
-    #error "_zstd module requires zstd v1.4.5+"
+    #error "_zstd module requires zstd v1.4.0+"
 #endif
 
 /* Forward declaration of module state */
