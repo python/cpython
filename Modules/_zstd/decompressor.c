@@ -87,7 +87,7 @@ _PyZstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
         }
 
         /* Both key & value should be 32-bit signed int */
-        const int key_v = PyLong_AsInt(key);
+        int key_v = PyLong_AsInt(key);
         if (key_v == -1 && PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
                             "Key of options dict should be a DParameter attribute.");
@@ -96,7 +96,7 @@ _PyZstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
 
         // TODO(emmatyping): check bounds when there is a value error here for better
         // error message?
-        const int value_v = PyLong_AsInt(value);
+        int value_v = PyLong_AsInt(value);
         if (value_v == -1 && PyErr_Occurred()) {
             PyErr_SetString(PyExc_ValueError,
                             "Value of options dict should be an int.");
@@ -269,9 +269,9 @@ load:
 */
 PyObject *
 decompress_impl(ZstdDecompressor *self, ZSTD_inBuffer *in,
-                const Py_ssize_t max_length,
-                const Py_ssize_t initial_size,
-                const decompress_type type)
+                Py_ssize_t max_length,
+                Py_ssize_t initial_size,
+                decompress_type type)
 {
     size_t zstd_ret;
     ZSTD_outBuffer out;
@@ -370,7 +370,7 @@ error:
 
 void
 decompressor_reset_session(ZstdDecompressor *self,
-                           const decompress_type type)
+                           decompress_type type)
 {
     /* Reset variables */
     self->in_begin = 0;
@@ -392,7 +392,7 @@ decompressor_reset_session(ZstdDecompressor *self,
 
 PyObject *
 stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length,
-                  const decompress_type type)
+                  decompress_type type)
 {
     Py_ssize_t initial_buffer_size = -1;
     ZSTD_inBuffer in;
@@ -449,21 +449,21 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
         use_input_buffer = 1;
 
         /* Unconsumed data size in input_buffer */
-        const size_t used_now = self->in_end - self->in_begin;
+        size_t used_now = self->in_end - self->in_begin;
         assert(self->in_end > self->in_begin);
 
         /* Number of bytes we can append to input buffer */
-        const size_t avail_now = self->input_buffer_size - self->in_end;
+        size_t avail_now = self->input_buffer_size - self->in_end;
         assert(self->input_buffer_size >= self->in_end);
 
         /* Number of bytes we can append if we move existing contents to
            beginning of buffer */
-        const size_t avail_total = self->input_buffer_size - used_now;
+        size_t avail_total = self->input_buffer_size - used_now;
         assert(self->input_buffer_size >= used_now);
 
         if (avail_total < (size_t) data->len) {
             char *tmp;
-            const size_t new_size = used_now + data->len;
+            size_t new_size = used_now + data->len;
 
             /* Allocate with new size */
             tmp = PyMem_Malloc(new_size);
@@ -537,7 +537,7 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
             self->in_end = 0;
         }
     } else {
-        const size_t data_size = in.size - in.pos;
+        size_t data_size = in.size - in.pos;
 
         self->needs_input = 0;
 

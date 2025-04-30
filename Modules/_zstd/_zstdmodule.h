@@ -171,7 +171,7 @@ mt_continue_should_break(ZSTD_inBuffer *in, ZSTD_outBuffer *out) {
 /* Format error message and set ZstdError. */
 extern void
 set_zstd_error(const _zstd_state* const state,
-               const error_type type, const size_t zstd_ret);
+               const error_type type, size_t zstd_ret);
 
 extern void
 set_parameter_error(const _zstd_state* const state, int is_compress,
@@ -194,10 +194,10 @@ _PyZstd_set_d_parameters(ZstdDecompressor *self, PyObject *options);
 
 extern PyObject *
 decompress_impl(ZstdDecompressor *self, ZSTD_inBuffer *in,
-                const Py_ssize_t max_length,
-                const Py_ssize_t initial_size,
-                const decompress_type type);
+                Py_ssize_t max_length,
+                Py_ssize_t initial_size,
+                decompress_type type);
 
 extern PyObject *
 compress_impl(ZstdCompressor *self, Py_buffer *data,
-                const ZSTD_EndDirective end_directive);
+              ZSTD_EndDirective end_directive);

@@ -20,7 +20,7 @@ module _zstd
 /* Format error message and set ZstdError. */
 void
 set_zstd_error(const _zstd_state* const state,
-               const error_type type, const size_t zstd_ret)
+               error_type type, size_t zstd_ret)
 {
     char *msg;
     assert(ZSTD_isError(zstd_ret));
@@ -610,7 +610,7 @@ add_parameters(PyObject *module)
 static inline PyObject *
 get_zstd_version_info(void)
 {
-    const uint32_t ver = ZSTD_versionNumber();
+    uint32_t ver = ZSTD_versionNumber();
     uint32_t major, minor, release;
 
     major = ver / 10000;
@@ -723,7 +723,7 @@ add_type_to_module(PyObject *module, const char *name,
 }
 
 static inline int
-add_constant_to_type(PyTypeObject *type, const char *name, const long value)
+add_constant_to_type(PyTypeObject *type, const char *name, long value)
 {
     PyObject *temp;
 
