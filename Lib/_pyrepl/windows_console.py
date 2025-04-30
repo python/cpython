@@ -525,7 +525,8 @@ class WindowsConsole(Console):
 
         while not self.event_queue.empty():
             e2 = self.event_queue.get()
-            e.data += e2.data
+            if e2:
+                e.data += e2.data
 
         rec = self._read_input(False)
         if rec and rec.EventType == KEY_EVENT:

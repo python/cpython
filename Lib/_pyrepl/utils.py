@@ -6,8 +6,10 @@ import token as T
 import tokenize
 import unicodedata
 
+from collections import deque
 from io import StringIO
-from typing import cast, Iterator, Literal, Match, NamedTuple, Self
+from tokenize import TokenInfo as TI
+from typing import TYPE_CHECKING, Iterable, Iterator, Literal, Match, NamedTuple, Self
 from _colorize import ANSIColors
 
 from .types import CharBuffer, CharWidths
@@ -18,7 +20,6 @@ ZERO_WIDTH_BRACKET = re.compile(r"\x01.*?\x02")
 ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
 IDENTIFIERS_AFTER = {"def", "class"}
 BUILTINS = {str(name) for name in dir(builtins) if not name.startswith('_')}
-
 
 type ColorTag = (
     Literal["KEYWORD"]
@@ -45,7 +46,7 @@ class Span(NamedTuple):
         return cls(re_span[0], re_span[1] - 1)
 
     @classmethod
-    def from_token(cls, token: tokenize.TokenInfo, line_len: list[int]) -> Self:
+    def from_token(cls, token: TI, line_len: list[int]) -> Self:
         return cls(
             line_len[token.start[0] - 1] + token.start[1],
             line_len[token.end[0] - 1] + token.end[1] - 1,
@@ -65,7 +66,7 @@ TAG_TO_ANSI: dict[ColorTag, str] = {
     "NUMBER": ANSIColors.YELLOW,
     "OP": ANSIColors.RESET,
     "DEFINITION": ANSIColors.BOLD_WHITE,
-    "SOFT_KEYWORD": ANSIColors.BOLD_GREEN,  # FIXME: change to RESET
+    "SOFT_KEYWORD": ANSIColors.BOLD_BLUE,
     "SYNC": ANSIColors.RESET,
 }
 
@@ -102,32 +103,6 @@ def unbracket(s: str, including_content: bool = False) -> str:
 
 
 def gen_colors(buffer: str) -> Iterator[ColorSpan]:
-    # FIXME: delete this previous version, now only kept for debugging.
-    from idlelib import colorizer
-    COLORIZE_RE = colorizer.prog
-    for match in COLORIZE_RE.finditer(buffer):
-        yield from gen_color_spans(match)
-
-
-def gen_color_spans(re_match: Match[str]) -> Iterator[ColorSpan]:
-    # FIXME: delete this previous version, now only kept for debugging.
-    from idlelib import colorizer
-    COLORIZE_GROUP_NAME_MAP = colorizer.prog_group_name_to_tag
-    IDENTIFIER_RE = colorizer.idprog
-
-    for tag, data in re_match.groupdict().items():
-        if not data:
-            continue
-        span = Span.from_re(re_match, tag)
-        tag = COLORIZE_GROUP_NAME_MAP.get(tag, tag)
-        yield ColorSpan(span, cast(ColorTag, tag))
-        if data in IDENTIFIERS_AFTER:
-            if name_match := IDENTIFIER_RE.match(re_match.string, span.end + 1):
-                span = Span.from_re(name_match, 1)
-                yield ColorSpan(span, "DEFINITION")
-
-
-def gen_colors(buffer: str) -> Iterator[ColorSpan]:
     """Returns a list of index spans to color using the given color tag.
 
     The input `buffer` should be a valid start of a Python code block, i.e.
@@ -141,7 +116,7 @@ def gen_colors(buffer: str) -> Iterator[ColorSpan]:
 
     sio.seek(0)
     gen = tokenize.generate_tokens(sio.readline)
-    last_emitted = None
+    last_emitted: ColorSpan | None = None
     try:
         for color in gen_colors_from_token_stream(gen, line_lengths):
             yield color
@@ -155,7 +130,7 @@ def gen_colors(buffer: str) -> Iterator[ColorSpan]:
 def recover_unterminated_string(
     exc: tokenize.TokenError,
     line_lengths: list[int],
-    last_emitted: ColorTag | None,
+    last_emitted: ColorSpan | None,
     buffer: str,
 ) -> Iterator[ColorSpan]:
     msg, loc = exc.args
@@ -185,11 +160,15 @@ def recover_unterminated_string(
 
 
 def gen_colors_from_token_stream(
-    token_generator: Iterator[tokenize.TokenInfo],
+    token_generator: Iterator[TI],
     line_lengths: list[int],
 ) -> Iterator[ColorSpan]:
+    token_window = prev_next_window(token_generator)
+
     is_def_name = False
-    for token in token_generator:
+    paren_level = 0
+    for prev_token, token, next_token in token_window:
+        assert token is not None
         if token.start == token.end:
             continue
 
@@ -204,6 +183,10 @@ def gen_colors_from_token_stream(
                 span = Span.from_token(token, line_lengths)
                 yield ColorSpan(span, "NUMBER")
             case T.OP:
+                if token.string == "(":
+                    paren_level += 1
+                elif token.string == ")":
+                    paren_level -= 1
                 span = Span.from_token(token, line_lengths)
                 yield ColorSpan(span, "OP")
             case T.NAME:
@@ -216,13 +199,64 @@ def gen_colors_from_token_stream(
                     yield ColorSpan(span, "KEYWORD")
                     if token.string in IDENTIFIERS_AFTER:
                         is_def_name = True
-                elif keyword.issoftkeyword(token.string):
+                elif (
+                    keyword.issoftkeyword(token.string)
+                    and paren_level == 0
+                    and is_soft_keyword_used(prev_token, token, next_token)
+                ):
                     span = Span.from_token(token, line_lengths)
                     yield ColorSpan(span, "SOFT_KEYWORD")
                 elif token.string in BUILTINS:
                     span = Span.from_token(token, line_lengths)
                     yield ColorSpan(span, "BUILTIN")
-                # TODO: soft keywords
+
+
+keyword_first_sets_match = {"False", "None", "True", "await", "lambda", "not"}
+keyword_first_sets_case = {"False", "None", "True"}
+
+
+def is_soft_keyword_used(*tokens: TI | None) -> bool:
+    """Returns True if the current token is a keyword in this context.
+
+    For the `*tokens` to match anything, they have to be a three-tuple of
+    (previous, current, next).
+    """
+    trace("is_soft_keyword_used{t}", t=tokens)
+    match tokens:
+        case (
+            None | TI(T.INDENT) | TI(string=":"),
+            TI(string="match"),
+            TI(T.NUMBER | T.STRING | T.FSTRING_START)
+            | TI(T.OP, string="(" | "*" | "-" | "+" | "[" | "{" | "~" | "...")
+        ):
+            return True
+        case (
+            None | TI(T.INDENT) | TI(string=":"),
+            TI(string="match"),
+            TI(T.NAME, string=s)
+        ):
+            if keyword.iskeyword(s):
+                return s in keyword_first_sets_match
+            return True
+        case (
+            None | TI(T.INDENT) | TI(string=":"),
+            TI(string="case"),
+            TI(T.NUMBER | T.STRING | T.FSTRING_START)
+            | TI(T.OP, string="(" | "*" | "-" | "[" | "{")
+        ):
+            return True
+        case (
+            None | TI(T.INDENT) | TI(string=":"),
+            TI(string="case"),
+            TI(T.NAME, string=s)
+        ):
+            if keyword.iskeyword(s):
+                return s in keyword_first_sets_case
+            return True
+        case (TI(string="case"), TI(string="_"), TI(string=":")):
+            return True
+        case _:
+            return False
 
 
 def disp_str(
@@ -306,3 +340,27 @@ def disp_str(
 
     # trace("disp_str({buffer}) = {s}, {b}", buffer=repr(buffer), s=chars, b=char_widths)
     return chars, char_widths
+
+
+def prev_next_window[T](
+    iterable: Iterable[T]
+) -> Iterator[tuple[T | None, ...]]:
+    """Generates three-tuples of (previous, current, next) items.
+
+    On the first iteration previous is None. On the last iteration next
+    is None. In case of exception next is None and the exception is re-raised
+    on a subsequent next() call.
+
+    Inspired by `sliding_window` from `itertools` recipes.
+    """
+
+    iterator = iter(iterable)
+    window = deque((None, next(iterator)), maxlen=3)
+    try:
+        for x in iterator:
+            window.append(x)
+            yield tuple(window)
+    except Exception:
+        window.append(None)
+        yield tuple(window)
+        raise
