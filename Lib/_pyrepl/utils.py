@@ -361,6 +361,7 @@ def prev_next_window[T](
             window.append(x)
             yield tuple(window)
     except Exception:
+        raise
+    finally:
         window.append(None)
         yield tuple(window)
-        raise
