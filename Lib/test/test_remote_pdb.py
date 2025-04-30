@@ -12,7 +12,7 @@ import textwrap
 import threading
 import unittest
 import unittest.mock
-from contextlib import contextmanager, redirect_stdout, ExitStack
+from contextlib import closing, contextmanager, redirect_stdout, ExitStack
 from pathlib import Path
 from test.support import is_wasi, os_helper, requires_subprocess, SHORT_TIMEOUT
 from test.support.os_helper import temp_dir, TESTFN, unlink
@@ -79,44 +79,6 @@ class MockSocketFile:
         return results
 
 
-class MockDebuggerSocket:
-    """Mock file-like simulating a connection to a _RemotePdb instance"""
-
-    def __init__(self, incoming):
-        self.incoming = iter(incoming)
-        self.outgoing = []
-        self.buffered = bytearray()
-
-    def write(self, data: bytes) -> None:
-        """Simulate write to socket."""
-        self.buffered += data
-
-    def flush(self) -> None:
-        """Ensure each line is valid JSON."""
-        lines = self.buffered.splitlines(keepends=True)
-        self.buffered.clear()
-        for line in lines:
-            assert line.endswith(b"\n")
-            self.outgoing.append(json.loads(line))
-
-    def readline(self) -> bytes:
-        """Read a line from the prepared input queue."""
-        # Anything written must be flushed before trying to read,
-        # since the read will be dependent upon the last write.
-        assert not self.buffered
-        try:
-            item = next(self.incoming)
-            if not isinstance(item, bytes):
-                item = json.dumps(item).encode()
-            return item + b"\n"
-        except StopIteration:
-            return b""
-
-    def close(self) -> None:
-        """No-op close implementation."""
-        pass
-
-
 class PdbClientTestCase(unittest.TestCase):
     """Tests for the _PdbClient class."""
 
@@ -124,7 +86,7 @@ class PdbClientTestCase(unittest.TestCase):
         self,
         *,
         incoming,
-        simulate_failure=None,
+        simulate_send_failure=False,
         expected_outgoing=None,
         expected_completions=None,
         expected_exception=None,
@@ -142,16 +104,6 @@ class PdbClientTestCase(unittest.TestCase):
         expected_state.setdefault("write_failed", False)
         messages = [m for source, m in incoming if source == "server"]
         prompts = [m["prompt"] for source, m in incoming if source == "user"]
-        sockfile = MockDebuggerSocket(messages)
-        stdout = io.StringIO()
-
-        if simulate_failure:
-            sockfile.write = unittest.mock.Mock()
-            sockfile.flush = unittest.mock.Mock()
-            if simulate_failure == "write":
-                sockfile.write.side_effect = OSError("write failed")
-            elif simulate_failure == "flush":
-                sockfile.flush.side_effect = OSError("flush failed")
 
         input_iter = (m for source, m in incoming if source == "user")
         completions = []
@@ -181,6 +133,28 @@ class PdbClientTestCase(unittest.TestCase):
             return reply
 
         with ExitStack() as stack:
+            client_sock, server_sock = socket.socketpair()
+            stack.enter_context(closing(client_sock))
+            stack.enter_context(closing(server_sock))
+
+            server_sock = unittest.mock.Mock(wraps=server_sock)
+
+            client_sock.sendall(
+                b"".join(
+                    (m if isinstance(m, bytes) else json.dumps(m).encode()) + b"\n"
+                    for m in messages
+                )
+            )
+            client_sock.shutdown(socket.SHUT_WR)
+
+            if simulate_send_failure:
+                server_sock.sendall = unittest.mock.Mock(
+                    side_effect=OSError("sendall failed")
+                )
+                client_sock.shutdown(socket.SHUT_RD)
+
+            stdout = io.StringIO()
+
             input_mock = stack.enter_context(
                 unittest.mock.patch("pdb.input", side_effect=mock_input)
             )
@@ -188,7 +162,7 @@ class PdbClientTestCase(unittest.TestCase):
 
             client = _PdbClient(
                 pid=0,
-                sockfile=sockfile,
+                server_socket=server_sock,
                 interrupt_script="/a/b.py",
             )
 
@@ -199,13 +173,12 @@ class PdbClientTestCase(unittest.TestCase):
 
             client.cmdloop()
 
-        actual_outgoing = sockfile.outgoing
-        if simulate_failure:
-            actual_outgoing += [
-                json.loads(msg.args[0]) for msg in sockfile.write.mock_calls
-            ]
+        sent_msgs = [msg.args[0] for msg in server_sock.sendall.mock_calls]
+        for msg in sent_msgs:
+            assert msg.endswith(b"\n")
+        actual_outgoing = [json.loads(msg) for msg in sent_msgs]
 
-        self.assertEqual(sockfile.outgoing, expected_outgoing)
+        self.assertEqual(actual_outgoing, expected_outgoing)
         self.assertEqual(completions, expected_completions)
         if expected_stdout_substring and not expected_stdout:
             self.assertIn(expected_stdout_substring, stdout.getvalue())
@@ -478,20 +451,7 @@ class PdbClientTestCase(unittest.TestCase):
         self.do_test(
             incoming=incoming,
             expected_outgoing=[{"signal": "INT"}],
-            simulate_failure="write",
-            expected_state={"write_failed": True},
-        )
-
-    def test_flush_failing(self):
-        """Test terminating if flush fails due to a half closed socket."""
-        incoming = [
-            ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
-            ("user", {"prompt": "(Pdb) ", "input": KeyboardInterrupt()}),
-        ]
-        self.do_test(
-            incoming=incoming,
-            expected_outgoing=[{"signal": "INT"}],
-            simulate_failure="flush",
+            simulate_send_failure=True,
             expected_state={"write_failed": True},
         )
 
@@ -622,42 +582,7 @@ class PdbClientTestCase(unittest.TestCase):
                 },
                 {"reply": "xyz"},
             ],
-            simulate_failure="write",
-            expected_completions=[],
-            expected_state={"state": "interact", "write_failed": True},
-        )
-
-    def test_flush_failure_during_completion(self):
-        """Test failing to flush to the socket to request tab completions."""
-        incoming = [
-            ("server", {"prompt": ">>> ", "state": "interact"}),
-            (
-                "user",
-                {
-                    "prompt": ">>> ",
-                    "completion_request": {
-                        "line": "xy",
-                        "begidx": 0,
-                        "endidx": 2,
-                    },
-                    "input": "xyz",
-                },
-            ),
-        ]
-        self.do_test(
-            incoming=incoming,
-            expected_outgoing=[
-                {
-                    "complete": {
-                        "text": "xy",
-                        "line": "xy",
-                        "begidx": 0,
-                        "endidx": 2,
-                    }
-                },
-                {"reply": "xyz"},
-            ],
-            simulate_failure="flush",
+            simulate_send_failure=True,
             expected_completions=[],
             expected_state={"state": "interact", "write_failed": True},
         )

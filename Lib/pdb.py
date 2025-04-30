@@ -2903,9 +2903,10 @@ class _PdbServer(Pdb):
 
 
 class _PdbClient:
-    def __init__(self, pid, sockfile, interrupt_script):
+    def __init__(self, pid, server_socket, interrupt_script):
         self.pid = pid
-        self.sockfile = sockfile
+        self.read_buf = b""
+        self.server_socket = server_socket
         self.interrupt_script = interrupt_script
         self.pdb_instance = Pdb()
         self.pdb_commands = set()
@@ -2947,8 +2948,7 @@ class _PdbClient:
         self._ensure_valid_message(kwargs)
         json_payload = json.dumps(kwargs)
         try:
-            self.sockfile.write(json_payload.encode() + b"\n")
-            self.sockfile.flush()
+            self.server_socket.sendall(json_payload.encode() + b"\n")
         except OSError:
             # This means that the client has abruptly disconnected, but we'll
             # handle that the next time we try to read from the client instead
@@ -2956,6 +2956,15 @@ class _PdbClient:
             # Track this with a flag rather than assuming readline() will ever
             # return an empty string because the socket may be half-closed.
             self.write_failed = True
+
+    def _readline(self):
+        while b"\n" not in self.read_buf:
+            self.read_buf += self.server_socket.recv(16 * 1024)
+            if not self.read_buf:
+                return b""
+
+        ret, sep, self.read_buf = self.read_buf.partition(b"\n")
+        return ret + sep
 
     def read_command(self, prompt):
         reply = input(prompt)
@@ -3054,7 +3063,7 @@ class _PdbClient:
             while not self.write_failed:
                 try:
                     with self._handle_sigint(signal.default_int_handler):
-                        if not (payload_bytes := self.sockfile.readline()):
+                        if not (payload_bytes := self._readline()):
                             break
                 except KeyboardInterrupt:
                     self.send_interrupt()
@@ -3144,7 +3153,7 @@ class _PdbClient:
                 return None
 
             with self._handle_sigint(signal.default_int_handler):
-                payload = self.sockfile.readline()
+                payload = self._readline()
             if not payload:
                 return None
 
@@ -3211,9 +3220,6 @@ def attach(pid, commands=()):
             client_sock, _ = server.accept()
 
             with closing(client_sock):
-                sockfile = client_sock.makefile("rwb")
-
-            with closing(sockfile):
                 with tempfile.NamedTemporaryFile("w", delete_on_close=False) as interrupt_script:
                     interrupt_script.write(
                         'import pdb, sys\n'
@@ -3222,7 +3228,7 @@ def attach(pid, commands=()):
                     )
                     interrupt_script.close()
 
-                    _PdbClient(pid, sockfile, interrupt_script.name).cmdloop()
+                    _PdbClient(pid, client_sock, interrupt_script.name).cmdloop()
 
 
 # Post-Mortem interface
