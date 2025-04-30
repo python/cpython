@@ -8,8 +8,10 @@ on:
   pull_request:
     paths:
       - ".github/workflows/mypy.yml"
+      - "Lib/_colorize.py"
       - "Lib/_pyrepl/**"
       - "Lib/test/libregrtest/**"
+      - "Misc/mypy/**"
       - "Tools/build/generate_sbom.py"
       - "Tools/cases_generator/**"
       - "Tools/clinic/**"

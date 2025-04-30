@@ -2197,12 +2197,10 @@ PyFloat_Pack4(double x, char *data, int le)
 
             memcpy(&v, &x, 8);
             if ((v & (1ULL << 51)) == 0) {
-                union float_val {
-                    float f;
-                    uint32_t u32;
-                } *py = (union float_val *)&y;
-
-                py->u32 &= ~(1 << 22); /* make sNaN */
+                uint32_t u32;
+                memcpy(&u32, &y, 4);
+                u32 &= ~(1 << 22); /* make sNaN */
+                memcpy(&y, &u32, 4);
             }
         }
 
@@ -2340,7 +2338,9 @@ PyFloat_Pack8(double x, char *data, int le)
         return -1;
     }
     else {
-        const unsigned char *s = (unsigned char*)&x;
+        unsigned char as_bytes[8];
+        memcpy(as_bytes, &x, 8);
+        const unsigned char *s = as_bytes;
         int i, incr = 1;
 
         if ((double_format == ieee_little_endian_format && !le)

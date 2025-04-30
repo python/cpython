@@ -138,25 +138,16 @@
 #endif
 
 
-static void
-check_invalid_reentrancy(void)
-{
-#if defined(Py_DEBUG) && defined(Py_GIL_DISABLED)
-    // In the free-threaded build, the interpreter must not be re-entered if
-    // the world-is-stopped.  If so, that's a bug somewhere (quite likely in
-    // the painfully complex typeobject code).
-    PyInterpreterState *interp = _PyInterpreterState_GET();
-    assert(!interp->stoptheworld.world_stopped);
-#endif
-}
-
-
 #ifdef Py_DEBUG
 static void
 dump_item(_PyStackRef item)
 {
     if (PyStackRef_IsNull(item)) {
         printf("<NULL>");
+        return;
+    }
+    if (PyStackRef_IsTaggedInt(item)) {
+        printf("%" PRId64, (int64_t)PyStackRef_UntagInt(item));
         return;
     }
     PyObject *obj = PyStackRef_AsPyObjectBorrow(item);
@@ -1008,7 +999,6 @@ PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
     _Py_EnsureTstateNotNULL(tstate);
-    check_invalid_reentrancy();
     CALL_STAT_INC(pyeval_calls);
 
 #if USE_COMPUTED_GOTOS && !Py_TAIL_CALL_INTERP
