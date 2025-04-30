@@ -12,6 +12,7 @@ _testinternalcapi = import_helper.import_module('_testinternalcapi')
 _interpreters = import_helper.import_module('_interpreters')
 from _interpreters import NotShareableError
 
+from test import _code_definitions as code_defs
 from test import _crossinterp_definitions as defs
 
 
@@ -24,9 +25,23 @@ OTHER_TYPES = [o for n, o in vars(types).items()
                   n not in ('DynamicClassAttribute', '_GeneratorWrapper'))]
 
 DEFS = defs
+with open(code_defs.__file__) as infile:
+    _code_defs_text = infile.read()
 with open(DEFS.__file__) as infile:
-    DEFS_TEXT = infile.read()
-del infile
+    _defs_text = infile.read()
+    _defs_text = _defs_text.replace('from ', '# from ')
+DEFS_TEXT = f"""
+#######################################
+# from {code_defs.__file__}
+
+{_code_defs_text}
+
+#######################################
+# from {defs.__file__}
+
+{_defs_text}
+"""
+del infile, _code_defs_text, _defs_text
 
 
 def load_defs(module=None):
