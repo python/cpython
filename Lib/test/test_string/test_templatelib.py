@@ -18,6 +18,13 @@ class TestTemplate(unittest.TestCase, TStringBaseCase):
         self.assertEqual(type(i).__qualname__, 'Interpolation')
         self.assertEqual(type(i).__module__, 'string.templatelib')
 
+    def test_final_types(self):
+        with self.assertRaisesRegex(TypeError, 'is not an acceptable base type'):
+            class Sub(Template): ...
+
+        with self.assertRaisesRegex(TypeError, 'is not an acceptable base type'):
+            class Sub(Interpolation): ...
+
     def test_basic_creation(self):
         # Simple t-string creation
         t = t'Hello, world'
