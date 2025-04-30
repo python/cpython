@@ -171,6 +171,9 @@ slot_tp_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 static int
 slot_tp_setattro(PyObject *self, PyObject *name, PyObject *value);
 
+static PyObject *
+slot_tp_call(PyObject *self, PyObject *args, PyObject *kwds);
+
 static inline PyTypeObject *
 type_from_ref(PyObject *ref)
 {
@@ -3709,6 +3712,7 @@ solid_base(PyTypeObject *type)
 // safe.
 
 typedef struct {
+    PyTypeObject *type;
     void **slot_ptr;
     void *slot_value;
 } slot_update_item_t;
@@ -3758,7 +3762,8 @@ slot_update_free_chunks(slot_update_t *updates)
 }
 
 static int
-queue_slot_update(slot_update_t *updates, void **slot_ptr, void *slot_value)
+queue_slot_update(slot_update_t *updates, PyTypeObject *type,
+                  void **slot_ptr, void *slot_value)
 {
     if (*slot_ptr == slot_value) {
         return 0; // slot pointer not actually changed, don't queue update
@@ -3772,6 +3777,7 @@ queue_slot_update(slot_update_t *updates, void **slot_ptr, void *slot_value)
         updates->head = chunk;
     }
     slot_update_item_t *item = &updates->head->updates[updates->head->n];
+    item->type = type;
     item->slot_ptr = slot_ptr;
     item->slot_value = slot_value;
     updates->head->n++;
@@ -3788,6 +3794,10 @@ apply_slot_updates(slot_update_t *updates)
         for (Py_ssize_t i = 0; i < chunk->n; i++) {
             slot_update_item_t *item = &chunk->updates[i];
             *(item->slot_ptr) = item->slot_value;
+            if (item->slot_value == slot_tp_call) {
+                /* A generic __call__ is incompatible with vectorcall */
+                type_clear_flags(item->type, Py_TPFLAGS_HAVE_VECTORCALL);
+            }
         }
         chunk = chunk->prev;
     }
@@ -11517,7 +11527,9 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
             }
             if (p->function == slot_tp_call) {
                 /* A generic __call__ is incompatible with vectorcall */
-                type_clear_flags(type, Py_TPFLAGS_HAVE_VECTORCALL);
+                if (queued_updates == NULL) {
+                    type_clear_flags(type, Py_TPFLAGS_HAVE_VECTORCALL);
+                }
             }
         }
         Py_DECREF(descr);
@@ -11533,7 +11545,7 @@ update_one_slot(PyTypeObject *type, pytype_slotdef *p, pytype_slotdef **next_p,
 #ifdef Py_GIL_DISABLED
     if (queued_updates != NULL) {
         // queue the update to perform later, while world is stopped
-        if (queue_slot_update(queued_updates, ptr, slot_value) < 0) {
+        if (queue_slot_update(queued_updates, type, ptr, slot_value) < 0) {
             return -1;
         }
     } else {
