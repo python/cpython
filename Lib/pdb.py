@@ -92,6 +92,7 @@ import tokenize
 import itertools
 import traceback
 import linecache
+import selectors
 import _colorize
 
 from contextlib import closing
@@ -2906,6 +2907,8 @@ class _PdbClient:
     def __init__(self, pid, server_socket, interrupt_script):
         self.pid = pid
         self.read_buf = b""
+        self.signal_read = None
+        self.signal_write = None
         self.server_socket = server_socket
         self.interrupt_script = interrupt_script
         self.pdb_instance = Pdb()
@@ -2958,13 +2961,39 @@ class _PdbClient:
             self.write_failed = True
 
     def _readline(self):
-        while b"\n" not in self.read_buf:
-            self.read_buf += self.server_socket.recv(16 * 1024)
-            if not self.read_buf:
-                return b""
+        # Wait for either a SIGINT or a line or EOF from the PDB server.
+        selector = selectors.DefaultSelector()
+        selector.register(self.signal_read, selectors.EVENT_READ)
+        selector.register(self.server_socket, selectors.EVENT_READ)
 
-        ret, sep, self.read_buf = self.read_buf.partition(b"\n")
-        return ret + sep
+        old_wakeup_fd = signal.set_wakeup_fd(
+            self.signal_write.fileno(),
+            warn_on_full_buffer=False,
+        )
+
+        got_sigint = False
+        def sigint_handler(*args, **kwargs):
+            nonlocal got_sigint
+            got_sigint = True
+
+        old_handler = signal.signal(signal.SIGINT, sigint_handler)
+        try:
+            while b"\n" not in self.read_buf:
+                for key, _ in selector.select():
+                    if key.fileobj == self.signal_read:
+                        self.signal_read.recv(1024)
+                        if got_sigint:
+                            raise KeyboardInterrupt
+                    elif key.fileobj == self.server_socket:
+                        self.read_buf += self.server_socket.recv(16 * 1024)
+                        if not self.read_buf:
+                            return b""
+
+            ret, sep, self.read_buf = self.read_buf.partition(b"\n")
+            return ret + sep
+        finally:
+            signal.set_wakeup_fd(old_wakeup_fd)
+            signal.signal(signal.SIGINT, old_handler)
 
     def read_command(self, prompt):
         reply = input(prompt)
@@ -3055,9 +3084,21 @@ class _PdbClient:
                 signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGINT})
                 signal.signal(signal.SIGINT, old_handler)
 
+    @contextmanager
+    def _signal_socket_pair(self):
+        self.signal_read, self.signal_write = socket.socketpair()
+        try:
+            with (closing(self.signal_read), closing(self.signal_write)):
+                self.signal_read.setblocking(False)
+                self.signal_write.setblocking(False)
+                yield
+        finally:
+            self.signal_read = self.signal_write = None
+
     def cmdloop(self):
         with (
             self._block_sigint(),
+            self._signal_socket_pair(),
             self.readline_completion(self.complete),
         ):
             while not self.write_failed:
