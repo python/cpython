@@ -1,0 +1,2 @@
+:func:`ast.parse` will no longer parse new :pep:`758` syntax with older
+*feature_version* passed.

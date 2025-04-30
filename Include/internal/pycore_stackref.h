@@ -63,11 +63,13 @@ extern void _Py_stackref_associate(PyInterpreterState *interp, PyObject *obj, _P
 
 static const _PyStackRef PyStackRef_NULL = { .index = 0 };
 
-#define PyStackRef_None ((_PyStackRef){ .index = 1 } )
-#define PyStackRef_False ((_PyStackRef){ .index = 2 })
-#define PyStackRef_True ((_PyStackRef){ .index = 3 })
+// Use the first 3 even numbers for None, True and False.
+// Odd numbers are reserved for (tagged) integers
+#define PyStackRef_None ((_PyStackRef){ .index = 2 } )
+#define PyStackRef_False ((_PyStackRef){ .index = 4 })
+#define PyStackRef_True ((_PyStackRef){ .index = 6 })
 
-#define LAST_PREDEFINED_STACKREF_INDEX 3
+#define INITIAL_STACKREF_INDEX 8
 
 static inline int
 PyStackRef_IsNull(_PyStackRef ref)
@@ -96,6 +98,7 @@ PyStackRef_IsNone(_PyStackRef ref)
 static inline PyObject *
 _PyStackRef_AsPyObjectBorrow(_PyStackRef ref, const char *filename, int linenumber)
 {
+    assert((ref.index & 1) == 0);
     _Py_stackref_record_borrow(ref, filename, linenumber);
     return _Py_stackref_get_object(ref);
 }
@@ -132,13 +135,23 @@ _PyStackRef_FromPyObjectImmortal(PyObject *obj, const char *filename, int linenu
 }
 #define PyStackRef_FromPyObjectImmortal(obj) _PyStackRef_FromPyObjectImmortal(_PyObject_CAST(obj), __FILE__, __LINE__)
 
+static inline bool
+PyStackRef_IsTaggedInt(_PyStackRef ref)
+{
+    return (ref.index & 1) == 1;
+}
+
 static inline void
 _PyStackRef_CLOSE(_PyStackRef ref, const char *filename, int linenumber)
 {
+    if (PyStackRef_IsTaggedInt(ref)) {
+        return;
+    }
     PyObject *obj = _Py_stackref_close(ref, filename, linenumber);
     Py_DECREF(obj);
 }
 #define PyStackRef_CLOSE(REF) _PyStackRef_CLOSE((REF), __FILE__, __LINE__)
+
 
 static inline void
 _PyStackRef_XCLOSE(_PyStackRef ref, const char *filename, int linenumber)
@@ -146,17 +159,21 @@ _PyStackRef_XCLOSE(_PyStackRef ref, const char *filename, int linenumber)
     if (PyStackRef_IsNull(ref)) {
         return;
     }
-    PyObject *obj = _Py_stackref_close(ref, filename, linenumber);
-    Py_DECREF(obj);
+    _PyStackRef_CLOSE(ref, filename, linenumber);
 }
 #define PyStackRef_XCLOSE(REF) _PyStackRef_XCLOSE((REF), __FILE__, __LINE__)
 
 static inline _PyStackRef
 _PyStackRef_DUP(_PyStackRef ref, const char *filename, int linenumber)
 {
-    PyObject *obj = _Py_stackref_get_object(ref);
-    Py_INCREF(obj);
-    return _Py_stackref_create(obj, filename, linenumber);
+    if (PyStackRef_IsTaggedInt(ref)) {
+        return ref;
+    }
+    else {
+        PyObject *obj = _Py_stackref_get_object(ref);
+        Py_INCREF(obj);
+        return _Py_stackref_create(obj, filename, linenumber);
+    }
 }
 #define PyStackRef_DUP(REF) _PyStackRef_DUP(REF, __FILE__, __LINE__)
 
@@ -210,7 +227,39 @@ _PyStackRef_FromPyObjectNewMortal(PyObject *obj, const char *filename, int linen
 
 extern int PyStackRef_Is(_PyStackRef a, _PyStackRef b);
 
+extern bool PyStackRef_IsTaggedInt(_PyStackRef ref);
+
+extern intptr_t PyStackRef_UntagInt(_PyStackRef ref);
+
+extern _PyStackRef PyStackRef_TagInt(intptr_t i);
+
+extern bool
+PyStackRef_IsNullOrInt(_PyStackRef ref);
+
 #else
+
+#define Py_INT_TAG 3
+
+static inline bool
+PyStackRef_IsTaggedInt(_PyStackRef i)
+{
+    return (i.bits & Py_INT_TAG) == Py_INT_TAG;
+}
+
+static inline _PyStackRef
+PyStackRef_TagInt(intptr_t i)
+{
+    assert(Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, (i << 2), 2) == i);
+    return (_PyStackRef){ .bits = ((((uintptr_t)i) << 2) | Py_INT_TAG) };
+}
+
+static inline intptr_t
+PyStackRef_UntagInt(_PyStackRef i)
+{
+    assert((i.bits & Py_INT_TAG) == Py_INT_TAG);
+    intptr_t val = (intptr_t)i.bits;
+    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, val, 2);
+}
 
 
 #ifdef Py_GIL_DISABLED
@@ -231,6 +280,8 @@ static const _PyStackRef PyStackRef_NULL = { .bits = Py_TAG_DEFERRED};
 #define PyStackRef_IsNone(ref) (PyStackRef_AsPyObjectBorrow(ref) == Py_None)
 #define PyStackRef_IsTrue(ref) (PyStackRef_AsPyObjectBorrow(ref) == Py_True)
 #define PyStackRef_IsFalse(ref) (PyStackRef_AsPyObjectBorrow(ref) == Py_False)
+
+#define PyStackRef_IsNullOrInt(stackref) (PyStackRef_IsNull(stackref) || PyStackRef_IsTaggedInt(stackref))
 
 static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef stackref)
@@ -451,6 +502,7 @@ PyStackRef_RefcountOnObject(_PyStackRef ref)
 static inline PyObject *
 PyStackRef_AsPyObjectBorrow(_PyStackRef ref)
 {
+    assert(!PyStackRef_IsTaggedInt(ref));
     return BITS_TO_PTR_MASKED(ref);
 }
 
@@ -586,6 +638,12 @@ PyStackRef_CLOSE(_PyStackRef ref)
     }
 }
 #endif
+
+static inline bool
+PyStackRef_IsNullOrInt(_PyStackRef ref)
+{
+    return PyStackRef_IsNull(ref) || PyStackRef_IsTaggedInt(ref);
+}
 
 static inline void
 PyStackRef_CLOSE_SPECIALIZED(_PyStackRef ref, destructor destruct)
@@ -726,7 +784,7 @@ _Py_TryXGetStackRef(PyObject **src, _PyStackRef *out)
 // Like Py_VISIT but for _PyStackRef fields
 #define _Py_VISIT_STACKREF(ref)                                         \
     do {                                                                \
-        if (!PyStackRef_IsNull(ref)) {                                  \
+        if (!PyStackRef_IsNullOrInt(ref)) {                             \
             int vret = _PyGC_VisitStackRef(&(ref), visit, arg);         \
             if (vret)                                                   \
                 return vret;                                            \

@@ -946,6 +946,18 @@ iframe_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
+code_returns_only_none(PyObject *self, PyObject *arg)
+{
+    if (!PyCode_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
+        return NULL;
+    }
+    PyCodeObject *code = (PyCodeObject *)arg;
+    int res = _PyCode_ReturnsOnlyNone(code);
+    return PyBool_FromLong(res);
+}
+
+static PyObject *
 get_co_framesize(PyObject *self, PyObject *arg)
 {
     if (!PyCode_Check(arg)) {
@@ -954,6 +966,37 @@ get_co_framesize(PyObject *self, PyObject *arg)
     }
     PyCodeObject *code = (PyCodeObject *)arg;
     return PyLong_FromLong(code->co_framesize);
+}
+
+static PyObject *
+get_co_localskinds(PyObject *self, PyObject *arg)
+{
+    if (!PyCode_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
+        return NULL;
+    }
+    PyCodeObject *co = (PyCodeObject *)arg;
+
+    PyObject *kinds = PyDict_New();
+    if (kinds == NULL) {
+        return NULL;
+    }
+    for (int offset = 0; offset < co->co_nlocalsplus; offset++) {
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, offset);
+        _PyLocals_Kind k = _PyLocals_GetKind(co->co_localspluskinds, offset);
+        PyObject *kind = PyLong_FromLong(k);
+        if (kind == NULL) {
+            Py_DECREF(kinds);
+            return NULL;
+        }
+        int res = PyDict_SetItem(kinds, name, kind);
+        Py_DECREF(kind);
+        if (res < 0) {
+            Py_DECREF(kinds);
+            return NULL;
+        }
+    }
+    return kinds;
 }
 
 static PyObject *
@@ -1730,6 +1773,11 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
             goto error;
         }
     }
+    else if (strcmp(mode, "marshal") == 0) {
+        if (_PyMarshal_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
     else {
         PyErr_Format(PyExc_ValueError, "unsupported mode %R", modeobj);
         goto error;
@@ -1985,6 +2033,18 @@ gh_119213_getargs_impl(PyObject *module, PyObject *spam)
     return Py_NewRef(spam);
 }
 
+/*[clinic input]
+get_next_dict_keys_version
+[clinic start generated code]*/
+
+static PyObject *
+get_next_dict_keys_version_impl(PyObject *module)
+/*[clinic end generated code: output=e5405a509cf9d423 input=bd1cee7c6b9d3a3c]*/
+{
+    PyInterpreterState *interp = _PyInterpreterState_GET();
+    uint32_t keys_version = interp->dict_state.next_keys_version;
+    return PyLong_FromLong(keys_version);
+}
 
 static PyObject *
 get_static_builtin_types(PyObject *self, PyObject *Py_UNUSED(ignored))
@@ -2057,7 +2117,9 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"code_returns_only_none", code_returns_only_none, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
+    {"get_co_localskinds", get_co_localskinds, METH_O, NULL},
     {"jit_enabled", jit_enabled,  METH_NOARGS, NULL},
 #ifdef _Py_TIER2
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
@@ -2124,6 +2186,7 @@ static PyMethodDef module_functions[] = {
     {"get_tracked_heap_size", get_tracked_heap_size, METH_NOARGS},
     {"is_static_immortal", is_static_immortal, METH_O},
     {"incref_decref_delayed", incref_decref_delayed, METH_O},
+    GET_NEXT_DICT_KEYS_VERSION_METHODDEF
     {NULL, NULL} /* sentinel */
 };
 
