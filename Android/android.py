@@ -82,15 +82,30 @@ def run(command, *, host=None, env=None, log=True, **kwargs):
     if env is None:
         env = os.environ.copy()
     if host:
-        env.update(android_env(host))
+        # The -I and -L arguments used when building Python should not be reused
+        # when building third-party extension modules, so pass them via the
+        # NODIST environment variables.
+        host_env = android_env(host)
+        for name in ["CFLAGS", "CXXFLAGS", "LDFLAGS"]:
+            flags = []
+            nodist = []
+            for word in host_env[name].split():
+                (nodist if word.startswith(("-I", "-L")) else flags).append(word)
+            host_env[name] = " ".join(flags)
+            host_env[f"{name}_NODIST"] = " ".join(nodist)
+
+        print_env(host_env)
+        env.update(host_env)
 
     if log:
         print(">", " ".join(map(str, command)))
     return subprocess.run(command, env=env, **kwargs)
 
 
-def print_env(context):
-    android_env(getattr(context, "host", None))
+# Format the environment so it can be pasted into a shell.
+def print_env(env):
+    for key, value in sorted(env.items()):
+        print(f"export {key}={shlex.quote(value)}")
 
 
 def android_env(host):
@@ -126,10 +141,6 @@ def android_env(host):
     if not env:
         raise ValueError(f"Found no variables in {env_script.name} output:\n"
                          + env_output)
-
-    # Format the environment so it can be pasted into a shell.
-    for key, value in sorted(env.items()):
-        print(f"export {key}={shlex.quote(value)}")
     return env
 
 
@@ -220,9 +231,12 @@ def make_host_python(context):
     for pattern in ("include/python*", "lib/libpython*", "lib/python*"):
         delete_glob(f"{prefix_dir}/{pattern}")
 
+    # The Android environment variables were already captured in the Makefile by
+    # `configure`, and passing them again when running `make` may cause some
+    # flags to be duplicated. So we don't use the `host` argument here.
     os.chdir(host_dir)
-    run(["make", "-j", str(os.cpu_count())], host=context.host)
-    run(["make", "install", f"prefix={prefix_dir}"], host=context.host)
+    run(["make", "-j", str(os.cpu_count())])
+    run(["make", "install", f"prefix={prefix_dir}"])
 
 
 def build_all(context):
@@ -628,6 +642,10 @@ def package(context):
         print(f"Wrote {package_path}")
 
 
+def env(context):
+    print_env(android_env(getattr(context, "host", None)))
+
+
 # Handle SIGTERM the same way as SIGINT. This ensures that if we're terminated
 # by the buildbot worker, we'll make an attempt to clean up our subprocesses.
 def install_signal_handler():
@@ -717,7 +735,7 @@ def main():
         "build-testbed": build_testbed,
         "test": run_testbed,
         "package": package,
-        "env": print_env,
+        "env": env,
     }
 
     try:
