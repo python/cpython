@@ -9,7 +9,7 @@ import unicodedata
 from collections import deque
 from io import StringIO
 from tokenize import TokenInfo as TI
-from typing import TYPE_CHECKING, Iterable, Iterator, Literal, Match, NamedTuple, Self
+from typing import Iterable, Iterator, Literal, Match, NamedTuple, Self
 from _colorize import ANSIColors
 
 from .types import CharBuffer, CharWidths
