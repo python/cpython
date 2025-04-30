@@ -592,7 +592,11 @@ ctype_get_pointer_type(PyObject *self, void *Py_UNUSED(ignored))
     if (info->pointer_type) {
         return Py_NewRef(info->pointer_type);
     }
-    Py_RETURN_NONE;
+
+    PyErr_Format(PyExc_AttributeError,
+                 "%R has no attribute '__pointer_type__'",
+                 self);
+    return NULL;
 }
 
 static PyObject *

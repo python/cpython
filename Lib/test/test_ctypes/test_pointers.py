@@ -320,7 +320,9 @@ class PointersTestCase(unittest.TestCase):
                 ('b', c_float),
             )
 
-        self.assertIsNone(Cls.__pointer_type__)
+        with self.assertRaisesRegex(AttributeError, ".Cls'> has no attribute '__pointer_type__'"):
+            Cls.__pointer_type__
+
         p = POINTER(Cls)
         self.assertIs(Cls.__pointer_type__, p)
 
