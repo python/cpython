@@ -2524,16 +2524,16 @@ class TestDateTime(TestDate):
     def test_compat_unpickle(self):
         tests = [
             b'cdatetime\ndatetime\n('
-            b"S'\\x07\\xdf\\x0b\\x1b\\x14;\\x01\\x00\\x10\\x00'\ntR.",
+            b"S'\\x07\\xdf\\x0b\\x1b\\x14;\\x01\\x00\\x10\\x00\\x00\\x01'\ntR.",
 
             b'cdatetime\ndatetime\n('
-            b'U\n\x07\xdf\x0b\x1b\x14;\x01\x00\x10\x00tR.',
+            b'U\n\x07\xdf\x0b\x1b\x14;\x01\x00\x10\x00\x00\x01tR.',
 
             b'\x80\x02cdatetime\ndatetime\n'
-            b'U\n\x07\xdf\x0b\x1b\x14;\x01\x00\x10\x00\x85R.',
+            b'U\n\x07\xdf\x0b\x1b\x14;\x01\x00\x10\x00\x85\x00\x01R.',
         ]
         args = 2015, 11, 27, 20, 59, 1, 64**2
-        expected = self.theclass(*args)
+        expected = self.theclass(*args, nanosecond=1)
         for data in tests:
             for loads in pickle_loads:
                 derived = loads(data, encoding='latin1')
@@ -3961,22 +3961,22 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
 
     def test_compat_unpickle(self):
         tests = [
-            (b"cdatetime\ntime\n(S'\\x14;\\x10\\x00\\x10\\x00'\ntR.",
+            (b"cdatetime\ntime\n(S'\\x14;\\x10\\x00\\x10\\x00\\x00\\x01'\ntR.",
              (20, 59, 16, 64**2)),
-            (b'cdatetime\ntime\n(U\x06\x14;\x10\x00\x10\x00tR.',
+            (b'cdatetime\ntime\n(U\x06\x14;\x10\x00\x10\x00\x00\x01tR.',
              (20, 59, 16, 64**2)),
-            (b'\x80\x02cdatetime\ntime\nU\x06\x14;\x10\x00\x10\x00\x85R.',
+            (b'\x80\x02cdatetime\ntime\nU\x06\x14;\x10\x00\x10\x00\x00\x01\x85R.',
              (20, 59, 16, 64**2)),
-            (b"cdatetime\ntime\n(S'\\x14;\\x19\\x00\\x10\\x00'\ntR.",
+            (b"cdatetime\ntime\n(S'\\x14;\\x19\\x00\\x10\\x00\\x00\\x01'\ntR.",
              (20, 59, 25, 64**2)),
-            (b'cdatetime\ntime\n(U\x06\x14;\x19\x00\x10\x00tR.',
+            (b'cdatetime\ntime\n(U\x06\x14;\x19\x00\x10\x00\x00\x01tR.',
              (20, 59, 25, 64**2)),
-            (b'\x80\x02cdatetime\ntime\nU\x06\x14;\x19\x00\x10\x00\x85R.',
+            (b'\x80\x02cdatetime\ntime\nU\x06\x14;\x19\x00\x10\x00\x00\x01\x85R.',
              (20, 59, 25, 64**2)),
         ]
         for i, (data, args) in enumerate(tests):
             with self.subTest(i=i):
-                expected = self.theclass(*args)
+                expected = self.theclass(*args, nanosecond=1)
                 for loads in pickle_loads:
                     derived = loads(data, encoding='latin1')
                     self.assertEqual(derived, expected)
@@ -4438,21 +4438,21 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
 
     def test_compat_unpickle(self):
         tests = [
-            b"cdatetime\ntime\n(S'\\x05\\x06\\x07\\x01\\xe2@'\n"
+            b"cdatetime\ntime\n(S'\\x05\\x06\\x07\\x01\\xe2@\\x00\\x01'\n"
             b"ctest.datetimetester\nPicklableFixedOffset\n(tR"
             b"(dS'_FixedOffset__offset'\ncdatetime\ntimedelta\n"
             b"(I-1\nI68400\nI0\ntRs"
             b"S'_FixedOffset__dstoffset'\nNs"
             b"S'_FixedOffset__name'\nS'cookie'\nsbtR.",
 
-            b'cdatetime\ntime\n(U\x06\x05\x06\x07\x01\xe2@'
+            b'cdatetime\ntime\n(U\x06\x05\x06\x07\x01\xe2@\x00\x01'
             b'ctest.datetimetester\nPicklableFixedOffset\n)R'
             b'}(U\x14_FixedOffset__offsetcdatetime\ntimedelta\n'
             b'(J\xff\xff\xff\xffJ0\x0b\x01\x00K\x00tR'
             b'U\x17_FixedOffset__dstoffsetN'
             b'U\x12_FixedOffset__nameU\x06cookieubtR.',
 
-            b'\x80\x02cdatetime\ntime\nU\x06\x05\x06\x07\x01\xe2@'
+            b'\x80\x02cdatetime\ntime\nU\x06\x05\x06\x07\x01\xe2@\x00\x01'
             b'ctest.datetimetester\nPicklableFixedOffset\n)R'
             b'}(U\x14_FixedOffset__offsetcdatetime\ntimedelta\n'
             b'J\xff\xff\xff\xffJ0\x0b\x01\x00K\x00\x87R'
@@ -4461,7 +4461,7 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         ]
 
         tinfo = PicklableFixedOffset(-300, 'cookie')
-        expected = self.theclass(5, 6, 7, 123456, tzinfo=tinfo)
+        expected = self.theclass(5, 6, 7, 123456, nanosecond=1, tzinfo=tinfo)
         for data in tests:
             for loads in pickle_loads:
                 derived = loads(data, encoding='latin1')
@@ -4928,7 +4928,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
     def test_compat_unpickle(self):
         tests = [
             b'cdatetime\ndatetime\n'
-            b"(S'\\x07\\xdf\\x0b\\x1b\\x14;\\x01\\x01\\xe2@'\n"
+            b"(S'\\x07\\xdf\\x0b\\x1b\\x14;\\x01\\x01\\xe2@\\x00\\x01'\n"
             b'ctest.datetimetester\nPicklableFixedOffset\n(tR'
             b"(dS'_FixedOffset__offset'\ncdatetime\ntimedelta\n"
             b'(I-1\nI68400\nI0\ntRs'
@@ -4936,7 +4936,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
             b"S'_FixedOffset__name'\nS'cookie'\nsbtR.",
 
             b'cdatetime\ndatetime\n'
-            b'(U\n\x07\xdf\x0b\x1b\x14;\x01\x01\xe2@'
+            b'(U\n\x07\xdf\x0b\x1b\x14;\x01\x01\xe2@\x00\x01'
             b'ctest.datetimetester\nPicklableFixedOffset\n)R'
             b'}(U\x14_FixedOffset__offsetcdatetime\ntimedelta\n'
             b'(J\xff\xff\xff\xffJ0\x0b\x01\x00K\x00tR'
@@ -4944,7 +4944,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
             b'U\x12_FixedOffset__nameU\x06cookieubtR.',
 
             b'\x80\x02cdatetime\ndatetime\n'
-            b'U\n\x07\xdf\x0b\x1b\x14;\x01\x01\xe2@'
+            b'U\n\x07\xdf\x0b\x1b\x14;\x01\x01\xe2@\x00\x01'
             b'ctest.datetimetester\nPicklableFixedOffset\n)R'
             b'}(U\x14_FixedOffset__offsetcdatetime\ntimedelta\n'
             b'J\xff\xff\xff\xffJ0\x0b\x01\x00K\x00\x87R'
@@ -4953,7 +4953,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         ]
         args = 2015, 11, 27, 20, 59, 1, 123456
         tinfo = PicklableFixedOffset(-300, 'cookie')
-        expected = self.theclass(*args, **{'tzinfo': tinfo})
+        expected = self.theclass(*args, **{'tzinfo': tinfo, 'nanosecond': 1})
         for data in tests:
             for loads in pickle_loads:
                 derived = loads(data, encoding='latin1')
