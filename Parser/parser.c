@@ -7140,7 +7140,7 @@ except_block_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_ExceptHandler ( e , NULL , b , EXTRA );
+            _res = CHECK_VERSION ( excepthandler_ty , 14 , "except expressions without parentheses" , _PyAST_ExceptHandler ( e , NULL , b , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
@@ -7342,7 +7342,7 @@ except_star_block_rule(Parser *p)
             UNUSED(_end_lineno); // Only used by EXTRA macro
             int _end_col_offset = _token->end_col_offset;
             UNUSED(_end_col_offset); // Only used by EXTRA macro
-            _res = _PyAST_ExceptHandler ( e , NULL , b , EXTRA );
+            _res = CHECK_VERSION ( excepthandler_ty , 14 , "except expressions without parentheses" , _PyAST_ExceptHandler ( e , NULL , b , EXTRA ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;
