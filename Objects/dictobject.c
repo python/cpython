@@ -3285,7 +3285,6 @@ dict_dealloc(PyObject *self)
 
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(mp);
-    Py_TRASHCAN_BEGIN(mp, dict_dealloc)
     if (values != NULL) {
         if (values->embedded == 0) {
             for (i = 0, n = values->capacity; i < n; i++) {
@@ -3305,7 +3304,6 @@ dict_dealloc(PyObject *self)
     else {
         Py_TYPE(mp)->tp_free((PyObject *)mp);
     }
-    Py_TRASHCAN_END
 }
 
 
