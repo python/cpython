@@ -66,6 +66,7 @@ Summary -- release highlights
 
 * :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
 * :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
+* :ref:`PEP 750: Template Strings <whatsnew314-pep750>`
 * :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 * :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
@@ -91,6 +92,76 @@ If you encounter :exc:`NameError`\s or pickling errors coming out of
 
 New features
 ============
+
+.. _whatsnew314-pep750:
+
+PEP 750: Template Strings
+-------------------------
+
+Template string literals (t-strings) are a generalization of f-strings,
+using a ``t`` in place of the ``f`` prefix. Instead of evaluating
+to :class:`str`, t-strings evaluate to a new :class:`!string.templatelib.Template` type:
+
+.. code-block:: python
+
+   from string.templatelib import Template
+
+   name = "World"
+   template: Template = t"Hello {name}"
+
+The template can then be combined with functions that operate on the template's
+structure to produce a :class:`str` or a string-like result.
+For example, sanitizing input:
+
+.. code-block:: python
+
+   evil = "<script>alert('evil')</script>"
+   template = t"<p>{evil}</p>"
+   assert html(template) == "<p>&lt;script&gt;alert('evil')&lt;/script&gt;</p>"
+
+As another example, generating HTML attributes from data:
+
+.. code-block:: python
+
+   attributes = {"src": "shrubbery.jpg", "alt": "looks nice"}
+   template = t"<img {attributes} />"
+   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" class="looks-nice" />'
+
+Unlike f-strings, the ``html`` function has access to template attributes
+containing the original information: static strings, interpolations, and values
+from the original scope. Unlike existing templating approaches, t-strings build
+from the well-known f-string syntax and rules. Template systems thus benefit
+from Python tooling as they are much closer to the Python language, syntax,
+scoping, and more.
+
+Writing template handlers is straightforward:
+
+.. code-block:: python
+
+   from string.templatelib import Template, Interpolation
+
+   def lower_upper(template: Template) -> str:
+       """Render static parts lowercased and interpolations uppercased."""
+       parts: list[str] = []
+       for item in template:
+           if isinstance(item, Interpolation):
+               parts.append(str(item.value).upper())
+           else:
+               parts.append(item.lower())
+       return "".join(parts)
+
+   name = "world"
+   assert lower_upper(t"HELLO {name}") == "hello WORLD"
+
+With this in place, developers can write template systems to sanitize SQL, make
+safe shell operations, improve logging, tackle modern ideas in web development
+(HTML, CSS, and so on), and implement lightweight, custom business DSLs.
+
+See :pep:`750` for more details.
+
+(Contributed by Jim Baker, Guido van Rossum, Paul Everitt, Koudai Aono,
+Lysandros Nikolaou, Dave Peck, Adam Turner, Jelle Zijlstra, Bénédikt Tran,
+and Pablo Galindo Salgado in :gh:`132661`.)
 
 .. _whatsnew314-pep768:
 
