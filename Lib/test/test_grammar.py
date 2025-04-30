@@ -383,9 +383,10 @@ class GrammarTests(unittest.TestCase):
         gns = {}; lns = {}
         exec("'docstring'\n"
              "x: int = 5\n", gns, lns)
+        self.assertNotIn('__annotate__', gns)
+
+        gns.update(lns)  # __annotate__ looks at globals
         self.assertEqual(lns["__annotate__"](annotationlib.Format.VALUE), {'x': int})
-        with self.assertRaises(KeyError):
-            gns['__annotate__']
 
     def test_var_annot_rhs(self):
         ns = {}
@@ -1506,6 +1507,8 @@ class GrammarTests(unittest.TestCase):
         check('[None (3, 4)]')
         check('[True (3, 4)]')
         check('[... (3, 4)]')
+        check('[t"{x}" (3, 4)]')
+        check('[t"x={x}" (3, 4)]')
 
         msg=r'is not subscriptable; perhaps you missed a comma\?'
         check('[{1, 2} [i, j]]')
@@ -1528,6 +1531,8 @@ class GrammarTests(unittest.TestCase):
         check('[f"x={x}" [i, j]]')
         check('["abc" [i, j]]')
         check('[b"abc" [i, j]]')
+        check('[t"{x}" [i, j]]')
+        check('[t"x={x}" [i, j]]')
 
         msg=r'indices must be integers or slices, not tuple;'
         check('[[1, 2] [3, 4]]')
@@ -1548,6 +1553,8 @@ class GrammarTests(unittest.TestCase):
         check('[[1, 2] [f"{x}"]]')
         check('[[1, 2] [f"x={x}"]]')
         check('[[1, 2] ["abc"]]')
+        check('[[1, 2] [t"{x}"]]')
+        check('[[1, 2] [t"x={x}"]]')
         msg=r'indices must be integers or slices, not'
         check('[[1, 2] [b"abc"]]')
         check('[[1, 2] [12.3]]')

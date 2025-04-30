@@ -57,7 +57,7 @@ struct _xidata {
     // likely a registered "xidatafunc", is responsible for
     // ensuring it owns the reference (i.e. incref).
     PyObject *obj;
-    // interp is the ID of the owning interpreter of the original
+    // interpid is the ID of the owning interpreter of the original
     // object.  It corresponds to the active interpreter when
     // _PyObject_GetXIData() was called.  This should only
     // be set by the cross-interpreter machinery.
@@ -93,6 +93,42 @@ PyAPI_FUNC(void) _PyXIData_Free(_PyXIData_t *data);
 // Users should not need getters for "new_object" or "free".
 
 
+/* defining cross-interpreter data */
+
+PyAPI_FUNC(void) _PyXIData_Init(
+        _PyXIData_t *data,
+        PyInterpreterState *interp, void *shared, PyObject *obj,
+        xid_newobjfunc new_object);
+PyAPI_FUNC(int) _PyXIData_InitWithSize(
+        _PyXIData_t *,
+        PyInterpreterState *interp, const size_t, PyObject *,
+        xid_newobjfunc);
+PyAPI_FUNC(void) _PyXIData_Clear(PyInterpreterState *, _PyXIData_t *);
+
+// Normally the Init* functions are sufficient.  The only time
+// additional initialization might be needed is to set the "free" func,
+// though that should be infrequent.
+#define _PyXIData_SET_FREE(DATA, FUNC) \
+    do { \
+        (DATA)->free = (FUNC); \
+    } while (0)
+#define _PyXIData_CHECK_FREE(DATA, FUNC) \
+    ((DATA)->free == (FUNC))
+// Additionally, some shareable types are essentially light wrappers
+// around other shareable types.  The xidatafunc of the wrapper
+// can often be implemented by calling the wrapped object's
+// xidatafunc and then changing the "new_object" function.
+// We have _PyXIData_SET_NEW_OBJECT() here for that,
+// but might be better to have a function like
+// _PyXIData_AdaptToWrapper() instead.
+#define _PyXIData_SET_NEW_OBJECT(DATA, FUNC) \
+    do { \
+        (DATA)->new_object = (FUNC); \
+    } while (0)
+#define _PyXIData_CHECK_NEW_OBJECT(DATA, FUNC) \
+    ((DATA)->new_object == (FUNC))
+
+
 /* getting cross-interpreter data */
 
 typedef int (*xidatafunc)(PyThreadState *tstate, PyObject *, _PyXIData_t *);
@@ -116,44 +152,38 @@ PyAPI_FUNC(int) _PyObject_GetXIData(
         PyObject *,
         _PyXIData_t *);
 
+// _PyObject_GetXIData() for bytes
+typedef struct {
+    const char *bytes;
+    Py_ssize_t len;
+} _PyBytes_data_t;
+PyAPI_FUNC(int) _PyBytes_GetData(PyObject *, _PyBytes_data_t *);
+PyAPI_FUNC(PyObject *) _PyBytes_FromData(_PyBytes_data_t *);
+PyAPI_FUNC(PyObject *) _PyBytes_FromXIData(_PyXIData_t *);
+PyAPI_FUNC(int) _PyBytes_GetXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+PyAPI_FUNC(_PyBytes_data_t *) _PyBytes_GetXIDataWrapped(
+        PyThreadState *,
+        PyObject *,
+        size_t,
+        xid_newobjfunc,
+        _PyXIData_t *);
+
+// _PyObject_GetXIData() for marshal
+PyAPI_FUNC(PyObject *) _PyMarshal_ReadObjectFromXIData(_PyXIData_t *);
+PyAPI_FUNC(int) _PyMarshal_GetXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+
 
 /* using cross-interpreter data */
 
 PyAPI_FUNC(PyObject *) _PyXIData_NewObject(_PyXIData_t *);
 PyAPI_FUNC(int) _PyXIData_Release(_PyXIData_t *);
 PyAPI_FUNC(int) _PyXIData_ReleaseAndRawFree(_PyXIData_t *);
-
-
-/* defining cross-interpreter data */
-
-PyAPI_FUNC(void) _PyXIData_Init(
-        _PyXIData_t *data,
-        PyInterpreterState *interp, void *shared, PyObject *obj,
-        xid_newobjfunc new_object);
-PyAPI_FUNC(int) _PyXIData_InitWithSize(
-        _PyXIData_t *,
-        PyInterpreterState *interp, const size_t, PyObject *,
-        xid_newobjfunc);
-PyAPI_FUNC(void) _PyXIData_Clear( PyInterpreterState *, _PyXIData_t *);
-
-// Normally the Init* functions are sufficient.  The only time
-// additional initialization might be needed is to set the "free" func,
-// though that should be infrequent.
-#define _PyXIData_SET_FREE(DATA, FUNC) \
-    do { \
-        (DATA)->free = (FUNC); \
-    } while (0)
-// Additionally, some shareable types are essentially light wrappers
-// around other shareable types.  The xidatafunc of the wrapper
-// can often be implemented by calling the wrapped object's
-// xidatafunc and then changing the "new_object" function.
-// We have _PyXIData_SET_NEW_OBJECT() here for that,
-// but might be better to have a function like
-// _PyXIData_AdaptToWrapper() instead.
-#define _PyXIData_SET_NEW_OBJECT(DATA, FUNC) \
-    do { \
-        (DATA)->new_object = (FUNC); \
-    } while (0)
 
 
 /* cross-interpreter data registry */
