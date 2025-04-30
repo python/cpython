@@ -120,13 +120,14 @@ world"""
 
 
 class TemplateIterTests(unittest.TestCase):
-    def test_basic(self):
+    def test_abc(self):
         self.assertIsInstance(iter(t''), Iterable)
         self.assertIsInstance(iter(t''), Iterator)
 
     def test_final(self):
+        TemplateIter = type(iter(t''))
         with self.assertRaisesRegex(TypeError, 'is not an acceptable base type'):
-            class Sub(type(iter(t''))): ...
+            class Sub(TemplateIter): ...
 
     def test_iter(self):
         x = 1
