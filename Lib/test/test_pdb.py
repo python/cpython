@@ -3214,7 +3214,7 @@ def test_pdb_issue_gh_108976():
     """
 
 def test_pdb_issue_gh_127321():
-    """See GH-127321
+    """See GH-127321, GH-132532
     breakpoint() should stop at a opcode that has a line number
     >>> def test_function():
     ...     import pdb; pdb_instance = pdb.Pdb(nosigint=True, readrc=False)
@@ -3224,8 +3224,8 @@ def test_pdb_issue_gh_127321():
     ...     'continue'
     ... ]):
     ...    test_function()
-    > <doctest test.test_pdb.test_pdb_issue_gh_127321[0]>(4)test_function()
-    -> a = 1
+    > <doctest test.test_pdb.test_pdb_issue_gh_127321[0]>(3)test_function()
+    -> [1, 2] and pdb_instance.set_trace()
     (Pdb) continue
     """
 
