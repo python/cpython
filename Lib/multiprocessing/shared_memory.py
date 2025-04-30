@@ -116,7 +116,7 @@ class SharedMemory:
                 size = stats.st_size
                 self._mmap = mmap.mmap(self._fd, size)
             except:
-                self.unlink()
+                _posixshmem.shm_unlink(self._name)
                 raise
             if self._track:
                 resource_tracker.register(self._name, "shared_memory")
