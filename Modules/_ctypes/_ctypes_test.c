@@ -24,7 +24,7 @@
 #endif
 
 #if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-#  include "../_complex.h"        // csqrt()
+#  include <complex.h>            // csqrt()
 #  undef I                        // for _ctypes_test_generated.c.h
 #endif
 #include <stdio.h>                // printf()
