@@ -2341,6 +2341,56 @@ test_get_incomplete_frame(void)
     return result;
 }
 
+const char *THREAD_CODE = "import time\n"
+                   "time.sleep(0.2)\n"
+                   "def fib(n):\n"
+                   "  if n <= 1:\n"
+                   "    return n\n"
+                   "  else:\n"
+                   "    return fib(n - 1) + fib(n - 2)\n"
+                   "fib(10)";
+
+typedef struct {
+    PyInterpreterState *interp;
+    int done;
+} ThreadData;
+
+static void
+do_tstate_ensure(void *arg)
+{
+    ThreadData *data = (ThreadData *)arg;
+    int res = PyThreadState_Ensure(data->interp);
+    assert(res == 0);
+    PyThreadState_Ensure(PyInterpreterState_Hold());
+    PyThreadState_Ensure(PyInterpreterState_Hold());
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    PyThreadState_Ensure(PyInterpreterState_Hold());
+    res = PyRun_SimpleString(THREAD_CODE);
+    PyThreadState_Release();
+    PyGILState_Release(gstate);
+    PyThreadState_Release();
+    PyThreadState_Release();
+    assert(res == 0);
+    PyThreadState_Release();
+    data->done = 1;
+}
+
+static int
+test_thread_state_ensure(void)
+{
+    _testembed_Py_InitializeFromConfig();
+    PyThread_handle_t handle;
+    PyThread_ident_t ident;
+    ThreadData data = { PyInterpreterState_Hold() };
+    if (PyThread_start_joinable_thread(do_tstate_ensure, &data,
+                                       &ident, &handle) < 0) {
+        PyInterpreterState_Release(data.interp);
+        return -1;
+    }
+    Py_Finalize();
+    assert(data.done == 1);
+    return 0;
+}
 
 /* *********************************************************
  * List of test cases and the function that implements it.
@@ -2431,6 +2481,7 @@ static struct TestCase TestCases[] = {
     {"test_frozenmain", test_frozenmain},
 #endif
     {"test_get_incomplete_frame", test_get_incomplete_frame},
+    {"test_thread_state_ensure", test_thread_state_ensure},
 
     {NULL, NULL}
 };

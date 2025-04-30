@@ -61,6 +61,12 @@ typedef struct _stack_chunk {
     PyObject * data[1]; /* Variable sized */
 } _PyStackChunk;
 
+typedef struct _ensured_tstate {
+    struct _ensured_tstate *next;
+    PyThreadState *prior_tstate;
+    uint8_t was_daemon;
+} _Py_ensured_tstate;
+
 struct _ts {
     /* See Python/ceval.c for comments explaining most fields */
 
@@ -206,6 +212,11 @@ struct _ts {
     */
     PyObject *threading_local_sentinel;
     _PyRemoteDebuggerSupport remote_debugger_support;
+
+    /* Whether this thread hangs when the interpreter is finalizing. */
+    uint8_t daemon;
+
+    _Py_ensured_tstate *ensured;
 };
 
 /* other API */
@@ -259,3 +270,24 @@ PyAPI_FUNC(_PyFrameEvalFunction) _PyInterpreterState_GetEvalFrameFunc(
 PyAPI_FUNC(void) _PyInterpreterState_SetEvalFrameFunc(
     PyInterpreterState *interp,
     _PyFrameEvalFunction eval_frame);
+
+/* Similar to PyInterpreterState_Get(), but returns the interpreter with an
+ * incremented reference count. PyInterpreterState_Delete() won't delete the
+ * full interpreter structure until the reference is released by
+ * PyThreadState_Ensure() or PyInterpreterState_Release(). */
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Hold(void);
+
+PyAPI_FUNC(PyInterpreterState *) PyInterpreterState_Lookup(int64_t interp_id);
+
+/* Release a reference to an interpreter incremented by PyInterpreterState_Hold() */
+PyAPI_FUNC(void) PyInterpreterState_Release(PyInterpreterState *interp);
+
+// Exports for '_testcapi' shared extension
+PyAPI_FUNC(Py_ssize_t) _PyInterpreterState_Refcount(PyInterpreterState *interp);
+PyAPI_FUNC(void) _PyInterpreterState_Incref(PyInterpreterState *interp);
+
+PyAPI_FUNC(int) PyThreadState_SetDaemon(int daemon);
+
+PyAPI_FUNC(int) PyThreadState_Ensure(PyInterpreterState *interp);
+
+PyAPI_FUNC(void) PyThreadState_Release(void);

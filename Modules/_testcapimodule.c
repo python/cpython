@@ -2546,6 +2546,75 @@ toggle_reftrace_printer(PyObject *ob, PyObject *arg)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+test_interp_refcount(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+
+    // Reference counts are technically 0 by default
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+    PyInterpreterState *held = PyInterpreterState_Hold();
+    assert(_PyInterpreterState_Refcount(interp) == 1);
+    held = PyInterpreterState_Hold();
+    assert(_PyInterpreterState_Refcount(interp) == 2);
+    PyInterpreterState_Release(held);
+    assert(_PyInterpreterState_Refcount(interp) == 1);
+    PyInterpreterState_Release(held);
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_interp_lookup(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    assert(_PyInterpreterState_Refcount(interp) == 0);
+    int64_t interp_id = PyInterpreterState_GetID(interp);
+    PyInterpreterState *ref = PyInterpreterState_Lookup(interp_id);
+    assert(ref == interp);
+    assert(_PyInterpreterState_Refcount(interp) == 1);
+    PyInterpreterState_Release(ref);
+    assert(PyInterpreterState_Lookup(10000) == NULL);
+    Py_BEGIN_ALLOW_THREADS;
+    ref = PyInterpreterState_Lookup(interp_id);
+    assert(ref == interp);
+    PyInterpreterState_Release(ref);
+    Py_END_ALLOW_THREADS;
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+test_interp_ensure(PyObject *self, PyObject *unused)
+{
+    PyInterpreterState *interp = PyInterpreterState_Get();
+    PyThreadState *save_tstate = PyThreadState_Swap(NULL);
+    PyThreadState *tstate = Py_NewInterpreter();
+    PyInterpreterState *subinterp = PyThreadState_GetInterpreter(tstate);
+
+    for (int i = 0; i < 10; ++i) {
+        _PyInterpreterState_Incref(interp);
+        int res = PyThreadState_Ensure(interp);
+        assert(res == 0);
+        assert(PyInterpreterState_Get() == interp);
+    }
+
+    for (int i = 0; i < 10; ++i) {
+        _PyInterpreterState_Incref(subinterp);
+        int res = PyThreadState_Ensure(subinterp);
+        assert(res == 0);
+        assert(PyInterpreterState_Get() == subinterp);
+    }
+
+    for (int i = 0; i < 20; ++i) {
+        PyThreadState_Release();
+    }
+
+    PyThreadState_Swap(save_tstate);
+    Py_RETURN_NONE;
+}
+
 static PyMethodDef TestMethods[] = {
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             test_config,                     METH_NOARGS},
@@ -2640,6 +2709,9 @@ static PyMethodDef TestMethods[] = {
     {"test_atexit", test_atexit, METH_NOARGS},
     {"code_offset_to_line", _PyCFunction_CAST(code_offset_to_line), METH_FASTCALL},
     {"toggle_reftrace_printer", toggle_reftrace_printer, METH_O},
+    {"test_interp_refcount", test_interp_refcount, METH_NOARGS},
+    {"test_interp_lookup", test_interp_lookup, METH_NOARGS},
+    {"test_interp_ensure", test_interp_ensure, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
