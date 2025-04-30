@@ -766,7 +766,6 @@ _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self)
 /*[clinic input]
 _zstd.ZstdDecompressor.decompress
 
-
     data: Py_buffer
         A bytes-like object, zstd data to be decompressed.
     max_length: Py_ssize_t = -1
@@ -794,7 +793,7 @@ static PyObject *
 _zstd_ZstdDecompressor_decompress_impl(ZstdDecompressor *self,
                                        Py_buffer *data,
                                        Py_ssize_t max_length)
-/*[clinic end generated code: output=a4302b3c940dbec6 input=16423de8f1c25985]*/
+/*[clinic end generated code: output=a4302b3c940dbec6 input=830e455bc9a50b6e]*/
 {
     PyObject *ret;
     /* Thread-safe code */

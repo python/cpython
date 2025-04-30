@@ -178,13 +178,13 @@ get_zstd_state(PyObject *module)
 /*[clinic input]
 _zstd._train_dict
 
-        samples_bytes: PyBytesObject
-            Concatenation of samples.
-        samples_size_list: object(subclass_of='&PyList_Type')
-            List of samples' sizes.
-        dict_size: Py_ssize_t
-            The size of the dictionary.
-        /
+    samples_bytes: PyBytesObject
+        Concatenation of samples.
+    samples_size_list: object(subclass_of='&PyList_Type')
+        List of samples' sizes.
+    dict_size: Py_ssize_t
+        The size of the dictionary.
+    /
 
 Internal function, train a zstd dictionary on sample data.
 [clinic start generated code]*/
@@ -192,7 +192,7 @@ Internal function, train a zstd dictionary on sample data.
 static PyObject *
 _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
                        PyObject *samples_size_list, Py_ssize_t dict_size)
-/*[clinic end generated code: output=ee53c34c8f77886b input=fdb00ebe474d1df9]*/
+/*[clinic end generated code: output=ee53c34c8f77886b input=b21d092c695a3a81]*/
 {
     // TODO(emmatyping): The preamble and suffix to this function and _finalize_dict
     // are pretty similar. We should see if we can refactor them to share that code.
@@ -281,17 +281,17 @@ success:
 /*[clinic input]
 _zstd._finalize_dict
 
-        custom_dict_bytes: PyBytesObject
-            Custom dictionary content.
-        samples_bytes: PyBytesObject
-            Concatenation of samples.
-        samples_size_list: object(subclass_of='&PyList_Type')
-            List of samples' sizes.
-        dict_size: Py_ssize_t
-            The size of the dictionary.
-        compression_level: int
-            Optimize for a specific zstd compression level, 0 means default.
-        /
+    custom_dict_bytes: PyBytesObject
+        Custom dictionary content.
+    samples_bytes: PyBytesObject
+        Concatenation of samples.
+    samples_size_list: object(subclass_of='&PyList_Type')
+        List of samples' sizes.
+    dict_size: Py_ssize_t
+        The size of the dictionary.
+    compression_level: int
+        Optimize for a specific zstd compression level, 0 means default.
+    /
 
 Internal function, finalize a zstd dictionary.
 [clinic start generated code]*/
@@ -301,7 +301,7 @@ _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
                           PyBytesObject *samples_bytes,
                           PyObject *samples_size_list, Py_ssize_t dict_size,
                           int compression_level)
-/*[clinic end generated code: output=9c2a7d8c845cee93 input=ef6f4f2b0b7e178d]*/
+/*[clinic end generated code: output=9c2a7d8c845cee93 input=08531a803d87c56f]*/
 {
     Py_ssize_t chunks_number;
     size_t *chunk_sizes = NULL;
