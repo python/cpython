@@ -125,6 +125,8 @@ get_module_state(PyObject *module)
 }
 
 
+#define INTERP_KEY ((PyObject *)&_Py_ID(cached_datetime_module))  // unused
+
 static PyObject *
 get_current_module(PyInterpreterState *interp, int *p_reloading)
 {
