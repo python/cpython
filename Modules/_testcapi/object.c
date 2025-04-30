@@ -134,7 +134,7 @@ pyobject_enable_deferred_refcount(PyObject *self, PyObject *obj)
 static PyObject *
 pyobject_is_unique_temporary(PyObject *self, PyObject *obj)
 {
-    int result = PyUnstable_Object_IsUniqueTemporary(obj);
+    int result = PyUnstable_Object_IsUniqueReferencedTemporary(obj);
     return PyLong_FromLong(result);
 }
 

@@ -613,7 +613,7 @@ Object Protocol
 
    .. versionadded:: 3.14
 
-.. c:function:: int PyUnstable_Object_IsUniqueTemporary(PyObject *obj)
+.. c:function:: int PyUnstable_Object_IsUniqueReferencedTemporary(PyObject *obj)
 
    Check if *obj* is a unique temporary object
    Returns ``1`` if *obj* is known to be a unique temporary object,

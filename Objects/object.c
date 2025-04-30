@@ -2618,7 +2618,7 @@ PyUnstable_Object_EnableDeferredRefcount(PyObject *op)
 }
 
 int
-PyUnstable_Object_IsUniqueTemporary(PyObject *op)
+PyUnstable_Object_IsUniqueReferencedTemporary(PyObject *op)
 {
     if (!_PyObject_IsUniquelyReferenced(op)) {
         return 0;
@@ -2634,14 +2634,9 @@ PyUnstable_Object_IsUniqueTemporary(PyObject *op)
     while (stackpointer > base) {
         stackpointer--;
         if (op == PyStackRef_AsPyObjectBorrow(*stackpointer)) {
-            if (!PyStackRef_IsHeapSafe(*stackpointer)) {
-                return 0;
-            }
-            return 1;
+            return PyStackRef_IsHeapSafe(*stackpointer);
         }
     }
-
-    // Check that we found exactly one reference to `op`
     return 0;
 }
 
