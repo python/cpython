@@ -607,32 +607,51 @@ PyModule_GetName(PyObject *m)
 }
 
 PyObject*
-PyModule_GetFilenameObject(PyObject *mod)
+_PyModule_GetFilenameObject(PyObject *mod)
 {
+    // We return None to indicate "not found" or "bogus".
     if (!PyModule_Check(mod)) {
         PyErr_BadArgument();
         return NULL;
     }
     PyObject *dict = ((PyModuleObject *)mod)->md_dict;  // borrowed reference
     if (dict == NULL) {
-        goto error;
+        // The module has been tampered with.
+        Py_RETURN_NONE;
     }
     PyObject *fileobj;
-    if (PyDict_GetItemRef(dict, &_Py_ID(__file__), &fileobj) <= 0) {
-        // error or not found
-        goto error;
+    int res = PyDict_GetItemRef(dict, &_Py_ID(__file__), &fileobj);
+    if (res < 0) {
+        return NULL;
+    }
+    if (res == 0) {
+        // __file__ isn't set.  There are several reasons why this might
+        // be so, most of them valid reasons.  If it's the __main__
+        // module then we're running the REPL or with -c.  Otherwise
+        // it's a namespace package or other module with a loader that
+        // isn't disk-based.  It could also be that a user created
+        // a module manually but without manually setting __file__.
+        Py_RETURN_NONE;
     }
     if (!PyUnicode_Check(fileobj)) {
         Py_DECREF(fileobj);
-        goto error;
+        Py_RETURN_NONE;
     }
     return fileobj;
+}
 
-error:
-    if (!PyErr_Occurred()) {
-        PyErr_SetString(PyExc_SystemError, "module filename missing");
+PyObject*
+PyModule_GetFilenameObject(PyObject *mod)
+{
+    PyObject *fileobj = _PyModule_GetFilenameObject(mod);
+    if (fileobj == NULL) {
+        return NULL;
     }
-    return NULL;
+    if (fileobj == Py_None) {
+        PyErr_SetString(PyExc_SystemError, "module filename missing");
+        return NULL;
+    }
+    return fileobj;
 }
 
 const char *
@@ -646,6 +665,37 @@ PyModule_GetFilename(PyObject *m)
     utf8 = PyUnicode_AsUTF8(fileobj);
     Py_DECREF(fileobj);   /* module dict has still a reference */
     return utf8;
+}
+
+Py_ssize_t
+_PyModule_GetFilenameUTF8(PyObject *mod, char *buffer, Py_ssize_t maxlen)
+{
+    // We "return" an empty string for an invalid module
+    // and for a missing, empty, or invalid filename.
+    assert(maxlen >= 0);
+    Py_ssize_t size = -1;
+    PyObject *filenameobj = _PyModule_GetFilenameObject(mod);
+    if (filenameobj == NULL) {
+        return -1;
+    }
+    if (filenameobj == Py_None) {
+        // It is missing or invalid.
+        buffer[0] = '\0';
+        size = 0;
+    }
+    else {
+        const char *filename = PyUnicode_AsUTF8AndSize(filenameobj, &size);
+        assert(size >= 0);
+        if (size > maxlen) {
+            size = -1;
+            PyErr_SetString(PyExc_ValueError, "__file__ too long");
+        }
+        else {
+            (void)strcpy(buffer, filename);
+        }
+    }
+    Py_DECREF(filenameobj);
+    return size;
 }
 
 PyModuleDef*

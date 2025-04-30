@@ -13,8 +13,6 @@ although there is currently no date scheduled for their removal.
     deprecated.
   * The :class:`argparse.FileType` type converter is deprecated.
 
-* :mod:`array`'s ``'u'`` format code (:gh:`57281`)
-
 * :mod:`builtins`:
 
   * ``bool(NotImplemented)``.

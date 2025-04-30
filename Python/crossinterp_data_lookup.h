@@ -348,34 +348,96 @@ _PyXIData_UnregisterClass(PyThreadState *tstate, PyTypeObject *cls)
 
 // bytes
 
-struct _shared_bytes_data {
+int
+_PyBytes_GetData(PyObject *obj, _PyBytes_data_t *data)
+{
+    if (!PyBytes_Check(obj)) {
+        PyErr_Format(PyExc_TypeError, "expected bytes, got %R", obj);
+        return -1;
+    }
     char *bytes;
     Py_ssize_t len;
-};
+    if (PyBytes_AsStringAndSize(obj, &bytes, &len) < 0) {
+        return -1;
+    }
+    *data = (_PyBytes_data_t){
+        .bytes = bytes,
+        .len = len,
+    };
+    return 0;
+}
 
-static PyObject *
-_new_bytes_object(_PyXIData_t *xidata)
+PyObject *
+_PyBytes_FromData(_PyBytes_data_t *data)
 {
-    struct _shared_bytes_data *shared = (struct _shared_bytes_data *)(xidata->data);
-    return PyBytes_FromStringAndSize(shared->bytes, shared->len);
+    return PyBytes_FromStringAndSize(data->bytes, data->len);
+}
+
+PyObject *
+_PyBytes_FromXIData(_PyXIData_t *xidata)
+{
+    _PyBytes_data_t *data = (_PyBytes_data_t *)xidata->data;
+    assert(_PyXIData_OBJ(xidata) != NULL
+            && PyBytes_Check(_PyXIData_OBJ(xidata)));
+    return _PyBytes_FromData(data);
 }
 
 static int
-_bytes_shared(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
+_bytes_shared(PyThreadState *tstate,
+              PyObject *obj, size_t size, xid_newobjfunc newfunc,
+              _PyXIData_t *xidata)
 {
+    assert(size >= sizeof(_PyBytes_data_t));
+    assert(newfunc != NULL);
     if (_PyXIData_InitWithSize(
-            xidata, tstate->interp, sizeof(struct _shared_bytes_data), obj,
-            _new_bytes_object
-            ) < 0)
+                        xidata, tstate->interp, size, obj, newfunc) < 0)
     {
         return -1;
     }
-    struct _shared_bytes_data *shared = (struct _shared_bytes_data *)xidata->data;
-    if (PyBytes_AsStringAndSize(obj, &shared->bytes, &shared->len) < 0) {
+    _PyBytes_data_t *data = (_PyBytes_data_t *)xidata->data;
+    if (_PyBytes_GetData(obj, data) < 0) {
         _PyXIData_Clear(tstate->interp, xidata);
         return -1;
     }
     return 0;
+}
+
+int
+_PyBytes_GetXIData(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
+{
+    if (!PyBytes_Check(obj)) {
+        PyErr_Format(PyExc_TypeError, "expected bytes, got %R", obj);
+        return -1;
+    }
+    size_t size = sizeof(_PyBytes_data_t);
+    return _bytes_shared(tstate, obj, size, _PyBytes_FromXIData, xidata);
+}
+
+_PyBytes_data_t *
+_PyBytes_GetXIDataWrapped(PyThreadState *tstate,
+                          PyObject *obj, size_t size, xid_newobjfunc newfunc,
+                          _PyXIData_t *xidata)
+{
+    if (!PyBytes_Check(obj)) {
+        PyErr_Format(PyExc_TypeError, "expected bytes, got %R", obj);
+        return NULL;
+    }
+    if (size < sizeof(_PyBytes_data_t)) {
+        PyErr_Format(PyExc_ValueError, "expected size >= %d, got %d",
+                     sizeof(_PyBytes_data_t), size);
+        return NULL;
+    }
+    if (newfunc == NULL) {
+        if (size == sizeof(_PyBytes_data_t)) {
+            PyErr_SetString(PyExc_ValueError, "missing new_object func");
+            return NULL;
+        }
+        newfunc = _PyBytes_FromXIData;
+    }
+    if (_bytes_shared(tstate, obj, size, newfunc, xidata) < 0) {
+        return NULL;
+    }
+    return (_PyBytes_data_t *)xidata->data;
 }
 
 // str
@@ -608,7 +670,7 @@ _register_builtins_for_crossinterpreter_data(dlregistry_t *xidregistry)
     }
 
     // bytes
-    if (_xidregistry_add_type(xidregistry, &PyBytes_Type, _bytes_shared) != 0) {
+    if (_xidregistry_add_type(xidregistry, &PyBytes_Type, _PyBytes_GetXIData) != 0) {
         Py_FatalError("could not register bytes for cross-interpreter sharing");
     }
 

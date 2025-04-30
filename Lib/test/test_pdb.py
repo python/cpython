@@ -1,6 +1,7 @@
 # A test suite for pdb; not very comprehensive at the moment.
 
 import doctest
+import gc
 import os
 import pdb
 import sys
@@ -2139,6 +2140,179 @@ if not SKIP_CORO_TESTS:
             -> import pdb; pdb.Pdb(nosigint=True, readrc=False).set_trace()
             (Pdb) $_asynctask
             <Task pending name=... coro=<test() running at <doctest test.test_pdb.test_pdb_asynctask[1]>:2> ...
+            (Pdb) continue
+            """
+
+        def test_pdb_await_support():
+            """Testing await support in pdb
+
+            >>> import asyncio
+
+            >>> async def test():
+            ...     print("hello")
+            ...     await asyncio.sleep(0)
+            ...     print("world")
+            ...     return 42
+
+            >>> async def main():
+            ...     import pdb
+            ...     task = asyncio.create_task(test())
+            ...     await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            ...     pass
+
+            >>> def test_function():
+            ...     asyncio.run(main(), loop_factory=asyncio.EventLoop)
+
+            >>> with PdbTestInput([  # doctest: +ELLIPSIS
+            ...     'x = await task',
+            ...     'p x',
+            ...     'x = await test()',
+            ...     'p x',
+            ...     'new_task = asyncio.create_task(test())',
+            ...     'await new_task',
+            ...     'await non_exist()',
+            ...     's',
+            ...     'continue',
+            ... ]):
+            ...     test_function()
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) x = await task
+            hello
+            world
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p x
+            42
+            (Pdb) x = await test()
+            hello
+            world
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p x
+            42
+            (Pdb) new_task = asyncio.create_task(test())
+            (Pdb) await new_task
+            hello
+            world
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) await non_exist()
+            *** NameError: name 'non_exist' is not defined
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) s
+            > <doctest test.test_pdb.test_pdb_await_support[2]>(5)main()
+            -> pass
+            (Pdb) continue
+            """
+
+        def test_pdb_await_with_breakpoint():
+            """Testing await support with breakpoints set in tasks
+
+            >>> import asyncio
+
+            >>> async def test():
+            ...     x = 2
+            ...     await asyncio.sleep(0)
+            ...     return 42
+
+            >>> async def main():
+            ...     import pdb
+            ...     task = asyncio.create_task(test())
+            ...     await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+
+            >>> def test_function():
+            ...     asyncio.run(main(), loop_factory=asyncio.EventLoop)
+
+            >>> with PdbTestInput([  # doctest: +ELLIPSIS
+            ...     'b test',
+            ...     'k = await task',
+            ...     'n',
+            ...     'p x',
+            ...     'continue',
+            ...     'p k',
+            ...     'continue',
+            ... ]):
+            ...     test_function()
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) b test
+            Breakpoint 1 at <doctest test.test_pdb.test_pdb_await_with_breakpoint[1]>:2
+            (Pdb) k = await task
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[1]>(2)test()
+            -> x = 2
+            (Pdb) n
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[1]>(3)test()
+            -> await asyncio.sleep(0)
+            (Pdb) p x
+            2
+            (Pdb) continue
+            > <doctest test.test_pdb.test_pdb_await_with_breakpoint[2]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p k
+            42
+            (Pdb) continue
+            """
+
+        def test_pdb_await_contextvar():
+            """Testing await support context vars
+
+            >>> import asyncio
+            >>> import contextvars
+
+            >>> var = contextvars.ContextVar('var')
+
+            >>> async def get_var():
+            ...     return var.get()
+
+            >>> async def set_var(val):
+            ...     var.set(val)
+            ...     return var.get()
+
+            >>> async def main():
+            ...     var.set(42)
+            ...     import pdb
+            ...     await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+
+            >>> def test_function():
+            ...     asyncio.run(main(), loop_factory=asyncio.EventLoop)
+
+            >>> with PdbTestInput([
+            ...     'p var.get()',
+            ...     'print(await get_var())',
+            ...     'print(await asyncio.create_task(set_var(100)))',
+            ...     'p var.get()',
+            ...     'print(await set_var(99))',
+            ...     'p var.get()',
+            ...     'print(await get_var())',
+            ...     'continue',
+            ... ]):
+            ...     test_function()
+            > <doctest test.test_pdb.test_pdb_await_contextvar[5]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p var.get()
+            42
+            (Pdb) print(await get_var())
+            42
+            > <doctest test.test_pdb.test_pdb_await_contextvar[5]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) print(await asyncio.create_task(set_var(100)))
+            100
+            > <doctest test.test_pdb.test_pdb_await_contextvar[5]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p var.get()
+            42
+            (Pdb) print(await set_var(99))
+            99
+            > <doctest test.test_pdb.test_pdb_await_contextvar[5]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
+            (Pdb) p var.get()
+            99
+            (Pdb) print(await get_var())
+            99
+            > <doctest test.test_pdb.test_pdb_await_contextvar[5]>(4)main()
+            -> await pdb.Pdb(nosigint=True, readrc=False).set_trace_async()
             (Pdb) continue
             """
 
@@ -4711,6 +4885,10 @@ def load_tests(loader, tests, pattern):
         if pdb.Pdb._last_pdb_instance:
             pdb.Pdb._last_pdb_instance.stop_trace()
             pdb.Pdb._last_pdb_instance = None
+
+        # If garbage objects are collected right after we start tracing, we
+        # could stop at __del__ of the object which would fail the test.
+        gc.collect()
 
     tests.addTest(
         doctest.DocTestSuite(
