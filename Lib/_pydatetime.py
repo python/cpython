@@ -2474,7 +2474,7 @@ class datetime(date):
             self._month = m
         self._year = yhi * 256 + ylo
         self._microsecond = (((us1 << 8) | us2) << 8) | us3
-        self._nanosecond = ((ns1 << 8) | ns2) << 8
+        self._nanosecond = ((ns1 << 8) | ns2)
         self._tzinfo = tzinfo
 
     def __reduce_ex__(self, protocol):

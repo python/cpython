@@ -25,10 +25,10 @@ extern "C" {
 /* # of bytes for year, month, and day. */
 #define _PyDateTime_DATE_DATASIZE 4
 
-/* # of bytes for hour, minute, second, and usecond. */
+/* # of bytes for hour, minute, second, microsecond and nanosecond */
 #define _PyDateTime_TIME_DATASIZE 8
 
-/* # of bytes for year, month, day, hour, minute, second, and usecond. */
+/* # of bytes for year, month, day, hour, minute, second, microsecond and nanosecond */
 #define _PyDateTime_DATETIME_DATASIZE 12
 
 
