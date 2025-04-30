@@ -2182,8 +2182,17 @@ Utility functions
 
    Create or return a ctypes pointer type. Pointer types are cached and
    reused internally, so calling this function repeatedly is cheap.
-   *type* must be a ctypes-like type. The ctypes-like type is a type that
-   has class level attribute with the name ``__pointer_type__``.
+   *type* must be a ctypes type.
+   
+   .. impl-detail::
+
+      The resulting pointer type is cached in the ``__pointer_type__``
+      attribute of *type*.
+      It is possible to set this attribute before the first call to
+      ``POINTER`` in order to set a custom pointer type.
+      However, doing this is discouraged: manually creating a suitable
+      pointer type is difficult without relying on implementation
+      details that may change in future Python versions.
 
 
 .. function:: pointer(obj, /)
@@ -2354,8 +2363,8 @@ Data types
    .. attribute:: __pointer_type__
 
       This attributes is a pointer type that was created by calling
-      :func:`POINTER` for corresponding ctypes data type. If ``POINTER`` was
-      not called for this type then attribute contains ``None``.
+      :func:`POINTER` for corresponding ctypes data type. If a pointer type
+      was not yet created, the attribute is missing.
 
       .. versionadded:: next
 

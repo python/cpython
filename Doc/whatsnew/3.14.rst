@@ -732,10 +732,10 @@ ctypes
   loaded by the current process.
   (Contributed by Brian Ward in :gh:`119349`.)
 
-* Move :func:`ctypes.POINTER` types cache from the global ``_pointer_type_cache``
-  to the corresponding :mod:`ctypes` types. This will stop the cache from
-  growing without limits in some situations. Also :mod:`ctypes` pointer types
-  can be accessed with ``__pointer_type__`` attribute from corresponding type.
+* Move :func:`ctypes.POINTER` types cache from a global internal cache
+  (``_pointer_type_cache``) to the :attr:`ctypes._CData.__pointer_type__`
+  attribute of the corresponding :mod:`ctypes` types.
+  This will stop the cache from growing without limits in some situations.
   (Contributed by Sergey Miryanov in :gh:`100926`).
 
 * The :class:`ctypes.py_object` type now supports subscription,
