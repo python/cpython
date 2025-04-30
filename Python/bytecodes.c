@@ -5332,18 +5332,6 @@ dummy_func(
             assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
         }
 
-        label(pop_4_error) {
-            stack_pointer -= 4;
-            assert(WITHIN_STACK_BOUNDS());
-            goto error;
-        }
-
-        label(pop_3_error) {
-            stack_pointer -= 3;
-            assert(WITHIN_STACK_BOUNDS());
-            goto error;
-        }
-
         label(pop_2_error) {
             stack_pointer -= 2;
             assert(WITHIN_STACK_BOUNDS());
