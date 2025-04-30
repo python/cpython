@@ -4253,22 +4253,25 @@ dummy_func(
             _CALL_BUILTIN_FAST_WITH_KEYWORDS +
             _CHECK_PERIODIC;
 
-        inst(CALL_LEN, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
-            /* len(o) */
-            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+        macro(CALL_LEN) =
+            unused/1 +
+            unused/2 +
+            _GUARD_NOS_NULL +
+            _GUARD_CALLABLE_LEN +
+            _CALL_LEN;
 
-            int total_args = oparg;
-            if (!PyStackRef_IsNull(self_or_null)) {
-                args--;
-                total_args++;
-            }
-            DEOPT_IF(total_args != 1);
+        op(_GUARD_CALLABLE_LEN, (callable, unused, unused -- callable, unused, unused)){
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable_o != interp->callable_cache.len);
+        }
+
+        op(_CALL_LEN, (callable, null, arg -- res)) {
+            /* len(o) */
+            (void)null;
             STAT_INC(CALL, hit);
-            _PyStackRef arg_stackref = args[0];
-            PyObject *arg = PyStackRef_AsPyObjectBorrow(arg_stackref);
-            Py_ssize_t len_i = PyObject_Length(arg);
+            PyObject *arg_o = PyStackRef_AsPyObjectBorrow(arg);
+            Py_ssize_t len_i = PyObject_Length(arg_o);
             if (len_i < 0) {
                 ERROR_NO_POP();
             }
@@ -4277,9 +4280,8 @@ dummy_func(
             if (res_o == NULL) {
                 ERROR_NO_POP();
             }
-            PyStackRef_CLOSE(arg_stackref);
-            DEAD(args);
-            DEAD(self_or_null);
+            PyStackRef_CLOSE(arg);
+            DEAD(null);
             PyStackRef_CLOSE(callable);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
