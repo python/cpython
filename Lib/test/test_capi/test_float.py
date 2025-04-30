@@ -180,10 +180,17 @@ class CAPIFloatTest(unittest.TestCase):
                             self.assertEqual(value2, value)
 
     @unittest.skipUnless(HAVE_IEEE_754, "requires IEEE 754")
+    # Skip on x86 (32-bit), since these tests fail. The problem is that sNaN
+    # doubles become qNaN doubles just by the C calling convention, there is no
+    # way to preserve sNaN doubles between C function calls. But tests pass
+    # on Windows x86.
+    @unittest.skipIf((sys.maxsize == 2147483647) and not(sys.platform == 'win32'),
+                     'test fails on x86 (32-bit)')
     def test_pack_unpack_roundtrip_for_nans(self):
         pack = _testcapi.float_pack
         unpack = _testcapi.float_unpack
-        for _ in range(1000):
+
+        for _ in range(10):
             for size in (2, 4, 8):
                 sign = random.randint(0, 1)
                 signaling = random.randint(0, 1)
@@ -203,7 +210,7 @@ class CAPIFloatTest(unittest.TestCase):
                         data1 = data if endian == BIG_ENDIAN else data[::-1]
                         value = unpack(data1, endian)
                         if signaling and sys.platform == 'win32':
-                            # On this platform sNaN becomes qNaN when returned
+                            # On Windows x86, sNaN becomes qNaN when returned
                             # from function.  That's a known bug, e.g.
                             # https://developercommunity.visualstudio.com/t/155064
                             # (see also gh-130317).

@@ -2985,15 +2985,6 @@ AC_CHECK_HEADERS([ \
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
 
-# for faulthandler
-AC_CHECK_HEADERS([execinfo.h link.h dlfcn.h], [
-  AC_CHECK_FUNCS([backtrace dladdr1], [
-    # dladdr1 requires -ldl
-    ac_cv_require_ldl=yes
-  ])
-])
-AS_VAR_IF([ac_cv_require_ldl], [yes], [AS_VAR_APPEND([LDFLAGS], [" -ldl"])])
-
 # bluetooth/bluetooth.h has been known to not compile with -std=c99.
 # http://permalink.gmane.org/gmane.linux.bluez.kernel/22294
 SAVE_CFLAGS=$CFLAGS
@@ -3713,6 +3704,22 @@ AC_SUBST([PERF_TRAMPOLINE_OBJ])
 AC_CHECK_LIB([sendfile], [sendfile])
 AC_CHECK_LIB([dl], [dlopen])       # Dynamic linking for SunOS/Solaris and SYSV
 AC_CHECK_LIB([dld], [shl_load])    # Dynamic linking for HP-UX
+
+
+dnl for faulthandler
+AC_CHECK_HEADERS([execinfo.h link.h dlfcn.h], [
+  AC_CHECK_FUNCS([backtrace dladdr1], [
+    # dladdr1 requires -ldl
+    ac_cv_require_ldl=yes
+  ])
+])
+
+dnl only add -ldl to LDFLAGS if it isn't already part of LIBS (GH-133081)
+AS_VAR_IF([ac_cv_require_ldl], [yes], [
+  AS_VAR_IF([ac_cv_lib_dl_dlopen], [yes], [], [
+    AS_VAR_APPEND([LDFLAGS], [" -ldl"])
+  ])
+])
 
 
 dnl check for uuid dependencies
