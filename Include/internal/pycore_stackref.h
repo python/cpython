@@ -714,18 +714,27 @@ PyStackRef_TYPE(_PyStackRef stackref) {
 static inline bool
 PyStackRef_GenCheck(_PyStackRef stackref)
 {
+    if (PyStackRef_IsTaggedInt(stackref)) {
+        return false;
+    }
     return PyGen_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 
 static inline bool
 PyStackRef_BoolCheck(_PyStackRef stackref)
 {
+    if (PyStackRef_IsTaggedInt(stackref)) {
+        return false;
+    }
     return PyBool_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 
 static inline bool
 PyStackRef_LongCheck(_PyStackRef stackref)
 {
+    if (PyStackRef_IsTaggedInt(stackref)) {
+        return false;
+    }
     return PyLong_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 
@@ -738,12 +747,18 @@ PyStackRef_ExceptionInstanceCheck(_PyStackRef stackref)
 static inline bool
 PyStackRef_CodeCheck(_PyStackRef stackref)
 {
+    if (PyStackRef_IsTaggedInt(stackref)) {
+        return false;
+    }
     return PyCode_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 
 static inline bool
 PyStackRef_FunctionCheck(_PyStackRef stackref)
 {
+    if (PyStackRef_IsTaggedInt(stackref)) {
+        return false;
+    }
     return PyFunction_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 
