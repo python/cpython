@@ -50,8 +50,21 @@
 
 // --- Reusable error messages ------------------------------------------------
 
-#define INVALID_KEY_LENGTH  "key length exceeds UINT32_MAX"
-#define INVALID_MSG_LENGTH  "message length exceeds UINT32_MAX"
+static inline void
+set_invalid_key_length_error(void)
+{
+    (void)PyErr_Format(PyExc_OverflowError,
+                       "key length exceeds %u",
+                       UINT32_MAX);
+}
+
+static inline void
+set_invalid_msg_length_error(void)
+{
+    (void)PyErr_Format(PyExc_OverflowError,
+                       "message length exceeds %u",
+                       UINT32_MAX);
+}
 
 // --- HMAC underlying hash function static information -----------------------
 
@@ -760,7 +773,7 @@ hmac_new_initial_state(HMACObject *self, uint8_t *key, Py_ssize_t len)
     // not rely on HACL* implementation anymore. As such, we explicitly
     // reject keys that do not fit on 32 bits until HACL* handles them.
     if (len > UINT32_MAX_AS_SSIZE_T) {
-        PyErr_SetString(PyExc_OverflowError, INVALID_KEY_LENGTH);
+        set_invalid_key_length_error();
         return -1;
     }
 #endif
@@ -1249,36 +1262,36 @@ _hmac_compute_digest_impl(PyObject *module, PyObject *key, PyObject *msg,
  * lest an OverflowError is raised. The Python implementation takes care
  * of dispatching to the OpenSSL implementation in this case.
  */
-#define Py_HMAC_HACL_ONESHOT(HACL_HID, KEY, MSG)                        \
-    do {                                                                \
-        Py_buffer keyview, msgview;                                     \
-        GET_BUFFER_VIEW_OR_ERROUT((KEY), &keyview);                     \
-        if (!has_uint32_t_buffer_length(&keyview)) {                    \
-            PyBuffer_Release(&keyview);                                 \
-            PyErr_SetString(PyExc_OverflowError, INVALID_KEY_LENGTH);   \
-            return NULL;                                                \
-        }                                                               \
-        GET_BUFFER_VIEW_OR_ERROR((MSG), &msgview,                       \
-                                 PyBuffer_Release(&keyview);            \
-                                 return NULL);                          \
-        if (!has_uint32_t_buffer_length(&msgview)) {                    \
-            PyBuffer_Release(&msgview);                                 \
-            PyBuffer_Release(&keyview);                                 \
-            PyErr_SetString(PyExc_OverflowError, INVALID_MSG_LENGTH);   \
-            return NULL;                                                \
-        }                                                               \
-        uint8_t out[Py_hmac_## HACL_HID ##_digest_size];                \
-        Py_hmac_## HACL_HID ##_compute_func(                            \
-            out,                                                        \
-            (uint8_t *)keyview.buf, (uint32_t)keyview.len,              \
-            (uint8_t *)msgview.buf, (uint32_t)msgview.len               \
-        );                                                              \
-        PyBuffer_Release(&msgview);                                     \
-        PyBuffer_Release(&keyview);                                     \
-        return PyBytes_FromStringAndSize(                               \
-            (const char *)out,                                          \
-            Py_hmac_## HACL_HID ##_digest_size                          \
-        );                                                              \
+#define Py_HMAC_HACL_ONESHOT(HACL_HID, KEY, MSG)                \
+    do {                                                        \
+        Py_buffer keyview, msgview;                             \
+        GET_BUFFER_VIEW_OR_ERROUT((KEY), &keyview);             \
+        if (!has_uint32_t_buffer_length(&keyview)) {            \
+            PyBuffer_Release(&keyview);                         \
+            set_invalid_key_length_error();                     \
+            return NULL;                                        \
+        }                                                       \
+        GET_BUFFER_VIEW_OR_ERROR((MSG), &msgview,               \
+                                 PyBuffer_Release(&keyview);    \
+                                 return NULL);                  \
+        if (!has_uint32_t_buffer_length(&msgview)) {            \
+            PyBuffer_Release(&msgview);                         \
+            PyBuffer_Release(&keyview);                         \
+            set_invalid_msg_length_error();                     \
+            return NULL;                                        \
+        }                                                       \
+        uint8_t out[Py_hmac_## HACL_HID ##_digest_size];        \
+        Py_hmac_## HACL_HID ##_compute_func(                    \
+            out,                                                \
+            (uint8_t *)keyview.buf, (uint32_t)keyview.len,      \
+            (uint8_t *)msgview.buf, (uint32_t)msgview.len       \
+        );                                                      \
+        PyBuffer_Release(&msgview);                             \
+        PyBuffer_Release(&keyview);                             \
+        return PyBytes_FromStringAndSize(                       \
+            (const char *)out,                                  \
+            Py_hmac_## HACL_HID ##_digest_size                  \
+        );                                                      \
     } while (0)
 
 /*[clinic input]
@@ -1679,6 +1692,20 @@ hmacmodule_init_strings(hmacmodule_state *state)
     return 0;
 }
 
+static int
+hmacmodule_init_globals(PyObject *module, hmacmodule_state *state)
+{
+#define ADD_INT_CONST(NAME, VALUE)                                  \
+    do {                                                            \
+        if (PyModule_AddIntConstant(module, (NAME), (VALUE)) < 0) { \
+            return -1;                                              \
+        }                                                           \
+    } while (0)
+    ADD_INT_CONST("_GIL_MINSIZE", HASHLIB_GIL_MINSIZE);
+#undef ADD_INT_CONST
+    return 0;
+}
+
 static void
 hmacmodule_init_cpu_features(hmacmodule_state *state)
 {
@@ -1767,6 +1794,9 @@ hmacmodule_exec(PyObject *module)
         return -1;
     }
     if (hmacmodule_init_strings(state) < 0) {
+        return -1;
+    }
+    if (hmacmodule_init_globals(module, state) < 0) {
         return -1;
     }
     hmacmodule_init_cpu_features(state);
