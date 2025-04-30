@@ -648,7 +648,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
         /* Process the various legal combinations of b"", r"", u"", and f"". */
         int saw_b = 0, saw_r = 0, saw_u = 0, saw_f = 0, saw_t = 0;
         while (1) {
-            if (!(saw_b || saw_u || saw_f || saw_t) && (c == 'b' || c == 'B'))
+            if (!(saw_b || saw_u || saw_f) && (c == 'b' || c == 'B'))
                 saw_b = 1;
             /* Since this is a backwards compatibility support literal we don't
                want to support it in arbitrary order like byte literals. */
@@ -663,7 +663,7 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             else if (!(saw_f || saw_b || saw_u) && (c == 'f' || c == 'F')) {
                 saw_f = 1;
             }
-            else if (!(saw_t || saw_b || saw_u) && (c == 't' || c == 'T')) {
+            else if (!(saw_t || saw_u) && (c == 't' || c == 'T')) {
                 saw_t = 1;
             }
             else {
@@ -671,11 +671,18 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             }
             c = tok_nextc(tok);
             if (c == '"' || c == '\'') {
+                if (saw_b && saw_t) {
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(
+                        tok,
+                        "can't use 't' prefix on bytes"));
+                }
                 if (saw_f && saw_t) {
                     return MAKE_TOKEN(_PyTokenizer_syntaxerror(
                         tok,
                         "can't use 'f' and 't' string prefixes at the same time"));
                 }
+
+                // Handle valid f or t string creation:
                 if (saw_f || saw_t) {
                     goto f_string_quote;
                 }

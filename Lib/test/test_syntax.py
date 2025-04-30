@@ -1886,6 +1886,14 @@ SyntaxError: can't use 'f' and 't' string prefixes at the same time
 Traceback (most recent call last):
 SyntaxError: can't use 'f' and 't' string prefixes at the same time
 
+>>> tb''
+Traceback (most recent call last):
+SyntaxError: can't use 't' prefix on bytes
+
+>>> bt"text"
+Traceback (most recent call last):
+SyntaxError: can't use 't' prefix on bytes
+
 >>> t'{x}' = 42
 Traceback (most recent call last):
 SyntaxError: cannot assign to t-string expression here. Maybe you meant '==' instead of '='?
