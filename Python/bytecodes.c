@@ -1925,7 +1925,7 @@ dummy_func(
             }
             PyStackRef_CLOSE(str);
             PyStackRef_CLOSE(value);
-            ERROR_IF(interpolation_o == NULL, error);
+            ERROR_IF(interpolation_o == NULL);
             interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
         }
 
@@ -1935,7 +1935,7 @@ dummy_func(
             PyObject *template_o = _PyTemplate_Build(strings_o, interpolations_o);
             PyStackRef_CLOSE(interpolations);
             PyStackRef_CLOSE(strings);
-            ERROR_IF(template_o == NULL, error);
+            ERROR_IF(template_o == NULL);
             template = PyStackRef_FromPyObjectSteal(template_o);
         }
 
