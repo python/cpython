@@ -386,8 +386,8 @@ class TestReader(ScreenEqualMixin, TestCase):
         expected = dedent(
             """\
             {k}import{z} re{o},{z} sys
-            {a}{k}def{z} {d}funct{z}{o}({z}{K}case{z}{o}:{z} {b}str{z} {o}={z} sys{o}.{z}platform{o}){z} {o}->{z} {k}None{z}{o}:{z}
-                {K}match{z} {o}={z} re{o}.{z}search{o}({z}
+            {a}{k}def{z} {d}funct{z}{o}({z}case{o}:{z} {b}str{z} {o}={z} sys{o}.{z}platform{o}){z} {o}->{z} {k}None{z}{o}:{z}
+                match {o}={z} re{o}.{z}search{o}({z}
                     {s}"(me)"{z}{o},{z}
                     {s}'''{z}
             {s}        Come on{z}
@@ -395,10 +395,10 @@ class TestReader(ScreenEqualMixin, TestCase):
             {s}            You know that it's time to emerge{z}
             {s}        '''{z}{o},{z}
                 {o}){z}
-                {K}match{z} {K}case{z}{o}:{z}
+                {K}match{z} case{o}:{z}
                     {K}case{z} {s}"emscripten"{z}{o}:{z} {b}print{z}{o}({z}{s}"on the web"{z}{o}){z}
                     {K}case{z} {s}"ios"{z} {o}|{z} {s}"android"{z}{o}:{z} {b}print{z}{o}({z}{s}"on the phone"{z}{o}){z}
-                    {K}case{z} {K}_{z}{o}:{z} {b}print{z}{o}({z}{s}'arms around'{z}{o},{z} {K}match{z}{o}.{z}group{o}({z}{n}1{z}{o}){z}{o}){z}
+                    {K}case{z} {K}_{z}{o}:{z} {b}print{z}{o}({z}{s}'arms around'{z}{o},{z} match{o}.{z}group{o}({z}{n}1{z}{o}){z}{o}){z}
             """
         )
         expected_sync = expected.format(a="", **colors)
