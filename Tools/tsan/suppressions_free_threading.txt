@@ -41,3 +41,6 @@ race:list_inplace_repeat_lock_held
 # PyObject_Realloc internally does memcpy which isn't atomic so can race
 # with non-locking reads. See #132070
 race:PyObject_Realloc
+
+# This function writes to the tp_getattr slot in an unsafe way.
+race:_Py_slot_tp_getattr_hook
