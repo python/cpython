@@ -871,14 +871,6 @@ invalid non-\ ``NULL`` pointers would crash Python)::
    ValueError: NULL pointer access
    >>>
 
-.. _ctypes-pointers-ctypes-like-types:
-
-Pointers for ctypes-like types
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-In some cases you want that :func:`POINTER` can accept non-ctypes types. To do so
-just add to your types a class level attribute with the name ``__pointer_type__``.
-
 .. _ctypes-thread-safety:
 
 Thread safety without the GIL
@@ -2183,7 +2175,7 @@ Utility functions
    Create or return a ctypes pointer type. Pointer types are cached and
    reused internally, so calling this function repeatedly is cheap.
    *type* must be a ctypes type.
-   
+
    .. impl-detail::
 
       The resulting pointer type is cached in the ``__pointer_type__``
