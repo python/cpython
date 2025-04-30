@@ -6,9 +6,6 @@ from ctypes import Structure, POINTER, pointer, c_char_p
 
 # The incomplete pointer example from the tutorial
 class TestSetPointerType(unittest.TestCase):
-    def tearDown(self):
-        ctypes._reset_cache()
-
     def test_incomplete_example(self):
         lpcell = POINTER("cell")
         class cell(Structure):

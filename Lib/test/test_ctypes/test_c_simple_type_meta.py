@@ -10,9 +10,6 @@ def set_non_ctypes_pointer_type(cls, pointer_type):
     cls.__pointer_type__ = pointer_type
 
 class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
-    def tearDown(self):
-        ctypes._reset_cache()
-
     def test_creating_pointer_in_dunder_new_1(self):
         # Test metaclass whose instances are C types; when the type is
         # created it automatically creates a pointer type for itself.
