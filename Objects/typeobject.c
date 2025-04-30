@@ -6315,6 +6315,32 @@ type_update_dict(PyTypeObject *type, PyDictObject *dict, PyObject *name,
 }
 
 static int
+update_slot_after_setattr(PyTypeObject *type, PyObject *name)
+{
+#ifdef Py_GIL_DISABLED
+    // stack allocate one chunk since that's all we need
+    assert(SLOT_UPDATE_CHUNK_SIZE >= MAX_EQUIV);
+    slot_update_chunk_t chunk = {0};
+    slot_update_t queued_updates = {&chunk};
+
+    if (update_slot(type, name, &queued_updates) < 0) {
+        return -1;
+    }
+    if (queued_updates.head != NULL) {
+        types_stop_world();
+        apply_slot_updates(&queued_updates);
+        types_start_world();
+        ASSERT_TYPE_LOCK_HELD();
+        // should never allocate another chunk
+        assert(chunk.prev == NULL);
+    }
+#else
+    update_slot(type, name, NULL);
+#endif
+    return 0;
+}
+
+static int
 type_setattro(PyObject *self, PyObject *name, PyObject *value)
 {
     PyTypeObject *type = PyTypeObject_CAST(self);
@@ -6389,10 +6415,7 @@ type_setattro(PyObject *self, PyObject *name, PyObject *value)
     if (res == 0) {
         if (is_dunder_name(name) && has_slotdef(name)) {
             // The name corresponds to a type slot.
-            types_stop_world();
-            res = update_slot(type, name, NULL);
-            types_start_world();
-            ASSERT_TYPE_LOCK_HELD();
+            res = update_slot_after_setattr(type, name);
         }
     }
     END_TYPE_DICT_LOCK();
