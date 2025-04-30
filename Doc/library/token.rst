@@ -149,7 +149,7 @@ The token constants are:
 
    .. impl-detail::
 
-      Replacement fields (that is, the non-literal parts of f-strings) use
+      Replacement fields (that is, the non-literal parts of t-strings) use
       the same tokens as other expressions, and are delimited by
       :data:`LBRACE`, :data:`RBRACE`, :data:`EXCLAMATION` and :data:`COLON`
       tokens.
