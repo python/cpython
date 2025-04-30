@@ -733,7 +733,7 @@ static inline bool
 PyStackRef_LongCheck(_PyStackRef stackref)
 {
     if (PyStackRef_IsTaggedInt(stackref)) {
-        return false;
+        return true;
     }
     return PyLong_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
