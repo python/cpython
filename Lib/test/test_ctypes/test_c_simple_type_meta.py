@@ -11,7 +11,6 @@ def set_non_ctypes_pointer_type(cls, pointer_type):
 
 class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
     def tearDown(self):
-        # to not leak references, we must clean _pointer_type_cache
         ctypes._reset_cache()
 
     def test_creating_pointer_in_dunder_new_1(self):

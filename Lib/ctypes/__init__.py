@@ -299,8 +299,38 @@ def pointer(obj):
     typ = POINTER(type(obj))
     return typ(obj)
 
-_pointer_type_cache = {}
-"""XXX: Subject to change."""
+class PointerTypeCache:
+    def __setitem__(self, cls, pointer_type):
+        import warnings
+        warnings._deprecated("ctypes._pointer_type_cache", remove=(3, 19))
+        try:
+            cls.__pointer_type__ = pointer_type
+        except AttributeError:
+            pass
+
+    def __getitem__(self, cls):
+        import warnings
+        warnings._deprecated("ctypes._pointer_type_cache", remove=(3, 19))
+        try:
+            return cls.__pointer_type__
+        except AttributeError:
+            raise KeyError(cls)
+
+    _sentinel = object()
+    def get(self, cls, default=_sentinel):
+        import warnings
+        warnings._deprecated("ctypes._pointer_type_cache", remove=(3, 19))
+        try:
+            return cls.__pointer_type__
+        except AttributeError:
+            if default is self._sentinel:
+                raise KeyError(cls)
+            return default
+
+    def __contains__(self, cls):
+        return hasattr(cls, '__pointer_type__')
+
+_pointer_type_cache = PointerTypeCache()
 
 class c_wchar_p(_SimpleCData):
     _type_ = "Z"
@@ -311,7 +341,6 @@ class c_wchar(_SimpleCData):
     _type_ = "u"
 
 def _reset_cache():
-    _pointer_type_cache.clear()
     _c_functype_cache.clear()
     if _os.name == "nt":
         _win_functype_cache.clear()
@@ -319,7 +348,6 @@ def _reset_cache():
     POINTER(c_wchar).from_param = c_wchar_p.from_param
     # _SimpleCData.c_char_p_from_param
     POINTER(c_char).from_param = c_char_p.from_param
-    _pointer_type_cache[None] = c_void_p
 
 def create_unicode_buffer(init, size=None):
     """create_unicode_buffer(aString) -> character array

@@ -7,7 +7,6 @@ from ctypes import Structure, POINTER, pointer, c_char_p
 # The incomplete pointer example from the tutorial
 class TestSetPointerType(unittest.TestCase):
     def tearDown(self):
-        # to not leak references, we must clean _pointer_type_cache
         ctypes._reset_cache()
 
     def test_incomplete_example(self):
@@ -19,6 +18,8 @@ class TestSetPointerType(unittest.TestCase):
         with warnings.catch_warnings():
             warnings.simplefilter('ignore', DeprecationWarning)
             ctypes.SetPointerType(lpcell, cell)
+
+        self.assertIs(POINTER(cell), lpcell)
 
         c1 = cell()
         c1.name = b"foo"
@@ -45,6 +46,7 @@ class TestSetPointerType(unittest.TestCase):
         with self.assertWarns(DeprecationWarning):
             ctypes.SetPointerType(lpcell, cell)
 
+        self.assertIs(POINTER(cell), lpcell)
 
 if __name__ == '__main__':
     unittest.main()

@@ -10,6 +10,7 @@ from ctypes import (CDLL, CFUNCTYPE, Structure,
                     c_byte, c_ubyte, c_short, c_ushort, c_int, c_uint,
                     c_long, c_ulong, c_longlong, c_ulonglong,
                     c_float, c_double)
+from ctypes import _pointer_type_cache
 from test.support import import_helper
 from weakref import WeakSet
 _ctypes_test = import_helper.import_module("_ctypes_test")
@@ -351,6 +352,54 @@ class PointersTestCase(unittest.TestCase):
         self.assertEqual(len(ws_typ), 0, ws_typ)
         self.assertEqual(len(ws_ptr), 0, ws_ptr)
 
+
+class PointerTypeCacheTestCase(unittest.TestCase):
+    # dummy tests to check warnings and base behavior
+
+    def test_deprecated_cache_with_not_ctypes_type(self):
+        class C:
+            pass
+
+        P = POINTER("C")
+        with self.assertWarns(DeprecationWarning):
+            _pointer_type_cache[C] = P
+
+        self.assertIs(C.__pointer_type__, P)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(_pointer_type_cache[C], P)
+
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(_pointer_type_cache.get(C), P)
+
+    def test_deprecated_cache_with_ctypes_type(self):
+        class C(Structure):
+            _fields_ = [("a", c_int),
+                        ("b", c_int),
+                        ("c", c_int)]
+
+        P1 = POINTER(C)
+        P2 = POINTER("C")
+        with self.assertWarns(DeprecationWarning):
+            _pointer_type_cache[C] = P1
+
+        with self.assertWarns(DeprecationWarning):
+            _pointer_type_cache[C] = P2 # silently do nothing
+
+        self.assertIs(C.__pointer_type__, P1)
+        self.assertIsNot(C.__pointer_type__, P2)
+
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(_pointer_type_cache[C], P1)
+
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(_pointer_type_cache.get(C), P1)
+
+    def test_get_not_registered(self):
+        with self.assertRaises(KeyError), self.assertWarns(DeprecationWarning):
+            _pointer_type_cache.get(str)
+
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(_pointer_type_cache.get(str, None))
 
 if __name__ == '__main__':
     unittest.main()
