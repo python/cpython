@@ -1877,6 +1877,15 @@ SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' ins
 Traceback (most recent call last):
 SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' instead of '='?
 
+>>> ft'abc'
+Traceback (most recent call last):
+SyntaxError: can't use 'f' and 't' string prefixes at the same time
+
+>>> x = 1
+>>> tf"{x=}"
+Traceback (most recent call last):
+SyntaxError: can't use 'f' and 't' string prefixes at the same time
+
 >>> t'{x}' = 42
 Traceback (most recent call last):
 SyntaxError: cannot assign to t-string expression here. Maybe you meant '==' instead of '='?

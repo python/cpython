@@ -660,10 +660,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             else if (!(saw_r || saw_u) && (c == 'r' || c == 'R')) {
                 saw_r = 1;
             }
-            else if (!(saw_f || saw_b || saw_u || saw_t) && (c == 'f' || c == 'F')) {
+            else if (!(saw_f || saw_b || saw_u) && (c == 'f' || c == 'F')) {
                 saw_f = 1;
             }
-            else if (!(saw_t || saw_b || saw_u || saw_f) && (c == 't' || c == 'T')) {
+            else if (!(saw_t || saw_b || saw_u) && (c == 't' || c == 'T')) {
                 saw_t = 1;
             }
             else {
@@ -671,6 +671,11 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             }
             c = tok_nextc(tok);
             if (c == '"' || c == '\'') {
+                if (saw_f && saw_t) {
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(
+                        tok,
+                        "can't use 'f' and 't' string prefixes at the same time"));
+                }
                 if (saw_f || saw_t) {
                     goto f_string_quote;
                 }
