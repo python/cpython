@@ -2738,11 +2738,12 @@ fields, or any other data types containing pointer type fields.
 
       .. deprecated-removed:: next 3.19
 
-         For historical reasons, if `_pack_` is non-zero, the MSVC-compatible
+         For historical reasons, if :attr:`!_pack_` is non-zero,
+         the MSVC-compatible
          layout will be used by default.
          On non-Windows platforms, this default is deprecated and is slated to
          become an error in Python 3.19.
-         If it is intended, set :attr:`~Structure._layout_` to `'ms'``
+         If it is intended, set :attr:`~Structure._layout_` to ``'ms'``
          explicitly.
 
    .. attribute:: _align_
