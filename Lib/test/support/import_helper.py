@@ -338,8 +338,8 @@ def ensure_lazy_imports(imported_module, modules_to_block):
 @contextlib.contextmanager
 def module_restored(name):
     """A context manager that restores a module to the original state."""
-    missing = name in sys.modules
-    orig = sys.modules.get(name)
+    missing = object()
+    orig = sys.modules.get(name, missing)
     if orig is None:
         mod = importlib.import_module(name)
     else:
@@ -349,7 +349,7 @@ def module_restored(name):
     try:
         yield mod
     finally:
-        if missing:
+        if orig is missing:
             sys.modules.pop(name, None)
         else:
             sys.modules[name] = orig
