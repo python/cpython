@@ -2164,7 +2164,7 @@ math_ldexp_impl(PyObject *module, double x, PyObject *i)
         errno = 0;
         r = ldexp(x, (int)exp);
 #ifdef _MSC_VER
-        if (-DBL_MIN < r && r < DBL_MIN) {
+        if (DBL_MIN > r && r > -DBL_MIN) {
             /* Denormal (or zero) results can be incorrectly rounded here (rather,
                truncated).  Fixed in newer versions of the C runtime, included
                with Windows 11. */
