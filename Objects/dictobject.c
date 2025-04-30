@@ -4854,6 +4854,7 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     d->ma_used = 0;
     d->_ma_watcher_tag = 0;
     // We don't inc ref empty keys because they're immortal
+    assert((Py_EMPTY_KEYS)->dk_refcnt == _Py_DICT_IMMORTAL_INITIAL_REFCNT);
     d->ma_keys = Py_EMPTY_KEYS;
     d->ma_values = NULL;
     ASSERT_CONSISTENT(d);
