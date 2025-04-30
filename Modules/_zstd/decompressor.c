@@ -131,7 +131,8 @@ _PyZstd_load_d_dict(ZstdDecompressor *self, PyObject *dict)
     ret = PyObject_IsInstance(dict, (PyObject*)mod_state->ZstdDict_type);
     if (ret < 0) {
         return -1;
-    } else if (ret > 0) {
+    }
+    else if (ret > 0) {
         /* When decompressing, use digested dictionary by default. */
         zd = (ZstdDict*)dict;
         type = DICT_TYPE_DIGESTED;
@@ -145,7 +146,8 @@ _PyZstd_load_d_dict(ZstdDecompressor *self, PyObject *dict)
                                   (PyObject*)mod_state->ZstdDict_type);
         if (ret < 0) {
             return -1;
-        } else if (ret > 0) {
+        }
+        else if (ret > 0) {
             /* type == -1 may indicate an error. */
             type = PyLong_AsInt(PyTuple_GET_ITEM(dict, 1));
             if (type == DICT_TYPE_DIGESTED ||
@@ -175,7 +177,8 @@ load:
         Py_BEGIN_CRITICAL_SECTION(self);
         zstd_ret = ZSTD_DCtx_refDDict(self->dctx, d_dict);
         Py_END_CRITICAL_SECTION();
-    } else if (type == DICT_TYPE_UNDIGESTED) {
+    }
+    else if (type == DICT_TYPE_UNDIGESTED) {
         /* Load a dictionary */
         Py_BEGIN_CRITICAL_SECTION2(self, zd);
         zstd_ret = ZSTD_DCtx_loadDictionary(
@@ -183,7 +186,8 @@ load:
                             PyBytes_AS_STRING(zd->dict_content),
                             Py_SIZE(zd->dict_content));
         Py_END_CRITICAL_SECTION2();
-    } else if (type == DICT_TYPE_PREFIX) {
+    }
+    else if (type == DICT_TYPE_PREFIX) {
         /* Load a prefix */
         Py_BEGIN_CRITICAL_SECTION2(self, zd);
         zstd_ret = ZSTD_DCtx_refPrefix(
@@ -191,7 +195,8 @@ load:
                             PyBytes_AS_STRING(zd->dict_content),
                             Py_SIZE(zd->dict_content));
         Py_END_CRITICAL_SECTION2();
-    } else {
+    }
+    else {
         /* Impossible code path */
         PyErr_SetString(PyExc_SystemError,
                         "load_d_dict() impossible code path");
@@ -296,7 +301,8 @@ decompress_impl(ZstdDecompressor *self, ZSTD_inBuffer *in,
         if (_OutputBuffer_InitWithSize(&buffer, &out, max_length, initial_size) < 0) {
             goto error;
         }
-    } else {
+    }
+    else {
         if (_OutputBuffer_InitAndGrow(&buffer, &out, max_length) < 0) {
             goto error;
         }
@@ -325,7 +331,8 @@ decompress_impl(ZstdDecompressor *self, ZSTD_inBuffer *in,
                 self->eof = 1;
                 break;
             }
-        } else if (type == TYPE_ENDLESS_DECOMPRESSOR) {
+        }
+        else if (type == TYPE_ENDLESS_DECOMPRESSOR) {
             /* decompress() function supports multiple frames */
             self->at_frame_edge = (zstd_ret == 0) ? 1 : 0;
 
@@ -351,7 +358,8 @@ decompress_impl(ZstdDecompressor *self, ZSTD_inBuffer *in,
             }
             assert(out.pos == 0);
 
-        } else if (in->pos == in->size) {
+        }
+        else if (in->pos == in->size) {
             /* Finished */
             break;
         }
@@ -406,7 +414,8 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
             assert(ret == NULL);
             goto success;
         }
-    } else if (type == TYPE_ENDLESS_DECOMPRESSOR) {
+    }
+    else if (type == TYPE_ENDLESS_DECOMPRESSOR) {
         /* Fast path for the first frame */
         if (self->at_frame_edge && self->in_begin == self->in_end) {
             /* Read decompressed size */
@@ -435,7 +444,8 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
         in.src = data->buf;
         in.size = data->len;
         in.pos = 0;
-    } else if (data->len == 0) {
+    }
+    else if (data->len == 0) {
         /* Has unconsumed data, fast path for b'' */
         assert(self->in_begin < self->in_end);
 
@@ -444,7 +454,8 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
         in.src = self->input_buffer + self->in_begin;
         in.size = self->in_end - self->in_begin;
         in.pos = 0;
-    } else {
+    }
+    else {
         /* Has unconsumed data */
         use_input_buffer = 1;
 
@@ -485,7 +496,8 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
             /* Set begin & end position */
             self->in_begin = 0;
             self->in_end = used_now;
-        } else if (avail_now < (size_t) data->len) {
+        }
+        else if (avail_now < (size_t) data->len) {
             /* Move unconsumed data to the beginning.
                Overlap is possible, so use memmove(). */
             memmove(self->input_buffer,
@@ -520,13 +532,16 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
         if (type == TYPE_DECOMPRESSOR) {
             if (Py_SIZE(ret) == max_length || self->eof) {
                 self->needs_input = 0;
-            } else {
+            }
+            else {
                 self->needs_input = 1;
             }
-        } else if (type == TYPE_ENDLESS_DECOMPRESSOR) {
+        }
+        else if (type == TYPE_ENDLESS_DECOMPRESSOR) {
             if (Py_SIZE(ret) == max_length && !self->at_frame_edge) {
                 self->needs_input = 0;
-            } else {
+            }
+            else {
                 self->needs_input = 1;
             }
         }
@@ -536,7 +551,8 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
             self->in_begin = 0;
             self->in_end = 0;
         }
-    } else {
+    }
+    else {
         size_t data_size = in.size - in.pos;
 
         self->needs_input = 0;
@@ -570,7 +586,8 @@ stream_decompress(ZstdDecompressor *self, Py_buffer *data, Py_ssize_t max_length
             memcpy(self->input_buffer, (char*)in.src + in.pos, data_size);
             self->in_begin = 0;
             self->in_end = data_size;
-        } else {
+        }
+        else {
             /* Use input buffer */
             self->in_begin += in.pos;
         }
@@ -726,14 +743,16 @@ _zstd_ZstdDecompressor_unused_data_get_impl(ZstdDecompressor *self)
         }
         ret = mod_state->empty_bytes;
         Py_INCREF(ret);
-    } else {
+    }
+    else {
         if (self->unused_data == NULL) {
             self->unused_data = PyBytes_FromStringAndSize(
                                     self->input_buffer + self->in_begin,
                                     self->in_end - self->in_begin);
             ret = self->unused_data;
             Py_XINCREF(ret);
-        } else {
+        }
+        else {
             ret = self->unused_data;
             Py_INCREF(ret);
         }

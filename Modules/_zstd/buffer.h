@@ -44,7 +44,8 @@ _OutputBuffer_InitWithSize(_BlocksOutputBuffer *buffer, ZSTD_outBuffer *ob,
     /* Get block size */
     if (0 <= max_length && max_length < init_size) {
         block_size = max_length;
-    } else {
+    }
+    else {
         block_size = init_size;
     }
 

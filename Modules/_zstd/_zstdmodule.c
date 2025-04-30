@@ -119,7 +119,8 @@ set_parameter_error(const _zstd_state* const state, int is_compress,
         list = cp_list;
         list_size = Py_ARRAY_LENGTH(cp_list);
         type = "compression";
-    } else {
+    }
+    else {
         list = dp_list;
         list_size = Py_ARRAY_LENGTH(dp_list);
         type = "decompression";
@@ -144,7 +145,8 @@ set_parameter_error(const _zstd_state* const state, int is_compress,
     /* Get parameter bounds */
     if (is_compress) {
         bounds = ZSTD_cParam_getBounds(key_v);
-    } else {
+    }
+    else {
         bounds = ZSTD_dParam_getBounds(key_v);
     }
     if (ZSTD_isError(bounds.error)) {
@@ -419,7 +421,8 @@ _zstd__get_param_bounds_impl(PyObject *module, int is_compress,
             set_zstd_error(mod_state, ERR_GET_C_BOUNDS, bound.error);
             return NULL;
         }
-    } else {
+    }
+    else {
         bound = ZSTD_dParam_getBounds(parameter);
         if (ZSTD_isError(bound.error)) {
             _zstd_state* const mod_state = get_zstd_state(module);

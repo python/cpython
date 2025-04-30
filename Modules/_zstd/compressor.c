@@ -94,7 +94,8 @@ _PyZstd_set_c_parameters(ZstdCompressor *self, PyObject *level_or_options,
             if (key_v == ZSTD_c_compressionLevel) {
                 /* Save for generating ZSTD_CDICT */
                 self->compression_level = value_v;
-            } else if (key_v == ZSTD_c_nbWorkers) {
+            }
+            else if (key_v == ZSTD_c_nbWorkers) {
                 /* From zstd library doc:
                    1. When nbWorkers >= 1, triggers asynchronous mode when
                       used with ZSTD_compressStream2().
@@ -177,7 +178,8 @@ _get_CDict(ZstdDict *self, int compressionLevel)
             goto error;
         }
         Py_DECREF(capsule);
-    } else {
+    }
+    else {
         /* ZSTD_CDict instance already exists */
         cdict = PyCapsule_GetPointer(capsule, NULL);
     }
@@ -206,7 +208,8 @@ _PyZstd_load_c_dict(ZstdCompressor *self, PyObject *dict) {
     ret = PyObject_IsInstance(dict, (PyObject*)mod_state->ZstdDict_type);
     if (ret < 0) {
         return -1;
-    } else if (ret > 0) {
+    }
+    else if (ret > 0) {
         /* When compressing, use undigested dictionary by default. */
         zd = (ZstdDict*)dict;
         type = DICT_TYPE_UNDIGESTED;
@@ -220,7 +223,8 @@ _PyZstd_load_c_dict(ZstdCompressor *self, PyObject *dict) {
                                   (PyObject*)mod_state->ZstdDict_type);
         if (ret < 0) {
             return -1;
-        } else if (ret > 0) {
+        }
+        else if (ret > 0) {
             /* type == -1 may indicate an error. */
             type = PyLong_AsInt(PyTuple_GET_ITEM(dict, 1));
             if (type == DICT_TYPE_DIGESTED ||
@@ -251,7 +255,8 @@ load:
         Py_BEGIN_CRITICAL_SECTION(self);
         zstd_ret = ZSTD_CCtx_refCDict(self->cctx, c_dict);
         Py_END_CRITICAL_SECTION();
-    } else if (type == DICT_TYPE_UNDIGESTED) {
+    }
+    else if (type == DICT_TYPE_UNDIGESTED) {
         /* Load a dictionary.
            It doesn't override compression context's parameters. */
         Py_BEGIN_CRITICAL_SECTION2(self, zd);
@@ -260,7 +265,8 @@ load:
                             PyBytes_AS_STRING(zd->dict_content),
                             Py_SIZE(zd->dict_content));
         Py_END_CRITICAL_SECTION2();
-    } else if (type == DICT_TYPE_PREFIX) {
+    }
+    else if (type == DICT_TYPE_PREFIX) {
         /* Load a prefix */
         Py_BEGIN_CRITICAL_SECTION2(self, zd);
         zstd_ret = ZSTD_CCtx_refPrefix(
@@ -268,7 +274,8 @@ load:
                             PyBytes_AS_STRING(zd->dict_content),
                             Py_SIZE(zd->dict_content));
         Py_END_CRITICAL_SECTION2();
-    } else {
+    }
+    else {
         /* Impossible code path */
         PyErr_SetString(PyExc_SystemError,
                         "load_c_dict() impossible code path");
@@ -412,7 +419,8 @@ compress_impl(ZstdCompressor *self, Py_buffer *data,
         in.src = data->buf;
         in.size = data->len;
         in.pos = 0;
-    } else {
+    }
+    else {
         in.src = &in;
         in.size = 0;
         in.pos = 0;
@@ -511,7 +519,8 @@ compress_mt_continue_impl(ZstdCompressor *self, Py_buffer *data)
             if (_OutputBuffer_Grow(&buffer, &out) < 0) {
                 goto error;
             }
-        } else if (in.pos == in.size) {
+        }
+        else if (in.pos == in.size) {
             /* Finished */
             assert(mt_continue_should_break(&in, &out));
             break;
@@ -569,13 +578,15 @@ _zstd_ZstdCompressor_compress_impl(ZstdCompressor *self, Py_buffer *data,
     /* Compress */
     if (self->use_multithread && mode == ZSTD_e_continue) {
         ret = compress_mt_continue_impl(self, data);
-    } else {
+    }
+    else {
         ret = compress_impl(self, data, mode);
     }
 
     if (ret) {
         self->last_mode = mode;
-    } else {
+    }
+    else {
         self->last_mode = ZSTD_e_end;
 
         /* Resetting cctx's session never fail */
@@ -621,7 +632,8 @@ _zstd_ZstdCompressor_flush_impl(ZstdCompressor *self, int mode)
 
     if (ret) {
         self->last_mode = mode;
-    } else {
+    }
+    else {
         self->last_mode = ZSTD_e_end;
 
         /* Resetting cctx's session never fail */
