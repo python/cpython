@@ -1672,6 +1672,12 @@ Deprecated
   :func:`codecs.open` is now deprecated. Use :func:`open` instead.
   (Contributed by Inada Naoki in :gh:`133036`.)
 
+* :mod:`ctypes`:
+  On non-Windows platforms, setting :attr:`.Structure._pack_` to use a
+  MSVC-compatible default memory layout is deprecated in favor of setting
+  :attr:`.Structure._layout_` to ``'ms'``.
+  (Contributed by Petr Viktorin in :gh:`131747`.)
+
 * :mod:`functools`:
   Calling the Python implementation of :func:`functools.reduce` with *function*
   or *sequence* as keyword arguments is now deprecated.
