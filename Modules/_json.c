@@ -51,7 +51,7 @@ typedef struct _PyEncoderObject {
     char sort_keys;
     char skipkeys;
     int allow_nan;
-    PyCFunction fast_encode;
+    int (*fast_encode)(PyUnicodeWriter *, PyObject*);
 } PyEncoderObject;
 
 #define PyEncoderObject_CAST(op)    ((PyEncoderObject *)(op))
@@ -102,8 +102,8 @@ static PyObject *
 _encoded_const(PyObject *obj);
 static void
 raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end);
-static PyObject *
-encoder_encode_string(PyEncoderObject *s, PyObject *obj);
+static int
+encoder_write_string(PyEncoderObject *s, PyUnicodeWriter *writer, PyObject *obj);
 static PyObject *
 encoder_encode_float(PyEncoderObject *s, PyObject *obj);
 
@@ -301,6 +301,89 @@ escape_unicode(PyObject *pystr)
     assert(_PyUnicode_CheckConsistency(rval, 1));
 #endif
     return rval;
+}
+
+// Take a PyUnicode pystr and write an ASCII-only escaped string to writer.
+static int
+write_escaped_ascii(PyUnicodeWriter *writer, PyObject *pystr)
+{
+    Py_ssize_t i;
+    Py_ssize_t input_chars;
+    Py_ssize_t chars;
+    Py_ssize_t copy_len = 0;
+    const void *input;
+    int kind;
+    int ret;
+    unsigned char buf[12];
+
+    input_chars = PyUnicode_GET_LENGTH(pystr);
+    input = PyUnicode_DATA(pystr);
+    kind = PyUnicode_KIND(pystr);
+
+    ret = PyUnicodeWriter_WriteChar(writer, '"');
+    if (ret) return ret;
+
+    for (i = 0; i < input_chars; i++) {
+        Py_UCS4 c = PyUnicode_READ(kind, input, i);
+        if (S_CHAR(c)) {
+            copy_len++;
+        }
+        else {
+            ret = PyUnicodeWriter_WriteSubstring(writer, pystr, i-copy_len, i);
+            if (ret) return ret;
+            copy_len = 0;
+
+            chars = ascii_escape_unichar(c, buf, 0);
+            ret = PyUnicodeWriter_WriteUTF8(writer, (const char*)buf, chars);
+            if (ret) return ret;
+        }
+    }
+
+    ret = PyUnicodeWriter_WriteSubstring(writer, pystr, i-copy_len, i);
+    if (ret) return ret;
+
+    return PyUnicodeWriter_WriteChar(writer, '"');
+}
+
+// Take a PyUnicode pystr and write an escaped string to writer.
+static int
+write_escaped_unicode(PyUnicodeWriter *writer, PyObject *pystr)
+{
+    Py_ssize_t i;
+    Py_ssize_t input_chars;
+    Py_ssize_t chars;
+    Py_ssize_t copy_len = 0;
+    const void *input;
+    int kind;
+    int ret;
+    unsigned char buf[12];
+
+    input_chars = PyUnicode_GET_LENGTH(pystr);
+    input = PyUnicode_DATA(pystr);
+    kind = PyUnicode_KIND(pystr);
+
+    ret = PyUnicodeWriter_WriteChar(writer, '"');
+    if (ret) return ret;
+
+    for (i = 0; i < input_chars; i++) {
+        Py_UCS4 c = PyUnicode_READ(kind, input, i);
+        if (c <= 0x1f || c == '\\' || c == '"') {
+            ret = PyUnicodeWriter_WriteSubstring(writer, pystr, i-copy_len, i);
+            if (ret) return ret;
+            copy_len = 0;
+
+            chars = ascii_escape_unichar(c, buf, 0);
+            ret = PyUnicodeWriter_WriteUTF8(writer, (const char*)buf, chars);
+            if (ret) return ret;
+        }
+        else {
+            copy_len++;
+        }
+    }
+
+    ret = PyUnicodeWriter_WriteSubstring(writer, pystr, i-copy_len, i);
+    if (ret) return ret;
+    return PyUnicodeWriter_WriteChar(writer, '"');
 }
 
 static void
@@ -1255,8 +1338,11 @@ encoder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (PyCFunction_Check(s->encoder)) {
         PyCFunction f = PyCFunction_GetFunction(s->encoder);
-        if (f == py_encode_basestring_ascii || f == py_encode_basestring) {
-            s->fast_encode = f;
+        if (f == py_encode_basestring_ascii){
+            s->fast_encode = write_escaped_ascii;
+        }
+        else if (f == py_encode_basestring) {
+            s->fast_encode = write_escaped_unicode;
         }
     }
 
@@ -1437,26 +1523,6 @@ encoder_encode_float(PyEncoderObject *s, PyObject *obj)
     return PyFloat_Type.tp_repr(obj);
 }
 
-static PyObject *
-encoder_encode_string(PyEncoderObject *s, PyObject *obj)
-{
-    /* Return the JSON representation of a string */
-    PyObject *encoded;
-
-    if (s->fast_encode) {
-        return s->fast_encode(NULL, obj);
-    }
-    encoded = PyObject_CallOneArg(s->encoder, obj);
-    if (encoded != NULL && !PyUnicode_Check(encoded)) {
-        PyErr_Format(PyExc_TypeError,
-                     "encoder() must return a string, not %.80s",
-                     Py_TYPE(encoded)->tp_name);
-        Py_DECREF(encoded);
-        return NULL;
-    }
-    return encoded;
-}
-
 static int
 _steal_accumulate(PyUnicodeWriter *writer, PyObject *stolen)
 {
@@ -1464,6 +1530,28 @@ _steal_accumulate(PyUnicodeWriter *writer, PyObject *stolen)
     int rval = PyUnicodeWriter_WriteStr(writer, stolen);
     Py_DECREF(stolen);
     return rval;
+}
+
+static int
+encoder_write_string(PyEncoderObject *s, PyUnicodeWriter *writer, PyObject *obj)
+{
+    if (s->fast_encode) {
+        return s->fast_encode(writer, obj);
+    }
+
+    /* Return the JSON representation of a string */
+    PyObject *encoded = PyObject_CallOneArg(s->encoder, obj);
+    if (encoded == NULL) {
+        return -1;
+    }
+    if (encoded != NULL && !PyUnicode_Check(encoded)) {
+        PyErr_Format(PyExc_TypeError,
+                     "encoder() must return a string, not %.80s",
+                     Py_TYPE(encoded)->tp_name);
+        Py_DECREF(encoded);
+        return -1;
+    }
+    return _steal_accumulate(writer, encoded);
 }
 
 static int
@@ -1485,10 +1573,7 @@ encoder_listencode_obj(PyEncoderObject *s, PyUnicodeWriter *writer,
       return PyUnicodeWriter_WriteUTF8(writer, "false", 5);
     }
     else if (PyUnicode_Check(obj)) {
-        PyObject *encoded = encoder_encode_string(s, obj);
-        if (encoded == NULL)
-            return -1;
-        return _steal_accumulate(writer, encoded);
+        return encoder_write_string(s, writer, obj);
     }
     else if (PyLong_Check(obj)) {
         if (PyLong_CheckExact(obj)) {
@@ -1577,7 +1662,7 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
                          PyObject *item_separator)
 {
     PyObject *keystr = NULL;
-    PyObject *encoded;
+    int rv;
 
     if (PyUnicode_Check(key)) {
         keystr = Py_NewRef(key);
@@ -1617,15 +1702,12 @@ encoder_encode_key_value(PyEncoderObject *s, PyUnicodeWriter *writer, bool *firs
         }
     }
 
-    encoded = encoder_encode_string(s, keystr);
+    rv = encoder_write_string(s, writer, keystr);
     Py_DECREF(keystr);
-    if (encoded == NULL) {
-        return -1;
+    if (rv != 0) {
+        return rv;
     }
 
-    if (_steal_accumulate(writer, encoded) < 0) {
-        return -1;
-    }
     if (PyUnicodeWriter_WriteStr(writer, s->key_separator) < 0) {
         return -1;
     }
