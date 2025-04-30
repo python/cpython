@@ -3009,12 +3009,53 @@ class _PdbClient:
         finally:
             readline.set_completer(old_completer)
 
+    if not hasattr(signal, "pthread_sigmask"):
+        # On Windows, we must drop signals arriving while we're ignoring them.
+        @contextmanager
+        def _block_sigint(self):
+            old_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+            try:
+                yield
+            finally:
+                signal.signal(signal.SIGINT, old_handler)
+
+        @contextmanager
+        def _handle_sigint(self, handler):
+            old_handler = signal.signal(signal.SIGINT, handler)
+            try:
+                yield
+            finally:
+                signal.signal(signal.SIGINT, old_handler)
+    else:
+        # On Unix, we can save them to be processed later.
+        @contextmanager
+        def _block_sigint(self):
+            signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGINT})
+            try:
+                yield
+            finally:
+                signal.pthread_sigmask(signal.SIG_UNBLOCK, {signal.SIGINT})
+
+        @contextmanager
+        def _handle_sigint(self, handler):
+            old_handler = signal.signal(signal.SIGINT, handler)
+            try:
+                signal.pthread_sigmask(signal.SIG_UNBLOCK, {signal.SIGINT})
+                yield
+            finally:
+                signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGINT})
+                signal.signal(signal.SIGINT, old_handler)
+
     def cmdloop(self):
-        with self.readline_completion(self.complete):
+        with (
+            self._block_sigint(),
+            self.readline_completion(self.complete),
+        ):
             while not self.write_failed:
                 try:
-                    if not (payload_bytes := self.sockfile.readline()):
-                        break
+                    with self._handle_sigint(signal.default_int_handler):
+                        if not (payload_bytes := self.sockfile.readline()):
+                            break
                 except KeyboardInterrupt:
                     self.send_interrupt()
                     continue
@@ -3061,7 +3102,8 @@ class _PdbClient:
     def prompt_for_reply(self, prompt):
         while True:
             try:
-                payload = {"reply": self.read_command(prompt)}
+                with self._handle_sigint(signal.default_int_handler):
+                    payload = {"reply": self.read_command(prompt)}
             except EOFError:
                 payload = {"signal": "EOF"}
             except KeyboardInterrupt:
@@ -3101,7 +3143,8 @@ class _PdbClient:
             if self.write_failed:
                 return None
 
-            payload = self.sockfile.readline()
+            with self._handle_sigint(signal.default_int_handler):
+                payload = self.sockfile.readline()
             if not payload:
                 return None
 
