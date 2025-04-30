@@ -4287,12 +4287,6 @@
                 JUMP_TO_JUMP_TARGET();
             }
             assert(PyStackRef_IsTaggedInt(null_or_index));
-            #ifdef Py_GIL_DISABLED
-            if (!_PyObject_IsUniquelyReferenced(iter_o)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
-            #endif
             break;
         }
 

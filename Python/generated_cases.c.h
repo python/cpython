@@ -5823,13 +5823,6 @@
                     JUMP_TO_PREDICTED(FOR_ITER);
                 }
                 assert(PyStackRef_IsTaggedInt(null_or_index));
-                #ifdef Py_GIL_DISABLED
-                if (!_PyObject_IsUniquelyReferenced(iter_o)) {
-                    UPDATE_MISS_STATS(FOR_ITER);
-                    assert(_PyOpcode_Deopt[opcode] == (FOR_ITER));
-                    JUMP_TO_PREDICTED(FOR_ITER);
-                }
-                #endif
             }
             // _ITER_JUMP_TUPLE
             {

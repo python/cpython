@@ -3286,9 +3286,6 @@ dummy_func(
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             EXIT_IF(Py_TYPE(iter_o) != &PyTuple_Type);
             assert(PyStackRef_IsTaggedInt(null_or_index));
-#ifdef Py_GIL_DISABLED
-            EXIT_IF(!_PyObject_IsUniquelyReferenced(iter_o));
-#endif
         }
 
         replaced op(_ITER_JUMP_TUPLE, (iter, null_or_index -- iter, null_or_index)) {
