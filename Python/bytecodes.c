@@ -3078,11 +3078,20 @@ dummy_func(
                 index_or_null = PyStackRef_TagInt(0);
             }
             else {
-                PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
-                PyStackRef_CLOSE(iterable);
-                ERROR_IF(iter_o == NULL);
-                iter = PyStackRef_FromPyObjectSteal(iter_o);
-                index_or_null = PyStackRef_NULL;
+                PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iterable);
+                if (tp == &PyRange_Type && _PyRange_IsSimpleCompact(iter_o)) {
+                    Py_ssize_t stop = _PyRange_GetStopIfCompact(iter_o);
+                    PyStackRef_CLOSE(iterable);
+                    iter = PyStackRef_TagInt(stop);
+                    index_or_null = PyStackRef_TagInt(0);
+                }
+                else {
+                    iter_o =  PyObject_GetIter(iter_o);
+                    PyStackRef_CLOSE(iterable);
+                    ERROR_IF(iter_o == NULL);
+                    iter = PyStackRef_FromPyObjectSteal(iter_o);
+                    index_or_null = PyStackRef_NULL;
+                }
             }
         }
 
@@ -3160,16 +3169,32 @@ dummy_func(
 
         replaced op(_FOR_ITER, (iter, null_or_index -- iter, null_or_index, next)) {
             /* before: [iter]; after: [iter, iter()] *or* [] (and jump over END_FOR.) */
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             if (PyStackRef_IsTaggedInt(null_or_index)) {
-                next = _PyForIter_NextWithIndex(iter_o, null_or_index);
-                if (PyStackRef_IsNull(next)) {
-                    JUMPBY(oparg + 1);
-                    DISPATCH();
+                if (PyStackRef_IsTaggedInt(iter)) {
+                    if (PyStackRef_Is(iter, null_or_index)) {
+                        null_or_index = PyStackRef_TagInt(-1);
+                        JUMPBY(oparg + 1);
+                        DISPATCH();
+
+                    }
+                    next = PyStackRef_BoxInt(null_or_index);
+                    if (PyStackRef_IsNull(next)) {
+                        ERROR_NO_POP();
+                    }
+                    null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
                 }
-                null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
+                else {
+                    PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
+                    next = _PyForIter_NextWithIndex(iter_o, null_or_index);
+                    if (PyStackRef_IsNull(next)) {
+                        JUMPBY(oparg + 1);
+                        DISPATCH();
+                    }
+                    null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
+                }
             }
             else {
+                PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
                 PyObject *next_o = (*Py_TYPE(iter_o)->tp_iternext)(iter_o);
                 if (next_o == NULL) {
                     if (_PyErr_Occurred(tstate)) {
@@ -3219,10 +3244,25 @@ dummy_func(
         inst(INSTRUMENTED_FOR_ITER, (unused/1, iter, null_or_index -- iter, null_or_index, next)) {
             PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             if (PyStackRef_IsTaggedInt(null_or_index)) {
-                next = _PyForIter_NextWithIndex(iter_o, null_or_index);
-                if (PyStackRef_IsNull(next)) {
-                    JUMPBY(oparg + 1);
-                    DISPATCH();
+                if (PyStackRef_IsTaggedInt(iter)) {
+                    if (PyStackRef_Is(iter, null_or_index)) {
+                        null_or_index = PyStackRef_TagInt(-1);
+                        JUMPBY(oparg + 1);
+                        DISPATCH();
+
+                    }
+                    next = PyStackRef_BoxInt(null_or_index);
+                    if (PyStackRef_IsNull(next)) {
+                        ERROR_NO_POP();
+                    }
+                    null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
+                }
+                else {
+                    next = _PyForIter_NextWithIndex(iter_o, null_or_index);
+                    if (PyStackRef_IsNull(next)) {
+                        JUMPBY(oparg + 1);
+                        DISPATCH();
+                    }
                 }
                 null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
                 INSTRUMENTED_JUMP(this_instr, next_instr, PY_MONITORING_EVENT_BRANCH_LEFT);
@@ -3254,10 +3294,10 @@ dummy_func(
 
 
         op(_ITER_CHECK_LIST, (iter, null_or_index -- iter, null_or_index)) {
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            EXIT_IF(Py_TYPE(iter_o) != &PyList_Type);
+            EXIT_IF(PyStackRef_TYPE(iter) != &PyList_Type);
             assert(PyStackRef_IsTaggedInt(null_or_index));
 #ifdef Py_GIL_DISABLED
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             EXIT_IF(!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o));
 #endif
         }
@@ -3339,8 +3379,7 @@ dummy_func(
             _ITER_NEXT_LIST;
 
         op(_ITER_CHECK_TUPLE, (iter, null_or_index -- iter, null_or_index)) {
-            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-            EXIT_IF(Py_TYPE(iter_o) != &PyTuple_Type);
+            EXIT_IF(PyStackRef_TYPE(iter) != &PyTuple_Type);
             assert(PyStackRef_IsTaggedInt(null_or_index));
         }
 
@@ -3380,21 +3419,11 @@ dummy_func(
             _ITER_NEXT_TUPLE;
 
         op(_ITER_CHECK_RANGE, (iter, null_or_index -- iter, null_or_index)) {
-            _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
-            EXIT_IF(Py_TYPE(r) != &PyRangeIter_Type);
-#ifdef Py_GIL_DISABLED
-            EXIT_IF(!_PyObject_IsUniquelyReferenced((PyObject *)r));
-#endif
+            EXIT_IF(!PyStackRef_IsTaggedInt(iter));
         }
 
         replaced op(_ITER_JUMP_RANGE, (iter, null_or_index -- iter, null_or_index)) {
-            _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
-            assert(Py_TYPE(r) == &PyRangeIter_Type);
-#ifdef Py_GIL_DISABLED
-            assert(_PyObject_IsUniquelyReferenced((PyObject *)r));
-#endif
-            STAT_INC(FOR_ITER, hit);
-            if (r->len <= 0) {
+            if (PyStackRef_Is(iter, null_or_index)) {
                 // Jump over END_FOR instruction.
                 JUMPBY(oparg + 1);
                 DISPATCH();
@@ -3403,24 +3432,15 @@ dummy_func(
 
         // Only used by Tier 2
         op(_GUARD_NOT_EXHAUSTED_RANGE, (iter, null_or_index -- iter, null_or_index)) {
-            _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
-            assert(Py_TYPE(r) == &PyRangeIter_Type);
-            EXIT_IF(r->len <= 0);
+            EXIT_IF(PyStackRef_Is(iter, null_or_index));
         }
 
         op(_ITER_NEXT_RANGE, (iter, null_or_index -- iter, null_or_index, next)) {
-            _PyRangeIterObject *r = (_PyRangeIterObject *)PyStackRef_AsPyObjectBorrow(iter);
-            assert(Py_TYPE(r) == &PyRangeIter_Type);
-#ifdef Py_GIL_DISABLED
-            assert(_PyObject_IsUniquelyReferenced((PyObject *)r));
-#endif
-            assert(r->len > 0);
-            long value = r->start;
-            r->start = value + r->step;
-            r->len--;
-            PyObject *res = PyLong_FromLong(value);
-            ERROR_IF(res == NULL);
-            next = PyStackRef_FromPyObjectSteal(res);
+            next = PyStackRef_BoxInt(null_or_index);
+            if (PyStackRef_IsNull(next)) {
+                ERROR_NO_POP();
+            }
+            null_or_index = PyStackRef_IncrementTaggedIntNoOverflow(null_or_index);
         }
 
         macro(FOR_ITER_RANGE) =
@@ -3430,8 +3450,8 @@ dummy_func(
             _ITER_NEXT_RANGE;
 
         op(_FOR_ITER_GEN_FRAME, (iter, null -- iter, null, gen_frame: _PyInterpreterFrame*)) {
+            DEOPT_IF(PyStackRef_TYPE(iter) != &PyGen_Type);
             PyGenObject *gen = (PyGenObject *)PyStackRef_AsPyObjectBorrow(iter);
-            DEOPT_IF(Py_TYPE(gen) != &PyGen_Type);
 #ifdef Py_GIL_DISABLED
             // Since generators can't be used by multiple threads anyway we
             // don't need to deopt here, but this lets us work on making

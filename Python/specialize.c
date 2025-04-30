@@ -2908,8 +2908,7 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
 {
     assert(ENABLE_SPECIALIZATION_FT);
     assert(_PyOpcode_Caches[FOR_ITER] == INLINE_CACHE_ENTRIES_FOR_ITER);
-    PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
-    PyTypeObject *tp = Py_TYPE(iter_o);
+    PyTypeObject *tp = PyStackRef_TYPE(iter);
 
     if (PyStackRef_IsNull(null_or_index)) {
 #ifdef Py_GIL_DISABLED
@@ -2922,11 +2921,7 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
             goto failure;
         }
 #endif
-        if (tp == &PyRangeIter_Type) {
-            specialize(instr, FOR_ITER_RANGE);
-            return;
-        }
-        else if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
+        if (tp == &PyGen_Type && oparg <= SHRT_MAX) {
             // Generators are very much not thread-safe, so don't worry about
             // the specialization not being thread-safe.
             assert(instr[oparg + INLINE_CACHE_ENTRIES_FOR_ITER + 1].op.code == END_FOR  ||
@@ -2941,8 +2936,13 @@ _Py_Specialize_ForIter(_PyStackRef iter, _PyStackRef null_or_index, _Py_CODEUNIT
         }
     }
     else {
+        if (tp == &PyLong_Type) {
+            specialize(instr, FOR_ITER_RANGE);
+            return;
+        }
         if (tp == &PyList_Type) {
 #ifdef Py_GIL_DISABLED
+            PyObject *iter_o = PyStackRef_AsPyObjectBorrow(iter);
             // Only specialize for lists owned by this thread or shared
             if (!_Py_IsOwnedByCurrentThread(iter_o) && !_PyObject_GC_IS_SHARED(iter_o)) {
                 goto failure;

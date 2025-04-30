@@ -10,6 +10,7 @@
 #include "pycore_long.h"          // _Py_SmallInts
 #include "pycore_object.h"        // _PyObject_Init()
 #include "pycore_runtime.h"       // _PY_NSMALLPOSINTS
+#include "pycore_stackref.h"
 #include "pycore_structseq.h"     // _PyStructSequence_FiniBuiltin()
 #include "pycore_unicodeobject.h" // _PyUnicode_Equal()
 
@@ -6872,3 +6873,19 @@ PyLongWriter_Finish(PyLongWriter *writer)
 
     return (PyObject*)obj;
 }
+
+// Tagged int support
+
+_PyStackRef
+PyStackRef_BoxInt(_PyStackRef i)
+{
+    assert((i.bits & Py_INT_TAG) == Py_INT_TAG);
+    intptr_t val = (intptr_t)i.bits;
+    val = Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, val, 2);
+    PyObject *boxed = PyLong_FromSsize_t(val);
+    if (boxed == NULL) {
+        return PyStackRef_NULL;
+    }
+    return PyStackRef_FromPyObjectSteal(boxed);
+}
+

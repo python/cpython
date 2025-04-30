@@ -276,6 +276,8 @@ PyStackRef_IncrementTaggedIntNoOverflow(_PyStackRef ref)
 
 #define PyStackRef_IsDeferredOrTaggedInt(ref) (((ref).bits & Py_TAG_REFCNT) != 0)
 
+extern _PyStackRef PyStackRef_BoxInt(_PyStackRef i);
+
 #ifdef Py_GIL_DISABLED
 
 #define Py_TAG_DEFERRED Py_TAG_REFCNT

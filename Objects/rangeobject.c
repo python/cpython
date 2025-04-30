@@ -156,6 +156,26 @@ range_vectorcall(PyObject *rangetype, PyObject *const *args,
     return range_from_array((PyTypeObject *)rangetype, args, nargs);
 }
 
+int
+_PyRange_IsSimpleCompact(PyObject *range) {
+    assert(PyRange_Check(range));
+    rangeobject *r = (rangeobject*)range;
+    if (r->start == _PyLong_GetZero() && r->step == _PyLong_GetOne() &&
+        _PyLong_IsNonNegativeCompact((PyLongObject *)r->stop)
+    ) {
+        return 1;
+    }
+    return 0;
+}
+
+Py_ssize_t
+_PyRange_GetStopIfCompact(PyObject *range) {
+    assert(PyRange_Check(range));
+    rangeobject *r = (rangeobject*)range;
+    assert(_PyLong_IsNonNegativeCompact((PyLongObject *)r->stop));
+    return _PyLong_GetNonNegativeCompactValue((PyLongObject *)r->stop);
+}
+
 PyDoc_STRVAR(range_doc,
 "range(stop) -> range object\n\
 range(start, stop[, step]) -> range object\n\
