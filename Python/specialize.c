@@ -3174,6 +3174,25 @@ _Py_GatherStats_GetIter(_PyStackRef iterable)
 #endif
 
 
+Py_NO_INLINE void
+_Py_Specialize_GetIter(_PyStackRef iterable, _Py_CODEUNIT *instr)
+{
+    PyTypeObject *tp = PyStackRef_TYPE(iterable);
+    if (tp->tp_iter == PyObject_SelfIter) {
+        specialize(instr, GET_ITER_SELF);
+        return;
+    }
+    if (tp == &PyList_Type || tp == &PyTuple_Type) {
+        specialize(instr, GET_ITER_LIST_OR_TUPLE);
+        return;
+    }
+#ifdef Py_STATS
+    _Py_GatherStats_GetIter(iterable);
+#endif
+    unspecialize(instr);
+    return;
+}
+
 /* Code init cleanup.
  * CALL_ALLOC_AND_ENTER_INIT will set up
  * the frame to execute the EXIT_INIT_CHECK

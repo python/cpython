@@ -4222,6 +4222,40 @@
             break;
         }
 
+        case _GET_ITER_SELF: {
+            _PyStackRef iter;
+            _PyStackRef null;
+            iter = stack_pointer[-1];
+            PyTypeObject *tp = PyStackRef_TYPE(iter);
+            if (tp->tp_iter != PyObject_SelfIter) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            null = PyStackRef_NULL;
+            stack_pointer[0] = null;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _GET_ITER_LIST_OR_TUPLE: {
+            _PyStackRef iter;
+            _PyStackRef index0;
+            iter = stack_pointer[-1];
+            PyTypeObject *tp = PyStackRef_TYPE(iter);
+            if (tp != &PyList_Type) {
+                if (tp != &PyTuple_Type) {
+                    UOP_STAT_INC(uopcode, miss);
+                    JUMP_TO_JUMP_TARGET();
+                }
+            }
+            index0 = PyStackRef_TagInt(0);
+            stack_pointer[0] = index0;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
         case _GET_YIELD_FROM_ITER: {
             _PyStackRef iterable;
             _PyStackRef iter;

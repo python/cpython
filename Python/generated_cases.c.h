@@ -6193,41 +6193,122 @@
             (void)(opcode);
             #endif
             frame->instr_ptr = next_instr;
-            next_instr += 1;
+            next_instr += 2;
             INSTRUCTION_STATS(GET_ITER);
-            _PyStackRef iterable;
+            PREDICTED_GET_ITER:;
+            _Py_CODEUNIT* const this_instr = next_instr - 2;
+            (void)this_instr;
             _PyStackRef iter;
+            _PyStackRef iterable;
             _PyStackRef index_or_null;
-            iterable = stack_pointer[-1];
-            #ifdef Py_STATS
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            _Py_GatherStats_GetIter(iterable);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
-            #endif
-
-            PyTypeObject *tp = PyStackRef_TYPE(iterable);
-            if (tp == &PyTuple_Type || tp == &PyList_Type) {
-                iter = iterable;
-                index_or_null = PyStackRef_TagInt(0);
-            }
-            else {
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                stack_pointer += -1;
-                assert(WITHIN_STACK_BOUNDS());
-                _PyFrame_SetStackPointer(frame, stack_pointer);
-                PyStackRef_CLOSE(iterable);
-                stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (iter_o == NULL) {
-                    JUMP_TO_LABEL(error);
+            // _SPECIALIZE_GET_ITER
+            {
+                iter = stack_pointer[-1];
+                uint16_t counter = read_u16(&this_instr[1].cache);
+                (void)counter;
+                #if ENABLE_SPECIALIZATION_FT
+                if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
+                    next_instr = this_instr;
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    _Py_Specialize_GetIter(iter, next_instr);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    DISPATCH_SAME_OPARG();
                 }
-                iter = PyStackRef_FromPyObjectSteal(iter_o);
-                index_or_null = PyStackRef_NULL;
-                stack_pointer += 1;
+                OPCODE_DEFERRED_INC(FOR_ITER);
+                ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
+                #endif  /* ENABLE_SPECIALIZATION_FT */
+            }
+            // _GET_ITER
+            {
+                iterable = iter;
+                #ifdef Py_STATS
+                _PyFrame_SetStackPointer(frame, stack_pointer);
+                _Py_GatherStats_GetIter(iterable);
+                stack_pointer = _PyFrame_GetStackPointer(frame);
+                #endif
+
+                PyTypeObject *tp = PyStackRef_TYPE(iterable);
+                if (tp == &PyTuple_Type || tp == &PyList_Type) {
+                    iter = iterable;
+                    index_or_null = PyStackRef_TagInt(0);
+                }
+                else {
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    PyObject *iter_o = PyObject_GetIter(PyStackRef_AsPyObjectBorrow(iterable));
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    stack_pointer += -1;
+                    assert(WITHIN_STACK_BOUNDS());
+                    _PyFrame_SetStackPointer(frame, stack_pointer);
+                    PyStackRef_CLOSE(iterable);
+                    stack_pointer = _PyFrame_GetStackPointer(frame);
+                    if (iter_o == NULL) {
+                        JUMP_TO_LABEL(error);
+                    }
+                    iter = PyStackRef_FromPyObjectSteal(iter_o);
+                    index_or_null = PyStackRef_NULL;
+                    stack_pointer += 1;
+                }
             }
             stack_pointer[-1] = iter;
             stack_pointer[0] = index_or_null;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
+        TARGET(GET_ITER_LIST_OR_TUPLE) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = GET_ITER_LIST_OR_TUPLE;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(GET_ITER_LIST_OR_TUPLE);
+            static_assert(1 == 1, "incorrect cache size");
+            _PyStackRef iter;
+            _PyStackRef index0;
+            /* Skip 1 cache entry */
+            iter = stack_pointer[-1];
+            PyTypeObject *tp = PyStackRef_TYPE(iter);
+            if (tp != &PyList_Type) {
+                if (tp != &PyTuple_Type) {
+                    UPDATE_MISS_STATS(GET_ITER);
+                    assert(_PyOpcode_Deopt[opcode] == (GET_ITER));
+                    JUMP_TO_PREDICTED(GET_ITER);
+                }
+            }
+            index0 = PyStackRef_TagInt(0);
+            stack_pointer[0] = index0;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            DISPATCH();
+        }
+
+        TARGET(GET_ITER_SELF) {
+            #if Py_TAIL_CALL_INTERP
+            int opcode = GET_ITER_SELF;
+            (void)(opcode);
+            #endif
+            _Py_CODEUNIT* const this_instr = next_instr;
+            (void)this_instr;
+            frame->instr_ptr = next_instr;
+            next_instr += 2;
+            INSTRUCTION_STATS(GET_ITER_SELF);
+            static_assert(1 == 1, "incorrect cache size");
+            _PyStackRef iter;
+            _PyStackRef null;
+            /* Skip 1 cache entry */
+            iter = stack_pointer[-1];
+            PyTypeObject *tp = PyStackRef_TYPE(iter);
+            if (tp->tp_iter != PyObject_SelfIter) {
+                UPDATE_MISS_STATS(GET_ITER);
+                assert(_PyOpcode_Deopt[opcode] == (GET_ITER));
+                JUMP_TO_PREDICTED(GET_ITER);
+            }
+            null = PyStackRef_NULL;
+            stack_pointer[0] = null;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
             DISPATCH();

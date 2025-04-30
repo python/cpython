@@ -3048,7 +3048,25 @@ dummy_func(
             values_or_none = PyStackRef_FromPyObjectSteal(values_or_none_o);
         }
 
-        inst(GET_ITER, (iterable -- iter, index_or_null)) {
+
+        family(GET_ITER, 1) = {
+            GET_ITER_LIST_OR_TUPLE,
+            GET_ITER_SELF,
+        };
+
+        specializing op(_SPECIALIZE_GET_ITER, (counter/1, iter -- iter)) {
+            #if ENABLE_SPECIALIZATION_FT
+            if (ADAPTIVE_COUNTER_TRIGGERS(counter)) {
+                next_instr = this_instr;
+                _Py_Specialize_GetIter(iter, next_instr);
+                DISPATCH_SAME_OPARG();
+            }
+            OPCODE_DEFERRED_INC(FOR_ITER);
+            ADVANCE_ADAPTIVE_COUNTER(this_instr[1].counter);
+            #endif  /* ENABLE_SPECIALIZATION_FT */
+        }
+
+        op(_GET_ITER, (iterable -- iter, index_or_null)) {
             #ifdef Py_STATS
             _Py_GatherStats_GetIter(iterable);
             #endif
@@ -3066,6 +3084,22 @@ dummy_func(
                 iter = PyStackRef_FromPyObjectSteal(iter_o);
                 index_or_null = PyStackRef_NULL;
             }
+        }
+
+        macro(GET_ITER) = _SPECIALIZE_GET_ITER + _GET_ITER;
+
+        inst(GET_ITER_SELF, (unused/1, iter -- iter, null)) {
+            PyTypeObject *tp = PyStackRef_TYPE(iter);
+            DEOPT_IF(tp->tp_iter != PyObject_SelfIter);
+            null = PyStackRef_NULL;
+        }
+
+        inst(GET_ITER_LIST_OR_TUPLE, (unused/1, iter -- iter, index0)) {
+            PyTypeObject *tp = PyStackRef_TYPE(iter);
+            if (tp != &PyList_Type) {
+                DEOPT_IF(tp != &PyTuple_Type);
+            }
+            index0 = PyStackRef_TagInt(0);
         }
 
         inst(GET_YIELD_FROM_ITER, (iterable -- iter)) {
