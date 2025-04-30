@@ -741,6 +741,9 @@ PyStackRef_LongCheck(_PyStackRef stackref)
 static inline bool
 PyStackRef_ExceptionInstanceCheck(_PyStackRef stackref)
 {
+    if (PyStackRef_IsTaggedInt(stackref)) {
+        return false;
+    }
     return PyExceptionInstance_Check(PyStackRef_AsPyObjectBorrow(stackref));
 }
 

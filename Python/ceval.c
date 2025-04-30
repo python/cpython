@@ -3421,14 +3421,28 @@ _PyStackRef
 _PyForIter_NextWithIndex(PyObject *seq, _PyStackRef index)
 {
     assert(PyStackRef_IsTaggedInt(index));
-    assert(Py_TYPE(seq) == &PyTuple_Type || Py_TYPE(seq) == &PyList_Type);
-    size_t size = Py_SIZE(seq);
+    assert(PyTuple_CheckExact(seq) || PyList_CheckExact(seq));
     intptr_t i = PyStackRef_UntagInt(index);
+    if (PyTuple_CheckExact(seq)) {
+        size_t size = PyTuple_GET_SIZE(seq);
+        if ((size_t)i >= size) {
+            return PyStackRef_NULL;
+        }
+        return PyStackRef_FromPyObjectNew(PyTuple_GET_ITEM(seq, i));
+    }
+    size_t size = PyList_GET_SIZE(seq);
     if ((size_t)i >= size) {
         return PyStackRef_NULL;
     }
-    PyObject *next_o = PySequence_Fast_GET_ITEM(seq, i);
-    return PyStackRef_FromPyObjectNew(next_o);
+#ifdef Py_GIL_DISABLED
+    PyObject *item = _PyList_GetItemRef((PyListObject *)seq, i);
+    if (item == NULL) {
+        return PyStackRef_NULL;
+    }
+    return PyStackRef_FromPyObjectSteal(item);
+#else
+    return PyStackRef_FromPyObjectNew(PyList_GET_ITEM(seq, i));
+#endif
 }
 
 /* Check if a 'cls' provides the given special method. */
