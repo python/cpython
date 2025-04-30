@@ -66,6 +66,7 @@ Summary -- release highlights
 
 * :ref:`PEP 649: deferred evaluation of annotations <whatsnew314-pep649>`
 * :ref:`PEP 741: Python Configuration C API <whatsnew314-pep741>`
+* :ref:`PEP 750: Template Strings <whatsnew314-pep750>`
 * :ref:`PEP 758: Allow except and except* expressions without parentheses <whatsnew314-pep758>`
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 * :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
@@ -92,6 +93,76 @@ If you encounter :exc:`NameError`\s or pickling errors coming out of
 New features
 ============
 
+.. _whatsnew314-pep750:
+
+PEP 750: Template Strings
+-------------------------
+
+Template string literals (t-strings) are a generalization of f-strings,
+using a ``t`` in place of the ``f`` prefix. Instead of evaluating
+to :class:`str`, t-strings evaluate to a new :class:`!string.templatelib.Template` type:
+
+.. code-block:: python
+
+   from string.templatelib import Template
+
+   name = "World"
+   template: Template = t"Hello {name}"
+
+The template can then be combined with functions that operate on the template's
+structure to produce a :class:`str` or a string-like result.
+For example, sanitizing input:
+
+.. code-block:: python
+
+   evil = "<script>alert('evil')</script>"
+   template = t"<p>{evil}</p>"
+   assert html(template) == "<p>&lt;script&gt;alert('evil')&lt;/script&gt;</p>"
+
+As another example, generating HTML attributes from data:
+
+.. code-block:: python
+
+   attributes = {"src": "shrubbery.jpg", "alt": "looks nice"}
+   template = t"<img {attributes} />"
+   assert html(template) == '<img src="shrubbery.jpg" alt="looks nice" class="looks-nice" />'
+
+Unlike f-strings, the ``html`` function has access to template attributes
+containing the original information: static strings, interpolations, and values
+from the original scope. Unlike existing templating approaches, t-strings build
+from the well-known f-string syntax and rules. Template systems thus benefit
+from Python tooling as they are much closer to the Python language, syntax,
+scoping, and more.
+
+Writing template handlers is straightforward:
+
+.. code-block:: python
+
+   from string.templatelib import Template, Interpolation
+
+   def lower_upper(template: Template) -> str:
+       """Render static parts lowercased and interpolations uppercased."""
+       parts: list[str] = []
+       for item in template:
+           if isinstance(item, Interpolation):
+               parts.append(str(item.value).upper())
+           else:
+               parts.append(item.lower())
+       return "".join(parts)
+
+   name = "world"
+   assert lower_upper(t"HELLO {name}") == "hello WORLD"
+
+With this in place, developers can write template systems to sanitize SQL, make
+safe shell operations, improve logging, tackle modern ideas in web development
+(HTML, CSS, and so on), and implement lightweight, custom business DSLs.
+
+See :pep:`750` for more details.
+
+(Contributed by Jim Baker, Guido van Rossum, Paul Everitt, Koudai Aono,
+Lysandros Nikolaou, Dave Peck, Adam Turner, Jelle Zijlstra, Bénédikt Tran,
+and Pablo Galindo Salgado in :gh:`132661`.)
+
 .. _whatsnew314-pep768:
 
 PEP 768: Safe external debugger interface for CPython
@@ -99,7 +170,9 @@ PEP 768: Safe external debugger interface for CPython
 
 :pep:`768` introduces a zero-overhead debugging interface that allows debuggers and profilers
 to safely attach to running Python processes. This is a significant enhancement to Python's
-debugging capabilities allowing debuggers to forego unsafe alternatives.
+debugging capabilities allowing debuggers to forego unsafe alternatives. See
+:ref:`below <whatsnew314-remote-pdb>` for how this feature is leveraged to
+implement the new :mod:`pdb` module's remote attaching capabilities.
 
 The new interface provides safe execution points for attaching debugger code without modifying
 the interpreter's normal execution path or adding runtime overhead. This enables tools to
@@ -148,6 +221,32 @@ for external processes to coordinate debugging operations.
 See :pep:`768` for more details.
 
 (Contributed by Pablo Galindo Salgado, Matt Wozniski, and Ivona Stojanovic in :gh:`131591`.)
+
+
+.. _whatsnew314-remote-pdb:
+
+Remote attaching to a running Python process with PDB
+-----------------------------------------------------
+
+The :mod:`pdb` module now supports remote attaching to a running Python process
+using a new ``-p PID`` command-line option:
+
+.. code-block:: sh
+
+   python -m pdb -p 1234
+
+This will connect to the Python process with the given PID and allow you to
+debug it interactively. Notice that due to how the Python interpreter works
+attaching to a remote process that is blocked in a system call or waiting for
+I/O will only work once the next bytecode instruction is executed or when the
+process receives a signal.
+
+This feature leverages :pep:`768` and the :func:`sys.remote_exec` function
+to attach to the remote process and send the PDB commands to it.
+
+
+(Contributed by Matt Wozniski and Pablo Galindo in :gh:`131591`.)
+
 
 .. _whatsnew314-pep758:
 
@@ -264,6 +363,49 @@ is unchanged.
 Improved error messages
 -----------------------
 
+* The interpreter now provides helpful suggestions when it detects typos in Python
+  keywords. When a word that closely resembles a Python keyword is encountered,
+  the interpreter will suggest the correct keyword in the error message. This
+  feature helps programmers quickly identify and fix common typing mistakes. For
+  example:
+
+  .. code-block:: python
+
+     >>> whille True:
+     ...     pass
+     Traceback (most recent call last):
+       File "<stdin>", line 1
+         whille True:
+         ^^^^^^
+     SyntaxError: invalid syntax. Did you mean 'while'?
+
+     >>> asynch def fetch_data():
+     ...     pass
+     Traceback (most recent call last):
+       File "<stdin>", line 1
+         asynch def fetch_data():
+         ^^^^^^
+     SyntaxError: invalid syntax. Did you mean 'async'?
+
+     >>> async def foo():
+     ...     awaid fetch_data()
+     Traceback (most recent call last):
+       File "<stdin>", line 2
+         awaid fetch_data()
+         ^^^^^
+     SyntaxError: invalid syntax. Did you mean 'await'?
+
+     >>> raisee ValueError("Error")
+     Traceback (most recent call last):
+       File "<stdin>", line 1
+         raisee ValueError("Error")
+         ^^^^^^
+     SyntaxError: invalid syntax. Did you mean 'raise'?
+
+  While the feature focuses on the most common cases, some variations of
+  misspellings may still result in regular syntax errors.
+  (Contributed by Pablo Galindo in :gh:`132449`.)
+
 * When unpacking assignment fails due to incorrect number of variables, the
   error message prints the received number of values in more cases than before.
   (Contributed by Tushar Sadhwani in :gh:`122239`.)
@@ -277,6 +419,21 @@ Improved error messages
          ^^^^^^^
      ValueError: too many values to unpack (expected 3, got 4)
 
+* :keyword:`elif` statements that follow an :keyword:`else` block now have a specific error message.
+  (Contributed by Steele Farnsworth in :gh:`129902`.)
+
+  .. code-block:: pycon
+
+      >>> if who == "me":
+      ...     print("It's me!")
+      ... else:
+      ...     print("It's not me!")
+      ... elif who is None:
+      ...     print("Who is it?")
+      File "<stdin>", line 5
+        elif who is None:
+        ^^^^
+      SyntaxError: 'elif' block follows an 'else' block
 
 * If a statement (:keyword:`pass`, :keyword:`del`, :keyword:`return`,
   :keyword:`yield`, :keyword:`raise`, :keyword:`break`, :keyword:`continue`,
@@ -664,6 +821,10 @@ decimal
   :meth:`Decimal.from_number() <decimal.Decimal.from_number>`.
   (Contributed by Serhiy Storchaka in :gh:`121798`.)
 
+* Expose :func:`decimal.IEEEContext` to support creation of contexts
+  corresponding to the IEEE 754 (2008) decimal interchange formats.
+  (Contributed by Sergey B Kirpichev in :gh:`53032`.)
+
 difflib
 -------
 
@@ -911,9 +1072,22 @@ mimetypes
 
   * :rfc:`2361`: Change type for ``.avi`` to ``video/vnd.avi``
     and for ``.wav`` to ``audio/vnd.wave``
-  * :rfc:`4337`: Add MPEG-4 ``audio/mp4`` (``.m4a``))
+  * :rfc:`4337`: Add MPEG-4 ``audio/mp4`` (``.m4a``)
   * :rfc:`5334`: Add Ogg media (``.oga``, ``.ogg`` and ``.ogx``)
+  * :rfc:`6713`: Add gzip ``application/gzip`` (``.gz``)
   * :rfc:`9639`: Add FLAC ``audio/flac`` (``.flac``)
+  * Add 7z ``application/x-7z-compressed`` (``.7z``)
+  * Add Android Package ``application/vnd.android.package-archive`` (``.apk``)
+    when not strict
+  * Add deb ``application/x-debian-package`` (``.deb``)
+  * Add glTF binary ``model/gltf-binary`` (``.glb``)
+  * Add glTF JSON/ASCII ``model/gltf+json`` (``.gltf``)
+  * Add M4V ``video/x-m4v`` (``.m4v``)
+  * Add PHP ``application/x-httpd-php`` (``.php``)
+  * Add RAR ``application/vnd.rar`` (``.rar``)
+  * Add RPM ``application/x-rpm`` (``.rpm``)
+  * Add STL ``model/stl`` (``.stl``)
+  * Add Windows Media Video ``video/x-ms-wmv`` (``.wmv``)
   * De facto: Add WebM ``audio/webm`` (``.weba``)
   * `ECMA-376
     <https://ecma-international.org/publications-and-standards/standards/ecma-376/>`__:
@@ -972,6 +1146,10 @@ multiprocessing
   The :func:`set` in :func:`multiprocessing.Manager` method is now available.
   (Contributed by Mingyu Park in :gh:`129949`.)
 
+* Add :func:`multiprocessing.Process.interrupt` which terminates the child
+  process by sending :py:const:`~signal.SIGINT`. This enables "finally" clauses
+  and printing stack trace for the terminated process.
+  (Contributed by Artem Pulkin in :gh:`131913`.)
 
 operator
 --------
@@ -1061,6 +1239,11 @@ pdb
   backend by default, which is configurable.
   (Contributed by Tian Gao in :gh:`124533`.)
 
+* :func:`pdb.set_trace_async` is added to support debugging asyncio
+  coroutines. :keyword:`await` statements are supported with this
+  function.
+  (Contributed by Tian Gao in :gh:`132576`.)
+
 
 pickle
 ------
@@ -1126,7 +1309,7 @@ struct
 ------
 
 * Support the :c:expr:`float complex` and :c:expr:`double complex` C types in
-  the :mod:`struct` module (formatting characters ``'E'`` and ``'C'``,
+  the :mod:`struct` module (formatting characters ``'F'`` and ``'D'``,
   respectively) if the compiler has C11 complex arithmetic.
   (Contributed by Sergey B Kirpichev in :gh:`121249`.)
 
@@ -1155,6 +1338,9 @@ sys
 
 * On FreeBSD, :data:`sys.platform` doesn't contain the major version anymore.
   It is always ``'freebsd'``, instead of ``'freebsd13'`` or ``'freebsd14'``.
+
+* Raise :exc:`DeprecationWarning` for :func:`sys._clear_type_cache`. This
+  function was deprecated in Python 3.13 but it didn't raise a runtime warning.
 
 
 sys.monitoring
@@ -1331,6 +1517,17 @@ uuid
   (Contributed by Simon Legner in :gh:`131236`.)
 
 
+webbrowser
+----------
+
+* Names in the :envvar:`BROWSER` environment variable can now refer to already
+  registered browsers for the :mod:`webbrowser` module, instead of always
+  generating a new browser command.
+
+  This makes it possible to set :envvar:`BROWSER` to the value of one of the
+  supported browsers on macOS.
+
+
 zipinfo
 -------
 
@@ -1471,10 +1668,26 @@ Deprecated
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
 
+* :mod:`codecs`:
+  :func:`codecs.open` is now deprecated. Use :func:`open` instead.
+  (Contributed by Inada Naoki in :gh:`133036`.)
+
 * :mod:`functools`:
   Calling the Python implementation of :func:`functools.reduce` with *function*
   or *sequence* as keyword arguments is now deprecated.
   (Contributed by Kirill Podoprigora in :gh:`121676`.)
+
+* :mod:`logging`:
+  Support for custom logging handlers with the *strm* argument is deprecated
+  and scheduled for removal in Python 3.16. Define handlers with the *stream*
+  argument instead. (Contributed by Mariusz Felisiak in :gh:`115032`.)
+
+* :mod:`mimetypes`:
+  Valid extensions start with a '.' or are empty for
+  :meth:`mimetypes.MimeTypes.add_type`.
+  Undotted extensions are deprecated and will
+  raise a :exc:`ValueError` in Python 3.16.
+  (Contributed by Hugo van Kemenade in :gh:`75223`.)
 
 * :mod:`!nturl2path`: This module is now deprecated. Call
   :func:`urllib.request.url2pathname` and :func:`~urllib.request.pathname2url`
@@ -1503,6 +1716,13 @@ Deprecated
 * :mod:`symtable`:
   Deprecate :meth:`symtable.Class.get_methods` due to the lack of interest.
   (Contributed by Bénédikt Tran in :gh:`119698`.)
+
+* :mod:`tkinter`:
+  The :class:`!tkinter.Variable` methods :meth:`!trace_variable`,
+  :meth:`!trace_vdelete` and :meth:`!trace_vinfo` are now deprecated.
+  Use :meth:`!trace_add`, :meth:`!trace_remove` and :meth:`!trace_info`
+  instead.
+  (Contributed by Serhiy Storchaka in :gh:`120220`.)
 
 * :mod:`urllib.parse`:
   Accepting objects with false values (like ``0`` and ``[]``) except empty
@@ -1969,6 +2189,11 @@ New features
   Adding ``?`` after any format unit makes ``None`` be accepted as a value.
   (Contributed by Serhiy Storchaka in :gh:`112068`.)
 
+* The ``k`` and ``K`` formats in :c:func:`PyArg_ParseTuple` and
+  similar functions now use :meth:`~object.__index__` if available,
+  like all other integer formats.
+  (Contributed by Serhiy Storchaka in :gh:`112068`.)
+
 * Add macros :c:func:`Py_PACK_VERSION` and :c:func:`Py_PACK_FULL_VERSION` for
   bit-packing Python version numbers.
   (Contributed by Petr Viktorin in :gh:`128629`.)
@@ -2142,3 +2367,10 @@ Removed
 * Remove the private ``_Py_InitializeMain()`` function. It was a
   :term:`provisional API` added to Python 3.8 by :pep:`587`.
   (Contributed by Victor Stinner in :gh:`129033`.)
+
+* The undocumented APIs :c:macro:`!Py_C_RECURSION_LIMIT` and
+  :c:member:`!PyThreadState.c_recursion_remaining`, added in 3.13, are removed
+  without a deprecation period.
+  Please use :c:func:`Py_EnterRecursiveCall` to guard against runaway recursion
+  in C code.
+  (Removed in :gh:`133079`, see also :gh:`130396`.)

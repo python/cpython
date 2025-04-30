@@ -948,6 +948,18 @@ isn't, there should be a syntax error.
      ...
    SyntaxError: 'break' outside loop
 
+elif can't come after an else.
+
+    >>> if a % 2 == 0:
+    ...     pass
+    ... else:
+    ...     pass
+    ... elif a % 2 == 1:
+    ...     pass
+    Traceback (most recent call last):
+      ...
+    SyntaxError: 'elif' block follows an 'else' block
+
 Misuse of the nonlocal and global statement can lead to a few unique syntax errors.
 
    >>> def f():
@@ -1838,6 +1850,12 @@ SyntaxError: invalid syntax. Did you mean 'if'?
 Traceback (most recent call last):
 SyntaxError: invalid syntax. Did you mean 'for'?
 
+
+>>> for x im n:
+...     pass
+Traceback (most recent call last):
+SyntaxError: invalid syntax. Did you mean 'in'?
+
 >>> f(a=23, a=234)
 Traceback (most recent call last):
    ...
@@ -1858,6 +1876,30 @@ SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' ins
 >>> f'{x}-{y}' = 42
 Traceback (most recent call last):
 SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' instead of '='?
+
+>>> ft'abc'
+Traceback (most recent call last):
+SyntaxError: can't use 'f' and 't' string prefixes together
+
+>>> tf"{x=}"
+Traceback (most recent call last):
+SyntaxError: can't use 'f' and 't' string prefixes together
+
+>>> tb''
+Traceback (most recent call last):
+SyntaxError: can't use 'b' and 't' string prefixes together
+
+>>> bt"text"
+Traceback (most recent call last):
+SyntaxError: can't use 'b' and 't' string prefixes together
+
+>>> t'{x}' = 42
+Traceback (most recent call last):
+SyntaxError: cannot assign to t-string expression here. Maybe you meant '==' instead of '='?
+
+>>> t'{x}-{y}' = 42
+Traceback (most recent call last):
+SyntaxError: cannot assign to t-string expression here. Maybe you meant '==' instead of '='?
 
 >>> (x, y, z=3, d, e)
 Traceback (most recent call last):

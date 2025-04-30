@@ -665,7 +665,7 @@ through a simple assignment::
 User-defined generics for parameter expressions are also supported via parameter
 specification variables in the form ``[**P]``.  The behavior is consistent
 with type variables' described above as parameter specification variables are
-treated by the typing module as a specialized type variable.  The one exception
+treated by the :mod:`!typing` module as a specialized type variable.  The one exception
 to this is that a list of types can be used to substitute a :class:`ParamSpec`::
 
    >>> class Z[T, **P]: ...  # T is a TypeVar; P is a ParamSpec
@@ -706,7 +706,7 @@ are intended primarily for static type checking.
 
 A user-defined generic class can have ABCs as base classes without a metaclass
 conflict. Generic metaclasses are not supported. The outcome of parameterizing
-generics is cached, and most types in the typing module are :term:`hashable` and
+generics is cached, and most types in the :mod:`!typing` module are :term:`hashable` and
 comparable for equality.
 
 
@@ -2787,7 +2787,7 @@ types.
 Protocols
 ---------
 
-The following protocols are provided by the typing module. All are decorated
+The following protocols are provided by the :mod:`!typing` module. All are decorated
 with :func:`@runtime_checkable <runtime_checkable>`.
 
 .. class:: SupportsAbs
@@ -3531,7 +3531,7 @@ Deprecated aliases
 ------------------
 
 This module defines several deprecated aliases to pre-existing
-standard library classes. These were originally included in the typing
+standard library classes. These were originally included in the :mod:`!typing`
 module in order to support parameterizing these generic classes using ``[]``.
 However, the aliases became redundant in Python 3.9 when the
 corresponding pre-existing classes were enhanced to support ``[]`` (see
@@ -3544,7 +3544,7 @@ interpreter for these aliases.
 
 If at some point it is decided to remove these deprecated aliases, a
 deprecation warning will be issued by the interpreter for at least two releases
-prior to removal. The aliases are guaranteed to remain in the typing module
+prior to removal. The aliases are guaranteed to remain in the :mod:`!typing` module
 without deprecation warnings until at least Python 3.14.
 
 Type checkers are encouraged to flag uses of the deprecated types if the
