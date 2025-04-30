@@ -441,15 +441,12 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
         self.assertEqual(out, '20000101\n' * INIT_LOOPS)
 
     def test_datetime_capi_at_shutdown(self):
-        # gh-120782: Current datetime test calls PyDateTime_IMPORT only once
+        # gh-132413: datetime module is currently tested in an interp's life.
+        # PyDateTime_IMPORT needs to be called at least once after the restart.
         code = textwrap.dedent("""
             import sys
             import _testcapi
-            if not _testcapi.get_capi_types():
-                _testcapi.test_datetime_capi()
-                assert '_datetime' in sys.modules
-            else:
-                assert '_datetime' not in sys.modules
+            _testcapi.test_datetime_capi_newinterp()
             timedelta = _testcapi.get_capi_types()['timedelta']
 
             def gen():
@@ -457,40 +454,12 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                     yield
                 finally:
                     assert not sys.modules
-                    res = 1
+                    res = 0
                     try:
                         timedelta(days=1)
+                        res = 1
                     except ImportError as e:
-                        res =  2 if 'sys.meta_path is None' in e.msg else 3
-                    assert not sys.modules
-                    print(res)
-
-            it = gen()
-            next(it)
-        """)
-        out, err = self.run_embedded_interpreter("test_repeated_init_exec", code)
-        self.assertEqual(out, '1\n' + '2\n' * (INIT_LOOPS - 1))
-
-    def test_datetime_capi_at_shutdown2(self):
-        # gh-120782: This PR allows PyDateTime_IMPORT to be called on restart
-        code = textwrap.dedent("""
-            import sys
-            import _testcapi
-            _testcapi.test_datetime_capi()
-            assert '_datetime' in sys.modules
-            timedelta = _testcapi.get_capi_types()['timedelta']
-
-            def gen():
-                try:
-                    yield
-                finally:
-                    assert not sys.modules
-                    res = 1
-                    try:
-                        timedelta(days=1)
-                    except ImportError as e:
-                        res =  2 if 'sys.meta_path is None' in e.msg else 3
-                    assert not sys.modules
+                        res = 2
                     print(res)
 
             it = gen()
