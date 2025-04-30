@@ -1518,6 +1518,13 @@ io
   :gh:`120754` and :gh:`90102`.)
 
 
+json
+----
+
+* Improve the performance of :class:`~json.JSONEncoder` encodes strings.
+  (Contributed by Inada Naoki in :gh:`133186`.)
+
+
 uuid
 ----
 
