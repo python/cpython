@@ -230,7 +230,6 @@ def c2py(plural):
 
 
 def _expand_lang(loc):
-    import locale
     loc = locale.normalize(loc)
     COMPONENT_CODESET   = 1 << 0
     COMPONENT_TERRITORY = 1 << 1
@@ -494,7 +493,7 @@ def find(domain, localedir=None, languages=None, all=False):
         languages = []
         if val := os.environ.get('LANGUAGE'):
             languages = val.split(':')
-        elif (loc := locale.getlocale()) != (None, None):
+        elif (loc := locale.setlocale(locale.LC_MESSAGES)) != (None, None):
             languages = [".".join(filter(None, loc))]
         else:
             for envar in ('LC_ALL', 'LC_MESSAGES', 'LANG'):

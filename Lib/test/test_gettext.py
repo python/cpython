@@ -1,4 +1,3 @@
-import locale
 import os
 import base64
 import gettext
@@ -737,30 +736,32 @@ class FindTestCase(unittest.TestCase):
             f.write(GNU_MO_DATA)
         return mo_file
 
-    @unittest.mock.patch("locale.getlocale", return_value=(None, None))
+    def _for_all_vars(self, mo_file, locale):
+        for var in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
+            self.env.set(var, locale)
+            result = gettext.find("mofile",
+                                  localedir=os.path.join(self.tempdir, "locale"))
+            self.assertEqual(mo_file, result)
+            self.env.unset(var)
+
+    @unittest.mock.patch("locale.setlocale", return_value=(None, None))
     def test_find_with_env_vars(self, patch_getlocale):
         # test that find correctly finds the environment variables
         # when languages are not supplied
         mo_file = self.create_mo_file("ga_IE")
-        for var in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
-            self.env.set(var, 'ga_IE')
-            result = gettext.find("mofile",
-                                  localedir=os.path.join(self.tempdir, "locale"))
-            self.assertEqual(result, mo_file)
-            self.env.unset(var)
-        # test fallbacks
-        for var in ('LANGUAGE', 'LC_ALL', 'LC_MESSAGES', 'LANG'):
-            self.env.set(var, 'es_ES:ga_IE:fr_FR')
-            result = gettext.find("mofile",
-                                  localedir=os.path.join(self.tempdir, "locale"))
-            self.assertEqual(result, mo_file)
-            self.env.unset(var)
+        self._for_all_vars(mo_file, "ga_IE")
+        self._for_all_vars(mo_file, "ga_IE.UTF-8")
+        self._for_all_vars(mo_file, "es_ES:ga_IE:fr_FR")
+        self._for_all_vars(mo_file, "ga_IE@euro")
 
-    @unittest.mock.patch("locale.getlocale", return_value=('ga_IE', 'UTF-8'))
-    def test_process_vars_override(self, patch_getlocale):
+    def test_process_vars_override(self):
         mo_file = self.create_mo_file("ga_IE")
-        result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
-        self.assertEqual(result, mo_file)
+        with unittest.mock.patch("locale.setlocale", return_value=('ga_IE', 'UTF-8')):
+            result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
+            self.assertEqual(mo_file, result)
+        with unittest.mock.patch("locale.setlocale", return_value=('ga_IE', None)):
+            result = gettext.find("mofile", localedir=os.path.join(self.tempdir, "locale"))
+            self.assertEqual(mo_file, result)
 
     def test_find_with_languages(self):
         # test that passed languages are used
