@@ -2913,13 +2913,15 @@ finally:
 void
 _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
 {
-    _PyObject_ASSERT(op, _PyObject_IS_GC(op));
-    _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
 #ifdef Py_GIL_DISABLED
     op->ob_tid = (uintptr_t)tstate->delete_later;
 #else
-    _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)tstate->delete_later);
+    /* Store the delete_later pointer in the refcnt field.
+     * As this object may still be tracked by the GC,
+     * it is important that we never store 0 (NULL). */
+    uintptr_t refcnt = (uintptr_t)tstate->delete_later;
+    *((uintptr_t*)op) = refcnt+1;
 #endif
     tstate->delete_later = op;
 }
@@ -2938,7 +2940,11 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
         op->ob_tid = 0;
         _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, _Py_REF_MERGED);
 #else
-        tstate->delete_later = (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
+        /* Get the delete_later pointer from the refcnt field.
+         * See _PyTrash_thread_deposit_object(). */
+        uintptr_t refcnt = *((uintptr_t*)op);
+        tstate->delete_later = (PyObject *)(refcnt - 1);
+        op->ob_refcnt = 0;
 #endif
 
         /* Call the deallocator directly.  This used to try to
@@ -3003,13 +3009,25 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 }
 
 
+/*
+When deallocating a container object, it's possible to trigger an unbounded
+chain of deallocations, as each Py_DECREF in turn drops the refcount on "the
+next" object in the chain to 0.  This can easily lead to stack overflows.
+To avoid that, if the C stack is nearing its limit, instead of calling
+dealloc on the object, it is added to a queue to be freed later when the
+stack is shallower */
 void
 _Py_Dealloc(PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
     destructor dealloc = type->tp_dealloc;
-#ifdef Py_DEBUG
     PyThreadState *tstate = _PyThreadState_GET();
+    intptr_t margin = _Py_RecursionLimit_GetMargin(tstate);
+    if (margin < 2) {
+        _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
+        return;
+    }
+#ifdef Py_DEBUG
 #if !defined(Py_GIL_DISABLED) && !defined(Py_STACKREF_DEBUG)
     /* This assertion doesn't hold for the free-threading build, as
      * PyStackRef_CLOSE_SPECIALIZED is not implemented */
@@ -3051,6 +3069,9 @@ _Py_Dealloc(PyObject *op)
     Py_XDECREF(old_exc);
     Py_DECREF(type);
 #endif
+    if (tstate->delete_later && margin >= 4) {
+        _PyTrash_thread_destroy_chain(tstate);
+    }
 }
 
 

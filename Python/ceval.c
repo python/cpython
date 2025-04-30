@@ -482,12 +482,6 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     assert(_tstate->c_stack_soft_limit != 0);
-    if (_tstate->c_stack_hard_limit == 0) {
-        _Py_InitializeRecursionLimits(tstate);
-    }
-    if (here_addr >= _tstate->c_stack_soft_limit) {
-        return 0;
-    }
     assert(_tstate->c_stack_hard_limit != 0);
     if (here_addr < _tstate->c_stack_hard_limit) {
         /* Overflowing while handling an overflow. Give up. */
