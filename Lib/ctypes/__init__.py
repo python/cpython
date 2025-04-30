@@ -271,10 +271,6 @@ def POINTER(cls):
 
     Pointer types are cached and reused internally,
     so calling this function repeatedly is cheap.
-
-    Pointer types for incomplete types are not cached,
-    so calling this function repeatedly will give
-    different types.
     """
     if cls is None:
         return c_void_p
@@ -285,7 +281,12 @@ def POINTER(cls):
     except AttributeError:
         pass
     if isinstance(cls, str):
+        # handle old-style incomplete types
+        # in this case pointer type is not cached and calling this function
+        # repeatedly will give different result
         return type(f'LP_{cls}', (_Pointer,), {})
+
+    # create pointer type and set __pointer_type__ for cls
     return type(f'LP_{cls.__name__}', (_Pointer,), {'_type_': cls})
 
 def pointer(obj):
