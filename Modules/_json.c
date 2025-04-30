@@ -304,6 +304,8 @@ escape_unicode(PyObject *pystr)
 }
 
 // Take a PyUnicode pystr and write an ASCII-only escaped string to writer.
+// Same to ascii_escape_unicode(), but write to PyUnicodeWriter instead of
+// return Unicode object.
 static int
 write_escaped_ascii(PyUnicodeWriter *writer, PyObject *pystr)
 {
@@ -346,6 +348,8 @@ write_escaped_ascii(PyUnicodeWriter *writer, PyObject *pystr)
 }
 
 // Take a PyUnicode pystr and write an escaped string to writer.
+// Same to escape_unicode(), but write to PyUnicodeWriter instead of
+// return Unicode object.
 static int
 write_escaped_unicode(PyUnicodeWriter *writer, PyObject *pystr)
 {
