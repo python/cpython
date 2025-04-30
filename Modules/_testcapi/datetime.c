@@ -11,7 +11,6 @@ test_datetime_capi(PyObject *self, PyObject *args)
     if (PyDateTimeAPI) {
         if (test_run_counter) {
             /* Probably regrtest.py -R */
-            // Interpreters need their module, so call PyDateTime_IMPORT
         }
         else {
             PyErr_SetString(PyExc_AssertionError,
@@ -20,7 +19,7 @@ test_datetime_capi(PyObject *self, PyObject *args)
         }
     }
     test_run_counter++;
-    PyDateTime_IMPORT;
+    PyDateTime_IMPORT;  // Ensure interpreters individually import a module
 
     if (PyDateTimeAPI == NULL) {
         return NULL;
@@ -527,7 +526,7 @@ _PyTestCapi_Init_DateTime(PyObject *mod)
 static int
 _testcapi_datetime_exec(PyObject *mod)
 {
-    // Call test_datetime_capi() in each test.
+    // The execution does not invoke test_datetime_capi()
     return 0;
 }
 

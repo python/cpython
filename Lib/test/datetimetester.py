@@ -7155,9 +7155,8 @@ class CapiTest(unittest.TestCase):
 
                     self.assertEqual(dt_orig, dt_rt)
 
-    def assert_python_in_subinterp(self, check_if_ok: bool, script,
-                                   setup='_testcapi.test_datetime_capi()',
-                                   config='isolated'):
+    def assert_python_in_subinterp(self, check_if_ok, script, init='',
+                                   fini='', repeat=1, config='isolated'):
         # iOS requires the use of the custom framework loader,
         # not the ExtensionFileLoader.
         if sys.platform == "ios":
@@ -7166,40 +7165,41 @@ class CapiTest(unittest.TestCase):
             extension_loader = "ExtensionFileLoader"
 
         code = textwrap.dedent(f'''
-            import textwrap
-            from test import support
-
-            subcode = textwrap.dedent("""
-                if {_interpreters is None}:
-                    import _testcapi
-                else:
-                    import importlib.machinery
-                    import importlib.util
-                    fullname = '_testcapi_datetime'
-                    origin = importlib.util.find_spec('_testcapi').origin
-                    loader = importlib.machinery.{extension_loader}(fullname, origin)
-                    spec = importlib.util.spec_from_loader(fullname, loader)
-                    _testcapi = importlib.util.module_from_spec(spec)
-                    spec.loader.exec_module(_testcapi)
-
+            subinterp_code = """
+            if {_interpreters is None}:
+                import _testcapi
+            else:
+                import importlib.machinery
+                import importlib.util
+                fullname = '_testcapi_datetime'
+                origin = importlib.util.find_spec('_testcapi').origin
+                loader = importlib.machinery.{extension_loader}(fullname, origin)
+                spec = importlib.util.spec_from_loader(fullname, loader)
+                _testcapi = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(_testcapi)
+            INDEX = $INDEX$
+            setup = _testcapi.test_datetime_capi  # call it if needed
             $SCRIPT$
-            """)
+            """
 
             import _testcapi
-            $SETUP$
+            from test import support
+            setup = _testcapi.test_datetime_capi
+            $INIT$
 
-            if {_interpreters is None}:
-                ret = support.run_in_subinterp(subcode)
-            else:
-                import _interpreters
-                config = _interpreters.new_config('{config}').__dict__
-                ret = support.run_in_subinterp_with_config(subcode, **config)
-
-            assert ret == 0
-
-        ''').rstrip()
-        code = code.replace('$SETUP$', setup)
-        code = code.replace('$SCRIPT$', textwrap.indent(script, '\x20'*4))
+            for idx in range({repeat}):
+                subcode = subinterp_code.replace('$INDEX$', str(idx))
+                if {_interpreters is None}:
+                    ret = support.run_in_subinterp(subcode)
+                else:
+                    import _interpreters
+                    config = _interpreters.new_config('{config}').__dict__
+                    ret = support.run_in_subinterp_with_config(subcode, **config)
+                assert ret == 0
+            $FINI$
+        ''')
+        code = code.replace('$INIT$', init).replace('$FINI$', fini)
+        code = code.replace('$SCRIPT$', script)
 
         if check_if_ok:
             res = script_helper.assert_python_ok('-c', code)
@@ -7213,7 +7213,7 @@ class CapiTest(unittest.TestCase):
                 if not type_checker(obj, True):
                     raise TypeError(f'{{type(obj)}} is not C API type')
 
-            _testcapi.test_datetime_capi()
+            setup()
             import _datetime
             run(_testcapi.datetime_check_date,     _datetime.date.today())
             run(_testcapi.datetime_check_datetime, _datetime.datetime.now())
@@ -7221,10 +7221,10 @@ class CapiTest(unittest.TestCase):
             run(_testcapi.datetime_check_delta,    _datetime.timedelta(1))
             run(_testcapi.datetime_check_tzinfo,   _datetime.tzinfo())
             """)
-        self.assert_python_in_subinterp(True, script, '')
+        self.assert_python_in_subinterp(True, script)
         if _interpreters is not None:
             with self.subTest(name := 'legacy'):
-                self.assert_python_in_subinterp(True, script, '', name)
+                self.assert_python_in_subinterp(True, script, config=name)
 
 
 class ExtensionModuleTests(unittest.TestCase):
@@ -7331,38 +7331,34 @@ class ExtensionModuleTests(unittest.TestCase):
         self.assertIn(b'[0 refs, 0 blocks]', res.err)
 
     def test_static_type_on_subinterp(self):
-        script = textwrap.dedent(f"""
+        script = textwrap.dedent("""
             date = _testcapi.get_capi_types()['date']
             date.today
             """)
-        # Fail before loaded
         with self.subTest('[PyDateTime_IMPORT] main: yes, sub: no'):
-            self.assert_python_in_subinterp(False, script)
+            # FIXME: Segfault
+            self.assert_python_in_subinterp(False, script, 'setup()')
 
-        # OK after loaded
-        script2 = f'_testcapi.test_datetime_capi()\n{script}'
+        with_setup = 'setup()' + script
         with self.subTest('[PyDateTime_IMPORT] main: no, sub: yes'):
-            self.assert_python_in_subinterp(True, script2, setup='')
+            self.assert_python_in_subinterp(True, with_setup)
 
         with self.subTest('[PyDateTime_IMPORT] main: yes, sub: yes'):
-            # Check if each test_datetime_capi() calls PyDateTime_IMPORT
-            self.assert_python_in_subinterp(True, script2)
+            # Check if PyDateTime_IMPORT is invoked not only once
+            self.assert_python_in_subinterp(True, with_setup, 'setup()')
+            self.assert_python_in_subinterp(True, 'setup()', fini=with_setup)
+            self.assert_python_in_subinterp(True, with_setup, repeat=2)
 
-        script3 = f'import _datetime\n{script}'
-        with self.subTest('Regular import'):
-            self.assert_python_in_subinterp(True, script3)
+        with_import = 'import _datetime' + script
+        with self.subTest('Explicit import'):
+            self.assert_python_in_subinterp(True, with_import, 'setup()')
 
-        script4 = textwrap.dedent(f"""
-            import sys
-            assert '_datetime' not in sys.modules
+        with_import = textwrap.dedent("""
             timedelta = _testcapi.get_capi_types()['timedelta']
             timedelta(days=1)
-            assert '_datetime' in sys.modules
-            date = _testcapi.get_capi_types()['date']
-            date.today
-            """)
+            """) + script
         with self.subTest('Implicit import'):
-            self.assert_python_in_subinterp(True, script4)
+            self.assert_python_in_subinterp(True, with_import, 'setup()')
 
     def test_static_type_at_shutdown(self):
         # gh-132413
@@ -7390,7 +7386,7 @@ class ExtensionModuleTests(unittest.TestCase):
             res = script_helper.assert_python_ok('-c', script)
             self.assertFalse(res.err)
         with self.subTest('Subinterpreter'):
-            res = self.assert_python_in_subinterp(True, script, setup='')
+            res = self.assert_python_in_subinterp(True, script)
             self.assertFalse(res.err)
 
         script = textwrap.dedent("""
@@ -7445,17 +7441,12 @@ class ExtensionModuleTests(unittest.TestCase):
             next(it)
             """)
         with self.subTest('[PyDateTime_IMPORT] main: yes, sub: no'):
-            res = self.assert_python_in_subinterp(True, script)
+            res = self.assert_python_in_subinterp(True, script, 'setup()')
             self.assertIn(b'ImportError: sys.meta_path is None', res.err)
 
-        script2 = f'_testcapi.test_datetime_capi()\n{script}'
+        with_import = 'setup()' + script
         with self.subTest('[PyDateTime_IMPORT] main: no, sub: yes'):
-            res = self.assert_python_in_subinterp(True, script2, setup='')
-            self.assertFalse(res.err)
-
-        with self.subTest('[PyDateTime_IMPORT] main: yes, sub: yes'):
-            # Check if each test_datetime_capi() calls PyDateTime_IMPORT
-            res = self.assert_python_in_subinterp(True, script2)
+            res = self.assert_python_in_subinterp(True, with_import)
             self.assertFalse(res.err)
 
 
