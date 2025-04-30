@@ -621,9 +621,14 @@ Object Protocol
    conservative, and may return ``0`` in some cases even if *obj* is a unique
    temporary object.
 
-   If an object is a unique temporary, it is guaranteed that the reference
-   count is ``1`` and it may be safe to modify the object in-place because
-   it is not visible to any other code.
+   If an object is a unique temporary, it is guaranteed that the current code
+   has the only reference to the object. For arguments to C functions, this
+   should be used instead of checking if the reference count is ``1``. Starting
+   with Python 3.14, the interpreter internally avoids some reference count
+   modifications when loading objects onto the operands stack by
+   :term:`borrowing <borrowed reference>` references when possible, which means
+   that a reference count of ``1`` by itself does not guarantee that a function
+   argument uniquely referenced.
 
    In the example below, ``my_func`` is called with a unique temporary object
    as its argument::
