@@ -65,6 +65,8 @@ POST_ARGS = (
     '-E',
 )
 
+EXIT_MARKERS = {'# 0 "<command-line>" 2', '# 1 "<command-line>" 2'}
+
 
 def preprocess(filename,
                incldirs=None,
@@ -138,6 +140,7 @@ def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
             filter_reqfile,
             make_info,
             raw,
+            EXIT_MARKERS
         )
         last = included
     # The last one is always the requested file.
@@ -146,7 +149,7 @@ def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
 
 def _iter_top_include_lines(lines, topfile, cwd,
                             filter_reqfile, make_info,
-                            raw):
+                            raw, exit_markers):
     partial = 0  # depth
     files = [topfile]
     # We start at 1 in case there are source lines (including blank ones)
@@ -154,7 +157,7 @@ def _iter_top_include_lines(lines, topfile, cwd,
     # _parse_marker_line() that the preprocessor reported lno as 1.
     lno = 1
     for line in lines:
-        if line == '# 0 "<command-line>" 2' or line == '# 1 "<command-line>" 2':
+        if line in exit_markers:
             # We're done with this top-level include.
             return
 
