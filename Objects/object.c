@@ -2631,19 +2631,18 @@ PyUnstable_Object_IsUniqueTemporary(PyObject *op)
 
     _PyStackRef *base = _PyFrame_Stackbase(frame);
     _PyStackRef *stackpointer = frame->stackpointer;
-    int found = 0;
     while (stackpointer > base) {
         stackpointer--;
         if (op == PyStackRef_AsPyObjectBorrow(*stackpointer)) {
             if (!PyStackRef_IsHeapSafe(*stackpointer)) {
                 return 0;
             }
-            found++;
+            return 1;
         }
     }
 
     // Check that we found exactly one reference to `op`
-    return found == 1;
+    return 0;
 }
 
 int
