@@ -7178,13 +7178,13 @@ class CapiTest(unittest.TestCase):
                 _testcapi = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(_testcapi)
             INDEX = $INDEX$
-            setup = _testcapi.test_datetime_capi  # call it if needed
+            setup = _testcapi.test_datetime_capi_newinterp  # call it if needed
             $SCRIPT$
             """
 
             import _testcapi
             from test import support
-            setup = _testcapi.test_datetime_capi
+            setup = _testcapi.test_datetime_capi_newinterp
             $INIT$
 
             for idx in range({repeat}):
@@ -7335,16 +7335,13 @@ class ExtensionModuleTests(unittest.TestCase):
             date = _testcapi.get_capi_types()['date']
             date.today
             """)
-        with self.subTest('[PyDateTime_IMPORT] main: yes, sub: no'):
-            # FIXME: Segfault
-            self.assert_python_in_subinterp(False, script, 'setup()')
-
         with_setup = 'setup()' + script
         with self.subTest('[PyDateTime_IMPORT] main: no, sub: yes'):
             self.assert_python_in_subinterp(True, with_setup)
 
         with self.subTest('[PyDateTime_IMPORT] main: yes, sub: yes'):
-            # Check if PyDateTime_IMPORT is invoked not only once
+            # Fails if the setup() means test_datetime_capi() rather than
+            # test_datetime_capi_newinterp()
             self.assert_python_in_subinterp(True, with_setup, 'setup()')
             self.assert_python_in_subinterp(True, 'setup()', fini=with_setup)
             self.assert_python_in_subinterp(True, with_setup, repeat=2)
