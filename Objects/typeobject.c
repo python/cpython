@@ -1868,6 +1868,8 @@ type_set_bases_unlocked(PyTypeObject *type, PyObject *new_bases, PyTypeObject *b
         if (update_all_slots(type) < 0) {
             goto bail;
         }
+        /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
+        type_modified_unlocked(type);
     }
     else {
         res = 0;
@@ -11618,11 +11620,7 @@ update_all_slots(PyTypeObject* type)
         apply_slot_updates(&queued_updates);
         types_start_world();
         ASSERT_TYPE_LOCK_HELD();
-
         slot_update_free_chunks(&queued_updates);
-
-        /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
-        type_modified_unlocked(type);
     }
     return 0;
 }
@@ -11634,14 +11632,10 @@ static int
 update_all_slots(PyTypeObject* type)
 {
     pytype_slotdef *p;
-
     for (p = slotdefs; p->name; p++) {
         /* update_slot returns int but can't actually fail in this case*/
         update_slot(type, p->name_strobj, NULL);
     }
-
-    /* Clear the VALID_VERSION flag of 'type' and all its subclasses. */
-    type_modified_unlocked(type);
     return 0;
 }
 
