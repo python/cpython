@@ -6,9 +6,6 @@ target-version = "py310"
 # PEP 8
 line-length = 79
 
-# Nicer diagnostic output
-output-format = "full"
-
 # Enable automatic fixes by default.
 # To override this, use ``fix = false`` in a subdirectory's config file
 # or ``--no-fix`` on the CLI
