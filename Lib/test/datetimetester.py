@@ -7187,7 +7187,7 @@ class CapiTest(unittest.TestCase):
             setup = _testcapi.test_datetime_capi_newinterp
             $INIT$
 
-            for i in range(1, {1+repeat}):
+            for i in range(1, {1 + repeat}):
                 subcode = subinterp_code.replace('$RUN_COUNTER$', str(i))
                 if {_interpreters is None}:
                     ret = support.run_in_subinterp(subcode)
@@ -7200,9 +7200,7 @@ class CapiTest(unittest.TestCase):
         ''')
         code = code.replace('$INIT$', init).replace('$FINI$', fini)
         code = code.replace('$SCRIPT$', script)
-
-        res = script_helper.assert_python_ok('-c', code)
-        return res
+        return script_helper.assert_python_ok('-c', code)
 
     def test_type_check_in_subinterp(self):
         script = textwrap.dedent(f"""
