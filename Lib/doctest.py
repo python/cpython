@@ -93,8 +93,8 @@ __all__ = [
 ]
 
 import __future__
-import contextlib
 import difflib
+import importlib.resources
 import inspect
 import linecache
 import os
@@ -103,9 +103,8 @@ import re
 import sys
 import traceback
 import unittest
-import importlib.resources
-from io import StringIO
 from collections import namedtuple
+from io import StringIO
 import _colorize  # Used in doctests
 from _colorize import ANSIColors, can_colorize
 
@@ -238,17 +237,20 @@ def _normalize_module(module, depth=2):
         raise TypeError("Expected a module, string, or None")
 
 def _load_testfile(filename, package, module_relative, encoding):
+    text = None
     if module_relative:
-        package = _normalize_module(package, 3)
-        with contextlib.suppress(Exception):
-            text = importlib.resources.read_text(package, filename,
-                                                 encoding=encoding)
-            return text, filename
+        package = _normalize_module(package, depth=3)
+        try:
+            file = importlib.resources.files(package) / filename
+            text = file.read_text(encoding=encoding)
+        except AttributeError:
+            filename = _module_relative_path(package, filename)
 
-        filename = _module_relative_path(package, filename)
+    if text is None:
+        with open(filename, encoding=encoding) as f:
+            text = f.read()
 
-    with open(filename, encoding=encoding) as f:
-        return f.read(), filename
+    return text, filename
 
 def _indent(s, indent=4):
     """
