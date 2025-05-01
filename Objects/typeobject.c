@@ -136,6 +136,50 @@ types_start_world(void)
     assert(!types_world_is_stopped());
 }
 
+// This is used to temporarily prevent the TYPE_LOCK from being suspended
+// when held by the topmost critical section.
+static void
+type_lock_prevent_release(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    uintptr_t *tagptr = &tstate->critical_section;
+    PyCriticalSection *c = (PyCriticalSection *)(*tagptr & ~_Py_CRITICAL_SECTION_MASK);
+    if (c->_cs_mutex == TYPE_LOCK) {
+        c->_cs_mutex = NULL;
+    }
+    else {
+        assert(*tagptr & _Py_CRITICAL_SECTION_TWO_MUTEXES);
+        PyCriticalSection2 *c2 = (PyCriticalSection2 *)c;
+        if (c2->_cs_mutex2 == TYPE_LOCK) {
+                c2->_cs_mutex2 = NULL;
+        }
+        else {
+            assert(0); // TYPE_LOCK must be one of the mutexes
+        }
+    }
+}
+
+static void
+type_lock_allow_release(void)
+{
+    PyThreadState *tstate = _PyThreadState_GET();
+    uintptr_t *tagptr = &tstate->critical_section;
+    PyCriticalSection *c = (PyCriticalSection *)(*tagptr & ~_Py_CRITICAL_SECTION_MASK);
+    if (c->_cs_mutex == NULL) {
+        c->_cs_mutex = TYPE_LOCK;
+    }
+    else {
+        assert(*tagptr & _Py_CRITICAL_SECTION_TWO_MUTEXES);
+        PyCriticalSection2 *c2 = (PyCriticalSection2 *)c;
+        if (c2->_cs_mutex2 == NULL) {
+                c2->_cs_mutex2 = TYPE_LOCK;
+        }
+        else {
+            assert(0);
+        }
+    }
+}
+
 #else
 
 #define BEGIN_TYPE_LOCK()
@@ -3656,14 +3700,15 @@ solid_base(PyTypeObject *type)
 #ifdef Py_GIL_DISABLED
 
 // The structures and functions below are used in the free-threaded build
-// to safely make updates to type slots, when __bases__ is re-assigned.  Since
-// the slots are read without atomic operations and without locking, we can
-// only safely update them while the world is stopped.  However, with the
-// world stopped, we are very limited on which APIs can be safely used.  For
-// example, calling _PyObject_HashFast() or _PyDict_GetItemRef_KnownHash() are
-// not safe and can potentially cause deadlocks.  Hashing can be re-entrant
-// and _PyDict_GetItemRef_KnownHash can acquire a lock if the dictionary is
-// not owned by the current thread, to mark it shared on reading.
+// to safely make updates to type slots, on type_setattro() for a slot
+// or when __bases__ is re-assigned.  Since the slots are read without atomic
+// operations and without locking, we can only safely update them while the
+// world is stopped.  However, with the world stopped, we are very limited on
+// which APIs can be safely used.  For example, calling _PyObject_HashFast()
+// or _PyDict_GetItemRef_KnownHash() are not safe and can potentially cause
+// deadlocks.  Hashing can be re-entrant and _PyDict_GetItemRef_KnownHash can
+// acquire a lock if the dictionary is not owned by the current thread, to
+// mark it shared on reading.
 //
 // We do the slot updates in two steps.  First, with TYPE_LOCK held, we lookup
 // the descriptor for each slot, for each subclass. We build a queue of
@@ -3762,6 +3807,34 @@ apply_slot_updates(slot_update_t *updates)
         }
         chunk = chunk->prev;
     }
+}
+
+static void
+apply_slot_updates_world_stopped(slot_update_t *updates)
+{
+    // This must be done carefully to avoid data races and deadlocks.  We
+    // have just updated the type __dict__, while holding TYPE_LOCK.  We have
+    // collected all of the required type slot updates into the 'updates'
+    // queue.  Note that those updates can apply to multiple types since
+    // subclasses might also be affected by the dict change.
+    //
+    // We need to prevent other threads from writing to the dict before we can
+    // finish updating the slots. The actual stores to the slots are done
+    // with the world stopped.  If we block on the stop-the-world mutex then
+    // we could release TYPE_LOCK mutex and potentially allow other threads
+    // to update the dict.  That's because TYPE_LOCK was acquired using a
+    // critical section.
+    //
+    // The type_lock_prevent_release() call prevents the TYPE_LOCK mutex from
+    // being released even if we block on the STM mutex.  We need to take care
+    // that we do not deadlock because of that.  It is safe because we always
+    // acquire locks in the same order: first the TYPE_LOCK mutex and then the
+    // STM mutex.
+    type_lock_prevent_release();
+    types_stop_world();
+    apply_slot_updates(updates);
+    types_start_world();
+    type_lock_allow_release();
 }
 
 #else
@@ -6298,9 +6371,7 @@ update_slot_after_setattr(PyTypeObject *type, PyObject *name)
         return -1;
     }
     if (queued_updates.head->n > 0) {
-        types_stop_world();
-        apply_slot_updates(&queued_updates);
-        types_start_world();
+        apply_slot_updates_world_stopped(&queued_updates);
         ASSERT_TYPE_LOCK_HELD();
         // should never allocate another chunk
         assert(chunk.prev == NULL);
@@ -11616,9 +11687,7 @@ update_all_slots(PyTypeObject* type)
         }
     }
     if (queued_updates.head != NULL) {
-        types_stop_world();
-        apply_slot_updates(&queued_updates);
-        types_start_world();
+        apply_slot_updates_world_stopped(&queued_updates);
         ASSERT_TYPE_LOCK_HELD();
         slot_update_free_chunks(&queued_updates);
     }
