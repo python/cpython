@@ -16,8 +16,9 @@
 #include "pycore_emscripten_signal.h"  // _Py_CHECK_EMSCRIPTEN_SIGNALS
 #include "pycore_function.h"
 #include "pycore_instruments.h"
+#include "pycore_interpolation.h" // _PyInterpolation_Build()
 #include "pycore_intrinsics.h"
-#include "pycore_long.h"          // _PyLong_GetZero()
+#include "pycore_long.h"          // _PyLong_ExactDealloc(), _PyLong_GetZero()
 #include "pycore_moduleobject.h"  // PyModuleObject
 #include "pycore_object.h"        // _PyObject_GC_TRACK()
 #include "pycore_opcode_metadata.h"  // uop names
@@ -26,10 +27,10 @@
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
-#include "pycore_long.h"          // _PyLong_ExactDealloc()
 #include "pycore_setobject.h"     // _PySet_NextEntry()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_stackref.h"
+#include "pycore_template.h"      // _PyTemplate_Build()
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_typeobject.h"    // _PySuper_Lookup()
 
@@ -517,6 +518,11 @@ dummy_func(
             EXIT_IF(!PyList_CheckExact(o));
         }
 
+        op(_GUARD_TOS_SLICE, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            EXIT_IF(!PySlice_Check(o));
+        }
+
         macro(TO_BOOL_LIST) = _GUARD_TOS_LIST + unused/1 + unused/2 + _TO_BOOL_LIST;
 
         op(_TO_BOOL_LIST, (value -- res)) {
@@ -589,6 +595,7 @@ dummy_func(
             BINARY_OP_SUBTRACT_FLOAT,
             BINARY_OP_ADD_UNICODE,
             BINARY_OP_SUBSCR_LIST_INT,
+            BINARY_OP_SUBSCR_LIST_SLICE,
             BINARY_OP_SUBSCR_TUPLE_INT,
             BINARY_OP_SUBSCR_STR_INT,
             BINARY_OP_SUBSCR_DICT,
@@ -894,6 +901,24 @@ dummy_func(
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);
 #endif
+            STAT_INC(BINARY_OP, hit);
+            DECREF_INPUTS();
+        }
+
+        macro(BINARY_OP_SUBSCR_LIST_SLICE) =
+            _GUARD_TOS_SLICE + _GUARD_NOS_LIST + unused/5 + _BINARY_OP_SUBSCR_LIST_SLICE;
+
+        op(_BINARY_OP_SUBSCR_LIST_SLICE, (list_st, sub_st -- res)) {
+            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+            PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
+
+            assert(PySlice_Check(sub));
+            assert(PyList_CheckExact(list));
+
+            PyObject *res_o = _PyList_SliceSubscript(list, sub);
+            DEOPT_IF(res_o == NULL);
+            STAT_INC(BINARY_OP, hit);
+            res = PyStackRef_FromPyObjectSteal(res_o);
             STAT_INC(BINARY_OP, hit);
             DECREF_INPUTS();
         }
@@ -1901,6 +1926,40 @@ dummy_func(
             DECREF_INPUTS();
             ERROR_IF(str_o == NULL);
             str = PyStackRef_FromPyObjectSteal(str_o);
+        }
+
+        inst(BUILD_INTERPOLATION, (value, str, format[oparg & 1] -- interpolation)) {
+            PyObject *value_o = PyStackRef_AsPyObjectBorrow(value);
+            PyObject *str_o = PyStackRef_AsPyObjectBorrow(str);
+            int conversion = oparg >> 2;
+            PyObject *format_o;
+            if (oparg & 1) {
+                format_o = PyStackRef_AsPyObjectBorrow(format[0]);
+            }
+            else {
+                format_o = &_Py_STR(empty);
+            }
+            PyObject *interpolation_o = _PyInterpolation_Build(value_o, str_o, conversion, format_o);
+            if (oparg & 1) {
+                PyStackRef_CLOSE(format[0]);
+            }
+            else {
+                DEAD(format);
+            }
+            PyStackRef_CLOSE(str);
+            PyStackRef_CLOSE(value);
+            ERROR_IF(interpolation_o == NULL);
+            interpolation = PyStackRef_FromPyObjectSteal(interpolation_o);
+        }
+
+        inst(BUILD_TEMPLATE, (strings, interpolations -- template)) {
+            PyObject *strings_o = PyStackRef_AsPyObjectBorrow(strings);
+            PyObject *interpolations_o = PyStackRef_AsPyObjectBorrow(interpolations);
+            PyObject *template_o = _PyTemplate_Build(strings_o, interpolations_o);
+            PyStackRef_CLOSE(interpolations);
+            PyStackRef_CLOSE(strings);
+            ERROR_IF(template_o == NULL);
+            template = PyStackRef_FromPyObjectSteal(template_o);
         }
 
         inst(BUILD_TUPLE, (values[oparg] -- tup)) {
@@ -5294,18 +5353,6 @@ dummy_func(
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
             DEOPT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK);
             assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
-        }
-
-        label(pop_4_error) {
-            stack_pointer -= 4;
-            assert(WITHIN_STACK_BOUNDS());
-            goto error;
-        }
-
-        label(pop_3_error) {
-            stack_pointer -= 3;
-            assert(WITHIN_STACK_BOUNDS());
-            goto error;
         }
 
         label(pop_2_error) {

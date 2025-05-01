@@ -1,0 +1,3 @@
+Implement :pep:`750` (Template Strings). Add new syntax for t-strings and
+implement new internal :class:`!string.templatelib.Template` and
+:class:`!string.templatelib.Interpolation` types.
