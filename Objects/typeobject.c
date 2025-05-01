@@ -11296,7 +11296,7 @@ _PyType_InitSlotDefs(PyInterpreterState *interp)
     pytype_slotdef *p;
     Py_ssize_t idx = 0;
     for (p = slotdefs; p->name_strobj; p++, idx++) {
-        assert (idx < 255);
+        assert(idx < 255);
 
         if (PyDict_GetItemRef(cache, p->name_strobj, &bytearray) < 0) {
             goto error;
@@ -11317,11 +11317,11 @@ _PyType_InitSlotDefs(PyInterpreterState *interp)
             }
         }
 
-        assert (PyByteArray_CheckExact(bytearray));
+        assert(PyByteArray_CheckExact(bytearray));
         uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(bytearray);
 
         data[0] += 1;
-        assert (data[0] < MAX_EQUIV);
+        assert(data[0] < MAX_EQUIV);
 
         data[data[0]] = (uint8_t)idx;
 
@@ -11330,9 +11330,9 @@ _PyType_InitSlotDefs(PyInterpreterState *interp)
 
     memset(slotdefs_name_counts, 0, sizeof(slotdefs_name_counts));
 
-    Py_ssize_t pos=0;
-    PyObject *key=NULL;
-    PyObject *value=NULL;
+    Py_ssize_t pos = 0;
+    PyObject *key = NULL;
+    PyObject *value = NULL;
     while (PyDict_Next(cache, &pos, &key, &value)) {
         uint8_t *data = (uint8_t *)PyByteArray_AS_STRING(value);
         uint8_t n = data[0];
