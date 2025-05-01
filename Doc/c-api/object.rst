@@ -641,6 +641,8 @@ Object Protocol
       my_list = [1, 2, 3]
       my_func(my_list)
 
+   See also the function :c:func:`Py_REFCNT`.
+
    .. versionadded:: 3.14
 
 .. c:function:: int PyUnstable_IsImmortal(PyObject *obj)
