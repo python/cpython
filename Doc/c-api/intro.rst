@@ -148,7 +148,7 @@ complete listing.
 .. c:macro:: Py_ALWAYS_INLINE
 
    Ask the compiler to always inline a static inline function. The compiler can
-   ignore it and decides to not inline the function.
+   ignore it and decide to not inline the function.
 
    It can be used to inline performance critical static inline functions when
    building Python in debug mode with function inlining disabled. For example,

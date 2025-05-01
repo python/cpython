@@ -6,11 +6,11 @@ import random
 import test.support.hashlib_helper as hashlib_helper
 import types
 import unittest
-import unittest.mock
+import unittest.mock as mock
 import warnings
 from _operator import _compare_digest as operator_compare_digest
 from test.support import check_disallow_instantiation
-from test.support.import_helper import import_fresh_module
+from test.support.import_helper import import_fresh_module, import_module
 
 try:
     import _hashlib
@@ -58,10 +58,14 @@ class BuiltinModuleMixin(ModuleMixin):
         cls.hmac = import_fresh_module('_hmac')
 
 
+# Sentinel object used to detect whether a digestmod is given or not.
+DIGESTMOD_SENTINEL = object()
+
+
 class CreatorMixin:
     """Mixin exposing a method creating a HMAC object."""
 
-    def hmac_new(self, key, msg=None, digestmod=None):
+    def hmac_new(self, key, msg=None, digestmod=DIGESTMOD_SENTINEL):
         """Create a new HMAC object.
 
         Implementations should accept arbitrary 'digestmod' as this
@@ -77,7 +81,7 @@ class CreatorMixin:
 class DigestMixin:
     """Mixin exposing a method computing a HMAC digest."""
 
-    def hmac_digest(self, key, msg=None, digestmod=None):
+    def hmac_digest(self, key, msg=None, digestmod=DIGESTMOD_SENTINEL):
         """Compute a HMAC digest.
 
         Implementations should accept arbitrary 'digestmod' as this
@@ -90,6 +94,20 @@ class DigestMixin:
         return functools.partial(self.hmac_digest, digestmod=digestmod)
 
 
+def _call_newobj_func(new_func, key, msg, digestmod):
+    if digestmod is DIGESTMOD_SENTINEL:  # to test when digestmod is missing
+        return new_func(key, msg)  # expected to raise
+    # functions creating HMAC objects take a 'digestmod' keyword argument
+    return new_func(key, msg, digestmod=digestmod)
+
+
+def _call_digest_func(digest_func, key, msg, digestmod):
+    if digestmod is DIGESTMOD_SENTINEL:  # to test when digestmod is missing
+        return digest_func(key, msg)  # expected to raise
+    # functions directly computing digests take a 'digest' keyword argument
+    return digest_func(key, msg, digest=digestmod)
+
+
 class ThroughObjectMixin(ModuleMixin, CreatorMixin, DigestMixin):
     """Mixin delegating to <module>.HMAC() and <module>.HMAC(...).digest().
 
@@ -97,46 +115,46 @@ class ThroughObjectMixin(ModuleMixin, CreatorMixin, DigestMixin):
     expose a HMAC class with the same functionalities.
     """
 
-    def hmac_new(self, key, msg=None, digestmod=None):
+    def hmac_new(self, key, msg=None, digestmod=DIGESTMOD_SENTINEL):
         """Create a HMAC object via a module-level class constructor."""
-        return self.hmac.HMAC(key, msg, digestmod=digestmod)
+        return _call_newobj_func(self.hmac.HMAC, key, msg, digestmod)
 
-    def hmac_digest(self, key, msg=None, digestmod=None):
+    def hmac_digest(self, key, msg=None, digestmod=DIGESTMOD_SENTINEL):
         """Call the digest() method on a HMAC object obtained by hmac_new()."""
-        return self.hmac_new(key, msg, digestmod).digest()
+        return _call_newobj_func(self.hmac_new, key, msg, digestmod).digest()
 
 
 class ThroughModuleAPIMixin(ModuleMixin, CreatorMixin, DigestMixin):
     """Mixin delegating to <module>.new() and <module>.digest()."""
 
-    def hmac_new(self, key, msg=None, digestmod=None):
+    def hmac_new(self, key, msg=None, digestmod=DIGESTMOD_SENTINEL):
         """Create a HMAC object via a module-level function."""
-        return self.hmac.new(key, msg, digestmod=digestmod)
+        return _call_newobj_func(self.hmac.new, key, msg, digestmod)
 
-    def hmac_digest(self, key, msg=None, digestmod=None):
+    def hmac_digest(self, key, msg=None, digestmod=DIGESTMOD_SENTINEL):
         """One-shot HMAC digest computation."""
-        return self.hmac.digest(key, msg, digest=digestmod)
+        return _call_digest_func(self.hmac.digest, key, msg, digestmod)
 
 
 @hashlib_helper.requires_hashlib()
 class ThroughOpenSSLAPIMixin(CreatorMixin, DigestMixin):
     """Mixin delegating to _hashlib.hmac_new() and _hashlib.hmac_digest()."""
 
-    def hmac_new(self, key, msg=None, digestmod=None):
-        return _hashlib.hmac_new(key, msg, digestmod=digestmod)
+    def hmac_new(self, key, msg=None, digestmod=DIGESTMOD_SENTINEL):
+        return _call_newobj_func(_hashlib.hmac_new, key, msg, digestmod)
 
-    def hmac_digest(self, key, msg=None, digestmod=None):
-        return _hashlib.hmac_digest(key, msg, digest=digestmod)
+    def hmac_digest(self, key, msg=None, digestmod=DIGESTMOD_SENTINEL):
+        return _call_digest_func(_hashlib.hmac_digest, key, msg, digestmod)
 
 
 class ThroughBuiltinAPIMixin(BuiltinModuleMixin, CreatorMixin, DigestMixin):
     """Mixin delegating to _hmac.new() and _hmac.compute_digest()."""
 
-    def hmac_new(self, key, msg=None, digestmod=None):
-        return self.hmac.new(key, msg, digestmod=digestmod)
+    def hmac_new(self, key, msg=None, digestmod=DIGESTMOD_SENTINEL):
+        return _call_newobj_func(self.hmac.new, key, msg, digestmod)
 
-    def hmac_digest(self, key, msg=None, digestmod=None):
-        return self.hmac.compute_digest(key, msg, digest=digestmod)
+    def hmac_digest(self, key, msg=None, digestmod=DIGESTMOD_SENTINEL):
+        return _call_digest_func(self.hmac.compute_digest, key, msg, digestmod)
 
 
 class ObjectCheckerMixin:
@@ -777,7 +795,8 @@ class DigestModTestCaseMixin(CreatorMixin, DigestMixin):
 
     def assert_raises_missing_digestmod(self):
         """A context manager catching errors when a digestmod is missing."""
-        return self.assertRaisesRegex(TypeError, "Missing required.*digestmod")
+        return self.assertRaisesRegex(TypeError,
+                                      "[M|m]issing.*required.*digestmod")
 
     def assert_raises_unknown_digestmod(self):
         """A context manager catching errors when a digestmod is unknown."""
@@ -804,19 +823,23 @@ class DigestModTestCaseMixin(CreatorMixin, DigestMixin):
     def cases_missing_digestmod_in_constructor(self):
         raise NotImplementedError
 
-    def make_missing_digestmod_cases(self, func, choices):
-        """Generate cases for missing digestmod tests."""
+    def make_missing_digestmod_cases(self, func, missing_like=()):
+        """Generate cases for missing digestmod tests.
+
+        Only the Python implementation should consider "falsey" 'digestmod'
+        values as being equivalent to a missing one.
+        """
         key, msg = b'unused key', b'unused msg'
-        cases = self._invalid_digestmod_cases(func, key, msg, choices)
-        return [(func, (key,), {}), (func, (key, msg), {})] + cases
+        choices = [DIGESTMOD_SENTINEL, *missing_like]
+        return self._invalid_digestmod_cases(func, key, msg, choices)
 
     def cases_unknown_digestmod_in_constructor(self):
         raise NotImplementedError
 
-    def make_unknown_digestmod_cases(self, func, choices):
+    def make_unknown_digestmod_cases(self, func, bad_digestmods):
         """Generate cases for unknown digestmod tests."""
         key, msg = b'unused key', b'unused msg'
-        return self._invalid_digestmod_cases(func, key, msg, choices)
+        return self._invalid_digestmod_cases(func, key, msg, bad_digestmods)
 
     def _invalid_digestmod_cases(self, func, key, msg, choices):
         cases = []
@@ -932,19 +955,12 @@ class ExtensionConstructorTestCaseMixin(DigestModTestCaseMixin,
         with self.assertRaisesRegex(TypeError, "immutable type"):
             self.obj_type.value = None
 
-    def assert_digestmod_error(self):
+    def assert_raises_unknown_digestmod(self):
         self.assertIsSubclass(self.exc_type, ValueError)
         return self.assertRaises(self.exc_type)
 
-    def test_constructor_missing_digestmod(self):
-        self.do_test_constructor_missing_digestmod(self.assert_digestmod_error)
-
-    def test_constructor_unknown_digestmod(self):
-        self.do_test_constructor_unknown_digestmod(self.assert_digestmod_error)
-
     def cases_missing_digestmod_in_constructor(self):
-        func, choices = self.hmac_new, ['', None, False]
-        return self.make_missing_digestmod_cases(func, choices)
+        return self.make_missing_digestmod_cases(self.hmac_new)
 
     def cases_unknown_digestmod_in_constructor(self):
         func, choices = self.hmac_new, ['unknown', 1234]
@@ -964,10 +980,11 @@ class OpenSSLConstructorTestCase(ThroughOpenSSLAPIMixin,
         return _hashlib.UnsupportedDigestmodError
 
     def test_hmac_digest_digestmod_parameter(self):
-        # TODO(picnixz): remove default arguments in _hashlib.hmac_digest()
-        # since the return value is not a HMAC object but a bytes object.
         for value in [object, 'unknown', 1234, None]:
-            with self.subTest(value=value), self.assert_digestmod_error():
+            with (
+                self.subTest(value=value),
+                self.assert_raises_unknown_digestmod(),
+            ):
                 self.hmac_digest(b'key', b'msg', value)
 
 
@@ -985,7 +1002,10 @@ class BuiltinConstructorTestCase(ThroughBuiltinAPIMixin,
 
     def test_hmac_digest_digestmod_parameter(self):
         for value in [object, 'unknown', 1234, None]:
-            with self.subTest(value=value), self.assert_digestmod_error():
+            with (
+                self.subTest(value=value),
+                self.assert_raises_unknown_digestmod(),
+            ):
                 self.hmac_digest(b'key', b'msg', value)
 
 
@@ -1000,6 +1020,9 @@ class SanityTestCaseMixin(CreatorMixin):
     hmac_class: type
     # The underlying hash function name (should be accepted by the HMAC class).
     digestname: str
+    # The expected digest and block sizes (must be hardcoded).
+    digest_size: int
+    block_size: int
 
     def test_methods(self):
         h = self.hmac_new(b"my secret key", digestmod=self.digestname)
@@ -1008,6 +1031,12 @@ class SanityTestCaseMixin(CreatorMixin):
         self.assertIsInstance(h.digest(), bytes)
         self.assertIsInstance(h.hexdigest(), str)
         self.assertIsInstance(h.copy(), self.hmac_class)
+
+    def test_properties(self):
+        h = self.hmac_new(b"my secret key", digestmod=self.digestname)
+        self.assertEqual(h.name, f"hmac-{self.digestname}")
+        self.assertEqual(h.digest_size, self.digest_size)
+        self.assertEqual(h.block_size, self.block_size)
 
     def test_repr(self):
         # HMAC object representation may differ across implementations
@@ -1023,6 +1052,8 @@ class PySanityTestCase(ThroughObjectMixin, PyModuleMixin, SanityTestCaseMixin,
         super().setUpClass()
         cls.hmac_class = cls.hmac.HMAC
         cls.digestname = 'sha256'
+        cls.digest_size = 32
+        cls.block_size = 64
 
     def test_repr(self):
         h = self.hmac_new(b"my secret key", digestmod=self.digestname)
@@ -1038,6 +1069,8 @@ class OpenSSLSanityTestCase(ThroughOpenSSLAPIMixin, SanityTestCaseMixin,
         super().setUpClass()
         cls.hmac_class = _hashlib.HMAC
         cls.digestname = 'sha256'
+        cls.digest_size = 32
+        cls.block_size = 64
 
     def test_repr(self):
         h = self.hmac_new(b"my secret key", digestmod=self.digestname)
@@ -1052,6 +1085,8 @@ class BuiltinSanityTestCase(ThroughBuiltinAPIMixin, SanityTestCaseMixin,
         super().setUpClass()
         cls.hmac_class = cls.hmac.HMAC
         cls.digestname = 'sha256'
+        cls.digest_size = 32
+        cls.block_size = 64
 
     def test_repr(self):
         h = self.hmac_new(b"my secret key", digestmod=self.digestname)
@@ -1065,16 +1100,34 @@ class UpdateTestCaseMixin:
         """Create a HMAC object."""
         raise NotImplementedError
 
+    @property
+    def gil_minsize(self):
+        """Get the maximal input length for the GIL to be held."""
+        raise NotImplementedError
+
+    def check_update(self, key, chunks):
+        chunks = list(chunks)
+        msg = b''.join(chunks)
+        h1 = self.HMAC(key, msg)
+
+        h2 = self.HMAC(key)
+        for chunk in chunks:
+            h2.update(chunk)
+
+        self.assertEqual(h1.digest(), h2.digest())
+        self.assertEqual(h1.hexdigest(), h2.hexdigest())
+
     def test_update(self):
         key, msg = random.randbytes(16), random.randbytes(16)
         with self.subTest(key=key, msg=msg):
-            h1 = self.HMAC(key, msg)
+            self.check_update(key, [msg])
 
-            h2 = self.HMAC(key)
-            h2.update(msg)
-
-            self.assertEqual(h1.digest(), h2.digest())
-            self.assertEqual(h1.hexdigest(), h2.hexdigest())
+    def test_update_large(self):
+        gil_minsize = self.gil_minsize
+        key = random.randbytes(16)
+        top = random.randbytes(gil_minsize + 1)
+        bot = random.randbytes(gil_minsize + 1)
+        self.check_update(key, [top, bot])
 
     def test_update_exceptions(self):
         h = self.HMAC(b"key")
@@ -1083,16 +1136,15 @@ class UpdateTestCaseMixin:
                 self.assertRaises(TypeError, h.update, msg)
 
 
-@hashlib_helper.requires_hashdigest('sha256')
-class PyUpdateTestCase(UpdateTestCaseMixin, unittest.TestCase):
-
-    @classmethod
-    def setUpClass(cls):
-        super().setUpClass()
-        cls.hmac = import_fresh_module('hmac', blocked=['_hashlib', '_hmac'])
+@requires_builtin_sha2()
+class PyUpdateTestCase(PyModuleMixin, UpdateTestCaseMixin, unittest.TestCase):
 
     def HMAC(self, key, msg=None):
         return self.hmac.HMAC(key, msg, digestmod='sha256')
+
+    @property
+    def gil_minsize(self):
+        return sha2._GIL_MINSIZE
 
 
 @hashlib_helper.requires_openssl_hashdigest('sha256')
@@ -1100,6 +1152,10 @@ class OpenSSLUpdateTestCase(UpdateTestCaseMixin, unittest.TestCase):
 
     def HMAC(self, key, msg=None):
         return _hashlib.hmac_new(key, msg, digestmod='sha256')
+
+    @property
+    def gil_minsize(self):
+        return _hashlib._GIL_MINSIZE
 
 
 class BuiltinUpdateTestCase(BuiltinModuleMixin,
@@ -1109,6 +1165,10 @@ class BuiltinUpdateTestCase(BuiltinModuleMixin,
         # Even if Python does not build '_sha2', the HACL* sources
         # are still built, making it possible to use SHA-2 hashes.
         return self.hmac.new(key, msg, digestmod='sha256')
+
+    @property
+    def gil_minsize(self):
+        return self.hmac._GIL_MINSIZE
 
 
 class CopyBaseTestCase:
@@ -1345,6 +1405,32 @@ class OperatorCompareDigestTestCase(CompareDigestMixin, unittest.TestCase):
 class PyMiscellaneousTests(unittest.TestCase):
     """Miscellaneous tests for the pure Python HMAC module."""
 
+    @hashlib_helper.requires_builtin_hmac()
+    def test_hmac_constructor_uses_builtin(self):
+        # Block the OpenSSL implementation and check that
+        # HMAC() uses the built-in implementation instead.
+        hmac = import_fresh_module("hmac", blocked=["_hashlib"])
+
+        def watch_method(cls, name):
+            return mock.patch.object(
+                cls, name, autospec=True, wraps=getattr(cls, name)
+            )
+
+        with (
+            watch_method(hmac.HMAC, '_init_openssl_hmac') as f,
+            watch_method(hmac.HMAC, '_init_builtin_hmac') as g,
+        ):
+            _ = hmac.HMAC(b'key', b'msg', digestmod="sha256")
+            f.assert_not_called()
+            g.assert_called_once()
+
+    @hashlib_helper.requires_hashdigest('sha256')
+    def test_hmac_delegated_properties(self):
+        h = hmac.HMAC(b'key', b'msg', digestmod="sha256")
+        self.assertEqual(h.name, "hmac-sha256")
+        self.assertEqual(h.digest_size, 32)
+        self.assertEqual(h.block_size, 64)
+
     @hashlib_helper.requires_hashdigest('sha256')
     def test_legacy_block_size_warnings(self):
         class MockCrazyHash(object):
@@ -1379,6 +1465,37 @@ class PyMiscellaneousTests(unittest.TestCase):
             self.assertEqual(hexdigest, expected)
         finally:
             cache.pop('foo')
+
+
+class BuiltinMiscellaneousTests(BuiltinModuleMixin, unittest.TestCase):
+    """HMAC-BLAKE2 is not standardized as BLAKE2 is a keyed hash function.
+
+    In particular, there is no official test vectors for HMAC-BLAKE2.
+    However, we can test that the HACL* interface is correctly used by
+    checking against the pure Python implementation output.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.blake2 = import_module("_blake2")
+        cls.blake2b = cls.blake2.blake2b
+        cls.blake2s = cls.blake2.blake2s
+
+    def assert_hmac_blake_correctness(self, digest, key, msg, hashfunc):
+        self.assertIsInstance(digest, bytes)
+        expect = hmac._compute_digest_fallback(key, msg, hashfunc)
+        self.assertEqual(digest, expect)
+
+    def test_compute_blake2b_32(self):
+        key, msg = random.randbytes(8), random.randbytes(16)
+        digest = self.hmac.compute_blake2b_32(key, msg)
+        self.assert_hmac_blake_correctness(digest, key, msg, self.blake2b)
+
+    def test_compute_blake2s_32(self):
+        key, msg = random.randbytes(8), random.randbytes(16)
+        digest = self.hmac.compute_blake2s_32(key, msg)
+        self.assert_hmac_blake_correctness(digest, key, msg, self.blake2s)
 
 
 if __name__ == "__main__":

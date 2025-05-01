@@ -489,14 +489,14 @@ struct tagPyCArgObject {
         int i;
         long l;
         long long q;
-        long double D;
+        long double g;
         double d;
         float f;
         void *p;
 #if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-        double complex C;
-        float complex E;
-        long double complex F;
+        double complex D;
+        float complex F;
+        long double complex G;
 #endif
     } value;
     PyObject *obj;
@@ -536,6 +536,8 @@ extern PyObject *PyCData_FromBaseObj(ctypes_state *st, PyObject *type,
 extern int _ctypes_simple_instance(ctypes_state *st, PyObject *obj);
 
 PyObject *_ctypes_get_errobj(ctypes_state *st, int **pspace);
+
+extern void _ctypes_init_fielddesc(void);
 
 #ifdef USING_MALLOC_CLOSURE_DOT_C
 void Py_ffi_closure_free(void *p);
@@ -642,15 +644,4 @@ PyStgInfo_Init(ctypes_state *state, PyTypeObject *type)
 
     info->initialized = 1;
     return info;
-}
-
-/* Equivalent to *self->b_ptr with a lock. */
-static inline void *
-locked_deref(CDataObject *self)
-{
-    void *ptr;
-    Py_BEGIN_CRITICAL_SECTION(self);
-    ptr = *(void **)self->b_ptr;
-    Py_END_CRITICAL_SECTION();
-    return ptr;
 }

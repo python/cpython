@@ -27,6 +27,7 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _PyIsSelectable_fd()
+#include "pycore_long.h"          // _PyLong_UnsignedLongLong_Converter()
 #include "pycore_pyerrors.h"      // _PyErr_ChainExceptions1()
 #include "pycore_time.h"          // _PyDeadline_Init()
 
@@ -121,8 +122,10 @@ static void _PySSLFixErrno(void) {
 
 /* Include generated data (error codes) */
 /* See make_ssl_data.h for notes on adding a new version. */
-#if (OPENSSL_VERSION_NUMBER >= 0x30100000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x30401000L)
 #include "_ssl_data_34.h"
+#elif (OPENSSL_VERSION_NUMBER >= 0x30100000L)
+#include "_ssl_data_340.h"
 #elif (OPENSSL_VERSION_NUMBER >= 0x30000000L)
 #include "_ssl_data_300.h"
 #elif (OPENSSL_VERSION_NUMBER >= 0x10101000L)
@@ -293,10 +296,6 @@ typedef struct {
     unsigned int alpn_protocols_len;
     PyObject *set_sni_cb;
     int check_hostname;
-    /* OpenSSL has no API to get hostflags from X509_VERIFY_PARAM* struct.
-     * We have to maintain our own copy. OpenSSL's hostflags default to 0.
-     */
-    unsigned int hostflags;
     int protocol;
 #if defined(PySSL_HAVE_POST_HS_AUTH)
     int post_handshake_auth;
@@ -824,15 +823,15 @@ _ssl_configure_hostname(PySSLSocket *self, const char* server_hostname)
         }
     }
     if (self->ctx->check_hostname) {
-        X509_VERIFY_PARAM *param = SSL_get0_param(self->ssl);
+        X509_VERIFY_PARAM *ssl_verification_params = SSL_get0_param(self->ssl);
         if (ip == NULL) {
-            if (!X509_VERIFY_PARAM_set1_host(param, server_hostname,
+            if (!X509_VERIFY_PARAM_set1_host(ssl_verification_params, server_hostname,
                                              strlen(server_hostname))) {
                 _setSSLError(get_state_sock(self), NULL, 0, __FILE__, __LINE__);
                 goto error;
             }
         } else {
-            if (!X509_VERIFY_PARAM_set1_ip(param, ASN1_STRING_get0_data(ip),
+            if (!X509_VERIFY_PARAM_set1_ip(ssl_verification_params, ASN1_STRING_get0_data(ip),
                                            ASN1_STRING_length(ip))) {
                 _setSSLError(get_state_sock(self), NULL, 0, __FILE__, __LINE__);
                 goto error;
@@ -909,8 +908,11 @@ newPySSLSocket(PySSLContext *sslctx, PySocketSockObject *sock,
 
     /* bpo43522 and OpenSSL < 1.1.1l: copy hostflags manually */
 #if OPENSSL_VERSION < 0x101010cf
-    X509_VERIFY_PARAM *ssl_params = SSL_get0_param(self->ssl);
-    X509_VERIFY_PARAM_set_hostflags(ssl_params, sslctx->hostflags);
+    X509_VERIFY_PARAM *ssl_verification_params = SSL_get0_param(self->ssl);
+    X509_VERIFY_PARAM *ssl_ctx_verification_params = SSL_CTX_get0_param(ctx);
+
+    unsigned int ssl_ctx_host_flags = X509_VERIFY_PARAM_get_hostflags(ssl_ctx_verification_params);
+    X509_VERIFY_PARAM_set_hostflags(ssl_verification_params, ssl_ctx_host_flags);
 #endif
     SSL_set_app_data(self->ssl, self);
     if (sock) {
@@ -3097,7 +3099,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     uint64_t options;
     const SSL_METHOD *method = NULL;
     SSL_CTX *ctx = NULL;
-    X509_VERIFY_PARAM *params;
+    X509_VERIFY_PARAM *ssl_verification_params;
     int result;
 
    /* slower approach, walk MRO and get borrowed reference to module.
@@ -3181,7 +3183,6 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
         return NULL;
     }
     self->ctx = ctx;
-    self->hostflags = X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS;
     self->protocol = proto_version;
     self->msg_cb = NULL;
     self->keylog_filename = NULL;
@@ -3271,11 +3272,11 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
        usage for no cost at all. */
     SSL_CTX_set_mode(self->ctx, SSL_MODE_RELEASE_BUFFERS);
 
-    params = SSL_CTX_get0_param(self->ctx);
+    ssl_verification_params = SSL_CTX_get0_param(self->ctx);
     /* Improve trust chain building when cross-signed intermediate
        certificates are present. See https://bugs.python.org/issue23476. */
-    X509_VERIFY_PARAM_set_flags(params, X509_V_FLAG_TRUSTED_FIRST);
-    X509_VERIFY_PARAM_set_hostflags(params, self->hostflags);
+    X509_VERIFY_PARAM_set_flags(ssl_verification_params, X509_V_FLAG_TRUSTED_FIRST);
+    X509_VERIFY_PARAM_set_hostflags(ssl_verification_params, X509_CHECK_FLAG_NO_PARTIAL_WILDCARDS);
 
 #if defined(PySSL_HAVE_POST_HS_AUTH)
     self->post_handshake_auth = 0;
@@ -3530,11 +3531,11 @@ static PyObject *
 _ssl__SSLContext_verify_flags_get_impl(PySSLContext *self)
 /*[clinic end generated code: output=fbbf8ba28ad6e56e input=c1ec36d610b3f391]*/
 {
-    X509_VERIFY_PARAM *param;
+    X509_VERIFY_PARAM *ssl_verification_params;
     unsigned long flags;
 
-    param = SSL_CTX_get0_param(self->ctx);
-    flags = X509_VERIFY_PARAM_get_flags(param);
+    ssl_verification_params = SSL_CTX_get0_param(self->ctx);
+    flags = X509_VERIFY_PARAM_get_flags(ssl_verification_params);
     return PyLong_FromUnsignedLong(flags);
 }
 
@@ -3548,23 +3549,23 @@ static int
 _ssl__SSLContext_verify_flags_set_impl(PySSLContext *self, PyObject *value)
 /*[clinic end generated code: output=a3e3b2a0ce6c2e99 input=b2a0c42583d4f34e]*/
 {
-    X509_VERIFY_PARAM *param;
+    X509_VERIFY_PARAM *ssl_verification_params;
     unsigned long new_flags, flags, set, clear;
 
     if (!PyArg_Parse(value, "k", &new_flags))
         return -1;
-    param = SSL_CTX_get0_param(self->ctx);
-    flags = X509_VERIFY_PARAM_get_flags(param);
+    ssl_verification_params = SSL_CTX_get0_param(self->ctx);
+    flags = X509_VERIFY_PARAM_get_flags(ssl_verification_params);
     clear = flags & ~new_flags;
     set = ~flags & new_flags;
     if (clear) {
-        if (!X509_VERIFY_PARAM_clear_flags(param, clear)) {
+        if (!X509_VERIFY_PARAM_clear_flags(ssl_verification_params, clear)) {
             _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
             return -1;
         }
     }
     if (set) {
-        if (!X509_VERIFY_PARAM_set_flags(param, set)) {
+        if (!X509_VERIFY_PARAM_set_flags(ssl_verification_params, set)) {
             _setSSLError(get_state_ctx(self), NULL, 0, __FILE__, __LINE__);
             return -1;
         }
@@ -3812,7 +3813,6 @@ static int
 _ssl__SSLContext_options_set_impl(PySSLContext *self, PyObject *value)
 /*[clinic end generated code: output=92ca34731ece5dbb input=2b94bf789e9ae5dd]*/
 {
-    PyObject *new_opts_obj;
     unsigned long long new_opts_arg;
     uint64_t new_opts, opts, clear, set;
     uint64_t opt_no = (
@@ -3820,11 +3820,7 @@ _ssl__SSLContext_options_set_impl(PySSLContext *self, PyObject *value)
         SSL_OP_NO_TLSv1_1 | SSL_OP_NO_TLSv1_2 | SSL_OP_NO_TLSv1_3
     );
 
-    if (!PyArg_Parse(value, "O!", &PyLong_Type, &new_opts_obj)) {
-        return -1;
-    }
-    new_opts_arg = PyLong_AsUnsignedLongLong(new_opts_obj);
-    if (new_opts_arg == (unsigned long long)-1 && PyErr_Occurred()) {
+    if (!PyArg_Parse(value, "O&", _PyLong_UnsignedLongLong_Converter, &new_opts_arg)) {
         return -1;
     }
     Py_BUILD_ASSERT(sizeof(new_opts) >= sizeof(new_opts_arg));
@@ -3859,7 +3855,12 @@ static PyObject *
 _ssl__SSLContext__host_flags_get_impl(PySSLContext *self)
 /*[clinic end generated code: output=0f9db6654ce32582 input=8e3c49499eefd0e5]*/
 {
-    return PyLong_FromUnsignedLong(self->hostflags);
+    X509_VERIFY_PARAM *ssl_verification_params;
+    unsigned int host_flags;
+
+    ssl_verification_params = SSL_CTX_get0_param(self->ctx);
+    host_flags = X509_VERIFY_PARAM_get_hostflags(ssl_verification_params);
+    return PyLong_FromUnsignedLong(host_flags);
 }
 
 /*[clinic input]
@@ -3872,15 +3873,14 @@ static int
 _ssl__SSLContext__host_flags_set_impl(PySSLContext *self, PyObject *value)
 /*[clinic end generated code: output=1ed6f4027aaf2e3e input=28caf1fb9c32f6cb]*/
 {
-    X509_VERIFY_PARAM *param;
+    X509_VERIFY_PARAM *ssl_verification_params;
     unsigned int new_flags = 0;
 
     if (!PyArg_Parse(value, "I", &new_flags))
         return -1;
 
-    param = SSL_CTX_get0_param(self->ctx);
-    self->hostflags = new_flags;
-    X509_VERIFY_PARAM_set_hostflags(param, new_flags);
+    ssl_verification_params = SSL_CTX_get0_param(self->ctx);
+    X509_VERIFY_PARAM_set_hostflags(ssl_verification_params, new_flags);
     return 0;
 }
 
