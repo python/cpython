@@ -1279,6 +1279,8 @@ conflict.
    free-threaded builds and to ``0`` otherwise.  See :option:`-X
    context_aware_warnings<-X>`.
 
+   .. versionadded:: 3.14
+
 .. envvar:: PYTHON_JIT
 
    On builds where experimental just-in-time compilation is available, this
