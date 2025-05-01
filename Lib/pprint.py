@@ -202,23 +202,22 @@ class PrettyPrinter:
         max_width = self._width - indent - allowance
         if len(rep) > max_width:
             p = self._dispatch.get(type(object).__repr__, None)
+            # Lazy import to improve module import time
             from dataclasses import is_dataclass
 
             if p is not None:
                 context[objid] = 1
-                p(self, object, stream,
-                  indent, allowance, context, level + 1)
+                p(self, object, stream, indent, allowance, context, level + 1)
                 del context[objid]
                 return
             elif (is_dataclass(object)
                   and not isinstance(object, type)
                   and object.__dataclass_params__.repr
+                  # Check dataclass has generated repr method.
                   and hasattr(object.__repr__, "__wrapped__")
                   and "__create_fn__" in object.__repr__.__wrapped__.__qualname__):
                 context[objid] = 1
-                self._pprint_dataclass(object, stream,
-                                       indent, allowance,
-                                       context, level + 1)
+                self._pprint_dataclass(object, stream, indent, allowance, context, level + 1)
                 del context[objid]
                 return
 
