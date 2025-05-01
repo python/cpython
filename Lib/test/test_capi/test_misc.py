@@ -1411,6 +1411,7 @@ class TestPendingCalls(unittest.TestCase):
                 self.assertNotIn(task.requester_tid, runner_tids)
 
     @requires_subinterpreters
+    @support.skip_if_sanitizer("gh-129824: race on assign_version_tag", thread=True)
     def test_isolated_subinterpreter(self):
         # We exercise the most important permutations.
 

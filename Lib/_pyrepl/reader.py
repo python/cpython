@@ -25,48 +25,17 @@ import sys
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
-import unicodedata
-from _colorize import can_colorize, ANSIColors  # type: ignore[import-not-found]
+from _colorize import can_colorize, ANSIColors
 
 
 from . import commands, console, input
-from .utils import ANSI_ESCAPE_SEQUENCE, wlen, str_width
+from .utils import wlen, unbracket, disp_str
 from .trace import trace
 
 
 # types
 Command = commands.Command
 from .types import Callback, SimpleContextManager, KeySpec, CommandName
-
-
-def disp_str(buffer: str) -> tuple[str, list[int]]:
-    """disp_str(buffer:string) -> (string, [int])
-
-    Return the string that should be the printed representation of
-    |buffer| and a list detailing where the characters of |buffer|
-    get used up.  E.g.:
-
-    >>> disp_str(chr(3))
-    ('^C', [1, 0])
-
-    """
-    b: list[int] = []
-    s: list[str] = []
-    for c in buffer:
-        if c == '\x1a':
-            s.append(c)
-            b.append(2)
-        elif ord(c) < 128:
-            s.append(c)
-            b.append(1)
-        elif unicodedata.category(c).startswith("C"):
-            c = r"\u%04x" % ord(c)
-            s.append(c)
-            b.append(len(c))
-        else:
-            s.append(c)
-            b.append(str_width(c))
-    return "".join(s), b
 
 
 # syntax classes:
@@ -347,14 +316,12 @@ class Reader:
         pos -= offset
 
         prompt_from_cache = (offset and self.buffer[offset - 1] != "\n")
-
         lines = "".join(self.buffer[offset:]).split("\n")
-
         cursor_found = False
         lines_beyond_cursor = 0
         for ln, line in enumerate(lines, num_common_lines):
-            ll = len(line)
-            if 0 <= pos <= ll:
+            line_len = len(line)
+            if 0 <= pos <= line_len:
                 self.lxy = pos, ln
                 cursor_found = True
             elif cursor_found:
@@ -368,34 +335,34 @@ class Reader:
                 prompt_from_cache = False
                 prompt = ""
             else:
-                prompt = self.get_prompt(ln, ll >= pos >= 0)
+                prompt = self.get_prompt(ln, line_len >= pos >= 0)
             while "\n" in prompt:
                 pre_prompt, _, prompt = prompt.partition("\n")
                 last_refresh_line_end_offsets.append(offset)
                 screen.append(pre_prompt)
                 screeninfo.append((0, []))
-            pos -= ll + 1
-            prompt, lp = self.process_prompt(prompt)
-            l, l2 = disp_str(line)
-            wrapcount = (wlen(l) + lp) // self.console.width
-            if wrapcount == 0:
-                offset += ll + 1  # Takes all of the line plus the newline
+            pos -= line_len + 1
+            prompt, prompt_len = self.process_prompt(prompt)
+            chars, char_widths = disp_str(line)
+            wrapcount = (sum(char_widths) + prompt_len) // self.console.width
+            trace("wrapcount = {wrapcount}", wrapcount=wrapcount)
+            if wrapcount == 0 or not char_widths:
+                offset += line_len + 1  # Takes all of the line plus the newline
                 last_refresh_line_end_offsets.append(offset)
-                screen.append(prompt + l)
-                screeninfo.append((lp, l2))
+                screen.append(prompt + "".join(chars))
+                screeninfo.append((prompt_len, char_widths))
             else:
-                i = 0
-                while l:
-                    prelen = lp if i == 0 else 0
+                pre = prompt
+                prelen = prompt_len
+                for wrap in range(wrapcount + 1):
                     index_to_wrap_before = 0
                     column = 0
-                    for character_width in l2:
-                        if column + character_width >= self.console.width - prelen:
+                    for char_width in char_widths:
+                        if column + char_width + prelen >= self.console.width:
                             break
                         index_to_wrap_before += 1
-                        column += character_width
-                    pre = prompt if i == 0 else ""
-                    if len(l) > index_to_wrap_before:
+                        column += char_width
+                    if len(chars) > index_to_wrap_before:
                         offset += index_to_wrap_before
                         post = "\\"
                         after = [1]
@@ -404,11 +371,14 @@ class Reader:
                         post = ""
                         after = []
                     last_refresh_line_end_offsets.append(offset)
-                    screen.append(pre + l[:index_to_wrap_before] + post)
-                    screeninfo.append((prelen, l2[:index_to_wrap_before] + after))
-                    l = l[index_to_wrap_before:]
-                    l2 = l2[index_to_wrap_before:]
-                    i += 1
+                    render = pre + "".join(chars[:index_to_wrap_before]) + post
+                    render_widths = char_widths[:index_to_wrap_before] + after
+                    screen.append(render)
+                    screeninfo.append((prelen, render_widths))
+                    chars = chars[index_to_wrap_before:]
+                    char_widths = char_widths[index_to_wrap_before:]
+                    pre = ""
+                    prelen = 0
         self.screeninfo = screeninfo
         self.cxy = self.pos2xy()
         if self.msg:
@@ -421,42 +391,15 @@ class Reader:
 
     @staticmethod
     def process_prompt(prompt: str) -> tuple[str, int]:
-        """Process the prompt.
+        r"""Return a tuple with the prompt string and its visible length.
 
-        This means calculate the length of the prompt. The character \x01
-        and \x02 are used to bracket ANSI control sequences and need to be
-        excluded from the length calculation.  So also a copy of the prompt
-        is returned with these control characters removed."""
-
-        # The logic below also ignores the length of common escape
-        # sequences if they were not explicitly within \x01...\x02.
-        # They are CSI (or ANSI) sequences  ( ESC [ ... LETTER )
-
-        # wlen from utils already excludes ANSI_ESCAPE_SEQUENCE chars,
-        # which breaks the logic below so we redefine it here.
-        def wlen(s: str) -> int:
-            return sum(str_width(i) for i in s)
-
-        out_prompt = ""
-        l = wlen(prompt)
-        pos = 0
-        while True:
-            s = prompt.find("\x01", pos)
-            if s == -1:
-                break
-            e = prompt.find("\x02", s)
-            if e == -1:
-                break
-            # Found start and end brackets, subtract from string length
-            l = l - (e - s + 1)
-            keep = prompt[pos:s]
-            l -= sum(map(wlen, ANSI_ESCAPE_SEQUENCE.findall(keep)))
-            out_prompt += keep + prompt[s + 1 : e]
-            pos = e + 1
-        keep = prompt[pos:]
-        l -= sum(map(wlen, ANSI_ESCAPE_SEQUENCE.findall(keep)))
-        out_prompt += keep
-        return out_prompt, l
+        The prompt string has the zero-width brackets recognized by shells
+        (\x01 and \x02) removed.  The length ignores anything between those
+        brackets as well as any ANSI escape sequences.
+        """
+        out_prompt = unbracket(prompt, including_content=False)
+        visible_prompt = unbracket(prompt, including_content=True)
+        return out_prompt, wlen(visible_prompt)
 
     def bow(self, p: int | None = None) -> int:
         """Return the 0-based index of the word break preceding p most
@@ -564,9 +507,9 @@ class Reader:
         pos = 0
         i = 0
         while i < y:
-            prompt_len, character_widths = self.screeninfo[i]
-            offset = len(character_widths) - character_widths.count(0)
-            in_wrapped_line = prompt_len + sum(character_widths) >= self.console.width
+            prompt_len, char_widths = self.screeninfo[i]
+            offset = len(char_widths)
+            in_wrapped_line = prompt_len + sum(char_widths) >= self.console.width
             if in_wrapped_line:
                 pos += offset - 1  # -1 cause backslash is not in buffer
             else:
@@ -587,29 +530,33 @@ class Reader:
 
     def pos2xy(self) -> tuple[int, int]:
         """Return the x, y coordinates of position 'pos'."""
-        # this *is* incomprehensible, yes.
-        p, y = 0, 0
-        l2: list[int] = []
+
+        prompt_len, y = 0, 0
+        char_widths: list[int] = []
         pos = self.pos
         assert 0 <= pos <= len(self.buffer)
+
+        # optimize for the common case: typing at the end of the buffer
         if pos == len(self.buffer) and len(self.screeninfo) > 0:
             y = len(self.screeninfo) - 1
-            p, l2 = self.screeninfo[y]
-            return p + sum(l2) + l2.count(0), y
+            prompt_len, char_widths = self.screeninfo[y]
+            return prompt_len + sum(char_widths), y
 
-        for p, l2 in self.screeninfo:
-            l = len(l2) - l2.count(0)
-            in_wrapped_line = p + sum(l2) >= self.console.width
-            offset = l - 1 if in_wrapped_line else l  # need to remove backslash
+        for prompt_len, char_widths in self.screeninfo:
+            offset = len(char_widths)
+            in_wrapped_line = prompt_len + sum(char_widths) >= self.console.width
+            if in_wrapped_line:
+                offset -= 1  # need to remove line-wrapping backslash
+
             if offset >= pos:
                 break
 
-            if p + sum(l2) >= self.console.width:
-                pos -= l - 1  # -1 cause backslash is not in buffer
-            else:
-                pos -= l + 1  # +1 cause newline is in buffer
+            if not in_wrapped_line:
+                offset += 1  # there's a newline in buffer
+
+            pos -= offset
             y += 1
-        return p + sum(l2[:pos]), y
+        return prompt_len + sum(char_widths[:pos]), y
 
     def insert(self, text: str | list[str]) -> None:
         """Insert 'text' at the insertion point."""

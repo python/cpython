@@ -2,6 +2,7 @@
 #include "opcode.h"
 
 #include "pycore_code.h"          // _PyCodeConstructor
+#include "pycore_function.h"      // _PyFunction_ClearCodeByVersion()
 #include "pycore_hashtable.h"     // _Py_hashtable_t
 #include "pycore_index_pool.h"    // _PyIndexPool_Fini()
 #include "pycore_initconfig.h"    // _PyStatus_OK()
@@ -1688,6 +1689,49 @@ PyCode_GetFreevars(PyCodeObject *code)
     return _PyCode_GetFreevars(code);
 }
 
+
+/* Here "value" means a non-None value, since a bare return is identical
+ * to returning None explicitly.  Likewise a missing return statement
+ * at the end of the function is turned into "return None". */
+int
+_PyCode_ReturnsOnlyNone(PyCodeObject *co)
+{
+    // Look up None in co_consts.
+    Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
+    int none_index = 0;
+    for (; none_index < nconsts; none_index++) {
+        if (PyTuple_GET_ITEM(co->co_consts, none_index) == Py_None) {
+            break;
+        }
+    }
+    if (none_index == nconsts) {
+        // None wasn't there, which means there was no implicit return,
+        // "return", or "return None".  That means there must be
+        // an explicit return (non-None).
+        return 0;
+    }
+
+    // Walk the bytecode, looking for RETURN_VALUE.
+    Py_ssize_t len = Py_SIZE(co);
+    for (int i = 0; i < len; i++) {
+        _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
+        if (IS_RETURN_OPCODE(inst.op.code)) {
+            assert(i != 0);
+            // Ignore it if it returns None.
+            _Py_CODEUNIT prev = _Py_GetBaseCodeUnit(co, i-1);
+            if (prev.op.code == LOAD_CONST) {
+                // We don't worry about EXTENDED_ARG for now.
+                if (prev.op.arg == none_index) {
+                    continue;
+                }
+            }
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
 #ifdef _Py_TIER2
 
 static void
@@ -2995,8 +3039,9 @@ is_bytecode_unused(_PyCodeArray *tlbc, Py_ssize_t idx,
 }
 
 static int
-get_code_with_unused_tlbc(PyObject *obj, struct get_code_args *args)
+get_code_with_unused_tlbc(PyObject *obj, void *data)
 {
+    struct get_code_args *args = (struct get_code_args *) data;
     if (!PyCode_Check(obj)) {
         return 1;
     }
@@ -3045,7 +3090,7 @@ _Py_ClearUnusedTLBC(PyInterpreterState *interp)
     }
     // Collect code objects that have bytecode not in use by any thread
     _PyGC_VisitObjectsWorldStopped(
-        interp, (gcvisitobjects_t)get_code_with_unused_tlbc, &args);
+        interp, get_code_with_unused_tlbc, &args);
     if (args.err < 0) {
         goto err;
     }

@@ -29,15 +29,6 @@ class MD5Type "MD5object *" "&PyType_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=6e5261719957a912]*/
 
-/* Some useful types */
-
-#if SIZEOF_INT == 4
-typedef unsigned int MD5_INT32; /* 32-bit integer */
-typedef long long MD5_INT64; /* 64-bit integer */
-#else
-/* not defined. compilation will die. */
-#endif
-
 /* The MD5 block size and message digest sizes, in bytes */
 
 #define MD5_BLOCKSIZE    64
@@ -379,6 +370,9 @@ md5_exec(PyObject *m)
     if (PyModule_AddObjectRef(m, "MD5Type", (PyObject *)st->md5_type) < 0) {
         return -1;
     }
+    if (PyModule_AddIntConstant(m, "_GIL_MINSIZE", HASHLIB_GIL_MINSIZE) < 0) {
+        return -1;
+    }
 
     return 0;
 }
@@ -392,14 +386,14 @@ static PyModuleDef_Slot _md5_slots[] = {
 
 
 static struct PyModuleDef _md5module = {
-        PyModuleDef_HEAD_INIT,
-        .m_name = "_md5",
-        .m_size = sizeof(MD5State),
-        .m_methods = MD5_functions,
-        .m_slots = _md5_slots,
-        .m_traverse = _md5_traverse,
-        .m_clear = _md5_clear,
-        .m_free = _md5_free,
+    PyModuleDef_HEAD_INIT,
+    .m_name = "_md5",
+    .m_size = sizeof(MD5State),
+    .m_methods = MD5_functions,
+    .m_slots = _md5_slots,
+    .m_traverse = _md5_traverse,
+    .m_clear = _md5_clear,
+    .m_free = _md5_free,
 };
 
 PyMODINIT_FUNC

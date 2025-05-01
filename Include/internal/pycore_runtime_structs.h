@@ -64,6 +64,7 @@ struct _fileutils_state {
     int force_ascii;
 };
 
+#include "pycore_interpframe_structs.h" // _PyInterpreterFrame
 #include "pycore_debug_offsets.h" // _Py_DebugOffsets
 #include "pycore_signal.h"        // struct _signals_runtime_state
 #include "pycore_faulthandler.h"  // struct _faulthandler_runtime_state

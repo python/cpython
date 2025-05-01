@@ -1,2 +1,0 @@
-:func:`platform.libc_ver` can now detect and report the version of ``musl``
-on Alpine Linux.

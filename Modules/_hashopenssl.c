@@ -413,7 +413,7 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
                 digest = PY_EVP_MD_fetch(entry->ossl_name, NULL);
 #ifdef Py_GIL_DISABLED
                 // exchange just in case another thread did same thing at same time
-                other_digest = _Py_atomic_exchange_ptr(&entry->evp, digest);
+                other_digest = _Py_atomic_exchange_ptr(&entry->evp, (void *)digest);
 #else
                 entry->evp = digest;
 #endif
@@ -425,7 +425,7 @@ py_digest_by_name(PyObject *module, const char *name, enum Py_hash_type py_ht)
                 digest = PY_EVP_MD_fetch(entry->ossl_name, "-fips");
 #ifdef Py_GIL_DISABLED
                 // exchange just in case another thread did same thing at same time
-                other_digest = _Py_atomic_exchange_ptr(&entry->evp_nosecurity, digest);
+                other_digest = _Py_atomic_exchange_ptr(&entry->evp_nosecurity, (void *)digest);
 #else
                 entry->evp_nosecurity = digest;
 #endif
@@ -1388,19 +1388,15 @@ end:
 
 #ifdef PY_OPENSSL_HAS_SCRYPT
 
-/* XXX: Parameters salt, n, r and p should be required keyword-only parameters.
-   They are optional in the Argument Clinic declaration only due to a
-   limitation of PyArg_ParseTupleAndKeywords. */
-
 /*[clinic input]
 _hashlib.scrypt
 
     password: Py_buffer
     *
-    salt: Py_buffer = None
-    n as n_obj: object(subclass_of='&PyLong_Type') = None
-    r as r_obj: object(subclass_of='&PyLong_Type') = None
-    p as p_obj: object(subclass_of='&PyLong_Type') = None
+    salt: Py_buffer
+    n: unsigned_long
+    r: unsigned_long
+    p: unsigned_long
     maxmem: long = 0
     dklen: long = 64
 
@@ -1410,14 +1406,13 @@ scrypt password-based key derivation function.
 
 static PyObject *
 _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
-                     PyObject *n_obj, PyObject *r_obj, PyObject *p_obj,
+                     unsigned long n, unsigned long r, unsigned long p,
                      long maxmem, long dklen)
-/*[clinic end generated code: output=14849e2aa2b7b46c input=48a7d63bf3f75c42]*/
+/*[clinic end generated code: output=d424bc3e8c6b9654 input=0c9a84230238fd79]*/
 {
     PyObject *key_obj = NULL;
     char *key;
     int retval;
-    unsigned long n, r, p;
 
     if (password->len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
@@ -1425,40 +1420,15 @@ _hashlib_scrypt_impl(PyObject *module, Py_buffer *password, Py_buffer *salt,
         return NULL;
     }
 
-    if (salt->buf == NULL) {
-        PyErr_SetString(PyExc_TypeError,
-                        "salt is required");
-        return NULL;
-    }
     if (salt->len > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "salt is too long.");
         return NULL;
     }
 
-    n = PyLong_AsUnsignedLong(n_obj);
-    if (n == (unsigned long) -1 && PyErr_Occurred()) {
-        PyErr_SetString(PyExc_TypeError,
-                        "n is required and must be an unsigned int");
-        return NULL;
-    }
     if (n < 2 || n & (n - 1)) {
         PyErr_SetString(PyExc_ValueError,
                         "n must be a power of 2.");
-        return NULL;
-    }
-
-    r = PyLong_AsUnsignedLong(r_obj);
-    if (r == (unsigned long) -1 && PyErr_Occurred()) {
-        PyErr_SetString(PyExc_TypeError,
-                        "r is required and must be an unsigned int");
-        return NULL;
-    }
-
-    p = PyLong_AsUnsignedLong(p_obj);
-    if (p == (unsigned long) -1 && PyErr_Occurred()) {
-        PyErr_SetString(PyExc_TypeError,
-                        "p is required and must be an unsigned int");
         return NULL;
     }
 
@@ -2358,6 +2328,16 @@ hashlib_exception(PyObject *module)
     return 0;
 }
 
+static int
+hashlib_constants(PyObject *module)
+{
+    if (PyModule_AddIntConstant(module, "_GIL_MINSIZE",
+                                HASHLIB_GIL_MINSIZE) < 0)
+    {
+        return -1;
+    }
+    return 0;
+}
 
 static PyModuleDef_Slot hashlib_slots[] = {
     {Py_mod_exec, hashlib_init_hashtable},
@@ -2367,6 +2347,7 @@ static PyModuleDef_Slot hashlib_slots[] = {
     {Py_mod_exec, hashlib_md_meth_names},
     {Py_mod_exec, hashlib_init_constructors},
     {Py_mod_exec, hashlib_exception},
+    {Py_mod_exec, hashlib_constants},
     {Py_mod_multiple_interpreters, Py_MOD_PER_INTERPRETER_GIL_SUPPORTED},
     {Py_mod_gil, Py_MOD_GIL_NOT_USED},
     {0, NULL}

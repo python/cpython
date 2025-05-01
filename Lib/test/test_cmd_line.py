@@ -9,6 +9,7 @@ import sysconfig
 import tempfile
 import textwrap
 import unittest
+import warnings
 from test import support
 from test.support import os_helper
 from test.support import force_not_colorized
@@ -17,6 +18,8 @@ from test.support.script_helper import (
     spawn_python, kill_python, assert_python_ok, assert_python_failure,
     interpreter_requires_environment
 )
+from textwrap import dedent
+
 
 if not support.has_subprocess_support:
     raise unittest.SkipTest("test module requires subprocess")
@@ -934,14 +937,20 @@ class CmdLineTest(unittest.TestCase):
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
     def test_python_dump_refs(self):
         code = 'import sys; sys._clear_type_cache()'
-        rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
+        # TODO: Remove warnings context manager once sys._clear_type_cache is removed
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFS='1')
         self.assertEqual(rc, 0)
 
     @unittest.skipUnless(sysconfig.get_config_var('Py_TRACE_REFS'), "Requires --with-trace-refs build option")
     def test_python_dump_refs_file(self):
         with tempfile.NamedTemporaryFile() as dump_file:
             code = 'import sys; sys._clear_type_cache()'
-            rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
+            # TODO: Remove warnings context manager once sys._clear_type_cache is removed
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", DeprecationWarning)
+                rc, out, err = assert_python_ok('-c', code, PYTHONDUMPREFSFILE=dump_file.name)
             self.assertEqual(rc, 0)
             with open(dump_file.name, 'r') as file:
                 contents = file.read()
@@ -1050,6 +1059,88 @@ class CmdLineTest(unittest.TestCase):
             PYTHONINTMAXSTRDIGITS='4000'
         )
         self.assertEqual(res2int(res), (6000, 6000))
+
+    def test_cmd_dedent(self):
+        # test that -c auto-dedents its arguments
+        test_cases = [
+            (
+                """
+                    print('space-auto-dedent')
+                """,
+                "space-auto-dedent",
+            ),
+            (
+                dedent(
+                    """
+                ^^^print('tab-auto-dedent')
+                """
+                ).replace("^", "\t"),
+                "tab-auto-dedent",
+            ),
+            (
+                dedent(
+                    """
+                ^^if 1:
+                ^^^^print('mixed-auto-dedent-1')
+                ^^print('mixed-auto-dedent-2')
+                """
+                ).replace("^", "\t \t"),
+                "mixed-auto-dedent-1\nmixed-auto-dedent-2",
+            ),
+            (
+                '''
+                    data = """$
+
+                    this data has an empty newline above and a newline with spaces below $
+                                            $
+                    """$
+                    if 1:         $
+                        print(repr(data))$
+                '''.replace(
+                    "$", ""
+                ),
+                # Note: entirely blank lines are normalized to \n, even if they
+                # are part of a data string. This is consistent with
+                # textwrap.dedent behavior, but might not be intuitive.
+                "'\\n\\nthis data has an empty newline above and a newline with spaces below \\n\\n'",
+            ),
+            (
+                '',
+                '',
+            ),
+            (
+                '  \t\n\t\n \t\t\t  \t\t \t\n\t\t \n\n\n\t\t\t   ',
+                '',
+            ),
+        ]
+        for code, expected in test_cases:
+            # Run the auto-dedent case
+            args1 = sys.executable, '-c', code
+            proc1 = subprocess.run(args1, stdout=subprocess.PIPE)
+            self.assertEqual(proc1.returncode, 0, proc1)
+            output1 = proc1.stdout.strip().decode(encoding='utf-8')
+
+            # Manually dedent beforehand, check the result is the same.
+            args2 = sys.executable, '-c', dedent(code)
+            proc2 = subprocess.run(args2, stdout=subprocess.PIPE)
+            self.assertEqual(proc2.returncode, 0, proc2)
+            output2 = proc2.stdout.strip().decode(encoding='utf-8')
+
+            self.assertEqual(output1, output2)
+            self.assertEqual(output1.replace('\r\n', '\n'), expected)
+
+    def test_cmd_dedent_failcase(self):
+        # Mixing tabs and spaces is not allowed
+        from textwrap import dedent
+        template = dedent(
+            '''
+            -+if 1:
+            +-++ print('will fail')
+            ''')
+        code = template.replace('-', ' ').replace('+', '\t')
+        assert_python_failure('-c', code)
+        code = template.replace('-', '\t').replace('+', ' ')
+        assert_python_failure('-c', code)
 
     def test_cpu_count(self):
         code = "import os; print(os.cpu_count(), os.process_cpu_count())"
