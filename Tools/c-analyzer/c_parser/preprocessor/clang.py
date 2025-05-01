@@ -1,9 +1,10 @@
 import os.path
-import re
+import re, sys
 
 from . import common as _common
 from . import gcc as _gcc
 
+_normpath = _gcc._normpath
 
 TOOL = 'clang'
 
@@ -22,7 +23,7 @@ def preprocess(filename,
                ):
     if not cwd or not os.path.isabs(cwd):
         cwd = os.path.abspath(cwd or '.')
-    filename = _gcc._normpath(filename, cwd)
+    filename = _normpath(filename, cwd)
 
     postargs = _gcc.POST_ARGS
     basename = os.path.basename(filename)
@@ -46,14 +47,40 @@ def preprocess(filename,
     return _iter_lines(text, filename, samefiles, cwd)
 
 
+# Reasons:
+#   py_curses related have a stack return in unusual order for /include/curses.h
+CLANG_IGNORES = (
+    '/Include/py_curses.h',
+    '/Modules/_cursesmodule.c',
+    '/Modules/_curses_panel.c'
+)
+
+EXPERIMENTAL_PRINTED = False
+
+CLANG_EXPERIMENTAL = """
+
+WARNING
+=======
+clang preprocessor is in experimental state.
+a) There might be false positives
+b) Following files are skipped
+{}
+
+""".format('\n'.join(['    ' + fn for fn in CLANG_IGNORES]))
+
+
 EXIT_MARKERS = {'# 2 "<built-in>" 2', '# 3 "<built-in>" 2', '# 4 "<built-in>" 2'}
 
 
 def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
-    # NOTE:HACK: has a stack return in unusual order for /include/curses.h
-    if reqfile.endswith(('/Include/py_curses.h',
-                         '/Modules/_cursesmodule.c',
-                         '/Modules/_curses_panel.c')):
+    global EXPERIMENTAL_PRINTED
+    if not EXPERIMENTAL_PRINTED:
+        print(CLANG_EXPERIMENTAL, flush=True)
+        EXPERIMENTAL_PRINTED = True
+
+    # NOTE:clang specific
+    if reqfile.endswith(CLANG_IGNORES):
+        print(f'\nSkipping: {reqfile}', flush=True)
         return
 
     lines = iter(text.splitlines())
@@ -79,7 +106,7 @@ def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
     last = None
     for line in lines:
         assert last != reqfile, (last,)
-        # NOTE:clang specific
+        # NOTE:condition is clang specific
         if not line:
             continue
         lno, included, flags = _gcc._parse_marker_line(line, reqfile)
@@ -89,14 +116,14 @@ def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
             # This will be the last one.
             assert 2 in flags, (line, flags)
         else:
-            # NOTE:clang specific
-            if _gcc._normpath(included, cwd) == reqfile:
+            # NOTE:first condition is specific to clang
+            if _normpath(included, cwd) == reqfile:
                 assert 1 in flags or 2 in flags, (line, flags, included, reqfile)
             else:
                 assert 1 in flags, (line, flags, included, reqfile)
         yield from _gcc._iter_top_include_lines(
             lines,
-            _gcc._normpath(included, cwd),
+            _normpath(included, cwd),
             cwd,
             filter_reqfile,
             make_info,
@@ -105,5 +132,5 @@ def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
         )
         last = included
     # The last one is always the requested file.
-    # NOTE:clang specific
-    assert _gcc._normpath(included, cwd) == reqfile, (line,)
+    # NOTE:_normpath is clang specific
+    assert _normpath(included, cwd) == reqfile, (line,)
