@@ -1151,18 +1151,18 @@ class CustomPrettyPrinter(pprint.PrettyPrinter):
             return "HASHABLE_SENTINAL", True, False
         else:
             return super().format(obj, context, maxlevels, level)
-    
+
 class CustomPrettyPrinterTest(unittest.TestCase):
     def test_custom_printer(self):
         # Test that the custom printer works as expected
         obj = SENTINAL
         formatted = CustomPrettyPrinter().pformat(obj)
         self.assertEqual(formatted, "SENTINAL")
-        
+
         obj = HASHABLE_SENTINAL
         formatted = CustomPrettyPrinter().pformat(obj)
         self.assertEqual(formatted, "HASHABLE_SENTINAL")
-        
+
         # Test that the default printer works as expected
         obj = object()
         formatted = pprint.pformat(obj)

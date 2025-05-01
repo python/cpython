@@ -197,7 +197,7 @@ class PrettyPrinter:
                 del context[objid]
                 return
 
-        # fallback to one-line repr + width 
+        # fallback to one-line repr + width
         rep = self._repr(object, context, level)
         max_width = self._width - indent - allowance
         if len(rep) > max_width:
