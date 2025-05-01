@@ -360,11 +360,10 @@ Notes:
    For the ``'E'`` and ``'C'`` format characters, the packed representation uses
    the IEEE 754 binary32 and binary64 format for components of the complex
    number, regardless of the floating-point format used by the platform.
-   Note that support for complex types is available unconditionally,
-   regardless on support IEC 60559 compatible complex arithmetic (Annex G of
-   the C11 standard) by the compiler.  Each complex type is interpreted as an
-   array type containing exactly two elements of the corresponding real type
-   (real and imaginary parts, respectively).
+   Note that complex types (``F`` and ``D``) are available unconditionally,
+   despite complex types being an optional feature in C.
+   As specified in the C11 standard, each complex type is represented by a
+   two-element C array containing, respectively, the real and imaginary parts.
 
 
 A format character may be preceded by an integral repeat count.  For example,

@@ -761,7 +761,7 @@ d_get(void *ptr, Py_ssize_t size)
 
 #if defined(Py_FFI_SUPPORT_C_COMPLEX)
 
-/* We don't use Annex G complex types here, using arrays instead, as the C17+
+/* We don't use _Complex types here, using arrays instead, as the C11+
    standard says: "Each complex type has the same representation and alignment
    requirements as an array type containing exactly two elements of the
    corresponding real type; the first element is equal to the real part, and
