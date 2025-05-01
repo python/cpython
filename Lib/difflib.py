@@ -1053,7 +1053,10 @@ def IS_LINE_JUNK(line, pat=None):
     """
 
     if pat is None:
-        return line.strip() in {'', '#'}
+        # Default: match '#' or the empty string
+        return line.strip() in '#'
+   # Previous versions used the undocumented parameter 'pat' as a
+   # match function. Retain this behaviour for compatibility.
     return pat(line) is not None
 
 def IS_CHARACTER_JUNK(ch, ws=" \t"):
