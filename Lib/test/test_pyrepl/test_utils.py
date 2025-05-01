@@ -32,7 +32,7 @@ class TestUtils(TestCase):
             yield 2
             yield 3
             yield 4
-        
+
         pnw = prev_next_window(gen_normal())
         self.assertEqual(next(pnw), (None, 1, 2))
         self.assertEqual(next(pnw), (1, 2, 3))
@@ -43,7 +43,7 @@ class TestUtils(TestCase):
 
         def gen_short():
             yield 1
-        
+
         pnw = prev_next_window(gen_short())
         self.assertEqual(next(pnw), (None, 1, None))
         with self.assertRaises(StopIteration):
@@ -52,7 +52,7 @@ class TestUtils(TestCase):
         def gen_raise():
             yield from gen_normal()
             1/0
-        
+
         pnw = prev_next_window(gen_raise())
         self.assertEqual(next(pnw), (None, 1, 2))
         self.assertEqual(next(pnw), (1, 2, 3))

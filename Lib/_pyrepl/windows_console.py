@@ -426,7 +426,9 @@ class WindowsConsole(Console):
 
         return rec
 
-    def _read_input_bulk(self, block: bool, n: int) -> tuple[INPUT_RECORD, int]:
+    def _read_input_bulk(
+        self, block: bool, n: int
+    ) -> tuple[ctypes.Array[INPUT_RECORD], int]:
         rec = (n * INPUT_RECORD)()
         read = DWORD()
 
