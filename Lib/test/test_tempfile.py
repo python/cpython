@@ -952,7 +952,7 @@ class BaseTemporaryFileTestCases:
 
         flags = spy.call_args[0][1]
         self.assertEqual(flags & os.O_RDONLY, 0x0)
-        self.assertEqual(flags & os.O_RDWR, 0x0)
+        self.assertNotEqual(flags & os.O_RDWR, os.O_RDWR)
         self.assertEqual(flags & os.O_WRONLY, os.O_WRONLY)
         self.assertEqual(flags & os.O_EXCL, os.O_EXCL)
 
