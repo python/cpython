@@ -16860,7 +16860,7 @@ tstring_rule(Parser *p)
         )
         {
             D(fprintf(stderr, "%*c+ tstring[%d-%d]: %s succeeded!\n", p->level, ' ', _mark, p->mark, "TSTRING_START tstring_middle* TSTRING_END"));
-            _res = _PyPegen_template_str ( p , a , ( asdl_expr_seq* ) b , c );
+            _res = CHECK_VERSION ( expr_ty , 14 , "t-strings are" , _PyPegen_template_str ( p , a , ( asdl_expr_seq* ) b , c ) );
             if (_res == NULL && PyErr_Occurred()) {
                 p->error_indicator = 1;
                 p->level--;

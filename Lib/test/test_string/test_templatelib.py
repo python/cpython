@@ -1,5 +1,6 @@
 import pickle
 import unittest
+from collections.abc import Iterator, Iterable
 from string.templatelib import Template, Interpolation
 
 from test.test_string._support import TStringBaseCase, fstring
@@ -123,6 +124,29 @@ world"""
                     self.assertEqual(unpickled.expression, interpolation.expression)
                     self.assertEqual(unpickled.conversion, interpolation.conversion)
                     self.assertEqual(unpickled.format_spec, interpolation.format_spec)
+
+
+class TemplateIterTests(unittest.TestCase):
+    def test_abc(self):
+        self.assertIsInstance(iter(t''), Iterable)
+        self.assertIsInstance(iter(t''), Iterator)
+
+    def test_final(self):
+        TemplateIter = type(iter(t''))
+        with self.assertRaisesRegex(TypeError, 'is not an acceptable base type'):
+            class Sub(TemplateIter): ...
+
+    def test_iter(self):
+        x = 1
+        res = list(iter(t'abc {x} yz'))
+
+        self.assertEqual(res[0], 'abc ')
+        self.assertIsInstance(res[1], Interpolation)
+        self.assertEqual(res[1].value, 1)
+        self.assertEqual(res[1].expression, 'x')
+        self.assertEqual(res[1].conversion, None)
+        self.assertEqual(res[1].format_spec, '')
+        self.assertEqual(res[2], ' yz')
 
 
 if __name__ == '__main__':
