@@ -1925,40 +1925,56 @@ finally:
 }
 
 
-const char *
-_PyCode_CheckNoInternalState(PyCodeObject *co)
+int
+_PyCode_CheckNoInternalState(PyCodeObject *co, const char **p_errmsg)
 {
+    const char *errmsg = NULL;
     if (_PyCode_HAS_EXECUTORS(co) || _PyCode_HAS_INSTRUMENTATION(co)) {
-        return "only basic code objects are supported";
+        errmsg = "only basic code objects are supported";
     }
-    if (co->_co_monitoring != NULL) {
-        return "only basic code objects are supported";
+    else if (co->_co_monitoring != NULL) {
+        *p_errmsg = "only basic code objects are supported";
     }
-    if (co->co_extra != NULL) {
-        return "only basic code objects are supported";
+    else if (co->co_extra != NULL) {
+        *p_errmsg = "only basic code objects are supported";
     }
-    return NULL;
+
+    if (errmsg != NULL) {
+        if (p_errmsg != NULL) {
+            *p_errmsg = errmsg;
+        }
+        return 0;
+    }
+    return 1;
 }
 
-const char *
-_PyCode_CheckNoExternalState(PyCodeObject *co, _PyCode_var_counts_t *counts)
+int
+_PyCode_CheckNoExternalState(PyCodeObject *co, _PyCode_var_counts_t *counts,
+                             const char **p_errmsg)
 {
-    if (counts->numfree > 0) {  // It's a closure.
-        return "closures not supported";
-    }
+    const char *errmsg = NULL;
     assert(counts->locals.hidden.total == 0);
-
-    if (counts->unbound.globals.numglobal > 0) {
-        return "globals not supported";
+    if (counts->numfree > 0) {  // It's a closure.
+        errmsg = "closures not supported";
+    }
+    else if (counts->unbound.globals.numglobal > 0) {
+        errmsg = "globals not supported";
     }
     else if (counts->unbound.globals.numbuiltin > 0
-             && counts->unbound.globals.numunknown > 0) {
-        return "globals not supported";
+             && counts->unbound.globals.numunknown > 0)
+    {
+        errmsg = "globals not supported";
     }
     // Otherwise we don't check counts.unbound.globals.numunknown since we can't
     // distinguish beween globals and builtins here.
 
-    return NULL;
+    if (errmsg != NULL) {
+        if (p_errmsg != NULL) {
+            *p_errmsg = errmsg;
+        }
+        return 0;
+    }
+    return 1;
 }
 
 int
@@ -1975,14 +1991,13 @@ _PyCode_VerifyStateless(PyThreadState *tstate,
     {
         return -1;
     }
-    // We may consider relaxing these if it becomes a problem.
-    errmsg = _PyCode_CheckNoInternalState(co);
-    if (errmsg != NULL) {
+    // We may consider relaxing the internal state constraints
+    // if it becomes a problem.
+    if (!_PyCode_CheckNoInternalState(co, &errmsg)) {
         _PyErr_SetString(tstate, PyExc_ValueError, errmsg);
         return -1;
     }
-    errmsg = _PyCode_CheckNoExternalState(co, &counts);
-    if (errmsg != NULL) {
+    if (!_PyCode_CheckNoExternalState(co, &counts, &errmsg)) {
         _PyErr_SetString(tstate, PyExc_ValueError, errmsg);
         return -1;
     }
@@ -1991,22 +2006,30 @@ _PyCode_VerifyStateless(PyThreadState *tstate,
 }
 
 
-const char *
-_PyCode_CheckPureFunction(PyCodeObject *co)
+int
+_PyCode_CheckPureFunction(PyCodeObject *co, const char **p_errmsg)
 {
+    const char *errmsg = NULL;
     if (co->co_flags & CO_GENERATOR) {
-        return "generators not supported";
+        errmsg = "generators not supported";
     }
-    if (co->co_flags & CO_COROUTINE) {
-        return "coroutines not supported";
+    else if (co->co_flags & CO_COROUTINE) {
+        errmsg = "coroutines not supported";
     }
-    if (co->co_flags & CO_ITERABLE_COROUTINE) {
-        return "coroutines not supported";
+    else if (co->co_flags & CO_ITERABLE_COROUTINE) {
+        errmsg = "coroutines not supported";
     }
-    if (co->co_flags & CO_ASYNC_GENERATOR) {
-        return "generators not supported";
+    else if (co->co_flags & CO_ASYNC_GENERATOR) {
+        errmsg = "generators not supported";
     }
-    return NULL;
+
+    if (errmsg != NULL) {
+        if (p_errmsg != NULL) {
+            *p_errmsg = errmsg;
+        }
+        return 0;
+    }
+    return 1;
 }
 
 /* Here "value" means a non-None value, since a bare return is identical
@@ -2015,7 +2038,7 @@ _PyCode_CheckPureFunction(PyCodeObject *co)
 int
 _PyCode_ReturnsOnlyNone(PyCodeObject *co)
 {
-    if (_PyCode_CheckPureFunction(co) != NULL) {
+    if (!_PyCode_CheckPureFunction(co, NULL)) {
         return 0;
     }
 

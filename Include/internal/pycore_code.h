@@ -644,10 +644,11 @@ PyAPI_FUNC(int) _PyCode_SetUnboundVarCounts(
  * in a different execution context than where
  * the return value will be used. */
 
-PyAPI_FUNC(const char *) _PyCode_CheckNoInternalState(PyCodeObject *);
-PyAPI_FUNC(const char *) _PyCode_CheckNoExternalState(
+PyAPI_FUNC(int) _PyCode_CheckNoInternalState(PyCodeObject *, const char **);
+PyAPI_FUNC(int) _PyCode_CheckNoExternalState(
         PyCodeObject *,
-        _PyCode_var_counts_t *);
+        _PyCode_var_counts_t *,
+        const char **);
 PyAPI_FUNC(int) _PyCode_VerifyStateless(
         PyThreadState *,
         PyCodeObject *,
@@ -655,7 +656,7 @@ PyAPI_FUNC(int) _PyCode_VerifyStateless(
         PyObject *globalsns,
         PyObject *builtinsns);
 
-PyAPI_FUNC(const char *) _PyCode_CheckPureFunction(PyCodeObject *);
+PyAPI_FUNC(int) _PyCode_CheckPureFunction(PyCodeObject *, const char **);
 PyAPI_FUNC(int) _PyCode_ReturnsOnlyNone(PyCodeObject *);
 
 
