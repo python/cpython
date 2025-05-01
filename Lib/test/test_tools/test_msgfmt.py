@@ -16,11 +16,11 @@ skip_if_missing('i18n')
 
 data_dir = (Path(__file__).parent / 'msgfmt_data').resolve()
 script_dir = Path(toolsdir) / 'i18n'
-msgfmt = script_dir / 'msgfmt.py'
+msgfmt_py = script_dir / 'msgfmt.py'
 
 
 def compile_messages(po_file, mo_file):
-    assert_python_ok(msgfmt, '-o', mo_file, po_file)
+    assert_python_ok(msgfmt_py, '-o', mo_file, po_file)
 
 
 class CompilationTest(unittest.TestCase):
@@ -92,7 +92,7 @@ class CompilationTest(unittest.TestCase):
         with temp_cwd():
             Path('bom.po').write_bytes(b'\xef\xbb\xbfmsgid "Python"\nmsgstr "Pioton"\n')
 
-            res = assert_python_failure(msgfmt, 'bom.po')
+            res = assert_python_failure(msgfmt_py, 'bom.po')
             err = res.err.decode('utf-8')
             self.assertIn('The file bom.po starts with a UTF-8 BOM', err)
 
@@ -103,7 +103,7 @@ msgid_plural "plural"
 msgstr[0] "singular"
 ''')
 
-            res = assert_python_failure(msgfmt, 'invalid.po')
+            res = assert_python_failure(msgfmt_py, 'invalid.po')
             err = res.err.decode('utf-8')
             self.assertIn('msgid_plural not preceded by msgid', err)
 
@@ -114,7 +114,7 @@ msgid "foo"
 msgstr[0] "bar"
 ''')
 
-            res = assert_python_failure(msgfmt, 'invalid.po')
+            res = assert_python_failure(msgfmt_py, 'invalid.po')
             err = res.err.decode('utf-8')
             self.assertIn('plural without msgid_plural', err)
 
@@ -126,7 +126,7 @@ msgid_plural "foos"
 msgstr "bar"
 ''')
 
-            res = assert_python_failure(msgfmt, 'invalid.po')
+            res = assert_python_failure(msgfmt_py, 'invalid.po')
             err = res.err.decode('utf-8')
             self.assertIn('indexed msgstr required for plural', err)
 
@@ -136,7 +136,7 @@ msgstr "bar"
 "foo"
 ''')
 
-            res = assert_python_failure(msgfmt, 'invalid.po')
+            res = assert_python_failure(msgfmt_py, 'invalid.po')
             err = res.err.decode('utf-8')
             self.assertIn('Syntax error', err)
 
@@ -231,30 +231,30 @@ class CLITest(unittest.TestCase):
 
     def test_help(self):
         for option in ('--help', '-h'):
-            res = assert_python_ok(msgfmt, option)
+            res = assert_python_ok(msgfmt_py, option)
             err = res.err.decode('utf-8')
             self.assertIn('Generate binary message catalog from textual translation description.', err)
 
     def test_version(self):
         for option in ('--version', '-V'):
-            res = assert_python_ok(msgfmt, option)
+            res = assert_python_ok(msgfmt_py, option)
             out = res.out.decode('utf-8').strip()
             self.assertEqual('msgfmt.py 1.2', out)
 
     def test_invalid_option(self):
-        res = assert_python_failure(msgfmt, '--invalid-option')
+        res = assert_python_failure(msgfmt_py, '--invalid-option')
         err = res.err.decode('utf-8')
         self.assertIn('Generate binary message catalog from textual translation description.', err)
         self.assertIn('option --invalid-option not recognized', err)
 
     def test_no_input_file(self):
-        res = assert_python_ok(msgfmt)
+        res = assert_python_ok(msgfmt_py)
         err = res.err.decode('utf-8').replace('\r\n', '\n')
         self.assertIn('No input file given\n'
                       "Try `msgfmt --help' for more information.", err)
 
     def test_nonexistent_file(self):
-        assert_python_failure(msgfmt, 'nonexistent.po')
+        assert_python_failure(msgfmt_py, 'nonexistent.po')
 
 
 def update_catalog_snapshots():
