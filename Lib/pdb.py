@@ -2909,6 +2909,8 @@ class _PdbClient:
         self.read_buf = b""
         self.signal_read = None
         self.signal_write = None
+        self.sigint_received = False
+        self.raise_on_sigint = False
         self.server_socket = server_socket
         self.interrupt_script = interrupt_script
         self.pdb_instance = Pdb()
@@ -2961,42 +2963,39 @@ class _PdbClient:
             self.write_failed = True
 
     def _readline(self):
+        if self.sigint_received:
+            # There's a pending unhandled SIGINT. Handle it now.
+            self.sigint_received = False
+            raise KeyboardInterrupt
+
         # Wait for either a SIGINT or a line or EOF from the PDB server.
         selector = selectors.DefaultSelector()
         selector.register(self.signal_read, selectors.EVENT_READ)
         selector.register(self.server_socket, selectors.EVENT_READ)
 
-        old_wakeup_fd = signal.set_wakeup_fd(
-            self.signal_write.fileno(),
-            warn_on_full_buffer=False,
-        )
+        while b"\n" not in self.read_buf:
+            for key, _ in selector.select():
+                if key.fileobj == self.signal_read:
+                    self.signal_read.recv(1024)
+                    if self.sigint_received:
+                        # If not, we're reading wakeup events for sigints that
+                        # we've previously handled, and can ignore them.
+                        self.sigint_received = False
+                        raise KeyboardInterrupt
+                elif key.fileobj == self.server_socket:
+                    data = self.server_socket.recv(16 * 1024)
+                    self.read_buf += data
+                    if not data and b"\n" not in self.read_buf:
+                        # EOF without a full final line. Drop the partial line.
+                        self.read_buf = b""
+                        return b""
 
-        got_sigint = False
-        def sigint_handler(*args, **kwargs):
-            nonlocal got_sigint
-            got_sigint = True
-
-        old_handler = signal.signal(signal.SIGINT, sigint_handler)
-        try:
-            while b"\n" not in self.read_buf:
-                for key, _ in selector.select():
-                    if key.fileobj == self.signal_read:
-                        self.signal_read.recv(1024)
-                        if got_sigint:
-                            raise KeyboardInterrupt
-                    elif key.fileobj == self.server_socket:
-                        self.read_buf += self.server_socket.recv(16 * 1024)
-                        if not self.read_buf:
-                            return b""
-
-            ret, sep, self.read_buf = self.read_buf.partition(b"\n")
-            return ret + sep
-        finally:
-            signal.set_wakeup_fd(old_wakeup_fd)
-            signal.signal(signal.SIGINT, old_handler)
+        ret, sep, self.read_buf = self.read_buf.partition(b"\n")
+        return ret + sep
 
     def read_command(self, prompt):
-        reply = input(prompt)
+        with self._sigint_raises_keyboard_interrupt():
+            reply = input(prompt)
 
         if self.state == "dumb":
             # No logic applied whatsoever, just pass the raw reply back.
@@ -3022,7 +3021,8 @@ class _PdbClient:
         # Otherwise, valid first line of a multi-line statement
         continue_prompt = "...".ljust(len(prompt))
         while codeop.compile_command(reply, "<stdin>", "single") is None:
-            reply += "\n" + input(continue_prompt)
+            with self._sigint_raises_keyboard_interrupt():
+                reply += "\n" + input(continue_prompt)
 
         return prefix + reply
 
@@ -3047,65 +3047,71 @@ class _PdbClient:
         finally:
             readline.set_completer(old_completer)
 
-    if not hasattr(signal, "pthread_sigmask"):
-        # On Windows, we must drop signals arriving while we're ignoring them.
-        @contextmanager
-        def _block_sigint(self):
-            old_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
-            try:
-                yield
-            finally:
-                signal.signal(signal.SIGINT, old_handler)
+    @contextmanager
+    def _sigint_handler(self):
+        # Signal handling strategy:
+        # - When we call input() we want a SIGINT to raise KeyboardInterrupt
+        # - Otherwise we want to write to the wakeup FD and set a flag.
+        #   We'll break out of select() when the wakeup FD is written to,
+        #   and we'll check the flag whenever we're about to accept input.
+        def handler(signum, frame):
+            self.sigint_received = True
+            if self.raise_on_sigint:
+                # One-shot; don't raise again until the flag is set again.
+                self.raise_on_sigint = False
+                self.sigint_received = False
+                raise KeyboardInterrupt
 
-        @contextmanager
-        def _handle_sigint(self, handler):
-            old_handler = signal.signal(signal.SIGINT, handler)
-            try:
-                yield
-            finally:
-                signal.signal(signal.SIGINT, old_handler)
-    else:
-        # On Unix, we can save them to be processed later.
-        @contextmanager
-        def _block_sigint(self):
-            signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGINT})
-            try:
-                yield
-            finally:
-                signal.pthread_sigmask(signal.SIG_UNBLOCK, {signal.SIGINT})
+        sentinel = object()
+        old_handler = sentinel
+        old_wakeup_fd = sentinel
 
-        @contextmanager
-        def _handle_sigint(self, handler):
-            old_handler = signal.signal(signal.SIGINT, handler)
+        self.signal_read, self.signal_write = socket.socketpair()
+        with (closing(self.signal_read), closing(self.signal_write)):
+            self.signal_read.setblocking(False)
+            self.signal_write.setblocking(False)
+
             try:
-                signal.pthread_sigmask(signal.SIG_UNBLOCK, {signal.SIGINT})
-                yield
+                old_handler = signal.signal(signal.SIGINT, handler)
+
+                try:
+                    old_wakeup_fd = signal.set_wakeup_fd(
+                        self.signal_write.fileno(),
+                        warn_on_full_buffer=False,
+                    )
+                    yield
+                finally:
+                    # Restore the old wakeup fd if we installed a new one
+                    if old_wakeup_fd is not sentinel:
+                        signal.set_wakeup_fd(old_wakeup_fd)
+                    self.signal_read = self.signal_write = None
             finally:
-                signal.pthread_sigmask(signal.SIG_BLOCK, {signal.SIGINT})
-                signal.signal(signal.SIGINT, old_handler)
+                if old_handler is not sentinel:
+                    # Restore the old handler if we installed a new one
+                    signal.signal(signal.SIGINT, old_handler)
 
     @contextmanager
-    def _signal_socket_pair(self):
-        self.signal_read, self.signal_write = socket.socketpair()
+    def _sigint_raises_keyboard_interrupt(self):
+        if self.sigint_received:
+            # There's a pending unhandled SIGINT. Handle it now.
+            self.sigint_received = False
+            raise KeyboardInterrupt
+
         try:
-            with (closing(self.signal_read), closing(self.signal_write)):
-                self.signal_read.setblocking(False)
-                self.signal_write.setblocking(False)
-                yield
+            self.raise_on_sigint = True
+            yield
         finally:
-            self.signal_read = self.signal_write = None
+            self.raise_on_sigint = False
 
     def cmdloop(self):
         with (
-            self._block_sigint(),
-            self._signal_socket_pair(),
+            self._sigint_handler(),
             self.readline_completion(self.complete),
         ):
             while not self.write_failed:
                 try:
-                    with self._handle_sigint(signal.default_int_handler):
-                        if not (payload_bytes := self._readline()):
-                            break
+                    if not (payload_bytes := self._readline()):
+                        break
                 except KeyboardInterrupt:
                     self.send_interrupt()
                     continue
@@ -3161,8 +3167,7 @@ class _PdbClient:
     def prompt_for_reply(self, prompt):
         while True:
             try:
-                with self._handle_sigint(signal.default_int_handler):
-                    payload = {"reply": self.read_command(prompt)}
+                payload = {"reply": self.read_command(prompt)}
             except EOFError:
                 payload = {"signal": "EOF"}
             except KeyboardInterrupt:
@@ -3202,8 +3207,7 @@ class _PdbClient:
             if self.write_failed:
                 return None
 
-            with self._handle_sigint(signal.default_int_handler):
-                payload = self._readline()
+            payload = self._readline()
             if not payload:
                 return None
 
