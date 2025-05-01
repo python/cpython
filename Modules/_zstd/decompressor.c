@@ -104,7 +104,9 @@ _PyZstd_set_d_parameters(ZstdDecompressor *self, PyObject *options)
         }
 
         /* Set parameter to compression context */
+        Py_BEGIN_CRITICAL_SECTION(self);
         zstd_ret = ZSTD_DCtx_setParameter(self->dctx, key_v, value_v);
+        Py_END_CRITICAL_SECTION();
 
         /* Check error */
         if (ZSTD_isError(zstd_ret)) {
