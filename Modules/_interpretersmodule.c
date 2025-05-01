@@ -63,7 +63,7 @@ is_running_main(PyInterpreterState *interp)
     // using this module for the main interpreter is doing so through
     // the main program.  Thus we can make this extra check.  This benefits
     // applications that embed Python but haven't been updated yet
-    // to call_PyInterpreterState_SetRunningMain().
+    // to call _PyInterpreterState_SetRunningMain().
     if (_Py_IsMainInterpreter(interp)) {
         return 1;
     }
