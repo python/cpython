@@ -608,11 +608,11 @@
       "checksums": [
         {
           "algorithm": "SHA1",
-          "checksumValue": "c7fd386ae8b0430385ed0ba9a125ebf65c82840c"
+          "checksumValue": "c9651ef21479c4d8a3b04c5baa1902866dbb1cdf"
         },
         {
           "algorithm": "SHA256",
-          "checksumValue": "e49ec69b37722c8809e55ddfc9eb17056be4438e087f9d9d4b6303309d49f6c7"
+          "checksumValue": "e039c82ba670606ca111573942baad800f75da467abbc74cd7d1fe175ebcdfaf"
         }
       ],
       "fileName": "Modules/_hacl/Lib_Memzero0.c"
@@ -1752,14 +1752,14 @@
       "checksums": [
         {
           "algorithm": "SHA256",
-          "checksumValue": "502a0250fa08d2cbcc8b9e43831235a2c075de2eb180e7381ecb5d10b181971e"
+          "checksumValue": "02dfcf0c79d488b120d7f2c2a0f9206301c7927ed5106545e0b6f2aef88da76a"
         }
       ],
-      "downloadLocation": "https://github.com/hacl-star/hacl-star/archive/cfbd2e5de9a4b053f18cbef2cae92c4f46f28e74.zip",
+      "downloadLocation": "https://github.com/hacl-star/hacl-star/archive/7720f6d4fc0468a99d5ea6120976bcc271e42727.zip",
       "externalRefs": [
         {
           "referenceCategory": "SECURITY",
-          "referenceLocator": "cpe:2.3:a:hacl-star:hacl-star:cfbd2e5de9a4b053f18cbef2cae92c4f46f28e74:*:*:*:*:*:*:*",
+          "referenceLocator": "cpe:2.3:a:hacl-star:hacl-star:7720f6d4fc0468a99d5ea6120976bcc271e42727:*:*:*:*:*:*:*",
           "referenceType": "cpe23Type"
         }
       ],
@@ -1767,7 +1767,7 @@
       "name": "hacl-star",
       "originator": "Organization: HACL* Developers",
       "primaryPackagePurpose": "SOURCE",
-      "versionInfo": "cfbd2e5de9a4b053f18cbef2cae92c4f46f28e74"
+      "versionInfo": "7720f6d4fc0468a99d5ea6120976bcc271e42727"
     },
     {
       "SPDXID": "SPDXRef-PACKAGE-macholib",

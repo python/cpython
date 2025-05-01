@@ -13,11 +13,11 @@
 // memset_s is available from macOS 10.9, iOS 7, watchOS 2, and on all tvOS and visionOS versions.
 #  if (defined(MAC_OS_X_VERSION_MIN_REQUIRED) && (MAC_OS_X_VERSION_MIN_REQUIRED >= __MAC_10_9))
 #    define APPLE_HAS_MEMSET_S 1
-#  elif (defined(IPHONE_OS_VERSION_MIN_REQUIRED) && (IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_7_0))
+#  elif (defined(__IPHONE_OS_VERSION_MIN_REQUIRED) && (__IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_7_0))
 #    define APPLE_HAS_MEMSET_S 1
 #  elif (defined(TARGET_OS_TV) && TARGET_OS_TV)
 #    define APPLE_HAS_MEMSET_S 1
-#  elif (defined(WATCH_OS_VERSION_MIN_REQUIRED) && (WATCH_OS_VERSION_MIN_REQUIRED >= __WATCHOS_2_0))
+#  elif (defined(__WATCH_OS_VERSION_MIN_REQUIRED) && (__WATCH_OS_VERSION_MIN_REQUIRED >= __WATCHOS_2_0))
 #    define APPLE_HAS_MEMSET_S 1
 #  elif (defined(TARGET_OS_VISION) && TARGET_OS_VISION)
 #    define APPLE_HAS_MEMSET_S 1
