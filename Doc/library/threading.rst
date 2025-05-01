@@ -49,8 +49,8 @@ creating and starting threads using :class:`~threading.Thread`::
        t = threading.Thread(target=crawl, args=(link,), kwargs={"delay": 2})
        threads.append(t)
 
-    # Start each thread
-    for t in threads:
+   # Start each thread
+   for t in threads:
        t.start()
 
    # Wait for all threads to finish
