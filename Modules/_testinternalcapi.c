@@ -2087,10 +2087,13 @@ reset_rare_event_counters(PyObject *self, PyObject *Py_UNUSED(type))
 
     interp->rare_events.set_class = 0;
     interp->rare_events.set_bases = 0;
+    interp->rare_events.set_eval_frame_func = 0;
     interp->rare_events.builtin_dict = 0;
     interp->rare_events.func_modification = 0;
 
     return Py_None;
+}
+
 
 #ifdef Py_GIL_DISABLED
 static PyObject *

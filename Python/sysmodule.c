@@ -4124,7 +4124,7 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     }
     err = PyDict_SetItemString(sysdict, "_jit", jit);
     Py_DECREF(jit);
-    if (err < 0) {
+    if (err) {
         goto error;
     }
 
