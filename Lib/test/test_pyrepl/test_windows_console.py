@@ -11,8 +11,8 @@ from typing import Iterable
 from unittest import TestCase
 from unittest.mock import MagicMock, call
 
-from .support import handle_all_events, code_to_events, reader_no_colors
-from .support import prepare_reader as default_prepare_reader
+from .support import handle_all_events, code_to_events
+from .support import reader_no_colors as default_prepare_reader
 
 try:
     from _pyrepl.console import Event, Console
@@ -258,9 +258,7 @@ class WindowsConsoleTests(TestCase):
         # fmt: on
 
         events = itertools.chain(code_to_events(code))
-        reader, console = self.handle_events_short(
-            events, prepare_reader=reader_no_colors
-        )
+        reader, console = self.handle_events_short(events)
 
         console.height = 2
         console.getheightwidth = MagicMock(lambda _: (2, 80))
