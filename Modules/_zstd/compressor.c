@@ -277,10 +277,7 @@ load:
         Py_END_CRITICAL_SECTION2();
     }
     else {
-        /* Impossible code path */
-        PyErr_SetString(PyExc_SystemError,
-                        "load_c_dict() impossible code path");
-        return -1;
+        Py_UNREACHABLE();
     }
 
     /* Check error */
