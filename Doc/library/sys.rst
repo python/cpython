@@ -1294,14 +1294,14 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
    .. versionadded:: next
 
-   .. function:: sys._jit.is_available()
+   .. function:: _jit.is_available()
 
       Return ``True`` if the current Python executable supports JIT compilation,
       and ``False`` otherwise.  This can be controlled by building CPython with
       the ``--experimental-jit`` option on Windows, and the
       :option:`--enable-experimental-jit` option on all other platforms.
 
-   .. function:: sys._jit.is_enabled()
+   .. function:: _jit.is_enabled()
 
       Return ``True`` if JIT compilation is enabled for the current Python
       process (implies :func:`sys._jit.is_available`), and ``False`` otherwise.
@@ -1309,7 +1309,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       :envvar:`PYTHON_JIT` environment variable to ``0`` (disabled) or ``1``
       (enabled) at interpreter startup.
 
-   .. function:: sys._jit.is_active()
+   .. function:: _jit.is_active()
 
       Return ``True`` if the topmost Python frame is currently executing JIT
       code, and ``False`` otherwise.
