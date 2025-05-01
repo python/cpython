@@ -40,7 +40,9 @@ def _dump_footer(
     yield "};"
 
 
-def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator[str]:
+def _dump_stencil(
+    opname: str, group: _stencils.StencilGroup
+) -> typing.Iterator[str]:
     yield "void"
     yield f"emit_{opname}("
     yield "    unsigned char *code, unsigned char *data, _PyExecutorObject *executor,"
@@ -62,7 +64,9 @@ def _dump_stencil(opname: str, group: _stencils.StencilGroup) -> typing.Iterator
             yield f"    memcpy({part}, {part}_body, sizeof({part}_body));"
         skip = False
         stencil.holes.sort(key=lambda hole: hole.offset)
-        for hole, pair in itertools.zip_longest(stencil.holes, stencil.holes[1:]):
+        for hole, pair in itertools.zip_longest(
+            stencil.holes, stencil.holes[1:]
+        ):
             if skip:
                 skip = False
                 continue

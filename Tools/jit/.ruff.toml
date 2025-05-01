@@ -1,7 +1,5 @@
 extend = "../../.ruff.toml"  # Inherit the project-wide settings
 
-line-length = 88
-
 [format]
 preview = true
 docstring-code-format = true

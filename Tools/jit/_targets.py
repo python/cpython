@@ -17,7 +17,9 @@ import _stencils
 import _writer
 
 if sys.version_info < (3, 11):
-    raise RuntimeError("Building the JIT compiler requires Python 3.11 or newer!")
+    raise RuntimeError(
+        "Building the JIT compiler requires Python 3.11 or newer!"
+    )
 
 TOOLS_JIT_BUILD = pathlib.Path(__file__).resolve()
 TOOLS_JIT = TOOLS_JIT_BUILD.parent
@@ -27,9 +29,14 @@ PYTHON_EXECUTOR_CASES_C_H = CPYTHON / "Python" / "executor_cases.c.h"
 TOOLS_JIT_TEMPLATE_C = TOOLS_JIT / "template.c"
 ASYNCIO_RUNNER = asyncio.Runner()
 
-_S = typing.TypeVar("_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection)
+_S = typing.TypeVar(
+    "_S", _schema.COFFSection, _schema.ELFSection, _schema.MachOSection
+)
 _R = typing.TypeVar(
-    "_R", _schema.COFFRelocation, _schema.ELFRelocation, _schema.MachORelocation
+    "_R",
+    _schema.COFFRelocation,
+    _schema.ELFRelocation,
+    _schema.MachORelocation,
 )
 
 
@@ -95,7 +102,9 @@ class _Target(typing.Generic[_S, _R]):
         # ...and also COFF:
         output = output[output.index("[", 1, None) :]
         output = output[: output.rindex("]", None, -1) + 1]
-        sections: list[dict[typing.Literal["Section"], _S]] = json.loads(output)
+        sections: list[dict[typing.Literal["Section"], _S]] = json.loads(
+            output
+        )
         for wrapped_section in sections:
             self._handle_section(wrapped_section["Section"], group)
         assert group.symbols["_JIT_ENTRY"] == (_stencils.HoleValue.CODE, 0)
@@ -104,7 +113,9 @@ class _Target(typing.Generic[_S, _R]):
             group.data.disassembly.append(line)
         return group
 
-    def _handle_section(self, section: _S, group: _stencils.StencilGroup) -> None:
+    def _handle_section(
+        self, section: _S, group: _stencils.StencilGroup
+    ) -> None:
         raise NotImplementedError(type(self))
 
     def _handle_relocation(
@@ -160,7 +171,9 @@ class _Target(typing.Generic[_S, _R]):
         generated_cases = PYTHON_EXECUTOR_CASES_C_H.read_text()
         cases_and_opnames = sorted(
             re.findall(
-                r"\n {8}(case (\w+): \{\n.*?\n {8}\})", generated_cases, flags=re.DOTALL
+                r"\n {8}(case (\w+): \{\n.*?\n {8}\})",
+                generated_cases,
+                flags=re.DOTALL,
             )
         )
         tasks = []
@@ -200,7 +213,9 @@ class _Target(typing.Generic[_S, _R]):
         """Build jit_stencils.h in the given directory."""
         if not self.stable:
             warning = f"JIT support for {self.triple} is still experimental!"
-            request = "Please report any issues you encounter.".center(len(warning))
+            request = "Please report any issues you encounter.".center(
+                len(warning)
+            )
             outline = "=" * len(warning)
             print("\n".join(["", outline, warning, request, outline, ""]))
         digest = f"// {self._compute_digest(out)}\n"
@@ -264,7 +279,9 @@ class _COFF(_Target[_schema.COFFSection, _schema.COFFRelocation]):
             hole = self._handle_relocation(base, relocation, stencil.body)
             stencil.holes.append(hole)
 
-    def _unwrap_dllimport(self, name: str) -> tuple[_stencils.HoleValue, str | None]:
+    def _unwrap_dllimport(
+        self, name: str
+    ) -> tuple[_stencils.HoleValue, str | None]:
         if name.startswith("__imp_"):
             name = name.removeprefix("__imp_")
             name = name.removeprefix(self.prefix)
@@ -291,13 +308,17 @@ class _COFF(_Target[_schema.COFFSection, _schema.COFFRelocation]):
                 "Offset": offset,
                 "Symbol": s,
                 "Type": {
-                    "Name": "IMAGE_REL_AMD64_REL32" | "IMAGE_REL_I386_REL32" as kind
+                    "Name": "IMAGE_REL_AMD64_REL32"
+                    | "IMAGE_REL_I386_REL32" as kind
                 },
             }:
                 offset += base
                 value, symbol = self._unwrap_dllimport(s)
                 addend = (
-                    int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                    int.from_bytes(
+                        raw[offset : offset + 4], "little", signed=True
+                    )
+                    - 4
                 )
             case {
                 "Offset": offset,
@@ -429,7 +450,12 @@ class _MachO(_Target[_schema.MachOSection, _schema.MachORelocation]):
         base = section["Address"] - start_address
         group.symbols[section["Index"]] = value, base
         stencil.body.extend(
-            [0] * (section["Address"] - len(group.code.body) - len(group.data.body))
+            [0]
+            * (
+                section["Address"]
+                - len(group.code.body)
+                - len(group.data.body)
+            )
         )
         stencil.body.extend(section["SectionData"]["Bytes"])
         assert "Symbols" in section
@@ -468,13 +494,19 @@ class _MachO(_Target[_schema.MachOSection, _schema.MachORelocation]):
             case {
                 "Offset": offset,
                 "Symbol": {"Name": s},
-                "Type": {"Name": "X86_64_RELOC_GOT" | "X86_64_RELOC_GOT_LOAD" as kind},
+                "Type": {
+                    "Name": "X86_64_RELOC_GOT"
+                    | "X86_64_RELOC_GOT_LOAD" as kind
+                },
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
                 value, symbol = _stencils.HoleValue.GOT, s
                 addend = (
-                    int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                    int.from_bytes(
+                        raw[offset : offset + 4], "little", signed=True
+                    )
+                    - 4
                 )
             case {
                 "Offset": offset,
@@ -483,13 +515,19 @@ class _MachO(_Target[_schema.MachOSection, _schema.MachORelocation]):
             } | {
                 "Offset": offset,
                 "Symbol": {"Name": s},
-                "Type": {"Name": "X86_64_RELOC_BRANCH" | "X86_64_RELOC_SIGNED" as kind},
+                "Type": {
+                    "Name": "X86_64_RELOC_BRANCH"
+                    | "X86_64_RELOC_SIGNED" as kind
+                },
             }:
                 offset += base
                 s = s.removeprefix(self.prefix)
                 value, symbol = _stencils.symbol_to_value(s)
                 addend = (
-                    int.from_bytes(raw[offset : offset + 4], "little", signed=True) - 4
+                    int.from_bytes(
+                        raw[offset : offset + 4], "little", signed=True
+                    )
+                    - 4
                 )
             case {
                 "Offset": offset,

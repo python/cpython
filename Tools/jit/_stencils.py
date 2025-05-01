@@ -199,14 +199,18 @@ class Stencil:
 
     body: bytearray = dataclasses.field(default_factory=bytearray, init=False)
     holes: list[Hole] = dataclasses.field(default_factory=list, init=False)
-    disassembly: list[str] = dataclasses.field(default_factory=list, init=False)
+    disassembly: list[str] = dataclasses.field(
+        default_factory=list, init=False
+    )
 
     def pad(self, alignment: int) -> None:
         """Pad the stencil to the given alignment."""
         offset = len(self.body)
         padding = -offset % alignment
         if padding:
-            self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
+            self.disassembly.append(
+                f"{offset:x}: {' '.join(['00'] * padding)}"
+            )
         self.body.extend([0] * padding)
 
     def add_nops(self, nop: bytes, alignment: int) -> None:
@@ -291,13 +295,21 @@ class StencilGroup:
     _trampolines: set[int] = dataclasses.field(default_factory=set, init=False)
 
     def process_relocations(
-        self, known_symbols: dict[str, int], *, alignment: int = 1, nop: bytes = b""
+        self,
+        known_symbols: dict[str, int],
+        *,
+        alignment: int = 1,
+        nop: bytes = b"",
     ) -> None:
         """Fix up all GOT and internal relocations for this stencil group."""
         for hole in self.code.holes.copy():
             if (
                 hole.kind
-                in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
+                in {
+                    "R_AARCH64_CALL26",
+                    "R_AARCH64_JUMP26",
+                    "ARM64_RELOC_BRANCH26",
+                }
                 and hole.value is HoleValue.ZERO
                 and hole.symbol not in self.symbols
             ):
@@ -320,7 +332,9 @@ class StencilGroup:
                 if hole.value is HoleValue.GOT:
                     assert hole.symbol is not None
                     hole.value = HoleValue.DATA
-                    hole.addend += self._global_offset_table_lookup(hole.symbol)
+                    hole.addend += self._global_offset_table_lookup(
+                        hole.symbol
+                    )
                     hole.symbol = None
                 elif hole.symbol in self.symbols:
                     hole.value, addend = self.symbols[hole.symbol]
@@ -338,7 +352,9 @@ class StencilGroup:
         self.data.holes.sort(key=lambda hole: hole.offset)
 
     def _global_offset_table_lookup(self, symbol: str) -> int:
-        return len(self.data.body) + self._got.setdefault(symbol, 8 * len(self._got))
+        return len(self.data.body) + self._got.setdefault(
+            symbol, 8 * len(self._got)
+        )
 
     def _emit_global_offset_table(self) -> None:
         got = len(self.data.body)

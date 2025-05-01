@@ -9,7 +9,9 @@ import subprocess
 import typing
 
 _LLVM_VERSION = 19
-_LLVM_VERSION_PATTERN = re.compile(rf"version\s+{_LLVM_VERSION}\.\d+\.\d+\S*\s+")
+_LLVM_VERSION_PATTERN = re.compile(
+    rf"version\s+{_LLVM_VERSION}\.\d+\.\d+\S*\s+"
+)
 
 _P = typing.ParamSpec("_P")
 _R = typing.TypeVar("_R")
@@ -33,7 +35,9 @@ def _async_cache(f: _C[_P, _R]) -> _C[_P, _R]:
 _CORES = asyncio.BoundedSemaphore(os.cpu_count() or 1)
 
 
-async def _run(tool: str, args: typing.Iterable[str], echo: bool = False) -> str | None:
+async def _run(
+    tool: str, args: typing.Iterable[str], echo: bool = False
+) -> str | None:
     command = [tool, *args]
     async with _CORES:
         if echo:
@@ -46,7 +50,9 @@ async def _run(tool: str, args: typing.Iterable[str], echo: bool = False) -> str
             return None
         out, _ = await process.communicate()
     if process.returncode:
-        raise RuntimeError(f"{tool} exited with return code {process.returncode}")
+        raise RuntimeError(
+            f"{tool} exited with return code {process.returncode}"
+        )
     return out.decode()
 
 
@@ -58,7 +64,9 @@ async def _check_tool_version(name: str, *, echo: bool = False) -> bool:
 
 @_async_cache
 async def _get_brew_llvm_prefix(*, echo: bool = False) -> str | None:
-    output = await _run("brew", ["--prefix", f"llvm@{_LLVM_VERSION}"], echo=echo)
+    output = await _run(
+        "brew", ["--prefix", f"llvm@{_LLVM_VERSION}"], echo=echo
+    )
     return output and output.removesuffix("\n")
 
 
@@ -90,7 +98,9 @@ async def maybe_run(
     return path and await _run(path, args, echo=echo)
 
 
-async def run(tool: str, args: typing.Iterable[str], echo: bool = False) -> str:
+async def run(
+    tool: str, args: typing.Iterable[str], echo: bool = False
+) -> str:
     """Run an LLVM tool if it can be found. Otherwise, raise RuntimeError."""
     output = await maybe_run(tool, args, echo=echo)
     if output is None:
