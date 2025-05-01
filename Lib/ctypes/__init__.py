@@ -275,9 +275,7 @@ def POINTER(cls):
     if cls is None:
         return c_void_p
     try:
-        pt = cls.__pointer_type__
-        if pt is not None:
-            return pt
+        return cls.__pointer_type__
     except AttributeError:
         pass
     if isinstance(cls, str):
