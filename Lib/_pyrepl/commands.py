@@ -488,7 +488,10 @@ class perform_bracketed_paste(Command):
             self.reader.console.wait(100)
             ev = self.reader.console.getpending()
             data += ev.data
-            trace("len(data) = {d}", d=len(data))
-        trace("bracketed pasting done in {s:.2f}s", s=time.time() - start)
+        trace(
+            "bracketed pasting of {l} chars done in {s:.2f}s",
+            l=len(data),
+            s=time.time() - start,
+        )
         self.reader.insert(data.replace(done, ""))
         self.reader.last_refresh_cache.invalidated = True

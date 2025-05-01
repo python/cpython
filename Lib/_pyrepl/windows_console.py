@@ -426,6 +426,18 @@ class WindowsConsole(Console):
 
         return rec
 
+    def _read_input_bulk(self, block: bool, n: int) -> tuple[INPUT_RECORD, int]:
+        rec = (n * INPUT_RECORD)()
+        read = DWORD()
+
+        if not block and not self.wait(timeout=0):
+            return rec, 0
+
+        if not ReadConsoleInput(InHandle, rec, n, read):
+            raise WinError(GetLastError())
+
+        return rec, read.value
+
     def get_event(self, block: bool = True) -> Event | None:
         """Return an Event instance.  Returns None if |block| is false
         and there is no event pending, otherwise waits for the
@@ -528,10 +540,15 @@ class WindowsConsole(Console):
             if e2:
                 e.data += e2.data
 
-        rec = self._read_input(False)
-        if rec and rec.EventType == KEY_EVENT:
-            key_event = rec.Event.KeyEvent
-            e.data += key_event.uChar.UnicodeChar
+        recs, rec_count = self._read_input_bulk(False, 1024)
+        for i in range(rec_count):
+            rec = recs[i]
+            if rec and rec.EventType == KEY_EVENT:
+                key_event = rec.Event.KeyEvent
+                ch = key_event.uChar.UnicodeChar
+                if ch == "\r":
+                    ch += "\n"
+                e.data += ch
         return e
 
     def wait(self, timeout: float | None) -> bool:
