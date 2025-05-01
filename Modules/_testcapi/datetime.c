@@ -209,7 +209,7 @@ get_datetime_fromdateandtime(PyObject *self, PyObject *args)
     int year, month, day;
     int hour, minute, second, microsecond;
 
-    if (!PyArg_ParseTuple(args, "piiiiii",
+    if (!PyArg_ParseTuple(args, "piiiiiii",
                           &macro,
                           &year, &month, &day,
                           &hour, &minute, &second, &microsecond)) {
@@ -239,7 +239,7 @@ get_datetime_fromdateandtimeandfold(PyObject *self, PyObject *args)
     int year, month, day;
     int hour, minute, second, microsecond, nanosecond, fold;
 
-    if (!PyArg_ParseTuple(args, "piiiiiiii",
+    if (!PyArg_ParseTuple(args, "piiiiiiiii",
                           &macro,
                           &year, &month, &day,
                           &hour, &minute, &second, &microsecond,
@@ -271,7 +271,7 @@ get_time_fromtime(PyObject *self, PyObject *args)
     int macro;
     int hour, minute, second, microsecond;
 
-    if (!PyArg_ParseTuple(args, "piiiii",
+    if (!PyArg_ParseTuple(args, "piiii",
                           &macro,
                           &hour, &minute, &second, &microsecond))
     {

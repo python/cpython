@@ -7083,7 +7083,7 @@ class CapiTest(unittest.TestCase):
                 self.assertEqual(c_api_time, exp_time)
 
     def test_time_from_timeandfold(self):
-        exp_time = time(22, 12, 55, 99999)
+        exp_time = time(22, 12, 55, 99999, nanosecond=1)
 
         for fold in [0, 1]:
             for macro in False, True:
@@ -7094,7 +7094,8 @@ class CapiTest(unittest.TestCase):
                         exp_time.minute,
                         exp_time.second,
                         exp_time.microsecond,
-                        exp_time.fold)
+                        exp_time.fold,
+                        exp_time.nanosecond)
 
                     self.assertEqual(c_api_time, exp_time)
                     self.assertEqual(c_api_time.fold, exp_time.fold)
