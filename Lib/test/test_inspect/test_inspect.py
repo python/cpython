@@ -3602,9 +3602,10 @@ class TestSignatureObject(unittest.TestCase):
                           int))
 
     def test_signature_on_classmethod(self):
-        self.assertEqual(self.signature(classmethod),
-                         ((('function', ..., ..., "positional_only"),),
-                          ...))
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertEqual(self.signature(classmethod),
+                            ((('function', ..., ..., "positional_only"),),
+                            ...))
 
         class Test:
             @classmethod
@@ -3624,9 +3625,10 @@ class TestSignatureObject(unittest.TestCase):
                           ...))
 
     def test_signature_on_staticmethod(self):
-        self.assertEqual(self.signature(staticmethod),
-                         ((('function', ..., ..., "positional_only"),),
-                          ...))
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertEqual(self.signature(staticmethod),
+                            ((('function', ..., ..., "positional_only"),),
+                            ...))
 
         class Test:
             @staticmethod
@@ -4076,9 +4078,10 @@ class TestSignatureObject(unittest.TestCase):
 
             self.assertEqual(C(3), 8)
             self.assertEqual(C(3, 7), 1)
-            # BUG: Returns '<Signature (b)>'
-            with self.assertRaises(AssertionError):
-                self.assertEqual(self.signature(C), self.signature((0).__pow__))
+            if not support.MISSING_C_DOCSTRINGS:
+                # BUG: Returns '<Signature (b)>'
+                with self.assertRaises(AssertionError):
+                    self.assertEqual(self.signature(C), self.signature((0).__pow__))
 
         class CM(type):
             def __new__(mcls, name, bases, dct, *, foo=1):
@@ -4478,7 +4481,8 @@ class TestSignatureObject(unittest.TestCase):
                 __call__ = (2).__pow__
 
             self.assertEqual(C()(3), 8)
-            self.assertEqual(self.signature(C()), self.signature((0).__pow__))
+            if not support.MISSING_C_DOCSTRINGS:
+                self.assertEqual(self.signature(C()), self.signature((0).__pow__))
 
         with self.subTest('ClassMethodDescriptorType'):
             class C(dict):
@@ -4487,7 +4491,8 @@ class TestSignatureObject(unittest.TestCase):
             res = C()([1, 2], 3)
             self.assertEqual(res, {1: 3, 2: 3})
             self.assertEqual(type(res), C)
-            self.assertEqual(self.signature(C()), self.signature(dict.fromkeys))
+            if not support.MISSING_C_DOCSTRINGS:
+                self.assertEqual(self.signature(C()), self.signature(dict.fromkeys))
 
         with self.subTest('MethodDescriptorType'):
             class C(str):
@@ -4501,7 +4506,8 @@ class TestSignatureObject(unittest.TestCase):
                 __call__ = int.__pow__
 
             self.assertEqual(C(2)(3), 8)
-            self.assertEqual(self.signature(C()), self.signature((0).__pow__))
+            if not support.MISSING_C_DOCSTRINGS:
+                self.assertEqual(self.signature(C()), self.signature((0).__pow__))
 
         with self.subTest('MemberDescriptorType'):
             class C:
@@ -4519,7 +4525,8 @@ class TestSignatureObject(unittest.TestCase):
             def __call__(self, *args, **kwargs):
                 pass
 
-        self.assertEqual(self.signature(C), ((), ...))
+        if not support.MISSING_C_DOCSTRINGS:
+            self.assertEqual(self.signature(C), ((), ...))
         self.assertEqual(self.signature(C()),
                          ((('a', ..., ..., "positional_only"),
                            ('b', ..., ..., "positional_or_keyword"),
