@@ -314,15 +314,12 @@ class PointerTypeCache:
         except AttributeError:
             raise KeyError(cls)
 
-    _sentinel = object()
-    def get(self, cls, default=_sentinel):
+    def get(self, cls, default=None):
         import warnings
         warnings._deprecated("ctypes._pointer_type_cache", remove=(3, 19))
         try:
             return cls.__pointer_type__
         except AttributeError:
-            if default is self._sentinel:
-                raise KeyError(cls)
             return default
 
     def __contains__(self, cls):

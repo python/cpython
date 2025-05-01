@@ -397,8 +397,8 @@ class PointerTypeCacheTestCase(unittest.TestCase):
             self.assertIs(_pointer_type_cache.get(C), P1)
 
     def test_get_not_registered(self):
-        with self.assertRaises(KeyError), self.assertWarns(DeprecationWarning):
-            _pointer_type_cache.get(str)
+        with self.assertWarns(DeprecationWarning):
+            self.assertIsNone(_pointer_type_cache.get(str))
 
         with self.assertWarns(DeprecationWarning):
             self.assertIsNone(_pointer_type_cache.get(str, None))
