@@ -299,7 +299,7 @@ class PointersTestCase(unittest.TestCase):
             pass
 
         t1 = POINTER(c_int)
-        with self.assertRaisesRegex(TypeError, "pointer type already set"):
+        with self.assertRaisesRegex(TypeError, "cls type already set"):
             t1.set_type(c_float)
 
         with self.assertRaisesRegex(TypeError, "cls type already set"):
@@ -332,6 +332,34 @@ class PointersTestCase(unittest.TestCase):
 
         p = POINTER(Cls)
         self.assertIs(Cls.__pointer_type__, p)
+
+    def test_arbitrary_pointer_type_attribute(self):
+        class Cls(Structure):
+            _fields_ = (
+                ('a', c_int),
+                ('b', c_float),
+            )
+
+        garbage = 'garbage'
+
+        P = POINTER(Cls)
+        self.assertIs(Cls.__pointer_type__, P)
+        Cls.__pointer_type__ = garbage
+        self.assertIs(Cls.__pointer_type__, garbage)
+        self.assertIs(POINTER(Cls), garbage)
+        self.assertIs(P._type_, Cls)
+
+        instance = Cls(1, 2.0)
+        pointer = P(instance)
+        self.assertEqual(pointer[0].a, 1)
+        self.assertEqual(pointer[0].b, 2)
+
+        del Cls.__pointer_type__
+
+        NewP = POINTER(Cls)
+        self.assertIsNot(NewP, P)
+        self.assertIs(Cls.__pointer_type__, NewP)
+        self.assertIs(P._type_, Cls)
 
     def test_pointer_types_factory(self):
         """Shouldn't leak"""
@@ -401,16 +429,16 @@ class PointerTypeCacheTestCase(unittest.TestCase):
             P2 = POINTER("C")
 
         with self.assertWarns(DeprecationWarning):
-            _pointer_type_cache[C] = P2 # silently do nothing
+            _pointer_type_cache[C] = P2
 
-        self.assertIs(C.__pointer_type__, P1)
-        self.assertIsNot(C.__pointer_type__, P2)
-
-        with self.assertWarns(DeprecationWarning):
-            self.assertIs(_pointer_type_cache[C], P1)
+        self.assertIs(C.__pointer_type__, P2)
+        self.assertIsNot(C.__pointer_type__, P1)
 
         with self.assertWarns(DeprecationWarning):
-            self.assertIs(_pointer_type_cache.get(C), P1)
+            self.assertIs(_pointer_type_cache[C], P2)
+
+        with self.assertWarns(DeprecationWarning):
+            self.assertIs(_pointer_type_cache.get(C), P2)
 
     def test_get_not_registered(self):
         with self.assertWarns(DeprecationWarning):
