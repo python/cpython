@@ -13,13 +13,13 @@ import subprocess
 PROCESS_VM_READV_SUPPORTED = False
 
 try:
-    from _testexternalinspection import PROCESS_VM_READV_SUPPORTED
-    from _testexternalinspection import get_stack_trace
-    from _testexternalinspection import get_async_stack_trace
-    from _testexternalinspection import get_all_awaited_by
+    from _remotedebuggingg import PROCESS_VM_READV_SUPPORTED
+    from _remotedebuggingg import get_stack_trace
+    from _remotedebuggingg import get_async_stack_trace
+    from _remotedebuggingg import get_all_awaited_by
 except ImportError:
     raise unittest.SkipTest(
-        "Test only runs when _testexternalinspection is available")
+        "Test only runs when _remotedebuggingmodule is available")
 
 def _make_test_script(script_dir, script_basename, source):
     to_return = make_script(script_dir, script_basename, source)
