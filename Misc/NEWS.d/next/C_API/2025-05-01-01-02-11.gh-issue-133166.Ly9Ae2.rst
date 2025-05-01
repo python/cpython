@@ -1,0 +1,2 @@
+Fix regression where :c:func:`PyType_GetModuleByDef` returns NULL without
+setting :exc:`TypeError` when a static type is passed.

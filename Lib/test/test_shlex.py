@@ -3,6 +3,7 @@ import itertools
 import shlex
 import string
 import unittest
+from test.support import import_helper
 
 
 # The original test data set was from shellwords, by Hartmut Goebel.
@@ -362,6 +363,9 @@ class ShlexTest(unittest.TestCase):
         self.assertEqual(shlex_instance.punctuation_chars, punctuation_chars)
         with self.assertRaises(AttributeError):
             shlex_instance.punctuation_chars = False
+
+    def test_lazy_imports(self):
+        import_helper.ensure_lazy_imports('shlex', {'collections', 're', 'os'})
 
 
 # Allow this test to be used with old shlex.py
