@@ -408,44 +408,45 @@ static int
 maybe_raise_syntax_error_for_string_prefixes(struct tok_state *tok,
                                              int saw_b, int saw_r, int saw_u,
                                              int saw_f, int saw_t) {
-    // Return -1 when there's no error,
-    // return token_type >= 0 when there's an error.
     // Supported: rb, rf, rt (in any order)
     // Unsupported: ub, ur, uf, ut, bf, bt, ft (in any order)
 
-#define MAKE_SYNTAX_ERROR(PREFIX1, PREFIX2)                          \
-    _PyTokenizer_syntaxerror_known_range(                            \
-        tok, (int)(tok->start + 1 - tok->line_start),                \
-        (int)(tok->cur - tok->line_start),                           \
-        "'" PREFIX1 "' and '" PREFIX2 "' prefixes are incompatible")
+#define RETURN_SYNTAX_ERROR(PREFIX1, PREFIX2)                             \
+    do {                                                                  \
+        (void)_PyTokenizer_syntaxerror_known_range(                       \
+            tok, (int)(tok->start + 1 - tok->line_start),                 \
+            (int)(tok->cur - tok->line_start),                            \
+            "'" PREFIX1 "' and '" PREFIX2 "' prefixes are incompatible"); \
+        return -1;                                                        \
+    } while (0)
 
     if (saw_u && saw_b) {
-        return MAKE_SYNTAX_ERROR("u", "b");
+        RETURN_SYNTAX_ERROR("u", "b");
     }
     if (saw_u && saw_r) {
-        return MAKE_SYNTAX_ERROR("u", "r");
+        RETURN_SYNTAX_ERROR("u", "r");
     }
     if (saw_u && saw_f) {
-        return MAKE_SYNTAX_ERROR("u", "f");
+        RETURN_SYNTAX_ERROR("u", "f");
     }
     if (saw_u && saw_t) {
-        return MAKE_SYNTAX_ERROR("u", "t");
+        RETURN_SYNTAX_ERROR("u", "t");
     }
 
     if (saw_b && saw_f) {
-        return MAKE_SYNTAX_ERROR("b", "f");
+        RETURN_SYNTAX_ERROR("b", "f");
     }
     if (saw_b && saw_t) {
-        return MAKE_SYNTAX_ERROR("b", "t");
+        RETURN_SYNTAX_ERROR("b", "t");
     }
 
     if (saw_f && saw_t) {
-        return MAKE_SYNTAX_ERROR("f", "t");
+        RETURN_SYNTAX_ERROR("f", "t");
     }
-    return -1;
 
-#undef MAKE_SYNTAX_ERROR
+#undef RETURN_SYNTAX_ERROR
 
+    return 0;
 }
 
 static int
@@ -716,10 +717,10 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
             c = tok_nextc(tok);
             if (c == '"' || c == '\'') {
                 // Raise error on incompatible string prefixes:
-                int err = maybe_raise_syntax_error_for_string_prefixes(
+                int status = maybe_raise_syntax_error_for_string_prefixes(
                     tok, saw_b, saw_r, saw_u, saw_f, saw_t);
-                if (err >= 0) {
-                    return MAKE_TOKEN(err);
+                if (status < 0) {
+                    return MAKE_TOKEN(ERRORTOKEN);
                 }
 
                 // Handle valid f or t string creation:
