@@ -675,6 +675,12 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('(x := 0)', feature_version=(3, 7))
 
+    def test_pep750_tstring(self):
+        code = 't""'
+        ast.parse(code, feature_version=(3, 14))
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 13))
+
     def test_pep758_except_without_parens(self):
         code = textwrap.dedent("""
             try:
