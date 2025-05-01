@@ -1219,18 +1219,18 @@ class ThreadTests(BaseTestCase):
             import threading
             done = threading.Event()
 
-            def loop():
+            def set_event():
                 done.set()
-
 
             class Cycle:
                 def __init__(self):
                     self.self_ref = self
-                    self.thr = threading.Thread(target=loop, daemon=True)
+                    self.thr = threading.Thread(target=set_event, daemon=True)
                     self.thr.start()
-                    done.wait()
+                    self.thr.join()
 
                 def __del__(self):
+                    assert done.is_set()
                     assert not self.thr.is_alive()
                     self.thr.join()
                     assert not self.thr.is_alive()

@@ -622,7 +622,7 @@ used as follows.  If the buffer has reached the maximum size, new object
 pointers found while following references are pushed to the stack, rather than
 put in the buffer.  When dequeuing objects from the buffer, we will "prime" the
 buffer if the current length drops below the low threshold.  Priming means
-popping objects from the stack and enqueing them into the buffer.  While
+popping objects from the stack and enqueuing them into the buffer.  While
 priming, we will fill it only until the high threshold is reached.
 
 To measure the effectiveness of the buffer, some benchmark programs were run

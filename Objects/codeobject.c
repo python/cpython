@@ -1689,6 +1689,49 @@ PyCode_GetFreevars(PyCodeObject *code)
     return _PyCode_GetFreevars(code);
 }
 
+
+/* Here "value" means a non-None value, since a bare return is identical
+ * to returning None explicitly.  Likewise a missing return statement
+ * at the end of the function is turned into "return None". */
+int
+_PyCode_ReturnsOnlyNone(PyCodeObject *co)
+{
+    // Look up None in co_consts.
+    Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
+    int none_index = 0;
+    for (; none_index < nconsts; none_index++) {
+        if (PyTuple_GET_ITEM(co->co_consts, none_index) == Py_None) {
+            break;
+        }
+    }
+    if (none_index == nconsts) {
+        // None wasn't there, which means there was no implicit return,
+        // "return", or "return None".  That means there must be
+        // an explicit return (non-None).
+        return 0;
+    }
+
+    // Walk the bytecode, looking for RETURN_VALUE.
+    Py_ssize_t len = Py_SIZE(co);
+    for (int i = 0; i < len; i++) {
+        _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
+        if (IS_RETURN_OPCODE(inst.op.code)) {
+            assert(i != 0);
+            // Ignore it if it returns None.
+            _Py_CODEUNIT prev = _Py_GetBaseCodeUnit(co, i-1);
+            if (prev.op.code == LOAD_CONST) {
+                // We don't worry about EXTENDED_ARG for now.
+                if (prev.op.arg == none_index) {
+                    continue;
+                }
+            }
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
 #ifdef _Py_TIER2
 
 static void

@@ -946,6 +946,18 @@ iframe_getlasti(PyObject *self, PyObject *frame)
 }
 
 static PyObject *
+code_returns_only_none(PyObject *self, PyObject *arg)
+{
+    if (!PyCode_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
+        return NULL;
+    }
+    PyCodeObject *code = (PyCodeObject *)arg;
+    int res = _PyCode_ReturnsOnlyNone(code);
+    return PyBool_FromLong(res);
+}
+
+static PyObject *
 get_co_framesize(PyObject *self, PyObject *arg)
 {
     if (!PyCode_Check(arg)) {
@@ -954,6 +966,37 @@ get_co_framesize(PyObject *self, PyObject *arg)
     }
     PyCodeObject *code = (PyCodeObject *)arg;
     return PyLong_FromLong(code->co_framesize);
+}
+
+static PyObject *
+get_co_localskinds(PyObject *self, PyObject *arg)
+{
+    if (!PyCode_Check(arg)) {
+        PyErr_SetString(PyExc_TypeError, "argument must be a code object");
+        return NULL;
+    }
+    PyCodeObject *co = (PyCodeObject *)arg;
+
+    PyObject *kinds = PyDict_New();
+    if (kinds == NULL) {
+        return NULL;
+    }
+    for (int offset = 0; offset < co->co_nlocalsplus; offset++) {
+        PyObject *name = PyTuple_GET_ITEM(co->co_localsplusnames, offset);
+        _PyLocals_Kind k = _PyLocals_GetKind(co->co_localspluskinds, offset);
+        PyObject *kind = PyLong_FromLong(k);
+        if (kind == NULL) {
+            Py_DECREF(kinds);
+            return NULL;
+        }
+        int res = PyDict_SetItem(kinds, name, kind);
+        Py_DECREF(kind);
+        if (res < 0) {
+            Py_DECREF(kinds);
+            return NULL;
+        }
+    }
+    return kinds;
 }
 
 static PyObject *
@@ -1730,6 +1773,16 @@ get_crossinterp_data(PyObject *self, PyObject *args, PyObject *kwargs)
             goto error;
         }
     }
+    else if (strcmp(mode, "pickle") == 0) {
+        if (_PyPickle_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
+    else if (strcmp(mode, "marshal") == 0) {
+        if (_PyMarshal_GetXIData(tstate, obj, xidata) != 0) {
+            goto error;
+        }
+    }
     else {
         PyErr_Format(PyExc_ValueError, "unsupported mode %R", modeobj);
         goto error;
@@ -2069,7 +2122,9 @@ static PyMethodDef module_functions[] = {
     {"iframe_getcode", iframe_getcode, METH_O, NULL},
     {"iframe_getline", iframe_getline, METH_O, NULL},
     {"iframe_getlasti", iframe_getlasti, METH_O, NULL},
+    {"code_returns_only_none", code_returns_only_none, METH_O, NULL},
     {"get_co_framesize", get_co_framesize, METH_O, NULL},
+    {"get_co_localskinds", get_co_localskinds, METH_O, NULL},
     {"jit_enabled", jit_enabled,  METH_NOARGS, NULL},
 #ifdef _Py_TIER2
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
