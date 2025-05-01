@@ -2678,7 +2678,7 @@ class _PdbServer(Pdb):
         try:
             self._sockfile.write(json_payload.encode() + b"\n")
             self._sockfile.flush()
-        except OSError:
+        except (OSError, ValueError):
             # This means that the client has abruptly disconnected, but we'll
             # handle that the next time we try to read from the client instead
             # of trying to handle it from everywhere _send() may be called.
