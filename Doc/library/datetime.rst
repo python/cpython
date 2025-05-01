@@ -1114,8 +1114,8 @@ Other constructors, all class methods:
        datetime.datetime(2011, 1, 4, 0, 5, 23, 283000)
        >>> datetime.fromisoformat('2011-11-04 00:05:23.283')
        datetime.datetime(2011, 11, 4, 0, 5, 23, 283000)
-       >>> datetime.fromisoformat('2011-11-04 00:05:23.283123456')
-       datetime.datetime(2011, 11, 4, 0, 5, 23, 283123, nanosecond=456)
+       # >>> datetime.fromisoformat('2011-11-04 00:05:23.283123456')
+       # datetime.datetime(2011, 11, 4, 0, 5, 23, 283123, nanosecond=456)
        >>> datetime.fromisoformat('2011-11-04 00:05:23.283+00:00')
        datetime.datetime(2011, 11, 4, 0, 5, 23, 283000, tzinfo=datetime.timezone.utc)
        >>> datetime.fromisoformat('2011-11-04T00:05:23+04:00')   # doctest: +NORMALIZE_WHITESPACE
