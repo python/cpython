@@ -2354,7 +2354,7 @@ Data types
 
    .. attribute:: __pointer_type__
 
-      This attributes is a pointer type that was created by calling
+      The pointer type that was created by calling
       :func:`POINTER` for corresponding ctypes data type. If a pointer type
       was not yet created, the attribute is missing.
 

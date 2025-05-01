@@ -243,7 +243,6 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
                     ns = {'_type_': self}
                     internal_pointer_type = PointerMeta(f"p{name}", p_bases, ns)
                     assert isinstance(internal_pointer_type, PyCPointerType)
-                    assert self.__pointer_type__ is not None
                     assert self.__pointer_type__ is internal_pointer_type
 
         class PointerMeta(PyCPointerType):
@@ -307,7 +306,6 @@ class PyCSimpleTypeAsMetaclassTest(unittest.TestCase):
                     ns = {'_type_': self}
                     internal_pointer_type = PointerMeta(f"p{name}", p_bases, ns)
                     assert isinstance(internal_pointer_type, PyCPointerType)
-                    assert self.__pointer_type__ is not None
                     assert self.__pointer_type__ is internal_pointer_type
 
         class PointerMeta(PyCPointerType):
