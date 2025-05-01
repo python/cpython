@@ -11,40 +11,6 @@
 This module constructs higher-level threading interfaces on top of the lower
 level :mod:`_thread` module.
 
-.. versionchanged:: 3.7
-   This module used to be optional, it is now always available.
-
-.. seealso::
-
-   :class:`concurrent.futures.ThreadPoolExecutor` offers a higher level interface
-   to push tasks to a background thread without blocking execution of the
-   calling thread, while still being able to retrieve their results when needed.
-
-   :mod:`queue` provides a thread-safe interface for exchanging data between
-   running threads.
-
-   :mod:`asyncio` offers an alternative approach to achieving task level
-   concurrency without requiring the use of multiple operating system threads.
-
-.. note::
-
-   In the Python 2.x series, this module contained ``camelCase`` names
-   for some methods and functions. These are deprecated as of Python 3.10,
-   but they are still supported for compatibility with Python 2.5 and lower.
-
-
-.. impl-detail::
-
-   In CPython, due to the :term:`Global Interpreter Lock
-   <global interpreter lock>`, only one thread
-   can execute Python code at once (even though certain performance-oriented
-   libraries might overcome this limitation).
-   If you want your application to make better use of the computational
-   resources of multi-core machines, you are advised to use
-   :mod:`multiprocessing` or :class:`concurrent.futures.ProcessPoolExecutor`.
-   However, threading is still an appropriate model if you want to run
-   multiple I/O-bound tasks simultaneously.
-
 .. include:: ../includes/wasm-notavail.rst
 
 Introduction
@@ -91,6 +57,40 @@ creating and starting threads using :class:`~threading.Thread`::
    for t in threads:
        t.join()
 
+.. versionchanged:: 3.7
+   This module used to be optional, it is now always available.
+
+.. seealso::
+
+   :class:`concurrent.futures.ThreadPoolExecutor` offers a higher level interface
+   to push tasks to a background thread without blocking execution of the
+   calling thread, while still being able to retrieve their results when needed.
+
+   :mod:`queue` provides a thread-safe interface for exchanging data between
+   running threads.
+
+   :mod:`asyncio` offers an alternative approach to achieving task level
+   concurrency without requiring the use of multiple operating system threads.
+
+.. note::
+
+   In the Python 2.x series, this module contained ``camelCase`` names
+   for some methods and functions. These are deprecated as of Python 3.10,
+   but they are still supported for compatibility with Python 2.5 and lower.
+
+
+.. impl-detail::
+
+   In CPython, due to the :term:`Global Interpreter Lock
+   <global interpreter lock>`, only one thread
+   can execute Python code at once (even though certain performance-oriented
+   libraries might overcome this limitation).
+   If you want your application to make better use of the computational
+   resources of multi-core machines, you are advised to use
+   :mod:`multiprocessing` or :class:`concurrent.futures.ProcessPoolExecutor`.
+   However, threading is still an appropriate model if you want to run
+   multiple I/O-bound tasks simultaneously.
+
 GIL and Performance Considerations
 ----------------------------------
 
@@ -105,6 +105,9 @@ for achieving concurrency in many scenarios.
 As of Python 3.13, experimental :term:`free-threaded <free threading>` builds
 can disable the :term:`GIL`, enabling true parallel execution of threads, but
 this feature is not available by default. (See :pep:`703`.)
+
+Reference
+---------
 
 This module defines the following functions:
 
@@ -317,7 +320,7 @@ All of the methods described below are executed atomically.
 
 
 Thread-Local Data
------------------
+^^^^^^^^^^^^^^^^^
 
 Thread-local data is data whose values are thread specific.  To manage
 thread-local data, just create an instance of :class:`local` (or a
@@ -340,7 +343,7 @@ The instance's values will be different for separate threads.
 .. _thread-objects:
 
 Thread Objects
---------------
+^^^^^^^^^^^^^^
 
 The :class:`Thread` class represents an activity that is run in a separate
 thread of control.  There are two ways to specify the activity: by passing a
@@ -575,7 +578,7 @@ since it is impossible to detect the termination of alien threads.
 .. _lock-objects:
 
 Lock Objects
-------------
+^^^^^^^^^^^^
 
 A primitive lock is a synchronization primitive that is not owned by a
 particular thread when locked.  In Python, it is currently the lowest level
@@ -668,7 +671,7 @@ All methods are executed atomically.
 .. _rlock-objects:
 
 RLock Objects
--------------
+^^^^^^^^^^^^^
 
 A reentrant lock is a synchronization primitive that may be acquired multiple
 times by the same thread.  Internally, it uses the concepts of "owning thread"
@@ -771,7 +774,7 @@ call release as many times the lock has been acquired can lead to deadlock.
 .. _condition-objects:
 
 Condition Objects
------------------
+^^^^^^^^^^^^^^^^^
 
 A condition variable is always associated with some kind of lock; this can be
 passed in or one will be created by default.  Passing one in is useful when
@@ -943,7 +946,7 @@ item to the buffer only needs to wake up one consumer thread.
 .. _semaphore-objects:
 
 Semaphore Objects
------------------
+^^^^^^^^^^^^^^^^^
 
 This is one of the oldest synchronization primitives in the history of computer
 science, invented by the early Dutch computer scientist Edsger W. Dijkstra (he
@@ -1052,7 +1055,7 @@ causes the semaphore to be released more than it's acquired will go undetected.
 .. _event-objects:
 
 Event Objects
--------------
+^^^^^^^^^^^^^
 
 This is one of the simplest mechanisms for communication between threads: one
 thread signals an event and other threads wait for it.
@@ -1109,7 +1112,7 @@ method.  The :meth:`~Event.wait` method blocks until the flag is true.
 .. _timer-objects:
 
 Timer Objects
--------------
+^^^^^^^^^^^^^
 
 This class represents an action that should be run only after a certain amount
 of time has passed --- a timer.  :class:`Timer` is a subclass of :class:`Thread`
@@ -1147,7 +1150,7 @@ For example::
 
 
 Barrier Objects
----------------
+^^^^^^^^^^^^^^^
 
 .. versionadded:: 3.2
 
