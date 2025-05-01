@@ -651,6 +651,9 @@ else:
         prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
 
         flags = _bin_openflags
+        if "r" not in mode and "+" not in mode:
+            flags = (flags & ~_os.O_RDWR) | _os.O_WRONLY
+
         if _O_TMPFILE_WORKS:
             fd = None
             def opener(*args):

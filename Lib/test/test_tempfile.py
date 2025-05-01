@@ -1565,6 +1565,21 @@ if tempfile.NamedTemporaryFile is not tempfile.TemporaryFile:
             roundtrip("\u039B", "w+", encoding="utf-16")
             roundtrip("foo\r\n", "w+", newline="")
 
+        def test_wronly_mode(self):
+            with mock.patch('os.open', wraps=os.open) as spy:
+                with tempfile.TemporaryFile(mode='wb') as fileobj:
+                    fileobj.write(b'abc')
+                    fileobj.seek(0)
+                    self.assertRaises(io.UnsupportedOperation, fileobj.read)
+                    with self.assertRaises(OSError):
+                        os.read(fileobj.fileno(), 1)
+
+            flags = spy.call_args[0][1]
+            self.assertEqual(flags & os.O_RDONLY, 0x0)
+            self.assertEqual(flags & os.O_RDWR, 0x0)
+            self.assertEqual(flags & os.O_WRONLY, os.O_WRONLY)
+            self.assertEqual(flags & os.O_EXCL, os.O_EXCL)
+
         def test_bad_mode(self):
             dir = tempfile.mkdtemp()
             self.addCleanup(os_helper.rmtree, dir)
