@@ -1292,7 +1292,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       ``sys._jit`` is not guaranteed to exist or behave the same way in all
       Python implementations, versions, or build configurations.
 
-   .. versionadded:: 3.14
+   .. versionadded:: next
 
    .. function:: sys._jit.is_available()
 
@@ -1304,7 +1304,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. function:: sys._jit.is_enabled()
 
       Return ``True`` if JIT compilation is enabled for the current Python
-      process (implies ``sys._jit.is_available()``), and ``False`` otherwise.
+      process (implies :func:`sys._jit.is_available`), and ``False`` otherwise.
       If JIT compilation is available, this can be controlled by setting the
       :envvar:`PYTHON_JIT` environment variable to ``0`` (disabled) or ``1``
       (enabled) at interpreter startup.
@@ -1315,6 +1315,10 @@ always available. Unless explicitly noted otherwise, all variables are read-only
       code, and ``False`` otherwise.
 
       .. note::
+
+         This function is intended for testing and debugging the JIT itself.
+         Beyond using it to confirm that the JIT is actually working, most users
+         will never *need* to use it.
 
          Due to the nature of tracing JIT compilers, repeated calls to this
          function may give surprising results. For example, branching on its
