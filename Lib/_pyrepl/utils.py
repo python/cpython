@@ -113,8 +113,10 @@ def recover_unterminated_string(
     if (
         msg.startswith("unterminated string literal")
         or msg.startswith("unterminated f-string literal")
+        or msg.startswith("unterminated t-string literal")
         or msg.startswith("EOF in multi-line string")
         or msg.startswith("unterminated triple-quoted f-string literal")
+        or msg.startswith("unterminated triple-quoted t-string literal")
     ):
         start = line_lengths[loc[0] - 1] + loc[1] - 1
         end = line_lengths[-1] - 1
@@ -149,7 +151,11 @@ def gen_colors_from_token_stream(
             continue
 
         match token.type:
-            case T.STRING | T.FSTRING_START | T.FSTRING_MIDDLE | T.FSTRING_END:
+            case (
+                T.STRING
+                | T.FSTRING_START | T.FSTRING_MIDDLE | T.FSTRING_END
+                | T.TSTRING_START | T.TSTRING_MIDDLE | T.TSTRING_END
+            ):
                 span = Span.from_token(token, line_lengths)
                 yield ColorSpan(span, "STRING")
             case T.COMMENT:
@@ -202,7 +208,7 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
         case (
             None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
             TI(string="match"),
-            TI(T.NUMBER | T.STRING | T.FSTRING_START)
+            TI(T.NUMBER | T.STRING | T.FSTRING_START | T.TSTRING_START)
             | TI(T.OP, string="(" | "*" | "-" | "+" | "[" | "{" | "~" | "...")
         ):
             return True
@@ -217,7 +223,7 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
         case (
             None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
             TI(string="case"),
-            TI(T.NUMBER | T.STRING | T.FSTRING_START)
+            TI(T.NUMBER | T.STRING | T.FSTRING_START | T.TSTRING_START)
             | TI(T.OP, string="(" | "*" | "-" | "[" | "{")
         ):
             return True
