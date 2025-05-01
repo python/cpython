@@ -1849,12 +1849,13 @@ _PyCode_GetVarCounts(PyCodeObject *co, _PyCode_var_counts_t *counts)
     assert(numfree == co->co_nfreevars);
 
     // Get the unbound counts.
-    assert(PyTuple_GET_SIZE(co->co_names) >= 0);
+    int numunbound = PyTuple_GET_SIZE(co->co_names);
+    assert(numunbound >= 0);
     struct co_unbound_counts unbound = {
-        .total = (int)PyTuple_GET_SIZE(co->co_names),
+        .total = numunbound,
         // numglobal and numattrs can be set later
         // with _PyCode_SetUnboundVarCounts().
-        .numunknown = (int)PyTuple_GET_SIZE(co->co_names),
+        .numunknown = numunbound,
     };
 
     // "Return" the result.
