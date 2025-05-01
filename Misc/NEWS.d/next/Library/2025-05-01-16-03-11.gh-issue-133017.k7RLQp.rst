@@ -1,4 +1,4 @@
-Improve the error message of :func:`multiprocessing.Array`,
-:func:`multiprocessing.RawArray`, :func:`multiprocessing.Value` and
-:func:`multiprocessing.RawValue` when an invalid typecode is passed. Patch
+Improve the error message of :func:`multiprocessing.sharedctypes.Array`,
+:func:`multiprocessing.sharedctypes.RawArray`, :func:`multiprocessing.sharedctypes.Value` and
+:func:`multiprocessing.sharedctypes.RawValue` when an invalid typecode is passed. Patch
 by Tomas Roun
