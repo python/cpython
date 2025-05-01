@@ -6796,16 +6796,17 @@ class CapiTest(unittest.TestCase):
             pass
 
         for klass in [timedelta, TimeDeltaSubclass]:
-            for args in [(26, 55, 99999), (26, 55, 99999)]:
+            for args in [(26, 55, 99999, 1)]:
                 d = klass(*args)
                 with self.subTest(cls=klass, date=args):
-                    days, seconds, microseconds = _testcapi.PyDateTime_DELTA_GET(d)
+                    days, seconds, microseconds, nanoseconds = _testcapi.PyDateTime_DELTA_GET(d)
 
                     self.assertEqual(days, d.days)
                     self.assertEqual(seconds, d.seconds)
                     self.assertEqual(microseconds, d.microseconds)
+                    self.assertEqual(nanoseconds, d.nanoseconds)
 
-    def test_PyDateTime_GET(self):
+    def test_PyDateTime_DATE_GET(self):
         class DateSubclass(date):
             pass
 
@@ -6819,7 +6820,7 @@ class CapiTest(unittest.TestCase):
                     self.assertEqual(month, d.month)
                     self.assertEqual(day, d.day)
 
-    def test_PyDateTime_DATE_GET(self):
+    def test_PyDateTime_DATETIME_GET(self):
         class DateTimeSubclass(datetime):
             pass
 
@@ -6827,9 +6828,9 @@ class CapiTest(unittest.TestCase):
             for args in [(1993, 8, 26, 22, 12, 55, 99999),
                          (1993, 8, 26, 22, 12, 55, 99999,
                           timezone.utc)]:
-                d = klass(*args)
+                d = klass(*args, nanosecond=1)
                 with self.subTest(cls=klass, date=args):
-                    hour, minute, second, microsecond, tzinfo = \
+                    hour, minute, second, microsecond, tzinfo, nanosecond = \
                                             _testcapi.PyDateTime_DATE_GET(d)
 
                     self.assertEqual(hour, d.hour)
@@ -6837,6 +6838,7 @@ class CapiTest(unittest.TestCase):
                     self.assertEqual(second, d.second)
                     self.assertEqual(microsecond, d.microsecond)
                     self.assertIs(tzinfo, d.tzinfo)
+                    self.assertEqual(nanosecond, d.nanosecond)
 
     def test_PyDateTime_TIME_GET(self):
         class TimeSubclass(time):
@@ -6845,9 +6847,9 @@ class CapiTest(unittest.TestCase):
         for klass in [time, TimeSubclass]:
             for args in [(12, 30, 20, 10),
                          (12, 30, 20, 10, timezone.utc)]:
-                d = klass(*args)
+                d = klass(*args, nanosecond=1)
                 with self.subTest(cls=klass, date=args):
-                    hour, minute, second, microsecond, tzinfo = \
+                    hour, minute, second, microsecond, tzinfo, nanosecond = \
                                               _testcapi.PyDateTime_TIME_GET(d)
 
                     self.assertEqual(hour, d.hour)
@@ -6855,6 +6857,7 @@ class CapiTest(unittest.TestCase):
                     self.assertEqual(second, d.second)
                     self.assertEqual(microsecond, d.microsecond)
                     self.assertIs(tzinfo, d.tzinfo)
+                    self.assertEqual(nanosecond, d.nanosecond)
 
     def test_timezones_offset_zero(self):
         utc0, utc1, non_utc = _testcapi.get_timezones_offset_zero()
