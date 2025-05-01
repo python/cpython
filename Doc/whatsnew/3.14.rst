@@ -485,6 +485,23 @@ For further information on how to build Python, see
 (Contributed by Ken Jin in :gh:`128563`, with ideas on how to implement this
 in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
 
+Syntax highlighting in PyREPL
+-----------------------------
+
+The default :term:`interactive` shell now highlights Python syntax as you
+type.  The feature is enabled by default unless the
+:envvar:`PYTHON_BASIC_REPL` environment is set or any color-disabling
+environment variables are used. See :ref:`using-on-controlling-color` for
+details.
+
+The default color theme for syntax highlighting strives for good contrast
+and uses exclusively the 4-bit VGA standard ANSI color codes for maximum
+compatibility. The theme can be customized using an experimental API
+``_colorize.set_theme()``.  This can be called interactively, as well as
+in the :envvar:`PYTHONSTARTUP` script.
+
+(Contributed by Łukasz Langa in :gh:`131507`.)
+
 
 Other language changes
 ======================

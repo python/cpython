@@ -22,10 +22,10 @@
 from __future__ import annotations
 
 import sys
+import _colorize
 
 from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
-from _colorize import can_colorize, ANSIColors
 
 from . import commands, console, input
 from .utils import wlen, unbracket, disp_str, gen_colors
@@ -273,7 +273,7 @@ class Reader:
         self.screeninfo = [(0, [])]
         self.cxy = self.pos2xy()
         self.lxy = (self.pos, 0)
-        self.can_colorize = can_colorize()
+        self.can_colorize = _colorize.can_colorize()
 
         self.last_refresh_cache.screeninfo = self.screeninfo
         self.last_refresh_cache.pos = self.pos
@@ -492,7 +492,11 @@ class Reader:
             prompt = self.ps1
 
         if self.can_colorize:
-            prompt = f"{ANSIColors.BOLD_MAGENTA}{prompt}{ANSIColors.RESET}"
+            prompt = (
+                f"{_colorize.theme["PROMPT"]}"
+                f"{prompt}"
+                f"{_colorize.theme["RESET"]}"
+            )
         return prompt
 
     def push_input_trans(self, itrans: input.KeymapTranslator) -> None:

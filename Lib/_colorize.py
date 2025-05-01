@@ -7,7 +7,22 @@ COLORIZE = True
 
 # types
 if False:
-    from typing import IO
+    from typing import IO, Literal
+
+    type ColorTag = (
+        Literal["PROMPT"]
+        | Literal["KEYWORD"]
+        | Literal["BUILTIN"]
+        | Literal["COMMENT"]
+        | Literal["STRING"]
+        | Literal["NUMBER"]
+        | Literal["OP"]
+        | Literal["DEFINITION"]
+        | Literal["SOFT_KEYWORD"]
+        | Literal["RESET"]
+    )
+
+    theme: dict[ColorTag, str]
 
 
 class ANSIColors:
@@ -110,3 +125,28 @@ def can_colorize(*, file: IO[str] | IO[bytes] | None = None) -> bool:
         return os.isatty(file.fileno())
     except io.UnsupportedOperation:
         return hasattr(file, "isatty") and file.isatty()
+
+
+def set_theme(t: dict[ColorTag, str] | None = None) -> None:
+    global theme
+
+    if t:
+        theme = t
+        return
+
+    colors = get_colors()
+    theme = {
+        "PROMPT": colors.BOLD_MAGENTA,
+        "KEYWORD": colors.BOLD_BLUE,
+        "BUILTIN": colors.CYAN,
+        "COMMENT": colors.RED,
+        "STRING": colors.GREEN,
+        "NUMBER": colors.YELLOW,
+        "OP": colors.RESET,
+        "DEFINITION": colors.BOLD_WHITE,
+        "SOFT_KEYWORD": colors.BOLD_BLUE,
+        "RESET": colors.RESET,
+    }
+
+
+set_theme()

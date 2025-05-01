@@ -11,11 +11,11 @@ from .support import prepare_console, reader_force_colors
 from .support import reader_no_colors as prepare_reader
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
-from _pyrepl.utils import TAG_TO_ANSI
+from _colorize import theme
 
 
-overrides = {"SYNC": "z", "SOFT_KEYWORD": "K"}
-colors = {overrides.get(k, k[0].lower()): v for k, v in TAG_TO_ANSI.items()}
+overrides = {"RESET": "z", "SOFT_KEYWORD": "K"}
+colors = {overrides.get(k, k[0].lower()): v for k, v in theme.items()}
 
 
 class TestReader(ScreenEqualMixin, TestCase):

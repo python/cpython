@@ -1,3 +1,4 @@
+from __future__ import annotations
 import builtins
 import functools
 import keyword
@@ -5,12 +6,12 @@ import re
 import token as T
 import tokenize
 import unicodedata
+import _colorize
 
 from collections import deque
 from io import StringIO
 from tokenize import TokenInfo as TI
-from typing import Iterable, Iterator, Literal, Match, NamedTuple, Self
-from _colorize import ANSIColors
+from typing import Iterable, Iterator, Match, NamedTuple, Self
 
 from .types import CharBuffer, CharWidths
 from .trace import trace
@@ -20,18 +21,6 @@ ZERO_WIDTH_BRACKET = re.compile(r"\x01.*?\x02")
 ZERO_WIDTH_TRANS = str.maketrans({"\x01": "", "\x02": ""})
 IDENTIFIERS_AFTER = {"def", "class"}
 BUILTINS = {str(name) for name in dir(builtins) if not name.startswith('_')}
-
-type ColorTag = (
-    Literal["KEYWORD"]
-    | Literal["BUILTIN"]
-    | Literal["COMMENT"]
-    | Literal["STRING"]
-    | Literal["NUMBER"]
-    | Literal["OP"]
-    | Literal["DEFINITION"]
-    | Literal["SOFT_KEYWORD"]
-    | Literal["SYNC"]
-)
 
 
 class Span(NamedTuple):
@@ -55,20 +44,7 @@ class Span(NamedTuple):
 
 class ColorSpan(NamedTuple):
     span: Span
-    tag: ColorTag
-
-
-TAG_TO_ANSI: dict[ColorTag, str] = {
-    "KEYWORD": ANSIColors.BOLD_BLUE,
-    "BUILTIN": ANSIColors.CYAN,
-    "COMMENT": ANSIColors.RED,
-    "STRING": ANSIColors.GREEN,
-    "NUMBER": ANSIColors.YELLOW,
-    "OP": ANSIColors.RESET,
-    "DEFINITION": ANSIColors.BOLD_WHITE,
-    "SOFT_KEYWORD": ANSIColors.BOLD_BLUE,
-    "SYNC": ANSIColors.RESET,
-}
+    tag: _colorize.ColorTag
 
 
 @functools.cache
@@ -305,11 +281,11 @@ def disp_str(
     post_color = ""
     if colors and colors[0].span.start < start_index:
         # looks like we're continuing a previous color (e.g. a multiline str)
-        pre_color = TAG_TO_ANSI[colors[0].tag]
+        pre_color = _colorize.theme[colors[0].tag]
 
     for i, c in enumerate(buffer, start_index):
         if colors and colors[0].span.start == i:  # new color starts now
-            pre_color = TAG_TO_ANSI[colors[0].tag]
+            pre_color = _colorize.theme[colors[0].tag]
 
         if c == "\x1a":  # CTRL-Z on Windows
             chars.append(c)
@@ -326,7 +302,7 @@ def disp_str(
             char_widths.append(str_width(c))
 
         if colors and colors[0].span.end == i:  # current color ends now
-            post_color = TAG_TO_ANSI["SYNC"]
+            post_color = _colorize.theme["RESET"]
             colors.pop(0)
 
         chars[-1] = pre_color + chars[-1] + post_color
@@ -336,7 +312,7 @@ def disp_str(
     if colors and colors[0].span.start < i and colors[0].span.end > i:
         # even though the current color should be continued, reset it for now.
         # the next call to `disp_str()` will revive it.
-        chars[-1] += TAG_TO_ANSI["SYNC"]
+        chars[-1] += _colorize.theme["RESET"]
 
     # trace("disp_str({buffer}) = {s}, {b}", buffer=repr(buffer), s=chars, b=char_widths)
     return chars, char_widths
