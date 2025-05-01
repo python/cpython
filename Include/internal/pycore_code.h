@@ -619,8 +619,8 @@ PyAPI_FUNC(int) _PyCode_SetUnboundVarCounts(
 
 /* "Stateless" code is a function or code object which does not rely on
  * external state or internal state.  It may rely on arguments and
- * builtins, but not globals or a closure.  Thus it does not need to
- * rely __globals__ or __closure__, and a stateless function
+ * builtins, but not globals or a closure.  Thus it does not rely
+ * on __globals__ or __closure__, and a stateless function
  * is equivalent to its code object.
  *
  * Stateless code also does not keep any persistent state
@@ -636,13 +636,13 @@ PyAPI_FUNC(int) _PyCode_SetUnboundVarCounts(
  * Stateless code that takes no arguments and doesn't return anything
  * may be treated like a script.
  *
- * Note that we can consider stateless code to be
- * "portable" if it does not return any object that holds a reference
- * to any of the code's locals.  Thus generators and coroutines are not
- * portable.  Likewise a function that returns a closure isn't portable.
- * The concept of portability is useful in cases where the code is run
- * in a different execution context than where the return value
- * will be used. */
+ * We consider stateless code to be "portable" if it does not return any
+ * any object that holds a reference to any of the code's locals.  Thus
+ * generators and coroutines are not portable.  Likewise a function
+ * that returns a closure is not portable.  The concept of
+ * portability is useful in cases where the code is run
+ * in a different execution context than where
+ * the return value will be used. */
 
 PyAPI_FUNC(const char *) _PyCode_CheckNoInternalState(PyCodeObject *);
 PyAPI_FUNC(const char *) _PyCode_CheckNoExternalState(
