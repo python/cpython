@@ -6,6 +6,7 @@ import itertools
 import os
 import array
 import re
+import select
 import socket
 import threading
 
@@ -125,6 +126,7 @@ class FakeSocketHTTPConnection(client.HTTPConnection):
         super().__init__('example.com')
         self.fake_socket_args = args
         self._create_connection = self.create_connection
+        self._select = self.fake_select
 
     def connect(self):
         """Count the number of times connect() is invoked"""
@@ -133,6 +135,21 @@ class FakeSocketHTTPConnection(client.HTTPConnection):
 
     def create_connection(self, *pos, **kw):
         return FakeSocket(*self.fake_socket_args)
+
+    def fake_select(self, rlist, wlist, xlist, timeout=None):
+        """Real select.select() won't work on our fake socket"""
+        # Only needs to support read select for current tests
+        ret = []
+        for r in rlist:
+            assert isinstance(r, FakeSocket)
+            if r.data and not hasattr(r, 'file'):
+                ret.append(r)   # Has data to read, hasn't called makefile() yet
+            elif getattr(r, 'file', None) and not r.file_closed:
+                if r.file.read(1):
+                    r.file.seek(r.file.tell() - 1)
+                    ret.append(r)
+        return ret, [], []
+
 
 class HeaderTests(TestCase):
     def test_auto_headers(self):
@@ -2214,6 +2231,126 @@ class RequestBodyTest(TestCase):
             self.assertEqual("chunked", message.get("Transfer-Encoding"))
             self.assertNotIn("Content-Length", message)
             self.assertEqual(b'5\r\nbody\xc1\r\n0\r\n\r\n', f.read())
+
+
+class ExpectContinueTests(TestCase):
+
+    def test_data_sent_on_continue(self):
+        # Prior versions would pass this too, as they send body immediately
+        # and ignore the Continue, but make sure it still behaves as expected.
+        conn = FakeSocketHTTPConnection(
+            b'HTTP/1.1 100 Continue\r\n'
+            b'\r\n'
+            b'HTTP/1.1 200 OK\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        conn.request('PUT', '/', headers={'Expect': '100-continue'},
+                     body=b'Body content')
+        resp = conn.getresponse()
+        self.assertEqual(resp.code, 200)
+        self.assertIn(b'Expect: 100-continue', conn.sock.data)
+        self.assertIn(b'Body content', conn.sock.data)
+
+    def test_data_not_sent_on_error(self):
+        conn = FakeSocketHTTPConnection(
+            b'HTTP/1.1 429 Too Many Requests\r\n'
+            b'Content-Length: 0\r\n'
+            b'\r\n'
+        )
+        conn.request('PUT', '/', headers={'Expect': '100-continue'},
+                     body=b'Body content')
+        resp = conn.getresponse()
+        self.assertEqual(resp.code, 429)
+        self.assertIn(b'Expect: 100-continue', conn.sock.data)
+        self.assertNotIn(b'Body content', conn.sock.data)
+
+    def test_body_sent_on_timeout(self):
+        def client_thread(port):
+            conn = client.HTTPConnection('localhost', port,
+                                         continue_timeout=0.75)
+            conn.request('PUT', '/',
+                         headers={'Expect': '100-continue'},
+                         body=b'Body content')
+            resp = conn.getresponse()
+            self.assertEqual(resp.code, 200)
+            resp.close()
+            conn.close()
+
+        with socket.socket() as sock:
+            sock.bind(('localhost', 0))
+            sock.listen(1)
+            t = threading.Thread(target=client_thread,
+                                 args=(sock.getsockname()[1],))
+            t.start()
+            conn, _ = sock.accept()
+            req_data = conn.recv(4096)
+            self.assertTrue(req_data.startswith(b'PUT / HTTP/1.1\r\n'))
+            self.assertIn(b'Expect: 100-continue\r\n', req_data)
+            self.assertIn(b'Content-Length: 12\r\n', req_data)
+            self.assertNotIn(b'Body content', req_data)
+            # Client should not send body data yet
+            rr, _, _ = select.select([conn], [], [], 0.5)
+            self.assertEqual(rr, [])
+            # Client should time out and send body data in another ~0.25s
+            rr, _, _ = select.select([conn], [], [], 0.5)
+            self.assertEqual(rr, [conn])
+            body = conn.recv(4096)
+            self.assertEqual(body, b'Body content')
+            conn.sendall(
+                b'HTTP/1.1 200 OK\r\n'
+                b'Content-Length: 0\r\n'
+                b'\r\n'
+            )
+            conn.close()
+            sock.close()
+            t.join()
+
+    def test_manual_getresponse(self):
+        def client_thread(port):
+            conn = client.HTTPConnection('localhost', port,
+                                         continue_timeout=0)
+            conn.putrequest("PUT", "/file")
+            conn.putheader('Expect', '100-Continue')
+            conn.putheader('Content-Length', '42')
+            conn.endheaders()
+            with conn.getresponse(ignore_100_continue=False) as resp:
+                self.assertEqual(resp.status, 100)
+            conn.send(b'Go away or I shall taunt you a second time')
+            with conn.getresponse() as resp:
+                self.assertEqual(resp.status, 200)
+            conn.close()
+
+        with socket.socket() as sock:
+            sock.bind(('localhost', 0))
+            sock.listen(1)
+            t = threading.Thread(target=client_thread,
+                                 args=(sock.getsockname()[1],))
+            t.start()
+            conn, _ = sock.accept()
+            req_data = conn.recv(4096)
+            self.assertTrue(req_data.startswith(b'PUT /file HTTP/1.1\r\n'))
+            self.assertIn(b'Expect: 100-Continue\r\n', req_data)
+            self.assertIn(b'Content-Length: 42\r\n', req_data)
+            self.assertNotIn(b'I shall taunt you', req_data)
+            # Client is not expected to send body data until we respond,
+            # regardless of continue_timeout
+            rr, _, _ = select.select([conn], [], [], 1.0)
+            self.assertEqual(rr, [])
+            conn.sendall(b'HTTP/1.1 100 Continue\r\n\r\n')
+            rr, _, _ = select.select([conn], [], [], 0.5)
+            self.assertEqual(rr, [conn])
+            b = conn.recv(42)
+            self.assertEqual(b, b'Go away or I shall taunt you a second time')
+            conn.sendall(
+                b'HTTP/1.1 200 OK\r\n'
+                b'Content-Length: 0\r\n'
+                b'\r\n'
+            )
+            conn.close()
+            sock.close()
+            t.join()
+
 
 
 class HTTPResponseTest(TestCase):
