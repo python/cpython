@@ -181,29 +181,50 @@ class PrettyPrinter:
             self._recursive = True
             self._readable = False
             return
+
+        # If this is a subclass of PrettyPrinter, force all known
+        # container types through their pretty-printers so that any
+        # override of format() applies to their elements.
+        if type(self) is not PrettyPrinter:
+            fn = type(object).__repr__
+            # skip raw repr for str/bytes
+            if fn in self._dispatch and not isinstance(object, (str, bytes, bytearray)):
+                context[objid] = 1
+                self._dispatch[fn](
+                    self, object, stream,
+                    indent, allowance, context, level + 1
+                )
+                del context[objid]
+                return
+
+        # fallback to one-line repr + width 
         rep = self._repr(object, context, level)
         max_width = self._width - indent - allowance
         if len(rep) > max_width:
             p = self._dispatch.get(type(object).__repr__, None)
-            # Lazy import to improve module import time
             from dataclasses import is_dataclass
 
             if p is not None:
                 context[objid] = 1
-                p(self, object, stream, indent, allowance, context, level + 1)
+                p(self, object, stream,
+                  indent, allowance, context, level + 1)
                 del context[objid]
                 return
-            elif (is_dataclass(object) and
-                  not isinstance(object, type) and
-                  object.__dataclass_params__.repr and
-                  # Check dataclass has generated repr method.
-                  hasattr(object.__repr__, "__wrapped__") and
-                  "__create_fn__" in object.__repr__.__wrapped__.__qualname__):
+            elif (is_dataclass(object)
+                  and not isinstance(object, type)
+                  and object.__dataclass_params__.repr
+                  and hasattr(object.__repr__, "__wrapped__")
+                  and "__create_fn__" in object.__repr__.__wrapped__.__qualname__):
                 context[objid] = 1
-                self._pprint_dataclass(object, stream, indent, allowance, context, level + 1)
+                self._pprint_dataclass(object, stream,
+                                       indent, allowance,
+                                       context, level + 1)
                 del context[objid]
                 return
+
+        # write the one-line repr
         stream.write(rep)
+
 
     def _pprint_dataclass(self, object, stream, indent, allowance, context, level):
         # Lazy import to improve module import time
