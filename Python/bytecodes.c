@@ -519,6 +519,11 @@ dummy_func(
             EXIT_IF(!PyList_CheckExact(o));
         }
 
+        op(_GUARD_TOS_SLICE, (tos -- tos)) {
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            EXIT_IF(!PySlice_Check(o));
+        }
+
         macro(TO_BOOL_LIST) = _GUARD_TOS_LIST + unused/1 + unused/2 + _TO_BOOL_LIST;
 
         op(_TO_BOOL_LIST, (value -- res)) {
@@ -591,6 +596,7 @@ dummy_func(
             BINARY_OP_SUBTRACT_FLOAT,
             BINARY_OP_ADD_UNICODE,
             BINARY_OP_SUBSCR_LIST_INT,
+            BINARY_OP_SUBSCR_LIST_SLICE,
             BINARY_OP_SUBSCR_TUPLE_INT,
             BINARY_OP_SUBSCR_STR_INT,
             BINARY_OP_SUBSCR_DICT,
@@ -896,6 +902,24 @@ dummy_func(
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);
 #endif
+            STAT_INC(BINARY_OP, hit);
+            DECREF_INPUTS();
+        }
+
+        macro(BINARY_OP_SUBSCR_LIST_SLICE) =
+            _GUARD_TOS_SLICE + _GUARD_NOS_LIST + unused/5 + _BINARY_OP_SUBSCR_LIST_SLICE;
+
+        op(_BINARY_OP_SUBSCR_LIST_SLICE, (list_st, sub_st -- res)) {
+            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+            PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
+
+            assert(PySlice_Check(sub));
+            assert(PyList_CheckExact(list));
+
+            PyObject *res_o = _PyList_SliceSubscript(list, sub);
+            DEOPT_IF(res_o == NULL);
+            STAT_INC(BINARY_OP, hit);
+            res = PyStackRef_FromPyObjectSteal(res_o);
             STAT_INC(BINARY_OP, hit);
             DECREF_INPUTS();
         }
@@ -5330,18 +5354,6 @@ dummy_func(
             uintptr_t eval_breaker = _Py_atomic_load_uintptr_relaxed(&tstate->eval_breaker);
             DEOPT_IF(eval_breaker & _PY_EVAL_EVENTS_MASK);
             assert(tstate->tracing || eval_breaker == FT_ATOMIC_LOAD_UINTPTR_ACQUIRE(_PyFrame_GetCode(frame)->_co_instrumentation_version));
-        }
-
-        label(pop_4_error) {
-            stack_pointer -= 4;
-            assert(WITHIN_STACK_BOUNDS());
-            goto error;
-        }
-
-        label(pop_3_error) {
-            stack_pointer -= 3;
-            assert(WITHIN_STACK_BOUNDS());
-            goto error;
         }
 
         label(pop_2_error) {

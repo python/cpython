@@ -740,6 +740,17 @@
             break;
         }
 
+        case _GUARD_TOS_SLICE: {
+            _PyStackRef tos;
+            tos = stack_pointer[-1];
+            PyObject *o = PyStackRef_AsPyObjectBorrow(tos);
+            if (!PySlice_Check(o)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
         case _TO_BOOL_LIST: {
             _PyStackRef value;
             _PyStackRef res;
@@ -1308,6 +1319,41 @@
             assert(res_o != NULL);
             res = PyStackRef_FromPyObjectNew(res_o);
             #endif
+            STAT_INC(BINARY_OP, hit);
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            _PyStackRef tmp = list_st;
+            list_st = res;
+            stack_pointer[-2] = list_st;
+            PyStackRef_CLOSE(tmp);
+            tmp = sub_st;
+            sub_st = PyStackRef_NULL;
+            stack_pointer[-1] = sub_st;
+            PyStackRef_CLOSE(tmp);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BINARY_OP_SUBSCR_LIST_SLICE: {
+            _PyStackRef sub_st;
+            _PyStackRef list_st;
+            _PyStackRef res;
+            sub_st = stack_pointer[-1];
+            list_st = stack_pointer[-2];
+            PyObject *sub = PyStackRef_AsPyObjectBorrow(sub_st);
+            PyObject *list = PyStackRef_AsPyObjectBorrow(list_st);
+            assert(PySlice_Check(sub));
+            assert(PyList_CheckExact(list));
+            _PyFrame_SetStackPointer(frame, stack_pointer);
+            PyObject *res_o = _PyList_SliceSubscript(list, sub);
+            stack_pointer = _PyFrame_GetStackPointer(frame);
+            if (res_o == NULL) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            STAT_INC(BINARY_OP, hit);
+            res = PyStackRef_FromPyObjectSteal(res_o);
             STAT_INC(BINARY_OP, hit);
             _PyFrame_SetStackPointer(frame, stack_pointer);
             _PyStackRef tmp = list_st;
