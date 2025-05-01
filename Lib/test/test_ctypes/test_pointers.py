@@ -295,15 +295,29 @@ class PointersTestCase(unittest.TestCase):
         self.assertIs(t1._type_, c_int)
 
     def test_pointer_set_wrong_type(self):
-        class C(c_int):
-            pass
+        int_ptr = POINTER(c_int)
+        float_ptr = POINTER(float_ptr)
+        try:
+            class C(c_int):
+                pass
 
-        t1 = POINTER(c_int)
-        with self.assertRaisesRegex(TypeError, "cls type already set"):
+            t1 = POINTER(c_int)
+            t2 = POINTER(c_float)
             t1.set_type(c_float)
+            self.assertEqual(t1(c_float(1.5))[0], 1.5)
+            self.assertIs(c_int._type_, c_float)
+            self.assertIs(c_int.__pointer_type__, t1)
+            self.assertIs(c_float.__pointer_type__, float_ptr)
 
-        with self.assertRaisesRegex(TypeError, "cls type already set"):
             t1.set_type(C)
+            self.assertEqual(t1(C(123))[0].value, 123)
+            self.assertIs(c_int.__pointer_type__, t1)
+            self.assertIs(c_float.__pointer_type__, float_ptr)
+        finally:
+            POINTER(c_int).set_type(c_int)
+        self.assertIs(POINTER(c_int), int_ptr)
+        self.assertIs(POINTER(c_int)._type_, c_int)
+        self.assertIs(c_int.__pointer_type__, int_ptr)
 
     def test_pointer_not_ctypes_type(self):
         with self.assertRaisesRegex(TypeError, "must have storage info"):

@@ -1253,19 +1253,9 @@ PyCPointerType_SetProto(ctypes_state *st, PyObject *self, StgInfo *stginfo, PyOb
         PyErr_Format(PyExc_TypeError, "%R must have storage info", proto);
         return -1;
     }
-    if (stginfo->proto && stginfo->proto != proto) {
-        PyErr_Format(PyExc_TypeError,
-            "cls type already set: old=%R, new=%R",
-            stginfo->proto, proto);
-        return -1;
-    }
-
-    if (!stginfo->proto) {
-        stginfo->proto = Py_NewRef(proto);
-    }
-
+    Py_XSETREF(stginfo->proto, Py_NewRef(proto));
     if (info->pointer_type == NULL) {
-        Py_XSETREF(info->pointer_type, Py_XNewRef(self));
+        Py_XSETREF(info->pointer_type, Py_NewRef(self));
     }
     return 0;
 }
