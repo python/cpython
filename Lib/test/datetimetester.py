@@ -7103,7 +7103,7 @@ class CapiTest(unittest.TestCase):
                     self.assertEqual(c_api_time.fold, exp_time.fold)
 
     def test_delta_from_dsu(self):
-        return 
+        return
         # BUG
         exp_delta = timedelta(26, 55, 99999, nanoseconds=2)
         print(exp_delta, exp_delta.days, exp_delta.seconds, exp_delta.microseconds, exp_delta.nanoseconds)
