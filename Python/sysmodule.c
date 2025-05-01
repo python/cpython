@@ -4118,12 +4118,12 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
         goto error;
     }
 
-    PyObject *jit = _PyModule_CreateInitialized(&_jit_module, PYTHON_API_VERSION);
-    if (jit == NULL) {
+    PyObject *_jit = _PyModule_CreateInitialized(&_jit_module, PYTHON_API_VERSION);
+    if (_jit == NULL) {
         goto error;
     }
-    err = PyDict_SetItemString(sysdict, "_jit", jit);
-    Py_DECREF(jit);
+    err = PyDict_SetItemString(sysdict, "_jit", _jit);
+    Py_DECREF(_jit);
     if (err) {
         goto error;
     }
