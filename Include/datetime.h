@@ -17,7 +17,7 @@ extern "C" {
  *  4           hour     1 byte, 0-23
  *  5           minute   1 byte, 0-59
  *  6           second   1 byte, 0-59
- *  7           usecond  3 bytes, 0-999999
+ *  7           microsecond  3 bytes, 0-999999
  * 10           nsecond  2 bytes, 0-999
  * 12
  */
@@ -237,20 +237,20 @@ static PyDateTime_CAPI *PyDateTimeAPI = NULL;
     PyDateTimeAPI->DateTime_FromDateAndTime((year), (month), (day), (hour), \
         (min), (sec), (usec), Py_None, PyDateTimeAPI->DateTimeType)
 
-#define PyDateTime_FromDateAndTimeAndFold(year, month, day, hour, min, sec, usec, fold, nanosec) \
+#define PyDateTime_FromDateAndTimeAndFold(year, month, day, hour, min, sec, usec, fold, nanosecond) \
     PyDateTimeAPI->DateTime_FromDateAndTimeAndFold((year), (month), (day), (hour), \
-        (min), (sec), (usec), Py_None, (fold), (nanosec), PyDateTimeAPI->DateTimeType)
+        (min), (sec), (usec), Py_None, (fold), (nanosecond), PyDateTimeAPI->DateTimeType)
 
-#define PyTime_FromTime(hour, minute, second, usecond) \
-    PyDateTimeAPI->Time_FromTime((hour), (minute), (second), (usecond), \
+#define PyTime_FromTime(hour, minute, second, microsecond) \
+    PyDateTimeAPI->Time_FromTime((hour), (minute), (second), (microsecond), \
         Py_None, PyDateTimeAPI->TimeType)
 
-#define PyTime_FromTimeAndFold(hour, minute, second, usecond, nanosec, fold) \
-    PyDateTimeAPI->Time_FromTimeAndFold((hour), (minute), (second), (usecond), \
-        Py_None, (fold), (nanosec), PyDateTimeAPI->TimeType)
+#define PyTime_FromTimeAndFold(hour, minute, second, microsecond, fold, nanosecond) \
+    PyDateTimeAPI->Time_FromTimeAndFold((hour), (minute), (second), (microsecond), \
+        Py_None, (fold), (nanosecond), PyDateTimeAPI->TimeType)
 
-#define PyDelta_FromDSU(days, seconds, useconds, nanoseconds) \
-    PyDateTimeAPI->Delta_FromDelta((days), (seconds), (useconds), (nanoseconds), 1, \
+#define PyDelta_FromDSU(days, seconds, microseconds, nanoseconds) \
+    PyDateTimeAPI->Delta_FromDelta((days), (seconds), (microseconds), (nanoseconds), 1, \
         PyDateTimeAPI->DeltaType)
 
 #define PyTimeZone_FromOffset(offset) \
