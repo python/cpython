@@ -272,7 +272,7 @@ def make_wasi_python(context, working_dir):
     subprocess.check_call([exec_script, "--version"])
     print(
         f"🎉 Use '{exec_script.relative_to(context.init_dir)}' "
-        "to run CPython in wasmtime"
+        "to run CPython in wasm runtime"
     )
 
 
