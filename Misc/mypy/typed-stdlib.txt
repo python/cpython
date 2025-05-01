@@ -2,3 +2,4 @@
 
 _colorize.py
 _pyrepl
+tomllib

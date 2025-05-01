@@ -130,7 +130,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. data:: base_exec_prefix
 
-   Equivalent to :data:`exec_prefix`, but refering to the base Python installation.
+   Equivalent to :data:`exec_prefix`, but referring to the base Python installation.
 
    When running under :ref:`sys-path-init-virtual-environments`,
    :data:`exec_prefix` gets overwritten to the virtual environment prefix.
@@ -143,7 +143,7 @@ always available. Unless explicitly noted otherwise, all variables are read-only
 
 .. data:: base_prefix
 
-   Equivalent to :data:`prefix`, but refering to the base Python installation.
+   Equivalent to :data:`prefix`, but referring to the base Python installation.
 
    When running under :ref:`virtual environment <venv-def>`,
    :data:`prefix` gets overwritten to the virtual environment prefix.

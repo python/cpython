@@ -1,0 +1,3 @@
+Prevents against stack overflows when calling :c:func:`Py_DECREF`. Third-party
+extension objects no longer need to use the "trashcan" mechanism, as
+protection is now built into the :c:func:`Py_DECREF` macro.

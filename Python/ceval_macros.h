@@ -70,8 +70,13 @@
 #define INSTRUCTION_STATS(op) ((void)0)
 #endif
 
-#define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg
-#define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg
+#ifdef Py_STATS
+#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg, int lastopcode
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg, lastopcode
+#else
+#   define TAIL_CALL_PARAMS _PyInterpreterFrame *frame, _PyStackRef *stack_pointer, PyThreadState *tstate, _Py_CODEUNIT *next_instr, int oparg
+#   define TAIL_CALL_ARGS frame, stack_pointer, tstate, next_instr, oparg
+#endif
 
 #if Py_TAIL_CALL_INTERP
     // Note: [[clang::musttail]] works for GCC 15, but not __attribute__((musttail)) at the moment.
@@ -88,10 +93,17 @@
         do { \
             Py_MUSTTAIL return (_TAIL_CALL_##name)(TAIL_CALL_ARGS); \
         } while (0)
-#   define JUMP_TO_PREDICTED(name) \
-        do { \
-            Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, oparg); \
-        } while (0)
+#   ifdef Py_STATS
+#       define JUMP_TO_PREDICTED(name) \
+            do { \
+                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, oparg, lastopcode); \
+            } while (0)
+#   else
+#       define JUMP_TO_PREDICTED(name) \
+            do { \
+                Py_MUSTTAIL return (_TAIL_CALL_##name)(frame, stack_pointer, tstate, this_instr, oparg); \
+            } while (0)
+#   endif
 #    define LABEL(name) TARGET(name)
 #elif USE_COMPUTED_GOTOS
 #  define TARGET(op) TARGET_##op:

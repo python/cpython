@@ -5,7 +5,6 @@ but random access is not allowed."""
 
 # based on Andrew Kuchling's minigzip.py distributed with the zlib module
 
-import _compression
 import builtins
 import io
 import os
@@ -14,6 +13,7 @@ import sys
 import time
 import weakref
 import zlib
+from compression._common import _streams
 
 __all__ = ["BadGzipFile", "GzipFile", "open", "compress", "decompress"]
 
@@ -144,7 +144,7 @@ class _WriteBufferStream(io.RawIOBase):
         return True
 
 
-class GzipFile(_compression.BaseStream):
+class GzipFile(_streams.BaseStream):
     """The GzipFile class simulates most of the methods of a file object with
     the exception of the truncate() method.
 
@@ -523,7 +523,7 @@ def _read_gzip_header(fp):
     return last_mtime
 
 
-class _GzipReader(_compression.DecompressReader):
+class _GzipReader(_streams.DecompressReader):
     def __init__(self, fp):
         super().__init__(_PaddedFile(fp), zlib._ZlibDecompressor,
                          wbits=-zlib.MAX_WBITS)
