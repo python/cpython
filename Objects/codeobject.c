@@ -1690,6 +1690,26 @@ PyCode_GetFreevars(PyCodeObject *code)
 }
 
 
+#define GET_OPARG(co, i, initial) (initial)
+// We may want to move these macros to pycore_opcode_utils.h
+// and use them in Python/bytecodes.c.
+#define LOAD_GLOBAL_NAME_INDEX(oparg) ((oparg)>>1)
+#define LOAD_ATTR_NAME_INDEX(oparg) ((oparg)>>1)
+
+#ifndef Py_DEBUG
+#define GETITEM(v, i) PyTuple_GET_ITEM((v), (i))
+#else
+static inline PyObject *
+GETITEM(PyObject *v, Py_ssize_t i)
+{
+    assert(PyTuple_Check(v));
+    assert(i >= 0);
+    assert(i < PyTuple_GET_SIZE(v));
+    assert(PyTuple_GET_ITEM(v, i) != NULL);
+    return PyTuple_GET_ITEM(v, i);
+}
+#endif
+
 static int
 identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
                        PyObject *globalnames, PyObject *attrnames,
@@ -1712,7 +1732,9 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     for (int i = 0; i < len; i++) {
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
         if (inst.op.code == LOAD_ATTR) {
-            PyObject *name = PyTuple_GET_ITEM(co->co_names, inst.op.arg>>1);
+            int oparg = GET_OPARG(co, i, inst.op.arg);
+            int index = LOAD_ATTR_NAME_INDEX(oparg);
+            PyObject *name = GETITEM(co->co_names, index);
             if (counts != NULL) {
                 if (PySet_Contains(attrnames, name)) {
                     if (_PyErr_Occurred(tstate)) {
@@ -1728,7 +1750,9 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
             }
         }
         else if (inst.op.code == LOAD_GLOBAL) {
-            PyObject *name = PyTuple_GET_ITEM(co->co_names, inst.op.arg>>1);
+            int oparg = GET_OPARG(co, i, inst.op.arg);
+            int index = LOAD_ATTR_NAME_INDEX(oparg);
+            PyObject *name = GETITEM(co->co_names, index);
             if (counts != NULL) {
                 if (PySet_Contains(globalnames, name)) {
                     if (_PyErr_Occurred(tstate)) {
