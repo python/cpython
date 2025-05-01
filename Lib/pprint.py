@@ -221,9 +221,7 @@ class PrettyPrinter:
                 del context[objid]
                 return
 
-        # write the one-line repr
         stream.write(rep)
-
 
     def _pprint_dataclass(self, object, stream, indent, allowance, context, level):
         # Lazy import to improve module import time
