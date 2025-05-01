@@ -1760,20 +1760,20 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
             }
             unbound.total += 1;
             unbound.globals.total += 1;
-            unbound.globals.numunknown += 1;
             if (globalsns != NULL && PyDict_Contains(globalsns, name)) {
                 if (_PyErr_Occurred(tstate)) {
                     return -1;
                 }
                 unbound.globals.numglobal += 1;
-                unbound.globals.numunknown -= 1;
             }
-            if (builtinsns != NULL && PyDict_Contains(builtinsns, name)) {
+            else if (builtinsns != NULL && PyDict_Contains(builtinsns, name)) {
                 if (_PyErr_Occurred(tstate)) {
                     return -1;
                 }
                 unbound.globals.numbuiltin += 1;
-                unbound.globals.numunknown -= 1;
+            }
+            else {
+                unbound.globals.numunknown += 1;
             }
             if (PySet_Add(globalnames, name) < 0) {
                 return -1;
