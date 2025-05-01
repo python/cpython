@@ -1085,7 +1085,7 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
         return -3;
     }
 
-    static int microsecond_correction[] = {
+    static const int microsecond_correction[] = {
         100000, 10000, 1000, 100, 10
     };
 
@@ -1108,7 +1108,7 @@ parse_hh_mm_ss_ff(const char *tstr, const char *tstr_end, int *hour,
     //     }
     // }
     *nanosecond = 0; // BUG
-    static int nanosecond_correction[] = {
+    static const int nanosecond_correction[] = {
         100, 10
     };
 
