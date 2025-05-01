@@ -458,7 +458,7 @@ class EmbeddingTests(EmbeddingTestsMixin, unittest.TestCase):
                     try:
                         timedelta(days=1)
                         res = 1
-                    except ImportError as e:
+                    except ImportError:
                         res = 2
                     print(res)
 
