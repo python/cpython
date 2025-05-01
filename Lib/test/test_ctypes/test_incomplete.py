@@ -3,11 +3,20 @@ import unittest
 import warnings
 from ctypes import Structure, POINTER, pointer, c_char_p
 
+# String-based "incomplete pointers" wers implemented ctypes 0.6.3 (2003, when
+# ctypes was an external project). They made obsolete by the current
+# incomplete *types* (setting `_fields_` late) in 0.9.5 (2005).
+# ctypes was added to Python 2.5 (2006), without any mention in docs.
 
-# The incomplete pointer example from the tutorial
+# This tests incomplete pointer example from the old tutorial
+# (https://svn.python.org/projects/ctypes/tags/release_0_6_3/ctypes/docs/tutorial.stx)
 class TestSetPointerType(unittest.TestCase):
+    def tearDown(self):
+        ctypes._pointer_type_cache_fallback.clear()
+
     def test_incomplete_example(self):
-        lpcell = POINTER("cell")
+        with self.assertWarns(DeprecationWarning):
+            lpcell = POINTER("cell")
         class cell(Structure):
             _fields_ = [("name", c_char_p),
                         ("next", lpcell)]
@@ -35,7 +44,8 @@ class TestSetPointerType(unittest.TestCase):
         self.assertEqual(result, [b"foo", b"bar"] * 4)
 
     def test_deprecation(self):
-        lpcell = POINTER("cell")
+        with self.assertWarns(DeprecationWarning):
+            lpcell = POINTER("cell")
         class cell(Structure):
             _fields_ = [("name", c_char_p),
                         ("next", lpcell)]
