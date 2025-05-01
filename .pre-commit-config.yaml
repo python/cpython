@@ -28,7 +28,7 @@ repos:
         files: ^Tools/build/check_warnings.py
       - id: ruff-format
         name: Run Ruff (format) on Tools/jit/
-        args: [--check]
+        args: [--check, --config=Tools/jit/.ruff.toml]
         files: ^Tools/jit/
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
