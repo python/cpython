@@ -971,7 +971,12 @@ tstring_middle[expr_ty]:
     | tstring_replacement_field
     | t=TSTRING_MIDDLE { _PyPegen_constant_from_token(p, t) }
 tstring[expr_ty] (memo):
-    | a=TSTRING_START b=tstring_middle* c=TSTRING_END { _PyPegen_template_str(p, a, (asdl_expr_seq*)b, c) }
+    | a=TSTRING_START b=tstring_middle* c=TSTRING_END { 
+        CHECK_VERSION(
+            expr_ty, 
+            14, 
+            "t-strings are", 
+            _PyPegen_template_str(p, a, (asdl_expr_seq*)b, c)) }
 
 string[expr_ty]: s[Token*]=STRING { _PyPegen_constant_from_string(p, s) }
 strings[expr_ty] (memo): a[asdl_expr_seq*]=(fstring|string|tstring)+ { _PyPegen_concatenate_strings(p, a, EXTRA) }
