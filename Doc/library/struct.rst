@@ -364,7 +364,7 @@ Notes:
    ``'0c'`` means 0 characters).
 
 (10)
-   For the ``'E'`` and ``'C'`` format characters, the packed representation uses
+   For the ``'F'`` and ``'D'`` format characters, the packed representation uses
    the IEEE 754 binary32 and binary64 format for components of the complex
    number, regardless of the floating-point format used by the platform.
 
