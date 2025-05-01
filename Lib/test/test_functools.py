@@ -2952,7 +2952,7 @@ class TestSingleDispatch(unittest.TestCase):
                 self.assertEqual(meth.__qualname__, prefix + meth.__name__)
                 self.assertEqual(meth.__doc__,
                                  ('My function docstring'
-                                  if support.HAVE_DOCSTRINGS
+                                  if support.HAVE_PY_DOCSTRINGS
                                   else None))
                 self.assertEqual(meth.__annotations__['arg'], int)
 
@@ -3107,7 +3107,7 @@ class TestSingleDispatch(unittest.TestCase):
             with self.subTest(meth=meth):
                 self.assertEqual(meth.__doc__,
                                  ('My function docstring'
-                                  if support.HAVE_DOCSTRINGS
+                                  if support.HAVE_PY_DOCSTRINGS
                                   else None))
                 self.assertEqual(meth.__annotations__['arg'], int)
 
@@ -3584,7 +3584,7 @@ class TestCachedProperty(unittest.TestCase):
     def test_doc(self):
         self.assertEqual(CachedCostItem.cost.__doc__,
                          ("The cost of the item."
-                          if support.HAVE_DOCSTRINGS
+                          if support.HAVE_PY_DOCSTRINGS
                           else None))
 
     def test_module(self):
