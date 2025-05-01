@@ -1580,6 +1580,14 @@ Deprecated
   as a single positional argument.
   (Contributed by Serhiy Storchaka in :gh:`109218`.)
 
+* :mod:`ctypes`:
+  Calling :func:`ctypes.POINTER` on a string is deprecated.
+  Use :ref:`ctypes-incomplete-types` for self-referential structures.
+  Also, ``ctypes._pointer_type_cache`` is deprecated as a courtesy to
+  existing users of this internal API.
+  See :func:`ctypes.POINTER` for updated implementation details.
+  (Contributed by Sergey Myrianov in :gh:`100926`.)
+
 * :mod:`functools`:
   Calling the Python implementation of :func:`functools.reduce` with *function*
   or *sequence* as keyword arguments is now deprecated.
