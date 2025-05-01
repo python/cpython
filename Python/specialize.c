@@ -2657,6 +2657,10 @@ _Py_Specialize_BinaryOp(_PyStackRef lhs_st, _PyStackRef rhs_st, _Py_CODEUNIT *in
                 specialize(instr, BINARY_OP_SUBSCR_DICT);
                 return;
             }
+            if (PyList_CheckExact(lhs) && PySlice_Check(rhs)) {
+                specialize(instr, BINARY_OP_SUBSCR_LIST_SLICE);
+                return;
+            }
             unsigned int tp_version;
             PyTypeObject *container_type = Py_TYPE(lhs);
             PyObject *descriptor = _PyType_LookupRefAndVersion(container_type, &_Py_ID(__getitem__), &tp_version);
