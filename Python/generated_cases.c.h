@@ -811,27 +811,27 @@
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 PyObject *res_o = _PyList_SliceSubscript(list, sub);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                if (res_o == NULL) {
-                    UPDATE_MISS_STATS(BINARY_OP);
-                    assert(_PyOpcode_Deopt[opcode] == (BINARY_OP));
-                    JUMP_TO_PREDICTED(BINARY_OP);
-                }
-                STAT_INC(BINARY_OP, hit);
-                res = PyStackRef_FromPyObjectSteal(res_o);
                 STAT_INC(BINARY_OP, hit);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
-                _PyStackRef tmp = list_st;
-                list_st = res;
-                stack_pointer[-2] = list_st;
-                PyStackRef_CLOSE(tmp);
-                tmp = sub_st;
+                _PyStackRef tmp = sub_st;
                 sub_st = PyStackRef_NULL;
                 stack_pointer[-1] = sub_st;
                 PyStackRef_CLOSE(tmp);
+                tmp = list_st;
+                list_st = PyStackRef_NULL;
+                stack_pointer[-2] = list_st;
+                PyStackRef_CLOSE(tmp);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
-                stack_pointer += -1;
+                stack_pointer += -2;
                 assert(WITHIN_STACK_BOUNDS());
+                if (res_o == NULL) {
+                    JUMP_TO_LABEL(error);
+                }
+                res = PyStackRef_FromPyObjectSteal(res_o);
             }
+            stack_pointer[0] = res;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
             DISPATCH();
         }
 

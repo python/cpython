@@ -916,11 +916,10 @@ dummy_func(
             assert(PyList_CheckExact(list));
 
             PyObject *res_o = _PyList_SliceSubscript(list, sub);
-            DEOPT_IF(res_o == NULL);
-            STAT_INC(BINARY_OP, hit);
-            res = PyStackRef_FromPyObjectSteal(res_o);
             STAT_INC(BINARY_OP, hit);
             DECREF_INPUTS();
+            ERROR_IF(res_o == NULL);
+            res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
         macro(BINARY_OP_SUBSCR_STR_INT) =
