@@ -4845,7 +4845,7 @@ class _TestSharedMemory(BaseTestCase):
 
     @unittest.skipIf(os.name != "posix", "windows automatically unlinks")
     def test_creating_shm_unlinks_on_error(self):
-        name = self._new_shm_name("test_creating_shm_unlinks_on_error")
+        name = self._new_shm_name("test_csuoe")
         with unittest.mock.patch('mmap.mmap') as mock_mmap:
             mock_mmap.side_effect = OSError("filesystems are evil")
             with self.assertRaises(OSError):
@@ -4855,7 +4855,7 @@ class _TestSharedMemory(BaseTestCase):
             _posixshmem.shm_unlink(name)
 
     def test_existing_shm_not_unlinked_on_error(self):
-        name = self._new_shm_name("test_existing_shm_not_unlinked_on_error")
+        name = self._new_shm_name("test_esnuoe")
         mem = shared_memory.SharedMemory(name, create=True, size=1)
         self.addCleanup(mem.unlink)
         with unittest.mock.patch('mmap.mmap') as mock_mmap:
@@ -4864,7 +4864,7 @@ class _TestSharedMemory(BaseTestCase):
                 shared_memory.SharedMemory(name, create=False)
 
     def test_zero_length_shared_memory(self):
-        name = self._new_shm_name("test_zero_length_shared_memory")
+        name = self._new_shm_name("test_zlsm")
         mem = shared_memory.SharedMemory(name, create=True, size=0)
         self.addCleanup(mem.unlink)
         self.assertEqual(mem.size, 0)
