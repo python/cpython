@@ -1,0 +1,2 @@
+:mod:`textwrap` now treats real, Unicode em-dashes like the simulated ones
+(two or more consecutive hyphens). Patch by Jonathan Eunice.
