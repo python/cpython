@@ -146,7 +146,6 @@ _PyFrame_Initialize(
     frame->return_offset = 0;
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->visited = 0;
-    frame->jit_active = false;
 #ifdef Py_DEBUG
     frame->lltrace = 0;
 #endif
@@ -328,7 +327,6 @@ _PyFrame_PushTrampolineUnchecked(PyThreadState *tstate, PyCodeObject *code, int 
 #endif
     frame->owner = FRAME_OWNED_BY_THREAD;
     frame->visited = 0;
-    frame->jit_active = false;
 #ifdef Py_DEBUG
     frame->lltrace = 0;
 #endif

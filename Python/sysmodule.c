@@ -4033,13 +4033,21 @@ _jit_is_active_impl(PyObject *module)
 /*[clinic end generated code: output=7facca06b10064d4 input=a7e31db659d40a0b]*/
 {
     (void)module;
-    _PyInterpreterFrame *frame = _PyThreadState_GET()->current_frame;
+    PyThreadState *tstate = _PyThreadState_GET();
+    _PyInterpreterFrame *frame = tstate->current_frame;
+    _PyInterpreterFrame *jit_entry_frame = tstate->jit_entry;
     while (true) {
-        frame = frame->previous;
-        if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
-            return frame->jit_active;
+        // If we hit the JIT's "entry" frame first, we're in JIT code:
+        if (frame == jit_entry_frame) {
+            return true;
         }
+        // If we hit the interpreter's "entry" frame first, we're not:
+        if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
+            return false;
+        }
+        frame = frame->previous;
     }
+    Py_UNREACHABLE();
 }
 
 static PyMethodDef _jit_methods[] = {
