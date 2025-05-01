@@ -1,0 +1,3 @@
+When using ``O_TMPFILE``, open :class:`tempfile.TemporaryFile` file descriptors
+with ``O_WRONLY`` and not ``O_RDWR`` when a write-only mode is given. This will
+prevent low-level reads on their underlying file descriptor.
