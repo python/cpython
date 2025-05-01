@@ -1108,6 +1108,7 @@ extern "C" {
     INIT_ID(name_from), \
     INIT_ID(namespace_separator), \
     INIT_ID(namespaces), \
+    INIT_ID(nanosecond), \
     INIT_ID(narg), \
     INIT_ID(ndigits), \
     INIT_ID(nested), \
