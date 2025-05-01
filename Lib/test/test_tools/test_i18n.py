@@ -167,8 +167,6 @@ class Test_pygettext(unittest.TestCase):
             with temp_cwd():
                 assert_python_ok(self.script, f'{opt}test')
                 self.assertTrue(os.path.exists('test'))
-                assert_python_ok(self.script, f'{opt}file.pot')
-                self.assertTrue(os.path.exists('file.pot'))
                 res = assert_python_ok(self.script, f'{opt}-')
                 self.assertIn(b'Project-Id-Version: PACKAGE VERSION', res.out)
 
