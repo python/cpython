@@ -1165,12 +1165,6 @@ error:
     return NULL;
 }
 
-static PyObject *
-jit_enabled(PyObject *self, PyObject *arg)
-{
-    return PyBool_FromLong(_PyInterpreterState_GET()->jit);
-}
-
 #ifdef _Py_TIER2
 
 static PyObject *
@@ -2093,13 +2087,10 @@ reset_rare_event_counters(PyObject *self, PyObject *Py_UNUSED(type))
 
     interp->rare_events.set_class = 0;
     interp->rare_events.set_bases = 0;
-    interp->rare_events.set_eval_frame_func = 0;
     interp->rare_events.builtin_dict = 0;
     interp->rare_events.func_modification = 0;
 
     return Py_None;
-}
-
 
 #ifdef Py_GIL_DISABLED
 static PyObject *
@@ -2293,7 +2284,6 @@ static PyMethodDef module_functions[] = {
     {"get_co_localskinds", get_co_localskinds, METH_O, NULL},
     {"get_code_var_counts", _PyCFunction_CAST(get_code_var_counts),
      METH_VARARGS | METH_KEYWORDS, NULL},
-    {"jit_enabled", jit_enabled,  METH_NOARGS, NULL},
 #ifdef _Py_TIER2
     {"add_executor_dependency", add_executor_dependency, METH_VARARGS, NULL},
     {"invalidate_executors", invalidate_executors, METH_O, NULL},

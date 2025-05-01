@@ -43,11 +43,11 @@ struct _PyInterpreterFrame {
 #endif
     uint16_t return_offset;  /* Only relevant during a function call */
     char owner;
-#ifdef Py_DEBUG
     uint8_t visited:1;
-    uint8_t lltrace:7;
-#else
-    uint8_t visited;
+    // Set on interpreter entry frames when the JIT is active:
+    uint8_t jit_active:1;
+#ifdef Py_DEBUG
+    uint8_t lltrace:6;
 #endif
     /* Locals and stack */
     _PyStackRef localsplus[1];

@@ -3986,6 +3986,77 @@ error:
 
 PyObject *_Py_CreateMonitoringObject(void);
 
+/*[clinic input]
+module _jit
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=10952f74d7bbd972]*/
+
+PyDoc_STRVAR(_jit_doc, "Utilities for observing just-in-time compilation.");
+
+/*[clinic input]
+_jit.is_available -> bool
+Return True if the current Python executable supports JIT compilation, and False otherwise.
+[clinic start generated code]*/
+
+static int
+_jit_is_available_impl(PyObject *module)
+/*[clinic end generated code: output=6849a9cd2ff4aac9 input=03add84aa8347cf1]*/
+{
+    (void)module;
+#ifdef _Py_TIER2
+    return true;
+#else
+    return false;
+#endif
+}
+
+/*[clinic input]
+_jit.is_enabled -> bool
+Return True if JIT compilation is enabled for the current Python process (implies sys._jit.is_available()), and False otherwise.
+[clinic start generated code]*/
+
+static int
+_jit_is_enabled_impl(PyObject *module)
+/*[clinic end generated code: output=55865f8de993fe42 input=02439394da8e873f]*/
+{
+    (void)module;
+    return _PyInterpreterState_GET()->jit;
+}
+
+/*[clinic input]
+_jit.is_active -> bool
+Return True if the topmost Python frame is currently executing JIT code, and False otherwise.
+[clinic start generated code]*/
+
+static int
+_jit_is_active_impl(PyObject *module)
+/*[clinic end generated code: output=7facca06b10064d4 input=a7e31db659d40a0b]*/
+{
+    (void)module;
+    _PyInterpreterFrame *frame = _PyThreadState_GET()->current_frame;
+    while (true) {
+        frame = frame->previous;
+        if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
+            return frame->jit_active;
+        }
+    }
+}
+
+static PyMethodDef _jit_methods[] = {
+    _JIT_IS_AVAILABLE_METHODDEF
+    _JIT_IS_ENABLED_METHODDEF
+    _JIT_IS_ACTIVE_METHODDEF
+    {NULL}
+};
+
+static struct PyModuleDef _jit_module = {
+    PyModuleDef_HEAD_INIT,
+    .m_name = "sys._jit",
+    .m_doc = _jit_doc,
+    .m_size = -1,
+    .m_methods = _jit_methods,
+};
+
 /* Create sys module without all attributes.
    _PySys_UpdateConfig() should be called later to add remaining attributes. */
 PyStatus
@@ -4043,6 +4114,16 @@ _PySys_Create(PyThreadState *tstate, PyObject **sysmod_p)
     }
     int err = PyDict_SetItemString(sysdict, "monitoring", monitoring);
     Py_DECREF(monitoring);
+    if (err < 0) {
+        goto error;
+    }
+
+    PyObject *jit = _PyModule_CreateInitialized(&_jit_module, PYTHON_API_VERSION);
+    if (jit == NULL) {
+        goto error;
+    }
+    err = PyDict_SetItemString(sysdict, "_jit", jit);
+    Py_DECREF(jit);
     if (err < 0) {
         goto error;
     }

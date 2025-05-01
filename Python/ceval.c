@@ -1036,9 +1036,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry_frame.f_executable = PyStackRef_None;
     entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
     entry_frame.stackpointer = entry_frame.localsplus;
+    entry_frame.return_offset = 0;
     entry_frame.owner = FRAME_OWNED_BY_INTERPRETER;
     entry_frame.visited = 0;
-    entry_frame.return_offset = 0;
+    entry_frame.jit_active = false;
 #ifdef Py_DEBUG
     entry_frame.lltrace = 0;
 #endif
