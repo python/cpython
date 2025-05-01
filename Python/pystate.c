@@ -684,7 +684,7 @@ init_interpreter(PyInterpreterState *interp,
         interp->dtoa = (struct _dtoa_state)_dtoa_state_INIT(interp);
     }
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
-    interp->next_stackref = 1;
+    interp->next_stackref = INITIAL_STACKREF_INDEX;
     _Py_hashtable_allocator_t alloc = {
         .malloc = malloc,
         .free = free,
@@ -2168,7 +2168,10 @@ _PyThreadState_Attach(PyThreadState *tstate)
     if (current_fast_get() != NULL) {
         Py_FatalError("non-NULL old thread state");
     }
-
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    if (_tstate->c_stack_hard_limit == 0) {
+        _Py_InitializeRecursionLimits(tstate);
+    }
 
     while (1) {
         _PyEval_AcquireLock(tstate);
