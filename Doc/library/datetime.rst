@@ -2050,7 +2050,7 @@ Instance methods:
       >>> from datetime import time
       >>> time(hour=12, minute=34, second=56, microsecond=123456).isoformat(timespec='minutes')
       '12:34'
-      >>> dt = time(hour=12, minute=34, second=56, microsecond=0, nanosecond=123456789)
+      >>> dt = time(hour=12, minute=34, second=56, microsecond=123456, nanosecond=789)
       >>> dt.isoformat(timespec='microseconds')
       '12:34:56.000000'
       >>> dt.isoformat(timespec='nanoseconds')
