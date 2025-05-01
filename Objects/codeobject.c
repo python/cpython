@@ -1766,6 +1766,8 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
 void
 _PyCode_GetVarCounts(PyCodeObject *co, _PyCode_var_counts_t *counts)
 {
+    assert(counts != NULL);
+
     // Count the locals, cells, and free vars.
     struct co_locals_counts locals = {0};
     int numfree = 0;
