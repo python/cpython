@@ -30,6 +30,7 @@ Modules/Setup*                @erlend-aasland
 Objects/set*                  @rhettinger
 Objects/dict*                 @methane @markshannon
 Objects/typevarobject.c       @JelleZijlstra
+Objects/unionobject.c         @JelleZijlstra
 Objects/type*                 @markshannon
 Objects/codeobject.c          @markshannon
 Objects/frameobject.c         @markshannon
@@ -166,6 +167,9 @@ Include/internal/pycore_time.h  @pganssle @abalkin
 **/*mime*                     @python/email-team
 **/*imap*                     @python/email-team
 **/*poplib*                   @python/email-team
+
+# Exclude .mailmap from being owned by @python/email-team
+/.mailmap
 
 # Garbage collector
 /Modules/gcmodule.c           @pablogsal
@@ -316,3 +320,9 @@ Lib/test/test__colorize.py    @hugovk
 
 # Fuzzing
 Modules/_xxtestfuzz/          @ammaraskar
+
+# t-strings
+**/*interpolationobject*      @lysnikolaou
+**/*templateobject*           @lysnikolaou
+**/*templatelib*              @lysnikolaou
+**/*tstring*                  @lysnikolaou

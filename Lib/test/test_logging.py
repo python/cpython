@@ -3281,6 +3281,37 @@ class ConfigDictTest(BaseTest):
         }
     }
 
+    # Remove when deprecation ends.
+    class DeprecatedStrmHandler(logging.StreamHandler):
+        def __init__(self, strm=None):
+            super().__init__(stream=strm)
+
+    config_custom_handler_with_deprecated_strm_arg = {
+        "version": 1,
+        "formatters": {
+            "form1": {
+                "format": "%(levelname)s ++ %(message)s",
+            },
+        },
+        "handlers": {
+            "hand1": {
+                "class": DeprecatedStrmHandler,
+                "formatter": "form1",
+                "level": "NOTSET",
+                "stream": "ext://sys.stdout",
+            },
+        },
+        "loggers": {
+            "compiler.parser": {
+                "level": "DEBUG",
+                "handlers": ["hand1"],
+            },
+        },
+        "root": {
+            "level": "WARNING",
+        },
+    }
+
     def apply_config(self, conf):
         logging.config.dictConfig(conf)
 
@@ -3369,6 +3400,15 @@ class ConfigDictTest(BaseTest):
     def test_config5_ok(self):
         self.test_config1_ok(config=self.config5)
         self.check_handler('hand1', CustomHandler)
+
+    def test_deprecation_warning_custom_handler_with_strm_arg(self):
+        msg = (
+            "Support for custom logging handlers with the 'strm' argument "
+            "is deprecated and scheduled for removal in Python 3.16. "
+            "Define handlers with the 'stream' argument instead."
+        )
+        with self.assertWarnsRegex(DeprecationWarning, msg):
+            self.test_config1_ok(config=self.config_custom_handler_with_deprecated_strm_arg)
 
     def test_config6_failure(self):
         self.assertRaises(Exception, self.apply_config, self.config6)
