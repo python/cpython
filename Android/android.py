@@ -138,19 +138,19 @@ def make_build_python(context):
     run(["make", "-j", str(os.cpu_count())])
 
 
-def unpack_deps(host):
+def unpack_deps(host, prefix_dir):
     deps_url = "https://github.com/beeware/cpython-android-source-deps/releases/download"
     for name_ver in ["bzip2-1.0.8-2", "libffi-3.4.4-3", "openssl-3.0.15-4",
                      "sqlite-3.49.1-0", "xz-5.4.6-1"]:
         filename = f"{name_ver}-{host}.tar.gz"
         download(f"{deps_url}/{name_ver}/{filename}")
-        run(["tar", "-xf", filename])
+        shutil.unpack_archive(filename, prefix_dir)
         os.remove(filename)
 
 
 def download(url, target_dir="."):
     out_path = f"{target_dir}/{basename(url)}"
-    run(["curl", "-Lf", "-o", out_path, url])
+    run(["curl", "-Lf", "--retry", "5", "--retry-all-errors", "-o", out_path, url])
     return out_path
 
 
@@ -162,8 +162,7 @@ def configure_host_python(context):
     prefix_dir = host_dir / "prefix"
     if not prefix_dir.exists():
         prefix_dir.mkdir()
-        os.chdir(prefix_dir)
-        unpack_deps(context.host)
+        unpack_deps(context.host, prefix_dir)
 
     os.chdir(host_dir)
     command = [
@@ -241,15 +240,14 @@ def setup_sdk():
 # the Gradle wrapper is not included in the CPython repository. Instead, we
 # extract it from the Gradle GitHub repository.
 def setup_testbed():
-    # The Gradle version used for the build is specified in
-    # testbed/gradle/wrapper/gradle-wrapper.properties. This wrapper version
-    # doesn't need to match, as any version of the wrapper can download any
-    # version of Gradle.
-    version = "8.9.0"
     paths = ["gradlew", "gradlew.bat", "gradle/wrapper/gradle-wrapper.jar"]
-
     if all((TESTBED_DIR / path).exists() for path in paths):
         return
+
+    # The wrapper version isn't important, as any version of the wrapper can
+    # download any version of Gradle. The Gradle version actually used for the
+    # build is specified in testbed/gradle/wrapper/gradle-wrapper.properties.
+    version = "8.9.0"
 
     for path in paths:
         out_path = TESTBED_DIR / path
