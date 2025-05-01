@@ -9,7 +9,7 @@ from pathlib import Path
 
 from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure, assert_python_ok
-from test.test_tools import skip_if_missing, toolsdir
+from test.test_tools import imports_under_tool, skip_if_missing, toolsdir
 
 
 skip_if_missing('i18n')
@@ -17,6 +17,9 @@ skip_if_missing('i18n')
 data_dir = (Path(__file__).parent / 'msgfmt_data').resolve()
 script_dir = Path(toolsdir) / 'i18n'
 msgfmt_py = script_dir / 'msgfmt.py'
+
+with imports_under_tool("i18n"):
+    import msgfmt
 
 
 def compile_messages(po_file, mo_file):
@@ -142,6 +145,12 @@ msgstr "bar"
 
 
 class POParserTest(unittest.TestCase):
+    @classmethod
+    def tearDownClass(cls):
+        # msgfmt uses a global variable to store messages,
+        # clear it after the tests.
+        msgfmt.MESSAGES.clear()
+
     def test_strings(self):
         # Test that the PO parser correctly handles and unescape
         # strings in the PO file.
@@ -193,8 +202,10 @@ class POParserTest(unittest.TestCase):
                     # check the result.
                     po = f'msgid {po_string}\nmsgstr "translation"'
                     Path('messages.po').write_text(po)
+                    # Reset the global MESSAGES dictionary
+                    msgfmt.MESSAGES.clear()
+                    msgfmt.make('messages.po', 'messages.mo')
 
-                    compile_messages('messages.po', 'messages.mo')
                     with open('messages.mo', 'rb') as f:
                         actual = GNUTranslations(f)
 
@@ -224,7 +235,10 @@ class POParserTest(unittest.TestCase):
                 with self.subTest(string=invalid_string):
                     po = f'msgid {invalid_string}\nmsgstr "translation"'
                     Path('messages.po').write_text(po)
-                    assert_python_failure(msgfmt, 'messages.po')
+                    # Reset the global MESSAGES dictionary
+                    msgfmt.MESSAGES.clear()
+                    with self.assertRaises(Exception):
+                        msgfmt.make('messages.po', 'messages.mo')
 
 
 class CLITest(unittest.TestCase):
