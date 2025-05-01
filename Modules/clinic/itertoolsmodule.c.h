@@ -965,4 +965,34 @@ skip_optional_pos:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=999758202a532e0a input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(itertools_serialize__doc__,
+"serialize(iterable, /)\n"
+"--\n"
+"\n"
+"Make an iterator thread-safe [tbd]");
+
+static PyObject *
+itertools_serialize_impl(PyTypeObject *type, PyObject *iterable);
+
+static PyObject *
+itertools_serialize(PyTypeObject *type, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    PyTypeObject *base_tp = clinic_state()->serialize_type;
+    PyObject *iterable;
+
+    if ((type == base_tp || type->tp_init == base_tp->tp_init) &&
+        !_PyArg_NoKeywords("serialize", kwargs)) {
+        goto exit;
+    }
+    if (!_PyArg_CheckPositional("serialize", PyTuple_GET_SIZE(args), 1, 1)) {
+        goto exit;
+    }
+    iterable = PyTuple_GET_ITEM(args, 0);
+    return_value = itertools_serialize_impl(type, iterable);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=5f9393576be897be input=a9049054013a1b77]*/

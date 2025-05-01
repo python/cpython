@@ -32,6 +32,7 @@ typedef struct {
     PyTypeObject *permutations_type;
     PyTypeObject *product_type;
     PyTypeObject *repeat_type;
+    PyTypeObject *serialize_type;
     PyTypeObject *starmap_type;
     PyTypeObject *takewhile_type;
     PyTypeObject *tee_type;
@@ -85,8 +86,9 @@ class itertools.compress "compressobject *" "clinic_state()->compress_type"
 class itertools.filterfalse "filterfalseobject *" "clinic_state()->filterfalse_type"
 class itertools.count "countobject *" "clinic_state()->count_type"
 class itertools.pairwise "pairwiseobject *" "clinic_state()->pairwise_type"
+class itertools.serialize "serializeobject *" "clinic_state()->serialize_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=aa48fe4de9d4080f]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1261e430ec3a27e1]*/
 
 #define clinic_state() (find_state_by_type(type))
 #define clinic_state_by_cls() (get_module_state_by_cls(base_tp))
@@ -3697,6 +3699,100 @@ static PyType_Spec repeat_spec = {
     .slots = repeat_slots,
 };
 
+/* serialize object **************************************************************/
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *it;
+} serializeobject;
+
+#define serializeobject_CAST(op)    ((serializeobject *)(op))
+
+/*[clinic input]
+@classmethod
+itertools.serialize.__new__
+    iterable: object
+    /
+Make an iterator thread-safe [tbd]
+
+[clinic start generated code]*/
+
+static PyObject *
+itertools_serialize_impl(PyTypeObject *type, PyObject *iterable)
+/*[clinic end generated code: output=abd19e483759f1b7 input=0099ab7fd57cdc9f]*/
+{
+    /* Get iterator. */
+    PyObject *it = PyObject_GetIter(iterable);
+    if (it == NULL)
+        return NULL;
+
+    serializeobject *lz = (serializeobject *)type->tp_alloc(type, 0);
+    lz->it = it;
+
+    return (PyObject *)lz;
+}
+
+static void
+serialize_dealloc(PyObject *op)
+{
+    serializeobject *lz = serializeobject_CAST(op);
+    PyTypeObject *tp = Py_TYPE(lz);
+    PyObject_GC_UnTrack(lz);
+    Py_XDECREF(lz->it);
+    tp->tp_free(lz);
+    Py_DECREF(tp);
+}
+
+static int
+serialize_traverse(PyObject *op, visitproc visit, void *arg)
+{
+    serializeobject *lz = serializeobject_CAST(op);
+    Py_VISIT(Py_TYPE(lz));
+    Py_VISIT(lz->it);
+    return 0;
+}
+
+static PyObject *
+serialize_next(PyObject *op)
+{
+    serializeobject *lz = serializeobject_CAST(op);
+    PyObject *result = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(op);  // or lock on op->it ?
+    PyObject *it = lz->it;
+    if (it != NULL) {
+        result = PyIter_Next(lz->it);
+        if (result == NULL) {
+            /* Note:  StopIteration is already cleared by PyIter_Next() */
+            if (PyErr_Occurred())
+                return NULL;
+            Py_CLEAR(lz->it);
+        }
+    }
+    Py_END_CRITICAL_SECTION();
+    return result;
+}
+
+static PyType_Slot serialize_slots[] = {
+    {Py_tp_dealloc, serialize_dealloc},
+    {Py_tp_getattro, PyObject_GenericGetAttr},
+    {Py_tp_doc, (void *)itertools_serialize__doc__},
+    {Py_tp_traverse, serialize_traverse},
+    {Py_tp_iter, PyObject_SelfIter},
+    {Py_tp_iternext, serialize_next},
+    {Py_tp_new, itertools_serialize},
+    {Py_tp_free, PyObject_GC_Del},
+    {0, NULL},
+};
+
+static PyType_Spec serialize_spec = {
+    .name = "itertools.serialize",
+    .basicsize = sizeof(serializeobject),
+    .flags = (Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_BASETYPE |
+              Py_TPFLAGS_IMMUTABLETYPE),
+    .slots = serialize_slots,
+};
+
 
 /* ziplongest object *********************************************************/
 
@@ -3963,6 +4059,7 @@ itertoolsmodule_traverse(PyObject *mod, visitproc visit, void *arg)
     Py_VISIT(state->permutations_type);
     Py_VISIT(state->product_type);
     Py_VISIT(state->repeat_type);
+    Py_VISIT(state->serialize_type);
     Py_VISIT(state->starmap_type);
     Py_VISIT(state->takewhile_type);
     Py_VISIT(state->tee_type);
@@ -3992,6 +4089,7 @@ itertoolsmodule_clear(PyObject *mod)
     Py_CLEAR(state->permutations_type);
     Py_CLEAR(state->product_type);
     Py_CLEAR(state->repeat_type);
+    Py_CLEAR(state->serialize_type);
     Py_CLEAR(state->starmap_type);
     Py_CLEAR(state->takewhile_type);
     Py_CLEAR(state->tee_type);
@@ -4038,6 +4136,7 @@ itertoolsmodule_exec(PyObject *mod)
     ADD_TYPE(mod, state->permutations_type, &permutations_spec);
     ADD_TYPE(mod, state->product_type, &product_spec);
     ADD_TYPE(mod, state->repeat_type, &repeat_spec);
+    ADD_TYPE(mod, state->serialize_type, &serialize_spec);
     ADD_TYPE(mod, state->starmap_type, &starmap_spec);
     ADD_TYPE(mod, state->takewhile_type, &takewhile_spec);
     ADD_TYPE(mod, state->tee_type, &tee_spec);
