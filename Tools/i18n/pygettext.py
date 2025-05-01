@@ -130,7 +130,7 @@ Options:
         This is useful for testing purposes because it eliminates a source of
         variance for generated .mo files.
 
-        Note: Using this option will lead to an error during compilation or other
+        Note: Using this option may lead to an error during compilation or other
         manipulation if the resulting file is not entirely in ASCII.
 
     -x filename
