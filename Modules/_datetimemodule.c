@@ -6742,7 +6742,7 @@ local_timezone_from_timestamp(time_t timestamp)
                                   local_time_tm.tm_mday,
                                   local_time_tm.tm_hour,
                                   local_time_tm.tm_min,
-                                  local_time_tm.tm_sec, 0, Py_None, 0);
+                                  local_time_tm.tm_sec, 0, Py_None, 0, 0);
         if (local_time == NULL) {
             return NULL;
         }
@@ -6753,7 +6753,7 @@ local_timezone_from_timestamp(time_t timestamp)
                                 utc_time_tm.tm_mday,
                                 utc_time_tm.tm_hour,
                                 utc_time_tm.tm_min,
-                                utc_time_tm.tm_sec, 0, Py_None, 0);
+                                utc_time_tm.tm_sec, 0, Py_None, 0, 0);
         if (utc_time == NULL) {
             Py_DECREF(local_time);
             return NULL;
