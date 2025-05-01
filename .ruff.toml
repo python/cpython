@@ -9,5 +9,7 @@ line-length = 79
 # Nicer diagnostic output
 output-format = "full"
 
-# Enable automatic fixes (use ``fix = false`` or ``--no-fix`` to override)
+# Enable automatic fixes by default.
+# To override this, use ``fix = false`` in a subdirectory's config file
+# or ``--no-fix`` on the CLI
 fix = true
