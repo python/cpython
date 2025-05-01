@@ -303,12 +303,11 @@ escape_unicode(PyObject *pystr)
     return rval;
 }
 
-#define ESCAPE_BUF_SIZE 200
-
 // Take a PyUnicode pystr and write an escaped string to writer. (ensure_ascii)
 static int
 write_escaped_ascii(PyUnicodeWriter *writer, PyObject *pystr)
 {
+#define ESCAPE_BUF_SIZE 200
     Py_ssize_t i;
     Py_ssize_t input_chars;
     Py_ssize_t buf_len;
@@ -367,59 +366,73 @@ static int
 write_escaped_unicode(PyUnicodeWriter *writer, PyObject *pystr)
 {
     Py_ssize_t i;
-    Py_ssize_t input_size;
-    Py_ssize_t buf_len;
-    const unsigned char *input;
+    Py_ssize_t input_chars;
+    Py_ssize_t chars = 0;
+    const void *input;
+    int kind;
     int ret;
-    unsigned char c = 0;
-    char buf[ESCAPE_BUF_SIZE];
+    Py_UCS4 output[ESCAPE_BUF_SIZE];
 
-    // We don't need to escape non-ASCII chars.
-    // So we just copy UTF-8 from pystr to buf.
-    input = (const unsigned char*) PyUnicode_AsUTF8AndSize(pystr, &input_size);
+    input_chars = PyUnicode_GET_LENGTH(pystr);
+    input = PyUnicode_DATA(pystr);
+    kind = PyUnicode_KIND(pystr);
 
     ret = PyUnicodeWriter_WriteChar(writer, '"');
     if (ret) return ret;
 
     // Fast path for string doesn't need escape at all: e.g. "id", "name"
-    for (i = 0; i < input_size; i++) {
-        c = input[i];
+    for (i = 0; i < input_chars; i++) {
+        Py_UCS4 c = PyUnicode_READ(kind, input, i);
         if (c <= 0x1f || c == '\\' || c == '"') {
             break;
         }
     }
     if (i > 0) {
-        ret = PyUnicodeWriter_WriteUTF8(writer, (const char *)input, i);
+        ret = PyUnicodeWriter_WriteSubstring(writer, pystr, 0, i);
         if (ret) return ret;
     }
-    if (i == input_size) {
+    if (i == input_chars) {
         return PyUnicodeWriter_WriteChar(writer, '"');
     }
 
-    buf_len = ascii_escape_unichar(c, (unsigned char *)buf, 0);
+    for (; i < input_chars; i++) {
+        Py_UCS4 c = PyUnicode_READ(kind, input, i);
 
-    for (i++; i < input_size; i++) {
-        c = input[i];
-        if (c <= 0x1f || c == '\\' || c == '"') {
-            buf_len = ascii_escape_unichar(c, (unsigned char *)buf, buf_len);
-        }
-        else {
-            buf[buf_len++] = c;
+        // Same to ENCODE_OUTPUT in escape_unicode
+        switch (c) {
+        case '\\': output[chars++] = '\\'; output[chars++] = c; break;
+        case '"':  output[chars++] = '\\'; output[chars++] = c; break;
+        case '\b': output[chars++] = '\\'; output[chars++] = 'b'; break;
+        case '\f': output[chars++] = '\\'; output[chars++] = 'f'; break;
+        case '\n': output[chars++] = '\\'; output[chars++] = 'n'; break;
+        case '\r': output[chars++] = '\\'; output[chars++] = 'r'; break;
+        case '\t': output[chars++] = '\\'; output[chars++] = 't'; break;
+        default:
+            if (c <= 0x1f) {
+                output[chars++] = '\\';
+                output[chars++] = 'u';
+                output[chars++] = '0';
+                output[chars++] = '0';
+                output[chars++] = Py_hexdigits[(c >> 4) & 0xf];
+                output[chars++] = Py_hexdigits[(c     ) & 0xf];
+            } else {
+                output[chars++] = c;
+            }
         }
 
-        if (buf_len + 6 > ESCAPE_BUF_SIZE) {
-            ret = PyUnicodeWriter_WriteUTF8(writer, buf, buf_len);
+        if (chars + 6 > ESCAPE_BUF_SIZE) {
+            ret = PyUnicodeWriter_WriteUCS4(writer, output, chars);
             if (ret) return ret;
-            buf_len = 0;
+            chars = 0;
         }
     }
 
-    assert(buf_len < ESCAPE_BUF_SIZE);
-    buf[buf_len++] = '"';
-    return PyUnicodeWriter_WriteUTF8(writer, buf, buf_len);
+    assert(chars < ESCAPE_BUF_SIZE);
+    output[chars++] = '"';
+    return PyUnicodeWriter_WriteUCS4(writer, output, chars);
 }
-
 #undef ESCAPE_BUF_SIZE
+
 
 static void
 raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
