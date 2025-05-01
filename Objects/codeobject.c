@@ -1728,6 +1728,7 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     assert(globalsns == NULL || PyDict_Check(globalsns));
     assert(builtinsns == NULL || PyDict_Check(builtinsns));
     assert(counts == NULL || counts->total == 0);
+    struct co_unbound_counts unbound = {0};
     Py_ssize_t len = Py_SIZE(co);
     for (int i = 0; i < len; i++) {
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
@@ -1735,16 +1736,14 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
             int oparg = GET_OPARG(co, i, inst.op.arg);
             int index = LOAD_ATTR_NAME_INDEX(oparg);
             PyObject *name = GETITEM(co->co_names, index);
-            if (counts != NULL) {
-                if (PySet_Contains(attrnames, name)) {
-                    if (_PyErr_Occurred(tstate)) {
-                        return -1;
-                    }
-                    continue;
+            if (PySet_Contains(attrnames, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
                 }
-                counts->total += 1;
-                counts->numattrs += 1;
+                continue;
             }
+            unbound.total += 1;
+            unbound.numattrs += 1;
             if (PySet_Add(attrnames, name) < 0) {
                 return -1;
             }
@@ -1753,35 +1752,36 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
             int oparg = GET_OPARG(co, i, inst.op.arg);
             int index = LOAD_ATTR_NAME_INDEX(oparg);
             PyObject *name = GETITEM(co->co_names, index);
-            if (counts != NULL) {
-                if (PySet_Contains(globalnames, name)) {
-                    if (_PyErr_Occurred(tstate)) {
-                        return -1;
-                    }
-                    continue;
+            if (PySet_Contains(globalnames, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
                 }
-                counts->total += 1;
-                counts->globals.total += 1;
-                counts->globals.numunknown += 1;
-                if (globalsns != NULL && PyDict_Contains(globalsns, name)) {
-                    if (_PyErr_Occurred(tstate)) {
-                        return -1;
-                    }
-                    counts->globals.numglobal += 1;
-                    counts->globals.numunknown -= 1;
+                continue;
+            }
+            unbound.total += 1;
+            unbound.globals.total += 1;
+            unbound.globals.numunknown += 1;
+            if (globalsns != NULL && PyDict_Contains(globalsns, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
                 }
-                if (builtinsns != NULL && PyDict_Contains(builtinsns, name)) {
-                    if (_PyErr_Occurred(tstate)) {
-                        return -1;
-                    }
-                    counts->globals.numbuiltin += 1;
-                    counts->globals.numunknown -= 1;
+                unbound.globals.numglobal += 1;
+                unbound.globals.numunknown -= 1;
+            }
+            if (builtinsns != NULL && PyDict_Contains(builtinsns, name)) {
+                if (_PyErr_Occurred(tstate)) {
+                    return -1;
                 }
+                unbound.globals.numbuiltin += 1;
+                unbound.globals.numunknown -= 1;
             }
             if (PySet_Add(globalnames, name) < 0) {
                 return -1;
             }
         }
+    }
+    if (counts != NULL) {
+        *counts = unbound;
     }
     return 0;
 }
