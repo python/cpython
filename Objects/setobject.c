@@ -62,6 +62,152 @@ static PyObject _dummy_struct;
 
 #define dummy (&_dummy_struct)
 
+#define SET_LOOKKEY_FOUND 1
+#define SET_LOOKKEY_NO_MATCH 0
+#define SET_LOOKKEY_ERROR (-1)
+#define SET_LOOKKEY_CHANGED (-2)
+#define SET_LOOKKEY_EMPTY (-3)
+
+#ifdef Py_GIL_DISABLED
+
+#define LOAD_HASH(entry) _Py_atomic_load_ssize_acquire(&(entry)->hash)
+#define STORE_HASH(entry, v) _Py_atomic_store_ssize_release(&(entry)->hash, v)
+
+#define LOAD_KEY(entry) _Py_atomic_load_ptr_acquire(&(entry)->key)
+#define STORE_KEY(entry, v) _Py_atomic_store_ptr_release(&(entry)->key, v)
+
+#define LOAD_TABLE(so) _Py_atomic_load_ptr_acquire(&(so)->table)
+#define STORE_TABLE(so, v) _Py_atomic_store_ptr_release(&(so)->table, v)
+
+#define LOAD_MASK(so) _Py_atomic_load_ssize_acquire(&(so)->mask)
+#define STORE_MASK(so, v) _Py_atomic_store_ssize_release(&(so)->mask, v)
+
+#define LOAD_USED(so) _Py_atomic_load_ssize_acquire(&(so)->used)
+#define STORE_USED(so, v) _Py_atomic_store_ssize_release(&(so)->used, v)
+
+#define LOAD_SIZE(so) _Py_atomic_load_ssize_acquire(&(so)->size)
+#define STORE_SIZE(so, v) _Py_atomic_store_ssize_release(&(so)->size, v)
+
+#define IS_SHARED(so) _PyObject_GC_IS_SHARED(so)
+#define SET_SHARED(so) _PyObject_GC_SET_SHARED(so)
+
+static void
+ensure_shared_on_read(PySetObject *so)
+{
+    if (!_Py_IsOwnedByCurrentThread((PyObject *)so) && !IS_SHARED(so)) {
+        // The first time we access a set from a non-owning thread we mark it
+        // as shared. This ensures that a concurrent resize operation will
+        // delay freeing the old entries using QSBR, which is necessary
+        // to safely allow concurrent reads without locking...
+        Py_BEGIN_CRITICAL_SECTION(so);
+        if (!IS_SHARED(so)) {
+            SET_SHARED(so);
+        }
+        Py_END_CRITICAL_SECTION();
+    }
+}
+
+static inline Py_ALWAYS_INLINE int
+set_compare_threadsafe(PySetObject *so, setentry *table, setentry *ep,
+                       PyObject *key, Py_hash_t hash)
+{
+    PyObject *startkey = LOAD_KEY(ep);
+    if (startkey == NULL) {
+        return SET_LOOKKEY_EMPTY;
+    }
+    if (startkey == key) {
+        return SET_LOOKKEY_FOUND;
+    }
+    Py_ssize_t ep_hash = LOAD_HASH(ep);
+    if (ep_hash == hash) {
+        if (startkey == NULL || !_Py_TryIncrefCompare(&ep->key, startkey)) {
+            return SET_LOOKKEY_CHANGED;
+        }
+        int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+        Py_DECREF(startkey);
+        if (cmp < 0) {
+            return SET_LOOKKEY_ERROR;
+        }
+        if (table == LOAD_TABLE(so) &&
+            startkey == LOAD_KEY(ep)) {
+            assert(cmp == SET_LOOKKEY_FOUND || cmp == SET_LOOKKEY_NO_MATCH);
+            return cmp;
+        }
+        else {
+            /* The set was mutated, restart */
+            return SET_LOOKKEY_CHANGED;
+        }
+    }
+    return SET_LOOKKEY_NO_MATCH;
+}
+
+#else
+
+#define LOAD_HASH(entry) ((entry)->hash)
+#define STORE_HASH(entry, v) ((entry)->hash = v)
+
+#define LOAD_KEY(entry) ((entry)->key)
+#define STORE_KEY(entry, v) ((entry)->key = v)
+
+#define LOAD_TABLE(so) ((so)->table)
+#define STORE_TABLE(so, v) ((so)->table = v)
+
+#define LOAD_MASK(so) ((so)->mask)
+#define STORE_MASK(so, v) ((so)->mask = v)
+
+#define LOAD_USED(so) ((so)->used)
+#define STORE_USED(so, v) ((so)->used = v)
+
+#define LOAD_SIZE(so) ((so)->size)
+#define STORE_SIZE(so, v) ((so)->size = v)
+
+#define IS_SHARED(so) 0
+#define SET_SHARED(so)
+
+#endif
+
+static inline Py_ALWAYS_INLINE int
+set_compare_entry(PySetObject *so, setentry *table, setentry *entry,
+                  PyObject *key, Py_hash_t hash)
+{
+    if (entry->hash == 0 && entry->key == NULL)
+        return SET_LOOKKEY_EMPTY;
+    if (entry->hash == hash) {
+        PyObject *startkey = entry->key;
+        assert(startkey != dummy);
+        if (startkey == key)
+            return SET_LOOKKEY_FOUND;
+        if (PyUnicode_CheckExact(startkey)
+            && PyUnicode_CheckExact(key)
+            && unicode_eq(startkey, key))
+            return SET_LOOKKEY_FOUND;
+        table = so->table;
+        Py_INCREF(startkey);
+        int cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+        Py_DECREF(startkey);
+        if (cmp < 0)
+            return SET_LOOKKEY_ERROR;
+        if (table != so->table || entry->key != startkey)
+            return SET_LOOKKEY_CHANGED;
+        if (cmp > 0)
+            return SET_LOOKKEY_FOUND;
+    }
+    return SET_LOOKKEY_NO_MATCH;
+}
+
+static void
+set_zero_table(setentry *table, size_t size)
+{
+#ifdef Py_GIL_DISABLED
+    for (size_t i = 0; i < size; i++) {
+        setentry *entry = &table[i];
+        STORE_HASH(entry, 0);
+        STORE_KEY(entry, NULL);
+    }
+#else
+    memset(table, 0, sizeof(setentry)*size);
+#endif
+}
 
 /* ======================================================================== */
 /* ======= Begin logic for probing the hash table ========================= */
@@ -74,49 +220,36 @@ static PyObject _dummy_struct;
 /* This must be >= 1 */
 #define PERTURB_SHIFT 5
 
-static setentry *
-set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
+static int
+set_do_lookup(PySetObject *so, setentry *table, size_t mask, PyObject *key,
+              Py_hash_t hash, setentry **epp,
+              int (*compare_entry)(PySetObject *so, setentry *table, setentry *ep,
+                                   PyObject *key, Py_hash_t hash))
 {
-    setentry *table;
     setentry *entry;
     size_t perturb = hash;
-    size_t mask = so->mask;
     size_t i = (size_t)hash & mask; /* Unsigned for defined overflow behavior */
     int probes;
-    int cmp;
+    int status;
 
     while (1) {
-        entry = &so->table[i];
+        entry = &table[i];
         probes = (i + LINEAR_PROBES <= mask) ? LINEAR_PROBES: 0;
         do {
-            if (entry->hash == 0 && entry->key == NULL)
-                return entry;
-            if (entry->hash == hash) {
-                PyObject *startkey = entry->key;
-                assert(startkey != dummy);
-                if (startkey == key)
-                    return entry;
-                if (PyUnicode_CheckExact(startkey)
-                    && PyUnicode_CheckExact(key)
-                    && unicode_eq(startkey, key))
-                    return entry;
-                table = so->table;
-                Py_INCREF(startkey);
-                cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
-                Py_DECREF(startkey);
-                if (cmp < 0)
-                    return NULL;
-                if (table != so->table || entry->key != startkey)
-                    return set_lookkey(so, key, hash);
-                if (cmp > 0)
-                    return entry;
-                mask = so->mask;
+            status = compare_entry(so, table, entry, key, hash);
+            if (status != SET_LOOKKEY_NO_MATCH) {
+                if (status == SET_LOOKKEY_EMPTY) {
+                    return SET_LOOKKEY_NO_MATCH;
+                }
+                *epp = entry;
+                return status;
             }
             entry++;
         } while (probes--);
         perturb >>= PERTURB_SHIFT;
         i = (i * 5 + 1 + perturb) & mask;
     }
+    Py_UNREACHABLE();
 }
 
 static int set_table_resize(PySetObject *, Py_ssize_t);
@@ -180,16 +313,16 @@ set_add_entry_takeref(PySetObject *so, PyObject *key, Py_hash_t hash)
   found_unused_or_dummy:
     if (freeslot == NULL)
         goto found_unused;
-    FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used + 1);
-    freeslot->key = key;
-    freeslot->hash = hash;
+    STORE_USED(so, so->used + 1);
+    STORE_KEY(freeslot, key);
+    STORE_HASH(freeslot, hash);
     return 0;
 
   found_unused:
     so->fill++;
-    FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used + 1);
-    entry->key = key;
-    entry->hash = hash;
+    STORE_USED(so, so->used + 1);
+    STORE_KEY(entry, key);
+    STORE_HASH(entry, hash);
     if ((size_t)so->fill*5 < mask*3)
         return 0;
     return set_table_resize(so, so->used>50000 ? so->used*2 : so->used*4);
@@ -272,12 +405,61 @@ set_insert_clean(setentry *table, size_t mask, PyObject *key, Py_hash_t hash)
         i = (i * 5 + 1 + perturb) & mask;
     }
   found_null:
-    entry->key = key;
-    entry->hash = hash;
+    STORE_KEY(entry, key);
+    STORE_HASH(entry, hash);
 }
 
 /* ======== End logic for probing the hash table ========================== */
 /* ======================================================================== */
+
+static int
+set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash, setentry **epp)
+{
+    int status;
+    Py_BEGIN_CRITICAL_SECTION(so);
+    do {
+        status = set_do_lookup(so, so->table, so->mask, key, hash, epp, set_compare_entry);
+    } while (status == SET_LOOKKEY_CHANGED);
+    Py_END_CRITICAL_SECTION();
+    assert(status == SET_LOOKKEY_FOUND ||
+           status == SET_LOOKKEY_NO_MATCH ||
+           status == SET_LOOKKEY_ERROR);
+    return status;
+}
+
+#ifdef Py_GIL_DISABLED
+static int
+set_lookkey_threadsafe(PySetObject *so, PyObject *key, Py_hash_t hash)
+{
+    int status;
+    setentry *entry;
+    ensure_shared_on_read(so);
+    setentry *table = LOAD_TABLE(so);
+    size_t mask = LOAD_MASK(so);
+    if (table == NULL || table != LOAD_TABLE(so)) {
+        return set_lookkey(so, key, hash, &entry);
+    }
+    status = set_do_lookup(so, table, mask, key, hash, &entry, set_compare_threadsafe);
+    if (status == SET_LOOKKEY_CHANGED) {
+        return set_lookkey(so, key, hash, &entry);
+    }
+    assert(status == SET_LOOKKEY_FOUND ||
+           status == SET_LOOKKEY_NO_MATCH ||
+           status == SET_LOOKKEY_ERROR);
+    return status;
+}
+#endif
+
+static void free_entries(setentry *entries, bool use_qsbr)
+{
+#ifdef Py_GIL_DISABLED
+    if (use_qsbr) {
+        _PyMem_FreeDelayed(entries);
+        return;
+    }
+#endif
+    PyMem_Free(entries);
+}
 
 /*
 Restructure the table by allocating a new table and reinserting all
@@ -336,9 +518,9 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
 
     /* Make the set empty, using the new table. */
     assert(newtable != oldtable);
-    memset(newtable, 0, sizeof(setentry) * newsize);
-    so->mask = newsize - 1;
-    so->table = newtable;
+    set_zero_table(newtable, newsize);
+    STORE_TABLE(so, NULL);
+    STORE_MASK(so, newsize - 1);
 
     /* Copy the data over; this is refcount-neutral for active entries;
        dummy entries aren't copied over, of course */
@@ -358,20 +540,22 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
         }
     }
 
+    STORE_TABLE(so, newtable);
+
     if (is_oldtable_malloced)
-        PyMem_Free(oldtable);
+        free_entries(oldtable, IS_SHARED(so));
     return 0;
 }
 
 static int
 set_contains_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
-    setentry *entry;
-
-    entry = set_lookkey(so, key, hash);
-    if (entry != NULL)
-        return entry->key != NULL;
-    return -1;
+#ifdef Py_GIL_DISABLED
+    return set_lookkey_threadsafe(so, key, hash);
+#else
+    setentry *entry; // unused
+    return set_lookkey(so, key, hash, &entry);
+#endif
 }
 
 #define DISCARD_NOTFOUND 0
@@ -382,16 +566,18 @@ set_discard_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
     setentry *entry;
     PyObject *old_key;
-
-    entry = set_lookkey(so, key, hash);
-    if (entry == NULL)
+    int status = set_lookkey(so, key, hash, &entry);
+    if (status < 0) {
         return -1;
-    if (entry->key == NULL)
+    }
+    if (status == SET_LOOKKEY_NO_MATCH) {
         return DISCARD_NOTFOUND;
+    }
+    assert(status == SET_LOOKKEY_FOUND);
     old_key = entry->key;
-    entry->key = dummy;
-    entry->hash = -1;
-    FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used - 1);
+    STORE_KEY(entry, dummy);
+    STORE_HASH(entry, -1);
+    STORE_USED(so, so->used - 1);
     Py_DECREF(old_key);
     return DISCARD_FOUND;
 }
@@ -432,12 +618,13 @@ set_discard_key(PySetObject *so, PyObject *key)
 static void
 set_empty_to_minsize(PySetObject *so)
 {
-    memset(so->smalltable, 0, sizeof(so->smalltable));
+    STORE_TABLE(so, NULL);
+    set_zero_table(so->smalltable, PySet_MINSIZE);
     so->fill = 0;
-    FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, 0);
-    so->mask = PySet_MINSIZE - 1;
-    so->table = so->smalltable;
-    FT_ATOMIC_STORE_SSIZE_RELAXED(so->hash, -1);
+    STORE_USED(so, 0);
+    STORE_MASK(so, PySet_MINSIZE - 1);
+    STORE_HASH(so, -1);
+    STORE_TABLE(so, so->smalltable);
 }
 
 static int
@@ -486,7 +673,7 @@ set_clear_internal(PyObject *self)
     }
 
     if (table_is_malloced)
-        PyMem_Free(table);
+        free_entries(table, IS_SHARED(so));
     return 0;
 }
 
@@ -546,7 +733,7 @@ set_dealloc(PyObject *self)
         }
     }
     if (so->table != so->smalltable)
-        PyMem_Free(so->table);
+        free_entries(so->table, IS_SHARED(so));
     Py_TYPE(so)->tp_free(so);
 }
 
@@ -619,7 +806,7 @@ static Py_ssize_t
 set_len(PyObject *self)
 {
     PySetObject *so = _PySet_CAST(self);
-    return FT_ATOMIC_LOAD_SSIZE_RELAXED(so->used);
+    return LOAD_USED(so);
 }
 
 static int
@@ -657,12 +844,12 @@ set_merge_lock_held(PySetObject *so, PyObject *otherset)
             key = other_entry->key;
             if (key != NULL) {
                 assert(so_entry->key == NULL);
-                so_entry->key = Py_NewRef(key);
-                so_entry->hash = other_entry->hash;
+                STORE_KEY(so_entry, Py_NewRef(key));
+                STORE_HASH(so_entry, other_entry->hash);
             }
         }
         so->fill = other->fill;
-        FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, other->used);
+        STORE_USED(so, other->used);
         return 0;
     }
 
@@ -671,7 +858,7 @@ set_merge_lock_held(PySetObject *so, PyObject *otherset)
         setentry *newtable = so->table;
         size_t newmask = (size_t)so->mask;
         so->fill = other->used;
-        FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, other->used);
+        STORE_USED(so, other->used);
         for (i = other->mask + 1; i > 0 ; i--, other_entry++) {
             key = other_entry->key;
             if (key != NULL && key != dummy) {
@@ -723,9 +910,9 @@ set_pop_impl(PySetObject *so)
             entry = so->table;
     }
     key = entry->key;
-    entry->key = dummy;
-    entry->hash = -1;
-    FT_ATOMIC_STORE_SSIZE_RELAXED(so->used, so->used - 1);
+    STORE_KEY(entry, dummy);
+    STORE_HASH(entry, -1);
+    STORE_USED(so, so->used - 1);
     so->finger = entry - so->table + 1;   /* next place to start */
     return key;
 }
@@ -811,12 +998,12 @@ frozenset_hash(PyObject *self)
     PySetObject *so = _PySet_CAST(self);
     Py_uhash_t hash;
 
-    if (FT_ATOMIC_LOAD_SSIZE_RELAXED(so->hash) != -1) {
-        return FT_ATOMIC_LOAD_SSIZE_RELAXED(so->hash);
+    if (LOAD_HASH(so) != -1) {
+        return LOAD_HASH(so);
     }
 
     hash = frozenset_hash_impl(self);
-    FT_ATOMIC_STORE_SSIZE_RELAXED(so->hash, hash);
+    STORE_HASH(so, hash);
     return hash;
 }
 
@@ -898,7 +1085,7 @@ static PyObject *setiter_iternext(PyObject *self)
         return NULL;
     assert (PyAnySet_Check(so));
 
-    Py_ssize_t so_used = FT_ATOMIC_LOAD_SSIZE(so->used);
+    Py_ssize_t so_used = LOAD_USED(so);
     Py_ssize_t si_used = FT_ATOMIC_LOAD_SSIZE(si->si_used);
     if (si_used != so_used) {
         PyErr_SetString(PyExc_RuntimeError,
@@ -1239,21 +1426,28 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
     setentry tab[PySet_MINSIZE];
     Py_hash_t h;
 
+    setentry *a_table = a->table;
+    setentry *b_table = b->table;
+    STORE_TABLE(a, NULL);
+    STORE_TABLE(b, NULL);
+
     t = a->fill;     a->fill   = b->fill;        b->fill  = t;
     t = a->used;
-    FT_ATOMIC_STORE_SSIZE_RELAXED(a->used, b->used);
-    FT_ATOMIC_STORE_SSIZE_RELAXED(b->used, t);
-    t = a->mask;     a->mask   = b->mask;        b->mask  = t;
+    STORE_USED(a, b->used);
+    STORE_USED(b, t);
+    t = a->mask;
+    STORE_MASK(a, b->mask);
+    STORE_MASK(b, t);
 
-    u = a->table;
-    if (a->table == a->smalltable)
+    u = a_table;
+    if (a_table == a->smalltable)
         u = b->smalltable;
-    a->table  = b->table;
-    if (b->table == b->smalltable)
-        a->table = a->smalltable;
-    b->table = u;
+    a_table  = b_table;
+    if (b_table == b->smalltable)
+        a_table = a->smalltable;
+    b_table = u;
 
-    if (a->table == a->smalltable || b->table == b->smalltable) {
+    if (a_table == a->smalltable || b_table == b->smalltable) {
         memcpy(tab, a->smalltable, sizeof(tab));
         memcpy(a->smalltable, b->smalltable, sizeof(tab));
         memcpy(b->smalltable, tab, sizeof(tab));
@@ -1261,13 +1455,21 @@ set_swap_bodies(PySetObject *a, PySetObject *b)
 
     if (PyType_IsSubtype(Py_TYPE(a), &PyFrozenSet_Type)  &&
         PyType_IsSubtype(Py_TYPE(b), &PyFrozenSet_Type)) {
-        h = FT_ATOMIC_LOAD_SSIZE_RELAXED(a->hash);
-        FT_ATOMIC_STORE_SSIZE_RELAXED(a->hash, FT_ATOMIC_LOAD_SSIZE_RELAXED(b->hash));
-        FT_ATOMIC_STORE_SSIZE_RELAXED(b->hash, h);
+        h = LOAD_HASH(a);
+        STORE_HASH(a, LOAD_HASH(b));
+        STORE_HASH(b, h);
     } else {
-        FT_ATOMIC_STORE_SSIZE_RELAXED(a->hash, -1);
-        FT_ATOMIC_STORE_SSIZE_RELAXED(b->hash, -1);
+        STORE_HASH(a, -1);
+        STORE_HASH(b, -1);
     }
+    if (IS_SHARED(a)) {
+        SET_SHARED(b);
+    }
+    if (IS_SHARED(b)) {
+        SET_SHARED(a);
+    }
+    STORE_TABLE(a, a_table);
+    STORE_TABLE(b, b_table);
 }
 
 /*[clinic input]
@@ -2161,8 +2363,8 @@ set_richcompare(PyObject *self, PyObject *w, int op)
     case Py_EQ:
         if (PySet_GET_SIZE(v) != PySet_GET_SIZE(w))
             Py_RETURN_FALSE;
-        Py_hash_t v_hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(v->hash);
-        Py_hash_t w_hash = FT_ATOMIC_LOAD_SSIZE_RELAXED(((PySetObject *)w)->hash);
+        Py_hash_t v_hash = LOAD_HASH(v);
+        Py_hash_t w_hash = LOAD_HASH((PySetObject *)w);
         if (v_hash != -1 && w_hash != -1 && v_hash != w_hash)
             Py_RETURN_FALSE;
         return set_issubset((PyObject*)v, w);
@@ -2212,33 +2414,21 @@ set_add_impl(PySetObject *so, PyObject *key)
     Py_RETURN_NONE;
 }
 
-static int
-set_contains_lock_held(PySetObject *so, PyObject *key)
-{
-    int rv;
-
-    rv = set_contains_key(so, key);
-    if (rv < 0) {
-        if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
-            return -1;
-        PyErr_Clear();
-        Py_hash_t hash;
-        Py_BEGIN_CRITICAL_SECTION(key);
-        hash = frozenset_hash_impl(key);
-        Py_END_CRITICAL_SECTION();
-        rv = set_contains_entry(so, key, hash);
-    }
-    return rv;
-}
-
 int
 _PySet_Contains(PySetObject *so, PyObject *key)
 {
-    int rv;
-    Py_BEGIN_CRITICAL_SECTION(so);
-    rv = set_contains_lock_held(so, key);
-    Py_END_CRITICAL_SECTION();
-    return rv;
+    Py_hash_t hash = _PyObject_HashFast(key);
+    if (hash == -1) {
+        if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError)) {
+            return -1;
+        }
+        PyErr_Clear();
+        Py_BEGIN_CRITICAL_SECTION(key);
+        hash = frozenset_hash_impl(key);
+        Py_END_CRITICAL_SECTION();
+        return set_contains_entry(so, key, hash);
+    }
+    return set_contains_entry(so, key, hash);
 }
 
 static int
@@ -2249,7 +2439,6 @@ set_contains(PyObject *self, PyObject *key)
 }
 
 /*[clinic input]
-@critical_section
 @coexist
 set.__contains__
     so: setobject
@@ -2265,7 +2454,7 @@ set___contains___impl(PySetObject *so, PyObject *key)
 {
     long result;
 
-    result = set_contains_lock_held(so, key);
+    result = _PySet_Contains(so, key);
     if (result < 0)
         return NULL;
     return PyBool_FromLong(result);
