@@ -380,7 +380,6 @@ def SetPointerType(pointer, cls):
         raise RuntimeError("This type already exists in the cache")
 
     pointer.set_type(cls)
-    _pointer_type_cache[cls] = pointer
 
 def ARRAY(typ, len):
     return typ * len
