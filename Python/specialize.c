@@ -440,7 +440,9 @@ _Py_PrintSpecializationStats(int to_file)
 #define SPECIALIZATION_FAIL(opcode, kind) \
 do { \
     if (_Py_stats) { \
-        _Py_stats->opcode_stats[opcode].specialization.failure_kinds[kind]++; \
+        int _kind = (kind); \
+        assert(_kind < SPECIALIZATION_FAILURE_KINDS); \
+        _Py_stats->opcode_stats[opcode].specialization.failure_kinds[_kind]++; \
     } \
 } while (0)
 
