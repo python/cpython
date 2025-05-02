@@ -13,9 +13,9 @@ c_heapq = import_helper.import_fresh_module('heapq', fresh=['_heapq'])
 
 # _heapq.nlargest/nsmallest are saved in heapq._nlargest/_smallest when
 # _heapq is imported, so check them there
-func_names = ['heapify', 'heappop', 'heappush', 'heappushpop', 'heapreplace',
-              'heapify_max', 'heappop_max', 'heappush_max', 'heappushpop_max',
-              'heapreplace_max']
+func_names = ['heapify', 'heappop', 'heappush', 'heappushpop', 'heapreplace']
+# Add max-heap variants
+func_names += [func + '_max' for func in func_names]
 
 class TestModules(TestCase):
     def test_py_functions(self):
