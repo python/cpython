@@ -1,6 +1,6 @@
 extend = "../../.ruff.toml"  # Inherit the project-wide settings
 
-line-length = 88
+line-length = 88  # slightly longer than PEP 8, for readability
 
 [format]
 preview = true
