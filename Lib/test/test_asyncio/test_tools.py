@@ -1,7 +1,8 @@
 """Tests for the asyncio tools script."""
 
+import unittest
+
 from Lib.asyncio import tools
-from test.test_asyncio import utils as test_utils
 
 
 # mock output of get_all_awaited_by function.
@@ -209,48 +210,53 @@ TEST_INPUTS = [
         # test case containing two roots
         (
             (
-                1,
+                9,
                 [
-                    (2, "Task-1", []),
-                    (3, "timer", [[["awaiter"], 4]]),
-                    (4, "subtask1", [[["main"], 2]]),
+                    (5, "Task-5", []),
+                    (6, "Task-6", [[["main2"], 5]]),
+                    (7, "Task-7", [[["main2"], 5]]),
+                    (8, "Task-8", [[["main2"], 5]]),
                 ],
             ),
             (
-                5,
+                10,
                 [
-                    (6, "Task-1", []),
-                    (7, "sleeper", [[["awaiter2"], 8]]),
-                    (8, "subtask2", [[["main"], 6]]),
+                    (1, "Task-1", []),
+                    (2, "Task-2", [[["main"], 1]]),
+                    (3, "Task-3", [[["main"], 1]]),
+                    (4, "Task-4", [[["main"], 1]]),
                 ],
             ),
+            (11, []),
             (0, []),
         ),
         ([]),
         (
             [
                 [
-                    "└── (T) Task-1",
-                    "    └──  main",
-                    "        └── (T) subtask1",
-                    "            └──  awaiter",
-                    "                └── (T) timer",
+                    "└── (T) Task-5",
+                    "    └──  main2",
+                    "        ├── (T) Task-6",
+                    "        ├── (T) Task-7",
+                    "        └── (T) Task-8",
                 ],
                 [
                     "└── (T) Task-1",
                     "    └──  main",
-                    "        └── (T) subtask2",
-                    "            └──  awaiter2",
-                    "                └── (T) sleeper",
+                    "        ├── (T) Task-2",
+                    "        ├── (T) Task-3",
+                    "        └── (T) Task-4",
                 ],
             ]
         ),
         (
             [
-                [1, "0x3", "timer", "awaiter", "subtask1", "0x4"],
-                [1, "0x4", "subtask1", "main", "Task-1", "0x2"],
-                [5, "0x7", "sleeper", "awaiter2", "subtask2", "0x8"],
-                [5, "0x8", "subtask2", "main", "Task-1", "0x6"],
+                [9, "0x6", "Task-6", "main2", "Task-5", "0x5"],
+                [9, "0x7", "Task-7", "main2", "Task-5", "0x5"],
+                [9, "0x8", "Task-8", "main2", "Task-5", "0x5"],
+                [10, "0x2", "Task-2", "main", "Task-1", "0x1"],
+                [10, "0x3", "Task-3", "main", "Task-1", "0x1"],
+                [10, "0x4", "Task-4", "main", "Task-1", "0x1"],
             ]
         ),
     ],
@@ -366,7 +372,7 @@ TEST_INPUTS = [
 ]
 
 
-class TestAsyncioTools(test_utils.TestCase):
+class TestAsyncioTools(unittest.TestCase):
 
     def test_asyncio_utils(self):
         for input_, cycles, tree, table in TEST_INPUTS:
@@ -376,7 +382,5 @@ class TestAsyncioTools(test_utils.TestCase):
                 except tools.CycleFoundException as e:
                     self.assertEqual(e.cycles, cycles)
             else:
-                print(tools.print_async_tree(input_))
                 self.assertEqual(tools.print_async_tree(input_), tree)
-            print(tools.build_task_table(input_))
             self.assertEqual(tools.build_task_table(input_), table)

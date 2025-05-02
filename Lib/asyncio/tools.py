@@ -73,9 +73,9 @@ def _build_tree(id2name, awaits):
 
 
 def _roots(id2label, children):
-    roots = [n for n, lbl in id2label.items() if lbl == "Task-1"]
-    if roots:
-        return roots
+    # roots = [n for n, lbl in id2label.items() if lbl == "Task-1"]
+    # if roots:
+    #     return roots
     all_children = {c for kids in children.values() for c in kids}
     return [n for n in id2label if n not in all_children]
 
@@ -187,6 +187,7 @@ if __name__ == "__main__":
         print(f"Error retrieving tasks: {e}")
         sys.exit(1)
 
+    print(tasks)
     if args.tree:
         # Print the async call tree
         result = print_async_tree(tasks)
