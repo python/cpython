@@ -1877,6 +1877,22 @@ SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' ins
 Traceback (most recent call last):
 SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' instead of '='?
 
+>>> ft'abc'
+Traceback (most recent call last):
+SyntaxError: can't use 'f' and 't' string prefixes together
+
+>>> tf"{x=}"
+Traceback (most recent call last):
+SyntaxError: can't use 'f' and 't' string prefixes together
+
+>>> tb''
+Traceback (most recent call last):
+SyntaxError: can't use 'b' and 't' string prefixes together
+
+>>> bt"text"
+Traceback (most recent call last):
+SyntaxError: can't use 'b' and 't' string prefixes together
+
 >>> t'{x}' = 42
 Traceback (most recent call last):
 SyntaxError: cannot assign to t-string expression here. Maybe you meant '==' instead of '='?
@@ -1964,6 +1980,56 @@ SyntaxError: cannot assign to __debug__
 >>> from a import b as __debug__
 Traceback (most recent call last):
 SyntaxError: cannot assign to __debug__
+
+>>> import a as b.c
+Traceback (most recent call last):
+SyntaxError: cannot use attribute as import target
+
+>>> import a.b as (a, b)
+Traceback (most recent call last):
+SyntaxError: cannot use tuple as import target
+
+>>> import a, a.b as 1
+Traceback (most recent call last):
+SyntaxError: cannot use literal as import target
+
+>>> import a.b as 'a', a
+Traceback (most recent call last):
+SyntaxError: cannot use literal as import target
+
+>>> from a import (b as c.d)
+Traceback (most recent call last):
+SyntaxError: cannot use attribute as import target
+
+>>> from a import b as 1
+Traceback (most recent call last):
+SyntaxError: cannot use literal as import target
+
+>>> from a import (
+...   b as f())
+Traceback (most recent call last):
+SyntaxError: cannot use function call as import target
+
+>>> from a import (
+...   b as [],
+... )
+Traceback (most recent call last):
+SyntaxError: cannot use list as import target
+
+>>> from a import (
+...   b,
+...   c as ()
+... )
+Traceback (most recent call last):
+SyntaxError: cannot use tuple as import target
+
+>>> from a import b, с as d[e]
+Traceback (most recent call last):
+SyntaxError: cannot use subscript as import target
+
+>>> from a import с as d[e], b
+Traceback (most recent call last):
+SyntaxError: cannot use subscript as import target
 
 # Check that we dont raise the "trailing comma" error if there is more
 # input to the left of the valid part that we parsed.
