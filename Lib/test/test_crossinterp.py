@@ -758,9 +758,9 @@ class CodeTests(_GetXIDataTests):
         ])
 
 
-class ShareableScriptTests(_GetXIDataTests):
+class PureShareableScriptTests(_GetXIDataTests):
 
-    MODE = 'script'
+    MODE = 'script-pure'
 
     VALID_SCRIPTS = [
         '',
@@ -809,24 +809,34 @@ class ShareableScriptTests(_GetXIDataTests):
             *(s.encode('utf8') for s in self.INVALID_SCRIPTS),
         ])
 
-    def test_script_code(self):
+    def test_pure_script_code(self):
         self.assert_roundtrip_equal_not_identical([
-            *(f.__code__ for f in defs.SCRIPT_FUNCTIONS),
-            defs.script_with_globals.__code__,
+            *(f.__code__ for f in defs.PURE_SCRIPT_FUNCTIONS),
+        ])
+
+    def test_impure_script_code(self):
+        self.assert_not_shareable([
+            *(f.__code__ for f in defs.SCRIPT_FUNCTIONS
+              if f not in defs.PURE_SCRIPT_FUNCTIONS),
         ])
 
     def test_other_code(self):
         self.assert_not_shareable([
             *(f.__code__ for f in defs.FUNCTIONS
-              if f not in defs.SCRIPT_FUNCTIONS and
-                f is not defs.script_with_globals),
+              if f not in defs.SCRIPT_FUNCTIONS),
             *(f.__code__ for f in defs.FUNCTION_LIKE),
         ])
 
-    def test_script_function(self):
+    def test_pure_script_function(self):
         self.assert_roundtrip_not_equal([
-            *defs.SCRIPT_FUNCTIONS,
+            *defs.PURE_SCRIPT_FUNCTIONS,
         ], expecttype=types.CodeType)
+
+    def test_impure_script_function(self):
+        self.assert_not_shareable([
+            *(f for f in defs.SCRIPT_FUNCTIONS
+              if f not in defs.PURE_SCRIPT_FUNCTIONS),
+        ])
 
     def test_other_function(self):
         self.assert_not_shareable([
@@ -847,6 +857,23 @@ class ShareableScriptTests(_GetXIDataTests):
             {},
             object(),
         ])
+
+
+class ShareableScriptTests(PureShareableScriptTests):
+
+    MODE = 'script'
+
+    def test_impure_script_code(self):
+        self.assert_roundtrip_equal_not_identical([
+            *(f.__code__ for f in defs.SCRIPT_FUNCTIONS
+              if f not in defs.PURE_SCRIPT_FUNCTIONS),
+        ])
+
+    def test_impure_script_function(self):
+        self.assert_roundtrip_not_equal([
+            *(f for f in defs.SCRIPT_FUNCTIONS
+              if f not in defs.PURE_SCRIPT_FUNCTIONS),
+        ], expecttype=types.CodeType)
 
 
 class ShareableTypeTests(_GetXIDataTests):

@@ -789,10 +789,21 @@ _PyMarshal_GetXIData(PyThreadState *tstate, PyObject *obj, _PyXIData_t *xidata)
 /* script wrapper */
 
 static int
-verify_script(PyThreadState *tstate, PyCodeObject *co)
+verify_script(PyThreadState *tstate, PyCodeObject *co, int checked, int pure)
 {
-    assert(_PyCode_VerifyStateless(
-                tstate, co, NULL, NULL, _PyEval_GetBuiltins(tstate)) == 0);
+    // Make sure it isn't a closure and (optionally) doesn't use globals.
+    PyObject *builtins = NULL;
+    if (pure) {
+        builtins = _PyEval_GetBuiltins(tstate);
+        assert(builtins != NULL);
+    }
+    if (checked) {
+        assert(_PyCode_VerifyStateless(tstate, co, NULL, NULL, builtins) == 0);
+    }
+    else if (_PyCode_VerifyStateless(tstate, co, NULL, NULL, builtins) < 0) {
+        return -1;
+    }
+    // Make sure it doesn't have args.
     if (co->co_argcount > 0
         || co->co_posonlyargcount > 0
         || co->co_kwonlyargcount > 0
@@ -802,6 +813,7 @@ verify_script(PyThreadState *tstate, PyCodeObject *co)
                          "code with args not supported");
         return -1;
     }
+    // Make sure it doesn't return anything.
     if (!_PyCode_ReturnsOnlyNone(co)) {
         _PyErr_SetString(tstate, PyExc_ValueError,
                          "code that returns a value is not a script");
@@ -810,35 +822,26 @@ verify_script(PyThreadState *tstate, PyCodeObject *co)
     return 0;
 }
 
-int
-_PyCode_GetScriptXIData(PyThreadState *tstate,
-                        PyObject *obj, _PyXIData_t *xidata)
+static int
+get_script_xidata(PyThreadState *tstate, PyObject *obj, int pure,
+                  _PyXIData_t *xidata)
 {
     // Get the corresponding code object.
     PyObject *code = NULL;
+    int checked = 0;
     if (PyCode_Check(obj)) {
         code = obj;
         Py_INCREF(code);
-        PyObject *builtins = _PyEval_GetBuiltins(tstate);
-        assert(builtins != NULL);
-        if (_PyCode_VerifyStateless(
-                    tstate, (PyCodeObject *)code, NULL, NULL, builtins) < 0)
-        {
-            goto error;
-        }
-        if (verify_script(tstate, (PyCodeObject *)code) < 0) {
-            goto error;
-        }
     }
     else if (PyFunction_Check(obj)) {
         code = PyFunction_GET_CODE(obj);
         assert(code != NULL);
         Py_INCREF(code);
-        if (_PyFunction_VerifyStateless(tstate, obj) < 0) {
-            goto error;
-        }
-        if (verify_script(tstate, (PyCodeObject *)code) < 0) {
-            goto error;
+        if (pure) {
+            if (_PyFunction_VerifyStateless(tstate, obj) < 0) {
+                goto error;
+            }
+            checked = 1;
         }
     }
     else {
@@ -846,14 +849,14 @@ _PyCode_GetScriptXIData(PyThreadState *tstate,
         PyCompilerFlags cf = _PyCompilerFlags_INIT;
         cf.cf_flags = PyCF_SOURCE_IS_UTF8;
         PyObject *ref = NULL;
-        const char *script =
-                _Py_SourceAsString(obj, "???", "???", &cf, &ref);
+        const char *script = _Py_SourceAsString(obj, "???", "???", &cf, &ref);
         if (script == NULL) {
             if (!PyBytes_Check(obj) && !PyUnicode_Check(obj)
                 && !PyByteArray_Check(obj) && !PyObject_CheckBuffer(obj))
             {
                 // We discard the raised exception.
-                _PyErr_Format(tstate, PyExc_TypeError, "unsupported script %R", obj);
+                _PyErr_Format(tstate, PyExc_TypeError,
+                              "unsupported script %R", obj);
             }
             goto error;
         }
@@ -862,6 +865,15 @@ _PyCode_GetScriptXIData(PyThreadState *tstate,
         if (code == NULL) {
             goto error;
         }
+        if (!pure) {
+            // It can't be a closure.
+            checked = 1;
+        }
+    }
+
+    // Make sure it's actually a script.
+    if (verify_script(tstate, (PyCodeObject *)code, checked, pure) < 0) {
+        goto error;
     }
 
     // Convert the code object.
@@ -880,6 +892,20 @@ error:
                 tstate, NULL, "object not a valid script", cause);
     Py_DECREF(cause);
     return -1;
+}
+
+int
+_PyCode_GetScriptXIData(PyThreadState *tstate,
+                        PyObject *obj, _PyXIData_t *xidata)
+{
+    return get_script_xidata(tstate, obj, 0, xidata);
+}
+
+int
+_PyCode_GetPureScriptXIData(PyThreadState *tstate,
+                            PyObject *obj, _PyXIData_t *xidata)
+{
+    return get_script_xidata(tstate, obj, 1, xidata);
 }
 
 

@@ -242,7 +242,7 @@ STATELESS_CODE = [
     spam_full,
 ]
 
-SCRIPT_FUNCTIONS = [
+PURE_SCRIPT_FUNCTIONS = [
     simple_script,
     complex_script,
     script_with_explicit_empty_return,
@@ -250,6 +250,11 @@ SCRIPT_FUNCTIONS = [
     spam_with_builtins,
     spam_with_inner_not_closure,
     spam_with_inner_closure,
+]
+SCRIPT_FUNCTIONS = [
+    *PURE_SCRIPT_FUNCTIONS,
+    script_with_globals,
+    spam_with_globals_and_builtins,
 ]
 
 
