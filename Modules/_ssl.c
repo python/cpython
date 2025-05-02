@@ -2485,7 +2485,7 @@ _ssl__SSLSocket_uses_ktls_for_send_impl(PySSLSocket *self)
     // Also, it returns -1 for failure before OpenSSL 3.0.4.
     return Py_NewRef(uses == 1 ? Py_True : Py_False);
 #else
-    return Py_NewRef(Py_False);
+    Py_RETURN_FALSE;
 #endif
 }
 
@@ -2506,7 +2506,7 @@ _ssl__SSLSocket_uses_ktls_for_recv_impl(PySSLSocket *self)
     // Also, it returns -1 for failure before OpenSSL 3.0.4.
     return Py_NewRef(uses == 1 ? Py_True : Py_False);
 #else
-    return Py_NewRef(Py_False);
+    Py_RETURN_FALSE;
 #endif
 }
 
