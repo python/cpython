@@ -1554,7 +1554,7 @@ static PyMethodDef methods[] = {
 
 static struct PyModuleDef module = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_remotedebuggingmodule",
+    .m_name = "_remotedebugging",
     .m_size = -1,
     .m_methods = methods,
 };
