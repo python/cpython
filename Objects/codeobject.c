@@ -1734,10 +1734,10 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
         if (inst.op.code == LOAD_ATTR) {
             int oparg = GET_OPARG(co, i, inst.op.arg);
+// The next line might be the problem.
+continue;
             int index = LOAD_ATTR_NAME_INDEX(oparg);
             PyObject *name = GETITEM(co->co_names, index);
-// The previous 3 lines might be the problem.
-continue;
             if (PySet_Contains(attrnames, name)) {
                 if (_PyErr_Occurred(tstate)) {
                     return -1;
@@ -1752,10 +1752,10 @@ continue;
         }
         else if (inst.op.code == LOAD_GLOBAL) {
             int oparg = GET_OPARG(co, i, inst.op.arg);
+// The next line might be the problem.
+continue;
             int index = LOAD_ATTR_NAME_INDEX(oparg);
             PyObject *name = GETITEM(co->co_names, index);
-// The previous 3 lines might be the problem.
-continue;
             if (PySet_Contains(globalnames, name)) {
                 if (_PyErr_Occurred(tstate)) {
                     return -1;
@@ -1784,9 +1784,9 @@ continue;
             }
         }
     }
-    if (counts != NULL) {
-        *counts = unbound;
-    }
+//    if (counts != NULL) {
+//        *counts = unbound;
+//    }
     return 0;
 }
 
