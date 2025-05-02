@@ -286,7 +286,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_testcapi _testcapimodule.c
 #_testimportmultiple _testimportmultiple.c
 #_testmultiphase _testmultiphase.c
-#_remotedebuggingmodule _remotedebuggingmodule.c
+#_remotedebugging _remotedebuggingmodule.c
 #_testsinglephase _testsinglephase.c
 
 # ---
