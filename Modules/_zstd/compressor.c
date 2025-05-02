@@ -299,7 +299,7 @@ static PyObject *
 _zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwargs))
 {
     ZstdCompressor *self;
-    self = (ZstdCompressor*)type->tp_alloc(type, 0);
+    self = PyObject_GC_New(ZstdCompressor, type);
     if (self == NULL) {
         goto error;
     }
@@ -322,7 +322,7 @@ _zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject
     return (PyObject*)self;
 
 error:
-    Py_XDECREF(self);
+    PyObject_GC_UnTrack(self);
     return NULL;
 }
 
@@ -330,14 +330,17 @@ static void
 ZstdCompressor_dealloc(PyObject *ob)
 {
     ZstdCompressor *self = ZstdCompressor_CAST(ob);
+
+    PyObject_GC_UnTrack(self);
+
     /* Free compression context */
     ZSTD_freeCCtx(self->cctx);
 
     /* Py_XDECREF the dict after free the compression context */
-    Py_XDECREF(self->dict);
+    Py_CLEAR(self->dict);
 
     PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free((PyObject*)self);
+    PyObject_GC_Del(ob);
     Py_DECREF(tp);
 }
 
@@ -398,6 +401,8 @@ _zstd_ZstdCompressor___init___impl(ZstdCompressor *self, PyObject *level,
         self->dict = zstd_dict;
     }
 
+    // We can only start tracking self with the GC once self->dict is set.
+    PyObject_GC_Track(self);
     return 0;
 }
 
@@ -660,6 +665,22 @@ static PyMemberDef ZstdCompressor_members[] = {
     {0}
 };
 
+static int
+ZstdCompressor_traverse(PyObject *ob, visitproc visit, void *arg)
+{
+    ZstdCompressor *self = ZstdCompressor_CAST(ob);
+    Py_VISIT(self->dict);
+    return 0;
+}
+
+static int
+ZstdCompressor_clear(PyObject *ob)
+{
+    ZstdCompressor *self = ZstdCompressor_CAST(ob);
+    Py_CLEAR(self->dict);
+    return 0;
+}
+
 static PyType_Slot zstdcompressor_slots[] = {
     {Py_tp_new, _zstd_ZstdCompressor_new},
     {Py_tp_dealloc, ZstdCompressor_dealloc},
@@ -667,12 +688,14 @@ static PyType_Slot zstdcompressor_slots[] = {
     {Py_tp_methods, ZstdCompressor_methods},
     {Py_tp_members, ZstdCompressor_members},
     {Py_tp_doc, (char*)_zstd_ZstdCompressor___init____doc__},
+    {Py_tp_traverse,  ZstdCompressor_traverse},
+    {Py_tp_clear, ZstdCompressor_clear},
     {0}
 };
 
 PyType_Spec zstdcompressor_type_spec = {
     .name = "_zstd.ZstdCompressor",
     .basicsize = sizeof(ZstdCompressor),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = zstdcompressor_slots,
 };
