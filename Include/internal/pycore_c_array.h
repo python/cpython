@@ -14,7 +14,7 @@ extern "C" {
 
 typedef struct {
     void *array;              /* pointer to the array */
-    int allocated_entries;    /* the capacity of the array */
+    int allocated_entries;    /* pointer to the capacity of the array */
     size_t item_size;         /* size of each element */
     int initial_num_entries;  /* initial allocation size */
 } _Py_c_array_t;

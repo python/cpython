@@ -850,6 +850,10 @@ array_richcompare(PyObject *v, PyObject *w, int op)
     return res;
 }
 
+static int
+array_binop_specialize(PyObject *v, PyObject *w, int oparg,
+                       _PyBinaryOpSpecializationDescr **descr);
+
 static Py_ssize_t
 array_length(PyObject *op)
 {
@@ -2966,6 +2970,7 @@ static PyType_Slot array_slots[] = {
     {Py_tp_new, array_new},
     {Py_tp_traverse, array_tp_traverse},
     {Py_tp_token, Py_TP_USE_SPEC},
+    {Py_tp_binop_specialize, array_binop_specialize},
 
     /* as sequence */
     {Py_sq_length, array_length},
@@ -2997,6 +3002,61 @@ static PyType_Spec array_spec = {
               Py_TPFLAGS_SEQUENCE),
     .slots = array_slots,
 };
+
+static inline int
+array_subscr_guard(PyObject *lhs, PyObject *rhs)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    int ret = PyType_GetBaseByToken(Py_TYPE(lhs), &array_spec, NULL);
+    if (ret < 0) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+            PyErr_Clear();
+            ret = 0;
+        }
+    }
+    _PyErr_ChainExceptions1(exc);
+    return ret;
+}
+
+static PyObject *
+array_subscr_action(PyObject *lhs, PyObject *rhs)
+{
+    return array_subscr(lhs, rhs);
+}
+
+static int
+array_binop_specialize(PyObject *v, PyObject *w, int oparg,
+                       _PyBinaryOpSpecializationDescr **descr)
+{
+    array_state *state = find_array_state_by_type(Py_TYPE(v));
+
+    if (!array_Check(v, state)) {
+        return 0;
+    }
+
+    *descr = NULL;
+    switch(oparg) {
+        case NB_SUBSCR:
+            if (array_subscr_guard(v, w)) {
+                *descr = (_PyBinaryOpSpecializationDescr*)PyMem_Malloc(
+                             sizeof(_PyBinaryOpSpecializationDescr));
+                if (*descr == NULL) {
+                    PyErr_NoMemory();
+                    return -1;
+                }
+                **descr = (_PyBinaryOpSpecializationDescr) {
+                    .oparg = oparg,
+                    .guard = array_subscr_guard,
+                    .action = array_subscr_action,
+                };
+                return 1;
+            }
+            break;
+    }
+
+    return 0;
+}
+
 
 /*********************** Array Iterator **************************/
 
@@ -3204,41 +3264,6 @@ do {                                                     \
     state->str_ ## string = tmp;                         \
 } while (0)
 
-static inline int
-array_subscr_guard(PyObject *lhs, PyObject *rhs)
-{
-    PyObject *exc = PyErr_GetRaisedException();
-    int ret = PyType_GetBaseByToken(Py_TYPE(lhs), &array_spec, NULL);
-    if (ret < 0) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-            PyErr_Clear();
-            ret = 0;
-        }
-    }
-    _PyErr_ChainExceptions1(exc);
-    return ret;
-}
-
-static PyObject *
-array_subscr_action(PyObject *lhs, PyObject *rhs)
-{
-    return array_subscr(lhs, rhs);
-}
-
-static int
-array_register_specializations(void)
-{
-    _PyBinaryOpSpecializationDescr descr = {
-        .oparg = NB_SUBSCR,
-        .guard = array_subscr_guard,
-        .action = array_subscr_action,
-    };
-    if (_Py_Specialize_AddBinaryOpExtention(&descr) < 0) {
-        return -1;
-    }
-    return 0;
-}
-
 static int
 array_modexec(PyObject *m)
 {
@@ -3277,10 +3302,6 @@ array_modexec(PyObject *m)
         return -1;
     }
     Py_DECREF(res);
-
-    if (array_register_specializations() < 0) {
-        return -1;
-    }
 
     if (PyModule_AddType(m, state->ArrayType) < 0) {
         return -1;

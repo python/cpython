@@ -801,7 +801,8 @@ dummy_func(
             PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
             _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
             assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
-            assert(d && d->guard);
+            assert(d);
+            assert(d->guard);
             int res = d->guard(left_o, right_o);
             ERROR_IF(res < 0, error);
             DEOPT_IF(res == 0);

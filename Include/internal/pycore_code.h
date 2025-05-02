@@ -485,13 +485,11 @@ adaptive_counter_backoff(_Py_BackoffCounter counter) {
 typedef int (*binaryopguardfunc)(PyObject *lhs, PyObject *rhs);
 typedef PyObject *(*binaryopactionfunc)(PyObject *lhs, PyObject *rhs);
 
-typedef struct {
+typedef struct _PyBinopSpecializationDescr {
     int oparg;
     binaryopguardfunc guard;
     binaryopactionfunc action;
 } _PyBinaryOpSpecializationDescr;
-
-PyAPI_DATA(int) _Py_Specialize_AddBinaryOpExtention(_PyBinaryOpSpecializationDescr* descr);
 
 /* Comparison bit masks. */
 

@@ -2556,32 +2556,14 @@ static _PyBinaryOpSpecializationDescr binaryop_extend_builtins[] = {
     {NB_MULTIPLY, compactlong_float_guard, compactlong_float_multiply},
 };
 
-int
-_Py_Specialize_AddBinaryOpExtention(_PyBinaryOpSpecializationDescr* descr)
-{
-    PyThreadState *tstate = PyThreadState_Get();
-    _Py_c_array_t *extensions = &tstate->interp->binop_specializer_extentions;
-    Py_ssize_t idx = tstate->interp->num_binop_specializer_extentions;
-    if (idx == 0) {
-        _Py_CArray_Init(extensions, sizeof(_PyBinaryOpSpecializationDescr), 10);
-    }
-    if (_Py_CArray_EnsureCapacity(extensions, idx) < 0) {
-        return -1;
-    }
-    _PyBinaryOpSpecializationDescr* descrs = (_PyBinaryOpSpecializationDescr*)extensions->array;
-    descrs[idx] = *descr;
-    tstate->interp->num_binop_specializer_extentions++;
-    return 0;
-}
-
 static int
-binary_op_extended_specialization_from_list(
-        _PyBinaryOpSpecializationDescr *descrs, size_t size,
-        PyObject *lhs, PyObject *rhs, int oparg,
-        _PyBinaryOpSpecializationDescr **descr)
+binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
+                                  _PyBinaryOpSpecializationDescr **descr)
 {
+    typedef _PyBinaryOpSpecializationDescr descr_type;
+    size_t size = sizeof(binaryop_extend_builtins)/sizeof(descr_type);
     for (size_t i = 0; i < size; i++) {
-        _PyBinaryOpSpecializationDescr *d = &descrs[i];
+        descr_type *d = &binaryop_extend_builtins[i];
         assert(d != NULL);
         assert(d->guard != NULL);
         if (d->oparg == oparg && d->guard(lhs, rhs)) {
@@ -2589,30 +2571,14 @@ binary_op_extended_specialization_from_list(
             return 1;
         }
     }
-    return 0;
-}
 
-static int
-binary_op_extended_specialization(PyObject *lhs, PyObject *rhs, int oparg,
-                                  _PyBinaryOpSpecializationDescr **descr)
-{
-    typedef _PyBinaryOpSpecializationDescr descr_type;
-    if (binary_op_extended_specialization_from_list(
-            binaryop_extend_builtins,
-            sizeof(binaryop_extend_builtins)/sizeof(descr_type),
-            lhs, rhs, oparg, descr))
-    {
-        return 1;
-    }
+    if (Py_TYPE(lhs)->tp_binop_specialize != NULL) {
+        int ret = Py_TYPE(lhs)->tp_binop_specialize(lhs, rhs, oparg, descr);
+        if (ret < 0) {
+            return -1;
+        }
 
-    PyThreadState *tstate = PyThreadState_Get();
-    _Py_c_array_t *extensions = &tstate->interp->binop_specializer_extentions;
-    if (binary_op_extended_specialization_from_list(
-            (descr_type*)extensions->array,
-            tstate->interp->num_binop_specializer_extentions,
-            lhs, rhs, oparg, descr))
-    {
-        return 1;
+        return ret;
     }
     return 0;
 }

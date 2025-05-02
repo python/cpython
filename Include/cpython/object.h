@@ -143,6 +143,11 @@ typedef struct {
  * backwards-compatibility */
 typedef Py_ssize_t printfunc;
 
+/* Specialize a binary by setting the descriptor pointer */
+struct _PyBinopSpecializationDescr;
+typedef int(*binop_specialize_func)(PyObject *v, PyObject *w, int oparg,
+                                    struct _PyBinopSpecializationDescr **descr);
+
 // If this structure is modified, Doc/includes/typestruct.h should be updated
 // as well.
 struct _typeobject {
@@ -232,6 +237,9 @@ struct _typeobject {
 
     /* bitset of which type-watchers care about this type */
     unsigned char tp_watched;
+
+    /* callback that may specialize BINARY_OP */
+    binop_specialize_func tp_binop_specialize;
 
     /* Number of tp_version_tag values used.
      * Set to _Py_ATTR_CACHE_UNUSED if the attribute cache is

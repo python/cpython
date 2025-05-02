@@ -283,7 +283,8 @@
                 PyObject *right_o = PyStackRef_AsPyObjectBorrow(right);
                 _PyBinaryOpSpecializationDescr *d = (_PyBinaryOpSpecializationDescr*)descr;
                 assert(INLINE_CACHE_ENTRIES_BINARY_OP == 5);
-                assert(d && d->guard);
+                assert(d);
+                assert(d->guard);
                 _PyFrame_SetStackPointer(frame, stack_pointer);
                 int res = d->guard(left_o, right_o);
                 stack_pointer = _PyFrame_GetStackPointer(frame);

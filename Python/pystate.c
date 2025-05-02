@@ -873,8 +873,6 @@ interpreter_clear(PyInterpreterState *interp, PyThreadState *tstate)
     interp->ceval.instrumentation_version = 0;
     tstate->eval_breaker = 0;
 
-    _Py_CArray_Fini(&interp->binop_specializer_extentions);
-
     for (int i = 0; i < _PY_MONITORING_UNGROUPED_EVENTS; i++) {
         interp->monitors.tools[i] = 0;
     }

@@ -8,7 +8,6 @@ extern "C" {
 #endif
 
 #include "pycore_ast_state.h"     // struct ast_state
-#include "pycore_c_array.h"       // _Py_c_array_t
 #include "pycore_llist.h"         // struct llist_node
 #include "pycore_opcode_utils.h"  // NUM_COMMON_CONSTANTS
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
@@ -951,10 +950,6 @@ struct _is {
     _Py_hashtable_t *closed_stackrefs_table;
 #  endif
 #endif
-
-    /* Specialization extensions */
-    Py_ssize_t num_binop_specializer_extentions;
-    _Py_c_array_t binop_specializer_extentions;
 
     /* the initial PyInterpreterState.threads.head */
     _PyThreadStateImpl _initial_thread;
