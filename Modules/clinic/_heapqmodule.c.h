@@ -175,6 +175,40 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_heapq_heappush_max__doc__,
+"heappush_max($module, heap, item, /)\n"
+"--\n"
+"\n"
+"Push item onto max heap, maintaining the heap invariant.");
+
+#define _HEAPQ_HEAPPUSH_MAX_METHODDEF    \
+    {"heappush_max", _PyCFunction_CAST(_heapq_heappush_max), METH_FASTCALL, _heapq_heappush_max__doc__},
+
+static PyObject *
+_heapq_heappush_max_impl(PyObject *module, PyObject *heap, PyObject *item);
+
+static PyObject *
+_heapq_heappush_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    PyObject *heap;
+    PyObject *item;
+
+    if (!_PyArg_CheckPositional("heappush_max", nargs, 2, 2)) {
+        goto exit;
+    }
+    if (!PyList_Check(args[0])) {
+        _PyArg_BadArgument("heappush_max", "argument 1", "list", args[0]);
+        goto exit;
+    }
+    heap = args[0];
+    item = args[1];
+    return_value = _heapq_heappush_max_impl(module, heap, item);
+
+exit:
+    return return_value;
+}
+
 PyDoc_STRVAR(_heapq_heappop_max__doc__,
 "heappop_max($module, heap, /)\n"
 "--\n"
@@ -303,4 +337,4 @@ _heapq_heappushpop_max(PyObject *module, PyObject *const *args, Py_ssize_t nargs
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0404176bef8091d2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f55d8595ce150c76 input=a9049054013a1b77]*/

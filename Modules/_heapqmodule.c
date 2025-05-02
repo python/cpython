@@ -480,6 +480,30 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
     return siftdown_max(heap, startpos, pos);
 }
 
+/*[clinic input]
+_heapq.heappush_max
+
+    heap: object(subclass_of='&PyList_Type')
+    item: object
+    /
+
+Push item onto max heap, maintaining the heap invariant.
+[clinic start generated code]*/
+
+static PyObject *
+_heapq_heappush_max_impl(PyObject *module, PyObject *heap, PyObject *item)
+/*[clinic end generated code: output=c869d5f9deb08277 input=4743d7db137b6e2b]*/
+{
+    if (PyList_Append(heap, item)) {
+        return NULL;
+    }
+
+    if (siftdown_max((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1)) {
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
 
 /*[clinic input]
 _heapq.heappop_max
@@ -585,10 +609,13 @@ static PyMethodDef heapq_methods[] = {
     _HEAPQ_HEAPPOP_METHODDEF
     _HEAPQ_HEAPREPLACE_METHODDEF
     _HEAPQ_HEAPIFY_METHODDEF
-    _HEAPQ_HEAPPOP_MAX_METHODDEF
-    _HEAPQ_HEAPIFY_MAX_METHODDEF
-    _HEAPQ_HEAPREPLACE_MAX_METHODDEF
+
+    _HEAPQ_HEAPPUSH_MAX_METHODDEF
     _HEAPQ_HEAPPUSHPOP_MAX_METHODDEF
+    _HEAPQ_HEAPPOP_MAX_METHODDEF
+    _HEAPQ_HEAPREPLACE_MAX_METHODDEF
+    _HEAPQ_HEAPIFY_MAX_METHODDEF
+
     {NULL, NULL}           /* sentinel */
 };
 

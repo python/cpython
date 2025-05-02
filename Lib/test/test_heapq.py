@@ -14,7 +14,8 @@ c_heapq = import_helper.import_fresh_module('heapq', fresh=['_heapq'])
 # _heapq.nlargest/nsmallest are saved in heapq._nlargest/_smallest when
 # _heapq is imported, so check them there
 func_names = ['heapify', 'heappop', 'heappush', 'heappushpop', 'heapreplace',
-              'heappop_max', 'heapreplace_max', 'heapify_max', 'heappushpop_max']
+              'heapify_max', 'heappop_max', 'heappush_max', 'heappushpop_max',
+              'heapreplace_max']
 
 class TestModules(TestCase):
     def test_py_functions(self):
@@ -24,7 +25,7 @@ class TestModules(TestCase):
     @skipUnless(c_heapq, 'requires _heapq')
     def test_c_functions(self):
         for fname in func_names:
-            self.assertEqual(getattr(c_heapq, fname).__module__, '_heapq')
+            self.assertEqual(getattr(c_heapq, fname).__module__, '_heapq', fname)
 
 
 def load_tests(loader, tests, ignore):
