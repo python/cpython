@@ -1,2 +1,0 @@
-:meth:`bytes.fromhex` and :meth:`bytearray.fromhex` now accepts ASCII
-:class:`bytes` and :term:`bytes-like objects <bytes-like object>`.

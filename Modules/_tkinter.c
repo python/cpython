@@ -32,6 +32,7 @@ Copyright (C) 1994 Steen Lumholt.
 
 #include "pycore_long.h"          // _PyLong_IsNegative()
 #include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
+#include "pycore_unicodeobject.h" // _PyUnicode_AsUTF8String
 
 #ifdef MS_WINDOWS
 #  include <windows.h>

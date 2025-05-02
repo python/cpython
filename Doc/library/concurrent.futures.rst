@@ -73,7 +73,7 @@ Executor Objects
       .. versionchanged:: 3.5
          Added the *chunksize* parameter.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.14
          Added the *buffersize* parameter.
 
    .. method:: shutdown(wait=True, *, cancel_futures=False)
@@ -298,7 +298,7 @@ the bytes over a shared :mod:`socket <socket>` or
 
    The optional *initializer* and *initargs* arguments have the same
    meaning as for :class:`!ThreadPoolExecutor`: the initializer is run
-   when each worker is created, though in this case it is run.in
+   when each worker is created, though in this case it is run in
    the worker's interpreter.  The executor serializes the *initializer*
    and *initargs* using :mod:`pickle` when sending them to the worker's
    interpreter.
@@ -431,7 +431,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       After calling this method the caller should no longer submit tasks to the
       executor.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
    .. method:: kill_workers()
 
@@ -443,7 +443,7 @@ to a :class:`ProcessPoolExecutor` will result in deadlock.
       After calling this method the caller should no longer submit tasks to the
       executor.
 
-      .. versionadded:: next
+      .. versionadded:: 3.14
 
 .. _processpoolexecutor-example:
 

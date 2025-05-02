@@ -1,2 +1,0 @@
-Add fast path for medium-size integers in :c:func:`PyLong_FromSsize_t`.
-Patch by Chris Eibl.

@@ -693,8 +693,7 @@ class TestInterpreterPrepareMain(TestBase):
 
     def test_not_shareable(self):
         interp = interpreters.create()
-        # XXX TypeError?
-        with self.assertRaises(ValueError):
+        with self.assertRaises(interpreters.NotShareableError):
             interp.prepare_main(spam={'spam': 'eggs', 'foo': 'bar'})
 
         # Make sure neither was actually bound.

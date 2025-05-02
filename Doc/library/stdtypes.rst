@@ -2456,6 +2456,146 @@ expression support in the :mod:`re` module).
       '-0042'
 
 
+.. index::
+   single: ! formatted string literal
+   single: formatted string literals
+   single: ! f-string
+   single: f-strings
+   single: fstring
+   single: interpolated string literal
+   single: string; formatted literal
+   single: string; interpolated literal
+   single: {} (curly brackets); in formatted string literal
+   single: ! (exclamation mark); in formatted string literal
+   single: : (colon); in formatted string literal
+   single: = (equals); for help in debugging using string literals
+
+Formatted String Literals (f-strings)
+-------------------------------------
+
+.. versionadded:: 3.6
+.. versionchanged:: 3.7
+   The :keyword:`await` and :keyword:`async for` can be used in expressions
+   within f-strings.
+.. versionchanged:: 3.8
+   Added the debugging operator (``=``)
+.. versionchanged:: 3.12
+   Many restrictions on expressions within f-strings have been removed.
+   Notably, nested strings, comments, and backslashes are now permitted.
+
+An :dfn:`f-string` (formally a :dfn:`formatted string literal`) is
+a string literal that is prefixed with ``f`` or ``F``.
+This type of string literal allows embedding arbitrary Python expressions
+within *replacement fields*, which are delimited by curly brackets (``{}``).
+These expressions are evaluated at runtime, similarly to :meth:`str.format`,
+and are converted into regular :class:`str` objects.
+For example:
+
+.. doctest::
+
+   >>> who = 'nobody'
+   >>> nationality = 'Spanish'
+   >>> f'{who.title()} expects the {nationality} Inquisition!'
+   'Nobody expects the Spanish Inquisition!'
+
+It is also possible to use a multi line f-string:
+
+.. doctest::
+
+   >>> f'''This is a string
+   ... on two lines'''
+   'This is a string\non two lines'
+
+A single opening curly bracket, ``'{'``, marks a *replacement field* that
+can contain any Python expression:
+
+.. doctest::
+
+   >>> nationality = 'Spanish'
+   >>> f'The {nationality} Inquisition!'
+   'The Spanish Inquisition!'
+
+To include a literal ``{`` or ``}``, use a double bracket:
+
+.. doctest::
+
+   >>> x = 42
+   >>> f'{{x}} is {x}'
+   '{x} is 42'
+
+Functions can also be used, and :ref:`format specifiers <formatstrings>`:
+
+.. doctest::
+
+   >>> from math import sqrt
+   >>> f'√2 \N{ALMOST EQUAL TO} {sqrt(2):.5f}'
+   '√2 ≈ 1.41421'
+
+Any non-string expression is converted using :func:`str`, by default:
+
+.. doctest::
+
+   >>> from fractions import Fraction
+   >>> f'{Fraction(1, 3)}'
+   '1/3'
+
+To use an explicit conversion, use the ``!`` (exclamation mark) operator,
+followed by any of the valid formats, which are:
+
+========== ==============
+Conversion  Meaning
+========== ==============
+``!a``      :func:`ascii`
+``!r``      :func:`repr`
+``!s``      :func:`str`
+========== ==============
+
+For example:
+
+.. doctest::
+
+   >>> from fractions import Fraction
+   >>> f'{Fraction(1, 3)!s}'
+   '1/3'
+   >>> f'{Fraction(1, 3)!r}'
+   'Fraction(1, 3)'
+   >>> question = '¿Dónde está el Presidente?'
+   >>> print(f'{question!a}')
+   '\xbfD\xf3nde est\xe1 el Presidente?'
+
+While debugging it may be helpful to see both the expression and its value,
+by using the equals sign (``=``) after the expression.
+This preserves spaces within the brackets, and can be used with a converter.
+By default, the debugging operator uses the :func:`repr` (``!r``) conversion.
+For example:
+
+.. doctest::
+
+   >>> from fractions import Fraction
+   >>> calculation = Fraction(1, 3)
+   >>> f'{calculation=}'
+   'calculation=Fraction(1, 3)'
+   >>> f'{calculation = }'
+   'calculation = Fraction(1, 3)'
+   >>> f'{calculation = !s}'
+   'calculation = 1/3'
+
+Once the output has been evaluated, it can be formatted using a
+:ref:`format specifier <formatstrings>` following a colon (``':'``).
+After the expression has been evaluated, and possibly converted to a string,
+the :meth:`!__format__` method of the result is called with the format specifier,
+or the empty string if no format specifier is given.
+The formatted result is then used as the final value for the replacement field.
+For example:
+
+.. doctest::
+
+   >>> from fractions import Fraction
+   >>> f'{Fraction(1, 7):.6f}'
+   '0.142857'
+   >>> f'{Fraction(1, 7):_^+10}'
+   '___+1/7___'
+
 
 .. _old-string-formatting:
 
@@ -2744,7 +2884,7 @@ data and are closely related to string objects in a variety of other ways.
          :meth:`bytes.fromhex` now skips all ASCII whitespace in the string,
          not just spaces.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.14
          :meth:`bytes.fromhex` now accepts ASCII :class:`bytes` and
          :term:`bytes-like objects <bytes-like object>` as input.
 
@@ -2833,7 +2973,7 @@ objects.
          :meth:`bytearray.fromhex` now skips all ASCII whitespace in the string,
          not just spaces.
 
-      .. versionchanged:: next
+      .. versionchanged:: 3.14
          :meth:`bytearray.fromhex` now accepts ASCII :class:`bytes` and
          :term:`bytes-like objects <bytes-like object>` as input.
 
@@ -4780,7 +4920,7 @@ can be used interchangeably to index the same dictionary entry.
       such as an empty list.  To get distinct values, use a :ref:`dict
       comprehension <dict>` instead.
 
-   .. method:: get(key, default=None)
+   .. method:: get(key, default=None, /)
 
       Return the value for *key* if *key* is in the dictionary, else *default*.
       If *default* is not given, it defaults to ``None``, so that this method
@@ -4822,7 +4962,7 @@ can be used interchangeably to index the same dictionary entry.
 
       .. versionadded:: 3.8
 
-   .. method:: setdefault(key, default=None)
+   .. method:: setdefault(key, default=None, /)
 
       If *key* is in the dictionary, return its value.  If not, insert *key*
       with a value of *default* and return *default*.  *default* defaults to
@@ -5244,6 +5384,8 @@ list is non-exhaustive.
 * :class:`set`
 * :class:`frozenset`
 * :class:`type`
+* :class:`asyncio.Future`
+* :class:`asyncio.Task`
 * :class:`collections.deque`
 * :class:`collections.defaultdict`
 * :class:`collections.OrderedDict`

@@ -1,1 +1,0 @@
-Fix issue with ``__contains__``, values, and pseudo-members for :class:`enum.Flag`.

@@ -1,1 +1,0 @@
-Supported completions for attributes of convenience variables in :mod:`pdb`.

@@ -1293,8 +1293,8 @@ fileio_get_mode(PyObject *op, void *closure)
 static PyObject *
 fileio_get_blksize(PyObject *op, void *closure)
 {
-    fileio *self = PyFileIO_CAST(op);
 #ifdef HAVE_STRUCT_STAT_ST_BLKSIZE
+    fileio *self = PyFileIO_CAST(op);
     if (self->stat_atopen != NULL && self->stat_atopen->st_blksize > 1) {
         return PyLong_FromLong(self->stat_atopen->st_blksize);
     }

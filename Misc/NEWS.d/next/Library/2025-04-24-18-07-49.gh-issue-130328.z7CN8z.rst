@@ -1,0 +1,1 @@
+Speedup pasting in ``PyREPL`` on Windows. Fix by Chris Eibl.

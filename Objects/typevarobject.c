@@ -1,7 +1,9 @@
 // TypeVar, TypeVarTuple, ParamSpec, and TypeAlias
 #include "Python.h"
+#include "pycore_interpframe.h"   // _PyInterpreterFrame
 #include "pycore_object.h"        // _PyObject_GC_TRACK/UNTRACK, PyAnnotateFormat
 #include "pycore_typevarobject.h"
+#include "pycore_unicodeobject.h" // _PyUnicode_EqualToASCIIString()
 #include "pycore_unionobject.h"   // _Py_union_type_or, _Py_union_from_tuple
 #include "structmember.h"
 
@@ -2254,15 +2256,17 @@ error:
 }
 
 static PyObject *
-generic_init_subclass(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
+generic_init_subclass(PyObject *cls, PyObject *args, PyObject *kwargs)
 {
-    return call_typing_args_kwargs("_generic_init_subclass", cls, args, kwargs);
+    return call_typing_args_kwargs("_generic_init_subclass",
+                                   (PyTypeObject*)cls, args, kwargs);
 }
 
 static PyObject *
-generic_class_getitem(PyTypeObject *cls, PyObject *args, PyObject *kwargs)
+generic_class_getitem(PyObject *cls, PyObject *args, PyObject *kwargs)
 {
-    return call_typing_args_kwargs("_generic_class_getitem", cls, args, kwargs);
+    return call_typing_args_kwargs("_generic_class_getitem",
+                                   (PyTypeObject*)cls, args, kwargs);
 }
 
 PyObject *

@@ -1,2 +1,0 @@
-The behavior of ``PyConfig.use_system_logger`` was modified to be enabled by
-default on iOS. It remains disabled by default on macOS.

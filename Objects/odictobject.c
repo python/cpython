@@ -471,6 +471,7 @@ later:
 #include "pycore_dict.h"             // _Py_dict_lookup()
 #include "pycore_object.h"           // _PyObject_GC_UNTRACK()
 #include "pycore_pyerrors.h"         // _PyErr_ChainExceptions1()
+#include "pycore_tuple.h"            // _PyTuple_Recycle()
 #include <stddef.h>                  // offsetof()
 
 #include "clinic/odictobject.c.h"
@@ -1388,7 +1389,6 @@ odict_dealloc(PyObject *op)
 {
     PyODictObject *self = _PyODictObject_CAST(op);
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_BEGIN(self, odict_dealloc)
 
     Py_XDECREF(self->od_inst_dict);
     if (self->od_weakreflist != NULL)
@@ -1396,8 +1396,6 @@ odict_dealloc(PyObject *op)
 
     _odict_clear_nodes(self);
     PyDict_Type.tp_dealloc((PyObject *)self);
-
-    Py_TRASHCAN_END
 }
 
 /* tp_repr */
@@ -1762,9 +1760,7 @@ odictiter_iternext(PyObject *op)
         Py_DECREF(PyTuple_GET_ITEM(result, 1));  /* borrowed */
         // bpo-42536: The GC may have untracked this result tuple. Since we're
         // recycling it, make sure it's tracked again:
-        if (!_PyObject_GC_IS_TRACKED(result)) {
-            _PyObject_GC_TRACK(result);
-        }
+        _PyTuple_Recycle(result);
     }
     else {
         result = PyTuple_New(2);
@@ -1883,8 +1879,9 @@ odictiter_new(PyODictObject *od, int kind)
 /* keys() */
 
 static PyObject *
-odictkeys_iter(_PyDictViewObject *dv)
+odictkeys_iter(PyObject *op)
 {
+    _PyDictViewObject *dv = (_PyDictViewObject*)op;
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
@@ -1934,7 +1931,7 @@ PyTypeObject PyODictKeys_Type = {
     0,                                        /* tp_clear */
     0,                                        /* tp_richcompare */
     0,                                        /* tp_weaklistoffset */
-    (getiterfunc)odictkeys_iter,              /* tp_iter */
+    odictkeys_iter,                           /* tp_iter */
     0,                                        /* tp_iternext */
     odictkeys_methods,                        /* tp_methods */
     0,                                        /* tp_members */
@@ -1951,8 +1948,9 @@ odictkeys_new(PyObject *od, PyObject *Py_UNUSED(ignored))
 /* items() */
 
 static PyObject *
-odictitems_iter(_PyDictViewObject *dv)
+odictitems_iter(PyObject *op)
 {
+    _PyDictViewObject *dv = (_PyDictViewObject*)op;
     if (dv->dv_dict == NULL) {
         Py_RETURN_NONE;
     }
@@ -2002,7 +2000,7 @@ PyTypeObject PyODictItems_Type = {
     0,                                        /* tp_clear */
     0,                                        /* tp_richcompare */
     0,                                        /* tp_weaklistoffset */
-    (getiterfunc)odictitems_iter,             /* tp_iter */
+    odictitems_iter,                          /* tp_iter */
     0,                                        /* tp_iternext */
     odictitems_methods,                       /* tp_methods */
     0,                                        /* tp_members */

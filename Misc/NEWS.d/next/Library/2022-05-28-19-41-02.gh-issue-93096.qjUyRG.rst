@@ -1,5 +1,0 @@
-Document the command-line for :mod:`mimetypes`.
-It now exits with ``1`` on failure instead of ``0``
-and ``2`` on incorrect command-line parameters instead of ``1``.
-Also, errors are printed to stderr instead of stdout and their text is made
-tighter. Patch by Oleg Iarygin and Hugo van Kemenade.
