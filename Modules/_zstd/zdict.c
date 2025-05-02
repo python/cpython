@@ -250,6 +250,7 @@ static PyType_Slot zstddict_slots[] = {
     {0}
 };
 
+// TODO(emmatyping): ZstdDict (and others?) should become a GC object.
 PyType_Spec zstddict_type_spec = {
     .name = "_zstd.ZstdDict",
     .basicsize = sizeof(ZstdDict),
