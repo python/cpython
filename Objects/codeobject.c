@@ -1728,7 +1728,6 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     assert(globalsns == NULL || PyDict_Check(globalsns));
     assert(builtinsns == NULL || PyDict_Check(builtinsns));
     assert(counts == NULL || counts->total == 0);
-    return 0;
     struct co_unbound_counts unbound = {0};
     Py_ssize_t len = Py_SIZE(co);
     for (int i = 0; i < len; i++) {
@@ -1737,6 +1736,8 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
             int oparg = GET_OPARG(co, i, inst.op.arg);
             int index = LOAD_ATTR_NAME_INDEX(oparg);
             PyObject *name = GETITEM(co->co_names, index);
+// The previous 3 lines might be the problem.
+continue;
             if (PySet_Contains(attrnames, name)) {
                 if (_PyErr_Occurred(tstate)) {
                     return -1;
@@ -1753,6 +1754,8 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
             int oparg = GET_OPARG(co, i, inst.op.arg);
             int index = LOAD_ATTR_NAME_INDEX(oparg);
             PyObject *name = GETITEM(co->co_names, index);
+// The previous 3 lines might be the problem.
+continue;
             if (PySet_Contains(globalnames, name)) {
                 if (_PyErr_Occurred(tstate)) {
                     return -1;
