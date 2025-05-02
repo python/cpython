@@ -39,7 +39,7 @@ _zstd_ZstdDict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_U
     return (PyObject*)self;
 
 error:
-    Py_XDECREF(self);
+    PyObject_GC_UnTrack(self);
     return NULL;
 }
 
@@ -47,17 +47,17 @@ static void
 ZstdDict_dealloc(PyObject *ob)
 {
     ZstdDict *self = ZstdDict_CAST(ob);
-    /* Free ZSTD_CDict instances */
-    Py_XDECREF(self->c_dicts);
+
+    PyObject_GC_UnTrack(self);
 
     /* Free ZSTD_DDict instance */
     ZSTD_freeDDict(self->d_dict);
 
     /* Release dict_content after Free ZSTD_CDict/ZSTD_DDict instances */
-    Py_XDECREF(self->dict_content);
+    Py_CLEAR(self->dict_content);
 
     PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free((PyObject*)self);
+    PyObject_GC_Del(ob);
     Py_DECREF(tp);
 }
 
@@ -123,6 +123,8 @@ _zstd_ZstdDict___init___impl(ZstdDict *self, PyObject *dict_content,
         return -1;
     }
 
+    // Can only track self once self->dict_content is included
+    PyObject_GC_Track(self);
     return 0;
 }
 
@@ -238,6 +240,23 @@ ZstdDict_length(PyObject *ob)
     return Py_SIZE(self->dict_content);
 }
 
+static int
+ZstdDict_traverse(PyObject *ob, visitproc visit, void *arg)
+{
+    ZstdDict *self = ZstdDict_CAST(ob);
+    Py_VISIT(self->c_dicts);
+    Py_VISIT(self->dict_content);
+    return 0;
+}
+
+static int
+ZstdDict_clear(PyObject *ob)
+{
+    ZstdDict *self = ZstdDict_CAST(ob);
+    Py_CLEAR(self->dict_content);
+    return 0;
+}
+
 static PyType_Slot zstddict_slots[] = {
     {Py_tp_members, ZstdDict_members},
     {Py_tp_getset, ZstdDict_getset},
@@ -247,13 +266,14 @@ static PyType_Slot zstddict_slots[] = {
     {Py_tp_str, ZstdDict_str},
     {Py_tp_doc, (char*)_zstd_ZstdDict___init____doc__},
     {Py_sq_length, ZstdDict_length},
+    {Py_tp_traverse, ZstdDict_traverse},
+    {Py_tp_clear, ZstdDict_clear},
     {0}
 };
 
-// TODO(emmatyping): ZstdDict (and others?) should become a GC object.
 PyType_Spec zstddict_type_spec = {
     .name = "_zstd.ZstdDict",
     .basicsize = sizeof(ZstdDict),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = zstddict_slots,
 };

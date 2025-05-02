@@ -617,7 +617,7 @@ static PyObject *
 _zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     ZstdDecompressor *self;
-    self = (ZstdDecompressor*)type->tp_alloc(type, 0);
+    self = PyObject_GC_New(ZstdDecompressor, type);
     if (self == NULL) {
         goto error;
     }
@@ -642,7 +642,7 @@ _zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject*)self;
 
 error:
-    Py_XDECREF(self);
+    PyObject_GC_UnTrack(self);
     return NULL;
 }
 
@@ -650,20 +650,23 @@ static void
 ZstdDecompressor_dealloc(PyObject *ob)
 {
     ZstdDecompressor *self = ZstdDecompressor_CAST(ob);
+
+    PyObject_GC_UnTrack(self);
+
     /* Free decompression context */
     ZSTD_freeDCtx(self->dctx);
 
-    /* Py_XDECREF the dict after free decompression context */
-    Py_XDECREF(self->dict);
+    /* Py_CLEAR the dict after free decompression context */
+    Py_CLEAR(self->dict);
 
     /* Free unconsumed input data buffer */
     PyMem_Free(self->input_buffer);
 
     /* Free unused data */
-    Py_XDECREF(self->unused_data);
+    Py_CLEAR(self->unused_data);
 
     PyTypeObject *tp = Py_TYPE(self);
-    tp->tp_free((PyObject*)self);
+    PyObject_GC_Del(ob);
     Py_DECREF(tp);
 }
 
@@ -711,6 +714,8 @@ _zstd_ZstdDecompressor___init___impl(ZstdDecompressor *self,
         }
     }
 
+    // We can only start tracking self with the GC once self->dict is set.
+    PyObject_GC_Track(self);
     return 0;
 }
 
@@ -837,6 +842,23 @@ static PyGetSetDef ZstdDecompressor_getset[] = {
     {0}
 };
 
+static int
+ZstdDecompressor_traverse(PyObject *ob, visitproc visit, void *arg)
+{
+    ZstdDecompressor *self = ZstdDecompressor_CAST(ob);
+    Py_VISIT(self->dict);
+    return 0;
+}
+
+static int
+ZstdDecompressor_clear(PyObject *ob)
+{
+    ZstdDecompressor *self = ZstdDecompressor_CAST(ob);
+    Py_CLEAR(self->dict);
+    Py_CLEAR(self->unused_data);
+    return 0;
+}
+
 static PyType_Slot ZstdDecompressor_slots[] = {
     {Py_tp_new, _zstd_ZstdDecompressor_new},
     {Py_tp_dealloc, ZstdDecompressor_dealloc},
@@ -845,12 +867,14 @@ static PyType_Slot ZstdDecompressor_slots[] = {
     {Py_tp_members, ZstdDecompressor_members},
     {Py_tp_getset, ZstdDecompressor_getset},
     {Py_tp_doc, (char*)_zstd_ZstdDecompressor___init____doc__},
+    {Py_tp_traverse, ZstdDecompressor_traverse},
+    {Py_tp_clear, ZstdDecompressor_clear},
     {0}
 };
 
 PyType_Spec ZstdDecompressor_type_spec = {
     .name = "_zstd.ZstdDecompressor",
     .basicsize = sizeof(ZstdDecompressor),
-    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
+    .flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
     .slots = ZstdDecompressor_slots,
 };
