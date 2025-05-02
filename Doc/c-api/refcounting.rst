@@ -23,6 +23,8 @@ of Python objects.
 
    Use the :c:func:`Py_SET_REFCNT()` function to set an object reference count.
 
+   See also the function :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary()`.
+
    .. versionchanged:: 3.10
       :c:func:`Py_REFCNT()` is changed to the inline static function.
 
