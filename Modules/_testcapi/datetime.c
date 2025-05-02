@@ -335,7 +335,7 @@ get_delta_fromdsu(PyObject *self, PyObject *args)
     }
     else {
         rv = PyDateTimeAPI->Delta_FromDelta(
-                days, seconds, microseconds, 1, nanoseconds,
+                days, seconds, microseconds, nanoseconds, 1,
                 PyDateTimeAPI->DeltaType);
     }
 
