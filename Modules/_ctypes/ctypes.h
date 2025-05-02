@@ -388,7 +388,8 @@ typedef struct {
     PyObject *converters;       /* tuple([t.from_param for t in argtypes]) */
     PyObject *restype;          /* CDataObject or NULL */
     PyObject *checker;
-    PyObject *pointer_type;
+    PyObject *pointer_type;     /* __pointer_type__ attribute;
+                                   arbitrary object or NULL */
     PyObject *module;
     int flags;                  /* calling convention and such */
 #ifdef Py_GIL_DISABLED

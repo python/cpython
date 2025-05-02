@@ -599,6 +599,23 @@ ctype_get_pointer_type(PyObject *self, void *Py_UNUSED(ignored))
     return NULL;
 }
 
+static int
+ctype_set_pointer_type(PyObject *self, PyObject *tp, void *Py_UNUSED(ignored))
+{
+    ctypes_state *st = get_module_state_by_def(Py_TYPE(self));
+    StgInfo *info;
+    if (PyStgInfo_FromType(st, self, &info) < 0) {
+        return -1;
+    }
+    if (!info) {
+        PyErr_Format(PyExc_TypeError, "%R must have storage info", self);
+        return -1;
+    }
+
+    Py_XSETREF(info->pointer_type, Py_XNewRef(tp));
+    return 0;
+}
+
 static PyObject *
 CType_Type_repeat(PyObject *self, Py_ssize_t length);
 
@@ -609,7 +626,8 @@ static PyMethodDef ctype_methods[] = {
 };
 
 static PyGetSetDef ctype_getsets[] = {
-    { "__pointer_type__", ctype_get_pointer_type, NULL, "pointer type", NULL },
+    { "__pointer_type__", ctype_get_pointer_type, ctype_set_pointer_type,
+      "pointer type", NULL },
     { NULL, NULL }
 };
 
@@ -1235,25 +1253,9 @@ PyCPointerType_SetProto(ctypes_state *st, PyObject *self, StgInfo *stginfo, PyOb
         PyErr_Format(PyExc_TypeError, "%R must have storage info", proto);
         return -1;
     }
-    if (info->pointer_type && info->pointer_type != self) {
-        PyErr_Format(PyExc_TypeError,
-            "pointer type already set: old=%R, new=%R",
-            info->pointer_type, self);
-        return -1;
-    }
-    if (stginfo->proto && stginfo->proto != proto) {
-        PyErr_Format(PyExc_TypeError,
-            "cls type already set: old=%R, new=%R",
-            stginfo->proto, proto);
-        return -1;
-    }
-
-    if (!stginfo->proto) {
-        stginfo->proto = Py_NewRef(proto);
-    }
-
-    if (!info->pointer_type) {
-        info->pointer_type = Py_NewRef(self);
+    Py_XSETREF(stginfo->proto, Py_NewRef(proto));
+    if (info->pointer_type == NULL) {
+        Py_XSETREF(info->pointer_type, Py_NewRef(self));
     }
     return 0;
 }

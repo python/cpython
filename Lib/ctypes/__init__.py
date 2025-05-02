@@ -279,10 +279,15 @@ def POINTER(cls):
     except AttributeError:
         pass
     if isinstance(cls, str):
-        # handle old-style incomplete types
-        # in this case pointer type is not cached and calling this function
-        # repeatedly will give different result
-        return type(f'LP_{cls}', (_Pointer,), {})
+        # handle old-style incomplete types (see test_ctypes.test_incomplete)
+        import warnings
+        warnings._deprecated("ctypes.POINTER with string", remove=(3, 19))
+        try:
+            return _pointer_type_cache_fallback[cls]
+        except KeyError:
+            result = type(f'LP_{cls}', (_Pointer,), {})
+            _pointer_type_cache_fallback[cls] = result
+            return result
 
     # create pointer type and set __pointer_type__ for cls
     return type(f'LP_{cls.__name__}', (_Pointer,), {'_type_': cls})
@@ -297,14 +302,14 @@ def pointer(obj):
     typ = POINTER(type(obj))
     return typ(obj)
 
-class PointerTypeCache:
+class _PointerTypeCache:
     def __setitem__(self, cls, pointer_type):
         import warnings
         warnings._deprecated("ctypes._pointer_type_cache", remove=(3, 19))
         try:
             cls.__pointer_type__ = pointer_type
         except AttributeError:
-            pass
+            _pointer_type_cache_fallback[cls] = pointer_type
 
     def __getitem__(self, cls):
         import warnings
@@ -312,7 +317,7 @@ class PointerTypeCache:
         try:
             return cls.__pointer_type__
         except AttributeError:
-            raise KeyError(cls)
+            return _pointer_type_cache_fallback[cls]
 
     def get(self, cls, default=None):
         import warnings
@@ -325,7 +330,8 @@ class PointerTypeCache:
     def __contains__(self, cls):
         return hasattr(cls, '__pointer_type__')
 
-_pointer_type_cache = PointerTypeCache()
+_pointer_type_cache_fallback = {}
+_pointer_type_cache = _PointerTypeCache()
 
 class c_wchar_p(_SimpleCData):
     _type_ = "Z"
@@ -376,9 +382,6 @@ def create_unicode_buffer(init, size=None):
 def SetPointerType(pointer, cls):
     import warnings
     warnings._deprecated("ctypes.SetPointerType", remove=(3, 15))
-    if _pointer_type_cache.get(cls, None) is not None:
-        raise RuntimeError("This type already exists in the cache")
-
     pointer.set_type(cls)
 
 def ARRAY(typ, len):
