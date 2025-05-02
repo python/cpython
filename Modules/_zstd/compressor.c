@@ -304,10 +304,6 @@ _zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject
         goto error;
     }
 
-    assert(self->dict == NULL);
-    assert(self->use_multithread == 0);
-    assert(self->compression_level == 0);
-    assert(self->inited == 0);
 
     /* Compression context */
     self->cctx = ZSTD_createCCtx();

@@ -30,11 +30,6 @@ _zstd_ZstdDict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_U
         goto error;
     }
 
-    assert(self->dict_content == NULL);
-    assert(self->dict_id == 0);
-    assert(self->d_dict == NULL);
-    assert(self->inited == 0);
-
     /* ZSTD_CDict dict */
     self->c_dicts = PyDict_New();
     if (self->c_dicts == NULL) {

@@ -622,15 +622,6 @@ _zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
-    assert(self->dict == NULL);
-    assert(self->input_buffer == NULL);
-    assert(self->input_buffer_size == 0);
-    assert(self->in_begin == 0);
-    assert(self->in_end == 0);
-    assert(self->unused_data == NULL);
-    assert(self->eof == 0);
-    assert(self->inited == 0);
-
     /* needs_input flag */
     self->needs_input = 1;
 
