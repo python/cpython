@@ -3129,7 +3129,7 @@ class _PdbClient:
                 self.process_payload(payload)
 
     def send_interrupt(self):
-        if hasattr(signal, "pthread_kill"):
+        if sys.platform != "win32":
             # On Unix, send a SIGINT to the remote process, which interrupts IO
             # and makes it raise a KeyboardInterrupt on the main thread when
             # PyErr_CheckSignals is called or the eval loop regains control.
