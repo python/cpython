@@ -807,10 +807,15 @@ ctypes
   loaded by the current process.
   (Contributed by Brian Ward in :gh:`119349`.)
 
+* Move :func:`ctypes.POINTER` types cache from a global internal cache
+  (``_pointer_type_cache``) to the :attr:`ctypes._CData.__pointer_type__`
+  attribute of the corresponding :mod:`ctypes` types.
+  This will stop the cache from growing without limits in some situations.
+  (Contributed by Sergey Miryanov in :gh:`100926`).
+
 * The :class:`ctypes.py_object` type now supports subscription,
   making it a :term:`generic type`.
   (Contributed by Brian Schubert in :gh:`132168`.)
-
 
 datetime
 --------
@@ -1678,6 +1683,13 @@ Deprecated
 * :mod:`codecs`:
   :func:`codecs.open` is now deprecated. Use :func:`open` instead.
   (Contributed by Inada Naoki in :gh:`133036`.)
+
+* :mod:`ctypes`:
+  Calling :func:`ctypes.POINTER` on a string is deprecated.
+  Use :ref:`ctypes-incomplete-types` for self-referential structures.
+  Also, the internal ``ctypes._pointer_type_cache`` is deprecated.
+  See :func:`ctypes.POINTER` for updated implementation details.
+  (Contributed by Sergey Myrianov in :gh:`100926`.)
 
 * :mod:`functools`:
   Calling the Python implementation of :func:`functools.reduce` with *function*
