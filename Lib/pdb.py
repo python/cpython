@@ -2679,8 +2679,9 @@ class _PdbServer(Pdb):
             self._sockfile.write(json_payload.encode() + b"\n")
             self._sockfile.flush()
         except (OSError, ValueError):
-            # This means that the client has abruptly disconnected, but we'll
-            # handle that the next time we try to read from the client instead
+            # We get an OSError if the network connection has dropped, and a
+            # ValueError if detach() if the sockfile has been closed. We'll
+            # handle this the next time we try to read from the client instead
             # of trying to handle it from everywhere _send() may be called.
             # Track this with a flag rather than assuming readline() will ever
             # return an empty string because the socket may be half-closed.
