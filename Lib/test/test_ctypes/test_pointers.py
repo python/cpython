@@ -296,7 +296,7 @@ class PointersTestCase(unittest.TestCase):
 
     def test_pointer_set_wrong_type(self):
         int_ptr = POINTER(c_int)
-        float_ptr = POINTER(float_ptr)
+        float_ptr = POINTER(c_float)
         try:
             class C(c_int):
                 pass
@@ -305,7 +305,7 @@ class PointersTestCase(unittest.TestCase):
             t2 = POINTER(c_float)
             t1.set_type(c_float)
             self.assertEqual(t1(c_float(1.5))[0], 1.5)
-            self.assertIs(c_int._type_, c_float)
+            self.assertIs(t1._type_, c_float)
             self.assertIs(c_int.__pointer_type__, t1)
             self.assertIs(c_float.__pointer_type__, float_ptr)
 
