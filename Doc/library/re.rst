@@ -665,10 +665,10 @@ character ``'$'``.
            single: \Z; in regular expressions
 
 ``\z``
-``\Z``
    Matches only at the end of the string.
-   ``\z`` is a newer and more portable variant.
-   ``\Z`` is only needed for compatibility with old Python versions.
+
+``\Z``
+   The same as ``\z``.  For compatibility with old Python versions.
 
 .. index::
    single: \a; in regular expressions
