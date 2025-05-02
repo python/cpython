@@ -11,7 +11,6 @@ Python module.
 #include "zstd.h"
 #include "zdict.h"
 
-#include "pycore_lock.h" // PyMutex APIs
 
 #define PYTHON_MINIMUM_SUPPORTED_ZSTD_VERSION 10400
 
