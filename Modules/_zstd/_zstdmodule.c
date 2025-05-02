@@ -642,6 +642,7 @@ add_vars_to_module(PyObject *module)
         Py_XDECREF(obj);
         return -1;
     }
+    Py_DECREF(obj);
 
     /* Add zstd parameters */
     if (add_parameters(module) < 0) {
@@ -664,6 +665,7 @@ add_vars_to_module(PyObject *module)
         Py_XDECREF(obj);
         return -1;
     }
+    Py_DECREF(obj);
 
     /* _ZSTD_CStreamSizes */
     obj = Py_BuildValue("II",
@@ -673,6 +675,7 @@ add_vars_to_module(PyObject *module)
         Py_XDECREF(obj);
         return -1;
     }
+    Py_DECREF(obj);
 
     /* _ZSTD_DStreamSizes */
     obj = Py_BuildValue("II",
@@ -682,6 +685,7 @@ add_vars_to_module(PyObject *module)
         Py_XDECREF(obj);
         return -1;
     }
+    Py_DECREF(obj);
 
     /* _ZSTD_CONFIG */
     obj = Py_BuildValue("isOOO", 8*(int)sizeof(Py_ssize_t), "c",
@@ -698,6 +702,7 @@ add_vars_to_module(PyObject *module)
         Py_XDECREF(obj);
         return -1;
     }
+    Py_DECREF(obj);
 
     return 0;
 }
@@ -721,7 +726,6 @@ add_type_to_module(PyObject *module, const char *name,
         return -1;
     }
 
-    Py_INCREF(temp);
     *dest = (PyTypeObject*) temp;
 
     return 0;
@@ -780,7 +784,6 @@ static int _zstd_exec(PyObject *module) {
         return -1;
     }
 
-    Py_INCREF(mod_state->ZstdError);
     if (PyModule_AddObjectRef(module, "ZstdError", mod_state->ZstdError) < 0) {
         Py_DECREF(mod_state->ZstdError);
         return -1;
