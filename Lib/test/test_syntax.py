@@ -1877,21 +1877,77 @@ SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' ins
 Traceback (most recent call last):
 SyntaxError: cannot assign to f-string expression here. Maybe you meant '==' instead of '='?
 
->>> ft'abc'
+>>> ub''
 Traceback (most recent call last):
-SyntaxError: can't use 'f' and 't' string prefixes together
+SyntaxError: 'u' and 'b' prefixes are incompatible
 
->>> tf"{x=}"
+>>> bu"привет"
 Traceback (most recent call last):
-SyntaxError: can't use 'f' and 't' string prefixes together
+SyntaxError: 'u' and 'b' prefixes are incompatible
 
->>> tb''
+>>> ur''
 Traceback (most recent call last):
-SyntaxError: can't use 'b' and 't' string prefixes together
+SyntaxError: 'u' and 'r' prefixes are incompatible
+
+>>> ru"\t"
+Traceback (most recent call last):
+SyntaxError: 'u' and 'r' prefixes are incompatible
+
+>>> uf'{1 + 1}'
+Traceback (most recent call last):
+SyntaxError: 'u' and 'f' prefixes are incompatible
+
+>>> fu""
+Traceback (most recent call last):
+SyntaxError: 'u' and 'f' prefixes are incompatible
+
+>>> ut'{1}'
+Traceback (most recent call last):
+SyntaxError: 'u' and 't' prefixes are incompatible
+
+>>> tu"234"
+Traceback (most recent call last):
+SyntaxError: 'u' and 't' prefixes are incompatible
+
+>>> bf'{x!r}'
+Traceback (most recent call last):
+SyntaxError: 'b' and 'f' prefixes are incompatible
+
+>>> fb"text"
+Traceback (most recent call last):
+SyntaxError: 'b' and 'f' prefixes are incompatible
 
 >>> bt"text"
 Traceback (most recent call last):
-SyntaxError: can't use 'b' and 't' string prefixes together
+SyntaxError: 'b' and 't' prefixes are incompatible
+
+>>> tb''
+Traceback (most recent call last):
+SyntaxError: 'b' and 't' prefixes are incompatible
+
+>>> tf"{0.3:.02f}"
+Traceback (most recent call last):
+SyntaxError: 'f' and 't' prefixes are incompatible
+
+>>> ft'{x=}'
+Traceback (most recent call last):
+SyntaxError: 'f' and 't' prefixes are incompatible
+
+>>> tfu"{x=}"
+Traceback (most recent call last):
+SyntaxError: 'u' and 'f' prefixes are incompatible
+
+>>> turf"{x=}"
+Traceback (most recent call last):
+SyntaxError: 'u' and 'r' prefixes are incompatible
+
+>>> burft"{x=}"
+Traceback (most recent call last):
+SyntaxError: 'u' and 'b' prefixes are incompatible
+
+>>> brft"{x=}"
+Traceback (most recent call last):
+SyntaxError: 'b' and 'f' prefixes are incompatible
 
 >>> t'{x}' = 42
 Traceback (most recent call last):
