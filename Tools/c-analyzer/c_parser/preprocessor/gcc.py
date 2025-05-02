@@ -102,6 +102,8 @@ def preprocess(filename,
 
 
 def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
+    with open('/Users/Edu/Downloads/test.c', 'r') as f:
+        text = f.read()
     lines = iter(text.splitlines())
 
     # The first line is special.
@@ -163,6 +165,14 @@ def _iter_top_include_lines(lines, topfile, cwd,
 
         _lno, included, flags = _parse_marker_line(line)
         if included:
+            # HACK:
+            # Mixes curses.h and ncurses.h marker lines
+            # gcc silently passes this, while clang fails
+            # See: /Include/py_curses.h #if-elif directives
+            # And compare with preprocessor output
+            if os.path.basename(included) == 'curses.h':
+                included = os.path.join(os.path.dirname(included), 'ncurses.h')
+
             lno = _lno
             included = _normpath(included, cwd)
             # We hit a marker line.

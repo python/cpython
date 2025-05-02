@@ -47,42 +47,10 @@ def preprocess(filename,
     return _iter_lines(text, filename, samefiles, cwd)
 
 
-# Reasons:
-#   py_curses related have a stack return in unusual order for /include/curses.h
-CLANG_IGNORES = (
-    '/Include/py_curses.h',
-    '/Modules/_cursesmodule.c',
-    '/Modules/_curses_panel.c'
-)
-
-EXPERIMENTAL_PRINTED = False
-
-CLANG_EXPERIMENTAL = """
-
-WARNING
-=======
-clang preprocessor is in experimental state.
-a) There might be false positives
-b) Following files are skipped
-{}
-
-""".format('\n'.join(['    ' + fn for fn in CLANG_IGNORES]))
-
-
 EXIT_MARKERS = {'# 2 "<built-in>" 2', '# 3 "<built-in>" 2', '# 4 "<built-in>" 2'}
 
 
 def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
-    global EXPERIMENTAL_PRINTED
-    if not EXPERIMENTAL_PRINTED:
-        print(CLANG_EXPERIMENTAL, flush=True)
-        EXPERIMENTAL_PRINTED = True
-
-    # NOTE:clang specific
-    if reqfile.endswith(CLANG_IGNORES):
-        print(f'\nSkipping: {reqfile}', flush=True)
-        return
-
     lines = iter(text.splitlines())
 
     # The first line is special.
