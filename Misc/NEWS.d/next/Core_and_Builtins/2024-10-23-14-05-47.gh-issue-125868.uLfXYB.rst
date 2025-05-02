@@ -1,3 +1,0 @@
-It was possible in 3.14.0a1 only for attribute lookup to give the wrong
-value. This was due to an incorrect specialization in very specific
-circumstances. This is fixed in 3.14.0a2.

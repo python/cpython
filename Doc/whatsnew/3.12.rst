@@ -811,6 +811,14 @@ pathlib
   :meth:`pathlib.Path.rglob` and :meth:`pathlib.PurePath.match` for matching
   the path's case sensitivity, allowing for more precise control over the matching process.
 
+platform
+--------
+
+* Add support for detecting Windows 11 and Windows Server releases past 2012.
+  Previously, lookups on Windows Server platforms newer than Windows Server 2012
+  and on Windows 11 would return ``Windows-10``.
+  (Contributed by Steve Dower in :gh:`89545`.)
+
 pdb
 ---
 
@@ -1339,7 +1347,11 @@ Deprecated
 
 .. include:: ../deprecations/pending-removal-in-3.16.rst
 
+.. include:: ../deprecations/pending-removal-in-3.17.rst
+
 .. include:: ../deprecations/pending-removal-in-future.rst
+
+.. _whatsnew312-removed:
 
 Removed
 =======
@@ -1365,6 +1377,8 @@ configparser
     shorter :class:`~configparser.ConfigParser` name instead.
   * :class:`configparser.ConfigParser` no longer has a ``readfp`` method.
     Use :meth:`~configparser.ConfigParser.read_file` instead.
+
+.. _whatsnew312-removed-distutils:
 
 distutils
 ---------
@@ -1447,6 +1461,8 @@ importlib
   * ``importlib.abc.Finder``, ``pkgutil.ImpImporter``, and ``pkgutil.ImpLoader``
     have been removed.  (Contributed by Barry Warsaw in :gh:`98040`.)
 
+.. _whatsnew312-removed-imp:
+
 imp
 ---
 
@@ -1461,8 +1477,8 @@ imp
     ``imp.NullImporter``               Insert ``None`` into ``sys.path_importer_cache``
     ``imp.cache_from_source()``        :func:`importlib.util.cache_from_source`
     ``imp.find_module()``              :func:`importlib.util.find_spec`
-    ``imp.get_magic()``                :attr:`importlib.util.MAGIC_NUMBER`
-    ``imp.get_suffixes()``             :attr:`importlib.machinery.SOURCE_SUFFIXES`, :attr:`importlib.machinery.EXTENSION_SUFFIXES`, and :attr:`importlib.machinery.BYTECODE_SUFFIXES`
+    ``imp.get_magic()``                :const:`importlib.util.MAGIC_NUMBER`
+    ``imp.get_suffixes()``             :const:`importlib.machinery.SOURCE_SUFFIXES`, :const:`importlib.machinery.EXTENSION_SUFFIXES`, and :const:`importlib.machinery.BYTECODE_SUFFIXES`
     ``imp.get_tag()``                  :attr:`sys.implementation.cache_tag <sys.implementation>`
     ``imp.load_module()``              :func:`importlib.import_module`
     ``imp.new_module(name)``           ``types.ModuleType(name)``
@@ -1813,7 +1829,7 @@ Build Changes
 * ``PYTHON_FOR_REGEN`` now require Python 3.10 or newer.
 
 * Autoconf 2.71 and aclocal 1.16.4 is now required to regenerate
-  :file:`!configure`.
+  :file:`configure`.
   (Contributed by Christian Heimes in :gh:`89886`.)
 
 * Windows builds and macOS installers from python.org now use OpenSSL 3.0.

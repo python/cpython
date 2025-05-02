@@ -29,11 +29,16 @@ class HoleValue(enum.Enum):
     GOT = enum.auto()
     # The current uop's oparg (exposed as _JIT_OPARG):
     OPARG = enum.auto()
-    # The current uop's operand on 64-bit platforms (exposed as _JIT_OPERAND):
-    OPERAND = enum.auto()
-    # The current uop's operand on 32-bit platforms (exposed as _JIT_OPERAND_HI/LO):
-    OPERAND_HI = enum.auto()
-    OPERAND_LO = enum.auto()
+    # The current uop's operand0 on 64-bit platforms (exposed as _JIT_OPERAND0):
+    OPERAND0 = enum.auto()
+    # The current uop's operand0 on 32-bit platforms (exposed as _JIT_OPERAND0_HI/LO):
+    OPERAND0_HI = enum.auto()
+    OPERAND0_LO = enum.auto()
+    # The current uop's operand1 on 64-bit platforms (exposed as _JIT_OPERAND1):
+    OPERAND1 = enum.auto()
+    # The current uop's operand1 on 32-bit platforms (exposed as _JIT_OPERAND1_HI/LO):
+    OPERAND1_HI = enum.auto()
+    OPERAND1_LO = enum.auto()
     # The current uop's target (exposed as _JIT_TARGET):
     TARGET = enum.auto()
     # The base address of the machine code for the jump target (exposed as _JIT_JUMP_TARGET):
@@ -79,9 +84,8 @@ _PATCH_FUNCS = {
     "R_AARCH64_MOVW_UABS_G3": "patch_aarch64_16d",
     # x86_64-unknown-linux-gnu:
     "R_X86_64_64": "patch_64",
-    "R_X86_64_GOTPCREL": "patch_32r",
     "R_X86_64_GOTPCRELX": "patch_x86_64_32rx",
-    "R_X86_64_PC32": "patch_32r",
+    "R_X86_64_PLT32": "patch_32r",
     "R_X86_64_REX_GOTPCRELX": "patch_x86_64_32rx",
     # x86_64-apple-darwin:
     "X86_64_RELOC_BRANCH": "patch_32r",
@@ -99,9 +103,12 @@ _HOLE_EXPRS = {
     # These should all have been turned into DATA values by process_relocations:
     # HoleValue.GOT: "",
     HoleValue.OPARG: "instruction->oparg",
-    HoleValue.OPERAND: "instruction->operand",
-    HoleValue.OPERAND_HI: "(instruction->operand >> 32)",
-    HoleValue.OPERAND_LO: "(instruction->operand & UINT32_MAX)",
+    HoleValue.OPERAND0: "instruction->operand0",
+    HoleValue.OPERAND0_HI: "(instruction->operand0 >> 32)",
+    HoleValue.OPERAND0_LO: "(instruction->operand0 & UINT32_MAX)",
+    HoleValue.OPERAND1: "instruction->operand1",
+    HoleValue.OPERAND1_HI: "(instruction->operand1 >> 32)",
+    HoleValue.OPERAND1_LO: "(instruction->operand1 & UINT32_MAX)",
     HoleValue.TARGET: "instruction->target",
     HoleValue.JUMP_TARGET: "state->instruction_starts[instruction->jump_target]",
     HoleValue.ERROR_TARGET: "state->instruction_starts[instruction->error_target]",
@@ -133,7 +140,11 @@ class Hole:
     def __post_init__(self) -> None:
         self.func = _PATCH_FUNCS[self.kind]
 
-    def fold(self, other: typing.Self, body: bytes) -> typing.Self | None:
+    def fold(
+        self,
+        other: typing.Self,
+        body: bytes | bytearray,
+    ) -> typing.Self | None:
         """Combine two holes into a single hole, if possible."""
         instruction_a = int.from_bytes(
             body[self.offset : self.offset + 4], byteorder=sys.byteorder
@@ -194,10 +205,28 @@ class Stencil:
         """Pad the stencil to the given alignment."""
         offset = len(self.body)
         padding = -offset % alignment
-        self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
+        if padding:
+            self.disassembly.append(f"{offset:x}: {' '.join(['00'] * padding)}")
         self.body.extend([0] * padding)
 
-    def remove_jump(self, *, alignment: int = 1) -> None:
+    def add_nops(self, nop: bytes, alignment: int) -> None:
+        """Add NOPs until there is alignment. Fail if it is not possible."""
+        offset = len(self.body)
+        nop_size = len(nop)
+
+        # Calculate the gap to the next multiple of alignment.
+        gap = -offset % alignment
+        if gap:
+            if gap % nop_size == 0:
+                count = gap // nop_size
+                self.body.extend(nop * count)
+            else:
+                raise ValueError(
+                    f"Cannot add nops of size '{nop_size}' to a body with "
+                    f"offset '{offset}' to align with '{alignment}'"
+                )
+
+    def remove_jump(self) -> None:
         """Remove a zero-length continuation jump, if it exists."""
         hole = max(self.holes, key=lambda hole: hole.offset)
         match hole:
@@ -209,17 +238,19 @@ class Stencil:
                 addend=-4,
             ) as hole:
                 # jmp qword ptr [rip]
-                jump = b"\x48\xFF\x25\x00\x00\x00\x00"
+                jump = b"\x48\xff\x25\x00\x00\x00\x00"
                 offset -= 3
             case Hole(
                 offset=offset,
-                kind="IMAGE_REL_I386_REL32" | "X86_64_RELOC_BRANCH",
+                kind="IMAGE_REL_I386_REL32" | "R_X86_64_PLT32" | "X86_64_RELOC_BRANCH",
                 value=HoleValue.CONTINUE,
                 symbol=None,
-                addend=-4,
-            ) as hole:
+                addend=addend,
+            ) as hole if (
+                _signed(addend) == -4
+            ):
                 # jmp 5
-                jump = b"\xE9\x00\x00\x00\x00"
+                jump = b"\xe9\x00\x00\x00\x00"
                 offset -= 1
             case Hole(
                 offset=offset,
@@ -230,20 +261,9 @@ class Stencil:
             ) as hole:
                 # b #4
                 jump = b"\x00\x00\x00\x14"
-            case Hole(
-                offset=offset,
-                kind="R_X86_64_GOTPCRELX",
-                value=HoleValue.GOT,
-                symbol="_JIT_CONTINUE",
-                addend=addend,
-            ) as hole:
-                assert _signed(addend) == -4
-                # jmp qword ptr [rip]
-                jump = b"\xFF\x25\x00\x00\x00\x00"
-                offset -= 2
             case _:
                 return
-        if self.body[offset:] == jump and offset % alignment == 0:
+        if self.body[offset:] == jump:
             self.body = self.body[:offset]
             self.holes.remove(hole)
 
@@ -265,10 +285,7 @@ class StencilGroup:
     _trampolines: set[int] = dataclasses.field(default_factory=set, init=False)
 
     def process_relocations(
-        self,
-        known_symbols: dict[str, int],
-        *,
-        alignment: int = 1,
+        self, known_symbols: dict[str, int], *, alignment: int = 1, nop: bytes = b""
     ) -> None:
         """Fix up all GOT and internal relocations for this stencil group."""
         for hole in self.code.holes.copy():
@@ -276,6 +293,7 @@ class StencilGroup:
                 hole.kind
                 in {"R_AARCH64_CALL26", "R_AARCH64_JUMP26", "ARM64_RELOC_BRANCH26"}
                 and hole.value is HoleValue.ZERO
+                and hole.symbol not in self.symbols
             ):
                 hole.func = "patch_aarch64_trampoline"
                 hole.need_state = True
@@ -288,8 +306,8 @@ class StencilGroup:
                 self._trampolines.add(ordinal)
                 hole.addend = ordinal
                 hole.symbol = None
-        self.code.remove_jump(alignment=alignment)
-        self.code.pad(alignment)
+        self.code.remove_jump()
+        self.code.add_nops(nop=nop, alignment=alignment)
         self.data.pad(8)
         for stencil in [self.code, self.data]:
             for hole in stencil.holes:

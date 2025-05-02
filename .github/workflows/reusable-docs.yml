@@ -15,19 +15,21 @@ env:
   FORCE_COLOR: 1
 
 jobs:
-  build_doc:
+  build-doc:
     name: 'Docs'
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
       branch_base: 'origin/${{ github.event.pull_request.base.ref }}'
       branch_pr: 'origin/${{ github.event.pull_request.head.ref }}'
+      commits: ${{ github.event.pull_request.commits }}
       refspec_base: '+${{ github.event.pull_request.base.sha }}:remotes/origin/${{ github.event.pull_request.base.ref }}'
       refspec_pr: '+${{ github.event.pull_request.head.sha }}:remotes/origin/${{ github.event.pull_request.head.ref }}'
     steps:
     - name: 'Check out latest PR branch commit'
       uses: actions/checkout@v4
       with:
+        persist-credentials: false
         ref: >-
           ${{
             github.event_name == 'pull_request'
@@ -39,15 +41,15 @@ jobs:
       if: github.event_name == 'pull_request'
       run: |
         # Fetch enough history to find a common ancestor commit (aka merge-base):
-        git fetch origin ${{ env.refspec_pr }} --depth=$(( ${{ github.event.pull_request.commits }} + 1 )) \
+        git fetch origin "${refspec_pr}" --depth=$(( commits + 1 )) \
           --no-tags --prune --no-recurse-submodules
 
         # This should get the oldest commit in the local fetched history (which may not be the commit the PR branched from):
-        COMMON_ANCESTOR=$( git rev-list --first-parent --max-parents=0 --max-count=1 ${{ env.branch_pr }} )
+        COMMON_ANCESTOR=$( git rev-list --first-parent --max-parents=0 --max-count=1 "${branch_pr}" )
         DATE=$( git log --date=iso8601 --format=%cd "${COMMON_ANCESTOR}" )
 
         # Get all commits since that commit date from the base branch (eg: master or main):
-        git fetch origin ${{ env.refspec_base }} --shallow-since="${DATE}" \
+        git fetch origin "${refspec_base}" --shallow-since="${DATE}" \
           --no-tags --prune --no-recurse-submodules
     - name: 'Set up Python'
       uses: actions/setup-python@v5
@@ -63,42 +65,26 @@ jobs:
       continue-on-error: true
       run: |
         set -Eeuo pipefail
-        # Build docs with the '-n' (nit-picky) option; write warnings to file
-        make -C Doc/ PYTHON=../python SPHINXOPTS="-q -n -W --keep-going -w sphinx-warnings.txt" html
+        # Build docs with the nit-picky option; write warnings to file
+        make -C Doc/ PYTHON=../python SPHINXOPTS="--quiet --nitpicky --fail-on-warning --warning-file sphinx-warnings.txt" html
     - name: 'Check warnings'
       if: github.event_name == 'pull_request'
       run: |
         python Doc/tools/check-warnings.py \
-          --annotate-diff '${{ env.branch_base }}' '${{ env.branch_pr }}' \
+          --annotate-diff "${branch_base}" "${branch_pr}" \
           --fail-if-regression \
           --fail-if-improved \
           --fail-if-new-news-nit
 
-  # This build doesn't use problem matchers or check annotations
-  build_doc_oldest_supported_sphinx:
-    name: 'Docs (Oldest Sphinx)'
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-    - uses: actions/checkout@v4
-    - name: 'Set up Python'
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.13'  # known to work with Sphinx 7.2.6
-        cache: 'pip'
-        cache-dependency-path: 'Doc/requirements-oldest-sphinx.txt'
-    - name: 'Install build dependencies'
-      run: make -C Doc/ venv REQUIREMENTS="requirements-oldest-sphinx.txt"
-    - name: 'Build HTML documentation'
-      run: make -C Doc/ SPHINXOPTS="-q" SPHINXERRORHANDLING="-W --keep-going" html
-
   # Run "doctest" on HEAD as new syntax doesn't exist in the latest stable release
   doctest:
     name: 'Doctest'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
     steps:
     - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
     - uses: actions/cache@v4
       with:
         path: ~/.cache/pip
@@ -115,4 +101,4 @@ jobs:
       run: make -C Doc/ PYTHON=../python venv
     # Use "xvfb-run" since some doctest tests open GUI windows
     - name: 'Run documentation doctest'
-      run: xvfb-run make -C Doc/ PYTHON=../python SPHINXERRORHANDLING="-W --keep-going" doctest
+      run: xvfb-run make -C Doc/ PYTHON=../python SPHINXERRORHANDLING="--fail-on-warning" doctest

@@ -1,3 +1,0 @@
-Fix a bug where dictionary watchers (e.g., :c:func:`PyDict_Watch`) on an
-object's attribute dictionary (:attr:`~object.__dict__`) were not triggered
-when the object's attributes were modified.

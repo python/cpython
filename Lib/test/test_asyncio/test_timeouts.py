@@ -9,7 +9,7 @@ from test.test_asyncio.utils import await_without_task
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 class TimeoutTests(unittest.IsolatedAsyncioTestCase):
 

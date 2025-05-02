@@ -1,2 +1,0 @@
-Speed up pattern parsing in :meth:`pathlib.Path.glob` by skipping creation
-of a :class:`pathlib.Path` object for the pattern.

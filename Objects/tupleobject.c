@@ -1,14 +1,16 @@
-
 /* Tuple object implementation */
 
 #include "Python.h"
 #include "pycore_abstract.h"      // _PyIndex_Check()
 #include "pycore_ceval.h"         // _PyEval_GetBuiltin()
-#include "pycore_freelist.h"      // _Py_FREELIST_PUSH(), _Py_FREELIST_POP()
+#include "pycore_freelist.h"      // _Py_FREELIST_PUSH()
 #include "pycore_gc.h"            // _PyObject_GC_IS_TRACKED()
-#include "pycore_initconfig.h"    // _PyStatus_OK()
+#include "pycore_list.h"          // _Py_memory_repeat()
 #include "pycore_modsupport.h"    // _PyArg_NoKwnames()
-#include "pycore_object.h"        // _PyObject_GC_TRACK(), _Py_FatalRefcountError(), _PyDebugAllocatorStats()
+#include "pycore_object.h"        // _PyObject_GC_TRACK()
+#include "pycore_stackref.h"      // PyStackRef_AsPyObjectSteal()
+#include "pycore_tuple.h"         // _PyTupleIterObject
+
 
 /*[clinic input]
 class tuple "PyTupleObject *" "&PyTuple_Type"
@@ -43,6 +45,7 @@ tuple_alloc(Py_ssize_t size)
     if (index < PyTuple_MAXSAVESIZE) {
         PyTupleObject *op = _Py_FREELIST_POP(PyTupleObject, tuples[index]);
         if (op != NULL) {
+            _PyTuple_RESET_HASH_CACHE(op);
             return op;
         }
     }
@@ -51,7 +54,11 @@ tuple_alloc(Py_ssize_t size)
                 sizeof(PyObject *))) / sizeof(PyObject *)) {
         return (PyTupleObject *)PyErr_NoMemory();
     }
-    return PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
+    PyTupleObject *result = PyObject_GC_NewVar(PyTupleObject, &PyTuple_Type, size);
+    if (result != NULL) {
+        _PyTuple_RESET_HASH_CACHE(result);
+    }
+    return result;
 }
 
 // The empty tuple singleton is not tracked by the GC.
@@ -200,7 +207,6 @@ tuple_dealloc(PyObject *self)
     }
 
     PyObject_GC_UnTrack(op);
-    Py_TRASHCAN_BEGIN(op, tuple_dealloc)
 
     Py_ssize_t i = Py_SIZE(op);
     while (--i >= 0) {
@@ -210,8 +216,6 @@ tuple_dealloc(PyObject *self)
     if (!maybe_freelist_push(op)) {
         Py_TYPE(op)->tp_free((PyObject *)op);
     }
-
-    Py_TRASHCAN_END
 }
 
 static PyObject *
@@ -294,50 +298,41 @@ error:
    For the xxHash specification, see
    https://github.com/Cyan4973/xxHash/blob/master/doc/xxhash_spec.md
 
-   Below are the official constants from the xxHash specification. Optimizing
-   compilers should emit a single "rotate" instruction for the
-   _PyHASH_XXROTATE() expansion. If that doesn't happen for some important
-   platform, the macro could be changed to expand to a platform-specific rotate
-   spelling instead.
+   The constants for the hash function are defined in pycore_tuple.h.
 */
-#if SIZEOF_PY_UHASH_T > 4
-#define _PyHASH_XXPRIME_1 ((Py_uhash_t)11400714785074694791ULL)
-#define _PyHASH_XXPRIME_2 ((Py_uhash_t)14029467366897019727ULL)
-#define _PyHASH_XXPRIME_5 ((Py_uhash_t)2870177450012600261ULL)
-#define _PyHASH_XXROTATE(x) ((x << 31) | (x >> 33))  /* Rotate left 31 bits */
-#else
-#define _PyHASH_XXPRIME_1 ((Py_uhash_t)2654435761UL)
-#define _PyHASH_XXPRIME_2 ((Py_uhash_t)2246822519UL)
-#define _PyHASH_XXPRIME_5 ((Py_uhash_t)374761393UL)
-#define _PyHASH_XXROTATE(x) ((x << 13) | (x >> 19))  /* Rotate left 13 bits */
-#endif
 
-/* Tests have shown that it's not worth to cache the hash value, see
-   https://bugs.python.org/issue9685 */
 static Py_hash_t
 tuple_hash(PyObject *op)
 {
     PyTupleObject *v = _PyTuple_CAST(op);
+
+    Py_uhash_t acc = FT_ATOMIC_LOAD_SSIZE_RELAXED(v->ob_hash);
+    if (acc != (Py_uhash_t)-1) {
+        return acc;
+    }
+
     Py_ssize_t len = Py_SIZE(v);
     PyObject **item = v->ob_item;
-
-    Py_uhash_t acc = _PyHASH_XXPRIME_5;
+    acc = _PyTuple_HASH_XXPRIME_5;
     for (Py_ssize_t i = 0; i < len; i++) {
         Py_uhash_t lane = PyObject_Hash(item[i]);
         if (lane == (Py_uhash_t)-1) {
             return -1;
         }
-        acc += lane * _PyHASH_XXPRIME_2;
-        acc = _PyHASH_XXROTATE(acc);
-        acc *= _PyHASH_XXPRIME_1;
+        acc += lane * _PyTuple_HASH_XXPRIME_2;
+        acc = _PyTuple_HASH_XXROTATE(acc);
+        acc *= _PyTuple_HASH_XXPRIME_1;
     }
 
     /* Add input length, mangled to keep the historical value of hash(()). */
-    acc += len ^ (_PyHASH_XXPRIME_5 ^ 3527539UL);
+    acc += len ^ (_PyTuple_HASH_XXPRIME_5 ^ 3527539UL);
 
     if (acc == (Py_uhash_t)-1) {
-        return 1546275796;
+        acc = 1546275796;
     }
+
+    FT_ATOMIC_STORE_SSIZE_RELAXED(v->ob_hash, acc);
+
     return acc;
 }
 
@@ -391,16 +386,13 @@ _PyTuple_FromArray(PyObject *const *src, Py_ssize_t n)
 }
 
 PyObject *
-_PyTuple_FromStackRefSteal(const _PyStackRef *src, Py_ssize_t n)
+_PyTuple_FromStackRefStealOnSuccess(const _PyStackRef *src, Py_ssize_t n)
 {
     if (n == 0) {
         return tuple_get_empty();
     }
     PyTupleObject *tuple = tuple_alloc(n);
     if (tuple == NULL) {
-        for (Py_ssize_t i = 0; i < n; i++) {
-            PyStackRef_CLOSE(src[i]);
-        }
         return NULL;
     }
     PyObject **dst = tuple->ob_item;
@@ -607,8 +599,8 @@ Return number of occurrences of value.
 [clinic start generated code]*/
 
 static PyObject *
-tuple_count(PyTupleObject *self, PyObject *value)
-/*[clinic end generated code: output=aa927affc5a97605 input=531721aff65bd772]*/
+tuple_count_impl(PyTupleObject *self, PyObject *value)
+/*[clinic end generated code: output=cf02888d4bc15d7a input=531721aff65bd772]*/
 {
     Py_ssize_t count = 0;
     Py_ssize_t i;
@@ -764,6 +756,8 @@ tuple_subtype_new(PyTypeObject *type, PyObject *iterable)
         PyTuple_SET_ITEM(newobj, i, Py_NewRef(item));
     }
     Py_DECREF(tmp);
+
+    _PyTuple_RESET_HASH_CACHE(newobj);
 
     // Don't track if a subclass tp_alloc is PyType_GenericAlloc()
     if (!_PyObject_GC_IS_TRACKED(newobj)) {
@@ -966,6 +960,7 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
     for (i = newsize; i < oldsize; i++) {
         Py_CLEAR(v->ob_item[i]);
     }
+    _PyReftracerTrack((PyObject *)v, PyRefTracer_DESTROY);
     sv = PyObject_GC_Resize(PyTupleObject, v, newsize);
     if (sv == NULL) {
         *pv = NULL;
@@ -987,75 +982,99 @@ _PyTuple_Resize(PyObject **pv, Py_ssize_t newsize)
 
 /*********************** Tuple Iterator **************************/
 
+#define _PyTupleIterObject_CAST(op) ((_PyTupleIterObject *)(op))
 
 static void
-tupleiter_dealloc(_PyTupleIterObject *it)
+tupleiter_dealloc(PyObject *self)
 {
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     _PyObject_GC_UNTRACK(it);
     Py_XDECREF(it->it_seq);
-    PyObject_GC_Del(it);
+    assert(Py_IS_TYPE(self, &PyTupleIter_Type));
+    _Py_FREELIST_FREE(tuple_iters, it, PyObject_GC_Del);
 }
 
 static int
-tupleiter_traverse(_PyTupleIterObject *it, visitproc visit, void *arg)
+tupleiter_traverse(PyObject *self, visitproc visit, void *arg)
 {
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     Py_VISIT(it->it_seq);
     return 0;
 }
 
 static PyObject *
-tupleiter_next(PyObject *obj)
+tupleiter_next(PyObject *self)
 {
-    _PyTupleIterObject *it = (_PyTupleIterObject *)obj;
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     PyTupleObject *seq;
     PyObject *item;
 
     assert(it != NULL);
     seq = it->it_seq;
+#ifndef Py_GIL_DISABLED
     if (seq == NULL)
         return NULL;
+#endif
     assert(PyTuple_Check(seq));
 
-    if (it->it_index < PyTuple_GET_SIZE(seq)) {
-        item = PyTuple_GET_ITEM(seq, it->it_index);
-        ++it->it_index;
+    Py_ssize_t index = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+    if (index < PyTuple_GET_SIZE(seq)) {
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index + 1);
+        item = PyTuple_GET_ITEM(seq, index);
         return Py_NewRef(item);
     }
 
+#ifndef Py_GIL_DISABLED
     it->it_seq = NULL;
     Py_DECREF(seq);
+#endif
     return NULL;
 }
 
 static PyObject *
-tupleiter_len(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
+tupleiter_len(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     Py_ssize_t len = 0;
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t idx = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+    Py_ssize_t seq_len = PyTuple_GET_SIZE(it->it_seq);
+    if (idx < seq_len)
+        len = seq_len - idx;
+#else
     if (it->it_seq)
         len = PyTuple_GET_SIZE(it->it_seq) - it->it_index;
+#endif
     return PyLong_FromSsize_t(len);
 }
 
 PyDoc_STRVAR(length_hint_doc, "Private method returning an estimate of len(list(it)).");
 
 static PyObject *
-tupleiter_reduce(_PyTupleIterObject *it, PyObject *Py_UNUSED(ignored))
+tupleiter_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     PyObject *iter = _PyEval_GetBuiltin(&_Py_ID(iter));
 
     /* _PyEval_GetBuiltin can invoke arbitrary code,
      * call must be before access of iterator pointers.
      * see issue #101765 */
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
 
+#ifdef Py_GIL_DISABLED
+    Py_ssize_t idx = FT_ATOMIC_LOAD_SSIZE_RELAXED(it->it_index);
+    if (idx < PyTuple_GET_SIZE(it->it_seq))
+        return Py_BuildValue("N(O)n", iter, it->it_seq, idx);
+#else
     if (it->it_seq)
         return Py_BuildValue("N(O)n", iter, it->it_seq, it->it_index);
-    else
-        return Py_BuildValue("N(())", iter);
+#endif
+    return Py_BuildValue("N(())", iter);
 }
 
 static PyObject *
-tupleiter_setstate(_PyTupleIterObject *it, PyObject *state)
+tupleiter_setstate(PyObject *self, PyObject *state)
 {
+    _PyTupleIterObject *it = _PyTupleIterObject_CAST(self);
     Py_ssize_t index = PyLong_AsSsize_t(state);
     if (index == -1 && PyErr_Occurred())
         return NULL;
@@ -1064,7 +1083,7 @@ tupleiter_setstate(_PyTupleIterObject *it, PyObject *state)
             index = 0;
         else if (index > PyTuple_GET_SIZE(it->it_seq))
             index = PyTuple_GET_SIZE(it->it_seq); /* exhausted iterator */
-        it->it_index = index;
+        FT_ATOMIC_STORE_SSIZE_RELAXED(it->it_index, index);
     }
     Py_RETURN_NONE;
 }
@@ -1073,19 +1092,19 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
 PyDoc_STRVAR(setstate_doc, "Set state information for unpickling.");
 
 static PyMethodDef tupleiter_methods[] = {
-    {"__length_hint__", (PyCFunction)tupleiter_len, METH_NOARGS, length_hint_doc},
-    {"__reduce__", (PyCFunction)tupleiter_reduce, METH_NOARGS, reduce_doc},
-    {"__setstate__", (PyCFunction)tupleiter_setstate, METH_O, setstate_doc},
-    {NULL,              NULL}           /* sentinel */
+    {"__length_hint__", tupleiter_len, METH_NOARGS, length_hint_doc},
+    {"__reduce__", tupleiter_reduce, METH_NOARGS, reduce_doc},
+    {"__setstate__", tupleiter_setstate, METH_O, setstate_doc},
+    {NULL, NULL, 0, NULL} /* sentinel */
 };
 
 PyTypeObject PyTupleIter_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "tuple_iterator",                           /* tp_name */
-    sizeof(_PyTupleIterObject),                    /* tp_basicsize */
+    sizeof(_PyTupleIterObject),                 /* tp_basicsize */
     0,                                          /* tp_itemsize */
     /* methods */
-    (destructor)tupleiter_dealloc,              /* tp_dealloc */
+    tupleiter_dealloc,                          /* tp_dealloc */
     0,                                          /* tp_vectorcall_offset */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
@@ -1102,7 +1121,7 @@ PyTypeObject PyTupleIter_Type = {
     0,                                          /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
     0,                                          /* tp_doc */
-    (traverseproc)tupleiter_traverse,           /* tp_traverse */
+    tupleiter_traverse,                         /* tp_traverse */
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
@@ -1115,15 +1134,16 @@ PyTypeObject PyTupleIter_Type = {
 static PyObject *
 tuple_iter(PyObject *seq)
 {
-    _PyTupleIterObject *it;
-
     if (!PyTuple_Check(seq)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    it = PyObject_GC_New(_PyTupleIterObject, &PyTupleIter_Type);
-    if (it == NULL)
-        return NULL;
+    _PyTupleIterObject *it = _Py_FREELIST_POP(_PyTupleIterObject, tuple_iters);
+    if (it == NULL) {
+        it = PyObject_GC_New(_PyTupleIterObject, &PyTupleIter_Type);
+        if (it == NULL)
+            return NULL;
+    }
     it->it_index = 0;
     it->it_seq = (PyTupleObject *)Py_NewRef(seq);
     _PyObject_GC_TRACK(it);

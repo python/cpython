@@ -8,15 +8,16 @@
 static int
 ensure_xid_class(PyTypeObject *cls, xidatafunc getdata)
 {
-    //assert(cls->tp_flags & Py_TPFLAGS_HEAPTYPE);
-    return _PyXIData_RegisterClass(cls, getdata);
+    PyThreadState *tstate = PyThreadState_Get();
+    return _PyXIData_RegisterClass(tstate, cls, getdata);
 }
 
 #ifdef REGISTERS_HEAP_TYPES
 static int
 clear_xid_class(PyTypeObject *cls)
 {
-    return _PyXIData_UnregisterClass(cls);
+    PyThreadState *tstate = PyThreadState_Get();
+    return _PyXIData_UnregisterClass(tstate, cls);
 }
 #endif
 
