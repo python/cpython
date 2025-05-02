@@ -698,6 +698,15 @@ argparse
   and subparser names if mistyped by the user.
   (Contributed by Savannah Ostrowski in :gh:`124456`.)
 
+* Introduced the optional *color* parameter to
+  :class:`argparse.ArgumentParser`, enabling color for help text.
+  This can be controlled via the :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical |NO_COLOR|_
+  and |FORCE_COLOR|_ environment variables.
+  See also :ref:`using-on-controlling-color`.
+  (Contributed by Hugo van Kemenade in :gh:`130645`.)
+
+
 ast
 ---
 
