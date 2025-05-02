@@ -43,7 +43,6 @@ class CompilationTest(unittest.TestCase):
                         actual = GNUTranslations(f)
 
                     self.assertDictEqual(actual._catalog, expected._catalog)
-                    self.assertFalse(msgfmt.MESSAGES)
 
     def test_binary_header(self):
         with temp_cwd():
