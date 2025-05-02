@@ -25,10 +25,14 @@ static PyObject *
 _zstd_ZstdDict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_UNUSED(kwargs))
 {
     ZstdDict *self;
-    self = (ZstdDict*)type->tp_alloc(type, 0);
+    self = PyObject_GC_New(ZstdDict, type);
     if (self == NULL) {
         goto error;
     }
+
+    self->dict_content = NULL;
+    self->inited = 0;
+    self->d_dict = NULL;
 
     /* ZSTD_CDict dict */
     self->c_dicts = PyDict_New();
@@ -39,7 +43,9 @@ _zstd_ZstdDict_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject *Py_U
     return (PyObject*)self;
 
 error:
-    PyObject_GC_UnTrack(self);
+    if (self != NULL) {
+        PyObject_GC_Del(self);
+    }
     return NULL;
 }
 

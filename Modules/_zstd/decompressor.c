@@ -622,6 +622,15 @@ _zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         goto error;
     }
 
+    self->inited = 0;
+    self->dict = NULL;
+    self->input_buffer = NULL;
+    self->input_buffer_size = 0;
+    self->in_begin = -1;
+    self->in_end = -1;
+    self->unused_data = NULL;
+    self->eof = 0;
+
     /* needs_input flag */
     self->needs_input = 1;
 
@@ -642,7 +651,9 @@ _zstd_ZstdDecompressor_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject*)self;
 
 error:
-    PyObject_GC_UnTrack(self);
+    if (self != NULL) {
+        PyObject_GC_Del(self);
+    }
     return NULL;
 }
 

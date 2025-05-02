@@ -304,6 +304,10 @@ _zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject
         goto error;
     }
 
+    self->inited = 0;
+    self->dict = NULL;
+    self->use_multithread = 0;
+
 
     /* Compression context */
     self->cctx = ZSTD_createCCtx();
@@ -322,7 +326,9 @@ _zstd_ZstdCompressor_new(PyTypeObject *type, PyObject *Py_UNUSED(args), PyObject
     return (PyObject*)self;
 
 error:
-    PyObject_GC_UnTrack(self);
+    if (self != NULL) {
+        PyObject_GC_Del(self);
+    }
     return NULL;
 }
 
