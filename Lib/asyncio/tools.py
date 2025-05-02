@@ -56,18 +56,93 @@ def _build_tree(id2name, awaits):
 
 
 def _roots(id2label, children):
-    roots = [n for n, lbl in id2label.items() if lbl == "Task-1"]
-    if roots:
-        return roots
+    """Return every task that is *not awaited by anybody*."""
     all_children = {c for kids in children.values() for c in kids}
     return [n for n in id2label if n not in all_children]
+
+# ─── helpers for _roots() ─────────────────────────────────────────
+from collections import defaultdict
+
+def _roots(id2label, children):
+    """
+    Return one root per *source* strongly-connected component (SCC).
+
+    • Build the graph that contains **only tasks** as nodes and edges
+      parent-task ─▶ child-task (ignore coroutine frames).
+
+    • Collapse it into SCCs with Tarjan (linear time).
+
+    • For every component whose condensation-DAG in-degree is 0, choose a
+      stable representative (lexicographically-smallest label, fallback to
+      smallest object-id) and return that list.
+    """
+    TASK = NodeType.TASK
+    task_nodes = [n for n in id2label if n[0] == TASK]
+
+    # ------------ adjacency list among *tasks only* -----------------
+    adj = defaultdict(list)
+    for p in task_nodes:
+        adj[p] = [c for c in children.get(p, []) if c[0] == TASK]
+
+    # ------------ Tarjan’s algorithm --------------------------------
+    index = 0
+    stack, on_stack = [], set()
+    node_index, low = {}, {}
+    comp_of = {}                      # node -> comp-id
+    comps = defaultdict(list)         # comp-id -> [members]
+
+    def strong(v):
+        nonlocal index
+        node_index[v] = low[v] = index
+        index += 1
+        stack.append(v)
+        on_stack.add(v)
+
+        for w in adj[v]:
+            if w not in node_index:
+                strong(w)
+                low[v] = min(low[v], low[w])
+            elif w in on_stack:
+                low[v] = min(low[v], node_index[w])
+
+        if low[v] == node_index[v]:           # root of an SCC
+            while True:
+                w = stack.pop()
+                on_stack.remove(w)
+                comp_of[w] = v               # use root-node as comp-id
+                comps[v].append(w)
+                if w == v:
+                    break
+
+    for v in task_nodes:
+        if v not in node_index:
+            strong(v)
+
+    # ------------ condensation DAG in-degrees -----------------------
+    indeg = defaultdict(int)
+    for p in task_nodes:
+        cp = comp_of[p]
+        for q in adj[p]:
+            cq = comp_of[q]
+            if cp != cq:
+                indeg[cq] += 1
+
+    # ------------ choose one representative per source-SCC ----------
+    roots = []
+    for cid, members in comps.items():
+        if indeg[cid] == 0:                      # source component
+            roots.append(min(
+                members,
+                key=lambda n: (id2label[n], n[1])   # stable pick
+            ))
+    return roots
 
 
 # ─── PRINT TREE FUNCTION ───────────────────────────────────────
 def print_async_tree(result, task_emoji="(T)", cor_emoji="", printer=print):
     """
     Pretty-print the async call tree produced by `get_all_async_stacks()`,
-    prefixing tasks with *task_emoji* and coroutine frames with *cor_emoji*.
+    coping safely with cycles.
     """
     id2name, awaits = _index(result)
     labels, children = _build_tree(id2name, awaits)
@@ -76,20 +151,29 @@ def print_async_tree(result, task_emoji="(T)", cor_emoji="", printer=print):
         flag = task_emoji if node[0] == NodeType.TASK else cor_emoji
         return f"{flag} {labels[node]}"
 
-    def render(node, prefix="", last=True, buf=None):
+    def render(node, prefix="", last=True, buf=None, ancestry=frozenset()):
+        """
+        DFS renderer that stops if *node* already occurs in *ancestry*
+        (i.e. we just found a cycle).
+        """
         if buf is None:
             buf = []
+
+        if node in ancestry:
+            buf.append(f"{prefix}{'└── ' if last else '├── '}↺ {pretty(node)} (cycle)")
+            return buf
+
         buf.append(f"{prefix}{'└── ' if last else '├── '}{pretty(node)}")
         new_pref = prefix + ("    " if last else "│   ")
         kids = children.get(node, [])
         for i, kid in enumerate(kids):
-            render(kid, new_pref, i == len(kids) - 1, buf)
+            render(kid, new_pref, i == len(kids) - 1, buf, ancestry | {node})
         return buf
 
-    result = []
-    for r, root in enumerate(_roots(labels, children)):
-        result.append(render(root))
-    return result
+    forest = []
+    for root in _roots(labels, children):
+        forest.append(render(root))
+    return forest
 
 
 def build_task_table(result):
@@ -124,6 +208,7 @@ if __name__ == "__main__":
 
     try:
         tasks = get_all_awaited_by(args.pid)
+        print(tasks)
     except RuntimeError as e:
         print(f"Error retrieving tasks: {e}")
         sys.exit(1)
