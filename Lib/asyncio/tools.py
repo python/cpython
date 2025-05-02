@@ -11,6 +11,23 @@ class NodeType(Enum):
     TASK = 2
 
 
+class CycleFoundException(Exception):
+    """Raised when there is a cycle when drawing the call tree."""
+
+    def __init__(self, cycles, id2name):
+        super().__init__()
+        self.cycles = cycles
+        self.id2name = id2name
+
+    def __str__(self):
+        for c in self.cycles:
+            names = " → ".join(self.id2name.get(tid, hex(tid)) for tid in c)
+            return (
+                "ERROR: await-graph contains cycles – cannot print a tree!\n"
+                f"cycle: {names}"
+            )
+
+
 # ─── indexing helpers ───────────────────────────────────────────
 def _index(result):
     id2name, awaits = {}, []
@@ -80,7 +97,7 @@ def _find_cycles(graph):
     empty list if the graph is acyclic.
     """
     WHITE, GREY, BLACK = 0, 1, 2
-    color = {n: WHITE for n in graph}
+    color = defaultdict(lambda: WHITE)
     path, cycles = [], []
 
     def dfs(v):
@@ -108,6 +125,10 @@ def print_async_tree(result, task_emoji="(T)", cor_emoji="", printer=print):
     prefixing tasks with *task_emoji* and coroutine frames with *cor_emoji*.
     """
     id2name, awaits = _index(result)
+    g = _task_graph(awaits)
+    cycles = _find_cycles(g)
+    if cycles:
+        raise CycleFoundException(cycles, id2name)
     labels, children = _build_tree(id2name, awaits)
 
     def pretty(node):
@@ -168,18 +189,6 @@ if __name__ == "__main__":
 
     if args.tree:
         # Print the async call tree
-        id2name, awaits = _index(tasks)
-        g = _task_graph(awaits)
-        cycles = _find_cycles(g)
-
-        if cycles:
-            print("ERROR: await-graph contains cycles – cannot print a tree!\n")
-            for c in cycles:
-                # pretty-print task names instead of bare ids
-                names = " → ".join(id2name.get(tid, hex(tid)) for tid in c)
-                print(f"  cycle: {names}")
-            sys.exit(1)
-
         result = print_async_tree(tasks)
         for tree in result:
             print("\n".join(tree))
