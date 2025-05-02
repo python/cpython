@@ -13,6 +13,7 @@
 #include "pycore_function.h"
 #include "pycore_genobject.h"
 #include "pycore_interpframe.h"
+#include "pycore_interpolation.h"
 #include "pycore_intrinsics.h"
 #include "pycore_jit.h"
 #include "pycore_list.h"
@@ -25,6 +26,7 @@
 #include "pycore_setobject.h"
 #include "pycore_sliceobject.h"
 #include "pycore_stackref.h"
+#include "pycore_template.h"
 #include "pycore_tuple.h"
 #include "pycore_unicodeobject.h"
 
