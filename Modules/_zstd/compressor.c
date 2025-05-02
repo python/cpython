@@ -151,9 +151,12 @@ _get_CDict(ZstdDict *self, int compressionLevel)
         }
 
         /* Create ZSTD_CDict instance */
+        char *dict_buffer = PyBytes_AS_STRING(self->dict_content);
+        Py_ssize_t dict_len = Py_SIZE(self->dict_content);
         Py_BEGIN_ALLOW_THREADS
-        cdict = ZSTD_createCDict(PyBytes_AS_STRING(self->dict_content),
-                                 Py_SIZE(self->dict_content), compressionLevel);
+        cdict = ZSTD_createCDict(dict_buffer,
+                                 dict_len,
+                                 compressionLevel);
         Py_END_ALLOW_THREADS
 
         if (cdict == NULL) {

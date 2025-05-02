@@ -250,9 +250,11 @@ _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
     }
 
     /* Train the dictionary */
+    char *dst_dict_buffer = PyBytes_AS_STRING(dst_dict_bytes);
+    char *samples_buffer = PyBytes_AS_STRING(samples_bytes);
     Py_BEGIN_ALLOW_THREADS
-    zstd_ret = ZDICT_trainFromBuffer(PyBytes_AS_STRING(dst_dict_bytes), dict_size,
-                                     PyBytes_AS_STRING(samples_bytes),
+    zstd_ret = ZDICT_trainFromBuffer(dst_dict_buffer, dict_size,
+                                     samples_buffer,
                                      chunk_sizes, (uint32_t)chunks_number);
     Py_END_ALLOW_THREADS
 
