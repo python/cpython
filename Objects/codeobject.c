@@ -2041,6 +2041,12 @@ _PyCode_ReturnsOnlyNone(PyCodeObject *co)
     if (!_PyCode_CheckPureFunction(co, NULL)) {
         return 0;
     }
+    Py_ssize_t len = Py_SIZE(co);
+    assert(len > 0);
+
+    // The last instruction either returns or raises.  We can take advantage
+    // of that for a quick exit.
+    _Py_CODEUNIT final = _Py_GetBaseCodeUnit(co, len-1);
 
     // Look up None in co_consts.
     Py_ssize_t nconsts = PyTuple_Size(co->co_consts);
@@ -2052,26 +2058,42 @@ _PyCode_ReturnsOnlyNone(PyCodeObject *co)
     }
     if (none_index == nconsts) {
         // None wasn't there, which means there was no implicit return,
-        // "return", or "return None".  That means there must be
-        // an explicit return (non-None).
-        return 0;
-    }
+        // "return", or "return None".
 
-    // Walk the bytecode, looking for RETURN_VALUE.
-    Py_ssize_t len = Py_SIZE(co);
-    for (int i = 0; i < len; i++) {
-        _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
-        if (IS_RETURN_OPCODE(inst.op.code)) {
-            assert(i != 0);
-            // Ignore it if it returns None.
-            _Py_CODEUNIT prev = _Py_GetBaseCodeUnit(co, i-1);
-            if (prev.op.code == LOAD_CONST) {
-                // We don't worry about EXTENDED_ARG for now.
-                if (prev.op.arg == none_index) {
-                    continue;
-                }
-            }
+        // That means there must be
+        // an explicit return (non-None), or it only raises.
+        if (IS_RETURN_OPCODE(final.op.code)) {
+            // It was an explicit return (non-None).
             return 0;
+        }
+        // It must end with a raise then.  We still have to walk the
+        // bytecode to see if there's any explicit return (non-None).
+        assert(IS_RAISE_OPCODE(final.op.code));
+        for (int i = 0; i < len; i++) {
+            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
+            if (IS_RETURN_OPCODE(inst.op.code)) {
+                // We alraedy know it isn't returning None.
+                return 0;
+            }
+        }
+        // It must only raise.
+    }
+    else {
+        // Walk the bytecode, looking for RETURN_VALUE.
+        for (int i = 0; i < len; i++) {
+            _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
+            if (IS_RETURN_OPCODE(inst.op.code)) {
+                assert(i != 0);
+                // Ignore it if it returns None.
+                _Py_CODEUNIT prev = _Py_GetBaseCodeUnit(co, i-1);
+                if (prev.op.code == LOAD_CONST) {
+                    // We don't worry about EXTENDED_ARG for now.
+                    if (prev.op.arg == none_index) {
+                        continue;
+                    }
+                }
+                return 0;
+            }
         }
     }
     return 1;
