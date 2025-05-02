@@ -21,6 +21,7 @@
 
 from __future__ import annotations
 import os
+import time
 
 # Categories of actions:
 #  killing
@@ -481,9 +482,7 @@ class perform_bracketed_paste(Command):
     def do(self) -> None:
         done = "\x1b[201~"
         data = ""
-        import time
         start = time.time()
-        trace("bracketed pasting starts")
         while done not in data:
             self.reader.console.wait(100)
             ev = self.reader.console.getpending()

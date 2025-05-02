@@ -110,6 +110,11 @@ def recover_unterminated_string(
     buffer: str,
 ) -> Iterator[ColorSpan]:
     msg, loc = exc.args
+    if loc is None:
+        return
+
+    line_no, column = loc
+
     if msg.startswith(
         (
             "unterminated string literal",
@@ -120,7 +125,7 @@ def recover_unterminated_string(
             "unterminated triple-quoted t-string literal",
         )
     ):
-        start = line_lengths[loc[0] - 1] + loc[1] - 1
+        start = line_lengths[line_no - 1] + column - 1
         end = line_lengths[-1] - 1
 
         # in case FSTRING_START was already emitted
