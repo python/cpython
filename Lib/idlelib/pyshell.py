@@ -952,6 +952,7 @@ class PyShell(OutputWindow):
         self.per.insertfilter(UserInputTaggingDelegator())
 
         if not use_subprocess:
+            # Menu options "View Last Restart" and "Restart Shell" are disabled
             self.update_menu_state("shell", 0, "disabled")
             self.update_menu_state("shell", 1, "disabled")
 
