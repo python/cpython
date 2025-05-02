@@ -1636,8 +1636,11 @@ def _compute_suggestion_error(exc_value, tb, wrong_name):
         # has the wrong name as attribute
         if 'self' in frame.f_locals:
             self = frame.f_locals['self']
-            if hasattr(self, wrong_name):
-                return f"self.{wrong_name}"
+            try:
+                if hasattr(self, wrong_name):
+                    return f"self.{wrong_name}"
+            except NameError:
+                return None
 
     try:
         import _suggestions
