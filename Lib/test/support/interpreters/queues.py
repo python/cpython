@@ -88,7 +88,7 @@ def list_all():
         if not hasattr(self, '_unbound'):
             self._set_unbound(unboundop)
         else:
-            assert self._unbound[0] == op
+            assert self._unbound[0] == unboundop
         queues.append(self)
     return queues
 
