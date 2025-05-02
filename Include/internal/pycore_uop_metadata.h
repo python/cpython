@@ -74,6 +74,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_TO_BOOL_INT] = HAS_EXIT_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_NOS_LIST] = HAS_EXIT_FLAG,
     [_GUARD_TOS_LIST] = HAS_EXIT_FLAG,
+    [_GUARD_TOS_SLICE] = HAS_EXIT_FLAG,
     [_TO_BOOL_LIST] = 0,
     [_TO_BOOL_NONE] = HAS_EXIT_FLAG,
     [_GUARD_NOS_UNICODE] = HAS_EXIT_FLAG,
@@ -98,6 +99,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_BINARY_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_STORE_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_LIST_INT] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
+    [_BINARY_OP_SUBSCR_LIST_SLICE] = HAS_ERROR_FLAG | HAS_ESCAPES_FLAG,
     [_BINARY_OP_SUBSCR_STR_INT] = HAS_DEOPT_FLAG | HAS_ESCAPES_FLAG,
     [_GUARD_NOS_TUPLE] = HAS_EXIT_FLAG,
     [_GUARD_TOS_TUPLE] = HAS_EXIT_FLAG,
@@ -236,6 +238,7 @@ const uint16_t _PyUop_Flags[MAX_UOP_ID+1] = {
     [_CHECK_PEP_523] = HAS_DEOPT_FLAG,
     [_CHECK_FUNCTION_EXACT_ARGS] = HAS_ARG_FLAG | HAS_EXIT_FLAG,
     [_CHECK_STACK_SPACE] = HAS_ARG_FLAG | HAS_DEOPT_FLAG,
+    [_CHECK_RECURSION_REMAINING] = HAS_DEOPT_FLAG,
     [_INIT_CALL_PY_EXACT_ARGS_0] = HAS_PURE_FLAG,
     [_INIT_CALL_PY_EXACT_ARGS_1] = HAS_PURE_FLAG,
     [_INIT_CALL_PY_EXACT_ARGS_2] = HAS_PURE_FLAG,
@@ -327,6 +330,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_BINARY_OP_SUBSCR_DICT] = "_BINARY_OP_SUBSCR_DICT",
     [_BINARY_OP_SUBSCR_INIT_CALL] = "_BINARY_OP_SUBSCR_INIT_CALL",
     [_BINARY_OP_SUBSCR_LIST_INT] = "_BINARY_OP_SUBSCR_LIST_INT",
+    [_BINARY_OP_SUBSCR_LIST_SLICE] = "_BINARY_OP_SUBSCR_LIST_SLICE",
     [_BINARY_OP_SUBSCR_STR_INT] = "_BINARY_OP_SUBSCR_STR_INT",
     [_BINARY_OP_SUBSCR_TUPLE_INT] = "_BINARY_OP_SUBSCR_TUPLE_INT",
     [_BINARY_OP_SUBTRACT_FLOAT] = "_BINARY_OP_SUBTRACT_FLOAT",
@@ -377,6 +381,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_CHECK_PEP_523] = "_CHECK_PEP_523",
     [_CHECK_PERIODIC] = "_CHECK_PERIODIC",
     [_CHECK_PERIODIC_IF_NOT_YIELD_FROM] = "_CHECK_PERIODIC_IF_NOT_YIELD_FROM",
+    [_CHECK_RECURSION_REMAINING] = "_CHECK_RECURSION_REMAINING",
     [_CHECK_STACK_SPACE] = "_CHECK_STACK_SPACE",
     [_CHECK_STACK_SPACE_OPERAND] = "_CHECK_STACK_SPACE_OPERAND",
     [_CHECK_VALIDITY] = "_CHECK_VALIDITY",
@@ -445,6 +450,7 @@ const char *const _PyOpcode_uop_name[MAX_UOP_ID+1] = {
     [_GUARD_TOS_FLOAT] = "_GUARD_TOS_FLOAT",
     [_GUARD_TOS_INT] = "_GUARD_TOS_INT",
     [_GUARD_TOS_LIST] = "_GUARD_TOS_LIST",
+    [_GUARD_TOS_SLICE] = "_GUARD_TOS_SLICE",
     [_GUARD_TOS_TUPLE] = "_GUARD_TOS_TUPLE",
     [_GUARD_TOS_UNICODE] = "_GUARD_TOS_UNICODE",
     [_GUARD_TYPE_VERSION] = "_GUARD_TYPE_VERSION",
@@ -714,6 +720,8 @@ int _PyUop_num_popped(int opcode, int oparg)
             return 0;
         case _GUARD_TOS_LIST:
             return 0;
+        case _GUARD_TOS_SLICE:
+            return 0;
         case _TO_BOOL_LIST:
             return 1;
         case _TO_BOOL_NONE:
@@ -761,6 +769,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _STORE_SLICE:
             return 4;
         case _BINARY_OP_SUBSCR_LIST_INT:
+            return 2;
+        case _BINARY_OP_SUBSCR_LIST_SLICE:
             return 2;
         case _BINARY_OP_SUBSCR_STR_INT:
             return 2;
@@ -1037,6 +1047,8 @@ int _PyUop_num_popped(int opcode, int oparg)
         case _CHECK_FUNCTION_EXACT_ARGS:
             return 0;
         case _CHECK_STACK_SPACE:
+            return 0;
+        case _CHECK_RECURSION_REMAINING:
             return 0;
         case _INIT_CALL_PY_EXACT_ARGS_0:
             return 2 + oparg;

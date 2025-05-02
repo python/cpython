@@ -10866,6 +10866,12 @@ fi
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tier2_flags $jit_flags" >&5
 printf "%s\n" "$tier2_flags $jit_flags" >&6; }
 
+if test "$disable_gil" = "yes" -a "$enable_experimental_jit" != "no"; then
+  # GH-133171: This configuration builds the JIT but never actually uses it,
+  # which is surprising (and strictly worse than not building it at all):
+  as_fn_error $? "--enable-experimental-jit cannot be used with --disable-gil." "$LINENO" 5
+fi
+
 case "$ac_cv_cc_name" in
 mpicc)
     CFLAGS_NODIST="$CFLAGS_NODIST"
