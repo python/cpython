@@ -322,7 +322,8 @@ class OptionMenuTest(AbstractTkTest, unittest.TestCase):
     def test_specify_name(self):
         textvar = tkinter.StringVar(self.root)
         widget = ttk.OptionMenu(self.root, textvar, ":)", name="option_menu_ex")
-        self.assertIs(self.root.nametowidget("option_menu_ex"), widget)
+        self.assertEqual(str(widget), ".option_menu_ex")
+        self.assertIs(self.root.children["option_menu_ex"], widget)
 
 
 class DefaultRootTest(AbstractDefaultRootTest, unittest.TestCase):
