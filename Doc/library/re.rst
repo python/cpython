@@ -266,7 +266,7 @@ The special characters are:
      not a word boundary as outside a set, and numeric escapes
      such as ``\1`` are always octal escapes, not group references.
      Special sequences which do not match a single character such as ``\A``
-     and ``\Z`` are not allowed.
+     and ``\z`` are not allowed.
 
    .. index:: single: ^ (caret); in regular expressions
 
@@ -661,10 +661,14 @@ character ``'$'``.
    matches characters which are neither alphanumeric in the current locale
    nor the underscore.
 
-.. index:: single: \Z; in regular expressions
+.. index:: single: \z; in regular expressions
+           single: \Z; in regular expressions
 
+``\z``
 ``\Z``
    Matches only at the end of the string.
+   ``\z`` is a newer and more portable variant.
+   ``\Z`` is only needed for compatibility with old Python versions.
 
 .. index::
    single: \a; in regular expressions
@@ -710,6 +714,9 @@ three digits in length.
 .. versionchanged:: 3.8
    The :samp:`'\\N\\{{name}\\}'` escape sequence has been added. As in string literals,
    it expands to the named Unicode character (e.g. ``'\N{EM DASH}'``).
+
+.. versionchanged:: next
+   The ``'\z'`` escape sequence has been added.
 
 
 .. _contents-of-module-re:
