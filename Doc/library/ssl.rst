@@ -1071,8 +1071,8 @@ SSL Sockets
      (but passing a non-zero ``flags`` argument is not allowed)
    - :meth:`~socket.socket.send`, :meth:`~socket.socket.sendall` (with
      the same limitation)
-   - :meth:`~socket.socket.sendfile` (but it may be high-performant only when
-     the kernel TLS is enabled (see :data:`~ssl.OP_ENABLE_KTLS`) or when a
+   - :meth:`~socket.socket.sendfile` (it may be high-performant only when
+     the kernel TLS is enabled by setting :data:`~ssl.OP_ENABLE_KTLS` or when a
      socket is plain-text, else :meth:`~socket.socket.send` will be used)
    - :meth:`~socket.socket.shutdown`
 
