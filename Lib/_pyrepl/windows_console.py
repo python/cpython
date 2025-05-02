@@ -543,7 +543,6 @@ class WindowsConsole(Console):
         while not self.event_queue.empty():
             e2 = self.event_queue.get()
             e.data += e2.data
-            e.raw += e.raw
 
         return e
 
