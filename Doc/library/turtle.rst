@@ -1,5 +1,5 @@
 =================================
-:mod:`turtle` --- Turtle graphics
+:mod:`!turtle` --- Turtle graphics
 =================================
 
 .. module:: turtle

@@ -1,5 +1,5 @@
 ========================================
-:mod:`typing` --- Support for type hints
+:mod:`!typing` --- Support for type hints
 ========================================
 
 .. testsetup:: *
