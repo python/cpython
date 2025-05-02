@@ -7629,6 +7629,7 @@
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
+            #if !Py_TAIL_CALL_INTERP && defined(_Py_TIER2)
             _PyStackRef executor = entry.frame.localsplus[0];
             assert(tstate->current_executor == NULL);
             if (!PyStackRef_IsNull(executor)) {
@@ -7640,6 +7641,7 @@
                 stack_pointer = _PyFrame_GetStackPointer(frame);
                 stack_pointer += 1;
             }
+            #endif
             LLTRACE_RESUME_FRAME();
             return result;
         }

@@ -267,6 +267,8 @@ uop_dealloc(PyObject *op) {
     _PyObject_GC_UNTRACK(self);
     assert(self->vm_data.code == NULL);
     unlink_executor(self);
+    // Once unlinked it becomes impossible to invalidate an executor, so do it here.
+    self->vm_data.valid = 0;
     add_to_pending_deletion_list(self);
 }
 

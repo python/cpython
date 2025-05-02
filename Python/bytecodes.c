@@ -1169,12 +1169,14 @@ dummy_func(
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
+#if !Py_TAIL_CALL_INTERP && defined(_Py_TIER2)
             _PyStackRef executor = entry.frame.localsplus[0];
             assert(tstate->current_executor == NULL);
             if (!PyStackRef_IsNull(executor)) {
                 tstate->current_executor = PyStackRef_AsPyObjectBorrow(executor);
                 PyStackRef_CLOSE(executor);
             }
+#endif
             LLTRACE_RESUME_FRAME();
             return result;
         }

@@ -1050,14 +1050,13 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     entry.frame.previous = tstate->current_frame;
     frame->previous = &entry.frame;
     tstate->current_frame = frame;
-
+    entry.frame.localsplus[0] = PyStackRef_NULL;
+#ifdef _Py_TIER2
     if (tstate->current_executor != NULL) {
         entry.frame.localsplus[0] = PyStackRef_FromPyObjectNew(tstate->current_executor);
         tstate->current_executor = NULL;
     }
-    else {
-        entry.frame.localsplus[0] = PyStackRef_NULL;
-    }
+#endif
 
     /* support for generator.throw() */
     if (throwflag) {
@@ -1084,10 +1083,19 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         stack_pointer = _PyFrame_GetStackPointer(frame);
 #if Py_TAIL_CALL_INTERP
 #   if Py_STATS
-            return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0, lastopcode);
+        PyObject *res = _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0, lastopcode);
 #   else
-            return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
+        PyObject *res = _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
 #   endif
+#   ifdef _Py_TIER2
+        _PyStackRef executor = entry.frame.localsplus[0];
+        assert(tstate->current_executor == NULL);
+        if (!PyStackRef_IsNull(executor)) {
+            tstate->current_executor = PyStackRef_AsPyObjectBorrow(executor);
+            PyStackRef_CLOSE(executor);
+        }
+#   endif
+        return res;
 #else
         goto error;
 #endif
