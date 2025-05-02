@@ -99,6 +99,9 @@ def generate():
 
 
 def make(filename, outfile):
+    global MESSAGES
+    MESSAGES.clear()
+
     ID = 1
     STR = 2
     CTXT = 3
