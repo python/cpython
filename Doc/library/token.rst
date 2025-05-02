@@ -131,6 +131,41 @@ The token constants are:
 
       The token string contains the closing quote(s).
 
+.. data:: TSTRING_START
+
+   Token value used to indicate the beginning of a template string literal.
+
+   .. impl-detail::
+
+      The token string includes the prefix and the opening quote(s), but none
+      of the contents of the literal.
+
+   .. versionadded:: next
+
+.. data:: TSTRING_MIDDLE
+
+   Token value used for literal text inside a template string literal
+   including format specifications.
+
+   .. impl-detail::
+
+      Replacement fields (that is, the non-literal parts of t-strings) use
+      the same tokens as other expressions, and are delimited by
+      :data:`LBRACE`, :data:`RBRACE`, :data:`EXCLAMATION` and :data:`COLON`
+      tokens.
+
+   .. versionadded:: next
+
+.. data:: TSTRING_END
+
+   Token value used to indicate the end of a template string literal.
+
+   .. impl-detail::
+
+      The token string contains the closing quote(s).
+
+   .. versionadded:: next
+
 .. data:: ENDMARKER
 
    Token value that indicates the end of input.
