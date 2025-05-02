@@ -1997,6 +1997,11 @@ _PyCode_VerifyStateless(PyThreadState *tstate,
         _PyErr_SetString(tstate, PyExc_ValueError, errmsg);
         return -1;
     }
+    if (builtinsns != NULL) {
+        // Make sure the next check will fail for globals,
+        // even if there aren't any builtins.
+        counts.unbound.globals.numbuiltin += 1;
+    }
     if (!_PyCode_CheckNoExternalState(co, &counts, &errmsg)) {
         _PyErr_SetString(tstate, PyExc_ValueError, errmsg);
         return -1;
