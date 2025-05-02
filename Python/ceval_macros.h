@@ -359,12 +359,13 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 do {                                                   \
     OPT_STAT_INC(traces_executed);                     \
     _PyExecutorObject *_executor = (EXECUTOR);         \
+    assert(tstate->current_executor == _executor);     \
     jit_func jitted = _executor->jit_code;             \
     /* Keep the shim frame alive via the executor: */  \
     Py_INCREF(_executor);                              \
     next_instr = jitted(frame, stack_pointer, tstate); \
     Py_DECREF(_executor);                              \
-    Py_CLEAR(tstate->previous_executor);               \
+    tstate->current_executor = NULL;                   \
     frame = tstate->current_frame;                     \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
     if (next_instr == NULL) {                          \
@@ -387,9 +388,9 @@ do { \
     do                                                                \
     {                                                                 \
         next_instr = (TARGET);                                        \
+        assert(tstate->current_executor == NULL);                     \
         OPT_HIST(trace_uop_execution_counter, trace_run_length_hist); \
         _PyFrame_SetStackPointer(frame, stack_pointer);               \
-        Py_CLEAR(tstate->previous_executor);                          \
         stack_pointer = _PyFrame_GetStackPointer(frame);              \
         if (next_instr == NULL)                                       \
         {                                                             \

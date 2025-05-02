@@ -6965,7 +6965,7 @@
                 Py_CLEAR(exit->executor);
                 stack_pointer = _PyFrame_GetStackPointer(frame);
             }
-            tstate->previous_executor = (PyObject *)current_executor;
+            tstate->current_executor = NULL;
             if (exit->executor == NULL) {
                 _Py_BackoffCounter temperature = exit->temperature;
                 if (!backoff_counter_triggers(temperature)) {
@@ -6990,7 +6990,7 @@
                 }
                 exit->executor = executor;
             }
-            Py_INCREF(exit->executor);
+            tstate->current_executor = (PyObject *)exit->executor;
             GOTO_TIER_TWO(exit->executor);
             break;
         }
@@ -7094,9 +7094,6 @@
 
         case _START_EXECUTOR: {
             PyObject *executor = (PyObject *)CURRENT_OPERAND0();
-            _PyFrame_SetStackPointer(frame, stack_pointer);
-            Py_CLEAR(tstate->previous_executor);
-            stack_pointer = _PyFrame_GetStackPointer(frame);
             #ifndef _Py_JIT
             current_executor = (_PyExecutorObject*)executor;
             #endif
@@ -7119,7 +7116,7 @@
         }
 
         case _DEOPT: {
-            tstate->previous_executor = (PyObject *)current_executor;
+            tstate->current_executor = NULL;
             GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
             break;
         }
@@ -7127,7 +7124,7 @@
         case _ERROR_POP_N: {
             oparg = CURRENT_OPARG();
             uint32_t target = (uint32_t)CURRENT_OPERAND0();
-            tstate->previous_executor = (PyObject *)current_executor;
+            tstate->current_executor = NULL;
             assert(oparg == 0);
             frame->instr_ptr = _PyFrame_GetBytecode(frame) + target;
             GOTO_TIER_ONE(NULL);

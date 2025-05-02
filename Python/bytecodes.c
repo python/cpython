@@ -1169,6 +1169,12 @@ dummy_func(
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
+            _PyStackRef executor = entry.frame.localsplus[0];
+            assert(tstate->current_executor == NULL);
+            if (!PyStackRef_IsNull(executor)) {
+                tstate->current_executor = PyStackRef_AsPyObjectBorrow(executor);
+                PyStackRef_CLOSE(executor);
+            }
             LLTRACE_RESUME_FRAME();
             return result;
         }
@@ -2912,8 +2918,8 @@ dummy_func(
                 }
                 else {
                     this_instr[1].counter = initial_jump_backoff_counter();
-                    assert(tstate->previous_executor == NULL);
-                    tstate->previous_executor = Py_None;
+                    assert(tstate->current_executor == NULL);
+                    tstate->current_executor = (PyObject *)executor;
                     GOTO_TIER_TWO(executor);
                 }
             }
@@ -2965,7 +2971,7 @@ dummy_func(
             assert(executor->vm_data.index == INSTR_OFFSET() - 1);
             assert(executor->vm_data.code == code);
             assert(executor->vm_data.valid);
-            assert(tstate->previous_executor == NULL);
+            assert(tstate->current_executor == NULL);
             /* If the eval breaker is set then stay in tier 1.
              * This avoids any potentially infinite loops
              * involving _RESUME_CHECK */
@@ -2978,8 +2984,7 @@ dummy_func(
                 }
                 DISPATCH_GOTO();
             }
-            tstate->previous_executor = Py_None;
-            Py_INCREF(executor);
+            tstate->current_executor = (PyObject *)executor;
             GOTO_TIER_TWO(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
@@ -5247,7 +5252,7 @@ dummy_func(
                 exit->temperature = initial_temperature_backoff_counter();
                 Py_CLEAR(exit->executor);
             }
-            tstate->previous_executor = (PyObject *)current_executor;
+            tstate->current_executor = NULL;
             if (exit->executor == NULL) {
                 _Py_BackoffCounter temperature = exit->temperature;
                 if (!backoff_counter_triggers(temperature)) {
@@ -5270,7 +5275,7 @@ dummy_func(
                 }
                 exit->executor = executor;
             }
-            Py_INCREF(exit->executor);
+            tstate->current_executor = (PyObject *)exit->executor;
             GOTO_TIER_TWO(exit->executor);
         }
 
@@ -5309,7 +5314,6 @@ dummy_func(
         }
 
         tier2 op(_START_EXECUTOR, (executor/4 --)) {
-            Py_CLEAR(tstate->previous_executor);
 #ifndef _Py_JIT
             current_executor = (_PyExecutorObject*)executor;
 #endif
@@ -5330,12 +5334,12 @@ dummy_func(
         }
 
         tier2 op(_DEOPT, (--)) {
-            tstate->previous_executor = (PyObject *)current_executor;
+            tstate->current_executor = NULL;
             GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
         }
 
         tier2 op(_ERROR_POP_N, (target/2 --)) {
-            tstate->previous_executor = (PyObject *)current_executor;
+            tstate->current_executor = NULL;
             assert(oparg == 0);
             frame->instr_ptr = _PyFrame_GetBytecode(frame) + target;
             SYNC_SP();
