@@ -45,6 +45,15 @@ struct _Py_AsyncioModuleDebugOffsets {
     } asyncio_thread_state;
 };
 
+// Helper to chain exceptions and avoid repetitions
+static void
+chain_exceptions(PyObject *exception, const char *string)
+{
+    PyObject *exc = PyErr_GetRaisedException();
+    PyErr_SetString(exception, string);
+    _PyErr_ChainExceptions1(exc);
+}
+
 // Get the PyAsyncioDebug section address for any platform
 static uintptr_t
 _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
@@ -65,7 +74,7 @@ _Py_RemoteDebug_GetAsyncioDebugAddress(proc_handle_t* handle)
         address = search_map_for_section(handle, "AsyncioDebug", "_asyncio.cpython");
     }
 #else
-    address = 0;
+    Py_UNREACHABLE();
 #endif
 
     return address;
@@ -304,7 +313,7 @@ parse_task_name(
     if ((flags & Py_TPFLAGS_LONG_SUBCLASS)) {
         long res = read_py_long(handle, offsets, task_name_addr);
         if (res == -1) {
-            PyErr_SetString(PyExc_RuntimeError, "Failed to get task name");
+            chain_exceptions(PyExc_RuntimeError, "Failed to get task name");
             return NULL;
         }
         return PyUnicode_FromFormat("Task-%d", res);
@@ -481,9 +490,6 @@ parse_task(
     if (err) {
         return -1;
     }
-
-    uintptr_t refcnt;
-    read_ptr(handle, task_address + sizeof(Py_ssize_t), &refcnt);
 
     PyObject* result = PyList_New(0);
     if (result == NULL) {
@@ -1159,30 +1165,32 @@ get_all_awaited_by(PyObject* self, PyObject* args)
         return 0;
     }
 
+    PyObject *result = NULL;
+
     uintptr_t runtime_start_addr = _Py_RemoteDebug_GetPyRuntimeAddress(handle);
     if (runtime_start_addr == 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(
                 PyExc_RuntimeError, "Failed to get .PyRuntime address");
         }
-        return NULL;
+        goto result_err;
     }
     struct _Py_DebugOffsets local_debug_offsets;
 
     if (_Py_RemoteDebug_ReadDebugOffsets(handle, &runtime_start_addr, &local_debug_offsets)) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to read debug offsets");
-        return NULL;
+        chain_exceptions(PyExc_RuntimeError, "Failed to read debug offsets");
+        goto result_err;
     }
 
     struct _Py_AsyncioModuleDebugOffsets local_async_debug;
     if (read_async_debug(handle, &local_async_debug)) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to read asyncio debug offsets");
-        return NULL;
+        chain_exceptions(PyExc_RuntimeError, "Failed to read asyncio debug offsets");
+        goto result_err;
     }
 
-    PyObject *result = PyList_New(0);
+    result = PyList_New(0);
     if (result == NULL) {
-        return NULL;
+        goto result_err;
     }
 
     uint64_t interpreter_state_list_head =
@@ -1259,7 +1267,7 @@ get_all_awaited_by(PyObject* self, PyObject* args)
     return result;
 
 result_err:
-    Py_DECREF(result);
+    Py_XDECREF(result);
     _Py_RemoteDebug_CleanupProcHandle(handle);
     return NULL;
 }
@@ -1299,7 +1307,7 @@ get_stack_trace(PyObject* self, PyObject* args)
     struct _Py_DebugOffsets local_debug_offsets;
 
     if (_Py_RemoteDebug_ReadDebugOffsets(handle, &runtime_start_address, &local_debug_offsets)) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to read debug offsets");
+        chain_exceptions(PyExc_RuntimeError, "Failed to read debug offsets");
         goto result_err;
     }
 
@@ -1357,40 +1365,40 @@ get_async_stack_trace(PyObject* self, PyObject* args)
         return 0;
     }
 
+    PyObject *result = NULL;
+
     uintptr_t runtime_start_address = _Py_RemoteDebug_GetPyRuntimeAddress(handle);
     if (runtime_start_address == 0) {
         if (!PyErr_Occurred()) {
             PyErr_SetString(
                 PyExc_RuntimeError, "Failed to get .PyRuntime address");
         }
-        return NULL;
+        goto result_err;
     }
     struct _Py_DebugOffsets local_debug_offsets;
 
     if (_Py_RemoteDebug_ReadDebugOffsets(handle, &runtime_start_address, &local_debug_offsets)) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to read debug offsets");
-        return NULL;
+        chain_exceptions(PyExc_RuntimeError, "Failed to read debug offsets");
+        goto result_err;
     }
 
     struct _Py_AsyncioModuleDebugOffsets local_async_debug;
     if (read_async_debug(handle, &local_async_debug)) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to read asyncio debug offsets");
-        return NULL;
+        chain_exceptions(PyExc_RuntimeError, "Failed to read asyncio debug offsets");
+        goto result_err;
     }
 
-    PyObject* result = PyList_New(1);
+    result = PyList_New(1);
     if (result == NULL) {
-        return NULL;
+        goto result_err;
     }
     PyObject* calls = PyList_New(0);
     if (calls == NULL) {
-        Py_DECREF(result);
-        return NULL;
+        goto result_err;
     }
     if (PyList_SetItem(result, 0, calls)) { /* steals ref to 'calls' */
-        Py_DECREF(result);
         Py_DECREF(calls);
-        return NULL;
+        goto result_err;
     }
 
     uintptr_t running_task_addr = (uintptr_t)NULL;
@@ -1398,7 +1406,7 @@ get_async_stack_trace(PyObject* self, PyObject* args)
         handle, runtime_start_address, &local_debug_offsets, &local_async_debug,
         &running_task_addr)
     ) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to find running task");
+        chain_exceptions(PyExc_RuntimeError, "Failed to find running task");
         goto result_err;
     }
 
@@ -1413,7 +1421,7 @@ get_async_stack_trace(PyObject* self, PyObject* args)
         running_task_addr + local_async_debug.asyncio_task_object.task_coro,
         &running_coro_addr
     )) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to read running task coro");
+        chain_exceptions(PyExc_RuntimeError, "Failed to read running task coro");
         goto result_err;
     }
 
@@ -1443,7 +1451,7 @@ get_async_stack_trace(PyObject* self, PyObject* args)
         handle, runtime_start_address, &local_debug_offsets,
         &address_of_current_frame)
     ) {
-        PyErr_SetString(PyExc_RuntimeError, "Failed to find running frame");
+        chain_exceptions(PyExc_RuntimeError, "Failed to find running frame");
         goto result_err;
     }
 
@@ -1459,7 +1467,7 @@ get_async_stack_trace(PyObject* self, PyObject* args)
         );
 
         if (res < 0) {
-            PyErr_SetString(PyExc_RuntimeError, "Failed to parse async frame object");
+            chain_exceptions(PyExc_RuntimeError, "Failed to parse async frame object");
             goto result_err;
         }
 
@@ -1501,7 +1509,7 @@ get_async_stack_trace(PyObject* self, PyObject* args)
 
 result_err:
     _Py_RemoteDebug_CleanupProcHandle(handle);
-    Py_DECREF(result);
+    Py_XDECREF(result);
     return NULL;
 }
 
