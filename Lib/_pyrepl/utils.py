@@ -151,7 +151,7 @@ def gen_colors_from_token_stream(
     token_window = prev_next_window(token_generator)
 
     is_def_name = False
-    paren_level = 0
+    bracket_level = 0
     for prev_token, token, next_token in token_window:
         assert token is not None
         if token.start == token.end:
@@ -172,10 +172,10 @@ def gen_colors_from_token_stream(
                 span = Span.from_token(token, line_lengths)
                 yield ColorSpan(span, "NUMBER")
             case T.OP:
-                if token.string == "(":
-                    paren_level += 1
-                elif token.string == ")":
-                    paren_level -= 1
+                if token.string in "([{":
+                    bracket_level += 1
+                elif token.string in ")]}":
+                    bracket_level -= 1
                 span = Span.from_token(token, line_lengths)
                 yield ColorSpan(span, "OP")
             case T.NAME:
@@ -190,7 +190,7 @@ def gen_colors_from_token_stream(
                         is_def_name = True
                 elif (
                     keyword.issoftkeyword(token.string)
-                    and paren_level == 0
+                    and bracket_level == 0
                     and is_soft_keyword_used(prev_token, token, next_token)
                 ):
                     span = Span.from_token(token, line_lengths)
