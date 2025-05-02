@@ -102,8 +102,6 @@ def preprocess(filename,
 
 
 def _iter_lines(text, reqfile, samefiles, cwd, raw=False):
-    with open('/Users/Edu/Downloads/test.c', 'r') as f:
-        text = f.read()
     lines = iter(text.splitlines())
 
     # The first line is special.
