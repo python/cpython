@@ -37,6 +37,7 @@ class ANSIColors:
     WHITE = "\x1b[37m"  # more like LIGHT GRAY
     YELLOW = "\x1b[33m"
 
+    BOLD = "\x1b[1m"
     BOLD_BLACK = "\x1b[1;30m"  # DARK GRAY
     BOLD_BLUE = "\x1b[1;34m"
     BOLD_CYAN = "\x1b[1;36m"
