@@ -1383,6 +1383,8 @@ PyCPointerType_set_type_impl(PyTypeObject *self, PyTypeObject *cls,
         return NULL;
     }
 
+    PyType_Modified(self);
+
     Py_DECREF(attrdict);
     Py_RETURN_NONE;
 }
