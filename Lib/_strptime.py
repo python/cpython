@@ -365,7 +365,7 @@ class TimeRE(dict):
                     nonlocal day_of_month_in_format
                     day_of_month_in_format = True
             return self[format_char]
-        format = re_sub(r'%(O?.)', repl, format)
+        format = re_sub(r'%([OE]?\\?.?)', repl, format)
         if day_of_month_in_format and not year_in_format:
             import warnings
             warnings.warn("""\
@@ -439,14 +439,13 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             # \\, in which case it was a stray % but with a space after it
             except KeyError as err:
                 bad_directive = err.args[0]
-                if bad_directive == "\\":
-                    bad_directive = "%"
                 del err
+                bad_directive = bad_directive.replace('\\s', '')
+                if not bad_directive:
+                    raise ValueError("stray %% in format '%s'" % format) from None
+                bad_directive = bad_directive.replace('\\', '', 1)
                 raise ValueError("'%s' is a bad directive in format '%s'" %
                                     (bad_directive, format)) from None
-            # IndexError only occurs when the format string is "%"
-            except IndexError:
-                raise ValueError("stray %% in format '%s'" % format) from None
             _regex_cache[format] = format_regex
     found = format_regex.match(data_string)
     if not found:

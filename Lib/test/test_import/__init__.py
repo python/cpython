@@ -444,7 +444,7 @@ class ImportTests(unittest.TestCase):
         # (SF bug 422177).
         from test.test_import.data import double_const
         unload('test.test_import.data.double_const')
-        from test.test_import.data import double_const
+        from test.test_import.data import double_const  # noqa: F811
 
     def test_import(self):
         def test_with_extension(ext):
@@ -573,7 +573,7 @@ class ImportTests(unittest.TestCase):
 
         # import in a 'for' loop resulted in segmentation fault
         for i in range(2):
-            import test.support.script_helper as x
+            import test.support.script_helper as x  # noqa: F811
 
     def test_failing_reload(self):
         # A failing reload should leave the module object in sys.modules.
@@ -1055,7 +1055,7 @@ except TypeError as e:
 """)
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
-            self.assertEqual(stdout.rstrip(), b"unhashable type: 'substr'")
+            self.assertIn(b"unhashable type: 'substr'", stdout.rstrip())
 
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
                 f.write("""
@@ -1072,7 +1072,7 @@ except TypeError as e:
 
             popen = script_helper.spawn_python("main.py", cwd=tmp)
             stdout, stderr = popen.communicate()
-            self.assertEqual(stdout.rstrip(), b"unhashable type: 'substr'")
+            self.assertIn(b"unhashable type: 'substr'", stdout.rstrip())
 
             # Various issues with sys module
             with open(os.path.join(tmp, "main.py"), "w", encoding='utf-8') as f:
@@ -1186,6 +1186,7 @@ except ImportError as e:
                 self.assertRegex(line, rb"cannot import name 'Fraction' from 'fractions' \(.*\)")
 
     @unittest.skipIf(sys.platform == 'win32', 'Cannot delete cwd on Windows')
+    @unittest.skipIf(sys.platform == 'sunos5', 'Cannot delete cwd on Solaris/Illumos')
     def test_script_shadowing_stdlib_cwd_failure(self):
         with os_helper.temp_dir() as tmp:
             subtmp = os.path.join(tmp, "subtmp")

@@ -884,7 +884,6 @@ class StreamRecoder:
 ### Shortcuts
 
 def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
-
     """ Open an encoded file using the given mode and return
         a wrapped version providing transparent encoding/decoding.
 
@@ -912,8 +911,11 @@ def open(filename, mode='r', encoding=None, errors='strict', buffering=-1):
         .encoding which allows querying the used encoding. This
         attribute is only available if an encoding was specified as
         parameter.
-
     """
+    import warnings
+    warnings.warn("codecs.open() is deprecated. Use open() instead.",
+                  DeprecationWarning, stacklevel=2)
+
     if encoding is not None and \
        'b' not in mode:
         # Force opening of the file in binary mode

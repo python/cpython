@@ -8,8 +8,9 @@ extern "C" {
 #  error "this header requires Py_BUILD_CORE define"
 #endif
 
-#include "pycore_runtime.h"       // _PyRuntime
-#include "pycore_tstate.h"        // _PyThreadStateImpl
+#include "pycore_typedefs.h"      // _PyRuntimeState
+#include "pycore_tstate.h"
+
 
 // Values for PyThreadState.state. A thread must be in the "attached" state
 // before calling most Python APIs. If the GIL is enabled, then "attached"
@@ -49,19 +50,10 @@ extern "C" {
 
 /* Check if the current thread is the main thread.
    Use _Py_IsMainInterpreter() to check if it's the main interpreter. */
-static inline int
-_Py_IsMainThread(void)
-{
-    unsigned long thread = PyThread_get_thread_ident();
-    return (thread == _PyRuntime.main_thread);
-}
+extern int _Py_IsMainThread(void);
 
-
-static inline PyInterpreterState *
-_PyInterpreterState_Main(void)
-{
-    return _PyRuntime.interpreters.main;
-}
+// Export for '_testinternalcapi' shared extension
+PyAPI_FUNC(PyInterpreterState*) _PyInterpreterState_Main(void);
 
 static inline int
 _Py_IsMainInterpreter(PyInterpreterState *interp)
@@ -69,16 +61,7 @@ _Py_IsMainInterpreter(PyInterpreterState *interp)
     return (interp == _PyInterpreterState_Main());
 }
 
-static inline int
-_Py_IsMainInterpreterFinalizing(PyInterpreterState *interp)
-{
-    /* bpo-39877: Access _PyRuntime directly rather than using
-       tstate->interp->runtime to support calls from Python daemon threads.
-       After Py_Finalize() has been called, tstate can be a dangling pointer:
-       point to PyThreadState freed memory. */
-    return (_PyRuntimeState_GetFinalizing(&_PyRuntime) != NULL &&
-            interp == &_PyRuntime._main_interpreter);
-}
+extern int _Py_IsMainInterpreterFinalizing(PyInterpreterState *interp);
 
 // Export for _interpreters module.
 PyAPI_FUNC(PyObject *) _PyInterpreterState_GetIDObject(PyInterpreterState *);
@@ -91,17 +74,7 @@ PyAPI_FUNC(void) _PyErr_SetInterpreterAlreadyRunning(void);
 
 extern int _PyThreadState_IsRunningMain(PyThreadState *);
 extern void _PyInterpreterState_ReinitRunningMain(PyThreadState *);
-
-
-static inline const PyConfig *
-_Py_GetMainConfig(void)
-{
-    PyInterpreterState *interp = _PyInterpreterState_Main();
-    if (interp == NULL) {
-        return NULL;
-    }
-    return _PyInterpreterState_GetConfig(interp);
-}
+extern const PyConfig* _Py_GetMainConfig(void);
 
 
 /* Only handle signals on the main thread of the main interpreter. */
@@ -311,6 +284,9 @@ PyAPI_FUNC(const PyConfig*) _Py_GetConfig(void);
 // See also PyInterpreterState_Get() and _PyInterpreterState_GET().
 extern PyInterpreterState* _PyGILState_GetInterpreterStateUnsafe(void);
 
+extern PyObject * _Py_GetMainModule(PyThreadState *);
+extern int _Py_CheckMainModule(PyObject *module);
+
 #ifndef NDEBUG
 /* Modern equivalent of assert(PyGILState_Check()) */
 static inline void
@@ -323,6 +299,34 @@ _Py_AssertHoldsTstateFunc(const char *func)
 #else
 #define _Py_AssertHoldsTstate()
 #endif
+
+#if !_Py__has_builtin(__builtin_frame_address) && !defined(__GNUC__) && !defined(_MSC_VER)
+static uintptr_t return_pointer_as_int(char* p) {
+    return (uintptr_t)p;
+}
+#endif
+
+static inline uintptr_t
+_Py_get_machine_stack_pointer(void) {
+#if _Py__has_builtin(__builtin_frame_address) || defined(__GNUC__)
+    return (uintptr_t)__builtin_frame_address(0);
+#elif defined(_MSC_VER)
+    return (uintptr_t)_AddressOfReturnAddress();
+#else
+    char here;
+    /* Avoid compiler warning about returning stack address */
+    return return_pointer_as_int(&here);
+#endif
+}
+
+static inline intptr_t
+_Py_RecursionLimit_GetMargin(PyThreadState *tstate)
+{
+    _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
+    assert(_tstate->c_stack_hard_limit != 0);
+    intptr_t here_addr = _Py_get_machine_stack_pointer();
+    return Py_ARITHMETIC_RIGHT_SHIFT(intptr_t, here_addr - (intptr_t)_tstate->c_stack_soft_limit, PYOS_STACK_MARGIN_SHIFT);
+}
 
 #ifdef __cplusplus
 }

@@ -1,2 +1,0 @@
-Add :func:`uuid.uuid6` for generating UUIDv6 objects as specified in
-:rfc:`9562`. Patch by Bénédikt Tran.

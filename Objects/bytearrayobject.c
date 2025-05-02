@@ -2533,7 +2533,7 @@ bytearray_splitlines_impl(PyByteArrayObject *self, int keepends)
 @classmethod
 bytearray.fromhex
 
-    string: unicode
+    string: object
     /
 
 Create a bytearray object from a string of hexadecimal numbers.
@@ -2544,7 +2544,7 @@ Example: bytearray.fromhex('B9 01EF') -> bytearray(b'\\xb9\\x01\\xef')
 
 static PyObject *
 bytearray_fromhex_impl(PyTypeObject *type, PyObject *string)
-/*[clinic end generated code: output=8f0f0b6d30fb3ba0 input=f033a16d1fb21f48]*/
+/*[clinic end generated code: output=8f0f0b6d30fb3ba0 input=7e314e5b2d7ab484]*/
 {
     PyObject *result = _PyBytes_FromHex(string, type == &PyByteArray_Type);
     if (type != &PyByteArray_Type && result != NULL) {
@@ -2832,7 +2832,7 @@ PyTypeObject PyByteArray_Type = {
     0,                                  /* tp_descr_get */
     0,                                  /* tp_descr_set */
     0,                                  /* tp_dictoffset */
-    (initproc)bytearray___init__,       /* tp_init */
+    bytearray___init__,                 /* tp_init */
     PyType_GenericAlloc,                /* tp_alloc */
     PyType_GenericNew,                  /* tp_new */
     PyObject_Free,                      /* tp_free */

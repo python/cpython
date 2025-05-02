@@ -1,0 +1,3 @@
+Rename ``annotationlib.value_to_string`` to
+:func:`annotationlib.type_repr` and provide better handling for function
+objects.

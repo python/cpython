@@ -2,10 +2,12 @@
 /* Interface to Sjoerd's portable C thread library */
 
 #include "Python.h"
+#include "pycore_fileutils.h"     // _PyFile_Flush
 #include "pycore_interp.h"        // _PyInterpreterState.threads.count
 #include "pycore_lock.h"
-#include "pycore_moduleobject.h"  // _PyModule_GetState()
 #include "pycore_modsupport.h"    // _PyArg_NoKeywords()
+#include "pycore_moduleobject.h"  // _PyModule_GetState()
+#include "pycore_object_deferred.h" // _PyObject_SetDeferredRefcount()
 #include "pycore_pylifecycle.h"
 #include "pycore_pystate.h"       // _PyThreadState_SetCurrent()
 #include "pycore_sysmodule.h"     // _PySys_GetOptionalAttr()
@@ -382,8 +384,9 @@ exit:
 }
 
 static int
-force_done(ThreadHandle *handle)
+force_done(void *arg)
 {
+    ThreadHandle *handle = (ThreadHandle *)arg;
     assert(get_thread_handle_state(handle) == THREAD_HANDLE_STARTING);
     _PyEvent_Notify(&handle->thread_is_exiting);
     set_thread_handle_state(handle, THREAD_HANDLE_DONE);
@@ -456,13 +459,14 @@ ThreadHandle_start(ThreadHandle *self, PyObject *func, PyObject *args,
     return 0;
 
 start_failed:
-    _PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)force_done, self);
+    _PyOnceFlag_CallOnce(&self->once, force_done, self);
     return -1;
 }
 
 static int
-join_thread(ThreadHandle *handle)
+join_thread(void *arg)
 {
+    ThreadHandle *handle = (ThreadHandle*)arg;
     assert(get_thread_handle_state(handle) == THREAD_HANDLE_RUNNING);
     PyThread_handle_t os_handle;
     if (ThreadHandle_get_os_handle(handle, &os_handle)) {
@@ -507,11 +511,21 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
     // To work around this, we set `thread_is_exiting` immediately before
     // `thread_run` returns.  We can be sure that we are not attempting to join
     // ourselves if the handle's thread is about to exit.
-    if (!_PyEvent_IsSet(&self->thread_is_exiting) &&
-        ThreadHandle_ident(self) == PyThread_get_thread_ident_ex()) {
-        // PyThread_join_thread() would deadlock or error out.
-        PyErr_SetString(ThreadError, "Cannot join current thread");
-        return -1;
+    if (!_PyEvent_IsSet(&self->thread_is_exiting)) {
+        if (ThreadHandle_ident(self) == PyThread_get_thread_ident_ex()) {
+            // PyThread_join_thread() would deadlock or error out.
+            PyErr_SetString(ThreadError, "Cannot join current thread");
+            return -1;
+        }
+        if (Py_IsFinalizing()) {
+            // gh-123940: On finalization, other threads are prevented from
+            // running Python code. They cannot finalize themselves,
+            // so join() would hang forever (or until timeout).
+            // We raise instead.
+            PyErr_SetString(PyExc_PythonFinalizationError,
+                            "cannot join thread at interpreter shutdown");
+            return -1;
+        }
     }
 
     // Wait until the deadline for the thread to exit.
@@ -536,8 +550,7 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
         }
     }
 
-    if (_PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)join_thread,
-                             self) == -1) {
+    if (_PyOnceFlag_CallOnce(&self->once, join_thread, self) == -1) {
         return -1;
     }
     assert(get_thread_handle_state(self) == THREAD_HANDLE_DONE);
@@ -545,8 +558,9 @@ ThreadHandle_join(ThreadHandle *self, PyTime_t timeout_ns)
 }
 
 static int
-set_done(ThreadHandle *handle)
+set_done(void *arg)
 {
+    ThreadHandle *handle = (ThreadHandle*)arg;
     assert(get_thread_handle_state(handle) == THREAD_HANDLE_RUNNING);
     if (detach_thread(handle) < 0) {
         PyErr_SetString(ThreadError, "failed detaching handle");
@@ -564,7 +578,7 @@ ThreadHandle_set_done(ThreadHandle *self)
         return -1;
     }
 
-    if (_PyOnceFlag_CallOnce(&self->once, (_Py_once_fn_t *)set_done, self) ==
+    if (_PyOnceFlag_CallOnce(&self->once, set_done, self) ==
         -1) {
         return -1;
     }
@@ -647,12 +661,12 @@ PyThreadHandleObject_join(PyObject *op, PyObject *args)
     PyThreadHandleObject *self = PyThreadHandleObject_CAST(op);
 
     PyObject *timeout_obj = NULL;
-    if (!PyArg_ParseTuple(args, "|O:join", &timeout_obj)) {
+    if (!PyArg_ParseTuple(args, "|O?:join", &timeout_obj)) {
         return NULL;
     }
 
     PyTime_t timeout_ns = -1;
-    if (timeout_obj != NULL && timeout_obj != Py_None) {
+    if (timeout_obj != NULL) {
         if (_PyTime_FromSecondsObject(&timeout_ns, timeout_obj,
                                       _PyTime_ROUND_TIMEOUT) < 0) {
             return NULL;
@@ -1083,6 +1097,19 @@ PyDoc_STRVAR(rlock_exit_doc,
 Release the lock.");
 
 static PyObject *
+rlock_locked(PyObject *op, PyObject *Py_UNUSED(ignored))
+{
+    rlockobject *self = rlockobject_CAST(op);
+    int is_locked = _PyRecursiveMutex_IsLockedByCurrentThread(&self->lock);
+    return PyBool_FromLong(is_locked);
+}
+
+PyDoc_STRVAR(rlock_locked_doc,
+"locked()\n\
+\n\
+Return a boolean indicating whether this object is locked right now.");
+
+static PyObject *
 rlock_acquire_restore(PyObject *op, PyObject *args)
 {
     rlockobject *self = rlockobject_CAST(op);
@@ -1200,6 +1227,8 @@ static PyMethodDef rlock_methods[] = {
      METH_VARARGS | METH_KEYWORDS, rlock_acquire_doc},
     {"release",      rlock_release,
      METH_NOARGS, rlock_release_doc},
+    {"locked",       rlock_locked,
+     METH_NOARGS, rlock_locked_doc},
     {"_is_owned",     rlock_is_owned,
      METH_NOARGS, rlock_is_owned_doc},
     {"_acquire_restore", rlock_acquire_restore,
@@ -1900,24 +1929,16 @@ thread_PyThread_start_joinable_thread(PyObject *module, PyObject *fargs,
     PyObject *func = NULL;
     int daemon = 1;
     thread_module_state *state = get_thread_state(module);
-    PyObject *hobj = NULL;
+    PyObject *hobj = Py_None;
     if (!PyArg_ParseTupleAndKeywords(fargs, fkwargs,
-                                     "O|Op:start_joinable_thread", keywords,
-                                     &func, &hobj, &daemon)) {
+                                     "O|O!?p:start_joinable_thread", keywords,
+                                     &func, state->thread_handle_type, &hobj, &daemon)) {
         return NULL;
     }
 
     if (!PyCallable_Check(func)) {
         PyErr_SetString(PyExc_TypeError,
                         "thread function must be callable");
-        return NULL;
-    }
-
-    if (hobj == NULL) {
-        hobj = Py_None;
-    }
-    else if (hobj != Py_None && !Py_IS_TYPE(hobj, state->thread_handle_type)) {
-        PyErr_SetString(PyExc_TypeError, "'handle' must be a _ThreadHandle");
         return NULL;
     }
 
@@ -2390,8 +2411,16 @@ PyDoc_STRVAR(thread__get_main_thread_ident_doc,
 Internal only. Return a non-zero integer that uniquely identifies the main thread\n\
 of the main interpreter.");
 
+#if defined(__OpenBSD__)
+    /* pthread_*_np functions, especially pthread_{get,set}_name_np().
+       pthread_np.h exists on both OpenBSD and FreeBSD but the latter declares
+       pthread_getname_np() and pthread_setname_np() in pthread.h as long as
+       __BSD_VISIBLE remains set.
+     */
+#   include <pthread_np.h>
+#endif
 
-#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(MS_WINDOWS)
+#if defined(HAVE_PTHREAD_GETNAME_NP) || defined(HAVE_PTHREAD_GET_NAME_NP) || defined(MS_WINDOWS)
 /*[clinic input]
 _thread._get_name
 
@@ -2406,7 +2435,12 @@ _thread__get_name_impl(PyObject *module)
     // Linux and macOS are limited to respectively 16 and 64 bytes
     char name[100];
     pthread_t thread = pthread_self();
+#ifdef HAVE_PTHREAD_GETNAME_NP
     int rc = pthread_getname_np(thread, name, Py_ARRAY_LENGTH(name));
+#else /* defined(HAVE_PTHREAD_GET_NAME_NP) */
+    int rc = 0; /* pthread_get_name_np() returns void */
+    pthread_get_name_np(thread, name, Py_ARRAY_LENGTH(name));
+#endif
     if (rc) {
         errno = rc;
         return PyErr_SetFromErrno(PyExc_OSError);
@@ -2433,10 +2467,10 @@ _thread__get_name_impl(PyObject *module)
     return name_obj;
 #endif
 }
-#endif  // HAVE_PTHREAD_GETNAME_NP
+#endif  // HAVE_PTHREAD_GETNAME_NP || HAVE_PTHREAD_GET_NAME_NP || MS_WINDOWS
 
 
-#if defined(HAVE_PTHREAD_SETNAME_NP) || defined(MS_WINDOWS)
+#if defined(HAVE_PTHREAD_SETNAME_NP) || defined(HAVE_PTHREAD_SET_NAME_NP) || defined(MS_WINDOWS)
 /*[clinic input]
 _thread.set_name
 
@@ -2485,9 +2519,13 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
 #elif defined(__NetBSD__)
     pthread_t thread = pthread_self();
     int rc = pthread_setname_np(thread, "%s", (void *)name);
-#else
+#elif defined(HAVE_PTHREAD_SETNAME_NP)
     pthread_t thread = pthread_self();
     int rc = pthread_setname_np(thread, name);
+#else /* defined(HAVE_PTHREAD_SET_NAME_NP) */
+    pthread_t thread = pthread_self();
+    int rc = 0; /* pthread_set_name_np() returns void */
+    pthread_set_name_np(thread, name);
 #endif
     Py_DECREF(name_encoded);
     if (rc) {
@@ -2525,7 +2563,7 @@ _thread_set_name_impl(PyObject *module, PyObject *name_obj)
     Py_RETURN_NONE;
 #endif
 }
-#endif  // HAVE_PTHREAD_SETNAME_NP
+#endif  // HAVE_PTHREAD_SETNAME_NP || HAVE_PTHREAD_SET_NAME_NP || MS_WINDOWS
 
 
 static PyMethodDef thread_methods[] = {
