@@ -131,6 +131,13 @@ pyobject_enable_deferred_refcount(PyObject *self, PyObject *obj)
     return PyLong_FromLong(result);
 }
 
+static PyObject *
+pyobject_is_unique_temporary(PyObject *self, PyObject *obj)
+{
+    int result = PyUnstable_Object_IsUniqueReferencedTemporary(obj);
+    return PyLong_FromLong(result);
+}
+
 static int MyObject_dealloc_called = 0;
 
 static void
@@ -478,6 +485,7 @@ static PyMethodDef test_methods[] = {
     {"pyobject_print_os_error", pyobject_print_os_error, METH_VARARGS},
     {"pyobject_clear_weakrefs_no_callbacks", pyobject_clear_weakrefs_no_callbacks, METH_O},
     {"pyobject_enable_deferred_refcount", pyobject_enable_deferred_refcount, METH_O},
+    {"pyobject_is_unique_temporary", pyobject_is_unique_temporary, METH_O},
     {"test_py_try_inc_ref", test_py_try_inc_ref, METH_NOARGS},
     {"test_xincref_doesnt_leak",test_xincref_doesnt_leak,        METH_NOARGS},
     {"test_incref_doesnt_leak", test_incref_doesnt_leak,         METH_NOARGS},
