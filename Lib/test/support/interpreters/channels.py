@@ -69,7 +69,7 @@ def list_all():
         if not hasattr(send, '_unboundop'):
             send._set_unbound(unboundop)
         else:
-            assert send._unbound[0] == op
+            assert send._unbound[0] == unboundop
         channels.append(chan)
     return channels
 
