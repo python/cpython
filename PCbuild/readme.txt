@@ -70,7 +70,7 @@ You can also use a specific version of clang-cl downloaded from
 https://github.com/llvm/llvm-project/releases, e.g.
 clang+llvm-18.1.8-x86_64-pc-windows-msvc.tar.xz.
 Given you have extracted that to <my-clang-dir>, you can use it like so
-build.bat --pgo "/p:PlatformToolset=ClangCL" "/p:LLVMInstallDir=<my-clang-dir> "/p:LLVMToolsVersion=18"
+build.bat --pgo "/p:PlatformToolset=ClangCL" "/p:LLVMInstallDir=<my-clang-dir>" "/p:LLVMToolsVersion=18"
 
 Setting LLVMToolsVersion to the major version is enough, although you
 can be specific and use 18.1.8 in the above example, too.

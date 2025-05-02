@@ -153,6 +153,20 @@ _PyImport_GetModules(PyInterpreterState *interp)
     return MODULES(interp);
 }
 
+PyObject *
+_PyImport_GetModulesRef(PyInterpreterState *interp)
+{
+    _PyImport_AcquireLock(interp);
+    PyObject *modules = MODULES(interp);
+    if (modules == NULL) {
+        /* The interpreter hasn't been initialized yet. */
+        modules = Py_None;
+    }
+    Py_INCREF(modules);
+    _PyImport_ReleaseLock(interp);
+    return modules;
+}
+
 void
 _PyImport_ClearModules(PyInterpreterState *interp)
 {

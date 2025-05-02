@@ -51,6 +51,12 @@ def requires_colors(test):
 
 term = os.environ.get('TERM')
 SHORT_MAX = 0x7fff
+DEFAULT_PAIR_CONTENTS = [
+    (curses.COLOR_WHITE, curses.COLOR_BLACK),
+    (0, 0),
+    (-1, -1),
+    (15, 0),  # for xterm-256color (15 is for BRIGHT WHITE)
+]
 
 # If newterm was supported we could use it instead of initscr and not exit
 @unittest.skipIf(not term or term == 'unknown',
@@ -751,7 +757,6 @@ class TestCurses(unittest.TestCase):
         curses.nl(False)
         curses.nl()
 
-
     def test_input_options(self):
         stdscr = self.stdscr
 
@@ -944,8 +949,7 @@ class TestCurses(unittest.TestCase):
     @requires_colors
     def test_pair_content(self):
         if not hasattr(curses, 'use_default_colors'):
-            self.assertEqual(curses.pair_content(0),
-                             (curses.COLOR_WHITE, curses.COLOR_BLACK))
+            self.assertIn(curses.pair_content(0), DEFAULT_PAIR_CONTENTS)
         curses.pair_content(0)
         maxpair = self.get_pair_limit() - 1
         if maxpair > 0:
@@ -996,7 +1000,7 @@ class TestCurses(unittest.TestCase):
         except curses.error:
             self.skipTest('cannot change color (use_default_colors() failed)')
         self.assertEqual(curses.pair_content(0), (-1, -1))
-        self.assertIn(old, [(curses.COLOR_WHITE, curses.COLOR_BLACK), (-1, -1), (0, 0)])
+        self.assertIn(old, DEFAULT_PAIR_CONTENTS)
 
     def test_keyname(self):
         # TODO: key_name()
