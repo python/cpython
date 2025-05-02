@@ -95,6 +95,7 @@ import linecache
 import selectors
 import _colorize
 
+from contextlib import ExitStack
 from contextlib import closing
 from contextlib import contextmanager
 from rlcompleter import Completer
@@ -3250,40 +3251,50 @@ def _connect(host, port, frame, commands, version):
 
 def attach(pid, commands=()):
     """Attach to a running process with the given PID."""
-    with closing(socket.create_server(("localhost", 0))) as server:
+    with ExitStack() as stack:
+        server = stack.enter_context(
+            closing(socket.create_server(("localhost", 0)))
+        )
+
         port = server.getsockname()[1]
 
-        with tempfile.NamedTemporaryFile("w", delete_on_close=False) as connect_script:
-            connect_script.write(
-                textwrap.dedent(
-                    f"""
-                    import pdb, sys
-                    pdb._connect(
-                        host="localhost",
-                        port={port},
-                        frame=sys._getframe(1),
-                        commands={json.dumps("\n".join(commands))},
-                        version={_PdbServer.protocol_version()},
-                    )
-                    """
+        connect_script = stack.enter_context(
+            tempfile.NamedTemporaryFile("w", delete_on_close=False)
+        )
+
+        connect_script.write(
+            textwrap.dedent(
+                f"""
+                import pdb, sys
+                pdb._connect(
+                    host="localhost",
+                    port={port},
+                    frame=sys._getframe(1),
+                    commands={json.dumps("\n".join(commands))},
+                    version={_PdbServer.protocol_version()},
                 )
+                """
             )
-            connect_script.close()
-            sys.remote_exec(pid, connect_script.name)
+        )
+        connect_script.close()
+        sys.remote_exec(pid, connect_script.name)
 
-            # TODO Add a timeout? Or don't bother since the user can ^C?
-            client_sock, _ = server.accept()
+        # TODO Add a timeout? Or don't bother since the user can ^C?
+        client_sock, _ = server.accept()
 
-            with closing(client_sock):
-                with tempfile.NamedTemporaryFile("w", delete_on_close=False) as interrupt_script:
-                    interrupt_script.write(
-                        'import pdb, sys\n'
-                        'if inst := pdb.Pdb._last_pdb_instance:\n'
-                        '    inst.set_trace(sys._getframe(1))\n'
-                    )
-                    interrupt_script.close()
+        stack.enter_context(closing(client_sock))
 
-                    _PdbClient(pid, client_sock, interrupt_script.name).cmdloop()
+        interrupt_script = stack.enter_context(
+            tempfile.NamedTemporaryFile("w", delete_on_close=False)
+        )
+        interrupt_script.write(
+            'import pdb, sys\n'
+            'if inst := pdb.Pdb._last_pdb_instance:\n'
+            '    inst.set_trace(sys._getframe(1))\n'
+        )
+        interrupt_script.close()
+
+        _PdbClient(pid, client_sock, interrupt_script.name).cmdloop()
 
 
 # Post-Mortem interface
