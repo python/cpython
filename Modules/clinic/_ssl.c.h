@@ -458,7 +458,13 @@ _ssl__SSLSocket_uses_ktls_for_send_impl(PySSLSocket *self);
 static PyObject *
 _ssl__SSLSocket_uses_ktls_for_send(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLSocket_uses_ktls_for_send_impl((PySSLSocket *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_uses_ktls_for_send_impl((PySSLSocket *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 PyDoc_STRVAR(_ssl__SSLSocket_uses_ktls_for_recv__doc__,
@@ -476,7 +482,13 @@ _ssl__SSLSocket_uses_ktls_for_recv_impl(PySSLSocket *self);
 static PyObject *
 _ssl__SSLSocket_uses_ktls_for_recv(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _ssl__SSLSocket_uses_ktls_for_recv_impl((PySSLSocket *)self);
+    PyObject *return_value = NULL;
+
+    Py_BEGIN_CRITICAL_SECTION(self);
+    return_value = _ssl__SSLSocket_uses_ktls_for_recv_impl((PySSLSocket *)self);
+    Py_END_CRITICAL_SECTION();
+
+    return return_value;
 }
 
 #if defined(BIO_get_ktls_send)
@@ -3002,4 +3014,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=2a1a9b4a90b86168 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1adc3780d8ca682a input=a9049054013a1b77]*/

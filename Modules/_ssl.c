@@ -2469,6 +2469,7 @@ PySSL_select(PySocketSockObject *s, int writing, PyTime_t timeout)
 }
 
 /*[clinic input]
+@critical_section
 _ssl._SSLSocket.uses_ktls_for_send
 
 Check if the Kernel TLS data-path is used for sending.
@@ -2476,7 +2477,7 @@ Check if the Kernel TLS data-path is used for sending.
 
 static PyObject *
 _ssl__SSLSocket_uses_ktls_for_send_impl(PySSLSocket *self)
-/*[clinic end generated code: output=f9d95fbefceb5068 input=604d98b67c65e8a7]*/
+/*[clinic end generated code: output=f9d95fbefceb5068 input=8d1ce4a131190e6b]*/
 {
 #ifdef BIO_get_ktls_send
     int uses = BIO_get_ktls_send(SSL_get_wbio(self->ssl));
@@ -2489,6 +2490,7 @@ _ssl__SSLSocket_uses_ktls_for_send_impl(PySSLSocket *self)
 }
 
 /*[clinic input]
+@critical_section
 _ssl._SSLSocket.uses_ktls_for_recv
 
 Check if the Kernel TLS data-path is used for receiving.
@@ -2496,7 +2498,7 @@ Check if the Kernel TLS data-path is used for receiving.
 
 static PyObject *
 _ssl__SSLSocket_uses_ktls_for_recv_impl(PySSLSocket *self)
-/*[clinic end generated code: output=ce38b00317a1f681 input=fc237448ad8cfe18]*/
+/*[clinic end generated code: output=ce38b00317a1f681 input=a13778a924fc7d44]*/
 {
 #ifdef BIO_get_ktls_recv
     int uses = BIO_get_ktls_recv(SSL_get_rbio(self->ssl));
