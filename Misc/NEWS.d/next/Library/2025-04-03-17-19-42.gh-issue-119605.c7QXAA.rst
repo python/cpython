@@ -1,0 +1,4 @@
+Respect ``follow_wrapped`` for :meth:`!__init__` and :meth:`!__new__` methods
+when getting the class signature for a class with :func:`inspect.signature`.
+Preserve class signature after wrapping with :func:`warnings.deprecated`.
+Patch by Xuehai Pan.
