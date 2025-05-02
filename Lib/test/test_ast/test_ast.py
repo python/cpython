@@ -1,3 +1,4 @@
+import _ast_unparse
 import ast
 import builtins
 import copy
@@ -188,6 +189,26 @@ class AST_Tests(unittest.TestCase):
         # Check that compilation doesn't crash. Note: this may crash explicitly only on debug mode.
         compile(tree, "<string>", "exec")
 
+    def test_negative_locations_for_compile(self):
+        # See https://github.com/python/cpython/issues/130775
+        alias = ast.alias(name='traceback', lineno=0, col_offset=0)
+        for attrs in (
+            {'lineno': -2, 'col_offset': 0},
+            {'lineno': 0, 'col_offset': -2},
+            {'lineno': 0, 'col_offset': -2, 'end_col_offset': -2},
+            {'lineno': -2, 'end_lineno': -2, 'col_offset': 0},
+        ):
+            with self.subTest(attrs=attrs):
+                tree = ast.Module(body=[
+                    ast.Import(names=[alias], **attrs)
+                ], type_ignores=[])
+
+                # It used to crash on this step:
+                compile(tree, "<string>", "exec")
+
+                # This also must not crash:
+                ast.parse(tree, optimize=2)
+
     def test_slice(self):
         slc = ast.parse("x[::]").body[0].value.slice
         self.assertIsNone(slc.upper)
@@ -277,7 +298,7 @@ class AST_Tests(unittest.TestCase):
         x = ast.arguments()
         self.assertEqual(x._fields, ('posonlyargs', 'args', 'vararg', 'kwonlyargs',
                                      'kw_defaults', 'kwarg', 'defaults'))
-        self.assertEqual(x.__annotations__, {
+        self.assertEqual(ast.arguments.__annotations__, {
             'posonlyargs': list[ast.arg],
             'args': list[ast.arg],
             'vararg': ast.arg | None,
@@ -654,6 +675,34 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('(x := 0)', feature_version=(3, 7))
 
+    def test_pep750_tstring(self):
+        code = 't""'
+        ast.parse(code, feature_version=(3, 14))
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 13))
+
+    def test_pep758_except_without_parens(self):
+        code = textwrap.dedent("""
+            try:
+                ...
+            except ValueError, TypeError:
+                ...
+        """)
+        ast.parse(code, feature_version=(3, 14))
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 13))
+
+    def test_pep758_except_star_without_parens(self):
+        code = textwrap.dedent("""
+            try:
+                ...
+            except* ValueError, TypeError:
+                ...
+        """)
+        ast.parse(code, feature_version=(3, 14))
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 13))
+
     def test_conditional_context_managers_parse_with_low_feature_version(self):
         # regression test for gh-115881
         ast.parse('with (x() if y else z()): ...', feature_version=(3, 8))
@@ -732,7 +781,7 @@ class AST_Tests(unittest.TestCase):
                     return self.__class__(self + 1)
                 except ValueError:
                     return self
-        enum._test_simple_enum(_Precedence, ast._Precedence)
+        enum._test_simple_enum(_Precedence, _ast_unparse._Precedence)
 
     @support.cpython_only
     @skip_wasi_stack_overflow()
@@ -858,6 +907,25 @@ class AST_Tests(unittest.TestCase):
         ]
         for src in srcs:
             ast.parse(src)
+
+    def test_tstring(self):
+        # Test AST structure for simple t-string
+        tree = ast.parse('t"Hello"')
+        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
+        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
+
+        # Test AST for t-string with interpolation
+        tree = ast.parse('t"Hello {name}"')
+        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
+        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
+        self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
+
+        # Test AST for implicit concat of t-string with f-string
+        tree = ast.parse('t"Hello {name}" f"{name}"')
+        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
+        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
+        self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
+        self.assertIsInstance(tree.body[0].value.values[2], ast.FormattedValue)
 
 
 class CopyTests(unittest.TestCase):

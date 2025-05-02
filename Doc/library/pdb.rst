@@ -188,6 +188,21 @@ slightly different way:
    .. versionadded:: 3.14
       The *commands* argument.
 
+
+.. awaitablefunction:: set_trace_async(*, header=None, commands=None)
+
+   async version of :func:`set_trace`. This function should be used inside an
+   async function with :keyword:`await`.
+
+   .. code-block:: python
+
+      async def f():
+          await pdb.set_trace_async()
+
+   :keyword:`await` statements are supported if the debugger is invoked by this function.
+
+   .. versionadded:: 3.14
+
 .. function:: post_mortem(t=None)
 
    Enter post-mortem debugging of the given exception or
@@ -769,7 +784,7 @@ can be overridden by the local file.
    When using ``pdb.pm()``  or ``Pdb.post_mortem(...)`` with a chained exception
    instead of a traceback, it allows the user to move between the
    chained exceptions using ``exceptions`` command to list exceptions, and
-   ``exception <number>`` to switch to that exception.
+   ``exceptions <number>`` to switch to that exception.
 
 
    Example::

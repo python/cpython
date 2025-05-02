@@ -585,7 +585,9 @@ extern "C" {
     INIT_ID(__and__), \
     INIT_ID(__anext__), \
     INIT_ID(__annotate__), \
+    INIT_ID(__annotate_func__), \
     INIT_ID(__annotations__), \
+    INIT_ID(__annotations_cache__), \
     INIT_ID(__args__), \
     INIT_ID(__await__), \
     INIT_ID(__bases__), \
@@ -751,6 +753,7 @@ extern "C" {
     INIT_ID(_feature_version), \
     INIT_ID(_field_types), \
     INIT_ID(_fields_), \
+    INIT_ID(_filters), \
     INIT_ID(_finalizing), \
     INIT_ID(_find_and_load), \
     INIT_ID(_fix_up_module), \
@@ -875,6 +878,7 @@ extern "C" {
     INIT_ID(consts), \
     INIT_ID(context), \
     INIT_ID(contravariant), \
+    INIT_ID(conversion), \
     INIT_ID(cookie), \
     INIT_ID(copy), \
     INIT_ID(copyreg), \
@@ -932,6 +936,7 @@ extern "C" {
     INIT_ID(exception), \
     INIT_ID(existing_file_name), \
     INIT_ID(exp), \
+    INIT_ID(expression), \
     INIT_ID(extend), \
     INIT_ID(extra_tokens), \
     INIT_ID(facility), \
@@ -1018,6 +1023,7 @@ extern "C" {
     INIT_ID(intern), \
     INIT_ID(intersection), \
     INIT_ID(interval), \
+    INIT_ID(io), \
     INIT_ID(is_running), \
     INIT_ID(is_struct), \
     INIT_ID(isatty), \
@@ -1193,6 +1199,7 @@ extern "C" {
     INIT_ID(salt), \
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \
+    INIT_ID(script), \
     INIT_ID(second), \
     INIT_ID(security_attributes), \
     INIT_ID(seek), \

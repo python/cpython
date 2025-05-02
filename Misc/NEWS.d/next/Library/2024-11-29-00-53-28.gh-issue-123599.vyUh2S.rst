@@ -1,2 +1,0 @@
-Deprecate :meth:`!pathlib.PurePath.as_uri`; use :meth:`pathlib.Path.as_uri`
-instead.

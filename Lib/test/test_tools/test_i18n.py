@@ -18,7 +18,8 @@ DATA_DIR = Path(__file__).resolve().parent / 'i18n_data'
 
 
 with imports_under_tool("i18n"):
-    from pygettext import parse_spec
+    from pygettext import (parse_spec, process_keywords, DEFAULTKEYWORDS,
+                           unparse_spec)
 
 
 def normalize_POT_file(pot):
@@ -160,6 +161,14 @@ class Test_pygettext(unittest.TestCase):
 
             # This will raise if the date format does not exactly match.
             datetime.strptime(creationDate, '%Y-%m-%d %H:%M%z')
+
+    def test_output_option(self):
+        for opt in ('-o', '--output='):
+            with temp_cwd():
+                assert_python_ok(self.script, f'{opt}test')
+                self.assertTrue(os.path.exists('test'))
+                res = assert_python_ok(self.script, f'{opt}-')
+                self.assertIn(b'Project-Id-Version: PACKAGE VERSION', res.out)
 
     def test_funcdocstring(self):
         for doc in ('"""doc"""', "r'''doc'''", "R'doc'", 'u"doc"'):
@@ -483,20 +492,22 @@ class Test_pygettext(unittest.TestCase):
 
     def test_parse_keyword_spec(self):
         valid = (
-            ('foo', ('foo', {0: 'msgid'})),
-            ('foo:1', ('foo', {0: 'msgid'})),
-            ('foo:1,2', ('foo', {0: 'msgid', 1: 'msgid_plural'})),
-            ('foo:1, 2', ('foo', {0: 'msgid', 1: 'msgid_plural'})),
-            ('foo:1,2c', ('foo', {0: 'msgid', 1: 'msgctxt'})),
-            ('foo:2c,1', ('foo', {0: 'msgid', 1: 'msgctxt'})),
-            ('foo:2c ,1', ('foo', {0: 'msgid', 1: 'msgctxt'})),
-            ('foo:1,2,3c', ('foo', {0: 'msgid', 1: 'msgid_plural', 2: 'msgctxt'})),
-            ('foo:1, 2, 3c', ('foo', {0: 'msgid', 1: 'msgid_plural', 2: 'msgctxt'})),
-            ('foo:3c,1,2', ('foo', {0: 'msgid', 1: 'msgid_plural', 2: 'msgctxt'})),
+            ('foo', ('foo', {'msgid': 0})),
+            ('foo:1', ('foo', {'msgid': 0})),
+            ('foo:1,2', ('foo', {'msgid': 0, 'msgid_plural': 1})),
+            ('foo:1, 2', ('foo', {'msgid': 0, 'msgid_plural': 1})),
+            ('foo:1,2c', ('foo', {'msgid': 0, 'msgctxt': 1})),
+            ('foo:2c,1', ('foo', {'msgid': 0, 'msgctxt': 1})),
+            ('foo:2c ,1', ('foo', {'msgid': 0, 'msgctxt': 1})),
+            ('foo:1,2,3c', ('foo', {'msgid': 0, 'msgid_plural': 1, 'msgctxt': 2})),
+            ('foo:1, 2, 3c', ('foo', {'msgid': 0, 'msgid_plural': 1, 'msgctxt': 2})),
+            ('foo:3c,1,2', ('foo', {'msgid': 0, 'msgid_plural': 1, 'msgctxt': 2})),
         )
         for spec, expected in valid:
             with self.subTest(spec=spec):
                 self.assertEqual(parse_spec(spec), expected)
+                # test unparse-parse round-trip
+                self.assertEqual(parse_spec(unparse_spec(*expected)), expected)
 
         invalid = (
             ('foo:', "Invalid keyword spec 'foo:': missing argument positions"),
@@ -516,6 +527,70 @@ class Test_pygettext(unittest.TestCase):
                     parse_spec(spec)
                 self.assertEqual(str(cm.exception), message)
 
+    def test_process_keywords(self):
+        default_keywords = {name: [spec] for name, spec
+                            in DEFAULTKEYWORDS.items()}
+        inputs = (
+            (['foo'], True),
+            (['_:1,2'], True),
+            (['foo', 'foo:1,2'], True),
+            (['foo'], False),
+            (['_:1,2', '_:1c,2,3', 'pgettext'], False),
+            # Duplicate entries
+            (['foo', 'foo'], True),
+            (['_'], False)
+        )
+        expected = (
+            {'foo': [{'msgid': 0}]},
+            {'_': [{'msgid': 0, 'msgid_plural': 1}]},
+            {'foo': [{'msgid': 0}, {'msgid': 0, 'msgid_plural': 1}]},
+            default_keywords | {'foo': [{'msgid': 0}]},
+            default_keywords | {'_': [{'msgid': 0, 'msgid_plural': 1},
+                                      {'msgctxt': 0, 'msgid': 1, 'msgid_plural': 2},
+                                      {'msgid': 0}],
+                                'pgettext': [{'msgid': 0},
+                                             {'msgctxt': 0, 'msgid': 1}]},
+            {'foo': [{'msgid': 0}]},
+            default_keywords,
+        )
+        for (keywords, no_default_keywords), expected in zip(inputs, expected):
+            with self.subTest(keywords=keywords,
+                              no_default_keywords=no_default_keywords):
+                processed = process_keywords(
+                    keywords,
+                    no_default_keywords=no_default_keywords)
+                self.assertEqual(processed, expected)
+
+    def test_multiple_keywords_same_funcname_errors(self):
+        # If at least one keyword spec for a given funcname matches,
+        # no error should be printed.
+        msgids, stderr = self.extract_from_str(dedent('''\
+        _("foo", 42)
+        _(42, "bar")
+        '''), args=('--keyword=_:1', '--keyword=_:2'), with_stderr=True)
+        self.assertIn('foo', msgids)
+        self.assertIn('bar', msgids)
+        self.assertEqual(stderr, b'')
+
+        # If no keyword spec for a given funcname matches,
+        # all errors are printed.
+        msgids, stderr = self.extract_from_str(dedent('''\
+        _(x, 42)
+        _(42, y)
+        '''), args=('--keyword=_:1', '--keyword=_:2'), with_stderr=True,
+              strict=False)
+        self.assertEqual(msgids, [''])
+        # Normalize line endings on Windows
+        stderr = stderr.decode('utf-8').replace('\r', '')
+        self.assertEqual(
+            stderr,
+            '*** test.py:1: No keywords matched gettext call "_":\n'
+            '\tkeyword="_": Expected a string constant for argument 1, got x\n'
+            '\tkeyword="_:2": Expected a string constant for argument 2, got 42\n'
+            '*** test.py:2: No keywords matched gettext call "_":\n'
+            '\tkeyword="_": Expected a string constant for argument 1, got 42\n'
+            '\tkeyword="_:2": Expected a string constant for argument 2, got y\n')
+
 
 def extract_from_snapshots():
     snapshots = {
@@ -526,11 +601,25 @@ def extract_from_snapshots():
         'custom_keywords.py': ('--keyword=foo', '--keyword=nfoo:1,2',
                                '--keyword=pfoo:1c,2',
                                '--keyword=npfoo:1c,2,3', '--keyword=_:1,2'),
+        'multiple_keywords.py': ('--keyword=foo:1c,2,3', '--keyword=foo:1c,2',
+                                 '--keyword=foo:1,2',
+                                 # repeat a keyword to make sure it is extracted only once
+                                 '--keyword=foo', '--keyword=foo'),
+        # == Test character escaping
+        # Escape ascii and unicode:
+        'escapes.py': ('--escape', '--add-comments='),
+        # Escape only ascii and let unicode pass through:
+        ('escapes.py', 'ascii-escapes.pot'): ('--add-comments=',),
     }
 
     for filename, args in snapshots.items():
-        input_file = DATA_DIR / filename
-        output_file = input_file.with_suffix('.pot')
+        if isinstance(filename, tuple):
+            filename, output_file = filename
+            output_file = DATA_DIR / output_file
+            input_file = DATA_DIR / filename
+        else:
+            input_file = DATA_DIR / filename
+            output_file = input_file.with_suffix('.pot')
         contents = input_file.read_bytes()
         with temp_cwd(None):
             Path(input_file.name).write_bytes(contents)

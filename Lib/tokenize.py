@@ -251,7 +251,7 @@ class Untokenizer:
                     self.tokens.append(indent)
                     self.prev_col = len(indent)
                 startline = False
-            elif tok_type == FSTRING_MIDDLE:
+            elif tok_type in {FSTRING_MIDDLE, TSTRING_MIDDLE}:
                 if '{' in token or '}' in token:
                     token = self.escape_brackets(token)
                     last_line = token.splitlines()[-1]
@@ -308,7 +308,7 @@ class Untokenizer:
             elif startline and indents:
                 toks_append(indents[-1])
                 startline = False
-            elif toknum == FSTRING_MIDDLE:
+            elif toknum in {FSTRING_MIDDLE, TSTRING_MIDDLE}:
                 tokval = self.escape_brackets(tokval)
 
             # Insert a space between two consecutive brackets if we are in an f-string

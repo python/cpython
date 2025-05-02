@@ -15,6 +15,7 @@
 #include "pycore_hamt.h"          // _PyHamtItems_Type
 #include "pycore_initconfig.h"    // _PyStatus_OK()
 #include "pycore_instruction_sequence.h" // _PyInstructionSequence_Type
+#include "pycore_interpolation.h" // _PyInterpolation_Type
 #include "pycore_list.h"          // _PyList_DebugMallocStats()
 #include "pycore_long.h"          // _PyLong_GetZero()
 #include "pycore_memoryobject.h"  // _PyManagedBuffer_Type
@@ -25,6 +26,7 @@
 #include "pycore_pymem.h"         // _PyMem_IsPtrFreed()
 #include "pycore_pystate.h"       // _PyThreadState_GET()
 #include "pycore_symtable.h"      // PySTEntry_Type
+#include "pycore_template.h"      // _PyTemplate_Type _PyTemplateIter_Type
 #include "pycore_tuple.h"         // _PyTuple_DebugMallocStats()
 #include "pycore_typeobject.h"    // _PyBufferWrapper_Type
 #include "pycore_typevarobject.h" // _PyTypeAlias_Type
@@ -931,6 +933,8 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
     clear_freelist(&freelists->dicts, is_finalization, free_object);
     clear_freelist(&freelists->dictkeys, is_finalization, PyMem_Free);
     clear_freelist(&freelists->slices, is_finalization, free_object);
+    clear_freelist(&freelists->ranges, is_finalization, free_object);
+    clear_freelist(&freelists->range_iters, is_finalization, free_object);
     clear_freelist(&freelists->contexts, is_finalization, free_object);
     clear_freelist(&freelists->async_gens, is_finalization, free_object);
     clear_freelist(&freelists->async_gen_asends, is_finalization, free_object);
@@ -942,6 +946,8 @@ _PyObject_ClearFreeLists(struct _Py_freelists *freelists, int is_finalization)
     }
     clear_freelist(&freelists->unicode_writers, is_finalization, PyMem_Free);
     clear_freelist(&freelists->ints, is_finalization, free_object);
+    clear_freelist(&freelists->pycfunctionobject, is_finalization, PyObject_GC_Del);
+    clear_freelist(&freelists->pycmethodobject, is_finalization, PyObject_GC_Del);
     clear_freelist(&freelists->pymethodobjects, is_finalization, free_object);
 }
 
@@ -2106,7 +2112,7 @@ static PyNumberMethods none_as_number = {
     0,                          /* nb_negative */
     0,                          /* nb_positive */
     0,                          /* nb_absolute */
-    (inquiry)none_bool,         /* nb_bool */
+    none_bool,                  /* nb_bool */
     0,                          /* nb_invert */
     0,                          /* nb_lshift */
     0,                          /* nb_rshift */
@@ -2152,7 +2158,7 @@ PyTypeObject _PyNone_Type = {
     &none_as_number,    /*tp_as_number*/
     0,                  /*tp_as_sequence*/
     0,                  /*tp_as_mapping*/
-    (hashfunc)none_hash,/*tp_hash */
+    none_hash,          /*tp_hash */
     0,                  /*tp_call */
     0,                  /*tp_str */
     0,                  /*tp_getattro */
@@ -2405,6 +2411,7 @@ static PyTypeObject* static_types[] = {
     &_PyHamt_CollisionNode_Type,
     &_PyHamt_Type,
     &_PyInstructionSequence_Type,
+    &_PyInterpolation_Type,
     &_PyLegacyEventHandler_Type,
     &_PyLineIterator,
     &_PyManagedBuffer_Type,
@@ -2414,6 +2421,8 @@ static PyTypeObject* static_types[] = {
     &_PyNone_Type,
     &_PyNotImplemented_Type,
     &_PyPositionsIterator,
+    &_PyTemplate_Type,
+    &_PyTemplateIter_Type,
     &_PyUnicodeASCIIIter_Type,
     &_PyUnion_Type,
 #ifdef _Py_TIER2
@@ -2904,13 +2913,15 @@ finally:
 void
 _PyTrash_thread_deposit_object(PyThreadState *tstate, PyObject *op)
 {
-    _PyObject_ASSERT(op, _PyObject_IS_GC(op));
-    _PyObject_ASSERT(op, !_PyObject_GC_IS_TRACKED(op));
     _PyObject_ASSERT(op, Py_REFCNT(op) == 0);
 #ifdef Py_GIL_DISABLED
     op->ob_tid = (uintptr_t)tstate->delete_later;
 #else
-    _PyGCHead_SET_PREV(_Py_AS_GC(op), (PyGC_Head*)tstate->delete_later);
+    /* Store the delete_later pointer in the refcnt field.
+     * As this object may still be tracked by the GC,
+     * it is important that we never store 0 (NULL). */
+    uintptr_t refcnt = (uintptr_t)tstate->delete_later;
+    *((uintptr_t*)op) = refcnt+1;
 #endif
     tstate->delete_later = op;
 }
@@ -2929,7 +2940,11 @@ _PyTrash_thread_destroy_chain(PyThreadState *tstate)
         op->ob_tid = 0;
         _Py_atomic_store_ssize_relaxed(&op->ob_ref_shared, _Py_REF_MERGED);
 #else
-        tstate->delete_later = (PyObject*) _PyGCHead_PREV(_Py_AS_GC(op));
+        /* Get the delete_later pointer from the refcnt field.
+         * See _PyTrash_thread_deposit_object(). */
+        uintptr_t refcnt = *((uintptr_t*)op);
+        tstate->delete_later = (PyObject *)(refcnt - 1);
+        op->ob_refcnt = 0;
 #endif
 
         /* Call the deallocator directly.  This used to try to
@@ -2994,13 +3009,25 @@ _PyObject_AssertFailed(PyObject *obj, const char *expr, const char *msg,
 }
 
 
+/*
+When deallocating a container object, it's possible to trigger an unbounded
+chain of deallocations, as each Py_DECREF in turn drops the refcount on "the
+next" object in the chain to 0.  This can easily lead to stack overflows.
+To avoid that, if the C stack is nearing its limit, instead of calling
+dealloc on the object, it is added to a queue to be freed later when the
+stack is shallower */
 void
 _Py_Dealloc(PyObject *op)
 {
     PyTypeObject *type = Py_TYPE(op);
     destructor dealloc = type->tp_dealloc;
-#ifdef Py_DEBUG
     PyThreadState *tstate = _PyThreadState_GET();
+    intptr_t margin = _Py_RecursionLimit_GetMargin(tstate);
+    if (margin < 2) {
+        _PyTrash_thread_deposit_object(tstate, (PyObject *)op);
+        return;
+    }
+#ifdef Py_DEBUG
 #if !defined(Py_GIL_DISABLED) && !defined(Py_STACKREF_DEBUG)
     /* This assertion doesn't hold for the free-threading build, as
      * PyStackRef_CLOSE_SPECIALIZED is not implemented */
@@ -3042,6 +3069,9 @@ _Py_Dealloc(PyObject *op)
     Py_XDECREF(old_exc);
     Py_DECREF(type);
 #endif
+    if (tstate->delete_later && margin >= 4) {
+        _PyTrash_thread_destroy_chain(tstate);
+    }
 }
 
 
