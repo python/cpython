@@ -384,6 +384,9 @@ void
 decompressor_reset_session(ZstdDecompressor *self,
                            decompress_type type)
 {
+    // TODO(emmatyping): use _Py_CRITICAL_SECTION_ASSERT_OBJECT_LOCKED here
+    // and ensure lock is always held
+
     /* Reset variables */
     self->in_begin = 0;
     self->in_end = 0;
