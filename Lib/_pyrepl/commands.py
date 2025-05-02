@@ -21,6 +21,7 @@
 
 from __future__ import annotations
 import os
+import time
 
 # Categories of actions:
 #  killing
@@ -31,6 +32,7 @@ import os
 #  finishing
 # [completion]
 
+from .trace import trace
 
 # types
 if False:
@@ -471,19 +473,24 @@ class show_history(Command):
 
 
 class paste_mode(Command):
-
     def do(self) -> None:
         self.reader.paste_mode = not self.reader.paste_mode
         self.reader.dirty = True
 
 
-class enable_bracketed_paste(Command):
+class perform_bracketed_paste(Command):
     def do(self) -> None:
-        self.reader.paste_mode = True
-        self.reader.in_bracketed_paste = True
-
-class disable_bracketed_paste(Command):
-    def do(self) -> None:
-        self.reader.paste_mode = False
-        self.reader.in_bracketed_paste = False
-        self.reader.dirty = True
+        done = "\x1b[201~"
+        data = ""
+        start = time.time()
+        while done not in data:
+            self.reader.console.wait(100)
+            ev = self.reader.console.getpending()
+            data += ev.data
+        trace(
+            "bracketed pasting of {l} chars done in {s:.2f}s",
+            l=len(data),
+            s=time.time() - start,
+        )
+        self.reader.insert(data.replace(done, ""))
+        self.reader.last_refresh_cache.invalidated = True

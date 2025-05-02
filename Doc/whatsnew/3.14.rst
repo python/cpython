@@ -89,6 +89,10 @@ If you encounter :exc:`NameError`\s or pickling errors coming out of
 :mod:`multiprocessing` or :mod:`concurrent.futures`, see the
 :ref:`forkserver restrictions <multiprocessing-programming-forkserver>`.
 
+The interpreter avoids some reference count modifications internally when
+it's safe to do so. This can lead to different values returned from
+:func:`sys.getrefcount` and :c:func:`Py_REFCNT` compared to previous versions
+of Python.  See :ref:`below <whatsnew314-refcount>` for details.
 
 New features
 ============
@@ -556,6 +560,23 @@ For further information on how to build Python, see
 (Contributed by Ken Jin in :gh:`128563`, with ideas on how to implement this
 in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
 
+Syntax highlighting in PyREPL
+-----------------------------
+
+The default :term:`interactive` shell now highlights Python syntax as you
+type.  The feature is enabled by default unless the
+:envvar:`PYTHON_BASIC_REPL` environment is set or any color-disabling
+environment variables are used. See :ref:`using-on-controlling-color` for
+details.
+
+The default color theme for syntax highlighting strives for good contrast
+and uses exclusively the 4-bit VGA standard ANSI color codes for maximum
+compatibility. The theme can be customized using an experimental API
+``_colorize.set_theme()``.  This can be called interactively, as well as
+in the :envvar:`PYTHONSTARTUP` script.
+
+(Contributed by Łukasz Langa in :gh:`131507`.)
+
 
 Other language changes
 ======================
@@ -803,10 +824,15 @@ ctypes
   loaded by the current process.
   (Contributed by Brian Ward in :gh:`119349`.)
 
+* Move :func:`ctypes.POINTER` types cache from a global internal cache
+  (``_pointer_type_cache``) to the :attr:`ctypes._CData.__pointer_type__`
+  attribute of the corresponding :mod:`ctypes` types.
+  This will stop the cache from growing without limits in some situations.
+  (Contributed by Sergey Miryanov in :gh:`100926`).
+
 * The :class:`ctypes.py_object` type now supports subscription,
   making it a :term:`generic type`.
   (Contributed by Brian Schubert in :gh:`132168`.)
-
 
 datetime
 --------
@@ -1309,8 +1335,8 @@ struct
 ------
 
 * Support the :c:expr:`float complex` and :c:expr:`double complex` C types in
-  the :mod:`struct` module (formatting characters ``'F'`` and ``'D'``,
-  respectively) if the compiler has C11 complex arithmetic.
+  the :mod:`struct` module (formatting characters ``'F'`` and ``'D'``
+  respectively).
   (Contributed by Sergey B Kirpichev in :gh:`121249`.)
 
 
@@ -1372,6 +1398,9 @@ tkinter
   arguments passed by keyword.
   (Contributed by Zhikang Yan in :gh:`126899`.)
 
+* Add ability to specify name for :class:`!tkinter.OptionMenu` and
+  :class:`!tkinter.ttk.OptionMenu`.
+  (Contributed by Zhikang Yan in :gh:`130482`.)
 
 turtle
 ------
@@ -1671,6 +1700,13 @@ Deprecated
 * :mod:`codecs`:
   :func:`codecs.open` is now deprecated. Use :func:`open` instead.
   (Contributed by Inada Naoki in :gh:`133036`.)
+
+* :mod:`ctypes`:
+  Calling :func:`ctypes.POINTER` on a string is deprecated.
+  Use :ref:`ctypes-incomplete-types` for self-referential structures.
+  Also, the internal ``ctypes._pointer_type_cache`` is deprecated.
+  See :func:`ctypes.POINTER` for updated implementation details.
+  (Contributed by Sergey Myrianov in :gh:`100926`.)
 
 * :mod:`functools`:
   Calling the Python implementation of :func:`functools.reduce` with *function*
@@ -2212,6 +2248,11 @@ New features
   take a C integer and produce a Python :class:`bool` object. (Contributed by
   Pablo Galindo in :issue:`45325`.)
 
+* Add :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary` to determine if an object
+  is a unique temporary object on the interpreter's operand stack. This can
+  be used in some cases as a replacement for checking if :c:func:`Py_REFCNT`
+  is ``1`` for Python objects passed as arguments to C API functions.
+
 
 Limited C API changes
 ---------------------
@@ -2245,6 +2286,17 @@ Porting to Python 3.14
   now raises a :exc:`TypeError` if its exception argument is not
   a :exc:`UnicodeError` object.
   (Contributed by Bénédikt Tran in :gh:`127691`.)
+
+.. _whatsnew314-refcount:
+
+* The interpreter internally avoids some reference count modifications when
+  loading objects onto the operands stack by :term:`borrowing <borrowed reference>`
+  references when possible. This can lead to smaller reference count values
+  compared to previous Python versions. C API extensions that checked
+  :c:func:`Py_REFCNT` of ``1`` to determine if an function argument is not
+  referenced by any other code should instead use
+  :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary` as a safer replacement.
+
 
 * Private functions promoted to public C APIs:
 
