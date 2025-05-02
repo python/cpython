@@ -325,7 +325,7 @@ class _PointerTypeCache:
         try:
             return cls.__pointer_type__
         except AttributeError:
-            return default
+            return _pointer_type_cache_fallback.get(cls, default)
 
     def __contains__(self, cls):
         return hasattr(cls, '__pointer_type__')
