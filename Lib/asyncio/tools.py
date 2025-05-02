@@ -130,43 +130,6 @@ def print_async_tree(result, task_emoji="(T)", cor_emoji="", printer=print):
     return result
 
 
-def print_async_tree(result, task_emoji="(T)", cor_emoji="", printer=print):
-    """
-    Pretty-print the async call tree produced by `get_all_async_stacks()`,
-    coping safely with cycles.
-    """
-    id2name, awaits = _index(result)
-    labels, children = _build_tree(id2name, awaits)
-
-    def pretty(node):
-        flag = task_emoji if node[0] == NodeType.TASK else cor_emoji
-        return f"{flag} {labels[node]}"
-
-    def render(node, prefix="", last=True, buf=None, ancestry=frozenset()):
-        """
-        DFS renderer that stops if *node* already occurs in *ancestry*
-        (i.e. we just found a cycle).
-        """
-        if buf is None:
-            buf = []
-
-        if node in ancestry:
-            buf.append(f"{prefix}{'└── ' if last else '├── '}↺ {pretty(node)} (cycle)")
-            return buf
-
-        buf.append(f"{prefix}{'└── ' if last else '├── '}{pretty(node)}")
-        new_pref = prefix + ("    " if last else "│   ")
-        kids = children.get(node, [])
-        for i, kid in enumerate(kids):
-            render(kid, new_pref, i == len(kids) - 1, buf, ancestry | {node})
-        return buf
-
-    forest = []
-    for root in _roots(labels, children):
-        forest.append(render(root))
-    return forest
-
-
 def build_task_table(result):
     id2name, awaits = _index(result)
     table = []
