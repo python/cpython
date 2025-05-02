@@ -692,6 +692,63 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse(code, feature_version=(3, 13))
 
+    def test_pep758_except_with_single_expr(self):
+        single_expr = textwrap.dedent("""
+            try:
+                ...
+            except{0} TypeError:
+                ...
+        """)
+
+        single_expr_with_as = textwrap.dedent("""
+            try:
+                ...
+            except{0} TypeError as exc:
+                ...
+        """)
+
+        single_tuple_expr = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError,):
+                ...
+        """)
+
+        single_tuple_expr_with_as = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError,) as exc:
+                ...
+        """)
+
+        single_parens_expr = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError):
+                ...
+        """)
+
+        single_parens_expr_with_as = textwrap.dedent("""
+            try:
+                ...
+            except{0} (TypeError) as exc:
+                ...
+        """)
+
+        for code in [
+            single_expr,
+            single_expr_with_as,
+            single_tuple_expr,
+            single_tuple_expr_with_as,
+            single_parens_expr,
+            single_parens_expr_with_as,
+        ]:
+            for star in [True, False]:
+                code = code.format('*' if star else '')
+                with self.subTest(code=code, star=star):
+                    ast.parse(code, feature_version=(3, 14))
+                    ast.parse(code, feature_version=(3, 13))
+
     def test_pep758_except_star_without_parens(self):
         code = textwrap.dedent("""
             try:
