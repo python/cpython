@@ -1588,7 +1588,7 @@ class ClassPropertiesAndMethods(unittest.TestCase, ExtraAssertions):
         cm_dict = {'__annotations__': {},
                    '__doc__': (
                        "f docstring"
-                       if support.HAVE_DOCSTRINGS
+                       if support.HAVE_PY_DOCSTRINGS
                        else None
                     ),
                    '__module__': __name__,
