@@ -1683,8 +1683,7 @@ Deprecated
 * :mod:`ctypes`:
   Calling :func:`ctypes.POINTER` on a string is deprecated.
   Use :ref:`ctypes-incomplete-types` for self-referential structures.
-  Also, ``ctypes._pointer_type_cache`` is deprecated as a courtesy to
-  existing users of this internal API.
+  Also, the internal ``ctypes._pointer_type_cache`` is deprecated.
   See :func:`ctypes.POINTER` for updated implementation details.
   (Contributed by Sergey Myrianov in :gh:`100926`.)
 
