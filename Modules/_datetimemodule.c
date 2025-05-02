@@ -260,8 +260,7 @@ finally:
 
 #define MINYEAR 1
 #define MAXYEAR 9999
-// #define NS 999
-#define NS 0
+#define NS 999
 #define MAXORDINAL 3652059 /* date(9999,12,31).toordinal() */
 
 /* Nine decimal digits is easy to communicate, and leaves enough room
