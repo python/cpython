@@ -123,6 +123,13 @@ if "%do_pgo%" EQU "true" if "%platf%" EQU "x64" (
     )
 )
 
+if "%UseDisableGil%" EQU "true" if "%UseTIER2%" NEQ "" (
+    rem GH-133171: This configuration builds the JIT but never actually uses it,
+    rem which is surprising (and strictly worse than not building it at all):
+    echo.ERROR: --experimental-jit cannot be used with --disable-gil.
+    exit /b 1
+)
+
 if not exist "%GIT%" where git > "%TEMP%\git.loc" 2> nul && set /P GIT= < "%TEMP%\git.loc" & del "%TEMP%\git.loc"
 if exist "%GIT%" set GITProperty=/p:GIT="%GIT%"
 if not exist "%GIT%" echo Cannot find Git on PATH & set GITProperty=

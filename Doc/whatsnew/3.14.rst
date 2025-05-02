@@ -89,6 +89,10 @@ If you encounter :exc:`NameError`\s or pickling errors coming out of
 :mod:`multiprocessing` or :mod:`concurrent.futures`, see the
 :ref:`forkserver restrictions <multiprocessing-programming-forkserver>`.
 
+The interpreter avoids some reference count modifications internally when
+it's safe to do so. This can lead to different values returned from
+:func:`sys.getrefcount` and :c:func:`Py_REFCNT` compared to previous versions
+of Python.  See :ref:`below <whatsnew314-refcount>` for details.
 
 New features
 ============
@@ -1372,6 +1376,9 @@ tkinter
   arguments passed by keyword.
   (Contributed by Zhikang Yan in :gh:`126899`.)
 
+* Add ability to specify name for :class:`!tkinter.OptionMenu` and
+  :class:`!tkinter.ttk.OptionMenu`.
+  (Contributed by Zhikang Yan in :gh:`130482`.)
 
 turtle
 ------
@@ -1736,6 +1743,8 @@ Deprecated
 .. include:: ../deprecations/pending-removal-in-3.15.rst
 
 .. include:: ../deprecations/pending-removal-in-3.16.rst
+
+.. include:: ../deprecations/pending-removal-in-3.17.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 
@@ -2210,6 +2219,11 @@ New features
   take a C integer and produce a Python :class:`bool` object. (Contributed by
   Pablo Galindo in :issue:`45325`.)
 
+* Add :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary` to determine if an object
+  is a unique temporary object on the interpreter's operand stack. This can
+  be used in some cases as a replacement for checking if :c:func:`Py_REFCNT`
+  is ``1`` for Python objects passed as arguments to C API functions.
+
 
 Limited C API changes
 ---------------------
@@ -2243,6 +2257,17 @@ Porting to Python 3.14
   now raises a :exc:`TypeError` if its exception argument is not
   a :exc:`UnicodeError` object.
   (Contributed by Bénédikt Tran in :gh:`127691`.)
+
+.. _whatsnew314-refcount:
+
+* The interpreter internally avoids some reference count modifications when
+  loading objects onto the operands stack by :term:`borrowing <borrowed reference>`
+  references when possible. This can lead to smaller reference count values
+  compared to previous Python versions. C API extensions that checked
+  :c:func:`Py_REFCNT` of ``1`` to determine if an function argument is not
+  referenced by any other code should instead use
+  :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary` as a safer replacement.
+
 
 * Private functions promoted to public C APIs:
 
