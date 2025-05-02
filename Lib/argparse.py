@@ -1886,8 +1886,8 @@ class ArgumentParser(_AttributeHolder, _ActionsContainer):
                  add_help=True,
                  allow_abbrev=True,
                  exit_on_error=True,
-                 suggest_on_error=False,
                  *,
+                 suggest_on_error=False,
                  color=False,
                  ):
         superinit = super(ArgumentParser, self).__init__
