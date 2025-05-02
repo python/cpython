@@ -26,7 +26,13 @@ import sys
 #     test_signals in test_threadsignals.py.
 signal.pthread_sigmask(signal.SIG_UNBLOCK, [signal.SIGUSR1])
 
+mode = os.environ["PYTHON_MODE"]
+module = os.environ["PYTHON_MODULE"]
 sys.argv[1:] = shlex.split(os.environ["PYTHON_ARGS"])
 
-# The test module will call sys.exit to indicate whether the tests passed.
-runpy.run_module("test")
+if mode == "-c":
+    exec(module, {})
+elif mode == "-m":
+    runpy.run_module(module, run_name="__main__", alter_sys=True)
+else:
+    raise ValueError(f"unknown mode: {mode}")

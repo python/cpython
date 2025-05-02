@@ -98,8 +98,17 @@ def run(command, *, host=None, env=None, log=True, **kwargs):
         env.update(host_env)
 
     if log:
-        print(">", " ".join(map(str, command)))
+        print(">", join_command(command))
     return subprocess.run(command, env=env, **kwargs)
+
+
+# Format a command so it can be copied into a shell. Like shlex.join, but also
+# accepts arguments which are Paths, or a single string/Path outside of a list.
+def join_command(args):
+    if isinstance(args, (str, Path)):
+        return str(args)
+    else:
+        return shlex.join(map(str, args))
 
 
 # Format the environment so it can be pasted into a shell.
@@ -512,24 +521,42 @@ async def gradle_task(context):
         task_prefix = "connected"
         env["ANDROID_SERIAL"] = context.connected
 
+    hidden_output = []
+
+    def log(line):
+        # Gradle may take several minutes to install SDK packages, so it's worth
+        # showing those messages even in non-verbose mode.
+        if context.verbose or line.startswith('Preparing "Install'):
+            sys.stdout.write(line)
+        else:
+            hidden_output.append(line)
+
+    if context.command:
+        mode = "-c"
+        module = context.command
+    else:
+        mode = "-m"
+        module = context.module or "test"
+
     args = [
         gradlew, "--console", "plain", f"{task_prefix}DebugAndroidTest",
-        "-Pandroid.testInstrumentationRunnerArguments.pythonArgs="
-        + shlex.join(context.args),
+    ] + [
+        f"-Pandroid.testInstrumentationRunnerArguments.python{name}={value}"
+        for name, value in [
+            ("Mode", mode),
+            ("Module", module),
+            ("Args", join_command(context.args)),
+        ]
     ]
-    hidden_output = []
+    log("> " + join_command(args))
+
     try:
         async with async_process(
             *args, cwd=TESTBED_DIR, env=env,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         ) as process:
             while line := (await process.stdout.readline()).decode(*DECODE_ARGS):
-                # Gradle may take several minutes to install SDK packages, so
-                # it's worth showing those messages even in non-verbose mode.
-                if context.verbose or line.startswith('Preparing "Install'):
-                    sys.stdout.write(line)
-                else:
-                    hidden_output.append(line)
+                log(line)
 
             status = await wait_for(process.wait(), timeout=1)
             if status == 0:
@@ -701,6 +728,7 @@ def parse_args():
         "-v", "--verbose", action="count", default=0,
         help="Show Gradle output, and non-Python logcat messages. "
         "Use twice to include high-volume messages which are rarely useful.")
+
     device_group = test.add_mutually_exclusive_group(required=True)
     device_group.add_argument(
         "--connected", metavar="SERIAL", help="Run on a connected device. "
@@ -708,8 +736,17 @@ def parse_args():
     device_group.add_argument(
         "--managed", metavar="NAME", help="Run on a Gradle-managed device. "
         "These are defined in `managedDevices` in testbed/app/build.gradle.kts.")
+
+    mode_group = test.add_mutually_exclusive_group()
+    mode_group.add_argument(
+        "-c", dest="command", help="Execute the given Python code.")
+    mode_group.add_argument(
+        "-m", dest="module", help="Execute the module with the given name.")
+    test.epilog = (
+        "If neither -c nor -m are passed, the default is '-m test', which will "
+        "run Python's own test suite.")
     test.add_argument(
-        "args", nargs="*", help=f"Arguments for `python -m test`. "
+        "args", nargs="*", help=f"Arguments to add to sys.argv. "
         f"Separate them from {SCRIPT_NAME}'s own arguments with `--`.")
 
     return parser.parse_args()
@@ -756,14 +793,9 @@ def print_called_process_error(e):
             if not content.endswith("\n"):
                 stream.write("\n")
 
-    # Format the command so it can be copied into a shell. shlex uses single
-    # quotes, so we surround the whole command with double quotes.
-    args_joined = (
-        e.cmd if isinstance(e.cmd, str)
-        else " ".join(shlex.quote(str(arg)) for arg in e.cmd)
-    )
+    # shlex uses single quotes, so we surround the command with double quotes.
     print(
-        f'Command "{args_joined}" returned exit status {e.returncode}'
+        f'Command "{join_command(e.cmd)}" returned exit status {e.returncode}'
     )
 
 
