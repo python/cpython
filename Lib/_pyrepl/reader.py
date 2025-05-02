@@ -344,7 +344,10 @@ class Reader:
             pos -= line_len + 1
             prompt, prompt_len = self.process_prompt(prompt)
             chars, char_widths = disp_str(line)
-            wrapcount = (sum(char_widths) + prompt_len) // self.console.width
+            wrapcount = (sum(char_widths) + prompt_len) // (self.console.width - 1) # 1 for line continuations
+            if (sum(char_widths) + prompt_len) % (self.console.width - 1) == 0:
+                wrapcount -= 1
+
             trace("wrapcount = {wrapcount}", wrapcount=wrapcount)
             if wrapcount == 0 or not char_widths:
                 offset += line_len + 1  # Takes all of the line plus the newline
@@ -716,6 +719,7 @@ class Reader:
             elif event.evt == "scroll":
                 self.refresh()
             elif event.evt == "resize":
+                self.console.sync_screen()
                 self.refresh()
             else:
                 translate = False
