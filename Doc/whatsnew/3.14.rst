@@ -1376,6 +1376,9 @@ tkinter
   arguments passed by keyword.
   (Contributed by Zhikang Yan in :gh:`126899`.)
 
+* Add ability to specify name for :class:`!tkinter.OptionMenu` and
+  :class:`!tkinter.ttk.OptionMenu`.
+  (Contributed by Zhikang Yan in :gh:`130482`.)
 
 turtle
 ------
@@ -1740,6 +1743,8 @@ Deprecated
 .. include:: ../deprecations/pending-removal-in-3.15.rst
 
 .. include:: ../deprecations/pending-removal-in-3.16.rst
+
+.. include:: ../deprecations/pending-removal-in-3.17.rst
 
 .. include:: ../deprecations/pending-removal-in-future.rst
 

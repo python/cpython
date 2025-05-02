@@ -224,6 +224,17 @@ class PointersTestCase(unittest.TestCase):
     def test_abstract(self):
         self.assertRaises(TypeError, _Pointer.set_type, 42)
 
+    def test_repeated_set_type(self):
+        # Regression test for gh-133290
+        class C(Structure):
+            _fields_ = [('a', c_int)]
+        ptr = POINTER(C)
+        # Read _type_ several times to warm up cache
+        for i in range(5):
+            self.assertIs(ptr._type_, C)
+        ptr.set_type(c_int)
+        self.assertIs(ptr._type_, c_int)
+
 
 if __name__ == '__main__':
     unittest.main()
