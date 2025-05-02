@@ -2069,6 +2069,145 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "All abstract uops"):
             self.run_cases_test(input, input2, output)
 
+    def test_validate_uop_input_length_mismatch(self):
+        input = """
+        op(OP, (arg1 -- out)) {
+            SPAM();
+        }
+        """
+        input2 = """
+        op(OP, (arg1, arg2 -- out)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Must have the same number of inputs"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_output_length_mismatch(self):
+        input = """
+        op(OP, (arg1 -- out)) {
+            SPAM();
+        }
+        """
+        input2 = """
+        op(OP, (arg1 -- out1, out2)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Must have the same number of outputs"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_input_name_mismatch(self):
+        input = """
+        op(OP, (foo -- out)) {
+            SPAM();
+        }
+        """
+        input2 = """
+        op(OP, (bar -- out)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Inputs must have equal names"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_output_name_mismatch(self):
+        input = """
+        op(OP, (arg1 -- foo)) {
+            SPAM();
+        }
+        """
+        input2 = """
+        op(OP, (arg1 -- bar)) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Outputs must have equal names"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_unused_input(self):
+        input = """
+        op(OP, (unused -- )) {
+        }
+        """
+        input2 = """
+        op(OP, (foo -- )) {
+        }
+        """
+        output = """
+        case OP: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+        input = """
+        op(OP, (foo -- )) {
+        }
+        """
+        input2 = """
+        op(OP, (unused -- )) {
+        }
+        """
+        output = """
+        case OP: {
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_unused_override(self):
+        input = """
+        op(OP, ( -- unused)) {
+        }
+        """
+        input2 = """
+        op(OP, ( -- foo)) {
+            foo = NULL;
+        }
+        """
+        output = """
+        case OP: {
+            JitOptSymbol *foo;
+            foo = NULL;
+            stack_pointer[0] = foo;
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
+        input = """
+        op(OP, ( -- foo)) {
+            foo = NULL;
+        }
+        """
+        input2 = """
+        op(OP, ( -- unused)) {
+        }
+        """
+        output = """
+        case OP: {
+            stack_pointer += 1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+        """
+        self.run_cases_test(input, input2, output)
+
 
 if __name__ == "__main__":
     unittest.main()

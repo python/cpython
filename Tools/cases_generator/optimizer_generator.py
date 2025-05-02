@@ -30,16 +30,36 @@ DEFAULT_ABSTRACT_INPUT = (ROOT / "Python/optimizer_bytecodes.c").absolute().as_p
 
 
 def validate_uop(override: Uop, uop: Uop) -> None:
-    # To do
-    pass
+    for stack_effect in ('inputs', 'outputs'):
+        orig_effects = getattr(uop.stack, stack_effect)
+        new_effects = getattr(override.stack, stack_effect)
+
+        if len(orig_effects) != len(new_effects):
+            msg = (
+                f"{uop.name}: Must have the same number of {stack_effect} "
+                "in bytecodes.c and optimizer_bytecodes.c "
+                f"({len(orig_effects)} != {len(new_effects)})"
+            )
+            raise analysis_error(msg, override.body.open)
+
+        for orig, new in zip(orig_effects, new_effects, strict=True):
+            if orig.name == 'unused' or new.name == 'unused':
+                continue
+            if orig.name != new.name:
+                msg = (
+                    f"{uop.name}: {stack_effect.capitalize()} must have "
+                    "equal names in bytecodes.c and optimizer_bytecodes.c "
+                    f"({orig.name} != {new.name})"
+                )
+                raise analysis_error(msg, override.body.open)
 
 
 def type_name(var: StackItem) -> str:
     if var.is_array():
-        return f"JitOptSymbol **"
+        return "JitOptSymbol **"
     if var.type:
         return var.type
-    return f"JitOptSymbol *"
+    return "JitOptSymbol *"
 
 
 def declare_variables(uop: Uop, out: CWriter, skip_inputs: bool) -> None:
