@@ -356,7 +356,8 @@ class OptionMenuTest(MenubuttonTest, unittest.TestCase):
 
     def test_specify_name(self):
         widget = tkinter.OptionMenu(self.root, None, ':)', name="option_menu")
-        self.assertIs(self.root.nametowidget("option_menu"), widget)
+        self.assertEqual(str(widget), ".option_menu")
+        self.assertIs(self.root.children["option_menu"], widget)
 
 @add_configure_tests(IntegerSizeTests, StandardOptionsTests)
 class EntryTest(AbstractWidgetTest, unittest.TestCase):
