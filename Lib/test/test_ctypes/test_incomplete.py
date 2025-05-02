@@ -3,7 +3,7 @@ import unittest
 import warnings
 from ctypes import Structure, POINTER, pointer, c_char_p
 
-# String-based "incomplete pointers" wers implemented ctypes 0.6.3 (2003, when
+# String-based "incomplete pointers" were implemented in ctypes 0.6.3 (2003, when
 # ctypes was an external project). They made obsolete by the current
 # incomplete *types* (setting `_fields_` late) in 0.9.5 (2005).
 # ctypes was added to Python 2.5 (2006), without any mention in docs.

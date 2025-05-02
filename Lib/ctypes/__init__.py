@@ -342,6 +342,7 @@ class c_wchar(_SimpleCData):
     _type_ = "u"
 
 def _reset_cache():
+    _pointer_type_cache_fallback.clear()
     _c_functype_cache.clear()
     if _os.name == "nt":
         _win_functype_cache.clear()
