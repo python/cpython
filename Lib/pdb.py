@@ -3085,8 +3085,8 @@ class _PdbClient:
                     # Restore the old wakeup fd if we installed a new one
                     if old_wakeup_fd is not sentinel:
                         signal.set_wakeup_fd(old_wakeup_fd)
-                    self.signal_read = self.signal_write = None
             finally:
+                self.signal_read = self.signal_write = None
                 if old_handler is not sentinel:
                     # Restore the old handler if we installed a new one
                     signal.signal(signal.SIGINT, old_handler)
