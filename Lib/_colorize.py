@@ -9,18 +9,18 @@ COLORIZE = True
 if False:
     from typing import IO, Literal
 
-    type ColorTag = (
-        Literal["PROMPT"]
-        | Literal["KEYWORD"]
-        | Literal["BUILTIN"]
-        | Literal["COMMENT"]
-        | Literal["STRING"]
-        | Literal["NUMBER"]
-        | Literal["OP"]
-        | Literal["DEFINITION"]
-        | Literal["SOFT_KEYWORD"]
-        | Literal["RESET"]
-    )
+    type ColorTag = Literal[
+        "PROMPT",
+        "KEYWORD",
+        "BUILTIN",
+        "COMMENT",
+        "STRING",
+        "NUMBER",
+        "OP",
+        "DEFINITION",
+        "SOFT_KEYWORD",
+        "RESET",
+    ]
 
     theme: dict[ColorTag, str]
 
@@ -143,7 +143,7 @@ def set_theme(t: dict[ColorTag, str] | None = None) -> None:
         "STRING": colors.GREEN,
         "NUMBER": colors.YELLOW,
         "OP": colors.RESET,
-        "DEFINITION": colors.BOLD_WHITE,
+        "DEFINITION": colors.BOLD,
         "SOFT_KEYWORD": colors.BOLD_BLUE,
         "RESET": colors.RESET,
     }

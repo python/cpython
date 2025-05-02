@@ -110,13 +110,15 @@ def recover_unterminated_string(
     buffer: str,
 ) -> Iterator[ColorSpan]:
     msg, loc = exc.args
-    if (
-        msg.startswith("unterminated string literal")
-        or msg.startswith("unterminated f-string literal")
-        or msg.startswith("unterminated t-string literal")
-        or msg.startswith("EOF in multi-line string")
-        or msg.startswith("unterminated triple-quoted f-string literal")
-        or msg.startswith("unterminated triple-quoted t-string literal")
+    if msg.startswith(
+        (
+            "unterminated string literal",
+            "unterminated f-string literal",
+            "unterminated t-string literal",
+            "EOF in multi-line string",
+            "unterminated triple-quoted f-string literal",
+            "unterminated triple-quoted t-string literal",
+        )
     ):
         start = line_lengths[loc[0] - 1] + loc[1] - 1
         end = line_lengths[-1] - 1
@@ -320,7 +322,6 @@ def disp_str(
         # the next call to `disp_str()` will revive it.
         chars[-1] += _colorize.theme["RESET"]
 
-    # trace("disp_str({buffer}) = {s}, {b}", buffer=repr(buffer), s=chars, b=char_widths)
     return chars, char_widths
 
 
