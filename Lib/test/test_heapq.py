@@ -208,11 +208,11 @@ class TestHeap:
 
         h = [10]
         x = self.module.heappushpop_max(h, 11)
-        self.assertTupleEqual((h, x), ([11], 10))
+        self.assertTupleEqual((h, x), ([10], 11))
 
         h = [10]
         x = self.module.heappushpop_max(h, 9)
-        self.assertTupleEqual((h, x), ([10], 9))
+        self.assertTupleEqual((h, x), ([9], 10))
 
     def test_heappop_max(self):
         # heapop_max has an optimization for one-item lists which isn't
@@ -515,13 +515,16 @@ class TestErrorHandling:
             def __lt__(self, o):
                 heap.clear()
                 return NotImplemented
+            def __gt__(self, o):
+                heap.clear()
+                return NotImplemented
 
         heap = []
         self.module.heappush(heap, EvilClass(0))
         self.assertRaises(IndexError, self.module.heappushpop, heap, 1)
         heap = []
-        self.module.heappush_max(heap, EvilClass(0))
-        self.assertRaises(IndexError, self.module.heappushpop_max, heap, 1)
+        self.module.heappush_max(heap, EvilClass(1))
+        self.assertRaises(IndexError, self.module.heappushpop_max, heap, 0)
 
     def test_comparison_operator_modifiying_heap_two_heaps(self):
 
