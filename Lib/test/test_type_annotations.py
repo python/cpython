@@ -3,7 +3,7 @@ import inspect
 import textwrap
 import types
 import unittest
-from test.support import run_code, check_syntax_error, cpython_only
+from test.support import run_code, check_syntax_error, import_helper, cpython_only
 from test.test_inspect import inspect_stringized_annotations
 
 
@@ -150,6 +150,14 @@ class TypeAnnotationTests(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del D.__annotations__
         self.assertEqual(D.__annotations__, {})
+
+    def test_partially_executed_module(self):
+        partialexe = import_helper.import_fresh_module("test.typinganndata.partialexecution")
+        self.assertEqual(
+            partialexe.a.__annotations__,
+            {"v1": int, "v2": int},
+        )
+        self.assertEqual(partialexe.b.annos, {"v1": int})
 
     @cpython_only
     def test_no_cell(self):
@@ -387,10 +395,21 @@ class DeferredEvaluationTests(unittest.TestCase):
         self.assertEqual(Outer.__annotations__, {"x": Outer.Nested})
 
     def test_no_exotic_expressions(self):
-        check_syntax_error(self, "def func(x: (yield)): ...", "yield expression cannot be used within an annotation")
-        check_syntax_error(self, "def func(x: (yield from x)): ...", "yield expression cannot be used within an annotation")
-        check_syntax_error(self, "def func(x: (y := 3)): ...", "named expression cannot be used within an annotation")
-        check_syntax_error(self, "def func(x: (await 42)): ...", "await expression cannot be used within an annotation")
+        preludes = [
+            "",
+            "class X:\n ",
+            "def f():\n ",
+            "async def f():\n ",
+        ]
+        for prelude in preludes:
+            with self.subTest(prelude=prelude):
+                check_syntax_error(self, prelude + "def func(x: (yield)): ...", "yield expression cannot be used within an annotation")
+                check_syntax_error(self, prelude + "def func(x: (yield from x)): ...", "yield expression cannot be used within an annotation")
+                check_syntax_error(self, prelude + "def func(x: (y := 3)): ...", "named expression cannot be used within an annotation")
+                check_syntax_error(self, prelude + "def func(x: (await 42)): ...", "await expression cannot be used within an annotation")
+                check_syntax_error(self, prelude + "def func(x: [y async for y in x]): ...", "asynchronous comprehension outside of an asynchronous function")
+                check_syntax_error(self, prelude + "def func(x: {y async for y in x}): ...", "asynchronous comprehension outside of an asynchronous function")
+                check_syntax_error(self, prelude + "def func(x: {y: y async for y in x}): ...", "asynchronous comprehension outside of an asynchronous function")
 
     def test_no_exotic_expressions_in_unevaluated_annotations(self):
         preludes = [
@@ -406,6 +425,9 @@ class DeferredEvaluationTests(unittest.TestCase):
                 check_syntax_error(self, prelude + "(x): (y := 3)", "named expression cannot be used within an annotation")
                 check_syntax_error(self, prelude + "(x): (__debug__ := 3)", "named expression cannot be used within an annotation")
                 check_syntax_error(self, prelude + "(x): (await 42)", "await expression cannot be used within an annotation")
+                check_syntax_error(self, prelude + "(x): [y async for y in x]", "asynchronous comprehension outside of an asynchronous function")
+                check_syntax_error(self, prelude + "(x): {y async for y in x}", "asynchronous comprehension outside of an asynchronous function")
+                check_syntax_error(self, prelude + "(x): {y: y async for y in x}", "asynchronous comprehension outside of an asynchronous function")
 
     def test_ignore_non_simple_annotations(self):
         ns = run_code("class X: (y): int")
@@ -709,3 +731,66 @@ class ConditionalAnnotationTests(unittest.TestCase):
         """
         expected = {"before": "before", "after": "after"}
         self.check_scopes(code, expected, expected)
+
+
+class RegressionTests(unittest.TestCase):
+    # gh-132479
+    def test_complex_comprehension_inlining(self):
+        # Test that the various repro cases from the issue don't crash
+        cases = [
+            """
+            (unique_name_0): 0
+            unique_name_1: (
+                0
+                for (
+                    0
+                    for unique_name_2 in 0
+                    for () in (0 for unique_name_3 in unique_name_4 for unique_name_5 in name_1)
+                ).name_3 in {0: 0 for name_1 in unique_name_8}
+                if name_1
+            )
+            """,
+            """
+            unique_name_0: 0
+            unique_name_1: {
+                0: 0
+                for unique_name_2 in [0 for name_0 in unique_name_4]
+                if {
+                    0: 0
+                    for unique_name_5 in 0
+                    if name_0
+                    if ((name_0 for unique_name_8 in unique_name_9) for [] in 0)
+                }
+            }
+            """,
+            """
+            0[0]: {0 for name_0 in unique_name_1}
+            unique_name_2: {
+                0: (lambda: name_0 for unique_name_4 in unique_name_5)
+                for unique_name_6 in ()
+                if name_0
+            }
+            """,
+        ]
+        for case in cases:
+            case = textwrap.dedent(case)
+            compile(case, "<test>", "exec")
+
+    def test_complex_comprehension_inlining_exec(self):
+        code = """
+            unique_name_1 = unique_name_5 = [1]
+            name_0 = 42
+            unique_name_7: {name_0 for name_0 in unique_name_1}
+            unique_name_2: {
+                0: (lambda: name_0 for unique_name_4 in unique_name_5)
+                for unique_name_6 in [1]
+                if name_0
+            }
+        """
+        mod = build_module(code)
+        annos = mod.__annotations__
+        self.assertEqual(annos.keys(), {"unique_name_7", "unique_name_2"})
+        self.assertEqual(annos["unique_name_7"], {True})
+        genexp = annos["unique_name_2"][0]
+        lamb = list(genexp)[0]
+        self.assertEqual(lamb(), 42)

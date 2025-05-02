@@ -1169,7 +1169,7 @@ class GeneralModuleTests(unittest.TestCase):
     @support.skip_android_selinux('if_indextoname')
     def testInvalidInterfaceIndexToName(self):
         self.assertRaises(OSError, socket.if_indextoname, 0)
-        self.assertRaises(OverflowError, socket.if_indextoname, -1)
+        self.assertRaises(ValueError, socket.if_indextoname, -1)
         self.assertRaises(OverflowError, socket.if_indextoname, 2**1000)
         self.assertRaises(TypeError, socket.if_indextoname, '_DEADBEEF')
         if hasattr(socket, 'if_nameindex'):
@@ -1225,24 +1225,23 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertEqual(swapped & mask, mask)
             self.assertRaises(OverflowError, func, 1<<34)
 
-    @support.cpython_only
-    @unittest.skipIf(_testcapi is None, "requires _testcapi")
     def testNtoHErrors(self):
-        import _testcapi
         s_good_values = [0, 1, 2, 0xffff]
         l_good_values = s_good_values + [0xffffffff]
-        l_bad_values = [-1, -2, 1<<32, 1<<1000]
-        s_bad_values = (
-            l_bad_values +
-            [_testcapi.INT_MIN-1, _testcapi.INT_MAX+1] +
-            [1 << 16, _testcapi.INT_MAX]
-        )
+        neg_values = [-1, -2, -(1<<15)-1, -(1<<31)-1, -(1<<63)-1, -1<<1000]
+        l_bad_values = [1<<32, 1<<1000]
+        s_bad_values = l_bad_values + [1 << 16, (1<<31)-1, 1<<31]
         for k in s_good_values:
             socket.ntohs(k)
             socket.htons(k)
         for k in l_good_values:
             socket.ntohl(k)
             socket.htonl(k)
+        for k in neg_values:
+            self.assertRaises(ValueError, socket.ntohs, k)
+            self.assertRaises(ValueError, socket.htons, k)
+            self.assertRaises(ValueError, socket.ntohl, k)
+            self.assertRaises(ValueError, socket.htonl, k)
         for k in s_bad_values:
             self.assertRaises(OverflowError, socket.ntohs, k)
             self.assertRaises(OverflowError, socket.htons, k)
@@ -2606,7 +2605,7 @@ class BasicVSOCKTest(unittest.TestCase):
                              socket.SO_VM_SOCKETS_BUFFER_MIN_SIZE))
 
 
-@unittest.skipUnless(HAVE_SOCKET_BLUETOOTH,
+@unittest.skipUnless(hasattr(socket, 'AF_BLUETOOTH'),
                      'Bluetooth sockets required for this test.')
 class BasicBluetoothTest(unittest.TestCase):
 
@@ -2615,19 +2614,78 @@ class BasicBluetoothTest(unittest.TestCase):
         socket.BDADDR_LOCAL
         socket.AF_BLUETOOTH
         socket.BTPROTO_RFCOMM
+        socket.SOL_RFCOMM
+
+        if sys.platform == "win32":
+            socket.SO_BTH_ENCRYPT
+            socket.SO_BTH_MTU
+            socket.SO_BTH_MTU_MAX
+            socket.SO_BTH_MTU_MIN
 
         if sys.platform != "win32":
             socket.BTPROTO_HCI
             socket.SOL_HCI
             socket.BTPROTO_L2CAP
+            socket.SOL_L2CAP
             socket.BTPROTO_SCO
+            socket.SOL_SCO
+            socket.HCI_DATA_DIR
 
         if sys.platform == "linux":
+            socket.SOL_BLUETOOTH
+            socket.HCI_DEV_NONE
             socket.HCI_CHANNEL_RAW
             socket.HCI_CHANNEL_USER
             socket.HCI_CHANNEL_MONITOR
             socket.HCI_CHANNEL_CONTROL
             socket.HCI_CHANNEL_LOGGING
+            socket.HCI_TIME_STAMP
+            socket.BT_SECURITY
+            socket.BT_SECURITY_SDP
+            socket.BT_FLUSHABLE
+            socket.BT_POWER
+            socket.BT_CHANNEL_POLICY
+            socket.BT_CHANNEL_POLICY_BREDR_ONLY
+            if hasattr(socket, 'BT_PHY'):
+                socket.BT_PHY_BR_1M_1SLOT
+            if hasattr(socket, 'BT_MODE'):
+                socket.BT_MODE_BASIC
+            if hasattr(socket, 'BT_VOICE'):
+                socket.BT_VOICE_TRANSPARENT
+                socket.BT_VOICE_CVSD_16BIT
+            socket.L2CAP_LM
+            socket.L2CAP_LM_MASTER
+            socket.L2CAP_LM_AUTH
+
+        if sys.platform in ("linux", "freebsd"):
+            socket.BDADDR_BREDR
+            socket.BDADDR_LE_PUBLIC
+            socket.BDADDR_LE_RANDOM
+            socket.HCI_FILTER
+
+        if sys.platform.startswith(("freebsd", "netbsd", "dragonfly")):
+            socket.SO_L2CAP_IMTU
+            socket.SO_L2CAP_FLUSH
+            socket.SO_RFCOMM_MTU
+            socket.SO_RFCOMM_FC_INFO
+            socket.SO_SCO_MTU
+
+        if sys.platform == "freebsd":
+            socket.SO_SCO_CONNINFO
+
+        if sys.platform.startswith(("netbsd", "dragonfly")):
+            socket.SO_HCI_EVT_FILTER
+            socket.SO_HCI_PKT_FILTER
+            socket.SO_L2CAP_IQOS
+            socket.SO_L2CAP_LM
+            socket.L2CAP_LM_AUTH
+            socket.SO_RFCOMM_LM
+            socket.RFCOMM_LM_AUTH
+            socket.SO_SCO_HANDLE
+
+@unittest.skipUnless(HAVE_SOCKET_BLUETOOTH,
+                     'Bluetooth sockets required for this test.')
+class BluetoothTest(unittest.TestCase):
 
     def testCreateRfcommSocket(self):
         with socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM) as s:
@@ -2745,6 +2803,12 @@ class BasicBluetoothTest(unittest.TestCase):
                 addr = s.getsockname()
                 self.assertEqual(addr, dev)
 
+            with (self.subTest('integer'),
+                  socket.socket(socket.AF_BLUETOOTH, socket.SOCK_RAW, socket.BTPROTO_HCI) as s):
+                s.bind(dev)
+                addr = s.getsockname()
+                self.assertEqual(addr, dev)
+
             with (self.subTest('channel=HCI_CHANNEL_RAW'),
                   socket.socket(socket.AF_BLUETOOTH, socket.SOCK_RAW, socket.BTPROTO_HCI) as s):
                 channel = socket.HCI_CHANNEL_RAW
@@ -2789,8 +2853,6 @@ class BasicBluetoothTest(unittest.TestCase):
                     s.bind(())
                 with self.assertRaises(OSError):
                     s.bind((dev, socket.HCI_CHANNEL_RAW, 0, 0))
-                with self.assertRaises(OSError):
-                    s.bind(dev)
                 with self.assertRaises(OSError):
                     s.bind(socket.BDADDR_ANY)
                 with self.assertRaises(OSError):

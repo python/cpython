@@ -675,6 +675,34 @@ class AST_Tests(unittest.TestCase):
         with self.assertRaises(SyntaxError):
             ast.parse('(x := 0)', feature_version=(3, 7))
 
+    def test_pep750_tstring(self):
+        code = 't""'
+        ast.parse(code, feature_version=(3, 14))
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 13))
+
+    def test_pep758_except_without_parens(self):
+        code = textwrap.dedent("""
+            try:
+                ...
+            except ValueError, TypeError:
+                ...
+        """)
+        ast.parse(code, feature_version=(3, 14))
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 13))
+
+    def test_pep758_except_star_without_parens(self):
+        code = textwrap.dedent("""
+            try:
+                ...
+            except* ValueError, TypeError:
+                ...
+        """)
+        ast.parse(code, feature_version=(3, 14))
+        with self.assertRaises(SyntaxError):
+            ast.parse(code, feature_version=(3, 13))
+
     def test_conditional_context_managers_parse_with_low_feature_version(self):
         # regression test for gh-115881
         ast.parse('with (x() if y else z()): ...', feature_version=(3, 8))
@@ -879,6 +907,25 @@ class AST_Tests(unittest.TestCase):
         ]
         for src in srcs:
             ast.parse(src)
+
+    def test_tstring(self):
+        # Test AST structure for simple t-string
+        tree = ast.parse('t"Hello"')
+        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
+        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
+
+        # Test AST for t-string with interpolation
+        tree = ast.parse('t"Hello {name}"')
+        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
+        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
+        self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
+
+        # Test AST for implicit concat of t-string with f-string
+        tree = ast.parse('t"Hello {name}" f"{name}"')
+        self.assertIsInstance(tree.body[0].value, ast.TemplateStr)
+        self.assertIsInstance(tree.body[0].value.values[0], ast.Constant)
+        self.assertIsInstance(tree.body[0].value.values[1], ast.Interpolation)
+        self.assertIsInstance(tree.body[0].value.values[2], ast.FormattedValue)
 
 
 class CopyTests(unittest.TestCase):

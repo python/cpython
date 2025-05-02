@@ -282,7 +282,7 @@ class NestedDict:
                 cont = cont[-1]
             if not isinstance(cont, dict):
                 raise KeyError("There is no nest behind this key")
-        return cont
+        return cont  # type: ignore[no-any-return]
 
     def append_nest_to_list(self, key: Key) -> None:
         cont = self.get_or_create_nest(key[:-1])
@@ -741,7 +741,7 @@ def make_safe_parse_float(parse_float: ParseFloat) -> ParseFloat:
     instead of returning illegal types.
     """
     # The default `float` callable never returns illegal types. Optimize it.
-    if parse_float is float:  # type: ignore[comparison-overlap]
+    if parse_float is float:
         return float
 
     def safe_parse_float(float_str: str) -> Any:

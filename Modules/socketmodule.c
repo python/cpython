@@ -208,6 +208,12 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #  include <sys/ioctl.h>
 #endif
 
+#if defined(HAVE_BLUETOOTH_H) && !defined(__FreeBSD__)
+#  include <netbt/l2cap.h>
+#  include <netbt/rfcomm.h>
+#  include <netbt/hci.h>
+#  include <netbt/sco.h>
+#endif
 
 #if defined(__sgi) && _COMPILER_VERSION>700 && !_SGIAPI
 /* make sure that the reentrant (gethostbyaddr_r etc)
@@ -337,12 +343,6 @@ static FlagRuntimeInfo win_runtime_flags[] = {
     /* available starting with Windows 10 1607 */
     {14393, "TCP_FASTOPEN"}
 };
-
-/*[clinic input]
-module _socket
-class _socket.socket "PySocketSockObject *" "clinic_state()->sock_type"
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2db2489bd2219fd8]*/
 
 static int
 remove_unusable_flags(PyObject *m)
@@ -474,6 +474,7 @@ remove_unusable_flags(PyObject *m)
 #   define BTPROTO_SCO BLUETOOTH_PROTO_SCO
 #   define SOL_HCI SOL_HCI_RAW
 #   define HCI_FILTER SO_HCI_RAW_FILTER
+#   define HCI_DATA_DIR SO_HCI_RAW_DIRECTION
 #   define sockaddr_l2 sockaddr_l2cap
 #   define sockaddr_rc sockaddr_rfcomm
 #   define hci_dev hci_node
@@ -491,7 +492,10 @@ remove_unusable_flags(PyObject *m)
 #   define bt_sco bt
 #   define bt_hci bt
 #   define bt_cid bt_channel
+#   define SOL_L2CAP BTPROTO_L2CAP
+#   define SOL_RFCOMM BTPROTO_RFCOMM
 #   define SOL_HCI BTPROTO_HCI
+#   define SOL_SCO BTPROTO_SCO
 #   define HCI_DATA_DIR SO_HCI_DIRECTION
 #   define _BT_L2_MEMB(sa, memb) ((sa)->bt_##memb)
 #   define _BT_RC_MEMB(sa, memb) ((sa)->bt_##memb)
@@ -613,6 +617,60 @@ find_module_state_by_def(PyTypeObject *type)
     assert(mod != NULL);
     return get_module_state(mod);
 }
+
+#define UNSIGNED_INT_CONVERTER(NAME, TYPE)                          \
+static int                                                          \
+_PyLong_##NAME##_Converter(PyObject *obj, void *ptr)                \
+{                                                                   \
+    Py_ssize_t bytes = PyLong_AsNativeBytes(obj, ptr, sizeof(TYPE), \
+            Py_ASNATIVEBYTES_NATIVE_ENDIAN |                        \
+            Py_ASNATIVEBYTES_ALLOW_INDEX |                          \
+            Py_ASNATIVEBYTES_REJECT_NEGATIVE |                      \
+            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);                      \
+    if (bytes < 0) {                                                \
+        return 0;                                                   \
+    }                                                               \
+    if ((size_t)bytes > sizeof(TYPE)) {                             \
+        PyErr_SetString(PyExc_OverflowError,                        \
+                        "Python int too large for C " #TYPE);       \
+        return 0;                                                   \
+    }                                                               \
+    return 1;                                                       \
+}
+
+UNSIGNED_INT_CONVERTER(UInt16, uint16_t)
+UNSIGNED_INT_CONVERTER(UInt32, uint32_t)
+
+#if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+# ifdef MS_WINDOWS
+    UNSIGNED_INT_CONVERTER(NetIfindex, NET_IFINDEX)
+# else
+    UNSIGNED_INT_CONVERTER(NetIfindex, unsigned int)
+#   define NET_IFINDEX unsigned int
+# endif
+#endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
+
+/*[python input]
+class uint16_converter(CConverter):
+    type = "uint16_t"
+    converter = '_PyLong_UInt16_Converter'
+
+class uint32_converter(CConverter):
+    type = "uint32_t"
+    converter = '_PyLong_UInt32_Converter'
+
+class NET_IFINDEX_converter(CConverter):
+    type = "NET_IFINDEX"
+    converter = '_PyLong_NetIfindex_Converter'
+
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=3de2e4a03fbf83b8]*/
+
+/*[clinic input]
+module _socket
+class _socket.socket "PySocketSockObject *" "clinic_state()->sock_type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2db2489bd2219fd8]*/
 
 #define clinic_state() (find_module_state_by_def(type))
 #include "clinic/socketmodule.c.h"
@@ -2147,7 +2205,12 @@ getsockaddrarg(PySocketSockObject *s, PyObject *args,
 #if defined(HAVE_BLUETOOTH_BLUETOOTH_H)
             unsigned short dev;
             unsigned short channel = HCI_CHANNEL_RAW;
-            if (!PyArg_ParseTuple(args, "H|H", &dev, &channel)) {
+            if (PyIndex_Check(args)) {
+                if (!PyArg_Parse(args, "H", &dev)) {
+                    return 0;
+                }
+            }
+            else if (!PyArg_ParseTuple(args, "H|H", &dev, &channel)) {
                 PyErr_Format(PyExc_OSError,
                              "%s(): wrong format", caller);
                 return 0;
@@ -6560,132 +6623,72 @@ AF_UNIX if defined on the platform; otherwise, the default is AF_INET.");
 
 
 /*[clinic input]
-_socket.socket.ntohs
-    x: int
+_socket.ntohs
+    integer as x: uint16
     /
 
 Convert a 16-bit unsigned integer from network to host byte order.
 [clinic start generated code]*/
 
 static PyObject *
-_socket_socket_ntohs_impl(PySocketSockObject *self, int x)
-/*[clinic end generated code: output=a828a61a9fb205b2 input=9a79cb3a71652147]*/
+_socket_ntohs_impl(PyObject *module, uint16_t x)
+/*[clinic end generated code: output=8e991859ddcedcc9 input=a702372437396511]*/
 {
-    if (x < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "ntohs: can't convert negative Python int to C "
-                        "16-bit unsigned integer");
-        return NULL;
-    }
-    if (x > 0xffff) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "ntohs: Python int too large to convert to C "
-                        "16-bit unsigned integer");
-        return NULL;
-    }
-    return PyLong_FromUnsignedLong(ntohs((unsigned short)x));
+    return PyLong_FromUnsignedLong(ntohs(x));
 }
-
-
-static PyObject *
-socket_ntohl(PyObject *self, PyObject *arg)
-{
-    unsigned long x;
-
-    if (PyLong_Check(arg)) {
-        x = PyLong_AsUnsignedLong(arg);
-        if (x == (unsigned long) -1 && PyErr_Occurred())
-            return NULL;
-#if SIZEOF_LONG > 4
-        {
-            unsigned long y;
-            /* only want the trailing 32 bits */
-            y = x & 0xFFFFFFFFUL;
-            if (y ^ x)
-                return PyErr_Format(PyExc_OverflowError,
-                            "int larger than 32 bits");
-            x = y;
-        }
-#endif
-    }
-    else
-        return PyErr_Format(PyExc_TypeError,
-                            "expected int, %s found",
-                            Py_TYPE(arg)->tp_name);
-    return PyLong_FromUnsignedLong(ntohl(x));
-}
-
-PyDoc_STRVAR(ntohl_doc,
-"ntohl(integer) -> integer\n\
-\n\
-Convert a 32-bit integer from network to host byte order.");
 
 
 /*[clinic input]
-_socket.socket.htons
-    x: int
+_socket.ntohl
+    integer as x: uint32
+    /
+
+Convert a 32-bit unsigned integer from network to host byte order.
+[clinic start generated code]*/
+
+static PyObject *
+_socket_ntohl_impl(PyObject *module, uint32_t x)
+/*[clinic end generated code: output=158bcc5ba449f795 input=a0406faf2236bd1f]*/
+{
+    return PyLong_FromUnsignedLong(ntohl(x));
+}
+
+
+/*[clinic input]
+_socket.htons
+    integer as x: uint16
     /
 
 Convert a 16-bit unsigned integer from host to network byte order.
 [clinic start generated code]*/
 
 static PyObject *
-_socket_socket_htons_impl(PySocketSockObject *self, int x)
-/*[clinic end generated code: output=d785ee692312da47 input=053252d8416f4337]*/
+_socket_htons_impl(PyObject *module, uint16_t x)
+/*[clinic end generated code: output=35aa2bcc370fd80b input=78047a26d51866d1]*/
 {
-    if (x < 0) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "htons: can't convert negative Python int to C "
-                        "16-bit unsigned integer");
-        return NULL;
-    }
-    if (x > 0xffff) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "htons: Python int too large to convert to C "
-                        "16-bit unsigned integer");
-        return NULL;
-    }
-    return PyLong_FromUnsignedLong(htons((unsigned short)x));
+    return PyLong_FromUnsignedLong(htons(x));
 }
 
+
+/*[clinic input]
+_socket.htonl
+    integer as x: uint32
+    /
+
+Convert a 32-bit unsigned integer from host to network byte order.
+[clinic start generated code]*/
 
 static PyObject *
-socket_htonl(PyObject *self, PyObject *arg)
+_socket_htonl_impl(PyObject *module, uint32_t x)
+/*[clinic end generated code: output=283eb6857d5f7e0d input=89a9077647082806]*/
 {
-    unsigned long x;
-
-    if (PyLong_Check(arg)) {
-        x = PyLong_AsUnsignedLong(arg);
-        if (x == (unsigned long) -1 && PyErr_Occurred())
-            return NULL;
-#if SIZEOF_LONG > 4
-        {
-            unsigned long y;
-            /* only want the trailing 32 bits */
-            y = x & 0xFFFFFFFFUL;
-            if (y ^ x)
-                return PyErr_Format(PyExc_OverflowError,
-                            "int larger than 32 bits");
-            x = y;
-        }
-#endif
-    }
-    else
-        return PyErr_Format(PyExc_TypeError,
-                            "expected int, %s found",
-                            Py_TYPE(arg)->tp_name);
-    return PyLong_FromUnsignedLong(htonl((unsigned long)x));
+    return PyLong_FromUnsignedLong(htonl(x));
 }
-
-PyDoc_STRVAR(htonl_doc,
-"htonl(integer) -> integer\n\
-\n\
-Convert a 32-bit integer from host to network byte order.");
 
 /* socket.inet_aton() and socket.inet_ntoa() functions. */
 
 /*[clinic input]
-_socket.socket.inet_aton
+_socket.inet_aton
     ip_addr: str
     /
 
@@ -6693,8 +6696,8 @@ Convert an IP address in string format (123.45.67.89) to the 32-bit packed binar
 [clinic start generated code]*/
 
 static PyObject *
-_socket_socket_inet_aton_impl(PySocketSockObject *self, const char *ip_addr)
-/*[clinic end generated code: output=5bfe11a255423d8c input=a120e20cb52b9488]*/
+_socket_inet_aton_impl(PyObject *module, const char *ip_addr)
+/*[clinic end generated code: output=f2c2f772eb721b6e input=3a52dec207bf8956]*/
 {
 #ifdef HAVE_INET_ATON
     struct in_addr buf;
@@ -6756,7 +6759,7 @@ _socket_socket_inet_aton_impl(PySocketSockObject *self, const char *ip_addr)
 
 #ifdef HAVE_INET_NTOA
 /*[clinic input]
-_socket.socket.inet_ntoa
+_socket.inet_ntoa
     packed_ip: Py_buffer
     /
 
@@ -6764,8 +6767,8 @@ Convert an IP address from 32-bit packed binary format to string format.
 [clinic start generated code]*/
 
 static PyObject *
-_socket_socket_inet_ntoa_impl(PySocketSockObject *self, Py_buffer *packed_ip)
-/*[clinic end generated code: output=b671880a3f62461b input=95c2c4a1b2ee957c]*/
+_socket_inet_ntoa_impl(PyObject *module, Py_buffer *packed_ip)
+/*[clinic end generated code: output=3077324c50af0935 input=2850d4f57e4db345]*/
 {
     struct in_addr packed_addr;
 
@@ -6937,8 +6940,12 @@ socket_getaddrinfo(PyObject *self, PyObject *args, PyObject* kwargs)
                         "getaddrinfo() argument 1 must be string or None");
         return NULL;
     }
-    if (PyLong_CheckExact(pobj)) {
-        pstr = PyObject_Str(pobj);
+    if (PyIndex_Check(pobj)) {
+        pstr = PyNumber_Index(pobj);
+        if (pstr == NULL)
+            goto err;
+        assert(PyLong_CheckExact(pstr));
+        Py_SETREF(pstr, PyObject_Str(pstr));
         if (pstr == NULL)
             goto err;
         assert(PyUnicode_Check(pstr));
@@ -7273,7 +7280,7 @@ PyDoc_STRVAR(if_nameindex_doc,
 Returns a list of network interface information (index, name) tuples.");
 
 /*[clinic input]
-_socket.socket.if_nametoindex
+_socket.if_nametoindex
     oname: object(converter="PyUnicode_FSConverter")
     /
 
@@ -7281,8 +7288,8 @@ Returns the interface index corresponding to the interface name if_name.
 [clinic start generated code]*/
 
 static PyObject *
-_socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname)
-/*[clinic end generated code: output=f7fc00511a309a8e input=662688054482cd46]*/
+_socket_if_nametoindex_impl(PyObject *module, PyObject *oname)
+/*[clinic end generated code: output=289a411614f30244 input=01e0f1205307fb77]*/
 {
 #ifdef MS_WINDOWS
     NET_IFINDEX index;
@@ -7302,25 +7309,18 @@ _socket_socket_if_nametoindex_impl(PySocketSockObject *self, PyObject *oname)
 }
 
 
+/*[clinic input]
+_socket.if_indextoname
+    if_index as index: NET_IFINDEX
+    /
+
+Returns the interface name corresponding to the interface index if_index.
+[clinic start generated code]*/
+
 static PyObject *
-socket_if_indextoname(PyObject *self, PyObject *arg)
+_socket_if_indextoname_impl(PyObject *module, NET_IFINDEX index)
+/*[clinic end generated code: output=e48bc324993052e0 input=c93f753d0cf6d7d1]*/
 {
-    unsigned long index_long = PyLong_AsUnsignedLong(arg);
-    if (index_long == (unsigned long) -1 && PyErr_Occurred()) {
-        return NULL;
-    }
-
-#ifdef MS_WINDOWS
-    NET_IFINDEX index = (NET_IFINDEX)index_long;
-#else
-    unsigned int index = (unsigned int)index_long;
-#endif
-
-    if ((unsigned long)index != index_long) {
-        PyErr_SetString(PyExc_OverflowError, "index is too large");
-        return NULL;
-    }
-
     char name[IF_NAMESIZE + 1];
     if (if_indextoname(index, name) == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
@@ -7329,11 +7329,6 @@ socket_if_indextoname(PyObject *self, PyObject *arg)
 
     return PyUnicode_DecodeFSDefault(name);
 }
-
-PyDoc_STRVAR(if_indextoname_doc,
-"if_indextoname(if_index)\n\
-\n\
-Returns the interface name corresponding to the interface index if_index.");
 
 #endif // defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
 
@@ -7445,15 +7440,13 @@ static PyMethodDef socket_methods[] = {
     {"socketpair",              socket_socketpair,
      METH_VARARGS, socketpair_doc},
 #endif
-    _SOCKET_SOCKET_NTOHS_METHODDEF
-    {"ntohl",                   socket_ntohl,
-     METH_O, ntohl_doc},
-    _SOCKET_SOCKET_HTONS_METHODDEF
-    {"htonl",                   socket_htonl,
-     METH_O, htonl_doc},
-    _SOCKET_SOCKET_INET_ATON_METHODDEF
+    _SOCKET_NTOHS_METHODDEF
+    _SOCKET_NTOHL_METHODDEF
+    _SOCKET_HTONS_METHODDEF
+    _SOCKET_HTONL_METHODDEF
+    _SOCKET_INET_ATON_METHODDEF
 #ifdef HAVE_INET_NTOA
-    _SOCKET_SOCKET_INET_NTOA_METHODDEF
+    _SOCKET_INET_NTOA_METHODDEF
 #endif
 #ifdef HAVE_INET_PTON
     {"inet_pton",               socket_inet_pton,
@@ -7476,9 +7469,8 @@ static PyMethodDef socket_methods[] = {
 #if defined(HAVE_IF_NAMEINDEX) || defined(MS_WINDOWS)
     {"if_nameindex", socket_if_nameindex,
      METH_NOARGS, if_nameindex_doc},
-    _SOCKET_SOCKET_IF_NAMETOINDEX_METHODDEF
-    {"if_indextoname", socket_if_indextoname,
-     METH_O, if_indextoname_doc},
+    _SOCKET_IF_NAMETOINDEX_METHODDEF
+    _SOCKET_IF_INDEXTONAME_METHODDEF
 #endif
 #ifdef CMSG_LEN
     {"CMSG_LEN",                socket_CMSG_LEN,
@@ -7874,38 +7866,167 @@ socket_exec(PyObject *m)
     ADD_INT_MACRO(m, AF_BLUETOOTH);
 #ifdef BTPROTO_L2CAP
     ADD_INT_MACRO(m, BTPROTO_L2CAP);
+    ADD_INT_MACRO(m, SOL_L2CAP);
 #if defined(BDADDR_BREDR)
     ADD_INT_MACRO(m, BDADDR_BREDR);
     ADD_INT_MACRO(m, BDADDR_LE_PUBLIC);
     ADD_INT_MACRO(m, BDADDR_LE_RANDOM);
 #endif
+#ifdef SO_L2CAP_IMTU
+    ADD_INT_MACRO(m, SO_L2CAP_IMTU);
+    ADD_INT_MACRO(m, SO_L2CAP_OMTU);
+    ADD_INT_MACRO(m, SO_L2CAP_FLUSH);
+#endif
+#ifdef SO_L2CAP_IQOS
+    ADD_INT_MACRO(m, SO_L2CAP_IQOS);
+    ADD_INT_MACRO(m, SO_L2CAP_OQOS);
+#endif
+#ifdef SO_L2CAP_ENCRYPTED
+    ADD_INT_MACRO(m, SO_L2CAP_ENCRYPTED);
+#endif
+#ifdef L2CAP_LM
+    ADD_INT_MACRO(m, L2CAP_LM);
+    ADD_INT_MACRO(m, L2CAP_LM_MASTER);
+    ADD_INT_MACRO(m, L2CAP_LM_AUTH);
+    ADD_INT_MACRO(m, L2CAP_LM_ENCRYPT);
+    ADD_INT_MACRO(m, L2CAP_LM_TRUSTED);
+    ADD_INT_MACRO(m, L2CAP_LM_RELIABLE);
+    ADD_INT_MACRO(m, L2CAP_LM_SECURE);
+#endif
+#ifdef SO_L2CAP_LM
+    ADD_INT_MACRO(m, SO_L2CAP_LM);
+    ADD_INT_MACRO(m, L2CAP_LM_AUTH);
+    ADD_INT_MACRO(m, L2CAP_LM_ENCRYPT);
+    ADD_INT_MACRO(m, L2CAP_LM_SECURE);
+#endif
 #endif /* BTPROTO_L2CAP */
 #ifdef BTPROTO_HCI
     ADD_INT_MACRO(m, BTPROTO_HCI);
     ADD_INT_MACRO(m, SOL_HCI);
-#if defined(HCI_CHANNEL_RAW)
+#ifdef HAVE_BLUETOOTH_BLUETOOTH_H
+    ADD_INT_MACRO(m, HCI_DEV_NONE);
     ADD_INT_MACRO(m, HCI_CHANNEL_RAW);
     ADD_INT_MACRO(m, HCI_CHANNEL_USER);
     ADD_INT_MACRO(m, HCI_CHANNEL_MONITOR);
     ADD_INT_MACRO(m, HCI_CHANNEL_CONTROL);
     ADD_INT_MACRO(m, HCI_CHANNEL_LOGGING);
 #endif
-#if defined(HCI_FILTER)
+#ifdef HCI_FILTER
     ADD_INT_MACRO(m, HCI_FILTER);
 #endif
-#if defined(HCI_TIME_STAMP)
-    ADD_INT_MACRO(m, HCI_TIME_STAMP);
+#ifdef HCI_DATA_DIR
     ADD_INT_MACRO(m, HCI_DATA_DIR);
+#endif
+#ifdef HCI_TIME_STAMP
+    ADD_INT_MACRO(m, HCI_TIME_STAMP);
+#endif
+#ifdef SO_HCI_EVT_FILTER
+    ADD_INT_MACRO(m, SO_HCI_EVT_FILTER);
+    ADD_INT_MACRO(m, SO_HCI_PKT_FILTER);
 #endif
 #endif /* BTPROTO_HCI */
 #ifdef BTPROTO_RFCOMM
     ADD_INT_MACRO(m, BTPROTO_RFCOMM);
+    ADD_INT_MACRO(m, SOL_RFCOMM);
+#ifdef SO_RFCOMM_MTU
+    ADD_INT_MACRO(m, SO_RFCOMM_MTU);
+    ADD_INT_MACRO(m, SO_RFCOMM_FC_INFO);
+#endif
+#ifdef SO_RFCOMM_LM
+    ADD_INT_MACRO(m, SO_RFCOMM_LM);
+    ADD_INT_MACRO(m, RFCOMM_LM_AUTH);
+    ADD_INT_MACRO(m, RFCOMM_LM_ENCRYPT);
+    ADD_INT_MACRO(m, RFCOMM_LM_SECURE);
+#endif
+#ifdef MS_WINDOWS_DESKTOP
+    ADD_INT_MACRO(m, SO_BTH_ENCRYPT);
+    ADD_INT_MACRO(m, SO_BTH_MTU);
+    ADD_INT_MACRO(m, SO_BTH_MTU_MAX);
+    ADD_INT_MACRO(m, SO_BTH_MTU_MIN);
+#endif
 #endif /* BTPROTO_RFCOMM */
     ADD_STR_CONST(m, "BDADDR_ANY", "00:00:00:00:00:00");
     ADD_STR_CONST(m, "BDADDR_LOCAL", "00:00:00:FF:FF:FF");
 #ifdef BTPROTO_SCO
     ADD_INT_MACRO(m, BTPROTO_SCO);
+    ADD_INT_MACRO(m, SOL_SCO);
+#ifdef SO_SCO_MTU
+    ADD_INT_MACRO(m, SO_SCO_MTU);
+#endif
+#ifdef SO_SCO_CONNINFO
+    ADD_INT_MACRO(m, SO_SCO_CONNINFO);
+#endif
+#ifdef SO_SCO_HANDLE
+    ADD_INT_MACRO(m, SO_SCO_HANDLE);
+#endif
 #endif /* BTPROTO_SCO */
+#ifdef HAVE_BLUETOOTH_BLUETOOTH_H
+    ADD_INT_MACRO(m, SOL_BLUETOOTH);
+    ADD_INT_MACRO(m, BT_SECURITY);
+    ADD_INT_MACRO(m, BT_SECURITY_SDP);
+    ADD_INT_MACRO(m, BT_SECURITY_LOW);
+    ADD_INT_MACRO(m, BT_SECURITY_MEDIUM);
+    ADD_INT_MACRO(m, BT_SECURITY_HIGH);
+#ifdef BT_SECURITY_FIPS
+    ADD_INT_MACRO(m, BT_SECURITY_FIPS);
+#endif
+#ifdef BT_DEFER_SETUP
+    ADD_INT_MACRO(m, BT_DEFER_SETUP);
+#endif
+    ADD_INT_MACRO(m, BT_FLUSHABLE);
+    ADD_INT_MACRO(m, BT_FLUSHABLE_OFF);
+    ADD_INT_MACRO(m, BT_FLUSHABLE_ON);
+    ADD_INT_MACRO(m, BT_POWER);
+    ADD_INT_MACRO(m, BT_POWER_FORCE_ACTIVE_OFF);
+    ADD_INT_MACRO(m, BT_POWER_FORCE_ACTIVE_ON);
+    ADD_INT_MACRO(m, BT_CHANNEL_POLICY);
+    ADD_INT_MACRO(m, BT_CHANNEL_POLICY_BREDR_ONLY);
+    ADD_INT_MACRO(m, BT_CHANNEL_POLICY_BREDR_PREFERRED);
+    ADD_INT_MACRO(m, BT_CHANNEL_POLICY_BREDR_PREFERRED);
+    ADD_INT_MACRO(m, BT_VOICE);
+    ADD_INT_MACRO(m, BT_VOICE_TRANSPARENT);
+    ADD_INT_MACRO(m, BT_VOICE_CVSD_16BIT);
+#ifdef BT_VOICE_TRANSPARENT_16BIT
+    ADD_INT_MACRO(m, BT_VOICE_TRANSPARENT_16BIT);
+#endif
+    ADD_INT_MACRO(m, BT_SNDMTU);
+    ADD_INT_MACRO(m, BT_RCVMTU);
+#ifdef BT_PHY
+    ADD_INT_MACRO(m, BT_PHY);
+    ADD_INT_MACRO(m, BT_PHY_BR_1M_1SLOT);
+    ADD_INT_MACRO(m, BT_PHY_BR_1M_3SLOT);
+    ADD_INT_MACRO(m, BT_PHY_BR_1M_5SLOT);
+    ADD_INT_MACRO(m, BT_PHY_EDR_2M_1SLOT);
+    ADD_INT_MACRO(m, BT_PHY_EDR_2M_3SLOT);
+    ADD_INT_MACRO(m, BT_PHY_EDR_2M_5SLOT);
+    ADD_INT_MACRO(m, BT_PHY_EDR_3M_1SLOT);
+    ADD_INT_MACRO(m, BT_PHY_EDR_3M_3SLOT);
+    ADD_INT_MACRO(m, BT_PHY_EDR_3M_5SLOT);
+    ADD_INT_MACRO(m, BT_PHY_LE_1M_TX);
+    ADD_INT_MACRO(m, BT_PHY_LE_1M_RX);
+    ADD_INT_MACRO(m, BT_PHY_LE_2M_TX);
+    ADD_INT_MACRO(m, BT_PHY_LE_2M_RX);
+    ADD_INT_MACRO(m, BT_PHY_LE_CODED_TX);
+    ADD_INT_MACRO(m, BT_PHY_LE_CODED_RX);
+#endif
+#ifdef BT_MODE
+    ADD_INT_MACRO(m, BT_MODE);
+    ADD_INT_MACRO(m, BT_MODE_BASIC);
+    ADD_INT_MACRO(m, BT_MODE_ERTM);
+    ADD_INT_MACRO(m, BT_MODE_STREAMING);
+    ADD_INT_MACRO(m, BT_MODE_LE_FLOWCTL);
+    ADD_INT_MACRO(m, BT_MODE_EXT_FLOWCTL);
+#endif
+#ifdef BT_PKT_STATUS
+    ADD_INT_MACRO(m, BT_PKT_STATUS);
+#endif
+#ifdef BT_ISO_QOS
+    ADD_INT_MACRO(m, BT_ISO_QOS);
+#endif
+#ifdef BT_CODEC
+    ADD_INT_MACRO(m, BT_CODEC);
+#endif
+#endif /* HAVE_BLUETOOTH_BLUETOOTH_H */
 #endif /* USE_BLUETOOTH */
 
 #ifdef AF_CAN
@@ -8327,7 +8448,7 @@ socket_exec(PyObject *m)
 #endif
 #if defined(HAVE_LINUX_CAN_RAW_H) || defined(HAVE_NETCAN_CAN_H)
     ADD_INT_MACRO(m, CAN_RAW_FILTER);
-#ifdef CAN_RAW_ERR_FILTER
+#ifdef HAVE_LINUX_CAN_RAW_H
     ADD_INT_MACRO(m, CAN_RAW_ERR_FILTER);
 #endif
     ADD_INT_MACRO(m, CAN_RAW_LOOPBACK);
@@ -8684,6 +8805,9 @@ socket_exec(PyObject *m)
 #endif
 #ifdef  IP_MAX_MEMBERSHIPS
     ADD_INT_MACRO(m, IP_MAX_MEMBERSHIPS);
+#endif
+#ifdef  IP_FREEBIND
+    ADD_INT_MACRO(m, IP_FREEBIND);
 #endif
 #ifdef  IP_TRANSPARENT
     ADD_INT_MACRO(m, IP_TRANSPARENT);
