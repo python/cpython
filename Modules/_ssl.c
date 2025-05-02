@@ -2549,9 +2549,6 @@ _ssl__SSLSocket_sendfile_impl(PySSLSocket *self, int fd, Py_off_t offset,
             return NULL;
         }
         Py_INCREF(sock);
-    }
-
-    if (sock != NULL) {
         /* just in case the blocking state of the socket has been changed */
         int nonblocking = (sock->sock_timeout >= 0);
         BIO_set_nbio(SSL_get_rbio(self->ssl), nonblocking);
