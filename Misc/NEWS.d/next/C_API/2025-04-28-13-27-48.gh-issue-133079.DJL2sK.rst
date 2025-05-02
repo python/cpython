@@ -1,0 +1,3 @@
+The undocumented APIs :c:macro:`!Py_C_RECURSION_LIMIT` and
+:c:member:`!PyThreadState.c_recursion_remaining`, added in 3.13, are removed
+without a deprecation period.
