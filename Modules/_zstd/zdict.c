@@ -61,6 +61,7 @@ ZstdDict_dealloc(PyObject *ob)
 
     /* Release dict_content after Free ZSTD_CDict/ZSTD_DDict instances */
     Py_CLEAR(self->dict_content);
+    Py_CLEAR(self->c_dicts);
 
     PyTypeObject *tp = Py_TYPE(self);
     PyObject_GC_Del(ob);
