@@ -168,7 +168,7 @@ Macros to create objects:
    .. versionadded:: 3.6
 
 
-.. c:function:: PyObject* PyDelta_FromDSU(int days, int seconds, int useconds)
+.. c:function:: PyObject* PyDelta_FromDSU(int days, int seconds, int microseconds, int nanoseconds)
 
    Return a :class:`datetime.timedelta` object representing the given number
    of days, seconds and microseconds.  Normalization is performed so that the
