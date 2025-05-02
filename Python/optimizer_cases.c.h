@@ -215,6 +215,10 @@
             break;
         }
 
+        case _GUARD_TOS_SLICE: {
+            break;
+        }
+
         case _TO_BOOL_LIST: {
             JitOptSymbol *value;
             JitOptSymbol *res;
@@ -579,6 +583,15 @@
         }
 
         case _BINARY_OP_SUBSCR_LIST_INT: {
+            JitOptSymbol *res;
+            res = sym_new_not_null(ctx);
+            stack_pointer[-2] = res;
+            stack_pointer += -1;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BINARY_OP_SUBSCR_LIST_SLICE: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
             stack_pointer[-2] = res;
@@ -1032,9 +1045,27 @@
 
         case _BUILD_STRING: {
             JitOptSymbol *str;
-            str = sym_new_not_null(ctx);
+            str = sym_new_type(ctx, &PyUnicode_Type);
             stack_pointer[-oparg] = str;
             stack_pointer += 1 - oparg;
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BUILD_INTERPOLATION: {
+            JitOptSymbol *interpolation;
+            interpolation = sym_new_not_null(ctx);
+            stack_pointer[-2 - (oparg & 1)] = interpolation;
+            stack_pointer += -1 - (oparg & 1);
+            assert(WITHIN_STACK_BOUNDS());
+            break;
+        }
+
+        case _BUILD_TEMPLATE: {
+            JitOptSymbol *template;
+            template = sym_new_not_null(ctx);
+            stack_pointer[-2] = template;
+            stack_pointer += -1;
             assert(WITHIN_STACK_BOUNDS());
             break;
         }
@@ -1073,7 +1104,7 @@
 
         case _BUILD_SET: {
             JitOptSymbol *set;
-            set = sym_new_not_null(ctx);
+            set = sym_new_type(ctx, &PySet_Type);
             stack_pointer[-oparg] = set;
             stack_pointer += 1 - oparg;
             assert(WITHIN_STACK_BOUNDS());

@@ -320,3 +320,9 @@ Lib/test/test__colorize.py    @hugovk
 
 # Fuzzing
 Modules/_xxtestfuzz/          @ammaraskar
+
+# t-strings
+**/*interpolationobject*      @lysnikolaou
+**/*templateobject*           @lysnikolaou
+**/*templatelib*              @lysnikolaou
+**/*tstring*                  @lysnikolaou

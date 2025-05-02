@@ -36,6 +36,9 @@ OPTIONS = {
     "alias": {"help": "aliased python.exe entry-point binaries"},
     "alias3": {"help": "aliased python3.exe entry-point binaries"},
     "alias3x": {"help": "aliased python3.x.exe entry-point binaries"},
+    "install-json": {"help": "a PyManager __install__.json file"},
+    "install-embed-json": {"help": "a PyManager __install__.json file for embeddable distro"},
+    "install-test-json": {"help": "a PyManager __install__.json for the test distro"},
 }
 
 
@@ -93,6 +96,34 @@ PRESETS = {
             "flat-dlls",
             "underpth",
             "precompile",
+        ],
+    },
+    "pymanager": {
+        "help": "PyManager package",
+        "options": [
+            "stable",
+            "pip",
+            "tcltk",
+            "idle",
+            "venv",
+            "dev",
+            "html-doc",
+            "install-json",
+        ],
+    },
+    "pymanager-test": {
+        "help": "PyManager test package",
+        "options": [
+            "stable",
+            "pip",
+            "tcltk",
+            "idle",
+            "venv",
+            "dev",
+            "html-doc",
+            "symbols",
+            "tests",
+            "install-test-json",
         ],
     },
 }

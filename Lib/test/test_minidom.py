@@ -396,13 +396,28 @@ class MinidomTest(unittest.TestCase):
         dom.unlink()
 
     def testGetAttrList(self):
-        pass
+        dom = parseString("<abc/>")
+        self.addCleanup(dom.unlink)
+        el = dom.documentElement
+        el.setAttribute("spam", "jam")
+        self.assertEqual(len(el.attributes.items()), 1)
+        el.setAttribute("foo", "bar")
+        items = el.attributes.items()
+        self.assertEqual(len(items), 2)
+        self.assertIn(('spam', 'jam'), items)
+        self.assertIn(('foo', 'bar'), items)
 
     def testGetAttrValues(self):
-        pass
-
-    def testGetAttrLength(self):
-        pass
+        dom = parseString("<abc/>")
+        self.addCleanup(dom.unlink)
+        el = dom.documentElement
+        el.setAttribute("spam", "jam")
+        values = [x.value for x in el.attributes.values()]
+        self.assertIn("jam", values)
+        el.setAttribute("foo", "bar")
+        values = [x.value for x in el.attributes.values()]
+        self.assertIn("bar", values)
+        self.assertIn("jam", values)
 
     def testGetAttribute(self):
         dom = Document()
@@ -495,8 +510,6 @@ class MinidomTest(unittest.TestCase):
         node = el.setAttribute("abc", "def")
         self.assertEqual(str(node), repr(node))
         dom.unlink()
-
-    def testTextNodeRepr(self): pass
 
     def testWriteXML(self):
         str = '<?xml version="1.0" ?><a b="c"/>'
@@ -601,9 +614,19 @@ class MinidomTest(unittest.TestCase):
                 and pi.localName is None
                 and pi.namespaceURI == xml.dom.EMPTY_NAMESPACE)
 
-    def testProcessingInstructionRepr(self): pass
+    def testProcessingInstructionRepr(self):
+        dom = parseString('<e><?mypi \t\n data \t\n ?></e>')
+        pi = dom.documentElement.firstChild
+        self.assertEqual(str(pi.nodeType), repr(pi.nodeType))
 
-    def testTextRepr(self): pass
+    def testTextRepr(self):
+        dom = Document()
+        self.addCleanup(dom.unlink)
+        elem = dom.createElement("elem")
+        elem.appendChild(dom.createTextNode("foo"))
+        el = elem.firstChild
+        self.assertEqual(str(el), repr(el))
+        self.assertEqual('<DOM Text node "\'foo\'">', str(el))
 
     def testWriteText(self): pass
 
