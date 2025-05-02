@@ -17,22 +17,13 @@ if __name__ == "__main__":
         help="a PEP 11 target triple to compile for",
     )
     parser.add_argument(
-        "-d",
-        "--debug",
-        action="store_true",
-        help="compile for a debug build of Python",
+        "-d", "--debug", action="store_true", help="compile for a debug build of Python"
     )
     parser.add_argument(
-        "-f",
-        "--force",
-        action="store_true",
-        help="force the entire JIT to be rebuilt",
+        "-f", "--force", action="store_true", help="force the entire JIT to be rebuilt"
     )
     parser.add_argument(
-        "-v",
-        "--verbose",
-        action="store_true",
-        help="echo commands as they are run",
+        "-v", "--verbose", action="store_true", help="echo commands as they are run"
     )
     args = parser.parse_args()
     for target in args.target:

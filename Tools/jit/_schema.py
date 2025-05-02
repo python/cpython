@@ -97,9 +97,7 @@ class COFFSection(typing.TypedDict):
 class ELFSection(typing.TypedDict):
     """An ELF object file section."""
 
-    Flags: dict[
-        typing.Literal["Flags"], list[dict[typing.Literal["Name"], str]]
-    ]
+    Flags: dict[typing.Literal["Flags"], list[dict[typing.Literal["Name"], str]]]
     Index: int
     Info: int
     Relocations: list[dict[typing.Literal["Relocation"], ELFRelocation]]
@@ -112,15 +110,11 @@ class MachOSection(typing.TypedDict):
     """A Mach-O object file section."""
 
     Address: int
-    Attributes: dict[
-        typing.Literal["Flags"], list[dict[typing.Literal["Name"], str]]
-    ]
+    Attributes: dict[typing.Literal["Flags"], list[dict[typing.Literal["Name"], str]]]
     Index: int
     Name: dict[typing.Literal["Value"], str]
     Relocations: typing.NotRequired[
         list[dict[typing.Literal["Relocation"], MachORelocation]]
     ]
     SectionData: typing.NotRequired[dict[typing.Literal["Bytes"], list[int]]]
-    Symbols: typing.NotRequired[
-        list[dict[typing.Literal["Symbol"], _MachOSymbol]]
-    ]
+    Symbols: typing.NotRequired[list[dict[typing.Literal["Symbol"], _MachOSymbol]]]
