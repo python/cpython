@@ -163,7 +163,7 @@ class PdbClientTestCase(unittest.TestCase):
             client = _PdbClient(
                 pid=0,
                 server_socket=server_sock,
-                interrupt_script="/a/b.py",
+                interrupt_sock=unittest.mock.Mock(spec=socket.socket),
             )
 
             if expected_exception is not None:

@@ -77,6 +77,7 @@ import glob
 import json
 import token
 import types
+import atexit
 import codeop
 import pprint
 import signal
@@ -93,6 +94,7 @@ import itertools
 import traceback
 import linecache
 import selectors
+import threading
 import _colorize
 
 from contextlib import ExitStack
@@ -2906,7 +2908,7 @@ class _PdbServer(Pdb):
 
 
 class _PdbClient:
-    def __init__(self, pid, server_socket, interrupt_script):
+    def __init__(self, pid, server_socket, interrupt_sock):
         self.pid = pid
         self.read_buf = b""
         self.signal_read = None
@@ -2914,7 +2916,7 @@ class _PdbClient:
         self.sigint_received = False
         self.raise_on_sigint = False
         self.server_socket = server_socket
-        self.interrupt_script = interrupt_script
+        self.interrupt_sock = interrupt_sock
         self.pdb_instance = Pdb()
         self.pdb_commands = set()
         self.completion_matches = []
@@ -3136,14 +3138,11 @@ class _PdbClient:
             # PyErr_CheckSignals is called or the eval loop regains control.
             os.kill(self.pid, signal.SIGINT)
         else:
-            # On Windows, inject a remote script that calls Pdb.set_trace()
-            # when the eval loop regains control. This cannot interrupt IO, and
-            # also cannot interrupt statements executed at a PDB prompt.
-            print(
-                "\n*** Program will stop at the next bytecode instruction."
-                " (Use 'cont' to resume)."
-            )
-            sys.remote_exec(self.pid, self.interrupt_script)
+            # On Windows, write to a socket that the PDB server listens on.
+            # This triggers the remote to raise a SIGINT for itself. We do this
+            # because Windows doesn't allow triggering SIGINT remotely.
+            # See https://stackoverflow.com/a/35792192 for many more details.
+            self.interrupt_sock.sendall(signal.SIGINT.to_bytes())
 
     def process_payload(self, payload):
         match payload:
@@ -3226,6 +3225,41 @@ class _PdbClient:
             return None
 
 
+def _start_interrupt_listener(host, port):
+    def sigint_listener(host, port):
+        with closing(
+            socket.create_connection((host, port), timeout=5)
+        ) as sock:
+            # Check if the interpreter is finalizing every quarter of a second.
+            # Clean up and exit if so.
+            sock.settimeout(0.25)
+            sock.shutdown(socket.SHUT_WR)
+            while not shut_down.is_set():
+                try:
+                    data = sock.recv(1024)
+                except socket.timeout:
+                    continue
+                if data == b"":
+                    return  # EOF
+                signal.raise_signal(signal.SIGINT)
+
+    def stop_thread():
+        shut_down.set()
+        thread.join()
+
+    # Use a daemon thread so that we don't detach until after all non-daemon
+    # threads are done. Use an atexit handler to stop gracefully at that point,
+    # so that our thread is stopped before the interpreter is torn down.
+    shut_down = threading.Event()
+    thread = threading.Thread(
+        target=sigint_listener,
+        args=(host, port),
+        daemon=True,
+    )
+    atexit.register(stop_thread)
+    thread.start()
+
+
 def _connect(host, port, frame, commands, version):
     with closing(socket.create_connection((host, port))) as conn:
         sockfile = conn.makefile("rwb")
@@ -3255,8 +3289,13 @@ def attach(pid, commands=()):
         server = stack.enter_context(
             closing(socket.create_server(("localhost", 0)))
         )
-
         port = server.getsockname()[1]
+
+        if sys.platform == "win32":
+            commands = [
+                f"__import__('pdb')._start_interrupt_listener('localhost', {port})",
+                *commands,
+            ]
 
         connect_script = stack.enter_context(
             tempfile.NamedTemporaryFile("w", delete_on_close=False)
@@ -3281,20 +3320,16 @@ def attach(pid, commands=()):
 
         # TODO Add a timeout? Or don't bother since the user can ^C?
         client_sock, _ = server.accept()
-
         stack.enter_context(closing(client_sock))
 
-        interrupt_script = stack.enter_context(
-            tempfile.NamedTemporaryFile("w", delete_on_close=False)
-        )
-        interrupt_script.write(
-            'import pdb, sys\n'
-            'if inst := pdb.Pdb._last_pdb_instance:\n'
-            '    inst.set_trace(sys._getframe(1))\n'
-        )
-        interrupt_script.close()
+        if sys.platform == "win32":
+            interrupt_sock, _ = server.accept()
+            stack.enter_context(closing(interrupt_sock))
+            interrupt_sock.setblocking(False)
+        else:
+            interrupt_sock = None
 
-        _PdbClient(pid, client_sock, interrupt_script.name).cmdloop()
+        _PdbClient(pid, client_sock, interrupt_sock).cmdloop()
 
 
 # Post-Mortem interface
