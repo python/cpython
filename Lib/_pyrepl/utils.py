@@ -211,7 +211,7 @@ def is_soft_keyword_used(*tokens: TI | None) -> bool:
             None | TI(T.NEWLINE) | TI(T.INDENT) | TI(string=":"),
             TI(string="match"),
             TI(T.NUMBER | T.STRING | T.FSTRING_START | T.TSTRING_START)
-            | TI(T.OP, string="(" | "*" | "-" | "+" | "[" | "{" | "~" | "...")
+            | TI(T.OP, string="(" | "*" | "[" | "{" | "~" | "...")
         ):
             return True
         case (
