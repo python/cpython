@@ -42,7 +42,6 @@ from .utils import wlen
 
 # declare posix optional to allow None assignment on other platforms
 posix: types.ModuleType | None
-
 try:
     import posix
 except ImportError:
@@ -558,8 +557,8 @@ class UnixConsole(Console):
 
     @property
     def input_hook(self):
-        # avoid inline imports here so the repl doesn't get flooded with import
-        # logging from -Ximporttime=2
+        # avoid inline imports here so the repl doesn't get flooded
+        # with import logging from -X importtime=2
         if posix is not None and posix._is_inputhook_installed():
             return posix._inputhook
 
