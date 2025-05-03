@@ -1716,7 +1716,6 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
                        PyObject *globalsns, PyObject *builtinsns,
                        struct co_unbound_counts *counts)
 {
-    return 0;
     // This function is inspired by inspect.getclosurevars().
     // It would be nicer if we had something similar to co_localspluskinds,
     // but for co_names.
@@ -1731,6 +1730,7 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     assert(counts == NULL || counts->total == 0);
     struct co_unbound_counts unbound = {0};
     Py_ssize_t len = Py_SIZE(co);
+return 0;
     for (int i = 0; i < len; i++) {
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
         if (inst.op.code == LOAD_ATTR) {
