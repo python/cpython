@@ -1537,7 +1537,7 @@ class LWPCookieTests(unittest.TestCase):
         h = req.get_header("Cookie")
         self.assertIn("PART_NUMBER=ROCKET_LAUNCHER_0001", h)
         self.assertIn("CUSTOMER=WILE_E_COYOTE", h)
-        self.assertTrue(h.startswith("SHIPPING=FEDEX;"))
+        self.assertStartsWith(h, "SHIPPING=FEDEX;")
 
     def test_netscape_example_2(self):
         # Second Example transaction sequence:

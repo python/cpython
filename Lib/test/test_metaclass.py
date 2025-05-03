@@ -297,4 +297,6 @@ def load_tests(loader, tests, pattern):
 
 
 if __name__ == "__main__":
+    # set __name__ to match doctest expectations
+    __name__ = "test.test_metaclass"
     unittest.main()

@@ -648,14 +648,14 @@ union result {
     int i;
     long l;
     long long q;
-    long double D;
+    long double g;
     double d;
     float f;
     void *p;
 #if defined(Py_HAVE_C_COMPLEX) && defined(Py_FFI_SUPPORT_C_COMPLEX)
-    double complex C;
-    float complex E;
-    long double complex F;
+    double complex D;
+    float complex F;
+    long double complex G;
 #endif
 };
 
@@ -683,7 +683,9 @@ static int ConvParam(ctypes_state *st,
         PyCArgObject *carg;
         assert(info->paramfunc);
         /* If it has an stginfo, it is a CDataObject */
+        Py_BEGIN_CRITICAL_SECTION(obj);
         carg = info->paramfunc(st, (CDataObject *)obj);
+        Py_END_CRITICAL_SECTION();
         if (carg == NULL)
             return -1;
         pa->ffi_type = carg->pffi_type;
@@ -1022,11 +1024,12 @@ static PyObject *GetResult(ctypes_state *st,
     if (info->getfunc && !_ctypes_simple_instance(st, restype)) {
         retval = info->getfunc(result, info->size);
         /* If restype is py_object (detected by comparing getfunc with
-           O_get), we have to call Py_DECREF because O_get has already
-           called Py_INCREF.
+           O_get), we have to call Py_XDECREF because O_get has already
+           called Py_INCREF, unless the result was NULL, in which case
+           an error is set (by the called function, or by O_get).
         */
         if (info->getfunc == _ctypes_get_fielddesc("O")->getfunc) {
-            Py_DECREF(retval);
+            Py_XDECREF(retval);
         }
     }
     else {
@@ -1196,6 +1199,21 @@ PyObject *_ctypes_callproc(ctypes_state *st,
     ffi_type *rtype;
     void **avalues;
     PyObject *retval = NULL;
+
+    // Both call_function and call_cdeclfunction call us:
+#if SIZEOF_VOID_P == SIZEOF_LONG
+    if (PySys_Audit("ctypes.call_function", "kO",
+                    (unsigned long)pProc, argtuple) < 0) {
+#elif SIZEOF_VOID_P == SIZEOF_LONG_LONG
+    if (PySys_Audit("ctypes.call_function", "KO",
+                    (unsigned long long)pProc, argtuple) < 0) {
+#else
+# warning "unexpected pointer size, you may see odd values in audit hooks"
+    if (PySys_Audit("ctypes.call_function", "nO",
+                    (Py_ssize_t)pProc, argtuple) < 0) {
+#endif
+        return NULL;
+    }
 
     n = argcount = PyTuple_GET_SIZE(argtuple);
 #ifdef MS_WIN32
@@ -1672,10 +1690,6 @@ call_function(PyObject *self, PyObject *args)
                           &_parse_voidp, &func,
                           &PyTuple_Type, &arguments))
         return NULL;
-    if (PySys_Audit("ctypes.call_function", "nO",
-                    (Py_ssize_t)func, arguments) < 0) {
-        return NULL;
-    }
 
     ctypes_state *st = get_module_state(self);
     result = _ctypes_callproc(st,
@@ -1709,10 +1723,6 @@ call_cdeclfunction(PyObject *self, PyObject *args)
                           &_parse_voidp, &func,
                           &PyTuple_Type, &arguments))
         return NULL;
-    if (PySys_Audit("ctypes.call_function", "nO",
-                    (Py_ssize_t)func, arguments) < 0) {
-        return NULL;
-    }
 
     ctypes_state *st = get_module_state(self);
     result = _ctypes_callproc(st,
@@ -1962,105 +1972,6 @@ error:
     return NULL;
 }
 
-/*[clinic input]
-_ctypes.POINTER as create_pointer_type
-
-    type as cls: object
-        A ctypes type.
-    /
-
-Create and return a new ctypes pointer type.
-
-Pointer types are cached and reused internally,
-so calling this function repeatedly is cheap.
-[clinic start generated code]*/
-
-static PyObject *
-create_pointer_type(PyObject *module, PyObject *cls)
-/*[clinic end generated code: output=98c3547ab6f4f40b input=3b81cff5ff9b9d5b]*/
-{
-    PyObject *result;
-    PyTypeObject *typ;
-    PyObject *key;
-
-    assert(module);
-    ctypes_state *st = get_module_state(module);
-    if (PyDict_GetItemRef(st->_ctypes_ptrtype_cache, cls, &result) != 0) {
-        // found or error
-        return result;
-    }
-    // not found
-    if (PyUnicode_CheckExact(cls)) {
-        PyObject *name = PyUnicode_FromFormat("LP_%U", cls);
-        result = PyObject_CallFunction((PyObject *)Py_TYPE(st->PyCPointer_Type),
-                                       "N(O){}",
-                                       name,
-                                       st->PyCPointer_Type);
-        if (result == NULL)
-            return result;
-        key = PyLong_FromVoidPtr(result);
-        if (key == NULL) {
-            Py_DECREF(result);
-            return NULL;
-        }
-    } else if (PyType_Check(cls)) {
-        typ = (PyTypeObject *)cls;
-        PyObject *name = PyUnicode_FromFormat("LP_%s", typ->tp_name);
-        result = PyObject_CallFunction((PyObject *)Py_TYPE(st->PyCPointer_Type),
-                                       "N(O){sO}",
-                                       name,
-                                       st->PyCPointer_Type,
-                                       "_type_", cls);
-        if (result == NULL)
-            return result;
-        key = Py_NewRef(cls);
-    } else {
-        PyErr_SetString(PyExc_TypeError, "must be a ctypes type");
-        return NULL;
-    }
-    if (PyDict_SetItem(st->_ctypes_ptrtype_cache, key, result) < 0) {
-        Py_DECREF(result);
-        Py_DECREF(key);
-        return NULL;
-    }
-    Py_DECREF(key);
-    return result;
-}
-
-/*[clinic input]
-_ctypes.pointer as create_pointer_inst
-
-    obj as arg: object
-    /
-
-Create a new pointer instance, pointing to 'obj'.
-
-The returned object is of the type POINTER(type(obj)). Note that if you
-just want to pass a pointer to an object to a foreign function call, you
-should use byref(obj) which is much faster.
-[clinic start generated code]*/
-
-static PyObject *
-create_pointer_inst(PyObject *module, PyObject *arg)
-/*[clinic end generated code: output=3b543bc9f0de2180 input=713685fdb4d9bc27]*/
-{
-    PyObject *result;
-    PyObject *typ;
-
-    ctypes_state *st = get_module_state(module);
-    if (PyDict_GetItemRef(st->_ctypes_ptrtype_cache, (PyObject *)Py_TYPE(arg), &typ) < 0) {
-        return NULL;
-    }
-    if (typ == NULL) {
-        typ = create_pointer_type(module, (PyObject *)Py_TYPE(arg));
-        if (typ == NULL)
-            return NULL;
-    }
-    result = PyObject_CallOneArg(typ, arg);
-    Py_DECREF(typ);
-    return result;
-}
-
 static PyObject *
 buffer_info(PyObject *self, PyObject *arg)
 {
@@ -2095,8 +2006,6 @@ buffer_info(PyObject *self, PyObject *arg)
 PyMethodDef _ctypes_module_methods[] = {
     {"get_errno", get_errno, METH_NOARGS},
     {"set_errno", set_errno, METH_VARARGS},
-    CREATE_POINTER_TYPE_METHODDEF
-    CREATE_POINTER_INST_METHODDEF
     {"_unpickle", unpickle, METH_VARARGS },
     {"buffer_info", buffer_info, METH_O, "Return buffer interface information"},
     _CTYPES_RESIZE_METHODDEF

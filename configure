@@ -708,11 +708,6 @@ MODULE__CTYPES_FALSE
 MODULE__CTYPES_TRUE
 MODULE__HMAC_FALSE
 MODULE__HMAC_TRUE
-LIBHACL_SIMD256_OBJS
-LIBHACL_SIMD256_FLAGS
-LIBHACL_SIMD128_OBJS
-LIBHACL_SIMD128_FLAGS
-LIBHACL_CFLAGS
 MODULE__BLAKE2_FALSE
 MODULE__BLAKE2_TRUE
 MODULE__SHA3_FALSE
@@ -723,6 +718,13 @@ MODULE__SHA1_FALSE
 MODULE__SHA1_TRUE
 MODULE__MD5_FALSE
 MODULE__MD5_TRUE
+LIBHACL_LDEPS_LIBTYPE
+LIBHACL_BLAKE2_SIMD256_OBJS
+LIBHACL_SIMD256_FLAGS
+LIBHACL_BLAKE2_SIMD128_OBJS
+LIBHACL_SIMD128_FLAGS
+LIBHACL_LDFLAGS
+LIBHACL_CFLAGS
 MODULE_UNICODEDATA_FALSE
 MODULE_UNICODEDATA_TRUE
 MODULE__MULTIBYTECODEC_FALSE
@@ -898,6 +900,8 @@ LDSHARED
 SHLIB_SUFFIX
 DSYMUTIL_PATH
 DSYMUTIL
+JIT_STENCILS_H
+REGEN_JIT_COMMAND
 UNIVERSAL_ARCH_FLAGS
 WASM_STDLIB
 WASM_ASSETS_DIR
@@ -926,8 +930,6 @@ LLVM_AR
 PROFILE_TASK
 DEF_MAKE_RULE
 DEF_MAKE_ALL_RULE
-JIT_STENCILS_H
-REGEN_JIT_COMMAND
 ABI_THREAD
 ABIFLAGS
 LN
@@ -1090,13 +1092,13 @@ with_pydebug
 with_trace_refs
 enable_pystats
 with_assertions
-enable_experimental_jit
 enable_optimizations
 with_lto
 enable_bolt
 with_strict_overflow
 enable_safety
 enable_slower_safety
+enable_experimental_jit
 with_dsymutil
 with_address_sanitizer
 with_memory_sanitizer
@@ -1821,9 +1823,6 @@ Optional Features:
   --disable-gil           enable experimental support for running without the
                           GIL (default is no)
   --enable-pystats        enable internal statistics gathering (default is no)
-  --enable-experimental-jit[=no|yes|yes-off|interpreter]
-                          build the experimental just-in-time compiler
-                          (default is no)
   --enable-optimizations  enable expensive, stable optimizations (PGO, etc.)
                           (default is no)
   --enable-bolt           enable usage of the llvm-bolt post-link optimizer
@@ -1832,6 +1831,9 @@ Optional Features:
                           no performance overhead
   --enable-slower-safety  enable usage of the security compiler options with
                           performance overhead
+  --enable-experimental-jit[=no|yes|yes-off|interpreter]
+                          build the experimental just-in-time compiler
+                          (default is no)
   --enable-loadable-sqlite-extensions
                           support loadable extensions in the sqlite3 module,
                           see Doc/library/sqlite3.rst (default is no)
@@ -8365,51 +8367,6 @@ else
 printf "%s\n" "no" >&6; }
 fi
 
-# Check for --enable-experimental-jit:
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-experimental-jit" >&5
-printf %s "checking for --enable-experimental-jit... " >&6; }
-# Check whether --enable-experimental-jit was given.
-if test ${enable_experimental_jit+y}
-then :
-  enableval=$enable_experimental_jit;
-else case e in #(
-  e) enable_experimental_jit=no ;;
-esac
-fi
-
-case $enable_experimental_jit in
-  no)              jit_flags="";          tier2_flags="" ;;
-  yes)             jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=1" ;;
-  yes-off)         jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=3" ;;
-  interpreter)     jit_flags="";          tier2_flags="-D_Py_TIER2=4" ;;
-  interpreter-off) jit_flags="";          tier2_flags="-D_Py_TIER2=6" ;;  # Secret option
-  *) as_fn_error $? "invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-off|interpreter" "$LINENO" 5 ;;
-esac
-if ${tier2_flags:+false} :
-then :
-
-else case e in #(
-  e) as_fn_append CFLAGS_NODIST " $tier2_flags" ;;
-esac
-fi
-if ${jit_flags:+false} :
-then :
-
-else case e in #(
-  e) as_fn_append CFLAGS_NODIST " $jit_flags"
-           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py $host"
-           JIT_STENCILS_H="jit_stencils.h"
-           if test "x$Py_DEBUG" = xtrue
-then :
-  as_fn_append REGEN_JIT_COMMAND " --debug"
-fi ;;
-esac
-fi
-
-
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tier2_flags $jit_flags" >&5
-printf "%s\n" "$tier2_flags $jit_flags" >&6; }
-
 # Enable optimization flags
 
 
@@ -10704,42 +10661,50 @@ fi
                UNIVERSAL_ARCH_FLAGS="-arch ppc -arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+               ARCH_TRIPLES=`echo {ppc,i386}-apple-darwin`
                ;;
             64-bit)
                UNIVERSAL_ARCH_FLAGS="-arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+               ARCH_TRIPLES=`echo {ppc64,x86_64}-apple-darwin`
                ;;
             all)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch ppc64 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+               ARCH_TRIPLES=`echo {i386,ppc,ppc64,x86_64}-apple-darwin`
                ;;
             universal2)
                UNIVERSAL_ARCH_FLAGS="-arch arm64 -arch x86_64"
                LIPO_32BIT_FLAGS=""
                LIPO_INTEL64_FLAGS="-extract x86_64"
                ARCH_RUN_32BIT="true"
+               ARCH_TRIPLES=`echo {aarch64,x86_64}-apple-darwin`
                ;;
             intel)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch x86_64"
                LIPO_32BIT_FLAGS="-extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386"
+               ARCH_TRIPLES=`echo {i386,x86_64}-apple-darwin`
                ;;
             intel-32)
                UNIVERSAL_ARCH_FLAGS="-arch i386"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT=""
+               ARCH_TRIPLES=i386-apple-darwin
                ;;
             intel-64)
                UNIVERSAL_ARCH_FLAGS="-arch x86_64"
                LIPO_32BIT_FLAGS=""
                ARCH_RUN_32BIT="true"
+               ARCH_TRIPLES=x86_64-apple-darwin
                ;;
             3-way)
                UNIVERSAL_ARCH_FLAGS="-arch i386 -arch ppc -arch x86_64"
                LIPO_32BIT_FLAGS="-extract ppc7400 -extract i386"
                ARCH_RUN_32BIT="/usr/bin/arch -i386 -ppc"
+               ARCH_TRIPLES=`echo {i386,ppc,x86_64}-apple-darwin`
                ;;
             *)
                as_fn_error $? "proper usage is --with-universal-arch=universal2|32-bit|64-bit|all|intel|3-way" "$LINENO" 5
@@ -10854,6 +10819,57 @@ else case e in #(
     esac
  ;;
 esac
+fi
+
+# Check for --enable-experimental-jit:
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for --enable-experimental-jit" >&5
+printf %s "checking for --enable-experimental-jit... " >&6; }
+# Check whether --enable-experimental-jit was given.
+if test ${enable_experimental_jit+y}
+then :
+  enableval=$enable_experimental_jit;
+else case e in #(
+  e) enable_experimental_jit=no ;;
+esac
+fi
+
+case $enable_experimental_jit in
+  no)              jit_flags="";          tier2_flags="" ;;
+  yes)             jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=1" ;;
+  yes-off)         jit_flags="-D_Py_JIT"; tier2_flags="-D_Py_TIER2=3" ;;
+  interpreter)     jit_flags="";          tier2_flags="-D_Py_TIER2=4" ;;
+  interpreter-off) jit_flags="";          tier2_flags="-D_Py_TIER2=6" ;;  # Secret option
+  *) as_fn_error $? "invalid argument: --enable-experimental-jit=$enable_experimental_jit; expected no|yes|yes-off|interpreter" "$LINENO" 5 ;;
+esac
+if ${tier2_flags:+false} :
+then :
+
+else case e in #(
+  e) as_fn_append CFLAGS_NODIST " $tier2_flags" ;;
+esac
+fi
+if ${jit_flags:+false} :
+then :
+
+else case e in #(
+  e) as_fn_append CFLAGS_NODIST " $jit_flags"
+           REGEN_JIT_COMMAND="\$(PYTHON_FOR_REGEN) \$(srcdir)/Tools/jit/build.py ${ARCH_TRIPLES:-$host}"
+           JIT_STENCILS_H="jit_stencils.h"
+           if test "x$Py_DEBUG" = xtrue
+then :
+  as_fn_append REGEN_JIT_COMMAND " --debug"
+fi ;;
+esac
+fi
+
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $tier2_flags $jit_flags" >&5
+printf "%s\n" "$tier2_flags $jit_flags" >&6; }
+
+if test "$disable_gil" = "yes" -a "$enable_experimental_jit" != "no"; then
+  # GH-133171: This configuration builds the JIT but never actually uses it,
+  # which is surprising (and strictly worse than not building it at all):
+  as_fn_error $? "--enable-experimental-jit cannot be used with --disable-gil." "$LINENO" 5
 fi
 
 case "$ac_cv_cc_name" in
@@ -13975,6 +13991,54 @@ fi
     # Dynamic linking for HP-UX
 
 
+       for ac_header in execinfo.h link.h dlfcn.h
+do :
+  as_ac_Header=`printf "%s\n" "ac_cv_header_$ac_header" | sed "$as_sed_sh"`
+ac_fn_c_check_header_compile "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
+if eval test \"x\$"$as_ac_Header"\" = x"yes"
+then :
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_header" | sed "$as_sed_cpp"` 1
+_ACEOF
+
+
+  for ac_func in backtrace dladdr1
+do :
+  as_ac_var=`printf "%s\n" "ac_cv_func_$ac_func" | sed "$as_sed_sh"`
+ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
+if eval test \"x\$"$as_ac_var"\" = x"yes"
+then :
+  cat >>confdefs.h <<_ACEOF
+#define `printf "%s\n" "HAVE_$ac_func" | sed "$as_sed_cpp"` 1
+_ACEOF
+
+    # dladdr1 requires -ldl
+    ac_cv_require_ldl=yes
+
+fi
+
+done
+
+fi
+
+done
+
+if test "x$ac_cv_require_ldl" = xyes
+then :
+
+  if test "x$ac_cv_lib_dl_dlopen" = xyes
+then :
+
+else case e in #(
+  e)
+    as_fn_append LDFLAGS " -ldl"
+   ;;
+esac
+fi
+
+fi
+
+
 
 
 
@@ -15486,7 +15550,7 @@ else case e in #(
 #include <ffi.h>
 int z_is_expected(double complex z)
 {
-    const double complex expected = CMPLX(1.25, -0.5);
+    const double complex expected = 1.25 - 0.5 * I;
     return z == expected;
 }
 int main(void)
@@ -31912,221 +31976,54 @@ then :
 fi
 
 
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _md5" >&5
-printf %s "checking for stdlib extension module _md5... " >&6; }
-        if test "$py_cv_module__md5" != "n/a"
-then :
-
-    if test "$with_builtin_md5" = yes
-then :
-  if true
-then :
-  py_cv_module__md5=yes
-else case e in #(
-  e) py_cv_module__md5=missing ;;
-esac
-fi
-else case e in #(
-  e) py_cv_module__md5=disabled ;;
-esac
-fi
-
-fi
-  as_fn_append MODULE_BLOCK "MODULE__MD5_STATE=$py_cv_module__md5$as_nl"
-  if test "x$py_cv_module__md5" = xyes
-then :
-
-
-
-
-fi
-   if test "$py_cv_module__md5" = yes; then
-  MODULE__MD5_TRUE=
-  MODULE__MD5_FALSE='#'
-else
-  MODULE__MD5_TRUE='#'
-  MODULE__MD5_FALSE=
-fi
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__md5" >&5
-printf "%s\n" "$py_cv_module__md5" >&6; }
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha1" >&5
-printf %s "checking for stdlib extension module _sha1... " >&6; }
-        if test "$py_cv_module__sha1" != "n/a"
-then :
-
-    if test "$with_builtin_sha1" = yes
-then :
-  if true
-then :
-  py_cv_module__sha1=yes
-else case e in #(
-  e) py_cv_module__sha1=missing ;;
-esac
-fi
-else case e in #(
-  e) py_cv_module__sha1=disabled ;;
-esac
-fi
-
-fi
-  as_fn_append MODULE_BLOCK "MODULE__SHA1_STATE=$py_cv_module__sha1$as_nl"
-  if test "x$py_cv_module__sha1" = xyes
-then :
-
-
-
-
-fi
-   if test "$py_cv_module__sha1" = yes; then
-  MODULE__SHA1_TRUE=
-  MODULE__SHA1_FALSE='#'
-else
-  MODULE__SHA1_TRUE='#'
-  MODULE__SHA1_FALSE=
-fi
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sha1" >&5
-printf "%s\n" "$py_cv_module__sha1" >&6; }
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha2" >&5
-printf %s "checking for stdlib extension module _sha2... " >&6; }
-        if test "$py_cv_module__sha2" != "n/a"
-then :
-
-    if test "$with_builtin_sha2" = yes
-then :
-  if true
-then :
-  py_cv_module__sha2=yes
-else case e in #(
-  e) py_cv_module__sha2=missing ;;
-esac
-fi
-else case e in #(
-  e) py_cv_module__sha2=disabled ;;
-esac
-fi
-
-fi
-  as_fn_append MODULE_BLOCK "MODULE__SHA2_STATE=$py_cv_module__sha2$as_nl"
-  if test "x$py_cv_module__sha2" = xyes
-then :
-
-
-
-
-fi
-   if test "$py_cv_module__sha2" = yes; then
-  MODULE__SHA2_TRUE=
-  MODULE__SHA2_FALSE='#'
-else
-  MODULE__SHA2_TRUE='#'
-  MODULE__SHA2_FALSE=
-fi
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sha2" >&5
-printf "%s\n" "$py_cv_module__sha2" >&6; }
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha3" >&5
-printf %s "checking for stdlib extension module _sha3... " >&6; }
-        if test "$py_cv_module__sha3" != "n/a"
-then :
-
-    if test "$with_builtin_sha3" = yes
-then :
-  if true
-then :
-  py_cv_module__sha3=yes
-else case e in #(
-  e) py_cv_module__sha3=missing ;;
-esac
-fi
-else case e in #(
-  e) py_cv_module__sha3=disabled ;;
-esac
-fi
-
-fi
-  as_fn_append MODULE_BLOCK "MODULE__SHA3_STATE=$py_cv_module__sha3$as_nl"
-  if test "x$py_cv_module__sha3" = xyes
-then :
-
-
-
-
-fi
-   if test "$py_cv_module__sha3" = yes; then
-  MODULE__SHA3_TRUE=
-  MODULE__SHA3_FALSE='#'
-else
-  MODULE__SHA3_TRUE='#'
-  MODULE__SHA3_FALSE=
-fi
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sha3" >&5
-printf "%s\n" "$py_cv_module__sha3" >&6; }
-
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _blake2" >&5
-printf %s "checking for stdlib extension module _blake2... " >&6; }
-        if test "$py_cv_module__blake2" != "n/a"
-then :
-
-    if test "$with_builtin_blake2" = yes
-then :
-  if true
-then :
-  py_cv_module__blake2=yes
-else case e in #(
-  e) py_cv_module__blake2=missing ;;
-esac
-fi
-else case e in #(
-  e) py_cv_module__blake2=disabled ;;
-esac
-fi
-
-fi
-  as_fn_append MODULE_BLOCK "MODULE__BLAKE2_STATE=$py_cv_module__blake2$as_nl"
-  if test "x$py_cv_module__blake2" = xyes
-then :
-
-
-
-
-fi
-   if test "$py_cv_module__blake2" = yes; then
-  MODULE__BLAKE2_TRUE=
-  MODULE__BLAKE2_FALSE='#'
-else
-  MODULE__BLAKE2_TRUE='#'
-  MODULE__BLAKE2_FALSE=
-fi
-
-  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__blake2" >&5
-printf "%s\n" "$py_cv_module__blake2" >&6; }
-
-
-LIBHACL_CFLAGS='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include -D_BSD_SOURCE -D_DEFAULT_SOURCE $(PY_STDMODULE_CFLAGS) $(CCSHARED)'
+###############################################################################
+# HACL* compilation and linking configuration (contact: @picnixz)
+#
+# Used by the HACL*-based implementations of cryptographic primitives.
+#
+# CPython provides a vendored copy of a subset of the HACL* project used
+# to build extension modules of cryptographic primitives. On WASI, HACL*
+# sources must be statically linked with the extension modules; on other
+# platforms, the extension modules may assume that HACL* has been compiled
+# as a shared library.
+#
+# Example for MD5:
+#
+#   * Compile Modules/_hacl/Hacl_Hash_MD5.c into Modules/_hacl/Hacl_Hash_MD5.o.
+#   * Decide whether the object files are to be passed to the linker (emulate
+#     a shared library without having to install it) or if we need to create
+#     a static library for WASI. The following summarizes the values taken by
+#     the MODULE_<NAME>_LDFLAGS variable depending on the linkage type:
+#     - shared: MODULE__MD5_LDFLAGS is set to LIBHACL_MD5_OBJS
+#     - static: MODULE__MD5_LDFLAGS is set to Modules/_hacl/libHacl_Hash_MD5.a
+#   * Compile Modules/md5module.c into Modules/md5module.o.
+#   * Link Modules/md5module.o using $(MODULE__MD5_LDFLAGS)
+#     and get Modules/_md5$(EXT_SUFFIX).
+#
+# LIBHACL_FLAG_I: '-I' flags passed to $(CC) for HACL* and HACL*-based modules
+# LIBHACL_FLAG_D: '-D' flags passed to $(CC) for HACL* and HACL*-based modules
+# LIBHACL_CFLAGS: compiler flags passed for HACL* and HACL*-based modules
+# LIBHACL_LDFLAGS: linker flags passed for HACL* and HACL*-based modules
+LIBHACL_FLAG_I='-I$(srcdir)/Modules/_hacl -I$(srcdir)/Modules/_hacl/include'
+LIBHACL_FLAG_D='-D_BSD_SOURCE -D_DEFAULT_SOURCE'
 case "$ac_sys_system" in
   Linux*)
     if test "$ac_cv_func_explicit_bzero" = "no"; then
-      LIBHACL_CFLAGS="$LIBHACL_CFLAGS -DLINUX_NO_EXPLICIT_BZERO"
+      LIBHACL_FLAG_D="${LIBHACL_FLAG_D} -DLINUX_NO_EXPLICIT_BZERO"
     fi
   ;;
 esac
+LIBHACL_CFLAGS="${LIBHACL_FLAG_I} ${LIBHACL_FLAG_D} \$(PY_STDMODULE_CFLAGS) \$(CCSHARED)"
+
+LIBHACL_LDFLAGS=  # for now, no specific linker flags are needed
 
 
 # The SIMD files use aligned_alloc, which is not available on older versions of
 # Android.
 # The *mmintrin.h headers are x86-family-specific, so can't be used on WASI.
-if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
+   { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
+then
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2" >&5
 printf %s "checking whether C compiler accepts -msse -msse2 -msse3 -msse4.1 -msse4.2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__msse__msse2__msse3__msse4_1__msse4_2+y}
@@ -32175,11 +32072,11 @@ printf "%s\n" "#define HACL_CAN_COMPILE_SIMD128 1" >>confdefs.h
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* SIMD128 implementation" >&5
 printf %s "checking for HACL* SIMD128 implementation... " >&6; }
     if test "$UNIVERSAL_ARCHS" == "universal2"; then
-      LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"
+      LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128_universal2.o"
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: universal2" >&5
 printf "%s\n" "universal2" >&6; }
     else
-      LIBHACL_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"
+      LIBHACL_BLAKE2_SIMD128_OBJS="Modules/_hacl/Hacl_Hash_Blake2s_Simd128.o"
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: standard" >&5
 printf "%s\n" "standard" >&6; }
     fi
@@ -32201,7 +32098,9 @@ fi
 # Although AVX support is not guaranteed on Android
 # (https://developer.android.com/ndk/guides/abis#86-64), this is safe because we do a
 # runtime CPUID check.
-if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || test "$ANDROID_API_LEVEL" -ge 28; then
+if test "$ac_sys_system" != "Linux-android" -a "$ac_sys_system" != "WASI" || \
+   { test -n "$ANDROID_API_LEVEL" && test "$ANDROID_API_LEVEL" -ge 28; }
+then
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking whether C compiler accepts -mavx2" >&5
 printf %s "checking whether C compiler accepts -mavx2... " >&6; }
 if test ${ax_cv_check_cflags__Werror__mavx2+y}
@@ -32250,11 +32149,11 @@ printf "%s\n" "#define HACL_CAN_COMPILE_SIMD256 1" >>confdefs.h
     { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* SIMD256 implementation" >&5
 printf %s "checking for HACL* SIMD256 implementation... " >&6; }
     if test "$UNIVERSAL_ARCHS" == "universal2"; then
-      LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"
+      LIBHACL_BLAKE2_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256_universal2.o"
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: universal2" >&5
 printf "%s\n" "universal2" >&6; }
     else
-      LIBHACL_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"
+      LIBHACL_BLAKE2_SIMD256_OBJS="Modules/_hacl/Hacl_Hash_Blake2b_Simd256.o"
       { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: standard" >&5
 printf "%s\n" "standard" >&6; }
     fi
@@ -32267,7 +32166,257 @@ fi
 fi
 
 
+### end(HACL* configuration)
 
+###############################################################################
+# HACL*-based cryptographic primitives
+
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for HACL* library linking type" >&5
+printf %s "checking for HACL* library linking type... " >&6; }
+if test "$ac_sys_system" = "WASI"; then
+  LIBHACL_LDEPS_LIBTYPE=STATIC
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: static" >&5
+printf "%s\n" "static" >&6; }
+else
+  LIBHACL_LDEPS_LIBTYPE=SHARED
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: shared" >&5
+printf "%s\n" "shared" >&6; }
+fi
+# Used to complete the "MODULE_<NAME>_LDEPS" Makefile variable.
+# The LDEPS variable is a Makefile rule prerequisite.
+
+
+
+
+
+
+  LIBHACL_MD5_LDFLAGS=LIBHACL_MD5_LIB_${LIBHACL_LDEPS_LIBTYPE}
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _md5" >&5
+printf %s "checking for stdlib extension module _md5... " >&6; }
+        if test "$py_cv_module__md5" != "n/a"
+then :
+
+    if test "$with_builtin_md5" = yes
+then :
+  if true
+then :
+  py_cv_module__md5=yes
+else case e in #(
+  e) py_cv_module__md5=missing ;;
+esac
+fi
+else case e in #(
+  e) py_cv_module__md5=disabled ;;
+esac
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__MD5_STATE=$py_cv_module__md5$as_nl"
+  if test "x$py_cv_module__md5" = xyes
+then :
+
+    as_fn_append MODULE_BLOCK "MODULE__MD5_CFLAGS=$LIBHACL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__MD5_LDFLAGS=\$($LIBHACL_MD5_LDFLAGS)$as_nl"
+
+fi
+   if test "$py_cv_module__md5" = yes; then
+  MODULE__MD5_TRUE=
+  MODULE__MD5_FALSE='#'
+else
+  MODULE__MD5_TRUE='#'
+  MODULE__MD5_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__md5" >&5
+printf "%s\n" "$py_cv_module__md5" >&6; }
+
+
+
+
+
+  LIBHACL_SHA1_LDFLAGS=LIBHACL_SHA1_LIB_${LIBHACL_LDEPS_LIBTYPE}
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha1" >&5
+printf %s "checking for stdlib extension module _sha1... " >&6; }
+        if test "$py_cv_module__sha1" != "n/a"
+then :
+
+    if test "$with_builtin_sha1" = yes
+then :
+  if true
+then :
+  py_cv_module__sha1=yes
+else case e in #(
+  e) py_cv_module__sha1=missing ;;
+esac
+fi
+else case e in #(
+  e) py_cv_module__sha1=disabled ;;
+esac
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__SHA1_STATE=$py_cv_module__sha1$as_nl"
+  if test "x$py_cv_module__sha1" = xyes
+then :
+
+    as_fn_append MODULE_BLOCK "MODULE__SHA1_CFLAGS=$LIBHACL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA1_LDFLAGS=\$($LIBHACL_SHA1_LDFLAGS)$as_nl"
+
+fi
+   if test "$py_cv_module__sha1" = yes; then
+  MODULE__SHA1_TRUE=
+  MODULE__SHA1_FALSE='#'
+else
+  MODULE__SHA1_TRUE='#'
+  MODULE__SHA1_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sha1" >&5
+printf "%s\n" "$py_cv_module__sha1" >&6; }
+
+
+
+
+
+  LIBHACL_SHA2_LDFLAGS=LIBHACL_SHA2_LIB_${LIBHACL_LDEPS_LIBTYPE}
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha2" >&5
+printf %s "checking for stdlib extension module _sha2... " >&6; }
+        if test "$py_cv_module__sha2" != "n/a"
+then :
+
+    if test "$with_builtin_sha2" = yes
+then :
+  if true
+then :
+  py_cv_module__sha2=yes
+else case e in #(
+  e) py_cv_module__sha2=missing ;;
+esac
+fi
+else case e in #(
+  e) py_cv_module__sha2=disabled ;;
+esac
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__SHA2_STATE=$py_cv_module__sha2$as_nl"
+  if test "x$py_cv_module__sha2" = xyes
+then :
+
+    as_fn_append MODULE_BLOCK "MODULE__SHA2_CFLAGS=$LIBHACL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA2_LDFLAGS=\$($LIBHACL_SHA2_LDFLAGS)$as_nl"
+
+fi
+   if test "$py_cv_module__sha2" = yes; then
+  MODULE__SHA2_TRUE=
+  MODULE__SHA2_FALSE='#'
+else
+  MODULE__SHA2_TRUE='#'
+  MODULE__SHA2_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sha2" >&5
+printf "%s\n" "$py_cv_module__sha2" >&6; }
+
+
+
+
+
+  LIBHACL_SHA3_LDFLAGS=LIBHACL_SHA3_LIB_${LIBHACL_LDEPS_LIBTYPE}
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _sha3" >&5
+printf %s "checking for stdlib extension module _sha3... " >&6; }
+        if test "$py_cv_module__sha3" != "n/a"
+then :
+
+    if test "$with_builtin_sha3" = yes
+then :
+  if true
+then :
+  py_cv_module__sha3=yes
+else case e in #(
+  e) py_cv_module__sha3=missing ;;
+esac
+fi
+else case e in #(
+  e) py_cv_module__sha3=disabled ;;
+esac
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__SHA3_STATE=$py_cv_module__sha3$as_nl"
+  if test "x$py_cv_module__sha3" = xyes
+then :
+
+    as_fn_append MODULE_BLOCK "MODULE__SHA3_CFLAGS=$LIBHACL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__SHA3_LDFLAGS=\$($LIBHACL_SHA3_LDFLAGS)$as_nl"
+
+fi
+   if test "$py_cv_module__sha3" = yes; then
+  MODULE__SHA3_TRUE=
+  MODULE__SHA3_FALSE='#'
+else
+  MODULE__SHA3_TRUE='#'
+  MODULE__SHA3_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__sha3" >&5
+printf "%s\n" "$py_cv_module__sha3" >&6; }
+
+
+
+
+
+  LIBHACL_BLAKE2_LDFLAGS=LIBHACL_BLAKE2_LIB_${LIBHACL_LDEPS_LIBTYPE}
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _blake2" >&5
+printf %s "checking for stdlib extension module _blake2... " >&6; }
+        if test "$py_cv_module__blake2" != "n/a"
+then :
+
+    if test "$with_builtin_blake2" = yes
+then :
+  if true
+then :
+  py_cv_module__blake2=yes
+else case e in #(
+  e) py_cv_module__blake2=missing ;;
+esac
+fi
+else case e in #(
+  e) py_cv_module__blake2=disabled ;;
+esac
+fi
+
+fi
+  as_fn_append MODULE_BLOCK "MODULE__BLAKE2_STATE=$py_cv_module__blake2$as_nl"
+  if test "x$py_cv_module__blake2" = xyes
+then :
+
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_CFLAGS=$LIBHACL_CFLAGS$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__BLAKE2_LDFLAGS=\$($LIBHACL_BLAKE2_LDFLAGS)$as_nl"
+
+fi
+   if test "$py_cv_module__blake2" = yes; then
+  MODULE__BLAKE2_TRUE=
+  MODULE__BLAKE2_FALSE='#'
+else
+  MODULE__BLAKE2_TRUE='#'
+  MODULE__BLAKE2_FALSE=
+fi
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__blake2" >&5
+printf "%s\n" "$py_cv_module__blake2" >&6; }
+
+
+
+
+
+
+  LIBHACL_HMAC_LDFLAGS=LIBHACL_HMAC_LIB_${LIBHACL_LDEPS_LIBTYPE}
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _hmac" >&5
 printf %s "checking for stdlib extension module _hmac... " >&6; }
@@ -32294,7 +32443,7 @@ fi
 then :
 
     as_fn_append MODULE_BLOCK "MODULE__HMAC_CFLAGS=$LIBHACL_CFLAGS$as_nl"
-    as_fn_append MODULE_BLOCK "MODULE__HMAC_LDFLAGS=$LIBHACL_CFLAGS Modules/_hacl/libHacl_HMAC.a$as_nl"
+    as_fn_append MODULE_BLOCK "MODULE__HMAC_LDFLAGS=\$($LIBHACL_HMAC_LDFLAGS)$as_nl"
 
 fi
    if test "$py_cv_module__hmac" = yes; then
@@ -32308,6 +32457,9 @@ fi
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $py_cv_module__hmac" >&5
 printf "%s\n" "$py_cv_module__hmac" >&6; }
 
+
+
+### end(cryptographic primitives)
 
 
   { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for stdlib extension module _ctypes" >&5

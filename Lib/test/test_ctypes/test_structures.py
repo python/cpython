@@ -284,7 +284,9 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
         func(s)
         self.assertEqual(s.first, 0xdeadbeef)
         self.assertEqual(s.second, 0xcafebabe)
-        got = X.in_dll(dll, "last_tfrsuv_arg")
+        dll.get_last_tfrsuv_arg.argtypes = ()
+        dll.get_last_tfrsuv_arg.restype = X
+        got = dll.get_last_tfrsuv_arg()
         self.assertEqual(s.first, got.first)
         self.assertEqual(s.second, got.second)
 
@@ -682,6 +684,30 @@ class StructureTestCase(unittest.TestCase, StructCheckMixin):
             result = func(test8)
         self.assertEqual(ctx.exception.args[0], 'item 1 in _argtypes_ passes '
                          'a union by value, which is unsupported.')
+
+    def test_do_not_share_pointer_type_cache_via_stginfo_clone(self):
+        # This test case calls PyCStgInfo_clone()
+        # for the Mid and Vector class definitions
+        # and checks that pointer_type cache not shared
+        # between subclasses.
+        class Base(Structure):
+            _fields_ = [('y', c_double),
+                        ('x', c_double)]
+        base_ptr = POINTER(Base)
+
+        class Mid(Base):
+            pass
+        Mid._fields_ = []
+        mid_ptr = POINTER(Mid)
+
+        class Vector(Mid):
+            pass
+
+        vector_ptr = POINTER(Vector)
+
+        self.assertIsNot(base_ptr, mid_ptr)
+        self.assertIsNot(base_ptr, vector_ptr)
+        self.assertIsNot(mid_ptr, vector_ptr)
 
 
 if __name__ == '__main__':

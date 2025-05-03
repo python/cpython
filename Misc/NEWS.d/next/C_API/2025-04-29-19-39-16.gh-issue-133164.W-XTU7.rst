@@ -1,0 +1,5 @@
+Add :c:func:`PyUnstable_Object_IsUniqueReferencedTemporary` function for
+determining if an object exists as a unique temporary variable on the
+interpreter's stack.  This is a replacement for some cases where checking
+that :c:func:`Py_REFCNT` is one is no longer sufficient to determine if it's
+safe to modify a Python object in-place with no visible side effects.
