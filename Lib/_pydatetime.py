@@ -24,8 +24,8 @@ def _get_class_module(self):
 MINYEAR = 1
 MAXYEAR = 9999
 _MAXORDINAL = 3652059  # date.max.toordinal()
-# NS = 999
-NS = 0
+MAX_NS = 999
+
 # Utility functions, adapted from Python's Demo/classes/Dates.py, which
 # also assumes the current Gregorian calendar indefinitely extended in
 # both directions.  Difference:  Dates.py calls January 1 of year 0 day
@@ -900,9 +900,9 @@ class timedelta:
                              self._nanoseconds * other)
         if isinstance(other, float):
             nanosecond = round(self._nanoseconds * other)
-            usec = self._to_microseconds()
+            nsec = self._to_nanoseconds()
             a, b = other.as_integer_ratio()
-            return timedelta(0, 0, _divide_and_round(usec * a, b), nanosecond)
+            return timedelta(0, 0, _divide_and_round(nsec * a, b), nanosecond)
         return NotImplemented
 
     __rmul__ = __mul__
@@ -910,38 +910,41 @@ class timedelta:
     def _to_microseconds(self):
         return ((self._days * (24*3600) + self._seconds) * 1000000 +
                 self._microseconds)
+    
+    def _to_nanoseconds(self):
+        return self._to_microseconds() * 1000 + self._nanoseconds
 
     def __floordiv__(self, other):
         if not isinstance(other, (int, timedelta)):
             return NotImplemented
-        usec = self._to_microseconds()
+        nsec = self._to_nanoseconds()
         if isinstance(other, timedelta):
-            return usec // other._to_microseconds()
+            return nsec // (other._to_nanoseconds())
         if isinstance(other, int):
-            return timedelta(0, 0, usec // other)
+            return timedelta(0, 0, nsec // other)
 
     def __truediv__(self, other):
         if not isinstance(other, (int, float, timedelta)):
             return NotImplemented
-        usec = self._to_microseconds()
+        nsec = self._to_nanoseconds()
         if isinstance(other, timedelta):
-            return usec / other._to_microseconds()
+            return nsec / other._to_nanoseconds()
         if isinstance(other, int):
-            return timedelta(0, 0, _divide_and_round(usec, other))
+            return timedelta(0, 0, _divide_and_round(nsec, other))
         if isinstance(other, float):
             a, b = other.as_integer_ratio()
-            return timedelta(0, 0, _divide_and_round(b * usec, a))
+            return timedelta(0, 0, _divide_and_round(b * nsec, a))
 
     def __mod__(self, other):
         if isinstance(other, timedelta):
-            r = self._to_microseconds() % other._to_microseconds()
+            r = self._to_nanoseconds() % other._to_nanoseconds()
             return timedelta(0, 0, r)
         return NotImplemented
 
     def __divmod__(self, other):
         if isinstance(other, timedelta):
-            q, r = divmod(self._to_microseconds(),
-                          other._to_microseconds())
+            q, r = divmod(self._to_nanoseconds(),
+                          other._to_nanoseconds())
             return q, timedelta(0, 0, r)
         return NotImplemented
 
@@ -1002,7 +1005,7 @@ class timedelta:
 
 timedelta.min = timedelta(-999999999)
 timedelta.max = timedelta(days=999999999, hours=23, minutes=59, seconds=59,
-                          microseconds=999999, nanoseconds=NS)
+                          microseconds=999999, nanoseconds=MAX_NS)
 timedelta.resolution = timedelta(nanoseconds=1)
 
 class date:
@@ -1812,7 +1815,7 @@ class time:
 _time_class = time  # so functions w/ args named "time" can get at the class
 
 time.min = time(0, 0, 0)
-time.max = time(23, 59, 59, 999999, nanosecond=NS)
+time.max = time(23, 59, 59, 999999, nanosecond=MAX_NS)
 time.resolution = timedelta(nanoseconds=1)
 
 
@@ -2485,7 +2488,7 @@ class datetime(date):
 
 
 datetime.min = datetime(1, 1, 1)
-datetime.max = datetime(9999, 12, 31, 23, 59, 59, 999999, nanosecond=NS)
+datetime.max = datetime(9999, 12, 31, 23, 59, 59, 999999, nanosecond=MAX_NS)
 datetime.resolution = timedelta(nanoseconds=1)
 
 
