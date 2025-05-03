@@ -609,7 +609,7 @@ Other language changes
 
 * Support ``\z`` as a synonym for ``\Z`` in :mod:`regular expressions <re>`.
   It is interpreted unambiguously in many other regular expression engines,
-  unlike to ``\Z``, which has subtly different behavior.
+  unlike ``\Z``, which has subtly different behavior.
   (Contributed by Serhiy Storchaka in :gh:`133306`.)
 
 * ``\B`` in :mod:`regular expression <re>` now matches empty input string.
