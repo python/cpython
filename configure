@@ -22439,6 +22439,7 @@ printf "%s\n" "yes" >&6; }
         have_liblzma=yes
 fi
 
+have_libzstd=no
 
 
 
@@ -22593,9 +22594,9 @@ main (void)
 _ACEOF
 if ac_fn_c_try_run "$LINENO"
 then :
-  have_libzstd=yes
+  py__zstd_too_old=no
 else case e in #(
-  e) have_libzstd=no ;;
+  e) py__zstd_too_old=yes ;;
 esac
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
@@ -22603,6 +22604,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 esac
 fi
 
+    have_libzstd=yes
 
 else case e in #(
   e) have_libzstd=no ;;
@@ -22727,9 +22729,9 @@ main (void)
 _ACEOF
 if ac_fn_c_try_run "$LINENO"
 then :
-  have_libzstd=yes
+  py__zstd_too_old=no
 else case e in #(
-  e) have_libzstd=no ;;
+  e) py__zstd_too_old=yes ;;
 esac
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
@@ -22737,6 +22739,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 esac
 fi
 
+    have_libzstd=yes
 
 else case e in #(
   e) have_libzstd=no ;;
@@ -22799,9 +22802,9 @@ main (void)
 _ACEOF
 if ac_fn_c_try_run "$LINENO"
 then :
-  have_libzstd=yes
+  py__zstd_too_old=no
 else case e in #(
-  e) have_libzstd=no ;;
+  e) py__zstd_too_old=yes ;;
 esac
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
@@ -22809,6 +22812,7 @@ rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
 esac
 fi
 
+    have_libzstd=yes
 
 fi
 
@@ -33396,7 +33400,7 @@ printf %s "checking for stdlib extension module _zstd... " >&6; }
         if test "$py_cv_module__zstd" != "n/a"
 then :
 
-    if true
+    if test "$py__zstd_too_old" = no
 then :
   if test "$have_libzstd" = yes
 then :

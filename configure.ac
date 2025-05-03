@@ -5415,7 +5415,8 @@ PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   ])
 ])
 
-define([TEST_ZSTD_VERSION],[
+have_libzstd=no
+AC_DEFUN([TEST_ZSTD_VERSION],[
   AC_MSG_CHECKING([if libzstd is new enough])
 
   dnl TODO(emmatyping): check if we can set a C define for the minimum version
@@ -5428,7 +5429,9 @@ define([TEST_ZSTD_VERSION],[
       #if ZSTD_VERSION_NUMBER < 10405
           exit(1);
       #endif
-    ])], [have_libzstd=yes], [have_libzstd=no])
+    ])], [py__zstd_too_old=no], [py__zstd_too_old=yes])
+  dnl Important to record that we have libzstd
+  have_libzstd=yes
 ])
 
 PKG_CHECK_MODULES([LIBZSTD], [libzstd], [TEST_ZSTD_VERSION()], [
@@ -8094,7 +8097,7 @@ PY_STDLIB_MOD([_bz2], [], [test "$have_bzip2" = yes],
   [$BZIP2_CFLAGS], [$BZIP2_LIBS])
 PY_STDLIB_MOD([_lzma], [], [test "$have_liblzma" = yes],
   [$LIBLZMA_CFLAGS], [$LIBLZMA_LIBS])
-PY_STDLIB_MOD([_zstd], [], [test "$have_libzstd" = yes],
+PY_STDLIB_MOD([_zstd], [test "$py__zstd_too_old" = no], [test "$have_libzstd" = yes],
   [$LIBZSTD_CFLAGS], [$LIBZSTD_LIBS])
 
 dnl OpenSSL bindings
