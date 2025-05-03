@@ -773,27 +773,26 @@ class CommandLineTest(unittest.TestCase):
                 self.invoke_platform(*combination)
 
     def test_arg_parsing(self):
-        # Due to backwards compatibility, the `aliased` and `terse` parameters
-        # are computed based on a combination of positional arguments and flags.
+        # For backwards compatibility, the `aliased` and `terse` parameters are
+        # computed based on a combination of positional arguments and flags.
         #
-        # This test tests that the arguments are correctly passed to the underlying
-        # `platform.platform()` call. The parameters are two booleans for `aliased`
-        # and `terse`.
+        # Test that the arguments are correctly passed to the underlying
+        # `platform.platform()` call.
         options = (
-            (["--nonaliased"], (False, False)),
-            (["nonaliased"], (False, False)),
-            (["--terse"], (True, True)),
-            (["terse"], (True, True)),
-            (["nonaliased", "terse"], (False, True)),
-            (["--nonaliased", "terse"], (False, True)),
-            (["--terse", "nonaliased"], (False, True)),
+            (["--nonaliased"], False, False),
+            (["nonaliased"], False, False),
+            (["--terse"], True, True),
+            (["terse"], True, True),
+            (["nonaliased", "terse"], False, True),
+            (["--nonaliased", "terse"], False, True),
+            (["--terse", "nonaliased"], False, True),
         )
 
-        for flags, args in options:
-            with self.subTest(flags=flags, args=args):
+        for flags, aliased, terse in options:
+            with self.subTest(flags=flags, aliased=aliased, terse=terse):
                 with mock.patch.object(platform, 'platform') as obj:
                     self.invoke_platform(*flags)
-                    obj.assert_called_once_with(*args)
+                    obj.assert_called_once_with(aliased, terse)
 
     def test_help(self):
         output = io.StringIO()
