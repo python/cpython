@@ -547,3 +547,227 @@ class TestAsyncioToolsTable(unittest.TestCase):
         for input_, table in TEST_INPUTS_TABLE:
             with self.subTest(input_):
                 self.assertEqual(tools.build_task_table(input_), table)
+
+
+class TestAsyncioToolsBasic(unittest.TestCase):
+    def test_empty_input_tree(self):
+        """Test print_async_tree with empty input."""
+        result = []
+        expected_output = []
+        self.assertEqual(tools.print_async_tree(result), expected_output)
+
+    def test_empty_input_table(self):
+        """Test build_task_table with empty input."""
+        result = []
+        expected_output = []
+        self.assertEqual(tools.build_task_table(result), expected_output)
+
+    def test_only_independent_tasks_tree(self):
+        input_ = [(1, [(10, "taskA", []), (11, "taskB", [])])]
+        expected = [["└── (T) taskA"], ["└── (T) taskB"]]
+        result = tools.print_async_tree(input_)
+        self.assertEqual(sorted(result), sorted(expected))
+
+    def test_only_independent_tasks_table(self):
+        input_ = [(1, [(10, "taskA", []), (11, "taskB", [])])]
+        self.assertEqual(tools.build_task_table(input_), [])
+
+    def test_single_task_tree(self):
+        """Test print_async_tree with a single task and no awaits."""
+        result = [
+            (
+                1,
+                [
+                    (2, "Task-1", []),
+                ],
+            )
+        ]
+        expected_output = [
+            [
+                "└── (T) Task-1",
+            ]
+        ]
+        self.assertEqual(tools.print_async_tree(result), expected_output)
+
+    def test_single_task_table(self):
+        """Test build_task_table with a single task and no awaits."""
+        result = [
+            (
+                1,
+                [
+                    (2, "Task-1", []),
+                ],
+            )
+        ]
+        expected_output = []
+        self.assertEqual(tools.build_task_table(result), expected_output)
+
+    def test_cycle_detection(self):
+        """Test print_async_tree raises CycleFoundException for cyclic input."""
+        result = [
+            (
+                1,
+                [
+                    (2, "Task-1", [[["main"], 3]]),
+                    (3, "Task-2", [[["main"], 2]]),
+                ],
+            )
+        ]
+        with self.assertRaises(tools.CycleFoundException) as context:
+            tools.print_async_tree(result)
+        self.assertEqual(context.exception.cycles, [[3, 2, 3]])
+
+    def test_complex_tree(self):
+        """Test print_async_tree with a more complex tree structure."""
+        result = [
+            (
+                1,
+                [
+                    (2, "Task-1", []),
+                    (3, "Task-2", [[["main"], 2]]),
+                    (4, "Task-3", [[["main"], 3]]),
+                ],
+            )
+        ]
+        expected_output = [
+            [
+                "└── (T) Task-1",
+                "    └──  main",
+                "        └── (T) Task-2",
+                "            └──  main",
+                "                └── (T) Task-3",
+            ]
+        ]
+        self.assertEqual(tools.print_async_tree(result), expected_output)
+
+    def test_complex_table(self):
+        """Test build_task_table with a more complex tree structure."""
+        result = [
+            (
+                1,
+                [
+                    (2, "Task-1", []),
+                    (3, "Task-2", [[["main"], 2]]),
+                    (4, "Task-3", [[["main"], 3]]),
+                ],
+            )
+        ]
+        expected_output = [
+            [1, "0x3", "Task-2", "main", "Task-1", "0x2"],
+            [1, "0x4", "Task-3", "main", "Task-2", "0x3"],
+        ]
+        self.assertEqual(tools.build_task_table(result), expected_output)
+
+    def test_deep_coroutine_chain(self):
+        input_ = [
+            (
+                1,
+                [
+                    (10, "leaf", [[["c1", "c2", "c3", "c4", "c5"], 11]]),
+                    (11, "root", []),
+                ],
+            )
+        ]
+        expected = [
+            [
+                "└── (T) root",
+                "    └──  c5",
+                "        └──  c4",
+                "            └──  c3",
+                "                └──  c2",
+                "                    └──  c1",
+                "                        └── (T) leaf",
+            ]
+        ]
+        result = tools.print_async_tree(input_)
+        self.assertEqual(result, expected)
+
+    def test_multiple_cycles_same_node(self):
+        input_ = [
+            (
+                1,
+                [
+                    (1, "Task-A", [[["call1"], 2]]),
+                    (2, "Task-B", [[["call2"], 3]]),
+                    (3, "Task-C", [[["call3"], 1], [["call4"], 2]]),
+                ],
+            )
+        ]
+        with self.assertRaises(tools.CycleFoundException) as ctx:
+            tools.print_async_tree(input_)
+        cycles = ctx.exception.cycles
+        self.assertTrue(any(set(c) == {1, 2, 3} for c in cycles))
+
+    def test_table_output_format(self):
+        input_ = [(1, [(1, "Task-A", [[["foo"], 2]]), (2, "Task-B", [])])]
+        table = tools.build_task_table(input_)
+        for row in table:
+            self.assertEqual(len(row), 6)
+            self.assertIsInstance(row[0], int)  # thread ID
+            self.assertTrue(
+                isinstance(row[1], str) and row[1].startswith("0x")
+            )  # hex task ID
+            self.assertIsInstance(row[2], str)  # task name
+            self.assertIsInstance(row[3], str)  # coroutine chain
+            self.assertIsInstance(row[4], str)  # awaiter name
+            self.assertTrue(
+                isinstance(row[5], str) and row[5].startswith("0x")
+            )  # hex awaiter ID
+
+
+class TestAsyncioToolsEdgeCases(unittest.TestCase):
+
+    def test_task_awaits_self(self):
+        """A task directly awaits itself – should raise a cycle."""
+        input_ = [(1, [(1, "Self-Awaiter", [[["loopback"], 1]])])]
+        with self.assertRaises(tools.CycleFoundException) as ctx:
+            tools.print_async_tree(input_)
+        self.assertIn([1, 1], ctx.exception.cycles)
+
+    def test_task_with_missing_awaiter_id(self):
+        """Awaiter ID not in task list – should not crash, just show 'Unknown'."""
+        input_ = [(1, [(1, "Task-A", [[["coro"], 999]])])]  # 999 not defined
+        table = tools.build_task_table(input_)
+        self.assertEqual(len(table), 1)
+        self.assertEqual(table[0][4], "Unknown")
+
+    def test_duplicate_coroutine_frames(self):
+        """Same coroutine frame repeated under a parent – should deduplicate."""
+        input_ = [
+            (
+                1,
+                [
+                    (1, "Task-1", [[["frameA"], 2], [["frameA"], 3]]),
+                    (2, "Task-2", []),
+                    (3, "Task-3", []),
+                ],
+            )
+        ]
+        tree = tools.print_async_tree(input_)
+        # Both children should be under the same coroutine node
+        flat = "\n".join(tree[0])
+        self.assertIn("frameA", flat)
+        self.assertIn("Task-2", flat)
+        self.assertIn("Task-1", flat)
+
+        flat = "\n".join(tree[1])
+        self.assertIn("frameA", flat)
+        self.assertIn("Task-3", flat)
+        self.assertIn("Task-1", flat)
+
+    def test_task_with_no_name(self):
+        """Task with no name in id2name – should still render with fallback."""
+        input_ = [(1, [(1, "root", [[["f1"], 2]]), (2, None, [])])]
+        # If name is None, fallback to string should not crash
+        tree = tools.print_async_tree(input_)
+        self.assertIn("(T) None", "\n".join(tree[0]))
+
+    def test_tree_rendering_with_custom_emojis(self):
+        """Pass custom emojis to the tree renderer."""
+        input_ = [(1, [(1, "MainTask", [[["f1", "f2"], 2]]), (2, "SubTask", [])])]
+        tree = tools.print_async_tree(input_, task_emoji="🧵", cor_emoji="🔁")
+        flat = "\n".join(tree[0])
+        self.assertIn("🧵 MainTask", flat)
+        self.assertIn("🔁 f1", flat)
+        self.assertIn("🔁 f2", flat)
+        self.assertIn("🧵 SubTask", flat)
