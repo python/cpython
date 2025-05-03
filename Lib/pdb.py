@@ -2378,7 +2378,7 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             prefix = '  '
         stack_entry = self.format_stack_entry(frame_lineno, prompt_prefix)
         if self.colorize:
-            lines = stack_entry.split(prompt_prefix)
+            lines = stack_entry.split(prompt_prefix, 1)
             if len(lines) > 1:
                 # We have some code to display
                 lines[1] = self._colorize_code(lines[1])
