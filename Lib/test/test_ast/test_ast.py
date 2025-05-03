@@ -5,7 +5,6 @@ import contextlib
 import copy
 import dis
 import enum
-import io
 import itertools
 import os
 import re
@@ -15,6 +14,7 @@ import textwrap
 import types
 import unittest
 import weakref
+from io import StringIO
 from pathlib import Path
 from textwrap import dedent
 try:
@@ -3197,7 +3197,7 @@ class CommandLineTests(unittest.TestCase):
             f.write(self.text_normalize(content))
 
     def invoke_ast(self, *flags):
-        output = io.StringIO()
+        output = StringIO()
         with contextlib.redirect_stdout(output):
             ast._main(args=[*flags, self.filename])
         return self.text_normalize(output.getvalue())
@@ -3232,8 +3232,9 @@ class CommandLineTests(unittest.TestCase):
 
         with self.assertRaises(SystemExit):
             # suppress argparse error message
-            with contextlib.redirect_stderr(io.StringIO()):
-                _ = self.invoke_ast('--unknown')
+            with contextlib.redirect_stderr(StringIO()):
+                output = self.invoke_ast('--unknown')
+                self.assertStartsWith(output, 'usage: ')
 
     def test_mode_flag(self):
         # test 'python -m ast -m/--mode'
