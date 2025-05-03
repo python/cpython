@@ -910,7 +910,7 @@ class timedelta:
     def _to_microseconds(self):
         return ((self._days * (24*3600) + self._seconds) * 1000000 +
                 self._microseconds)
-    
+
     def _to_nanoseconds(self):
         return self._to_microseconds() * 1000 + self._nanoseconds
 
