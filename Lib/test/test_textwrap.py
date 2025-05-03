@@ -8,9 +8,11 @@
 # $Id$
 #
 
+import re
 import unittest
 
 from textwrap import TextWrapper, wrap, fill, dedent, indent, shorten
+from textwrap import _cached_regex as cached_regex
 
 
 class BaseTestCase(unittest.TestCase):
@@ -711,6 +713,44 @@ We used enyzme 2-succinyl-6-hydroxy-2,4-cyclohexadiene-1-carboxylate synthase.
         expected = ['1234567890',  '-123456789', '0--this_is', '_a_very_lo',
                     'ng_option_', 'indeed-', 'good-bye"']
         self.check_wrap(self.text2, 10, expected)
+
+
+class TextWrapperCachedRegexTestCase(BaseTestCase):
+    def test_attr_access(self):
+        wrapper = TextWrapper()
+        # these names are not part of the public interface,
+        # but are not prefixed with an underscore.
+        for attr in 'wordsep_re', 'wordsep_simple_re', 'sentence_end_re':
+            self.assertTrue(hasattr(wrapper, attr))
+            self.assertIsInstance(getattr(wrapper, attr), re.Pattern)
+            self.assertIsInstance(getattr(TextWrapper, attr), re.Pattern)
+
+            setattr(wrapper, attr, attr)
+            self.assertEqual(getattr(wrapper, attr), attr)
+            self.assertIsInstance(getattr(TextWrapper, attr), re.Pattern)
+
+    def test_cached_regex(self):
+        class Spam:
+            pat1 = cached_regex('pat1')
+            pat2 = cached_regex('pat2')
+
+        # both patterns are instances of cached_regex
+        self.assertIsInstance(Spam.__dict__['pat1'], cached_regex)
+        self.assertIsInstance(Spam.__dict__['pat2'], cached_regex)
+
+        # the attribute is replaced with a compiled pattern when accessed
+        self.assertEqual(Spam.pat1, re.compile('pat1'))
+        self.assertEqual(Spam.__dict__['pat1'], re.compile('pat1'))
+
+        # including when accessed from an instance
+        spam = Spam()
+        self.assertEqual(spam.__dict__, {})
+        self.assertIsInstance(spam.__class__.__dict__['pat2'], cached_regex)
+        self.assertEqual(spam.pat2, re.compile('pat2'))
+        self.assertEqual(Spam.pat2, re.compile('pat2'))
+        self.assertEqual(spam.__class__.__dict__['pat2'], re.compile('pat2'))
+        self.assertIs(spam.pat2, Spam.pat2)
+
 
 class IndentTestCases(BaseTestCase):
 
