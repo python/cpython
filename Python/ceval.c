@@ -1083,19 +1083,10 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         stack_pointer = _PyFrame_GetStackPointer(frame);
 #if Py_TAIL_CALL_INTERP
 #   if Py_STATS
-        PyObject *res = _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0, lastopcode);
+        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0, lastopcode);
 #   else
-        PyObject *res = _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
+        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
 #   endif
-#   ifdef _Py_TIER2
-        _PyStackRef executor = entry.frame.localsplus[0];
-        assert(tstate->current_executor == NULL);
-        if (!PyStackRef_IsNull(executor)) {
-            tstate->current_executor = PyStackRef_AsPyObjectBorrow(executor);
-            PyStackRef_CLOSE(executor);
-        }
-#   endif
-        return res;
 #else
         goto error;
 #endif

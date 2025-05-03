@@ -7651,8 +7651,11 @@
             tstate->current_frame = frame->previous;
             assert(!_PyErr_Occurred(tstate));
             PyObject *result = PyStackRef_AsPyObjectSteal(retval);
-            #if !Py_TAIL_CALL_INTERP && defined(_Py_TIER2)
-            _PyStackRef executor = entry.frame.localsplus[0];
+            #if !Py_TAIL_CALL_INTERP
+            assert(frame == &entry.frame);
+            #endif
+            #ifdef _Py_TIER2
+            _PyStackRef executor = frame->localsplus[0];
             assert(tstate->current_executor == NULL);
             if (!PyStackRef_IsNull(executor)) {
                 tstate->current_executor = PyStackRef_AsPyObjectBorrow(executor);
@@ -12436,6 +12439,17 @@ JUMP_TO_LABEL(error);
             frame->return_offset = 0;
             if (frame->owner == FRAME_OWNED_BY_INTERPRETER) {
                 tstate->current_frame = frame->previous;
+                #if !Py_TAIL_CALL_INTERP
+                assert(frame == &entry.frame);
+                #endif
+                #ifdef _Py_TIER2
+                _PyStackRef executor = frame->localsplus[0];
+                assert(tstate->current_executor == NULL);
+                if (!PyStackRef_IsNull(executor)) {
+                    tstate->current_executor = PyStackRef_AsPyObjectBorrow(executor);
+                    PyStackRef_CLOSE(executor);
+                }
+                #endif
                 return NULL;
             }
             next_instr = frame->instr_ptr;
