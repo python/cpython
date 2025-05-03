@@ -25,7 +25,7 @@ class PythonTestRunner(val context: Context) {
     fun run(instrumentationArgs: Bundle) = run(
         instrumentationArgs.getString("pythonMode")!!,
         instrumentationArgs.getString("pythonModule")!!,
-        instrumentationArgs.getString("pythonArgs")!!,
+        instrumentationArgs.getString("pythonArgs") ?: "",
     )
 
     /** Run Python.
@@ -35,7 +35,7 @@ class PythonTestRunner(val context: Context) {
      *     "-m" mode.
      * @param args Arguments to add to sys.argv. Will be parsed by `shlex.split`.
      * @return The Python exit status: zero on success, nonzero on failure. */
-    fun run(mode: String, module: String, args: String = "") : Int {
+    fun run(mode: String, module: String, args: String) : Int {
         Os.setenv("PYTHON_MODE", mode, true)
         Os.setenv("PYTHON_MODULE", module, true)
         Os.setenv("PYTHON_ARGS", args, true)

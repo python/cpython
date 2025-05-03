@@ -205,10 +205,28 @@ androidComponents.onVariants { variant ->
 
                 into("site-packages") {
                     from("$projectDir/src/main/python")
+
+                    val sitePackages = findProperty("python.sitePackages") as String?
+                    if (!sitePackages.isNullOrEmpty()) {
+                        if (!file(sitePackages).exists()) {
+                            throw GradleException("$sitePackages does not exist")
+                        }
+                        from(sitePackages)
+                    }
                 }
 
                 duplicatesStrategy = DuplicatesStrategy.EXCLUDE
                 exclude("**/__pycache__")
+            }
+
+            into("cwd") {
+                val cwd = findProperty("python.cwd") as String?
+                if (!cwd.isNullOrEmpty()) {
+                    if (!file(cwd).exists()) {
+                        throw GradleException("$cwd does not exist")
+                    }
+                    from(cwd)
+                }
             }
         }
     }

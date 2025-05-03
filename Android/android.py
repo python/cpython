@@ -14,7 +14,7 @@ from asyncio import wait_for
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from glob import glob
-from os.path import basename, relpath
+from os.path import abspath, basename, relpath
 from pathlib import Path
 from subprocess import CalledProcessError
 from tempfile import TemporaryDirectory
@@ -541,12 +541,17 @@ async def gradle_task(context):
     args = [
         gradlew, "--console", "plain", f"{task_prefix}DebugAndroidTest",
     ] + [
+        # Build-time properties
+        f"-Ppython.{name}={value}"
+        for name, value in [
+            ("sitePackages", context.site_packages), ("cwd", context.cwd)
+        ] if value
+    ] + [
+        # Runtime properties
         f"-Pandroid.testInstrumentationRunnerArguments.python{name}={value}"
         for name, value in [
-            ("Mode", mode),
-            ("Module", module),
-            ("Args", join_command(context.args)),
-        ]
+            ("Mode", mode), ("Module", module), ("Args", join_command(context.args))
+        ] if value
     ]
     log("> " + join_command(args))
 
@@ -684,24 +689,24 @@ def install_signal_handler():
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    subcommands = parser.add_subparsers(dest="subcommand")
+    subcommands = parser.add_subparsers(dest="subcommand", required=True)
 
     # Subcommands
-    build = subcommands.add_parser("build", help="Build everything")
-    configure_build = subcommands.add_parser("configure-build",
-                                             help="Run `configure` for the "
-                                             "build Python")
-    subcommands.add_parser("make-build", help="Run `make` for the build Python")
-    configure_host = subcommands.add_parser("configure-host",
-                                            help="Run `configure` for Android")
-    make_host = subcommands.add_parser("make-host",
-                                       help="Run `make` for Android")
+    build = subcommands.add_parser(
+        "build", help="Run configure-build, make-build, configure-host and "
+        "make-host")
+    configure_build = subcommands.add_parser(
+        "configure-build", help="Run `configure` for the build Python")
     subcommands.add_parser(
-        "clean", help="Delete all build and prefix directories")
-    subcommands.add_parser(
-        "build-testbed", help="Build the testbed app")
-    test = subcommands.add_parser(
-        "test", help="Run the test suite")
+        "make-build", help="Run `make` for the build Python")
+    configure_host = subcommands.add_parser(
+        "configure-host", help="Run `configure` for Android")
+    make_host = subcommands.add_parser(
+        "make-host", help="Run `make` for Android")
+
+    subcommands.add_parser("clean", help="Delete all build directories")
+    subcommands.add_parser("build-testbed", help="Build the testbed app")
+    test = subcommands.add_parser("test", help="Run the testbed app")
     package = subcommands.add_parser("package", help="Make a release package")
     env = subcommands.add_parser("env", help="Print environment variables")
 
@@ -709,7 +714,7 @@ def parse_args():
     for subcommand in build, configure_build, configure_host:
         subcommand.add_argument(
             "--clean", action="store_true", default=False, dest="clean",
-            help="Delete the relevant build and prefix directories first")
+            help="Delete the relevant build directories first")
 
     host_commands = [build, configure_host, make_host, package]
     if in_source_tree:
@@ -736,6 +741,13 @@ def parse_args():
     device_group.add_argument(
         "--managed", metavar="NAME", help="Run on a Gradle-managed device. "
         "These are defined in `managedDevices` in testbed/app/build.gradle.kts.")
+
+    test.add_argument(
+        "--site-packages", metavar="DIR", type=abspath,
+        help="Directory to copy as the app's site-packages.")
+    test.add_argument(
+        "--cwd", metavar="DIR", type=abspath,
+        help="Directory to copy as the app's working directory.")
 
     mode_group = test.add_mutually_exclusive_group()
     mode_group.add_argument(
