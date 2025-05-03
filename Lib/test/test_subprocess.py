@@ -1660,8 +1660,6 @@ class RunFuncTestCase(BaseTestCase):
         # child.
         with self.assertRaises(subprocess.TimeoutExpired):
             self.run_python("while True: pass", timeout=0.0001)
-    def test_timeout_zero(self):
-        self.run_python("import time; time.sleep(0.1)", timeout=0)
 
     def test_capture_stdout(self):
         # capture stdout with zero return code

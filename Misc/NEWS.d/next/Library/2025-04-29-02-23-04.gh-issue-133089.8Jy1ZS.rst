@@ -1,2 +1,2 @@
-Make :func:`subprocess.run`'s behavior is same with 'timeout=None' when
-the timeout is zero
+Use origional timeout value for :exc:`TimeoutExpired`
+when the func :meth:`subprocess.run` is called with a timeout

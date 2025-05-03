@@ -2031,7 +2031,7 @@ class Popen:
             if self.returncode is not None:
                 return self.returncode
 
-            if timeout is not None and timeout > 0:
+            if timeout is not None:
                 endtime = _time() + timeout
                 # Enter a busy loop if we have a timeout.  This busy loop was
                 # cribbed from Lib/threading.py in Thread.wait() at r71065.
@@ -2049,7 +2049,7 @@ class Popen:
                         finally:
                             self._waitpid_lock.release()
                     remaining = self._remaining_time(endtime)
-                    if remaining < 0:
+                    if remaining <= 0:
                         raise TimeoutExpired(self.args, timeout)
                     delay = min(delay * 2, remaining, .05)
                     time.sleep(delay)
@@ -2145,8 +2145,10 @@ class Popen:
                                 selector.unregister(key.fileobj)
                                 key.fileobj.close()
                             self._fileobj2output[key.fileobj].append(data)
-
-            self.wait(timeout=self._remaining_time(endtime))
+            try:
+                self.wait(timeout=self._remaining_time(endtime))
+            except TimeoutExpired:
+                raise TimeoutExpired(self.args, orig_timeout)
 
             # All data exchanged.  Translate lists into strings.
             if stdout is not None:
