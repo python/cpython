@@ -820,8 +820,6 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
             self.assertEqual(td, td2)
 
     def test_resolution_info(self):
-        return 
-        # BUG
         self.assertIsInstance(timedelta.min, timedelta)
         self.assertIsInstance(timedelta.max, timedelta)
         self.assertIsInstance(timedelta.resolution, timedelta)
@@ -840,9 +838,8 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
 
         td = timedelta.max - tiny
         td += tiny  # no problem
-        return # BUG
-        # self.assertRaises(OverflowError, td.__add__, tiny)
-        # self.assertRaises(OverflowError, td.__sub__, -tiny)
+        self.assertRaises(OverflowError, td.__add__, tiny)
+        self.assertRaises(OverflowError, td.__sub__, -tiny)
 
         self.assertRaises(OverflowError, lambda: -timedelta.max)
 
@@ -860,8 +857,6 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(OverflowError, day.__mul__, -INF)
 
     def test_microsecond_rounding(self):
-        return
-        # BUG
         td = timedelta
         eq = self.assertEqual
 
@@ -1431,7 +1426,6 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
 
             dt = self.theclass.max - delta
             dt += delta  # no problem
-            return # BUG
             self.assertRaises(OverflowError, dt.__add__, delta)
             self.assertRaises(OverflowError, dt.__sub__, -delta)
 
@@ -5090,7 +5084,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         # Try max possible difference.
         min = self.theclass(1, 1, 1, tzinfo=FixedOffset(1439, "min"))
         max = self.theclass(MAXYEAR, 12, 31, 23, 59, 59, 999999,
-                            tzinfo=FixedOffset(-1439, "max"))
+                            tzinfo=FixedOffset(-1439, "max"), nanosecond=999)
         maxdiff = max - min
         self.assertEqual(maxdiff, self.theclass.max - self.theclass.min +
                                   timedelta(minutes=2*1439))
@@ -7051,9 +7045,7 @@ class CapiTest(unittest.TestCase):
                 self.assertEqual(c_api_date, exp_date)
 
     def test_datetime_from_dateandtimeandfold(self):
-        return
-        # BUG
-        exp_date = datetime(1993, 8, 26, 22, 12, 55, 99999, nanosecond=0)
+        exp_date = datetime(1993, 8, 26, 22, 12, 55, 99999, nanosecond=1)
 
         for fold in [0, 1]:
             for macro in False, True:
@@ -7067,7 +7059,8 @@ class CapiTest(unittest.TestCase):
                         exp_date.minute,
                         exp_date.second,
                         exp_date.microsecond,
-                        exp_date.fold)
+                        exp_date.fold,
+                        exp_date.nanosecond)
 
                     self.assertEqual(c_api_date, exp_date)
                     self.assertEqual(c_api_date.fold, exp_date.fold)
