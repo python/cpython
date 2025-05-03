@@ -1088,6 +1088,21 @@ dummy_func(void) {
         res = sym_new_type(ctx, &PyLong_Type);
     }
 
+    op(_GUARD_CALLABLE_ISINSTANCE_NULL, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
+        if (sym_is_null(null)) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_null(null);
+    }
+
+    op(_GUARD_CALLABLE_ISINSTANCE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+        PyObject *isinstance = _PyInterpreterState_GET()->callable_cache.isinstance;
+        if (sym_get_const(ctx, callable) == isinstance) {
+            REPLACE_OP(this_instr, _NOP, 0, 0);
+        }
+        sym_set_const(callable, isinstance);
+    }
+
 // END BYTECODES //
 
 }

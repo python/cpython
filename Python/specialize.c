@@ -2158,7 +2158,7 @@ specialize_c_call(PyObject *callable, _Py_CODEUNIT *instr, int nargs)
             if (nargs == 2) {
                 /* isinstance(o1, o2) */
                 PyInterpreterState *interp = _PyInterpreterState_GET();
-                if (callable == interp->callable_cache.isinstance) {
+                if (callable == interp->callable_cache.isinstance && instr->op.arg == 2) {
                     specialize(instr, CALL_ISINSTANCE);
                     return 0;
                 }

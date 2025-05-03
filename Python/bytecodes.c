@@ -4349,30 +4349,42 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        inst(CALL_ISINSTANCE, (unused/1, unused/2, callable, self_or_null, args[oparg] -- res)) {
-            /* isinstance(o, o2) */
-            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
+        op(_GUARD_CALLABLE_ISINSTANCE_NULL, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
+            DEOPT_IF(!PyStackRef_IsNull(null));
+        }
 
-            int total_args = oparg;
-            _PyStackRef *arguments = args;
-            if (!PyStackRef_IsNull(self_or_null)) {
-                arguments--;
-                total_args++;
-            }
-            DEOPT_IF(total_args != 2);
+        op(_GUARD_CALLABLE_ISINSTANCE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+            PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable_o != interp->callable_cache.isinstance);
+        }
+
+        op(_CALL_ISINSTANCE, (callable, null, args[oparg] -- res)) {
+            /* isinstance(o, o2) */
+            assert(oparg == 2);
             STAT_INC(CALL, hit);
-            _PyStackRef cls_stackref = arguments[1];
-            _PyStackRef inst_stackref = arguments[0];
-            int retval = PyObject_IsInstance(PyStackRef_AsPyObjectBorrow(inst_stackref), PyStackRef_AsPyObjectBorrow(cls_stackref));
+            PyObject *inst = PyStackRef_AsPyObjectBorrow(args[0]);
+            PyObject *cls = PyStackRef_AsPyObjectBorrow(args[1]);
+            int retval = PyObject_IsInstance(inst, cls);
             if (retval < 0) {
                 ERROR_NO_POP();
             }
+            (void)callable; // Silence compiler warnings about unused variables
+            (void)null;
+            DEAD(callable);
+            DEAD(null);
+            PyStackRef_CLOSE(args[0]);
+            PyStackRef_CLOSE(args[1]);
             res = retval ? PyStackRef_True : PyStackRef_False;
             assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
-            DECREF_INPUTS();
         }
+
+        macro(CALL_ISINSTANCE) =
+            unused/1 +
+            unused/2 +
+            _GUARD_CALLABLE_ISINSTANCE_NULL +
+            _GUARD_CALLABLE_ISINSTANCE +
+            _CALL_ISINSTANCE;
 
         // This is secretly a super-instruction
         inst(CALL_LIST_APPEND, (unused/1, unused/2, callable, self, arg -- )) {

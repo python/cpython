@@ -2076,6 +2076,27 @@
             break;
         }
 
+        case _GUARD_CALLABLE_ISINSTANCE_NULL: {
+            JitOptSymbol *null;
+            null = stack_pointer[-1 - oparg];
+            if (sym_is_null(null)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_null(null);
+            break;
+        }
+
+        case _GUARD_CALLABLE_ISINSTANCE: {
+            JitOptSymbol *callable;
+            callable = stack_pointer[-2 - oparg];
+            PyObject *isinstance = _PyInterpreterState_GET()->callable_cache.isinstance;
+            if (sym_get_const(ctx, callable) == isinstance) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_const(callable, isinstance);
+            break;
+        }
+
         case _CALL_ISINSTANCE: {
             JitOptSymbol *res;
             res = sym_new_not_null(ctx);
