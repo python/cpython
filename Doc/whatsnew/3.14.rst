@@ -891,6 +891,14 @@ ctypes
   making it a :term:`generic type`.
   (Contributed by Brian Schubert in :gh:`132168`.)
 
+curses
+------
+
+* Add the :func:`~curses.assume_default_colors` function,
+  a refinement of the :func:`~curses.use_default_colors` function which
+  allows to change the color pair ``0``.
+  (Contributed by Serhiy Storchaka in :gh:`133139`.)
+
 datetime
 --------
 
