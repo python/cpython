@@ -22563,7 +22563,14 @@ printf "%s\n" "$ac_cv_lib_zstd_ZDICT_finalizeDictionary" >&6; }
 if test "x$ac_cv_lib_zstd_ZDICT_finalizeDictionary" = xyes
 then :
 
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        if test "$cross_compiling" = yes
+then :
+  { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See 'config.log' for more details" "$LINENO" 5; }
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
           #include "zstd.h"
@@ -22582,14 +22589,18 @@ main (void)
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_run "$LINENO"
 then :
   have_libzstd=yes
 else case e in #(
   e) have_libzstd=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+
 
 else case e in #(
   e) have_libzstd=no ;;
@@ -22686,7 +22697,14 @@ printf "%s\n" "$ac_cv_lib_zstd_ZDICT_finalizeDictionary" >&6; }
 if test "x$ac_cv_lib_zstd_ZDICT_finalizeDictionary" = xyes
 then :
 
-        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+        if test "$cross_compiling" = yes
+then :
+  { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See 'config.log' for more details" "$LINENO" 5; }
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
           #include "zstd.h"
@@ -22705,14 +22723,18 @@ main (void)
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"
+if ac_fn_c_try_run "$LINENO"
 then :
   have_libzstd=yes
 else case e in #(
   e) have_libzstd=no ;;
 esac
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+
 
 else case e in #(
   e) have_libzstd=no ;;
