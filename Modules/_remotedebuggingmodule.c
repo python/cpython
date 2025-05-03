@@ -345,7 +345,7 @@ parse_coro_chain(
     uintptr_t gen_type_addr;
     int err = read_ptr(
         handle,
-        coro_address + sizeof(void*),
+        coro_address + offsets->pyobject.ob_type,
         &gen_type_addr);
     if (err) {
         return -1;
