@@ -2194,15 +2194,22 @@ PyFloat_Pack4(double x, char *data, int le)
         /* correct y if x was a sNaN, transformed to qNaN by conversion */
         if (isnan(x)) {
             uint64_t v;
-            uint32_t u32;
 
             memcpy(&v, &x, 8);
-            memcpy(&u32, &y, 4);
-
+#ifndef __riscv
             if ((v & (1ULL << 51)) == 0) {
+                uint32_t u32;
+                memcpy(&u32, &y, 4);
                 u32 &= ~(1 << 22); /* make sNaN */
+                memcpy(&y, &u32, 4);
             }
+#else
+            uint32_t u32;
 
+            memcpy(&u32, &y, 4);
+            if ((v & (1ULL << 51)) == 0) {
+                u32 &= ~(1 << 22);
+            }
             /* Workaround RISC-V: "If a NaN value is converted to a
              * different floating-point type, the result is the
              * canonical NaN of the new type".  The canonical NaN here
@@ -2215,6 +2222,7 @@ PyFloat_Pack4(double x, char *data, int le)
             u32 += (uint32_t)((v & 0x7ffffffffffffULL) >> 29);
 
             memcpy(&y, &u32, 4);
+#endif
         }
 
         unsigned char s[sizeof(float)];
@@ -2503,17 +2511,26 @@ PyFloat_Unpack4(const char *data, int le)
 
         /* return sNaN double if x was sNaN float */
         if (isnan(x)) {
-            double y = x; /* will make qNaN double */
             uint32_t v;
+            memcpy(&v, &x, 4);
+
+#ifndef __riscv
+            if ((v & (1 << 22)) == 0) {
+                double y = x; /* will make qNaN double */
+                uint64_t u64;
+                memcpy(&u64, &y, 8);
+                u64 &= ~(1ULL << 51); /* make sNaN */
+                memcpy(&y, &u64, 8);
+                return y;
+            }
+#else
+            double y = x;
             uint64_t u64;
 
-            memcpy(&v, &x, 4);
             memcpy(&u64, &y, 8);
-
             if ((v & (1 << 22)) == 0) {
-                u64 &= ~(1ULL << 51); /* make sNaN */
+                u64 &= ~(1ULL << 51);
             }
-
             /* Workaround RISC-V, see PyFloat_Pack4() */
             if (v & (1 << 31)) {
                 u64 |= (1ULL << 63); /* set sign */
@@ -2524,6 +2541,7 @@ PyFloat_Unpack4(const char *data, int le)
 
             memcpy(&y, &u64, 8);
             return y;
+#endif
         }
 
         return x;
