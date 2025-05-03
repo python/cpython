@@ -508,7 +508,7 @@ configuration mechanisms).
 .. seealso::
    :pep:`741`.
 
-.. _whatsnew314-asyncio-introspection
+.. _whatsnew314-asyncio-introspection:
 
 Asyncio introspection capabilities
 ----------------------------------
@@ -597,7 +597,7 @@ If a cycle is detected in the async await graph (which could indicate a
 programming issue), the tool raises an error and lists the cycle paths that
 prevent tree construction.
 
-(Contributed by Pablo Galindo, Łukasz Langa and Marta Gomez Macias in :gh:`91048`.)
+(Contributed by Pablo Galindo, Łukasz Langa, and Marta Gomez Macias in :gh:`91048`.)
 
 .. _whatsnew314-tail-call:
 
