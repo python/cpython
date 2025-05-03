@@ -312,8 +312,8 @@ The following implementation-specific options are available:\n\
 "-X gil=[0|1]: enable (1) or disable (0) the GIL; also PYTHON_GIL\n"
 #endif
 "\
--X importtime[=2]: show how long each import takes; -X importtime=2 also prints\
-         rows for imports of already-loaded modules; also PYTHONPROFILEIMPORTTIME\n\
+-X importtime[=2]: show how long each import takes; use -X importtime=2 to\
+         log imports of already-loaded modules; also PYTHONPROFILEIMPORTTIME\n\
 -X int_max_str_digits=N: limit the size of int<->str conversions;\n\
          0 disables the limit; also PYTHONINTMAXSTRDIGITS\n\
 -X no_debug_ranges: don't include extra location information in code objects;\n\
