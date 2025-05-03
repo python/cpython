@@ -518,14 +518,18 @@ asynchronous tasks, available via:
 
 .. code-block:: bash
 
-  python -m asyncio.tools [--tree] PID
+  python -m asyncio ps PID
 
 This tool inspects the given process ID (PID) and displays information about
-currently running asyncio tasks.  By default, it outputs a task table: a flat
+currently running asyncio tasks.  It outputs a task table: a flat
 listing of all tasks, their names, their coroutine stacks, and which tasks are
 awaiting them.
 
-With the ``--tree`` option, it instead renders a visual async call tree,
+.. code-block:: bash
+
+  python -m asyncio pstree PID
+
+This tool fetches the same information, but renders a visual async call tree,
 showing coroutine relationships in a hierarchical format.  This command is
 particularly useful for debugging long-running or stuck asynchronous programs.
 It can help developers quickly identify where a program is blocked, what tasks
@@ -565,7 +569,7 @@ Executing the new tool on the running process will yield a table like this:
 
 .. code-block:: bash
 
-  python -m asyncio.tools 12345
+  python -m asyncio ps 12345
 
     tid        task id              task name            coroutine chain                                    awaiter name         awaiter id
   ---------------------------------------------------------------------------------------------------------------------------------------
@@ -576,11 +580,11 @@ Executing the new tool on the running process will yield a table like this:
   6826911    0x200013c0e20        Task-7               task_group                                         Task-3               0x200013c0420
 
 
-and with the ``--tree`` option:
+or:
 
 .. code-block:: bash
 
-  python -m asyncio.tools --tree 12345
+  python -m asyncio pstree 12345
 
   └── (T) Task-1
     └──  main

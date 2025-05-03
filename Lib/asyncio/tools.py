@@ -1,4 +1,3 @@
-import argparse
 from dataclasses import dataclass
 from collections import defaultdict
 from itertools import count
@@ -107,10 +106,12 @@ def _find_cycles(graph):
 
 
 # ─── PRINT TREE FUNCTION ───────────────────────────────────────
-def print_async_tree(result, task_emoji="(T)", cor_emoji="", printer=print):
+def build_async_tree(result, task_emoji="(T)", cor_emoji="", printer=print):
     """
-    Pretty-print the async call tree produced by `get_all_async_stacks()`,
-    prefixing tasks with *task_emoji* and coroutine frames with *cor_emoji*.
+    Build a list of strings for pretty-print a async call tree.
+    
+    The call tree is produced by `get_all_async_stacks()`, prefixing tasks
+    with `task_emoji` and coroutine frames with `cor_emoji`.
     """
     id2name, awaits = _index(result)
     g = _task_graph(awaits)
@@ -179,40 +180,39 @@ def _print_cycle_exception(exception: CycleFoundException):
         print(f"cycle: {inames}", file=sys.stderr)
 
 
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Show Python async tasks in a process")
-    parser.add_argument("pid", type=int, help="Process ID(s) to inspect.")
-    parser.add_argument(
-        "--tree", "-t", action="store_true", help="Display tasks in a tree format"
-    )
-    args = parser.parse_args()
-
+def _get_awaited_by_tasks(pid: int) -> list:
     try:
-        tasks = get_all_awaited_by(args.pid)
+        return get_all_awaited_by(pid)
     except RuntimeError as e:
         while e.__context__ is not None:
             e = e.__context__
         print(f"Error retrieving tasks: {e}")
         sys.exit(1)
 
-    if args.tree:
-        # Print the async call tree
-        try:
-            result = print_async_tree(tasks)
-        except CycleFoundException as e:
-           _print_cycle_exception(e)
-           sys.exit(1)
 
-        for tree in result:
-            print("\n".join(tree))
-    else:
-        # Build and print the task table
-        table = build_task_table(tasks)
-        # Print the table in a simple tabular format
-        print(
-            f"{'tid':<10} {'task id':<20} {'task name':<20} {'coroutine chain':<50} {'awaiter name':<20} {'awaiter id':<15}"
-        )
-        print("-" * 135)
-        for row in table:
-            print(f"{row[0]:<10} {row[1]:<20} {row[2]:<20} {row[3]:<50} {row[4]:<20} {row[5]:<15}")
+def display_awaited_by_tasks_table(pid: int) -> None:
+    """Build and print a table of all pending tasks under `pid`."""
+
+    tasks = _get_awaited_by_tasks(pid)
+    table = build_task_table(tasks)
+    # Print the table in a simple tabular format
+    print(
+        f"{'tid':<10} {'task id':<20} {'task name':<20} {'coroutine chain':<50} {'awaiter name':<20} {'awaiter id':<15}"
+    )
+    print("-" * 135)
+    for row in table:
+        print(f"{row[0]:<10} {row[1]:<20} {row[2]:<20} {row[3]:<50} {row[4]:<20} {row[5]:<15}")
+
+
+def display_awaited_by_tasks_tree(pid: int) -> None:
+    """Build and print a tree of all pending tasks under `pid`."""
+
+    tasks = _get_awaited_by_tasks(pid)
+    try:
+        result = print_async_tree(tasks)
+    except CycleFoundException as e:
+        _print_cycle_exception(e)
+        sys.exit(1)
+
+    for tree in result:
+        print("\n".join(tree))
