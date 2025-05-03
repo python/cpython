@@ -97,13 +97,13 @@ class ThemeSection(Mapping[str, str]):
         for color_name, color_field in self.__dataclass_fields__.items():
             color_state[color_name] = ""
         return type(self)(**color_state)
-    
+
     def __getitem__(self, key: str) -> str:
         return self._name_to_value(key)
-    
+
     def __len__(self) -> int:
         return len(self.__dataclass_fields__)
-    
+
     def __iter__(self) -> Iterator[str]:
         return iter(self.__dataclass_fields__)
 
