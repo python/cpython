@@ -667,6 +667,8 @@ character ``'$'``.
 ``\z``
    Matches only at the end of the string.
 
+   .. versionadded:: next
+
 ``\Z``
    The same as ``\z``.  For compatibility with old Python versions.
 
@@ -714,9 +716,6 @@ three digits in length.
 .. versionchanged:: 3.8
    The :samp:`'\\N\\{{name}\\}'` escape sequence has been added. As in string literals,
    it expands to the named Unicode character (e.g. ``'\N{EM DASH}'``).
-
-.. versionchanged:: next
-   The ``'\z'`` escape sequence has been added.
 
 
 .. _contents-of-module-re:
