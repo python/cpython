@@ -6096,7 +6096,7 @@ _parser = re.compile(r"""        # A numeric string consists of:
         (?P<diag>\d*)            # with (possibly empty) diagnostic info.
     )
 #    \s*
-    \Z
+    \z
 """, re.VERBOSE | re.IGNORECASE).match
 
 _all_zeros = re.compile('0*$').match
@@ -6124,7 +6124,7 @@ _parse_format_specifier_regex = re.compile(r"""\A
 (?P<thousands_sep>[,_])?
 (?:\.(?P<precision>0|(?!0)\d+))?
 (?P<type>[eEfFgGn%])?
-\Z
+\z
 """, re.VERBOSE|re.DOTALL)
 
 del re
