@@ -144,6 +144,17 @@ def build_task_table(result):
     table = []
     for tid, tasks in result:
         for task_id, task_name, awaited in tasks:
+            if not awaited:
+                table.append(
+                    [
+                        tid,
+                        hex(task_id),
+                        task_name,
+                        "",
+                        "",
+                        "0x0"
+                    ]
+                )
             for stack, awaiter_id in awaited:
                 coroutine_chain = " -> ".join(stack)
                 awaiter_name = id2name.get(awaiter_id, "Unknown")
