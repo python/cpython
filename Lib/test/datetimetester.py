@@ -3289,7 +3289,6 @@ class TestDateTime(TestDate):
                     self.assertEqual(dt, dt_rt)
 
     def test_fromisoformat_timezone(self):
-        return # BUG
         base_dt = self.theclass(2014, 12, 30, 12, 30, 45, 217456)
 
         tzoffsets = [
@@ -4785,8 +4784,6 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
                 self.theclass.fromisoformat(bad_type)
 
     def test_fromisoformat_subclass(self):
-        return
-        # BUG
         class TimeSubclass(self.theclass):
             pass
 
