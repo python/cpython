@@ -1,12 +1,16 @@
 import _ast_unparse
 import ast
 import builtins
+import contextlib
 import copy
 import dis
 import enum
+import io
+import itertools
 import os
 import re
 import sys
+import tempfile
 import textwrap
 import types
 import unittest
@@ -3175,23 +3179,151 @@ class ModuleStateTests(unittest.TestCase):
         self.assertEqual(res, 0)
 
 
-class ASTMainTests(unittest.TestCase):
-    # Tests `ast.main()` function.
+class CommandLineTests(unittest.TestCase):
+    def setUp(self):
+        self.filename = tempfile.mktemp()
+        self.addCleanup(os_helper.unlink, self.filename)
 
-    def test_cli_file_input(self):
-        code = "print(1, 2, 3)"
-        expected = ast.dump(ast.parse(code), indent=3)
+    @staticmethod
+    def text_normalize(string):
+        """Dedent *string* and strip it from its surrounding whitespaces.
+        This method is used by the other utility functions so that any
+        string to write or to match against can be freely indented.
+        """
+        return textwrap.dedent(string).strip()
 
-        with os_helper.temp_dir() as tmp_dir:
-            filename = os.path.join(tmp_dir, "test_module.py")
-            with open(filename, 'w', encoding='utf-8') as f:
-                f.write(code)
-            res, _ = script_helper.run_python_until_end("-m", "ast", filename)
+    def set_source(self, content):
+        with open(self.filename, 'w') as f:
+            f.write(self.text_normalize(content))
 
-        self.assertEqual(res.err, b"")
-        self.assertEqual(expected.splitlines(),
-                         res.out.decode("utf8").splitlines())
-        self.assertEqual(res.rc, 0)
+    def invoke_ast(self, *flags):
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            ast._main(args=[*flags, self.filename])
+        return self.text_normalize(output.getvalue())
+
+    def check_output(self, source, expect, *flags):
+        with self.subTest(source=source, flags=flags):
+            self.set_source(source)
+            res = self.invoke_ast(*flags)
+            expect = self.text_normalize(expect)
+            self.assertListEqual(res.splitlines(), expect.splitlines())
+
+    def test_invocation(self):
+        # test various combinations of parameters
+        base_flags = [
+            ('-m=exec', '--mode=exec'),
+            ('--no-type-comments', '--no-type-comments'),
+            ('-a', '--include-attributes'),
+            ('-i=4', '--indent=4'),
+        ]
+        self.set_source('''
+            print(1, 2, 3)
+            def f(x):
+                x -= 1
+                return x
+        ''')
+
+        for r in range(1, len(base_flags) + 1):
+            for choices in itertools.combinations(base_flags, r=r):
+                for args in itertools.product(*choices):
+                    with self.subTest(args=args[1:]):
+                        _ = self.invoke_ast(*args)
+
+        with self.assertRaises(SystemExit):
+            # suppress argparse error message
+            with contextlib.redirect_stderr(io.StringIO()):
+                _ = self.invoke_ast('--unknown')
+
+    def test_mode_flag(self):
+        # test 'python -m ast -m/--mode'
+        source = 'print(1, 2, 3)'
+        expect = '''
+            Module(
+               body=[
+                  Expr(
+                     value=Call(
+                        func=Name(id='print', ctx=Load()),
+                        args=[
+                           Constant(value=1),
+                           Constant(value=2),
+                           Constant(value=3)]))])
+        '''
+        for flag in ['-m=exec', '--mode=exec']:
+            self.check_output(source, expect, flag)
+        source = 'pass'
+        expect = '''
+            Interactive(
+               body=[
+                  Pass()])
+        '''
+        for flag in ['-m=single', '--mode=single']:
+            self.check_output(source, expect, flag)
+        source = 'print(1, 2, 3)'
+        expect = '''
+            Expression(
+               body=Call(
+                  func=Name(id='print', ctx=Load()),
+                  args=[
+                     Constant(value=1),
+                     Constant(value=2),
+                     Constant(value=3)]))
+        '''
+        for flag in ['-m=eval', '--mode=eval']:
+            self.check_output(source, expect, flag)
+        source = '(int, str) -> list[int]'
+        expect = '''
+            FunctionType(
+               argtypes=[
+                  Name(id='int', ctx=Load()),
+                  Name(id='str', ctx=Load())],
+               returns=Subscript(
+                  value=Name(id='list', ctx=Load()),
+                  slice=Name(id='int', ctx=Load()),
+                  ctx=Load()))
+        '''
+        for flag in ['-m=func_type', '--mode=func_type']:
+            self.check_output(source, expect, flag)
+
+    def test_no_type_comments_flag(self):
+        # test 'python -m ast --no-type-comments'
+        source = 'x: bool = 1 # type: ignore[assignment]'
+        expect = '''
+            Module(
+               body=[
+                  AnnAssign(
+                     target=Name(id='x', ctx=Store()),
+                     annotation=Name(id='bool', ctx=Load()),
+                     value=Constant(value=1),
+                     simple=1)])
+        '''
+        self.check_output(source, expect, '--no-type-comments')
+
+    def test_include_attributes_flag(self):
+        # test 'python -m ast -a/--include-attributes'
+        source = 'pass'
+        expect = '''
+            Module(
+               body=[
+                  Pass(
+                     lineno=1,
+                     col_offset=0,
+                     end_lineno=1,
+                     end_col_offset=4)])
+        '''
+        for flag in ['-a', '--include-attributes']:
+            self.check_output(source, expect, flag)
+
+    def test_indent_flag(self):
+        # test 'python -m ast -i/--indent'
+        source = 'pass'
+        expect = '''
+            Module(
+            body=[
+            Pass()])
+        '''
+        for flag in ['-i=0', '--indent=0']:
+            self.check_output(source, expect, flag)
 
 
 class ASTOptimiziationTests(unittest.TestCase):

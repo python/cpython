@@ -626,7 +626,7 @@ def unparse(ast_obj):
     return unparser.visit(ast_obj)
 
 
-def main():
+def _main(args=None):
     import argparse
     import sys
 
@@ -643,7 +643,7 @@ def main():
                              'column offsets')
     parser.add_argument('-i', '--indent', type=int, default=3,
                         help='indentation of nodes (number of spaces)')
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     if args.infile == '-':
         name = '<stdin>'
@@ -656,4 +656,4 @@ def main():
     print(dump(tree, include_attributes=args.include_attributes, indent=args.indent))
 
 if __name__ == '__main__':
-    main()
+    _main()
