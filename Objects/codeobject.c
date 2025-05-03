@@ -1781,9 +1781,9 @@ break;
             }
         }
     }
-//    if (counts != NULL) {
-//        *counts = unbound;
-//    }
+    if (counts != NULL) {
+        *counts = unbound;
+    }
     return 0;
 }
 
