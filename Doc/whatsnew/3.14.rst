@@ -71,7 +71,12 @@ Summary -- release highlights
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 * :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
 * :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
-* :ref:`A new type of interpreter  <whatsnew314-tail-call>`
+* :ref:`A new type of interpreter <whatsnew314-tail-call>`
+* :ref:`Syntax highlighting in PyREPL <whatsnew314-pyrepl-highlighting>`,
+  and color output in :ref:`unittest <whatsnew314-color-unittest>`,
+  :ref:`argparse <whatsnew314-color-argparse>`,
+  :ref:`json <whatsnew314-color-json>` and
+  :ref:`calendar <whatsnew314-color-calendar>` CLIs
 
 
 Incompatible changes
@@ -474,6 +479,36 @@ Improved error messages
     Traceback (most recent call last):
     SyntaxError: invalid syntax. Is this intended to be part of the string?
 
+* When strings have incompatible prefixes, the error now shows
+  which prefixes are incompatible. (Contributed by
+  Nikita Sobolev in :gh:`133197`.)
+
+  .. code-block:: pycon
+
+    >>> ub'abc'
+      File "<python-input-0>", line 1
+        ub'abc'
+        ^^
+    SyntaxError: 'u' and 'b' prefixes are incompatible
+
+* Improved error messages when using ``as`` with incompatible targets in:
+
+  - Imports: ``import ... as ...``
+  - From imports: ``from ... import ... as ...``
+  - Except handlers: ``except ... as ...``
+  - Pattern-match cases: ``case ... as ...``
+
+  (Contributed by Nikita Sobolev in :gh:`123539`,
+  :gh:`123562`, and :gh:`123440`.)
+
+  .. code-block:: pycon
+
+   >>> import ast as arr[0]
+     File "<python-input-1>", line 1
+       import ast as arr[0]
+                     ^^^^^^
+   SyntaxError: cannot use subscript as import target
+
 
 .. _whatsnew314-pep741:
 
@@ -560,6 +595,9 @@ For further information on how to build Python, see
 (Contributed by Ken Jin in :gh:`128563`, with ideas on how to implement this
 in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
 
+
+.. _whatsnew314-pyrepl-highlighting:
+
 Syntax highlighting in PyREPL
 -----------------------------
 
@@ -623,6 +661,11 @@ Other language changes
 * The :func:`bytes.fromhex` and :func:`bytearray.fromhex` methods now accept
   ASCII :class:`bytes` and :term:`bytes-like objects <bytes-like object>`.
   (Contributed by Daniel Pope in :gh:`129349`.)
+
+* Support ``\z`` as a synonym for ``\Z`` in :mod:`regular expressions <re>`.
+  It is interpreted unambiguously in many other regular expression engines,
+  unlike ``\Z``, which has subtly different behavior.
+  (Contributed by Serhiy Storchaka in :gh:`133306`.)
 
 * ``\B`` in :mod:`regular expression <re>` now matches empty input string.
   Now it is always the opposite of ``\b``.
@@ -698,6 +741,17 @@ argparse
   and subparser names if mistyped by the user.
   (Contributed by Savannah Ostrowski in :gh:`124456`.)
 
+  .. _whatsnew314-color-argparse:
+
+* Introduced the optional *color* parameter to
+  :class:`argparse.ArgumentParser`, enabling color for help text.
+  This can be controlled via the :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical |NO_COLOR|_
+  and |FORCE_COLOR|_ environment variables.
+  See also :ref:`using-on-controlling-color`.
+  (Contributed by Hugo van Kemenade in :gh:`130645`.)
+
+
 ast
 ---
 
@@ -722,6 +776,9 @@ bdb
 
 * The :mod:`bdb` module now supports the :mod:`sys.monitoring` backend.
   (Contributed by Tian Gao in :gh:`124533`.)
+
+
+  .. _whatsnew314-color-calendar:
 
 calendar
 --------
@@ -1020,6 +1077,8 @@ json
   switch: :program:`python -m json`.
   See the :ref:`JSON command-line interface <json-commandline>` documentation.
   (Contributed by Trey Hunner in :gh:`122873`.)
+
+  .. _whatsnew314-color-json:
 
 * By default, the output of the :ref:`JSON command-line interface <json-commandline>`
   is highlighted in color. This can be controlled via the
@@ -1466,6 +1525,8 @@ unicodedata
 
 * The Unicode database has been updated to Unicode 16.0.0.
 
+
+.. _whatsnew314-color-unittest:
 
 unittest
 --------
