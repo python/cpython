@@ -4353,26 +4353,25 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        op(_GUARD_CALLABLE_ISINSTANCE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
+        op(_GUARD_CALLABLE_ISINSTANCE, (callable, unused, unused, unused -- callable, unused, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyInterpreterState *interp = tstate->interp;
             DEOPT_IF(callable_o != interp->callable_cache.isinstance);
         }
 
-        op(_CALL_ISINSTANCE, (callable, null, args[oparg] -- res)) {
+        op(_CALL_ISINSTANCE, (callable, null, inst_, cls -- res)) {
             /* isinstance(o, o2) */
-            assert(oparg == 2);
             STAT_INC(CALL, hit);
-            PyObject *inst = PyStackRef_AsPyObjectBorrow(args[0]);
-            PyObject *cls = PyStackRef_AsPyObjectBorrow(args[1]);
-            int retval = PyObject_IsInstance(inst, cls);
+            PyObject *inst_o = PyStackRef_AsPyObjectBorrow(inst_);
+            PyObject *cls_o = PyStackRef_AsPyObjectBorrow(cls);
+            int retval = PyObject_IsInstance(inst_o, cls_o);
             if (retval < 0) {
                 ERROR_NO_POP();
             }
             (void)null; // Silence compiler warnings about unused variables
+            PyStackRef_CLOSE(cls);
+            PyStackRef_CLOSE(inst_);
             DEAD(null);
-            PyStackRef_CLOSE(args[0]);
-            PyStackRef_CLOSE(args[1]);
             PyStackRef_CLOSE(callable);
             res = retval ? PyStackRef_True : PyStackRef_False;
             assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
