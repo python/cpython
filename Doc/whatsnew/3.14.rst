@@ -486,10 +486,10 @@ Improved error messages
 
 * Improved error messages when using ``as`` with incompatible targets in
 
-  - ``import ... as ...``
-  - ``from ... import ... as ``
-  - ``except ... as ...``
-  - ``case ... as ...``
+  - Imports: ``import ... as ...``
+  - From imports: ``from ... import ... as ...``
+  - Except hanlders: ``except ... as ...``
+  - Pattern-match cases: ``case ... as ...``
 
   (Contributed by Nikita Sobolev in :gh:`123629`,
   :gh:`123562`, and :gh:`123440`.)
