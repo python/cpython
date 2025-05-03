@@ -1005,6 +1005,7 @@ _PyConfig_InitCompatConfig(PyConfig *config)
     memset(config, 0, sizeof(*config));
 
     config->_config_init = (int)_PyConfig_INIT_COMPAT;
+    config->import_time = -1;
     config->isolated = -1;
     config->use_environment = -1;
     config->dev_mode = -1;
@@ -2247,61 +2248,36 @@ config_init_run_presite(PyConfig *config)
 }
 #endif
 
-/* Set `config->import_time` based on `value` from `-Ximporttime(=.*)?`. */
 static PyStatus
-config_set_import_time(PyConfig *config, const wchar_t *value)
+config_init_import_time(PyConfig *config)
 {
-    int numeric_value;
+    int importtime = 0;
 
-    // If no value is specified or the value is not an integer, use 1.
-    if (*value == 0 || config_wstr_to_int(value, &numeric_value) != 0) {
-        config->import_time = 1;
+    const char *env = config_get_env(config, "PYTHONPROFILEIMPORTTIME");
+    if (env) {
+        if (_Py_str_to_int(env, &importtime) != 0) {
+            importtime = 1;
+        }
+        if (importtime < 0 || importtime > 2) {
+            return _PyStatus_ERR(
+                "PYTHONPROFILEIMPORTTIME: numeric values other than 1 and 2 "
+                "are reserved for future use.");
+        }
     }
 
-    /* -Ximporttime=1 incurs the default behavior. -Ximporttime=2 also
-     * prints import cache hits. All other numeric values are reserved.
-     */
-    else if (0 <= numeric_value && numeric_value <= 2) {
-        config->import_time = numeric_value;
+    const wchar_t *x_value = config_get_xoption_value(config, L"importtime");
+    if (x_value) {
+        if (*x_value == 0 || config_wstr_to_int(x_value, &importtime) != 0) {
+            importtime = 1;
+        }
+        if (importtime < 0 || importtime > 2) {
+            return _PyStatus_ERR(
+                "-X importtime: values other than 1 and 2 "
+                "are reserved for future use.");
+        }
     }
 
-    else {
-        return _PyStatus_ERR(
-                "-X importtime: numeric values other than 1 or 2 are "
-                "reserved for future use");
-    }
-
-    return _PyStatus_OK();
-}
-
-/* Configure `config->import_time` by checking -Ximporttime then the
- * PYTHONPROFILEIMPORTTIME environment variable. Defaults to 0.
- */
-static PyStatus
-config_read_import_time(PyConfig *config)
-{
-    /* Check the -X option first. */
-    const wchar_t *xoption_value = NULL;
-    xoption_value = config_get_xoption_value(config, L"importtime");
-    if (xoption_value != NULL) {
-        return config_set_import_time(config, xoption_value);
-    }
-
-    /* If there's no -Ximporttime, look for ENV flag */
-    wchar_t *env_value = NULL;
-    /* `CONFIG_GET_ENV_DUP` requires dest to be initialized to `NULL`. */
-    PyStatus status = CONFIG_GET_ENV_DUP(config, &env_value,
-                                         L"PYTHONPROFILEIMPORTTIME",
-                                         "PYTHONPROFILEIMPORTTIME");
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
-    }
-    if (env_value != NULL) {
-        status = config_set_import_time(config, env_value);
-        PyMem_RawFree(env_value);
-        return status;
-    }
-
+    config->import_time = importtime;
     return _PyStatus_OK();
 }
 
@@ -2321,10 +2297,11 @@ config_read_complex_options(PyConfig *config)
     }
 
     PyStatus status;
-
-    status = config_read_import_time(config);
-    if (_PyStatus_EXCEPTION(status)) {
-        return status;
+    if (config->import_time < 0) {
+        status = config_init_import_time(config);
+        if (_PyStatus_EXCEPTION(status)) {
+            return status;
+        }
     }
 
     if (config->tracemalloc < 0) {
