@@ -1731,8 +1731,8 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     struct co_unbound_counts unbound = {0};
     Py_ssize_t len = Py_SIZE(co);
     for (int i = 0; i < len; i++) {
-break;
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
+continue;
         if (inst.op.code == LOAD_ATTR) {
             int oparg = GET_OPARG(co, i, inst.op.arg);
             int index = LOAD_ATTR_NAME_INDEX(oparg);
