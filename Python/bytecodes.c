@@ -4369,12 +4369,11 @@ dummy_func(
             if (retval < 0) {
                 ERROR_NO_POP();
             }
-            (void)callable; // Silence compiler warnings about unused variables
-            (void)null;
-            DEAD(callable);
+            (void)null; // Silence compiler warnings about unused variables
             DEAD(null);
             PyStackRef_CLOSE(args[0]);
             PyStackRef_CLOSE(args[1]);
+            PyStackRef_CLOSE(callable);
             res = retval ? PyStackRef_True : PyStackRef_False;
             assert((!PyStackRef_IsNull(res)) ^ (_PyErr_Occurred(tstate) != NULL));
         }
