@@ -23,7 +23,7 @@ except ImportError:
     _testinternalcapi = None
 
 from test import support
-from test.support import os_helper, script_helper
+from test.support import os_helper
 from test.support import skip_emscripten_stack_overflow, skip_wasi_stack_overflow
 from test.support.ast_helper import ASTTestMixin
 from test.test_ast.utils import to_tuple
