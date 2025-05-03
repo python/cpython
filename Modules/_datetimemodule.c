@@ -260,7 +260,7 @@ finally:
 
 #define MINYEAR 1
 #define MAXYEAR 9999
-#define NS 999
+#define MAX_NS 999
 #define MAXORDINAL 3652059 /* date(9999,12,31).toordinal() */
 
 /* Nine decimal digits is easy to communicate, and leaves enough room
@@ -2974,7 +2974,9 @@ delta_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     }
 
     self = microseconds_to_delta_ex(x, type);
-    // self->nanoseconds = ns;
+    if (ns) {
+        SET_TD_NANOSECONDS((PyDateTime_Delta *)self, PyLong_AsLong(ns));
+    }
     Py_DECREF(x);
 
 Done:
@@ -7591,7 +7593,7 @@ _datetime_exec(PyObject *module)
         DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 0, 1, 0));
         DATETIME_ADD_MACRO(d, "min", new_delta(-MAX_DELTA_DAYS, 0, 0, 0, 0));
         DATETIME_ADD_MACRO(d, "max",
-                           new_delta(MAX_DELTA_DAYS, 24*3600-1, 1000000-1, NS, 0));
+                           new_delta(MAX_DELTA_DAYS, 24*3600-1, 1000000-1, MAX_NS, 0));
 
         /* date values */
         d = _PyType_GetDict(&PyDateTime_DateType);
@@ -7602,7 +7604,7 @@ _datetime_exec(PyObject *module)
         /* time values */
         d = _PyType_GetDict(&PyDateTime_TimeType);
         DATETIME_ADD_MACRO(d, "min", new_time(0, 0, 0, 0, Py_None, 0, 0));
-        DATETIME_ADD_MACRO(d, "max", new_time(23, 59, 59, 999999, Py_None, 0, NS));
+        DATETIME_ADD_MACRO(d, "max", new_time(23, 59, 59, 999999, Py_None, 0, MAX_NS));
         DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 0, 1, 0));
 
         /* datetime values */
@@ -7610,7 +7612,7 @@ _datetime_exec(PyObject *module)
         DATETIME_ADD_MACRO(d, "min",
                            new_datetime(1, 1, 1, 0, 0, 0, 0, Py_None, 0, 0));
         DATETIME_ADD_MACRO(d, "max", new_datetime(MAXYEAR, 12, 31, 23, 59, 59,
-                                                  999999, Py_None, 0, NS));
+                                                  999999, Py_None, 0, MAX_NS));
         DATETIME_ADD_MACRO(d, "resolution", new_delta(0, 0, 0, 1, 0));
 
         /* timezone values */
