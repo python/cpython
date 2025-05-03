@@ -3448,6 +3448,7 @@ def test_pdb_issue_gh_65052():
     """
 
 
+@support.force_not_colorized_test_class
 @support.requires_subprocess()
 class PdbTestCase(unittest.TestCase):
     def tearDown(self):
