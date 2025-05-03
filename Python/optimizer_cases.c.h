@@ -1470,7 +1470,7 @@
 
         case _GET_LEN: {
             JitOptSymbol *len;
-            len = sym_new_not_null(ctx);
+            len = sym_new_type(ctx, &PyLong_Type);
             stack_pointer[0] = len;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());

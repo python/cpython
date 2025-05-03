@@ -480,7 +480,7 @@ dummy_func(void) {
             res = sym_new_const(ctx, tmp);
             Py_DECREF(tmp);
         }
-        else {
+    else {
             res = sym_new_type(ctx, &PyBool_Type);
         }
     }
@@ -1086,6 +1086,10 @@ dummy_func(void) {
 
     op(_CALL_LEN, (unused, unused, unused -- res)) {
         res = sym_new_type(ctx, &PyLong_Type);
+    }
+
+    op(_GET_LEN, (-- len)) {
+        len = sym_new_type(ctx, &PyLong_Type);
     }
 
     op(_GUARD_CALLABLE_LEN, (callable, unused, unused -- callable, unused, unused)) {
