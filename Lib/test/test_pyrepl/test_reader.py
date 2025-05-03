@@ -11,11 +11,11 @@ from .support import prepare_console, reader_force_colors
 from .support import reader_no_colors as prepare_reader
 from _pyrepl.console import Event
 from _pyrepl.reader import Reader
-from _colorize import theme
+from _colorize import get_theme
 
 
-overrides = {"RESET": "z", "SOFT_KEYWORD": "K"}
-colors = {overrides.get(k, k[0].lower()): v for k, v in theme.items()}
+overrides = {"reset": "z", "soft_keyword": "K"}
+colors = {overrides.get(k, k[0].lower()): v for k, v in get_theme().repl.items()}
 
 
 class TestReader(ScreenEqualMixin, TestCase):

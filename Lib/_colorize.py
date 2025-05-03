@@ -1,28 +1,17 @@
-from __future__ import annotations
 import io
 import os
 import sys
 
+from collections.abc import Callable, Iterator, Mapping
+from dataclasses import dataclass, field, Field
+
 COLORIZE = True
+
 
 # types
 if False:
-    from typing import IO, Literal
-
-    type ColorTag = Literal[
-        "PROMPT",
-        "KEYWORD",
-        "BUILTIN",
-        "COMMENT",
-        "STRING",
-        "NUMBER",
-        "OP",
-        "DEFINITION",
-        "SOFT_KEYWORD",
-        "RESET",
-    ]
-
-    theme: dict[ColorTag, str]
+    from typing import IO, Self, ClassVar
+    _theme: Theme
 
 
 class ANSIColors:
@@ -86,6 +75,68 @@ for attr, code in ANSIColors.__dict__.items():
         setattr(NoColors, attr, "")
 
 
+class ThemeSection(Mapping[str, str]):
+    __dataclass_fields__: ClassVar[dict[str, Field[str]]]
+    _name_to_value: Callable[[str], str]
+
+    def __post_init__(self) -> None:
+        name_to_value = {}
+        for color_name, color_field in self.__dataclass_fields__.items():
+            name_to_value[color_name] = getattr(self, color_name)
+        super().__setattr__('_name_to_value', name_to_value.__getitem__)
+
+    def copy_with(self, **kwargs: str) -> Self:
+        color_state: dict[str, str] = {}
+        for color_name, color_field in self.__dataclass_fields__.items():
+            color_state[color_name] = getattr(self, color_name)
+        color_state.update(kwargs)
+        return type(self)(**color_state)
+
+    def no_colors(self) -> Self:
+        color_state: dict[str, str] = {}
+        for color_name, color_field in self.__dataclass_fields__.items():
+            color_state[color_name] = ""
+        return type(self)(**color_state)
+    
+    def __getitem__(self, key: str) -> str:
+        return self._name_to_value(key)
+    
+    def __len__(self) -> int:
+        return len(self.__dataclass_fields__)
+    
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.__dataclass_fields__)
+
+
+@dataclass(frozen=True)
+class REPL(ThemeSection):
+    prompt: str = ANSIColors.BOLD_MAGENTA
+    keyword: str = ANSIColors.BOLD_BLUE
+    builtin: str = ANSIColors.CYAN
+    comment: str = ANSIColors.RED
+    string: str = ANSIColors.GREEN
+    number: str = ANSIColors.YELLOW
+    op: str = ANSIColors.RESET
+    definition: str = ANSIColors.BOLD
+    soft_keyword: str = ANSIColors.BOLD_BLUE
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True)
+class Theme:
+    repl: REPL = field(default_factory=REPL)
+
+    def copy_with(self, *, repl: REPL | None) -> Self:
+        return type(self)(
+            repl=repl or self.repl,
+        )
+
+    def no_colors(self) -> Self:
+        return type(self)(
+            repl=self.repl.no_colors(),
+        )
+
+
 def get_colors(
     colorize: bool = False, *, file: IO[str] | IO[bytes] | None = None
 ) -> ANSIColors:
@@ -138,26 +189,21 @@ def can_colorize(*, file: IO[str] | IO[bytes] | None = None) -> bool:
         return hasattr(file, "isatty") and file.isatty()
 
 
-def set_theme(t: dict[ColorTag, str] | None = None) -> None:
-    global theme
-
-    if t:
-        theme = t
-        return
-
-    colors = get_colors()
-    theme = {
-        "PROMPT": colors.BOLD_MAGENTA,
-        "KEYWORD": colors.BOLD_BLUE,
-        "BUILTIN": colors.CYAN,
-        "COMMENT": colors.RED,
-        "STRING": colors.GREEN,
-        "NUMBER": colors.YELLOW,
-        "OP": colors.RESET,
-        "DEFINITION": colors.BOLD,
-        "SOFT_KEYWORD": colors.BOLD_BLUE,
-        "RESET": colors.RESET,
-    }
+default_theme = Theme()
+theme_no_color = default_theme.no_colors()
 
 
-set_theme()
+def get_theme(*, tty_file: IO[str] | IO[bytes] | None = None) -> Theme:
+    if can_colorize(file=tty_file):
+        return _theme
+    return theme_no_color
+
+
+def set_theme(t: Theme) -> None:
+    global _theme
+
+    _theme = t
+    return
+
+
+set_theme(default_theme)

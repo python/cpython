@@ -28,7 +28,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field, fields
 
 from . import commands, console, input
-from .utils import wlen, unbracket, disp_str, gen_colors
+from .utils import wlen, unbracket, disp_str, gen_colors, THEME
 from .trace import trace
 
 
@@ -491,10 +491,11 @@ class Reader:
             prompt = self.ps1
 
         if self.can_colorize:
+            t = THEME()
             prompt = (
-                f"{_colorize.theme["PROMPT"]}"
+                f"{t.prompt}"
                 f"{prompt}"
-                f"{_colorize.theme["RESET"]}"
+                f"{t.reset}"
             )
         return prompt
 
