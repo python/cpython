@@ -1284,7 +1284,8 @@ new_datetime_ex(int year, int month, int day, int hour, int minute,
 static PyObject *
 call_subclass_fold(PyObject *cls, int fold, int nanosecond, const char *format, ...)
 {
-    PyObject *kwargs = NULL, *res = NULL;
+    PyObject *kwargs = NULL, *res = NULL, *obj = NULL;
+    int err = 0;
     va_list va;
 
     va_start(va, format);
@@ -1293,19 +1294,32 @@ call_subclass_fold(PyObject *cls, int fold, int nanosecond, const char *format, 
     if (args == NULL) {
         return NULL;
     }
-    if (fold) {
+    if (fold || nanosecond) {
         kwargs = PyDict_New();
         if (kwargs == NULL) {
             goto Done;
         }
-        PyObject *obj = PyLong_FromLong(fold);
-        if (obj == NULL) {
-            goto Done;
+        if (fold) {
+            obj = PyLong_FromLong(fold);
+            if (obj == NULL) {
+                goto Done;
+            }
+            err = PyDict_SetItemString(kwargs, "fold", obj);
+            Py_DECREF(obj);
+            if (err < 0) {
+                goto Done;
+            }
         }
-        int err = PyDict_SetItemString(kwargs, "fold", obj);
-        Py_DECREF(obj);
-        if (err < 0) {
-            goto Done;
+        if (nanosecond) {
+            obj = PyLong_FromLong(nanosecond);
+            if (obj == NULL) {
+                goto Done;
+            }
+            err = PyDict_SetItemString(kwargs, "nanosecond", obj);
+            Py_DECREF(obj);
+            if (err < 0) {
+                goto Done;
+            }
         }
     }
     res = PyObject_Call(cls, args, kwargs);
