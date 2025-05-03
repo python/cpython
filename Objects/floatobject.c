@@ -2194,14 +2194,27 @@ PyFloat_Pack4(double x, char *data, int le)
         /* correct y if x was a sNaN, transformed to qNaN by conversion */
         if (isnan(x)) {
             uint64_t v;
+            uint32_t u32;
 
             memcpy(&v, &x, 8);
+            memcpy(&u32, &y, 4);
+
             if ((v & (1ULL << 51)) == 0) {
-                uint32_t u32;
-                memcpy(&u32, &y, 4);
                 u32 &= ~(1 << 22); /* make sNaN */
-                memcpy(&y, &u32, 4);
             }
+
+            /* Workaround RISC-V: "If a NaN value is converted to a
+             * different floating-point type, the result is the
+             * canonical NaN of the new type".  The canonical NaN here
+             * is a positive qNaN with zero payload. */
+            if (v & (1ULL << 63)) {
+                u32 |= (1 << 31); /* set sign */
+            }
+            /* add payload */
+            u32 -= (u32 & 0x3fffff);
+            u32 += (uint32_t)((v & 0x7ffffffffffffULL) >> 29);
+
+            memcpy(&y, &u32, 4);
         }
 
         unsigned char s[sizeof(float)];
