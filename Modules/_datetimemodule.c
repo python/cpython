@@ -1282,7 +1282,7 @@ new_datetime_ex(int year, int month, int day, int hour, int minute,
     new_datetime_ex2(y, m, d, hh, mm, ss, us, tzinfo, fold, ns, DATETIME_TYPE(NO_STATE))
 
 static PyObject *
-call_subclass_fold(PyObject *cls, int fold, const char *format, ...)
+call_subclass_fold(PyObject *cls, int fold, int nanosecond, const char *format, ...)
 {
     PyObject *kwargs = NULL, *res = NULL;
     va_list va;
@@ -1328,8 +1328,8 @@ new_datetime_subclass_fold_ex(int year, int month, int day, int hour, int minute
     }
     else {
         // Subclass
-        dt = call_subclass_fold(cls, fold, "iiiiiiiO", year, month, day,
-                                hour, minute, second, microsecond, tzinfo, nanosecond);
+        dt = call_subclass_fold(cls, fold, nanosecond, "iiiiiiiO", year, month, day,
+                                hour, minute, second, microsecond, tzinfo);
     }
 
     return dt;
@@ -1397,8 +1397,8 @@ new_time_subclass_fold_ex(int hour, int minute, int second, int microsecond,
     }
     else {
         // Subclass
-        t = call_subclass_fold(cls, fold, "iiiiO", hour, minute, second,
-                               microsecond, tzinfo, nanosecond);
+        t = call_subclass_fold(cls, fold, nanosecond, "iiiiO", hour, minute, second,
+                               microsecond, tzinfo);
     }
 
     return t;
@@ -5218,13 +5218,7 @@ time_fromisoformat(PyObject *cls, PyObject *tstr) {
         return NULL;
     }
 
-    PyObject *t;
-    if ( (PyTypeObject *)cls == TIME_TYPE(NO_STATE)) {
-        t = new_time(hour, minute, second, microsecond, tzinfo, 0, nanosecond);
-    } else {
-        t = PyObject_CallFunction(cls, "iiiiOii",
-                                  hour, minute, second, microsecond, tzinfo, 0, nanosecond);
-    }
+    PyObject *t = new_time_subclass_fold_ex(hour, minute, second, microsecond, tzinfo, 0, nanosecond, (PyObject *)cls);
 
     Py_DECREF(tzinfo);
     return t;
