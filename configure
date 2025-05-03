@@ -22492,9 +22492,9 @@ then :
 #define `printf "%s\n" "HAVE_$ac_header" | sed "$as_sed_cpp"` 1
 _ACEOF
 
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ZSTD_compress in -lzstd" >&5
-printf %s "checking for ZSTD_compress in -lzstd... " >&6; }
-if test ${ac_cv_lib_zstd_ZSTD_compress+y}
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ZDICT_finalizeDictionary in -lzstd" >&5
+printf %s "checking for ZDICT_finalizeDictionary in -lzstd... " >&6; }
+if test ${ac_cv_lib_zstd_ZDICT_finalizeDictionary+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
@@ -22512,20 +22512,20 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char ZSTD_compress (void);
+char ZDICT_finalizeDictionary (void);
 int
 main (void)
 {
-return ZSTD_compress ();
+return ZDICT_finalizeDictionary ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_zstd_ZSTD_compress=yes
+  ac_cv_lib_zstd_ZDICT_finalizeDictionary=yes
 else case e in #(
-  e) ac_cv_lib_zstd_ZSTD_compress=no ;;
+  e) ac_cv_lib_zstd_ZDICT_finalizeDictionary=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -22533,9 +22533,9 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 LIBS=$ac_check_lib_save_LIBS ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_zstd_ZSTD_compress" >&5
-printf "%s\n" "$ac_cv_lib_zstd_ZSTD_compress" >&6; }
-if test "x$ac_cv_lib_zstd_ZSTD_compress" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_zstd_ZDICT_finalizeDictionary" >&5
+printf "%s\n" "$ac_cv_lib_zstd_ZDICT_finalizeDictionary" >&6; }
+if test "x$ac_cv_lib_zstd_ZDICT_finalizeDictionary" = xyes
 then :
   have_libzstd=yes
 else case e in #(
@@ -22587,9 +22587,9 @@ then :
 #define `printf "%s\n" "HAVE_$ac_header" | sed "$as_sed_cpp"` 1
 _ACEOF
 
-      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ZSTD_compress in -lzstd" >&5
-printf %s "checking for ZSTD_compress in -lzstd... " >&6; }
-if test ${ac_cv_lib_zstd_ZSTD_compress+y}
+      { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for ZDICT_finalizeDictionary in -lzstd" >&5
+printf %s "checking for ZDICT_finalizeDictionary in -lzstd... " >&6; }
+if test ${ac_cv_lib_zstd_ZDICT_finalizeDictionary+y}
 then :
   printf %s "(cached) " >&6
 else case e in #(
@@ -22607,20 +22607,20 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char ZSTD_compress (void);
+char ZDICT_finalizeDictionary (void);
 int
 main (void)
 {
-return ZSTD_compress ();
+return ZDICT_finalizeDictionary ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_c_try_link "$LINENO"
 then :
-  ac_cv_lib_zstd_ZSTD_compress=yes
+  ac_cv_lib_zstd_ZDICT_finalizeDictionary=yes
 else case e in #(
-  e) ac_cv_lib_zstd_ZSTD_compress=no ;;
+  e) ac_cv_lib_zstd_ZDICT_finalizeDictionary=no ;;
 esac
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.beam \
@@ -22628,9 +22628,9 @@ rm -f core conftest.err conftest.$ac_objext conftest.beam \
 LIBS=$ac_check_lib_save_LIBS ;;
 esac
 fi
-{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_zstd_ZSTD_compress" >&5
-printf "%s\n" "$ac_cv_lib_zstd_ZSTD_compress" >&6; }
-if test "x$ac_cv_lib_zstd_ZSTD_compress" = xyes
+{ printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_zstd_ZDICT_finalizeDictionary" >&5
+printf "%s\n" "$ac_cv_lib_zstd_ZDICT_finalizeDictionary" >&6; }
+if test "x$ac_cv_lib_zstd_ZDICT_finalizeDictionary" = xyes
 then :
   have_libzstd=yes
 else case e in #(

@@ -5399,7 +5399,7 @@ PKG_CHECK_MODULES([LIBZSTD], [libzstd], [have_libzstd=yes], [
     CPPFLAGS="$CPPFLAGS $LIBZSTD_CFLAGS"
     LIBS="$LIBS $LIBZSTD_LIBS"
     AC_CHECK_HEADERS([zstd.h zdict.h], [
-      AC_CHECK_LIB([zstd], [ZSTD_compress], [have_libzstd=yes], [have_libzstd=no])
+      AC_CHECK_LIB([zstd], [ZDICT_finalizeDictionary], [have_libzstd=yes], [have_libzstd=no])
     ], [have_libzstd=no])
     AS_VAR_IF([have_libzstd], [yes], [
       LIBZSTD_CFLAGS=${LIBZSTD_CFLAGS-""}
