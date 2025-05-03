@@ -282,7 +282,7 @@ class Test_TestResult(unittest.TestCase):
         result.addFailure(test, exc_info_tuple)
         result.stopTest(test)
 
-        formatted_exc = result.failures[0][1]
+        formatted_exc = traceback.strip_exc_timestamps(result.failures[0][1])
         self.assertEqual(formatted_exc.count("Exception: Loop\n"), 1)
 
     def test_addFailure_filter_traceback_frames_chained_exception_cycle(self):
@@ -311,7 +311,7 @@ class Test_TestResult(unittest.TestCase):
         result.addFailure(test, exc_info_tuple)
         result.stopTest(test)
 
-        formatted_exc = result.failures[0][1]
+        formatted_exc = traceback.strip_exc_timestamps(result.failures[0][1])
         self.assertEqual(formatted_exc.count("Exception: A\n"), 1)
         self.assertEqual(formatted_exc.count("Exception: B\n"), 1)
         self.assertEqual(formatted_exc.count("Exception: C\n"), 1)

@@ -42,6 +42,16 @@ get_exc_state(void)
 }
 
 
+static bool
+should_collect_traceback_timestamps(void)
+{
+    /* Unset or empty means disabled. */
+    wchar_t *traceback_timestamps = (
+        _PyInterpreterState_GET()->config.traceback_timestamps);
+    return traceback_timestamps && traceback_timestamps[0] != '\0';
+}
+
+
 /* NOTE: If the exception class hierarchy changes, don't forget to update
  * Lib/test/exception_hierarchy.txt
  */
@@ -67,6 +77,7 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* the dict is created on the fly in PyObject_GenericSetAttr */
     self->dict = NULL;
     self->notes = NULL;
+    self->timestamp_ns = 0;
     self->traceback = self->cause = self->context = NULL;
     self->suppress_context = 0;
 
@@ -84,6 +95,17 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)self;
 }
 
+static inline void BaseException_init_timestamp(PyBaseExceptionObject *self)
+{
+    if (!should_collect_traceback_timestamps() ||
+        Py_IS_TYPE(self, (PyTypeObject *)PyExc_StopIteration) ||
+        Py_IS_TYPE(self, (PyTypeObject *)PyExc_StopAsyncIteration)) {
+        self->timestamp_ns = 0;  /* fast; frequent non-error control flow. */
+    } else {
+        PyTime_TimeRaw(&self->timestamp_ns);  /* fills in 0 on failure. */
+    }
+}
+
 static int
 BaseException_init(PyObject *op, PyObject *args, PyObject *kwds)
 {
@@ -92,6 +114,7 @@ BaseException_init(PyObject *op, PyObject *args, PyObject *kwds)
         return -1;
 
     Py_XSETREF(self->args, Py_NewRef(args));
+    BaseException_init_timestamp(self);
     return 0;
 }
 
@@ -114,6 +137,7 @@ BaseException_vectorcall(PyObject *type_obj, PyObject * const*args,
     // The dict is created on the fly in PyObject_GenericSetAttr()
     self->dict = NULL;
     self->notes = NULL;
+    BaseException_init_timestamp(self);  // self.timestamp_ns = ...
     self->traceback = NULL;
     self->cause = NULL;
     self->context = NULL;
@@ -211,6 +235,26 @@ BaseException_repr(PyObject *op)
 
 /* Pickling support */
 
+/* Returns dict on success, after having maybe added a __timestamp_ns__ key;
+   NULL on error.  dict does not have to be self->dict as the getstate use
+   case often uses a copy.  No key is added if its value would be 0. */
+static PyObject* BaseException_add_timestamp_to_dict(PyBaseExceptionObject *self, PyObject *dict)
+{
+    assert(dict != NULL);
+    if (self->timestamp_ns <= 0) {
+        return dict;
+    }
+    PyObject *ts = PyLong_FromLongLong(self->timestamp_ns);
+    if (!ts)
+        return NULL;
+    if (PyDict_SetItem(dict, &_Py_ID(__timestamp_ns__), ts) == -1) {
+        Py_DECREF(ts);
+        return NULL;
+    }
+    Py_DECREF(ts);
+    return dict;
+}
+
 /*[clinic input]
 @critical_section
 BaseException.__reduce__
@@ -220,10 +264,16 @@ static PyObject *
 BaseException___reduce___impl(PyBaseExceptionObject *self)
 /*[clinic end generated code: output=af87c1247ef98748 input=283be5a10d9c964f]*/
 {
-    if (self->args && self->dict)
-        return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
-    else
-        return PyTuple_Pack(2, Py_TYPE(self), self->args);
+    if (!self->dict) {
+        self->dict = PyDict_New();
+        if (self->dict == NULL) {
+            return NULL;
+        }
+    }
+    if (!BaseException_add_timestamp_to_dict(self, self->dict)) {
+        return NULL;
+    }
+    return PyTuple_Pack(3, Py_TYPE(self), self->args, self->dict);
 }
 
 /*
@@ -605,6 +655,8 @@ PyExceptionClass_Name(PyObject *ob)
 static struct PyMemberDef BaseException_members[] = {
     {"__suppress_context__", Py_T_BOOL,
      offsetof(PyBaseExceptionObject, suppress_context)},
+    {"__timestamp_ns__", Py_T_LONGLONG,
+     offsetof(PyBaseExceptionObject, timestamp_ns)},
     {NULL}
 };
 
@@ -1821,30 +1873,27 @@ ImportError_getstate(PyObject *op)
 {
     PyImportErrorObject *self = PyImportErrorObject_CAST(op);
     PyObject *dict = self->dict;
-    if (self->name || self->path || self->name_from) {
-        dict = dict ? PyDict_Copy(dict) : PyDict_New();
-        if (dict == NULL)
-            return NULL;
-        if (self->name && PyDict_SetItem(dict, &_Py_ID(name), self->name) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-        if (self->path && PyDict_SetItem(dict, &_Py_ID(path), self->path) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-        if (self->name_from && PyDict_SetItem(dict, &_Py_ID(name_from), self->name_from) < 0) {
-            Py_DECREF(dict);
-            return NULL;
-        }
-        return dict;
+    dict = dict ? PyDict_Copy(dict) : PyDict_New();
+    if (dict == NULL) {
+        return NULL;
     }
-    else if (dict) {
-        return Py_NewRef(dict);
+    if (!BaseException_add_timestamp_to_dict((PyBaseExceptionObject *)self, dict)) {
+        Py_DECREF(dict);
+        return NULL;
     }
-    else {
-        Py_RETURN_NONE;
+    if (self->name && PyDict_SetItem(dict, &_Py_ID(name), self->name) < 0) {
+        Py_DECREF(dict);
+        return NULL;
     }
+    if (self->path && PyDict_SetItem(dict, &_Py_ID(path), self->path) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+    if (self->name_from && PyDict_SetItem(dict, &_Py_ID(name_from), self->name_from) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+    return dict;
 }
 
 /* Pickling support */
@@ -1856,10 +1905,7 @@ ImportError_reduce(PyObject *self, PyObject *Py_UNUSED(ignored))
     if (state == NULL)
         return NULL;
     PyBaseExceptionObject *exc = PyBaseExceptionObject_CAST(self);
-    if (state == Py_None)
-        res = PyTuple_Pack(2, Py_TYPE(self), exc->args);
-    else
-        res = PyTuple_Pack(3, Py_TYPE(self), exc->args, state);
+    res = PyTuple_Pack(3, Py_TYPE(self), exc->args, state);
     Py_DECREF(state);
     return res;
 }
@@ -2142,6 +2188,8 @@ OSError_init(PyObject *op, PyObject *args, PyObject *kwds)
     PyObject *winerror = NULL;
 #endif
 
+    BaseException_init_timestamp((PyBaseExceptionObject *)self);
+
     if (!oserror_use_init(Py_TYPE(self)))
         /* Everything already done in OSError_new */
         return 0;
@@ -2286,10 +2334,15 @@ OSError_reduce(PyObject *op, PyObject *Py_UNUSED(ignored))
     } else
         Py_INCREF(args);
 
-    if (self->dict)
-        res = PyTuple_Pack(3, Py_TYPE(self), args, self->dict);
-    else
-        res = PyTuple_Pack(2, Py_TYPE(self), args);
+    if (!self->dict) {
+        self->dict = PyDict_New();
+    }
+    if (!self->dict ||
+        !BaseException_add_timestamp_to_dict((PyBaseExceptionObject*)self, self->dict)) {
+        Py_DECREF(args);
+        return NULL;
+    }
+    res = PyTuple_Pack(3, Py_TYPE(self), args, self->dict);
     Py_DECREF(args);
     return res;
 }
@@ -2578,11 +2631,11 @@ AttributeError_getstate(PyObject *op, PyObject *Py_UNUSED(ignored))
 {
     PyAttributeErrorObject *self = PyAttributeErrorObject_CAST(op);
     PyObject *dict = self->dict;
+    dict = dict ? PyDict_Copy(dict) : PyDict_New();
+    if (dict == NULL) {
+        return NULL;
+    }
     if (self->name || self->args) {
-        dict = dict ? PyDict_Copy(dict) : PyDict_New();
-        if (dict == NULL) {
-            return NULL;
-        }
         if (self->name && PyDict_SetItemString(dict, "name", self->name) < 0) {
             Py_DECREF(dict);
             return NULL;
@@ -2596,10 +2649,22 @@ AttributeError_getstate(PyObject *op, PyObject *Py_UNUSED(ignored))
         }
         return dict;
     }
-    else if (dict) {
-        return Py_NewRef(dict);
+    if (!BaseException_add_timestamp_to_dict((PyBaseExceptionObject*)self, dict)) {
+        Py_DECREF(dict);
+        return NULL;
     }
-    Py_RETURN_NONE;
+    if (self->name && PyDict_SetItemString(dict, "name", self->name) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+    /* We specifically are not pickling the obj attribute since there are many
+    cases where it is unlikely to be picklable. See GH-103352.
+    */
+    if (self->args && PyDict_SetItemString(dict, "args", self->args) < 0) {
+        Py_DECREF(dict);
+        return NULL;
+    }
+    return dict;
 }
 
 static PyObject *
@@ -4516,4 +4581,3 @@ _PyException_AddNote(PyObject *exc, PyObject *note)
     Py_XDECREF(r);
     return res;
 }
-
