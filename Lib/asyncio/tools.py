@@ -109,7 +109,7 @@ def _find_cycles(graph):
 def build_async_tree(result, task_emoji="(T)", cor_emoji="", printer=print):
     """
     Build a list of strings for pretty-print a async call tree.
-    
+
     The call tree is produced by `get_all_async_stacks()`, prefixing tasks
     with `task_emoji` and coroutine frames with `cor_emoji`.
     """
