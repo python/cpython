@@ -164,6 +164,37 @@ TEST_INPUTS_TREE = [
             ]
         ),
     ],
+    [
+        # test case containing two roots, one of them without subtasks
+        (
+            [
+                (1, [(2, "Task-5", [])]),
+                (
+                    3,
+                    [
+                        (4, "Task-1", []),
+                        (5, "Task-2", [[["main"], 4]]),
+                        (6, "Task-3", [[["main"], 4]]),
+                        (7, "Task-4", [[["main"], 4]]),
+                    ],
+                ),
+                (8, []),
+                (0, []),
+            ]
+        ),
+        (
+            [
+                ["└── (T) Task-5"],
+                [
+                    "└── (T) Task-1",
+                    "    └──  main",
+                    "        ├── (T) Task-2",
+                    "        ├── (T) Task-3",
+                    "        └── (T) Task-4",
+                ],
+            ]
+        ),
+    ],
 ]
 
 TEST_INPUTS_CYCLES_TREE = [
@@ -300,6 +331,7 @@ TEST_INPUTS_TABLE = [
         ),
         (
             [
+                [1, "0x2", "Task-1", "", "", "0x0"],
                 [
                     1,
                     "0x3",
@@ -409,12 +441,42 @@ TEST_INPUTS_TABLE = [
         ),
         (
             [
+                [9, "0x5", "Task-5", "", "", "0x0"],
                 [9, "0x6", "Task-6", "main2", "Task-5", "0x5"],
                 [9, "0x7", "Task-7", "main2", "Task-5", "0x5"],
                 [9, "0x8", "Task-8", "main2", "Task-5", "0x5"],
+                [10, "0x1", "Task-1", "", "", "0x0"],
                 [10, "0x2", "Task-2", "main", "Task-1", "0x1"],
                 [10, "0x3", "Task-3", "main", "Task-1", "0x1"],
                 [10, "0x4", "Task-4", "main", "Task-1", "0x1"],
+            ]
+        ),
+    ],
+    [
+        # test case containing two roots, one of them without subtasks
+        (
+            [
+                (1, [(2, "Task-5", [])]),
+                (
+                    3,
+                    [
+                        (4, "Task-1", []),
+                        (5, "Task-2", [[["main"], 4]]),
+                        (6, "Task-3", [[["main"], 4]]),
+                        (7, "Task-4", [[["main"], 4]]),
+                    ],
+                ),
+                (8, []),
+                (0, []),
+            ]
+        ),
+        (
+            [
+                [1, "0x2", "Task-5", "", "", "0x0"],
+                [3, "0x4", "Task-1", "", "", "0x0"],
+                [3, "0x5", "Task-2", "main", "Task-1", "0x4"],
+                [3, "0x6", "Task-3", "main", "Task-1", "0x4"],
+                [3, "0x7", "Task-4", "main", "Task-1", "0x4"],
             ]
         ),
     ],
@@ -440,6 +502,7 @@ TEST_INPUTS_TABLE = [
         ),
         (
             [
+                [1, "0x2", "Task-1", "", "", "0x0"],
                 [1, "0x3", "a", "awaiter2", "b", "0x4"],
                 [1, "0x3", "a", "main", "Task-1", "0x2"],
                 [1, "0x4", "b", "awaiter", "a", "0x3"],
@@ -480,6 +543,7 @@ TEST_INPUTS_TABLE = [
         ),
         (
             [
+                [1, "0x2", "Task-1", "", "", "0x0"],
                 [
                     1,
                     "0x3",
@@ -570,7 +634,10 @@ class TestAsyncioToolsBasic(unittest.TestCase):
 
     def test_only_independent_tasks_table(self):
         input_ = [(1, [(10, "taskA", []), (11, "taskB", [])])]
-        self.assertEqual(tools.build_task_table(input_), [])
+        self.assertEqual(
+            tools.build_task_table(input_),
+            [[1, "0xa", "taskA", "", "", "0x0"], [1, "0xb", "taskB", "", "", "0x0"]],
+        )
 
     def test_single_task_tree(self):
         """Test print_async_tree with a single task and no awaits."""
@@ -599,7 +666,7 @@ class TestAsyncioToolsBasic(unittest.TestCase):
                 ],
             )
         ]
-        expected_output = []
+        expected_output = [[1, "0x2", "Task-1", "", "", "0x0"]]
         self.assertEqual(tools.build_task_table(result), expected_output)
 
     def test_cycle_detection(self):
@@ -653,6 +720,7 @@ class TestAsyncioToolsBasic(unittest.TestCase):
             )
         ]
         expected_output = [
+            [1, "0x2", "Task-1", "", "", "0x0"],
             [1, "0x3", "Task-2", "main", "Task-1", "0x2"],
             [1, "0x4", "Task-3", "main", "Task-2", "0x3"],
         ]
