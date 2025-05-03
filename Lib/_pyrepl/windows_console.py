@@ -59,8 +59,8 @@ except:
             self.err = err
             self.descr = descr
 
+# declare nt optional to allow None assignment on other platforms
 nt: types.ModuleType | None
-
 try:
     import nt
 except ImportError:
@@ -128,7 +128,7 @@ class _error(Exception):
 
 def _supports_vt():
     try:
-        nt._supports_virtual_terminal()
+        return nt._supports_virtual_terminal()
     except AttributeError:
         return False
 
@@ -241,8 +241,8 @@ class WindowsConsole(Console):
 
     @property
     def input_hook(self):
-        # avoid inline imports here so the repl doesn't get flooded with import
-        # logging from -Ximporttime=2
+        # avoid inline imports here so the repl doesn't get flooded
+        # with import logging from -X importtime=2
         if nt is not None and nt._is_inputhook_installed():
             return nt._inputhook
 
