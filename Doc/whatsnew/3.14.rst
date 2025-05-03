@@ -1275,6 +1275,11 @@ pdb
   function.
   (Contributed by Tian Gao in :gh:`132576`.)
 
+* Source code displayed in :mod:`pdb` will be syntax-highlighted. This feature
+  can be controlled using the same methods as PyREPL, in addition to the newly
+  added ``colorize`` argument of :class:`pdb.Pdb`.
+  (Contributed by Tian Gao in :gh:`133355`.)
+
 
 pickle
 ------
