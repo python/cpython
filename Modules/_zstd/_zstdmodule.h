@@ -12,10 +12,12 @@ Python module.
 #include "zdict.h"
 
 
-#define PYTHON_MINIMUM_SUPPORTED_ZSTD_VERSION 10400
+// if you update the minimum version, you should update the compile
+// check in configure.ac
+#define PYTHON_MINIMUM_SUPPORTED_ZSTD_VERSION 10405
 
 #if ZSTD_VERSION_NUMBER < PYTHON_MINIMUM_SUPPORTED_ZSTD_VERSION
-    #error "_zstd module requires zstd v1.4.0+"
+    #error "_zstd module requires zstd v1.4.5+"
 #endif
 
 /* Forward declaration of module state */

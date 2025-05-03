@@ -22562,7 +22562,35 @@ fi
 printf "%s\n" "$ac_cv_lib_zstd_ZDICT_finalizeDictionary" >&6; }
 if test "x$ac_cv_lib_zstd_ZDICT_finalizeDictionary" = xyes
 then :
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+          #include "zstd.h"
+
+int
+main (void)
+{
+
+          // if you update the minimum version, you should update the compile
+          // check in Modules/_zstd/_zstdmodule.h
+          #if ZSTD_VERSION_NUMBER < 10405
+              #error "_zstd module requires zstd v1.4.5+"
+          #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
   have_libzstd=yes
+else case e in #(
+  e) have_libzstd=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
 else case e in #(
   e) have_libzstd=no ;;
 esac
@@ -22657,7 +22685,35 @@ fi
 printf "%s\n" "$ac_cv_lib_zstd_ZDICT_finalizeDictionary" >&6; }
 if test "x$ac_cv_lib_zstd_ZDICT_finalizeDictionary" = xyes
 then :
+
+        cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+          #include "zstd.h"
+
+int
+main (void)
+{
+
+          // if you update the minimum version, you should update the compile
+          // check in Modules/_zstd/_zstdmodule.h
+          #if ZSTD_VERSION_NUMBER < 10405
+              #error "_zstd module requires zstd v1.4.5+"
+          #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"
+then :
   have_libzstd=yes
+else case e in #(
+  e) have_libzstd=no ;;
+esac
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.beam conftest.$ac_ext
+
 else case e in #(
   e) have_libzstd=no ;;
 esac
