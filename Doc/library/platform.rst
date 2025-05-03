@@ -360,6 +360,33 @@ Android Platform
 
    .. versionadded:: 3.13
 
+.. _platform-cli:
+
+Command-line Usage
+------------------
+
+:mod:`platform` can also be invoked directly using the :option:`-m`
+switch of the interpreter::
+
+   python -m platform [--terse] [--nonaliased] [{nonaliased,terse} ...]
+
+The following options are accepted:
+
+.. program:: platform
+
+.. option:: --terse
+
+   Print terse information about the platform. This is equivalent to
+   calling :func:`platform` with the *terse* argument set to ``True``.
+
+.. option:: --nonaliased
+
+   Print information without system/OS name aliasing. This is equivalent to
+   calling :func:`platform` with the *aliased* argument set to ``True``.
+
+You can also pass one or more positional arguments (``terse``, ``nonaliased``)
+to explicitly control the output format. These behave similarly to their
+corresponding options.
 
 Miscellaneous
 -------------
