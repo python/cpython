@@ -539,12 +539,13 @@ Miscellaneous options
    * ``-X importtime`` to show how long each import takes. It shows module
      name, cumulative time (including nested imports) and self time (excluding
      nested imports).  Note that its output may be broken in multi-threaded
-     application.  Typical usage is ``python3 -X importtime -c 'import
-     asyncio'``.  See also :envvar:`PYTHONPROFILEIMPORTTIME`.
+     application.  Typical usage is ``python -X importtime -c 'import asyncio'``.
 
      ``-X importtime=2`` enables additional output that indicates when an
      imported module has already been loaded.  In such cases, the string
-     ``cached`` will be printed in the self time and cumulative time columns.
+     ``cached`` will be printed in both time columns.
+
+     See also :envvar:`PYTHONPROFILEIMPORTTIME`.
 
      .. versionadded:: 3.7
 
