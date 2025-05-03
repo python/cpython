@@ -1730,8 +1730,8 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     assert(counts == NULL || counts->total == 0);
     struct co_unbound_counts unbound = {0};
     Py_ssize_t len = Py_SIZE(co);
-return 0;
     for (int i = 0; i < len; i++) {
+break;
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
         if (inst.op.code == LOAD_ATTR) {
             int oparg = GET_OPARG(co, i, inst.op.arg);
