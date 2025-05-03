@@ -123,17 +123,37 @@ class REPL(ThemeSection):
 
 
 @dataclass(frozen=True)
+class Traceback(ThemeSection):
+    type: str = ANSIColors.BOLD_MAGENTA
+    message: str = ANSIColors.MAGENTA
+    filename: str = ANSIColors.MAGENTA
+    line_no: str = ANSIColors.MAGENTA
+    frame: str = ANSIColors.MAGENTA
+    error_highlight: str = ANSIColors.BOLD_RED
+    error_range: str = ANSIColors.RED
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True)
 class Theme:
     repl: REPL = field(default_factory=REPL)
+    traceback: Traceback = field(default_factory=Traceback)
 
-    def copy_with(self, *, repl: REPL | None) -> Self:
+    def copy_with(
+        self,
+        *,
+        repl: REPL | None = None,
+        traceback: Traceback | None = None,
+    ) -> Self:
         return type(self)(
             repl=repl or self.repl,
+            traceback=traceback or self.traceback,
         )
 
     def no_colors(self) -> Self:
         return type(self)(
             repl=self.repl.no_colors(),
+            traceback=self.traceback.no_colors(),
         )
 
 
