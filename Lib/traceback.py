@@ -13,7 +13,6 @@ import io
 import _colorize
 
 from contextlib import suppress
-from _colorize import get_theme, theme_no_color
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
@@ -187,7 +186,10 @@ def format_exception_only(exc, /, value=_sentinel, *, show_group=False, **kwargs
 def _format_final_exc_line(etype, value, *, insert_final_newline=True, colorize=False):
     valuestr = _safe_string(value, 'exception')
     end_char = "\n" if insert_final_newline else ""
-    theme = (theme_no_color if not colorize else get_theme()).traceback
+    if colorize:
+        theme = _colorize.get_theme(force_color=True).traceback
+    else:
+        theme = _colorize.get_theme(force_no_color=True).traceback
     if value is None or not valuestr:
         line = f"{theme.type}{etype}{theme.reset}{end_char}"
     else:
@@ -534,8 +536,10 @@ class StackSummary(list):
         filename = frame_summary.filename
         if frame_summary.filename.startswith("<stdin>-"):
             filename = "<stdin>"
-
-        theme = (theme_no_color if not colorize else get_theme()).traceback
+        if colorize:
+            theme = _colorize.get_theme(force_color=True).traceback
+        else:
+            theme = _colorize.get_theme(force_no_color=True).traceback
         row.append(
             '  File {}"{}"{}, line {}{}{}, in {}{}{}\n'.format(
                 theme.filename,
@@ -1373,7 +1377,10 @@ class TracebackException:
         """Format SyntaxError exceptions (internal helper)."""
         # Show exactly where the problem was found.
         colorize = kwargs.get("colorize", False)
-        theme = (theme_no_color if not colorize else get_theme()).traceback
+        if colorize:
+            theme = _colorize.get_theme(force_color=True).traceback
+        else:
+            theme = _colorize.get_theme(force_no_color=True).traceback
         filename_suffix = ''
         if self.lineno is not None:
             yield '  File {}"{}"{}, line {}{}{}\n'.format(

@@ -492,11 +492,7 @@ class Reader:
 
         if self.can_colorize:
             t = THEME()
-            prompt = (
-                f"{t.prompt}"
-                f"{prompt}"
-                f"{t.reset}"
-            )
+            prompt = f"{t.prompt}{prompt}{t.reset}"
         return prompt
 
     def push_input_trans(self, itrans: input.KeymapTranslator) -> None:

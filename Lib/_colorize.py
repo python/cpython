@@ -213,8 +213,13 @@ default_theme = Theme()
 theme_no_color = default_theme.no_colors()
 
 
-def get_theme(*, tty_file: IO[str] | IO[bytes] | None = None) -> Theme:
-    if can_colorize(file=tty_file):
+def get_theme(
+    *,
+    tty_file: IO[str] | IO[bytes] | None = None,
+    force_color: bool = False,
+    force_no_color: bool = False,
+) -> Theme:
+    if force_color or (not force_no_color and can_colorize(file=tty_file)):
         return _theme
     return theme_no_color
 
