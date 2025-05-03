@@ -480,7 +480,7 @@ dummy_func(void) {
             res = sym_new_const(ctx, tmp);
             Py_DECREF(tmp);
         }
-    else {
+        else {
             res = sym_new_type(ctx, &PyBool_Type);
         }
     }
