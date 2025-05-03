@@ -81,20 +81,20 @@ class ThemeSection(Mapping[str, str]):
 
     def __post_init__(self) -> None:
         name_to_value = {}
-        for color_name, color_field in self.__dataclass_fields__.items():
+        for color_name in self.__dataclass_fields__:
             name_to_value[color_name] = getattr(self, color_name)
         super().__setattr__('_name_to_value', name_to_value.__getitem__)
 
     def copy_with(self, **kwargs: str) -> Self:
         color_state: dict[str, str] = {}
-        for color_name, color_field in self.__dataclass_fields__.items():
+        for color_name in self.__dataclass_fields__:
             color_state[color_name] = getattr(self, color_name)
         color_state.update(kwargs)
         return type(self)(**color_state)
 
     def no_colors(self) -> Self:
         color_state: dict[str, str] = {}
-        for color_name, color_field in self.__dataclass_fields__.items():
+        for color_name in self.__dataclass_fields__:
             color_state[color_name] = ""
         return type(self)(**color_state)
 
@@ -228,7 +228,6 @@ def set_theme(t: Theme) -> None:
     global _theme
 
     _theme = t
-    return
 
 
 set_theme(default_theme)
