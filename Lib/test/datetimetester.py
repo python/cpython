@@ -2520,17 +2520,15 @@ class TestDateTime(TestDate):
             self.assertTrue(isinstance(derived, SubclassDatetime))
 
     def test_compat_unpickle(self):
-        return
-        # BUG
         tests = [
             b'cdatetime\ndatetime\n('
             b"S'\\x07\\xdf\\x0b\\x1b\\x14;\\x01\\x00\\x10\\x00\\x00\\x01'\ntR.",
 
             b'cdatetime\ndatetime\n('
-            b'U\n\x07\xdf\x0b\x1b\x14;\x01\x00\x10\x00\x00\x01tR.',
+            b'U\x0c\x07\xdf\x0b\x1b\x14;\x01\x00\x10\x00\x00\x01tR.',
 
             b'\x80\x02cdatetime\ndatetime\n'
-            b'U\n\x07\xdf\x0b\x1b\x14;\x01\x00\x10\x00\x85\x00\x01R.',
+            b'U\x0c\x07\xdf\x0b\x1b\x14;\x01\x00\x10\x00\x00\x01\x85R.',
         ]
         args = 2015, 11, 27, 20, 59, 1, 64**2
         expected = self.theclass(*args, nanosecond=1)
@@ -3959,20 +3957,18 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
             self.assertTrue(isinstance(derived, SubclassTime))
 
     def test_compat_unpickle(self):
-        return
-        # BUG
         tests = [
             (b"cdatetime\ntime\n(S'\\x14;\\x10\\x00\\x10\\x00\\x00\\x01'\ntR.",
              (20, 59, 16, 64**2)),
-            (b'cdatetime\ntime\n(U\x06\x14;\x10\x00\x10\x00\x00\x01tR.',
+            (b'cdatetime\ntime\n(U\x08\x14;\x10\x00\x10\x00\x00\x01tR.',
              (20, 59, 16, 64**2)),
-            (b'\x80\x02cdatetime\ntime\nU\x06\x14;\x10\x00\x10\x00\x00\x01\x85R.',
+            (b'\x80\x02cdatetime\ntime\nU\x08\x14;\x10\x00\x10\x00\x00\x01\x85R.',
              (20, 59, 16, 64**2)),
             (b"cdatetime\ntime\n(S'\\x14;\\x19\\x00\\x10\\x00\\x00\\x01'\ntR.",
              (20, 59, 25, 64**2)),
-            (b'cdatetime\ntime\n(U\x06\x14;\x19\x00\x10\x00\x00\x01tR.',
+            (b'cdatetime\ntime\n(U\x08\x14;\x19\x00\x10\x00\x00\x01tR.',
              (20, 59, 25, 64**2)),
-            (b'\x80\x02cdatetime\ntime\nU\x06\x14;\x19\x00\x10\x00\x00\x01\x85R.',
+            (b'\x80\x02cdatetime\ntime\nU\x08\x14;\x19\x00\x10\x00\x00\x01\x85R.',
              (20, 59, 25, 64**2)),
         ]
         for i, (data, args) in enumerate(tests):
@@ -4438,8 +4434,6 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
         self.assertEqual(orig.__reduce__(), orig.__reduce_ex__(2))
 
     def test_compat_unpickle(self):
-        return
-        # BUG
         tests = [
             b"cdatetime\ntime\n(S'\\x05\\x06\\x07\\x01\\xe2@\\x00\\x01'\n"
             b"ctest.datetimetester\nPicklableFixedOffset\n(tR"
@@ -4448,14 +4442,14 @@ class TestTimeTZ(TestTime, TZInfoBase, unittest.TestCase):
             b"S'_FixedOffset__dstoffset'\nNs"
             b"S'_FixedOffset__name'\nS'cookie'\nsbtR.",
 
-            b'cdatetime\ntime\n(U\x06\x05\x06\x07\x01\xe2@\x00\x01'
+            b'cdatetime\ntime\n(U\x08\x05\x06\x07\x01\xe2@\x00\x01'
             b'ctest.datetimetester\nPicklableFixedOffset\n)R'
             b'}(U\x14_FixedOffset__offsetcdatetime\ntimedelta\n'
             b'(J\xff\xff\xff\xffJ0\x0b\x01\x00K\x00tR'
             b'U\x17_FixedOffset__dstoffsetN'
             b'U\x12_FixedOffset__nameU\x06cookieubtR.',
 
-            b'\x80\x02cdatetime\ntime\nU\x06\x05\x06\x07\x01\xe2@\x00\x01'
+            b'\x80\x02cdatetime\ntime\nU\x08\x05\x06\x07\x01\xe2@\x00\x01'
             b'ctest.datetimetester\nPicklableFixedOffset\n)R'
             b'}(U\x14_FixedOffset__offsetcdatetime\ntimedelta\n'
             b'J\xff\xff\xff\xffJ0\x0b\x01\x00K\x00\x87R'
@@ -4929,8 +4923,6 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         self.assertEqual(orig.__reduce__(), orig.__reduce_ex__(2))
 
     def test_compat_unpickle(self):
-        return
-        # BUG
         tests = [
             b'cdatetime\ndatetime\n'
             b"(S'\\x07\\xdf\\x0b\\x1b\\x14;\\x01\\x01\\xe2@\\x00\\x01'\n"
@@ -4941,7 +4933,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
             b"S'_FixedOffset__name'\nS'cookie'\nsbtR.",
 
             b'cdatetime\ndatetime\n'
-            b'(U\n\x07\xdf\x0b\x1b\x14;\x01\x01\xe2@\x00\x01'
+            b'(U\x0c\x07\xdf\x0b\x1b\x14;\x01\x01\xe2@\x00\x01'
             b'ctest.datetimetester\nPicklableFixedOffset\n)R'
             b'}(U\x14_FixedOffset__offsetcdatetime\ntimedelta\n'
             b'(J\xff\xff\xff\xffJ0\x0b\x01\x00K\x00tR'
@@ -4949,7 +4941,7 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
             b'U\x12_FixedOffset__nameU\x06cookieubtR.',
 
             b'\x80\x02cdatetime\ndatetime\n'
-            b'U\n\x07\xdf\x0b\x1b\x14;\x01\x01\xe2@\x00\x01'
+            b'U\x0c\x07\xdf\x0b\x1b\x14;\x01\x01\xe2@\x00\x01'
             b'ctest.datetimetester\nPicklableFixedOffset\n)R'
             b'}(U\x14_FixedOffset__offsetcdatetime\ntimedelta\n'
             b'J\xff\xff\xff\xffJ0\x0b\x01\x00K\x00\x87R'
