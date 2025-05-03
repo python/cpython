@@ -64,9 +64,6 @@ def _build_tree(id2name, awaits):
 
 
 def _roots(id2label, children):
-    # roots = [n for n, lbl in id2label.items() if lbl == "Task-1"]
-    # if roots:
-    #     return roots
     all_children = {c for kids in children.values() for c in kids}
     return [n for n in id2label if n not in all_children]
 
@@ -183,8 +180,8 @@ if __name__ == "__main__":
     try:
         tasks = get_all_awaited_by(args.pid)
     except RuntimeError as e:
-        while e.__cause__ is not None:
-            e = e.__cause__
+        while e.__context__ is not None:
+            e = e.__context__
         print(f"Error retrieving tasks: {e}")
         sys.exit(1)
 
