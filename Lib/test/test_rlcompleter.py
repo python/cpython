@@ -56,14 +56,16 @@ class TestRlcompleter(unittest.TestCase):
         self.assertEqual(self.stdcompleter.attr_matches('tuple.foospamegg'), [])
 
         def create_expected_for_none():
+            if not MISSING_C_DOCSTRINGS:
+                parentheses = ('__init_subclass__', '__class__')
+            else:
+                # When `--without-doc-strings` is used, `__class__`
+                # won't have a known signature.
+                parentheses = ('__init_subclass__',)
+
             items = set()
             for x in dir(None):
-                if (
-                    x == '__init_subclass__'
-                    # When `--without-doc-strings` is used, `__class__`
-                    # won't have a known signature.
-                    or (x == '__class__' and not MISSING_C_DOCSTRINGS)
-                ):
+                if x in parentheses:
                     items.add(f'None.{x}()')
                 elif x == '__doc__':
                     items.add(f'None.{x}')
