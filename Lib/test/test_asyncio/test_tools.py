@@ -2,7 +2,7 @@
 
 import unittest
 
-from Lib.asyncio import tools
+from asyncio import tools
 
 
 # mock output of get_all_awaited_by function.
