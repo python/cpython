@@ -73,10 +73,10 @@ Summary -- release highlights
 * :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
 * :ref:`A new type of interpreter <whatsnew314-tail-call>`
 * :ref:`Syntax highlighting in PyREPL <whatsnew314-pyrepl-highlighting>`,
-  color output in :ref:`unittest <whatsnew314-color-unittest>`,
+  and color output in :ref:`unittest <whatsnew314-color-unittest>`,
+  :ref:`argparse <whatsnew314-color-argparse>`,
   :ref:`json <whatsnew314-color-json>` and
-  :ref:`calendar <whatsnew314-color-calendar>` CLIs, and in
-  :ref:`argparse <whatsnew314-color-argparse>` help
+  :ref:`calendar <whatsnew314-color-calendar>` CLIs
 
 
 Incompatible changes
