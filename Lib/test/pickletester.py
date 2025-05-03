@@ -15,6 +15,7 @@ import threading
 import types
 import unittest
 import weakref
+from contextlib import contextmanager
 from textwrap import dedent
 from http.cookies import SimpleCookie
 
@@ -151,6 +152,17 @@ __main__.D = D
 D.__module__ = "__main__"
 __main__.E = E
 E.__module__ = "__main__"
+
+@contextmanager
+def fake_main_module():
+    real_main = sys.modules.get("__main__")
+    fake_main = types.ModuleType("__main__")
+
+    sys.modules["__main__"] = fake_main
+    try:
+        yield
+    finally:
+        sys.modules["__main__"] = real_main
 
 # Simple mutable object.
 class Object:
@@ -2287,12 +2299,14 @@ class AbstractPicklingErrorTests:
         obj.__module__ = None
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(pickle.PicklingError) as cm:
-                    self.dumps(obj, proto)
-                    self.assertEqual(str(cm.exception),
-                        f"Can't pickle {obj!r}: it's not found as __main__.AbstractPickleTests.spam")
-                    self.assertEqual(str(cm.exception.__context__),
-                        "module '__main__' has no attribute 'AbstractPickleTests'")
+                with fake_main_module():
+                    with self.assertRaises(pickle.PicklingError) as cm:
+                        self.dumps(obj, proto)
+                self.assertEqual(str(cm.exception),
+                    f"Can't pickle {obj!r}: "
+                    "it's not found as __main__.AbstractPickleTests.spam")
+                self.assertEqual(str(cm.exception.__context__),
+                    "module '__main__' has no attribute 'AbstractPickleTests'")
 
     def test_wrong_object_lookup_error(self):
         # Name is bound to different object
@@ -2304,18 +2318,21 @@ class AbstractPicklingErrorTests:
                 with self.assertRaises(pickle.PicklingError) as cm:
                     self.dumps(obj, proto)
                 self.assertEqual(str(cm.exception),
-                    f"Can't pickle {obj!r}: it's not the same object as {__name__}.AbstractPickleTests")
+                    f"Can't pickle {obj!r}: "
+                    f"it's not the same object as {__name__}.AbstractPickleTests")
                 self.assertIsNone(cm.exception.__context__)
 
         obj.__module__ = None
         for proto in protocols:
             with self.subTest(proto=proto):
-                with self.assertRaises(pickle.PicklingError) as cm:
-                    self.dumps(obj, proto)
-                    self.assertEqual(str(cm.exception),
-                        f"Can't pickle {obj!r}: it's not found as __main__.AbstractPickleTests")
-                    self.assertEqual(str(cm.exception.__context__),
-                        "module '__main__' has no attribute 'AbstractPickleTests'")
+                with fake_main_module():
+                    with self.assertRaises(pickle.PicklingError) as cm:
+                        self.dumps(obj, proto)
+                self.assertEqual(str(cm.exception),
+                    f"Can't pickle {obj!r}: "
+                    "it's not found as __main__.AbstractPickleTests")
+                self.assertEqual(str(cm.exception.__context__),
+                    "module '__main__' has no attribute 'AbstractPickleTests'")
 
     def test_local_lookup_error(self):
         # Test that whichmodule() errors out cleanly when looking up
