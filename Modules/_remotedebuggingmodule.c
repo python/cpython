@@ -429,7 +429,7 @@ parse_coro_chain(
                 uintptr_t gi_await_addr_type_addr;
                 int err = read_ptr(
                     handle,
-                    gi_await_addr + sizeof(void*),
+                    gi_await_addr + offsets->pyobject.ob_type,
                     &gi_await_addr_type_addr);
                 if (err) {
                     return -1;
