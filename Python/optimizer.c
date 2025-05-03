@@ -224,6 +224,8 @@ _Py_ClearExecutorDeletionList(PyInterpreterState *interp)
     while (ts) {
         _PyExecutorObject *current = (_PyExecutorObject *)ts->current_executor;
         if (current != NULL) {
+            /* Anything in this list will be unlinked, so we can reuse the
+             * linked field as a reachability marker. */
             current->vm_data.linked = 1;
         }
         HEAD_LOCK(runtime);

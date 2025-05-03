@@ -5567,7 +5567,6 @@
                 }
                 DISPATCH_GOTO();
             }
-            tstate->current_executor = (PyObject *)executor;
             GOTO_TIER_TWO(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
@@ -7802,7 +7801,6 @@
                         this_instr[1].counter = initial_jump_backoff_counter();
                         stack_pointer = _PyFrame_GetStackPointer(frame);
                         assert(tstate->current_executor == NULL);
-                        tstate->current_executor = (PyObject *)executor;
                         GOTO_TIER_TWO(executor);
                     }
                 }

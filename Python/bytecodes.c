@@ -2924,7 +2924,6 @@ dummy_func(
                 else {
                     this_instr[1].counter = initial_jump_backoff_counter();
                     assert(tstate->current_executor == NULL);
-                    tstate->current_executor = (PyObject *)executor;
                     GOTO_TIER_TWO(executor);
                 }
             }
@@ -2989,7 +2988,6 @@ dummy_func(
                 }
                 DISPATCH_GOTO();
             }
-            tstate->current_executor = (PyObject *)executor;
             GOTO_TIER_TWO(executor);
             #else
             Py_FatalError("ENTER_EXECUTOR is not supported in this build");
@@ -5264,7 +5262,6 @@ dummy_func(
                 exit->temperature = initial_temperature_backoff_counter();
                 Py_CLEAR(exit->executor);
             }
-            tstate->current_executor = NULL;
             if (exit->executor == NULL) {
                 _Py_BackoffCounter temperature = exit->temperature;
                 if (!backoff_counter_triggers(temperature)) {
@@ -5287,7 +5284,6 @@ dummy_func(
                 }
                 exit->executor = executor;
             }
-            tstate->current_executor = (PyObject *)exit->executor;
             GOTO_TIER_TWO(exit->executor);
         }
 
@@ -5346,12 +5342,10 @@ dummy_func(
         }
 
         tier2 op(_DEOPT, (--)) {
-            tstate->current_executor = NULL;
             GOTO_TIER_ONE(_PyFrame_GetBytecode(frame) + CURRENT_TARGET());
         }
 
         tier2 op(_ERROR_POP_N, (target/2 --)) {
-            tstate->current_executor = NULL;
             assert(oparg == 0);
             frame->instr_ptr = _PyFrame_GetBytecode(frame) + target;
             SYNC_SP();

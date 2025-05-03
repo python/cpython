@@ -359,7 +359,7 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 do {                                                   \
     OPT_STAT_INC(traces_executed);                     \
     _PyExecutorObject *_executor = (EXECUTOR);         \
-    assert(tstate->current_executor == _executor);     \
+    tstate->current_executor = (PyObject *)_executor;  \
     jit_func jitted = _executor->jit_code;             \
     /* Keep the shim frame alive via the executor: */  \
     Py_INCREF(_executor);                              \
@@ -378,7 +378,9 @@ do {                                                   \
 #define GOTO_TIER_TWO(EXECUTOR) \
 do { \
     OPT_STAT_INC(traces_executed); \
-    next_uop = (EXECUTOR)->trace; \
+    _PyExecutorObject *_executor = (EXECUTOR); \
+    tstate->current_executor = (PyObject *)_executor; \
+    next_uop = _executor->trace; \
     assert(next_uop->opcode == _START_EXECUTOR); \
     goto enter_tier_two; \
 } while (0)
@@ -387,6 +389,7 @@ do { \
 #define GOTO_TIER_ONE(TARGET)                                         \
     do                                                                \
     {                                                                 \
+        tstate->current_executor = NULL;                              \
         next_instr = (TARGET);                                        \
         assert(tstate->current_executor == NULL);                     \
         OPT_HIST(trace_uop_execution_counter, trace_run_length_hist); \
