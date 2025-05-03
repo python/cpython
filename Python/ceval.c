@@ -19,6 +19,7 @@
 #include "pycore_import.h"        // _PyImport_IsDefaultImportFunc()
 #include "pycore_instruments.h"
 #include "pycore_interpframe.h"   // _PyFrame_SetStackPointer()
+#include "pycore_interpolation.h" // _PyInterpolation_Build()
 #include "pycore_intrinsics.h"
 #include "pycore_jit.h"
 #include "pycore_list.h"          // _PyList_GetItemRef()
@@ -29,13 +30,13 @@
 #include "pycore_opcode_utils.h"  // MAKE_FUNCTION_*
 #include "pycore_optimizer.h"     // _PyUOpExecutor_Type
 #include "pycore_pyatomic_ft_wrappers.h" // FT_ATOMIC_*
-#include "pycore_pyerrors.h"
 #include "pycore_pyerrors.h"      // _PyErr_GetRaisedException()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 #include "pycore_range.h"         // _PyRangeIterObject
 #include "pycore_setobject.h"     // _PySet_Update()
 #include "pycore_sliceobject.h"   // _PyBuildSlice_ConsumeRefs
 #include "pycore_sysmodule.h"     // _PySys_GetOptionalAttrString()
+#include "pycore_template.h"      // _PyTemplate_Build()
 #include "pycore_traceback.h"     // _PyTraceBack_FromFrame
 #include "pycore_tuple.h"         // _PyTuple_ITEMS()
 #include "pycore_uop_ids.h"       // Uops
@@ -480,12 +481,6 @@ _Py_CheckRecursiveCall(PyThreadState *tstate, const char *where)
     _PyThreadStateImpl *_tstate = (_PyThreadStateImpl *)tstate;
     uintptr_t here_addr = _Py_get_machine_stack_pointer();
     assert(_tstate->c_stack_soft_limit != 0);
-    if (_tstate->c_stack_hard_limit == 0) {
-        _Py_InitializeRecursionLimits(tstate);
-    }
-    if (here_addr >= _tstate->c_stack_soft_limit) {
-        return 0;
-    }
     assert(_tstate->c_stack_hard_limit != 0);
     if (here_addr < _tstate->c_stack_hard_limit) {
         /* Overflowing while handling an overflow. Give up. */

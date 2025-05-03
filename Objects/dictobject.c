@@ -3285,7 +3285,6 @@ dict_dealloc(PyObject *self)
 
     /* bpo-31095: UnTrack is needed before calling any callbacks */
     PyObject_GC_UnTrack(mp);
-    Py_TRASHCAN_BEGIN(mp, dict_dealloc)
     if (values != NULL) {
         if (values->embedded == 0) {
             for (i = 0, n = values->capacity; i < n; i++) {
@@ -3305,7 +3304,6 @@ dict_dealloc(PyObject *self)
     else {
         Py_TYPE(mp)->tp_free((PyObject *)mp);
     }
-    Py_TRASHCAN_END
 }
 
 
@@ -4853,7 +4851,8 @@ dict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     d->ma_used = 0;
     d->_ma_watcher_tag = 0;
-    dictkeys_incref(Py_EMPTY_KEYS);
+    // We don't inc ref empty keys because they're immortal
+    assert((Py_EMPTY_KEYS)->dk_refcnt == _Py_DICT_IMMORTAL_INITIAL_REFCNT);
     d->ma_keys = Py_EMPTY_KEYS;
     d->ma_values = NULL;
     ASSERT_CONSISTENT(d);
