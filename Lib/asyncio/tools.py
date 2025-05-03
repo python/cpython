@@ -1,4 +1,5 @@
 import argparse
+from dataclasses import dataclass
 from collections import defaultdict
 from itertools import count
 from enum import Enum
@@ -11,21 +12,11 @@ class NodeType(Enum):
     TASK = 2
 
 
+@dataclass(frozen=True)
 class CycleFoundException(Exception):
     """Raised when there is a cycle when drawing the call tree."""
-
-    def __init__(self, cycles, id2name):
-        super().__init__()
-        self.cycles = cycles
-        self.id2name = id2name
-
-    def __str__(self):
-        for c in self.cycles:
-            names = " → ".join(self.id2name.get(tid, hex(tid)) for tid in c)
-            return (
-                "ERROR: await-graph contains cycles – cannot print a tree!\n"
-                f"cycle: {names}"
-            )
+    cycles: list[list[int]]
+    id2name: dict[int, str]
 
 
 # ─── indexing helpers ───────────────────────────────────────────
@@ -172,6 +163,14 @@ def build_task_table(result):
 
     return table
 
+def _print_cycle_exception(exception: CycleFoundException):
+    print("ERROR: await-graph contains cycles – cannot print a tree!", file=sys.stderr)
+    print("", file=sys.stderr)
+    for c in exception.cycles:
+        inames = " → ".join(exception.id2name.get(tid, hex(tid)) for tid in c)
+        print(f"cycle: {inames}", file=sys.stderr)
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Show Python async tasks in a process")
@@ -184,13 +183,19 @@ if __name__ == "__main__":
     try:
         tasks = get_all_awaited_by(args.pid)
     except RuntimeError as e:
+        while e.__cause__ is not None:
+            e = e.__cause__
         print(f"Error retrieving tasks: {e}")
         sys.exit(1)
 
-    print(tasks)
     if args.tree:
         # Print the async call tree
-        result = print_async_tree(tasks)
+        try:
+            result = print_async_tree(tasks)
+        except CycleFoundException as e:
+           _print_cycle_exception(e)
+           sys.exit(1)
+
         for tree in result:
             print("\n".join(tree))
     else:
