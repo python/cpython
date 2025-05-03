@@ -1731,7 +1731,8 @@ identify_unbound_names(PyThreadState *tstate, PyCodeObject *co,
     struct co_unbound_counts unbound = {0};
     Py_ssize_t len = Py_SIZE(co);
     for (int i = 0; i < len; i++) {
-printf("%d\n", i);
+fprintf(stderr, "%d\n", i);
+fflush(stderr);
         _Py_CODEUNIT inst = _Py_GetBaseCodeUnit(co, i);
 continue;
         if (inst.op.code == LOAD_ATTR) {
@@ -1782,9 +1783,9 @@ continue;
             }
         }
     }
-//    if (counts != NULL) {
-//        *counts = unbound;
-//    }
+    if (counts != NULL) {
+        *counts = unbound;
+    }
     return 0;
 }
 
