@@ -2503,17 +2503,27 @@ PyFloat_Unpack4(const char *data, int le)
 
         /* return sNaN double if x was sNaN float */
         if (isnan(x)) {
+            double y = x; /* will make qNaN double */
             uint32_t v;
+            uint64_t u64;
+
             memcpy(&v, &x, 4);
+            memcpy(&u64, &y, 8);
 
             if ((v & (1 << 22)) == 0) {
-                double y = x; /* will make qNaN double */
-                uint64_t u64;
-                memcpy(&u64, &y, 8);
                 u64 &= ~(1ULL << 51); /* make sNaN */
-                memcpy(&y, &u64, 8);
-                return y;
             }
+
+            /* Workaround RISC-V, see PyFloat_Pack4() */
+            if (v & (1 << 31)) {
+                u64 |= (1ULL << 63); /* set sign */
+            }
+            /* add payload */
+            u64 -= (u64 & 0x7ffffffffffffULL);
+            u64 += ((v & 0x3fffffULL) << 29);
+
+            memcpy(&y, &u64, 8);
+            return y;
         }
 
         return x;
