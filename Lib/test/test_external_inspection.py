@@ -5,7 +5,7 @@ import importlib
 import sys
 import socket
 from unittest.mock import ANY
-from test.support import os_helper, SHORT_TIMEOUT, busy_retry
+from test.support import os_helper, SHORT_TIMEOUT, busy_retry, requires_gil_enabled
 from test.support.script_helper import make_script
 from test.support.socket_helper import find_unused_port
 
@@ -406,6 +406,7 @@ class TestGetStackTrace(unittest.TestCase):
             self.assertEqual(stack_trace, expected_stack_trace)
 
     @skip_if_not_supported
+    @requires_gil_enabled("gh-133359: occasionally flaky on AMD64")
     @unittest.skipIf(sys.platform == "linux" and not PROCESS_VM_READV_SUPPORTED,
                      "Test only runs on Linux with process_vm_readv support")
     def test_async_global_awaited_by(self):
@@ -517,7 +518,6 @@ class TestGetStackTrace(unittest.TestCase):
                 self.assertEqual(all_awaited_by[1], (0, []))
                 entries = all_awaited_by[0][1]
                 # expected: at least 1000 pending tasks
-                print(entries, file=sys.stderr)
                 self.assertGreaterEqual(len(entries), 1000)
                 # the first three tasks stem from the code structure
                 self.assertIn((ANY, 'Task-1', []), entries)
@@ -548,7 +548,6 @@ class TestGetStackTrace(unittest.TestCase):
                      "Test only runs on Linux with process_vm_readv support")
     def test_self_trace(self):
         stack_trace = get_stack_trace(os.getpid())
-        print(stack_trace)
         self.assertEqual(stack_trace[0], "test_self_trace")
 
 if __name__ == "__main__":
