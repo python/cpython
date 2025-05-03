@@ -28,7 +28,7 @@ The following modules have a command-line interface.
 * :mod:`pdb`
 * :mod:`pickle`
 * :ref:`pickletools <pickletools-cli>`
-* :mod:`platform`
+* :ref:`platform <platform-cli>`
 * :mod:`poplib`
 * :ref:`profile <profile-cli>`
 * :mod:`pstats`
