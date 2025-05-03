@@ -22575,7 +22575,7 @@ main (void)
           // if you update the minimum version, you should update the compile
           // check in Modules/_zstd/_zstdmodule.h
           #if ZSTD_VERSION_NUMBER < 10405
-              #error "_zstd module requires zstd v1.4.5+"
+              exit(1);
           #endif
 
   ;
@@ -22698,7 +22698,7 @@ main (void)
           // if you update the minimum version, you should update the compile
           // check in Modules/_zstd/_zstdmodule.h
           #if ZSTD_VERSION_NUMBER < 10405
-              #error "_zstd module requires zstd v1.4.5+"
+              exit(1);
           #endif
 
   ;

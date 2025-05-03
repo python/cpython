@@ -5427,7 +5427,7 @@ PKG_CHECK_MODULES([LIBZSTD], [libzstd], [have_libzstd=yes], [
           // if you update the minimum version, you should update the compile
           // check in Modules/_zstd/_zstdmodule.h
           #if ZSTD_VERSION_NUMBER < 10405
-              #error "_zstd module requires zstd v1.4.5+"
+              exit(1);
           #endif
         ])], [have_libzstd=yes], [have_libzstd=no])
       ], [have_libzstd=no])
