@@ -1159,23 +1159,19 @@ class CmdLineTest(unittest.TestCase):
         self.assertEqual(self.res2int(res), (os.cpu_count(), os.process_cpu_count()))
 
     def test_import_time(self):
-        code = "import os"
-        res = assert_python_ok('-X', 'importtime', '-c', code)
-        res_err = res.err.decode("utf-8")
-        self.assertRegex(res_err, r"import time: \s*\d+ \| \s*\d+ \| \s*os")
-        self.assertNotRegex(res_err, r"import time: cached\s* \| cached\s* \| os")
+        # os is not imported at startup
+        code = 'import os; import os'
 
-        code = "import os"
-        res = assert_python_ok('-X', 'importtime=true', '-c', code)
-        res_err = res.err.decode("utf-8")
-        self.assertRegex(res_err, r"import time: \s*\d+ \| \s*\d+ \| \s*os")
-        self.assertNotRegex(res_err, r"import time: cached\s* \| cached\s* \| os")
+        for case in 'importtime', 'importtime=1', 'importtime=true':
+            res = assert_python_ok('-X', case, '-c', code)
+            res_err = res.err.decode('utf-8')
+            self.assertRegex(res_err, r'import time: \s*\d+ \| \s*\d+ \| \s*os')
+            self.assertNotRegex(res_err, r'import time: cached\s* \| cached\s* \| os')
 
-        code = "import os; import os"
         res = assert_python_ok('-X', 'importtime=2', '-c', code)
-        res_err = res.err.decode("utf-8")
-        self.assertRegex(res_err, r"import time: \s*\d+ \| \s*\d+ \| \s*os")
-        self.assertRegex(res_err, r"import time: cached\s* \| cached\s* \| os")
+        res_err = res.err.decode('utf-8')
+        self.assertRegex(res_err, r'import time: \s*\d+ \| \s*\d+ \| \s*os')
+        self.assertRegex(res_err, r'import time: cached\s* \| cached\s* \| os')
 
         assert_python_failure('-X', 'importtime=-1', '-c', code)
         assert_python_failure('-X', 'importtime=3', '-c', code)
