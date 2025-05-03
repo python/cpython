@@ -1,0 +1,2 @@
+Handle case of an empty bytes object passed to :class:`zoneinfo.ZoneInfo`.
+

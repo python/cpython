@@ -238,6 +238,7 @@ class ZoneInfoTest(TzPathUserMixin, ZoneInfoTestBase):
             "America/../America/Los_Angeles",  # Not normalized
             "America/./Los_Angeles",
             "",
+            b"",
         ]
 
         for bad_key in bad_keys:
