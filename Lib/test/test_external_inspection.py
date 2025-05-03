@@ -517,6 +517,7 @@ class TestGetStackTrace(unittest.TestCase):
                 self.assertEqual(all_awaited_by[1], (0, []))
                 entries = all_awaited_by[0][1]
                 # expected: at least 1000 pending tasks
+                print(entries, file=sys.stderr)
                 self.assertGreaterEqual(len(entries), 1000)
                 # the first three tasks stem from the code structure
                 self.assertIn((ANY, 'Task-1', []), entries)
