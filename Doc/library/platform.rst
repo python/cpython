@@ -377,12 +377,13 @@ The following options are accepted:
 .. option:: --terse
 
    Print terse information about the platform. This is equivalent to
-   calling :func:`platform` with the *terse* argument set to ``True``.
+   calling :func:`platform.platform` with the *terse* argument set to ``True``.
 
 .. option:: --nonaliased
 
-   Print information without system/OS name aliasing. This is equivalent to
-   calling :func:`platform` with the *aliased* argument set to ``True``.
+   Print platform information without system/OS name aliasing. This is
+   equivalent to calling :func:`platform.platform` with the *aliased* argument
+   set to ``True``.
 
 You can also pass one or more positional arguments (``terse``, ``nonaliased``)
 to explicitly control the output format. These behave similarly to their
