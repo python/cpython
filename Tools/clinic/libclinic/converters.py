@@ -161,12 +161,19 @@ class unsigned_char_converter(CConverter):
         elif self.format_unit == 'B':
             return self.format_code("""
                 {{{{
-                    unsigned long ival = PyLong_AsUnsignedLongMask({argname});
-                    if (ival == (unsigned long)-1 && PyErr_Occurred()) {{{{
+                    Py_ssize_t _bytes = PyLong_AsNativeBytes({argname}, &{paramname}, sizeof(unsigned char),
+                            Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                            Py_ASNATIVEBYTES_ALLOW_INDEX |
+                            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+                    if (_bytes < 0) {{{{
                         goto exit;
                     }}}}
-                    else {{{{
-                        {paramname} = (unsigned char) ival;
+                    if ((size_t)_bytes > sizeof(unsigned char)) {{{{
+                        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "integer value out of range", 1) < 0)
+                        {{{{
+                            goto exit;
+                        }}}}
                     }}}}
                 }}}}
                 """,
@@ -252,9 +259,21 @@ class unsigned_short_converter(CConverter):
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'H':
             return self.format_code("""
-                {paramname} = (unsigned short)PyLong_AsUnsignedLongMask({argname});
-                if ({paramname} == (unsigned short)-1 && PyErr_Occurred()) {{{{
-                    goto exit;
+                {{{{
+                    Py_ssize_t _bytes = PyLong_AsNativeBytes({argname}, &{paramname}, sizeof(unsigned short),
+                            Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                            Py_ASNATIVEBYTES_ALLOW_INDEX |
+                            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+                    if (_bytes < 0) {{{{
+                        goto exit;
+                    }}}}
+                    if ((size_t)_bytes > sizeof(unsigned short)) {{{{
+                        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "integer value out of range", 1) < 0)
+                        {{{{
+                            goto exit;
+                        }}}}
+                    }}}}
                 }}}}
                 """,
                 argname=argname)
@@ -330,9 +349,21 @@ class unsigned_int_converter(CConverter):
     def parse_arg(self, argname: str, displayname: str, *, limited_capi: bool) -> str | None:
         if self.format_unit == 'I':
             return self.format_code("""
-                {paramname} = (unsigned int)PyLong_AsUnsignedLongMask({argname});
-                if ({paramname} == (unsigned int)-1 && PyErr_Occurred()) {{{{
-                    goto exit;
+                {{{{
+                    Py_ssize_t _bytes = PyLong_AsNativeBytes({argname}, &{paramname}, sizeof(unsigned int),
+                            Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                            Py_ASNATIVEBYTES_ALLOW_INDEX |
+                            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+                    if (_bytes < 0) {{{{
+                        goto exit;
+                    }}}}
+                    if ((size_t)_bytes > sizeof(unsigned int)) {{{{
+                        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "integer value out of range", 1) < 0)
+                        {{{{
+                            goto exit;
+                        }}}}
+                    }}}}
                 }}}}
                 """,
                 argname=argname)
@@ -382,7 +413,22 @@ class unsigned_long_converter(CConverter):
                     {bad_argument}
                     goto exit;
                 }}}}
-                {paramname} = PyLong_AsUnsignedLongMask({argname});
+                {{{{
+                    Py_ssize_t _bytes = PyLong_AsNativeBytes({argname}, &{paramname}, sizeof(unsigned long),
+                            Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                            Py_ASNATIVEBYTES_ALLOW_INDEX |
+                            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+                    if (_bytes < 0) {{{{
+                        goto exit;
+                    }}}}
+                    if ((size_t)_bytes > sizeof(unsigned long)) {{{{
+                        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "integer value out of range", 1) < 0)
+                        {{{{
+                            goto exit;
+                        }}}}
+                    }}}}
+                }}}}
                 """,
                 argname=argname,
                 bad_argument=self.bad_argument(displayname, 'int', limited_capi=limited_capi),
@@ -433,7 +479,22 @@ class unsigned_long_long_converter(CConverter):
                     {bad_argument}
                     goto exit;
                 }}}}
-                {paramname} = PyLong_AsUnsignedLongLongMask({argname});
+                {{{{
+                    Py_ssize_t _bytes = PyLong_AsNativeBytes({argname}, &{paramname}, sizeof(unsigned long long),
+                            Py_ASNATIVEBYTES_NATIVE_ENDIAN |
+                            Py_ASNATIVEBYTES_ALLOW_INDEX |
+                            Py_ASNATIVEBYTES_UNSIGNED_BUFFER);
+                    if (_bytes < 0) {{{{
+                        goto exit;
+                    }}}}
+                    if ((size_t)_bytes > sizeof(unsigned long long)) {{{{
+                        if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                            "integer value out of range", 1) < 0)
+                        {{{{
+                            goto exit;
+                        }}}}
+                    }}}}
+                }}}}
                 """,
                 argname=argname,
                 bad_argument=self.bad_argument(displayname, 'int', limited_capi=limited_capi),
