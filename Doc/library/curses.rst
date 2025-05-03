@@ -73,11 +73,12 @@ The module :mod:`curses` defines the following functions:
    Allow use of default values for colors on terminals supporting this feature.
    Use this to support transparency in your application.
 
-   Assign terminal default foreground/background colors to color number ``-1``.
-   So ``init_pair(x, COLOR_RED, -1)`` will initialize pair *x* as red
-   on default background and ``init_pair(x, -1, COLOR_BLUE)`` will
-   initialize pair *x* as default foreground on blue.
-   Change the definition of the color-pair ``0`` to ``(fg, bg)``.
+   * Assign terminal default foreground/background colors to color number ``-1``.
+     So ``init_pair(x, COLOR_RED, -1)`` will initialize pair *x* as red
+     on default background and ``init_pair(x, -1, COLOR_BLUE)`` will
+     initialize pair *x* as default foreground on blue.
+
+   * Change the definition of the color-pair ``0`` to ``(fg, bg)``.
 
    .. versionadded:: next
 
