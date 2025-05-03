@@ -365,6 +365,8 @@ Android Platform
 Command-line Usage
 ------------------
 
+.. versionadded:: 3.14
+
 :mod:`platform` can also be invoked directly using the :option:`-m`
 switch of the interpreter::
 
