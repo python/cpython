@@ -22440,6 +22440,8 @@ printf "%s\n" "yes" >&6; }
 fi
 
 
+
+
 pkg_failed=no
 { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking for libzstd" >&5
 printf %s "checking for libzstd... " >&6; }
@@ -22563,6 +22565,10 @@ printf "%s\n" "$ac_cv_lib_zstd_ZDICT_finalizeDictionary" >&6; }
 if test "x$ac_cv_lib_zstd_ZDICT_finalizeDictionary" = xyes
 then :
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if libzstd is new enough" >&5
+printf %s "checking if libzstd is new enough... " >&6; }
+
+
         if test "$cross_compiling" = yes
 then :
   { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
@@ -22572,18 +22578,14 @@ See 'config.log' for more details" "$LINENO" 5; }
 else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-          #include "zstd.h"
-
+#include "zstd.h"
 int
 main (void)
 {
 
-          // if you update the minimum version, you should update the compile
-          // check in Modules/_zstd/_zstdmodule.h
-          #if ZSTD_VERSION_NUMBER < 10405
-              exit(1);
-          #endif
+      #if ZSTD_VERSION_NUMBER < 10405
+          exit(1);
+      #endif
 
   ;
   return 0;
@@ -22697,6 +22699,10 @@ printf "%s\n" "$ac_cv_lib_zstd_ZDICT_finalizeDictionary" >&6; }
 if test "x$ac_cv_lib_zstd_ZDICT_finalizeDictionary" = xyes
 then :
 
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if libzstd is new enough" >&5
+printf %s "checking if libzstd is new enough... " >&6; }
+
+
         if test "$cross_compiling" = yes
 then :
   { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
@@ -22706,18 +22712,14 @@ See 'config.log' for more details" "$LINENO" 5; }
 else case e in #(
   e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-
-          #include "zstd.h"
-
+#include "zstd.h"
 int
 main (void)
 {
 
-          // if you update the minimum version, you should update the compile
-          // check in Modules/_zstd/_zstdmodule.h
-          #if ZSTD_VERSION_NUMBER < 10405
-              exit(1);
-          #endif
+      #if ZSTD_VERSION_NUMBER < 10405
+          exit(1);
+      #endif
 
   ;
   return 0;
@@ -22768,7 +22770,46 @@ else
         LIBZSTD_LIBS=$pkg_cv_LIBZSTD_LIBS
         { printf "%s\n" "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 printf "%s\n" "yes" >&6; }
-        have_libzstd=yes
+
+  { printf "%s\n" "$as_me:${as_lineno-$LINENO}: checking if libzstd is new enough" >&5
+printf %s "checking if libzstd is new enough... " >&6; }
+
+
+        if test "$cross_compiling" = yes
+then :
+  { { printf "%s\n" "$as_me:${as_lineno-$LINENO}: error: in '$ac_pwd':" >&5
+printf "%s\n" "$as_me: error: in '$ac_pwd':" >&2;}
+as_fn_error $? "cannot run test program while cross compiling
+See 'config.log' for more details" "$LINENO" 5; }
+else case e in #(
+  e) cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include "zstd.h"
+int
+main (void)
+{
+
+      #if ZSTD_VERSION_NUMBER < 10405
+          exit(1);
+      #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_run "$LINENO"
+then :
+  have_libzstd=yes
+else case e in #(
+  e) have_libzstd=no ;;
+esac
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext \
+  conftest.$ac_objext conftest.beam conftest.$ac_ext ;;
+esac
+fi
+
+
 fi
 
 
