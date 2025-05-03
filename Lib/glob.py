@@ -262,8 +262,6 @@ def escape(pathname):
 _special_parts = ('', '.', '..')
 _dir_open_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
 _no_recurse_symlinks = object()
-
-
 def translate(pat, *, recursive=False, include_hidden=False, seps=None):
     """Translate a pathname with shell wildcards to a regular expression.
 

@@ -1,0 +1,11 @@
+.. versionchanged:: next
+    :func:`glob.translate` now correctly handles ranges implicitly containing path
+    separators (for instance, ``[%-0]`` contains ``/``) by adding either a negative
+    lookahead (``(?!/)``) or by not including the path separator (``^/``). In addition,
+    ranges including path separator literals are now correctly escaped, as specified by
+    POSIX specifications.
+.. versionchanged:: next
+    :func:`fnmatch.translate` does not treat path separator characters as having any
+    special meaning at all, so it still matches ranges implicitly containing path
+    separators (for instance, ``[%-0]`` contains ``/``) and ranges explicitly
+    containing path separators (for instance, ``[/-/]`` contains ``/``).

@@ -233,6 +233,13 @@ class TranslateTestCase(unittest.TestCase):
         self.assertEqual(translate('A*********'), r'(?s:A.*)\Z')
         self.assertEqual(translate('*********A'), r'(?s:.*A)\Z')
         self.assertEqual(translate('A*********?[?]?'), r'(?s:A.*.[?].)\Z')
+        self.assertEqual(translate('foo[%-0]bar'), r'(?s:foo[%-0]bar)\Z')
+        self.assertEqual(translate('foo[%-0][%-0[%-0]bar'), r'(?s:foo[%-0][%-0[%-0]bar)\Z')
+        self.assertEqual(translate('foo[/-/]bar'), r'(?s:foo[/-/]bar)\Z')
+        self.assertEqual(translate('foo[%-0][1-9]bar'), r'(?s:foo[%-0][1-9]bar)\Z')
+        self.assertEqual(translate('foo[%-/]bar'), r'(?s:foo[%-/]bar)\Z')
+        self.assertEqual(translate('foo?'), r'(?s:foo.)\Z')
+        self.assertEqual(translate('foo.'), r'(?s:foo\.)\Z')
         # fancy translation to prevent exponential-time match failure
         t = translate('**a*a****a')
         self.assertEqual(t, r'(?s:(?>.*?a)(?>.*?a).*a)\Z')
