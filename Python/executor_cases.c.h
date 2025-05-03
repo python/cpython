@@ -5276,6 +5276,16 @@
             break;
         }
 
+        case _GUARD_THIRD_NULL: {
+            _PyStackRef null;
+            null = stack_pointer[-3];
+            if (!PyStackRef_IsNull(null)) {
+                UOP_STAT_INC(uopcode, miss);
+                JUMP_TO_JUMP_TARGET();
+            }
+            break;
+        }
+
         case _GUARD_CALLABLE_TYPE_1: {
             _PyStackRef callable;
             callable = stack_pointer[-3];
@@ -5854,17 +5864,6 @@
             stack_pointer[0] = res;
             stack_pointer += 1;
             assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _GUARD_CALLABLE_ISINSTANCE_NULL: {
-            _PyStackRef null;
-            oparg = CURRENT_OPARG();
-            null = stack_pointer[-1 - oparg];
-            if (!PyStackRef_IsNull(null)) {
-                UOP_STAT_INC(uopcode, miss);
-                JUMP_TO_JUMP_TARGET();
-            }
             break;
         }
 

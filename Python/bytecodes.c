@@ -4033,6 +4033,10 @@ dummy_func(
             DEOPT_IF(!PyStackRef_IsNull(null));
         }
 
+        op(_GUARD_THIRD_NULL, (null, unused, unused -- null, unused, unused)) {
+            DEOPT_IF(!PyStackRef_IsNull(null));
+        }
+
         op(_GUARD_CALLABLE_TYPE_1, (callable, unused, unused -- callable, unused, unused)) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             DEOPT_IF(callable_o != (PyObject *)&PyType_Type);
@@ -4349,10 +4353,6 @@ dummy_func(
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
-        op(_GUARD_CALLABLE_ISINSTANCE_NULL, (callable, null, unused[oparg] -- callable, null, unused[oparg])) {
-            DEOPT_IF(!PyStackRef_IsNull(null));
-        }
-
         op(_GUARD_CALLABLE_ISINSTANCE, (callable, unused, unused[oparg] -- callable, unused, unused[oparg])) {
             PyObject *callable_o = PyStackRef_AsPyObjectBorrow(callable);
             PyInterpreterState *interp = tstate->interp;
@@ -4381,7 +4381,7 @@ dummy_func(
         macro(CALL_ISINSTANCE) =
             unused/1 +
             unused/2 +
-            _GUARD_CALLABLE_ISINSTANCE_NULL +
+            _GUARD_THIRD_NULL +
             _GUARD_CALLABLE_ISINSTANCE +
             _CALL_ISINSTANCE;
 

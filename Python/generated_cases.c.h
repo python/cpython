@@ -2783,9 +2783,9 @@
             _PyStackRef res;
             /* Skip 1 cache entry */
             /* Skip 2 cache entries */
-            // _GUARD_CALLABLE_ISINSTANCE_NULL
+            // _GUARD_THIRD_NULL
             {
-                null = stack_pointer[-1 - oparg];
+                null = stack_pointer[-3];
                 if (!PyStackRef_IsNull(null)) {
                     UPDATE_MISS_STATS(CALL);
                     assert(_PyOpcode_Deopt[opcode] == (CALL));
@@ -2806,6 +2806,7 @@
             // _CALL_ISINSTANCE
             {
                 args = &stack_pointer[-oparg];
+                null = stack_pointer[-1 - oparg];
                 assert(oparg == 2);
                 STAT_INC(CALL, hit);
                 PyObject *inst = PyStackRef_AsPyObjectBorrow(args[0]);

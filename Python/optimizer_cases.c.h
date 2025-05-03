@@ -1921,6 +1921,16 @@
             break;
         }
 
+        case _GUARD_THIRD_NULL: {
+            JitOptSymbol *null;
+            null = stack_pointer[-3];
+            if (sym_is_null(null)) {
+                REPLACE_OP(this_instr, _NOP, 0, 0);
+            }
+            sym_set_null(null);
+            break;
+        }
+
         case _GUARD_CALLABLE_TYPE_1: {
             JitOptSymbol *callable;
             callable = stack_pointer[-3];
@@ -2073,16 +2083,6 @@
             stack_pointer[-2 - oparg] = res;
             stack_pointer += -1 - oparg;
             assert(WITHIN_STACK_BOUNDS());
-            break;
-        }
-
-        case _GUARD_CALLABLE_ISINSTANCE_NULL: {
-            JitOptSymbol *null;
-            null = stack_pointer[-1 - oparg];
-            if (sym_is_null(null)) {
-                REPLACE_OP(this_instr, _NOP, 0, 0);
-            }
-            sym_set_null(null);
             break;
         }
 
