@@ -508,6 +508,96 @@ configuration mechanisms).
 .. seealso::
    :pep:`741`.
 
+.. _whatsnew314-asyncio-introspection
+
+Asyncio introspection capabilities
+----------------------------------
+
+Added a new command-line interface to inspect running Python processes using
+asynchronous tasks, available via:
+
+.. code-block:: bash
+  python -m asyncio.tools [--tree] PID
+
+This tool inspects the given process ID (PID) and displays information about
+currently running asyncio tasks.  By default, it outputs a task table: a flat
+listing of all tasks, their names, their coroutine stacks, and which tasks are
+awaiting them.
+
+With the ``--tree`` option, it instead renders a visual async call tree,
+showing coroutine relationships in a hierarchical format.  This command is
+particularly useful for debugging long-running or stuck asynchronous programs.
+It can help developers quickly identify where a program is blocked, what tasks
+are pending, and how coroutines are chained together.
+
+For example given this code:
+
+.. code-block:: python
+
+  import asyncio
+
+  async def sleeper(name, delay):
+      await asyncio.sleep(delay)
+      print(f"{name} is done sleeping.")
+
+  async def inner(name):
+      await asyncio.sleep(0.1)
+      await sleeper(name, 1)
+
+  async def task_group(name):
+      await asyncio.gather(
+          inner(f"{name}-1"),
+          inner(f"{name}-2"),
+      )
+
+  async def main():
+      # Start two separate task groups
+      t1 = asyncio.create_task(task_group("groupA"))
+      t2 = asyncio.create_task(task_group("groupB"))
+      await t1
+      await t2
+
+  if __name__ == "__main__":
+      asyncio.run(main())
+
+Executing the new tool on the running process will yield a table like this:
+
+.. code-block:: bash
+
+  python -m asyncio.tools 12345
+
+    tid        task id              task name            coroutine chain                                    awaiter name         awaiter id
+  ---------------------------------------------------------------------------------------------------------------------------------------
+  6826911    0x200013c0220        Task-2               main                                               Task-1               0x200013b0020
+  6826911    0x200013c0620        Task-4               task_group                                         Task-2               0x200013c0220
+  6826911    0x200013c0820        Task-5               task_group                                         Task-2               0x200013c0220
+  6826911    0x200013c0c20        Task-6               task_group                                         Task-3               0x200013c0420
+  6826911    0x200013c0e20        Task-7               task_group                                         Task-3               0x200013c0420
+
+
+and with the ``--tree`` option:
+
+.. code-block:: bash
+
+  python -m asyncio.tools --tree 12345
+
+  └── (T) Task-1
+    └──  main
+        └── (T) Task-2
+            └──  task_group
+                ├── (T) Task-4
+                └── (T) Task-5
+  └── (T) Task-3
+      └──  task_group
+          ├── (T) Task-6
+          └── (T) Task-7
+
+If a cycle is detected in the async await graph (which could indicate a
+programming issue), the tool raises an error and lists the cycle paths that
+prevent tree construction.
+
+(Contributed by Pablo Galindo, Łukasz Langa and Marta Gomez Macias in :gh:`91048`.)
+
 .. _whatsnew314-tail-call:
 
 A new type of interpreter
