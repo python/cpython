@@ -1088,7 +1088,7 @@ dummy_func(void) {
         sym_set_const(callable, (PyObject *)&PyUnicode_Type);
     }
 
-    op(_CALL_LEN, (callable[1], self_or_null[1], args[oparg] -- res)) {
+    op(_CALL_LEN, (callable, self_or_null, args[oparg] -- res)) {
         res = sym_new_type(ctx, &PyLong_Type);
     }
 

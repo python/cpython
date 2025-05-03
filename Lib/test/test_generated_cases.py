@@ -2168,7 +2168,7 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         self.run_cases_test(input, input2, output)
 
-    def test_validate_uop_unused_override(self):
+    def test_validate_uop_unused_output(self):
         input = """
         op(OP, ( -- unused)) {
         }
@@ -2208,6 +2208,50 @@ class TestGeneratedAbstractCases(unittest.TestCase):
         """
         self.run_cases_test(input, input2, output)
 
+    def test_validate_uop_input_size_mismatch(self):
+        input = """
+        op(OP, (arg1[2] -- )) {
+        }
+        """
+        input2 = """
+        op(OP, (arg1[4] -- )) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Inputs must have equal sizes"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_output_size_mismatch(self):
+        input = """
+        op(OP, ( -- out[2])) {
+        }
+        """
+        input2 = """
+        op(OP, ( -- out[4])) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Outputs must have equal sizes"):
+            self.run_cases_test(input, input2, output)
+
+    def test_validate_uop_unused_size_mismatch(self):
+        input = """
+        op(OP, (foo[2] -- )) {
+        }
+        """
+        input2 = """
+        op(OP, (unused[4] -- )) {
+        }
+        """
+        output = """
+        """
+        with self.assertRaisesRegex(SyntaxError,
+                                    "Inputs must have equal sizes"):
+            self.run_cases_test(input, input2, output)
 
 if __name__ == "__main__":
     unittest.main()
