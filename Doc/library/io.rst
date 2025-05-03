@@ -965,7 +965,8 @@ Text I/O
    :class:`TextIOBase`.
 
    *encoding* gives the name of the encoding that the stream will be decoded or
-   encoded with.  It defaults to :func:`locale.getencoding`.
+   encoded with.  In :ref:`UTF-8 Mode <utf8-mode>`, this defaults to UTF-8.
+   Otherwise, it defaults to :func:`locale.getencoding`.
    ``encoding="locale"`` can be used to specify the current locale's encoding
    explicitly. See :ref:`io-text-encoding` for more information.
 
