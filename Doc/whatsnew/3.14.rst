@@ -479,6 +479,36 @@ Improved error messages
     Traceback (most recent call last):
     SyntaxError: invalid syntax. Is this intended to be part of the string?
 
+* When strings have incompatible prefixes, the error now shows
+  which prefixes are incompatible. (Contributed by
+  Nikita Sobolev in :gh:`133197`.)
+
+  .. code-block:: pycon
+
+    >>> ub'abc'
+      File "<python-input-0>", line 1
+        ub'abc'
+        ^^
+    SyntaxError: 'u' and 'b' prefixes are incompatible
+
+* Improved error messages when using ``as`` with incompatible targets in:
+
+  - Imports: ``import ... as ...``
+  - From imports: ``from ... import ... as ...``
+  - Except handlers: ``except ... as ...``
+  - Pattern-match cases: ``case ... as ...``
+
+  (Contributed by Nikita Sobolev in :gh:`123539`,
+  :gh:`123562`, and :gh:`123440`.)
+
+  .. code-block:: pycon
+
+   >>> import ast as arr[0]
+     File "<python-input-1>", line 1
+       import ast as arr[0]
+                     ^^^^^^
+   SyntaxError: cannot use subscript as import target
+
 
 .. _whatsnew314-pep741:
 
