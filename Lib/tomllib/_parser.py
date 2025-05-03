@@ -142,7 +142,7 @@ class Flags:
     EXPLICIT_NEST = 1
 
     def __init__(self) -> None:
-        self._flags: dict[str, dict] = {}
+        self._flags: dict[str, dict[Any, Any]] = {}
         self._pending_flags: set[tuple[Key, int]] = set()
 
     def add_pending(self, key: Key, flag: int) -> None:
@@ -200,7 +200,7 @@ class NestedDict:
         key: Key,
         *,
         access_lists: bool = True,
-    ) -> dict:
+    ) -> dict[str, Any]:
         cont: Any = self.dict
         for k in key:
             if k not in cont:
@@ -409,9 +409,9 @@ def parse_one_line_basic_str(src: str, pos: Pos) -> tuple[Pos, str]:
     return parse_basic_str(src, pos, multiline=False)
 
 
-def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, list]:
+def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, list[Any]]:
     pos += 1
-    array: list = []
+    array: list[Any] = []
 
     pos = skip_comments_and_array_ws(src, pos)
     if src.startswith("]", pos):
@@ -433,7 +433,7 @@ def parse_array(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, list]
             return pos + 1, array
 
 
-def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, dict]:
+def parse_inline_table(src: str, pos: Pos, parse_float: ParseFloat) -> tuple[Pos, dict[str, Any]]:
     pos += 1
     nested_dict = NestedDict()
     flags = Flags()
