@@ -3193,8 +3193,7 @@ class CommandLineTests(unittest.TestCase):
         return textwrap.dedent(string).strip()
 
     def set_source(self, content):
-        with open(self.filename, 'w') as f:
-            f.write(self.text_normalize(content))
+        Path(self.filename).write_text(self.text_normalize(content))
 
     def invoke_ast(self, *flags):
         output = StringIO()
@@ -3207,16 +3206,16 @@ class CommandLineTests(unittest.TestCase):
             self.set_source(source)
             res = self.invoke_ast(*flags)
             expect = self.text_normalize(expect)
-            self.assertListEqual(res.splitlines(), expect.splitlines())
+            self.assertEqual(res, expect)
 
     def test_invocation(self):
         # test various combinations of parameters
-        base_flags = [
+        base_flags = (
             ('-m=exec', '--mode=exec'),
             ('--no-type-comments', '--no-type-comments'),
             ('-a', '--include-attributes'),
             ('-i=4', '--indent=4'),
-        ]
+        )
         self.set_source('''
             print(1, 2, 3)
             def f(x):
@@ -3250,7 +3249,7 @@ class CommandLineTests(unittest.TestCase):
                            Constant(value=2),
                            Constant(value=3)]))])
         '''
-        for flag in ['-m=exec', '--mode=exec']:
+        for flag in ('-m=exec', '--mode=exec'):
             self.check_output(source, expect, flag)
         source = 'pass'
         expect = '''
@@ -3258,7 +3257,7 @@ class CommandLineTests(unittest.TestCase):
                body=[
                   Pass()])
         '''
-        for flag in ['-m=single', '--mode=single']:
+        for flag in ('-m=single', '--mode=single'):
             self.check_output(source, expect, flag)
         source = 'print(1, 2, 3)'
         expect = '''
@@ -3270,7 +3269,7 @@ class CommandLineTests(unittest.TestCase):
                      Constant(value=2),
                      Constant(value=3)]))
         '''
-        for flag in ['-m=eval', '--mode=eval']:
+        for flag in ('-m=eval', '--mode=eval'):
             self.check_output(source, expect, flag)
         source = '(int, str) -> list[int]'
         expect = '''
@@ -3283,7 +3282,7 @@ class CommandLineTests(unittest.TestCase):
                   slice=Name(id='int', ctx=Load()),
                   ctx=Load()))
         '''
-        for flag in ['-m=func_type', '--mode=func_type']:
+        for flag in ('-m=func_type', '--mode=func_type'):
             self.check_output(source, expect, flag)
 
     def test_no_type_comments_flag(self):
@@ -3312,7 +3311,7 @@ class CommandLineTests(unittest.TestCase):
                      end_lineno=1,
                      end_col_offset=4)])
         '''
-        for flag in ['-a', '--include-attributes']:
+        for flag in ('-a', '--include-attributes'):
             self.check_output(source, expect, flag)
 
     def test_indent_flag(self):
@@ -3323,7 +3322,7 @@ class CommandLineTests(unittest.TestCase):
             body=[
             Pass()])
         '''
-        for flag in ['-i=0', '--indent=0']:
+        for flag in ('-i=0', '--indent=0'):
             self.check_output(source, expect, flag)
 
 
