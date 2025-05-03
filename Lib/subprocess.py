@@ -1191,8 +1191,6 @@ class Popen:
         universal_newlines.
         """
 
-        timeout = None if timeout == 0 else timeout
-
         if self._communication_started and input:
             raise ValueError("Cannot send input after starting communication")
 
@@ -1270,7 +1268,6 @@ class Popen:
 
 
     def wait(self, timeout=None):
-        timeout = None if timeout == 0 else timeout
         """Wait for child process to terminate; returns self.returncode."""
         if timeout is not None:
             endtime = _time() + timeout
@@ -2034,7 +2031,7 @@ class Popen:
             if self.returncode is not None:
                 return self.returncode
 
-            if timeout is not None:
+            if timeout is not None and timeout > 0:
                 endtime = _time() + timeout
                 # Enter a busy loop if we have a timeout.  This busy loop was
                 # cribbed from Lib/threading.py in Thread.wait() at r71065.
@@ -2052,7 +2049,7 @@ class Popen:
                         finally:
                             self._waitpid_lock.release()
                     remaining = self._remaining_time(endtime)
-                    if remaining <= 0:
+                    if remaining < 0:
                         raise TimeoutExpired(self.args, timeout)
                     delay = min(delay * 2, remaining, .05)
                     time.sleep(delay)
