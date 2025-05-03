@@ -135,9 +135,19 @@ class Traceback(ThemeSection):
 
 
 @dataclass(frozen=True)
+class Unittest(ThemeSection):
+    passed: str = ANSIColors.GREEN
+    warn: str = ANSIColors.YELLOW
+    fail: str = ANSIColors.RED
+    fail_info: str = ANSIColors.BOLD_RED
+    reset: str = ANSIColors.RESET
+
+
+@dataclass(frozen=True)
 class Theme:
     repl: REPL = field(default_factory=REPL)
     traceback: Traceback = field(default_factory=Traceback)
+    unittest: Unittest = field(default_factory=Unittest)
 
     def copy_with(
         self,
