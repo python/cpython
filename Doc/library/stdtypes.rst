@@ -2012,7 +2012,7 @@ expression support in the :mod:`re` module).
 
 .. method:: str.isprintable()
 
-   Return true if all characters in the string are printable, false if it
+   Return ``True`` if all characters in the string are printable, ``False`` if it
    contains at least one non-printable character.
 
    Here "printable" means the character is suitable for :func:`repr` to use in
