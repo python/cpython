@@ -71,7 +71,12 @@ Summary -- release highlights
 * :ref:`PEP 761: Discontinuation of PGP signatures <whatsnew314-pep761>`
 * :ref:`PEP 765: Disallow return/break/continue that exit a finally block <whatsnew314-pep765>`
 * :ref:`PEP 768: Safe external debugger interface for CPython <whatsnew314-pep768>`
-* :ref:`A new type of interpreter  <whatsnew314-tail-call>`
+* :ref:`A new type of interpreter <whatsnew314-tail-call>`
+* :ref:`Syntax highlighting in PyREPL <whatsnew314-pyrepl-highlighting>`,
+  and color output in :ref:`unittest <whatsnew314-color-unittest>`,
+  :ref:`argparse <whatsnew314-color-argparse>`,
+  :ref:`json <whatsnew314-color-json>` and
+  :ref:`calendar <whatsnew314-color-calendar>` CLIs
 
 
 Incompatible changes
@@ -560,6 +565,9 @@ For further information on how to build Python, see
 (Contributed by Ken Jin in :gh:`128563`, with ideas on how to implement this
 in CPython by Mark Shannon, Garrett Gu, Haoran Xu, and Josh Haberman.)
 
+
+.. _whatsnew314-pyrepl-highlighting:
+
 Syntax highlighting in PyREPL
 -----------------------------
 
@@ -703,6 +711,17 @@ argparse
   and subparser names if mistyped by the user.
   (Contributed by Savannah Ostrowski in :gh:`124456`.)
 
+  .. _whatsnew314-color-argparse:
+
+* Introduced the optional *color* parameter to
+  :class:`argparse.ArgumentParser`, enabling color for help text.
+  This can be controlled via the :envvar:`PYTHON_COLORS` environment
+  variable as well as the canonical |NO_COLOR|_
+  and |FORCE_COLOR|_ environment variables.
+  See also :ref:`using-on-controlling-color`.
+  (Contributed by Hugo van Kemenade in :gh:`130645`.)
+
+
 ast
 ---
 
@@ -727,6 +746,9 @@ bdb
 
 * The :mod:`bdb` module now supports the :mod:`sys.monitoring` backend.
   (Contributed by Tian Gao in :gh:`124533`.)
+
+
+  .. _whatsnew314-color-calendar:
 
 calendar
 --------
@@ -1025,6 +1047,8 @@ json
   switch: :program:`python -m json`.
   See the :ref:`JSON command-line interface <json-commandline>` documentation.
   (Contributed by Trey Hunner in :gh:`122873`.)
+
+  .. _whatsnew314-color-json:
 
 * By default, the output of the :ref:`JSON command-line interface <json-commandline>`
   is highlighted in color. This can be controlled via the
@@ -1471,6 +1495,8 @@ unicodedata
 
 * The Unicode database has been updated to Unicode 16.0.0.
 
+
+.. _whatsnew314-color-unittest:
 
 unittest
 --------
