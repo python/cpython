@@ -197,6 +197,7 @@ class ForwardRef:
                 globals=globals,
                 owner=owner,
                 is_class=self.__forward_is_class__,
+                format=format,
             )
             try:
                 result = eval(code, globals=globals, locals=new_locals)
@@ -703,7 +704,13 @@ def call_annotate_function(annotate, format, *, owner=None, _is_evaluate=False):
 
         # Try again, but do not provide any globals. This allows us to return
         # a value in certain cases where an exception gets raised during evaluation.
-        globals = _StringifierDict({}, annotate.__globals__, owner, is_class)
+        globals = _StringifierDict(
+            {},
+            globals=annotate.__globals__,
+            owner=owner,
+            is_class=is_class,
+            format=format,
+        )
         closure = _build_closure(
             annotate, owner, is_class, globals, allow_evaluation=False
         )
