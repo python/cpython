@@ -68,11 +68,18 @@ jobs:
           }}
 
     - run: git remote -vvv
-    - run: echo ${{ github.ref }}
-    - run: echo ${{ github.repository }}
-    - run: echo ${{ github.repository }}
-    - run: echo ${{ github.event.pull_request.head.sha }}
-    - run: echo ${{ env.GITHUB_HEAD_REF }}
+    - run: git -P branch -v
+    - run: git -P branch -r -v
+    - run: echo ref= ${{ github.ref }}
+    - run: echo sha= ${{ github.sha }}
+    - run: echo repository= ${{ github.repository }}
+    - run: echo event.pull_request.head.sha= ${{ github.event.pull_request.head.sha }}
+    - run: echo head_ref= ${{ github.head_ref }}
+    - run: echo base_ref= ${{ github.base_ref }}
+    - run: echo env.GITHUB_HEAD_REF= ${{ env.GITHUB_HEAD_REF }}
+    - run: echo $GITHUB_HEAD_REF
+    - run: echo $GITHUB_BASE_REF
+    - run: echo head sha or sha = ${{ github.event.pull_request.head.sha || github.sha }}
 
     # Adapted from https://github.com/actions/checkout/issues/520#issuecomment-1167205721
     - name: Fetch commits to get branch diff
@@ -96,6 +103,8 @@ jobs:
         commits: ${{ github.event.pull_request.commits }}
         refspec_base: '+${{ github.event.pull_request.base.sha }}:remotes/origin/${{ github.event.pull_request.base.ref }}'
         refspec_pr: '+${{ github.event.pull_request.head.sha }}:remotes/origin/${{ github.event.pull_request.head.ref }}'
+    - run: git -P branch -v
+    - run: git -P branch -r -v
 
     # We only want to run tests on PRs when related files are changed,
     # or when someone triggers a manual workflow run.
@@ -104,6 +113,8 @@ jobs:
       run: python Tools/build/compute-changes.py
       env:
         GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        CCF_TARGET_REF: ${{ github.base_ref || github.event.repository.default_branch }}
+        CCF_HEAD_REF: ${{ github.event.pull_request.head.sha || github.sha }}
 
     - name: Compute hash for config cache key
       id: config-hash
