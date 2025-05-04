@@ -1,6 +1,4 @@
-"""Python bindings to Zstandard (zstd) compression library, the API style is
-similar to Python's bz2/lzma/zlib modules.
-"""
+"""Python bindings to the Zstandard (zstd) compression library (RFC-8878)."""
 
 __all__ = (
     # compression.zstd
