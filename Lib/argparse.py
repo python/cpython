@@ -458,7 +458,7 @@ class HelpFormatter(object):
             elif not action.option_strings:
                 default = self._get_default_metavar_for_positional(action)
                 part = (
-                    t.summary_short_option
+                    t.summary_action
                     + self._format_args(action, default)
                     + t.reset
                 )

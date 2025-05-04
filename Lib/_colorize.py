@@ -144,6 +144,7 @@ class Argparse(ThemeSection):
     summary_long_option: str = ANSIColors.CYAN
     summary_short_option: str = ANSIColors.GREEN
     summary_label: str = ANSIColors.YELLOW
+    summary_action: str = ANSIColors.GREEN
     long_option: str = ANSIColors.BOLD_CYAN
     short_option: str = ANSIColors.BOLD_GREEN
     label: str = ANSIColors.BOLD_YELLOW
