@@ -152,9 +152,9 @@ read_char(proc_handle_t *handle, uintptr_t address, char *result)
 }
 
 static int
-read_int(proc_handle_t *handle, uintptr_t address, int *result)
+read_sized_int(proc_handle_t *handle, uintptr_t address, void *result, size_t size)
 {
-    int res = _Py_RemoteDebug_ReadRemoteMemory(handle, address, sizeof(int), result);
+    int res = _Py_RemoteDebug_ReadRemoteMemory(handle, address, size, result);
     if (res < 0) {
         return -1;
     }
@@ -345,7 +345,7 @@ parse_coro_chain(
     uintptr_t gen_type_addr;
     int err = read_ptr(
         handle,
-        coro_address + sizeof(void*),
+        coro_address + offsets->pyobject.ob_type,
         &gen_type_addr);
     if (err) {
         return -1;
@@ -376,11 +376,13 @@ parse_coro_chain(
     }
     Py_DECREF(name);
 
-    int gi_frame_state;
-    err = read_int(
+    int8_t gi_frame_state;
+    err = read_sized_int(
         handle,
         coro_address + offsets->gen_object.gi_frame_state,
-        &gi_frame_state);
+        &gi_frame_state,
+        sizeof(int8_t)
+    );
     if (err) {
         return -1;
     }
@@ -427,7 +429,7 @@ parse_coro_chain(
                 uintptr_t gi_await_addr_type_addr;
                 int err = read_ptr(
                     handle,
-                    gi_await_addr + sizeof(void*),
+                    gi_await_addr + offsets->pyobject.ob_type,
                     &gi_await_addr_type_addr);
                 if (err) {
                     return -1;
@@ -470,7 +472,8 @@ parse_task_awaited_by(
     struct _Py_DebugOffsets* offsets,
     struct _Py_AsyncioModuleDebugOffsets* async_offsets,
     uintptr_t task_address,
-    PyObject *awaited_by
+    PyObject *awaited_by,
+    int recurse_task
 );
 
 
@@ -480,7 +483,8 @@ parse_task(
     struct _Py_DebugOffsets* offsets,
     struct _Py_AsyncioModuleDebugOffsets* async_offsets,
     uintptr_t task_address,
-    PyObject *render_to
+    PyObject *render_to,
+    int recurse_task
 ) {
     char is_task;
     int err = read_char(
@@ -508,8 +512,13 @@ parse_task(
     Py_DECREF(call_stack);
 
     if (is_task) {
-        PyObject *tn = parse_task_name(
-            handle, offsets, async_offsets, task_address);
+        PyObject *tn = NULL;
+        if (recurse_task) {
+            tn = parse_task_name(
+                handle, offsets, async_offsets, task_address);
+        } else {
+            tn = PyLong_FromUnsignedLongLong(task_address);
+        }
         if (tn == NULL) {
             goto err;
         }
@@ -550,21 +559,23 @@ parse_task(
         goto err;
     }
 
-    PyObject *awaited_by = PyList_New(0);
-    if (awaited_by == NULL) {
-        goto err;
-    }
-    if (PyList_Append(result, awaited_by)) {
+    if (recurse_task) {
+        PyObject *awaited_by = PyList_New(0);
+        if (awaited_by == NULL) {
+            goto err;
+        }
+        if (PyList_Append(result, awaited_by)) {
+            Py_DECREF(awaited_by);
+            goto err;
+        }
+        /* we can operate on a borrowed one to simplify cleanup */
         Py_DECREF(awaited_by);
-        goto err;
-    }
-    /* we can operate on a borrowed one to simplify cleanup */
-    Py_DECREF(awaited_by);
 
-    if (parse_task_awaited_by(handle, offsets, async_offsets,
-                              task_address, awaited_by)
-    ) {
-        goto err;
+        if (parse_task_awaited_by(handle, offsets, async_offsets,
+                                task_address, awaited_by, 1)
+        ) {
+            goto err;
+        }
     }
     Py_DECREF(result);
 
@@ -581,7 +592,8 @@ parse_tasks_in_set(
     struct _Py_DebugOffsets* offsets,
     struct _Py_AsyncioModuleDebugOffsets* async_offsets,
     uintptr_t set_addr,
-    PyObject *awaited_by
+    PyObject *awaited_by,
+    int recurse_task
 ) {
     uintptr_t set_obj;
     if (read_py_ptr(
@@ -642,7 +654,9 @@ parse_tasks_in_set(
                     offsets,
                     async_offsets,
                     key_addr,
-                    awaited_by)
+                    awaited_by,
+                    recurse_task
+                )
                 ) {
                     return -1;
                 }
@@ -666,7 +680,8 @@ parse_task_awaited_by(
     struct _Py_DebugOffsets* offsets,
     struct _Py_AsyncioModuleDebugOffsets* async_offsets,
     uintptr_t task_address,
-    PyObject *awaited_by
+    PyObject *awaited_by,
+    int recurse_task
 ) {
     uintptr_t task_ab_addr;
     int err = read_py_ptr(
@@ -696,7 +711,9 @@ parse_task_awaited_by(
             offsets,
             async_offsets,
             task_address + async_offsets->asyncio_task_object.task_awaited_by,
-            awaited_by)
+            awaited_by,
+            recurse_task
+        )
          ) {
             return -1;
         }
@@ -715,7 +732,9 @@ parse_task_awaited_by(
             offsets,
             async_offsets,
             sub_task,
-            awaited_by)
+            awaited_by,
+            recurse_task
+        )
         ) {
             return -1;
         }
@@ -1060,15 +1079,24 @@ append_awaited_by_for_thread(
             return -1;
         }
 
-        PyObject *result_item = PyTuple_New(2);
-        if (result_item == NULL) {
+        PyObject* task_id = PyLong_FromUnsignedLongLong(task_addr);
+        if (task_id == NULL) {
             Py_DECREF(tn);
             Py_DECREF(current_awaited_by);
             return -1;
         }
 
-        PyTuple_SET_ITEM(result_item, 0, tn);  // steals ref
-        PyTuple_SET_ITEM(result_item, 1, current_awaited_by);  // steals ref
+        PyObject *result_item = PyTuple_New(3);
+        if (result_item == NULL) {
+            Py_DECREF(tn);
+            Py_DECREF(current_awaited_by);
+            Py_DECREF(task_id);
+            return -1;
+        }
+
+        PyTuple_SET_ITEM(result_item, 0, task_id);  // steals ref
+        PyTuple_SET_ITEM(result_item, 1, tn);  // steals ref
+        PyTuple_SET_ITEM(result_item, 2, current_awaited_by);  // steals ref
         if (PyList_Append(result, result_item)) {
             Py_DECREF(result_item);
             return -1;
@@ -1076,7 +1104,7 @@ append_awaited_by_for_thread(
         Py_DECREF(result_item);
 
         if (parse_task_awaited_by(handle, debug_offsets, async_offsets,
-                                  task_addr, current_awaited_by))
+                                  task_addr, current_awaited_by, 0))
         {
             return -1;
         }
@@ -1499,7 +1527,7 @@ get_async_stack_trace(PyObject* self, PyObject* args)
 
     if (parse_task_awaited_by(
         handle, &local_debug_offsets, &local_async_debug,
-        running_task_addr, awaited_by)
+        running_task_addr, awaited_by, 1)
     ) {
         goto result_err;
     }
@@ -1526,13 +1554,13 @@ static PyMethodDef methods[] = {
 
 static struct PyModuleDef module = {
     .m_base = PyModuleDef_HEAD_INIT,
-    .m_name = "_testexternalinspection",
+    .m_name = "_remotedebugging",
     .m_size = -1,
     .m_methods = methods,
 };
 
 PyMODINIT_FUNC
-PyInit__testexternalinspection(void)
+PyInit__remotedebugging(void)
 {
     PyObject* mod = PyModule_Create(&module);
     if (mod == NULL) {

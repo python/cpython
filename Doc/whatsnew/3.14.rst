@@ -543,6 +543,105 @@ configuration mechanisms).
 .. seealso::
    :pep:`741`.
 
+.. _whatsnew314-asyncio-introspection:
+
+Asyncio introspection capabilities
+----------------------------------
+
+Added a new command-line interface to inspect running Python processes using
+asynchronous tasks, available via:
+
+.. code-block:: bash
+
+  python -m asyncio ps PID
+
+This tool inspects the given process ID (PID) and displays information about
+currently running asyncio tasks.  It outputs a task table: a flat
+listing of all tasks, their names, their coroutine stacks, and which tasks are
+awaiting them.
+
+.. code-block:: bash
+
+  python -m asyncio pstree PID
+
+This tool fetches the same information, but renders a visual async call tree,
+showing coroutine relationships in a hierarchical format.  This command is
+particularly useful for debugging long-running or stuck asynchronous programs.
+It can help developers quickly identify where a program is blocked, what tasks
+are pending, and how coroutines are chained together.
+
+For example given this code:
+
+.. code-block:: python
+
+  import asyncio
+
+  async def play(track):
+      await asyncio.sleep(5)
+      print(f"🎵 Finished: {track}")
+
+  async def album(name, tracks):
+      async with asyncio.TaskGroup() as tg:
+          for track in tracks:
+              tg.create_task(play(track), name=track)
+
+  async def main():
+      async with asyncio.TaskGroup() as tg:
+          tg.create_task(
+            album("Sundowning", ["TNDNBTG", "Levitate"]), name="Sundowning")
+          tg.create_task(
+            album("TMBTE", ["DYWTYLM", "Aqua Regia"]), name="TMBTE")
+
+  if __name__ == "__main__":
+      asyncio.run(main())
+
+Executing the new tool on the running process will yield a table like this:
+
+.. code-block:: bash
+
+  python -m asyncio ps 12345
+
+  tid        task id              task name            coroutine chain                                    awaiter name         awaiter id
+  ---------------------------------------------------------------------------------------------------------------------------------------
+  8138752    0x564bd3d0210        Task-1                                                                                       0x0
+  8138752    0x564bd3d0410        Sundowning           _aexit -> __aexit__ -> main                        Task-1               0x564bd3d0210
+  8138752    0x564bd3d0610        TMBTE                _aexit -> __aexit__ -> main                        Task-1               0x564bd3d0210
+  8138752    0x564bd3d0810        TNDNBTG              _aexit -> __aexit__ -> album                       Sundowning           0x564bd3d0410
+  8138752    0x564bd3d0a10        Levitate             _aexit -> __aexit__ -> album                       Sundowning           0x564bd3d0410
+  8138752    0x564bd3e0550        DYWTYLM              _aexit -> __aexit__ -> album                       TMBTE                 0x564bd3d0610
+  8138752    0x564bd3e0710        Aqua Regia           _aexit -> __aexit__ -> album                       TMBTE                 0x564bd3d0610
+
+
+or:
+
+.. code-block:: bash
+
+  python -m asyncio pstree 12345
+
+  └── (T) Task-1
+      └──  main
+          └──  __aexit__
+              └──  _aexit
+                  ├── (T) Sundowning
+                  │   └──  album
+                  │       └──  __aexit__
+                  │           └──  _aexit
+                  │               ├── (T) TNDNBTG
+                  │               └── (T) Levitate
+                  └── (T) TMBTE
+                      └──  album
+                          └──  __aexit__
+                              └──  _aexit
+                                  ├── (T) DYWTYLM
+                                  └── (T) Aqua Regia
+
+If a cycle is detected in the async await graph (which could indicate a
+programming issue), the tool raises an error and lists the cycle paths that
+prevent tree construction.
+
+(Contributed by Pablo Galindo, Łukasz Langa, Yury Selivanov, and Marta
+Gomez Macias in :gh:`91048`.)
+
 .. _whatsnew314-tail-call:
 
 A new type of interpreter
