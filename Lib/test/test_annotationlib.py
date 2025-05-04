@@ -1,5 +1,6 @@
 """Tests for the annotations module."""
 
+import textwrap
 import annotationlib
 import builtins
 import collections
@@ -12,7 +13,6 @@ from annotationlib import (
     Format,
     ForwardRef,
     get_annotations,
-    get_annotate_function,
     annotations_to_string,
     type_repr,
 )
@@ -1155,13 +1155,13 @@ class MetaclassTests(unittest.TestCase):
             b: float
 
         self.assertEqual(get_annotations(Meta), {"a": int})
-        self.assertEqual(get_annotate_function(Meta)(Format.VALUE), {"a": int})
+        self.assertEqual(Meta.__annotate__(Format.VALUE), {"a": int})
 
         self.assertEqual(get_annotations(X), {})
-        self.assertIs(get_annotate_function(X), None)
+        self.assertIs(X.__annotate__, None)
 
         self.assertEqual(get_annotations(Y), {"b": float})
-        self.assertEqual(get_annotate_function(Y)(Format.VALUE), {"b": float})
+        self.assertEqual(Y.__annotate__(Format.VALUE), {"b": float})
 
     def test_unannotated_meta(self):
         class Meta(type):
@@ -1174,13 +1174,13 @@ class MetaclassTests(unittest.TestCase):
             pass
 
         self.assertEqual(get_annotations(Meta), {})
-        self.assertIs(get_annotate_function(Meta), None)
+        self.assertIs(Meta.__annotate__, None)
 
         self.assertEqual(get_annotations(Y), {})
-        self.assertIs(get_annotate_function(Y), None)
+        self.assertIs(Y.__annotate__, None)
 
         self.assertEqual(get_annotations(X), {"a": str})
-        self.assertEqual(get_annotate_function(X)(Format.VALUE), {"a": str})
+        self.assertEqual(X.__annotate__(Format.VALUE), {"a": str})
 
     def test_ordering(self):
         # Based on a sample by David Ellis
@@ -1218,7 +1218,7 @@ class MetaclassTests(unittest.TestCase):
                 for c in classes:
                     with self.subTest(c=c):
                         self.assertEqual(get_annotations(c), c.expected_annotations)
-                        annotate_func = get_annotate_function(c)
+                        annotate_func = getattr(c, "__annotate__", None)
                         if c.expected_annotations:
                             self.assertEqual(
                                 annotate_func(Format.VALUE), c.expected_annotations
@@ -1227,25 +1227,39 @@ class MetaclassTests(unittest.TestCase):
                             self.assertIs(annotate_func, None)
 
 
-class TestGetAnnotateFunction(unittest.TestCase):
-    def test_static_class(self):
-        self.assertIsNone(get_annotate_function(object))
-        self.assertIsNone(get_annotate_function(int))
+class TestGetAnnotateFromClassNamespace(unittest.TestCase):
+    def test_with_metaclass(self):
+        class Meta(type):
+            def __new__(mcls, name, bases, ns):
+                annotate = annotationlib.get_annotate_from_class_namespace(ns)
+                expected = ns["expected_annotate"]
+                with self.subTest(name=name):
+                    if expected:
+                        self.assertIsNotNone(annotate)
+                    else:
+                        self.assertIsNone(annotate)
+                return super().__new__(mcls, name, bases, ns)
 
-    def test_unannotated_class(self):
-        class C:
-            pass
-
-        self.assertIsNone(get_annotate_function(C))
-
-        D = type("D", (), {})
-        self.assertIsNone(get_annotate_function(D))
-
-    def test_annotated_class(self):
-        class C:
+        class HasAnnotations(metaclass=Meta):
+            expected_annotate = True
             a: int
 
-        self.assertEqual(get_annotate_function(C)(Format.VALUE), {"a": int})
+        class NoAnnotations(metaclass=Meta):
+            expected_annotate = False
+
+        class CustomAnnotate(metaclass=Meta):
+            expected_annotate = True
+            def __annotate__(format):
+                return {}
+
+        code = """
+            from __future__ import annotations
+
+            class HasFutureAnnotations(metaclass=Meta):
+                expected_annotate = False
+                a: int
+        """
+        exec(textwrap.dedent(code), {"Meta": Meta})
 
 
 class TestTypeRepr(unittest.TestCase):
