@@ -517,7 +517,7 @@ parse_task(
             tn = parse_task_name(
                 handle, offsets, async_offsets, task_address);
         } else {
-            tn = PyLong_FromUnsignedLong(task_address);
+            tn = PyLong_FromUnsignedLongLong(task_address);
         }
         if (tn == NULL) {
             goto err;
@@ -1079,7 +1079,7 @@ append_awaited_by_for_thread(
             return -1;
         }
 
-        PyObject* task_id = PyLong_FromUnsignedLong(task_addr);
+        PyObject* task_id = PyLong_FromUnsignedLongLong(task_addr);
         if (task_id == NULL) {
             Py_DECREF(tn);
             Py_DECREF(current_awaited_by);
