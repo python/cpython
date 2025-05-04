@@ -3,28 +3,30 @@ similar to Python's bz2/lzma/zlib modules.
 """
 
 __all__ = (
-    # From this file
+    # compression.zstd
     "compressionLevel_values",
-    "get_frame_info",
+    "compress",
     "CParameter",
+    "decompress",
     "DParameter",
-    "Strategy",
     "finalize_dict",
+    "get_frame_info",
+    "Strategy",
     "train_dict",
     "zstd_support_multithread",
-    "compress",
-    "decompress",
-    # From _zstd
+
+    # compression.zstd.zstdfile
+    "open",
+    "ZstdFile",
+
+    # _zstd
+    "get_frame_size",
+    "zstd_version",
+    "zstd_version_info",
     "ZstdCompressor",
     "ZstdDecompressor",
     "ZstdDict",
     "ZstdError",
-    "get_frame_size",
-    "zstd_version",
-    "zstd_version_info",
-    # From zstd.zstdfile
-    "open",
-    "ZstdFile",
 )
 
 import enum
@@ -43,43 +45,55 @@ _train_dict = _zstd._train_dict
 _finalize_dict = _zstd._finalize_dict
 
 
-@dataclasses.dataclass(frozen=True)
-class _CompressionLevelValues:
-    default: int
-    min: int
-    max: int
+class _CLValues:
+    __slots__ = 'default', 'min', 'max'
+
+    def __init__(self, default, min, max):
+        super().__setattr__('default', default)
+        super().__setattr__('min', min)
+        super().__setattr__('max', max)
+
+    def __repr__(self):
+        return (f'compression_level_values(default={self.default}, '
+                f'min={self.min}, max={self.max})')
+
+    def __setattr__(self, name, _):
+        raise AttributeError(f"can't set attribute {name!r}")
 
 compressionLevel_values = _CompressionLevelValues(*_zstd._compressionLevel_values)
 
-@dataclasses.dataclass(frozen=True)
 class FrameInfo:
-    """A dataclass storing information about a Zstandard frame."""
-    decompressed_size: int
-    dictionary_id: int
+    """Information about a Zstandard frame."""
+    __slots__ = 'decompressed_size', 'dictionary_id'
+
+    def __init__(self, decompressed_size, dictionary_id):
+        super().__setattr__('decompressed_size', decompressed_size)
+        super().__setattr__('dictionary_id', dictionary_id)
+
+    def __repr__(self):
+        return (f'FrameInfo(decompressed_size={self.decompressed_size}, '
+                f'dictionary_id={self.dictionary_id})')
+
+    def __setattr__(self, name, _):
+        raise AttributeError(f"can't set attribute {name!r}")
 
 
 def get_frame_info(frame_buffer):
     """Get zstd frame information from a frame header.
 
-    Parameter
-    frame_buffer: A bytes-like object. It should starts from the beginning of
-                  a frame, and needs to include at least the frame header (6 to
-                  18 bytes).
+    *frame_buffer* is a bytes-like object. It should starts from the beginning of
+    a frame, and needs to include at least the frame header (6 to 18 bytes).
 
     Return a FrameInfo dataclass, which currently has two attributes
 
     'decompressed_size' is the size in bytes of the data in the frame when
-    decompressed.
-
-    If decompressed_size is None, decompressed size is unknown.
+    decompressed, or None when the decompressed size is unknown.
 
     'dictionary_id' is a 32-bit unsigned integer value. 0 means dictionary ID was
     not recorded in the frame header, the frame may or may not need a dictionary
     to be decoded, and the ID of such a dictionary is not specified.
     """
-
-    ret_tuple = _zstd._get_frame_info(frame_buffer)
-    return FrameInfo(*ret_tuple)
+    return FrameInfo(*_zstd._get_frame_info(frame_buffer))
 
 
 def _nbytes(dat):
@@ -92,14 +106,13 @@ def _nbytes(dat):
 def train_dict(samples, dict_size):
     """Train a zstd dictionary, return a ZstdDict object.
 
-    Parameters
-    samples:   An iterable of samples, a sample is a bytes-like object
-               represents a file.
-    dict_size: The dictionary's maximum size, in bytes.
+    *samples* is an iterable of samples, where a sample is a bytes-like
+    object representing a file.
+    *dict_size* is the dictionary's maximum size, in bytes.
     """
-    # Check argument's type
     if not isinstance(dict_size, int):
-        raise TypeError('dict_size argument should be an int object.')
+        ds_cls = type(dict_size).__qualname__
+        raise TypeError('dict_size must be an int object, not {ds_cls!r}.')
 
     # Prepare data
     chunks = []
@@ -169,11 +182,10 @@ def finalize_dict(zstd_dict, samples, dict_size, level):
     dict_content = _finalize_dict(zstd_dict.dict_content,
                                   chunks, chunk_sizes,
                                   dict_size, level)
-
-    return _zstd.ZstdDict(dict_content)
+    return ZstdDict(dict_content)
 
 def compress(data, level=None, options=None, zstd_dict=None):
-    """Compress a block of data, return a bytes object of zstd compressed data.
+    """Return Zstandard compressed *data* as bytes.
 
     Refer to ZstdCompressor's docstring for a description of the
     optional arguments *level*, *options*, and *zstd_dict*.
