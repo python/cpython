@@ -804,7 +804,7 @@ dummy_func(
             assert(d);
             assert(d->guard);
             int res = d->guard(left_o, right_o);
-            ERROR_IF(res < 0, error);
+            ERROR_IF(res < 0);
             DEOPT_IF(res == 0);
         }
 
@@ -818,7 +818,7 @@ dummy_func(
 
             PyObject *res_o = d->action(left_o, right_o);
             DECREF_INPUTS();
-            ERROR_IF(res_o == NULL, error);
+            ERROR_IF(res_o == NULL);
             res = PyStackRef_FromPyObjectSteal(res_o);
         }
 
