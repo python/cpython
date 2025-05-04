@@ -94,7 +94,7 @@ def train_dict(samples, dict_size):
     """
     if not isinstance(dict_size, int):
         ds_cls = type(dict_size).__qualname__
-        raise TypeError('dict_size must be an int object, not {ds_cls!r}.')
+        raise TypeError(f'dict_size must be an int object, not {ds_cls!r}.')
 
     samples = tuple(samples)
     chunks = b''.join(samples)
