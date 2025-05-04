@@ -14,8 +14,7 @@ import io
 
 import textwrap
 from test import support
-from test.support import import_helper
-from test.support import os_helper
+from test.support import import_helper, is_apple, os_helper
 from test.support.script_helper import (
     make_pkg, make_script, make_zip_pkg, make_zip_script,
     assert_python_ok, assert_python_failure, spawn_python, kill_python)
@@ -89,6 +88,8 @@ def _make_test_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
     importlib.invalidate_caches()
     return to_return
 
+
+@support.force_not_colorized_test_class
 class CmdLineTest(unittest.TestCase):
     def _check_output(self, script_name, exit_code, data,
                              expected_file, expected_argv0,
@@ -544,7 +545,7 @@ class CmdLineTest(unittest.TestCase):
         script = textwrap.dedent("""\
             try:
                 raise ValueError
-            except:
+            except ValueError:
                 raise NameError from None
             """)
         with os_helper.temp_dir() as script_dir:
@@ -557,12 +558,17 @@ class CmdLineTest(unittest.TestCase):
             self.assertTrue(text[3].startswith('NameError'))
 
     def test_non_ascii(self):
-        # Mac OS X denies the creation of a file with an invalid UTF-8 name.
+        # Apple platforms deny the creation of a file with an invalid UTF-8 name.
         # Windows allows creating a name with an arbitrary bytes name, but
         # Python cannot a undecodable bytes argument to a subprocess.
-        # WASI does not permit invalid UTF-8 names.
-        if (os_helper.TESTFN_UNDECODABLE
-        and sys.platform not in ('win32', 'darwin', 'emscripten', 'wasi')):
+        # Emscripten/WASI does not permit invalid UTF-8 names.
+        if (
+            os_helper.TESTFN_UNDECODABLE
+            and sys.platform not in {
+                "win32", "emscripten", "wasi"
+            }
+            and not is_apple
+        ):
             name = os.fsdecode(os_helper.TESTFN_UNDECODABLE)
         elif os_helper.TESTFN_NONASCII:
             name = os_helper.TESTFN_NONASCII
@@ -654,8 +660,9 @@ class CmdLineTest(unittest.TestCase):
             self.assertEqual(
                 stderr.splitlines()[-3:],
                 [   b'    foo = """\\q"""',
-                    b'          ^^^^^^^^',
-                    b'SyntaxError: invalid escape sequence \'\\q\''
+                    b'             ^^',
+                    b'SyntaxError: "\\q" is an invalid escape sequence. '
+                    b'Did you mean "\\\\q"? A raw string is also an option.'
                 ],
             )
 

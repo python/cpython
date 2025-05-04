@@ -40,6 +40,10 @@
 #ifndef Expat_External_INCLUDED
 #define Expat_External_INCLUDED 1
 
+/* Namespace external symbols to allow multiple libexpat version to
+   co-exist. */
+#include "pyexpatns.h"
+
 /* External API definitions */
 
 /* Expat tries very hard to make the API boundary very specifically
@@ -64,11 +68,6 @@
    compiled with the cdecl calling convention as the default since
    system headers may assume the cdecl convention.
 */
-
-/* Namespace external symbols to allow multiple libexpat version to
-   co-exist. */
-#include "pyexpatns.h"
-
 #ifndef XMLCALL
 #  if defined(_MSC_VER)
 #    define XMLCALL __cdecl

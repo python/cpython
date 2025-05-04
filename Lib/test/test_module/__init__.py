@@ -30,7 +30,7 @@ class ModuleTests(unittest.TestCase):
             self.fail("__name__ = %s" % repr(s))
         except AttributeError:
             pass
-        self.assertEqual(foo.__doc__, ModuleType.__doc__)
+        self.assertEqual(foo.__doc__, ModuleType.__doc__ or '')
 
     def test_uninitialized_missing_getattr(self):
         # Issue 8297
@@ -357,6 +357,8 @@ a = A(destroyed)"""
         ann_module4 = import_helper.import_fresh_module(
             'test.typinganndata.ann_module4',
         )
+        self.assertFalse("__annotations__" in ann_module4.__dict__)
+        self.assertEqual(ann_module4.__annotations__, {"a": int, "b": str})
         self.assertTrue("__annotations__" in ann_module4.__dict__)
         del ann_module4.__annotations__
         self.assertFalse("__annotations__" in ann_module4.__dict__)
