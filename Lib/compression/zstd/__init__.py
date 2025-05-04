@@ -31,7 +31,6 @@ __all__ = (
 
 import enum
 import functools
-import dataclasses
 
 from compression.zstd.zstdfile import ZstdFile, open
 from _zstd import *
@@ -116,7 +115,7 @@ def train_dict(samples, dict_size):
 
     samples = tuple(samples)
     chunks = b''.join(samples)
-    chunk_sizes = tuple(map(_nbytes, samples))
+    chunk_sizes = tuple(_nbytes(sample) for sample in samples)
     if not chunks:
         raise ValueError("samples contained no data; can't train dictionary.")
     dict_content = _train_dict(chunks, chunk_sizes, dict_size)
@@ -136,14 +135,13 @@ def finalize_dict(zstd_dict, samples, dict_size, level):
     dictionary can be a "raw content" dictionary, see is_raw parameter in
     ZstdDict.__init__ method.
 
-    Parameters
-    zstd_dict: A ZstdDict object, basis dictionary.
-    samples:   An iterable of samples, a sample is a bytes-like object
-               represents a file.
-    dict_size: The dictionary's maximum size, in bytes.
-    level:     The compression level expected to use in production. The
-               statistics for each compression level differ, so tuning the
-               dictionary for the compression level can help quite a bit.
+    *zstd_dict* is a ZstdDict object, the basis dictionary.
+    *samples* is an iterable of samples, a sample is a bytes-like object
+    representing a file.
+    *dict_size* is the dictionary's maximum size, in bytes.
+    *level* is the compression level expected to use in production. The
+    statistics for each compression level differ, so tuning the
+    dictionary for the compression level can help quite a bit.
     """
 
     # Check arguments' type
@@ -154,22 +152,11 @@ def finalize_dict(zstd_dict, samples, dict_size, level):
     if not isinstance(level, int):
         raise TypeError('level argument should be an int object.')
 
-    # Prepare data
-    chunks = []
-    chunk_sizes = []
-    for chunk in samples:
-        chunks.append(chunk)
-        chunk_sizes.append(_nbytes(chunk))
-
-    chunks = b''.join(chunks)
+    samples = tuple(samples)
+    chunks = b''.join(samples)
+    chunk_sizes = tuple(_nbytes(sample) for sample in samples)
     if not chunks:
         raise ValueError("The samples are empty content, can't finalize dictionary.")
-
-    # custom_dict_bytes: existing dictionary.
-    # samples_bytes: samples be stored concatenated in a single flat buffer.
-    # samples_size_list: a list of each sample's size.
-    # dict_size: maximal size of the dictionary, in bytes.
-    # compression_level: compression level expected to use in production.
     dict_content = _finalize_dict(zstd_dict.dict_content,
                                   chunks, chunk_sizes,
                                   dict_size, level)
