@@ -3235,7 +3235,7 @@ class CommandLineTests(unittest.TestCase):
                 output = StringIO()
                 with self.assertRaises(SystemExit):
                     with contextlib.redirect_stderr(output):
-                        ast.main(args=(flag))
+                        ast.main(args=flag)
                 self.assertStartsWith(output.getvalue(), 'usage: ')
 
     def test_exec_mode_flag(self):
