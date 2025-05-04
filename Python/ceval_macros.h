@@ -365,7 +365,6 @@ do {                                                   \
     Py_INCREF(_executor);                              \
     next_instr = jitted(frame, stack_pointer, tstate); \
     Py_DECREF(_executor);                              \
-    tstate->current_executor = NULL;                   \
     frame = tstate->current_frame;                     \
     stack_pointer = _PyFrame_GetStackPointer(frame);   \
     if (next_instr == NULL) {                          \
