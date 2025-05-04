@@ -97,9 +97,7 @@ import selectors
 import threading
 import _colorize
 
-from contextlib import ExitStack
-from contextlib import closing
-from contextlib import contextmanager
+from contextlib import ExitStack, closing, contextmanager
 from rlcompleter import Completer
 from types import CodeType
 from warnings import deprecated
