@@ -1542,6 +1542,40 @@ class FileTestCase(unittest.TestCase):
             with self.assertRaisesRegex(AttributeError, r'fileno'):
                 f.fileno()
 
+    def test_name(self):
+        # 1
+        f = ZstdFile(io.BytesIO(COMPRESSED_100_PLUS_32KB))
+        try:
+            with self.assertRaises(AttributeError):
+                f.name
+        finally:
+            f.close()
+        with self.assertRaises(ValueError):
+            f.name
+
+        # 2
+        with tempfile.NamedTemporaryFile(delete=False) as tmp_f:
+            filename = pathlib.Path(tmp_f.name)
+
+        f = ZstdFile(filename)
+        try:
+            self.assertEqual(f.name, f._fp.name)
+            self.assertIsInstance(f.name, str)
+        finally:
+            f.close()
+        with self.assertRaises(ValueError):
+            f.name
+
+        os.remove(filename)
+
+        # 3, no .filename property
+        class C:
+            def read(self, size=-1):
+                return b'123'
+        with ZstdFile(C(), 'rb') as f:
+            with self.assertRaisesRegex(AttributeError, r'name'):
+                f.name
+
     def test_seekable(self):
         f = ZstdFile(io.BytesIO(COMPRESSED_100_PLUS_32KB))
         try:
