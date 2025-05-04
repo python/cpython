@@ -3059,11 +3059,13 @@ class _PdbClient:
         ret, sep, self.read_buf = self.read_buf.partition(b"\n")
         return ret + sep
 
-    def read_command(self, prompt):
-        self.multiline_block = False
+    def read_input(self, prompt, multiline_block):
+        self.multiline_block = multiline_block
         with self._sigint_raises_keyboard_interrupt():
-            reply = input(prompt)
+            return input(prompt)
 
+    def read_command(self, prompt):
+        reply = self.read_input(prompt, multiline_block=False)
         if self.state == "dumb":
             # No logic applied whatsoever, just pass the raw reply back.
             return reply
@@ -3086,11 +3088,9 @@ class _PdbClient:
             return prefix + reply
 
         # Otherwise, valid first line of a multi-line statement
-        self.multiline_block = True
-        continue_prompt = "...".ljust(len(prompt))
+        more_prompt = "...".ljust(len(prompt))
         while codeop.compile_command(reply, "<stdin>", "single") is None:
-            with self._sigint_raises_keyboard_interrupt():
-                reply += "\n" + input(continue_prompt)
+            reply += "\n" + self.read_input(more_prompt, multiline_block=True)
 
         return prefix + reply
 
