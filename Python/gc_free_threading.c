@@ -23,14 +23,10 @@
     #include <psapi.h> // For GetProcessMemoryInfo
 #elif defined(__linux__)
     #include <unistd.h> // For sysconf, getpid
-    //#include <errno.h>
-    // #include <fcntl.h> // Only if using open/read directly
 #elif defined(__APPLE__)
-    // macOS (Darwin)
     #include <mach/mach.h>
     #include <unistd.h> // For sysconf, getpid
 #elif defined(__FreeBSD__)
-    // FreeBSD
     #include <sys/types.h>
     #include <sys/sysctl.h>
     #include <sys/user.h> // Requires sys/user.h for kinfo_proc definition
@@ -39,12 +35,10 @@
     #include <fcntl.h> // For O_RDONLY
     #include <limits.h> // For _POSIX2_LINE_MAX
 #elif defined(__OpenBSD__)
-    // OpenBSD
     #include <sys/types.h>
     #include <sys/sysctl.h>
     #include <sys/user.h> // For kinfo_proc
     #include <unistd.h> // For sysconf, getpid
-    //#include <errno.h>
 #endif
 
 // enable the "mark alive" pass of GC
