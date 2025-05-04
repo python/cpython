@@ -3230,18 +3230,14 @@ class CommandLineTests(unittest.TestCase):
                     with self.subTest(flags=args):
                         self.invoke_ast(*args)
 
-    def test_unknown_flag(self):
-        with self.assertRaises(SystemExit):
-            output = self.invoke_ast('--unknown')
-            self.assertStartsWith(output, 'usage: ')
-
-    def test_help_flag(self):
-        # test 'python -m ast -h/--help'
-        for flag in ('-h', '--help'):
+    def test_help_message(self):
+        for flag in ('-h', '--help', '--unknown'):
             with self.subTest(flag=flag):
+                output = StringIO()
                 with self.assertRaises(SystemExit):
-                    output = self.invoke_ast(flag)
-                    self.assertStartsWith(output, 'usage: ')
+                    with contextlib.redirect_stderr(output):
+                        ast.main(args=(flag))
+                self.assertStartsWith(output.getvalue(), 'usage: ')
 
     def test_exec_mode_flag(self):
         # test 'python -m ast -m/--mode exec'
