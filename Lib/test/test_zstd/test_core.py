@@ -65,14 +65,12 @@ SAMPLES = None
 
 TRAINED_DICT = None
 
-KB = 1024
-MB = 1024*1024
 
 def setUpModule():
     # uncompressed size 130KB, more than a zstd block.
     # with a frame epilogue, 4 bytes checksum.
     global DAT_130K_D
-    DAT_130K_D = bytes([random.randint(0, 127) for _ in range(130*1024)])
+    DAT_130K_D = bytes([random.randint(0, 127) for _ in range(130*_1K)])
 
     global DAT_130K_C
     DAT_130K_C = compress(DAT_130K_D, options={CParameter.checksumFlag:1})
@@ -84,15 +82,15 @@ def setUpModule():
     COMPRESSED_DAT = compress(DECOMPRESSED_DAT)
 
     global DECOMPRESSED_100_PLUS_32KB
-    DECOMPRESSED_100_PLUS_32KB = b'a' * (100 + 32*1024)
+    DECOMPRESSED_100_PLUS_32KB = b'a' * (100 + 32*_1K)
 
     global COMPRESSED_100_PLUS_32KB
     COMPRESSED_100_PLUS_32KB = compress(DECOMPRESSED_100_PLUS_32KB)
 
     global SKIPPABLE_FRAME
     SKIPPABLE_FRAME = (0x184D2A50).to_bytes(4, byteorder='little') + \
-                      (32*1024).to_bytes(4, byteorder='little') + \
-                      b'a' * (32*1024)
+                      (32*_1K).to_bytes(4, byteorder='little') + \
+                      b'a' * (32*_1K)
 
     global THIS_FILE_BYTES, THIS_FILE_STR
     with builtins.open(os.path.abspath(__file__), 'rb') as f:
@@ -122,8 +120,8 @@ def setUpModule():
     assert len(SAMPLES) > 10
 
     global TRAINED_DICT
-    TRAINED_DICT = train_dict(SAMPLES, 3*1024)
-    assert len(TRAINED_DICT.dict_content) <= 3*1024
+    TRAINED_DICT = train_dict(SAMPLES, 3*_1K)
+    assert len(TRAINED_DICT.dict_content) <= 3*_1K
 
 
 class FunctionsTestCase(unittest.TestCase):
@@ -157,7 +155,7 @@ class FunctionsTestCase(unittest.TestCase):
     def test_get_frame_info(self):
         # no dict
         info = get_frame_info(COMPRESSED_100_PLUS_32KB[:20])
-        self.assertEqual(info.decompressed_size, 32 * 1024 + 100)
+        self.assertEqual(info.decompressed_size, 32 * _1K + 100)
         self.assertEqual(info.dictionary_id, 0)
 
         # use dict
@@ -675,7 +673,7 @@ class DecompressorFlagsTestCase(unittest.TestCase):
         cls.FRAME_42_60 = cls.FRAME_42 + cls.FRAME_60
         cls.DECOMPRESSED_42_60 = cls.DECOMPRESSED_42 + cls.DECOMPRESSED_60
 
-        cls._130_1K = 130*1024
+        cls._130_1K = 130*_1K
 
         c = ZstdCompressor()
         cls.UNKNOWN_FRAME_42 = c.compress(cls.DECOMPRESSED_42) + c.flush()
@@ -686,7 +684,7 @@ class DecompressorFlagsTestCase(unittest.TestCase):
 
     def test_function_decompress(self):
 
-        self.assertEqual(len(decompress(COMPRESSED_100_PLUS_32KB)), 100+32*1024)
+        self.assertEqual(len(decompress(COMPRESSED_100_PLUS_32KB)), 100+32*_1K)
 
         # 1 frame
         self.assertEqual(decompress(self.FRAME_42), self.DECOMPRESSED_42)
@@ -875,11 +873,11 @@ class DecompressorFlagsTestCase(unittest.TestCase):
         self.assertEqual(d.unused_data, self.TRAIL) # twice
 
         # 1 frame, 32_1K
-        temp = compress(b'a'*(32*1024))
+        temp = compress(b'a'*(32*_1K))
         d = ZstdDecompressor()
-        dat = d.decompress(temp, 32*1024)
+        dat = d.decompress(temp, 32*_1K)
 
-        self.assertEqual(dat, b'a'*(32*1024))
+        self.assertEqual(dat, b'a'*(32*_1K))
         self.assertTrue(d.eof)
         self.assertFalse(d.needs_input)
         self.assertEqual(d.unused_data, b'')
@@ -899,7 +897,7 @@ class DecompressorFlagsTestCase(unittest.TestCase):
 
         dat = d.decompress(b'') # 32_1K
 
-        self.assertEqual(len(dat), 32*1024)
+        self.assertEqual(len(dat), 32*_1K)
         self.assertTrue(d.eof)
         self.assertFalse(d.needs_input)
         self.assertEqual(d.unused_data, self.TRAIL)
@@ -1117,7 +1115,7 @@ class ZstdDictTestCase(unittest.TestCase):
             self.assertEqual(sample, dat2)
 
     def test_finalize_dict(self):
-        DICT_SIZE2 = 200*1024
+        DICT_SIZE2 = 200*_1K
         C_LEVEL = 6
 
         try:
@@ -1233,20 +1231,20 @@ class ZstdDictTestCase(unittest.TestCase):
         # wrong size list
         with self.assertRaisesRegex(ValueError,
                 "The samples size list doesn't match the concatenation's size"):
-            _zstd._train_dict(concatenation, tuple(wrong_size_lst), 100*1024)
+            _zstd._train_dict(concatenation, tuple(wrong_size_lst), 100*_1K)
 
         # correct size list
-        _zstd._train_dict(concatenation, tuple(correct_size_lst), 3*1024)
+        _zstd._train_dict(concatenation, tuple(correct_size_lst), 3*_1K)
 
         # wrong size list
         with self.assertRaisesRegex(ValueError,
                 "The samples size list doesn't match the concatenation's size"):
             _zstd._finalize_dict(TRAINED_DICT.dict_content,
-                                  concatenation, tuple(wrong_size_lst), 300*1024, 5)
+                                  concatenation, tuple(wrong_size_lst), 300*_1K, 5)
 
         # correct size list
         _zstd._finalize_dict(TRAINED_DICT.dict_content,
-                              concatenation, tuple(correct_size_lst), 300*1024, 5)
+                              concatenation, tuple(correct_size_lst), 300*_1K, 5)
 
     def test_as_prefix(self):
         # V1
@@ -1659,7 +1657,7 @@ class FileTestCase(unittest.TestCase):
 
         with ZstdFile(io.BytesIO(truncated)) as f:
             # this is an important test, make sure it doesn't raise EOFError.
-            self.assertEqual(f.read(130*1024), DAT_130K_D)
+            self.assertEqual(f.read(130*_1K), DAT_130K_D)
             with self.assertRaises(EOFError):
                 f.read(1)
 
@@ -1789,7 +1787,7 @@ class FileTestCase(unittest.TestCase):
             self.assertListEqual(f.readlines(), lines)
 
     def test_decompress_limited(self):
-        _ZSTD_DStreamInSize = 128*1024 + 3
+        _ZSTD_DStreamInSize = 128*_1K + 3
 
         bomb = compress(b'\0' * int(2e6), level=10)
         self.assertLess(len(bomb), _ZSTD_DStreamInSize)
@@ -1798,7 +1796,7 @@ class FileTestCase(unittest.TestCase):
         self.assertEqual(decomp.read(1), b'\0')
 
         # BufferedReader uses 128 KiB buffer in __init__.py
-        max_decomp = 128*1024
+        max_decomp = 128*_1K
         self.assertLessEqual(decomp._buffer.raw.tell(), max_decomp,
             "Excessive amount of data was decompressed")
 
@@ -1913,8 +1911,8 @@ class FileTestCase(unittest.TestCase):
             comp = ZstdCompressor()
             return comp.compress(data) + comp.flush()
 
-        part1 = THIS_FILE_BYTES[:1024]
-        part2 = THIS_FILE_BYTES[1024:1536]
+        part1 = THIS_FILE_BYTES[:_1K]
+        part2 = THIS_FILE_BYTES[_1K:1536]
         part3 = THIS_FILE_BYTES[1536:]
         expected = b"".join(comp(x) for x in (part1, part2, part3))
         with io.BytesIO() as dst:
