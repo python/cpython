@@ -16,23 +16,21 @@ class StressTests(TestBase):
     # but not so many that any test takes too long.
 
     @support.requires_resource('cpu')
-    @support.bigmemtest(size=100, memuse=6.2*2**20, dry_run=False)
-    def test_create_many_sequential(self, size):
+    def test_create_many_sequential(self):
         alive = []
-        for _ in range(size):
+        for _ in range(100):
             interp = interpreters.create()
             alive.append(interp)
         del alive
         support.gc_collect()
 
-    @support.requires_resource('cpu')
     @support.bigmemtest(size=200, memuse=32*2**20, dry_run=False)
     def test_create_many_threaded(self, size):
         alive = []
         start = threading.Event()
         def task():
             # try to create all interpreters simultaneously
-            if not start.wait(10):
+            if not start.wait(support.SHORT_TIMEOUT):
                 raise TimeoutError
             interp = interpreters.create()
             alive.append(interp)
@@ -42,9 +40,8 @@ class StressTests(TestBase):
         del alive
         support.gc_collect()
 
-    @support.requires_resource('cpu')
     @threading_helper.requires_working_threading()
-    @support.bigmemtest(size=200, memuse=32*2**20, dry_run=False)
+    @support.bigmemtest(size=200, memuse=34*2**20, dry_run=False)
     def test_many_threads_running_interp_in_other_interp(self, size):
         start = threading.Event()
         interp = interpreters.create()
@@ -55,12 +52,12 @@ class StressTests(TestBase):
             """
 
         def run():
-            # try to create all interpreters simultaneously
-            if not start.wait(10):
-                raise TimeoutError
             interp = interpreters.create()
             alreadyrunning = (f'{interpreters.InterpreterError}: '
                               'interpreter already running')
+            # try to run all interpreters simultaneously
+            if not start.wait(support.SHORT_TIMEOUT):
+                raise TimeoutError
             success = False
             while not success:
                 try:
@@ -75,6 +72,7 @@ class StressTests(TestBase):
         threads = [threading.Thread(target=run) for _ in range(size)]
         with threading_helper.start_threads(threads):
             start.set()
+        support.gc_collect()
 
 
 if __name__ == '__main__':
