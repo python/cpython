@@ -21,13 +21,13 @@ static PyObject *
 SHA256Type_copy_impl(SHA256object *self, PyTypeObject *cls);
 
 static PyObject *
-SHA256Type_copy(SHA256object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+SHA256Type_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
-    return SHA256Type_copy_impl(self, cls);
+    return SHA256Type_copy_impl((SHA256object *)self, cls);
 }
 
 PyDoc_STRVAR(SHA512Type_copy__doc__,
@@ -43,13 +43,13 @@ static PyObject *
 SHA512Type_copy_impl(SHA512object *self, PyTypeObject *cls);
 
 static PyObject *
-SHA512Type_copy(SHA512object *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+SHA512Type_copy(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "copy() takes no arguments");
         return NULL;
     }
-    return SHA512Type_copy_impl(self, cls);
+    return SHA512Type_copy_impl((SHA512object *)self, cls);
 }
 
 PyDoc_STRVAR(SHA256Type_digest__doc__,
@@ -65,9 +65,9 @@ static PyObject *
 SHA256Type_digest_impl(SHA256object *self);
 
 static PyObject *
-SHA256Type_digest(SHA256object *self, PyObject *Py_UNUSED(ignored))
+SHA256Type_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA256Type_digest_impl(self);
+    return SHA256Type_digest_impl((SHA256object *)self);
 }
 
 PyDoc_STRVAR(SHA512Type_digest__doc__,
@@ -83,9 +83,9 @@ static PyObject *
 SHA512Type_digest_impl(SHA512object *self);
 
 static PyObject *
-SHA512Type_digest(SHA512object *self, PyObject *Py_UNUSED(ignored))
+SHA512Type_digest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA512Type_digest_impl(self);
+    return SHA512Type_digest_impl((SHA512object *)self);
 }
 
 PyDoc_STRVAR(SHA256Type_hexdigest__doc__,
@@ -101,9 +101,9 @@ static PyObject *
 SHA256Type_hexdigest_impl(SHA256object *self);
 
 static PyObject *
-SHA256Type_hexdigest(SHA256object *self, PyObject *Py_UNUSED(ignored))
+SHA256Type_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA256Type_hexdigest_impl(self);
+    return SHA256Type_hexdigest_impl((SHA256object *)self);
 }
 
 PyDoc_STRVAR(SHA512Type_hexdigest__doc__,
@@ -119,9 +119,9 @@ static PyObject *
 SHA512Type_hexdigest_impl(SHA512object *self);
 
 static PyObject *
-SHA512Type_hexdigest(SHA512object *self, PyObject *Py_UNUSED(ignored))
+SHA512Type_hexdigest(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return SHA512Type_hexdigest_impl(self);
+    return SHA512Type_hexdigest_impl((SHA512object *)self);
 }
 
 PyDoc_STRVAR(SHA256Type_update__doc__,
@@ -133,6 +133,19 @@ PyDoc_STRVAR(SHA256Type_update__doc__,
 #define SHA256TYPE_UPDATE_METHODDEF    \
     {"update", (PyCFunction)SHA256Type_update, METH_O, SHA256Type_update__doc__},
 
+static PyObject *
+SHA256Type_update_impl(SHA256object *self, PyObject *obj);
+
+static PyObject *
+SHA256Type_update(PyObject *self, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+
+    return_value = SHA256Type_update_impl((SHA256object *)self, obj);
+
+    return return_value;
+}
+
 PyDoc_STRVAR(SHA512Type_update__doc__,
 "update($self, obj, /)\n"
 "--\n"
@@ -141,6 +154,19 @@ PyDoc_STRVAR(SHA512Type_update__doc__,
 
 #define SHA512TYPE_UPDATE_METHODDEF    \
     {"update", (PyCFunction)SHA512Type_update, METH_O, SHA512Type_update__doc__},
+
+static PyObject *
+SHA512Type_update_impl(SHA512object *self, PyObject *obj);
+
+static PyObject *
+SHA512Type_update(PyObject *self, PyObject *obj)
+{
+    PyObject *return_value = NULL;
+
+    return_value = SHA512Type_update_impl((SHA512object *)self, obj);
+
+    return return_value;
+}
 
 PyDoc_STRVAR(_sha2_sha256__doc__,
 "sha256($module, /, string=b\'\', *, usedforsecurity=True)\n"
@@ -164,9 +190,11 @@ _sha2_sha256(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
     };
     #undef NUM_KEYWORDS
@@ -239,9 +267,11 @@ _sha2_sha224(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
     };
     #undef NUM_KEYWORDS
@@ -314,9 +344,11 @@ _sha2_sha512(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
     };
     #undef NUM_KEYWORDS
@@ -389,9 +421,11 @@ _sha2_sha384(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyObject
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(string), &_Py_ID(usedforsecurity), },
     };
     #undef NUM_KEYWORDS
@@ -441,4 +475,4 @@ skip_optional_kwonly:
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=602a6939b8ec0927 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=af11090855b7c85a input=a9049054013a1b77]*/

@@ -1,1 +1,0 @@
-Only show stale code warning in :mod:`pdb` when we display source code.

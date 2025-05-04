@@ -247,11 +247,11 @@ class _NetlocResultMixinBytes(_NetlocResultMixinBase, _ResultMixinBytes):
         return hostname, port
 
 
-_DefragResultBase = namedtuple('DefragResult', 'url fragment')
+_DefragResultBase = namedtuple('_DefragResultBase', 'url fragment')
 _SplitResultBase = namedtuple(
-    'SplitResult', 'scheme netloc path query fragment')
+    '_SplitResultBase', 'scheme netloc path query fragment')
 _ParseResultBase = namedtuple(
-    'ParseResult', 'scheme netloc path params query fragment')
+    '_ParseResultBase', 'scheme netloc path params query fragment')
 
 _DefragResultBase.__doc__ = """
 DefragResult(url, fragment)
@@ -439,11 +439,28 @@ def _checknetloc(netloc):
             raise ValueError("netloc '" + netloc + "' contains invalid " +
                              "characters under NFKC normalization")
 
+def _check_bracketed_netloc(netloc):
+    # Note that this function must mirror the splitting
+    # done in NetlocResultMixins._hostinfo().
+    hostname_and_port = netloc.rpartition('@')[2]
+    before_bracket, have_open_br, bracketed = hostname_and_port.partition('[')
+    if have_open_br:
+        # No data is allowed before a bracket.
+        if before_bracket:
+            raise ValueError("Invalid IPv6 URL")
+        hostname, _, port = bracketed.partition(']')
+        # No data is allowed after the bracket but before the port delimiter.
+        if port and not port.startswith(":"):
+            raise ValueError("Invalid IPv6 URL")
+    else:
+        hostname, _, port = hostname_and_port.partition(':')
+    _check_bracketed_host(hostname)
+
 # Valid bracketed hosts are defined in
 # https://www.rfc-editor.org/rfc/rfc3986#page-49 and https://url.spec.whatwg.org/
 def _check_bracketed_host(hostname):
     if hostname.startswith('v'):
-        if not re.match(r"\Av[a-fA-F0-9]+\..+\Z", hostname):
+        if not re.match(r"\Av[a-fA-F0-9]+\..+\z", hostname):
             raise ValueError(f"IPvFuture address is invalid")
     else:
         ip = ipaddress.ip_address(hostname) # Throws Value Error if not IPv6 or IPv4
@@ -505,8 +522,7 @@ def _urlsplit(url, scheme=None, allow_fragments=True):
                 (']' in netloc and '[' not in netloc)):
             raise ValueError("Invalid IPv6 URL")
         if '[' in netloc and ']' in netloc:
-            bracketed_host = netloc.partition('[')[2].partition(']')[0]
-            _check_bracketed_host(bracketed_host)
+            _check_bracketed_netloc(netloc)
     if allow_fragments and '#' in url:
         url, fragment = url.split('#', 1)
     if '?' in url:
@@ -753,7 +769,8 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
     parsed_result = {}
     pairs = parse_qsl(qs, keep_blank_values, strict_parsing,
                       encoding=encoding, errors=errors,
-                      max_num_fields=max_num_fields, separator=separator)
+                      max_num_fields=max_num_fields, separator=separator,
+                      _stacklevel=2)
     for name, value in pairs:
         if name in parsed_result:
             parsed_result[name].append(value)
@@ -763,7 +780,7 @@ def parse_qs(qs, keep_blank_values=False, strict_parsing=False,
 
 
 def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
-              encoding='utf-8', errors='replace', max_num_fields=None, separator='&'):
+              encoding='utf-8', errors='replace', max_num_fields=None, separator='&', *, _stacklevel=1):
     """Parse a query given as a string argument.
 
         Arguments:
@@ -791,7 +808,6 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
 
         Returns a list, as G-d intended.
     """
-
     if not separator or not isinstance(separator, (str, bytes)):
         raise ValueError("Separator must be of type string or bytes.")
     if isinstance(qs, str):
@@ -800,12 +816,21 @@ def parse_qsl(qs, keep_blank_values=False, strict_parsing=False,
         eq = '='
         def _unquote(s):
             return unquote_plus(s, encoding=encoding, errors=errors)
+    elif qs is None:
+        return []
     else:
-        if not qs:
-            return []
-        # Use memoryview() to reject integers and iterables,
-        # acceptable by the bytes constructor.
-        qs = bytes(memoryview(qs))
+        try:
+            # Use memoryview() to reject integers and iterables,
+            # acceptable by the bytes constructor.
+            qs = bytes(memoryview(qs))
+        except TypeError:
+            if not qs:
+                warnings.warn(f"Accepting {type(qs).__name__} objects with "
+                              f"false value in urllib.parse.parse_qsl() is "
+                              f"deprecated as of 3.14",
+                              DeprecationWarning, stacklevel=_stacklevel + 1)
+                return []
+            raise
         if isinstance(separator, str):
             separator = bytes(separator, 'ascii')
         eq = b'='

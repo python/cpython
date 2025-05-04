@@ -70,8 +70,8 @@ Select Customize to review current options.</String>
   <String Id="Include_docHelpLabel">Installs the Python documentation files.</String>
   <String Id="Include_pipLabel">&amp;pip</String>
   <String Id="Include_pipHelpLabel">Installs pip, which can download and install other Python packages.</String>
-  <String Id="Include_tcltkLabel">tcl/tk and &amp;IDLE</String>
-  <String Id="Include_tcltkHelpLabel">Installs tkinter and the IDLE development environment.</String>
+  <String Id="Include_tcltkLabel">Tcl/Tk, turtle and &amp;IDLE</String>
+  <String Id="Include_tcltkHelpLabel">Installs tkinter, turtle and the IDLE development environment.</String>
   <String Id="Include_testLabel">Python &amp;test suite</String>
   <String Id="Include_testHelpLabel">Installs the standard library test suite.</String>
   <String Id="Include_launcherLabel">py &amp;launcher</String>
@@ -128,4 +128,6 @@ Feel free to post at &lt;a href="https://discuss.python.org/c/users/7"&gt;discus
 Visit &lt;a href="https://www.python.org/downloads/"&gt;python.org&lt;/a&gt; to download an earlier version of Python.</String>
   <String Id="SuccessMaxPathButton">Disable path length limit</String>
   <String Id="SuccessMaxPathButtonNote">Changes your machine configuration to allow programs, including Python, to bypass the 260 character "MAX_PATH" limitation.</String>
+
+  <String Id="DeprecationMessage">NOTE: This installer is being retired and will no longer be available after Python 3.15. &lt;a href="https://docs.python.org/using/windows"&gt;More info&lt;/a&gt;</String>
 </WixLocalization>

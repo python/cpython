@@ -25,13 +25,18 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
+env:
+  FORCE_COLOR: 1
+
 jobs:
   interpreter:
     name: Interpreter (Debug)
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Build tier two interpreter
         run: |
           ./configure --enable-experimental-jit=interpreter --with-pydebug
@@ -54,9 +59,7 @@ jobs:
           - x86_64-apple-darwin/clang
           - aarch64-apple-darwin/clang
           - x86_64-unknown-linux-gnu/gcc
-          - x86_64-unknown-linux-gnu/clang
           - aarch64-unknown-linux-gnu/gcc
-          - aarch64-unknown-linux-gnu/clang
         debug:
           - true
           - false
@@ -66,125 +69,87 @@ jobs:
           - target: i686-pc-windows-msvc/msvc
             architecture: Win32
             runner: windows-latest
-            compiler: msvc
           - target: x86_64-pc-windows-msvc/msvc
             architecture: x64
             runner: windows-latest
-            compiler: msvc
           - target: aarch64-pc-windows-msvc/msvc
             architecture: ARM64
-            runner: windows-latest
-            compiler: msvc
+            runner: windows-11-arm
           - target: x86_64-apple-darwin/clang
             architecture: x86_64
             runner: macos-13
-            compiler: clang
           - target: aarch64-apple-darwin/clang
             architecture: aarch64
             runner: macos-14
-            compiler: clang
           - target: x86_64-unknown-linux-gnu/gcc
             architecture: x86_64
-            runner: ubuntu-22.04
-            compiler: gcc
-          - target: x86_64-unknown-linux-gnu/clang
-            architecture: x86_64
-            runner: ubuntu-22.04
-            compiler: clang
+            runner: ubuntu-24.04
           - target: aarch64-unknown-linux-gnu/gcc
             architecture: aarch64
-            runner: ubuntu-22.04
-            compiler: gcc
-          - target: aarch64-unknown-linux-gnu/clang
-            architecture: aarch64
-            runner: ubuntu-22.04
-            compiler: clang
-    env:
-      CC: ${{ matrix.compiler }}
+            runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Native Windows
-        if: runner.os == 'Windows' && matrix.architecture != 'ARM64'
+      # PCbuild downloads LLVM automatically:
+      - name: Windows
+        if: runner.os == 'Windows'
         run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
-          ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '--pgo' }} -p ${{ matrix.architecture }}
-          ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
-      # No PGO or tests (yet):
-      - name: Emulated Windows
-        if: runner.os == 'Windows' && matrix.architecture == 'ARM64'
-        run: |
-          choco install llvm --allow-downgrade --no-progress --version ${{ matrix.llvm }}.1.0
           ./PCbuild/build.bat --experimental-jit ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }}
+          ./PCbuild/rt.bat ${{ matrix.debug && '-d' || '' }} -p ${{ matrix.architecture }} -q --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
         # The `find` line is required as a result of https://github.com/actions/runner-images/issues/9966.
         # This is a bug in the macOS runner image where the pre-installed Python is installed in the same
-        # directory as the Homebrew Python, which causes the build to fail for macos-13. This line removes 
+        # directory as the Homebrew Python, which causes the build to fail for macos-13. This line removes
         # the symlink to the pre-installed Python so that the Homebrew Python is used instead.
-      - name: Native macOS
+      - name: macOS
         if: runner.os == 'macOS'
         run: |
           brew update
           find /usr/local/bin -lname '*/Library/Frameworks/Python.framework/*' -delete
           brew install llvm@${{ matrix.llvm }}
           export SDKROOT="$(xcrun --show-sdk-path)"
-          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
+          ./configure --enable-experimental-jit --enable-universalsdk --with-universal-archs=universal2 ${{ matrix.debug && '--with-pydebug' || '' }}
           make all --jobs 4
           ./python.exe -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-      - name: Native Linux
-        if: runner.os == 'Linux' && matrix.architecture == 'x86_64'
+      - name: Linux
+        if: runner.os == 'Linux'
         run: |
           sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
           export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--enable-optimizations --with-lto' }}
+          ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '' }}
           make all --jobs 4
           ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
 
-      - name: Emulated Linux
-        if: runner.os == 'Linux' && matrix.architecture != 'x86_64'
-        # The --ignorefile on ./python -m test is used to exclude tests known to fail when running on an emulated Linux.
-        run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          ./configure --prefix="$(pwd)/../build"
-          make install --jobs 4
-          make clean --jobs 4
-          export HOST=${{ matrix.architecture }}-linux-gnu
-          sudo apt install --yes "gcc-$HOST" qemu-user
-          ${{ !matrix.debug && matrix.compiler == 'clang' && './configure --enable-optimizations' || '' }}
-          ${{ !matrix.debug && matrix.compiler == 'clang' && 'make profile-run-stamp --jobs 4' || '' }}
-          export QEMU_LD_PREFIX="/usr/$HOST"
-          CC="${{ matrix.compiler == 'clang' && 'clang --target=$HOST' || '$HOST-gcc' }}" \
-            CPP="$CC --preprocess" \
-            HOSTRUNNER=qemu-${{ matrix.architecture }} \
-            ./configure --enable-experimental-jit ${{ matrix.debug && '--with-pydebug' || '--with-lto' }} --build=x86_64-linux-gnu --host="$HOST" --with-build-python=../build/bin/python3 --with-pkg-config=no ac_cv_buggy_getaddrinfo=no ac_cv_file__dev_ptc=no ac_cv_file__dev_ptmx=yes
-          make all --jobs 4
-          ./python -m test --ignorefile=Tools/jit/ignore-tests-emulated-linux.txt --multiprocess 0 --timeout 4500 --verbose2 --verbose3
-
-  jit-with-disabled-gil:
-    name: Free-Threaded (Debug)
-    needs: interpreter
-    runs-on: ubuntu-22.04
-    strategy:
-      matrix:
-        llvm:
-          - 19
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Build with JIT enabled and GIL disabled
-        run: |
-          sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
-          export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
-          ./configure --enable-experimental-jit --with-pydebug --disable-gil
-          make all --jobs 4
-      - name: Run tests
-        run: |
-          ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3
+  # XXX: GH-133171
+  # jit-with-disabled-gil:
+  #   name: Free-Threaded (Debug)
+  #   needs: interpreter
+  #   runs-on: ubuntu-24.04
+  #   timeout-minutes: 90
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       llvm:
+  #         - 19
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         persist-credentials: false
+  #     - uses: actions/setup-python@v5
+  #       with:
+  #         python-version: '3.11'
+  #     - name: Build with JIT enabled and GIL disabled
+  #       run: |
+  #         sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)" ./llvm.sh ${{ matrix.llvm }}
+  #         export PATH="$(llvm-config-${{ matrix.llvm }} --bindir):$PATH"
+  #         ./configure --enable-experimental-jit --with-pydebug --disable-gil
+  #         make all --jobs 4
+  #     - name: Run tests
+  #       run: |
+  #         ./python -m test --multiprocess 0 --timeout 4500 --verbose2 --verbose3

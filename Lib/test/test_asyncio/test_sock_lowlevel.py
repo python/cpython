@@ -15,7 +15,7 @@ if socket_helper.tcp_blackhole():
 
 
 def tearDownModule():
-    asyncio.set_event_loop_policy(None)
+    asyncio._set_event_loop_policy(None)
 
 
 class MyProto(asyncio.Protocol):
@@ -110,7 +110,7 @@ class BaseSockTestsMixin:
         self.loop.run_until_complete(
             self.loop.sock_recv(sock, 1024))
         sock.close()
-        self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
+        self.assertStartsWith(data, b'HTTP/1.0 200 OK')
 
     def _basetest_sock_recv_into(self, httpd, sock):
         # same as _basetest_sock_client_ops, but using sock_recv_into
@@ -127,7 +127,7 @@ class BaseSockTestsMixin:
             self.loop.run_until_complete(
                 self.loop.sock_recv_into(sock, buf[nbytes:]))
         sock.close()
-        self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
+        self.assertStartsWith(data, b'HTTP/1.0 200 OK')
 
     def test_sock_client_ops(self):
         with test_utils.run_test_server() as httpd:
@@ -150,7 +150,7 @@ class BaseSockTestsMixin:
         # consume data
         await self.loop.sock_recv(sock, 1024)
 
-        self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
+        self.assertStartsWith(data, b'HTTP/1.0 200 OK')
 
     async def _basetest_sock_recv_into_racing(self, httpd, sock):
         sock.setblocking(False)
@@ -168,7 +168,7 @@ class BaseSockTestsMixin:
             nbytes = await self.loop.sock_recv_into(sock, buf[:1024])
             # consume data
             await self.loop.sock_recv_into(sock, buf[nbytes:])
-            self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
+            self.assertStartsWith(data, b'HTTP/1.0 200 OK')
 
         await task
 
@@ -217,7 +217,7 @@ class BaseSockTestsMixin:
             sock.shutdown(socket.SHUT_WR)
             data = await task
             # ProactorEventLoop could deliver hello, so endswith is necessary
-            self.assertTrue(data.endswith(b'world'))
+            self.assertEndsWith(data, b'world')
 
     # After the first connect attempt before the listener is ready,
     # the socket needs time to "recover" to make the next connect call.
@@ -298,7 +298,7 @@ class BaseSockTestsMixin:
         data = await self.loop.sock_recv(sock, DATA_SIZE)
         # HTTP headers size is less than MTU,
         # they are sent by the first packet always
-        self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
+        self.assertStartsWith(data, b'HTTP/1.0 200 OK')
         while data.find(b'\r\n\r\n') == -1:
             data += await self.loop.sock_recv(sock, DATA_SIZE)
         # Strip headers
@@ -351,7 +351,7 @@ class BaseSockTestsMixin:
         data = bytes(buf[:nbytes])
         # HTTP headers size is less than MTU,
         # they are sent by the first packet always
-        self.assertTrue(data.startswith(b'HTTP/1.0 200 OK'))
+        self.assertStartsWith(data, b'HTTP/1.0 200 OK')
         while data.find(b'\r\n\r\n') == -1:
             nbytes = await self.loop.sock_recv_into(sock, buf)
             data = bytes(buf[:nbytes])

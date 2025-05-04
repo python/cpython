@@ -1,9 +1,4 @@
-
-The bytecode interpreter
-========================
-
-Overview
---------
+# The bytecode interpreter
 
 This document describes the workings and implementation of the bytecode
 interpreter, the part of python that executes compiled Python code. Its
@@ -16,7 +11,7 @@ from the instruction definitions in [Python/bytecodes.c](../Python/bytecodes.c)
 which are written in [a DSL](../Tools/cases_generator/interpreter_definition.md)
 developed for this purpose.
 
-Recall that the [Python Compiler](compiler.md) produces a [`CodeObject`](code_object.md),
+Recall that the [Python Compiler](compiler.md) produces a [`CodeObject`](code_objects.md),
 which contains the bytecode instructions along with static data that is required to execute them,
 such as the consts list, variable names,
 [exception table](exception_handling.md#format-of-the-exception-table), and so on.
@@ -25,7 +20,7 @@ When the interpreter's
 [`PyEval_EvalCode()`](https://docs.python.org/3.14/c-api/veryhigh.html#c.PyEval_EvalCode)
 function is called to execute a `CodeObject`, it constructs a [`Frame`](frames.md) and calls
 [`_PyEval_EvalFrame()`](https://docs.python.org/3.14/c-api/veryhigh.html#c.PyEval_EvalCode)
-to execute the code object in this frame. The frame hold the dynamic state of the
+to execute the code object in this frame. The frame holds the dynamic state of the
 `CodeObject`'s execution, including the instruction pointer, the globals and builtins.
 It also has a reference to the `CodeObject` itself.
 
@@ -48,8 +43,7 @@ simply calls [`_PyEval_EvalFrameDefault()`] to execute the frame. However, as pe
 `_PyEval_EvalFrameDefault()`.
 
 
-Instruction decoding
---------------------
+## Instruction decoding
 
 The first task of the interpreter is to decode the bytecode instructions.
 Bytecode is stored as an array of 16-bit code units (`_Py_CODEUNIT`).
@@ -111,35 +105,35 @@ snippet decode a complete instruction:
 For various reasons we'll get to later (mostly efficiency, given that `EXTENDED_ARG`
 is rare) the actual code is different.
 
-Jumps
-=====
+## Jumps
 
 Note that when the `switch` statement is reached, `next_instr` (the "instruction offset")
 already points to the next instruction.
 Thus, jump instructions can be implemented by manipulating `next_instr`:
 
 - A jump forward (`JUMP_FORWARD`) sets `next_instr += oparg`.
-- A jump backward sets `next_instr -= oparg`.
+- A jump backward (`JUMP_BACKWARD`) sets `next_instr -= oparg`.
 
-Inline cache entries
-====================
+## Inline cache entries
 
 Some (specialized or specializable) instructions have an associated "inline cache".
 The inline cache consists of one or more two-byte entries included in the bytecode
 array as additional words following the `opcode`/`oparg` pair.
 The size of the inline cache for a particular instruction is fixed by its `opcode`.
 Moreover, the inline cache size for all instructions in a
-[family of specialized/specializable instructions](adaptive.md)
+[family of specialized/specializable instructions](#Specialization)
 (for example, `LOAD_ATTR`, `LOAD_ATTR_SLOT`, `LOAD_ATTR_MODULE`) must all be
 the same.  Cache entries are reserved by the compiler and initialized with zeros.
 Although they are represented by code units, cache entries do not conform to the
 `opcode` / `oparg` format.
 
-If an instruction has an inline cache, the layout of its cache is described by
-a `struct` definition in (`pycore_code.h`)[../Include/internal/pycore_code.h].
-This allows us to access the cache by casting `next_instr` to a pointer to this `struct`.
-The size of such a `struct` must be independent of the machine architecture, word size
-and alignment requirements.  For a 32-bit field, the `struct` should use `_Py_CODEUNIT field[2]`.
+If an instruction has an inline cache, the layout of its cache is described in
+the instruction's definition in [`Python/bytecodes.c`](../Python/bytecodes.c).
+The structs defined in [`pycore_code.h`](../Include/internal/pycore_code.h)
+allow us to access the cache by casting `next_instr` to a pointer to the relevant
+`struct`.  The size of such a `struct` must be independent of the machine
+architecture, word size and alignment requirements.  For a 32-bit field, the
+`struct` should use `_Py_CODEUNIT field[2]`.
 
 The instruction implementation is responsible for advancing `next_instr` past the inline cache.
 For example, if an instruction's inline cache is four bytes (that is, two code units) in size,
@@ -154,15 +148,14 @@ Serializing non-zero cache entries would present a problem because the serializa
 More information about the use of inline caches can be found in
 [PEP 659](https://peps.python.org/pep-0659/#ancillary-data).
 
-The evaluation stack
---------------------
+## The evaluation stack
 
 Most instructions read or write some data in the form of object references (`PyObject *`).
 The CPython bytecode interpreter is a stack machine, meaning that its instructions operate
 by pushing data onto and popping it off the stack.
-The stack is forms part of the frame for the code object. Its maximum depth is calculated
+The stack forms part of the frame for the code object. Its maximum depth is calculated
 by the compiler and stored in the `co_stacksize` field of the code object, so that the
-stack can be pre-allocated is a contiguous array of `PyObject*` pointers, when the frame
+stack can be pre-allocated as a contiguous array of `PyObject*` pointers, when the frame
 is created.
 
 The stack effects of each instruction are also exposed through the
@@ -194,16 +187,14 @@ For example, the following sequence is illegal, because it keeps pushing items o
 > Do not confuse the evaluation stack with the call stack, which is used to implement calling
 > and returning from functions.
 
-Error handling
---------------
+## Error handling
 
 When the implementation of an opcode raises an exception, it jumps to the
 `exception_unwind` label in [Python/ceval.c](../Python/ceval.c).
 The exception is then handled as described in the
 [`exception handling documentation`](exception_handling.md#handling-exceptions).
 
-Python-to-Python calls
-----------------------
+## Python-to-Python calls
 
 The `_PyEval_EvalFrameDefault()` function is recursive, because sometimes
 the interpreter calls some C function that calls back into the interpreter.
@@ -228,8 +219,7 @@ returns from `_PyEval_EvalFrameDefault()` altogether, to a C caller.
 
 A similar check is performed when an unhandled exception occurs.
 
-The call stack
---------------
+## The call stack
 
 Up through 3.10, the call stack was implemented as a singly-linked list of
 [frame objects](frames.md). This was expensive because each call would require a
@@ -263,8 +253,7 @@ See also the [generators](generators.md) section.
 
 <!--
 
-All sorts of variables
-----------------------
+## All sorts of variables
 
 The bytecode compiler determines the scope in which each variable name is defined,
 and generates instructions accordingly.  For example, loading a local variable
@@ -298,8 +287,7 @@ Other topics
 
 -->
 
-Introducing a new bytecode instruction
---------------------------------------
+## Introducing a new bytecode instruction
 
 It is occasionally necessary to add a new opcode in order to implement
 a new feature or change the way that existing features are compiled.
@@ -355,6 +343,169 @@ files you have, forcing new ones to be created and thus allow you test out your
 new bytecode properly.  Run `make regen-importlib` for updating the
 bytecode of frozen importlib files.  You have to run `make` again after this
 to recompile the generated C files.
+
+## Specialization
+
+Bytecode specialization, which was introduced in
+[PEP 659](https://peps.python.org/pep-0659/), speeds up program execution by
+rewriting instructions based on runtime information. This is done by replacing
+a generic instruction with a faster version that works for the case that this
+program encounters. Each specializable instruction is responsible for rewriting
+itself, using its [inline caches](#inline-cache-entries) for
+bookkeeping.
+
+When an adaptive instruction executes, it may attempt to specialize itself,
+depending on the argument and the contents of its cache. This is done
+by calling one of the `_Py_Specialize_XXX` functions in
+[`Python/specialize.c`](../Python/specialize.c).
+
+
+The specialized instructions are responsible for checking that the special-case
+assumptions still apply, and de-optimizing back to the generic version if not.
+
+## Families of instructions
+
+A *family* of instructions consists of an adaptive instruction along with the
+specialized instructions that it can be replaced by.
+It has the following fundamental properties:
+
+* It corresponds to a single instruction in the code
+  generated by the bytecode compiler.
+* It has a single adaptive instruction that records an execution count and,
+  at regular intervals, attempts to specialize itself. If not specializing,
+  it executes the base implementation.
+* It has at least one specialized form of the instruction that is tailored
+  for a particular value or set of values at runtime.
+* All members of the family must have the same number of inline cache entries,
+  to ensure correct execution.
+  Individual family members do not need to use all of the entries,
+  but must skip over any unused entries when executing.
+
+The current implementation also requires the following,
+although these are not fundamental and may change:
+
+* All families use one or more inline cache entries,
+  the first entry is always the counter.
+* All instruction names should start with the name of the adaptive
+  instruction.
+* Specialized forms should have names describing their specialization.
+
+## Example family
+
+The `LOAD_GLOBAL` instruction (in [Python/bytecodes.c](../Python/bytecodes.c))
+already has an adaptive family that serves as a relatively simple example.
+
+The `LOAD_GLOBAL` instruction performs adaptive specialization,
+calling `_Py_Specialize_LoadGlobal()` when the counter reaches zero.
+
+There are two specialized instructions in the family, `LOAD_GLOBAL_MODULE`
+which is specialized for global variables in the module, and
+`LOAD_GLOBAL_BUILTIN` which is specialized for builtin variables.
+
+## Performance analysis
+
+The benefit of a specialization can be assessed with the following formula:
+`Tbase/Tadaptive`.
+
+Where `Tbase` is the mean time to execute the base instruction,
+and `Tadaptive` is the mean time to execute the specialized and adaptive forms.
+
+`Tadaptive = (sum(Ti*Ni) + Tmiss*Nmiss)/(sum(Ni)+Nmiss)`
+
+`Ti` is the time to execute the `i`th instruction in the family and `Ni` is
+the number of times that instruction is executed.
+`Tmiss` is the time to process a miss, including de-optimzation
+and the time to execute the base instruction.
+
+The ideal situation is where misses are rare and the specialized
+forms are much faster than the base instruction.
+`LOAD_GLOBAL` is near ideal, `Nmiss/sum(Ni) ≈ 0`.
+In which case we have `Tadaptive ≈ sum(Ti*Ni)`.
+Since we can expect the specialized forms `LOAD_GLOBAL_MODULE` and
+`LOAD_GLOBAL_BUILTIN` to be much faster than the adaptive base instruction,
+we would expect the specialization of `LOAD_GLOBAL` to be profitable.
+
+## Design considerations
+
+While `LOAD_GLOBAL` may be ideal, instructions like `LOAD_ATTR` and
+`CALL_FUNCTION` are not. For maximum performance we want to keep `Ti`
+low for all specialized instructions and `Nmiss` as low as possible.
+
+Keeping `Nmiss` low means that there should be specializations for almost
+all values seen by the base instruction. Keeping `sum(Ti*Ni)` low means
+keeping `Ti` low which means minimizing branches and dependent memory
+accesses (pointer chasing). These two objectives may be in conflict,
+requiring judgement and experimentation to design the family of instructions.
+
+The size of the inline cache should as small as possible,
+without impairing performance, to reduce the number of
+`EXTENDED_ARG` jumps, and to reduce pressure on the CPU's data cache.
+
+### Gathering data
+
+Before choosing how to specialize an instruction, it is important to gather
+some data. What are the patterns of usage of the base instruction?
+Data can best be gathered by instrumenting the interpreter. Since a
+specialization function and adaptive instruction are going to be required,
+instrumentation can most easily be added in the specialization function.
+
+### Choice of specializations
+
+The performance of the specializing adaptive interpreter relies on the
+quality of specialization and keeping the overhead of specialization low.
+
+Specialized instructions must be fast. In order to be fast,
+specialized instructions should be tailored for a particular
+set of values that allows them to:
+
+1. Verify that incoming value is part of that set with low overhead.
+2. Perform the operation quickly.
+
+This requires that the set of values is chosen such that membership can be
+tested quickly and that membership is sufficient to allow the operation to be
+performed quickly.
+
+For example, `LOAD_GLOBAL_MODULE` is specialized for `globals()`
+dictionaries that have a keys with the expected version.
+
+This can be tested quickly:
+
+* `globals->keys->dk_version == expected_version`
+
+and the operation can be performed quickly:
+
+* `value = entries[cache->index].me_value;`.
+
+Because it is impossible to measure the performance of an instruction without
+also measuring unrelated factors, the assessment of the quality of a
+specialization will require some judgement.
+
+As a general rule, specialized instructions should be much faster than the
+base instruction.
+
+### Implementation of specialized instructions
+
+In general, specialized instructions should be implemented in two parts:
+
+1. A sequence of guards, each of the form
+  `DEOPT_IF(guard-condition-is-false, BASE_NAME)`.
+2. The operation, which should ideally have no branches and
+  a minimum number of dependent memory accesses.
+
+In practice, the parts may overlap, as data required for guards
+can be re-used in the operation.
+
+If there are branches in the operation, then consider further specialization
+to eliminate the branches.
+
+### Maintaining stats
+
+Finally, take care that stats are gathered correctly.
+After the last `DEOPT_IF` has passed, a hit should be recorded with
+`STAT_INC(BASE_INSTRUCTION, hit)`.
+After an optimization has been deferred in the adaptive instruction,
+that should be recorded with `STAT_INC(BASE_INSTRUCTION, deferred)`.
+
 
 Additional resources
 --------------------

@@ -3,9 +3,10 @@
 
 #include "Python.h"
 #include "pycore_fileutils.h"     // _Py_add_relfile()
+#include "pycore_importdl.h"      // dl_funcptr
+#include "pycore_interp.h"        // _PyInterpreterState_GetConfig()
 #include "pycore_pystate.h"       // _PyInterpreterState_GET()
 
-#include "pycore_importdl.h"      // dl_funcptr
 #include "patchlevel.h"           // PY_MAJOR_VERSION
 #include <windows.h>
 

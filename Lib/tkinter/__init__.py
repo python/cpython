@@ -500,10 +500,14 @@ class Variable:
 
         Return the name of the callback.
 
-        This deprecated method wraps a deprecated Tcl method that will
-        likely be removed in the future.  Use trace_add() instead.
+        This deprecated method wraps a deprecated Tcl method removed
+        in Tcl 9.0.  Use trace_add() instead.
         """
-        # TODO: Add deprecation warning
+        import warnings
+        warnings.warn(
+                "trace_variable() is deprecated and not supported with Tcl 9; "
+                "use trace_add() instead.",
+                DeprecationWarning, stacklevel=2)
         cbname = self._register(callback)
         self._tk.call("trace", "variable", self._name, mode, cbname)
         return cbname
@@ -516,10 +520,14 @@ class Variable:
         MODE is one of "r", "w", "u" for read, write, undefine.
         CBNAME is the name of the callback returned from trace_variable or trace.
 
-        This deprecated method wraps a deprecated Tcl method that will
-        likely be removed in the future.  Use trace_remove() instead.
+        This deprecated method wraps a deprecated Tcl method removed
+        in Tcl 9.0.  Use trace_remove() instead.
         """
-        # TODO: Add deprecation warning
+        import warnings
+        warnings.warn(
+                "trace_vdelete() is deprecated and not supported with Tcl 9; "
+                "use trace_remove() instead.",
+                DeprecationWarning, stacklevel=2)
         self._tk.call("trace", "vdelete", self._name, mode, cbname)
         cbname = self._tk.splitlist(cbname)[0]
         for m, ca in self.trace_info():
@@ -535,10 +543,14 @@ class Variable:
     def trace_vinfo(self):
         """Return all trace callback information.
 
-        This deprecated method wraps a deprecated Tcl method that will
-        likely be removed in the future.  Use trace_info() instead.
+        This deprecated method wraps a deprecated Tcl method removed
+        in Tcl 9.0.  Use trace_info() instead.
         """
-        # TODO: Add deprecation warning
+        import warnings
+        warnings.warn(
+                "trace_vinfo() is deprecated and not supported with Tcl 9; "
+                "use trace_info() instead.",
+                DeprecationWarning, stacklevel=2)
         return [self._tk.splitlist(x) for x in self._tk.splitlist(
             self._tk.call("trace", "vinfo", self._name))]
 
@@ -847,7 +859,7 @@ class Misc:
         if not name: return None
         return self._nametowidget(name)
 
-    def after(self, ms, func=None, *args):
+    def after(self, ms, func=None, *args, **kw):
         """Call function once after given time.
 
         MS specifies the time in milliseconds. FUNC gives the
@@ -861,7 +873,7 @@ class Misc:
         else:
             def callit():
                 try:
-                    func(*args)
+                    func(*args, **kw)
                 finally:
                     try:
                         self.deletecommand(name)
@@ -875,13 +887,13 @@ class Misc:
             name = self._register(callit)
             return self.tk.call('after', ms, name)
 
-    def after_idle(self, func, *args):
+    def after_idle(self, func, *args, **kw):
         """Call FUNC once if the Tcl main loop has no event to
         process.
 
         Return an identifier to cancel the scheduling with
         after_cancel."""
-        return self.after('idle', func, *args)
+        return self.after('idle', func, *args, **kw)
 
     def after_cancel(self, id):
         """Cancel scheduling of function identified with ID.
@@ -2265,7 +2277,7 @@ class Wm:
         explicitly.  DEFAULT can be the relative path to a .ico file
         (example: root.iconbitmap(default='myicon.ico') ).  See Tk
         documentation for more information."""
-        if default:
+        if default is not None:
             return self.tk.call('wm', 'iconbitmap', self._w, '-default', default)
         else:
             return self.tk.call('wm', 'iconbitmap', self._w, bitmap)
@@ -2741,6 +2753,8 @@ class BaseWidget(Misc):
             del cnf['name']
         if not name:
             name = self.__class__.__name__.lower()
+            if name[-1].isdigit():
+                name += "!"  # Avoid duplication when calculating names below
             if master._last_child_ids is None:
                 master._last_child_ids = {}
             count = master._last_child_ids.get(name, 0) + 1
@@ -4185,7 +4199,7 @@ class OptionMenu(Menubutton):
         keyword argument command."""
         kw = {"borderwidth": 2, "textvariable": variable,
               "indicatoron": 1, "relief": RAISED, "anchor": "c",
-              "highlightthickness": 2}
+              "highlightthickness": 2, "name": kwargs.pop("name", None)}
         Widget.__init__(self, master, "menubutton", kw)
         self.widgetName = 'tk_optionMenu'
         menu = self.__menu = Menu(self, name="menu", tearoff=0)

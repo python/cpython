@@ -64,7 +64,7 @@ _RATIONAL_FORMAT = re.compile(r"""
        (?:\.(?P<decimal>\d*|\d+(_\d+)*))?  # an optional fractional part
        (?:E(?P<exp>[-+]?\d+(_\d+)*))?      # and optional exponent
     )
-    \s*\Z                                  # and optional whitespace to finish
+    \s*\z                                  # and optional whitespace to finish
 """, re.VERBOSE | re.IGNORECASE)
 
 
@@ -905,8 +905,10 @@ class Fraction(numbers.Rational):
         else:
             return NotImplemented
 
-    def __rpow__(b, a):
+    def __rpow__(b, a, modulo=None):
         """a ** b"""
+        if modulo is not None:
+            return NotImplemented
         if b._denominator == 1 and b._numerator >= 0:
             # If a is an int, keep it that way if possible.
             return a ** b._numerator

@@ -85,9 +85,7 @@ class Test_Exceptions(unittest.TestCase):
         warnings = proc.err.splitlines()
         self.assertEqual(warnings, [
             b'<string>:6: RuntimeWarning: Testing PyErr_WarnEx',
-            b'  foo()  # line 6',
             b'<string>:9: RuntimeWarning: Testing PyErr_WarnEx',
-            b'  foo()  # line 9',
         ])
 
     def test_warn_during_finalization(self):
@@ -413,6 +411,156 @@ class Test_ErrSetAndRestore(unittest.TestCase):
 
         # CRASHES formatunraisable(NULL, b'Error in %R', [])
         # CRASHES formatunraisable(NULL, NULL)
+
+
+class TestUnicodeTranslateError(UnicodeTranslateError):
+    # UnicodeTranslateError takes 4 arguments instead of 5,
+    # so we just make a UnicodeTranslateError class that is
+    # compatible with the UnicodeError.__init__.
+    def __init__(self, encoding, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+
+class TestUnicodeError(unittest.TestCase):
+
+    def _check_no_crash(self, exc):
+        # ensure that the __str__() method does not crash
+        _ = str(exc)
+
+    def test_unicode_encode_error_get_start(self):
+        get_start = _testcapi.unicode_encode_get_start
+        self._test_unicode_error_get_start('x', UnicodeEncodeError, get_start)
+
+    def test_unicode_decode_error_get_start(self):
+        get_start = _testcapi.unicode_decode_get_start
+        self._test_unicode_error_get_start(b'x', UnicodeDecodeError, get_start)
+
+    def test_unicode_translate_error_get_start(self):
+        get_start = _testcapi.unicode_translate_get_start
+        self._test_unicode_error_get_start('x', TestUnicodeTranslateError, get_start)
+
+    def _test_unicode_error_get_start(self, literal, exc_type, get_start):
+        for obj_len, start, c_start in [
+            # normal cases
+            (5, 0, 0),
+            (5, 1, 1),
+            (5, 2, 2),
+            # out of range start is clamped to max(0, obj_len - 1)
+            (0, 0, 0),
+            (0, 1, 0),
+            (0, 10, 0),
+            (5, 5, 4),
+            (5, 10, 4),
+            # negative values are allowed but clipped in the getter
+            (0, -1, 0),
+            (1, -1, 0),
+            (2, -1, 0),
+            (2, -2, 0),
+        ]:
+            obj = literal * obj_len
+            with self.subTest(obj, exc_type=exc_type, start=start):
+                exc = exc_type('utf-8', obj, start, obj_len, 'reason')
+                self.assertEqual(get_start(exc), c_start)
+                self._check_no_crash(exc)
+
+    def test_unicode_encode_error_set_start(self):
+        set_start = _testcapi.unicode_encode_set_start
+        self._test_unicode_error_set_start('x', UnicodeEncodeError, set_start)
+
+    def test_unicode_decode_error_set_start(self):
+        set_start = _testcapi.unicode_decode_set_start
+        self._test_unicode_error_set_start(b'x', UnicodeDecodeError, set_start)
+
+    def test_unicode_translate_error_set_start(self):
+        set_start = _testcapi.unicode_translate_set_start
+        self._test_unicode_error_set_start('x', TestUnicodeTranslateError, set_start)
+
+    def _test_unicode_error_set_start(self, literal, exc_type, set_start):
+        obj_len = 5
+        obj = literal * obj_len
+        for new_start in range(-2 * obj_len, 2 * obj_len):
+            with self.subTest('C-API', obj=obj, exc_type=exc_type, new_start=new_start):
+                exc = exc_type('utf-8', obj, 0, obj_len, 'reason')
+                # arbitrary value is allowed in the C API setter
+                set_start(exc, new_start)
+                self.assertEqual(exc.start, new_start)
+                self._check_no_crash(exc)
+
+            with self.subTest('Py-API', obj=obj, exc_type=exc_type, new_start=new_start):
+                exc = exc_type('utf-8', obj, 0, obj_len, 'reason')
+                # arbitrary value is allowed in the attribute setter
+                exc.start = new_start
+                self.assertEqual(exc.start, new_start)
+                self._check_no_crash(exc)
+
+    def test_unicode_encode_error_get_end(self):
+        get_end = _testcapi.unicode_encode_get_end
+        self._test_unicode_error_get_end('x', UnicodeEncodeError, get_end)
+
+    def test_unicode_decode_error_get_end(self):
+        get_end = _testcapi.unicode_decode_get_end
+        self._test_unicode_error_get_end(b'x', UnicodeDecodeError, get_end)
+
+    def test_unicode_translate_error_get_end(self):
+        get_end = _testcapi.unicode_translate_get_end
+        self._test_unicode_error_get_end('x', TestUnicodeTranslateError, get_end)
+
+    def _test_unicode_error_get_end(self, literal, exc_type, get_end):
+        for obj_len, end, c_end in [
+            # normal cases
+            (5, 0, 1),
+            (5, 1, 1),
+            (5, 2, 2),
+            # out-of-range clipped in [MIN(1, OBJLEN), MAX(MIN(1, OBJLEN), OBJLEN)]
+            (0, 0, 0),
+            (0, 1, 0),
+            (0, 10, 0),
+            (1, 1, 1),
+            (1, 2, 1),
+            (5, 5, 5),
+            (5, 5, 5),
+            (5, 10, 5),
+            # negative values are allowed but clipped in the getter
+            (0, -1, 0),
+            (1, -1, 1),
+            (2, -1, 1),
+            (2, -2, 1),
+        ]:
+            obj = literal * obj_len
+            with self.subTest(obj, exc_type=exc_type, end=end):
+                exc = exc_type('utf-8', obj, 0, end, 'reason')
+                self.assertEqual(get_end(exc), c_end)
+                self._check_no_crash(exc)
+
+    def test_unicode_encode_error_set_end(self):
+        set_end = _testcapi.unicode_encode_set_end
+        self._test_unicode_error_set_end('x', UnicodeEncodeError, set_end)
+
+    def test_unicode_decode_error_set_end(self):
+        set_end = _testcapi.unicode_decode_set_end
+        self._test_unicode_error_set_end(b'x', UnicodeDecodeError, set_end)
+
+    def test_unicode_translate_error_set_end(self):
+        set_end = _testcapi.unicode_translate_set_end
+        self._test_unicode_error_set_end('x', TestUnicodeTranslateError, set_end)
+
+    def _test_unicode_error_set_end(self, literal, exc_type, set_end):
+        obj_len = 5
+        obj = literal * obj_len
+        for new_end in range(-2 * obj_len, 2 * obj_len):
+            with self.subTest('C-API', obj=obj, exc_type=exc_type, new_end=new_end):
+                exc = exc_type('utf-8', obj, 0, obj_len, 'reason')
+                # arbitrary value is allowed in the C API setter
+                set_end(exc, new_end)
+                self.assertEqual(exc.end, new_end)
+                self._check_no_crash(exc)
+
+            with self.subTest('Py-API', obj=obj, exc_type=exc_type, new_end=new_end):
+                exc = exc_type('utf-8', obj, 0, obj_len, 'reason')
+                # arbitrary value is allowed in the attribute setter
+                exc.end = new_end
+                self.assertEqual(exc.end, new_end)
+                self._check_no_crash(exc)
 
 
 class Test_PyUnstable_Exc_PrepReraiseStar(ExceptionIsLikeMixin, unittest.TestCase):
