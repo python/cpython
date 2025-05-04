@@ -531,6 +531,44 @@ class PdbClientTestCase(unittest.TestCase):
             expected_state={"state": "pdb"},
         )
 
+    def test_multiline_completion_in_pdb_state(self):
+        """Test requesting tab completions at a (Pdb) continuation prompt."""
+        # GIVEN
+        incoming = [
+            ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
+            ("user", {"prompt": "(Pdb) ", "input": "if True:"}),
+            (
+                "user",
+                {
+                    "prompt": "...   ",
+                    "completion_request": {
+                        "line": "    b",
+                        "begidx": 4,
+                        "endidx": 5,
+                    },
+                    "input": "    bool()",
+                },
+            ),
+            ("server", {"completions": ["bin", "bool", "bytes"]}),
+            ("user", {"prompt": "...   ", "input": ""}),
+        ]
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {
+                    "complete": {
+                        "text": "b",
+                        "line": "! b",
+                        "begidx": 2,
+                        "endidx": 3,
+                    }
+                },
+                {"reply": "if True:\n    bool()\n"},
+            ],
+            expected_completions=["bin", "bool", "bytes"],
+            expected_state={"state": "pdb"},
+        )
+
     def test_completion_in_interact_state(self):
         """Test requesting tab completions at a >>> prompt."""
         incoming = [
