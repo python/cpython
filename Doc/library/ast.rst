@@ -2574,7 +2574,7 @@ The following options are accepted:
 
 .. option:: --feature-version <version>
 
-   Minor version (int) or 3.x tuple (e.g., 3.10).
+   Python version in the format 3.x (e.g., 3.10).
 
    .. versionadded:: next
 
@@ -2587,7 +2587,7 @@ The following options are accepted:
 
 .. option:: --show-empty
 
-   Show empty lists and fields in dump output.
+   Show empty lists and fields that are ``None``.
 
    .. versionadded:: next
 

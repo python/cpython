@@ -645,7 +645,7 @@ def main():
                         help='indentation of nodes (number of spaces)')
     parser.add_argument('--feature-version',
                         type=str, default=None, metavar='VERSION',
-                        help='minor version (int) or 3.x tuple (e.g., 3.10)')
+                        help='python version in the format 3.x (e.g., 3.10)')
     parser.add_argument('-o', '--optimize',
                         type=int, default=-1, metavar='LEVEL',
                         help='optimization level for parser (default -1)')
@@ -664,13 +664,13 @@ def main():
     # Process feature_version
     feature_version = None
     if args.feature_version:
-        if '.' in args.feature_version:
-            major_minor = tuple(map(int, args.feature_version.split('.', 1)))
-            if len(major_minor) != 2 or major_minor[0] != 3:
-                parser.error("--feature-version must be 3.x tuple (e.g., 3.10)")
-            feature_version = major_minor
-        else:
-            feature_version = int(args.feature_version)
+        try:
+            major, minor = map(int, args.feature_version.split('.', 1))
+        except ValueError:
+            parser.error('Invalid format for --feature-version; '
+                         'expected format 3.x (e.g., 3.10)')
+
+        feature_version = (major, minor)
 
     tree = parse(source, name, args.mode, type_comments=args.no_type_comments,
                  feature_version=feature_version, optimize=args.optimize)
