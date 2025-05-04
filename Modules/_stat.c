@@ -295,9 +295,21 @@ _PyLong_AsMode_t(PyObject *op)
     unsigned long value;
     mode_t mode;
 
-    value = PyLong_AsUnsignedLong(op);
-    if ((value == (unsigned long)-1) && PyErr_Occurred())
+    if (PyLong_Check(op)) {
+        value = PyLong_AsUnsignedLong(op);
+    }
+    else {
+        op = PyNumber_Index(op);
+        if (op == NULL) {
+            return (mode_t)-1;
+        }
+        value = PyLong_AsUnsignedLong(op);
+        Py_DECREF(op);
+    }
+
+    if ((value == (unsigned long)-1) && PyErr_Occurred()) {
         return (mode_t)-1;
+    }
 
     mode = (mode_t)value;
     if ((unsigned long)mode != value) {
@@ -506,7 +518,7 @@ S_IWOTH: write by others\n\
 S_IXOTH: execute by others\n\
 \n"
 
-"UF_SETTABLE: mask of owner changable flags\n\
+"UF_SETTABLE: mask of owner changeable flags\n\
 UF_NODUMP: do not dump file\n\
 UF_IMMUTABLE: file may not be changed\n\
 UF_APPEND: file may only be appended to\n\

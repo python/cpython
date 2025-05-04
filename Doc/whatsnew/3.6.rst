@@ -45,7 +45,7 @@
    when researching a change.
 
 This article explains the new features in Python 3.6, compared to 3.5.
-Python 3.6 was released on December 23, 2016.  See the
+Python 3.6 was released on December 23, 2016.  See the
 `changelog <https://docs.python.org/3.6/whatsnew/changelog.html>`_ for a full
 list of changes.
 
@@ -511,10 +511,10 @@ correct.
 Prior to Python 3.6, data loss could result when using bytes paths on Windows.
 With this change, using bytes to represent paths is now supported on Windows,
 provided those bytes are encoded with the encoding returned by
-:func:`sys.getfilesystemencoding()`, which now defaults to ``'utf-8'``.
+:func:`sys.getfilesystemencoding`, which now defaults to ``'utf-8'``.
 
 Applications that do not use str to represent paths should use
-:func:`os.fsencode()` and :func:`os.fsdecode()` to ensure their bytes are
+:func:`os.fsencode` and :func:`os.fsdecode` to ensure their bytes are
 correctly encoded. To revert to the previous behaviour, set
 :envvar:`PYTHONLEGACYWINDOWSFSENCODING` or call
 :func:`sys._enablelegacywindowsfsencoding`.
@@ -549,7 +549,7 @@ PEP 520: Preserving Class Attribute Definition Order
 
 Attributes in a class definition body have a natural ordering: the same
 order in which the names appear in the source.  This order is now
-preserved in the new class's :attr:`~object.__dict__` attribute.
+preserved in the new class's :attr:`~type.__dict__` attribute.
 
 Also, the effective default class *execution* namespace (returned from
 :ref:`type.__prepare__() <prepare>`) is now an insertion-order-preserving
@@ -780,7 +780,7 @@ for managing secrets, such as account authentication, tokens, and similar.
 
   Note that the pseudo-random generators in the :mod:`random` module
   should *NOT* be used for security purposes.  Use :mod:`secrets`
-  on Python 3.6+ and :func:`os.urandom()` on Python 3.5 and earlier.
+  on Python 3.6+ and :func:`os.urandom` on Python 3.5 and earlier.
 
 .. seealso::
 
@@ -934,7 +934,7 @@ asynchronous generators.
 
 The :func:`~collections.namedtuple` function now accepts an optional
 keyword argument *module*, which, when specified, is used for
-the ``__module__`` attribute of the returned named tuple class.
+the :attr:`~type.__module__` attribute of the returned named tuple class.
 (Contributed by Raymond Hettinger in :issue:`17941`.)
 
 The *verbose* and *rename* arguments for
@@ -1316,7 +1316,7 @@ Storchaka in :issue:`24164`.)
 pickletools
 -----------
 
-:func:`pickletools.dis()` now outputs the implicit memo index for the
+:func:`pickletools.dis` now outputs the implicit memo index for the
 ``MEMOIZE`` opcode.
 (Contributed by Serhiy Storchaka in :issue:`25382`.)
 
@@ -2366,27 +2366,27 @@ There have been several major changes to the :term:`bytecode` in Python 3.6.
   (Contributed by Demur Rumed with input and reviews from
   Serhiy Storchaka and Victor Stinner in :issue:`26647` and :issue:`28050`.)
 
-* The new :opcode:`FORMAT_VALUE` and :opcode:`BUILD_STRING` opcodes as part
+* The new :opcode:`!FORMAT_VALUE` and :opcode:`BUILD_STRING` opcodes as part
   of the  :ref:`formatted string literal <whatsnew36-pep498>` implementation.
   (Contributed by Eric Smith in :issue:`25483` and
   Serhiy Storchaka in :issue:`27078`.)
 
-* The new :opcode:`BUILD_CONST_KEY_MAP` opcode to optimize the creation
+* The new :opcode:`!BUILD_CONST_KEY_MAP` opcode to optimize the creation
   of dictionaries with constant keys.
   (Contributed by Serhiy Storchaka in :issue:`27140`.)
 
 * The function call opcodes have been heavily reworked for better performance
   and simpler implementation.
-  The :opcode:`MAKE_FUNCTION`, :opcode:`CALL_FUNCTION`,
-  :opcode:`CALL_FUNCTION_KW` and :opcode:`BUILD_MAP_UNPACK_WITH_CALL` opcodes
+  The :opcode:`MAKE_FUNCTION`, :opcode:`!CALL_FUNCTION`,
+  :opcode:`!CALL_FUNCTION_KW` and :opcode:`!BUILD_MAP_UNPACK_WITH_CALL` opcodes
   have been modified, the new :opcode:`CALL_FUNCTION_EX` and
-  :opcode:`BUILD_TUPLE_UNPACK_WITH_CALL` have been added, and
+  :opcode:`!BUILD_TUPLE_UNPACK_WITH_CALL` have been added, and
   ``CALL_FUNCTION_VAR``, ``CALL_FUNCTION_VAR_KW`` and ``MAKE_CLOSURE`` opcodes
   have been removed.
   (Contributed by Demur Rumed in :issue:`27095`, and Serhiy Storchaka in
   :issue:`27213`, :issue:`28257`.)
 
-* The new :opcode:`SETUP_ANNOTATIONS` and :opcode:`STORE_ANNOTATION` opcodes
+* The new :opcode:`SETUP_ANNOTATIONS` and :opcode:`!STORE_ANNOTATION` opcodes
   have been added to support the new :term:`variable annotation` syntax.
   (Contributed by Ivan Levkivskyi in :issue:`27985`.)
 
