@@ -626,7 +626,7 @@ def unparse(ast_obj):
     return unparser.visit(ast_obj)
 
 
-def _main(args=None):
+def main(args=None):
     import argparse
     import sys
 
@@ -656,4 +656,4 @@ def _main(args=None):
     print(dump(tree, include_attributes=args.include_attributes, indent=args.indent))
 
 if __name__ == '__main__':
-    _main()
+    main()

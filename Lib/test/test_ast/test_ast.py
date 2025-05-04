@@ -3186,20 +3186,21 @@ class CommandLineTests(unittest.TestCase):
 
     @staticmethod
     def text_normalize(string):
-        """Dedent *string* and strip it from its surrounding whitespaces.
-        This method is used by the other utility functions so that any
-        string to write or to match against can be freely indented.
-        """
         return textwrap.dedent(string).strip()
 
     def set_source(self, content):
         Path(self.filename).write_text(self.text_normalize(content))
 
     def invoke_ast(self, *flags):
-        output = StringIO()
-        with contextlib.redirect_stdout(output):
-            ast._main(args=[*flags, self.filename])
-        return self.text_normalize(output.getvalue())
+        stderr = StringIO()
+        stdout = StringIO()
+        with (
+            contextlib.redirect_stdout(stdout),
+            contextlib.redirect_stderr(stderr),
+        ):
+            ast.main(args=[*flags, self.filename])
+        self.assertEqual(stderr.getvalue(), '')
+        return self.text_normalize(stdout.getvalue())
 
     def check_output(self, source, expect, *flags):
         with self.subTest(source=source, flags=flags):
@@ -3218,7 +3219,7 @@ class CommandLineTests(unittest.TestCase):
         )
         self.set_source('''
             print(1, 2, 3)
-            def f(x):
+            def f(x: int) -> int:
                 x -= 1
                 return x
         ''')
@@ -3226,31 +3227,41 @@ class CommandLineTests(unittest.TestCase):
         for r in range(1, len(base_flags) + 1):
             for choices in itertools.combinations(base_flags, r=r):
                 for args in itertools.product(*choices):
-                    with self.subTest(args=args[1:]):
+                    with self.subTest(flags=args[1:]):
                         _ = self.invoke_ast(*args)
 
+    def test_unknown_flag(self):
         with self.assertRaises(SystemExit):
-            # suppress argparse error message
-            with contextlib.redirect_stderr(StringIO()):
-                output = self.invoke_ast('--unknown')
-                self.assertStartsWith(output, 'usage: ')
+            output = self.invoke_ast('--unknown')
+            self.assertStartsWith(output, 'usage: ')
 
-    def test_mode_flag(self):
-        # test 'python -m ast -m/--mode'
-        source = 'print(1, 2, 3)'
+    def test_help_flag(self):
+        # test 'python -m ast -h/--help'
+        for flag in ('-h', '--help'):
+            with self.subTest(flags=flag):
+                with self.assertRaises(SystemExit):
+                    output = self.invoke_ast(flag)
+                    self.assertStartsWith(output, 'usage: ')
+
+    def test_exec_mode_flag(self):
+        # test 'python -m ast -m/--mode exec'
+        source = 'x: bool = 1 # type: ignore[assignment]'
         expect = '''
             Module(
                body=[
-                  Expr(
-                     value=Call(
-                        func=Name(id='print', ctx=Load()),
-                        args=[
-                           Constant(value=1),
-                           Constant(value=2),
-                           Constant(value=3)]))])
+                  AnnAssign(
+                     target=Name(id='x', ctx=Store()),
+                     annotation=Name(id='bool', ctx=Load()),
+                     value=Constant(value=1),
+                     simple=1)],
+               type_ignores=[
+                  TypeIgnore(lineno=1, tag='[assignment]')])
         '''
         for flag in ('-m=exec', '--mode=exec'):
             self.check_output(source, expect, flag)
+
+    def test_single_mode_flag(self):
+        # test 'python -m ast -m/--mode single'
         source = 'pass'
         expect = '''
             Interactive(
@@ -3259,6 +3270,9 @@ class CommandLineTests(unittest.TestCase):
         '''
         for flag in ('-m=single', '--mode=single'):
             self.check_output(source, expect, flag)
+
+    def test_eval_mode_flag(self):
+        # test 'python -m ast -m/--mode eval'
         source = 'print(1, 2, 3)'
         expect = '''
             Expression(
@@ -3271,6 +3285,9 @@ class CommandLineTests(unittest.TestCase):
         '''
         for flag in ('-m=eval', '--mode=eval'):
             self.check_output(source, expect, flag)
+
+    def test_func_type_mode_flag(self):
+        # test 'python -m ast -m/--mode func_type'
         source = '(int, str) -> list[int]'
         expect = '''
             FunctionType(
