@@ -1312,13 +1312,12 @@ always available. Unless explicitly noted otherwise, all variables are read-only
    .. function:: _jit.is_active()
 
       Return ``True`` if the topmost Python frame is currently executing JIT
-      code, and ``False`` otherwise.
+      code (implies :func:`sys._jit.is_enabled`), and ``False`` otherwise.
 
       .. note::
 
          This function is intended for testing and debugging the JIT itself.
-         Beyond using it to confirm that the JIT is actually working, most users
-         will never *need* to use it.
+         Most users will never need it.
 
          Due to the nature of tracing JIT compilers, repeated calls to this
          function may give surprising results. For example, branching on its

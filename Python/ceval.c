@@ -990,6 +990,11 @@ _PyObjectArray_Free(PyObject **array, PyObject **scratch)
 #define DONT_SLP_VECTORIZE
 #endif
 
+typedef struct {
+    _PyInterpreterFrame frame;
+    _PyStackRef stack[1];
+} _PyEntryFrame;
+
 PyObject* _Py_HOT_FUNCTION DONT_SLP_VECTORIZE
 _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int throwflag)
 {
@@ -1009,7 +1014,7 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     int oparg;         /* Current opcode argument, if any */
     assert(tstate->current_frame == NULL || tstate->current_frame->stackpointer != NULL);
 #endif
-    _PyInterpreterFrame entry_frame;
+    _PyEntryFrame entry;
 
     if (_Py_EnterRecursiveCallTstate(tstate, "")) {
         assert(frame->owner != FRAME_OWNED_BY_INTERPRETER);
@@ -1021,30 +1026,37 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
      * These are cached values from the frame and code object.  */
     _Py_CODEUNIT *next_instr;
     _PyStackRef *stack_pointer;
-    entry_frame.localsplus[0] = PyStackRef_NULL;
+    entry.stack[0] = PyStackRef_NULL;
 #ifdef Py_STACKREF_DEBUG
-    entry_frame.f_funcobj = PyStackRef_None;
+    entry.frame.f_funcobj = PyStackRef_None;
 #elif defined(Py_DEBUG)
     /* Set these to invalid but identifiable values for debugging. */
-    entry_frame.f_funcobj = (_PyStackRef){.bits = 0xaaa0};
-    entry_frame.f_locals = (PyObject*)0xaaa1;
-    entry_frame.frame_obj = (PyFrameObject*)0xaaa2;
-    entry_frame.f_globals = (PyObject*)0xaaa3;
-    entry_frame.f_builtins = (PyObject*)0xaaa4;
+    entry.frame.f_funcobj = (_PyStackRef){.bits = 0xaaa0};
+    entry.frame.f_locals = (PyObject*)0xaaa1;
+    entry.frame.frame_obj = (PyFrameObject*)0xaaa2;
+    entry.frame.f_globals = (PyObject*)0xaaa3;
+    entry.frame.f_builtins = (PyObject*)0xaaa4;
 #endif
-    entry_frame.f_executable = PyStackRef_None;
-    entry_frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
-    entry_frame.stackpointer = entry_frame.localsplus;
-    entry_frame.owner = FRAME_OWNED_BY_INTERPRETER;
-    entry_frame.visited = 0;
-    entry_frame.return_offset = 0;
+    entry.frame.f_executable = PyStackRef_None;
+    entry.frame.instr_ptr = (_Py_CODEUNIT *)_Py_INTERPRETER_TRAMPOLINE_INSTRUCTIONS + 1;
+    entry.frame.stackpointer = entry.stack;
+    entry.frame.owner = FRAME_OWNED_BY_INTERPRETER;
+    entry.frame.visited = 0;
+    entry.frame.return_offset = 0;
 #ifdef Py_DEBUG
-    entry_frame.lltrace = 0;
+    entry.frame.lltrace = 0;
 #endif
     /* Push frame */
-    entry_frame.previous = tstate->current_frame;
-    frame->previous = &entry_frame;
+    entry.frame.previous = tstate->current_frame;
+    frame->previous = &entry.frame;
     tstate->current_frame = frame;
+    entry.frame.localsplus[0] = PyStackRef_NULL;
+#ifdef _Py_TIER2
+    if (tstate->current_executor != NULL) {
+        entry.frame.localsplus[0] = PyStackRef_FromPyObjectNew(tstate->current_executor);
+        tstate->current_executor = NULL;
+    }
+#endif
 
     /* support for generator.throw() */
     if (throwflag) {
@@ -1071,9 +1083,9 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
         stack_pointer = _PyFrame_GetStackPointer(frame);
 #if Py_TAIL_CALL_INTERP
 #   if Py_STATS
-            return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0, lastopcode);
+        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0, lastopcode);
 #   else
-            return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
+        return _TAIL_CALL_error(frame, stack_pointer, tstate, next_instr, 0);
 #   endif
 #else
         goto error;

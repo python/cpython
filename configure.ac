@@ -2786,6 +2786,12 @@ AC_SUBST([REGEN_JIT_COMMAND])
 AC_SUBST([JIT_STENCILS_H])
 AC_MSG_RESULT([$tier2_flags $jit_flags])
 
+if test "$disable_gil" = "yes" -a "$enable_experimental_jit" != "no"; then
+  # GH-133171: This configuration builds the JIT but never actually uses it,
+  # which is surprising (and strictly worse than not building it at all):
+  AC_MSG_ERROR([--enable-experimental-jit cannot be used with --disable-gil.])
+fi
+
 case "$ac_cv_cc_name" in
 mpicc)
     CFLAGS_NODIST="$CFLAGS_NODIST"
@@ -5409,6 +5415,40 @@ PKG_CHECK_MODULES([LIBLZMA], [liblzma], [have_liblzma=yes], [
   ])
 ])
 
+have_libzstd=no
+AC_DEFUN([TEST_ZSTD_VERSION],[
+  AC_MSG_CHECKING([if libzstd is new enough])
+
+  dnl TODO(emmatyping): check if we can set a C define for the minimum version
+  dnl to re-use here and in the header compile check
+
+  dnl This is checked when both a package is found and we do fallback searches
+  dnl If you update the minimum version here, you should update the compile
+  dnl check in Modules/_zstd/_zstdmodule.h
+  AC_RUN_IFELSE([AC_LANG_PROGRAM([@%:@include "zstd.h"], [
+      #if ZSTD_VERSION_NUMBER < 10405
+          exit(1);
+      #endif
+    ])], [py__zstd_too_old=no], [py__zstd_too_old=yes])
+  dnl Important to record that we have libzstd
+  have_libzstd=yes
+])
+
+PKG_CHECK_MODULES([LIBZSTD], [libzstd], [TEST_ZSTD_VERSION()], [
+  WITH_SAVE_ENV([
+    CPPFLAGS="$CPPFLAGS $LIBZSTD_CFLAGS"
+    LIBS="$LIBS $LIBZSTD_LIBS"
+    AC_CHECK_HEADERS([zstd.h zdict.h], [
+      AC_CHECK_LIB([zstd], [ZDICT_finalizeDictionary],
+       [TEST_ZSTD_VERSION()], [have_libzstd=no])
+    ], [have_libzstd=no])
+    AS_VAR_IF([have_libzstd], [yes], [
+      LIBZSTD_CFLAGS=${LIBZSTD_CFLAGS-""}
+      LIBZSTD_LIBS=${LIBZSTD_LIBS-"-lzstd"}
+    ])
+  ])
+])
+
 dnl PY_CHECK_NETDB_FUNC(FUNCTION)
 AC_DEFUN([PY_CHECK_NETDB_FUNC], [PY_CHECK_FUNC([$1], [@%:@include <netdb.h>])])
 
@@ -7110,6 +7150,7 @@ SRCDIRS="\
   Modules/_xxtestfuzz \
   Modules/cjkcodecs \
   Modules/expat \
+  Modules/_zstd \
   Objects \
   Objects/mimalloc \
   Objects/mimalloc/prim \
@@ -7714,7 +7755,7 @@ AS_CASE([$ac_sys_system],
     dnl (see Modules/Setup.stdlib.in).
     PY_STDLIB_MOD_SET_NA(
       [_ctypes_test],
-      [_testexternalinspection],
+      [_remotedebugging],
       [_testimportmultiple],
       [_testmultiphase],
       [_testsinglephase],
@@ -8056,6 +8097,8 @@ PY_STDLIB_MOD([_bz2], [], [test "$have_bzip2" = yes],
   [$BZIP2_CFLAGS], [$BZIP2_LIBS])
 PY_STDLIB_MOD([_lzma], [], [test "$have_liblzma" = yes],
   [$LIBLZMA_CFLAGS], [$LIBLZMA_LIBS])
+PY_STDLIB_MOD([_zstd], [test "$py__zstd_too_old" = no], [test "$have_libzstd" = yes],
+  [$LIBZSTD_CFLAGS], [$LIBZSTD_LIBS])
 
 dnl OpenSSL bindings
 PY_STDLIB_MOD([_ssl], [], [test "$ac_cv_working_openssl_ssl" = yes],
@@ -8076,7 +8119,7 @@ PY_STDLIB_MOD([_testbuffer], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_testimportmultiple], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testmultiphase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
 PY_STDLIB_MOD([_testsinglephase], [test "$TEST_MODULES" = yes], [test "$ac_cv_func_dlopen" = yes])
-PY_STDLIB_MOD([_testexternalinspection], [test "$TEST_MODULES" = yes])
+PY_STDLIB_MOD([_remotedebugging], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([xxsubtype], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_xxtestfuzz], [test "$TEST_MODULES" = yes])
 PY_STDLIB_MOD([_ctypes_test],

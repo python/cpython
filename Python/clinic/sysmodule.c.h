@@ -1881,7 +1881,7 @@ PyDoc_STRVAR(_jit_is_active__doc__,
 "is_active($module, /)\n"
 "--\n"
 "\n"
-"Return True if the topmost Python frame is currently executing JIT code, and False otherwise.");
+"Return True if the topmost Python frame is currently executing JIT code (implies sys._jit.is_enabled()), and False otherwise.");
 
 #define _JIT_IS_ACTIVE_METHODDEF    \
     {"is_active", (PyCFunction)_jit_is_active, METH_NOARGS, _jit_is_active__doc__},
@@ -1948,4 +1948,4 @@ exit:
 #ifndef SYS_GETANDROIDAPILEVEL_METHODDEF
     #define SYS_GETANDROIDAPILEVEL_METHODDEF
 #endif /* !defined(SYS_GETANDROIDAPILEVEL_METHODDEF) */
-/*[clinic end generated code: output=b8cd807acf1686d5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=449d16326e69dcf6 input=a9049054013a1b77]*/

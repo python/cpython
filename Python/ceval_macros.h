@@ -355,32 +355,31 @@ _PyFrame_SetStackPointer(frame, stack_pointer)
 /* Tier-switching macros. */
 
 #ifdef _Py_JIT
-#define GOTO_TIER_TWO(EXECUTOR)                         \
-do {                                                    \
-    OPT_STAT_INC(traces_executed);                      \
-    _PyExecutorObject *_executor = (EXECUTOR);          \
-    jit_func jitted = _executor->jit_code;              \
-    /* Keep the shim frame alive via the executor: */   \
-    Py_INCREF(_executor);                               \
-    _PyInterpreterFrame *jit_entry = tstate->jit_entry; \
-    tstate->jit_entry = frame;                          \
-    next_instr = jitted(frame, stack_pointer, tstate);  \
-    tstate->jit_entry = jit_entry;                      \
-    Py_DECREF(_executor);                               \
-    Py_CLEAR(tstate->previous_executor);                \
-    frame = tstate->current_frame;                      \
-    stack_pointer = _PyFrame_GetStackPointer(frame);    \
-    if (next_instr == NULL) {                           \
-        next_instr = frame->instr_ptr;                  \
-        JUMP_TO_LABEL(error);                           \
-    }                                                   \
-    DISPATCH();                                         \
+#define GOTO_TIER_TWO(EXECUTOR)                        \
+do {                                                   \
+    OPT_STAT_INC(traces_executed);                     \
+    _PyExecutorObject *_executor = (EXECUTOR);         \
+    tstate->current_executor = (PyObject *)_executor;  \
+    jit_func jitted = _executor->jit_code;             \
+    /* Keep the shim frame alive via the executor: */  \
+    Py_INCREF(_executor);                              \
+    next_instr = jitted(frame, stack_pointer, tstate); \
+    Py_DECREF(_executor);                              \
+    frame = tstate->current_frame;                     \
+    stack_pointer = _PyFrame_GetStackPointer(frame);   \
+    if (next_instr == NULL) {                          \
+        next_instr = frame->instr_ptr;                 \
+        JUMP_TO_LABEL(error);                          \
+    }                                                  \
+    DISPATCH();                                        \
 } while (0)
 #else
 #define GOTO_TIER_TWO(EXECUTOR) \
 do { \
     OPT_STAT_INC(traces_executed); \
-    next_uop = (EXECUTOR)->trace; \
+    _PyExecutorObject *_executor = (EXECUTOR); \
+    tstate->current_executor = (PyObject *)_executor; \
+    next_uop = _executor->trace; \
     assert(next_uop->opcode == _START_EXECUTOR); \
     jit_entry = tstate->jit_entry; \
     tstate->jit_entry = frame; \
@@ -391,11 +390,11 @@ do { \
 #define GOTO_TIER_ONE(TARGET)                                         \
     do                                                                \
     {                                                                 \
-        tstate->jit_entry = jit_entry;                                \
+        tstate->current_executor = NULL;                              \
         next_instr = (TARGET);                                        \
+        assert(tstate->current_executor == NULL);                     \
         OPT_HIST(trace_uop_execution_counter, trace_run_length_hist); \
         _PyFrame_SetStackPointer(frame, stack_pointer);               \
-        Py_CLEAR(tstate->previous_executor);                          \
         stack_pointer = _PyFrame_GetStackPointer(frame);              \
         if (next_instr == NULL)                                       \
         {                                                             \
