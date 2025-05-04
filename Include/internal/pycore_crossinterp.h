@@ -171,6 +171,13 @@ PyAPI_FUNC(_PyBytes_data_t *) _PyBytes_GetXIDataWrapped(
         xid_newobjfunc,
         _PyXIData_t *);
 
+// _PyObject_GetXIData() for pickle
+PyAPI_DATA(PyObject *) _PyPickle_LoadFromXIData(_PyXIData_t *);
+PyAPI_FUNC(int) _PyPickle_GetXIData(
+        PyThreadState *,
+        PyObject *,
+        _PyXIData_t *);
+
 // _PyObject_GetXIData() for marshal
 PyAPI_FUNC(PyObject *) _PyMarshal_ReadObjectFromXIData(_PyXIData_t *);
 PyAPI_FUNC(int) _PyMarshal_GetXIData(

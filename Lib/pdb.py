@@ -1157,6 +1157,22 @@ class Pdb(bdb.Bdb, cmd.Cmd):
             state += 1
         return matches
 
+    @contextmanager
+    def _enable_rlcompleter(self, ns):
+        try:
+            import readline
+        except ImportError:
+            yield
+            return
+
+        try:
+            old_completer = readline.get_completer()
+            completer = Completer(ns)
+            readline.set_completer(completer.complete)
+            yield
+        finally:
+            readline.set_completer(old_completer)
+
     # Pdb meta commands, only intended to be used internally by pdb
 
     def _pdbcmd_print_frame_status(self, arg):
@@ -2242,9 +2258,10 @@ class Pdb(bdb.Bdb, cmd.Cmd):
         contains all the (global and local) names found in the current scope.
         """
         ns = {**self.curframe.f_globals, **self.curframe.f_locals}
-        console = _PdbInteractiveConsole(ns, message=self.message)
-        console.interact(banner="*pdb interact start*",
-                         exitmsg="*exit from pdb interact command*")
+        with self._enable_rlcompleter(ns):
+            console = _PdbInteractiveConsole(ns, message=self.message)
+            console.interact(banner="*pdb interact start*",
+                             exitmsg="*exit from pdb interact command*")
 
     def do_alias(self, arg):
         """alias [name [command]]
@@ -2716,7 +2733,7 @@ class _PdbServer(Pdb):
             try:
                 payload = json.loads(msg)
             except json.JSONDecodeError:
-                self.error(f"Disconnecting: client sent invalid JSON {msg}")
+                self.error(f"Disconnecting: client sent invalid JSON {msg!r}")
                 raise EOFError
 
             match payload:
@@ -2749,14 +2766,18 @@ class _PdbServer(Pdb):
             self.error(f"Ignoring invalid message from client: {msg}")
 
     def _complete_any(self, text, line, begidx, endidx):
-        if begidx == 0:
-            return self.completenames(text, line, begidx, endidx)
-
-        cmd = self.parseline(line)[0]
-        if cmd:
-            compfunc = getattr(self, "complete_" + cmd, self.completedefault)
-        else:
+        # If we're in 'interact' mode, we need to use the default completer
+        if self._interact_state:
             compfunc = self.completedefault
+        else:
+            if begidx == 0:
+                return self.completenames(text, line, begidx, endidx)
+
+            cmd = self.parseline(line)[0]
+            if cmd:
+                compfunc = getattr(self, "complete_" + cmd, self.completedefault)
+            else:
+                compfunc = self.completedefault
         return compfunc(text, line, begidx, endidx)
 
     def cmdloop(self, intro=None):
@@ -2912,6 +2933,7 @@ class _PdbClient:
         self.completion_matches = []
         self.state = "dumb"
         self.write_failed = False
+        self.multiline_block = False
 
     def _ensure_valid_message(self, msg):
         # Ensure the message conforms to our protocol.
@@ -2958,6 +2980,7 @@ class _PdbClient:
             self.write_failed = True
 
     def read_command(self, prompt):
+        self.multiline_block = False
         reply = input(prompt)
 
         if self.state == "dumb":
@@ -2982,6 +3005,7 @@ class _PdbClient:
             return prefix + reply
 
         # Otherwise, valid first line of a multi-line statement
+        self.multiline_block = True
         continue_prompt = "...".ljust(len(prompt))
         while codeop.compile_command(reply, "<stdin>", "single") is None:
             reply += "\n" + input(continue_prompt)
@@ -3023,7 +3047,7 @@ class _PdbClient:
                     payload = json.loads(payload_bytes)
                 except json.JSONDecodeError:
                     print(
-                        f"*** Invalid JSON from remote: {payload_bytes}",
+                        f"*** Invalid JSON from remote: {payload_bytes!r}",
                         flush=True,
                     )
                     continue
@@ -3084,9 +3108,13 @@ class _PdbClient:
 
             origline = readline.get_line_buffer()
             line = origline.lstrip()
-            stripped = len(origline) - len(line)
-            begidx = readline.get_begidx() - stripped
-            endidx = readline.get_endidx() - stripped
+            if self.multiline_block:
+                # We're completing a line contained in a multi-line block.
+                # Force the remote to treat it as a Python expression.
+                line = "! " + line
+            offset = len(origline) - len(line)
+            begidx = readline.get_begidx() - offset
+            endidx = readline.get_endidx() - offset
 
             msg = {
                 "complete": {
