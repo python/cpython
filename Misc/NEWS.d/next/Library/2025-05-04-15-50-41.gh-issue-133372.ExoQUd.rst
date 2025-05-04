@@ -1,1 +1,1 @@
-Add a C implementation of :class:`types._GeneratorWrapper`.
+Add a C implementation of :class:`~types._GeneratorWrapper`.
