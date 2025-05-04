@@ -81,6 +81,12 @@ class UnsupportedOperationTest(unittest.TestCase):
         self.assertTrue(isinstance(pathlib.UnsupportedOperation(), NotImplementedError))
 
 
+class TestImportTime(unittest.TestCase):
+    @cpython_only
+    def test_lazy_import(self):
+        import_helper.ensure_lazy_imports("pathlib", {"shutil"})
+
+
 #
 # Tests for the pure classes.
 #
@@ -129,10 +135,6 @@ class PurePathTest(unittest.TestCase):
         self.assertEqual(p, P(*args))
         for part in p.parts:
             self.assertIs(type(part), str)
-
-    @cpython_only
-    def test_lazy_import(self):
-        import_helper.ensure_lazy_imports("pathlib", {"shutil"})
 
     def test_str_subclass_common(self):
         self._check_str_subclass('')

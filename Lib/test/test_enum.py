@@ -1275,10 +1275,6 @@ class TestSpecial(unittest.TestCase):
             IDES_OF_MARCH = 2013, 3, 15
         self.Holiday = Holiday
 
-    @cpython_only
-    def test_lazy_import(self):
-        ensure_lazy_imports("enum", {"functools", "warnings", "inspect", "re"})
-
     def test_bool(self):
         # plain Enum members are always True
         class Logic(Enum):
@@ -5292,6 +5288,10 @@ class MiscTestCase(unittest.TestCase):
 
     def test__all__(self):
         support.check__all__(self, enum, not_exported={'bin', 'show_flag_values'})
+
+    @cpython_only
+    def test_lazy_import(self):
+        ensure_lazy_imports("enum", {"functools", "warnings", "inspect", "re"})
 
     def test_doc_1(self):
         class Single(Enum):
