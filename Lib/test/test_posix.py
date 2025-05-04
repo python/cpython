@@ -1549,10 +1549,6 @@ class PosixTester(unittest.TestCase):
             except NotImplementedError:
                 if os.link in os.supports_follow_symlinks or default_no_follow:
                     raise
-            except PermissionError:
-                if sys.platform == 'android':
-                    self.skipTest('Android blocks follow_symlinks with SELinux')
-                raise
             else:
                 self.addCleanup(os_helper.unlink, link)
                 self.assertEqual(posix.lstat(link), posix.lstat(symlink))
@@ -1565,10 +1561,6 @@ class PosixTester(unittest.TestCase):
             except NotImplementedError:
                 if os.link in os.supports_follow_symlinks or default_follow:
                     raise
-            except PermissionError:
-                if sys.platform == 'android':
-                    self.skipTest('Android blocks follow_symlinks with SELinux')
-                raise
             else:
                 self.addCleanup(os_helper.unlink, link)
                 self.assertEqual(posix.lstat(link), posix.lstat(orig))

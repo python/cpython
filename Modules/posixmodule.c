@@ -573,7 +573,7 @@ extern char *ctermid_r(char *);
 #  define HAVE_FACCESSAT_RUNTIME 1
 #  define HAVE_FCHMODAT_RUNTIME 1
 #  define HAVE_FCHOWNAT_RUNTIME 1
-#ifdef __wasi__
+#if defined(__wasi__) || defined(__ANDROID__)
 #  define HAVE_LINKAT_RUNTIME 0
 # else
 #  define HAVE_LINKAT_RUNTIME 1
