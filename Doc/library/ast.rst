@@ -2578,7 +2578,7 @@ The following options are accepted:
 
    .. versionadded:: next
 
-.. option:: -o <level>
+.. option:: -O <level>
             --optimize <level>
 
    Optimization level for parser.

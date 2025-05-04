@@ -646,7 +646,7 @@ def main():
     parser.add_argument('--feature-version',
                         type=str, default=None, metavar='VERSION',
                         help='python version in the format 3.x (e.g., 3.10)')
-    parser.add_argument('-o', '--optimize',
+    parser.add_argument('-O', '--optimize',
                         type=int, default=-1, metavar='LEVEL',
                         help='optimization level for parser (default -1)')
     parser.add_argument('--show-empty', default=False, action='store_true',
