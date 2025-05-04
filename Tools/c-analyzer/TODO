@@ -794,6 +794,7 @@ Objects/genobject.c:_PyAsyncGenASend_Type                        PyTypeObject _P
 Objects/genobject.c:_PyAsyncGenAThrow_Type                       PyTypeObject _PyAsyncGenAThrow_Type
 Objects/genobject.c:_PyAsyncGenWrappedValue_Type                 PyTypeObject _PyAsyncGenWrappedValue_Type
 Objects/genobject.c:_PyCoroWrapper_Type                          PyTypeObject _PyCoroWrapper_Type
+Objects/genobject.c:_PyGenWrapper_Type                           PyTypeObject _PyGenWrapper_Type
 Objects/interpolationobject.c:_PyInterpolation_Type              PyTypeObject _PyInterpolation_Type
 Objects/interpreteridobject.c:_PyInterpreterID_Type              PyTypeObject _PyInterpreterID_Type
 Objects/iterobject.c:PyCallIter_Type                             PyTypeObject PyCallIter_Type
