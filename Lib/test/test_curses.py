@@ -8,7 +8,8 @@ import unittest
 from unittest.mock import MagicMock
 
 from test.support import (requires, verbose, SaveSignals, cpython_only,
-                          check_disallow_instantiation, MISSING_C_DOCSTRINGS)
+                          check_disallow_instantiation, MISSING_C_DOCSTRINGS,
+                          gc_collect)
 from test.support.import_helper import import_module
 
 # Optionally test curses module.  This currently requires that the
@@ -186,6 +187,14 @@ class TestCurses(unittest.TestCase):
         self.assertEqual(win3.getbegyx(), (4, 8))
         self.assertEqual(win3.getparyx(), (2, 1))
         self.assertEqual(win3.getmaxyx(), (6, 11))
+
+    def test_subwindows_references(self):
+        win = curses.newwin(5, 10)
+        win2 = win.subwin(3, 7)
+        del win
+        gc_collect()
+        del win2
+        gc_collect()
 
     def test_move_cursor(self):
         stdscr = self.stdscr

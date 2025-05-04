@@ -666,7 +666,8 @@ Window_TwoArgNoReturnFunction(wresize, int, "ii;lines,columns")
 /* Allocation and deallocation of Window Objects */
 
 static PyObject *
-PyCursesWindow_New(WINDOW *win, const char *encoding)
+PyCursesWindow_New(WINDOW *win, const char *encoding,
+                   PyCursesWindowObject *orig)
 {
     PyCursesWindowObject *wo;
 
@@ -697,6 +698,8 @@ PyCursesWindow_New(WINDOW *win, const char *encoding)
         PyErr_NoMemory();
         return NULL;
     }
+    wo->orig = orig;
+    Py_XINCREF(orig);
     return (PyObject *)wo;
 }
 
@@ -706,6 +709,7 @@ PyCursesWindow_Dealloc(PyCursesWindowObject *wo)
     if (wo->win != stdscr) delwin(wo->win);
     if (wo->encoding != NULL)
         PyMem_Free(wo->encoding);
+    Py_XDECREF(wo->orig);
     PyObject_Free(wo);
 }
 
@@ -1309,7 +1313,7 @@ _curses_window_derwin_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     }
 
-    return (PyObject *)PyCursesWindow_New(win, NULL);
+    return (PyObject *)PyCursesWindow_New(win, NULL, self);
 }
 
 /*[clinic input]
@@ -2336,7 +2340,7 @@ _curses_window_subwin_impl(PyCursesWindowObject *self, int group_left_1,
         return NULL;
     }
 
-    return (PyObject *)PyCursesWindow_New(win, self->encoding);
+    return (PyObject *)PyCursesWindow_New(win, self->encoding, self);
 }
 
 /*[clinic input]
@@ -3084,7 +3088,7 @@ _curses_getwin(PyObject *module, PyObject *file)
         PyErr_SetString(PyCursesError, catchall_NULL);
         goto error;
     }
-    res = PyCursesWindow_New(win, NULL);
+    res = PyCursesWindow_New(win, NULL, NULL);
 
 error:
     fclose(fp);
@@ -3257,7 +3261,7 @@ _curses_initscr_impl(PyObject *module)
 
     if (initialised) {
         wrefresh(stdscr);
-        return (PyObject *)PyCursesWindow_New(stdscr, NULL);
+        return (PyObject *)PyCursesWindow_New(stdscr, NULL, NULL);
     }
 
     win = initscr();
@@ -3349,7 +3353,7 @@ _curses_initscr_impl(PyObject *module)
     SetDictInt("LINES", LINES);
     SetDictInt("COLS", COLS);
 
-    winobj = (PyCursesWindowObject *)PyCursesWindow_New(win, NULL);
+    winobj = (PyCursesWindowObject *)PyCursesWindow_New(win, NULL, NULL);
     screen_encoding = winobj->encoding;
     return (PyObject *)winobj;
 }
@@ -3728,7 +3732,7 @@ _curses_newpad_impl(PyObject *module, int nlines, int ncols)
         return NULL;
     }
 
-    return (PyObject *)PyCursesWindow_New(win, NULL);
+    return (PyObject *)PyCursesWindow_New(win, NULL, NULL);
 }
 
 /*[clinic input]
@@ -3767,7 +3771,7 @@ _curses_newwin_impl(PyObject *module, int nlines, int ncols,
         return NULL;
     }
 
-    return (PyObject *)PyCursesWindow_New(win, NULL);
+    return (PyObject *)PyCursesWindow_New(win, NULL, NULL);
 }
 
 /*[clinic input]
