@@ -361,7 +361,7 @@ Creating Futures and Tasks
 
    .. versionadded:: 3.5.2
 
-.. method:: loop.create_task(coro, *, name=None, context=None, eager_start=...)
+.. method:: loop.create_task(coro, *, name=None, context=None, eager_start=None)
 
    Schedule the execution of :ref:`coroutine <coroutine>` *coro*.
    Return a :class:`Task` object.
