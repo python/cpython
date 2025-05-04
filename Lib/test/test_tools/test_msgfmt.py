@@ -258,7 +258,6 @@ class POParserTest(unittest.TestCase):
             ('msgstr', None),
             ('msgstr[0]', None),
             ('[0]', f'Syntax error on messages.po:1 before:{os.linesep}[0]'),
-
             # unclosed string
             (
                 dedent('''\
@@ -267,7 +266,6 @@ class POParserTest(unittest.TestCase):
                 '''),
                 None
             ),
-
             # unclosed string
             (
                 dedent('''\
@@ -276,7 +274,6 @@ class POParserTest(unittest.TestCase):
                 '''),
                 None
             ),
-
             # unclosed string
             (
                 dedent('''\
@@ -285,7 +282,6 @@ class POParserTest(unittest.TestCase):
                 '''),
                 None
             ),
-
             # unclosed string
             (
                 dedent('''\
@@ -295,7 +291,6 @@ class POParserTest(unittest.TestCase):
                 '''),
                 None
             ),
-
             # illegal backslash
             (
                 dedent('''\
@@ -305,7 +300,6 @@ class POParserTest(unittest.TestCase):
                 '''),
                 None
             ),
-
             # msgid with an index
             (
                 dedent('''\
@@ -314,7 +308,6 @@ class POParserTest(unittest.TestCase):
                 '''),
                 None
             ),
-
             # invalid plural index
             (
                 dedent('''\
@@ -324,7 +317,6 @@ class POParserTest(unittest.TestCase):
                 '''),
                 None
             ),
-
             # invalid plural index
             (
                 dedent('''\
@@ -334,7 +326,6 @@ class POParserTest(unittest.TestCase):
                 '''),
                 'indexed msgstr required for plural on  messages.po:3'
             ),
-
             # invalid plural index
             (
                 dedent('''\
@@ -371,7 +362,6 @@ class POParserTest(unittest.TestCase):
                 '''),
                 'msgid_plural not preceded by msgid on messages.po:1'
             ),
-
             # msgid_plural not allowed after comment
             (
                 dedent('''\
@@ -383,7 +373,6 @@ class POParserTest(unittest.TestCase):
                 '''),
                 'msgid_plural not preceded by msgid on messages.po:2'
             ),
-
             # msgid_plural not allowed after msgctxt
             (
                 dedent('''\
@@ -395,7 +384,6 @@ class POParserTest(unittest.TestCase):
                 '''),
                 'msgid_plural not preceded by msgid on messages.po:2'
             ),
-
             # msgid_plural not allowed after msgstr
             (
                 dedent('''\
@@ -408,7 +396,6 @@ class POParserTest(unittest.TestCase):
                 '''),
                 'msgid_plural not preceded by msgid on messages.po:3'
             ),
-
             # msgstr must be preceded by msgid
             (
                 dedent('''\
@@ -419,7 +406,6 @@ class POParserTest(unittest.TestCase):
                 '''),
                 None
             ),
-
             # msgstr not allowed after msgctxt
             (
                 dedent('''\
@@ -431,7 +417,6 @@ class POParserTest(unittest.TestCase):
                 '''),
                 None
             ),
-
             # missing msgid_plural section
             (
                 dedent('''\
