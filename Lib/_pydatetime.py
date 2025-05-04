@@ -745,19 +745,24 @@ class timedelta:
         # secondsfrac isn't referenced again
 
         if isinstance(microseconds, float):
-            microseconds = round(microseconds + usdouble)
+            microseconds, nanoseconds1 = divmod((microseconds + usdouble) * 1000, 1000)
+            microseconds = round(microseconds)
+            nanoseconds += nanoseconds1
             seconds, microseconds = divmod(microseconds, 1000000)
             days, seconds = divmod(seconds, 24*3600)
             d += days
             s += seconds
         else:
-            microseconds = int(microseconds)
+            microseconds, nanoseconds1 = divmod((microseconds) * 1000, 1000)
+            microseconds = round(microseconds)
+            nanoseconds += nanoseconds1
             seconds, microseconds = divmod(microseconds, 1000000)
             days, seconds = divmod(seconds, 24*3600)
             d += days
             s += seconds
             microseconds = round(microseconds + usdouble)
-        assert isinstance(s, int)
+        nanoseconds = round(nanoseconds)
+        assert isinstance(s, int), f"{s =}"
         assert isinstance(microseconds, int)
         assert abs(s) <= 3 * 24 * 3600
         assert abs(microseconds) < 3.1e6
@@ -2829,6 +2834,3 @@ _EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
 # small dst() may get within its bounds; and it doesn't even matter if some
 # perverse time zone returns a negative dst()).  So a breaking case must be
 # pretty bizarre, and a tzinfo subclass can override fromutc() if it is.
-print(timedelta(microseconds=0.5))
-print(timedelta(microseconds=1))
-print(timedelta(nanoseconds=1))

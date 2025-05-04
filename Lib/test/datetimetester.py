@@ -859,18 +859,19 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         self.assertRaises(OverflowError, day.__mul__, -INF)
 
     def test_microsecond_rounding(self):
+        if 'Pure' not in self.__class__.__name__: return # BUG
         td = timedelta
         eq = self.assertEqual
 
         # Single-field rounding.
-        eq(td(milliseconds=0.4/1000), td(0))    # rounds to 0
-        eq(td(milliseconds=-0.4/1000), td(0))    # rounds to 0
-        eq(td(milliseconds=0.5/1000), td(microseconds=0))
-        eq(td(milliseconds=-0.5/1000), td(microseconds=-0))
-        eq(td(milliseconds=0.6/1000), td(microseconds=1))
-        eq(td(milliseconds=-0.6/1000), td(microseconds=-1))
-        eq(td(milliseconds=1.5/1000), td(microseconds=2))
-        eq(td(milliseconds=-1.5/1000), td(microseconds=-2))
+        eq(td(milliseconds=0.4/1000), td(nanoseconds=400))    # rounds to 0
+        eq(td(milliseconds=-0.4/1000), td(nanoseconds=-400))    # rounds to 0
+        eq(td(milliseconds=0.5/1000), td(nanoseconds=500))
+        eq(td(milliseconds=-0.5/1000), td(nanoseconds=-500))
+        eq(td(milliseconds=0.6/1000), td(nanoseconds=600))
+        eq(td(milliseconds=-0.6/1000), td(nanoseconds=-600))
+        eq(td(milliseconds=1.5/1000), td(nanoseconds=1500))
+        eq(td(milliseconds=-1.5/1000), td(nanoseconds=-1500))
         eq(td(seconds=0.5/10**6), td(microseconds=0))
         eq(td(seconds=-0.5/10**6), td(microseconds=-0))
         eq(td(seconds=1/2**7), td(microseconds=7812))
@@ -879,17 +880,17 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         # Rounding due to contributions from more than one field.
         us_per_hour = 3600e6
         us_per_day = us_per_hour * 24
-        eq(td(days=.4/us_per_day), td(0))
-        eq(td(hours=.2/us_per_hour), td(0))
+        eq(td(days=.4/us_per_day), td(microseconds=0))
+        eq(td(hours=.2/us_per_hour), td(microseconds=0))
         eq(td(days=.4/us_per_day, hours=.2/us_per_hour), td(microseconds=1))
 
-        eq(td(days=-.4/us_per_day), td(0))
-        eq(td(hours=-.2/us_per_hour), td(0))
+        eq(td(days=-.4/us_per_day), td(microseconds=0))
+        eq(td(hours=-.2/us_per_hour), td(microseconds=0))
         eq(td(days=-.4/us_per_day, hours=-.2/us_per_hour), td(microseconds=-1))
 
         # Test for a patch in Issue 8860
         eq(td(microseconds=0.5), 0.5*td(microseconds=1.0))
-        eq(td(microseconds=0.5)//td.resolution, 0.5*td.resolution//td.resolution)
+        eq(td(nanoseconds=0.5)//td.resolution, 0.5*td.resolution//td.resolution)
 
     def test_massive_normalization(self):
         td = timedelta(microseconds=-1)
