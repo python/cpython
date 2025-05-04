@@ -1,2 +1,2 @@
-Add ``--feature-version``, ``--optimize``, ``--show-empty`` options for
-:mod:`ast` command-line interface. Patch by Semyon Moroz.
+Add the ``--feature-version``, ``--optimize``, and ``--show-empty`` options
+to the :mod:`ast` command-line interface. Patch by Semyon Moroz.
