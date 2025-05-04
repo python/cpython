@@ -3200,7 +3200,7 @@ class CommandLineTests(unittest.TestCase):
         ):
             ast.main(args=[*flags, self.filename])
         self.assertEqual(stderr.getvalue(), '')
-        return self.text_normalize(stdout.getvalue())
+        return stdout.getvalue().strip()
 
     def check_output(self, source, expect, *flags):
         with self.subTest(source=source, flags=flags):
