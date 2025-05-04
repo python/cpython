@@ -1231,7 +1231,7 @@ class ZstdDictTestCase(unittest.TestCase):
 
         # wrong size list
         with self.assertRaisesRegex(ValueError,
-                "The samples size list doesn't match the concatenation's size"):
+                "The samples size tuple doesn't match the concatenation's size"):
             _zstd._train_dict(concatenation, tuple(wrong_size_lst), 100*_1K)
 
         # correct size list
@@ -1239,7 +1239,7 @@ class ZstdDictTestCase(unittest.TestCase):
 
         # wrong size list
         with self.assertRaisesRegex(ValueError,
-                "The samples size list doesn't match the concatenation's size"):
+                "The samples size tuple doesn't match the concatenation's size"):
             _zstd._finalize_dict(TRAINED_DICT.dict_content,
                                   concatenation, tuple(wrong_size_lst), 300*_1K, 5)
 
