@@ -173,7 +173,7 @@ class Unittest(ThemeSection):
 @dataclass(frozen=True)
 class Theme:
     """A suite of themes for all sections of Python.
-    
+
     When adding a new one, remember to also modify `copy_with` and `no_colors`
     below.
     """
