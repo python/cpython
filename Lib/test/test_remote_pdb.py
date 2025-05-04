@@ -87,7 +87,9 @@ class PdbClientTestCase(unittest.TestCase):
         *,
         incoming,
         simulate_send_failure=False,
+        simulate_sigint_during_stdout_write=False,
         expected_outgoing=None,
+        expected_outgoing_signals=None,
         expected_completions=None,
         expected_exception=None,
         expected_stdout="",
@@ -96,6 +98,8 @@ class PdbClientTestCase(unittest.TestCase):
     ):
         if expected_outgoing is None:
             expected_outgoing = []
+        if expected_outgoing_signals is None:
+            expected_outgoing_signals = []
         if expected_completions is None:
             expected_completions = []
         if expected_state is None:
@@ -130,7 +134,9 @@ class PdbClientTestCase(unittest.TestCase):
             reply = message["input"]
             if isinstance(reply, BaseException):
                 raise reply
-            return reply
+            if isinstance(reply, str):
+                return reply
+            return reply()
 
         with ExitStack() as stack:
             client_sock, server_sock = socket.socketpair()
@@ -155,15 +161,25 @@ class PdbClientTestCase(unittest.TestCase):
 
             stdout = io.StringIO()
 
+            if simulate_sigint_during_stdout_write:
+                orig_stdout_write = stdout.write
+
+                def sigint_stdout_write(s):
+                    signal.raise_signal(signal.SIGINT)
+                    return orig_stdout_write(s)
+
+                stdout.write = sigint_stdout_write
+
             input_mock = stack.enter_context(
                 unittest.mock.patch("pdb.input", side_effect=mock_input)
             )
             stack.enter_context(redirect_stdout(stdout))
 
+            interrupt_sock = unittest.mock.Mock(spec=socket.socket)
             client = _PdbClient(
                 pid=0,
                 server_socket=server_sock,
-                interrupt_sock=unittest.mock.Mock(spec=socket.socket),
+                interrupt_sock=interrupt_sock,
             )
 
             if expected_exception is not None:
@@ -187,6 +203,12 @@ class PdbClientTestCase(unittest.TestCase):
         input_mock.assert_has_calls([unittest.mock.call(p) for p in prompts])
         actual_state = {k: getattr(client, k) for k in expected_state}
         self.assertEqual(actual_state, expected_state)
+
+        outgoing_signals = [
+            signal.Signals(int.from_bytes(call.args[0]))
+            for call in interrupt_sock.sendall.call_args_list
+        ]
+        self.assertEqual(outgoing_signals, expected_outgoing_signals)
 
     def test_remote_immediately_closing_the_connection(self):
         """Test the behavior when the remote closes the connection immediately."""
@@ -382,11 +404,17 @@ class PdbClientTestCase(unittest.TestCase):
             expected_state={"state": "dumb"},
         )
 
-    def test_keyboard_interrupt_at_prompt(self):
-        """Test signaling when a prompt gets a KeyboardInterrupt."""
+    def test_sigint_at_prompt(self):
+        """Test signaling when a prompt gets interrupted."""
         incoming = [
             ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
-            ("user", {"prompt": "(Pdb) ", "input": KeyboardInterrupt()}),
+            (
+                "user",
+                {
+                    "prompt": "(Pdb) ",
+                    "input": lambda: signal.raise_signal(signal.SIGINT),
+                },
+            ),
         ]
         self.do_test(
             incoming=incoming,
@@ -394,6 +422,40 @@ class PdbClientTestCase(unittest.TestCase):
                 {"signal": "INT"},
             ],
             expected_state={"state": "pdb"},
+        )
+
+    def test_sigint_at_continuation_prompt(self):
+        """Test signaling when a continuation prompt gets interrupted."""
+        incoming = [
+            ("server", {"prompt": "(Pdb) ", "state": "pdb"}),
+            ("user", {"prompt": "(Pdb) ", "input": "if True:"}),
+            (
+                "user",
+                {
+                    "prompt": "...   ",
+                    "input": lambda: signal.raise_signal(signal.SIGINT),
+                },
+            ),
+        ]
+        self.do_test(
+            incoming=incoming,
+            expected_outgoing=[
+                {"signal": "INT"},
+            ],
+            expected_state={"state": "pdb"},
+        )
+
+    def test_sigint_when_writing(self):
+        """Test siginaling when sys.stdout.write() gets interrupted."""
+        incoming = [
+            ("server", {"message": "Some message or other\n", "type": "info"}),
+        ]
+        self.do_test(
+            incoming=incoming,
+            simulate_sigint_during_stdout_write=True,
+            expected_outgoing=[],
+            expected_outgoing_signals=[signal.SIGINT],
+            expected_stdout="Some message or other\n",
         )
 
     def test_eof_at_prompt(self):
