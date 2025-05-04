@@ -2576,14 +2576,20 @@ The following options are accepted:
 
    Minor version (int) or 3.x tuple (e.g., 3.10).
 
+   .. versionadded:: next
+
 .. option:: -o <level>
             --optimize <level>
 
    Optimization level for parser.
 
+   .. versionadded:: next
+
 .. option:: --show-empty
 
    Show empty lists and fields in dump output.
+
+   .. versionadded:: next
 
 If :file:`infile` is specified its contents are parsed to AST and dumped
 to stdout.  Otherwise, the content is read from stdin.
