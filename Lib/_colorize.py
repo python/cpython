@@ -79,12 +79,12 @@ for attr, code in ANSIColors.__dict__.items():
 # Experimental theming support (see gh-133346)
 #
 
-# - create a theme by copying an existing `Theme` with one or more sections
+# - Create a theme by copying an existing `Theme` with one or more sections
 #   replaced, using `default_theme.copy_with()`;
 # - create a theme section by copying an existing `ThemeSection` with one or
 #   more colors replaced, using for example `default_theme.repl.copy_with()`;
 # - create a theme from scratch by instantiating a `Theme` data class with
-#   the required sections (with are also dataclass instances).
+#   the required sections (which are also dataclass instances).
 #
 # Then call `_colorize.set_theme(your_theme)` to set it.
 #
