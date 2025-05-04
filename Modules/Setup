@@ -132,7 +132,6 @@ PYTHONPATH=$(COREPYTHONPATH)
 
 #_asyncio _asynciomodule.c
 #_bisect _bisectmodule.c
-#_contextvars _contextvarsmodule.c
 #_csv _csv.c
 #_datetime _datetimemodule.c
 #_decimal _decimal/_decimal.c
@@ -150,6 +149,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_socket socketmodule.c
 #_statistics _statisticsmodule.c
 #_struct _struct.c
+#_types _typesmodule.c
 #_typing _typingmodule.c
 #_zoneinfo _zoneinfo.c
 #array arraymodule.c
@@ -165,11 +165,12 @@ PYTHONPATH=$(COREPYTHONPATH)
 #pyexpat pyexpat.c
 
 # hashing builtins
-#_blake2 blake2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_Blake2.a
-#_md5 md5module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_MD5.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
-#_sha1 sha1module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA1.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
-#_sha2 sha2module.c -I$(srcdir)/Modules/_hacl/include Modules/_hacl/libHacl_Hash_SHA2.a
-#_sha3 sha3module.c -I$(srcdir)/Modules/_hacl/include _hacl/Hacl_Hash_SHA3.c -D_BSD_SOURCE -D_DEFAULT_SOURCE
+#_blake2 blake2module.c
+#_md5 md5module.c
+#_sha1 sha1module.c
+#_sha2 sha2module.c
+#_sha3 sha3module.c
+#_hmac hmacmodule.c
 
 # text encodings and unicode
 #_codecs_cn cjkcodecs/_codecs_cn.c
@@ -199,6 +200,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_dbm _dbmmodule.c -lgdbm_compat -DUSE_GDBM_COMPAT
 #_gdbm _gdbmmodule.c -lgdbm
 #_lzma _lzmamodule.c -llzma
+#_zstd _zstd/_zstdmodule.c -lzstd -I$(srcdir)/Modules/_zstd
 #_uuid _uuidmodule.c -luuid
 #zlib  zlibmodule.c -lz
 
@@ -285,7 +287,7 @@ PYTHONPATH=$(COREPYTHONPATH)
 #_testcapi _testcapimodule.c
 #_testimportmultiple _testimportmultiple.c
 #_testmultiphase _testmultiphase.c
-#_testexternalinspection _testexternalinspection.c
+#_remotedebugging _remotedebuggingmodule.c
 #_testsinglephase _testsinglephase.c
 
 # ---

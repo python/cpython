@@ -1,15 +1,13 @@
+/* This files contains various key structs that are widely used
+ * and do not depend on other headers. */
+
 #ifndef Py_INTERNAL_STRUCTS_H
 #define Py_INTERNAL_STRUCTS_H
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* This files contains various key structs that are widely used
- * and do not depend on other headers. */
-
-#include <stddef.h>
-#include <stdint.h>
-#include <stdbool.h>
+#include <stdint.h>      // uint16_t
 
 
 typedef struct {
@@ -54,10 +52,16 @@ typedef struct {
     PyObject *b_array[1];
 } PyHamtNode_Bitmap;
 
-#include "pycore_context.h"
+#include "pycore_context.h"       // _PyContextTokenMissing
 
 // Define this to get precise tracking of stackrefs.
 // #define Py_STACKREF_DEBUG 1
+
+// Define this to get precise tracking of closed stackrefs.
+// This will use unbounded memory, as it can only grow.
+// Use this to track double closes in short-lived programs
+// #define Py_STACKREF_CLOSE_DEBUG 1
+
 
 typedef union _PyStackRef {
 #if !defined(Py_GIL_DISABLED) && defined(Py_STACKREF_DEBUG)
@@ -66,6 +70,16 @@ typedef union _PyStackRef {
     uintptr_t bits;
 #endif
 } _PyStackRef;
+
+// A stackref that can be stored in a regular C local variable and be visible
+// to the GC in the free threading build.
+// Used in combination with _PyThreadState_PushCStackRef().
+typedef struct _PyCStackRef {
+    _PyStackRef ref;
+#ifdef Py_GIL_DISABLED
+    struct _PyCStackRef *next;
+#endif
+} _PyCStackRef;
 
 
 #ifdef __cplusplus

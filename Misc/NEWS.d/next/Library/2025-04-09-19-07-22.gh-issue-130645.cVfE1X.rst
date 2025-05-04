@@ -1,0 +1,1 @@
+Add colour to :mod:`argparse` help output. Patch by Hugo van Kemenade.

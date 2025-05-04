@@ -11,8 +11,6 @@
 #include "pycore_call.h"          // _PyObject_CallNoArgs()
 #include "pycore_runtime.h"       // _Py_ID()
 
-#include <stdbool.h>
-
 #ifdef MS_WIN32
 #  include <malloc.h>
 #endif

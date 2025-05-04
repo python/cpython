@@ -60,9 +60,6 @@ from _io import (DEFAULT_BUFFER_SIZE, BlockingIOError, UnsupportedOperation,
                  IncrementalNewlineDecoder, text_encoding, TextIOWrapper)
 
 
-# Pretend this exception was created here.
-UnsupportedOperation.__module__ = "io"
-
 # for seek()
 SEEK_SET = 0
 SEEK_CUR = 1

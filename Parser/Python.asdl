@@ -78,7 +78,9 @@ module Python
          | Compare(expr left, cmpop* ops, expr* comparators)
          | Call(expr func, expr* args, keyword* keywords)
          | FormattedValue(expr value, int conversion, expr? format_spec)
+         | Interpolation(expr value, constant str, int conversion, expr? format_spec)
          | JoinedStr(expr* values)
+         | TemplateStr(expr* values)
          | Constant(constant value, string? kind)
 
          -- the following expression can appear in assignment context

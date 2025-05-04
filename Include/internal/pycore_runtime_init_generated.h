@@ -585,7 +585,9 @@ extern "C" {
     INIT_ID(__and__), \
     INIT_ID(__anext__), \
     INIT_ID(__annotate__), \
+    INIT_ID(__annotate_func__), \
     INIT_ID(__annotations__), \
+    INIT_ID(__annotations_cache__), \
     INIT_ID(__args__), \
     INIT_ID(__await__), \
     INIT_ID(__bases__), \
@@ -596,12 +598,14 @@ extern "C" {
     INIT_ID(__bytes__), \
     INIT_ID(__call__), \
     INIT_ID(__cantrace__), \
+    INIT_ID(__ceil__), \
     INIT_ID(__class__), \
     INIT_ID(__class_getitem__), \
     INIT_ID(__classcell__), \
     INIT_ID(__classdict__), \
     INIT_ID(__classdictcell__), \
     INIT_ID(__complex__), \
+    INIT_ID(__conditional_annotations__), \
     INIT_ID(__contains__), \
     INIT_ID(__ctypes_from_outparam__), \
     INIT_ID(__del__), \
@@ -619,6 +623,7 @@ extern "C" {
     INIT_ID(__file__), \
     INIT_ID(__firstlineno__), \
     INIT_ID(__float__), \
+    INIT_ID(__floor__), \
     INIT_ID(__floordiv__), \
     INIT_ID(__format__), \
     INIT_ID(__fspath__), \
@@ -724,6 +729,7 @@ extern "C" {
     INIT_ID(__subclasscheck__), \
     INIT_ID(__subclasshook__), \
     INIT_ID(__truediv__), \
+    INIT_ID(__trunc__), \
     INIT_ID(__type_params__), \
     INIT_ID(__typing_is_unpacked_typevartuple__), \
     INIT_ID(__typing_prepare_subst__), \
@@ -747,6 +753,7 @@ extern "C" {
     INIT_ID(_feature_version), \
     INIT_ID(_field_types), \
     INIT_ID(_fields_), \
+    INIT_ID(_filters), \
     INIT_ID(_finalizing), \
     INIT_ID(_find_and_load), \
     INIT_ID(_fix_up_module), \
@@ -754,6 +761,7 @@ extern "C" {
     INIT_ID(_get_sourcefile), \
     INIT_ID(_handle_fromlist), \
     INIT_ID(_initializing), \
+    INIT_ID(_internal_use), \
     INIT_ID(_io), \
     INIT_ID(_is_text_encoding), \
     INIT_ID(_isatty_open_only), \
@@ -785,7 +793,9 @@ extern "C" {
     INIT_ID(aggregate_class), \
     INIT_ID(alias), \
     INIT_ID(align), \
+    INIT_ID(all), \
     INIT_ID(allow_code), \
+    INIT_ID(any), \
     INIT_ID(append), \
     INIT_ID(arg), \
     INIT_ID(argdefs), \
@@ -804,6 +814,7 @@ extern "C" {
     INIT_ID(before), \
     INIT_ID(big), \
     INIT_ID(binary_form), \
+    INIT_ID(bit_offset), \
     INIT_ID(bit_size), \
     INIT_ID(block), \
     INIT_ID(bound), \
@@ -814,11 +825,14 @@ extern "C" {
     INIT_ID(buffers), \
     INIT_ID(bufsize), \
     INIT_ID(builtins), \
+    INIT_ID(byte_offset), \
+    INIT_ID(byte_size), \
     INIT_ID(byteorder), \
     INIT_ID(bytes), \
     INIT_ID(bytes_per_sep), \
     INIT_ID(c_call), \
     INIT_ID(c_exception), \
+    INIT_ID(c_parameter_type), \
     INIT_ID(c_return), \
     INIT_ID(cached_datetime_module), \
     INIT_ID(cached_statements), \
@@ -865,6 +879,7 @@ extern "C" {
     INIT_ID(consts), \
     INIT_ID(context), \
     INIT_ID(contravariant), \
+    INIT_ID(conversion), \
     INIT_ID(cookie), \
     INIT_ID(copy), \
     INIT_ID(copyreg), \
@@ -872,6 +887,7 @@ extern "C" {
     INIT_ID(count), \
     INIT_ID(covariant), \
     INIT_ID(cwd), \
+    INIT_ID(d_parameter_type), \
     INIT_ID(data), \
     INIT_ID(database), \
     INIT_ID(day), \
@@ -886,6 +902,7 @@ extern "C" {
     INIT_ID(deterministic), \
     INIT_ID(device), \
     INIT_ID(dict), \
+    INIT_ID(dict_content), \
     INIT_ID(dictcomp), \
     INIT_ID(difference_update), \
     INIT_ID(digest), \
@@ -922,6 +939,7 @@ extern "C" {
     INIT_ID(exception), \
     INIT_ID(existing_file_name), \
     INIT_ID(exp), \
+    INIT_ID(expression), \
     INIT_ID(extend), \
     INIT_ID(extra_tokens), \
     INIT_ID(facility), \
@@ -951,6 +969,7 @@ extern "C" {
     INIT_ID(follow_symlinks), \
     INIT_ID(format), \
     INIT_ID(format_spec), \
+    INIT_ID(frame_buffer), \
     INIT_ID(from_param), \
     INIT_ID(fromlist), \
     INIT_ID(fromtimestamp), \
@@ -1008,6 +1027,9 @@ extern "C" {
     INIT_ID(intern), \
     INIT_ID(intersection), \
     INIT_ID(interval), \
+    INIT_ID(io), \
+    INIT_ID(is_compress), \
+    INIT_ID(is_raw), \
     INIT_ID(is_running), \
     INIT_ID(is_struct), \
     INIT_ID(isatty), \
@@ -1131,6 +1153,7 @@ extern "C" {
     INIT_ID(overlapped), \
     INIT_ID(owner), \
     INIT_ID(pages), \
+    INIT_ID(parameter), \
     INIT_ID(parent), \
     INIT_ID(password), \
     INIT_ID(path), \
@@ -1183,6 +1206,7 @@ extern "C" {
     INIT_ID(salt), \
     INIT_ID(sched_priority), \
     INIT_ID(scheduler), \
+    INIT_ID(script), \
     INIT_ID(second), \
     INIT_ID(security_attributes), \
     INIT_ID(seek), \
@@ -1291,6 +1315,7 @@ extern "C" {
     INIT_ID(write_through), \
     INIT_ID(year), \
     INIT_ID(zdict), \
+    INIT_ID(zstd_dict), \
 }
 
 #define _Py_str_ascii_INIT { \

@@ -6,6 +6,7 @@
 #endif
 
 #include "pycore_structs.h"       // _Py_CODEUNIT
+#include "pycore_typedefs.h"      // _PyInterpreterFrame
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,32 +35,32 @@ int _PyMonitoring_GetLocalEvents(PyCodeObject *code, int tool_id, _PyMonitoringE
 
 extern int
 _Py_call_instrumentation(PyThreadState *tstate, int event,
-    struct _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr);
 
 extern int
-_Py_call_instrumentation_line(PyThreadState *tstate, struct _PyInterpreterFrame* frame,
+_Py_call_instrumentation_line(PyThreadState *tstate, _PyInterpreterFrame* frame,
                               _Py_CODEUNIT *instr, _Py_CODEUNIT *prev);
 
 extern int
 _Py_call_instrumentation_instruction(
-    PyThreadState *tstate, struct _PyInterpreterFrame* frame, _Py_CODEUNIT *instr);
+    PyThreadState *tstate, _PyInterpreterFrame* frame, _Py_CODEUNIT *instr);
 
 _Py_CODEUNIT *
 _Py_call_instrumentation_jump(
     _Py_CODEUNIT *instr, PyThreadState *tstate, int event,
-    struct _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest);
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *src, _Py_CODEUNIT *dest);
 
 extern int
 _Py_call_instrumentation_arg(PyThreadState *tstate, int event,
-    struct _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg);
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg);
 
 extern int
 _Py_call_instrumentation_2args(PyThreadState *tstate, int event,
-    struct _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
 
 extern void
 _Py_call_instrumentation_exc2(PyThreadState *tstate, int event,
-    struct _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
+    _PyInterpreterFrame *frame, _Py_CODEUNIT *instr, PyObject *arg0, PyObject *arg1);
 
 extern int
 _Py_Instrumentation_GetLine(PyCodeObject *code, int index);

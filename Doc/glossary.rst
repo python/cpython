@@ -132,6 +132,28 @@ Glossary
       iterator's :meth:`~object.__anext__` method until it raises a
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
 
+   attached thread state
+
+      A :term:`thread state` that is active for the current OS thread.
+
+      When a :term:`thread state` is attached, the OS thread has
+      access to the full Python C API and can safely invoke the
+      bytecode interpreter.
+
+      Unless a function explicitly notes otherwise, attempting to call
+      the C API without an attached thread state will result in a fatal
+      error or undefined behavior.  A thread state can be attached and detached
+      explicitly by the user through the C API, or implicitly by the runtime,
+      including during blocking C calls and by the bytecode interpreter in between
+      calls.
+
+      On most builds of Python, having an attached thread state implies that the
+      caller holds the :term:`GIL` for the current interpreter, so only
+      one OS thread can have an attached thread state at a given moment. In
+      :term:`free-threaded <free threading>` builds of Python, threads can concurrently
+      hold an attached thread state, allowing for true parallelism of the bytecode
+      interpreter.
+
    attribute
       A value associated with an object which is usually referenced by name
       using dotted expressions.
@@ -621,6 +643,10 @@ Glossary
       environment variable. This feature enables improved performance for
       multi-threaded applications and makes it easier to use multi-core CPUs
       efficiently. For more details, see :pep:`703`.
+
+      In prior versions of Python's C API, a function might declare that it
+      requires the GIL to be held in order to use it. This refers to having an
+      :term:`attached thread state`.
 
    hash-based pyc
       A bytecode cache file that uses the hash rather than the last-modified
@@ -1294,6 +1320,29 @@ Glossary
 
       See also :term:`binary file` for a file object able to read and write
       :term:`bytes-like objects <bytes-like object>`.
+
+   thread state
+
+      The information used by the :term:`CPython` runtime to run in an OS thread.
+      For example, this includes the current exception, if any, and the
+      state of the bytecode interpreter.
+
+      Each thread state is bound to a single OS thread, but threads may have
+      many thread states available.  At most, one of them may be
+      :term:`attached <attached thread state>` at once.
+
+      An :term:`attached thread state` is required to call most
+      of Python's C API, unless a function explicitly documents otherwise.
+      The bytecode interpreter only runs under an attached thread state.
+
+      Each thread state belongs to a single interpreter, but each interpreter
+      may have many thread states, including multiple for the same OS thread.
+      Thread states from multiple interpreters may be bound to the same
+      thread, but only one can be :term:`attached <attached thread state>` in
+      that thread at any given moment.
+
+      See :ref:`Thread State and the Global Interpreter Lock <threads>` for more
+      information.
 
    token
 

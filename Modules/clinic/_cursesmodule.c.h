@@ -2388,7 +2388,7 @@ _curses_ungetmouse(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (z == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    if (!PyLong_Check(args[4])) {
+    if (!PyIndex_Check(args[4])) {
         _PyArg_BadArgument("ungetmouse", "argument 5", "int", args[4]);
         goto exit;
     }
@@ -2703,9 +2703,11 @@ _curses_setupterm(PyObject *module, PyObject *const *args, Py_ssize_t nargs, PyO
     static struct {
         PyGC_Head _this_is_not_used;
         PyObject_VAR_HEAD
+        Py_hash_t ob_hash;
         PyObject *ob_item[NUM_KEYWORDS];
     } _kwtuple = {
         .ob_base = PyVarObject_HEAD_INIT(&PyTuple_Type, NUM_KEYWORDS)
+        .ob_hash = -1,
         .ob_item = { &_Py_ID(term), &_Py_ID(fd), },
     };
     #undef NUM_KEYWORDS
@@ -3152,7 +3154,7 @@ _curses_mousemask(PyObject *module, PyObject *arg)
     PyObject *return_value = NULL;
     unsigned long newmask;
 
-    if (!PyLong_Check(arg)) {
+    if (!PyIndex_Check(arg)) {
         _PyArg_BadArgument("mousemask", "argument", "int", arg);
         goto exit;
     }
@@ -4261,10 +4263,7 @@ PyDoc_STRVAR(_curses_use_default_colors__doc__,
 "use_default_colors($module, /)\n"
 "--\n"
 "\n"
-"Allow use of default values for colors on terminals supporting this feature.\n"
-"\n"
-"Use this to support transparency in your application.  The default color\n"
-"is assigned to the color number -1.");
+"Equivalent to assume_default_colors(-1, -1).");
 
 #define _CURSES_USE_DEFAULT_COLORS_METHODDEF    \
     {"use_default_colors", (PyCFunction)_curses_use_default_colors, METH_NOARGS, _curses_use_default_colors__doc__},
@@ -4276,6 +4275,51 @@ static PyObject *
 _curses_use_default_colors(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_use_default_colors_impl(module);
+}
+
+#endif /* !defined(STRICT_SYSV_CURSES) */
+
+#if !defined(STRICT_SYSV_CURSES)
+
+PyDoc_STRVAR(_curses_assume_default_colors__doc__,
+"assume_default_colors($module, fg, bg, /)\n"
+"--\n"
+"\n"
+"Allow use of default values for colors on terminals supporting this feature.\n"
+"\n"
+"Assign terminal default foreground/background colors to color number -1.\n"
+"Change the definition of the color-pair 0 to (fg, bg).\n"
+"\n"
+"Use this to support transparency in your application.");
+
+#define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF    \
+    {"assume_default_colors", _PyCFunction_CAST(_curses_assume_default_colors), METH_FASTCALL, _curses_assume_default_colors__doc__},
+
+static PyObject *
+_curses_assume_default_colors_impl(PyObject *module, int fg, int bg);
+
+static PyObject *
+_curses_assume_default_colors(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyObject *return_value = NULL;
+    int fg;
+    int bg;
+
+    if (!_PyArg_CheckPositional("assume_default_colors", nargs, 2, 2)) {
+        goto exit;
+    }
+    fg = PyLong_AsInt(args[0]);
+    if (fg == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    bg = PyLong_AsInt(args[1]);
+    if (bg == -1 && PyErr_Occurred()) {
+        goto exit;
+    }
+    return_value = _curses_assume_default_colors_impl(module, fg, bg);
+
+exit:
+    return return_value;
 }
 
 #endif /* !defined(STRICT_SYSV_CURSES) */
@@ -4392,4 +4436,8 @@ _curses_has_extended_color_support(PyObject *module, PyObject *Py_UNUSED(ignored
 #ifndef _CURSES_USE_DEFAULT_COLORS_METHODDEF
     #define _CURSES_USE_DEFAULT_COLORS_METHODDEF
 #endif /* !defined(_CURSES_USE_DEFAULT_COLORS_METHODDEF) */
-/*[clinic end generated code: output=ce2d19df9e20bfa3 input=a9049054013a1b77]*/
+
+#ifndef _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
+    #define _CURSES_ASSUME_DEFAULT_COLORS_METHODDEF
+#endif /* !defined(_CURSES_ASSUME_DEFAULT_COLORS_METHODDEF) */
+/*[clinic end generated code: output=42b2923d88c8d0f6 input=a9049054013a1b77]*/
