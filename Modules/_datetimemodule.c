@@ -4896,10 +4896,7 @@ time_repr(PyObject *op)
     int fold = TIME_GET_FOLD(self);
     PyObject *result = NULL;
 
-    if (ns)
-        result = PyUnicode_FromFormat("%s(%d, %d, %d, %d, %d)",
-                                      type_name, h, m, s, us, ns);
-    else if (us)
+    if (us)
         result = PyUnicode_FromFormat("%s(%d, %d, %d, %d)",
                                       type_name, h, m, s, us);
     else if (s)
@@ -4907,11 +4904,13 @@ time_repr(PyObject *op)
                                       type_name, h, m, s);
     else
         result = PyUnicode_FromFormat("%s(%d, %d)", type_name, h, m);
-    if (result != NULL && HASTZINFO(self))
-        result = append_keyword_tzinfo(result, self->tzinfo);
+    if (result != NULL && ns)
+        result = append_keyword_nanosecond(result, ns);
     if (result != NULL && fold)
         result = append_keyword_fold(result, fold);
-    return result;
+    if (result == NULL || ! HASTZINFO(self))
+        return result;
+    return append_keyword_tzinfo(result, self->tzinfo);
 }
 
 static PyObject *
@@ -6382,10 +6381,10 @@ datetime_repr(PyObject *op)
                       GET_YEAR(self), GET_MONTH(self), GET_DAY(self),
                       DATE_GET_HOUR(self), DATE_GET_MINUTE(self));
     }
-    if (baserepr != NULL && DATE_GET_FOLD(self) != 0)
-        baserepr = append_keyword_fold(baserepr, DATE_GET_FOLD(self));
     if (baserepr != NULL && DATE_GET_NANOSECOND(self) != 0)
         baserepr = append_keyword_nanosecond(baserepr, DATE_GET_NANOSECOND(self));
+    if (baserepr != NULL && DATE_GET_FOLD(self) != 0)
+        baserepr = append_keyword_fold(baserepr, DATE_GET_FOLD(self));
     if (baserepr == NULL || ! HASTZINFO(self))
         return baserepr;
     return append_keyword_tzinfo(baserepr, self->tzinfo);
