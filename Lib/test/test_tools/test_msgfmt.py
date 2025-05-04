@@ -1,7 +1,6 @@
 """Tests for the Tools/i18n/msgfmt.py tool."""
 
 import json
-import os
 import struct
 import sys
 import unittest
@@ -250,14 +249,14 @@ class POParserTest(unittest.TestCase):
             ('', None),
             ('"', None),
             ('""', 'Syntax error on messages.po:1 before:'),
-            ('"foo"', f'Syntax error on messages.po:1 before:{os.linesep}foo'),
+            ('"foo"', f'Syntax error on messages.po:1 before:\nfoo'),
             # 'msgid',  # invalid but currently accepted
             ('msgstr', None),
             ('msgid_plural', 'msgid_plural not preceded by msgid on messages.po:1'),
             # 'msgctxt',  # invalid but currently accepted
             ('msgstr', None),
             ('msgstr[0]', None),
-            ('[0]', f'Syntax error on messages.po:1 before:{os.linesep}[0]'),
+            ('[0]', f'Syntax error on messages.po:1 before:\n[0]'),
             # unclosed string
             (
                 dedent('''\
