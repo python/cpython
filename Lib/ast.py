@@ -626,7 +626,7 @@ def unparse(ast_obj):
     return unparser.visit(ast_obj)
 
 
-def main():
+def main(args=None):
     import argparse
     import sys
 
@@ -651,7 +651,7 @@ def main():
                         help='optimization level for parser (default -1)')
     parser.add_argument('--show-empty', default=False, action='store_true',
                         help='show empty lists and fields in dump output')
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     if args.infile == '-':
         name = '<stdin>'
