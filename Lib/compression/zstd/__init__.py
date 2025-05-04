@@ -184,14 +184,7 @@ def decompress(data, zstd_dict=None, options=None):
     results = []
     while True:
         decomp = ZstdDecompressor(options=options, zstd_dict=zstd_dict)
-        try:
-            res = decomp.decompress(data)
-        except ZstdError:
-            if results:
-                break  # Leftover data is not a valid LZMA/XZ stream; ignore it.
-            else:
-                raise  # Error on the first iteration; bail out.
-        results.append(res)
+        results.append(decomp.decompress(data))
         if not decomp.eof:
             raise ZstdError("Compressed data ended before the "
                             "end-of-stream marker was reached")

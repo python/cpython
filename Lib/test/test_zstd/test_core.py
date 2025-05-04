@@ -736,15 +736,11 @@ class DecompressorFlagsTestCase(unittest.TestCase):
         with self.assertRaisesRegex(ZstdError, "Unknown frame descriptor"):
             decompress(b'aaaaaaaaa')
 
-        self.assertEqual(
-            decompress(self.FRAME_42 + b'aaaaaaaaa'),
-            self.DECOMPRESSED_42
-        )
+        with self.assertRaisesRegex(ZstdError, "Unknown frame descriptor"):
+            decompress(self.FRAME_42 + b'aaaaaaaaa')
 
-        self.assertEqual(
-            decompress(self.UNKNOWN_FRAME_42_60 + b'aaaaaaaaa'),
-            self.DECOMPRESSED_42_60
-        )
+        with self.assertRaisesRegex(ZstdError, "Unknown frame descriptor"):
+            decompress(self.UNKNOWN_FRAME_42_60 + b'aaaaaaaaa')
 
         # doesn't match checksum
         checksum = DAT_130K_C[-4:]
@@ -803,15 +799,11 @@ class DecompressorFlagsTestCase(unittest.TestCase):
         with self.assertRaisesRegex(ZstdError, "Unknown frame descriptor"):
             decompress(b'aaaaaaaaa' + SKIPPABLE_FRAME)
 
-        self.assertEqual(
-            decompress(SKIPPABLE_FRAME + b'aaaaaaaaa'),
-            b''
-        )
+        with self.assertRaisesRegex(ZstdError, "Unknown frame descriptor"):
+            decompress(SKIPPABLE_FRAME + b'aaaaaaaaa')
 
-        self.assertEqual(
-            decompress(SKIPPABLE_FRAME + SKIPPABLE_FRAME + b'aaaaaaaaa'),
-            b''
-        )
+        with self.assertRaisesRegex(ZstdError, "Unknown frame descriptor"):
+            decompress(SKIPPABLE_FRAME + SKIPPABLE_FRAME + b'aaaaaaaaa')
 
     def test_decompressor_1(self):
         # empty 1
