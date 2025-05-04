@@ -265,17 +265,17 @@ class CompressorTestCase(unittest.TestCase):
         compress(b'', level_max+1)
         compress(b'', level_min-1)
 
-        compress(b'', {CParameter.compression_level:level_max+1})
-        compress(b'', {CParameter.compression_level:level_min-1})
+        compress(b'', options={CParameter.compression_level:level_max+1})
+        compress(b'', options={CParameter.compression_level:level_min-1})
 
         # zstd lib doesn't support MT compression
         if not SUPPORT_MULTITHREADING:
             with self.assertRaises(ZstdError):
-                ZstdCompressor({CParameter.nb_workers:4})
+                ZstdCompressor(options={CParameter.nb_workers:4})
             with self.assertRaises(ZstdError):
-                ZstdCompressor({CParameter.job_size:4})
+                ZstdCompressor(options={CParameter.job_size:4})
             with self.assertRaises(ZstdError):
-                ZstdCompressor({CParameter.overlap_log:4})
+                ZstdCompressor(options={CParameter.overlap_log:4})
 
         # out of bounds error msg
         option = {CParameter.window_log:100}
@@ -1859,7 +1859,7 @@ class FileTestCase(unittest.TestCase):
             with ZstdFile(dst, "w", options={CParameter.checksum_flag:1}) as f:
                 f.write(raw_data)
 
-            comp = ZstdCompressor({CParameter.checksum_flag:1})
+            comp = ZstdCompressor(options={CParameter.checksum_flag:1})
             expected = comp.compress(raw_data) + comp.flush()
             self.assertEqual(dst.getvalue(), expected)
 
