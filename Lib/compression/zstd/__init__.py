@@ -147,21 +147,27 @@ def finalize_dict(zstd_dict, samples, dict_size, level):
 def compress(data, level=None, options=None, zstd_dict=None):
     """Return Zstandard compressed *data* as bytes.
 
-    Refer to ZstdCompressor's docstring for a description of the
-    optional arguments *level*, *options*, and *zstd_dict*.
+    *level* is an int specifying the compression level to use, defaulting to
+    COMPRESSION_LEVEL_DEFAULT
+    *options* is a dict object that contains advanced compression
+    parameters. See CParameter for more on options.
+    *zstd_dict* is a ZstdDict object, a pre-trained Zstandard dictionary. See
+    the function train_dict for how to train a ZstdDict on sample data.
 
-    For incremental compression, use an ZstdCompressor instead.
+    For incremental compression, use a ZstdCompressor instead.
     """
     comp = ZstdCompressor(level=level, options=options, zstd_dict=zstd_dict)
     return comp.compress(data, mode=ZstdCompressor.FLUSH_FRAME)
 
 def decompress(data, zstd_dict=None, options=None):
-    """Decompress one or more frames of data.
+    """Decompress one or more frames of Zstandard compressed *data*.
 
-    Refer to ZstdDecompressor's docstring for a description of the
-    optional arguments *zstd_dict*, *options*.
+    *zstd_dict* is a ZstdDict object, a pre-trained Zstandard dictionary. See
+    the function train_dict for how to train a ZstdDict on sample data.
+    *options* is a dict object that contains advanced compression
+    parameters. See DParameter for more on options.
 
-    For incremental decompression, use an ZstdDecompressor instead.
+    For incremental decompression, use a ZstdDecompressor instead.
     """
     results = []
     while True:
