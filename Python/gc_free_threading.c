@@ -2040,7 +2040,8 @@ gc_should_collect_rss(GCState *gcstate)
         return true;
     }
     int threshold = gcstate->young.threshold;
-    if (gcstate->deferred_count > threshold * 40) {
+    Py_ssize_t deferred = _Py_atomic_load_ssize_relaxed(&gcstate->deferred_count);
+    if (deferred > threshold * 40) {
         // Too many new container objects since last GC, even though RSS
         // might not have increased much.  This is intended to avoid resource
         // exhaustion if some objects consume resources but don't result in a
