@@ -3263,7 +3263,7 @@ class _PdbClient:
             return None
 
 
-def _connect(host, port, frame, commands, version, signal_raising_thread):
+def _connect(*, host, port, frame, commands, version, signal_raising_thread):
     with closing(socket.create_connection((host, port))) as conn:
         sockfile = conn.makefile("rwb")
 
