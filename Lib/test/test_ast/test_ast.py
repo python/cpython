@@ -3238,7 +3238,7 @@ class CommandLineTests(unittest.TestCase):
     def test_help_flag(self):
         # test 'python -m ast -h/--help'
         for flag in ('-h', '--help'):
-            with self.subTest(flags=flag):
+            with self.subTest(flag=flag):
                 with self.assertRaises(SystemExit):
                     output = self.invoke_ast(flag)
                     self.assertStartsWith(output, 'usage: ')
@@ -3258,7 +3258,7 @@ class CommandLineTests(unittest.TestCase):
                   TypeIgnore(lineno=1, tag='[assignment]')])
         '''
         for flag in ('-m=exec', '--mode=exec'):
-            with self.subTest(flags=flag):
+            with self.subTest(flag=flag):
                 self.check_output(source, expect, flag)
 
     def test_single_mode_flag(self):
@@ -3270,7 +3270,7 @@ class CommandLineTests(unittest.TestCase):
                   Pass()])
         '''
         for flag in ('-m=single', '--mode=single'):
-            with self.subTest(flags=flag):
+            with self.subTest(flag=flag):
                 self.check_output(source, expect, flag)
 
     def test_eval_mode_flag(self):
@@ -3286,7 +3286,7 @@ class CommandLineTests(unittest.TestCase):
                      Constant(value=3)]))
         '''
         for flag in ('-m=eval', '--mode=eval'):
-            with self.subTest(flags=flag):
+            with self.subTest(flag=flag):
                 self.check_output(source, expect, flag)
 
     def test_func_type_mode_flag(self):
@@ -3303,7 +3303,7 @@ class CommandLineTests(unittest.TestCase):
                   ctx=Load()))
         '''
         for flag in ('-m=func_type', '--mode=func_type'):
-            with self.subTest(flags=flag):
+            with self.subTest(flag=flag):
                 self.check_output(source, expect, flag)
 
     def test_no_type_comments_flag(self):
@@ -3333,7 +3333,7 @@ class CommandLineTests(unittest.TestCase):
                      end_col_offset=4)])
         '''
         for flag in ('-a', '--include-attributes'):
-            with self.subTest(flags=flag):
+            with self.subTest(flag=flag):
                 self.check_output(source, expect, flag)
 
     def test_indent_flag(self):
@@ -3345,7 +3345,7 @@ class CommandLineTests(unittest.TestCase):
             Pass()])
         '''
         for flag in ('-i=0', '--indent=0'):
-            with self.subTest(flags=flag):
+            with self.subTest(flag=flag):
                 self.check_output(source, expect, flag)
 
 
