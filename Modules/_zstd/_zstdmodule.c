@@ -180,8 +180,8 @@ _zstd._train_dict
 
     samples_bytes: PyBytesObject
         Concatenation of samples.
-    samples_size_list: object(subclass_of='&PyList_Type')
-        List of samples' sizes.
+    samples_sizes: object(subclass_of='&PyTuple_Type')
+        Tuple of samples' sizes.
     dict_size: Py_ssize_t
         The size of the dictionary.
     /
@@ -191,8 +191,8 @@ Internal function, train a zstd dictionary on sample data.
 
 static PyObject *
 _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
-                       PyObject *samples_size_list, Py_ssize_t dict_size)
-/*[clinic end generated code: output=ee53c34c8f77886b input=b21d092c695a3a81]*/
+                       PyObject *samples_sizes, Py_ssize_t dict_size)
+/*[clinic end generated code: output=b5b4f36347c0addd input=2dce5b57d63923e2]*/
 {
     // TODO(emmatyping): The preamble and suffix to this function and _finalize_dict
     // are pretty similar. We should see if we can refactor them to share that code.
@@ -209,7 +209,7 @@ _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
         return NULL;
     }
 
-    chunks_number = Py_SIZE(samples_size_list);
+    chunks_number = Py_SIZE(samples_sizes);
     if ((size_t) chunks_number > UINT32_MAX) {
         PyErr_Format(PyExc_ValueError,
                         "The number of samples should be <= %u.", UINT32_MAX);
@@ -225,12 +225,11 @@ _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
 
     sizes_sum = 0;
     for (i = 0; i < chunks_number; i++) {
-        PyObject *size = PyList_GetItemRef(samples_size_list, i);
+        PyObject *size = PyTuple_GetItem(samples_sizes, i);
         chunk_sizes[i] = PyLong_AsSize_t(size);
-        Py_DECREF(size);
         if (chunk_sizes[i] == (size_t)-1 && PyErr_Occurred()) {
             PyErr_Format(PyExc_ValueError,
-                            "Items in samples_size_list should be an int "
+                            "Items in samples_sizes should be an int "
                             "object, with a value between 0 and %u.", SIZE_MAX);
             goto error;
         }
@@ -239,7 +238,7 @@ _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
 
     if (sizes_sum != Py_SIZE(samples_bytes)) {
         PyErr_SetString(PyExc_ValueError,
-                        "The samples size list doesn't match the concatenation's size.");
+                        "The samples size tuple doesn't match the concatenation's size.");
         goto error;
     }
 
@@ -287,8 +286,8 @@ _zstd._finalize_dict
         Custom dictionary content.
     samples_bytes: PyBytesObject
         Concatenation of samples.
-    samples_size_list: object(subclass_of='&PyList_Type')
-        List of samples' sizes.
+    samples_sizes: object(subclass_of='&PyTuple_Type')
+        Tuple of samples' sizes.
     dict_size: Py_ssize_t
         The size of the dictionary.
     compression_level: int
@@ -301,9 +300,9 @@ Internal function, finalize a zstd dictionary.
 static PyObject *
 _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
                           PyBytesObject *samples_bytes,
-                          PyObject *samples_size_list, Py_ssize_t dict_size,
+                          PyObject *samples_sizes, Py_ssize_t dict_size,
                           int compression_level)
-/*[clinic end generated code: output=9c2a7d8c845cee93 input=08531a803d87c56f]*/
+/*[clinic end generated code: output=5dc5b520fddba37f input=8afd42a249078460]*/
 {
     Py_ssize_t chunks_number;
     size_t *chunk_sizes = NULL;
@@ -319,7 +318,7 @@ _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
         return NULL;
     }
 
-    chunks_number = Py_SIZE(samples_size_list);
+    chunks_number = Py_SIZE(samples_sizes);
     if ((size_t) chunks_number > UINT32_MAX) {
         PyErr_Format(PyExc_ValueError,
                         "The number of samples should be <= %u.", UINT32_MAX);
@@ -335,11 +334,11 @@ _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
 
     sizes_sum = 0;
     for (i = 0; i < chunks_number; i++) {
-        PyObject *size = PyList_GET_ITEM(samples_size_list, i);
+        PyObject *size = PyTuple_GetItem(samples_sizes, i);
         chunk_sizes[i] = PyLong_AsSize_t(size);
         if (chunk_sizes[i] == (size_t)-1 && PyErr_Occurred()) {
             PyErr_Format(PyExc_ValueError,
-                            "Items in samples_size_list should be an int "
+                            "Items in samples_sizes should be an int "
                             "object, with a value between 0 and %u.", SIZE_MAX);
             goto error;
         }
@@ -348,7 +347,7 @@ _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
 
     if (sizes_sum != Py_SIZE(samples_bytes)) {
         PyErr_SetString(PyExc_ValueError,
-                        "The samples size list doesn't match the concatenation's size.");
+                        "The samples size tuple doesn't match the concatenation's size.");
         goto error;
     }
 

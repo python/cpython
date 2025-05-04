@@ -10,15 +10,15 @@ preserve
 #include "pycore_modsupport.h"    // _PyArg_CheckPositional()
 
 PyDoc_STRVAR(_zstd__train_dict__doc__,
-"_train_dict($module, samples_bytes, samples_size_list, dict_size, /)\n"
+"_train_dict($module, samples_bytes, samples_sizes, dict_size, /)\n"
 "--\n"
 "\n"
 "Internal function, train a zstd dictionary on sample data.\n"
 "\n"
 "  samples_bytes\n"
 "    Concatenation of samples.\n"
-"  samples_size_list\n"
-"    List of samples\' sizes.\n"
+"  samples_sizes\n"
+"    Tuple of samples\' sizes.\n"
 "  dict_size\n"
 "    The size of the dictionary.");
 
@@ -27,14 +27,14 @@ PyDoc_STRVAR(_zstd__train_dict__doc__,
 
 static PyObject *
 _zstd__train_dict_impl(PyObject *module, PyBytesObject *samples_bytes,
-                       PyObject *samples_size_list, Py_ssize_t dict_size);
+                       PyObject *samples_sizes, Py_ssize_t dict_size);
 
 static PyObject *
 _zstd__train_dict(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
 {
     PyObject *return_value = NULL;
     PyBytesObject *samples_bytes;
-    PyObject *samples_size_list;
+    PyObject *samples_sizes;
     Py_ssize_t dict_size;
 
     if (!_PyArg_CheckPositional("_train_dict", nargs, 3, 3)) {
@@ -45,11 +45,11 @@ _zstd__train_dict(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     samples_bytes = (PyBytesObject *)args[0];
-    if (!PyList_Check(args[1])) {
-        _PyArg_BadArgument("_train_dict", "argument 2", "list", args[1]);
+    if (!PyTuple_Check(args[1])) {
+        _PyArg_BadArgument("_train_dict", "argument 2", "tuple", args[1]);
         goto exit;
     }
-    samples_size_list = args[1];
+    samples_sizes = args[1];
     {
         Py_ssize_t ival = -1;
         PyObject *iobj = _PyNumber_Index(args[2]);
@@ -62,7 +62,7 @@ _zstd__train_dict(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         }
         dict_size = ival;
     }
-    return_value = _zstd__train_dict_impl(module, samples_bytes, samples_size_list, dict_size);
+    return_value = _zstd__train_dict_impl(module, samples_bytes, samples_sizes, dict_size);
 
 exit:
     return return_value;
@@ -70,7 +70,7 @@ exit:
 
 PyDoc_STRVAR(_zstd__finalize_dict__doc__,
 "_finalize_dict($module, custom_dict_bytes, samples_bytes,\n"
-"               samples_size_list, dict_size, compression_level, /)\n"
+"               samples_sizes, dict_size, compression_level, /)\n"
 "--\n"
 "\n"
 "Internal function, finalize a zstd dictionary.\n"
@@ -79,8 +79,8 @@ PyDoc_STRVAR(_zstd__finalize_dict__doc__,
 "    Custom dictionary content.\n"
 "  samples_bytes\n"
 "    Concatenation of samples.\n"
-"  samples_size_list\n"
-"    List of samples\' sizes.\n"
+"  samples_sizes\n"
+"    Tuple of samples\' sizes.\n"
 "  dict_size\n"
 "    The size of the dictionary.\n"
 "  compression_level\n"
@@ -92,7 +92,7 @@ PyDoc_STRVAR(_zstd__finalize_dict__doc__,
 static PyObject *
 _zstd__finalize_dict_impl(PyObject *module, PyBytesObject *custom_dict_bytes,
                           PyBytesObject *samples_bytes,
-                          PyObject *samples_size_list, Py_ssize_t dict_size,
+                          PyObject *samples_sizes, Py_ssize_t dict_size,
                           int compression_level);
 
 static PyObject *
@@ -101,7 +101,7 @@ _zstd__finalize_dict(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     PyObject *return_value = NULL;
     PyBytesObject *custom_dict_bytes;
     PyBytesObject *samples_bytes;
-    PyObject *samples_size_list;
+    PyObject *samples_sizes;
     Py_ssize_t dict_size;
     int compression_level;
 
@@ -118,11 +118,11 @@ _zstd__finalize_dict(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
         goto exit;
     }
     samples_bytes = (PyBytesObject *)args[1];
-    if (!PyList_Check(args[2])) {
-        _PyArg_BadArgument("_finalize_dict", "argument 3", "list", args[2]);
+    if (!PyTuple_Check(args[2])) {
+        _PyArg_BadArgument("_finalize_dict", "argument 3", "tuple", args[2]);
         goto exit;
     }
-    samples_size_list = args[2];
+    samples_sizes = args[2];
     {
         Py_ssize_t ival = -1;
         PyObject *iobj = _PyNumber_Index(args[3]);
@@ -139,7 +139,7 @@ _zstd__finalize_dict(PyObject *module, PyObject *const *args, Py_ssize_t nargs)
     if (compression_level == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = _zstd__finalize_dict_impl(module, custom_dict_bytes, samples_bytes, samples_size_list, dict_size, compression_level);
+    return_value = _zstd__finalize_dict_impl(module, custom_dict_bytes, samples_bytes, samples_sizes, dict_size, compression_level);
 
 exit:
     return return_value;
@@ -429,4 +429,4 @@ _zstd__set_parameter_types(PyObject *module, PyObject *const *args, Py_ssize_t n
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=077c8ea2b11fb188 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f4530f3e3439cbe7 input=a9049054013a1b77]*/

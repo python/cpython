@@ -1128,9 +1128,6 @@ class ZstdDictTestCase(unittest.TestCase):
             self.assertEqual(sample, dat2)
 
     def test_finalize_dict(self):
-        if zstd_version_info < (1, 4, 5):
-            return
-
         DICT_SIZE2 = 200*1024
         C_LEVEL = 6
 
@@ -1174,16 +1171,8 @@ class ZstdDictTestCase(unittest.TestCase):
             train_dict(SAMPLES, 0)
 
     def test_finalize_dict_arguments(self):
-        if zstd_version_info < (1, 4, 5):
-            with self.assertRaises(NotImplementedError):
-                finalize_dict({1:2}, [b'aaa', b'bbb'], 100*_1K, 2)
-            return
-
-        try:
-            finalize_dict(TRAINED_DICT, SAMPLES, 1*_1M, 2)
-        except NotImplementedError:
-            # < v1.4.5 at compile-time, >= v.1.4.5 at run-time
-            return
+        with self.assertRaises(TypeError):
+            finalize_dict({1:2}, (b'aaa', b'bbb'), 100*_1K, 2)
 
         with self.assertRaises(ValueError):
             finalize_dict(TRAINED_DICT, [], 100*_1K, 2)
@@ -1197,51 +1186,43 @@ class ZstdDictTestCase(unittest.TestCase):
     def test_train_dict_c(self):
         # argument wrong type
         with self.assertRaises(TypeError):
-            _zstd._train_dict({}, [], 100)
+            _zstd._train_dict({}, (), 100)
         with self.assertRaises(TypeError):
             _zstd._train_dict(b'', 99, 100)
         with self.assertRaises(TypeError):
-            _zstd._train_dict(b'', [], 100.1)
+            _zstd._train_dict(b'', (), 100.1)
 
         # size > size_t
         with self.assertRaises(ValueError):
-            _zstd._train_dict(b'', [2**64+1], 100)
+            _zstd._train_dict(b'', (2**64+1,), 100)
 
         # dict_size <= 0
         with self.assertRaises(ValueError):
-            _zstd._train_dict(b'', [], 0)
+            _zstd._train_dict(b'', (), 0)
 
     def test_finalize_dict_c(self):
-        if zstd_version_info < (1, 4, 5):
-            with self.assertRaises(NotImplementedError):
-                _zstd._finalize_dict(1, 2, 3, 4, 5)
-            return
-
-        try:
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'123', [3,], 1*_1M, 5)
-        except NotImplementedError:
-            # < v1.4.5 at compile-time, >= v.1.4.5 at run-time
-            return
+        with self.assertRaises(TypeError):
+            _zstd._finalize_dict(1, 2, 3, 4, 5)
 
         # argument wrong type
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict({}, b'', [], 100, 5)
+            _zstd._finalize_dict({}, b'', (), 100, 5)
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, {}, [], 100, 5)
+            _zstd._finalize_dict(TRAINED_DICT.dict_content, {}, (), 100, 5)
         with self.assertRaises(TypeError):
             _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', 99, 100, 5)
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', [], 100.1, 5)
+            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', (), 100.1, 5)
         with self.assertRaises(TypeError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', [], 100, 5.1)
+            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', (), 100, 5.1)
 
         # size > size_t
         with self.assertRaises(ValueError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', [2**64+1], 100, 5)
+            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', (2**64+1,), 100, 5)
 
         # dict_size <= 0
         with self.assertRaises(ValueError):
-            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', [], 0, 5)
+            _zstd._finalize_dict(TRAINED_DICT.dict_content, b'', (), 0, 5)
 
     def test_train_buffer_protocol_samples(self):
         def _nbytes(dat):
@@ -1263,24 +1244,20 @@ class ZstdDictTestCase(unittest.TestCase):
         # wrong size list
         with self.assertRaisesRegex(ValueError,
                 "The samples size list doesn't match the concatenation's size"):
-            _zstd._train_dict(concatenation, wrong_size_lst, 100*1024)
+            _zstd._train_dict(concatenation, tuple(wrong_size_lst), 100*1024)
 
         # correct size list
-        _zstd._train_dict(concatenation, correct_size_lst, 3*1024)
-
-        # test _finalize_dict
-        if zstd_version_info < (1, 4, 5):
-            return
+        _zstd._train_dict(concatenation, tuple(correct_size_lst), 3*1024)
 
         # wrong size list
         with self.assertRaisesRegex(ValueError,
                 "The samples size list doesn't match the concatenation's size"):
             _zstd._finalize_dict(TRAINED_DICT.dict_content,
-                                  concatenation, wrong_size_lst, 300*1024, 5)
+                                  concatenation, tuple(wrong_size_lst), 300*1024, 5)
 
         # correct size list
         _zstd._finalize_dict(TRAINED_DICT.dict_content,
-                              concatenation, correct_size_lst, 300*1024, 5)
+                              concatenation, tuple(correct_size_lst), 300*1024, 5)
 
     def test_as_prefix(self):
         # V1
