@@ -2614,12 +2614,21 @@ async def set_trace_async(*, header=None, commands=None):
 # Remote PDB
 
 class _PdbServer(Pdb):
-    def __init__(self, sockfile, owns_sockfile=True, **kwargs):
+    def __init__(
+        self,
+        sockfile,
+        signal_server=None,
+        owns_sockfile=True,
+        **kwargs,
+    ):
         self._owns_sockfile = owns_sockfile
         self._interact_state = None
         self._sockfile = sockfile
         self._command_name_cache = []
         self._write_failed = False
+        if signal_server:
+            # Only started by the top level _PdbServer, not recursive ones.
+            self._start_signal_listener(signal_server)
         super().__init__(**kwargs)
 
     @staticmethod
@@ -2674,6 +2683,39 @@ class _PdbServer(Pdb):
                 raise AssertionError(
                     f"PDB message doesn't follow the schema! {msg}"
                 )
+
+    @classmethod
+    def _start_signal_listener(cls, address):
+        def listener(sock):
+            with closing(sock):
+                # Check if the interpreter is finalizing every quarter of a second.
+                # Clean up and exit if so.
+                sock.settimeout(0.25)
+                sock.shutdown(socket.SHUT_WR)
+                while not shut_down.is_set():
+                    try:
+                        data = sock.recv(1024)
+                    except socket.timeout:
+                        continue
+                    if data == b"":
+                        return  # EOF
+                    signal.raise_signal(signal.SIGINT)
+
+        def stop_thread():
+            shut_down.set()
+            thread.join()
+
+        # Use a daemon thread so that we don't detach until after all non-daemon
+        # threads are done. Use an atexit handler to stop gracefully at that point,
+        # so that our thread is stopped before the interpreter is torn down.
+        shut_down = threading.Event()
+        thread = threading.Thread(
+            target=listener,
+            args=[socket.create_connection(address, timeout=5)],
+            daemon=True,
+        )
+        atexit.register(stop_thread)
+        thread.start()
 
     def _send(self, **kwargs):
         self._ensure_valid_message(kwargs)
@@ -3132,17 +3174,13 @@ class _PdbClient:
                 self.process_payload(payload)
 
     def send_interrupt(self):
-        if sys.platform != "win32":
-            # On Unix, send a SIGINT to the remote process, which interrupts IO
-            # and makes it raise a KeyboardInterrupt on the main thread when
-            # PyErr_CheckSignals is called or the eval loop regains control.
-            os.kill(self.pid, signal.SIGINT)
-        else:
-            # On Windows, write to a socket that the PDB server listens on.
-            # This triggers the remote to raise a SIGINT for itself. We do this
-            # because Windows doesn't allow triggering SIGINT remotely.
-            # See https://stackoverflow.com/a/35792192 for many more details.
-            self.interrupt_sock.sendall(signal.SIGINT.to_bytes())
+        # Write to a socket that the PDB server listens on. This triggers
+        # the remote to raise a SIGINT for itself. We do this because
+        # Windows doesn't allow triggering SIGINT remotely.
+        # See https://stackoverflow.com/a/35792192 for many more details.
+        # We could directly send SIGINT to the remote process on Unix, but
+        # doing the same thing on all platforms simplifies maintenance.
+        self.interrupt_sock.sendall(signal.SIGINT.to_bytes())
 
     def process_payload(self, payload):
         match payload:
@@ -3225,46 +3263,19 @@ class _PdbClient:
             return None
 
 
-def _start_interrupt_listener(host, port):
-    def sigint_listener(host, port):
-        with closing(
-            socket.create_connection((host, port), timeout=5)
-        ) as sock:
-            # Check if the interpreter is finalizing every quarter of a second.
-            # Clean up and exit if so.
-            sock.settimeout(0.25)
-            sock.shutdown(socket.SHUT_WR)
-            while not shut_down.is_set():
-                try:
-                    data = sock.recv(1024)
-                except socket.timeout:
-                    continue
-                if data == b"":
-                    return  # EOF
-                signal.raise_signal(signal.SIGINT)
-
-    def stop_thread():
-        shut_down.set()
-        thread.join()
-
-    # Use a daemon thread so that we don't detach until after all non-daemon
-    # threads are done. Use an atexit handler to stop gracefully at that point,
-    # so that our thread is stopped before the interpreter is torn down.
-    shut_down = threading.Event()
-    thread = threading.Thread(
-        target=sigint_listener,
-        args=(host, port),
-        daemon=True,
-    )
-    atexit.register(stop_thread)
-    thread.start()
-
-
-def _connect(host, port, frame, commands, version):
+def _connect(host, port, frame, commands, version, signal_raising_thread):
     with closing(socket.create_connection((host, port))) as conn:
         sockfile = conn.makefile("rwb")
 
-    remote_pdb = _PdbServer(sockfile)
+    # Starting a signal raising thread is optional to allow us the flexibility
+    # to switch to sending signals directly on Unix platforms in the future
+    # without breaking backwards compatibility. This also makes tests simpler.
+    if signal_raising_thread:
+        signal_server = (host, port)
+    else:
+        signal_server = None
+
+    remote_pdb = _PdbServer(sockfile, signal_server=signal_server)
     weakref.finalize(remote_pdb, sockfile.close)
 
     if Pdb._last_pdb_instance is not None:
@@ -3291,12 +3302,6 @@ def attach(pid, commands=()):
         )
         port = server.getsockname()[1]
 
-        if sys.platform == "win32":
-            commands = [
-                f"__import__('pdb')._start_interrupt_listener('localhost', {port})",
-                *commands,
-            ]
-
         connect_script = stack.enter_context(
             tempfile.NamedTemporaryFile("w", delete_on_close=False)
         )
@@ -3311,6 +3316,7 @@ def attach(pid, commands=()):
                     frame=sys._getframe(1),
                     commands={json.dumps("\n".join(commands))},
                     version={_PdbServer.protocol_version()},
+                    signal_raising_thread=True,
                 )
                 """
             )
@@ -3322,12 +3328,9 @@ def attach(pid, commands=()):
         client_sock, _ = server.accept()
         stack.enter_context(closing(client_sock))
 
-        if sys.platform == "win32":
-            interrupt_sock, _ = server.accept()
-            stack.enter_context(closing(interrupt_sock))
-            interrupt_sock.setblocking(False)
-        else:
-            interrupt_sock = None
+        interrupt_sock, _ = server.accept()
+        stack.enter_context(closing(interrupt_sock))
+        interrupt_sock.setblocking(False)
 
         _PdbClient(pid, client_sock, interrupt_sock).cmdloop()
 

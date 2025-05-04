@@ -919,6 +919,7 @@ class PdbConnectTestCase(unittest.TestCase):
                             frame=frame,
                             commands="",
                             version=pdb._PdbServer.protocol_version(),
+                            signal_raising_thread=False,
                         )
                         return x  # This line won't be reached in debugging
 
@@ -975,23 +976,6 @@ class PdbConnectTestCase(unittest.TestCase):
         """Helper to send a command to the debugger."""
         client_file.write(json.dumps({"reply": command}).encode() + b"\n")
         client_file.flush()
-
-    def _send_interrupt(self, pid):
-        """Helper to send an interrupt signal to the debugger."""
-        # with tempfile.NamedTemporaryFile("w", delete_on_close=False) as interrupt_script:
-        interrupt_script = TESTFN + "_interrupt_script.py"
-        with open(interrupt_script, 'w') as f:
-            f.write(
-                'import pdb, sys\n'
-                'print("Hello, world!")\n'
-                'if inst := pdb.Pdb._last_pdb_instance:\n'
-                '    inst.set_trace(sys._getframe(1))\n'
-            )
-        self.addCleanup(unlink, interrupt_script)
-        try:
-            sys.remote_exec(pid, interrupt_script)
-        except PermissionError:
-            self.skipTest("Insufficient permissions to execute code in remote process")
 
     def test_connect_and_basic_commands(self):
         """Test connecting to a remote debugger and sending basic commands."""
@@ -1105,6 +1089,7 @@ class PdbConnectTestCase(unittest.TestCase):
                     frame=frame,
                     commands="",
                     version=pdb._PdbServer.protocol_version(),
+                    signal_raising_thread=True,
                 )
                 print("Connected to debugger")
                 iterations = 50
@@ -1119,6 +1104,10 @@ class PdbConnectTestCase(unittest.TestCase):
             """)
         self._create_script(script=script)
         process, client_file = self._connect_and_get_client_file()
+
+        # Accept a 2nd connection from the subprocess to tell it about signals
+        signal_sock, _ = self.server_sock.accept()
+        self.addCleanup(signal_sock.close)
 
         with kill_on_error(process):
             # Skip initial messages until we get to the prompt
@@ -1135,7 +1124,7 @@ class PdbConnectTestCase(unittest.TestCase):
                     break
 
             # Inject a script to interrupt the running process
-            self._send_interrupt(process.pid)
+            signal_sock.sendall(signal.SIGINT.to_bytes())
             messages = self._read_until_prompt(client_file)
 
             # Verify we got the keyboard interrupt message.
@@ -1191,6 +1180,7 @@ class PdbConnectTestCase(unittest.TestCase):
                     frame=frame,
                     commands="",
                     version=fake_version,
+                    signal_raising_thread=False,
                 )
 
                 # This should print if the debugger detaches correctly
