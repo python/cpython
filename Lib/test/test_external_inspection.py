@@ -20,7 +20,7 @@ try:
     from _remotedebugging import get_all_awaited_by
 except ImportError:
     raise unittest.SkipTest(
-        "Test only runs when _remotedebuggingmodule is available")
+        "Test only runs when _remotedebugging is available")
 
 def _make_test_script(script_dir, script_basename, source):
     to_return = make_script(script_dir, script_basename, source)
