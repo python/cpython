@@ -213,6 +213,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         else:
             self.fail("g[42] didn't raise KeyError")
 
+    test_repr_deep = mapping_tests.TestHashMappingProtocol.test_repr_deep
 
 
 if __name__ == "__main__":

@@ -2,6 +2,9 @@
 preserve
 [clinic start generated code]*/
 
+#if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
+#  include "pycore_runtime.h"     // _Py_SINGLETON()
+#endif
 #include "pycore_modsupport.h"    // _PyArg_UnpackKeywords()
 
 PyDoc_STRVAR(_curses_panel_panel_bottom__doc__,
@@ -17,13 +20,13 @@ static PyObject *
 _curses_panel_panel_bottom_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 
 static PyObject *
-_curses_panel_panel_bottom(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_curses_panel_panel_bottom(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "bottom() takes no arguments");
         return NULL;
     }
-    return _curses_panel_panel_bottom_impl(self, cls);
+    return _curses_panel_panel_bottom_impl((PyCursesPanelObject *)self, cls);
 }
 
 PyDoc_STRVAR(_curses_panel_panel_hide__doc__,
@@ -41,13 +44,13 @@ static PyObject *
 _curses_panel_panel_hide_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 
 static PyObject *
-_curses_panel_panel_hide(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_curses_panel_panel_hide(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "hide() takes no arguments");
         return NULL;
     }
-    return _curses_panel_panel_hide_impl(self, cls);
+    return _curses_panel_panel_hide_impl((PyCursesPanelObject *)self, cls);
 }
 
 PyDoc_STRVAR(_curses_panel_panel_show__doc__,
@@ -63,13 +66,13 @@ static PyObject *
 _curses_panel_panel_show_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 
 static PyObject *
-_curses_panel_panel_show(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_curses_panel_panel_show(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "show() takes no arguments");
         return NULL;
     }
-    return _curses_panel_panel_show_impl(self, cls);
+    return _curses_panel_panel_show_impl((PyCursesPanelObject *)self, cls);
 }
 
 PyDoc_STRVAR(_curses_panel_panel_top__doc__,
@@ -85,13 +88,13 @@ static PyObject *
 _curses_panel_panel_top_impl(PyCursesPanelObject *self, PyTypeObject *cls);
 
 static PyObject *
-_curses_panel_panel_top(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_curses_panel_panel_top(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "top() takes no arguments");
         return NULL;
     }
-    return _curses_panel_panel_top_impl(self, cls);
+    return _curses_panel_panel_top_impl((PyCursesPanelObject *)self, cls);
 }
 
 PyDoc_STRVAR(_curses_panel_panel_above__doc__,
@@ -107,9 +110,9 @@ static PyObject *
 _curses_panel_panel_above_impl(PyCursesPanelObject *self);
 
 static PyObject *
-_curses_panel_panel_above(PyCursesPanelObject *self, PyObject *Py_UNUSED(ignored))
+_curses_panel_panel_above(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _curses_panel_panel_above_impl(self);
+    return _curses_panel_panel_above_impl((PyCursesPanelObject *)self);
 }
 
 PyDoc_STRVAR(_curses_panel_panel_below__doc__,
@@ -125,9 +128,9 @@ static PyObject *
 _curses_panel_panel_below_impl(PyCursesPanelObject *self);
 
 static PyObject *
-_curses_panel_panel_below(PyCursesPanelObject *self, PyObject *Py_UNUSED(ignored))
+_curses_panel_panel_below(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _curses_panel_panel_below_impl(self);
+    return _curses_panel_panel_below_impl((PyCursesPanelObject *)self);
 }
 
 PyDoc_STRVAR(_curses_panel_panel_hidden__doc__,
@@ -143,9 +146,9 @@ static PyObject *
 _curses_panel_panel_hidden_impl(PyCursesPanelObject *self);
 
 static PyObject *
-_curses_panel_panel_hidden(PyCursesPanelObject *self, PyObject *Py_UNUSED(ignored))
+_curses_panel_panel_hidden(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _curses_panel_panel_hidden_impl(self);
+    return _curses_panel_panel_hidden_impl((PyCursesPanelObject *)self);
 }
 
 PyDoc_STRVAR(_curses_panel_panel_move__doc__,
@@ -162,7 +165,7 @@ _curses_panel_panel_move_impl(PyCursesPanelObject *self, PyTypeObject *cls,
                               int y, int x);
 
 static PyObject *
-_curses_panel_panel_move(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_curses_panel_panel_move(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -182,7 +185,8 @@ _curses_panel_panel_move(PyCursesPanelObject *self, PyTypeObject *cls, PyObject 
     int y;
     int x;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 2, 2, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 2, /*maxpos*/ 2, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -194,7 +198,7 @@ _curses_panel_panel_move(PyCursesPanelObject *self, PyTypeObject *cls, PyObject 
     if (x == -1 && PyErr_Occurred()) {
         goto exit;
     }
-    return_value = _curses_panel_panel_move_impl(self, cls, y, x);
+    return_value = _curses_panel_panel_move_impl((PyCursesPanelObject *)self, cls, y, x);
 
 exit:
     return return_value;
@@ -213,9 +217,9 @@ static PyObject *
 _curses_panel_panel_window_impl(PyCursesPanelObject *self);
 
 static PyObject *
-_curses_panel_panel_window(PyCursesPanelObject *self, PyObject *Py_UNUSED(ignored))
+_curses_panel_panel_window(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
-    return _curses_panel_panel_window_impl(self);
+    return _curses_panel_panel_window_impl((PyCursesPanelObject *)self);
 }
 
 PyDoc_STRVAR(_curses_panel_panel_replace__doc__,
@@ -233,7 +237,7 @@ _curses_panel_panel_replace_impl(PyCursesPanelObject *self,
                                  PyCursesWindowObject *win);
 
 static PyObject *
-_curses_panel_panel_replace(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_curses_panel_panel_replace(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -252,7 +256,8 @@ _curses_panel_panel_replace(PyCursesPanelObject *self, PyTypeObject *cls, PyObje
     PyObject *argsbuf[1];
     PyCursesWindowObject *win;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
@@ -261,7 +266,7 @@ _curses_panel_panel_replace(PyCursesPanelObject *self, PyTypeObject *cls, PyObje
         goto exit;
     }
     win = (PyCursesWindowObject *)args[0];
-    return_value = _curses_panel_panel_replace_impl(self, cls, win);
+    return_value = _curses_panel_panel_replace_impl((PyCursesPanelObject *)self, cls, win);
 
 exit:
     return return_value;
@@ -281,7 +286,7 @@ _curses_panel_panel_set_userptr_impl(PyCursesPanelObject *self,
                                      PyTypeObject *cls, PyObject *obj);
 
 static PyObject *
-_curses_panel_panel_set_userptr(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_curses_panel_panel_set_userptr(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
     PyObject *return_value = NULL;
     #if defined(Py_BUILD_CORE) && !defined(Py_BUILD_CORE_MODULE)
@@ -300,12 +305,13 @@ _curses_panel_panel_set_userptr(PyCursesPanelObject *self, PyTypeObject *cls, Py
     PyObject *argsbuf[1];
     PyObject *obj;
 
-    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser, 1, 1, 0, argsbuf);
+    args = _PyArg_UnpackKeywords(args, nargs, NULL, kwnames, &_parser,
+            /*minpos*/ 1, /*maxpos*/ 1, /*minkw*/ 0, /*varpos*/ 0, argsbuf);
     if (!args) {
         goto exit;
     }
     obj = args[0];
-    return_value = _curses_panel_panel_set_userptr_impl(self, cls, obj);
+    return_value = _curses_panel_panel_set_userptr_impl((PyCursesPanelObject *)self, cls, obj);
 
 exit:
     return return_value;
@@ -325,13 +331,13 @@ _curses_panel_panel_userptr_impl(PyCursesPanelObject *self,
                                  PyTypeObject *cls);
 
 static PyObject *
-_curses_panel_panel_userptr(PyCursesPanelObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
+_curses_panel_panel_userptr(PyObject *self, PyTypeObject *cls, PyObject *const *args, Py_ssize_t nargs, PyObject *kwnames)
 {
-    if (nargs) {
+    if (nargs || (kwnames && PyTuple_GET_SIZE(kwnames))) {
         PyErr_SetString(PyExc_TypeError, "userptr() takes no arguments");
         return NULL;
     }
-    return _curses_panel_panel_userptr_impl(self, cls);
+    return _curses_panel_panel_userptr_impl((PyCursesPanelObject *)self, cls);
 }
 
 PyDoc_STRVAR(_curses_panel_bottom_panel__doc__,
@@ -418,4 +424,4 @@ _curses_panel_update_panels(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _curses_panel_update_panels_impl(module);
 }
-/*[clinic end generated code: output=636beecf71d96ff1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=36853ecb4a979814 input=a9049054013a1b77]*/

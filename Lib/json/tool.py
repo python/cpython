@@ -1,32 +1,54 @@
-r"""Command-line tool to validate and pretty-print JSON
+"""Command-line tool to validate and pretty-print JSON
 
-Usage::
-
-    $ echo '{"json":"obj"}' | python -m json.tool
-    {
-        "json": "obj"
-    }
-    $ echo '{ 1.2:3.4}' | python -m json.tool
-    Expecting property name enclosed in double quotes: line 1 column 3 (char 2)
-
+See `json.__main__` for a usage example (invocation as
+`python -m json.tool` is supported for backwards compatibility).
 """
 import argparse
 import json
+import re
 import sys
-from pathlib import Path
+from _colorize import ANSIColors, can_colorize
+
+
+# The string we are colorizing is valid JSON,
+# so we can use a looser but simpler regex to match
+# the various parts, most notably strings and numbers,
+# where the regex given by the spec is much more complex.
+_color_pattern = re.compile(r'''
+    (?P<key>"(\\.|[^"\\])*")(?=:)           |
+    (?P<string>"(\\.|[^"\\])*")             |
+    (?P<boolean>true|false)                 |
+    (?P<null>null)
+''', re.VERBOSE)
+
+
+_colors = {
+    'key': ANSIColors.INTENSE_BLUE,
+    'string': ANSIColors.BOLD_GREEN,
+    'boolean': ANSIColors.BOLD_CYAN,
+    'null': ANSIColors.BOLD_CYAN,
+}
+
+
+def _replace_match_callback(match):
+    for key, color in _colors.items():
+        if m := match.group(key):
+            return f"{color}{m}{ANSIColors.RESET}"
+    return match.group()
+
+
+def _colorize_json(json_str):
+    return re.sub(_color_pattern, _replace_match_callback, json_str)
 
 
 def main():
-    prog = 'python -m json.tool'
     description = ('A simple command line interface for json module '
                    'to validate and pretty-print JSON objects.')
-    parser = argparse.ArgumentParser(prog=prog, description=description)
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument('infile', nargs='?',
-                        type=argparse.FileType(encoding="utf-8"),
                         help='a JSON file to be validated or pretty-printed',
-                        default=sys.stdin)
+                        default='-')
     parser.add_argument('outfile', nargs='?',
-                        type=Path,
                         help='write the output of infile to outfile',
                         default=None)
     parser.add_argument('--sort-keys', action='store_true', default=False,
@@ -59,27 +81,38 @@ def main():
         dump_args['indent'] = None
         dump_args['separators'] = ',', ':'
 
-    with options.infile as infile:
+    try:
+        if options.infile == '-':
+            infile = sys.stdin
+        else:
+            infile = open(options.infile, encoding='utf-8')
         try:
             if options.json_lines:
                 objs = (json.loads(line) for line in infile)
             else:
                 objs = (json.load(infile),)
+        finally:
+            if infile is not sys.stdin:
+                infile.close()
 
-            if options.outfile is None:
-                out = sys.stdout
-            else:
-                out = options.outfile.open('w', encoding='utf-8')
-            with out as outfile:
-                for obj in objs:
+        if options.outfile is None:
+            outfile = sys.stdout
+        else:
+            outfile = open(options.outfile, 'w', encoding='utf-8')
+        with outfile:
+            for obj in objs:
+                if can_colorize(file=outfile):
+                    json_str = json.dumps(obj, **dump_args)
+                    outfile.write(_colorize_json(json_str))
+                else:
                     json.dump(obj, outfile, **dump_args)
-                    outfile.write('\n')
-        except ValueError as e:
-            raise SystemExit(e)
+                outfile.write('\n')
+    except ValueError as e:
+        raise SystemExit(e)
 
 
 if __name__ == '__main__':
     try:
         main()
     except BrokenPipeError as exc:
-        sys.exit(exc.errno)
+        raise SystemExit(exc.errno)

@@ -6,7 +6,7 @@ import copy
 import pickle
 import random
 import sys
-from test.support import bigmemtest, _1G, _4G, skip_on_s390x
+from test.support import bigmemtest, _1G, _4G, is_s390x
 
 
 zlib = import_helper.import_module('zlib')
@@ -18,8 +18,24 @@ requires_Decompress_copy = unittest.skipUnless(
         hasattr(zlib.decompressobj(), "copy"),
         'requires Decompress.copy()')
 
-# bpo-46623: On s390x, when a hardware accelerator is used, using different
-# ways to compress data with zlib can produce different compressed data.
+
+def _zlib_runtime_version_tuple(zlib_version=zlib.ZLIB_RUNTIME_VERSION):
+    # Register "1.2.3" as "1.2.3.0"
+    # or "1.2.0-linux","1.2.0.f","1.2.0.f-linux"
+    v = zlib_version.split('-', 1)[0].split('.')
+    if len(v) < 4:
+        v.append('0')
+    elif not v[-1].isnumeric():
+        v[-1] = '0'
+    return tuple(map(int, v))
+
+
+ZLIB_RUNTIME_VERSION_TUPLE = _zlib_runtime_version_tuple()
+
+
+# bpo-46623: When a hardware accelerator is used (currently only on s390x),
+# using different ways to compress data with zlib can produce different
+# compressed data.
 # Simplified test_pair() code:
 #
 #   def func1(data):
@@ -42,8 +58,10 @@ requires_Decompress_copy = unittest.skipUnless(
 #
 #   zlib.decompress(func1(data)) == zlib.decompress(func2(data)) == data
 #
-# Make the assumption that s390x always has an accelerator to simplify the skip
-# condition.
+# To simplify the skip condition, make the assumption that s390x always has an
+# accelerator, and nothing else has it.
+HW_ACCELERATED = is_s390x
+
 
 class VersionTestCase(unittest.TestCase):
 
@@ -208,12 +226,14 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
                                          bufsize=zlib.DEF_BUF_SIZE),
                          HAMLET_SCENE)
 
-    @skip_on_s390x
     def test_speech128(self):
         # compress more data
         data = HAMLET_SCENE * 128
         x = zlib.compress(data)
-        self.assertEqual(zlib.compress(bytearray(data)), x)
+        # With hardware acceleration, the compressed bytes
+        # might not be identical.
+        if not HW_ACCELERATED:
+            self.assertEqual(zlib.compress(bytearray(data)), x)
         for ob in x, bytearray(x):
             self.assertEqual(zlib.decompress(ob), data)
 
@@ -260,7 +280,6 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
 
 class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
     # Test compression object
-    @skip_on_s390x
     def test_pair(self):
         # straightforward compress/decompress objects
         datasrc = HAMLET_SCENE * 128
@@ -271,7 +290,10 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
             x1 = co.compress(data)
             x2 = co.flush()
             self.assertRaises(zlib.error, co.flush) # second flush should not work
-            self.assertEqual(x1 + x2, datazip)
+            # With hardware acceleration, the compressed bytes might not
+            # be identical.
+            if not HW_ACCELERATED:
+                self.assertEqual(x1 + x2, datazip)
         for v1, v2 in ((x1, x2), (bytearray(x1), bytearray(x2))):
             dco = zlib.decompressobj()
             y1 = dco.decompress(v1 + v2)
@@ -473,9 +495,8 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         sync_opt = ['Z_NO_FLUSH', 'Z_SYNC_FLUSH', 'Z_FULL_FLUSH',
                     'Z_PARTIAL_FLUSH']
 
-        ver = tuple(int(v) for v in zlib.ZLIB_RUNTIME_VERSION.split('.'))
         # Z_BLOCK has a known failure prior to 1.2.5.3
-        if ver >= (1, 2, 5, 3):
+        if ZLIB_RUNTIME_VERSION_TUPLE >= (1, 2, 5, 3):
             sync_opt.append('Z_BLOCK')
 
         sync_opt = [getattr(zlib, opt) for opt in sync_opt
@@ -484,20 +505,16 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
         for sync in sync_opt:
             for level in range(10):
-                try:
+                with self.subTest(sync=sync, level=level):
                     obj = zlib.compressobj( level )
                     a = obj.compress( data[:3000] )
                     b = obj.flush( sync )
                     c = obj.compress( data[3000:] )
                     d = obj.flush()
-                except:
-                    print("Error for flush mode={}, level={}"
-                          .format(sync, level))
-                    raise
-                self.assertEqual(zlib.decompress(b''.join([a,b,c,d])),
-                                 data, ("Decompress failed: flush "
-                                        "mode=%i, level=%i") % (sync, level))
-                del obj
+                    self.assertEqual(zlib.decompress(b''.join([a,b,c,d])),
+                                     data, ("Decompress failed: flush "
+                                            "mode=%i, level=%i") % (sync, level))
+                    del obj
 
     @unittest.skipUnless(hasattr(zlib, 'Z_SYNC_FLUSH'),
                          'requires zlib.Z_SYNC_FLUSH')
@@ -793,16 +810,7 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
 
     def test_wbits(self):
         # wbits=0 only supported since zlib v1.2.3.5
-        # Register "1.2.3" as "1.2.3.0"
-        # or "1.2.0-linux","1.2.0.f","1.2.0.f-linux"
-        v = zlib.ZLIB_RUNTIME_VERSION.split('-', 1)[0].split('.')
-        if len(v) < 4:
-            v.append('0')
-        elif not v[-1].isnumeric():
-            v[-1] = '0'
-
-        v = tuple(map(int, v))
-        supports_wbits_0 = v >= (1, 2, 3, 5)
+        supports_wbits_0 = ZLIB_RUNTIME_VERSION_TUPLE >= (1, 2, 3, 5)
 
         co = zlib.compressobj(level=1, wbits=15)
         zlib15 = co.compress(HAMLET_SCENE) + co.flush()
