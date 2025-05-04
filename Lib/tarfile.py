@@ -1835,7 +1835,7 @@ class TarFile(object):
            'w:gz'       open for writing with gzip compression
            'w:bz2'      open for writing with bzip2 compression
            'w:xz'       open for writing with lzma compression
-           'w:zst' open for writing with zstd compression
+           'w:zst'      open for writing with zstd compression
 
            'x' or 'x:'  create a tarfile exclusively without compression, raise
                         an exception if the file is already created
@@ -1853,12 +1853,12 @@ class TarFile(object):
            'r|gz'       open a gzip compressed stream of tar blocks
            'r|bz2'      open a bzip2 compressed stream of tar blocks
            'r|xz'       open an lzma compressed stream of tar blocks
-           'r|zst' open a zstd compressed stream of tar blocks
+           'r|zst'      open a zstd compressed stream of tar blocks
            'w|'         open an uncompressed stream for writing
            'w|gz'       open a gzip compressed stream for writing
            'w|bz2'      open a bzip2 compressed stream for writing
            'w|xz'       open an lzma compressed stream for writing
-           'w|zst' open a zstd compressed stream for writing
+           'w|zst'      open a zstd compressed stream for writing
         """
 
         if not name and not fileobj:
@@ -2026,7 +2026,7 @@ class TarFile(object):
 
     @classmethod
     def zstopen(cls, name, mode="r", fileobj=None, level=None, options=None,
-                 zstd_dict=None, **kwargs):
+                zstd_dict=None, **kwargs):
         """Open zstd compressed tar archive name for reading or writing.
            Appending is not allowed.
         """
@@ -2064,8 +2064,8 @@ class TarFile(object):
         "tar": "taropen",   # uncompressed tar
         "gz":  "gzopen",    # gzip compressed tar
         "bz2": "bz2open",   # bzip2 compressed tar
-        "xz":  "xzopen",     # lzma compressed tar
-        "zst": "zstopen" # zstd compressed tar
+        "xz":  "xzopen",    # lzma compressed tar
+        "zst": "zstopen"    # zstd compressed tar
     }
 
     #--------------------------------------------------------------------------
