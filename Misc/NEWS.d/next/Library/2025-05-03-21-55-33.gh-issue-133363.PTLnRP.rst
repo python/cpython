@@ -1,0 +1,5 @@
+The :class:`cmd.Cmd` class has been fixed to call the ``completedefault``
+method whenever the ``do_shell`` method is not defined and tab completion is
+requested for a line beginning with ``!``. Previously ``completedefault``
+was called only if there were no spaces between the ``!`` and the cursor
+position where tab completion was attempted.
