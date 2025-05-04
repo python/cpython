@@ -2348,7 +2348,7 @@ BadDivmod:
 static PyObject *
 nanoseconds_to_delta(PyObject *pyns)
 {
-    return new_delta(0, 0, 0, PyLong_AsLong(pyns), 1, DELTA_TYPE(NO_STATE));
+    return new_delta(0, 0, 0, PyLong_AsLong(pyns), 1);
 }
 
 static PyObject *
