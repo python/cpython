@@ -173,24 +173,31 @@ library which are implemented in C; each one builds a DLL (renamed to
  * _asyncio
  * _ctypes
  * _ctypes_test
- * _zoneinfo
  * _decimal
  * _elementtree
  * _hashlib
+ * _lzma
  * _multiprocessing
  * _overlapped
+ * _queue
+ * _remotedebugging
  * _socket
+ * _sqlite3
+ * _ssl
  * _testbuffer
  * _testcapi
- * _testlimitedcapi
- * _testinternalcapi
  * _testclinic
  * _testclinic_limited
  * _testconsole
  * _testimportmultiple
+ * _testinternalcapi
+ * _testlimitedcapi
  * _testmultiphase
  * _testsinglephase
  * _tkinter
+ * _uuid
+ * _wmi
+ * _zoneinfo
  * pyexpat
  * select
  * unicodedata
@@ -202,15 +209,18 @@ interpreter, but they do implement several major features.  See the
 "Getting External Sources" section below for additional information
 about getting the source for building these libraries.  The sub-projects
 are:
+
 _bz2
     Python wrapper for version 1.0.8 of the libbzip2 compression library
     Homepage:
         http://www.bzip.org/
-_lzma
+
+liblzma
     Python wrapper for version 5.2.2 of the liblzma compression library
     Homepage:
         https://tukaani.org/xz/
-_ssl
+
+openssl
     Python wrapper for version 3.0.15 of the OpenSSL secure sockets
     library, which is downloaded from our binaries repository at
     https://github.com/python/cpython-bin-deps.
@@ -229,10 +239,11 @@ _ssl
     As long as this folder exists, its contents will not be downloaded
     again when building.
 
-_sqlite3
+sqlite3
     Wraps SQLite 3.49.1, which is itself built by sqlite3.vcxproj
     Homepage:
         https://www.sqlite.org/
+
 _tkinter
     Wraps version 8.6.15 of the Tk windowing system, which is downloaded
     from our binaries repository at
@@ -252,6 +263,7 @@ _tkinter
     Win32 and "tcltk64" on x64.  They also copy the Tcl and Tk DLLs
     into the current output directory, which should ensure that Tkinter
     is able to load Tcl/Tk without having to change your PATH.
+
 zlib-ng
     Compiles zlib-ng as a static library, which is later included by
     pythoncore.vcxproj. This was generated using CMake against zlib-ng
