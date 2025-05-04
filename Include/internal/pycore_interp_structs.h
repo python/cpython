@@ -9,7 +9,6 @@ extern "C" {
 
 #include "pycore_ast_state.h"     // struct ast_state
 #include "pycore_llist.h"         // struct llist_node
-#include "pycore_memoryobject.h"  // struct _memoryobject_state
 #include "pycore_opcode_utils.h"  // NUM_COMMON_CONSTANTS
 #include "pycore_pymath.h"        // _PY_SHORT_FLOAT_REPR
 #include "pycore_structs.h"       // PyHamtObject
@@ -913,10 +912,9 @@ struct _is {
     struct _dtoa_state dtoa;
     struct _py_func_state func_state;
     struct _py_code_state code_state;
+
     struct _Py_dict_state dict_state;
     struct _Py_exc_state exc_state;
-    struct _memoryobject_state memobj_state;
-
     struct _Py_mem_interp_free_queue mem_free_queue;
 
     struct ast_state ast;
@@ -925,6 +923,8 @@ struct _is {
     PyObject *common_consts[NUM_COMMON_CONSTANTS];
     bool jit;
     struct _PyExecutorObject *executor_list_head;
+    struct _PyExecutorObject *executor_deletion_list_head;
+    int executor_deletion_list_remaining_capacity;
     size_t trace_run_counter;
     _rare_events rare_events;
     PyDict_WatchCallback builtins_dict_watcher;

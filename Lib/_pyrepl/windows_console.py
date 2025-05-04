@@ -22,8 +22,6 @@ from __future__ import annotations
 import io
 import os
 import sys
-import time
-import msvcrt
 
 import ctypes
 from ctypes.wintypes import (
@@ -44,12 +42,15 @@ from .utils import wlen
 from .windows_eventqueue import EventQueue
 
 try:
-    from ctypes import GetLastError, WinDLL, windll, WinError  # type: ignore[attr-defined]
+    from ctypes import get_last_error, GetLastError, WinDLL, windll, WinError  # type: ignore[attr-defined]
 except:
     # Keep MyPy happy off Windows
     from ctypes import CDLL as WinDLL, cdll as windll
 
     def GetLastError() -> int:
+        return 42
+
+    def get_last_error() -> int:
         return 42
 
     class WinError(OSError):  # type: ignore[no-redef]
@@ -107,6 +108,12 @@ CLEAR = "\x1b[H\x1b[J"
 # State of control keys: https://learn.microsoft.com/en-us/windows/console/key-event-record-str
 ALT_ACTIVE = 0x01 | 0x02
 CTRL_ACTIVE = 0x04 | 0x08
+
+WAIT_TIMEOUT = 0x102
+WAIT_FAILED = 0xFFFFFFFF
+
+# from winbase.h
+INFINITE = 0xFFFFFFFF
 
 
 class _error(Exception):
@@ -409,12 +416,8 @@ class WindowsConsole(Console):
         return info.srWindow.Bottom  # type: ignore[no-any-return]
 
     def _read_input(self, block: bool = True) -> INPUT_RECORD | None:
-        if not block:
-            events = DWORD()
-            if not GetNumberOfConsoleInputEvents(InHandle, events):
-                raise WinError(GetLastError())
-            if not events.value:
-                return None
+        if not block and not self.wait(timeout=0):
+            return None
 
         rec = INPUT_RECORD()
         read = DWORD()
@@ -422,6 +425,20 @@ class WindowsConsole(Console):
             raise WinError(GetLastError())
 
         return rec
+
+    def _read_input_bulk(
+        self, block: bool, n: int
+    ) -> tuple[ctypes.Array[INPUT_RECORD], int]:
+        rec = (n * INPUT_RECORD)()
+        read = DWORD()
+
+        if not block and not self.wait(timeout=0):
+            return rec, 0
+
+        if not ReadConsoleInput(InHandle, rec, n, read):
+            raise WinError(GetLastError())
+
+        return rec, read.value
 
     def get_event(self, block: bool = True) -> Event | None:
         """Return an Event instance.  Returns None if |block| is false
@@ -518,18 +535,36 @@ class WindowsConsole(Console):
     def getpending(self) -> Event:
         """Return the characters that have been typed but not yet
         processed."""
-        return Event("key", "", b"")
+        e = Event("key", "", b"")
+
+        while not self.event_queue.empty():
+            e2 = self.event_queue.get()
+            if e2:
+                e.data += e2.data
+
+        recs, rec_count = self._read_input_bulk(False, 1024)
+        for i in range(rec_count):
+            rec = recs[i]
+            if rec and rec.EventType == KEY_EVENT:
+                key_event = rec.Event.KeyEvent
+                ch = key_event.uChar.UnicodeChar
+                if ch == "\r":
+                    ch += "\n"
+                e.data += ch
+        return e
 
     def wait(self, timeout: float | None) -> bool:
         """Wait for an event."""
-        # Poor man's Windows select loop
-        start_time = time.time()
-        while True:
-            if msvcrt.kbhit(): # type: ignore[attr-defined]
-                return True
-            if timeout and time.time() - start_time > timeout / 1000:
-                return False
-            time.sleep(0.01)
+        if timeout is None:
+            timeout = INFINITE
+        else:
+            timeout = int(timeout)
+        ret = WaitForSingleObject(InHandle, timeout)
+        if ret == WAIT_FAILED:
+            raise WinError(get_last_error())
+        elif ret == WAIT_TIMEOUT:
+            return False
+        return True
 
     def repaint(self) -> None:
         raise NotImplementedError("No repaint support")
@@ -649,13 +684,14 @@ if sys.platform == "win32":
     ReadConsoleInput.argtypes = [HANDLE, POINTER(INPUT_RECORD), DWORD, POINTER(DWORD)]
     ReadConsoleInput.restype = BOOL
 
-    GetNumberOfConsoleInputEvents = _KERNEL32.GetNumberOfConsoleInputEvents
-    GetNumberOfConsoleInputEvents.argtypes = [HANDLE, POINTER(DWORD)]
-    GetNumberOfConsoleInputEvents.restype = BOOL
 
     FlushConsoleInputBuffer = _KERNEL32.FlushConsoleInputBuffer
     FlushConsoleInputBuffer.argtypes = [HANDLE]
     FlushConsoleInputBuffer.restype = BOOL
+
+    WaitForSingleObject = _KERNEL32.WaitForSingleObject
+    WaitForSingleObject.argtypes = [HANDLE, DWORD]
+    WaitForSingleObject.restype = DWORD
 
     OutHandle = GetStdHandle(STD_OUTPUT_HANDLE)
     InHandle = GetStdHandle(STD_INPUT_HANDLE)
@@ -670,7 +706,7 @@ else:
     GetConsoleMode = _win_only
     SetConsoleMode = _win_only
     ReadConsoleInput = _win_only
-    GetNumberOfConsoleInputEvents = _win_only
     FlushConsoleInputBuffer = _win_only
+    WaitForSingleObject = _win_only
     OutHandle = 0
     InHandle = 0

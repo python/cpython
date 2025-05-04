@@ -891,7 +891,9 @@ class SysModuleTest(unittest.TestCase):
 
     @test.support.cpython_only
     def test_clear_type_cache(self):
-        sys._clear_type_cache()
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   r"sys\._clear_type_cache\(\) is deprecated.*"):
+            sys._clear_type_cache()
 
     @force_not_colorized
     @support.requires_subprocess()
@@ -1958,7 +1960,7 @@ def _supports_remote_attaching():
     PROCESS_VM_READV_SUPPORTED = False
 
     try:
-        from _testexternalinspection import PROCESS_VM_READV_SUPPORTED
+        from _remotedebuggingmodule import PROCESS_VM_READV_SUPPORTED
     except ImportError:
         pass
 
