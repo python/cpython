@@ -339,7 +339,7 @@ class _Stream:
     """
 
     def __init__(self, name, mode, comptype, fileobj, bufsize,
-                 compresslevel):
+                 compresslevel, preset):
         """Construct a _Stream object.
         """
         self._extfileobj = True
@@ -398,7 +398,7 @@ class _Stream:
                     self.cmp = lzma.LZMADecompressor()
                     self.exception = lzma.LZMAError
                 else:
-                    self.cmp = lzma.LZMACompressor()
+                    self.cmp = lzma.LZMACompressor(preset=preset)
 
             elif comptype != "tar":
                 raise CompressionError("unknown compression type %r" % comptype)
@@ -1760,6 +1760,8 @@ class TarFile(object):
                                 # current position in the archive file
         self.inodes = {}        # dictionary caching the inodes of
                                 # archive members already added
+        self._unames = {}       # Cached mappings of uid -> uname
+        self._gnames = {}       # Cached mappings of gid -> gname
 
         try:
             if self.mode == "r":
@@ -1883,10 +1885,17 @@ class TarFile(object):
 
             if filemode not in ("r", "w"):
                 raise ValueError("mode must be 'r' or 'w'")
+            if "compresslevel" in kwargs and comptype not in ("gz", "bz2"):
+                raise ValueError(
+                    "compresslevel is only valid for w|gz and w|bz2 modes"
+                )
+            if "preset" in kwargs and comptype not in ("xz",):
+                raise ValueError("preset is only valid for w|xz mode")
 
             compresslevel = kwargs.pop("compresslevel", 9)
+            preset = kwargs.pop("preset", None)
             stream = _Stream(name, filemode, comptype, fileobj, bufsize,
-                             compresslevel)
+                             compresslevel, preset)
             try:
                 t = cls(name, filemode, stream, **kwargs)
             except:
@@ -2138,16 +2147,23 @@ class TarFile(object):
         tarinfo.mtime = statres.st_mtime
         tarinfo.type = type
         tarinfo.linkname = linkname
+
+        # Calls to pwd.getpwuid() and grp.getgrgid() tend to be expensive. To
+        # speed things up, cache the resolved usernames and group names.
         if pwd:
-            try:
-                tarinfo.uname = pwd.getpwuid(tarinfo.uid)[0]
-            except KeyError:
-                pass
+            if tarinfo.uid not in self._unames:
+                try:
+                    self._unames[tarinfo.uid] = pwd.getpwuid(tarinfo.uid)[0]
+                except KeyError:
+                    self._unames[tarinfo.uid] = ''
+            tarinfo.uname = self._unames[tarinfo.uid]
         if grp:
-            try:
-                tarinfo.gname = grp.getgrgid(tarinfo.gid)[0]
-            except KeyError:
-                pass
+            if tarinfo.gid not in self._gnames:
+                try:
+                    self._gnames[tarinfo.gid] = grp.getgrgid(tarinfo.gid)[0]
+                except KeyError:
+                    self._gnames[tarinfo.gid] = ''
+            tarinfo.gname = self._gnames[tarinfo.gid]
 
         if type in (CHRTYPE, BLKTYPE):
             if hasattr(os, "major") and hasattr(os, "minor"):

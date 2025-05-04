@@ -270,6 +270,10 @@ def make_wasi_python(context, working_dir):
 
     exec_script = working_dir / "python.sh"
     subprocess.check_call([exec_script, "--version"])
+    print(
+        f"🎉 Use '{exec_script.relative_to(context.init_dir)}' "
+        "to run CPython in wasm runtime"
+    )
 
 
 def build_all(context):
@@ -297,8 +301,6 @@ def main():
                         # build.
                         # Use 16 MiB stack.
                         "--wasm max-wasm-stack=16777216 "
-                        # Use WASI 0.2 primitives.
-                        "--wasi preview2 "
                         # Enable thread support; causes use of preview1.
                         #"--wasm threads=y --wasi threads=y "
                         # Map the checkout to / to load the stdlib from /Lib.
@@ -346,10 +348,11 @@ def main():
                              "(default designed for wasmtime 14 or newer: "
                                 f"`{default_host_runner}`)")
     for subcommand in build, configure_host, make_host:
-        subcommand.add_argument("--host-triple", action="store", default="wasm32-wasi",
+        subcommand.add_argument("--host-triple", action="store", default="wasm32-wasip1",
                         help="The target triple for the WASI host build")
 
     context = parser.parse_args()
+    context.init_dir = pathlib.Path().absolute()
 
     dispatch = {"configure-build-python": configure_build_python,
                 "make-build-python": make_build_python,

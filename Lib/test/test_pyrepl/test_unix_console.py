@@ -1,11 +1,13 @@
 import itertools
+import os
 import sys
 import unittest
 from functools import partial
+from test.support import os_helper
 from unittest import TestCase
 from unittest.mock import MagicMock, call, patch, ANY
 
-from .support import handle_all_events, code_to_events
+from .support import handle_all_events, code_to_events, reader_no_colors
 
 try:
     from _pyrepl.console import Event
@@ -21,6 +23,7 @@ def unix_console(events, **kwargs):
     height = kwargs.get("height", 25)
     width = kwargs.get("width", 80)
     console.getheightwidth = MagicMock(side_effect=lambda: (height, width))
+    console.wait = MagicMock()
 
     console.prepare()
     for key, val in kwargs.items():
@@ -30,10 +33,12 @@ def unix_console(events, **kwargs):
 
 handle_events_unix_console = partial(
     handle_all_events,
-    prepare_console=partial(unix_console),
+    prepare_reader=reader_no_colors,
+    prepare_console=unix_console,
 )
 handle_events_narrow_unix_console = partial(
     handle_all_events,
+    prepare_reader=reader_no_colors,
     prepare_console=partial(unix_console, width=5),
 )
 handle_events_short_unix_console = partial(
@@ -250,7 +255,9 @@ class TestConsole(TestCase):
         # fmt: on
 
         events = itertools.chain(code_to_events(code))
-        reader, console = handle_events_short_unix_console(events)
+        reader, console = handle_events_short_unix_console(
+            events, prepare_reader=reader_no_colors
+        )
 
         console.height = 2
         console.getheightwidth = MagicMock(lambda _: (2, 80))
@@ -312,3 +319,14 @@ class TestConsole(TestCase):
         )
         console.restore()
         con.restore()
+
+    def test_getheightwidth_with_invalid_environ(self, _os_write):
+        # gh-128636
+        console = UnixConsole()
+        with os_helper.EnvironmentVarGuard() as env:
+            env["LINES"] = ""
+            self.assertIsInstance(console.getheightwidth(), tuple)
+            env["COLUMNS"] = ""
+            self.assertIsInstance(console.getheightwidth(), tuple)
+            os.environ = []
+            self.assertIsInstance(console.getheightwidth(), tuple)

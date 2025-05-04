@@ -288,7 +288,7 @@ class OpcodeStats:
                 opcode = "SUPER"
             elif opcode.endswith("ATTR"):
                 opcode = "ATTR"
-            elif opcode in ("FOR_ITER", "SEND"):
+            elif opcode in ("FOR_ITER", "GET_ITER", "SEND"):
                 opcode = "ITER"
             elif opcode.endswith("SUBSCR"):
                 opcode = "SUBSCR"
@@ -298,12 +298,20 @@ class OpcodeStats:
             return "kind " + str(kind)
 
         family_stats = self._get_stats_for_opcode(opcode)
-        failure_kinds = [0] * 40
+
+        def key_to_index(key):
+            return int(key[:-1].split("[")[1])
+
+        max_index = 0
+        for key in family_stats:
+            if key.startswith("specialization.failure_kind"):
+                max_index = max(max_index, key_to_index(key))
+
+        failure_kinds = [0] * (max_index + 1)
         for key in family_stats:
             if not key.startswith("specialization.failure_kind"):
                 continue
-            index = int(key[:-1].split("[")[1])
-            failure_kinds[index] = family_stats[key]
+            failure_kinds[key_to_index(key)] = family_stats[key]
         return {
             kind_to_text(index, opcode): value
             for (index, value) in enumerate(failure_kinds)
@@ -457,6 +465,7 @@ class Stats:
         inner_loop = self._data["Optimization inner loop"]
         recursive_call = self._data["Optimization recursive call"]
         low_confidence = self._data["Optimization low confidence"]
+        unknown_callee = self._data["Optimization unknown callee"]
         executors_invalidated = self._data["Executors invalidated"]
 
         return {
@@ -483,7 +492,7 @@ class Stats:
             ): (trace_too_long, attempts),
             Doc(
                 "Trace too short",
-                "A potential trace is abandoced because it it too short.",
+                "A potential trace is abandoned because it it too short.",
             ): (trace_too_short, attempts),
             Doc(
                 "Inner loop found", "A trace is truncated because it has an inner loop"
@@ -497,6 +506,10 @@ class Stats:
                 "A trace is abandoned because the likelihood of the jump to top being taken "
                 "is too low.",
             ): (low_confidence, attempts),
+            Doc(
+                "Unknown callee",
+                "A trace is abandoned because the target of a call is unknown.",
+            ): (unknown_callee, attempts),
             Doc(
                 "Executors invalidated",
                 "The number of executors that were invalidated due to watched "
@@ -543,6 +556,41 @@ class Stats:
                 "Remove globals incorrect keys",
                 "The keys in the globals dictionary aren't what was expected",
             ): (incorrect_keys, attempts),
+        }
+
+    def get_jit_memory_stats(self) -> dict[Doc, tuple[int, int | None]]:
+        jit_total_memory_size = self._data["JIT total memory size"]
+        jit_code_size = self._data["JIT code size"]
+        jit_trampoline_size = self._data["JIT trampoline size"]
+        jit_data_size = self._data["JIT data size"]
+        jit_padding_size = self._data["JIT padding size"]
+        jit_freed_memory_size = self._data["JIT freed memory size"]
+
+        return {
+            Doc(
+                "Total memory size",
+                "The total size of the memory allocated for the JIT traces",
+            ): (jit_total_memory_size, None),
+            Doc(
+                "Code size",
+                "The size of the memory allocated for the code of the JIT traces",
+            ): (jit_code_size, jit_total_memory_size),
+            Doc(
+                "Trampoline size",
+                "The size of the memory allocated for the trampolines of the JIT traces",
+            ): (jit_trampoline_size, jit_total_memory_size),
+            Doc(
+                "Data size",
+                "The size of the memory allocated for the data of the JIT traces",
+            ): (jit_data_size, jit_total_memory_size),
+            Doc(
+                "Padding size",
+                "The size of the memory allocated for the padding of the JIT traces",
+            ): (jit_padding_size, jit_total_memory_size),
+            Doc(
+                "Freed memory size",
+                "The size of the memory freed from the JIT traces",
+            ): (jit_freed_memory_size, jit_total_memory_size),
         }
 
     def get_histogram(self, prefix: str) -> list[tuple[int, int]]:
@@ -1118,6 +1166,8 @@ def gc_stats_section() -> Section:
                 Count(gen["collections"]),
                 Count(gen["objects collected"]),
                 Count(gen["object visits"]),
+                Count(gen["objects reachable from roots"]),
+                Count(gen["objects not reachable from roots"]),
             )
             for (i, gen) in enumerate(gc_stats)
         ]
@@ -1127,7 +1177,8 @@ def gc_stats_section() -> Section:
         "GC collections and effectiveness",
         [
             Table(
-                ("Generation:", "Collections:", "Objects collected:", "Object visits:"),
+                ("Generation:", "Collections:", "Objects collected:", "Object visits:",
+                 "Reachable from roots:", "Not reachable from roots:"),
                 calc_gc_stats,
             )
         ],
@@ -1158,16 +1209,31 @@ def optimization_section() -> Section:
             for label, (value, den) in optimizer_stats.items()
         ]
 
-    def calc_histogram_table(key: str, den: str) -> RowCalculator:
+    def calc_jit_memory_table(stats: Stats) -> Rows:
+        jit_memory_stats = stats.get_jit_memory_stats()
+
+        return [
+            (
+                label,
+                Count(value),
+                Ratio(value, den, percentage=label != "Total memory size"),
+            )
+            for label, (value, den) in jit_memory_stats.items()
+        ]
+
+    def calc_histogram_table(key: str, den: str | None = None) -> RowCalculator:
         def calc(stats: Stats) -> Rows:
             histogram = stats.get_histogram(key)
-            denominator = stats.get(den)
+
+            if den:
+                denominator = stats.get(den)
+            else:
+                denominator = 0
+                for _, v in histogram:
+                    denominator += v
 
             rows: Rows = []
-            last_non_zero = 0
             for k, v in histogram:
-                if v != 0:
-                    last_non_zero = len(rows)
                 rows.append(
                     (
                         f"<= {k:,d}",
@@ -1175,9 +1241,19 @@ def optimization_section() -> Section:
                         Ratio(v, denominator),
                     )
                 )
-            # Don't include any zero entries at the end
-            rows = rows[: last_non_zero + 1]
-            return rows
+            # Don't include any leading and trailing zero entries
+            start = 0
+            end = len(rows) - 1
+
+            while start <= end:
+                if rows[start][1] == 0:
+                    start += 1
+                elif rows[end][1] == 0:
+                    end -= 1
+                else:
+                    break
+
+            return rows[start:end+1]
 
         return calc
 
@@ -1211,6 +1287,28 @@ def optimization_section() -> Section:
 
         yield Table(("", "Count:", "Ratio:"), calc_optimization_table, JoinMode.CHANGE)
         yield Table(("", "Count:", "Ratio:"), calc_optimizer_table, JoinMode.CHANGE)
+        yield Section(
+            "JIT memory stats",
+            "JIT memory stats",
+            [
+                Table(
+                    ("", "Size (bytes):", "Ratio:"),
+                    calc_jit_memory_table,
+                    JoinMode.CHANGE
+                )
+            ],
+        )
+        yield Section(
+            "JIT trace total memory histogram",
+            "JIT trace total memory histogram",
+            [
+                Table(
+                    ("Size (bytes)", "Count", "Ratio:"),
+                    calc_histogram_table("Trace total memory size"),
+                    JoinMode.CHANGE_NO_SORT,
+                )
+            ],
+        )
         for name, den in [
             ("Trace length", "Optimization traces created"),
             ("Optimized trace length", "Optimization traces created"),

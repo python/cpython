@@ -1,2 +1,0 @@
-Allow calling :func:`os.path.exists` and :func:`os.path.lexists` with
-keyword arguments on Windows. Fixes a regression in 3.13.0.

@@ -30,6 +30,16 @@ familiar with writing an extension before  attempting to embed Python in a real
 application.
 
 
+Language version compatibility
+==============================
+
+Python's C API is compatible with C11 and C++11 versions of C and C++.
+
+This is a lower limit: the C API does not require features from later
+C/C++ versions.
+You do *not* need to enable your compiler's "c11 mode".
+
+
 Coding standards
 ================
 
@@ -138,7 +148,7 @@ complete listing.
 .. c:macro:: Py_ALWAYS_INLINE
 
    Ask the compiler to always inline a static inline function. The compiler can
-   ignore it and decides to not inline the function.
+   ignore it and decide to not inline the function.
 
    It can be used to inline performance critical static inline functions when
    building Python in debug mode with function inlining disabled. For example,

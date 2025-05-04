@@ -1,1 +1,0 @@
-Update bundled Tcl/Tk in macOS installer to 8.6.15.

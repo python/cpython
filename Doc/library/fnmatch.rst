@@ -46,9 +46,15 @@ module.  See module :mod:`glob` for pathname expansion (:mod:`glob` uses
 a period are not special for this module, and are matched by the ``*`` and ``?``
 patterns.
 
-Also note that :func:`functools.lru_cache` with the *maxsize* of 32768 is used to
-cache the compiled regex patterns in the following functions: :func:`fnmatch`,
-:func:`fnmatchcase`, :func:`.filter`.
+Unless stated otherwise, "filename string" and "pattern string" either refer to
+:class:`str` or ``ISO-8859-1`` encoded :class:`bytes` objects. Note that the
+functions documented below do not allow to mix a :class:`!bytes` pattern with
+a :class:`!str` filename, and vice-versa.
+
+Finally, note that :func:`functools.lru_cache` with a *maxsize* of 32768
+is used to cache the (typed) compiled regex patterns in the following
+functions: :func:`fnmatch`, :func:`fnmatchcase`, :func:`.filter`.
+
 
 .. function:: fnmatch(name, pat)
 
@@ -78,16 +84,26 @@ cache the compiled regex patterns in the following functions: :func:`fnmatch`,
 
 .. function:: filter(names, pat)
 
-   Construct a list from those elements of the :term:`iterable` *names*
-   that match pattern *pat*.
+   Construct a list from those elements of the :term:`iterable` of filename
+   strings *names* that match the pattern string *pat*.
    It is the same as ``[n for n in names if fnmatch(n, pat)]``,
    but implemented more efficiently.
+
+
+.. function:: filterfalse(names, pat)
+
+   Construct a list from those elements of the :term:`iterable` of filename
+   strings *names* that do not match the pattern string *pat*.
+   It is the same as ``[n for n in names if not fnmatch(n, pat)]``,
+   but implemented more efficiently.
+
+   .. versionadded:: 3.14
 
 
 .. function:: translate(pat)
 
    Return the shell-style pattern *pat* converted to a regular expression for
-   using with :func:`re.match`.
+   using with :func:`re.match`. The pattern is expected to be a :class:`str`.
 
    Example:
 
@@ -95,7 +111,7 @@ cache the compiled regex patterns in the following functions: :func:`fnmatch`,
       >>>
       >>> regex = fnmatch.translate('*.txt')
       >>> regex
-      '(?s:.*\\.txt)\\Z'
+      '(?s:.*\\.txt)\\z'
       >>> reobj = re.compile(regex)
       >>> reobj.match('foobar.txt')
       <re.Match object; span=(0, 10), match='foobar.txt'>
