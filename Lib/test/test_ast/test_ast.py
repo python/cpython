@@ -3227,8 +3227,8 @@ class CommandLineTests(unittest.TestCase):
         for r in range(1, len(base_flags) + 1):
             for choices in itertools.combinations(base_flags, r=r):
                 for args in itertools.product(*choices):
-                    with self.subTest(flags=args[1:]):
-                        _ = self.invoke_ast(*args)
+                    with self.subTest(flags=args):
+                        self.invoke_ast(*args)
 
     def test_unknown_flag(self):
         with self.assertRaises(SystemExit):
@@ -3258,7 +3258,8 @@ class CommandLineTests(unittest.TestCase):
                   TypeIgnore(lineno=1, tag='[assignment]')])
         '''
         for flag in ('-m=exec', '--mode=exec'):
-            self.check_output(source, expect, flag)
+            with self.subTest(flags=flag):
+                self.check_output(source, expect, flag)
 
     def test_single_mode_flag(self):
         # test 'python -m ast -m/--mode single'
@@ -3269,7 +3270,8 @@ class CommandLineTests(unittest.TestCase):
                   Pass()])
         '''
         for flag in ('-m=single', '--mode=single'):
-            self.check_output(source, expect, flag)
+            with self.subTest(flags=flag):
+                self.check_output(source, expect, flag)
 
     def test_eval_mode_flag(self):
         # test 'python -m ast -m/--mode eval'
@@ -3284,7 +3286,8 @@ class CommandLineTests(unittest.TestCase):
                      Constant(value=3)]))
         '''
         for flag in ('-m=eval', '--mode=eval'):
-            self.check_output(source, expect, flag)
+            with self.subTest(flags=flag):
+                self.check_output(source, expect, flag)
 
     def test_func_type_mode_flag(self):
         # test 'python -m ast -m/--mode func_type'
@@ -3300,7 +3303,8 @@ class CommandLineTests(unittest.TestCase):
                   ctx=Load()))
         '''
         for flag in ('-m=func_type', '--mode=func_type'):
-            self.check_output(source, expect, flag)
+            with self.subTest(flags=flag):
+                self.check_output(source, expect, flag)
 
     def test_no_type_comments_flag(self):
         # test 'python -m ast --no-type-comments'
@@ -3329,7 +3333,8 @@ class CommandLineTests(unittest.TestCase):
                      end_col_offset=4)])
         '''
         for flag in ('-a', '--include-attributes'):
-            self.check_output(source, expect, flag)
+            with self.subTest(flags=flag):
+                self.check_output(source, expect, flag)
 
     def test_indent_flag(self):
         # test 'python -m ast -i/--indent'
@@ -3340,7 +3345,8 @@ class CommandLineTests(unittest.TestCase):
             Pass()])
         '''
         for flag in ('-i=0', '--indent=0'):
-            self.check_output(source, expect, flag)
+            with self.subTest(flags=flag):
+                self.check_output(source, expect, flag)
 
 
 class ASTOptimiziationTests(unittest.TestCase):
