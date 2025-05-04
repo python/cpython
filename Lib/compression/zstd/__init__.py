@@ -114,20 +114,11 @@ def train_dict(samples, dict_size):
         ds_cls = type(dict_size).__qualname__
         raise TypeError('dict_size must be an int object, not {ds_cls!r}.')
 
-    # Prepare data
-    chunks = []
-    chunk_sizes = []
-    for chunk in samples:
-        chunks.append(chunk)
-        chunk_sizes.append(_nbytes(chunk))
-
-    chunks = b''.join(chunks)
+    samples = tuple(samples)
+    chunks = b''.join(samples)
+    chunk_sizes = tuple(map(_nbytes, samples))
     if not chunks:
-        raise ValueError("The samples are empty content, can't train dictionary.")
-
-    # samples_bytes: samples be stored concatenated in a single flat buffer.
-    # samples_size_list: a list of each sample's size.
-    # dict_size: size of the dictionary, in bytes.
+        raise ValueError("samples contained no data; can't train dictionary.")
     dict_content = _train_dict(chunks, chunk_sizes, dict_size)
 
     return ZstdDict(dict_content)
