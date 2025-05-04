@@ -60,7 +60,7 @@ class _CLValues:
     def __setattr__(self, name, _):
         raise AttributeError(f"can't set attribute {name!r}")
 
-compressionLevel_values = _CompressionLevelValues(*_zstd._compressionLevel_values)
+compressionLevel_values = _CLValues(*_zstd._compressionLevel_values)
 
 class FrameInfo:
     """Information about a Zstandard frame."""
