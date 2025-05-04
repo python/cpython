@@ -20,6 +20,7 @@
 #     http://asdl.sourceforge.net/
 #-------------------------------------------------------------------------------
 from collections import namedtuple
+import enum
 import re
 
 __all__ = [
@@ -64,11 +65,9 @@ class Constructor(AST):
     def __repr__(self):
         return 'Constructor({0.name}, {0.fields})'.format(self)
 
-class Quantifier:
-    class _Optional: pass
-    class _Sequence: pass
-    OPTIONAL = _Optional()
-    SEQUENCE = _Sequence()
+class Quantifier(enum.Enum):
+    OPTIONAL = enum.auto()
+    SEQUENCE = enum.auto()
 
 class Field(AST):
     def __init__(self, type, name=None, quantifiers=None):
