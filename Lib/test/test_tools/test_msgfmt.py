@@ -10,6 +10,7 @@ from pathlib import Path
 from test.support.os_helper import temp_cwd
 from test.support.script_helper import assert_python_failure, assert_python_ok
 from test.test_tools import imports_under_tool, skip_if_missing, toolsdir
+from textwrap import dedent
 
 
 skip_if_missing('i18n')
@@ -255,63 +256,63 @@ class POParserTest(unittest.TestCase):
             '[0]',
 
             # unclosed string
-            '''
-msgid "
-msgstr "bar"
-''',
+            dedent('''\
+                msgid "
+                msgstr "bar"
+            '''),
 
             # unclosed string
-            '''
-msgid "foo
-msgstr "bar"
-''',
+            dedent('''\
+                msgid "foo
+                msgstr "bar"
+            '''),
 
             # unclosed string
-            '''
-msgid "foo" "
-msgstr "bar"
-''',
+            dedent('''\
+                msgid "foo" "
+                msgstr "bar"
+            '''),
 
             # unclosed string
-            '''
-msgid "foo"
-"
-msgstr "bar"
-''',
+            dedent('''\
+                msgid "foo"
+                "
+                msgstr "bar"
+            '''),
 
             # illegal backslash
-            '''
-msgid "foo\\"
-"
-msgstr "bar"
-''',
+            dedent('''\
+                msgid "foo\\"
+                "
+                msgstr "bar"
+            '''),
 
             # msgid with an index
-            '''
-msgid[0] "foo"
-msgstr "bar"
-''',
+            dedent('''\
+                msgid[0] "foo"
+                msgstr "bar"
+            '''),
 
             # invalid plural index
-            '''
-msgid "foo"
-msgid_plural "foos"
-msgstr[0 "baz"
-''',
+            dedent('''\
+                msgid "foo"
+                msgid_plural "foos"
+                msgstr[0 "baz"
+            '''),
 
             # invalid plural index
-            '''
-msgid "foo"
-msgid_plural "foos"
-msgstr1] "baz"
-''',
+            dedent('''\
+                msgid "foo"
+                msgid_plural "foos"
+                msgstr1] "baz"
+            '''),
 
             # invalid plural index
-            '''
-msgid "foo"
-msgid_plural "foos"
-msgstr[[0]] "baz"
-''',
+            dedent('''\
+                msgid "foo"
+                msgid_plural "foos"
+                msgstr[[0]] "baz"
+            '''),
         )
         with temp_cwd():
             for invalid_po in invalid_po_files:
@@ -326,66 +327,66 @@ msgstr[[0]] "baz"
     def test_semantic_errors(self):
         invalid_po_files = (
             # msgid_plural must be preceded by msgid
-            '''
-msgid_plural "foos"
+            dedent('''\
+                msgid_plural "foos"
 
-msgid "bar"
-msgstr "baz"
-''',
+                msgid "bar"
+                msgstr "baz"
+            '''),
 
             # msgid_plural not allowed after comment
-            '''
-# comment
-msgid_plural "foos"
+            dedent('''\
+                # comment
+                msgid_plural "foos"
 
-msgid "bar"
-msgstr "baz"
-''',
+                msgid "bar"
+                msgstr "baz"
+            '''),
 
             # msgid_plural not allowed after msgctxt
-            '''
-msgctxt "foo"
-msgid_plural "foos"
+            dedent('''\
+                msgctxt "foo"
+                msgid_plural "foos"
 
-msgid "bar"
-msgstr "baz"
-''',
+                msgid "bar"
+                msgstr "baz"
+            '''),
 
             # msgid_plural not allowed after msgstr
-            '''
-msgid "foo"
-msgstr "bar"
-msgid_plural "foos"
+            dedent('''\
+                msgid "foo"
+                msgstr "bar"
+                msgid_plural "foos"
 
-msgid "bar"
-msgstr "baz"
-''',
+                msgid "bar"
+                msgstr "baz"
+            '''),
 
             # msgstr must be preceded by msgid
-            '''
-msgstr "foo"
+            dedent('''\
+                msgstr "foo"
 
-msgid "bar"
-msgstr "baz"
-''',
+                msgid "bar"
+                msgstr "baz"
+            '''),
 
             # msgstr not allowed after msgctxt
-            '''
-msgctxt "foo"
-msgstr "bar"
+            dedent('''\
+                msgctxt "foo"
+                msgstr "bar"
 
-msgid "foo"
-msgstr "bar"
-''',
+                msgid "foo"
+                msgstr "bar"
+            '''),
 
             # missing msgid_plural section
-            '''
-msgid "foo"
-msgstr[0] "bar"
+            dedent('''\
+                msgid "foo"
+                msgstr[0] "bar"
 
-msgid "bar"
-msgstr "baz"
-'''
+                msgid "bar"
+                msgstr "baz"
+            '''),
         )
         with temp_cwd():
             for invalid_po in invalid_po_files:
@@ -399,11 +400,11 @@ msgstr "baz"
     def test_msgstr_invalid_indices(self):
         invalid_po_files = (
             # msgstr not pluralized
-            '''
-msgid "foo"
-msgid_plural "foos"
-msgstr "bar"
-''',
+            dedent('''\
+                msgid "foo"
+                msgid_plural "foos"
+                msgstr "bar"
+            '''),
         )
         with temp_cwd():
             for invalid_po in invalid_po_files:
