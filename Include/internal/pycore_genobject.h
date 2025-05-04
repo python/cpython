@@ -34,6 +34,7 @@ PyAPI_FUNC(PyObject *)_PyCoro_GetAwaitableIter(PyObject *o);
 extern PyObject *_PyAsyncGenValueWrapperNew(PyThreadState *state, PyObject *);
 
 extern PyTypeObject _PyCoroWrapper_Type;
+extern PyTypeObject _PyGenWrapper_Type;
 extern PyTypeObject _PyAsyncGenWrappedValue_Type;
 extern PyTypeObject _PyAsyncGenAThrow_Type;
 

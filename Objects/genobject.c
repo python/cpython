@@ -1201,7 +1201,7 @@ PyDoc_STRVAR(coro_close_doc,
 
 static PyMethodDef coro_methods[] = {
     {"send", gen_send, METH_O, coro_send_doc},
-    {"throw",_PyCFunction_CAST(gen_throw), METH_FASTCALL, coro_throw_doc},
+    {"throw", _PyCFunction_CAST(gen_throw), METH_FASTCALL, coro_throw_doc},
     {"close", gen_close, METH_NOARGS, coro_close_doc},
     {"__sizeof__", gen_sizeof, METH_NOARGS, sizeof__doc__},
     {"__class_getitem__", Py_GenericAlias, METH_O|METH_CLASS, PyDoc_STR("See PEP 585")},
@@ -2414,3 +2414,307 @@ async_gen_athrow_new(PyAsyncGenObject *gen, PyObject *args)
     _PyObject_GC_TRACK((PyObject*)o);
     return (PyObject*)o;
 }
+
+/* Generator Wrapper Object */
+
+typedef struct {
+    PyObject_HEAD
+    PyObject *gw_gen;
+    PyObject *gw_name;
+    PyObject *gw_qualname;
+    PyObject *gw_weakreflist;
+    char gw_is_gen;
+} PyGenWrapper;
+
+#define _PyGenWrapper_CAST(op) \
+    (assert(Py_IS_TYPE((op), &_PyGenWrapper_Type)), \
+     _Py_CAST(PyGenWrapper*, (op)))
+
+static void
+gen_wrapper_dealloc(PyObject *self)
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    _PyObject_GC_UNTRACK((PyObject *)gw);
+    Py_CLEAR(gw->gw_gen);
+    Py_CLEAR(gw->gw_name);
+    Py_CLEAR(gw->gw_qualname);
+    if (gw->gw_weakreflist != NULL)
+        PyObject_ClearWeakRefs(self);
+    PyObject_GC_Del(gw);
+}
+
+static int
+gen_wrapper_traverse(PyObject *self, visitproc visit, void *arg)
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    Py_VISIT(gw->gw_gen);
+    Py_VISIT(gw->gw_name);
+    Py_VISIT(gw->gw_qualname);
+    return 0;
+}
+
+static PyObject *
+gen_wrapper_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *gen = NULL;
+
+    if ((type == &_PyGenWrapper_Type ||
+         type->tp_init == _PyGenWrapper_Type.tp_init) &&
+        !_PyArg_NoKeywords(type->tp_name, kwds)) {
+        return NULL;
+    }
+
+    if (!PyArg_UnpackTuple(args, type->tp_name, 1, 1, &gen)) {
+        return NULL;
+    }
+
+    PyGenWrapper *gw = _PyGenWrapper_CAST(type->tp_alloc(type, 0));
+    if (gw == NULL)
+        return NULL;
+
+    gw->gw_gen = Py_NewRef(gen);
+    gw->gw_is_gen = Py_IS_TYPE(gen, &PyGen_Type);
+
+    PyObject *gen_name;
+    (void)PyObject_GetOptionalAttr(gen, &_Py_ID(__name__), &gen_name);
+    if (gen_name != NULL)
+        gw->gw_name = Py_NewRef(gen_name);
+    else
+        gw->gw_name = NULL;
+
+    PyObject *gen_qualname;
+    (void)PyObject_GetOptionalAttr(gen, &_Py_ID(__qualname__), &gen_qualname);
+    if (gen_qualname != NULL)
+        gw->gw_qualname = Py_NewRef(gen_qualname);
+    else
+        gw->gw_qualname = NULL;
+
+    gw->gw_weakreflist = NULL;
+
+    return (PyObject *)gw;
+}
+
+static PyObject *
+gen_wrapper_iter(PyObject *self)
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    if (gw->gw_is_gen)
+        return Py_NewRef(gw->gw_gen);
+
+    return Py_NewRef(gw);
+}
+
+static PyObject *
+gen_wrapper_iternext(PyObject *self)
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    PyTypeObject *tp = Py_TYPE(gw->gw_gen);
+    if (!PyIter_Check(gw->gw_gen)) {
+        PyErr_Format(PyExc_TypeError,
+            "'%.200s' object is not an iterator",
+            tp->tp_name);
+        return NULL;
+    }
+    return tp->tp_iternext(gw->gw_gen);
+}
+
+static PyObject *
+gen_wrapper_send(PyObject *self, PyObject *arg)
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    return PyObject_CallMethodObjArgs(gw->gw_gen, &_Py_ID(send), arg, NULL);
+}
+
+static PyObject *
+gen_wrapper_throw(PyObject *self, PyObject *const *args, Py_ssize_t nargs)
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    PyObject *typ;
+    PyObject *tb;
+    PyObject *val;
+
+    if (!_PyArg_CheckPositional("throw", nargs, 1, 3)) {
+        return NULL;
+    }
+
+    typ = args[0];
+    if (nargs == 3) {
+        val = args[1];
+        tb = args[2];
+        return PyObject_CallMethodObjArgs(gw->gw_gen, &_Py_ID(throw), typ, val, tb, NULL);
+    }
+    else if (nargs == 2) {
+        val = args[1];
+        return PyObject_CallMethodObjArgs(gw->gw_gen, &_Py_ID(throw), typ, val, NULL);
+    }
+    return PyObject_CallMethodObjArgs(gw->gw_gen, &_Py_ID(throw), typ, NULL);
+}
+
+static PyObject *
+gen_wrapper_close(PyObject *self, PyObject *args)
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    return PyObject_CallMethodObjArgs(gw->gw_gen, &_Py_ID(close), NULL);
+}
+
+static PyObject *
+gen_wrapper_get_name(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    if (!gw->gw_name)
+        return Py_None;
+
+    return Py_NewRef(gw->gw_name);
+}
+
+static int
+gen_wrapper_set_name(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    /* Not legal to del gw.__name__ or to set it to anything
+     * other than a string object. */
+    if (value == NULL || !PyUnicode_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__name__ must be set to a string object");
+        return -1;
+    }
+    Py_XSETREF(gw->gw_name, Py_NewRef(value));
+    return 0;
+}
+
+static PyObject *
+gen_wrapper_get_qualname(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    if (!gw->gw_qualname)
+        return Py_None;
+
+    return Py_NewRef(gw->gw_qualname);
+}
+
+static int
+gen_wrapper_set_qualname(PyObject *self, PyObject *value, void *Py_UNUSED(ignored))
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    /* Not legal to del gw.__qualname__ or to set it to anything
+     * other than a string object. */
+    if (value == NULL || !PyUnicode_Check(value)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "__qualname__ must be set to a string object");
+        return -1;
+    }
+    Py_XSETREF(gw->gw_qualname, Py_NewRef(value));
+    return 0;
+}
+
+static PyObject *
+gen_wrapper_getyieldfrom(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    return PyObject_GetAttr(gw->gw_gen, &_Py_ID(gi_yieldfrom));
+}
+
+static PyObject *
+gen_wrapper_getrunning(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    return PyObject_GetAttr(gw->gw_gen, &_Py_ID(gi_running));
+}
+
+static PyObject *
+gen_wrapper_getsuspended(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    return PyObject_GetAttr(gw->gw_gen, &_Py_ID(gi_suspended));
+}
+
+static PyObject *
+gen_wrapper_getframe(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    return PyObject_GetAttr(gw->gw_gen, &_Py_ID(gi_frame));
+}
+
+static PyObject *
+gen_wrapper_getcode(PyObject *self, void *Py_UNUSED(ignored))
+{
+    PyGenWrapper *gw = _PyGenWrapper_CAST(self);
+    return PyObject_GetAttr(gw->gw_gen, &_Py_ID(gi_code));
+}
+
+static PyGetSetDef gen_wrapper_getsetlist[] = {
+    {"__name__", gen_wrapper_get_name, gen_wrapper_set_name,
+     PyDoc_STR("name of the generator wrapper")},
+    {"__qualname__", gen_wrapper_get_qualname, gen_wrapper_set_qualname,
+     PyDoc_STR("qualified name of the generator wrapper")},
+    {"gi_yieldfrom", gen_wrapper_getyieldfrom, NULL,
+     PyDoc_STR("object being iterated by yield from, or None")},
+    {"gi_running", gen_wrapper_getrunning, NULL, NULL},
+    {"gi_frame", gen_wrapper_getframe,  NULL, NULL},
+    {"gi_suspended", gen_wrapper_getsuspended,  NULL, NULL},
+    {"gi_code", gen_wrapper_getcode,  NULL, NULL},
+    {"cr_await", gen_wrapper_getyieldfrom, NULL,
+     PyDoc_STR("object being awaited on, or None")},
+    {"cr_running", gen_wrapper_getrunning, NULL, NULL},
+    {"cr_frame", gen_wrapper_getframe, NULL, NULL},
+    {"cr_code", gen_wrapper_getcode, NULL, NULL},
+    {"cr_suspended", gen_wrapper_getsuspended, NULL, NULL},
+    {NULL} /* Sentinel */
+};
+
+static PyMethodDef gen_wrapper_methods[] = {
+    {"send", gen_wrapper_send, METH_O, coro_send_doc},
+    {"throw", _PyCFunction_CAST(gen_wrapper_throw), METH_FASTCALL,
+     coro_throw_doc},
+    {"close", gen_wrapper_close, METH_NOARGS, coro_close_doc},
+    {NULL, NULL}        /* Sentinel */
+};
+
+static PyAsyncMethods gen_wrapper_as_async = {
+    gen_wrapper_iter,                           /* am_await */
+    0,                                          /* am_aiter */
+    0,                                          /* am_anext */
+    PyGen_am_send,                              /* am_send  */
+};
+
+PyTypeObject _PyGenWrapper_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "_GeneratorWrapper",
+    sizeof(PyGenWrapper),                       /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    gen_wrapper_dealloc,                        /* destructor tp_dealloc */
+    0,                                          /* tp_vectorcall_offset */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    &gen_wrapper_as_async,                      /* tp_as_async */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    "A wrapper object that makes coroutines from generators.",
+    gen_wrapper_traverse,                       /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    offsetof(PyGenWrapper, gw_weakreflist),     /* tp_weaklistoffset */
+    gen_wrapper_iter,                           /* tp_iter */
+    gen_wrapper_iternext,                       /* tp_iternext */
+    gen_wrapper_methods,                        /* tp_methods */
+    0,                                          /* tp_members */
+    gen_wrapper_getsetlist,                     /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    PyType_GenericAlloc,                        /* tp_alloc */
+    gen_wrapper_new,                            /* tp_new */
+    0,                                          /* tp_free */
+};

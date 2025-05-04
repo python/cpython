@@ -5,6 +5,7 @@
 #include "pycore_namespace.h"     // _PyNamespace_Type
 #include "pycore_object.h"        // _PyNone_Type, _PyNotImplemented_Type
 #include "pycore_unionobject.h"   // _PyUnion_Type
+#include "pycore_genobject.h"     // _PyGenWrapper_Type
 
 static int
 _types_exec(PyObject *m)
@@ -46,6 +47,7 @@ _types_exec(PyObject *m)
     EXPORT_STATIC_TYPE("TracebackType", PyTraceBack_Type);
     EXPORT_STATIC_TYPE("UnionType", _PyUnion_Type);
     EXPORT_STATIC_TYPE("WrapperDescriptorType", PyWrapperDescr_Type);
+    EXPORT_STATIC_TYPE("_GeneratorWrapper", _PyGenWrapper_Type);
 #undef EXPORT_STATIC_TYPE
     return 0;
 }

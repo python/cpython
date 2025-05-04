@@ -986,6 +986,11 @@ extern "C" {
     INIT_ID(get_source), \
     INIT_ID(getattr), \
     INIT_ID(getstate), \
+    INIT_ID(gi_code), \
+    INIT_ID(gi_frame), \
+    INIT_ID(gi_running), \
+    INIT_ID(gi_suspended), \
+    INIT_ID(gi_yieldfrom), \
     INIT_ID(gid), \
     INIT_ID(globals), \
     INIT_ID(groupindex), \

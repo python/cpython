@@ -988,6 +988,11 @@ _PyStaticObjects_CheckRefcnt(PyInterpreterState *interp) {
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(get_source));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(getattr));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(getstate));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(gi_code));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(gi_frame));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(gi_running));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(gi_suspended));
+    _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(gi_yieldfrom));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(gid));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(globals));
     _PyStaticObject_CheckRefcnt((PyObject *)&_Py_ID(groupindex));
