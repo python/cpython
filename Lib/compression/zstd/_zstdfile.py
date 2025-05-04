@@ -72,21 +72,21 @@ class ZstdFile(_streams.BaseStream):
                         "options."
                     )
                 )
-            if level:
+            if level is not None:
                 raise TypeError("level argument should only be passed when writing.")
             mode_code = _MODE_READ
         elif mode in ("w", "wb", "a", "ab", "x", "xb"):
             if not isinstance(level, (type(None), int)):
-                raise TypeError(("level argument should be an int object."))
+                raise TypeError("level argument should be an int object.")
             if not isinstance(options, (type(None), dict)):
-                raise TypeError(("options argument should be an dict object."))
+                raise TypeError("options argument should be an dict object.")
             mode_code = _MODE_WRITE
             self._compressor = ZstdCompressor(
                 level=level, options=options, zstd_dict=zstd_dict
             )
             self._pos = 0
         else:
-            raise ValueError("Invalid mode: {!r}".format(mode))
+            raise ValueError(f"Invalid mode: {mode!r}")
 
         # File object
         if isinstance(filename, (str, bytes, PathLike)):
@@ -97,7 +97,7 @@ class ZstdFile(_streams.BaseStream):
         elif hasattr(filename, "read") or hasattr(filename, "write"):
             self._fp = filename
         else:
-            raise TypeError(("filename must be a str, bytes, file or PathLike object"))
+            raise TypeError("filename must be a str, bytes, file or PathLike object")
         self._mode = mode_code
 
         if self._mode == _MODE_READ:
@@ -358,7 +358,7 @@ def open(
 
     if "t" in mode:
         if "b" in mode:
-            raise ValueError("Invalid mode: %r" % (mode,))
+            raise ValueError(f"Invalid mode: {mode!r}")
     else:
         if encoding is not None:
             raise ValueError("Argument 'encoding' not supported in binary mode")
