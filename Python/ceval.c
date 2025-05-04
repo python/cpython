@@ -1096,7 +1096,6 @@ _PyEval_EvalFrameDefault(PyThreadState *tstate, _PyInterpreterFrame *frame, int 
     /* Tier 2 interpreter state */
     _PyExecutorObject *current_executor = NULL;
     const _PyUOpInstruction *next_uop = NULL;
-    _PyInterpreterFrame *jit_entry;
 #endif
 #if Py_TAIL_CALL_INTERP
 #   if Py_STATS

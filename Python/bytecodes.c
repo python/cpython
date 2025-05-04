@@ -1202,9 +1202,6 @@ dummy_func(
             LOAD_IP(frame->return_offset);
             res = temp;
             LLTRACE_RESUME_FRAME();
-        #if TIER_TWO
-            tstate->jit_entry = frame;
-        #endif
         }
 
         tier1 op(_RETURN_VALUE_EVENT, (val -- val)) {
@@ -1391,9 +1388,6 @@ dummy_func(
             LOAD_IP(1 + INLINE_CACHE_ENTRIES_SEND);
             value = PyStackRef_MakeHeapSafe(temp);
             LLTRACE_RESUME_FRAME();
-        #if TIER_TWO
-            tstate->jit_entry = frame;
-        #endif
         }
 
         tier1 op(_YIELD_VALUE_EVENT, (val -- val)) {
@@ -4983,9 +4977,6 @@ dummy_func(
             RELOAD_STACK();
             res = PyStackRef_FromPyObjectStealMortal((PyObject *)gen);
             LLTRACE_RESUME_FRAME();
-        #if TIER_TWO
-            tstate->jit_entry = frame;
-        #endif
         }
 
         inst(BUILD_SLICE, (args[oparg] -- slice)) {

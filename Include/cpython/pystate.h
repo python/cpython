@@ -206,10 +206,6 @@ struct _ts {
     */
     PyObject *threading_local_sentinel;
     _PyRemoteDebuggerSupport remote_debugger_support;
-
-    // Any frame between the topmost frame where the JIT is currently active,
-    // and the interpreter entry frame below it (used by sys._jit.is_active):
-    struct _PyInterpreterFrame *jit_entry;
 };
 
 /* other API */

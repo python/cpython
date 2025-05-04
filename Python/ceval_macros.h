@@ -381,8 +381,6 @@ do { \
     tstate->current_executor = (PyObject *)_executor; \
     next_uop = _executor->trace; \
     assert(next_uop->opcode == _START_EXECUTOR); \
-    jit_entry = tstate->jit_entry; \
-    tstate->jit_entry = frame; \
     goto enter_tier_two; \
 } while (0)
 #endif
